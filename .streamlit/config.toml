@@ -1,0 +1,22 @@
+# Visual theme of the dashboard (D-037, D-038). The reader switches between the
+# two modes in the app menu (⋮ > Settings); the charts follow the active mode.
+[theme]
+baseRadius = "large"
+showSidebarBorder = false
+
+[theme.dark]
+primaryColor = "#3987e5"
+backgroundColor = "#09090b"
+secondaryBackgroundColor = "#141416"
+textColor = "#f0efec"
+borderColor = "#26262a"
+
+[theme.light]
+primaryColor = "#2a78d6"
+backgroundColor = "#f6f1e7"
+secondaryBackgroundColor = "#fffdf8"
+textColor = "#1d1b17"
+borderColor = "#e7dfcf"
+
+[browser]
+gatherUsageStats = false
