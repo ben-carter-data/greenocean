@@ -115,9 +115,18 @@ def get_channel_color(channel, mode):
 
 
 def build_channel_color_scale(channels, mode):
-    """Color scale with only the channels present, each with its fixed color."""
+    """Color scale with only the channels present, each with its fixed color.
+
+    Series that are not channels (products or regions in the Consultas page)
+    take the same validated colors, in order.
+    """
     channel_colors = get_palette(mode)["channels"]
     present_channels = [channel for channel in channel_colors if channel in set(channels)]
+    if not present_channels:
+        series_names = sorted(set(channels))
+        colors = list(channel_colors.values())
+        return alt.Scale(domain=series_names, range=[
+            colors[position % len(colors)] for position in range(len(series_names))])
     return alt.Scale(domain=present_channels,
                      range=[channel_colors[channel] for channel in present_channels])
 
