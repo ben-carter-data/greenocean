@@ -1,4 +1,4 @@
-"""Tests for the robot control: schedule, run states and GitHub answers (faked)."""
+"""Tests for the pipeline control: schedule, run states and GitHub answers (faked)."""
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path

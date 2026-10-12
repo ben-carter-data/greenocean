@@ -83,7 +83,8 @@ Orden de arriba hacia abajo. Cada tarea indica cuándo se considera terminada. L
 | T-36 | Migración opcional a PostgreSQL gestionado |
 | T-37 | Tabla de equivalencia de calidades entre fuentes (papa: «Primera» contra «1a (cosecha)», etc.), ver D-030 |
 | T-38 | Panel con aspecto de producto: modo oscuro y claro beige, tarjetas, cifras clave y gráficos con colores fijos por canal (D-037) |
-| T-39 | Centro de control: estado e historial del robot y botón «Ejecutar ahora» con código de acceso (D-038) |
+| T-39 | Centro de control: estado e historial del pipeline y botón «Ejecutar ahora» con código de acceso (D-038) |
 | T-40 | Página «Pipeline»: recorrido de los datos con el estado real de cada paso (D-039) |
 | T-41 | Explicaciones al pasar el mouse en cada gráfico y página «El proyecto» con la idea de negocio (D-040) |
 | T-42 | Página «Consultas»: constructor de consultas por clics (vista, agrupación, filtros y medida), con tabla, gráfico, CSV y «Ver SQL» (D-041) |
+| T-46 | Vocabulario estándar de ingeniería de datos en panel, documentos y código: pipeline, job semanal, workflow, ejecución, ingesta, ETL, staging, data warehouse |

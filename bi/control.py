@@ -1,6 +1,6 @@
-"""Control of the weekly robot from the dashboard, through the GitHub Actions API.
+"""Control of the weekly pipeline from the dashboard, through the GitHub Actions API.
 
-The robot is the workflow .github/workflows/semanal.yml. Reading its runs needs
+The pipeline runs as the workflow .github/workflows/semanal.yml. Reading its runs needs
 no key because the repository is public; starting a run needs a token with
 permission to run workflows, kept in the dashboard secrets, never in the code.
 """
@@ -100,7 +100,7 @@ def build_headers(token=None):
 
 
 def list_workflow_runs(token=None, count=10):
-    """Latest runs of the weekly robot, newest first."""
+    """Latest runs of the weekly workflow, newest first."""
     response = requests.get(
         f"{API_URL}/repos/{REPOSITORY}/actions/workflows/{WORKFLOW_FILE}/runs",
         headers=build_headers(token), params={"per_page": count},
@@ -110,7 +110,7 @@ def list_workflow_runs(token=None, count=10):
 
 
 def start_workflow_run(token):
-    """Ask GitHub to start the robot now. Raises an exception if GitHub refuses."""
+    """Ask GitHub to start the workflow now. Raises an exception if GitHub refuses."""
     response = requests.post(
         f"{API_URL}/repos/{REPOSITORY}/actions/workflows/{WORKFLOW_FILE}/dispatches",
         headers=build_headers(token),
