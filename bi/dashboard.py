@@ -3,7 +3,7 @@
 Run it with:  streamlit run bi/dashboard.py
 
 It reads etl/datos.db through the named queries of bi/queries.sql, and the
-state of the weekly robot through the GitHub API (bi/control.py).
+state of the weekly pipeline through the GitHub API (bi/control.py).
 Texts shown to the user are in Spanish; code and comments are in English.
 The two color modes live in .streamlit/config.toml, the charts in bi/charts.py.
 """
@@ -92,7 +92,7 @@ EXPLORER_BASE_QUERIES = {explorer.VIEW_MARGINS: "k1_margin",
 MANIFEST_FILE = Path(__file__).resolve().parent.parent / "agent" / "downloads" / "manifest.json"
 ISSUES_PAGE_URL = f"https://github.com/{control.REPOSITORY}/issues"
 CHILE_TIME_ZONE = "America/Santiago"
-# Seconds between two questions to GitHub while the robot works, and the
+# Seconds between two questions to GitHub while the pipeline runs, and the
 # longest wait: a normal run takes about one minute.
 PROGRESS_POLL_SECONDS = 4
 PROGRESS_MAXIMUM_SECONDS = 600
@@ -325,7 +325,7 @@ def show_chart(chart):
 
 # region Data access
 def get_database_version():
-    """Changes when the robot saves a new database, so cached data is read again."""
+    """Changes when the weekly job saves a new database, so cached data is read again."""
     return queries.DATABASE_FILE.stat().st_mtime
 
 
@@ -1057,7 +1057,7 @@ def get_secret(name):
 
 
 @st.cache_data(ttl=30)
-def read_robot_runs():
+def read_pipeline_runs():
     """(latest runs, error text). Kept 30 seconds so GitHub is not asked on every click."""
     try:
         return control.list_workflow_runs(get_secret(SECRET_GITHUB_TOKEN),
@@ -1067,18 +1067,18 @@ def read_robot_runs():
 
 
 def build_run_chip(state):
-    """Chip for a robot run: Éxito, Falla or En curso."""
+    """Chip for a pipeline run: Éxito, Falla or En curso."""
     texts = {control.RUN_OK: ("Éxito", "ok"), control.RUN_FAILED: ("Falla", "failed"),
              control.RUN_IN_PROGRESS: ("En curso", "running")}
     text, kind = texts.get(state, ("Omitido", "neutral"))
     return build_chip(text, kind)
 
 
-def show_robot_status(runs):
+def show_pipeline_status(runs):
     """Three cards: latest run, next automatic run and latest data load."""
     status_column, next_column, data_column = st.columns(3)
-    with status_column, open_card("robot_latest"):
-        st.markdown('<div class="kpi-label">Última ejecución del robot</div>',
+    with status_column, open_card("pipeline_latest"):
+        st.markdown('<div class="kpi-label">Última ejecución del pipeline</div>',
                     unsafe_allow_html=True)
         if runs:
             latest = runs[0]
@@ -1088,13 +1088,13 @@ def show_robot_status(runs):
                         unsafe_allow_html=True)
         else:
             st.markdown('<div class="kpi-value">sin datos</div>', unsafe_allow_html=True)
-    with next_column, open_card("robot_next"):
+    with next_column, open_card("pipeline_next"):
         next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc))
         st.markdown('<div class="kpi-label">Próxima ejecución automática</div>'
                     f'<div class="kpi-value">{format_chile_time(next_run)}</div>'
                     '<div class="kpi-note">Cada martes, sin intervención</div>',
                     unsafe_allow_html=True)
-    with data_column, open_card("robot_data"):
+    with data_column, open_card("pipeline_data"):
         latest_run = read_latest_run()
         st.markdown('<div class="kpi-label">Filas cargadas en la última carga</div>'
                     f'<div class="kpi-value">{charts.format_thousands(latest_run["rows_loaded"])}'
@@ -1107,7 +1107,7 @@ def build_step_lines(steps):
     icons = {control.RUN_OK: "✅", control.RUN_FAILED: "❌",
              control.RUN_IN_PROGRESS: "⏳", "skipped": "⏭️"}
     if not steps:
-        return "⏳ Preparando el robot…"
+        return "⏳ Preparando la ejecución…"
     return "  \n".join(f"{icons.get(state, '•')} {name}" for name, state in steps)
 
 
@@ -1138,11 +1138,11 @@ def follow_run_progress(run_id, token, progress_area):
     return control.RUN_IN_PROGRESS
 
 
-def run_robot_now(token):
-    """Start the robot and show its steps live until it finishes."""
+def run_pipeline_now(token):
+    """Start the pipeline and show its steps live until it finishes."""
     requested_at = datetime.now(timezone.utc)
     control.start_workflow_run(token)
-    with st.status("El robot está trabajando…", expanded=True) as status_box:
+    with st.status("El pipeline se está ejecutando…", expanded=True) as status_box:
         run = wait_for_manual_run(requested_at, token)
         if run is None:
             status_box.update(label="GitHub no confirmó el inicio; revisa el historial "
@@ -1155,13 +1155,13 @@ def run_robot_now(token):
             st.success("El panel muestra los datos nuevos en cuanto recibe la base "
                        "guardada, normalmente en 1 o 2 minutos. Usa «Recargar datos».")
         else:
-            status_box.update(label="El robot terminó con una falla. Los datos anteriores "
+            status_box.update(label="La ejecución terminó con una falla. Los datos anteriores "
                               "siguen intactos.", state="error")
-    read_robot_runs.clear()
+    read_pipeline_runs.clear()
 
 
 def show_run_now_card():
-    """Card with the button that starts the robot, protected by an access code."""
+    """Card with the button that starts the pipeline, protected by an access code."""
     with open_card("run_now", "Ejecutar ahora",
                    "Descarga los datos de ODEPA, los limpia, los prueba y actualiza el "
                    "panel. Tarda alrededor de un minuto."):
@@ -1170,8 +1170,8 @@ def show_run_now_card():
         if not token or not access_code:
             st.info("El botón se activa cuando la autora configura su clave de GitHub y "
                     "su código de acceso en los secretos del panel. Mientras tanto, el "
-                    "robot se puede lanzar desde GitHub.")
-            st.link_button("Abrir el robot en GitHub", control.WORKFLOW_PAGE_URL,
+                    "workflow se puede lanzar desde GitHub.")
+            st.link_button("Abrir el workflow en GitHub", control.WORKFLOW_PAGE_URL,
                            icon=":material/open_in_new:")
             return
         typed_code = st.text_input("Código de acceso", type="password")
@@ -1179,11 +1179,11 @@ def show_run_now_card():
             if not hmac.compare_digest(typed_code, access_code):
                 st.error("Código de acceso incorrecto.")
                 return
-            run_robot_now(token)
+            run_pipeline_now(token)
 
 
 def show_run_history(runs, error_text):
-    """Card: latest robot runs with their state."""
+    """Card: latest pipeline runs with their state."""
     with open_card("run_history", "Historial de ejecuciones"):
         if error_text:
             st.warning("No se pudo consultar GitHub en este momento.")
@@ -1198,11 +1198,11 @@ def show_run_history(runs, error_text):
 
 
 def show_control_page(mode):
-    """The weekly robot: its state, its history and a button to run it now."""
-    show_page_header("Centro de control", "El robot descarga, revisa y guarda los datos "
+    """The weekly pipeline: its state, its history and a button to run it now."""
+    show_page_header("Centro de control", "El pipeline descarga, revisa y guarda los datos "
                      "cada martes. Aquí ves su estado y puedes lanzarlo cuando quieras.")
-    runs, error_text = read_robot_runs()
-    show_robot_status(runs)
+    runs, error_text = read_pipeline_runs()
+    show_pipeline_status(runs)
     run_column, history_column = st.columns([2, 3])
     with run_column:
         show_run_now_card()
@@ -1224,9 +1224,9 @@ def read_download_manifest():
 
 
 @st.cache_data(ttl=30)
-def read_latest_robot_steps():
-    """(state of each step by Spanish name, latest robot run) from GitHub, or ({}, None)."""
-    runs, _ = read_robot_runs()
+def read_latest_pipeline_steps():
+    """(state of each step by Spanish name, latest pipeline run) from GitHub, or ({}, None)."""
+    runs, _ = read_pipeline_runs()
     if not runs:
         return {}, None
     try:
@@ -1251,8 +1251,8 @@ def describe_years(manifest):
     return f"años {years[0]} a {years[-1]}"
 
 
-def build_journey_states(step_states, robot_run, latest_load, manifest):
-    """Real state of each step: from the latest robot run and the current database."""
+def build_journey_states(step_states, pipeline_run, latest_load, manifest):
+    """Real state of each step: from the latest pipeline run and the current database."""
     load_state = (control.RUN_OK if latest_load["status"] == etl.STATUS_LOADED
                   else control.RUN_FAILED)
     return {
@@ -1261,20 +1261,20 @@ def build_journey_states(step_states, robot_run, latest_load, manifest):
         "etl": get_step_state(step_states, "Run the ETL"),
         "tests": get_step_state(step_states, "Run the tests against the new database"),
         "report": get_step_state(step_states, "Publish the weekly report"),
-        "robot": robot_run["state"] if robot_run else architecture.STATE_UNKNOWN,
+        "workflow": pipeline_run["state"] if pipeline_run else architecture.STATE_UNKNOWN,
         "load": load_state,
         "panel": control.RUN_OK,
     }
 
 
-def build_journey_figures(manifest, robot_run, latest_load):
+def build_journey_figures(manifest, pipeline_run, latest_load):
     """Short texts shown under the steps, all from real data."""
     weekly_prices = read_indicator("quality_flag_counts")["weekly_prices"].sum()
     latest_week = read_indicator("k6_national_weekly_price")["week_start"].max()
     loaded_at = to_chile_time(parse_run_start(latest_load["started_at"]))
     next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc))
-    last_run = (f"última {to_chile_time(robot_run['started_at']):%d-%m %H:%M}"
-                if robot_run else "sin datos del robot")
+    last_run = (f"última {to_chile_time(pipeline_run['started_at']):%d-%m %H:%M}"
+                if pipeline_run else "sin datos del workflow")
     return {
         "source_years": describe_years(manifest),
         "last_run": last_run,
@@ -1291,13 +1291,13 @@ def show_architecture_page(mode):
     """Live diagram of the data journey, from ODEPA to this dashboard."""
     show_page_header("Pipeline", "El recorrido de los datos, de ODEPA a este panel. "
                      "Los puntos de color muestran el estado real de cada paso.")
-    step_states, robot_run = read_latest_robot_steps()
+    step_states, pipeline_run = read_latest_pipeline_steps()
     latest_load = read_latest_run()
     manifest = read_download_manifest()
     with open_card("journey", hint=ARCHITECTURE_HINT):
         st.image(architecture.build_journey_svg(
-            build_journey_states(step_states, robot_run, latest_load, manifest),
-            build_journey_figures(manifest, robot_run, latest_load), mode),
+            build_journey_states(step_states, pipeline_run, latest_load, manifest),
+            build_journey_figures(manifest, pipeline_run, latest_load), mode),
             use_container_width=True)
     report_column, legend_column = st.columns(2)
     with report_column, open_card("journey_report"):
@@ -1309,7 +1309,7 @@ def show_architecture_page(mode):
         st.markdown(f'{build_chip("OK", "ok")} {build_chip("En curso", "running")} '
                     f'{build_chip("Falla", "failed")} {build_chip("Sin datos", "neutral")}'
                     '<div class="kpi-note" style="margin-top:8px">Punto de color en cada '
-                    'paso: estado de la última ejecución del robot y de la base actual.'
+                    'paso: estado de la última ejecución del pipeline y de la base actual.'
                     '</div>', unsafe_allow_html=True)
 # endregion
 

@@ -3,7 +3,7 @@
 Layers from left to right (sources, ingestion, bronze, cleaning, rules, quality,
 gold, consumption), an orchestration band on top, observability at the bottom,
 and a quarantine for rejected rows. Each step carries a status dot with its real
-state (latest robot run and current database); dots travel along the arrows.
+state (latest pipeline run and current database); dots travel along the arrows.
 The result is a standalone SVG text, shown with st.image (st.html removes SVG).
 Only steps that really exist in this project are drawn.
 """
@@ -321,7 +321,7 @@ def build_orchestration(states, figures, palette):
                         LAYER_COLORS["orchestration"], palette),
              build_band_item(left + 30, 128, "GitHub Actions",
                              f"cada martes · próxima {figures['next_run']}", palette,
-                             states["robot"]),
+                             states["workflow"]),
              build_band_item(left + 380, 128, "Pruebas automáticas",
                              "si fallan, no se guarda nada", palette, states["tests"]),
              build_band_item(left + 720, 128, "Secretos",
@@ -343,7 +343,7 @@ def build_observability(figures, palette):
             + build_band_item(left + 30, 662, "etl_run", "una línea por carga", palette)
             + build_band_item(left + 220, 662, "Logs del agente", "un archivo por ejecución",
                               palette)
-            + build_band_item(left + 470, 662, "Correo de GitHub", "si el robot falla",
+            + build_band_item(left + 470, 662, "Correo de GitHub", "si el job semanal falla",
                               palette)
             + build_band_item(left + 690, 662, "Centro de control", "historial en vivo",
                               palette))
@@ -364,7 +364,7 @@ def build_journey_svg(states, figures, mode):
     """The whole live diagram, in the colors of the active mode.
 
     states holds the state of: sources, download, etl, load, panel, report,
-    robot and tests. figures holds the short texts shown under the steps.
+    workflow and tests. figures holds the short texts shown under the steps.
     """
     palette = charts.get_palette(mode)
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {HEIGHT}" '

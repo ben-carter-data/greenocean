@@ -9,7 +9,7 @@ FIGURES = {"source_years": "año 2026", "last_run": "última 12-10 05:51",
            "rows_read": "397.814 filas leídas", "rows_rejected": "0 filas",
            "weekly_prices": "131.144 precios", "latest_week": "hasta 05-10-2026",
            "panel_time": "datos al 12-10 05:52", "next_run": "13-10 09:00"}
-STATE_NAMES = ["sources", "download", "etl", "tests", "report", "robot", "load", "panel"]
+STATE_NAMES = ["sources", "download", "etl", "tests", "report", "workflow", "load", "panel"]
 
 
 def make_states(state):
