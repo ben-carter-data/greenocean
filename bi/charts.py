@@ -38,6 +38,8 @@ CHART_FONT = "Source Sans Pro, sans-serif"
 CHART_HEIGHT = 300
 SPARKLINE_HEIGHT = 70
 BAR_HEIGHT = 28
+# Share of the value axis left free beyond the bars, so their labels fit.
+BAR_LABEL_ROOM = 0.18
 WEEK_AXIS_FORMAT = "%d-%m"
 # Vega expression for axis labels: a dot every three digits, as in Chile.
 THOUSANDS_AXIS_EXPRESSION = "replace(format(datum.value, ',.0f'), ',', '.')"
@@ -206,8 +208,16 @@ def draw_single_weekly_area(rows, value_title, value_labels, mode, reference_val
     return apply_chart_style(alt.layer(*layers).properties(height=CHART_HEIGHT), mode)
 
 
+def calculate_bar_domain(values):
+    """Value axis from zero (or the lowest value) to the highest, plus room for labels."""
+    lowest = min(0, values.min())
+    highest = max(0, values.max())
+    room = (highest - lowest) * BAR_LABEL_ROOM
+    return [lowest - room if lowest < 0 else 0, highest + room]
+
+
 def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=None):
-    """Horizontal bars with their value written at the end.
+    """Horizontal bars with their value written next to them.
 
     rows needs the columns label, value and value_label; colors, when given,
     is a list with one color per row. An optional column "meaning" explains the
@@ -221,16 +231,21 @@ def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=N
     if "meaning" in rows.columns:
         tooltip.append(alt.Tooltip("meaning:N", title="Qué significa"))
     base = alt.Chart(rows).encode(
-        y=alt.Y("label:N", title=None, sort=order, axis=alt.Axis(labelLimit=260)),
+        y=alt.Y("label:N", title=None, sort=order,
+                axis=alt.Axis(labelLimit=260, labelPadding=10)),
         tooltip=tooltip)
     bars = base.mark_bar(cornerRadiusEnd=6, height={"band": 0.65}).encode(
-        x=alt.X("value:Q", title=value_title, axis=alt.Axis(tickCount=5)),
+        x=alt.X("value:Q", title=value_title, axis=alt.Axis(tickCount=5),
+                scale=alt.Scale(domain=calculate_bar_domain(rows["value"]), nice=False)),
         color=alt.Color("color:N", scale=None))
-    # Labels sit outside the bar end: right of positive bars, left of negative ones.
+    # Positive values are written after the end of their bar. Negative values
+    # are written just right of zero: written at the end of a negative bar,
+    # they ran over the names column.
     positive_labels = base.transform_filter("datum.value >= 0").mark_text(
         align="left", dx=6, color=palette["text"]).encode(x="value:Q", text="value_label:N")
     negative_labels = base.transform_filter("datum.value < 0").mark_text(
-        align="right", dx=-6, color=palette["text"]).encode(x="value:Q", text="value_label:N")
+        align="left", dx=6, color=palette["text"]).encode(x=alt.datum(0),
+                                                          text="value_label:N")
     layers = [bars, positive_labels, negative_labels]
     if reference_value is not None:
         # Same rows as the bars (so the bands stay intact) but no y: one full line.
