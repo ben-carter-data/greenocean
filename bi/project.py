@@ -1,0 +1,506 @@
+"""Content of the project page: documents, SQL catalog, files and real examples.
+
+The page shows text from docs/ and README.md, read here (one source: the
+dashboard copies no long text). Every figure comes from datos.db when the page
+is drawn. The dashboard only draws what these functions return.
+"""
+import fnmatch
+import inspect
+import re
+from pathlib import Path
+
+import pandas as pd
+
+from bi import alerts, charts, explorer, lag, queries
+from etl import etl
+
+# region Constants
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+DOCS_DIR = PROJECT_DIR / "docs"
+PROJECT_GUIDE_FILE = DOCS_DIR / "PROYECTO.md"
+MANUAL_FILE = DOCS_DIR / "MANUAL.md"
+DESIGN_FILE = DOCS_DIR / "DISENO.md"
+DECISIONS_FILE = DOCS_DIR / "DECISIONES.md"
+README_FILE = PROJECT_DIR / "README.md"
+GITIGNORE_FILE = PROJECT_DIR / ".gitignore"
+SCHEMA_FILE = PROJECT_DIR / "etl" / "schema.sql"
+
+GITHUB_URL = "https://github.com/cben6514-boop/monitor-precios-hito1"
+GITHUB_BRANCH = "main"
+COMMITS_URL = f"{GITHUB_URL}/commits/{GITHUB_BRANCH}"
+ACTIONS_URL = f"{GITHUB_URL}/actions"
+
+# Headings of docs/DISENO.md that hold the business questions, rules and indicators.
+QUESTIONS_HEADING = "3. Preguntas de negocio"
+RULES_HEADING = "6. Reglas de negocio"
+INDICATORS_HEADING = "7. Indicadores"
+# A table cell may contain an escaped pipe (\|), which is not a column border.
+CELL_BORDER_PATTERN = re.compile(r"(?<!\\)\|")
+DEFINITION_PATTERN = re.compile(r"^- `([^`]+)`: (.+)$", re.MULTILINE)
+DECISION_HEADING_PATTERN = re.compile(r"^## (D-\d+ · .+)$", re.MULTILINE)
+
+# Clauses shown as labels, with the pattern that finds them in a query without
+# comments. Only clauses really present are shown.
+SQL_CLAUSE_PATTERNS = {
+    "WITH": r"^\s*WITH\b",
+    "SELECT": r"\bSELECT\b",
+    "JOIN": r"\bJOIN\b",
+    "WHERE": r"\bWHERE\b",
+    "GROUP BY": r"\bGROUP\s+BY\b",
+    "HAVING": r"\bHAVING\b",
+    "ORDER BY": r"\bORDER\s+BY\b",
+    "Funciones de ventana": r"\bOVER\b",
+    "LAG": r"\bLAG\s*\(",
+    "CASE": r"\bCASE\b",
+    "Subconsultas": r"\(\s*SELECT\b",
+}
+PREVIEW_ROW_COUNT = 20
+# Python functions that compute the same as an alternative SQL query (D-049).
+PYTHON_VERSIONS = {
+    "k6_usual_range_sql": [alerts.add_weekly_variation, alerts.add_usual_range,
+                           alerts.find_price_alerts],
+    "k5_weekly_variations_sql": [lag.add_weekly_variations, lag.has_enough_weeks],
+}
+# Name given in the catalog to the K7 query, which lives in etl/etl.py.
+MATCH_COVERAGE_QUERY_NAME = "k7_match_coverage"
+# An example of the SQL the Consultas page builds: tomato in two channels.
+EXPLORER_EXAMPLE_FILTERS = {explorer.FILTER_PRODUCTS: ["Tomate"],
+                            explorer.FILTER_CHANNELS: ["Feria libre", "Supermercado"]}
+
+TABLE_NAMES = ["weekly_price", "dim_product", "dim_region", "dim_channel", "etl_run",
+               "rejection"]
+DIMENSION_TABLES = ["dim_product", "dim_region", "dim_channel"]
+RUN_TABLES = ["etl_run", "rejection"]
+
+# The case every KPI example uses: the one the dashboard opens with.
+EXAMPLE_PRODUCT = {"product": "Tomate", "variety": "Larga vida", "quality": "Primera",
+                   "normalized_unit": "kilo"}
+EXAMPLE_REGION = "Región Metropolitana de Santiago"
+EXAMPLE_CHANNEL = "Feria libre"
+EXAMPLE_OTHER_CHANNEL = "Supermercado"
+# endregion
+
+
+# region Documents
+def read_document(path):
+    """Text of one document of the repository."""
+    return Path(path).read_text(encoding="utf-8")
+
+
+def read_section(text, heading):
+    """Text under '## heading' until the next '## ' heading (without the heading)."""
+    lines = text.splitlines()
+    start = lines.index(f"## {heading}") + 1
+    end = next((position for position in range(start, len(lines))
+                if lines[position].startswith("## ")), len(lines))
+    return "\n".join(lines[start:end]).strip()
+
+
+def split_sections(text):
+    """[(heading, body)] for every '## ' section of a document."""
+    parts = re.split(r"^## (.+)$", text, flags=re.MULTILINE)
+    return [(parts[position].strip(), parts[position + 1].strip())
+            for position in range(1, len(parts), 2)]
+
+
+def parse_markdown_table(text):
+    """Rows of the first Markdown table in text, as dictionaries {header: cell}."""
+    table_lines = [line.strip() for line in text.splitlines() if line.strip().startswith("|")]
+    rows = [[cell.strip().replace("\\|", "|") for cell in
+             CELL_BORDER_PATTERN.split(line.strip("|"))] for line in table_lines]
+    headers, body = rows[0], rows[2:]  # rows[1] is the |---| separator
+    return [dict(zip(headers, cells)) for cells in body]
+
+
+def parse_definitions(text):
+    """{name: sentence} from the lines '- `name`: sentence'."""
+    return dict(DEFINITION_PATTERN.findall(text))
+
+
+def read_guide_table(heading):
+    """One table of docs/PROYECTO.md."""
+    return parse_markdown_table(read_section(read_document(PROJECT_GUIDE_FILE), heading))
+
+
+def read_design_table(heading):
+    """One table of docs/DISENO.md (questions, rules or indicators)."""
+    return parse_markdown_table(read_section(read_document(DESIGN_FILE), heading))
+
+
+def list_decisions():
+    """[(title, body)] of every decision of docs/DECISIONES.md, in order."""
+    return [(heading, body) for heading, body in split_sections(read_document(DECISIONS_FILE))
+            if DECISION_HEADING_PATTERN.match(f"## {heading}")]
+# endregion
+
+
+# region SQL catalog
+def strip_sql_comments(sql):
+    """The query without its '-- ...' comments."""
+    return re.sub(r"--[^\n]*", "", sql)
+
+
+def detect_sql_clauses(sql):
+    """Clauses really used by a query, in a fixed order.
+
+    The body of a WITH block, «name AS (SELECT …)», is not a subquery, so its
+    parenthesis is removed before looking for subqueries.
+    """
+    code = strip_sql_comments(sql).upper()
+    code = re.sub(r"\bAS\s*\(\s*SELECT\b", "AS SELECT", code)
+    return [label for label, pattern in SQL_CLAUSE_PATTERNS.items()
+            if re.search(pattern, code, re.MULTILINE)]
+
+
+def build_preview_sql(sql):
+    """The query limited to its first 20 rows, for the «Ver resultado» button."""
+    query = strip_sql_comments(sql).strip().rstrip(";")
+    return f"SELECT * FROM (\n{query}\n) LIMIT {PREVIEW_ROW_COUNT}"
+
+
+def run_preview(sql, parameters=(), database_file=queries.DATABASE_FILE):
+    """First 20 rows of a query, run on the read-only connection."""
+    connection = queries.open_database(database_file)
+    rows = pd.read_sql(build_preview_sql(sql), connection, params=list(parameters))
+    connection.close()
+    return rows
+
+
+def read_python_versions(query_name):
+    """Source code of the Python functions that compute the same as the query."""
+    return [inspect.getsource(function) for function in PYTHON_VERSIONS.get(query_name, [])]
+
+
+def list_named_queries():
+    """Every named query of bi/queries.sql with its question and page (docs/PROYECTO.md)."""
+    descriptions = {row["Consulta"]: row for row in read_guide_table("Consultas SQL")}
+    return [{"name": name, "sql": sql.strip(),
+             "question": descriptions[name]["Qué responde"],
+             "page": descriptions[name]["Página"],
+             "clauses": detect_sql_clauses(sql),
+             "python": read_python_versions(name)}
+            for name, sql in queries.load_queries().items()]
+
+
+def build_explorer_example():
+    """(SQL, parameters) that the Consultas page builds for tomato in two channels."""
+    return explorer.build_price_query(EXPLORER_EXAMPLE_FILTERS)
+# endregion
+
+
+# region Data model
+def count_table_rows(database_file=queries.DATABASE_FILE):
+    """{table: number of rows} for every table of the data warehouse."""
+    connection = queries.open_database(database_file)
+    counts = {table: connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+              for table in TABLE_NAMES}
+    connection.close()
+    return counts
+
+
+def build_table_label(table, row_count):
+    """Text of one box of the diagram: the table name and its rows."""
+    return f"{table}\\n{charts.format_thousands(row_count)} filas"
+
+
+def build_star_diagram(row_counts, mode):
+    """Graphviz (DOT) text of the star model, in the colors of the active mode.
+
+    The three dimensions sit above the fact table; the two run tables apart.
+    """
+    palette = charts.get_palette(mode)
+    style = (f'style="rounded,filled" fillcolor="{palette["card"]}" '
+             f'color="{palette["card_border"]}" fontcolor="{palette["strong_text"]}"')
+    lines = ["graph star {", 'bgcolor="transparent"; nodesep=0.5; ranksep=0.6;',
+             f'node [shape=box fontname="{charts.CHART_FONT}" fontsize=12 {style}];',
+             f'edge [color="{palette["reference"]}"];']
+    for table in TABLE_NAMES:
+        highlight = f' color="{palette["accent"]}" penwidth=2' if table == "weekly_price" else ""
+        lines.append(f'{table} [label="{build_table_label(table, row_counts[table])}"'
+                     f'{highlight}];')
+    lines.append(f'{{ rank=same; {"; ".join(DIMENSION_TABLES)}; }}')
+    lines += [f"{table} -- weekly_price;" for table in DIMENSION_TABLES]
+    lines += ["etl_run -- rejection;", "}"]
+    return "\n".join(lines)
+
+# endregion
+
+
+# region Repository files
+def parse_readme_structure(readme_text):
+    """[(path, description)] from the tree of the README section «Estructura»."""
+    tree = read_section(readme_text, "Estructura").strip("`\n")
+    folders = []
+    entries = []
+    for line in tree.splitlines():
+        branch = re.search(r"[├└]── ", line)
+        if not branch:
+            continue
+        depth = branch.start() // 4
+        # Names have no spaces; whatever follows the name is its description.
+        name, _, description = line[branch.end():].partition(" ")
+        folders = folders[:depth]
+        entries.append(("".join(folders) + name, description.strip()))
+        if name.endswith("/"):
+            folders.append(name)
+    return entries
+
+
+def read_ignored_patterns():
+    """Patterns of .gitignore: files kept out of the repository (D-020)."""
+    return [line.strip() for line in read_document(GITIGNORE_FILE).splitlines()
+            if line.strip() and not line.startswith("#")]
+
+
+def is_in_repository(path):
+    """True when the path exists here and .gitignore does not keep it out of GitHub."""
+    is_ignored = any(fnmatch.fnmatch(path, pattern) or fnmatch.fnmatch(Path(path).name, pattern)
+                     for pattern in read_ignored_patterns())
+    return (PROJECT_DIR / path).exists() and not is_ignored
+
+
+def build_github_url(path):
+    """Address of a file (blob) or a folder (tree) of the repository on GitHub."""
+    kind = "tree" if path.endswith("/") else "blob"
+    return f"{GITHUB_URL}/{kind}/{GITHUB_BRANCH}/{path.rstrip('/')}"
+
+
+def list_repository_files():
+    """[(path, description, GitHub address or None)] from the README tree."""
+    return [(path, description, build_github_url(path) if is_in_repository(path) else None)
+            for path, description in parse_readme_structure(read_document(README_FILE))]
+# endregion
+
+
+# region KPI examples
+def select_example_rows(rows, region=EXAMPLE_REGION, channel=EXAMPLE_CHANNEL):
+    """Rows of the example product, region and channel (each only if the column exists)."""
+    conditions = dict(EXAMPLE_PRODUCT, region=region, channel=channel)
+    for column, value in conditions.items():
+        if column in rows.columns and value is not None:
+            rows = rows[rows[column] == value]
+    return rows
+
+
+def format_money(value):
+    """'$ 1.234'."""
+    return f"$ {charts.format_thousands(value)}"
+
+
+def format_week(week_start):
+    """'05-10-2026'."""
+    return f"{pd.Timestamp(week_start):%d-%m-%Y}"
+
+
+def build_k1_example(margin_rows):
+    """K1 step by step for the example product, the latest week with a margin."""
+    rows = select_example_rows(margin_rows)
+    if rows.empty:
+        return []
+    row = rows.loc[rows["week_start"].idxmax()]
+    return [f"Semana del {format_week(row['week_start'])}, {EXAMPLE_REGION}, "
+            f"{EXAMPLE_CHANNEL}.",
+            f"Precio mayorista: {format_money(row['wholesale_price'])} por kilo.",
+            f"Precio al consumidor: {format_money(row['consumer_price'])} por kilo.",
+            f"({format_money(row['consumer_price'])} − {format_money(row['wholesale_price'])}) / "
+            f"{format_money(row['wholesale_price'])} = "
+            f"{charts.format_percent(row['margin'] * 100)}."]
+
+
+def build_k2_example(gap_rows):
+    """K2 step by step: supermarket against street market, latest week."""
+    rows = select_example_rows(gap_rows, channel=EXAMPLE_OTHER_CHANNEL)
+    rows = rows[rows["reference_channel"] == EXAMPLE_CHANNEL]
+    if rows.empty:
+        return []
+    row = rows.loc[rows["week_start"].idxmax()]
+    return [f"Semana del {format_week(row['week_start'])}, {EXAMPLE_REGION}.",
+            f"{EXAMPLE_OTHER_CHANNEL}: {format_money(row['price'])}; "
+            f"{EXAMPLE_CHANNEL}: {format_money(row['reference_price'])}.",
+            f"{format_money(row['price'])} / {format_money(row['reference_price'])} − 1 = "
+            f"{charts.format_signed_percent(row['gap'] * 100)}."]
+
+
+def build_k3_example(regional_rows):
+    """K3 step by step: the region against the national price, latest week."""
+    rows = select_example_rows(regional_rows)
+    if rows.empty:
+        return []
+    row = rows.loc[rows["week_start"].idxmax()]
+    return [f"Semana del {format_week(row['week_start'])}, {EXAMPLE_CHANNEL}.",
+            f"Precio en la {EXAMPLE_REGION}: {format_money(row['price'])}.",
+            f"Promedio simple de las regiones con dato: {format_money(row['national_price'])}.",
+            f"{format_money(row['price'])} / {format_money(row['national_price'])} = "
+            f"{charts.format_index(row['regional_index'])}: "
+            f"{charts.describe_regional_index(row['regional_index'])}."]
+
+
+def build_k4_example(seasonal_rows):
+    """K4 step by step: the national price of the latest week against its year."""
+    rows = select_example_rows(seasonal_rows, region=None)
+    if rows.empty:
+        return []
+    row = rows.loc[rows["week_start"].idxmax()]
+    return [f"Semana del {format_week(row['week_start'])}, {EXAMPLE_CHANNEL}, precio nacional: "
+            f"{format_money(row['national_price'])}.",
+            f"Promedio de las {row['week_count']} semanas de {row['price_year']}: "
+            f"{format_money(row['yearly_price'])}.",
+            f"{format_money(row['national_price'])} / {format_money(row['yearly_price'])} = "
+            f"{charts.format_index(row['seasonal_index'])}."]
+
+
+def build_k5_example(margin_rows):
+    """K5 step by step for the example series (bi/lag.py)."""
+    rows = select_example_rows(margin_rows)
+    if not lag.has_enough_weeks(rows):
+        return []
+    best = lag.find_lag(lag.correlate_by_lag(rows))
+    if best is None:
+        return []
+    best_lag, correlation, pair_count = best
+    threshold = lag.SIGNIFICANCE_FACTOR / pair_count ** 0.5
+    verdict = (f"rezago de {best_lag} semanas" if lag.is_clear_relation(correlation, pair_count)
+               else "sin relación clara")
+    return [f"{EXAMPLE_REGION}, {EXAMPLE_CHANNEL}: {rows['week_start'].nunique()} semanas "
+            "con ambos precios.",
+            f"La correlación más alta es {charts.format_index(correlation)}, con "
+            f"{best_lag} semanas de desfase y {pair_count} pares de cambios semanales.",
+            f"Umbral 2/√{pair_count} = {charts.format_index(threshold)}: {verdict}."]
+
+
+def build_k6_example(alert_rows):
+    """K6 step by step: the largest movement of the latest week with alerts."""
+    if alert_rows.empty:
+        return []
+    latest_week = alert_rows[alert_rows["week_start"] == alert_rows["week_start"].max()]
+    row = latest_week.loc[latest_week["variation"].abs().idxmax()]
+    limit = alerts.ALERT_DEVIATIONS * row["variation_deviation"] * 100
+    return [f"Semana del {format_week(row['week_start'])}: {row['product']} "
+            f"{row['variety']} · {row['quality']}, {row['channel']}.",
+            f"Cambio de la semana: {charts.format_signed_percent(row['variation'] * 100)}. "
+            f"Cambio habitual (12 semanas previas): "
+            f"{charts.format_signed_percent(row['usual_variation'] * 100)}.",
+            f"Desviación estándar: {charts.format_percent(row['variation_deviation'] * 100)}; "
+            f"el límite es 2 × {charts.format_percent(row['variation_deviation'] * 100)} = "
+            f"{charts.format_percent(limit)} alrededor de lo habitual: es alerta."]
+
+
+def build_k7_example(keys_with_margin, consumer_keys):
+    """K7 step by step from the coverage query of etl/etl.py."""
+    return [f"Claves de frutas y verduras del consumidor: {consumer_keys}.",
+            f"De ellas, con un precio mayorista en la misma semana, región y unidad: "
+            f"{keys_with_margin}.",
+            f"{keys_with_margin} / {consumer_keys} = "
+            f"{charts.format_percent(keys_with_margin / consumer_keys * 100)}."]
+
+
+def build_k8_example(latest_run, rejection_rows):
+    """K8 step by step from the latest ETL run."""
+    rows_read = charts.format_thousands(latest_run["rows_read"])
+    if rejection_rows.empty:
+        return [f"Filas leídas en la última ejecución: {rows_read}.",
+                "Filas rechazadas: 0, así que K8 = 0 %."]
+    return ([f"Filas leídas en la última ejecución: {rows_read}."]
+            + [f"{row['source']} · {row['reason']}: "
+               f"{charts.format_thousands(row['rejected_rows'])} filas = "
+               f"{charts.format_percent(row['rejected_share'] * 100, decimals=3)}."
+               for row in rejection_rows.to_dict("records")])
+# endregion
+
+
+# region Rule evidence
+# One query per rule, run on datos.db, and the sentence that shows its answer.
+RULE_EVIDENCE = {
+    "RN-02": ("SELECT COUNT(*) AS keys, SUM(variety = 'Sin especificar' "
+              "AND quality = 'Sin especificar') AS unspecified FROM dim_product",
+              "{keys} claves de producto; {unspecified} sin variedad ni calidad "
+              "(«Sin especificar»)."),
+    "RN-03": ("SELECT COUNT(*) AS prices FROM weekly_price JOIN dim_channel USING (channel_id) "
+              "WHERE dim_channel.source = 'wholesale' AND normalized_unit = 'kilo'",
+              "{prices} precios semanales mayoristas quedaron por kilo."),
+    "RN-04": ("SELECT COUNT(*) AS prices FROM weekly_price JOIN dim_channel USING (channel_id) "
+              "WHERE dim_channel.source = 'wholesale' AND normalized_unit = 'unidad'",
+              "{prices} precios semanales mayoristas quedaron por unidad."),
+    "RN-05": ("SELECT COUNT(*) AS prices FROM weekly_price WHERE flag = 'UNIDAD_NO_CONVERTIBLE'",
+              "{prices} precios semanales conservados con la marca UNIDAD_NO_CONVERTIBLE."),
+    "RN-07": ("SELECT ROUND(AVG(observation_count), 1) AS average, MAX(observation_count) "
+              "AS maximum FROM weekly_price JOIN dim_channel USING (channel_id) "
+              "WHERE dim_channel.source = 'wholesale' AND price IS NOT NULL",
+              "Cada precio semanal mayorista junta en promedio {average} precios diarios "
+              "(máximo {maximum})."),
+    "RN-08": ("SELECT COUNT(DISTINCT week_start) AS weeks, "
+              "COUNT(DISTINCT CASE WHEN strftime('%w', week_start) <> '1' THEN week_start END) "
+              "AS other_days FROM weekly_price",
+              "{weeks} semanas en la base; {other_days} empiezan en un día que no es lunes."),
+    "RN-09": ("SELECT ROUND(AVG(observation_count), 1) AS average FROM weekly_price "
+              "JOIN dim_channel USING (channel_id) WHERE dim_channel.source = 'consumer'",
+              "Cada precio semanal al consumidor promedia {average} puntos de venta."),
+    "RN-10": ("SELECT COUNT(*) AS prices FROM weekly_price JOIN dim_channel USING (channel_id) "
+              "WHERE dim_channel.source = 'consumer' AND dim_channel.channel = 'Mercado Mayorista'",
+              "{prices} precios semanales del canal «Mercado Mayorista» del consumidor."),
+    "RN-12": ("SELECT COUNT(*) AS prices FROM weekly_price WHERE flag = 'ATIPICO'",
+              "{prices} precios semanales marcados como atípicos y fuera de los indicadores."),
+    "RN-13": ("SELECT COUNT(*) AS names FROM dim_product WHERE product LIKE '%  %' "
+              "OR product LIKE '%' || char(160) || '%' OR variety LIKE '%  %' "
+              "OR quality LIKE '%  %'",
+              "{names} nombres de producto con espacios repetidos o no separables en la base."),
+    "RN-14": ("SELECT (SELECT COUNT(*) FROM etl_run WHERE status = 'LOADED') AS runs, "
+              "(SELECT COUNT(*) FROM (SELECT 1 FROM weekly_price GROUP BY week_start, product_id, "
+              "region_id, channel_id, normalized_unit HAVING COUNT(*) > 1)) AS duplicates",
+              "{runs} cargas correctas registradas; {duplicates} claves repetidas en "
+              "weekly_price."),
+}
+
+
+def format_evidence_value(value):
+    """Whole numbers with a dot every three digits; decimals with a comma."""
+    if isinstance(value, float) and not value.is_integer():
+        return f"{value}".replace(".", ",")
+    return charts.format_thousands(value or 0)
+
+
+def read_rule_evidence(database_file=queries.DATABASE_FILE):
+    """{rule: sentence with its real figure} for the rules that datos.db can show."""
+    connection = queries.open_database(database_file)
+    evidence = {}
+    for rule, (sql, sentence) in RULE_EVIDENCE.items():
+        row = pd.read_sql(sql, connection).iloc[0]
+        evidence[rule] = sentence.format(**{column: format_evidence_value(row[column])
+                                            for column in row.index})
+    connection.close()
+    return evidence
+
+
+def describe_margin_evidence(margin_rows):
+    """RN-06: margins exist only between prices of the same unit."""
+    return (f"{charts.format_thousands(len(margin_rows))} márgenes semanales calculados, "
+            f"todos entre precios de la misma unidad.")
+
+
+def describe_rejection_evidence(rejection_rows, example_row=None):
+    """RN-11: rejected rows of the latest run, by reason, with one example."""
+    if rejection_rows.empty:
+        return "La última ejecución no rechazó filas."
+    reasons = ", ".join(f"{row['reason']}: {charts.format_thousands(row['rejected_rows'])}"
+                        for row in rejection_rows.to_dict("records"))
+    example = f" Ejemplo guardado: {example_row}" if example_row else ""
+    return f"Filas rechazadas en la última ejecución: {reasons}.{example}"
+
+
+def read_rejection_example(database_file=queries.DATABASE_FILE):
+    """One rejected row exactly as it was read, or None."""
+    connection = queries.open_database(database_file)
+    row = connection.execute("SELECT original_row FROM rejection LIMIT 1").fetchone()
+    connection.close()
+    return row[0] if row else None
+# endregion
+
+
+# region Coverage
+def read_match_coverage(database_file=queries.DATABASE_FILE):
+    """K7 as (keys with margin, consumer keys), with the query of etl/etl.py."""
+    connection = queries.open_database(database_file)
+    coverage = etl.measure_match_coverage(connection)
+    connection.close()
+    return coverage
+# endregion

@@ -3,7 +3,8 @@
 Layers from left to right (sources, ingestion, bronze, cleaning, rules, quality,
 gold, consumption), an orchestration band on top, observability at the bottom,
 and a quarantine for rejected rows. Each step carries a status dot with its real
-state (latest pipeline run and current database); dots travel along the arrows.
+state (latest pipeline run and current database); dots travel along the arrows
+only while a run is in progress: every animation shows real data (D-043).
 The result is a standalone SVG text, shown with st.image (st.html removes SVG).
 Only steps that really exist in this project are drawn.
 """
@@ -45,6 +46,11 @@ COLUMN_HEADERS = [
     ("gold", "ORO", "listo para analizar", "gold"),
     ("consumption", "CONSUMO", "decisiones", "consumption"),
 ]
+# The small version shown at the top of the project page.
+MINI_WIDTH = 1000
+MINI_HEIGHT = 200
+MINI_ROW_Y = 64
+MINI_COLUMN_X = [100, 300, 500, 700, 900]
 # endregion
 
 
@@ -184,7 +190,7 @@ def build_chip(x, y, text, color, palette):
             f'font-family="monospace" fill="{color}">{html.escape(text)}</text>')
 
 
-def build_link(start, end, color, palette, chip_text=None, dashed=False, moving_dot=True):
+def build_link(start, end, color, palette, chip_text=None, dashed=False, moving_dot=False):
     """Curved link between two points, with an optional chip and a travelling dot."""
     (x1, y1), (x2, y2) = start, end
     middle_x = (x1 + x2) / 2
@@ -261,8 +267,11 @@ def build_consumption_nodes(states, figures, palette):
     ])
 
 
-def build_links(palette):
-    """Links between steps, each with the kind of data that travels through it."""
+def build_links(palette, is_running):
+    """Links between steps, each with the kind of data that travels through it.
+
+    Dots travel along them only while a run is in progress.
+    """
     column = COLUMN_X
     half = TILE_SIZE / 2
     gray = palette["text"]
@@ -275,23 +284,23 @@ def build_links(palette):
 
     return "".join([
         build_link(right_of("sources", 250), left_of("ingestion"), LAYER_COLORS["sources"],
-                   palette, "CSV"),
+                   palette, "CSV", moving_dot=is_running),
         build_link(right_of("sources", 420), left_of("ingestion"), LAYER_COLORS["sources"],
-                   palette, "CSV"),
+                   palette, "CSV", moving_dot=is_running),
         build_link(right_of("ingestion"), left_of("bronze"), LAYER_COLORS["ingestion"],
-                   palette, "manifest"),
+                   palette, "manifest", moving_dot=is_running),
         build_link(right_of("bronze"), left_of("cleaning"), LAYER_COLORS["bronze"],
-                   palette, "raw_*"),
+                   palette, "raw_*", moving_dot=is_running),
         build_link(right_of("cleaning"), left_of("rules"), LAYER_COLORS["processing"],
-                   palette, "válidas"),
+                   palette, "válidas", moving_dot=is_running),
         build_link(right_of("rules"), left_of("quality"), LAYER_COLORS["processing"],
-                   palette, "plata"),
+                   palette, "plata", moving_dot=is_running),
         build_link(right_of("quality"), left_of("gold"), LAYER_COLORS["quality"],
-                   palette, "OK"),
+                   palette, "OK", moving_dot=is_running),
         build_link(right_of("gold"), left_of("consumption", 210), LAYER_COLORS["gold"],
-                   palette, "SQL"),
+                   palette, "SQL", moving_dot=is_running),
         build_link(right_of("gold"), left_of("consumption", 360), LAYER_COLORS["gold"],
-                   palette, "MD"),
+                   palette, "MD", moving_dot=is_running),
         build_link(right_of("gold"), left_of("consumption", 510), gray, palette,
                    moving_dot=False),
     ])
@@ -372,9 +381,37 @@ def build_journey_svg(states, figures, mode):
              f'aria-label="Recorrido de los datos de ODEPA al panel" '
              f'font-family="{charts.CHART_FONT}">', build_style(),
              build_column_headers(), build_container(palette),
-             build_orchestration(states, figures, palette), build_links(palette),
+             build_orchestration(states, figures, palette),
+             build_links(palette, states.get("workflow") == control.RUN_IN_PROGRESS),
              build_quarantine(figures, palette), build_main_nodes(states, figures, palette),
              build_consumption_nodes(states, figures, palette),
              build_observability(figures, palette), "</svg>"]
     return "".join(parts)
+
+
+def build_mini_journey_svg(states, figures, mode):
+    """Five steps from ODEPA to the dashboard, with the real state and figures.
+
+    states and figures are the same as for build_journey_svg.
+    """
+    palette = charts.get_palette(mode)
+    steps = [("sources", draw_file_icon, "ODEPA", figures["source_years"], "sources"),
+             ("ingestion", draw_download_icon, "Ingesta", figures["last_run"], "download"),
+             ("processing", draw_funnel_icon, "ETL", figures["rows_read"], "etl"),
+             ("gold", draw_database_icon, "Data warehouse", figures["weekly_prices"], "load"),
+             ("consumption", draw_chart_icon, "Panel", figures["panel_time"], "panel")]
+    is_running = states.get("workflow") == control.RUN_IN_PROGRESS
+    half = TILE_SIZE / 2
+    links = [build_link((MINI_COLUMN_X[position] + half, MINI_ROW_Y),
+                        (MINI_COLUMN_X[position + 1] - half, MINI_ROW_Y),
+                        LAYER_COLORS[steps[position][0]], palette, moving_dot=is_running)
+             for position in range(len(steps) - 1)]
+    nodes = [build_node(x, MINI_ROW_Y, layer, draw_icon, title, [figure], palette,
+                        states.get(state_name))
+             for x, (layer, draw_icon, title, figure, state_name) in zip(MINI_COLUMN_X, steps)]
+    return "".join([f'<svg xmlns="http://www.w3.org/2000/svg" '
+                    f'viewBox="0 0 {MINI_WIDTH} {MINI_HEIGHT}" role="img" '
+                    f'aria-label="Estado real del pipeline, de ODEPA al panel" '
+                    f'font-family="{charts.CHART_FONT}">', build_style(), *links, *nodes,
+                    "</svg>"])
 # endregion

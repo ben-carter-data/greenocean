@@ -127,3 +127,32 @@ def test_margins_page_shows_k5_with_its_descriptive_note():
     assert dashboard.LAG_NOTE in [caption.value for caption in app.caption]
     assert any("semanas" in block.value or "Sin relación clara" in block.value
                for block in app.markdown)
+
+
+@needs_database
+def test_project_page_draws_start_here_and_its_eight_tabs():
+    app = draw_page(dashboard.PAGE_PROJECT)
+    assert not app.exception
+    assert [tab.label for tab in app.tabs][:8] == dashboard.PROJECT_TABS
+    expander_labels = [expander.label for expander in app.expander]
+    for query_name in queries.load_queries():
+        assert any(label.startswith(f"{query_name} · ") for label in expander_labels)
+
+
+@needs_database
+def test_project_page_runs_a_query_when_asked():
+    app = draw_page(dashboard.PAGE_PROJECT)
+    app.button(key="preview_k1_margin").click().run()
+    assert not app.exception
+    assert any(len(frame.value) == 20 for frame in app.dataframe)
+
+
+def test_kpi_link_opens_the_kpi_tab_with_that_indicator():
+    link = dashboard.build_kpi_link("K5")
+    assert 'href="el-proyecto?seccion=KPI+y+c%C3%A1lculos&amp;kpi=K5"' in link
+
+
+def test_page_only_in_the_data_team_profile_takes_that_profile():
+    assert dashboard.build_page_address(dashboard.PAGE_DATA_QUALITY) == (
+        "calidad-de-datos?perfil=Equipo+de+datos")
+    assert dashboard.build_page_address(dashboard.PAGE_ALERTS) == "alertas"
