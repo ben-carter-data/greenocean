@@ -4,7 +4,12 @@ Integración automatizada de datos públicos, del mercado mayorista al consumido
 
 Cada semana el sistema descarga los precios mayoristas y los precios al consumidor que publica ODEPA, los limpia, aplica reglas de negocio y actualiza un panel con indicadores para análisis de pricing y abastecimiento.
 
-> Estado: descarga, ETL con reglas, panel, alertas, informe y job semanal construidos y probados en local. Falta la primera ejecución en GitHub y publicar el panel; el enlace se agrega entonces.
+> Estado al 12-10-2026: ejecución manual semanal comprobada en GitHub, informe automático publicado y panel público funcionando. Pendiente: observar cuatro ejecuciones semanales automáticas consecutivas (T-26).
+
+[**Abrir el panel público**](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/)
+
+[![pruebas](https://github.com/cben6514-boop/monitor-precios-hito1/actions/workflows/pruebas.yml/badge.svg)](https://github.com/cben6514-boop/monitor-precios-hito1/actions/workflows/pruebas.yml)
+[![semanal](https://github.com/cben6514-boop/monitor-precios-hito1/actions/workflows/semanal.yml/badge.svg)](https://github.com/cben6514-boop/monitor-precios-hito1/actions/workflows/semanal.yml)
 
 ## Qué responde
 
