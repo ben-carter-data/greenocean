@@ -23,7 +23,7 @@ import streamlit as st
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import alerts, architecture, charts, control, explorer, queries  # noqa: E402
+from bi import alerts, architecture, charts, control, explorer, lag, queries  # noqa: E402
 from etl import etl  # noqa: E402
 # endregion
 
@@ -110,6 +110,13 @@ PRICE_TREND_HINT = ("Cada línea es el precio promedio de un canal, semana a sem
 MEDIAN_MARGIN_HINT = ("Cuánto más paga el consumidor que el mayorista, en %. **145 %** "
                       "significa que el consumidor paga 2,45 veces el precio mayorista. "
                       "Es la mediana de las semanas mostradas.")
+LAG_HINT = ("Cuántas semanas tarda el precio al consumidor en moverse después del "
+            "mayorista. Para cada desfase de 0 a 8 semanas se mide la **correlación** entre "
+            "los cambios semanales de ambos precios: 1 = se mueven igual, 0 = sin relación. "
+            "El rezago es el desfase con la correlación más alta, si se distingue de cero "
+            "(más de 2/√pares). Necesita 26 semanas.")
+LAG_NOTE = ("Indicador descriptivo: muestra qué desfase coincide mejor con los datos, no "
+            "prueba que el precio mayorista cause el cambio al consumidor.")
 MARGIN_TREND_HINT = ("El margen de cada canal, semana a semana. Si la línea sube, la "
                      "distancia entre el precio al consumidor y el mayorista creció.")
 REGIONAL_INDEX_HINT = ("**1,00** es el promedio nacional de la semana. **1,46** = 46 % más "
@@ -185,7 +192,7 @@ BUSINESS_QUESTIONS = [
     ("¿En qué semanas sube y baja cada producto, y cuánto?", PAGE_SEASONALITY,
      "available", "Todos los grupos, desde 2022"),
     ("¿Con cuántas semanas de diferencia sigue el precio al consumidor al mayorista?",
-     "—", "pending", "Indicador K5, en construcción"),
+     PAGE_MARGINS, "available", "Frutas y verduras; descriptivo, no prueba causa"),
     ("¿Qué productos se movieron esta semana fuera de su rango normal?", PAGE_ALERTS,
      "available", "Todos los grupos"),
 ]
@@ -704,7 +711,7 @@ def show_project_page(mode):
 
 # region Margins page
 def show_margins_page(mode):
-    """K1: margin between the wholesale price and each consumer channel."""
+    """K1, margin between the wholesale and each consumer channel, and K5, its lag."""
     show_page_header("Márgenes", "Margen = (precio al consumidor − precio mayorista) / "
                      "precio mayorista, con la misma variedad, calidad, región, semana y unidad.")
     rows = choose_product_rows(read_indicator("k1_margin"))
@@ -732,7 +739,54 @@ def show_margins_page(mode):
         show_overview_trend(rows, mode)
     with bars_column:
         show_overview_margins(rows, mode)
+    show_lag_card(rows, mode)
     st.caption(NOMINAL_PRICES_TEXT)
+
+
+def build_lag_bar_rows(correlations, best_lag, mode):
+    """Bars of K5: one per lag, the chosen lag in the accent color."""
+    correlations = correlations.dropna(subset=["correlation"])
+    palette = charts.get_palette(mode)
+    bar_rows = pd.DataFrame({
+        "label": [f"{weeks} semanas" for weeks in correlations["lag_weeks"]],
+        "value": correlations["correlation"].to_numpy(),
+        "value_label": correlations["correlation"].map(charts.format_index).to_numpy(),
+        "meaning": [f"Correlación con {pairs} pares de cambios semanales"
+                    for pairs in correlations["pair_count"]]})
+    colors = [palette["accent"] if weeks == best_lag else palette["reference"]
+              for weeks in correlations["lag_weeks"]]
+    return bar_rows, colors
+
+
+def show_lag_card(rows, mode):
+    """Card: K5, weeks the consumer price takes to follow the wholesale price."""
+    with open_card("lag", "Rezago mayorista → consumidor (K5)", hint=LAG_HINT):
+        channel = choose_value("Canal", rows["channel"].unique(), DEFAULT_CHANNEL,
+                               key="lag_channel")
+        series_rows = rows[rows["channel"] == channel]
+        if not lag.has_enough_weeks(series_rows):
+            st.info(f"K5 necesita {lag.MINIMUM_WEEKS} semanas con ambos precios; esta "
+                    f"selección tiene {series_rows['week_start'].nunique()}.")
+            return
+        correlations = lag.correlate_by_lag(series_rows)
+        best = lag.find_lag(correlations)
+        if best is None:
+            st.info("No hay cambios semanales suficientes para calcular el rezago.")
+            return
+        best_lag, correlation, pair_count = best
+        if lag.is_clear_relation(correlation, pair_count):
+            lag_text = f"{best_lag} semanas"
+        else:
+            # The highest of several weak correlations is noise, not a lag.
+            lag_text = "Sin relación clara"
+        st.markdown(f'<div class="kpi-value">{lag_text}</div>'
+                    f'<div class="kpi-note">correlación más alta '
+                    f'{charts.format_index(correlation)} en {channel}, con {pair_count} '
+                    f'pares de cambios semanales</div>', unsafe_allow_html=True)
+        bar_rows, colors = build_lag_bar_rows(correlations, best_lag, mode)
+        show_chart(charts.draw_horizontal_bars(bar_rows, "Correlación", mode, colors,
+                                               reference_value=0))
+        st.caption(LAG_NOTE)
 # endregion
 
 

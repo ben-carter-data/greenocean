@@ -118,3 +118,12 @@ def test_consultas_page_refuses_week_and_month_together():
     assert not app.exception
     assert "Elige semana o mes, no los dos a la vez." in [warning.value
                                                          for warning in app.warning]
+
+
+@needs_database
+def test_margins_page_shows_k5_with_its_descriptive_note():
+    app = draw_page(dashboard.PAGE_MARGINS)
+    assert not app.exception
+    assert dashboard.LAG_NOTE in [caption.value for caption in app.caption]
+    assert any("semanas" in block.value or "Sin relación clara" in block.value
+               for block in app.markdown)
