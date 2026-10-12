@@ -23,6 +23,8 @@ SCHEDULE_HOUR_UTC = 12
 RUN_OK = "ok"
 RUN_FAILED = "failed"
 RUN_IN_PROGRESS = "in_progress"
+# A failure asked for on purpose with the «simulate failure» option (T-23).
+RUN_SIMULATED_FAILURE = "simulated_failure"
 TRIGGER_NAMES = {"schedule": "Automática", "workflow_dispatch": "Manual"}
 SIMULATED_FAILURE_STEP = "Simulate a failure"
 # Workflow steps the reader cares about, in Spanish. Setup steps are left out.
@@ -126,6 +128,22 @@ def list_run_steps(run_id, token=None):
     response.raise_for_status()
     jobs = response.json()["jobs"]
     return simplify_steps(jobs[0]) if jobs else []
+
+
+def is_simulated_failure(steps):
+    """True when the run failed only because the failure test step was asked for."""
+    return (STEP_NAMES[SIMULATED_FAILURE_STEP], RUN_FAILED) in steps
+
+
+def mark_simulated_failures(runs, token=None):
+    """Mark the failed runs whose failure was a requested test, so nobody worries.
+
+    Only failed runs are asked for their steps: they are few.
+    """
+    for run in runs:
+        if run["state"] == RUN_FAILED and is_simulated_failure(list_run_steps(run["id"], token)):
+            run["state"] = RUN_SIMULATED_FAILURE
+    return runs
 
 
 def find_run_started_after(runs, requested_at):

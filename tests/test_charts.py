@@ -79,3 +79,32 @@ def test_bar_axis_leaves_room_for_the_labels_on_both_sides():
     assert domain[0] < -3.5
     assert domain[1] > 131.0
     assert charts.calculate_bar_domain(pd.Series([2.0, 5.0]))[0] == 0
+
+
+def test_numbers_that_round_to_zero_have_no_minus_sign():
+    assert charts.format_index(-0.001) == "0,00"
+    assert charts.format_percent(-0.04) == "0,0 %"
+
+
+def test_lags_are_written_in_plain_words():
+    assert charts.describe_weeks(0) == "la misma semana"
+    assert charts.describe_weeks(1) == "1 semana"
+    assert charts.describe_weeks(3) == "3 semanas"
+
+
+def test_every_chart_writes_numbers_and_months_as_in_chile():
+    rows = pd.DataFrame({"week_start": pd.to_datetime(["2024-03-04", "2024-03-11"]),
+                         "channel": ["Feria libre", "Feria libre"], "value": [1000.0, 1100.0]})
+    chart = charts.draw_weekly_lines(rows, "$/kilo", rows["value"].astype(str),
+                                     charts.MODE_DARK, is_money=True).to_dict()
+    assert chart["config"]["locale"]["number"]["decimal"] == ","
+    assert chart["config"]["locale"]["time"]["shortMonths"][2] == "mar"
+    assert charts.WEEK_AXIS_FORMAT == "%b %Y"
+
+
+def test_bars_can_keep_the_order_they_arrive_in():
+    rows = pd.DataFrame({"label": ["0", "1", "2"], "value": [0.1, 0.5, 0.3],
+                         "value_label": ["0,10", "0,50", "0,30"]})
+    chart = charts.draw_horizontal_bars(rows, "Correlación", charts.MODE_DARK,
+                                        is_sorted_by_value=False).to_dict()
+    assert chart["layer"][0]["encoding"]["y"]["sort"] == ["0", "1", "2"]

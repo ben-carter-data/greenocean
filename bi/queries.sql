@@ -273,3 +273,11 @@ FROM ordered
 JOIN dim_product ON dim_product.product_id = ordered.product_id
 JOIN dim_region ON dim_region.region_id = ordered.region_id
 JOIN dim_channel ON dim_channel.channel_id = ordered.channel_id;
+
+-- name: quality_week_range
+-- First and last week loaded in the data warehouse, and their years (ISO rule,
+-- as K4): what the dashboard says about the years it covers.
+SELECT MIN(week_start) AS first_week, MAX(week_start) AS last_week,
+       strftime('%Y', MIN(week_start), '+3 days') AS first_year,
+       strftime('%Y', MAX(week_start), '+3 days') AS last_year
+FROM weekly_price;

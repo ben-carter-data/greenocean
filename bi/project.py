@@ -75,6 +75,7 @@ RUN_TABLES = ["etl_run", "rejection"]
 # The case every KPI example uses: the one the dashboard opens with.
 EXAMPLE_PRODUCT = {"product": "Tomate", "variety": "Larga vida", "quality": "Primera",
                    "normalized_unit": "kilo"}
+EXAMPLE_KEY = dict(EXAMPLE_PRODUCT, product_group="Hortalizas")
 EXAMPLE_REGION = "Región Metropolitana de Santiago"
 EXAMPLE_CHANNEL = "Feria libre"
 EXAMPLE_OTHER_CHANNEL = "Supermercado"
@@ -359,12 +360,12 @@ def build_k5_example(margin_rows):
         return []
     best_lag, correlation, pair_count = best
     threshold = lag.SIGNIFICANCE_FACTOR / pair_count ** 0.5
-    verdict = (f"rezago de {best_lag} semanas" if lag.is_clear_relation(correlation, pair_count)
-               else "sin relación clara")
+    verdict = (f"rezago: {charts.describe_weeks(best_lag)}"
+               if lag.is_clear_relation(correlation, pair_count) else "sin relación clara")
     return [f"{EXAMPLE_REGION}, {EXAMPLE_CHANNEL}: {rows['week_start'].nunique()} semanas "
             "con ambos precios.",
-            f"La correlación más alta es {charts.format_index(correlation)}, con "
-            f"{best_lag} semanas de desfase y {pair_count} pares de cambios semanales.",
+            f"La correlación más alta es {charts.format_index(correlation)}, con un desfase "
+            f"de {charts.describe_weeks(best_lag)} y {pair_count} pares de cambios semanales.",
             f"Umbral 2/√{pair_count} = {charts.format_index(threshold)}: {verdict}."]
 
 
@@ -471,9 +472,9 @@ def read_rule_evidence(database_file=queries.DATABASE_FILE):
     return evidence
 
 
-def describe_margin_evidence(margin_rows):
+def describe_margin_evidence(margin_count):
     """RN-06: margins exist only between prices of the same unit."""
-    return (f"{charts.format_thousands(len(margin_rows))} márgenes semanales calculados, "
+    return (f"{charts.format_thousands(margin_count)} márgenes semanales calculados, "
             f"todos entre precios de la misma unidad.")
 
 

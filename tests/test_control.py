@@ -83,3 +83,18 @@ def test_the_manual_run_started_after_the_click_is_found():
 def test_the_token_is_only_sent_when_there_is_one():
     assert "Authorization" not in control.build_headers()
     assert control.build_headers("abc")["Authorization"] == "Bearer abc"
+
+
+def test_failure_asked_for_on_purpose_is_marked_as_simulated(monkeypatch):
+    simulated_steps = [("Limpieza y reglas de negocio", control.RUN_OK),
+                       ("Falla simulada", control.RUN_FAILED)]
+    real_failure_steps = [("Limpieza y reglas de negocio", control.RUN_FAILED)]
+    assert control.is_simulated_failure(simulated_steps)
+    assert not control.is_simulated_failure(real_failure_steps)
+    steps_by_run = {1: simulated_steps, 2: real_failure_steps}
+    monkeypatch.setattr(control, "list_run_steps",
+                        lambda run_id, token=None: steps_by_run[run_id])
+    runs = [{"id": 1, "state": control.RUN_FAILED}, {"id": 2, "state": control.RUN_FAILED},
+            {"id": 3, "state": control.RUN_OK}]
+    states = [run["state"] for run in control.mark_simulated_failures(runs)]
+    assert states == [control.RUN_SIMULATED_FAILURE, control.RUN_FAILED, control.RUN_OK]
