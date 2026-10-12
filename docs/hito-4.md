@@ -1,19 +1,19 @@
 # Hito 4 · Automatización y publicación
 
-Estado al 11-10-2026: **construido y probado en local; falta ejecutarlo en GitHub.**
-Las tareas que dependen de la cuenta del autor están marcadas como pendientes.
+Estado al 12-10-2026: **ejecución manual comprobada en GitHub y panel publicado.**
+Pendientes: enlace en el CV a cargo de la autora y observación de cuatro martes consecutivos (T-26).
 
 ## Qué se construyó
 
 | Tarea | Estado | Resultado |
 |---|---|---|
-| T-22 | Construida, sin ejecutar en GitHub | `.github/workflows/semanal.yml`: agente → ETL → pruebas → guardar base → informe |
-| T-23 | Comprobada en local | Si un paso falla, los siguientes no corren y la base no cambia |
-| T-24 | Pendiente del autor | Publicar el panel en Streamlit Community Cloud |
-| T-25 | Pendiente del autor | Enlace en el README y en el CV |
+| T-22 | Comprobada en GitHub | `.github/workflows/semanal.yml`: agente → ETL → pruebas → guardar base → informe |
+| T-23 | Comprobada en local y GitHub | Si un paso falla, los siguientes no corren y la base no cambia |
+| T-24 | Comprobada | Panel publicado; ambos perfiles cargan y el enlace abre sin conexión en navegación privada |
+| T-25 | README preparado; CV pendiente de la autora | Enlace público agregado al README |
 | T-25b | Terminada | `bi/alerts.py` (K6) y vista «Alertas» del panel |
-| T-25c | Construida, sin ejecutar en GitHub | `bi/report.py` y paso del job que lo publica como issue |
-| T-25d | Pendiente de comprobar | Correo de GitHub ante una falla del job |
+| T-25c | Comprobada en GitHub | `bi/report.py` y paso del job que lo publica como issue |
+| T-25d | Comprobada | La autora mostró el correo de GitHub de la falla forzada |
 | T-26 | Pendiente | Observar cuatro ejecuciones semanales |
 
 ## Cómo comprobarlo en local
@@ -23,16 +23,17 @@ Las tareas que dependen de la cuenta del autor están marcadas como pendientes.
 3. `streamlit run bi/dashboard.py` → vista «Alertas» en el perfil del analista.
 4. T-23: con la red cortada, `python agent/agent.py && python etl/etl.py` termina con error en el primer comando y `etl/datos.db` no cambia.
 
-## Pasos del autor en GitHub
+## Resultados reales en GitHub y Streamlit (12-10-2026)
 
-1. Crear el repositorio público y subir los commits (uno por tarea).
-2. En el repositorio: Settings → Actions → General → Workflow permissions → «Read and write permissions».
-3. Actions → `semanal` → Run workflow. Debe terminar en verde, crear un commit «Weekly data update» y un issue «Informe semanal AAAA-MM-DD» (T-22, T-25c).
-4. Run workflow otra vez marcando «Forzar una falla después del ETL». Debe terminar en rojo, sin commit nuevo ni issue, y debe llegar un correo de GitHub (T-23, T-25d).
-5. En share.streamlit.io: New app → elegir el repositorio, rama principal y archivo `bi/dashboard.py` (T-24).
-6. Poner el enlace del panel y los sellos de estado en el README, y el enlace en el CV (T-25, T-06b). Los sellos tienen esta forma:
-   `![pruebas](https://github.com/USUARIO/REPOSITORIO/actions/workflows/pruebas.yml/badge.svg)`
-7. Revisar cada martes durante cuatro semanas que el job quede en verde (T-26).
+- Repositorio público: [cben6514-boop/monitor-precios-hito1](https://github.com/cben6514-boop/monitor-precios-hito1), rama `main`.
+- El workflow `pruebas` terminó en verde sobre el commit inicial `7a69210`, según la verificación de la passation. Permisos de Actions configurados en lectura y escritura.
+- **T-23 / T-25d:** [ejecución 38224845969](https://github.com/cben6514-boop/monitor-precios-hito1/actions/runs/38224845969), con la casilla de falla forzada marcada (confirmado por la autora). El agente y el ETL terminaron; «Simulate a failure» falló y los pasos posteriores se omitieron, sin commit ni issue. La autora mostró el correo «Run failed: semanal» recibido en su cuenta.
+- **T-22:** [ejecución 38226180308](https://github.com/cben6514-boop/monitor-precios-hito1/actions/runs/38226180308), sin la casilla marcada: `Success`, duración total de 57 segundos.
+- Commit automático: [`ed08f4c`, «Weekly data update»](https://github.com/cben6514-boop/monitor-precios-hito1/commit/ed08f4c), de `github-actions[bot]`. Recuperado en local mediante Pull; el asistente comprobó que era el último commit local.
+- **T-25c:** [issue #1, «Informe semanal 2026-10-12»](https://github.com/cben6514-boop/monitor-precios-hito1/issues/1), creado por GitHub Actions. La autora mostró el informe: 397.814 filas cargadas, 0 rechazadas, K7 131 de 168 y 43 alertas para la semana del 2026-10-05.
+- **T-24:** [panel público](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/), publicado desde `main`, archivo `bi/dashboard.py`. Se comprobaron las vistas Márgenes del perfil analista y Calidad de datos del perfil Equipo de datos. La autora mostró también el panel abierto en Chrome Incognito sin pedir conexión.
+- La vista de calidad publicada mostró estado `LOADED`, fecha `2026-10-12T08:52:08`, 397.814 filas leídas y cargadas, 0 rechazadas y K7 131 de 168 (78,0 %).
+- **T-25 / T-06b:** enlace del panel y sellos de `pruebas` y `semanal` preparados en el README; pendientes de commit y push aprobados por la autora.
 
 ## Resultados reales (en local, datos del 11-10-2026)
 
@@ -44,8 +45,9 @@ Las tareas que dependen de la cuenta del autor están marcadas como pendientes.
 
 ## Qué quedó pendiente
 
-- **Nada del job se ha ejecutado en GitHub.** El archivo `semanal.yml` es YAML válido y sus comandos se probaron uno por uno en local, pero los permisos, el `git push` y `gh issue create` solo se comprueban allí.
-- **Día y hora del job:** martes 12:00 UTC (09:00 en Chile). El diseño pide ajustarlo observando cuándo publica ODEPA.
-- **Alertas en productos muy estables:** un cambio de 1 % puede ser alerta (por ejemplo marraqueta +0,9 %). Recalibrar es T-30.
-- **T-06b:** los sellos de estado necesitan la dirección del repositorio.
-- **`datos.db` de esta entrega** se generó en una carpeta temporal y se copió a `etl/`. Ejecutar `python etl/etl.py` en el computador del autor lo confirma. `etl/datos.db-journal` (vacío) se puede borrar.
+- **T-26:** comprobar cuatro ejecuciones programadas consecutivas en verde, sin intervención. Fechas previstas de revisión: martes **13-10-2026, 20-10-2026, 27-10-2026 y 03-11-2026**. Ninguna se da por cumplida con la ejecución manual del 12-10-2026; registrar el enlace y resultado real de cada ejecución.
+- **Día y hora del job:** martes 12:00 UTC. El diseño pide ajustarlo observando cuándo publica ODEPA.
+- **T-25:** la autora agrega el enlace del panel al CV.
+- **T-06b:** los sellos están preparados; no se ha realizado una prueba deliberadamente rota en GitHub para comprobar el cambio del sello a rojo. La ejecución correcta de `pruebas` sobre `7a69210` sí fue verificada en la passation.
+- **Alertas en productos muy estables:** un cambio de 1 % puede ser alerta (por ejemplo marraqueta +0,9 %). Recalibrar es T-30, fuera de este cierre.
+- **Hitos 5 y 6:** no iniciados; requieren confirmación de la autora después de revisar el hito 4.
