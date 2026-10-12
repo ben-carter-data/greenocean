@@ -27,6 +27,7 @@ TRIGGER_NAMES = {"schedule": "Automática", "workflow_dispatch": "Manual"}
 SIMULATED_FAILURE_STEP = "Simulate a failure"
 # Workflow steps the reader cares about, in Spanish. Setup steps are left out.
 STEP_NAMES = {
+    "Restore the closed-year files": "Archivos de años cerrados (caché)",
     "Download the ODEPA files": "Descarga de ODEPA",
     "Run the ETL": "Limpieza y reglas de negocio",
     "Simulate a failure": "Falla simulada",

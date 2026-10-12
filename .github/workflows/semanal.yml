@@ -28,6 +28,21 @@ jobs:
           python-version: "3.11"
       - run: pip install -r requirements.txt
 
+      # D-047: the files of closed years do not change, so they are kept in the
+      # Actions cache. The agent skips a closed year whose file is already there
+      # and downloads it when the cache expired. The key changes with the
+      # current year and with input.csv: in January the year that just closed
+      # is downloaded complete once, instead of reusing a copy from mid-year.
+      - name: Find the current year
+        id: current_year
+        run: echo "year=$(date +%Y)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the closed-year files
+        uses: actions/cache@v4
+        with:
+          path: agent/downloads/*.csv
+          key: odepa-files-${{ steps.current_year.outputs.year }}-${{ hashFiles('agent/input.csv') }}
+
       - name: Download the ODEPA files
         run: python agent/agent.py
 

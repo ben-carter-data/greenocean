@@ -4,13 +4,69 @@
     "year": 2026,
     "hash": "c959696510b98a17193cbd04ddf57607c0c4b8db1ec79444db0023ca152eff3f",
     "bytes": 32350548,
-    "downloaded_at": "2026-10-12T08:52:00"
+    "downloaded_at": "2026-10-12T13:38:11"
   },
   "consumer_2026.csv": {
     "source": "consumer",
     "year": 2026,
     "hash": "d6cdda7e0e9d674224460122cf84be1d6b89e79e8c529f3f820a3fe43038680a",
     "bytes": 45798183,
-    "downloaded_at": "2026-10-12T08:52:04"
+    "downloaded_at": "2026-10-12T13:38:12"
+  },
+  "wholesale_2022.csv": {
+    "source": "wholesale",
+    "year": 2022,
+    "hash": "5d34b468950050685e2e55bf0ec79a2b91899530a89a76b88da1c405aef9ddfa",
+    "bytes": 41898521,
+    "downloaded_at": "2026-10-12T13:38:12"
+  },
+  "consumer_2022.csv": {
+    "source": "consumer",
+    "year": 2022,
+    "hash": "51fed28d5472e20ff4e8979d554cfea5648cfad20497a9e363e8e9d4041fb007",
+    "bytes": 58533005,
+    "downloaded_at": "2026-10-12T13:38:13"
+  },
+  "wholesale_2023.csv": {
+    "source": "wholesale",
+    "year": 2023,
+    "hash": "0b5df3e213ee54a8f2bf56f21efc3699cbe8f7f30454bfdbeb996b2be98fbcc8",
+    "bytes": 41806801,
+    "downloaded_at": "2026-10-12T13:38:14"
+  },
+  "consumer_2023.csv": {
+    "source": "consumer",
+    "year": 2023,
+    "hash": "b9d1a822a007b03e7c25fe61973ae3f57829390a3ab02e100dc7e203c8740c8e",
+    "bytes": 64696777,
+    "downloaded_at": "2026-10-12T13:38:15"
+  },
+  "wholesale_2024.csv": {
+    "source": "wholesale",
+    "year": 2024,
+    "hash": "c55955b9135ae02c1a46aad73f842a965f891646d8a41c0465c8e6c67be29cee",
+    "bytes": 42324353,
+    "downloaded_at": "2026-10-12T13:38:15"
+  },
+  "consumer_2024.csv": {
+    "source": "consumer",
+    "year": 2024,
+    "hash": "c1f424b9cacabd602091c6f9c3fc6736373e0c8ce0d2da2fcdd036b03ed1693b",
+    "bytes": 61461492,
+    "downloaded_at": "2026-10-12T13:38:17"
+  },
+  "wholesale_2025.csv": {
+    "source": "wholesale",
+    "year": 2025,
+    "hash": "fc7c7e30de9d940f48a16c69202fd66a77708ecb12ecc70a7c018665c72c2a18",
+    "bytes": 45069939,
+    "downloaded_at": "2026-10-12T13:38:17"
+  },
+  "consumer_2025.csv": {
+    "source": "consumer",
+    "year": 2025,
+    "hash": "389b65d59356e8d9857c393285776d4f1a8484f4ac06bed9b83dbc83d0d25902",
+    "bytes": 60391246,
+    "downloaded_at": "2026-10-12T13:38:18"
   }
 }

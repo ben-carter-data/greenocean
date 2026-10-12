@@ -123,8 +123,9 @@ ALERTS_HINT = ("Productos cuyo precio cambió esta semana mucho más de lo que s
                "semanal promedio de las 12 semanas anteriores. Son señales para revisar, "
                "no conclusiones.")
 SEASONAL_INDEX_HINT = ("**1,00** es el precio promedio del año. **1,20** = esa semana el "
-                       "precio estuvo 20 % sobre su promedio; **0,80** = 20 % bajo. Con un "
-                       "solo año cargado es variación dentro del año, aún no estacionalidad.")
+                       "precio estuvo 20 % sobre su promedio; **0,80** = 20 % bajo. Con "
+                       "datos desde 2022 se ve si el producto sube o baja siempre en las "
+                       "mismas semanas del año.")
 NATIONAL_PRICE_HINT = ("Promedio simple de las regiones con dato, en pesos por kilo (o por "
                        "unidad), semana a semana.")
 ARCHITECTURE_HINT = ("Los datos viajan de izquierda a derecha. **Bronce**: el archivo tal "
@@ -168,7 +169,8 @@ DATA_TEXT = (
     "mayoristas** de frutas y hortalizas, diarios, y **precios al consumidor**, semanales, "
     "por región y tipo de comercio. Licencia Creative Commons Atribución.")
 LIMITS_TEXT = (
-    "Precios nominales, sin ajuste por inflación. Por ahora, un solo año cargado (2026). "
+    "Precios nominales, sin ajuste por inflación: al comparar años, parte de la subida "
+    "es inflación. Datos desde enero de 2022. "
     "La papa no tiene margen porque sus calidades no coinciden entre las dos fuentes. "
     "Las cifras del panel son cálculos sobre datos oficiales; los hallazgos se publican "
     "solo después de verificarlos.")
@@ -181,9 +183,9 @@ BUSINESS_QUESTIONS = [
     ("¿En qué regiones son más altos los precios?", PAGE_CHANNELS_AND_REGIONS,
      "available", "Todos los grupos"),
     ("¿En qué semanas sube y baja cada producto, y cuánto?", PAGE_SEASONALITY,
-     "partial", "Un solo año cargado"),
+     "available", "Todos los grupos, desde 2022"),
     ("¿Con cuántas semanas de diferencia sigue el precio al consumidor al mayorista?",
-     "—", "pending", "Necesita el histórico"),
+     "—", "pending", "Indicador K5, en construcción"),
     ("¿Qué productos se movieron esta semana fuera de su rango normal?", PAGE_ALERTS,
      "available", "Todos los grupos"),
 ]
@@ -796,7 +798,7 @@ def show_channels_and_regions_page(mode):
 def show_seasonality_page(mode):
     """K4: national price of each week over the average of its year."""
     show_page_header("Estacionalidad", "Índice = precio nacional de la semana / promedio "
-                     "del año. Con un solo año cargado muestra la variación dentro del año.")
+                     "del año. Con varios años se ve qué semanas son caras o baratas cada año.")
     rows = choose_product_rows(read_indicator("k4_seasonal_index"))
     channel = choose_value("Canal", rows["channel"].unique(), DEFAULT_CHANNEL)
     rows = rows[rows["channel"] == channel]
