@@ -8,7 +8,7 @@ from streamlit.testing.v1 import AppTest
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
-from bi import dashboard, queries  # noqa: E402
+from bi import control, dashboard, queries  # noqa: E402
 
 DASHBOARD_FILE = str(PROJECT_DIR / "bi" / "dashboard.py")
 # These tests draw the real dashboard, so they need the committed database.
@@ -156,3 +156,44 @@ def test_page_only_in_the_data_team_profile_takes_that_profile():
     assert dashboard.build_page_address(dashboard.PAGE_DATA_QUALITY) == (
         "calidad-de-datos?perfil=Equipo+de+datos")
     assert dashboard.build_page_address(dashboard.PAGE_ALERTS) == "alertas"
+
+
+def test_t52_every_link_of_the_project_points_to_a_page_that_exists():
+    """The home page lives at './'; any other page at its own path (A1)."""
+    other_paths = {path for title, path in dashboard.PAGE_PATHS.items()
+                   if title != dashboard.PAGE_OVERVIEW}
+    for journey in [dashboard.JOURNEY_MANAGER, dashboard.JOURNEY_ANALYST,
+                    dashboard.JOURNEY_TECHNICAL]:
+        for _, address in dashboard.list_journey_steps(journey):
+            path = address.split("?")[0]
+            assert path == "./" or path in other_paths, address
+    assert dashboard.build_page_address(dashboard.PAGE_OVERVIEW) == "./"
+
+
+def test_t52_each_channel_gap_says_how_many_regions_stand_behind_it():
+    rows = pd.DataFrame({"channel": ["Supermercado"] * 3 + ["Mercado Minorista"] * 2,
+                         "region": ["Región de Arica y Parinacota", "Región del Maule",
+                                    "Región del Maule", "Región de Arica y Parinacota",
+                                    "Región de Arica y Parinacota"]})
+    assert dashboard.describe_gap_basis(rows) == [
+        "Mercado Minorista: 1 región (Arica y Parinacota), 2 semanas",
+        "Supermercado: 2 regiones, 3 comparaciones"]
+    assert dashboard.list_channels_without_pairs(
+        rows, ["Supermercado", "Mercado Minorista", "Supermercado en Línea", "Feria libre"],
+        "Feria libre") == ["Supermercado en Línea"]
+
+
+def test_t52_pipeline_summary_shows_its_worst_real_state():
+    states = {name: control.RUN_OK for name in ["sources", "download", "etl", "load", "panel"]}
+    assert dashboard.summarize_journey_state(states) == ("OK", "ok")
+    states["etl"] = control.RUN_FAILED
+    assert dashboard.summarize_journey_state(states) == ("con falla", "failed")
+
+
+def test_t52_a_bar_resting_on_one_or_two_regions_names_them_next_to_it():
+    assert dashboard.label_channel_with_its_regions(
+        "Supermercado", ["Región de Arica y Parinacota"]) == (
+        "Supermercado · solo Arica y Parinacota")
+    assert dashboard.label_channel_with_its_regions(
+        "Supermercado", ["Región del Maule", "Región de Ñuble", "Región del Biobío"]) == (
+        "Supermercado")

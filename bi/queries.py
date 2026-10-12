@@ -14,6 +14,8 @@ DATABASE_FILE = BASE_DIR.parent / "etl" / "datos.db"
 QUERIES_FILE = BASE_DIR / "queries.sql"
 # Each query of queries.sql starts with a line "-- name: query_name".
 QUERY_NAME_PATTERN = re.compile(r"^-- name: (\w+)\n", re.MULTILINE)
+# A product key: what the dashboard filters choose (D-050).
+KEY_COLUMNS = ["product_group", "product", "variety", "quality", "normalized_unit"]
 # endregion
 
 
@@ -31,10 +33,39 @@ def open_database(database_file=DATABASE_FILE):
     return sqlite3.connect(f"file:{database_file}?mode=ro", uri=True)
 
 
-def run_query(query_name, database_file=DATABASE_FILE):
+def run_query(query_name, database_file=DATABASE_FILE, parameters=()):
     """Run one named query and return its rows as a DataFrame."""
+    return run_sql(load_queries()[query_name], database_file, parameters)
+
+
+def run_sql(sql, database_file=DATABASE_FILE, parameters=()):
+    """Run a query text on the read-only connection and return its rows."""
     connection = open_database(database_file)
-    rows = pd.read_sql(load_queries()[query_name], connection)
+    rows = pd.read_sql(sql, connection, params=list(parameters))
     connection.close()
     return rows
+
+
+def read_query_body(query_name):
+    """A named query without its final semicolon, so it can be used as a subquery."""
+    return load_queries()[query_name].strip().rstrip(";")
+
+
+def run_query_for_key(query_name, key, database_file=DATABASE_FILE):
+    """Rows of one named query for a single product key (D-050).
+
+    SQLite filters the rows, so the dashboard receives a few thousand rows
+    instead of the whole indicator. The key values travel as parameters.
+    """
+    conditions = " AND ".join(f"{column} = ?" for column in KEY_COLUMNS)
+    sql = f"SELECT * FROM (\n{read_query_body(query_name)}\n) WHERE {conditions}"
+    return run_sql(sql, database_file, [key[column] for column in KEY_COLUMNS])
+
+
+def list_query_keys(query_name, database_file=DATABASE_FILE):
+    """Product keys present in one named query, with how many rows each one has."""
+    columns = ", ".join(KEY_COLUMNS)
+    sql = (f"SELECT {columns}, COUNT(*) AS row_count FROM (\n{read_query_body(query_name)}\n) "
+           f"GROUP BY {columns}")
+    return run_sql(sql, database_file)
 # endregion

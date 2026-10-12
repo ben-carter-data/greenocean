@@ -11,7 +11,7 @@ measure are always computed with pandas, because SQLite has no median.
 """
 import pandas as pd
 
-from bi import queries
+from bi import charts, queries
 
 # region Constants
 VIEW_PRICES = "Precios semanales"
@@ -227,6 +227,22 @@ def name_columns_for_reader(result, view, measure_label):
     if "week_start" in result.columns:
         result["week_start"] = pd.to_datetime(result["week_start"]).dt.date
     return result.rename(columns=titles)
+
+
+def write_numbers_for_reader(table, view, measure_label):
+    """Values and counts as text written as in Chile (1.234 and 12,5), for the screen.
+
+    The downloaded CSV keeps plain numbers, so a spreadsheet can still compute.
+    """
+    table = table.copy()
+    value_title = f"{measure_label} · {VALUE_TITLES[view]}"
+    if view == VIEW_PRICES:
+        table[value_title] = table[value_title].map(charts.format_thousands)
+    else:
+        table[value_title] = table[value_title].map(
+            lambda value: f"{charts.remove_negative_zero(value, 1):.1f}".replace(".", ","))
+    table[COUNT_TITLES[view]] = table[COUNT_TITLES[view]].map(charts.format_thousands)
+    return table
 # endregion
 
 

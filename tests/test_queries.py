@@ -49,7 +49,7 @@ def test_queries_file_has_one_named_query_per_indicator():
         "k1_margin", "k2_channel_gap", "k3_regional_index", "k4_seasonal_index",
         "k6_national_weekly_price", "k8_rejected_rows", "quality_runs",
         "quality_flag_counts", "quality_outliers", "k6_usual_range_sql",
-        "k5_weekly_variations_sql"}
+        "k5_weekly_variations_sql", "quality_week_range"}
 
 
 def test_k1_margin_is_consumer_minus_wholesale_over_wholesale(database_file):
@@ -111,3 +111,26 @@ def test_k8_rejected_rows_are_counted_by_reason_over_rows_read(tmp_path):
     assert rejections.to_dict("records") == [{
         "source": etl.SOURCE_CONSUMER, "reason": etl.REASON_NON_POSITIVE_PRICE,
         "rejected_rows": 1, "rejected_share": 0.25}]
+
+
+def test_d050_rows_of_one_product_key_are_filtered_by_sqlite(database_file):
+    key = {"product_group": "Hortalizas", "product": "Tomate", "variety": "Larga vida",
+           "quality": "Primera", "normalized_unit": "kilo"}
+    rows = queries.run_query_for_key("k1_margin", key, database_file)
+    assert len(rows) == len(queries.run_query("k1_margin", database_file))
+    other_key = dict(key, variety="Cherry")
+    assert queries.run_query_for_key("k1_margin", other_key, database_file).empty
+
+
+def test_d050_key_options_count_the_rows_of_each_key(database_file):
+    options = queries.list_query_keys("k1_margin", database_file)
+    assert options[queries.KEY_COLUMNS].to_dict("records") == [
+        {"product_group": "Hortalizas", "product": "Tomate", "variety": "Larga vida",
+         "quality": "Primera", "normalized_unit": "kilo"}]
+    assert options["row_count"].iloc[0] == len(queries.run_query("k1_margin", database_file))
+
+
+def test_week_range_gives_the_years_really_loaded(database_file):
+    week_range = queries.run_query("quality_week_range", database_file).iloc[0]
+    assert (week_range["first_week"], week_range["last_week"]) == ("2026-01-05", "2026-01-12")
+    assert (week_range["first_year"], week_range["last_year"]) == ("2026", "2026")

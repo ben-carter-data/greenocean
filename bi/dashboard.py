@@ -7,6 +7,7 @@ state of the weekly pipeline through the GitHub API (bi/control.py).
 Texts shown to the user are in Spanish; code and comments are in English.
 The two color modes live in .streamlit/config.toml, the charts in bi/charts.py.
 """
+import base64
 import hmac
 import html
 import json
@@ -100,6 +101,8 @@ FLAG_NAMES = {"SIN_MARCA": "Usados en los indicadores",
               etl.FLAG_UNIT_NOT_CONVERTIBLE: "Unidad no convertible",
               etl.FLAG_OUTLIER: "Atípicos"}
 OVERVIEW_ALERT_COUNT = 6
+# A channel gap that rests on this many regions or fewer names them next to its bar.
+MAXIMUM_REGIONS_NAMED = 2
 ALERTS_PAGE_BAR_COUNT = 15
 RUN_HISTORY_COUNT = 8
 # Consultas page: it opens with one row per product and channel.
@@ -288,6 +291,21 @@ def build_style_css(mode):
             font-size: 0.95rem; font-weight: 400; line-height: 1.45;
         }}
     }}
+    .figure-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+                    margin: 8px 0; }}
+    .narrow-only {{ display: none; }}
+    .scroll-box {{ overflow-x: auto; }}
+    .scroll-box img {{ max-width: none; }}
+    .status-list {{ display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px 0; }}
+    /* Phones: two figures per row, a status list instead of a tiny diagram, and
+       less empty room above the title, so «Empieza aquí» fits on one screen. */
+    @media (max-width: 640px) {{
+        .figure-grid {{ grid-template-columns: repeat(2, 1fr); }}
+        .wide-only {{ display: none; }}
+        .narrow-only {{ display: block; }}
+        [data-testid="stMainBlockContainer"] {{ padding-top: 2.5rem; }}
+        [class*="st-key-card_start_here"] li {{ font-size: 0.9rem; line-height: 1.4; }}
+    }}
     table.card-table {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }}
     table.card-table th {{ text-align: left; color: {palette["text"]}; font-weight: 500;
                           padding: 6px 4px; border-bottom: 1px solid {palette["card_border"]}; }}
@@ -340,7 +358,10 @@ def build_page_address(page_title, tab=None, kpi=None):
     if kpi:
         parameters[KPI_PARAMETER] = kpi
     query = f"?{urlencode(parameters)}" if parameters else ""
-    return PAGE_PATHS[page_title] + query
+    # The first page of the navigation is the home page: Streamlit serves it at
+    # the root of the app, and its own path does not exist.
+    path = "./" if page_title == PAGE_OVERVIEW else PAGE_PATHS[page_title]
+    return path + query
 
 
 def build_link_html(text, address):
@@ -373,6 +394,18 @@ def build_html_table(headers, rows):
     body_rows = "".join("<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>"
                         for row in rows)
     return f'<table class="card-table"><tr>{header_cells}</tr>{body_rows}</table>'
+
+
+def build_svg_image_html(svg, css_class="", is_actual_size=False):
+    """An SVG drawing as an image tag, so CSS can show it only on some screens.
+
+    At actual size it keeps its own width (inside a box that scrolls sideways)
+    instead of shrinking to the screen, so its text stays readable.
+    """
+    data = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+    size = "" if is_actual_size else ' style="width:100%"'
+    return (f'<div class="{css_class}"><img src="data:image/svg+xml;base64,{data}"{size} '
+            f'alt="Recorrido de los datos"></div>')
 
 
 def show_chart(chart):
@@ -410,6 +443,47 @@ def read_indicator(query_name):
 
 
 @st.cache_data
+def read_cached_key_options(query_name, database_version):
+    """Product keys of one indicator with their number of rows (D-050)."""
+    return add_display_columns(queries.list_query_keys(query_name))
+
+
+def read_key_options(query_name):
+    """Product keys offered by the filters of one indicator."""
+    return read_cached_key_options(query_name, get_database_version())
+
+
+@st.cache_data
+def read_cached_rows_for_key(query_name, key_items, database_version):
+    """Rows of one indicator for one product key, filtered by SQLite (D-050)."""
+    return add_display_columns(queries.run_query_for_key(query_name, dict(key_items)))
+
+
+def read_indicator_for_key(query_name, key):
+    """Rows of one indicator for the chosen product key."""
+    return read_cached_rows_for_key(query_name, tuple(sorted(key.items())),
+                                    get_database_version())
+
+
+def read_week_range():
+    """First and last week loaded in the data warehouse, with their years."""
+    return read_indicator("quality_week_range").iloc[0]
+
+
+def read_latest_week():
+    """Monday of the latest week with prices."""
+    return pd.Timestamp(read_week_range()["last_week"])
+
+
+def describe_loaded_years():
+    """'año 2026' or 'años 2022 a 2026', from the weeks really loaded in datos.db."""
+    week_range = read_week_range()
+    if week_range["first_year"] == week_range["last_year"]:
+        return f"año {week_range['last_year']}"
+    return f"años {week_range['first_year']} a {week_range['last_year']}"
+
+
+@st.cache_data
 def read_cached_price_alerts(database_version):
     """K6 alerts of every week, computed once per database."""
     prices = queries.run_query("k6_national_weekly_price")
@@ -421,12 +495,18 @@ def read_price_alerts():
     return read_cached_price_alerts(get_database_version())
 
 
-def read_match_coverage():
-    """K7 as (keys with margin, consumer keys)."""
+@st.cache_data
+def read_cached_match_coverage(database_version):
+    """K7, computed once per database: its query crosses the whole price table."""
     connection = queries.open_database()
     coverage = etl.measure_match_coverage(connection)
     connection.close()
     return coverage
+
+
+def read_match_coverage():
+    """K7 as (keys with margin, consumer keys)."""
+    return read_cached_match_coverage(get_database_version())
 
 
 def read_latest_run():
@@ -479,23 +559,31 @@ def choose_value(label, values, preferred_value=None, key=None):
     return st.selectbox(label, options, index=index, key=key)
 
 
-def choose_product_rows(rows):
-    """Narrow the rows to the group, product and variety/quality the user chooses.
+def choose_product_key(query_name, columns=None):
+    """Group, product and variety/quality/unit chosen by the reader, as a key.
 
-    The three choices sit in one row, above the charts they filter.
+    The options come from the indicator; only the chosen key is read later.
+    columns, when given, are the three places for the three choices.
     """
-    group_column, product_column, key_column = st.columns(3)
+    options = read_key_options(query_name)
+    group_column, product_column, key_column = columns or st.columns(3)
     with group_column:
-        group = choose_value("Grupo", rows["product_group"].unique(), DEFAULT_GROUP)
-    rows = rows[rows["product_group"] == group]
+        group = choose_value("Grupo", options["product_group"].unique(), DEFAULT_GROUP)
+    options = options[options["product_group"] == group]
     with product_column:
-        product = choose_value("Producto", rows["product"].unique(), DEFAULT_PRODUCT)
-    rows = rows[rows["product"] == product]
+        product = choose_value("Producto", options["product"].unique(), DEFAULT_PRODUCT)
+    options = options[options["product"] == product]
     with key_column:
         # The key with most data goes first, so the page opens with a full chart.
-        key_labels = rows["key_label"].value_counts().index.to_list()
-        key_label = st.selectbox("Variedad · calidad · unidad", key_labels)
-    return rows[rows["key_label"] == key_label]
+        options = options.sort_values("row_count", ascending=False)
+        key_label = st.selectbox("Variedad · calidad · unidad", options["key_label"].to_list())
+    chosen = options[options["key_label"] == key_label].iloc[0]
+    return {column: chosen[column] for column in queries.KEY_COLUMNS}
+
+
+def choose_product_rows(query_name):
+    """Rows of one indicator for the product key the reader chooses."""
+    return read_indicator_for_key(query_name, choose_product_key(query_name))
 # endregion
 
 
@@ -560,7 +648,7 @@ def show_price_figure(key, label, series, unit, mode, color):
     latest_price, change = calculate_weekly_change(series)
     show_key_figure(key, label, series, f"$ {charts.format_thousands(latest_price)}",
                     build_change_chip(change), f"$/{unit} · semana del "
-                    f"{series.index.max():%d-%m}", mode, color)
+                    f"{series.index.max():%d-%m-%Y}", mode, color)
 # endregion
 
 
@@ -639,14 +727,13 @@ def show_overview_margins(rows, mode):
         show_chart(charts.draw_horizontal_bars(bar_rows, "Margen mediano (%)", mode, colors))
 
 
-def show_overview_regions(product, key_label, mode):
+def show_overview_regions(key, mode):
     """Card: regional index of the street market price for the chosen product."""
     with open_card("regions", "¿Dónde es más caro?",
                    "Precio en feria por región; 1 = promedio nacional.",
                    hint=REGIONAL_INDEX_HINT, kpi="K3"):
-        rows = read_indicator("k3_regional_index")
-        rows = rows[(rows["product"] == product) & (rows["key_label"] == key_label)
-                    & (rows["channel"] == DEFAULT_CHANNEL)]
+        rows = read_indicator_for_key("k3_regional_index", key)
+        rows = rows[rows["channel"] == DEFAULT_CHANNEL]
         if rows.empty:
             st.info(NO_DATA_TEXT)
             return
@@ -677,7 +764,7 @@ def build_alert_rows_html(alert_rows):
 def show_overview_alerts():
     """Card: the largest price movements of the latest week."""
     alert_rows = read_price_alerts()
-    latest_week = read_indicator("k6_national_weekly_price")["week_start"].max()
+    latest_week = read_latest_week()
     week_alerts = alert_rows[alert_rows["week_start"] == latest_week]
     with open_card("alerts", f"Alertas de la semana ({len(week_alerts)})",
                    f"Semana del {latest_week:%d-%m-%Y}. Señales para revisar, no conclusiones.",
@@ -696,18 +783,9 @@ def show_overview_page(mode):
     """Home page: key figures, trend, margins, regions and alerts on one screen."""
     show_page_header("Panel de precios", "Del mercado mayorista al consumidor, con datos "
                      "oficiales de ODEPA que se actualizan solos cada martes.")
-    rows = read_indicator("k1_margin")
     filter_columns = st.columns([1, 1, 1.4, 1.4])
-    with filter_columns[0]:
-        group = choose_value("Grupo", rows["product_group"].unique(), DEFAULT_GROUP)
-    rows = rows[rows["product_group"] == group]
-    with filter_columns[1]:
-        product = choose_value("Producto", rows["product"].unique(), DEFAULT_PRODUCT)
-    rows = rows[rows["product"] == product]
-    with filter_columns[2]:
-        key_label = st.selectbox("Variedad · calidad · unidad",
-                                 rows["key_label"].value_counts().index.to_list())
-    rows = rows[rows["key_label"] == key_label]
+    key = choose_product_key("k1_margin", filter_columns[:3])
+    rows = read_indicator_for_key("k1_margin", key)
     with filter_columns[3]:
         region = choose_value("Región", rows["region"].unique(), DEFAULT_REGION)
     rows = rows[rows["region"] == region]
@@ -720,7 +798,7 @@ def show_overview_page(mode):
         show_overview_margins(rows, mode)
     region_column, alert_column = st.columns([2, 3])
     with region_column:
-        show_overview_regions(product, key_label, mode)
+        show_overview_regions(key, mode)
     with alert_column:
         show_overview_alerts()
     st.caption(NOMINAL_PRICES_TEXT)
@@ -737,26 +815,41 @@ def read_cached_rule_evidence(database_version):
 def read_week_alert_count():
     """Number of K6 alerts in the latest week with prices."""
     alert_rows = read_price_alerts()
-    latest_week = read_indicator("k6_national_weekly_price")["week_start"].max()
-    return int((alert_rows["week_start"] == latest_week).sum())
+    return int((alert_rows["week_start"] == read_latest_week()).sum())
 
 
-def show_small_figure(label, value_text):
-    """A label and a value, smaller than a key figure card."""
-    st.markdown(f'<div class="kpi-label">{html.escape(label)}</div>'
-                f'<div class="card-title">{html.escape(value_text)}</div>',
-                unsafe_allow_html=True)
+def summarize_journey_state(states):
+    """(word, chip kind) of the whole pipeline: its worst real step state."""
+    step_states = [states.get(name) for name in ["sources", "download", "etl", "load", "panel"]]
+    if control.RUN_FAILED in step_states:
+        return "con falla", "failed"
+    if control.RUN_IN_PROGRESS in step_states:
+        return "en curso", "running"
+    if all(state == control.RUN_OK for state in step_states):
+        return "OK", "ok"
+    return "sin datos", "neutral"
+
+
+def build_journey_status_html(states, figures):
+    """One line with the real state and figures of the pipeline, for narrow screens."""
+    word, kind = summarize_journey_state(states)
+    text = (f"Pipeline {word} · {figures['weekly_prices']} · {figures['source_years']} · "
+            f"{figures['last_run']}")
+    return (f'<div class="narrow-only"><div class="status-list">{build_chip(text, kind)}'
+            f'</div></div>')
 
 
 def show_pipeline_hook(mode):
-    """Mini diagram of the pipeline with the real state of the latest run."""
+    """The pipeline with the real state of the latest run: a small diagram on wide
+    screens and a list of labels on phones, where the diagram would be unreadable."""
     step_states, pipeline_run = read_latest_pipeline_steps()
     latest_load = read_latest_run()
     manifest = read_download_manifest()
-    st.image(architecture.build_mini_journey_svg(
-        build_journey_states(step_states, pipeline_run, latest_load, manifest),
-        build_journey_figures(manifest, pipeline_run, latest_load), mode),
-        use_container_width=True)
+    states = build_journey_states(step_states, pipeline_run, latest_load, manifest)
+    figures = build_journey_figures(manifest, pipeline_run, latest_load)
+    st.markdown(build_svg_image_html(architecture.build_mini_journey_svg(states, figures, mode),
+                                     "wide-only")
+                + build_journey_status_html(states, figures), unsafe_allow_html=True)
 
 
 def show_project_value():
@@ -764,15 +857,16 @@ def show_project_value():
     st.markdown(project.read_section(project.read_document(project.PROJECT_GUIDE_FILE),
                                      "Resumen"))
     keys_with_margin, consumer_keys = read_match_coverage()
-    figures = [("Precios semanales cargados",
+    figures = [("Precios semanales",
                 charts.format_thousands(read_indicator("quality_flag_counts")
                                         ["weekly_prices"].sum())),
-               ("Datos de ODEPA", describe_years(read_download_manifest())),
-               ("Cobertura del cruce (K7)", f"{keys_with_margin} de {consumer_keys} claves"),
-               ("Alertas de la última semana (K6)", str(read_week_alert_count()))]
-    for column, (label, value_text) in zip(st.columns(len(figures)), figures):
-        with column:
-            show_small_figure(label, value_text)
+               ("Datos cargados", describe_loaded_years()),
+               ("Cobertura (K7)", f"{keys_with_margin} de {consumer_keys} claves"),
+               ("Alertas de la semana (K6)", str(read_week_alert_count()))]
+    cells = "".join(f'<div><div class="kpi-label">{html.escape(label)}</div>'
+                    f'<div class="card-title">{html.escape(value_text)}</div></div>'
+                    for label, value_text in figures)
+    st.markdown(f'<div class="figure-grid">{cells}</div>', unsafe_allow_html=True)
 
 
 def list_journey_steps(journey):
@@ -861,7 +955,7 @@ def show_sources_tab(mode):
 
 def show_model_tab(mode):
     """Star model of the data warehouse with the real rows of each table."""
-    row_counts = project.count_table_rows()
+    row_counts = count_cached_table_rows(get_database_version())
     definitions = project.parse_definitions(project.read_section(
         project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos"))
     diagram_column, table_column = st.columns([2, 3])
@@ -878,14 +972,27 @@ def show_model_tab(mode):
             st.code(project.read_document(project.SCHEMA_FILE), language="sql")
 
 
+@st.cache_data
+def build_cached_kpi_examples(database_version):
+    """Real examples of K1 to K8, computed once per database."""
+    return build_kpi_examples()
+
+
+@st.cache_data
+def count_cached_table_rows(database_version):
+    """Rows of each table of the data warehouse, counted once per database."""
+    return project.count_table_rows()
+
+
 def build_kpi_examples():
     """{KPI: steps of its real example}, computed from the current database."""
-    margin_rows = read_indicator("k1_margin")
+    key = project.EXAMPLE_KEY
+    margin_rows = read_indicator_for_key("k1_margin", key)
     keys_with_margin, consumer_keys = read_match_coverage()
     return {"K1": project.build_k1_example(margin_rows),
-            "K2": project.build_k2_example(read_indicator("k2_channel_gap")),
-            "K3": project.build_k3_example(read_indicator("k3_regional_index")),
-            "K4": project.build_k4_example(read_indicator("k4_seasonal_index")),
+            "K2": project.build_k2_example(read_indicator_for_key("k2_channel_gap", key)),
+            "K3": project.build_k3_example(read_indicator_for_key("k3_regional_index", key)),
+            "K4": project.build_k4_example(read_indicator_for_key("k4_seasonal_index", key)),
             "K5": project.build_k5_example(margin_rows),
             "K6": project.build_k6_example(read_price_alerts()),
             "K7": project.build_k7_example(keys_with_margin, consumer_keys),
@@ -932,7 +1039,7 @@ def show_kpi_tab(mode):
     indicators = project.read_design_table(project.INDICATORS_HEADING)
     requested_kpi = st.query_params.get(KPI_PARAMETER)
     indicators.sort(key=lambda indicator: indicator["ID"] != requested_kpi)
-    examples = build_kpi_examples()
+    examples = build_cached_kpi_examples(get_database_version())
     for indicator in indicators:
         question = questions.get(indicator["Pregunta"], "¿La carga de datos es confiable?")
         show_kpi_card(indicator, guide_rows[indicator["ID"]], question,
@@ -942,7 +1049,8 @@ def show_kpi_tab(mode):
 def describe_rule_evidence(rule):
     """Real figure of one rule from datos.db, or a dash when the base cannot show it."""
     if rule == "RN-06":
-        return project.describe_margin_evidence(read_indicator("k1_margin"))
+        return project.describe_margin_evidence(
+            int(read_key_options("k1_margin")["row_count"].sum()))
     if rule == "RN-11":
         return project.describe_rejection_evidence(read_indicator("k8_rejected_rows"),
                                                    project.read_rejection_example())
@@ -1074,7 +1182,7 @@ def show_margins_page(mode):
     """K1, margin between the wholesale and each consumer channel, and K5, its lag."""
     show_page_header("Márgenes", "Margen = (precio al consumidor − precio mayorista) / "
                      "precio mayorista, con la misma variedad, calidad, región, semana y unidad.")
-    rows = choose_product_rows(read_indicator("k1_margin"))
+    rows = choose_product_rows("k1_margin")
     region_column, channel_column = st.columns([1, 2])
     with region_column:
         region = choose_value("Región", rows["region"].unique(), DEFAULT_REGION)
@@ -1108,7 +1216,8 @@ def build_lag_bar_rows(correlations, best_lag, mode):
     correlations = correlations.dropna(subset=["correlation"])
     palette = charts.get_palette(mode)
     bar_rows = pd.DataFrame({
-        "label": [f"{weeks} semanas" for weeks in correlations["lag_weeks"]],
+        "label": [charts.describe_weeks(weeks).capitalize()
+                  for weeks in correlations["lag_weeks"]],
         "value": correlations["correlation"].to_numpy(),
         "value_label": correlations["correlation"].map(charts.format_index).to_numpy(),
         "meaning": [f"Correlación con {pairs} pares de cambios semanales"
@@ -1135,7 +1244,7 @@ def show_lag_card(rows, mode):
             return
         best_lag, correlation, pair_count = best
         if lag.is_clear_relation(correlation, pair_count):
-            lag_text = f"{best_lag} semanas"
+            lag_text = charts.describe_weeks(best_lag).capitalize()
         else:
             # The highest of several weak correlations is noise, not a lag.
             lag_text = "Sin relación clara"
@@ -1145,13 +1254,49 @@ def show_lag_card(rows, mode):
                     f'pares de cambios semanales</div>', unsafe_allow_html=True)
         bar_rows, colors = build_lag_bar_rows(correlations, best_lag, mode)
         show_chart(charts.draw_horizontal_bars(bar_rows, "Correlación", mode, colors,
-                                               reference_value=0))
+                                               reference_value=0, is_sorted_by_value=False))
         st.caption(LAG_NOTE)
 # endregion
 
 
 # region Channels and regions page
-def show_channel_gaps(rows, mode):
+def describe_gap_basis(rows):
+    """What each bar stands on: 'Supermercado: 9 regiones, 363 semanas'.
+
+    When a single region is behind a bar it is named, so a regional figure is
+    never read as a national one (the +131 % of Arica, T-52).
+    """
+    lines = []
+    for channel, channel_rows in rows.groupby("channel"):
+        regions = sorted(channel_rows["region"].unique())
+        region_text = (f"1 región ({charts.shorten_region_name(regions[0])})"
+                       if len(regions) == 1 else f"{len(regions)} regiones")
+        # Each row is one week in one region where both channels have a price.
+        count_text = (f"{charts.format_thousands(len(channel_rows))} semanas"
+                      if len(regions) == 1
+                      else f"{charts.format_thousands(len(channel_rows))} comparaciones")
+        lines.append(f"{channel}: {region_text}, {count_text}")
+    return lines
+
+
+def label_channel_with_its_regions(channel, regions):
+    """'Supermercado · solo Arica y Parinacota' when 1 or 2 regions stand behind a bar.
+
+    Next to the bar, so a regional figure is never read as a national one.
+    """
+    if len(regions) > MAXIMUM_REGIONS_NAMED:
+        return channel
+    names = ", ".join(charts.shorten_region_name(region) for region in sorted(regions))
+    return f"{channel} · solo {names}"
+
+
+def list_channels_without_pairs(rows, consumer_channels, reference_channel):
+    """Channels of the product that never share a week and region with the reference."""
+    channels_with_pairs = set(rows["channel"])
+    return sorted(set(consumer_channels) - channels_with_pairs - {reference_channel})
+
+
+def show_channel_gaps(rows, consumer_channels, mode):
     """Card: K2, average price gap of each channel against a reference channel."""
     with open_card("channel_gaps", "Diferencia entre canales", hint=CHANNEL_GAP_HINT,
                    kpi="K2"):
@@ -1162,15 +1307,25 @@ def show_channel_gaps(rows, mode):
                                          rows["reference_channel"].unique(), DEFAULT_CHANNEL)
         rows = rows[rows["reference_channel"] == reference_channel]
         average_gap = rows.groupby("channel")["gap"].mean() * 100
-        bar_rows = pd.DataFrame({"label": average_gap.index, "value": average_gap.to_numpy()})
+        regions_by_channel = rows.groupby("channel")["region"].unique()
+        bar_rows = pd.DataFrame({
+            "label": [label_channel_with_its_regions(channel, regions_by_channel[channel])
+                      for channel in average_gap.index],
+            "value": average_gap.to_numpy()})
         bar_rows["value_label"] = bar_rows["value"].map(charts.format_signed_percent)
         bar_rows["meaning"] = [charts.describe_channel_gap(gap, reference_channel)
                                for gap in bar_rows["value"]]
-        colors = [charts.get_channel_color(channel, mode) for channel in bar_rows["label"]]
+        colors = [charts.get_channel_color(channel, mode) for channel in average_gap.index]
         show_chart(charts.draw_horizontal_bars(bar_rows, "Diferencia promedio (%)", mode,
                                                colors, reference_value=0))
         st.caption(f"Cuánto más caro (+) o más barato (−) es cada canal que "
-                   f"«{reference_channel}», en las semanas y regiones donde ambos tienen precio.")
+                   f"«{reference_channel}», en las semanas y regiones donde ambos tienen precio.  \n"
+                   f"Base de cada barra: {' · '.join(describe_gap_basis(rows))}.")
+        missing_channels = list_channels_without_pairs(rows, consumer_channels,
+                                                       reference_channel)
+        if missing_channels:
+            st.caption(f"Sin datos comparables con «{reference_channel}»: "
+                       f"{', '.join(missing_channels)}.")
 
 
 def show_regional_index(rows, mode):
@@ -1195,15 +1350,14 @@ def show_channels_and_regions_page(mode):
     """K2 and K3 for any product group, with or without a wholesale price."""
     show_page_header("Canales y regiones", "Qué canal y qué región son más caros para un "
                      "producto, incluidas carnes, lácteos y abarrotes.")
-    regional_rows = choose_product_rows(read_indicator("k3_regional_index"))
-    key_label = regional_rows["key_label"].iloc[0]
-    product = regional_rows["product"].iloc[0]
-    gap_rows = read_indicator("k2_channel_gap")
-    gap_rows = gap_rows[(gap_rows["product"] == product)
-                        & (gap_rows["key_label"] == key_label)]
+    key = choose_product_key("k3_regional_index")
+    regional_rows = read_indicator_for_key("k3_regional_index", key)
+    gap_rows = read_indicator_for_key("k2_channel_gap", key)
+    consumer_channels = [channel for channel in regional_rows["channel"].unique()
+                         if channel != WHOLESALE_LABEL]
     gaps_column, regions_column = st.columns(2)
     with gaps_column:
-        show_channel_gaps(gap_rows, mode)
+        show_channel_gaps(gap_rows, consumer_channels, mode)
     with regions_column:
         show_regional_index(regional_rows, mode)
     st.caption(NOMINAL_PRICES_TEXT)
@@ -1215,7 +1369,7 @@ def show_seasonality_page(mode):
     """K4: national price of each week over the average of its year."""
     show_page_header("Estacionalidad", "Índice = precio nacional de la semana / promedio "
                      "del año. Con varios años se ve qué semanas son caras o baratas cada año.")
-    rows = choose_product_rows(read_indicator("k4_seasonal_index"))
+    rows = choose_product_rows("k4_seasonal_index")
     channel = choose_value("Canal", rows["channel"].unique(), DEFAULT_CHANNEL)
     rows = rows[rows["channel"] == channel]
     index_column, price_column = st.columns(2)
@@ -1282,6 +1436,13 @@ def show_alerts_page(mode):
 
 
 # region Consultas page
+@st.cache_data
+def read_cached_explorer_result(view, group_labels, measure_label, filters, database_version):
+    """Result of one combination of choices, computed once per database (T-52)."""
+    return explorer.build_result(view, read_explorer_rows(view, filters), list(group_labels),
+                                 measure_label, filters)
+
+
 @st.cache_data
 def read_cached_price_options(database_version):
     """Real values for the price filters, read once per database."""
@@ -1414,7 +1575,8 @@ def show_explorer_result(view, result, measure_label, mode):
         if st.toggle("Ver como gráfico", key="explorer_chart"):
             show_explorer_chart(view, result, mode)
         else:
-            st.dataframe(explorer.name_columns_for_reader(shown_rows, view, measure_label),
+            table = explorer.name_columns_for_reader(shown_rows, view, measure_label)
+            st.dataframe(explorer.write_numbers_for_reader(table, view, measure_label),
                          hide_index=True, use_container_width=True)
         # utf-8-sig lets Excel read the accents of the Spanish titles.
         csv_text = explorer.name_columns_for_reader(result, view, measure_label).to_csv(
@@ -1457,8 +1619,8 @@ def show_explorer_page(mode):
     if explorer.TIME_GROUPS <= set(group_labels):
         st.warning("Elige semana o mes, no los dos a la vez.")
         return
-    result = explorer.build_result(view, read_explorer_rows(view, filters), group_labels,
-                                   measure_label, filters)
+    result = read_cached_explorer_result(view, tuple(group_labels), measure_label, filters,
+                                         get_database_version())
     show_explorer_result(view, result, measure_label, mode)
     show_explorer_sql(view, filters, group_labels, measure_label)
 # endregion
@@ -1477,8 +1639,9 @@ def get_secret(name):
 def read_pipeline_runs():
     """(latest runs, error text). Kept 30 seconds so GitHub is not asked on every click."""
     try:
-        return control.list_workflow_runs(get_secret(SECRET_GITHUB_TOKEN),
-                                          RUN_HISTORY_COUNT), ""
+        token = get_secret(SECRET_GITHUB_TOKEN)
+        runs = control.list_workflow_runs(token, RUN_HISTORY_COUNT)
+        return control.mark_simulated_failures(runs, token), ""
     except Exception as error:  # GitHub unreachable or refused
         return [], str(error)
 
@@ -1486,7 +1649,8 @@ def read_pipeline_runs():
 def build_run_chip(state):
     """Chip for a pipeline run: Éxito, Falla or En curso."""
     texts = {control.RUN_OK: ("Éxito", "ok"), control.RUN_FAILED: ("Falla", "failed"),
-             control.RUN_IN_PROGRESS: ("En curso", "running")}
+             control.RUN_IN_PROGRESS: ("En curso", "running"),
+             control.RUN_SIMULATED_FAILURE: ("Falla simulada (prueba)", "neutral")}
     text, kind = texts.get(state, ("Omitido", "neutral"))
     return build_chip(text, kind)
 
@@ -1658,16 +1822,6 @@ def get_step_state(step_states, workflow_step):
     return step_states.get(control.STEP_NAMES[workflow_step], architecture.STATE_UNKNOWN)
 
 
-def describe_years(manifest):
-    """'año 2026' or 'años 2022 a 2026' from the downloaded files."""
-    years = sorted({file_info["year"] for file_info in manifest.values()})
-    if not years:
-        return "sin descargas"
-    if years[0] == years[-1]:
-        return f"año {years[0]}"
-    return f"años {years[0]} a {years[-1]}"
-
-
 def build_journey_states(step_states, pipeline_run, latest_load, manifest):
     """Real state of each step: from the latest pipeline run and the current database."""
     load_state = (control.RUN_OK if latest_load["status"] == etl.STATUS_LOADED
@@ -1687,13 +1841,13 @@ def build_journey_states(step_states, pipeline_run, latest_load, manifest):
 def build_journey_figures(manifest, pipeline_run, latest_load):
     """Short texts shown under the steps, all from real data."""
     weekly_prices = read_indicator("quality_flag_counts")["weekly_prices"].sum()
-    latest_week = read_indicator("k6_national_weekly_price")["week_start"].max()
+    latest_week = read_latest_week()
     loaded_at = to_chile_time(parse_run_start(latest_load["started_at"]))
     next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc))
     last_run = (f"última {to_chile_time(pipeline_run['started_at']):%d-%m %H:%M}"
                 if pipeline_run else "sin datos del workflow")
     return {
-        "source_years": describe_years(manifest),
+        "source_years": describe_loaded_years(),
         "last_run": last_run,
         "rows_read": f"{charts.format_thousands(latest_load['rows_read'])} filas leídas",
         "rows_rejected": f"{charts.format_thousands(latest_load['rows_rejected'])} filas",
@@ -1711,11 +1865,14 @@ def show_architecture_page(mode):
     step_states, pipeline_run = read_latest_pipeline_steps()
     latest_load = read_latest_run()
     manifest = read_download_manifest()
-    with open_card("journey", hint=ARCHITECTURE_HINT):
-        st.image(architecture.build_journey_svg(
+    with open_card("journey_state", "Estado de la última ejecución"):
+        show_pipeline_hook(mode)
+    with open_card("journey", "Recorrido completo por capas", hint=ARCHITECTURE_HINT):
+        st.caption("A tamaño real, para que se lea. Desliza hacia el lado para recorrerlo.")
+        st.markdown(build_svg_image_html(architecture.build_journey_svg(
             build_journey_states(step_states, pipeline_run, latest_load, manifest),
             build_journey_figures(manifest, pipeline_run, latest_load), mode),
-            use_container_width=True)
+            "scroll-box", is_actual_size=True), unsafe_allow_html=True)
     report_column, legend_column = st.columns(2)
     with report_column, open_card("journey_report"):
         st.markdown('<div class="kpi-label">Informe que deja cada ejecución</div>',

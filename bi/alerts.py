@@ -28,26 +28,21 @@ def add_weekly_variation(prices):
     return prices
 
 
-def calculate_previous_average(variation):
-    """Average of the 12 variations before each week (the week itself excluded)."""
-    return variation.shift(1).rolling(ALERT_WINDOW_WEEKS).mean()
-
-
-def calculate_previous_deviation(variation):
-    """Standard deviation of the 12 variations before each week."""
-    return variation.shift(1).rolling(ALERT_WINDOW_WEEKS).std()
-
-
 def add_usual_range(prices):
     """Add each week's variation and the average and deviation of the 12 before it.
 
     A series needs 12 previous variations without gaps; otherwise both stay empty.
+    The window runs over the whole column at once, which is much faster than one
+    series at a time; a window that would reach into the previous series is
+    discarded, because a row needs 12 earlier rows of its own series.
     """
     prices = add_weekly_variation(prices)
-    variation_by_series = prices.groupby(SERIES_COLUMNS)["variation"]
-    prices["usual_variation"] = variation_by_series.transform(calculate_previous_average)
-    prices["variation_deviation"] = variation_by_series.transform(
-        calculate_previous_deviation)
+    series = prices.groupby(SERIES_COLUMNS)
+    # The week judged is left out of its own usual range.
+    window = series["variation"].shift(1).rolling(ALERT_WINDOW_WEEKS)
+    has_full_window = series.cumcount() >= ALERT_WINDOW_WEEKS
+    prices["usual_variation"] = window.mean().where(has_full_window)
+    prices["variation_deviation"] = window.std().where(has_full_window)
     return prices
 
 

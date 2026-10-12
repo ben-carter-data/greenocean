@@ -179,3 +179,11 @@ def test_bar_chart_shows_the_largest_values_first():
     bar_rows = explorer.prepare_bar_rows(result)
     assert bar_rows["label"].to_list() == ["Supermercado · kilo", "Feria libre · kilo"]
 # endregion
+
+
+def test_numbers_on_screen_are_written_as_in_chile():
+    result = explorer.build_result(explorer.VIEW_PRICES, make_price_rows(),
+                                   [explorer.GROUP_CHANNEL], "Promedio", {})
+    titled = explorer.name_columns_for_reader(result, explorer.VIEW_PRICES, "Promedio")
+    table = explorer.write_numbers_for_reader(titled, explorer.VIEW_PRICES, "Promedio")
+    assert table["Promedio · precio ($)"].to_list() == ["1.033", "2.000"]
