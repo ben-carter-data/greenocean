@@ -23,7 +23,7 @@ import streamlit as st
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import alerts, architecture, charts, control, queries  # noqa: E402
+from bi import alerts, architecture, charts, control, explorer, queries  # noqa: E402
 from etl import etl  # noqa: E402
 # endregion
 
@@ -37,14 +37,16 @@ PAGE_MARGINS = "Márgenes"
 PAGE_CHANNELS_AND_REGIONS = "Canales y regiones"
 PAGE_SEASONALITY = "Estacionalidad"
 PAGE_ALERTS = "Alertas"
+PAGE_EXPLORER = "Consultas"
 PAGE_ARCHITECTURE = "Pipeline"
 PAGE_CONTROL = "Centro de control"
 PAGE_DATA_QUALITY = "Calidad de datos"
 PAGES_BY_PROFILE = {
     PROFILE_ANALYST: [PAGE_OVERVIEW, PAGE_PROJECT, PAGE_MARGINS, PAGE_CHANNELS_AND_REGIONS,
-                      PAGE_SEASONALITY, PAGE_ALERTS, PAGE_ARCHITECTURE, PAGE_CONTROL],
+                      PAGE_SEASONALITY, PAGE_ALERTS, PAGE_EXPLORER, PAGE_ARCHITECTURE,
+                      PAGE_CONTROL],
     PROFILE_DATA_TEAM: [PAGE_OVERVIEW, PAGE_PROJECT, PAGE_ARCHITECTURE, PAGE_CONTROL,
-                        PAGE_DATA_QUALITY],
+                        PAGE_DATA_QUALITY, PAGE_EXPLORER],
 }
 PAGE_ICONS = {
     PAGE_OVERVIEW: ":material/space_dashboard:", PAGE_PROJECT: ":material/lightbulb:",
@@ -52,12 +54,13 @@ PAGE_ICONS = {
     PAGE_CHANNELS_AND_REGIONS: ":material/storefront:",
     PAGE_SEASONALITY: ":material/calendar_month:",
     PAGE_ALERTS: ":material/notifications_active:",
+    PAGE_EXPLORER: ":material/manage_search:",
     PAGE_ARCHITECTURE: ":material/account_tree:", PAGE_CONTROL: ":material/smart_toy:", PAGE_DATA_QUALITY: ":material/verified:",
 }
 PAGE_PATHS = {
     PAGE_OVERVIEW: "panel", PAGE_PROJECT: "el-proyecto", PAGE_MARGINS: "margenes",
     PAGE_CHANNELS_AND_REGIONS: "canales-y-regiones", PAGE_SEASONALITY: "estacionalidad",
-    PAGE_ALERTS: "alertas", PAGE_ARCHITECTURE: "pipeline",
+    PAGE_ALERTS: "alertas", PAGE_EXPLORER: "consultas", PAGE_ARCHITECTURE: "pipeline",
     PAGE_CONTROL: "centro-de-control",
     PAGE_DATA_QUALITY: "calidad-de-datos",
 }
@@ -78,6 +81,13 @@ FLAG_NAMES = {"SIN_MARCA": "Usados en los indicadores",
 OVERVIEW_ALERT_COUNT = 6
 ALERTS_PAGE_BAR_COUNT = 15
 RUN_HISTORY_COUNT = 8
+# Consultas page: it opens with one row per product and channel.
+EXPLORER_DEFAULT_GROUPS = [explorer.GROUP_PRODUCT, explorer.GROUP_CHANNEL]
+EXPLORER_FILTER_LABELS = {explorer.FILTER_PRODUCTS: "Producto",
+                          explorer.FILTER_REGIONS: "Región", explorer.FILTER_CHANNELS: "Canal"}
+# The named query each pandas-built view starts from, shown in «Ver SQL».
+EXPLORER_BASE_QUERIES = {explorer.VIEW_MARGINS: "k1_margin",
+                         explorer.VIEW_ALERTS: "k6_national_weekly_price"}
 
 MANIFEST_FILE = Path(__file__).resolve().parent.parent / "agent" / "downloads" / "manifest.json"
 ISSUES_PAGE_URL = f"https://github.com/{control.REPOSITORY}/issues"
@@ -123,6 +133,20 @@ ARCHITECTURE_HINT = ("Los datos viajan de izquierda a derecha. **Bronce**: el ar
                      "nada. **Oro**: la base lista para analizar. Arriba, quién da las "
                      "órdenes; abajo, cómo sabemos qué pasó. El punto de color de cada paso "
                      "es su estado real.")
+EXPLORER_VIEW_HINT = ("**Precios semanales**: el precio de cada producto por región y canal, "
+                      "semana a semana. **Márgenes**: cuánto más paga el consumidor que el "
+                      "mayorista, en %. **Alertas**: cambios semanales fuera de lo habitual, "
+                      "calculados con el precio nacional (por eso no tienen región).")
+EXPLORER_GROUP_HINT = ("Cada casilla parte el resultado en grupos: Producto + Canal da una fila "
+                       "por producto en cada canal. Producto junta todas sus variedades y "
+                       "calidades. En precios se agrega siempre la unidad ($/kilo, $/unidad) "
+                       "para no mezclar pesos por kilo con pesos por unidad.")
+EXPLORER_FILTER_HINT = ("Una lista vacía incluye todo. Las fechas son el lunes de cada semana.")
+EXPLORER_MEASURE_HINT = ("Cómo resumir cada grupo. **Mediana**: el valor del medio; los precios "
+                         "muy altos o muy bajos la mueven menos que al promedio.")
+EXPLORER_RESULT_HINT = ("Una fila por grupo, con la medida elegida y cuántos valores semanales "
+                        "resume. Los precios marcados como atípicos o sin unidad convertible "
+                        "quedan fuera, igual que en el resto del panel.")
 # The project page. Texts come from docs/DISENO.md (sections 2 to 4) and DECISIONES.md.
 PROBLEM_TEXT = (
     "Un analista de pricing, compras o abastecimiento que quiere seguir los precios de los "
@@ -838,6 +862,189 @@ def show_alerts_page(mode):
 # endregion
 
 
+# region Consultas page
+@st.cache_data
+def read_cached_price_options(database_version):
+    """Real values for the price filters, read once per database."""
+    return explorer.read_price_options()
+
+
+@st.cache_data
+def read_cached_price_rows(filters, database_version):
+    """Weekly prices that pass the filters, kept until the database changes."""
+    return explorer.read_price_rows(filters)
+
+
+def read_explorer_rows(view, filters):
+    """Rows of the chosen view before grouping, with the measured value in 'value'."""
+    if view == explorer.VIEW_PRICES:
+        return read_cached_price_rows(filters, get_database_version())
+    if view == explorer.VIEW_MARGINS:
+        return explorer.prepare_margin_rows(read_indicator("k1_margin"))
+    return explorer.prepare_alert_rows(read_price_alerts())
+
+
+def list_filter_options(view):
+    """Values offered in each filter of the view, and its first and last week."""
+    if view == explorer.VIEW_PRICES:
+        return read_cached_price_options(get_database_version())
+    rows = read_explorer_rows(view, {})
+    options = {name: sorted(rows[column].unique())
+               for name, column in explorer.LIST_FILTER_COLUMNS.items() if column in rows.columns}
+    options[explorer.FILTER_FIRST_WEEK] = rows["week_start"].min().date()
+    options[explorer.FILTER_LAST_WEEK] = rows["week_start"].max().date()
+    return options
+
+
+def choose_explorer_view():
+    """Step 1: what to look at."""
+    with open_card("explorer_view", "1 · Vista", hint=EXPLORER_VIEW_HINT):
+        return st.radio("Vista", explorer.VIEWS, horizontal=True,
+                        label_visibility="collapsed", key="explorer_view")
+
+
+def choose_explorer_groups(view):
+    """Step 2: one check box per grouping the view allows."""
+    with open_card("explorer_groups", "2 · Agrupar por", hint=EXPLORER_GROUP_HINT):
+        labels = explorer.GROUPS_BY_VIEW[view]
+        return [label for column, label in zip(st.columns(len(labels)), labels)
+                if column.checkbox(label, value=label in EXPLORER_DEFAULT_GROUPS,
+                                   key=f"explorer_group_{view}_{label}")]
+
+
+def choose_week_range(options, view):
+    """Date range of the weeks; while the reader picks it, it may have one end only."""
+    chosen_weeks = st.date_input(
+        "Semanas entre", (options[explorer.FILTER_FIRST_WEEK],
+                          options[explorer.FILTER_LAST_WEEK]),
+        min_value=options[explorer.FILTER_FIRST_WEEK],
+        max_value=options[explorer.FILTER_LAST_WEEK], format="DD-MM-YYYY",
+        key=f"explorer_weeks_{view}")
+    week_range = {explorer.FILTER_FIRST_WEEK: chosen_weeks[0]} if chosen_weeks else {}
+    if len(chosen_weeks) == 2:
+        week_range[explorer.FILTER_LAST_WEEK] = chosen_weeks[1]
+    return week_range
+
+
+def choose_explorer_filters(view):
+    """Step 3: lists with the real values of the database, and the date range."""
+    options = list_filter_options(view)
+    filter_names = [name for name in explorer.LIST_FILTER_COLUMNS if name in options]
+    with open_card("explorer_filters", "3 · Filtros", hint=EXPLORER_FILTER_HINT):
+        columns = st.columns(len(filter_names) + 1)
+        # The view is part of each key: every view offers its own values.
+        filters = {name: column.multiselect(EXPLORER_FILTER_LABELS[name], options[name],
+                                            placeholder="Todos",
+                                            key=f"explorer_{name}_{view}")
+                   for column, name in zip(columns, filter_names)}
+        with columns[-1]:
+            filters.update(choose_week_range(options, view))
+    return filters
+
+
+def choose_explorer_measure():
+    """Step 4: how to summarize each group."""
+    with open_card("explorer_measure", "4 · Medida", hint=EXPLORER_MEASURE_HINT):
+        return st.radio("Medida", list(explorer.MEASURES), horizontal=True,
+                        label_visibility="collapsed", key="explorer_measure")
+
+
+def show_explorer_chart(view, result, mode):
+    """Lines when the result is grouped by week or month, bars otherwise."""
+    is_money = view == explorer.VIEW_PRICES
+    value_title = explorer.VALUE_TITLES[view].capitalize()
+    if explorer.find_time_column(result):
+        line_rows = explorer.prepare_line_rows(result)
+        series_count = line_rows["channel"].nunique()
+        if series_count > explorer.CHART_MAXIMUM_SERIES:
+            st.info(f"El gráfico admite hasta {explorer.CHART_MAXIMUM_SERIES} líneas y este "
+                    f"resultado tiene {series_count}. Filtra o marca menos casillas.")
+            return
+        show_chart(charts.draw_weekly_lines(line_rows, value_title,
+                                            format_explorer_values(line_rows["value"], is_money),
+                                            mode, is_money))
+        return
+    bar_rows = explorer.prepare_bar_rows(result)
+    bar_rows["value_label"] = format_explorer_values(bar_rows["value"], is_money)
+    if len(result) > len(bar_rows):
+        st.caption(f"El gráfico muestra los {len(bar_rows)} valores más altos.")
+    show_chart(charts.draw_horizontal_bars(bar_rows, value_title, mode))
+
+
+def format_explorer_values(values, is_money):
+    """'$ 1.234' for prices, '12,5 %' for margins and variations."""
+    if is_money:
+        return "$ " + values.map(charts.format_thousands)
+    return values.map(charts.format_percent)
+
+
+def show_explorer_result(view, result, measure_label, mode):
+    """Result card: table or chart, at most 1.000 rows on screen, and the full CSV."""
+    with open_card("explorer_result", "Resultado", hint=EXPLORER_RESULT_HINT):
+        if result.empty:
+            st.info("Esta combinación no devuelve filas. Prueba con menos filtros o con un "
+                    "rango de semanas más amplio.")
+            return
+        shown_rows, is_truncated = explorer.limit_rows(result)
+        if is_truncated:
+            st.warning(f"El resultado tiene {charts.format_thousands(len(result))} filas; se "
+                       f"muestran las primeras {charts.format_thousands(len(shown_rows))}. "
+                       "Descarga el CSV para verlas todas.")
+        else:
+            st.caption(f"{charts.format_thousands(len(result))} filas.")
+        if st.toggle("Ver como gráfico", key="explorer_chart"):
+            show_explorer_chart(view, result, mode)
+        else:
+            st.dataframe(explorer.name_columns_for_reader(shown_rows, view, measure_label),
+                         hide_index=True, use_container_width=True)
+        # utf-8-sig lets Excel read the accents of the Spanish titles.
+        csv_text = explorer.name_columns_for_reader(result, view, measure_label).to_csv(
+            index=False).encode("utf-8-sig")
+        st.download_button("Descargar CSV", csv_text, file_name="consulta.csv",
+                           mime="text/csv", icon=":material/download:")
+
+
+def show_explorer_sql(view, filters, group_labels, measure_label):
+    """Closed box with the SQL behind the result, so anyone can repeat it."""
+    with st.expander("Ver SQL"):
+        if view == explorer.VIEW_PRICES:
+            sql, parameters = explorer.build_price_query(filters)
+            st.code(sql, language="sql")
+            st.caption(f"Valores de cada «?», enviados aparte del texto: {parameters}")
+        else:
+            st.code(queries.load_queries()[EXPLORER_BASE_QUERIES[view]], language="sql")
+            st.caption("Los filtros se aplican después, con pandas."
+                       + (" Las alertas se calculan sobre esta serie en bi/alerts.py."
+                          if view == explorer.VIEW_ALERTS else ""))
+        groups_text = ", ".join(group_labels).lower() or "nada (un solo total)"
+        st.caption(f"Luego se agrupa por {groups_text} y se calcula {measure_label.lower()} "
+                   "con pandas, porque SQLite no tiene mediana.")
+
+
+def show_explorer_page(mode):
+    """Query builder: the reader picks a view, groups, filters and a measure with clicks."""
+    show_page_header("Consultas", "Arma tu propia consulta con clics: qué ver, cómo "
+                     "agruparlo, qué filtrar y cómo resumirlo.")
+    view_column, group_column = st.columns([2, 3])
+    with view_column:
+        view = choose_explorer_view()
+    with group_column:
+        group_labels = choose_explorer_groups(view)
+    filter_column, measure_column = st.columns([3, 1])
+    with filter_column:
+        filters = choose_explorer_filters(view)
+    with measure_column:
+        measure_label = choose_explorer_measure()
+    if explorer.TIME_GROUPS <= set(group_labels):
+        st.warning("Elige semana o mes, no los dos a la vez.")
+        return
+    result = explorer.build_result(view, read_explorer_rows(view, filters), group_labels,
+                                   measure_label, filters)
+    show_explorer_result(view, result, measure_label, mode)
+    show_explorer_sql(view, filters, group_labels, measure_label)
+# endregion
+
+
 # region Control center page
 def get_secret(name):
     """A dashboard secret, or None when it is not configured."""
@@ -1181,6 +1388,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_CHANNELS_AND_REGIONS: show_channels_and_regions_page,
     PAGE_SEASONALITY: show_seasonality_page,
     PAGE_ALERTS: show_alerts_page,
+    PAGE_EXPLORER: show_explorer_page,
     PAGE_ARCHITECTURE: show_architecture_page,
     PAGE_CONTROL: show_control_page,
     PAGE_DATA_QUALITY: show_data_quality_page,

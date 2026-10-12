@@ -28,10 +28,11 @@ def test_each_profile_has_its_own_pages():
     assert dashboard.PAGES_BY_PROFILE[dashboard.PROFILE_ANALYST] == [
         dashboard.PAGE_OVERVIEW, dashboard.PAGE_PROJECT, dashboard.PAGE_MARGINS,
         dashboard.PAGE_CHANNELS_AND_REGIONS, dashboard.PAGE_SEASONALITY,
-        dashboard.PAGE_ALERTS, dashboard.PAGE_ARCHITECTURE, dashboard.PAGE_CONTROL]
+        dashboard.PAGE_ALERTS, dashboard.PAGE_EXPLORER, dashboard.PAGE_ARCHITECTURE,
+        dashboard.PAGE_CONTROL]
     assert dashboard.PAGES_BY_PROFILE[dashboard.PROFILE_DATA_TEAM] == [
         dashboard.PAGE_OVERVIEW, dashboard.PAGE_PROJECT, dashboard.PAGE_ARCHITECTURE,
-        dashboard.PAGE_CONTROL, dashboard.PAGE_DATA_QUALITY]
+        dashboard.PAGE_CONTROL, dashboard.PAGE_DATA_QUALITY, dashboard.PAGE_EXPLORER]
 
 
 def test_every_page_has_a_function_an_icon_and_an_address():
@@ -95,3 +96,25 @@ def test_every_business_question_points_to_a_page_or_is_pending():
     for question, page, state, scope in dashboard.BUSINESS_QUESTIONS:
         assert state in dashboard.QUESTION_STATES
         assert page in dashboard.SHOW_PAGE_BY_TITLE or state == "pending"
+
+
+@needs_database
+@pytest.mark.parametrize("view", ["Precios semanales", "Márgenes", "Alertas"])
+def test_consultas_page_draws_every_view_as_table_and_as_chart(view):
+    app = draw_page(dashboard.PAGE_EXPLORER)
+    app.radio(key="explorer_view").set_value(view).run()
+    assert not app.exception
+    assert len(app.dataframe) == 1
+    app.toggle(key="explorer_chart").set_value(True).run()
+    assert not app.exception
+    assert not app.dataframe
+
+
+@needs_database
+def test_consultas_page_refuses_week_and_month_together():
+    app = draw_page(dashboard.PAGE_EXPLORER)
+    app.checkbox(key="explorer_group_Precios semanales_Semana").check().run()
+    app.checkbox(key="explorer_group_Precios semanales_Mes").check().run()
+    assert not app.exception
+    assert "Elige semana o mes, no los dos a la vez." in [warning.value
+                                                         for warning in app.warning]

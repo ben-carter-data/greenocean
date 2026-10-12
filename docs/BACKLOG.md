@@ -86,3 +86,4 @@ Orden de arriba hacia abajo. Cada tarea indica cuándo se considera terminada. L
 | T-39 | Centro de control: estado e historial del robot y botón «Ejecutar ahora» con código de acceso (D-038) |
 | T-40 | Página «Pipeline»: recorrido de los datos con el estado real de cada paso (D-039) |
 | T-41 | Explicaciones al pasar el mouse en cada gráfico y página «El proyecto» con la idea de negocio (D-040) |
+| T-42 | Página «Consultas»: constructor de consultas por clics (vista, agrupación, filtros y medida), con tabla, gráfico, CSV y «Ver SQL» (D-041) |
