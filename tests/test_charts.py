@@ -62,3 +62,20 @@ def test_numbers_are_explained_in_plain_words():
     assert charts.describe_margin(145) == "El consumidor paga 2,45 veces el precio mayorista"
     assert charts.describe_channel_gap(62.7, "Feria libre") == (
         "62,7 % más caro que Feria libre")
+
+
+def test_negative_bar_labels_are_written_right_of_zero_not_over_the_names():
+    rows = pd.DataFrame({"label": ["Supermercado", "Feria libre"], "value": [131.0, -3.5],
+                         "value_label": ["+131,0 %", "-3,5 %"]})
+    chart = charts.draw_horizontal_bars(rows, "Diferencia (%)", charts.MODE_DARK).to_dict()
+    negative_layer = [layer for layer in chart["layer"]
+                      if layer.get("transform") == [{"filter": "datum.value < 0"}]][0]
+    assert negative_layer["encoding"]["x"] == {"datum": 0}
+    assert negative_layer["mark"]["align"] == "left"
+
+
+def test_bar_axis_leaves_room_for_the_labels_on_both_sides():
+    domain = charts.calculate_bar_domain(pd.Series([131.0, -3.5]))
+    assert domain[0] < -3.5
+    assert domain[1] > 131.0
+    assert charts.calculate_bar_domain(pd.Series([2.0, 5.0]))[0] == 0
