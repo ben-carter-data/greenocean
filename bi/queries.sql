@@ -162,3 +162,114 @@ JOIN dim_channel ON dim_channel.channel_id = weekly_price.channel_id
 WHERE weekly_price.flag IS NULL
 GROUP BY weekly_price.week_start, weekly_price.product_id, weekly_price.channel_id,
          weekly_price.normalized_unit;
+
+-- name: k6_usual_range_sql
+-- K6 (P6) in SQL, the alternative to bi/alerts.py (the version the dashboard
+-- uses); a test checks that both give the same result (D-049). For each week:
+-- the variation against the week before, and the average and the sample
+-- variance of the 12 variations before it, with window functions.
+-- SQLite has no standard deviation and SQRT is optional, so the rule
+-- |variation - average| > 2 * deviation is written with squares:
+-- (variation - average)^2 > 4 * variance.
+WITH national AS (
+    SELECT weekly_price.week_start, weekly_price.product_id, weekly_price.channel_id,
+           weekly_price.normalized_unit, AVG(weekly_price.price) AS national_price
+    FROM weekly_price
+    WHERE weekly_price.flag IS NULL
+    GROUP BY weekly_price.week_start, weekly_price.product_id, weekly_price.channel_id,
+             weekly_price.normalized_unit
+),
+variations AS (
+    SELECT national.*,
+           -- A change across a gap of several weeks is not a weekly change.
+           CASE WHEN julianday(week_start) - julianday(LAG(week_start) OVER series) = 7
+                THEN national_price / LAG(national_price) OVER series - 1
+           END AS variation
+    FROM national
+    WINDOW series AS (PARTITION BY product_id, channel_id, normalized_unit
+                      ORDER BY week_start)
+),
+usual AS (
+    SELECT variations.*,
+           COUNT(variation) OVER previous_weeks AS previous_count,
+           AVG(variation) OVER previous_weeks AS usual_variation,
+           AVG(variation * variation) OVER previous_weeks AS usual_square
+    FROM variations
+    WINDOW previous_weeks AS (PARTITION BY product_id, channel_id, normalized_unit
+                              ORDER BY week_start
+                              ROWS BETWEEN 12 PRECEDING AND 1 PRECEDING)
+)
+SELECT usual.week_start,
+       dim_product.product_group, dim_product.product, dim_product.variety,
+       dim_product.quality, dim_channel.channel, usual.normalized_unit,
+       usual.national_price, usual.variation, usual.usual_variation,
+       -- Sample variance (divided by n - 1 = 11), the same definition as pandas.
+       (usual.usual_square - usual.usual_variation * usual.usual_variation) * 12.0 / 11
+           AS variation_variance,
+       CASE WHEN (usual.variation - usual.usual_variation)
+                 * (usual.variation - usual.usual_variation)
+                 > 4 * (usual.usual_square - usual.usual_variation * usual.usual_variation)
+                       * 12.0 / 11
+            THEN 1 ELSE 0
+       END AS is_alert
+FROM usual
+JOIN dim_product ON dim_product.product_id = usual.product_id
+JOIN dim_channel ON dim_channel.channel_id = usual.channel_id
+-- A week is judged only with its own variation and 12 previous ones.
+WHERE usual.previous_count = 12 AND usual.variation IS NOT NULL;
+
+-- name: k5_weekly_variations_sql
+-- K5 (P5) in SQL, first half: the weekly changes of both prices, with LAG(),
+-- for the series with at least 26 weeks with both prices (HAVING). The
+-- correlation for each lag stays in bi/lag.py (D-049). A series is one product
+-- key, unit, region and consumer channel with the pairs of k1_margin (D-048).
+WITH pairs AS (
+    SELECT consumer.week_start, consumer.product_id, consumer.region_id,
+           consumer.channel_id, consumer.normalized_unit,
+           wholesale.price AS wholesale_price, consumer.price AS consumer_price
+    FROM weekly_price AS consumer
+    JOIN dim_channel AS consumer_channel
+      ON consumer_channel.channel_id = consumer.channel_id
+     AND consumer_channel.source = 'consumer'
+    JOIN weekly_price AS wholesale
+      ON wholesale.week_start = consumer.week_start
+     AND wholesale.product_id = consumer.product_id
+     AND wholesale.region_id = consumer.region_id
+     AND wholesale.normalized_unit = consumer.normalized_unit
+    JOIN dim_channel AS wholesale_channel
+      ON wholesale_channel.channel_id = wholesale.channel_id
+     AND wholesale_channel.source = 'wholesale'
+    WHERE consumer.flag IS NULL AND wholesale.flag IS NULL
+),
+long_series AS (
+    SELECT product_id, region_id, channel_id, normalized_unit
+    FROM pairs
+    GROUP BY product_id, region_id, channel_id, normalized_unit
+    HAVING COUNT(*) >= 26
+),
+ordered AS (
+    SELECT pairs.*,
+           julianday(pairs.week_start) - julianday(LAG(pairs.week_start) OVER series)
+               AS days_since_previous_week,
+           LAG(pairs.wholesale_price) OVER series AS previous_wholesale_price,
+           LAG(pairs.consumer_price) OVER series AS previous_consumer_price
+    FROM pairs
+    JOIN long_series USING (product_id, region_id, channel_id, normalized_unit)
+    WINDOW series AS (PARTITION BY pairs.product_id, pairs.region_id, pairs.channel_id,
+                                   pairs.normalized_unit
+                      ORDER BY pairs.week_start)
+)
+SELECT ordered.week_start,
+       dim_product.product_group, dim_product.product, dim_product.variety,
+       dim_product.quality, ordered.normalized_unit, dim_region.region,
+       dim_channel.channel,
+       CASE WHEN ordered.days_since_previous_week = 7
+            THEN ordered.wholesale_price / ordered.previous_wholesale_price - 1
+       END AS wholesale_variation,
+       CASE WHEN ordered.days_since_previous_week = 7
+            THEN ordered.consumer_price / ordered.previous_consumer_price - 1
+       END AS consumer_variation
+FROM ordered
+JOIN dim_product ON dim_product.product_id = ordered.product_id
+JOIN dim_region ON dim_region.region_id = ordered.region_id
+JOIN dim_channel ON dim_channel.channel_id = ordered.channel_id;

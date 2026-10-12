@@ -1,4 +1,4 @@
-"""Tests for the indicator queries of bi/queries.sql (K1 to K4, K8)."""
+"""Tests for bi/queries.sql (K1 to K4, K8). The SQL K5 and K6: test_reconciliation."""
 import sys
 from pathlib import Path
 
@@ -48,7 +48,8 @@ def test_queries_file_has_one_named_query_per_indicator():
     assert set(queries.load_queries()) == {
         "k1_margin", "k2_channel_gap", "k3_regional_index", "k4_seasonal_index",
         "k6_national_weekly_price", "k8_rejected_rows", "quality_runs",
-        "quality_flag_counts", "quality_outliers"}
+        "quality_flag_counts", "quality_outliers", "k6_usual_range_sql",
+        "k5_weekly_variations_sql"}
 
 
 def test_k1_margin_is_consumer_minus_wholesale_over_wholesale(database_file):
