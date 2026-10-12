@@ -37,7 +37,7 @@ PAGE_MARGINS = "Márgenes"
 PAGE_CHANNELS_AND_REGIONS = "Canales y regiones"
 PAGE_SEASONALITY = "Estacionalidad"
 PAGE_ALERTS = "Alertas"
-PAGE_ARCHITECTURE = "Cómo funciona"
+PAGE_ARCHITECTURE = "Pipeline"
 PAGE_CONTROL = "Centro de control"
 PAGE_DATA_QUALITY = "Calidad de datos"
 PAGES_BY_PROFILE = {
@@ -57,7 +57,7 @@ PAGE_ICONS = {
 PAGE_PATHS = {
     PAGE_OVERVIEW: "panel", PAGE_PROJECT: "el-proyecto", PAGE_MARGINS: "margenes",
     PAGE_CHANNELS_AND_REGIONS: "canales-y-regiones", PAGE_SEASONALITY: "estacionalidad",
-    PAGE_ALERTS: "alertas", PAGE_ARCHITECTURE: "como-funciona",
+    PAGE_ALERTS: "alertas", PAGE_ARCHITECTURE: "pipeline",
     PAGE_CONTROL: "centro-de-control",
     PAGE_DATA_QUALITY: "calidad-de-datos",
 }
@@ -1080,7 +1080,7 @@ def build_journey_figures(manifest, robot_run, latest_load):
 
 def show_architecture_page(mode):
     """Live diagram of the data journey, from ODEPA to this dashboard."""
-    show_page_header("Cómo funciona", "El recorrido de los datos, de ODEPA a este panel. "
+    show_page_header("Pipeline", "El recorrido de los datos, de ODEPA a este panel. "
                      "Los puntos de color muestran el estado real de cada paso.")
     step_states, robot_run = read_latest_robot_steps()
     latest_load = read_latest_run()
