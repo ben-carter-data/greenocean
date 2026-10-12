@@ -8,3 +8,4 @@ etl/raw.db
 *.db-journal
 report.md
 .DS_Store
+docs/privado/
