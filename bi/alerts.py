@@ -38,16 +38,22 @@ def calculate_previous_deviation(variation):
     return variation.shift(1).rolling(ALERT_WINDOW_WEEKS).std()
 
 
-def find_price_alerts(prices):
-    """K6: rows whose weekly variation is outside average +/- 2 standard deviations.
+def add_usual_range(prices):
+    """Add each week's variation and the average and deviation of the 12 before it.
 
-    A series needs 12 previous variations without gaps to be judged.
+    A series needs 12 previous variations without gaps; otherwise both stay empty.
     """
     prices = add_weekly_variation(prices)
     variation_by_series = prices.groupby(SERIES_COLUMNS)["variation"]
     prices["usual_variation"] = variation_by_series.transform(calculate_previous_average)
     prices["variation_deviation"] = variation_by_series.transform(
         calculate_previous_deviation)
+    return prices
+
+
+def find_price_alerts(prices):
+    """K6: rows whose weekly variation is outside average +/- 2 standard deviations."""
+    prices = add_usual_range(prices)
     distance = (prices["variation"] - prices["usual_variation"]).abs()
     is_alert = distance > ALERT_DEVIATIONS * prices["variation_deviation"]
     return prices[is_alert]
