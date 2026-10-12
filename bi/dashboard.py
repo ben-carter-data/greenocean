@@ -2,11 +2,18 @@
 
 Run it with:  streamlit run bi/dashboard.py
 
-It only reads etl/datos.db, through the named queries of bi/queries.sql.
+It reads etl/datos.db through the named queries of bi/queries.sql, and the
+state of the weekly robot through the GitHub API (bi/control.py).
 Texts shown to the user are in Spanish; code and comments are in English.
+The two color modes live in .streamlit/config.toml, the charts in bi/charts.py.
 """
+import hmac
+import html
 import sys
+import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import streamlit as st
@@ -15,7 +22,7 @@ import streamlit as st
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import alerts, queries  # noqa: E402
+from bi import alerts, charts, control, queries  # noqa: E402
 from etl import etl  # noqa: E402
 # endregion
 
@@ -23,24 +30,57 @@ from etl import etl  # noqa: E402
 PROFILE_ANALYST = "Analista de pricing / compras"
 PROFILE_DATA_TEAM = "Equipo de datos"
 
-VIEW_MARGINS = "Márgenes"
-VIEW_CHANNELS_AND_REGIONS = "Canales y regiones"
-VIEW_SEASONALITY = "Estacionalidad"
-VIEW_ALERTS = "Alertas"
-VIEW_DATA_QUALITY = "Calidad de datos"
-VIEWS_BY_PROFILE = {
-    PROFILE_ANALYST: [VIEW_MARGINS, VIEW_CHANNELS_AND_REGIONS, VIEW_SEASONALITY,
-                      VIEW_ALERTS],
-    PROFILE_DATA_TEAM: [VIEW_DATA_QUALITY],
+PAGE_OVERVIEW = "Panel"
+PAGE_MARGINS = "Márgenes"
+PAGE_CHANNELS_AND_REGIONS = "Canales y regiones"
+PAGE_SEASONALITY = "Estacionalidad"
+PAGE_ALERTS = "Alertas"
+PAGE_CONTROL = "Centro de control"
+PAGE_DATA_QUALITY = "Calidad de datos"
+PAGES_BY_PROFILE = {
+    PROFILE_ANALYST: [PAGE_OVERVIEW, PAGE_MARGINS, PAGE_CHANNELS_AND_REGIONS,
+                      PAGE_SEASONALITY, PAGE_ALERTS, PAGE_CONTROL],
+    PROFILE_DATA_TEAM: [PAGE_OVERVIEW, PAGE_CONTROL, PAGE_DATA_QUALITY],
+}
+PAGE_ICONS = {
+    PAGE_OVERVIEW: ":material/space_dashboard:", PAGE_MARGINS: ":material/percent:",
+    PAGE_CHANNELS_AND_REGIONS: ":material/storefront:",
+    PAGE_SEASONALITY: ":material/calendar_month:",
+    PAGE_ALERTS: ":material/notifications_active:",
+    PAGE_CONTROL: ":material/smart_toy:", PAGE_DATA_QUALITY: ":material/verified:",
+}
+PAGE_PATHS = {
+    PAGE_OVERVIEW: "panel", PAGE_MARGINS: "margenes",
+    PAGE_CHANNELS_AND_REGIONS: "canales-y-regiones", PAGE_SEASONALITY: "estacionalidad",
+    PAGE_ALERTS: "alertas", PAGE_CONTROL: "centro-de-control",
+    PAGE_DATA_QUALITY: "calidad-de-datos",
 }
 
-# Choices shown first when they exist, so the dashboard opens with a known case.
+# Choices shown first when they exist, so every page opens with a known case.
 DEFAULT_GROUP = "Hortalizas"
 DEFAULT_PRODUCT = "Tomate"
 DEFAULT_REGION = "Región Metropolitana de Santiago"
 DEFAULT_CHANNEL = "Feria libre"
-DEFAULT_MARGIN_CHANNELS = ["Feria libre", "Supermercado"]
+SUPERMARKET = "Supermercado"
+DEFAULT_MARGIN_CHANNELS = [DEFAULT_CHANNEL, SUPERMARKET]
 WHOLESALE_LABEL = "Mayorista"
+UNSPECIFIED = "Sin especificar"
+SOURCE_NAMES = {etl.SOURCE_WHOLESALE: "Mayorista", etl.SOURCE_CONSUMER: "Consumidor"}
+FLAG_NAMES = {"SIN_MARCA": "Usados en los indicadores",
+              etl.FLAG_UNIT_NOT_CONVERTIBLE: "Unidad no convertible",
+              etl.FLAG_OUTLIER: "Atípicos"}
+OVERVIEW_ALERT_COUNT = 6
+ALERTS_PAGE_BAR_COUNT = 15
+RUN_HISTORY_COUNT = 8
+
+CHILE_TIME_ZONE = "America/Santiago"
+# Seconds between two questions to GitHub while the robot works, and the
+# longest wait: a normal run takes about one minute.
+PROGRESS_POLL_SECONDS = 4
+PROGRESS_MAXIMUM_SECONDS = 600
+# Names of the dashboard secrets that enable the "run now" button.
+SECRET_GITHUB_TOKEN = "GITHUB_TOKEN"
+SECRET_CONTROL_CODE = "CONTROL_CODE"
 
 NO_DATA_TEXT = "No hay datos para esta selección."
 NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
@@ -51,7 +91,85 @@ ATTRIBUTION_TEXT = (
 # endregion
 
 
+# region Style
+def get_mode():
+    """Active color mode chosen by the reader; dark until the browser reports it."""
+    theme_type = st.context.theme.type
+    return theme_type if theme_type in charts.PALETTES else charts.MODE_DARK
+
+
+def build_style_css(mode):
+    """Cards, key figures, chips and tables, in the colors of the active mode."""
+    palette = charts.get_palette(mode)
+    return f"""
+    [class*="st-key-card_"] {{
+        background: {palette["card"]}; border: 1px solid {palette["card_border"]};
+        border-radius: 18px; padding: 18px 20px 14px 20px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    }}
+    .card-title {{ font-size: 1.05rem; font-weight: 600; color: {palette["strong_text"]}; }}
+    .page-subtitle {{ color: {palette["text"]}; margin-top: -0.6rem; }}
+    .kpi-label {{ color: {palette["text"]}; font-size: 0.9rem; }}
+    .kpi-value {{ font-size: 2rem; font-weight: 700; color: {palette["strong_text"]};
+                 line-height: 1.2; }}
+    .kpi-note {{ color: {palette["text"]}; font-size: 0.8rem; }}
+    .chip {{ display: inline-block; padding: 2px 10px; border-radius: 999px;
+            font-size: 0.8rem; font-weight: 600; margin-left: 6px; }}
+    .chip-ok {{ background: rgba(12, 163, 12, 0.16); color: #22b35a; }}
+    .chip-failed {{ background: rgba(208, 59, 59, 0.16); color: #e66767; }}
+    .chip-running {{ background: rgba(57, 135, 229, 0.16); color: #5b9cf0; }}
+    .chip-neutral {{ background: rgba(128, 128, 128, 0.16); color: {palette["text"]}; }}
+    .chip-rise {{ background: rgba(227, 73, 72, 0.16); color: {palette["rise"]}; }}
+    .chip-fall {{ background: rgba(57, 135, 229, 0.16); color: {palette["fall"]}; }}
+    table.card-table {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }}
+    table.card-table th {{ text-align: left; color: {palette["text"]}; font-weight: 500;
+                          padding: 6px 4px; border-bottom: 1px solid {palette["card_border"]}; }}
+    table.card-table td {{ padding: 8px 4px; border-bottom: 1px solid {palette["card_border"]};
+                          color: {palette["strong_text"]}; }}
+    """
+
+
+def apply_style(mode):
+    """Add the dashboard CSS to the page."""
+    st.markdown(f"<style>{build_style_css(mode)}</style>", unsafe_allow_html=True)
+
+
+def open_card(key, title=None, caption=None):
+    """A rounded card; use it with 'with'. The key must be unique on the page."""
+    card = st.container(key=f"card_{key}")
+    if title:
+        card.markdown(f'<div class="card-title">{html.escape(title)}</div>',
+                      unsafe_allow_html=True)
+    if caption:
+        card.caption(caption)
+    return card
+
+
+def build_chip(text, kind):
+    """A small colored label: kind is ok, failed, running, neutral, rise or fall."""
+    return f'<span class="chip chip-{kind}">{html.escape(text)}</span>'
+
+
+def build_html_table(headers, rows):
+    """A simple table; cells are already-escaped HTML (they may contain chips)."""
+    header_cells = "".join(f"<th>{html.escape(header)}</th>" for header in headers)
+    body_rows = "".join("<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>"
+                        for row in rows)
+    return f'<table class="card-table"><tr>{header_cells}</tr>{body_rows}</table>'
+
+
+def show_chart(chart):
+    """Draw an Altair chart with its own colors (not Streamlit's chart theme)."""
+    st.altair_chart(chart, use_container_width=True, theme=None)
+# endregion
+
+
 # region Data access
+def get_database_version():
+    """Changes when the robot saves a new database, so cached data is read again."""
+    return queries.DATABASE_FILE.stat().st_mtime
+
+
 def add_display_columns(rows):
     """Add the date and the product key label used by filters and charts."""
     if "week_start" in rows.columns:
@@ -64,279 +182,760 @@ def add_display_columns(rows):
 
 
 @st.cache_data
-def read_indicator(query_name):
-    """Rows of one indicator, read once and kept in memory between interactions."""
+def read_cached_indicator(query_name, database_version):
+    """Rows of one indicator, kept in memory until the database changes."""
     return add_display_columns(queries.run_query(query_name))
 
 
+def read_indicator(query_name):
+    """Rows of one indicator for the current database."""
+    return read_cached_indicator(query_name, get_database_version())
+
+
 @st.cache_data
-def read_price_alerts():
-    """K6 alerts of every week, computed once."""
+def read_cached_price_alerts(database_version):
+    """K6 alerts of every week, computed once per database."""
     prices = queries.run_query("k6_national_weekly_price")
     return add_display_columns(alerts.find_price_alerts(prices))
+
+
+def read_price_alerts():
+    """K6 alerts for the current database."""
+    return read_cached_price_alerts(get_database_version())
+
+
+def read_match_coverage():
+    """K7 as (keys with margin, consumer keys)."""
+    connection = queries.open_database()
+    coverage = etl.measure_match_coverage(connection)
+    connection.close()
+    return coverage
+
+
+def read_latest_run():
+    """Latest ETL run recorded in the database (one row)."""
+    return read_indicator("quality_runs").iloc[0]
+
+
+def describe_product(row):
+    """'Tomate Larga vida · Primera', leaving out parts ODEPA does not specify."""
+    description = row["product"]
+    if row["variety"] != UNSPECIFIED:
+        description += f" {row['variety']}"
+    if row["quality"] != UNSPECIFIED:
+        description += f" · {row['quality']}"
+    return description
+# endregion
+
+
+# region Time
+def to_chile_time(moment):
+    """A UTC datetime in Chilean time; a fixed UTC-3 if the time zone is missing."""
+    try:
+        return moment.astimezone(ZoneInfo(CHILE_TIME_ZONE))
+    except Exception:  # time zone database not installed
+        return moment.astimezone(timezone(timedelta(hours=-3)))
+
+
+def format_chile_time(moment):
+    """'12-10-2026 05:52' in Chilean time."""
+    return f"{to_chile_time(moment):%d-%m-%Y %H:%M}"
+
+
+def parse_run_start(started_at):
+    """The ETL stores its start in UTC as '2026-10-12T08:52:08'."""
+    return datetime.fromisoformat(started_at).replace(tzinfo=timezone.utc)
+
+
+def format_duration(duration):
+    """timedelta -> '57 s' or '2 min 5 s'."""
+    seconds = int(duration.total_seconds())
+    return f"{seconds} s" if seconds < 60 else f"{seconds // 60} min {seconds % 60} s"
 # endregion
 
 
 # region Filters
-def choose_value(label, values, preferred_value=None):
+def choose_value(label, values, preferred_value=None, key=None):
     """Show a select box and return the chosen value."""
     options = sorted(values)
     index = options.index(preferred_value) if preferred_value in options else 0
-    return st.selectbox(label, options, index=index)
+    return st.selectbox(label, options, index=index, key=key)
 
 
 def choose_product_rows(rows):
-    """Narrow the rows to the group, product and variety/quality the user chooses."""
-    group = choose_value("Grupo", rows["product_group"].unique(), DEFAULT_GROUP)
+    """Narrow the rows to the group, product and variety/quality the user chooses.
+
+    The three choices sit in one row, above the charts they filter.
+    """
+    group_column, product_column, key_column = st.columns(3)
+    with group_column:
+        group = choose_value("Grupo", rows["product_group"].unique(), DEFAULT_GROUP)
     rows = rows[rows["product_group"] == group]
-    product = choose_value("Producto", rows["product"].unique(), DEFAULT_PRODUCT)
+    with product_column:
+        product = choose_value("Producto", rows["product"].unique(), DEFAULT_PRODUCT)
     rows = rows[rows["product"] == product]
-    # The key with most data goes first, so the view opens with a full chart.
-    key_labels = rows["key_label"].value_counts().index.to_list()
-    key_label = st.selectbox("Variedad · calidad · unidad", key_labels)
+    with key_column:
+        # The key with most data goes first, so the page opens with a full chart.
+        key_labels = rows["key_label"].value_counts().index.to_list()
+        key_label = st.selectbox("Variedad · calidad · unidad", key_labels)
     return rows[rows["key_label"] == key_label]
 # endregion
 
 
-# region Margins view
-def summarize_margins(rows):
-    """One line per channel: median margin and number of weeks with data."""
-    summary = rows.groupby("channel")["margin_percent"].agg(["median", "count"])
-    summary.columns = ["Margen mediano (%)", "Semanas con dato"]
-    summary.index.name = "Canal"
-    return summary.round(1)
+# region Page header
+def show_page_header(title, subtitle):
+    """Page title, a one-line explanation and the freshness of the data."""
+    latest_run = read_latest_run()
+    run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
+    run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
+    freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
+    title_column, status_column = st.columns([3, 2], vertical_alignment="bottom")
+    with title_column:
+        st.title(title)
+    with status_column:
+        st.markdown(f'<div style="text-align:right">Datos actualizados el {freshness} '
+                    f'{build_chip(run_text, run_kind)}</div>', unsafe_allow_html=True)
+    st.markdown(f'<p class="page-subtitle">{html.escape(subtitle)}</p>',
+                unsafe_allow_html=True)
+# endregion
 
 
-def show_margins_view():
+# region Key figure cards
+def calculate_weekly_change(series):
+    """(latest value, change against the week before in percent) of a weekly series."""
+    series = series.sort_index()
+    if len(series) < 2:
+        return series.iloc[-1], None
+    return series.iloc[-1], (series.iloc[-1] / series.iloc[-2] - 1) * 100
+
+
+def build_change_chip(change, unit="%"):
+    """▲ +5,8 % in red when the price rises, ▼ in blue when it falls."""
+    if change is None or pd.isna(change):
+        return build_chip("sin semana previa", "neutral")
+    arrow, kind = ("▲", "rise") if change > 0 else ("▼", "fall")
+    text = f"{arrow} {change:+.1f} {unit}".replace(".", ",")
+    return build_chip(text, kind)
+
+
+def show_key_figure(key, label, series, value_text, change_chip, note, mode, color):
+    """One card: label, big value, weekly change and a small trend line."""
+    with open_card(key):
+        st.markdown(f'<div class="kpi-label">{html.escape(label)}</div>'
+                    f'<div class="kpi-value">{value_text}{change_chip}</div>'
+                    f'<div class="kpi-note">{html.escape(note)}</div>',
+                    unsafe_allow_html=True)
+        trend_rows = pd.DataFrame({"week_start": series.index, "value": series.to_numpy()})
+        show_chart(charts.draw_sparkline(trend_rows, color, mode))
+
+
+def show_price_figure(key, label, series, unit, mode, color):
+    """Key figure card for a weekly price series."""
+    if series.empty:
+        with open_card(key):
+            st.markdown(f'<div class="kpi-label">{html.escape(label)}</div>'
+                        '<div class="kpi-value">sin dato</div>', unsafe_allow_html=True)
+        return
+    latest_price, change = calculate_weekly_change(series)
+    show_key_figure(key, label, series, f"$ {charts.format_thousands(latest_price)}",
+                    build_change_chip(change), f"$/{unit} · semana del "
+                    f"{series.index.max():%d-%m}", mode, color)
+# endregion
+
+
+# region Overview page
+def build_channel_series(rows, channel):
+    """Weekly consumer price of one channel, indexed by week."""
+    channel_rows = rows[rows["channel"] == channel]
+    return channel_rows.set_index("week_start")["consumer_price"].sort_index()
+
+
+def show_overview_figures(rows, mode):
+    """Four key figure cards: wholesale, street market, supermarket and margin."""
+    unit = rows["normalized_unit"].iloc[0]
+    wholesale = rows.groupby("week_start")["wholesale_price"].first().sort_index()
+    cards = st.columns(4)
+    with cards[0]:
+        show_price_figure("wholesale", "Precio mayorista", wholesale, unit, mode,
+                          charts.get_channel_color(WHOLESALE_LABEL, mode))
+    with cards[1]:
+        show_price_figure("street_market", "Precio en feria",
+                          build_channel_series(rows, DEFAULT_CHANNEL), unit, mode,
+                          charts.get_channel_color(DEFAULT_CHANNEL, mode))
+    with cards[2]:
+        show_price_figure("supermarket", "Precio en supermercado",
+                          build_channel_series(rows, SUPERMARKET), unit, mode,
+                          charts.get_channel_color(SUPERMARKET, mode))
+    with cards[3]:
+        show_margin_figure(rows, mode)
+
+
+def show_margin_figure(rows, mode):
+    """Key figure card: supermarket margin over the wholesale price."""
+    margins = rows[rows["channel"] == SUPERMARKET].set_index("week_start")["margin"] * 100
+    if margins.empty:
+        with open_card("margin"):
+            st.markdown('<div class="kpi-label">Margen supermercado</div>'
+                        '<div class="kpi-value">sin dato</div>', unsafe_allow_html=True)
+        return
+    latest_margin = margins.sort_index().iloc[-1]
+    previous_change = margins.sort_index().diff().iloc[-1] if len(margins) > 1 else None
+    show_key_figure("margin", "Margen supermercado sobre mayorista", margins,
+                    charts.format_percent(latest_margin, decimals=0),
+                    build_change_chip(previous_change, unit="pts"),
+                    "(consumidor − mayorista) / mayorista", mode,
+                    charts.get_channel_color(SUPERMARKET, mode))
+
+
+def show_overview_trend(rows, mode):
+    """Card: weekly price of the wholesale market and of each consumer channel."""
+    with open_card("trend", "Precio por semana",
+                   "La línea gris es el precio mayorista."):
+        consumer_rows = rows[["week_start", "channel", "consumer_price"]].rename(
+            columns={"consumer_price": "value"})
+        wholesale_rows = rows.groupby("week_start", as_index=False)["wholesale_price"].first()
+        wholesale_rows = wholesale_rows.rename(columns={"wholesale_price": "value"})
+        wholesale_rows["channel"] = WHOLESALE_LABEL
+        price_rows = pd.concat([wholesale_rows, consumer_rows], ignore_index=True)
+        show_chart(charts.draw_weekly_lines(
+            price_rows, f"$/{rows['normalized_unit'].iloc[0]}",
+            "$ " + price_rows["value"].map(charts.format_thousands), mode, is_money=True))
+
+
+def show_overview_margins(rows, mode):
+    """Card: median margin of each consumer channel over the weeks shown."""
+    with open_card("margins", "Margen mediano por canal",
+                   "Cuánto más paga el consumidor que el mayorista."):
+        median_margins = rows.groupby("channel")["margin"].median() * 100
+        bar_rows = pd.DataFrame({"label": median_margins.index,
+                                 "value": median_margins.to_numpy()})
+        bar_rows["value_label"] = bar_rows["value"].map(
+            lambda margin: charts.format_percent(margin, decimals=0))
+        colors = [charts.get_channel_color(channel, mode) for channel in bar_rows["label"]]
+        show_chart(charts.draw_horizontal_bars(bar_rows, "Margen mediano (%)", mode, colors))
+
+
+def show_overview_regions(product, key_label, mode):
+    """Card: regional index of the street market price for the chosen product."""
+    with open_card("regions", "¿Dónde es más caro?",
+                   "Precio en feria por región; 1 = promedio nacional."):
+        rows = read_indicator("k3_regional_index")
+        rows = rows[(rows["product"] == product) & (rows["key_label"] == key_label)
+                    & (rows["channel"] == DEFAULT_CHANNEL)]
+        if rows.empty:
+            st.info(NO_DATA_TEXT)
+            return
+        average_index = rows.groupby("region")["regional_index"].mean()
+        bar_rows = pd.DataFrame({
+            "label": [charts.shorten_region_name(region) for region in average_index.index],
+            "value": average_index.to_numpy()})
+        bar_rows["value_label"] = bar_rows["value"].map(charts.format_index)
+        show_chart(charts.draw_horizontal_bars(bar_rows, "Índice regional", mode,
+                                               reference_value=1))
+
+
+def build_alert_rows_html(alert_rows):
+    """Table cells for alerts: product, channel and a red or blue change chip."""
+    table_rows = []
+    for alert in alert_rows.to_dict("records"):
+        change = alert["variation"] * 100
+        kind = "rise" if change > 0 else "fall"
+        arrow = "▲" if change > 0 else "▼"
+        table_rows.append([html.escape(describe_product(alert)),
+                           html.escape(alert["channel"]),
+                           build_chip(f"{arrow} {charts.format_signed_percent(change)}", kind)])
+    return table_rows
+
+
+def show_overview_alerts():
+    """Card: the largest price movements of the latest week."""
+    alert_rows = read_price_alerts()
+    latest_week = read_indicator("k6_national_weekly_price")["week_start"].max()
+    week_alerts = alert_rows[alert_rows["week_start"] == latest_week]
+    with open_card("alerts", f"Alertas de la semana ({len(week_alerts)})",
+                   f"Semana del {latest_week:%d-%m-%Y}. Señales para revisar, no conclusiones."):
+        if week_alerts.empty:
+            st.info("Ningún producto se movió fuera de su rango habitual.")
+            return
+        largest_first = week_alerts["variation"].abs().sort_values(ascending=False).index
+        shown_alerts = week_alerts.loc[largest_first].head(OVERVIEW_ALERT_COUNT)
+        st.markdown(build_html_table(["Producto", "Canal", "Variación"],
+                                     build_alert_rows_html(shown_alerts)),
+                    unsafe_allow_html=True)
+
+
+def show_overview_page(mode):
+    """Home page: key figures, trend, margins, regions and alerts on one screen."""
+    show_page_header("Panel de precios", "Del mercado mayorista al consumidor, con datos "
+                     "oficiales de ODEPA que se actualizan solos cada martes.")
+    rows = read_indicator("k1_margin")
+    filter_columns = st.columns([1, 1, 1.4, 1.4])
+    with filter_columns[0]:
+        group = choose_value("Grupo", rows["product_group"].unique(), DEFAULT_GROUP)
+    rows = rows[rows["product_group"] == group]
+    with filter_columns[1]:
+        product = choose_value("Producto", rows["product"].unique(), DEFAULT_PRODUCT)
+    rows = rows[rows["product"] == product]
+    with filter_columns[2]:
+        key_label = st.selectbox("Variedad · calidad · unidad",
+                                 rows["key_label"].value_counts().index.to_list())
+    rows = rows[rows["key_label"] == key_label]
+    with filter_columns[3]:
+        region = choose_value("Región", rows["region"].unique(), DEFAULT_REGION)
+    rows = rows[rows["region"] == region]
+
+    show_overview_figures(rows, mode)
+    trend_column, margin_column = st.columns([3, 2])
+    with trend_column:
+        show_overview_trend(rows, mode)
+    with margin_column:
+        show_overview_margins(rows, mode)
+    region_column, alert_column = st.columns([2, 3])
+    with region_column:
+        show_overview_regions(product, key_label, mode)
+    with alert_column:
+        show_overview_alerts()
+    st.caption(NOMINAL_PRICES_TEXT)
+# endregion
+
+
+# region Margins page
+def show_margins_page(mode):
     """K1: margin between the wholesale price and each consumer channel."""
-    st.header("Márgenes entre mayorista y consumidor")
-    st.caption("K1 = (precio consumidor − precio mayorista) / precio mayorista. "
-               "Solo se compara la misma variedad, calidad, región, semana y unidad.")
+    show_page_header("Márgenes", "Margen = (precio al consumidor − precio mayorista) / "
+                     "precio mayorista, con la misma variedad, calidad, región, semana y unidad.")
     rows = choose_product_rows(read_indicator("k1_margin"))
-    region = choose_value("Región", rows["region"].unique(), DEFAULT_REGION)
+    region_column, channel_column = st.columns([1, 2])
+    with region_column:
+        region = choose_value("Región", rows["region"].unique(), DEFAULT_REGION)
     rows = rows[rows["region"] == region]
     available_channels = sorted(rows["channel"].unique())
-    default_channels = [channel for channel in DEFAULT_MARGIN_CHANNELS
-                        if channel in available_channels]
-    channels = st.multiselect("Canal", available_channels, default=default_channels)
+    with channel_column:
+        channels = st.multiselect("Canal", available_channels, default=[
+            channel for channel in DEFAULT_MARGIN_CHANNELS if channel in available_channels])
     rows = rows[rows["channel"].isin(channels)].copy()
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
     rows["margin_percent"] = rows["margin"] * 100
-
-    st.subheader("Margen por semana (%)")
-    st.line_chart(rows.pivot(index="week_start", columns="channel",
-                             values="margin_percent"))
-    st.subheader("Precio por semana ($)")
-    prices = rows.pivot(index="week_start", columns="channel", values="consumer_price")
-    prices[WHOLESALE_LABEL] = rows.groupby("week_start")["wholesale_price"].first()
-    st.line_chart(prices)
-    st.dataframe(summarize_margins(rows))
+    with open_card("margin_trend", "Margen por semana"):
+        margin_rows = rows[["week_start", "channel", "margin_percent"]].rename(
+            columns={"margin_percent": "value"})
+        show_chart(charts.draw_weekly_lines(
+            margin_rows, "Margen (%)", margin_rows["value"].map(charts.format_percent),
+            mode, is_money=False))
+    trend_column, bars_column = st.columns([3, 2])
+    with trend_column:
+        show_overview_trend(rows, mode)
+    with bars_column:
+        show_overview_margins(rows, mode)
     st.caption(NOMINAL_PRICES_TEXT)
 # endregion
 
 
-# region Channels and regions view
-def show_channel_gaps(rows):
-    """K2: average price gap of each channel against a reference channel."""
-    st.subheader("Diferencial entre canales (K2)")
-    if rows.empty:
-        st.info("Este producto se registra en un solo canal.")
-        return
-    reference_channel = choose_value("Canal de referencia",
-                                     rows["reference_channel"].unique(),
-                                     DEFAULT_CHANNEL)
-    rows = rows[rows["reference_channel"] == reference_channel]
-    average_gap = rows.groupby("channel")["gap"].mean() * 100
-    st.bar_chart(average_gap.rename("Diferencial promedio (%)"), horizontal=True)
-    st.caption(f"Cuánto más caro (+) o más barato (−) es cada canal que "
-               f"«{reference_channel}», en promedio de las semanas y regiones "
-               f"donde ambos tienen precio.")
+# region Channels and regions page
+def show_channel_gaps(rows, mode):
+    """Card: K2, average price gap of each channel against a reference channel."""
+    with open_card("channel_gaps", "Diferencia entre canales"):
+        if rows.empty:
+            st.info("Este producto se registra en un solo canal.")
+            return
+        reference_channel = choose_value("Comparar contra",
+                                         rows["reference_channel"].unique(), DEFAULT_CHANNEL)
+        rows = rows[rows["reference_channel"] == reference_channel]
+        average_gap = rows.groupby("channel")["gap"].mean() * 100
+        bar_rows = pd.DataFrame({"label": average_gap.index, "value": average_gap.to_numpy()})
+        bar_rows["value_label"] = bar_rows["value"].map(charts.format_signed_percent)
+        colors = [charts.get_channel_color(channel, mode) for channel in bar_rows["label"]]
+        show_chart(charts.draw_horizontal_bars(bar_rows, "Diferencia promedio (%)", mode,
+                                               colors, reference_value=0))
+        st.caption(f"Cuánto más caro (+) o más barato (−) es cada canal que "
+                   f"«{reference_channel}», en las semanas y regiones donde ambos tienen precio.")
 
 
-def show_regional_index(rows):
-    """K3: average regional index of each region for one channel."""
-    st.subheader("Índice regional (K3)")
-    channel = choose_value("Canal", rows["channel"].unique(), DEFAULT_CHANNEL)
-    rows = rows[rows["channel"] == channel]
-    average_index = rows.groupby("region")["regional_index"].mean()
-    st.bar_chart(average_index.rename("Índice regional promedio"), horizontal=True)
-    st.caption("1 = precio promedio nacional de la semana. Sobre 1, la región "
-               "es más cara que el promedio; bajo 1, más barata.")
+def show_regional_index(rows, mode):
+    """Card: K3, average regional index of each region for one channel."""
+    with open_card("regional_index", "Precio por región"):
+        channel = choose_value("Canal", rows["channel"].unique(), DEFAULT_CHANNEL)
+        rows = rows[rows["channel"] == channel]
+        average_index = rows.groupby("region")["regional_index"].mean()
+        bar_rows = pd.DataFrame({
+            "label": [charts.shorten_region_name(region) for region in average_index.index],
+            "value": average_index.to_numpy()})
+        bar_rows["value_label"] = bar_rows["value"].map(charts.format_index)
+        show_chart(charts.draw_horizontal_bars(bar_rows, "Índice regional", mode,
+                                               reference_value=1))
+        st.caption("Sobre 1, la región es más cara que el promedio nacional de la semana; "
+                   "bajo 1, más barata.")
 
 
-def show_channels_and_regions_view():
+def show_channels_and_regions_page(mode):
     """K2 and K3 for any product group, with or without a wholesale price."""
-    st.header("Canales y regiones")
+    show_page_header("Canales y regiones", "Qué canal y qué región son más caros para un "
+                     "producto, incluidas carnes, lácteos y abarrotes.")
     regional_rows = choose_product_rows(read_indicator("k3_regional_index"))
     key_label = regional_rows["key_label"].iloc[0]
     product = regional_rows["product"].iloc[0]
     gap_rows = read_indicator("k2_channel_gap")
     gap_rows = gap_rows[(gap_rows["product"] == product)
                         & (gap_rows["key_label"] == key_label)]
-    show_channel_gaps(gap_rows)
-    show_regional_index(regional_rows)
+    gaps_column, regions_column = st.columns(2)
+    with gaps_column:
+        show_channel_gaps(gap_rows, mode)
+    with regions_column:
+        show_regional_index(regional_rows, mode)
     st.caption(NOMINAL_PRICES_TEXT)
 # endregion
 
 
-# region Seasonality view
-def show_seasonality_view():
+# region Seasonality page
+def show_seasonality_page(mode):
     """K4: national price of each week over the average of its year."""
-    st.header("Estacionalidad")
-    st.caption("K4 = precio nacional de la semana / precio promedio del año. "
-               "Con un solo año cargado muestra la variación dentro de ese año; "
-               "la estacionalidad se confirma al cargar el histórico.")
+    show_page_header("Estacionalidad", "Índice = precio nacional de la semana / promedio "
+                     "del año. Con un solo año cargado muestra la variación dentro del año.")
     rows = choose_product_rows(read_indicator("k4_seasonal_index"))
     channel = choose_value("Canal", rows["channel"].unique(), DEFAULT_CHANNEL)
     rows = rows[rows["channel"] == channel]
-    st.subheader("Índice estacional por semana")
-    st.line_chart(rows.pivot(index="week_start", columns="price_year",
-                             values="seasonal_index"))
-    st.subheader("Precio nacional por semana ($)")
-    st.line_chart(rows.set_index("week_start")["national_price"])
+    index_column, price_column = st.columns(2)
+    with index_column, open_card("seasonal_index", "Índice estacional",
+                                 "1 = precio promedio del año."):
+        index_rows = rows[["week_start", "seasonal_index"]].rename(
+            columns={"seasonal_index": "value"})
+        show_chart(charts.draw_single_weekly_area(
+            index_rows, "Índice", index_rows["value"].map(charts.format_index), mode,
+            reference_value=1))
+    with price_column, open_card("national_price", "Precio nacional por semana"):
+        price_rows = rows[["week_start", "national_price"]].rename(
+            columns={"national_price": "value"})
+        show_chart(charts.draw_single_weekly_area(
+            price_rows, f"$/{rows['normalized_unit'].iloc[0]}",
+            "$ " + price_rows["value"].map(charts.format_thousands), mode, is_money=True))
     st.caption(NOMINAL_PRICES_TEXT)
 # endregion
 
 
-# region Alerts view
-def show_alerts_view():
+# region Alerts page
+def format_alerts(alert_rows):
+    """Alerts as a table for the reader, largest movements first."""
+    order = alert_rows["variation"].abs().sort_values(ascending=False).index
+    alert_rows = alert_rows.loc[order]
+    return pd.DataFrame({
+        "Producto": [describe_product(row) for row in alert_rows.to_dict("records")],
+        "Canal": alert_rows["channel"],
+        "Unidad": alert_rows["normalized_unit"],
+        "Precio nacional": "$ " + alert_rows["national_price"].map(charts.format_thousands),
+        "Variación": (alert_rows["variation"] * 100).map(charts.format_signed_percent),
+        "Variación habitual": (alert_rows["usual_variation"] * 100).map(
+            charts.format_signed_percent),
+    })
+
+
+def show_alerts_page(mode):
     """K6: products whose price moved outside their usual range in one week."""
-    st.header("Alertas de variación")
-    st.caption("K6: la variación semanal del precio nacional se sale de su media "
-               "± 2 desviaciones estándar de las 12 semanas anteriores. Un producto "
-               "necesita 13 semanas seguidas con precio para ser evaluado.")
+    show_page_header("Alertas", "Hay alerta cuando el cambio semanal del precio se aleja "
+                     "más de 2 desviaciones estándar de lo habitual en las 12 semanas previas.")
     alert_rows = read_price_alerts()
     if alert_rows.empty:
         st.info("Todavía no hay semanas suficientes para calcular alertas.")
         return
     weeks = sorted(alert_rows["week_start"].dt.date.unique(), reverse=True)
-    week = st.selectbox("Semana (lunes de inicio)", weeks)
+    week = st.selectbox("Semana (lunes de inicio)", weeks,
+                        format_func=lambda day: day.strftime("%d-%m-%Y"))
     week_rows = alert_rows[alert_rows["week_start"].dt.date == week]
-    st.metric("Productos fuera de su rango", len(week_rows))
-    st.dataframe(format_alerts(week_rows), hide_index=True)
+    with open_card("alert_bars", f"Mayores movimientos ({len(week_rows)} alertas)",
+                   "Rojo: subió. Azul: bajó."):
+        largest_first = week_rows["variation"].abs().sort_values(ascending=False).index
+        shown_rows = week_rows.loc[largest_first].head(ALERTS_PAGE_BAR_COUNT)
+        bar_rows = pd.DataFrame({
+            "label": [f"{describe_product(row)} ({row['channel']})"
+                      for row in shown_rows.to_dict("records")],
+            "value": shown_rows["variation"].to_numpy() * 100})
+        show_chart(charts.draw_variation_bars(bar_rows, mode))
+    with open_card("alert_table", "Todas las alertas de la semana"):
+        st.dataframe(format_alerts(week_rows), hide_index=True, use_container_width=True)
     st.caption(NOMINAL_PRICES_TEXT)
-
-
-def format_alerts(alert_rows):
-    """Alerts as a table for the reader, largest movements first."""
-    table = pd.DataFrame({
-        "Producto": alert_rows["product"],
-        "Variedad": alert_rows["variety"],
-        "Calidad": alert_rows["quality"],
-        "Canal": alert_rows["channel"],
-        "Unidad": alert_rows["normalized_unit"],
-        "Precio nacional ($)": alert_rows["national_price"].round(0),
-        "Variación (%)": (alert_rows["variation"] * 100).round(1),
-        "Variación habitual (%)": (alert_rows["usual_variation"] * 100).round(1),
-        "Desviación estándar (%)": (alert_rows["variation_deviation"] * 100).round(1),
-    })
-    order = table["Variación (%)"].abs().sort_values(ascending=False).index
-    return table.loc[order]
 # endregion
 
 
-# region Data quality view
-def show_latest_run(runs):
-    """Counts and status of the latest ETL run."""
-    latest_run = runs.iloc[0]
-    st.subheader(f"Última ejecución: {latest_run['status']} · {latest_run['started_at']}")
-    columns = st.columns(3)
-    columns[0].metric("Filas leídas", f"{latest_run['rows_read']:,}")
-    columns[1].metric("Filas cargadas", f"{latest_run['rows_loaded']:,}")
-    columns[2].metric("Filas rechazadas", f"{latest_run['rows_rejected']:,}")
-    if latest_run["message"]:
-        st.error(latest_run["message"])
+# region Control center page
+def get_secret(name):
+    """A dashboard secret, or None when it is not configured."""
+    try:
+        return st.secrets.get(name)
+    except Exception:  # no secrets file at all
+        return None
 
 
-def show_match_coverage():
-    """K7: consumer fruit and vegetable keys that have a margin."""
-    connection = queries.open_database()
-    keys_with_margin, consumer_keys = etl.measure_match_coverage(connection)
-    connection.close()
-    st.subheader("Cobertura del cruce (K7)")
-    st.metric("Claves de frutas y verduras con margen",
-              f"{keys_with_margin} de {consumer_keys}"
-              f" ({keys_with_margin / consumer_keys:.1%})")
-    st.caption("Clave = producto + variedad + calidad. Tiene margen si coincide con "
-               "el mayorista en alguna semana, región y unidad.")
+@st.cache_data(ttl=30)
+def read_robot_runs():
+    """(latest runs, error text). Kept 30 seconds so GitHub is not asked on every click."""
+    try:
+        return control.list_workflow_runs(get_secret(SECRET_GITHUB_TOKEN),
+                                          RUN_HISTORY_COUNT), ""
+    except Exception as error:  # GitHub unreachable or refused
+        return [], str(error)
 
 
-def show_rejections():
-    """K8: rejected rows of the latest run, by source and reason."""
-    st.subheader("Filas rechazadas por motivo (K8)")
-    rejections = read_indicator("k8_rejected_rows")
-    if rejections.empty:
-        st.success("La última ejecución no rechazó ninguna fila.")
-        return
-    rejections["rejected_share"] = (rejections["rejected_share"] * 100).round(3)
-    rejections.columns = ["Fuente", "Motivo", "Filas rechazadas", "% de filas leídas"]
-    st.dataframe(rejections, hide_index=True)
+def build_run_chip(state):
+    """Chip for a robot run: Éxito, Falla or En curso."""
+    texts = {control.RUN_OK: ("Éxito", "ok"), control.RUN_FAILED: ("Falla", "failed"),
+             control.RUN_IN_PROGRESS: ("En curso", "running")}
+    text, kind = texts.get(state, ("Omitido", "neutral"))
+    return build_chip(text, kind)
 
 
-def show_flagged_prices():
-    """Weekly prices kept but left out of the indicators (RN-05, RN-12)."""
-    st.subheader("Precios semanales marcados")
-    flag_counts = read_indicator("quality_flag_counts").copy()
-    flag_counts.columns = ["Fuente", "Marca", "Precios semanales"]
-    st.dataframe(flag_counts, hide_index=True)
-    st.caption("UNIDAD_NO_CONVERTIBLE: la unidad no se puede llevar a kilo, unidad "
-               "o litro. ATIPICO: más de 5 veces, o menos de 1/5, de la mediana del "
-               "producto esa semana en su fuente. Ambos se conservan, sin entrar "
-               "en los indicadores.")
-    outliers = read_indicator("quality_outliers").drop(columns="key_label").copy()
-    outliers["week_start"] = outliers["week_start"].dt.date
-    outliers.columns = ["Semana", "Fuente", "Canal", "Región", "Producto", "Variedad",
-                        "Calidad", "Unidad", "Precio", "Observaciones"]
-    st.dataframe(outliers, hide_index=True)
+def show_robot_status(runs):
+    """Three cards: latest run, next automatic run and latest data load."""
+    status_column, next_column, data_column = st.columns(3)
+    with status_column, open_card("robot_latest"):
+        st.markdown('<div class="kpi-label">Última ejecución del robot</div>',
+                    unsafe_allow_html=True)
+        if runs:
+            latest = runs[0]
+            st.markdown(f'<div class="kpi-value">{format_chile_time(latest["started_at"])}</div>'
+                        f'{build_run_chip(latest["state"])}'
+                        f'<span class="kpi-note"> {latest["trigger"]}</span>',
+                        unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="kpi-value">sin datos</div>', unsafe_allow_html=True)
+    with next_column, open_card("robot_next"):
+        next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc))
+        st.markdown('<div class="kpi-label">Próxima ejecución automática</div>'
+                    f'<div class="kpi-value">{format_chile_time(next_run)}</div>'
+                    '<div class="kpi-note">Cada martes, sin intervención</div>',
+                    unsafe_allow_html=True)
+    with data_column, open_card("robot_data"):
+        latest_run = read_latest_run()
+        st.markdown('<div class="kpi-label">Filas cargadas en la última carga</div>'
+                    f'<div class="kpi-value">{charts.format_thousands(latest_run["rows_loaded"])}'
+                    f'</div><div class="kpi-note">{latest_run["rows_rejected"]} rechazadas</div>',
+                    unsafe_allow_html=True)
 
 
-def show_data_quality_view():
+def build_step_lines(steps):
+    """Progress of a run as text lines with an icon per step."""
+    icons = {control.RUN_OK: "✅", control.RUN_FAILED: "❌",
+             control.RUN_IN_PROGRESS: "⏳", "skipped": "⏭️"}
+    if not steps:
+        return "⏳ Preparando el robot…"
+    return "  \n".join(f"{icons.get(state, '•')} {name}" for name, state in steps)
+
+
+def wait_for_manual_run(requested_at, token):
+    """The run GitHub created for the click, or None if it does not appear in time."""
+    for _ in range(10):
+        time.sleep(PROGRESS_POLL_SECONDS)
+        run = control.find_run_started_after(
+            control.list_workflow_runs(token, RUN_HISTORY_COUNT), requested_at)
+        if run is not None:
+            return run
+    return None
+
+
+def follow_run_progress(run_id, token, progress_area):
+    """Show the steps until the run ends; return its final state."""
+    waited_seconds = 0
+    while waited_seconds < PROGRESS_MAXIMUM_SECONDS:
+        progress_area.markdown(build_step_lines(control.list_run_steps(run_id, token)))
+        runs = control.list_workflow_runs(token, RUN_HISTORY_COUNT)
+        state = next((run["state"] for run in runs if run["id"] == run_id),
+                     control.RUN_IN_PROGRESS)
+        if state != control.RUN_IN_PROGRESS:
+            progress_area.markdown(build_step_lines(control.list_run_steps(run_id, token)))
+            return state
+        time.sleep(PROGRESS_POLL_SECONDS)
+        waited_seconds += PROGRESS_POLL_SECONDS
+    return control.RUN_IN_PROGRESS
+
+
+def run_robot_now(token):
+    """Start the robot and show its steps live until it finishes."""
+    requested_at = datetime.now(timezone.utc)
+    control.start_workflow_run(token)
+    with st.status("El robot está trabajando…", expanded=True) as status_box:
+        run = wait_for_manual_run(requested_at, token)
+        if run is None:
+            status_box.update(label="GitHub no confirmó el inicio; revisa el historial "
+                              "en un minuto.", state="error")
+            return
+        state = follow_run_progress(run["id"], token, st.empty())
+        if state == control.RUN_OK:
+            status_box.update(label="Listo: datos descargados, revisados y guardados.",
+                              state="complete")
+            st.success("El panel muestra los datos nuevos en cuanto recibe la base "
+                       "guardada, normalmente en 1 o 2 minutos. Usa «Recargar datos».")
+        else:
+            status_box.update(label="El robot terminó con una falla. Los datos anteriores "
+                              "siguen intactos.", state="error")
+    read_robot_runs.clear()
+
+
+def show_run_now_card():
+    """Card with the button that starts the robot, protected by an access code."""
+    with open_card("run_now", "Ejecutar ahora",
+                   "Descarga los datos de ODEPA, los limpia, los prueba y actualiza el "
+                   "panel. Tarda alrededor de un minuto."):
+        token = get_secret(SECRET_GITHUB_TOKEN)
+        access_code = get_secret(SECRET_CONTROL_CODE)
+        if not token or not access_code:
+            st.info("El botón se activa cuando la autora configura su clave de GitHub y "
+                    "su código de acceso en los secretos del panel. Mientras tanto, el "
+                    "robot se puede lanzar desde GitHub.")
+            st.link_button("Abrir el robot en GitHub", control.WORKFLOW_PAGE_URL,
+                           icon=":material/open_in_new:")
+            return
+        typed_code = st.text_input("Código de acceso", type="password")
+        if st.button("Ejecutar ahora", type="primary", icon=":material/play_arrow:"):
+            if not hmac.compare_digest(typed_code, access_code):
+                st.error("Código de acceso incorrecto.")
+                return
+            run_robot_now(token)
+
+
+def show_run_history(runs, error_text):
+    """Card: latest robot runs with their state."""
+    with open_card("run_history", "Historial de ejecuciones"):
+        if error_text:
+            st.warning("No se pudo consultar GitHub en este momento.")
+            return
+        table_rows = [[format_chile_time(run["started_at"]), html.escape(run["trigger"]),
+                       format_duration(run["duration"]) if run["duration"] else "—",
+                       build_run_chip(run["state"]),
+                       f'<a href="{html.escape(run["url"])}" target="_blank">detalle</a>']
+                      for run in runs]
+        st.markdown(build_html_table(["Inicio", "Tipo", "Duración", "Estado", ""],
+                                     table_rows), unsafe_allow_html=True)
+
+
+def show_control_page(mode):
+    """The weekly robot: its state, its history and a button to run it now."""
+    show_page_header("Centro de control", "El robot descarga, revisa y guarda los datos "
+                     "cada martes. Aquí ves su estado y puedes lanzarlo cuando quieras.")
+    runs, error_text = read_robot_runs()
+    show_robot_status(runs)
+    run_column, history_column = st.columns([2, 3])
+    with run_column:
+        show_run_now_card()
+        if st.button("Recargar datos del panel", icon=":material/refresh:"):
+            st.cache_data.clear()
+            st.rerun()
+    with history_column:
+        show_run_history(runs, error_text)
+# endregion
+
+
+# region Data quality page
+def show_load_figures(latest_run):
+    """Three cards with the row counts of the latest load."""
+    figures = [("Filas leídas", latest_run["rows_read"]),
+               ("Filas cargadas", latest_run["rows_loaded"]),
+               ("Filas rechazadas", latest_run["rows_rejected"])]
+    for column, (label, count) in zip(st.columns(3), figures):
+        with column, open_card(f"load_{label}"):
+            st.markdown(f'<div class="kpi-label">{label}</div>'
+                        f'<div class="kpi-value">{charts.format_thousands(count)}</div>',
+                        unsafe_allow_html=True)
+
+
+def show_flag_donut(mode):
+    """Card: weekly prices used in the indicators against those left out."""
+    flag_counts = read_indicator("quality_flag_counts")
+    totals = flag_counts.groupby("flag")["weekly_prices"].sum()
+    with open_card("flag_donut", "Estado de los precios semanales"):
+        palette = charts.get_palette(mode)
+        rows = pd.DataFrame({"label": [FLAG_NAMES.get(flag, flag) for flag in totals.index],
+                             "value": totals.to_numpy()})
+        rows["value_label"] = rows["value"].map(charts.format_thousands)
+        colors = [palette["accent"] if flag == "SIN_MARCA" else
+                  palette["rise"] if flag == etl.FLAG_OUTLIER else palette["reference"]
+                  for flag in totals.index]
+        donut_column, legend_column = st.columns([1, 1], vertical_alignment="center")
+        with donut_column:
+            show_chart(charts.draw_donut(rows, colors, mode))
+        with legend_column:
+            for label, value_label, color in zip(rows["label"], rows["value_label"], colors):
+                st.markdown(f'<span style="color:{color}">●</span> {html.escape(label)}: '
+                            f'**{value_label}**', unsafe_allow_html=True)
+
+
+def show_quality_details():
+    """Card: match coverage (K7), rejections (K8) and the list of outliers."""
+    keys_with_margin, consumer_keys = read_match_coverage()
+    with open_card("quality_details", "Cobertura y rechazos"):
+        st.markdown(f"**K7 · Cobertura del cruce:** {keys_with_margin} de {consumer_keys} "
+                    f"claves de frutas y verduras tienen margen "
+                    f"({charts.format_percent(keys_with_margin / consumer_keys * 100)}).")
+        rejections = read_indicator("k8_rejected_rows")
+        if rejections.empty:
+            st.markdown(f"**K8 · Rechazos:** {build_chip('0 filas rechazadas', 'ok')}",
+                        unsafe_allow_html=True)
+        else:
+            st.dataframe(rejections, hide_index=True)
+        outliers = read_indicator("quality_outliers").drop(columns="key_label").copy()
+        outliers["week_start"] = outliers["week_start"].dt.strftime("%d-%m-%Y")
+        outliers["source"] = outliers["source"].map(SOURCE_NAMES)
+        outliers.columns = ["Semana", "Fuente", "Canal", "Región", "Producto", "Variedad",
+                            "Calidad", "Unidad", "Precio", "Observaciones"]
+        with st.expander(f"Ver los {len(outliers)} precios marcados como atípicos"):
+            st.dataframe(outliers, hide_index=True)
+
+
+def show_data_quality_page(mode):
     """Whether the latest load worked and what was left out."""
-    st.header("Calidad de datos")
-    runs = read_indicator("quality_runs").copy()
-    if runs.empty:
-        st.warning("Todavía no hay ejecuciones registradas.")
-        return
-    show_latest_run(runs)
-    show_match_coverage()
-    show_rejections()
-    show_flagged_prices()
-    st.subheader("Últimas ejecuciones")
-    runs.columns = ["Ejecución", "Inicio", "Estado", "Filas leídas", "Filas cargadas",
-                    "Filas rechazadas", "Mensaje"]
-    st.dataframe(runs, hide_index=True)
+    show_page_header("Calidad de datos", "Qué se cargó, qué quedó fuera y por qué.")
+    show_load_figures(read_latest_run())
+    donut_column, details_column = st.columns([2, 3])
+    with donut_column:
+        show_flag_donut(mode)
+    with details_column:
+        show_quality_details()
 # endregion
 
 
 # region Entry point
-SHOW_VIEW_BY_NAME = {
-    VIEW_MARGINS: show_margins_view,
-    VIEW_CHANNELS_AND_REGIONS: show_channels_and_regions_view,
-    VIEW_SEASONALITY: show_seasonality_view,
-    VIEW_ALERTS: show_alerts_view,
-    VIEW_DATA_QUALITY: show_data_quality_view,
+SHOW_PAGE_BY_TITLE = {
+    PAGE_OVERVIEW: show_overview_page,
+    PAGE_MARGINS: show_margins_page,
+    PAGE_CHANNELS_AND_REGIONS: show_channels_and_regions_page,
+    PAGE_SEASONALITY: show_seasonality_page,
+    PAGE_ALERTS: show_alerts_page,
+    PAGE_CONTROL: show_control_page,
+    PAGE_DATA_QUALITY: show_data_quality_page,
 }
 
 
 def show_attribution():
-    """Footer with the data source, shown under every view."""
+    """Footer with the data source, shown under every page."""
     st.divider()
     st.caption(ATTRIBUTION_TEXT)
 
 
+def render_page(title):
+    """Draw one page with the style of the active mode and the footer."""
+    mode = get_mode()
+    apply_style(mode)
+    SHOW_PAGE_BY_TITLE[title](mode)
+    show_attribution()
+
+
+def build_page(title, is_default):
+    """A navigation entry that draws one page."""
+    return st.Page(lambda: render_page(title), title=title, icon=PAGE_ICONS[title],
+                   url_path=PAGE_PATHS[title], default=is_default)
+
+
 def main():
-    """Draw the profile selector, the chosen view and the footer."""
-    st.set_page_config(page_title="Monitor de precios de alimentos", layout="wide")
-    st.title("Monitor de precios y márgenes de alimentos en Chile")
+    """Profile selector, navigation with icons and the chosen page."""
+    st.set_page_config(page_title="Monitor de precios de alimentos", layout="wide",
+                       page_icon=":material/monitoring:")
     if not queries.DATABASE_FILE.exists():
         st.error("Falta etl/datos.db. Ejecuta primero: python etl/etl.py")
         return
-    profile = st.sidebar.selectbox("¿Quién consulta?", list(VIEWS_BY_PROFILE))
-    view = st.sidebar.radio("Vista", VIEWS_BY_PROFILE[profile])
-    SHOW_VIEW_BY_NAME[view]()
-    show_attribution()
+    profile = st.sidebar.selectbox("¿Quién consulta?", list(PAGES_BY_PROFILE))
+    pages = [build_page(title, position == 0)
+             for position, title in enumerate(PAGES_BY_PROFILE[profile])]
+    st.navigation(pages, position="sidebar").run()
+    st.sidebar.caption("Fuente: ODEPA · actualización automática cada martes.")
 
 
 if __name__ == "__main__":

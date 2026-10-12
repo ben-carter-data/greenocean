@@ -82,3 +82,5 @@ Orden de arriba hacia abajo. Cada tarea indica cuándo se considera terminada. L
 | T-35 | Tercera fuente: comercio exterior de ODEPA |
 | T-36 | Migración opcional a PostgreSQL gestionado |
 | T-37 | Tabla de equivalencia de calidades entre fuentes (papa: «Primera» contra «1a (cosecha)», etc.), ver D-030 |
+| T-38 | Panel con aspecto de producto: modo oscuro y claro beige, tarjetas, cifras clave y gráficos con colores fijos por canal (D-037) |
+| T-39 | Centro de control: estado e historial del robot y botón «Ejecutar ahora» con código de acceso (D-038) |

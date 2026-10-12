@@ -1,0 +1,227 @@
+"""Charts and visual style of the dashboard, drawn with Altair (installed with Streamlit).
+
+Every chart takes the active mode ("dark" or "light") and uses its palette.
+Every channel keeps the same hue in every chart, so a reader learns it once.
+Numbers in labels and tooltips are written as in Chile: 1.234 and 12,5 %.
+"""
+import altair as alt
+import pandas as pd
+
+# region Constants
+MODE_DARK = "dark"
+MODE_LIGHT = "light"
+
+# Categorical palette validated for color blindness, one step per mode
+# (checked against each mode's card color). The wholesale price is a reference,
+# so it gets neutral ink instead of a hue.
+PALETTES = {
+    MODE_DARK: {
+        "channels": {"Feria libre": "#3987e5", "Supermercado": "#d95926",
+                     "Supermercado en Línea": "#199e70", "Mercado Minorista": "#c98500",
+                     "Carnicería": "#d55181", "Panadería": "#008300",
+                     "Mercado Mayorista": "#9085e9", "Mayorista": "#c3c2b7"},
+        "rise": "#e66767", "fall": "#3987e5", "accent": "#3987e5",
+        "text": "#c3c2b7", "grid": "#26262a", "reference": "#6f6e69",
+        "card": "#141416", "card_border": "#26262a", "strong_text": "#f0efec",
+    },
+    MODE_LIGHT: {
+        "channels": {"Feria libre": "#2a78d6", "Supermercado": "#eb6834",
+                     "Supermercado en Línea": "#1baf7a", "Mercado Minorista": "#eda100",
+                     "Carnicería": "#e87ba4", "Panadería": "#008300",
+                     "Mercado Mayorista": "#6250d6", "Mayorista": "#52514e"},
+        "rise": "#e34948", "fall": "#2a78d6", "accent": "#2a78d6",
+        "text": "#52514e", "grid": "#ece5d6", "reference": "#a8a497",
+        "card": "#fffdf8", "card_border": "#e7dfcf", "strong_text": "#1d1b17",
+    },
+}
+CHART_FONT = "Source Sans Pro, sans-serif"
+CHART_HEIGHT = 300
+SPARKLINE_HEIGHT = 70
+BAR_HEIGHT = 28
+WEEK_AXIS_FORMAT = "%d-%m"
+# Vega expression for axis labels: a dot every three digits, as in Chile.
+THOUSANDS_AXIS_EXPRESSION = "replace(format(datum.value, ',.0f'), ',', '.')"
+# Words removed from region names in charts, where space is short.
+REGION_PREFIXES = ["Región de ", "Región del ", "Región "]
+# endregion
+
+
+# region Formats
+def format_thousands(value):
+    """1234.5 -> '1.235'."""
+    return f"{value:,.0f}".replace(",", ".")
+
+
+def format_percent(value, decimals=1):
+    """A value already in percent: 12.34 -> '12,3 %'."""
+    return f"{value:.{decimals}f} %".replace(".", ",")
+
+
+def format_signed_percent(value):
+    """A value already in percent, with its sign: 12.34 -> '+12,3 %'."""
+    return f"{value:+.1f} %".replace(".", ",")
+
+
+def format_index(value):
+    """An index around 1: 1.234 -> '1,23'."""
+    return f"{value:.2f}".replace(".", ",")
+
+
+def shorten_region_name(region):
+    """'Región Metropolitana de Santiago' -> 'Metropolitana de Santiago'."""
+    for prefix in REGION_PREFIXES:
+        if region.startswith(prefix):
+            return region[len(prefix):]
+    return region
+# endregion
+
+
+# region Shared pieces
+def get_palette(mode):
+    """Palette of the active mode; dark when the mode is unknown."""
+    return PALETTES.get(mode, PALETTES[MODE_DARK])
+
+
+def get_channel_color(channel, mode):
+    """Fixed color of one channel in the active mode."""
+    palette = get_palette(mode)
+    return palette["channels"].get(channel, palette["accent"])
+
+
+def build_channel_color_scale(channels, mode):
+    """Color scale with only the channels present, each with its fixed color."""
+    channel_colors = get_palette(mode)["channels"]
+    present_channels = [channel for channel in channel_colors if channel in set(channels)]
+    return alt.Scale(domain=present_channels,
+                     range=[channel_colors[channel] for channel in present_channels])
+
+
+def apply_chart_style(chart, mode):
+    """Transparent background, quiet grid and the mode's text colors."""
+    palette = get_palette(mode)
+    return chart.configure(background="transparent", font=CHART_FONT).configure_view(
+        strokeWidth=0).configure_axis(
+        gridColor=palette["grid"], domain=False, ticks=False,
+        labelColor=palette["text"], titleColor=palette["text"],
+        labelFontSize=12, titleFontSize=12, titleFontWeight="normal").configure_legend(
+        labelColor=palette["text"], titleColor=palette["text"], orient="bottom",
+        symbolType="circle")
+
+
+def add_week_labels(rows, value_labels):
+    """Columns shown in tooltips: the week as dd-mm-yyyy and the formatted value."""
+    return rows.assign(week_label=rows["week_start"].dt.strftime("%d-%m-%Y"),
+                       value_label=value_labels)
+# endregion
+
+
+# region Charts
+def draw_sparkline(rows, color, mode):
+    """Small area chart without axes, for a key figure card (rows: week_start, value)."""
+    line = alt.Chart(rows).mark_area(
+        line={"color": color, "strokeWidth": 2}, color=color, opacity=0.18,
+        interpolate="monotone").encode(
+        x=alt.X("week_start:T", axis=None),
+        y=alt.Y("value:Q", axis=None, scale=alt.Scale(zero=False)))
+    return apply_chart_style(line.properties(height=SPARKLINE_HEIGHT), mode)
+
+
+def draw_weekly_lines(rows, value_title, value_labels, mode, is_money):
+    """Lines by week, one per channel, with a tooltip on every point.
+
+    rows needs the columns week_start, channel and value.
+    """
+    rows = add_week_labels(rows, value_labels)
+    value_axis = (alt.Axis(labelExpr=THOUSANDS_AXIS_EXPRESSION) if is_money
+                  else alt.Axis(format=".0f"))
+    base = alt.Chart(rows).encode(
+        x=alt.X("week_start:T", title=None, axis=alt.Axis(format=WEEK_AXIS_FORMAT)),
+        y=alt.Y("value:Q", title=value_title, axis=value_axis, scale=alt.Scale(zero=False)),
+        color=alt.Color("channel:N", title=None,
+                        scale=build_channel_color_scale(rows["channel"], mode)))
+    lines = base.mark_line(strokeWidth=2.5, interpolate="monotone")
+    # Invisible wide points: easy to hover, and they carry the tooltip.
+    hover_points = base.mark_point(size=160, opacity=0).encode(
+        tooltip=[alt.Tooltip("week_label:N", title="Semana"),
+                 alt.Tooltip("channel:N", title="Canal"),
+                 alt.Tooltip("value_label:N", title=value_title)])
+    chart = alt.layer(lines, hover_points).properties(height=CHART_HEIGHT)
+    return apply_chart_style(chart, mode)
+
+
+def draw_single_weekly_area(rows, value_title, value_labels, mode, reference_value=None,
+                            is_money=False):
+    """One series by week as a soft area (rows: week_start, value)."""
+    rows = add_week_labels(rows, value_labels)
+    color = get_palette(mode)["accent"]
+    value_axis = alt.Axis(labelExpr=THOUSANDS_AXIS_EXPRESSION) if is_money else alt.Axis()
+    base = alt.Chart(rows).encode(
+        x=alt.X("week_start:T", title=None, axis=alt.Axis(format=WEEK_AXIS_FORMAT)),
+        y=alt.Y("value:Q", title=value_title, axis=value_axis, scale=alt.Scale(zero=False)))
+    area = base.mark_area(line={"color": color, "strokeWidth": 2.5}, color=color,
+                          opacity=0.16, interpolate="monotone")
+    hover_points = base.mark_point(size=160, opacity=0).encode(
+        tooltip=[alt.Tooltip("week_label:N", title="Semana"),
+                 alt.Tooltip("value_label:N", title=value_title)])
+    layers = [area, hover_points]
+    if reference_value is not None:
+        layers.insert(0, alt.Chart(rows).mark_rule(
+            color=get_palette(mode)["reference"], strokeDash=[4, 4]).encode(
+            y=alt.datum(reference_value)))
+    return apply_chart_style(alt.layer(*layers).properties(height=CHART_HEIGHT), mode)
+
+
+def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=None):
+    """Horizontal bars with their value written at the end.
+
+    rows needs the columns label, value and value_label; colors, when given,
+    is a list with one color per row.
+    """
+    palette = get_palette(mode)
+    rows = rows.assign(color=colors if colors is not None else palette["accent"])
+    order = rows.sort_values("value", ascending=False)["label"].to_list()
+    base = alt.Chart(rows).encode(
+        y=alt.Y("label:N", title=None, sort=order, axis=alt.Axis(labelLimit=260)),
+        tooltip=[alt.Tooltip("label:N", title=" "),
+                 alt.Tooltip("value_label:N", title=value_title)])
+    bars = base.mark_bar(cornerRadiusEnd=6, height={"band": 0.65}).encode(
+        x=alt.X("value:Q", title=value_title, axis=alt.Axis(tickCount=5)),
+        color=alt.Color("color:N", scale=None))
+    # Labels sit outside the bar end: right of positive bars, left of negative ones.
+    positive_labels = base.transform_filter("datum.value >= 0").mark_text(
+        align="left", dx=6, color=palette["text"]).encode(x="value:Q", text="value_label:N")
+    negative_labels = base.transform_filter("datum.value < 0").mark_text(
+        align="right", dx=-6, color=palette["text"]).encode(x="value:Q", text="value_label:N")
+    layers = [bars, positive_labels, negative_labels]
+    if reference_value is not None:
+        # Same rows as the bars (so the bands stay intact) but no y: one full line.
+        layers.insert(0, alt.Chart(rows).mark_rule(
+            color=palette["reference"], strokeDash=[4, 4]).encode(x=alt.datum(reference_value)))
+    # One fixed band height per bar, so long lists stay readable.
+    chart = alt.layer(*layers).properties(height=alt.Step(BAR_HEIGHT))
+    return apply_chart_style(chart, mode)
+
+
+def draw_variation_bars(rows, mode):
+    """Weekly price changes in percent: rises in red, falls in blue.
+
+    rows needs the columns label and value (percent).
+    """
+    palette = get_palette(mode)
+    rows = rows.assign(value_label=rows["value"].map(format_signed_percent))
+    colors = [palette["rise"] if value > 0 else palette["fall"] for value in rows["value"]]
+    return draw_horizontal_bars(rows, "Variación semanal (%)", mode, colors, reference_value=0)
+
+
+def draw_donut(rows, colors, mode):
+    """Shares of a whole as a ring (rows: label, value, value_label)."""
+    rows = rows.assign(color=colors)
+    ring = alt.Chart(rows).mark_arc(innerRadius=62, outerRadius=96, cornerRadius=4,
+                                    padAngle=0.02).encode(
+        theta=alt.Theta("value:Q", stack=True),
+        color=alt.Color("color:N", scale=None),
+        order=alt.Order("value:Q", sort="descending"),
+        tooltip=[alt.Tooltip("label:N", title=" "),
+                 alt.Tooltip("value_label:N", title="Precios semanales")])
+    return apply_chart_style(ring.properties(height=210, width=210), mode)
+# endregion
