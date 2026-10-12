@@ -52,3 +52,13 @@ def test_variation_bars_use_red_for_rises_and_blue_for_falls():
               if "label" in row}
     palette = charts.PALETTES[charts.MODE_LIGHT]
     assert colors == {"Lechuga": palette["rise"], "Ajo": palette["fall"]}
+
+
+def test_numbers_are_explained_in_plain_words():
+    assert charts.describe_weekly_change(49.9) == "Subió 49,9 % frente a la semana anterior"
+    assert charts.describe_weekly_change(-0.4) == "Bajó 0,4 % frente a la semana anterior"
+    assert charts.describe_regional_index(1.46) == "46 % más caro que el promedio nacional"
+    assert charts.describe_regional_index(0.66) == "34 % más barato que el promedio nacional"
+    assert charts.describe_margin(145) == "El consumidor paga 2,45 veces el precio mayorista"
+    assert charts.describe_channel_gap(62.7, "Feria libre") == (
+        "62,7 % más caro que Feria libre")

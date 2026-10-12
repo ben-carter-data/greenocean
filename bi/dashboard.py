@@ -9,6 +9,7 @@ The two color modes live in .streamlit/config.toml, the charts in bi/charts.py.
 """
 import hmac
 import html
+import json
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -22,7 +23,7 @@ import streamlit as st
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import alerts, charts, control, queries  # noqa: E402
+from bi import alerts, architecture, charts, control, queries  # noqa: E402
 from etl import etl  # noqa: E402
 # endregion
 
@@ -31,28 +32,33 @@ PROFILE_ANALYST = "Analista de pricing / compras"
 PROFILE_DATA_TEAM = "Equipo de datos"
 
 PAGE_OVERVIEW = "Panel"
+PAGE_PROJECT = "El proyecto"
 PAGE_MARGINS = "Márgenes"
 PAGE_CHANNELS_AND_REGIONS = "Canales y regiones"
 PAGE_SEASONALITY = "Estacionalidad"
 PAGE_ALERTS = "Alertas"
+PAGE_ARCHITECTURE = "Cómo funciona"
 PAGE_CONTROL = "Centro de control"
 PAGE_DATA_QUALITY = "Calidad de datos"
 PAGES_BY_PROFILE = {
-    PROFILE_ANALYST: [PAGE_OVERVIEW, PAGE_MARGINS, PAGE_CHANNELS_AND_REGIONS,
-                      PAGE_SEASONALITY, PAGE_ALERTS, PAGE_CONTROL],
-    PROFILE_DATA_TEAM: [PAGE_OVERVIEW, PAGE_CONTROL, PAGE_DATA_QUALITY],
+    PROFILE_ANALYST: [PAGE_OVERVIEW, PAGE_PROJECT, PAGE_MARGINS, PAGE_CHANNELS_AND_REGIONS,
+                      PAGE_SEASONALITY, PAGE_ALERTS, PAGE_ARCHITECTURE, PAGE_CONTROL],
+    PROFILE_DATA_TEAM: [PAGE_OVERVIEW, PAGE_PROJECT, PAGE_ARCHITECTURE, PAGE_CONTROL,
+                        PAGE_DATA_QUALITY],
 }
 PAGE_ICONS = {
-    PAGE_OVERVIEW: ":material/space_dashboard:", PAGE_MARGINS: ":material/percent:",
+    PAGE_OVERVIEW: ":material/space_dashboard:", PAGE_PROJECT: ":material/lightbulb:",
+    PAGE_MARGINS: ":material/percent:",
     PAGE_CHANNELS_AND_REGIONS: ":material/storefront:",
     PAGE_SEASONALITY: ":material/calendar_month:",
     PAGE_ALERTS: ":material/notifications_active:",
-    PAGE_CONTROL: ":material/smart_toy:", PAGE_DATA_QUALITY: ":material/verified:",
+    PAGE_ARCHITECTURE: ":material/account_tree:", PAGE_CONTROL: ":material/smart_toy:", PAGE_DATA_QUALITY: ":material/verified:",
 }
 PAGE_PATHS = {
-    PAGE_OVERVIEW: "panel", PAGE_MARGINS: "margenes",
+    PAGE_OVERVIEW: "panel", PAGE_PROJECT: "el-proyecto", PAGE_MARGINS: "margenes",
     PAGE_CHANNELS_AND_REGIONS: "canales-y-regiones", PAGE_SEASONALITY: "estacionalidad",
-    PAGE_ALERTS: "alertas", PAGE_CONTROL: "centro-de-control",
+    PAGE_ALERTS: "alertas", PAGE_ARCHITECTURE: "como-funciona",
+    PAGE_CONTROL: "centro-de-control",
     PAGE_DATA_QUALITY: "calidad-de-datos",
 }
 
@@ -73,6 +79,8 @@ OVERVIEW_ALERT_COUNT = 6
 ALERTS_PAGE_BAR_COUNT = 15
 RUN_HISTORY_COUNT = 8
 
+MANIFEST_FILE = Path(__file__).resolve().parent.parent / "agent" / "downloads" / "manifest.json"
+ISSUES_PAGE_URL = f"https://github.com/{control.REPOSITORY}/issues"
 CHILE_TIME_ZONE = "America/Santiago"
 # Seconds between two questions to GitHub while the robot works, and the
 # longest wait: a normal run takes about one minute.
@@ -81,6 +89,82 @@ PROGRESS_MAXIMUM_SECONDS = 600
 # Names of the dashboard secrets that enable the "run now" button.
 SECRET_GITHUB_TOKEN = "GITHUB_TOKEN"
 SECRET_CONTROL_CODE = "CONTROL_CODE"
+
+# Plain explanations shown when the mouse passes over the ⓘ of each card.
+KEY_FIGURES_HINT = ("▲ en rojo: el precio **subió** frente a la semana anterior. "
+                    "▼ en azul: **bajó**. En el margen, «pts» son puntos porcentuales: "
+                    "de 58 % a 44 % son −14 pts.")
+PRICE_TREND_HINT = ("Cada línea es el precio promedio de un canal, semana a semana, en "
+                    "pesos por kilo (o por unidad). La línea gris es el mercado mayorista: "
+                    "la distancia entre la gris y las demás es lo que agrega el comercio.")
+MEDIAN_MARGIN_HINT = ("Cuánto más paga el consumidor que el mayorista, en %. **145 %** "
+                      "significa que el consumidor paga 2,45 veces el precio mayorista. "
+                      "Es la mediana de las semanas mostradas.")
+MARGIN_TREND_HINT = ("El margen de cada canal, semana a semana. Si la línea sube, la "
+                     "distancia entre el precio al consumidor y el mayorista creció.")
+REGIONAL_INDEX_HINT = ("**1,00** es el promedio nacional de la semana. **1,46** = 46 % más "
+                       "caro que el promedio; **0,66** = 34 % más barato. Promedio de todas "
+                       "las semanas. La línea punteada marca el 1,00.")
+CHANNEL_GAP_HINT = ("Compara cada canal con el canal de referencia. **+62,7 %** = ese canal "
+                    "es 62,7 % más caro; un valor **negativo** = más barato. Solo cuenta "
+                    "semanas y regiones donde ambos tienen precio.")
+ALERTS_HINT = ("Productos cuyo precio cambió esta semana mucho más de lo que suele cambiar. "
+               "▲ en rojo: subió; ▼ en azul: bajó. «Variación habitual» es su cambio "
+               "semanal promedio de las 12 semanas anteriores. Son señales para revisar, "
+               "no conclusiones.")
+SEASONAL_INDEX_HINT = ("**1,00** es el precio promedio del año. **1,20** = esa semana el "
+                       "precio estuvo 20 % sobre su promedio; **0,80** = 20 % bajo. Con un "
+                       "solo año cargado es variación dentro del año, aún no estacionalidad.")
+NATIONAL_PRICE_HINT = ("Promedio simple de las regiones con dato, en pesos por kilo (o por "
+                       "unidad), semana a semana.")
+ARCHITECTURE_HINT = ("Los datos viajan de izquierda a derecha. **Bronce**: el archivo tal "
+                     "como llega. **Limpieza y reglas**: se corrigen formatos y se aplican "
+                     "las reglas de negocio. **Calidad**: si algo no cuadra, no se guarda "
+                     "nada. **Oro**: la base lista para analizar. Arriba, quién da las "
+                     "órdenes; abajo, cómo sabemos qué pasó. El punto de color de cada paso "
+                     "es su estado real.")
+# The project page. Texts come from docs/DISENO.md (sections 2 to 4) and DECISIONES.md.
+PROBLEM_TEXT = (
+    "Un analista de pricing, compras o abastecimiento que quiere seguir los precios de los "
+    "alimentos en Chile tiene que bajar archivos de dos fuentes de ODEPA cada semana, "
+    "convertir unidades distintas (cajas, bins, mallas, kilos) y cruzarlos a mano. Las "
+    "fuentes existen, pero están separadas y no se pueden comparar sin trabajo previo. "
+    "Este proyecto hace ese trabajo solo, cada semana, y deja el resultado en un panel.")
+AUDIENCE_TEXT = (
+    "**Analista de pricing o compras**: márgenes, canales, regiones y alertas.  \n"
+    "**Equipo de datos**: si la carga funcionó y qué quedó fuera.  \n"
+    "Más adelante: un resumen para gerencia y una vista simple para consumidores.")
+WHY_TEXT = (
+    "Los datos son abiertos y oficiales, el cruce entre precio mayorista y precio al "
+    "consumidor se pudo verificar con datos reales, y las preguntas son las que se hace "
+    "a diario un área de pricing o abastecimiento. Se descartaron el scraping de "
+    "supermercados (condiciones de uso inciertas) y otros temas con menos valor al cruzar.")
+DATA_TEXT = (
+    "Dos conjuntos de datos abiertos de ODEPA (Ministerio de Agricultura): **precios "
+    "mayoristas** de frutas y hortalizas, diarios, y **precios al consumidor**, semanales, "
+    "por región y tipo de comercio. Licencia Creative Commons Atribución.")
+LIMITS_TEXT = (
+    "Precios nominales, sin ajuste por inflación. Por ahora, un solo año cargado (2026). "
+    "La papa no tiene margen porque sus calidades no coinciden entre las dos fuentes. "
+    "Las cifras del panel son cálculos sobre datos oficiales; los hallazgos se publican "
+    "solo después de verificarlos.")
+# (question, page where it is answered, state: available, partial or pending, note)
+BUSINESS_QUESTIONS = [
+    ("¿Cuál es el margen entre el precio mayorista y el precio al consumidor, y cómo "
+     "evoluciona?", PAGE_MARGINS, "available", "Frutas y verduras"),
+    ("¿Cuánto difiere el precio entre canales: supermercado, feria, carnicería…?",
+     PAGE_CHANNELS_AND_REGIONS, "available", "Todos los grupos"),
+    ("¿En qué regiones son más altos los precios?", PAGE_CHANNELS_AND_REGIONS,
+     "available", "Todos los grupos"),
+    ("¿En qué semanas sube y baja cada producto, y cuánto?", PAGE_SEASONALITY,
+     "partial", "Un solo año cargado"),
+    ("¿Con cuántas semanas de diferencia sigue el precio al consumidor al mayorista?",
+     "—", "pending", "Necesita el histórico"),
+    ("¿Qué productos se movieron esta semana fuera de su rango normal?", PAGE_ALERTS,
+     "available", "Todos los grupos"),
+]
+QUESTION_STATES = {"available": ("Disponible", "ok"), "partial": ("Parcial", "running"),
+                   "pending": ("Pendiente", "neutral")}
 
 NO_DATA_TEXT = "No hay datos para esta selección."
 NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
@@ -121,6 +205,32 @@ def build_style_css(mode):
     .chip-neutral {{ background: rgba(128, 128, 128, 0.16); color: {palette["text"]}; }}
     .chip-rise {{ background: rgba(227, 73, 72, 0.16); color: {palette["rise"]}; }}
     .chip-fall {{ background: rgba(57, 135, 229, 0.16); color: {palette["fall"]}; }}
+    .hint {{ position: relative; display: inline-block; margin-left: 8px; cursor: help;
+            color: {palette["text"]}; font-weight: 400; outline: none;
+            padding: 0 4px; font-size: 1.1em; }}
+    /* :focus makes the explanation open with a tap on phones, where there is no mouse. */
+    .hint:hover::after, .hint:focus::after {{
+        content: attr(data-hint); position: absolute; left: 0; top: 1.7em; z-index: 1000;
+        width: min(340px, 75vw); padding: 10px 12px; border-radius: 10px; white-space: normal;
+        background: {palette["card"]}; border: 1px solid {palette["card_border"]};
+        color: {palette["strong_text"]}; font-size: 0.85rem; font-weight: 400;
+        line-height: 1.45; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }}
+    .hint-chip {{ position: relative; cursor: help; outline: none; }}
+    .hint-chip:focus::after {{
+        content: attr(data-hint); position: absolute; right: 0; top: 1.9em; z-index: 1000;
+        width: min(260px, 70vw); padding: 8px 10px; border-radius: 10px; white-space: normal;
+        background: {palette["card"]}; border: 1px solid {palette["card_border"]};
+        color: {palette["strong_text"]}; font-size: 0.8rem; font-weight: 400;
+    }}
+    /* On narrow screens the explanation opens as a panel at the bottom of the
+       screen, so it never runs off the edge. */
+    @media (max-width: 640px) {{
+        .hint:hover::after, .hint:focus::after, .hint-chip:focus::after {{
+            position: fixed; left: 16px; right: 16px; bottom: 16px; top: auto;
+            width: auto; font-size: 0.95rem;
+        }}
+    }}
     table.card-table {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }}
     table.card-table th {{ text-align: left; color: {palette["text"]}; font-weight: 500;
                           padding: 6px 4px; border-bottom: 1px solid {palette["card_border"]}; }}
@@ -134,20 +244,41 @@ def apply_style(mode):
     st.markdown(f"<style>{build_style_css(mode)}</style>", unsafe_allow_html=True)
 
 
-def open_card(key, title=None, caption=None):
-    """A rounded card; use it with 'with'. The key must be unique on the page."""
+def open_card(key, title=None, caption=None, hint=None):
+    """A rounded card; use it with 'with'. The key must be unique on the page.
+
+    hint, when given, is a short explanation in plain words that appears when
+    the mouse passes over the ⓘ next to the title.
+    """
     card = st.container(key=f"card_{key}")
-    if title:
-        card.markdown(f'<div class="card-title">{html.escape(title)}</div>',
+    hint_icon = build_hint_icon(hint) if hint else ""
+    if title or hint:
+        card.markdown(f'<div class="card-title">{html.escape(title or "")}{hint_icon}</div>',
                       unsafe_allow_html=True)
     if caption:
         card.caption(caption)
     return card
 
 
-def build_chip(text, kind):
-    """A small colored label: kind is ok, failed, running, neutral, rise or fall."""
-    return f'<span class="chip chip-{kind}">{html.escape(text)}</span>'
+def build_hint_icon(hint):
+    """An ⓘ that shows a short explanation when the mouse passes over it, or when
+    it is tapped on a phone (tabindex makes it focusable)."""
+    plain_hint = html.escape(hint.replace("**", ""), quote=True)
+    return (f'<span class="hint" tabindex="0" role="button" aria-label="{plain_hint}" '
+            f'data-hint="{plain_hint}">ⓘ</span>')
+
+
+def build_chip(text, kind, hover_text=None):
+    """A small colored label: kind is ok, failed, running, neutral, rise or fall.
+
+    hover_text, when given, appears when the mouse passes over the label.
+    """
+    if not hover_text:
+        return f'<span class="chip chip-{kind}">{html.escape(text)}</span>'
+    escaped_hover_text = html.escape(hover_text, quote=True)
+    return (f'<span class="chip chip-{kind} hint-chip" tabindex="0" '
+            f'title="{escaped_hover_text}" data-hint="{escaped_hover_text}">'
+            f'{html.escape(text)}</span>')
 
 
 def build_html_table(headers, rows):
@@ -315,7 +446,11 @@ def build_change_chip(change, unit="%"):
         return build_chip("sin semana previa", "neutral")
     arrow, kind = ("▲", "rise") if change > 0 else ("▼", "fall")
     text = f"{arrow} {change:+.1f} {unit}".replace(".", ",")
-    return build_chip(text, kind)
+    verb = "Subió" if change > 0 else "Bajó"
+    unit_words = "puntos porcentuales" if unit == "pts" else "%"
+    hover_text = (f"{verb} {abs(change):.1f} {unit_words} frente a la semana anterior. "
+                  "Rojo = sube, azul = baja.").replace(".", ",", 1)
+    return build_chip(text, kind, hover_text)
 
 
 def show_key_figure(key, label, series, value_text, change_chip, note, mode, color):
@@ -368,6 +503,7 @@ def show_overview_figures(rows, mode):
                           charts.get_channel_color(SUPERMARKET, mode))
     with cards[3]:
         show_margin_figure(rows, mode)
+    st.caption(f"Cómo leer las cifras: {KEY_FIGURES_HINT}".replace("**", ""))
 
 
 def show_margin_figure(rows, mode):
@@ -389,8 +525,8 @@ def show_margin_figure(rows, mode):
 
 def show_overview_trend(rows, mode):
     """Card: weekly price of the wholesale market and of each consumer channel."""
-    with open_card("trend", "Precio por semana",
-                   "La línea gris es el precio mayorista."):
+    with open_card("trend", "Precio por semana", "La línea gris es el precio mayorista.",
+                   hint=PRICE_TREND_HINT):
         consumer_rows = rows[["week_start", "channel", "consumer_price"]].rename(
             columns={"consumer_price": "value"})
         wholesale_rows = rows.groupby("week_start", as_index=False)["wholesale_price"].first()
@@ -405,12 +541,13 @@ def show_overview_trend(rows, mode):
 def show_overview_margins(rows, mode):
     """Card: median margin of each consumer channel over the weeks shown."""
     with open_card("margins", "Margen mediano por canal",
-                   "Cuánto más paga el consumidor que el mayorista."):
+                   "Cuánto más paga el consumidor que el mayorista.", hint=MEDIAN_MARGIN_HINT):
         median_margins = rows.groupby("channel")["margin"].median() * 100
         bar_rows = pd.DataFrame({"label": median_margins.index,
                                  "value": median_margins.to_numpy()})
         bar_rows["value_label"] = bar_rows["value"].map(
             lambda margin: charts.format_percent(margin, decimals=0))
+        bar_rows["meaning"] = bar_rows["value"].map(charts.describe_margin)
         colors = [charts.get_channel_color(channel, mode) for channel in bar_rows["label"]]
         show_chart(charts.draw_horizontal_bars(bar_rows, "Margen mediano (%)", mode, colors))
 
@@ -418,7 +555,8 @@ def show_overview_margins(rows, mode):
 def show_overview_regions(product, key_label, mode):
     """Card: regional index of the street market price for the chosen product."""
     with open_card("regions", "¿Dónde es más caro?",
-                   "Precio en feria por región; 1 = promedio nacional."):
+                   "Precio en feria por región; 1 = promedio nacional.",
+                   hint=REGIONAL_INDEX_HINT):
         rows = read_indicator("k3_regional_index")
         rows = rows[(rows["product"] == product) & (rows["key_label"] == key_label)
                     & (rows["channel"] == DEFAULT_CHANNEL)]
@@ -430,6 +568,7 @@ def show_overview_regions(product, key_label, mode):
             "label": [charts.shorten_region_name(region) for region in average_index.index],
             "value": average_index.to_numpy()})
         bar_rows["value_label"] = bar_rows["value"].map(charts.format_index)
+        bar_rows["meaning"] = bar_rows["value"].map(charts.describe_regional_index)
         show_chart(charts.draw_horizontal_bars(bar_rows, "Índice regional", mode,
                                                reference_value=1))
 
@@ -443,7 +582,8 @@ def build_alert_rows_html(alert_rows):
         arrow = "▲" if change > 0 else "▼"
         table_rows.append([html.escape(describe_product(alert)),
                            html.escape(alert["channel"]),
-                           build_chip(f"{arrow} {charts.format_signed_percent(change)}", kind)])
+                           build_chip(f"{arrow} {charts.format_signed_percent(change)}", kind,
+                                      charts.describe_weekly_change(change))])
     return table_rows
 
 
@@ -453,7 +593,8 @@ def show_overview_alerts():
     latest_week = read_indicator("k6_national_weekly_price")["week_start"].max()
     week_alerts = alert_rows[alert_rows["week_start"] == latest_week]
     with open_card("alerts", f"Alertas de la semana ({len(week_alerts)})",
-                   f"Semana del {latest_week:%d-%m-%Y}. Señales para revisar, no conclusiones."):
+                   f"Semana del {latest_week:%d-%m-%Y}. Señales para revisar, no conclusiones.",
+                   hint=ALERTS_HINT):
         if week_alerts.empty:
             st.info("Ningún producto se movió fuera de su rango habitual.")
             return
@@ -499,6 +640,40 @@ def show_overview_page(mode):
 # endregion
 
 
+# region Project page
+def build_question_rows():
+    """Table cells: question number, question, page that answers it and its state."""
+    rows = []
+    for number, (question, page, state, scope) in enumerate(BUSINESS_QUESTIONS, start=1):
+        state_text, kind = QUESTION_STATES[state]
+        rows.append([f"P{number}", html.escape(question), html.escape(page),
+                     build_chip(state_text, kind, scope)])
+    return rows
+
+
+def show_project_page(mode):
+    """The business idea: the problem, who it is for and the questions it answers."""
+    show_page_header("El proyecto", "Qué problema resuelve este panel, para quién y qué "
+                     "preguntas de negocio responde.")
+    problem_column, audience_column = st.columns([3, 2])
+    with problem_column, open_card("project_problem", "El problema"):
+        st.markdown(PROBLEM_TEXT)
+    with audience_column, open_card("project_audience", "Para quién"):
+        st.markdown(AUDIENCE_TEXT)
+    with open_card("project_questions", "Preguntas de negocio que responde",
+                   hint="Pasa el mouse sobre el estado para ver a qué productos aplica."):
+        st.markdown(build_html_table(["", "Pregunta", "Dónde verla", "Estado"],
+                                     build_question_rows()), unsafe_allow_html=True)
+    why_column, data_column, limits_column = st.columns(3)
+    with why_column, open_card("project_why", "Por qué este tema"):
+        st.markdown(WHY_TEXT)
+    with data_column, open_card("project_data", "Los datos"):
+        st.markdown(DATA_TEXT)
+    with limits_column, open_card("project_limits", "Límites"):
+        st.markdown(LIMITS_TEXT)
+# endregion
+
+
 # region Margins page
 def show_margins_page(mode):
     """K1: margin between the wholesale price and each consumer channel."""
@@ -518,7 +693,7 @@ def show_margins_page(mode):
         st.info(NO_DATA_TEXT)
         return
     rows["margin_percent"] = rows["margin"] * 100
-    with open_card("margin_trend", "Margen por semana"):
+    with open_card("margin_trend", "Margen por semana", hint=MARGIN_TREND_HINT):
         margin_rows = rows[["week_start", "channel", "margin_percent"]].rename(
             columns={"margin_percent": "value"})
         show_chart(charts.draw_weekly_lines(
@@ -536,7 +711,7 @@ def show_margins_page(mode):
 # region Channels and regions page
 def show_channel_gaps(rows, mode):
     """Card: K2, average price gap of each channel against a reference channel."""
-    with open_card("channel_gaps", "Diferencia entre canales"):
+    with open_card("channel_gaps", "Diferencia entre canales", hint=CHANNEL_GAP_HINT):
         if rows.empty:
             st.info("Este producto se registra en un solo canal.")
             return
@@ -546,6 +721,8 @@ def show_channel_gaps(rows, mode):
         average_gap = rows.groupby("channel")["gap"].mean() * 100
         bar_rows = pd.DataFrame({"label": average_gap.index, "value": average_gap.to_numpy()})
         bar_rows["value_label"] = bar_rows["value"].map(charts.format_signed_percent)
+        bar_rows["meaning"] = [charts.describe_channel_gap(gap, reference_channel)
+                               for gap in bar_rows["value"]]
         colors = [charts.get_channel_color(channel, mode) for channel in bar_rows["label"]]
         show_chart(charts.draw_horizontal_bars(bar_rows, "Diferencia promedio (%)", mode,
                                                colors, reference_value=0))
@@ -555,7 +732,7 @@ def show_channel_gaps(rows, mode):
 
 def show_regional_index(rows, mode):
     """Card: K3, average regional index of each region for one channel."""
-    with open_card("regional_index", "Precio por región"):
+    with open_card("regional_index", "Precio por región", hint=REGIONAL_INDEX_HINT):
         channel = choose_value("Canal", rows["channel"].unique(), DEFAULT_CHANNEL)
         rows = rows[rows["channel"] == channel]
         average_index = rows.groupby("region")["regional_index"].mean()
@@ -563,6 +740,7 @@ def show_regional_index(rows, mode):
             "label": [charts.shorten_region_name(region) for region in average_index.index],
             "value": average_index.to_numpy()})
         bar_rows["value_label"] = bar_rows["value"].map(charts.format_index)
+        bar_rows["meaning"] = bar_rows["value"].map(charts.describe_regional_index)
         show_chart(charts.draw_horizontal_bars(bar_rows, "Índice regional", mode,
                                                reference_value=1))
         st.caption("Sobre 1, la región es más cara que el promedio nacional de la semana; "
@@ -598,13 +776,14 @@ def show_seasonality_page(mode):
     rows = rows[rows["channel"] == channel]
     index_column, price_column = st.columns(2)
     with index_column, open_card("seasonal_index", "Índice estacional",
-                                 "1 = precio promedio del año."):
+                                 "1 = precio promedio del año.", hint=SEASONAL_INDEX_HINT):
         index_rows = rows[["week_start", "seasonal_index"]].rename(
             columns={"seasonal_index": "value"})
         show_chart(charts.draw_single_weekly_area(
             index_rows, "Índice", index_rows["value"].map(charts.format_index), mode,
             reference_value=1))
-    with price_column, open_card("national_price", "Precio nacional por semana"):
+    with price_column, open_card("national_price", "Precio nacional por semana",
+                                 hint=NATIONAL_PRICE_HINT):
         price_rows = rows[["week_start", "national_price"]].rename(
             columns={"national_price": "value"})
         show_chart(charts.draw_single_weekly_area(
@@ -643,7 +822,7 @@ def show_alerts_page(mode):
                         format_func=lambda day: day.strftime("%d-%m-%Y"))
     week_rows = alert_rows[alert_rows["week_start"].dt.date == week]
     with open_card("alert_bars", f"Mayores movimientos ({len(week_rows)} alertas)",
-                   "Rojo: subió. Azul: bajó."):
+                   "Rojo: subió. Azul: bajó.", hint=ALERTS_HINT):
         largest_first = week_rows["variation"].abs().sort_values(ascending=False).index
         shown_rows = week_rows.loc[largest_first].head(ALERTS_PAGE_BAR_COUNT)
         bar_rows = pd.DataFrame({
@@ -824,6 +1003,106 @@ def show_control_page(mode):
 # endregion
 
 
+# region Architecture page
+def read_download_manifest():
+    """Record of the downloaded files (agent/downloads/manifest.json), or {}."""
+    try:
+        return json.loads(MANIFEST_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+@st.cache_data(ttl=30)
+def read_latest_robot_steps():
+    """(state of each step by Spanish name, latest robot run) from GitHub, or ({}, None)."""
+    runs, _ = read_robot_runs()
+    if not runs:
+        return {}, None
+    try:
+        steps = control.list_run_steps(runs[0]["id"], get_secret(SECRET_GITHUB_TOKEN))
+    except Exception:  # GitHub unreachable: the stage shows "Sin datos"
+        return {}, runs[0]
+    return dict(steps), runs[0]
+
+
+def get_step_state(step_states, workflow_step):
+    """State of one workflow step, by its name in semanal.yml."""
+    return step_states.get(control.STEP_NAMES[workflow_step], architecture.STATE_UNKNOWN)
+
+
+def describe_years(manifest):
+    """'año 2026' or 'años 2022 a 2026' from the downloaded files."""
+    years = sorted({file_info["year"] for file_info in manifest.values()})
+    if not years:
+        return "sin descargas"
+    if years[0] == years[-1]:
+        return f"año {years[0]}"
+    return f"años {years[0]} a {years[-1]}"
+
+
+def build_journey_states(step_states, robot_run, latest_load, manifest):
+    """Real state of each step: from the latest robot run and the current database."""
+    load_state = (control.RUN_OK if latest_load["status"] == etl.STATUS_LOADED
+                  else control.RUN_FAILED)
+    return {
+        "sources": control.RUN_OK if manifest else architecture.STATE_UNKNOWN,
+        "download": get_step_state(step_states, "Download the ODEPA files"),
+        "etl": get_step_state(step_states, "Run the ETL"),
+        "tests": get_step_state(step_states, "Run the tests against the new database"),
+        "report": get_step_state(step_states, "Publish the weekly report"),
+        "robot": robot_run["state"] if robot_run else architecture.STATE_UNKNOWN,
+        "load": load_state,
+        "panel": control.RUN_OK,
+    }
+
+
+def build_journey_figures(manifest, robot_run, latest_load):
+    """Short texts shown under the steps, all from real data."""
+    weekly_prices = read_indicator("quality_flag_counts")["weekly_prices"].sum()
+    latest_week = read_indicator("k6_national_weekly_price")["week_start"].max()
+    loaded_at = to_chile_time(parse_run_start(latest_load["started_at"]))
+    next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc))
+    last_run = (f"última {to_chile_time(robot_run['started_at']):%d-%m %H:%M}"
+                if robot_run else "sin datos del robot")
+    return {
+        "source_years": describe_years(manifest),
+        "last_run": last_run,
+        "rows_read": f"{charts.format_thousands(latest_load['rows_read'])} filas leídas",
+        "rows_rejected": f"{charts.format_thousands(latest_load['rows_rejected'])} filas",
+        "weekly_prices": f"{charts.format_thousands(weekly_prices)} precios",
+        "latest_week": f"hasta {latest_week:%d-%m-%Y}",
+        "panel_time": f"datos al {loaded_at:%d-%m %H:%M}",
+        "next_run": f"{to_chile_time(next_run):%d-%m %H:%M}",
+    }
+
+
+def show_architecture_page(mode):
+    """Live diagram of the data journey, from ODEPA to this dashboard."""
+    show_page_header("Cómo funciona", "El recorrido de los datos, de ODEPA a este panel. "
+                     "Los puntos de color muestran el estado real de cada paso.")
+    step_states, robot_run = read_latest_robot_steps()
+    latest_load = read_latest_run()
+    manifest = read_download_manifest()
+    with open_card("journey", hint=ARCHITECTURE_HINT):
+        st.image(architecture.build_journey_svg(
+            build_journey_states(step_states, robot_run, latest_load, manifest),
+            build_journey_figures(manifest, robot_run, latest_load), mode),
+            use_container_width=True)
+    report_column, legend_column = st.columns(2)
+    with report_column, open_card("journey_report"):
+        st.markdown('<div class="kpi-label">Informe que deja cada ejecución</div>',
+                    unsafe_allow_html=True)
+        st.link_button("Ver informes semanales", ISSUES_PAGE_URL,
+                       icon=":material/description:")
+    with legend_column, open_card("journey_legend"):
+        st.markdown(f'{build_chip("OK", "ok")} {build_chip("En curso", "running")} '
+                    f'{build_chip("Falla", "failed")} {build_chip("Sin datos", "neutral")}'
+                    '<div class="kpi-note" style="margin-top:8px">Punto de color en cada '
+                    'paso: estado de la última ejecución del robot y de la base actual.'
+                    '</div>', unsafe_allow_html=True)
+# endregion
+
+
 # region Data quality page
 def show_load_figures(latest_run):
     """Three cards with the row counts of the latest load."""
@@ -895,10 +1174,12 @@ def show_data_quality_page(mode):
 # region Entry point
 SHOW_PAGE_BY_TITLE = {
     PAGE_OVERVIEW: show_overview_page,
+    PAGE_PROJECT: show_project_page,
     PAGE_MARGINS: show_margins_page,
     PAGE_CHANNELS_AND_REGIONS: show_channels_and_regions_page,
     PAGE_SEASONALITY: show_seasonality_page,
     PAGE_ALERTS: show_alerts_page,
+    PAGE_ARCHITECTURE: show_architecture_page,
     PAGE_CONTROL: show_control_page,
     PAGE_DATA_QUALITY: show_data_quality_page,
 }

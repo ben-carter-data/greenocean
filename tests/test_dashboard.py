@@ -26,11 +26,12 @@ def draw_page(title):
 
 def test_each_profile_has_its_own_pages():
     assert dashboard.PAGES_BY_PROFILE[dashboard.PROFILE_ANALYST] == [
-        dashboard.PAGE_OVERVIEW, dashboard.PAGE_MARGINS,
+        dashboard.PAGE_OVERVIEW, dashboard.PAGE_PROJECT, dashboard.PAGE_MARGINS,
         dashboard.PAGE_CHANNELS_AND_REGIONS, dashboard.PAGE_SEASONALITY,
-        dashboard.PAGE_ALERTS, dashboard.PAGE_CONTROL]
+        dashboard.PAGE_ALERTS, dashboard.PAGE_ARCHITECTURE, dashboard.PAGE_CONTROL]
     assert dashboard.PAGES_BY_PROFILE[dashboard.PROFILE_DATA_TEAM] == [
-        dashboard.PAGE_OVERVIEW, dashboard.PAGE_CONTROL, dashboard.PAGE_DATA_QUALITY]
+        dashboard.PAGE_OVERVIEW, dashboard.PAGE_PROJECT, dashboard.PAGE_ARCHITECTURE,
+        dashboard.PAGE_CONTROL, dashboard.PAGE_DATA_QUALITY]
 
 
 def test_every_page_has_a_function_an_icon_and_an_address():
@@ -77,3 +78,20 @@ def test_every_page_draws_without_errors_and_shows_the_attribution(title):
     app = draw_page(title)
     assert not app.exception
     assert dashboard.ATTRIBUTION_TEXT in [caption.value for caption in app.caption]
+
+
+def test_hover_hint_is_plain_text_and_escaped():
+    icon = dashboard.build_hint_icon('**1,46** = "más caro"')
+    assert "**" not in icon
+    assert 'data-hint="1,46 = &quot;más caro&quot;"' in icon
+
+
+def test_change_chip_explains_itself_when_the_mouse_passes_over_it():
+    chip = dashboard.build_change_chip(-14.1, unit="pts")
+    assert 'title="Bajó 14,1 puntos porcentuales frente a la semana anterior' in chip
+
+
+def test_every_business_question_points_to_a_page_or_is_pending():
+    for question, page, state, scope in dashboard.BUSINESS_QUESTIONS:
+        assert state in dashboard.QUESTION_STATES
+        assert page in dashboard.SHOW_PAGE_BY_TITLE or state == "pending"
