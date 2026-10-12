@@ -1,0 +1,10 @@
+__pycache__/
+.venv/
+*.tmp
+.pytest_cache/
+agent/logs/*.log
+agent/downloads/*.csv
+etl/raw.db
+*.db-journal
+report.md
+.DS_Store
