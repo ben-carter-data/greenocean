@@ -56,6 +56,7 @@ Un job semanal de GitHub Actions ejecuta todo y guarda la base actualizada.
 │   ├── queries.sql      una consulta por indicador
 │   ├── queries.py       lectura de la base por nombre de consulta
 │   ├── alerts.py        alertas de variación (K6)
+│   ├── lag.py           rezago entre precio mayorista y consumidor (K5)
 │   ├── charts.py        gráficos y colores del panel (Altair)
 │   ├── control.py       estado y lanzamiento del job semanal (API de GitHub)
 │   ├── architecture.py  diagrama en vivo del recorrido de los datos
