@@ -1,0 +1,255 @@
+# Registro de decisiones
+
+Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué se pierde.
+
+## D-001 · Descargar archivos oficiales en vez de hacer scraping
+
+- **Decisión:** obtener los datos desde los CSV del portal de datos abiertos de ODEPA.
+- **Por qué:** la información requerida ya existe como archivo. Es más estable, más rápido y no depende de la estructura de una página.
+- **Descartado:** scraping de supermercados; registros públicos de salud.
+- **Se pierde:** el proyecto no muestra navegación web. Esa habilidad queda respaldada por la experiencia laboral.
+
+## D-002 · Dos fuentes en la etapa 1
+
+- **Decisión:** precios mayoristas y precios al consumidor. Comercio exterior queda para la etapa 2.
+- **Por qué:** el riesgo está en el cruce principal; conviene validarlo antes de sumar una fuente mensual con otra codificación.
+- **Descartado:** partir con tres fuentes.
+- **Se pierde:** no se responde de qué países proviene cada producto.
+
+## D-003 · Tema: cadena de precios de alimentos
+
+- **Decisión:** analizar precios y márgenes entre mayorista y consumidor.
+- **Por qué:** datos abiertos, cruce verificado, preguntas reconocibles para pricing y abastecimiento.
+- **Descartado:** prestadores de salud acreditados (poco valor al cruzar), monitor de precios de supermercados (condiciones de uso inciertas), ofertas de empleo.
+- **Se pierde:** cercanía temática con el rubro salud.
+
+## D-004 · Enfoque de negocio, no de consumidor
+
+- **Decisión:** el usuario principal es un analista de pricing, compras o abastecimiento.
+- **Por qué:** es un portafolio dirigido a empresas.
+- **Descartado:** un comparador para el público general como vista principal.
+- **Se pierde:** inmediatez para quien no es del rubro. Se compensa con un perfil consumidor de prioridad baja.
+
+## D-005 · Selector de perfil sin inicio de sesión
+
+- **Decisión:** el panel pregunta quién consulta y adapta las vistas.
+- **Por qué:** muestra los mismos datos según la necesidad de cada usuario sin sumar infraestructura.
+- **Descartado:** usuarios con cuenta; paneles separados.
+- **Se pierde:** personalización persistente.
+
+## D-006 · Cruce por semana
+
+- **Decisión:** agregar el precio mayorista diario a semana (lunes de inicio), ponderado por volumen.
+- **Por qué:** la fuente de consumidor es semanal.
+- **Descartado:** repartir el precio semanal del consumidor en días.
+- **Se pierde:** detalle diario del mayorista en los indicadores (se conserva en la tabla cruda).
+
+## D-007 · Clave exacta producto + variedad + calidad
+
+- **Decisión:** calcular el margen solo entre filas con la misma clave.
+- **Por qué:** mezclar calidades infla la diferencia; la prueba inicial lo mostró.
+- **Descartado:** cruzar solo por nombre de producto.
+- **Se pierde:** 22 de 168 claves del consumidor quedan sin margen en 2026.
+
+## D-008 · Unidades no convertibles se conservan sin margen
+
+- **Decisión:** comparar por kilo o por unidad cuando ambas fuentes lo permiten; el resto se muestra sin margen y con motivo.
+- **Por qué:** una equivalencia inventada (peso de un atado) daría márgenes falsos.
+- **Descartado:** excluir esas filas; estimar pesos.
+- **Se pierde:** margen en productos vendidos por atado o docena.
+
+## D-009 · Histórico desde 2022 (propuesta)
+
+- **Decisión:** cargar 2022 a 2026, sujeto a validar el formato de cada año.
+- **Por qué:** varios años permiten estacionalidad; más atrás aumenta el riesgo de cambios de formato y el efecto de la inflación.
+- **Descartado:** solo 2026; toda la serie desde 2008.
+- **Se pierde:** tendencias de largo plazo.
+
+## D-010 · Precios nominales en la etapa 1
+
+- **Decisión:** no ajustar por inflación al inicio.
+- **Por qué:** los indicadores principales comparan precios de la misma semana, donde la inflación no afecta.
+- **Descartado:** integrar el IPC desde el inicio.
+- **Se pierde:** comparaciones entre años en términos reales. Queda señalado en el panel.
+
+## D-011 · El rezago de precios es descriptivo
+
+- **Decisión:** K5 se presenta como desfase observado, sin afirmar causa.
+- **Por qué:** con datos semanales y sin controlar otros factores no se puede probar causalidad.
+- **Descartado:** modelos econométricos.
+- **Se pierde:** una respuesta concluyente sobre transmisión de precios.
+
+## D-012 · SQLite, GitHub Actions y Streamlit Community Cloud
+
+- **Decisión:** base en archivo, job programado y panel publicado en servicios gratuitos.
+- **Por qué:** sin costo, sin servidor que mantener, y cualquiera puede clonar y ejecutar.
+- **Descartado:** servidor propio; base en la nube; Power BI (no se puede abrir desde un enlace público sin licencia).
+- **Se pierde:** concurrencia y volumen. Suficiente para datos semanales de este tamaño.
+
+## D-013 · Repositorio público
+
+- **Decisión:** código, datos y panel abiertos.
+- **Por qué:** el objetivo es que un reclutador pueda verlo; la autoría queda en el historial.
+- **Descartado:** repositorio privado o mixto.
+- **Se pierde:** exclusividad. Lo publicado se puede rehacer con los mismos datos abiertos.
+
+## D-014 · Agente en un solo archivo
+
+- **Decisión:** `agent.py` contiene el flujo completo con funciones nombradas por lo que hacen.
+- **Por qué:** se lee de arriba abajo y es replicable para otra fuente cambiando la configuración.
+- **Descartado:** dividir el agente en varios módulos desde el inicio.
+- **Se pierde:** separación fina de responsabilidades; se divide si crece.
+
+## D-015 · Código propio, sin material del empleador
+
+- **Decisión:** todo el código se escribe desde cero con librerías públicas.
+- **Por qué:** evitar cualquier uso de propiedad de terceros.
+- **Descartado:** traducir plantillas o usar librerías internas.
+- **Se pierde:** nada.
+
+## D-016 · Pruebas y controles de calidad visibles desde la primera versión
+
+- **Decisión:** las pruebas corren solas en cada cambio y cada carga pasa controles de calidad antes de actualizar la base.
+- **Por qué:** un sistema que corre sin supervisión debe detectar solo cuando algo sale mal.
+- **Descartado:** agregar las pruebas al final.
+- **Se pierde:** tiempo al inicio.
+
+## D-017 · Informe semanal y avisos con las herramientas de GitHub
+
+- **Decisión:** el job publica un informe semanal en el repositorio y GitHub avisa por correo si falla.
+- **Por qué:** no requiere servidor de correo, claves ni servicios externos.
+- **Descartado:** correo propio; mensajería externa.
+- **Se pierde:** un canal más cómodo para un usuario de negocio. Se puede agregar después.
+
+## D-018 · Los hallazgos se publican solo si se pueden reproducir
+
+- **Decisión:** cada hallazgo va con su consulta SQL y sus límites.
+- **Por qué:** una cifra llamativa que no resiste una revisión resta credibilidad a todo el proyecto.
+- **Descartado:** publicar las cifras de la prueba inicial, que mezclaban calidades.
+- **Se pierde:** titulares más vistosos.
+
+## D-019 · Sin tecnologías agregadas para aparentar
+
+- **Decisión:** no sumar nube, contenedores ni modelos predictivos en esta versión.
+- **Por qué:** no responden mejor ninguna pregunta y habría que defenderlos en entrevista.
+- **Descartado:** esas tres.
+- **Se pierde:** palabras clave en el CV.
+
+## D-020 · Los datos crudos no se suben al repositorio
+
+- **Decisión:** los CSV descargados y la base cruda (`raw.db`) se reconstruyen en cada ejecución y quedan fuera del repositorio. Solo se suben la base de indicadores (`datos.db`, agregada por semana) y el registro de descargas (`manifest.json`).
+- **Por qué:** al construir el hito 1 se midió el tamaño real: 32 MB y 46 MB por archivo anual, y 105 MB la base cruda de un solo año. GitHub rechaza archivos de más de 100 MB y el repositorio crecería en cada ejecución.
+- **Descartado:** subir todo; usar almacenamiento de archivos grandes.
+- **Se pierde:** quien clone el repositorio debe ejecutar el agente para tener los datos crudos. Los indicadores sí vienen incluidos.
+
+## D-021 · Código en inglés, documentación en español
+
+- **Decisión:** nombres de archivos, funciones, variables, tablas, comentarios y mensajes de log en inglés. Los documentos del proyecto y los textos del panel en español. Los nombres de columnas y valores de ODEPA se conservan tal como vienen.
+- **Por qué:** el inglés es la convención del código; el público del proyecto es chileno; traducir los valores de la fuente rompería la trazabilidad.
+- **Descartado:** todo en español; todo en inglés.
+- **Se pierde:** quien no lee inglés depende de la documentación para seguir el código.
+
+## D-022 · Convenciones de código
+
+- **Decisión:** estilo PEP 8; funciones con nombre de verbo que dice lo que hacen (`download_all_resources`, `validate_downloaded_file`); booleanos con prefijo `is_`; sin abreviaturas; constantes en mayúsculas en vez de textos repetidos; cada archivo dividido en secciones con `# region` y `# endregion`, que VS Code y PyCharm permiten plegar.
+- **Por qué:** el código debe entenderse sin esfuerzo y cada parte debe ubicarse rápido, igual que las regiones de un proyecto .NET.
+- **Descartado:** nombres cortos del flujo original (`navigation`, `load_input`), por ser menos descriptivos.
+- **Se pierde:** nombres algo más largos.
+
+## D-023 · Tablas y columnas en inglés; un esquema por base (hito 2)
+
+- **Decisión:** las tablas de `datos.db` se llaman `dim_product`, `dim_region`, `dim_channel`, `weekly_price`, `etl_run` y `rejection`, con columnas en inglés. `etl/schema.sql` define `datos.db` y `etl/raw_schema.sql` define `raw.db`.
+- **Por qué:** D-021 pide tablas en inglés y el hito 1 ya lo hizo así con las tablas crudas. Con un solo archivo de esquema cada base quedaba con las tablas vacías de la otra.
+- **Descartado:** los nombres en español del diagrama de `DISENO.md` 8.3 (`precio_semanal`, `ejecucion`, `rechazo`); un único `schema.sql`.
+- **Se pierde:** el diagrama del diseño ya no coincide letra por letra con la base. La equivalencia está en `docs/hito-2.md`.
+
+## D-024 · Los precios semanales se reconstruyen completos en cada ejecución (hito 2)
+
+- **Decisión:** para cumplir RN-14, `load()` borra y vuelve a escribir `weekly_price` dentro de una transacción. Las dimensiones solo reciben filas nuevas, así sus identificadores no cambian. `etl_run` guarda una línea por ejecución y `rejection` solo los rechazos de la última.
+- **Por qué:** `raw.db` ya se reconstruye en cada ejecución (D-020), así que recalcular todo es lo más simple y no puede duplicar. Además una semana que cruza dos años (29-12-2025) junta filas de dos archivos sin lógica especial.
+- **Descartado:** actualizar semana por semana con claves; acumular los rechazos de todas las ejecuciones.
+- **Se pierde:** el historial de rechazos de ejecuciones anteriores (queda solo su número en `etl_run`).
+
+## D-025 · RN-11: una semana pertenece al archivo si toca su año (hito 2)
+
+- **Decisión:** la fecha se considera fuera del año del archivo solo si ni el inicio ni el término de la semana caen en ese año. Se agregan dos motivos de rechazo: valor ilegible (`UNREADABLE_VALUE`) y fila mayorista sin volumen (`NON_POSITIVE_VOLUME`).
+- **Por qué:** la semana 1 del consumidor 2026 empieza el 29-12-2025; con RN-11 literal se rechazaban sus 4.382 filas válidas. Una fila mayorista sin volumen no puede entrar en el promedio ponderado de RN-07.
+- **Descartado:** validar solo por `Fecha inicio`; dar peso 1 a las filas sin volumen.
+- **Se pierde:** nada medido: en 2026 ninguna fila cae en los motivos nuevos.
+
+## D-026 · Conversión de unidades por lectura literal del texto (hito 2)
+
+- **Decisión:** una unidad se convierte si empieza con `$/kilo`, `$/unidad` o `$/litro`, o si su texto trae un solo número seguido de una medida: kilos, unidades, gramos (a kilo) o ml y litros (a litro). La misma función se aplica a las dos fuentes. Por eso `$/docena de atados (6 kilos)` se convierte dividiendo por 6 (1.470 filas mayoristas) y `$/botella 900 ml` pasa a precio por litro.
+- **Por qué:** es la lectura directa de RN-03 a RN-05 y una sola regla es más fácil de revisar; las 147 unidades reales están en `tests/wholesale_units_2026.csv` con su conversión. Sin gramos ni litros, 13.188 filas de abarrotes y lácteos (aceite, leche, yogur) quedaban fuera de P2 a P4, que el alcance sí incluye.
+- **Descartado:** una tabla manual de equivalencias (T-33); limitarse a kilo y unidad como decía el diseño original; convertir envases con dos números (`$/bandeja 12 canastillos 125 gramos`), porque obliga a interpretar el texto.
+- **Se pierde:** 7.931 filas mayoristas (5,46 %) siguen sin convertir: atados, docenas, matas y rangos. Aparece una tercera unidad normalizada, `litro`, que el diseño no tenía.
+
+## D-027 · RN-07 pondera por el volumen tal como se publica (hito 2)
+
+- **Decisión:** el peso de cada precio diario es la columna `Volumen` sin transformar.
+- **Por qué:** es la regla escrita. El volumen viene en la unidad de comercialización (cajas, bins, mallas), y convertirlo a kilos exige interpretar también unidades como `$/kilo (en caja de 17 kilos)`.
+- **Descartado:** convertir el volumen a kilos antes de ponderar.
+- **Se pierde:** cuando una misma clave y semana mezcla envases de distinto tamaño, el envase grande pesa menos de lo que debería.
+
+## D-028 · RN-12: mediana por producto, unidad, semana y fuente, con factor 5 (hito 2)
+
+- **Decisión:** la mediana se calcula sobre los precios semanales del producto en esa semana y unidad, dentro de una misma fuente (mayorista por un lado, consumidor por otro), mezclando variedades, calidades, regiones y canales. El factor 5 del diseño se mantiene.
+- **Por qué:** el precio al consumidor es sistemáticamente mayor que el mayorista; una mediana común marcaba como atípico un margen alto, que es justo lo que el proyecto quiere medir. Con 2026 marca 193 de 129.164 precios (0,15 %) y sigue detectando errores evidentes (poroto a $3 el kilo).
+- **Descartado:** mediana común a las dos fuentes (346 marcados); factor 3 o 10.
+- **Se pierde:** la mediana aún mezcla variedades y calidades. Quedan marcados 49 precios de arándano en consumidor y 71 de limón mayorista (variedades Sutil y Tahití a unos $2.000 el kilo) que probablemente son precios reales.
+
+## D-029 · Controles de calidad antes de cargar (hito 2)
+
+- **Decisión:** la carga se detiene si las filas leídas bajan de 90 % de la última carga correcta, si falta una semana intermedia en alguna fuente, o si aparece una región fuera de 1 a 16 o un canal desconocido. La ejecución queda en `etl_run` como `FAILED` con el mensaje.
+- **Por qué:** los archivos de un año solo crecen, así que una baja fuerte indica un archivo truncado. Comparar con la carga anterior no requiere fijar cifras a mano.
+- **Descartado:** un límite superior de filas, porque cargar el histórico (hito 5) multiplica las filas de forma legítima; rangos fijos por semana.
+- **Se pierde:** la primera ejecución no tiene con qué compararse, y un archivo duplicado no se detecta por conteo.
+
+## D-030 · La papa queda sin margen en la etapa 1 (hito 2)
+
+- **Decisión:** se mantiene la clave exacta de D-007 también para la papa, que por eso no tiene margen (K1) en ninguna región. Sí aparece en canales, regiones y estacionalidad.
+- **Por qué:** el consumidor publica la papa con calidad «Primera» o «Segunda» y el mayorista con «1a (cosecha)», «1a (guarda)», «1a nueva(o)», «1a (cosecha lavada)», etc. Unirlas mezclaría papa nueva, de guarda y lavada, que tienen precios distintos: el mismo error que D-007 y D-018 quieren evitar.
+- **Descartado:** una tabla de equivalencia de calidades hecha a mano en esta etapa (queda como mejora T-37).
+- **Se pierde:** el criterio 5 de `DISENO.md` 11 se cumple para cuatro de los cinco productos de la prueba (tomate, limón, palta, cebolla), no para la papa.
+
+## D-031 · Indicadores como consultas con nombre y cálculo simple (hito 3)
+
+- **Decisión:** `bi/queries.sql` contiene una consulta por indicador, cada una precedida por una línea `-- name:`; el panel las lee por nombre y filtra el resultado con pandas. El precio nacional de K3 y K4 es el promedio simple de las regiones con dato. El año de K4 es el del jueves de la semana (regla ISO). La unidad normalizada forma parte de la clave que se elige en el panel.
+- **Por qué:** una consulta por indicador se puede copiar y ejecutar tal cual en SQLite para comprobar una cifra. El promedio simple no exige ponderadores que las fuentes no publican. Con la regla ISO, la semana que empieza el 29-12-2025 cuenta en 2026, igual que en el archivo del consumidor.
+- **Descartado:** consultas con parámetros por producto; ponderar regiones por población; vistas SQL dentro de la base.
+- **Se pierde:** el panel carga cada indicador completo en memoria (hasta unas 129.000 filas con un año). Con varios años puede convenir filtrar en SQL.
+
+## D-032 · Streamlit 1.36 o superior (hito 3)
+
+- **Decisión:** `requirements.txt` pide `streamlit>=1.36` en vez de `>=1.30`.
+- **Por qué:** las barras horizontales (`horizontal=True`) existen desde la 1.36 y dejan leer los nombres de las regiones.
+- **Descartado:** barras verticales con nombres cortados; agregar una librería de gráficos.
+- **Se pierde:** nada práctico; es la misma librería.
+
+## D-033 · K6 se calcula sobre el precio nacional, con pandas (hito 4)
+
+- **Decisión:** la serie de cada alerta es el precio nacional semanal de una clave (producto + variedad + calidad), canal y unidad. Hay alerta cuando la variación de la semana se aleja más de 2 desviaciones estándar de la media de sus 12 variaciones anteriores. Solo se evalúan series con 13 semanas seguidas. La consulta SQL entrega la serie y `bi/alerts.py` hace el cálculo móvil.
+- **Por qué:** SQLite no tiene desviación estándar. Trabajar a nivel nacional da series más largas y menos ruido que por región. Excluir la semana evaluada de su propio rango evita que un salto grande se esconda a sí mismo.
+- **Descartado:** alertas por región; banda centrada en cero; escribir la desviación estándar a mano en SQL.
+- **Se pierde:** un movimiento que ocurre en una sola región puede no verse. En productos de precio muy estable, un cambio de 1 % ya es alerta; el umbral se recalibra en T-30.
+
+## D-034 · Job semanal: nada se guarda si un paso falla (hito 4)
+
+- **Decisión:** `semanal.yml` ejecuta en orden agente, ETL, pruebas, guardar `datos.db` y `manifest.json`, y publicar el informe como issue. Tiene una opción manual `simulate_failure` que falla después del ETL. El aviso de falla es el correo que GitHub envía por defecto al autor.
+- **Por qué:** GitHub Actions detiene el job en el primer paso que falla, así que la base del repositorio solo se reemplaza por una carga que pasó los controles y las pruebas. La opción manual permite demostrar T-23 y T-25d sin esperar un error real. Medido en una simulación: agregar una semana hace crecer el repositorio unos 0,7 MB, no los 10 MB del archivo, porque Git guarda la diferencia.
+- **Descartado:** guardar la base en una rama aparte o como artefacto; un servicio de mensajería para los avisos (D-017).
+- **Se pierde:** el historial de Git crece unos 35 MB por año con un solo año cargado, y más al cargar el histórico.
+
+## D-035 · Tres archivos nuevos en `bi/` con nombre en inglés (hito 4)
+
+- **Decisión:** el informe semanal vive en `bi/report.py` (el diseño lo llamaba `informe.py`), las alertas en `bi/alerts.py` y el acceso a datos compartido en `bi/queries.py`.
+- **Por qué:** D-021 pide nombres de archivo en inglés. El panel y el informe usan las mismas tres funciones de lectura y el mismo cálculo de alertas; duplicarlos sería peor.
+- **Descartado:** todo dentro de `dashboard.py`, que obligaría al informe a importar Streamlit.
+- **Se pierde:** dos archivos más que los previstos en el diseño.
+
+## D-036 · Licencia MIT y un commit inicial para los hitos 1 a 4 (cierre del hito 4)
+
+- **Decisión:** el código lleva licencia MIT. El repositorio parte con un solo commit que reúne T-01 a T-25d tal como quedaron construidas; desde ahí, un commit por tarea. `run_download.command` se conserva en el repositorio como lanzador opcional para macOS. Los commits los puede hacer el asistente, siempre después de mostrar su contenido y recibir la aprobación del autor.
+- **Por qué:** MIT es la licencia más simple y permite que cualquiera revise y reutilice el código, como busca D-013. Los hitos 1 a 4 se escribieron antes de que la carpeta fuera un repositorio y las tareas comparten archivos: separarlas después daría commits artificiales. El lanzador no estorba y ayuda a quien use macOS.
+- **Descartado:** reconstruir un commit por tarea de los hitos 1 a 4; dejar el repositorio sin licencia, que en la práctica no permite reutilizar el código; borrar el lanzador.
+- **Se pierde:** el historial no muestra el avance de los hitos 1 a 4 tarea por tarea; ese detalle queda en `docs/hito-1.md` a `docs/hito-4.md`.

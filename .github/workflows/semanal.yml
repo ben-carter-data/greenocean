@@ -1,0 +1,57 @@
+name: semanal
+
+# Weekly load: download, ETL, tests, save the database and publish the report.
+# If a step fails the next ones do not run, so the database in the repository
+# is only replaced by a load that passed every check.
+on:
+  schedule:
+    # Tuesdays at 12:00 UTC (09:00 in Chile, standard time).
+    - cron: "0 12 * * 2"
+  workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: "Forzar una falla después del ETL (prueba de T-23)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  weekly-load:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+
+      - name: Download the ODEPA files
+        run: python agent/agent.py
+
+      - name: Run the ETL
+        run: python etl/etl.py
+
+      - name: Simulate a failure
+        if: ${{ inputs.simulate_failure }}
+        run: exit 1
+
+      - name: Run the tests against the new database
+        run: pytest -q
+
+      - name: Save the updated database
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add etl/datos.db agent/downloads/manifest.json
+          git commit -m "Weekly data update"
+          git push
+
+      - name: Publish the weekly report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python bi/report.py > report.md
+          gh issue create --title "Informe semanal $(date +%Y-%m-%d)" --body-file report.md
