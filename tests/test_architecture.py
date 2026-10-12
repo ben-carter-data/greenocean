@@ -49,3 +49,21 @@ def test_text_from_the_data_is_escaped():
                                          charts.MODE_DARK)
     assert "<b>397.814</b>" not in svg
     assert "&lt;b&gt;397.814&lt;/b&gt;" in svg
+
+
+def test_d043_dots_travel_along_the_arrows_only_while_a_run_is_in_progress():
+    idle_svg = architecture.build_journey_svg(make_states(control.RUN_OK), FIGURES,
+                                              charts.MODE_DARK)
+    assert "animateMotion" not in idle_svg
+    running_states = dict(make_states(control.RUN_OK), workflow=control.RUN_IN_PROGRESS)
+    running_svg = architecture.build_journey_svg(running_states, FIGURES, charts.MODE_DARK)
+    assert "animateMotion" in running_svg
+
+
+def test_mini_journey_shows_real_figures_and_states():
+    states = dict(make_states(control.RUN_OK), load=control.RUN_FAILED)
+    svg = architecture.build_mini_journey_svg(states, FIGURES, charts.MODE_LIGHT)
+    for figure in ["año 2026", "131.144 precios", "397.814 filas leídas"]:
+        assert figure in svg
+    assert architecture.STATE_COLORS[control.RUN_FAILED] in svg
+    assert "animateMotion" not in svg

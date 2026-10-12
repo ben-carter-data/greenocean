@@ -26,6 +26,8 @@ Pendiente. Se publican cuando estén verificados, cada uno con la consulta que l
 
 ## Cómo funciona
 
+Para operarlo sin ser técnico: [manual de operación](docs/MANUAL.md).
+
 ```
 ODEPA (CSV) → agente de descarga → datos crudos → ETL (limpieza y reglas) → SQLite → consultas SQL → panel
 ```
@@ -41,7 +43,9 @@ Un job semanal de GitHub Actions ejecuta todo y guarda la base actualizada.
 ├── docs/
 │   ├── DISENO.md        documento de diseño
 │   ├── BACKLOG.md       tareas y criterios de terminado
-│   └── DECISIONES.md    registro de decisiones
+│   ├── DECISIONES.md    registro de decisiones
+│   ├── MANUAL.md        manual de operación: qué pasa cada martes y qué hacer si falla
+│   └── PROYECTO.md      textos de la página «El proyecto» del panel
 ├── agent/
 │   ├── agent.py         descarga y validación de archivos
 │   ├── input.csv      recursos a descargar
@@ -61,6 +65,7 @@ Un job semanal de GitHub Actions ejecuta todo y guarda la base actualizada.
 │   ├── control.py       estado y lanzamiento del job semanal (API de GitHub)
 │   ├── architecture.py  diagrama en vivo del recorrido de los datos
 │   ├── explorer.py      constructor de consultas por clics (página Consultas)
+│   ├── project.py       contenido de la página «El proyecto»: documentos, SQL y ejemplos reales
 │   ├── dashboard.py     panel Streamlit
 │   └── report.py        informe semanal de alertas y estado
 ├── tests/

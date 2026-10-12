@@ -14,6 +14,7 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -23,7 +24,8 @@ import streamlit as st
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import alerts, architecture, charts, control, explorer, lag, queries  # noqa: E402
+from bi import (alerts, architecture, charts, control, explorer, lag, project,  # noqa: E402
+                queries)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -64,6 +66,25 @@ PAGE_PATHS = {
     PAGE_CONTROL: "centro-de-control",
     PAGE_DATA_QUALITY: "calidad-de-datos",
 }
+
+# The project page: its tabs travel in the address (?seccion=...), so a link can
+# open one of them; ?perfil=... chooses the profile the same way.
+PROJECT_TAB_IDEA = "Idea de negocio"
+PROJECT_TAB_SOURCES = "Fuentes y cruces"
+PROJECT_TAB_MODEL = "Modelo de datos"
+PROJECT_TAB_KPI = "KPI y cálculos"
+PROJECT_TAB_RULES = "Reglas de calidad"
+PROJECT_TAB_MANUAL = "Cómo funciona"
+PROJECT_TAB_DECISIONS = "Decisiones y método"
+PROJECT_TAB_CODE = "Código"
+PROJECT_TABS = [PROJECT_TAB_IDEA, PROJECT_TAB_SOURCES, PROJECT_TAB_MODEL, PROJECT_TAB_KPI,
+                PROJECT_TAB_RULES, PROJECT_TAB_MANUAL, PROJECT_TAB_DECISIONS, PROJECT_TAB_CODE]
+TAB_PARAMETER = "seccion"
+PROFILE_PARAMETER = "perfil"
+KPI_PARAMETER = "kpi"
+JOURNEY_MANAGER = "Soy gerente"
+JOURNEY_ANALYST = "Soy analista"
+JOURNEY_TECHNICAL = "Soy técnico"
 
 # Choices shown first when they exist, so every page opens with a known case.
 DEFAULT_GROUP = "Hortalizas"
@@ -230,6 +251,7 @@ def build_style_css(mode):
     .kpi-value {{ font-size: 2rem; font-weight: 700; color: {palette["strong_text"]};
                  line-height: 1.2; }}
     .kpi-note {{ color: {palette["text"]}; font-size: 0.8rem; }}
+    .kpi-link {{ margin-left: 10px; font-size: 0.8rem; font-weight: 400; }}
     .chip {{ display: inline-block; padding: 2px 10px; border-radius: 999px;
             font-size: 0.8rem; font-weight: 600; margin-left: 6px; }}
     .chip-ok {{ background: rgba(12, 163, 12, 0.16); color: #22b35a; }}
@@ -279,17 +301,19 @@ def apply_style(mode):
     st.markdown(f"<style>{build_style_css(mode)}</style>", unsafe_allow_html=True)
 
 
-def open_card(key, title=None, caption=None, hint=None):
+def open_card(key, title=None, caption=None, hint=None, kpi=None):
     """A rounded card; use it with 'with'. The key must be unique on the page.
 
     hint, when given, is a short explanation in plain words that appears when
-    the mouse passes over the ⓘ next to the title.
+    the mouse passes over the ⓘ next to the title. kpi, when given, adds a link
+    «¿Cómo se calcula?» to that indicator in the project page.
     """
     card = st.container(key=f"card_{key}")
     hint_icon = build_hint_icon(hint) if hint else ""
+    kpi_link = build_kpi_link(kpi) if kpi else ""
     if title or hint:
-        card.markdown(f'<div class="card-title">{html.escape(title or "")}{hint_icon}</div>',
-                      unsafe_allow_html=True)
+        card.markdown(f'<div class="card-title">{html.escape(title or "")}{hint_icon}'
+                      f'{kpi_link}</div>', unsafe_allow_html=True)
     if caption:
         card.caption(caption)
     return card
@@ -301,6 +325,33 @@ def build_hint_icon(hint):
     plain_hint = html.escape(hint.replace("**", ""), quote=True)
     return (f'<span class="hint" tabindex="0" role="button" aria-label="{plain_hint}" '
             f'data-hint="{plain_hint}">ⓘ</span>')
+
+
+def build_page_address(page_title, tab=None, kpi=None):
+    """Relative address of a page, a project tab or a KPI card.
+
+    A page that only the data team profile shows takes that profile with it.
+    """
+    parameters = {}
+    if page_title not in PAGES_BY_PROFILE[PROFILE_ANALYST]:
+        parameters[PROFILE_PARAMETER] = PROFILE_DATA_TEAM
+    if tab:
+        parameters[TAB_PARAMETER] = tab
+    if kpi:
+        parameters[KPI_PARAMETER] = kpi
+    query = f"?{urlencode(parameters)}" if parameters else ""
+    return PAGE_PATHS[page_title] + query
+
+
+def build_link_html(text, address):
+    """A link that opens in the same tab, with already-escaped text."""
+    return f'<a href="{html.escape(address)}" target="_self">{html.escape(text)}</a>'
+
+
+def build_kpi_link(kpi):
+    """«¿Cómo se calcula?»: opens the card of the indicator in the project page."""
+    address = build_page_address(PAGE_PROJECT, PROJECT_TAB_KPI, kpi)
+    return f'<span class="kpi-link">{build_link_html("¿Cómo se calcula?", address)}</span>'
 
 
 def build_chip(text, kind, hover_text=None):
@@ -576,7 +627,8 @@ def show_overview_trend(rows, mode):
 def show_overview_margins(rows, mode):
     """Card: median margin of each consumer channel over the weeks shown."""
     with open_card("margins", "Margen mediano por canal",
-                   "Cuánto más paga el consumidor que el mayorista.", hint=MEDIAN_MARGIN_HINT):
+                   "Cuánto más paga el consumidor que el mayorista.", hint=MEDIAN_MARGIN_HINT,
+                   kpi="K1"):
         median_margins = rows.groupby("channel")["margin"].median() * 100
         bar_rows = pd.DataFrame({"label": median_margins.index,
                                  "value": median_margins.to_numpy()})
@@ -591,7 +643,7 @@ def show_overview_regions(product, key_label, mode):
     """Card: regional index of the street market price for the chosen product."""
     with open_card("regions", "¿Dónde es más caro?",
                    "Precio en feria por región; 1 = promedio nacional.",
-                   hint=REGIONAL_INDEX_HINT):
+                   hint=REGIONAL_INDEX_HINT, kpi="K3"):
         rows = read_indicator("k3_regional_index")
         rows = rows[(rows["product"] == product) & (rows["key_label"] == key_label)
                     & (rows["channel"] == DEFAULT_CHANNEL)]
@@ -629,7 +681,7 @@ def show_overview_alerts():
     week_alerts = alert_rows[alert_rows["week_start"] == latest_week]
     with open_card("alerts", f"Alertas de la semana ({len(week_alerts)})",
                    f"Semana del {latest_week:%d-%m-%Y}. Señales para revisar, no conclusiones.",
-                   hint=ALERTS_HINT):
+                   hint=ALERTS_HINT, kpi="K6"):
         if week_alerts.empty:
             st.info("Ningún producto se movió fuera de su rango habitual.")
             return
@@ -676,6 +728,93 @@ def show_overview_page(mode):
 
 
 # region Project page
+@st.cache_data
+def read_cached_rule_evidence(database_version):
+    """Real figure of each quality rule, read once per database."""
+    return project.read_rule_evidence()
+
+
+def read_week_alert_count():
+    """Number of K6 alerts in the latest week with prices."""
+    alert_rows = read_price_alerts()
+    latest_week = read_indicator("k6_national_weekly_price")["week_start"].max()
+    return int((alert_rows["week_start"] == latest_week).sum())
+
+
+def show_small_figure(label, value_text):
+    """A label and a value, smaller than a key figure card."""
+    st.markdown(f'<div class="kpi-label">{html.escape(label)}</div>'
+                f'<div class="card-title">{html.escape(value_text)}</div>',
+                unsafe_allow_html=True)
+
+
+def show_pipeline_hook(mode):
+    """Mini diagram of the pipeline with the real state of the latest run."""
+    step_states, pipeline_run = read_latest_pipeline_steps()
+    latest_load = read_latest_run()
+    manifest = read_download_manifest()
+    st.image(architecture.build_mini_journey_svg(
+        build_journey_states(step_states, pipeline_run, latest_load, manifest),
+        build_journey_figures(manifest, pipeline_run, latest_load), mode),
+        use_container_width=True)
+
+
+def show_project_value():
+    """Three sentences and the main figures, all read now."""
+    st.markdown(project.read_section(project.read_document(project.PROJECT_GUIDE_FILE),
+                                     "Resumen"))
+    keys_with_margin, consumer_keys = read_match_coverage()
+    figures = [("Precios semanales cargados",
+                charts.format_thousands(read_indicator("quality_flag_counts")
+                                        ["weekly_prices"].sum())),
+               ("Datos de ODEPA", describe_years(read_download_manifest())),
+               ("Cobertura del cruce (K7)", f"{keys_with_margin} de {consumer_keys} claves"),
+               ("Alertas de la última semana (K6)", str(read_week_alert_count()))]
+    for column, (label, value_text) in zip(st.columns(len(figures)), figures):
+        with column:
+            show_small_figure(label, value_text)
+
+
+def list_journey_steps(journey):
+    """(text, address) of each stop of a guided tour of the project."""
+    tabs = {tab: build_page_address(PAGE_PROJECT, tab) for tab in PROJECT_TABS}
+    journeys = {
+        JOURNEY_MANAGER: [("Panel", build_page_address(PAGE_OVERVIEW)),
+                          ("Alertas", build_page_address(PAGE_ALERTS)),
+                          ("KPI y cálculos", tabs[PROJECT_TAB_KPI])],
+        JOURNEY_ANALYST: [("Idea de negocio", tabs[PROJECT_TAB_IDEA]),
+                          ("KPI y cálculos", tabs[PROJECT_TAB_KPI]),
+                          ("Reglas de calidad", tabs[PROJECT_TAB_RULES]),
+                          ("Decisiones y método", tabs[PROJECT_TAB_DECISIONS])],
+        JOURNEY_TECHNICAL: [("Pipeline", build_page_address(PAGE_ARCHITECTURE)),
+                            ("Código y consultas SQL", tabs[PROJECT_TAB_CODE]),
+                            ("Centro de control", build_page_address(PAGE_CONTROL))],
+    }
+    return journeys[journey]
+
+
+def show_journeys():
+    """Three guided tours; the chosen one shows its stops as links, in order."""
+    journey = st.segmented_control("Elige tu recorrido",
+                                   [JOURNEY_MANAGER, JOURNEY_ANALYST, JOURNEY_TECHNICAL],
+                                   key="journey")
+    if not journey:
+        return
+    stops = [f"{number}. {build_link_html(text, address)}"
+             for number, (text, address) in enumerate(list_journey_steps(journey), start=1)]
+    if journey == JOURNEY_MANAGER:
+        stops.append(f"{len(stops) + 1}. Hallazgos: se publican cuando estén verificados.")
+    st.markdown(" &nbsp;→&nbsp; ".join(stops), unsafe_allow_html=True)
+
+
+def show_start_here(mode):
+    """Inverted pyramid: the real pipeline, the value, then the guided tours."""
+    with open_card("start_here", "Empieza aquí"):
+        show_pipeline_hook(mode)
+        show_project_value()
+        show_journeys()
+
+
 def build_question_rows():
     """Table cells: question number, question, page that answers it and its state."""
     rows = []
@@ -686,10 +825,8 @@ def build_question_rows():
     return rows
 
 
-def show_project_page(mode):
+def show_business_idea_tab(mode):
     """The business idea: the problem, who it is for and the questions it answers."""
-    show_page_header("El proyecto", "Qué problema resuelve este panel, para quién y qué "
-                     "preguntas de negocio responde.")
     problem_column, audience_column = st.columns([3, 2])
     with problem_column, open_card("project_problem", "El problema"):
         st.markdown(PROBLEM_TEXT)
@@ -706,6 +843,229 @@ def show_project_page(mode):
         st.markdown(DATA_TEXT)
     with limits_column, open_card("project_limits", "Límites"):
         st.markdown(LIMITS_TEXT)
+
+
+def show_sources_tab(mode):
+    """Both ODEPA sources, how they are matched and the real match coverage."""
+    text_column, figure_column = st.columns([3, 1])
+    with text_column, open_card("sources_text", "Dos fuentes, una clave"):
+        st.markdown(project.read_section(project.read_document(project.PROJECT_GUIDE_FILE),
+                                         "Fuentes y cruces"))
+    keys_with_margin, consumer_keys = read_match_coverage()
+    with figure_column, open_card("sources_coverage", "Cobertura del cruce", kpi="K7"):
+        st.markdown(f'<div class="kpi-value">{keys_with_margin} de {consumer_keys}</div>'
+                    f'<div class="kpi-note">claves de frutas y verduras del consumidor con '
+                    f'margen ({charts.format_percent(keys_with_margin / consumer_keys * 100)})'
+                    f'</div>', unsafe_allow_html=True)
+
+
+def show_model_tab(mode):
+    """Star model of the data warehouse with the real rows of each table."""
+    row_counts = project.count_table_rows()
+    definitions = project.parse_definitions(project.read_section(
+        project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos"))
+    diagram_column, table_column = st.columns([2, 3])
+    with diagram_column, open_card("model_diagram", "Modelo estrella"):
+        st.graphviz_chart(project.build_star_diagram(row_counts, mode),
+                          use_container_width=True)
+    with table_column, open_card("model_tables", "Tablas de datos.db"):
+        st.markdown(build_html_table(
+            ["Tabla", "Filas", "Qué guarda"],
+            [[f"<code>{table}</code>", charts.format_thousands(row_counts[table]),
+              html.escape(definitions[table])] for table in project.TABLE_NAMES]),
+            unsafe_allow_html=True)
+        with st.expander("Ver etl/schema.sql"):
+            st.code(project.read_document(project.SCHEMA_FILE), language="sql")
+
+
+def build_kpi_examples():
+    """{KPI: steps of its real example}, computed from the current database."""
+    margin_rows = read_indicator("k1_margin")
+    keys_with_margin, consumer_keys = read_match_coverage()
+    return {"K1": project.build_k1_example(margin_rows),
+            "K2": project.build_k2_example(read_indicator("k2_channel_gap")),
+            "K3": project.build_k3_example(read_indicator("k3_regional_index")),
+            "K4": project.build_k4_example(read_indicator("k4_seasonal_index")),
+            "K5": project.build_k5_example(margin_rows),
+            "K6": project.build_k6_example(read_price_alerts()),
+            "K7": project.build_k7_example(keys_with_margin, consumer_keys),
+            "K8": project.build_k8_example(read_latest_run(),
+                                           read_indicator("k8_rejected_rows"))}
+
+
+def read_kpi_query(query_name):
+    """(SQL text, file it lives in) of the query behind a KPI."""
+    if query_name == project.MATCH_COVERAGE_QUERY_NAME:
+        return etl.MATCH_COVERAGE_QUERY.strip(), "etl/etl.py"
+    return queries.load_queries()[query_name].strip(), "bi/queries.sql"
+
+
+def show_kpi_card(indicator, guide_row, question, example_steps, is_requested):
+    """One KPI: question, formula in words, real example, its SQL and where to see it."""
+    kpi = indicator["ID"]
+    with open_card(f"kpi_{kpi}", f"{kpi} · {indicator['Indicador']}"):
+        if is_requested:
+            st.markdown(build_chip("Llegaste desde un gráfico del panel", "running"),
+                        unsafe_allow_html=True)
+        st.markdown(f"**Pregunta:** {question}  \n**En palabras:** {guide_row['En palabras']}"
+                    f"  \n**Fórmula:** {indicator['Fórmula']}")
+        if example_steps:
+            st.markdown("**Ejemplo real, paso a paso:**  \n"
+                        + "  \n".join(f"{number}. {step}"
+                                      for number, step in enumerate(example_steps, start=1)))
+        sql, file_name = read_kpi_query(guide_row["Consulta"])
+        with st.expander(f"Ver la consulta SQL ({guide_row['Consulta']})"):
+            st.code(sql, language="sql")
+            st.markdown(build_link_html(f"Abrir {file_name} en GitHub",
+                                        project.build_github_url(file_name)),
+                        unsafe_allow_html=True)
+        st.markdown("Se ve en: " + build_link_html(
+            guide_row["Página"], build_page_address(guide_row["Página"])),
+            unsafe_allow_html=True)
+
+
+def show_kpi_tab(mode):
+    """One card per indicator K1 to K8, with the one asked for from a chart first."""
+    questions = {row["#"]: row["Pregunta"]
+                 for row in project.read_design_table(project.QUESTIONS_HEADING)}
+    guide_rows = {row["KPI"]: row for row in project.read_guide_table("KPI")}
+    indicators = project.read_design_table(project.INDICATORS_HEADING)
+    requested_kpi = st.query_params.get(KPI_PARAMETER)
+    indicators.sort(key=lambda indicator: indicator["ID"] != requested_kpi)
+    examples = build_kpi_examples()
+    for indicator in indicators:
+        question = questions.get(indicator["Pregunta"], "¿La carga de datos es confiable?")
+        show_kpi_card(indicator, guide_rows[indicator["ID"]], question,
+                      examples[indicator["ID"]], indicator["ID"] == requested_kpi)
+
+
+def describe_rule_evidence(rule):
+    """Real figure of one rule from datos.db, or a dash when the base cannot show it."""
+    if rule == "RN-06":
+        return project.describe_margin_evidence(read_indicator("k1_margin"))
+    if rule == "RN-11":
+        return project.describe_rejection_evidence(read_indicator("k8_rejected_rows"),
+                                                   project.read_rejection_example())
+    return read_cached_rule_evidence(get_database_version()).get(rule, "—")
+
+
+def show_rules_tab(mode):
+    """RN-01 to RN-14: what each does with a row, with real evidence; details folded."""
+    rules = project.read_design_table(project.RULES_HEADING)
+    guide_rows = {row["Regla"]: row for row in project.read_guide_table("Reglas de calidad")}
+    with open_card("rules_table", "Reglas de calidad y su evidencia en la base"):
+        st.markdown(build_html_table(
+            ["Regla", "Qué hace con la fila", "Evidencia real en datos.db"],
+            [[rule["ID"], html.escape(guide_rows[rule["ID"]]["Qué hace con la fila"]),
+              html.escape(describe_rule_evidence(rule["ID"]))] for rule in rules]),
+            unsafe_allow_html=True)
+    for rule in rules:
+        guide_row = guide_rows[rule["ID"]]
+        with st.expander(f"{rule['ID']} · por qué y regla completa"):
+            st.markdown(f"**Regla:** {rule['Regla']}  \n**Por qué:** {guide_row['Por qué']}")
+            if guide_row["Ejemplo documentado"] != "—":
+                st.markdown(f"**Ejemplo documentado:** {guide_row['Ejemplo documentado']}")
+
+
+def show_sections_folded(text, first_open=True):
+    """Each '## ' section of a document in its own box; only the first one open."""
+    for position, (heading, body) in enumerate(project.split_sections(text)):
+        with st.expander(heading, expanded=first_open and position == 0):
+            st.markdown(body)
+
+
+def show_manual_tab(mode):
+    """docs/MANUAL.md, one section per box."""
+    show_sections_folded(project.read_document(project.MANUAL_FILE))
+
+
+def show_decisions_tab(mode):
+    """docs/DECISIONES.md, one decision per box."""
+    decisions = project.list_decisions()
+    st.subheader("Registro de decisiones")
+    st.caption(f"{len(decisions)} decisiones, cada una con qué se decidió, por qué, qué se "
+               "descartó y qué se pierde.")
+    for title, body in decisions:
+        with st.expander(title):
+            st.markdown(body)
+
+
+def show_query_result_button(key, sql, parameters=()):
+    """Button that runs a query on the read-only database and shows 20 rows."""
+    if st.button("Ver resultado", key=f"preview_{key}", icon=":material/play_arrow:"):
+        st.dataframe(project.run_preview(sql, parameters), hide_index=True,
+                     use_container_width=True)
+        st.caption(f"Primeras {project.PREVIEW_ROW_COUNT} filas como máximo, en solo lectura.")
+
+
+def show_named_query(query):
+    """One query of bi/queries.sql: question, clauses, page, SQL (and Python) and result."""
+    with st.expander(f"{query['name']} · {query['question']}"):
+        chips = " ".join(build_chip(clause, "neutral") for clause in query["clauses"])
+        page = query["page"]
+        st.markdown(f"{chips}  \nSe usa en: "
+                    f"{build_link_html(page, build_page_address(page))}",
+                    unsafe_allow_html=True)
+        if query["python"]:
+            sql_tab, python_tab = st.tabs(["SQL", "Python"])
+            sql_tab.code(query["sql"], language="sql")
+            python_tab.code("\n\n".join(query["python"]), language="python")
+            st.caption("Ambas versiones dan el mismo resultado (verificado por test).")
+        else:
+            st.code(query["sql"], language="sql")
+        show_query_result_button(query["name"], query["sql"])
+
+
+def show_extra_queries():
+    """SQL that lives outside bi/queries.sql: K7, the schema and a Consultas example."""
+    with st.expander(f"{project.MATCH_COVERAGE_QUERY_NAME} · ¿Cuántas claves tienen margen? "
+                     "(vive en etl/etl.py)"):
+        st.code(etl.MATCH_COVERAGE_QUERY.strip(), language="sql")
+        show_query_result_button(project.MATCH_COVERAGE_QUERY_NAME, etl.MATCH_COVERAGE_QUERY)
+    with st.expander("etl/schema.sql · creación de las tablas"):
+        st.code(project.read_document(project.SCHEMA_FILE), language="sql")
+    explorer_sql, explorer_parameters = project.build_explorer_example()
+    with st.expander("Ejemplo de la página Consultas · tomate en feria y supermercado"):
+        st.code(explorer_sql, language="sql")
+        st.caption(f"Valores de cada «?», enviados aparte del texto: {explorer_parameters}")
+        show_query_result_button("explorer_example", explorer_sql, explorer_parameters)
+
+
+def show_repository_files():
+    """Every file of the README tree with its sentence and its link on GitHub."""
+    rows = [[build_link_html(path, address) if address else html.escape(path),
+             html.escape(description)]
+            for path, description, address in project.list_repository_files()]
+    st.markdown(build_html_table(["Archivo", "Qué hace"], rows), unsafe_allow_html=True)
+    st.markdown(f"{build_link_html('Historial de commits', project.COMMITS_URL)} · "
+                f"{build_link_html('Ejecuciones en GitHub Actions', project.ACTIONS_URL)}",
+                unsafe_allow_html=True)
+
+
+def show_code_tab(mode):
+    """SQL catalog (with Python where it exists) and the files of the repository."""
+    named_queries = project.list_named_queries()
+    with open_card("code_queries", "Consultas SQL"):
+        st.caption(f"Las {len(named_queries)} consultas con nombre de bi/queries.sql, leídas "
+                   "del archivo. Las etiquetas son las cláusulas que cada una usa.")
+        for query in named_queries:
+            show_named_query(query)
+        show_extra_queries()
+    with open_card("code_files", "Archivos"):
+        show_repository_files()
+
+
+def show_project_page(mode):
+    """The project explained by itself: the real pipeline first, the detail in tabs."""
+    show_page_header("El proyecto", "Qué problema resuelve, cómo funciona y cómo se "
+                     "calcula cada cifra.")
+    show_start_here(mode)
+    tabs = st.tabs(PROJECT_TABS, key=TAB_PARAMETER, bind="query-params")
+    tab_contents = [show_business_idea_tab, show_sources_tab, show_model_tab, show_kpi_tab,
+                    show_rules_tab, show_manual_tab, show_decisions_tab, show_code_tab]
+    for tab, show_tab_content in zip(tabs, tab_contents):
+        with tab:
+            show_tab_content(mode)
 # endregion
 
 
@@ -728,7 +1088,7 @@ def show_margins_page(mode):
         st.info(NO_DATA_TEXT)
         return
     rows["margin_percent"] = rows["margin"] * 100
-    with open_card("margin_trend", "Margen por semana", hint=MARGIN_TREND_HINT):
+    with open_card("margin_trend", "Margen por semana", hint=MARGIN_TREND_HINT, kpi="K1"):
         margin_rows = rows[["week_start", "channel", "margin_percent"]].rename(
             columns={"margin_percent": "value"})
         show_chart(charts.draw_weekly_lines(
@@ -760,7 +1120,7 @@ def build_lag_bar_rows(correlations, best_lag, mode):
 
 def show_lag_card(rows, mode):
     """Card: K5, weeks the consumer price takes to follow the wholesale price."""
-    with open_card("lag", "Rezago mayorista → consumidor (K5)", hint=LAG_HINT):
+    with open_card("lag", "Rezago mayorista → consumidor (K5)", hint=LAG_HINT, kpi="K5"):
         channel = choose_value("Canal", rows["channel"].unique(), DEFAULT_CHANNEL,
                                key="lag_channel")
         series_rows = rows[rows["channel"] == channel]
@@ -793,7 +1153,8 @@ def show_lag_card(rows, mode):
 # region Channels and regions page
 def show_channel_gaps(rows, mode):
     """Card: K2, average price gap of each channel against a reference channel."""
-    with open_card("channel_gaps", "Diferencia entre canales", hint=CHANNEL_GAP_HINT):
+    with open_card("channel_gaps", "Diferencia entre canales", hint=CHANNEL_GAP_HINT,
+                   kpi="K2"):
         if rows.empty:
             st.info("Este producto se registra en un solo canal.")
             return
@@ -814,7 +1175,8 @@ def show_channel_gaps(rows, mode):
 
 def show_regional_index(rows, mode):
     """Card: K3, average regional index of each region for one channel."""
-    with open_card("regional_index", "Precio por región", hint=REGIONAL_INDEX_HINT):
+    with open_card("regional_index", "Precio por región", hint=REGIONAL_INDEX_HINT,
+                   kpi="K3"):
         channel = choose_value("Canal", rows["channel"].unique(), DEFAULT_CHANNEL)
         rows = rows[rows["channel"] == channel]
         average_index = rows.groupby("region")["regional_index"].mean()
@@ -858,14 +1220,15 @@ def show_seasonality_page(mode):
     rows = rows[rows["channel"] == channel]
     index_column, price_column = st.columns(2)
     with index_column, open_card("seasonal_index", "Índice estacional",
-                                 "1 = precio promedio del año.", hint=SEASONAL_INDEX_HINT):
+                                 "1 = precio promedio del año.", hint=SEASONAL_INDEX_HINT,
+                                 kpi="K4"):
         index_rows = rows[["week_start", "seasonal_index"]].rename(
             columns={"seasonal_index": "value"})
         show_chart(charts.draw_single_weekly_area(
             index_rows, "Índice", index_rows["value"].map(charts.format_index), mode,
             reference_value=1))
     with price_column, open_card("national_price", "Precio nacional por semana",
-                                 hint=NATIONAL_PRICE_HINT):
+                                 hint=NATIONAL_PRICE_HINT, kpi="K4"):
         price_rows = rows[["week_start", "national_price"]].rename(
             columns={"national_price": "value"})
         show_chart(charts.draw_single_weekly_area(
@@ -904,7 +1267,7 @@ def show_alerts_page(mode):
                         format_func=lambda day: day.strftime("%d-%m-%Y"))
     week_rows = alert_rows[alert_rows["week_start"].dt.date == week]
     with open_card("alert_bars", f"Mayores movimientos ({len(week_rows)} alertas)",
-                   "Rojo: subió. Azul: bajó.", hint=ALERTS_HINT):
+                   "Rojo: subió. Azul: bajó.", hint=ALERTS_HINT, kpi="K6"):
         largest_first = week_rows["variation"].abs().sort_values(ascending=False).index
         shown_rows = week_rows.loc[largest_first].head(ALERTS_PAGE_BAR_COUNT)
         bar_rows = pd.DataFrame({
@@ -1478,7 +1841,8 @@ def main():
     if not queries.DATABASE_FILE.exists():
         st.error("Falta etl/datos.db. Ejecuta primero: python etl/etl.py")
         return
-    profile = st.sidebar.selectbox("¿Quién consulta?", list(PAGES_BY_PROFILE))
+    profile = st.sidebar.selectbox("¿Quién consulta?", list(PAGES_BY_PROFILE),
+                                   key=PROFILE_PARAMETER, bind="query-params")
     pages = [build_page(title, position == 0)
              for position, title in enumerate(PAGES_BY_PROFILE[profile])]
     st.navigation(pages, position="sidebar").run()
