@@ -14,3 +14,15 @@ def test_database_is_created_from_scratch(tmp_path):
     table_names = {row[0] for row in connection.execute(
         "SELECT name FROM sqlite_master WHERE type = 'table'")}
     assert table_names == EXPECTED_TABLES
+
+
+def test_d046_old_unique_index_is_removed_from_existing_databases(tmp_path):
+    database_file = tmp_path / "datos.db"
+    connection = etl.open_database(database_file, etl.SCHEMA_FILE)
+    connection.execute("CREATE UNIQUE INDEX ux_weekly_price_key ON weekly_price"
+                       " (week_start, product_id, region_id, channel_id, normalized_unit)")
+    connection.close()
+    connection = etl.open_database(database_file, etl.SCHEMA_FILE)
+    index_names = [row[0] for row in connection.execute(
+        "SELECT name FROM sqlite_master WHERE type = 'index'")]
+    assert "ux_weekly_price_key" not in index_names

@@ -108,10 +108,14 @@ KNOWN_REGION_IDS = set(range(1, 17))
 KNOWN_CHANNELS = {WHOLESALE_CHANNEL, "Supermercado", "Feria libre", "Carnicería",
                   "Panadería", "Mercado Minorista", "Mercado Mayorista",
                   "Supermercado en Línea"}
+# D-042: weeks the source itself never published (checked in the original file).
+# They are accepted; any other missing week still stops the load.
+KNOWN_SOURCE_GAPS = {SOURCE_CONSUMER: {"2022-05-02"}}
 PROBLEM_TOO_FEW_ROWS = "TOO_FEW_ROWS"
 PROBLEM_MISSING_WEEKS = "MISSING_WEEKS"
 PROBLEM_UNKNOWN_REGION = "UNKNOWN_REGION"
 PROBLEM_UNKNOWN_CHANNEL = "UNKNOWN_CHANNEL"
+PROBLEM_DUPLICATE_KEYS = "DUPLICATE_KEYS"
 
 # K7. A key is product + variety + quality. It has a margin when a wholesale
 # and a consumer price exist for the same week, region and unit (RN-06),
@@ -426,6 +430,14 @@ def find_missing_weeks(week_starts):
     return [str(week.date()) for week in expected_weeks if week not in weeks_with_data]
 
 
+def find_unexpected_missing_weeks(week_starts, source):
+    """Missing Mondays of one source, leaving out the known gaps of the source (D-042)."""
+    if not len(week_starts):
+        return []
+    known_gaps = KNOWN_SOURCE_GAPS.get(source, set())
+    return [week for week in find_missing_weeks(week_starts) if week not in known_gaps]
+
+
 def check_quality(weekly_prices, rows_read, previous_rows_read):
     """Return the problems that must stop the load; an empty list means go ahead."""
     problems = []
@@ -435,7 +447,7 @@ def check_quality(weekly_prices, rows_read, previous_rows_read):
                         f" successful run read {previous_rows_read}")
     for source in SOURCES:
         source_weeks = weekly_prices.loc[weekly_prices["source"] == source, "week_start"]
-        missing_weeks = find_missing_weeks(source_weeks) if len(source_weeks) else []
+        missing_weeks = find_unexpected_missing_weeks(source_weeks, source)
         if missing_weeks:
             problems.append(f"{PROBLEM_MISSING_WEEKS}: {source} has no data for"
                             f" {', '.join(missing_weeks)}")
@@ -445,6 +457,11 @@ def check_quality(weekly_prices, rows_read, previous_rows_read):
     unknown_channels = sorted(set(weekly_prices["channel"]) - KNOWN_CHANNELS)
     if unknown_channels:
         problems.append(f"{PROBLEM_UNKNOWN_CHANNEL}: {unknown_channels}")
+    # RN-14 and D-046: the database has no unique index, so the check lives here.
+    duplicate_count = weekly_prices.duplicated(WEEKLY_KEY_COLUMNS).sum()
+    if duplicate_count:
+        problems.append(f"{PROBLEM_DUPLICATE_KEYS}: {duplicate_count} weekly prices"
+                        " share their key with another one")
     return problems
 # endregion
 
@@ -573,6 +590,9 @@ def run_etl(raw_connection, connection):
 
     regions = valid_rows[["region_id", "region"]].drop_duplicates("region_id")
     load(connection, weekly_prices, regions, rejections, started_at, row_counts)
+    # The table is rebuilt on every run; compacting keeps the committed file at
+    # its smallest size (D-046).
+    connection.execute("VACUUM")
     row_counts["status"] = STATUS_LOADED
     row_counts["message"] = ""
     return row_counts

@@ -1,3 +1,11 @@
 source,year,url
 wholesale,2026,https://datos.odepa.gob.cl/dataset/33f10516-acbe-4446-b633-68244b9b6b26/resource/580beca0-e87e-4dd4-9e8a-0bd92773f4a6/download/precio_mayorista_fruta-hortaliza_2026.csv
 consumer,2026,https://datos.odepa.gob.cl/dataset/d4646b7f-0d2e-4567-b6fa-932b1a6bb3f3/resource/9f885df4-afeb-4b75-8bab-9334f79db00f/download/precio_consumidor_2026.csv
+wholesale,2022,https://datos.odepa.gob.cl/dataset/33f10516-acbe-4446-b633-68244b9b6b26/resource/e218e12f-8064-4521-b4be-20015a57893b/download/precio_mayorista_fruta-hortaliza_2022.csv
+consumer,2022,https://datos.odepa.gob.cl/dataset/d4646b7f-0d2e-4567-b6fa-932b1a6bb3f3/resource/e9c3f2fc-9bb7-4f5f-a529-d1d60d7a61a5/download/precio_consumidor_2022.csv
+wholesale,2023,https://datos.odepa.gob.cl/dataset/33f10516-acbe-4446-b633-68244b9b6b26/resource/10a871e2-3b41-49d3-97b7-4802ee9904d2/download/precio_mayorista_fruta-hortaliza_2023.csv
+consumer,2023,https://datos.odepa.gob.cl/dataset/d4646b7f-0d2e-4567-b6fa-932b1a6bb3f3/resource/1a73ae5d-f4e2-4706-b2c3-e1e05a23fcb6/download/precio_consumidor_2023.csv
+wholesale,2024,https://datos.odepa.gob.cl/dataset/33f10516-acbe-4446-b633-68244b9b6b26/resource/11b8b84f-f409-4fa8-9764-2c874e703cc3/download/precio_mayorista_fruta-hortaliza_2024.csv
+consumer,2024,https://datos.odepa.gob.cl/dataset/d4646b7f-0d2e-4567-b6fa-932b1a6bb3f3/resource/5f773b96-6c3a-4017-b871-6340d779ea96/download/precio_consumidor_2024.csv
+wholesale,2025,https://datos.odepa.gob.cl/dataset/33f10516-acbe-4446-b633-68244b9b6b26/resource/92353fad-463e-4e85-a3ff-accb0286d0c5/download/precio_mayorista_fruta-hortaliza_2025.csv
+consumer,2025,https://datos.odepa.gob.cl/dataset/d4646b7f-0d2e-4567-b6fa-932b1a6bb3f3/resource/eab239c4-e338-4cde-a9e0-7c4f27826030/download/precio_consumidor_2025.csv

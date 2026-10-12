@@ -36,8 +36,11 @@ CREATE TABLE IF NOT EXISTS weekly_price (
     flag TEXT                                -- NULL, 'UNIDAD_NO_CONVERTIBLE' or 'ATIPICO'
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS ux_weekly_price_key ON weekly_price
-    (week_start, product_id, region_id, channel_id, normalized_unit);
+-- D-046: no unique index on the weekly price key. It took 40 % of the file
+-- and no query got faster with it. One row per key is guaranteed by the ETL,
+-- which rebuilds this table grouping by the key and stops if it finds a duplicate.
+-- The DROP removes the index from databases created before this decision.
+DROP INDEX IF EXISTS ux_weekly_price_key;
 
 CREATE TABLE IF NOT EXISTS etl_run (
     run_id INTEGER PRIMARY KEY,

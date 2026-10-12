@@ -142,6 +142,24 @@ def test_week_without_data_between_two_weeks_stops_the_load(tmp_path):
     assert read_table(connection, "weekly_price").empty
 
 
+def test_t28_known_source_gap_does_not_stop_the_load_but_other_gaps_do():
+    weeks = pd.to_datetime(["2022-04-25", "2022-05-09", "2022-05-23"])
+    assert etl.find_unexpected_missing_weeks(pd.Series(weeks), etl.SOURCE_CONSUMER) == [
+        "2022-05-16"]
+    # The same gap in the other source was never confirmed, so it still counts.
+    assert etl.find_unexpected_missing_weeks(pd.Series(weeks), etl.SOURCE_WHOLESALE) == [
+        "2022-05-02", "2022-05-16"]
+
+
+def test_rn14_duplicate_weekly_price_key_stops_the_load():
+    weekly_prices = etl.aggregate_weekly(etl.normalize_units(etl.clean(
+        make_raw_consumer_rows(), etl.SOURCE_CONSUMER)))
+    duplicated_prices = pd.concat([weekly_prices, weekly_prices], ignore_index=True)
+    assert etl.check_quality(weekly_prices, 1, None) == []
+    assert etl.check_quality(duplicated_prices, 1, None) == [
+        "DUPLICATE_KEYS: 1 weekly prices share their key with another one"]
+
+
 def test_unknown_region_and_channel_stop_the_load(tmp_path):
     raw_connection, connection = open_test_databases(tmp_path)
     replace_raw_rows(raw_connection, etl.SOURCE_CONSUMER, [
