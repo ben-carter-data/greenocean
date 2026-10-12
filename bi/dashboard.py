@@ -217,18 +217,20 @@ def build_style_css(mode):
         line-height: 1.45; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }}
     .hint-chip {{ position: relative; cursor: help; outline: none; }}
-    .hint-chip:focus::after {{
-        content: attr(data-hint); position: absolute; right: 0; top: 1.9em; z-index: 1000;
-        width: min(260px, 70vw); padding: 8px 10px; border-radius: 10px; white-space: normal;
-        background: {palette["card"]}; border: 1px solid {palette["card_border"]};
-        color: {palette["strong_text"]}; font-size: 0.8rem; font-weight: 400;
-    }}
     /* On narrow screens the explanation opens as a panel at the bottom of the
-       screen, so it never runs off the edge. */
+       screen, so it never runs off the edge. On computers the chips use the
+       browser's own tooltip (title), so only one explanation shows at a time. */
     @media (max-width: 640px) {{
-        .hint:hover::after, .hint:focus::after, .hint-chip:focus::after {{
+        .hint:hover::after, .hint:focus::after {{
             position: fixed; left: 16px; right: 16px; bottom: 16px; top: auto;
             width: auto; font-size: 0.95rem;
+        }}
+        .hint-chip:focus::after {{
+            content: attr(data-hint); position: fixed; left: 16px; right: 16px;
+            bottom: 16px; z-index: 1000; padding: 10px 12px; border-radius: 10px;
+            white-space: normal; background: {palette["card"]};
+            border: 1px solid {palette["card_border"]}; color: {palette["strong_text"]};
+            font-size: 0.95rem; font-weight: 400; line-height: 1.45;
         }}
     }}
     table.card-table {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }}
