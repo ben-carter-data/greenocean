@@ -67,6 +67,32 @@ def format_index(value):
     return f"{value:.2f}".replace(".", ",")
 
 
+def describe_weekly_change(change):
+    """A change in percent in plain words: 12.3 -> 'Subió 12,3 % frente a la semana anterior'."""
+    verb = "Subió" if change > 0 else "Bajó"
+    return f"{verb} {format_percent(abs(change))} frente a la semana anterior"
+
+
+def describe_regional_index(index):
+    """1.46 -> '46 % más caro que el promedio nacional'."""
+    if round(index, 2) == 1:
+        return "Igual al promedio nacional"
+    word = "más caro" if index > 1 else "más barato"
+    return f"{format_percent(abs(index - 1) * 100, decimals=0)} {word} que el promedio nacional"
+
+
+def describe_margin(margin):
+    """A margin in percent: 145 -> 'El consumidor paga 2,45 veces el precio mayorista'."""
+    times = f"{1 + margin / 100:.2f}".replace(".", ",")
+    return f"El consumidor paga {times} veces el precio mayorista"
+
+
+def describe_channel_gap(gap, reference_channel):
+    """62.7 -> '62,7 % más caro que Feria libre'."""
+    word = "más caro" if gap > 0 else "más barato"
+    return f"{format_percent(abs(gap))} {word} que {reference_channel}"
+
+
 def shorten_region_name(region):
     """'Región Metropolitana de Santiago' -> 'Metropolitana de Santiago'."""
     for prefix in REGION_PREFIXES:
@@ -175,15 +201,19 @@ def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=N
     """Horizontal bars with their value written at the end.
 
     rows needs the columns label, value and value_label; colors, when given,
-    is a list with one color per row.
+    is a list with one color per row. An optional column "meaning" explains the
+    value in plain words in the tooltip.
     """
     palette = get_palette(mode)
     rows = rows.assign(color=colors if colors is not None else palette["accent"])
     order = rows.sort_values("value", ascending=False)["label"].to_list()
+    tooltip = [alt.Tooltip("label:N", title=" "),
+               alt.Tooltip("value_label:N", title=value_title)]
+    if "meaning" in rows.columns:
+        tooltip.append(alt.Tooltip("meaning:N", title="Qué significa"))
     base = alt.Chart(rows).encode(
         y=alt.Y("label:N", title=None, sort=order, axis=alt.Axis(labelLimit=260)),
-        tooltip=[alt.Tooltip("label:N", title=" "),
-                 alt.Tooltip("value_label:N", title=value_title)])
+        tooltip=tooltip)
     bars = base.mark_bar(cornerRadiusEnd=6, height={"band": 0.65}).encode(
         x=alt.X("value:Q", title=value_title, axis=alt.Axis(tickCount=5)),
         color=alt.Color("color:N", scale=None))
@@ -208,7 +238,8 @@ def draw_variation_bars(rows, mode):
     rows needs the columns label and value (percent).
     """
     palette = get_palette(mode)
-    rows = rows.assign(value_label=rows["value"].map(format_signed_percent))
+    rows = rows.assign(value_label=rows["value"].map(format_signed_percent),
+                       meaning=rows["value"].map(describe_weekly_change))
     colors = [palette["rise"] if value > 0 else palette["fall"] for value in rows["value"]]
     return draw_horizontal_bars(rows, "Variación semanal (%)", mode, colors, reference_value=0)
 

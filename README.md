@@ -58,6 +58,7 @@ Un job semanal de GitHub Actions ejecuta todo y guarda la base actualizada.
 │   ├── alerts.py        alertas de variación (K6)
 │   ├── charts.py        gráficos y colores del panel (Altair)
 │   ├── control.py       estado y lanzamiento del robot (API de GitHub)
+│   ├── architecture.py  diagrama en vivo del recorrido de los datos
 │   ├── dashboard.py     panel Streamlit
 │   └── report.py        informe semanal de alertas y estado
 ├── tests/
