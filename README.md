@@ -45,7 +45,7 @@ Un job semanal de GitHub Actions ejecuta todo y guarda la base actualizada.
 │   ├── BACKLOG.md       tareas y criterios de terminado
 │   ├── DECISIONES.md    registro de decisiones
 │   ├── MANUAL.md        manual de operación: qué pasa cada martes y qué hacer si falla
-│   └── PROYECTO.md      textos de la página «El proyecto» del panel
+│   └── PROYECTO.md      textos del panel: «Inicio», glosario y tablas de «Arquitectura»
 ├── agent/
 │   ├── agent.py         descarga y validación de archivos
 │   ├── input.csv      recursos a descargar
@@ -65,7 +65,7 @@ Un job semanal de GitHub Actions ejecuta todo y guarda la base actualizada.
 │   ├── control.py       estado y lanzamiento del job semanal (API de GitHub)
 │   ├── architecture.py  diagrama en vivo del recorrido de los datos
 │   ├── explorer.py      constructor de consultas por clics (página Consultas)
-│   ├── project.py       contenido de la página «El proyecto»: documentos, SQL y ejemplos reales
+│   ├── project.py       contenido del panel: documentos, SQL, glosario y ejemplos reales
 │   ├── dashboard.py     panel Streamlit
 │   └── report.py        informe semanal de alertas y estado
 ├── tests/

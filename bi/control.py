@@ -15,6 +15,13 @@ BRANCH = "main"
 API_URL = "https://api.github.com"
 WORKFLOW_PAGE_URL = f"https://github.com/{REPOSITORY}/actions/workflows/{WORKFLOW_FILE}"
 REQUEST_TIMEOUT_SECONDS = 10
+# Administration (T-54): shown only after the control code is typed.
+STREAMLIT_ADMIN_URL = "https://share.streamlit.io"
+TOKEN_CREATE_URL = "https://github.com/settings/personal-access-tokens/new"
+TOKENS_URL = "https://github.com/settings/tokens"
+# GitHub states when the token of a request expires in this answer header.
+TOKEN_EXPIRATION_HEADER = "GitHub-Authentication-Token-Expiration"
+TOKEN_WARNING_DAYS = 14
 
 # Schedule of semanal.yml: Tuesdays at 12:00 UTC.
 SCHEDULE_WEEKDAY = 1  # Monday is 0
@@ -144,6 +151,42 @@ def mark_simulated_failures(runs, token=None):
         if run["state"] == RUN_FAILED and is_simulated_failure(list_run_steps(run["id"], token)):
             run["state"] = RUN_SIMULATED_FAILURE
     return runs
+
+
+def parse_token_expiration(text):
+    """'2026-12-31 12:00:00 UTC' (or with a -0300 offset) -> aware datetime, or None."""
+    if not text:
+        return None
+    for pattern in ("%Y-%m-%d %H:%M:%S %Z", "%Y-%m-%d %H:%M:%S %z"):
+        try:
+            moment = datetime.strptime(text.strip(), pattern)
+        except ValueError:
+            continue
+        return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+    return None
+
+
+def read_token_expiration(token):
+    """When the token expires, from GitHub's answer header; None if it never does.
+
+    /rate_limit does not count against the hourly limit. Only the date leaves
+    this function: never the token, the headers or the answer.
+    """
+    response = requests.get(f"{API_URL}/rate_limit", headers=build_headers(token),
+                            timeout=REQUEST_TIMEOUT_SECONDS)
+    response.raise_for_status()
+    return parse_token_expiration(response.headers.get(TOKEN_EXPIRATION_HEADER))
+
+
+def describe_token_expiration(expiration, now):
+    """(sentence, is_urgent) about the token: «Tu token vence en X días»."""
+    if expiration is None:
+        return "Tu token no tiene fecha de vencimiento.", False
+    days = (expiration - now).days
+    if days < 0:
+        return "Tu token venció: crea uno nuevo y cámbialo en los secretos del panel.", True
+    return (f"Tu token vence en {days} días ({expiration:%d-%m-%Y}).",
+            days < TOKEN_WARNING_DAYS)
 
 
 def describe_github_error(error, now=None):

@@ -24,11 +24,42 @@ DECISIONS_FILE = DOCS_DIR / "DECISIONES.md"
 README_FILE = PROJECT_DIR / "README.md"
 GITIGNORE_FILE = PROJECT_DIR / ".gitignore"
 SCHEMA_FILE = PROJECT_DIR / "etl" / "schema.sql"
+TESTS_DIR = PROJECT_DIR / "tests"
 
 GITHUB_URL = "https://github.com/cben6514-boop/monitor-precios-hito1"
 GITHUB_BRANCH = "main"
 COMMITS_URL = f"{GITHUB_URL}/commits/{GITHUB_BRANCH}"
 ACTIONS_URL = f"{GITHUB_URL}/actions"
+ISSUES_URL = f"{GITHUB_URL}/issues"
+WHOLESALE_SOURCE_URL = ("https://datos.odepa.gob.cl/dataset/"
+                        "precios-mayoristas-de-frutas-y-hortalizas")
+CONSUMER_SOURCE_URL = "https://datos.odepa.gob.cl/dataset/precios-consumidor"
+# The links of the project, shown at the foot of every page and in Operaciones
+# and Arquitectura (T-54). One list for all of them. A link without an address
+# (the video, the post) stays hidden until it exists.
+PROJECT_LINKS = [
+    {"name": "Código en GitHub", "description": "Ver el código completo.",
+     "url": GITHUB_URL, "icon": "code"},
+    {"name": "Ejecuciones", "description": "Historial del job semanal y de los tests (Actions).",
+     "url": ACTIONS_URL, "icon": "history"},
+    {"name": "Informes semanales",
+     "description": "El informe publicado tras cada ejecución (Issues).",
+     "url": ISSUES_URL, "icon": "description"},
+    {"name": "Historial de cambios", "description": "Cada commit, con su tarea.",
+     "url": COMMITS_URL, "icon": "commit"},
+    {"name": "Fuente: precios mayoristas", "description": "Datos originales de ODEPA.",
+     "url": WHOLESALE_SOURCE_URL, "icon": "database"},
+    {"name": "Fuente: precios al consumidor", "description": "Datos originales de ODEPA.",
+     "url": CONSUMER_SOURCE_URL, "icon": "database"},
+    {"name": "MANUAL", "description": "Qué pasa cada martes y qué hacer si algo falla.",
+     "url": f"{GITHUB_URL}/blob/{GITHUB_BRANCH}/docs/MANUAL.md", "icon": "menu_book"},
+    {"name": "DECISIONES", "description": "Qué se decidió, por qué y qué se descartó.",
+     "url": f"{GITHUB_URL}/blob/{GITHUB_BRANCH}/docs/DECISIONES.md", "icon": "gavel"},
+    {"name": "Video", "description": "El proyecto explicado en dos minutos.",
+     "url": None, "icon": "play_circle"},
+    {"name": "Post de LinkedIn", "description": "La presentación del proyecto.",
+     "url": None, "icon": "campaign"},
+]
 
 # Headings of docs/DISENO.md that hold the business questions, rules and indicators.
 QUESTIONS_HEADING = "3. Preguntas de negocio"
@@ -246,30 +277,46 @@ def count_table_rows(database_file=queries.DATABASE_FILE):
     return counts
 
 
-def build_table_label(table, row_count):
-    """Text of one box of the diagram: the table name and its rows."""
-    return f"{table}\\n{charts.format_thousands(row_count)} filas"
+def count_week_prices(week_start, database_file=queries.DATABASE_FILE):
+    """Number of weekly prices of one week (week_start: Monday, YYYY-MM-DD)."""
+    connection = queries.open_database(database_file)
+    count = connection.execute("SELECT COUNT(*) FROM weekly_price WHERE week_start = ?",
+                               (week_start,)).fetchone()[0]
+    connection.close()
+    return count
 
 
-def build_star_diagram(row_counts, mode):
-    """Graphviz (DOT) text of the star model, in the colors of the active mode.
+def describe_file_size(path):
+    """Size of a file in megabytes, with a decimal comma: «33,9 MB»."""
+    return f"{path.stat().st_size / 1_000_000:.1f} MB".replace(".", ",")
 
-    The three dimensions sit above the fact table; the two run tables apart.
-    """
-    palette = charts.get_palette(mode)
-    style = (f'style="rounded,filled" fillcolor="{palette["card"]}" '
-             f'color="{palette["card_border"]}" fontcolor="{palette["strong_text"]}"')
-    lines = ["graph star {", 'bgcolor="transparent"; nodesep=0.5; ranksep=0.6;',
-             f'node [shape=box fontname="{charts.CHART_FONT}" fontsize=12 {style}];',
-             f'edge [color="{palette["reference"]}"];']
-    for table in TABLE_NAMES:
-        highlight = f' color="{palette["accent"]}" penwidth=2' if table == "weekly_price" else ""
-        lines.append(f'{table} [label="{build_table_label(table, row_counts[table])}"'
-                     f'{highlight}];')
-    lines.append(f'{{ rank=same; {"; ".join(DIMENSION_TABLES)}; }}')
-    lines += [f"{table} -- weekly_price;" for table in DIMENSION_TABLES]
-    lines += ["etl_run -- rejection;", "}"]
-    return "\n".join(lines)
+
+def count_test_functions(tests_dir=TESTS_DIR):
+    """Number of test functions in the repository (a parametrized one counts once)."""
+    return sum(path.read_text(encoding="utf-8").count("\ndef test_")
+               for path in tests_dir.glob("test_*.py"))
+
+
+def read_schema_columns(schema_text):
+    """{table: [(column, "PK", "FK" or "")]} from the CREATE TABLE statements."""
+    tables = {}
+    for match in re.finditer(r"CREATE TABLE IF NOT EXISTS (\w+) \((.*?)\n\);", schema_text,
+                             re.DOTALL):
+        lines = [line.split("--")[0].strip() for line in match.group(2).splitlines()]
+        columns = [line for line in lines if line and not line.startswith("UNIQUE")]
+        tables[match.group(1)] = [(column.split()[0], "PK" if "PRIMARY KEY" in column
+                                   else "FK" if "REFERENCES" in column else "")
+                                  for column in columns]
+    return tables
+
+
+def read_week_span(database_file=queries.DATABASE_FILE):
+    """(number of weeks, first Monday, last Monday) with prices."""
+    connection = queries.open_database(database_file)
+    span = connection.execute("SELECT COUNT(DISTINCT week_start), MIN(week_start), "
+                              "MAX(week_start) FROM weekly_price").fetchone()
+    connection.close()
+    return span
 
 # endregion
 

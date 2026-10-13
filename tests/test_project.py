@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import requests
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -177,3 +178,49 @@ def test_rule_evidence_has_a_sentence_for_each_rule_it_measures():
     assert set(evidence) == set(project.RULE_EVIDENCE)
     assert evidence["RN-14"].endswith("0 claves repetidas en weekly_price.")
 # endregion
+
+
+# region Project links (T-54)
+def test_t54_project_links_have_the_agreed_names_and_hide_what_does_not_exist():
+    names = [link["name"] for link in project.PROJECT_LINKS]
+    assert names == ["Código en GitHub", "Ejecuciones", "Informes semanales",
+                     "Historial de cambios", "Fuente: precios mayoristas",
+                     "Fuente: precios al consumidor", "MANUAL", "DECISIONES", "Video",
+                     "Post de LinkedIn"]
+    for link in project.PROJECT_LINKS:
+        assert link["description"] and link["icon"]
+    unpublished = {link["name"] for link in project.PROJECT_LINKS if not link["url"]}
+    assert unpublished == {"Video", "Post de LinkedIn"}
+
+
+@pytest.mark.parametrize("link", [link for link in project.PROJECT_LINKS if link["url"]],
+                         ids=lambda link: link["name"])
+def test_t54_every_public_link_answers(link):
+    try:
+        response = requests.get(link["url"], timeout=20, allow_redirects=True,
+                                headers={"User-Agent": "monitor-precios-tests"})
+    except requests.ConnectionError:
+        pytest.skip("no network")
+    assert response.status_code < 400, f"{link['name']}: {response.status_code}"
+# endregion
+
+
+def test_d054_real_figures_of_the_devops_diagram(tmp_path):
+    (tmp_path / "test_one.py").write_text("x = 1\n\ndef test_a():\n    pass\n\n\n"
+                                          "def test_b():\n    pass\n", encoding="utf-8")
+    (tmp_path / "helper.py").write_text("\ndef test_not_counted():\n    pass\n",
+                                        encoding="utf-8")
+    assert project.count_test_functions(tmp_path) == 2
+    sized = tmp_path / "datos.db"
+    sized.write_bytes(b"0" * 33_900_000)
+    assert project.describe_file_size(sized) == "33,9 MB"
+
+
+@pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.db has not been built")
+def test_d054_week_prices_match_the_rows_of_that_week():
+    connection = queries.open_database()
+    rows = pd.read_sql_query("SELECT week_start FROM weekly_price", connection)
+    connection.close()
+    latest_week = rows["week_start"].max()
+    assert project.count_week_prices(latest_week) == (rows["week_start"] == latest_week).sum()
+    assert project.count_week_prices("1999-01-04") == 0

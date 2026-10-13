@@ -1,6 +1,6 @@
 # Guía del proyecto
 
-Textos que muestra la página «El proyecto» del panel, portada incluida (pestaña «Arquitectura»: DevOps, Seguridad, Observabilidad e Informes). El panel lee este archivo tal cual: para cambiar un texto de la página, se cambia aquí. Las reglas (RN), los indicadores (K) y las preguntas (P) se leen de `DISENO.md`; las cifras salen de la base en cada visita.
+Textos que muestra el panel: «Inicio» (portada y pestañas de documentación, glosario incluido) y «Arquitectura» (pestaña «DevOps y seguridad»: DevOps, Seguridad, Observabilidad e Informes). El panel lee este archivo tal cual: para cambiar un texto de la página, se cambia aquí. Las reglas (RN), los indicadores (K) y las preguntas (P) se leen de `DISENO.md`; las cifras salen de la base en cada visita.
 
 ## Resumen
 
@@ -38,11 +38,11 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 
 | KPI | En palabras | Página | Consulta |
 |---|---|---|---|
-| K1 | Cuánto más paga el consumidor que el mayorista por lo mismo, en la misma semana y región. | Márgenes | k1_margin |
+| K1 | Cuánto más paga el consumidor que el mayorista por lo mismo, en la misma semana y región. | Brecha de precio | k1_margin |
 | K2 | Cuánto más caro o más barato es un canal que otro, para el mismo producto, semana y región. | Canales y regiones | k2_channel_gap |
 | K3 | Cuánto más caro o más barato es una región que el promedio de las regiones esa semana. | Canales y regiones | k3_regional_index |
 | K4 | Cuánto más caro o más barato es una semana que el promedio de su año. | Estacionalidad | k4_seasonal_index |
-| K5 | Cuántas semanas tarda el precio al consumidor en moverse después del mayorista. | Márgenes | k5_weekly_variations_sql |
+| K5 | Cuántas semanas tarda el precio al consumidor en moverse después del mayorista. | Brecha de precio | k5_weekly_variations_sql |
 | K6 | Si el cambio de precio de esta semana es mucho mayor que los cambios habituales del producto. | Alertas | k6_usual_range_sql |
 | K7 | Cuántas claves de frutas y verduras del consumidor tienen un precio mayorista con qué compararse. | Calidad de datos | k7_match_coverage |
 | K8 | Qué parte de las filas leídas se rechazó, y por qué motivo. | Calidad de datos | k8_rejected_rows |
@@ -70,7 +70,7 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 
 | Consulta | Qué responde | Página |
 |---|---|---|
-| k1_margin | ¿Cuánto más paga el consumidor que el mayorista, semana a semana? | Márgenes |
+| k1_margin | ¿Cuánto más paga el consumidor que el mayorista, semana a semana? | Brecha de precio |
 | k2_channel_gap | ¿Cuánto más caro es un canal que otro para el mismo producto? | Canales y regiones |
 | k3_regional_index | ¿Qué regiones son más caras que el promedio nacional? | Canales y regiones |
 | k4_seasonal_index | ¿Qué semanas del año son caras o baratas para cada producto? | Estacionalidad |
@@ -78,17 +78,17 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 | quality_runs | ¿Cómo terminaron las últimas ejecuciones del ETL? | Calidad de datos |
 | quality_flag_counts | ¿Cuántos precios semanales se usan y cuántos quedaron marcados? | Calidad de datos |
 | quality_outliers | ¿Qué precios se marcaron como atípicos? | Calidad de datos |
-| quality_week_range | ¿Qué semanas y años hay cargados en la base? | El proyecto |
+| quality_week_range | ¿Qué semanas y años hay cargados en la base? | Inicio |
 | k6_national_weekly_price | ¿Cuál es el precio nacional de cada producto y canal, semana a semana? | Alertas |
 | k6_usual_range_sql | ¿Qué cambios semanales salen de su rango habitual? (versión SQL de K6) | Alertas |
-| k5_weekly_variations_sql | ¿Cuánto cambió cada precio frente a la semana anterior, en las series largas? (versión SQL de K5) | Márgenes |
+| k5_weekly_variations_sql | ¿Cuánto cambió cada precio frente a la semana anterior, en las series largas? (versión SQL de K5) | Brecha de precio |
 
 ## DevOps
 
 | Pieza | Qué hace | Archivo |
 |---|---|---|
 | Workflow semanal | Cada martes a las 12:00 UTC descarga, ejecuta el ETL, corre los tests, guarda el data warehouse y publica el informe. Si un paso falla, los siguientes no corren (D-034). | .github/workflows/semanal.yml |
-| Tests en cada push | `pytest` corre en cada push y pull request, antes de que el cambio llegue al panel. | .github/workflows/pruebas.yml |
+| Tests en cada push | `pytest` corre en cada push y pull request. Streamlit publica la rama `main` en paralelo, sin esperar el resultado: una prueba en rojo avisa, no detiene la publicación. | .github/workflows/pruebas.yml |
 | Caché de años cerrados | Los archivos de años que ya no cambian se guardan en la caché de GitHub Actions (D-047). | .github/workflows/semanal.yml |
 | Despliegue continuo | Streamlit Community Cloud publica el panel desde la rama `main`: cada push lo actualiza. | requirements.txt |
 | Entorno de desarrollo | Dev container con Python 3.11 y las librerías de `requirements.txt`. | .devcontainer/devcontainer.json |
@@ -110,7 +110,7 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 | Tabla `etl_run` | Una fila por carga: inicio, estado, filas leídas, cargadas y rechazadas. | Calidad de datos |
 | Tabla `rejection` | Cada fila rechazada con su motivo (RN-11). | Calidad de datos |
 | Logs del agente | Un archivo por ejecución de la ingesta, con una línea por archivo descargado y su resultado. | agent/logs |
-| Historial de GitHub Actions | Cada ejecución del workflow con el resultado de cada paso. | Centro de control |
+| Historial de GitHub Actions | Cada ejecución del workflow con el resultado de cada paso. | Ejecuciones |
 | Correo de GitHub | Aviso a la autora si el job semanal falla. | Correo |
 
 ## Informes
@@ -119,3 +119,27 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 |---|---|---|
 | Issue «Informe semanal AAAA-MM-DD» | Estado de la carga, filas leídas, cargadas y rechazadas, cobertura del cruce (K7) y alertas de la semana (K6). | Cada martes, solo si todos los pasos anteriores pasaron. |
 | Este panel | Las cifras de la última carga, leídas de `datos.db` en cada visita. | Uno o dos minutos después del commit semanal. |
+
+## Glosario
+
+| Sigla o término | Significado | Dónde aparece |
+|---|---|---|
+| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Inicio, Arquitectura |
+| CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Arquitectura |
+| ETL | Extraer, transformar y cargar: limpia los datos, aplica las reglas y los guarda. | Arquitectura, Operaciones |
+| Pipeline | La cadena completa que corre cada martes: descarga, ETL, pruebas, guardado e informe. | Inicio, Arquitectura |
+| Data warehouse | La base lista para analizar (`datos.db`), con el modelo estrella. | Arquitectura |
+| Bronce, plata, oro | Las capas de los datos: tal como llegan, limpios con reglas, y listos para analizar. | Arquitectura |
+| PK | Clave primaria: la columna que identifica cada fila de una tabla. | Arquitectura (Modelo de datos) |
+| FK | Clave foránea: la columna que apunta a la clave primaria de otra tabla. | Arquitectura (Modelo de datos) |
+| JOIN | Unión de dos tablas por su clave. | Arquitectura, Datos y código |
+| SQL | Lenguaje de consultas estructurado: con él se leen los datos de la base. | Datos y código |
+| KPI | Indicador clave: cada cifra que mide algo del negocio (K1 a K8). | Inicio, Análisis |
+| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Inicio (Reglas de calidad) |
+| CI | Integración continua: las pruebas corren solas en cada cambio del código. | Arquitectura (DevOps y seguridad) |
+| Job, workflow | Tarea automática de GitHub Actions; el job semanal corre cada martes. | Arquitectura, Operaciones |
+| Commit, push | Guardar un cambio en el historial del código, y subirlo a GitHub. | Arquitectura |
+| Issue | Publicación en GitHub; aquí, el informe semanal. | Operaciones |
+| API | La puerta por la que un programa habla con otro; el panel la usa para consultar GitHub. | Operaciones |
+| HTTPS | Conexión web cifrada. | Arquitectura |
+| UTC | Hora universal; el job corre a las 12:00 UTC, 09:00 en Chile. | Arquitectura |

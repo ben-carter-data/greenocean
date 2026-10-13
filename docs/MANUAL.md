@@ -1,10 +1,10 @@
 # Manual de operación
 
-Para quien opera el proyecto sin ser técnico: qué pasa solo, qué hay que revisar y qué hacer si algo falla. El panel muestra este archivo en «El proyecto» → «Cómo funciona».
+Para quien opera el proyecto sin ser técnico: qué pasa solo, qué hay que revisar y qué hacer si algo falla. El panel muestra este archivo en «Inicio» → «Cómo funciona».
 
 ## Qué pasa cada martes
 
-El job semanal (`.github/workflows/semanal.yml`) corre solo cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. También se puede lanzar a mano desde GitHub o con el botón «Ejecutar ahora» del Centro de control. Hace, en orden:
+El job semanal (`.github/workflows/semanal.yml`) corre solo cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. También se puede lanzar a mano desde GitHub o con el botón «Ejecutar ahora» de «Operaciones» → «Ejecuciones». Hace, en orden:
 
 1. **Prepara el entorno:** descarga el código del repositorio e instala Python y las librerías.
 2. **Recupera los años cerrados de la caché** (D-047): los archivos de años anteriores no cambian y se guardan en la caché de GitHub Actions.
@@ -18,7 +18,7 @@ Si un paso falla, los siguientes no se ejecutan: el data warehouse del repositor
 
 ## Qué es real en el diagrama del pipeline
 
-El diagrama aparece arriba en la portada («Pipeline en vivo») y completo en «El proyecto» → «Arquitectura». Mezcla datos reales con un dibujo fijo:
+En «Inicio» («Pipeline en vivo») se ve la línea de estado y, en celular, el diagrama en cinco pasos; completo, en «Arquitectura» → «Pipeline». Cada diagrama tiene una sola pestaña en «Arquitectura» y no se repite en otra (D-054, D-056). Mezcla datos reales con un dibujo fijo:
 
 | Real: se lee en cada visita | Representación: no cambia sola |
 |---|---|
@@ -29,13 +29,19 @@ El diagrama aparece arriba en la portada («Pipeline en vivo») y completo en «
 
 El diagrama no se refresca solo: muestra el estado del momento en que se abrió la página. Para ver un cambio, se recarga la página.
 
+La pestaña «DevOps y seguridad» dibuja la infraestructura por plataforma: cada recuadro es un lugar donde corre algo (ODEPA, tu computador, GitHub, Streamlit Community Cloud y los usuarios) y dentro están sus componentes; cada línea dice cómo se comunican (HTTPS · CSV, git push, `st.secrets`, etc.). Sigue las mismas reglas. Son reales el tamaño de `datos.db`, el número de funciones de prueba, los precios de la última semana (lo que agregó el job semanal), la próxima ejecución, la hora de los datos y los puntos de estado de ODEPA, el job, Streamlit y el informe. «Pruebas (CI)» no lleva punto: el panel no consulta el workflow `pruebas.yml`. En pantallas angostas este diagrama se ajusta al ancho y se lee con zoom.
+
+### Zoom en los diagramas
+
+Los tres diagramas de «Arquitectura» (pipeline, modelo de datos e infraestructura) se abren ajustados al ancho y completos. Con dos dedos se acercan (pinch-zoom) y con un dedo, o el mouse, se arrastran dentro de su marco, sin mover el resto de la página. Los botones ＋, － y ⟲, bajo el marco a la derecha, acercan, alejan y vuelven al tamaño original. El zoom redibuja el diagrama a su nuevo tamaño, así que se ve nítido con cualquier acercamiento (hasta 6 veces). En el esquema estrella, al pasar el mouse sobre una tabla, o al tocarla en el celular, el panel de abajo explica qué guarda, cómo se une a `weekly_price` y cuántas filas tiene.
+
 ## Cómo leer un aviso rojo
 
 Hay cinco lugares donde se nota una falla:
 
 | Dónde | Qué se ve |
 |---|---|
-| Centro de control del panel | La última ejecución aparece como «Falla»; «detalle» abre la ejecución en GitHub. |
+| «Operaciones» → «Ejecuciones» del panel | La última ejecución aparece como «Falla»; «detalle» abre la ejecución en GitHub. |
 | Correo de GitHub | Llega un correo «Run failed: semanal» a la cuenta de la autora. |
 | Informe semanal | Esa semana no aparece un issue nuevo. |
 | Calidad de datos del panel | La fecha de la última carga sigue siendo la de la semana anterior. |
@@ -59,7 +65,7 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 | Qué se ve | Qué significa | Qué hacer |
 |---|---|---|
 | Después de un push, una página muestra `AttributeError` en producción | Streamlit Cloud mezcló archivos nuevos con otros que tenía en memoria (ocurrió el 12-10-2026; el código en GitHub estaba bien) | Abrir el panel, «Manage app» (abajo a la derecha) → ⋮ → **Reboot**. Esperar uno o dos minutos |
-| El Centro de control dice «No se pudo consultar GitHub: …» | El mensaje trae la causa real. La más común es «GitHub respondió 403: se agotó el límite de consultas sin clave»: GitHub permite 60 consultas por hora sin clave, compartidas por todas las apps del mismo servidor | Nada: el panel muestra la última respuesta guardada o, si no hay, los estados de la última carga guardada en la base, y vuelve a preguntar cada 5 minutos. Con la clave de «Ejecutar ahora» configurada el límite sube |
+| «Operaciones» → «Ejecuciones» dice «No se pudo consultar GitHub: …» | El mensaje trae la causa real. La más común es «GitHub respondió 403: se agotó el límite de consultas sin clave»: GitHub permite 60 consultas por hora sin clave, compartidas por todas las apps del mismo servidor | Nada: el panel muestra la última respuesta guardada o, si no hay, los estados de la última carga guardada en la base, y vuelve a preguntar cada 5 minutos. Con la clave de «Ejecutar ahora» configurada el límite sube |
 | Con un tema claro (Corporativo o Claro) las listas, tablas o bloques de código se ven oscuros, o al revés con Vantablack | El panel cambia el modo base de Streamlit solo, una vez por página; si una versión nueva de Streamlit cambió cómo guarda ese modo, el cambio no ocurre (D-052) | Elegir el modo a mano: ⋮ (arriba a la derecha) → Settings → Light para Corporativo y Claro, Dark para Vantablack |
 
 ## Tareas de la autora y tareas automáticas
@@ -68,10 +74,18 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 
 **De la autora:**
 
-- **Cada martes:** mirar el Centro de control o el correo. Si está en verde, no hay nada que hacer.
+- **Cada martes:** mirar «Operaciones» → «Ejecuciones» o el correo. Si está en verde, no hay nada que hacer.
 - **Cada enero:** agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL de descarga que publica ODEPA en las páginas de cada conjunto de datos (`DISENO.md`, sección 5).
 - **Respaldar `agent/downloads`:** los CSV descargados no se suben al repositorio (D-020) y la caché de GitHub no es un respaldo, porque se borra si no se usa en 7 días. Conviene copiar esa carpeta a otro disco de vez en cuando.
 - **Renovar la clave de GitHub** del botón «Ejecutar ahora» antes de que venza (D-038).
+
+## Administración y enlaces
+
+Los enlaces del proyecto están en un solo lugar: «Operaciones» → «Enlaces» (código, ejecuciones, informes, historial de cambios, las dos fuentes de ODEPA, este MANUAL y las DECISIONES). Cada uno se abre en una pestaña nueva y tiene un botón «Copiar enlace».
+
+La tarjeta «🔒 Administración» de «Operaciones» → «Ejecuciones» se abre con la clave de control (secreto `CONTROL_CODE` del panel). Muestra: administrar la app en Streamlit (Reboot, secretos, registros), lanzar el workflow en GitHub, crear un token, ver los tokens, el aviso «Tu token vence en X días» (destacado si faltan menos de 14) y el botón «Ejecutar ahora». El panel nunca muestra el token ni una parte de él.
+
+**La clave ordena el acceso, pero no es la seguridad real.** Los enlaces de administración llevan a páginas de GitHub y Streamlit que piden su propio inicio de sesión: quien vea la tarjeta sin tener la cuenta de la autora no puede cambiar nada. Lo que protege el proyecto es el inicio de sesión de GitHub y Streamlit (con verificación en dos pasos) y que el token tenga solo el permiso de lanzar el workflow de este repositorio. La clave sirve para que el botón «Ejecutar ahora» no lo use cualquier visitante del panel público.
 
 ## Límites conocidos
 
