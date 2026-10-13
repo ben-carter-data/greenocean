@@ -1,4 +1,5 @@
 """Tests for the dashboard: profiles, pages, key figures and footer."""
+import html
 import sys
 from pathlib import Path
 
@@ -424,3 +425,24 @@ def test_d057_rules_tab_keeps_the_long_rejected_row_out_of_the_cards():
     assert cards.count('class="info-card"') == 14
     assert "file_hash" not in cards
     assert len(app.expander) == len(dashboard.RULE_STAGES)
+
+
+@needs_database
+def test_d057_manual_tab_shows_every_section_of_the_manual():
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+              "from bi import dashboard\ndashboard.show_manual_tab(dashboard.charts.MODE_DARK)\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    texts = " ".join(block.value for block in app.markdown)
+    assert texts.count("<li>") == 7
+    # The automatic part and the four tasks of the author, one card each.
+    tasks = [block.value for block in app.markdown if "Automáticas, sin intervención" in block.value]
+    assert tasks[0].count('class="info-card"') == 5
+    labels = " ".join(expander.label for expander in app.expander).lower()
+    # Two sections take a plainer title in the panel; the glossary keeps its terms folded.
+    shown_titles = {"Cómo leer un aviso rojo": "Si algo falla",
+                    "Tareas de la autora y tareas automáticas": "Qué hace la autora",
+                    "Glosario": "términos de operación"}
+    for heading, _ in project.split_sections(project.read_document(project.MANUAL_FILE)):
+        title = shown_titles.get(heading, heading)
+        assert f">{html.escape(title)}<" in texts or title.lower() in labels, heading

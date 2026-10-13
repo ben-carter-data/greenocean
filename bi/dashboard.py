@@ -867,8 +867,14 @@ def show_section_intro(title, lead, is_subsection=False):
                 unsafe_allow_html=True)
 
 
+def capitalize_first(text):
+    """A text that may come from the middle of a sentence, starting in upper case."""
+    return text[:1].upper() + text[1:]
+
+
 def build_info_card_html(title, text, label=None, note=None, link=None, is_warning=False):
     """One card: an optional label, a title, a short text, a note and a named link."""
+    text = capitalize_first(text)
     parts = [f'<div class="info-label">{html.escape(label)}</div>' if label else "",
              f'<div class="info-title">{format_inline(title)}</div>',
              f'<div class="info-text">{format_inline(text)}</div>',
@@ -1283,8 +1289,7 @@ def show_sources(mode):
     show_section_intro("Las fuentes y cómo se cruzan", "Dos archivos abiertos de ODEPA "
                        "(Ministerio de Agricultura), uno por año. Existen, pero están "
                        "separados: antes de compararlos hay que resolver tres diferencias.", True)
-    show_info_cards([build_info_card_html(name, text[0].upper() + text[1:],
-                                          label=SOURCE_LABELS.get(name))
+    show_info_cards([build_info_card_html(name, text, label=SOURCE_LABELS.get(name))
                      for name, text in project.parse_labeled_items(section)])
     st.markdown('<div class="info-note">Licencia Creative Commons Atribución. Los enlaces a '
                 f'las fuentes están en {build_place_link(TAB_LINKS, "")}'
@@ -1529,9 +1534,88 @@ def show_sections_folded(text, first_open=True):
             st.markdown(body)
 
 
+def split_bold_label(text):
+    """(label, rest) of a paragraph that starts with «**Label:**»."""
+    match = re.match(r"\*\*(.+?):\*\* ?(.*)", text, flags=re.DOTALL)
+    return (match.group(1), match.group(2)) if match else ("", text)
+
+
+def build_table_cards_html(rows, title_column, text_column, action_column=None):
+    """A lookup table as cards: one row per card, its action as the note."""
+    return [build_info_card_html(row[title_column], row[text_column],
+                                 note=f"Qué hacer: {row[action_column]}" if action_column
+                                 else None) for row in rows]
+
+
+def show_weekly_run(manual):
+    """What the weekly job does, in order, and what happens when a step fails."""
+    section = project.read_section(manual, "Qué pasa cada martes")
+    paragraphs = project.read_paragraphs(section)
+    show_section_intro("Qué pasa cada martes", paragraphs[0], True)
+    st.markdown(build_steps_html(project.read_numbered_items(section)),
+                unsafe_allow_html=True)
+    show_info_cards([build_info_card_html("Nada se guarda a medias", paragraphs[-1],
+                                          is_warning=True)])
+
+
+def show_owner_tasks(manual):
+    """What runs alone and the four tasks of the author."""
+    section = project.read_section(manual, "Tareas de la autora y tareas automáticas")
+    automatic_label, automatic_text = split_bold_label(project.read_paragraphs(section)[0])
+    show_section_intro("Qué hace la autora", "Lo automático no necesita a nadie; estas "
+                       "tareas, sí.", True)
+    show_info_cards([build_info_card_html(automatic_label, automatic_text)]
+                    + [build_info_card_html(label, text)
+                       for label, text in project.parse_labeled_items(section)])
+
+
+def show_failures(manual):
+    """Where a failure shows, and what to do, folded by kind of failure."""
+    section = project.read_section(manual, "Cómo leer un aviso rojo")
+    paragraphs = project.read_paragraphs(section)
+    show_section_intro("Si algo falla", paragraphs[0].rstrip(":") + ".", True)
+    show_info_cards(build_table_cards_html(
+        project.parse_markdown_table(project.read_section_lead(section)), "Dónde", "Qué se ve"))
+    st.markdown(f'<div class="info-note">{format_inline(paragraphs[1])}</div>',
+                unsafe_allow_html=True)
+    for heading, title, text, action in [
+            ("Qué significa que falle cada paso y qué hacer", "Paso", "Qué suele significar",
+             "Qué hacer"),
+            ("Fallas del panel publicado", "Qué se ve", "Qué significa", "Qué hacer")]:
+        with st.expander(f"Ver detalles: {heading[0].lower() + heading[1:]}"):
+            show_info_cards(build_table_cards_html(project.parse_markdown_table(
+                project.read_subsection(manual, heading)), title, text, action))
+
+
+def show_known_limits(manual):
+    """The limits of the current set-up, always in sight."""
+    show_section_intro("Límites conocidos", "Cuándo el diseño actual deja de alcanzar, y qué "
+                       "hacer entonces.", True)
+    show_info_cards([build_info_card_html(label, text, is_warning=True) for label, text in
+                     project.parse_labeled_items(project.read_section(manual,
+                                                                      "Límites conocidos"))])
+
+
+def show_manual_details(manual):
+    """The rest of the manual, folded: the live diagram, administration and terms."""
+    show_section_intro("Más detalles", "Para quien quiere comprobar cómo funciona cada parte.",
+                       True)
+    for heading in ["Qué es real en el diagrama del pipeline", "Administración y enlaces",
+                    "Glosario"]:
+        label = "términos de operación" if heading == "Glosario" else heading.lower()
+        with st.expander(f"Ver detalles: {label}"):
+            st.markdown(project.read_section(manual, heading).replace("### ", "#### "))
+
+
 def show_manual_tab(mode):
-    """docs/MANUAL.md, one section per box."""
-    show_sections_folded(project.read_document(project.MANUAL_FILE))
+    """docs/MANUAL.md for whoever operates the project: the weekly run first, then the
+    tasks, failures and limits; the rest folded (D-057)."""
+    manual = project.read_document(project.MANUAL_FILE)
+    show_section_intro("Cómo funciona", "Qué pasa solo cada martes, qué revisar y qué hacer si "
+                       "algo falla. Para quien opera el proyecto sin ser técnico.")
+    for show_part in [show_weekly_run, show_owner_tasks, show_failures, show_known_limits,
+                      show_manual_details]:
+        show_part(manual)
 
 
 def show_decisions_tab(mode):
