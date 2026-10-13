@@ -371,10 +371,13 @@ def test_d056_project_links_live_only_in_operaciones_and_never_as_text():
 # endregion
 
 
-def test_architecture_tables_show_file_names_not_long_links():
-    cell = dashboard.format_architecture_cell(".github/workflows/semanal.yml")
-    assert cell == '<code title=".github/workflows/semanal.yml">semanal.yml</code>'
-    assert "<a " in dashboard.format_architecture_cell(dashboard.TAB_QUALITY)
+def test_architecture_cards_show_file_names_and_named_links():
+    note = dashboard.format_architecture_note("Archivo", ".github/workflows/semanal.yml")
+    assert note == 'Archivo: <code title=".github/workflows/semanal.yml">semanal.yml</code>'
+    assert ">Ver en Operaciones › Calidad de datos<" in dashboard.format_architecture_note(
+        "Dónde se ve", dashboard.TAB_QUALITY)
+    assert [group[0] for group in dashboard.ARCHITECTURE_GROUPS] == [
+        "Seguridad", "DevOps", "Observabilidad", "Informes"]
 
 
 def test_d057_cards_escape_their_text_and_keep_bold_and_code():

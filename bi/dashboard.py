@@ -278,6 +278,18 @@ GLOSSARY_THEME_LEADS = {
     "Indicadores": "Las cifras y las reglas que las producen.",
     "Conexiones": "Cómo se comunican las piezas.",
 }
+# The tables of «DevOps y seguridad» by priority: what protects the data first,
+# then what runs the project, how a run is observed and what gets published.
+# (heading in docs/PROYECTO.md, sentence, title column, text column, note column)
+ARCHITECTURE_GROUPS = [
+    ("Seguridad", "Qué protege los datos y las claves del proyecto.", "Medida",
+     "Qué protege", "Archivo"),
+    ("DevOps", "Qué hace correr el proyecto solo: cada semana y en cada cambio del código.",
+     "Pieza", "Qué hace", "Archivo"),
+    ("Observabilidad", "Cómo se sabe qué pasó en cada carga.", "Fuente", "Qué registra",
+     "Dónde se ve"),
+    ("Informes", "Qué se publica después de cada carga.", "Informe", "Qué contiene", "Cuándo"),
+]
 # (question, page where it is answered, state: available, partial or pending, note)
 BUSINESS_QUESTIONS = [
     ("¿Cuál es el margen entre el precio mayorista y el precio al consumidor, y cómo "
@@ -2659,23 +2671,24 @@ def read_journey():
     return states, figures, pipeline_run, latest_load, error_note
 
 
-def format_architecture_cell(text):
-    """A cell of an Arquitectura table: a page becomes a link; a repository file shows
-    only its name, with the whole path on hover (the links live in their own list)."""
+def format_architecture_note(column, text):
+    """The note of an architecture card: a file by its name (whole path on hover), a
+    place of the panel as a named link, or plain text."""
     if text in PAGE_PATHS or text in PAGE_OF_TAB:
-        return build_link_html(text, build_place_address(text))
+        return build_place_link(text)
     if project.is_in_repository(text):
-        return (f'<code title="{html.escape(text)}">'
+        return (f'{html.escape(column)}: <code title="{html.escape(text)}">'
                 f'{html.escape(text.rstrip("/").split("/")[-1])}</code>')
-    return re.sub(r"`([^`]+)`", r"<code>\1</code>", html.escape(text))
+    return f"{html.escape(column)}: {format_inline(text)}"
 
 
-def show_architecture_table(heading):
-    """One table of docs/PROYECTO.md (DevOps, Seguridad, ...), with its links."""
-    rows = project.read_guide_table(heading)
-    st.markdown(build_html_table(list(rows[0]), [[format_architecture_cell(cell)
-                                                  for cell in row.values()] for row in rows]),
-                unsafe_allow_html=True)
+def show_architecture_group(heading, lead, title_column, text_column, note_column):
+    """One table of docs/PROYECTO.md (Seguridad, DevOps, ...) as cards."""
+    show_section_intro(heading, lead, True)
+    show_info_cards([build_info_card_html(
+        row[title_column], row[text_column],
+        link=format_architecture_note(note_column, row[note_column]))
+        for row in project.read_guide_table(heading)])
 
 
 def build_journey_legend_html():
@@ -2716,8 +2729,8 @@ def build_devops_figures(figures):
 
 
 def show_devops_tab(mode):
-    """The whole project in one live diagram, then DevOps, security, observability
-    and reports."""
+    """The whole project in one live diagram, then security, DevOps, observability and
+    reports as cards, by priority (D-057)."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
     with open_card("devops_diagram", "Arquitectura por plataforma", hint=DEVOPS_HINT):
         st.markdown(build_run_status_html(states, pipeline_run, latest_load),
@@ -2727,19 +2740,12 @@ def show_devops_tab(mode):
         st.markdown(zoom.build_zoom_frame_html(
             architecture.build_devops_svg(states, build_devops_figures(figures), mode))
             + build_journey_legend_html(), unsafe_allow_html=True)
-    devops_column, security_column = st.columns(2)
-    with devops_column, open_card("architecture_devops", "DevOps"):
-        show_architecture_table("DevOps")
-        st.caption(f"Próxima ejecución automática: {figures['next_run']}.")
-    with security_column, open_card("architecture_security", "Seguridad"):
-        show_architecture_table("Seguridad")
-    observability_column, reports_column = st.columns(2)
-    with observability_column, open_card("architecture_observability", "Observabilidad"):
-        show_architecture_table("Observabilidad")
-    with reports_column, open_card("architecture_reports", "Informes"):
-        show_architecture_table("Informes")
-        st.link_button("Ver informes semanales", ISSUES_PAGE_URL,
-                       icon=":material/description:")
+    for group in ARCHITECTURE_GROUPS:
+        show_architecture_group(*group)
+        if group[0] == "DevOps":
+            st.markdown(f'<div class="info-note">Próxima ejecución automática: '
+                        f'{figures["next_run"]}.</div>', unsafe_allow_html=True)
+    st.link_button("Ver informes semanales", ISSUES_PAGE_URL, icon=":material/description:")
 
 
 def show_architecture_page(mode):
