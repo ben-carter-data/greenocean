@@ -373,3 +373,20 @@ def test_architecture_tables_show_file_names_not_long_links():
     cell = dashboard.format_architecture_cell(".github/workflows/semanal.yml")
     assert cell == '<code title=".github/workflows/semanal.yml">semanal.yml</code>'
     assert "<a " in dashboard.format_architecture_cell(dashboard.TAB_QUALITY)
+
+
+def test_d057_cards_escape_their_text_and_keep_bold_and_code():
+    card = dashboard.build_info_card_html("<b>Título</b>", "Texto con **negrita** y `datos.db`",
+                                          label="P1", note="nota")
+    assert "<b>Título</b>" not in card and "&lt;b&gt;Título&lt;/b&gt;" in card
+    assert "<strong>negrita</strong>" in card and "<code>datos.db</code>" in card
+    assert 'class="info-label">P1<' in card
+
+
+def test_d057_links_say_where_they_go():
+    link = dashboard.build_place_link(dashboard.TAB_GAP)
+    assert ">Ver en Análisis › Brecha de precio<" in link
+    assert ">Ir a Operaciones › Calidad de datos<" in dashboard.build_place_link(
+        dashboard.TAB_QUALITY, "Ir a")
+    steps = dashboard.build_steps_html([("Nombres", "se separan"), ("Unidades", "a kilo")])
+    assert steps.count("<li>") == 2 and steps.startswith('<ol class="steps">')
