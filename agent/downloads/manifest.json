@@ -4,14 +4,14 @@
     "year": 2026,
     "hash": "c959696510b98a17193cbd04ddf57607c0c4b8db1ec79444db0023ca152eff3f",
     "bytes": 32350548,
-    "downloaded_at": "2026-10-12T22:16:07"
+    "downloaded_at": "2026-10-13T18:34:29"
   },
   "consumer_2026.csv": {
     "source": "consumer",
     "year": 2026,
     "hash": "d6cdda7e0e9d674224460122cf84be1d6b89e79e8c529f3f820a3fe43038680a",
     "bytes": 45798183,
-    "downloaded_at": "2026-10-12T22:16:11"
+    "downloaded_at": "2026-10-13T18:34:45"
   },
   "wholesale_2022.csv": {
     "source": "wholesale",
