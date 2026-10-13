@@ -405,3 +405,22 @@ def test_d057_kpi_tab_shows_eight_cards_and_opens_the_asked_one_first():
     assert "Fórmula:" in cards and "Ver en Análisis › Brecha de precio" in cards
     assert [expander.label for expander in app.expander][0].startswith("Ver detalles de K5")
     assert "¿Cómo se calcula K7?" in dashboard.build_kpi_link("K7")
+
+
+def test_d057_every_rule_has_one_stage_in_the_order_of_the_etl():
+    rules = [rule for _, _, stage_rules, _ in dashboard.RULE_STAGES for rule in stage_rules]
+    assert sorted(rules) == [f"RN-{number:02d}" for number in range(1, 15)]
+    assert [stage for stage, _, _, _ in dashboard.RULE_STAGES][:6] == [
+        "Limpieza", "Validación", "Unidades", "Semanas", "Atípicos", "Carga"]
+
+
+@needs_database
+def test_d057_rules_tab_keeps_the_long_rejected_row_out_of_the_cards():
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+              "from bi import dashboard\ndashboard.show_rules_tab(dashboard.charts.MODE_DARK)\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    cards = " ".join(block.value for block in app.markdown if 'class="info-grid"' in block.value)
+    assert cards.count('class="info-card"') == 14
+    assert "file_hash" not in cards
+    assert len(app.expander) == len(dashboard.RULE_STAGES)
