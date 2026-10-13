@@ -91,3 +91,6 @@ Orden de arriba hacia abajo. Cada tarea indica cuándo se considera terminada. L
 | T-46 | Vocabulario estándar de ingeniería de datos en panel, documentos y código: pipeline, job semanal, workflow, ejecución, ingesta, ETL, staging, data warehouse |
 | T-47 | Versiones SQL de K6 (funciones de ventana) y K5 (`LAG`, `HAVING`), con tests de reconciliación contra Python (D-049) |
 | T-52 | Revisión de experiencia de usuario: etiquetas que no tapan nombres, enlaces que existen, años y fechas reales, formato chileno de números y fechas, celular, tiempos de carga (D-050) |
+| T-46b | Glosario de siglas y términos en «Inicio» → «Glosario», leído de `docs/PROYECTO.md` (D-056) |
+| T-59 | Modelo estrella dibujado como estrella, con columnas reales de `schema.sql`, panel de explicación y JOIN por tabla, y zoom (pinch, arrastre, ＋ － ⟲) en los diagramas (D-055) |
+| — | Panel organizado por tipo de contenido: Inicio, Análisis, Arquitectura, Datos y código, Operaciones, con pestañas, filtros compartidos y enlaces en un solo lugar (D-056) |

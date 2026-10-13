@@ -9,3 +9,4 @@ etl/raw.db
 report.md
 .DS_Store
 docs/privado/
+.streamlit/secrets.toml

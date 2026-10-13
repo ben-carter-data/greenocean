@@ -28,69 +28,73 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import (alerts, architecture, charts, control, explorer, lag, project,  # noqa: E402
-                queries)
+                queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
 # region Constants
-PROFILE_ANALYST = "Analista de pricing / compras"
-PROFILE_DATA_TEAM = "Equipo de datos"
-
-PAGE_OVERVIEW = "Panel"
-PAGE_PROJECT = "El proyecto"
-PAGE_MARGINS = "Márgenes"
-PAGE_CHANNELS_AND_REGIONS = "Canales y regiones"
-PAGE_SEASONALITY = "Estacionalidad"
-PAGE_ALERTS = "Alertas"
-PAGE_EXPLORER = "Consultas"
-PAGE_CONTROL = "Centro de control"
-PAGE_DATA_QUALITY = "Calidad de datos"
-# The project page is the home page of every profile (D-051).
-HOME_PAGE = PAGE_PROJECT
-PAGES_BY_PROFILE = {
-    PROFILE_ANALYST: [PAGE_PROJECT, PAGE_OVERVIEW, PAGE_MARGINS, PAGE_CHANNELS_AND_REGIONS,
-                      PAGE_SEASONALITY, PAGE_ALERTS, PAGE_EXPLORER, PAGE_CONTROL],
-    PROFILE_DATA_TEAM: [PAGE_PROJECT, PAGE_OVERVIEW, PAGE_CONTROL, PAGE_DATA_QUALITY,
-                        PAGE_EXPLORER],
-}
+# One menu for everyone, by type of content: each entry has its tabs (D-056).
+PAGE_HOME = "Inicio"
+PAGE_ANALYSIS = "Análisis"
+PAGE_ARCHITECTURE = "Arquitectura"
+PAGE_DATA_AND_CODE = "Datos y código"
+PAGE_OPERATIONS = "Operaciones"
+PAGES = [PAGE_HOME, PAGE_ANALYSIS, PAGE_ARCHITECTURE, PAGE_DATA_AND_CODE, PAGE_OPERATIONS]
+HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
-    PAGE_OVERVIEW: ":material/space_dashboard:", PAGE_PROJECT: ":material/lightbulb:",
-    PAGE_MARGINS: ":material/percent:",
-    PAGE_CHANNELS_AND_REGIONS: ":material/storefront:",
-    PAGE_SEASONALITY: ":material/calendar_month:",
-    PAGE_ALERTS: ":material/notifications_active:",
-    PAGE_EXPLORER: ":material/manage_search:",
-    PAGE_CONTROL: ":material/smart_toy:", PAGE_DATA_QUALITY: ":material/verified:",
+    PAGE_HOME: ":material/home:", PAGE_ANALYSIS: ":material/monitoring:",
+    PAGE_ARCHITECTURE: ":material/account_tree:", PAGE_DATA_AND_CODE: ":material/database:",
+    PAGE_OPERATIONS: ":material/settings:",
 }
 PAGE_PATHS = {
-    PAGE_OVERVIEW: "panel", PAGE_PROJECT: "inicio", PAGE_MARGINS: "margenes",
-    PAGE_CHANNELS_AND_REGIONS: "canales-y-regiones", PAGE_SEASONALITY: "estacionalidad",
-    PAGE_ALERTS: "alertas", PAGE_EXPLORER: "consultas", PAGE_CONTROL: "centro-de-control",
-    PAGE_DATA_QUALITY: "calidad-de-datos",
+    PAGE_HOME: "inicio", PAGE_ANALYSIS: "analisis", PAGE_ARCHITECTURE: "arquitectura",
+    PAGE_DATA_AND_CODE: "datos-y-codigo", PAGE_OPERATIONS: "operaciones",
 }
 
-# Old addresses, kept so that saved links still work: each one opens the home
-# page, «pipeline» on its Arquitectura tab (D-051).
-OLD_PIPELINE_PATH = "pipeline"
-OLD_PROJECT_PATH = "el-proyecto"
+# The tabs of each page travel in the address (?seccion=...), so a link can open one.
+TAB_IDEA = "Idea de negocio"
+TAB_KPI = "KPI y cálculos"
+TAB_RULES = "Reglas de calidad"
+TAB_MANUAL = "Cómo funciona"
+TAB_DECISIONS = "Decisiones y método"
+TAB_GLOSSARY = "Glosario"
+TAB_WEEK = "Esta semana"
+TAB_GAP = "Brecha de precio"
+TAB_CHANNELS = "Canales y regiones"
+TAB_SEASONALITY = "Estacionalidad"
+TAB_ALERTS = "Alertas"
+TAB_PIPELINE = "Pipeline"
+TAB_MODEL = "Modelo de datos"
+TAB_DEVOPS = "DevOps y seguridad"
+TAB_EXPLORER = "Consulta por clics"
+TAB_QUERIES = "Queries"
+TAB_CODE = "Código"
+TAB_RUNS = "Ejecuciones"
+TAB_QUALITY = "Calidad de datos"
+TAB_LINKS = "Enlaces"
+TABS_BY_PAGE = {
+    PAGE_HOME: [TAB_IDEA, TAB_KPI, TAB_RULES, TAB_MANUAL, TAB_DECISIONS, TAB_GLOSSARY],
+    PAGE_ANALYSIS: [TAB_WEEK, TAB_GAP, TAB_CHANNELS, TAB_SEASONALITY, TAB_ALERTS],
+    PAGE_ARCHITECTURE: [TAB_PIPELINE, TAB_MODEL, TAB_DEVOPS],
+    PAGE_DATA_AND_CODE: [TAB_EXPLORER, TAB_QUERIES, TAB_CODE],
+    PAGE_OPERATIONS: [TAB_RUNS, TAB_QUALITY, TAB_LINKS],
+}
+PAGE_OF_TAB = {tab: page for page, tabs in TABS_BY_PAGE.items() for tab in tabs}
 
-# The project page: its tabs travel in the address (?seccion=...), so a link can
-# open one of them; ?perfil=... chooses the profile the same way.
-PROJECT_TAB_IDEA = "Idea de negocio"
-PROJECT_TAB_SOURCES = "Fuentes y cruces"
-PROJECT_TAB_ARCHITECTURE = "Arquitectura"
-PROJECT_TAB_MODEL = "Modelo de datos"
-PROJECT_TAB_KPI = "KPI y cálculos"
-PROJECT_TAB_RULES = "Reglas de calidad"
-PROJECT_TAB_MANUAL = "Cómo funciona"
-PROJECT_TAB_DECISIONS = "Decisiones y método"
-PROJECT_TAB_CODE = "Código"
-PROJECT_TABS = [PROJECT_TAB_IDEA, PROJECT_TAB_SOURCES, PROJECT_TAB_ARCHITECTURE,
-                PROJECT_TAB_MODEL, PROJECT_TAB_KPI, PROJECT_TAB_RULES, PROJECT_TAB_MANUAL,
-                PROJECT_TAB_DECISIONS, PROJECT_TAB_CODE]
+# Old addresses, kept so that saved links still work: each opens its new tab (D-056).
+OLD_PATHS = {
+    "el-proyecto": (PAGE_HOME, None), "panel": (PAGE_ANALYSIS, TAB_WEEK),
+    "margenes": (PAGE_ANALYSIS, TAB_GAP), "canales-y-regiones": (PAGE_ANALYSIS, TAB_CHANNELS),
+    "estacionalidad": (PAGE_ANALYSIS, TAB_SEASONALITY), "alertas": (PAGE_ANALYSIS, TAB_ALERTS),
+    "consultas": (PAGE_DATA_AND_CODE, TAB_EXPLORER), "pipeline": (PAGE_ARCHITECTURE, TAB_PIPELINE),
+    "diagramas": (PAGE_ARCHITECTURE, None), "centro-de-control": (PAGE_OPERATIONS, TAB_RUNS),
+    "calidad-de-datos": (PAGE_OPERATIONS, TAB_QUALITY),
+}
+# Tabs of the old project page that live elsewhere now.
+OLD_HOME_TABS = {"Fuentes y cruces": TAB_IDEA, "Arquitectura": TAB_PIPELINE,
+                 "Modelo de datos": TAB_MODEL, "Código": TAB_CODE}
 TAB_PARAMETER = "seccion"
 THEME_PARAMETER = "tema"
-PROFILE_PARAMETER = "perfil"
 KPI_PARAMETER = "kpi"
 JOURNEY_MANAGER = "Soy gerente"
 JOURNEY_ANALYST = "Soy analista"
@@ -123,7 +127,7 @@ EXPLORER_BASE_QUERIES = {explorer.VIEW_MARGINS: "k1_margin",
                          explorer.VIEW_ALERTS: "k6_national_weekly_price"}
 
 MANIFEST_FILE = Path(__file__).resolve().parent.parent / "agent" / "downloads" / "manifest.json"
-ISSUES_PAGE_URL = f"https://github.com/{control.REPOSITORY}/issues"
+ISSUES_PAGE_URL = project.ISSUES_URL
 CHILE_TIME_ZONE = "America/Santiago"
 # GitHub allows 60 questions per hour without a key, shared by every app on the
 # same server: an answer is kept 5 minutes before asking again.
@@ -180,7 +184,18 @@ ARCHITECTURE_HINT = ("Los datos viajan de izquierda a derecha. **Bronce**: el ar
                      "las reglas de negocio. **Calidad**: si algo no cuadra, no se guarda "
                      "nada. **Oro**: la base lista para analizar. Arriba, quién da las "
                      "órdenes; abajo, cómo sabemos qué pasó. El punto de color de cada paso "
-                     "es su estado real.")
+                     "es su estado real. Pasa el mouse sobre cada pieza para ver qué hace. "
+                     "**Siglas**: ODEPA, Oficina de Estudios y Políticas Agrarias; CSV, archivo "
+                     "de valores separados por comas; ETL, extraer, transformar y cargar; RN, "
+                     "regla de negocio; SQL, lenguaje de consultas; MD, Markdown.")
+DEVOPS_HINT = ("Cada recuadro es una plataforma y, dentro, lo que corre en ella: ODEPA, tu "
+               "computador, GitHub (repositorio, Actions, caché e Issues), Streamlit Cloud y "
+               "quienes usan el panel. Cada línea dice cómo se comunican dos piezas. Las cifras "
+               "y los puntos de color son reales; sin punto, no hay un estado que leer. Pasa "
+               "el mouse sobre cada pieza para ver qué hace. **Siglas**: CI, integración "
+               "continua (pruebas automáticas en cada cambio); HTTPS, conexión web cifrada; "
+               "API, la puerta por la que un programa habla con GitHub; CSV, archivo de "
+               "valores separados por comas.")
 EXPLORER_VIEW_HINT = ("**Precios semanales**: el precio de cada producto por región y canal, "
                       "semana a semana. **Márgenes**: cuánto más paga el consumidor que el "
                       "mayorista, en %. **Alertas**: cambios semanales fuera de lo habitual, "
@@ -224,22 +239,27 @@ LIMITS_TEXT = (
 # (question, page where it is answered, state: available, partial or pending, note)
 BUSINESS_QUESTIONS = [
     ("¿Cuál es el margen entre el precio mayorista y el precio al consumidor, y cómo "
-     "evoluciona?", PAGE_MARGINS, "available", "Frutas y verduras"),
+     "evoluciona?", TAB_GAP, "available", "Frutas y verduras"),
     ("¿Cuánto difiere el precio entre canales: supermercado, feria, carnicería…?",
-     PAGE_CHANNELS_AND_REGIONS, "available", "Todos los grupos"),
-    ("¿En qué regiones son más altos los precios?", PAGE_CHANNELS_AND_REGIONS,
+     TAB_CHANNELS, "available", "Todos los grupos"),
+    ("¿En qué regiones son más altos los precios?", TAB_CHANNELS,
      "available", "Todos los grupos"),
-    ("¿En qué semanas sube y baja cada producto, y cuánto?", PAGE_SEASONALITY,
+    ("¿En qué semanas sube y baja cada producto, y cuánto?", TAB_SEASONALITY,
      "available", "Todos los grupos, desde 2022"),
     ("¿Con cuántas semanas de diferencia sigue el precio al consumidor al mayorista?",
-     PAGE_MARGINS, "available", "Frutas y verduras; descriptivo, no prueba causa"),
-    ("¿Qué productos se movieron esta semana fuera de su rango normal?", PAGE_ALERTS,
+     TAB_GAP, "available", "Frutas y verduras; descriptivo, no prueba causa"),
+    ("¿Qué productos se movieron esta semana fuera de su rango normal?", TAB_ALERTS,
      "available", "Todos los grupos"),
 ]
 QUESTION_STATES = {"available": ("Disponible", "ok"), "partial": ("Parcial", "running"),
                    "pending": ("Pendiente", "neutral")}
 
 NO_DATA_TEXT = "No hay datos para esta selección."
+NO_MARGIN_TEXT = ("Este producto no tiene precio mayorista en esta región y canal: la brecha "
+                  "solo existe para frutas y verduras con la misma unidad (RN-06). Mira "
+                  "Canales y regiones o Estacionalidad.")
+FILTERS_NOTE = ("Los filtros valen para todas las pestañas. Canales y regiones compara todos "
+                "los canales y regiones del producto; Alertas muestra todos los productos.")
 NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
 ATTRIBUTION_TEXT = (
     "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de "
@@ -369,24 +389,25 @@ def build_style_css(mode):
     }}
     .figure-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
                     margin: 8px 0; }}
+    .phone-only {{ display: none; }}
     .diagram-fit {{ width: 100%; min-width: 0; }}
     .diagram-fit img {{ display: block; width: 100%; max-width: 100%; height: auto; }}
     /* The whole diagram: wide from left to right; on narrow screens (phones,
        tablets, small windows) the wide one would shrink to unreadable text, so
-       the vertical version takes its place, and on the home page the five steps. */
-    .diagram-narrow, .diagram-mini {{ display: none; }}
-    .diagram-narrow img {{ display: block; width: 100%; max-width: 440px; height: auto;
-                           margin: 0 auto; }}
+       the vertical version takes its place. */
+    .diagram-narrow {{ display: none; max-width: 440px; margin: 0 auto; }}
     @media (max-width: 1000px) {{
         .diagram-wide {{ display: none; }}
-        .diagram-narrow, .diagram-mini {{ display: block; }}
+        .diagram-narrow {{ display: block; }}
     }}
+    {zoom.build_zoom_css(palette)}
     .run-status {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
                    margin: 0 0 10px 0; font-size: 0.9rem; }}
     /* Phones: two figures per row and less empty room above the title, so
        «Empieza aquí» fits on one screen. */
     @media (max-width: 640px) {{
         .figure-grid {{ grid-template-columns: repeat(2, 1fr); }}
+        .phone-only {{ display: block; }}
         [data-testid="stMainBlockContainer"] {{ padding-top: 2.5rem; }}
         [class*="st-key-card_start_here"] li {{ font-size: 0.9rem; line-height: 1.4; }}
     }}
@@ -395,6 +416,28 @@ def build_style_css(mode):
                           padding: 6px 4px; border-bottom: 1px solid {palette["card_border"]}; }}
     table.card-table td {{ padding: 8px 4px; border-bottom: 1px solid {palette["card_border"]};
                           color: {palette["strong_text"]}; }}
+    .link-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                  gap: 10px; margin: 6px 0; }}
+    .link-card {{ display: flex; align-items: center; gap: 8px; min-height: 52px;
+                  padding: 8px 10px; border-radius: 12px; background: {palette["card"]};
+                  border: 1px solid {palette["card_border"]}; }}
+    .link-card a {{ flex: 1; display: flex; align-items: center; gap: 10px;
+                    text-decoration: none; min-width: 0; }}
+    .link-card .link-icon {{ font-family: "Material Symbols Rounded"; font-size: 22px;
+                             color: {palette["accent"]}; }}
+    .link-card .link-text {{ display: flex; flex-direction: column; min-width: 0; }}
+    .link-card strong {{ color: {palette["strong_text"]}; font-size: 0.9rem; }}
+    .link-card small {{ color: {palette["text"]}; font-size: 0.78rem; line-height: 1.3; }}
+    .copy-link {{ flex: none; min-height: 36px; padding: 4px 10px; border-radius: 8px;
+                  cursor: pointer; font-size: 0.75rem; background: transparent;
+                  color: {palette["text"]}; border: 1px solid {palette["card_border"]}; }}
+    .copy-link:hover {{ color: {palette["accent"]}; border-color: {palette["accent"]}; }}
+    .admin-locked {{ color: {palette["text"]}; font-size: 0.9rem; }}
+    /* A text field inside a card stands out from the card around it. */
+    [class*="st-key-card_"] [data-testid="stTextInputRootElement"] {{
+        background: {palette["background"]} !important;
+        border-color: {palette["reference"]} !important;
+    }}
     /* Long file paths wrap inside their cell on phones; words do not break. */
     table.card-table td a {{ overflow-wrap: anywhere; }}
     """
@@ -432,13 +475,8 @@ def build_hint_icon(hint):
 
 
 def build_page_address(page_title, tab=None, kpi=None):
-    """Relative address of a page, a project tab or a KPI card.
-
-    A page that only the data team profile shows takes that profile with it.
-    """
+    """Relative address of a page, one of its tabs or a KPI card."""
     parameters = {}
-    if page_title not in PAGES_BY_PROFILE[PROFILE_ANALYST]:
-        parameters[PROFILE_PARAMETER] = PROFILE_DATA_TEAM
     if tab:
         parameters[TAB_PARAMETER] = tab
     if kpi:
@@ -450,6 +488,13 @@ def build_page_address(page_title, tab=None, kpi=None):
     return path + query
 
 
+def build_place_address(place):
+    """Address of a place named in a document: a page or a tab of a page."""
+    if place in PAGE_OF_TAB:
+        return build_page_address(PAGE_OF_TAB[place], place)
+    return build_page_address(place)
+
+
 def build_link_html(text, address):
     """A link that opens in the same tab, with already-escaped text."""
     return f'<a href="{html.escape(address)}" target="_self">{html.escape(text)}</a>'
@@ -457,7 +502,7 @@ def build_link_html(text, address):
 
 def build_kpi_link(kpi):
     """«¿Cómo se calcula?»: opens the card of the indicator in the project page."""
-    address = build_page_address(PAGE_PROJECT, PROJECT_TAB_KPI, kpi)
+    address = build_page_address(PAGE_HOME, TAB_KPI, kpi)
     return f'<span class="kpi-link">{build_link_html("¿Cómo se calcula?", address)}</span>'
 
 
@@ -492,6 +537,64 @@ def build_svg_image_html(svg, css_class="", is_actual_size=False):
     size = "" if is_actual_size else ' style="width:100%"'
     return (f'<div class="{css_class}"><img src="data:image/svg+xml;base64,{data}"{size} '
             f'alt="Recorrido de los datos"></div>')
+
+
+# Copies the address of a link card without showing it. One listener for the
+# whole page, so a block drawn twice does not copy twice.
+COPY_LINK_SCRIPT = """<script>
+if (!window.linkCardsReady) {
+    window.linkCardsReady = true;
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest(".copy-link");
+        if (!button) { return; }
+        const link = button.closest(".link-card").querySelector("a");
+        const show = (text) => {
+            button.textContent = text;
+            setTimeout(() => { button.textContent = "Copiar enlace"; }, 1500);
+        };
+        // Older browsers, or a page without focus: a hidden field and the copy command.
+        const copyWithField = () => {
+            const field = document.createElement("textarea");
+            field.value = link.href;
+            field.style.position = "fixed";
+            field.style.opacity = "0";
+            document.body.appendChild(field);
+            field.select();
+            const copied = document.execCommand("copy");
+            field.remove();
+            show(copied ? "Copiado ✓" : "No se pudo copiar");
+        };
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(link.href).then(() => show("Copiado ✓"), copyWithField);
+        } else {
+            copyWithField();
+        }
+    });
+}
+document.querySelectorAll(".link-card a").forEach((link) => {
+    link.target = "_blank"; link.rel = "noopener";
+});
+</script>"""
+
+
+def build_link_card_html(link):
+    """Name, icon and one line of description; the address is never shown as text."""
+    return (f'<div class="link-card"><a href="{html.escape(link["url"], quote=True)}" '
+            f'target="_blank" rel="noopener"><span class="link-icon">{link["icon"]}</span>'
+            f'<span class="link-text"><strong>{html.escape(link["name"])}</strong>'
+            f'<small>{html.escape(link["description"])}</small></span></a>'
+            f'<button type="button" class="copy-link">Copiar enlace</button></div>')
+
+
+def build_link_cards_html(links):
+    """A grid of link cards; links without an address (not published yet) stay out."""
+    cards = "".join(build_link_card_html(link) for link in links if link["url"])
+    return f'<div class="link-grid">{cards}</div>'
+
+
+def show_link_cards(links):
+    """Draw link cards that open in a new tab, each with its «Copiar enlace» button."""
+    st.html(build_link_cards_html(links) + COPY_LINK_SCRIPT, unsafe_allow_javascript=True)
 
 
 def show_chart(chart):
@@ -645,6 +748,17 @@ def choose_value(label, values, preferred_value=None, key=None):
     return st.selectbox(label, options, index=index, key=key)
 
 
+def recall_filter(name, default=None):
+    """The value the reader chose last for one filter of Análisis, or default."""
+    return st.session_state.get(f"analysis_{name}", default)
+
+
+def remember_filter(name, value):
+    """Keep a filter of Análisis, so it holds in every tab and after leaving the page."""
+    st.session_state[f"analysis_{name}"] = value
+    return value
+
+
 def choose_product_key(query_name, columns=None):
     """Group, product and variety/quality/unit chosen by the reader, as a key.
 
@@ -654,22 +768,24 @@ def choose_product_key(query_name, columns=None):
     options = read_key_options(query_name)
     group_column, product_column, key_column = columns or st.columns(3)
     with group_column:
-        group = choose_value("Grupo", options["product_group"].unique(), DEFAULT_GROUP)
+        group = remember_filter("group", choose_value(
+            "Grupo", options["product_group"].unique(), recall_filter("group", DEFAULT_GROUP)))
     options = options[options["product_group"] == group]
     with product_column:
-        product = choose_value("Producto", options["product"].unique(), DEFAULT_PRODUCT)
+        product = remember_filter("product", choose_value(
+            "Producto", options["product"].unique(), recall_filter("product", DEFAULT_PRODUCT)))
     options = options[options["product"] == product]
     with key_column:
         # The key with most data goes first, so the page opens with a full chart.
-        options = options.sort_values("row_count", ascending=False)
-        key_label = st.selectbox("Variedad · calidad · unidad", options["key_label"].to_list())
+        labels = options.sort_values("row_count", ascending=False)["key_label"].to_list()
+        remembered = recall_filter("key_label")
+        key_label = remember_filter("key_label", st.selectbox(
+            "Variedad · calidad · unidad", labels,
+            index=labels.index(remembered) if remembered in labels else 0))
     chosen = options[options["key_label"] == key_label].iloc[0]
     return {column: chosen[column] for column in queries.KEY_COLUMNS}
 
 
-def choose_product_rows(query_name):
-    """Rows of one indicator for the product key the reader chooses."""
-    return read_indicator_for_key(query_name, choose_product_key(query_name))
 # endregion
 
 
@@ -688,6 +804,14 @@ def show_page_header(title, subtitle):
                     f'{build_chip(run_text, run_kind)}</div>', unsafe_allow_html=True)
     st.markdown(f'<p class="page-subtitle">{html.escape(subtitle)}</p>',
                 unsafe_allow_html=True)
+def show_page_tabs(page, tab_contents, *arguments):
+    """The tabs of one page, bound to the address so a link can open one of them."""
+    tabs = st.tabs(TABS_BY_PAGE[page], key=TAB_PARAMETER, bind="query-params")
+    for tab, show_tab_content in zip(tabs, tab_contents):
+        with tab:
+            show_tab_content(*arguments)
+
+
 # endregion
 
 
@@ -783,9 +907,9 @@ def show_margin_figure(rows, mode):
                     charts.get_channel_color(SUPERMARKET, mode))
 
 
-def show_overview_trend(rows, mode):
+def show_overview_trend(rows, mode, key="trend"):
     """Card: weekly price of the wholesale market and of each consumer channel."""
-    with open_card("trend", "Precio por semana", "La línea gris es el precio mayorista.",
+    with open_card(key, "Precio por semana", "La línea gris es el precio mayorista.",
                    hint=PRICE_TREND_HINT):
         consumer_rows = rows[["week_start", "channel", "consumer_price"]].rename(
             columns={"consumer_price": "value"})
@@ -798,9 +922,9 @@ def show_overview_trend(rows, mode):
             "$ " + price_rows["value"].map(charts.format_thousands), mode, is_money=True))
 
 
-def show_overview_margins(rows, mode):
+def show_overview_margins(rows, mode, key="margins"):
     """Card: median margin of each consumer channel over the weeks shown."""
-    with open_card("margins", "Margen mediano por canal",
+    with open_card(key, "Margen mediano por canal",
                    "Cuánto más paga el consumidor que el mayorista.", hint=MEDIAN_MARGIN_HINT,
                    kpi="K1"):
         median_margins = rows.groupby("channel")["margin"].median() * 100
@@ -865,29 +989,52 @@ def show_overview_alerts():
                     unsafe_allow_html=True)
 
 
-def show_overview_page(mode):
-    """Home page: key figures, trend, margins, regions and alerts on one screen."""
-    show_page_header("Panel de precios", "Del mercado mayorista al consumidor, con datos "
-                     "oficiales de ODEPA que se actualizan solos cada martes.")
-    filter_columns = st.columns([1, 1, 1.4, 1.4])
-    key = choose_product_key("k1_margin", filter_columns[:3])
-    rows = read_indicator_for_key("k1_margin", key)
-    with filter_columns[3]:
-        region = choose_value("Región", rows["region"].unique(), DEFAULT_REGION)
-    rows = rows[rows["region"] == region]
+def choose_analysis_filters():
+    """Group, product, variety, region and channels, once for every tab of Análisis."""
+    columns = st.columns([1, 1, 1.4, 1.3, 1.8])
+    key = choose_product_key("k3_regional_index", columns[:3])
+    rows = read_indicator_for_key("k3_regional_index", key)
+    with columns[3]:
+        region = remember_filter("region", choose_value(
+            "Región", rows["region"].unique(), recall_filter("region", DEFAULT_REGION)))
+    consumer_channels = sorted(channel for channel in rows["channel"].unique()
+                               if channel != WHOLESALE_LABEL)
+    remembered = [channel for channel in recall_filter("channels", DEFAULT_MARGIN_CHANNELS)
+                  if channel in consumer_channels]
+    with columns[4]:
+        channels = remember_filter("channels", st.multiselect(
+            "Canal", consumer_channels, default=remembered))
+    st.caption(FILTERS_NOTE)
+    return {"key": key, "region": region, "channels": channels}
 
-    show_overview_figures(rows, mode)
-    trend_column, margin_column = st.columns([3, 2])
-    with trend_column:
-        show_overview_trend(rows, mode)
-    with margin_column:
-        show_overview_margins(rows, mode)
+
+def read_margin_rows(filters):
+    """K1 rows of the chosen product and region."""
+    rows = read_indicator_for_key("k1_margin", filters["key"])
+    return rows[rows["region"] == filters["region"]]
+
+
+def show_week_tab(mode, filters):
+    """This week: key figures, trend, margins, regions and alerts on one screen."""
+    rows = read_margin_rows(filters)
+    chosen_rows = rows[rows["channel"].isin(filters["channels"])]
+    if rows.empty or chosen_rows.empty:
+        st.info(NO_MARGIN_TEXT)
+    else:
+        show_overview_figures(rows, mode)
+        trend_column, margin_column = st.columns([3, 2])
+        with trend_column:
+            show_overview_trend(chosen_rows, mode)
+        with margin_column:
+            show_overview_margins(chosen_rows, mode)
     region_column, alert_column = st.columns([2, 3])
     with region_column:
-        show_overview_regions(key, mode)
+        show_overview_regions(filters["key"], mode)
     with alert_column:
         show_overview_alerts()
     st.caption(NOMINAL_PRICES_TEXT)
+
+
 # endregion
 
 
@@ -926,28 +1073,17 @@ def describe_state_source(error_text, step_states, latest_load):
     return f"GitHub no respondió ({error_text}); {source}."
 
 
-def build_mini_journey_html(states, figures, mode):
-    """The five-step diagram and the link to the whole one, only on narrow screens."""
-    return ('<div class="diagram-mini">'
-            + build_svg_image_html(architecture.build_mini_journey_svg(states, figures, mode),
-                                   "diagram-fit")
-            + build_link_html("Ver la arquitectura completa", build_page_address(
-                PAGE_PROJECT, PROJECT_TAB_ARCHITECTURE)) + '</div>')
-
-
 def show_pipeline_hook(mode):
-    """The live pipeline: the whole diagram on wide screens, the five steps on narrow ones."""
+    """The state line of the live pipeline; on phones also its five steps. The whole
+    diagram lives only in Arquitectura (D-056)."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
-    with open_card("live_pipeline", "Pipeline en vivo", hint=ARCHITECTURE_HINT):
+    with open_card("live_pipeline", "Pipeline en vivo"):
         st.markdown(build_run_status_html(states, pipeline_run, latest_load),
                     unsafe_allow_html=True)
         if error_note:
             st.caption(error_note)
-        st.markdown(build_svg_image_html(architecture.build_journey_svg(states, figures, mode),
-                                         "diagram-fit diagram-wide")
-                    + build_mini_journey_html(states, figures, mode)
-                    + f'<div class="diagram-wide">{build_journey_legend_html()}</div>',
-                    unsafe_allow_html=True)
+        st.markdown(build_svg_image_html(architecture.build_mini_journey_svg(
+            states, figures, mode), "diagram-fit phone-only"), unsafe_allow_html=True)
 
 
 def show_project_value():
@@ -969,18 +1105,16 @@ def show_project_value():
 
 def list_journey_steps(journey):
     """(text, address) of each stop of a guided tour of the project."""
-    tabs = {tab: build_page_address(PAGE_PROJECT, tab) for tab in PROJECT_TABS}
+    tabs = {tab: build_place_address(tab) for tab in PAGE_OF_TAB}
     journeys = {
-        JOURNEY_MANAGER: [("Panel", build_page_address(PAGE_OVERVIEW)),
-                          ("Alertas", build_page_address(PAGE_ALERTS)),
-                          ("KPI y cálculos", tabs[PROJECT_TAB_KPI])],
-        JOURNEY_ANALYST: [("Idea de negocio", tabs[PROJECT_TAB_IDEA]),
-                          ("KPI y cálculos", tabs[PROJECT_TAB_KPI]),
-                          ("Reglas de calidad", tabs[PROJECT_TAB_RULES]),
-                          ("Decisiones y método", tabs[PROJECT_TAB_DECISIONS])],
-        JOURNEY_TECHNICAL: [("Arquitectura", tabs[PROJECT_TAB_ARCHITECTURE]),
-                            ("Código y consultas SQL", tabs[PROJECT_TAB_CODE]),
-                            ("Centro de control", build_page_address(PAGE_CONTROL))],
+        JOURNEY_MANAGER: [(TAB_WEEK, tabs[TAB_WEEK]), (TAB_ALERTS, tabs[TAB_ALERTS]),
+                          (TAB_KPI, tabs[TAB_KPI])],
+        JOURNEY_ANALYST: [(TAB_IDEA, tabs[TAB_IDEA]), (TAB_GAP, tabs[TAB_GAP]),
+                          (TAB_KPI, tabs[TAB_KPI]), (TAB_RULES, tabs[TAB_RULES]),
+                          (TAB_DECISIONS, tabs[TAB_DECISIONS])],
+        JOURNEY_TECHNICAL: [(PAGE_ARCHITECTURE, build_page_address(PAGE_ARCHITECTURE)),
+                            (TAB_QUERIES, tabs[TAB_QUERIES]),
+                            (PAGE_OPERATIONS, build_page_address(PAGE_OPERATIONS))],
     }
     return journeys[journey]
 
@@ -1051,16 +1185,63 @@ def show_sources_tab(mode):
                     f'</div>', unsafe_allow_html=True)
 
 
-def show_model_tab(mode):
-    """Star model of the data warehouse with the real rows of each table."""
+@st.cache_data
+def read_cached_week_span(database_version):
+    """(weeks, first Monday, last Monday) with prices, read once per database."""
+    return project.read_week_span()
+
+
+def format_iso_date(text):
+    """«2026-10-05» as «05-10-2026»."""
+    return f"{pd.Timestamp(text):%d-%m-%Y}"
+
+
+def list_star_panels(row_counts, definitions):
+    """(table, title, text, JOIN, real figures) of each table of the star (T-59)."""
+    week_count, first_week, last_week = read_cached_week_span(get_database_version())
+    loaded_at = format_chile_time(parse_run_start(read_latest_run()["started_at"]))
+    panels = [
+        ("weekly_price", "weekly_price · tabla de hechos",
+         "El centro de la estrella: cada fila es un precio semanal. Las claves (FK) la unen "
+         "a cada punta; las medidas en cian son lo que se analiza.",
+         "weekly_price\nJOIN dim_product USING (product_id)\n"
+         "JOIN dim_region USING (region_id)\nJOIN dim_channel USING (channel_id)",
+         f"{charts.format_thousands(row_counts['weekly_price'])} filas · datos al {loaded_at}"),
+        (star_model.WEEK_CARD, "Semana · week_start",
+         "Todavía no es una tabla: la semana es la columna week_start de weekly_price, el "
+         "lunes de inicio (RN-08). Mejora: una dim_date con mes, año y temporada.",
+         "SELECT week_start, AVG(price) FROM weekly_price GROUP BY week_start",
+         f"{week_count} semanas · {format_iso_date(first_week)} a "
+         f"{format_iso_date(last_week)}"),
+    ]
+    for table in project.DIMENSION_TABLES:
+        key = table.replace("dim_", "") + "_id"
+        panels.append((table, f"{table} · dimensión", definitions[table].capitalize() + ".",
+                       f"weekly_price JOIN {table} USING ({key})",
+                       f"{charts.format_thousands(row_counts[table])} filas"))
+    return panels
+
+
+def show_star_schema_tab(mode):
+    """The star model drawn as a star, its explanation panel and the table list."""
     row_counts = count_cached_table_rows(get_database_version())
     definitions = project.parse_definitions(project.read_section(
         project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos"))
-    diagram_column, table_column = st.columns([2, 3])
-    with diagram_column, open_card("model_diagram", "Modelo estrella"):
-        st.graphviz_chart(project.build_star_diagram(row_counts, mode),
-                          use_container_width=True)
-    with table_column, open_card("model_tables", "Tablas de datos.db"):
+    columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
+    note = (f"Aparte, fuera de la estrella: <strong>etl_run</strong> → "
+            f"<strong>rejection</strong> (auditoría de cada carga · "
+            f"{charts.format_thousands(row_counts['etl_run'])} y "
+            f"{charts.format_thousands(row_counts['rejection'])} filas).")
+    with open_card("model_diagram", "Modelo estrella",
+                   hint="**Siglas**: PK, clave primaria (identifica cada fila); FK, clave "
+                        "foránea (apunta a la clave de otra tabla); JOIN, unión de dos tablas "
+                        "por su clave. Pasa el mouse sobre una tabla, o tócala en el celular, "
+                        "para ver qué "
+                        "guarda y cómo se une a weekly_price."):
+        st.markdown(star_model.build_star_model_html(
+            columns, row_counts, list_star_panels(row_counts, definitions), note, mode),
+            unsafe_allow_html=True)
+    with open_card("model_tables", "Tablas de datos.db"):
         st.markdown(build_html_table(
             ["Tabla", "Filas", "Qué guarda"],
             [[f"<code>{table}</code>", charts.format_thousands(row_counts[table]),
@@ -1125,7 +1306,7 @@ def show_kpi_card(indicator, guide_row, question, example_steps, is_requested):
                                         project.build_github_url(file_name)),
                         unsafe_allow_html=True)
         st.markdown("Se ve en: " + build_link_html(
-            guide_row["Página"], build_page_address(guide_row["Página"])),
+            guide_row["Página"], build_place_address(guide_row["Página"])),
             unsafe_allow_html=True)
 
 
@@ -1220,7 +1401,7 @@ def show_query_block(query, origin=None, parameters=()):
                     unsafe_allow_html=True)
         page = query["page"]
         st.markdown(f"{build_chip(query['level'], 'ok')} {build_clause_chips(query)}  \n"
-                    f"Se usa en: {build_link_html(page, build_page_address(page))}",
+                    f"Se usa en: {build_link_html(page, build_place_address(page))}",
                     unsafe_allow_html=True)
         with st.expander("Ver SQL"):
             if query["python"]:
@@ -1241,12 +1422,12 @@ def build_extra_queries():
     match_coverage = {"name": project.MATCH_COVERAGE_QUERY_NAME,
                       "sql": etl.MATCH_COVERAGE_QUERY.strip(),
                       "question": "¿Cuántas claves de producto tienen margen?",
-                      "page": PAGE_DATA_QUALITY, "python": [],
+                      "page": TAB_QUALITY, "python": [],
                       **project.describe_query(etl.MATCH_COVERAGE_QUERY)}
     explorer_example = {"name": "explorer_example", "sql": explorer_sql,
                         "question": "Ejemplo generado por la página Consultas: precios del "
                                     "tomate en feria y supermercado.",
-                        "page": PAGE_EXPLORER, "python": [],
+                        "page": TAB_EXPLORER, "python": [],
                         **project.describe_query(explorer_sql)}
     return [(match_coverage, "etl/etl.py", ()),
             (explorer_example, "bi/explorer.py", explorer_parameters)]
@@ -1274,14 +1455,14 @@ def show_repository_files():
                 unsafe_allow_html=True)
 
 
-def show_code_tab(mode):
-    """SQL catalog (with Python where it exists) and the files of the repository."""
+def show_queries_tab(mode):
+    """Every SQL query of the project, by level, with Python where it exists (T-57)."""
     named_queries = project.list_named_queries()
     groups = project.group_queries_by_level(named_queries)
     with open_card("code_queries", "Queries"):
         st.markdown(f"### {len(named_queries)} queries del proyecto")
         st.caption("Las queries con nombre de bi/queries.sql, contadas al abrir la página. "
-                   "Al final, la de K7 (etl/etl.py), un ejemplo de la página Consultas y "
+                   "Al final, la de K7 (etl/etl.py), un ejemplo de Consulta por clics y "
                    "etl/schema.sql.")
         show_level_criteria(groups)
         for level in project.QUERY_LEVELS:
@@ -1293,42 +1474,51 @@ def show_code_tab(mode):
             show_query_block(query, origin, parameters)
         with st.expander("etl/schema.sql · creación de las tablas (no es una consulta)"):
             st.code(project.read_document(project.SCHEMA_FILE), language="sql")
+
+
+def show_files_tab(mode):
+    """The files of the repository, each with what it does."""
     with open_card("code_files", "Archivos"):
         show_repository_files()
 
 
-def show_project_page(mode):
-    """The project explained by itself: the real pipeline first, the detail in tabs."""
-    show_page_header("El proyecto", "Qué problema resuelve, cómo funciona y cómo se "
-                     "calcula cada cifra.")
+def show_idea_tab(mode):
+    """The business idea, then both sources and how they are matched."""
+    show_business_idea_tab(mode)
+    show_sources_tab(mode)
+
+
+def show_glossary_tab(mode):
+    """Acronyms and terms of the project, in plain words (T-46b)."""
+    with open_card("glossary", "Glosario", "Siglas y términos que aparecen en el panel."):
+        rows = project.read_guide_table("Glosario")
+        st.markdown(build_html_table(list(rows[0]), [[html.escape(cell) for cell in row.values()]
+                                                     for row in rows]),
+                    unsafe_allow_html=True)
+
+
+def show_home_page(mode):
+    """Short home: the state of the pipeline, the value and the tours; the
+    documentation in tabs (D-056)."""
+    show_page_header("Monitor de precios de alimentos", "Qué problema resuelve, cómo "
+                     "funciona y cómo se calcula cada cifra.")
     show_start_here(mode)
-    tabs = st.tabs(PROJECT_TABS, key=TAB_PARAMETER, bind="query-params")
-    tab_contents = [show_business_idea_tab, show_sources_tab, show_architecture_tab,
-                    show_model_tab, show_kpi_tab, show_rules_tab, show_manual_tab,
-                    show_decisions_tab, show_code_tab]
-    for tab, show_tab_content in zip(tabs, tab_contents):
-        with tab:
-            show_tab_content(mode)
+    show_page_tabs(PAGE_HOME, [show_idea_tab, show_kpi_tab, show_rules_tab, show_manual_tab,
+                               show_decisions_tab, show_glossary_tab], mode)
+
+
 # endregion
 
 
 # region Margins page
-def show_margins_page(mode):
-    """K1, margin between the wholesale and each consumer channel, and K5, its lag."""
-    show_page_header("Márgenes", "Margen = (precio al consumidor − precio mayorista) / "
-                     "precio mayorista, con la misma variedad, calidad, región, semana y unidad.")
-    rows = choose_product_rows("k1_margin")
-    region_column, channel_column = st.columns([1, 2])
-    with region_column:
-        region = choose_value("Región", rows["region"].unique(), DEFAULT_REGION)
-    rows = rows[rows["region"] == region]
-    available_channels = sorted(rows["channel"].unique())
-    with channel_column:
-        channels = st.multiselect("Canal", available_channels, default=[
-            channel for channel in DEFAULT_MARGIN_CHANNELS if channel in available_channels])
-    rows = rows[rows["channel"].isin(channels)].copy()
+def show_gap_tab(mode, filters):
+    """K1, gap between the wholesale and each consumer channel, and K5, its lag."""
+    st.caption("Brecha = (precio al consumidor − precio mayorista) / precio mayorista, con la "
+               "misma variedad, calidad, región, semana y unidad.")
+    rows = read_margin_rows(filters)
+    rows = rows[rows["channel"].isin(filters["channels"])].copy()
     if rows.empty:
-        st.info(NO_DATA_TEXT)
+        st.info(NO_MARGIN_TEXT)
         return
     rows["margin_percent"] = rows["margin"] * 100
     with open_card("margin_trend", "Margen por semana", hint=MARGIN_TREND_HINT, kpi="K1"):
@@ -1339,9 +1529,9 @@ def show_margins_page(mode):
             mode, is_money=False))
     trend_column, bars_column = st.columns([3, 2])
     with trend_column:
-        show_overview_trend(rows, mode)
+        show_overview_trend(rows, mode, key="gap_trend")
     with bars_column:
-        show_overview_margins(rows, mode)
+        show_overview_margins(rows, mode, key="gap_margins")
     show_lag_card(rows, mode)
     st.caption(NOMINAL_PRICES_TEXT)
 
@@ -1481,13 +1671,12 @@ def show_regional_index(rows, mode):
                    "bajo 1, más barata.")
 
 
-def show_channels_and_regions_page(mode):
+def show_channels_tab(mode, filters):
     """K2 and K3 for any product group, with or without a wholesale price."""
-    show_page_header("Canales y regiones", "Qué canal y qué región son más caros para un "
-                     "producto, incluidas carnes, lácteos y abarrotes.")
-    key = choose_product_key("k3_regional_index")
-    regional_rows = read_indicator_for_key("k3_regional_index", key)
-    gap_rows = read_indicator_for_key("k2_channel_gap", key)
+    st.caption("Qué canal y qué región son más caros para el producto elegido, incluidas "
+               "carnes, lácteos y abarrotes.")
+    regional_rows = read_indicator_for_key("k3_regional_index", filters["key"])
+    gap_rows = read_indicator_for_key("k2_channel_gap", filters["key"])
     consumer_channels = [channel for channel in regional_rows["channel"].unique()
                          if channel != WHOLESALE_LABEL]
     gaps_column, regions_column = st.columns(2)
@@ -1496,34 +1685,40 @@ def show_channels_and_regions_page(mode):
     with regions_column:
         show_regional_index(regional_rows, mode)
     st.caption(NOMINAL_PRICES_TEXT)
+
+
 # endregion
 
 
 # region Seasonality page
-def show_seasonality_page(mode):
-    """K4: national price of each week over the average of its year."""
-    show_page_header("Estacionalidad", "Índice = precio nacional de la semana / promedio "
-                     "del año. Con varios años se ve qué semanas son caras o baratas cada año.")
-    rows = choose_product_rows("k4_seasonal_index")
-    channel = choose_value("Canal", rows["channel"].unique(), DEFAULT_CHANNEL)
-    rows = rows[rows["channel"] == channel]
+def show_seasonality_tab(mode, filters):
+    """K4: national price of each week over the average of its year, by channel."""
+    st.caption("Índice = precio nacional de la semana / promedio del año. Con varios años se "
+               "ve qué semanas son caras o baratas cada año.")
+    rows = read_indicator_for_key("k4_seasonal_index", filters["key"])
+    rows = rows[rows["channel"].isin(filters["channels"])]
+    if rows.empty:
+        st.info(NO_DATA_TEXT)
+        return
     index_column, price_column = st.columns(2)
     with index_column, open_card("seasonal_index", "Índice estacional",
                                  "1 = precio promedio del año.", hint=SEASONAL_INDEX_HINT,
                                  kpi="K4"):
-        index_rows = rows[["week_start", "seasonal_index"]].rename(
+        index_rows = rows[["week_start", "channel", "seasonal_index"]].rename(
             columns={"seasonal_index": "value"})
-        show_chart(charts.draw_single_weekly_area(
+        show_chart(charts.draw_weekly_lines(
             index_rows, "Índice", index_rows["value"].map(charts.format_index), mode,
-            reference_value=1))
+            is_money=False))
     with price_column, open_card("national_price", "Precio nacional por semana",
                                  hint=NATIONAL_PRICE_HINT, kpi="K4"):
-        price_rows = rows[["week_start", "national_price"]].rename(
+        price_rows = rows[["week_start", "channel", "national_price"]].rename(
             columns={"national_price": "value"})
-        show_chart(charts.draw_single_weekly_area(
+        show_chart(charts.draw_weekly_lines(
             price_rows, f"$/{rows['normalized_unit'].iloc[0]}",
             "$ " + price_rows["value"].map(charts.format_thousands), mode, is_money=True))
     st.caption(NOMINAL_PRICES_TEXT)
+
+
 # endregion
 
 
@@ -1543,10 +1738,10 @@ def format_alerts(alert_rows):
     })
 
 
-def show_alerts_page(mode):
+def show_alerts_tab(mode, filters):
     """K6: products whose price moved outside their usual range in one week."""
-    show_page_header("Alertas", "Hay alerta cuando el cambio semanal del precio se aleja "
-                     "más de 2 desviaciones estándar de lo habitual en las 12 semanas previas.")
+    st.caption("Hay alerta cuando el cambio semanal del precio se aleja más de 2 desviaciones "
+               "estándar de lo habitual en las 12 semanas previas. Muestra todos los productos.")
     alert_rows = read_price_alerts()
     if alert_rows.empty:
         st.info("Todavía no hay semanas suficientes para calcular alertas.")
@@ -1567,6 +1762,17 @@ def show_alerts_page(mode):
     with open_card("alert_table", "Todas las alertas de la semana"):
         st.dataframe(format_alerts(week_rows), hide_index=True, use_container_width=True)
     st.caption(NOMINAL_PRICES_TEXT)
+
+
+def show_analysis_page(mode):
+    """Every chart of the project; the filters on top hold for every tab (D-056)."""
+    show_page_header(PAGE_ANALYSIS, "Del mercado mayorista al consumidor, con datos oficiales "
+                     "de ODEPA que se actualizan solos cada martes.")
+    filters = choose_analysis_filters()
+    show_page_tabs(PAGE_ANALYSIS, [show_week_tab, show_gap_tab, show_channels_tab,
+                                   show_seasonality_tab, show_alerts_tab], mode, filters)
+
+
 # endregion
 
 
@@ -1737,10 +1943,10 @@ def show_explorer_sql(view, filters, group_labels, measure_label):
                    "con pandas, porque SQLite no tiene mediana.")
 
 
-def show_explorer_page(mode):
+def show_explorer_tab(mode):
     """Query builder: the reader picks a view, groups, filters and a measure with clicks."""
-    show_page_header("Consultas", "Arma tu propia consulta con clics: qué ver, cómo "
-                     "agruparlo, qué filtrar y cómo resumirlo.")
+    st.caption("Arma tu propia consulta con clics: qué ver, cómo agruparlo, qué filtrar y "
+               "cómo resumirlo.")
     view_column, group_column = st.columns([2, 3])
     with view_column:
         view = choose_explorer_view()
@@ -1758,6 +1964,16 @@ def show_explorer_page(mode):
                                          get_database_version())
     show_explorer_result(view, result, measure_label, mode)
     show_explorer_sql(view, filters, group_labels, measure_label)
+
+
+def show_data_and_code_page(mode):
+    """The data by clicks, every SQL query and the files of the project (D-056)."""
+    show_page_header(PAGE_DATA_AND_CODE, "Consulta los datos con clics, revisa todas las "
+                     "queries SQL y los archivos del proyecto.")
+    show_page_tabs(PAGE_DATA_AND_CODE, [show_explorer_tab, show_queries_tab, show_files_tab],
+                   mode)
+
+
 # endregion
 
 
@@ -1895,26 +2111,75 @@ def run_pipeline_now(token):
     read_pipeline_runs.clear()
 
 
-def show_run_now_card():
-    """Card with the button that starts the pipeline, protected by an access code."""
-    with open_card("run_now", "Ejecutar ahora",
-                   "Descarga los datos de ODEPA, los limpia, los prueba y actualiza el "
-                   "panel. Tarda alrededor de un minuto."):
-        token = get_secret(SECRET_GITHUB_TOKEN)
+ADMIN_UNLOCKED = "admin_unlocked"
+ADMIN_LINKS = [
+    {"name": "Administrar la app en Streamlit",
+     "description": "Reboot, secretos y registros del panel publicado.",
+     "url": control.STREAMLIT_ADMIN_URL, "icon": "settings"},
+    {"name": "Lanzar el workflow en GitHub", "description": "Run workflow, desde GitHub.",
+     "url": control.WORKFLOW_PAGE_URL, "icon": "play_circle"},
+    {"name": "Crear token", "description": "Clave nueva para «Ejecutar ahora».",
+     "url": control.TOKEN_CREATE_URL, "icon": "key"},
+    {"name": "Ver mis tokens", "description": "Vencimiento y permisos de cada clave.",
+     "url": control.TOKENS_URL, "icon": "vpn_key"},
+]
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def read_cached_token_expiration(token):
+    """Expiration of the token, asked to GitHub at most once an hour."""
+    return control.read_token_expiration(token)
+
+
+def show_token_expiration(token):
+    """«Tu token vence en X días», highlighted under 14 days. Never the token itself."""
+    try:
+        expiration = read_cached_token_expiration(token)
+    except Exception as error:  # GitHub unreachable or the token was refused
+        st.warning(f"No se pudo leer el vencimiento del token: "
+                   f"{control.describe_github_error(error)}.")
+        return
+    sentence, is_urgent = control.describe_token_expiration(expiration,
+                                                            datetime.now(timezone.utc))
+    if is_urgent:
+        st.warning(sentence, icon=":material/schedule:")
+    else:
+        st.caption(sentence)
+
+
+def show_admin_unlocked(token):
+    """What the control code opens: admin links, token expiration and «Ejecutar ahora»."""
+    show_link_cards(ADMIN_LINKS)
+    if not token:
+        st.info("«Ejecutar ahora» se activa cuando la autora guarda su token de GitHub en "
+                "los secretos del panel («Crear token», arriba).")
+        return
+    show_token_expiration(token)
+    if st.button("Ejecutar ahora", type="primary", icon=":material/play_arrow:",
+                 help="Descarga los datos de ODEPA, los limpia, los prueba y actualiza el "
+                      "panel. Tarda alrededor de un minuto."):
+        run_pipeline_now(token)
+
+
+def show_admin_card():
+    """Administration, behind the control code: nothing of it shows without the code."""
+    with open_card("admin", "🔒 Administración"):
         access_code = get_secret(SECRET_CONTROL_CODE)
-        if not token or not access_code:
-            st.info("El botón se activa cuando la autora configura su clave de GitHub y "
-                    "su código de acceso en los secretos del panel. Mientras tanto, el "
-                    "workflow se puede lanzar desde GitHub.")
-            st.link_button("Abrir el workflow en GitHub", control.WORKFLOW_PAGE_URL,
-                           icon=":material/open_in_new:")
+        if st.session_state.get(ADMIN_UNLOCKED) and access_code:
+            show_admin_unlocked(get_secret(SECRET_GITHUB_TOKEN))
             return
-        typed_code = st.text_input("Código de acceso", type="password")
-        if st.button("Ejecutar ahora", type="primary", icon=":material/play_arrow:"):
-            if not hmac.compare_digest(typed_code, access_code):
-                st.error("Código de acceso incorrecto.")
-                return
-            run_pipeline_now(token)
+        st.markdown('<div class="admin-locked">Requiere clave de control.</div>',
+                    unsafe_allow_html=True)
+        if not access_code:
+            st.caption("Se activa cuando la autora guarda la clave de control en los "
+                       "secretos del panel.")
+            return
+        typed_code = st.text_input("Clave de control", type="password")
+        if st.button("Desbloquear", icon=":material/lock_open:"):
+            if hmac.compare_digest(typed_code, access_code):
+                st.session_state[ADMIN_UNLOCKED] = True
+                st.rerun()
+            st.error("Clave incorrecta.")
 
 
 def show_run_history(runs, error_text):
@@ -1935,20 +2200,29 @@ def show_run_history(runs, error_text):
                                      table_rows), unsafe_allow_html=True)
 
 
-def show_control_page(mode):
-    """The weekly pipeline: its state, its history and a button to run it now."""
-    show_page_header("Centro de control", "El pipeline descarga, revisa y guarda los datos "
-                     "cada martes. Aquí ves su estado y puedes lanzarlo cuando quieras.")
+def show_runs_tab(mode):
+    """The weekly pipeline: its state, its history and, behind the control code, the
+    button to run it now and the administration links."""
     runs, error_text = read_pipeline_runs()
     show_pipeline_status(runs)
     run_column, history_column = st.columns([2, 3])
     with run_column:
-        show_run_now_card()
+        show_admin_card()
         if st.button("Recargar datos del panel", icon=":material/refresh:"):
             st.cache_data.clear()
             st.rerun()
     with history_column:
         show_run_history(runs, error_text)
+
+
+def show_links_tab(mode):
+    """The only place with the links of the project (D-056)."""
+    with open_card("links", "Enlaces del proyecto"):
+        show_link_cards(project.PROJECT_LINKS)
+        st.caption("Los enlaces de administración (Streamlit, workflow y tokens) están en "
+                   "Ejecuciones → 🔒 Administración, con la clave de control.")
+
+
 # endregion
 
 
@@ -2073,11 +2347,13 @@ def read_journey():
 
 
 def format_architecture_cell(text):
-    """A cell of an Arquitectura table: a page or a repository file becomes a link."""
-    if text in PAGE_PATHS:
-        return build_link_html(text, build_page_address(text))
+    """A cell of an Arquitectura table: a page becomes a link; a repository file shows
+    only its name, with the whole path on hover (the links live in their own list)."""
+    if text in PAGE_PATHS or text in PAGE_OF_TAB:
+        return build_link_html(text, build_place_address(text))
     if project.is_in_repository(text):
-        return build_link_html(text, project.build_github_url(text))
+        return (f'<code title="{html.escape(text)}">'
+                f'{html.escape(text.rstrip("/").split("/")[-1])}</code>')
     return re.sub(r"`([^`]+)`", r"<code>\1</code>", html.escape(text))
 
 
@@ -2098,19 +2374,46 @@ def build_journey_legend_html():
             'Las flechas solo se mueven mientras hay una ejecución en curso.</div>')
 
 
-def show_architecture_tab(mode):
-    """The detailed live diagram, then DevOps, security, observability and reports."""
+def show_pipeline_tab(mode):
+    """The detailed live diagram of the data, from ODEPA to the dashboard."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
     with open_card("journey", "Recorrido completo por capas", hint=ARCHITECTURE_HINT):
         st.markdown(build_run_status_html(states, pipeline_run, latest_load),
                     unsafe_allow_html=True)
         if error_note:
             st.caption(error_note)
-        st.markdown(build_svg_image_html(architecture.build_journey_svg(states, figures, mode),
-                                         "diagram-fit diagram-wide")
-                    + build_svg_image_html(architecture.build_vertical_journey_svg(
-                        states, figures, mode), "diagram-narrow"), unsafe_allow_html=True)
+        # Inline SVG (not an image), so each piece shows its explanation on hover.
+        st.markdown(zoom.build_zoom_frame_html(
+                        architecture.build_journey_svg(states, figures, mode), "diagram-wide")
+                    + zoom.build_zoom_frame_html(
+                        architecture.build_vertical_journey_svg(states, figures, mode),
+                        "diagram-narrow"), unsafe_allow_html=True)
         st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
+
+
+def build_devops_figures(figures):
+    """The pipeline figures plus the size of datos.db, the test functions and the
+    prices of the latest week (what the weekly job added), all read now."""
+    latest_week = read_latest_week()
+    week_prices = project.count_week_prices(f"{latest_week:%Y-%m-%d}")
+    return dict(figures, database_size=project.describe_file_size(queries.DATABASE_FILE),
+                test_functions=f"{project.count_test_functions()} funciones de prueba",
+                week_prices=(f"semana {latest_week:%d-%m}: "
+                             f"{charts.format_thousands(week_prices)} precios"))
+
+
+def show_devops_tab(mode):
+    """The whole project in one live diagram, then DevOps, security, observability
+    and reports."""
+    states, figures, pipeline_run, latest_load, error_note = read_journey()
+    with open_card("devops_diagram", "Arquitectura por plataforma", hint=DEVOPS_HINT):
+        st.markdown(build_run_status_html(states, pipeline_run, latest_load),
+                    unsafe_allow_html=True)
+        if error_note:
+            st.caption(error_note)
+        st.markdown(zoom.build_zoom_frame_html(
+            architecture.build_devops_svg(states, build_devops_figures(figures), mode))
+            + build_journey_legend_html(), unsafe_allow_html=True)
     devops_column, security_column = st.columns(2)
     with devops_column, open_card("architecture_devops", "DevOps"):
         show_architecture_table("DevOps")
@@ -2124,6 +2427,15 @@ def show_architecture_tab(mode):
         show_architecture_table("Informes")
         st.link_button("Ver informes semanales", ISSUES_PAGE_URL,
                        icon=":material/description:")
+
+
+def show_architecture_page(mode):
+    """Every diagram of the project, each in its own tab, none repeated (D-054, D-056)."""
+    show_page_header(PAGE_ARCHITECTURE, "El pipeline de los datos, el modelo de datos y la "
+                     "infraestructura del proyecto, con datos reales.")
+    show_page_tabs(PAGE_ARCHITECTURE, [show_pipeline_tab, show_star_schema_tab,
+                                       show_devops_tab], mode)
+    st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
 
 
 # endregion
@@ -2185,34 +2497,41 @@ def show_quality_details():
             st.dataframe(outliers, hide_index=True)
 
 
-def show_data_quality_page(mode):
+def show_quality_tab(mode):
     """Whether the latest load worked and what was left out."""
-    show_page_header("Calidad de datos", "Qué se cargó, qué quedó fuera y por qué.")
+    st.caption("Qué se cargó, qué quedó fuera y por qué.")
     show_load_figures(read_latest_run())
     donut_column, details_column = st.columns([2, 3])
     with donut_column:
         show_flag_donut(mode)
     with details_column:
         show_quality_details()
+
+
+def show_operations_page(mode):
+    """The state of each run, the quality of each load and every project link (D-056)."""
+    show_page_header(PAGE_OPERATIONS, "El pipeline descarga, revisa y guarda los datos cada "
+                     "martes. Aquí ves su estado, la calidad de cada carga y los enlaces "
+                     "del proyecto.")
+    show_page_tabs(PAGE_OPERATIONS, [show_runs_tab, show_quality_tab, show_links_tab], mode)
+
+
 # endregion
 
 
 # region Entry point
 SHOW_PAGE_BY_TITLE = {
-    PAGE_OVERVIEW: show_overview_page,
-    PAGE_PROJECT: show_project_page,
-    PAGE_MARGINS: show_margins_page,
-    PAGE_CHANNELS_AND_REGIONS: show_channels_and_regions_page,
-    PAGE_SEASONALITY: show_seasonality_page,
-    PAGE_ALERTS: show_alerts_page,
-    PAGE_EXPLORER: show_explorer_page,
-    PAGE_CONTROL: show_control_page,
-    PAGE_DATA_QUALITY: show_data_quality_page,
+    PAGE_HOME: show_home_page,
+    PAGE_ANALYSIS: show_analysis_page,
+    PAGE_ARCHITECTURE: show_architecture_page,
+    PAGE_DATA_AND_CODE: show_data_and_code_page,
+    PAGE_OPERATIONS: show_operations_page,
 }
 
 
 def show_attribution():
-    """Footer with the data source, shown under every page."""
+    """Footer of every page: the data source. The project links live only in
+    Operaciones (D-056)."""
     st.divider()
     st.caption(ATTRIBUTION_TEXT)
 
@@ -2231,34 +2550,46 @@ def build_page(title, is_default):
                    url_path=PAGE_PATHS[title], default=is_default)
 
 
-def build_redirect_page(url_path, home_page, tab=None):
-    """A hidden page at an old address that opens the home page, keeping the
-    parameters of the link (D-051)."""
+def build_redirect_page(url_path, target_page, tab=None):
+    """A hidden page at an old address that opens its new place, keeping the
+    parameters of the link (D-051, D-056)."""
     def redirect():
         parameters = st.query_params.to_dict()
         if tab:
             parameters[TAB_PARAMETER] = tab
-        st.switch_page(home_page, query_params=parameters)
-    return st.Page(redirect, title=HOME_PAGE, url_path=url_path, visibility="hidden")
+        st.switch_page(target_page, query_params=parameters)
+    return st.Page(redirect, title=target_page.title, url_path=url_path,
+                   visibility="hidden")
+
+
+def redirect_old_home_tab(current_page, pages_by_title):
+    """An old link to a tab of the former project page opens that tab where it lives
+    now (D-056)."""
+    moved_tab = OLD_HOME_TABS.get(st.query_params.get(TAB_PARAMETER))
+    if current_page.title == HOME_PAGE and moved_tab:
+        st.switch_page(pages_by_title[PAGE_OF_TAB[moved_tab]],
+                       query_params=dict(st.query_params.to_dict(),
+                                         **{TAB_PARAMETER: moved_tab}))
 
 
 def main():
-    """Profile selector, navigation with icons and the chosen page."""
+    """Theme, navigation with icons and the chosen page."""
     st.set_page_config(page_title="Monitor de precios de alimentos", layout="wide",
                        page_icon=":material/monitoring:")
     if not queries.DATABASE_FILE.exists():
         st.error("Falta etl/datos.db. Ejecuta primero: python etl/etl.py")
         return
-    profile = st.sidebar.selectbox("¿Quién consulta?", list(PAGES_BY_PROFILE),
-                                   key=PROFILE_PARAMETER, bind="query-params")
     theme = st.sidebar.selectbox("Tema", charts.THEMES, key=THEME_PARAMETER,
                                  bind="query-params")
     match_base_mode(theme)
-    pages = [build_page(title, position == 0)
-             for position, title in enumerate(PAGES_BY_PROFILE[profile])]
-    pages += [build_redirect_page(OLD_PIPELINE_PATH, pages[0], PROJECT_TAB_ARCHITECTURE),
-              build_redirect_page(OLD_PROJECT_PATH, pages[0])]
-    st.navigation(pages, position="sidebar").run()
+    pages_by_title = {title: build_page(title, position == 0)
+                      for position, title in enumerate(PAGES)}
+    redirects = [build_redirect_page(path, pages_by_title[page], tab)
+                 for path, (page, tab) in OLD_PATHS.items()]
+    current_page = st.navigation(list(pages_by_title.values()) + redirects,
+                                 position="sidebar")
+    redirect_old_home_tab(current_page, pages_by_title)
+    current_page.run()
     st.sidebar.caption("Fuente: ODEPA · actualización automática cada martes.")
 
 

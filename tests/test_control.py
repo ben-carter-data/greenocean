@@ -140,3 +140,45 @@ def test_github_error_handles_invalid_reset_and_untrusted_reason():
     error.response.reason = "secret-token-123"
     assert control.describe_github_error(error) == (
         "GitHub respondió 418: error al consultar GitHub")
+
+
+# region Token expiration (T-54)
+def test_t54_token_expiration_is_read_in_both_formats_github_uses():
+    assert control.parse_token_expiration("2026-12-31 12:00:00 UTC") == datetime(
+        2026, 12, 31, 12, tzinfo=timezone.utc)
+    assert control.parse_token_expiration("2026-12-31 09:00:00 -0300") == datetime(
+        2026, 12, 31, 12, tzinfo=timezone.utc)
+    assert control.parse_token_expiration(None) is None
+    assert control.parse_token_expiration("not a date") is None
+
+
+def test_t54_token_warning_is_highlighted_under_14_days():
+    now = datetime(2026, 10, 13, tzinfo=timezone.utc)
+    sentence, is_urgent = control.describe_token_expiration(now + timedelta(days=40), now)
+    assert sentence == "Tu token vence en 40 días (22-11-2026)." and not is_urgent
+    assert control.describe_token_expiration(now + timedelta(days=13), now)[1]
+    assert control.describe_token_expiration(now - timedelta(days=1), now)[1]
+    assert control.describe_token_expiration(None, now) == (
+        "Tu token no tiene fecha de vencimiento.", False)
+
+
+def test_t54_only_the_expiration_date_leaves_the_github_answer(monkeypatch):
+    secret = "github_pat_FAKE_SECRET_123"
+    seen = {}
+
+    class Answer:
+        headers = {control.TOKEN_EXPIRATION_HEADER: "2026-12-31 12:00:00 UTC"}
+
+        def raise_for_status(self):
+            return None
+
+    def fake_get(url, headers, timeout):
+        seen["authorization"] = headers["Authorization"]
+        return Answer()
+
+    monkeypatch.setattr(control.requests, "get", fake_get)
+    expiration = control.read_token_expiration(secret)
+    assert seen["authorization"] == f"Bearer {secret}"
+    assert expiration == datetime(2026, 12, 31, 12, tzinfo=timezone.utc)
+    assert secret not in control.describe_token_expiration(expiration, expiration)[0]
+# endregion
