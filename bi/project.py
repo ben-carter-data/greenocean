@@ -150,10 +150,36 @@ def read_section(text, heading):
     return "\n".join(lines[start:end]).strip()
 
 
+def read_subsection(text, heading):
+    """Text under '### heading' until the next heading of any level."""
+    lines = text.splitlines()
+    start = lines.index(f"### {heading}") + 1
+    end = next((position for position in range(start, len(lines))
+                if lines[position].startswith("#")), len(lines))
+    return "\n".join(lines[start:end]).strip()
+
+
+def read_paragraphs(text):
+    """The plain paragraphs of a section: no lists, tables or headings."""
+    blocks = [block.strip() for block in text.split("\n\n") if block.strip()]
+    return [block for block in blocks if not re.match(r"^(-|\d+\.|\||#)", block)]
+
+
+def read_numbered_items(text):
+    """The text of each item of a numbered list, as written (bold and code included)."""
+    return re.findall(r"^\d+\. (.+)$", text, flags=re.MULTILINE)
+
+
+def read_section_lead(text):
+    """A section up to its first '### ' subsection."""
+    return text.split("\n### ")[0]
+
+
 def parse_labeled_items(text, numbered=False):
-    """[(label, text)] of the list items written as «- **Label:** text» (or «1. ...»)."""
+    """[(label, text)] of the list items that start in bold: «- **Label:** text», also
+    «- **Label** text» (or «1. ...»)."""
     marker = r"\d+\." if numbered else "-"
-    return re.findall(rf"^{marker} \*\*(.+?):\*\* (.+)$", text, flags=re.MULTILINE)
+    return re.findall(rf"^{marker} \*\*(.+?):?\*\*:? ?(.+)$", text, flags=re.MULTILINE)
 
 
 def read_closing_paragraph(text):
