@@ -290,6 +290,17 @@ ARCHITECTURE_GROUPS = [
      "Dónde se ve"),
     ("Informes", "Qué se publica después de cada carga.", "Informe", "Qué contiene", "Cuándo"),
 ]
+# The folders of the repository in the order the data goes through them, each
+# with what it is for. «» is the root.
+FOLDER_PURPOSES = [
+    ("", "Raíz del repositorio", "Por dónde empezar: qué es el proyecto y cómo correrlo."),
+    ("agent/", "agent/", "Ingesta: descarga y valida los archivos de ODEPA."),
+    ("etl/", "etl/", "Limpieza, reglas de negocio y carga en las dos bases."),
+    ("bi/", "bi/", "Indicadores, panel, diagramas e informe semanal."),
+    ("tests/", "tests/", "Pruebas automáticas que corren en cada cambio y cada martes."),
+    (".github/workflows/", ".github/workflows/", "Automatización en GitHub Actions."),
+    ("docs/", "docs/", "Diseño, decisiones, manual y textos del panel."),
+]
 # (question, page where it is answered, state: available, partial or pending, note)
 BUSINESS_QUESTIONS = [
     ("¿Cuál es el margen entre el precio mayorista y el precio al consumidor, y cómo "
@@ -476,6 +487,7 @@ def build_style_css(mode):
                          margin: 0; }}
     .info-grid {{ display: grid; gap: 12px; margin: 6px 0 8px 0;
                   grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }}
+    .info-grid.is-compact {{ align-items: start; }}
     .info-card {{ display: flex; flex-direction: column; gap: 6px; min-width: 0;
                   padding: 16px 18px; border-radius: 16px; text-align: left;
                   background: {palette["card"]}; border: 1px solid {palette["card_border"]}; }}
@@ -489,6 +501,10 @@ def build_style_css(mode):
     .info-note {{ font-size: 0.83rem; color: {palette["text"]}; line-height: 1.45; }}
     .info-link {{ margin-top: auto; padding-top: 4px; font-size: 0.9rem; }}
     .info-card code, .steps code {{ overflow-wrap: anywhere; }}
+    .file-list {{ list-style: none; padding: 0 !important; margin: 4px 0 0 0 !important;
+                  display: grid; gap: 6px; font-size: 0.9rem; }}
+    .file-list li {{ margin: 0; line-height: 1.45; color: {palette["strong_text"]}; }}
+    .file-list a {{ font-family: monospace; font-size: 0.86rem; }}
     /* !important: Streamlit indents every list of a Markdown block. */
     .steps {{ list-style: none; counter-reset: step; padding: 0 !important;
               margin: 6px 0 8px 0 !important; display: grid; gap: 10px; }}
@@ -903,21 +919,26 @@ def capitalize_first(text):
     return text[:1].upper() + text[1:]
 
 
-def build_info_card_html(title, text, label=None, note=None, link=None, is_warning=False):
-    """One card: an optional label, a title, a short text, a note and a named link."""
+def build_info_card_html(title, text, label=None, note=None, link=None, is_warning=False,
+                         body_html=""):
+    """One card: an optional label, a title, a short text, more content right under it
+    (body_html), a note and a named link at the bottom."""
     text = capitalize_first(text)
     parts = [f'<div class="info-label">{html.escape(label)}</div>' if label else "",
              f'<div class="info-title">{format_inline(title)}</div>',
-             f'<div class="info-text">{format_inline(text)}</div>',
+             f'<div class="info-text">{format_inline(text)}</div>', body_html,
              f'<div class="info-note">{format_inline(note)}</div>' if note else "",
              f'<div class="info-link">{link}</div>' if link else ""]
     kind = " is-warning" if is_warning else ""
     return f'<div class="info-card{kind}">{"".join(parts)}</div>'
 
 
-def show_info_cards(cards_html):
-    """Cards in a grid: side by side when they fit, stacked on narrow screens."""
-    st.markdown(f'<div class="info-grid">{"".join(cards_html)}</div>', unsafe_allow_html=True)
+def show_info_cards(cards_html, is_compact=False):
+    """Cards in a grid: side by side when they fit, stacked on narrow screens. Compact
+    cards keep their own height instead of the tallest one of their row."""
+    kind = " is-compact" if is_compact else ""
+    st.markdown(f'<div class="info-grid{kind}">{"".join(cards_html)}</div>',
+                unsafe_allow_html=True)
 
 
 def build_steps_html(steps):
@@ -1743,7 +1764,7 @@ def build_extra_queries():
                       "page": TAB_QUALITY, "python": [],
                       **project.describe_query(etl.MATCH_COVERAGE_QUERY)}
     explorer_example = {"name": "explorer_example", "sql": explorer_sql,
-                        "question": "Ejemplo generado por la página Consultas: precios del "
+                        "question": "Ejemplo generado por Consulta por clics: precios del "
                                     "tomate en feria y supermercado.",
                         "page": TAB_EXPLORER, "python": [],
                         **project.describe_query(explorer_sql)}
@@ -1762,14 +1783,42 @@ def show_level_criteria(groups):
                "que deciden su nivel.")
 
 
+def find_folder(path):
+    """The folder of FOLDER_PURPOSES a file belongs to («» for the root)."""
+    folders = [folder for folder, _, _ in FOLDER_PURPOSES if folder and path.startswith(folder)]
+    return max(folders, key=len) if folders else ""
+
+
+def build_file_line_html(path, description, address):
+    """One file: its name (a link to it on GitHub when it is there) and what it does."""
+    name = path.rstrip("/").split("/")[-1] + ("/" if path.endswith("/") else "")
+    label = build_link_html(name, address) if address else f"<code>{html.escape(name)}</code>"
+    return f"<li>{label}{' — ' + format_inline(description) if description else ''}</li>"
+
+
 def show_repository_files():
-    """Every file of the README tree with its sentence and its link on GitHub."""
-    rows = [[build_link_html(path, address) if address else html.escape(path),
-             html.escape(description)]
-            for path, description, address in project.list_repository_files()]
-    st.markdown(build_html_table(["Archivo", "Qué hace"], rows), unsafe_allow_html=True)
-    st.markdown(f"{build_link_html('Historial de commits', project.COMMITS_URL)} · "
-                f"{build_link_html('Ejecuciones en GitHub Actions', project.ACTIONS_URL)}",
+    """The files of the README tree, one card per folder, in the order of the data."""
+    files = [(path, description, address) for path, description, address
+             in project.list_repository_files()
+             if not any(path == folder for folder, _, _ in FOLDER_PURPOSES if folder)]
+    cards = []
+    for folder, title, purpose in FOLDER_PURPOSES:
+        entries = [entry for entry in files if find_folder(entry[0]) == folder]
+        # A folder the README lists by the names of its files («semanal.yml, pruebas.yml»).
+        folder_line = next((description for path, description, _ in
+                            project.list_repository_files() if path == folder), "")
+        if folder and re.fullmatch(r"[\w.-]+\.\w+(, [\w.-]+\.\w+)*", folder_line):
+            entries += [(folder + name, "", project.build_github_url(folder + name))
+                        for name in folder_line.split(", ")]
+        lines = "".join(build_file_line_html(*entry) for entry in entries)
+        link = (build_link_html(f"Abrir {folder} en GitHub", project.build_github_url(folder))
+                if folder and not lines else None)
+        cards.append(build_info_card_html(
+            title, purpose, link=link,
+            body_html=f'<ul class="file-list">{lines}</ul>' if lines else ""))
+    show_info_cards(cards, is_compact=True)
+    st.markdown(f'<div class="info-note">Los enlaces al historial de commits y a las '
+                f'ejecuciones están en {build_place_link(TAB_LINKS, "")}.</div>',
                 unsafe_allow_html=True)
 
 
@@ -1795,9 +1844,10 @@ def show_queries_tab(mode):
 
 
 def show_files_tab(mode):
-    """The files of the repository, each with what it does."""
-    with open_card("code_files", "Archivos"):
-        show_repository_files()
+    """The files of the repository, by folder, each with what it does (D-057)."""
+    show_section_intro("Código", "Los archivos del repositorio por carpeta, en el orden en que "
+                       "pasan los datos. Cada nombre abre el archivo en GitHub.")
+    show_repository_files()
 
 
 def show_idea_tab(mode):
