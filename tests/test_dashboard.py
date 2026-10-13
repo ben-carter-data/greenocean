@@ -154,6 +154,20 @@ def test_project_page_draws_start_here_and_its_eight_tabs():
 
 
 @needs_database
+def test_home_shows_the_whole_diagram_and_the_five_steps_only_on_narrow_screens():
+    """Wide screens: the whole diagram at the top; narrow ones: the five steps and the
+    link. The Arquitectura tab only has the whole diagram."""
+    app = draw_page(dashboard.PAGE_PROJECT)
+    texts = [block.value for block in app.markdown]
+    mini_blocks = [text for text in texts if 'class="diagram-mini"' in text]
+    assert len(mini_blocks) == 1
+    assert "Ver la arquitectura completa" in mini_blocks[0]
+    assert 'class="diagram-fit diagram-wide"' in mini_blocks[0]
+    assert sum('class="diagram-fit diagram-wide"' in text for text in texts) == 2
+    assert sum('class="diagram-narrow"' in text for text in texts) == 1
+
+
+@needs_database
 def test_t57_queries_section_shows_the_real_count_and_each_query_in_its_group():
     """The number shown is the one of «-- name:» lines; each query under its level."""
     named_count = queries.QUERIES_FILE.read_text(encoding="utf-8").count("\n-- name: ")

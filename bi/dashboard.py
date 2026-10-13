@@ -369,28 +369,24 @@ def build_style_css(mode):
     }}
     .figure-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
                     margin: 8px 0; }}
-    .narrow-only {{ display: none; }}
     .diagram-fit {{ width: 100%; min-width: 0; }}
     .diagram-fit img {{ display: block; width: 100%; max-width: 100%; height: auto; }}
     /* The whole diagram: wide from left to right; on narrow screens (phones,
        tablets, small windows) the wide one would shrink to unreadable text, so
-       the vertical version takes its place. */
-    .diagram-narrow {{ display: none; }}
+       the vertical version takes its place, and on the home page the five steps. */
+    .diagram-narrow, .diagram-mini {{ display: none; }}
     .diagram-narrow img {{ display: block; width: 100%; max-width: 440px; height: auto;
                            margin: 0 auto; }}
     @media (max-width: 1000px) {{
         .diagram-wide {{ display: none; }}
-        .diagram-narrow {{ display: block; }}
+        .diagram-narrow, .diagram-mini {{ display: block; }}
     }}
     .run-status {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
                    margin: 0 0 10px 0; font-size: 0.9rem; }}
-    .status-list {{ display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px 0; }}
-    /* Phones: two figures per row, a status list instead of a tiny diagram, and
-       less empty room above the title, so «Empieza aquí» fits on one screen. */
+    /* Phones: two figures per row and less empty room above the title, so
+       «Empieza aquí» fits on one screen. */
     @media (max-width: 640px) {{
         .figure-grid {{ grid-template-columns: repeat(2, 1fr); }}
-        .wide-only {{ display: none; }}
-        .narrow-only {{ display: block; }}
         [data-testid="stMainBlockContainer"] {{ padding-top: 2.5rem; }}
         [class*="st-key-card_start_here"] li {{ font-size: 0.9rem; line-height: 1.4; }}
     }}
@@ -920,15 +916,6 @@ def summarize_journey_state(states):
     return "sin datos", "neutral"
 
 
-def build_journey_status_html(states, figures):
-    """One line with the real state and figures of the pipeline, for narrow screens."""
-    word, kind = summarize_journey_state(states)
-    text = (f"Pipeline {word} · {figures['weekly_prices']} · {figures['source_years']} · "
-            f"{figures['last_run']}")
-    return (f'<div class="narrow-only"><div class="status-list">{build_chip(text, kind)}'
-            f'</div></div>')
-
-
 def describe_state_source(error_text, step_states, latest_load):
     """Where the states come from when GitHub did not answer, and why it did not."""
     if step_states:
@@ -939,19 +926,28 @@ def describe_state_source(error_text, step_states, latest_load):
     return f"GitHub no respondió ({error_text}); {source}."
 
 
+def build_mini_journey_html(states, figures, mode):
+    """The five-step diagram and the link to the whole one, only on narrow screens."""
+    return ('<div class="diagram-mini">'
+            + build_svg_image_html(architecture.build_mini_journey_svg(states, figures, mode),
+                                   "diagram-fit")
+            + build_link_html("Ver la arquitectura completa", build_page_address(
+                PAGE_PROJECT, PROJECT_TAB_ARCHITECTURE)) + '</div>')
+
+
 def show_pipeline_hook(mode):
-    """The live pipeline: its status line, a small diagram on wide screens and a list
-    of labels on phones, where the diagram would be unreadable."""
+    """The live pipeline: the whole diagram on wide screens, the five steps on narrow ones."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
-    with open_card("live_pipeline", "Pipeline en vivo"):
-        st.markdown(build_run_status_html(states, pipeline_run, latest_load)
-                    + build_svg_image_html(architecture.build_mini_journey_svg(
-                        states, figures, mode), "wide-only")
-                    + build_journey_status_html(states, figures)
-                    + build_link_html("Ver la arquitectura completa", build_page_address(
-                        PAGE_PROJECT, PROJECT_TAB_ARCHITECTURE)), unsafe_allow_html=True)
+    with open_card("live_pipeline", "Pipeline en vivo", hint=ARCHITECTURE_HINT):
+        st.markdown(build_run_status_html(states, pipeline_run, latest_load),
+                    unsafe_allow_html=True)
         if error_note:
             st.caption(error_note)
+        st.markdown(build_svg_image_html(architecture.build_journey_svg(states, figures, mode),
+                                         "diagram-fit diagram-wide")
+                    + build_mini_journey_html(states, figures, mode)
+                    + f'<div class="diagram-wide">{build_journey_legend_html()}</div>',
+                    unsafe_allow_html=True)
 
 
 def show_project_value():
@@ -2093,6 +2089,15 @@ def show_architecture_table(heading):
                 unsafe_allow_html=True)
 
 
+def build_journey_legend_html():
+    """What the colored dot of each step and the moving arrows mean."""
+    return (f'{build_chip("OK", "ok")} {build_chip("En curso", "running")} '
+            f'{build_chip("Falla", "failed")} {build_chip("Sin datos", "neutral")}'
+            '<div class="kpi-note" style="margin-top:8px">Punto de color en cada '
+            'paso: estado de la última ejecución del pipeline y de la base actual. '
+            'Las flechas solo se mueven mientras hay una ejecución en curso.</div>')
+
+
 def show_architecture_tab(mode):
     """The detailed live diagram, then DevOps, security, observability and reports."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
@@ -2105,12 +2110,7 @@ def show_architecture_tab(mode):
                                          "diagram-fit diagram-wide")
                     + build_svg_image_html(architecture.build_vertical_journey_svg(
                         states, figures, mode), "diagram-narrow"), unsafe_allow_html=True)
-        st.markdown(f'{build_chip("OK", "ok")} {build_chip("En curso", "running")} '
-                    f'{build_chip("Falla", "failed")} {build_chip("Sin datos", "neutral")}'
-                    '<div class="kpi-note" style="margin-top:8px">Punto de color en cada '
-                    'paso: estado de la última ejecución del pipeline y de la base actual. '
-                    'Las flechas solo se mueven mientras hay una ejecución en curso.</div>',
-                    unsafe_allow_html=True)
+        st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
     devops_column, security_column = st.columns(2)
     with devops_column, open_card("architecture_devops", "DevOps"):
         show_architecture_table("DevOps")
