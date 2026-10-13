@@ -446,3 +446,25 @@ def test_d057_manual_tab_shows_every_section_of_the_manual():
     for heading, _ in project.split_sections(project.read_document(project.MANUAL_FILE)):
         title = shown_titles.get(heading, heading)
         assert f">{html.escape(title)}<" in texts or title.lower() in labels, heading
+
+
+def test_d057_key_decisions_exist_and_the_rest_go_newest_first():
+    numbers = {dashboard.split_decision_title(title)[0] for title, _ in project.list_decisions()}
+    key_numbers = [number for _, _, group in dashboard.KEY_DECISIONS for number in group]
+    assert len(key_numbers) == len(set(key_numbers)) == 12
+    assert set(key_numbers) <= numbers
+    assert dashboard.read_first_sentence("Uno. Dos.") == "Uno."
+
+
+@needs_database
+def test_d057_decisions_tab_shows_twelve_cards_and_folds_the_rest():
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+              "from bi import dashboard\ndashboard.show_decisions_tab(dashboard.charts.MODE_DARK)\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    cards = " ".join(block.value for block in app.markdown if 'class="info-grid"' in block.value)
+    assert cards.count('class="info-card"') == 12
+    folded = [expander.label for expander in app.expander if expander.label.startswith("D-")]
+    folded_numbers = [int(label[2:5]) for label in folded]
+    assert folded_numbers == sorted(folded_numbers, reverse=True)
+    assert len(folded) == len(project.list_decisions()) - 12
