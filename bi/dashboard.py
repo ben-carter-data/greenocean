@@ -259,6 +259,17 @@ RULE_STAGES = [
     ("Al calcular el margen", "El margen solo compara precios en la misma unidad.",
      ["RN-06"], "consulta `k1_margin` en `bi/queries.sql`"),
 ]
+# The decisions a reviewer should see first: real data-engineering trade-offs
+# (source, architecture and cost, reliability, rigor), agreed with the author.
+KEY_DECISIONS = [
+    ("Datos", "De dónde salen los datos y cómo se cruzan sin inventar nada.",
+     ["D-001", "D-007", "D-042"]),
+    ("Arquitectura y costo", "Qué se eligió para operar sin costo y dentro de los límites de "
+                             "GitHub.", ["D-012", "D-020", "D-046"]),
+    ("Confiabilidad del pipeline", "Cómo cada martes se carga todo o nada, sin duplicar ni "
+                                   "descargar de más.", ["D-024", "D-034", "D-047"]),
+    ("Rigor", "Qué se publica y cómo se comprueba.", ["D-018", "D-049", "D-019"]),
+]
 # (question, page where it is answered, state: available, partial or pending, note)
 BUSINESS_QUESTIONS = [
     ("¿Cuál es el margen entre el precio mayorista y el precio al consumidor, y cómo "
@@ -1618,15 +1629,49 @@ def show_manual_tab(mode):
         show_part(manual)
 
 
+def split_decision_title(title):
+    """(«D-046», «Sin índice único…») of a decision heading."""
+    number, _, name = title.partition(" · ")
+    return number, name
+
+
+def read_first_sentence(text):
+    """The first sentence of a text, to show it in a card."""
+    return re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0]
+
+
+def build_decision_card_html(title, body):
+    """A key decision: its name and why it was taken, in one sentence."""
+    number, name = split_decision_title(title)
+    fields = dict(project.parse_labeled_items(body))
+    return build_info_card_html(name, f"Por qué: {read_first_sentence(fields['Por qué'])}",
+                                label=number)
+
+
 def show_decisions_tab(mode):
-    """docs/DECISIONES.md, one decision per box."""
-    decisions = project.list_decisions()
-    st.subheader("Registro de decisiones")
-    st.caption(f"{len(decisions)} decisiones, cada una con qué se decidió, por qué, qué se "
-               "descartó y qué se pierde.")
-    for title, body in decisions:
-        with st.expander(title):
-            st.markdown(body)
+    """The key decisions first, by theme; every other one folded, newest first (D-057)."""
+    decisions = dict(project.list_decisions())
+    by_number = {split_decision_title(title)[0]: title for title in decisions}
+    show_section_intro("Decisiones y método", f"{len(decisions)} decisiones registradas, cada "
+                       "una con qué se decidió, por qué, qué se descartó y qué se pierde. "
+                       "Primero, las que muestran los compromisos de ingeniería de datos.")
+    for theme, lead, numbers in KEY_DECISIONS:
+        show_section_intro(theme, lead, True)
+        show_info_cards([build_decision_card_html(by_number[number],
+                                                  decisions[by_number[number]])
+                         for number in numbers])
+        with st.expander(f"Ver detalles: {theme.lower()}"):
+            for number in numbers:
+                st.markdown(f"**{by_number[number]}**")
+                st.markdown(decisions[by_number[number]])
+    key_numbers = {number for _, _, numbers in KEY_DECISIONS for number in numbers}
+    others = sorted((number for number in by_number if number not in key_numbers),
+                    key=lambda number: int(number[2:]), reverse=True)
+    show_section_intro("Las demás decisiones", f"{len(others)} decisiones, de la más reciente "
+                       "a la más antigua.", True)
+    for number in others:
+        with st.expander(by_number[number]):
+            st.markdown(decisions[by_number[number]])
 
 
 def show_query_result_button(key, sql, parameters=()):
