@@ -160,7 +160,8 @@ def test_d056_home_is_short_and_documents_in_tabs():
     for absent in ["diagram-wide", "diagram-narrow", "zoom-frame",
                    "Ver la arquitectura completa", ">DevOps<"]:
         assert absent not in texts
-    assert "Sigla o término" in texts
+    glossary_rows = project.read_guide_table("Glosario")
+    assert all(f">{html.escape(row['Sigla o término'])}<" in texts for row in glossary_rows)
 
 
 @needs_database
@@ -442,7 +443,7 @@ def test_d057_manual_tab_shows_every_section_of_the_manual():
     # Two sections take a plainer title in the panel; the glossary keeps its terms folded.
     shown_titles = {"Cómo leer un aviso rojo": "Si algo falla",
                     "Tareas de la autora y tareas automáticas": "Qué hace la autora",
-                    "Glosario": "términos de operación"}
+                    "Glosario": "Inicio › Glosario"}
     for heading, _ in project.split_sections(project.read_document(project.MANUAL_FILE)):
         title = shown_titles.get(heading, heading)
         assert f">{html.escape(title)}<" in texts or title.lower() in labels, heading
@@ -468,3 +469,8 @@ def test_d057_decisions_tab_shows_twelve_cards_and_folds_the_rest():
     folded_numbers = [int(label[2:5]) for label in folded]
     assert folded_numbers == sorted(folded_numbers, reverse=True)
     assert len(folded) == len(project.list_decisions()) - 12
+
+
+def test_d057_every_theme_of_the_glossary_says_what_it_groups():
+    themes = {row["Tema"] for row in project.read_guide_table("Glosario")}
+    assert themes == set(dashboard.GLOSSARY_THEME_LEADS)

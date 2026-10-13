@@ -270,6 +270,14 @@ KEY_DECISIONS = [
                                    "descargar de más.", ["D-024", "D-034", "D-047"]),
     ("Rigor", "Qué se publica y cómo se comprueba.", ["D-018", "D-049", "D-019"]),
 ]
+# What each theme of the glossary groups, in one sentence.
+GLOSSARY_THEME_LEADS = {
+    "Fuentes": "De dónde vienen los precios.",
+    "Pipeline": "Lo que corre cada martes y cómo se controla.",
+    "Base de datos": "Cómo se guardan y se leen los datos.",
+    "Indicadores": "Las cifras y las reglas que las producen.",
+    "Conexiones": "Cómo se comunican las piezas.",
+}
 # (question, page where it is answered, state: available, partial or pending, note)
 BUSINESS_QUESTIONS = [
     ("¿Cuál es el margen entre el precio mayorista y el precio al consumidor, y cómo "
@@ -1608,14 +1616,15 @@ def show_known_limits(manual):
 
 
 def show_manual_details(manual):
-    """The rest of the manual, folded: the live diagram, administration and terms."""
+    """The rest of the manual, folded: the live diagram and administration."""
     show_section_intro("Más detalles", "Para quien quiere comprobar cómo funciona cada parte.",
                        True)
-    for heading in ["Qué es real en el diagrama del pipeline", "Administración y enlaces",
-                    "Glosario"]:
-        label = "términos de operación" if heading == "Glosario" else heading.lower()
-        with st.expander(f"Ver detalles: {label}"):
+    for heading in ["Qué es real en el diagrama del pipeline", "Administración y enlaces"]:
+        with st.expander(f"Ver detalles: {heading.lower()}"):
             st.markdown(project.read_section(manual, heading).replace("### ", "#### "))
+    # The terms of the manual live once, in the glossary of Inicio.
+    st.markdown(f'<div class="info-note">Las siglas y los términos están en '
+                f'{build_place_link(TAB_GLOSSARY, "")}.</div>', unsafe_allow_html=True)
 
 
 def show_manual_tab(mode):
@@ -1789,12 +1798,16 @@ def show_idea_tab(mode):
 
 
 def show_glossary_tab(mode):
-    """Acronyms and terms of the project, in plain words (T-46b)."""
-    with open_card("glossary", "Glosario", "Siglas y términos que aparecen en el panel."):
-        rows = project.read_guide_table("Glosario")
-        st.markdown(build_html_table(list(rows[0]), [[html.escape(cell) for cell in row.values()]
-                                                     for row in rows]),
-                    unsafe_allow_html=True)
+    """Acronyms and terms of the project in plain words, grouped by theme (T-46b, D-057)."""
+    rows = project.read_guide_table("Glosario")
+    show_section_intro("Glosario", f"{len(rows)} siglas y términos que aparecen en el panel, "
+                       "en palabras simples y agrupados por tema.")
+    themes = list(dict.fromkeys(row["Tema"] for row in rows))
+    for theme in themes:
+        show_section_intro(theme, GLOSSARY_THEME_LEADS.get(theme, ""), True)
+        show_info_cards([build_info_card_html(row["Sigla o término"], row["Significado"],
+                                              note=f"Aparece en: {row['Dónde aparece']}")
+                         for row in rows if row["Tema"] == theme])
 
 
 def show_home_page(mode):

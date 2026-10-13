@@ -122,24 +122,29 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 
 ## Glosario
 
-| Sigla o término | Significado | Dónde aparece |
-|---|---|---|
-| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Inicio, Arquitectura |
-| CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Arquitectura |
-| ETL | Extraer, transformar y cargar: limpia los datos, aplica las reglas y los guarda. | Arquitectura, Operaciones |
-| Pipeline | La cadena completa que corre cada martes: descarga, ETL, pruebas, guardado e informe. | Inicio, Arquitectura |
-| Data warehouse | La base lista para analizar (`datos.db`), con el modelo estrella. | Arquitectura |
-| Bronce, plata, oro | Las capas de los datos: tal como llegan, limpios con reglas, y listos para analizar. | Arquitectura |
-| PK | Clave primaria: la columna que identifica cada fila de una tabla. | Arquitectura (Modelo de datos) |
-| FK | Clave foránea: la columna que apunta a la clave primaria de otra tabla. | Arquitectura (Modelo de datos) |
-| JOIN | Unión de dos tablas por su clave. | Arquitectura, Datos y código |
-| SQL | Lenguaje de consultas estructurado: con él se leen los datos de la base. | Datos y código |
-| KPI | Indicador clave: cada cifra que mide algo del negocio (K1 a K8). | Inicio, Análisis |
-| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Inicio (Reglas de calidad) |
-| CI | Integración continua: las pruebas corren solas en cada cambio del código. | Arquitectura (DevOps y seguridad) |
-| Job, workflow | Tarea automática de GitHub Actions; el job semanal corre cada martes. | Arquitectura, Operaciones |
-| Commit, push | Guardar un cambio en el historial del código, y subirlo a GitHub. | Arquitectura |
-| Issue | Publicación en GitHub; aquí, el informe semanal. | Operaciones |
-| API | La puerta por la que un programa habla con otro; el panel la usa para consultar GitHub. | Operaciones |
-| HTTPS | Conexión web cifrada. | Arquitectura |
-| UTC | Hora universal; el job corre a las 12:00 UTC, 09:00 en Chile. | Arquitectura |
+| Sigla o término | Significado | Dónde aparece | Tema |
+|---|---|---|---|
+| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Inicio, Arquitectura | Fuentes |
+| CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Arquitectura | Fuentes |
+| Pipeline | El flujo completo de cada martes, de ODEPA al panel: descarga, ETL, pruebas, guardado e informe. | Inicio, Arquitectura | Pipeline |
+| Ingesta | La descarga de los archivos de ODEPA; la hace el agente de ingesta (`agent/agent.py`), que revisa que cada archivo traiga las columnas esperadas. | Arquitectura | Pipeline |
+| ETL | Extraer, transformar y cargar (`etl/etl.py`): limpia los datos, aplica las reglas y los guarda. | Arquitectura, Operaciones | Pipeline |
+| Data quality checks | Los controles que detienen la carga si algo no cuadra. | Inicio (Reglas de calidad), Operaciones | Pipeline |
+| Job, workflow | Tarea automática de GitHub Actions; el job semanal (`semanal.yml`) ejecuta el pipeline cada martes. | Arquitectura, Operaciones | Pipeline |
+| Cron | La programación del job semanal: cada martes a las 12:00 UTC. | Operaciones | Pipeline |
+| Ejecución (run) | Una pasada completa del job semanal. | Operaciones | Pipeline |
+| Tests, CI | Las pruebas automáticas (tests); la integración continua (CI) las corre solas en cada cambio del código (`pruebas.yml`). | Arquitectura (DevOps y seguridad) | Pipeline |
+| Commit, push | Guardar un cambio en el historial del código, y subirlo a GitHub. | Arquitectura | Pipeline |
+| Issue | Publicación en GitHub; aquí, el informe semanal. | Operaciones | Pipeline |
+| Bronce, plata, oro | Las capas de los datos: tal como llegan (bronce o staging, `raw.db`, que se reconstruye en cada ejecución y no se sube al repositorio), limpios con reglas (plata) y listos para analizar (oro). | Arquitectura | Base de datos |
+| Data warehouse | La base lista para analizar (`datos.db`), con el modelo estrella. | Arquitectura | Base de datos |
+| PK | Clave primaria: la columna que identifica cada fila de una tabla. | Arquitectura (Modelo de datos) | Base de datos |
+| FK | Clave foránea: la columna que apunta a la clave primaria de otra tabla. | Arquitectura (Modelo de datos) | Base de datos |
+| JOIN | Unión de dos tablas por su clave. | Arquitectura, Datos y código | Base de datos |
+| SQL | Lenguaje de consultas estructurado: con él se leen los datos de la base. | Datos y código | Base de datos |
+| KPI | Indicador clave: cada cifra que mide algo del negocio (K1 a K8). | Inicio, Análisis | Indicadores |
+| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Inicio (Reglas de calidad) | Indicadores |
+| Alertas, notificaciones | Las alertas K6 de precios, y el correo de GitHub cuando el job semanal falla. | Análisis, Operaciones | Indicadores |
+| API | La puerta por la que un programa habla con otro; el panel la usa para consultar GitHub. | Operaciones | Conexiones |
+| HTTPS | Conexión web cifrada. | Arquitectura | Conexiones |
+| UTC | Hora universal; el job corre a las 12:00 UTC, 09:00 en Chile. | Arquitectura | Conexiones |

@@ -234,3 +234,15 @@ def test_d057_labeled_items_and_closing_paragraph_come_from_the_document():
     assert [label for label, _ in project.parse_labeled_items(section, numbered=True)] == [
         "Nombres", "Unidades", "Tiempo"]
     assert project.read_closing_paragraph(section).startswith("Solo hay margen")
+
+
+def test_d057_every_term_of_the_manual_is_in_the_glossary_of_the_panel():
+    """The panel shows the terms once, in Inicio › Glosario."""
+    glossary = " ".join(f"{row['Sigla o término']} {row['Significado']}"
+                        for row in project.read_guide_table("Glosario")).lower()
+    manual_terms = project.parse_markdown_table(project.read_section(
+        project.read_document(project.MANUAL_FILE), "Glosario"))
+    for row in manual_terms:
+        first_word = row["Término"].split(" / ")[0].split(" (")[0]
+        assert first_word.lower() in glossary, first_word
+    assert all(row["Tema"] for row in project.read_guide_table("Glosario"))
