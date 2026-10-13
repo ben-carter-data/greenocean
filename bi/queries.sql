@@ -148,6 +148,24 @@ JOIN dim_region ON dim_region.region_id = weekly_price.region_id
 WHERE weekly_price.flag = 'ATIPICO'
 ORDER BY weekly_price.week_start DESC, dim_product.product;
 
+-- name: quality_rejected_rows
+-- RN-11: the rows rejected in the latest run, as they were read, with their reason.
+SELECT source, reason, original_row
+FROM rejection
+ORDER BY source, reason;
+
+-- name: quality_unconvertible_units
+-- RN-05: weekly prices kept without a comparable price, by product and channel.
+SELECT dim_channel.source, dim_channel.channel, dim_product.product,
+       dim_product.variety, dim_product.quality, COUNT(*) AS weekly_prices
+FROM weekly_price
+JOIN dim_product ON dim_product.product_id = weekly_price.product_id
+JOIN dim_channel ON dim_channel.channel_id = weekly_price.channel_id
+WHERE weekly_price.flag = 'UNIDAD_NO_CONVERTIBLE'
+GROUP BY dim_channel.source, dim_channel.channel, dim_product.product,
+         dim_product.variety, dim_product.quality
+ORDER BY weekly_prices DESC, dim_product.product;
+
 -- name: k6_national_weekly_price
 -- K6 (P6): national weekly price of each product key and channel. The weekly
 -- variation and its usual range are computed in bi/alerts.py, because SQLite

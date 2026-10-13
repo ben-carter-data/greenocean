@@ -301,6 +301,22 @@ FOLDER_PURPOSES = [
     (".github/workflows/", ".github/workflows/", "Automatización en GitHub Actions."),
     ("docs/", "docs/", "Diseño, decisiones, manual y textos del panel."),
 ]
+# Why a row is rejected (RN-11), in the words of validate_rows() in etl/etl.py.
+REASON_TEXTS = {
+    etl.REASON_UNREADABLE_VALUE: "un precio, una fecha o la región no se pudo leer",
+    etl.REASON_NON_POSITIVE_PRICE: "un precio (mínimo, máximo o promedio) es cero o negativo",
+    etl.REASON_MINIMUM_ABOVE_MAXIMUM: "el precio mínimo es mayor que el máximo",
+    etl.REASON_DATE_OUTSIDE_FILE_YEAR: "la fecha no cae en el año del archivo",
+    etl.REASON_NON_POSITIVE_VOLUME: "una fila mayorista sin volumen no puede entrar al "
+                                    "promedio ponderado (RN-07)",
+}
+# The fields of a rejected row worth reading, as ODEPA sent them, in Spanish.
+REJECTED_ROW_LABELS = {
+    "price_date": "Fecha", "week_start": "Semana", "region": "Región", "market": "Mercado",
+    "channel": "Canal", "product": "Producto", "variety": "Variedad", "quality": "Calidad",
+    "sale_unit": "Unidad de venta", "unit": "Unidad", "volume": "Volumen",
+    "min_price": "Precio mínimo", "max_price": "Precio máximo", "avg_price": "Precio promedio",
+}
 # (question, page where it is answered, state: available, partial or pending, note)
 BUSINESS_QUESTIONS = [
     ("¿Cuál es el margen entre el precio mayorista y el precio al consumidor, y cómo "
@@ -722,7 +738,7 @@ def add_display_columns(rows):
     """Add the date and the product key label used by filters and charts."""
     if "week_start" in rows.columns:
         rows["week_start"] = pd.to_datetime(rows["week_start"])
-    if "variety" in rows.columns:
+    if {"variety", "normalized_unit"} <= set(rows.columns):
         # The unit is part of the label: one product can be sold by kilo and by unit.
         rows["key_label"] = (rows["variety"] + " · " + rows["quality"]
                              + " · $/" + rows["normalized_unit"])
@@ -2845,36 +2861,115 @@ def show_flag_donut(mode):
 
 
 def show_quality_details():
-    """Card: match coverage (K7), rejections (K8) and the list of outliers."""
+    """Card: match coverage (K7)."""
     keys_with_margin, consumer_keys = read_match_coverage()
-    with open_card("quality_details", "Cobertura y rechazos"):
-        st.markdown(f"**K7 · Cobertura del cruce:** {keys_with_margin} de {consumer_keys} "
-                    f"claves de frutas y verduras tienen margen "
-                    f"({charts.format_percent(keys_with_margin / consumer_keys * 100)}).")
-        rejections = read_indicator("k8_rejected_rows")
-        if rejections.empty:
-            st.markdown(f"**K8 · Rechazos:** {build_chip('0 filas rechazadas', 'ok')}",
-                        unsafe_allow_html=True)
+    with open_card("quality_details", "Cobertura del cruce", kpi="K7"):
+        st.markdown(f'<div class="kpi-value">{keys_with_margin} de {consumer_keys}</div>'
+                    f'<div class="kpi-note">claves de frutas y verduras del consumidor tienen '
+                    f'margen ({charts.format_percent(keys_with_margin / consumer_keys * 100)})'
+                    f'</div>', unsafe_allow_html=True)
+
+
+def describe_reasons(rejections):
+    """«NON_POSITIVE_PRICE (201): un precio … es cero o negativo», one per reason."""
+    return "; ".join(f"{row['reason']} ({charts.format_thousands(row['rejected_rows'])}): "
+                     f"{REASON_TEXTS.get(row['reason'], 'motivo sin descripción')}"
+                     for row in rejections.to_dict("records"))
+
+
+def build_excluded_cards(latest_run, rejections, flag_totals):
+    """What was left out of the indicators, and why: rejected, outliers, no unit."""
+    rejected = int(rejections["rejected_rows"].sum()) if not rejections.empty else 0
+    share = charts.format_percent(rejected / latest_run["rows_read"] * 100, decimals=3)
+    rejected_text = (f"{charts.format_thousands(rejected)} de "
+                     f"{charts.format_thousands(latest_run['rows_read'])} filas leídas ({share}). "
+                     + (f"Motivo: {describe_reasons(rejections)}." if rejected
+                        else "La última ejecución no rechazó filas."))
+    outliers = int(flag_totals.get(etl.FLAG_OUTLIER, 0))
+    unconvertible = int(flag_totals.get(etl.FLAG_UNIT_NOT_CONVERTIBLE, 0))
+    return [
+        build_info_card_html("Filas rechazadas", rejected_text, label="RN-11 · no se cargan",
+                             note="Se guardan tal como venían en la tabla `rejection`; nunca "
+                                  "se borran en silencio.", is_warning=True),
+        build_info_card_html("Precios atípicos", f"{charts.format_thousands(outliers)} precios "
+                             "semanales a más de 5 veces, o menos de 1/5, de la mediana de su "
+                             "producto esa semana.", label="RN-12 · fuera de los indicadores",
+                             note="Siguen en `weekly_price` con la marca `ATIPICO`."),
+        build_info_card_html("Unidad no convertible", f"{charts.format_thousands(unconvertible)}"
+                             " precios semanales en unidades con un rango o sin cantidad "
+                             "declarada (un atado de 1,5 a 2 kilos, una docena de atados): no "
+                             "se pueden llevar a kilo ni a unidad.",
+                             label="RN-05 · sin precio comparable",
+                             note="Siguen en `weekly_price` con la marca "
+                                  "`UNIDAD_NO_CONVERTIBLE`, sin margen."),
+    ]
+
+
+def build_rejected_rows_table(rejected_rows):
+    """The rejected rows as ODEPA sent them, with readable columns in Spanish."""
+    records = []
+    for row in rejected_rows.to_dict("records"):
+        original = json.loads(row["original_row"])
+        record = {"Fuente": SOURCE_NAMES.get(row["source"], row["source"]),
+                  "Motivo": row["reason"]}
+        record.update({label: original[key] for key, label in REJECTED_ROW_LABELS.items()
+                       if key in original})
+        records.append(record)
+    return pd.DataFrame(records)
+
+
+def format_outliers(outliers):
+    """The outliers with readable columns in Spanish."""
+    outliers = outliers.drop(columns="key_label").copy()
+    outliers["week_start"] = outliers["week_start"].dt.strftime("%d-%m-%Y")
+    outliers["source"] = outliers["source"].map(SOURCE_NAMES)
+    outliers.columns = ["Semana", "Fuente", "Canal", "Región", "Producto", "Variedad",
+                        "Calidad", "Unidad", "Precio", "Observaciones"]
+    return outliers
+
+
+def show_excluded_rows(latest_run):
+    """Which rows were left out, why, and the rows themselves folded."""
+    rejections = read_indicator("k8_rejected_rows")
+    flag_totals = read_indicator("quality_flag_counts").groupby("flag")["weekly_prices"].sum()
+    show_section_intro("Qué quedó fuera y por qué", "Tres grupos de datos que no entran a los "
+                       "indicadores; ninguno se borra.", True)
+    show_info_cards(build_excluded_cards(latest_run, rejections, flag_totals))
+    rejected_rows = build_rejected_rows_table(read_indicator("quality_rejected_rows"))
+    with st.expander(f"Ver las {charts.format_thousands(len(rejected_rows))} filas rechazadas, "
+                     "tal como venían"):
+        if rejected_rows.empty:
+            st.info("La última ejecución no rechazó filas.")
         else:
-            st.dataframe(rejections, hide_index=True)
-        outliers = read_indicator("quality_outliers").drop(columns="key_label").copy()
-        outliers["week_start"] = outliers["week_start"].dt.strftime("%d-%m-%Y")
-        outliers["source"] = outliers["source"].map(SOURCE_NAMES)
-        outliers.columns = ["Semana", "Fuente", "Canal", "Región", "Producto", "Variedad",
-                            "Calidad", "Unidad", "Precio", "Observaciones"]
-        with st.expander(f"Ver los {len(outliers)} precios marcados como atípicos"):
-            st.dataframe(outliers, hide_index=True)
+            reasons = sorted(rejected_rows["Motivo"].unique())
+            if len(reasons) > 1:
+                reason = st.selectbox("Motivo", reasons, key="rejected_reason")
+                rejected_rows = rejected_rows[rejected_rows["Motivo"] == reason]
+            st.dataframe(rejected_rows, hide_index=True)
+    outliers = format_outliers(read_indicator("quality_outliers"))
+    with st.expander(f"Ver los {charts.format_thousands(len(outliers))} precios atípicos"):
+        st.dataframe(outliers, hide_index=True)
+    units = read_indicator("quality_unconvertible_units")
+    units["source"] = units["source"].map(SOURCE_NAMES)
+    units.columns = ["Fuente", "Canal", "Producto", "Variedad", "Calidad", "Precios semanales"]
+    with st.expander("Ver los precios con unidad no convertible, por producto"):
+        st.dataframe(units, hide_index=True)
+    st.caption("Consultas: `quality_rejected_rows`, `quality_outliers` y "
+               "`quality_unconvertible_units` en `bi/queries.sql`.")
 
 
 def show_quality_tab(mode):
-    """Whether the latest load worked and what was left out."""
-    st.caption("Qué se cargó, qué quedó fuera y por qué.")
-    show_load_figures(read_latest_run())
-    donut_column, details_column = st.columns([2, 3])
+    """What the latest load read and kept, then what was left out and why (D-057)."""
+    show_section_intro("Calidad de datos", "Qué se cargó en la última ejecución, qué quedó "
+                       "fuera y por qué.")
+    latest_run = read_latest_run()
+    show_load_figures(latest_run)
+    donut_column, details_column = st.columns([3, 2])
     with donut_column:
         show_flag_donut(mode)
     with details_column:
         show_quality_details()
+    show_excluded_rows(latest_run)
 
 
 def show_operations_page(mode):
