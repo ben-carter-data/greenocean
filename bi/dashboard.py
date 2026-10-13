@@ -2605,6 +2605,9 @@ def show_run_history(runs, error_text):
 def show_runs_tab(mode):
     """The weekly pipeline: its state, its history and, behind the control code, the
     button to run it now and the administration links."""
+    show_section_intro("Ejecuciones", "El estado del job semanal: la última ejecución, la "
+                       "próxima, la última carga y el historial. Con la clave de control se "
+                       "puede lanzar ahora.")
     runs, error_text = read_pipeline_runs()
     show_pipeline_status(runs)
     run_column, history_column = st.columns([2, 3])
