@@ -535,3 +535,28 @@ def test_d057_the_menu_folds_once_on_narrow_screens_only():
     assert dashboard.NARROW_SCREEN_WIDTH == 1024
     # Folded once per visit: a reader who opens it again keeps it open.
     assert 'sessionStorage.getItem("sidebarFolded")' in script
+
+
+def test_d059_alert_levels_go_from_moderate_to_very_high_with_icon_and_label():
+    assert dashboard.find_alert_level(2.5) == ("Moderada", "●", "warning")
+    assert dashboard.find_alert_level(3.2) == ("Alta", "▲", "serious")
+    assert dashboard.find_alert_level(11) == ("Muy alta", "◆", "critical")
+    rows = pd.DataFrame({"product": ["Tomate"], "variety": ["Larga vida"], "quality": ["Primera"],
+                         "channel": ["Feria libre"], "variation": [0.25],
+                         "usual_variation": [0.01], "variation_deviation": [0.06]})
+    item = dashboard.build_alert_list_html(rows)
+    assert "▲ Alta" not in item and "◆ Muy alta" in item and "▲ +25,0 %" in item
+    assert 'class="alert-limit"' in item
+
+
+@needs_database
+def test_d059_every_analysis_tab_draws_its_new_form():
+    app = draw_page(dashboard.PAGE_ANALYSIS)
+    assert not app.exception
+    texts = " ".join(block.value for block in app.markdown)
+    for title in ["Mayores variaciones de la semana", "Mayorista y consumidor, la última semana",
+                  "Brecha · Feria libre", "Calendario de precios · Feria libre",
+                  "Alertas de la semana"]:
+        assert title in texts, title
+    assert 'class="alert-list"' in texts
+    assert sum(expander.label == "Ver evolución histórica" for expander in app.expander) == 3

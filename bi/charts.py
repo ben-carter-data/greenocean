@@ -58,6 +58,16 @@ PALETTES = {
         "glow": "rgba(37, 99, 235, 0.0)", "on_accent": "#ffffff",
     },
 }
+# Sequential ramps for a heat map, one hue, light (cheap) to dark (expensive):
+# cyan in Vantablack, the business blue in the light themes. Both validated as
+# ordinal ramps against the card color of their themes (dataviz validator).
+HEAT_RAMPS = {MODE_DARK: ["#a5f3fc", "#22d3ee", "#0891b2", "#155e75"],
+              MODE_CORPORATE: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"],
+              MODE_LIGHT: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"]}
+# Status colors (fixed in every theme), always shown with an icon and a label.
+STATUS_COLORS = {"warning": "#fab219", "serious": "#ec835a", "critical": "#d03b3b"}
+MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov",
+               "dic"]
 CHART_FONT = "Source Sans Pro, sans-serif"
 CHART_HEIGHT = 300
 SPARKLINE_HEIGHT = 70
@@ -269,7 +279,7 @@ def calculate_bar_domain(values):
 
 
 def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=None,
-                         is_sorted_by_value=True):
+                         is_sorted_by_value=True, reference_label=None):
     """Horizontal bars with their value written next to them.
 
     rows needs the columns label, value and value_label; colors, when given,
@@ -307,6 +317,13 @@ def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=N
         # Same rows as the bars (so the bands stay intact) but no y: one full line.
         layers.insert(0, alt.Chart(rows).mark_rule(
             color=palette["reference"], strokeDash=[4, 4]).encode(x=alt.datum(reference_value)))
+        if reference_label:
+            # The name of the dashed line, at its top, so it reads without a legend.
+            # Above the plot, never over a bar.
+            layers.append(alt.Chart(rows.head(1)).mark_text(
+                align="center", baseline="bottom", dy=-4, fontSize=11,
+                color=palette["text"]).encode(x=alt.datum(reference_value), y=alt.value(0),
+                                              text=alt.datum(reference_label)))
     # One fixed band height per bar, so long lists stay readable.
     chart = alt.layer(*layers).properties(height=alt.Step(BAR_HEIGHT))
     return apply_chart_style(chart, mode)
@@ -318,10 +335,71 @@ def draw_variation_bars(rows, mode):
     rows needs the columns label and value (percent).
     """
     palette = get_palette(mode)
-    rows = rows.assign(value_label=rows["value"].map(format_signed_percent),
+    # The arrow says the direction without color: ▲ rose, ▼ fell.
+    rows = rows.assign(value_label=[f"{'▲' if value > 0 else '▼'} {format_signed_percent(value)}"
+                                    for value in rows["value"]],
                        meaning=rows["value"].map(describe_weekly_change))
     colors = [palette["rise"] if value > 0 else palette["fall"] for value in rows["value"]]
     return draw_horizontal_bars(rows, "Variación semanal (%)", mode, colors, reference_value=0)
+
+
+def draw_dumbbell(rows, unit, mode):
+    """Wholesale price and consumer price of each channel, joined by a line.
+
+    rows needs the columns channel, wholesale_price, consumer_price and gap_label;
+    the gap is written at the right of each channel.
+    """
+    palette = get_palette(mode)
+    rows = rows.sort_values("consumer_price", ascending=False).assign(
+        wholesale_label=rows["wholesale_price"].map(lambda value: f"$ {format_thousands(value)}"),
+        consumer_label=rows["consumer_price"].map(lambda value: f"$ {format_thousands(value)}"))
+    order = rows["channel"].to_list()
+    money_axis = alt.Axis(format=MONEY_AXIS_FORMAT, tickCount=5)
+    tooltip = [alt.Tooltip("channel:N", title="Canal"),
+               alt.Tooltip("wholesale_label:N", title=f"Mayorista $/{unit}"),
+               alt.Tooltip("consumer_label:N", title=f"Consumidor $/{unit}"),
+               alt.Tooltip("gap_label:N", title="Brecha")]
+    base = alt.Chart(rows).encode(
+        y=alt.Y("channel:N", title=None, sort=order,
+                axis=alt.Axis(labelLimit=200, labelPadding=10)), tooltip=tooltip)
+    joins = base.mark_rule(strokeWidth=2, color=palette["reference"]).encode(
+        x=alt.X("wholesale_price:Q", title=f"$/{unit}", axis=money_axis,
+                scale=alt.Scale(zero=False)), x2="consumer_price:Q")
+    wholesale = base.mark_point(filled=True, size=110, opacity=1,
+                                color=get_channel_color("Mayorista", mode),
+                                stroke=palette["card"], strokeWidth=2).encode(
+        x="wholesale_price:Q")
+    consumers = base.mark_point(filled=True, size=130, opacity=1, stroke=palette["card"],
+                                strokeWidth=2).encode(
+        x="consumer_price:Q",
+        color=alt.Color("channel:N", legend=None,
+                        scale=build_channel_color_scale(rows["channel"], mode)))
+    gaps = base.mark_text(align="left", dx=10, color=palette["text"]).encode(
+        x="consumer_price:Q", text="gap_label:N")
+    chart = alt.layer(joins, wholesale, consumers, gaps).properties(height=alt.Step(40))
+    return apply_chart_style(chart, mode)
+
+
+def draw_heatmap(rows, mode):
+    """A calendar: one cell per month and year, darker when the price is higher.
+
+    rows needs the columns year, month (1 to 12), value and value_label.
+    """
+    palette = get_palette(mode)
+    rows = rows.assign(month_name=[MONTH_NAMES[month - 1] for month in rows["month"]])
+    cells = alt.Chart(rows).mark_rect(cornerRadius=3, stroke=palette["card"],
+                                      strokeWidth=2).encode(
+        x=alt.X("month_name:O", title=None, sort=MONTH_NAMES,
+                axis=alt.Axis(labelAngle=0, domain=False, ticks=False)),
+        y=alt.Y("year:O", title=None, axis=alt.Axis(domain=False, ticks=False)),
+        color=alt.Color("value:Q", title="Índice (1 = promedio del año)",
+                        scale=alt.Scale(range=HEAT_RAMPS.get(mode, HEAT_RAMPS[MODE_LIGHT])),
+                        legend=alt.Legend(orient="bottom", gradientLength=220,
+                                          format=".2f")),
+        tooltip=[alt.Tooltip("month_name:N", title="Mes"), alt.Tooltip("year:O", title="Año"),
+                 alt.Tooltip("value_label:N", title="Índice estacional")])
+    chart = cells.properties(height=alt.Step(34))
+    return apply_chart_style(chart, mode)
 
 
 def draw_donut(rows, colors, mode):
