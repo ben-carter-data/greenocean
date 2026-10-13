@@ -45,14 +45,36 @@ SQL_CLAUSE_PATTERNS = {
     "WITH": r"^\s*WITH\b",
     "SELECT": r"\bSELECT\b",
     "JOIN": r"\bJOIN\b",
+    # The same table twice in FROM/JOIN, under two different aliases.
+    "Auto-join": r"(?s)\b(?:FROM|JOIN)\s+(\w+)\s+AS\s+(\w+)\b.*\bJOIN\s+\1\s+AS\s+(?!\2\b)\w+",
     "WHERE": r"\bWHERE\b",
     "GROUP BY": r"\bGROUP\s+BY\b",
+    "Agregados": r"\b(?:COUNT|SUM|AVG|MIN|MAX|TOTAL)\s*\(",
     "HAVING": r"\bHAVING\b",
     "ORDER BY": r"\bORDER\s+BY\b",
     "Funciones de ventana": r"\bOVER\b",
     "LAG": r"\bLAG\s*\(",
     "CASE": r"\bCASE\b",
     "Subconsultas": r"\(\s*SELECT\b",
+    "Funciones de fecha": r"\b(?:STRFTIME|JULIANDAY|DATE|DATETIME)\s*\(",
+}
+# Label of a query whose result a test compares with a Python version (D-049).
+PYTHON_RECONCILIATION = "Reconciliación con Python"
+# Complexity levels (T-57). A query takes the highest level whose labels it uses;
+# a query with none of them is Simple. Labels not listed do not change the level.
+LEVEL_SIMPLE = "Simple"
+LEVEL_INTERMEDIATE = "Intermedio"
+LEVEL_ADVANCED = "Avanzado"
+QUERY_LEVELS = [LEVEL_SIMPLE, LEVEL_INTERMEDIATE, LEVEL_ADVANCED]
+LEVEL_LABELS = {
+    LEVEL_ADVANCED: ["Funciones de ventana", "LAG", "HAVING", PYTHON_RECONCILIATION],
+    LEVEL_INTERMEDIATE: ["JOIN", "Auto-join", "Subconsultas", "Funciones de fecha"],
+}
+LEVEL_CRITERIA = {
+    LEVEL_SIMPLE: "SELECT, WHERE, GROUP BY y agregados",
+    LEVEL_INTERMEDIATE: "joins del modelo estrella, auto-joins, subconsultas o funciones "
+                        "de fecha",
+    LEVEL_ADVANCED: "funciones de ventana, LAG, HAVING o reconciliación con Python",
 }
 PREVIEW_ROW_COUNT = 20
 # Python functions that compute the same as an alternative SQL query (D-049).
@@ -172,15 +194,40 @@ def read_python_versions(query_name):
     return [inspect.getsource(function) for function in PYTHON_VERSIONS.get(query_name, [])]
 
 
+def classify_query_level(clauses):
+    """(level, labels that set it) from the labels detected in a query."""
+    for level in [LEVEL_ADVANCED, LEVEL_INTERMEDIATE]:
+        reasons = [clause for clause in clauses if clause in LEVEL_LABELS[level]]
+        if reasons:
+            return level, reasons
+    return LEVEL_SIMPLE, []
+
+
+def describe_query(sql, has_python_version=False):
+    """{clauses, level, level_reasons} of a query, all read from its text."""
+    clauses = detect_sql_clauses(sql) + ([PYTHON_RECONCILIATION] if has_python_version else [])
+    level, reasons = classify_query_level(clauses)
+    return {"clauses": clauses, "level": level, "level_reasons": reasons}
+
+
 def list_named_queries():
     """Every named query of bi/queries.sql with its question and page (docs/PROYECTO.md)."""
     descriptions = {row["Consulta"]: row for row in read_guide_table("Consultas SQL")}
-    return [{"name": name, "sql": sql.strip(),
-             "question": descriptions[name]["Qué responde"],
-             "page": descriptions[name]["Página"],
-             "clauses": detect_sql_clauses(sql),
-             "python": read_python_versions(name)}
-            for name, sql in queries.load_queries().items()]
+    catalog = []
+    for name, sql in queries.load_queries().items():
+        python_versions = read_python_versions(name)
+        catalog.append({"name": name, "sql": sql.strip(),
+                        "question": descriptions[name]["Qué responde"],
+                        "page": descriptions[name]["Página"],
+                        "python": python_versions,
+                        **describe_query(sql, bool(python_versions))})
+    return catalog
+
+
+def group_queries_by_level(catalog):
+    """{level: queries of that level}, from Simple to Avanzado, in catalog order."""
+    return {level: [query for query in catalog if query["level"] == level]
+            for level in QUERY_LEVELS}
 
 
 def build_explorer_example():

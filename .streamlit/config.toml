@@ -1,22 +1,26 @@
-# Visual theme of the dashboard (D-037, D-038). The reader switches between the
-# two modes in the app menu (⋮ > Settings); the charts follow the active mode.
+# Visual theme of the dashboard (D-037, D-052). The reader chooses one of three
+# themes in the sidebar: Vantablack (dark base) or Corporativo and Claro (light
+# base). The page, sidebar and charts take the colors of the chosen theme from
+# bi/charts.py; Streamlit's own widgets (lists, tables, code) follow these two
+# base modes, which the dashboard switches to match the theme.
 [theme]
+base = "dark"
 baseRadius = "large"
 showSidebarBorder = false
 
 [theme.dark]
-primaryColor = "#3987e5"
-backgroundColor = "#09090b"
-secondaryBackgroundColor = "#141416"
-textColor = "#f0efec"
-borderColor = "#26262a"
+primaryColor = "#2fd3f0"
+backgroundColor = "#030304"
+secondaryBackgroundColor = "#0b0c0f"
+textColor = "#f3f5f9"
+borderColor = "#1b1e26"
 
 [theme.light]
-primaryColor = "#2a78d6"
-backgroundColor = "#f6f1e7"
-secondaryBackgroundColor = "#fffdf8"
-textColor = "#1d1b17"
-borderColor = "#e7dfcf"
+primaryColor = "#1d5fbf"
+backgroundColor = "#f8f9fb"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#111827"
+borderColor = "#e3e7ed"
 
 [browser]
 gatherUsageStats = false

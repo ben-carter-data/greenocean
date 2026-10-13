@@ -4,7 +4,8 @@ Layers from left to right (sources, ingestion, bronze, cleaning, rules, quality,
 gold, consumption), an orchestration band on top, observability at the bottom,
 and a quarantine for rejected rows. Each step carries a status dot with its real
 state (latest pipeline run and current database); dots travel along the arrows
-only while a run is in progress: every animation shows real data (D-043).
+and the dashed links move only while a run is in progress: every animation shows
+real data (D-043, D-051). The rest of the time the diagram stays still.
 The result is a standalone SVG text, shown with st.image (st.html removes SVG).
 Only steps that really exist in this project are drawn.
 """
@@ -48,9 +49,21 @@ COLUMN_HEADERS = [
 ]
 # The small version shown at the top of the project page.
 MINI_WIDTH = 1000
-MINI_HEIGHT = 200
+MINI_HEIGHT = 160
 MINI_ROW_Y = 64
 MINI_COLUMN_X = [100, 300, 500, 700, 900]
+# The vertical version, for narrow screens: one step per row.
+VERTICAL_WIDTH = 400
+VERTICAL_TILE_X = 64
+VERTICAL_FIRST_Y = 170
+VERTICAL_ROW = 112
+# endregion
+
+
+# region States
+def has_real_state(state):
+    """True for a state read from a run or from the database; unknown is not one."""
+    return state in STATE_COLORS and state != STATE_UNKNOWN
 # endregion
 
 
@@ -135,16 +148,20 @@ def draw_warning_icon(x, y, color):
 
 
 # region Pieces
-def build_style():
-    """Pulse for running steps; moving dashes on the dashed links."""
-    return """<style>
-    .journey-running { animation: journey-pulse 1.2s ease-in-out infinite; }
-    .journey-dashed { stroke-dasharray: 5 5; animation: journey-dash 1.2s linear infinite; }
-    @keyframes journey-pulse { 50% { opacity: 0.2; } }
-    @keyframes journey-dash { to { stroke-dashoffset: -20; } }
-    @media (prefers-reduced-motion: reduce) {
-      .journey-running, .journey-dashed { animation: none; }
-    }
+def build_style(is_running):
+    """Pulse for running steps; the dashed links move only while a run is in progress.
+
+    The rest of the time the diagram stays still: only its status dots speak.
+    """
+    dash_motion = ("animation: journey-dash 1.2s linear infinite;" if is_running else "")
+    return f"""<style>
+    .journey-running {{ animation: journey-pulse 1.2s ease-in-out infinite; }}
+    .journey-dashed {{ stroke-dasharray: 5 5; {dash_motion} }}
+    @keyframes journey-pulse {{ 50% {{ opacity: 0.2; }} }}
+    @keyframes journey-dash {{ to {{ stroke-dashoffset: -20; }} }}
+    @media (prefers-reduced-motion: reduce) {{
+      .journey-running, .journey-dashed {{ animation: none; }}
+    }}
     </style>"""
 
 
@@ -173,10 +190,12 @@ def build_node(x, y, layer, draw_icon, title, lines, palette, state=None):
     for line_number, line in enumerate(lines[:2]):
         parts.append(f'<text x="{x}" y="{y+half+42+line_number*17}" text-anchor="middle" '
                      f'font-size="13" fill="{palette["text"]}">{html.escape(line)}</text>')
-    if state is not None:
+    # Only a real state gets a dot; an unknown one gets none (a grey dot would
+    # look like a state).
+    if has_real_state(state):
         pulse = ' class="journey-running"' if state == control.RUN_IN_PROGRESS else ""
         parts.append(f'<circle{pulse} cx="{x+half-4}" cy="{y-half+4}" r="7" '
-                     f'fill="{STATE_COLORS.get(state, STATE_COLORS[STATE_UNKNOWN])}" '
+                     f'fill="{STATE_COLORS[state]}" '
                      f'stroke="{palette["card"]}" stroke-width="2.5"/>')
     return "".join(parts)
 
@@ -215,11 +234,15 @@ def build_band(x, y, width, height, title, color, palette):
 
 
 def build_band_item(x, y, title, detail, palette, state=None):
-    """One item of a band: a status dot (or a neutral dot), a title and a detail."""
-    dot_color = STATE_COLORS.get(state, palette["text"]) if state else palette["text"]
-    pulse = ' class="journey-running"' if state == control.RUN_IN_PROGRESS else ""
-    return (f'<circle{pulse} cx="{x}" cy="{y-4}" r="5" fill="{dot_color}"/>'
-            f'<text x="{x+12}" y="{y}" font-size="14" font-weight="700" '
+    """One item of a band: a title, a detail and, only with a real state, its dot.
+
+    An item without a known state has no dot: a grey dot would look like a state.
+    """
+    dot = ""
+    if has_real_state(state):
+        pulse = ' class="journey-running"' if state == control.RUN_IN_PROGRESS else ""
+        dot = f'<circle{pulse} cx="{x}" cy="{y-4}" r="5" fill="{STATE_COLORS[state]}"/>'
+    return (f'{dot}<text x="{x+12}" y="{y}" font-size="14" font-weight="700" '
             f'fill="{palette["strong_text"]}">{html.escape(title)}</text>'
             f'<text x="{x+12}" y="{y+18}" font-size="13" fill="{palette["text"]}">'
             f'{html.escape(detail)}</text>')
@@ -343,13 +366,14 @@ def build_orchestration(states, figures, palette):
     return "".join(parts)
 
 
-def build_observability(figures, palette):
+def build_observability(states, figures, palette):
     """Bottom band: how we know what happened in each run."""
     left = COLUMN_X["bronze"] - 70
     width = COLUMN_X["gold"] + 70 - left
     return (build_band(left, 618, width, 72, "OBSERVABILIDAD — cómo sabemos qué pasó",
                        palette["text"], palette)
-            + build_band_item(left + 30, 662, "etl_run", "una línea por carga", palette)
+            + build_band_item(left + 30, 662, "etl_run", "una línea por carga", palette,
+                              states.get("etl_run"))
             + build_band_item(left + 220, 662, "Logs del agente", "un archivo por ejecución",
                               palette)
             + build_band_item(left + 470, 662, "Correo de GitHub", "si el job semanal falla",
@@ -379,13 +403,14 @@ def build_journey_svg(states, figures, mode):
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {HEIGHT}" '
              f'width="{WIDTH}" height="{HEIGHT}" role="img" '
              f'aria-label="Recorrido de los datos de ODEPA al panel" '
-             f'font-family="{charts.CHART_FONT}">', build_style(),
+             f'font-family="{charts.CHART_FONT}">',
+             build_style(states.get("workflow") == control.RUN_IN_PROGRESS),
              build_column_headers(), build_container(palette),
              build_orchestration(states, figures, palette),
              build_links(palette, states.get("workflow") == control.RUN_IN_PROGRESS),
              build_quarantine(figures, palette), build_main_nodes(states, figures, palette),
              build_consumption_nodes(states, figures, palette),
-             build_observability(figures, palette), "</svg>"]
+             build_observability(states, figures, palette), "</svg>"]
     return "".join(parts)
 
 
@@ -412,6 +437,132 @@ def build_mini_journey_svg(states, figures, mode):
     return "".join([f'<svg xmlns="http://www.w3.org/2000/svg" '
                     f'viewBox="0 0 {MINI_WIDTH} {MINI_HEIGHT}" role="img" '
                     f'aria-label="Estado real del pipeline, de ODEPA al panel" '
-                    f'font-family="{charts.CHART_FONT}">', build_style(), *links, *nodes,
+                    f'font-family="{charts.CHART_FONT}">', build_style(is_running), *links,
+                    *nodes, "</svg>"])
+
+
+def list_vertical_steps(states, figures):
+    """(layer header, layer, icon, title, lines, state, chip to the next step), in order."""
+    return [
+        ("FUENTES", "sources", draw_file_icon, "ODEPA mayorista y consumidor",
+         ["precios diarios y semanales", figures["source_years"]], states["sources"], "CSV"),
+        ("INGESTA", "ingestion", draw_download_icon, "Agente de descarga",
+         ["agent.py · reintentos", figures["last_run"]], states["download"], "manifest"),
+        ("BRONCE", "bronze", draw_database_icon, "raw.db",
+         ["tal como viene", "hash por archivo"], None, "raw_*"),
+        ("LIMPIEZA", "processing", draw_funnel_icon, "Limpieza",
+         [figures["rows_read"], f"inválidas → Rechazos · {figures['rows_rejected']}"],
+         states["etl"], "válidas"),
+        ("REGLAS", "processing", draw_sliders_icon, "Reglas de negocio",
+         ["unidades · semanas", "atípicos RN-12"], states["etl"], "plata"),
+        ("CALIDAD", "quality", draw_shield_icon, "Controles de carga",
+         ["filas · semanas", "regiones · canales"], states["load"], "OK"),
+        ("ORO", "gold", draw_database_icon, "datos.db",
+         [figures["weekly_prices"], figures["latest_week"]], states["load"], None),
+    ]
+
+
+def build_vertical_node(y, header, layer, draw_icon, title, lines, palette, state):
+    """One step of the vertical diagram: tile on the left, text on its right."""
+    x = VERTICAL_TILE_X
+    half = TILE_SIZE / 2
+    color = LAYER_COLORS[layer]
+    parts = [f'<rect x="{x-half}" y="{y-half}" width="{TILE_SIZE}" height="{TILE_SIZE}" '
+             f'rx="16" fill="{palette["card"]}" stroke="{color}" stroke-width="1.5"/>',
+             draw_icon(x, y, color)]
+    text_x = x + half + 18
+    if header:
+        parts.append(f'<text x="{text_x}" y="{y-20}" font-size="12" font-weight="700" '
+                     f'letter-spacing="1" fill="{color}">{header}</text>')
+    parts.append(f'<text x="{text_x}" y="{y}" font-size="16" font-weight="700" '
+                 f'fill="{palette["strong_text"]}">{html.escape(title)}</text>')
+    for line_number, line in enumerate(lines[:2]):
+        line_color = (LAYER_COLORS["quarantine"] if line.startswith("inválidas")
+                      else palette["text"])
+        parts.append(f'<text x="{text_x}" y="{y+19+line_number*17}" font-size="13" '
+                     f'fill="{line_color}">{html.escape(line)}</text>')
+    if has_real_state(state):
+        pulse = ' class="journey-running"' if state == control.RUN_IN_PROGRESS else ""
+        parts.append(f'<circle{pulse} cx="{x+half-4}" cy="{y-half+4}" r="7" '
+                     f'fill="{STATE_COLORS[state]}" '
+                     f'stroke="{palette["card"]}" stroke-width="2.5"/>')
+    return "".join(parts)
+
+
+def build_vertical_link(y1, y2, color, palette, chip_text, moving_dot):
+    """Straight link down from one tile to the next, with its chip on the line."""
+    x = VERTICAL_TILE_X
+    path = f"M{x} {y1} V{y2}"
+    parts = [f'<path d="{path}" stroke="{color}" stroke-width="1.6" opacity="0.85"/>']
+    if moving_dot:
+        parts.append(f'<circle r="3.5" fill="{color}"><animateMotion dur="1.6s" '
+                     f'repeatCount="indefinite" path="{path}"/></circle>')
+    if chip_text:
+        parts.append(build_chip(x, (y1 + y2) / 2, chip_text, color, palette))
+    return "".join(parts)
+
+
+def build_vertical_band(y, title, items, palette):
+    """A band as a short list: a title and one line per item (dot only if real)."""
+    parts = [f'<text x="16" y="{y}" font-size="12" font-weight="700" letter-spacing="1" '
+             f'fill="{palette["text"]}">{html.escape(title)}</text>']
+    for position, (item_title, detail, state) in enumerate(items):
+        parts.append(build_band_item(28, y + 26 + position * 40, item_title, detail, palette,
+                                     state))
+    return "".join(parts)
+
+
+def build_vertical_journey_svg(states, figures, mode):
+    """The whole live diagram from top to bottom, readable on a phone.
+
+    It shows the same steps, real states and figures as build_journey_svg.
+    """
+    palette = charts.get_palette(mode)
+    is_running = states.get("workflow") == control.RUN_IN_PROGRESS
+    half = TILE_SIZE / 2
+    orchestration = [("GitHub Actions", f"cada martes · próxima {figures['next_run']}",
+                      states["workflow"]),
+                     ("Pruebas automáticas", "si fallan, no se guarda nada", states["tests"])]
+    parts = [build_vertical_band(24, "ORQUESTACIÓN — da las órdenes", orchestration, palette)]
+    y = VERTICAL_FIRST_Y
+    steps = list_vertical_steps(states, figures)
+    for header, layer, draw_icon, title, lines, state, chip_text in steps:
+        parts.append(build_vertical_node(y, header, layer, draw_icon, title, lines, palette,
+                                         state))
+        if chip_text:
+            parts.append(build_vertical_link(y + half, y + VERTICAL_ROW - half,
+                                             LAYER_COLORS[layer], palette, chip_text,
+                                             is_running))
+        y += VERTICAL_ROW
+    # Consumption: three uses of datos.db, joined to it by one trunk on the left.
+    gold_bottom = y - VERTICAL_ROW + half
+    consumption = [(draw_chart_icon, "Panel Streamlit", ["esta página", figures["panel_time"]],
+                    states["panel"]),
+                   (draw_report_icon, "Informe semanal", ["issue en GitHub",
+                                                          "alertas y estado"],
+                    states["report"]),
+                   (draw_code_icon, "Consultas SQL", ["queries.sql", "una por indicador"],
+                    None)]
+    trunk_x = VERTICAL_TILE_X - half - 12
+    last_y = y + (len(consumption) - 1) * VERTICAL_ROW
+    parts.append(f'<path d="M{VERTICAL_TILE_X} {gold_bottom} V{gold_bottom + 14} '
+                 f'H{trunk_x} V{last_y}" fill="none" stroke="{LAYER_COLORS["gold"]}" '
+                 f'stroke-width="1.6" opacity="0.85"/>')
+    for position, (draw_icon, title, lines, state) in enumerate(consumption):
+        row_y = y + position * VERTICAL_ROW
+        parts.append(f'<path d="M{trunk_x} {row_y} H{VERTICAL_TILE_X - half}" '
+                     f'stroke="{LAYER_COLORS["gold"]}" stroke-width="1.6" opacity="0.85"/>')
+        parts.append(build_vertical_node(row_y, "CONSUMO" if position == 0 else None,
+                                         "consumption", draw_icon, title, lines, palette,
+                                         state))
+    observability = [("etl_run", "una línea por carga", states.get("etl_run")),
+                     ("Centro de control", "historial en vivo", None)]
+    height = last_y + half + 150
+    parts.append(build_vertical_band(last_y + half + 44, "OBSERVABILIDAD — qué pasó",
+                                     observability, palette))
+    return "".join([f'<svg xmlns="http://www.w3.org/2000/svg" '
+                    f'viewBox="0 0 {VERTICAL_WIDTH} {height}" role="img" '
+                    f'aria-label="Recorrido de los datos de ODEPA al panel" '
+                    f'font-family="{charts.CHART_FONT}">', build_style(is_running), *parts,
                     "</svg>"])
 # endregion

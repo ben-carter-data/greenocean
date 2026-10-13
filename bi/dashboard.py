@@ -11,6 +11,7 @@ import base64
 import hmac
 import html
 import json
+import re
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -20,6 +21,7 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 # region Imports of the project
 # Streamlit runs this file as a script, so the project folder is added to the
@@ -41,15 +43,15 @@ PAGE_CHANNELS_AND_REGIONS = "Canales y regiones"
 PAGE_SEASONALITY = "Estacionalidad"
 PAGE_ALERTS = "Alertas"
 PAGE_EXPLORER = "Consultas"
-PAGE_ARCHITECTURE = "Pipeline"
 PAGE_CONTROL = "Centro de control"
 PAGE_DATA_QUALITY = "Calidad de datos"
+# The project page is the home page of every profile (D-051).
+HOME_PAGE = PAGE_PROJECT
 PAGES_BY_PROFILE = {
-    PROFILE_ANALYST: [PAGE_OVERVIEW, PAGE_PROJECT, PAGE_MARGINS, PAGE_CHANNELS_AND_REGIONS,
-                      PAGE_SEASONALITY, PAGE_ALERTS, PAGE_EXPLORER, PAGE_ARCHITECTURE,
-                      PAGE_CONTROL],
-    PROFILE_DATA_TEAM: [PAGE_OVERVIEW, PAGE_PROJECT, PAGE_ARCHITECTURE, PAGE_CONTROL,
-                        PAGE_DATA_QUALITY, PAGE_EXPLORER],
+    PROFILE_ANALYST: [PAGE_PROJECT, PAGE_OVERVIEW, PAGE_MARGINS, PAGE_CHANNELS_AND_REGIONS,
+                      PAGE_SEASONALITY, PAGE_ALERTS, PAGE_EXPLORER, PAGE_CONTROL],
+    PROFILE_DATA_TEAM: [PAGE_PROJECT, PAGE_OVERVIEW, PAGE_CONTROL, PAGE_DATA_QUALITY,
+                        PAGE_EXPLORER],
 }
 PAGE_ICONS = {
     PAGE_OVERVIEW: ":material/space_dashboard:", PAGE_PROJECT: ":material/lightbulb:",
@@ -58,29 +60,36 @@ PAGE_ICONS = {
     PAGE_SEASONALITY: ":material/calendar_month:",
     PAGE_ALERTS: ":material/notifications_active:",
     PAGE_EXPLORER: ":material/manage_search:",
-    PAGE_ARCHITECTURE: ":material/account_tree:", PAGE_CONTROL: ":material/smart_toy:", PAGE_DATA_QUALITY: ":material/verified:",
+    PAGE_CONTROL: ":material/smart_toy:", PAGE_DATA_QUALITY: ":material/verified:",
 }
 PAGE_PATHS = {
-    PAGE_OVERVIEW: "panel", PAGE_PROJECT: "el-proyecto", PAGE_MARGINS: "margenes",
+    PAGE_OVERVIEW: "panel", PAGE_PROJECT: "inicio", PAGE_MARGINS: "margenes",
     PAGE_CHANNELS_AND_REGIONS: "canales-y-regiones", PAGE_SEASONALITY: "estacionalidad",
-    PAGE_ALERTS: "alertas", PAGE_EXPLORER: "consultas", PAGE_ARCHITECTURE: "pipeline",
-    PAGE_CONTROL: "centro-de-control",
+    PAGE_ALERTS: "alertas", PAGE_EXPLORER: "consultas", PAGE_CONTROL: "centro-de-control",
     PAGE_DATA_QUALITY: "calidad-de-datos",
 }
+
+# Old addresses, kept so that saved links still work: each one opens the home
+# page, «pipeline» on its Arquitectura tab (D-051).
+OLD_PIPELINE_PATH = "pipeline"
+OLD_PROJECT_PATH = "el-proyecto"
 
 # The project page: its tabs travel in the address (?seccion=...), so a link can
 # open one of them; ?perfil=... chooses the profile the same way.
 PROJECT_TAB_IDEA = "Idea de negocio"
 PROJECT_TAB_SOURCES = "Fuentes y cruces"
+PROJECT_TAB_ARCHITECTURE = "Arquitectura"
 PROJECT_TAB_MODEL = "Modelo de datos"
 PROJECT_TAB_KPI = "KPI y cálculos"
 PROJECT_TAB_RULES = "Reglas de calidad"
 PROJECT_TAB_MANUAL = "Cómo funciona"
 PROJECT_TAB_DECISIONS = "Decisiones y método"
 PROJECT_TAB_CODE = "Código"
-PROJECT_TABS = [PROJECT_TAB_IDEA, PROJECT_TAB_SOURCES, PROJECT_TAB_MODEL, PROJECT_TAB_KPI,
-                PROJECT_TAB_RULES, PROJECT_TAB_MANUAL, PROJECT_TAB_DECISIONS, PROJECT_TAB_CODE]
+PROJECT_TABS = [PROJECT_TAB_IDEA, PROJECT_TAB_SOURCES, PROJECT_TAB_ARCHITECTURE,
+                PROJECT_TAB_MODEL, PROJECT_TAB_KPI, PROJECT_TAB_RULES, PROJECT_TAB_MANUAL,
+                PROJECT_TAB_DECISIONS, PROJECT_TAB_CODE]
 TAB_PARAMETER = "seccion"
+THEME_PARAMETER = "tema"
 PROFILE_PARAMETER = "perfil"
 KPI_PARAMETER = "kpi"
 JOURNEY_MANAGER = "Soy gerente"
@@ -116,6 +125,13 @@ EXPLORER_BASE_QUERIES = {explorer.VIEW_MARGINS: "k1_margin",
 MANIFEST_FILE = Path(__file__).resolve().parent.parent / "agent" / "downloads" / "manifest.json"
 ISSUES_PAGE_URL = f"https://github.com/{control.REPOSITORY}/issues"
 CHILE_TIME_ZONE = "America/Santiago"
+# GitHub allows 60 questions per hour without a key, shared by every app on the
+# same server: an answer is kept 5 minutes before asking again.
+GITHUB_CACHE_SECONDS = 300
+# The database is saved only after these steps passed (D-034), so a saved load
+# proves their state when GitHub does not answer.
+STEPS_PROVED_BY_A_SAVED_LOAD = {"Download the ODEPA files", "Run the ETL",
+                                "Run the tests against the new database"}
 # Seconds between two questions to GitHub while the pipeline runs, and the
 # longest wait: a normal run takes about one minute.
 PROGRESS_POLL_SECONDS = 4
@@ -234,19 +250,79 @@ ATTRIBUTION_TEXT = (
 
 # region Style
 def get_mode():
-    """Active color mode chosen by the reader; dark until the browser reports it."""
-    theme_type = st.context.theme.type
-    return theme_type if theme_type in charts.PALETTES else charts.MODE_DARK
+    """Theme chosen by the reader in the sidebar; Vantablack until they choose."""
+    theme = st.session_state.get(THEME_PARAMETER)
+    return theme if theme in charts.PALETTES else charts.MODE_DARK
+
+
+def build_base_mode_script(base):
+    """JavaScript that puts Streamlit in its light or dark base mode and reloads.
+
+    Streamlit has no Python function for this; it keeps the reader's choice in
+    the browser (localStorage, key «stActiveTheme-<path>-v2»), the same place its
+    own ⋮ > Settings writes. It tries once per page and base: if Streamlit ever
+    changes that key, the page does not reload again and again (D-052).
+    """
+    value = json.dumps("Dark" if base == charts.BASE_DARK else "Light")
+    return f"""<script>
+    const page = window.parent;
+    const attempt = "base-mode-" + page.location.pathname + "-" + {value};
+    if (!page.sessionStorage.getItem(attempt)) {{
+        page.sessionStorage.setItem(attempt, "1");
+        page.localStorage.setItem("stActiveTheme-" + page.location.pathname + "-v2",
+                                  JSON.stringify({value}));
+        page.location.reload();
+    }}
+    </script>"""
+
+
+def match_base_mode(theme):
+    """Streamlit's lists, tables and code follow its base mode: switch it when the
+    chosen theme needs the other one. Nothing happens until the browser reports
+    its mode."""
+    base = charts.get_palette(theme)["base"]
+    if st.context.theme.type in (charts.BASE_DARK, charts.BASE_LIGHT) and (
+            st.context.theme.type != base):
+        components.html(build_base_mode_script(base), height=0)
+
+
+def build_theme_css(palette):
+    """Page, sidebar and links in the colors of the active theme (T-44, D-052).
+
+    Streamlit's own widgets keep the colors of its base mode; the theme only
+    restyles what it can do without fighting them.
+    """
+    return f"""
+    .stApp, [data-testid="stHeader"] {{ background: {palette["background"]}; }}
+    [data-testid="stSidebar"] {{ background: {palette["sidebar"]}; }}
+    [data-testid="stSidebar"] [data-testid="stSidebarNav"] span,
+    [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {{
+        color: {palette["sidebar_text"]};
+    }}
+    [data-testid="stSidebarNavLink"][aria-current="page"] {{
+        box-shadow: inset 2px 0 0 {palette["accent"]}, 0 0 14px {palette["glow"]};
+    }}
+    [data-testid="stSidebarNavLink"] [data-testid="stIconMaterial"] {{
+        color: {palette["accent"]};
+    }}
+    [data-testid="stMain"] a {{ color: {palette["accent"]}; }}
+    /* Text on the accent color (the chips of a multiple choice), always readable. */
+    [data-baseweb="tag"] span, [data-baseweb="tag"] svg {{
+        color: {palette["on_accent"]}; fill: {palette["on_accent"]};
+    }}
+    .hint {{ color: {palette["accent"]} !important; }}
+    """
 
 
 def build_style_css(mode):
-    """Cards, key figures, chips and tables, in the colors of the active mode."""
+    """Cards, key figures, chips and tables, in the colors of the active theme."""
     palette = charts.get_palette(mode)
-    return f"""
+    return build_theme_css(palette) + f"""
     [class*="st-key-card_"] {{
         background: {palette["card"]}; border: 1px solid {palette["card_border"]};
         border-radius: 18px; padding: 18px 20px 14px 20px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), inset 0 1px 0 {palette["glow"]};
     }}
     .card-title {{ font-size: 1.05rem; font-weight: 600; color: {palette["strong_text"]}; }}
     .page-subtitle {{ color: {palette["text"]}; margin-top: -0.6rem; }}
@@ -294,8 +370,20 @@ def build_style_css(mode):
     .figure-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
                     margin: 8px 0; }}
     .narrow-only {{ display: none; }}
-    .scroll-box {{ overflow-x: auto; }}
-    .scroll-box img {{ max-width: none; }}
+    .diagram-fit {{ width: 100%; min-width: 0; }}
+    .diagram-fit img {{ display: block; width: 100%; max-width: 100%; height: auto; }}
+    /* The whole diagram: wide from left to right; on narrow screens (phones,
+       tablets, small windows) the wide one would shrink to unreadable text, so
+       the vertical version takes its place. */
+    .diagram-narrow {{ display: none; }}
+    .diagram-narrow img {{ display: block; width: 100%; max-width: 440px; height: auto;
+                           margin: 0 auto; }}
+    @media (max-width: 1000px) {{
+        .diagram-wide {{ display: none; }}
+        .diagram-narrow {{ display: block; }}
+    }}
+    .run-status {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+                   margin: 0 0 10px 0; font-size: 0.9rem; }}
     .status-list {{ display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px 0; }}
     /* Phones: two figures per row, a status list instead of a tiny diagram, and
        less empty room above the title, so «Empieza aquí» fits on one screen. */
@@ -311,6 +399,8 @@ def build_style_css(mode):
                           padding: 6px 4px; border-bottom: 1px solid {palette["card_border"]}; }}
     table.card-table td {{ padding: 8px 4px; border-bottom: 1px solid {palette["card_border"]};
                           color: {palette["strong_text"]}; }}
+    /* Long file paths wrap inside their cell on phones; words do not break. */
+    table.card-table td a {{ overflow-wrap: anywhere; }}
     """
 
 
@@ -360,7 +450,7 @@ def build_page_address(page_title, tab=None, kpi=None):
     query = f"?{urlencode(parameters)}" if parameters else ""
     # The first page of the navigation is the home page: Streamlit serves it at
     # the root of the app, and its own path does not exist.
-    path = "./" if page_title == PAGE_OVERVIEW else PAGE_PATHS[page_title]
+    path = "./" if page_title == HOME_PAGE else PAGE_PATHS[page_title]
     return path + query
 
 
@@ -839,17 +929,29 @@ def build_journey_status_html(states, figures):
             f'</div></div>')
 
 
+def describe_state_source(error_text, step_states, latest_load):
+    """Where the states come from when GitHub did not answer, and why it did not."""
+    if step_states:
+        source = "se muestra la última respuesta guardada"
+    else:
+        loaded_at = format_chile_time(parse_run_start(latest_load["started_at"]))
+        source = f"los estados salen de la última carga guardada en la base ({loaded_at})"
+    return f"GitHub no respondió ({error_text}); {source}."
+
+
 def show_pipeline_hook(mode):
-    """The pipeline with the real state of the latest run: a small diagram on wide
-    screens and a list of labels on phones, where the diagram would be unreadable."""
-    step_states, pipeline_run = read_latest_pipeline_steps()
-    latest_load = read_latest_run()
-    manifest = read_download_manifest()
-    states = build_journey_states(step_states, pipeline_run, latest_load, manifest)
-    figures = build_journey_figures(manifest, pipeline_run, latest_load)
-    st.markdown(build_svg_image_html(architecture.build_mini_journey_svg(states, figures, mode),
-                                     "wide-only")
-                + build_journey_status_html(states, figures), unsafe_allow_html=True)
+    """The live pipeline: its status line, a small diagram on wide screens and a list
+    of labels on phones, where the diagram would be unreadable."""
+    states, figures, pipeline_run, latest_load, error_note = read_journey()
+    with open_card("live_pipeline", "Pipeline en vivo"):
+        st.markdown(build_run_status_html(states, pipeline_run, latest_load)
+                    + build_svg_image_html(architecture.build_mini_journey_svg(
+                        states, figures, mode), "wide-only")
+                    + build_journey_status_html(states, figures)
+                    + build_link_html("Ver la arquitectura completa", build_page_address(
+                        PAGE_PROJECT, PROJECT_TAB_ARCHITECTURE)), unsafe_allow_html=True)
+        if error_note:
+            st.caption(error_note)
 
 
 def show_project_value():
@@ -880,7 +982,7 @@ def list_journey_steps(journey):
                           ("KPI y cálculos", tabs[PROJECT_TAB_KPI]),
                           ("Reglas de calidad", tabs[PROJECT_TAB_RULES]),
                           ("Decisiones y método", tabs[PROJECT_TAB_DECISIONS])],
-        JOURNEY_TECHNICAL: [("Pipeline", build_page_address(PAGE_ARCHITECTURE)),
+        JOURNEY_TECHNICAL: [("Arquitectura", tabs[PROJECT_TAB_ARCHITECTURE]),
                             ("Código y consultas SQL", tabs[PROJECT_TAB_CODE]),
                             ("Centro de control", build_page_address(PAGE_CONTROL))],
     }
@@ -902,9 +1004,9 @@ def show_journeys():
 
 
 def show_start_here(mode):
-    """Inverted pyramid: the real pipeline, the value, then the guided tours."""
+    """Inverted pyramid: the live pipeline first, then the value and the guided tours."""
+    show_pipeline_hook(mode)
     with open_card("start_here", "Empieza aquí"):
-        show_pipeline_hook(mode)
         show_project_value()
         show_journeys()
 
@@ -1106,37 +1208,63 @@ def show_query_result_button(key, sql, parameters=()):
         st.caption(f"Primeras {project.PREVIEW_ROW_COUNT} filas como máximo, en solo lectura.")
 
 
-def show_named_query(query):
-    """One query of bi/queries.sql: question, clauses, page, SQL (and Python) and result."""
-    with st.expander(f"{query['name']} · {query['question']}"):
-        chips = " ".join(build_chip(clause, "neutral") for clause in query["clauses"])
-        page = query["page"]
-        st.markdown(f"{chips}  \nSe usa en: "
-                    f"{build_link_html(page, build_page_address(page))}",
+def build_clause_chips(query):
+    """Labels of a query; those that set its level are colored and say so on hover."""
+    return " ".join(
+        build_chip(clause, "running", f"Por esta etiqueta la query es {query['level']}")
+        if clause in query["level_reasons"] else build_chip(clause, "neutral")
+        for clause in query["clauses"])
+
+
+def show_query_block(query, origin=None, parameters=()):
+    """One query: question, level and labels, page, SQL folded and its first 20 rows."""
+    with st.container(border=True, key=f"query_{query['name']}"):
+        origin_text = f" · vive en {origin}" if origin else ""
+        st.markdown(f"**{query['name']}**{origin_text}  \n{html.escape(query['question'])}",
                     unsafe_allow_html=True)
-        if query["python"]:
-            sql_tab, python_tab = st.tabs(["SQL", "Python"])
-            sql_tab.code(query["sql"], language="sql")
-            python_tab.code("\n\n".join(query["python"]), language="python")
-            st.caption("Ambas versiones dan el mismo resultado (verificado por test).")
-        else:
-            st.code(query["sql"], language="sql")
-        show_query_result_button(query["name"], query["sql"])
+        page = query["page"]
+        st.markdown(f"{build_chip(query['level'], 'ok')} {build_clause_chips(query)}  \n"
+                    f"Se usa en: {build_link_html(page, build_page_address(page))}",
+                    unsafe_allow_html=True)
+        with st.expander("Ver SQL"):
+            if query["python"]:
+                sql_tab, python_tab = st.tabs(["SQL", "Python"])
+                sql_tab.code(query["sql"], language="sql")
+                python_tab.code("\n\n".join(query["python"]), language="python")
+                st.caption("Ambas versiones dan el mismo resultado (verificado por test).")
+            else:
+                st.code(query["sql"], language="sql")
+            if parameters:
+                st.caption(f"Valores de cada «?», enviados aparte del texto: {list(parameters)}")
+        show_query_result_button(query["name"], query["sql"], parameters)
 
 
-def show_extra_queries():
-    """SQL that lives outside bi/queries.sql: K7, the schema and a Consultas example."""
-    with st.expander(f"{project.MATCH_COVERAGE_QUERY_NAME} · ¿Cuántas claves tienen margen? "
-                     "(vive en etl/etl.py)"):
-        st.code(etl.MATCH_COVERAGE_QUERY.strip(), language="sql")
-        show_query_result_button(project.MATCH_COVERAGE_QUERY_NAME, etl.MATCH_COVERAGE_QUERY)
-    with st.expander("etl/schema.sql · creación de las tablas"):
-        st.code(project.read_document(project.SCHEMA_FILE), language="sql")
+def build_extra_queries():
+    """Queries that live outside bi/queries.sql: K7 (etl/etl.py) and a Consultas example."""
     explorer_sql, explorer_parameters = project.build_explorer_example()
-    with st.expander("Ejemplo de la página Consultas · tomate en feria y supermercado"):
-        st.code(explorer_sql, language="sql")
-        st.caption(f"Valores de cada «?», enviados aparte del texto: {explorer_parameters}")
-        show_query_result_button("explorer_example", explorer_sql, explorer_parameters)
+    match_coverage = {"name": project.MATCH_COVERAGE_QUERY_NAME,
+                      "sql": etl.MATCH_COVERAGE_QUERY.strip(),
+                      "question": "¿Cuántas claves de producto tienen margen?",
+                      "page": PAGE_DATA_QUALITY, "python": [],
+                      **project.describe_query(etl.MATCH_COVERAGE_QUERY)}
+    explorer_example = {"name": "explorer_example", "sql": explorer_sql,
+                        "question": "Ejemplo generado por la página Consultas: precios del "
+                                    "tomate en feria y supermercado.",
+                        "page": PAGE_EXPLORER, "python": [],
+                        **project.describe_query(explorer_sql)}
+    return [(match_coverage, "etl/etl.py", ()),
+            (explorer_example, "bi/explorer.py", explorer_parameters)]
+
+
+def show_level_criteria(groups):
+    """How a query gets its level, and how many queries each level has."""
+    st.markdown(build_html_table(
+        ["Nivel", "Criterio (cláusulas detectadas en el texto SQL)", "Queries"],
+        [[build_chip(level, "ok"), html.escape(project.LEVEL_CRITERIA[level]),
+          str(len(groups[level]))] for level in project.QUERY_LEVELS]),
+        unsafe_allow_html=True)
+    st.caption("Cada query toma el nivel más alto que alcanza. Las etiquetas en azul son las "
+               "que deciden su nivel.")
 
 
 def show_repository_files():
@@ -1153,12 +1281,22 @@ def show_repository_files():
 def show_code_tab(mode):
     """SQL catalog (with Python where it exists) and the files of the repository."""
     named_queries = project.list_named_queries()
-    with open_card("code_queries", "Consultas SQL"):
-        st.caption(f"Las {len(named_queries)} consultas con nombre de bi/queries.sql, leídas "
-                   "del archivo. Las etiquetas son las cláusulas que cada una usa.")
-        for query in named_queries:
-            show_named_query(query)
-        show_extra_queries()
+    groups = project.group_queries_by_level(named_queries)
+    with open_card("code_queries", "Queries"):
+        st.markdown(f"### {len(named_queries)} queries del proyecto")
+        st.caption("Las queries con nombre de bi/queries.sql, contadas al abrir la página. "
+                   "Al final, la de K7 (etl/etl.py), un ejemplo de la página Consultas y "
+                   "etl/schema.sql.")
+        show_level_criteria(groups)
+        for level in project.QUERY_LEVELS:
+            st.markdown(f"#### {level} · {len(groups[level])}")
+            for query in groups[level]:
+                show_query_block(query)
+        st.markdown("#### Fuera de bi/queries.sql")
+        for query, origin, parameters in build_extra_queries():
+            show_query_block(query, origin, parameters)
+        with st.expander("etl/schema.sql · creación de las tablas (no es una consulta)"):
+            st.code(project.read_document(project.SCHEMA_FILE), language="sql")
     with open_card("code_files", "Archivos"):
         show_repository_files()
 
@@ -1169,8 +1307,9 @@ def show_project_page(mode):
                      "calcula cada cifra.")
     show_start_here(mode)
     tabs = st.tabs(PROJECT_TABS, key=TAB_PARAMETER, bind="query-params")
-    tab_contents = [show_business_idea_tab, show_sources_tab, show_model_tab, show_kpi_tab,
-                    show_rules_tab, show_manual_tab, show_decisions_tab, show_code_tab]
+    tab_contents = [show_business_idea_tab, show_sources_tab, show_architecture_tab,
+                    show_model_tab, show_kpi_tab, show_rules_tab, show_manual_tab,
+                    show_decisions_tab, show_code_tab]
     for tab, show_tab_content in zip(tabs, tab_contents):
         with tab:
             show_tab_content(mode)
@@ -1635,15 +1774,29 @@ def get_secret(name):
         return None
 
 
-@st.cache_data(ttl=30)
+@st.cache_resource
+def get_last_github_answers():
+    """Last good answers of GitHub, shared by every visitor, used when GitHub fails."""
+    return {}
+
+
+@st.cache_data(ttl=GITHUB_CACHE_SECONDS)
+def fetch_pipeline_runs():
+    """Latest runs from GitHub. A failure raises, and is not kept in the cache."""
+    token = get_secret(SECRET_GITHUB_TOKEN)
+    runs = control.list_workflow_runs(token, RUN_HISTORY_COUNT)
+    return control.mark_simulated_failures(runs, token)
+
+
 def read_pipeline_runs():
-    """(latest runs, error text). Kept 30 seconds so GitHub is not asked on every click."""
+    """(latest runs, why GitHub failed or ""). On a failure, the last good answer."""
+    last_answers = get_last_github_answers()
     try:
-        token = get_secret(SECRET_GITHUB_TOKEN)
-        runs = control.list_workflow_runs(token, RUN_HISTORY_COUNT)
-        return control.mark_simulated_failures(runs, token), ""
+        runs = fetch_pipeline_runs()
     except Exception as error:  # GitHub unreachable or refused
-        return [], str(error)
+        return last_answers.get("runs", []), control.describe_github_error(error)
+    last_answers["runs"] = runs
+    return runs, ""
 
 
 def build_run_chip(state):
@@ -1668,7 +1821,12 @@ def show_pipeline_status(runs):
                         f'<span class="kpi-note"> {latest["trigger"]}</span>',
                         unsafe_allow_html=True)
         else:
-            st.markdown('<div class="kpi-value">sin datos</div>', unsafe_allow_html=True)
+            # Without GitHub, the latest load saved in the database is still a fact.
+            latest_load = read_latest_run()
+            st.markdown(f'<div class="kpi-value">'
+                        f'{format_chile_time(parse_run_start(latest_load["started_at"]))}</div>'
+                        f'<span class="kpi-note">última carga guardada en la base</span>',
+                        unsafe_allow_html=True)
     with next_column, open_card("pipeline_next"):
         next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc))
         st.markdown('<div class="kpi-label">Próxima ejecución automática</div>'
@@ -1767,8 +1925,11 @@ def show_run_history(runs, error_text):
     """Card: latest pipeline runs with their state."""
     with open_card("run_history", "Historial de ejecuciones"):
         if error_text:
-            st.warning("No se pudo consultar GitHub en este momento.")
-            return
+            # The real cause, so a failure can be diagnosed from the public panel.
+            st.warning(f"No se pudo consultar GitHub: {error_text}.")
+            if not runs:
+                return
+            st.caption("Se muestra la última respuesta guardada.")
         table_rows = [[format_chile_time(run["started_at"]), html.escape(run["trigger"]),
                        format_duration(run["duration"]) if run["duration"] else "—",
                        build_run_chip(run["state"]),
@@ -1804,17 +1965,29 @@ def read_download_manifest():
         return {}
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=GITHUB_CACHE_SECONDS)
+def fetch_run_steps(run_id):
+    """Steps of one run from GitHub. A failure raises, and is not kept in the cache."""
+    return dict(control.list_run_steps(run_id, get_secret(SECRET_GITHUB_TOKEN)))
+
+
 def read_latest_pipeline_steps():
-    """(state of each step by Spanish name, latest pipeline run) from GitHub, or ({}, None)."""
-    runs, _ = read_pipeline_runs()
+    """(state of each step by Spanish name, latest run, why GitHub failed or "").
+
+    Without an answer from GitHub the steps are {} and the diagram takes its
+    states from the database (build_journey_states).
+    """
+    runs, error_text = read_pipeline_runs()
     if not runs:
-        return {}, None
+        return {}, None, error_text
+    last_answers = get_last_github_answers()
     try:
-        steps = control.list_run_steps(runs[0]["id"], get_secret(SECRET_GITHUB_TOKEN))
-    except Exception:  # GitHub unreachable: the stage shows "Sin datos"
-        return {}, runs[0]
-    return dict(steps), runs[0]
+        steps = fetch_run_steps(runs[0]["id"])
+    except Exception as error:  # GitHub unreachable or refused
+        steps = last_answers.get(("steps", runs[0]["id"]), {})
+        return steps, runs[0], error_text or control.describe_github_error(error)
+    last_answers[("steps", runs[0]["id"])] = steps
+    return steps, runs[0], error_text
 
 
 def get_step_state(step_states, workflow_step):
@@ -1822,18 +1995,36 @@ def get_step_state(step_states, workflow_step):
     return step_states.get(control.STEP_NAMES[workflow_step], architecture.STATE_UNKNOWN)
 
 
+def read_step_state(step_states, workflow_step, load_state):
+    """State of one step: from GitHub, or from the latest saved load when GitHub did
+    not answer (only for the steps a saved load proves passed)."""
+    if step_states:
+        return get_step_state(step_states, workflow_step)
+    if workflow_step in STEPS_PROVED_BY_A_SAVED_LOAD:
+        return load_state
+    return architecture.STATE_UNKNOWN
+
+
 def build_journey_states(step_states, pipeline_run, latest_load, manifest):
-    """Real state of each step: from the latest pipeline run and the current database."""
+    """Real state of each step: from the latest pipeline run and the current database.
+
+    Without an answer from GitHub, the latest load saved in etl_run stands in: the
+    database is only saved after download, ETL and tests passed (D-034). What the
+    database cannot tell (the report, the workflow itself) stays unknown, and an
+    unknown state is drawn without a dot.
+    """
     load_state = (control.RUN_OK if latest_load["status"] == etl.STATUS_LOADED
                   else control.RUN_FAILED)
     return {
         "sources": control.RUN_OK if manifest else architecture.STATE_UNKNOWN,
-        "download": get_step_state(step_states, "Download the ODEPA files"),
-        "etl": get_step_state(step_states, "Run the ETL"),
-        "tests": get_step_state(step_states, "Run the tests against the new database"),
-        "report": get_step_state(step_states, "Publish the weekly report"),
+        "download": read_step_state(step_states, "Download the ODEPA files", load_state),
+        "etl": read_step_state(step_states, "Run the ETL", load_state),
+        "tests": read_step_state(step_states, "Run the tests against the new database",
+                                 load_state),
+        "report": read_step_state(step_states, "Publish the weekly report", load_state),
         "workflow": pipeline_run["state"] if pipeline_run else architecture.STATE_UNKNOWN,
         "load": load_state,
+        "etl_run": load_state,
         "panel": control.RUN_OK,
     }
 
@@ -1858,33 +2049,83 @@ def build_journey_figures(manifest, pipeline_run, latest_load):
     }
 
 
-def show_architecture_page(mode):
-    """Live diagram of the data journey, from ODEPA to this dashboard."""
-    show_page_header("Pipeline", "El recorrido de los datos, de ODEPA a este panel. "
-                     "Los puntos de color muestran el estado real de cada paso.")
-    step_states, pipeline_run = read_latest_pipeline_steps()
+def describe_last_run_time(pipeline_run, latest_load):
+    """Date and time of the latest pipeline run; without GitHub, of the latest saved load."""
+    if pipeline_run:
+        return format_chile_time(pipeline_run["started_at"])
+    return format_chile_time(parse_run_start(latest_load["started_at"]))
+
+
+def build_run_status_html(states, pipeline_run, latest_load):
+    """«Estado de la última ejecución (date) · se actualiza al recargar la página»."""
+    word, kind = summarize_journey_state(states)
+    return (f'<div class="run-status">{build_chip(word, kind)} Estado de la última '
+            f'ejecución ({describe_last_run_time(pipeline_run, latest_load)}) · se actualiza '
+            'al recargar la página</div>')
+
+
+def read_journey():
+    """(states, figures, pipeline run, latest load, GitHub error) of the live diagram."""
+    step_states, pipeline_run, error_text = read_latest_pipeline_steps()
     latest_load = read_latest_run()
     manifest = read_download_manifest()
-    with open_card("journey_state", "Estado de la última ejecución"):
-        show_pipeline_hook(mode)
+    states = build_journey_states(step_states, pipeline_run, latest_load, manifest)
+    figures = build_journey_figures(manifest, pipeline_run, latest_load)
+    error_note = (describe_state_source(error_text, step_states, latest_load)
+                  if error_text else None)
+    return states, figures, pipeline_run, latest_load, error_note
+
+
+def format_architecture_cell(text):
+    """A cell of an Arquitectura table: a page or a repository file becomes a link."""
+    if text in PAGE_PATHS:
+        return build_link_html(text, build_page_address(text))
+    if project.is_in_repository(text):
+        return build_link_html(text, project.build_github_url(text))
+    return re.sub(r"`([^`]+)`", r"<code>\1</code>", html.escape(text))
+
+
+def show_architecture_table(heading):
+    """One table of docs/PROYECTO.md (DevOps, Seguridad, ...), with its links."""
+    rows = project.read_guide_table(heading)
+    st.markdown(build_html_table(list(rows[0]), [[format_architecture_cell(cell)
+                                                  for cell in row.values()] for row in rows]),
+                unsafe_allow_html=True)
+
+
+def show_architecture_tab(mode):
+    """The detailed live diagram, then DevOps, security, observability and reports."""
+    states, figures, pipeline_run, latest_load, error_note = read_journey()
     with open_card("journey", "Recorrido completo por capas", hint=ARCHITECTURE_HINT):
-        st.caption("A tamaño real, para que se lea. Desliza hacia el lado para recorrerlo.")
-        st.markdown(build_svg_image_html(architecture.build_journey_svg(
-            build_journey_states(step_states, pipeline_run, latest_load, manifest),
-            build_journey_figures(manifest, pipeline_run, latest_load), mode),
-            "scroll-box", is_actual_size=True), unsafe_allow_html=True)
-    report_column, legend_column = st.columns(2)
-    with report_column, open_card("journey_report"):
-        st.markdown('<div class="kpi-label">Informe que deja cada ejecución</div>',
+        st.markdown(build_run_status_html(states, pipeline_run, latest_load),
                     unsafe_allow_html=True)
-        st.link_button("Ver informes semanales", ISSUES_PAGE_URL,
-                       icon=":material/description:")
-    with legend_column, open_card("journey_legend"):
+        if error_note:
+            st.caption(error_note)
+        st.markdown(build_svg_image_html(architecture.build_journey_svg(states, figures, mode),
+                                         "diagram-fit diagram-wide")
+                    + build_svg_image_html(architecture.build_vertical_journey_svg(
+                        states, figures, mode), "diagram-narrow"), unsafe_allow_html=True)
         st.markdown(f'{build_chip("OK", "ok")} {build_chip("En curso", "running")} '
                     f'{build_chip("Falla", "failed")} {build_chip("Sin datos", "neutral")}'
                     '<div class="kpi-note" style="margin-top:8px">Punto de color en cada '
-                    'paso: estado de la última ejecución del pipeline y de la base actual.'
-                    '</div>', unsafe_allow_html=True)
+                    'paso: estado de la última ejecución del pipeline y de la base actual. '
+                    'Las flechas solo se mueven mientras hay una ejecución en curso.</div>',
+                    unsafe_allow_html=True)
+    devops_column, security_column = st.columns(2)
+    with devops_column, open_card("architecture_devops", "DevOps"):
+        show_architecture_table("DevOps")
+        st.caption(f"Próxima ejecución automática: {figures['next_run']}.")
+    with security_column, open_card("architecture_security", "Seguridad"):
+        show_architecture_table("Seguridad")
+    observability_column, reports_column = st.columns(2)
+    with observability_column, open_card("architecture_observability", "Observabilidad"):
+        show_architecture_table("Observabilidad")
+    with reports_column, open_card("architecture_reports", "Informes"):
+        show_architecture_table("Informes")
+        st.link_button("Ver informes semanales", ISSUES_PAGE_URL,
+                       icon=":material/description:")
+
+
 # endregion
 
 
@@ -1965,7 +2206,6 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_SEASONALITY: show_seasonality_page,
     PAGE_ALERTS: show_alerts_page,
     PAGE_EXPLORER: show_explorer_page,
-    PAGE_ARCHITECTURE: show_architecture_page,
     PAGE_CONTROL: show_control_page,
     PAGE_DATA_QUALITY: show_data_quality_page,
 }
@@ -1991,6 +2231,17 @@ def build_page(title, is_default):
                    url_path=PAGE_PATHS[title], default=is_default)
 
 
+def build_redirect_page(url_path, home_page, tab=None):
+    """A hidden page at an old address that opens the home page, keeping the
+    parameters of the link (D-051)."""
+    def redirect():
+        parameters = st.query_params.to_dict()
+        if tab:
+            parameters[TAB_PARAMETER] = tab
+        st.switch_page(home_page, query_params=parameters)
+    return st.Page(redirect, title=HOME_PAGE, url_path=url_path, visibility="hidden")
+
+
 def main():
     """Profile selector, navigation with icons and the chosen page."""
     st.set_page_config(page_title="Monitor de precios de alimentos", layout="wide",
@@ -2000,8 +2251,13 @@ def main():
         return
     profile = st.sidebar.selectbox("¿Quién consulta?", list(PAGES_BY_PROFILE),
                                    key=PROFILE_PARAMETER, bind="query-params")
+    theme = st.sidebar.selectbox("Tema", charts.THEMES, key=THEME_PARAMETER,
+                                 bind="query-params")
+    match_base_mode(theme)
     pages = [build_page(title, position == 0)
              for position, title in enumerate(PAGES_BY_PROFILE[profile])]
+    pages += [build_redirect_page(OLD_PIPELINE_PATH, pages[0], PROJECT_TAB_ARCHITECTURE),
+              build_redirect_page(OLD_PROJECT_PATH, pages[0])]
     st.navigation(pages, position="sidebar").run()
     st.sidebar.caption("Fuente: ODEPA · actualización automática cada martes.")
 
