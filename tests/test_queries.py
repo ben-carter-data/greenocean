@@ -49,7 +49,8 @@ def test_queries_file_has_one_named_query_per_indicator():
         "k1_margin", "k2_channel_gap", "k3_regional_index", "k4_seasonal_index",
         "k6_national_weekly_price", "k8_rejected_rows", "quality_runs",
         "quality_flag_counts", "quality_outliers", "k6_usual_range_sql",
-        "k5_weekly_variations_sql", "quality_week_range"}
+        "k5_weekly_variations_sql", "quality_week_range", "quality_rejected_rows",
+        "quality_unconvertible_units"}
 
 
 def test_k1_margin_is_consumer_minus_wholesale_over_wholesale(database_file):

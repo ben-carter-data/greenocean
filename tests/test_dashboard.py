@@ -488,3 +488,33 @@ def test_d057_every_file_of_the_readme_falls_in_one_known_folder():
     assert "bi/zoom.py" in paths and "bi/star_model.py" in paths
     line = dashboard.build_file_line_html("bi/zoom.py", "zoom", "https://github.com/x")
     assert ">zoom.py</a> — zoom</li>" in line
+
+
+def test_d057_every_rejection_reason_of_the_etl_is_explained():
+    from etl import etl
+    reasons = {value for name, value in vars(etl).items() if name.startswith("REASON_")}
+    assert reasons == set(dashboard.REASON_TEXTS)
+
+
+def test_d057_rejected_rows_show_readable_spanish_columns():
+    rows = pd.DataFrame({"source": ["wholesale"], "reason": ["NON_POSITIVE_PRICE"],
+                         "original_row": ['{"file_hash": "abc", "price_date": "2025-01-01", '
+                                          '"product": "Ají", "avg_price": "0,0000"}']})
+    table = dashboard.build_rejected_rows_table(rows)
+    assert list(table.columns) == ["Fuente", "Motivo", "Fecha", "Producto", "Precio promedio"]
+    assert table.iloc[0]["Fuente"] == "Mayorista"
+
+
+@needs_database
+def test_d057_quality_tab_explains_what_was_left_out_and_shows_it():
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+              "from bi import dashboard\ndashboard.show_quality_tab(dashboard.charts.MODE_DARK)\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    cards = " ".join(block.value for block in app.markdown if 'class="info-grid"' in block.value)
+    for label in ["RN-11 · no se cargan", "RN-12 · fuera de los indicadores",
+                  "RN-05 · sin precio comparable"]:
+        assert label in cards
+    assert "0,008 %" in cards
+    assert not [column for frame in app.dataframe for column in frame.value.columns
+                if column in ("source", "reason", "rejected_rows", "rejected_share")]
