@@ -239,6 +239,26 @@ MATCH_DETAILS = (
     "(semanas) y RN-06 (margen solo con la misma unidad).  \n"
     "**Dónde ocurre:** `etl/etl.py` lee `raw_wholesale` y `raw_consumer` de `raw.db` y deja "
     "el resultado en `weekly_price` de `datos.db`.")
+# The quality rules in the order the ETL applies them (etl/etl.py), then the one
+# that lives in the margin query: (stage, what it does, rules, where it happens).
+RULE_STAGES = [
+    ("Limpieza", "Cada fila leída se pone en un formato común antes de revisarla.",
+     ["RN-13", "RN-01", "RN-02"], "`clean()` en `etl/etl.py`"),
+    ("Validación", "Las filas que no se pueden usar se apartan con su motivo; nunca se borran "
+                   "en silencio.", ["RN-11"],
+     "`validate_rows()` y `build_rejections()` en `etl/etl.py`; tabla `rejection`"),
+    ("Unidades", "Los precios se llevan a kilo, unidad o litro para poder compararlos.",
+     ["RN-03", "RN-04", "RN-05"], "`normalize_units()` en `etl/etl.py`"),
+    ("Semanas", "Los precios diarios y de cada punto de venta se juntan en un precio por "
+                "semana.", ["RN-08", "RN-07", "RN-09", "RN-10"],
+     "`assign_week_start()` y `aggregate_weekly()` en `etl/etl.py`"),
+    ("Atípicos", "Los precios muy lejos del resto se marcan y quedan fuera de los "
+                 "indicadores.", ["RN-12"], "`flag_outliers()` en `etl/etl.py`"),
+    ("Carga", "La base se reconstruye completa y se revisa antes de guardarla.", ["RN-14"],
+     "`check_quality()` y `load()` en `etl/etl.py`; tabla `weekly_price`"),
+    ("Al calcular el margen", "El margen solo compara precios en la misma unidad.",
+     ["RN-06"], "consulta `k1_margin` en `bi/queries.sql`"),
+]
 # (question, page where it is answered, state: available, partial or pending, note)
 BUSINESS_QUESTIONS = [
     ("¿Cuál es el margen entre el precio mayorista y el precio al consumidor, y cómo "
@@ -1458,27 +1478,48 @@ def describe_rule_evidence(rule):
         return project.describe_margin_evidence(
             int(read_key_options("k1_margin")["row_count"].sum()))
     if rule == "RN-11":
-        return project.describe_rejection_evidence(read_indicator("k8_rejected_rows"),
-                                                   project.read_rejection_example())
+        # The saved example row is long: it goes in the details, not in the card.
+        return project.describe_rejection_evidence(read_indicator("k8_rejected_rows"))
     return read_cached_rule_evidence(get_database_version()).get(rule, "—")
 
 
+def build_rule_card_html(rule, guide_row):
+    """One rule: what it does with a row and its real figure in datos.db."""
+    evidence = describe_rule_evidence(rule)
+    if evidence[:2].istitle():
+        # After the colon a sentence goes on in lower case; codes and numbers stay.
+        evidence = evidence[0].lower() + evidence[1:]
+    text = (f"En datos.db: {evidence}" if evidence != "—"
+            else "La base no guarda una cifra para esta regla.")
+    return build_info_card_html(guide_row["Qué hace con la fila"], text, label=rule)
+
+
+def show_rule_details(rules, design_rules, guide_rows, where):
+    """The whole rule, why it exists, its documented example and where it happens."""
+    with st.expander("Ver detalles: regla completa, por qué y dónde ocurre"):
+        for rule in rules:
+            guide_row = guide_rows[rule]
+            example = guide_row["Ejemplo documentado"]
+            st.markdown(f"**{rule}.** {design_rules[rule]}  \n**Por qué:** {guide_row['Por qué']}"
+                        + (f"  \n**Ejemplo documentado:** {example}" if example != "—" else ""))
+            if rule == "RN-11" and project.read_rejection_example():
+                st.markdown("**Ejemplo de fila rechazada, tal como se guardó:**")
+                st.code(project.read_rejection_example(), language="json", wrap_lines=True)
+        st.markdown(f"**Dónde ocurre:** {where}.")
+
+
 def show_rules_tab(mode):
-    """RN-01 to RN-14: what each does with a row, with real evidence; details folded."""
-    rules = project.read_design_table(project.RULES_HEADING)
+    """RN-01 to RN-14 in the order the data goes through them, with real evidence (D-057)."""
+    show_section_intro("Reglas de calidad", "Las 14 reglas que sigue cada fila, en el orden en "
+                       "que el ETL las aplica, con lo que hace cada una y su cifra real en la "
+                       "base.")
+    design_rules = {rule["ID"]: rule["Regla"]
+                    for rule in project.read_design_table(project.RULES_HEADING)}
     guide_rows = {row["Regla"]: row for row in project.read_guide_table("Reglas de calidad")}
-    with open_card("rules_table", "Reglas de calidad y su evidencia en la base"):
-        st.markdown(build_html_table(
-            ["Regla", "Qué hace con la fila", "Evidencia real en datos.db"],
-            [[rule["ID"], html.escape(guide_rows[rule["ID"]]["Qué hace con la fila"]),
-              html.escape(describe_rule_evidence(rule["ID"]))] for rule in rules]),
-            unsafe_allow_html=True)
-    for rule in rules:
-        guide_row = guide_rows[rule["ID"]]
-        with st.expander(f"{rule['ID']} · por qué y regla completa"):
-            st.markdown(f"**Regla:** {rule['Regla']}  \n**Por qué:** {guide_row['Por qué']}")
-            if guide_row["Ejemplo documentado"] != "—":
-                st.markdown(f"**Ejemplo documentado:** {guide_row['Ejemplo documentado']}")
+    for number, (stage, lead, rules, where) in enumerate(RULE_STAGES, start=1):
+        show_section_intro(f"{number}. {stage}", lead, True)
+        show_info_cards([build_rule_card_html(rule, guide_rows[rule]) for rule in rules])
+        show_rule_details(rules, design_rules, guide_rows, where)
 
 
 def show_sections_folded(text, first_open=True):
