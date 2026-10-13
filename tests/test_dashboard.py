@@ -477,3 +477,14 @@ def test_d057_decisions_tab_shows_twelve_cards_and_folds_the_rest():
 def test_d057_every_theme_of_the_glossary_says_what_it_groups():
     themes = {row["Tema"] for row in project.read_guide_table("Glosario")}
     assert themes == set(dashboard.GLOSSARY_THEME_LEADS)
+
+
+def test_d057_every_file_of_the_readme_falls_in_one_known_folder():
+    folders = [folder for folder, _, _ in dashboard.FOLDER_PURPOSES]
+    assert folders[:2] == ["", "agent/"] and folders[-1] == "docs/"
+    paths = [path for path, _, _ in project.list_repository_files()]
+    assert {dashboard.find_folder(path) for path in paths} <= set(folders)
+    assert dashboard.find_folder("bi/zoom.py") == "bi/"
+    assert "bi/zoom.py" in paths and "bi/star_model.py" in paths
+    line = dashboard.build_file_line_html("bi/zoom.py", "zoom", "https://github.com/x")
+    assert ">zoom.py</a> — zoom</li>" in line
