@@ -119,7 +119,6 @@ SOURCE_NAMES = {etl.SOURCE_WHOLESALE: "Mayorista", etl.SOURCE_CONSUMER: "Consumi
 FLAG_NAMES = {"SIN_MARCA": "Usados en los indicadores",
               etl.FLAG_UNIT_NOT_CONVERTIBLE: "Unidad no convertible",
               etl.FLAG_OUTLIER: "Atípicos"}
-OVERVIEW_ALERT_COUNT = 6
 # A channel gap that rests on this many regions or fewer names them next to its bar.
 MAXIMUM_REGIONS_NAMED = 2
 ALERTS_PAGE_BAR_COUNT = 15
@@ -156,9 +155,6 @@ KEY_FIGURES_HINT = ("▲ en rojo: el precio **subió** frente a la semana anteri
 PRICE_TREND_HINT = ("Cada línea es el precio promedio de un canal, semana a semana, en "
                     "pesos por kilo (o por unidad). La línea gris es el mercado mayorista: "
                     "la distancia entre la gris y las demás es lo que agrega el comercio.")
-MEDIAN_MARGIN_HINT = ("Cuánto más paga el consumidor que el mayorista, en %. **145 %** "
-                      "significa que el consumidor paga 2,45 veces el precio mayorista. "
-                      "Es la mediana de las semanas mostradas.")
 LAG_HINT = ("Cuántas semanas tarda el precio al consumidor en moverse después del "
             "mayorista. Para cada desfase de 0 a 8 semanas se mide la **correlación** entre "
             "los cambios semanales de ambos precios: 1 = se mueven igual, 0 = sin relación. "
@@ -166,8 +162,6 @@ LAG_HINT = ("Cuántas semanas tarda el precio al consumidor en moverse después 
             "(más de 2/√pares). Necesita 26 semanas.")
 LAG_NOTE = ("Indicador descriptivo: muestra qué desfase coincide mejor con los datos, no "
             "prueba que el precio mayorista cause el cambio al consumidor.")
-MARGIN_TREND_HINT = ("El margen de cada canal, semana a semana. Si la línea sube, la "
-                     "distancia entre el precio al consumidor y el mayorista creció.")
 REGIONAL_INDEX_HINT = ("**1,00** es el promedio nacional de la semana. **1,46** = 46 % más "
                        "caro que el promedio; **0,66** = 34 % más barato. Promedio de todas "
                        "las semanas. La línea punteada marca el 1,00.")
@@ -178,6 +172,27 @@ ALERTS_HINT = ("Productos cuyo precio cambió esta semana mucho más de lo que s
                "▲ en rojo: subió; ▼ en azul: bajó. «Variación habitual» es su cambio "
                "semanal promedio de las 12 semanas anteriores. Son señales para revisar, "
                "no conclusiones.")
+WEEK_RANKING_HINT = ("**Qué muestra:** los productos del grupo elegido cuyo precio más cambió "
+                     "esta semana frente a la anterior, en los canales elegidos. **Cómo leerlo:"
+                     "** ▲ en rojo subió, ▼ en azul bajó; la barra más larga es el mayor "
+                     "cambio. Es el precio nacional (promedio de las regiones).")
+DUMBBELL_HINT = ("**Qué muestra:** el precio mayorista (punto gris) y el precio al consumidor "
+                 "de cada canal (punto de color) en la última semana con ambos precios, en "
+                 "la región elegida. **Cómo leerlo:** cuanto más larga la línea, mayor la "
+                 "brecha; el número a la derecha es la brecha en %.")
+GAP_LINE_HINT = ("**Qué muestra:** la brecha de un canal (consumidor − mayorista, sobre el "
+                 "mayorista) semana a semana, en las últimas 52 semanas. **Cómo leerlo:** si "
+                 "la línea sube, el consumidor paga proporcionalmente más; la línea punteada "
+                 "es 0 %, sin brecha.")
+HEATMAP_HINT = ("**Qué muestra:** el índice estacional promedio de cada mes (1 = precio "
+                "promedio de su año), un año por fila. **Cómo leerlo:** más oscuro = más caro "
+                "ese mes; compara una columna de arriba abajo para ver si el mismo mes se "
+                "repite caro o barato cada año.")
+ALERT_LIST_HINT = ("**Qué muestra:** los productos cuyo cambio semanal se salió de su rango "
+                   "habitual (más de 2 desviaciones estándar respecto de las 12 semanas "
+                   "previas). **Cómo leerlo:** el semáforo dice cuán lejos: ● moderada (2 a 3"
+                   "), ▲ alta (3 a 4), ◆ muy alta (4 o más); la barra mide esa distancia y la "
+                   "marca vertical es el límite de 2.")
 SEASONAL_INDEX_HINT = ("**1,00** es el precio promedio del año. **1,20** = esa semana el "
                        "precio estuvo 20 % sobre su promedio; **0,80** = 20 % bajo. Con "
                        "datos desde 2022 se ve si el producto sube o baja siempre en las "
@@ -350,6 +365,14 @@ NO_DATA_TEXT = "No hay datos para esta selección."
 NO_MARGIN_TEXT = ("Este producto no tiene precio mayorista en esta región y canal: la brecha "
                   "solo existe para frutas y verduras con la misma unidad (RN-06). Mira "
                   "Canales y regiones o Estacionalidad.")
+# Esta semana: how many products the ranking shows, and the weeks of each small line.
+RANKING_SIZE = 12
+SPARKLINE_WEEKS = 12
+# Brecha de precio: the weeks of the gap line (the whole history is folded).
+GAP_LINE_WEEKS = 52
+# Alertas: (lowest distance in standard deviations, label, icon, status color).
+ALERT_LEVELS = [(4, "Muy alta", "◆", "critical"), (3, "Alta", "▲", "serious"),
+                (0, "Moderada", "●", "warning")]
 FILTERS_NOTE = ("Los filtros valen para todas las pestañas. Canales y regiones compara todos "
                 "los canales y regiones del producto; Alertas muestra todos los productos.")
 NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
@@ -546,6 +569,27 @@ def build_style_css(mode):
     .stat-line {{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
                   margin: 4px 0 6px 0; }}
     .stat-line strong {{ font-size: 1.35rem; color: {palette["strong_text"]}; }}
+    /* Alertas: one row per alert; on phones the row wraps and the bar takes a line. */
+    .alert-list {{ list-style: none; padding: 0 !important; margin: 4px 0 !important;
+                   display: grid; gap: 8px; }}
+    .alert-row {{ display: grid; align-items: center; gap: 4px 12px; margin: 0;
+                  grid-template-columns: 7.5rem minmax(0, 1fr) 5.5rem minmax(90px, 160px) 4.5rem;
+                  padding: 8px 10px; border-radius: 10px; border: 1px solid {palette["card_border"]};
+                  font-size: 0.9rem; color: {palette["strong_text"]}; }}
+    .alert-status {{ font-weight: 600; white-space: nowrap; }}
+    .alert-product {{ min-width: 0; overflow-wrap: break-word; }}
+    .alert-change {{ font-variant-numeric: tabular-nums; white-space: nowrap; }}
+    .alert-meter {{ position: relative; height: 8px; border-radius: 4px;
+                    background: {palette["grid"]}; }}
+    .alert-bar {{ position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; }}
+    .alert-limit {{ position: absolute; top: -4px; bottom: -4px; width: 2px;
+                    background: {palette["strong_text"]}; }}
+    .alert-distance {{ color: {palette["text"]}; font-size: 0.82rem; white-space: nowrap; }}
+    @media (max-width: 640px) {{
+        .alert-row {{ grid-template-columns: auto minmax(0, 1fr) auto; }}
+        .alert-product {{ grid-column: 1 / -1; order: -1; }}
+        .alert-meter {{ grid-column: 1 / -1; }}
+    }}
     table.card-table {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }}
     table.card-table th {{ text-align: left; color: {palette["text"]}; font-weight: 500;
                           padding: 6px 4px; border-bottom: 1px solid {palette["card_border"]}; }}
@@ -999,6 +1043,8 @@ def show_page_header(title, subtitle):
                     f'{build_chip(run_text, run_kind)}</div>', unsafe_allow_html=True)
     st.markdown(f'<p class="page-subtitle">{html.escape(subtitle)}</p>',
                 unsafe_allow_html=True)
+
+
 def show_page_tabs(page, tab_contents, *arguments):
     """The tabs of one page, bound to the address so a link can open one of them."""
     tabs = st.tabs(TABS_BY_PAGE[page], key=TAB_PARAMETER, bind="query-params")
@@ -1039,7 +1085,9 @@ def show_key_figure(key, label, series, value_text, change_chip, note, mode, col
                     f'<div class="kpi-value">{value_text}{change_chip}</div>'
                     f'<div class="kpi-note">{html.escape(note)}</div>',
                     unsafe_allow_html=True)
-        trend_rows = pd.DataFrame({"week_start": series.index, "value": series.to_numpy()})
+        # The small line shows the last weeks: five years would flatten this week away.
+        recent = series.sort_index().tail(SPARKLINE_WEEKS)
+        trend_rows = pd.DataFrame({"week_start": recent.index, "value": recent.to_numpy()})
         show_chart(charts.draw_sparkline(trend_rows, color, mode))
 
 
@@ -1082,7 +1130,8 @@ def show_overview_figures(rows, mode):
                           charts.get_channel_color(SUPERMARKET, mode))
     with cards[3]:
         show_margin_figure(rows, mode)
-    st.caption(f"Cómo leer las cifras: {KEY_FIGURES_HINT}".replace("**", ""))
+    st.caption(f"Cómo leer las cifras: {KEY_FIGURES_HINT}".replace("**", "")
+               + f" La línea de cada tarjeta muestra las últimas {SPARKLINE_WEEKS} semanas.")
 
 
 def show_margin_figure(rows, mode):
@@ -1102,9 +1151,9 @@ def show_margin_figure(rows, mode):
                     charts.get_channel_color(SUPERMARKET, mode))
 
 
-def show_overview_trend(rows, mode, key="trend"):
+def show_overview_trend(rows, mode, key="trend", title="Precio por semana"):
     """Card: weekly price of the wholesale market and of each consumer channel."""
-    with open_card(key, "Precio por semana", "La línea gris es el precio mayorista.",
+    with open_card(key, title, "La línea gris es el precio mayorista.",
                    hint=PRICE_TREND_HINT):
         consumer_rows = rows[["week_start", "channel", "consumer_price"]].rename(
             columns={"consumer_price": "value"})
@@ -1115,73 +1164,6 @@ def show_overview_trend(rows, mode, key="trend"):
         show_chart(charts.draw_weekly_lines(
             price_rows, f"$/{rows['normalized_unit'].iloc[0]}",
             "$ " + price_rows["value"].map(charts.format_thousands), mode, is_money=True))
-
-
-def show_overview_margins(rows, mode, key="margins"):
-    """Card: median margin of each consumer channel over the weeks shown."""
-    with open_card(key, "Margen mediano por canal",
-                   "Cuánto más paga el consumidor que el mayorista.", hint=MEDIAN_MARGIN_HINT,
-                   kpi="K1"):
-        median_margins = rows.groupby("channel")["margin"].median() * 100
-        bar_rows = pd.DataFrame({"label": median_margins.index,
-                                 "value": median_margins.to_numpy()})
-        bar_rows["value_label"] = bar_rows["value"].map(
-            lambda margin: charts.format_percent(margin, decimals=0))
-        bar_rows["meaning"] = bar_rows["value"].map(charts.describe_margin)
-        colors = [charts.get_channel_color(channel, mode) for channel in bar_rows["label"]]
-        show_chart(charts.draw_horizontal_bars(bar_rows, "Margen mediano (%)", mode, colors))
-
-
-def show_overview_regions(key, mode):
-    """Card: regional index of the street market price for the chosen product."""
-    with open_card("regions", "¿Dónde es más caro?",
-                   "Precio en feria por región; 1 = promedio nacional.",
-                   hint=REGIONAL_INDEX_HINT, kpi="K3"):
-        rows = read_indicator_for_key("k3_regional_index", key)
-        rows = rows[rows["channel"] == DEFAULT_CHANNEL]
-        if rows.empty:
-            st.info(NO_DATA_TEXT)
-            return
-        average_index = rows.groupby("region")["regional_index"].mean()
-        bar_rows = pd.DataFrame({
-            "label": [charts.shorten_region_name(region) for region in average_index.index],
-            "value": average_index.to_numpy()})
-        bar_rows["value_label"] = bar_rows["value"].map(charts.format_index)
-        bar_rows["meaning"] = bar_rows["value"].map(charts.describe_regional_index)
-        show_chart(charts.draw_horizontal_bars(bar_rows, "Índice regional", mode,
-                                               reference_value=1))
-
-
-def build_alert_rows_html(alert_rows):
-    """Table cells for alerts: product, channel and a red or blue change chip."""
-    table_rows = []
-    for alert in alert_rows.to_dict("records"):
-        change = alert["variation"] * 100
-        kind = "rise" if change > 0 else "fall"
-        arrow = "▲" if change > 0 else "▼"
-        table_rows.append([html.escape(describe_product(alert)),
-                           html.escape(alert["channel"]),
-                           build_chip(f"{arrow} {charts.format_signed_percent(change)}", kind,
-                                      charts.describe_weekly_change(change))])
-    return table_rows
-
-
-def show_overview_alerts():
-    """Card: the largest price movements of the latest week."""
-    alert_rows = read_price_alerts()
-    latest_week = read_latest_week()
-    week_alerts = alert_rows[alert_rows["week_start"] == latest_week]
-    with open_card("alerts", f"Alertas de la semana ({len(week_alerts)})",
-                   f"Semana del {latest_week:%d-%m-%Y}. Señales para revisar, no conclusiones.",
-                   hint=ALERTS_HINT, kpi="K6"):
-        if week_alerts.empty:
-            st.info("Ningún producto se movió fuera de su rango habitual.")
-            return
-        largest_first = week_alerts["variation"].abs().sort_values(ascending=False).index
-        shown_alerts = week_alerts.loc[largest_first].head(OVERVIEW_ALERT_COUNT)
-        st.markdown(build_html_table(["Producto", "Canal", "Variación"],
-                                     build_alert_rows_html(shown_alerts)),
-                    unsafe_allow_html=True)
 
 
 def choose_analysis_filters():
@@ -1209,24 +1191,55 @@ def read_margin_rows(filters):
     return rows[rows["region"] == filters["region"]]
 
 
+@st.cache_data
+def read_cached_latest_variations(database_version):
+    """Weekly variation of every national price series in the latest week."""
+    prices = alerts.add_weekly_variation(queries.run_query("k6_national_weekly_price"))
+    latest = prices[prices["week_start"] == prices["week_start"].max()]
+    return add_display_columns(latest[latest["variation"].notna()])
+
+
+def show_week_ranking(filters, mode):
+    """Card: the largest price changes of the week in the chosen group and channels."""
+    group = filters["key"]["product_group"]
+    rows = read_cached_latest_variations(get_database_version())
+    rows = rows[(rows["product_group"] == group) & rows["channel"].isin(filters["channels"])]
+    with open_card("week_ranking", f"Mayores variaciones de la semana · {group}",
+                   hint=WEEK_RANKING_HINT, kpi="K6"):
+        if rows.empty:
+            st.info(NO_DATA_TEXT)
+            return
+        st.caption(f"Semana del {rows['week_start'].max():%d-%m-%Y}, frente a la anterior.")
+        largest = rows.loc[rows["variation"].abs().sort_values(ascending=False).index]
+        largest = largest.head(RANKING_SIZE)
+        bar_rows = pd.DataFrame({
+            "label": [f"{describe_product(row)} · {row['channel']}"
+                      for row in largest.to_dict("records")],
+            "value": largest["variation"].to_numpy() * 100})
+        show_chart(charts.draw_variation_bars(bar_rows, mode))
+
+
+def show_week_history(rows, filters, mode):
+    """The long history, folded: wholesale and one channel per chart (two lines)."""
+    with st.expander("Ver evolución histórica"):
+        for channel in filters["channels"]:
+            channel_rows = rows[rows["channel"] == channel]
+            if not channel_rows.empty:
+                show_overview_trend(channel_rows, mode, key=f"week_history_{channel}",
+                                    title=f"Precio por semana · mayorista y {channel}")
+
+
 def show_week_tab(mode, filters):
-    """This week: key figures, trend, margins, regions and alerts on one screen."""
+    """This week: the price cards (12 weeks of trend) and the week's largest changes;
+    the long history folded (D-059)."""
     rows = read_margin_rows(filters)
-    chosen_rows = rows[rows["channel"].isin(filters["channels"])]
-    if rows.empty or chosen_rows.empty:
+    if rows.empty:
         st.info(NO_MARGIN_TEXT)
     else:
         show_overview_figures(rows, mode)
-        trend_column, margin_column = st.columns([3, 2])
-        with trend_column:
-            show_overview_trend(chosen_rows, mode)
-        with margin_column:
-            show_overview_margins(chosen_rows, mode)
-    region_column, alert_column = st.columns([2, 3])
-    with region_column:
-        show_overview_regions(filters["key"], mode)
-    with alert_column:
-        show_overview_alerts()
+    show_week_ranking(filters, mode)
+    if not rows.empty:
+        show_week_history(rows, filters, mode)
     st.caption(NOMINAL_PRICES_TEXT)
 
 
@@ -1913,8 +1926,41 @@ def show_home_page(mode):
 
 
 # region Margins page
+def show_gap_dumbbell(rows, mode):
+    """Card: wholesale and consumer price of each channel in the latest common week."""
+    latest_week = rows["week_start"].max()
+    week_rows = rows[rows["week_start"] == latest_week]
+    with open_card("gap_dumbbell", "Mayorista y consumidor, la última semana",
+                   hint=DUMBBELL_HINT, kpi="K1"):
+        st.caption(f"Semana del {latest_week:%d-%m-%Y}, {week_rows['region'].iloc[0]}. "
+                   "Punto gris: mayorista; punto de color: cada canal.")
+        dumbbell_rows = week_rows[["channel", "wholesale_price", "consumer_price"]].copy()
+        dumbbell_rows["gap_label"] = [charts.format_signed_percent(margin * 100)
+                                      for margin in week_rows["margin"]]
+        show_chart(charts.draw_dumbbell(dumbbell_rows, rows["normalized_unit"].iloc[0], mode))
+        missing = sorted(set(rows["channel"]) - set(week_rows["channel"]))
+        if missing:
+            st.caption(f"Sin precio esa semana: {', '.join(missing)}.")
+
+
+def show_gap_line(rows, channel, mode, weeks=None, key_prefix="gap_line"):
+    """Card: the gap of one channel, week by week, as one line."""
+    channel_rows = rows[rows["channel"] == channel].sort_values("week_start")
+    if weeks:
+        channel_rows = channel_rows.tail(weeks)
+    period = f"últimas {weeks} semanas" if weeks else "todo el período"
+    with open_card(f"{key_prefix}_{channel}", f"Brecha · {channel}", period,
+                   hint=GAP_LINE_HINT, kpi="K1"):
+        line_rows = pd.DataFrame({"week_start": channel_rows["week_start"],
+                                  "value": channel_rows["margin"] * 100})
+        show_chart(charts.draw_single_weekly_area(
+            line_rows, "Brecha (%)", line_rows["value"].map(charts.format_percent), mode,
+            reference_value=0))
+
+
 def show_gap_tab(mode, filters):
-    """K1, gap between the wholesale and each consumer channel, and K5, its lag."""
+    """K1 as a dumbbell for this week and one line per channel for its evolution, then
+    K5; the whole history folded (D-059)."""
     st.caption("Brecha = (precio al consumidor − precio mayorista) / precio mayorista, con la "
                "misma variedad, calidad, región, semana y unidad.")
     rows = read_margin_rows(filters)
@@ -1922,19 +1968,15 @@ def show_gap_tab(mode, filters):
     if rows.empty:
         st.info(NO_MARGIN_TEXT)
         return
-    rows["margin_percent"] = rows["margin"] * 100
-    with open_card("margin_trend", "Margen por semana", hint=MARGIN_TREND_HINT, kpi="K1"):
-        margin_rows = rows[["week_start", "channel", "margin_percent"]].rename(
-            columns={"margin_percent": "value"})
-        show_chart(charts.draw_weekly_lines(
-            margin_rows, "Margen (%)", margin_rows["value"].map(charts.format_percent),
-            mode, is_money=False))
-    trend_column, bars_column = st.columns([3, 2])
-    with trend_column:
-        show_overview_trend(rows, mode, key="gap_trend")
-    with bars_column:
-        show_overview_margins(rows, mode, key="gap_margins")
+    show_gap_dumbbell(rows, mode)
+    channels = [channel for channel in filters["channels"] if channel in set(rows["channel"])]
+    for column, channel in zip(st.columns(len(channels)), channels):
+        with column:
+            show_gap_line(rows, channel, mode, weeks=GAP_LINE_WEEKS)
     show_lag_card(rows, mode)
+    with st.expander("Ver evolución histórica"):
+        for channel in channels:
+            show_gap_line(rows, channel, mode, key_prefix="gap_history")
     st.caption(NOMINAL_PRICES_TEXT)
 
 
@@ -2044,7 +2086,8 @@ def show_channel_gaps(rows, consumer_channels, mode):
                                for gap in bar_rows["value"]]
         colors = [charts.get_channel_color(channel, mode) for channel in average_gap.index]
         show_chart(charts.draw_horizontal_bars(bar_rows, "Diferencia promedio (%)", mode,
-                                               colors, reference_value=0))
+                                               colors, reference_value=0,
+                                               reference_label=reference_channel))
         st.caption(f"Cuánto más caro (+) o más barato (−) es cada canal que "
                    f"«{reference_channel}», en las semanas y regiones donde ambos tienen precio.  \n"
                    f"Base de cada barra: {' · '.join(describe_gap_basis(rows))}.")
@@ -2068,7 +2111,8 @@ def show_regional_index(rows, mode):
         bar_rows["value_label"] = bar_rows["value"].map(charts.format_index)
         bar_rows["meaning"] = bar_rows["value"].map(charts.describe_regional_index)
         show_chart(charts.draw_horizontal_bars(bar_rows, "Índice regional", mode,
-                                               reference_value=1))
+                                               reference_value=1,
+                                               reference_label="Promedio nacional"))
         st.caption("Sobre 1, la región es más cara que el promedio nacional de la semana; "
                    "bajo 1, más barata.")
 
@@ -2093,31 +2137,52 @@ def show_channels_tab(mode, filters):
 
 
 # region Seasonality page
+def build_month_rows(rows):
+    """Average seasonal index of each month of each year (rows of one channel)."""
+    months = rows.assign(year=rows["week_start"].dt.year, month=rows["week_start"].dt.month)
+    months = months.groupby(["year", "month"], as_index=False)["seasonal_index"].mean()
+    months = months.rename(columns={"seasonal_index": "value"})
+    months["value_label"] = months["value"].map(charts.format_index)
+    return months
+
+
+def show_seasonality_history(rows, mode):
+    """The weekly index and national price, folded: one line per channel."""
+    with st.expander("Ver evolución histórica"):
+        index_column, price_column = st.columns(2)
+        with index_column, open_card("seasonal_index", "Índice estacional por semana",
+                                     "1 = precio promedio del año.", hint=SEASONAL_INDEX_HINT,
+                                     kpi="K4"):
+            index_rows = rows[["week_start", "channel", "seasonal_index"]].rename(
+                columns={"seasonal_index": "value"})
+            show_chart(charts.draw_weekly_lines(
+                index_rows, "Índice", index_rows["value"].map(charts.format_index), mode,
+                is_money=False))
+        with price_column, open_card("national_price", "Precio nacional por semana",
+                                     hint=NATIONAL_PRICE_HINT, kpi="K4"):
+            price_rows = rows[["week_start", "channel", "national_price"]].rename(
+                columns={"national_price": "value"})
+            show_chart(charts.draw_weekly_lines(
+                price_rows, f"$/{rows['normalized_unit'].iloc[0]}",
+                "$ " + price_rows["value"].map(charts.format_thousands), mode, is_money=True))
+
+
 def show_seasonality_tab(mode, filters):
-    """K4: national price of each week over the average of its year, by channel."""
+    """K4 as a calendar of months and years, one per channel; the weekly lines folded
+    (D-059)."""
     st.caption("Índice = precio nacional de la semana / promedio del año. Con varios años se "
-               "ve qué semanas son caras o baratas cada año.")
+               "ve qué meses son caros o baratos cada año.")
     rows = read_indicator_for_key("k4_seasonal_index", filters["key"])
     rows = rows[rows["channel"].isin(filters["channels"])]
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
-    index_column, price_column = st.columns(2)
-    with index_column, open_card("seasonal_index", "Índice estacional",
-                                 "1 = precio promedio del año.", hint=SEASONAL_INDEX_HINT,
-                                 kpi="K4"):
-        index_rows = rows[["week_start", "channel", "seasonal_index"]].rename(
-            columns={"seasonal_index": "value"})
-        show_chart(charts.draw_weekly_lines(
-            index_rows, "Índice", index_rows["value"].map(charts.format_index), mode,
-            is_money=False))
-    with price_column, open_card("national_price", "Precio nacional por semana",
-                                 hint=NATIONAL_PRICE_HINT, kpi="K4"):
-        price_rows = rows[["week_start", "channel", "national_price"]].rename(
-            columns={"national_price": "value"})
-        show_chart(charts.draw_weekly_lines(
-            price_rows, f"$/{rows['normalized_unit'].iloc[0]}",
-            "$ " + price_rows["value"].map(charts.format_thousands), mode, is_money=True))
+    for channel in [channel for channel in filters["channels"] if channel in set(rows["channel"])]:
+        with open_card(f"seasonal_calendar_{channel}", f"Calendario de precios · {channel}",
+                       "Más oscuro = más caro ese mes.", hint=HEATMAP_HINT, kpi="K4"):
+            show_chart(charts.draw_heatmap(build_month_rows(rows[rows["channel"] == channel]),
+                                           mode))
+    show_seasonality_history(rows, mode)
     st.caption(NOMINAL_PRICES_TEXT)
 
 
@@ -2140,8 +2205,41 @@ def format_alerts(alert_rows):
     })
 
 
+def find_alert_level(distance):
+    """(label, icon, status) of an alert by its distance in standard deviations."""
+    return next((label, icon, status) for floor, label, icon, status in ALERT_LEVELS
+                if distance >= floor)
+
+
+def build_alert_list_html(alert_rows):
+    """One row per alert: traffic light (icon + label), product, change and how far it
+    went beyond its usual range, as a bar with the limit of 2 marked."""
+    distances = ((alert_rows["variation"] - alert_rows["usual_variation"]).abs()
+                 / alert_rows["variation_deviation"])
+    longest = max(distances.max(), alerts.ALERT_DEVIATIONS * 2)
+    limit_left = alerts.ALERT_DEVIATIONS / longest * 100
+    items = []
+    for row, distance in zip(alert_rows.to_dict("records"), distances):
+        label, icon, status = find_alert_level(distance)
+        change = row["variation"] * 100
+        arrow = "▲" if change > 0 else "▼"
+        items.append(
+            f'<li class="alert-row"><span class="alert-status" style="color:'
+            f'{charts.STATUS_COLORS[status]}">{icon} {label}</span>'
+            f'<span class="alert-product">{html.escape(describe_product(row))} · '
+            f'{html.escape(row["channel"])}</span>'
+            f'<span class="alert-change">{arrow} {charts.format_signed_percent(change)}</span>'
+            f'<span class="alert-meter" title="{charts.format_index(distance)} desviaciones '
+            f'estándar; el límite es {alerts.ALERT_DEVIATIONS}"><span class="alert-bar" style='
+            f'"width:{distance / longest * 100:.1f}%;background:{charts.STATUS_COLORS[status]}">'
+            f'</span><span class="alert-limit" style="left:{limit_left:.1f}%"></span></span>'
+            f'<span class="alert-distance">{charts.format_index(distance)} desv.</span></li>')
+    return f'<ul class="alert-list">{"".join(items)}</ul>'
+
+
 def show_alerts_tab(mode, filters):
-    """K6: products whose price moved outside their usual range in one week."""
+    """K6 as a traffic-light list with how far each change went; the table folded
+    (D-059)."""
     st.caption("Hay alerta cuando el cambio semanal del precio se aleja más de 2 desviaciones "
                "estándar de lo habitual en las 12 semanas previas. Muestra todos los productos.")
     alert_rows = read_price_alerts()
@@ -2152,16 +2250,18 @@ def show_alerts_tab(mode, filters):
     week = st.selectbox("Semana (lunes de inicio)", weeks,
                         format_func=lambda day: day.strftime("%d-%m-%Y"))
     week_rows = alert_rows[alert_rows["week_start"].dt.date == week]
-    with open_card("alert_bars", f"Mayores movimientos ({len(week_rows)} alertas)",
-                   "Rojo: subió. Azul: bajó.", hint=ALERTS_HINT, kpi="K6"):
-        largest_first = week_rows["variation"].abs().sort_values(ascending=False).index
-        shown_rows = week_rows.loc[largest_first].head(ALERTS_PAGE_BAR_COUNT)
-        bar_rows = pd.DataFrame({
-            "label": [f"{describe_product(row)} ({row['channel']})"
-                      for row in shown_rows.to_dict("records")],
-            "value": shown_rows["variation"].to_numpy() * 100})
-        show_chart(charts.draw_variation_bars(bar_rows, mode))
-    with open_card("alert_table", "Todas las alertas de la semana"):
+    distance = ((week_rows["variation"] - week_rows["usual_variation"]).abs()
+                / week_rows["variation_deviation"])
+    shown_rows = week_rows.loc[distance.sort_values(ascending=False).index]
+    with open_card("alert_list", f"Alertas de la semana ({len(week_rows)})",
+                   "De la más lejana a su rango habitual a la más cercana.",
+                   hint=ALERT_LIST_HINT, kpi="K6"):
+        st.markdown(build_alert_list_html(shown_rows.head(ALERTS_PAGE_BAR_COUNT)),
+                    unsafe_allow_html=True)
+        if len(shown_rows) > ALERTS_PAGE_BAR_COUNT:
+            st.caption(f"Se muestran las {ALERTS_PAGE_BAR_COUNT} más lejanas; todas están en "
+                       "la tabla de abajo.")
+    with st.expander("Ver todas las alertas de la semana en tabla"):
         st.dataframe(format_alerts(week_rows), hide_index=True, use_container_width=True)
     st.caption(NOMINAL_PRICES_TEXT)
 

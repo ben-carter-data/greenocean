@@ -124,3 +124,35 @@ def test_t44_three_themes_share_the_validated_channel_colors_of_their_base():
     assert charts.PALETTES[charts.MODE_DARK]["base"] == charts.BASE_DARK
     assert {charts.PALETTES[theme]["base"] for theme in
             [charts.MODE_CORPORATE, charts.MODE_LIGHT]} == {charts.BASE_LIGHT}
+
+
+def test_d059_dumbbell_joins_wholesale_and_each_channel_with_its_gap():
+    rows = pd.DataFrame({"channel": ["Feria libre", "Supermercado"],
+                         "wholesale_price": [1387.0, 1387.0], "consumer_price": [1569.0, 1990.0],
+                         "gap_label": ["+13,2 %", "+43,5 %"]})
+    spec = charts.draw_dumbbell(rows, "kilo", charts.MODE_DARK).to_dict()
+    marks = [layer["mark"]["type"] for layer in spec["layer"]]
+    assert marks == ["rule", "point", "point", "text"]
+    assert "$ 1.990" in str(spec)
+
+
+def test_d059_heatmap_is_one_hue_light_to_dark_in_every_theme():
+    rows = pd.DataFrame({"year": [2025, 2025], "month": [1, 2], "value": [0.9, 1.2],
+                         "value_label": ["0,90", "1,20"]})
+    for mode in charts.THEMES:
+        spec = charts.draw_heatmap(rows, mode).to_dict()
+        assert spec["encoding"]["color"]["scale"]["range"] == charts.HEAT_RAMPS[mode]
+    assert charts.HEAT_RAMPS[charts.MODE_DARK][1] == "#22d3ee"
+
+
+def test_d059_variation_bars_say_the_direction_with_an_arrow_too():
+    rows = pd.DataFrame({"label": ["Tomate", "Papa"], "value": [12.3, -4.5]})
+    text = str(charts.draw_variation_bars(rows, charts.MODE_LIGHT).to_dict())
+    assert "▲ +12,3 %" in text and "▼ -4,5 %" in text
+
+
+def test_d059_a_reference_line_can_say_its_name():
+    rows = pd.DataFrame({"label": ["A", "B"], "value": [1.2, 0.9], "value_label": ["1,2", "0,9"]})
+    spec = charts.draw_horizontal_bars(rows, "Índice", charts.MODE_DARK, reference_value=1,
+                                       reference_label="Promedio nacional").to_dict()
+    assert "Promedio nacional" in str(spec)
