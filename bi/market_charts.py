@@ -154,3 +154,73 @@ def draw_regional_heatmap(rows, mode, revision):
                         showgrid=False, zeroline=False)
     figure.update_yaxes(title="Canal", automargin=True, showgrid=False, zeroline=False)
     return finish(figure, mode, 450, revision)
+
+
+def build_scene_axis(palette):
+    """Axis style shared by the 3D scenes."""
+    return dict(backgroundcolor=palette["card"], gridcolor=palette["grid"],
+                zerolinecolor=palette["reference"], showbackground=True, tickfont=dict(size=10))
+
+
+def draw_seasonality_surface(rows, mode, revision):
+    """3D surface of the seasonal index: months × years, higher and darker = dearer.
+
+    rows needs the columns year, month (1 to 12) and value (the index, 1 = year average).
+    """
+    palette = charts.get_palette(mode)
+    matrix = rows.pivot(index="year", columns="month", values="value").reindex(
+        columns=range(1, 13)).sort_index()
+    text = [["Sin dato" if pd.isna(value) else charts.format_index(value) for value in row]
+            for row in matrix.to_numpy()]
+    figure = go.Figure(go.Surface(
+        x=list(range(12)), y=list(range(len(matrix.index))), z=matrix.to_numpy(),
+        text=text, colorscale=list(zip([0, .33, .66, 1], charts.HEAT_RAMPS[mode])),
+        colorbar=dict(title="Índice", thickness=12, len=.7),
+        contours=dict(z=dict(show=True, usecolormap=True, project_z=True, width=1)),
+        customdata=[[[month, year] for month in charts.MONTH_NAMES] for year in matrix.index],
+        hovertemplate="%{customdata[0]} %{customdata[1]}<br>Índice: %{text}"
+                      "<br>1 = promedio de su año<extra></extra>"))
+    axis = build_scene_axis(palette)
+    figure.update_layout(scene=dict(
+        xaxis=dict(**axis, title="", tickvals=list(range(12)), ticktext=charts.MONTH_NAMES),
+        yaxis=dict(**axis, title="", tickvals=list(range(len(matrix.index))),
+                   ticktext=[str(year) for year in matrix.index]),
+        zaxis=dict(**axis, title="Índice"), bgcolor="rgba(0,0,0,0)",
+        aspectmode="manual", aspectratio=dict(x=1.6, y=1, z=.6),
+        camera=dict(eye=dict(x=1.3, y=-1.4, z=.85), center=dict(x=0, y=0, z=-.1))),
+        dragmode="orbit", margin=dict(l=0, r=0, t=0, b=0))
+    figure.update_traces(colorbar=dict(thickness=10, len=.6, x=.98))
+    return finish(figure, mode, 430, revision).update_layout(margin=dict(l=0, r=0, t=0, b=0))
+
+
+def draw_gap_ribbons(rows, mode, revision):
+    """3D ribbons of the gap: one ribbon per channel along the weeks, its height the gap.
+
+    rows needs the columns week_start, channel and gap (percent). Each channel is its own
+    ribbon, so nothing is interpolated between channels.
+    """
+    palette = charts.get_palette(mode)
+    figure = go.Figure()
+    channels = sorted(rows["channel"].unique())
+    for position, channel in enumerate(channels):
+        points = rows[rows["channel"] == channel].sort_values("week_start")
+        weeks = points["week_start"].dt.strftime("%d-%m-%Y").tolist()
+        color = charts.get_channel_color(channel, mode)
+        gaps = points["gap"].to_numpy()
+        figure.add_trace(go.Surface(
+            x=[weeks, weeks], y=[[position - .3] * len(weeks), [position + .3] * len(weeks)],
+            z=[gaps, gaps], showscale=False, opacity=.9, name=channel,
+            colorscale=[[0, color], [1, color]],
+            text=[[charts.format_signed_percent(gap) for gap in gaps]] * 2,
+            hovertemplate=f"<b>{html.escape(channel)}</b><br>Semana %{{x}}<br>"
+                          "Brecha: %{text}<extra></extra>"))
+    axis = build_scene_axis(palette)
+    figure.update_layout(scene=dict(
+        xaxis=dict(**axis, title="Semana", nticks=6),
+        yaxis=dict(**axis, title="Canal", tickvals=list(range(len(channels))),
+                   ticktext=channels),
+        zaxis=dict(**axis, title="Brecha (%)"), bgcolor="rgba(0,0,0,0)",
+        aspectmode="manual", aspectratio=dict(x=2.2, y=.9, z=.6),
+        camera=dict(eye=dict(x=1.0, y=-1.25, z=.55), center=dict(x=0, y=0, z=-.15))),
+        dragmode="orbit", showlegend=False)
+    return finish(figure, mode, 460, revision).update_layout(margin=dict(l=0, r=0, t=0, b=0))

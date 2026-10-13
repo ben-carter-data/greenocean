@@ -55,15 +55,33 @@ PAGE_MANUAL = "Manual"
 PAGE_DECISIONS = "Decisiones"
 PAGE_GLOSSARY = "Glosario"
 PAGE_LINKS = "Enlaces"
-NAVIGATION_GROUPS = {
-    "01 · Visualizaciones": [PAGE_HOME, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS,
-                             PAGE_ALERTS, PAGE_SEASONALITY, PAGE_DIAGRAMS,
-                             PAGE_ARCHITECTURE, PAGE_DEVOPS],
-    "02 · Negocio y criterios": [PAGE_BUSINESS, PAGE_KPI, PAGE_RULES],
-    "03 · Datos e implementación": [PAGE_DATA_AND_CODE, PAGE_QUERIES, PAGE_CODE],
-    "04 · Operación": [PAGE_OPERATIONS, PAGE_RUNS, PAGE_MANUAL],
-    "05 · Documentación": [PAGE_DECISIONS, PAGE_GLOSSARY, PAGE_LINKS],
+PAGE_3D = "Vista 3D"
+# Six windows in the side menu, one per subject; inside each, its views change with a
+# selector and ◀ ▶, without leaving the window (D-065). Every chart lives in Dashboard,
+# from the most important view to the least.
+WINDOWS = {
+    "01 · Dashboard": [PAGE_HOME, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
+                       PAGE_SEASONALITY, PAGE_3D],
+    "02 · Proyecto y negocio": [PAGE_BUSINESS, PAGE_KPI, PAGE_RULES],
+    "03 · Arquitectura": [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS],
+    "04 · Datos y código": [PAGE_DATA_AND_CODE, PAGE_QUERIES, PAGE_CODE],
+    "05 · Operación": [PAGE_OPERATIONS, PAGE_RUNS, PAGE_MANUAL],
+    "06 · Documentación": [PAGE_DECISIONS, PAGE_GLOSSARY, PAGE_LINKS],
 }
+WINDOW_PATHS = {"01 · Dashboard": "dashboard", "02 · Proyecto y negocio": "proyecto",
+                "03 · Arquitectura": "arquitectura", "04 · Datos y código": "datos-y-codigo",
+                "05 · Operación": "operacion", "06 · Documentación": "documentacion"}
+WINDOW_ICONS = {"01 · Dashboard": ":material/dashboard:",
+                "02 · Proyecto y negocio": ":material/assignment:",
+                "03 · Arquitectura": ":material/account_tree:",
+                "04 · Datos y código": ":material/code:",
+                "05 · Operación": ":material/monitor_heart:",
+                "06 · Documentación": ":material/menu_book:"}
+WINDOW_OF_VIEW = {view: window for window, views in WINDOWS.items() for view in views}
+VIEW_PARAMETER = "vista"
+FIRST_WINDOW = next(iter(WINDOWS))
+# The groups of views before D-065, kept for the documents that name them.
+NAVIGATION_GROUPS = WINDOWS
 PAGES = [page for pages in NAVIGATION_GROUPS.values() for page in pages]
 HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
@@ -77,6 +95,7 @@ PAGE_ICONS = {
     PAGE_OPERATIONS: ":material/health_and_safety:", PAGE_RUNS: ":material/play_circle:",
     PAGE_MANUAL: ":material/menu_book:", PAGE_DECISIONS: ":material/history:",
     PAGE_GLOSSARY: ":material/dictionary:", PAGE_LINKS: ":material/link:",
+    PAGE_3D: ":material/view_in_ar:",
 }
 PAGE_PATHS = {
     PAGE_HOME: "dashboard", PAGE_BUSINESS: "negocio", PAGE_DIAGRAMS: "diagramas",
@@ -85,7 +104,7 @@ PAGE_PATHS = {
     PAGE_KPI: "indicadores", PAGE_DATA_AND_CODE: "datos-y-codigo", PAGE_QUERIES: "queries",
     PAGE_CODE: "codigo", PAGE_RULES: "reglas", PAGE_DEVOPS: "devops", PAGE_OPERATIONS: "operaciones",
     PAGE_RUNS: "ejecuciones", PAGE_MANUAL: "manual", PAGE_DECISIONS: "decisiones",
-    PAGE_GLOSSARY: "glosario", PAGE_LINKS: "enlaces",
+    PAGE_GLOSSARY: "glosario", PAGE_LINKS: "enlaces", PAGE_3D: "vista-3d",
 }
 TAB_IDEA = "Idea de negocio"
 TAB_KPI = "KPI y cálculos"
@@ -821,6 +840,8 @@ def build_style_css(mode):
     .copy-link:hover {{ color: {palette["accent"]}; border-color: {palette["accent"]}; }}
     .admin-locked {{ color: {palette["text"]}; font-size: 0.9rem; }}
     {build_code_colors_css(palette)}
+    /* Bold text of the side menu takes the menu's own ink (navy menu in Corporativo). */
+    [data-testid="stSidebar"] strong {{ color: {palette["sidebar_text"]}; }}
     /* Every list of the page stands out from what is behind it: its own fill and a
        visible border, the accent on hover and focus (D-060). */
     [data-testid="stMain"] :is([data-testid="stSelectbox"], [data-testid="stMultiSelect"])
@@ -903,10 +924,12 @@ def build_page_address(page_title, tab=None, kpi=None):
         parameters[TAB_PARAMETER] = tab
     if kpi:
         parameters[KPI_PARAMETER] = kpi
+    window = WINDOW_OF_VIEW.get(page_title, page_title)
+    if page_title in WINDOW_OF_VIEW and page_title != WINDOWS[window][0]:
+        parameters[VIEW_PARAMETER] = page_title
     query = f"?{urlencode(parameters)}" if parameters else ""
-    # The first page of the navigation is the home page: Streamlit serves it at
-    # the root of the app, and its own path does not exist.
-    path = "./" if page_title == HOME_PAGE else PAGE_PATHS[page_title]
+    # The first window is the home page: Streamlit serves it at the root of the app.
+    path = "./" if window == FIRST_WINDOW else WINDOW_PATHS[window]
     return path + query
 
 
@@ -2761,13 +2784,61 @@ def show_alerts_tab(mode, filters):
 def show_analysis_view(mode, title, renderer):
     show_page_header(title, "Análisis de precios oficiales de ODEPA, con unidades y "
                      "series comparables.")
-    st.markdown(build_link_html("Ver el panorama general en Dashboard →",
-                                build_page_address(PAGE_HOME)), unsafe_allow_html=True)
     if renderer is show_alerts_tab:
         renderer(mode, None)
     else:
         filters = choose_analysis_filters()
         renderer(mode, filters)
+
+
+def build_gap_weeks(filters, weeks=26):
+    """The gap of each chosen channel over the last weeks, in percent."""
+    rows = read_margin_rows(filters)
+    rows = rows[rows["channel"].isin(filters["channels"])]
+    last_weeks = sorted(rows["week_start"].unique())[-weeks:]
+    rows = rows[rows["week_start"].isin(last_weeks)]
+    return rows.assign(gap=rows["margin"] * 100)[["week_start", "channel", "gap"]]
+
+
+def show_3d_tab(mode, filters):
+    """Two views in three dimensions for the chosen product, each with its flat twin."""
+    config = {"displaylogo": False, "responsive": True}
+    revision = "-".join(str(value) for value in filters["key"].values())
+    gap_rows = build_gap_weeks(filters)
+    with open_card("gap_ribbons", "Brecha por canal · últimas 26 semanas",
+                   hint="Una cinta por canal; su altura es la brecha sobre el precio mayorista "
+                        "esa semana. Gira la vista arrastrando; el valor exacto está al pasar "
+                        "el mouse.", kpi="K1"):
+        if gap_rows.empty:
+            st.info(NO_MARGIN_TEXT)
+        else:
+            show_3d_or_flat("gap", market_charts.draw_gap_ribbons(gap_rows, mode, revision),
+                            lambda: show_gap_line(gap_rows.assign(margin=gap_rows["gap"] / 100),
+                                                  filters["channels"][0], mode, 26, "gap_flat"),
+                            config)
+    seasonal = read_indicator_for_key("k4_seasonal_index", filters["key"])
+    seasonal = seasonal[seasonal["channel"].isin(filters["channels"])]
+    channels = [channel for channel in filters["channels"] if channel in set(seasonal["channel"])]
+    for column, channel in zip(st.columns(max(1, min(2, len(channels)))) * 4, channels):
+        months = build_month_rows(seasonal[seasonal["channel"] == channel])
+        with column, open_card(f"seasonal_surface_{channel}", f"Estacionalidad · {channel}",
+                               hint=HEATMAP_HINT, kpi="K4"):
+            show_3d_or_flat(f"season_{channel}",
+                            market_charts.draw_seasonality_surface(months, mode, revision),
+                            lambda months=months: show_chart(charts.draw_heatmap(months, mode)),
+                            config)
+    st.caption(NOMINAL_PRICES_TEXT)
+
+
+def show_3d_or_flat(key, figure, show_flat, config):
+    """A 3D figure, or its flat version for exact reading or devices without WebGL."""
+    view = st.segmented_control("Representación", ["3D", "Plano"], default="3D",
+                                key=f"representation_{key}") or "3D"
+    if view == "3D":
+        st.plotly_chart(figure, theme=None, use_container_width=True, config=config,
+                        key=f"plot_{key}")
+    else:
+        show_flat()
 
 
 def show_analysis_page(mode):
@@ -3768,6 +3839,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_GLOSSARY: lambda mode: show_document_page(mode, PAGE_GLOSSARY,
         "Siglas y conceptos explicados en contexto.", show_glossary_tab),
     PAGE_LINKS: show_links_page,
+    PAGE_3D: lambda mode: show_analysis_view(mode, PAGE_3D, show_3d_tab),
 }
 
 
@@ -3804,71 +3876,102 @@ def show_attribution():
     st.caption(ATTRIBUTION_TEXT)
 
 
-def build_journey_navigation(title, position):
-    index = PAGES.index(title)
-    group = next(group for group, pages in NAVIGATION_GROUPS.items() if title in pages)
-    previous = (build_link_html("← Anterior · " + PAGES[index - 1], build_page_address(PAGES[index - 1]))
-                if index else '<span>Inicio del recorrido</span>')
-    following = (build_link_html("Siguiente · " + PAGES[index + 1] + " →", build_page_address(PAGES[index + 1]))
-                 if index + 1 < len(PAGES) else build_link_html("Volver al dashboard →", build_page_address(PAGE_HOME)))
-    return (f'<nav class="project-navigation" aria-label="Recorrido del proyecto · {position}">'
-            f'<div>{previous}</div><div class="journey-position">{html.escape(group)} · '
-            f'{index + 1}/{len(PAGES)}</div><div>{following}</div></nav>')
+def window_view_key(window):
+    """Session key of the view chosen in one window."""
+    return f"view_{WINDOW_PATHS[window]}"
 
 
-def render_page(title):
-    """Draw one page with the style of the active mode and the footer."""
+def step_view(window, step):
+    """◀ or ▶: the view before or after the current one, going round."""
+    views = WINDOWS[window]
+    key = window_view_key(window)
+    st.session_state[key] = views[(views.index(st.session_state[key]) + step) % len(views)]
+
+
+def choose_window_view(window):
+    """The view of a window: from the address when a link asks for one, then from the
+    selector; ◀ ▶ step through them without leaving the window (D-065)."""
+    views = WINDOWS[window]
+    key = window_view_key(window)
+    requested = st.query_params.get(VIEW_PARAMETER)
+    if requested in views and requested != st.session_state.get(f"{key}_synced"):
+        st.session_state[key] = requested
+    if st.session_state.get(key) not in views:
+        st.session_state[key] = views[0]
+    with st.container(key="window_views", horizontal=True, vertical_alignment="center"):
+        st.button("◀", key="previous_view", help="Vista anterior", on_click=step_view,
+                  args=(window, -1))
+        st.segmented_control("Vista", views, key=key, label_visibility="collapsed",
+                             required=True)
+        st.button("▶", key="next_view", help="Vista siguiente", on_click=step_view,
+                  args=(window, 1))
+    view = st.session_state[key]
+    st.session_state[f"{key}_synced"] = view
+    if view == views[0]:
+        st.query_params.pop(VIEW_PARAMETER, None)
+    else:
+        st.query_params[VIEW_PARAMETER] = view
+    return view
+
+
+def render_window(window):
+    """Draw one window: its view selector, the chosen view and the footer."""
     mode = get_mode()
     apply_style(mode)
-    st.markdown(build_journey_navigation(title, "inicio"), unsafe_allow_html=True)
-    SHOW_PAGE_BY_TITLE[title](mode)
-    st.markdown(build_journey_navigation(title, "final"), unsafe_allow_html=True)
+    view = choose_window_view(window)
+    SHOW_PAGE_BY_TITLE[view](mode)
     show_attribution()
     st.html(FOLD_SIDEBAR_SCRIPT, unsafe_allow_javascript=True)
 
 
-def build_page(title, is_default):
-    """A navigation entry that draws one page."""
-    return st.Page(lambda: render_page(title), title=title, icon=PAGE_ICONS[title],
-                   url_path=PAGE_PATHS[title], default=is_default)
+def render_page(title):
+    """Draw one view alone, as tests and old callers do."""
+    mode = get_mode()
+    apply_style(mode)
+    SHOW_PAGE_BY_TITLE[title](mode)
+    show_attribution()
 
 
-def build_redirect_page(url_path, target_page, tab=None):
-    """A hidden page at an old address that opens its new place, keeping the
-    parameters of the link (D-051, D-056)."""
+def build_window_page(window, is_default):
+    """A navigation entry that draws one window."""
+    return st.Page(lambda: render_window(window), title=window, icon=WINDOW_ICONS[window],
+                   url_path=WINDOW_PATHS[window], default=is_default)
+
+
+def build_redirect_page(url_path, view, windows_by_title):
+    """A hidden page at an old address that opens its window on the same view (D-065)."""
     def redirect():
         parameters = {key: value for key, value in st.query_params.to_dict().items()
                       if key != THEME_PARAMETER}
-        if tab:
-            parameters[TAB_PARAMETER] = tab
-        st.switch_page(target_page, query_params=parameters)
-    return st.Page(redirect, title=target_page.title, url_path=url_path,
-                   visibility="hidden")
+        window = WINDOW_OF_VIEW[view]
+        if view != WINDOWS[window][0]:
+            parameters[VIEW_PARAMETER] = view
+        st.switch_page(windows_by_title[window], query_params=parameters)
+    return st.Page(redirect, title=view, url_path=url_path, visibility="hidden")
 
 
-def redirect_moved_tab(current_page, pages_by_title):
-    """Keep deep links working after moving a tab to the sidebar."""
+def redirect_moved_tab(current_page, windows_by_title):
+    """Keep deep links with ?seccion=… working: they open the view that holds that tab."""
     tab = st.query_params.get(TAB_PARAMETER)
-    if (current_page.title, tab) in OLD_TAB_PAGES:
-        st.query_params.pop(TAB_PARAMETER, None)
-        st.switch_page(pages_by_title[OLD_TAB_PAGES[(current_page.title, tab)]],
-                       query_params={key: value for key, value in st.query_params.to_dict().items()
-                                     if key != THEME_PARAMETER})
-    tab = OLD_HOME_TABS.get(tab, tab)
-    destination = PAGE_OF_TAB.get(tab)
-    if destination and destination != current_page.title:
-        parameters = {key: value for key, value in st.query_params.to_dict().items()
-                      if key != THEME_PARAMETER}
-        if tab in TABS_BY_PAGE[destination]:
-            parameters[TAB_PARAMETER] = tab
-        else:
-            parameters.pop(TAB_PARAMETER, None)
-        st.switch_page(pages_by_title[destination], query_params=parameters)
+    view = OLD_TAB_PAGES.get((current_page.title, tab)) or PAGE_OF_TAB.get(
+        OLD_HOME_TABS.get(tab, tab))
+    if not view:
+        return
+    st.query_params.pop(TAB_PARAMETER, None)
+    window = WINDOW_OF_VIEW[view]
+    parameters = {key: value for key, value in st.query_params.to_dict().items()
+                  if key != THEME_PARAMETER}
+    if view != WINDOWS[window][0]:
+        parameters[VIEW_PARAMETER] = view
+    if window != current_page.title or st.query_params.get(VIEW_PARAMETER) != parameters.get(
+            VIEW_PARAMETER):
+        st.switch_page(windows_by_title[window], query_params=parameters)
 
 
-@st.dialog("Monitor de precios de alimentos", dismissible=False, width="small")
+@st.dialog("Monitor de precios de alimentos", width="small")
 def choose_visitor_profile():
-    """One choice per session, before any data or diagram is displayed."""
+    """Offered once per session; closing it or «Entrar sin perfil» opens the dashboard
+    with every section (D-065)."""
     st.markdown("### ¿Desde qué mirada quieres recorrerlo?")
     st.write("Accede al seguimiento de precios, variaciones y alertas de alimentos en Chile. "
              "Tu perfil orienta el recorrido; todas las secciones están disponibles.")
@@ -3877,19 +3980,26 @@ def choose_visitor_profile():
                             format_func=lambda value: value)
         submitted = st.form_submit_button("Abrir dashboard", type="primary",
                                           use_container_width=True)
+    if st.button("Entrar sin perfil", type="tertiary", use_container_width=True):
+        st.rerun()
     if submitted:
         if selected is None:
             st.info("Elige un perfil para continuar.")
         else:
             st.session_state[PROFILE_PARAMETER] = selected
             st.query_params["perfil"] = selected
-            st.session_state["open_dashboard_after_profile"] = True
             st.rerun()
 
 
 def change_visitor_profile():
     st.session_state.pop(PROFILE_PARAMETER, None)
     st.query_params.pop("perfil", None)
+    offer_visitor_profile()
+
+
+def offer_visitor_profile():
+    """Show the profile choice again on the next run."""
+    st.session_state["profile_offered"] = False
 
 
 def main():
@@ -3907,30 +4017,34 @@ def main():
     saved_profile = st.query_params.get("perfil")
     if saved_profile in VISITOR_PROFILES and PROFILE_PARAMETER not in st.session_state:
         st.session_state[PROFILE_PARAMETER] = saved_profile
-    if st.session_state.get(PROFILE_PARAMETER) not in VISITOR_PROFILES:
-        apply_style(get_mode())
+    profile = st.session_state.get(PROFILE_PARAMETER)
+    if profile not in VISITOR_PROFILES and not st.session_state.get("profile_offered"):
+        st.session_state["profile_offered"] = True
         choose_visitor_profile()
-        st.stop()
-    st.query_params["perfil"] = st.session_state[PROFILE_PARAMETER]
+    if profile in VISITOR_PROFILES:
+        st.query_params["perfil"] = profile
     st.sidebar.markdown("**MONITOR DE PRECIOS**")
     st.sidebar.caption("Seguimiento de precios · ODEPA")
-    st.sidebar.caption(st.session_state[PROFILE_PARAMETER])
-    st.sidebar.button("Cambiar perfil", on_click=change_visitor_profile,
-                      icon=":material/person:", use_container_width=True)
+    if profile in VISITOR_PROFILES:
+        st.sidebar.caption(profile)
+        st.sidebar.button("Cambiar perfil", on_click=change_visitor_profile,
+                          icon=":material/person:", use_container_width=True)
+    else:
+        st.sidebar.button("Elegir perfil", on_click=offer_visitor_profile,
+                          icon=":material/person:", use_container_width=True)
     theme = st.sidebar.selectbox("Tema", charts.THEMES, key=THEME_PARAMETER,
                                  bind="query-params")
     match_base_mode(theme)
-    pages_by_title = {title: build_page(title, position == 0)
-                      for position, title in enumerate(PAGES)}
-    redirects = [build_redirect_page(path, pages_by_title[page], tab)
-                 for path, (page, tab) in OLD_PATHS.items()]
-    sections = {group: [pages_by_title[title] for title in titles]
-                for group, titles in NAVIGATION_GROUPS.items()}
-    sections["Compatibilidad"] = redirects
-    current_page = st.navigation(sections, position="sidebar", expanded=True)
-    if st.session_state.pop("open_dashboard_after_profile", False):
-        st.switch_page(pages_by_title[PAGE_HOME], query_params={"perfil": st.session_state[PROFILE_PARAMETER]})
-    redirect_moved_tab(current_page, pages_by_title)
+    windows_by_title = {window: build_window_page(window, position == 0)
+                        for position, window in enumerate(WINDOWS)}
+    redirects = [build_redirect_page(path, view, windows_by_title)
+                 for view, path in PAGE_PATHS.items() if path not in WINDOW_PATHS.values()]
+    redirects += [build_redirect_page(path, page, windows_by_title)
+                  for path, (page, _) in OLD_PATHS.items()
+                  if path not in WINDOW_PATHS.values() and path not in PAGE_PATHS.values()]
+    current_page = st.navigation({"Ventanas": list(windows_by_title.values()),
+                                  "Compatibilidad": redirects}, position="sidebar")
+    redirect_moved_tab(current_page, windows_by_title)
     current_page.run()
     st.sidebar.caption("Fuente: ODEPA · actualización automática cada martes.")
 

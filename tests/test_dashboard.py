@@ -34,31 +34,18 @@ def draw_page(title):
     return AppTest.from_string(script, default_timeout=60).run()
 
 
-def test_portfolio_sidebar_separates_result_construction_and_operation():
-    assert dashboard.PAGES[0] == dashboard.HOME_PAGE == "Dashboard"
-    pages = [page for group in dashboard.NAVIGATION_GROUPS.values() for page in group]
-    assert pages == dashboard.PAGES and len(pages) == len(set(pages))
-    assert dashboard.PAGE_CODE in pages and dashboard.PAGE_RUNS in pages
-    assert dashboard.TABS_BY_PAGE[dashboard.HOME_PAGE] == []
+def test_d065_six_windows_hold_every_view_once_and_charts_only_in_dashboard():
+    assert list(dashboard.WINDOWS) == ["01 · Dashboard", "02 · Proyecto y negocio",
+                                       "03 · Arquitectura", "04 · Datos y código",
+                                       "05 · Operación", "06 · Documentación"]
+    views = [view for window in dashboard.WINDOWS.values() for view in window]
+    assert len(views) == len(set(views)) and set(views) == set(dashboard.SHOW_PAGE_BY_TITLE)
+    assert dashboard.WINDOWS["01 · Dashboard"] == [
+        dashboard.HOME_PAGE, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP, dashboard.PAGE_CHANNELS,
+        dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY, dashboard.PAGE_3D]
+    assert dashboard.WINDOWS["03 · Arquitectura"] == [
+        dashboard.PAGE_DIAGRAMS, dashboard.PAGE_ARCHITECTURE, dashboard.PAGE_DEVOPS]
     assert dashboard.PAGE_OF_TAB[dashboard.TAB_PIPELINE] == dashboard.PAGE_DIAGRAMS
-    assert dashboard.PAGE_OF_TAB[dashboard.TAB_RUNS] == dashboard.PAGE_RUNS
-    visuals = dashboard.NAVIGATION_GROUPS["01 · Visualizaciones"]
-    assert visuals == [dashboard.HOME_PAGE, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP,
-                       dashboard.PAGE_CHANNELS, dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY,
-                       dashboard.PAGE_DIAGRAMS, dashboard.PAGE_ARCHITECTURE, dashboard.PAGE_DEVOPS]
-    assert dashboard.PAGE_PATHS[dashboard.PAGE_SEASONALITY] == "estacionalidad"
-    assert dashboard.PAGE_PATHS[dashboard.PAGE_DEVOPS] == "devops"
-
-def test_d056_old_addresses_open_their_new_tab():
-    assert set(dashboard.OLD_PATHS).isdisjoint(dashboard.PAGE_PATHS.values())
-    for path in ["panel", "margenes", "canales-y-regiones",
-                 "consultas", "centro-de-control", "calidad-de-datos", "pipeline",
-                 "el-proyecto"]:
-        page, tab = dashboard.OLD_PATHS[path]
-        assert tab is None or dashboard.PAGE_OF_TAB[tab] == page
-    assert set(dashboard.OLD_HOME_TABS.values()) <= set(dashboard.PAGE_OF_TAB)
-    assert set(dashboard.OLD_HOME_TABS).isdisjoint(
-        dashboard.TABS_BY_PAGE[dashboard.HOME_PAGE])
 
 
 def test_every_page_has_a_function_an_icon_and_an_address():
@@ -93,26 +80,15 @@ def test_durations_are_written_for_people():
 
 
 @needs_database
-def test_the_whole_app_requires_profile_before_showing_data():
+def test_d065_the_profile_is_offered_once_and_is_not_required():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not app.exception
     assert app.radio[0].label == "¿Quién consulta?"
-    assert not app.title and not app.get("vega_lite_chart")
-    app.radio[0].set_value("Reclutamiento")
-    app.button(key="FormSubmitter:visitor_welcome-Abrir dashboard").click().run()
-    assert not app.exception
-    assert app.session_state[dashboard.PROFILE_PARAMETER] == "Reclutamiento"
+    # The dashboard is drawn behind the offer: nothing waits for a profile.
     assert app.title[0].value == "Precios de alimentos · Chile"
-    assert [box.label for box in app.sidebar.selectbox] == ["Tema"]
-    app.button[0].click().run()  # change profile requires the welcome again
-    assert not app.title and app.radio[0].label == "¿Quién consulta?"
-
-@needs_database
-@pytest.mark.parametrize("title", ALL_PAGES)
-def test_every_page_draws_without_errors_and_shows_the_attribution(title):
-    app = draw_page(title)
-    assert not app.exception
-    assert dashboard.ATTRIBUTION_TEXT in [caption.value for caption in app.caption]
+    app.button(key="previous_view").click().run()
+    assert not app.exception and not app.radio
+    assert app.session_state.get(dashboard.PROFILE_PARAMETER) is None
 
 
 def test_hover_hint_is_plain_text_and_escaped():
@@ -254,29 +230,27 @@ def test_queries_tab_runs_a_query_when_asked():
     assert any(len(frame.value) == 20 for frame in app.dataframe)
 
 
-def test_kpi_link_opens_the_kpi_tab_with_that_indicator():
+def test_kpi_link_opens_the_kpi_view_with_that_indicator():
     link = dashboard.build_kpi_link("K5")
-    assert 'href="indicadores?kpi=K5"' in link
+    assert 'href="proyecto?kpi=K5&amp;vista=Indicadores+%C2%B7+BI"' in link
 
 
-def test_d056_a_place_named_in_a_document_opens_its_page_and_tab():
-    assert dashboard.build_place_address(dashboard.TAB_QUALITY) == (
-        "operaciones")
-    assert dashboard.build_place_address(dashboard.TAB_KPI) == "indicadores"
-    assert dashboard.build_place_address(dashboard.PAGE_ANALYSIS) == "analisis"
+def test_d065_a_place_named_in_a_document_opens_its_window_and_view():
+    assert dashboard.build_place_address(dashboard.TAB_QUALITY) == "operacion"
+    assert dashboard.build_place_address(dashboard.TAB_KPI) == (
+        "proyecto?vista=Indicadores+%C2%B7+BI")
+    assert dashboard.build_place_address(dashboard.PAGE_ANALYSIS) == "./?vista=Esta+semana"
 
 
-def test_t52_every_link_of_the_project_points_to_a_page_that_exists():
-    """The home page lives at './'; any other page at its own path (A1)."""
-    other_paths = {path for title, path in dashboard.PAGE_PATHS.items()
-                   if title != dashboard.HOME_PAGE}
+def test_t52_every_link_of_the_project_points_to_a_window_that_exists():
+    """The first window lives at './'; any other one at its own path."""
+    paths = set(dashboard.WINDOW_PATHS.values())
     for journey in [dashboard.JOURNEY_MANAGER, dashboard.JOURNEY_ANALYST,
                     dashboard.JOURNEY_TECHNICAL]:
         for _, address in dashboard.list_journey_steps(journey):
             path = address.split("?")[0]
-            assert path == "./" or path in other_paths, address
+            assert path == "./" or path in paths, address
     assert dashboard.build_page_address(dashboard.HOME_PAGE) == "./"
-    assert dashboard.build_page_address(dashboard.PAGE_ANALYSIS) == "analisis"
 
 
 def test_t52_each_channel_gap_says_how_many_regions_stand_behind_it():
@@ -551,10 +525,10 @@ def test_d057_quality_tab_explains_what_was_left_out_and_shows_it():
                 if column in ("source", "reason", "rejected_rows", "rejected_share")]
 
 
-def test_d058_the_old_links_tab_opens_the_links_page():
+def test_d058_the_old_links_tab_opens_the_links_view():
     assert dashboard.OLD_TAB_PAGES[(dashboard.PAGE_OPERATIONS, "Enlaces")] == dashboard.PAGE_LINKS
-    assert "Enlaces" not in dashboard.TABS_BY_PAGE[dashboard.PAGE_OPERATIONS]
-    assert dashboard.build_place_address(dashboard.PAGE_LINKS) == "enlaces"
+    assert dashboard.build_place_address(dashboard.PAGE_LINKS) == (
+        "documentacion?vista=Enlaces")
     groups = {link["group"] for link in project.PROJECT_LINKS}
     assert groups == {"Código y operación", "Fuentes de datos", "Documentos"}
     assert set(dashboard.LINK_GROUP_LEADS) == groups
@@ -681,18 +655,6 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         assert ("Top 10 · cambios de precio" in texts) == (page == dashboard.HOME_PAGE)
         assert ('class="zoom-frame diagram-wide"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
         assert (">Arquitectura por plataforma<" in texts) == (page == dashboard.PAGE_DIAGRAMS)
-        assert texts.count('class="project-navigation"') == 2
-
-@needs_database
-def test_a_kpi_link_opens_its_canonical_query_without_repeating_it():
-    app = draw_page(dashboard.PAGE_KPI)
-    assert not [block for block in app.code if block.language == "sql"]
-    script = ("import streamlit as st\nst.query_params['consulta']='k7_match_coverage'\n"
-              "from bi import dashboard\ndashboard.show_queries_tab(dashboard.charts.MODE_DARK)")
-    catalog = AppTest.from_string(script, default_timeout=60).run()
-    assert not catalog.exception
-    assert catalog.expander[0].label.startswith("k7_match_coverage")
-    assert sum(expander.label.startswith("k7_match_coverage") for expander in catalog.expander) == 1
 
 
 @needs_database
@@ -707,13 +669,14 @@ def test_business_definition_has_a_mission_vision_scope_and_acceptance_criteria(
     assert 'data-component-kind="scope"' in text
 
 
-def test_every_destination_can_be_followed_in_the_sidebar_order():
-    for index, page in enumerate(dashboard.PAGES):
-        navigation = dashboard.build_journey_navigation(page, "inicio")
-        if index:
-            assert html.escape(dashboard.build_page_address(dashboard.PAGES[index-1])) in navigation
-        if index + 1 < len(dashboard.PAGES):
-            assert html.escape(dashboard.build_page_address(dashboard.PAGES[index+1])) in navigation
+def test_d065_previous_and_next_go_round_the_views_of_a_window():
+    window = "03 · Arquitectura"
+    key = dashboard.window_view_key(window)
+    dashboard.st.session_state[key] = dashboard.PAGE_DIAGRAMS
+    dashboard.step_view(window, -1)
+    assert dashboard.st.session_state[key] == dashboard.PAGE_DEVOPS
+    dashboard.step_view(window, 1)
+    assert dashboard.st.session_state[key] == dashboard.PAGE_DIAGRAMS
 
 
 def test_security_and_database_have_distinct_functional_symbols():
@@ -725,15 +688,13 @@ def test_security_and_database_have_distinct_functional_symbols():
 
 
 @needs_database
-@pytest.mark.parametrize("profile", list(dashboard.VISITOR_PROFILES))
-def test_every_profile_starts_at_the_dashboard_even_with_an_old_section_link(profile):
+def test_d065_an_old_section_link_opens_its_view_inside_the_dashboard():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params["perfil"] = "Analista BI"
     app.query_params["seccion"] = dashboard.TAB_GAP
     app.run()
-    app.radio[0].set_value(profile)
-    app.button(key="FormSubmitter:visitor_welcome-Abrir dashboard").click().run()
     assert not app.exception
-    assert app.title[0].value == "Precios de alimentos · Chile"
+    assert app.title[0].value == dashboard.PAGE_GAP
     assert "seccion" not in app.query_params
 
 
@@ -746,3 +707,35 @@ def test_old_section_links_can_redirect_with_a_bound_theme():
     app.run()
     assert not app.exception
     assert app.title[0].value == dashboard.PAGE_GAP
+
+
+def test_d056_old_addresses_open_their_new_tab():
+    assert set(dashboard.OLD_PATHS).isdisjoint(dashboard.PAGE_PATHS.values())
+    for path in ["panel", "margenes", "canales-y-regiones",
+                 "consultas", "centro-de-control", "calidad-de-datos", "pipeline",
+                 "el-proyecto"]:
+        page, tab = dashboard.OLD_PATHS[path]
+        assert tab is None or dashboard.PAGE_OF_TAB[tab] == page
+    assert set(dashboard.OLD_HOME_TABS.values()) <= set(dashboard.PAGE_OF_TAB)
+    assert set(dashboard.OLD_HOME_TABS).isdisjoint(
+        dashboard.TABS_BY_PAGE[dashboard.HOME_PAGE])
+
+
+@needs_database
+@pytest.mark.parametrize("title", ALL_PAGES)
+def test_every_page_draws_without_errors_and_shows_the_attribution(title):
+    app = draw_page(title)
+    assert not app.exception
+    assert dashboard.ATTRIBUTION_TEXT in [caption.value for caption in app.caption]
+
+
+@needs_database
+def test_a_kpi_link_opens_its_canonical_query_without_repeating_it():
+    app = draw_page(dashboard.PAGE_KPI)
+    assert not [block for block in app.code if block.language == "sql"]
+    script = ("import streamlit as st\nst.query_params['consulta']='k7_match_coverage'\n"
+              "from bi import dashboard\ndashboard.show_queries_tab(dashboard.charts.MODE_DARK)")
+    catalog = AppTest.from_string(script, default_timeout=60).run()
+    assert not catalog.exception
+    assert catalog.expander[0].label.startswith("k7_match_coverage")
+    assert sum(expander.label.startswith("k7_match_coverage") for expander in catalog.expander) == 1
