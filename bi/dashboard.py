@@ -494,7 +494,7 @@ def open_card(key, title=None, caption=None, hint=None, kpi=None):
 
     hint, when given, is a short explanation in plain words that appears when
     the mouse passes over the ⓘ next to the title. kpi, when given, adds a link
-    «¿Cómo se calcula?» to that indicator in the project page.
+    «¿Cómo se calcula K1?» to the details of that indicator in Inicio.
     """
     card = st.container(key=f"card_{key}")
     hint_icon = build_hint_icon(hint) if hint else ""
@@ -542,9 +542,10 @@ def build_link_html(text, address):
 
 
 def build_kpi_link(kpi):
-    """«¿Cómo se calcula?»: opens the card of the indicator in the project page."""
+    """«¿Cómo se calcula K7?»: opens the details of that indicator in Inicio."""
     address = build_page_address(PAGE_HOME, TAB_KPI, kpi)
-    return f'<span class="kpi-link">{build_link_html("¿Cómo se calcula?", address)}</span>'
+    return (f'<span class="kpi-link">{build_link_html(f"¿Cómo se calcula {kpi}?", address)}'
+            '</span>')
 
 
 def build_chip(text, kind, hover_text=None):
@@ -863,9 +864,10 @@ def show_info_cards(cards_html):
 
 
 def build_steps_html(steps):
-    """Numbered steps of a process, in order: [(label, text)]."""
-    items = "".join(f"<li><strong>{format_inline(label)}:</strong> {format_inline(text)}</li>"
-                    for label, text in steps)
+    """Numbered steps of a process, in order: [(label, text)] or plain texts."""
+    items = "".join(f"<li><strong>{format_inline(step[0])}:</strong> {format_inline(step[1])}"
+                    "</li>" if isinstance(step, tuple) else f"<li>{format_inline(step)}</li>"
+                    for step in steps)
     return f'<ol class="steps">{items}</ol>'
 
 
@@ -1397,43 +1399,57 @@ def read_kpi_query(query_name):
     return queries.load_queries()[query_name].strip(), "bi/queries.sql"
 
 
-def show_kpi_card(indicator, guide_row, question, example_steps, is_requested):
-    """One KPI: question, formula in words, real example, its SQL and where to see it."""
+def build_kpi_card_html(indicator, guide_row):
+    """One indicator in a card: what it says in words, its formula and where to see it."""
+    return build_info_card_html(indicator["Indicador"], guide_row["En palabras"],
+                                label=indicator["ID"],
+                                note=f"Fórmula: {indicator['Fórmula']}",
+                                link=build_place_link(guide_row["Página"]))
+
+
+def show_kpi_details(indicator, guide_row, question, example_steps, is_requested):
+    """The question, the real example step by step and the SQL of one indicator, folded."""
     kpi = indicator["ID"]
-    with open_card(f"kpi_{kpi}", f"{kpi} · {indicator['Indicador']}"):
+    with st.expander(f"Ver detalles de {kpi}: ejemplo real y consulta SQL",
+                     expanded=is_requested):
         if is_requested:
             st.markdown(build_chip("Llegaste desde un gráfico del panel", "running"),
                         unsafe_allow_html=True)
-        st.markdown(f"**Pregunta:** {question}  \n**En palabras:** {guide_row['En palabras']}"
-                    f"  \n**Fórmula:** {indicator['Fórmula']}")
+        st.markdown(f"**Pregunta que responde:** {question}")
         if example_steps:
-            st.markdown("**Ejemplo real, paso a paso:**  \n"
-                        + "  \n".join(f"{number}. {step}"
-                                      for number, step in enumerate(example_steps, start=1)))
+            st.markdown("**Ejemplo real, calculado con la base actual:**  \n"
+                        + build_steps_html(example_steps), unsafe_allow_html=True)
         sql, file_name = read_kpi_query(guide_row["Consulta"])
-        with st.expander(f"Ver la consulta SQL ({guide_row['Consulta']})"):
-            st.code(sql, language="sql")
-            st.markdown(build_link_html(f"Abrir {file_name} en GitHub",
-                                        project.build_github_url(file_name)),
-                        unsafe_allow_html=True)
-        st.markdown("Se ve en: " + build_link_html(
-            guide_row["Página"], build_place_address(guide_row["Página"])),
-            unsafe_allow_html=True)
+        st.markdown(f"**Consulta SQL** `{guide_row['Consulta']}`, en `{file_name}`:")
+        st.code(sql, language="sql")
+        st.markdown(build_link_html(f"Abrir {file_name} en GitHub",
+                                    project.build_github_url(file_name)),
+                    unsafe_allow_html=True)
 
 
 def show_kpi_tab(mode):
-    """One card per indicator K1 to K8, with the one asked for from a chart first."""
+    """K1 to K8: the eight cards first, then the details of each one folded (D-057).
+
+    The indicator asked for from a chart goes first, with its details open.
+    """
+    show_section_intro("KPI y cálculos", "Las ocho cifras del panel: qué dice cada una, su "
+                       "fórmula y dónde se ve. En los detalles, un ejemplo real calculado con "
+                       "la base actual y su consulta SQL.")
     questions = {row["#"]: row["Pregunta"]
                  for row in project.read_design_table(project.QUESTIONS_HEADING)}
     guide_rows = {row["KPI"]: row for row in project.read_guide_table("KPI")}
     indicators = project.read_design_table(project.INDICATORS_HEADING)
     requested_kpi = st.query_params.get(KPI_PARAMETER)
     indicators.sort(key=lambda indicator: indicator["ID"] != requested_kpi)
+    show_info_cards([build_kpi_card_html(indicator, guide_rows[indicator["ID"]])
+                     for indicator in indicators])
+    show_section_intro("Cómo se calcula cada una", "Abre un indicador para ver su ejemplo "
+                       "paso a paso y la consulta que lo produce.", True)
     examples = build_cached_kpi_examples(get_database_version())
     for indicator in indicators:
         question = questions.get(indicator["Pregunta"], "¿La carga de datos es confiable?")
-        show_kpi_card(indicator, guide_rows[indicator["ID"]], question,
-                      examples[indicator["ID"]], indicator["ID"] == requested_kpi)
+        show_kpi_details(indicator, guide_rows[indicator["ID"]], question,
+                         examples[indicator["ID"]], indicator["ID"] == requested_kpi)
 
 
 def describe_rule_evidence(rule):

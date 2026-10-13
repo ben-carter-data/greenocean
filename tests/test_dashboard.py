@@ -390,3 +390,18 @@ def test_d057_links_say_where_they_go():
         dashboard.TAB_QUALITY, "Ir a")
     steps = dashboard.build_steps_html([("Nombres", "se separan"), ("Unidades", "a kilo")])
     assert steps.count("<li>") == 2 and steps.startswith('<ol class="steps">')
+
+
+@needs_database
+def test_d057_kpi_tab_shows_eight_cards_and_opens_the_asked_one_first():
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+              "import streamlit as st\nst.query_params['kpi'] = 'K5'\n"
+              "from bi import dashboard\ndashboard.show_kpi_tab(dashboard.charts.MODE_DARK)\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    cards = " ".join(block.value for block in app.markdown if 'class="info-grid"' in block.value)
+    assert cards.count('class="info-card"') == 8
+    assert cards.index('info-label">K5<') < cards.index('info-label">K1<')
+    assert "Fórmula:" in cards and "Ver en Análisis › Brecha de precio" in cards
+    assert [expander.label for expander in app.expander][0].startswith("Ver detalles de K5")
+    assert "¿Cómo se calcula K7?" in dashboard.build_kpi_link("K7")
