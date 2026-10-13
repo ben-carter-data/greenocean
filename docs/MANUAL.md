@@ -1,6 +1,6 @@
 # Manual de operación
 
-Para quien opera el proyecto sin ser técnico: qué pasa solo, qué hay que revisar y qué hacer si algo falla. El panel muestra este archivo en «Inicio» → «Cómo funciona».
+Para quien opera el proyecto sin ser técnico: qué pasa solo, qué hay que revisar y qué hacer si algo falla. El panel muestra este archivo en «Manual».
 
 ## Qué pasa cada martes
 
@@ -18,22 +18,25 @@ Si un paso falla, los siguientes no se ejecutan: el data warehouse del repositor
 
 ## Qué es real en el diagrama del pipeline
 
-En «Inicio» («Pipeline en vivo») se ve la línea de estado y, en celular, el diagrama en cinco pasos; completo, en «Arquitectura» → «Pipeline». Cada diagrama tiene una sola pestaña en «Arquitectura» y no se repite en otra (D-054, D-056). Mezcla datos reales con un dibujo fijo:
+«Pipeline y arquitectura» muestra el recorrido completo y la infraestructura en una sola
+ubicación, con una versión vertical del pipeline para pantallas estrechas. El dashboard
+muestra resultados y no contiene diagramas. Los estados y cifras provienen de la última
+respuesta disponible; las conexiones representan la estructura del sistema.
 
 | Real: se lee en cada visita | Representación: no cambia sola |
 |---|---|
 | La línea «Estado de la última ejecución (fecha y hora) · se actualiza al recargar la página»: la fecha es el inicio de la última ejecución del workflow en GitHub o, si GitHub no responde, de la última carga guardada en `etl_run`. | La estructura: qué pasos hay, en qué orden y por qué flecha pasan los datos. Se dibujó a partir del código (`semanal.yml`, `agent.py`, `etl.py`) y se actualiza a mano si el código cambia. |
 | El punto de color de cada paso: verde (OK), azul (en curso), rojo (falla). Un paso sin estado conocido no lleva punto. | Las capas (bronce, plata, oro) y las bandas de orquestación y observabilidad: agrupan los pasos para explicarlos. |
 | Las cifras bajo los pasos: años cargados, filas leídas y rechazadas, precios semanales, última semana, próxima ejecución. | Las etiquetas de las flechas (`CSV`, `manifest`, `raw_*`, `plata`, `SQL`): el tipo de dato que pasa, no un contador. |
-| El movimiento: los puntos que recorren las flechas y las líneas punteadas solo se mueven mientras hay una ejecución en curso. El resto del tiempo el diagrama queda quieto. | |
+| El estado «En curso» y el pulso de sus nodos identifican una ejecución real en progreso. | El movimiento de puntos por las conexiones ilustra el recorrido. Se activa por defecto y se puede pausar con «Animar el recorrido de los datos»; no significa que haya una carga en curso. |
 
 El diagrama no se refresca solo: muestra el estado del momento en que se abrió la página. Para ver un cambio, se recarga la página.
 
-La pestaña «DevOps y seguridad» dibuja la infraestructura por plataforma: cada recuadro es un lugar donde corre algo (ODEPA, tu computador, GitHub, Streamlit Community Cloud y los usuarios) y dentro están sus componentes; cada línea dice cómo se comunican (HTTPS · CSV, git push, `st.secrets`, etc.). Sigue las mismas reglas. Son reales el tamaño de `datos.db`, el número de funciones de prueba, los precios de la última semana (lo que agregó el job semanal), la próxima ejecución, la hora de los datos y los puntos de estado de ODEPA, el job, Streamlit y el informe. «Pruebas (CI)» no lleva punto: el panel no consulta el workflow `pruebas.yml`. En pantallas angostas este diagrama se ajusta al ancho y se lee con zoom.
+La sección «Pipeline y arquitectura» dibuja también la infraestructura por plataforma: cada recuadro es un lugar donde corre algo (ODEPA, tu computador, GitHub, Streamlit Community Cloud y los usuarios) y dentro están sus componentes; cada línea dice cómo se comunican (HTTPS · CSV, git push, `st.secrets`, etc.). Sigue las mismas reglas. Son reales el tamaño de `datos.db`, el número de funciones de prueba, los precios de la última semana (lo que agregó el job semanal), la próxima ejecución, la hora de los datos y los puntos de estado de ODEPA, el job, Streamlit y el informe. «Pruebas (CI)» no lleva punto: el panel no consulta el workflow `pruebas.yml`. En pantallas angostas este diagrama se ajusta al ancho y se lee con zoom.
 
 ### Zoom en los diagramas
 
-Los tres diagramas de «Arquitectura» (pipeline, modelo de datos e infraestructura) se abren ajustados al ancho y completos. Con dos dedos se acercan (pinch-zoom) y con un dedo, o el mouse, se arrastran dentro de su marco, sin mover el resto de la página. Los botones ＋, － y ⟲, bajo el marco a la derecha, acercan, alejan y vuelven al tamaño original. El zoom redibuja el diagrama a su nuevo tamaño, así que se ve nítido con cualquier acercamiento (hasta 6 veces). En el esquema estrella, al pasar el mouse sobre una tabla, o al tocarla en el celular, el panel de abajo explica qué guarda, cómo se une a `weekly_price` y cuántas filas tiene.
+Los diagramas de «Pipeline y arquitectura» y «Modelo de datos» se abren ajustados al ancho y completos. Con dos dedos se acercan (pinch-zoom) y con un dedo, o el mouse, se arrastran dentro de su marco, sin mover el resto de la página. Los botones ＋, － y ⟲, bajo el marco a la derecha, acercan, alejan y vuelven al tamaño original. El zoom redibuja el diagrama a su nuevo tamaño, así que se ve nítido con cualquier acercamiento (hasta 6 veces). En el esquema estrella, al pasar el mouse sobre una tabla, o al tocarla en el celular, el panel de abajo explica qué guarda, cómo se une a `weekly_price` y cuántas filas tiene.
 
 ## Cómo leer un aviso rojo
 
@@ -81,7 +84,7 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 
 ## Administración y enlaces
 
-Los enlaces del proyecto están en un solo lugar: la página «Enlaces» del menú, agrupados en código y operación (código, ejecuciones, informes, historial de cambios), fuentes de datos (las dos de ODEPA) y documentos (este MANUAL y las DECISIONES). Cada uno se abre en una pestaña nueva y tiene un botón «Copiar enlace».
+Los enlaces del proyecto están en un solo lugar: la página «Enlaces» del menú, agrupados en código y operación (código, ejecuciones, informes, historial de cambios), fuentes de datos (las dos de ODEPA) y documentos (este MANUAL y las DECISIONES). Cada recurso tiene una descripción y se abre en una pestaña nueva.
 
 La tarjeta «🔒 Administración» de «Operaciones» → «Ejecuciones» se abre con la clave de control (secreto `CONTROL_CODE` del panel). Muestra: administrar la app en Streamlit (Reboot, secretos, registros), lanzar el workflow en GitHub, crear un token, ver los tokens, el aviso «Tu token vence en X días» (destacado si faltan menos de 14) y el botón «Ejecutar ahora». El panel nunca muestra el token ni una parte de él.
 
@@ -109,3 +112,52 @@ La tarjeta «🔒 Administración» de «Operaciones» → «Ejecuciones» se ab
 | Data quality checks | Los controles que detienen la carga si algo no cuadra. |
 | Alertas / notificaciones | Las alertas K6 de precios y el correo de GitHub ante una falla. |
 | Tests / CI | Las pruebas automáticas; `pruebas.yml` las corre en cada cambio subido al repositorio. |
+
+
+## Recorrido del proyecto
+
+Al entrar, el diálogo «¿Quién consulta?» pide un perfil y abre siempre el dashboard. El perfil
+solo sugiere un recorrido: todas las páginas siguen disponibles. «Cambiar perfil»
+vuelve a abrir el diálogo. No se solicitan datos personales.
+
+El dashboard presenta los rankings de la última semana. El pipeline vivo y la
+arquitectura tienen su propia sección en el menú lateral. «Ajustar el ranking» permite cambiar Top N y separar alzas y bajas.
+El fondo alimentario es una imagen ilustrativa generada, no una fotografía de una
+fuente de datos. Los indicadores y gráficos flotan sobre superficies con contraste
+adaptado a Vantablack y Corporativo; conservan filtros, detalles al pasar el mouse
+y exportaciones. Los controles del ranking están encima de los gráficos.
+El panorama combina un anillo (observaciones válidas por grupo), curvas con área
+(precio nacional por canal durante 12 semanas) y una vista territorial 3D que
+abre automáticamente con un producto comparable. El selector conserva producto,
+variedad, calidad y unidad; cambia la tendencia y la vista territorial juntas.
+En 3D, arrastra para girar y usa los controles del gráfico para acercar o restablecer
+la cámara. La altura es el índice regional: 100 = promedio nacional del mismo canal.
+«Mapa 2D» presenta esos mismos índices en una matriz y reemplaza la escena 3D.
+Las leyendas permiten ocultar canales; las infoburbujas muestran cifras y contexto.
+El anillo cuenta observaciones, no ventas ni gasto. Las semanas sin precios quedan
+interrumpidas en las curvas. Los rankings detallados siguen debajo del panorama.
+Las secciones de Análisis BI permiten profundizar en cada pregunta y recuerdan la selección de producto al recorrerlas.
+
+El menú reúne Dashboard, análisis filtrados, Histórico y estacionalidad, Pipeline
+y arquitectura, Modelo de datos y DevOps en «Visualizaciones», en ese orden de
+lectura: panorama Top N → detalle filtrado → histórico → explicación técnica.
+En Dashboard, el Top N precede la composición, la tendencia y la vista territorial.
+Siguen Negocio y criterios, Datos e implementación, Operación y Documentación.
+Cada vista tiene acceso directo;
+«Anterior» y «Siguiente» siguen el mismo orden al inicio y al final de cada página.
+Todos los acordeones y detalles desplegables aparecen abiertos por defecto en todas
+las páginas, incluidos filtros, históricos, tablas, indicadores, archivos y documentos.
+Puedes cerrarlos a voluntad. El detalle de una ejecución también permanece abierto al terminar.
+«Ejecuciones» contiene el historial y la administración; «Monitoreo» muestra la
+calidad de la carga. «Código Python y SQL» abre los archivos Python y los esquemas SQL con su código
+visible, plegable a voluntad. El catálogo de queries está solo en «Consultas SQL»; los
+indicadores y la página de código enlazan a él. DevOps enlaza a «Pipeline y arquitectura».
+Solo hay dos temas: Vantablack y Corporativo. Un enlace antiguo con «Claro» abre Corporativo.
+
+DevOps presenta un ciclo compacto con los logos de Git, GitHub, Python, SQLite,
+pytest y Streamlit, y una descripción breve por fase. Los detalles de seguridad,
+observabilidad e informes se leen en filas, sin tarjetas grandes. La arquitectura
+por plataforma conserva su única ubicación en «Pipeline y arquitectura», con
+símbolos y logos pequeños; el ciclo explica las fases del trabajo. En móvil, el
+ciclo se presenta como una lista legible de las mismas fases. La animación es
+ilustrativa y pausable; los estados se basan en la última evidencia disponible.

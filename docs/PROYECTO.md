@@ -1,6 +1,17 @@
 # Guía del proyecto
 
-Textos que muestra el panel: «Inicio» (portada y pestañas de documentación, glosario incluido) y «Arquitectura» (pestaña «DevOps y seguridad»: DevOps, Seguridad, Observabilidad e Informes). El panel lee este archivo tal cual: para cambiar un texto de la página, se cambia aquí. Las reglas (RN), los indicadores (K) y las preguntas (P) se leen de `DISENO.md`; las cifras salen de la base en cada visita.
+Textos de Definición del proyecto, Indicadores, Reglas, Glosario y DevOps y seguridad. El dashboard abre con los resultados; Pipeline y arquitectura tiene su propia sección. El panel lee este archivo: para cambiar una explicación se cambia aquí. Las reglas (RN), los indicadores (K) y las preguntas (P) se leen de `DISENO.md`; las cifras salen de la base.
+
+## Marco de negocio
+
+| Elemento | Definición | Forma |
+|---|---|---|
+| Misión | Transformar los precios públicos de ODEPA en información semanal comparable para apoyar el seguimiento de precios, compras y abastecimiento en Chile. | mission |
+| Visión | Disponer de una base trazable y de un seguimiento sostenido que permita entender las diferencias de precio y anticipar qué situaciones merecen revisión por el equipo de negocio. | vision |
+| Objetivo de negocio | Reducir la consolidación manual de archivos y facilitar la detección de brechas, patrones estacionales y variaciones inusuales. El proyecto entrega evidencia descriptiva para la decisión humana. | mission |
+| Alcance | Ingesta de las dos fuentes oficiales de ODEPA, conservación del original, limpieza, normalización de unidades, controles de calidad, modelo estrella, indicadores, dashboard y automatización semanal para los años cargados en la base. | scope |
+| Fuera de alcance | Predecir precios, atribuir causalidad, medir la utilidad del comercio, recomendar compras de forma automática o representar todos los precios efectivos de cada establecimiento. | scope |
+| Criterios de aceptación | Comparaciones con semana, región y unidad compatibles; reglas y rechazos explicados; indicadores trazables a sus consultas; ejecuciones auditables y conservación de la última base válida cuando falla una carga. | rule |
 
 ## Resumen
 
@@ -80,7 +91,7 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 | quality_outliers | ¿Qué precios se marcaron como atípicos? | Calidad de datos |
 | quality_rejected_rows | ¿Qué filas se rechazaron, tal como venían, y por qué motivo? | Calidad de datos |
 | quality_unconvertible_units | ¿Qué precios quedaron sin unidad comparable, por producto y canal? | Calidad de datos |
-| quality_week_range | ¿Qué semanas y años hay cargados en la base? | Inicio |
+| quality_week_range | ¿Qué semanas y años hay cargados en la base? | Dashboard |
 | k6_national_weekly_price | ¿Cuál es el precio nacional de cada producto y canal, semana a semana? | Alertas |
 | k6_usual_range_sql | ¿Qué cambios semanales salen de su rango habitual? (versión SQL de K6) | Alertas |
 | k5_weekly_variations_sql | ¿Cuánto cambió cada precio frente a la semana anterior, en las series largas? (versión SQL de K5) | Brecha de precio |
@@ -100,7 +111,7 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 | Medida | Qué protege | Archivo |
 |---|---|---|
 | Base en solo lectura | El panel abre `datos.db` con `mode=ro`: ninguna página puede cambiar los datos. | bi/queries.py |
-| Lista blanca y parámetros | La pestaña «Consulta por clics» solo arma SQL con columnas fijas; cada valor elegido viaja como parámetro, nunca dentro del texto. | bi/explorer.py |
+| Lista blanca y parámetros | La sección «Consulta de datos» solo arma SQL con columnas fijas; cada valor elegido viaja como parámetro, nunca dentro del texto. | bi/explorer.py |
 | Secretos fuera del código | La clave de GitHub y el código de acceso de «Ejecutar ahora» viven en los secretos del panel; el código compara el código de acceso en tiempo constante. | bi/dashboard.py |
 | Permisos mínimos del workflow | El job semanal solo puede escribir contenido (el commit de la base) y crear issues (el informe). | .github/workflows/semanal.yml |
 | Datos crudos fuera del repositorio | Los CSV descargados, `raw.db` y los logs no se suben a GitHub (D-020). | .gitignore |
@@ -126,27 +137,27 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 
 | Sigla o término | Significado | Dónde aparece | Tema |
 |---|---|---|---|
-| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Inicio, Arquitectura | Fuentes |
+| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Dashboard, Arquitectura | Fuentes |
 | CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Arquitectura | Fuentes |
-| Pipeline | El flujo completo de cada martes, de ODEPA al panel: descarga, ETL, pruebas, guardado e informe. | Inicio, Arquitectura | Pipeline |
+| Pipeline | El flujo completo de cada martes, de ODEPA al panel: descarga, ETL, pruebas, guardado e informe. | Dashboard, Arquitectura | Pipeline |
 | Ingesta | La descarga de los archivos de ODEPA; la hace el agente de ingesta (`agent/agent.py`), que revisa que cada archivo traiga las columnas esperadas. | Arquitectura | Pipeline |
-| ETL | Extraer, transformar y cargar (`etl/etl.py`): limpia los datos, aplica las reglas y los guarda. | Arquitectura, Operaciones | Pipeline |
-| Data quality checks | Los controles que detienen la carga si algo no cuadra. | Inicio (Reglas de calidad), Operaciones | Pipeline |
-| Job, workflow | Tarea automática de GitHub Actions; el job semanal (`semanal.yml`) ejecuta el pipeline cada martes. | Arquitectura, Operaciones | Pipeline |
-| Cron | La programación del job semanal: cada martes a las 12:00 UTC. | Operaciones | Pipeline |
-| Ejecución (run) | Una pasada completa del job semanal. | Operaciones | Pipeline |
-| Tests, CI | Las pruebas automáticas (tests); la integración continua (CI) las corre solas en cada cambio del código (`pruebas.yml`). | Arquitectura (DevOps y seguridad) | Pipeline |
+| ETL | Extraer, transformar y cargar (`etl/etl.py`): limpia los datos, aplica las reglas y los guarda. | Arquitectura, Monitoreo y Ejecuciones | Pipeline |
+| Data quality checks | Los controles que detienen la carga si algo no cuadra. | Reglas de calidad, Monitoreo y Ejecuciones | Pipeline |
+| Job, workflow | Tarea automática de GitHub Actions; el job semanal (`semanal.yml`) ejecuta el pipeline cada martes. | Arquitectura, Monitoreo y Ejecuciones | Pipeline |
+| Cron | La programación del job semanal: cada martes a las 12:00 UTC. | Monitoreo y Ejecuciones | Pipeline |
+| Ejecución (run) | Una pasada completa del job semanal. | Monitoreo y Ejecuciones | Pipeline |
+| Tests, CI | Las pruebas automáticas (tests); la integración continua (CI) las corre solas en cada cambio del código (`pruebas.yml`). | DevOps y seguridad | Pipeline |
 | Commit, push | Guardar un cambio en el historial del código, y subirlo a GitHub. | Arquitectura | Pipeline |
-| Issue | Publicación en GitHub; aquí, el informe semanal. | Operaciones | Pipeline |
+| Issue | Publicación en GitHub; aquí, el informe semanal. | Monitoreo y Ejecuciones | Pipeline |
 | Bronce, plata, oro | Las capas de los datos: tal como llegan (bronce o staging, `raw.db`, que se reconstruye en cada ejecución y no se sube al repositorio), limpios con reglas (plata) y listos para analizar (oro). | Arquitectura | Base de datos |
 | Data warehouse | La base lista para analizar (`datos.db`), con el modelo estrella. | Arquitectura | Base de datos |
-| PK | Clave primaria: la columna que identifica cada fila de una tabla. | Arquitectura (Modelo de datos) | Base de datos |
-| FK | Clave foránea: la columna que apunta a la clave primaria de otra tabla. | Arquitectura (Modelo de datos) | Base de datos |
-| JOIN | Unión de dos tablas por su clave. | Arquitectura, Datos y código | Base de datos |
-| SQL | Lenguaje de consultas estructurado: con él se leen los datos de la base. | Datos y código | Base de datos |
-| KPI | Indicador clave: cada cifra que mide algo del negocio (K1 a K8). | Inicio, Análisis | Indicadores |
-| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Inicio (Reglas de calidad) | Indicadores |
-| Alertas, notificaciones | Las alertas K6 de precios, y el correo de GitHub cuando el job semanal falla. | Análisis, Operaciones | Indicadores |
-| API | La puerta por la que un programa habla con otro; el panel la usa para consultar GitHub. | Operaciones | Conexiones |
+| PK | Clave primaria: la columna que identifica cada fila de una tabla. | Modelo de datos | Base de datos |
+| FK | Clave foránea: la columna que apunta a la clave primaria de otra tabla. | Modelo de datos | Base de datos |
+| JOIN | Unión de dos tablas por su clave. | Arquitectura, Datos y SQL | Base de datos |
+| SQL | Lenguaje de consultas estructurado: con él se leen los datos de la base. | Datos y SQL | Base de datos |
+| KPI | Indicador clave: cada cifra que mide algo del negocio (K1 a K8). | Dashboard, Análisis | Indicadores |
+| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Reglas de calidad | Indicadores |
+| Alertas, notificaciones | Las alertas K6 de precios, y el correo de GitHub cuando el job semanal falla. | Análisis, Monitoreo y Ejecuciones | Indicadores |
+| API | La puerta por la que un programa habla con otro; el panel la usa para consultar GitHub. | Monitoreo y Ejecuciones | Conexiones |
 | HTTPS | Conexión web cifrada. | Arquitectura | Conexiones |
 | UTC | Hora universal; el job corre a las 12:00 UTC, 09:00 en Chile. | Arquitectura | Conexiones |

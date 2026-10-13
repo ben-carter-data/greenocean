@@ -167,3 +167,24 @@ def test_every_piece_of_every_diagram_explains_itself_on_hover():
     journey = architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK)
     assert "ETL = extraer, transformar y cargar" in journey
     assert all(text in architecture.TOOLTIPS for text in ["Pruebas (CI)", "datos.db", "raw.db"])
+
+
+def test_explicit_flow_illustration_moves_without_changing_the_recorded_state():
+    states = make_states(control.RUN_OK)
+    for builder in [architecture.build_journey_svg, architecture.build_vertical_journey_svg]:
+        still = builder(states, FIGURES, charts.MODE_DARK)
+        animated = builder(states, FIGURES, charts.MODE_DARK, animate_flow=True)
+        assert "animateMotion" not in still
+        assert "animateMotion" in animated
+        assert 'class="journey-running"' not in animated
+        assert ".journey-flow { display: none; }" in animated
+        assert set(states.values()) == {control.RUN_OK}
+
+
+def test_flow_can_be_paused_without_changing_a_real_running_status():
+    states = make_states(control.RUN_OK)
+    states["workflow"] = control.RUN_IN_PROGRESS
+    paused = architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK, animate_flow=False)
+    assert "animateMotion" not in paused
+    assert 'class="journey-running"' in paused
+    assert states["workflow"] == control.RUN_IN_PROGRESS

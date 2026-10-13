@@ -1,6 +1,5 @@
-"""Tests for the query builder of the Consultas page (T-42)."""
+"""Tests for the search of «Consulta por clics» (D-060)."""
 import sys
-from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -12,178 +11,120 @@ from etl import etl  # noqa: E402
 
 
 # region Sample data
-def make_price_rows():
-    """Four weekly prices: two weeks of March, one of April, two channels."""
-    return pd.DataFrame({
-        "week_start": pd.to_datetime(["2026-03-02", "2026-03-09", "2026-04-06",
-                                      "2026-03-02"]),
-        "product": ["Tomate", "Tomate", "Tomate", "Tomate"],
-        "region": ["Región de Valparaíso"] * 4,
-        "channel": ["Feria libre", "Feria libre", "Feria libre", "Supermercado"],
-        "normalized_unit": ["kilo"] * 4,
-        "value": [1000.0, 1200.0, 900.0, 2000.0],
-    })
-
-
 def build_sample_database(database_file):
-    """A small datos.db with two weekly prices and one flagged outlier."""
+    """A small datos.db: tomato in Valparaíso, wholesale and street market, one outlier
+    and one week missing in the street market series."""
     connection = etl.open_database(database_file, etl.SCHEMA_FILE)
     with connection:
         connection.execute("INSERT INTO dim_product VALUES (1, 'Hortalizas', 'Tomate', "
                            "'Larga vida', 'Primera')")
         connection.execute("INSERT INTO dim_region VALUES (5, 'Región de Valparaíso')")
-        connection.execute("INSERT INTO dim_channel VALUES (1, 'Feria libre', 'consumer')")
+        connection.execute("INSERT INTO dim_channel VALUES (1, 'Mayorista', 'wholesale')")
+        connection.execute("INSERT INTO dim_channel VALUES (2, 'Feria libre', 'consumer')")
         connection.executemany(
-            "INSERT INTO weekly_price VALUES (?, 1, 5, 1, 'kilo', ?, NULL, 1, ?)",
-            [("2026-03-02", 1000.0, None), ("2026-03-09", 1200.0, None),
-             ("2026-03-16", 9.0, etl.FLAG_OUTLIER)])
+            "INSERT INTO weekly_price VALUES (?, 1, 5, ?, 'kilo', ?, NULL, 1, ?)",
+            [("2026-03-02", 1, 500.0, None), ("2026-03-09", 1, 600.0, None),
+             ("2026-03-02", 2, 1000.0, None), ("2026-03-09", 2, 1200.0, None),
+             ("2026-03-16", 2, 9.0, etl.FLAG_OUTLIER), ("2026-03-23", 2, 1300.0, None)])
     connection.close()
+
+
+def make_filters(**values):
+    """A search over everything, from the first to the last sample week."""
+    filters = {field: explorer.ALL for field in explorer.LIST_FIELD_COLUMNS}
+    filters.update({explorer.FIELD_FIRST_WEEK: "2026-03-02",
+                    explorer.FIELD_LAST_WEEK: "2026-03-23", explorer.FIELD_ALERT: explorer.ALL})
+    filters.update(values)
+    return filters
+
+
+@pytest.fixture
+def database_file(tmp_path):
+    database_file = tmp_path / "datos.db"
+    build_sample_database(database_file)
+    return database_file
 # endregion
 
 
-# region Allowlist
-def test_unknown_view_grouping_measure_or_filter_is_rejected():
+# region Allowlist and parameters
+def test_unknown_field_is_rejected():
     with pytest.raises(ValueError):
-        explorer.validate_choices("Clientes", [], "Promedio", {})
-    with pytest.raises(ValueError):
-        explorer.validate_choices(explorer.VIEW_PRICES, ["product; DROP TABLE"],
-                                  "Promedio", {})
-    with pytest.raises(ValueError):
-        explorer.validate_choices(explorer.VIEW_PRICES, [], "SUM", {})
-    with pytest.raises(ValueError):
-        explorer.validate_choices(explorer.VIEW_PRICES, [], "Promedio", {"price": [1]})
+        explorer.build_search_query(make_filters(price_above="100"))
 
 
-def test_alerts_have_no_region_because_they_are_national():
-    with pytest.raises(ValueError):
-        explorer.validate_choices(explorer.VIEW_ALERTS, [explorer.GROUP_REGION],
-                                  "Promedio", {})
-
-
-def test_week_and_month_cannot_be_grouped_together():
-    with pytest.raises(ValueError):
-        explorer.validate_choices(explorer.VIEW_MARGINS,
-                                  [explorer.GROUP_WEEK, explorer.GROUP_MONTH],
-                                  "Promedio", {})
-
-
-def test_prices_are_always_grouped_by_unit():
-    assert explorer.list_group_columns(explorer.VIEW_PRICES, [explorer.GROUP_PRODUCT]) == [
-        "product", explorer.UNIT_COLUMN]
-    assert explorer.list_group_columns(explorer.VIEW_MARGINS, [explorer.GROUP_PRODUCT]) == [
-        "product"]
-# endregion
-
-
-# region SQL parameters
 def test_chosen_values_travel_as_parameters_never_inside_the_sql():
-    dangerous_value = "Tomate'); DROP TABLE weekly_price; --"
-    sql, parameters = explorer.build_price_query({
-        explorer.FILTER_PRODUCTS: [dangerous_value, "Palta"],
-        explorer.FILTER_FIRST_WEEK: date(2026, 3, 1)})
-    assert dangerous_value not in sql
-    assert "dim_product.product IN (?, ?)" in sql
-    assert "weekly_price.week_start >= ?" in sql
-    assert parameters == [dangerous_value, "Palta", "2026-03-01"]
+    sql, parameters = explorer.build_search_query(make_filters(product="Tomate'; DROP TABLE x"))
+    assert "DROP TABLE" not in sql
+    assert "Tomate'; DROP TABLE x" in parameters
+    assert "dim_product.product = ?" in sql
 
 
-def test_price_rows_leave_flagged_prices_out_and_apply_date_filters(tmp_path):
-    database_file = tmp_path / "datos.db"
-    build_sample_database(database_file)
-    rows = explorer.read_price_rows({explorer.FILTER_FIRST_WEEK: date(2026, 3, 9)},
-                                    database_file)
-    assert rows["value"].to_list() == [1200.0]
-
-
-def test_price_options_come_from_the_database(tmp_path):
-    database_file = tmp_path / "datos.db"
-    build_sample_database(database_file)
-    options = explorer.read_price_options(database_file)
-    assert options[explorer.FILTER_PRODUCTS] == ["Tomate"]
-    assert options[explorer.FILTER_FIRST_WEEK] == date(2026, 3, 2)
-    assert options[explorer.FILTER_LAST_WEEK] == date(2026, 3, 16)
+def test_the_week_before_the_first_one_is_read_to_measure_its_change():
+    _, parameters = explorer.build_search_query(make_filters(first_week="2026-03-09"))
+    assert parameters[0] == "2026-03-02" and parameters[-1] == "2026-03-09"
 # endregion
 
 
-# region Filters, grouping and measure
-def test_filters_by_list_and_by_date_range():
-    rows = explorer.filter_rows(make_price_rows(), {
-        explorer.FILTER_CHANNELS: ["Feria libre"],
-        explorer.FILTER_FIRST_WEEK: date(2026, 3, 9),
-        explorer.FILTER_LAST_WEEK: date(2026, 4, 30)})
-    assert rows["value"].to_list() == [1200.0, 900.0]
+# region Rows, changes and gaps
+def test_search_leaves_flagged_prices_out_and_keeps_the_week_range(database_file):
+    rows = explorer.read_search_rows(make_filters(first_week="2026-03-09"), database_file)
+    assert sorted(rows["week_start"].dt.strftime("%Y-%m-%d").unique()) == [
+        "2026-03-09", "2026-03-23"]
+    assert 9.0 not in rows["price"].to_list()
 
 
-def test_grouping_by_month_uses_the_monday_of_each_week():
-    result = explorer.build_result(explorer.VIEW_PRICES, make_price_rows(),
-                                   [explorer.GROUP_CHANNEL, explorer.GROUP_MONTH],
-                                   "Promedio", {})
-    feria = result[result["channel"] == "Feria libre"]
-    assert feria["month"].to_list() == ["2026-03", "2026-04"]
-    assert feria["value"].to_list() == [1100.0, 900.0]
-    assert feria[explorer.COUNT_COLUMN].to_list() == [2, 1]
+def test_change_is_against_the_week_right_before_and_gap_over_wholesale(database_file):
+    rows = explorer.read_search_rows(make_filters(), database_file)
+    street = rows[rows["channel"] == "Feria libre"]
+    street = street.set_index(street["week_start"].dt.strftime("%Y-%m-%d"))
+    assert street.loc["2026-03-09", "variation"] == pytest.approx(0.2)
+    assert street.loc["2026-03-09", "gap"] == pytest.approx(1.0)
+    # The week of 16 March is an outlier: 23 March has no week right before it.
+    assert pd.isna(street.loc["2026-03-23", "variation"])
+    wholesale = rows[rows["channel"] == "Mayorista"]
+    assert wholesale["gap"].isna().all()
 
 
-def test_each_measure_summarizes_the_group():
-    rows = make_price_rows()
-    measured = {measure: explorer.build_result(explorer.VIEW_PRICES, rows, [], measure,
-                                               {})["value"].iloc[0]
-                for measure in explorer.MEASURES}
-    assert measured == {"Promedio": 1275.0, "Mediana": 1100.0, "Mínimo": 900.0,
-                        "Máximo": 2000.0}
+def test_a_list_field_filters_by_its_value(database_file):
+    rows = explorer.read_search_rows(make_filters(source="wholesale"), database_file)
+    assert set(rows["channel"]) == {"Mayorista"}
 
 
-def test_a_combination_without_rows_gives_an_empty_result():
-    result = explorer.build_result(explorer.VIEW_PRICES, make_price_rows(),
-                                   [explorer.GROUP_PRODUCT], "Promedio",
-                                   {explorer.FILTER_PRODUCTS: ["Papaya"]})
-    assert result.empty
-
-
-def test_at_most_one_thousand_rows_are_shown():
-    result = pd.DataFrame({"value": range(1500)})
-    shown, is_truncated = explorer.limit_rows(result)
-    assert len(shown) == 1000
-    assert is_truncated
-    assert explorer.limit_rows(result.head(10))[1] is False
+def test_options_and_history_come_from_the_database(database_file):
+    options = explorer.read_search_options(database_file)
+    assert options[explorer.FIELD_CHANNEL] == ["Feria libre", "Mayorista"]
+    assert options["weeks"][0] == "2026-03-23"
+    row = explorer.read_search_rows(make_filters(), database_file).iloc[0]
+    history = explorer.read_series_history(row, weeks=12, database_file=database_file)
+    assert history["week_start"].is_monotonic_increasing
+    assert history["week_start"].max() == row["week_start"]
 # endregion
 
 
-# region Views and chart data
-def test_margins_and_alerts_are_measured_in_percent():
-    margins = explorer.prepare_margin_rows(pd.DataFrame({"margin": [0.601]}))
-    alerts = explorer.prepare_alert_rows(pd.DataFrame({"variation": [-0.145]}))
-    assert margins["value"].iloc[0] == pytest.approx(60.1)
-    assert alerts["value"].iloc[0] == pytest.approx(-14.5)
+# region Alert states, summary and pages
+def test_alert_state_follows_the_k6_distance():
+    assert explorer.classify_alert_state(1.0) == explorer.ALERT_NORMAL
+    assert explorer.classify_alert_state(1.8) == explorer.ALERT_ATTENTION
+    assert explorer.classify_alert_state(2.5) == explorer.ALERT_OUT
+    assert explorer.classify_alert_state(float("nan")) == explorer.ALERT_UNKNOWN
 
 
-def test_reader_sees_spanish_column_titles():
-    result = explorer.build_result(explorer.VIEW_PRICES, make_price_rows(),
-                                   [explorer.GROUP_PRODUCT], "Mediana", {})
-    titled = explorer.name_columns_for_reader(result, explorer.VIEW_PRICES, "Mediana")
-    assert titled.columns.to_list() == ["Producto", "Unidad", "Mediana · precio ($)",
-                                        "Precios semanales"]
+def test_a_price_without_a_usual_range_is_without_data(database_file):
+    rows = explorer.read_search_rows(make_filters(), database_file)
+    states = pd.DataFrame(columns=explorer.alerts.SERIES_COLUMNS
+                          + ["week_start", "alert_state", "alert_distance"])
+    states["week_start"] = pd.to_datetime(states["week_start"])
+    rows = explorer.add_alert_states(rows, states)
+    assert set(rows["alert_state"]) == {explorer.ALERT_UNKNOWN}
+    assert explorer.summarize_latest_week(rows)[explorer.ALERT_UNKNOWN] == 1
+    assert list(explorer.summarize_groups(rows).columns) == explorer.ALERT_STATES
+    assert len(explorer.keep_alert_state(rows, explorer.ALERT_OUT)) == 0
 
 
-def test_line_chart_has_one_series_per_group():
-    result = explorer.build_result(explorer.VIEW_PRICES, make_price_rows(),
-                                   [explorer.GROUP_CHANNEL, explorer.GROUP_WEEK],
-                                   "Promedio", {})
-    line_rows = explorer.prepare_line_rows(result)
-    assert set(line_rows["channel"]) == {"Feria libre · kilo", "Supermercado · kilo"}
-
-
-def test_bar_chart_shows_the_largest_values_first():
-    result = explorer.build_result(explorer.VIEW_PRICES, make_price_rows(),
-                                   [explorer.GROUP_CHANNEL], "Promedio", {})
-    bar_rows = explorer.prepare_bar_rows(result)
-    assert bar_rows["label"].to_list() == ["Supermercado · kilo", "Feria libre · kilo"]
+def test_pages_say_which_rows_they_show():
+    rows = pd.DataFrame({"value": range(45)})
+    shown, first, last, total = explorer.take_page(rows, 20, 3)
+    assert (len(shown), first, last, total) == (5, 41, 45, 45)
+    assert explorer.take_page(rows, 20, 9)[1:3] == (41, 45)
+    assert explorer.take_page(rows.head(0), 20, 1)[1:] == (0, 0, 0)
 # endregion
-
-
-def test_numbers_on_screen_are_written_as_in_chile():
-    result = explorer.build_result(explorer.VIEW_PRICES, make_price_rows(),
-                                   [explorer.GROUP_CHANNEL], "Promedio", {})
-    titled = explorer.name_columns_for_reader(result, explorer.VIEW_PRICES, "Promedio")
-    table = explorer.write_numbers_for_reader(titled, explorer.VIEW_PRICES, "Promedio")
-    assert table["Promedio · precio ($)"].to_list() == ["1.033", "2.000"]
