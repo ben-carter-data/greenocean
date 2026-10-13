@@ -211,31 +211,34 @@ EXPLORER_RESULT_HINT = ("Una fila por grupo, con la medida elegida y cuántos va
                         "resume. Los precios marcados como atípicos o sin unidad convertible "
                         "quedan fuera, igual que en el resto del panel.")
 # The project page. Texts come from docs/DISENO.md (sections 2 to 4) and DECISIONES.md.
-PROBLEM_TEXT = (
-    "Un analista de pricing, compras o abastecimiento que quiere seguir los precios de los "
-    "alimentos en Chile tiene que bajar archivos de dos fuentes de ODEPA cada semana, "
-    "convertir unidades distintas (cajas, bins, mallas, kilos) y cruzarlos a mano. Las "
-    "fuentes existen, pero están separadas y no se pueden comparar sin trabajo previo. "
-    "Este proyecto hace ese trabajo solo, cada semana, y deja el resultado en un panel.")
-AUDIENCE_TEXT = (
-    "**Analista de pricing o compras**: márgenes, canales, regiones y alertas.  \n"
-    "**Equipo de datos**: si la carga funcionó y qué quedó fuera.  \n"
-    "Más adelante: un resumen para gerencia y una vista simple para consumidores.")
-WHY_TEXT = (
-    "Los datos son abiertos y oficiales, el cruce entre precio mayorista y precio al "
-    "consumidor se pudo verificar con datos reales, y las preguntas son las que se hace "
-    "a diario un área de pricing o abastecimiento. Se descartaron el scraping de "
-    "supermercados (condiciones de uso inciertas) y otros temas con menos valor al cruzar.")
-DATA_TEXT = (
-    "Dos conjuntos de datos abiertos de ODEPA (Ministerio de Agricultura): **precios "
-    "mayoristas** de frutas y hortalizas, diarios, y **precios al consumidor**, semanales, "
-    "por región y tipo de comercio. Licencia Creative Commons Atribución.")
-LIMITS_TEXT = (
-    "Precios nominales, sin ajuste por inflación: al comparar años, parte de la subida "
-    "es inflación. Datos desde enero de 2022. "
-    "La papa no tiene margen porque sus calidades no coinciden entre las dos fuentes. "
-    "Las cifras del panel son cálculos sobre datos oficiales; los hallazgos se publican "
-    "solo después de verificarlos.")
+# Idea de negocio, in short pieces: what each card says, without repeating
+# «Empieza aquí» (the problem in three sentences lives there).
+AUDIENCE_CARDS = [
+    ("Analista de pricing o compras", "Márgenes, canales, regiones y alertas.", PAGE_ANALYSIS),
+    ("Equipo de datos", "Si la carga funcionó y qué quedó fuera.", TAB_QUALITY),
+    ("Más adelante", "Un resumen para gerencia y una vista simple para consumidores.", None),
+]
+SOURCE_LABELS = {"Precios mayoristas": "Diario · frutas y hortalizas",
+                 "Precios al consumidor": "Semanal · todos los grupos"}
+LIMIT_CARDS = [
+    ("Precios nominales", "Sin ajuste por inflación: al comparar años, parte de la subida es "
+                          "inflación."),
+    ("Desde enero de 2022", "Los datos cargados empiezan en enero de 2022."),
+    ("La papa no tiene margen", "Sus calidades no coinciden entre las dos fuentes."),
+    ("Cálculos, no hallazgos", "Las cifras del panel son cálculos sobre datos oficiales; los "
+                               "hallazgos se publican solo después de verificarlos."),
+]
+WHY_TEXT = ("Los datos son abiertos y oficiales, el cruce entre precio mayorista y precio al "
+            "consumidor se pudo verificar con datos reales, y las preguntas son las que se "
+            "hace a diario un área de pricing o abastecimiento.")
+WHY_DETAILS = ("Se descartaron el scraping de supermercados (condiciones de uso inciertas) y "
+               "otros temas con menos valor al cruzar.")
+MATCH_DETAILS = (
+    "**Clave de cruce:** producto + variedad + calidad + región + semana (lunes de inicio).  \n"
+    "**Reglas que lo hacen:** RN-02 (nombres), RN-03 a RN-05 (unidades), RN-07 y RN-08 "
+    "(semanas) y RN-06 (margen solo con la misma unidad).  \n"
+    "**Dónde ocurre:** `etl/etl.py` lee `raw_wholesale` y `raw_consumer` de `raw.db` y deja "
+    "el resultado en `weekly_price` de `datos.db`.")
 # (question, page where it is answered, state: available, partial or pending, note)
 BUSINESS_QUESTIONS = [
     ("¿Cuál es el margen entre el precio mayorista y el precio al consumidor, y cómo "
@@ -411,6 +414,44 @@ def build_style_css(mode):
         [data-testid="stMainBlockContainer"] {{ padding-top: 2.5rem; }}
         [class*="st-key-card_start_here"] li {{ font-size: 0.9rem; line-height: 1.4; }}
     }}
+    /* Text sections (D-057): a title with one sentence, cards in a grid that stack
+       by themselves on narrow screens, numbered steps and folded details. */
+    .section-head {{ margin: 22px 0 10px 0; text-align: left; }}
+    .section-title {{ font-size: 1.3rem; font-weight: 700; color: {palette["strong_text"]};
+                      margin: 0; line-height: 1.3; }}
+    .section-lead {{ font-size: 1rem; color: {palette["text"]}; margin: 4px 0 0 0;
+                     max-width: 72ch; line-height: 1.5; }}
+    .subsection-title {{ font-size: 1.08rem; font-weight: 650; color: {palette["strong_text"]};
+                         margin: 0; }}
+    .info-grid {{ display: grid; gap: 12px; margin: 6px 0 8px 0;
+                  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }}
+    .info-card {{ display: flex; flex-direction: column; gap: 6px; min-width: 0;
+                  padding: 16px 18px; border-radius: 16px; text-align: left;
+                  background: {palette["card"]}; border: 1px solid {palette["card_border"]}; }}
+    .info-card.is-warning {{ border-left: 3px solid {palette["rise"]}; }}
+    .info-label {{ font-size: 0.76rem; letter-spacing: 0.05em; text-transform: uppercase;
+                   color: {palette["text"]}; }}
+    .info-title {{ font-size: 1.02rem; font-weight: 600; color: {palette["strong_text"]};
+                   line-height: 1.35; }}
+    .info-text {{ font-size: 0.94rem; color: {palette["strong_text"]}; line-height: 1.5;
+                  overflow-wrap: break-word; }}
+    .info-note {{ font-size: 0.83rem; color: {palette["text"]}; line-height: 1.45; }}
+    .info-link {{ margin-top: auto; padding-top: 4px; font-size: 0.9rem; }}
+    .info-card code, .steps code {{ overflow-wrap: anywhere; }}
+    /* !important: Streamlit indents every list of a Markdown block. */
+    .steps {{ list-style: none; counter-reset: step; padding: 0 !important;
+              margin: 6px 0 8px 0 !important; display: grid; gap: 10px; }}
+    .steps li {{ counter-increment: step; position: relative; min-width: 0; margin: 0;
+                 padding: 14px 16px 14px 58px; border-radius: 14px; line-height: 1.5;
+                 background: {palette["card"]}; border: 1px solid {palette["card_border"]};
+                 color: {palette["strong_text"]}; font-size: 0.94rem; }}
+    .steps li::before {{ content: counter(step); position: absolute; left: 16px; top: 13px;
+                         width: 28px; height: 28px; border-radius: 50%; font-weight: 700;
+                         display: flex; align-items: center; justify-content: center;
+                         background: {palette["accent"]}; color: {palette["background"]}; }}
+    .stat-line {{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
+                  margin: 4px 0 6px 0; }}
+    .stat-line strong {{ font-size: 1.35rem; color: {palette["strong_text"]}; }}
     table.card-table {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }}
     table.card-table th {{ text-align: left; color: {palette["text"]}; font-weight: 500;
                           padding: 6px 4px; border-bottom: 1px solid {palette["card_border"]}; }}
@@ -789,6 +830,53 @@ def choose_product_key(query_name, columns=None):
 # endregion
 
 
+# region Text sections
+def format_inline(text):
+    """Escaped text with the two marks the documents use: **bold** and `code`."""
+    escaped = html.escape(text)
+    escaped = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
+    return re.sub(r"`([^`]+)`", r"<code>\1</code>", escaped)
+
+
+def show_section_intro(title, lead, is_subsection=False):
+    """A section title and one sentence that says what the section is for."""
+    title_class = "subsection-title" if is_subsection else "section-title"
+    st.markdown(f'<div class="section-head"><div class="{title_class}">{html.escape(title)}'
+                f'</div><div class="section-lead">{format_inline(lead)}</div></div>',
+                unsafe_allow_html=True)
+
+
+def build_info_card_html(title, text, label=None, note=None, link=None, is_warning=False):
+    """One card: an optional label, a title, a short text, a note and a named link."""
+    parts = [f'<div class="info-label">{html.escape(label)}</div>' if label else "",
+             f'<div class="info-title">{format_inline(title)}</div>',
+             f'<div class="info-text">{format_inline(text)}</div>',
+             f'<div class="info-note">{format_inline(note)}</div>' if note else "",
+             f'<div class="info-link">{link}</div>' if link else ""]
+    kind = " is-warning" if is_warning else ""
+    return f'<div class="info-card{kind}">{"".join(parts)}</div>'
+
+
+def show_info_cards(cards_html):
+    """Cards in a grid: side by side when they fit, stacked on narrow screens."""
+    st.markdown(f'<div class="info-grid">{"".join(cards_html)}</div>', unsafe_allow_html=True)
+
+
+def build_steps_html(steps):
+    """Numbered steps of a process, in order: [(label, text)]."""
+    items = "".join(f"<li><strong>{format_inline(label)}:</strong> {format_inline(text)}</li>"
+                    for label, text in steps)
+    return f'<ol class="steps">{items}</ol>'
+
+
+def build_place_link(place, verb="Ver en"):
+    """A link whose words say where it goes: «Ver en Análisis › Brecha de precio»."""
+    page = PAGE_OF_TAB.get(place)
+    destination = f"{page} › {place}" if page else place
+    return build_link_html(f"{verb} {destination}".strip(), build_place_address(place))
+# endregion
+
+
 # region Page header
 def show_page_header(title, subtitle):
     """Page title, a one-line explanation and the freshness of the data."""
@@ -1141,48 +1229,71 @@ def show_start_here(mode):
         show_journeys()
 
 
-def build_question_rows():
-    """Table cells: question number, question, page that answers it and its state."""
-    rows = []
-    for number, (question, page, state, scope) in enumerate(BUSINESS_QUESTIONS, start=1):
-        state_text, kind = QUESTION_STATES[state]
-        rows.append([f"P{number}", html.escape(question), html.escape(page),
-                     build_chip(state_text, kind, scope)])
-    return rows
+def build_question_cards():
+    """One card per business question: its state, where it applies and where to see it."""
+    cards = []
+    for number, (question, place, state, scope) in enumerate(BUSINESS_QUESTIONS, start=1):
+        state_text, _ = QUESTION_STATES[state]
+        cards.append(build_info_card_html(question, scope, label=f"P{number} · {state_text}",
+                                          link=build_place_link(place)))
+    return cards
 
 
-def show_business_idea_tab(mode):
-    """The business idea: the problem, who it is for and the questions it answers."""
-    problem_column, audience_column = st.columns([3, 2])
-    with problem_column, open_card("project_problem", "El problema"):
-        st.markdown(PROBLEM_TEXT)
-    with audience_column, open_card("project_audience", "Para quién"):
-        st.markdown(AUDIENCE_TEXT)
-    with open_card("project_questions", "Preguntas de negocio que responde",
-                   hint="Pasa el mouse sobre el estado para ver a qué productos aplica."):
-        st.markdown(build_html_table(["", "Pregunta", "Dónde verla", "Estado"],
-                                     build_question_rows()), unsafe_allow_html=True)
-    why_column, data_column, limits_column = st.columns(3)
-    with why_column, open_card("project_why", "Por qué este tema"):
-        st.markdown(WHY_TEXT)
-    with data_column, open_card("project_data", "Los datos"):
-        st.markdown(DATA_TEXT)
-    with limits_column, open_card("project_limits", "Límites"):
-        st.markdown(LIMITS_TEXT)
+def show_questions(mode):
+    """What the panel answers, first: it is what a visitor came for."""
+    show_section_intro("Preguntas que responde", "Seis preguntas de un área de pricing o "
+                       "abastecimiento; cada una lleva a la pestaña donde se ve.", True)
+    show_info_cards(build_question_cards())
 
 
-def show_sources_tab(mode):
-    """Both ODEPA sources, how they are matched and the real match coverage."""
-    text_column, figure_column = st.columns([3, 1])
-    with text_column, open_card("sources_text", "Dos fuentes, una clave"):
-        st.markdown(project.read_section(project.read_document(project.PROJECT_GUIDE_FILE),
-                                         "Fuentes y cruces"))
+def show_audience(mode):
+    """Who the panel is for, and where each reader starts."""
+    show_section_intro("Para quién", "Quién lo usa hoy y qué viene después.", True)
+    show_info_cards([build_info_card_html(
+        title, text, link=build_place_link(place, "Ir a") if place else None,
+        note=None if place else "Pendiente.") for title, text, place in AUDIENCE_CARDS])
+
+
+def show_sources(mode):
+    """Both ODEPA sources, the three steps that make them comparable, and the coverage."""
+    section = project.read_section(project.read_document(project.PROJECT_GUIDE_FILE),
+                                   "Fuentes y cruces")
+    show_section_intro("Las fuentes y cómo se cruzan", "Dos archivos abiertos de ODEPA "
+                       "(Ministerio de Agricultura), uno por año. Existen, pero están "
+                       "separados: antes de compararlos hay que resolver tres diferencias.", True)
+    show_info_cards([build_info_card_html(name, text[0].upper() + text[1:],
+                                          label=SOURCE_LABELS.get(name))
+                     for name, text in project.parse_labeled_items(section)])
+    st.markdown('<div class="info-note">Licencia Creative Commons Atribución. Los enlaces a '
+                f'las fuentes están en {build_place_link(TAB_LINKS, "")}'
+                '.</div>', unsafe_allow_html=True)
+    st.markdown(build_steps_html(project.parse_labeled_items(section, numbered=True)),
+                unsafe_allow_html=True)
     keys_with_margin, consumer_keys = read_match_coverage()
-    with figure_column, open_card("sources_coverage", "Cobertura del cruce", kpi="K7"):
-        st.markdown(f'<div class="kpi-value">{keys_with_margin} de {consumer_keys}</div>'
-                    f'<div class="kpi-note">claves de frutas y verduras del consumidor con '
-                    f'margen ({charts.format_percent(keys_with_margin / consumer_keys * 100)})'
-                    f'</div>', unsafe_allow_html=True)
+    st.markdown(f'<p class="info-text">{format_inline(project.read_closing_paragraph(section))}'
+                f'</p><div class="stat-line"><span class="kpi-label">Cobertura del cruce (K7)'
+                f'</span><strong>{keys_with_margin} de {consumer_keys} claves</strong>'
+                f'<span class="info-note">'
+                f'{charts.format_percent(keys_with_margin / consumer_keys * 100)} de las claves '
+                f'de frutas y verduras del consumidor</span>{build_kpi_link("K7")}</div>',
+                unsafe_allow_html=True)
+    with st.expander("Ver detalles"):
+        st.markdown(MATCH_DETAILS)
+
+
+def show_limits(mode):
+    """What the figures do not say, always in sight."""
+    show_section_intro("Límites", "Lo que hay que tener presente al leer cualquier cifra.",
+                       True)
+    show_info_cards([build_info_card_html(title, text, is_warning=True)
+                     for title, text in LIMIT_CARDS])
+
+
+def show_why(mode):
+    """Why this subject, with the discarded alternatives folded."""
+    show_section_intro("Por qué este tema", WHY_TEXT, True)
+    with st.expander("Ver detalles"):
+        st.markdown(WHY_DETAILS)
 
 
 @st.cache_data
@@ -1483,9 +1594,12 @@ def show_files_tab(mode):
 
 
 def show_idea_tab(mode):
-    """The business idea, then both sources and how they are matched."""
-    show_business_idea_tab(mode)
-    show_sources_tab(mode)
+    """The business idea: the most useful first (questions), then who it is for, the
+    sources and how they are matched, the limits and why this subject (D-057)."""
+    show_section_intro("Idea de negocio", "Qué preguntas responde el panel, para quién está "
+                       "hecho, de dónde salen los datos y qué límites tiene.")
+    for show_part in [show_questions, show_audience, show_sources, show_limits, show_why]:
+        show_part(mode)
 
 
 def show_glossary_tab(mode):

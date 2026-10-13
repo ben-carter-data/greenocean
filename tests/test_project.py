@@ -224,3 +224,13 @@ def test_d054_week_prices_match_the_rows_of_that_week():
     latest_week = rows["week_start"].max()
     assert project.count_week_prices(latest_week) == (rows["week_start"] == latest_week).sum()
     assert project.count_week_prices("1999-01-04") == 0
+
+
+def test_d057_labeled_items_and_closing_paragraph_come_from_the_document():
+    section = project.read_section(project.read_document(project.PROJECT_GUIDE_FILE),
+                                   "Fuentes y cruces")
+    assert [label for label, _ in project.parse_labeled_items(section)] == [
+        "Precios mayoristas", "Precios al consumidor"]
+    assert [label for label, _ in project.parse_labeled_items(section, numbered=True)] == [
+        "Nombres", "Unidades", "Tiempo"]
+    assert project.read_closing_paragraph(section).startswith("Solo hay margen")

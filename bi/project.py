@@ -150,6 +150,19 @@ def read_section(text, heading):
     return "\n".join(lines[start:end]).strip()
 
 
+def parse_labeled_items(text, numbered=False):
+    """[(label, text)] of the list items written as «- **Label:** text» (or «1. ...»)."""
+    marker = r"\d+\." if numbered else "-"
+    return re.findall(rf"^{marker} \*\*(.+?):\*\* (.+)$", text, flags=re.MULTILINE)
+
+
+def read_closing_paragraph(text):
+    """The last paragraph of a section that is not part of a list."""
+    paragraphs = [block.strip() for block in text.split("\n\n") if block.strip()]
+    return next(block for block in reversed(paragraphs)
+                if not re.match(r"^(-|\d+\.) ", block))
+
+
 def split_sections(text):
     """[(heading, body)] for every '## ' section of a document."""
     parts = re.split(r"^## (.+)$", text, flags=re.MULTILINE)
