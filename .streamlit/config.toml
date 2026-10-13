@@ -1,8 +1,5 @@
-# Visual theme of the dashboard (D-037, D-052). The reader chooses one of three
-# themes in the sidebar: Vantablack (dark base) or Corporativo and Claro (light
-# base). The page, sidebar and charts take the colors of the chosen theme from
-# bi/charts.py; Streamlit's own widgets (lists, tables, code) follow these two
-# base modes, which the dashboard switches to match the theme.
+# Two themes: Vantablack with raised slate surfaces, and Corporativo.
+# The page stays black in Vantablack; fields and cards have their own contrast.
 [theme]
 base = "dark"
 baseRadius = "large"
@@ -11,9 +8,9 @@ showSidebarBorder = false
 [theme.dark]
 primaryColor = "#2fd3f0"
 backgroundColor = "#030304"
-secondaryBackgroundColor = "#0b0c0f"
+secondaryBackgroundColor = "#121a27"
 textColor = "#f3f5f9"
-borderColor = "#1b1e26"
+borderColor = "#344256"
 
 [theme.light]
 primaryColor = "#1d5fbf"

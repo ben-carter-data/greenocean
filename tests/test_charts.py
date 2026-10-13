@@ -110,10 +110,10 @@ def test_bars_can_keep_the_order_they_arrive_in():
     assert chart["layer"][0]["encoding"]["y"]["sort"] == ["0", "1", "2"]
 
 
-def test_t44_three_themes_share_the_validated_channel_colors_of_their_base():
+def test_two_visible_themes_keep_legacy_light_palette_compatible():
     """Vantablack is dark; Corporativo and Claro are light. Only surfaces, ink and
     accent change: the channel colors stay the ones validated for color blindness."""
-    assert charts.THEMES == ["Vantablack", "Corporativo", "Claro"]
+    assert charts.THEMES == ["Vantablack", "Corporativo"]
     keys = set(charts.PALETTES[charts.MODE_DARK])
     for theme in charts.THEMES:
         palette = charts.PALETTES[theme]

@@ -11,7 +11,7 @@ Only steps that really exist in this project are drawn.
 """
 import html
 
-from bi import charts, control
+from bi import brand_icons, charts, control
 
 # region Constants
 STATE_UNKNOWN = "unknown"
@@ -293,10 +293,7 @@ def draw_cloud_icon(x, y, color):
 
 # region Pieces
 def build_style(is_running):
-    """Pulse for running steps; the dashed links move only while a run is in progress.
-
-    The rest of the time the diagram stays still: only its status dots speak.
-    """
+    """Style the flow illustration; status pulses are attached to real running nodes."""
     dash_motion = ("animation: journey-dash 1.2s linear infinite;" if is_running else "")
     return f"""<style>
     .journey-running {{ animation: journey-pulse 1.2s ease-in-out infinite; }}
@@ -305,6 +302,7 @@ def build_style(is_running):
     @keyframes journey-dash {{ to {{ stroke-dashoffset: -20; }} }}
     @media (prefers-reduced-motion: reduce) {{
       .journey-running, .journey-dashed {{ animation: none; }}
+      .journey-flow {{ display: none; }}
     }}
     </style>"""
 
@@ -364,7 +362,7 @@ def build_link(start, end, color, palette, chip_text=None, dashed=False, moving_
     parts = [f'<path{dash_class} d="{path}" fill="none" stroke="{color}" stroke-width="1.6" '
              f'opacity="0.85"/>']
     if moving_dot:
-        parts.append(f'<circle r="3.5" fill="{color}"><animateMotion dur="2.4s" '
+        parts.append(f'<circle class="journey-flow" r="3.5" fill="{color}"><animateMotion dur="2.4s" '
                      f'repeatCount="indefinite" path="{path}"/></circle>')
     if chip_text:
         parts.append(build_chip(middle_x, (y1 + y2) / 2, chip_text, color, palette))
@@ -540,7 +538,7 @@ def build_container(palette):
             f'</text>')
 
 
-def build_journey_svg(states, figures, mode):
+def build_journey_svg(states, figures, mode, animate_flow=None):
     """The whole live diagram, in the colors of the active mode.
 
     states holds the state of: sources, download, etl, load, panel, report,
@@ -551,10 +549,10 @@ def build_journey_svg(states, figures, mode):
              f'width="{WIDTH}" height="{HEIGHT}" role="img" '
              f'aria-label="Recorrido de los datos de ODEPA al panel" '
              f'font-family="{charts.CHART_FONT}">',
-             build_style(states.get("workflow") == control.RUN_IN_PROGRESS),
+             build_style((states.get("workflow") == control.RUN_IN_PROGRESS if animate_flow is None else animate_flow)),
              build_column_headers(), build_container(palette),
              build_orchestration(states, figures, palette),
-             build_links(palette, states.get("workflow") == control.RUN_IN_PROGRESS),
+             build_links(palette, (states.get("workflow") == control.RUN_IN_PROGRESS if animate_flow is None else animate_flow)),
              build_quarantine(figures, palette), build_main_nodes(states, figures, palette),
              build_consumption_nodes(states, figures, palette),
              build_observability(states, figures, palette), "</svg>"]
@@ -642,7 +640,7 @@ def build_vertical_link(y1, y2, color, palette, chip_text, moving_dot):
     path = f"M{x} {y1} V{y2}"
     parts = [f'<path d="{path}" stroke="{color}" stroke-width="1.6" opacity="0.85"/>']
     if moving_dot:
-        parts.append(f'<circle r="3.5" fill="{color}"><animateMotion dur="1.6s" '
+        parts.append(f'<circle class="journey-flow" r="3.5" fill="{color}"><animateMotion dur="1.6s" '
                      f'repeatCount="indefinite" path="{path}"/></circle>')
     if chip_text:
         parts.append(build_chip(x, (y1 + y2) / 2, chip_text, color, palette))
@@ -659,13 +657,14 @@ def build_vertical_band(y, title, items, palette):
     return "".join(parts)
 
 
-def build_vertical_journey_svg(states, figures, mode):
+def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
     """The whole live diagram from top to bottom, readable on a phone.
 
     It shows the same steps, real states and figures as build_journey_svg.
     """
     palette = charts.get_palette(mode)
-    is_running = states.get("workflow") == control.RUN_IN_PROGRESS
+    is_running = (states.get("workflow") == control.RUN_IN_PROGRESS
+                  if animate_flow is None else animate_flow)
     half = TILE_SIZE / 2
     orchestration = [("GitHub Actions", f"cada martes · próxima {figures['next_run']}",
                       states["workflow"]),
@@ -731,10 +730,14 @@ def build_component(x, y, layer, draw_icon, title, lines, palette, state=None):
     and a status dot only when its state is known."""
     color = LAYER_COLORS[layer]
     left, top = x - COMPONENT_WIDTH / 2, y - COMPONENT_HEIGHT / 2
-    parts = [f'<rect x="{left}" y="{top}" width="{COMPONENT_WIDTH}" '
-             f'height="{COMPONENT_HEIGHT}" rx="12" fill="{palette["card"]}" '
-             f'stroke="{color}" stroke-width="1.4"/>',
-             draw_icon(left + 34, y, color),
+    brand = {"Job semanal.yml": "github", "Caché de Actions": "github", "Issues": "github",
+             "Repositorio": "git", "Pruebas (CI)": "pytest", "App Streamlit": "streamlit"}.get(title)
+    icon = (brand_icons.logo(brand, left + 19, y - 15, color, 30)
+            if brand else draw_icon(left + 34, y, color))
+    parts = [f'<rect x="{left + 8}" y="{y - 26}" width="52" '
+             f'height="52" rx="16" fill="{color}" fill-opacity=".08" '
+             f'stroke="{color}" stroke-opacity=".35" stroke-width="1"/>',
+             icon,
              f'<text x="{left + 66}" y="{y - 12}" font-size="15" font-weight="700" '
              f'fill="{palette["strong_text"]}">{html.escape(title)}</text>']
     for line_number, line in enumerate(lines[:2]):
@@ -789,7 +792,7 @@ def build_connection(points, color, palette, chip_text, chip_at, moving_dot=Fals
     parts = [f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.6" '
              f'opacity="0.85"/>']
     if moving_dot:
-        parts.append(f'<circle r="3.5" fill="{color}"><animateMotion dur="2.4s" '
+        parts.append(f'<circle class="journey-flow" r="3.5" fill="{color}"><animateMotion dur="2.4s" '
                      f'repeatCount="indefinite" path="{path}"/></circle>')
     parts.append(build_chip(*chip_at, chip_text, color, palette))
     return "".join(parts)
@@ -831,7 +834,7 @@ def build_connections(palette, is_running):
     ])
 
 
-def build_devops_svg(states, figures, mode):
+def build_devops_svg(states, figures, mode, animate_flow=None):
     """The infrastructure: each platform with its components and how they connect.
 
     states holds the state of: sources, workflow, report and panel. figures
@@ -839,7 +842,8 @@ def build_devops_svg(states, figures, mode):
     week_prices.
     """
     palette = charts.get_palette(mode)
-    is_running = states.get("workflow") == control.RUN_IN_PROGRESS
+    is_running = (states.get("workflow") == control.RUN_IN_PROGRESS
+                  if animate_flow is None else animate_flow)
     frames = "".join(build_platform_frame(*platform, palette) for platform in PLATFORMS)
     height = PLATFORM_HEIGHT - PLATFORM_TOP
     return "".join([f'<svg xmlns="http://www.w3.org/2000/svg" '

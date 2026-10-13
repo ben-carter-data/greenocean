@@ -1,6 +1,6 @@
 """Charts and visual style of the dashboard, drawn with Altair (installed with Streamlit).
 
-Every chart takes the active theme (Vantablack, Corporativo or Claro) and uses
+Every chart takes the active theme (Vantablack or Corporativo) and uses
 its palette.
 Every channel keeps the same hue in every chart, so a reader learns it once.
 Numbers in labels and tooltips are written as in Chile: 1.234 and 12,5 %.
@@ -9,12 +9,13 @@ import altair as alt
 import pandas as pd
 
 # region Constants
-# Three themes (T-44, D-052). Each one sits on one of Streamlit's two base modes,
+# Two visible themes (D-060); Claro remains an export compatibility palette.
+# Each theme sits on one of Streamlit's two base modes,
 # which decides the colors of its own widgets (lists, tables, code).
 MODE_DARK = "Vantablack"
 MODE_CORPORATE = "Corporativo"
 MODE_LIGHT = "Claro"
-THEMES = [MODE_DARK, MODE_CORPORATE, MODE_LIGHT]
+THEMES = [MODE_DARK, MODE_CORPORATE]
 BASE_DARK = "dark"
 BASE_LIGHT = "light"
 
@@ -34,9 +35,9 @@ PALETTES = {
     MODE_DARK: {
         "base": BASE_DARK, "channels": DARK_CHANNELS,
         "rise": "#e66767", "fall": "#3987e5", "accent": "#2fd3f0",
-        "text": "#b9bdc7", "grid": "#17191f", "reference": "#6c7080",
-        "card": "#0b0c0f", "card_border": "#1b1e26", "strong_text": "#f3f5f9",
-        "background": "#030304", "sidebar": "#07080a", "sidebar_text": "#d6dae3",
+        "text": "#c4ccd9", "grid": "#303b4b", "reference": "#94a3b8",
+        "card": "#121a27", "card_border": "#344256", "strong_text": "#f3f5f9",
+        "background": "#030304", "field": "#202c3d", "sidebar": "#0b111b", "sidebar_text": "#d6dae3",
         "glow": "rgba(47, 211, 240, 0.35)", "on_accent": "#021216",
     },
     # Neutral and serious: navy sidebar, cool grey page, white cards, business blue.
@@ -45,7 +46,7 @@ PALETTES = {
         "rise": "#e34948", "fall": "#2a78d6", "accent": "#1d5fbf",
         "text": "#475467", "grid": "#e4e9f0", "reference": "#98a2b3",
         "card": "#ffffff", "card_border": "#d6dde8", "strong_text": "#0f1b2d",
-        "background": "#eef2f7", "sidebar": "#0f2a4a", "sidebar_text": "#e6edf7",
+        "background": "#eef2f7", "field": "#f3f6fa", "sidebar": "#0f2a4a", "sidebar_text": "#e6edf7",
         "glow": "rgba(29, 95, 191, 0.0)", "on_accent": "#ffffff",
     },
     # Light and crisp: white and cool greys, no warm beige.
@@ -54,7 +55,7 @@ PALETTES = {
         "rise": "#e34948", "fall": "#2a78d6", "accent": "#2563eb",
         "text": "#4b5563", "grid": "#eceff3", "reference": "#a3a9b4",
         "card": "#ffffff", "card_border": "#e3e7ed", "strong_text": "#111827",
-        "background": "#f8f9fb", "sidebar": "#ffffff", "sidebar_text": "#1f2937",
+        "background": "#f8f9fb", "field": "#f3f5f8", "sidebar": "#ffffff", "sidebar_text": "#1f2937",
         "glow": "rgba(37, 99, 235, 0.0)", "on_accent": "#ffffff",
     },
 }
@@ -65,7 +66,12 @@ HEAT_RAMPS = {MODE_DARK: ["#a5f3fc", "#22d3ee", "#0891b2", "#155e75"],
               MODE_CORPORATE: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"],
               MODE_LIGHT: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"]}
 # Status colors (fixed in every theme), always shown with an icon and a label.
-STATUS_COLORS = {"warning": "#fab219", "serious": "#ec835a", "critical": "#d03b3b"}
+STATUS_COLORS = {"good": "#22b35a", "warning": "#fab219", "serious": "#ec835a",
+                 "critical": "#d03b3b", "running": "#5b9cf0", "unknown": "#8a8984"}
+# On a white card the bright steps fall under 3:1, so their text takes a darker step
+# of the same hue (4.5:1 or more on white). Marks (bars, dots) keep the bright step.
+STATUS_TEXT_ON_LIGHT = {"good": "#15803d", "warning": "#a16207", "serious": "#c2410c",
+                        "critical": "#b91c1c", "running": "#1d4ed8", "unknown": "#57534e"}
 MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov",
                "dic"]
 CHART_FONT = "Source Sans Pro, sans-serif"
@@ -77,6 +83,8 @@ BAR_LABEL_ROOM = 0.18
 # Month and year: with several years loaded, a day and month alone repeat and
 # cannot be told apart.
 WEEK_AXIS_FORMAT = "%b %Y"
+# A few weeks: day and month, so no label repeats.
+SHORT_WEEK_AXIS_FORMAT = "%d-%m"
 MONEY_AXIS_FORMAT = ",.0f"
 # Numbers and dates of every chart as in Chile: 1.234,5 and "mar 2024".
 CHILE_LOCALE = {
@@ -171,6 +179,12 @@ def get_palette(mode):
     return PALETTES.get(mode, PALETTES[MODE_DARK])
 
 
+def get_status_text_color(status, mode):
+    """Color of a status written as text: bright on Vantablack, darker on light themes."""
+    base = get_palette(mode)["base"]
+    return (STATUS_TEXT_ON_LIGHT if base == BASE_LIGHT else STATUS_COLORS)[status]
+
+
 def get_channel_color(channel, mode):
     """Fixed color of one channel in the active mode."""
     palette = get_palette(mode)
@@ -249,13 +263,13 @@ def draw_weekly_lines(rows, value_title, value_labels, mode, is_money):
 
 
 def draw_single_weekly_area(rows, value_title, value_labels, mode, reference_value=None,
-                            is_money=False):
+                            is_money=False, week_format=WEEK_AXIS_FORMAT):
     """One series by week as a soft area (rows: week_start, value)."""
     rows = add_week_labels(rows, value_labels)
     color = get_palette(mode)["accent"]
     value_axis = alt.Axis(format=MONEY_AXIS_FORMAT) if is_money else alt.Axis()
     base = alt.Chart(rows).encode(
-        x=alt.X("week_start:T", title=None, axis=alt.Axis(format=WEEK_AXIS_FORMAT)),
+        x=alt.X("week_start:T", title=None, axis=alt.Axis(format=week_format)),
         y=alt.Y("value:Q", title=value_title, axis=value_axis, scale=alt.Scale(zero=False)))
     area = base.mark_area(line={"color": color, "strokeWidth": 2.5}, color=color,
                           opacity=0.16, interpolate="monotone")
@@ -298,7 +312,7 @@ def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=N
         tooltip.append(alt.Tooltip("meaning:N", title="Qué significa"))
     base = alt.Chart(rows).encode(
         y=alt.Y("label:N", title=None, sort=order,
-                axis=alt.Axis(labelLimit=260, labelPadding=10)),
+                axis=alt.Axis(labelLimit=150, labelPadding=8)),
         tooltip=tooltip)
     bars = base.mark_bar(cornerRadiusEnd=6, height={"band": 0.65}).encode(
         x=alt.X("value:Q", title=value_title, axis=alt.Axis(tickCount=5),
@@ -329,7 +343,7 @@ def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=N
     return apply_chart_style(chart, mode)
 
 
-def draw_variation_bars(rows, mode):
+def draw_variation_bars(rows, mode, keep_rank_order=False):
     """Weekly price changes in percent: rises in red, falls in blue.
 
     rows needs the columns label and value (percent).
@@ -340,7 +354,8 @@ def draw_variation_bars(rows, mode):
                                     for value in rows["value"]],
                        meaning=rows["value"].map(describe_weekly_change))
     colors = [palette["rise"] if value > 0 else palette["fall"] for value in rows["value"]]
-    return draw_horizontal_bars(rows, "Variación semanal (%)", mode, colors, reference_value=0)
+    return draw_horizontal_bars(rows, "Variación semanal (%)", mode, colors, reference_value=0,
+                                is_sorted_by_value=not keep_rank_order)
 
 
 def draw_dumbbell(rows, unit, mode):

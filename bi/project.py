@@ -119,8 +119,10 @@ PYTHON_VERSIONS = {
 # Name given in the catalog to the K7 query, which lives in etl/etl.py.
 MATCH_COVERAGE_QUERY_NAME = "k7_match_coverage"
 # An example of the SQL the Consultas page builds: tomato in two channels.
-EXPLORER_EXAMPLE_FILTERS = {explorer.FILTER_PRODUCTS: ["Tomate"],
-                            explorer.FILTER_CHANNELS: ["Feria libre", "Supermercado"]}
+EXPLORER_EXAMPLE_FILTERS = dict(
+    {field: explorer.ALL for field in explorer.LIST_FIELD_COLUMNS},
+    **{explorer.FIELD_PRODUCT: "Tomate", explorer.FIELD_REGION: "Región Metropolitana de Santiago",
+       explorer.FIELD_FIRST_WEEK: "2026-09-07", explorer.FIELD_LAST_WEEK: "2026-10-05"})
 
 TABLE_NAMES = ["weekly_price", "dim_product", "dim_region", "dim_channel", "etl_run",
                "rejection"]
@@ -290,7 +292,8 @@ def list_named_queries():
         python_versions = read_python_versions(name)
         catalog.append({"name": name, "sql": sql.strip(),
                         "question": descriptions[name]["Qué responde"],
-                        "page": descriptions[name]["Página"],
+                        "page": ("Dashboard" if descriptions[name]["Página"] == "Inicio"
+                                 else descriptions[name]["Página"]),
                         "python": python_versions,
                         **describe_query(sql, bool(python_versions))})
     return catalog
@@ -303,8 +306,9 @@ def group_queries_by_level(catalog):
 
 
 def build_explorer_example():
-    """(SQL, parameters) that the Consultas page builds for tomato in two channels."""
-    return explorer.build_price_query(EXPLORER_EXAMPLE_FILTERS)
+    """(SQL, parameters) that Consulta por clics builds: tomato in the Metropolitan
+    Region, five weeks."""
+    return explorer.build_search_query(EXPLORER_EXAMPLE_FILTERS)
 # endregion
 
 
@@ -640,3 +644,84 @@ def read_match_coverage(database_file=queries.DATABASE_FILE):
     connection.close()
     return coverage
 # endregion
+
+
+# File order follows execution and dependency flow, rather than claiming a commit chronology.
+CODE_WALKTHROUGH = [
+    ("agent/agent.py", "Téléchargement", "Descargar y validar las fuentes",
+     "Descarga los CSV de ODEPA, valida encabezados y deja un manifiesto por archivo.",
+     "agent/input.csv y URLs de ODEPA", "CSV descargados y manifest.json",
+     "Reintentar fallas de conexión y detectar un archivo inesperado antes de cargarlo."),
+    ("etl/etl.py", "Transformation", "Limpiar, aplicar reglas y cargar",
+     "Conserva el original, normaliza unidades y semanas, aplica controles y carga el modelo estrella.",
+     "CSV descargados", "raw.db, datos.db y registro de rechazos",
+     "Evitar comparar unidades distintas y guardar una carga que no pasa los controles de calidad."),
+    ("bi/queries.py", "Accès aux données", "Leer los indicadores en modo solo lectura",
+     "Ejecuta consultas SQL por nombre y limita los datos al producto solicitado.",
+     "datos.db y queries.sql", "tablas de resultados para el panel",
+     "Consultar sin modificar la base y pasar los filtros como parámetros, sin concatenar sus valores."),
+    ("bi/alerts.py", "Analyse", "Detectar variaciones fuera de lo habitual",
+     "Calcula cambios semanales y compara cada uno con las 12 variaciones anteriores.",
+     "precios nacionales semanales", "alertas K6 con variación y rango habitual",
+     "No tratar un salto entre semanas faltantes como una variación semanal ni usar el dato evaluado en su propio rango."),
+    ("bi/lag.py", "Analyse", "Medir el rezago descriptivo",
+     "Compara los cambios mayoristas y al consumidor para varios desfases.",
+     "series de precios comparables", "correlaciones y desfase K5",
+     "Exigir historia suficiente y distinguir una asociación descriptiva de una afirmación causal."),
+    ("bi/explorer.py", "Accès aux données", "Construir consultas con clics",
+     "Traduce los filtros del explorador a SQL parametrizado y organiza las opciones disponibles.",
+     "selección de producto, región, canal y fechas", "consulta y parámetros separados",
+     "Permitir explorar sin escribir SQL y sin ejecutar texto introducido por el visitante."),
+    ("bi/charts.py", "Visualisation", "Convertir indicadores en gráficos",
+     "Dibuja comparaciones, tendencias y calendarios con formatos chilenos y colores coherentes.",
+     "tablas de indicadores", "gráficos Altair y paletas",
+     "Elegir una forma legible para cada pregunta y mantener identificables canales, alzas y bajas."),
+    ("bi/market_charts.py", "Visualisation", "Explorar el mercado en 2D y 3D",
+     "Dibuja la composición semanal, la evolución de un producto y el índice regional en tres ejes.",
+     "observaciones válidas e indicadores K3 y K6 de una clave comparable", "gráficos Plotly interactivos",
+     "Comparar la misma variedad, calidad y unidad, conservar semanas sin dato y ofrecer una alternativa 2D."),
+    ("bi/market_style.py", "Visualisation", "Presentar paneles flotantes con la paleta del proyecto",
+     "Aplica al dashboard un fondo alimentario local y superficies con contraste según el tema.",
+     "paletas de charts.py y fondo de bi/assets", "estilos exclusivos del dashboard",
+     "Conservar la dominante Vantablack, las superficies pizarra y el cian sin alterar los gráficos."),
+    ("bi/control.py", "Opération", "Consultar y ejecutar el pipeline",
+     "Lee estados de GitHub Actions y permite solicitar una ejecución con credenciales de administración.",
+     "API de GitHub y credenciales en secretos", "estados, pasos y diagnóstico HTTP seguro",
+     "Explicar fallas de red, permisos o límites de consultas sin exponer tokens ni respuestas sensibles."),
+    ("bi/architecture.py", "Visualisation", "Dibujar el recorrido y la infraestructura",
+     "Construye diagramas SVG con los estados y cifras reales que recibe del panel.",
+     "estados del pipeline y cifras de la carga", "pipeline y arquitectura por plataforma",
+     "Distinguir un estado conocido de uno sin evidencia y explicar cada componente al pasar el mouse."),
+    ("bi/star_model.py", "Visualisation", "Explicar el modelo estrella",
+     "Presenta tablas, relaciones y claves del data warehouse con explicaciones accesibles.",
+     "columnas del esquema y conteos reales", "diagrama del modelo y detalle de tablas",
+     "Mostrar qué guarda cada tabla y cómo se relacionan sus claves sin exigir conocer SQL."),
+    ("bi/zoom.py", "Visualisation", "Explorar los diagramas",
+     "Añade zoom y desplazamiento dentro del marco del diagrama.",
+     "SVG del pipeline o de la arquitectura", "marco interactivo con acercar, alejar y restablecer",
+     "Conservar el contexto de la página al ampliar un detalle, también con interacción táctil."),
+    ("bi/project.py", "Documentation", "Vincular documentación, SQL y ejemplos",
+     "Lee el diseño, las reglas, los archivos y las consultas desde el repositorio.",
+     "docs/, consultas SQL y archivos públicos", "catálogos y ejemplos documentados",
+     "Evitar mantener versiones distintas de la explicación y el código real."),
+    ("bi/dashboard.py", "Présentation", "Presentar el seguimiento y el análisis",
+     "Conecta el dashboard, los filtros, los diagramas, la documentación y la operación.",
+     "indicadores, estados y perfil del visitante", "este sistema de seguimiento en Streamlit",
+     "Dar contexto antes de pedir filtros y conservar un recorrido claro desde el resultado hasta su implementación."),
+    ("bi/report.py", "Opération", "Publicar el informe semanal",
+     "Resume el estado de la carga y las alertas de la semana para el informe automatizado.",
+     "datos.db y ejecución semanal", "informe para GitHub Issues",
+     "Dejar un resultado verificable de cada ejecución además de actualizar la base."),
+]
+
+
+def list_code_walkthrough():
+    """Public source files only, with context and source read from the working tree."""
+    entries = []
+    for number, (path, stage, title, purpose, inputs, outputs, challenge) in enumerate(
+            CODE_WALKTHROUGH, 1):
+        entries.append({"number": number, "path": path, "folder": path.split('/')[0],
+                        "title": title, "purpose": purpose, "input": inputs,
+                        "output": outputs, "challenge": challenge,
+                        "source": read_document(PROJECT_DIR / path)})
+    return entries
