@@ -3,6 +3,8 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import requests
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import control  # noqa: E402
 
@@ -98,3 +100,43 @@ def test_failure_asked_for_on_purpose_is_marked_as_simulated(monkeypatch):
             {"id": 3, "state": control.RUN_OK}]
     states = [run["state"] for run in control.mark_simulated_failures(runs)]
     assert states == [control.RUN_SIMULATED_FAILURE, control.RUN_FAILED, control.RUN_OK]
+
+
+def make_http_error(status_code, headers=None):
+    """An error as requests raises it, with a fake response."""
+    response = requests.Response()
+    response.status_code = status_code
+    response.reason = "Forbidden" if status_code == 403 else "Error"
+    response.headers.update(headers or {})
+    return requests.HTTPError(response=response)
+
+
+def test_github_error_says_the_real_cause_with_its_code():
+    now = datetime(2026, 10, 12, 22, 0, tzinfo=timezone.utc)
+    reset = int(datetime(2026, 10, 12, 22, 23, tzinfo=timezone.utc).timestamp())
+    rate_limit = make_http_error(403, {"X-RateLimit-Remaining": "0", "X-RateLimit-Limit": "60",
+                                       "X-RateLimit-Reset": str(reset)})
+    assert control.describe_github_error(rate_limit, now) == (
+        "GitHub respondió 403: se agotó el límite de consultas sin clave (60 por hora); "
+        "se renueva en 23 min")
+    assert control.describe_github_error(make_http_error(401)) == (
+        "GitHub respondió 401: la clave no es válida o venció")
+    assert control.describe_github_error(requests.Timeout()) == "GitHub no respondió en 10 s"
+    assert control.describe_github_error(requests.ConnectionError()) == (
+        "no hubo conexión con GitHub")
+
+
+def test_github_error_never_shows_the_token():
+    error = make_http_error(401, {"Authorization": "Bearer secret-token-123"})
+    assert "secret-token-123" not in control.describe_github_error(error)
+
+
+def test_github_error_handles_invalid_reset_and_untrusted_reason():
+    error = make_http_error(429, {"X-RateLimit-Remaining": "0",
+                                 "X-RateLimit-Reset": "invalid"})
+    assert control.describe_github_error(error) == (
+        "GitHub respondió 429: se agotó el límite de consultas")
+    error = make_http_error(418)
+    error.response.reason = "secret-token-123"
+    assert control.describe_github_error(error) == (
+        "GitHub respondió 418: error al consultar GitHub")

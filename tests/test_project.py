@@ -8,6 +8,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import charts, project, queries  # noqa: E402
+from etl import etl  # noqa: E402
 
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(),
                                     reason="etl/datos.db has not been built")
@@ -70,6 +71,51 @@ def test_queries_with_a_python_version_carry_its_source():
 def test_every_named_query_runs_read_only_with_at_most_20_rows(query_name):
     rows = project.run_preview(queries.load_queries()[query_name])
     assert len(rows) <= project.PREVIEW_ROW_COUNT
+
+
+def test_t57_level_is_the_highest_one_of_the_clauses_detected():
+    simple = project.describe_query("SELECT a, COUNT(*) FROM t WHERE b = 1 GROUP BY a")
+    assert (simple["level"], simple["level_reasons"]) == (project.LEVEL_SIMPLE, [])
+    assert "Agregados" in simple["clauses"]
+    dated = project.describe_query("SELECT strftime('%Y', week_start) FROM t")
+    assert (dated["level"], dated["level_reasons"]) == (project.LEVEL_INTERMEDIATE,
+                                                        ["Funciones de fecha"])
+    grouped = project.describe_query("SELECT a FROM t JOIN u ON u.a = t.a GROUP BY a "
+                                     "HAVING COUNT(*) > 2")
+    assert (grouped["level"], grouped["level_reasons"]) == (project.LEVEL_ADVANCED, ["HAVING"])
+    reconciled = project.describe_query("SELECT a FROM t", has_python_version=True)
+    assert reconciled["level_reasons"] == [project.PYTHON_RECONCILIATION]
+
+
+def test_t57_auto_join_needs_the_same_table_under_two_aliases():
+    assert "Auto-join" in project.detect_sql_clauses(
+        "SELECT 1 FROM price AS consumer JOIN price AS wholesale ON 1 = 1")
+    assert "Auto-join" not in project.detect_sql_clauses(
+        "SELECT 1 FROM price AS consumer JOIN dim_product AS product ON 1 = 1")
+    assert "Auto-join" not in project.detect_sql_clauses(
+        "WITH n AS (SELECT a FROM price) SELECT 1 FROM price JOIN n ON 1 = 1")
+
+
+def test_t57_every_named_query_is_in_exactly_the_group_of_its_level():
+    named_count = queries.QUERIES_FILE.read_text(encoding="utf-8").count("\n-- name: ")
+    catalog = project.list_named_queries()
+    groups = project.group_queries_by_level(catalog)
+    assert list(groups) == [project.LEVEL_SIMPLE, project.LEVEL_INTERMEDIATE,
+                            project.LEVEL_ADVANCED]
+    grouped_names = [query["name"] for group in groups.values() for query in group]
+    assert sorted(grouped_names) == sorted(queries.load_queries())
+    assert len(grouped_names) == named_count
+    for level, group in groups.items():
+        assert all(query["level"] == level for query in group)
+    # The two queries checked against Python are the advanced ones (D-049).
+    assert {query["name"] for query in groups[project.LEVEL_ADVANCED]} == set(
+        project.PYTHON_VERSIONS)
+
+
+@needs_database
+def test_t57_k7_query_of_the_etl_runs_read_only():
+    rows = project.run_preview(etl.MATCH_COVERAGE_QUERY)
+    assert 0 < len(rows) <= project.PREVIEW_ROW_COUNT
 
 
 @needs_database

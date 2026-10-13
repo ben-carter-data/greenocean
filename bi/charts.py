@@ -1,6 +1,7 @@
 """Charts and visual style of the dashboard, drawn with Altair (installed with Streamlit).
 
-Every chart takes the active mode ("dark" or "light") and uses its palette.
+Every chart takes the active theme (Vantablack, Corporativo or Claro) and uses
+its palette.
 Every channel keeps the same hue in every chart, so a reader learns it once.
 Numbers in labels and tooltips are written as in Chile: 1.234 and 12,5 %.
 """
@@ -8,30 +9,53 @@ import altair as alt
 import pandas as pd
 
 # region Constants
-MODE_DARK = "dark"
-MODE_LIGHT = "light"
+# Three themes (T-44, D-052). Each one sits on one of Streamlit's two base modes,
+# which decides the colors of its own widgets (lists, tables, code).
+MODE_DARK = "Vantablack"
+MODE_CORPORATE = "Corporativo"
+MODE_LIGHT = "Claro"
+THEMES = [MODE_DARK, MODE_CORPORATE, MODE_LIGHT]
+BASE_DARK = "dark"
+BASE_LIGHT = "light"
 
-# Categorical palette validated for color blindness, one step per mode
-# (checked against each mode's card color). The wholesale price is a reference,
+# Categorical palette validated for color blindness, one step per base mode
+# (checked against each theme's card color). The wholesale price is a reference,
 # so it gets neutral ink instead of a hue.
+DARK_CHANNELS = {"Feria libre": "#3987e5", "Supermercado": "#d95926",
+                 "Supermercado en Línea": "#199e70", "Mercado Minorista": "#c98500",
+                 "Carnicería": "#d55181", "Panadería": "#008300",
+                 "Mercado Mayorista": "#9085e9", "Mayorista": "#c3c2b7"}
+LIGHT_CHANNELS = {"Feria libre": "#2a78d6", "Supermercado": "#eb6834",
+                  "Supermercado en Línea": "#1baf7a", "Mercado Minorista": "#eda100",
+                  "Carnicería": "#e87ba4", "Panadería": "#008300",
+                  "Mercado Mayorista": "#6250d6", "Mayorista": "#52514e"}
 PALETTES = {
+    # Deep black with a cold cyan light on what matters (links, active tab, focus).
     MODE_DARK: {
-        "channels": {"Feria libre": "#3987e5", "Supermercado": "#d95926",
-                     "Supermercado en Línea": "#199e70", "Mercado Minorista": "#c98500",
-                     "Carnicería": "#d55181", "Panadería": "#008300",
-                     "Mercado Mayorista": "#9085e9", "Mayorista": "#c3c2b7"},
-        "rise": "#e66767", "fall": "#3987e5", "accent": "#3987e5",
-        "text": "#c3c2b7", "grid": "#26262a", "reference": "#6f6e69",
-        "card": "#141416", "card_border": "#26262a", "strong_text": "#f0efec",
+        "base": BASE_DARK, "channels": DARK_CHANNELS,
+        "rise": "#e66767", "fall": "#3987e5", "accent": "#2fd3f0",
+        "text": "#b9bdc7", "grid": "#17191f", "reference": "#6c7080",
+        "card": "#0b0c0f", "card_border": "#1b1e26", "strong_text": "#f3f5f9",
+        "background": "#030304", "sidebar": "#07080a", "sidebar_text": "#d6dae3",
+        "glow": "rgba(47, 211, 240, 0.35)", "on_accent": "#021216",
     },
+    # Neutral and serious: navy sidebar, cool grey page, white cards, business blue.
+    MODE_CORPORATE: {
+        "base": BASE_LIGHT, "channels": LIGHT_CHANNELS,
+        "rise": "#e34948", "fall": "#2a78d6", "accent": "#1d5fbf",
+        "text": "#475467", "grid": "#e4e9f0", "reference": "#98a2b3",
+        "card": "#ffffff", "card_border": "#d6dde8", "strong_text": "#0f1b2d",
+        "background": "#eef2f7", "sidebar": "#0f2a4a", "sidebar_text": "#e6edf7",
+        "glow": "rgba(29, 95, 191, 0.0)", "on_accent": "#ffffff",
+    },
+    # Light and crisp: white and cool greys, no warm beige.
     MODE_LIGHT: {
-        "channels": {"Feria libre": "#2a78d6", "Supermercado": "#eb6834",
-                     "Supermercado en Línea": "#1baf7a", "Mercado Minorista": "#eda100",
-                     "Carnicería": "#e87ba4", "Panadería": "#008300",
-                     "Mercado Mayorista": "#6250d6", "Mayorista": "#52514e"},
-        "rise": "#e34948", "fall": "#2a78d6", "accent": "#2a78d6",
-        "text": "#52514e", "grid": "#ece5d6", "reference": "#a8a497",
-        "card": "#fffdf8", "card_border": "#e7dfcf", "strong_text": "#1d1b17",
+        "base": BASE_LIGHT, "channels": LIGHT_CHANNELS,
+        "rise": "#e34948", "fall": "#2a78d6", "accent": "#2563eb",
+        "text": "#4b5563", "grid": "#eceff3", "reference": "#a3a9b4",
+        "card": "#ffffff", "card_border": "#e3e7ed", "strong_text": "#111827",
+        "background": "#f8f9fb", "sidebar": "#ffffff", "sidebar_text": "#1f2937",
+        "glow": "rgba(37, 99, 235, 0.0)", "on_accent": "#ffffff",
     },
 }
 CHART_FONT = "Source Sans Pro, sans-serif"
@@ -133,7 +157,7 @@ def shorten_region_name(region):
 
 # region Shared pieces
 def get_palette(mode):
-    """Palette of the active mode; dark when the mode is unknown."""
+    """Palette of the active theme; Vantablack when the theme is unknown."""
     return PALETTES.get(mode, PALETTES[MODE_DARK])
 
 

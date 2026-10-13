@@ -1,6 +1,6 @@
 # Guía del proyecto
 
-Textos que muestra la página «El proyecto» del panel. El panel lee este archivo tal cual: para cambiar un texto de la página, se cambia aquí. Las reglas (RN), los indicadores (K) y las preguntas (P) se leen de `DISENO.md`; las cifras salen de la base en cada visita.
+Textos que muestra la página «El proyecto» del panel, portada incluida (pestaña «Arquitectura»: DevOps, Seguridad, Observabilidad e Informes). El panel lee este archivo tal cual: para cambiar un texto de la página, se cambia aquí. Las reglas (RN), los indicadores (K) y las preguntas (P) se leen de `DISENO.md`; las cifras salen de la base en cada visita.
 
 ## Resumen
 
@@ -78,7 +78,44 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 | quality_runs | ¿Cómo terminaron las últimas ejecuciones del ETL? | Calidad de datos |
 | quality_flag_counts | ¿Cuántos precios semanales se usan y cuántos quedaron marcados? | Calidad de datos |
 | quality_outliers | ¿Qué precios se marcaron como atípicos? | Calidad de datos |
-| quality_week_range | ¿Qué semanas y años hay cargados en la base? | Pipeline |
+| quality_week_range | ¿Qué semanas y años hay cargados en la base? | El proyecto |
 | k6_national_weekly_price | ¿Cuál es el precio nacional de cada producto y canal, semana a semana? | Alertas |
 | k6_usual_range_sql | ¿Qué cambios semanales salen de su rango habitual? (versión SQL de K6) | Alertas |
 | k5_weekly_variations_sql | ¿Cuánto cambió cada precio frente a la semana anterior, en las series largas? (versión SQL de K5) | Márgenes |
+
+## DevOps
+
+| Pieza | Qué hace | Archivo |
+|---|---|---|
+| Workflow semanal | Cada martes a las 12:00 UTC descarga, ejecuta el ETL, corre los tests, guarda el data warehouse y publica el informe. Si un paso falla, los siguientes no corren (D-034). | .github/workflows/semanal.yml |
+| Tests en cada push | `pytest` corre en cada push y pull request, antes de que el cambio llegue al panel. | .github/workflows/pruebas.yml |
+| Caché de años cerrados | Los archivos de años que ya no cambian se guardan en la caché de GitHub Actions (D-047). | .github/workflows/semanal.yml |
+| Despliegue continuo | Streamlit Community Cloud publica el panel desde la rama `main`: cada push lo actualiza. | requirements.txt |
+| Entorno de desarrollo | Dev container con Python 3.11 y las librerías de `requirements.txt`. | .devcontainer/devcontainer.json |
+
+## Seguridad
+
+| Medida | Qué protege | Archivo |
+|---|---|---|
+| Base en solo lectura | El panel abre `datos.db` con `mode=ro`: ninguna página puede cambiar los datos. | bi/queries.py |
+| Lista blanca y parámetros | La página Consultas solo arma SQL con columnas fijas; cada valor elegido viaja como parámetro, nunca dentro del texto. | bi/explorer.py |
+| Secretos fuera del código | La clave de GitHub y el código de acceso de «Ejecutar ahora» viven en los secretos del panel; el código compara el código de acceso en tiempo constante. | bi/dashboard.py |
+| Permisos mínimos del workflow | El job semanal solo puede escribir contenido (el commit de la base) y crear issues (el informe). | .github/workflows/semanal.yml |
+| Datos crudos fuera del repositorio | Los CSV descargados, `raw.db` y los logs no se suben a GitHub (D-020). | .gitignore |
+
+## Observabilidad
+
+| Fuente | Qué registra | Dónde se ve |
+|---|---|---|
+| Tabla `etl_run` | Una fila por carga: inicio, estado, filas leídas, cargadas y rechazadas. | Calidad de datos |
+| Tabla `rejection` | Cada fila rechazada con su motivo (RN-11). | Calidad de datos |
+| Logs del agente | Un archivo por ejecución de la ingesta, con una línea por archivo descargado y su resultado. | agent/logs |
+| Historial de GitHub Actions | Cada ejecución del workflow con el resultado de cada paso. | Centro de control |
+| Correo de GitHub | Aviso a la autora si el job semanal falla. | Correo |
+
+## Informes
+
+| Informe | Qué contiene | Cuándo |
+|---|---|---|
+| Issue «Informe semanal AAAA-MM-DD» | Estado de la carga, filas leídas, cargadas y rechazadas, cobertura del cruce (K7) y alertas de la semana (K6). | Cada martes, solo si todos los pasos anteriores pasaron. |
+| Este panel | Las cifras de la última carga, leídas de `datos.db` en cada visita. | Uno o dos minutos después del commit semanal. |

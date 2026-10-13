@@ -16,6 +16,19 @@ El job semanal (`.github/workflows/semanal.yml`) corre solo cada martes a las 12
 
 Si un paso falla, los siguientes no se ejecutan: el data warehouse del repositorio queda como estaba y no se publica informe (D-034).
 
+## Qué es real en el diagrama del pipeline
+
+El diagrama aparece arriba en la portada («Pipeline en vivo») y completo en «El proyecto» → «Arquitectura». Mezcla datos reales con un dibujo fijo:
+
+| Real: se lee en cada visita | Representación: no cambia sola |
+|---|---|
+| La línea «Estado de la última ejecución (fecha y hora) · se actualiza al recargar la página»: la fecha es el inicio de la última ejecución del workflow en GitHub o, si GitHub no responde, de la última carga guardada en `etl_run`. | La estructura: qué pasos hay, en qué orden y por qué flecha pasan los datos. Se dibujó a partir del código (`semanal.yml`, `agent.py`, `etl.py`) y se actualiza a mano si el código cambia. |
+| El punto de color de cada paso: verde (OK), azul (en curso), rojo (falla). Un paso sin estado conocido no lleva punto. | Las capas (bronce, plata, oro) y las bandas de orquestación y observabilidad: agrupan los pasos para explicarlos. |
+| Las cifras bajo los pasos: años cargados, filas leídas y rechazadas, precios semanales, última semana, próxima ejecución. | Las etiquetas de las flechas (`CSV`, `manifest`, `raw_*`, `plata`, `SQL`): el tipo de dato que pasa, no un contador. |
+| El movimiento: los puntos que recorren las flechas y las líneas punteadas solo se mueven mientras hay una ejecución en curso. El resto del tiempo el diagrama queda quieto. | |
+
+El diagrama no se refresca solo: muestra el estado del momento en que se abrió la página. Para ver un cambio, se recarga la página.
+
 ## Cómo leer un aviso rojo
 
 Hay cinco lugares donde se nota una falla:
@@ -40,6 +53,14 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 | Run the tests against the new database | Los datos nuevos no cumplen algo que el código da por hecho. | Leer qué test falló en el log; suele indicar el producto o la semana. |
 | Save the updated database | GitHub no aceptó el commit: permisos o un archivo demasiado grande. | Revisar Settings → Actions → Workflow permissions («Read and write») y el tamaño de `datos.db` (ver límites). |
 | Publish the weekly report | No se pudo crear el issue. | Revisar los permisos; los datos ya quedaron guardados. |
+
+### Fallas del panel publicado
+
+| Qué se ve | Qué significa | Qué hacer |
+|---|---|---|
+| Después de un push, una página muestra `AttributeError` en producción | Streamlit Cloud mezcló archivos nuevos con otros que tenía en memoria (ocurrió el 12-10-2026; el código en GitHub estaba bien) | Abrir el panel, «Manage app» (abajo a la derecha) → ⋮ → **Reboot**. Esperar uno o dos minutos |
+| El Centro de control dice «No se pudo consultar GitHub: …» | El mensaje trae la causa real. La más común es «GitHub respondió 403: se agotó el límite de consultas sin clave»: GitHub permite 60 consultas por hora sin clave, compartidas por todas las apps del mismo servidor | Nada: el panel muestra la última respuesta guardada o, si no hay, los estados de la última carga guardada en la base, y vuelve a preguntar cada 5 minutos. Con la clave de «Ejecutar ahora» configurada el límite sube |
+| Con un tema claro (Corporativo o Claro) las listas, tablas o bloques de código se ven oscuros, o al revés con Vantablack | El panel cambia el modo base de Streamlit solo, una vez por página; si una versión nueva de Streamlit cambió cómo guarda ese modo, el cambio no ocurre (D-052) | Elegir el modo a mano: ⋮ (arriba a la derecha) → Settings → Light para Corporativo y Claro, Dark para Vantablack |
 
 ## Tareas de la autora y tareas automáticas
 

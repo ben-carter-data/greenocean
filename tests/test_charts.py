@@ -23,8 +23,8 @@ def test_region_names_lose_their_prefix():
         "Región Metropolitana de Santiago") == "Metropolitana de Santiago"
 
 
-def test_every_known_channel_has_its_own_fixed_color_in_both_modes():
-    for mode in [charts.MODE_DARK, charts.MODE_LIGHT]:
+def test_every_known_channel_has_its_own_fixed_color_in_every_theme():
+    for mode in charts.THEMES:
         channel_colors = charts.PALETTES[mode]["channels"]
         assert set(channel_colors) == etl.KNOWN_CHANNELS
         assert len(set(channel_colors.values())) == len(channel_colors)
@@ -108,3 +108,19 @@ def test_bars_can_keep_the_order_they_arrive_in():
     chart = charts.draw_horizontal_bars(rows, "Correlación", charts.MODE_DARK,
                                         is_sorted_by_value=False).to_dict()
     assert chart["layer"][0]["encoding"]["y"]["sort"] == ["0", "1", "2"]
+
+
+def test_t44_three_themes_share_the_validated_channel_colors_of_their_base():
+    """Vantablack is dark; Corporativo and Claro are light. Only surfaces, ink and
+    accent change: the channel colors stay the ones validated for color blindness."""
+    assert charts.THEMES == ["Vantablack", "Corporativo", "Claro"]
+    keys = set(charts.PALETTES[charts.MODE_DARK])
+    for theme in charts.THEMES:
+        palette = charts.PALETTES[theme]
+        assert set(palette) == keys
+        expected = (charts.DARK_CHANNELS if palette["base"] == charts.BASE_DARK
+                    else charts.LIGHT_CHANNELS)
+        assert palette["channels"] == expected
+    assert charts.PALETTES[charts.MODE_DARK]["base"] == charts.BASE_DARK
+    assert {charts.PALETTES[theme]["base"] for theme in
+            [charts.MODE_CORPORATE, charts.MODE_LIGHT]} == {charts.BASE_LIGHT}

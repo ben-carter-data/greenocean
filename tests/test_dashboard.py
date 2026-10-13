@@ -8,7 +8,7 @@ from streamlit.testing.v1 import AppTest
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
-from bi import control, dashboard, queries  # noqa: E402
+from bi import charts, control, dashboard, project, queries  # noqa: E402
 
 DASHBOARD_FILE = str(PROJECT_DIR / "bi" / "dashboard.py")
 # These tests draw the real dashboard, so they need the committed database.
@@ -26,13 +26,24 @@ def draw_page(title):
 
 def test_each_profile_has_its_own_pages():
     assert dashboard.PAGES_BY_PROFILE[dashboard.PROFILE_ANALYST] == [
-        dashboard.PAGE_OVERVIEW, dashboard.PAGE_PROJECT, dashboard.PAGE_MARGINS,
+        dashboard.PAGE_PROJECT, dashboard.PAGE_OVERVIEW, dashboard.PAGE_MARGINS,
         dashboard.PAGE_CHANNELS_AND_REGIONS, dashboard.PAGE_SEASONALITY,
-        dashboard.PAGE_ALERTS, dashboard.PAGE_EXPLORER, dashboard.PAGE_ARCHITECTURE,
-        dashboard.PAGE_CONTROL]
+        dashboard.PAGE_ALERTS, dashboard.PAGE_EXPLORER, dashboard.PAGE_CONTROL]
     assert dashboard.PAGES_BY_PROFILE[dashboard.PROFILE_DATA_TEAM] == [
-        dashboard.PAGE_OVERVIEW, dashboard.PAGE_PROJECT, dashboard.PAGE_ARCHITECTURE,
-        dashboard.PAGE_CONTROL, dashboard.PAGE_DATA_QUALITY, dashboard.PAGE_EXPLORER]
+        dashboard.PAGE_PROJECT, dashboard.PAGE_OVERVIEW, dashboard.PAGE_CONTROL,
+        dashboard.PAGE_DATA_QUALITY, dashboard.PAGE_EXPLORER]
+
+
+def test_d051_project_page_is_home_and_pipeline_left_the_menu():
+    for pages in dashboard.PAGES_BY_PROFILE.values():
+        assert pages[0] == dashboard.HOME_PAGE == dashboard.PAGE_PROJECT
+        assert "Pipeline" not in pages
+    assert dashboard.PROJECT_TAB_ARCHITECTURE in dashboard.PROJECT_TABS
+    # Old links keep working through hidden pages that open the home page.
+    assert dashboard.OLD_PIPELINE_PATH == "pipeline"
+    assert dashboard.OLD_PROJECT_PATH == "el-proyecto"
+    assert {dashboard.OLD_PIPELINE_PATH, dashboard.OLD_PROJECT_PATH}.isdisjoint(
+        dashboard.PAGE_PATHS.values())
 
 
 def test_every_page_has_a_function_an_icon_and_an_address():
@@ -133,10 +144,33 @@ def test_margins_page_shows_k5_with_its_descriptive_note():
 def test_project_page_draws_start_here_and_its_eight_tabs():
     app = draw_page(dashboard.PAGE_PROJECT)
     assert not app.exception
-    assert [tab.label for tab in app.tabs][:8] == dashboard.PROJECT_TABS
-    expander_labels = [expander.label for expander in app.expander]
-    for query_name in queries.load_queries():
-        assert any(label.startswith(f"{query_name} · ") for label in expander_labels)
+    assert [tab.label for tab in app.tabs][:len(dashboard.PROJECT_TABS)] == (
+        dashboard.PROJECT_TABS)
+    texts = " ".join(block.value for block in app.markdown)
+    assert "Estado de la última ejecución (" in texts
+    assert "se actualiza al recargar la página" in texts
+    for heading in ["DevOps", "Seguridad", "Observabilidad", "Informes"]:
+        assert f">{heading}<" in texts
+
+
+@needs_database
+def test_t57_queries_section_shows_the_real_count_and_each_query_in_its_group():
+    """The number shown is the one of «-- name:» lines; each query under its level."""
+    named_count = queries.QUERIES_FILE.read_text(encoding="utf-8").count("\n-- name: ")
+    app = draw_page(dashboard.PAGE_PROJECT)
+    texts = [block.value for block in app.markdown]
+    assert f"### {named_count} queries del proyecto" in texts
+    shown_group = {}
+    group = None
+    for text in texts:
+        if text.startswith("#### "):
+            group = text[5:].split(" · ")[0]
+        elif text.startswith("**") and group:
+            shown_group.setdefault(text[2:].split("**")[0], group)
+    levels = {query["name"]: query["level"] for query in project.list_named_queries()}
+    assert len(levels) == named_count
+    assert {name: shown_group.get(name) for name in levels} == levels
+    assert shown_group[project.MATCH_COVERAGE_QUERY_NAME] == "Fuera de bi/queries.sql"
 
 
 @needs_database
@@ -149,7 +183,7 @@ def test_project_page_runs_a_query_when_asked():
 
 def test_kpi_link_opens_the_kpi_tab_with_that_indicator():
     link = dashboard.build_kpi_link("K5")
-    assert 'href="el-proyecto?seccion=KPI+y+c%C3%A1lculos&amp;kpi=K5"' in link
+    assert 'href="./?seccion=KPI+y+c%C3%A1lculos&amp;kpi=K5"' in link
 
 
 def test_page_only_in_the_data_team_profile_takes_that_profile():
@@ -161,13 +195,14 @@ def test_page_only_in_the_data_team_profile_takes_that_profile():
 def test_t52_every_link_of_the_project_points_to_a_page_that_exists():
     """The home page lives at './'; any other page at its own path (A1)."""
     other_paths = {path for title, path in dashboard.PAGE_PATHS.items()
-                   if title != dashboard.PAGE_OVERVIEW}
+                   if title != dashboard.HOME_PAGE}
     for journey in [dashboard.JOURNEY_MANAGER, dashboard.JOURNEY_ANALYST,
                     dashboard.JOURNEY_TECHNICAL]:
         for _, address in dashboard.list_journey_steps(journey):
             path = address.split("?")[0]
             assert path == "./" or path in other_paths, address
-    assert dashboard.build_page_address(dashboard.PAGE_OVERVIEW) == "./"
+    assert dashboard.build_page_address(dashboard.HOME_PAGE) == "./"
+    assert dashboard.build_page_address(dashboard.PAGE_OVERVIEW) == "panel"
 
 
 def test_t52_each_channel_gap_says_how_many_regions_stand_behind_it():
@@ -197,3 +232,29 @@ def test_t52_a_bar_resting_on_one_or_two_regions_names_them_next_to_it():
     assert dashboard.label_channel_with_its_regions(
         "Supermercado", ["Región del Maule", "Región de Ñuble", "Región del Biobío"]) == (
         "Supermercado")
+
+
+def test_without_github_the_states_come_from_the_latest_saved_load():
+    latest_load = {"status": "LOADED", "started_at": "2026-10-12T22:17:01"}
+    states = dashboard.build_journey_states({}, None, latest_load, {"file": {"year": 2026}})
+    assert [states[step] for step in ["download", "etl", "tests", "load", "etl_run"]] == [
+        control.RUN_OK] * 5
+    # What a saved load cannot prove stays unknown, and is drawn without a dot.
+    assert states["report"] == dashboard.architecture.STATE_UNKNOWN
+    assert states["workflow"] == dashboard.architecture.STATE_UNKNOWN
+    assert dashboard.describe_state_source("GitHub respondió 403", {}, latest_load) == (
+        "GitHub no respondió (GitHub respondió 403); los estados salen de la última carga "
+        "guardada en la base (12-10-2026 19:17).")
+
+
+def test_t44_vantablack_is_the_default_theme():
+    assert dashboard.get_mode() == charts.MODE_DARK
+
+
+def test_t44_base_mode_switch_writes_streamlit_choice_and_tries_only_once():
+    script = dashboard.build_base_mode_script(charts.BASE_LIGHT)
+    assert '"stActiveTheme-" + page.location.pathname + "-v2"' in script
+    assert 'JSON.stringify("Light")' in script
+    # A second attempt on the same page and base is skipped: no endless reload.
+    assert "if (!page.sessionStorage.getItem(attempt))" in script
+    assert 'JSON.stringify("Dark")' in dashboard.build_base_mode_script(charts.BASE_DARK)

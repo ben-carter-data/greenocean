@@ -67,3 +67,55 @@ def test_mini_journey_shows_real_figures_and_states():
         assert figure in svg
     assert architecture.STATE_COLORS[control.RUN_FAILED] in svg
     assert "animateMotion" not in svg
+
+
+def test_only_real_states_get_a_dot_and_an_unknown_one_gets_none():
+    states = dict(make_states(control.RUN_OK), report=architecture.STATE_UNKNOWN,
+                  etl_run=control.RUN_FAILED)
+    svg = architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK)
+    grey = architecture.STATE_COLORS[architecture.STATE_UNKNOWN]
+    # The grey of the column subtitles is text, not a dot: only circles count.
+    assert f'r="7" fill="{grey}"' not in svg
+    assert f'r="5" fill="{grey}"' not in svg
+    # etl_run takes the state of the latest load.
+    assert architecture.STATE_COLORS[control.RUN_FAILED] in svg
+    # Items with no state to read (secrets, logs, mail) have no dot.
+    item_without_state = architecture.build_band_item(0, 0, "Secretos", "clave",
+                                                      charts.get_palette(charts.MODE_DARK))
+    assert "<circle" not in item_without_state
+
+
+def test_vertical_journey_has_every_step_figure_and_real_state():
+    states = dict(make_states(control.RUN_OK), load=control.RUN_FAILED,
+                  report=architecture.STATE_UNKNOWN)
+    svg = architecture.build_vertical_journey_svg(states, FIGURES, charts.MODE_DARK)
+    for text in ["FUENTES", "INGESTA", "BRONCE", "LIMPIEZA", "REGLAS", "CALIDAD", "ORO",
+                 "CONSUMO", "raw.db", "datos.db", "Rechazos", "GitHub Actions",
+                 "OBSERVABILIDAD", "Panel Streamlit", "Informe semanal", "Consultas SQL"]:
+        assert text in svg
+    for figure in FIGURES.values():
+        assert figure in svg
+    assert architecture.STATE_COLORS[control.RUN_FAILED] in svg
+    grey = architecture.STATE_COLORS[architecture.STATE_UNKNOWN]
+    assert f'r="7" fill="{grey}"' not in svg
+
+
+def test_vertical_journey_moves_its_dots_only_while_a_run_is_in_progress():
+    idle_svg = architecture.build_vertical_journey_svg(make_states(control.RUN_OK), FIGURES,
+                                                       charts.MODE_LIGHT)
+    assert "animateMotion" not in idle_svg
+    running_states = dict(make_states(control.RUN_OK), workflow=control.RUN_IN_PROGRESS)
+    assert "animateMotion" in architecture.build_vertical_journey_svg(
+        running_states, FIGURES, charts.MODE_LIGHT)
+
+
+def test_d051_diagram_stays_still_unless_a_run_is_in_progress():
+    """Idle: no travelling dots and no moving dashes; only the status dots speak."""
+    idle_states = make_states(control.RUN_OK)
+    running_states = dict(idle_states, workflow=control.RUN_IN_PROGRESS)
+    for build in [architecture.build_journey_svg, architecture.build_mini_journey_svg,
+                  architecture.build_vertical_journey_svg]:
+        idle_svg = build(idle_states, FIGURES, charts.MODE_DARK)
+        assert "animateMotion" not in idle_svg
+        assert "animation: journey-dash" not in idle_svg
+        assert "animation: journey-dash" in build(running_states, FIGURES, charts.MODE_DARK)
