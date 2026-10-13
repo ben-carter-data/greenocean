@@ -527,3 +527,11 @@ def test_d058_the_old_links_tab_opens_the_links_page():
     groups = {link["group"] for link in project.PROJECT_LINKS}
     assert groups == {"Código y operación", "Fuentes de datos", "Documentos"}
     assert set(dashboard.LINK_GROUP_LEADS) == groups
+
+
+def test_d057_the_menu_folds_once_on_narrow_screens_only():
+    script = dashboard.FOLD_SIDEBAR_SCRIPT
+    assert f"window.innerWidth >= {dashboard.NARROW_SCREEN_WIDTH}" in script
+    assert dashboard.NARROW_SCREEN_WIDTH == 1024
+    # Folded once per visit: a reader who opens it again keeps it open.
+    assert 'sessionStorage.getItem("sidebarFolded")' in script

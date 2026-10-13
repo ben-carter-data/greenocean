@@ -3021,6 +3021,32 @@ SHOW_PAGE_BY_TITLE = {
 }
 
 
+# Tablets and narrow windows: the menu folds once per visit, so the page gets the
+# whole width; once the reader opens it again it stays open (D-057). Streamlit
+# already folds it on phones; computers keep it open.
+NARROW_SCREEN_WIDTH = 1024
+FOLD_SIDEBAR_SCRIPT = f"""<script>
+(() => {{
+if (window.innerWidth >= {NARROW_SCREEN_WIDTH}) {{ return; }}
+try {{ if (sessionStorage.getItem("sidebarFolded")) {{ return; }} }} catch (error) {{ return; }}
+let tries = 0;
+const fold = () => {{
+    const sidebar = document.querySelector('[data-testid="stSidebar"]');
+    const button = document.querySelector('[data-testid="stSidebarCollapseButton"] button');
+    if (sidebar && button && sidebar.getAttribute("aria-expanded") === "true") {{
+        button.click();
+        try {{ sessionStorage.setItem("sidebarFolded", "yes"); }} catch (error) {{}}
+    }} else if (sidebar && sidebar.getAttribute("aria-expanded") === "false") {{
+        try {{ sessionStorage.setItem("sidebarFolded", "yes"); }} catch (error) {{}}
+    }} else if (tries++ < 40) {{
+        setTimeout(fold, 100);
+    }}
+}};
+fold();
+}})();
+</script>"""
+
+
 def show_attribution():
     """Footer of every page: the data source. The project links live only in
     Operaciones (D-056)."""
@@ -3034,6 +3060,7 @@ def render_page(title):
     apply_style(mode)
     SHOW_PAGE_BY_TITLE[title](mode)
     show_attribution()
+    st.html(FOLD_SIDEBAR_SCRIPT, unsafe_allow_javascript=True)
 
 
 def build_page(title, is_default):
