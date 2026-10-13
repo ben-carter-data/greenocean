@@ -39,16 +39,20 @@ PAGE_ANALYSIS = "Análisis"
 PAGE_ARCHITECTURE = "Arquitectura"
 PAGE_DATA_AND_CODE = "Datos y código"
 PAGE_OPERATIONS = "Operaciones"
-PAGES = [PAGE_HOME, PAGE_ANALYSIS, PAGE_ARCHITECTURE, PAGE_DATA_AND_CODE, PAGE_OPERATIONS]
+# The project links have an entry of their own, the only place that shows them (D-058).
+PAGE_LINKS = "Enlaces"
+PAGES = [PAGE_HOME, PAGE_ANALYSIS, PAGE_ARCHITECTURE, PAGE_DATA_AND_CODE, PAGE_OPERATIONS,
+         PAGE_LINKS]
 HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
     PAGE_HOME: ":material/home:", PAGE_ANALYSIS: ":material/monitoring:",
     PAGE_ARCHITECTURE: ":material/account_tree:", PAGE_DATA_AND_CODE: ":material/database:",
-    PAGE_OPERATIONS: ":material/settings:",
+    PAGE_OPERATIONS: ":material/settings:", PAGE_LINKS: ":material/link:",
 }
 PAGE_PATHS = {
     PAGE_HOME: "inicio", PAGE_ANALYSIS: "analisis", PAGE_ARCHITECTURE: "arquitectura",
     PAGE_DATA_AND_CODE: "datos-y-codigo", PAGE_OPERATIONS: "operaciones",
+    PAGE_LINKS: "enlaces",
 }
 
 # The tabs of each page travel in the address (?seccion=...), so a link can open one.
@@ -71,13 +75,13 @@ TAB_QUERIES = "Queries"
 TAB_CODE = "Código"
 TAB_RUNS = "Ejecuciones"
 TAB_QUALITY = "Calidad de datos"
-TAB_LINKS = "Enlaces"
 TABS_BY_PAGE = {
     PAGE_HOME: [TAB_IDEA, TAB_KPI, TAB_RULES, TAB_MANUAL, TAB_DECISIONS, TAB_GLOSSARY],
     PAGE_ANALYSIS: [TAB_WEEK, TAB_GAP, TAB_CHANNELS, TAB_SEASONALITY, TAB_ALERTS],
     PAGE_ARCHITECTURE: [TAB_PIPELINE, TAB_MODEL, TAB_DEVOPS],
     PAGE_DATA_AND_CODE: [TAB_EXPLORER, TAB_QUERIES, TAB_CODE],
-    PAGE_OPERATIONS: [TAB_RUNS, TAB_QUALITY, TAB_LINKS],
+    PAGE_OPERATIONS: [TAB_RUNS, TAB_QUALITY],
+    PAGE_LINKS: [],
 }
 PAGE_OF_TAB = {tab: page for page, tabs in TABS_BY_PAGE.items() for tab in tabs}
 
@@ -93,6 +97,8 @@ OLD_PATHS = {
 # Tabs of the old project page that live elsewhere now.
 OLD_HOME_TABS = {"Fuentes y cruces": TAB_IDEA, "Arquitectura": TAB_PIPELINE,
                  "Modelo de datos": TAB_MODEL, "Código": TAB_CODE}
+# Tabs that became a page of their own: (page they lived in, tab) -> new page.
+OLD_TAB_PAGES = {(PAGE_OPERATIONS, "Enlaces"): PAGE_LINKS}
 TAB_PARAMETER = "seccion"
 THEME_PARAMETER = "tema"
 KPI_PARAMETER = "kpi"
@@ -127,7 +133,6 @@ EXPLORER_BASE_QUERIES = {explorer.VIEW_MARGINS: "k1_margin",
                          explorer.VIEW_ALERTS: "k6_national_weekly_price"}
 
 MANIFEST_FILE = Path(__file__).resolve().parent.parent / "agent" / "downloads" / "manifest.json"
-ISSUES_PAGE_URL = project.ISSUES_URL
 CHILE_TIME_ZONE = "America/Santiago"
 # GitHub allows 60 questions per hour without a key, shared by every app on the
 # same server: an answer is kept 5 minutes before asking again.
@@ -316,6 +321,12 @@ REJECTED_ROW_LABELS = {
     "channel": "Canal", "product": "Producto", "variety": "Variedad", "quality": "Calidad",
     "sale_unit": "Unidad de venta", "unit": "Unidad", "volume": "Volumen",
     "min_price": "Precio mínimo", "max_price": "Precio máximo", "avg_price": "Precio promedio",
+}
+# What each group of project links is for.
+LINK_GROUP_LEADS = {
+    "Código y operación": "El código, cada ejecución, cada informe y cada cambio.",
+    "Fuentes de datos": "Los archivos originales de ODEPA.",
+    "Documentos": "El manual de operación y el registro de decisiones.",
 }
 # (question, page where it is answered, state: available, partial or pending, note)
 BUSINESS_QUESTIONS = [
@@ -1360,7 +1371,7 @@ def show_sources(mode):
     show_info_cards([build_info_card_html(name, text, label=SOURCE_LABELS.get(name))
                      for name, text in project.parse_labeled_items(section)])
     st.markdown('<div class="info-note">Licencia Creative Commons Atribución. Los enlaces a '
-                f'las fuentes están en {build_place_link(TAB_LINKS, "")}'
+                f'las fuentes están en {build_place_link(PAGE_LINKS, "la página")}'
                 '.</div>', unsafe_allow_html=True)
     st.markdown(build_steps_html(project.parse_labeled_items(section, numbered=True)),
                 unsafe_allow_html=True)
@@ -1834,7 +1845,7 @@ def show_repository_files():
             body_html=f'<ul class="file-list">{lines}</ul>' if lines else ""))
     show_info_cards(cards, is_compact=True)
     st.markdown(f'<div class="info-note">Los enlaces al historial de commits y a las '
-                f'ejecuciones están en {build_place_link(TAB_LINKS, "")}.</div>',
+                f'ejecuciones están en {build_place_link(PAGE_LINKS, "la página")}.</div>',
                 unsafe_allow_html=True)
 
 
@@ -2606,14 +2617,6 @@ def show_runs_tab(mode):
         show_run_history(runs, error_text)
 
 
-def show_links_tab(mode):
-    """The only place with the links of the project (D-056)."""
-    with open_card("links", "Enlaces del proyecto"):
-        show_link_cards(project.PROJECT_LINKS)
-        st.caption("Los enlaces de administración (Streamlit, workflow y tokens) están en "
-                   "Ejecuciones → 🔒 Administración, con la clave de control.")
-
-
 # endregion
 
 
@@ -2811,7 +2814,8 @@ def show_devops_tab(mode):
         if group[0] == "DevOps":
             st.markdown(f'<div class="info-note">Próxima ejecución automática: '
                         f'{figures["next_run"]}.</div>', unsafe_allow_html=True)
-    st.link_button("Ver informes semanales", ISSUES_PAGE_URL, icon=":material/description:")
+    st.markdown(f'<div class="info-note">El enlace a los informes semanales está en '
+                f'{build_place_link(PAGE_LINKS, "la página")}.</div>', unsafe_allow_html=True)
 
 
 def show_architecture_page(mode):
@@ -2973,13 +2977,33 @@ def show_quality_tab(mode):
 
 
 def show_operations_page(mode):
-    """The state of each run, the quality of each load and every project link (D-056)."""
+    """The state of each run and the quality of each load (D-056)."""
     show_page_header(PAGE_OPERATIONS, "El pipeline descarga, revisa y guarda los datos cada "
-                     "martes. Aquí ves su estado, la calidad de cada carga y los enlaces "
-                     "del proyecto.")
-    show_page_tabs(PAGE_OPERATIONS, [show_runs_tab, show_quality_tab, show_links_tab], mode)
+                     "martes. Aquí ves su estado y la calidad de cada carga.")
+    show_page_tabs(PAGE_OPERATIONS, [show_runs_tab, show_quality_tab], mode)
 
 
+# endregion
+
+
+# region Links page
+def show_links_page(mode):
+    """The only place with the links of the project, by group (D-058)."""
+    show_page_header(PAGE_LINKS, "Todos los enlaces del proyecto en un solo lugar: el código, "
+                     "las ejecuciones, las fuentes de datos y los documentos.")
+    links = project.PROJECT_LINKS
+    for group in dict.fromkeys(link["group"] for link in links):
+        published = [link for link in links if link["group"] == group and link["url"]]
+        if published:
+            show_section_intro(group, LINK_GROUP_LEADS.get(group, ""), True)
+            show_link_cards(published)
+    upcoming = [link["name"] for link in links if not link["url"]]
+    if upcoming:
+        st.markdown(f'<div class="info-note">Próximamente: {html.escape(", ".join(upcoming))}.'
+                    '</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="info-note">Los enlaces de administración (Streamlit, workflow y '
+                f'tokens) están en {build_place_link(TAB_RUNS, "")} → 🔒 Administración, con '
+                'la clave de control.</div>', unsafe_allow_html=True)
 # endregion
 
 
@@ -2990,6 +3014,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_ARCHITECTURE: show_architecture_page,
     PAGE_DATA_AND_CODE: show_data_and_code_page,
     PAGE_OPERATIONS: show_operations_page,
+    PAGE_LINKS: show_links_page,
 }
 
 
@@ -3026,14 +3051,19 @@ def build_redirect_page(url_path, target_page, tab=None):
                    visibility="hidden")
 
 
-def redirect_old_home_tab(current_page, pages_by_title):
-    """An old link to a tab of the former project page opens that tab where it lives
-    now (D-056)."""
-    moved_tab = OLD_HOME_TABS.get(st.query_params.get(TAB_PARAMETER))
+def redirect_moved_tab(current_page, pages_by_title):
+    """An old link to a tab that moved opens it where it lives now: the tabs of the
+    former project page (D-056) and the links, now a page of their own (D-058)."""
+    tab = st.query_params.get(TAB_PARAMETER)
+    parameters = st.query_params.to_dict()
+    moved_page = OLD_TAB_PAGES.get((current_page.title, tab))
+    if moved_page:
+        parameters.pop(TAB_PARAMETER)
+        st.switch_page(pages_by_title[moved_page], query_params=parameters)
+    moved_tab = OLD_HOME_TABS.get(tab)
     if current_page.title == HOME_PAGE and moved_tab:
         st.switch_page(pages_by_title[PAGE_OF_TAB[moved_tab]],
-                       query_params=dict(st.query_params.to_dict(),
-                                         **{TAB_PARAMETER: moved_tab}))
+                       query_params=dict(parameters, **{TAB_PARAMETER: moved_tab}))
 
 
 def main():
@@ -3052,7 +3082,7 @@ def main():
                  for path, (page, tab) in OLD_PATHS.items()]
     current_page = st.navigation(list(pages_by_title.values()) + redirects,
                                  position="sidebar")
-    redirect_old_home_tab(current_page, pages_by_title)
+    redirect_moved_tab(current_page, pages_by_title)
     current_page.run()
     st.sidebar.caption("Fuente: ODEPA · actualización automática cada martes.")
 

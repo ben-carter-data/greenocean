@@ -27,7 +27,7 @@ def draw_page(title):
 
 def test_d056_one_menu_of_five_entries_by_type_of_content():
     assert dashboard.PAGES == ["Inicio", "Análisis", "Arquitectura", "Datos y código",
-                               "Operaciones"]
+                               "Operaciones", "Enlaces"]
     assert dashboard.HOME_PAGE == dashboard.PAGES[0]
     assert set(dashboard.TABS_BY_PAGE) == set(dashboard.PAGES)
     # A tab name belongs to one page only, so a place name always has one address.
@@ -358,14 +358,14 @@ def test_t54_the_right_code_opens_administration_and_never_shows_the_token():
 
 
 @needs_database
-def test_d056_project_links_live_only_in_operaciones_and_never_as_text():
+def test_d058_project_links_live_only_in_their_page_and_never_as_text():
     for title in ALL_PAGES:
         texts = [element.proto.body for element in draw_page(title).get("html")]
         links = "\n".join(texts)
         for link in project.PROJECT_LINKS:
             if link["url"]:
                 shown = f'href="{link["url"]}"' in links
-                assert shown == (title == dashboard.PAGE_OPERATIONS), (title, link["name"])
+                assert shown == (title == dashboard.PAGE_LINKS), (title, link["name"])
                 # The address lives only in the link, never as visible text.
                 assert f'>{link["url"]}<' not in links
 # endregion
@@ -518,3 +518,12 @@ def test_d057_quality_tab_explains_what_was_left_out_and_shows_it():
     assert "0,008 %" in cards
     assert not [column for frame in app.dataframe for column in frame.value.columns
                 if column in ("source", "reason", "rejected_rows", "rejected_share")]
+
+
+def test_d058_the_old_links_tab_opens_the_links_page():
+    assert dashboard.OLD_TAB_PAGES[(dashboard.PAGE_OPERATIONS, "Enlaces")] == dashboard.PAGE_LINKS
+    assert "Enlaces" not in dashboard.TABS_BY_PAGE[dashboard.PAGE_OPERATIONS]
+    assert dashboard.build_place_address(dashboard.PAGE_LINKS) == "enlaces"
+    groups = {link["group"] for link in project.PROJECT_LINKS}
+    assert groups == {"Código y operación", "Fuentes de datos", "Documentos"}
+    assert set(dashboard.LINK_GROUP_LEADS) == groups
