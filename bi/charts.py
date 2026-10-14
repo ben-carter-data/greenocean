@@ -493,8 +493,10 @@ def draw_region_channel_map(rows, mode, chosen_region=None):
                        short_region=rows["region"].map(shorten_region_name))
     pick = alt.selection_point(name="pick", fields=["region"], on="click", clear="dblclick")
     base = alt.Chart(rows).encode(
-        x=alt.X("short_region:N", title=None, axis=alt.Axis(labelAngle=-35, labelLimit=90)),
-        y=alt.Y("channel:N", title=None, axis=alt.Axis(labelLimit=140)),
+        # Regions in rows and channels in columns: every name reads whole and level.
+        x=alt.X("channel:N", title=None, axis=alt.Axis(orient="top", labelAngle=0,
+                                                         labelLimit=90)),
+        y=alt.Y("short_region:N", title=None, axis=alt.Axis(labelLimit=120)),
         tooltip=[alt.Tooltip("detail:N", title="Detalle"),
                  alt.Tooltip("index_label:N", title="Índice (100 = promedio nacional)")])
     opacity = (alt.condition(alt.datum.region == chosen_region, alt.value(1), alt.value(.45))
@@ -502,23 +504,51 @@ def draw_region_channel_map(rows, mode, chosen_region=None):
     cells = base.mark_rect(cornerRadius=3, stroke=palette["card"], strokeWidth=2,
                            cursor="pointer").encode(
         color=alt.Color("index:Q", title="Índice", scale=alt.Scale(range=ramp),
-            legend=alt.Legend(orient="right", gradientLength=120, format=".0f")),
+            # Under the grid, as in the mockup: the cells keep the card's whole width.
+            legend=alt.Legend(orient="bottom", direction="horizontal", gradientLength=160,
+                              format=".0f", title="Índice (100 = promedio del canal)")),
         opacity=opacity).add_params(pick)
     text = base.mark_text(fontSize=11).encode(text="index_label:N",
                                               color=alt.Color("text_color:N", scale=None))
+    layers = [cells, text]
+    # A region without a price in a channel reads «Sin dato» on a neutral cell: absent,
+    # never a zero on the heat scale (D-072).
+    grid = pd.MultiIndex.from_product([rows["short_region"].unique(), rows["channel"].unique()],
+                                      names=["short_region", "channel"]).to_frame(index=False)
+    missing = grid.merge(rows[["short_region", "channel"]], how="left", indicator=True)
+    missing = missing[missing["_merge"] == "left_only"].drop(columns="_merge")
+    if not missing.empty:
+        empty = alt.Chart(missing.assign(label="Sin dato")).encode(
+            x=alt.X("channel:N"), y=alt.Y("short_region:N"))
+        layers += [empty.mark_rect(cornerRadius=3, stroke=palette["card"], strokeWidth=2,
+                                   color=palette["grid"]),
+                   empty.mark_text(fontSize=10, fontStyle="italic", color=palette["text"])
+                   .encode(text="label:N")]
     # The ink has its own scale: it must not join the heat scale of the cells.
-    return apply_chart_style(alt.layer(cells, text).resolve_scale(color="independent"), mode)
+    return apply_chart_style(alt.layer(*layers).resolve_scale(color="independent"), mode)
 
 
-def draw_donut(rows, colors, mode):
-    """Shares of a whole as a ring (rows: label, value, value_label)."""
+def draw_donut(rows, colors, mode, center=None, center_note=None, size=210):
+    """Shares of a whole as a ring (rows: label, value, value_label); center writes the
+    whole in the middle, with center_note under it, so the reader knows what it adds up."""
+    palette = get_palette(mode)
     rows = rows.assign(color=colors)
-    ring = alt.Chart(rows).mark_arc(innerRadius=62, outerRadius=96, cornerRadius=4,
+    outer = size * 0.46
+    ring = alt.Chart(rows).mark_arc(innerRadius=outer * 0.68, outerRadius=outer, cornerRadius=4,
                                     padAngle=0.02).encode(
         theta=alt.Theta("value:Q", stack=True),
         color=alt.Color("color:N", scale=None),
         order=alt.Order("value:Q", sort="descending"),
         tooltip=[alt.Tooltip("label:N", title=" "),
                  alt.Tooltip("value_label:N", title="Precios semanales")])
-    return apply_chart_style(ring.properties(height=210, width=210), mode)
+    layers = [ring]
+    if center:
+        middle = alt.Chart(pd.DataFrame({"text": [center]}))
+        layers.append(middle.mark_text(fontSize=size * 0.1, fontWeight="bold", dy=-6,
+                                       color=palette["strong_text"]).encode(text="text:N"))
+        if center_note:
+            layers.append(middle.mark_text(fontSize=size * 0.06, dy=size * 0.08,
+                                           color=palette["text"]).encode(
+                text=alt.datum(center_note)))
+    return apply_chart_style(alt.layer(*layers).properties(height=size, width=size), mode)
 # endregion
