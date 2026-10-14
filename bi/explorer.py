@@ -37,7 +37,7 @@ SEARCH_FIELDS = list(LIST_FIELD_COLUMNS) + [FIELD_FIRST_WEEK, FIELD_LAST_WEEK, F
 FIELD_LABELS = {FIELD_GROUP: "Grupo", FIELD_PRODUCT: "Producto", FIELD_VARIETY: "Variedad",
                 FIELD_QUALITY: "Calidad", FIELD_REGION: "Región", FIELD_CHANNEL: "Canal",
                 FIELD_SOURCE: "Fuente", FIELD_FIRST_WEEK: "Semana desde",
-                FIELD_LAST_WEEK: "Semana hasta", FIELD_ALERT: "Estado de alerta"}
+                FIELD_LAST_WEEK: "Semana hasta", FIELD_ALERT: "Qué tan común es el cambio"}
 ALL = "Todos"
 SOURCE_NAMES = {"wholesale": "Mayorista", "consumer": "Consumidor"}
 

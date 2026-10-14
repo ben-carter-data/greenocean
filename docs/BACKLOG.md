@@ -71,6 +71,7 @@ Orden de arriba hacia abajo. Cada tarea indica cuándo se considera terminada. L
 | T-31c | Verificar cada hallazgo: misma variedad y calidad, suficientes semanas, sin atípicos, y revisión a mano de una muestra | La consulta SQL que lo produce está en el repositorio y cualquiera la puede repetir |
 | T-31d | Publicar los hallazgos en el README y en el resumen del panel, con sus límites | Sección «Hallazgos» visible |
 | T-31e | Opcional: mostrar el panel a una persona de compras o pricing y registrar qué cambió por su comentario | Entrada nueva en DECISIONES.md |
+| T-31f | Separar la brecha en dos: «granel» (mayorista contra feria libre: mismo formato) y «envasado» (mayorista contra supermercado), explicando que la segunda incluye empaque y presentación, no solo margen (D-068) | Los hallazgos citan cada brecha por su nombre, con su consulta, y ninguno compara granel con envasado sin decirlo |
 
 ## Mejoras
 

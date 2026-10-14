@@ -119,6 +119,17 @@ def test_every_business_question_points_to_a_page_or_is_pending():
         assert page in dashboard.PAGE_OF_TAB or state == "pending"
 
 
+def test_business_questions_float_without_repetitive_card_backgrounds():
+    showcase = dashboard.build_question_showcase_html()
+
+    assert showcase.count('class="question-item"') == len(dashboard.BUSINESS_QUESTIONS)
+    assert 'class="info-card' not in showcase
+    for number in range(1, len(dashboard.BUSINESS_QUESTIONS) + 1):
+        assert f"Pregunta {number} · Disponible" in showcase
+    for symbol in ["gap", "channels", "region", "calendar", "lag", "alert"]:
+        assert f'data-kind="{symbol}"' in showcase
+
+
 @needs_database
 def test_d060_search_shows_form_summary_and_table():
     app = draw_page(dashboard.PAGE_DATA_AND_CODE)
@@ -128,9 +139,13 @@ def test_d060_search_shows_form_summary_and_table():
         assert explorer.FIELD_LABELS[field] in labels
     texts = " ".join(block.value for block in app.markdown)
     for state in explorer.ALERT_STATES:
-        assert state in texts
+        assert dashboard.ALERT_STATE_PUBLIC_LABELS[state] in texts
+    assert "Grupo de alimentos" in texts
     assert "Mostrando 1 a 20 de" in texts
     assert len(app.dataframe) >= 1
+    sql_details = next(expander for expander in app.expander
+                       if expander.label.startswith("Cómo se construyó esta búsqueda"))
+    assert sql_details.proto.expanded
 
 
 @needs_database
@@ -140,7 +155,8 @@ def test_d060_a_summary_card_applies_its_filter_and_shows_a_chip():
     assert not app.exception
     assert app.session_state["search_applied"][explorer.FIELD_ALERT] == explorer.ALERT_OUT
     chip = app.button(key=f"chip_{explorer.FIELD_ALERT}")
-    assert chip.label == f"Estado de alerta: {explorer.ALERT_OUT} ✕"
+    assert chip.label == (f"{explorer.FIELD_LABELS[explorer.FIELD_ALERT]}: "
+                          f"{dashboard.ALERT_STATE_PUBLIC_LABELS[explorer.ALERT_OUT]} ✕")
     chip.click().run()
     assert app.session_state["search_applied"][explorer.FIELD_ALERT] == explorer.ALL
 
@@ -161,11 +177,13 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     texts = " ".join(block.value for block in app.markdown)
     assert "Top 8" in texts and "811.578" in texts
     assert 'class="zoom-frame' not in texts and "animateMotion" not in texts
-    assert texts.index("Top 8 · cambios") < texts.index("Composición de la semana")
+    assert texts.index("Top 8 · cambios") < texts.index("¿Qué grupo subió más?")
     figures = [json.loads(chart.proto.spec) for chart in app.get("plotly_chart")]
-    assert len(figures) == 3
+    assert len(figures) == 2
     assert {trace["type"] for figure in figures for trace in figure["data"]} == {
-        "pie", "scatter", "scatter3d"}
+        "heatmap", "scatter"}
+    assert "scatter3d" not in {trace["type"] for figure in figures for trace in figure["data"]}
+    assert texts.count('class="overview-metric"') == 4
     diagrams = draw_page(dashboard.PAGE_DIAGRAMS)
     texts = " ".join(block.value for block in diagrams.markdown)
     assert not diagrams.exception and not diagrams.tabs
@@ -176,13 +194,11 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
 
 
 @needs_database
-def test_territorial_view_switches_to_2d_without_duplicating_the_3d_plot():
+def test_dashboard_territory_is_immediately_readable_without_a_3d_duplicate():
     app = draw_page(dashboard.HOME_PAGE)
-    selector = next(widget for widget in app.get("button_group") if widget.key == "home_territorial_view")
-    selector.set_value("Mapa 2D").run()
     assert not app.exception
     figures = [json.loads(chart.proto.spec) for chart in app.get("plotly_chart")]
-    assert len(figures) == 3
+    assert len(figures) == 2
     types = {trace["type"] for figure in figures for trace in figure["data"]}
     assert "heatmap" in types and "scatter3d" not in types
 
@@ -223,9 +239,10 @@ def test_t57_queries_section_shows_the_real_count_and_each_query_open_by_its_par
     named_count = queries.QUERIES_FILE.read_text(encoding="utf-8").count("\n-- name: ")
     app = draw_page(dashboard.PAGE_QUERIES)
     texts = [block.value for block in app.markdown]
-    assert f"### {named_count} queries del proyecto" in texts
+    assert f"### {named_count} consultas del proyecto" in texts
     catalog = project.list_named_queries()
-    labels = {expander.label.split(" · ")[0]: expander for expander in app.expander}
+    labels = {expander.label.rsplit("nombre técnico: ", 1)[-1]: expander
+              for expander in app.expander if "nombre técnico: " in expander.label}
     for query in catalog + [{"name": project.MATCH_COVERAGE_QUERY_NAME}]:
         assert labels[query["name"]].proto.expanded, query["name"]
     parts = [text[5:].split(" · ")[0] for text in texts if text.startswith("#### ")]
@@ -243,13 +260,14 @@ def test_queries_tab_runs_a_query_when_asked():
 
 def test_kpi_link_opens_the_kpi_view_with_that_indicator():
     link = dashboard.build_kpi_link("K5")
-    assert 'href="proyecto?kpi=K5&amp;vista=Indicadores+%C2%B7+BI"' in link
+    assert 'href="proyecto?kpi=K5&amp;vista=Indicadores+explicados"' in link
+    assert ">K5<" not in link
 
 
 def test_d065_a_place_named_in_a_document_opens_its_window_and_view():
     assert dashboard.build_place_address(dashboard.TAB_QUALITY) == "operacion"
     assert dashboard.build_place_address(dashboard.TAB_KPI) == (
-        "proyecto?vista=Indicadores+%C2%B7+BI")
+        "proyecto?vista=Indicadores+explicados")
     assert dashboard.build_place_address(dashboard.PAGE_ANALYSIS) == "./?vista=Esta+semana"
 
 
@@ -317,6 +335,9 @@ def test_t44_base_mode_switch_writes_streamlit_choice_and_tries_only_once():
     # A second attempt on the same page and base is skipped: no endless reload.
     assert "current !== wanted && requested !== wanted" in script
     assert 'const wanted = "Dark"' in dashboard.build_base_mode_script(charts.BASE_DARK)
+    graphite = dashboard.build_base_mode_script(charts.MODE_GRAPHITE)
+    assert 'const wanted = "Dark"' in graphite
+    assert 'address.searchParams.set("tema", "Grafito")' in graphite
 
 
 # region Administration (T-54)
@@ -422,10 +443,15 @@ def test_d057_kpi_tab_shows_eight_cards_and_opens_the_asked_one_first():
     assert not app.exception
     cards = " ".join(block.value for block in app.markdown if 'class="info-grid"' in block.value)
     assert cards.count('class="info-card"') == 8
-    assert cards.index('info-label">K5<') < cards.index('info-label">K1<')
+    indicators = {row["ID"]: row["Indicador"]
+                  for row in project.read_design_table(project.INDICATORS_HEADING)}
+    assert cards.index(indicators["K5"]) < cards.index(indicators["K1"])
+    assert 'info-label">K' not in cards
     assert "Fórmula:" in cards and "Ver en Brecha de precio" in cards
-    assert [expander.label for expander in app.expander][0].startswith("Ver detalles de K5")
-    assert "¿Cómo se calcula K7?" in dashboard.build_kpi_link("K7")
+    assert [expander.label for expander in app.expander][0] == (
+        f"Cómo se calcula «{indicators['K5']}»")
+    assert "¿Cómo se calcula?" in dashboard.build_kpi_link("K7")
+    assert ">K7<" not in dashboard.build_kpi_link("K7")
 
 
 def test_d057_every_rule_has_one_stage_in_the_order_of_the_etl():
@@ -609,6 +635,13 @@ def test_status_text_is_readable_on_light_themes():
         assert charts.get_status_text_color(status, charts.MODE_DARK) == charts.STATUS_COLORS[status]
 
 
+def test_streamlit_file_watcher_never_overlays_the_report():
+    css = dashboard.build_theme_css(charts.get_palette(charts.MODE_DARK))
+
+    assert '[data-testid="stStatusWidget"]' in css
+    assert "display: none !important" in css
+
+
 def test_market_ranking_handles_both_directions_missing_values_and_top_n():
     rows = pd.DataFrame({"variation": [0.1, -0.8, 0.4, float("nan"), float("inf")]})
     assert dashboard.rank_weekly_movements(rows, 2).variation.tolist() == [-0.8, 0.4]
@@ -748,8 +781,9 @@ def test_a_kpi_link_opens_its_canonical_query_without_repeating_it():
               "from bi import dashboard\ndashboard.show_queries_tab(dashboard.charts.MODE_DARK)")
     catalog = AppTest.from_string(script, default_timeout=60).run()
     assert not catalog.exception
-    assert catalog.expander[0].label.startswith("k7_match_coverage")
-    assert sum(expander.label.startswith("k7_match_coverage") for expander in catalog.expander) == 1
+    assert catalog.expander[0].label.endswith("nombre técnico: k7_match_coverage")
+    assert sum(expander.label.endswith("nombre técnico: k7_match_coverage")
+               for expander in catalog.expander) == 1
 
 
 def test_d066_each_profile_orders_the_same_windows_and_starts_at_the_first():
@@ -778,10 +812,12 @@ def test_d066_a_profile_reorders_the_menu_and_the_sidebar_does_not_show_it():
 def test_d067_report_pages_use_a_compact_header_and_short_kpi_links():
     dashboard.st.session_state[dashboard.COMPACT_VIEW] = True
     try:
-        assert dashboard.build_kpi_link("K6").count(">K6 ↗<") == 1
+        compact_link = dashboard.build_kpi_link("K6")
+        assert compact_link.count(">Cómo se calcula ↗<") == 1
+        assert ">K6" not in compact_link
     finally:
         dashboard.st.session_state[dashboard.COMPACT_VIEW] = False
-    assert "¿Cómo se calcula K6?" in dashboard.build_kpi_link("K6")
+    assert "¿Cómo se calcula?" in dashboard.build_kpi_link("K6")
     ranked = pd.DataFrame({"product_group": ["Frutas"], "product": ["Manzana"],
                            "variety": ["Cripps Pink"], "quality": ["Calibre 80"],
                            "channel": ["Mayorista"], "normalized_unit": ["kilo"],
@@ -791,3 +827,47 @@ def test_d067_report_pages_use_a_compact_header_and_short_kpi_links():
     assert table.iloc[0]["Semana"] == "05-10-2026"
     assert table.iloc[0]["Precio nacional"] == "$ 1.556"
     assert table.iloc[0]["Variación"] == "+55,6 %"
+
+
+def test_d068_gaps_above_300_percent_are_a_packed_format_and_leave_the_ranking():
+    gaps = pd.DataFrame({"product": ["Frutilla", "Tomate"], "margin": [8.36, 0.52]})
+    comparable, excluded = dashboard.split_comparable_gaps(gaps)
+    assert comparable["product"].tolist() == ["Tomate"]
+    assert excluded["product"].tolist() == ["Frutilla"]
+    assert dashboard.MAXIMUM_COMPARABLE_GAP == 3.0
+
+
+def test_d068_short_labels_stay_unique_and_the_detail_goes_to_the_tooltip():
+    rows = pd.DataFrame({"product": ["Naranja", "Naranja"], "channel": ["Supermercado"] * 2,
+                         "variety": ["Lane Late", "Navel Late"], "quality": ["Primera"] * 2})
+    labels = dashboard.build_short_labels(rows, lambda row: f"{row['product']} · {row['channel']}")
+    assert labels[0] == "Naranja · Supermercado" and len(set(labels)) == 2
+    assert labels[1].strip("\u200b") == labels[0]
+    spec = str(charts.draw_horizontal_bars(pd.DataFrame(
+        {"label": labels, "value": [1, 2], "value_label": ["1", "2"], "detail": ["a", "b"]}),
+        "x", charts.MODE_DARK).to_dict())
+    assert "'title': 'Detalle'" in spec
+
+
+def test_d068_the_map_hides_channels_and_regions_almost_without_data():
+    points = pd.DataFrame({"channel": ["A", "A", "A", "B"], "region": ["R1", "R2", "R3", "R1"],
+                           "regional_index": [1.0, 1.1, 0.9, 1.2]})
+    kept = dashboard.keep_covered_cells(points)
+    assert set(kept["channel"]) == {"A"}
+
+
+def test_d068_the_summary_sentence_and_figures_read_real_weekly_data():
+    summary = {"latest": {"rises": 214, "falls": 180, "typical_change": 0.4, "median_gap": 61,
+                          "alerts": 43},
+               "previous": {"rises": 200, "falls": 190, "typical_change": 1.0,
+                            "median_gap": 58, "alerts": 50},
+               "strong_rises": 46, "week": pd.Timestamp("2026-10-05"),
+               "top_rise": {"product": "Manzana", "channel": "Mayorista", "variation": 0.556}}
+    sentence = dashboard.build_summary_sentence(summary)
+    assert sentence == ("Esta semana subieron 214 precios y bajaron 180. 46 productos "
+                        "subieron más de 10 %; la mayor alza fue Manzana en Mayorista (+55,6 %).")
+    figures = dashboard.build_business_figures_html(summary, charts.MODE_DARK)
+    assert "▲ 14 frente a la semana anterior (suben)" in figures
+    assert "▼ 7 frente a la semana anterior" in figures
+    assert "▼ 0,6 pts frente a la semana anterior" in figures
+    assert "Observaciones históricas" not in figures

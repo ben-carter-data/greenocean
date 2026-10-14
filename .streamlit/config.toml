@@ -1,5 +1,5 @@
-# Two themes: Vantablack with raised slate surfaces, and Corporativo.
-# The page stays black in Vantablack; fields and cards have their own contrast.
+# Streamlit's native bases support the app palettes: Vantablack, Grafito and
+# Corporativo. Fields and cards keep their own contrast in every palette.
 [theme]
 base = "dark"
 baseRadius = "large"
@@ -21,3 +21,8 @@ borderColor = "#e3e7ed"
 
 [browser]
 gatherUsageStats = false
+
+[client]
+# Keep local developer actions out of the report canvas. This also removes the
+# floating rerun/deploy controls that can cover content on narrow viewports.
+toolbarMode = "viewer"
