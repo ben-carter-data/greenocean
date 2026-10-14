@@ -94,6 +94,11 @@ MAXIMUM_COMPARABLE_GAP = 3.0
 STRONG_CHANGE = 0.10
 # The pulse shows three series by default; the reader adds the others.
 PULSE_CHANNELS = ["Mayorista", "Feria libre", "Supermercado"]
+# Filters of the whole report (D-069): one bar for every Dashboard view, kept while the
+# reader moves with ◀ ▶. The product comes from a click (cross filter or drill-down).
+ALL_VALUES = "Todas"
+GLOBAL_FILTERS = {"group": "Categoría", "region": "Región", "week": "Semana"}
+DASHBOARD_WEEKS = 26
 # A channel or region of the territory map needs data in this share of the other axis.
 MINIMUM_MAP_COVERAGE = 0.5
 BAR_STEP = 22
@@ -599,11 +604,29 @@ def build_style_css(mode):
     .page-freshness {{ color:{palette["text"]}; font-size:0.82rem; margin-bottom:8px; }}
     [data-testid="stMain"] h1 {{ font-size:clamp(1.7rem,3vw,2.35rem); line-height:1.15; }}
     .st-key-app_header {{ background:{palette["card"]}; border:1px solid {palette["card_border"]};
-        border-radius:16px; padding:10px 16px 7px; margin:0 0 14px;
+        border-radius:16px; padding:8px 14px; margin:0 0 6px;
         box-shadow:0 2px 10px rgba(0,0,0,.08); }}
     .app-brand {{ display:flex; align-items:baseline; gap:12px; min-height:38px; }}
     .app-brand span {{ color:{palette["strong_text"]}; font-size:1rem; font-weight:750;
         letter-spacing:.07em; }}
+    /* Report header: one line; the brand never wraps and the arrows stay compact. */
+    .st-key-app_header:has(.st-key-report_navigation) .app-brand {{ flex-direction:column;
+        gap:0; min-height:0; }}
+    /* In the report the brand takes two short lines, so the selects keep their text. */
+    .st-key-app_header:has(.st-key-report_navigation) .app-brand span {{ font-size:.8rem;
+        max-width:7.2em; line-height:1.2; letter-spacing:.05em; }}
+    .st-key-app_header:has(.st-key-report_navigation) .app-brand small {{ display:none; }}
+    .st-key-report_navigation {{ flex-wrap:nowrap !important; gap:6px; }}
+    .st-key-report_navigation [data-testid="stButton"] {{ flex:none; width:auto !important; }}
+    .st-key-report_navigation [data-testid="stButton"] button {{ min-height:36px; height:36px;
+        width:36px; padding:0; }}
+    .st-key-report_navigation [data-testid="stSelectbox"] {{ flex:1 1 0; min-width:0; }}
+    .st-key-report_filters {{ flex-wrap:nowrap !important; gap:8px; }}
+    .st-key-report_breadcrumb {{ flex-wrap:nowrap !important; gap:4px; min-width:0; }}
+    .st-key-report_breadcrumb [data-testid="stButton"] button {{ white-space:nowrap; }}
+    .st-key-app_header [data-testid="stSelectbox"] .react-aria-ComboBox > div {{
+        font-size:.82rem; padding-left:2px; }}
+    .st-key-report_filters [data-testid="stSelectbox"] {{ flex:1 1 0; min-width:0; }}
     .app-brand small {{ color:{palette["text"]}; font-size:.78rem; }}
     .st-key-app_header [data-testid="stWidgetLabel"] p {{ font-size:.72rem; }}
     .project-navigation {{ display:grid; grid-template-columns:1fr auto 1fr; gap:12px;
@@ -712,6 +735,11 @@ def build_style_css(mode):
                  line-height: 1.2; }}
     .kpi-note {{ color: {palette["text"]}; font-size: 0.8rem; }}
     .kpi-link {{ margin-left: 10px; font-size: 0.8rem; font-weight: 400; }}
+    .card-title {{ display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: 0; }}
+    .card-title > *:not(.card-title-text) {{ flex: none; }}
+    .card-title-text {{ min-width: 0; overflow: hidden; text-overflow: ellipsis;
+                        white-space: nowrap; }}
+    .card-title .kpi-link {{ margin-left: auto; white-space: nowrap; }}
     .chip {{ display: inline-block; padding: 2px 10px; border-radius: 999px;
             font-size: 0.8rem; font-weight: 600; margin-left: 6px; }}
     .chip-ok {{ background: rgba(12, 163, 12, 0.16);
@@ -939,23 +967,36 @@ def build_style_css(mode):
     .compact-header h1 {{ font-size: 1.3rem !important; margin: 0 !important; white-space: nowrap;
                           padding: 0 !important; line-height: 1.25; cursor: help; }}
     .compact-header .page-freshness {{ margin: 0; font-size: 0.8rem; }}
-    [class*="st-key-report_page"] {{ gap: 0.9rem; }}
-    [class*="st-key-report_page"] [data-testid="stVerticalBlock"] {{ gap: 0.8rem; }}
+    /* The report starts right under the header: the invisible script frame between them
+       keeps no band of its own. */
+    [class*="st-key-report_page"] {{ gap: 0.6rem; margin-top: -1.6rem; }}
+    [class*="st-key-report_page"] [data-testid="stVerticalBlock"] {{ gap: 0.6rem; }}
     [class*="st-key-report_page"] [class*="st-key-card_"] {{ padding: 10px 14px 6px 14px;
                                                               border-radius: 14px; }}
-    [class*="st-key-report_page"] .card-title {{ font-size: 0.95rem; }}
+    [class*="st-key-report_page"] .card-title {{ font-size: 0.95rem; margin-bottom: 2px; }}
+    [class*="st-key-report_page"] .card-title .component-symbol {{ width: 24px; height: 26px;
+                                                                    margin: 0; }}
+    [class*="st-key-report_page"] .kpi-link {{ font-size: 0.75rem; }}
+    /* Three channels fit on one line in the pulse's field. */
+    [class*="st-key-report_page"] [data-testid="stMultiSelect"] [data-baseweb="tag"] {{
+        font-size: 0.72rem; height: 22px; margin: 1px 3px 1px 0; padding: 0 4px 0 6px; }}
+    [class*="st-key-report_page"] .overview-metric .component-symbol {{ width: 22px; height: 22px;
+                                                                        margin: 0 6px 0 0; }}
+    [class*="st-key-report_page"] .overview-metric .kpi-label {{ font-size: 0.82rem; }}
+    [class*="st-key-report_page"] .overview-metric .market-metric-note {{ font-size: 0.72rem;
+                                                                          margin: 0; }}
     [class*="st-key-report_page"] .overview-metrics {{ gap: 8px !important;
                                                        margin: 0 0 4px 0 !important; }}
     /* Each figure on one line: its name left, its value right. */
-    [class*="st-key-report_page"] .overview-metrics > .overview-metric {{ padding:10px 12px !important; }}
+    [class*="st-key-report_page"] .overview-metrics > .overview-metric {{ padding:6px 12px !important; }}
     [class*="st-key-report_page"] .overview-metrics .market-metric-heading {{ margin: 0 !important; }}
     [class*="st-key-report_page"] .overview-metrics .kpi-value {{ font-size: 1.25rem !important;
                                                                   line-height: 1.2 !important;
                                                                   white-space: nowrap; }}
     [class*="st-key-report_page"] .market-eyebrow {{ display: none; }}
-    .summary-sentence {{ font-size: 1rem; font-weight: 600; color: {palette["strong_text"]};
-                         margin: 2px 0 4px 0; line-height: 1.4; }}
-    .context-line {{ font-size: 0.78rem; color: {palette["text"]}; margin: 2px 0 6px 0; }}
+    .summary-sentence {{ font-size: 0.95rem; font-weight: 600; color: {palette["strong_text"]};
+                         margin: 0 0 6px 0; line-height: 1.35; }}
+    .context-line {{ font-size: 0.75rem; color: {palette["text"]}; margin: 0; }}
     [class*="st-key-report_page"] [data-testid="stHorizontalBlock"] {{ gap:14px; }}
     .st-key-dashboard_filter_bar {{ padding:10px 14px 8px; margin:4px 0 2px;
         background:{palette["card"]}; border:1px solid {palette["card_border"]}; border-radius:14px; }}
@@ -982,8 +1023,22 @@ def build_style_css(mode):
     }}
     /* Long file paths wrap inside their cell on phones; words do not break. */
     table.card-table td a {{ overflow-wrap: anywhere; }}
+    /* Tablet: the report header takes two rows (brand and page; filters and theme). */
+    @media(min-width:641px) and (max-width:1180px) {{
+        .st-key-app_header [data-testid="stHorizontalBlock"] {{ flex-wrap:wrap; row-gap:8px; }}
+        .st-key-app_header [data-testid="stColumn"]:nth-child(1) {{ flex:0 0 auto; width:auto; }}
+        .st-key-app_header [data-testid="stColumn"]:nth-child(2) {{ flex:1 1 55%; }}
+        .st-key-app_header [data-testid="stColumn"]:nth-child(3) {{ flex:1 1 70%; }}
+        .st-key-app_header [data-testid="stColumn"]:nth-child(4) {{ flex:1 1 20%; }}
+        .st-key-report_title_row [data-testid="stHorizontalBlock"] {{ flex-wrap:wrap; }}
+        .st-key-report_title_row [data-testid="stColumn"] {{ flex:1 1 45%; }}
+        .st-key-app_header:has(.st-key-report_navigation) .app-brand span {{ max-width:none; }}
+    }}
     @media(max-width:640px) {{
         .app-brand {{ align-items:flex-start; flex-direction:column; gap:1px; }}
+        .st-key-report_filters {{ flex-wrap:wrap !important; }}
+        .st-key-report_filters [data-testid="stSelectbox"] {{ flex:1 1 40%; }}
+        .st-key-app_header:has(.st-key-report_navigation) .app-brand span {{ max-width:none; }}
     }}
     """
 
@@ -994,11 +1049,12 @@ def apply_style(mode):
 
 
 def show_app_header(window):
-    """Product header with the visual theme control, visible on every real page."""
+    """Product header on one line. In the report: the page, ◀ ▶ (always side by side, also
+    on phones) and the report's filters; elsewhere the theme (D-069)."""
     with st.container(key="app_header"):
         if window == REPORT_WINDOW:
-            brand_column, view_column, previous, following, theme_column = st.columns(
-                [2.4, 2.5, .36, .36, 1.1], vertical_alignment="bottom")
+            brand_column, view_column, filters_column, theme_column = st.columns(
+                [0.95, 2.6, 4.9, 1.25], vertical_alignment="center")
         else:
             brand_column, theme_column = st.columns([5, 1.15], vertical_alignment="center")
         with brand_column:
@@ -1008,16 +1064,21 @@ def show_app_header(window):
         if window == REPORT_WINDOW:
             key = window_view_key(window)
             views = WINDOWS[window]
-            view_column.selectbox("Página del informe", views, key=key,
-                                  format_func=lambda value: ("Resumen ejecutivo"
-                                                             if value == PAGE_HOME else value))
-            previous.button("◀", key="previous_view", help="Vista anterior", on_click=step_view,
-                            args=(window, -1), use_container_width=True)
-            following.button("▶", key="next_view", help="Vista siguiente", on_click=step_view,
-                             args=(window, 1), use_container_width=True)
+            with view_column, st.container(key="report_navigation", horizontal=True,
+                                           vertical_alignment="center"):
+                st.button("◀", key="previous_view", help="Vista anterior", on_click=step_view,
+                          args=(window, -1))
+                st.selectbox("Página del informe", views, key=key, label_visibility="collapsed",
+                             format_func=lambda value: ("Resumen ejecutivo"
+                                                        if value == PAGE_HOME else value))
+                st.button("▶", key="next_view", help="Vista siguiente", on_click=step_view,
+                          args=(window, 1))
+            with filters_column:
+                show_report_filters()
         with theme_column:
             theme = st.selectbox("Apariencia", charts.THEMES, key=THEME_PARAMETER,
-                                 bind="query-params", help="Cambia la paleta de toda la aplicación.")
+                                 bind="query-params", label_visibility="collapsed",
+                                 help="Cambia la paleta de toda la aplicación.")
     match_base_mode(theme)
     return theme
 
@@ -1041,8 +1102,11 @@ def open_card(key, title=None, caption=None, hint=None, kpi=None):
         hint_icon = build_hint_icon(hint)
     kpi_link = build_kpi_link(kpi) if kpi else ""
     if title or hint:
-        card.markdown(f'<div class="card-title">{build_component_symbol(component_kind(key, title))}{html.escape(title or "")}{hint_icon}'
-                      f'{kpi_link}</div>', unsafe_allow_html=True)
+        # One line: the title shortens with «…» (whole on hover); ⓘ and the link stay whole.
+        card.markdown(f'<div class="card-title">{build_component_symbol(component_kind(key, title))}'
+                      f'<span class="card-title-text" title="{html.escape(title or "")}">'
+                      f'{html.escape(title or "")}</span>{hint_icon}{kpi_link}</div>',
+                      unsafe_allow_html=True)
     if caption:
         card.caption(caption)
     return card
@@ -1368,13 +1432,22 @@ def choose_product_key(query_name, columns=None):
     """Group, product and variety/quality/unit chosen by the reader, as a key.
 
     The options come from the indicator; only the chosen key is read later.
-    columns, when given, are the three places for the three choices.
+    columns, when given, are the three places for the three choices. Inside the report,
+    the category of the report's bar fixes the group (D-069).
     """
     options = read_key_options(query_name)
     group_column, product_column, key_column = columns or st.columns(3)
+    report_group = read_filter("group") if st.session_state.get(COMPACT_VIEW) else ALL_VALUES
     with group_column:
-        group = remember_filter("group", choose_value(
-            "Grupo", options["product_group"].unique(), recall_filter("group", DEFAULT_GROUP)))
+        if report_group != ALL_VALUES and report_group in set(options["product_group"]):
+            group = report_group
+            st.markdown(f'<div class="fixed-filter"><span class="kpi-label">Grupo</span>'
+                        f'<strong>{html.escape(group)}</strong><small>desde la barra del '
+                        f'informe</small></div>', unsafe_allow_html=True)
+        else:
+            group = remember_filter("group", choose_value(
+                "Grupo", options["product_group"].unique(),
+                recall_filter("group", DEFAULT_GROUP)))
     options = options[options["product_group"] == group]
     with product_column:
         product = remember_filter("product", choose_value(
@@ -1646,9 +1719,17 @@ def choose_analysis_filters():
     columns = st.columns([1, 1, 1.4, 1.3, 1.8])
     key = choose_product_key("k3_regional_index", columns[:3])
     rows = read_indicator_for_key("k3_regional_index", key)
+    report_region = read_filter("region") if st.session_state.get(COMPACT_VIEW) else ALL_VALUES
     with columns[3]:
-        region = remember_filter("region", choose_value(
-            "Región", rows["region"].unique(), recall_filter("region", DEFAULT_REGION)))
+        if report_region != ALL_VALUES and report_region in set(rows["region"]):
+            region = report_region
+            st.markdown(f'<div class="fixed-filter"><span class="kpi-label">Región</span>'
+                        f'<strong>{html.escape(charts.shorten_region_name(region))}</strong>'
+                        f'<small>desde la barra del informe</small></div>',
+                        unsafe_allow_html=True)
+        else:
+            region = remember_filter("region", choose_value(
+                "Región", rows["region"].unique(), recall_filter("region", DEFAULT_REGION)))
     consumer_channels = sorted(channel for channel in rows["channel"].unique()
                                if channel != WHOLESALE_LABEL)
     remembered = [channel for channel in recall_filter("channels", DEFAULT_MARGIN_CHANNELS)
@@ -1668,35 +1749,62 @@ def read_margin_rows(filters):
 
 
 @st.cache_data
-def read_cached_latest_variations(database_version):
-    """Weekly variation of every national price series in the latest week."""
-    prices = alerts.add_weekly_variation(queries.run_query("k6_national_weekly_price"))
-    latest = prices[prices["week_start"] == prices["week_start"].max()]
-    return add_display_columns(latest[latest["variation"].notna()])
+def read_cached_national_prices(database_version):
+    """Every national price series, every week (K6): read once, filtered in memory, so a
+    click on a new product answers without a query (D-069)."""
+    return add_display_columns(queries.run_query("k6_national_weekly_price"))
 
 
 @st.cache_data
-def read_cached_week_summary(database_version):
-    """This week and the week before, in business terms: how many prices rose and fell,
-    the typical change, the comparable median gap and the active alerts (D-068)."""
+def read_cached_all_variations(database_version):
+    """Weekly change of every national price series, every week (K6 base)."""
     prices = alerts.add_weekly_variation(queries.run_query("k6_national_weekly_price"))
-    weeks = sorted(prices["week_start"].unique())[-2:]
-    gaps = queries.run_sql("SELECT week_start, margin FROM (" + queries.read_query_body(
-        "k1_margin") + ") WHERE week_start >= ?",
-        parameters=(str(pd.Timestamp(weeks[0]).date()),))
-    gaps["week_start"] = pd.to_datetime(gaps["week_start"])
+    return add_display_columns(prices[prices["variation"].notna()].copy())
+
+
+def read_week_variations(week=None, group=None):
+    """The weekly changes of one week (the latest by default), of one group if given."""
+    rows = read_cached_all_variations(get_database_version())
+    week = pd.Timestamp(week) if week else rows["week_start"].max()
+    rows = rows[rows["week_start"] == week]
+    return rows[rows["product_group"] == group] if group and group != ALL_VALUES else rows
+
+
+def read_cached_latest_variations(database_version):
+    """Weekly variation of every national price series in the latest week."""
+    return read_week_variations()
+
+
+@st.cache_data
+def read_cached_week_summary(database_version, week, group=ALL_VALUES, region=ALL_VALUES):
+    """The chosen week and the week before, in business terms: how many prices rose and
+    fell, the typical change, the comparable median gap and the active alerts (D-068).
+    The category applies to everything; the region only to the gap, the one figure
+    measured by region (changes and alerts are national)."""
+    variations = read_cached_all_variations(database_version)
+    if group != ALL_VALUES:
+        variations = variations[variations["product_group"] == group]
+    weeks = sorted(variations.loc[variations["week_start"] <= pd.Timestamp(week),
+                                  "week_start"].unique())[-2:]
     alert_rows = read_price_alerts()
+    if group != ALL_VALUES:
+        alert_rows = alert_rows[alert_rows["product_group"] == group]
     summary = {}
-    for name, week in zip(["previous", "latest"], weeks):
-        changes = prices.loc[prices["week_start"] == week, "variation"].dropna()
-        week_gaps = gaps.loc[gaps["week_start"] == week, "margin"]
+    for name, current in zip(["previous", "latest"], weeks):
+        changes = variations.loc[variations["week_start"] == current, "variation"]
+        gaps = read_cached_week_gaps(database_version, f"{pd.Timestamp(current):%Y-%m-%d}")
+        if group != ALL_VALUES:
+            gaps = gaps[gaps["product_group"] == group]
+        if region != ALL_VALUES:
+            gaps = gaps[gaps["region"] == region]
+        comparable = gaps.loc[gaps["margin"] <= MAXIMUM_COMPARABLE_GAP, "margin"]
         summary[name] = {
             "rises": int((changes > 0).sum()), "falls": int((changes < 0).sum()),
-            "typical_change": float(changes.median() * 100),
-            "median_gap": float(week_gaps[week_gaps <= MAXIMUM_COMPARABLE_GAP].median() * 100),
-            "alerts": int((alert_rows["week_start"] == week).sum())}
-    latest = add_display_columns(prices[(prices["week_start"] == weeks[-1])
-                                        & prices["variation"].notna()].copy())
+            "typical_change": float(changes.median() * 100) if len(changes) else 0.0,
+            "median_gap": float(comparable.median() * 100) if len(comparable) else 0.0,
+            "alerts": int((alert_rows["week_start"] == current).sum())}
+    summary.setdefault("previous", summary["latest"])
+    latest = variations[variations["week_start"] == weeks[-1]]
     summary["week"] = pd.Timestamp(weeks[-1])
     summary["strong_rises"] = int(latest.loc[latest["variation"] > STRONG_CHANGE,
                                              "product"].nunique())
@@ -1739,7 +1847,7 @@ def build_business_figures_html(summary, mode):
          f"{charts.format_thousands(latest['falls'])}",
          describe_week_change(latest["rises"] - previous["rises"], "") + " (suben)",
          "chart", PAGE_ANALYSIS),
-        ("Brecha mediana mayorista–consumidor", charts.format_percent(latest["median_gap"], 0),
+        ("Brecha mediana", charts.format_percent(latest["median_gap"], 0),
          describe_week_change(latest["median_gap"] - previous["median_gap"], "pts"),
          "document", PAGE_GAP),
         ("Alertas activas", str(latest["alerts"]),
@@ -1770,9 +1878,10 @@ def split_comparable_gaps(gaps):
 
 
 @st.cache_data
-def read_cached_group_changes(database_version):
-    """Typical weekly change of each product group in the latest week, in percent."""
-    variations = read_cached_latest_variations(database_version)
+def read_cached_group_changes(database_version, week):
+    """Typical weekly change of each product group in one week, in percent."""
+    variations = read_cached_all_variations(database_version)
+    variations = variations[variations["week_start"] == pd.Timestamp(week)]
     return (variations.groupby("product_group")["variation"].median() * 100).sort_values(
         ascending=False)
 
@@ -1780,8 +1889,9 @@ def read_cached_group_changes(database_version):
 def show_week_ranking(filters, mode):
     """Card: the largest price changes of the week in the chosen group and channels."""
     group = filters["key"]["product_group"]
-    rows = read_cached_latest_variations(get_database_version())
-    rows = rows[(rows["product_group"] == group) & rows["channel"].isin(filters["channels"])]
+    week = read_filter("week") if st.session_state.get(COMPACT_VIEW) else ALL_VALUES
+    rows = read_week_variations(None if week == ALL_VALUES else week, group)
+    rows = rows[rows["channel"].isin(filters["channels"])]
     with open_card("week_ranking", f"Mayores variaciones de la semana · {group}",
                    hint=WEEK_RANKING_HINT, kpi="K6"):
         if rows.empty:
@@ -2506,12 +2616,16 @@ def show_glossary_tab(mode):
 
 
 @st.cache_data
-def read_cached_latest_gaps(database_version):
-    """Latest-week matched prices, ranked in SQLite before reaching the UI."""
+def read_cached_week_gaps(database_version, week):
+    """Matched wholesale and consumer prices of one week, largest gap first."""
     sql = ("SELECT * FROM (" + queries.read_query_body("k1_margin") + ") "
-           "WHERE week_start = (SELECT MAX(week_start) FROM weekly_price) "
-           "ORDER BY margin DESC LIMIT 50")
-    return add_display_columns(queries.run_sql(sql))
+           "WHERE week_start = ? ORDER BY margin DESC")
+    return add_display_columns(queries.run_sql(sql, parameters=(week,)))
+
+
+def read_cached_latest_gaps(database_version):
+    """Latest-week matched prices, largest gap first."""
+    return read_cached_week_gaps(database_version, f"{read_latest_week():%Y-%m-%d}")
 
 
 def rank_weekly_movements(rows, count, direction="Mayores movimientos"):
@@ -2582,11 +2696,16 @@ def show_ranking_chart(rows, mode, key, is_variation=False):
 
 
 @st.cache_data
-def read_cached_market_snapshot(database_version):
-    """The canonical K3 query, restricted to the latest week of valid observations."""
+def read_cached_week_snapshot(database_version, week):
+    """The regional index (K3) of one week of valid observations."""
     sql = ("SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") "
-           "WHERE week_start = (SELECT MAX(week_start) FROM weekly_price)")
-    return add_display_columns(queries.run_sql(sql))
+           "WHERE week_start = ?")
+    return add_display_columns(queries.run_sql(sql, parameters=(week,)))
+
+
+def read_cached_market_snapshot(database_version):
+    """The regional index (K3) of the latest week."""
+    return read_cached_week_snapshot(database_version, f"{read_latest_week():%Y-%m-%d}")
 
 
 def choose_market_product(snapshot, prefix):
@@ -2747,6 +2866,118 @@ def format_ranking_table(ranked):
     return detail
 
 
+# region Report filters and cross filtering (D-069)
+def read_filter(name):
+    """The value of a report filter, kept across views and windows."""
+    return st.session_state.get(f"dashboard_{name}", ALL_VALUES)
+
+
+def set_filter(name, value):
+    """Set a report filter (used by callbacks and clicks). The bar copies it into its
+    field before drawing it: a field already drawn cannot be written."""
+    st.session_state[f"dashboard_{name}"] = value
+    if name in ("group", "week"):
+        # A new category or week starts a new search: the product goes away.
+        st.session_state.pop("dashboard_product", None)
+    reset_chart_selections()
+
+
+def keep_filter_from_field(name):
+    """The bar's field changed: keep its value as the report filter."""
+    set_filter(name, st.session_state[f"dashboard_{name}_field"])
+
+
+def reset_chart_selections():
+    """New chart keys, so a cleared selection can be chosen again."""
+    st.session_state["dashboard_round"] = st.session_state.get("dashboard_round", 0) + 1
+
+
+def read_product_filter():
+    """The product chosen by a click: its key, its channel and its name, or None."""
+    return st.session_state.get("dashboard_product")
+
+
+def clear_product_filter():
+    st.session_state.pop("dashboard_product", None)
+    reset_chart_selections()
+
+
+@st.cache_data
+def read_cached_filter_options(database_version):
+    """Categories, regions and the last weeks with prices, for the report's bar."""
+    variations = read_cached_all_variations(database_version)
+    weeks = sorted(variations["week_start"].unique(), reverse=True)[:DASHBOARD_WEEKS]
+    snapshot = read_cached_market_snapshot(database_version)
+    return {"group": [ALL_VALUES] + sorted(variations["product_group"].unique()),
+            "region": [ALL_VALUES] + sorted(snapshot["region"].unique()),
+            "week": [f"{pd.Timestamp(week):%Y-%m-%d}" for week in weeks]}
+
+
+def show_report_filters():
+    """One bar for the whole report: category, region and week (D-069)."""
+    options = read_cached_filter_options(get_database_version())
+    if read_filter("week") not in options["week"]:
+        st.session_state["dashboard_week"] = options["week"][0]
+    for name, label in GLOBAL_FILTERS.items():
+        field = f"dashboard_{name}_field"
+        if st.session_state.get(field) != read_filter(name):
+            st.session_state[field] = read_filter(name)
+    with st.container(key="report_filters", horizontal=True, vertical_alignment="center"):
+        for name, label in GLOBAL_FILTERS.items():
+            st.session_state[f"dashboard_{name}_field"] = read_filter(name)
+            # The name of the filter goes inside its value, so the bar keeps one line.
+            st.selectbox(label, options[name], key=f"dashboard_{name}_field",
+                         on_change=keep_filter_from_field, args=(name,),
+                         label_visibility="collapsed",
+                         format_func=lambda value, label=label, name=name: (
+                             f"Sem. {pd.Timestamp(value):%d-%m-%Y}" if name == "week"
+                             else f"{label} · {value}"))
+    return {name: read_filter(name) for name in GLOBAL_FILTERS}
+
+
+def show_breadcrumb_and_chips():
+    """«Todas › Frutas › Manzana» to go back up, and a chip per active filter to remove it."""
+    group, product = read_filter("group"), read_product_filter()
+    with st.container(key="report_breadcrumb", horizontal=True, vertical_alignment="center"):
+        st.button("Todas las categorías" if group == ALL_VALUES else "Todas", key="crumb_all", type="tertiary", on_click=set_filter,
+                  args=("group", ALL_VALUES), disabled=group == ALL_VALUES and not product)
+        if group != ALL_VALUES:
+            st.markdown('<span class="crumb-separator">›</span>', unsafe_allow_html=True)
+            st.button(group, key="crumb_group", type="tertiary", on_click=clear_product_filter,
+                      disabled=not product)
+        if product:
+            st.markdown('<span class="crumb-separator">›</span>', unsafe_allow_html=True)
+            st.button(f"Filtro: {product['name']} ✕", key="chip_product",
+                      on_click=clear_product_filter, help="Quitar el filtro de producto")
+        if read_filter("region") != ALL_VALUES:
+            st.button(f"Región: {charts.shorten_region_name(read_filter('region'))} ✕",
+                      key="chip_region", on_click=set_filter, args=("region", ALL_VALUES),
+                      help="Quitar el filtro de región")
+
+
+def read_picked(event):
+    """The value clicked in an Altair chart, or None."""
+    picked = (event or {}).get("selection", {}).get("pick") or []
+    return picked[0] if picked else None
+
+
+def apply_click(chart_key, picked, apply):
+    """Apply a click once: the chart keeps its selection after the rerun."""
+    signature = f"{chart_key}:{picked}"
+    if picked and st.session_state.get("dashboard_last_click") != signature:
+        st.session_state["dashboard_last_click"] = signature
+        apply(picked)
+        st.rerun()
+
+
+def show_clickable_chart(chart, key):
+    """An Altair chart whose clicks come back to the page."""
+    round_number = st.session_state.get("dashboard_round", 0)
+    return st.altair_chart(chart, use_container_width=True, theme=None, on_select="rerun",
+                           key=f"{key}_{round_number}")
+# endregion
+
+
 def show_excluded_gaps(excluded):
     """The gaps left out of the ranking, with what each one compares (D-068)."""
     if excluded.empty:
@@ -2770,70 +3001,236 @@ def show_excluded_gaps(excluded):
             hide_index=True, use_container_width=True)
 
 
+def describe_variation_detail(row):
+    """Tooltip of a weekly change: product, channel, unit, price, change and week."""
+    return (f"{describe_price_row(row)} · {charts.format_signed_percent(row['variation'] * 100)}"
+            f" frente a la semana anterior · semana del {row['week_start']:%d-%m-%Y}")
+
+
+def describe_gap_detail(row):
+    """Tooltip of a gap: product, channel, region, both prices, unit and week."""
+    return (f"{describe_product(row)} · {row['channel']} · "
+            f"{charts.shorten_region_name(row['region'])} · mayorista $ "
+            f"{charts.format_thousands(row['wholesale_price'])} y consumidor $ "
+            f"{charts.format_thousands(row['consumer_price'])} por {row['normalized_unit']}"
+            f" · semana del {pd.Timestamp(row['week_start']):%d-%m-%Y}")
+
+
+def build_product_filter(row):
+    """The product filter of one clicked row: its key, its channel and a short name."""
+    parts = [part for part in (row["variety"],) if part and part != UNSPECIFIED]
+    return {"key": {column: row[column] for column in queries.KEY_COLUMNS},
+            "channel": row["channel"], "name": " ".join([row["product"]] + parts)}
+
+
+def keep_product(rows, product):
+    """The rows of the chosen product key (all rows when none is chosen)."""
+    if not product:
+        return rows
+    for column, value in product["key"].items():
+        rows = rows[rows[column] == value]
+    return rows
+
+
+def choose_default_key(ranked, week):
+    """The product of the pulse and the map before any click: the first of the ranking
+    with a price in two regions or more, so the map has something to compare."""
+    if ranked.empty:
+        return None
+    snapshot = read_cached_week_snapshot(get_database_version(), week)
+    regions = snapshot.groupby(queries.KEY_COLUMNS)["region"].nunique()
+    for row in ranked.to_dict("records"):
+        key = tuple(row[column] for column in queries.KEY_COLUMNS)
+        if regions.get(key, 0) >= 2:
+            return {column: row[column] for column in queries.KEY_COLUMNS}
+    return {column: ranked.iloc[0][column] for column in queries.KEY_COLUMNS}
+
+
+def show_movements_card(prefix, ranked, count, mode):
+    """Card: the largest weekly changes; a click on a bar filters by its product."""
+    with open_card(f"{prefix}_movements", f"Top {count} · cambios",
+        hint="Cada barra es un producto en un canal: su precio nacional frente a la semana "
+             "anterior. ▲ en rojo subió; ▼ en azul bajó. Haz clic en una barra para ver ese "
+             "producto en los demás gráficos; doble clic para soltarla.", kpi="K6"):
+        if ranked.empty:
+            st.info("No hay cambios disponibles para esta selección.")
+            return
+        bars = pd.DataFrame({
+            "label": build_short_labels(ranked, lambda row: f"{row['product']} · {row['channel']}"),
+            "value": ranked["variation"].to_numpy() * 100,
+            "detail": [describe_variation_detail(row) for row in ranked.to_dict("records")],
+            "pick": [str(position) for position in range(len(ranked))]})
+        chart = charts.draw_variation_bars(bars, mode, keep_rank_order=True, select_field="pick")
+        event = show_clickable_chart(compact_bar_chart(chart), f"{prefix}_movements_chart")
+        apply_click(f"{prefix}_movements", read_picked(event), lambda picked: st.session_state.
+                    update(dashboard_product=build_product_filter(
+                        ranked.iloc[int(picked["pick"])])))
+        st.markdown(build_mobile_ranking_html(bars, mode, True), unsafe_allow_html=True)
+
+
+def show_gaps_card(prefix, gaps, count, mode):
+    """Card: the largest comparable gaps; a click on a bar filters by its product."""
+    with open_card(f"{prefix}_gaps", f"Top {count} · brechas",
+        hint="Cuánto más paga el consumidor que el mayorista por el mismo producto, unidad, "
+             "región y semana. Solo pares comparables: las brechas sobre +300 % comparan "
+             "granel con envasado y se listan aparte. Clic en una barra para filtrar.",
+        kpi="K1"):
+        if gaps.empty:
+            st.info("No hay pares comparables para esta selección.")
+            return
+        # With a product chosen its name is in the chip, so each bar says where instead.
+        describe = ((lambda row: f"{row['channel']} · "
+                                 f"{charts.shorten_region_name(row['region'])}")
+                    if read_product_filter() else
+                    (lambda row: f"{row['product']} · {row['channel']}"))
+        bars = pd.DataFrame({
+            "label": build_short_labels(gaps, describe),
+            "value": gaps["margin"].to_numpy() * 100,
+            "detail": [describe_gap_detail(row) for row in gaps.to_dict("records")],
+            "pick": [str(position) for position in range(len(gaps))]})
+        bars["value_label"] = bars["value"].map(charts.format_percent)
+        chart = charts.draw_horizontal_bars(bars, "Brecha (%)", mode, select_field="pick",
+                                            is_sorted_by_value=False)
+        event = show_clickable_chart(compact_bar_chart(chart), f"{prefix}_gaps_chart")
+        apply_click(f"{prefix}_gaps", read_picked(event), lambda picked: st.session_state.
+                    update(dashboard_product=build_product_filter(gaps.iloc[int(picked["pick"])])))
+        st.markdown(build_mobile_ranking_html(bars, mode), unsafe_allow_html=True)
+
+
+def show_group_card(prefix, week, mode):
+    """Card: the typical change of each group; a click goes down into that group."""
+    with open_card(f"{prefix}_group_changes", "¿Qué grupo subió más?",
+        hint="El cambio típico (la mediana) de los precios de cada grupo frente a la semana "
+             "anterior. Haz clic en un grupo para ver solo sus productos."):
+        changes = read_cached_group_changes(get_database_version(), week)
+        bars = pd.DataFrame({"label": changes.index, "value": changes.to_numpy(),
+                             "pick": changes.index})
+        chart = charts.draw_variation_bars(bars, mode, select_field="pick")
+        event = show_clickable_chart(compact_bar_chart(chart, BAR_STEP + 4),
+                                     f"{prefix}_groups_chart")
+        apply_click(f"{prefix}_groups", read_picked(event),
+                    lambda picked: set_filter("group", picked["pick"]))
+
+
+def compact_bar_chart(chart, step=None):
+    """A ranking for a report tile: fixed band and no axis numbers (each bar has its value)."""
+    if not st.session_state.get(COMPACT_VIEW):
+        return chart
+    # The axis title comes from the encoding, so it is hidden by size, not by name.
+    # Room on the right, so the value after the longest bar is never cut.
+    return chart.properties(height=alt.Step(step or BAR_STEP),
+                            padding={"left": 0, "top": 0, "bottom": 0, "right": 30}).configure_axisX(
+        labels=False, ticks=False, domain=False, titleFontSize=0, titlePadding=0)
+
+
+def show_pulse_card(prefix, key, week, mode):
+    """Card: the national price of the product, three channels at most, 12 weeks."""
+    history = keep_product(read_cached_national_prices(get_database_version()), {"key": key})
+    week = pd.Timestamp(week)
+    history = history[history["week_start"].between(week - pd.Timedelta(weeks=11), week)]
+    name = " ".join(part for part in (key["product"], key["variety"]) if part != UNSPECIFIED)
+    with open_card(f"{prefix}_price_trend", f"{name} · 12 semanas",
+        hint="Precio nacional por canal (promedio simple de las regiones con dato). Elige "
+             "hasta tres canales; las semanas sin dato quedan cortadas."):
+        channels = sorted(history["channel"].unique())
+        chosen = st.multiselect("Canales", channels, key=f"{prefix}_pulse_channels_{name}",
+                                default=[channel for channel in PULSE_CHANNELS
+                                         if channel in channels] or channels[:3],
+                                max_selections=3, label_visibility="collapsed")
+        figure = market_charts.draw_price_trend(history[history["channel"].isin(chosen)],
+                                                mode, name)
+        figure.update_layout(height=TILE_HEIGHT - 85, margin=dict(l=8, r=8, t=8, b=8),
+                             legend=dict(orientation="h", y=1.02, yanchor="bottom", x=0,
+                                         font=dict(size=10)))
+        st.plotly_chart(figure, theme=None, use_container_width=True,
+                        config={"displaylogo": False, "responsive": True},
+                        key=f"{prefix}_trend_plot")
+
+
+def show_map_card(prefix, key, week, mode):
+    """Card: the regional index of the product, region × channel; a click picks a region."""
+    snapshot = read_cached_week_snapshot(get_database_version(), week)
+    points = keep_covered_cells(keep_product(snapshot, {"key": key}))
+    short_name = " ".join(part for part in (key["product"], key["variety"]) if part != UNSPECIFIED)
+    with open_card(f"{prefix}_regional_map", f"¿Dónde es más caro {short_name}?",
+        hint="Cada celda compara una región con el promedio nacional del mismo canal: 100 es "
+             "el promedio, 120 es 20 % más caro. Haz clic en una región para filtrar las "
+             "brechas por ella.", kpi="K3"):
+        if points["region"].nunique() < 2:
+            st.info(f"{short_name} tiene precio en una sola región esta semana: no hay "
+                    "regiones que comparar. Elige otro producto con un clic en los rankings.")
+            return
+        points = points.assign(detail=[
+            f"{describe_product(row)} · {row['channel']} · {row['region']} · $ "
+            f"{charts.format_thousands(row['price'])} por {row['normalized_unit']} · semana del "
+            f"{pd.Timestamp(row['week_start']):%d-%m-%Y}" for row in points.to_dict("records")])
+        chosen_region = read_filter("region")
+        chart = charts.draw_region_channel_map(
+            points, mode, None if chosen_region == ALL_VALUES else chosen_region)
+        event = show_clickable_chart(chart.properties(height=TILE_HEIGHT - 95),
+                                     f"{prefix}_map_chart")
+        apply_click(f"{prefix}_map", read_picked(event),
+                    lambda picked: set_filter("region", picked["region"]))
+
+
 def show_market_overview(mode, prefix):
-    """Executive BI report: questions first, useful charts and advanced detail below."""
-    latest_week = read_latest_week()
-    variations = read_cached_latest_variations(get_database_version())
-    all_alerts = read_price_alerts()
-    week_alerts = all_alerts[all_alerts["week_start"] == latest_week]
-    show_page_header("Precios de alimentos · Chile", "Observa cómo cambian los precios y "
-                     "dónde se amplía la brecha entre mayorista y consumidor.")
-    snapshot = read_cached_market_snapshot(get_database_version())
-    with st.container(key="dashboard_filter_bar"):
-        count_column, direction_column, product_column = st.columns(
-            [0.8, 2.0, 2.5], vertical_alignment="bottom")
-        count, direction = choose_ranking(prefix, count_column, direction_column)
-        with product_column:
-            key = choose_market_product(snapshot, prefix)
-    summary = read_cached_week_summary(get_database_version())
+    """The report page: what happened this week, the rankings and the chosen product, with
+    cross filtering by click and drill-down by category (D-068, D-069)."""
+    filters = {name: read_filter(name) for name in GLOBAL_FILTERS}
+    week = filters["week"] if filters["week"] != ALL_VALUES else f"{read_latest_week():%Y-%m-%d}"
+    group, region, product = filters["group"], filters["region"], read_product_filter()
+    title_row = st.container(key="report_title_row")
+    title_column, crumb_column, ranking_column = title_row.columns([1.3, 1.7, 1.85],
+                                                                   vertical_alignment="center")
+    with title_column:
+        show_page_header("Precios de alimentos · Chile", "Observa cómo cambian los precios y "
+                         "dónde se amplía la brecha entre mayorista y consumidor.")
+    with crumb_column:
+        show_breadcrumb_and_chips()
+    with ranking_column, st.container(key="dashboard_ranking_controls", horizontal=True,
+                                      vertical_alignment="center"):
+        count = st.selectbox("Top N", [5, 8, 10, 15], index=1, key=f"{prefix}_top_n",
+                             label_visibility="collapsed", width=110,
+                             format_func=lambda value: f"Top {value}")
+        direction = st.segmented_control(
+            "Orden del ranking", ["Mayores movimientos", "Alzas", "Bajas"],
+            default="Mayores movimientos", key=f"{prefix}_ranking_direction",
+            label_visibility="collapsed", format_func=lambda value: {
+                "Mayores movimientos": "▲▼ Ambos", "Alzas": "▲ Alzas",
+                "Bajas": "▼ Bajas"}[value]) or "Mayores movimientos"
+    variations = read_week_variations(week, group)
+    summary = read_cached_week_summary(get_database_version(), week, group, region)
     st.markdown(f'<div class="summary-sentence">{html.escape(build_summary_sentence(summary))}'
                 f'</div>{build_business_figures_html(summary, mode)}'
                 f'{build_context_line(summary, variations)}', unsafe_allow_html=True)
     ranked = rank_weekly_movements(variations, count, direction)
-    gaps, excluded_gaps = split_comparable_gaps(read_cached_latest_gaps(get_database_version()))
-    gaps = gaps.head(count)
-    movements_column, trend_column, share_column = st.columns([1.15, 1.55, .95])
-    with movements_column, open_card(f"{prefix}_movements", f"Top {count} · cambios",
-        hint="Compara el precio nacional con la semana anterior, para cada producto y canal. "
-             "Rojo y ▲: alza; azul y ▼: baja. La longitud de la barra mide el cambio en %. "
-             "Precio nacional: promedio simple de las regiones con dato.", kpi="K6"):
-        if ranked.empty:
-            st.info("No hay cambios disponibles para este orden en la última semana.")
-        else:
-            bars = pd.DataFrame({
-                "label": build_short_labels(ranked, lambda row: f"{row['product']} · "
-                                                                f"{row['channel']}"),
-                "value": ranked["variation"].to_numpy() * 100,
-                "detail": [describe_price_row(row) for row in ranked.to_dict("records")]})
-            show_ranking_chart(bars, mode, f"{prefix}_movements", is_variation=True)
-    show_market_visuals(mode, prefix, latest_week, snapshot, key, trend_column, share_column)
-    gaps_column, territory_column = st.columns([1.15, 2.5])
-    with gaps_column, open_card(f"{prefix}_gaps", f"Top {count} · brechas",
-        hint="Las mayores brechas de precio de la misma semana, producto, unidad y región. "
-             "Brecha = (consumidor / mayorista − 1) × 100. Un 50 % significa que el consumidor "
-             "paga 1,5 veces el mayorista. No mide utilidad ni costo del comercio.", kpi="K1"):
-        if gaps.empty:
-            st.info("No hay pares comparables en la última semana.")
-        else:
-            bars = pd.DataFrame({
-                "label": build_short_labels(gaps, lambda row: f"{row['product']} · "
-                                                              f"{row['channel']}"),
-                "value": gaps["margin"].to_numpy() * 100,
-                "detail": [f"{describe_product(row)} · {row['channel']} · "
-                           f"{charts.shorten_region_name(row['region'])} · mayorista $ "
-                           f"{charts.format_thousands(row['wholesale_price'])} y consumidor $ "
-                           f"{charts.format_thousands(row['consumer_price'])} por "
-                           f"{row['normalized_unit']}" for row in gaps.to_dict("records")]})
-            bars["value_label"] = bars["value"].map(charts.format_percent)
-            show_ranking_chart(bars, mode, f"{prefix}_gaps")
-    with territory_column:
-        show_market_territory(mode, prefix, snapshot, key)
+    gaps = read_cached_week_gaps(get_database_version(), week)
+    if group != ALL_VALUES:
+        gaps = gaps[gaps["product_group"] == group]
+    if region != ALL_VALUES:
+        gaps = gaps[gaps["region"] == region]
+    gaps = keep_product(gaps, product)
+    gaps, excluded_gaps = split_comparable_gaps(gaps)
+    key = product["key"] if product else choose_default_key(ranked, week)
+    movements_column, pulse_column, group_column = st.columns([1.3, 1.45, .95])
+    with movements_column:
+        show_movements_card(prefix, ranked, count, mode)
+    with group_column:
+        show_group_card(prefix, week, mode)
+    gaps_column, map_column = st.columns([1.3, 2.35])
+    with gaps_column:
+        show_gaps_card(prefix, gaps.head(count), count, mode)
+    if key is not None:
+        with pulse_column:
+            show_pulse_card(prefix, key, week, mode)
+        with map_column:
+            show_map_card(prefix, key, week, mode)
     show_excluded_gaps(excluded_gaps)
     with st.expander("Datos y descarga del ranking", expanded=True):
         detail = format_ranking_table(ranked)
         st.dataframe(detail, hide_index=True, use_container_width=True)
         st.download_button("Descargar ranking CSV", detail.to_csv(index=False).encode("utf-8-sig"),
-                           file_name=f"ranking-{latest_week:%Y-%m-%d}.csv", mime="text/csv",
+                           file_name=f"ranking-{week}.csv", mime="text/csv",
                            key=f"{prefix}_download")
     st.caption(NOMINAL_PRICES_TEXT)
 
@@ -3187,9 +3584,17 @@ def show_alerts_tab(mode, filters):
         st.info("Todavía no hay semanas suficientes para calcular alertas.")
         return
     weeks = sorted(alert_rows["week_start"].dt.date.unique(), reverse=True)
-    week_column, _ = st.columns([1, 4])
-    week = week_column.selectbox("Semana (lunes de inicio)", weeks,
-                                 format_func=lambda day: day.strftime("%d-%m-%Y"))
+    report_week = read_filter("week") if st.session_state.get(COMPACT_VIEW) else ALL_VALUES
+    if report_week != ALL_VALUES and pd.Timestamp(report_week).date() in weeks:
+        # Inside the report the week comes from its bar (D-069).
+        week = pd.Timestamp(report_week).date()
+    else:
+        week_column, _ = st.columns([1, 4])
+        week = week_column.selectbox("Semana (lunes de inicio)", weeks,
+                                     format_func=lambda day: day.strftime("%d-%m-%Y"))
+    group = read_filter("group") if st.session_state.get(COMPACT_VIEW) else ALL_VALUES
+    if group != ALL_VALUES:
+        alert_rows = alert_rows[alert_rows["product_group"] == group]
     week_rows = alert_rows[alert_rows["week_start"].dt.date == week]
     distance = ((week_rows["variation"] - week_rows["usual_variation"]).abs()
                 / week_rows["variation_deviation"])
