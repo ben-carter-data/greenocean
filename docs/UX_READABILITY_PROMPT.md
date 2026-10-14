@@ -42,7 +42,7 @@ Cada pantalla debe permitir responder en pocos segundos:
 - No dupliques información. Enlaza a la sección canónica cuando el detalle ya
   existe en otra parte.
 - Conserva el orden cronológico del recorrido y la navegación anterior/siguiente.
-- Conserva las paletas Vantablack, Grafito y Corporativo. Asegura contraste de
+- Conserva los cuatro temas: Corporativo (por defecto), Vantablack, Blue Light y Dark Grey. Asegura contraste de
   lectura en fondo, tarjetas, campos, gráficos, estados, código y tooltips.
 
 ## Criterio de aceptación

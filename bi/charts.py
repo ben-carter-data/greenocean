@@ -1,7 +1,7 @@
 """Charts and visual style of the dashboard, drawn with Altair (installed with Streamlit).
 
-Every chart takes the active theme (Vantablack, Grafito or Corporativo) and uses
-its palette.
+Every chart takes the active theme (Corporativo, Vantablack, Blue Light or Dark Grey)
+and uses its palette.
 Every channel keeps the same hue in every chart, so a reader learns it once.
 Numbers in labels and tooltips are written as in Chile: 1.234 and 12,5 %.
 """
@@ -9,14 +9,15 @@ import altair as alt
 import pandas as pd
 
 # region Constants
-# Visible themes; Claro remains an export compatibility palette.
-# Each theme sits on one of Streamlit's two base modes,
+# The four visible themes, Corporativo first: it is the default (D-071). Claro remains an
+# export compatibility palette. Each theme sits on one of Streamlit's two base modes,
 # which decides the colors of its own widgets (lists, tables, code).
 MODE_DARK = "Vantablack"
 MODE_CORPORATE = "Corporativo"
-MODE_GRAPHITE = "Grafito"
+MODE_BLUE_LIGHT = "Blue Light"
+MODE_GRAPHITE = "Dark Grey"
 MODE_LIGHT = "Claro"
-THEMES = [MODE_DARK, MODE_GRAPHITE, MODE_CORPORATE]
+THEMES = [MODE_CORPORATE, MODE_DARK, MODE_BLUE_LIGHT, MODE_GRAPHITE]
 BASE_DARK = "dark"
 BASE_LIGHT = "light"
 
@@ -45,20 +46,30 @@ PALETTES = {
     MODE_CORPORATE: {
         "base": BASE_LIGHT, "channels": LIGHT_CHANNELS,
         "rise": "#e34948", "fall": "#2a78d6", "accent": "#1d5fbf",
-        "text": "#475467", "grid": "#e4e9f0", "reference": "#98a2b3",
+        "text": "#475467", "grid": "#e4e9f0", "reference": "#7b8798",
         "card": "#ffffff", "card_border": "#d6dde8", "strong_text": "#0f1b2d",
         "background": "#eef2f7", "field": "#f3f6fa", "sidebar": "#0f2a4a", "sidebar_text": "#e6edf7",
         "glow": "rgba(29, 95, 191, 0.0)", "on_accent": "#ffffff",
     },
-    # Graphite alternative: charcoal page, deep-grey panels and restrained green.
+    # Very light blue page, white panels, dark ink and blue accents.
+    MODE_BLUE_LIGHT: {
+        "base": BASE_LIGHT, "channels": LIGHT_CHANNELS,
+        "rise": "#e34948", "fall": "#2a78d6", "accent": "#1565d8",
+        "text": "#3b4a63", "grid": "#dfe9f6", "reference": "#7b8798",
+        "card": "#ffffff", "card_border": "#c9dbf3", "strong_text": "#0b1f3a",
+        "background": "#eaf3ff", "field": "#f1f7ff", "sidebar": "#dcebff",
+        "sidebar_text": "#0b1f3a", "glow": "rgba(21, 101, 216, 0.0)", "on_accent": "#ffffff",
+    },
+    # Dark Grey: charcoal page, deep-grey panels and the project's cyan, the same one
+    # Streamlit gives its own controls on the dark base (D-071).
     MODE_GRAPHITE: {
         "base": BASE_DARK, "channels": DARK_CHANNELS,
-        "rise": "#ef6a6a", "fall": "#5b9cf0", "accent": "#5bc5a7",
+        "rise": "#ef6a6a", "fall": "#5b9cf0", "accent": "#2fd3f0",
         "text": "#c5c5d2", "grid": "#4a4a4f", "reference": "#a3a3ad",
         "card": "#2f2f2f", "card_border": "#505055", "strong_text": "#f3f3f3",
         "background": "#212121", "field": "#424242", "sidebar": "#171717",
-        "sidebar_text": "#ececec", "glow": "rgba(91, 197, 167, 0.18)",
-        "on_accent": "#10251f",
+        "sidebar_text": "#ececec", "glow": "rgba(47, 211, 240, 0.18)",
+        "on_accent": "#021216",
     },
     # Light and crisp: white and cool greys, no warm beige.
     MODE_LIGHT: {
@@ -71,11 +82,12 @@ PALETTES = {
     },
 }
 # Sequential ramps for a heat map, one hue, light (cheap) to dark (expensive):
-# cyan in Vantablack, the business blue in the light themes. Both validated as
-# ordinal ramps against the card color of their themes (dataviz validator).
+# cyan in the dark themes, the business blue in the light ones. Each validated as an
+# ordinal ramp against the card color of its theme (dataviz validator).
 HEAT_RAMPS = {MODE_DARK: ["#a5f3fc", "#22d3ee", "#0891b2", "#155e75"],
-              MODE_GRAPHITE: ["#203a35", "#2e665a", "#3f9b84", "#78d7bd"],
+              MODE_GRAPHITE: ["#2a8199", "#36a6c2", "#5fcbe3", "#a8eef9"],
               MODE_CORPORATE: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"],
+              MODE_BLUE_LIGHT: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"],
               MODE_LIGHT: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"]}
 # Status colors (fixed in every theme), always shown with an icon and a label.
 STATUS_COLORS = {"good": "#22b35a", "warning": "#fab219", "serious": "#ec835a",
@@ -191,7 +203,7 @@ def shorten_region_name(region):
 # region Shared pieces
 def get_palette(mode):
     """Palette of the active theme; Vantablack when the theme is unknown."""
-    return PALETTES.get(mode, PALETTES[MODE_DARK])
+    return PALETTES.get(mode, PALETTES[MODE_CORPORATE])
 
 
 def get_status_text_color(status, mode):

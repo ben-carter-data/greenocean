@@ -192,8 +192,10 @@ THEME_PARAMETER = "tema"
 # The theme of the whole visit: kept in the session and written to the address on every
 # run, so every section, link and reload keeps it (D-070).
 THEME_STATE = "chosen_theme"
-# Retired theme names still open their closest theme.
-RETIRED_THEMES = {charts.MODE_LIGHT: charts.MODE_CORPORATE, "ChatGPT": charts.MODE_GRAPHITE}
+# Retired theme names still open their closest theme (D-071).
+RETIRED_THEMES = {charts.MODE_LIGHT: charts.MODE_CORPORATE, "ChatGPT": charts.MODE_GRAPHITE,
+                  "Grafito": charts.MODE_GRAPHITE}
+DEFAULT_THEME = charts.MODE_CORPORATE
 KPI_PARAMETER = "kpi"
 PROFILE_PARAMETER = "visitor_profile"
 VISITOR_PROFILES = {
@@ -505,9 +507,9 @@ ATTRIBUTION_TEXT = (
 
 # region Style
 def get_mode():
-    """Theme of the visit; Vantablack until the reader chooses another one."""
+    """Theme of the visit; Corporativo until the reader chooses another one."""
     theme = st.session_state.get(THEME_STATE)
-    return theme if theme in charts.THEMES else charts.MODE_DARK
+    return theme if theme in charts.THEMES else DEFAULT_THEME
 
 
 def settle_theme():

@@ -39,8 +39,8 @@ def test_color_follows_the_channel_whatever_channels_are_shown():
         "Supermercado": channel_colors["Supermercado"]}
 
 
-def test_unknown_mode_falls_back_to_dark():
-    assert charts.get_palette(None) == charts.PALETTES[charts.MODE_DARK]
+def test_unknown_mode_falls_back_to_the_default_corporativo():
+    assert charts.get_palette(None) == charts.PALETTES[charts.MODE_CORPORATE]
 
 
 def test_variation_bars_use_red_for_rises_and_blue_for_falls():
@@ -111,8 +111,8 @@ def test_bars_can_keep_the_order_they_arrive_in():
 
 
 def test_visible_themes_keep_legacy_light_palette_compatible():
-    """Vantablack and Grafito are dark; Corporativo and Claro are light."""
-    assert charts.THEMES == ["Vantablack", "Grafito", "Corporativo"]
+    """Vantablack and Dark Grey are dark; Corporativo, Blue Light and Claro are light."""
+    assert charts.THEMES == ["Corporativo", "Vantablack", "Blue Light", "Dark Grey"]
     keys = set(charts.PALETTES[charts.MODE_DARK])
     for theme in charts.THEMES:
         palette = charts.PALETTES[theme]
@@ -123,7 +123,7 @@ def test_visible_themes_keep_legacy_light_palette_compatible():
     assert {charts.PALETTES[theme]["base"] for theme in
             [charts.MODE_DARK, charts.MODE_GRAPHITE]} == {charts.BASE_DARK}
     assert {charts.PALETTES[theme]["base"] for theme in
-            [charts.MODE_CORPORATE, charts.MODE_LIGHT]} == {
+            [charts.MODE_CORPORATE, charts.MODE_BLUE_LIGHT, charts.MODE_LIGHT]} == {
                 charts.BASE_LIGHT}
 
 
