@@ -1,6 +1,6 @@
 """Charts and visual style of the dashboard, drawn with Altair (installed with Streamlit).
 
-Every chart takes the active theme (Vantablack or Corporativo) and uses
+Every chart takes the active theme (Vantablack, Grafito or Corporativo) and uses
 its palette.
 Every channel keeps the same hue in every chart, so a reader learns it once.
 Numbers in labels and tooltips are written as in Chile: 1.234 and 12,5 %.
@@ -9,13 +9,14 @@ import altair as alt
 import pandas as pd
 
 # region Constants
-# Two visible themes (D-060); Claro remains an export compatibility palette.
+# Visible themes; Claro remains an export compatibility palette.
 # Each theme sits on one of Streamlit's two base modes,
 # which decides the colors of its own widgets (lists, tables, code).
 MODE_DARK = "Vantablack"
 MODE_CORPORATE = "Corporativo"
+MODE_GRAPHITE = "Grafito"
 MODE_LIGHT = "Claro"
-THEMES = [MODE_DARK, MODE_CORPORATE]
+THEMES = [MODE_DARK, MODE_GRAPHITE, MODE_CORPORATE]
 BASE_DARK = "dark"
 BASE_LIGHT = "light"
 
@@ -49,6 +50,16 @@ PALETTES = {
         "background": "#eef2f7", "field": "#f3f6fa", "sidebar": "#0f2a4a", "sidebar_text": "#e6edf7",
         "glow": "rgba(29, 95, 191, 0.0)", "on_accent": "#ffffff",
     },
+    # Graphite alternative: charcoal page, deep-grey panels and restrained green.
+    MODE_GRAPHITE: {
+        "base": BASE_DARK, "channels": DARK_CHANNELS,
+        "rise": "#ef6a6a", "fall": "#5b9cf0", "accent": "#5bc5a7",
+        "text": "#c5c5d2", "grid": "#4a4a4f", "reference": "#a3a3ad",
+        "card": "#2f2f2f", "card_border": "#505055", "strong_text": "#f3f3f3",
+        "background": "#212121", "field": "#424242", "sidebar": "#171717",
+        "sidebar_text": "#ececec", "glow": "rgba(91, 197, 167, 0.18)",
+        "on_accent": "#10251f",
+    },
     # Light and crisp: white and cool greys, no warm beige.
     MODE_LIGHT: {
         "base": BASE_LIGHT, "channels": LIGHT_CHANNELS,
@@ -63,6 +74,7 @@ PALETTES = {
 # cyan in Vantablack, the business blue in the light themes. Both validated as
 # ordinal ramps against the card color of their themes (dataviz validator).
 HEAT_RAMPS = {MODE_DARK: ["#a5f3fc", "#22d3ee", "#0891b2", "#155e75"],
+              MODE_GRAPHITE: ["#203a35", "#2e665a", "#3f9b84", "#78d7bd"],
               MODE_CORPORATE: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"],
               MODE_LIGHT: ["#86b6ef", "#3987e5", "#1c5cab", "#0d366b"]}
 # Status colors (fixed in every theme), always shown with an icon and a label.
@@ -310,12 +322,15 @@ def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=N
                alt.Tooltip("value_label:N", title=value_title)]
     if "meaning" in rows.columns:
         tooltip.append(alt.Tooltip("meaning:N", title="Qué significa"))
+    if "detail" in rows.columns:
+        # The whole description lives here, so the axis can keep a short name.
+        tooltip.insert(1, alt.Tooltip("detail:N", title="Detalle"))
     base = alt.Chart(rows).encode(
         y=alt.Y("label:N", title=None, sort=order,
                 axis=alt.Axis(labelLimit=150, labelPadding=8)),
         tooltip=tooltip)
     bars = base.mark_bar(cornerRadiusEnd=6, height={"band": 0.65}).encode(
-        x=alt.X("value:Q", title=value_title, axis=alt.Axis(tickCount=5),
+        x=alt.X("value:Q", title=value_title, axis=alt.Axis(tickCount=5, labelOverlap=True),
                 scale=alt.Scale(domain=calculate_bar_domain(rows["value"]), nice=False)),
         color=alt.Color("color:N", scale=None))
     # Positive values are written after the end of their bar. Negative values
@@ -350,7 +365,9 @@ def draw_variation_bars(rows, mode, keep_rank_order=False):
     """
     palette = get_palette(mode)
     # The arrow says the direction without color: ▲ rose, ▼ fell.
-    rows = rows.assign(value_label=[f"{'▲' if value > 0 else '▼'} {format_signed_percent(value)}"
+    def arrow(value):
+        return "▲" if round(value, 1) > 0 else "▼" if round(value, 1) < 0 else "="
+    rows = rows.assign(value_label=[f"{arrow(value)} {format_signed_percent(value)}"
                                     for value in rows["value"]],
                        meaning=rows["value"].map(describe_weekly_change))
     colors = [palette["rise"] if value > 0 else palette["fall"] for value in rows["value"]]

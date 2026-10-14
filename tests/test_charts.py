@@ -110,10 +110,9 @@ def test_bars_can_keep_the_order_they_arrive_in():
     assert chart["layer"][0]["encoding"]["y"]["sort"] == ["0", "1", "2"]
 
 
-def test_two_visible_themes_keep_legacy_light_palette_compatible():
-    """Vantablack is dark; Corporativo and Claro are light. Only surfaces, ink and
-    accent change: the channel colors stay the ones validated for color blindness."""
-    assert charts.THEMES == ["Vantablack", "Corporativo"]
+def test_visible_themes_keep_legacy_light_palette_compatible():
+    """Vantablack and Grafito are dark; Corporativo and Claro are light."""
+    assert charts.THEMES == ["Vantablack", "Grafito", "Corporativo"]
     keys = set(charts.PALETTES[charts.MODE_DARK])
     for theme in charts.THEMES:
         palette = charts.PALETTES[theme]
@@ -121,9 +120,11 @@ def test_two_visible_themes_keep_legacy_light_palette_compatible():
         expected = (charts.DARK_CHANNELS if palette["base"] == charts.BASE_DARK
                     else charts.LIGHT_CHANNELS)
         assert palette["channels"] == expected
-    assert charts.PALETTES[charts.MODE_DARK]["base"] == charts.BASE_DARK
     assert {charts.PALETTES[theme]["base"] for theme in
-            [charts.MODE_CORPORATE, charts.MODE_LIGHT]} == {charts.BASE_LIGHT}
+            [charts.MODE_DARK, charts.MODE_GRAPHITE]} == {charts.BASE_DARK}
+    assert {charts.PALETTES[theme]["base"] for theme in
+            [charts.MODE_CORPORATE, charts.MODE_LIGHT]} == {
+                charts.BASE_LIGHT}
 
 
 def test_d059_dumbbell_joins_wholesale_and_each_channel_with_its_gap():
