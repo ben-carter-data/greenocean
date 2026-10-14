@@ -11,7 +11,7 @@ from streamlit.testing.v1 import AppTest
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
-from bi import charts, control, dashboard, explorer, project, queries  # noqa: E402
+from bi import charts, control, dashboard, project, queries  # noqa: E402
 
 DASHBOARD_FILE = str(PROJECT_DIR / "bi" / "dashboard.py")
 # These tests draw the real dashboard, so they need the committed database.
@@ -97,8 +97,8 @@ def test_durations_are_written_for_people():
 def test_d070_the_visit_starts_at_the_project_and_the_profile_is_optional_and_inline():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not app.exception
-    # No floating window: the project opens, with the profile as an optional choice.
-    assert read_page_title(app) == dashboard.PAGE_BUSINESS
+    # No floating window: the cover opens, with the profile as an optional choice (C01).
+    assert read_page_title(app) == dashboard.COVER_NAME
     assert app.session_state.get(dashboard.PROFILE_PARAMETER) is None
     choice = [group for group in app.get("button_group") if group.key == "profile_field"][0]
     assert choice.proto.label.startswith("¿Cómo quieres recorrerlo?")
@@ -136,35 +136,60 @@ def test_business_questions_float_without_repetitive_card_backgrounds():
         assert f'data-kind="{symbol}"' in showcase
 
 
-@needs_database
-def test_d060_search_shows_form_summary_and_table():
-    app = draw_page(dashboard.PAGE_DATA_AND_CODE)
-    assert not app.exception
-    labels = [box.label for box in app.selectbox]
-    for field in explorer.SEARCH_FIELDS:
-        assert explorer.FIELD_LABELS[field] in labels
-    texts = " ".join(block.value for block in app.markdown)
-    for state in explorer.ALERT_STATES:
-        assert dashboard.ALERT_STATE_PUBLIC_LABELS[state] in texts
-    assert "Grupo de alimentos" in texts
-    assert "Mostrando 1 a 20 de" in texts
-    assert len(app.dataframe) >= 1
-    sql_details = next(expander for expander in app.expander
-                       if expander.label.startswith("Cómo se construyó esta búsqueda"))
-    assert sql_details.proto.expanded
+def test_c03_the_catalog_covers_every_stored_query_once():
+    """Every named query of bi/queries.sql, plus K7 (etl/etl.py), is one question."""
+    names = [entry["name"] for entry in dashboard.CATALOG]
+    assert len(names) == len(set(names))
+    assert set(names) == set(queries.load_queries()) | {project.MATCH_COVERAGE_QUERY_NAME}
+    for entry in dashboard.CATALOG:
+        assert entry["question"].startswith("¿") and entry["compares"] and entry["reading"]
 
 
 @needs_database
-def test_d060_a_summary_card_applies_its_filter_and_shows_a_chip():
-    app = draw_page(dashboard.PAGE_DATA_AND_CODE)
-    app.button(key=f"filter_state_{explorer.ALERT_OUT}").click().run()
+def test_c03_every_result_is_read_only_and_runs_only_stored_queries(monkeypatch):
+    """Each result opens the database in read-only mode and runs a stored query, wrapped
+    only by fixed filter columns whose values travel as parameters."""
+    import sqlite3
+    opened = []
+    original = queries.open_database
+
+    def spy(database_file=queries.DATABASE_FILE):
+        connection = original(database_file)
+        with pytest.raises(sqlite3.OperationalError):
+            connection.execute("CREATE TABLE written_by_catalog (x)")
+        opened.append(connection)
+        return connection
+    monkeypatch.setattr(queries, "open_database", spy)
+    dashboard.read_cached_catalog_rows.clear()
+    for entry in dashboard.CATALOG:
+        result = entry["build"](dashboard.charts.MODE_CORPORATE)
+        assert not result["rows"].empty, entry["name"]
+        sql, parameters = dashboard.build_catalog_sql(entry["name"], result["filters"])
+        stored = project.strip_sql_comments(dashboard.read_catalog_sql(entry["name"]))
+        assert stored.strip().rstrip(";") in sql
+        assert len(parameters) == sql.count("?")
+    assert opened
+    dashboard.read_cached_catalog_rows.clear()
+
+
+def test_c03_old_addresses_of_the_retired_screen_open_the_catalog():
+    assert dashboard.PAGE_DATA_AND_CODE == dashboard.PAGE_QUERIES
+    assert dashboard.WINDOWS["Código y resultados"] == [dashboard.PAGE_QUERIES,
+                                                        dashboard.PAGE_CODE]
+    for path in ["datos-y-codigo", "consultas"]:
+        assert dashboard.OLD_PATHS[path] == (dashboard.PAGE_QUERIES, None)
+    assert dashboard.PAGE_OF_TAB[dashboard.TAB_EXPLORER] == dashboard.PAGE_QUERIES
+    assert "datos-y-codigo" not in dashboard.PAGE_PATHS.values()
+
+
+@needs_database
+def test_c03_an_old_section_link_to_the_explorer_opens_the_catalog():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params["seccion"] = dashboard.TAB_EXPLORER
+    app.run()
     assert not app.exception
-    assert app.session_state["search_applied"][explorer.FIELD_ALERT] == explorer.ALERT_OUT
-    chip = app.button(key=f"chip_{explorer.FIELD_ALERT}")
-    assert chip.label == (f"{explorer.FIELD_LABELS[explorer.FIELD_ALERT]}: "
-                          f"{dashboard.ALERT_STATE_PUBLIC_LABELS[explorer.ALERT_OUT]} ✕")
-    chip.click().run()
-    assert app.session_state["search_applied"][explorer.FIELD_ALERT] == explorer.ALL
+    assert read_page_title(app) == dashboard.SECTION_CODE
+    assert app.radio(key="catalog_choice").value == dashboard.CATALOG[0]["name"]
 
 
 @needs_database
@@ -181,14 +206,22 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     app = draw_page(dashboard.HOME_PAGE)
     assert not app.exception and not app.tabs
     texts = " ".join(block.value for block in app.markdown)
-    assert "Top 8" in texts and "811.578" in texts
+    captions = " ".join(caption.value for caption in app.caption)
+    # D-072: the summary follows the approved mockup, four questions under one title.
+    # The ring's total is drawn in the chart; its legend reads the parts in the text.
+    assert "Top 8 · frente a la semana anterior" in captions and "798.280" in texts
     assert 'class="zoom-frame' not in texts and "animateMotion" not in texts
-    assert texts.index("Top 8 · cambios") < texts.index("¿Qué grupo subió más?")
+    assert texts.index("Los precios esta semana") < texts.index("¿Qué precios subieron más?")
+    for question in ["¿Cómo evolucionó el producto?", "¿Dónde es más caro?",
+                     "¿Qué datos podemos usar?"]:
+        assert question in texts
     figures = [json.loads(chart.proto.spec) for chart in app.get("plotly_chart")]
     # The pulse is the only Plotly chart; the map is Altair, so a click can filter (D-069).
     assert [trace["type"] for figure in figures for trace in figure["data"]][0] == "scatter"
     assert "scatter3d" not in {trace["type"] for figure in figures for trace in figure["data"]}
-    assert texts.count('class="overview-metric"') == 4
+    # Alerts, comparable prices, the load and what an alert means (D-072).
+    assert texts.count('class="kpi-strip-item') == 4
+    assert "Una alerta invita a revisar; no explica la causa." in texts
     diagrams = draw_page(dashboard.PAGE_DIAGRAMS)
     texts = " ".join(block.value for block in diagrams.markdown)
     assert not diagrams.exception and not diagrams.tabs
@@ -239,29 +272,40 @@ def test_d056_analysis_filters_show_once_and_hold_in_every_tab():
 
 
 @needs_database
-def test_t57_queries_section_shows_the_real_count_and_each_query_open_by_its_part():
-    """The number shown is the one of «-- name:» lines; each query under the part of the
-    panel that uses it, in an expander open by default."""
-    named_count = queries.QUERIES_FILE.read_text(encoding="utf-8").count("\n-- name: ")
+def test_c03_catalog_lists_every_question_and_shows_the_chosen_one_whole():
+    """The list holds every question; the chosen one shows its result, how to read it,
+    its SQL with the file on GitHub, the whole table, the CSV and its Python."""
     app = draw_page(dashboard.PAGE_QUERIES)
-    texts = [block.value for block in app.markdown]
-    assert f"### {named_count} consultas del proyecto" in texts
-    catalog = project.list_named_queries()
-    labels = {expander.label.rsplit("nombre técnico: ", 1)[-1]: expander
-              for expander in app.expander if "nombre técnico: " in expander.label}
-    for query in catalog + [{"name": project.MATCH_COVERAGE_QUERY_NAME}]:
-        assert labels[query["name"]].proto.expanded, query["name"]
-    parts = [text[5:].split(" · ")[0] for text in texts if text.startswith("#### ")]
-    assert "Brecha de precio" in parts and parts[-1] == "Fuera de bi/queries.sql"
-    assert not [text for text in texts if "Intermedio" in text or "Avanzado" in text]
+    assert not app.exception
+    choice = app.radio(key="catalog_choice")
+    assert choice.options == [entry["question"] for entry in dashboard.CATALOG]
+    first = dashboard.CATALOG[0]
+    text = " ".join(block.value for block in app.markdown)
+    for words in [first["question"], "Resultado de la consulta", "Cómo leerlo",
+                  "Sin dato no significa precio cero", "Consulta SQL",
+                  "github.com", "bi/queries.sql en GitHub ↗"]:
+        assert words in text, words
+    assert any(block.value == queries.load_queries()[first["name"]].strip()
+               for block in app.code)
+    labels = [expander.label for expander in app.expander]
+    assert any(label.startswith("Ver tabla completa") for label in labels)
+    assert "Ver consulta completa · bi/queries.sql" in labels
+    assert "Implementación Python · Ver funciones" in labels
+    assert len(app.get("download_button")) == 1
 
 
 @needs_database
-def test_queries_tab_runs_a_query_when_asked():
+def test_c03_choosing_a_question_shows_its_result_and_keeps_it_in_the_address():
     app = draw_page(dashboard.PAGE_QUERIES)
-    app.button(key="preview_k1_margin").click().run()
+    app.radio(key="catalog_choice").set_value("k1_margin").run()
     assert not app.exception
-    assert any(len(frame.value) == 20 for frame in app.dataframe)
+    assert app.query_params[dashboard.CATALOG_PARAMETER] == "k1_margin"
+    text = " ".join(block.value for block in app.markdown)
+    assert "La brecha no mide" in text or "no mide ganancia" in text
+    app.text_input(key="catalog_search").input("carga").run()
+    assert not app.exception
+    options = app.radio(key="catalog_choice").options
+    assert "¿La última carga funcionó?" in options and len(options) < len(dashboard.CATALOG)
 
 
 def test_kpi_link_opens_the_kpi_view_with_that_indicator():
@@ -288,7 +332,8 @@ def test_t52_every_link_of_the_project_points_to_a_window_that_exists():
         for _, address in dashboard.list_journey_steps(journey):
             path = address.split("?")[0]
             assert path == "./" or path in paths, address
-    assert dashboard.build_page_address(dashboard.PAGE_BUSINESS) == "./"
+    assert dashboard.build_page_address(dashboard.PAGE_COVER) == "./"
+    assert dashboard.build_page_address(dashboard.PAGE_BUSINESS).startswith("./?")
     assert dashboard.build_page_address(dashboard.HOME_PAGE) == "dashboard"
 
 
@@ -621,20 +666,11 @@ def test_analysis_sections_are_direct_destinations_without_tabs():
         assert not app.exception and not app.tabs, page
         assert title in " ".join(block.value for block in app.markdown)
 
-def test_d060_queries_are_grouped_by_the_part_of_the_panel_that_uses_them():
-    parts = dashboard.group_queries_by_part(project.list_named_queries())
-    assert sum(len(group) for group in parts.values()) == len(project.list_named_queries())
-    assert any(part.startswith("Dashboard") for part in parts)
-    assert all(" › " in part or part in dashboard.PAGES for part in parts)
-
-
-@needs_database
-def test_d060_every_query_shows_its_sql_without_unfolding_it():
-    app = draw_page(dashboard.PAGE_QUERIES)
-    assert not app.exception
-    named_count = len(project.list_named_queries())
-    # Every query card has its SQL as a code block in sight, not inside an expander.
-    assert len([block for block in app.code if "SELECT" in block.value.upper()]) >= named_count
+def test_c03_the_catalog_opens_a_query_on_github_at_its_line():
+    for entry in dashboard.CATALOG:
+        path, line = dashboard.find_catalog_line(entry["name"])
+        lines = (PROJECT_DIR / path).read_text(encoding="utf-8").splitlines()
+        assert entry["name"] in lines[line - 1] or "MATCH_COVERAGE_QUERY" in lines[line - 1]
 
 
 def test_status_text_is_readable_on_light_themes():
@@ -712,7 +748,7 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         app = draw_page(page)
         assert not app.exception and not app.tabs, page
         texts = " ".join(block.value for block in app.markdown)
-        assert ("Top 8 · cambios" in texts) == (page == dashboard.HOME_PAGE)
+        assert ("<h1>Los precios esta semana</h1>" in texts) == (page == dashboard.HOME_PAGE)
         assert ('class="zoom-frame diagram-wide"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
         assert (">Arquitectura por plataforma<" in texts) == (page == dashboard.PAGE_DIAGRAMS)
 
@@ -727,6 +763,27 @@ def test_business_definition_has_a_mission_vision_scope_and_acceptance_criteria(
         assert heading in text
     assert 'data-component-kind="mission"' in text
     assert 'data-component-kind="scope"' in text
+
+
+@needs_database
+def test_c01_the_cover_names_the_project_reads_real_figures_and_links_every_step():
+    assert dashboard.WINDOWS["El proyecto"][:2] == [dashboard.PAGE_COVER, dashboard.PAGE_BUSINESS]
+    assert dashboard.OLD_PATHS["el-proyecto"][0] == dashboard.PAGE_COVER
+    app = draw_page(dashboard.PAGE_COVER)
+    assert not app.exception
+    assert read_page_title(app) == "GreenOcean"
+    text = " ".join(block.value for block in app.markdown)
+    weekly_prices = dashboard.read_indicator("quality_flag_counts")["weekly_prices"].sum()
+    assert dashboard.charts.format_thousands(weekly_prices) in text
+    for words in ["Precios de alimentos en Chile", "El problema", "Mi aporte", "Para quién",
+                  "Qué puedes comprobar", "Límites claros", "no mide ganancias"]:
+        assert words in text
+    # Every way out of the cover stays in the same window and names its destination.
+    for view in [dashboard.PAGE_HOME, dashboard.PAGE_QUERIES, dashboard.PAGE_RULES,
+                 dashboard.PAGE_KPI, dashboard.PAGE_RUNS, dashboard.PAGE_BUSINESS]:
+        assert f'href="{html.escape(dashboard.build_page_address(view))}" target="_self"' in text
+    # The full definition keeps its own view, untouched.
+    assert "Misión" not in text
 
 
 def test_d065_previous_and_next_go_round_the_views_of_a_window():
@@ -797,9 +854,9 @@ def test_a_kpi_link_opens_its_canonical_query_without_repeating_it():
               "from bi import dashboard\ndashboard.show_queries_tab(dashboard.charts.MODE_DARK)")
     catalog = AppTest.from_string(script, default_timeout=60).run()
     assert not catalog.exception
-    assert catalog.expander[0].label.endswith("nombre técnico: k7_match_coverage")
-    assert sum(expander.label.endswith("nombre técnico: k7_match_coverage")
-               for expander in catalog.expander) == 1
+    assert catalog.radio(key="catalog_choice").value == "k7_match_coverage"
+    # The stored query in sight (the executed one, unfolded on demand, is the same text).
+    assert catalog.code[0].value == dashboard.etl.MATCH_COVERAGE_QUERY.strip()
 
 
 def test_d070_a_profile_chooses_the_start_and_the_first_views_and_hides_nothing():
@@ -885,13 +942,16 @@ def test_d068_the_summary_sentence_and_figures_read_real_weekly_data():
                "strong_rises": 46, "week": pd.Timestamp("2026-10-05"),
                "top_rise": {"product": "Manzana", "channel": "Mayorista", "variation": 0.556}}
     sentence = dashboard.build_summary_sentence(summary)
-    assert sentence == ("Esta semana subieron 214 precios y bajaron 180. 46 productos "
+    assert sentence == ("Esta semana subieron 214 series de precios y bajaron 180. 46 productos "
                         "subieron más de 10 %; la mayor alza fue Manzana en Mayorista (+55,6 %).")
-    figures = dashboard.build_business_figures_html(summary, charts.MODE_DARK)
-    assert "▲ 14 frente a la semana anterior (suben)" in figures
-    assert "▼ 7 frente a la semana anterior" in figures
-    assert "▼ 0,6 pts frente a la semana anterior" in figures
-    assert "Observaciones históricas" not in figures
+    # D-072: the business figures became the summary's strip, as in the mockup.
+    run = pd.Series({"status": dashboard.etl.STATUS_LOADED,
+                     "started_at": "2026-10-13T18:35:00+00:00"})
+    strip = dashboard.build_kpi_strip_html(summary, (219, 257), run)
+    assert ">43<" in strip and "▼ 7 vs. semana anterior" in strip
+    assert "85,2 %" in strip and "219 de 257" in strip and "Carga correcta" in strip
+    assert "Una alerta invita a revisar; no explica la causa." in strip
+    assert "Observaciones históricas" not in strip
 
 
 def test_d069_a_product_filter_keeps_its_key_channel_and_a_short_name():
@@ -922,8 +982,8 @@ def test_d069_one_report_bar_holds_category_region_and_week_across_views():
     dashboard_bar.run()
     assert not dashboard_bar.exception
     labels = [box.label for box in dashboard_bar.selectbox]
-    assert {"Categoría", "Región", "Semana"} <= set(labels)
-    category = [box for box in dashboard_bar.selectbox if box.label == "Categoría"][0]
+    assert {"Grupo", "Producto", "Región", "Semana"} <= set(labels)
+    category = [box for box in dashboard_bar.selectbox if box.label == "Grupo"][0]
     category.set_value("Frutas").run()
     assert dashboard_bar.session_state["dashboard_group"] == "Frutas"
     dashboard_bar.button(key="next_view").click().run()
@@ -950,10 +1010,47 @@ def test_d069_a_click_filter_reaches_the_bar_and_the_map_starts_with_two_regions
     app.session_state["dashboard_group"] = "Frutas"
     app.run()
     assert not app.exception
-    category = [box for box in app.selectbox if box.label == "Categoría"][0]
+    category = [box for box in app.selectbox if box.label == "Grupo"][0]
     assert category.value == "Frutas"
     texts = " ".join(block.value for block in app.markdown)
     assert "tiene precio en una sola región" not in texts
+
+
+def count_ranking_bars(app):
+    """How many rows the summary's ranking table holds."""
+    [table] = [frame for frame in app.dataframe if "Variación" in frame.value.columns]
+    return len(table.value)
+
+
+@needs_database
+def test_d072_top_n_and_chained_filters_change_the_summary():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params["perfil"] = "Analista BI"
+    app.run()
+    assert not app.exception
+    assert count_ranking_bars(app) == dashboard.DEFAULT_TOP_N
+    app.slider(key="dashboard_top_n").set_value(5).run()
+    assert not app.exception and count_ranking_bars(app) == 5
+    assert "Top 5 · frente a la semana anterior" in " ".join(c.value for c in app.caption)
+    [product] = [box for box in app.selectbox if box.label == "Producto"]
+    fruit = next(option for option in product.options if option.startswith("Manzana"))
+    product.set_value(fruit).run()
+    chosen = app.session_state["dashboard_product"]
+    assert chosen["key"]["product"] == "Manzana"
+    assert "Manzana" in " ".join(c.value for c in app.caption)
+    # A product outside the chosen group (left by a click in another view) is let go.
+    stale = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    stale.query_params["perfil"] = "Analista BI"
+    stale.session_state["dashboard_group"] = "Hortalizas"
+    stale.session_state["dashboard_product"] = chosen
+    stale.run()
+    assert not stale.exception
+    with pytest.raises(KeyError):
+        stale.session_state["dashboard_product"]
+    [product] = [box for box in stale.selectbox if box.label == "Producto"]
+    assert product.value == "Todos" and not any(
+        option.startswith("Manzana") for option in product.options)
+    assert "Manzana" not in " ".join(c.value for c in stale.caption)
 
 
 @needs_database
