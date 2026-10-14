@@ -221,6 +221,6 @@ def draw_gap_ribbons(rows, mode, revision):
                    ticktext=channels),
         zaxis=dict(**axis, title="Brecha (%)"), bgcolor="rgba(0,0,0,0)",
         aspectmode="manual", aspectratio=dict(x=2.2, y=.9, z=.6),
-        camera=dict(eye=dict(x=1.0, y=-1.25, z=.55), center=dict(x=0, y=0, z=-.15))),
+        camera=dict(eye=dict(x=1.35, y=-1.6, z=.75), center=dict(x=0, y=0, z=-.15))),
         dragmode="orbit", showlegend=False)
     return finish(figure, mode, 460, revision).update_layout(margin=dict(l=0, r=0, t=0, b=0))

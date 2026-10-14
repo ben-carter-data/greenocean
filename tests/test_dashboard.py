@@ -1,5 +1,6 @@
 """Tests for the dashboard: profiles, pages, key figures and footer."""
 import html
+import re
 import json
 import sys
 from pathlib import Path
@@ -27,6 +28,17 @@ def fixed_github_answers(monkeypatch):
     yield
 
 
+def read_page_title(app):
+    """The title of the page: st.title, or the one-line header of a report page (D-067)."""
+    if app.title:
+        return app.title[0].value
+    for block in app.markdown:
+        match = re.search(r'class="compact-header"><h1[^>]*>([^<]+)</h1>', block.value)
+        if match:
+            return html.unescape(match.group(1))
+    return None
+
+
 def draw_page(title):
     """Draw one page alone, the way the navigation does."""
     script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
@@ -35,15 +47,14 @@ def draw_page(title):
 
 
 def test_d065_six_windows_hold_every_view_once_and_charts_only_in_dashboard():
-    assert list(dashboard.WINDOWS) == ["01 · Dashboard", "02 · Proyecto y negocio",
-                                       "03 · Arquitectura", "04 · Datos y código",
-                                       "05 · Operación", "06 · Documentación"]
+    assert list(dashboard.WINDOWS) == ["Dashboard", "Proyecto y negocio", "Arquitectura",
+                                       "Datos y código", "Operación", "Documentación"]
     views = [view for window in dashboard.WINDOWS.values() for view in window]
     assert len(views) == len(set(views)) and set(views) == set(dashboard.SHOW_PAGE_BY_TITLE)
-    assert dashboard.WINDOWS["01 · Dashboard"] == [
+    assert dashboard.WINDOWS["Dashboard"] == [
         dashboard.HOME_PAGE, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP, dashboard.PAGE_CHANNELS,
         dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY, dashboard.PAGE_3D]
-    assert dashboard.WINDOWS["03 · Arquitectura"] == [
+    assert dashboard.WINDOWS["Arquitectura"] == [
         dashboard.PAGE_DIAGRAMS, dashboard.PAGE_ARCHITECTURE, dashboard.PAGE_DEVOPS]
     assert dashboard.PAGE_OF_TAB[dashboard.TAB_PIPELINE] == dashboard.PAGE_DIAGRAMS
 
@@ -85,7 +96,7 @@ def test_d065_the_profile_is_offered_once_and_is_not_required():
     assert not app.exception
     assert app.radio[0].label == "¿Quién consulta?"
     # The dashboard is drawn behind the offer: nothing waits for a profile.
-    assert app.title[0].value == "Precios de alimentos · Chile"
+    assert read_page_title(app) == "Precios de alimentos · Chile"
     app.button(key="previous_view").click().run()
     assert not app.exception and not app.radio
     assert app.session_state.get(dashboard.PROFILE_PARAMETER) is None
@@ -148,9 +159,9 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     app = draw_page(dashboard.HOME_PAGE)
     assert not app.exception and not app.tabs
     texts = " ".join(block.value for block in app.markdown)
-    assert "Top 10" in texts and "811.578" in texts
+    assert "Top 8" in texts and "811.578" in texts
     assert 'class="zoom-frame' not in texts and "animateMotion" not in texts
-    assert texts.index("Top 10 · cambios de precio") < texts.index("Composición de los datos")
+    assert texts.index("Top 8 · cambios") < texts.index("Composición de la semana")
     figures = [json.loads(chart.proto.spec) for chart in app.get("plotly_chart")]
     assert len(figures) == 3
     assert {trace["type"] for figure in figures for trace in figure["data"]} == {
@@ -652,7 +663,7 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         app = draw_page(page)
         assert not app.exception and not app.tabs, page
         texts = " ".join(block.value for block in app.markdown)
-        assert ("Top 10 · cambios de precio" in texts) == (page == dashboard.HOME_PAGE)
+        assert ("Top 8 · cambios" in texts) == (page == dashboard.HOME_PAGE)
         assert ('class="zoom-frame diagram-wide"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
         assert (">Arquitectura por plataforma<" in texts) == (page == dashboard.PAGE_DIAGRAMS)
 
@@ -670,7 +681,7 @@ def test_business_definition_has_a_mission_vision_scope_and_acceptance_criteria(
 
 
 def test_d065_previous_and_next_go_round_the_views_of_a_window():
-    window = "03 · Arquitectura"
+    window = "Arquitectura"
     key = dashboard.window_view_key(window)
     dashboard.st.session_state[key] = dashboard.PAGE_DIAGRAMS
     dashboard.step_view(window, -1)
@@ -694,7 +705,7 @@ def test_d065_an_old_section_link_opens_its_view_inside_the_dashboard():
     app.query_params["seccion"] = dashboard.TAB_GAP
     app.run()
     assert not app.exception
-    assert app.title[0].value == dashboard.PAGE_GAP
+    assert read_page_title(app) == dashboard.PAGE_GAP
     assert "seccion" not in app.query_params
 
 
@@ -706,7 +717,7 @@ def test_old_section_links_can_redirect_with_a_bound_theme():
     app.query_params["seccion"] = dashboard.TAB_GAP
     app.run()
     assert not app.exception
-    assert app.title[0].value == dashboard.PAGE_GAP
+    assert read_page_title(app) == dashboard.PAGE_GAP
 
 
 def test_d056_old_addresses_open_their_new_tab():
@@ -739,3 +750,44 @@ def test_a_kpi_link_opens_its_canonical_query_without_repeating_it():
     assert not catalog.exception
     assert catalog.expander[0].label.startswith("k7_match_coverage")
     assert sum(expander.label.startswith("k7_match_coverage") for expander in catalog.expander) == 1
+
+
+def test_d066_each_profile_orders_the_same_windows_and_starts_at_the_first():
+    for profile, order in dashboard.PROFILE_WINDOW_ORDER.items():
+        assert sorted(order) == sorted(dashboard.WINDOWS), profile
+    assert set(dashboard.PROFILE_WINDOW_ORDER) == set(dashboard.VISITOR_PROFILES)
+    assert dashboard.order_windows("Sin perfil") == list(dashboard.WINDOWS)
+    order = dashboard.order_windows("Ingeniería de datos")
+    assert order[0] == "Arquitectura"
+    assert dashboard.number_window("Dashboard", order) == "04 · Dashboard"
+
+
+@needs_database
+def test_d066_a_profile_reorders_the_menu_and_the_sidebar_does_not_show_it():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params["perfil"] = "Ingeniería de datos"
+    app.run()
+    assert not app.exception
+    # The visit starts at the first window of the profile: Arquitectura, its pipeline.
+    assert read_page_title(app) == dashboard.PAGE_DIAGRAMS
+    sidebar = " ".join(block.value for block in app.sidebar.markdown)
+    assert "Ingeniería de datos" not in sidebar
+    assert not [button for button in app.sidebar.button if "perfil" in button.label]
+
+
+def test_d067_report_pages_use_a_compact_header_and_short_kpi_links():
+    dashboard.st.session_state[dashboard.COMPACT_VIEW] = True
+    try:
+        assert dashboard.build_kpi_link("K6").count(">K6 ↗<") == 1
+    finally:
+        dashboard.st.session_state[dashboard.COMPACT_VIEW] = False
+    assert "¿Cómo se calcula K6?" in dashboard.build_kpi_link("K6")
+    ranked = pd.DataFrame({"product_group": ["Frutas"], "product": ["Manzana"],
+                           "variety": ["Cripps Pink"], "quality": ["Calibre 80"],
+                           "channel": ["Mayorista"], "normalized_unit": ["kilo"],
+                           "week_start": [pd.Timestamp("2026-10-05")],
+                           "national_price": [1555.5556], "variation": [0.555556]})
+    table = dashboard.format_ranking_table(ranked)
+    assert table.iloc[0]["Semana"] == "05-10-2026"
+    assert table.iloc[0]["Precio nacional"] == "$ 1.556"
+    assert table.iloc[0]["Variación"] == "+55,6 %"
