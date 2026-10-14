@@ -113,7 +113,7 @@ TOOLTIPS = {
                 "«Ejecutar ahora».",
     "etl_run": "Tabla con una fila por carga. ETL = extraer, transformar y cargar.",
     "Logs del agente": "Un archivo de texto por ejecución con lo que hizo la descarga.",
-    "Correo de GitHub": "GitHub avisa por correo a la autora si el job semanal falla.",
+    "Correo de GitHub": "GitHub avisa por correo al autor si el job semanal falla.",
     "Centro de control": "Página del panel con el historial de ejecuciones en vivo.",
     "Datos abiertos": "Portal de datos abiertos de ODEPA: un CSV por año y fuente, descargado "
                       "por HTTPS.",
@@ -782,7 +782,7 @@ def build_components(states, figures, palette):
                         ["bi/dashboard.py · solo lectura", figures["panel_time"]], palette,
                         states["panel"]),
         build_component(1248, BOTTOM_ROW_Y, "consumption", draw_chart_icon, "Visitantes",
-                        ["navegador · enlace público", "autora: correo si falla"], palette),
+                        ["navegador · enlace público", "autor: correo si falla"], palette),
     ])
 
 

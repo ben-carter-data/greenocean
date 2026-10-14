@@ -45,7 +45,7 @@ Hay cinco lugares donde se nota una falla:
 | Dónde | Qué se ve |
 |---|---|
 | «Operaciones» → «Ejecuciones» del panel | La última ejecución aparece como «Falla»; «detalle» abre la ejecución en GitHub. |
-| Correo de GitHub | Llega un correo «Run failed: semanal» a la cuenta de la autora. |
+| Correo de GitHub | Llega un correo «Run failed: semanal» a la cuenta del autor. |
 | Informe semanal | Esa semana no aparece un issue nuevo. |
 | Calidad de datos del panel | La fecha de la última carga sigue siendo la de la semana anterior. |
 | Log del paso que falló, en GitHub | El mensaje exacto. Si falló el ETL, empieza con «Quality checks failed, nothing was loaded». |
@@ -71,11 +71,11 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 | «Operaciones» → «Ejecuciones» dice «No se pudo consultar GitHub: …» | El mensaje trae la causa real. La más común es «GitHub respondió 403: se agotó el límite de consultas sin clave»: GitHub permite 60 consultas por hora sin clave, compartidas por todas las apps del mismo servidor | Nada: el panel muestra la última respuesta guardada o, si no hay, los estados de la última carga guardada en la base, y vuelve a preguntar cada 5 minutos. Con la clave de «Ejecutar ahora» configurada el límite sube |
 | Con un tema claro (Corporativo o Claro) las listas, tablas o bloques de código se ven oscuros, o al revés con Vantablack | El panel cambia el modo base de Streamlit solo, una vez por página; si una versión nueva de Streamlit cambió cómo guarda ese modo, el cambio no ocurre (D-052) | Elegir el modo a mano: ⋮ (arriba a la derecha) → Settings → Light para Corporativo y Claro, Dark para Vantablack |
 
-## Tareas de la autora y tareas automáticas
+## Tareas del autor y tareas automáticas
 
 **Automáticas, sin intervención:** descarga, limpieza, reglas, data quality checks, tests, guardar el data warehouse, informe semanal, correo si algo falla, caché de los años cerrados y actualización del panel publicado.
 
-**De la autora:**
+**Del autor:**
 
 - **Cada martes:** mirar «Operaciones» → «Ejecuciones» o el correo. Si está en verde, no hay nada que hacer.
 - **Cada enero:** agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL de descarga que publica ODEPA en las páginas de cada conjunto de datos (`DISENO.md`, sección 5).
@@ -88,7 +88,7 @@ Los enlaces del proyecto están en un solo lugar: la página «Enlaces» del men
 
 La tarjeta «🔒 Administración» de «Operaciones» → «Ejecuciones» se abre con la clave de control (secreto `CONTROL_CODE` del panel). Muestra: administrar la app en Streamlit (Reboot, secretos, registros), lanzar el workflow en GitHub, crear un token, ver los tokens, el aviso «Tu token vence en X días» (destacado si faltan menos de 14) y el botón «Ejecutar ahora». El panel nunca muestra el token ni una parte de él.
 
-**La clave ordena el acceso, pero no es la seguridad real.** Los enlaces de administración llevan a páginas de GitHub y Streamlit que piden su propio inicio de sesión: quien vea la tarjeta sin tener la cuenta de la autora no puede cambiar nada. Lo que protege el proyecto es el inicio de sesión de GitHub y Streamlit (con verificación en dos pasos) y que el token tenga solo el permiso de lanzar el workflow de este repositorio. La clave sirve para que el botón «Ejecutar ahora» no lo use cualquier visitante del panel público.
+**La clave ordena el acceso, pero no es la seguridad real.** Los enlaces de administración llevan a páginas de GitHub y Streamlit que piden su propio inicio de sesión: quien vea la tarjeta sin tener la cuenta del autor no puede cambiar nada. Lo que protege el proyecto es el inicio de sesión de GitHub y Streamlit (con verificación en dos pasos) y que el token tenga solo el permiso de lanzar el workflow de este repositorio. La clave sirve para que el botón «Ejecutar ahora» no lo use cualquier visitante del panel público.
 
 ## Límites conocidos
 
@@ -116,48 +116,17 @@ La tarjeta «🔒 Administración» de «Operaciones» → «Ejecuciones» se ab
 
 ## Recorrido del proyecto
 
-Al entrar, el diálogo «¿Quién consulta?» pide un perfil y abre siempre el dashboard. El perfil
-solo sugiere un recorrido: todas las páginas siguen disponibles. «Cambiar perfil»
-vuelve a abrir el diálogo. No se solicitan datos personales.
+El panel se recorre como un CV con sus evidencias, en cuatro pasos, en este orden:
 
-El dashboard presenta los rankings de la última semana. El pipeline vivo y la
-arquitectura tienen su propia sección en el menú lateral. «Ajustar el ranking» permite cambiar Top N y separar alzas y bajas.
-El fondo alimentario es una imagen ilustrativa generada, no una fotografía de una
-fuente de datos. Los indicadores y gráficos flotan sobre superficies con contraste
-adaptado a Vantablack y Corporativo; conservan filtros, detalles al pasar el mouse
-y exportaciones. Los controles del ranking están encima de los gráficos.
-El panorama combina un anillo (observaciones válidas por grupo), curvas con área
-(precio nacional por canal durante 12 semanas) y una vista territorial 3D que
-abre automáticamente con un producto comparable. El selector conserva producto,
-variedad, calidad y unidad; cambia la tendencia y la vista territorial juntas.
-En 3D, arrastra para girar y usa los controles del gráfico para acercar o restablecer
-la cámara. La altura es el índice regional: 100 = promedio nacional del mismo canal.
-«Mapa 2D» presenta esos mismos índices en una matriz y reemplaza la escena 3D.
-Las leyendas permiten ocultar canales; las infoburbujas muestran cifras y contexto.
-El anillo cuenta observaciones, no ventas ni gasto. Las semanas sin precios quedan
-interrumpidas en las curvas. Los rankings detallados siguen debajo del panorama.
-Las secciones de Análisis BI permiten profundizar en cada pregunta y recuerdan la selección de producto al recorrerlas.
+1. **El proyecto:** qué problema resuelve, qué se construyó, para quién y sus límites. Abre el alcance y el método: indicadores explicados, reglas de calidad, decisiones y glosario.
+2. **Dashboard:** los precios de la semana elegida, con filtros (categoría, región y semana) que valen para todas sus vistas. Un clic en una barra filtra los demás gráficos; un clic en un grupo baja a esa categoría.
+3. **Código y resultados:** cada consulta con la pregunta que responde, su resultado real y su código SQL o Python.
+4. **Detalle técnico:** el diagrama original del pipeline, el modelo de datos, la calidad de la carga, las ejecuciones, DevOps y este manual.
 
-El menú reúne Dashboard, análisis filtrados, Histórico y estacionalidad, Pipeline
-y arquitectura, Modelo de datos y DevOps en «Visualizaciones», en ese orden de
-lectura: panorama Top N → detalle filtrado → histórico → explicación técnica.
-En Dashboard, el Top N precede la composición, la tendencia y la vista territorial.
-Siguen Negocio y criterios, Datos e implementación, Operación y Documentación.
-Cada vista tiene acceso directo;
-«Anterior» y «Siguiente» siguen el mismo orden al inicio y al final de cada página.
-Todos los acordeones y detalles desplegables aparecen abiertos por defecto en todas
-las páginas, incluidos filtros, históricos, tablas, indicadores, archivos y documentos.
-Puedes cerrarlos a voluntad. El detalle de una ejecución también permanece abierto al terminar.
-«Ejecuciones» contiene el historial y la administración; «Monitoreo» muestra la
-calidad de la carga. «Código Python y SQL» abre los archivos Python y los esquemas SQL con su código
-visible, plegable a voluntad. El catálogo de queries está solo en «Consultas SQL»; los
-indicadores y la página de código enlazan a él. DevOps enlaza a «Pipeline y arquitectura».
-Solo hay dos temas: Vantablack y Corporativo. Un enlace antiguo con «Claro» abre Corporativo.
+«Fuentes y enlaces» reúne, fuera del recorrido, las fuentes de ODEPA, el repositorio, las ejecuciones y los informes. Cada enlace dice adónde lleva antes de salir del panel.
 
-DevOps presenta un ciclo compacto con los logos de Git, GitHub, Python, SQLite,
-pytest y Streamlit, y una descripción breve por fase. Los detalles de seguridad,
-observabilidad e informes se leen en filas, sin tarjetas grandes. La arquitectura
-por plataforma conserva su única ubicación en «Pipeline y arquitectura», con
-símbolos y logos pequeños; el ciclo explica las fases del trabajo. En móvil, el
-ciclo se presenta como una lista legible de las mismas fases. La animación es
-ilustrativa y pausable; los estados se basan en la última evidencia disponible.
+Al pie de cada paso, «← Volver» y «Siguiente →» abren la sección vecina en la misma ventana. El tema, el perfil y los filtros se conservan al cambiar de sección.
+
+En «El proyecto» se puede elegir un perfil (opcional). El perfil no oculta nada: decide por dónde empieza la visita y qué vista abre primero en cada sección. Reclutamiento empieza por el proyecto; Negocio / gerencia y Analista BI, por el dashboard; Ingeniería de datos, por el detalle técnico. No se solicitan datos personales.
+
+La administración (ejecutar el job, tokens, administrar la app publicada) está en «Detalle técnico» → «Ejecuciones», detrás de la clave de control. No forma parte del recorrido de un visitante.

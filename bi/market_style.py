@@ -21,9 +21,6 @@ def build_css(mode):
     .stApp:has(.st-key-market_dashboard) {{
         background-color:{palette["background"]};
     }}
-    .stApp:has(.st-key-market_dashboard) [data-testid="stHeader"] {{
-        background:transparent;
-    }}
     .stApp:has(.st-key-market_dashboard) [data-testid="stMainBlockContainer"] {{
         max-width:1600px; padding-inline:clamp(20px, 3.3vw, 64px);
     }}

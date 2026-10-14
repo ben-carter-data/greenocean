@@ -46,16 +46,19 @@ def draw_page(title):
     return AppTest.from_string(script, default_timeout=60).run()
 
 
-def test_d065_six_windows_hold_every_view_once_and_charts_only_in_dashboard():
-    assert list(dashboard.WINDOWS) == ["Dashboard", "Proyecto y negocio", "Arquitectura",
-                                       "Datos y código", "Operación", "Documentación"]
+def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
+    assert dashboard.ROUTE == ["El proyecto", "Dashboard", "Código y resultados",
+                               "Detalle técnico"]
+    assert list(dashboard.WINDOWS) == dashboard.ROUTE + ["Fuentes y enlaces"]
     views = [view for window in dashboard.WINDOWS.values() for view in window]
     assert len(views) == len(set(views)) and set(views) == set(dashboard.SHOW_PAGE_BY_TITLE)
     assert dashboard.WINDOWS["Dashboard"] == [
         dashboard.HOME_PAGE, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP, dashboard.PAGE_CHANNELS,
-        dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY, dashboard.PAGE_3D]
-    assert dashboard.WINDOWS["Arquitectura"] == [
-        dashboard.PAGE_DIAGRAMS, dashboard.PAGE_ARCHITECTURE, dashboard.PAGE_DEVOPS]
+        dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY]
+    assert dashboard.WINDOWS["Detalle técnico"][0] == dashboard.PAGE_DIAGRAMS
+    # Old addresses of the retired windows and of the 3D view still open something.
+    for path in ["operacion", "documentacion", "vista-3d"]:
+        assert dashboard.OLD_PATHS[path][0] in views
     assert dashboard.PAGE_OF_TAB[dashboard.TAB_PIPELINE] == dashboard.PAGE_DIAGRAMS
 
 
@@ -91,15 +94,18 @@ def test_durations_are_written_for_people():
 
 
 @needs_database
-def test_d065_the_profile_is_offered_once_and_is_not_required():
+def test_d070_the_visit_starts_at_the_project_and_the_profile_is_optional_and_inline():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not app.exception
-    assert app.radio[0].label == "¿Quién consulta?"
-    # The dashboard is drawn behind the offer: nothing waits for a profile.
-    assert read_page_title(app) == "Precios de alimentos · Chile"
-    app.button(key="previous_view").click().run()
-    assert not app.exception and not app.radio
+    # No floating window: the project opens, with the profile as an optional choice.
+    assert read_page_title(app) == dashboard.PAGE_BUSINESS
     assert app.session_state.get(dashboard.PROFILE_PARAMETER) is None
+    choice = [group for group in app.get("button_group") if group.key == "profile_field"][0]
+    assert choice.proto.label.startswith("¿Cómo quieres recorrerlo?")
+    choice.set_value("Negocio / gerencia").run()
+    assert not app.exception
+    assert app.session_state[dashboard.PROFILE_PARAMETER] == "Negocio / gerencia"
+    assert app.query_params["perfil"] == "Negocio / gerencia"
 
 
 def test_hover_hint_is_plain_text_and_escaped():
@@ -260,15 +266,18 @@ def test_queries_tab_runs_a_query_when_asked():
 
 def test_kpi_link_opens_the_kpi_view_with_that_indicator():
     link = dashboard.build_kpi_link("K5")
-    assert 'href="proyecto?kpi=K5&amp;vista=Indicadores+explicados"' in link
+    # El proyecto starts the route, so it lives at the root of the app.
+    assert 'href="./?kpi=K5&amp;vista=Indicadores+explicados"' in link
     assert ">K5<" not in link
 
 
 def test_d065_a_place_named_in_a_document_opens_its_window_and_view():
-    assert dashboard.build_place_address(dashboard.TAB_QUALITY) == "operacion"
+    assert dashboard.build_place_address(dashboard.TAB_QUALITY) == (
+        "detalle-tecnico?vista=Monitoreo")
     assert dashboard.build_place_address(dashboard.TAB_KPI) == (
-        "proyecto?vista=Indicadores+explicados")
-    assert dashboard.build_place_address(dashboard.PAGE_ANALYSIS) == "./?vista=Esta+semana"
+        "./?vista=Indicadores+explicados")
+    assert dashboard.build_place_address(dashboard.PAGE_ANALYSIS) == (
+        "dashboard?vista=Esta+semana")
 
 
 def test_t52_every_link_of_the_project_points_to_a_window_that_exists():
@@ -279,7 +288,8 @@ def test_t52_every_link_of_the_project_points_to_a_window_that_exists():
         for _, address in dashboard.list_journey_steps(journey):
             path = address.split("?")[0]
             assert path == "./" or path in paths, address
-    assert dashboard.build_page_address(dashboard.HOME_PAGE) == "./"
+    assert dashboard.build_page_address(dashboard.PAGE_BUSINESS) == "./"
+    assert dashboard.build_page_address(dashboard.HOME_PAGE) == "dashboard"
 
 
 def test_t52_each_channel_gap_says_how_many_regions_stand_behind_it():
@@ -487,7 +497,7 @@ def test_d057_manual_tab_shows_every_section_of_the_manual():
     labels = " ".join(expander.label for expander in app.expander).lower()
     # Two sections take a plainer title in the panel; the glossary keeps its terms folded.
     shown_titles = {"Cómo leer un aviso rojo": "Si algo falla",
-                    "Tareas de la autora y tareas automáticas": "Qué hace la autora",
+                    "Tareas del autor y tareas automáticas": "Qué hace el autor",
                     "Glosario": "Glosario"}
     for heading, _ in project.split_sections(project.read_document(project.MANUAL_FILE)):
         title = shown_titles.get(heading, heading)
@@ -564,8 +574,7 @@ def test_d057_quality_tab_explains_what_was_left_out_and_shows_it():
 
 def test_d058_the_old_links_tab_opens_the_links_view():
     assert dashboard.OLD_TAB_PAGES[(dashboard.PAGE_OPERATIONS, "Enlaces")] == dashboard.PAGE_LINKS
-    assert dashboard.build_place_address(dashboard.PAGE_LINKS) == (
-        "documentacion?vista=Enlaces")
+    assert dashboard.build_place_address(dashboard.PAGE_LINKS) == "fuentes-y-enlaces"
     groups = {link["group"] for link in project.PROJECT_LINKS}
     assert groups == {"Código y operación", "Fuentes de datos", "Documentos"}
     assert set(dashboard.LINK_GROUP_LEADS) == groups
@@ -714,11 +723,11 @@ def test_business_definition_has_a_mission_vision_scope_and_acceptance_criteria(
 
 
 def test_d065_previous_and_next_go_round_the_views_of_a_window():
-    window = "Arquitectura"
+    window = "Detalle técnico"
     key = dashboard.window_view_key(window)
     dashboard.st.session_state[key] = dashboard.PAGE_DIAGRAMS
     dashboard.step_view(window, -1)
-    assert dashboard.st.session_state[key] == dashboard.PAGE_DEVOPS
+    assert dashboard.st.session_state[key] == dashboard.PAGE_MANUAL
     dashboard.step_view(window, 1)
     assert dashboard.st.session_state[key] == dashboard.PAGE_DIAGRAMS
 
@@ -786,23 +795,28 @@ def test_a_kpi_link_opens_its_canonical_query_without_repeating_it():
                for expander in catalog.expander) == 1
 
 
-def test_d066_each_profile_orders_the_same_windows_and_starts_at_the_first():
-    for profile, order in dashboard.PROFILE_WINDOW_ORDER.items():
-        assert sorted(order) == sorted(dashboard.WINDOWS), profile
-    assert set(dashboard.PROFILE_WINDOW_ORDER) == set(dashboard.VISITOR_PROFILES)
-    assert dashboard.order_windows("Sin perfil") == list(dashboard.WINDOWS)
-    order = dashboard.order_windows("Ingeniería de datos")
-    assert order[0] == "Arquitectura"
-    assert dashboard.number_window("Dashboard", order) == "04 · Dashboard"
+def test_d070_a_profile_chooses_the_start_and_the_first_views_and_hides_nothing():
+    assert set(dashboard.PROFILE_START) == set(dashboard.VISITOR_PROFILES)
+    assert set(dashboard.PROFILE_FIRST_VIEWS) == set(dashboard.VISITOR_PROFILES)
+    assert dashboard.start_window("Sin perfil") == "El proyecto"
+    assert dashboard.start_window("Ingeniería de datos") == "Detalle técnico"
+    for profile in dashboard.VISITOR_PROFILES:
+        for window, views in dashboard.WINDOWS.items():
+            assert sorted(dashboard.read_window_views(window, profile)) == sorted(views)
+    engineering = dashboard.read_window_views("Detalle técnico", "Ingeniería de datos")
+    assert engineering[:2] == [dashboard.PAGE_DIAGRAMS, dashboard.PAGE_RUNS]
+    order = dashboard.order_windows()
+    assert dashboard.number_window("Dashboard", order) == "02 · Dashboard"
+    assert dashboard.number_window("Fuentes y enlaces", order) == "Fuentes y enlaces"
 
 
 @needs_database
-def test_d066_a_profile_reorders_the_menu_and_the_sidebar_does_not_show_it():
+def test_d070_a_profile_starts_its_visit_and_the_sidebar_does_not_show_it():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params["perfil"] = "Ingeniería de datos"
     app.run()
     assert not app.exception
-    # The visit starts at the first window of the profile: Arquitectura, its pipeline.
+    # The visit starts at the section of the profile: Detalle técnico, its pipeline.
     assert read_page_title(app) == dashboard.PAGE_DIAGRAMS
     sidebar = " ".join(block.value for block in app.sidebar.markdown)
     assert "Ingeniería de datos" not in sidebar
@@ -813,7 +827,7 @@ def test_d067_report_pages_use_a_compact_header_and_short_kpi_links():
     dashboard.st.session_state[dashboard.COMPACT_VIEW] = True
     try:
         compact_link = dashboard.build_kpi_link("K6")
-        assert compact_link.count(">Cómo se calcula ↗<") == 1
+        assert compact_link.count(">Cómo se calcula →<") == 1
         assert ">K6" not in compact_link
     finally:
         dashboard.st.session_state[dashboard.COMPACT_VIEW] = False
