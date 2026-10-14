@@ -56,7 +56,9 @@ def get_colors(mode):
         return {"card": VANTABLACK_CARD, "frame": VANTABLACK_FRAME, "cyan": CYAN,
                 "text": palette["text"], "strong_text": palette["strong_text"],
                 "line": palette["card_border"]}
-    return {"card": palette["card"], "frame": palette["background"], "cyan": CYAN_ON_LIGHT,
+    # Dark Grey keeps the bright cyan; the light themes take the darker one.
+    cyan = CYAN if palette["base"] == charts.BASE_DARK else CYAN_ON_LIGHT
+    return {"card": palette["card"], "frame": palette["background"], "cyan": cyan,
             "text": palette["text"], "strong_text": palette["strong_text"],
             "line": palette["card_border"]}
 # endregion

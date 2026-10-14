@@ -1,7 +1,8 @@
-# Streamlit's native bases support the app palettes: Vantablack, Grafito and
-# Corporativo. Fields and cards keep their own contrast in every palette.
+# Streamlit's native bases support the app palettes: Corporativo and Blue Light on the
+# light base, Vantablack and Dark Grey on the dark one. The default theme is Corporativo,
+# so the app starts on the light base. Fields and cards keep their own contrast.
 [theme]
-base = "dark"
+base = "light"
 baseRadius = "large"
 showSidebarBorder = false
 

@@ -334,8 +334,15 @@ def test_without_github_the_states_come_from_the_latest_saved_load():
         "guardada en la base (12-10-2026 19:17).")
 
 
-def test_t44_vantablack_is_the_default_theme():
-    assert dashboard.get_mode() == charts.MODE_DARK
+def test_d071_four_themes_and_corporativo_is_the_default():
+    assert charts.THEMES == ["Corporativo", "Vantablack", "Blue Light", "Dark Grey"]
+    assert dashboard.get_mode() == charts.MODE_CORPORATE
+    # Shared links with retired names still open the closest theme.
+    assert dashboard.RETIRED_THEMES["Grafito"] == "Dark Grey"
+    for theme in charts.THEMES:
+        palette = charts.get_palette(theme)
+        assert theme in charts.HEAT_RAMPS and palette["base"] in (charts.BASE_DARK,
+                                                                  charts.BASE_LIGHT)
 
 
 def test_t44_base_mode_switch_writes_streamlit_choice_and_tries_only_once():
@@ -347,7 +354,7 @@ def test_t44_base_mode_switch_writes_streamlit_choice_and_tries_only_once():
     assert 'const wanted = "Dark"' in dashboard.build_base_mode_script(charts.BASE_DARK)
     graphite = dashboard.build_base_mode_script(charts.MODE_GRAPHITE)
     assert 'const wanted = "Dark"' in graphite
-    assert 'address.searchParams.set("tema", "Grafito")' in graphite
+    assert 'address.searchParams.set("tema", "Dark Grey")' in graphite
 
 
 # region Administration (T-54)
@@ -947,3 +954,17 @@ def test_d069_a_click_filter_reaches_the_bar_and_the_map_starts_with_two_regions
     assert category.value == "Frutas"
     texts = " ".join(block.value for block in app.markdown)
     assert "tiene precio en una sola región" not in texts
+
+
+@needs_database
+def test_d071_a_theme_chosen_in_the_header_holds_for_the_whole_visit():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    assert not app.exception
+    assert app.query_params["tema"] == "Corporativo"
+    [field for field in app.selectbox if field.key == "theme_field"][0].set_value(
+        "Dark Grey").run()
+    assert not app.exception
+    assert app.session_state[dashboard.THEME_STATE] == "Dark Grey"
+    assert app.query_params["tema"] == "Dark Grey"
+    app.button(key="next_view").click().run()
+    assert app.session_state[dashboard.THEME_STATE] == "Dark Grey"
