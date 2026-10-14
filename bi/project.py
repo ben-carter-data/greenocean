@@ -34,33 +34,52 @@ ISSUES_URL = f"{GITHUB_URL}/issues"
 WHOLESALE_SOURCE_URL = ("https://datos.odepa.gob.cl/dataset/"
                         "precios-mayoristas-de-frutas-y-hortalizas")
 CONSUMER_SOURCE_URL = "https://datos.odepa.gob.cl/dataset/precios-consumidor"
-# The links of the project, shown at the foot of every page and in Operaciones
-# and Arquitectura (T-54). One list for all of them. A link without an address
-# (the video, the post) stays hidden until it exists.
+# Administration (T-54): its links are shown only after the control code is typed.
+WORKFLOW_PAGE_URL = f"{GITHUB_URL}/actions/workflows/semanal.yml"
+STREAMLIT_ADMIN_URL = "https://share.streamlit.io"
+TOKEN_CREATE_URL = "https://github.com/settings/personal-access-tokens/new"
+TOKENS_URL = "https://github.com/settings/tokens"
+# Every address of the project, in one place (D-070). Each name says where the link goes
+# before leaving the panel; «page» names the page of the panel that already shows that
+# content, so it is read there and the original stays one click away. A link without an
+# address (the video, the post) stays hidden until it exists.
 PROJECT_LINKS = [
-    {"name": "Código en GitHub", "description": "Ver el código completo.",
+    {"name": "Ver el código en GitHub", "description": "El repositorio completo.",
      "url": GITHUB_URL, "icon": "code", "group": "Código y operación"},
-    {"name": "Ejecuciones", "description": "Historial del job semanal y de los tests (Actions).",
+    {"name": "Ver las ejecuciones en GitHub",
+     "description": "Historial del job semanal y de los tests (Actions).",
      "url": ACTIONS_URL, "icon": "history", "group": "Código y operación"},
-    {"name": "Informes semanales",
+    {"name": "Ver los informes semanales en GitHub",
      "description": "El informe publicado tras cada ejecución (Issues).",
      "url": ISSUES_URL, "icon": "description", "group": "Código y operación"},
-    {"name": "Historial de cambios", "description": "Cada commit, con su tarea.",
+    {"name": "Ver el historial de cambios en GitHub", "description": "Cada commit, con su tarea.",
      "url": COMMITS_URL, "icon": "commit", "group": "Código y operación"},
-    {"name": "Fuente: precios mayoristas", "description": "Datos originales de ODEPA.",
+    {"name": "Abrir fuente ODEPA: precios mayoristas", "description": "Datos originales.",
      "url": WHOLESALE_SOURCE_URL, "icon": "database", "group": "Fuentes de datos"},
-    {"name": "Fuente: precios al consumidor", "description": "Datos originales de ODEPA.",
+    {"name": "Abrir fuente ODEPA: precios al consumidor", "description": "Datos originales.",
      "url": CONSUMER_SOURCE_URL, "icon": "database", "group": "Fuentes de datos"},
     {"name": "MANUAL", "description": "Qué pasa cada martes y qué hacer si algo falla.",
      "url": f"{GITHUB_URL}/blob/{GITHUB_BRANCH}/docs/MANUAL.md", "icon": "menu_book",
-     "group": "Documentos"},
+     "group": "Documentos", "page": "Manual"},
     {"name": "DECISIONES", "description": "Qué se decidió, por qué y qué se descartó.",
      "url": f"{GITHUB_URL}/blob/{GITHUB_BRANCH}/docs/DECISIONES.md", "icon": "gavel",
-     "group": "Documentos"},
+     "group": "Documentos", "page": "Decisiones"},
     {"name": "Video", "description": "El proyecto explicado en dos minutos.",
      "url": None, "icon": "play_circle", "group": "Documentos"},
     {"name": "Post de LinkedIn", "description": "La presentación del proyecto.",
      "url": None, "icon": "campaign", "group": "Documentos"},
+]
+# Not part of a visitor's route: each service asks for its own login and permissions.
+ADMIN_LINKS = [
+    {"name": "Administrar la app en Streamlit",
+     "description": "Reboot, secretos y registros del panel publicado.",
+     "url": STREAMLIT_ADMIN_URL, "icon": "settings"},
+    {"name": "Lanzar el workflow en GitHub", "description": "Run workflow, desde GitHub.",
+     "url": WORKFLOW_PAGE_URL, "icon": "play_circle"},
+    {"name": "Crear token en GitHub", "description": "Clave nueva para «Ejecutar ahora».",
+     "url": TOKEN_CREATE_URL, "icon": "key"},
+    {"name": "Ver mis tokens en GitHub", "description": "Vencimiento y permisos de cada clave.",
+     "url": TOKENS_URL, "icon": "vpn_key"},
 ]
 
 # Headings of docs/DISENO.md that hold the business questions, rules and indicators.
@@ -676,10 +695,10 @@ CODE_WALKTHROUGH = [
      "Dibuja comparaciones, tendencias y calendarios con formatos chilenos y colores coherentes.",
      "tablas de indicadores", "gráficos Altair y paletas",
      "Elegir una forma legible para cada pregunta y mantener identificables canales, alzas y bajas."),
-    ("bi/market_charts.py", "Visualisation", "Explorar el mercado en 2D y 3D",
-     "Dibuja la composición semanal, la evolución de un producto y el índice regional en tres ejes.",
+    ("bi/market_charts.py", "Visualisation", "Explorar el mercado de un producto",
+     "Dibuja la composición semanal, la evolución de un producto y el índice regional por región y canal.",
      "observaciones válidas e indicadores K3 y K6 de una clave comparable", "gráficos Plotly interactivos",
-     "Comparar la misma variedad, calidad y unidad, conservar semanas sin dato y ofrecer una alternativa 2D."),
+     "Comparar la misma variedad, calidad y unidad, y conservar semanas sin dato."),
     ("bi/market_style.py", "Visualisation", "Presentar paneles flotantes con la paleta del proyecto",
      "Aplica al dashboard un fondo alimentario local y superficies con contraste según el tema.",
      "paletas de charts.py y fondo de bi/assets", "estilos exclusivos del dashboard",

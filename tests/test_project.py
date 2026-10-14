@@ -183,10 +183,12 @@ def test_rule_evidence_has_a_sentence_for_each_rule_it_measures():
 # region Project links (T-54)
 def test_t54_project_links_have_the_agreed_names_and_hide_what_does_not_exist():
     names = [link["name"] for link in project.PROJECT_LINKS]
-    assert names == ["Código en GitHub", "Ejecuciones", "Informes semanales",
-                     "Historial de cambios", "Fuente: precios mayoristas",
-                     "Fuente: precios al consumidor", "MANUAL", "DECISIONES", "Video",
-                     "Post de LinkedIn"]
+    assert names == ["Ver el código en GitHub", "Ver las ejecuciones en GitHub",
+                     "Ver los informes semanales en GitHub",
+                     "Ver el historial de cambios en GitHub",
+                     "Abrir fuente ODEPA: precios mayoristas",
+                     "Abrir fuente ODEPA: precios al consumidor", "MANUAL", "DECISIONES",
+                     "Video", "Post de LinkedIn"]
     for link in project.PROJECT_LINKS:
         assert link["description"] and link["icon"]
     unpublished = {link["name"] for link in project.PROJECT_LINKS if not link["url"]}

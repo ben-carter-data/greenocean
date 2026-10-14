@@ -124,7 +124,7 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 | Tabla `rejection` | Cada fila rechazada con su motivo (RN-11). | Calidad de datos |
 | Logs del agente | Un archivo por ejecución de la ingesta, con una línea por archivo descargado y su resultado. | agent/logs |
 | Historial de GitHub Actions | Cada ejecución del workflow con el resultado de cada paso. | Ejecuciones |
-| Correo de GitHub | Aviso a la autora si el job semanal falla. | Correo |
+| Correo de GitHub | Aviso al autor si el job semanal falla. | Correo |
 
 ## Informes
 

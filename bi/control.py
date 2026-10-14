@@ -13,12 +13,7 @@ REPOSITORY = "cben6514-boop/monitor-precios-hito1"
 WORKFLOW_FILE = "semanal.yml"
 BRANCH = "main"
 API_URL = "https://api.github.com"
-WORKFLOW_PAGE_URL = f"https://github.com/{REPOSITORY}/actions/workflows/{WORKFLOW_FILE}"
 REQUEST_TIMEOUT_SECONDS = 10
-# Administration (T-54): shown only after the control code is typed.
-STREAMLIT_ADMIN_URL = "https://share.streamlit.io"
-TOKEN_CREATE_URL = "https://github.com/settings/personal-access-tokens/new"
-TOKENS_URL = "https://github.com/settings/tokens"
 # GitHub states when the token of a request expires in this answer header.
 TOKEN_EXPIRATION_HEADER = "GitHub-Authentication-Token-Expiration"
 TOKEN_WARNING_DAYS = 14

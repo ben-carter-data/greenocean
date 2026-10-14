@@ -308,7 +308,8 @@ def calculate_bar_domain(values):
 
 
 def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=None,
-                         is_sorted_by_value=True, reference_label=None, select_field=None):
+                         is_sorted_by_value=True, reference_label=None, select_field=None,
+                         label_limit=150):
     """Horizontal bars with their value written next to them.
 
     rows needs the columns label, value and value_label; colors, when given,
@@ -330,7 +331,7 @@ def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=N
         tooltip.insert(1, alt.Tooltip("detail:N", title="Detalle"))
     base = alt.Chart(rows).encode(
         y=alt.Y("label:N", title=None, sort=order,
-                axis=alt.Axis(labelLimit=150, labelPadding=8)),
+                axis=alt.Axis(labelLimit=label_limit, labelPadding=8)),
         tooltip=tooltip)
     bars = base.mark_bar(cornerRadiusEnd=6, height={"band": 0.65}, cursor="pointer"
                          if select_field else "default").encode(
@@ -374,7 +375,7 @@ def draw_row_targets(base, rows, select_field):
         alt.selection_point(name="pick", fields=[select_field], on="click", clear="dblclick"))
 
 
-def draw_variation_bars(rows, mode, keep_rank_order=False, select_field=None):
+def draw_variation_bars(rows, mode, keep_rank_order=False, select_field=None, label_limit=150):
     """Weekly price changes in percent: rises in red, falls in blue.
 
     rows needs the columns label and value (percent).
@@ -389,7 +390,7 @@ def draw_variation_bars(rows, mode, keep_rank_order=False, select_field=None):
     colors = [palette["rise"] if value > 0 else palette["fall"] for value in rows["value"]]
     return draw_horizontal_bars(rows, "Variación semanal (%)", mode, colors, reference_value=0,
                                 is_sorted_by_value=not keep_rank_order,
-                                select_field=select_field)
+                                select_field=select_field, label_limit=label_limit)
 
 
 def draw_dumbbell(rows, unit, mode):
