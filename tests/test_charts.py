@@ -157,3 +157,9 @@ def test_d059_a_reference_line_can_say_its_name():
     spec = charts.draw_horizontal_bars(rows, "Índice", charts.MODE_DARK, reference_value=1,
                                        reference_label="Promedio nacional").to_dict()
     assert "Promedio nacional" in str(spec)
+
+
+def test_a_change_that_rounds_to_zero_says_it_did_not_move():
+    assert charts.describe_weekly_change(0.04) == "Sin cambio frente a la semana anterior"
+    assert charts.describe_weekly_change(-0.04) == "Sin cambio frente a la semana anterior"
+    assert charts.describe_weekly_change(-1.8).startswith("Bajó 1,8")

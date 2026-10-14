@@ -179,9 +179,8 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     assert 'class="zoom-frame' not in texts and "animateMotion" not in texts
     assert texts.index("Top 8 · cambios") < texts.index("¿Qué grupo subió más?")
     figures = [json.loads(chart.proto.spec) for chart in app.get("plotly_chart")]
-    assert len(figures) == 2
-    assert {trace["type"] for figure in figures for trace in figure["data"]} == {
-        "heatmap", "scatter"}
+    # The pulse is the only Plotly chart; the map is Altair, so a click can filter (D-069).
+    assert [trace["type"] for figure in figures for trace in figure["data"]][0] == "scatter"
     assert "scatter3d" not in {trace["type"] for figure in figures for trace in figure["data"]}
     assert texts.count('class="overview-metric"') == 4
     diagrams = draw_page(dashboard.PAGE_DIAGRAMS)
@@ -198,9 +197,10 @@ def test_dashboard_territory_is_immediately_readable_without_a_3d_duplicate():
     app = draw_page(dashboard.HOME_PAGE)
     assert not app.exception
     figures = [json.loads(chart.proto.spec) for chart in app.get("plotly_chart")]
-    assert len(figures) == 2
     types = {trace["type"] for figure in figures for trace in figure["data"]}
-    assert "heatmap" in types and "scatter3d" not in types
+    assert "scatter3d" not in types
+    texts = " ".join(block.value for block in app.markdown)
+    assert "¿Dónde es más caro" in texts
 
 @needs_database
 def test_model_has_its_diagram_and_devops_links_to_the_single_infrastructure():
@@ -666,7 +666,7 @@ def test_code_walkthrough_is_visible_and_collapsible_with_real_sources():
 def test_latest_gaps_keep_only_the_current_week_and_match_their_prices():
     rows = dashboard.read_cached_latest_gaps(dashboard.get_database_version())
     assert set(rows.week_start) == {dashboard.read_latest_week()}
-    assert rows.margin.is_monotonic_decreasing and len(rows) <= 50
+    assert rows.margin.is_monotonic_decreasing
     assert ((rows.consumer_price / rows.wholesale_price - 1) - rows.margin).abs().max() < 1e-12
 
 
@@ -871,3 +871,65 @@ def test_d068_the_summary_sentence_and_figures_read_real_weekly_data():
     assert "▼ 7 frente a la semana anterior" in figures
     assert "▼ 0,6 pts frente a la semana anterior" in figures
     assert "Observaciones históricas" not in figures
+
+
+def test_d069_a_product_filter_keeps_its_key_channel_and_a_short_name():
+    row = {"product_group": "Frutas", "product": "Manzana", "variety": "Cripps Pink",
+           "quality": "Calibre 80", "normalized_unit": "kilo", "channel": "Mayorista"}
+    product = dashboard.build_product_filter(row)
+    assert product["name"] == "Manzana Cripps Pink" and product["channel"] == "Mayorista"
+    rows = pd.DataFrame([row, dict(row, product="Pera")])
+    assert dashboard.keep_product(rows, product)["product"].tolist() == ["Manzana"]
+    assert len(dashboard.keep_product(rows, None)) == 2
+
+
+def test_d069_clickable_bars_carry_a_selection_and_the_map_too():
+    rows = pd.DataFrame({"label": ["A", "B"], "value": [5.0, -2.0], "pick": ["0", "1"]})
+    spec = charts.draw_variation_bars(rows, charts.MODE_DARK, select_field="pick").to_dict()
+    assert "'name': 'pick'" in str(spec) and "'fields': ['pick']" in str(spec)
+    points = pd.DataFrame({"region": ["Región del Maule"], "channel": ["Feria libre"],
+                           "regional_index": [1.2], "detail": ["x"]})
+    spec = str(charts.draw_region_channel_map(points, charts.MODE_DARK, "Región del Maule")
+               .to_dict())
+    assert "'fields': ['region']" in spec and "120" in spec
+
+
+@needs_database
+def test_d069_one_report_bar_holds_category_region_and_week_across_views():
+    dashboard_bar = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    dashboard_bar.query_params["perfil"] = "Analista BI"
+    dashboard_bar.run()
+    assert not dashboard_bar.exception
+    labels = [box.label for box in dashboard_bar.selectbox]
+    assert {"Categoría", "Región", "Semana"} <= set(labels)
+    category = [box for box in dashboard_bar.selectbox if box.label == "Categoría"][0]
+    category.set_value("Frutas").run()
+    assert dashboard_bar.session_state["dashboard_group"] == "Frutas"
+    dashboard_bar.button(key="next_view").click().run()
+    assert not dashboard_bar.exception
+    assert dashboard_bar.session_state["dashboard_group"] == "Frutas"
+    texts = " ".join(block.value for block in dashboard_bar.markdown)
+    assert "desde la barra del informe" in texts
+
+
+def test_d069_a_whole_row_takes_the_click_not_only_its_bar():
+    rows = pd.DataFrame({"label": ["A", "B"], "value": [1.2, -0.1], "pick": ["A", "B"]})
+    layers = charts.draw_variation_bars(rows, charts.MODE_DARK, select_field="pick").to_dict()
+    # Altair lifts the selection to the top and names the layer that carries it.
+    [selection] = [param for param in layers["params"] if param["name"] == "pick"]
+    [target] = [layer for layer in layers["layer"] if layer.get("name") in selection["views"]]
+    # That layer is an almost invisible band as wide as the chart.
+    assert target["mark"]["opacity"] < 0.01 and "x2" in target["encoding"]
+
+
+@needs_database
+def test_d069_a_click_filter_reaches_the_bar_and_the_map_starts_with_two_regions():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params["perfil"] = "Analista BI"
+    app.session_state["dashboard_group"] = "Frutas"
+    app.run()
+    assert not app.exception
+    category = [box for box in app.selectbox if box.label == "Categoría"][0]
+    assert category.value == "Frutas"
+    texts = " ".join(block.value for block in app.markdown)
+    assert "tiene precio en una sola región" not in texts

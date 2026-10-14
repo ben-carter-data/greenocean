@@ -145,6 +145,9 @@ def format_index(value):
 
 def describe_weekly_change(change):
     """A change in percent in plain words: 12.3 -> 'Subió 12,3 % frente a la semana anterior'."""
+    if round(change, 1) == 0:
+        # Same rule as the arrow «=»: a change that rounds to 0,0 % did not move.
+        return "Sin cambio frente a la semana anterior"
     verb = "Subió" if change > 0 else "Bajó"
     return f"{verb} {format_percent(abs(change))} frente a la semana anterior"
 
@@ -305,7 +308,7 @@ def calculate_bar_domain(values):
 
 
 def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=None,
-                         is_sorted_by_value=True, reference_label=None):
+                         is_sorted_by_value=True, reference_label=None, select_field=None):
     """Horizontal bars with their value written next to them.
 
     rows needs the columns label, value and value_label; colors, when given,
@@ -329,7 +332,8 @@ def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=N
         y=alt.Y("label:N", title=None, sort=order,
                 axis=alt.Axis(labelLimit=150, labelPadding=8)),
         tooltip=tooltip)
-    bars = base.mark_bar(cornerRadiusEnd=6, height={"band": 0.65}).encode(
+    bars = base.mark_bar(cornerRadiusEnd=6, height={"band": 0.65}, cursor="pointer"
+                         if select_field else "default").encode(
         x=alt.X("value:Q", title=value_title, axis=alt.Axis(tickCount=5, labelOverlap=True),
                 scale=alt.Scale(domain=calculate_bar_domain(rows["value"]), nice=False)),
         color=alt.Color("color:N", scale=None))
@@ -342,6 +346,10 @@ def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=N
         align="left", dx=6, color=palette["text"]).encode(x=alt.datum(0),
                                                           text="value_label:N")
     layers = [bars, positive_labels, negative_labels]
+    if select_field:
+        # A click anywhere on the row selects it (a short bar is hard to hit); the page
+        # filters the other charts (D-069). The row is almost transparent, on top.
+        layers.append(draw_row_targets(base, rows, select_field))
     if reference_value is not None:
         # Same rows as the bars (so the bands stay intact) but no y: one full line.
         layers.insert(0, alt.Chart(rows).mark_rule(
@@ -358,7 +366,15 @@ def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=N
     return apply_chart_style(chart, mode)
 
 
-def draw_variation_bars(rows, mode, keep_rank_order=False):
+def draw_row_targets(base, rows, select_field):
+    """An invisible band over each whole row that carries the click selection «pick»."""
+    low, high = calculate_bar_domain(rows["value"])
+    return base.mark_bar(height={"band": 1}, opacity=0.001, cursor="pointer").encode(
+        x=alt.datum(low), x2=alt.datum(high)).add_params(
+        alt.selection_point(name="pick", fields=[select_field], on="click", clear="dblclick"))
+
+
+def draw_variation_bars(rows, mode, keep_rank_order=False, select_field=None):
     """Weekly price changes in percent: rises in red, falls in blue.
 
     rows needs the columns label and value (percent).
@@ -372,7 +388,8 @@ def draw_variation_bars(rows, mode, keep_rank_order=False):
                        meaning=rows["value"].map(describe_weekly_change))
     colors = [palette["rise"] if value > 0 else palette["fall"] for value in rows["value"]]
     return draw_horizontal_bars(rows, "Variación semanal (%)", mode, colors, reference_value=0,
-                                is_sorted_by_value=not keep_rank_order)
+                                is_sorted_by_value=not keep_rank_order,
+                                select_field=select_field)
 
 
 def draw_dumbbell(rows, unit, mode):
@@ -432,6 +449,52 @@ def draw_heatmap(rows, mode):
                  alt.Tooltip("value_label:N", title="Índice estacional")])
     chart = cells.properties(height=alt.Step(34))
     return apply_chart_style(chart, mode)
+
+
+def pick_text_color_on(fill):
+    """Dark ink on a light cell, white on a dark one (relative luminance of the fill)."""
+    red, green, blue = (int(fill[position:position + 2], 16) / 255 for position in (1, 3, 5))
+    luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
+    return "#0f172a" if luminance > 0.45 else "#ffffff"
+
+
+def pick_cell_text_colors(values, ramp):
+    """The ink of each heat cell: the ramp step its value falls on decides it."""
+    low, high = values.min(), values.max()
+    spread = (high - low) or 1
+    steps = ((values - low) / spread * (len(ramp) - 1)).round().astype(int)
+    return [pick_text_color_on(ramp[step]) for step in steps]
+
+
+def draw_region_channel_map(rows, mode, chosen_region=None):
+    """Regional index of one product as a region × channel heat map you can click.
+
+    rows needs region, channel, regional_index and detail; 100 = national average.
+    """
+    palette = get_palette(mode)
+    ramp = HEAT_RAMPS.get(mode, HEAT_RAMPS[MODE_LIGHT])
+    index = rows["regional_index"] * 100
+    # Whole numbers in the cell (102, not 102,05); its ink follows the cell's own fill.
+    rows = rows.assign(index=index, index_label=index.round().astype(int).astype(str),
+                       text_color=pick_cell_text_colors(index, ramp),
+                       short_region=rows["region"].map(shorten_region_name))
+    pick = alt.selection_point(name="pick", fields=["region"], on="click", clear="dblclick")
+    base = alt.Chart(rows).encode(
+        x=alt.X("short_region:N", title=None, axis=alt.Axis(labelAngle=-35, labelLimit=90)),
+        y=alt.Y("channel:N", title=None, axis=alt.Axis(labelLimit=140)),
+        tooltip=[alt.Tooltip("detail:N", title="Detalle"),
+                 alt.Tooltip("index_label:N", title="Índice (100 = promedio nacional)")])
+    opacity = (alt.condition(alt.datum.region == chosen_region, alt.value(1), alt.value(.45))
+               if chosen_region else alt.value(1))
+    cells = base.mark_rect(cornerRadius=3, stroke=palette["card"], strokeWidth=2,
+                           cursor="pointer").encode(
+        color=alt.Color("index:Q", title="Índice", scale=alt.Scale(range=ramp),
+            legend=alt.Legend(orient="right", gradientLength=120, format=".0f")),
+        opacity=opacity).add_params(pick)
+    text = base.mark_text(fontSize=11).encode(text="index_label:N",
+                                              color=alt.Color("text_color:N", scale=None))
+    # The ink has its own scale: it must not join the heat scale of the cells.
+    return apply_chart_style(alt.layer(cells, text).resolve_scale(color="independent"), mode)
 
 
 def draw_donut(rows, colors, mode):
