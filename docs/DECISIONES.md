@@ -723,3 +723,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** cada grupo con subpáginas («01 · Dashboard», «02 · Arquitectura y operación», «05 · El proyecto», «Documentación») lleva ahora su propio ícono, el mismo que ya tenía asignado en `WINDOW_ICONS`, al mismo tamaño y en la misma posición que los íconos de página. Sus páginas quedan unidas por una guía vertical fina, como las ramas de un árbol de archivos (VS Code). Las entradas sueltas sin subpáginas (03 · Código del proyecto, 04 · Preguntas y resultados SQL) comparten el mismo margen e indentación que los grupos, en vez de un margen distinto como antes.
 - No cambia el comportamiento: todo sigue desplegado todo el tiempo (D-096); esto es una limpieza puramente visual de alineación e iconografía.
 - **Validación:** 407 pruebas sin cambios. Revisión visual en Corporativo y Vantablack.
+
+## D-102 · El menú lateral pliega y despliega de verdad, como VS Code
+
+- **Fecha:** 2026-10-16.
+- **Decisión:** cada carpeta del menú (grupo con subpáginas) tiene ahora una flecha real (▾ desplegada, ▸ plegada) que la pliega al hacer clic, igual que el panel Explorer de VS Code. Por defecto todas empiezan desplegadas, cumpliendo la regla original de D-096; plegar una es una acción explícita del visitante, no el estado inicial.
+- **La carpeta de la página actual no se puede plegar:** mientras se está viendo una página de un grupo, su flecha queda deshabilitada y el grupo permanece abierto, para no esconder nunca la página en pantalla. Al salir de ese grupo, su estado plegado o desplegado anterior se respeta.
+- **Implementación:** el estado de cada grupo vive en `st.session_state` (`nav_open_<ruta>`), one `st.button` con el ícono de flecha hace de fila de carpeta en lugar del texto estático anterior (D-101); sus páginas se omiten del todo cuando el grupo está plegado.
+- **Validación:** 409 pruebas; dos nuevas comprueban que un clic pliega y despliega un grupo sin afectar a los demás, y que el grupo de la página actual no se puede plegar.

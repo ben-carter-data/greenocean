@@ -1309,6 +1309,36 @@ def test_d096_sidebar_shows_every_section_unfolded_at_once():
 
 
 @needs_database
+def test_d102_a_folder_row_really_folds_like_vs_code():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.run()
+    toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_arquitectura-y-operacion')
+    assert toggle.label == '▾  02 · Arquitectura y operación'
+    labels_open = [link.proto.label for link in app.sidebar.get('page_link')]
+    assert 'Pipeline y arquitectura' in labels_open
+    toggle.click().run()
+    assert not app.exception
+    toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_arquitectura-y-operacion')
+    assert toggle.label == '▸  02 · Arquitectura y operación'
+    labels_closed = [link.proto.label for link in app.sidebar.get('page_link')]
+    assert 'Pipeline y arquitectura' not in labels_closed
+    # Every other group stays open; this collapse is per-folder.
+    assert 'Resumen de la semana' in labels_closed and 'Portada' in labels_closed
+    toggle.click().run()
+    assert not app.exception
+    assert 'Pipeline y arquitectura' in [link.proto.label for link in app.sidebar.get('page_link')]
+
+
+@needs_database
+def test_d102_the_open_window_cannot_be_folded_away():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.run()
+    toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_dashboard')
+    assert toggle.disabled
+    assert 'Resumen de la semana' in [link.proto.label for link in app.sidebar.get('page_link')]
+
+
+@needs_database
 def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
     """The trigger moved into the shared sidebar footer (D-096); its CSS must follow (D-100)."""
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
