@@ -489,3 +489,175 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Por qué:** un tema claro por defecto se lee mejor en una primera visita y en una pantalla compartida; dos temas oscuros y dos claros cubren las preferencias sin multiplicar paletas que mantener.
 - **Descartado:** un acento verde propio para Dark Grey (chocaba con el cian de los controles nativos, que Streamlit fija por base y no por tema).
 - **Se pierde:** Grafito con su verde.
+
+## D-073 · Destinos explícitos, preferencias en cabecera y mapa regional
+
+- **Fecha:** 2026-10-14.
+- **Decisión:** por solicitud del autor, separar «Preguntas y resultados SQL» de «Código del proyecto». El recorrido tiene cinco pasos: El proyecto, Dashboard, Preguntas y resultados SQL, Código del proyecto y Arquitectura y operación. Documentación y enlaces queda como referencia. Cada vista de una sección tiene un enlace visible en el menú; las antiguas direcciones siguen redirigiendo al contenido correspondiente.
+- **Perfil y tema:** el perfil se elige al entrar. Después, perfil y tema se cambian en una cabecera común, sin repetir el selector inicial en la portada. El perfil adapta la explicación y la vista inicial; no oculta contenido ni modifica los cálculos. Los filtros del dashboard se conservan al cambiar de perfil. Se mantienen los cuatro temas y Corporativo por defecto.
+- **Código:** carpetas y archivos cerrados por defecto, con nombres funcionales y código real. SQL, esquemas, configuración, pruebas y workflows se pueden leer dentro del panel. Las preguntas tienen su resultado antes del SQL, que se abre opcionalmente.
+- **Diagramas:** se conservan el pipeline animado, la arquitectura por plataforma, el modelo estrella y el ciclo DevOps. Su destino es Arquitectura y operación; no se duplican en el dashboard.
+- **Geografía:** el resumen incorpora un mapa 2D de Chile continental, por un canal a la vez, y un ranking con valores visibles. Usa el índice regional existente (100 = promedio del canal). Las regiones sin dato quedan grises. Geometría local simplificada de geoBoundaries / BCN / OCHA, con licencia y metadatos en bi/assets/CHILE_MAP.md; no requiere servicio externo en cada visita.
+- **Límite:** esta revisión cambia navegación y presentación, no ingesta, ETL, bases, reglas ni fórmulas. No constituye una auditoría adicional de calidad de los datos.
+
+## D-074 · Ayudas contextuales y detalle replegado
+
+- **Fecha:** 2026-10-14.
+- **Decisión:** las explicaciones y respuestas breves viven en el icono ⓘ de cada gráfico, al pasar el mouse o enfocar/tocar el icono. No añaden párrafos visibles. Se calculan con las mismas filas y filtros: variación semanal, precios de los canales elegidos e índice regional. El anillo aclara que cuenta registros, no ventas. «Definiciones y método» queda como ayuda secundaria.
+- **Detalle:** tablas de resultados, alertas, calidad, modelo e historial y bloques de código se abren bajo demanda, cerrados por defecto. Los datos, exportaciones y fuentes siguen disponibles. Se conserva la interacción de los gráficos y sus cálculos.
+
+
+## D-075 · Primero los datos, después implementación y documentación
+
+- **Fecha:** 2026-10-14.
+- **Decisión:** el recorrido del menú y los botones anterior/siguiente siguen Dashboard → Arquitectura y operación → Código del proyecto → Preguntas y resultados SQL → El proyecto. Documentación y enlaces permanece como referencia.
+- **Por qué:** mostrar primero resultados, después arquitectura y buenas prácticas de implementación. La lectura extensa del proyecto queda al final. Todos los perfiles empiezan en Dashboard y siguen teniendo acceso a todas las secciones.
+- **Compatibilidad:** los enlaces anteriores con una vista del proyecto en la raíz se redirigen a esa misma vista; se conservan tema y perfil, sin sustituir el destino solicitado por el nuevo inicio.
+
+
+## D-076 · KPIs como sección visible después del dashboard
+
+- **Fecha:** 2026-10-14.
+- **Decisión:** «KPIs · Qué medimos» es el segundo paso del recorrido. Reúne las ocho medidas existentes, sus tarjetas con definición, fórmula, limitaciones, ejemplos reales y enlaces al resultado y SQL. Los ejemplos están replegados, salvo el indicador solicitado por un enlace desde un gráfico.
+- **Sin duplicación:** la vista «Indicadores explicados» deja de pertenecer a El proyecto; los enlaces anteriores abren la misma vista en la nueva sección. El dashboard conserva los gráficos y sus cifras. No se crean nuevos KPIs ni se cambian los cálculos.
+
+## D-077 · Resumen alineado y tres gráficos en una cuadrícula
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** tomar de la referencia del autor la jerarquía y alineación: filtros arriba, banda de cifras y calidad, y tres paneles de análisis alineados (variaciones semanales, evolución de precios y mapa regional). No copiar las métricas de recursos humanos ni imponer un tipo de gráfico que no corresponda a los datos.
+- **Detalle:** el ranking y la tabla regional quedan en un desplegable cerrado bajo el mapa. Se conservan las ayudas ⓘ, filtros, Top N, selección de producto, canales, exportación y cálculos. La orientación por perfil del dashboard queda en la ayuda del selector Perfil; las demás secciones conservan su contexto.
+- **Adaptación:** los paneles se apilan en pantallas estrechas, con altura natural y sin desplazamiento horizontal. No se fuerza que todos los detalles quepan en una pantalla a costa de la lectura. Verificado a 1440 × 900 y 390 × 844.
+- **Validación:** 130 pruebas de dashboard y gráficos correctas; sin cambios de ingesta, ETL ni fórmulas.
+
+## D-078 · El dashboard es la portada pública
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** la entrada directa sin parámetros abre Dashboard con Corporativo por defecto, sin diálogo obligatorio de perfil. El visitante puede elegir su perfil en la cabecera y navegar a todas las secciones. Los enlaces que piden expresamente otro tema o destino se conservan.
+- **Presentación:** reducir la altura de la banda superior y simplificar la leyenda de calidad. Los enlaces de cálculo repetidos dejan de aparecer junto a cada título del resumen; las ayudas ⓘ, Definiciones y método y la sección KPIs conservan el acceso a las explicaciones. Se mantienen las métricas, filtros y tres visualizaciones, sin añadir indicadores de ventas que no existen en este proyecto.
+
+## D-079 · Catálogo compacto de ocho KPIs
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** sustituir las tarjetas extensas y la segunda lista de ejemplos por una cuadrícula de ocho tarjetas: cuatro columnas en escritorio, dos en pantallas intermedias y una en móvil. Cada tarjeta presenta un símbolo funcional, un nombre sencillo y una frase breve.
+- **Detalle:** cada indicador reúne su definición completa, fórmula, límite, resultado ilustrativo real y enlaces a visualización y consulta dentro de su desplegable. Cerrado por defecto; un enlace con kpi abre el indicador solicitado primero. No se eliminan medidas ni cambian cálculos.
+- **Jerarquía:** un solo encabezado de KPIs. El contexto por perfil sigue disponible en la ayuda del selector de perfil, sin repetir un párrafo sobre el catálogo.
+- **Verificación visual:** ocho tarjetas visibles a 1440 × 900; sin desbordamiento horizontal a 390 × 844. Los iconos reutilizan el sistema SVG local y las tarjetas usan la paleta del tema activo.
+
+## D-080 · Criterios SMART sin metas inventadas
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** cada detalle de KPI incluye una ficha SMART: específico, medible, alcanzable, relevante y temporal. Se conservan la cuadrícula compacta y los detalles cerrados por defecto.
+- **Alcance:** se documentan las unidades, utilidad y ventanas reales de cada cálculo. La capacidad de calcular una medida no demuestra que una meta de negocio sea alcanzable. Como no se han acordado metas y fechas objetivo, ambas se indican pendientes; la frecuencia de medición no se presenta como un plazo de cumplimiento. No se afirma que los ocho indicadores sean objetivos SMART completos.
+
+## D-081 · Iconos sin fondo y un único panel de lectura KPI
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** por solicitud del autor, los ocho KPIs se seleccionan mediante botones de icono transparentes, con nombre, ayuda y subrayado para la selección. No son tarjetas ni despliegan texto entre los iconos. El orden permanece estable al cambiar de indicador.
+- **Lectura:** un solo espacio a todo el ancho debajo del selector cambia con el KPI activo. Tres pestañas separan Qué mide, Criterios SMART y Ejemplo y consulta. Se conservan definición, fórmula, límites, ejemplos reales y enlaces internos; ningún cálculo cambia.
+- **Enlaces:** kpi en la dirección selecciona directamente el indicador, y cada clic actualiza ese parámetro. Sin parámetro, se conserva la selección de la visita o se muestra Brecha de precio.
+- **Accesibilidad y adaptación:** controles nativos con teclado, foco visible, ayuda y nombre textual. Se respeta la reducción de movimiento. Verificación visual a 1440 × 1000 y sin desbordamiento horizontal a 390 × 844.
+
+## D-082 · Relieve vectorial discreto para los iconos KPI
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** inspirarse en la claridad del selector de productos mostrado por el autor: símbolos aislados sin tarjeta, tipografía de sistema más ligera y espacio entre elementos. Los SVG locales tienen un relieve 2,5D sencillo mediante capas, gradiente y sombra de apoyo transparente; no son modelos 3D interactivos.
+- **Continuidad:** se conserva el selector nativo accesible, sus nombres y ayudas, el indicador activo y el panel inferior compartido. La paleta procede del tema actual y se respeta la reducción de movimiento. No se incorporan imágenes, fuentes ni servicios externos, ni cambia ningún cálculo.
+
+## D-083 · Contornos KPI más nítidos
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** retirar el gradiente metálico alternado que hacía los símbolos visualmente borrosos. Usar un trazo frontal uniforme, una profundidad de un píxel aproximado y una sombra de apoyo mucho más tenue. Se conserva la tipografía ligera, la paleta activa y toda la interacción del selector.
+
+## D-084 · Cabecera común con acceso directo a gráficos
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** añadir en todas las secciones una navegación horizontal ligera, inspirada en la referencia del autor. Orden: Dashboard, Esta semana, Brechas, Regiones, Alertas, Histórico, KPIs, Pipeline, Modelo y DevOps. La vista activa queda indicada con color y subrayado. GreenOcean vuelve al resumen del Dashboard.
+- **Continuidad:** el lateral conserva el recorrido completo, código y referencias. Perfil y tema siguen accesibles bajo la fila de enlaces, con el contexto de la sección. Se conserva tema y perfil al seguir cada enlace; todos los destinos permanecen dentro del proyecto y en la misma ventana.
+- **Estilo:** tipografía de sistema ligera compartida con los enlaces laterales, sin tarjetas ni iconos decorativos en la cabecera. Los enlaces se redistribuyen en varias líneas en móvil, sin forzar desplazamiento horizontal.
+
+## D-085 · Marca independiente en la esquina izquierda
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** retirar GreenOcean de los enlaces de gráficos y mostrarlo como marca mediante el logo nativo de Streamlit, arriba a la izquierda. Green aparece en verde y Ocean en azul. Se usan versiones claras u oscuras según el fondo del lateral y del encabezado cuando el lateral está cerrado. SVG local transparente; no requiere fuentes ni imágenes externas. La navegación conserva todos sus destinos.
+
+## D-086 · Cabecera más cerca del borde superior
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** eliminar del flujo los bloques invisibles que solo inyectan CSS, reducir el margen superior del contenido y el relleno vertical de la navegación. Mantener espacio para el logo nativo cuando el lateral está cerrado. No se cambian los destinos ni el orden de los enlaces.
+
+## D-087 · Clics de cabecera, recarga al resumen y legibilidad
+
+- **Fecha:** 2026-10-15.
+- **Corrección:** el contenedor transparente de la barra nativa de Streamlit interceptaba los clics de la navegación compacta. La capa y sus envoltorios dejan pasar los clics; sus botones y enlaces reales conservan interacción.
+- **Recarga:** una recarga del documento vuelve al resumen principal del Dashboard, conservando tema y perfil. La comprobación ocurre una sola vez por documento y distingue una recarga de un clic normal; navegar a una vista continúa funcionando. La selección de filtros sin recargar no se reinicia.
+- **Legibilidad:** títulos de paneles pueden pasar a otra línea; etiquetas largas del comparador de canales se separan en líneas con altura suficiente. Se corrige la compensación de margen de Markdown que hacía que la leyenda de alcance del resumen quedase debajo de los paneles.
+- **Validación:** clics reales desde la cabecera y recargas desde Brechas y Regiones al resumen. Pruebas de dashboard y gráficos: 132 correctas. Se conserva la estructura y las fórmulas de cada vista; el ejemplo financiero guía la organización visual, no aporta indicadores ni datos al proyecto.
+- **Histórico:** los gráficos históricos adicionales quedan replegados por defecto para dar prioridad a los calendarios y cifras principales. El eje de índices conserva dos decimales: se evita mostrar distintas fracciones repetidas como «1» por redondeo a enteros. Es un cambio de formato, no de cálculo.
+
+## D-088 · Ficha KPI en tabla a todo el ancho
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** el panel inferior del KPI activo presenta una tabla visible con dos columnas, Aspecto y Explicación. Reúne indicador, pregunta, significado, utilidad, medida, fórmula, periodo y límites. Cambiar de icono sustituye la ficha; no crea tarjetas adicionales ni listas de texto dispersas.
+- **Detalle:** SMART usa la misma tabla para sus cinco criterios; el ejemplo real se presenta paso a paso en tabla con su enlace a la consulta canónica. Se mantienen las tres pestañas y todos los enlaces internos.
+- **Espacio:** selector en una fila de ocho iconos en escritorio, cuatro columnas en pantallas intermedias y dos en móvil. La tabla ajusta líneas a su ancho en lugar de requerir desplazamiento horizontal. La ficha solicitada por el usuario queda visible por defecto, como excepción expresa a la regla anterior de tablas replegadas.
+- **Validación:** 112 pruebas del dashboard correctas; comprobación visual de cambio de indicador y tabla.
+
+## D-089 · Recorrido único, Dashboard de doble ranking y documentación independiente
+
+- **Fecha:** 2026-10-15.
+- **Decisión:** retirar la segmentación por perfil y mantener un único recorrido público. Las direcciones antiguas con perfil siguen funcionando, pero el parámetro se elimina y no cambia el contenido ni el orden de las vistas.
+- **Dashboard:** los rankings de alzas y bajas se muestran simultáneamente, con Top N aplicado a cada dirección. La exportación y la tabla reúnen ambas selecciones. Los ceros y valores no finitos no se presentan como alzas ni bajas. Se conserva la selección de producto desde cualquier barra, el histórico de precios, el mapa regional y el anillo de calidad. El estado de carga dispone de espacio propio antes de los filtros.
+- **Apariencia:** un icono de sol o luna abre las cuatro paletas, con nombres explícitos y acceso por teclado. Se retira el desplegable permanente de tema; Corporativo continúa siendo la paleta predeterminada.
+- **Navegación:** Volver recupera el destino anterior y la selección de datos. El historial se limita al origen del proyecto, se conserva en la sesión del navegador y restaura únicamente un conjunto validado de filtros. Una recarga sigue abriendo el resumen principal. Los enlaces sin modificadores se abren en la misma ventana; los clics deliberados con Ctrl o Cmd conservan el comportamiento del navegador. Las ejecuciones ya pueden consultarse en Arquitectura y operación; no se añade una segunda integración con GitHub.
+- **Contenido:** El proyecto describe el trabajo desarrollado, sus destinatarios operativos, trazabilidad y capacidad de reutilización sin atribuciones ambiguas. Se distingue entre componentes reutilizables y adaptaciones necesarias para fuentes o dominios nuevos; no se presenta la implementación ODEPA como plantilla de sustitución automática.
+- **Documentación:** manual, registro de decisiones y glosario tienen una sección propia, sin tarjetas de presentación. Enlaces reúne repositorio, registros públicos y fuentes externas. La descripción de coste y capacidad permanece en Arquitectura y operación. Se conservan las direcciones anteriores y el registro histórico de decisiones.
+- **Validación:** 326 pruebas del proyecto correctas. Comprobación visual del retorno Dashboard → KPIs → Volver con Frutas seleccionado, de ambos rankings y del menú de apariencia.
+
+## D-090 · KPIs como recorrido horizontal de tres estaciones
+
+- **Fecha:** 2026-10-16.
+- **Problema:** la vista KPIs era un registro de ocho filas con texto denso, un selector y un desplegable debajo; obligaba a desplazarse y no destacaba ningún resultado.
+- **Decisión:** un solo módulo con todo el recorrido a la vista, sin botón «Continuar» ni pasos ocultos. Cabecera de una línea (KPIs, frase, actualización y estado). Debajo, la pregunta de negocio en un desplegable y una línea luminosa que va de «Inicio» a «Detalle técnico» pasando por tres nodos numerados a distinta altura. Cada nodo se apoya en el borde superior de su tarjeta: **1 · Resultado** (la cifra grande, su significado, el estado de la carga, la semana y la anterior), **2 · Contexto** (pestañas Alcance, Lógica y Límites) y **3 · Consulta** (nombre, botón «Desplegar SQL» y enlace al catálogo). El tramo hacia la parte técnica es discontinuo.
+- **Geometría:** columnas de 30 %, 36 % y 28 % con separaciones de 3 %; los nodos se dibujan en la misma capa que la línea, en el centro de cada columna, para que siempre coincidan.
+- **Referencia visual:** una maqueta de recorrido guiado con línea brillante y tarjetas escalonadas. Se descartaron antes una versión de tarjetas con un paso a paso pequeño y otra de hoja de ruta con pines, porque no se leían como un camino.
+- **Sin scroll:** en 1440 × 900 el módulo completo cabe en pantalla.
+- **SQL:** la consulta se abre en una capa superpuesta al pulsar el botón y se lee del mismo archivo que el catálogo (`read_catalog_sql`); la página no muestra SQL por defecto, de modo que el catálogo sigue siendo su único lugar visible (D-061).
+- **Pantallas pequeñas:** las tres tarjetas se apilan en el mismo orden con su número en el título; la línea se oculta.
+- **Se retira:** la tabla de ocho filas y el desplegable de fórmula y SMART en esta vista. Los resultados por indicador se consultan cambiando la pregunta; SMART sigue en `build_kpi_smart_html` para la ficha anterior.
+
+## D-091 · Mapa de Chile grande, con el nombre sobre cada región, junto a las familias
+
+- **Fecha:** 2026-10-16.
+- **Problema:** el mapa ocupaba todo el ancho pero se dibujaba pequeño en el centro, con márgenes vacíos; las regiones eran demasiado estrechas para hacer clic con seguridad y sus nombres estaban en una columna aparte, unidos por líneas de referencia difíciles de seguir.
+- **Decisión:** el mapa ocupa la columna izquierda y las familias (galería y movimiento) la derecha, de modo que la vista principal se lee de una vez en 1440 × 900. Cada región lleva encima su nombre y su porcentaje; región y nombre forman un solo enlace. No hay líneas de referencia.
+- **Mapa esquemático:** cada región conserva su contorno y su orden de norte a sur. La latitud se reparte por región (78 % de la altura a partes iguales, el resto según su extensión real) y cada latitud recibe su propia escala horizontal, de modo que las regiones del norte se ensanchan. Ambas transformaciones dependen solo de la latitud: los bordes compartidos siguen compartidos y ninguna región se superpone a otra. Los contornos se suavizan y los islotes de menos de 6 px² no se dibujan. El mapa lo declara como esquemático; no es una referencia de límites.
+- **Precisión:** una prueba comprueba que el nombre de cada una de las 16 regiones queda dentro del contorno de su propia región, en orden de norte a sur y con al menos 20 px entre nombres; otra, que cada región dispone de al menos 24 px de alto.
+- **Clic:** al hacer clic en una región se abre un único paso: elegir la familia (o todas), con su número de precios. Un clic aplica región y familia. La búsqueda de un producto concreto queda como opción debajo. Se retiran el selector segmentado y los botones «Aplicar».
+
+## D-092 · Dashboard en una pantalla: mapa real, movimiento por familia y productos
+
+- **Fecha:** 2026-10-16.
+- **Sustituye:** el mapa esquemático y el diálogo de familias de D-091. El mapa esquemático hacía perder la forma de Chile; la galería de familias y el diálogo repartían la lectura en varios pasos.
+- **Decisión:** la vista principal sigue la maqueta aprobada y se lee sin desplazarse (verificada en 1920 × 1080 y 1440 × 900). Cabecera: título y tres resúmenes (familias que subieron y bajaron, regiones por dirección dominante, región seleccionada). Columna izquierda: mapa de Chile en proporción real. Columna derecha: movimiento por familia y, debajo, los productos de la familia seleccionada.
+- **Mapa:** proyección equirectangular corregida por el coseno de la latitud media. Cada región tiene una fila con su nombre y su porcentaje en una etiqueta de color; una línea recta une un punto situado dentro de la región con su fila. Las filas siguen el orden norte–sur de esos puntos, de modo que las líneas no se cruzan. Pruebas: el punto de cada una de las 16 líneas está dentro del contorno de su región, ningún par de líneas se cruza y la proporción alto/ancho del país es la real.
+- **Clics:** región (forma o fila) → selecciona la región; las familias y la tabla se recalculan para ella. Un segundo clic en la región seleccionada vuelve a todo Chile. Familia → la tabla muestra sus productos. La tabla filtra por canal y ordena por mayor cambio, subidas, bajadas o nombre; «Ver histórico» y la flecha de cada fila abren el histórico del producto.
+- **Regiones ↑ / ↓:** para el mismo producto, variedad, calidad, unidad y canal, número de regiones donde subió y donde bajó entre las dos semanas.
+- **Se conserva:** «Explorar productos y tablas por familia», debajo de la vista principal. **Se retiran:** la galería de familias con imágenes, el diálogo de región y sus funciones auxiliares.
+
+## D-093 · Un buscador en el panel de productos; se retira «Explorar productos y tablas por familia»
+
+- **Fecha:** 2026-10-16.
+- **Problema:** el desplegable final repetía lo que ya hace el panel «Productos · {familia}»: tablas por familia, orden por cambio, subidas y bajadas, y acceso al histórico.
+- **Decisión:** se retiran el desplegable y su control de filas (Top N). El panel gana un buscador por nombre en la misma fila que Canal, Orden y «Ver histórico». La búsqueda no distingue mayúsculas ni acentos y busca al inicio de cualquier palabra del producto o su variedad: «lech» encuentra «Lechuga», «esp» encuentra «Lechuga · Española» y «aji» encuentra «Ají»; varias palabras deben coincidir todas. El encabezado indica cuántos precios quedan («26 de 291 precios») y la tabla lo dice cuando no hay coincidencias.
+- **Se conserva lo que solo estaba abajo:** el orden «Inusuales» (alertas nacionales, el cambio más inusual primero) pasa al selector Orden, solo con todo Chile; la nota de cobertura y los enlaces a Calidad y Metodología quedan en una línea bajo la tabla.
+
+## D-094 · «Histórico y estacionalidad» pasa a «Contexto del precio»
+
+- **Fecha:** 2026-10-16.
+- **Problema:** el dashboard se usa para decidir semana a semana, pero la página mostraba cuatro años de precio con áreas y no respondía si el precio de esta semana es normal.
+- **Decisión:** una sola pantalla (1920 × 1080, sin desplazamiento) que responde tres preguntas: ¿es normal el precio de esta semana?, ¿dónde conviene comprar? y ¿qué suele pasar en las próximas semanas? Arriba, migas «Resumen › familia › producto», «Volver al resumen», el título, una frase de respuesta calculada y los selectores familia, producto y calidad · unidad. A la izquierda, las últimas 52 semanas frente a lo habitual y el patrón de temporada; a la derecha, precio de esta semana, brecha entre canales y meses siguientes.
+- **«Habitual»:** rango entre el percentil 25 y el 75 del precio de la misma semana ISO en los años anteriores disponibles; el año en curso nunca entra en su propia referencia. Sobre el P75 es «sobre lo habitual»; bajo el P25, «bajo lo habitual»; entre ambos, «dentro». Con menos de dos años anteriores para esa semana se muestra «Sin historia suficiente».
+- **Brecha:** (precio supermercado / precio feria − 1) × 100, solo en semanas con ambos precios. Se compara con la mediana de la brecha del mismo mes en años anteriores.
+- **Patrón de temporada:** índice estacional K4 (100 = promedio del año) por mes; primero el promedio de cada mes en cada año y luego el de los años, sin el año en curso. «Qué suele pasar» es el cambio de ese índice de feria del mes actual a los dos siguientes, presentado como patrón, no como pronóstico.
+- **Datos:** semanas sin precio quedan como hueco; no se interpola. Precios nominales. Cálculos en `bi/price_context.py` (funciones puras, con pruebas) y cacheados por versión de la base, de modo que cada carga semanal los renueva.
+- **Navegación:** «Histórico» sale de las pestañas superiores y queda en 01 · Dashboard como «Contexto del precio». El panel de productos del Resumen abre la página con el producto elegido ya seleccionado; las direcciones antiguas con la vista «Histórico y estacionalidad» siguen funcionando. Se retiran el gráfico de áreas, «Comparar meses y años por canal», «Detalle semanal del índice estacional» y «Cambiar el producto del análisis»; la serie completa y los datos (con el índice semanal) se abren en diálogos.

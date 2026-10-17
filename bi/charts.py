@@ -273,7 +273,7 @@ def draw_weekly_lines(rows, value_title, value_labels, mode, is_money):
     """
     rows = add_week_labels(rows, value_labels)
     value_axis = (alt.Axis(format=MONEY_AXIS_FORMAT) if is_money
-                  else alt.Axis(format=".0f"))
+                  else alt.Axis(format=".2f", tickCount=5, labelOverlap=True))
     base = alt.Chart(rows).encode(
         x=alt.X("week_start:T", title=None, axis=alt.Axis(format=WEEK_AXIS_FORMAT)),
         y=alt.Y("value:Q", title=value_title, axis=value_axis, scale=alt.Scale(zero=False)),
@@ -551,4 +551,257 @@ def draw_donut(rows, colors, mode, center=None, center_note=None, size=210):
                                            color=palette["text"]).encode(
                 text=alt.datum(center_note)))
     return apply_chart_style(alt.layer(*layers).properties(height=size, width=size), mode)
+# endregion
+
+
+# Geographic assets stay local: the visitor does not need a map service or API key.
+def draw_chile_map(rows, geometry, mode):
+    """Join existing indices to the 16 regions; preserve missing values as missing."""
+    import copy
+    features = copy.deepcopy(geometry["features"])
+    indexed = rows.set_index("region").to_dict("index")
+    palette = get_palette(mode)
+    extent = max(1, max((abs(float(value) * 100 - 100) for value in rows["regional_index"]), default=1))
+    def index_color(value):
+        if value is None:
+            return palette["grid"]
+        amount = min(1, abs(value - 100) / extent)
+        target = palette["rise"] if value >= 100 else palette["fall"]
+        return "#" + "".join(f"{round(int(palette['grid'][i:i+2],16) * (1-amount) + int(target[i:i+2],16) * amount):02x}"
+                             for i in (1,3,5))
+    for feature in features:
+        values = indexed.get(feature["properties"]["region"])
+        feature["properties"]["index"] = float(values["regional_index"] * 100) if values else None
+        feature["properties"]["price"] = float(values["price"]) if values else None
+        feature["properties"]["status"] = "Comparable" if values else "Sin dato comparable"
+        feature["properties"]["fill"] = index_color(feature["properties"]["index"])
+    pick = alt.selection_point(name="pick", fields=["properties.region"], on="click", clear="dblclick")
+    chart = alt.Chart(alt.Data(values=features)).mark_geoshape(
+        stroke=palette["background"], strokeWidth=.5, invalid=None).encode(
+        color=alt.Color("properties.fill:N", scale=None, legend=None),
+        tooltip=[alt.Tooltip("properties.region:N", title="Región"),
+                 alt.Tooltip("properties.status:N", title="Disponibilidad"),
+                 alt.Tooltip("properties.index:Q", title="Índice (100 = promedio)", format=".0f"),
+                 alt.Tooltip("properties.price:Q", title="Precio", format=",.0f")]
+    ).project(type="mercator").add_params(pick).properties(height=170)
+    return chart.configure_view(stroke=None).configure(background=palette["card"])
+
+
+def draw_regional_ranking(rows, mode):
+    """One channel: labels and index values readable without hover or truncation."""
+    palette = get_palette(mode)
+    data = rows.assign(index_value=rows["regional_index"] * 100,
+                       short_region=rows["region"].map(shorten_region_name))
+    base = alt.Chart(data).encode(y=alt.Y("short_region:N", title=None,
+        sort=alt.SortField("index_value", order="descending"), axis=alt.Axis(labelLimit=180)))
+    bars = base.mark_bar(cornerRadiusEnd=3, size=16).encode(
+        x=alt.X("index_value:Q", title="Índice · 100 = promedio", scale=alt.Scale(
+            domain=[0, max(100, float(data["index_value"].max())) * 1.18], nice=False)),
+        color=alt.condition(alt.datum.index_value >= 100, alt.value(palette["rise"]), alt.value(palette["fall"])))
+    labels = base.mark_text(align="left", dx=5, color=palette["strong_text"]).encode(
+        x="index_value:Q", text=alt.Text("index_value:Q", format=".0f"))
+    rule = alt.Chart(pd.DataFrame({"reference": [100]})).mark_rule(
+        strokeDash=[3,3], color=palette["reference"]).encode(x="reference:Q")
+    return (bars + labels + rule).properties(height=170).configure_view(stroke=None).configure(
+        background=palette["card"], axis=alt.AxisConfig(labelColor=palette["text"],
+        titleColor=palette["text"], gridColor=palette["grid"], labelFontSize=11))
+
+
+REGIONAL_ZONES = [
+    ("Arica y Parinacota", "Arica"), ("Tarapacá", "Tarapacá"),
+    ("Antofagasta", "Antofagasta"), ("Atacama", "Atacama"),
+    ("Coquimbo", "Coquimbo"), ("Valparaíso", "Valparaíso"),
+    ("Metropolitana de Santiago", "Metropolitana"), ("Libertador General Bernardo O’Higgins", "O’Higgins"),
+    ("Maule", "Maule"), ("Ñuble", "Ñuble"), ("Biobío", "Biobío"),
+    ("La Araucanía", "Araucanía"), ("Los Ríos", "Los Ríos"), ("Los Lagos", "Los Lagos"),
+    ("Aysén del General Carlos Ibáñez del Campo", "Aysén"),
+    ("Magallanes y de la Antártica Chilena", "Magallanes"),
+]
+
+
+def draw_regional_zones(rows, mode):
+    """A cartogram: equal-sized regions, real changes, missing distinct from zero."""
+    import unicodedata
+    def normalized(value):
+        return "".join(c for c in unicodedata.normalize("NFD", value.lower()) if unicodedata.category(c) != "Mn").replace("’", "'")
+    palette = get_palette(mode)
+    cells = []
+    for index, (name, label) in enumerate(REGIONAL_ZONES):
+        matches = rows[rows["region"].map(lambda value: normalized(name) in normalized(value))]
+        row = matches.iloc[0] if len(matches) else None
+        change = row["weekly_change"] if row is not None else None
+        missing = change is None or pd.isna(change)
+        stable = not missing and abs(change) < 1e-9
+        status = "Sin comparación" if missing else "Sin cambio" if stable else "Subió" if change > 0 else "Bajó"
+        color = palette["card"] if missing else "#858991" if stable else palette["rise"] if change > 0 else palette["fall"]
+        value = "—" if missing else "= 0 %" if stable else ("▲ " if change > 0 else "▼ ") + ("<0,1" if abs(change) < .05 else f"{abs(change):.1f}".replace(".", ",")) + " %"
+        cells.append(dict(region=row["region"] if row is not None else "Región de " + name,
+            label=label, column=index % 4, row=index // 4, status=status, fill=color,
+            value=value, weekly_change=None if missing else float(change),
+            ink=palette["text"] if missing else "#ffffff"))
+    base = alt.Chart(pd.DataFrame(cells)).encode(
+        x=alt.X("column:O", axis=None, scale=alt.Scale(paddingInner=.07)),
+        y=alt.Y("row:O", axis=None, scale=alt.Scale(paddingInner=.10)),
+        tooltip=[alt.Tooltip("region:N", title="Región"), alt.Tooltip("status:N", title="Movimiento"),
+                 alt.Tooltip("weekly_change:Q", title="Variación semanal (%)", format=".2f")])
+    pick = alt.selection_point(name="pick", fields=["region"], on="click", clear="dblclick")
+    zones = base.mark_rect(cornerRadius=5, stroke=palette["reference"], strokeWidth=.6).encode(
+        color=alt.Color("fill:N", scale=None, legend=None)).add_params(pick)
+    labels = base.mark_text(dy=-10, fontSize=11).encode(text="label:N", color=alt.Color("ink:N", scale=None, legend=None))
+    values = base.mark_text(dy=11, fontSize=13, fontWeight=600).encode(text="value:N", color=alt.Color("ink:N", scale=None, legend=None))
+    return (zones + labels + values).properties(height=268).configure_view(stroke=None).configure(background=palette["card"])
+
+
+def draw_regional_change_map(rows, geometry, mode, full_country=True):
+    """Real regional boundaries; missing comparisons never become zero changes."""
+    import copy
+    features = copy.deepcopy(geometry['features'])
+    palette = get_palette(mode)
+    indexed = rows.set_index('region').to_dict('index')
+    comparable = []
+    for feature in features:
+        props = feature['properties']
+        row = indexed.get(props['region'], {})
+        change = row.get('weekly_change')
+        missing = change is None or pd.isna(change)
+        stable = not missing and abs(change) < 1e-9
+        props.update(weekly_change=None if missing else float(change),
+                     price=None if pd.isna(row.get('price', float('nan'))) else float(row['price']),
+                     status='Sin comparación' if missing else 'Sin cambio' if stable else 'Subió' if change > 0 else 'Bajó',
+                     fill=palette['card'] if missing else '#858991' if stable else palette['rise'] if change > 0 else palette['fall'])
+        if not missing:
+            comparable.append(feature)
+    fit = {'type': 'FeatureCollection', 'features': features if full_country or not comparable else comparable}
+    pick = alt.selection_point(name='pick', fields=['properties.region'], on='click', clear='dblclick')
+    chart = alt.Chart(alt.Data(values=features)).mark_geoshape(
+        stroke=palette['reference'], strokeWidth=1, invalid=None, clip=True).encode(
+        color=alt.Color('properties.fill:N', scale=None, legend=None),
+        tooltip=[alt.Tooltip('properties.region:N', title='Región'),
+                 alt.Tooltip('properties.status:N', title='Movimiento'),
+                 alt.Tooltip('properties.weekly_change:Q', title='Variación semanal (%)', format='.2f'),
+                 alt.Tooltip('properties.price:Q', title='Precio por unidad seleccionada ($)', format=',.0f')]
+    ).project(type='mercator', fit=fit).add_params(pick).properties(height=430)
+    if full_country:
+        labels = []
+        for feature in features:
+            coords = [point for polygon in feature['geometry']['coordinates'] for ring in polygon for point in ring]
+            lon = (min(p[0] for p in coords) + max(p[0] for p in coords)) / 2
+            lat = (min(p[1] for p in coords) + max(p[1] for p in coords)) / 2
+            labels.append(dict(region=shorten_region_name(feature['properties']['region']), lon=lon, lat=lat, ink=palette['text'] if feature['properties']['weekly_change'] is None else feature['properties']['fill']))
+        labels.sort(key=lambda row: -row['lat'])
+        for i, row in enumerate(labels):
+            row.update(label_lon=-65.5, label_lat=-18.5-i*2.35)
+        base = alt.Chart(pd.DataFrame(labels))
+        leaders = base.mark_rule(color=palette['reference'], strokeWidth=.5).encode(
+            longitude='lon:Q', latitude='lat:Q', longitude2='label_lon:Q', latitude2='label_lat:Q')
+        names = base.mark_text(align='left', dx=4, fontSize=10, color=palette['text']).encode(
+            longitude='label_lon:Q', latitude='label_lat:Q', text='region:N', color=alt.Color('ink:N', scale=None, legend=None))
+        chart.projection = alt.Undefined
+        label_points = [{'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': [r['label_lon']+8, r['label_lat']]}, 'properties': {}} for r in labels]
+        chart = alt.layer(chart, leaders, names).project(type='mercator', fit={'type': 'FeatureCollection', 'features': features + label_points}).properties(height=580)
+    return chart.configure_view(stroke=None).configure(background=palette['card'])
+
+
+# region Contexto del precio (D-094)
+CONTEXT_CHANNELS = {"Feria libre": "#2563C9", "Supermercado": "#D9622B"}
+CONTEXT_STATE_WORDS = {"sobre": "sobre lo habitual", "bajo": "bajo lo habitual"}
+
+
+def split_gaps(rows, value):
+    """A segment number that changes after every missing week: lines break, never bridge."""
+    rows = rows.sort_values("week_start").copy()
+    rows["segment"] = rows[value].isna().cumsum()
+    return rows[rows[value].notna()]
+
+
+def draw_price_context(rows, mode, height=380):
+    """52 weeks: one line per channel over its P25–P75 band of previous years.
+
+    rows: week_start, channel, price, p25, p75, state. Missing weeks leave a gap.
+    """
+    palette = get_palette(mode)
+    domain = [channel for channel in CONTEXT_CHANNELS if channel in set(rows["channel"])]
+    colors = alt.Scale(domain=domain, range=[CONTEXT_CHANNELS[channel] for channel in domain])
+    values = pd.concat([rows["price"], rows["p25"], rows["p75"]]).dropna()
+    span = max(values.max() - values.min(), values.max() * .05, 1) if not values.empty else 1
+    scale = alt.Scale(zero=False, nice=False,
+                      domain=[max(0, values.min() - span * .12), values.max() + span * .12] if not values.empty else None)
+    x = alt.X("week_start:T", title=None, axis=alt.Axis(format="%b %Y", tickCount=6, labelPadding=6))
+    bands = split_gaps(rows.assign(band=rows["p25"]), "band")
+    lines = split_gaps(rows, "price")
+    band = alt.Chart(bands).mark_area(opacity=.16, interpolate="monotone").encode(
+        x=x, y=alt.Y("p25:Q", scale=scale, title="$ por unidad", axis=alt.Axis(format=MONEY_AXIS_FORMAT, tickCount=5)),
+        y2="p75:Q", color=alt.Color("channel:N", scale=colors, legend=None),
+        detail=alt.Detail("segment:N"))
+    line = alt.Chart(lines).mark_line(strokeWidth=2.2).encode(
+        x=x, y=alt.Y("price:Q", scale=scale), color=alt.Color("channel:N", scale=colors, legend=None),
+        detail=alt.Detail("segment:N"),
+        tooltip=[alt.Tooltip("week_start:T", title="Semana", format="%d-%m-%Y"),
+                 alt.Tooltip("channel:N", title="Canal"),
+                 alt.Tooltip("price:Q", title="Precio", format=",.0f"),
+                 alt.Tooltip("p25:Q", title="Habitual desde", format=",.0f"),
+                 alt.Tooltip("p75:Q", title="Habitual hasta", format=",.0f")])
+    last = lines.sort_values("week_start").groupby("channel").tail(1)
+    point = alt.Chart(last).mark_point(filled=True, size=70, stroke=palette["card"], strokeWidth=1.5).encode(
+        x=x, y=alt.Y("price:Q", scale=scale), color=alt.Color("channel:N", scale=colors, legend=None))
+    flagged = last[last["state"].isin(CONTEXT_STATE_WORDS)].assign(
+        label=lambda frame: frame["channel"].map(lambda c: c.split()[0]) + ": "
+        + frame["state"].map(CONTEXT_STATE_WORDS))
+    label = alt.Chart(flagged).mark_text(align="right", dx=-10, dy=-14, fontSize=12, fontWeight=700).encode(
+        x=x, y=alt.Y("price:Q", scale=scale), text="label:N",
+        color=alt.Color("channel:N", scale=colors, legend=None))
+    chart = alt.layer(band, line, point, label).properties(height=height)
+    return apply_chart_style(chart, mode)
+
+
+def draw_seasonal_pattern(pattern, channel, month, mode, height=150):
+    """12 bars, 100 = average of the year; the current month solid, the next two outlined."""
+    color = CONTEXT_CHANNELS.get(channel, get_palette(mode)["accent"])
+    following = {(month - 1 + step) % 12 + 1 for step in (1, 2)}
+    rows = pd.DataFrame([{"month": number, "label": MONTH_NAMES[number - 1].capitalize(),
+                          "value": pattern[number], "text": f"{pattern[number]:.0f}",
+                          "kind": "actual" if number == month else "proximo" if number in following else "otro"}
+                         for number in range(1, 13) if number in pattern])
+    if rows.empty:
+        return None
+    low = max(0, min(rows["value"].min(), 100) - 12)
+    scale = alt.Scale(domain=[low, max(rows["value"].max(), 100) + 8], nice=False)
+    x = alt.X("label:N", sort=[name.capitalize() for name in MONTH_NAMES], title=None,
+              axis=alt.Axis(labelAngle=0))
+    rows["fill"] = rows["kind"].map({"actual": color, "proximo": color + "29", "otro": color + "38"})
+    rows["outline"] = rows["kind"].map({"actual": color, "proximo": color, "otro": color + "00"})
+    rows["base"] = low
+    # Bars start at the bottom of the scale, not below it: they never cover the month names.
+    bars = alt.Chart(rows).mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3, strokeWidth=1.5).encode(
+        x=x, y=alt.Y("value:Q", scale=scale, title=None, axis=None), y2="base:Q",
+        color=alt.Color("fill:N", scale=None, legend=None), stroke=alt.Stroke("outline:N", scale=None, legend=None),
+        tooltip=[alt.Tooltip("label:N", title="Mes"), alt.Tooltip("value:Q", title="Índice", format=".0f")])
+    text = alt.Chart(rows).mark_text(dy=-7, fontSize=11, color=get_palette(mode)["text"]).encode(
+        x=x, y=alt.Y("value:Q", scale=scale), text="text:N")
+    rule = alt.Chart(pd.DataFrame({"value": [100]})).mark_rule(strokeDash=[3, 3], opacity=.5,
+                                                               color=get_palette(mode)["text"]).encode(
+        y=alt.Y("value:Q", scale=scale))
+    return apply_chart_style(alt.layer(bars, rule, text).properties(height=height), mode)
+
+
+def draw_full_history(rows, mode, height=360):
+    """Every week of both channels, lines only (no areas), gaps where a week is missing."""
+    domain = [channel for channel in CONTEXT_CHANNELS if channel in set(rows["channel"])]
+    colors = alt.Scale(domain=domain, range=[CONTEXT_CHANNELS[channel] for channel in domain])
+    full = []
+    for channel, series in rows.groupby("channel"):
+        calendar = pd.DataFrame({"week_start": pd.date_range(series["week_start"].min(),
+                                                             series["week_start"].max(), freq="7D")})
+        full.append(split_gaps(calendar.merge(series, on="week_start", how="left").assign(channel=channel),
+                               "national_price"))
+    data = pd.concat(full) if full else rows
+    chart = alt.Chart(data).mark_line(strokeWidth=1.8).encode(
+        x=alt.X("week_start:T", title=None, axis=alt.Axis(format="%b %Y")),
+        y=alt.Y("national_price:Q", title="$ por unidad", scale=alt.Scale(zero=False),
+                axis=alt.Axis(format=MONEY_AXIS_FORMAT)),
+        color=alt.Color("channel:N", scale=colors, title=None), detail="segment:N",
+        tooltip=[alt.Tooltip("week_start:T", title="Semana", format="%d-%m-%Y"),
+                 alt.Tooltip("channel:N", title="Canal"),
+                 alt.Tooltip("national_price:Q", title="Precio", format=",.0f")]).properties(height=height)
+    return apply_chart_style(chart, mode)
 # endregion

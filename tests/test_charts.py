@@ -163,3 +163,99 @@ def test_a_change_that_rounds_to_zero_says_it_did_not_move():
     assert charts.describe_weekly_change(0.04) == "Sin cambio frente a la semana anterior"
     assert charts.describe_weekly_change(-0.04) == "Sin cambio frente a la semana anterior"
     assert charts.describe_weekly_change(-1.8).startswith("Bajó 1,8")
+
+
+def test_chile_map_keeps_all_regions_and_missing_indices_without_mutation():
+    import copy
+    import json
+    geometry = json.loads((Path(__file__).resolve().parent.parent /
+                           'bi/assets/chile-regions.geojson').read_text())
+    original = copy.deepcopy(geometry)
+    rows = pd.DataFrame({'region': ['Región de Coquimbo'], 'regional_index': [1.2], 'price': [1500.]})
+    for theme in charts.THEMES:
+        spec = charts.draw_chile_map(rows, geometry, theme).to_dict()
+        features = spec['data']['values']
+        assert len(features) == 16
+        known = next(f for f in features if f['properties']['region'] == 'Región de Coquimbo')
+        assert known['properties']['index'] == 120 and known['properties']['price'] == 1500
+        missing = [f for f in features if f['properties']['status'] == 'Sin dato comparable']
+        assert len(missing) == 15 and all(f['properties']['index'] is None for f in missing)
+        assert all(f['properties']['fill'] == charts.get_palette(theme)['grid'] for f in missing)
+        assert spec['mark']['invalid'] is None  # Vega must not discard grey regions.
+    assert geometry == original
+    # D3 spherical projections need clockwise exterior rings, or they draw a globe.
+    for feature in geometry['features']:
+        for polygon in feature['geometry']['coordinates']:
+            outer = polygon[0]
+            assert sum(a[0]*b[1] - b[0]*a[1] for a,b in zip(outer,outer[1:])) < 0
+
+
+def test_regional_zones_show_direction_and_distinguish_missing_from_stable():
+    rows = pd.DataFrame({"region": ["Región de Coquimbo", "Región de Valparaíso", "Región del Maule"],
+                         "weekly_change": [10., -5., 0.]})
+    for theme in charts.THEMES:
+        spec = charts.draw_regional_zones(rows, theme).to_dict()
+        values = next(iter(spec["datasets"].values()))
+        assert len(values) == 16
+        cells = {value["label"]: value for value in values}
+        assert cells["Coquimbo"]["fill"] == charts.get_palette(theme)["rise"]
+        assert cells["Valparaíso"]["fill"] == charts.get_palette(theme)["fall"]
+        assert cells["Maule"]["status"] == "Sin cambio"
+        assert cells["Arica"]["status"] == "Sin comparación"
+        assert cells["Maule"]["fill"] != cells["Arica"]["fill"]
+
+
+def test_d094_price_context_breaks_lines_at_missing_weeks_and_does_not_start_at_zero():
+    rows = pd.DataFrame({"week_start": pd.to_datetime(["2026-09-21", "2026-09-28", "2026-10-05"]),
+                         "channel": ["Feria libre"] * 3, "price": [1200., None, 1500.],
+                         "p25": [1000., 1000., 1100.], "p75": [1300., 1300., 1400.],
+                         "state": ["dentro", None, "sobre"]})
+    for theme in charts.THEMES:
+        spec = charts.draw_price_context(rows, theme).to_dict()
+        text = str(spec)
+        assert "'zero': False" in text and "'type': 'area'" in text
+        lines = next(values for values in spec["datasets"].values()
+                     if values and "segment" in values[0] and len(values) == 2)
+        # The missing week starts a new segment: the line is not drawn across it.
+        assert lines[0]["segment"] != lines[1]["segment"]
+        assert "Feria: sobre lo habitual" in text
+
+
+def test_d094_full_history_has_lines_only_and_gaps_for_missing_weeks():
+    rows = pd.DataFrame({"week_start": pd.to_datetime(["2026-01-05", "2026-01-19"]),
+                         "channel": ["Feria libre", "Feria libre"], "national_price": [100., 120.]})
+    spec = charts.draw_full_history(rows, charts.MODE_LIGHT).to_dict()
+    assert spec["mark"]["type"] == "line" and "area" not in str(spec)
+    values = next(iter(spec["datasets"].values()))
+    assert len({row["segment"] for row in values}) == 2
+
+
+def test_d094_seasonal_pattern_marks_this_month_solid_and_the_next_two_outlined():
+    pattern = {month: 100. + month for month in range(1, 13)}
+    spec = charts.draw_seasonal_pattern(pattern, "Feria libre", 11, charts.MODE_LIGHT).to_dict()
+    values = next(iter(spec["datasets"].values()))
+    kinds = {row["month"]: row["kind"] for row in values}
+    assert kinds[11] == "actual" and kinds[12] == "proximo" and kinds[1] == "proximo" and kinds[2] == "otro"
+    assert {row["fill"] for row in values if row["kind"] == "actual"} == {"#2563C9"}
+
+
+def test_geographic_changes_keep_boundaries_and_missing_distinct_from_zero():
+    import json
+    geometry = json.loads((Path(__file__).resolve().parent.parent / 'bi/assets/chile-regions.geojson').read_text())
+    rows = pd.DataFrame({'region': ['Región de Coquimbo', 'Región de Valparaíso', 'Región del Maule'],
+                         'weekly_change': [10., -5., 0.], 'price': [100., 200., 300.]})
+    for theme in charts.THEMES:
+        for full in (False, True):
+            spec = charts.draw_regional_change_map(rows, geometry, theme, full).to_dict()
+            map_spec = spec['layer'][0] if full else spec
+            features = map_spec.get('data', {}).get('values')
+            if features is None:
+                features = spec['datasets'][map_spec['data']['name']]
+            assert len(features) == 16
+            props = {f['properties']['region']: f['properties'] for f in features}
+            assert props['Región de Coquimbo']['fill'] == charts.get_palette(theme)['rise']
+            assert props['Región de Valparaíso']['fill'] == charts.get_palette(theme)['fall']
+            assert props['Región del Maule']['status'] == 'Sin cambio'
+            assert sum(p['weekly_change'] is None for p in props.values()) == 13
+            assert len(spec['projection']['fit']['features']) == (32 if full else 3)
+    assert 'weekly_change' not in geometry['features'][0]['properties']

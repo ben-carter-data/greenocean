@@ -10,11 +10,13 @@ The color modes and chart palettes live in bi/charts.py.
 import base64
 import hmac
 import html
+import importlib
 import inspect
 import json
 import re
 import sys
 import time
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlencode
@@ -29,7 +31,7 @@ import streamlit.components.v1 as components
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import (alerts, architecture, charts, control, devops, lag, market_charts, market_style, project,  # noqa: E402
+from bi import (alerts, price_context, architecture, charts, control, devops, data_browser, home_mockup, lag, market_charts, market_style, project, quality,  # noqa: E402
                 queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
@@ -37,6 +39,7 @@ from etl import etl  # noqa: E402
 # region Constants
 # The menu is the project journey; every destination is directly accessible.
 PAGE_HOME = "Dashboard"
+PAGE_DATA = "Datos"
 # The cover of the portfolio (C01): what the project is, in one screen, with real figures
 # and a way into the dashboard and the code. The full definition is the view after it.
 PAGE_COVER = "Portada"
@@ -47,7 +50,8 @@ PAGE_ARCHITECTURE = "Modelo de datos"
 PAGE_ANALYSIS = "Esta semana"
 PAGE_GAP = "Brecha de precio"
 PAGE_CHANNELS = "Canales y regiones"
-PAGE_SEASONALITY = "Histórico y estacionalidad"
+PAGE_SEASONALITY = "Contexto del precio"
+RETIRED_VIEWS = {"Histórico y estacionalidad": "Contexto del precio"}
 PAGE_ALERTS = "Alertas"
 PAGE_KPI = "Indicadores explicados"
 PAGE_QUERIES = "Preguntas y resultados"
@@ -63,35 +67,47 @@ PAGE_MANUAL = "Manual"
 PAGE_DECISIONS = "Decisiones"
 PAGE_GLOSSARY = "Glosario"
 PAGE_LINKS = "Enlaces"
+PAGE_DOCUMENTATION = "Documentación"
+SECTION_RESOURCES = "Enlaces"
 # The visit is a portfolio route, like a CV with its evidence: the project, then the
 # dashboard, the code with its results and, for whoever wants more, the technical detail.
 # Sources and links have one place of their own, out of the route (D-070).
 SECTION_PROJECT = "El proyecto"
+SECTION_KPI = "KPIs"
 REPORT_WINDOW = "Dashboard"
-SECTION_CODE = "Código y resultados"
-SECTION_TECHNICAL = "Detalle técnico"
-SECTION_LINKS = "Fuentes y enlaces"
+SECTION_QUERIES = "Preguntas y resultados SQL"
+SECTION_CODE = "Código del proyecto"
+SECTION_TECHNICAL = "Arquitectura y operación"
+SECTION_LINKS = "Documentación"
 WINDOWS = {
-    SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_KPI, PAGE_RULES, PAGE_DECISIONS, PAGE_GLOSSARY],
-    REPORT_WINDOW: [PAGE_HOME, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
+    SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES],
+    SECTION_KPI: [PAGE_KPI],
+    REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY],
-    SECTION_CODE: [PAGE_QUERIES, PAGE_CODE],
-    SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS,
-                        PAGE_DEVOPS, PAGE_MANUAL],
-    SECTION_LINKS: [PAGE_LINKS],
+    SECTION_QUERIES: [PAGE_QUERIES],
+    SECTION_CODE: [PAGE_CODE],
+    SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
+    SECTION_LINKS: [PAGE_DOCUMENTATION, PAGE_GLOSSARY, PAGE_MANUAL],
+    SECTION_RESOURCES: [PAGE_LINKS],
 }
-ROUTE = [SECTION_PROJECT, REPORT_WINDOW, SECTION_CODE, SECTION_TECHNICAL]
-WINDOW_PATHS = {SECTION_PROJECT: "proyecto", REPORT_WINDOW: "dashboard",
-                SECTION_CODE: "codigo-y-resultados", SECTION_TECHNICAL: "detalle-tecnico",
-                SECTION_LINKS: "fuentes-y-enlaces"}
+ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_CODE, SECTION_QUERIES, SECTION_PROJECT]
+# The former KPI page remains as a hidden compatibility destination for old links;
+# its business information now lives in the dashboard and documentation.
+WINDOWS = {window: WINDOWS[window] for window in ROUTE + [SECTION_LINKS, SECTION_RESOURCES, SECTION_KPI]}
+WINDOW_PATHS = {SECTION_PROJECT: "proyecto", REPORT_WINDOW: "dashboard", SECTION_KPI: "kpis",
+                SECTION_QUERIES: "preguntas-y-resultados", SECTION_CODE: "codigo",
+                SECTION_TECHNICAL: "arquitectura-y-operacion",
+                SECTION_LINKS: "documentacion-y-enlaces", SECTION_RESOURCES: "enlaces"}
 WINDOW_ICONS = {SECTION_PROJECT: ":material/assignment:", REPORT_WINDOW: ":material/dashboard:",
-                SECTION_CODE: ":material/code:", SECTION_TECHNICAL: ":material/account_tree:",
-                SECTION_LINKS: ":material/link:"}
-# What each step of the route proves, for its «Siguiente» button.
+                SECTION_KPI: ":material/insights:",
+                SECTION_QUERIES: ":material/query_stats:", SECTION_CODE: ":material/code:",
+                SECTION_TECHNICAL: ":material/account_tree:", SECTION_LINKS: ":material/menu_book:", SECTION_RESOURCES: ":material/link:"}
 ROUTE_LEADS = {SECTION_PROJECT: "qué problema resuelve y qué se construyó",
-               REPORT_WINDOW: "los precios de la semana, filtrables con un clic",
-               SECTION_CODE: "cada pregunta con su resultado real y su código",
-               SECTION_TECHNICAL: "el pipeline, la arquitectura, la calidad y la operación"}
+               SECTION_KPI: "qué mide cada KPI, cómo se calcula y qué límites tiene",
+               REPORT_WINDOW: "los precios y cambios de la semana",
+               SECTION_QUERIES: "cada pregunta, su resultado y el SQL que lo produce",
+               SECTION_CODE: "los archivos reales, agrupados por su función",
+               SECTION_TECHNICAL: "pipeline, modelo estrella, DevOps y operación"}
 WINDOW_OF_VIEW = {view: window for window, views in WINDOWS.items() for view in views}
 VIEW_PARAMETER = "vista"
 # Session flag: the window being drawn is a report (Dashboard), so every view fits one
@@ -115,8 +131,8 @@ PULSE_CHANNELS = ["Mayorista", "Feria libre", "Supermercado"]
 ALL_VALUES = "Todas"
 GLOBAL_FILTERS = {"group": "Grupo", "region": "Región", "week": "Semana"}
 # Dashboard summary (D-072): a slider sets how many rows the ranking shows.
-TOP_N_RANGE = (5, 20)
-DEFAULT_TOP_N = 8
+TOP_N_RANGE = (1, 100)
+DEFAULT_TOP_N = 20
 RANKING_TITLES = {"Mayores movimientos": "¿Qué precios cambiaron más?",
                   "Alzas": "¿Qué precios subieron más?", "Bajas": "¿Qué precios bajaron más?"}
 # The trend keeps one or two curves: more lines on top of each other no longer read.
@@ -130,22 +146,13 @@ DASHBOARD_WEEKS = 26
 # A channel or region of the territory map needs data in this share of the other axis.
 MINIMUM_MAP_COVERAGE = 0.5
 BAR_STEP = 22
-# A profile adapts the visit, it never hides anything: where the visit starts and which
-# view opens first in each section (D-070). Without a profile, the route as it is.
-PROFILE_START = {"Reclutamiento": SECTION_PROJECT, "Negocio / gerencia": REPORT_WINDOW,
-                 "Analista BI": REPORT_WINDOW, "Ingeniería de datos": SECTION_TECHNICAL}
-PROFILE_FIRST_VIEWS = {
-    "Reclutamiento": [PAGE_COVER, PAGE_HOME, PAGE_QUERIES, PAGE_DIAGRAMS],
-    "Negocio / gerencia": [PAGE_COVER, PAGE_HOME, PAGE_ALERTS, PAGE_QUERIES, PAGE_RUNS],
-    "Analista BI": [PAGE_KPI, PAGE_HOME, PAGE_ANALYSIS, PAGE_QUERIES, PAGE_ARCHITECTURE],
-    "Ingeniería de datos": [PAGE_RULES, PAGE_HOME, PAGE_CODE, PAGE_DIAGRAMS, PAGE_RUNS],
-}
 # The groups of views before D-065, kept for the documents that name them.
 NAVIGATION_GROUPS = WINDOWS
 PAGES = [page for pages in NAVIGATION_GROUPS.values() for page in pages]
 HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
-    PAGE_HOME: ":material/dashboard:", PAGE_COVER: ":material/home:",
+    PAGE_DOCUMENTATION: ":material/menu_book:",
+    PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
     PAGE_BUSINESS: ":material/assignment:",
     PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
     PAGE_ANALYSIS: ":material/monitoring:", PAGE_GAP: ":material/compare_arrows:",
@@ -154,17 +161,18 @@ PAGE_ICONS = {
     PAGE_QUERIES: ":material/data_object:",
     PAGE_CODE: ":material/code:", PAGE_RULES: ":material/rule:", PAGE_DEVOPS: ":material/shield:",
     PAGE_OPERATIONS: ":material/health_and_safety:", PAGE_RUNS: ":material/play_circle:",
-    PAGE_MANUAL: ":material/menu_book:", PAGE_DECISIONS: ":material/history:",
+    PAGE_MANUAL: ":material/menu_book:",
     PAGE_GLOSSARY: ":material/dictionary:", PAGE_LINKS: ":material/link:",
 }
 PAGE_PATHS = {
-    PAGE_HOME: "dashboard", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
+    PAGE_DOCUMENTATION: "documentacion-general",
+    PAGE_HOME: "dashboard", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura", PAGE_ANALYSIS: "analisis", PAGE_GAP: "brecha",
     PAGE_CHANNELS: "canales", PAGE_SEASONALITY: "estacionalidad", PAGE_ALERTS: "alertas",
     PAGE_KPI: "indicadores", PAGE_QUERIES: "queries",
     PAGE_CODE: "codigo", PAGE_RULES: "reglas", PAGE_DEVOPS: "devops", PAGE_OPERATIONS: "operaciones",
-    PAGE_RUNS: "ejecuciones", PAGE_MANUAL: "manual", PAGE_DECISIONS: "decisiones",
+    PAGE_RUNS: "ejecuciones", PAGE_MANUAL: "manual",
     PAGE_GLOSSARY: "glosario", PAGE_LINKS: "enlaces",
 }
 TAB_IDEA = "Idea de negocio"
@@ -189,7 +197,7 @@ TAB_QUALITY = "Calidad de datos"
 TABS_BY_PAGE = {page: [] for page in PAGES}
 PAGE_OF_TAB = {
     TAB_IDEA: PAGE_BUSINESS, TAB_KPI: PAGE_KPI, TAB_RULES: PAGE_RULES,
-    TAB_MANUAL: PAGE_MANUAL, TAB_DECISIONS: PAGE_DECISIONS, TAB_GLOSSARY: PAGE_GLOSSARY,
+    TAB_MANUAL: PAGE_MANUAL, TAB_DECISIONS: PAGE_DOCUMENTATION, TAB_GLOSSARY: PAGE_GLOSSARY,
     TAB_PIPELINE: PAGE_DIAGRAMS, TAB_MODEL: PAGE_ARCHITECTURE, TAB_DEVOPS: PAGE_DEVOPS,
     TAB_CODE: PAGE_CODE, TAB_RUNS: PAGE_RUNS, TAB_QUALITY: PAGE_OPERATIONS,
     TAB_WEEK: PAGE_ANALYSIS, TAB_GAP: PAGE_GAP, TAB_CHANNELS: PAGE_CHANNELS,
@@ -202,9 +210,12 @@ OLD_PATHS = {
     "consultas": (PAGE_QUERIES, None), "pipeline": (PAGE_DIAGRAMS, None),
     # The retired «Consulta de datos» screen (C03).
     "datos-y-codigo": (PAGE_QUERIES, None),
+    "codigo-y-resultados": (PAGE_QUERIES, None),
+    "detalle-tecnico": (PAGE_DIAGRAMS, None),
+    "fuentes-y-enlaces": (PAGE_LINKS, None),
     "centro-de-control": (PAGE_RUNS, None), "calidad-de-datos": (PAGE_OPERATIONS, None),
     # Windows and views before the portfolio route (D-070).
-    "operacion": (PAGE_OPERATIONS, None), "documentacion": (PAGE_DECISIONS, None),
+    "operacion": (PAGE_OPERATIONS, None), "documentacion": (PAGE_DOCUMENTATION, None), "decisiones": (PAGE_DOCUMENTATION, None),
     "vista-3d": (PAGE_SEASONALITY, None),
 }
 OLD_HOME_TABS = {"Fuentes y cruces": TAB_IDEA, "Arquitectura": TAB_PIPELINE,
@@ -221,15 +232,7 @@ RETIRED_THEMES = {charts.MODE_LIGHT: charts.MODE_CORPORATE, "ChatGPT": charts.MO
 DEFAULT_THEME = charts.MODE_CORPORATE
 KPI_PARAMETER = "kpi"
 PROFILE_PARAMETER = "visitor_profile"
-VISITOR_PROFILES = {
-    "Reclutamiento": "Empieza por el proyecto y sigue el recorrido completo: dashboard, "
-                     "consultas con su resultado y pipeline.",
-    "Negocio / gerencia": "Empieza por el dashboard; las alertas y las consultas abren primero.",
-    "Analista BI": "Empieza por el dashboard; los indicadores explicados, el detalle de la "
-                   "semana y el modelo de datos abren primero.",
-    "Ingeniería de datos": "Empieza por el detalle técnico: pipeline, ejecuciones, reglas y "
-                           "código abren primero.",
-}
+PIPELINE_DIAGRAM_PARAMETER = "diagrama"
 JOURNEY_MANAGER = "Soy gerente"
 JOURNEY_ANALYST = "Soy analista"
 JOURNEY_TECHNICAL = "Soy técnico"
@@ -313,10 +316,6 @@ ALERT_LIST_HINT = ("**Qué muestra:** los productos cuyo cambio semanal se sali�
                    "previas). **Cómo leerlo:** el semáforo dice cuán lejos: ● moderada (2 a 3"
                    "), ▲ alta (3 a 4), ◆ muy alta (4 o más); la barra mide esa distancia y la "
                    "marca vertical es el límite de 2.")
-SEASONAL_INDEX_HINT = ("**1,00** es el precio promedio del año. **1,20** = esa semana el "
-                       "precio estuvo 20 % sobre su promedio; **0,80** = 20 % bajo. Con "
-                       "datos desde 2022 se ve si el producto sube o baja siempre en las "
-                       "mismas semanas del año.")
 NATIONAL_PRICE_HINT = ("Promedio simple de las regiones con dato, en pesos por kilo (o por "
                        "unidad), semana a semana.")
 ARCHITECTURE_HINT = ("Los datos viajan de izquierda a derecha. **Bronce**: el archivo tal "
@@ -362,10 +361,10 @@ COVER_LEAD = ("Integra los precios mayoristas y al consumidor de ODEPA para comp
 COVER_STATEMENTS = [
     ("database", "El problema", "Dos archivos públicos separados, con unidades distintas, "
                                 "que había que cruzar a mano cada semana."),
-    ("workflow", "Mi aporte", "Ingesta, limpieza, modelo de datos, consultas SQL, dashboard "
+    ("workflow", "Trabajo desarrollado", "Ingesta, limpieza, modelo de datos, consultas SQL, dashboard "
                               "y automatización semanal."),
-    ("person", "Para quién", "Pricing, compras y abastecimiento; también quien evalúa el "
-                             "proyecto."),
+    ("person", "Para quién", "Equipos de pricing, compras y abastecimiento que necesitan "
+                             "comparar precios y anticipar revisiones de compra."),
 ]
 COVER_OFFER = ("Comparaciones por canal y región, evolución de precios y cambios de la semana "
                "que conviene revisar.")
@@ -512,7 +511,10 @@ NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
 ATTRIBUTION_TEXT = (
     "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de "
     "Agricultura de Chile, licencia Creative Commons Atribución. "
-    "Este proyecto no es un producto oficial de ODEPA.")
+    "Este proyecto no es un producto oficial de ODEPA. "
+    "Lectura de los datos: el precio nacional es un promedio simple de las regiones disponibles, "
+    "sin ponderar por población o ventas. Los indicadores describen el histórico; no predicen precios. "
+    "Las pruebas verifican reglas concretas, no certifican cada dato de la fuente.")
 # endregion
 
 
@@ -566,12 +568,17 @@ def build_base_mode_script(theme_or_base):
     try {{
         const current = JSON.parse(page.localStorage.getItem(key) || "null");
         const requested = page.sessionStorage.getItem(attempt);
-        page.sessionStorage.setItem(attempt, wanted);
+        // Stored preference can already match while React still uses the old base.
+        const ink = page.getComputedStyle(page.document.body).color.match(/[0-9.]+/g);
+        const brightInk = ink && (Number(ink[0]) * .2126 + Number(ink[1]) * .7152 + Number(ink[2]) * .0722) > 128;
+        const baseMatches = ink && (wanted === "Dark" ? brightInk : !brightInk);
+        if (baseMatches) {{ page.sessionStorage.removeItem(attempt); }}
         for (const path of {section_paths}) {{
             page.localStorage.setItem("stActiveTheme-" + folder + path + "-v2",
                                       JSON.stringify(wanted));
         }}
-        if (current !== wanted && requested !== wanted) {{
+        if (!baseMatches && requested !== wanted) {{
+            page.sessionStorage.setItem(attempt, wanted);
             // The address keeps the chosen palette across the reload.
             const address = new URL(page.location.href);
             address.searchParams.set("tema", {selected_theme});
@@ -594,10 +601,45 @@ def build_theme_css(palette):
     restyles what it can do without fighting them.
     """
     return f"""
-    .stApp {{ background: {palette["background"]}; }}
-    /* Streamlit's top bar holds only the menu buttons: transparent, so it never covers
-       the header of a section. */
+    .stApp {{ background: {palette["background"]}; color:{palette["text"]};
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }}
+    [data-testid="stMain"] p, [data-testid="stMain"] h1, [data-testid="stMain"] h2,
+    [data-testid="stMain"] h3, [data-testid="stMain"] label, [data-testid="stMain"] input {{
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }}
+    [data-testid="stMain"], [data-testid="stMainBlockContainer"] {{ color:{palette["text"]}; }}
+    [data-testid="stMarkdownContainer"], [data-testid="stWidgetLabel"],
+    [data-testid="stWidgetLabel"] p, [data-testid="stCaptionContainer"],
+    [data-testid="stCaptionContainer"] p {{ color:{palette["text"]}; }}
+    [data-testid="stHeading"] h1, [data-testid="stHeading"] h2,
+    [data-testid="stHeading"] h3, [data-testid="stHeading"] h4 {{color:{palette["strong_text"]};}}
+    [data-testid="stExpander"] details {{background:{palette["card"]}; border-color:{palette["card_border"]};}}
+    [data-testid="stExpander"] summary, [data-testid="stExpander"] summary p,
+    [data-baseweb="tab"] p {{color:{palette["text"]};}}
+    [data-testid="stPopoverBody"], [data-testid="stDialog"] [role="dialog"] {{
+        background:{palette["card"]}; color:{palette["text"]};}}
+    [data-testid="stRadio"] p {{color:{palette["text"]};}}
+    [data-baseweb="select"] > div, [data-baseweb="input"],
+    [data-baseweb="input"] input, [data-baseweb="textarea"] textarea {{
+        background:{palette["field"]}; color:{palette["strong_text"]}; border-color:{palette["card_border"]};}}
+    [data-baseweb="select"] input {{color:{palette["strong_text"]};}}
+    [data-baseweb="popover"] [role="listbox"], [data-baseweb="popover"] [role="option"] {{
+        background:{palette["field"]}; color:{palette["strong_text"]};}}
+    [data-baseweb="popover"] [role="option"]:hover {{background:{palette["card"]};}}
+    button[kind="secondary"], button[kind="secondaryFormSubmit"] {{
+        background:{palette["card"]}; color:{palette["strong_text"]}; border-color:{palette["card_border"]};}}
+
+    /* Desktop navigation stays in normal flow. On mobile the fixed logo bar
+       needs an opaque surface so scrolling text never crosses the logo. */
     [data-testid="stHeader"] {{ background: transparent; }}
+    @media(max-width:800px) {{
+        [data-testid="stHeader"] {{background:{palette['background']};}}
+    }}
+    /* The app owns its four themes; hide Streamlit's duplicate theme/utility menu.
+       Keep the header itself so the sidebar toggle and GreenOcean logo still work. */
+    [data-testid="stMainMenu"] {{ display:none !important; }}
+    [data-testid="stHeader"], [data-testid="stHeader"] * {{pointer-events:none !important;}}
+    [data-testid="stHeader"] button, [data-testid="stHeader"] button *,
+    [data-testid="stHeader"] a, [data-testid="stHeader"] a * {{pointer-events:auto !important;}}
     [data-testid="stSidebar"] {{ background: {palette["sidebar"]}; }}
     /* Streamlit's local file watcher is a floating developer control. It can
        cover report content when the viewport is narrow, so it is never part
@@ -608,6 +650,10 @@ def build_theme_css(palette):
     [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {{
         color: {palette["sidebar_text"]};
     }}
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+    [data-testid="stSidebar"] [data-testid="stPageLink"] p,
+    [data-testid="stSidebar"] [data-testid="stPageLink"] span {{ color:{palette["sidebar_text"]}; }}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a {{ background:transparent !important; }}
     [data-testid="stSidebarNavLink"][aria-current="page"] {{
         box-shadow: inset 2px 0 0 {palette["accent"]}, 0 0 14px {palette["glow"]};
     }}
@@ -662,8 +708,21 @@ def build_style_css(mode):
     .page-freshness {{ color:{palette["text"]}; font-size:0.82rem; margin-bottom:8px; }}
     [data-testid="stMain"] h1 {{ font-size:clamp(1.7rem,3vw,2.35rem); line-height:1.15; }}
     /* One slim line on top (D-072): where the reader is, and ◀ [view] ▶ at the right. */
-    .st-key-app_header {{ justify-content:space-between; flex-wrap:nowrap !important;
-        gap:12px; margin:0 0 4px; }}
+    .st-key-app_header {{ justify-content:space-between; flex-wrap:wrap !important;
+        gap:12px; margin:0 0 8px; padding:10px 16px; background:{palette["card"]};
+        border:1px solid {palette["card_border"]}; border-radius:14px; }}
+    .st-key-header_preferences {{ width:min(460px,100%) !important; margin-left:auto; gap:12px;
+        flex-wrap:wrap !important; }}
+    .st-key-header_preferences > div {{ flex:1 1 180px; min-width:0; }}
+    .profile-context {{ font-size:.85rem; color:{palette["text"]}; margin:0 0 10px; }}
+    @media(max-width:700px) {{
+        .st-key-app_header {{ display:block !important; }}
+        .st-key-app_header > div {{ width:100% !important; max-width:100% !important; }}
+        .app-brand {{ margin-bottom:8px; white-space:normal; flex-wrap:wrap; }}
+        .st-key-header_preferences {{ width:100% !important; }}
+        [data-testid="stHorizontalBlock"]:has(.st-key-catalog_list) {{ flex-wrap:wrap; }}
+        [data-testid="stColumn"]:has(.st-key-catalog_list) {{ min-width:100%; }}
+    }}
     .app-brand {{ display:flex; align-items:baseline; gap:8px; white-space:nowrap; }}
     .app-brand span {{ color:{palette["text"]}; font-size:.85rem; font-weight:600; }}
     .app-brand small {{ color:{palette["accent"]}; font-size:.85rem; font-weight:600; }}
@@ -707,18 +766,17 @@ def build_style_css(mode):
     .kpi-strip-accent {{ color:{palette["accent"]}; }}
     .kpi-strip-good {{ color:{charts.get_status_text_color("good", mode)}; font-size:1.2rem; }}
     .kpi-strip-label {{ color:{palette["strong_text"]}; font-size:.88rem; font-weight:600; }}
-    .kpi-strip-note {{ color:{palette["text"]}; font-size:.75rem; white-space:nowrap;
-        overflow:hidden; text-overflow:ellipsis; }}
-    .kpi-strip-label {{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+    .kpi-strip-note {{ color:{palette["text"]}; font-size:.75rem; white-space:normal; }}
+    .kpi-strip-label {{ white-space:normal; }}
     .kpi-strip-meaning {{ justify-content:center; color:{palette["text"]}; font-size:.85rem; }}
     .filter-scope {{ color:{palette["text"]}; font-size:.78rem; margin:2px 0 0; }}
     .strip-note {{ color:{palette["text"]}; font-size:.8rem; margin:4px 0 0; }}
     .ring-legend {{ list-style:none; padding:0; margin:0; font-size:.84rem; }}
-    .ring-legend span:nth-child(2) {{ min-width:0; }}
+    .ring-legend span:nth-child(2) {{ min-width:0; white-space:normal; overflow-wrap:anywhere; }}
     .st-key-ranking_caption {{ flex-wrap:nowrap !important; justify-content:space-between; }}
     .st-key-ranking_caption [data-testid="stCaptionContainer"] {{ flex:1 1 auto; min-width:0; }}
     .st-key-ranking_order {{ flex:none; }}
-    .ring-legend li {{ display:grid; grid-template-columns:auto 1fr auto; gap:8px; padding:3px 0; }}
+    .ring-legend li {{ display:grid; grid-template-columns:8px minmax(0,1fr) auto; gap:8px; padding:3px 0; }}
     .ring-legend strong {{ color:{palette["strong_text"]}; }}
     .ring-note {{ color:{palette["text"]}; font-size:.78rem; margin:8px 0 0; }}
     /* Streamlit sizes markdown p and li itself: these win over it (D-072). */
@@ -796,8 +854,14 @@ def build_style_css(mode):
         .mobile-rankings {{ display:block; }}
     }}
     .resource-tree {{ list-style:none; padding:0 0 0 18px; border-left:1px solid {palette["card_border"]}; }}
-    .devops-cycle {{ max-width:1000px; margin:8px auto 20px; }}
-    .devops-cycle > svg {{ width:100%; height:auto; display:block; }}
+    .devops-cycle {{
+        width:min(100%,780px,calc((100vh - 220px) * 2.04));
+        margin:6px auto 14px;
+    }}
+    .devops-cycle > svg {{
+        width:100%; height:auto; max-height:calc(100vh - 220px);
+        display:block; margin:0 auto;
+    }}
     .devops-cycle-mobile {{ display:none; list-style:none; padding:0; }}
     .devops-cycle-mobile li, .technical-rows li {{ display:flex; align-items:flex-start;
         gap:14px; padding:12px 0; border-bottom:1px solid {palette["card_border"]}; }}
@@ -834,17 +898,23 @@ def build_style_css(mode):
         .resource-tree li {{ grid-template-columns:1fr; gap:4px; }}
     }}
     .card-title {{ font-size: 1.05rem; font-weight: 600; color: {palette["strong_text"]}; }}
-    .page-subtitle {{ color: {palette["text"]}; margin-top: -0.6rem; }}
+    .page-subtitle {{ color: {palette["text"]}; margin-top: 0; line-height:1.5; }}
     .kpi-label {{ color: {palette["text"]}; font-size: 0.9rem; }}
     .kpi-value {{ font-size: 2rem; font-weight: 700; color: {palette["strong_text"]};
                  line-height: 1.2; }}
     .kpi-note {{ color: {palette["text"]}; font-size: 0.8rem; }}
     .kpi-link {{ margin-left: 10px; font-size: 0.8rem; font-weight: 400; }}
-    .card-title {{ display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: 0; }}
+    .card-title {{ display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; min-width:0; line-height:1.45; padding-bottom:6px; }}
     .card-title > *:not(.card-title-text) {{ flex: none; }}
     .card-title-text {{ min-width: 0; overflow: hidden; text-overflow: ellipsis;
-                        white-space: nowrap; }}
+                        white-space:normal; overflow-wrap:break-word; }}
     .card-title .kpi-link {{ margin-left: auto; white-space: nowrap; }}
+    [class*="st-key-card_"] {{gap:12px;}}
+    [class*="st-key-card_"] [data-testid="stCaptionContainer"] p {{line-height:1.55; margin:0; padding:2px 0 6px;}}
+    [data-testid="stMain"] [data-testid="stWidgetLabel"] p {{line-height:1.45; padding-bottom:4px;}}
+    .regional-detail td, .regional-detail th, .chart-sample td, .chart-sample th {{line-height:1.5; vertical-align:top;}}
+    .compact-header {{row-gap:10px;}}
+
     .chip {{ display: inline-block; padding: 2px 10px; border-radius: 999px;
             font-size: 0.8rem; font-weight: 600; margin-left: 6px; }}
     .chip-ok {{ background: rgba(12, 163, 12, 0.16);
@@ -889,6 +959,8 @@ def build_style_css(mode):
     .phone-only {{ display: none; }}
     .diagram-fit {{ width: 100%; min-width: 0; }}
     .diagram-fit img {{ display: block; width: 100%; max-width: 100%; height: auto; }}
+    .pipeline-mini {{ width: 100%; overflow-x: auto; padding: 8px 0 2px; }}
+    .pipeline-mini svg {{ display: block; width: 100%; min-width: 700px; height: auto; }}
     /* The whole diagram: wide from left to right; on narrow screens (phones,
        tablets, small windows) the wide one would shrink to unreadable text, so
        the vertical version takes its place. */
@@ -1103,11 +1175,165 @@ def build_style_css(mode):
     .compact-header h1 {{ font-size: 1.3rem !important; margin: 0 !important; white-space: nowrap;
                           padding: 0 !important; line-height: 1.25; cursor: help; }}
     .compact-header .page-freshness {{ margin: 0; font-size: 0.8rem; }}
+    /* Main navigation views open as a complete panorama. Long tables and
+       methodology remain available in folded sections below that overview. */
+    [data-testid="stElementContainer"]:has(.overview-viewport-marker) {{display:none;}}
+    .stApp:has(.overview-viewport-marker) [data-testid="stMainBlockContainer"] {{
+        padding-bottom:8px !important;}}
+    .stApp:has(.overview-viewport-marker) .st-key-window_page,
+    .stApp:has(.overview-viewport-marker) .st-key-window_page > [data-testid="stVerticalBlock"] {{
+        gap:.45rem !important;}}
+    .stApp:has(.overview-viewport-marker) [data-testid="stExpander"] summary {{
+        min-height:34px; padding:5px 10px;}}
+    .stApp:has(.overview-viewport-marker) [data-testid="stExpander"] summary p {{
+        font-size:.82rem; line-height:1.2;}}
+    .stApp:has(.overview-viewport-marker) hr {{margin:.25rem 0;}}
+    /* Pipeline is a one-screen gallery: two detailed diagrams receive the
+       available space, while the execution state stays in a compact strip. */
+    .stApp:has(.overview-pipeline) [data-testid="stMainBlockContainer"] {{
+        padding-bottom:4px!important;}}
+    .stApp:has(.overview-pipeline) .pipeline-page-header {{
+        display:grid; grid-template-columns:auto 1fr auto; align-items:center;
+        gap:5px 12px; margin:0;}}
+    .stApp:has(.overview-pipeline) .pipeline-page-header h1 {{font-size:1.28rem!important;}}
+    .stApp:has(.overview-pipeline) .pipeline-header-description {{
+        color:{palette["text"]}; font-size:.78rem; white-space:nowrap; overflow:hidden;
+        text-overflow:ellipsis;}}
+    .stApp:has(.overview-pipeline) .pipeline-page-header .page-freshness {{
+        font-size:.72rem; white-space:nowrap;}}
+    .stApp:has(.overview-pipeline) [class*="st-key-animate_data_flow"] label {{
+        min-height:24px;}}
+    .stApp:has(.overview-pipeline) [class*="st-key-animate_data_flow"] p {{font-size:.72rem;}}
+    .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_"] {{
+        padding:5px 8px; gap:4px; overflow:hidden;}}
+    .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_"] .card-title {{
+        font-size:.92rem; line-height:1.2; padding-bottom:0;}}
+    .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_main"] {{
+        min-height:0;}}
+    .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_status"],
+    .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_platform"] {{
+        height:160px; min-height:160px; overflow:visible;}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-link {{
+        position:relative; display:flex; align-items:center; justify-content:center;
+        width:100%; overflow:hidden; border-radius:10px; text-decoration:none!important;
+        cursor:zoom-in; outline:1px solid transparent; transition:background .18s ease,
+        outline-color .18s ease;}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-main-link {{
+        height:clamp(285px,calc(100vh - 420px),760px);}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-secondary-link {{
+        height:105px;}}
+    .stApp:has(.overview-pipeline) .pipeline-status-content {{
+        display:flex; flex-direction:column; min-width:0;}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-status-preview {{
+        display:flex; align-items:center; justify-content:center; height:83px;
+        width:100%; overflow:hidden;}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-status-preview svg {{
+        display:block; width:100%; height:100%;}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-link:hover,
+    .stApp:has(.overview-pipeline) .pipeline-gallery-link:focus-visible {{
+        background:{palette["accent"]}14; outline-color:{palette["accent"]};}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-link svg {{
+        display:block; width:100%; height:100%; max-width:100%; max-height:100%;
+        transition:transform .18s ease;}}
+    .stApp:has(.overview-pipeline) .pipeline-platform-detailed {{display:none;}}
+    .stApp:has(.overview-pipeline) .pipeline-platform-compact {{display:block; width:100%; height:100%;}}
+    .stApp:has(.overview-pipeline) .pipeline-platform-compact svg,
+    .stApp:has(.overview-pipeline) .pipeline-platform-detailed svg {{
+        display:block; width:100%; height:100%;}}
+    /* The complete SVG has room between its nodes: use it for larger labels
+       in the preview without changing the focused diagram or its geometry. */
+    .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="12"] {{font-size:13px;}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="13"] {{font-size:15px;}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="14"] {{font-size:15px;}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="15"] {{font-size:16px;}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="16"] {{font-size:17px;}}
+    .stApp:has(.overview-pipeline) .pipeline-gallery-link:hover svg {{transform:scale(1.01);}}
+    .stApp:has(.overview-pipeline) .pipeline-open-label {{
+        position:absolute; right:8px; bottom:6px; padding:3px 8px; border-radius:999px;
+        color:{palette["strong_text"]}; background:{palette["card"]};
+        border:1px solid {palette["card_border"]}; font-size:.68rem; font-weight:650;
+        box-shadow:0 2px 10px rgba(0,0,0,.18);}}
+    .stApp:has(.overview-pipeline) .run-status {{margin-bottom:2px; font-size:.7rem;}}
+    .stApp:has(.overview-pipeline) .pipeline-focus-toolbar {{
+        display:flex; align-items:center; justify-content:center;
+        margin:0 0 5px; min-height:34px;}}
+    .stApp:has(.overview-pipeline) .pipeline-focus-toolbar strong {{
+        color:{palette["strong_text"]}; font-size:1rem;}}
+    .stApp:has(.overview-pipeline) [class*="st-key-pipeline_focus_"] {{
+        position:relative; height:calc(100vh - 155px); min-height:0; padding:8px 10px;
+        overflow:hidden;
+        border:1px solid {palette["card_border"]}; border-radius:14px;
+        background:{palette["card"]};}}
+    .stApp:has(.overview-pipeline) .pipeline-focus-return {{
+        display:flex; justify-content:flex-end; margin:4px 2px 0;}}
+    .stApp:has(.overview-pipeline) .pipeline-focus-return a {{
+        display:inline-flex; align-items:center; min-height:32px; padding:5px 11px;
+        border-radius:999px; border:1px solid {palette["card_border"]};
+        background:{palette["card"]}; color:{palette["accent"]};
+        box-shadow:0 3px 12px rgba(0,0,0,.15); text-decoration:none; font-size:.76rem;
+        font-weight:650;}}
+    .stApp:has(.overview-pipeline) .pipeline-focus-return a:hover {{
+        border-color:{palette["accent"]};}}
+    .stApp:has(.overview-pipeline) [class*="st-key-pipeline_focus_"] .zoom-buttons {{
+        position:absolute; left:14px; bottom:12px; z-index:3; margin:0;
+        justify-content:flex-start;}}
+    .stApp:has(.overview-pipeline) [class*="st-key-pipeline_focus_"] .zoom-viewport {{
+        max-height:calc(100vh - 215px);}}
+    .stApp:has(.overview-pipeline) [class*="st-key-pipeline_focus_"] .zoom-content svg {{
+        max-height:calc(100vh - 215px);}}
+    @media (max-height:800px) and (min-width:1001px) {{
+        .stApp:has(.overview-pipeline) .pipeline-gallery-main-link {{
+            height:clamp(240px,calc(100vh - 440px),320px);}}
+        .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_status"],
+        .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_platform"] {{
+            height:175px; min-height:175px;}}
+        .stApp:has(.overview-pipeline) .pipeline-gallery-secondary-link {{height:90px;}}
+        .stApp:has(.overview-pipeline) .pipeline-gallery-status-preview {{height:68px;}}
+    }}
+    @media (min-height:1000px) and (min-width:1200px) {{
+        .stApp:has(.overview-pipeline) .pipeline-gallery-main-link {{
+            height:clamp(420px,42vh,600px);}}
+        .stApp:has(.overview-pipeline) [data-testid="stHorizontalBlock"]:has(
+            [class*="st-key-card_pipeline_gallery_status"]) {{
+            display:flex; flex-direction:column; gap:6px;}}
+        .stApp:has(.overview-pipeline) [data-testid="stColumn"]:has(
+            [class*="st-key-card_pipeline_gallery_status"]),
+        .stApp:has(.overview-pipeline) [data-testid="stColumn"]:has(
+            [class*="st-key-card_pipeline_gallery_platform"]) {{
+            width:100%!important; flex:0 0 auto!important;}}
+        .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_status"] {{
+            height:100px; min-height:100px;}}
+        .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_platform"] {{
+            height:clamp(290px,29vh,390px); min-height:0;}}
+        .stApp:has(.overview-pipeline) .pipeline-status-content {{
+            flex-direction:row; align-items:center; gap:12px; height:65px;}}
+        .stApp:has(.overview-pipeline) .pipeline-status-content .run-status {{
+            flex:1; min-width:0; margin:0; white-space:nowrap;}}
+        .stApp:has(.overview-pipeline) .pipeline-gallery-status-preview {{
+            flex:1; min-width:0; height:65px;}}
+        .stApp:has(.overview-pipeline) .pipeline-gallery-secondary-link {{
+            height:calc(clamp(290px,29vh,390px) - 50px);}}
+        .stApp:has(.overview-pipeline) .pipeline-platform-compact {{display:none;}}
+        .stApp:has(.overview-pipeline) .pipeline-platform-detailed {{
+            display:block; width:100%; height:100%;}}
+    }}
+    @media (max-width:1000px) {{
+        .stApp:has(.overview-pipeline) .pipeline-page-header {{grid-template-columns:1fr;}}
+        .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_status"],
+        .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_platform"] {{
+            height:auto; min-height:150px;}}
+    }}
+    .stApp:has(.overview-history) [data-testid="stVegaLiteChart"] {{max-height:52vh; overflow:hidden;}}
+    .stApp:has(.overview-devops) .devops-cycle {{
+        width:min(100%,720px,calc((100vh - 260px) * 2.04)); margin:0 auto 3px;}}
+    .stApp:has(.overview-devops) .devops-cycle > svg {{max-height:calc(100vh - 260px);}}
+    .stApp:has(.overview-kpis) .kpi-register td,
+    .stApp:has(.overview-kpis) .kpi-register th {{padding:5px 7px!important; line-height:1.2;}}
     /* The report starts right under the header: the invisible script frame between them
        keeps no band of its own. */
-    [class*="st-key-report_page"] {{ gap: 0.6rem; margin-top: -1.6rem; }}
-    [class*="st-key-report_page"] [data-testid="stVerticalBlock"] {{ gap: 0.6rem; }}
-    [class*="st-key-report_page"] [class*="st-key-card_"] {{ padding: 10px 14px 6px 14px;
+    [class*="st-key-report_page"] {{ gap:1rem; margin-top:0; }}
+    [class*="st-key-report_page"] [data-testid="stVerticalBlock"] {{ gap:1rem; }}
+    [class*="st-key-report_page"] [class*="st-key-card_"] {{ padding:16px 18px 18px 18px;
                                                               border-radius: 14px; }}
     [class*="st-key-report_page"] .card-title {{ font-size: 0.95rem; margin-bottom: 2px; }}
     [class*="st-key-report_page"] .card-title .component-symbol {{ width: 24px; height: 26px;
@@ -1262,7 +1488,7 @@ def build_style_css(mode):
         .st-key-cover_offer, .st-key-cover_limits {{ padding:12px 0; }}
     }}
     @media(max-width:640px) {{
-        .app-brand span {{ display:none; }}
+        .app-brand span {{ display:inline; }}
         .kpi-strip-item {{ flex:1 1 45%; border-left:none; padding-left:4px; }}
         .kpi-strip-value {{ font-size:1.35rem; }}
         .st-key-report_filters > div:has(> [class*="st-key-bar_"]) {{ flex:1 1 100%; }}
@@ -1275,37 +1501,183 @@ def apply_style(mode):
     st.markdown(f"<style>{build_style_css(mode)}</style>", unsafe_allow_html=True)
 
 
+GRAPH_NAVIGATION = [
+    ("Dashboard", PAGE_HOME), ("Pipeline", PAGE_DIAGRAMS),
+    ("Modelo", PAGE_ARCHITECTURE), ("DevOps", PAGE_DEVOPS),
+]
+
+OVERVIEW_CLASS_BY_VIEW = {
+    PAGE_HOME: "overview-dashboard",
+    PAGE_SEASONALITY: "overview-history",
+    PAGE_KPI: "overview-kpis",
+    PAGE_DIAGRAMS: "overview-pipeline",
+    PAGE_ARCHITECTURE: "overview-model",
+    PAGE_DEVOPS: "overview-devops",
+}
+
+
+GRAPH_HELP = {
+    PAGE_DATA: "Consulta precios semanales, variaciones y brechas; filtra y recorre los registros de la base.",
+    PAGE_HOME: "Resumen de precios: cambios de esta semana, evolución y comparación regional.",
+    PAGE_ANALYSIS: "Esta semana: los precios que más subieron y bajaron frente a la semana anterior.",
+    PAGE_GAP: "Brecha: cuánto más cuesta al consumidor que al mayorista, para el mismo producto, unidad, región y semana. No es ganancia.",
+    PAGE_CHANNELS: "Regiones: compara dónde y en qué canal cuesta más el mismo producto.",
+    PAGE_ALERTS: "Alertas: cambios semanales poco habituales que conviene revisar; no prueban un error.",
+    PAGE_SEASONALITY: "Contexto del precio: si el precio de esta semana es normal, dónde conviene comprar y qué suele pasar. No es una predicción.",
+    PAGE_KPI: "KPI significa indicador clave: consulta su valor, periodo, comparación, fórmula y límites.",
+    PAGE_DIAGRAMS: "Pipeline: pasos que descargan, transforman y validan los datos antes de mostrarlos.",
+    PAGE_ARCHITECTURE: "Modelo: tablas, relaciones y claves que organizan los datos del proyecto.",
+    PAGE_DEVOPS: "DevOps: cómo se automatizan las pruebas, las cargas y la operación del proyecto.",
+}
+
+
+def show_reading_guide():
+    terms = {"Brecha": "Diferencia entre precio al consumidor y mayorista. Mayorista $1.000 y consumidor $1.300: brecha de 30 %. No mide ganancia.",
+             "Variación": "Cambio frente a la semana anterior: positivo subió, negativo bajó.",
+             "Índice": "Compara con una referencia: 100 significa igual al promedio si el gráfico usa base 100; en base 1, la referencia es 1.",
+             "Mediana": "Valor del centro al ordenar los resultados; resume el cambio típico sin dejar que un valor extremo domine.",
+             "Filas visibles": "Límite de productos por familia. El extremo derecho muestra todos los resultados disponibles."}
+    words = [f'<span class="hint reading-term" tabindex="0" role="button" aria-label="{html.escape(text, quote=True)}" data-hint="{html.escape(text, quote=True)}">{name}</span>' for name, text in terms.items()]
+    st.markdown('<div class="reading-guide">Ayuda al pasar el cursor: ' + ' · '.join(words) + '</div>', unsafe_allow_html=True)
+
+
+def show_data_sample(frame, title="Muestra del gráfico · primeros 3 resultados"):
+    """Small visible sample from exactly the displayed data, not a second ranking."""
+    if frame.empty:
+        return
+    sample = frame.head(3).fillna("—")
+    meanings = {"Variación": "Cambio frente a la semana anterior. Un valor negativo significa que bajó.",
+                "Precio nacional": "Promedio simple de las regiones con datos, sin ponderar por población ni ventas.",
+                "Mayorista": "Precio observado en el canal mayorista, para la unidad indicada.",
+                "Consumidor": "Precio observado en el canal de venta al consumidor, para la misma unidad.",
+                "Diferencia": "Porcentaje sobre el precio mayorista; no mide ganancia.",
+                "Índice": "Precio frente a su referencia; consulta si el gráfico usa base 1 o base 100.",
+                "Índice (100 = promedio anual)": "100 = promedio de las semanas disponibles del año; 120 = 20 % por encima.",
+                "Canal": "Tipo de punto de venta, como feria libre o supermercado.",
+                "Unidad": "Cantidad de referencia del precio: kilo, unidad u otra unidad normalizada."}
+    headers = [f'<span class="hint reading-term" tabindex="0" role="button" aria-label="{html.escape(meanings[str(c)], quote=True)}" data-hint="{html.escape(meanings[str(c)], quote=True)}">{html.escape(str(c))}</span>'
+               if str(c) in meanings else html.escape(str(c)) for c in sample.columns]
+    heading = "".join(f'<th scope="col">{value}</th>' for value in headers)
+    body = "".join('<tr>' + ''.join(f'<td>{html.escape(str(value))}</td>' for value in row) + '</tr>'
+                   for row in sample.itertuples(index=False, name=None))
+    st.markdown('<div class="chart-sample"><div class="sample-title">' + html.escape(title) + '</div>' +
+                '<table class="card-table"><thead><tr>' + heading + '</tr></thead><tbody>' + body + '</tbody></table>' +
+                ('<div class="sample-title">Precios redondeados para leerlos; los porcentajes usan los valores completos.</div>' if any(column in sample.columns for column in ('Precio nacional', 'Mayorista', 'Consumidor')) else '') + '</div>', unsafe_allow_html=True)
+
+
+def build_graph_navigation_html(window):
+    """Direct local destinations for analytical and architecture views, on every page."""
+    view = st.session_state.get(window_view_key(window))
+    links = []
+    for label, page in GRAPH_NAVIGATION:
+        active = ' aria-current="page"' if view == page else ''
+        address = html.escape(build_page_address(page), quote=True)
+        hint = html.escape(GRAPH_HELP[page], quote=True)
+        links.append(f'<span class="nav-item"><a href="{address}" target="_self"{active} aria-describedby="nav-help-{page.replace(" ", "-")}">{html.escape(label)}</a>'
+                     f'<span class="nav-help" role="tooltip" id="nav-help-{page.replace(" ", "-")}">{hint}</span></span>')
+    return ('<nav class="graph-navigation" aria-label="Gráficos y arquitectura">'
+            '<div class="graph-destinations">' + ''.join(links) + '</div></nav>')
+
+
+def build_greenocean_logo(mode, sidebar=False):
+    """Transparent wordmark, displayed by Streamlit outside the navigation links."""
+    background = charts.get_palette(mode)["sidebar" if sidebar else "background"]
+    rgb = tuple(int(background.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    dark = sum(rgb) / 3 < .5
+    green, ocean = ("#66d6a1", "#80baff") if dark else ("#167046", "#185ca8")
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="190" height="36" viewBox="0 0 190 36">'
+            '<title>GreenOcean</title>'
+            '<text x="0" y="27" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" '
+            'font-size="28" font-weight="500" letter-spacing="-.8">'
+            f'<tspan fill="{green}">Green</tspan><tspan fill="{ocean}">Ocean</tspan></text></svg>')
+
+
+
 def show_app_header(window):
-    """One slim line: where the reader is («Monitor de precios › Dashboard») and the view
-    of the section with ◀ [view] ▶, side by side also on phones (D-070, D-072). The theme
-    lives in the side menu and the report's filters in the page."""
-    views = read_window_views(window)
-    with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
-        st.markdown(f'<div class="app-brand"><span>Monitor de precios</span><small>› '
-                    f'{html.escape(window)}</small></div>', unsafe_allow_html=True)
-        if len(views) > 1:
-            key = window_view_key(window)
-            with st.container(key="report_navigation", horizontal=True,
-                              vertical_alignment="center"):
-                st.button("◀", key="previous_view", help="Vista anterior", on_click=step_view,
-                          args=(window, -1))
-                st.selectbox("Vista de la sección", views, key=key,
-                             label_visibility="collapsed",
-                             format_func=lambda value: ("Resumen de la semana"
-                                                        if value == PAGE_HOME else value))
-                st.button("▶", key="next_view", help="Vista siguiente", on_click=step_view,
-                          args=(window, 1))
+    """Shared, sober graphic navigation, followed by preferences and location."""
+    palette = charts.get_palette(get_mode())
+    st.logo(build_greenocean_logo(get_mode(), sidebar=True),
+            icon_image=build_greenocean_logo(get_mode()), size="large")
+    st.markdown(f"""<style>
+    [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {{display:none;}}
+    [data-testid="stMainBlockContainer"] {{padding-top:6px !important;}}
+    .stApp:has([data-testid="stSidebar"][aria-expanded="false"]) [data-testid="stMainBlockContainer"] {{padding-top:42px !important;}}
+    .graph-navigation {{display:flex; align-items:center; gap:22px; padding:4px 28px 4px 0;
+        border-bottom:1px solid {palette['card_border']};
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
+    .graph-navigation a {{font-size:.79rem; font-weight:400; text-decoration:none;
+        color:{palette['text']}; white-space:nowrap; padding:8px 0;}}
+    .graph-navigation .graph-brand {{font-weight:500; letter-spacing:-.025em;}}
+    .nav-item {{position:relative; display:inline-flex;}}
+    .nav-help {{display:none; position:absolute; top:calc(100% + 10px); left:0; width:min(250px,75vw);
+        background:{palette['card']}; color:{palette['strong_text']}; padding:10px 12px; border:1px solid {palette['card_border']};
+        border-radius:8px; font-size:.82rem; line-height:1.5; z-index:2000; box-shadow:0 4px 16px #0002; white-space:normal;}}
+    .nav-item:hover .nav-help, .nav-item:focus-within .nav-help {{display:block;}}
+    .nav-item:nth-last-child(-n+3) .nav-help {{left:auto; right:0;}}
+    .reading-guide {{font-size:.8rem; margin:5px 0 14px; color:{palette['text']};}}
+    .reading-term {{font-size:inherit; margin-left:0; border-bottom:1px dotted currentColor; font-weight:400;}}
+    .regional-detail {{width:100%; font-size:.75rem; border-collapse:collapse;}}
+    .regional-detail td, .regional-detail th {{padding:5px 6px!important; text-align:left;}}
+    .chart-sample {{margin-top:8px; padding-bottom:12px; overflow-x:auto;}}
+    .sample-title {{font-size:.75rem; color:{palette['text']}; margin-bottom:4px;}}
+    .chart-sample table {{width:100%; font-size:.75rem; border-collapse:collapse;}}
+    .chart-sample td, .chart-sample th {{padding:5px 7px; text-align:left; white-space:normal; border-bottom:1px solid {palette['card_border']};}}
+
+    .graph-destinations {{display:flex; flex:1; justify-content:space-between; gap:12px; flex-wrap:wrap;}}
+    .graph-navigation a:hover, .graph-navigation a[aria-current="page"] {{color:{palette['accent']};}}
+    .graph-navigation a[aria-current="page"] {{font-weight:600; box-shadow:0 1px {palette['accent']};}}
+    .graph-navigation a:focus-visible {{outline:2px solid {palette['accent']}; outline-offset:4px;}}
+    [data-testid="stMarkdownContainer"]:has(> .report-title) {{margin-bottom:0;}}
+    .report-title p {{display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:8px 0 12px;}}
+    .st-key-report_page .card-title {{flex-wrap:wrap; align-items:flex-start;}}
+    .st-key-report_page .card-title-text {{flex:1 1 140px; white-space:normal; overflow:visible;}}
+    .st-key-report_page [data-testid="stCaptionContainer"] {{overflow-wrap:anywhere;}}
+    .st-key-app_header {{background:transparent; border:0; border-radius:0; padding:4px 0 8px; margin:0;}}
+    .st-key-header_preferences {{width:auto !important;}}
+    .st-key-header_preferences {{flex-wrap:nowrap !important; align-items:center;}}
+    .st-key-header_preferences > div {{flex:none; min-width:0;}}
+    .st-key-header_preferences [data-testid="stPopover"] button {{width:40px; min-width:40px; padding:8px;}}
+    .st-key-header_preferences [data-testid="stPopover"] button p {{position:absolute; width:1px;
+        height:1px; overflow:hidden; clip-path:inset(50%);}}
+    .st-key-window_page [data-testid="stMarkdownContainer"] h3 {{font-size:1.2rem; font-weight:500;}}
+    .st-key-window_page [data-testid="stMarkdownContainer"] p,
+    .st-key-window_page [data-testid="stMarkdownContainer"] li {{
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.65;}}
+    .st-key-app_header .app-brand span {{font-weight:400;}}
+    [data-testid="stSidebarNav"] p, [data-testid="stSidebar"] [data-testid="stPageLink"] p {{
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-weight:400; letter-spacing:-.015em;}}
+    @media(max-width:800px) {{
+        .graph-navigation {{align-items:flex-start; flex-direction:column; gap:0;}}
+        .graph-destinations {{width:100%; justify-content:flex-start; gap:2px 18px;}}
+    }}
+    </style>""", unsafe_allow_html=True)
+    if window == REPORT_WINDOW and st.session_state.get(window_view_key(window)) == PAGE_HOME:
+        with st.container(key="home_header", horizontal=True, vertical_alignment="center"):
+            st.markdown(build_graph_navigation_html(window), unsafe_allow_html=True)
+            with st.container(key="header_preferences", width=40):
+                show_theme_field()
+    else:
+        st.markdown(build_graph_navigation_html(window), unsafe_allow_html=True)
+        with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
+            st.markdown(f'<div class="app-brand"><span>Estás en</span><small>'
+                        f'{html.escape(window)}</small></div>', unsafe_allow_html=True)
+            with st.container(key="header_preferences", horizontal=True):
+                if st.button("Volver", icon=":material/arrow_back:", key="return_to_previous",
+                             help="Volver al punto anterior del proyecto, con su selección."):
+                    st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
+                show_theme_field()
     theme = get_mode()
     match_base_mode(theme)
     return theme
 
 
 def show_theme_field():
-    """The theme of the whole visit, at the foot of the side menu."""
+    """A compact appearance icon; four named choices remain accessible."""
     st.session_state["theme_field"] = get_mode()
-    st.sidebar.selectbox("Tema", charts.THEMES, key="theme_field",
-                         on_change=keep_theme_from_field,
-                         help="Cambia la paleta de toda la aplicación.")
+    icon = ":material/dark_mode:" if charts.get_palette(get_mode())["base"] == "dark" else ":material/light_mode:"
+    with st.popover("Apariencia", icon=icon, help="Cambiar los colores: Corporativo, Vantablack, Blue Light o Dark Grey."):
+        st.radio("Apariencia del panel", charts.THEMES, key="theme_field", on_change=keep_theme_from_field)
+
 
 
 def open_card(key, title=None, caption=None, hint=None, kpi=None):
@@ -1355,10 +1727,9 @@ def build_hint_icon(hint):
 
 def build_page_address(page_title, tab=None, kpi=None):
     """Relative address of a page, one of its tabs or a KPI card."""
-    parameters = {}
-    profile = st.session_state.get(PROFILE_PARAMETER)
-    if profile in VISITOR_PROFILES:
-        parameters["perfil"] = profile
+    legacy_gap = page_title == PAGE_GAP
+    page_title = {PAGE_ANALYSIS: PAGE_HOME, PAGE_GAP: PAGE_DATA, PAGE_CHANNELS: PAGE_DATA}.get(page_title, page_title)
+    parameters = {"datos_modo":"brecha"} if legacy_gap else {}
     theme = st.session_state.get(THEME_STATE)
     if theme in charts.THEMES:
         parameters[THEME_PARAMETER] = theme
@@ -1752,7 +2123,8 @@ def component_kind(*texts):
         ("code", r"c[oó]digo|python|sql|quer[yi]|consulta"),
         ("database", r"tabla|base|datos\.db|raw\.db|modelo|dimensi[oó]n|fuente|registro|etl_run"),
         ("person", r"stakeholder|geren|analista|equipo|usuario|qui[eé]n"),
-        ("chart", r"precio|variaci|brecha|calendario|[ií]ndice|k[1-8]|indicador|tendencia"),
+        ("region", r"regional_map|d[oó]nde es m[aá]s caro"),
+        ("chart", r"precio|variaci|brecha|calendario|[ií]ndice|k[1-8]|indicador|tendencia|evolucion|usable_data"),
     ]:
         if re.search(pattern, text):
             return kind
@@ -1810,6 +2182,10 @@ def build_place_link(place, verb="Ver en"):
 # region Page header
 def show_page_header(title, subtitle):
     """Page title, a one-line explanation and the freshness of the data."""
+    if title in (PAGE_DOCUMENTATION, PAGE_MANUAL, PAGE_DECISIONS, PAGE_GLOSSARY, PAGE_LINKS):
+        st.title(title)
+        st.markdown(f'<p class="page-subtitle">{html.escape(subtitle)}</p>', unsafe_allow_html=True)
+        return
     latest_run = read_latest_run()
     run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
     run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
@@ -1818,7 +2194,7 @@ def show_page_header(title, subtitle):
         # A report page: title and freshness on one line; the sentence on hover.
         st.markdown(f'<div class="compact-header"><h1 title="{html.escape(subtitle)}">'
                     f'{html.escape(title)}</h1><span class="page-freshness">Datos al '
-                    f'{freshness} {build_chip(run_text, run_kind)}</span></div>',
+                    f'{freshness} {build_chip(run_text, run_kind)}</span></div></div>',
                     unsafe_allow_html=True)
         return
     st.title(title)
@@ -1938,29 +2314,33 @@ def show_overview_trend(rows, mode, key="trend", title="Precio por semana"):
             "$ " + price_rows["value"].map(charts.format_thousands), mode, is_money=True))
 
 
-def choose_analysis_filters():
+def choose_analysis_filters(include_region=True, include_channels=True):
     """Group, product, variety, region and channels, once for every tab of Análisis."""
-    columns = st.columns([1, 1, 1.4, 1.3, 1.8])
+    columns = st.columns([1, 1, 1.4] + ([1.3] if include_region else []) + ([1.8] if include_channels else []))
     key = choose_product_key("k3_regional_index", columns[:3])
     rows = read_indicator_for_key("k3_regional_index", key)
     report_region = read_filter("region") if st.session_state.get(COMPACT_VIEW) else ALL_VALUES
-    with columns[3]:
-        if report_region != ALL_VALUES and report_region in set(rows["region"]):
-            region = report_region
-            st.markdown(f'<div class="fixed-filter"><span class="kpi-label">Región</span>'
-                        f'<strong>{html.escape(charts.shorten_region_name(region))}</strong>'
-                        f'<small>desde la barra del informe</small></div>',
-                        unsafe_allow_html=True)
-        else:
-            region = remember_filter("region", choose_value(
-                "Región", rows["region"].unique(), recall_filter("region", DEFAULT_REGION)))
+    region = recall_filter("region", DEFAULT_REGION)
+    if include_region:
+        with columns[3]:
+            if report_region != ALL_VALUES and report_region in set(rows["region"]):
+                region = report_region
+                st.markdown(f'<div class="fixed-filter"><span class="kpi-label">Región</span>'
+                            f'<strong>{html.escape(charts.shorten_region_name(region))}</strong>'
+                            f'<small>desde la barra del informe</small></div>',
+                            unsafe_allow_html=True)
+            else:
+                region = remember_filter("region", choose_value(
+                    "Región", rows["region"].unique(), recall_filter("region", DEFAULT_REGION)))
     consumer_channels = sorted(channel for channel in rows["channel"].unique()
                                if channel != WHOLESALE_LABEL)
     remembered = [channel for channel in recall_filter("channels", DEFAULT_MARGIN_CHANNELS)
                   if channel in consumer_channels]
-    with columns[4]:
-        channels = remember_filter("channels", st.multiselect(
-            "Canal", consumer_channels, default=remembered))
+    channels = consumer_channels
+    if include_channels:
+        with columns[-1]:
+            channels = remember_filter("channels", st.multiselect(
+                "Canal", consumer_channels, default=remembered))
     if not st.session_state.get(COMPACT_VIEW):
         st.caption("La selección se recuerda al recorrer las secciones de análisis.")
     return {"key": key, "region": region, "channels": channels}
@@ -2072,7 +2452,7 @@ def subtract(latest, previous):
     return None if latest is None or previous is None else latest - previous
 
 
-def build_kpi_strip_html(summary, coverage, latest_run):
+def build_kpi_strip_html(summary, coverage, latest_run, include_note=True):
     """The figures of the week on one line, without cards (D-072): each one with its change
     in words and arrow, and each one opens the view that explains it."""
     latest, previous = summary["latest"], summary["previous"]
@@ -2088,22 +2468,29 @@ def build_kpi_strip_html(summary, coverage, latest_run):
          f"{charts.format_thousands(matched)} de {charts.format_thousands(total)} con precio "
          "mayorista y al consumidor",
          build_page_address(PAGE_OPERATIONS))]
+    symbols = ["notifications_active", "compare_arrows"]
+    explanations = ["Cambios de precio que requieren revisión; no son errores confirmados.",
+                    "Productos presentes tanto en mayorista como en venta al consumidor."]
+    actions = ["Revisar alertas →", "Ver cobertura →"]
     cells = "".join(
         f'<a class="kpi-strip-item" href="{html.escape(address)}" target="_self">'
+        f'<span class="kpi-strip-label"><span class="material-symbols-rounded metric-symbol" aria-hidden="true">{symbol}</span>{html.escape(label)}</span>'
         f'<span class="kpi-strip-value kpi-strip-{kind}">{html.escape(value)}</span>'
-        f'<span class="kpi-strip-label">{html.escape(label)}</span>'
-        f'<span class="kpi-strip-note">{html.escape(note)}</span></a>'
-        for kind, value, label, note, address in values)
+        f'<span class="kpi-strip-note">{html.escape(note)}</span>'
+        f'<span class="metric-explanation">{html.escape(explanation)}</span>'
+        f'<span class="metric-action">{action}</span></a>'
+        for (kind, value, label, note, address), symbol, explanation, action in zip(values, symbols, explanations, actions))
     is_loaded = latest_run["status"] == etl.STATUS_LOADED
     load = (f'<a class="kpi-strip-item" href="{html.escape(build_page_address(PAGE_OPERATIONS))}"'
-            f' target="_self"><span class="kpi-strip-value kpi-strip-{"good" if is_loaded else "rise"}">'
+            f' target="_self"><span class="kpi-strip-label"><span class="material-symbols-rounded metric-symbol" aria-hidden="true">task_alt</span>Última carga</span>'
+            f'<span class="kpi-strip-value kpi-strip-{"good" if is_loaded else "rise"}">'
             f'{"✓" if is_loaded else "!"} {"Carga correcta" if is_loaded else "Carga con falla"}'
-            f'</span><span class="kpi-strip-label">Ver calidad →</span>'
-            f'<span class="kpi-strip-note">{html.escape(format_chile_time(parse_run_start(latest_run["started_at"])))}'
-            '</span></a>')
+            f'</span><span class="kpi-strip-note">{html.escape(format_chile_time(parse_run_start(latest_run["started_at"])))}'
+            '</span><span class="metric-explanation">Estado registrado por el proceso de carga. Consulta los controles y sus límites.</span>'
+            '<span class="metric-action">Ver calidad →</span></a>')
     note = ('<span class="kpi-strip-item kpi-strip-meaning">ⓘ Una alerta invita a revisar; '
             'no explica la causa.</span>')
-    return f'<div class="kpi-strip">{cells}{load}{note}</div>'
+    return f'<div class="kpi-strip">{cells}{load}{note if include_note else ""}</div>'
 
 
 def build_context_line(summary, variations):
@@ -2156,7 +2543,7 @@ def show_week_ranking(filters, mode):
 
 def show_week_history(rows, filters, mode):
     """The long history, folded: wholesale and one channel per chart (two lines)."""
-    with st.expander("Ver evolución histórica", expanded=True):
+    with st.expander("Ver evolución histórica", expanded=False):
         for channel in filters["channels"]:
             channel_rows = rows[rows["channel"] == channel]
             if not channel_rows.empty:
@@ -2290,7 +2677,7 @@ def show_sources(mode):
                 f'{charts.format_percent(keys_with_margin / consumer_keys * 100)} de las claves '
                 f'de frutas y verduras del consumidor</span>{build_kpi_link("K7")}</div>',
                 unsafe_allow_html=True)
-    with st.expander("Ver detalles", expanded=True):
+    with st.expander("Ver detalles", expanded=False):
         st.markdown(MATCH_DETAILS)
 
 
@@ -2305,7 +2692,7 @@ def show_limits(mode):
 def show_why(mode):
     """Why this subject, with the discarded alternatives folded."""
     show_section_intro("Justificación del proyecto", WHY_TEXT, True)
-    with st.expander("Ver detalles", expanded=True):
+    with st.expander("Ver detalles", expanded=False):
         st.markdown(WHY_DETAILS)
 
 
@@ -2367,20 +2754,20 @@ def build_cover_figures_html():
 
 
 def list_cover_evidence():
-    """(title, what it proves, real figure, view, link label) of «Qué puedes comprobar»."""
+    """(title, what it proves, real figure, view, link label) of «Trazabilidad y operación»."""
     totals = read_indicator("quality_flag_counts").groupby("flag")["weekly_prices"].sum()
     used = totals.get("SIN_MARCA", 0) / totals.sum() * 100
     latest_run = read_latest_run()
     run_text = ("correcta" if latest_run["status"] == etl.STATUS_LOADED else "con falla")
     loaded_at = format_chile_time(parse_run_start(latest_run["started_at"])).split(" ")[0]
     return [
-        ("Datos trazables", "Fuente oficial, reglas de calidad y filas excluidas con su motivo.",
+        ("Trazabilidad de los datos", "Cada precio conserva su origen; los registros excluidos mantienen el motivo de validación.",
          f"{charts.format_percent(used)} de los precios semanales pasa los controles.",
          PAGE_RULES, "Ver reglas de calidad →"),
-        ("Cálculos reproducibles", "Cada indicador lleva a su fórmula y a su consulta SQL.",
+        ("Análisis reproducible", "Las definiciones de los indicadores, sus fórmulas y las consultas SQL están disponibles para revisión.",
          f"{len(queries.load_queries())} consultas con nombre en `bi/queries.sql`.",
          PAGE_KPI, "Ver indicadores explicados →"),
-        ("Actualización semanal", "Un workflow de GitHub carga los datos cada martes.",
+        ("Operación semanal", "GitHub Actions ejecuta la descarga, validación y carga de datos cada martes, con registro del resultado.",
          f"Última carga: {loaded_at} · {run_text}.", PAGE_RUNS, "Ver ejecuciones →"),
     ]
 
@@ -2389,10 +2776,10 @@ def show_cover_page(mode, pages=None):
     """The portfolio cover (C01): name, what it does, the way in, what can be checked and
     the limits, in one screen. Everything else stays in its own view."""
     with st.container(key="cover_top", horizontal=True, vertical_alignment="center"):
-        st.markdown('<div class="cover-eyebrow">Portafolio · Datos abiertos de ODEPA</div>',
+        st.markdown('<div class="cover-eyebrow">Analítica de precios · Datos abiertos de ODEPA</div>',
                     unsafe_allow_html=True)
         st.markdown(f'<a class="cover-github" href="{html.escape(project.GITHUB_URL, quote=True)}" '
-                    'target="_blank" rel="noopener noreferrer">Ver repositorio en GitHub ↗</a>',
+                    'target="_self" rel="noopener noreferrer">Repositorio en GitHub ↗</a>',
                     unsafe_allow_html=True)
     text_column, figures_column = st.columns([1.5, 1], gap="large", vertical_alignment="center")
     with text_column, st.container(key="cover_hero"):
@@ -2405,7 +2792,7 @@ def show_cover_page(mode, pages=None):
             show_cover_link(pages, PAGE_HOME, "Explorar el dashboard →", "cover_primary",
                             help=f"Muestra {ROUTE_LEADS[REPORT_WINDOW]}.")
             show_cover_link(pages, PAGE_QUERIES, "Ver código y resultados", "cover_secondary",
-                            help=f"Muestra {ROUTE_LEADS[SECTION_CODE]}.")
+                            help=f"Muestra {ROUTE_LEADS[SECTION_QUERIES]}.")
     with figures_column:
         st.markdown(build_cover_figures_html(), unsafe_allow_html=True)
     statements = "".join(
@@ -2413,7 +2800,7 @@ def show_cover_page(mode, pages=None):
         f'<h3>{html.escape(title)}</h3><p>{html.escape(text)}</p></div></div>'
         for symbol, title, text in COVER_STATEMENTS)
     st.markdown(f'<div class="cover-statements">{statements}</div>'
-                '<h2 class="cover-heading">Qué puedes comprobar</h2>', unsafe_allow_html=True)
+                '<h2 class="cover-heading">Trazabilidad y operación</h2>', unsafe_allow_html=True)
     with st.container(key="cover_evidence", horizontal=True):
         for number, (title, text, figure, view, label) in enumerate(list_cover_evidence(), 1):
             with st.container(key=f"cover_evidence_{number}"):
@@ -2434,6 +2821,12 @@ def show_cover_page(mode, pages=None):
                             f'<h3>{html.escape(title)}</h3><p>{html.escape(text)}</p></div></div>',
                             unsafe_allow_html=True)
                 show_cover_link(pages, *link, f"{key}_link")
+    st.markdown("### Reutilización y nuevas fuentes")
+    st.markdown("La separación entre ingesta, transformación, modelo de datos, consultas y presentación permite reutilizar la estructura del proyecto. "
+                "Una nueva fuente requiere adaptar su descarga, esquema y reglas de validación; las pruebas deben verificar las nuevas claves y unidades.")
+    st.markdown("En un proyecto de rendimiento deportivo se pueden conservar la navegación, los temas, la automatización y la organización del código. "
+                "El modelo, los indicadores, las fuentes y las reglas de calidad deben diseñarse para deportistas, sesiones y resultados. "
+                "La implementación actual está especializada en precios ODEPA; todavía no es una plantilla intercambiable solo cambiando una URL.")
 
 
 def format_iso_date(text):
@@ -2487,11 +2880,10 @@ def show_star_schema_tab(mode):
             columns, row_counts, list_star_panels(row_counts, definitions), note, mode),
             unsafe_allow_html=True)
     with open_card("model_tables", "Tablas de datos.db"):
-        st.markdown(build_html_table(
+        show_foldable_table(build_html_table(
             ["Tabla", "Filas", "Qué guarda"],
             [[f"<code>{table}</code>", charts.format_thousands(row_counts[table]),
-              html.escape(definitions[table])] for table in project.TABLE_NAMES]),
-            unsafe_allow_html=True)
+              html.escape(definitions[table])] for table in project.TABLE_NAMES]), 'Ver tablas del modelo de datos')
         st.markdown(build_link_html("Ver etl/schema.sql en Código Python y SQL →",
                                     build_page_address(PAGE_CODE)), unsafe_allow_html=True)
 
@@ -2531,52 +2923,660 @@ def read_kpi_query(query_name):
     return queries.load_queries()[query_name].strip(), "bi/queries.sql"
 
 
+KPI_LIMITS = {
+    "K1": "Compara precios; no mide ganancia ni descuenta costos. Requiere pares comparables.",
+    "K2": "Solo compara canales que tienen precios del mismo producto en semanas y regiones coincidentes.",
+    "K3": "La referencia usa las regiones con datos. Una región sin precio no equivale a un precio cero.",
+    "K4": "Describe patrones del histórico disponible; no es una predicción de precios.",
+    "K5": "El rezago es descriptivo, no prueba causalidad. Necesita historia suficiente (26 semanas).",
+    "K6": "Una alerta invita a revisar un cambio poco habitual; no demuestra un error ni explica su causa.",
+    "K7": "Mide cobertura del cruce entre fuentes, no garantiza la exactitud de cada precio.",
+    "K8": "Cero rechazos no implica que todos los precios sean utilizables: atípicos y unidades no convertibles se registran aparte.",
+}
+
+
+KPI_PRESENTATION = {
+    "K1": ("Brecha de precio", "gap", "Diferencia entre el precio al consumidor y el mayorista."),
+    "K2": ("Comparación de canales", "channels", "Diferencia de precio entre dos canales de venta."),
+    "K3": ("Precio por región", "region", "Precio regional frente al promedio de las regiones con datos."),
+    "K4": ("Estacionalidad", "calendar", "Semanas más caras o más baratas dentro de un año."),
+    "K5": ("Rezago de precios", "lag", "Desfase entre los cambios mayoristas y los del consumidor."),
+    "K6": ("Alertas de precio", "alert", "Cambios semanales que se salen del comportamiento habitual."),
+    "K7": ("Cobertura del cruce", "scope", "Productos con precios comparables en ambas fuentes."),
+    "K8": ("Filas rechazadas", "security", "Registros que no superan la validación de la carga."),
+}
+
+
+KPI_SMART_SCOPE = {
+    "K1": ("Porcentaje de diferencia sobre el precio mayorista.", "Comparar precios de compra y venta sin confundir la brecha con ganancia.", "Misma semana, región, producto y unidad."),
+    "K2": ("Porcentaje de diferencia entre dos canales.", "Identificar qué canal ofrece un precio más alto o más bajo.", "Misma semana y región para ambos canales."),
+    "K3": ("Índice base 1: 1 representa el promedio de las regiones con datos.", "Identificar diferencias territoriales de precio.", "Semana seleccionada, dentro del mismo canal."),
+    "K4": ("Razón entre el precio semanal y el promedio anual del producto.", "Reconocer patrones estacionales antes de comparar precios.", "Semana frente al año correspondiente del histórico disponible."),
+    "K5": ("Semanas de desfase entre 0 y 8; correlación descriptiva de las variaciones.", "Explorar el desfase entre precios mayoristas y del consumidor, sin afirmar causalidad.", "Historia mínima de 26 semanas; desfases de 0 a 8 semanas."),
+    "K6": ("Cambios fuera del rango de ±2 desviaciones estándar de las 12 semanas anteriores.", "Priorizar cambios de precio que merecen revisión.", "Revisión semanal con una referencia móvil de 12 semanas."),
+    "K7": ("Porcentaje de claves del consumidor que tienen comparación mayorista.", "Conocer el alcance de las comparaciones entre las dos fuentes.", "Cobertura del histórico disponible, recalculada con cada carga."),
+    "K8": ("Porcentaje de filas rechazadas sobre las filas leídas, por motivo.", "Localizar problemas de validación de la carga.", "Cada ejecución de carga; el ejemplo identifica la ejecución utilizada."),
+}
+
+
+def build_kpi_table_html(rows):
+    """A readable two-column fact sheet, wrapping within the available width."""
+    body = "".join(f'<tr><th scope="row">{html.escape(str(label))}</th>'
+                   f'<td>{html.escape(str(value))}</td></tr>' for label, value in rows)
+    return ('<table class="kpi-fact-table"><thead><tr><th scope="col">Aspecto</th>'
+            '<th scope="col">Explicación</th></tr></thead><tbody>' + body + '</tbody></table>')
+
+
+def build_kpi_smart_html(identifier):
+    """Separate measurable indicators from business goals not yet agreed with an owner."""
+    measure, relevance, period = KPI_SMART_SCOPE[identifier]
+    criteria = [
+        ("S · Específico", KPI_PRESENTATION[identifier][2]),
+        ("M · Medible", measure),
+        ("A · Alcanzable", "No hay meta acordada. Primero se debe revisar el resultado de partida y los recursos disponibles para saber qué objetivo es viable."),
+        ("R · Relevante", relevance),
+        ("T · Temporal", period + " El plazo de una meta se define cuando exista un objetivo acordado."),
+    ]
+    return ('<div class="kpi-smart"><h4>Criterios SMART</h4>'
+            '<p>SMART ayuda a definir objetivos concretos, medibles, viables, útiles y con plazo. Aquí se distingue lo que ya se mide de las metas que todavía no se han acordado.</p>'
+            + build_kpi_table_html(criteria) + '</div>')
+
+
+
 def build_kpi_card_html(indicator, guide_row):
-    """One indicator in a card: what it says in words, its formula and where to see it."""
-    return build_info_card_html(indicator["Indicador"], guide_row["En palabras"],
-                                note=f"Fórmula: {indicator['Fórmula']}",
-                                link=build_place_link(guide_row["Página"]))
+    """A short, scannable summary; formulas and evidence belong to its disclosure."""
+    title, symbol, summary = KPI_PRESENTATION[indicator["ID"]]
+    return (f'<div class="kpi-tile-summary">{build_component_symbol(symbol)}'
+            f'<h3>{html.escape(title)}</h3><p>{html.escape(summary)}</p></div>')
 
 
-def show_kpi_details(indicator, guide_row, question, example_steps, is_requested):
-    """A real example and a link to the canonical SQL, without copying the query."""
-    with st.expander(f"Cómo se calcula «{indicator['Indicador']}»",
-                     expanded=True):
-        if is_requested:
-            st.markdown(build_chip("Llegaste desde un gráfico del panel", "running"),
-                        unsafe_allow_html=True)
-        st.markdown(f"**Pregunta que responde:** {question}")
-        if example_steps:
-            st.markdown("**Ejemplo real, calculado con la base actual:**  \n"
-                        + build_steps_html(example_steps), unsafe_allow_html=True)
-        query_name = guide_row["Consulta"]
-        st.markdown(build_link_html(f"Ver la consulta {query_name} explicada →",
-                                    build_query_address(query_name)), unsafe_allow_html=True)
+KPI_ICONS = {"K1": ":material/compare_arrows:", "K2": ":material/hub:",
+             "K3": ":material/location_on:", "K4": ":material/calendar_month:",
+             "K5": ":material/schedule:", "K6": ":material/notification_important:",
+             "K7": ":material/join_inner:", "K8": ":material/verified_user:"}
 
 
-def show_kpi_tab(mode):
-    """K1 to K8: the eight cards first, then details open by default.
+def build_kpi_relief_css(mode):
+    """Local vector relief, transparent background; no images or external assets."""
+    palette = charts.get_palette(mode)
+    rules = []
+    for identifier, (_, symbol, _) in KPI_PRESENTATION.items():
+        shape = COMPONENT_SYMBOLS[symbol]
+        for active in (False, True):
+            ink = palette["accent"] if active else palette["strong_text"]
+            svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="72" height="80" viewBox="0 0 72 80">'
+                   f'<ellipse cx="36" cy="70" rx="15" ry="1.5" fill="{ink}" opacity=".035"/>'
+                   f'<g fill="none" stroke-linecap="round" stroke-linejoin="round">'
+                   f'<g transform="translate(14.7 10) scale(1.3)" stroke="{ink}" opacity=".12" stroke-width="2.2">{shape}</g>'
+                   f'<g transform="translate(14 9) scale(1.3)" stroke="{ink}" stroke-width="2">{shape}</g>'
+                   '</g></svg>')
+            encoded = base64.b64encode(svg.encode()).decode()
+            qualifier = '[kind="primary"]' if active else ''
+            rules.append(f'.st-key-choose_{identifier} button{qualifier} [data-testid="stIconMaterial"] '
+                         + '{background-image:url("data:image/svg+xml;base64,' + encoded + '");}')
+    return "\n".join(rules)
 
-    The indicator asked for from a chart goes first, with its details open.
-    """
-    show_section_intro("Cifras y cálculos", "Las ocho medidas del panel explicadas con palabras "
-                       "simples: qué responde cada una, cómo se calcula y dónde aparece. Los "
-                       "detalles incluyen un ejemplo real y, al final, la consulta técnica.")
+
+def select_kpi(identifier):
+    st.session_state["selected_kpi"] = identifier
+    st.query_params[KPI_PARAMETER] = identifier
+
+
+@st.cache_data
+def read_kpi_observation(database_version, identifier):
+    """One explicitly scoped observation, never a fabricated global average or target."""
+    if identifier in ("K1", "K2", "K3", "K4", "K5"):
+        query = {"K1": "k1_margin", "K2": "k2_channel_gap", "K3": "k3_regional_index",
+                 "K4": "k4_seasonal_index", "K5": "k1_margin"}[identifier]
+        rows = project.select_example_rows(read_indicator_for_key(query, project.EXAMPLE_KEY),
+                   region=None if identifier == "K4" else project.EXAMPLE_REGION,
+                   channel=project.EXAMPLE_OTHER_CHANNEL if identifier == "K2" else project.EXAMPLE_CHANNEL)
+        if identifier == "K2":
+            rows = rows[rows["reference_channel"] == project.EXAMPLE_CHANNEL]
+        if rows.empty:
+            return [("Resultado observado", "Sin datos comparables para la serie de referencia.")]
+        row = rows.loc[rows["week_start"].idxmax()]
+        scope = " · ".join(str(project.EXAMPLE_KEY[c]) for c in queries.KEY_COLUMNS)
+        scope += " · " + str(row["channel"])
+        if "region" in row:
+            scope += " · " + str(row["region"])
+        result = [("Serie de referencia", scope), ("Periodo del resultado", "Semana del " + project.format_week(row["week_start"]))]
+        if identifier == "K5":
+            best = lag.find_lag(lag.correlate_by_lag(rows)) if lag.has_enough_weeks(rows) else None
+            result[1] = ("Periodo del resultado", f"{project.format_week(rows['week_start'].min())} a {project.format_week(rows['week_start'].max())}")
+            value = "Sin historia suficiente" if best is None else (charts.describe_weeks(best[0]) if lag.is_clear_relation(best[1], best[2]) else "Sin relación clara")
+            return result + [("Resultado observado", value), ("Comparación", "Cambios mayoristas frente a cambios del consumidor; desfases de 0 a 8 semanas.")]
+        field = {"K1": "margin", "K2": "gap", "K3": "regional_index", "K4": "seasonal_index"}[identifier]
+        value = charts.format_signed_percent(float(row[field]) * 100) if identifier in ("K1", "K2") else charts.format_index(row[field])
+        reference = {"K1": "Precio mayorista de la misma semana, región y unidad.",
+                     "K2": "Precio en " + str(row.get("reference_channel", "")) + ", misma semana, región y unidad.",
+                     "K3": "1 = promedio simple de las regiones con precio en ese canal y semana.",
+                     "K4": "1 = promedio de las semanas disponibles del mismo año; el año en curso es provisional."}[identifier]
+        prior = rows[rows["week_start"] == row["week_start"] - pd.Timedelta(days=7)]
+        previous = "No hay dato comparable en la semana anterior." if prior.empty else (
+            charts.format_signed_percent(float(prior.iloc[0][field]) * 100) if identifier in ("K1", "K2") else charts.format_index(prior.iloc[0][field]))
+        return result + [("Resultado observado", value), ("Referencia de cálculo", reference), ("Semana anterior · mismo indicador", previous)]
+    if identifier == "K6":
+        rows = read_price_alerts()
+        week = pd.Timestamp(read_latest_week())
+        counts = [len(rows[rows["week_start"] == date]) for date in (week, week - pd.Timedelta(days=7))]
+        return [("Resultado observado", f"{counts[0]} alertas"), ("Periodo del resultado", "Semana del " + project.format_week(week)),
+                ("Comparación", f"{counts[1]} alertas en la semana anterior; diferencia: {counts[0] - counts[1]:+d}."),
+                ("Alcance", "Todos los productos y canales; cambios fuera del rango habitual de las 12 semanas anteriores.")]
+    if identifier == "K7":
+        matched, total = read_match_coverage()
+        _, first, last = project.read_week_span()
+        return [("Resultado observado", charts.format_percent(matched / total * 100) if total else "Sin datos"),
+                ("Comparación", f"{matched:,} claves con cruce de {total:,} claves del consumidor."),
+                ("Periodo del resultado", f"Histórico: {first} a {last}"),
+                ("Alcance", "Cobertura del cruce definida en el ETL; no representa ventas ni población.")]
+    run = read_latest_run()
+    share = run["rows_rejected"] / run["rows_read"] * 100 if run["rows_read"] else None
+    return [("Resultado observado", charts.format_percent(share) if share is not None else "Sin filas leídas"),
+            ("Periodo del resultado", str(run["started_at"])),
+            ("Comparación", f"{run['rows_rejected']:,} filas rechazadas de {run['rows_read']:,} filas leídas en esta carga."),
+            ("Alcance", "Última carga registrada; comparación de proporción, no contra una meta.")]
+
+
+def show_kpi_details(indicator, guide_row, question, example_steps, is_requested=False):
+    """One full-width reading area, updated by the icon selector above it."""
+    identifier = indicator["ID"]
+    with st.container(key="kpi_reading"):
+        st.subheader(KPI_PRESENTATION[identifier][0])
+        st.caption("K1–K5 muestran una serie de referencia identificada en la ficha, no un promedio de todos los productos. K6–K8 muestran el alcance indicado en su resultado.")
+        summary_tab, smart_tab, example_tab = st.tabs(["Qué mide", "Objetivo y criterios SMART", "Ejemplo y consulta"])
+        with summary_tab:
+            measure, relevance, period = KPI_SMART_SCOPE[identifier]
+            if identifier in ("K1", "K2", "K7", "K8"):
+                measure += " La razón de la fórmula se multiplica por 100 para expresarla en %."
+            rows = [("Indicador", KPI_PRESENTATION[identifier][0]),
+                    ("Pregunta que responde", question),
+                    *read_kpi_observation(get_database_version(), identifier),
+                    ("Qué significa", guide_row["En palabras"]),
+                    ("Para qué sirve", relevance),
+                    ("Cómo se mide", measure),
+                    ("Fórmula", indicator["Fórmula"]),
+                    ("Periodo de análisis", period),
+                    ("Meta", "Sin meta de negocio acordada. Este indicador describe o controla los datos; no se asigna un objetivo artificial."),
+                    ("Límites", KPI_LIMITS[identifier])]
+            st.markdown(build_kpi_table_html(rows), unsafe_allow_html=True)
+            st.markdown(build_place_link(guide_row["Página"]), unsafe_allow_html=True)
+        with smart_tab:
+            st.markdown(build_kpi_smart_html(identifier), unsafe_allow_html=True)
+        with example_tab:
+            if example_steps:
+                st.caption("Ejemplo real, calculado con la base actual.")
+                st.markdown(build_kpi_table_html([(f"Paso {number}", step)
+                            for number, step in enumerate(example_steps, 1)]), unsafe_allow_html=True)
+            query_name = guide_row["Consulta"]
+            st.markdown(build_link_html(f"Ver la consulta {query_name} explicada →",
+                                        build_query_address(query_name)), unsafe_allow_html=True)
+
+
+def show_kpi_legacy(mode):
+    """Eight transparent icon buttons and a single shared detail area."""
+    palette = charts.get_palette(mode)
+    st.markdown(f"""<style>
+    .st-key-kpi_catalog [data-testid="stHorizontalBlock"] {{display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:12px;}}
+    .st-key-kpi_catalog [data-testid="stColumn"] {{width:100% !important; min-width:0;}}
+    .st-key-kpi_catalog button {{
+        width:100%; min-height:124px; padding:6px 4px; background:transparent !important;
+        border:0 !important; border-radius:0; box-shadow:none !important;
+        color:{palette['text']}; display:flex; flex-direction:column; gap:12px;
+    }}
+    .st-key-kpi_catalog button [data-testid="stIconMaterial"] {{
+        font-size:0 !important; width:72px !important; height:80px !important; flex-shrink:0;
+        background-repeat:no-repeat; background-position:center; background-size:contain;
+        transition:transform .18s ease;
+    }}
+    .st-key-kpi_catalog button span:has(> [data-testid="stIconMaterial"]) {{
+        width:72px; height:80px; flex-shrink:0;}}
+    .st-key-kpi_catalog button [data-has-shortcut] {{display:flex; flex-direction:column;
+        align-items:center; gap:3px;}}
+    .st-key-kpi_catalog button p {{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+        font-size:.85rem; font-weight:400; letter-spacing:-.015em; white-space:normal !important;
+        overflow:visible !important; overflow-wrap:normal !important; word-break:normal !important; line-height:1.5; text-overflow:clip !important; color:{palette['text']} !important;}}
+    .st-key-kpi_catalog button[kind="primary"] p {{color:{palette['accent']} !important;}}
+    .st-key-kpi_catalog button:hover {{color:{palette['accent']}; transform:translateY(-2px);}}
+    .st-key-kpi_catalog button:hover [data-testid="stIconMaterial"] {{transform:translateY(-2px);}}
+    .st-key-kpi_catalog button:focus-visible {{outline:2px solid {palette['accent']}; outline-offset:2px;}}
+    .st-key-kpi_catalog button[kind="primary"] {{border-bottom:2px solid {palette['accent']} !important;
+        color:{palette['accent']};}}
+    .st-key-kpi_reading {{border-top:1px solid {palette['card_border']}; padding-top:16px;}}
+    .st-key-kpi_reading h3 {{font-size:1.25rem;}}
+    .kpi-fact-table {{width:100%; table-layout:fixed; border-collapse:collapse;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-size:.86rem;}}
+    .kpi-fact-table th, .kpi-fact-table td {{padding:10px 14px; text-align:left;
+        vertical-align:top; border-bottom:1px solid {palette['card_border']};
+        overflow-wrap:anywhere; white-space:normal; line-height:1.5;}}
+    .kpi-fact-table th:first-child {{width:22%; font-weight:500;}}
+    .kpi-fact-table thead th {{color:{palette['strong_text']}; background:{palette['card']};}}
+    .kpi-fact-table tbody th {{color:{palette['strong_text']};}}
+    .kpi-fact-table td {{color:{palette['text']};}}
+    @media(max-width:600px) {{
+        .kpi-fact-table th, .kpi-fact-table td {{padding:9px 7px; font-size:.8rem;}}
+        .kpi-fact-table th:first-child {{width:32%;}}
+    }}
+    @media(max-width:1100px) {{
+        .st-key-kpi_catalog [data-testid="stHorizontalBlock"] {{grid-template-columns:repeat(4,minmax(0,1fr));}}
+    }}
+    @media(max-width:600px) {{
+        .st-key-kpi_catalog [data-testid="stHorizontalBlock"] {{grid-template-columns:repeat(2,minmax(0,1fr));}}
+    }}
+    @media(prefers-reduced-motion:reduce) {{
+        .st-key-kpi_catalog button:hover,
+        .st-key-kpi_catalog button:hover [data-testid="stIconMaterial"] {{transform:none; transition:none;}}
+    }}
+    {build_kpi_relief_css(mode)}
+    </style>""", unsafe_allow_html=True)
     questions = {row["#"]: row["Pregunta"]
                  for row in project.read_design_table(project.QUESTIONS_HEADING)}
     guide_rows = {row["KPI"]: row for row in project.read_guide_table("KPI")}
     indicators = project.read_design_table(project.INDICATORS_HEADING)
-    requested_kpi = st.query_params.get(KPI_PARAMETER)
-    indicators.sort(key=lambda indicator: indicator["ID"] != requested_kpi)
-    show_info_cards([build_kpi_card_html(indicator, guide_rows[indicator["ID"]])
-                     for indicator in indicators])
-    show_section_intro("Cómo se calcula cada una", "Cada indicador muestra su ejemplo "
-                       "paso a paso y el enlace a la consulta que lo produce.", True)
+    by_id = {indicator["ID"]: indicator for indicator in indicators}
+    requested = st.query_params.get(KPI_PARAMETER)
+    selected = requested if requested in by_id else st.session_state.get("selected_kpi", "K1")
+    if selected not in by_id:
+        selected = "K1"
+    st.session_state["selected_kpi"] = selected
+    with st.container(key="kpi_catalog"):
+        for offset in range(0, len(indicators), 8):
+            columns = st.columns(8, gap="small")
+            for column, indicator in zip(columns, indicators[offset:offset + 8]):
+                identifier = indicator["ID"]
+                title, _, description = KPI_PRESENTATION[identifier]
+                with column:
+                    st.button(title, icon=KPI_ICONS[identifier], key=f"choose_{identifier}",
+                              type="primary" if identifier == selected else "secondary",
+                              help=description, use_container_width=True,
+                              on_click=select_kpi, args=(identifier,))
+    indicator = by_id[selected]
     examples = build_cached_kpi_examples(get_database_version())
-    for indicator in indicators:
-        question = questions.get(indicator["Pregunta"], "¿La carga de datos es confiable?")
-        show_kpi_details(indicator, guide_rows[indicator["ID"]], question,
-                         examples[indicator["ID"]], indicator["ID"] == requested_kpi)
+    question = questions.get(indicator["Pregunta"], "¿La carga de datos es confiable?")
+    show_kpi_details(indicator, guide_rows[selected], question, examples[selected])
+
+
+@st.cache_data
+def read_explorer_facets(version):
+    return data_browser.facets()
+
+
+def show_data_page(mode):
+    show_page_header("Explorar datos de precios", "Cada fila muestra el precio de un producto, variedad y calidad, en una región, canal, unidad y semana.")
+    options, first, last = read_explorer_facets(get_database_version())
+    apply_home_data_context(options, first, last)
+    st.caption("Cada fila es un precio semanal agregado. Los precios excluidos de indicadores se conservan en la vista Precios semanales.")
+    if st.query_params.get('_home_key'):
+        address=build_page_address(PAGE_HOME)
+        context={k:v for k,v in st.query_params.to_dict().items() if k.startswith('_home_')}
+        st.markdown(build_link_html('← Volver al producto en el dashboard',address+('&' if '?' in address else '?')+urlencode(context)),unsafe_allow_html=True)
+        if st.query_params.get('_home_region') == ALL_VALUES:
+            st.caption("Origen: promedio nacional del dashboard. Aquí puedes revisar los precios regionales que componen ese promedio, en las dos semanas seleccionadas.")
+    if st.button("Restablecer filtros", key="data_reset"):
+        for name in list(st.session_state):
+            if name.startswith("data_") and name != "data_reset":
+                del st.session_state[name]
+        st.query_params.pop("datos_modo", None)
+        for name in list(st.query_params):
+            if name.startswith('_home_'):
+                st.query_params.pop(name,None)
+        st.rerun()
+    requested = st.query_params.get("datos_modo")
+    if requested == "brecha" and requested != st.session_state.get("data_requested_mode"):
+        st.session_state["data_requested_mode"] = requested
+        st.session_state["data_mode"] = data_browser.MODES[2]
+    if requested != "brecha":
+        st.session_state["data_requested_mode"] = None
+    data_mode = st.radio("Vista de datos", data_browser.MODES, horizontal=True, key="data_mode")
+    scope_col, size_col, sort_col, direction_col = st.columns([2,1,2,1])
+    period = scope_col.selectbox("Periodo", ["Todo el histórico", "Última semana", "Rango de fechas"], key="data_period")
+    size = size_col.number_input("Filas por página", min_value=8, max_value=100, value=100, key="data_size")
+    sorts = ['week_start','product','region','channel'] + (['margin','wholesale_price','consumer_price'] if data_mode == data_browser.MODES[2] else ['price','observation_count'] + (['variation'] if data_mode == data_browser.MODES[1] else []))
+    sort = sort_col.selectbox("Ordenar resultados", sorts, format_func=lambda f: data_browser.LABELS.get(f,f), key="data_sort_"+str(data_browser.MODES.index(data_mode)))
+    descending = direction_col.selectbox("Orden", ["Descendente","Ascendente"], key="data_direction") == "Descendente"
+    start = end = None
+    if period == "Última semana":
+        start = end = last
+    elif period == "Rango de fechas":
+        dates = st.date_input("Desde / hasta", value=(pd.Timestamp(first).date(),pd.Timestamp(last).date()), min_value=pd.Timestamp(first).date(), max_value=pd.Timestamp(last).date(), key="data_dates")
+        if len(dates) != 2:
+            st.info("Selecciona ambas fechas para consultar."); return
+        start, end = dates
+    fields = list(data_browser.FIELDS)
+    if data_mode == data_browser.MODES[2]:
+        fields.remove('flag')
+    filters = {}
+    with st.expander("Filtrar productos, regiones, canales y calidad", expanded=True):
+        for offset in range(0,len(fields),4):
+            for column, field in zip(st.columns(4),fields[offset:offset+4]):
+                value = column.selectbox(data_browser.FIELDS[field], [None]+options[field], key="data_filter_"+field,
+                    format_func=lambda v: "Todos" if v is None else FLAG_NAMES.get(v,v), placeholder="Todos")
+                if value is not None:
+                    filters[field] = value
+    signature = repr((data_mode,filters,str(start),str(end),sort,descending,size))
+    if signature != st.session_state.get("data_signature"):
+        st.session_state["data_page"] = 0
+        st.session_state["data_signature"] = signature
+    rows,total,page = data_browser.read_page(data_mode,filters,start,end,sort,descending,
+                         st.session_state.get("data_page",0),int(size))
+    st.session_state["data_page"] = page
+    pages = max(1,(total+size-1)//size)
+    left,center,right = st.columns([1,3,1])
+    if left.button("← Anterior", disabled=page == 0, key="data_previous"):
+        st.session_state["data_page"] -= 1; st.rerun()
+    center.caption(f"{total:,} resultados · página {page+1} de {pages} · filas {page*size+1 if total else 0}–{min((page+1)*size,total)}".replace(",","."))
+    if right.button("Siguiente →", disabled=page+1 >= pages, key="data_next"):
+        st.session_state["data_page"] += 1; st.rerun()
+    display = rows.drop(columns=['record_id','percentage'],errors='ignore').copy()
+    if 'margin' in display:
+        display['Comparabilidad'] = display['margin'].map(lambda v: 'Revisar formato (>300 %)' if v > MAXIMUM_COMPARABLE_GAP else 'Dentro del rango de comparación')
+        display['margin'] *= 100
+    if 'flag' in display:
+        display['flag'] = display['flag'].map(lambda v: FLAG_NAMES.get(v,v))
+    if 'variation' in display:
+        display.insert(0,'Comparación semanal',display['variation'].map(
+            lambda value: 'Sin comparación' if pd.isna(value) else 'Con semana anterior'))
+    display = display.rename(columns=data_browser.LABELS)
+    formats = {data_browser.LABELS[field]:home_mockup.money
+               for field in ('price','previous_price','consumer_price','wholesale_price')
+               if data_browser.LABELS[field] in display}
+    formats.update({data_browser.LABELS[field]:lambda value:home_mockup.percent(value,True)
+                    for field in ('variation','margin') if data_browser.LABELS[field] in display})
+    formats['Semana'] = lambda value: pd.Timestamp(value).strftime('%d-%m-%Y')
+    # Styler controls display only: native sorting and CSV keep numeric precision.
+    st.dataframe(display.style.format(formats,na_rep="Sin comparación"), hide_index=True,
+                 use_container_width=True, height=min(500,max(150,36*(len(display)+1)+4)))
+    st.download_button("Descargar esta página (CSV)", display.to_csv(index=False).encode('utf-8-sig'), 'precios-pagina.csv', 'text/csv', key="data_csv")
+    st.caption("La ordenación superior se aplica a todos los resultados antes de paginar. La ordenación al pulsar una columna solo reorganiza la página visible.")
+    st.caption("Precios en pesos chilenos, redondeados para leer. La descarga conserva la precisión original. Sin comparación significa que falta un precio anterior válido.")
+    if data_mode == data_browser.MODES[2]:
+        st.caption("Brecha = (consumidor − mayorista) / mayorista. Misma semana, producto, variedad, calidad, región y unidad. No mide ganancia; los valores altos requieren revisar formato y comparabilidad.")
+    elif data_mode == data_browser.MODES[1]:
+        st.caption("Variación = (precio actual / precio anterior − 1) × 100. Se compara la misma serie regional con exactamente siete días antes. Sin precio anterior válido, no se calcula.")
+
+
+def apply_home_data_context(options, first, last):
+    """Apply a validated dashboard drill-through once, before creating data widgets."""
+    marker=repr({k:v for k,v in st.query_params.to_dict().items() if k.startswith('_home_')})
+    token=st.query_params.get('_home_key')
+    if not token or len(token)>6000 or st.session_state.get('data_home_context')==marker:
+        return
+    try:
+        payload=json.loads(base64.urlsafe_b64decode(token.encode()).decode())
+        if set(payload)!=set(queries.KEY_COLUMNS+['channel']):
+            return
+        if any(not isinstance(value,str) or value not in options[field] for field,value in payload.items()):
+            return
+        week=pd.Timestamp(st.query_params.get('_home_week'))
+        if pd.isna(week) or not pd.Timestamp(first)<=week<=pd.Timestamp(last):
+            return
+    except (ValueError,TypeError,UnicodeError):
+        return
+    for field in data_browser.FIELDS:
+        st.session_state['data_filter_'+field]=payload.get(field)
+    region=st.query_params.get('_home_region')
+    st.session_state['data_filter_region']=region if region in options['region'] else None
+    st.session_state['data_filter_flag']='SIN_MARCA'
+    st.session_state['data_mode']=data_browser.MODES[1]
+    st.session_state['data_period']='Rango de fechas'
+    st.session_state['data_dates']=(max(week-pd.Timedelta(days=7),pd.Timestamp(first)).date(),week.date())
+    st.session_state['data_page']=0
+    st.session_state['data_home_context']=marker
+
+
+KPI_QUESTIONS = {"K1":"¿Cuánto más cuesta al consumidor que al mayorista?",
+    "K2":"¿Cuánto difiere el precio entre canales de venta?", "K3":"¿Cómo se compara el precio regional con el promedio del canal?",
+    "K4":"¿En qué periodos el precio supera su promedio anual?", "K5":"¿Con qué desfase se relacionan cambios mayoristas y del consumidor?",
+    "K6":"¿Qué productos cambiaron fuera de su rango habitual?", "K7":"¿Qué proporción de productos permite cruzar mayorista y consumidor?",
+    "K8":"¿Qué proporción de filas rechazó la última carga?"}
+# The path of a KPI, seen at once from left to right: its result, its context, its query.
+# Each node sits on the top edge of its card; the line joins them at three heights (D-090).
+KPI_FIGURE = re.compile(r"^([+\-−]?[\d.,]+(?:\s?%)?)\s*(.*)$")
+# Card columns in % of the path width, and the height of each node on the line, in px.
+KPI_COLUMNS = (30, 36, 28)
+KPI_GAP = 3
+KPI_NODE_HEIGHTS = (44, 128, 44)
+KPI_BAND_HEIGHT = 160
+KPI_ICONS_SVG = {
+    "trend": '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>',
+    "info": '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+    "bars": '<path d="M5 19V11M10 19V6M15 19v-5M20 19V9"/>',
+    "code": '<path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/>',
+}
+
+
+def split_kpi_figure(result):
+    """(figure, unit): «43 alertas» → («43», «alertas»); a sentence stays whole as unit."""
+    match = KPI_FIGURE.match(result.strip())
+    return (match.group(1), match.group(2).lstrip("· ")) if match else ("", result)
+
+
+def build_kpi_icon(name):
+    return (f'<svg class="kpi-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" '
+            f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{KPI_ICONS_SVG[name]}</svg>')
+
+
+def kpi_node_positions():
+    """Horizontal centre of each card, in % of the path width."""
+    left, centres = 0, []
+    for width in KPI_COLUMNS:
+        centres.append(left + width / 2)
+        left += width + KPI_GAP
+    return centres
+
+
+def build_kpi_path_html():
+    """The line from «Inicio» to «Detalle técnico» through the three nodes, drawn once."""
+    (x1, x2, x3), (y1, y2, y3) = [x * 10 for x in kpi_node_positions()], KPI_NODE_HEIGHTS
+    lead = f"M4 {y1} L{x1} {y1}"
+    first = f"M{x1} {y1} C{x1 + 150} {y1},{x2 - 160} {y2},{x2} {y2}"
+    second = f"M{x2} {y2} C{x2 + 170} {y2},{x3 - 150} {y3},{x3} {y3} L992 12"
+    paths = "".join(f'<path class="{kind}" d="{d}" vector-effect="non-scaling-stroke"/>'
+                    for kind, d in (("kpi-line", lead), ("kpi-line", first), ("kpi-line kpi-line-next", second)))
+    nodes = "".join(f'<span class="kpi-node" style="left:{x}%;top:{y}px">{number}</span>' for number, (x, y)
+                    in enumerate(zip(kpi_node_positions(), KPI_NODE_HEIGHTS), 1))
+    return (f'<div class="kpi-band" aria-hidden="true"><svg viewBox="0 0 1000 {KPI_BAND_HEIGHT}" '
+            f'preserveAspectRatio="none">{paths}</svg>{nodes}<span class="kpi-start"><i></i>Inicio</span>'
+            '<span class="kpi-end">Detalle técnico<i></i></span></div>')
+
+
+def build_kpi_card_head(number, title):
+    return f'<div class="kpi-card-title"><span class="sr-only">{number}. </span>{html.escape(title)}</div>'
+
+
+def build_kpi_impact_html(identifier, evidence, run_kind, freshness):
+    """Card 1: the figure alone, large, with its meaning, the state of the data and the week."""
+    result = evidence.get("Resultado observado", "Sin dato comparable")
+    figure, unit = split_kpi_figure(result)
+    if figure and not unit:
+        unit = KPI_PRESENTATION[identifier][2]
+    if identifier in ("K3", "K4") and figure:
+        unit = "1 = " + ("promedio regional del canal" if identifier == "K3" else "promedio anual")
+    comparison = evidence.get("Comparación", "")
+    if "Semana anterior · mismo indicador" in evidence:
+        comparison = "Semana anterior: " + evidence["Semana anterior · mismo indicador"]
+    period = freshness if identifier == "K8" else evidence.get("Periodo del resultado", "")
+    has_data = bool(figure) or result not in ("Sin datos", "Sin dato comparable")
+    state, text = ((run_kind, "Carga correcta" if run_kind == "ok" else "Última carga con falla")
+                   if has_data else ("neutral", "Sin dato comparable"))
+    number = (f'<div class="kpi-figure">{html.escape(figure)}</div>' if figure
+              else f'<div class="kpi-figure kpi-figure-text">{html.escape(result)}</div>')
+    return (build_kpi_card_head(1, "Resultado") + number
+            + (f'<div class="kpi-lead">{html.escape(unit)}</div>' if figure and unit else "")
+            + f'<div class="kpi-rule"></div><div class="kpi-line-text kpi-status"><span class="kpi-state kpi-state-{state}">'
+            f'<i></i>{html.escape(text)}</span><span>{html.escape(period)}</span></div>'
+            + (f'<div class="kpi-line-text">{build_kpi_icon("trend")}{html.escape(comparison)}</div>' if comparison else ""))
+
+
+def build_kpi_scope_html(evidence, period):
+    """Context · Alcance: the reference series as chips, then what it is and its period."""
+    series = evidence.get("Serie de referencia")
+    if series:
+        chips = "".join(f'<span>{html.escape(part)}</span>' for part in series.split(" · "))
+        note = "Una serie de referencia identificada, no un promedio de todos los productos."
+        body = f'<div class="kpi-chips">{chips}</div>'
+    else:
+        body, note = "", evidence.get("Alcance", "Sin alcance registrado.")
+    return (body + '<div class="kpi-rule"></div>'
+            f'<div class="kpi-line-text">{build_kpi_icon("info")}{html.escape(note)}</div>'
+            f'<div class="kpi-line-text">{build_kpi_icon("bars")}{html.escape(period)}</div>')
+
+
+@st.dialog("Consulta SQL", width="large")
+def show_kpi_query_dialog(name):
+    """The stored query, on demand, in a layer above the module: nothing moves under it."""
+    st.caption(f"{name} · solo lectura, tal como está en el repositorio.")
+    st.code(read_catalog_sql(name), language="sql", wrap_lines=True)
+    st.markdown(build_link_html("Ver su resultado completo en Preguntas y resultados SQL →",
+                                build_query_address(name)), unsafe_allow_html=True)
+
+
+def build_kpi_module_css(mode):
+    palette = charts.get_palette(mode)
+    dark = palette['base'] == charts.BASE_DARK
+    accent = palette['accent']
+    glow = f"drop-shadow(0 0 6px {accent}) drop-shadow(0 0 14px {accent}66)" if dark else "none"
+    sans = '-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif'
+    columns = " ".join(f"{width}%" for width in KPI_COLUMNS)
+    # Columns start one flex gap (16 px) below the band: each top border crosses its node.
+    offsets = [height - 16 for height in KPI_NODE_HEIGHTS]
+    return f"""<style>
+    .kpi-head .compact-header {{display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 18px; margin:0 0 12px;}}
+    .kpi-head h1 {{font-size:1.6rem !important; margin:0 !important; padding:0 !important;}}
+    .kpi-head .kpi-sub {{color:{palette['text']}; font-size:.9rem;}}
+    .kpi-head .page-freshness {{margin:0 0 0 auto; font-size:.82rem;}}
+    .st-key-kpi_module {{border:1px solid {palette['card_border']}; border-radius:18px; padding:16px 22px 26px;
+        background:{palette['card'] if not dark else f"radial-gradient(120% 90% at 50% 0%, {accent}14, transparent 60%), {palette['background']}"};}}
+    .st-key-kpi_question [data-testid="stHorizontalBlock"] {{align-items:center; gap:12px;}}
+    .kpi-question-label {{border:1px solid {palette['card_border']}; border-radius:10px; padding:9px 14px;
+        font:500 .9rem {sans}; color:{palette['strong_text']}; text-align:center; white-space:nowrap;}}
+    .st-key-kpi_path {{position:relative; margin-top:8px;}}
+    .kpi-band {{position:absolute; left:0; right:0; top:0; height:{KPI_BAND_HEIGHT}px; pointer-events:none;}}
+    .kpi-band svg {{position:absolute; inset:0; width:100%; height:100%; overflow:visible; filter:{glow};}}
+    .kpi-line {{fill:none; stroke:{accent}; stroke-width:3; stroke-linecap:round;}}
+    .kpi-line-next {{stroke-dasharray:7 9; stroke-width:2.4;}}
+    .kpi-start, .kpi-end {{position:absolute; top:{KPI_NODE_HEIGHTS[0] - 40}px; display:flex; align-items:center; gap:8px;
+        font:500 .78rem {sans}; color:{palette['strong_text']}; padding:4px 10px; border-radius:8px;
+        border:1px solid {palette['card_border']}; background:{palette['card']};}}
+    .kpi-start {{left:0;}} .kpi-end {{right:0; top:-8px;}}
+    .kpi-start i, .kpi-end i {{width:9px; height:9px; border-radius:50%; border:2px solid {accent};}}
+    .st-key-kpi_path > div > [data-testid="stHorizontalBlock"] {{display:grid !important;
+        grid-template-columns:{columns}; column-gap:{KPI_GAP}%; align-items:start;}}
+    .st-key-kpi_path [data-testid="stColumn"] {{width:auto !important; min-width:0;}}
+    .st-key-kpi_card_1 {{margin-top:{offsets[0]}px;}} .st-key-kpi_card_2 {{margin-top:{offsets[1]}px;}}
+    .st-key-kpi_card_3 {{margin-top:{offsets[2]}px;}}
+    .st-key-kpi_card_1, .st-key-kpi_card_2, .st-key-kpi_card_3 {{position:relative; overflow:visible;
+        border:1px solid {accent if dark else palette['card_border']}; border-color:{accent}55; border-radius:14px;
+        padding:40px 22px 20px; background:{palette['card']};
+        box-shadow:{f"0 0 0 1px {accent}12, 0 0 24px {accent}14" if dark else "0 10px 28px rgba(15,23,42,.07)"};}}
+    .sr-only {{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}}
+    .kpi-node {{position:absolute; transform:translate(-50%,-50%); width:52px; height:52px;
+        border-radius:50%; display:grid; place-items:center; z-index:2; font:600 1.35rem {sans};
+        color:{palette['strong_text']}; background:{palette['card'] if not dark else palette['background']};
+        border:3px solid {accent}; box-shadow:{f"0 0 14px {accent}, 0 0 30px {accent}55" if dark else f"0 0 0 5px {accent}22"};}}
+    .kpi-card-title {{font:700 .95rem {sans}; letter-spacing:.06em; text-transform:uppercase;
+        color:{palette['strong_text']}; margin-bottom:6px;}}
+    .kpi-figure {{font:700 clamp(2.8rem,4.6vw,4.4rem)/1.05 {sans}; letter-spacing:-.035em; white-space:nowrap;
+        color:{accent}; font-variant-numeric:tabular-nums; margin:4px 0 8px;
+        text-shadow:{f"0 0 22px {accent}55" if dark else "none"};}}
+    .kpi-figure-text {{white-space:normal; font-size:clamp(1.6rem,2.6vw,2.2rem);}}
+    .kpi-lead {{font:400 1rem/1.4 {sans}; color:{palette['strong_text']};}}
+    .kpi-rule {{height:1px; background:{palette['card_border']}; margin:14px 0 12px;}}
+    .kpi-line-text {{display:flex; align-items:flex-start; gap:10px; font:400 .86rem/1.45 {sans};
+        color:{palette['strong_text']}; margin:0 0 8px;}}
+    .kpi-status {{flex-wrap:wrap; gap:4px 8px;}}
+    .kpi-icon {{width:20px; height:20px; flex-shrink:0; stroke:{palette['text']};}}
+    .kpi-state {{display:inline-flex; align-items:center; gap:8px; white-space:nowrap;}}
+    .kpi-state i {{width:9px; height:9px; border-radius:50%; background:{palette['reference']};}}
+    .kpi-state-ok {{color:#34c759;}} .kpi-state-ok i {{background:#34c759; box-shadow:0 0 8px #34c75999;}}
+    .kpi-state-failed {{color:#ff9f0a;}} .kpi-state-failed i {{background:#ff9f0a;}}
+    .st-key-kpi_card_2 [data-baseweb="tab-list"] {{gap:18px;}}
+    .st-key-kpi_card_2 [data-baseweb="tab-panel"] {{padding-top:12px;}}
+    .kpi-chips {{display:flex; flex-wrap:wrap; gap:8px;}}
+    .kpi-chips span {{padding:5px 13px; border-radius:999px; font:400 .84rem {sans}; color:{palette['strong_text']};
+        border:1px solid {palette['card_border']}; background:{palette['field']};}}
+    .kpi-formula {{font:500 .84rem/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; padding:10px 12px;
+        border-radius:10px; background:{palette['field']}; color:{palette['strong_text']};
+        border:1px solid {palette['card_border']}; overflow-wrap:anywhere; margin-bottom:10px;}}
+    .kpi-query-name {{font:500 .95rem ui-monospace,SFMono-Regular,Menlo,monospace; color:{palette['strong_text']};
+        padding:11px 14px; border-radius:10px; background:{palette['field']}; border:1px solid {palette['card_border']};
+        margin:6px 0 12px; overflow-wrap:anywhere;}}
+    .st-key-kpi_query_open button {{width:100%; justify-content:flex-start; border:1.5px solid {accent} !important;
+        color:{accent} !important; background:transparent !important; border-radius:10px; min-height:46px;
+        font-weight:600;}}
+    .st-key-kpi_query_open button p {{color:{accent} !important; font-weight:600;}}
+    @media(max-width:900px) {{
+        .kpi-band {{display:none;}}
+        .st-key-kpi_path > div > [data-testid="stHorizontalBlock"] {{grid-template-columns:1fr; row-gap:14px;}}
+        .st-key-kpi_card_1, .st-key-kpi_card_2, .st-key-kpi_card_3 {{margin-top:0; padding-top:20px;}}
+        .kpi-card-title .sr-only {{position:static; width:auto; height:auto; clip:auto; color:{accent};}}
+        .kpi-head .page-freshness {{margin-left:0;}}
+        .kpi-card-title {{padding-left:0;}}
+    }}
+    </style>"""
+
+
+def show_kpi_tab(mode):
+    """The whole path of one KPI, in sight at once: result → context → query (D-090)."""
+    st.markdown(build_kpi_module_css(mode), unsafe_allow_html=True)
+    indicators = project.read_design_table(project.INDICATORS_HEADING)
+    guide = {r['KPI']:r for r in project.read_guide_table('KPI')}
+    by_id = {r['ID']:r for r in indicators}
+    requested = st.query_params.get(KPI_PARAMETER,'K1')
+    latest_run = read_latest_run()
+    run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
+    freshness = format_chile_time(parse_run_start(latest_run['started_at']))
+    with st.container(key="kpi_module"):
+        with st.container(key="kpi_question"):
+            label, choice = st.columns([2, 8])
+            label.markdown('<div class="kpi-question-label">Pregunta de negocio</div>', unsafe_allow_html=True)
+            selected = choice.selectbox("Pregunta de negocio", list(by_id),
+                                        index=list(by_id).index(requested) if requested in by_id else 0,
+                                        format_func=lambda k: f"{KPI_PRESENTATION[k][0]} — {KPI_QUESTIONS[k]}",
+                                        key="kpi_register_selection", label_visibility="collapsed",
+                                        on_change=lambda: select_kpi(st.session_state["kpi_register_selection"]))
+        evidence = dict(read_kpi_observation(get_database_version(), selected))
+        query_name = guide[selected]['Consulta']
+        measure, _, period = KPI_SMART_SCOPE[selected]
+        reference = evidence.get("Referencia de cálculo")
+        with st.container(key="kpi_path"):
+            st.markdown(build_kpi_path_html(), unsafe_allow_html=True)
+            result, context, query = st.columns(3)
+            with result, st.container(key="kpi_card_1"):
+                st.markdown(build_kpi_impact_html(selected, evidence, run_kind, freshness), unsafe_allow_html=True)
+            with context, st.container(key="kpi_card_2"):
+                st.markdown(build_kpi_card_head(2, "Contexto"), unsafe_allow_html=True)
+                scope_tab, logic_tab, limits_tab = st.tabs(["Alcance", "Lógica", "Límites"])
+                scope_tab.markdown(build_kpi_scope_html(evidence, period), unsafe_allow_html=True)
+                logic_tab.markdown(f'<div class="kpi-formula">{html.escape(by_id[selected]["Fórmula"])}</div>'
+                                   f'<div class="kpi-line-text">{build_kpi_icon("info")}{html.escape(measure)}</div>'
+                                   + (f'<div class="kpi-line-text">{build_kpi_icon("bars")}{html.escape(reference)}</div>'
+                                      if reference else ""), unsafe_allow_html=True)
+                limits_tab.markdown(f'<div class="kpi-line-text">{build_kpi_icon("info")}{html.escape(KPI_LIMITS[selected])}</div>'
+                                    f'<div class="kpi-line-text">{build_kpi_icon("bars")}Sin meta de negocio acordada: '
+                                    'el indicador describe o controla los datos.</div>', unsafe_allow_html=True)
+            with query, st.container(key="kpi_card_3"):
+                st.markdown(build_kpi_card_head(3, "Consulta")
+                            + f'<div class="kpi-query-name">{html.escape(query_name)}</div>'
+                            '<div class="kpi-line-text">Consulta guardada que produce este resultado, en solo lectura.</div>',
+                            unsafe_allow_html=True)
+                if st.button("Desplegar SQL", key="kpi_query_open", icon=":material/code:", use_container_width=True):
+                    show_kpi_query_dialog(query_name)
+                st.markdown(build_link_html("Abrir en el catálogo →", build_query_address(query_name)),
+                            unsafe_allow_html=True)
+
+
+def show_kpi_page(mode):
+    """KPIs with a one-line header, so the whole path fits one screen."""
+    latest_run = read_latest_run()
+    run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
+    run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
+    freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
+    st.markdown(f'<div class="kpi-head"><div class="compact-header"><h1>{html.escape(SECTION_KPI)}</h1>'
+                '<span class="kpi-sub">Elige una pregunta y recorre su camino: resultado, contexto y consulta.</span>'
+                f'<span class="page-freshness">Datos actualizados el {freshness} {build_chip(run_text, run_kind)}</span></div></div>',
+                unsafe_allow_html=True)
+    show_kpi_tab(mode)
 
 
 def describe_rule_evidence(rule):
@@ -2603,7 +3603,7 @@ def build_rule_card_html(rule, guide_row):
 
 def show_rule_details(rules, design_rules, guide_rows, where):
     """The whole rule, why it exists, its documented example and where it happens."""
-    with st.expander("Ver detalles: regla completa, por qué y dónde ocurre", expanded=True):
+    with st.expander("Ver detalles: regla completa, por qué y dónde ocurre", expanded=False):
         for rule in rules:
             guide_row = guide_rows[rule]
             example = guide_row["Ejemplo documentado"]
@@ -2632,7 +3632,7 @@ def show_rules_tab(mode):
 def show_sections_folded(text):
     """Each '## ' section of a document in its own box, open by default."""
     for heading, body in project.split_sections(text):
-        with st.expander(heading, expanded=True):
+        with st.expander(heading, expanded=False):
             st.markdown(body)
 
 
@@ -2684,7 +3684,7 @@ def show_failures(manual):
             ("Qué significa que falle cada paso y qué hacer", "Paso", "Qué suele significar",
              "Qué hacer"),
             ("Fallas del panel publicado", "Qué se ve", "Qué significa", "Qué hacer")]:
-        with st.expander(f"Ver detalles: {heading[0].lower() + heading[1:]}", expanded=True):
+        with st.expander(f"Ver detalles: {heading[0].lower() + heading[1:]}", expanded=False):
             show_info_cards(build_table_cards_html(project.parse_markdown_table(
                 project.read_subsection(manual, heading)), title, text, action))
 
@@ -2703,7 +3703,7 @@ def show_manual_details(manual):
     show_section_intro("Más detalles", "Para quien quiere comprobar cómo funciona cada parte.",
                        True)
     for heading in ["Qué es real en el diagrama del pipeline", "Administración y enlaces"]:
-        with st.expander(f"Ver detalles: {heading.lower()}", expanded=True):
+        with st.expander(f"Ver detalles: {heading.lower()}", expanded=False):
             st.markdown(project.read_section(manual, heading).replace("### ", "#### "))
     # The terms of the manual live once, in the glossary of Inicio.
     st.markdown(f'<div class="info-note">Las siglas y los términos están en '
@@ -2711,16 +3711,13 @@ def show_manual_details(manual):
 
 
 def show_manual_tab(mode):
-    """docs/MANUAL.md for whoever operates the project: the weekly run first, then the
-    tasks, failures and limits; the rest folded (D-057)."""
+    """Read the operating manual as a document, without decorative cards."""
     manual = project.read_document(project.MANUAL_FILE)
-    show_section_intro("Cómo funciona", "Qué pasa solo cada martes, qué revisar y qué hacer si "
-                       "algo falla. Para quien opera el proyecto sin ser técnico.")
-    for show_part in [show_weekly_run, show_owner_tasks, show_failures, show_known_limits,
-                      show_manual_details]:
-        show_part(manual)
-    show_section_intro("Recorrido del proyecto", "Cómo entrar y recorrer las páginas.", True)
-    st.markdown(project.read_section(manual, "Recorrido del proyecto"))
+    for heading in ["Qué pasa cada martes", "Tareas del autor y tareas automáticas",
+                    "Cómo leer un aviso rojo", "Límites conocidos", "Recorrido del proyecto"]:
+        st.subheader(heading)
+        st.markdown(project.read_section(manual, heading))
+
 
 
 def split_decision_title(title):
@@ -2743,29 +3740,13 @@ def build_decision_card_html(title, body):
 
 
 def show_decisions_tab(mode):
-    """The key decisions first, by theme; every other one folded, newest first (D-057)."""
-    decisions = dict(project.list_decisions())
-    by_number = {split_decision_title(title)[0]: title for title in decisions}
-    show_section_intro("Decisiones y método", f"{len(decisions)} decisiones registradas, cada "
-                       "una con qué se decidió, por qué, qué se descartó y qué se pierde. "
-                       "Primero, las que muestran los compromisos de ingeniería de datos.")
-    for theme, lead, numbers in KEY_DECISIONS:
-        show_section_intro(theme, lead, True)
-        show_info_cards([build_decision_card_html(by_number[number],
-                                                  decisions[by_number[number]])
-                         for number in numbers])
-        with st.expander(f"Ver detalles: {theme.lower()}", expanded=True):
-            for number in numbers:
-                st.markdown(f"**{by_number[number]}**")
-                st.markdown(decisions[by_number[number]])
-    key_numbers = {number for _, _, numbers in KEY_DECISIONS for number in numbers}
-    others = sorted((number for number in by_number if number not in key_numbers),
-                    key=lambda number: int(number[2:]), reverse=True)
-    show_section_intro("Las demás decisiones", f"{len(others)} decisiones, de la más reciente "
-                       "a la más antigua.", True)
-    for number in others:
-        with st.expander(by_number[number], expanded=True):
-            st.markdown(decisions[by_number[number]])
+    """A chronological engineering decision register, read as documentation."""
+    decisions = project.list_decisions()
+    st.caption("Registro de decisiones: alcance, justificación y consecuencias. Orden cronológico inverso.")
+    for title, body in sorted(decisions, key=lambda item: int(split_decision_title(item[0])[0][2:]), reverse=True):
+        with st.expander(title, expanded=False):
+            st.markdown(body)
+
 
 
 def build_clause_chips(query):
@@ -2805,29 +3786,27 @@ def build_file_line_html(path, description, address):
 
 
 def show_repository_files():
-    """The files of the README tree, one card per folder, in the order of the data."""
-    files = [(path, description, address) for path, description, address
-             in project.list_repository_files()
-             if not any(path == folder for folder, _, _ in FOLDER_PURPOSES if folder)]
-    cards = []
-    for folder, title, purpose in FOLDER_PURPOSES:
-        entries = [entry for entry in files if find_folder(entry[0]) == folder]
-        # A folder the README lists by the names of its files («semanal.yml, pruebas.yml»).
-        folder_line = next((description for path, description, _ in
-                            project.list_repository_files() if path == folder), "")
-        if folder and re.fullmatch(r"[\w.-]+\.\w+(, [\w.-]+\.\w+)*", folder_line):
-            entries += [(folder + name, "", project.build_github_url(folder + name))
-                        for name in folder_line.split(", ")]
-        lines = "".join(build_file_line_html(*entry) for entry in entries)
-        link = (build_link_html(f"Abrir {folder} en GitHub", project.build_github_url(folder))
-                if folder and not lines else None)
-        cards.append(build_info_card_html(
-            title, purpose, link=link,
-            body_html=f'<ul class="file-list">{lines}</ul>' if lines else ""))
-    show_info_cards(cards, is_compact=True)
-    st.markdown(f'<div class="info-note">Los enlaces al historial de commits y a las '
-                f'ejecuciones están en {build_place_link(PAGE_LINKS, "la página")}.</div>',
-                unsafe_allow_html=True)
+    """Read the actual public configuration, tests and workflows inside the app."""
+    groups = [
+        ("Configuración · entorno y dependencias", ":material/settings:",
+         ["requirements.txt", ".gitignore", ".devcontainer/devcontainer.json", ".streamlit/config.toml"]),
+        ("Pruebas · tests/", ":material/fact_check:",
+         [path.relative_to(project.PROJECT_DIR).as_posix() for path in
+          sorted((project.PROJECT_DIR / "tests").glob("test_*.py"))]),
+        ("Automatización · GitHub Actions", ":material/automation:",
+         [path.relative_to(project.PROJECT_DIR).as_posix() for path in
+          sorted((project.PROJECT_DIR / ".github/workflows").glob("*.yml"))]),
+    ]
+    languages = {".py": "python", ".sql": "sql", ".json": "json", ".toml": "toml", ".yml": "yaml"}
+    for title, icon, paths in groups:
+        with st.expander(title, expanded=False, icon=icon):
+            for path in paths:
+                file = project.PROJECT_DIR / path
+                if file.is_file():
+                    with st.expander(path, expanded=False):
+                        st.code(project.read_document(file), language=languages.get(file.suffix, "text"),
+                                line_numbers=True, height=420)
+    st.caption("La documentación técnica y los enlaces externos tienen secciones independientes en el menú.")
 
 
 # region Código y resultados (C03)
@@ -3261,7 +4240,7 @@ def build_catalog_steps_html():
 
 def build_external_link_html(text, address):
     """A link that leaves the app: it says where it goes and opens a new tab (↗)."""
-    return (f'<a href="{html.escape(address)}" target="_blank" rel="noopener noreferrer">'
+    return (f'<a href="{html.escape(address)}" target="_self" rel="noopener noreferrer">'
             f'{html.escape(text)} ↗</a>')
 
 
@@ -3277,10 +4256,10 @@ def show_catalog_result(entry, result):
         elif result["chart"] is not None:
             show_chart(result["chart"])
         else:
-            st.dataframe(rows.head(CATALOG_PREVIEW_ROWS), hide_index=True, width="stretch")
+            st.caption("El resultado es una tabla. Abre el detalle para consultar sus filas.")
         st.markdown(f'<div class="catalog-reading"><b>Cómo leerlo.</b> '
                     f'{format_inline(entry["reading"])}</div>', unsafe_allow_html=True)
-        with st.expander(f"Ver tabla completa · {charts.format_thousands(len(rows))} filas"):
+        with st.expander(f"Ver tabla completa · {charts.format_thousands(len(rows))} filas", expanded=False):
             st.dataframe(rows, hide_index=True, width="stretch")
         st.download_button("Descargar resultado (CSV)", rows.to_csv(index=False).encode("utf-8"),
                            file_name=f"{entry['name']}.csv", mime="text/csv",
@@ -3295,7 +4274,7 @@ def show_catalog_code(entry, result):
     path, line = find_catalog_line(name)
     address = f"{project.build_github_url(path)}#L{line}"
     sql = read_catalog_sql(name)
-    with st.container(border=True, key="catalog_sql"):
+    with st.expander("Ver el SQL que produce este resultado", expanded=False):
         st.markdown(f'<div class="catalog-block-title">Consulta SQL'
                     f'<span>{build_external_link_html(f"Abrir archivo · {path} en GitHub", address)}'
                     f'</span></div><div class="query-meta">Nombre en el código: '
@@ -3304,14 +4283,14 @@ def show_catalog_code(entry, result):
                     unsafe_allow_html=True)
         st.code(sql, language="sql", line_numbers=True, wrap_lines=True,
                 height="content" if sql.count("\n") < 18 else 380)
-        with st.expander(f"Ver consulta completa · {path}"):
+        with st.expander(f"Ver consulta completa · {path}", expanded=False):
             executed, parameters = build_catalog_sql(name, result["filters"])
             st.caption("La consulta guardada, sin comentarios, tal como corrió para este "
                        "resultado en la conexión de solo lectura.")
             st.code(executed, language="sql", wrap_lines=True)
             if parameters:
                 st.caption(f"Valores de cada «?», enviados aparte del texto: {list(parameters)}")
-    with st.expander("Implementación Python · Ver funciones"):
+    with st.expander("Implementación Python · Ver funciones", expanded=False):
         for function in list_catalog_functions(name, entry["build"]):
             module = sys.modules[function.__module__]
             file = Path(module.__file__).resolve().relative_to(project.PROJECT_DIR).as_posix()
@@ -3347,32 +4326,39 @@ def show_queries_tab(mode):
 # endregion
 
 
+FOLDER_CODE_LABELS = {
+    "agent": "Ingesta · agent/ — descargar y validar las fuentes",
+    "etl": "Transformación · etl/ — limpiar, normalizar y cargar",
+    "bi": "Análisis y visualización · bi/ — consultas, indicadores y dashboard",
+}
+
+
 def show_files_tab(mode):
-    """An open file tree: source and explanation together, in pipeline order."""
-    show_section_intro("Python · del origen al dashboard", "Los archivos se leen en el orden "
-                       "del flujo de datos. Cada acordeón está abierto: puedes plegar un "
-                       "archivo o una carpeta para concentrarte en lo que te interesa.")
+    """Code folders open initially, with purpose and actual source inside."""
+    show_section_intro("Python · del origen al dashboard", "Cada carpeta reúne archivos con su propósito y su código real. Puedes plegarlos cuando quieras. "
+                       "El orden sigue el recorrido de los datos.")
     catalog = project.list_code_walkthrough()
     for folder in dict.fromkeys(entry["folder"] for entry in catalog):
-        with st.expander(f"📂 {folder}/", expanded=True):
+        with st.expander(FOLDER_CODE_LABELS.get(folder, f"{folder}/"), expanded=False,
+                         icon={"agent": ":material/download:", "etl": ":material/filter_alt:",
+                               "bi": ":material/analytics:"}.get(folder, ":material/folder:")):
             for entry in [entry for entry in catalog if entry["folder"] == folder]:
                 with st.expander(f"{entry['number']:02} · {entry['path']} — {entry['title']}",
-                                 expanded=True):
+                                 expanded=False):
                     st.write(entry["purpose"])
                     st.caption(f"Entrada: {entry['input']} → Salida: {entry['output']}")
                     st.info(f"Problema que resuelve: {entry['challenge']}", icon=":material/lightbulb:")
                     st.code(entry["source"], language="python", line_numbers=True, height=420)
-    show_section_intro("SQL · estructura y preguntas", "Primero las tablas que reciben los "
-                       "datos; luego cada consulta con su propósito, cláusulas y resultado.")
-    for path, title in [("etl/raw_schema.sql", "Capa bronce: conservar el archivo original"),
+    show_section_intro("SQL · consultas y modelo", "Abre queries.sql para explorar las consultas "
+                       "del proyecto, o un esquema para revisar las tablas. Los resultados "
+                       "tienen su propia sección: Preguntas y resultados SQL.")
+    for path, title in [("bi/queries.sql", "Consultas SQL: preguntas e indicadores del proyecto"),
+                        ("etl/raw_schema.sql", "Capa bronce: conservar el archivo original"),
                         ("etl/schema.sql", "Modelo estrella: precios, dimensiones y auditoría")]:
-        with st.expander(f"{path} — {title}", expanded=True):
+        with st.expander(f"{path} — {title}", expanded=False):
             st.code(project.read_document(project.PROJECT_DIR / path), language="sql",
                     line_numbers=True, height=420)
-    st.markdown(build_link_html("Continuar con cada pregunta, su resultado y su SQL →",
-                                build_page_address(PAGE_QUERIES)),
-                unsafe_allow_html=True)
-    with st.expander("📂 Otros archivos del repositorio", expanded=True):
+    with st.expander("Configuración, pruebas y automatización", expanded=False):
         show_repository_files()
 
 
@@ -3392,16 +4378,13 @@ def show_idea_tab(mode):
 
 
 def show_glossary_tab(mode):
-    """Acronyms and terms of the project in plain words, grouped by theme (T-46b, D-057)."""
+    """Terminology as a document, grouped by functional area."""
     rows = project.read_guide_table("Glosario")
-    show_section_intro("Glosario", f"{len(rows)} siglas y términos que aparecen en el panel, "
-                       "en palabras simples y agrupados por tema.")
-    themes = list(dict.fromkeys(row["Tema"] for row in rows))
-    for theme in themes:
-        show_section_intro(theme, GLOSSARY_THEME_LEADS.get(theme, ""), True)
-        show_info_cards([build_info_card_html(row["Sigla o término"], row["Significado"],
-                                              note=f"Aparece en: {row['Dónde aparece']}")
-                         for row in rows if row["Tema"] == theme])
+    for theme in dict.fromkeys(row["Tema"] for row in rows):
+        st.subheader(theme)
+        for row in [row for row in rows if row["Tema"] == theme]:
+            st.markdown(f"**{row['Sigla o término']}.** {row['Significado']} "
+                        f"— Uso: {row['Dónde aparece']}.")
 
 
 @st.cache_data
@@ -3767,6 +4750,7 @@ def show_product_field(week, group):
 def show_top_n_field():
     """Top N: a slider, its value always written next to it (D-072)."""
     st.session_state.setdefault("dashboard_top_n", DEFAULT_TOP_N)
+    st.session_state["dashboard_top_n"] = max(TOP_N_RANGE[0], min(TOP_N_RANGE[1], st.session_state["dashboard_top_n"]))
     with open_bar_field("top_n", "Top N"):
         st.slider("Top N", *TOP_N_RANGE, key="dashboard_top_n", step=1,
                   label_visibility="collapsed",
@@ -3784,7 +4768,7 @@ def show_order_field():
                                        "Bajas": "▼ Bajas"}[value])
 
 
-def show_report_filters(with_summary_fields=False):
+def show_report_filters(with_summary_fields=False, include_product=True, include_region=True):
     """One bar for the whole report: group, region and week, kept across its views
     (D-069). The summary adds the product and Top N (D-072). Returns Top N."""
     options = read_cached_filter_options(get_database_version())
@@ -3794,9 +4778,10 @@ def show_report_filters(with_summary_fields=False):
     count = None
     with st.container(key="report_filters", horizontal=True, vertical_alignment="center"):
         show_global_field("group", GLOBAL_FILTERS["group"], options["group"])
-        if with_summary_fields:
+        if with_summary_fields and include_product:
             show_product_field(week, read_filter("group"))
-        show_global_field("region", GLOBAL_FILTERS["region"], options["region"])
+        if include_region:
+            show_global_field("region", GLOBAL_FILTERS["region"], options["region"])
         show_global_field("week", GLOBAL_FILTERS["week"], options["week"])
         if with_summary_fields:
             count = show_top_n_field()
@@ -3852,7 +4837,7 @@ def show_excluded_gaps(excluded):
         return
     # Fact and hypothesis kept apart (C05): the format mismatch is not checked row by row.
     with st.expander(f"Brechas sobre +300 % fuera del ranking: {len(excluded)}",
-                     expanded=True):
+                     expanded=False):
         st.caption("Criterio: una brecha sobre +300 % sale del ranking y de la mediana; la "
                    "fila se conserva en la base y en «Brecha de precio». Hecho medido: en la "
                    "feria libre, que vende a granel como el mayorista, el 99 % de las brechas "
@@ -3893,6 +4878,23 @@ def build_product_filter(row):
             "channel": row["channel"], "name": " ".join([row["product"]] + parts)}
 
 
+def select_ranked_product(row, detail=False):
+    """A ranking click updates only its lower detail, never the overview's population."""
+    st.session_state["dashboard_product"] = build_product_filter(row)
+    if detail:
+        key = {column: row[column] for column in queries.KEY_COLUMNS}
+        options = read_key_options("k3_regional_index")
+        for column, value in key.items():
+            options = options[options[column] == value]
+        st.session_state["analysis_group"] = key["product_group"]
+        st.session_state["analysis_product"] = key["product"]
+        if not options.empty:
+            st.session_state["analysis_key_label"] = options.iloc[0]["key_label"]
+        st.session_state["analysis_channels"] = [row["channel"]]
+        if "region" in row:
+            st.session_state["analysis_region"] = row["region"]
+
+
 def keep_product(rows, product):
     """The rows of the chosen product key (all rows when none is chosen)."""
     if not product:
@@ -3916,32 +4918,58 @@ def choose_default_key(ranked, week):
     return {column: ranked.iloc[0][column] for column in queries.KEY_COLUMNS}
 
 
-def show_movements_card(prefix, ranked, count, mode):
+def describe_ranking_change(row):
+    movement = "subió" if row["variation"] > 0 else "bajó" if row["variation"] < 0 else "no cambió"
+    amount = " " + charts.format_percent(abs(row["variation"]) * 100) if row["variation"] else ""
+    return (f"En este ranking, {row['product']} en {row['channel']} {movement}{amount} "
+            "frente a la semana anterior. Las barras más largas muestran cambios mayores.")
+
+
+def describe_regional_comparison(row):
+    difference = (row["regional_index"] - 1) * 100
+    region = charts.shorten_region_name(row["region"])
+    if abs(difference) < .05:
+        return f"{region} tiene un precio igual al promedio nacional de {row['channel']}."
+    position = "por encima" if difference > 0 else "por debajo"
+    return (f"{region} está {charts.format_percent(abs(difference))} {position} del promedio "
+            f"nacional de {row['channel']}. Se compara el mismo producto y la misma unidad.")
+
+
+def show_foldable_table(table_html, label="Ver tabla de detalle"):
+    with st.expander(label, expanded=False):
+        st.markdown(table_html, unsafe_allow_html=True)
+
+
+def show_movements_card(prefix, ranked, count, mode, direction=None):
     """Card: the largest weekly changes; a click on a bar filters by its product."""
-    direction = st.session_state.get("dashboard_ranking_direction") or "Mayores movimientos"
+    direction = direction or st.session_state.get("dashboard_ranking_direction") or "Mayores movimientos"
     with open_card(f"{prefix}_movements", RANKING_TITLES[direction],
-        hint="Cada barra es un producto en un canal: su precio nacional frente a la semana "
-             "anterior. ▲ en rojo subió; ▼ en azul bajó. Haz clic en una barra para ver ese "
-             "producto en los demás gráficos; doble clic para soltarla.", kpi="K6"):
+        hint="Cada barra compara el precio de un producto con la semana anterior. "
+             "▲ en rojo subió; ▼ en azul bajó. Las barras más largas muestran cambios mayores. "
+             + (describe_ranking_change(ranked.iloc[0]) if not ranked.empty else "No hay datos para esta selección.")
+             + " Haz clic en una barra para ver ese producto en los demás gráficos; doble clic para soltarla.",
+        kpi="K6"):
         # The order sits on the subtitle's line: it belongs to this ranking only.
         with st.container(horizontal=True, vertical_alignment="center",
-                          key="ranking_caption"):
+                          key=f"{prefix}_ranking_caption"):
             st.caption(f"Top {count} · frente a la semana anterior · precio nacional")
-            show_order_field()
         if ranked.empty:
             st.info("No hay cambios disponibles para esta selección.")
             return
         bars = pd.DataFrame({
-            "label": build_short_labels(ranked, lambda row: f"{row['product']} · {row['channel']}"),
+            "label": build_short_labels(ranked, lambda row: f"{row['product']} {row['variety'] if row['variety'] != UNSPECIFIED else ''} · {row['quality']} · {row['channel']}"),
             "value": ranked["variation"].to_numpy() * 100,
             "detail": [describe_variation_detail(row) for row in ranked.to_dict("records")],
             "pick": [str(position) for position in range(len(ranked))]})
-        chart = charts.draw_variation_bars(bars, mode, keep_rank_order=True, select_field="pick")
-        event = show_clickable_chart(compact_bar_chart(chart), f"{prefix}_movements_chart")
-        apply_click(f"{prefix}_movements", read_picked(event), lambda picked: st.session_state.
-                    update(dashboard_product=build_product_filter(
-                        ranked.iloc[int(picked["pick"])])))
+        chart = charts.draw_variation_bars(bars, mode, keep_rank_order=True, select_field="pick").configure_axisY(
+            labelExpr="split(datum.label, ' · ')", labelLineHeight=12, labelLimit=185)
+        event = show_clickable_chart(compact_bar_chart(chart, step=44), f"{prefix}_movements_chart")
+        apply_click(f"{prefix}_movements", read_picked(event), lambda picked: select_ranked_product(ranked.iloc[int(picked["pick"])], detail=prefix.startswith("week_top")))
         st.markdown(build_mobile_ranking_html(bars, mode, True), unsafe_allow_html=True)
+        sample = format_ranking_table(ranked).copy()
+        sample["Producto"] = [describe_product(row) for row in ranked.to_dict("records")]
+        sample["Precio anterior"] = ["$ " + charts.format_thousands(row['national_price']/(1+row['variation'])) for row in ranked.to_dict('records')]
+        show_data_sample(sample[["Producto", "Canal", "Precio anterior", "Precio nacional", "Unidad", "Variación"]])
 
 
 def show_gaps_card(prefix, gaps, count, mode):
@@ -3957,23 +4985,26 @@ def show_gaps_card(prefix, gaps, count, mode):
         if gaps.empty:
             st.info("No hay pares comparables para esta selección.")
             return
-        # With a product chosen its name is in the chip, so each bar says where instead.
-        describe = ((lambda row: f"{row['channel']} · "
-                                 f"{charts.shorten_region_name(row['region'])}")
-                    if read_product_filter() else
-                    (lambda row: f"{row['product']} · {row['channel']}"))
+        describe = lambda row: f"{describe_product(row).replace(chr(183), chr(47))} · {row['channel']} · {charts.shorten_region_name(row['region'])}"
         bars = pd.DataFrame({
             "label": build_short_labels(gaps, describe),
             "value": gaps["margin"].to_numpy() * 100,
             "detail": [describe_gap_detail(row) for row in gaps.to_dict("records")],
             "pick": [str(position) for position in range(len(gaps))]})
         bars["value_label"] = bars["value"].map(charts.format_percent)
-        chart = charts.draw_horizontal_bars(bars, "Brecha (%)", mode, select_field="pick",
-                                            is_sorted_by_value=False)
-        event = show_clickable_chart(compact_bar_chart(chart), f"{prefix}_gaps_chart")
-        apply_click(f"{prefix}_gaps", read_picked(event), lambda picked: st.session_state.
-                    update(dashboard_product=build_product_filter(gaps.iloc[int(picked["pick"])])))
+        chart = charts.draw_horizontal_bars(bars, "Diferencia sobre el mayorista (%)", mode, select_field="pick",
+                                            is_sorted_by_value=False).configure_axisY(
+                                                labelExpr="split(datum.label, ' · ')", labelLimit=245, labelLineHeight=12).properties(height=alt.Step(44))
+        event = show_clickable_chart(compact_bar_chart(chart, step=44), f"{prefix}_gaps_chart")
+        apply_click(f"{prefix}_gaps", read_picked(event), lambda picked: select_ranked_product(gaps.iloc[int(picked["pick"])], detail=prefix == "gap"))
         st.markdown(build_mobile_ranking_html(bars, mode), unsafe_allow_html=True)
+        show_data_sample(pd.DataFrame({
+            "Producto": [describe_product(row) for row in gaps.to_dict("records")],
+            "Región / canal": [charts.shorten_region_name(row['region']) + " · " + row['channel'] for row in gaps.to_dict("records")],
+            "Unidad": gaps["normalized_unit"],
+            "Mayorista": gaps["wholesale_price"].map(lambda value: "$ " + charts.format_thousands(value)),
+            "Consumidor": gaps["consumer_price"].map(lambda value: "$ " + charts.format_thousands(value)),
+            "Diferencia": (gaps["margin"] * 100).map(charts.format_signed_percent)}))
 
 
 def show_group_card(prefix, week, mode):
@@ -4011,11 +5042,19 @@ def show_pulse_card(prefix, key, week, mode):
     history = history[history["week_start"].between(week - pd.Timedelta(weeks=11), week)]
     name = " ".join(part for part in (key["product"], key["variety"]) if part != UNSPECIFIED)
     unit = key["normalized_unit"]
+    channels = sorted(history["channel"].unique())
+    initial_channels = ([channel for channel in PULSE_CHANNELS if channel in channels] or channels)[:PULSE_MAXIMUM_CHANNELS]
+    hint_channels = st.session_state.get(f"{prefix}_pulse_channels_{name}", initial_channels)
+    current = history[(history["week_start"] == week) & history["channel"].isin(hint_channels)]
+    prices = " · ".join(f"{row['channel']}: $ {charts.format_thousands(row['national_price'])}/{unit}"
+                        for row in current.to_dict("records"))
+    reading = ("Semana elegida: " + prices + ". " if prices else
+               "No hay precio en la semana elegida para los canales seleccionados. ")
     with open_card(f"{prefix}_price_trend", "¿Cómo evolucionó el producto?",
-        caption=f"{name} · precio nacional por {unit} (promedio simple de las regiones con "
-                "dato) · últimas 12 semanas",
-        hint="Precio nacional por canal (promedio simple de las regiones con dato). Una o "
-             "dos curvas se leen; elige cuáles. Las semanas sin dato quedan cortadas."):
+        caption=f"{name} · $/{unit} · promedio nacional · últimas 12 semanas",
+        hint=reading + "Cada línea muestra cómo cambió el precio de un canal durante las últimas 12 semanas. "
+             "El precio nacional es el promedio simple de las regiones con dato. "
+             "Un corte significa que falta un dato, no que el precio sea cero."):
         channels = sorted(history["channel"].unique())
         chosen = st.multiselect("Canales", channels, key=f"{prefix}_pulse_channels_{name}",
                                 default=([channel for channel in PULSE_CHANNELS
@@ -4040,36 +5079,90 @@ def show_pulse_card(prefix, key, week, mode):
                         key=f"{prefix}_trend_plot")
 
 
-def show_map_card(prefix, key, week, mode):
-    """Card: the regional index of the product, region × channel; a click picks a region."""
-    snapshot = read_cached_week_snapshot(get_database_version(), week)
-    points = keep_covered_cells(keep_product(snapshot, {"key": key}))
+def regional_week_changes(current, previous):
+    """Compare the same product, channel and region in two exact consecutive weeks."""
+    keys = list(queries.KEY_COLUMNS) + ["region", "channel"]
+    merged = current.merge(previous[keys + ["price"]].rename(columns={"price": "previous_price"}),
+                           on=keys, how="left", validate="one_to_one")
+    valid = merged["previous_price"].gt(0) & merged["price"].notna()
+    merged["weekly_change"] = ((merged["price"] / merged["previous_price"] - 1) * 100).where(valid)
+    return merged
+
+
+def show_map_card(prefix, key, week, mode, compact=False):
+    """Readable regional zones, colored by actual week-on-week price movement."""
+    version = get_database_version()
+    current = keep_covered_cells(keep_product(read_cached_week_snapshot(version, week), {"key": key}))
+    previous_week = f"{pd.Timestamp(week) - pd.Timedelta(days=7):%Y-%m-%d}"
+    previous = keep_covered_cells(keep_product(read_cached_week_snapshot(version, previous_week), {"key": key}))
+    points = regional_week_changes(current, previous)
     short_name = " ".join(part for part in (key["product"], key["variety"]) if part != UNSPECIFIED)
-    with open_card(f"{prefix}_regional_map", "¿Dónde es más caro?",
-        caption=f"{short_name} · precio por {key['normalized_unit']} · semana del "
-                f"{pd.Timestamp(week):%d-%m-%Y} · índice regional por canal · 100 = promedio "
-                "nacional del canal",
-        hint="Cada celda compara una región con el promedio nacional del mismo canal: 100 es "
-             "el promedio, 120 es 20 % más caro. «Sin dato» es una región sin precio en ese "
-             "canal, no un precio cero. Haz clic en una región para filtrar el dashboard por "
-             "ella.", kpi="K3"):
-        if points["region"].nunique() < 2:
-            st.info(f"{short_name} tiene precio en una sola región esta semana: no hay "
-                    "regiones que comparar. Elige otro producto con un clic en los rankings.")
+    with open_card(f"{prefix}_regional_map", "¿Dónde subieron o bajaron?",
+        caption=f"{short_name} · por {key['normalized_unit']} · semana del {pd.Timestamp(week):%d-%m-%Y}",
+        hint="Cada zona representa una región. Compara el mismo producto y canal con la semana anterior. "
+             "Rojo: subió; azul: bajó; gris: sin cambio. Las zonas vacías no tienen comparación disponible.", kpi="K6"):
+        channels = sorted(points["channel"].unique())
+        if not channels:
+            st.info("No hay precios disponibles para esta selección.")
             return
-        points = points.assign(detail=[
-            f"{describe_product(row)} · {row['channel']} · {row['region']} · $ "
-            f"{charts.format_thousands(row['price'])} por {row['normalized_unit']} · semana del "
-            f"{pd.Timestamp(row['week_start']):%d-%m-%Y}" for row in points.to_dict("records")])
-        chosen_region = read_filter("region")
-        chart = charts.draw_region_channel_map(
-            points, mode, None if chosen_region == ALL_VALUES else chosen_region)
-        # One band per region: a long list grows the card instead of squeezing the rows.
-        event = show_clickable_chart(chart.properties(height=alt.Step(26)),
-                                     f"{prefix}_map_chart")
-        apply_click(f"{prefix}_map", read_picked(event),
-                    lambda picked: set_filter("region", picked["region"]))
-        show_regional_ranking(points)
+        field_key = f"{prefix}_map_channel"
+        if st.session_state.get(field_key) not in channels:
+            st.session_state[field_key] = channels[0]
+        channel = st.selectbox("Canal de comparación", channels, key=field_key)
+        selected = points[points["channel"] == channel].copy()
+        geometry = json.loads((Path(__file__).parent / "assets" / "chile-regions.geojson").read_text())
+        comparable = int(selected["weekly_change"].notna().sum())
+        with_price = int(selected["price"].notna().sum())
+        st.caption(f"{with_price} de 16 regiones con precio actual · {comparable} con comparación semanal · {channel}")
+        all_regions = pd.DataFrame({"region": [f["properties"]["region"] for f in sorted(geometry["features"], key=lambda f: -max(p[1] for poly in f["geometry"]["coordinates"] for ring in poly for p in ring))]})
+        detail = all_regions.merge(selected[["region", "price", "previous_price", "weekly_change"]], on="region", how="left", validate="one_to_one")
+        detail["Estado"] = detail.apply(lambda r: "Sin precio actual" if pd.isna(r["price"]) else "Sin precio anterior" if pd.isna(r["weekly_change"]) else "▲ Subió" if r["weekly_change"] > 0 else "▼ Bajó" if r["weekly_change"] < 0 else "= Sin cambio", axis=1)
+        detail["Región"] = detail["region"].map(charts.shorten_region_name)
+        for source, label in (("price", "Precio actual"), ("previous_price", "Precio anterior")):
+            detail[label] = detail[source].map(lambda v: "—" if pd.isna(v) else "$ " + f"{v:,.0f}".replace(",", "."))
+        detail["Variación"] = detail["weekly_change"].map(lambda v: "—" if pd.isna(v) else f"{v:+.1f} %".replace(".", ","))
+        visible = detail[detail["price"].notna()]
+        st.markdown(visible[["Región", "Precio actual", "Precio anterior", "Variación", "Estado"]].to_html(index=False, border=0, classes="regional-detail"), unsafe_allow_html=True)
+        st.caption(f"Precios en pesos por {key['normalized_unit']}. Las otras {16-with_price} regiones no tienen precio actual para esta selección.")
+        with st.expander("Ubicar estas regiones en el mapa de Chile", expanded=False):
+            chart = charts.draw_regional_change_map(selected, geometry, mode, full_country=True)
+            event = show_clickable_chart(chart, f"{prefix}_map_chart")
+            apply_click(f"{prefix}_map", read_picked(event),
+                        lambda picked: set_filter("region", picked.get("properties.region", picked.get("region")))
+                        if picked.get("properties.region", picked.get("region")) in set(selected["region"]) else None)
+            st.caption("Rojo ▲ Subió · Azul ▼ Bajó · Gris = Sin cambio · Sin relleno = Sin comparación")
+            st.caption("Las 16 regiones de Chile. Un precio actual sin precio de la semana anterior no permite calcular una variación.")
+
+
+
+
+def show_regional_overview(week, group, mode, prefix):
+    """Compare within each series first, then summarize changes by region."""
+    version = get_database_version()
+    current = keep_covered_cells(read_cached_week_snapshot(version, week))
+    previous = keep_covered_cells(read_cached_week_snapshot(version, f"{pd.Timestamp(week)-pd.Timedelta(days=7):%Y-%m-%d}"))
+    if group != ALL_VALUES:
+        current = current[current["product_group"] == group]
+        previous = previous[previous["product_group"] == group]
+    changes = regional_week_changes(current, previous)
+    valid = changes.dropna(subset=["weekly_change"])
+    with open_card(f"{prefix}_regional_overview", "¿Qué pasó en cada región?",
+                   caption="Todos los productos del grupo · comparación con la semana anterior",
+                   hint="Primero se compara cada producto, variedad, calidad, unidad y canal consigo mismo. Después se resume por región. La mediana es el cambio del centro: no es inflación ni una variación ponderada por ventas."):
+        if valid.empty:
+            st.info("No hay series regionales comparables esta semana.")
+            return
+        summary = valid.groupby("region").agg(series=("weekly_change", "size"), median=("weekly_change", "median"),
+                    rises=("weekly_change", lambda v: (v > 0).sum()), falls=("weekly_change", lambda v: (v < 0).sum()),
+                    stable=("weekly_change", lambda v: (v == 0).sum())).reset_index()
+        summary = summary.sort_values("median", ascending=False)
+        table = pd.DataFrame({"Región": summary["region"].map(charts.shorten_region_name),
+             "Series": summary["series"], "▲ Suben": summary["rises"], "▼ Bajan": summary["falls"],
+             "= Iguales": summary["stable"], "Cambio mediano": summary["median"].map(lambda v: f"{v:+.1f} %".replace(".", ","))})
+        st.caption(f"{len(summary)} regiones con comparación · {len(valid):,} series comparables".replace(",", "."))
+        st.markdown(table.to_html(index=False, border=0, classes="regional-detail"), unsafe_allow_html=True)
+        st.caption("La base cargada contiene precios válidos de 9 de las 16 regiones de Chile; no representa cobertura nacional completa.")
+        st.caption("Cada serie cuenta una vez. Se reúnen canales y productos distintos; no se suman ni promedian sus precios. Las regiones sin comparación quedan fuera del resumen.")
 
 
 def show_regional_ranking(points):
@@ -4080,7 +5173,7 @@ def show_regional_ranking(points):
                             f"({row['regional_index'] * 100:.0f})")
     top, bottom = ranked.iloc[0], ranked.iloc[-1]
     # The answer sits on the expander's own line: readable closed, the table when opened.
-    with st.expander(f"Más caro: {describe(top)} · más barato: {describe(bottom)}"):
+    with st.expander(f"Ver tabla · mayor índice: {describe(top)} · menor índice: {describe(bottom)}", expanded=False):
         st.dataframe(pd.DataFrame({
             "Región": ranked["region"].map(charts.shorten_region_name),
             "Canal": ranked["channel"],
@@ -4111,11 +5204,11 @@ def show_dashboard_title(week, ranked, prefix):
             f'<div class="report-title"><h1>Los precios esta semana</h1><p>Semana analizada: '
             f'<strong>{describe_week_span(week)}</strong><span class="report-divider">│</span>'
             f'Última carga: {format_chile_time(parse_run_start(latest_run["started_at"]))} '
-            f'{build_chip("Correcta" if is_loaded else "Con falla", "ok" if is_loaded else "failed")}'
+            f'{build_chip("Completada" if is_loaded else "Con falla", "ok" if is_loaded else "failed")}'
             '</p></div>', unsafe_allow_html=True)
     with actions_column, st.container(key="report_actions", horizontal=True,
                                       horizontal_alignment="right"):
-        st.markdown(build_link_html("Cómo leer los datos →", build_page_address(PAGE_KPI)),
+        st.markdown(build_link_html("Definiciones y método →", build_page_address(PAGE_KPI)),
                     unsafe_allow_html=True)
         detail = format_ranking_table(ranked)
         st.download_button("Descargar CSV", detail.to_csv(index=False).encode("utf-8-sig"),
@@ -4141,33 +5234,25 @@ def show_usable_data_card(mode):
     totals = read_indicator("quality_flag_counts").groupby("flag")["weekly_prices"].sum()
     totals = totals.sort_values(ascending=False)
     with open_card("usable_data", "¿Qué datos podemos usar?",
-                   caption="Todo el histórico (2022–2026), no solo esta semana · precios "
-                           "semanales, no ventas · no cambia con los filtros",
-                   hint="Cada precio semanal es el promedio de un producto, una región y un "
-                        "canal en una semana. Los atípicos y las unidades que no se pueden "
-                        "convertir quedan fuera de los indicadores, con su motivo."):
+                   caption="Histórico 2022–2026 · todos los datos",
+                   hint="El resumen cuenta registros de precios, no ventas. Distingue partes "
+                        "del total histórico: usados, atípicos o con unidad no convertible. "
+                        "Cada registro corresponde a un producto, región, canal y semana. "
+                        "Los excluidos se conservan con su motivo; no se borran."):
+        used_count = int(totals.get("SIN_MARCA", 0))
+        total = int(totals.sum())
+        used = used_count / total * 100 if total else 0
+        rejected = total - used_count
         palette = charts.get_palette(mode)
-        rows = pd.DataFrame({"label": [FLAG_NAMES.get(flag, flag) for flag in totals.index],
-                             "value": totals.to_numpy()})
-        rows["value_label"] = rows["value"].map(charts.format_thousands)
-        colors = [palette["accent"] if flag == "SIN_MARCA" else
-                  palette["rise"] if flag == etl.FLAG_OUTLIER else palette["reference"]
-                  for flag in totals.index]
-        ring_column, legend_column = st.columns([0.8, 1.6], vertical_alignment="center")
-        with ring_column:
-            show_chart(charts.draw_donut(rows, colors, mode,
-                                         center=charts.format_thousands(totals.sum()),
-                                         center_note="precios semanales", size=170))
-        with legend_column:
-            used = totals.get("SIN_MARCA", 0) / totals.sum() * 100
-            legend = "".join(
-                f'<li><span style="color:{color}">●</span><span>{html.escape(label)}</span>'
-                f'<strong>{value_label}</strong></li>'
-                for label, value_label, color in zip(rows["label"], rows["value_label"], colors))
-            st.markdown(f'<ul class="ring-legend">{legend}</ul><p class="ring-note">'
-                        f'{charts.format_percent(used)} se usa en los indicadores. Los excluidos '
-                        f'conservan su motivo. {build_link_html("Ver detalle →", build_page_address(PAGE_OPERATIONS))}'
-                        '</p>', unsafe_allow_html=True)
+        st.markdown(f'<div class="quality-summary"><strong class="quality-value">{charts.format_percent(used)}</strong>'
+                    f'<span>de los registros históricos se usan en los indicadores</span>'
+                    f'<div class="quality-meter" role="meter" aria-label="Registros utilizables" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{used}">'
+                    f'<span style="width:{used}%;background:{palette["accent"]}"></span></div>'
+                    f'<div class="quality-counts"><strong>{charts.format_thousands(used_count)}</strong> usados de {charts.format_thousands(total)} registros</div>'
+                    f'<div class="quality-counts">{charts.format_thousands(rejected)} excluidos: '
+                    f'{charts.format_thousands(int(totals.get(etl.FLAG_OUTLIER, 0)))} atípicos y '
+                    f'{charts.format_thousands(int(totals.get(etl.FLAG_UNIT_NOT_CONVERTIBLE, 0)))} con unidad no convertible.</div>'
+                    f'{build_link_html("Revisar calidad de datos →", build_page_address(PAGE_OPERATIONS))}</div>', unsafe_allow_html=True)
 
 
 def show_week_gap_ranking(mode):
@@ -4175,78 +5260,671 @@ def show_week_gap_ranking(mode):
     report's filters, and the ones left out, listed with their prices."""
     count = st.session_state.get("dashboard_top_n", DEFAULT_TOP_N)
     comparable, excluded = read_report_gaps(read_report_week(), read_filter("group"),
-                                            read_filter("region"), read_product_filter())
+                                            read_filter("region"), None)
     show_gaps_card("gap", comparable.head(count), count, mode)
     show_excluded_gaps(excluded)
 
 
+def build_movement_proportions(rows):
+    """Mutually exclusive parts of all comparable national series, not just Top N."""
+    values = rows["variation"].dropna()
+    counts = [int(values.gt(0).sum()), int(values.lt(0).sum()), int(values.eq(0).sum())]
+    total = sum(counts)
+    return pd.DataFrame({"label": ["Subieron", "Bajaron", "Sin cambio"], "value": counts,
+                         "share": [count / total * 100 if total else 0 for count in counts]})
+
+
+def show_movement_proportions(rows, week, group, mode):
+    palette = charts.get_palette(mode)
+    parts = build_movement_proportions(rows)
+    total = int(parts["value"].sum())
+    current = read_cached_national_prices(get_database_version())
+    current = current[current["week_start"] == pd.Timestamp(week)]
+    if group != ALL_VALUES:
+        current = current[current["product_group"] == group]
+    missing = max(0, len(current) - total)
+    with open_card("movement_proportions", "¿Qué proporción subió o bajó?",
+                   caption="Todas las series nacionales comparables del grupo · no solo el Top N",
+                   hint="Cada porción cuenta series de un producto, variedad, calidad, unidad y canal. "
+                        "Rojo: subieron; azul: bajaron; gris: precio igual a la semana anterior. "
+                        "Cada serie cuenta una vez, sin ponderar por ventas. No son cuotas de mercado ni gasto."):
+        if not total:
+            st.info("No hay series con comparación frente a la semana anterior.")
+            return
+        colors = [palette["rise"], palette["fall"], palette["reference"]]
+        parts["value_label"] = [f"{count} series · {charts.format_percent(share)}" for count, share in zip(parts["value"], parts["share"])]
+        ring, explanation = st.columns([1, 1.3], vertical_alignment="center")
+        with ring:
+            show_chart(charts.draw_donut(parts, colors, mode, center=str(total), center_note="series", size=175))
+        with explanation:
+            for item, color in zip(parts.to_dict("records"), colors):
+                st.markdown(f'<div style="margin:8px 0"><span style="color:{color}">●</span> '
+                            f'{item["label"]} <strong>{charts.format_percent(item["share"])}</strong>'
+                            f' · {item["value"]} series</div>', unsafe_allow_html=True)
+        st.caption(f"Cada serie es un producto y canal. {missing} series con precio esta semana no tienen comparación y quedan fuera del anillo. No representa ventas.")
+
+
+def apply_home_focus(options):
+    """Apply only validated deep-link selections, once; never override live widgets."""
+    token = st.query_params.get("_home_key")
+    marker = repr({k:v for k,v in st.query_params.to_dict().items() if k.startswith('_home_')})
+    requested = any(st.query_params.get('_home_' + name) for name in ('group', 'region', 'week'))
+    if (not token and not requested) or marker == st.session_state.get('mock_focus_seen'):
+        return
+    st.session_state['mock_focus_seen'] = marker
+    for name in ('group','region','week'):
+        value=st.query_params.get('_home_'+name)
+        if value in options[name] or value == ALL_VALUES:
+            st.session_state['dashboard_'+name]=value
+    count = st.query_params.get('_home_count', '')
+    if count.isdigit() and TOP_N_RANGE[0] <= int(count) <= 10_000:
+        st.session_state['dashboard_top_n'] = int(count)
+    order = st.query_params.get('_home_order')
+    if order in home_mockup.ORDERS:
+        st.session_state['home_order'] = order
+    if token:
+        try:
+            payload=json.loads(base64.urlsafe_b64decode(token.encode()).decode())
+            if set(payload) == set(queries.KEY_COLUMNS+['channel']) and all(isinstance(v,str) for v in payload.values()):
+                st.session_state['mock_focus_key']=payload
+        except (ValueError,TypeError,UnicodeError):
+            return
+
+
+def clear_home_product():
+    st.session_state['home_product_field'] = 'Todos los productos'
+
+
+def read_home_model(week, group, region, count, order='Mayores cambios', product_filter=None):
+    """Real regional or national series; K6 stays explicitly national."""
+    version=get_database_version()
+    week_date=pd.Timestamp(week)
+    previous_week=f'{week_date-pd.Timedelta(days=7):%Y-%m-%d}'
+    prices=read_cached_national_prices(version)
+    current=prices[prices['week_start']==week_date].copy()
+    previous=prices[prices['week_start']==pd.Timestamp(previous_week)].copy()
+    if group != ALL_VALUES:
+        current=current[current['product_group']==group]
+        previous=previous[previous['product_group']==group]
+    if product_filter:
+        family, product, variety = product_filter
+        current=current[(current['product_group']==family) & (current['product']==product) & (current['variety']==variety)]
+        previous=previous[(previous['product_group']==family) & (previous['product']==product) & (previous['variety']==variety)]
+    snapshot=read_cached_week_snapshot(version,week)
+    prior=read_cached_week_snapshot(version,previous_week)
+    if group != ALL_VALUES:
+        snapshot=snapshot[snapshot['product_group']==group]
+        prior=prior[prior['product_group']==group]
+    if product_filter:
+        family, product, variety = product_filter
+        snapshot=snapshot[(snapshot['product_group']==family) & (snapshot['product']==product) & (snapshot['variety']==variety)]
+        prior=prior[(prior['product_group']==family) & (prior['product']==product) & (prior['variety']==variety)]
+    coverage=snapshot.region.nunique()
+    join=queries.KEY_COLUMNS+['channel']
+    if region != ALL_VALUES:
+        snapshot=snapshot[snapshot.region==region]
+        prior=prior[prior.region==region]
+        current=snapshot.assign(national_price=snapshot.price)
+        previous=prior.assign(national_price=prior.price)
+        coverage=snapshot.region.nunique()
+    variations=home_mockup.compare_week(current,previous,join)
+    variations['_coverage_changed']=False
+    if region == ALL_VALUES:
+        regions_now=snapshot.groupby(join).region.agg(frozenset).rename('_regions_now')
+        regions_before=prior.groupby(join).region.agg(frozenset).rename('_regions_before')
+        variations=variations.merge(regions_now,on=join,how='left').merge(regions_before,on=join,how='left')
+        variations['_coverage_changed']=(variations['_regions_now'] != variations['_regions_before']) & variations.variation.notna()
+    valid=variations[variations.variation.notna() & variations.variation.abs().lt(float('inf'))].copy()
+    parts=build_movement_proportions(valid)
+    counts=[int(v) for v in parts.value]
+    alert_rows=read_price_alerts()
+    if group != ALL_VALUES:
+        alert_rows=alert_rows[alert_rows.product_group==group]
+    if product_filter:
+        family, product, variety = product_filter
+        alert_rows=alert_rows[(alert_rows['product_group']==family) & (alert_rows['product']==product) & (alert_rows['variety']==variety)]
+    alert_count=len(alert_rows[alert_rows.week_start==week_date])
+    alert_previous=len(alert_rows[alert_rows.week_start==pd.Timestamp(previous_week)])
+    variations['is_alert']=False
+    variations['_severity']=0.0
+    if region == ALL_VALUES:
+        week_alerts=alert_rows[alert_rows.week_start==week_date].copy()
+        week_alerts['_severity']=(week_alerts.variation-week_alerts.usual_variation).abs()/week_alerts.variation_deviation
+        variations=variations.drop(columns=['is_alert','_severity']).merge(
+            week_alerts[join+['_severity']].assign(is_alert=True),on=join,how='left',validate='one_to_one')
+        variations['is_alert']=variations.is_alert.eq(True)
+        variations['_severity']=variations['_severity'].fillna(0)
+    example_sets = {}
+    for kind, subset in {
+        'up': variations[variations.variation > 0],
+        'down': variations[variations.variation < 0],
+        'equal': variations[variations.variation == 0],
+        'alert': variations[variations.is_alert.eq(True)],
+    }.items():
+        subset = subset.copy()
+        if not subset.empty:
+            subset['_sort'] = subset.variation.abs()
+            subset = subset.sort_values(['_sort'] + join, ascending=[False] + [True] * len(join))
+            example_sets[kind] = [
+                f"{home_mockup.product_label(row, True)} · {row['channel']}"
+                for _, row in subset.head(2).iterrows()
+            ]
+    ranked=home_mockup.order_movements(variations,count,order)
+    if ranked.empty and valid.empty and order != 'Inusuales':
+        ranked=variations.sort_values(join).head(count)
+    # Default selection is the first displayed movement; clicks retain the exact key.
+    chosen=None
+    focus=st.session_state.get('mock_focus_key')
+    if focus:
+        matched=variations
+        for field,value in focus.items():
+            matched=matched[matched[field]==value]
+        if not matched.empty:
+            chosen=matched.iloc[0]
+    if chosen is None:
+        reference=ranked if not ranked.empty else variations.sort_values(join)
+        if not reference.empty:
+            chosen=reference.iloc[0]
+    history=pd.DataFrame(columns=['week_start','national_price'])
+    subtitle='Sin producto con precios disponibles'
+    if chosen is not None:
+        key={field:chosen[field] for field in queries.KEY_COLUMNS}
+        channel=chosen['channel']
+        if region == ALL_VALUES:
+            history=keep_product(prices,{'key':key})
+            history=history[history.channel==channel]
+        else:
+            sql='''SELECT w.week_start,w.price AS national_price FROM weekly_price w
+                JOIN dim_product p USING(product_id) JOIN dim_region r USING(region_id)
+                JOIN dim_channel c USING(channel_id) WHERE w.flag IS NULL
+                AND p.product_group=? AND p.product=? AND p.variety=? AND p.quality=?
+                AND w.normalized_unit=? AND r.region=? AND c.channel=? AND w.week_start BETWEEN ? AND ?'''
+            history=queries.run_sql(sql,parameters=list(key.values())+[region,channel,f'{week_date-pd.Timedelta(weeks=11):%Y-%m-%d}',week])
+            history['week_start']=pd.to_datetime(history.week_start)
+        history=history[history.week_start.between(week_date-pd.Timedelta(weeks=11),week_date)]
+        subtitle=home_mockup.product_label(chosen,True)+' · '+channel+' · $/'+key['normalized_unit']
+    return dict(counts=counts,alert_count=alert_count,alert_delta=alert_count-alert_previous,
+                examples=example_sets,
+                product_filter=product_filter,
+                family_rows=variations[variations.variation.notna() & variations.variation.abs().lt(float('inf'))].to_dict('records'),
+                rows=ranked.to_dict('records'),selected=chosen.to_dict() if chosen is not None else None,
+                history=history,subtitle=subtitle,coverage=coverage,missing=max(0,len(current)-sum(counts)),
+                available=len(current),national=region==ALL_VALUES,
+                coverage_changed=int(variations['_coverage_changed'].sum()),
+                week_label=f'{week_date:%d-%m-%Y}',previous_label=f'{pd.Timestamp(previous_week):%d-%m-%Y}')
+
+
+def build_regional_movement_model(current, previous):
+    """Summarize equivalent weekly prices by region without inventing a basket.
+
+    A movement smaller than 0.05 % is displayed as unchanged, consistently with
+    the product tables. The percentage is the share in the dominant direction.
+    """
+    join = queries.KEY_COLUMNS + ['channel', 'region']
+    current = current[join + ['price']].rename(columns={'price': 'national_price'})
+    previous = previous[join + ['price']].rename(columns={'price': 'national_price'})
+    compared = home_mockup.compare_week(current, previous, join)
+    compared = compared[compared['variation'].notna()
+                        & compared['variation'].abs().lt(float('inf'))].copy()
+    rows = []
+    current_counts = current.groupby('region').size().to_dict()
+    for region in sorted(set(current['region'])):
+        values = compared.loc[compared['region'] == region, 'variation']
+        up = int(values.ge(.0005).sum())
+        down = int(values.le(-.0005).sum())
+        stable = int(values.abs().lt(.0005).sum())
+        total = up + down + stable
+        missing = max(0, int(current_counts.get(region, 0)) - total)
+        counts = {'rise': up, 'fall': down, 'neutral': stable}
+        if not total:
+            state, share = 'missing', None
+        else:
+            largest = max(counts.values())
+            leaders = [name for name, value in counts.items() if value == largest]
+            state = leaders[0] if len(leaders) == 1 else 'mixed'
+            share = largest / total * 100
+        rows.append({'region': region, 'state': state, 'share': share, 'up': up,
+                     'down': down, 'stable': stable, 'total': total, 'missing': missing})
+    return rows
+
+
+def read_regional_movement_model(week, group=ALL_VALUES, product_filter=None):
+    """All available regions under the family/product filters of the dashboard."""
+    version = get_database_version()
+    week_date = pd.Timestamp(week)
+    previous_week = f'{week_date - pd.Timedelta(days=7):%Y-%m-%d}'
+    current = read_cached_week_snapshot(version, week).copy()
+    previous = read_cached_week_snapshot(version, previous_week).copy()
+    if group != ALL_VALUES:
+        current = current[current['product_group'] == group]
+        previous = previous[previous['product_group'] == group]
+    if product_filter:
+        family, product, variety = product_filter
+        for frame_name, frame in (('current', current), ('previous', previous)):
+            filtered = frame[(frame['product_group'] == family) & (frame['product'] == product)
+                             & (frame['variety'] == variety)]
+            if frame_name == 'current':
+                current = filtered
+            else:
+                previous = filtered
+    return build_regional_movement_model(current, previous)
+
+
+def home_alert_rows(week, group, product_filter=None):
+    """National alerts in the same week and product scope as the dashboard."""
+    rows = read_price_alerts()
+    rows = rows[rows['week_start'] == pd.Timestamp(week)]
+    if group != ALL_VALUES:
+        rows = rows[rows['product_group'] == group]
+    if product_filter:
+        family, product, variety = product_filter
+        rows = rows[(rows['product_group'] == family) & (rows['product'] == product)
+                    & (rows['variety'] == variety)]
+    rows = rows.copy()
+    rows['_distance'] = ((rows['variation'] - rows['usual_variation']).abs()
+                         / rows['variation_deviation'])
+    return rows.sort_values(['_distance', 'product_group', 'product'],
+                            ascending=[False, True, True])
+
+
+def home_alert_table(rows):
+    """Readable, severity-ordered rows for the dashboard alert dialog."""
+    records = rows.to_dict('records')
+    return pd.DataFrame({
+        'N.º': range(1, len(records) + 1),
+        'Nivel': [find_alert_level(row['_distance'])[0] for row in records],
+        'Familia': [row['product_group'] for row in records],
+        'Producto': [describe_product(row) for row in records],
+        'Canal': [row['channel'] for row in records],
+        'Unidad': [f"$/{row['normalized_unit']}" for row in records],
+        'Anterior': [home_mockup.money(row['national_price'] / (1 + row['variation']))
+                     for row in records],
+        'Actual': [home_mockup.money(row['national_price']) for row in records],
+        'Cambio': [home_mockup.percent(row['variation'] * 100, True) for row in records],
+    })
+
+
+def style_home_alert_table(table, mode):
+    """Color the alert level and price direction without changing their text labels."""
+    dark = charts.get_palette(mode)['base'] == 'dark'
+    colors = ({'Muy alta': ('#7f1d1d', '#fff4f4'), 'Alta': ('#9a3412', '#fff4e8'),
+               'Moderada': ('#78450a', '#fff4d2')} if dark else
+              {'Muy alta': ('#fee2e2', '#991b1b'), 'Alta': ('#ffedd5', '#9a3412'),
+               'Moderada': ('#fef3c7', '#854d0e')})
+    def level_css(value):
+        background, foreground = colors[value]
+        return f'background-color:{background};color:{foreground};font-weight:700'
+    def change_css(value):
+        foreground = ('#ff8a96' if dark else '#b91c1c') if value.startswith('+') else ('#83baff' if dark else '#1d4ed8')
+        return f'color:{foreground};font-weight:700'
+    return table.style.map(level_css, subset=['Nivel']).map(change_css, subset=['Cambio'])
+
+
+@st.dialog('Alertas de precio', width='large')
+def show_home_alerts_dialog(week, group, product_filter, mode):
+    rows = home_alert_rows(week, group, product_filter)
+    if rows.empty:
+        st.info('No hay alertas para esta selección.')
+        return
+    counts = rows.groupby('product_group').size().sort_values(ascending=False)
+    families = counts.index.tolist()
+    selected = st.session_state.get('home_alert_selected_family')
+    if selected not in families:
+        selected = None
+        st.session_state['home_alert_selected_family'] = None
+    if selected is None:
+        st.html('<div class="home-alert-overview-marker"></div>')
+        st.caption(f'{len(rows)} cambios poco habituales · {len(families)} familias · datos nacionales de ODEPA')
+        st.html('<div class="home-alert-gallery-legend">'
+                '<span><i class="hot"></i>Más alertas</span>'
+                '<span><i class="warm"></i>Intermedio</span>'
+                '<span><i class="mild"></i>Menos alertas</span>'
+                '<small>El color indica cantidad, no gravedad.</small></div>')
+        icons = {'Hortalizas': '🥬', 'Frutas': '🍎', 'Pan': '🍞',
+                 'Carne bovina': '🥩', 'Abarrotes y otros': '🥫'}
+        max_count = int(counts.max())
+        tile_css = []
+        shapes = ('circle(50%)',
+                  'polygon(18% 0%,82% 0%,100% 50%,82% 100%,18% 100%,0% 50%)',
+                  'polygon(50% 0%,100% 50%,50% 100%,0% 50%)',
+                  'polygon(50% 0%,100% 100%,0% 100%)',
+                  'polygon(25% 0%,75% 0%,100% 25%,100% 75%,75% 100%,25% 100%,0% 75%,0% 25%)',
+                  'inset(0 round 28%)',
+                  'polygon(50% 0%,95% 35%,80% 95%,20% 95%,5% 35%)')
+        for index, family in enumerate(families):
+            icon = icons.get(family, '🍗' if 'Cerdo' in family else '🥚')
+            ratio = int(counts[family]) / max_count
+            tone = ('#db3349' if ratio >= .75 else '#ed6b29' if ratio >= .45
+                    else '#f3a536' if ratio >= .25 else '#c6a062')
+            tile_css.append(f'.st-key-home_alert_card_{index}'
+                            f'{{--alert-tone:{tone};--alert-shape:{shapes[index % len(shapes)]};}}'
+                            f'.st-key-home_alert_card_{index} button::after{{content:"{icon}";}}')
+        st.html('<style>' + ''.join(tile_css) + '</style>')
+        for start in range(0, len(families), 4):
+            columns = st.columns(4, gap='small')
+            for offset, family in enumerate(families[start:start + 4]):
+                index = start + offset
+                total = int(counts[family])
+                label = f'{family}\n{total} {"alerta" if total == 1 else "alertas"}  →'
+                with columns[offset].container(key=f'home_alert_card_{index}'):
+                    if st.button(label, key=f'home_alert_family_{index}', use_container_width=True):
+                        st.session_state['home_alert_selected_family'] = family
+                        st.rerun(scope='fragment')
+        st.caption('La alerta señala un cambio inusual respecto de la semana anterior; no significa que el alimento sea el más caro.')
+        return
+
+    st.html('<div class="home-alert-detail-marker"></div>')
+    family_rows = rows[rows['product_group'] == selected]
+    family_total = len(family_rows)
+    with st.container(key='home_alert_detail_heading', horizontal=True,
+                      vertical_alignment='center', gap='small'):
+        if st.button('← Familias', key='home_alert_back'):
+            st.session_state['home_alert_selected_family'] = None
+            st.rerun(scope='fragment')
+        st.subheader(f'{selected} · {family_total} {"alerta" if family_total == 1 else "alertas"}')
+    units = ['Todas las unidades'] + sorted(family_rows['normalized_unit'].unique())
+    unit_key = f'home_alert_unit_{selected}'
+    if st.session_state.get(unit_key) not in units:
+        st.session_state[unit_key] = units[0]
+    with st.container(key='home_alert_detail_tools', horizontal=True,
+                      vertical_alignment='bottom', gap='small'):
+        st.html('<div class="home-alert-level-guide">'
+                '<span><i class="critical"></i>Muy alta</span>'
+                '<span><i class="high"></i>Alta</span>'
+                '<span><i class="moderate"></i>Moderada</span>'
+                '<small>El color indica cuán inusual fue el cambio.</small></div>')
+        selected_unit = st.selectbox('Unidad', units, key=unit_key,
+                                     format_func=lambda value: value if value == 'Todas las unidades' else f'$/{value}')
+    if selected_unit != 'Todas las unidades':
+        family_rows = family_rows[family_rows['normalized_unit'] == selected_unit]
+        st.caption(f'Mostrando {len(family_rows)} de {family_total} alertas de esta familia.')
+    table = home_alert_table(family_rows).drop(columns='Familia')
+    st.dataframe(style_home_alert_table(table, mode),
+                 hide_index=True, use_container_width=True,
+                 height=min(520, max(150, 35 * (len(family_rows) + 1))))
+
+
+PRODUCT_ORDERS = ('Mayor cambio', 'Subidas', 'Bajadas', 'Nombre', 'Inusuales')
+
+
+def normalize_search(text):
+    """Lower case without accents: «Ají», «aji» and «AJI» read the same."""
+    decomposed = unicodedata.normalize('NFD', str(text).lower())
+    return ''.join(char for char in decomposed if unicodedata.category(char) != 'Mn').strip()
+
+
+def matches_product_search(row, query):
+    """True when every searched word starts a word of the product or its variety."""
+    words = re.split(r'[^0-9a-zñ]+', normalize_search(f"{row['product']} {row['variety']}"))
+    return all(any(word.startswith(term) for word in words) for term in normalize_search(query).split())
+
+
+@st.cache_data
+def read_cached_region_directions(database_version, week):
+    """{(product key, channel): (regions up, regions down)} between two consecutive weeks."""
+    week_date = pd.Timestamp(week)
+    join = queries.KEY_COLUMNS + ['channel']
+    current = read_cached_week_snapshot(database_version, week)
+    previous = read_cached_week_snapshot(database_version, f'{week_date - pd.Timedelta(days=7):%Y-%m-%d}')
+    columns = join + ['region', 'price']
+    compared = home_mockup.compare_week(current[columns].rename(columns={'price': 'national_price'}),
+                                        previous[columns].rename(columns={'price': 'national_price'}),
+                                        join + ['region'])
+    compared = compared[compared['variation'].notna() & compared['variation'].abs().lt(float('inf'))]
+    up = compared[compared['variation'] >= .0005].groupby(join).size()
+    down = compared[compared['variation'] <= -.0005].groupby(join).size()
+    keys = set(up.index) | set(down.index)
+    return {key: (int(up.get(key, 0)), int(down.get(key, 0))) for key in keys}
+
+
+def sort_family_products(rows, order):
+    """The family table under the chosen order; ties stay in a stable, readable order."""
+    names = lambda row: (str(row['product']), str(row['variety']), str(row['channel']))
+    if order == 'Nombre':
+        return sorted(rows, key=names)
+    if order == 'Subidas':
+        return sorted(rows, key=lambda row: (-row['variation'], names(row)))
+    if order == 'Bajadas':
+        return sorted(rows, key=lambda row: (row['variation'], names(row)))
+    if order == 'Inusuales':
+        # National alerts only, the most unusual first (distance to the usual range).
+        return sorted((row for row in rows if row.get('is_alert')),
+                      key=lambda row: (-row.get('_severity', 0), names(row)))
+    return sorted(rows, key=lambda row: (-abs(row['variation']), names(row)))
+
+
 def show_market_overview(mode, prefix):
-    """The report's summary, like the approved mockup (D-072): title and analyzed week,
-    one filter bar with Top N as a slider, the figures of the week on one line, and four
-    questions, each with the chart its answer needs. Clicks still filter (D-069)."""
-    filters = {name: read_filter(name) for name in GLOBAL_FILTERS}
-    week = filters["week"] if filters["week"] != ALL_VALUES else f"{read_latest_week():%Y-%m-%d}"
-    group, region, product = filters["group"], filters["region"], read_product_filter()
-    # The mockup's question is «¿Qué precios subieron más?»: rises first, falls one pick away.
-    st.session_state.setdefault("dashboard_ranking_direction", "Alzas")
-    direction = st.session_state["dashboard_ranking_direction"]
-    count = st.session_state.get("dashboard_top_n", DEFAULT_TOP_N)
-    variations = read_week_variations(week, group)
-    ranked = rank_weekly_movements(variations, count, direction)
-    show_dashboard_title(week, ranked, prefix)
-    # The slider and the order write the session before the rerun: the ranking above
-    # already used their new values.
-    show_report_filters(with_summary_fields=True)
-    st.markdown('<p class="filter-scope"><strong>Alcance</strong> · Grupo y Semana: alertas, '
-                'ranking, curva y mapa · Producto: curva y mapa · Región: alertas y región '
-                'marcada en el mapa (ranking y curva son nacionales) · Top N: ranking. Grupo, '
-                'Región y Semana siguen en las demás vistas.</p>', unsafe_allow_html=True)
-    # The bar may have let go of a product outside the group or week (chained filters).
-    product = read_product_filter()
-    if group != ALL_VALUES or product or region != ALL_VALUES:
-        show_breadcrumb_and_chips()
-    summary = read_cached_week_summary(get_database_version(), week, group, region)
-    st.markdown(build_kpi_strip_html(summary, read_match_coverage(), read_latest_run()),
-                unsafe_allow_html=True)
-    key = product["key"] if product else choose_default_key(ranked, week)
-    ranking_column, trend_column = st.columns([1.35, 1])
-    with ranking_column:
-        show_movements_card(prefix, ranked, count, mode)
-    with trend_column:
-        if key is not None:
-            show_pulse_card(prefix, key, week, mode)
-    map_column, data_column = st.columns([1.35, 1])
-    with map_column:
-        if key is not None:
-            show_map_card(prefix, key, week, mode)
-    with data_column:
-        show_usable_data_card(mode)
-    st.markdown(f'<div class="report-footer">{build_link_html("Resultados y método →", build_page_address(PAGE_QUERIES))}'
-                f'<span>ⓘ {html.escape(ALERT_MEANING)}</span>'
-                f'<span>ⓘ {html.escape(GAP_MEANING)}</span></div>', unsafe_allow_html=True)
-    with st.expander("Datos del ranking", expanded=True):
-        st.dataframe(format_ranking_table(ranked), hide_index=True, use_container_width=True)
-    st.caption(NOMINAL_PRICES_TEXT)
+    """Map, movement by family and products of one family on one screen (D-092)."""
+    # Streamlit reruns this file without reimporting helpers; keep the live page
+    # in sync when the dashboard markup changes during development.
+    importlib.reload(home_mockup)
+    st.markdown(home_mockup.style(mode,charts.get_palette(mode)),unsafe_allow_html=True)
+    options=read_cached_filter_options(get_database_version())
+    apply_home_focus(options)
+    if read_filter('week') not in options['week']:
+        st.session_state['dashboard_week']=options['week'][0]
+    if read_filter('region') not in options['region']:
+        st.session_state['dashboard_region']=ALL_VALUES
+    week,region=read_filter('week'),read_filter('region')
+    st.session_state.pop('home_product_selection', None)
+    latest=read_latest_run()
+    stamp=to_chile_time(parse_run_start(latest['started_at']))
+    month=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][stamp.month-1]
+    updated=f'{stamp.day} {month} · {stamp:%H:%M}'
+    # Every family stays in the movement chart; the selected one fills the product table.
+    model=read_home_model(week,ALL_VALUES,region,DEFAULT_TOP_N)
+    regional_rows=read_regional_movement_model(week)
+    averages=home_mockup.family_averages(model['family_rows'])
+    families=[family for family, _, _ in averages]
+    family=st.query_params.get('familia')
+    if family not in families:
+        family=families[0] if families else None
+    scope='todo Chile' if region == ALL_VALUES else home_mockup.short_region(region)
+    def overview_link(chosen_region, chosen_family):
+        address = build_page_address(PAGE_HOME)
+        parameters = {'_home_region': chosen_region or ALL_VALUES, '_home_week': week}
+        if chosen_family:
+            parameters['familia'] = chosen_family
+        return address + ('&' if '?' in address else '?') + urlencode(parameters)
+    def context_link(page,row):
+        payload={field:row[field] for field in queries.KEY_COLUMNS+['channel']}
+        token=base64.urlsafe_b64encode(json.dumps(payload,ensure_ascii=False).encode()).decode()
+        address=build_page_address(page)
+        return address+('&' if '?' in address else '?')+urlencode({
+            '_home_key':token,'_home_group':row['product_group'],'_home_region':region,'_home_week':week})
+    st.markdown('<div class="greenocean-mockup">' + home_mockup.dashboard_header(
+        describe_week_span(week), updated, latest['status']==etl.STATUS_LOADED, model['family_rows'],
+        regional_rows, None if region == ALL_VALUES else region) + '</div>', unsafe_allow_html=True)
+    with st.sidebar.container(key='home_alert_access'):
+        if st.button(f'Alertas de precio · {model["alert_count"]}',
+                     key='home_alert_trigger',
+                     help=f'{model["alert_count"]} alertas de precio. Abre el detalle por familia.'):
+            st.session_state['home_alert_selected_family'] = None
+            show_home_alerts_dialog(week, ALL_VALUES, None, mode)
+    map_column, detail_column = st.container(key='home_overview').columns([0.56, 1.44], gap='small')
+    # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
+    # sanitizer intentionally removes interactive SVG links.
+    map_column.markdown('<div class="greenocean-mockup">' + home_mockup.regional_map(
+        regional_rows, lambda chosen: overview_link(chosen, family), model['week_label'],
+        model['previous_label'], None if region == ALL_VALUES else region) + '</div>', unsafe_allow_html=True)
+    with detail_column:
+        st.markdown('<div class="greenocean-mockup">' + home_mockup.family_movement(
+            model['family_rows'], lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen),
+            family, scope) + '</div>', unsafe_allow_html=True)
+        with st.container(key='home_products'):
+            rows=[row for row in model['family_rows'] if row['product_group'] == family]
+            average=next((value for name, value, _ in averages if name == family), None)
+            heading = st.empty()
+            search_column, channel_column, order_column, history_column = st.columns(
+                [1.7, 1.25, 1.35, 0.95], vertical_alignment='center')
+            query = search_column.text_input('Buscar', key='home_products_search', icon=':material/search:',
+                                             placeholder='Producto, ej.: lechuga', label_visibility='collapsed')
+            channels=['Todos'] + sorted({str(row['channel']) for row in rows})
+            if st.session_state.get('home_products_channel') not in channels:
+                st.session_state['home_products_channel']='Todos'
+            channel=channel_column.selectbox('Canal', channels, key='home_products_channel')
+            # Alerts are national: «Inusuales» only applies to the whole country.
+            orders=PRODUCT_ORDERS if region == ALL_VALUES else PRODUCT_ORDERS[:-1]
+            if st.session_state.get('home_products_order') not in orders:
+                st.session_state['home_products_order']=orders[0]
+            order=order_column.selectbox('Orden', orders, key='home_products_order')
+            total=len(rows)
+            if channel != 'Todos':
+                rows=[row for row in rows if row['channel'] == channel]
+            if query.strip():
+                rows=[row for row in rows if matches_product_search(row, query)]
+            rows=sort_family_products(rows, order)
+            heading.markdown('<div class="greenocean-mockup">' + home_mockup.products_heading(
+                family or 'Sin familia', average, scope, len(rows), total) + '</div>', unsafe_allow_html=True)
+            directions=read_cached_region_directions(get_database_version(), week)
+            for row in rows:
+                row['_regions']=directions.get(tuple(row[field] for field in queries.KEY_COLUMNS+['channel']))
+            history_address=(context_link(PAGE_SEASONALITY, rows[0]) if rows else build_page_address(PAGE_SEASONALITY))
+            history_column.markdown(f'<div class="greenocean-mockup"><a class="mock-history-button" '
+                                    f'href="{html.escape(history_address)}" target="_self">Contexto del precio</a></div>',
+                                    unsafe_allow_html=True)
+            st.markdown('<div class="greenocean-mockup">' + home_mockup.products_table(
+                rows, lambda row: context_link(PAGE_SEASONALITY, row), model['week_label'],
+                model['previous_label'], query.strip()) + home_mockup.coverage_note(
+                model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION))
+                + '</div>', unsafe_allow_html=True)
 
 
 def show_home_page(mode):
     """Market dashboard with latest-week rankings; diagrams have their own destination."""
-    st.markdown(f"<style>{market_style.build_css(mode)}</style>", unsafe_allow_html=True)
     with st.container(key="market_dashboard"):
         show_market_overview(mode, "home")
 
 
-def show_diagrams_page(mode):
-    show_page_header(PAGE_DIAGRAMS, "Cómo viajan los datos desde ODEPA hasta los indicadores "
-                     "y en qué plataformas corre cada componente.")
-    animate_flow = st.toggle("Animar el recorrido de los datos", value=True, key="animate_data_flow")
-    st.caption("El movimiento ilustra el recorrido de los datos. Los puntos y el estado "
-               "de ejecución muestran la última respuesta disponible del pipeline.")
-    show_pipeline_tab(mode, animate_flow)
-    show_section_intro("Arquitectura por plataforma", "Cada plataforma contiene los "
-                       "componentes que ejecuta y sus conexiones.")
-    show_infrastructure_diagram(mode, animate_flow)
+PIPELINE_DIAGRAMS = {"recorrido", "estado", "arquitectura"}
+
+
+def build_pipeline_diagram_address(diagram):
+    """Direct address of one diagram inside the Pipeline page."""
+    address = build_page_address(PAGE_DIAGRAMS)
+    separator = "&" if "?" in address else "?"
+    return address + separator + urlencode({PIPELINE_DIAGRAM_PARAMETER: diagram})
+
+
+def build_pipeline_mini_svg(states, figures, mode, animate_flow):
+    """Build the compact execution journey, including hot-reload compatibility."""
+    mini_builder_parameters = inspect.signature(
+        architecture.build_mini_journey_svg).parameters
+    if "animate_flow" in mini_builder_parameters:
+        return architecture.build_mini_journey_svg(
+            states, figures, mode, animate_flow=animate_flow)
+    return architecture.build_mini_journey_svg(states, figures, mode)
+
+
+def build_pipeline_gallery_link(svg, diagram, label, css_class=""):
+    """A whole diagram acts as the entry point to its focused view."""
+    address = build_pipeline_diagram_address(diagram)
+    return (f'<a class="pipeline-gallery-link {html.escape(css_class)}" '
+            f'href="{html.escape(address)}" target="_self" '
+            f'aria-label="Ampliar {html.escape(label)}">{svg}'
+            f'<span class="pipeline-open-label">Ampliar ↗</span></a>')
+
+
+def show_pipeline_page_header():
+    """A one-line Pipeline heading leaves the viewport to the diagrams themselves."""
+    latest_run = read_latest_run()
+    run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
+    run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
+    freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
+    st.markdown(
+        '<div class="compact-header pipeline-page-header">'
+        f'<h1>Pipeline y arquitectura</h1>'
+        '<span class="pipeline-header-description">ODEPA → indicadores · recorrido y plataformas</span>'
+        f'<span class="page-freshness">Datos al {freshness} '
+        f'{build_chip(run_text, run_kind)}</span></div></div>', unsafe_allow_html=True)
+
+
+def show_focused_pipeline_diagram(diagram, mode, animate_flow, journey):
+    """Show one Pipeline diagram alone, with a compact return control."""
+    states, figures, pipeline_run, latest_load, error_note = journey
+    titles = {"recorrido": "Recorrido completo por capas",
+              "estado": "Estado de la última ejecución",
+              "arquitectura": "Arquitectura por plataforma"}
+    st.markdown(
+        '<div class="pipeline-focus-toolbar">'
+        f'<strong>{html.escape(titles[diagram])}</strong></div>',
+        unsafe_allow_html=True)
+    with st.container(key=f"pipeline_focus_{diagram}"):
+        if diagram == "recorrido":
+            st.markdown(
+                zoom.build_zoom_frame_html(
+                    architecture.build_journey_svg(
+                        states, figures, mode, animate_flow=animate_flow), "diagram-wide")
+                + zoom.build_zoom_frame_html(
+                    architecture.build_vertical_journey_svg(
+                        states, figures, mode, animate_flow=animate_flow), "diagram-narrow"),
+                unsafe_allow_html=True)
+        elif diagram == "estado":
+            st.markdown(build_run_status_html(states, pipeline_run, latest_load),
+                        unsafe_allow_html=True)
+            if error_note:
+                st.caption(error_note)
+            st.markdown(zoom.build_zoom_frame_html(build_pipeline_mini_svg(
+                states, figures, mode, animate_flow)), unsafe_allow_html=True)
+            st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
+        else:
+            st.markdown(zoom.build_zoom_frame_html(architecture.build_devops_svg(
+                states, build_devops_figures(figures), mode,
+                animate_flow=animate_flow)), unsafe_allow_html=True)
+    st.markdown('<div class="pipeline-focus-return">'
+                + build_link_html("← Volver a los tres diagramas",
+                                  build_page_address(PAGE_DIAGRAMS))
+                + '</div>', unsafe_allow_html=True)
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
+
+
+def show_diagrams_page(mode):
+    # Streamlit may rerun this module while retaining an older architecture
+    # import from the same live session.
+    if not hasattr(architecture, "build_platform_gallery_svg"):
+        importlib.reload(architecture)
+    focused = st.query_params.get(PIPELINE_DIAGRAM_PARAMETER)
+    focused = focused if focused in PIPELINE_DIAGRAMS else None
+    journey = read_journey()
+    animate_flow = st.session_state.get("animate_data_flow", True)
+    if focused:
+        show_focused_pipeline_diagram(focused, mode, animate_flow, journey)
+        return
+
+    show_pipeline_page_header()
+    animate_flow = st.toggle("Animar el recorrido de los datos", value=True, key="animate_data_flow")
+    states, figures, pipeline_run, latest_load, error_note = journey
+
+    # The complete journey is the main diagram, so it leads the gallery and gets
+    # substantially more room than either supporting view.
+    with open_card("pipeline_gallery_main", "Recorrido completo por capas",
+                   hint=ARCHITECTURE_HINT):
+        st.markdown(build_pipeline_gallery_link(
+            architecture.build_journey_svg(
+                states, figures, mode, animate_flow=animate_flow),
+            "recorrido", "Recorrido completo por capas", "pipeline-gallery-main-link"),
+            unsafe_allow_html=True)
+
+    status_column, platform_column = st.columns(2, gap="small")
+    with status_column, open_card("pipeline_gallery_status", "Estado de la última ejecución",
+                                  hint=ARCHITECTURE_HINT):
+        st.markdown('<div class="pipeline-status-content">'
+                    + build_run_status_html(states, pipeline_run, latest_load)
+                    + '<div class="pipeline-gallery-status-preview">'
+                    + build_pipeline_mini_svg(states, figures, mode, animate_flow)
+                    + '</div></div>', unsafe_allow_html=True)
+    with platform_column, open_card("pipeline_gallery_platform", "Arquitectura por plataforma",
+                                    hint=DEVOPS_HINT):
+        st.markdown(build_pipeline_gallery_link(
+            '<span class="pipeline-platform-compact">'
+            + architecture.build_platform_gallery_svg(states, figures, mode,
+                                                      animate_flow=animate_flow)
+            + '</span><span class="pipeline-platform-detailed">'
+            + architecture.build_devops_svg(states, build_devops_figures(figures), mode,
+                                             animate_flow=animate_flow)
+            + '</span>',
+            "arquitectura", "Arquitectura por plataforma",
+            "pipeline-gallery-secondary-link"), unsafe_allow_html=True)
 
 
 # endregion
@@ -4303,10 +5981,9 @@ def show_gap_tab(mode, filters):
             show_gap_line(rows, channel, mode, weeks=GAP_LINE_WEEKS)
     st.caption("Brecha = (precio al consumidor − precio mayorista) / precio mayorista, con la "
                "misma variedad, calidad, región, semana y unidad.")
-    if st.session_state.get(COMPACT_VIEW):
-        show_week_gap_ranking(mode)
-    show_lag_card(rows, mode)
-    with st.expander("Ver evolución histórica", expanded=True):
+    with st.expander("Análisis avanzado · tiempo entre cambios de precios", expanded=False):
+        show_lag_card(rows, mode)
+    with st.expander("Ver evolución histórica", expanded=False):
         for channel in channels:
             show_gap_line(rows, channel, mode, key_prefix="gap_history")
     st.caption(NOMINAL_PRICES_TEXT)
@@ -4418,12 +6095,15 @@ def show_channel_gaps(rows, consumer_channels, mode):
         bar_rows["meaning"] = [charts.describe_channel_gap(gap, reference_channel)
                                for gap in bar_rows["value"]]
         colors = [charts.get_channel_color(channel, mode) for channel in average_gap.index]
-        show_chart(charts.draw_horizontal_bars(bar_rows, "Diferencia promedio (%)", mode,
-                                               colors, reference_value=0,
-                                               reference_label=reference_channel))
+        chart = charts.draw_horizontal_bars(bar_rows, "Diferencia promedio (%)", mode,
+                                            colors, reference_value=0,
+                                            reference_label=reference_channel, label_limit=175)
+        chart = chart.configure_axisY(labelExpr="split(datum.label, ' · ')", labelLineHeight=12)
+        show_chart(chart.properties(height=max(160, len(bar_rows) * 50)))
         st.caption(f"Cuánto más caro (+) o más barato (−) es cada canal que "
                    f"«{reference_channel}», en las semanas y regiones donde ambos tienen precio.  \n"
                    f"Base de cada barra: {' · '.join(describe_gap_basis(rows))}.")
+        show_data_sample(pd.DataFrame({"Canal / alcance": bar_rows["label"], "Diferencia": bar_rows["value_label"], "_order": bar_rows["value"]}).sort_values("_order", ascending=False).drop(columns="_order"))
         missing_channels = list_channels_without_pairs(rows, consumer_channels,
                                                        reference_channel)
         if missing_channels:
@@ -4446,6 +6126,7 @@ def show_regional_index(rows, mode):
         show_chart(charts.draw_horizontal_bars(bar_rows, "Índice regional", mode,
                                                reference_value=1,
                                                reference_label="Promedio nacional"))
+        show_data_sample(pd.DataFrame({"Región": bar_rows["label"], "Índice": bar_rows["value_label"], "_order": bar_rows["value"]}).sort_values("_order", ascending=False).drop(columns="_order"))
         st.caption("Sobre 1, la región es más cara que el promedio nacional de la semana; "
                    "bajo 1, más barata.")
 
@@ -4470,65 +6151,15 @@ def show_channels_tab(mode, filters):
 
 
 # region Seasonality page
-def build_month_rows(rows):
-    """Average seasonal index of each month of each year (rows of one channel)."""
-    months = rows.assign(year=rows["week_start"].dt.year, month=rows["week_start"].dt.month)
-    months = months.groupby(["year", "month"], as_index=False)["seasonal_index"].mean()
-    months = months.rename(columns={"seasonal_index": "value"})
-    months["value_label"] = months["value"].map(charts.format_index)
-    return months
-
-
-def show_seasonality_history(rows, mode):
-    """The weekly index and national price, folded: one line per channel."""
-    with st.expander("Ver evolución histórica", expanded=True):
-        index_column, price_column = st.columns(2)
-        with index_column, open_card("seasonal_index", "Índice estacional por semana",
-                                     "1 = precio promedio del año.", hint=SEASONAL_INDEX_HINT,
-                                     kpi="K4"):
-            index_rows = rows[["week_start", "channel", "seasonal_index"]].rename(
-                columns={"seasonal_index": "value"})
-            show_chart(charts.draw_weekly_lines(
-                index_rows, "Índice", index_rows["value"].map(charts.format_index), mode,
-                is_money=False))
-        with price_column, open_card("national_price", "Precio nacional por semana",
-                                     hint=NATIONAL_PRICE_HINT, kpi="K4"):
-            price_rows = rows[["week_start", "channel", "national_price"]].rename(
-                columns={"national_price": "value"})
-            show_chart(charts.draw_weekly_lines(
-                price_rows, f"$/{rows['normalized_unit'].iloc[0]}",
-                "$ " + price_rows["value"].map(charts.format_thousands), mode, is_money=True))
-
-
-def show_seasonality_tab(mode, filters):
-    """K4 as a calendar of months and years, one per channel; the weekly lines folded
-    (D-059)."""
-    st.caption("Índice = precio nacional de la semana / promedio del año. Con varios años se "
-               "ve qué meses son caros o baratos cada año.")
-    rows = read_indicator_for_key("k4_seasonal_index", filters["key"])
-    rows = rows[rows["channel"].isin(filters["channels"])]
-    if rows.empty:
-        st.info(NO_DATA_TEXT)
-        return
-    channels = [channel for channel in filters["channels"] if channel in set(rows["channel"])]
-    for column, channel in zip(st.columns(max(1, min(2, len(channels)))) * 4, channels):
-        with column, open_card(f"seasonal_calendar_{channel}",
-                               f"Calendario de precios · {channel}",
-                               "Más oscuro = más caro ese mes.", hint=HEATMAP_HINT, kpi="K4"):
-            show_chart(charts.draw_heatmap(build_month_rows(rows[rows["channel"] == channel]),
-                                           mode))
-    show_seasonality_history(rows, mode)
-    st.caption(NOMINAL_PRICES_TEXT)
-
-
 # endregion
 
 
 # region Alerts page
-def format_alerts(alert_rows):
+def format_alerts(alert_rows, keep_order=False):
     """Alerts as a table for the reader, largest movements first."""
-    order = alert_rows["variation"].abs().sort_values(ascending=False).index
-    alert_rows = alert_rows.loc[order]
+    if not keep_order:
+        order = alert_rows["variation"].abs().sort_values(ascending=False).index
+        alert_rows = alert_rows.loc[order]
     return pd.DataFrame({
         "Producto": [describe_product(row) for row in alert_rows.to_dict("records")],
         "Canal": alert_rows["channel"],
@@ -4581,7 +6212,7 @@ def show_alerts_tab(mode, filters):
         return
     weeks = sorted(alert_rows["week_start"].dt.date.unique(), reverse=True)
     report_week = read_filter("week") if st.session_state.get(COMPACT_VIEW) else ALL_VALUES
-    if report_week != ALL_VALUES and pd.Timestamp(report_week).date() in weeks:
+    if report_week != ALL_VALUES:
         # Inside the report the week comes from its bar (D-069).
         week = pd.Timestamp(report_week).date()
     else:
@@ -4595,18 +6226,33 @@ def show_alerts_tab(mode, filters):
     distance = ((week_rows["variation"] - week_rows["usual_variation"]).abs()
                 / week_rows["variation_deviation"])
     shown_rows = week_rows.loc[distance.sort_values(ascending=False).index]
-    shown_count = ALERTS_SCREEN_COUNT if st.session_state.get(COMPACT_VIEW) else ALERTS_PAGE_BAR_COUNT
+    control, product_col, channel_col = st.columns([1,2,2])
+    shown_count = control.slider("Top N de alertas",8,100,20,key="alerts_top_n")
+    selected_product = product_col.selectbox("Producto de la alerta", ["Todos"]+sorted(shown_rows["product"].unique()),key="alerts_product")
+    selected_channel = channel_col.selectbox("Canal de la alerta", ["Todos"]+sorted(shown_rows["channel"].unique()),key="alerts_channel")
+    if selected_product != "Todos":
+        shown_rows = shown_rows[shown_rows["product"] == selected_product]
+    if selected_channel != "Todos":
+        shown_rows = shown_rows[shown_rows["channel"] == selected_channel]
+    st.caption(f"{len(shown_rows)} alertas filtradas · se muestran {min(shown_count,len(shown_rows))}. Alcance nacional: promedio simple de las regiones disponibles, sin ponderación por ventas.")
     with open_card("alert_list", f"Alertas de la semana ({len(week_rows)})",
-                   "De la más lejana a su rango habitual a la más cercana.",
+                   "Primero, los cambios más inusuales. La barra muestra qué tanto se alejan de lo habitual; la marca negra es el umbral de alerta.",
                    hint=ALERT_LIST_HINT, kpi="K6"):
         st.markdown(build_alert_list_html(shown_rows.head(shown_count), mode),
                     unsafe_allow_html=True)
+        alert_sample = format_alerts(shown_rows.head(shown_count),keep_order=True)
+        alert_sample["Precio anterior"] = (shown_rows.head(shown_count)["national_price"]/(1+shown_rows.head(shown_count)["variation"])).map(lambda v:"$ "+charts.format_thousands(v)).to_numpy()
+        show_data_sample(alert_sample[["Producto","Canal","Precio anterior","Precio nacional","Unidad","Variación"]])
         if len(shown_rows) > shown_count:
             st.caption(f"Se muestran las {shown_count} más lejanas; todas están en la tabla "
                        "de abajo. Hay alerta cuando el cambio semanal se aleja más de 2 "
                        "desviaciones estándar de lo habitual en las 12 semanas previas.")
-    with st.expander("Ver todas las alertas de la semana en tabla", expanded=True):
-        st.dataframe(format_alerts(week_rows), hide_index=True, use_container_width=True)
+    with st.expander("Ver todas las alertas de la semana en tabla", expanded=False):
+        table = format_alerts(shown_rows, keep_order=True)
+        table["Precio anterior"] = (shown_rows["national_price"] / (1+shown_rows["variation"])).map(lambda v: "$ " + charts.format_thousands(v)).to_numpy()
+        table["Región / alcance"] = "Nacional · regiones disponibles"
+        table["Regla"] = "Cambio fuera de media ± 2 desviaciones de las 12 semanas previas"
+        st.dataframe(table, hide_index=True, use_container_width=True)
     st.caption(NOMINAL_PRICES_TEXT)
 
 
@@ -4617,15 +6263,421 @@ def read_report_week():
 
 
 def show_analysis_view(mode, title, renderer):
-    show_page_header(title, "Análisis de precios oficiales de ODEPA, con unidades y "
-                     "series comparables.")
-    if st.session_state.get(COMPACT_VIEW):
-        show_report_filters()
-    if renderer is show_alerts_tab:
-        renderer(mode, None)
-    else:
+    titles = {PAGE_GAP: "¿Cuánto más cuesta al consumidor?", PAGE_ANALYSIS: "¿Qué precios cambiaron esta semana?",
+              PAGE_CHANNELS: "¿Dónde cuesta más el mismo producto?", PAGE_SEASONALITY: "¿Cómo evolucionan los precios?",
+              PAGE_ALERTS: "¿Qué cambios conviene revisar?"}
+    show_page_header(titles.get(title, title), GRAPH_HELP.get(title, "Precios oficiales de ODEPA."))
+    show_reading_guide()
+    if renderer in (show_gap_tab, show_week_tab, show_alerts_tab):
+        show_report_filters(with_summary_fields=renderer is not show_alerts_tab, include_product=False, include_region=renderer is show_gap_tab)
+        if renderer is show_alerts_tab:
+            renderer(mode, None)
+            return
+        if renderer is show_gap_tab:
+            st.caption("Ejemplo de lectura: mayorista 1.000 pesos/kg y consumidor 1.300 pesos/kg = 30 % de diferencia. No es ganancia. Las diferencias sobre +300 % se revisan aparte.")
+            show_week_gap_ranking(mode)
+        else:
+            rows = read_week_variations(read_report_week(), read_filter("group"))
+            count = st.session_state.get("dashboard_top_n", DEFAULT_TOP_N)
+            left, right = st.columns(2)
+            with left:
+                show_movements_card("week_top_rises", rank_weekly_movements(rows, count, "Alzas"), count, mode, direction="Alzas")
+            with right:
+                show_movements_card("week_top_falls", rank_weekly_movements(rows, count, "Bajas"), count, mode, direction="Bajas")
+            show_group_card("week", read_report_week(), mode)
+        st.divider()
+        st.subheader("Detalle de un producto")
         filters = choose_analysis_filters()
+        if renderer is show_week_tab:
+            detail = read_margin_rows(filters)
+            if detail.empty:
+                st.info(NO_MARGIN_TEXT)
+            else:
+                show_overview_figures(detail, mode)
+                show_week_history(detail, filters, mode)
+        else:
+            renderer(mode, filters)
+        return
+    # Placeholder keeps the answer above the optional exploration controls.
+    chart_area = st.container()
+    st.divider()
+    st.subheader("Cambiar el producto del análisis")
+    filters = choose_analysis_filters(include_region=False, include_channels=False)
+    with chart_area:
+        key = filters["key"]
+        st.caption("Producto analizado: " + " · ".join(str(key[column]) for column in queries.KEY_COLUMNS) + " · histórico disponible completo")
         renderer(mode, filters)
+
+
+# region Contexto del precio (D-094)
+CONTEXT_CHANNELS = list(charts.CONTEXT_CHANNELS)
+CONTEXT_KEY = "context_key"
+CONTEXT_DEFAULT = {"product_group": "Hortalizas", "product": "Tomate", "variety": "Larga vida",
+                   "quality": "Primera", "normalized_unit": "kilo"}
+STATE_CHIPS = {"sobre": ("Sobre lo habitual", "rise"), "dentro": ("Dentro de lo habitual", "neutral"),
+               "bajo": ("Bajo lo habitual", "fall"), "sin_historia": ("Sin historia suficiente", "neutral")}
+
+
+@st.cache_data
+def read_context_options(database_version):
+    """Products with a street-market or supermarket price: the only ones this page reads."""
+    prices = read_cached_national_prices(database_version)
+    rows = prices[prices["channel"].isin(CONTEXT_CHANNELS)]
+    return rows[queries.KEY_COLUMNS].drop_duplicates().sort_values(queries.KEY_COLUMNS).reset_index(drop=True)
+
+
+@st.cache_data
+def read_context_model(database_version, key_items, week):
+    """Everything the page shows for one product, computed once per weekly load."""
+    key = dict(key_items)
+    prices = read_cached_national_prices(database_version)
+    mask = pd.Series(True, index=prices.index)
+    for field, value in key.items():
+        mask &= prices[field] == value
+    product = prices[mask & prices["channel"].isin(CONTEXT_CHANNELS)]
+    week = pd.Timestamp(week)
+    month = (week + pd.Timedelta(days=3)).month
+    series = {channel: product[product["channel"] == channel][["week_start", "national_price"]]
+              .sort_values("week_start").reset_index(drop=True) for channel in CONTEXT_CHANNELS}
+    series = {channel: rows for channel, rows in series.items() if not rows.empty}
+    weekly = []
+    now = {}
+    for channel, rows in series.items():
+        context = price_context.weekly_context(rows, week)
+        weekly.append(context.assign(channel=channel))
+        usual = price_context.rango_habitual(rows, week)
+        price = rows.loc[rows["week_start"] == week, "national_price"]
+        price = float(price.iloc[0]) if not price.empty else None
+        now[channel] = {"price": price, "usual": usual,
+                        "state": price_context.estado_precio(price, usual) if price is not None else "sin_historia"}
+    weekly = pd.concat(weekly, ignore_index=True) if weekly else pd.DataFrame(
+        columns=["week_start", "price", "p25", "p75", "state", "channel"])
+    gap = None
+    if len(series) == 2:
+        gaps = price_context.brecha(series["Feria libre"], series["Supermercado"])
+        recent = gaps[gaps["week_start"] > week - pd.Timedelta(weeks=52)].copy()
+        recent["usual"] = [price_context.brecha_habitual(gaps, day) for day in recent["week_start"]]
+        current = gaps.loc[gaps["week_start"] == week, "gap"]
+        gap = {"current": float(current.iloc[0]) if not current.empty else None,
+               "usual": price_context.brecha_habitual(gaps, week), "recent": recent}
+    seasonal = read_cached_rows_for_key("k4_seasonal_index", tuple(sorted(key.items())), database_version)
+    year = week.isocalendar().year
+    patterns, years = {}, {}
+    for channel in CONTEXT_CHANNELS:
+        rows = seasonal[seasonal["channel"] == channel]
+        patterns[channel] = price_context.patron_estacional(rows, current_year=year)
+        years[channel] = int((rows["price_year"].astype(int) < year).groupby(rows["price_year"]).any().sum())
+    return {"series": series, "weekly": weekly, "now": now, "gap": gap, "patterns": patterns,
+            "pattern_years": years, "seasonal": seasonal, "month": month}
+
+
+def read_context_key(options):
+    """The product of the page: a link from the Resumen first, then the last choice."""
+    token = st.query_params.get("_home_key")
+    if token and st.session_state.get("context_token") != token:
+        st.session_state["context_token"] = token
+        try:
+            payload = json.loads(base64.urlsafe_b64decode(token.encode()).decode())
+            key = {field: payload.get(field) for field in queries.KEY_COLUMNS}
+            matched = options
+            for field, value in key.items():
+                matched = matched[matched[field] == value]
+            if not matched.empty:
+                st.session_state[CONTEXT_KEY] = key
+            else:
+                st.session_state["context_notice"] = (
+                    f"{payload.get('product')} no tiene precios de feria ni de supermercado; "
+                    "se muestra otro producto de la misma familia.")
+                same = options[options["product_group"] == payload.get("product_group")]
+                if not same.empty:
+                    st.session_state[CONTEXT_KEY] = same.iloc[0].to_dict()
+        except (ValueError, TypeError, UnicodeError):
+            pass
+    key = st.session_state.get(CONTEXT_KEY)
+    if not key or options[(options[list(key)] == pd.Series(key)).all(axis=1)].empty:
+        default = options[(options[list(CONTEXT_DEFAULT)] == pd.Series(CONTEXT_DEFAULT)).all(axis=1)]
+        key = (default if not default.empty else options).iloc[0].to_dict()
+    st.session_state[CONTEXT_KEY] = key
+    return key
+
+
+def choose_context_product(options, key, columns):
+    """Familia, producto and calidad · unidad, each limited by the previous choice."""
+    def pick(column, label, values, current, render):
+        values = list(dict.fromkeys(values))
+        index = values.index(current) if current in values else 0
+        return column.selectbox(label, values, index=index, format_func=render,
+                                key=f"context_{label}_{key['product_group']}_{key['product']}_{key['variety']}")
+    group = pick(columns[0], "Familia", options["product_group"], key["product_group"], str)
+    rows = options[options["product_group"] == group]
+    names = list(zip(rows["product"], rows["variety"]))
+    current = (key["product"], key["variety"]) if group == key["product_group"] else names[0]
+    product, variety = pick(columns[1], "Producto", names, current,
+                            lambda pair: pair[0] if pair[1] == UNSPECIFIED else f"{pair[0]} · {pair[1]}")
+    rows = rows[(rows["product"] == product) & (rows["variety"] == variety)]
+    pairs = list(zip(rows["quality"], rows["normalized_unit"]))
+    current = (key["quality"], key["normalized_unit"]) if (product, variety) == (key["product"], key["variety"]) else pairs[0]
+    quality, unit = pick(columns[2], "Calidad · unidad", pairs, current, lambda pair: f"{pair[0]} · {pair[1]}")
+    chosen = {"product_group": group, "product": product, "variety": variety,
+              "quality": quality, "normalized_unit": unit}
+    if chosen != key:
+        st.session_state[CONTEXT_KEY] = chosen
+        st.rerun()
+    return chosen
+
+
+def describe_context_product(key):
+    return key["product"] if key["variety"] == UNSPECIFIED else f"{key['product']} {key['variety'].lower()}"
+
+
+def build_context_price_card(now, unit):
+    rows = []
+    for channel in CONTEXT_CHANNELS:
+        item = now.get(channel)
+        color = charts.CONTEXT_CHANNELS[channel]
+        if not item:
+            rows.append(f'<div class="ctx-price-row"><i style="background:{color}"></i><div><strong>{channel}</strong>'
+                        '<small>Sin precios para este producto</small></div><div class="ctx-price"><b>—</b></div></div>')
+            continue
+        usual = item["usual"]
+        habit = (f'Habitual: ${charts.format_thousands(usual[0])} a ${charts.format_thousands(usual[1])}'
+                 if usual else 'Habitual: sin historia suficiente')
+        label, kind = STATE_CHIPS[item["state"]] if item["price"] is not None else ("Sin precio esta semana", "neutral")
+        price = '—' if item["price"] is None else '$' + charts.format_thousands(item["price"])
+        rows.append(f'<div class="ctx-price-row"><i style="background:{color}"></i><div><strong>{channel}</strong>'
+                    f'<small>{habit}</small></div><div class="ctx-price"><b>{price}</b>'
+                    f'<span class="ctx-state {kind}">{label}</span></div></div>')
+    return (f'<section class="ctx-card"><h3>Precio esta semana</h3><div class="ctx-sub">$ por {html.escape(unit)} · '
+            'habitual = P25–P75 de la misma semana en años anteriores</p>' + "".join(rows) + '</section>')
+
+
+def build_gap_sparkline(recent):
+    """52 weeks: the real gap (solid) and the usual gap of its month (dotted)."""
+    if recent.empty:
+        return ''
+    width, height, pad = 380, 92, 6
+    values = pd.concat([recent["gap"], pd.Series([v for v in recent["usual"] if v is not None], dtype=float)])
+    low, high = float(values.min()), float(values.max())
+    span = (high - low) or 1
+    first, last = recent["week_start"].min(), recent["week_start"].max()
+    days = max((last - first).days, 1)
+    x = lambda day: pad + (day - first).days / days * (width - 2 * pad)
+    y = lambda value: pad + (high - value) / span * (height - 2 * pad)
+    def path(points):
+        return ''.join(('M' if index == 0 or gap else 'L') + f'{px:.1f},{py:.1f}'
+                       for index, (px, py, gap) in enumerate(points))
+    solid, dotted, previous = [], [], None
+    for row in recent.itertuples():
+        gap_break = previous is not None and (row.week_start - previous).days != 7
+        solid.append((x(row.week_start), y(row.gap), gap_break))
+        if row.usual is not None and pd.notna(row.usual):
+            dotted.append((x(row.week_start), y(row.usual), False))
+        previous = row.week_start
+    zero = f'<line x1="0" x2="{width}" y1="{y(0):.1f}" y2="{y(0):.1f}" class="ctx-zero"/>' if low < 0 < high else ''
+    end = solid[-1]
+    return (f'<svg class="ctx-spark" viewBox="0 0 {width} {height}" role="img" aria-label="Brecha de las últimas 52 semanas">'
+            f'{zero}<path d="{path(dotted)}" class="ctx-usual"/><path d="{path(solid)}" class="ctx-real"/>'
+            f'<circle cx="{end[0]:.1f}" cy="{end[1]:.1f}" r="3" class="ctx-end"/></svg>')
+
+
+def build_context_gap_card(gap, month):
+    title = '<section class="ctx-card"><h3>¿Dónde conviene comprar?</h3><div class="ctx-sub">Cuánto más caro está el supermercado que la feria.</div>'
+    if not gap or gap["current"] is None:
+        return title + '<div class="ctx-note">Sin precios de feria y supermercado en la misma semana para comparar.</div></section>'
+    current, usual = gap["current"], gap["usual"]
+    usual_text = '—' if usual is None else charts.format_signed_percent(usual)
+    cheaper = "La feria" if current > 0 else "El supermercado"
+    word = price_context.describe_gap_comparison(current, usual)
+    conclusion = f'{cheaper} es más barata esta semana' if current != 0 else 'Ambos canales cuestan lo mismo esta semana'
+    if word and current != 0:
+        conclusion += {"mayor": ", y la ventaja es <b>mayor que lo habitual</b>.",
+                       "menor": ", pero la ventaja es <b>menor que lo habitual</b>.",
+                       "similar": ", con una ventaja <b>similar a la habitual</b>."}[word]
+    elif current != 0:
+        conclusion += "; sin historia suficiente para compararla con otros años."
+    else:
+        conclusion += "."
+    return (title + '<div class="ctx-gap-figures">'
+            f'<div><span>Esta semana</span><b>{charts.format_signed_percent(current)}</b></div>'
+            f'<div><span>Habitual en {price_context.MONTHS[month - 1]}</span><b class="muted">{usual_text}</b></div></div>'
+            + build_gap_sparkline(gap["recent"])
+            + '<div class="ctx-legend"><span><i class="real"></i>Brecha real</span><span><i class="usual"></i>Brecha habitual del mes</span></div>'
+            f'<div class="ctx-note">{conclusion}</div></section>')
+
+
+def build_context_next_card(pattern, years, month):
+    rows = []
+    if years < price_context.MINIMUM_YEARS:
+        rows.append('<div class="ctx-note">Sin historia suficiente: hacen falta al menos dos años anteriores.</div>')
+    else:
+        for following, change in price_context.proximos_meses(pattern, month):
+            verb = "suele subir" if change > 0.05 else "suele bajar" if change < -0.05 else "suele mantenerse"
+            amount = '' if verb == "suele mantenerse" else f' {charts.format_percent(abs(change))}'
+            rows.append(f'<div class="ctx-next-row"><span>{price_context.MONTHS[following - 1].capitalize()}</span>'
+                        f'<b>Feria {verb}{amount}</b></div>')
+    return ('<section class="ctx-card"><h3>Qué suele pasar en las próximas semanas</h3>'
+            '<div class="ctx-sub">Cambio típico del índice estacional de feria frente a este mes.</div>'
+            + ''.join(rows) + f'<div class="ctx-foot">Patrón de {years} años anteriores. No es un pronóstico.</div></section>')
+
+
+@st.dialog("Serie completa", width="large")
+def show_full_history_dialog(series, mode, label):
+    rows = pd.concat([rows.assign(channel=channel) for channel, rows in series.items()])
+    st.caption(f"{label} · {rows['week_start'].min():%d-%m-%Y} a {rows['week_start'].max():%d-%m-%Y} · "
+               "precio nacional semanal, sin áreas; las semanas sin dato quedan en blanco.")
+    show_chart(charts.draw_full_history(rows, mode))
+    st.caption(NOMINAL_PRICES_TEXT)
+
+
+@st.dialog("Datos del gráfico", width="large")
+def show_context_data_dialog(model):
+    weekly = model["weekly"].copy()
+    table = pd.DataFrame({
+        "Semana": weekly["week_start"].dt.strftime("%d-%m-%Y"), "Canal": weekly["channel"],
+        "Precio": weekly["price"], "Habitual desde (P25)": weekly["p25"], "Habitual hasta (P75)": weekly["p75"],
+        "Estado": weekly["state"].map(lambda value: price_context.STATES.get(value, "sin precio"))})
+    st.caption("Últimas 52 semanas. Habitual = P25–P75 de la misma semana ISO en años anteriores (sin el año en curso).")
+    st.dataframe(table.sort_values(["Semana", "Canal"], ascending=[False, True]), hide_index=True,
+                 use_container_width=True, height=280,
+                 column_config={name: st.column_config.NumberColumn(format="$%.0f")
+                                for name in ("Precio", "Habitual desde (P25)", "Habitual hasta (P75)")})
+    seasonal = model["seasonal"]
+    seasonal = seasonal[seasonal["channel"].isin(CONTEXT_CHANNELS)]
+    st.caption("Índice estacional semanal (K4): precio de la semana ÷ promedio de su año; 1 = promedio.")
+    st.dataframe(pd.DataFrame({"Semana": seasonal["week_start"].dt.strftime("%d-%m-%Y"), "Año": seasonal["price_year"],
+                               "Canal": seasonal["channel"], "Índice": seasonal["seasonal_index"].round(3)})
+                 .sort_values("Semana", ascending=False), hide_index=True, use_container_width=True, height=220)
+
+
+def build_context_css(mode):
+    palette = charts.get_palette(mode)
+    return f"""<style>
+    .ctx-crumb {{font-size:12.5px;color:{palette['text']};}} .ctx-crumb a {{color:{palette['accent']}!important;text-decoration:none;}}
+    .ctx-crumb b {{color:{palette['strong_text']};}}
+    .ctx-back {{display:inline-flex;float:right;padding:5px 12px;border:1px solid {palette['card_border']};border-radius:8px;
+        font-size:12.5px;color:{palette['strong_text']}!important;text-decoration:none!important;background:{palette['card']};}}
+    .ctx-title h1 {{font-size:24px!important;font-weight:700;margin:0!important;padding:0!important;display:inline;}}
+    .ctx-title .page-freshness {{display:inline-flex;gap:6px;margin-left:12px;font-size:12px;}}
+    .ctx-answer {{font-size:14px;line-height:1.45;color:{palette['strong_text']};margin:4px 0 0;max-width:900px;}}
+    .ctx-answer b {{color:{palette['accent']};}}
+    .st-key-ctx_main, .st-key-ctx_pattern {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:12px 16px 6px;}}
+    .st-key-ctx_side {{gap:10px;}}
+    .ctx-head h3, .ctx-card h3 {{font-size:15px!important;font-weight:700;margin:0!important;padding:0!important;color:{palette['strong_text']};}}
+    .ctx-head p, .ctx-sub {{font-size:11px!important;font-size:11px;color:{palette['text']};margin:2px 0 6px!important;line-height:1.4;}}
+    .ctx-head {{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}}
+    .ctx-keys {{display:flex;gap:14px;font-size:11px;color:{palette['text']};white-space:nowrap;}}
+    .ctx-keys i {{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle;}}
+    .ctx-keys i.band {{height:9px;background:{palette['grid']};}}
+    .ctx-card {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:12px 16px;}}
+    .ctx-price-row {{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid {palette['card_border']};}}
+    .ctx-price-row i {{width:9px;height:9px;border-radius:50%;}}
+    .ctx-price-row strong {{display:block;font-size:13px;color:{palette['strong_text']};}}
+    .ctx-price-row small {{font-size:11px;color:{palette['text']};}}
+    .ctx-price {{text-align:right;}} .ctx-price b {{display:block;font-size:20px;color:{palette['strong_text']};font-variant-numeric:tabular-nums;}}
+    .ctx-state {{font-size:11px;font-weight:600;}} .ctx-state.rise {{color:#c0392b;}} .ctx-state.fall {{color:#1f7a4d;}} .ctx-state.neutral {{color:{palette['text']};}}
+    .ctx-gap-figures {{display:flex;gap:28px;margin:4px 0;}} .ctx-gap-figures span {{display:block;font-size:11px;color:{palette['text']};}}
+    .ctx-gap-figures b {{font-size:20px;color:{palette['strong_text']};font-variant-numeric:tabular-nums;}} .ctx-gap-figures b.muted {{color:{palette['text']};}}
+    .ctx-spark {{width:100%;height:92px;display:block;}}
+    .ctx-real {{fill:none;stroke:{palette['strong_text']};stroke-width:1.6;vector-effect:non-scaling-stroke;}}
+    .ctx-usual {{fill:none;stroke:{palette['text']};stroke-width:1.3;stroke-dasharray:3 3;vector-effect:non-scaling-stroke;}}
+    .ctx-zero {{stroke:{palette['grid']};stroke-width:1;}} .ctx-end {{fill:{palette['strong_text']};}}
+    .ctx-legend {{display:flex;gap:14px;font-size:10.5px;color:{palette['text']};margin-top:2px;}}
+    .ctx-legend i {{display:inline-block;width:14px;margin-right:5px;vertical-align:middle;border-top:2px solid {palette['strong_text']};}}
+    .ctx-legend i.usual {{border-top:2px dashed {palette['text']};}}
+    .ctx-note {{font-size:12px!important;line-height:1.45;color:{palette['strong_text']};margin:6px 0 0!important;}}
+    .ctx-next-row {{display:grid;grid-template-columns:90px 1fr;gap:10px;font-size:12.5px;padding:5px 0;border-top:1px solid {palette['card_border']};color:{palette['text']};}}
+    .ctx-next-row b {{color:{palette['strong_text']};}}
+    .ctx-foot {{font-size:10.5px;color:{palette['text']};margin:8px 0 0!important;}}
+    .st-key-ctx_links button {{padding:0 4px!important;min-height:0!important;}}
+    .st-key-ctx_links button p {{font-size:12px!important;color:{palette['accent']}!important;font-weight:600;}}
+    .st-key-ctx_links [data-testid="stCaptionContainer"] p {{font-size:11px!important;}}
+    .st-key-ctx_pattern [data-testid="stHorizontalBlock"] {{align-items:center;}}
+    </style>"""
+
+
+def show_price_context_page(mode):
+    """¿El precio de esta semana es normal? One screen, three answers (D-094)."""
+    st.markdown(build_context_css(mode), unsafe_allow_html=True)
+    version = get_database_version()
+    options = read_context_options(version)
+    if options.empty:
+        st.info(NO_DATA_TEXT)
+        return
+    key = read_context_key(options)
+    week = f"{read_latest_week():%Y-%m-%d}"
+    crumb, back = st.columns([5, 1], vertical_alignment="center")
+    home = build_page_address(PAGE_HOME)
+    home_family = home + ("&" if "?" in home else "?") + urlencode({"familia": key["product_group"]})
+    label = describe_context_product(key)
+    crumb.markdown(f'<div class="ctx-crumb"><a href="{html.escape(home)}" target="_self">Resumen</a> › '
+                   f'<a href="{html.escape(home_family)}" target="_self">{html.escape(key["product_group"])}</a> › '
+                   f'<b>{html.escape(label)}</b></div>', unsafe_allow_html=True)
+    back.markdown(f'<a class="ctx-back" href="{html.escape(home_family)}" target="_self">← Volver al resumen</a>',
+                  unsafe_allow_html=True)
+    title, *fields = st.columns([2.6, 0.9, 1.1, 0.9], vertical_alignment="bottom")
+    key = choose_context_product(options, key, fields)
+    label = describe_context_product(key)
+    model = read_context_model(version, tuple(sorted(key.items())), week)
+    latest = read_latest_run()
+    run_kind = "ok" if latest["status"] == etl.STATUS_LOADED else "failed"
+    states = {channel: model["now"][channel]["state"] for channel in CONTEXT_CHANNELS
+              if channel in model["now"] and model["now"][channel]["price"] is not None}
+    gap = model["gap"]
+    gap_word = price_context.describe_gap_comparison(gap["current"], gap["usual"]) if gap else None
+    sentence = html.escape(price_context.answer_sentence(label.lower(), model["month"], states, gap_word))
+    for phrase in price_context.STATES.values():
+        sentence = sentence.replace(phrase, f"<b>{phrase}</b>")
+    title.markdown(f'<div class="ctx-title compact-header"><h1>¿El precio de esta semana es normal?</h1>'
+                   f'<span class="page-freshness">Datos al {format_chile_time(parse_run_start(latest["started_at"]))} '
+                   f'{build_chip("Carga correcta" if run_kind == "ok" else "Última carga con falla", run_kind)}</span></div>'
+                   f'<p class="ctx-answer">{sentence}</p>', unsafe_allow_html=True)
+    notice = st.session_state.pop("context_notice", None)
+    if notice:
+        st.caption(notice)
+    left, right = st.columns([3.05, 1], gap="small")
+    with left:
+        with st.container(key="ctx_main"):
+            st.markdown('<div class="ctx-head"><div><h3>Últimas 52 semanas frente a lo habitual</h3>'
+                        '<p>Línea: precio de cada semana. Banda: rango habitual de esa misma semana en años anteriores '
+                        '(percentil 25 a 75). Si la línea sale de la banda, el precio es inusual.</p></div>'
+                        '<div class="ctx-keys">'
+                        + ''.join(f'<span><i style="background:{color}"></i>{channel}</span>'
+                                  for channel, color in charts.CONTEXT_CHANNELS.items() if channel in model["series"])
+                        + '<span><i class="band"></i>Rango habitual</span></div></div>', unsafe_allow_html=True)
+            if model["weekly"].empty:
+                st.info("Este producto no tiene precios de feria ni de supermercado.")
+            else:
+                show_chart(charts.draw_price_context(model["weekly"], mode, height=330))
+            with st.container(key="ctx_links", horizontal=True, vertical_alignment="center"):
+                missing = int(model["weekly"]["price"].isna().sum()) if not model["weekly"].empty else 0
+                st.caption("Precios nominales, sin ajuste por inflación."
+                           + (f" {missing} semanas sin dato quedan en blanco; no se interpolan." if missing else ""))
+                years = sorted({day.year for rows in model["series"].values() for day in rows["week_start"]})
+                span = f"{years[0]}–{years[-1]}" if years else ""
+                if st.button(f"Ver serie completa {span} →", key="ctx_full", type="tertiary"):
+                    show_full_history_dialog(model["series"], mode, label)
+                if st.button("Ver datos del gráfico →", key="ctx_data", type="tertiary"):
+                    show_context_data_dialog(model)
+        with st.container(key="ctx_pattern"):
+            heading, switch = st.columns([3, 1.6], vertical_alignment="center")
+            channel = switch.segmented_control("Canal del patrón", ["Feria", "Supermercado"], default="Feria",
+                                               key="ctx_pattern_channel", label_visibility="collapsed") or "Feria"
+            channel = "Feria libre" if channel == "Feria" else "Supermercado"
+            heading.markdown(f'<div class="ctx-head"><div><h3>Patrón de temporada · {channel.lower()}</h3>'
+                             '<p>Índice estacional por mes (100 = precio promedio del año), años anteriores. '
+                             'Mes actual marcado; los dos siguientes, con borde.</p></div></div>', unsafe_allow_html=True)
+            chart = charts.draw_seasonal_pattern(model["patterns"].get(channel, {}), channel, model["month"], mode)
+            if chart is None:
+                st.caption("Sin historia suficiente para este canal.")
+            else:
+                show_chart(chart)
+    with right, st.container(key="ctx_side"):
+        st.markdown(build_context_price_card(model["now"], key["normalized_unit"]), unsafe_allow_html=True)
+        st.markdown(build_context_gap_card(gap, model["month"]), unsafe_allow_html=True)
+        st.markdown(build_context_next_card(model["patterns"].get("Feria libre", {}),
+                                            model["pattern_years"].get("Feria libre", 0), model["month"]),
+                    unsafe_allow_html=True)
+# endregion
 
 
 def show_analysis_page(mode):
@@ -4844,8 +6896,8 @@ def show_run_history(runs, error_text):
                        build_run_chip(run["state"]),
                        f'<a href="{html.escape(run["url"])}">Ver en GitHub ↗</a>']
                       for run in runs]
-        st.markdown(build_html_table(["Inicio", "Tipo", "Duración", "Estado", ""],
-                                     table_rows), unsafe_allow_html=True)
+        show_foldable_table(build_html_table(["Inicio", "Tipo", "Duración", "Estado", ""],
+                                     table_rows), 'Ver historial de ejecuciones')
 
 
 def show_runs_tab(mode):
@@ -5020,12 +7072,13 @@ def build_journey_legend_html():
             f'{build_chip("Falla", "failed")} {build_chip("Sin datos", "neutral")}'
             '<div class="kpi-note" style="margin-top:8px">Punto de color en cada '
             'paso: estado de la última ejecución del pipeline y de la base actual. '
-            'El movimiento ilustra el recorrido; el estado identifica la ejecución real.</div>')
+            'El movimiento ilustrativo, no actividad en vivo, muestra el recorrido; '
+            'el estado identifica la ejecución real.</div>')
 
 
-def show_pipeline_tab(mode, animate_flow=False):
+def show_pipeline_tab(mode, animate_flow=False, journey=None):
     """The detailed live diagram of the data, from ODEPA to the dashboard."""
-    states, figures, pipeline_run, latest_load, error_note = read_journey()
+    states, figures, pipeline_run, latest_load, error_note = journey or read_journey()
     with open_card("journey", "Recorrido completo por capas", hint=ARCHITECTURE_HINT):
         st.markdown(build_run_status_html(states, pipeline_run, latest_load),
                     unsafe_allow_html=True)
@@ -5051,8 +7104,8 @@ def build_devops_figures(figures):
                              f"{charts.format_thousands(week_prices)} precios"))
 
 
-def show_infrastructure_diagram(mode, animate_flow=False):
-    states, figures, pipeline_run, latest_load, error_note = read_journey()
+def show_infrastructure_diagram(mode, animate_flow=False, journey=None):
+    states, figures, pipeline_run, latest_load, error_note = journey or read_journey()
     with open_card("devops_diagram", "Arquitectura por plataforma", hint=DEVOPS_HINT):
         st.markdown(zoom.build_zoom_frame_html(
             architecture.build_devops_svg(states, build_devops_figures(figures), mode, animate_flow=animate_flow)),
@@ -5062,25 +7115,31 @@ def show_infrastructure_diagram(mode, animate_flow=False):
 def show_devops_tab(mode):
     """Compact lifecycle with real tool logos; deployment topology remains unique."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
+    st.caption("Responsabilidades de mantenimiento: código, pruebas, cargas, publicación y seguimiento. Este ciclo no representa el orden de ejecución de una carga; ese recorrido está en Pipeline.")
     animate = st.toggle("Animar el ciclo DevOps", value=True, key="animate_devops_cycle")
     st.markdown(devops.build_html(states, mode, animate), unsafe_allow_html=True)
     st.caption("El movimiento ilustra el ciclo de trabajo. Los puntos de estado muestran "
                "la última evidencia disponible; no afirman que haya una ejecución en curso.")
     st.markdown(build_link_html("Ver el pipeline y la arquitectura →",
                                 build_page_address(PAGE_DIAGRAMS)), unsafe_allow_html=True)
-    for group in ARCHITECTURE_GROUPS:
-        show_architecture_group(*group)
-        if group[0] == "DevOps":
-            st.markdown(f'<div class="info-note">Próxima ejecución automática: '
-                        f'{figures["next_run"]}.</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="info-note">El enlace a los informes semanales está en '
-                f'{build_place_link(PAGE_LINKS, "la página")}.</div>', unsafe_allow_html=True)
+    with st.expander("Ver coste, capacidad, seguridad y observabilidad", expanded=False):
+        st.subheader("Coste y capacidad")
+        st.markdown("SQLite permite almacenar los datos sin un servidor de base de datos dedicado. GitHub Actions coordina las ejecuciones y Streamlit publica el panel. "
+                    "La capacidad depende del volumen, la duración de las cargas y las cuotas de cada servicio. La arquitectura debe revisarse antes de aumentar la frecuencia o incorporar fuentes de mayor tamaño.")
+        for group in ARCHITECTURE_GROUPS:
+            show_architecture_group(*group)
+            if group[0] == "DevOps":
+                st.markdown(f'<div class="info-note">Próxima ejecución automática: '
+                            f'{figures["next_run"]}.</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="info-note">El enlace a los informes semanales está en '
+                    f'{build_place_link(PAGE_LINKS, "la página")}.</div>', unsafe_allow_html=True)
 
 
 def show_architecture_page(mode):
     """The data model has a direct sidebar entry, without another tab layer."""
     show_page_header(PAGE_ARCHITECTURE, "La estructura que convierte los precios en "
                      "indicadores comparables: tablas, claves y relaciones.")
+    st.caption("Un registro de precios representa un producto, variedad y calidad, en una región, canal, unidad y semana. Las líneas del modelo relacionan tablas; no indican pasos de ejecución.")
     show_star_schema_tab(mode)
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
 
@@ -5199,7 +7258,7 @@ def show_excluded_rows(latest_run):
     show_info_cards(build_excluded_cards(latest_run, rejections, flag_totals))
     rejected_rows = build_rejected_rows_table(read_indicator("quality_rejected_rows"))
     with st.expander(f"Ver las {charts.format_thousands(len(rejected_rows))} filas rechazadas, "
-                     "tal como venían", expanded=True):
+                     "tal como venían", expanded=False):
         if rejected_rows.empty:
             st.info("La última ejecución no rechazó filas.")
         else:
@@ -5209,12 +7268,12 @@ def show_excluded_rows(latest_run):
                 rejected_rows = rejected_rows[rejected_rows["Motivo"] == reason]
             st.dataframe(rejected_rows, hide_index=True)
     outliers = format_outliers(read_indicator("quality_outliers"))
-    with st.expander(f"Ver los {charts.format_thousands(len(outliers))} precios atípicos", expanded=True):
+    with st.expander(f"Ver los {charts.format_thousands(len(outliers))} precios atípicos", expanded=False):
         st.dataframe(outliers, hide_index=True)
     units = read_indicator("quality_unconvertible_units")
     units["source"] = units["source"].map(SOURCE_NAMES)
     units.columns = ["Fuente", "Canal", "Producto", "Variedad", "Calidad", "Precios semanales"]
-    with st.expander("Ver los precios con unidad no convertible, por producto", expanded=True):
+    with st.expander("Ver los precios con unidad no convertible, por producto", expanded=False):
         st.dataframe(units, hide_index=True)
     st.caption("Consultas: `quality_rejected_rows`, `quality_outliers` y "
                "`quality_unconvertible_units` en `bi/queries.sql`.")
@@ -5234,9 +7293,46 @@ def show_quality_tab(mode):
     show_excluded_rows(latest_run)
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def read_quality_evidence(database_version, manifest_text, file_versions):
+    """Invalidate checks when either the database, manifest or local source files change."""
+    return quality.check_database(), quality.check_source_files(json.loads(manifest_text), MANIFEST_FILE.parent)
+
+
 def show_operations_page(mode):
-    """Monitoring shows load quality; launching and history have their own entry."""
-    show_page_header(PAGE_OPERATIONS, "Calidad de la última carga, datos excluidos y motivos.")
+    """Evidence first: implemented checks, independently checked storage, pending audits."""
+    show_page_header("Calidad y trazabilidad", "Origen, controles y evidencia disponible de los datos que alimentan el panel.")
+    manifest = read_download_manifest()
+    versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
+                     for path in sorted(MANIFEST_FILE.parent.glob("*.csv")))
+    checks, files = read_quality_evidence(get_database_version(), json.dumps(manifest, sort_keys=True), versions)
+    run = read_latest_run()
+    database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
+    matching = sum(item["status"].startswith("Verificado") for item in files)
+    failed = sum(item["status"].startswith("Falla") for item in files)
+    source_state = "Falla detectada" if failed else "Verificado" if files and matching == len(files) else "Pendiente de comprobación"
+    rows = [
+        ["Origen y archivos", "Registro disponible" if manifest else "Sin registro disponible", f"{len(files)} archivos registrados en manifest.json, con fecha y huella SHA-256. Esto identifica las descargas; no certifica cada precio."],
+        ["Integridad de archivos originales", source_state, f"{matching} de {len(files)} archivos locales coinciden con su huella; {failed} discrepancias. Los archivos ausentes no se consideran verificados."],
+        ["Última carga registrada", "Superada" if run["status"] == etl.STATUS_LOADED else "Falla registrada", f"Ejecución {run['run_id']} · {format_chile_time(parse_run_start(run['started_at']))} (Chile) · estado {run['status']}. Es evidencia de la carga guardada, no del último intento remoto."],
+        ["Comprobación de la base actual", "Verificado · alcance limitado" if database_ok else "Falla detectada", f"SQLite: {'correcto' if checks['integrity_ok'] else 'error'}; referencias inválidas: {checks['foreign_keys']}; claves duplicadas: {checks['duplicates']}; precios utilizables con formato inválido: {checks['invalid']}."],
+        ["Cobertura temporal", "Disponible", f"{checks['weeks']} semanas, desde {checks['first']} hasta {checks['last']}. Es cobertura registrada, no confirmación de que la fuente esté al día."],
+        ["Reconciliación fuente → base", "Pendiente", "Falta contrastar los precios originales y sus unidades con la transformación y los agregados almacenados."],
+        ["Recálculo independiente de indicadores", "Pendiente", "Las pruebas de software no sustituyen una reconciliación independiente de todos los indicadores contra la fuente."],
+        ["Concordancia cálculo → pantalla", "Pendiente", "Falta documentar una muestra auditada con producto, región, canal, periodo y valor mostrado."],
+        ["Contraste con otra fuente", "Pendiente", "No hay una comparación independiente de precios con otra fuente equivalente."],
+    ]
+    st.markdown(build_html_table(["Control", "Estado", "Evidencia y alcance"], rows), unsafe_allow_html=True)
+    st.caption("Comprobación local de la base: " + format_chile_time(datetime.fromisoformat(checks["checked_at"])) + " (Chile). Se actualiza al cambiar los archivos o, como máximo, cada cinco minutos al consultar esta vista.")
+    if not database_ok or failed:
+        st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
+    st.info("La carga aplica controles de calidad. La auditoría completa de origen a pantalla sigue pendiente; no se declara una garantía absoluta de exactitud.")
+    with st.expander("Ver evidencia de los archivos originales", expanded=False):
+        if files:
+            st.dataframe(pd.DataFrame(files).rename(columns={"file": "Archivo", "status": "Comprobación", "expected": "SHA-256 registrado", "actual": "SHA-256 comprobado", "downloaded_at": "Fecha registrada"}), hide_index=True, width="stretch")
+        else:
+            st.info("No hay manifiesto de descargas disponible.")
+    st.markdown(build_link_html("Ver ejecuciones del pipeline →", build_page_address(PAGE_RUNS)), unsafe_allow_html=True)
     show_quality_tab(mode)
 
 
@@ -5251,26 +7347,35 @@ def build_resource_row(link):
         inside = build_link_html(f"Leer {link['name']} en el panel", build_page_address(
             link["page"]))
         return (f'<li>{inside}<span>{html.escape(link["description"])} · '
-                f'<a href="{html.escape(link["url"], quote=True)}" rel="noopener">'
+                f'<a href="{html.escape(link["url"], quote=True)}" target="_self" rel="noopener">'
                 f'ver el original en GitHub ↗</a></span></li>')
-    return (f'<li><a href="{html.escape(link["url"], quote=True)}" rel="noopener noreferrer">'
+    return (f'<li><a href="{html.escape(link["url"], quote=True)}" target="_self" rel="noopener noreferrer">'
             f'{html.escape(link["name"])} ↗</a><span>{html.escape(link["description"])}'
             '</span></li>')
 
 
+def show_documentation_page(mode):
+    """Only documentation; operational diagrams and external resources live elsewhere."""
+    show_page_header("Documentación", "Alcance, procedimientos y términos del proyecto.")
+    for title, text, page in [
+        ("Manual de operación", "Ejecución semanal, responsabilidades, incidencias y límites del servicio.", PAGE_MANUAL),
+        ("Glosario", "Términos y definiciones utilizados en las fuentes, el modelo y los indicadores.", PAGE_GLOSSARY),
+    ]:
+        st.markdown(f"### {title}\n{text}")
+        st.markdown(build_link_html("Leer documento →", build_page_address(page)), unsafe_allow_html=True)
+    with st.expander("README · instalación y puesta en marcha", expanded=False):
+        st.markdown(project.read_document(project.README_FILE))
+
+
 def show_links_page(mode):
-    """The only place with the links of the project, by group (D-058)."""
-    show_page_header(SECTION_LINKS, "Todos los enlaces del proyecto en un solo lugar: el "
-                     "código, las ejecuciones, las fuentes de datos y los documentos. ↗ marca "
-                     "los que salen del panel.")
-    for group in dict.fromkeys(link["group"] for link in project.PROJECT_LINKS):
-        show_section_intro(group, LINK_GROUP_LEADS.get(group, ""), True)
-        entries = [link for link in project.PROJECT_LINKS if link["group"] == group]
-        rows = "".join(build_resource_row(link) for link in entries if link["url"])
+    """External destinations are listed once, apart from the documentation."""
+    show_page_header("Enlaces", "Repositorio público, registros de ejecución y fuentes originales. Los destinos externos se identifican con ↗.")
+    st.markdown(build_link_html("Consultar ejecuciones dentro del proyecto →", build_page_address(PAGE_RUNS)), unsafe_allow_html=True)
+    for group in ("Código y operación", "Fuentes de datos"):
+        st.subheader(group)
+        entries = [link for link in project.PROJECT_LINKS if link["group"] == group and link["url"]]
+        rows = "".join(build_resource_row(link) for link in entries)
         st.markdown(f'<ul class="resource-tree">{rows}</ul>', unsafe_allow_html=True)
-        upcoming = [link["name"] for link in entries if not link["url"]]
-        if upcoming:
-            st.caption("Por publicar: " + ", ".join(upcoming))
 
 # endregion
 
@@ -5282,7 +7387,9 @@ def show_document_page(mode, title, subtitle, renderer):
 
 
 SHOW_PAGE_BY_TITLE = {
+    PAGE_DOCUMENTATION: show_documentation_page,
     PAGE_HOME: show_home_page,
+    PAGE_DATA: show_data_page,
     PAGE_COVER: show_cover_page,
     PAGE_BUSINESS: lambda mode: show_document_page(mode, PAGE_BUSINESS,
         "Las preguntas, las fuentes y las decisiones de negocio detrás de los datos.", show_idea_tab),
@@ -5290,13 +7397,12 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_ANALYSIS: show_analysis_page,
     PAGE_GAP: lambda mode: show_analysis_view(mode, PAGE_GAP, show_gap_tab),
     PAGE_CHANNELS: lambda mode: show_analysis_view(mode, PAGE_CHANNELS, show_channels_tab),
-    PAGE_SEASONALITY: lambda mode: show_analysis_view(mode, PAGE_SEASONALITY, show_seasonality_tab),
+    PAGE_SEASONALITY: show_price_context_page,
     PAGE_ALERTS: lambda mode: show_analysis_view(mode, PAGE_ALERTS, show_alerts_tab),
-    PAGE_QUERIES: lambda mode: show_document_page(mode, SECTION_CODE,
+    PAGE_QUERIES: lambda mode: show_document_page(mode, SECTION_QUERIES,
         "Cada consulta, la pregunta que responde y su resultado real, en solo lectura.",
         show_queries_tab),
-    PAGE_KPI: lambda mode: show_document_page(mode, PAGE_KPI,
-        "Cada medida del panel, su fórmula explicada y un ejemplo real.", show_kpi_tab),
+    PAGE_KPI: show_kpi_page,
     PAGE_ARCHITECTURE: show_architecture_page,
     PAGE_CODE: lambda mode: show_document_page(mode, PAGE_CODE,
         "Del primer archivo que descarga datos al código que los presenta.", show_files_tab),
@@ -5309,8 +7415,6 @@ SHOW_PAGE_BY_TITLE = {
         "Qué se valida y qué ocurre cuando una fila no cumple las reglas.", show_rules_tab),
     PAGE_MANUAL: lambda mode: show_document_page(mode, PAGE_MANUAL,
         "Cómo operar el proyecto y resolver sus fallas.", show_manual_tab),
-    PAGE_DECISIONS: lambda mode: show_document_page(mode, PAGE_DECISIONS,
-        "Decisiones de diseño con su motivo y sus límites.", show_decisions_tab),
     PAGE_GLOSSARY: lambda mode: show_document_page(mode, PAGE_GLOSSARY,
         "Siglas y conceptos explicados en contexto.", show_glossary_tab),
     PAGE_LINKS: show_links_page,
@@ -5351,22 +7455,18 @@ def show_attribution():
 
 
 def order_windows():
-    """The menu: the four steps of the route, then the sources and links."""
-    return ROUTE + [SECTION_LINKS]
+    """The data-first route, followed by documentation and links."""
+    return ROUTE + [SECTION_LINKS, SECTION_RESOURCES, SECTION_KPI]
 
 
 def start_window(profile=None):
-    """Where the visit starts: the project, or the section the profile needs first."""
-    return PROFILE_START.get(profile or st.session_state.get(PROFILE_PARAMETER),
-                             SECTION_PROJECT)
+    """A single public entry point; legacy profile arguments are ignored."""
+    return REPORT_WINDOW
 
 
 def read_window_views(window, profile=None):
-    """The views of a section; a profile opens first the ones it needs (D-070)."""
-    profile = profile or st.session_state.get(PROFILE_PARAMETER)
-    views = WINDOWS[window]
-    first = [view for view in PROFILE_FIRST_VIEWS.get(profile, []) if view in views]
-    return first + [view for view in views if view not in first]
+    """One stable order for every visitor."""
+    return [p for p in WINDOWS[window] if p not in (PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS)]
 
 
 def number_window(window, order):
@@ -5398,6 +7498,11 @@ def synchronize_window_view(window):
     views = read_window_views(window)
     key = window_view_key(window)
     requested = st.query_params.get(VIEW_PARAMETER)
+    if requested in (PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS):
+        if requested == PAGE_GAP:
+            st.query_params["datos_modo"] = "brecha"
+        requested = PAGE_HOME if requested == PAGE_ANALYSIS else PAGE_DATA
+        st.query_params[VIEW_PARAMETER] = requested
     if requested in views and requested != st.session_state.get(f"{key}_synced"):
         st.session_state[key] = requested
         st.session_state[f"{key}_synced"] = requested
@@ -5411,6 +7516,11 @@ def choose_window_view(window):
     views = read_window_views(window)
     key = window_view_key(window)
     requested = st.query_params.get(VIEW_PARAMETER)
+    if requested in (PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS):
+        if requested == PAGE_GAP:
+            st.query_params["datos_modo"] = "brecha"
+        requested = PAGE_HOME if requested == PAGE_ANALYSIS else PAGE_DATA
+        st.query_params[VIEW_PARAMETER] = requested
     if requested in views and requested != st.session_state.get(f"{key}_synced"):
         st.session_state[key] = requested
     if st.session_state.get(key) not in views:
@@ -5433,17 +7543,20 @@ def render_window(window, pages=None):
     show_app_header(window)
     view = choose_window_view(window)
     with st.container(key="report_page" if window == REPORT_WINDOW else "window_page"):
+        overview_class = OVERVIEW_CLASS_BY_VIEW.get(view)
+        if overview_class:
+            st.markdown(f'<span class="overview-viewport-marker {overview_class}" '
+                        'aria-hidden="true"></span>', unsafe_allow_html=True)
         if view == PAGE_COVER:
             # The cover links with the navigation pages, so a visit keeps its session.
             show_cover_page(mode, pages)
         else:
             SHOW_PAGE_BY_TITLE[view](mode)
-    if view == PAGE_COVER and pages:
-        show_profile_choice(pages)
-    if pages:
-        show_route_footer(window, pages)
-    show_attribution()
-    st.html(FOLD_SIDEBAR_SCRIPT, unsafe_allow_javascript=True)
+    if view not in OVERVIEW_CLASS_BY_VIEW:
+        if pages:
+            show_route_footer(window, pages)
+        show_attribution()
+    st.html(FOLD_SIDEBAR_SCRIPT + RELOAD_HOME_SCRIPT + build_visit_history_script(), unsafe_allow_javascript=True)
 
 
 def keep_context():
@@ -5452,8 +7565,6 @@ def keep_context():
     context = {}
     if st.session_state.get(THEME_STATE) in charts.THEMES:
         context[THEME_PARAMETER] = st.session_state[THEME_STATE]
-    if st.session_state.get(PROFILE_PARAMETER) in VISITOR_PROFILES:
-        context["perfil"] = st.session_state[PROFILE_PARAMETER]
     return context
 
 
@@ -5476,30 +7587,6 @@ def show_route_footer(window, pages):
         st.caption(f"Siguiente paso: {ROUTE_LEADS[ROUTE[position + 1]]}.")
 
 
-def keep_profile_from_field():
-    """The profile field changed: keep it for the whole visit (or none)."""
-    chosen = st.session_state.get("profile_field")
-    if chosen in VISITOR_PROFILES:
-        st.session_state[PROFILE_PARAMETER] = chosen
-    else:
-        st.session_state.pop(PROFILE_PARAMETER, None)
-
-
-def show_profile_choice(pages):
-    """Optional: a profile says where to start and which views open first. Nothing is
-    hidden; without a profile the route stays as it is (D-070)."""
-    st.session_state["profile_field"] = st.session_state.get(PROFILE_PARAMETER)
-    with st.container(key="profile_choice"):
-        st.segmented_control("¿Cómo quieres recorrerlo? (opcional)", list(VISITOR_PROFILES),
-                             key="profile_field", on_change=keep_profile_from_field)
-        profile = st.session_state.get(PROFILE_PARAMETER)
-        if profile:
-            start = start_window(profile)
-            st.caption(VISITOR_PROFILES[profile])
-            if start != SECTION_PROJECT:
-                st.page_link(pages[start], label=f"Empezar por {start} →",
-                             query_params=keep_context())
-
 
 def render_page(title):
     """Draw one view alone, as tests and old callers do."""
@@ -5513,6 +7600,7 @@ def build_window_page(window, order, start, pages):
     """A navigation entry that draws one section, numbered by its step in the route."""
     return st.Page(lambda: render_window(window, pages), title=number_window(window, order),
                    icon=WINDOW_ICONS[window], url_path=WINDOW_PATHS[window],
+                   visibility="hidden" if window == SECTION_KPI else "visible",
                    default=window == start)
 
 
@@ -5548,6 +7636,169 @@ def redirect_moved_tab(current_page, windows_by_title):
         st.switch_page(windows_by_title[window], query_params=parameters)
 
 
+RETURN_CONTEXT_KEYS = ["dashboard_group", "dashboard_region", "dashboard_week", "dashboard_product", "dashboard_top_n",
+                       "analysis_group", "analysis_product", "analysis_key_label", "analysis_region", "analysis_channels"]
+
+
+def restore_return_context():
+    encoded = st.query_params.pop("_ctx", None)
+    if not encoded or len(encoded) > 16000:
+        return
+    try:
+        snapshot = json.loads(base64.b64decode(encoded, validate=True))
+        if isinstance(snapshot, dict):
+            for key in RETURN_CONTEXT_KEYS:
+                value = snapshot.get(key)
+                if key == "dashboard_top_n":
+                    if isinstance(value, int) and not isinstance(value, bool) and 8 <= value <= 20:
+                        st.session_state[key] = value
+                elif key == "dashboard_product":
+                    if (isinstance(value, dict) and isinstance(value.get("key"), dict)
+                            and all(isinstance(value["key"].get(field), str) for field in queries.KEY_COLUMNS)
+                            and isinstance(value.get("name"), str)):
+                        st.session_state[key] = value
+                elif key == "analysis_channels":
+                    if isinstance(value, list) and all(isinstance(item, str) for item in value):
+                        st.session_state[key] = value
+                elif isinstance(value, str):
+                    st.session_state[key] = value
+    except (ValueError, TypeError, UnicodeDecodeError):
+        pass
+
+
+def build_visit_history_script():
+    snapshot = {key: st.session_state[key] for key in RETURN_CONTEXT_KEYS if key in st.session_state}
+    encoded = json.dumps(snapshot, ensure_ascii=True, default=str).replace("<", "\\u003c")
+    return """<script>(() => {
+    try {
+        if (!document.documentElement.dataset.greenoceanLinksBound) {
+            document.documentElement.dataset.greenoceanLinksBound = 'true';
+            document.addEventListener('click', event => {
+                if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                const anchor = event.target.closest && event.target.closest('a[href]');
+                if (anchor && !anchor.hasAttribute('download')) anchor.target = '_self';
+            }, true);
+        }
+        const url = new URL(location.href); url.searchParams.delete('_ctx');
+        const identity = url.pathname + '|' + ['vista','kpi','consulta'].map(k => url.searchParams.get(k) || '').join('|');
+        const pending = sessionStorage.getItem('greenoceanReturning');
+        if (pending && pending !== identity) return;
+        if (pending) sessionStorage.removeItem('greenoceanReturning');
+        const rows = JSON.parse(sessionStorage.getItem('greenoceanTrail') || '[]');
+        const record = {url:url.pathname + url.search, identity, filters:__FILTERS__};
+        if (rows.length && rows[rows.length-1].identity === identity) rows[rows.length-1] = record;
+        else rows.push(record);
+        sessionStorage.setItem('greenoceanTrail', JSON.stringify(rows.slice(-30)));
+    } catch (_) {}
+    })();</script>""".replace("__FILTERS__", encoded)
+
+
+RETURN_ACTION_SCRIPT = """<script>(() => {
+    try {
+        const rows = JSON.parse(sessionStorage.getItem('greenoceanTrail') || '[]');
+        if (rows.length > 1) rows.pop();
+        const previous = rows.length > 0 ? rows[rows.length-1] : null;
+        const url = new URL(previous ? previous.url : '/', location.origin);
+        if (url.origin !== location.origin) return;
+        if (previous) {
+            sessionStorage.setItem('greenoceanReturning', previous.identity);
+            url.searchParams.set('_ctx', btoa(unescape(encodeURIComponent(JSON.stringify(previous.filters || {})))));
+        }
+        sessionStorage.setItem('greenoceanTrail', JSON.stringify(rows));
+        location.assign(url.href);
+    } catch (_) { location.assign('/'); }
+})();</script>"""
+
+RELOAD_HOME_SCRIPT = """<script>
+(() => {
+    if (document.documentElement.dataset.greenoceanReloadHandled === "true") return;
+    document.documentElement.dataset.greenoceanReloadHandled = "true";
+    const navigation = performance.getEntriesByType("navigation")[0];
+    if (!navigation || navigation.type !== "reload") return;
+    const current = new URL(window.location.href);
+    const home = new URL("/", current);
+    for (const name of ["tema"]) {
+        if (current.searchParams.has(name)) home.searchParams.set(name, current.searchParams.get(name));
+    }
+    home.searchParams.set("vista", "Dashboard");
+    try {
+        const trail = JSON.parse(sessionStorage.getItem('greenoceanTrail') || '[]');
+        const last = trail[trail.length - 1];
+        if (last && last.filters && Object.keys(last.filters).length) {
+            home.searchParams.set('_ctx', btoa(unescape(encodeURIComponent(JSON.stringify(last.filters)))));
+        }
+    } catch (_) {}
+    if (current.pathname !== home.pathname || current.search !== home.search || current.hash) {
+        window.location.replace(home.href);
+    }
+})();
+</script>"""
+
+
+def show_sidebar_navigation(windows_by_title, current_window, order):
+    """Place child views directly inside their section instead of a detached list."""
+    selected = st.query_params.get(VIEW_PARAMETER,st.session_state.get(window_view_key(current_window),read_window_views(current_window)[0]))
+    if current_window == REPORT_WINDOW and selected == PAGE_HOME:
+        items=[('Resumen','home',PAGE_HOME),
+               ('Contexto del precio','clock',PAGE_SEASONALITY),('Arquitectura','tree',PAGE_DIAGRAMS),
+               ('Código','code',PAGE_CODE),('Documentación','document',PAGE_DOCUMENTATION)]
+        st.sidebar.markdown(home_mockup.sidebar([(label,kind,build_page_address(page)) for label,kind,page in items]),unsafe_allow_html=True)
+        return
+    palette = charts.get_palette(get_mode())
+    st.sidebar.markdown(f"""<style>
+    [data-testid="stSidebar"] [data-testid="stExpander"] details {{
+        border:0 !important; background:transparent !important; border-radius:0;}}
+    [data-testid="stSidebar"] [data-testid="stExpander"] summary {{
+        padding:7px 6px; background:transparent !important; color:{palette['sidebar_text']} !important;
+        border:0 !important; border-radius:0; box-shadow:none !important;}}
+    [data-testid="stSidebar"] [data-testid="stExpander"] summary p {{
+        color:{palette['sidebar_text']} !important; font-size:.95rem; font-weight:500;}}
+    [data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {{opacity:.85;}}
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p,
+    [data-testid="stSidebarCollapseButton"] button, [data-testid="stSidebarCollapseButton"] span {{color:{palette['sidebar_text']} !important;}}
+    [data-testid="stSidebar"] [data-testid="stExpanderDetails"] {{padding:0 4px 0 17px; border-top:0 !important;}}
+    [class*="st-key-sidebar_children_"] {{
+        border-left:1px solid {palette['sidebar_text']}55; padding-left:12px; margin-left:3px; gap:0 !important;}}
+    [class*="st-key-sidebar_branch_"] {{position:relative; gap:0 !important;}}
+    [class*="st-key-sidebar_branch_"]::before {{content:""; position:absolute;
+        left:-13px; top:50%; width:13px; border-top:1px solid {palette['sidebar_text']}55;}}
+    [class*="st-key-sidebar_branch_"][class*="_last"]::after {{content:""; position:absolute;
+        left:-14px; top:calc(50% + 1px); bottom:0; width:2px; background:{palette['sidebar']};}}
+    [class*="st-key-sidebar_children_"] [data-testid="stPageLink"] a {{
+        background:transparent !important; border-radius:0; padding:5px 6px; box-shadow:none !important;}}
+    [class*="st-key-sidebar_children_"] [data-testid="stPageLink"] p {{font-size:.86rem;}}
+    [class*="st-key-sidebar_children_"] [data-testid="stPageLink"] a:hover {{text-decoration:underline; text-underline-offset:4px;}}
+    .st-key-sidebar_current_view [data-testid="stPageLink"] a {{
+        background:transparent !important; box-shadow:none !important;}}
+    .st-key-sidebar_current_view [data-testid="stPageLink"] p {{font-weight:650;}}
+    .st-key-sidebar_current_view [data-testid="stPageLink"] a::after {{
+        content:""; width:5px; height:5px; border-radius:50%; background:{palette['sidebar_text']}; margin-left:auto;}}
+    </style>""", unsafe_allow_html=True)
+    for heading, sections in (("Recorrido", ROUTE),
+                              ("Referencias", [SECTION_LINKS, SECTION_RESOURCES])):
+        st.sidebar.markdown(f"**{heading}**")
+        for window in sections:
+            views = [view for view in read_window_views(window) if view != PAGE_ALERTS]
+            if len(views) == 1:
+                st.sidebar.page_link(windows_by_title[window], label=number_window(window, order),
+                                     icon=WINDOW_ICONS[window], query_params=keep_context())
+                continue
+            with st.sidebar.expander(number_window(window, order), expanded=window == current_window):
+                with st.container(key=f"sidebar_children_{WINDOW_PATHS[window]}"):
+                    selected = st.query_params.get(VIEW_PARAMETER, st.session_state.get(window_view_key(window), views[0]))
+                    for index, view in enumerate(views):
+                        active = window == current_window and view == selected
+                        key = "sidebar_current_view" if active else f"sidebar_view_{WINDOW_PATHS[window]}_{index}"
+                        tail = "_last" if index == len(views) - 1 else ""
+                        with st.container(key=f"sidebar_branch_{WINDOW_PATHS[window]}_{index}{tail}"):
+                            with st.container(key=key):
+                                label = ("Resumen de la semana" if view == PAGE_HOME else
+                                         "Calidad y trazabilidad" if view == PAGE_OPERATIONS else view)
+                                st.page_link(windows_by_title[window], label=label,
+                                             icon=PAGE_ICONS.get(view),
+                                             query_params=keep_context() | {VIEW_PARAMETER: view})
+
+
 def main():
     """Theme, navigation with icons and the chosen page."""
     st.set_page_config(page_title="Monitor de precios de alimentos", layout="wide",
@@ -5556,14 +7807,10 @@ def main():
         st.error("Falta etl/datos.db. Ejecuta primero: python etl/etl.py")
         return
     settle_theme()
-    saved_profile = st.query_params.get("perfil")
-    if saved_profile in VISITOR_PROFILES and PROFILE_PARAMETER not in st.session_state:
-        st.session_state[PROFILE_PARAMETER] = saved_profile
-    profile = st.session_state.get(PROFILE_PARAMETER)
-    if profile in VISITOR_PROFILES:
-        st.query_params["perfil"] = profile
-    else:
-        st.query_params.pop("perfil", None)
+    st.session_state.pop(PROFILE_PARAMETER, None)
+    st.query_params.pop("perfil", None)
+    restore_return_context()
+    profile = None
     order = order_windows()
     start = start_window(profile)
     windows_by_title = {}
@@ -5576,10 +7823,25 @@ def main():
                   if path not in WINDOW_PATHS.values() and path not in PAGE_PATHS.values()]
     current_page = st.navigation({
         "Recorrido": [windows_by_title[window] for window in ROUTE],
-        "Referencias": [windows_by_title[SECTION_LINKS]],
-        "Compatibilidad": redirects}, position="sidebar")
+        "Referencias": [windows_by_title[SECTION_LINKS], windows_by_title[SECTION_RESOURCES]],
+        "Compatibilidad": [windows_by_title[SECTION_KPI]] + redirects}, position="hidden")
+    # Historical root links may request a project view. Keep that exact destination
+    # when Dashboard becomes the root, rather than silently showing another view.
+    # Views renamed since: old links open the new title (D-094).
+    if st.query_params.get(VIEW_PARAMETER) in RETIRED_VIEWS:
+        st.query_params[VIEW_PARAMETER] = RETIRED_VIEWS[st.query_params[VIEW_PARAMETER]]
+    requested_view = st.query_params.get(VIEW_PARAMETER)
+    requested_window = WINDOW_OF_VIEW.get(requested_view)
+    if requested_window and requested_window != window_of_page(current_page):
+        st.switch_page(windows_by_title[requested_window], query_params=st.query_params.to_dict())
     redirect_moved_tab(current_page, windows_by_title)
-    show_theme_field()
+    current_window = window_of_page(current_page)
+    if current_window not in WINDOWS:
+        # An old address: it only switches to its window, before any menu is drawn.
+        current_page.run()
+        return
+    show_sidebar_navigation(windows_by_title, current_window, order)
+    # The dashboard is the public home page; choosing a profile is optional.
     current_page.run()
     st.sidebar.caption("Fuente: ODEPA · actualización automática cada martes.")
 

@@ -206,21 +206,33 @@ def build_star_css(colors):
         f".star-model:has(.star-{table}:focus) .star-panel-{table} {{ display: block; }}"
         for table in tables)
     return f"""<style>
-    .star-model {{ background: {colors["frame"]}; border-radius: 18px; padding: 12px; }}
+    .star-model {{ background: {colors["frame"]}; border-radius: 18px; padding: 8px 10px; }}
+    .star-model > .zoom-frame {{
+        width: min(100%, 760px, calc((100vh - 330px) * 1.2));
+        margin: 0 auto;
+    }}
+    .star-model > .zoom-frame .zoom-content svg {{
+        width: 100%; height: auto; max-height: calc(100vh - 330px);
+    }}
     .star-table {{ cursor: pointer; outline: none; }}
     .star-table:hover .star-card, .star-table:focus .star-card {{ stroke-width: 3; }}
-    .star-panel {{ display: none; min-height: 150px; margin-top: 8px; padding: 14px 18px;
+    .star-panel {{ display: none; min-height: 96px; margin-top: 5px; padding: 9px 13px;
                    border-radius: 14px; border: 1px solid {colors["cyan"]};
                    background: {colors["card"]}; color: {colors["strong_text"]};
-                   line-height: 1.5; }}
+                   font-size:.84rem; line-height: 1.35; }}
     .star-panel-weekly_price {{ display: block; }}
-    .star-panel-title {{ color: {colors["cyan"]}; font-size: 1.2rem; font-weight: 700;
-                         margin-bottom: 4px; }}
-    .star-join {{ display: block; margin-top: 8px; white-space: pre-wrap;
+    .star-panel-title {{ color: {colors["cyan"]}; font-size: 1rem; font-weight: 700;
+                         margin-bottom: 2px; }}
+    .star-join {{ display: block; margin-top: 4px; white-space: pre-wrap;
                   color: {colors["cyan"]}; background: transparent; padding: 0; }}
-    .star-figures {{ margin-top: 6px; color: {colors["text"]}; font-family: {MONO_FONT}; }}
-    .star-note {{ margin-top: 10px; color: {colors["text"]}; }}
+    .star-figures {{ margin-top: 3px; color: {colors["text"]}; font-family: {MONO_FONT}; }}
+    .star-note {{ margin-top: 5px; color: {colors["text"]}; font-size:.78rem; }}
     .star-note strong {{ color: {colors["strong_text"]}; font-weight: 500; }}
+    @media (max-width: 700px) {{
+        .star-model {{ padding: 8px; border-radius: 12px; }}
+        .star-model > .zoom-frame {{ width: 100%; }}
+        .star-panel {{ min-height: 0; padding: 11px 13px; }}
+    }}
     {rules}
     </style>"""
 
