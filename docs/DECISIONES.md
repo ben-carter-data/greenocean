@@ -851,3 +851,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** las filas de D-114, con fondo plano teñido del color del indicador, se reorganizan en una grilla (`auto-fill, minmax(230px, 1fr)`) de tarjetas blancas elevadas: borde propio, sombra de color del indicador en vez de fondo teñido, y un ícono dentro de una placa redondeada del mismo color. Cada tarjeta se levanta un poco más al pasar el mouse (sombra más amplia, se eleva 5 px), dando la sensación «casi 3D» pedida.
 - **Alcance:** solo CSS (`.doc-kpi-grid`, `.doc-kpi-row`, `.doc-kpi-icon`); el ancho de columna del perfil BI crece a 960 px (antes 720, pensado para texto corrido) para que la galería respire, solo cuando la página tiene esa grilla.
 - **Validación:** 423 pruebas sin cambios (el único fallo, previo y no relacionado); las pruebas de D-114 siguen pasando porque verifican clases y datos, no el layout visual.
+
+## D-115 · BA muestra el marco de negocio completo, sin enlace a una página que lo repite
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** el enlace «Leer el marco de negocio completo →» del perfil BA llevaba a `PAGE_BUSINESS`, una página que muestra la misma tabla «Marco de negocio» (Misión, Visión, Objetivo, Alcance, Fuera de alcance) que BA ya tenía en pantalla, más algunas secciones adicionales (preguntas, audiencia, fuentes). El lector llegaba a lo mismo que ya estaba viendo.
+- **Decisión:** se retira el enlace, igual que en D-114 con BI; BA pasa a mostrar la tabla completa, agregando el campo que le faltaba —**Criterios de aceptación**— para que no quede nada relevante solo del otro lado de un clic.
+- **Validación:** 424 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d115_ba_shows_the_whole_business_frame_without_a_link_to_a_repeat` comprueba los seis campos y que el enlace viejo ya no está.
