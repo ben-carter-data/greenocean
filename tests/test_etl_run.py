@@ -52,6 +52,9 @@ def test_run_loads_weekly_prices_dimensions_and_the_run_record(tmp_path):
     assert set(read_table(connection, "dim_channel")["channel"]) == {
         etl.WHOLESALE_CHANNEL, "Feria libre", "Supermercado"}
     assert list(read_table(connection, "etl_run")["status"]) == [etl.STATUS_LOADED]
+    # D-095: every load rebuilds dim_date, and each price week is in it.
+    weeks = set(read_table(connection, "dim_date")["week_start"])
+    assert set(read_table(connection, "weekly_price")["week_start"]) <= weeks
 
 
 def test_rn11_rows_read_equal_rows_loaded_plus_rows_rejected(tmp_path):

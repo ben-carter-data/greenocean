@@ -5,7 +5,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from etl import etl  # noqa: E402
 
-EXPECTED_TABLES = {"dim_product", "dim_region", "dim_channel", "weekly_price",
+EXPECTED_TABLES = {"dim_product", "dim_region", "dim_channel", "dim_date", "weekly_price",
                    "etl_run", "rejection"}
 
 

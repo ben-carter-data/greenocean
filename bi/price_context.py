@@ -22,17 +22,27 @@ def iso_week(week_start):
     return calendar.year, calendar.week
 
 
-def rango_habitual(rows, week_start):
+def read_calendar(rows):
+    """(ISO year, ISO week, month) columns: from dim_date when joined, computed otherwise."""
+    if {"iso_year", "iso_week", "month"} <= set(rows.columns):
+        return rows["iso_year"].to_numpy(), rows["iso_week"].to_numpy(), rows["month"].to_numpy()
+    days = pd.to_datetime(rows["week_start"])
+    calendar = days.dt.isocalendar()
+    return calendar["year"].to_numpy(), calendar["week"].to_numpy(), days.dt.month.to_numpy()
+
+
+def rango_habitual(rows, week_start, iso=None):
     """(P25, P75, number of years) of the same ISO week in previous years, or None.
 
-    rows: one price series (week_start, national_price). Only years before the ISO
-    year of week_start count; a missing week in a year simply leaves that year out.
+    rows: one price series (week_start, national_price, and the dim_date columns when
+    available). iso: (ISO year, ISO week) of week_start from dim_date. Only years before
+    that ISO year count; a missing week in a year simply leaves that year out.
     """
-    year, week = iso_week(week_start)
+    year, week = iso or iso_week(week_start)
     if rows.empty:
         return None
-    calendar = pd.to_datetime(rows["week_start"]).dt.isocalendar()
-    same_week = rows[(calendar["week"].to_numpy() == week) & (calendar["year"].to_numpy() < year)]
+    years, weeks, _ = read_calendar(rows)
+    same_week = rows[(weeks == week) & (years < year)]
     prices = same_week["national_price"].dropna()
     if prices.size < MINIMUM_YEARS:
         return None
@@ -51,18 +61,22 @@ def estado_precio(price, usual_range):
     return "dentro"
 
 
-def weekly_context(rows, last_week, weeks=52):
+def weekly_context(rows, last_week, weeks=52, dates=None):
     """The last `weeks` weeks of one series with its usual band, one row per week.
 
     Weeks without a price keep a row with an empty price: the chart shows a gap,
-    never an interpolated value.
+    never an interpolated value. dates: dim_date indexed by week_start, if any.
     """
     last_week = pd.Timestamp(last_week)
     calendar = pd.date_range(end=last_week, periods=weeks, freq="7D")
+    def iso(week):
+        if dates is not None and week in dates.index:
+            return int(dates.at[week, "iso_year"]), int(dates.at[week, "iso_week"])
+        return None
     prices = rows.assign(week_start=pd.to_datetime(rows["week_start"])).set_index("week_start")["national_price"]
     records = []
     for week in calendar:
-        usual = rango_habitual(rows, week)
+        usual = rango_habitual(rows, week, iso(week))
         price = prices.get(week)
         price = float(price) if price is not None and pd.notna(price) else None
         records.append({"week_start": week, "price": price,
@@ -74,26 +88,30 @@ def weekly_context(rows, last_week, weeks=52):
 def brecha(feria, supermercado):
     """Weekly gap in %: (supermarket / street market − 1) × 100, only where both exist.
 
-    feria, supermercado: series of one product (week_start, national_price).
+    feria, supermercado: series of one product (week_start, national_price, and the
+    dim_date columns when available, which the result keeps).
     """
-    joined = (feria[["week_start", "national_price"]]
+    calendar = [column for column in ("iso_year", "iso_week", "month") if column in feria]
+    joined = (feria[["week_start", "national_price"] + calendar]
               .merge(supermercado[["week_start", "national_price"]], on="week_start",
                      suffixes=("_feria", "_super")))
     joined = joined[(joined["national_price_feria"] > 0) & joined["national_price_super"].notna()]
     joined = joined.assign(week_start=pd.to_datetime(joined["week_start"]))
     joined["gap"] = (joined["national_price_super"] / joined["national_price_feria"] - 1) * 100
-    return joined[["week_start", "gap"]].sort_values("week_start").reset_index(drop=True)
+    return joined[["week_start", "gap"] + calendar].sort_values("week_start").reset_index(drop=True)
 
 
-def brecha_habitual(gaps, week_start):
-    """Median gap of the same calendar month in previous years, or None (< 2 years)."""
+def brecha_habitual(gaps, week_start, iso_year=None, month=None):
+    """Median gap of the same month in previous years, or None (< 2 years).
+
+    The month is the one of week_start, as in dim_date.
+    """
     week_start = pd.Timestamp(week_start)
-    year = week_start.isocalendar().year
-    month = (week_start + pd.Timedelta(days=3)).month
-    moments = gaps["week_start"] + pd.Timedelta(days=3)
-    years = gaps["week_start"].dt.isocalendar()["year"].to_numpy()
-    previous = gaps[(moments.dt.month.to_numpy() == month) & (years < year)]
-    if previous.empty or len(set(previous["week_start"].dt.isocalendar()["year"])) < MINIMUM_YEARS:
+    year = iso_year or week_start.isocalendar().year
+    month = month or week_start.month
+    years, _, months = read_calendar(gaps)
+    previous = gaps[(months == month) & (years < year)]
+    if previous.empty or len(set(years[(months == month) & (years < year)])) < MINIMUM_YEARS:
         return None
     return float(previous["gap"].median())
 
@@ -107,8 +125,9 @@ def patron_estacional(rows, current_year=None):
     """
     if rows.empty:
         return {}
+    # The month comes from dim_date when joined: the month of week_start.
     rows = rows.assign(year=rows["price_year"].astype(int),
-                       month=(pd.to_datetime(rows["week_start"]) + pd.Timedelta(days=3)).dt.month)
+                       month=rows["month"] if "month" in rows else pd.to_datetime(rows["week_start"]).dt.month)
     if current_year is not None and (rows["year"] < current_year).any():
         rows = rows[rows["year"] < current_year]
     monthly = rows.groupby(["year", "month"])["seasonal_index"].mean().groupby("month").mean()

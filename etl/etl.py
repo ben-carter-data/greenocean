@@ -503,6 +503,61 @@ def attach_dimension_identifiers(connection, weekly_prices):
     return rows[WEEKLY_PRICE_COLUMNS]
 
 
+MONTH_NAMES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+               "septiembre", "octubre", "noviembre", "diciembre"]
+# Southern hemisphere: summer is December to February.
+SEASON_BY_MONTH = {12: "verano", 1: "verano", 2: "verano", 3: "otoño", 4: "otoño", 5: "otoño",
+                   6: "invierno", 7: "invierno", 8: "invierno",
+                   9: "primavera", 10: "primavera", 11: "primavera"}
+DIM_DATE_COLUMNS = ["week_start", "iso_year", "iso_week", "month", "month_name", "year", "season"]
+
+
+def build_dim_date(first_week, last_week):
+    """Every Monday from the first to the last week, without gaps (D-095)."""
+    weeks = pd.date_range(pd.Timestamp(first_week), pd.Timestamp(last_week), freq="7D")
+    calendar = weeks.isocalendar()
+    return pd.DataFrame({
+        "week_start": weeks.strftime("%Y-%m-%d"),
+        "iso_year": calendar["year"].to_numpy().astype(int),
+        "iso_week": calendar["week"].to_numpy().astype(int),
+        "month": weeks.month,
+        "month_name": [MONTH_NAMES[month - 1] for month in weeks.month],
+        "year": weeks.year,
+        "season": [SEASON_BY_MONTH[month] for month in weeks.month],
+    })[DIM_DATE_COLUMNS]
+
+
+def ensure_weekly_price_references_dim_date(connection):
+    """Databases created before D-095: rebuild weekly_price with its date key.
+
+    SQLite cannot add a foreign key to an existing table. The rows are copied
+    unchanged, in the same transaction as the caller.
+    """
+    references = {row[2] for row in connection.execute("PRAGMA foreign_key_list(weekly_price)")}
+    if "dim_date" in references:
+        return False
+    schema = SCHEMA_FILE.read_text(encoding="utf-8")
+    start = schema.index("CREATE TABLE IF NOT EXISTS weekly_price")
+    definition = schema[start:schema.index(");", start) + 2]
+    connection.execute("ALTER TABLE weekly_price RENAME TO weekly_price_before_d095")
+    connection.execute(definition)
+    columns = ", ".join(WEEKLY_PRICE_COLUMNS)
+    connection.execute(f"INSERT INTO weekly_price ({columns}) SELECT {columns} FROM weekly_price_before_d095")
+    connection.execute("DROP TABLE weekly_price_before_d095")
+    return True
+
+
+def refresh_dim_date(connection, week_starts=None):
+    """Rebuild dim_date from the weeks of weekly_price (or the given ones)."""
+    if week_starts is None:
+        first, last = connection.execute("SELECT MIN(week_start), MAX(week_start) FROM weekly_price").fetchone()
+    else:
+        first, last = min(week_starts), max(week_starts)
+    connection.execute("DELETE FROM dim_date")
+    if first is not None:
+        insert_rows(connection, "dim_date", build_dim_date(first, last))
+
+
 def record_run(connection, started_at, status, row_counts, message=""):
     """Write one line in etl_run and return its identifier."""
     cursor = connection.execute(
@@ -528,7 +583,10 @@ def load(connection, weekly_prices, regions, rejections, started_at, row_counts)
                                weekly_prices[CHANNEL_COLUMNS].drop_duplicates(),
                                CHANNEL_COLUMNS)
         # The weekly prices are rebuilt from the raw data, so they are replaced.
+        ensure_weekly_price_references_dim_date(connection)
         connection.execute("DELETE FROM weekly_price")
+        # Every week referenced by a price exists in dim_date before the price (D-095).
+        refresh_dim_date(connection, list(weekly_prices["week_start"]))
         insert_rows(connection, "weekly_price",
                     attach_dimension_identifiers(connection, weekly_prices))
         run_id = record_run(connection, started_at, STATUS_LOADED, row_counts)
