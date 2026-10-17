@@ -866,12 +866,20 @@ def build_style_css(mode):
         display:block; margin:0 auto;
     }}
     .devops-cycle-mobile {{ display:none; list-style:none; padding:0; }}
-    .devops-cycle-mobile li, .technical-rows li {{ display:flex; align-items:flex-start;
+    .devops-cycle-mobile li {{ display:flex; align-items:flex-start;
         gap:14px; padding:12px 0; border-bottom:1px solid {palette["card_border"]}; }}
+    /* A grid of floating cards, not a long list (D-122): the same elevated-card
+       language as the KPI gallery and the GitHub page. */
+    .technical-rows li {{ display:flex; align-items:flex-start; gap:12px; padding:16px;
+        border-radius:14px; background:{palette["card"]}; border:1px solid {palette["card_border"]};
+        box-shadow:0 12px 24px -14px rgba(0,0,0,.22), 0 2px 6px -1px rgba(0,0,0,.1);
+        transition:transform .15s ease; }}
+    .technical-rows li:hover {{ transform:translateY(-3px); }}
     .devops-logos {{ display:flex; gap:6px; flex-shrink:0; width:66px; }}
     .devops-logos svg {{ width:28px; height:28px; }}
     .devops-cycle-mobile span {{ display:block; font-size:.85rem; color:{palette["text"]}; }}
-    .technical-rows {{ list-style:none; padding:0; margin:0 0 20px; }}
+    .technical-rows {{ list-style:none; padding:0; margin:8px 0 20px; display:grid;
+        grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px; }}
     .technical-rows .component-symbol {{ width:28px; height:30px; margin:0; }}
     .technical-rows li > div {{ min-width:0; }}
     .technical-rows p {{ margin:4px 0; font-size:.9rem; line-height:1.5; }}
@@ -4318,13 +4326,6 @@ def show_catalog_list(selected):
                                 build_page_address(PAGE_CODE)), unsafe_allow_html=True)
 
 
-def build_catalog_steps_html():
-    """1 Pregunta → 2 Resultado → 3 Código: the order the detail reads in."""
-    steps = " <span aria-hidden=\"true\">→</span> ".join(
-        f'<span class="catalog-step"><b>{number}</b>{label}</span>'
-        for number, label in [(1, "Pregunta"), (2, "Resultado"), (3, "Código")])
-    return f'<div class="catalog-steps">{steps}</div>'
-
 
 def build_external_link_html(text, address):
     """A link that leaves the app: it says where it goes and opens a new tab (↗)."""
@@ -4365,50 +4366,59 @@ def show_catalog_result(entry, result):
                            key=f"catalog_download_{entry['name']}")
 
 
-def show_catalog_code(entry, result):
-    """3 · The code: the stored SQL (copy button on hover), its file on GitHub, how this
-    result filtered it and the Python that serves it."""
+def show_catalog_sql(entry, result):
+    """The stored SQL (copy button on hover), its file on GitHub and how this result
+    filtered it — its own tab, apart from Python (D-121)."""
     name = entry["name"]
     path, line = find_catalog_line(name)
     address = f"{project.build_github_url(path)}#L{line}"
     sql = read_catalog_sql(name)
-    with st.expander("Ver el SQL que produce este resultado", expanded=False):
-        st.markdown(f'<div class="catalog-block-title">Consulta SQL'
-                    f'<span>{build_external_link_html(f"Abrir archivo · {path} en GitHub", address)}'
-                    f'</span></div><div class="query-meta">Nombre en el código: '
-                    f'<code>{html.escape(name)}</code> · {html.escape(path)}, línea {line} · '
-                    f'{build_clause_chips(project.describe_query(sql))}</div>',
+    st.markdown(f'<div class="catalog-block-title">Consulta SQL'
+                f'<span>{build_external_link_html(f"Abrir archivo · {path} en GitHub", address)}'
+                f'</span></div><div class="query-meta">Nombre en el código: '
+                f'<code>{html.escape(name)}</code> · {html.escape(path)}, línea {line} · '
+                f'{build_clause_chips(project.describe_query(sql))}</div>',
+                unsafe_allow_html=True)
+    st.code(sql, language="sql", line_numbers=True, wrap_lines=True,
+            height="content" if sql.count("\n") < 18 else 380)
+    with st.expander(f"Ver consulta completa · {path}", expanded=False):
+        executed, parameters = build_catalog_sql(name, result["filters"])
+        st.caption("La consulta guardada, sin comentarios, tal como corrió para este "
+                   "resultado en la conexión de solo lectura.")
+        st.code(executed, language="sql", wrap_lines=True)
+        if parameters:
+            st.caption(f"Valores de cada «?», enviados aparte del texto: {list(parameters)}")
+
+
+def show_catalog_python(entry):
+    """The Python that serves the question — its own tab, apart from SQL (D-121)."""
+    for function in list_catalog_functions(entry["name"], entry["build"]):
+        module = sys.modules[function.__module__]
+        file = Path(module.__file__).resolve().relative_to(project.PROJECT_DIR).as_posix()
+        st.markdown(f'<div class="query-meta"><code>{html.escape(function.__name__)}</code> · '
+                    f'{build_external_link_html(file, project.build_github_url(file))}</div>',
                     unsafe_allow_html=True)
-        st.code(sql, language="sql", line_numbers=True, wrap_lines=True,
-                height="content" if sql.count("\n") < 18 else 380)
-        with st.expander(f"Ver consulta completa · {path}", expanded=False):
-            executed, parameters = build_catalog_sql(name, result["filters"])
-            st.caption("La consulta guardada, sin comentarios, tal como corrió para este "
-                       "resultado en la conexión de solo lectura.")
-            st.code(executed, language="sql", wrap_lines=True)
-            if parameters:
-                st.caption(f"Valores de cada «?», enviados aparte del texto: {list(parameters)}")
-    with st.expander("Implementación Python · Ver funciones", expanded=False):
-        for function in list_catalog_functions(name, entry["build"]):
-            module = sys.modules[function.__module__]
-            file = Path(module.__file__).resolve().relative_to(project.PROJECT_DIR).as_posix()
-            st.markdown(f'<div class="query-meta"><code>{html.escape(function.__name__)}</code> · '
-                        f'{build_external_link_html(file, project.build_github_url(file))}</div>',
-                        unsafe_allow_html=True)
-            st.code(inspect.getsource(function), language="python")
+        st.code(inspect.getsource(function), language="python", height=320)
 
 
 def show_catalog_detail(entry, mode):
-    """Right: 1 the question and what it compares, 2 its result, 3 its code."""
+    """Right: the question and what it compares, then Resultado · SQL · Python as
+    tabs, like a database tool's result pane — one visible at a time instead of
+    three blocks stacked down the page (D-121)."""
     result = entry["build"](mode)
     facts = '<span aria-hidden="true"> · </span>'.join(
         f"<span>{html.escape(str(fact))}</span>" for fact in result["facts"])
     st.markdown(f'<div class="catalog-head"><div><h2 class="catalog-question">'
                 f'{html.escape(entry["question"])}</h2><p class="catalog-compares">'
                 f'{html.escape(entry["compares"])}</p><p class="catalog-facts">{facts}</p>'
-                f'</div>{build_catalog_steps_html()}</div>', unsafe_allow_html=True)
-    show_catalog_result(entry, result)
-    show_catalog_code(entry, result)
+                f'</div></div>', unsafe_allow_html=True)
+    result_tab, sql_tab, python_tab = st.tabs(["Resultado", "SQL", "Python"])
+    with result_tab:
+        show_catalog_result(entry, result)
+    with sql_tab:
+        show_catalog_sql(entry, result)
+    with python_tab:
+        show_catalog_python(entry)
 
 
 def show_queries_page_header():
@@ -4432,7 +4442,9 @@ def show_queries_tab(mode):
     entry = choose_catalog_entry()
     with st.container(key="catalog"):
         list_column, detail_column = st.columns([1, 2.7], gap="medium")
-        with list_column, st.container(border=True, key="catalog_list"):
+        # A fixed-height pane that scrolls inside itself, like a database tool's
+        # object explorer, so the page around it does not grow (D-121).
+        with list_column, st.container(border=True, key="catalog_list", height=620):
             show_catalog_list(entry)
         with detail_column:
             show_catalog_detail(entry, mode)
@@ -7288,17 +7300,21 @@ def show_devops_tab(mode):
                "la última evidencia disponible; no afirman que haya una ejecución en curso.")
     st.markdown(build_link_html("Ver el pipeline y la arquitectura →",
                                 build_page_address(PAGE_DIAGRAMS)), unsafe_allow_html=True)
-    with st.expander("Ver coste, capacidad, seguridad y observabilidad", expanded=False):
-        st.subheader("Coste y capacidad")
+    # One tab per topic instead of one expander stacking all five (D-122): opening
+    # it no longer turns the page into a long scroll.
+    tabs = st.tabs(["Coste y capacidad"] + [group[0] for group in ARCHITECTURE_GROUPS])
+    with tabs[0]:
         st.markdown("SQLite permite almacenar los datos sin un servidor de base de datos dedicado. GitHub Actions coordina las ejecuciones y Streamlit publica el panel. "
                     "La capacidad depende del volumen, la duración de las cargas y las cuotas de cada servicio. La arquitectura debe revisarse antes de aumentar la frecuencia o incorporar fuentes de mayor tamaño.")
-        for group in ARCHITECTURE_GROUPS:
+    for tab, group in zip(tabs[1:], ARCHITECTURE_GROUPS):
+        with tab:
             show_architecture_group(*group)
             if group[0] == "DevOps":
                 st.markdown(f'<div class="info-note">Próxima ejecución automática: '
                             f'{figures["next_run"]}.</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="info-note">El enlace a los informes semanales está en '
-                    f'{build_place_link(PAGE_LINKS, "la página")}.</div>', unsafe_allow_html=True)
+            if group[0] == "Informes":
+                st.markdown(f'<div class="info-note">El enlace a los informes semanales está en '
+                            f'{build_place_link(PAGE_LINKS, "la página")}.</div>', unsafe_allow_html=True)
 
 
 # endregion
@@ -7456,8 +7472,51 @@ def read_quality_evidence(database_version, manifest_text, file_versions):
     return quality.check_database(), quality.check_source_files(json.loads(manifest_text), MANIFEST_FILE.parent)
 
 
+# A control's status color, by its first word (D-120): green when met, amber
+# while pending, red on a real failure — the same reading as a status dot
+# elsewhere in the app.
+QUALITY_STATUS_COLORS = {"fail": "#e66767", "pending": "#c98500", "ok": "#22b35a"}
+
+
+def classify_quality_status(status):
+    if status.startswith("Falla") or status.startswith("Sin registro"):
+        return "fail"
+    if status.startswith("Pendiente"):
+        return "pending"
+    return "ok"
+
+
+def build_quality_grid_css(mode):
+    palette = charts.get_palette(mode)
+    return f"""<style>
+    .quality-grid {{display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr));
+        gap:16px; margin:14px 0;}}
+    .quality-card {{display:flex; flex-direction:column; gap:7px; padding:16px 18px;
+        border-radius:16px; background:{palette['card']}; border:1px solid {palette['card_border']};
+        box-shadow:0 12px 24px -14px color-mix(in srgb,var(--q-color) 55%,#0003),
+                   0 2px 6px -1px rgba(0,0,0,.12);
+        transition:transform .15s ease, box-shadow .15s ease;}}
+    .quality-card:hover {{transform:translateY(-4px);}}
+    .quality-card-title {{font-weight:650; color:{palette['strong_text']}; font-size:.92rem;}}
+    .quality-badge {{display:inline-block; align-self:flex-start; padding:3px 10px;
+        border-radius:999px; font-size:.72rem; font-weight:650; color:#fff;
+        background:var(--q-color);}}
+    .quality-card-text {{font-size:.83rem; line-height:1.5; color:{palette['text']};}}
+    </style>"""
+
+
+def build_quality_card_html(title, status, evidence):
+    color = QUALITY_STATUS_COLORS[classify_quality_status(status)]
+    return (f'<div class="quality-card" style="--q-color:{color}">'
+            f'<div class="quality-card-title">{html.escape(title)}</div>'
+            f'<span class="quality-badge">{html.escape(status)}</span>'
+            f'<div class="quality-card-text">{html.escape(evidence)}</div></div>')
+
+
 def show_operations_page(mode):
-    """Evidence first: implemented checks, independently checked storage, pending audits."""
+    """Evidence first: implemented checks, independently checked storage, pending
+    audits — as a card gallery, then the rest behind tabs instead of one long
+    scroll (D-120)."""
     show_page_header("Calidad y trazabilidad", "Origen, controles y evidencia disponible de los datos que alimentan el panel.")
     manifest = read_download_manifest()
     versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
@@ -7479,18 +7538,22 @@ def show_operations_page(mode):
         ["Concordancia cálculo → pantalla", "Pendiente", "Falta documentar una muestra auditada con producto, región, canal, periodo y valor mostrado."],
         ["Contraste con otra fuente", "Pendiente", "No hay una comparación independiente de precios con otra fuente equivalente."],
     ]
-    st.markdown(build_html_table(["Control", "Estado", "Evidencia y alcance"], rows), unsafe_allow_html=True)
+    st.markdown(build_quality_grid_css(mode), unsafe_allow_html=True)
+    cards = "".join(build_quality_card_html(*row) for row in rows)
+    st.markdown(f'<div class="quality-grid">{cards}</div>', unsafe_allow_html=True)
     st.caption("Comprobación local de la base: " + format_chile_time(datetime.fromisoformat(checks["checked_at"])) + " (Chile). Se actualiza al cambiar los archivos o, como máximo, cada cinco minutos al consultar esta vista.")
     if not database_ok or failed:
         st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
     st.info("La carga aplica controles de calidad. La auditoría completa de origen a pantalla sigue pendiente; no se declara una garantía absoluta de exactitud.")
-    with st.expander("Ver evidencia de los archivos originales", expanded=False):
+    files_tab, run_tab = st.tabs(["Evidencia de archivos", "Última carga"])
+    with files_tab:
         if files:
             st.dataframe(pd.DataFrame(files).rename(columns={"file": "Archivo", "status": "Comprobación", "expected": "SHA-256 registrado", "actual": "SHA-256 comprobado", "downloaded_at": "Fecha registrada"}), hide_index=True, width="stretch")
         else:
             st.info("No hay manifiesto de descargas disponible.")
-    st.markdown(build_link_html("Ver ejecuciones del pipeline →", build_page_address(PAGE_RUNS)), unsafe_allow_html=True)
-    show_quality_tab(mode)
+        st.markdown(build_link_html("Ver ejecuciones del pipeline →", build_page_address(PAGE_RUNS)), unsafe_allow_html=True)
+    with run_tab:
+        show_quality_tab(mode)
 
 
 # endregion
@@ -8210,11 +8273,15 @@ def build_sidebar_css(mode):
         -webkit-text-fill-color:{child_green} !important; font-weight:460;
         text-shadow:0 0 10px color-mix(in srgb,{child_green} 18%,transparent);}}
     /* GitHub has nothing underneath it, so its mark stands alone instead of the
-       word in the sidebar's muted text (D-117). */
-    .nav-github-link {{display:flex; align-items:center; padding:5px 7px; margin:1px 0;
-        border-radius:5px; color:{text}; opacity:.82; transition:background .12s ease,opacity .12s ease;}}
-    .nav-github-link:hover {{background:color-mix(in srgb,{text} 7%,transparent); opacity:1;}}
-    .nav-github-link-current {{color:{palette['accent']}; opacity:1;}}
+       word in the sidebar's muted text (D-117). inline-flex so the hover/active
+       background hugs the icon instead of stretching the full sidebar width,
+       which read as a washed-out, near-invisible button in Corporativo (D-119). */
+    .nav-github-link {{display:inline-flex; align-items:center; justify-content:center;
+        width:28px; height:28px; padding:4px; margin:2px 0 2px 1px; border-radius:7px;
+        color:{text}; transition:background .12s ease,color .12s ease;}}
+    .nav-github-link:hover {{background:color-mix(in srgb,{text} 10%,transparent); color:{palette['strong_text']};}}
+    .nav-github-link-current {{color:{palette['accent']};
+        background:color-mix(in srgb,{palette['accent']} 12%,transparent);}}
     /* «Fuentes»: external children in the same green as every other child (D-118). */
     .nav-source-link {{display:block; padding:3px 7px; margin:1px 0; border-radius:5px;
         font-size:.78rem; font-weight:460; letter-spacing:-.005em; text-decoration:none;

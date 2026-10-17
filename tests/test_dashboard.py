@@ -301,7 +301,11 @@ def test_d097_model_page_fits_one_screen_with_a_clickable_table_detail():
     assert "Una fila por semana" in joined
 
     app = draw_page(dashboard.PAGE_DEVOPS)
-    assert not app.exception and not app.tabs
+    assert not app.exception
+    # One tab per topic instead of a single expander stacking all of them (D-122).
+    assert [tab.label for tab in app.tabs] == ["Coste y capacidad"] + [
+        group[0] for group in dashboard.ARCHITECTURE_GROUPS]
+    assert not app.expander
     joined = " ".join(block.value for block in app.markdown)
     assert joined.count('class="zoom-frame ') == 0
     assert 'aria-label="Ciclo DevOps del proyecto' in joined
@@ -351,7 +355,9 @@ def test_c03_catalog_lists_every_question_and_shows_the_chosen_one_whole():
     labels = [expander.label for expander in app.expander]
     assert any(label.startswith("Ver tabla completa") for label in labels)
     assert "Ver consulta completa · bi/queries.sql" in labels
-    assert "Implementación Python · Ver funciones" in labels
+    # Resultado, SQL and Python are separate tabs, not stacked expanders (D-121).
+    assert [tab.label for tab in app.tabs] == ["Resultado", "SQL", "Python"]
+    assert any(block.language == "python" for block in app.code)
     assert len(app.get("download_button")) == 1
 
 
@@ -833,10 +839,13 @@ def test_displayed_source_blocks_are_unique_across_the_portfolio():
 
 @needs_database
 def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
+    # Tabs are allowed only where they replace a long scroll (D-120, D-121, D-122).
+    tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_DEVOPS, dashboard.PAGE_OPERATIONS,
+              dashboard.PAGE_QUERIES}
     for page in dashboard.PAGES:
         app = draw_page(page)
         assert not app.exception, page
-        if page != dashboard.PAGE_KPI:
+        if page not in tabbed:
             assert not app.tabs, page
         texts = " ".join(block.value for block in app.markdown)
         assert ("<h1>¿Qué familias de alimentos subieron y bajaron?</h1>" in texts) == (page == dashboard.HOME_PAGE)

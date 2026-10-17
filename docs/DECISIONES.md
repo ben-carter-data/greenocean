@@ -888,3 +888,28 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Enlace repetido en GitHub:** el primer enlace de «Código y operación» («Código») llevaba al mismo repositorio que ya abre la franja de cabecera de arriba. Se retira: la cabecera cumple esa función; el grupo empieza directamente en «Ejecuciones».
 - **Tarjetas flotantes:** `.link-card` (compartida por la página GitHub y la tarjeta de Administración) gana sombra elevada y un leve desplazamiento hacia arriba al pasar el mouse, el mismo lenguaje «casi 3D» de la galería de KPIs (D-114b), en vez del borde plano anterior.
 - **Validación:** 427 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d118_sources_is_its_own_folder_with_two_external_children` comprueba la carpeta, sus dos hijos externos y que abren en pestaña nueva; se ajustan cuatro pruebas existentes a la nueva lista de `PROJECT_LINKS` y de carpetas del sidebar.
+
+## D-119 · El logo de GitHub del menú se ajusta a su ícono
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** en Corporativo el logo apenas se veía: el enlace usaba `display:flex`, que lo estiraba a todo el ancho del menú, y su fondo de hover/actual se leía como un botón ancho y desteñido, con el ícono atenuado (`opacity:.82`) a un costado.
+- **Decisión:** `inline-flex` de 28 × 28 px, sin atenuación; el fondo de hover y de página actual abraza solo el ícono. Página actual: color de acento con un fondo tenue del mismo tono.
+- **Validación:** pruebas de D-117 sin cambios.
+
+## D-120 · «Calidad y trazabilidad» sin scroll largo: tarjetas de estado y pestañas
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** se mantiene la página (sus verificaciones en vivo no existen en GitHub). La tabla de nueve controles pasa a una grilla de tarjetas flotantes, cada una con su estado en una insignia de color (verde cumplido, ámbar pendiente, rojo falla). Lo que antes se apilaba debajo —evidencia de archivos y la última carga— pasa a dos pestañas, una visible a la vez.
+- **Validación:** la prueba de «no declara una auditoría completa» sigue pasando sin cambios: los textos y estados son los mismos.
+
+## D-121 · «Análisis SQL»: Resultado, SQL y Python en pestañas separadas
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** el detalle de cada pregunta deja de apilar resultado, un expander de SQL y otro de Python uno debajo del otro. Ahora son tres pestañas —**Resultado · SQL · Python**—, como el panel de resultados de un motor de base de datos: Python queda separado de SQL y solo uno se ve a la vez. La lista de preguntas vive en un panel de altura fija que se desplaza por dentro (como el explorador de objetos de una herramienta de base de datos), así la página no crece. Se retira la guía «1 Pregunta → 2 Resultado → 3 Código», que las pestañas reemplazan.
+- **Validación:** se ajusta la prueba del catálogo para verificar las tres pestañas y el código Python.
+
+## D-122 · «DevOps y seguridad»: pestañas por tema y tarjetas en grilla
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** el expander «Ver coste, capacidad, seguridad y observabilidad», que al abrirse apilaba cinco secciones, pasa a cinco pestañas (Coste y capacidad, Seguridad, DevOps, Observabilidad, Informes). Dentro de cada una, las filas técnicas dejan de ser una lista vertical y pasan a una grilla de tarjetas flotantes, panorámica y simétrica.
+- **Validación:** se ajustan dos pruebas: la de DevOps verifica las cinco pestañas, y la que prohibía pestañas en cualquier página ahora las permite solo donde reemplazan un scroll largo (KPIs, DevOps, Calidad, Análisis SQL).
