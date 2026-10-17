@@ -7510,6 +7510,9 @@ def build_doc_profile_css(mode):
     .doc-indicator-code {{font-weight:450; color:{palette['reference']}; font-size:.85rem;}}
     .doc-indicator-text {{font-size:.95rem; line-height:1.6; color:{palette['text']}; margin-top:2px;}}
     .doc-profile-link {{display:inline-block; margin-top:26px; font-size:.95rem;}}
+    .doc-decisions {{display:flex; flex-direction:column; gap:8px; margin-top:10px;}}
+    .doc-decision {{font-size:.95rem; line-height:1.55; color:{palette['text']};}}
+    .doc-decision-id {{font-weight:650; color:{palette['accent']}; margin-right:4px;}}
     </style>"""
 
 
@@ -7555,11 +7558,38 @@ def describe_weekly_run():
     return lead.split(". Hace, en orden:")[0].rstrip(".") + "."
 
 
+def read_key_decision_sentences():
+    """{D-ID → the real sentence of its «Decisión:» field}, for every decision cited
+    by KEY_DECISIONS — what was actually decided, not just its category (D-112)."""
+    decisions = dict(project.list_decisions())
+    sentences = {}
+    for _, _, ids in KEY_DECISIONS:
+        for identifier in ids:
+            title = next(heading for heading in decisions if heading.startswith(f"{identifier} ·"))
+            fields = dict(project.parse_labeled_items(decisions[title]))
+            sentences[identifier] = capitalize_first(read_first_sentence(fields["Decisión"]))
+    return sentences
+
+
+def build_doc_decision_field_html(group, lead, ids, sentences):
+    """One KEY_DECISIONS group as a field: its category, then each real decision
+    sentence with its D-ID, so the page says what was decided, not only its theme."""
+    items = "".join(
+        f'<div class="doc-decision"><span class="doc-decision-id">{identifier}</span> '
+        f'{format_inline(sentences[identifier])}</div>' for identifier in ids)
+    return (f'<div class="doc-field"><div class="doc-field-label">{html.escape(group)}</div>'
+            f'<div class="doc-field-text">{format_inline(lead)}</div>'
+            f'<div class="doc-decisions">{items}</div></div>')
+
+
 def show_doc_it_body(mode):
-    """What an IT reader needs: why the system is built this way, conceptually — no
-    code or SQL; the repository already shows both, commit by commit."""
+    """What an IT reader needs: why the system is built this way, with the real
+    decisions behind it — no code or SQL; the repository already shows both,
+    commit by commit."""
     st.markdown(build_doc_profile_css(mode), unsafe_allow_html=True)
-    decisions = "".join(build_doc_field_html(title, text) for title, text, _ in KEY_DECISIONS)
+    sentences = read_key_decision_sentences()
+    decisions = "".join(build_doc_decision_field_html(group, lead, ids, sentences)
+                        for group, lead, ids in KEY_DECISIONS)
     st.markdown(f'<div class="doc-profile">{decisions}'
                 + build_doc_field_html("Operación semanal", describe_weekly_run())
                 + '</div>', unsafe_allow_html=True)

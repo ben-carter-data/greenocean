@@ -819,3 +819,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** cada campo (Misión, Alcance, cada decisión clave, cada indicador) pasa a tener su propia etiqueta como título corto, con el texto debajo en un tono más apagado, un ancho de lectura máximo de 720 px y una línea divisoria fina entre campos — la cadencia de una ficha técnica, no de un párrafo. `describe_weekly_run()` corta la oración antes de «. Hace, en orden:» en vez de mostrar el inicio de una lista que no está.
 - **Alcance:** solo CSS y una función nueva (`build_doc_profile_css`, `build_doc_field_html`, `describe_weekly_run`); ningún dato ni fuente cambia — siguen siendo las mismas tablas y documentos reales de siempre.
 - **Validación:** 419 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d111_the_weekly_run_sentence_never_ends_on_a_dangling_colon` y una verificación de que las clases CSS nuevas están presentes.
+
+## D-112 · El perfil IT nombra qué se decidió, no solo su categoría
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** «Arquitectura y costo. Qué se eligió para operar sin costo y dentro de los límites de GitHub.» no dice nada concreto — es la categoría, no la decisión. Las cuatro agrupaciones de `KEY_DECISIONS` solo mostraban su tema, nunca el contenido real de los doce D-ID que agrupan.
+- **Decisión:** cada grupo conserva su categoría como entrada, pero ahora lista, debajo, la frase real de «Decisión:» de cada uno de sus D-ID, leída en vivo de `docs/DECISIONES.md` (`read_key_decision_sentences()`, vía `project.list_decisions()`). Por ejemplo, «Arquitectura y costo» pasa a mostrar **D-012.** Base en archivo, job programado y panel publicado en servicios gratuitos. **D-020.** Los CSV descargados y la base cruda quedan fuera del repositorio. **D-046.** `etl/schema.sql` deja de crear el índice único y lo borra de las bases que ya lo tenían.
+- **Qué no cambia:** sigue sin mostrarse una consulta SQL completa ni código fuente; una decisión puede nombrar un archivo o una cláusula (`HAVING`, `LAG()`) al describir qué se decidió, que no es lo mismo que mostrar la consulta.
+- **Validación:** 420 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d112_the_it_profile_names_what_was_decided_not_only_its_category` comprueba que cada D-ID tiene su propia frase real y que aparece en la página.
