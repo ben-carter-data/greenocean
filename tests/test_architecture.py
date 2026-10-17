@@ -36,8 +36,11 @@ def test_pipeline_names_the_real_technology_used_at_each_stage():
                   "pytest · si fallan", "GitHub Actions · Secrets",
                   "Streamlit · historial"]:
         assert label in svg
-    for slug in ["python", "sqlite", "streamlit", "github"]:
+    # SQLite's own node draws the traditional database cylinder, not the brand
+    # mark (D-103 follow-up): its title already spells out "SQLite" in words.
+    for slug in ["python", "streamlit", "github"]:
         assert architecture.brand_icons.logo_body(slug) in svg
+    assert architecture.brand_icons.logo_body("sqlite") not in svg
 
 
 def test_d103_stack_pills_name_the_real_tools_without_inventing_any():
@@ -62,8 +65,8 @@ def test_d103_a_node_gets_pills_only_for_tools_its_own_icon_does_not_already_sho
     # not repeat "Python".
     stack = architecture.visible_stack("Agente de descarga", architecture.draw_python_icon)
     assert stack == ["requests"]
-    # SQLite · raw.db only uses SQLite, which its own icon already shows: no pills.
-    assert architecture.visible_stack("SQLite · raw.db", architecture.draw_sqlite_icon) == []
+    # SQLite · raw.db already spells "SQLite" out in its own title: no pill needed.
+    assert architecture.visible_stack("SQLite · raw.db", architecture.draw_sqlite_icon) is None
     # Informe semanal's icon is GitHub; python and markdown are new information.
     stack = architecture.visible_stack("Informe semanal", architecture.draw_github_icon)
     assert stack == ["python", "markdown"]

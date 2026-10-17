@@ -740,3 +740,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Sin redundancia:** `visible_stack()` quita de la fila cualquier tecnología cuyo logo ya es el ícono del propio nodo (por ejemplo, «SQLite · raw.db» no repite el logo de SQLite que ya tiene). Cuando no queda nada nuevo que mostrar, el paso conserva su texto original sin cambios.
 - **Auditoría:** cada tecnología listada corresponde a una dependencia real (`requirements.txt`) o a una llamada real del código (`requests.get` en `agent/agent.py`, `import pandas as pd` en `etl/etl.py`, `sqlite3.connect` en `etl/etl.py` y `bi/queries.py`, `gh issue create` en `.github/workflows/semanal.yml`); no se afirma ninguna «API REST» donde el código solo descarga CSV por HTTPS.
 - **Validación:** 414 pruebas, 4 nuevas (`test_d103_*`) verifican que cada id de `PIPELINE_STACK` es una dependencia real, que `visible_stack()` evita la redundancia y que las pastillas nunca generan una imagen rota ni una referencia externa.
+
+## D-103b · El cilindro tradicional en vez del logo de marca de SQLite
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** los nodos «SQLite · raw.db», «SQLite · datos.db» y «Consultas SQL» dibujan el cilindro tradicional de base de datos (`draw_database_icon`, ya existente en el módulo) en vez del logo de marca de SQLite. El título de cada nodo ya dice «SQLite» en palabras; el cilindro se lee más claro que la tipografía del logo a ese tamaño.
+- Se retiran de `PIPELINE_STACK` las entradas redundantes `"SQLite · raw.db": ["sqlite"]` y `"SQLite · datos.db": ["sqlite"]` (el título ya lo dice) y `"sqlite"` de la lista de «Consultas SQL» (queda solo `["sql"]`).
+- **Validación:** 414 pruebas; se ajustan las que verificaban el logo de marca de SQLite para confirmar en cambio que ya no aparece en el diagrama del pipeline.
