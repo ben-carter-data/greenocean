@@ -4568,7 +4568,7 @@ def show_console_result(source, executed, mode):
             st.caption(f"La columna {', '.join(opened)} trae JSON: se muestra abierta, un campo por columna.")
         helps = {column: st.column_config.Column(help=CONSOLE_COLUMN_HELP[column])
                  for column in rows.columns if column in CONSOLE_COLUMN_HELP}
-        st.dataframe(rows, hide_index=True, width="stretch", height=360, column_config=helps)
+        st.dataframe(rows, hide_index=True, width="stretch", height=540, column_config=helps)
         st.download_button("Descargar CSV", rows.to_csv(index=False).encode("utf-8"),
                            file_name="consulta.csv", mime="text/csv", icon=":material/download:",
                            on_click="ignore", key="console_download")
@@ -4626,7 +4626,7 @@ def show_queries_tab(mode):
     st.markdown(build_console_css(mode), unsafe_allow_html=True)
     sync_console_with_address()
     source = st.session_state[CONSOLE_SOURCE]
-    explorer_column, work_column = st.columns([1, 3], gap="medium")
+    explorer_column, work_column = st.columns([1, 3.6], gap="medium")
     with explorer_column, st.container(border=True, key="console_explorer", height=700):
         show_console_explorer(source)
     with work_column:
@@ -4801,7 +4801,7 @@ def show_python_result(question, executed, values):
                 unsafe_allow_html=True)
     result_tab, functions_tab = st.tabs(["Resultado", "Funciones usadas"])
     with result_tab:
-        st.dataframe(rows, hide_index=True, width="stretch", height=min(38 + 35 * max(len(rows), 1), 360))
+        st.dataframe(rows, hide_index=True, width="stretch", height=min(38 + 35 * max(len(rows), 1), 540))
     with functions_tab:
         for function in question["functions"]:
             path, line, source = python_console.describe_function(function)
@@ -4816,7 +4816,7 @@ def show_python_tab(mode):
     options = read_cached_python_options(get_database_version())
     question = python_console.QUESTIONS_BY_NAME[st.session_state[PYTHON_SELECTED]]
     values = read_python_values(question, options)
-    explorer_column, work_column = st.columns([1, 3], gap="medium")
+    explorer_column, work_column = st.columns([1, 3.6], gap="medium")
     with explorer_column, st.container(border=True, key="console_explorer", height=700):
         show_python_explorer(question["name"])
     with work_column:
