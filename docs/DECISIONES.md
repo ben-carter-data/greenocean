@@ -760,3 +760,12 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
   6. «Tu computador» dibuja un borde punteado y su nombre en tono más apagado, con la leyenda «· solo en desarrollo»: nunca corre en producción.
 - **Alcance:** todo el cambio vive en `bi/architecture.py`; `bi/zoom.py` gana una regla CSS nueva, aplicable solo a la clase `diagram-devops` (no afecta el zoom de ningún otro diagrama).
 - **Validación:** 414 pruebas existentes siguen pasando sin cambios; se verifica a mano que las puntas de flecha, la leyenda y el borde punteado no invaden ningún texto existente.
+
+## D-105 · «El proyecto» y «Documentación» se fusionan en una sola vista
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** las dos secciones del menú lateral «El proyecto» (Descripción general, Alcance del proyecto, Reglas de calidad) y «Documentación» (General, Manual, Glosario) —seis páginas en total— se fusionan en una sola entrada, «Documentación», que abre directo (sin carpeta que desplegar) a una única pantalla tipo dashboard.
+- **Contenido de la pantalla:** qué resuelve el proyecto y para quién (del mismo texto breve que ya usaba la portada), alcance y límites, las reglas de calidad (resumen y orden, sin repetir la cifra real que ya vive en «Reglas de calidad»), cómo opera cada semana y qué hacer si algo falla, los límites conocidos y el tamaño del glosario. Cada tarjeta enlaza al documento completo solo si hace falta profundizar.
+- **Lo que no se repite:** los documentos completos (manual, glosario, reglas con su detalle y evidencia, PRD, SAD) no se reescriben aquí; siguen existiendo como páginas propias, alcanzables por los enlaces de cada tarjeta, y el código y los documentos técnicos completos quedan a un clic en GitHub.
+- **Por qué:** un BI o un BA necesita leer esto en segundos, no navegar seis páginas; quien quiera el documento completo ya sabe que vive en el código del repositorio.
+- **Validación:** 414 pruebas (el único fallo, `test_every_decision_of_the_register_is_listed`, es previo a este cambio y no está relacionado); se ajusta `test_d096_sidebar_is_a_flat_explorer_with_every_section_closed_by_default` para reflejar que «Documentación» ahora es un enlace directo, no una carpeta.
