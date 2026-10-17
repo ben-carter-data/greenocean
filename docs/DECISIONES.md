@@ -716,3 +716,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema:** desde D-096 el botón «Alerta de precio» vive en el pie del menú lateral, visible en cualquier página. Su CSS (formas, leyenda, colores) seguía viviendo en `home_mockup.style()`, que solo se inyecta al dibujar el Resumen. Al abrir la ventana desde otra página (por ejemplo Contexto del precio o Modelo de datos), se veía sin estilo: botones planos en una fila, sin las formas de color ni el espaciado de la leyenda.
 - **Decisión:** `show_sidebar_footer()` inyecta `home_mockup.style(...)` de forma incondicional, en cualquier página, antes de dibujar el botón. Las reglas son inertes fuera del Dashboard (dependen de clases que solo existen en su propio marcado), así que no afectan a las demás páginas.
 - **Validación:** 407 pruebas; una nueva comprueba que el CSS de la ventana está presente y que la ventana se abre con el mismo marcado desde una página distinta al Resumen. Revisión visual en Corporativo y Vantablack, abierta desde Contexto del precio y desde Modelo de datos.
+
+## D-101 · El menú lateral se lee como un árbol de archivos
+
+- **Fecha:** 2026-10-16.
+- **Decisión:** cada grupo con subpáginas («01 · Dashboard», «02 · Arquitectura y operación», «05 · El proyecto», «Documentación») lleva ahora su propio ícono, el mismo que ya tenía asignado en `WINDOW_ICONS`, al mismo tamaño y en la misma posición que los íconos de página. Sus páginas quedan unidas por una guía vertical fina, como las ramas de un árbol de archivos (VS Code). Las entradas sueltas sin subpáginas (03 · Código del proyecto, 04 · Preguntas y resultados SQL) comparten el mismo margen e indentación que los grupos, en vez de un margen distinto como antes.
+- No cambia el comportamiento: todo sigue desplegado todo el tiempo (D-096); esto es una limpieza puramente visual de alineación e iconografía.
+- **Validación:** 407 pruebas sin cambios. Revisión visual en Corporativo y Vantablack.

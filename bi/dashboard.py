@@ -7827,18 +7827,28 @@ def build_sidebar_css(mode):
     [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important; min-height:calc(100vh - 96px);}}
     [data-testid="stSidebarNav"] {{display:none;}}
     .nav-heading {{font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700;
-        color:{text}; opacity:.62; margin:14px 8px 4px;}}
-    .nav-group {{font-size:.86rem; font-weight:650; color:{text}; margin:16px 8px 6px; cursor:default;}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a {{padding:4px 8px !important; border-radius:6px;
-        background:transparent !important; box-shadow:none !important; min-height:0;}}
+        color:{text}; opacity:.62; margin:18px 8px 4px;}}
+    /* A folder row: icon + name, same indent and icon size as a page link (D-101). */
+    .nav-group {{display:flex; align-items:center; gap:9px; font-size:.86rem; font-weight:600;
+        color:{text}; margin:10px 0 1px; padding:5px 8px; cursor:default;}}
+    .nav-icon {{font-family:"Material Symbols Rounded"; font-weight:400; font-style:normal;
+        font-size:17px; line-height:1; width:17px; flex-shrink:0; color:{text}; opacity:.85;}}
+    .nav-icon-spacer {{width:17px; flex-shrink:0;}}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a {{padding:5px 8px !important; border-radius:6px;
+        background:transparent !important; box-shadow:none !important; min-height:0; gap:9px !important;}}
     [data-testid="stSidebar"] [data-testid="stPageLink"] p {{font-size:.86rem; color:{text} !important;
         font-weight:400; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{
+        font-size:17px !important; width:17px !important; opacity:.85;}}
     [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {{background:{text}14 !important;}}
-    [class*="st-key-nav_child_"] [data-testid="stPageLink"] a {{margin-left:14px;}}
-    [class*="st-key-nav_"]:not([class*="st-key-nav_child_"]) {{margin:14px 0 2px;}}
+    /* Children sit under their folder on a thin guide line, like a file tree. */
+    [class*="st-key-nav_child_"] {{margin-left:21px; padding-left:8px; border-left:1px solid {text}26;}}
+    [class*="st-key-nav_"]:not([class*="st-key-nav_child_"]) {{margin:5px 0 2px;}}
     [class*="st-key-nav_current"] [data-testid="stPageLink"] a {{background:{text}24 !important;
         box-shadow:inset 3px 0 {palette['accent']} !important;}}
     [class*="st-key-nav_current"] [data-testid="stPageLink"] p {{font-weight:650;}}
+    [class*="st-key-nav_current"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{
+        opacity:1; color:{palette['accent']};}}
     .st-key-sidebar_footer {{margin-top:auto; position:sticky; bottom:0; padding:12px 0 14px;
         background:{palette['sidebar']}; gap:8px !important; z-index:5;}}
     .st-key-sidebar_footer button {{width:100%; justify-content:flex-start; border:0 !important;
@@ -7850,8 +7860,15 @@ def build_sidebar_css(mode):
     </style>"""
 
 
+def build_nav_icon(icon):
+    """A Material Symbol as plain text in its ligature font, matching st.page_link's
+    own icons so a group header (plain text, not a link) lines up with them (D-101)."""
+    name = icon.strip(":").split("/")[-1] if icon else ""
+    return f'<span class="nav-icon">{name}</span>' if name else '<span class="nav-icon-spacer"></span>'
+
+
 def show_sidebar_navigation(windows_by_title, current_window, order):
-    """Every section and view of the project, always unfolded (D-096)."""
+    """Every section and view of the project, always unfolded, as a file tree (D-096, D-101)."""
     st.sidebar.markdown(build_sidebar_css(get_mode()), unsafe_allow_html=True)
     current_view = read_current_view(current_window)
     for heading, sections in SIDEBAR_TREE:
@@ -7864,7 +7881,10 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
                     st.page_link(windows_by_title[window], label=label, icon=WINDOW_ICONS[window],
                                  query_params=keep_context())
                 continue
-            st.sidebar.markdown(f'<div class="nav-group">{html.escape(label)}</div>', unsafe_allow_html=True)
+            # A folder row (icon + name), then its pages indented under a guide line,
+            # the way a file tree reads (D-101).
+            st.sidebar.markdown(f'<div class="nav-group">{build_nav_icon(WINDOW_ICONS[window])}'
+                               f'{html.escape(label)}</div>', unsafe_allow_html=True)
             for index, view in enumerate(views):
                 active = window == current_window and view == current_view
                 key = f"nav_child_{WINDOW_PATHS[window]}_{index}" + ("_nav_current" if active else "")
