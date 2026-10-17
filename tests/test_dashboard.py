@@ -1400,9 +1400,26 @@ def test_d110_documentation_folds_open_into_three_profile_views():
         assert not page.exception
         text = " ".join(block.value for block in page.markdown)
         assert must_have in text
-        assert 'SELECT' not in text and 'bi/queries.sql' not in text
+        # No SQL query body or Python source; a decision may still name a file or
+        # a SQL clause in passing (e.g. «HAVING»), which is not the same as showing
+        # the query itself (D-112).
+        assert 'SELECT' not in text and 'FROM weekly_price' not in text
     css = ' '.join(block.value for block in draw_page(dashboard.PAGE_DOC_IT).markdown)
     assert 'doc-field-label' in css and 'doc-field-text' in css
+
+
+def test_d112_the_it_profile_names_what_was_decided_not_only_its_category():
+    """«Arquitectura y costo» alone says nothing concrete; each D-ID must carry its
+    own real sentence from the decisions register, not a repeat of the category."""
+    sentences = dashboard.read_key_decision_sentences()
+    for _, _, ids in dashboard.KEY_DECISIONS:
+        for identifier in ids:
+            assert sentences[identifier].endswith('.')
+            assert len(sentences[identifier]) > 20
+    app = draw_page(dashboard.PAGE_DOC_IT)
+    text = " ".join(block.value for block in app.markdown)
+    assert 'D-001' in text and 'ODEPA' in text
+    assert 'D-046' in text and 'índice único' in text
 
 
 def test_d111_the_weekly_run_sentence_never_ends_on_a_dangling_colon():
