@@ -844,3 +844,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** se retira el enlace «Ver cada indicador con su cálculo →»; los ocho indicadores (`KPI_PRESENTATION`, el mismo diccionario que ya usa la página KPIs) se muestran ahí mismo, cada uno en su propia fila con su ícono real (`build_component_symbol`, el mismo vocabulario visual que el resto del panel) y un color distinto — los ocho colores de capa que ya usan los diagramas del pipeline (`architecture.LAYER_COLORS`), para que la tabla se lea moderna y cada indicador se distinga de un vistazo.
 - **Por qué esos colores:** son los mismos ocho tonos que el lector ya vio en «Arquitectura y operación»; reutilizar el lenguaje visual existente en vez de inventar una paleta nueva.
 - **Validación:** 423 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d114_bi_shows_every_kpi_with_a_real_icon_and_its_own_color_inline` comprueba las 8 filas, sus íconos reales, 8 colores distintos y que el enlace viejo ya no está.
+
+## D-114b · Los ocho indicadores pasan de lista plana a galería de tarjetas flotantes
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** las filas de D-114, con fondo plano teñido del color del indicador, se reorganizan en una grilla (`auto-fill, minmax(230px, 1fr)`) de tarjetas blancas elevadas: borde propio, sombra de color del indicador en vez de fondo teñido, y un ícono dentro de una placa redondeada del mismo color. Cada tarjeta se levanta un poco más al pasar el mouse (sombra más amplia, se eleva 5 px), dando la sensación «casi 3D» pedida.
+- **Alcance:** solo CSS (`.doc-kpi-grid`, `.doc-kpi-row`, `.doc-kpi-icon`); el ancho de columna del perfil BI crece a 960 px (antes 720, pensado para texto corrido) para que la galería respire, solo cuando la página tiene esa grilla.
+- **Validación:** 423 pruebas sin cambios (el único fallo, previo y no relacionado); las pruebas de D-114 siguen pasando porque verifican clases y datos, no el layout visual.
