@@ -31,6 +31,11 @@ def build_zoom_css(palette):
     .zoom-buttons {{ display: flex; justify-content: flex-end; gap: 4px; margin-top: 6px;
                      opacity: 0.75; }}
     .zoom-buttons:hover, .zoom-buttons:focus-within {{ opacity: 1; }}
+    /* The platform diagram has nothing in its top-right corner: move the buttons
+       there instead of below the frame, so they never sit next to "Secretos". */
+    .zoom-frame.diagram-devops {{ position: relative; }}
+    .zoom-frame.diagram-devops .zoom-buttons {{ position: absolute; top: 8px; right: 8px;
+                                                margin-top: 0; }}
     .zoom-buttons button {{ width: 32px; height: 32px; padding: 0; border-radius: 8px;
                             cursor: pointer; font-size: 16px; line-height: 1;
                             background: {palette["card"]}; color: {palette["strong_text"]};

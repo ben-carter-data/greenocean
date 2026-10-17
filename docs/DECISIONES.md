@@ -747,3 +747,16 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** los nodos «SQLite · raw.db», «SQLite · datos.db» y «Consultas SQL» dibujan el cilindro tradicional de base de datos (`draw_database_icon`, ya existente en el módulo) en vez del logo de marca de SQLite. El título de cada nodo ya dice «SQLite» en palabras; el cilindro se lee más claro que la tipografía del logo a ese tamaño.
 - Se retiran de `PIPELINE_STACK` las entradas redundantes `"SQLite · raw.db": ["sqlite"]` y `"SQLite · datos.db": ["sqlite"]` (el título ya lo dice) y `"sqlite"` de la lista de «Consultas SQL» (queda solo `["sql"]`).
 - **Validación:** 414 pruebas; se ajustan las que verificaban el logo de marca de SQLite para confirmar en cambio que ya no aparece en el diagrama del pipeline.
+
+## D-104 · Dirección y lectura explícitas en «Arquitectura por plataforma»
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** el diagrama «Arquitectura por plataforma» (`build_devops_svg`) gana seis mejoras de lectura, sin cambiar su estructura, colores, textos ni datos:
+  1. Cada conexión dibuja una punta de flecha con la dirección real del flujo; «checkout · commit» (Job semanal.yml ↔ Repositorio) y «cache» (Job semanal.yml ↔ Caché de Actions) llevan punta en ambos extremos porque el flujo real va en los dos sentidos.
+  2. «Permisos del job» gana una segunda línea («⤷ del Job semanal.yml») en vez de una línea nueva que cruzara otras tarjetas: queda clara la relación sin alargar el diagrama.
+  3. Una leyenda pequeña («● = componente activo») se dibuja en el espacio libre entre GitHub y las plataformas de abajo.
+  4. Los controles de zoom de este diagrama, únicamente (`.zoom-frame.diagram-devops`), se mueven a la esquina superior derecha —vacía en este diagrama— para que no tapen «Secretos».
+  5. Los seis pasos del flujo semanal automático (Datos abiertos → Job semanal.yml → Repositorio → Pruebas CI → App Streamlit → Visitantes) llevan un número de 1 a 6 en su propio ícono.
+  6. «Tu computador» dibuja un borde punteado y su nombre en tono más apagado, con la leyenda «· solo en desarrollo»: nunca corre en producción.
+- **Alcance:** todo el cambio vive en `bi/architecture.py`; `bi/zoom.py` gana una regla CSS nueva, aplicable solo a la clase `diagram-devops` (no afecta el zoom de ningún otro diagrama).
+- **Validación:** 414 pruebas existentes siguen pasando sin cambios; se verifica a mano que las puntas de flecha, la leyenda y el borde punteado no invaden ningún texto existente.
