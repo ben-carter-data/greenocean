@@ -811,3 +811,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Por qué:** la versión anterior era la única sección «plana» del menú —sin chevron ni hijos—, lo que la hacía ver fuera de patrón frente al resto; y el subtítulo «en una vista para cada perfil: Business Intelligence, Business Analyst e IT» repetía algo que ya se nota con solo mirar las tres tarjetas, así que se retira.
 - **Compatibilidad:** `PAGE_DOCUMENTATION` (la vista combinada de las tres, una al lado de la otra) se mantiene fuera del menú solo para no romper enlaces viejos (`/documentacion-general`, `/decisiones`); ya no es el destino que abre el menú.
 - **Validación:** 418 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d110_documentation_folds_open_into_three_profile_views` comprueba el chevron, los tres hijos y que cada vista muestra su contenido propio sin SQL.
+
+## D-111 · Tipografía de ficha técnica en las tres vistas de Documentación, y un párrafo que no se cortaba
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** las tres vistas de perfil se veían como texto corrido genérico — etiqueta en negrita seguida del párrafo, sin jerarquía ni aire, muy lejos del estándar visual del resto del panel. Además, «Operación semanal» (perfil IT) terminaba en «…Hace, en orden:» sin la lista que ese dos puntos prometía: un párrafo cortado a mitad de idea.
+- **Decisión:** cada campo (Misión, Alcance, cada decisión clave, cada indicador) pasa a tener su propia etiqueta como título corto, con el texto debajo en un tono más apagado, un ancho de lectura máximo de 720 px y una línea divisoria fina entre campos — la cadencia de una ficha técnica, no de un párrafo. `describe_weekly_run()` corta la oración antes de «. Hace, en orden:» en vez de mostrar el inicio de una lista que no está.
+- **Alcance:** solo CSS y una función nueva (`build_doc_profile_css`, `build_doc_field_html`, `describe_weekly_run`); ningún dato ni fuente cambia — siguen siendo las mismas tablas y documentos reales de siempre.
+- **Validación:** 419 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d111_the_weekly_run_sentence_never_ends_on_a_dangling_colon` y una verificación de que las clases CSS nuevas están presentes.

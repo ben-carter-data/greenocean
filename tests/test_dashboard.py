@@ -1395,12 +1395,20 @@ def test_d110_documentation_folds_open_into_three_profile_views():
     assert 'IT y operación' in labels
     for profile, must_have in [(dashboard.PAGE_DOC_BI, 'indicadores'),
                                (dashboard.PAGE_DOC_BA, 'Misión'),
-                               (dashboard.PAGE_DOC_IT, 'Decisiones clave')]:
+                               (dashboard.PAGE_DOC_IT, 'Operación semanal')]:
         page = draw_page(profile)
         assert not page.exception
         text = " ".join(block.value for block in page.markdown)
         assert must_have in text
         assert 'SELECT' not in text and 'bi/queries.sql' not in text
+    css = ' '.join(block.value for block in draw_page(dashboard.PAGE_DOC_IT).markdown)
+    assert 'doc-field-label' in css and 'doc-field-text' in css
+
+
+def test_d111_the_weekly_run_sentence_never_ends_on_a_dangling_colon():
+    sentence = dashboard.describe_weekly_run()
+    assert sentence.endswith('.') and not sentence.rstrip('.').endswith(':')
+    assert 'Hace, en orden' not in sentence
 
 
 @needs_database

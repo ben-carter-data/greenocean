@@ -7492,66 +7492,110 @@ def build_business_frame_lookup():
     return {row["Elemento"]: row["Definición"] for row in project.read_guide_table("Marco de negocio")}
 
 
-def show_doc_bi_body(frame):
+def build_doc_profile_css(mode):
+    """Typography for a profile page: a label line per field, a muted paragraph under
+    it, generous spacing and a hairline between fields — the reading rhythm of a
+    product spec sheet instead of inline bold labels in a run of text (D-111)."""
+    palette = charts.get_palette(mode)
+    return f"""<style>
+    .doc-profile {{max-width:720px;}}
+    .doc-field {{padding:22px 0; border-top:1px solid {palette['card_border']};}}
+    .doc-field:first-child {{border-top:0; padding-top:4px;}}
+    .doc-field-label {{font-size:1.05rem; font-weight:650; letter-spacing:-.015em;
+        color:{palette['strong_text']}; margin-bottom:7px;}}
+    .doc-field-text {{font-size:.98rem; line-height:1.65; color:{palette['text']};}}
+    .doc-field-text code {{word-break:break-word;}}
+    .doc-indicators {{display:flex; flex-direction:column; gap:16px; margin-top:4px;}}
+    .doc-indicator-name {{font-weight:650; color:{palette['strong_text']};}}
+    .doc-indicator-code {{font-weight:450; color:{palette['reference']}; font-size:.85rem;}}
+    .doc-indicator-text {{font-size:.95rem; line-height:1.6; color:{palette['text']}; margin-top:2px;}}
+    .doc-profile-link {{display:inline-block; margin-top:26px; font-size:.95rem;}}
+    </style>"""
+
+
+def build_doc_field_html(label, text):
+    return (f'<div class="doc-field"><div class="doc-field-label">{html.escape(label)}</div>'
+            f'<div class="doc-field-text">{format_inline(text)}</div></div>')
+
+
+def show_doc_bi_body(frame, mode):
     """What a BI reader needs: the eight indicators and the data they cover, never SQL."""
-    st.markdown(f"**Alcance de los datos.** {frame['Alcance']}")
-    st.markdown("**Los ocho indicadores:**")
-    for kpi, (name, _, text) in KPI_PRESENTATION.items():
-        st.markdown(f"- **{name}** ({kpi}). {text}")
-    st.markdown(build_link_html("Ver cada indicador con su cálculo →",
-                                build_page_address(PAGE_KPI)), unsafe_allow_html=True)
+    st.markdown(build_doc_profile_css(mode), unsafe_allow_html=True)
+    indicators = "".join(
+        f'<div><span class="doc-indicator-name">{html.escape(name)}</span> '
+        f'<span class="doc-indicator-code">· {kpi}</span>'
+        f'<div class="doc-indicator-text">{html.escape(text)}</div></div>'
+        for kpi, (name, _, text) in KPI_PRESENTATION.items())
+    st.markdown('<div class="doc-profile">'
+                + build_doc_field_html("Alcance de los datos", frame["Alcance"])
+                + '<div class="doc-field"><div class="doc-field-label">Los ocho indicadores'
+                f'</div><div class="doc-indicators">{indicators}</div></div></div>',
+                unsafe_allow_html=True)
+    st.markdown('<div class="doc-profile-link">' + build_link_html(
+        "Ver cada indicador con su cálculo →", build_page_address(PAGE_KPI)) + '</div>',
+                unsafe_allow_html=True)
 
 
-def show_doc_ba_body(frame):
+def show_doc_ba_body(frame, mode):
     """What a BA reader needs: mission, vision and scope, in the business's own words."""
-    for element in ["Misión", "Visión", "Objetivo de negocio", "Alcance", "Fuera de alcance"]:
-        st.markdown(f"**{element}.** {frame[element]}")
-    st.markdown(build_link_html("Leer el marco de negocio completo →",
-                                build_page_address(PAGE_BUSINESS)), unsafe_allow_html=True)
+    st.markdown(build_doc_profile_css(mode), unsafe_allow_html=True)
+    fields = "".join(build_doc_field_html(element, frame[element]) for element in
+                     ["Misión", "Visión", "Objetivo de negocio", "Alcance", "Fuera de alcance"])
+    st.markdown(f'<div class="doc-profile">{fields}</div>', unsafe_allow_html=True)
+    st.markdown('<div class="doc-profile-link">' + build_link_html(
+        "Leer el marco de negocio completo →", build_page_address(PAGE_BUSINESS)) + '</div>',
+                unsafe_allow_html=True)
 
 
-def show_doc_it_body():
+def describe_weekly_run():
+    """What the weekly job does, in one sentence: the lead of «Qué pasa cada martes»,
+    trimmed before its «Hace, en orden:» list so it never ends mid-thought (D-111)."""
+    manual = project.read_document(project.MANUAL_FILE)
+    lead = project.read_paragraphs(project.read_section(manual, "Qué pasa cada martes"))[0]
+    return lead.split(". Hace, en orden:")[0].rstrip(".") + "."
+
+
+def show_doc_it_body(mode):
     """What an IT reader needs: why the system is built this way, conceptually — no
     code or SQL; the repository already shows both, commit by commit."""
-    st.markdown("**Decisiones clave de ingeniería:**")
-    for title, text, _ in KEY_DECISIONS:
-        st.markdown(f"- **{title}.** {text}")
-    manual = project.read_document(project.MANUAL_FILE)
-    weekly_run = project.read_paragraphs(project.read_section(manual, "Qué pasa cada martes"))[0]
-    st.markdown(f"**Operación semanal.** {weekly_run}")
-    st.markdown(build_external_link_html("Ver el registro completo de decisiones",
-                                         f"{project.GITHUB_URL}/blob/main/docs/DECISIONES.md"),
-                unsafe_allow_html=True)
+    st.markdown(build_doc_profile_css(mode), unsafe_allow_html=True)
+    decisions = "".join(build_doc_field_html(title, text) for title, text, _ in KEY_DECISIONS)
+    st.markdown(f'<div class="doc-profile">{decisions}'
+                + build_doc_field_html("Operación semanal", describe_weekly_run())
+                + '</div>', unsafe_allow_html=True)
+    st.markdown('<div class="doc-profile-link">' + build_external_link_html(
+        "Ver el registro completo de decisiones",
+        f"{project.GITHUB_URL}/blob/main/docs/DECISIONES.md") + '</div>', unsafe_allow_html=True)
 
 
 def show_documentation_bi_page(mode):
     show_page_header(*DOC_PROFILES["BI"])
-    show_doc_bi_body(build_business_frame_lookup())
+    show_doc_bi_body(build_business_frame_lookup(), mode)
 
 
 def show_documentation_ba_page(mode):
     show_page_header(*DOC_PROFILES["BA"])
-    show_doc_ba_body(build_business_frame_lookup())
+    show_doc_ba_body(build_business_frame_lookup(), mode)
 
 
 def show_documentation_it_page(mode):
     show_page_header(*DOC_PROFILES["IT"])
-    show_doc_it_body()
+    show_doc_it_body(mode)
 
 
-def show_documentation_bi_card(frame):
+def show_documentation_bi_card(frame, mode):
     with open_card("doc_bi", *DOC_PROFILES["BI"]):
-        show_doc_bi_body(frame)
+        show_doc_bi_body(frame, mode)
 
 
-def show_documentation_ba_card(frame):
+def show_documentation_ba_card(frame, mode):
     with open_card("doc_ba", *DOC_PROFILES["BA"]):
-        show_doc_ba_body(frame)
+        show_doc_ba_body(frame, mode)
 
 
-def show_documentation_it_card():
+def show_documentation_it_card(mode):
     with open_card("doc_it", *DOC_PROFILES["IT"]):
-        show_doc_it_body()
+        show_doc_it_body(mode)
 
 
 def show_documentation_page(mode):
@@ -7561,11 +7605,11 @@ def show_documentation_page(mode):
     frame = build_business_frame_lookup()
     bi_column, ba_column, it_column = st.columns(3, gap="medium")
     with bi_column:
-        show_documentation_bi_card(frame)
+        show_documentation_bi_card(frame, mode)
     with ba_column:
-        show_documentation_ba_card(frame)
+        show_documentation_ba_card(frame, mode)
     with it_column:
-        show_documentation_it_card()
+        show_documentation_it_card(mode)
 
 
 def show_links_page(mode):
