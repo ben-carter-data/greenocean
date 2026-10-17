@@ -778,3 +778,12 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Indentación corregida:** «GitHub», igual que «Documentación», ahora es un destino directo sin hijos que desplegar, así que no hay fila hija que alinear ni desalinear.
 - **Corrección de datos:** el enlace «DECISIONES» en `project.PROJECT_LINKS` apuntaba a una página interna («Decisiones») que nunca existió como ventana propia; se retira ese campo `page`, quedando como un enlace externo simple a GitHub.
 - **Validación:** 414 pruebas (el único fallo, `test_every_decision_of_the_register_is_listed`, es previo y no está relacionado); se ajustan `test_d096_sidebar_is_a_flat_explorer_with_every_section_closed_by_default` y `test_code_sql_and_links_folders_reveal_real_destinations_without_tooltips` para reflejar la fusión.
+
+## D-107 · «Preguntas y resultados SQL» se agrupa por tema y encabezado compacto
+
+- **Fecha:** 2026-10-17.
+- **Revisión de relevancia:** se auditaron las 15 preguntas del catálogo (7 de precios, 8 de calidad de datos); cada una corresponde a un indicador K real o a una evidencia de regla de calidad (RN) distinta. No se encontró ninguna redundante ni de relleno: ninguna se elimina.
+- **Decisión:** la lista de preguntas, antes una sola columna de 15 radios sin agrupar, ahora se divide en dos grupos con su propio encabezado — «PRECIOS · 7» y «CALIDAD DE DATOS · 8» — para que se lea organizada en vez de como una pila plana. Elegir una pregunta en un grupo limpia la selección del otro, así solo una queda marcada a la vez.
+- **Encabezado compacto:** la página pasa del encabezado largo de documento (título + subtítulo + franja de frescura) al mismo encabezado de una línea que usa el Dashboard (título y frescura juntos), para que la lista y el primer resultado se vean sin desplazarse por un título alto.
+- **Alcance:** el detalle de cada pregunta (resultado, cómo leerlo, tabla completa, SQL, Python) no cambia: ya vivía en paneles plegados por defecto, compacto desde antes.
+- **Validación:** 414 pruebas (el único fallo, previo y no relacionado); se ajustan cuatro pruebas que referenciaban la clave única `catalog_choice` para usar las nuevas claves por tema (`catalog_choice_Precios`, `catalog_choice_Calidad de datos`).
