@@ -49,15 +49,6 @@ def draw_page(title):
     return AppTest.from_string(script, default_timeout=60).run()
 
 
-def draw_pipeline_focus(diagram):
-    """Draw one Pipeline diagram through the same query parameter used by its card."""
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "import streamlit as st\nfrom bi import dashboard\n"
-              f"st.query_params[dashboard.PIPELINE_DIAGRAM_PARAMETER] = {diagram!r}\n"
-              "dashboard.render_page(dashboard.PAGE_DIAGRAMS)\n")
-    return AppTest.from_string(script, default_timeout=60).run()
-
-
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     assert dashboard.ROUTE == ["Dashboard", "Arquitectura y operación",
                                "Código del proyecto", "Preguntas y resultados SQL",
@@ -238,38 +229,32 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     assert not diagrams.exception and not diagrams.tabs
     pipeline_header = next(block.value for block in diagrams.markdown
                            if 'compact-header pipeline-page-header' in block.value)
-    assert 'Pipeline y arquitectura' in pipeline_header
+    assert '<h1>Pipeline</h1>' in pipeline_header
     assert 'page-freshness' not in pipeline_header and 'Carga correcta' not in pipeline_header
     assert not diagrams.toggle
     assert 'Animar el recorrido de los datos' not in texts
     assert 'ODEPA → indicadores · recorrido y plataformas' not in texts
-    assert 'class="pipeline-gallery-link pipeline-gallery-main-link"' in texts
-    assert texts.count('class="pipeline-gallery-link ') == 2
-    assert texts.count('aria-label="Arquitectura del proyecto por plataforma"') == 2
-    assert texts.count('aria-label="Estado real del pipeline, de ODEPA al panel"') == 1
-    assert 'class="pipeline-status-content"' in texts
-    assert 'viewBox="0 80 1420 620"' in texts
     for label in ["ODEPA mayorista", "ODEPA consumidor", "Informe semanal",
                   "Consultas SQL", "OBSERVABILIDAD"]:
         assert label in texts
     assert 'aria-label="Actualización semanal"' not in texts
-    assert texts.index('aria-label="Recorrido de los datos de ODEPA al panel"') < texts.index('aria-label="Estado real del pipeline, de ODEPA al panel"')
-    assert texts.index('aria-label="Estado real del pipeline, de ODEPA al panel"') < texts.index('aria-label="Arquitectura del proyecto por plataforma"')
     assert "animateMotion" in texts
-    assert 'diagrama=recorrido' in texts and 'diagrama=arquitectura' in texts
-    assert 'diagrama=estado' not in texts
 
 
 @needs_database
-@pytest.mark.parametrize("diagram", ["recorrido", "estado", "arquitectura"])
-def test_pipeline_gallery_opens_one_diagram_with_a_return_link(diagram):
-    app = draw_pipeline_focus(diagram)
-    texts = " ".join(block.value for block in app.markdown)
-    assert not app.exception
-    assert not app.toggle and "animateMotion" in texts
-    assert "← Volver a los tres diagramas" in texts
-    assert 'class="zoom-frame' in texts
-    assert '<a class="pipeline-gallery-link ' not in texts
+def test_d136_devops_shows_the_whole_platform_architecture_and_pipeline_only_the_journey():
+    pipeline = draw_page(dashboard.PAGE_DIAGRAMS)
+    texts = " ".join(block.value for block in pipeline.markdown)
+    assert not pipeline.exception
+    assert 'aria-label="Recorrido de los datos de ODEPA al panel"' in texts
+    assert 'aria-label="Arquitectura del proyecto por plataforma"' not in texts
+    assert 'aria-label="Estado real del pipeline, de ODEPA al panel"' not in texts
+    assert "Ampliar" not in texts and "diagrama=" not in texts
+    devops = draw_page(dashboard.PAGE_DEVOPS)
+    texts = " ".join(block.value for block in devops.markdown)
+    assert not devops.exception
+    assert texts.count('aria-label="Arquitectura del proyecto por plataforma"') == 1
+    assert "Ciclo DevOps" not in texts and "Ver el pipeline" not in texts
 
 
 @needs_database
@@ -310,12 +295,7 @@ def test_d097_model_page_fits_one_screen_with_a_clickable_table_detail():
     for heading in [group[0] for group in dashboard.ARCHITECTURE_GROUPS] + ["Coste y capacidad"]:
         assert f"devops_layer_{heading}" in keys
     joined = " ".join(block.value for block in app.markdown)
-    assert joined.count('class="zoom-frame ') == 0
-    assert 'aria-label="Ciclo DevOps del proyecto' in joined
-    assert "Ver el pipeline y la arquitectura" in joined
-    style = dashboard.build_style_css(dashboard.charts.MODE_DARK)
-    assert 'width:min(100%,780px,calc((100vh - 220px) * 2.04))' in style
-    assert 'max-height:calc(100vh - 220px)' in style
+    assert joined.count('class="zoom-frame diagram-devops"') == 1
     # A tile opens its layer's detail; only then are its rows drawn.
     assert 'class="technical-rows"' not in joined
     app.button(key="devops_layer_Seguridad").click().run()
@@ -885,8 +865,7 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
             assert not app.tabs, page
         texts = " ".join(block.value for block in app.markdown)
         assert ("<h1>¿Qué familias de alimentos subieron y bajaron?</h1>" in texts) == (page == dashboard.HOME_PAGE)
-        assert ('class="pipeline-gallery-link pipeline-gallery-main-link"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
-        assert ('aria-label="Estado real del pipeline, de ODEPA al panel"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
+        assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
 
 
 @needs_database
