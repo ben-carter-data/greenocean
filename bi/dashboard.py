@@ -729,6 +729,18 @@ def build_style_css(mode):
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), inset 0 1px 0 {palette["glow"]};
     }}
     [data-testid="stMainBlockContainer"] {{ padding-top:1.1rem; }}
+    .devops-layers-title {{ font-size:.7rem; font-weight:700; letter-spacing:.08em;
+        text-transform:uppercase; color:{palette["reference"]}; margin:0 0 6px; }}
+    .st-key-devops_layers button {{ justify-content:flex-start !important; min-height:52px;
+        padding:10px 16px !important; border-radius:14px !important; background:{palette["card"]} !important;
+        border:1px solid {palette["card_border"]} !important;
+        box-shadow:0 10px 22px -16px rgba(0,0,0,.3); transition:transform .14s ease; }}
+    .st-key-devops_layers button:hover {{ transform:translateY(-2px); border-color:{palette["accent"]} !important; }}
+    .st-key-devops_layers button p {{ font-weight:600; font-size:.92rem; }}
+    .st-key-devops_layers button [data-testid="stIconMaterial"] {{ color:{palette["accent"]}; }}
+    /* Idle pause (D-131): set by IDLE_ANIMATION_SCRIPT after 20 s without activity. */
+    .greenocean-idle *, .greenocean-idle *::before, .greenocean-idle *::after {{
+        animation-play-state:paused !important; }}
     .page-freshness {{ color:{palette["text"]}; font-size:0.82rem; margin-bottom:8px; }}
     [data-testid="stMain"] h1 {{ font-size:clamp(1.7rem,3vw,2.35rem); line-height:1.15; }}
     @media(max-width:700px) {{
@@ -5468,6 +5480,10 @@ export default function(component) {
         if (!link) return;
         const url = new URL(link.getAttribute('href'), window.location.href);
         if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) return;
+        // Only the map and family links: a product's «Contexto del precio» link
+        // carries a view and a product key, and must navigate (D-123b).
+        const params = url.searchParams;
+        if (!params.has('_home_region') || params.has('_home_key') || params.has('vista')) return;
         event.preventDefault();
         setTriggerValue('link', url.search);
     };
@@ -7332,9 +7348,13 @@ def format_architecture_note(column, text):
     return f"{html.escape(column)}: {format_inline(text)}"
 
 
-def show_architecture_group(heading, lead, title_column, text_column, note_column):
-    """Technical details as compact rows, rather than oversized uniform cards."""
-    show_section_intro(heading, lead, True)
+def show_architecture_group(heading, lead, title_column, text_column, note_column, titled=True):
+    """Technical details as compact rows, rather than oversized uniform cards. In a
+    dialog the dialog already carries the heading, so only the lead shows."""
+    if titled:
+        show_section_intro(heading, lead, True)
+    else:
+        st.caption(lead)
     kind = {"Seguridad": "security", "DevOps": "workflow",
             "Observabilidad": "chart", "Informes": "document"}[heading]
     rows = ''.join(f'<li>{build_component_symbol(kind)}<div>'
@@ -7392,31 +7412,52 @@ def show_infrastructure_diagram(mode, animate_flow=False, journey=None):
             unsafe_allow_html=True)
 
 
+DEVOPS_COST_TEXT = (
+    "SQLite permite almacenar los datos sin un servidor de base de datos dedicado. GitHub Actions "
+    "coordina las ejecuciones y Streamlit publica el panel. La capacidad depende del volumen, la "
+    "duración de las cargas y las cuotas de cada servicio. La arquitectura debe revisarse antes de "
+    "aumentar la frecuencia o incorporar fuentes de mayor tamaño.")
+DEVOPS_LAYER_ICONS = {"Seguridad": ":material/shield:", "DevOps": ":material/autorenew:",
+                      "Observabilidad": ":material/monitoring:", "Informes": ":material/description:",
+                      "Coste y capacidad": ":material/savings:"}
+
+
+def show_devops_layer_dialog(heading, next_run):
+    """One layer's detail in a dialog, so the page itself stays the diagram (D-132)."""
+    def body():
+        if heading == "Coste y capacidad":
+            st.markdown(DEVOPS_COST_TEXT)
+            return
+        show_architecture_group(*next(group for group in ARCHITECTURE_GROUPS if group[0] == heading),
+                                titled=False)
+        if heading == "DevOps":
+            st.markdown(f'<div class="info-note">Próxima ejecución automática: {next_run}.</div>',
+                        unsafe_allow_html=True)
+        if heading == "Informes":
+            st.markdown(f'<div class="info-note">El enlace a los informes semanales está en '
+                        f'{build_place_link(PAGE_LINKS, "la página")}.</div>', unsafe_allow_html=True)
+    st.dialog(heading, width="large")(body)()
+
+
 def show_devops_tab(mode):
-    """Compact lifecycle with real tool logos; deployment topology remains unique."""
+    """One screen (D-132): the always-animated lifecycle on the left and, on the right,
+    its layers as tiles; a click opens that layer's detail instead of stacking tabs."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
-    st.caption("Responsabilidades de mantenimiento: código, pruebas, cargas, publicación y seguimiento. Este ciclo no representa el orden de ejecución de una carga; ese recorrido está en Pipeline.")
-    animate = st.toggle("Animar el ciclo DevOps", value=True, key="animate_devops_cycle")
-    st.markdown(devops.build_html(states, mode, animate), unsafe_allow_html=True)
-    st.caption("El movimiento ilustra el ciclo de trabajo. Los puntos de estado muestran "
-               "la última evidencia disponible; no afirman que haya una ejecución en curso.")
-    st.markdown(build_link_html("Ver el pipeline y la arquitectura →",
-                                build_page_address(PAGE_DIAGRAMS)), unsafe_allow_html=True)
-    # One tab per topic instead of one expander stacking all five (D-122): opening
-    # it no longer turns the page into a long scroll.
-    tabs = st.tabs(["Coste y capacidad"] + [group[0] for group in ARCHITECTURE_GROUPS])
-    with tabs[0]:
-        st.markdown("SQLite permite almacenar los datos sin un servidor de base de datos dedicado. GitHub Actions coordina las ejecuciones y Streamlit publica el panel. "
-                    "La capacidad depende del volumen, la duración de las cargas y las cuotas de cada servicio. La arquitectura debe revisarse antes de aumentar la frecuencia o incorporar fuentes de mayor tamaño.")
-    for tab, group in zip(tabs[1:], ARCHITECTURE_GROUPS):
-        with tab:
-            show_architecture_group(*group)
-            if group[0] == "DevOps":
-                st.markdown(f'<div class="info-note">Próxima ejecución automática: '
-                            f'{figures["next_run"]}.</div>', unsafe_allow_html=True)
-            if group[0] == "Informes":
-                st.markdown(f'<div class="info-note">El enlace a los informes semanales está en '
-                            f'{build_place_link(PAGE_LINKS, "la página")}.</div>', unsafe_allow_html=True)
+    diagram_column, layers_column = st.columns([2.2, 1], gap="large", vertical_alignment="center")
+    with diagram_column:
+        st.markdown(devops.build_html(states, mode, True), unsafe_allow_html=True)
+        st.caption("Responsabilidades de mantenimiento: código, pruebas, cargas, publicación y "
+                   "seguimiento. No es el orden de una carga; ese recorrido está en Pipeline. Los "
+                   "puntos de estado muestran la última evidencia disponible.")
+    with layers_column, st.container(key="devops_layers"):
+        st.markdown('<div class="devops-layers-title">Capas</div>', unsafe_allow_html=True)
+        for heading, lead in [(group[0], group[1]) for group in ARCHITECTURE_GROUPS] + [
+                ("Coste y capacidad", "Qué cuesta operar y hasta dónde alcanza.")]:
+            if st.button(heading, key=f"devops_layer_{heading}", icon=DEVOPS_LAYER_ICONS[heading],
+                         help=lead, width="stretch"):
+                show_devops_layer_dialog(heading, figures["next_run"])
+        st.markdown(build_link_html("Ver el pipeline y la arquitectura →",
+                                    build_page_address(PAGE_DIAGRAMS)), unsafe_allow_html=True)
 
 
 # endregion
@@ -7922,8 +7963,8 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_ARCHITECTURE: show_architecture_page,
     PAGE_CODE: lambda mode: show_document_page(mode, PAGE_CODE,
         "Del primer archivo que descarga datos al código que los presenta.", show_files_tab),
-    PAGE_DEVOPS: lambda mode: show_document_page(mode, PAGE_DEVOPS,
-        "Automatización, seguridad, observabilidad e informes.", show_devops_tab),
+    PAGE_DEVOPS: lambda mode: (show_compact_page_header(
+        PAGE_DEVOPS, "Automatización, seguridad, observabilidad e informes."), show_devops_tab(mode)),
     PAGE_OPERATIONS: show_operations_page,
     PAGE_RUNS: show_runs_page,
     PAGE_RULES: lambda mode: show_document_page(mode, PAGE_RULES,
@@ -7940,6 +7981,29 @@ SHOW_PAGE_BY_TITLE = {
 # whole width; once the reader opens it again it stays open (D-057). Streamlit
 # already folds it on phones; computers keep it open.
 NARROW_SCREEN_WIDTH = 1024
+# Every diagram animates by default, with no toggle (D-131); after 20 s without a
+# mouse move, key, touch or scroll the page pauses CSS and SVG animations, and the
+# next movement resumes them — so a forgotten tab does not keep spending resources.
+IDLE_ANIMATION_SCRIPT = """<script>(() => {
+    if (window.greenoceanIdleBound) { return; }
+    window.greenoceanIdleBound = true;
+    const IDLE_MS = 20000;
+    let timer = null;
+    const setPaused = (paused) => {
+        document.documentElement.classList.toggle('greenocean-idle', paused);
+        document.querySelectorAll('svg').forEach((svg) => {
+            try { paused ? svg.pauseAnimations() : svg.unpauseAnimations(); } catch (_) {}
+        });
+    };
+    const wake = () => {
+        if (document.documentElement.classList.contains('greenocean-idle')) { setPaused(false); }
+        clearTimeout(timer);
+        timer = setTimeout(() => setPaused(true), IDLE_MS);
+    };
+    ['mousemove', 'pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll'].forEach((name) =>
+        window.addEventListener(name, wake, { passive: true, capture: true }));
+    wake();
+})();</script>"""
 FOLD_SIDEBAR_SCRIPT = f"""<script>
 (() => {{
 if (window.innerWidth >= {NARROW_SCREEN_WIDTH}) {{ return; }}
@@ -8071,7 +8135,8 @@ def render_window(window, pages=None):
         if pages:
             show_route_footer(window, pages)
         show_attribution()
-    st.html(FOLD_SIDEBAR_SCRIPT + RELOAD_HOME_SCRIPT + build_visit_history_script(), unsafe_allow_javascript=True)
+    st.html(FOLD_SIDEBAR_SCRIPT + RELOAD_HOME_SCRIPT + IDLE_ANIMATION_SCRIPT + build_visit_history_script(),
+            unsafe_allow_javascript=True)
 
 
 def keep_context():
@@ -8265,7 +8330,9 @@ RELOAD_HOME_SCRIPT = """<script>
 # conventional section names. Only a section's chevron carries visual meaning;
 # pages appear underneath after expansion.
 SIDEBAR_TREE = [
-    ("", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY, PAGE_DATA]),
+    # «Datos» left the menu (D-130): the Resumen's search and the SQL console cover
+    # what its raw, paginated browser offered; its address still works for old links.
+    ("", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY]),
           (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS]),
           # The two ODEPA datasets get their own folder (D-118): they are not
           # GitHub, so they do not belong on the GitHub page, and they are the

@@ -962,3 +962,27 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema reportado:** la página Ejecuciones se veía con números grandes y tarjetas poco elegantes; y la página GitHub tenía también una tarjeta «Ejecuciones», con el mismo nombre que la página del menú.
 - **Decisión:** la página pasa a una cabecera de una línea (título y frescura, como el Dashboard y la Consola SQL, con `show_compact_page_header` compartida), una franja de cuatro cifras compactas (última ejecución, próxima, filas cargadas, duración), el historial a la vista como tabla limpia —antes estaba plegado detrás de «Ver historial»— y, al lado, una tarjeta simple de Administración con «Recargar datos del panel» adentro. La tarjeta de la página GitHub se llama ahora **«GitHub Actions»** («Logs completos de cada ejecución del workflow»): son contenidos distintos —los logs técnicos en GitHub frente al historial y el botón de administración del panel— y ya no comparten nombre.
 - **Validación:** 434 pruebas; nuevas `test_d129_*`.
+
+## D-123b · El botón «Contexto del precio» vuelve a funcionar
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** el botón «Contexto del precio» del Resumen no hacía nada.
+- **Causa:** D-123 capturaba todo clic a la misma ruta; Contexto del precio vive en esa misma ruta (otra vista), así que su enlace se tragaba como si fuera un clic del mapa.
+- **Decisión:** la captura solo toma enlaces con `_home_region` y sin `_home_key` ni `vista`, es decir, los del mapa y de las familias; los de un producto navegan como antes.
+
+## D-130 · «Datos» sale del menú
+
+- **Fecha:** 2026-10-17.
+- **Revisión:** la vista recorría las filas de la base con ocho filtros, tres modos (precios, variaciones, brecha) y paginación. Ningún elemento del panel enlazaba ya a ella, y lo que ofrece lo cubren mejor el buscador del Resumen y la Consola SQL (D-126), que lee las mismas tablas.
+- **Decisión:** se retira del menú; su dirección sigue funcionando para enlaces viejos.
+
+## D-131 · Las animaciones no tienen interruptor: se pausan solas
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** se retira «Animar el ciclo DevOps» (el de Pipeline ya no existía). Todos los diagramas animan por defecto; un script global (`IDLE_ANIMATION_SCRIPT`) pausa las animaciones CSS y SVG tras 20 s sin mouse, teclado, toque ni desplazamiento, y las reanuda con el primer movimiento, para no gastar recursos en una pestaña olvidada.
+- **Validación:** comprobado en Chrome por CDP: tras 22 s sin actividad la página queda en pausa y un movimiento del mouse la reanuda.
+
+## D-132 · «DevOps y seguridad» en una pantalla: el ciclo y sus capas
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** la página pasa a una cabecera de una línea, el ciclo DevOps animado a la izquierda y, a la derecha, cinco tarjetas —Seguridad, DevOps, Observabilidad, Informes, Coste y capacidad— que abren el detalle de cada capa en una ventana emergente, en vez de pestañas apiladas bajo el diagrama. La fila de seguridad que describía la vieja «Consulta de datos» con columnas fijas se reemplaza por la protección real de la Consola SQL.

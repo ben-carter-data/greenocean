@@ -303,20 +303,24 @@ def test_d097_model_page_fits_one_screen_with_a_clickable_table_detail():
 
     app = draw_page(dashboard.PAGE_DEVOPS)
     assert not app.exception
-    # One tab per topic instead of a single expander stacking all of them (D-122).
-    assert [tab.label for tab in app.tabs] == ["Coste y capacidad"] + [
-        group[0] for group in dashboard.ARCHITECTURE_GROUPS]
-    assert not app.expander
+    # One screen (D-132): no toggle, no tabs; each layer is a tile that opens a dialog.
+    assert not app.tabs and not app.expander and not app.toggle
+    keys = [str(button.key) for button in app.button]
+    for heading in [group[0] for group in dashboard.ARCHITECTURE_GROUPS] + ["Coste y capacidad"]:
+        assert f"devops_layer_{heading}" in keys
     joined = " ".join(block.value for block in app.markdown)
     assert joined.count('class="zoom-frame ') == 0
     assert 'aria-label="Ciclo DevOps del proyecto' in joined
-    assert joined.count('class="technical-rows"') == len(dashboard.ARCHITECTURE_GROUPS)
     assert "Ver el pipeline y la arquitectura" in joined
     style = dashboard.build_style_css(dashboard.charts.MODE_DARK)
     assert 'width:min(100%,780px,calc((100vh - 220px) * 2.04))' in style
     assert 'max-height:calc(100vh - 220px)' in style
-    for heading in ["DevOps", "Seguridad", "Observabilidad", "Informes"]:
-        assert f">{heading}<" in joined
+    # A tile opens its layer's detail; only then are its rows drawn.
+    assert 'class="technical-rows"' not in joined
+    app.button(key="devops_layer_Seguridad").click().run()
+    assert not app.exception
+    joined = " ".join(block.value for block in app.markdown)
+    assert joined.count('class="technical-rows"') == 1 and "Consola SQL de solo lectura" in joined
 
 @needs_database
 def test_d056_analysis_filters_show_once_and_hold_in_every_tab():
