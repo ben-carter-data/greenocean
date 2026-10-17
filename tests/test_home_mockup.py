@@ -156,11 +156,14 @@ dashboard.show_home_alerts_dialog(
     assert app.dataframe
 
 
-def test_alert_symbol_is_transparent_and_respects_reduced_motion():
-    css = home_mockup.style(dashboard.charts.MODE_DARK, dashboard.charts.get_palette(dashboard.charts.MODE_DARK))
-    assert 'data:image/svg+xml;base64,' in css
-    assert 'home-alert-pulse 60s' in css
-    assert '.st-key-home_alert_access button {animation:none!important;}' in css
+def test_d096_sidebar_footer_shows_the_real_alert_count():
+    app = AppTest.from_file(ROOT/'bi/dashboard.py', default_timeout=60)
+    app.run()
+    assert not app.exception
+    button = next(b for b in app.sidebar.button if str(b.key) == 'home_alert_trigger')
+    week = dashboard.read_latest_week()
+    count = int((dashboard.read_price_alerts()['week_start'] == week).sum())
+    assert button.label == f'Alerta de precio · {count}'
 
 
 def test_product_view_names_the_selected_product_instead_of_claiming_a_family_result():
