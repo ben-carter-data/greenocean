@@ -1306,17 +1306,20 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_closed_by_default():
     assert not app.sidebar.expander
     raw_labels = [link.proto.label for link in app.sidebar.get('page_link')]
     labels = [label.removeprefix('›  ') for label in raw_labels]
-    assert raw_labels == []
+    # «El proyecto» and the old «Documentación» folder of six pages are now one
+    # single-page destination (D-105); «Código» merges into «GitHub», also a single
+    # destination: nobody browses source files in the sidebar when the real
+    # repository is one link away (D-106). Neither shows a folder to open.
+    assert raw_labels == ['Documentación', 'GitHub']
     for hidden_child in ['Resumen semanal', 'Pipeline', 'Modelo de datos', 'DevOps y seguridad',
                          'Calidad de datos', 'Ejecuciones', 'Archivos del proyecto',
-                         'Preguntas y resultados', 'Descripción general', 'General', 'Manual',
+                         'Preguntas y resultados', 'Descripción general', 'Manual',
                          'Glosario', 'Fuentes y enlaces']:
         assert hidden_child not in labels
     assert dashboard.PAGE_ALERTS not in labels
     folder_buttons = [button for button in app.sidebar.button if str(button.key).startswith('nav_toggle_')]
     toggles = {button.label for button in folder_buttons}
-    assert toggles == {'›  Dashboard', '›  Arquitectura', '›  Código', '›  Análisis SQL',
-                       '›  Proyecto', '›  Documentación', '›  Enlaces'}
+    assert toggles == {'›  Dashboard', '›  Arquitectura', '›  Análisis SQL'}
     assert all(not button.help for button in folder_buttons)
     css = ' '.join(block.value for block in app.sidebar.markdown)
     assert '[class*="st-key-nav_child_"] {margin-left:0; padding-left:0; border-left:0;}' in css
@@ -1356,15 +1359,16 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
 @needs_database
 def test_code_sql_and_links_folders_reveal_real_destinations_without_tooltips():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
-    for key, child in [('nav_toggle_codigo', 'Archivos del proyecto'),
-                       ('nav_toggle_preguntas-y-resultados', 'Preguntas y resultados'),
-                       ('nav_toggle_enlaces', 'Fuentes y enlaces')]:
-        toggle = next(button for button in app.sidebar.button if str(button.key) == key)
-        assert not toggle.help
-        toggle.click().run()
-        assert not app.exception
-        assert child in [link.proto.label for link in app.sidebar.get('page_link')]
-        next(button for button in app.sidebar.button if str(button.key) == key).click().run()
+    # «Código» merged into «GitHub» and «GitHub» (like «Documentación») is now a
+    # single destination: it shows directly, with no folder to open (D-106).
+    assert 'GitHub' in [link.proto.label for link in app.sidebar.get('page_link')]
+    key = 'nav_toggle_preguntas-y-resultados'
+    toggle = next(button for button in app.sidebar.button if str(button.key) == key)
+    assert not toggle.help
+    toggle.click().run()
+    assert not app.exception
+    assert 'Preguntas y resultados' in [link.proto.label for link in app.sidebar.get('page_link')]
+    next(button for button in app.sidebar.button if str(button.key) == key).click().run()
 
 
 @needs_database

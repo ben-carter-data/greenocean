@@ -2136,7 +2136,7 @@ def build_place_link(place, verb="Ver en"):
 # region Page header
 def show_page_header(title, subtitle):
     """Page title, a one-line explanation and the freshness of the data."""
-    if title in (PAGE_DOCUMENTATION, PAGE_MANUAL, PAGE_DECISIONS, PAGE_GLOSSARY, PAGE_LINKS):
+    if title in (PAGE_DOCUMENTATION, PAGE_MANUAL, PAGE_DECISIONS, PAGE_GLOSSARY, PAGE_LINKS, "GitHub"):
         st.title(title)
         st.markdown(f'<p class="page-subtitle">{html.escape(subtitle)}</p>', unsafe_allow_html=True)
         return
@@ -7405,24 +7405,76 @@ def build_resource_row(link):
             '</span></li>')
 
 
+DOC_PROFILES = {
+    "BI": ("Business Intelligence", "Qué mide el negocio: los indicadores y su alcance."),
+    "BA": ("Business Analyst", "Qué problema resuelve el proyecto, su misión y su alcance."),
+    "IT": ("IT y operación", "Las decisiones técnicas clave y cómo opera cada semana."),
+}
+
+
+def build_business_frame_lookup():
+    """{Elemento → Definición} of the business frame («Marco de negocio»), read once."""
+    return {row["Elemento"]: row["Definición"] for row in project.read_guide_table("Marco de negocio")}
+
+
+def show_documentation_bi_card(frame):
+    """What a BI reader needs: the eight indicators and the data they cover, never SQL."""
+    with open_card("doc_bi", *DOC_PROFILES["BI"]):
+        st.markdown(f"**Alcance de los datos.** {frame['Alcance']}")
+        st.markdown("**Los ocho indicadores:**")
+        for kpi, (name, _, text) in KPI_PRESENTATION.items():
+            st.markdown(f"- **{name}** ({kpi}). {text}")
+        st.markdown(build_link_html("Ver cada indicador con su cálculo →",
+                                    build_page_address(PAGE_KPI)), unsafe_allow_html=True)
+
+
+def show_documentation_ba_card(frame):
+    """What a BA reader needs: mission, vision and scope, in the business's own words."""
+    with open_card("doc_ba", *DOC_PROFILES["BA"]):
+        for element in ["Misión", "Visión", "Objetivo de negocio", "Alcance", "Fuera de alcance"]:
+            st.markdown(f"**{element}.** {frame[element]}")
+        st.markdown(build_link_html("Leer el marco de negocio completo →",
+                                    build_page_address(PAGE_BUSINESS)), unsafe_allow_html=True)
+
+
+def show_documentation_it_card():
+    """What an IT reader needs: why the system is built this way, conceptually — no
+    code or SQL; the repository already shows both, commit by commit."""
+    with open_card("doc_it", *DOC_PROFILES["IT"]):
+        st.markdown("**Decisiones clave de ingeniería:**")
+        for title, text, _ in KEY_DECISIONS:
+            st.markdown(f"- **{title}.** {text}")
+        manual = project.read_document(project.MANUAL_FILE)
+        weekly_run = project.read_paragraphs(project.read_section(manual, "Qué pasa cada martes"))[0]
+        st.markdown(f"**Operación semanal.** {weekly_run}")
+        st.markdown(build_external_link_html("Ver el registro completo de decisiones",
+                                             f"{project.GITHUB_URL}/blob/main/docs/DECISIONES.md"),
+                    unsafe_allow_html=True)
+
+
 def show_documentation_page(mode):
-    """Only documentation; operational diagrams and external resources live elsewhere."""
-    show_page_header("Documentación", "Alcance, procedimientos y términos del proyecto.")
-    for title, text, page in [
-        ("Manual de operación", "Ejecución semanal, responsabilidades, incidencias y límites del servicio.", PAGE_MANUAL),
-        ("Glosario", "Términos y definiciones utilizados en las fuentes, el modelo y los indicadores.", PAGE_GLOSSARY),
-    ]:
-        st.markdown(f"### {title}\n{text}")
-        st.markdown(build_link_html("Leer documento →", build_page_address(page)), unsafe_allow_html=True)
-    with st.expander("README · instalación y puesta en marcha", expanded=False):
-        st.markdown(project.read_document(project.README_FILE))
+    """One screen, three one-page views: what a BI, a BA or an IT reader needs to know
+    about the project, in its own words — mission, vision, scope, indicators and key
+    decisions. No SQL, no code: the repository already shows both in full (D-106)."""
+    show_page_header("Documentación", "Lo esencial del proyecto, en una vista para cada "
+                     "perfil: Business Intelligence, Business Analyst e IT.")
+    frame = build_business_frame_lookup()
+    bi_column, ba_column, it_column = st.columns(3, gap="medium")
+    with bi_column:
+        show_documentation_bi_card(frame)
+    with ba_column:
+        show_documentation_ba_card(frame)
+    with it_column:
+        show_documentation_it_card()
 
 
 def show_links_page(mode):
-    """External destinations are listed once, apart from the documentation."""
-    show_page_header("Enlaces", "Repositorio público, registros de ejecución y fuentes originales. Los destinos externos se identifican con ↗.")
+    """The repository is the single destination for code, commits, executions and full
+    documents: no separate «Código» section repeats what GitHub already shows (D-106)."""
+    show_page_header("GitHub", "El código, las ejecuciones y los documentos completos del "
+                     "proyecto viven en el repositorio. Los destinos externos se identifican con ↗.")
     st.markdown(build_link_html("Consultar ejecuciones dentro del proyecto →", build_page_address(PAGE_RUNS)), unsafe_allow_html=True)
-    for group in ("Código y operación", "Fuentes de datos"):
+    for group in ("Código y operación", "Fuentes de datos", "Documentos"):
         st.subheader(group)
         entries = [link for link in project.PROJECT_LINKS if link["group"] == group and link["url"]]
         rows = "".join(build_resource_row(link) for link in entries)
@@ -7799,21 +7851,23 @@ RELOAD_HOME_SCRIPT = """<script>
 SIDEBAR_TREE = [
     ("", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY, PAGE_DATA]),
           (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS]),
-          (SECTION_CODE, [PAGE_CODE]), (SECTION_QUERIES, [PAGE_QUERIES]),
-          (SECTION_PROJECT, [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES]),
-          (SECTION_LINKS, [PAGE_DOCUMENTATION, PAGE_MANUAL, PAGE_GLOSSARY]),
-          (SECTION_RESOURCES, [PAGE_LINKS])]),
+          (SECTION_QUERIES, [PAGE_QUERIES]),
+          # One page, one click: «El proyecto» and «Documentación» used to be two
+          # folders of six pages; they are now a single overview (D-105). «Código»
+          # merges into «GitHub»: nobody reads source files in the sidebar when the
+          # real repository, with every file and commit, is one link away (D-106).
+          (SECTION_LINKS, None),
+          (SECTION_RESOURCES, None)]),
 ]
 SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Arquitectura",
-                      SECTION_CODE: "Código", SECTION_QUERIES: "Análisis SQL",
+                      SECTION_QUERIES: "Análisis SQL",
                       SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación",
-                      SECTION_RESOURCES: "Enlaces"}
+                      SECTION_RESOURCES: "GitHub"}
 SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Contexto de precios",
                   PAGE_DIAGRAMS: "Pipeline", PAGE_OPERATIONS: "Calidad de datos",
-                  PAGE_CODE: "Archivos del proyecto", PAGE_QUERIES: "Preguntas y resultados",
-                  PAGE_DOCUMENTATION: "General", PAGE_MANUAL: "Manual",
-                  PAGE_COVER: "Descripción general", PAGE_BUSINESS: "Alcance del proyecto",
-                  PAGE_LINKS: "Fuentes y enlaces"}
+                  PAGE_QUERIES: "Preguntas y resultados",
+                  PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual",
+                  PAGE_COVER: "Descripción general", PAGE_BUSINESS: "Alcance del proyecto"}
 
 
 def read_current_view(window):
