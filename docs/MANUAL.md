@@ -123,9 +123,9 @@ El panel empieza por los datos y se recorre en seis pasos:
 3. **Arquitectura y operación**: pipeline animado, arquitectura por plataforma, modelo estrella, DevOps y seguimiento de las cargas.
 4. **Código del proyecto**: fuentes Python y SQL, pruebas y configuración, en carpetas cerradas que se pueden explorar.
 5. **Preguntas y resultados SQL**: cada pregunta con el resultado real y la consulta que lo produce.
-6. **El proyecto**: alcance, definición, fuentes y reglas, para quien quiera profundizar.
+6. **Documentación**: una sola pantalla con qué resuelve el proyecto, su alcance, sus reglas de calidad y cómo opera; los documentos completos (manual, glosario, PRD, SAD) quedan a un enlace de distancia.
 
-**Documentación** reúne manual y glosario. **Enlaces** contiene el repositorio público, los registros de GitHub y las fuentes originales. La navegación al pie de página sigue el orden del recorrido; las vistas de cada sección tienen enlaces directos.
+**Enlaces** contiene el repositorio público, los registros de GitHub y las fuentes originales. La navegación al pie de página sigue el orden del recorrido; las vistas de cada sección tienen enlaces directos.
 
 El Dashboard es la página de inicio para todas las visitas. Al recargar se vuelve al resumen principal. El icono de sol o luna en la cabecera abre Apariencia: Corporativo, Vantablack, Blue Light y Dark Grey. Corporativo es la apariencia predeterminada. El botón Volver recupera el punto anterior del proyecto y sus filtros, sin abrir otra ventana. Los rankings de alzas y bajas se muestran juntos; Top N limita cada ranking por separado.
 
