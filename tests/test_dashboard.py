@@ -713,7 +713,9 @@ def test_d058_the_old_links_tab_opens_the_links_view():
     assert dashboard.OLD_TAB_PAGES[(dashboard.PAGE_OPERATIONS, "Enlaces")] == dashboard.PAGE_LINKS
     assert dashboard.build_place_address(dashboard.PAGE_LINKS) == "enlaces"
     groups = {link["group"] for link in project.PROJECT_LINKS}
-    assert groups == {"Código y operación", "Fuentes de datos", "Documentos"}
+    # ODEPA moved out to its own sidebar folder, «Fuentes»: not a GitHub-page group
+    # any more (D-118).
+    assert groups == {"Código y operación", "Documentos"}
     assert set(dashboard.LINK_GROUP_LEADS) == groups
 
 
@@ -1336,7 +1338,9 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_closed_by_default():
     assert dashboard.PAGE_ALERTS not in labels
     folder_buttons = [button for button in app.sidebar.button if str(button.key).startswith('nav_toggle_')]
     toggles = {button.label for button in folder_buttons}
-    assert toggles == {'›  Dashboard', '›  Arquitectura', '›  Análisis SQL', '›  Documentación'}
+    # «Fuentes» (D-118): the two ODEPA datasets, a folder like every other section.
+    assert toggles == {'›  Dashboard', '›  Arquitectura', '›  Fuentes', '›  Análisis SQL',
+                       '›  Documentación'}
     assert all(not button.help for button in folder_buttons)
     css = ' '.join(block.value for block in app.sidebar.markdown)
     assert '[class*="st-key-nav_child_"] {margin-left:0; padding-left:0; border-left:0;}' in css
@@ -1447,6 +1451,24 @@ def test_d113_the_global_click_handler_only_forces_internal_links():
 
 
 @needs_database
+def test_d118_sources_is_its_own_folder_with_two_external_children():
+    """ODEPA is not GitHub: it gets its own sidebar folder, «Fuentes», with the
+    two datasets as external children in the same green as every other child."""
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    toggle = next(button for button in app.sidebar.button if str(button.key) == 'nav_toggle_fuentes')
+    assert toggle.label == '›  Fuentes'
+    toggle.click().run()
+    assert not app.exception
+    markup = " ".join(block.value for block in app.sidebar.markdown)
+    for name, url in dashboard.SOURCE_LINKS:
+        assert f'class="nav-source-link" href="{url}"' in markup
+        assert name in markup
+    assert markup.count('target="_blank"') >= 2
+    next(button for button in app.sidebar.button
+         if str(button.key) == 'nav_toggle_fuentes').click().run()
+
+
+@needs_database
 def test_d117_the_sidebar_github_entry_is_a_logo_not_a_word():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     markup = " ".join(block.value for block in app.sidebar.markdown)
@@ -1459,19 +1481,18 @@ def test_d117_the_sidebar_github_entry_is_a_logo_not_a_word():
 @needs_database
 def test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab():
     """Every PROJECT_LINKS entry pointing at github.com gets the real brand mark
-    instead of a material glyph; ODEPA (not GitHub) keeps its own icon."""
+    instead of a material glyph. ODEPA moved to its own sidebar folder, «Fuentes»
+    (D-118), so every remaining entry is a GitHub link."""
     app = draw_page(dashboard.PAGE_LINKS)
     assert not app.exception
     markup = "\n".join(block.value for block in app.markdown) + "\n".join(
         block.value for block in app.get('html'))
     github_links = [link for link in project.PROJECT_LINKS
                     if link["url"] and link["url"].startswith(project.GITHUB_URL)]
-    assert len(github_links) >= 6
+    assert github_links == [link for link in project.PROJECT_LINKS if link["url"]]
+    assert len(github_links) >= 5
     assert markup.count(dashboard.architecture.brand_icons.logo_body("github")) == len(github_links) + 1
     assert markup.count('target="_blank"') >= len(github_links) + 1
-    for link in project.PROJECT_LINKS:
-        if link["url"] and not link["url"].startswith(project.GITHUB_URL):
-            assert f'<span class="link-icon">{link["icon"]}</span>' in markup
 
 
 @needs_database

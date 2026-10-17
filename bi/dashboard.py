@@ -76,6 +76,13 @@ PAGE_DOC_BI = "Business Intelligence"
 PAGE_DOC_BA = "Business Analyst"
 PAGE_DOC_IT = "IT y operación"
 SECTION_RESOURCES = "Enlaces"
+# A sidebar-only folder (D-118): two external links, no Streamlit page of its own,
+# so it is not part of WINDOWS/ROUTE — rendered specially in show_sidebar_navigation.
+SECTION_SOURCES = "Fuentes"
+SOURCE_LINKS = [
+    ("ODEPA: precios mayoristas", project.WHOLESALE_SOURCE_URL),
+    ("ODEPA: precios al consumidor", project.CONSUMER_SOURCE_URL),
+]
 # The visit is a portfolio route, like a CV with its evidence: the project, then the
 # dashboard, the code with its results and, for whoever wants more, the technical detail.
 # Sources and links have one place of their own, out of the route (D-070).
@@ -481,10 +488,10 @@ REJECTED_ROW_LABELS = {
     "sale_unit": "Unidad de venta", "unit": "Unidad", "volume": "Volumen",
     "min_price": "Precio mínimo", "max_price": "Precio máximo", "avg_price": "Precio promedio",
 }
-# What each group of project links is for.
+# What each group of project links is for. ODEPA (D-118) moved to its own
+# sidebar folder, «Fuentes»: it is not GitHub, so it is not a group here any more.
 LINK_GROUP_LEADS = {
-    "Código y operación": "El código, cada ejecución, cada informe y cada cambio.",
-    "Fuentes de datos": "Los archivos originales de ODEPA.",
+    "Código y operación": "Cada ejecución, cada informe y cada cambio.",
     "Documentos": "El manual de operación y el registro de decisiones.",
 }
 # (question, page where it is answered, state: available, partial or pending, note)
@@ -1147,10 +1154,16 @@ def build_style_css(mode):
     table.card-table td {{ padding: 8px 4px; border-bottom: 1px solid {palette["card_border"]};
                           color: {palette["strong_text"]}; }}
     .link-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                  gap: 10px; margin: 6px 0; }}
+                  gap: 14px; margin: 10px 0; }}
+    /* Floating, not flush (D-118): the same elevated-card language as the KPI
+       gallery (D-114b), shared by this grid wherever it is used. */
     .link-card {{ display: flex; align-items: center; gap: 8px; min-height: 52px;
-                  padding: 8px 10px; border-radius: 12px; background: {palette["card"]};
-                  border: 1px solid {palette["card_border"]}; }}
+                  padding: 10px 12px; border-radius: 14px; background: {palette["card"]};
+                  border: 1px solid {palette["card_border"]};
+                  box-shadow: 0 12px 24px -14px rgba(0,0,0,.22), 0 2px 6px -1px rgba(0,0,0,.1);
+                  transition: transform .16s ease, box-shadow .16s ease; }}
+    .link-card:hover {{ transform: translateY(-3px);
+                        box-shadow: 0 18px 32px -14px rgba(0,0,0,.26), 0 3px 8px -1px rgba(0,0,0,.12); }}
     .link-card a {{ flex: 1; display: flex; align-items: center; gap: 10px;
                     text-decoration: none; min-width: 0; }}
     .link-card .link-icon {{ font-family: "Material Symbols Rounded"; font-size: 22px;
@@ -7699,15 +7712,16 @@ def show_documentation_page(mode):
 
 
 def show_links_page(mode):
-    """The repository is the single destination for code, commits, executions and full
+    """The repository is the single destination for commits, executions and full
     documents: no separate «Código» section repeats what GitHub already shows (D-106).
-    One link per destination, a real GitHub mark instead of repeating the word, and a
-    repo strip up top so the page reads like GitHub itself before sending the reader
-    there (D-116)."""
-    show_page_header("GitHub", "El código, las ejecuciones y los documentos completos del "
+    The repo strip already opens the code itself, so «Código y operación» does not
+    repeat it; ODEPA is not GitHub, so it moved to its own sidebar folder, «Fuentes»
+    (D-118). One link per destination, a real GitHub mark instead of repeating the
+    word (D-116)."""
+    show_page_header("GitHub", "Las ejecuciones y los documentos completos del "
                      "proyecto viven en el repositorio.")
     st.markdown(build_github_repo_header_html(), unsafe_allow_html=True)
-    for group in ("Código y operación", "Fuentes de datos", "Documentos"):
+    for group in ("Código y operación", "Documentos"):
         entries = [link for link in project.PROJECT_LINKS if link["group"] == group and link["url"]]
         if not entries:
             continue
@@ -8089,6 +8103,10 @@ RELOAD_HOME_SCRIPT = """<script>
 SIDEBAR_TREE = [
     ("", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY, PAGE_DATA]),
           (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS]),
+          # The two ODEPA datasets get their own folder (D-118): they are not
+          # GitHub, so they do not belong on the GitHub page, and they are the
+          # source the whole pipeline starts from, so they sit near Arquitectura.
+          (SECTION_SOURCES, SOURCE_LINKS),
           (SECTION_QUERIES, [PAGE_QUERIES]),
           # «El proyecto» and the old «Documentación» folder of six pages are now
           # three, one per reader (D-105, D-110): the same folder pattern as every
@@ -8197,6 +8215,13 @@ def build_sidebar_css(mode):
         border-radius:5px; color:{text}; opacity:.82; transition:background .12s ease,opacity .12s ease;}}
     .nav-github-link:hover {{background:color-mix(in srgb,{text} 7%,transparent); opacity:1;}}
     .nav-github-link-current {{color:{palette['accent']}; opacity:1;}}
+    /* «Fuentes»: external children in the same green as every other child (D-118). */
+    .nav-source-link {{display:block; padding:3px 7px; margin:1px 0; border-radius:5px;
+        font-size:.78rem; font-weight:460; letter-spacing:-.005em; text-decoration:none;
+        color:{child_green} !important; -webkit-text-fill-color:{child_green} !important;
+        text-shadow:0 0 10px color-mix(in srgb,{child_green} 18%,transparent);
+        transition:background .12s ease;}}
+    .nav-source-link:hover {{background:color-mix(in srgb,{text} 7%,transparent);}}
     .st-key-sidebar_footer {{position:fixed; left:17px; bottom:0; width:266px; padding:13px 5px 12px;
         background:linear-gradient(180deg,transparent 0%,{sidebar_bottom} 18%); gap:7px !important; z-index:5;
         border-top:1px solid {hairline};}}
@@ -8215,7 +8240,10 @@ def build_sidebar_css(mode):
 
 
 def nav_open_key(window):
-    return f"nav_open_{WINDOW_PATHS[window]}"
+    # SECTION_SOURCES is sidebar-only (D-118): it has no Streamlit page, so no entry
+    # in WINDOW_PATHS.
+    path = "fuentes" if window == SECTION_SOURCES else WINDOW_PATHS[window]
+    return f"nav_open_{path}"
 
 
 SIDEBAR_NAV_VERSION = 4
@@ -8256,17 +8284,27 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             # page. Opening it never changes the alignment of the rows it reveals.
             open_key = nav_open_key(window)
             is_open = st.session_state.get(open_key, False)
-            group_key = "nav_group_current" if window == current_window else f"nav_group_{WINDOW_PATHS[window]}"
+            nav_path = "fuentes" if window == SECTION_SOURCES else WINDOW_PATHS[window]
+            group_key = "nav_group_current" if window == current_window else f"nav_group_{nav_path}"
             chevron = "⌄" if is_open else "›"
             with st.sidebar.container(key=group_key):
-                if st.button(f"{chevron}  {label}", key=f"nav_toggle_{WINDOW_PATHS[window]}"):
+                if st.button(f"{chevron}  {label}", key=f"nav_toggle_{nav_path}"):
                     st.session_state[open_key] = not is_open
                     st.rerun()
             if not is_open:
                 continue
+            if window == SECTION_SOURCES:
+                # Both leave the app (D-118): a plain external link in the same
+                # green as every other child, not a page_link to a Streamlit view.
+                for index, (name, url) in enumerate(views):
+                    with st.sidebar.container(key=f"nav_child_{nav_path}_{index}"):
+                        st.markdown(f'<a class="nav-source-link" href="{html.escape(url, quote=True)}" '
+                                   f'target="_blank" rel="noopener noreferrer">{html.escape(name)}</a>',
+                                   unsafe_allow_html=True)
+                continue
             for index, view in enumerate(views):
                 active = window == current_window and view == current_view
-                key = f"nav_child_{WINDOW_PATHS[window]}_{index}" + ("_nav_current" if active else "")
+                key = f"nav_child_{nav_path}_{index}" + ("_nav_current" if active else "")
                 with st.sidebar.container(key=key):
                     st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
                                  query_params=keep_context() | {VIEW_PARAMETER: view})

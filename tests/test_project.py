@@ -185,9 +185,10 @@ def test_t54_project_links_have_the_agreed_names_and_hide_what_does_not_exist():
     names = [link["name"] for link in project.PROJECT_LINKS]
     # Names shortened (D-116): the page itself is titled «GitHub» and each GitHub
     # link now carries the real brand mark, so the words «en GitHub» / «Ver» /
-    # «Abrir» no longer need repeating on every single link.
-    assert names == ["Código", "Ejecuciones", "Informes semanales", "Historial de cambios",
-                     "ODEPA: precios mayoristas", "ODEPA: precios al consumidor",
+    # «Abrir» no longer need repeating on every single link. «Código» is retired
+    # (the repo-header strip already opens it) and ODEPA moved to its own sidebar
+    # folder, «Fuentes» (D-118).
+    assert names == ["Ejecuciones", "Informes semanales", "Historial de cambios",
                      "MANUAL", "DECISIONES", "Video", "Post de LinkedIn"]
     for link in project.PROJECT_LINKS:
         assert link["description"] and link["icon"]

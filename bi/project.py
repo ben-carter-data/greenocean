@@ -44,18 +44,16 @@ TOKENS_URL = "https://github.com/settings/tokens"
 # content, so it is read there and the original stays one click away. A link without an
 # address (the video, the post) stays hidden until it exists.
 PROJECT_LINKS = [
-    {"name": "Código", "description": "El repositorio completo.",
-     "url": GITHUB_URL, "icon": "code", "group": "Código y operación"},
+    # «Código» is retired (D-118): the GitHub page's own repo-header strip already
+    # opens the repository root, so a second link to the same place was redundant.
     {"name": "Ejecuciones", "description": "Historial del job semanal y de los tests (Actions).",
      "url": ACTIONS_URL, "icon": "history", "group": "Código y operación"},
     {"name": "Informes semanales", "description": "El informe publicado tras cada ejecución (Issues).",
      "url": ISSUES_URL, "icon": "description", "group": "Código y operación"},
     {"name": "Historial de cambios", "description": "Cada commit, con su tarea.",
      "url": COMMITS_URL, "icon": "commit", "group": "Código y operación"},
-    {"name": "ODEPA: precios mayoristas", "description": "Datos originales.",
-     "url": WHOLESALE_SOURCE_URL, "icon": "database", "group": "Fuentes de datos"},
-    {"name": "ODEPA: precios al consumidor", "description": "Datos originales.",
-     "url": CONSUMER_SOURCE_URL, "icon": "database", "group": "Fuentes de datos"},
+    # ODEPA moved to its own sidebar folder, «Fuentes» (D-118): it is not GitHub,
+    # so it no longer belongs on the GitHub page.
     {"name": "MANUAL", "description": "Qué pasa cada martes y qué hacer si algo falla.",
      "url": f"{GITHUB_URL}/blob/{GITHUB_BRANCH}/docs/MANUAL.md", "icon": "menu_book",
      "group": "Documentos"},
