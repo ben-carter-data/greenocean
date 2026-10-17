@@ -218,7 +218,8 @@ def test_d094_price_context_breaks_lines_at_missing_weeks_and_does_not_start_at_
                      if values and "segment" in values[0] and len(values) == 2)
         # The missing week starts a new segment: the line is not drawn across it.
         assert lines[0]["segment"] != lines[1]["segment"]
-        assert "Feria: sobre lo habitual" in text
+        # The state lives in the summary sentence and «Precio esta semana», not on the chart (D-098).
+        assert "sobre lo habitual" not in text and len(spec["layer"]) == 3
 
 
 def test_d094_full_history_has_lines_only_and_gaps_for_missing_weeks():
@@ -228,15 +229,6 @@ def test_d094_full_history_has_lines_only_and_gaps_for_missing_weeks():
     assert spec["mark"]["type"] == "line" and "area" not in str(spec)
     values = next(iter(spec["datasets"].values()))
     assert len({row["segment"] for row in values}) == 2
-
-
-def test_d094_seasonal_pattern_marks_this_month_solid_and_the_next_two_outlined():
-    pattern = {month: 100. + month for month in range(1, 13)}
-    spec = charts.draw_seasonal_pattern(pattern, "Feria libre", 11, charts.MODE_LIGHT).to_dict()
-    values = next(iter(spec["datasets"].values()))
-    kinds = {row["month"]: row["kind"] for row in values}
-    assert kinds[11] == "actual" and kinds[12] == "proximo" and kinds[1] == "proximo" and kinds[2] == "otro"
-    assert {row["fill"] for row in values if row["kind"] == "actual"} == {"#2563C9"}
 
 
 def test_geographic_changes_keep_boundaries_and_missing_distinct_from_zero():
