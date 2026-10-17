@@ -1158,6 +1158,14 @@ def build_style_css(mode):
     .link-card .link-text {{ display: flex; flex-direction: column; min-width: 0; }}
     .link-card strong {{ color: {palette["strong_text"]}; font-size: 0.9rem; }}
     .link-card small {{ color: {palette["text"]}; font-size: 0.78rem; line-height: 1.3; }}
+    .gh-repo-header {{ display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+                       margin: 10px 0 22px; border-radius: 14px; background: {palette["card"]};
+                       border: 1px solid {palette["card_border"]}; text-decoration: none;
+                       color: {palette["strong_text"]}; transition: border-color .12s ease; }}
+    .gh-repo-header:hover {{ border-color: {palette["accent"]}; }}
+    .gh-repo-slug {{ font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.95rem;
+                     font-weight: 600; flex: 1; }}
+    .gh-repo-open {{ font-size: 0.78rem; color: {palette["accent"]}; }}
     .copy-link {{ flex: none; min-height: 36px; padding: 4px 10px; border-radius: 8px;
                   cursor: pointer; font-size: 0.75rem; background: transparent;
                   color: {palette["text"]}; border: 1px solid {palette["card_border"]}; }}
@@ -1804,11 +1812,11 @@ if (!window.linkCardsReady) {
 
 
 def build_link_card_html(link):
-    """Name, icon and one line of description; the address is never shown as text."""
-    # Same window: the browser's back button returns here; the visitor may still open a
-    # new tab on purpose (D-070).
+    """Name, icon and one line of description; the address is never shown as text.
+    Opens a new tab (D-116): the same-window convention of D-070 is what made
+    GitHub refuse to load when this app runs behind an iframe wrapper (D-113)."""
     return (f'<div class="link-card"><a href="{html.escape(link["url"], quote=True)}" '
-            f'rel="noopener"><span class="link-icon">{link["icon"]}</span>'
+            f'target="_blank" rel="noopener noreferrer"><span class="link-icon">{link["icon"]}</span>'
             f'<span class="link-text"><strong>{html.escape(link["name"])} ↗</strong>'
             f'<small>{html.escape(link["description"])}</small></span></a>'
             f'<button type="button" class="copy-link">Copiar enlace</button></div>')
@@ -7476,18 +7484,27 @@ def show_operations_page(mode):
 
 
 # region Links page
-def build_resource_row(link):
-    """One link: a page of the panel opens here; an outside service says where it goes
-    (↗) and opens in the same window (D-070)."""
-    if link.get("page"):
-        inside = build_link_html(f"Leer {link['name']} en el panel", build_page_address(
-            link["page"]))
-        return (f'<li>{inside}<span>{html.escape(link["description"])} · '
-                f'<a href="{html.escape(link["url"], quote=True)}" target="_self" rel="noopener">'
-                f'ver el original en GitHub ↗</a></span></li>')
-    return (f'<li><a href="{html.escape(link["url"], quote=True)}" target="_self" rel="noopener noreferrer">'
-            f'{html.escape(link["name"])} ↗</a><span>{html.escape(link["description"])}'
-            '</span></li>')
+def build_github_icon_svg(size=22):
+    return (f'<svg viewBox="0 0 24 24" width="{size}" height="{size}" fill="currentColor" '
+            f'aria-hidden="true">{architecture.brand_icons.logo_body("github")}</svg>')
+
+
+def prepare_resource_cards(links):
+    """The same links, with a real GitHub mark for every link that actually goes to
+    GitHub (D-116) — the material glyph stays only for links that do not (ODEPA)."""
+    github_icon = build_github_icon_svg()
+    return [dict(link, icon=github_icon if link["url"].startswith(project.GITHUB_URL) else link["icon"])
+            for link in links]
+
+
+def build_github_repo_header_html():
+    """A small repo strip, like GitHub's own title bar, before sending the reader
+    there for real (D-116)."""
+    slug = "/".join(project.GITHUB_URL.rstrip("/").split("/")[-2:])
+    return (f'<a class="gh-repo-header" href="{html.escape(project.GITHUB_URL, quote=True)}" '
+            f'target="_blank" rel="noopener noreferrer">{build_github_icon_svg(26)}'
+            f'<span class="gh-repo-slug">{html.escape(slug)}</span>'
+            '<span class="gh-repo-open">Abrir repositorio ↗</span></a>')
 
 
 DOC_PROFILES = {
@@ -7683,15 +7700,19 @@ def show_documentation_page(mode):
 
 def show_links_page(mode):
     """The repository is the single destination for code, commits, executions and full
-    documents: no separate «Código» section repeats what GitHub already shows (D-106)."""
+    documents: no separate «Código» section repeats what GitHub already shows (D-106).
+    One link per destination, a real GitHub mark instead of repeating the word, and a
+    repo strip up top so the page reads like GitHub itself before sending the reader
+    there (D-116)."""
     show_page_header("GitHub", "El código, las ejecuciones y los documentos completos del "
-                     "proyecto viven en el repositorio. Los destinos externos se identifican con ↗.")
-    st.markdown(build_link_html("Consultar ejecuciones dentro del proyecto →", build_page_address(PAGE_RUNS)), unsafe_allow_html=True)
+                     "proyecto viven en el repositorio.")
+    st.markdown(build_github_repo_header_html(), unsafe_allow_html=True)
     for group in ("Código y operación", "Fuentes de datos", "Documentos"):
-        st.subheader(group)
         entries = [link for link in project.PROJECT_LINKS if link["group"] == group and link["url"]]
-        rows = "".join(build_resource_row(link) for link in entries)
-        st.markdown(f'<ul class="resource-tree">{rows}</ul>', unsafe_allow_html=True)
+        if not entries:
+            continue
+        st.subheader(group)
+        show_link_cards(prepare_resource_cards(entries))
 
 # endregion
 

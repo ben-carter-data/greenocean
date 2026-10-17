@@ -526,8 +526,11 @@ def test_t54_the_right_code_opens_administration_and_never_shows_the_token():
 def test_project_links_are_grouped_as_a_tree_with_descriptions():
     app = draw_page(dashboard.PAGE_LINKS)
     assert not app.exception
-    links = "\n".join(block.value for block in app.markdown)
-    assert 'class="resource-tree"' in links
+    # Rendered as the shared link-card grid, not a bespoke list (D-116).
+    links = "\n".join(block.value for block in app.markdown) + "\n".join(
+        block.value for block in app.get('html'))
+    assert 'class="link-grid"' in links
+    assert 'class="gh-repo-header"' in links
     for link in project.PROJECT_LINKS:
         if link["url"] and link["group"] != "Documentos":
             assert f'href="{link["url"]}"' in links
@@ -1436,6 +1439,24 @@ def test_d113_the_global_click_handler_only_forces_internal_links():
     script = dashboard.build_visit_history_script()
     assert "anchor.hostname === location.hostname" in script
     assert "anchor.target = '_self'" in script
+
+
+@needs_database
+def test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab():
+    """Every PROJECT_LINKS entry pointing at github.com gets the real brand mark
+    instead of a material glyph; ODEPA (not GitHub) keeps its own icon."""
+    app = draw_page(dashboard.PAGE_LINKS)
+    assert not app.exception
+    markup = "\n".join(block.value for block in app.markdown) + "\n".join(
+        block.value for block in app.get('html'))
+    github_links = [link for link in project.PROJECT_LINKS
+                    if link["url"] and link["url"].startswith(project.GITHUB_URL)]
+    assert len(github_links) >= 6
+    assert markup.count(dashboard.architecture.brand_icons.logo_body("github")) == len(github_links) + 1
+    assert markup.count('target="_blank"') >= len(github_links) + 1
+    for link in project.PROJECT_LINKS:
+        if link["url"] and not link["url"].startswith(project.GITHUB_URL):
+            assert f'<span class="link-icon">{link["icon"]}</span>' in markup
 
 
 @needs_database
