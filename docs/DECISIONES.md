@@ -795,3 +795,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Por qué el conteo es real:** `read_catalog_row_counts()` corre cada consulta guardada sin filtro (la misma que ya usa el detalle), cacheada por versión de la base, igual que el resto de los indicadores: no es una cifra inventada ni aproximada.
 - **Relevancia de cada pregunta:** de las 15, nueve ya terminan en gráfico (las siete de precios más «Cuántos precios entran en los indicadores» y «Qué precios no tienen unidad comparable»); las seis restantes son evidencia de auditoría (ejecuciones, filas rechazadas, atípicos, cobertura de semanas, brecha calculable) donde una tabla es más clara que un gráfico. Ninguna necesita convertirse: ya se marcan correctamente.
 - **Validación:** 414 pruebas (el único fallo, previo y no relacionado).
+
+## D-109 · El deploy se colgaba 20+ minutos por el file watcher, no por el código
+
+- **Fecha:** 2026-10-17.
+- **Síntoma:** el panel público quedaba en «Your app is in the oven» indefinidamente. El log de Streamlit Community Cloud mostraba, en loop desde el arranque: `OSError: [Errno 24] inotify instance limit reached` y luego `OSError: [Errno 28] inotify watch limit reached`, nunca la línea «You can now view your app».
+- **Causa:** el *file watcher* de Streamlit (que vigila cambios de archivo para recargar en caliente) agotaba los watchers de `inotify` del contenedor y reintentaba sin parar, sin llegar nunca a ejecutar `bi/dashboard.py`. No es un error del código: la app corre sin problema en local (`streamlit run`, HTTP 200, sin trazas).
+- **Decisión:** `[server] fileWatcherType = "none"` en `.streamlit/config.toml`. Nadie edita archivos en el servidor publicado, así que el watcher no cumple ninguna función ahí; solo consumía recursos y podía bloquear el arranque.
+- **Validación:** `streamlit run bi/dashboard.py` arranca y responde HTTP 200 en local con la configuración nueva; 414 pruebas sin cambios (no es código de la app).

@@ -27,3 +27,9 @@ gatherUsageStats = false
 # Keep local developer actions out of the report canvas. This also removes the
 # floating rerun/deploy controls that can cover content on narrow viewports.
 toolbarMode = "viewer"
+
+[server]
+# No one edits files on the live server, so the inotify file watcher only burns the
+# container's limited watch handles and can stall the whole deploy (saw it loop for
+# 20+ minutes with "inotify watch limit reached" instead of starting).
+fileWatcherType = "none"
