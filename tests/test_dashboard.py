@@ -234,6 +234,13 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     diagrams = draw_page(dashboard.PAGE_DIAGRAMS)
     texts = " ".join(block.value for block in diagrams.markdown)
     assert not diagrams.exception and not diagrams.tabs
+    pipeline_header = next(block.value for block in diagrams.markdown
+                           if 'compact-header pipeline-page-header' in block.value)
+    assert 'Pipeline y arquitectura' in pipeline_header
+    assert 'page-freshness' not in pipeline_header and 'Carga correcta' not in pipeline_header
+    assert not diagrams.toggle
+    assert 'Animar el recorrido de los datos' not in texts
+    assert 'ODEPA → indicadores · recorrido y plataformas' not in texts
     assert 'class="pipeline-gallery-link pipeline-gallery-main-link"' in texts
     assert texts.count('class="pipeline-gallery-link ') == 2
     assert texts.count('aria-label="Arquitectura del proyecto por plataforma"') == 2
@@ -257,6 +264,7 @@ def test_pipeline_gallery_opens_one_diagram_with_a_return_link(diagram):
     app = draw_pipeline_focus(diagram)
     texts = " ".join(block.value for block in app.markdown)
     assert not app.exception
+    assert not app.toggle and "animateMotion" in texts
     assert "← Volver a los tres diagramas" in texts
     assert 'class="zoom-frame' in texts
     assert '<a class="pipeline-gallery-link ' not in texts
@@ -1209,7 +1217,7 @@ def test_d096_header_shows_the_current_path_without_a_tab_bar():
     assert not app.exception
     assert 'graph-navigation' not in ' '.join(block.value for block in app.markdown)
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
-    assert 'Arquitectura y operación › Modelo de datos' in markup
+    assert 'Arquitectura › Modelo de datos' in markup
     assert app.button(key='return_to_previous').label == 'Volver'
 
 
@@ -1288,24 +1296,42 @@ def test_quality_page_does_not_claim_a_complete_audit_and_keeps_evidence_visible
 
 
 @needs_database
-@needs_database
-def test_d096_sidebar_shows_every_section_unfolded_at_once():
+def test_d096_sidebar_is_a_flat_explorer_with_every_section_closed_by_default():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params['vista'] = dashboard.PAGE_ARCHITECTURE
     app.run()
     assert not app.exception
-    # No expanders left: everything is visible together (D-096).
+    # Every section, including the current one, starts closed. Top-level rows are
+    # folders because each one exposes at least one real destination.
     assert not app.sidebar.expander
-    labels = [link.proto.label for link in app.sidebar.get('page_link')]
-    for expected in ['Resumen de la semana', 'Contexto del precio', 'Datos',
-                     'Pipeline y arquitectura', 'Modelo de datos', 'DevOps y seguridad',
-                     'Calidad y trazabilidad', 'Ejecuciones', '03 · Código del proyecto',
-                     '04 · Preguntas y resultados SQL', 'Portada', 'Definición del proyecto',
-                     'Reglas de calidad', 'Documentación general', 'Manual', 'Glosario', 'Enlaces']:
-        assert expected in labels, expected
+    raw_labels = [link.proto.label for link in app.sidebar.get('page_link')]
+    labels = [label.removeprefix('›  ') for label in raw_labels]
+    assert raw_labels == []
+    for hidden_child in ['Resumen semanal', 'Pipeline', 'Modelo de datos', 'DevOps y seguridad',
+                         'Calidad de datos', 'Ejecuciones', 'Archivos del proyecto',
+                         'Preguntas y resultados', 'Descripción general', 'General', 'Manual',
+                         'Glosario', 'Fuentes y enlaces']:
+        assert hidden_child not in labels
     assert dashboard.PAGE_ALERTS not in labels
-    heads = ' '.join(block.value for block in app.sidebar.markdown)
-    assert 'Recorrido' in heads and 'Referencias' in heads  # CSS renders these upper case
+    folder_buttons = [button for button in app.sidebar.button if str(button.key).startswith('nav_toggle_')]
+    toggles = {button.label for button in folder_buttons}
+    assert toggles == {'›  Dashboard', '›  Arquitectura', '›  Código', '›  Análisis SQL',
+                       '›  Proyecto', '›  Documentación', '›  Enlaces'}
+    assert all(not button.help for button in folder_buttons)
+    css = ' '.join(block.value for block in app.sidebar.markdown)
+    assert '[class*="st-key-nav_child_"] {margin-left:0; padding-left:0; border-left:0;}' in css
+    assert f'color:{dashboard.BRAND_GREEN_DARK} !important;' in dashboard.build_sidebar_css(charts.MODE_DARK)
+    # Corporativo's page is light, but its navy sidebar uses the same luminous
+    # green as the wordmark. Blue Light keeps the darker green on its light sidebar.
+    assert f'color:{dashboard.BRAND_GREEN_DARK} !important;' in dashboard.build_sidebar_css(charts.MODE_CORPORATE)
+    assert f'color:{dashboard.BRAND_GREEN_LIGHT} !important;' in dashboard.build_sidebar_css(charts.MODE_BLUE_LIGHT)
+    for mode in charts.THEMES:
+        expected = (dashboard.BRAND_GREEN_DARK if
+                    dashboard.is_dark_surface(charts.get_palette(mode)['sidebar']) else
+                    dashboard.BRAND_GREEN_LIGHT)
+        assert expected in dashboard.build_greenocean_logo(mode, sidebar=True)
+        assert f'color:{expected} !important;' in dashboard.build_sidebar_css(mode)
+    assert 'background:transparent !important; border-color:transparent; box-shadow:none !important;' in css
 
 
 @needs_database
@@ -1313,29 +1339,46 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.run()
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_arquitectura-y-operacion')
-    assert toggle.label == '▾  02 · Arquitectura y operación'
-    labels_open = [link.proto.label for link in app.sidebar.get('page_link')]
-    assert 'Pipeline y arquitectura' in labels_open
+    assert toggle.label == '›  Arquitectura'
+    labels_open = [link.proto.label.removeprefix('›  ') for link in app.sidebar.get('page_link')]
+    assert 'Pipeline' not in labels_open
     toggle.click().run()
     assert not app.exception
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_arquitectura-y-operacion')
-    assert toggle.label == '▸  02 · Arquitectura y operación'
-    labels_closed = [link.proto.label for link in app.sidebar.get('page_link')]
-    assert 'Pipeline y arquitectura' not in labels_closed
-    # Every other group stays open; this collapse is per-folder.
-    assert 'Resumen de la semana' in labels_closed and 'Portada' in labels_closed
+    assert toggle.label == '⌄  Arquitectura'
+    labels_open = [link.proto.label.removeprefix('›  ') for link in app.sidebar.get('page_link')]
+    assert 'Pipeline' in labels_open
     toggle.click().run()
     assert not app.exception
-    assert 'Pipeline y arquitectura' in [link.proto.label for link in app.sidebar.get('page_link')]
+    assert 'Pipeline' not in [link.proto.label.removeprefix('›  ') for link in app.sidebar.get('page_link')]
 
 
 @needs_database
-def test_d102_the_open_window_cannot_be_folded_away():
+def test_code_sql_and_links_folders_reveal_real_destinations_without_tooltips():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    for key, child in [('nav_toggle_codigo', 'Archivos del proyecto'),
+                       ('nav_toggle_preguntas-y-resultados', 'Preguntas y resultados'),
+                       ('nav_toggle_enlaces', 'Fuentes y enlaces')]:
+        toggle = next(button for button in app.sidebar.button if str(button.key) == key)
+        assert not toggle.help
+        toggle.click().run()
+        assert not app.exception
+        assert child in [link.proto.label for link in app.sidebar.get('page_link')]
+        next(button for button in app.sidebar.button if str(button.key) == key).click().run()
+
+
+@needs_database
+def test_d102_the_current_window_also_starts_closed_and_can_be_toggled():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.run()
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_dashboard')
-    assert toggle.disabled
-    assert 'Resumen de la semana' in [link.proto.label for link in app.sidebar.get('page_link')]
+    assert not toggle.disabled
+    assert toggle.label == '›  Dashboard'
+    assert 'Resumen semanal' not in [link.proto.label.removeprefix('›  ') for link in app.sidebar.get('page_link')]
+    toggle.click().run()
+    assert not app.exception
+    assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_dashboard').label == '⌄  Dashboard'
+    assert 'Resumen semanal' in [link.proto.label.removeprefix('›  ') for link in app.sidebar.get('page_link')]
 
 
 @needs_database

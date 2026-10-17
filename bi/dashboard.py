@@ -44,6 +44,8 @@ PAGE_DATA = "Datos"
 # and a way into the dashboard and the code. The full definition is the view after it.
 PAGE_COVER = "Portada"
 COVER_NAME = "GreenOcean"
+BRAND_GREEN_DARK = "#72e7ad"
+BRAND_GREEN_LIGHT = "#167046"
 PAGE_BUSINESS = "Definición del proyecto"
 PAGE_DIAGRAMS = "Pipeline y arquitectura"
 PAGE_ARCHITECTURE = "Modelo de datos"
@@ -609,6 +611,8 @@ def build_theme_css(palette):
     [data-testid="stMain"] p, [data-testid="stMain"] h1, [data-testid="stMain"] h2,
     [data-testid="stMain"] h3, [data-testid="stMain"] label, [data-testid="stMain"] input {{
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }}
+    [data-testid="stMain"] h1 {{font-weight:610 !important; letter-spacing:-.035em;}}
+    [data-testid="stMain"] h2, [data-testid="stMain"] h3 {{font-weight:560 !important; letter-spacing:-.02em;}}
     [data-testid="stMain"], [data-testid="stMainBlockContainer"] {{ color:{palette["text"]}; }}
     [data-testid="stMarkdownContainer"], [data-testid="stWidgetLabel"],
     [data-testid="stWidgetLabel"] p, [data-testid="stCaptionContainer"],
@@ -1175,17 +1179,9 @@ def build_style_css(mode):
     .stApp:has(.overview-pipeline) [data-testid="stMainBlockContainer"] {{
         padding-bottom:4px!important;}}
     .stApp:has(.overview-pipeline) .pipeline-page-header {{
-        display:grid; grid-template-columns:auto 1fr auto; align-items:center;
-        gap:5px 12px; margin:0;}}
-    .stApp:has(.overview-pipeline) .pipeline-page-header h1 {{font-size:1.28rem!important;}}
-    .stApp:has(.overview-pipeline) .pipeline-header-description {{
-        color:{palette["text"]}; font-size:.78rem; white-space:nowrap; overflow:hidden;
-        text-overflow:ellipsis;}}
-    .stApp:has(.overview-pipeline) .pipeline-page-header .page-freshness {{
-        font-size:.72rem; white-space:nowrap;}}
-    .stApp:has(.overview-pipeline) [class*="st-key-animate_data_flow"] label {{
-        min-height:24px;}}
-    .stApp:has(.overview-pipeline) [class*="st-key-animate_data_flow"] p {{font-size:.72rem;}}
+        display:block; margin:0 0 10px; padding:0;}}
+    .stApp:has(.overview-pipeline) .pipeline-page-header h1 {{
+        font-size:1.28rem!important; line-height:1.2;}}
     .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_"] {{
         padding:5px 8px; gap:4px; overflow:hidden;}}
     .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_"] .card-title {{
@@ -1300,7 +1296,6 @@ def build_style_css(mode):
             display:block; width:100%; height:100%;}}
     }}
     @media (max-width:1000px) {{
-        .stApp:has(.overview-pipeline) .pipeline-page-header {{grid-template-columns:1fr;}}
         .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_status"],
         .stApp:has(.overview-pipeline) [class*="st-key-card_pipeline_gallery_platform"] {{
             height:auto; min-height:150px;}}
@@ -1543,12 +1538,17 @@ def show_data_sample(frame, title="Muestra del gráfico · primeros 3 resultados
                 ('<div class="sample-title">Precios redondeados para leerlos; los porcentajes usan los valores completos.</div>' if any(column in sample.columns for column in ('Precio nacional', 'Mayorista', 'Consumidor')) else '') + '</div>', unsafe_allow_html=True)
 
 
+def is_dark_surface(color):
+    """Whether a hex surface needs the luminous brand colors."""
+    rgb = tuple(int(color.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    return sum(rgb) / 3 < .5
+
+
 def build_greenocean_logo(mode, sidebar=False):
     """Transparent wordmark, displayed by Streamlit outside the navigation links."""
     background = charts.get_palette(mode)["sidebar" if sidebar else "background"]
-    rgb = tuple(int(background.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4))
-    dark = sum(rgb) / 3 < .5
-    green, ocean = ("#66d6a1", "#80baff") if dark else ("#167046", "#185ca8")
+    dark = is_dark_surface(background)
+    green, ocean = (BRAND_GREEN_DARK, "#80baff") if dark else (BRAND_GREEN_LIGHT, "#185ca8")
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="190" height="36" viewBox="0 0 190 36">'
             '<title>GreenOcean</title>'
             '<text x="0" y="27" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" '
@@ -1605,20 +1605,21 @@ def show_app_header(window):
     </style>""", unsafe_allow_html=True)
     view = read_current_view(window)
     # Contexto del precio draws its own route and «Volver al resumen»: showing the
-    # generic path and Volver here too would duplicate them (D-098). Only the theme
-    # switcher, shared by every page, stays.
+    # generic path and Volver here too would duplicate them (D-098). Appearance now
+    # lives in the shared sidebar footer, where it stays available without competing
+    # with the page title.
     minimal = view == PAGE_SEASONALITY
-    path = window if len(read_window_views(window)) == 1 else f"{window} › {SIDEBAR_LABELS.get(view, view)}"
+    window_label = SIDEBAR_TOP_LABELS.get(window, window)
+    path = window_label if len(read_window_views(window)) == 1 else f"{window_label} › {SIDEBAR_LABELS.get(view, view)}"
     with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
         if not minimal:
             st.markdown(f'<div class="app-brand" aria-label="Página actual">{html.escape(path)}</div>',
                         unsafe_allow_html=True)
-        with st.container(key="header_preferences", horizontal=True):
-            if not minimal:
+        if not minimal:
+            with st.container(key="header_preferences", horizontal=True):
                 if st.button("Volver", icon=":material/arrow_back:", key="return_to_previous",
                              help="Volver al punto anterior del proyecto, con su selección."):
                     st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
-            show_theme_field()
     theme = get_mode()
     match_base_mode(theme)
     return theme
@@ -5832,17 +5833,9 @@ def build_pipeline_gallery_link(svg, diagram, label, css_class=""):
 
 
 def show_pipeline_page_header():
-    """A one-line Pipeline heading leaves the viewport to the diagrams themselves."""
-    latest_run = read_latest_run()
-    run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
-    run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
-    freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
-    st.markdown(
-        '<div class="compact-header pipeline-page-header">'
-        f'<h1>Pipeline y arquitectura</h1>'
-        '<span class="pipeline-header-description">ODEPA → indicadores · recorrido y plataformas</span>'
-        f'<span class="page-freshness">Datos al {freshness} '
-        f'{build_chip(run_text, run_kind)}</span></div></div>', unsafe_allow_html=True)
+    """A clean title above the gallery; execution evidence lives in its own card."""
+    st.markdown('<div class="compact-header pipeline-page-header">'
+                '<h1>Pipeline y arquitectura</h1></div>', unsafe_allow_html=True)
 
 
 def show_focused_pipeline_diagram(diagram, mode, animate_flow, journey):
@@ -5892,13 +5885,15 @@ def show_diagrams_page(mode):
     focused = st.query_params.get(PIPELINE_DIAGRAM_PARAMETER)
     focused = focused if focused in PIPELINE_DIAGRAMS else None
     journey = read_journey()
-    animate_flow = st.session_state.get("animate_data_flow", True)
+    # The motion explains the data route and is part of the diagram itself. Keep it
+    # on consistently; the SVG still honours the operating system's reduced-motion
+    # preference for accessibility.
+    animate_flow = True
     if focused:
         show_focused_pipeline_diagram(focused, mode, animate_flow, journey)
         return
 
     show_pipeline_page_header()
-    animate_flow = st.toggle("Animar el recorrido de los datos", value=True, key="animate_data_flow")
     states, figures, pipeline_run, latest_load, error_note = journey
 
     # The complete journey is the main diagram, so it leads the gallery and gets
@@ -7798,18 +7793,27 @@ RELOAD_HOME_SCRIPT = """<script>
 </script>"""
 
 
-# The side menu is the only navigation (D-096): every section and view in sight,
-# group titles that are not links, the current page highlighted.
+# The side menu follows the VS Code explorer model: one flat stack of short,
+# conventional section names. Only a section's chevron carries visual meaning;
+# pages appear underneath after expansion.
 SIDEBAR_TREE = [
-    ("Recorrido", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY, PAGE_DATA]),
-                   (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS]),
-                   (SECTION_CODE, None), (SECTION_QUERIES, None),
-                   (SECTION_PROJECT, [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES])]),
-    ("Referencias", [(SECTION_LINKS, [PAGE_DOCUMENTATION, PAGE_MANUAL, PAGE_GLOSSARY]),
-                     (SECTION_RESOURCES, None)]),
+    ("", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY, PAGE_DATA]),
+          (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS]),
+          (SECTION_CODE, [PAGE_CODE]), (SECTION_QUERIES, [PAGE_QUERIES]),
+          (SECTION_PROJECT, [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES]),
+          (SECTION_LINKS, [PAGE_DOCUMENTATION, PAGE_MANUAL, PAGE_GLOSSARY]),
+          (SECTION_RESOURCES, [PAGE_LINKS])]),
 ]
-SIDEBAR_LABELS = {PAGE_HOME: "Resumen de la semana", PAGE_OPERATIONS: "Calidad y trazabilidad",
-                  PAGE_DOCUMENTATION: "Documentación general", PAGE_COVER: "Portada"}
+SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Arquitectura",
+                      SECTION_CODE: "Código", SECTION_QUERIES: "Análisis SQL",
+                      SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación",
+                      SECTION_RESOURCES: "Enlaces"}
+SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Contexto de precios",
+                  PAGE_DIAGRAMS: "Pipeline", PAGE_OPERATIONS: "Calidad de datos",
+                  PAGE_CODE: "Archivos del proyecto", PAGE_QUERIES: "Preguntas y resultados",
+                  PAGE_DOCUMENTATION: "General", PAGE_MANUAL: "Manual",
+                  PAGE_COVER: "Descripción general", PAGE_BUSINESS: "Alcance del proyecto",
+                  PAGE_LINKS: "Fuentes y enlaces"}
 
 
 def read_current_view(window):
@@ -7822,49 +7826,92 @@ def read_current_view(window):
 def build_sidebar_css(mode):
     palette = charts.get_palette(mode)
     text = palette["sidebar_text"]
+    # The wordmark and its child links sit on the sidebar, so their contrast must
+    # follow that surface. Corporativo has a light page but a dark navy sidebar.
+    dark = is_dark_surface(palette["sidebar"])
+    child_green = BRAND_GREEN_DARK if dark else BRAND_GREEN_LIGHT
+    sidebar_top = "#101824" if dark else "#ffffff"
+    sidebar_bottom = "#080d15" if dark else "#f5f7fb"
+    hairline = "rgba(148, 163, 184, .18)" if dark else "rgba(15, 23, 42, .12)"
+    quiet = "rgba(214, 218, 227, .68)" if dark else "rgba(31, 41, 55, .68)"
+    alert_text = "#ff9ca4" if dark else "#9d1f2c"
     return f"""<style>
-    [data-testid="stSidebar"] {{background:{palette['sidebar']};}}
-    [data-testid="stSidebarUserContent"] {{padding:0 12px 0 !important;}}
-    [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important; min-height:calc(100vh - 96px);}}
+    [data-testid="stSidebar"] {{
+        background:linear-gradient(180deg,{sidebar_top} 0%,{palette['sidebar']} 38%,{sidebar_bottom} 100%);
+        border-right:1px solid {hairline}; box-shadow:10px 0 32px rgba(0,0,0,.12);}}
+    [data-testid="stSidebar"][aria-expanded="true"] {{min-width:300px !important; max-width:300px !important;}}
+    [data-testid="stSidebarContent"] {{background:transparent;}}
+    [data-testid="stSidebarHeader"] {{height:66px; padding:10px 17px 7px !important;
+        border-bottom:1px solid {hairline};}}
+    [data-testid="stSidebarHeader"] img {{max-width:144px !important;}}
+    [data-testid="stSidebarCollapseButton"] button {{width:32px; height:32px; min-height:32px;
+        border:1px solid {hairline} !important; border-radius:10px !important;
+        background:color-mix(in srgb,{palette['field']} 72%,transparent) !important;
+        box-shadow:inset 0 1px rgba(255,255,255,.04);}}
+    [data-testid="stSidebarUserContent"] {{padding:6px 17px 0 !important;}}
+    [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important;
+        min-height:calc(100vh - 86px); padding-bottom:116px;}}
     [data-testid="stSidebarNav"] {{display:none;}}
-    .nav-heading {{font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700;
-        color:{text}; opacity:.62; margin:18px 8px 4px;}}
     /* A folder row (D-102): a real button, styled as plain text, with a chevron that
-       folds it — the same affordance as VS Code's Explorer. Expanded by default. */
-    [class*="st-key-nav_group_"] button {{width:100%; justify-content:flex-start; gap:9px !important;
+       folds it — the same affordance as VS Code's Explorer. */
+    [class*="st-key-nav_group_"] button {{width:100%; justify-content:flex-start; gap:0 !important;
         border:0 !important; background:transparent !important; box-shadow:none !important;
-        padding:5px 8px !important; border-radius:6px; min-height:0;}}
-    [class*="st-key-nav_group_"] button:hover:not(:disabled) {{background:{text}14 !important;}}
+        padding:3px 7px !important; border-radius:5px; min-height:27px; transition:background .12s ease;}}
+    [class*="st-key-nav_group_"] button:hover:not(:disabled) {{background:color-mix(in srgb,{text} 7%,transparent) !important;}}
     [class*="st-key-nav_group_"] button:disabled {{cursor:default; opacity:1;}}
-    [class*="st-key-nav_group_"] button p {{font-size:.86rem !important; font-weight:600 !important;
-        color:{text} !important; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
-    [class*="st-key-nav_group_"] button [data-testid="stIconMaterial"] {{font-size:17px !important;
-        width:17px !important; opacity:.85;}}
-    .st-key-nav_group_current button p {{color:{palette['accent']} !important;}}
+    [class*="st-key-nav_group_"] button p {{font-size:.78rem !important; font-weight:430 !important;
+        letter-spacing:-.005em; color:{text} !important;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
+    .st-key-nav_group_current button p {{color:{text} !important;}}
     .st-key-nav_group_current button [data-testid="stIconMaterial"] {{color:{palette['accent']}; opacity:1;}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a {{padding:5px 8px !important; border-radius:6px;
-        background:transparent !important; box-shadow:none !important; min-height:0; gap:9px !important;}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] p {{font-size:.86rem; color:{text} !important;
-        font-weight:400; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{
-        font-size:17px !important; width:17px !important; opacity:.85;}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {{background:{text}14 !important;}}
-    /* Children sit under their folder on a thin guide line, like a file tree. */
-    [class*="st-key-nav_child_"] {{margin-left:21px; padding-left:8px; border-left:1px solid {text}26;}}
-    [class*="st-key-nav_"]:not([class*="st-key-nav_child_"]) {{margin:5px 0 2px;}}
-    [class*="st-key-nav_current"] [data-testid="stPageLink"] a {{background:{text}24 !important;
-        box-shadow:inset 3px 0 {palette['accent']} !important;}}
-    [class*="st-key-nav_current"] [data-testid="stPageLink"] p {{font-weight:650;}}
-    [class*="st-key-nav_current"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a {{padding:3px 7px !important; border-radius:5px;
+        background:transparent !important; box-shadow:none !important; min-height:27px; gap:0 !important;
+        border:1px solid transparent; transition:background .12s ease,border-color .12s ease;}}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] p {{font-size:.78rem; color:{text} !important;
+        font-weight:400; letter-spacing:-.005em; padding-left:10px;
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{display:none !important;}}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]) {{
+        display:none !important;}}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {{
+        background:color-mix(in srgb,{text} 7%,transparent) !important;
+        border-color:{hairline};}}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a:focus,
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a:active,
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a:visited {{
+        background:transparent !important; color:{text} !important; box-shadow:none !important;}}
+    /* Expanded rows remain on the same axis as their parent: this is a flat,
+       aligned explorer rather than an indented tree. */
+    [class*="st-key-nav_child_"] {{margin-left:0; padding-left:0; border-left:0;}}
+    [class*="st-key-nav_"]:not([class*="st-key-nav_child_"]) {{margin:1px 0;}}
+    [class*="st-key-nav_current"] [data-testid="stPageLink"] a,
+    [class*="_nav_current"] [data-testid="stPageLink"] a {{
+        background:transparent !important; border-color:transparent; box-shadow:none !important;}}
+    [class*="st-key-nav_current"] [data-testid="stPageLink"] a:hover,
+    [class*="_nav_current"] [data-testid="stPageLink"] a:hover {{
+        background:transparent !important; border-color:transparent !important;}}
+    [class*="st-key-nav_current"] [data-testid="stPageLink"] p,
+    [class*="_nav_current"] [data-testid="stPageLink"] p {{font-weight:500; color:{palette['strong_text']} !important;}}
+    [class*="st-key-nav_current"] [data-testid="stPageLink"] [data-testid="stIconMaterial"],
+    [class*="_nav_current"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{
         opacity:1; color:{palette['accent']};}}
-    .st-key-sidebar_footer {{margin-top:auto; position:sticky; bottom:0; padding:12px 0 14px;
-        background:{palette['sidebar']}; gap:8px !important; z-index:5;}}
-    .st-key-sidebar_footer button {{width:100%; justify-content:flex-start; border:0 !important;
-        background:#c62832 !important; color:#fff !important; border-radius:9px; padding:9px 12px; min-height:0;}}
-    .st-key-sidebar_footer button:hover {{background:#a91f28 !important;}}
-    .st-key-sidebar_footer button p {{color:#fff !important; font-weight:650; font-size:.86rem; text-align:left;}}
+    [class*="st-key-nav_child_"] [data-testid="stPageLink"] p {{color:{child_green} !important;
+        -webkit-text-fill-color:{child_green} !important; font-weight:460;
+        text-shadow:0 0 10px color-mix(in srgb,{child_green} 18%,transparent);}}
+    .st-key-sidebar_footer {{position:fixed; left:17px; bottom:0; width:266px; padding:13px 5px 12px;
+        background:linear-gradient(180deg,transparent 0%,{sidebar_bottom} 18%); gap:7px !important; z-index:5;
+        border-top:1px solid {hairline};}}
+    .st-key-home_alert_trigger button {{width:100%; justify-content:flex-start; border:0 !important;
+        background:transparent !important; color:{alert_text} !important; border-radius:5px;
+        padding:7px 5px; min-height:30px; box-shadow:none !important;}}
+    .st-key-home_alert_trigger button:hover {{background:transparent !important; filter:brightness(1.12);}}
+    .st-key-home_alert_trigger button p {{color:{alert_text} !important; -webkit-text-fill-color:{alert_text} !important;
+        font-weight:560; font-size:.79rem; text-align:left;}}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button {{background:transparent !important;
+        box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
     .st-key-sidebar_footer [data-testid="stCaptionContainer"] p {{color:{text} !important; opacity:.75;
-        font-size:.74rem; line-height:1.4;}}
+        font-size:.67rem; line-height:1.35; padding:0 3px;}}
     </style>"""
 
 
@@ -7872,32 +7919,38 @@ def nav_open_key(window):
     return f"nav_open_{WINDOW_PATHS[window]}"
 
 
+SIDEBAR_NAV_VERSION = 4
+
+
 def show_sidebar_navigation(windows_by_title, current_window, order):
-    """A file tree like VS Code's: every folder expanded by default, but a real
-    chevron folds it, exactly as there (D-096, D-101, D-102)."""
+    """A VS Code-like explorer: aligned top-level titles, no numbering or item
+    icons, and a chevron only for sections that contain pages."""
     st.sidebar.markdown(build_sidebar_css(get_mode()), unsafe_allow_html=True)
+    if st.session_state.get("sidebar_nav_version") != SIDEBAR_NAV_VERSION:
+        for _, sections in SIDEBAR_TREE:
+            for window, views in sections:
+                if views is not None:
+                    st.session_state[nav_open_key(window)] = False
+        st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
     for heading, sections in SIDEBAR_TREE:
-        st.sidebar.markdown(f'<div class="nav-heading">{heading}</div>', unsafe_allow_html=True)
+        if heading:
+            st.sidebar.markdown(f'<div class="nav-heading">{heading}</div>', unsafe_allow_html=True)
         for window, views in sections:
-            label = number_window(window, order)
+            label = SIDEBAR_TOP_LABELS.get(window, window)
             if views is None:
                 key = "nav_current" if window == current_window else f"nav_{WINDOW_PATHS[window]}"
                 with st.sidebar.container(key=key):
-                    st.page_link(windows_by_title[window], label=label, icon=WINDOW_ICONS[window],
-                                 query_params=keep_context())
+                    st.page_link(windows_by_title[window], label=label, query_params=keep_context())
                 continue
-            # A folder row: chevron + icon + name. Expanded by default; a click folds
-            # it, same as VS Code's Explorer (D-102). The viewed window always forces
-            # itself open, so the current page is never hidden.
+            # Every folder starts closed, including the section that owns the current
+            # page. Opening it never changes the alignment of the rows it reveals.
             open_key = nav_open_key(window)
-            is_open = st.session_state.get(open_key, True) or window == current_window
+            is_open = st.session_state.get(open_key, False)
             group_key = "nav_group_current" if window == current_window else f"nav_group_{WINDOW_PATHS[window]}"
-            chevron = "▾" if is_open else "▸"
+            chevron = "⌄" if is_open else "›"
             with st.sidebar.container(key=group_key):
-                if st.button(f"{chevron}  {label}", key=f"nav_toggle_{WINDOW_PATHS[window]}",
-                            icon=WINDOW_ICONS[window], disabled=window == current_window,
-                            help=None if window == current_window else ("Ocultar" if is_open else "Mostrar")):
+                if st.button(f"{chevron}  {label}", key=f"nav_toggle_{WINDOW_PATHS[window]}"):
                     st.session_state[open_key] = not is_open
                     st.rerun()
             if not is_open:
@@ -7907,7 +7960,6 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
                 key = f"nav_child_{WINDOW_PATHS[window]}_{index}" + ("_nav_current" if active else "")
                 with st.sidebar.container(key=key):
                     st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
-                                 icon=PAGE_ICONS.get(view),
                                  query_params=keep_context() | {VIEW_PARAMETER: view})
     show_sidebar_footer()
 
@@ -7923,10 +7975,12 @@ def show_sidebar_footer():
     # or the dialog renders as plain unstyled buttons (D-100).
     st.markdown(home_mockup.style(get_mode(), charts.get_palette(get_mode())), unsafe_allow_html=True)
     with st.sidebar.container(key="sidebar_footer"):
-        if st.button(f"Alerta de precio · {count}", icon=":material/warning:", key="home_alert_trigger",
+        if st.button(f"▲  Alerta de precio · {count}", key="home_alert_trigger",
                      help=f"{count} cambios de precio fuera de lo habitual esta semana. Abre el detalle por familia."):
             st.session_state["home_alert_selected_family"] = None
             show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())
+        with st.container(key="sidebar_appearance"):
+            show_theme_field()
         st.caption("Fuente: ODEPA · actualización automática cada martes.")
 
 
