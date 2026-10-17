@@ -1315,20 +1315,22 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_closed_by_default():
     assert not app.sidebar.expander
     raw_labels = [link.proto.label for link in app.sidebar.get('page_link')]
     labels = [label.removeprefix('›  ') for label in raw_labels]
-    # «El proyecto» and the old «Documentación» folder of six pages are now one
-    # single-page destination (D-105); «Código» merges into «GitHub», also a single
+    # «El proyecto» and the old «Documentación» folder of six pages are now three
+    # profile views — BI, BA, IT — behind one folder, the same pattern as every
+    # other section (D-105, D-110). «Código» merges into «GitHub», a single
     # destination: nobody browses source files in the sidebar when the real
-    # repository is one link away (D-106). Neither shows a folder to open.
-    assert raw_labels == ['Documentación', 'GitHub']
+    # repository is one link away (D-106).
+    assert raw_labels == ['GitHub']
     for hidden_child in ['Resumen semanal', 'Pipeline', 'Modelo de datos', 'DevOps y seguridad',
                          'Calidad de datos', 'Ejecuciones', 'Archivos del proyecto',
-                         'Preguntas y resultados', 'Descripción general', 'Manual',
-                         'Glosario', 'Fuentes y enlaces']:
+                         'Preguntas y resultados', 'Descripción general', 'Manual', 'Glosario',
+                         'Business Intelligence', 'Business Analyst', 'IT y operación',
+                         'Fuentes y enlaces']:
         assert hidden_child not in labels
     assert dashboard.PAGE_ALERTS not in labels
     folder_buttons = [button for button in app.sidebar.button if str(button.key).startswith('nav_toggle_')]
     toggles = {button.label for button in folder_buttons}
-    assert toggles == {'›  Dashboard', '›  Arquitectura', '›  Análisis SQL'}
+    assert toggles == {'›  Dashboard', '›  Arquitectura', '›  Análisis SQL', '›  Documentación'}
     assert all(not button.help for button in folder_buttons)
     css = ' '.join(block.value for block in app.sidebar.markdown)
     assert '[class*="st-key-nav_child_"] {margin-left:0; padding-left:0; border-left:0;}' in css
@@ -1368,8 +1370,7 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
 @needs_database
 def test_code_sql_and_links_folders_reveal_real_destinations_without_tooltips():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
-    # «Código» merged into «GitHub» and «GitHub» (like «Documentación») is now a
-    # single destination: it shows directly, with no folder to open (D-106).
+    # «Código» merged into «GitHub»: a single destination, no folder to open (D-106).
     assert 'GitHub' in [link.proto.label for link in app.sidebar.get('page_link')]
     key = 'nav_toggle_preguntas-y-resultados'
     toggle = next(button for button in app.sidebar.button if str(button.key) == key)
@@ -1378,6 +1379,28 @@ def test_code_sql_and_links_folders_reveal_real_destinations_without_tooltips():
     assert not app.exception
     assert 'Preguntas y resultados' in [link.proto.label for link in app.sidebar.get('page_link')]
     next(button for button in app.sidebar.button if str(button.key) == key).click().run()
+
+
+@needs_database
+def test_d110_documentation_folds_open_into_three_profile_views():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    key = 'nav_toggle_documentacion-y-enlaces'
+    toggle = next(button for button in app.sidebar.button if str(button.key) == key)
+    assert toggle.label == '›  Documentación'
+    toggle.click().run()
+    assert not app.exception
+    labels = [link.proto.label for link in app.sidebar.get('page_link')]
+    assert 'Business Intelligence' in labels
+    assert 'Business Analyst' in labels
+    assert 'IT y operación' in labels
+    for profile, must_have in [(dashboard.PAGE_DOC_BI, 'indicadores'),
+                               (dashboard.PAGE_DOC_BA, 'Misión'),
+                               (dashboard.PAGE_DOC_IT, 'Decisiones clave')]:
+        page = draw_page(profile)
+        assert not page.exception
+        text = " ".join(block.value for block in page.markdown)
+        assert must_have in text
+        assert 'SELECT' not in text and 'bi/queries.sql' not in text
 
 
 @needs_database
