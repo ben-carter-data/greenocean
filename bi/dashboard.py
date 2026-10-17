@@ -32,7 +32,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import (alerts, price_context, architecture, charts, control, devops, data_browser, home_mockup, lag, market_charts, market_style, project, quality,  # noqa: E402
-                queries, star_model, zoom)
+                python_console, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -58,6 +58,8 @@ PAGE_ALERTS = "Alertas"
 PAGE_KPI = "Indicadores explicados"
 PAGE_QUERIES = "Preguntas y resultados"
 PAGE_CODE = "Código Python y SQL"
+# The Python console (D-135): what the project does in Python, run on real data.
+PAGE_PYTHON = "Consola Python"
 # «Consulta de datos» (Consulta por clics) is retired (C03): the catalog of questions
 # answers with real results; its links and old addresses open the catalog.
 PAGE_DATA_AND_CODE = PAGE_QUERIES
@@ -91,6 +93,7 @@ SECTION_KPI = "KPIs"
 REPORT_WINDOW = "Dashboard"
 SECTION_QUERIES = "Preguntas y resultados SQL"
 SECTION_CODE = "Código del proyecto"
+SECTION_PYTHON = "Análisis con Python"
 SECTION_TECHNICAL = "Arquitectura y operación"
 SECTION_LINKS = "Documentación"
 WINDOWS = {
@@ -99,28 +102,32 @@ WINDOWS = {
     REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY],
     SECTION_QUERIES: [PAGE_QUERIES],
+    SECTION_PYTHON: [PAGE_PYTHON],
     SECTION_CODE: [PAGE_CODE],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
     SECTION_LINKS: [PAGE_DOC_BI, PAGE_DOC_BA, PAGE_DOC_IT, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
                     PAGE_MANUAL],
     SECTION_RESOURCES: [PAGE_LINKS],
 }
-ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_CODE, SECTION_QUERIES, SECTION_PROJECT]
+ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_CODE, SECTION_QUERIES, SECTION_PYTHON, SECTION_PROJECT]
 # The former KPI page remains as a hidden compatibility destination for old links;
 # its business information now lives in the dashboard and documentation.
 WINDOWS = {window: WINDOWS[window] for window in ROUTE + [SECTION_LINKS, SECTION_RESOURCES, SECTION_KPI]}
 WINDOW_PATHS = {SECTION_PROJECT: "proyecto", REPORT_WINDOW: "dashboard", SECTION_KPI: "kpis",
-                SECTION_QUERIES: "preguntas-y-resultados", SECTION_CODE: "codigo",
+                SECTION_QUERIES: "preguntas-y-resultados", SECTION_PYTHON: "analisis-python",
+                SECTION_CODE: "codigo",
                 SECTION_TECHNICAL: "arquitectura-y-operacion",
                 SECTION_LINKS: "documentacion-y-enlaces", SECTION_RESOURCES: "enlaces"}
 WINDOW_ICONS = {SECTION_PROJECT: ":material/assignment:", REPORT_WINDOW: ":material/dashboard:",
                 SECTION_KPI: ":material/insights:",
-                SECTION_QUERIES: ":material/query_stats:", SECTION_CODE: ":material/code:",
+                SECTION_QUERIES: ":material/query_stats:", SECTION_PYTHON: ":material/terminal:",
+                SECTION_CODE: ":material/code:",
                 SECTION_TECHNICAL: ":material/account_tree:", SECTION_LINKS: ":material/menu_book:", SECTION_RESOURCES: ":material/link:"}
 ROUTE_LEADS = {SECTION_PROJECT: "qué problema resuelve y qué se construyó",
                SECTION_KPI: "qué mide cada KPI, cómo se calcula y qué límites tiene",
                REPORT_WINDOW: "los precios y cambios de la semana",
                SECTION_QUERIES: "cada pregunta, su resultado y el SQL que lo produce",
+               SECTION_PYTHON: "lo que el proyecto calcula en Python, ejecutado sobre los datos reales",
                SECTION_CODE: "los archivos reales, agrupados por su función",
                SECTION_TECHNICAL: "pipeline, modelo estrella, DevOps y operación"}
 WINDOW_OF_VIEW = {view: window for window, views in WINDOWS.items() for view in views}
@@ -175,7 +182,7 @@ PAGE_ICONS = {
     PAGE_ANALYSIS: ":material/monitoring:", PAGE_GAP: ":material/compare_arrows:",
     PAGE_CHANNELS: ":material/storefront:", PAGE_SEASONALITY: ":material/calendar_month:",
     PAGE_ALERTS: ":material/notifications_active:", PAGE_KPI: ":material/insights:",
-    PAGE_QUERIES: ":material/data_object:",
+    PAGE_QUERIES: ":material/data_object:", PAGE_PYTHON: ":material/terminal:",
     PAGE_CODE: ":material/code:", PAGE_RULES: ":material/rule:", PAGE_DEVOPS: ":material/shield:",
     PAGE_OPERATIONS: ":material/health_and_safety:", PAGE_RUNS: ":material/play_circle:",
     PAGE_MANUAL: ":material/menu_book:",
@@ -189,7 +196,7 @@ PAGE_PATHS = {
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura", PAGE_ANALYSIS: "analisis", PAGE_GAP: "brecha",
     PAGE_CHANNELS: "canales", PAGE_SEASONALITY: "estacionalidad", PAGE_ALERTS: "alertas",
-    PAGE_KPI: "indicadores", PAGE_QUERIES: "queries",
+    PAGE_KPI: "indicadores", PAGE_QUERIES: "queries", PAGE_PYTHON: "python",
     PAGE_CODE: "codigo", PAGE_RULES: "reglas", PAGE_DEVOPS: "devops", PAGE_OPERATIONS: "operaciones",
     PAGE_RUNS: "ejecuciones", PAGE_MANUAL: "manual",
     PAGE_GLOSSARY: "glosario", PAGE_LINKS: "enlaces",
@@ -4193,7 +4200,8 @@ CATALOG = [
      "chart": False},
     {"name": "quality_rejected_rows", "theme": QUALITY_THEME,
      "question": "¿Cómo venían las filas rechazadas?",
-     "compares": "Muestra cada fila rechazada tal como llegó, con su fuente y su motivo.",
+     "compares": "Muestra cada fila rechazada tal como llegó, con su fuente (wholesale = precios "
+                 "mayoristas, consumer = precios al consumidor) y su motivo.",
      "reading": "Es la fila original del archivo de origen (RN-11): sirve para revisar la "
                 "fuente, no para recalcular indicadores.",
      "build": build_table_result("quality_rejected_rows", ["Por fuente y motivo",
@@ -4274,7 +4282,110 @@ CONSOLE_TEXT = "sql_console_text"
 CONSOLE_SOURCE = "sql_console_source"
 CONSOLE_EXECUTED = "sql_console_executed"
 CONSOLE_ORIGINAL = "sql_console_original"
+CONSOLE_VERSION = "sql_console_version"
 CONSOLE_DEFAULT = ("table", "weekly_price")
+# The editor (D-133): a transparent textarea over a syntax-coloured copy of its
+# text — VS Code's SQL colours, no library. Ctrl/Cmd+Enter runs; Tab indents.
+SQL_EDITOR_JS = r"""
+const SQL_KEYWORDS = new Set(('select from where group by order having join left right inner outer full '
+  + 'cross on as and or not in is null with recursive case when then else end limit offset distinct '
+  + 'union all except intersect between like glob exists asc desc over partition rows range '
+  + 'preceding following current row unbounded filter cast collate natural using values '
+  + 'true false').split(' '));
+const PYTHON_KEYWORDS = new Set(('import from as for in if elif else and or not is None True False '
+  + 'def return while with lambda try except finally class pass break continue yield raise '
+  + 'global del assert').split(' '));
+const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const SQL_TOKEN = /(--[^\n]*)|('(?:[^']|'')*'?)|("(?:[^"]|"")*"?)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)(\s*\()?|([\s\S])/g;
+const PYTHON_TOKEN = /(#[^\n]*)|([fFrRbB]{0,2}'(?:[^'\\\n]|\\.)*'?|[fFrRbB]{0,2}"(?:[^"\\\n]|\\.)*"?)|(?!)()|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)(\s*\()?|([\s\S])/g;
+function colour(text, language) {
+  const python = language === 'python';
+  const keywords = python ? PYTHON_KEYWORDS : SQL_KEYWORDS;
+  let out = '';
+  for (const m of text.matchAll(python ? PYTHON_TOKEN : SQL_TOKEN)) {
+    const [whole, comment, single, double, number, word, call, other] = m;
+    if (comment) out += `<span class="c">${escapeHtml(comment)}</span>`;
+    else if (single) out += `<span class="s">${escapeHtml(single)}</span>`;
+    else if (double) out += `<span class="i">${escapeHtml(double)}</span>`;
+    else if (number) out += `<span class="n">${number}</span>`;
+    else if (word) {
+      const kind = keywords.has(python ? word : word.toLowerCase()) ? 'k' : call ? 'f' : '';
+      out += (kind ? `<span class="${kind}">${word}</span>` : word) + (call ? escapeHtml(call) : '');
+    } else out += escapeHtml(other);
+  }
+  return out + '\n';
+}
+export default function(component) {
+  const { data, parentElement, setStateValue, setTriggerValue } = component;
+  let root = parentElement.querySelector('.sql-editor');
+  if (!root) {
+    root = document.createElement('div');
+    root.className = 'sql-editor';
+    root.innerHTML = '<pre aria-hidden="true"></pre><textarea spellcheck="false" '
+      + 'aria-label="Consulta SQL" autocomplete="off" autocapitalize="off"></textarea>';
+    parentElement.appendChild(root);
+  }
+  const area = root.querySelector('textarea');
+  const view = root.querySelector('pre');
+  for (const [name, value] of Object.entries(data.colours)) root.style.setProperty(`--${name}`, value);
+  root.style.height = `${data.height}px`;
+  area.readOnly = Boolean(data.readonly);
+  root.classList.toggle('readonly', area.readOnly);
+  area.setAttribute('aria-label', data.language === 'python' ? 'Código Python' : 'Consulta SQL');
+  const paint = () => { view.innerHTML = colour(area.value, data.language); view.scrollTop = area.scrollTop; view.scrollLeft = area.scrollLeft; };
+  const send = () => setStateValue('sql', { text: area.value, version: data.version });
+  if (root.dataset.version !== String(data.version)) {
+    root.dataset.version = String(data.version);
+    area.value = data.sql;
+    paint();
+  }
+  let timer = null;
+  area.oninput = () => { paint(); clearTimeout(timer); timer = setTimeout(send, 350); };
+  area.onblur = () => { clearTimeout(timer); send(); };
+  area.onscroll = () => { view.scrollTop = area.scrollTop; view.scrollLeft = area.scrollLeft; };
+  area.onkeydown = (event) => {
+    if (event.key === 'Tab') {
+      event.preventDefault();
+      const start = area.selectionStart;
+      area.setRangeText('    ', start, area.selectionEnd, 'end');
+      paint();
+    } else if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      clearTimeout(timer);
+      send();
+      setTriggerValue('run', Date.now());
+    }
+  };
+}
+"""
+SQL_EDITOR_CSS = """
+.sql-editor { position: relative; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--bg); overflow: hidden; }
+.sql-editor pre, .sql-editor textarea { position: absolute; inset: 0; margin: 0; padding: 14px 16px;
+  font: 13.5px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace; tab-size: 4;
+  white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto; border: 0; }
+.sql-editor pre { color: var(--text); pointer-events: none; }
+.sql-editor textarea { color: transparent; background: transparent; caret-color: var(--caret);
+  resize: none; outline: none; }
+.sql-editor textarea::selection { background: var(--selection); color: transparent; }
+.sql-editor:focus-within { border-color: var(--focus); }
+.sql-editor.readonly textarea { caret-color: transparent; }
+.sql-editor.readonly:focus-within { border-color: var(--border); }
+.sql-editor .k { color: var(--keyword); font-weight: 600; }
+.sql-editor .f { color: var(--function); }
+.sql-editor .s { color: var(--string); }
+.sql-editor .i { color: var(--identifier); }
+.sql-editor .n { color: var(--number); }
+.sql-editor .c { color: var(--comment); font-style: italic; }
+"""
+SQL_EDITOR_COLOURS = {
+    "dark": {"bg": "#1e1e1e", "text": "#d4d4d4", "keyword": "#569cd6", "function": "#dcdcaa",
+             "string": "#ce9178", "identifier": "#9cdcfe", "number": "#b5cea8", "comment": "#6a9955",
+             "caret": "#ffffff", "selection": "rgba(38,79,120,.85)", "border": "#3c3c3c"},
+    "light": {"bg": "#ffffff", "text": "#1f2328", "keyword": "#0033b3", "function": "#795e26",
+              "string": "#c2410c", "identifier": "#001080", "number": "#098658", "comment": "#008000",
+              "caret": "#111827", "selection": "rgba(173,214,255,.7)", "border": "#d6dde8"},
+}
 
 
 @st.cache_data(show_spinner=False)
@@ -4292,6 +4403,27 @@ def read_cached_tables(database_version):
     return queries.list_tables()
 
 
+def expand_json_columns(rows):
+    """Open every text column that holds JSON objects into one column per field, so
+    a packed record (a rejected row, say) reads whole instead of cut at the edge
+    (D-134). Returns (rows, names of the opened columns)."""
+    opened = []
+    for column in list(rows.columns):
+        values = rows[column].dropna()
+        if values.empty or not pd.api.types.is_string_dtype(values) or not values.astype(str).str.startswith("{").all():
+            continue
+        try:
+            fields = pd.json_normalize([json.loads(value) for value in rows[column].fillna("{}")])
+        except (TypeError, ValueError):
+            continue
+        fields.columns = [name if name not in rows.columns else f"{column}.{name}" for name in fields.columns]
+        position = rows.columns.get_loc(column)
+        rows = pd.concat([rows.iloc[:, :position], fields.set_index(rows.index),
+                          rows.iloc[:, position + 1:]], axis=1)
+        opened.append(column)
+    return rows, opened
+
+
 def build_table_preview_sql(table):
     return f"SELECT *\nFROM {table}\nLIMIT 100"
 
@@ -4303,6 +4435,7 @@ def load_console(source, sql, run=False):
     st.session_state[CONSOLE_SOURCE] = source
     st.session_state[CONSOLE_TEXT] = sql
     st.session_state[CONSOLE_ORIGINAL] = sql
+    st.session_state[CONSOLE_VERSION] = st.session_state.get(CONSOLE_VERSION, 0) + 1
     st.session_state[CONSOLE_EXECUTED] = sql if run else ""
     if source[0] == "query":
         st.query_params[CATALOG_PARAMETER] = source[1]
@@ -4317,6 +4450,25 @@ def run_console():
 def restore_console():
     """Undo the edits: back to the query as it was loaded, without running it."""
     st.session_state[CONSOLE_TEXT] = st.session_state.get(CONSOLE_ORIGINAL, "")
+    st.session_state[CONSOLE_VERSION] = st.session_state.get(CONSOLE_VERSION, 0) + 1
+
+
+def show_sql_editor(mode):
+    """The coloured editor; what is typed comes back as {text, version}, applied only
+    when it belongs to the query loaded now, so a new load is never overwritten by
+    text typed into the previous one."""
+    editor = st.components.v2.component("sql_editor", js=SQL_EDITOR_JS, css=SQL_EDITOR_CSS)
+    base = "dark" if charts.get_palette(mode)["base"] == charts.BASE_DARK else "light"
+    colours = dict(SQL_EDITOR_COLOURS[base], focus=charts.get_palette(mode)["accent"])
+    version = st.session_state[CONSOLE_VERSION]
+    result = editor(key="sql_editor", height=300, on_sql_change=lambda: None, on_run_change=lambda: None,
+                    data={"sql": st.session_state[CONSOLE_TEXT], "version": version, "height": 300,
+                          "colours": colours})
+    typed = result.sql
+    if isinstance(typed, dict) and typed.get("version") == version:
+        st.session_state[CONSOLE_TEXT] = typed.get("text", "")
+    if result.run:
+        run_console()
 
 
 def sync_console_with_address():
@@ -4357,6 +4509,22 @@ def show_console_explorer(source):
                       args=(("query", entry["name"]), read_catalog_sql(entry["name"])))
 
 
+# Coded column names of the base, explained on hover in the console grid.
+CONSOLE_COLUMN_HELP = {
+    "source": "Fuente ODEPA de la fila: wholesale = precios mayoristas; consumer = precios al consumidor.",
+    "reason": "Regla de calidad que rechazó la fila (RN-11), p. ej. NON_POSITIVE_PRICE = precio cero o negativo.",
+    "original_row": "La fila tal como llegó del archivo de origen, antes de limpiarla.",
+    "channel": "Canal de venta: Mayorista para la fuente wholesale; feria, supermercado, etc. para consumer.",
+    "normalized_unit": "Unidad a la que se convirtió el precio para poder compararlo (RN-03 a RN-05).",
+    "price": "Precio semanal en pesos chilenos, en la unidad normalizada.",
+    "volume": "Volumen transado en la semana (solo mayorista; pondera el precio, RN-07).",
+    "observation_count": "Cuántos precios diarios o puntos de venta se promediaron en la semana.",
+    "week_start": "Lunes que identifica la semana (RN-08).",
+    "flag": "Marca de calidad: vacía si es normal; ATIPICO si quedó lejos de la mediana de su "
+            "producto esa semana (RN-12); UNIDAD_NO_CONVERTIBLE si su unidad no se pudo comparar (RN-05).",
+}
+
+
 def describe_console_source(source):
     """(title, metadata HTML) of what the editor holds: for a saved query, what it
     compares and where it lives in the repository."""
@@ -4384,7 +4552,7 @@ def show_console_result(source, executed, mode):
         st.markdown(f'<div class="console-status console-status-error">✕ {html.escape(result["error"])}</div>',
                     unsafe_allow_html=True)
         return
-    rows = result["rows"]
+    rows, opened = expand_json_columns(result["rows"])
     shown = charts.format_thousands(len(rows))
     count = (f"primeras {shown} filas (hay más; agrega LIMIT o filtros)" if result["truncated"]
              else f"{shown} {'fila' if len(rows) == 1 else 'filas'}")
@@ -4396,7 +4564,11 @@ def show_console_result(source, executed, mode):
     names = ["Resultados"] + (["Gráfico"] if charted else [])
     tabs = dict(zip(names, st.tabs(names)))
     with tabs["Resultados"]:
-        st.dataframe(rows, hide_index=True, width="stretch", height=360)
+        if opened:
+            st.caption(f"La columna {', '.join(opened)} trae JSON: se muestra abierta, un campo por columna.")
+        helps = {column: st.column_config.Column(help=CONSOLE_COLUMN_HELP[column])
+                 for column in rows.columns if column in CONSOLE_COLUMN_HELP}
+        st.dataframe(rows, hide_index=True, width="stretch", height=360, column_config=helps)
         st.download_button("Descargar CSV", rows.to_csv(index=False).encode("utf-8"),
                            file_name="consulta.csv", mime="text/csv", icon=":material/download:",
                            on_click="ignore", key="console_download")
@@ -4422,8 +4594,6 @@ def build_console_css(mode):
     .st-key-console_explorer button p {{font-size:.82rem; text-align:left; white-space:normal;
         line-height:1.3;}}
     .st-key-console_explorer button[kind="secondary"] {{border-color:transparent; background:transparent;}}
-    .st-key-{CONSOLE_TEXT} textarea {{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-        font-size:.86rem; line-height:1.5;}}
     .console-title {{font-size:1.05rem; font-weight:650; color:{palette['strong_text']}; margin:0;}}
     .console-meta {{font-size:.78rem; color:{palette['text']}; margin:2px 0 8px;}}
     .console-status {{font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:.8rem;
@@ -4463,7 +4633,7 @@ def show_queries_tab(mode):
         title, meta = describe_console_source(source)
         st.markdown(f'<p class="console-title">{html.escape(title)}</p>'
                     f'<div class="console-meta">{meta}</div>', unsafe_allow_html=True)
-        st.text_area("Consulta SQL", key=CONSOLE_TEXT, height=270, label_visibility="collapsed")
+        show_sql_editor(mode)
         executed = st.session_state.get(CONSOLE_EXECUTED, "")
         text = st.session_state.get(CONSOLE_TEXT)
         with st.container(horizontal=True, vertical_alignment="center", key="console_actions"):
@@ -4476,7 +4646,7 @@ def show_queries_tab(mode):
             if executed and text != executed:
                 st.caption("Hay cambios sin ejecutar.")
             else:
-                st.caption(f"Solo lectura · SELECT o WITH · hasta "
+                st.caption(f"Ctrl/⌘ + Enter ejecuta · solo lectura · SELECT o WITH · hasta "
                            f"{charts.format_thousands(queries.CONSOLE_ROW_LIMIT)} filas · "
                            f"{queries.CONSOLE_TIMEOUT_SECONDS} s")
         show_console_result(source, executed, mode)
@@ -4485,6 +4655,190 @@ def show_queries_tab(mode):
 def show_queries_page(mode):
     show_queries_page_header()
     show_queries_tab(mode)
+# endregion
+
+
+# region Python console (D-135)
+PYTHON_PARAMETER = "python"
+PYTHON_SELECTED = "python_console_question"
+PYTHON_EXECUTED = "python_console_executed"
+# What the project does in Python, one tile per stage, above the console.
+PYTHON_STAGES = [
+    (":material/download:", "Ingesta", "agent/", "Descarga los archivos de ODEPA y valida su forma."),
+    (":material/filter_alt:", "ETL", "etl/", "Limpia, valida (RN-01 a RN-14), normaliza unidades, "
+                                              "agrega por semana y carga SQLite."),
+    (":material/insights:", "Indicadores", "bi/", "K5 desfase, K6 alertas y el contexto del precio: "
+                                                  "lo que SQLite no calcula solo."),
+    (":material/dashboard:", "Dashboard", "bi/dashboard.py", "Streamlit y Plotly sobre la misma base."),
+]
+
+
+@st.cache_data(show_spinner=False)
+def read_cached_python_options(database_version):
+    return {name: list(read()) for name, read in python_console.OPTION_READERS.items()}
+
+
+@st.cache_data(show_spinner=False)
+def read_cached_python_run(name, value_items, database_version):
+    """One run of a question's script, cached per parameters and database version."""
+    question = python_console.QUESTIONS_BY_NAME[name]
+    try:
+        run = python_console.run_script(question, dict(value_items),
+                                        read_cached_python_options(database_version))
+        return dict(run, error=None)
+    except Exception as error:  # shown like a SQLite error in the SQL console
+        return {"result": pd.DataFrame(), "answer": None, "ms": 0.0,
+                "error": f"{type(error).__name__}: {error}"}
+
+
+def python_widget_key(name, parameter):
+    return f"python_param_{name}_{parameter['name']}"
+
+
+def read_python_values(question, options):
+    """{parameter: value} from the widgets, their defaults before the first draw."""
+    defaults = python_console.default_parameters(question, options)
+    return {parameter["name"]: st.session_state.get(python_widget_key(question["name"], parameter),
+                                                    defaults[parameter["name"]])
+            for parameter in question["params"]}
+
+
+def run_python():
+    name = st.session_state[PYTHON_SELECTED]
+    values = read_python_values(python_console.QUESTIONS_BY_NAME[name],
+                                read_cached_python_options(get_database_version()))
+    st.session_state[PYTHON_EXECUTED] = (name, tuple(sorted(values.items())))
+
+
+def select_python_question(name, run=False):
+    """A click only loads the question (as in the SQL console, D-127); a link runs it."""
+    st.session_state[PYTHON_SELECTED] = name
+    st.query_params[PYTHON_PARAMETER] = name
+    if run:
+        run_python()
+
+
+def sync_python_with_address():
+    requested = st.query_params.get(PYTHON_PARAMETER)
+    if requested in python_console.QUESTIONS_BY_NAME and st.session_state.get(PYTHON_SELECTED) != requested:
+        select_python_question(requested, run=True)
+    if PYTHON_SELECTED not in st.session_state:
+        select_python_question(python_console.QUESTIONS[0]["name"], run=True)
+
+
+def show_python_stages():
+    with st.container(horizontal=True, key="python_stages", gap="small"):
+        for icon, title, folder, text in PYTHON_STAGES:
+            with st.container(border=True):
+                st.markdown(f"{icon} **{title}** · `{folder}`")
+                st.caption(text)
+
+
+def show_python_explorer(selected):
+    st.markdown('<div class="console-pane-title">Preguntas</div>', unsafe_allow_html=True)
+    for group in dict.fromkeys(question["group"] for question in python_console.QUESTIONS):
+        st.markdown(f'<div class="console-group">{html.escape(group)}</div>', unsafe_allow_html=True)
+        for question in python_console.QUESTIONS:
+            if question["group"] == group:
+                st.button(question["question"], key=f"python_question_{question['name']}",
+                          icon=":material/terminal:", width="stretch",
+                          type="primary" if question["name"] == selected else "secondary",
+                          on_click=select_python_question, args=(question["name"],))
+
+
+def build_function_links_html(question):
+    links = []
+    for function in question["functions"]:
+        path, line, _ = python_console.describe_function(function)
+        address = f"{project.build_github_url(path)}#L{line}"
+        links.append(build_external_link_html(f"{function.__name__} · {path}:{line}", address))
+    return " · ".join(links)
+
+
+def show_python_parameters(question, options, values):
+    if not question["params"]:
+        return
+    with st.container(horizontal=True, key="python_parameters"):
+        for parameter in question["params"]:
+            key = python_widget_key(question["name"], parameter)
+            if "text" in parameter:
+                st.text_input(parameter["label"], value=values[parameter["name"]], key=key,
+                              max_chars=python_console.UNIT_MAXIMUM_LENGTH)
+            else:
+                offered = options[parameter["options"]]
+                st.selectbox(parameter["label"], offered, key=key,
+                             index=offered.index(values[parameter["name"]]))
+
+
+def show_python_editor(script, mode):
+    """The script, coloured and read-only: the parameters change it, the visitor does not."""
+    editor = st.components.v2.component("sql_editor", js=SQL_EDITOR_JS, css=SQL_EDITOR_CSS)
+    base = "dark" if charts.get_palette(mode)["base"] == charts.BASE_DARK else "light"
+    colours = dict(SQL_EDITOR_COLOURS[base], focus=charts.get_palette(mode)["accent"])
+    height = min(30 + 21 * (script.count("\n") + 1), 440)
+    result = editor(key="python_editor", height=height, on_sql_change=lambda: None,
+                    on_run_change=lambda: None,
+                    data={"sql": script, "version": f"{hash(script)}", "height": height,
+                          "colours": colours, "language": "python", "readonly": True})
+    if result.run:
+        run_python()
+
+
+def show_python_result(question, executed, values):
+    if executed != (question["name"], tuple(sorted(values.items()))):
+        st.markdown('<div class="console-status console-status-idle">Script listo · pulsa '
+                    '<b>Ejecutar</b> para correrlo sobre los datos reales.</div>', unsafe_allow_html=True)
+        return
+    run = read_cached_python_run(question["name"], executed[1], get_database_version())
+    if run["error"]:
+        st.markdown(f'<div class="console-status console-status-error">✕ {html.escape(run["error"])}</div>',
+                    unsafe_allow_html=True)
+        return
+    rows = run["result"]
+    count = f"{charts.format_thousands(len(rows))} {'fila' if len(rows) == 1 else 'filas'}"
+    answer = f'{html.escape(run["answer"])} · ' if run["answer"] else ""
+    st.markdown(f'<div class="console-status">✓ {answer}{count} · {run["ms"]:.0f} ms</div>',
+                unsafe_allow_html=True)
+    result_tab, functions_tab = st.tabs(["Resultado", "Funciones usadas"])
+    with result_tab:
+        st.dataframe(rows, hide_index=True, width="stretch", height=min(38 + 35 * max(len(rows), 1), 360))
+    with functions_tab:
+        for function in question["functions"]:
+            path, line, source = python_console.describe_function(function)
+            st.caption(f"{path}, línea {line}")
+            st.code(source, language="python")
+
+
+def show_python_tab(mode):
+    """Python console: questions | the script that answers, Ejecutar, the result (D-135)."""
+    st.markdown(build_console_css(mode), unsafe_allow_html=True)
+    sync_python_with_address()
+    options = read_cached_python_options(get_database_version())
+    question = python_console.QUESTIONS_BY_NAME[st.session_state[PYTHON_SELECTED]]
+    values = read_python_values(question, options)
+    explorer_column, work_column = st.columns([1, 3], gap="medium")
+    with explorer_column, st.container(border=True, key="console_explorer", height=700):
+        show_python_explorer(question["name"])
+    with work_column:
+        st.markdown(f'<p class="console-title">{html.escape(question["question"])}</p>'
+                    f'<div class="console-meta">{format_inline(question["does"])}<br>'
+                    f'{build_function_links_html(question)}</div>', unsafe_allow_html=True)
+        show_python_parameters(question, options, values)
+        values = read_python_values(question, options)
+        show_python_editor(python_console.build_script(question, values), mode)
+        with st.container(horizontal=True, vertical_alignment="center", key="console_actions"):
+            st.button("Ejecutar", type="primary", icon=":material/play_arrow:", key="python_run",
+                      on_click=run_python)
+            st.caption("Ctrl/⌘ + Enter ejecuta · es el código del proyecto: cambian los parámetros, "
+                       "no el código")
+        show_python_result(question, st.session_state.get(PYTHON_EXECUTED), values)
+
+
+def show_python_page(mode):
+    show_compact_page_header("Consola Python", "Lo que el proyecto calcula en Python, "
+                             "ejecutado sobre datos.db con sus funciones reales.")
+    show_python_stages()
+    show_python_tab(mode)
 # endregion
 
 
@@ -7945,6 +8299,7 @@ def show_document_page(mode, title, subtitle, renderer):
 
 SHOW_PAGE_BY_TITLE = {
     PAGE_DOCUMENTATION: show_documentation_page,
+    PAGE_PYTHON: show_python_page,
     PAGE_DOC_BI: show_documentation_bi_page, PAGE_DOC_BA: show_documentation_ba_page,
     PAGE_DOC_IT: show_documentation_it_page,
     PAGE_HOME: show_home_page,
@@ -8339,6 +8694,7 @@ SIDEBAR_TREE = [
           # source the whole pipeline starts from, so they sit near Arquitectura.
           (SECTION_SOURCES, SOURCE_LINKS),
           (SECTION_QUERIES, [PAGE_QUERIES]),
+          (SECTION_PYTHON, [PAGE_PYTHON]),
           # «El proyecto» and the old «Documentación» folder of six pages are now
           # three, one per reader (D-105, D-110): the same folder pattern as every
           # other section, not a special-cased flat link.
@@ -8348,12 +8704,12 @@ SIDEBAR_TREE = [
           ]),
 ]
 SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Arquitectura",
-                      SECTION_QUERIES: "Análisis SQL",
+                      SECTION_QUERIES: "Análisis SQL", SECTION_PYTHON: "Análisis con Python",
                       SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación",
                       SECTION_RESOURCES: "GitHub"}
 SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Contexto de precios",
                   PAGE_DIAGRAMS: "Pipeline", PAGE_OPERATIONS: "Calidad de datos",
-                  PAGE_QUERIES: "Preguntas y resultados",
+                  PAGE_QUERIES: "Preguntas y resultados", PAGE_PYTHON: "Preguntas y resultados",
                   PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual",
                   PAGE_COVER: "Descripción general", PAGE_BUSINESS: "Alcance del proyecto"}
 
