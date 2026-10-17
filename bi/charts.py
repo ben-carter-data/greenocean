@@ -704,7 +704,6 @@ def draw_regional_change_map(rows, geometry, mode, full_country=True):
 
 # region Contexto del precio (D-094)
 CONTEXT_CHANNELS = {"Feria libre": "#2563C9", "Supermercado": "#D9622B"}
-CONTEXT_STATE_WORDS = {"sobre": "sobre lo habitual", "bajo": "bajo lo habitual"}
 
 
 def split_gaps(rows, value):
@@ -744,44 +743,10 @@ def draw_price_context(rows, mode, height=380):
     last = lines.sort_values("week_start").groupby("channel").tail(1)
     point = alt.Chart(last).mark_point(filled=True, size=70, stroke=palette["card"], strokeWidth=1.5).encode(
         x=x, y=alt.Y("price:Q", scale=scale), color=alt.Color("channel:N", scale=colors, legend=None))
-    flagged = last[last["state"].isin(CONTEXT_STATE_WORDS)].assign(
-        label=lambda frame: frame["channel"].map(lambda c: c.split()[0]) + ": "
-        + frame["state"].map(CONTEXT_STATE_WORDS))
-    label = alt.Chart(flagged).mark_text(align="right", dx=-10, dy=-14, fontSize=12, fontWeight=700).encode(
-        x=x, y=alt.Y("price:Q", scale=scale), text="label:N",
-        color=alt.Color("channel:N", scale=colors, legend=None))
-    chart = alt.layer(band, line, point, label).properties(height=height)
+    # The state (sobre/dentro/bajo) is already in the summary sentence and the
+    # «Precio esta semana» card; the chart itself stays free of text labels (D-098).
+    chart = alt.layer(band, line, point).properties(height=height)
     return apply_chart_style(chart, mode)
-
-
-def draw_seasonal_pattern(pattern, channel, month, mode, height=150):
-    """12 bars, 100 = average of the year; the current month solid, the next two outlined."""
-    color = CONTEXT_CHANNELS.get(channel, get_palette(mode)["accent"])
-    following = {(month - 1 + step) % 12 + 1 for step in (1, 2)}
-    rows = pd.DataFrame([{"month": number, "label": MONTH_NAMES[number - 1].capitalize(),
-                          "value": pattern[number], "text": f"{pattern[number]:.0f}",
-                          "kind": "actual" if number == month else "proximo" if number in following else "otro"}
-                         for number in range(1, 13) if number in pattern])
-    if rows.empty:
-        return None
-    low = max(0, min(rows["value"].min(), 100) - 12)
-    scale = alt.Scale(domain=[low, max(rows["value"].max(), 100) + 8], nice=False)
-    x = alt.X("label:N", sort=[name.capitalize() for name in MONTH_NAMES], title=None,
-              axis=alt.Axis(labelAngle=0))
-    rows["fill"] = rows["kind"].map({"actual": color, "proximo": color + "29", "otro": color + "38"})
-    rows["outline"] = rows["kind"].map({"actual": color, "proximo": color, "otro": color + "00"})
-    rows["base"] = low
-    # Bars start at the bottom of the scale, not below it: they never cover the month names.
-    bars = alt.Chart(rows).mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3, strokeWidth=1.5).encode(
-        x=x, y=alt.Y("value:Q", scale=scale, title=None, axis=None), y2="base:Q",
-        color=alt.Color("fill:N", scale=None, legend=None), stroke=alt.Stroke("outline:N", scale=None, legend=None),
-        tooltip=[alt.Tooltip("label:N", title="Mes"), alt.Tooltip("value:Q", title="Índice", format=".0f")])
-    text = alt.Chart(rows).mark_text(dy=-7, fontSize=11, color=get_palette(mode)["text"]).encode(
-        x=x, y=alt.Y("value:Q", scale=scale), text="text:N")
-    rule = alt.Chart(pd.DataFrame({"value": [100]})).mark_rule(strokeDash=[3, 3], opacity=.5,
-                                                               color=get_palette(mode)["text"]).encode(
-        y=alt.Y("value:Q", scale=scale))
-    return apply_chart_style(alt.layer(bars, rule, text).properties(height=height), mode)
 
 
 def draw_full_history(rows, mode, height=360):

@@ -1363,20 +1363,41 @@ def test_movement_ring_parts_cover_comparable_series_not_the_top_n():
 
 
 @needs_database
-def test_d094_price_context_answers_on_one_screen_with_real_figures():
+def test_d098_price_context_answers_on_one_screen_without_the_removed_cards():
     app = draw_page(dashboard.PAGE_SEASONALITY)
     assert not app.exception and not app.expander and not app.tabs
     text = ' '.join(block.value for block in app.markdown)
     for heading in ['¿El precio de esta semana es normal?', 'Últimas 52 semanas frente a lo habitual',
-                    'Patrón de temporada', 'Precio esta semana', '¿Dónde conviene comprar?',
-                    'Qué suele pasar en las próximas semanas', 'No es un pronóstico.']:
+                    'Precio esta semana', 'Qué suele pasar en las próximas semanas',
+                    'Otros productos de Hortalizas fuera de lo habitual']:
         assert heading in text, heading
+    # Retired by D-098: the standalone gap card and the seasonal-pattern bar chart.
+    assert '¿Dónde conviene comprar?' not in text and 'Patrón de temporada' not in text
     assert 'Resumen</a> › ' in text and 'Volver al resumen' in text
+    # The generic path/Volver header is suppressed here: only the theme switcher remains.
+    assert '<div class="app-brand"' not in text
+    assert not any(button.key == 'return_to_previous' for button in app.button)
     sentence = re.search(r'class="ctx-answer">(.*?)</p>', text).group(1)
     assert sentence.startswith('Esta semana, el precio de tomate larga vida en feria libre está')
+    assert '<b style="color:#2563C9">' in sentence
     assert 'Cambiar el producto del análisis' not in text
     assert [box.label for box in app.selectbox] == ['Familia', 'Producto', 'Calidad · unidad']
     assert 'Precios nominales, sin ajuste por inflación.' in ' '.join(c.value for c in app.caption)
+    assert 'class="hint"' in text  # long paragraphs became ⓘ tooltips (D-098)
+
+
+@needs_database
+def test_d098_next_months_cover_both_channels_and_the_outlier_table_links_back():
+    app = draw_page(dashboard.PAGE_SEASONALITY)
+    assert not app.exception
+    text = ' '.join(block.value for block in app.markdown)
+    table = re.search(r'<table class="ctx-next-table">.*?</table>', text).group(0)
+    assert table.count('<th>') >= 3  # three month headers
+    assert 'Feria libre' in table and 'Supermercado' in table
+    outliers = re.search(r'<section class="ctx-card ctx-card-wide">.*?</section>', text).group(0)
+    rows = re.findall(r'<tr><td><a href="([^"]+)"', outliers)
+    if rows:
+        assert '_home_key=' in rows[0]
 
 
 @needs_database

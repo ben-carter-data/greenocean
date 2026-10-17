@@ -1,4 +1,4 @@
-"""Rules of «Contexto del precio» (D-094): usual range, state, gap and seasonal pattern."""
+"""Rules of «Contexto del precio» (D-094, D-098): usual range, state, gap, pattern."""
 import pandas as pd
 import pytest
 
@@ -10,30 +10,43 @@ def series(prices):
     return pd.DataFrame({"week_start": pd.to_datetime(list(prices)), "national_price": list(prices.values())})
 
 
-# Monday of ISO week 41 in each year.
+# Monday of ISO week 41 (and its neighbours, weeks 40 and 42) in each year.
+WEEK_40 = {2022: "2022-10-03", 2023: "2023-10-02", 2024: "2024-09-30", 2025: "2025-09-29", 2026: "2026-09-28"}
 WEEK_41 = {2022: "2022-10-10", 2023: "2023-10-09", 2024: "2024-10-07", 2025: "2025-10-06", 2026: "2026-10-05"}
+WEEK_42 = {2022: "2022-10-17", 2023: "2023-10-16", 2024: "2024-10-14", 2025: "2025-10-13", 2026: "2026-10-20"}
 
 
-def test_usual_range_uses_the_same_iso_week_of_previous_years_only():
-    rows = series({WEEK_41[2022]: 100, WEEK_41[2023]: 200, WEEK_41[2024]: 300, WEEK_41[2025]: 400,
-                   WEEK_41[2026]: 9999, "2025-10-13": 5000})
+def test_usual_range_pools_the_week_and_its_iso_neighbours_across_previous_years():
+    rows = series({WEEK_41[2022]: 100, WEEK_41[2023]: 200, WEEK_40[2024]: 250, WEEK_42[2025]: 500,
+                   WEEK_41[2026]: 9999, "2025-11-03": 7000})
     low, high, years = pc.rango_habitual(rows, WEEK_41[2026])
-    # The current year and the neighbouring week stay out.
+    # The current year and a week outside the ±1 window stay out.
     assert years == 4
-    assert low == pytest.approx(175) and high == pytest.approx(325)
+    assert low == pytest.approx(175) and high == pytest.approx(312.5)
 
 
-def test_usual_range_needs_two_previous_years():
+def test_usual_range_needs_two_previous_years_with_a_price_in_the_window():
     rows = series({WEEK_41[2025]: 400, WEEK_41[2026]: 500})
     assert pc.rango_habitual(rows, WEEK_41[2026]) is None
     assert pc.estado_precio(500, None) == "sin_historia"
 
 
 def test_a_missing_week_in_one_year_leaves_that_year_out():
-    rows = series({WEEK_41[2022]: 100, WEEK_41[2024]: 300, "2023-10-16": 900})
+    rows = series({WEEK_41[2022]: 100, WEEK_41[2024]: 300, "2023-11-20": 900})
     assert pc.rango_habitual(rows, WEEK_41[2026])[2] == 2
-    # Incomplete years: only one previous year with that week is not enough.
-    assert pc.rango_habitual(series({WEEK_41[2024]: 300, "2023-10-16": 900}), WEEK_41[2026]) is None
+    # Incomplete years: only one previous year with a price in the window is not enough.
+    assert pc.rango_habitual(series({WEEK_41[2024]: 300, "2023-11-20": 900}), WEEK_41[2026]) is None
+
+
+def test_the_window_narrows_at_the_edges_of_the_calendar_instead_of_guessing():
+    # ISO week 1 of 2026 starts 2025-12-29; it has no week 0, only weeks 1 and 2.
+    rows = series({"2023-01-02": 100,    # 2023, week 1: counts
+                   "2023-01-09": 200,    # 2023, week 2: counts
+                   "2024-01-01": 300,    # 2024, week 1: counts
+                   "2025-12-22": 9000})  # 2025, week 52: NOT a neighbour of week 1
+    low, high, years = pc.rango_habitual(rows, "2025-12-29")
+    assert years == 2
+    assert low == pytest.approx(150) and high == pytest.approx(250)
 
 
 def test_price_state_against_p25_and_p75():
@@ -63,12 +76,13 @@ def test_gap_is_supermarket_over_street_market_on_common_weeks():
     assert gaps["gap"].iloc[0] == pytest.approx(25.0)
 
 
-def test_usual_gap_is_the_median_of_the_same_month_in_previous_years():
-    gaps = pd.DataFrame({"week_start": pd.to_datetime(["2023-10-02", "2023-10-09", "2024-10-07",
-                                                       "2024-11-04", "2026-10-05"]),
-                         "gap": [10.0, 20.0, 40.0, 99.0, 5.0]})
-    assert pc.brecha_habitual(gaps, "2026-10-05") == pytest.approx(20.0)
-    assert pc.brecha_habitual(gaps[gaps["week_start"].dt.year != 2023], "2026-10-05") is None
+def test_usual_gap_range_pools_the_same_iso_window_as_prices():
+    gaps = pd.DataFrame({"week_start": pd.to_datetime([WEEK_40[2023], WEEK_41[2023], WEEK_42[2024], WEEK_41[2026]]),
+                         "gap": [10.0, 20.0, 40.0, 5.0]})
+    low, high, years = pc.brecha_rango_habitual(gaps, WEEK_41[2026])
+    # 2023 contributes both its week-40 and week-41 gaps (10 and 20); 2024 contributes 40.
+    assert years == 2 and low == pytest.approx(15.0) and high == pytest.approx(30.0)
+    assert pc.brecha_rango_habitual(gaps[gaps["week_start"].dt.year != 2023], WEEK_41[2026]) is None
 
 
 def test_seasonal_pattern_averages_months_then_years_and_leaves_the_current_year_out():
@@ -82,9 +96,10 @@ def test_seasonal_pattern_averages_months_then_years_and_leaves_the_current_year
     assert pc.patron_estacional(rows.iloc[:0]) == {}
 
 
-def test_next_months_are_relative_to_the_current_month_and_wrap_the_year():
-    pattern = {11: 100.0, 12: 90.0, 1: 110.0}
+def test_next_months_default_to_three_and_wrap_the_year():
+    pattern = {10: 95.0, 11: 100.0, 12: 90.0, 1: 110.0}
     assert pc.proximos_meses(pattern, 11) == [(12, pytest.approx(-10.0)), (1, pytest.approx(10.0))]
+    assert [m for m, _ in pc.proximos_meses(pattern, 10)] == [11, 12, 1]
     assert pc.proximos_meses(pattern, 5) == []
 
 
@@ -94,16 +109,28 @@ def test_answer_sentence_is_built_from_states_and_names_missing_history():
                         "en supermercado está dentro de lo habitual. "
                         "La diferencia entre ambos canales es menor que de costumbre.")
     assert "sin historia suficiente" in pc.answer_sentence("Tomate", 10, {"Feria libre": "sin_historia"}, None)
-    assert pc.describe_gap_comparison(30, 20) == "mayor"
-    assert pc.describe_gap_comparison(21, 20) == "similar"
-    assert pc.describe_gap_comparison(None, 20) is None
+    # No gap_word: the clause about the gap is left out entirely (D-098).
+    assert "diferencia" not in pc.answer_sentence("Tomate", 10, {"Feria libre": "dentro"}, None)
+
+
+def test_answer_sentence_wrap_colours_each_channel_state_and_skips_missing_history():
+    seen = []
+    def wrap(channel, phrase):
+        seen.append((channel, phrase))
+        return f"[{channel}:{phrase}]"
+    sentence = pc.answer_sentence("palta hass", 3, {"Feria libre": "sobre", "Supermercado": "sin_historia"},
+                                  None, wrap=wrap)
+    assert seen == [("Feria libre", "sobre lo habitual")]
+    assert "[Feria libre:sobre lo habitual]" in sentence
+    assert "sin historia suficiente para compararlo" in sentence
+    assert "[Supermercado:" not in sentence
 
 
 def test_calendar_columns_from_dim_date_drive_the_usual_range_and_the_month():
     # Columns joined from dim_date win over the ones computed from week_start.
     rows = series({"2023-03-06": 100, "2024-03-04": 300}).assign(iso_year=[2023, 2024], iso_week=[7, 7], month=[2, 2])
     assert pc.rango_habitual(rows, "2026-03-02", iso=(2026, 7))[2] == 2
-    assert pc.rango_habitual(rows, "2026-03-02", iso=(2026, 10)) is None
+    assert pc.rango_habitual(rows, "2026-03-02", iso=(2026, 20)) is None
     seasonal = pd.DataFrame({"week_start": pd.to_datetime(["2024-03-04", "2025-03-03"]), "price_year": [2024, 2025],
                              "seasonal_index": [1.0, 1.2], "month": [2, 2]})
     assert set(pc.patron_estacional(seasonal)) == {2}

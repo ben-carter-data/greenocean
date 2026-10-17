@@ -1,9 +1,10 @@
-"""Contexto del precio: is this week's price normal? (D-094)
+"""Contexto del precio: is this week's price normal? (D-094, D-098)
 
 Pure pandas functions, without Streamlit, so each rule can be tested on its own.
-«Habitual» means the P25–P75 range of the same ISO week in previous years: the
-current year never enters its own reference, and fewer than two previous years
-is not enough history to classify a price.
+«Habitual» means the P25–P75 range of a ±1 ISO-week window (the target week and
+its immediate neighbours, up to three weeks) in previous years: the current year
+never enters its own reference, and fewer than two previous years with a price
+in that window is not enough history to classify a price (D-098).
 """
 import math
 
@@ -31,8 +32,19 @@ def read_calendar(rows):
     return calendar["year"].to_numpy(), calendar["week"].to_numpy(), days.dt.month.to_numpy()
 
 
+def nearby_mask(weeks, years, week, year):
+    """Rows within ±1 ISO week of (year, week), strictly before it (D-098).
+
+    At the edges of the calendar (week 1, or a year's last week) the window has
+    only two weeks instead of three: a neighbouring week number that never
+    exists (0, or 53/54) simply matches nothing, rather than guessing another
+    year's week count.
+    """
+    return (weeks >= week - 1) & (weeks <= week + 1) & (years < year)
+
+
 def rango_habitual(rows, week_start, iso=None):
-    """(P25, P75, number of years) of the same ISO week in previous years, or None.
+    """(P25, P75, number of previous years) of a ±1 ISO-week window, or None.
 
     rows: one price series (week_start, national_price, and the dim_date columns when
     available). iso: (ISO year, ISO week) of week_start from dim_date. Only years before
@@ -42,11 +54,12 @@ def rango_habitual(rows, week_start, iso=None):
     if rows.empty:
         return None
     years, weeks, _ = read_calendar(rows)
-    same_week = rows[(weeks == week) & (years < year)]
-    prices = same_week["national_price"].dropna()
-    if prices.size < MINIMUM_YEARS:
+    nearby = nearby_mask(weeks, years, week, year)
+    prices = rows.loc[nearby, "national_price"].dropna()
+    distinct_years = len(set(years[nearby]))
+    if distinct_years < MINIMUM_YEARS:
         return None
-    return float(prices.quantile(.25)), float(prices.quantile(.75)), int(prices.size)
+    return float(prices.quantile(.25)), float(prices.quantile(.75)), distinct_years
 
 
 def estado_precio(price, usual_range):
@@ -101,19 +114,22 @@ def brecha(feria, supermercado):
     return joined[["week_start", "gap"] + calendar].sort_values("week_start").reset_index(drop=True)
 
 
-def brecha_habitual(gaps, week_start, iso_year=None, month=None):
-    """Median gap of the same month in previous years, or None (< 2 years).
+def brecha_rango_habitual(gaps, week_start, iso=None):
+    """(P25, P75, number of previous years) of the gap, over the same ±1-week window.
 
-    The month is the one of week_start, as in dim_date.
+    Mirrors rango_habitual, so «is this week's gap usual?» follows the identical
+    P25–P75 rule as a price, instead of a separate tolerance (D-098).
     """
-    week_start = pd.Timestamp(week_start)
-    year = iso_year or week_start.isocalendar().year
-    month = month or week_start.month
-    years, _, months = read_calendar(gaps)
-    previous = gaps[(months == month) & (years < year)]
-    if previous.empty or len(set(years[(months == month) & (years < year)])) < MINIMUM_YEARS:
+    year, week = iso or iso_week(week_start)
+    if gaps.empty:
         return None
-    return float(previous["gap"].median())
+    years, weeks, _ = read_calendar(gaps)
+    nearby = nearby_mask(weeks, years, week, year)
+    values = gaps.loc[nearby, "gap"].dropna()
+    distinct_years = len(set(years[nearby]))
+    if distinct_years < MINIMUM_YEARS:
+        return None
+    return float(values.quantile(.25)), float(values.quantile(.75)), distinct_years
 
 
 def patron_estacional(rows, current_year=None):
@@ -134,7 +150,7 @@ def patron_estacional(rows, current_year=None):
     return {int(month): float(value) * 100 for month, value in monthly.items()}
 
 
-def proximos_meses(pattern, month, count=2):
+def proximos_meses(pattern, month, count=3):
     """[(month, change in %)] from the current month to each of the next ones."""
     if month not in pattern:
         return []
@@ -146,25 +162,22 @@ def proximos_meses(pattern, month, count=2):
     return result
 
 
-def describe_gap_comparison(current, usual, tolerance=2.0):
-    """«mayor», «menor» or «similar»: this week's gap against the usual one."""
-    if current is None or usual is None:
-        return None
-    if abs(current) - abs(usual) > tolerance:
-        return "mayor"
-    if abs(usual) - abs(current) > tolerance:
-        return "menor"
-    return "similar"
-
-
-def answer_sentence(product, month, states, gap_word):
+def answer_sentence(product, month, states, gap_word, wrap=None):
     """The sentence under the title, built only from computed facts.
 
-    states: {channel label: state}; a channel without data is left out.
+    states: {channel label: state}; a channel without data is left out. gap_word
+    is «mayor»/«menor» only when this week's gap sits outside its own P25–P75
+    window, or None to leave the gap out of the sentence entirely (D-098). wrap,
+    when given, receives (channel, phrase) and returns the phrase to use — the
+    caller's hook to colour each channel's state, e.g. with inline HTML.
     """
+    wrap = wrap or (lambda channel, phrase: phrase)
     parts = []
     for index, (channel, state) in enumerate(states.items()):
-        phrase = STATES[state] if state != "sin_historia" else "sin historia suficiente para compararlo"
+        if state == "sin_historia":
+            phrase = "sin historia suficiente para compararlo"
+        else:
+            phrase = wrap(channel, STATES[state])
         if index == 0:
             # «el precio de» avoids guessing the gender of each product name.
             parts.append(f"Esta semana, el precio de {product} en {channel.lower()} está {phrase}"

@@ -583,6 +583,9 @@ def build_base_mode_script(theme_or_base):
             const address = new URL(page.location.href);
             address.searchParams.set("tema", {selected_theme});
             page.history.replaceState(null, "", address.toString());
+            // This reload only syncs Streamlit's native-widget base mode; it is not
+            // a real page refresh, so it must not send the reader back home (D-099).
+            page.sessionStorage.setItem("greenoceanThemeReload", "1");
             page.location.reload();
         }}
     }} catch (error) {{ /* CSS remains usable when browser storage is unavailable. */ }}
@@ -1601,14 +1604,20 @@ def show_app_header(window):
     }}
     </style>""", unsafe_allow_html=True)
     view = read_current_view(window)
+    # Contexto del precio draws its own route and «Volver al resumen»: showing the
+    # generic path and Volver here too would duplicate them (D-098). Only the theme
+    # switcher, shared by every page, stays.
+    minimal = view == PAGE_SEASONALITY
     path = window if len(read_window_views(window)) == 1 else f"{window} › {SIDEBAR_LABELS.get(view, view)}"
     with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
-        st.markdown(f'<div class="app-brand" aria-label="Página actual">{html.escape(path)}</div>',
-                    unsafe_allow_html=True)
+        if not minimal:
+            st.markdown(f'<div class="app-brand" aria-label="Página actual">{html.escape(path)}</div>',
+                        unsafe_allow_html=True)
         with st.container(key="header_preferences", horizontal=True):
-            if st.button("Volver", icon=":material/arrow_back:", key="return_to_previous",
-                         help="Volver al punto anterior del proyecto, con su selección."):
-                st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
+            if not minimal:
+                if st.button("Volver", icon=":material/arrow_back:", key="return_to_previous",
+                             help="Volver al punto anterior del proyecto, con su selección."):
+                    st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
             show_theme_field()
     theme = get_mode()
     match_base_mode(theme)
@@ -5754,7 +5763,8 @@ def show_market_overview(mode, prefix):
             search_column, channel_column, order_column, history_column = st.columns(
                 [1.7, 1.25, 1.35, 0.95], vertical_alignment='center')
             query = search_column.text_input('Buscar', key='home_products_search', icon=':material/search:',
-                                             placeholder='Producto, ej.: lechuga', label_visibility='collapsed')
+                                             placeholder='Producto, ej.: lechuga', label_visibility='collapsed',
+                                             type='search', live=True)
             channels=['Todos'] + sorted({str(row['channel']) for row in rows})
             if st.session_state.get('home_products_channel') not in channels:
                 st.session_state['home_products_channel']='Todos'
@@ -6329,6 +6339,15 @@ def read_dim_date(database_version):
     return rows.assign(week_start=pd.to_datetime(rows["week_start"]))
 
 
+def describe_target_week(dates, week):
+    """((ISO year, ISO week), month) of week, from dim_date; falls back to week's own."""
+    indexed = dates.set_index("week_start")
+    if week in indexed.index:
+        target = indexed.loc[week]
+        return (int(target["iso_year"]), int(target["iso_week"])), int(target["month"])
+    return None, week.month
+
+
 @st.cache_data
 def read_context_model(database_version, key_items, week):
     """Everything the page shows for one product, computed once per weekly load."""
@@ -6340,19 +6359,17 @@ def read_context_model(database_version, key_items, week):
     product = prices[mask & prices["channel"].isin(CONTEXT_CHANNELS)]
     week = pd.Timestamp(week)
     dates = read_dim_date(database_version)
+    target_iso, month = describe_target_week(dates, week)
     # ISO week and month come from dim_date, the calendar of the data warehouse.
     series = {channel: product[product["channel"] == channel][["week_start", "national_price"]]
               .merge(dates, on="week_start", how="left")
               .sort_values("week_start").reset_index(drop=True) for channel in CONTEXT_CHANNELS}
-    dates = dates.set_index("week_start")
-    target = dates.loc[week] if week in dates.index else None
-    target_iso = (int(target["iso_year"]), int(target["iso_week"])) if target is not None else None
-    month = int(target["month"]) if target is not None else week.month
+    dates_indexed = dates.set_index("week_start")
     series = {channel: rows for channel, rows in series.items() if not rows.empty}
     weekly = []
     now = {}
     for channel, rows in series.items():
-        context = price_context.weekly_context(rows, week, dates=dates)
+        context = price_context.weekly_context(rows, week, dates=dates_indexed)
         weekly.append(context.assign(channel=channel))
         usual = price_context.rango_habitual(rows, week, target_iso)
         price = rows.loc[rows["week_start"] == week, "national_price"]
@@ -6361,26 +6378,63 @@ def read_context_model(database_version, key_items, week):
                         "state": price_context.estado_precio(price, usual) if price is not None else "sin_historia"}
     weekly = pd.concat(weekly, ignore_index=True) if weekly else pd.DataFrame(
         columns=["week_start", "price", "p25", "p75", "state", "channel"])
-    gap = None
+    # The gap's own habitual range, same ±1-week window; only shown when this
+    # week's gap falls outside it (D-098).
+    gap_now, gap_state = None, "sin_historia"
     if len(series) == 2:
         gaps = price_context.brecha(series["Feria libre"], series["Supermercado"])
-        recent = gaps[gaps["week_start"] > week - pd.Timedelta(weeks=52)].copy()
-        recent["usual"] = [price_context.brecha_habitual(gaps, row.week_start, row.iso_year, row.month)
-                           for row in recent.itertuples()]
         current = gaps.loc[gaps["week_start"] == week, "gap"]
-        gap = {"current": float(current.iloc[0]) if not current.empty else None,
-               "usual": price_context.brecha_habitual(gaps, week, target_iso and target_iso[0], month),
-               "recent": recent}
+        gap_now = float(current.iloc[0]) if not current.empty else None
+        gap_range = price_context.brecha_rango_habitual(gaps, week, target_iso)
+        gap_state = price_context.estado_precio(gap_now, gap_range) if gap_now is not None else "sin_historia"
     seasonal = read_cached_rows_for_key("k4_seasonal_index", tuple(sorted(key.items())), database_version)
-    seasonal = seasonal.merge(dates[["month"]], left_on="week_start", right_index=True, how="left")
-    year = week.isocalendar().year
+    seasonal = seasonal.merge(dates[["week_start", "month"]], on="week_start", how="left")
+    year = target_iso[0] if target_iso else week.isocalendar().year
     patterns, years = {}, {}
     for channel in CONTEXT_CHANNELS:
         rows = seasonal[seasonal["channel"] == channel]
         patterns[channel] = price_context.patron_estacional(rows, current_year=year)
         years[channel] = int((rows["price_year"].astype(int) < year).groupby(rows["price_year"]).any().sum())
-    return {"series": series, "weekly": weekly, "now": now, "gap": gap, "patterns": patterns,
-            "pattern_years": years, "seasonal": seasonal, "month": month}
+    return {"series": series, "weekly": weekly, "now": now, "gap_now": gap_now, "gap_state": gap_state,
+            "patterns": patterns, "pattern_years": years, "seasonal": seasonal, "month": month}
+
+
+@st.cache_data
+def read_family_outliers(database_version, product_group, week, exclude_product, exclude_variety):
+    """Other products of the same family whose price is outside its own habitual range.
+
+    One row per product/channel with a price this week that is «sobre» or «bajo» lo
+    habitual (the same ±1 ISO-week rule as the main chart), sorted by how far past
+    the limit it is, farthest first (D-098).
+    """
+    prices = read_cached_national_prices(database_version)
+    family = prices[(prices["product_group"] == product_group) & prices["channel"].isin(CONTEXT_CHANNELS)]
+    dates = read_dim_date(database_version)
+    family = family.merge(dates, on="week_start", how="left")
+    week = pd.Timestamp(week)
+    target_iso, _ = describe_target_week(dates, week)
+    results = []
+    group_columns = ["product", "variety", "quality", "normalized_unit", "channel"]
+    for key_values, group in family.groupby(group_columns):
+        product, variety, quality, unit, channel = key_values
+        if product == exclude_product and variety == exclude_variety:
+            continue
+        current = group.loc[group["week_start"] == week, "national_price"]
+        if current.empty or pd.isna(current.iloc[0]):
+            continue
+        price = float(current.iloc[0])
+        usual = price_context.rango_habitual(group, week, target_iso)
+        state = price_context.estado_precio(price, usual)
+        if state not in ("sobre", "bajo"):
+            continue
+        low, high, _ = usual
+        distance = (price / high - 1) * 100 if state == "sobre" else (1 - price / low) * 100
+        results.append({"product": product, "variety": variety, "quality": quality,
+                        "normalized_unit": unit, "channel": channel, "price": price,
+                        "state": state, "distance": distance})
+    rows = pd.DataFrame(results, columns=["product", "variety", "quality", "normalized_unit",
+                                          "channel", "price", "state", "distance"])
+    return rows.sort_values("distance", ascending=False).head(6).reset_index(drop=True)
 
 
 def read_context_key(options):
@@ -6442,6 +6496,15 @@ def describe_context_product(key):
     return key["product"] if key["variety"] == UNSPECIFIED else f"{key['product']} {key['variety'].lower()}"
 
 
+def build_context_self_link(product_group, row):
+    """Address of this same page, with one product of the «Otros productos» table preselected."""
+    payload = {"product_group": product_group, "product": row.product, "variety": row.variety,
+              "quality": row.quality, "normalized_unit": row.normalized_unit}
+    token = base64.urlsafe_b64encode(json.dumps(payload, ensure_ascii=False).encode()).decode()
+    address = build_page_address(PAGE_SEASONALITY)
+    return address + ("&" if "?" in address else "?") + urlencode({"_home_key": token})
+
+
 def build_context_price_card(now, unit):
     rows = []
     for channel in CONTEXT_CHANNELS:
@@ -6459,77 +6522,72 @@ def build_context_price_card(now, unit):
         rows.append(f'<div class="ctx-price-row"><i style="background:{color}"></i><div><strong>{channel}</strong>'
                     f'<small>{habit}</small></div><div class="ctx-price"><b>{price}</b>'
                     f'<span class="ctx-state {kind}">{label}</span></div></div>')
-    return (f'<section class="ctx-card"><h3>Precio esta semana</h3><div class="ctx-sub">$ por {html.escape(unit)} · '
-            'habitual = P25–P75 de la misma semana en años anteriores</p>' + "".join(rows) + '</section>')
+    hint = build_hint_icon(f"Precio por {unit}. Habitual = percentil 25 a 75 de la misma semana ISO "
+                           "(y la semana antes y después) en años anteriores.")
+    return (f'<section class="ctx-card"><h3>Precio esta semana{hint}</h3>' + "".join(rows) + '</section>')
 
 
-def build_gap_sparkline(recent):
-    """52 weeks: the real gap (solid) and the usual gap of its month (dotted)."""
-    if recent.empty:
-        return ''
-    width, height, pad = 380, 92, 6
-    values = pd.concat([recent["gap"], pd.Series([v for v in recent["usual"] if v is not None], dtype=float)])
-    low, high = float(values.min()), float(values.max())
-    span = (high - low) or 1
-    first, last = recent["week_start"].min(), recent["week_start"].max()
-    days = max((last - first).days, 1)
-    x = lambda day: pad + (day - first).days / days * (width - 2 * pad)
-    y = lambda value: pad + (high - value) / span * (height - 2 * pad)
-    def path(points):
-        return ''.join(('M' if index == 0 or gap else 'L') + f'{px:.1f},{py:.1f}'
-                       for index, (px, py, gap) in enumerate(points))
-    solid, dotted, previous = [], [], None
-    for row in recent.itertuples():
-        gap_break = previous is not None and (row.week_start - previous).days != 7
-        solid.append((x(row.week_start), y(row.gap), gap_break))
-        if row.usual is not None and pd.notna(row.usual):
-            dotted.append((x(row.week_start), y(row.usual), False))
-        previous = row.week_start
-    zero = f'<line x1="0" x2="{width}" y1="{y(0):.1f}" y2="{y(0):.1f}" class="ctx-zero"/>' if low < 0 < high else ''
-    end = solid[-1]
-    return (f'<svg class="ctx-spark" viewBox="0 0 {width} {height}" role="img" aria-label="Brecha de las últimas 52 semanas">'
-            f'{zero}<path d="{path(dotted)}" class="ctx-usual"/><path d="{path(solid)}" class="ctx-real"/>'
-            f'<circle cx="{end[0]:.1f}" cy="{end[1]:.1f}" r="3" class="ctx-end"/></svg>')
+def build_context_next_card(patterns, pattern_years, month):
+    """3 months × 2 channels, as a compact strip: month, arrow and % change (D-098)."""
+    months = [(month - 1 + step) % 12 + 1 for step in range(1, 4)]
+    header = "".join(f'<th>{price_context.MONTHS[following - 1][:3].capitalize()}</th>' for following in months)
+    channel_rows = []
+    any_history = False
+    for channel in CONTEXT_CHANNELS:
+        years = pattern_years.get(channel, 0)
+        pattern = patterns.get(channel, {})
+        if years < price_context.MINIMUM_YEARS:
+            cells = f'<td colspan="3" class="ctx-next-empty">Sin historia suficiente</td>'
+        else:
+            any_history = True
+            changes = dict(price_context.proximos_meses(pattern, month, count=3))
+            cells = ""
+            for following in months:
+                change = changes.get(following)
+                if change is None:
+                    cells += '<td>—</td>'
+                else:
+                    arrow = "▲" if change > 0.05 else "▼" if change < -0.05 else "▬"
+                    cells += f'<td class="{"rise" if change > 0.05 else "fall" if change < -0.05 else ""}">' \
+                             f'{arrow} {charts.format_percent(abs(change))}</td>'
+        color = charts.CONTEXT_CHANNELS[channel]
+        channel_rows.append(f'<tr><th><i style="background:{color}"></i>{channel}</th>{cells}</tr>')
+    hint = build_hint_icon("Cambio típico del índice estacional frente a este mes, por canal, en años "
+                           "anteriores. Es un patrón histórico, no un pronóstico.")
+    foot = ("Patrón de años anteriores. No es un pronóstico." if any_history else
+            "Sin historia suficiente en ningún canal: hacen falta al menos dos años anteriores.")
+    return ('<section class="ctx-card"><h3>Qué suele pasar en las próximas semanas' + hint + '</h3>'
+            f'<table class="ctx-next-table"><thead><tr><th></th>{header}</tr></thead>'
+            f'<tbody>{"".join(channel_rows)}</tbody></table>'
+            f'<div class="ctx-foot">{foot}</div></section>')
 
 
-def build_context_gap_card(gap, month):
-    title = '<section class="ctx-card"><h3>¿Dónde conviene comprar?</h3><div class="ctx-sub">Cuánto más caro está el supermercado que la feria.</div>'
-    if not gap or gap["current"] is None:
-        return title + '<div class="ctx-note">Sin precios de feria y supermercado en la misma semana para comparar.</div></section>'
-    current, usual = gap["current"], gap["usual"]
-    usual_text = '—' if usual is None else charts.format_signed_percent(usual)
-    cheaper = "La feria" if current > 0 else "El supermercado"
-    word = price_context.describe_gap_comparison(current, usual)
-    conclusion = f'{cheaper} es más barata esta semana' if current != 0 else 'Ambos canales cuestan lo mismo esta semana'
-    if word and current != 0:
-        conclusion += {"mayor": ", y la ventaja es <b>mayor que lo habitual</b>.",
-                       "menor": ", pero la ventaja es <b>menor que lo habitual</b>.",
-                       "similar": ", con una ventaja <b>similar a la habitual</b>."}[word]
-    elif current != 0:
-        conclusion += "; sin historia suficiente para compararla con otros años."
-    else:
-        conclusion += "."
-    return (title + '<div class="ctx-gap-figures">'
-            f'<div><span>Esta semana</span><b>{charts.format_signed_percent(current)}</b></div>'
-            f'<div><span>Habitual en {price_context.MONTHS[month - 1]}</span><b class="muted">{usual_text}</b></div></div>'
-            + build_gap_sparkline(gap["recent"])
-            + '<div class="ctx-legend"><span><i class="real"></i>Brecha real</span><span><i class="usual"></i>Brecha habitual del mes</span></div>'
-            f'<div class="ctx-note">{conclusion}</div></section>')
-
-
-def build_context_next_card(pattern, years, month):
-    rows = []
-    if years < price_context.MINIMUM_YEARS:
-        rows.append('<div class="ctx-note">Sin historia suficiente: hacen falta al menos dos años anteriores.</div>')
-    else:
-        for following, change in price_context.proximos_meses(pattern, month):
-            verb = "suele subir" if change > 0.05 else "suele bajar" if change < -0.05 else "suele mantenerse"
-            amount = '' if verb == "suele mantenerse" else f' {charts.format_percent(abs(change))}'
-            rows.append(f'<div class="ctx-next-row"><span>{price_context.MONTHS[following - 1].capitalize()}</span>'
-                        f'<b>Feria {verb}{amount}</b></div>')
-    return ('<section class="ctx-card"><h3>Qué suele pasar en las próximas semanas</h3>'
-            '<div class="ctx-sub">Cambio típico del índice estacional de feria frente a este mes.</div>'
-            + ''.join(rows) + f'<div class="ctx-foot">Patrón de {years} años anteriores. No es un pronóstico.</div></section>')
+def build_context_outliers_table(rows, product_group):
+    """«Otros productos de {familia} fuera de lo habitual»: a short, sorted table (D-098)."""
+    hint = build_hint_icon("Productos de la misma familia cuyo precio de esta semana, en cualquier "
+                           "canal, está fuera de su propio percentil 25 a 75 habitual (misma ventana "
+                           "de ±1 semana ISO). Ordenados por qué tan lejos están del límite.")
+    title = f'<h3>Otros productos de {html.escape(product_group)} fuera de lo habitual{hint}</h3>'
+    if rows.empty:
+        return (f'<section class="ctx-card ctx-card-wide">{title}'
+                f'<div class="ctx-note">Ningún otro producto de {html.escape(product_group)} está '
+                'fuera de lo habitual esta semana.</div></section>')
+    body = []
+    for row in rows.itertuples():
+        label = row.product if row.variety == UNSPECIFIED else f"{row.product} · {row.variety}"
+        state_label, kind = STATE_CHIPS[row.state]
+        link = html.escape(build_context_self_link(product_group, row))
+        body.append('<tr>'
+                    f'<td><a href="{link}" target="_self">{html.escape(label)}</a>'
+                    f'<small>{html.escape(row.quality)} · $/{html.escape(row.normalized_unit)}</small></td>'
+                    f'<td>{html.escape(row.channel)}</td>'
+                    f'<td class="num">${charts.format_thousands(row.price)}</td>'
+                    f'<td><span class="ctx-state {kind}">{html.escape(state_label)}</span></td>'
+                    f'<td class="num">{charts.format_percent(row.distance)}</td></tr>')
+    return (f'<section class="ctx-card ctx-card-wide">{title}'
+            '<div class="ctx-outlier-scroll"><table class="ctx-outlier-table"><thead><tr>'
+            '<th>Producto</th><th>Canal</th><th>Precio actual</th><th>Estado</th>'
+            '<th>Distancia al límite</th></tr></thead><tbody>' + "".join(body) + '</tbody></table></div></section>')
 
 
 @st.dialog("Serie completa", width="large")
@@ -6548,7 +6606,8 @@ def show_context_data_dialog(model):
         "Semana": weekly["week_start"].dt.strftime("%d-%m-%Y"), "Canal": weekly["channel"],
         "Precio": weekly["price"], "Habitual desde (P25)": weekly["p25"], "Habitual hasta (P75)": weekly["p75"],
         "Estado": weekly["state"].map(lambda value: price_context.STATES.get(value, "sin precio"))})
-    st.caption("Últimas 52 semanas. Habitual = P25–P75 de la misma semana ISO en años anteriores (sin el año en curso).")
+    st.caption("Últimas 52 semanas. Habitual = P25–P75 de la semana ISO (y la semana antes y después) "
+               "en años anteriores (sin el año en curso).")
     st.dataframe(table.sort_values(["Semana", "Canal"], ascending=[False, True]), hide_index=True,
                  use_container_width=True, height=280,
                  column_config={name: st.column_config.NumberColumn(format="$%.0f")
@@ -6568,47 +6627,51 @@ def build_context_css(mode):
     .ctx-crumb b {{color:{palette['strong_text']};}}
     .ctx-back {{display:inline-flex;float:right;padding:5px 12px;border:1px solid {palette['card_border']};border-radius:8px;
         font-size:12.5px;color:{palette['strong_text']}!important;text-decoration:none!important;background:{palette['card']};}}
-    .ctx-title h1 {{font-size:24px!important;font-weight:700;margin:0!important;padding:0!important;display:inline;}}
+    .ctx-title h1 {{font-size:21px!important;font-weight:700;margin:0!important;padding:0!important;display:inline;}}
     .ctx-title .page-freshness {{display:inline-flex;gap:6px;margin-left:12px;font-size:12px;}}
     .ctx-answer {{font-size:14px;line-height:1.45;color:{palette['strong_text']};margin:4px 0 0;max-width:900px;}}
-    .ctx-answer b {{color:{palette['accent']};}}
-    .st-key-ctx_main, .st-key-ctx_pattern {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:12px 16px 6px;}}
+    .st-key-ctx_main {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:10px 16px 4px;}}
     .st-key-ctx_side {{gap:10px;}}
-    .ctx-head h3, .ctx-card h3 {{font-size:15px!important;font-weight:700;margin:0!important;padding:0!important;color:{palette['strong_text']};}}
-    .ctx-head p, .ctx-sub {{font-size:11px!important;font-size:11px;color:{palette['text']};margin:2px 0 6px!important;line-height:1.4;}}
+    .st-key-ctx_bottom {{margin-top:10px;}}
+    .ctx-head h3, .ctx-card h3 {{font-size:15px!important;font-weight:700;margin:0!important;padding:0!important;
+        color:{palette['strong_text']};display:flex;align-items:center;gap:6px;}}
     .ctx-head {{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}}
     .ctx-keys {{display:flex;gap:14px;font-size:11px;color:{palette['text']};white-space:nowrap;}}
     .ctx-keys i {{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle;}}
     .ctx-keys i.band {{height:9px;background:{palette['grid']};}}
     .ctx-card {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:12px 16px;}}
+    .ctx-card-wide {{padding-bottom:6px;}}
     .ctx-price-row {{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid {palette['card_border']};}}
     .ctx-price-row i {{width:9px;height:9px;border-radius:50%;}}
     .ctx-price-row strong {{display:block;font-size:13px;color:{palette['strong_text']};}}
     .ctx-price-row small {{font-size:11px;color:{palette['text']};}}
     .ctx-price {{text-align:right;}} .ctx-price b {{display:block;font-size:20px;color:{palette['strong_text']};font-variant-numeric:tabular-nums;}}
     .ctx-state {{font-size:11px;font-weight:600;}} .ctx-state.rise {{color:#c0392b;}} .ctx-state.fall {{color:#1f7a4d;}} .ctx-state.neutral {{color:{palette['text']};}}
-    .ctx-gap-figures {{display:flex;gap:28px;margin:4px 0;}} .ctx-gap-figures span {{display:block;font-size:11px;color:{palette['text']};}}
-    .ctx-gap-figures b {{font-size:20px;color:{palette['strong_text']};font-variant-numeric:tabular-nums;}} .ctx-gap-figures b.muted {{color:{palette['text']};}}
-    .ctx-spark {{width:100%;height:92px;display:block;}}
-    .ctx-real {{fill:none;stroke:{palette['strong_text']};stroke-width:1.6;vector-effect:non-scaling-stroke;}}
-    .ctx-usual {{fill:none;stroke:{palette['text']};stroke-width:1.3;stroke-dasharray:3 3;vector-effect:non-scaling-stroke;}}
-    .ctx-zero {{stroke:{palette['grid']};stroke-width:1;}} .ctx-end {{fill:{palette['strong_text']};}}
-    .ctx-legend {{display:flex;gap:14px;font-size:10.5px;color:{palette['text']};margin-top:2px;}}
-    .ctx-legend i {{display:inline-block;width:14px;margin-right:5px;vertical-align:middle;border-top:2px solid {palette['strong_text']};}}
-    .ctx-legend i.usual {{border-top:2px dashed {palette['text']};}}
     .ctx-note {{font-size:12px!important;line-height:1.45;color:{palette['strong_text']};margin:6px 0 0!important;}}
-    .ctx-next-row {{display:grid;grid-template-columns:90px 1fr;gap:10px;font-size:12.5px;padding:5px 0;border-top:1px solid {palette['card_border']};color:{palette['text']};}}
-    .ctx-next-row b {{color:{palette['strong_text']};}}
+    .ctx-next-table {{width:100%;border-collapse:collapse;margin-top:4px;font-size:12.5px;}}
+    .ctx-next-table th, .ctx-next-table td {{padding:6px 4px;text-align:center;border-top:1px solid {palette['card_border']};}}
+    .ctx-next-table thead th {{border-top:0;color:{palette['text']};font-weight:500;font-size:11px;}}
+    .ctx-next-table tbody th {{text-align:left;font-weight:600;color:{palette['strong_text']};white-space:nowrap;}}
+    .ctx-next-table tbody th i {{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}}
+    .ctx-next-table td.rise {{color:#c0392b;}} .ctx-next-table td.fall {{color:#1f7a4d;}}
+    .ctx-next-empty {{color:{palette['text']};font-style:italic;}}
     .ctx-foot {{font-size:10.5px;color:{palette['text']};margin:8px 0 0!important;}}
+    .ctx-outlier-scroll {{overflow:auto;max-height:230px;}}
+    .ctx-outlier-table {{width:100%;min-width:640px;border-collapse:collapse;font-size:12.5px;}}
+    .ctx-outlier-table th {{text-align:left;padding:6px 10px;color:{palette['text']};font-weight:500;font-size:11px;
+        border-bottom:1px solid {palette['card_border']};}}
+    .ctx-outlier-table td {{padding:7px 10px;border-bottom:1px solid {palette['card_border']};color:{palette['strong_text']};}}
+    .ctx-outlier-table td a {{color:{palette['accent']}!important;text-decoration:none;font-weight:600;}}
+    .ctx-outlier-table td small {{display:block;font-size:10.5px;color:{palette['text']};font-weight:400;}}
+    .ctx-outlier-table td.num {{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}}
     .st-key-ctx_links button {{padding:0 4px!important;min-height:0!important;}}
     .st-key-ctx_links button p {{font-size:12px!important;color:{palette['accent']}!important;font-weight:600;}}
     .st-key-ctx_links [data-testid="stCaptionContainer"] p {{font-size:11px!important;}}
-    .st-key-ctx_pattern [data-testid="stHorizontalBlock"] {{align-items:center;}}
     </style>"""
 
 
 def show_price_context_page(mode):
-    """¿El precio de esta semana es normal? One screen, three answers (D-094)."""
+    """¿El precio de esta semana es normal? One screen, no scroll at 1920×1080 (D-098)."""
     st.markdown(build_context_css(mode), unsafe_allow_html=True)
     version = get_database_version()
     options = read_context_options(version)
@@ -6634,11 +6697,11 @@ def show_price_context_page(mode):
     run_kind = "ok" if latest["status"] == etl.STATUS_LOADED else "failed"
     states = {channel: model["now"][channel]["state"] for channel in CONTEXT_CHANNELS
               if channel in model["now"] and model["now"][channel]["price"] is not None}
-    gap = model["gap"]
-    gap_word = price_context.describe_gap_comparison(gap["current"], gap["usual"]) if gap else None
-    sentence = html.escape(price_context.answer_sentence(label.lower(), model["month"], states, gap_word))
-    for phrase in price_context.STATES.values():
-        sentence = sentence.replace(phrase, f"<b>{phrase}</b>")
+    # The gap only earns a mention when it is outside its own habitual range (D-098).
+    gap_word = {"sobre": "mayor", "bajo": "menor"}.get(model["gap_state"])
+    def wrap(channel, phrase):
+        return f'<b style="color:{charts.CONTEXT_CHANNELS.get(channel, "inherit")}">{html.escape(phrase)}</b>'
+    sentence = price_context.answer_sentence(html.escape(label.lower()), model["month"], states, gap_word, wrap=wrap)
     title.markdown(f'<div class="ctx-title compact-header"><h1>¿El precio de esta semana es normal?</h1>'
                    f'<span class="page-freshness">Datos al {format_chile_time(parse_run_start(latest["started_at"]))} '
                    f'{build_chip("Carga correcta" if run_kind == "ok" else "Última carga con falla", run_kind)}</span></div>'
@@ -6649,9 +6712,10 @@ def show_price_context_page(mode):
     left, right = st.columns([3.05, 1], gap="small")
     with left:
         with st.container(key="ctx_main"):
-            st.markdown('<div class="ctx-head"><div><h3>Últimas 52 semanas frente a lo habitual</h3>'
-                        '<p>Línea: precio de cada semana. Banda: rango habitual de esa misma semana en años anteriores '
-                        '(percentil 25 a 75). Si la línea sale de la banda, el precio es inusual.</p></div>'
+            hint = build_hint_icon("Línea: precio de cada semana. Banda: rango habitual de esa misma semana "
+                                   "(y la semana antes y después) en años anteriores, percentil 25 a 75. Si la "
+                                   "línea sale de la banda, el precio es inusual.")
+            st.markdown(f'<div class="ctx-head"><h3>Últimas 52 semanas frente a lo habitual{hint}</h3>'
                         '<div class="ctx-keys">'
                         + ''.join(f'<span><i style="background:{color}"></i>{channel}</span>'
                                   for channel, color in charts.CONTEXT_CHANNELS.items() if channel in model["series"])
@@ -6659,7 +6723,7 @@ def show_price_context_page(mode):
             if model["weekly"].empty:
                 st.info("Este producto no tiene precios de feria ni de supermercado.")
             else:
-                show_chart(charts.draw_price_context(model["weekly"], mode, height=330))
+                show_chart(charts.draw_price_context(model["weekly"], mode, height=350))
             with st.container(key="ctx_links", horizontal=True, vertical_alignment="center"):
                 missing = int(model["weekly"]["price"].isna().sum()) if not model["weekly"].empty else 0
                 st.caption("Precios nominales, sin ajuste por inflación."
@@ -6670,25 +6734,13 @@ def show_price_context_page(mode):
                     show_full_history_dialog(model["series"], mode, label)
                 if st.button("Ver datos del gráfico →", key="ctx_data", type="tertiary"):
                     show_context_data_dialog(model)
-        with st.container(key="ctx_pattern"):
-            heading, switch = st.columns([3, 1.6], vertical_alignment="center")
-            channel = switch.segmented_control("Canal del patrón", ["Feria", "Supermercado"], default="Feria",
-                                               key="ctx_pattern_channel", label_visibility="collapsed") or "Feria"
-            channel = "Feria libre" if channel == "Feria" else "Supermercado"
-            heading.markdown(f'<div class="ctx-head"><div><h3>Patrón de temporada · {channel.lower()}</h3>'
-                             '<p>Índice estacional por mes (100 = precio promedio del año), años anteriores. '
-                             'Mes actual marcado; los dos siguientes, con borde.</p></div></div>', unsafe_allow_html=True)
-            chart = charts.draw_seasonal_pattern(model["patterns"].get(channel, {}), channel, model["month"], mode)
-            if chart is None:
-                st.caption("Sin historia suficiente para este canal.")
-            else:
-                show_chart(chart)
     with right, st.container(key="ctx_side"):
         st.markdown(build_context_price_card(model["now"], key["normalized_unit"]), unsafe_allow_html=True)
-        st.markdown(build_context_gap_card(gap, model["month"]), unsafe_allow_html=True)
-        st.markdown(build_context_next_card(model["patterns"].get("Feria libre", {}),
-                                            model["pattern_years"].get("Feria libre", 0), model["month"]),
+        st.markdown(build_context_next_card(model["patterns"], model["pattern_years"], model["month"]),
                     unsafe_allow_html=True)
+    with st.container(key="ctx_bottom"):
+        outliers = read_family_outliers(version, key["product_group"], week, key["product"], key["variety"])
+        st.markdown(build_context_outliers_table(outliers, key["product_group"]), unsafe_allow_html=True)
 # endregion
 
 
@@ -7716,6 +7768,13 @@ RELOAD_HOME_SCRIPT = """<script>
 (() => {
     if (document.documentElement.dataset.greenoceanReloadHandled === "true") return;
     document.documentElement.dataset.greenoceanReloadHandled = "true";
+    // A reload just to sync the theme's base mode (D-099): stay on this page.
+    try {
+        if (sessionStorage.getItem("greenoceanThemeReload")) {
+            sessionStorage.removeItem("greenoceanThemeReload");
+            return;
+        }
+    } catch (_) {}
     const navigation = performance.getEntriesByType("navigation")[0];
     if (!navigation || navigation.type !== "reload") return;
     const current = new URL(window.location.href);

@@ -690,3 +690,22 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Selección por clic, no por mouse encima:** la tabla elegida se guarda en `st.session_state` (un `st.radio` siempre desplegado) y actualiza la tarjeta de detalle; en el diagrama, la tarjeta elegida se resalta con un trazo más grueso y resplandor. Reemplaza el sistema anterior basado en CSS `:hover`/`:focus`, que no funcionaba igual en celulares.
 - **Se retira:** el envoltorio de zoom (controles «+ − ⟲») y los paneles de explicación fijados por CSS bajo el diagrama; `bi/zoom.py` sigue en uso en Pipeline y DevOps. `list_star_panels` y `show_star_schema_tab` se eliminan.
 - **Validación:** 404 pruebas, incluida una de no superposición del layout y otra del clic que cambia la tabla seleccionada. Revisión visual en Corporativo y Vantablack, en 1920 × 1080 y 1440 × 900, sin desplazamiento en ninguno.
+
+## D-098 · Contexto del precio: estado final
+
+- **Fecha:** 2026-10-16.
+- **Cabecera:** se retira la barra genérica «ruta · Volver» en esta página; solo queda su propia ruta «Resumen › familia › producto» con «Volver al resumen». El selector de tema sigue disponible, arriba a la derecha.
+- **Suavizado ±1 semana ISO:** lo habitual (P25–P75) usa ahora la semana ISO objetivo y sus dos vecinas (hasta 3 semanas por año anterior), en vez de una sola semana. En los bordes del calendario (semana 1, última semana del año) la ventana tiene 2 semanas en lugar de 3, sin adivinar el número de semanas de otro año. El mismo criterio se aplica a la brecha entre canales.
+- **Gráfico:** sin etiquetas de texto sobre la línea; el estado ya está en la frase y en «Precio esta semana».
+- **Frase de resumen:** el estado de feria se colorea en azul `#2563C9` y el de supermercado en naranja `#D9622B`, iguales a las líneas del gráfico. La brecha entre canales solo se menciona cuando queda fuera de su propio rango habitual (mismo criterio P25–P75); si está dentro, no se menciona.
+- **Se retiran:** la tarjeta «¿Dónde conviene comprar?» con su mini gráfico, y «Patrón de temporada» (barras + selector Feria/Supermercado). `brecha_habitual` (mediana) y `describe_gap_comparison` (tolerancia) se reemplazan por `brecha_rango_habitual`, que reutiliza `estado_precio`.
+- **«Qué suele pasar en las próximas semanas»:** se conserva y gana una franja compacta de 3 meses × 2 canales (feria y supermercado, antes solo feria), con flecha y % de cambio frente al mes actual.
+- **Nueva tarjeta «Otros productos de {familia} fuera de lo habitual»:** productos de la misma familia cuyo precio de esta semana, en cualquier canal, queda fuera de su propio P25–P75 (misma ventana). Hasta 6 filas, ordenadas por qué tan lejos están del límite; un clic en un producto recarga esta misma página con ese producto. La tabla tiene su propio scroll acotado (230 px) para que la página quepa en 1920 × 1080 sin desplazamiento, cualquiera sea el número de filas.
+- **Subtítulos largos → ⓘ:** se reemplazan por el ícono de ayuda ya usado en el resto del proyecto (`build_hint_icon`), con el texto completo como tooltip.
+- **Validación:** 406 pruebas. Revisión visual en Corporativo y Vantablack, en 1920 × 1080, sin desplazamiento.
+
+## D-099 · El cambio de tema ya no regresa al Resumen
+
+- **Fecha:** 2026-10-16.
+- **Problema:** cambiar de paleta (por ejemplo a Vantablack) dispara una recarga del navegador para sincronizar el modo base de los widgets nativos de Streamlit. Un script separado, pensado para detectar cuando el visitante presiona recargar en el navegador, interpretaba esa misma recarga como un refresco real y enviaba al Resumen, perdiendo la página en la que estaba.
+- **Decisión:** antes de recargar por el cambio de tema, se guarda una marca en `sessionStorage` (`greenoceanThemeReload`). El script que decide si volver al Resumen la revisa primero: si está presente, la borra y no hace nada más, de modo que la recarga deja al visitante exactamente donde estaba, con el tema nuevo aplicado.
