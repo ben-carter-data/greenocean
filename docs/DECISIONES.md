@@ -836,3 +836,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** el script ahora solo fuerza `_self` cuando el enlace apunta al mismo origen (`anchor.hostname === location.hostname`); todo enlace externo deja de ser interceptado y abre en una pestaña nueva con un clic normal. `build_external_link_html`, el enlace de GitHub de la portada y el nuevo `build_github_link_html` pasan de `target="_self"` a `target="_blank"`.
 - **Además:** el enlace a las decisiones en el perfil IT ahora lleva el logo de GitHub (`build_github_link_html`, con el SVG de marca ya usado en los diagramas).
 - **Validación:** 422 pruebas (el único fallo, previo y no relacionado); nuevas pruebas `test_d113_the_github_link_opens_a_new_tab_with_its_mark` y `test_d113_the_global_click_handler_only_forces_internal_links`.
+
+## D-114 · BI muestra los ocho indicadores en línea, no un enlace a otra página
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** el perfil BI enlazaba a la vieja página «KPIs» (el camino tipo roadmap de D-090) para ver el detalle — una página que ya no vive en el menú y que el usuario creía eliminada. No hacía falta: lo único que BI necesita de ahí son los ocho indicadores con su nombre e ícono real.
+- **Decisión:** se retira el enlace «Ver cada indicador con su cálculo →»; los ocho indicadores (`KPI_PRESENTATION`, el mismo diccionario que ya usa la página KPIs) se muestran ahí mismo, cada uno en su propia fila con su ícono real (`build_component_symbol`, el mismo vocabulario visual que el resto del panel) y un color distinto — los ocho colores de capa que ya usan los diagramas del pipeline (`architecture.LAYER_COLORS`), para que la tabla se lea moderna y cada indicador se distinga de un vistazo.
+- **Por qué esos colores:** son los mismos ocho tonos que el lector ya vio en «Arquitectura y operación»; reutilizar el lenguaje visual existente en vez de inventar una paleta nueva.
+- **Validación:** 423 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d114_bi_shows_every_kpi_with_a_real_icon_and_its_own_color_inline` comprueba las 8 filas, sus íconos reales, 8 colores distintos y que el enlace viejo ya no está.

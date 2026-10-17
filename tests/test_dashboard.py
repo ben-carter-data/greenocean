@@ -1438,6 +1438,22 @@ def test_d113_the_global_click_handler_only_forces_internal_links():
     assert "anchor.target = '_self'" in script
 
 
+@needs_database
+def test_d114_bi_shows_every_kpi_with_a_real_icon_and_its_own_color_inline():
+    """BI used to link out to the old KPIs page; the eight indicators now show here,
+    each with the same name and icon used elsewhere, no two sharing a color."""
+    app = draw_page(dashboard.PAGE_DOC_BI)
+    assert not app.exception
+    text = " ".join(block.value for block in app.markdown)
+    assert text.count('class="doc-kpi-row"') == len(dashboard.KPI_PRESENTATION)
+    for kpi, (name, icon, _) in dashboard.KPI_PRESENTATION.items():
+        assert name in text and kpi in text
+        assert f'data-kind="{icon}"' in text
+    colors = re.findall(r'--kpi-color:(#[0-9a-f]{6})', text)
+    assert len(colors) == len(set(colors)) == len(dashboard.KPI_PRESENTATION)
+    assert 'Ver cada indicador con su cálculo' not in text
+
+
 def test_d111_the_weekly_run_sentence_never_ends_on_a_dangling_colon():
     sentence = dashboard.describe_weekly_run()
     assert sentence.endswith('.') and not sentence.rstrip('.').endswith(':')
