@@ -25,6 +25,64 @@ def test_every_layer_and_step_is_drawn():
         assert text in svg
 
 
+def test_pipeline_names_the_real_technology_used_at_each_stage():
+    svg = architecture.build_journey_svg(make_states(control.RUN_OK), FIGURES,
+                                         charts.MODE_DARK, animate_flow=True)
+    # Informe semanal and Consultas SQL now show their first line as technology
+    # pills (D-103: GitHub CLI/Markdown, SQL); every other label is untouched
+    # because its own pills added nothing beyond what the node already said.
+    for label in ["HTTPS · CSV · sin API", "Python · requests", "Python · pandas",
+                  "Python · validaciones", "SQLite · raw.db", "SQLite · datos.db",
+                  "pytest · si fallan", "GitHub Actions · Secrets",
+                  "Streamlit · historial"]:
+        assert label in svg
+    for slug in ["python", "sqlite", "streamlit", "github"]:
+        assert architecture.brand_icons.logo_body(slug) in svg
+
+
+def test_d103_stack_pills_name_the_real_tools_without_inventing_any():
+    """Every id in PIPELINE_STACK is a real, declared dependency (D-103)."""
+    import re
+    requirements = (Path(__file__).resolve().parent.parent / "requirements.txt").read_text()
+    declared = {line.split(">=")[0].split("==")[0].split("<")[0].strip().lower()
+               for line in requirements.splitlines() if line.strip()}
+    # pandas/requests are pip packages that must be declared; "python" names the
+    # interpreter itself and sqlite3/markdown-text/https/csv/sql/github-cli are
+    # not pip packages, so only these two are checked against requirements.txt.
+    library_ids = {"pandas", "requests"}
+    for tech_id in library_ids:
+        assert tech_id in declared, f"{tech_id} is not in requirements.txt"
+    for stack in architecture.PIPELINE_STACK.values():
+        for tech_id in stack:
+            assert tech_id in architecture.TECH, tech_id
+
+
+def test_d103_a_node_gets_pills_only_for_tools_its_own_icon_does_not_already_show():
+    # Agente de descarga's icon is Python; the pill row should add "requests" but
+    # not repeat "Python".
+    stack = architecture.visible_stack("Agente de descarga", architecture.draw_python_icon)
+    assert stack == ["requests"]
+    # SQLite · raw.db only uses SQLite, which its own icon already shows: no pills.
+    assert architecture.visible_stack("SQLite · raw.db", architecture.draw_sqlite_icon) == []
+    # Informe semanal's icon is GitHub; python and markdown are new information.
+    stack = architecture.visible_stack("Informe semanal", architecture.draw_github_icon)
+    assert stack == ["python", "markdown"]
+    # A step outside PIPELINE_STACK gets no row at all.
+    assert architecture.visible_stack("Rechazos", architecture.draw_warning_icon) is None
+
+
+def test_d103_pills_render_as_local_logos_or_styled_text_never_a_broken_image():
+    svg = architecture.build_journey_svg(make_states(control.RUN_OK), FIGURES,
+                                         charts.MODE_DARK)
+    assert ">requests<" in svg and ">pandas<" in svg and ">CSV<" in svg and ">HTTPS<" in svg
+    assert ">Markdown<" in svg and ">SQL<" in svg
+    # No <image>/CDN reference: logos are inlined <path> data from bi/assets/logos/.
+    assert "<image" not in svg
+    vertical = architecture.build_vertical_journey_svg(make_states(control.RUN_OK), FIGURES,
+                                                        charts.MODE_DARK)
+    assert ">pandas<" in vertical and ">requests<" in vertical
+
+
 def test_figures_from_the_data_appear_under_their_steps():
     svg = architecture.build_journey_svg(make_states(control.RUN_OK), FIGURES,
                                          charts.MODE_LIGHT)

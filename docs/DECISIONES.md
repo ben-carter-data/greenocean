@@ -731,3 +731,12 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **La carpeta de la página actual no se puede plegar:** mientras se está viendo una página de un grupo, su flecha queda deshabilitada y el grupo permanece abierto, para no esconder nunca la página en pantalla. Al salir de ese grupo, su estado plegado o desplegado anterior se respeta.
 - **Implementación:** el estado de cada grupo vive en `st.session_state` (`nav_open_<ruta>`), one `st.button` con el ícono de flecha hace de fila de carpeta en lugar del texto estático anterior (D-101); sus páginas se omiten del todo cuando el grupo está plegado.
 - **Validación:** 409 pruebas; dos nuevas comprueban que un clic pliega y despliega un grupo sin afectar a los demás, y que el grupo de la página actual no se puede plegar.
+
+## D-103 · Pastillas de tecnología real en cada paso del pipeline
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** el diagrama del pipeline («Pipeline y arquitectura», diagrama horizontal y su versión angosta) gana, bajo cada paso que lo necesita, de 1 a 3 pastillas con la tecnología realmente usada: logo local cuando existe uno (Python, SQLite, Streamlit, GitHub, ya en `bi/assets/logos/`) o una pastilla de texto cuando no (HTTPS, CSV, pandas, requests, Markdown, SQL) en vez de inventar un logo. Sin red, sin CDN, sin cambiar el layout, los colores ni la estructura del diagrama aprobado.
+- **Una sola fuente:** `PIPELINE_STACK` (nombre del paso → lista de tecnologías) y `TECH` (tecnología → etiqueta y logo), ambos en `bi/architecture.py`, con las mismas claves que ya usa `TOOLTIPS`.
+- **Sin redundancia:** `visible_stack()` quita de la fila cualquier tecnología cuyo logo ya es el ícono del propio nodo (por ejemplo, «SQLite · raw.db» no repite el logo de SQLite que ya tiene). Cuando no queda nada nuevo que mostrar, el paso conserva su texto original sin cambios.
+- **Auditoría:** cada tecnología listada corresponde a una dependencia real (`requirements.txt`) o a una llamada real del código (`requests.get` en `agent/agent.py`, `import pandas as pd` en `etl/etl.py`, `sqlite3.connect` en `etl/etl.py` y `bi/queries.py`, `gh issue create` en `.github/workflows/semanal.yml`); no se afirma ninguna «API REST» donde el código solo descarga CSV por HTTPS.
+- **Validación:** 414 pruebas, 4 nuevas (`test_d103_*`) verifican que cada id de `PIPELINE_STACK` es una dependencia real, que `visible_stack()` evita la redundancia y que las pastillas nunca generan una imagen rota ni una referencia externa.
