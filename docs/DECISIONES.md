@@ -679,3 +679,14 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Alerta de precio:** botón fijo al final del menú, separado de la navegación, con el conteo real de alertas de la semana; debajo, la nota de fuente. Al pulsarlo abre el mismo diálogo que antes, ahora disponible desde cualquier página, no solo el Resumen.
 - **Se retira:** `build_graph_navigation_html`, `GRAPH_NAVIGATION`, el `home_header` especial del Resumen y el `home_mockup.sidebar` propio del Resumen con su imagen de alerta animada.
 - **Validación:** 401 pruebas. Revisión visual en Corporativo y Vantablack, en 1920 × 1080 y en móvil (390 px), con el menú plegado automáticamente en pantallas angostas.
+
+## D-097 · Modelo de datos en una sola pantalla, con clic en lugar de hover
+
+- **Fecha:** 2026-10-16.
+- **Decisión:** la página se lee entera en 1920 × 1080, sin desplazamiento. Cabecera: título, una frase y tres indicadores reales a la derecha (filas de weekly_price; cargas en etl_run y filas en rejection; fecha y estado de la última carga). Columna izquierda: la frase «1 fila de weekly_price = …» y el diagrama estrella. Columna derecha: «Detalle de la tabla seleccionada» (nombre, rol, filas, descripción y una consulta SQL real) y «Tablas de datos.db», siempre visible, sin desplegable.
+- **dim_date como dimensión real:** sustituye la antigua caja punteada «Semana» (D-095). Queda en la punta superior de la estrella, con sus siete columnas reales. `dim_date` se agrega a `project.TABLE_NAMES` y `DIMENSION_TABLES`, y a las definiciones del modelo en `docs/PROYECTO.md`.
+- **Posiciones calculadas, no fijas:** `star_model.compute_layout` ubica las cinco tarjetas a partir del número real de columnas de cada tabla, de modo que el diagrama nunca se superpone aunque una tabla gane o pierda columnas. Una prueba lo verifica agregando columnas de más a `dim_date`.
+- **Auditoría de cargas:** el grupo `etl_run → rejection` queda separado de la estrella, abajo a la derecha del diagrama, con una flecha y `run_id (FK)`.
+- **Selección por clic, no por mouse encima:** la tabla elegida se guarda en `st.session_state` (un `st.radio` siempre desplegado) y actualiza la tarjeta de detalle; en el diagrama, la tarjeta elegida se resalta con un trazo más grueso y resplandor. Reemplaza el sistema anterior basado en CSS `:hover`/`:focus`, que no funcionaba igual en celulares.
+- **Se retira:** el envoltorio de zoom (controles «+ − ⟲») y los paneles de explicación fijados por CSS bajo el diagrama; `bi/zoom.py` sigue en uso en Pipeline y DevOps. `list_star_panels` y `show_star_schema_tab` se eliminan.
+- **Validación:** 404 pruebas, incluida una de no superposición del layout y otra del clic que cambia la tabla seleccionada. Revisión visual en Corporativo y Vantablack, en 1920 × 1080 y 1440 × 900, sin desplazamiento en ninguno.

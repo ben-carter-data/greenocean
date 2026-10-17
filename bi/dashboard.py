@@ -2778,58 +2778,116 @@ def format_iso_date(text):
     return f"{pd.Timestamp(text):%d-%m-%Y}"
 
 
-def list_star_panels(row_counts, definitions):
-    """(table, title, text, JOIN, real figures) of each table of the star (T-59)."""
-    week_count, first_week, last_week = read_cached_week_span(get_database_version())
-    loaded_at = format_chile_time(parse_run_start(read_latest_run()["started_at"]))
-    panels = [
-        ("weekly_price", "weekly_price · tabla de hechos",
-         "El centro de la estrella: cada fila es un precio semanal. Las claves (FK) la unen "
-         "a cada punta; las medidas en cian son lo que se analiza.",
-         "weekly_price\nJOIN dim_product USING (product_id)\n"
-         "JOIN dim_region USING (region_id)\nJOIN dim_channel USING (channel_id)",
-         f"{charts.format_thousands(row_counts['weekly_price'])} filas · datos al {loaded_at}"),
-        (star_model.WEEK_CARD, "Semana · week_start",
-         "Todavía no es una tabla: la semana es la columna week_start de weekly_price, el "
-         "lunes de inicio (RN-08). Mejora: una dim_date con mes, año y temporada.",
-         "SELECT week_start, AVG(price) FROM weekly_price GROUP BY week_start",
-         f"{week_count} semanas · {format_iso_date(first_week)} a "
-         f"{format_iso_date(last_week)}"),
-    ]
-    for table in project.DIMENSION_TABLES:
-        key = table.replace("dim_", "") + "_id"
-        panels.append((table, f"{table} · dimensión", definitions[table].capitalize() + ".",
-                       f"weekly_price JOIN {table} USING ({key})",
-                       f"{charts.format_thousands(row_counts[table])} filas"))
-    return panels
+TABLE_ROLES = {"weekly_price": "hechos", "dim_product": "dimensión", "dim_region": "dimensión",
+              "dim_channel": "dimensión", "dim_date": "dimensión", "etl_run": "auditoría",
+              "rejection": "auditoría"}
+# One real, runnable query per table: what a reader would actually ask it (D-097).
+TABLE_EXAMPLE_SQL = {
+    "weekly_price": "SELECT COUNT(*) FROM weekly_price WHERE flag IS NULL;",
+    "dim_product": "SELECT * FROM dim_product WHERE product = 'Tomate';",
+    "dim_region": "SELECT * FROM dim_region ORDER BY region;",
+    "dim_channel": "SELECT * FROM dim_channel;",
+    "dim_date": "SELECT * FROM dim_date WHERE iso_year = 2026 AND iso_week = 41;",
+    "etl_run": "SELECT * FROM etl_run ORDER BY started_at DESC LIMIT 1;",
+    "rejection": "SELECT reason, COUNT(*) FROM rejection GROUP BY reason;",
+}
+ARCHITECTURE_TABLE_KEY = "architecture_selected_table"
 
 
-def show_star_schema_tab(mode):
-    """The star model drawn as a star, its explanation panel and the table list."""
+def build_architecture_header(row_counts, latest_run):
+    """Title, a one-line description and three real figures, on the right (D-097)."""
+    run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
+    run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
+    freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
+    chips = [("weekly_price", f"{charts.format_thousands(row_counts['weekly_price'])} filas"),
+             ("Auditoría", f"{charts.format_thousands(row_counts['etl_run'])} cargas · "
+                           f"{charts.format_thousands(row_counts['rejection'])} rechazos"),
+             ("Última carga", f"{freshness} · {run_text}")]
+    return (f'<div class="arch-head compact-header"><h1>{html.escape(PAGE_ARCHITECTURE)}</h1>'
+            '<span class="page-freshness">Modelo estrella que convierte los precios en '
+            'indicadores comparables. Las líneas relacionan tablas; no son pasos de '
+            'ejecución.</span></div><div class="arch-chips">'
+            + "".join(f'<div class="arch-chip"><span>{html.escape(label)}</span>'
+                      f'<div>{html.escape(value)}</div></div>' for label, value in chips)
+            + "</div>")
+
+
+def build_architecture_css(mode):
+    palette = charts.get_palette(mode)
+    return f"""<style>
+    .arch-head {{display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 18px; margin:0;}}
+    .arch-head h1 {{font-size:1.5rem !important; margin:0 !important; padding:0 !important;}}
+    .arch-head .page-freshness {{margin:2px 0 0; font-size:.86rem; max-width:900px;}}
+    .arch-chips {{display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 4px;}}
+    .arch-chip {{border:1px solid {palette['card_border']}; border-radius:9px; background:{palette['card']};
+        padding:6px 13px; min-width:150px;}}
+    .arch-chip span {{display:block; font-size:10.5px; color:{palette['text']}; line-height:1.3;}}
+    .arch-chip div {{font-size:13px; color:{palette['strong_text']}; font-weight:600; white-space:nowrap;}}
+    .st-key-architecture_body [data-testid="stHorizontalBlock"] {{align-items:stretch; gap:14px;}}
+    .st-key-architecture_diagram {{border:1px solid {palette['card_border']}; border-radius:14px;
+        background:{palette['card']}; padding:12px 16px 10px;}}
+    .st-key-architecture_diagram svg {{display:block; width:100%; height:auto;
+        max-height:calc(100vh - 300px);}}
+    .arch-legend {{display:flex; gap:16px; margin-top:6px; font-size:11.5px; color:{palette['text']};}}
+    .arch-phrase {{font-size:.85rem; color:{palette['strong_text']}; margin:0 0 8px;}}
+    .st-key-architecture_detail, .st-key-architecture_tables {{border:1px solid {palette['card_border']};
+        border-radius:14px; background:{palette['card']}; padding:12px 16px 10px;}}
+    .arch-detail-head {{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}}
+    .arch-detail-head code {{font-size:1.05rem; font-weight:700; color:{palette['accent']};}}
+    .arch-detail-role {{font-size:11px; padding:2px 9px; border-radius:999px;
+        background:{palette['field']}; color:{palette['text']};}}
+    .arch-detail-rows {{margin-left:auto; font-size:12px; color:{palette['text']};}}
+    .arch-detail-text {{font-size:.86rem; line-height:1.5; color:{palette['strong_text']}; margin:7px 0 9px;}}
+    .st-key-architecture_tables_list label p {{font-size:.86rem !important;}}
+    </style>"""
+
+
+def show_architecture_table_detail(table, row_counts, definitions):
+    """Name, role, rows, a short description and a real example query (D-097)."""
+    st.markdown(f'<div class="arch-detail-head"><code>{html.escape(table)}</code>'
+                f'<span class="arch-detail-role">{TABLE_ROLES[table]}</span>'
+                f'<span class="arch-detail-rows">{charts.format_thousands(row_counts[table])} filas</span></div>'
+                f'<p class="arch-detail-text">{html.escape((definitions[table][0].upper() + definitions[table][1:]))}</p>',
+                unsafe_allow_html=True)
+    st.code(TABLE_EXAMPLE_SQL[table], language="sql", wrap_lines=True)
+
+
+def show_architecture_page(mode):
+    """One screen at 1920×1080: the star model, its detail and every table (D-097)."""
     row_counts = count_cached_table_rows(get_database_version())
     definitions = project.parse_definitions(project.read_section(
         project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos"))
     columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
-    note = (f"Aparte, fuera de la estrella: <strong>etl_run</strong> → "
-            f"<strong>rejection</strong> (auditoría de cada carga · "
-            f"{charts.format_thousands(row_counts['etl_run'])} y "
-            f"{charts.format_thousands(row_counts['rejection'])} filas).")
-    with open_card("model_diagram", "Modelo estrella",
-                   hint="**Siglas**: PK, clave primaria (identifica cada fila); FK, clave "
-                        "foránea (apunta a la clave de otra tabla); JOIN, unión de dos tablas "
-                        "por su clave. Pasa el mouse sobre una tabla, o tócala en el celular, "
-                        "para ver qué "
-                        "guarda y cómo se une a weekly_price."):
-        st.markdown(star_model.build_star_model_html(
-            columns, row_counts, list_star_panels(row_counts, definitions), note, mode),
-            unsafe_allow_html=True)
-    with open_card("model_tables", "Tablas de datos.db"):
-        show_foldable_table(build_html_table(
-            ["Tabla", "Filas", "Qué guarda"],
-            [[f"<code>{table}</code>", charts.format_thousands(row_counts[table]),
-              html.escape(definitions[table])] for table in project.TABLE_NAMES]), 'Ver tablas del modelo de datos')
-        st.markdown(build_link_html("Ver etl/schema.sql en Código Python y SQL →",
-                                    build_page_address(PAGE_CODE)), unsafe_allow_html=True)
+    st.markdown(build_architecture_css(mode), unsafe_allow_html=True)
+    st.markdown(build_architecture_header(row_counts, read_latest_run()), unsafe_allow_html=True)
+    selected = st.session_state.get(ARCHITECTURE_TABLE_KEY, "weekly_price")
+    if selected not in project.TABLE_NAMES:
+        selected = "weekly_price"
+    with st.container(key="architecture_body"):
+        diagram_column, side_column = st.columns([2.1, 1], gap="medium")
+        with diagram_column:
+            st.markdown('<p class="arch-phrase">1 fila de weekly_price = un producto '
+                        '(variedad y calidad) × región × canal × unidad × semana.</p>',
+                        unsafe_allow_html=True)
+            with st.container(key="architecture_diagram"):
+                st.markdown(star_model.build_star_svg(columns, row_counts, mode, selected=selected),
+                            unsafe_allow_html=True)
+                st.markdown('<div class="arch-legend"><span><b>PK</b> clave primaria</span>'
+                            '<span><b>FK</b> clave foránea</span>'
+                            '<span><b>cian</b> medida</span></div>', unsafe_allow_html=True)
+        with side_column:
+            with st.container(key="architecture_detail"):
+                st.markdown("##### Detalle de la tabla seleccionada")
+                show_architecture_table_detail(selected, row_counts, definitions)
+            with st.container(key="architecture_tables"):
+                st.markdown("##### Tablas de datos.db")
+                with st.container(key="architecture_tables_list"):
+                    st.radio("Elegir tabla", project.TABLE_NAMES, key=ARCHITECTURE_TABLE_KEY,
+                             label_visibility="collapsed",
+                             format_func=lambda table: f"{table} · {TABLE_ROLES[table]} · "
+                                                        f"{charts.format_thousands(row_counts[table])} filas")
+                st.markdown(build_link_html("Ver etl/schema.sql en Código del proyecto →",
+                                            build_page_address(PAGE_CODE)), unsafe_allow_html=True)
 
 
 @st.cache_data
@@ -7087,15 +7145,6 @@ def show_devops_tab(mode):
                             f'{figures["next_run"]}.</div>', unsafe_allow_html=True)
         st.markdown(f'<div class="info-note">El enlace a los informes semanales está en '
                     f'{build_place_link(PAGE_LINKS, "la página")}.</div>', unsafe_allow_html=True)
-
-
-def show_architecture_page(mode):
-    """The data model has a direct sidebar entry, without another tab layer."""
-    show_page_header(PAGE_ARCHITECTURE, "La estructura que convierte los precios en "
-                     "indicadores comparables: tablas, claves y relaciones.")
-    st.caption("Un registro de precios representa un producto, variedad y calidad, en una región, canal, unidad y semana. Las líneas del modelo relacionan tablas; no indican pasos de ejecución.")
-    show_star_schema_tab(mode)
-    st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
 
 
 # endregion

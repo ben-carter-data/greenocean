@@ -143,9 +143,9 @@ EXPLORER_EXAMPLE_FILTERS = dict(
     **{explorer.FIELD_PRODUCT: "Tomate", explorer.FIELD_REGION: "Región Metropolitana de Santiago",
        explorer.FIELD_FIRST_WEEK: "2026-09-07", explorer.FIELD_LAST_WEEK: "2026-10-05"})
 
-TABLE_NAMES = ["weekly_price", "dim_product", "dim_region", "dim_channel", "etl_run",
-               "rejection"]
-DIMENSION_TABLES = ["dim_product", "dim_region", "dim_channel"]
+TABLE_NAMES = ["weekly_price", "dim_product", "dim_region", "dim_channel", "dim_date",
+               "etl_run", "rejection"]
+DIMENSION_TABLES = ["dim_product", "dim_region", "dim_channel", "dim_date"]
 RUN_TABLES = ["etl_run", "rejection"]
 
 # The case every KPI example uses: the one the dashboard opens with.
