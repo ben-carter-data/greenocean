@@ -787,3 +787,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Encabezado compacto:** la página pasa del encabezado largo de documento (título + subtítulo + franja de frescura) al mismo encabezado de una línea que usa el Dashboard (título y frescura juntos), para que la lista y el primer resultado se vean sin desplazarse por un título alto.
 - **Alcance:** el detalle de cada pregunta (resultado, cómo leerlo, tabla completa, SQL, Python) no cambia: ya vivía en paneles plegados por defecto, compacto desde antes.
 - **Validación:** 414 pruebas (el único fallo, previo y no relacionado); se ajustan cuatro pruebas que referenciaban la clave única `catalog_choice` para usar las nuevas claves por tema (`catalog_choice_Precios`, `catalog_choice_Calidad de datos`).
+
+## D-108 · Cada pregunta del catálogo muestra sus filas reales, como un motor de base de datos
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** cada opción de la lista ahora muestra, junto a la pregunta, el número real de filas que devuelve su consulta sin filtrar —toda la tabla, no el ejemplo filtrado que se grafica— y un ícono que dice si el resultado ya es un gráfico (📊) o solo una tabla (📋). Por ejemplo: «¿Dónde es más caro? · 798.280 filas 📊».
+- **Por qué el conteo es real:** `read_catalog_row_counts()` corre cada consulta guardada sin filtro (la misma que ya usa el detalle), cacheada por versión de la base, igual que el resto de los indicadores: no es una cifra inventada ni aproximada.
+- **Relevancia de cada pregunta:** de las 15, nueve ya terminan en gráfico (las siete de precios más «Cuántos precios entran en los indicadores» y «Qué precios no tienen unidad comparable»); las seis restantes son evidencia de auditoría (ejecuciones, filas rechazadas, atípicos, cobertura de semanas, brecha calculable) donde una tabla es más clara que un gráfico. Ninguna necesita convertirse: ya se marcan correctamente.
+- **Validación:** 414 pruebas (el único fallo, previo y no relacionado).

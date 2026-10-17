@@ -333,10 +333,13 @@ def test_c03_catalog_lists_every_question_and_shows_the_chosen_one_whole():
     its SQL with the file on GitHub, the whole table, the CSV and its Python."""
     app = draw_page(dashboard.PAGE_QUERIES)
     assert not app.exception
-    # The list is grouped by theme (D-107): one radio per theme, not one flat stack.
-    shown = [question for theme in dashboard.CATALOG_THEMES
-             for question in app.radio(key=f"catalog_choice_{theme}").options]
-    assert shown == [entry["question"] for entry in dashboard.CATALOG]
+    # The list is grouped by theme (D-107), each option naming its real row count and
+    # whether it ends in a chart or a table (D-108), not just the bare question.
+    shown = [option for theme in dashboard.CATALOG_THEMES
+             for option in app.radio(key=f"catalog_choice_{theme}").options]
+    assert shown == [dashboard.describe_catalog_option(entry["name"],
+                                                        dashboard.read_catalog_row_counts())
+                     for entry in dashboard.CATALOG]
     first = dashboard.CATALOG[0]
     text = " ".join(block.value for block in app.markdown)
     for words in [first["question"], "Resultado de la consulta", "Cómo leerlo",
@@ -366,7 +369,8 @@ def test_c03_choosing_a_question_shows_its_result_and_keeps_it_in_the_address():
     with pytest.raises(KeyError):
         app.radio(key=f"catalog_choice_{dashboard.PRICE_THEME}")
     options = app.radio(key=f"catalog_choice_{dashboard.QUALITY_THEME}").options
-    assert "¿La última carga funcionó?" in options and len(options) < len(dashboard.CATALOG)
+    assert any(option.startswith("¿La última carga funcionó?") for option in options)
+    assert len(options) < len(dashboard.CATALOG)
 
 
 def test_kpi_link_opens_the_kpi_view_with_that_indicator():
