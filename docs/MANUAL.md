@@ -162,6 +162,10 @@ En **Histórico**, la evolución cronológica de los precios aparece antes de la
 
 La página «Contexto del precio» (en 01 · Dashboard) responde si el precio de esta semana es normal. **Habitual** es el rango entre el percentil 25 y el 75 del precio de la **misma semana del año en los años anteriores** disponibles; el año en curso no se usa. Si el precio supera ese rango, está «sobre lo habitual»; si queda por debajo, «bajo lo habitual». Cuando hay menos de dos años anteriores con esa semana, la página dice «Sin historia suficiente» en vez de clasificar el precio. La brecha entre canales es cuánto más caro está el supermercado que la feria, comparada con la mediana del mismo mes en años anteriores. «Qué suele pasar» resume el patrón de años anteriores; no es un pronóstico. Para abrirla con un producto, elígelo en el panel de productos del Resumen.
 
+### Modelo de datos
+
+La página cabe en una pantalla (1920 × 1080). A la izquierda, el diagrama estrella: `weekly_price` al centro, `dim_date` arriba, `dim_product` a la izquierda, `dim_region` a la derecha, `dim_channel` abajo, y aparte, abajo a la derecha, la auditoría de cargas (`etl_run → rejection`). A la derecha, el detalle de la tabla elegida (con una consulta SQL real) y la lista completa de tablas; elegir una actualiza el detalle y resalta esa tabla en el diagrama.
+
 ### Navegación
 
 El menú lateral es la única navegación del proyecto: todas las secciones y subpáginas están siempre desplegadas, sin pestañas ni expanders. Arriba de cada página hay su ruta («Arquitectura y operación › Modelo de datos»), el botón «Volver» y el selector de tema. La alerta de precio tiene su propio botón, fijo al final del menú.

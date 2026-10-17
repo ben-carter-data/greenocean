@@ -42,6 +42,7 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 - `dim_product`: cada clave de producto: grupo, producto, variedad y calidad.
 - `dim_region`: las regiones con datos, con su número oficial.
 - `dim_channel`: los canales; el mayorista es un canal más, así el margen compara dos canales de la misma tabla.
+- `dim_date`: una fila por semana, sin huecos, con su año y semana ISO, mes y estación (D-095).
 - `etl_run`: una línea por ejecución del ETL, con filas leídas, cargadas y rechazadas.
 - `rejection`: las filas rechazadas de la última ejecución, tal como venían, con su motivo.
 
