@@ -63,7 +63,7 @@ PROJECT_LINKS = [
      "group": "Documentos", "page": "Manual"},
     {"name": "DECISIONES", "description": "Qué se decidió, por qué y qué se descartó.",
      "url": f"{GITHUB_URL}/blob/{GITHUB_BRANCH}/docs/DECISIONES.md", "icon": "gavel",
-     "group": "Documentos", "page": "Decisiones"},
+     "group": "Documentos"},
     {"name": "Video", "description": "El proyecto explicado en dos minutos.",
      "url": None, "icon": "play_circle", "group": "Documentos"},
     {"name": "Post de LinkedIn", "description": "La presentación del proyecto.",

@@ -84,7 +84,7 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 
 ## Administración y enlaces
 
-Los enlaces del proyecto están en un solo lugar: la página «Enlaces» del menú, agrupados en código y operación (código, ejecuciones, informes, historial de cambios), fuentes de datos (las dos de ODEPA) y documentos (este MANUAL y las DECISIONES). Cada recurso tiene una descripción y se abre en una pestaña nueva.
+Los enlaces del proyecto están en un solo lugar: la página «GitHub» del menú, agrupados en código y operación (código, ejecuciones, informes, historial de cambios), fuentes de datos (las dos de ODEPA) y documentos (este MANUAL y las DECISIONES). Cada recurso tiene una descripción y se abre en una pestaña nueva. El explorador de archivos del panel se retiró: se navega el código directamente en el repositorio.
 
 La tarjeta «🔒 Administración» de «Operaciones» → «Ejecuciones» se abre con la clave de control (secreto `CONTROL_CODE` del panel). Muestra: administrar la app en Streamlit (Reboot, secretos, registros), lanzar el workflow en GitHub, crear un token, ver los tokens, el aviso «Tu token vence en X días» (destacado si faltan menos de 14) y el botón «Ejecutar ahora». El panel nunca muestra el token ni una parte de él.
 
@@ -116,16 +116,15 @@ La tarjeta «🔒 Administración» de «Operaciones» → «Ejecuciones» se ab
 
 ## Recorrido del proyecto
 
-El panel empieza por los datos y se recorre en seis pasos:
+El panel empieza por los datos y se recorre en cinco pasos:
 
 1. **Dashboard**: precios de la semana, gráficos, filtros y ayudas contextuales.
 2. **KPIs · Qué medimos**: las ocho medidas, sus fórmulas, ejemplos reales, límites y enlaces al resultado y SQL.
 3. **Arquitectura y operación**: pipeline animado, arquitectura por plataforma, modelo estrella, DevOps y seguimiento de las cargas.
-4. **Código del proyecto**: fuentes Python y SQL, pruebas y configuración, en carpetas cerradas que se pueden explorar.
-5. **Preguntas y resultados SQL**: cada pregunta con el resultado real y la consulta que lo produce.
-6. **Documentación**: una sola pantalla con qué resuelve el proyecto, su alcance, sus reglas de calidad y cómo opera; los documentos completos (manual, glosario, PRD, SAD) quedan a un enlace de distancia.
+4. **Preguntas y resultados SQL**: cada pregunta con el resultado real y la consulta que lo produce.
+5. **Documentación**: tres vistas de una sola pantalla —Business Intelligence, Business Analyst e IT— con qué resuelve el proyecto, su misión, su alcance, sus indicadores y sus decisiones clave; sin SQL ni código.
 
-**Enlaces** contiene el repositorio público, los registros de GitHub y las fuentes originales. La navegación al pie de página sigue el orden del recorrido; las vistas de cada sección tienen enlaces directos.
+**GitHub** reúne el código completo, los registros de ejecución, las fuentes originales y los documentos (manual, decisiones). El explorador de archivos del panel se retiró: el código se navega en el repositorio. La navegación al pie de página sigue el orden del recorrido; las vistas de cada sección tienen enlaces directos.
 
 El Dashboard es la página de inicio para todas las visitas. Al recargar se vuelve al resumen principal. El icono de sol o luna en la cabecera abre Apariencia: Corporativo, Vantablack, Blue Light y Dark Grey. Corporativo es la apariencia predeterminada. El botón Volver recupera el punto anterior del proyecto y sus filtros, sin abrir otra ventana. Los rankings de alzas y bajas se muestran juntos; Top N limita cada ranking por separado.
 
