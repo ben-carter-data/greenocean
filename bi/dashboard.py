@@ -707,31 +707,10 @@ def build_style_css(mode):
     [data-testid="stMainBlockContainer"] {{ padding-top:1.1rem; }}
     .page-freshness {{ color:{palette["text"]}; font-size:0.82rem; margin-bottom:8px; }}
     [data-testid="stMain"] h1 {{ font-size:clamp(1.7rem,3vw,2.35rem); line-height:1.15; }}
-    /* One slim line on top (D-072): where the reader is, and ◀ [view] ▶ at the right. */
-    .st-key-app_header {{ justify-content:space-between; flex-wrap:wrap !important;
-        gap:12px; margin:0 0 8px; padding:10px 16px; background:{palette["card"]};
-        border:1px solid {palette["card_border"]}; border-radius:14px; }}
-    .st-key-header_preferences {{ width:min(460px,100%) !important; margin-left:auto; gap:12px;
-        flex-wrap:wrap !important; }}
-    .st-key-header_preferences > div {{ flex:1 1 180px; min-width:0; }}
-    .profile-context {{ font-size:.85rem; color:{palette["text"]}; margin:0 0 10px; }}
     @media(max-width:700px) {{
-        .st-key-app_header {{ display:block !important; }}
-        .st-key-app_header > div {{ width:100% !important; max-width:100% !important; }}
-        .app-brand {{ margin-bottom:8px; white-space:normal; flex-wrap:wrap; }}
-        .st-key-header_preferences {{ width:100% !important; }}
         [data-testid="stHorizontalBlock"]:has(.st-key-catalog_list) {{ flex-wrap:wrap; }}
         [data-testid="stColumn"]:has(.st-key-catalog_list) {{ min-width:100%; }}
     }}
-    .app-brand {{ display:flex; align-items:baseline; gap:8px; white-space:nowrap; }}
-    .app-brand span {{ color:{palette["text"]}; font-size:.85rem; font-weight:600; }}
-    .app-brand small {{ color:{palette["accent"]}; font-size:.85rem; font-weight:600; }}
-    .st-key-report_navigation {{ flex-wrap:nowrap !important; gap:6px; width:min(420px, 100%) !important;
-        margin-left:auto; }}
-    .st-key-report_navigation [data-testid="stButton"] {{ flex:none; width:auto !important; }}
-    .st-key-report_navigation [data-testid="stButton"] button {{ min-height:34px; height:34px;
-        width:34px; padding:0; }}
-    .st-key-report_navigation [data-testid="stSelectbox"] {{ flex:1 1 0; min-width:0; }}
     /* The report: title and analyzed week, actions at the right. */
     .report-title h1 {{ font-size:clamp(1.6rem,2.6vw,2.2rem) !important; margin:0 !important;
         padding:0 !important; line-height:1.15; }}
@@ -1501,10 +1480,6 @@ def apply_style(mode):
     st.markdown(f"<style>{build_style_css(mode)}</style>", unsafe_allow_html=True)
 
 
-GRAPH_NAVIGATION = [
-    ("Dashboard", PAGE_HOME), ("Pipeline", PAGE_DIAGRAMS),
-    ("Modelo", PAGE_ARCHITECTURE), ("DevOps", PAGE_DEVOPS),
-]
 
 OVERVIEW_CLASS_BY_VIEW = {
     PAGE_HOME: "overview-dashboard",
@@ -1565,20 +1540,6 @@ def show_data_sample(frame, title="Muestra del gráfico · primeros 3 resultados
                 ('<div class="sample-title">Precios redondeados para leerlos; los porcentajes usan los valores completos.</div>' if any(column in sample.columns for column in ('Precio nacional', 'Mayorista', 'Consumidor')) else '') + '</div>', unsafe_allow_html=True)
 
 
-def build_graph_navigation_html(window):
-    """Direct local destinations for analytical and architecture views, on every page."""
-    view = st.session_state.get(window_view_key(window))
-    links = []
-    for label, page in GRAPH_NAVIGATION:
-        active = ' aria-current="page"' if view == page else ''
-        address = html.escape(build_page_address(page), quote=True)
-        hint = html.escape(GRAPH_HELP[page], quote=True)
-        links.append(f'<span class="nav-item"><a href="{address}" target="_self"{active} aria-describedby="nav-help-{page.replace(" ", "-")}">{html.escape(label)}</a>'
-                     f'<span class="nav-help" role="tooltip" id="nav-help-{page.replace(" ", "-")}">{hint}</span></span>')
-    return ('<nav class="graph-navigation" aria-label="Gráficos y arquitectura">'
-            '<div class="graph-destinations">' + ''.join(links) + '</div></nav>')
-
-
 def build_greenocean_logo(mode, sidebar=False):
     """Transparent wordmark, displayed by Streamlit outside the navigation links."""
     background = charts.get_palette(mode)["sidebar" if sidebar else "background"]
@@ -1600,20 +1561,7 @@ def show_app_header(window):
             icon_image=build_greenocean_logo(get_mode()), size="large")
     st.markdown(f"""<style>
     [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {{display:none;}}
-    [data-testid="stMainBlockContainer"] {{padding-top:6px !important;}}
-    .stApp:has([data-testid="stSidebar"][aria-expanded="false"]) [data-testid="stMainBlockContainer"] {{padding-top:42px !important;}}
-    .graph-navigation {{display:flex; align-items:center; gap:22px; padding:4px 28px 4px 0;
-        border-bottom:1px solid {palette['card_border']};
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
-    .graph-navigation a {{font-size:.79rem; font-weight:400; text-decoration:none;
-        color:{palette['text']}; white-space:nowrap; padding:8px 0;}}
-    .graph-navigation .graph-brand {{font-weight:500; letter-spacing:-.025em;}}
-    .nav-item {{position:relative; display:inline-flex;}}
-    .nav-help {{display:none; position:absolute; top:calc(100% + 10px); left:0; width:min(250px,75vw);
-        background:{palette['card']}; color:{palette['strong_text']}; padding:10px 12px; border:1px solid {palette['card_border']};
-        border-radius:8px; font-size:.82rem; line-height:1.5; z-index:2000; box-shadow:0 4px 16px #0002; white-space:normal;}}
-    .nav-item:hover .nav-help, .nav-item:focus-within .nav-help {{display:block;}}
-    .nav-item:nth-last-child(-n+3) .nav-help {{left:auto; right:0;}}
+    .stApp:has([data-testid="stSidebar"][aria-expanded="false"]) [data-testid="stMainBlockContainer"] {{padding-top:54px !important;}}
     .reading-guide {{font-size:.8rem; margin:5px 0 14px; color:{palette['text']};}}
     .reading-term {{font-size:inherit; margin-left:0; border-bottom:1px dotted currentColor; font-weight:400;}}
     .regional-detail {{width:100%; font-size:.75rem; border-collapse:collapse;}}
@@ -1623,18 +1571,19 @@ def show_app_header(window):
     .chart-sample table {{width:100%; font-size:.75rem; border-collapse:collapse;}}
     .chart-sample td, .chart-sample th {{padding:5px 7px; text-align:left; white-space:normal; border-bottom:1px solid {palette['card_border']};}}
 
-    .graph-destinations {{display:flex; flex:1; justify-content:space-between; gap:12px; flex-wrap:wrap;}}
-    .graph-navigation a:hover, .graph-navigation a[aria-current="page"] {{color:{palette['accent']};}}
-    .graph-navigation a[aria-current="page"] {{font-weight:600; box-shadow:0 1px {palette['accent']};}}
-    .graph-navigation a:focus-visible {{outline:2px solid {palette['accent']}; outline-offset:4px;}}
     [data-testid="stMarkdownContainer"]:has(> .report-title) {{margin-bottom:0;}}
     .report-title p {{display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:8px 0 12px;}}
     .st-key-report_page .card-title {{flex-wrap:wrap; align-items:flex-start;}}
     .st-key-report_page .card-title-text {{flex:1 1 140px; white-space:normal; overflow:visible;}}
     .st-key-report_page [data-testid="stCaptionContainer"] {{overflow-wrap:anywhere;}}
-    .st-key-app_header {{background:transparent; border:0; border-radius:0; padding:4px 0 8px; margin:0;}}
-    .st-key-header_preferences {{width:auto !important;}}
-    .st-key-header_preferences {{flex-wrap:nowrap !important; align-items:center;}}
+    /* The page's path, Volver and the theme choice: the only header on every page (D-096). */
+    .st-key-app_header {{background:transparent; border:0; border-bottom:1px solid {palette['card_border']};
+        border-radius:0; padding:4px 0 8px !important; margin:0 0 6px; justify-content:space-between;
+        flex-wrap:wrap !important; row-gap:6px;}}
+    .st-key-app_header .app-brand {{font-size:.86rem; font-weight:600; color:{palette['strong_text']};
+        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
+    .st-key-header_preferences {{flex-wrap:nowrap !important; align-items:center; gap:8px; width:auto !important;
+        margin-left:auto;}}
     .st-key-header_preferences > div {{flex:none; min-width:0;}}
     .st-key-header_preferences [data-testid="stPopover"] button {{width:40px; min-width:40px; padding:8px;}}
     .st-key-header_preferences [data-testid="stPopover"] button p {{position:absolute; width:1px;
@@ -1643,29 +1592,24 @@ def show_app_header(window):
     .st-key-window_page [data-testid="stMarkdownContainer"] p,
     .st-key-window_page [data-testid="stMarkdownContainer"] li {{
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; line-height:1.65;}}
-    .st-key-app_header .app-brand span {{font-weight:400;}}
+    .block-container, [data-testid="stMainBlockContainer"] {{padding-top:1rem !important; padding-bottom:.5rem !important;}}
     [data-testid="stSidebarNav"] p, [data-testid="stSidebar"] [data-testid="stPageLink"] p {{
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-weight:400; letter-spacing:-.015em;}}
-    @media(max-width:800px) {{
-        .graph-navigation {{align-items:flex-start; flex-direction:column; gap:0;}}
-        .graph-destinations {{width:100%; justify-content:flex-start; gap:2px 18px;}}
+    @media(max-width:700px) {{
+        .st-key-app_header .app-brand {{white-space:normal; flex:1 1 100%; order:1;}}
+        .st-key-header_preferences {{order:2; margin-left:0;}}
     }}
     </style>""", unsafe_allow_html=True)
-    if window == REPORT_WINDOW and st.session_state.get(window_view_key(window)) == PAGE_HOME:
-        with st.container(key="home_header", horizontal=True, vertical_alignment="center"):
-            st.markdown(build_graph_navigation_html(window), unsafe_allow_html=True)
-            with st.container(key="header_preferences", width=40):
-                show_theme_field()
-    else:
-        st.markdown(build_graph_navigation_html(window), unsafe_allow_html=True)
-        with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
-            st.markdown(f'<div class="app-brand"><span>Estás en</span><small>'
-                        f'{html.escape(window)}</small></div>', unsafe_allow_html=True)
-            with st.container(key="header_preferences", horizontal=True):
-                if st.button("Volver", icon=":material/arrow_back:", key="return_to_previous",
-                             help="Volver al punto anterior del proyecto, con su selección."):
-                    st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
-                show_theme_field()
+    view = read_current_view(window)
+    path = window if len(read_window_views(window)) == 1 else f"{window} › {SIDEBAR_LABELS.get(view, view)}"
+    with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
+        st.markdown(f'<div class="app-brand" aria-label="Página actual">{html.escape(path)}</div>',
+                    unsafe_allow_html=True)
+        with st.container(key="header_preferences", horizontal=True):
+            if st.button("Volver", icon=":material/arrow_back:", key="return_to_previous",
+                         help="Volver al punto anterior del proyecto, con su selección."):
+                st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
+            show_theme_field()
     theme = get_mode()
     match_base_mode(theme)
     return theme
@@ -5735,12 +5679,6 @@ def show_market_overview(mode, prefix):
     st.markdown('<div class="greenocean-mockup">' + home_mockup.dashboard_header(
         describe_week_span(week), updated, latest['status']==etl.STATUS_LOADED, model['family_rows'],
         regional_rows, None if region == ALL_VALUES else region) + '</div>', unsafe_allow_html=True)
-    with st.sidebar.container(key='home_alert_access'):
-        if st.button(f'Alertas de precio · {model["alert_count"]}',
-                     key='home_alert_trigger',
-                     help=f'{model["alert_count"]} alertas de precio. Abre el detalle por familia.'):
-            st.session_state['home_alert_selected_family'] = None
-            show_home_alerts_dialog(week, ALL_VALUES, None, mode)
     map_column, detail_column = st.container(key='home_overview').columns([0.56, 1.44], gap='small')
     # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
     # sanitizer intentionally removes interactive SVG links.
@@ -7751,68 +7689,95 @@ RELOAD_HOME_SCRIPT = """<script>
 </script>"""
 
 
+# The side menu is the only navigation (D-096): every section and view in sight,
+# group titles that are not links, the current page highlighted.
+SIDEBAR_TREE = [
+    ("Recorrido", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY, PAGE_DATA]),
+                   (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS]),
+                   (SECTION_CODE, None), (SECTION_QUERIES, None),
+                   (SECTION_PROJECT, [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES])]),
+    ("Referencias", [(SECTION_LINKS, [PAGE_DOCUMENTATION, PAGE_MANUAL, PAGE_GLOSSARY]),
+                     (SECTION_RESOURCES, None)]),
+]
+SIDEBAR_LABELS = {PAGE_HOME: "Resumen de la semana", PAGE_OPERATIONS: "Calidad y trazabilidad",
+                  PAGE_DOCUMENTATION: "Documentación general", PAGE_COVER: "Portada"}
+
+
+def read_current_view(window):
+    """The view drawn in a window: the address first, then the last choice."""
+    views = read_window_views(window)
+    view = st.query_params.get(VIEW_PARAMETER, st.session_state.get(window_view_key(window), views[0]))
+    return view if view in views else views[0]
+
+
+def build_sidebar_css(mode):
+    palette = charts.get_palette(mode)
+    text = palette["sidebar_text"]
+    return f"""<style>
+    [data-testid="stSidebar"] {{background:{palette['sidebar']};}}
+    [data-testid="stSidebarUserContent"] {{padding:0 12px 0 !important;}}
+    [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important; min-height:calc(100vh - 96px);}}
+    [data-testid="stSidebarNav"] {{display:none;}}
+    .nav-heading {{font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700;
+        color:{text}; opacity:.62; margin:14px 8px 4px;}}
+    .nav-group {{font-size:.86rem; font-weight:650; color:{text}; margin:16px 8px 6px; cursor:default;}}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a {{padding:4px 8px !important; border-radius:6px;
+        background:transparent !important; box-shadow:none !important; min-height:0;}}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] p {{font-size:.86rem; color:{text} !important;
+        font-weight:400; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
+    [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {{background:{text}14 !important;}}
+    [class*="st-key-nav_child_"] [data-testid="stPageLink"] a {{margin-left:14px;}}
+    [class*="st-key-nav_"]:not([class*="st-key-nav_child_"]) {{margin:14px 0 2px;}}
+    [class*="st-key-nav_current"] [data-testid="stPageLink"] a {{background:{text}24 !important;
+        box-shadow:inset 3px 0 {palette['accent']} !important;}}
+    [class*="st-key-nav_current"] [data-testid="stPageLink"] p {{font-weight:650;}}
+    .st-key-sidebar_footer {{margin-top:auto; position:sticky; bottom:0; padding:12px 0 14px;
+        background:{palette['sidebar']}; gap:8px !important; z-index:5;}}
+    .st-key-sidebar_footer button {{width:100%; justify-content:flex-start; border:0 !important;
+        background:#c62832 !important; color:#fff !important; border-radius:9px; padding:9px 12px; min-height:0;}}
+    .st-key-sidebar_footer button:hover {{background:#a91f28 !important;}}
+    .st-key-sidebar_footer button p {{color:#fff !important; font-weight:650; font-size:.86rem; text-align:left;}}
+    .st-key-sidebar_footer [data-testid="stCaptionContainer"] p {{color:{text} !important; opacity:.75;
+        font-size:.74rem; line-height:1.4;}}
+    </style>"""
+
+
 def show_sidebar_navigation(windows_by_title, current_window, order):
-    """Place child views directly inside their section instead of a detached list."""
-    selected = st.query_params.get(VIEW_PARAMETER,st.session_state.get(window_view_key(current_window),read_window_views(current_window)[0]))
-    if current_window == REPORT_WINDOW and selected == PAGE_HOME:
-        items=[('Resumen','home',PAGE_HOME),
-               ('Contexto del precio','clock',PAGE_SEASONALITY),('Arquitectura','tree',PAGE_DIAGRAMS),
-               ('Código','code',PAGE_CODE),('Documentación','document',PAGE_DOCUMENTATION)]
-        st.sidebar.markdown(home_mockup.sidebar([(label,kind,build_page_address(page)) for label,kind,page in items]),unsafe_allow_html=True)
-        return
-    palette = charts.get_palette(get_mode())
-    st.sidebar.markdown(f"""<style>
-    [data-testid="stSidebar"] [data-testid="stExpander"] details {{
-        border:0 !important; background:transparent !important; border-radius:0;}}
-    [data-testid="stSidebar"] [data-testid="stExpander"] summary {{
-        padding:7px 6px; background:transparent !important; color:{palette['sidebar_text']} !important;
-        border:0 !important; border-radius:0; box-shadow:none !important;}}
-    [data-testid="stSidebar"] [data-testid="stExpander"] summary p {{
-        color:{palette['sidebar_text']} !important; font-size:.95rem; font-weight:500;}}
-    [data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {{opacity:.85;}}
-    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] p,
-    [data-testid="stSidebarCollapseButton"] button, [data-testid="stSidebarCollapseButton"] span {{color:{palette['sidebar_text']} !important;}}
-    [data-testid="stSidebar"] [data-testid="stExpanderDetails"] {{padding:0 4px 0 17px; border-top:0 !important;}}
-    [class*="st-key-sidebar_children_"] {{
-        border-left:1px solid {palette['sidebar_text']}55; padding-left:12px; margin-left:3px; gap:0 !important;}}
-    [class*="st-key-sidebar_branch_"] {{position:relative; gap:0 !important;}}
-    [class*="st-key-sidebar_branch_"]::before {{content:""; position:absolute;
-        left:-13px; top:50%; width:13px; border-top:1px solid {palette['sidebar_text']}55;}}
-    [class*="st-key-sidebar_branch_"][class*="_last"]::after {{content:""; position:absolute;
-        left:-14px; top:calc(50% + 1px); bottom:0; width:2px; background:{palette['sidebar']};}}
-    [class*="st-key-sidebar_children_"] [data-testid="stPageLink"] a {{
-        background:transparent !important; border-radius:0; padding:5px 6px; box-shadow:none !important;}}
-    [class*="st-key-sidebar_children_"] [data-testid="stPageLink"] p {{font-size:.86rem;}}
-    [class*="st-key-sidebar_children_"] [data-testid="stPageLink"] a:hover {{text-decoration:underline; text-underline-offset:4px;}}
-    .st-key-sidebar_current_view [data-testid="stPageLink"] a {{
-        background:transparent !important; box-shadow:none !important;}}
-    .st-key-sidebar_current_view [data-testid="stPageLink"] p {{font-weight:650;}}
-    .st-key-sidebar_current_view [data-testid="stPageLink"] a::after {{
-        content:""; width:5px; height:5px; border-radius:50%; background:{palette['sidebar_text']}; margin-left:auto;}}
-    </style>""", unsafe_allow_html=True)
-    for heading, sections in (("Recorrido", ROUTE),
-                              ("Referencias", [SECTION_LINKS, SECTION_RESOURCES])):
-        st.sidebar.markdown(f"**{heading}**")
-        for window in sections:
-            views = [view for view in read_window_views(window) if view != PAGE_ALERTS]
-            if len(views) == 1:
-                st.sidebar.page_link(windows_by_title[window], label=number_window(window, order),
-                                     icon=WINDOW_ICONS[window], query_params=keep_context())
+    """Every section and view of the project, always unfolded (D-096)."""
+    st.sidebar.markdown(build_sidebar_css(get_mode()), unsafe_allow_html=True)
+    current_view = read_current_view(current_window)
+    for heading, sections in SIDEBAR_TREE:
+        st.sidebar.markdown(f'<div class="nav-heading">{heading}</div>', unsafe_allow_html=True)
+        for window, views in sections:
+            label = number_window(window, order)
+            if views is None:
+                key = "nav_current" if window == current_window else f"nav_{WINDOW_PATHS[window]}"
+                with st.sidebar.container(key=key):
+                    st.page_link(windows_by_title[window], label=label, icon=WINDOW_ICONS[window],
+                                 query_params=keep_context())
                 continue
-            with st.sidebar.expander(number_window(window, order), expanded=window == current_window):
-                with st.container(key=f"sidebar_children_{WINDOW_PATHS[window]}"):
-                    selected = st.query_params.get(VIEW_PARAMETER, st.session_state.get(window_view_key(window), views[0]))
-                    for index, view in enumerate(views):
-                        active = window == current_window and view == selected
-                        key = "sidebar_current_view" if active else f"sidebar_view_{WINDOW_PATHS[window]}_{index}"
-                        tail = "_last" if index == len(views) - 1 else ""
-                        with st.container(key=f"sidebar_branch_{WINDOW_PATHS[window]}_{index}{tail}"):
-                            with st.container(key=key):
-                                label = ("Resumen de la semana" if view == PAGE_HOME else
-                                         "Calidad y trazabilidad" if view == PAGE_OPERATIONS else view)
-                                st.page_link(windows_by_title[window], label=label,
-                                             icon=PAGE_ICONS.get(view),
-                                             query_params=keep_context() | {VIEW_PARAMETER: view})
+            st.sidebar.markdown(f'<div class="nav-group">{html.escape(label)}</div>', unsafe_allow_html=True)
+            for index, view in enumerate(views):
+                active = window == current_window and view == current_view
+                key = f"nav_child_{WINDOW_PATHS[window]}_{index}" + ("_nav_current" if active else "")
+                with st.sidebar.container(key=key):
+                    st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
+                                 icon=PAGE_ICONS.get(view),
+                                 query_params=keep_context() | {VIEW_PARAMETER: view})
+    show_sidebar_footer()
+
+
+def show_sidebar_footer():
+    """The price alerts, apart from the navigation and always at the bottom, on every page."""
+    alerts_now = read_price_alerts()
+    week = read_latest_week()
+    count = int((alerts_now["week_start"] == week).sum()) if not alerts_now.empty else 0
+    with st.sidebar.container(key="sidebar_footer"):
+        if st.button(f"Alerta de precio · {count}", icon=":material/warning:", key="home_alert_trigger",
+                     help=f"{count} cambios de precio fuera de lo habitual esta semana. Abre el detalle por familia."):
+            st.session_state["home_alert_selected_family"] = None
+            show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())
+        st.caption("Fuente: ODEPA · actualización automática cada martes.")
 
 
 def main():
@@ -7859,7 +7824,6 @@ def main():
     show_sidebar_navigation(windows_by_title, current_window, order)
     # The dashboard is the public home page; choosing a profile is optional.
     current_page.run()
-    st.sidebar.caption("Fuente: ODEPA · actualización automática cada martes.")
 
 
 if __name__ == "__main__":

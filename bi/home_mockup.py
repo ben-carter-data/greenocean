@@ -79,8 +79,6 @@ def icon(kind):
 
 def style(mode, palette):
     css = Path(__file__).with_suffix('.css').read_text()
-    alert_icon = base64.b64encode((Path(__file__).parent / 'assets' / 'alert-price.svg').read_bytes()).decode('ascii')
-    css = css.replace('__ALERT_ICON__', f'data:image/svg+xml;base64,{alert_icon}')
     dark = palette['base'] == 'dark'
     colors = {'BG': '#ffffff' if not dark else palette['background'],
               'PANEL': '#ffffff' if not dark else palette['card'],
@@ -106,15 +104,6 @@ def style(mode, palette):
         .greenocean-mockup .mock-last-price{fill:#83baff;}
         """
     return '<style>'+css+'</style>' 
-
-
-def sidebar(items):
-    links = []
-    for i,(title,kind,address) in enumerate(items):
-        if i == 4:
-            links.append('<hr>')
-        links.append(f'<a href="{esc(address)}" target="_self" class="{"active" if i==0 else ""}">{icon(kind)}<span>{esc(title)}</span></a>')
-    return '<div class="mock-brand"><span>Green</span>Ocean</div><nav class="mock-sidebar" aria-label="Navegación del dashboard">'+''.join(links)+'</nav>'
 
 
 def title(week_label, updated, loaded):

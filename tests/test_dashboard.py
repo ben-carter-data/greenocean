@@ -1188,22 +1188,16 @@ def test_smart_criteria_cover_each_kpi_without_inventing_goals():
     assert "histórico disponible" in dashboard.build_kpi_smart_html("K7")
 
 
-def test_global_graph_header_has_direct_local_links_and_current_view():
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "import streamlit as st\nfrom bi import dashboard\n"
-              "st.session_state[dashboard.PROFILE_PARAMETER] = 'Reclutamiento'\n"
-              "st.session_state[dashboard.THEME_STATE] = dashboard.DEFAULT_THEME\n"
-              "st.session_state[dashboard.window_view_key(dashboard.REPORT_WINDOW)] = dashboard.PAGE_HOME\n"
-              "st.markdown(dashboard.build_graph_navigation_html(dashboard.REPORT_WINDOW), unsafe_allow_html=True)\n")
-    app = AppTest.from_string(script).run()
+@needs_database
+def test_d096_header_shows_the_current_path_without_a_tab_bar():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params['vista'] = dashboard.PAGE_ARCHITECTURE
+    app.run()
     assert not app.exception
-    markup = app.markdown[0].value
-    assert markup.count('<a ') == len(dashboard.GRAPH_NAVIGATION)
-    assert re.search(r'aria-current="page"[^>]*>Dashboard</a>', markup)
-    assert 'perfil=' not in markup and 'tema=Corporativo' in markup
-    assert 'target="_blank"' not in markup and 'https://' not in markup
-    for label, _ in dashboard.GRAPH_NAVIGATION:
-        assert f'>{label}</a>' in markup
+    assert 'graph-navigation' not in ' '.join(block.value for block in app.markdown)
+    markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
+    assert 'Arquitectura y operación › Modelo de datos' in markup
+    assert app.button(key='return_to_previous').label == 'Volver'
 
 
 def test_return_context_restores_only_supported_selection_fields():
@@ -1281,27 +1275,26 @@ def test_quality_page_does_not_claim_a_complete_audit_and_keeps_evidence_visible
 
 
 @needs_database
-def test_sidebar_keeps_architecture_views_nested_in_the_active_section():
+@needs_database
+def test_d096_sidebar_shows_every_section_unfolded_at_once():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params['vista'] = dashboard.PAGE_ARCHITECTURE
     app.run()
     assert not app.exception
-    architecture_menu = next(item for item in app.sidebar.expander
-                             if 'Arquitectura y operación' in item.label)
-    assert architecture_menu.proto.expanded
-    labels = [item.proto.label for item in architecture_menu.get('page_link')]
-    assert labels == ['Pipeline y arquitectura', 'Modelo de datos', 'DevOps y seguridad',
-                      'Calidad y trazabilidad', 'Ejecuciones']
-    assert 'En esta sección' not in ' '.join(block.value for block in app.sidebar.markdown)
-    assert not next(item for item in app.sidebar.expander if 'Dashboard' in item.label).proto.expanded
+    # No expanders left: everything is visible together (D-096).
+    assert not app.sidebar.expander
+    labels = [link.proto.label for link in app.sidebar.get('page_link')]
+    for expected in ['Resumen de la semana', 'Contexto del precio', 'Datos',
+                     'Pipeline y arquitectura', 'Modelo de datos', 'DevOps y seguridad',
+                     'Calidad y trazabilidad', 'Ejecuciones', '03 · Código del proyecto',
+                     '04 · Preguntas y resultados SQL', 'Portada', 'Definición del proyecto',
+                     'Reglas de calidad', 'Documentación general', 'Manual', 'Glosario', 'Enlaces']:
+        assert expected in labels, expected
+    assert dashboard.PAGE_ALERTS not in labels
+    heads = ' '.join(block.value for block in app.sidebar.markdown)
+    assert 'Recorrido' in heads and 'Referencias' in heads  # CSS renders these upper case
 
 
-def test_every_header_destination_explains_itself_on_hover_and_keyboard_focus():
-    markup = dashboard.build_graph_navigation_html(dashboard.REPORT_WINDOW)
-    for label, page in dashboard.GRAPH_NAVIGATION:
-        assert dashboard.GRAPH_HELP[page] in html.unescape(markup)
-    assert markup.count('role="tooltip"') == len(dashboard.GRAPH_NAVIGATION)
-    assert markup.count('aria-describedby=') == len(dashboard.GRAPH_NAVIGATION)
 
 
 @needs_database
@@ -1397,8 +1390,6 @@ def test_d094_old_history_links_open_the_new_page():
 
 
 def test_business_header_order_and_retired_views_are_not_in_the_menu():
-    # «Histórico» became «Contexto del precio», inside 01 · Dashboard only (D-094).
-    assert [label for label,_ in dashboard.GRAPH_NAVIGATION] == ['Dashboard','Pipeline','Modelo','DevOps']
     views=dashboard.read_window_views(dashboard.REPORT_WINDOW)
     assert not set([dashboard.PAGE_ANALYSIS,dashboard.PAGE_GAP,dashboard.PAGE_CHANNELS]) & set(views)
     assert 'datos_modo=brecha' in dashboard.build_page_address(dashboard.PAGE_GAP)

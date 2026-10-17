@@ -162,6 +162,10 @@ En **Histórico**, la evolución cronológica de los precios aparece antes de la
 
 La página «Contexto del precio» (en 01 · Dashboard) responde si el precio de esta semana es normal. **Habitual** es el rango entre el percentil 25 y el 75 del precio de la **misma semana del año en los años anteriores** disponibles; el año en curso no se usa. Si el precio supera ese rango, está «sobre lo habitual»; si queda por debajo, «bajo lo habitual». Cuando hay menos de dos años anteriores con esa semana, la página dice «Sin historia suficiente» en vez de clasificar el precio. La brecha entre canales es cuánto más caro está el supermercado que la feria, comparada con la mediana del mismo mes en años anteriores. «Qué suele pasar» resume el patrón de años anteriores; no es un pronóstico. Para abrirla con un producto, elígelo en el panel de productos del Resumen.
 
+### Navegación
+
+El menú lateral es la única navegación del proyecto: todas las secciones y subpáginas están siempre desplegadas, sin pestañas ni expanders. Arriba de cada página hay su ruta («Arquitectura y operación › Modelo de datos»), el botón «Volver» y el selector de tema. La alerta de precio tiene su propio botón, fijo al final del menú.
+
 ### Mapa regional y disponibilidad
 
 La vista principal del Dashboard cabe en una pantalla. A la izquierda, el mapa de Chile en proporción real: cada región tiene una fila con su nombre y su porcentaje, unida a la región por una línea. Al hacer clic en una región (o en su fila) se selecciona; las familias y la tabla de productos se recalculan para ella, y un segundo clic vuelve a todo Chile. Al hacer clic en una familia, la tabla muestra sus productos, con filtro de canal, orden y acceso al histórico. Para encontrar un producto, escribe el inicio de su nombre o de su variedad en el buscador del panel; no importan mayúsculas ni acentos. El orden «Inusuales» muestra solo las alertas nacionales.
