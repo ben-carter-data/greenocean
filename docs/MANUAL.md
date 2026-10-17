@@ -84,7 +84,7 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 
 ## Administración y enlaces
 
-Los enlaces del proyecto están en un solo lugar: la página «GitHub» del menú, agrupados en código y operación (código, ejecuciones, informes, historial de cambios), fuentes de datos (las dos de ODEPA) y documentos (este MANUAL y las DECISIONES). Cada recurso tiene una descripción y se abre en una pestaña nueva. El explorador de archivos del panel se retiró: se navega el código directamente en el repositorio.
+Los enlaces del proyecto están en la página «GitHub» del menú, agrupados en código y operación (ejecuciones, informes, historial de cambios: el repositorio en sí ya se abre desde la cabecera de la página) y documentos (este MANUAL y las DECISIONES). Cada recurso tiene una descripción y se abre en una pestaña nueva. El explorador de archivos del panel se retiró: se navega el código directamente en el repositorio. Las dos fuentes de ODEPA tienen su propia carpeta en el menú, «Fuentes».
 
 La tarjeta «🔒 Administración» de «Operaciones» → «Ejecuciones» se abre con la clave de control (secreto `CONTROL_CODE` del panel). Muestra: administrar la app en Streamlit (Reboot, secretos, registros), lanzar el workflow en GitHub, crear un token, ver los tokens, el aviso «Tu token vence en X días» (destacado si faltan menos de 14) y el botón «Ejecutar ahora». El panel nunca muestra el token ni una parte de él.
 
