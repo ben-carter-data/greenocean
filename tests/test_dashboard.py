@@ -1308,6 +1308,22 @@ def test_d096_sidebar_shows_every_section_unfolded_at_once():
     assert 'Recorrido' in heads and 'Referencias' in heads  # CSS renders these upper case
 
 
+@needs_database
+def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
+    """The trigger moved into the shared sidebar footer (D-096); its CSS must follow (D-100)."""
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params['vista'] = dashboard.PAGE_ARCHITECTURE
+    app.run()
+    assert not app.exception
+    # The alert dialog's shapes/legend CSS loads globally now, not only on Resumen.
+    markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
+    assert '.home-alert-gallery-legend' in markup and '[class*="st-key-home_alert_card_"]' in markup
+    app.button(key='home_alert_trigger').click().run()
+    assert not app.exception
+    # The dialog opens here too (not only from Resumen), with the same styled markup.
+    markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
+    assert 'home-alert-overview-marker' in markup
+
 
 
 @needs_database

@@ -7880,6 +7880,11 @@ def show_sidebar_footer():
     alerts_now = read_price_alerts()
     week = read_latest_week()
     count = int((alerts_now["week_start"] == week).sum()) if not alerts_now.empty else 0
+    # The alert dialog's styling (shapes, legend, colors) lives in home_mockup's
+    # stylesheet, built only for the Resumen page before D-096. The trigger now
+    # sits in this sidebar on every page, so its CSS must load everywhere too,
+    # or the dialog renders as plain unstyled buttons (D-100).
+    st.markdown(home_mockup.style(get_mode(), charts.get_palette(get_mode())), unsafe_allow_html=True)
     with st.sidebar.container(key="sidebar_footer"):
         if st.button(f"Alerta de precio · {count}", icon=":material/warning:", key="home_alert_trigger",
                      help=f"{count} cambios de precio fuera de lo habitual esta semana. Abre el detalle por familia."):
