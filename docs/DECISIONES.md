@@ -803,3 +803,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Causa:** el *file watcher* de Streamlit (que vigila cambios de archivo para recargar en caliente) agotaba los watchers de `inotify` del contenedor y reintentaba sin parar, sin llegar nunca a ejecutar `bi/dashboard.py`. No es un error del código: la app corre sin problema en local (`streamlit run`, HTTP 200, sin trazas).
 - **Decisión:** `[server] fileWatcherType = "none"` en `.streamlit/config.toml`. Nadie edita archivos en el servidor publicado, así que el watcher no cumple ninguna función ahí; solo consumía recursos y podía bloquear el arranque.
 - **Validación:** `streamlit run bi/dashboard.py` arranca y responde HTTP 200 en local con la configuración nueva; 414 pruebas sin cambios (no es código de la app).
+
+## D-110 · «Documentación» vuelve a ser una carpeta, con tres vistas por perfil
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** «Documentación» deja de ser un enlace directo (D-105) y vuelve a ser una carpeta con chevron, igual que «Dashboard» o «Arquitectura», con tres hijos en verde: **Business Intelligence**, **Business Analyst** e **IT y operación**. Cada uno es ahora su propia página, no una columna dentro de una vista combinada: el contenido no cambió (misión y visión para BA, los ocho indicadores para BI, las decisiones clave para IT), solo dónde vive.
+- **Por qué:** la versión anterior era la única sección «plana» del menú —sin chevron ni hijos—, lo que la hacía ver fuera de patrón frente al resto; y el subtítulo «en una vista para cada perfil: Business Intelligence, Business Analyst e IT» repetía algo que ya se nota con solo mirar las tres tarjetas, así que se retira.
+- **Compatibilidad:** `PAGE_DOCUMENTATION` (la vista combinada de las tres, una al lado de la otra) se mantiene fuera del menú solo para no romper enlaces viejos (`/documentacion-general`, `/decisiones`); ya no es el destino que abre el menú.
+- **Validación:** 418 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d110_documentation_folds_open_into_three_profile_views` comprueba el chevron, los tres hijos y que cada vista muestra su contenido propio sin SQL.

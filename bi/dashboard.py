@@ -70,6 +70,11 @@ PAGE_DECISIONS = "Decisiones"
 PAGE_GLOSSARY = "Glosario"
 PAGE_LINKS = "Enlaces"
 PAGE_DOCUMENTATION = "Documentación"
+# The three profile views of Documentación (D-110): one per reader, each its own
+# sidebar child, folded by default like every other section.
+PAGE_DOC_BI = "Business Intelligence"
+PAGE_DOC_BA = "Business Analyst"
+PAGE_DOC_IT = "IT y operación"
 SECTION_RESOURCES = "Enlaces"
 # The visit is a portfolio route, like a CV with its evidence: the project, then the
 # dashboard, the code with its results and, for whoever wants more, the technical detail.
@@ -89,7 +94,8 @@ WINDOWS = {
     SECTION_QUERIES: [PAGE_QUERIES],
     SECTION_CODE: [PAGE_CODE],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
-    SECTION_LINKS: [PAGE_DOCUMENTATION, PAGE_GLOSSARY, PAGE_MANUAL],
+    SECTION_LINKS: [PAGE_DOC_BI, PAGE_DOC_BA, PAGE_DOC_IT, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
+                    PAGE_MANUAL],
     SECTION_RESOURCES: [PAGE_LINKS],
 }
 ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_CODE, SECTION_QUERIES, SECTION_PROJECT]
@@ -154,6 +160,8 @@ PAGES = [page for pages in NAVIGATION_GROUPS.values() for page in pages]
 HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
     PAGE_DOCUMENTATION: ":material/menu_book:",
+    PAGE_DOC_BI: ":material/insights:", PAGE_DOC_BA: ":material/assignment:",
+    PAGE_DOC_IT: ":material/build:",
     PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
     PAGE_BUSINESS: ":material/assignment:",
     PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
@@ -168,6 +176,8 @@ PAGE_ICONS = {
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
+    PAGE_DOC_BI: "documentacion-bi", PAGE_DOC_BA: "documentacion-ba",
+    PAGE_DOC_IT: "documentacion-it",
     PAGE_HOME: "dashboard", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura", PAGE_ANALYSIS: "analisis", PAGE_GAP: "brecha",
@@ -2136,7 +2146,8 @@ def build_place_link(place, verb="Ver en"):
 # region Page header
 def show_page_header(title, subtitle):
     """Page title, a one-line explanation and the freshness of the data."""
-    if title in (PAGE_DOCUMENTATION, PAGE_MANUAL, PAGE_DECISIONS, PAGE_GLOSSARY, PAGE_LINKS, "GitHub"):
+    if title in (PAGE_DOCUMENTATION, PAGE_MANUAL, PAGE_DECISIONS, PAGE_GLOSSARY, PAGE_LINKS, "GitHub",
+                PAGE_DOC_BI, PAGE_DOC_BA, PAGE_DOC_IT):
         st.title(title)
         st.markdown(f'<p class="page-subtitle">{html.escape(subtitle)}</p>', unsafe_allow_html=True)
         return
@@ -7470,9 +7481,9 @@ def build_resource_row(link):
 
 
 DOC_PROFILES = {
-    "BI": ("Business Intelligence", "Qué mide el negocio: los indicadores y su alcance."),
-    "BA": ("Business Analyst", "Qué problema resuelve el proyecto, su misión y su alcance."),
-    "IT": ("IT y operación", "Las decisiones técnicas clave y cómo opera cada semana."),
+    "BI": (PAGE_DOC_BI, "Qué mide el negocio: los indicadores y su alcance."),
+    "BA": (PAGE_DOC_BA, "Qué problema resuelve el proyecto, su misión y su alcance."),
+    "IT": (PAGE_DOC_IT, "Las decisiones técnicas clave y cómo opera cada semana."),
 }
 
 
@@ -7481,47 +7492,72 @@ def build_business_frame_lookup():
     return {row["Elemento"]: row["Definición"] for row in project.read_guide_table("Marco de negocio")}
 
 
-def show_documentation_bi_card(frame):
+def show_doc_bi_body(frame):
     """What a BI reader needs: the eight indicators and the data they cover, never SQL."""
+    st.markdown(f"**Alcance de los datos.** {frame['Alcance']}")
+    st.markdown("**Los ocho indicadores:**")
+    for kpi, (name, _, text) in KPI_PRESENTATION.items():
+        st.markdown(f"- **{name}** ({kpi}). {text}")
+    st.markdown(build_link_html("Ver cada indicador con su cálculo →",
+                                build_page_address(PAGE_KPI)), unsafe_allow_html=True)
+
+
+def show_doc_ba_body(frame):
+    """What a BA reader needs: mission, vision and scope, in the business's own words."""
+    for element in ["Misión", "Visión", "Objetivo de negocio", "Alcance", "Fuera de alcance"]:
+        st.markdown(f"**{element}.** {frame[element]}")
+    st.markdown(build_link_html("Leer el marco de negocio completo →",
+                                build_page_address(PAGE_BUSINESS)), unsafe_allow_html=True)
+
+
+def show_doc_it_body():
+    """What an IT reader needs: why the system is built this way, conceptually — no
+    code or SQL; the repository already shows both, commit by commit."""
+    st.markdown("**Decisiones clave de ingeniería:**")
+    for title, text, _ in KEY_DECISIONS:
+        st.markdown(f"- **{title}.** {text}")
+    manual = project.read_document(project.MANUAL_FILE)
+    weekly_run = project.read_paragraphs(project.read_section(manual, "Qué pasa cada martes"))[0]
+    st.markdown(f"**Operación semanal.** {weekly_run}")
+    st.markdown(build_external_link_html("Ver el registro completo de decisiones",
+                                         f"{project.GITHUB_URL}/blob/main/docs/DECISIONES.md"),
+                unsafe_allow_html=True)
+
+
+def show_documentation_bi_page(mode):
+    show_page_header(*DOC_PROFILES["BI"])
+    show_doc_bi_body(build_business_frame_lookup())
+
+
+def show_documentation_ba_page(mode):
+    show_page_header(*DOC_PROFILES["BA"])
+    show_doc_ba_body(build_business_frame_lookup())
+
+
+def show_documentation_it_page(mode):
+    show_page_header(*DOC_PROFILES["IT"])
+    show_doc_it_body()
+
+
+def show_documentation_bi_card(frame):
     with open_card("doc_bi", *DOC_PROFILES["BI"]):
-        st.markdown(f"**Alcance de los datos.** {frame['Alcance']}")
-        st.markdown("**Los ocho indicadores:**")
-        for kpi, (name, _, text) in KPI_PRESENTATION.items():
-            st.markdown(f"- **{name}** ({kpi}). {text}")
-        st.markdown(build_link_html("Ver cada indicador con su cálculo →",
-                                    build_page_address(PAGE_KPI)), unsafe_allow_html=True)
+        show_doc_bi_body(frame)
 
 
 def show_documentation_ba_card(frame):
-    """What a BA reader needs: mission, vision and scope, in the business's own words."""
     with open_card("doc_ba", *DOC_PROFILES["BA"]):
-        for element in ["Misión", "Visión", "Objetivo de negocio", "Alcance", "Fuera de alcance"]:
-            st.markdown(f"**{element}.** {frame[element]}")
-        st.markdown(build_link_html("Leer el marco de negocio completo →",
-                                    build_page_address(PAGE_BUSINESS)), unsafe_allow_html=True)
+        show_doc_ba_body(frame)
 
 
 def show_documentation_it_card():
-    """What an IT reader needs: why the system is built this way, conceptually — no
-    code or SQL; the repository already shows both, commit by commit."""
     with open_card("doc_it", *DOC_PROFILES["IT"]):
-        st.markdown("**Decisiones clave de ingeniería:**")
-        for title, text, _ in KEY_DECISIONS:
-            st.markdown(f"- **{title}.** {text}")
-        manual = project.read_document(project.MANUAL_FILE)
-        weekly_run = project.read_paragraphs(project.read_section(manual, "Qué pasa cada martes"))[0]
-        st.markdown(f"**Operación semanal.** {weekly_run}")
-        st.markdown(build_external_link_html("Ver el registro completo de decisiones",
-                                             f"{project.GITHUB_URL}/blob/main/docs/DECISIONES.md"),
-                    unsafe_allow_html=True)
+        show_doc_it_body()
 
 
 def show_documentation_page(mode):
-    """One screen, three one-page views: what a BI, a BA or an IT reader needs to know
-    about the project, in its own words — mission, vision, scope, indicators and key
-    decisions. No SQL, no code: the repository already shows both in full (D-106)."""
-    show_page_header("Documentación", "Lo esencial del proyecto, en una vista para cada "
-                     "perfil: Business Intelligence, Business Analyst e IT.")
+    """Kept for old addresses (D-105): the three profiles together, one screen. The
+    sidebar itself now opens each profile as its own page (D-110)."""
+    show_page_header("Documentación", "Qué resuelve el proyecto, para quién y cómo opera.")
     frame = build_business_frame_lookup()
     bi_column, ba_column, it_column = st.columns(3, gap="medium")
     with bi_column:
@@ -7555,6 +7591,8 @@ def show_document_page(mode, title, subtitle, renderer):
 
 SHOW_PAGE_BY_TITLE = {
     PAGE_DOCUMENTATION: show_documentation_page,
+    PAGE_DOC_BI: show_documentation_bi_page, PAGE_DOC_BA: show_documentation_ba_page,
+    PAGE_DOC_IT: show_documentation_it_page,
     PAGE_HOME: show_home_page,
     PAGE_DATA: show_data_page,
     PAGE_COVER: show_cover_page,
@@ -7914,11 +7952,12 @@ SIDEBAR_TREE = [
     ("", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY, PAGE_DATA]),
           (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS]),
           (SECTION_QUERIES, [PAGE_QUERIES]),
-          # One page, one click: «El proyecto» and «Documentación» used to be two
-          # folders of six pages; they are now a single overview (D-105). «Código»
-          # merges into «GitHub»: nobody reads source files in the sidebar when the
-          # real repository, with every file and commit, is one link away (D-106).
-          (SECTION_LINKS, None),
+          # «El proyecto» and the old «Documentación» folder of six pages are now
+          # three, one per reader (D-105, D-110): the same folder pattern as every
+          # other section, not a special-cased flat link. «Código» merges into
+          # «GitHub»: nobody reads source files in the sidebar when the real
+          # repository, with every file and commit, is one link away (D-106).
+          (SECTION_LINKS, [PAGE_DOC_BI, PAGE_DOC_BA, PAGE_DOC_IT]),
           (SECTION_RESOURCES, None)]),
 ]
 SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Arquitectura",
