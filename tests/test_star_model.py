@@ -44,6 +44,8 @@ def test_t59_each_table_can_be_touched_and_chooses_its_panel():
     assert 'class="star-panel star-panel-dim_product"' in page
     assert "<script" not in page
     assert 'class="zoom-frame ' in page
+    assert 'width: min(100%, 760px, calc((100vh - 330px) * 1.2))' in page
+    assert 'max-height: calc(100vh - 330px)' in page
 
 
 def test_t59_text_from_the_data_is_escaped_in_the_panel():

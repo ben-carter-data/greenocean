@@ -69,7 +69,7 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 |---|---|---|
 | Después de un push, una página muestra `AttributeError` en producción | Streamlit Cloud mezcló archivos nuevos con otros que tenía en memoria (ocurrió el 12-10-2026; el código en GitHub estaba bien) | Abrir el panel, «Manage app» (abajo a la derecha) → ⋮ → **Reboot**. Esperar uno o dos minutos |
 | «Operaciones» → «Ejecuciones» dice «No se pudo consultar GitHub: …» | El mensaje trae la causa real. La más común es «GitHub respondió 403: se agotó el límite de consultas sin clave»: GitHub permite 60 consultas por hora sin clave, compartidas por todas las apps del mismo servidor | Nada: el panel muestra la última respuesta guardada o, si no hay, los estados de la última carga guardada en la base, y vuelve a preguntar cada 5 minutos. Con la clave de «Ejecutar ahora» configurada el límite sube |
-| Con un tema claro (Corporativo o Claro) las listas, tablas o bloques de código se ven oscuros, o al revés con Vantablack | El panel cambia el modo base de Streamlit solo, una vez por página; si una versión nueva de Streamlit cambió cómo guarda ese modo, el cambio no ocurre (D-052) | Elegir el modo a mano: ⋮ (arriba a la derecha) → Settings → Light para Corporativo y Claro, Dark para Vantablack |
+| Con un tema claro (Corporativo o Blue Light) las listas, tablas o bloques de código se ven oscuros, o al revés con Vantablack | El panel cambia el modo base de Streamlit solo, una vez por página; si una versión nueva de Streamlit cambió cómo guarda ese modo, el cambio no ocurre (D-052) | Elegir el modo a mano: ⋮ (arriba a la derecha) → Settings → Light para Corporativo y Blue Light, Dark para Vantablack |
 
 ## Tareas del autor y tareas automáticas
 
@@ -116,17 +116,72 @@ La tarjeta «🔒 Administración» de «Operaciones» → «Ejecuciones» se ab
 
 ## Recorrido del proyecto
 
-El panel se recorre como un CV con sus evidencias, en cuatro pasos, en este orden:
+El panel empieza por los datos y se recorre en seis pasos:
 
-1. **El proyecto:** qué problema resuelve, qué se construyó, para quién y sus límites. Abre el alcance y el método: indicadores explicados, reglas de calidad, decisiones y glosario.
-2. **Dashboard:** los precios de la semana elegida, con filtros (categoría, región y semana) que valen para todas sus vistas. Un clic en una barra filtra los demás gráficos; un clic en un grupo baja a esa categoría.
-3. **Código y resultados:** cada consulta con la pregunta que responde, su resultado real y su código SQL o Python.
-4. **Detalle técnico:** el diagrama original del pipeline, el modelo de datos, la calidad de la carga, las ejecuciones, DevOps y este manual.
+1. **Dashboard**: precios de la semana, gráficos, filtros y ayudas contextuales.
+2. **KPIs · Qué medimos**: las ocho medidas, sus fórmulas, ejemplos reales, límites y enlaces al resultado y SQL.
+3. **Arquitectura y operación**: pipeline animado, arquitectura por plataforma, modelo estrella, DevOps y seguimiento de las cargas.
+4. **Código del proyecto**: fuentes Python y SQL, pruebas y configuración, en carpetas cerradas que se pueden explorar.
+5. **Preguntas y resultados SQL**: cada pregunta con el resultado real y la consulta que lo produce.
+6. **El proyecto**: alcance, definición, fuentes y reglas, para quien quiera profundizar.
 
-«Fuentes y enlaces» reúne, fuera del recorrido, las fuentes de ODEPA, el repositorio, las ejecuciones y los informes. Cada enlace dice adónde lleva antes de salir del panel.
+**Documentación** reúne manual y glosario. **Enlaces** contiene el repositorio público, los registros de GitHub y las fuentes originales. La navegación al pie de página sigue el orden del recorrido; las vistas de cada sección tienen enlaces directos.
 
-Al pie de cada paso, «← Volver» y «Siguiente →» abren la sección vecina en la misma ventana. El tema, el perfil y los filtros se conservan al cambiar de sección.
+El Dashboard es la página de inicio para todas las visitas. Al recargar se vuelve al resumen principal. El icono de sol o luna en la cabecera abre Apariencia: Corporativo, Vantablack, Blue Light y Dark Grey. Corporativo es la apariencia predeterminada. El botón Volver recupera el punto anterior del proyecto y sus filtros, sin abrir otra ventana. Los rankings de alzas y bajas se muestran juntos; Top N limita cada ranking por separado.
 
-En «El proyecto» se puede elegir un perfil (opcional). El perfil no oculta nada: decide por dónde empieza la visita y qué vista abre primero en cada sección. Reclutamiento empieza por el proyecto; Negocio / gerencia y Analista BI, por el dashboard; Ingeniería de datos, por el detalle técnico. No se solicitan datos personales.
+Las tablas y el código se abren bajo demanda. Las ayudas ⓘ se leen al pasar el mouse, enfocar con teclado o tocar el icono.
 
-La administración (ejecutar el job, tokens, administrar la app publicada) está en «Detalle técnico» → «Ejecuciones», detrás de la clave de control. No forma parte del recorrido de un visitante.
+La administración (ejecutar el job, tokens y administración de la app publicada) queda en «Arquitectura y operación» → «Ejecuciones», detrás de la clave de control.
+
+
+### Calidad y trazabilidad
+
+En **Arquitectura y operación → Calidad y trazabilidad**, el panel muestra la evidencia de la última carga guardada y comprueba en solo lectura la integridad SQLite, las referencias, las claves duplicadas y el formato de los precios utilizables. El acceso **Ver calidad** del Dashboard abre esta misma vista.
+
+Las huellas SHA-256 solo se consideran verificadas cuando el archivo original está disponible y coincide con el manifiesto. Un archivo ausente queda pendiente. Los controles se actualizan al cambiar la base o los archivos y tienen una caché máxima de cinco minutos al consultar la vista.
+
+La reconciliación de fuente a base, el recálculo independiente de todos los indicadores, la muestra auditada de pantalla y el contraste con otra fuente se identifican como pendientes. Superar los controles disponibles no certifica cada precio publicado por ODEPA.
+
+
+### Lectura de los dashboards
+
+El resumen y la vista **Esta semana** presentan primero los rankings de alzas y bajas. **Brecha de precio** presenta las diferencias entre consumidor y mayorista de la misma semana, región, producto y unidad. El deslizador **Top N** muestra entre 8 y 20 resultados; las diferencias superiores a +300 % siguen identificadas aparte según la regla de comparabilidad existente.
+
+Bajo cada ranking se muestran los tres primeros resultados del mismo conjunto de datos, con sus precios o porcentajes. El detalle de producto se consulta después del ranking. En Regiones e Histórico se identifica el producto de las curvas o comparaciones antes del gráfico; los controles para cambiarlo quedan debajo. Se omiten los filtros que no afectan a esos gráficos.
+
+Las opciones del header explican su función al pasar el cursor o al recibir foco con el teclado. Las palabras subrayadas de la guía y de las muestras también ofrecen una explicación breve.
+
+
+### Proporciones y evolución cronológica
+
+El anillo **¿Qué proporción subió o bajó?** cuenta todas las series nacionales comparables de la semana y del grupo seleccionado, sin limitarse al Top N ni ponderar por ventas. Una serie identifica producto, variedad, calidad, unidad y canal. Las series sin comparación con la semana anterior se indican aparte y no forman parte del denominador.
+
+En **Histórico**, la evolución cronológica de los precios aparece antes de las comparaciones estacionales. Cada área representa el precio semanal de un canal del producto seleccionado: las áreas se superponen con transparencia, no se apilan ni se suman. El eje de precios parte de cero, las semanas sin dato interrumpen el trazo y no se muestra una predicción ni una regresión.
+
+### Contexto del precio: qué significa «habitual»
+
+La página «Contexto del precio» (en 01 · Dashboard) responde si el precio de esta semana es normal. **Habitual** es el rango entre el percentil 25 y el 75 del precio de la **misma semana del año en los años anteriores** disponibles; el año en curso no se usa. Si el precio supera ese rango, está «sobre lo habitual»; si queda por debajo, «bajo lo habitual». Cuando hay menos de dos años anteriores con esa semana, la página dice «Sin historia suficiente» en vez de clasificar el precio. La brecha entre canales es cuánto más caro está el supermercado que la feria, comparada con la mediana del mismo mes en años anteriores. «Qué suele pasar» resume el patrón de años anteriores; no es un pronóstico. Para abrirla con un producto, elígelo en el panel de productos del Resumen.
+
+### Mapa regional y disponibilidad
+
+La vista principal del Dashboard cabe en una pantalla. A la izquierda, el mapa de Chile en proporción real: cada región tiene una fila con su nombre y su porcentaje, unida a la región por una línea. Al hacer clic en una región (o en su fila) se selecciona; las familias y la tabla de productos se recalculan para ella, y un segundo clic vuelve a todo Chile. Al hacer clic en una familia, la tabla muestra sus productos, con filtro de canal, orden y acceso al histórico. Para encontrar un producto, escribe el inicio de su nombre o de su variedad en el buscador del panel; no importan mayúsculas ni acentos. El orden «Inusuales» muestra solo las alertas nacionales.
+
+El mapa muestra las 16 regiones con límites geográficos simplificados y nombres visibles. Los colores representan el cambio del mismo producto, variedad, calidad, unidad y canal frente a la semana anterior: rojo subió, azul bajó y gris sin cambio. Una región sin comparación queda sin relleno; esto no implica necesariamente ausencia de precio actual. El resumen diferencia regiones con precio actual y regiones con comparación semanal. La tabla presenta ambos precios, la variación y el motivo de ausencia de comparación para cada región. Cambiar el producto, canal o semana puede cambiar la cobertura; no se asignan precios regionales a ciudades.
+
+### Lectura regional en el dashboard
+
+Sin un producto seleccionado, el dashboard presenta todas las regiones con series comparables de la semana y grupo elegidos. Cada serie mantiene producto, variedad, calidad, unidad y canal constantes entre las dos semanas. El resumen cuenta alzas, bajas y precios iguales, y calcula la mediana de las variaciones individuales; no suma precios ni representa inflación o gasto.
+
+Al elegir un producto, los precios actuales, anteriores y las variaciones regionales se muestran directamente en una tabla compacta. Se incluyen las regiones con precio actual aunque les falte comparación anterior, explicando la ausencia. El mapa completo con nombres queda como complemento dentro de «Ubicar estas regiones en el mapa de Chile».
+
+La cobertura territorial de la base cargada es de nueve regiones con precios válidos en el histórico; las siete restantes no se representan como si tuvieran datos. Esta es la cobertura de los archivos incorporados al proyecto, no una afirmación sobre toda la oferta de datos de ODEPA. La evolución de 12 semanas solo se ofrece al elegir un producto y está dentro de un detalle desplegable; no se presenta una serie de referencia automática al seleccionar «Todos».
+
+## Navegación y lectura de negocio
+
+La cabecera ordena Dashboard, Datos, Alertas, Histórico, KPIs, Pipeline, Modelo y DevOps. Esta semana se integra en Dashboard; las direcciones antiguas de Brechas y Regiones llevan a Datos. Los cálculos canónicos se conservan.
+
+Datos ofrece Precios semanales (incluidos los marcados), Variación semanal regional y Brecha mayorista/consumidor. Son vistas de agregados semanales, no de registros crudos. Comienza con 100 filas por página; admite de 8 a 100. Los filtros y el orden superior se aplican antes de LIMIT/OFFSET. El CSV explícito descarga únicamente la página visible. Ordenar una columna del visor solo reorganiza esa página.
+
+Alertas mantiene K6 nacional: producto, variedad, calidad, unidad y canal, comparado con su rango previo de 12 semanas. No son alertas regionales ni una clasificación por precio absoluto alto. Top N admite de 8 a 100 y comienza en 20; el detalle completo conserva precio anterior, precio actual, regla y alcance.
+
+KPIs muestra todo el recorrido de un indicador de una vez, sin pasos que avanzar: se elige la pregunta de negocio y una línea une 1 · Resultado (cifra grande y estado de la carga), 2 · Contexto (pestañas Alcance, Lógica y Límites) y 3 · Consulta (botón «Desplegar SQL», que abre la consulta en una capa, y enlace al catálogo). K1–K5 muestran una serie de referencia identificada; K6–K8 muestran el alcance operativo especificado. No se fijan metas empresariales inventadas.

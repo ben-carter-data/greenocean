@@ -1,99 +1,68 @@
-"""Surfaces of the live dashboard: a plain background and light panels (D-068)."""
+"""A compact report grid: a summary band above three aligned analytical panels."""
 from bi import charts
 
 
 def build_css(mode):
-    """Scope every visual change to the dashboard, keeping native chart interaction."""
-    palette = charts.get_palette(mode)
-    dark = palette["base"] != charts.BASE_LIGHT
-
-    def rgba(color, opacity):
-        red, green, blue = (int(color[index:index + 2], 16) for index in (1, 3, 5))
-        return f"rgba({red}, {green}, {blue}, {opacity})"
-
-    # Use the established slate/cyan palette, rather than tinting panels green.
-    surface = rgba(palette["card"], .94 if dark else .95)
-    raised_surface = rgba(palette["field"], .96)
-    border = rgba(palette["card_border"], .85)
-    # Light panels: a thin border and almost no shadow, on a plain background.
-    shadow = "0 1px 2px rgba(0, 0, 0, .12)"
+    """Keep the reference layout independent from its business-specific chart choices."""
+    p = charts.get_palette(mode)
     return f"""
-    .stApp:has(.st-key-market_dashboard) {{
-        background-color:{palette["background"]};
-    }}
+    .stApp:has(.st-key-market_dashboard) {{ background:{p['background']}; }}
     .stApp:has(.st-key-market_dashboard) [data-testid="stMainBlockContainer"] {{
-        max-width:1600px; padding-inline:clamp(20px, 3.3vw, 64px);
-    }}
-    .st-key-market_dashboard {{ gap:18px; }}
-    .st-key-market_intro {{ padding:4px 0 8px; max-width:780px; gap:4px; }}
-    .st-key-market_intro h1 {{ font-size:clamp(1.8rem, 3vw, 2.6rem); letter-spacing:-.045em;
-        padding-block:4px 10px; }}
-    .market-eyebrow {{ font-size:.73rem; letter-spacing:.19em; font-weight:650;
-        text-transform:uppercase; margin:0 0 4px; }}
-    .st-key-market_intro .page-subtitle {{ font-size:1rem; max-width:560px; line-height:1.6; }}
-    .st-key-market_dashboard .overview-metrics {{
-        padding:0; margin:0 0 8px; background:transparent; border:0; gap:14px;
-    }}
-    .st-key-market_dashboard .overview-metrics > .overview-metric,
-    .st-key-market_dashboard [class*="st-key-card_"],
+        max-width:1680px; padding:16px clamp(18px,2.2vw,40px) 24px; }}
+    .st-key-market_dashboard, .st-key-report_page {{ gap:16px; }}
+    .st-key-market_dashboard [class*="st-key-card_"] {{
+        background:{p['card']}; border:1px solid {p['card_border']};
+        border-radius:4px; box-shadow:none; padding:16px; gap:12px; min-width:0; }}
+    .st-key-market_dashboard .card-title {{ font-size:.95rem; line-height:1.45; gap:10px;
+        align-items:flex-start; flex-wrap:wrap; }}
+    .st-key-market_dashboard .card-title-text {{ white-space:normal; overflow:visible;
+        flex:1 1 130px; }}
+    .st-key-market_dashboard .card-title .component-symbol {{ display:none; }}
+    .st-key-market_dashboard .card-title .kpi-link {{ display:none; }}
+    .st-key-market_dashboard [data-testid="stCaptionContainer"] {{ font-size:.76rem; line-height:1.55; }}
+    .st-key-dashboard_summary_band {{margin-bottom:18px;}}
+    .st-key-dashboard_summary_band .kpi-strip {{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+        margin:0; border:1px solid {p['card_border']}; background:{p['card']}; min-height:268px; }}
+    .st-key-dashboard_summary_band .kpi-strip-item {{ justify-content:flex-start; padding:18px; gap:12px; }}
+    .st-key-dashboard_summary_band .kpi-strip-value {{ font-size:clamp(1.45rem,2.5vw,2.1rem); }}
+    .st-key-dashboard_summary_band .kpi-strip-good {{ font-size:1.2rem; white-space:normal; }}
+    .st-key-dashboard_summary_band .kpi-strip-label {{ font-size:.88rem; line-height:1.3; white-space:normal; }}
+    .st-key-dashboard_summary_band .kpi-strip-note {{ font-size:.76rem; line-height:1.35; white-space:normal; }}
+    .st-key-dashboard_summary_band .st-key-card_usable_data {{ min-height:268px; }}
+    .st-key-dashboard_summary_band [data-testid="stMarkdownContainer"]:has(> .ring-legend) {{margin-bottom:0;}}
+    .metric-symbol {{font-family:"Material Symbols Rounded"; font-size:22px; font-weight:400; color:{p['accent']};}}
+    .st-key-dashboard_summary_band .kpi-strip-label {{display:flex; gap:8px; align-items:center; min-height:46px;}}
+    .metric-explanation {{font-size:.78rem; line-height:1.5; color:{p['text']};}}
+    .metric-action {{font-size:.78rem; margin-top:auto; padding-top:6px; color:{p['accent']};}}
+    .quality-summary {{display:flex; flex-direction:column; gap:12px; font-size:.8rem; line-height:1.5;}}
+    .quality-value {{font-size:1.9rem; line-height:1.15; color:{p['accent']};}}
+    .quality-meter {{height:8px; width:100%; border-radius:5px; background:{p['grid']}; overflow:hidden;}}
+    .quality-meter span {{display:block; height:100%; border-radius:5px;}}
+    .quality-counts {{font-size:.76rem; line-height:1.5;}}
+    .st-key-dashboard_summary_band .ring-legend {{ font-size:.72rem; }}
+    .st-key-dashboard_summary_band .ring-note {{ margin:4px 0 0; font-size:.72rem; }}
+    .st-key-dashboard_summary_band ul.ring-legend li {{ font-size:.72rem; gap:5px; white-space:normal; }}
+    .st-key-dashboard_analysis_grid [class*="st-key-card_"] {{ min-height:300px; }}
+    .st-key-dashboard_analysis_grid .st-key-ranking_caption {{ flex-wrap:wrap !important; gap:4px; }}
+    .st-key-dashboard_analysis_grid .st-key-ranking_order {{ margin-left:auto; }}
     .st-key-market_dashboard [data-testid="stExpander"] details {{
-        background:{surface}; border:1px solid {border}; border-radius:24px;
-        box-shadow:{shadow}; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+        border-radius:4px; border:1px solid {p['card_border']}; background:{p['card']}; }}
+    .st-key-market_dashboard [data-testid="stExpander"] summary p {{ font-size:.76rem; }}
+    .st-key-market_dashboard [data-testid="stMarkdownContainer"]:has(> .filter-scope) {{margin-bottom:0;}}
+    .st-key-market_dashboard .filter-scope {{ margin:0; font-size:.72rem; }}
+    .st-key-market_dashboard .report-footer {{ font-size:.75rem; gap:4px 12px; }}
+    @media(max-width:1100px) {{
+        .st-key-dashboard_analysis_grid > [data-testid="stHorizontalBlock"],
+        .st-key-dashboard_analysis_grid [data-testid="stHorizontalBlock"]:has(> [data-testid="stColumn"] > div > [class*="st-key-card_"]) {{
+            flex-wrap:wrap; }}
+        .st-key-dashboard_analysis_grid [data-testid="stColumn"] {{ min-width:min(100%,310px); }}
     }}
-    .st-key-market_dashboard .overview-metrics > .overview-metric {{ padding:16px; position:relative;
-        display:block; color:inherit !important; text-decoration:none; min-width:0;
-        transition:transform .16s ease, border-color .16s ease, box-shadow .16s ease; }}
-    .st-key-market_dashboard .overview-metrics > .overview-metric:hover,
-    .st-key-market_dashboard .overview-metrics > .overview-metric:focus-visible {{
-        transform:translateY(-2px); border-color:{rgba(palette["accent"], .72)};
-        box-shadow:0 18px 48px rgba(0,0,0,.28), 0 0 0 2px {rgba(palette["accent"], .18)}; }}
-    .st-key-market_dashboard .overview-metrics > .overview-metric:nth-child(even) {{
-        background:{raised_surface};
-        border-top-color:{rgba(palette["accent"], .45)};
-    }}
-    .metric-arrow {{ margin-left:auto; color:{palette["accent"]}; font-size:.9rem; }}
-    .metric-value-row {{ display:flex; align-items:flex-end; justify-content:space-between;
-        gap:12px; margin-top:5px; }}
-    .metric-mini-chart {{ width:72px; height:34px; flex:0 0 72px; opacity:.78; }}
-    .st-key-market_dashboard .overview-metrics .kpi-value {{
-        font-size:clamp(1.4rem, 2.2vw, 2.1rem); font-variant-numeric:tabular-nums; letter-spacing:-.04em;
-    }}
-    .market-metric-heading {{ display:flex; align-items:center; gap:10px; min-height:32px; }}
-    .market-metric-heading .component-symbol {{ width:24px; height:26px; margin:0; }}
-    .market-metric-note {{ font-size:.73rem; margin-top:8px; opacity:.78; }}
-    .st-key-market_dashboard [class*="st-key-card_"] {{ padding:18px 18px 12px; }}
-    .st-key-market_dashboard [class*="st-key-card_"]:has(.component-symbol[data-kind="chart"]) {{
-        border-radius:24px; border-bottom:1px solid {border};
-    }}
-    .st-key-market_dashboard .card-title {{ font-size:1.05rem; line-height:1.5; }}
-    .st-key-market_dashboard .card-title .component-symbol {{ width:28px; height:30px; }}
-    .st-key-market_dashboard [data-testid="stExpander"] summary {{ background:transparent; }}
-    .st-key-market_dashboard [data-testid="stExpanderDetails"] {{ padding-top:4px; }}
-    .stApp:has(.st-key-market_dashboard) .project-navigation {{
-        background:{surface}; border:1px solid {border}; padding:12px 18px;
-        border-radius:16px; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
-    }}
-    @media (max-width:1000px) {{
-        .st-key-market_dashboard [data-testid="stHorizontalBlock"]:has([class*="st-key-card_home_"]) {{
-            flex-direction:column;
-        }}
-        .st-key-market_dashboard [data-testid="stColumn"]:has([class*="st-key-card_home_"]) {{
-            width:100%; flex:1 1 100%;
-        }}
-    }}
-    @media (max-width:640px) {{
-        .stApp:has(.st-key-market_dashboard) {{ background-attachment:scroll; background-position:65% top; }}
-        .st-key-market_intro {{ padding:8px 0 14px; }}
-        .st-key-market_dashboard .overview-metrics {{ gap:10px; }}
-        .st-key-market_dashboard .overview-metrics > .overview-metric {{ padding:15px; border-radius:18px; }}
-        .market-metric-heading {{ align-items:flex-start; }}
-        .market-metric-heading .kpi-label {{ font-size:.77rem; }}
-        .st-key-market_dashboard [class*="st-key-card_"] {{ padding:18px 14px; }}
-        .st-key-market_dashboard [data-testid="stHorizontalBlock"]:has([data-testid="stSlider"]) {{
-            flex-direction:column;
-        }}
-        .st-key-market_dashboard [data-testid="stColumn"]:has([data-testid="stSlider"], [data-testid="stButtonGroup"]) {{
-            width:100%; flex:1 1 100%;
-        }}
+    @media(max-width:700px) {{
+        .st-key-dashboard_summary_band .kpi-strip {{ grid-template-columns:1fr; min-height:0; }}
+        .st-key-dashboard_summary_band .kpi-strip-item {{ padding:14px; border-left:0;
+            border-bottom:1px solid {p['card_border']}; }}
+        .st-key-dashboard_summary_band .kpi-strip-item:last-child {{ border-bottom:0; }}
+        .st-key-dashboard_analysis_grid [class*="st-key-card_"] {{ min-height:0; }}
+        .st-key-dashboard_analysis_grid [data-testid="stColumn"] {{ min-width:100%; }}
     }}
     """
