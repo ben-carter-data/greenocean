@@ -986,3 +986,22 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 
 - **Fecha:** 2026-10-17.
 - **Decisión:** la página pasa a una cabecera de una línea, el ciclo DevOps animado a la izquierda y, a la derecha, cinco tarjetas —Seguridad, DevOps, Observabilidad, Informes, Coste y capacidad— que abren el detalle de cada capa en una ventana emergente, en vez de pestañas apiladas bajo el diagrama. La fila de seguridad que describía la vieja «Consulta de datos» con columnas fijas se reemplaza por la protección real de la Consola SQL.
+
+## D-133 · El SQL de la consola se ve como código, con colores
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** el cuadro de texto plano de la Consola SQL se reemplaza por un editor propio (componente `sql_editor`): palabras clave en azul, textos entre comillas en naranja, funciones, números y comentarios con su color, con paletas al estilo de VS Code para modo oscuro y claro. Tab inserta cuatro espacios y Ctrl/⌘ + Enter ejecuta.
+- **Validación:** comprobado en Chrome; las pruebas leen y escriben el texto por `session_state`.
+
+## D-134 · Las columnas JSON se abren y las columnas con código se explican
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** en «¿Cómo venían las filas rechazadas?» la columna `original_row` se cortaba, y no se entendía qué era `source`.
+- **Decisión:** toda columna de texto que trae objetos JSON se abre en una columna por campo (16 en `original_row`). Las columnas con nombre técnico (`source`, `reason`, `channel`, `flag`, `normalized_unit`…) muestran su significado al pasar el mouse por el encabezado; `source` es la fuente ODEPA: `wholesale` = precios mayoristas, `consumer` = precios al consumidor.
+
+## D-135 · «Análisis con Python»: una consola de las preguntas que el proyecto responde en Python
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** nueva carpeta del menú con su consola. Arriba, lo que hace Python en el proyecto (ingesta, ETL, indicadores, dashboard); abajo, seis preguntas reales —filas rechazadas (RN-11), conversión de unidades (RN-03 a RN-05), alertas K6, desfase K5, rango habitual y patrón estacional K4— cada una con el script corto que llama a las funciones de `etl/` y `bi/`. Como en la Consola SQL, un clic carga y **Ejecutar** corre; la pestaña «Funciones usadas» muestra el código real de cada función, con enlace a su línea en GitHub.
+- **Seguridad:** el código no se edita. Ejecutar Python escrito por un visitante en un servidor público equivale a entregarle el servidor; solo cambian los parámetros, elegidos de listas cerradas o escritos como literal de Python (`repr`), de modo que un valor nunca puede ser código (`bi/python_console.py`).
+- **Validación:** pruebas `test_d135_*`; comprobado en Chrome.
