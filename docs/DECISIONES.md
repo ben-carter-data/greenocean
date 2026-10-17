@@ -1005,3 +1005,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** nueva carpeta del menú con su consola. Arriba, lo que hace Python en el proyecto (ingesta, ETL, indicadores, dashboard); abajo, seis preguntas reales —filas rechazadas (RN-11), conversión de unidades (RN-03 a RN-05), alertas K6, desfase K5, rango habitual y patrón estacional K4— cada una con el script corto que llama a las funciones de `etl/` y `bi/`. Como en la Consola SQL, un clic carga y **Ejecutar** corre; la pestaña «Funciones usadas» muestra el código real de cada función, con enlace a su línea en GitHub.
 - **Seguridad:** el código no se edita. Ejecutar Python escrito por un visitante en un servidor público equivale a entregarle el servidor; solo cambian los parámetros, elegidos de listas cerradas o escritos como literal de Python (`repr`), de modo que un valor nunca puede ser código (`bi/python_console.py`).
 - **Validación:** pruebas `test_d135_*`; comprobado en Chrome.
+
+## D-136 · DevOps muestra la arquitectura por plataforma; Pipeline, solo el recorrido
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** DevOps mostraba un ciclo animado y un enlace a Pipeline para ver la arquitectura; Pipeline repartía su espacio entre el recorrido, una miniatura «Estado de la última ejecución» (el mismo recorrido en pequeño, sin mostrar ninguna ejecución) y la arquitectura por plataforma.
+- **Decisión:** «Arquitectura por plataforma» pasa completa y a todo el ancho a **DevOps y seguridad**, con las cinco capas como fila de tarjetas debajo; se retiran el ciclo y el enlace. **Pipeline** queda con un solo diagrama, el recorrido por capas, a tamaño completo y con zoom, sin galería ni vista «Ampliar». El estado de cada ejecución está en Ejecuciones y en GitHub Actions. Los botones de zoom van bajo el diagrama, sin tapar los puntos de estado.
+- **Validación:** prueba `test_d136_*`; comprobado en Chrome.

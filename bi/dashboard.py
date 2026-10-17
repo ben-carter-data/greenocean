@@ -258,7 +258,6 @@ RETIRED_THEMES = {charts.MODE_LIGHT: charts.MODE_CORPORATE, "ChatGPT": charts.MO
 DEFAULT_THEME = charts.MODE_CORPORATE
 KPI_PARAMETER = "kpi"
 PROFILE_PARAMETER = "visitor_profile"
-PIPELINE_DIAGRAM_PARAMETER = "diagrama"
 JOURNEY_MANAGER = "Soy gerente"
 JOURNEY_ANALYST = "Soy analista"
 JOURNEY_TECHNICAL = "Soy técnico"
@@ -738,6 +737,7 @@ def build_style_css(mode):
     [data-testid="stMainBlockContainer"] {{ padding-top:1.1rem; }}
     .devops-layers-title {{ font-size:.7rem; font-weight:700; letter-spacing:.08em;
         text-transform:uppercase; color:{palette["reference"]}; margin:0 0 6px; }}
+    .st-key-devops_layers {{ margin-top:10px; }}
     .st-key-devops_layers button {{ justify-content:flex-start !important; min-height:52px;
         padding:10px 16px !important; border-radius:14px !important; background:{palette["card"]} !important;
         border:1px solid {palette["card_border"]} !important;
@@ -6353,129 +6353,28 @@ def show_home_page(mode):
         show_market_overview(mode, "home")
 
 
-PIPELINE_DIAGRAMS = {"recorrido", "estado", "arquitectura"}
-
-
-def build_pipeline_diagram_address(diagram):
-    """Direct address of one diagram inside the Pipeline page."""
-    address = build_page_address(PAGE_DIAGRAMS)
-    separator = "&" if "?" in address else "?"
-    return address + separator + urlencode({PIPELINE_DIAGRAM_PARAMETER: diagram})
-
-
-def build_pipeline_mini_svg(states, figures, mode, animate_flow):
-    """Build the compact execution journey, including hot-reload compatibility."""
-    mini_builder_parameters = inspect.signature(
-        architecture.build_mini_journey_svg).parameters
-    if "animate_flow" in mini_builder_parameters:
-        return architecture.build_mini_journey_svg(
-            states, figures, mode, animate_flow=animate_flow)
-    return architecture.build_mini_journey_svg(states, figures, mode)
-
-
-def build_pipeline_gallery_link(svg, diagram, label, css_class=""):
-    """A whole diagram acts as the entry point to its focused view."""
-    address = build_pipeline_diagram_address(diagram)
-    return (f'<a class="pipeline-gallery-link {html.escape(css_class)}" '
-            f'href="{html.escape(address)}" target="_self" '
-            f'aria-label="Ampliar {html.escape(label)}">{svg}'
-            f'<span class="pipeline-open-label">Ampliar ↗</span></a>')
-
-
 def show_pipeline_page_header():
-    """A clean title above the gallery; execution evidence lives in its own card."""
+    """A clean title above the diagram; execution evidence lives in GitHub and Ejecuciones."""
     st.markdown('<div class="compact-header pipeline-page-header">'
-                '<h1>Pipeline y arquitectura</h1></div>', unsafe_allow_html=True)
-
-
-def show_focused_pipeline_diagram(diagram, mode, animate_flow, journey):
-    """Show one Pipeline diagram alone, with a compact return control."""
-    states, figures, pipeline_run, latest_load, error_note = journey
-    titles = {"recorrido": "Recorrido completo por capas",
-              "estado": "Estado de la última ejecución",
-              "arquitectura": "Arquitectura por plataforma"}
-    st.markdown(
-        '<div class="pipeline-focus-toolbar">'
-        f'<strong>{html.escape(titles[diagram])}</strong></div>',
-        unsafe_allow_html=True)
-    with st.container(key=f"pipeline_focus_{diagram}"):
-        if diagram == "recorrido":
-            st.markdown(
-                zoom.build_zoom_frame_html(
-                    architecture.build_journey_svg(
-                        states, figures, mode, animate_flow=animate_flow), "diagram-wide")
-                + zoom.build_zoom_frame_html(
-                    architecture.build_vertical_journey_svg(
-                        states, figures, mode, animate_flow=animate_flow), "diagram-narrow"),
-                unsafe_allow_html=True)
-        elif diagram == "estado":
-            st.markdown(build_run_status_html(states, pipeline_run, latest_load),
-                        unsafe_allow_html=True)
-            if error_note:
-                st.caption(error_note)
-            st.markdown(zoom.build_zoom_frame_html(build_pipeline_mini_svg(
-                states, figures, mode, animate_flow)), unsafe_allow_html=True)
-            st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
-        else:
-            st.markdown(zoom.build_zoom_frame_html(architecture.build_devops_svg(
-                states, build_devops_figures(figures), mode,
-                animate_flow=animate_flow), "diagram-devops"), unsafe_allow_html=True)
-    st.markdown('<div class="pipeline-focus-return">'
-                + build_link_html("← Volver a los tres diagramas",
-                                  build_page_address(PAGE_DIAGRAMS))
-                + '</div>', unsafe_allow_html=True)
-    st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
+                '<h1>Pipeline</h1></div>', unsafe_allow_html=True)
 
 
 def show_diagrams_page(mode):
-    # Streamlit may rerun this module while retaining an older architecture
-    # import from the same live session.
-    if not hasattr(architecture, "build_platform_gallery_svg"):
-        importlib.reload(architecture)
-    focused = st.query_params.get(PIPELINE_DIAGRAM_PARAMETER)
-    focused = focused if focused in PIPELINE_DIAGRAMS else None
-    journey = read_journey()
-    # The motion explains the data route and is part of the diagram itself. Keep it
-    # on consistently; the SVG still honours the operating system's reduced-motion
-    # preference for accessibility.
-    animate_flow = True
-    if focused:
-        show_focused_pipeline_diagram(focused, mode, animate_flow, journey)
-        return
-
+    """Only the complete journey, as large as the screen allows (D-136): the platform
+    architecture moved to DevOps y seguridad, and the small «Estado de la última
+    ejecución» repeated this diagram in miniature without showing any run."""
+    states, figures, pipeline_run, latest_load, error_note = read_journey()
     show_pipeline_page_header()
-    states, figures, pipeline_run, latest_load, error_note = journey
-
-    # The complete journey is the main diagram, so it leads the gallery and gets
-    # substantially more room than either supporting view.
-    with open_card("pipeline_gallery_main", "Recorrido completo por capas",
-                   hint=ARCHITECTURE_HINT):
-        st.markdown(build_pipeline_gallery_link(
-            architecture.build_journey_svg(
-                states, figures, mode, animate_flow=animate_flow),
-            "recorrido", "Recorrido completo por capas", "pipeline-gallery-main-link"),
-            unsafe_allow_html=True)
-
-    status_column, platform_column = st.columns(2, gap="small")
-    with status_column, open_card("pipeline_gallery_status", "Estado de la última ejecución",
-                                  hint=ARCHITECTURE_HINT):
-        st.markdown('<div class="pipeline-status-content">'
-                    + build_run_status_html(states, pipeline_run, latest_load)
-                    + '<div class="pipeline-gallery-status-preview">'
-                    + build_pipeline_mini_svg(states, figures, mode, animate_flow)
-                    + '</div></div>', unsafe_allow_html=True)
-    with platform_column, open_card("pipeline_gallery_platform", "Arquitectura por plataforma",
-                                    hint=DEVOPS_HINT):
-        st.markdown(build_pipeline_gallery_link(
-            '<span class="pipeline-platform-compact">'
-            + architecture.build_platform_gallery_svg(states, figures, mode,
-                                                      animate_flow=animate_flow)
-            + '</span><span class="pipeline-platform-detailed">'
-            + architecture.build_devops_svg(states, build_devops_figures(figures), mode,
-                                             animate_flow=animate_flow)
-            + '</span>',
-            "arquitectura", "Arquitectura por plataforma",
-            "pipeline-gallery-secondary-link"), unsafe_allow_html=True)
+    with open_card("pipeline_main", "Recorrido completo por capas", hint=ARCHITECTURE_HINT):
+        # Inline SVG (not an image), so each piece shows its explanation on hover.
+        st.markdown(zoom.build_zoom_frame_html(
+                        architecture.build_journey_svg(states, figures, mode, animate_flow=True),
+                        "diagram-wide")
+                    + zoom.build_zoom_frame_html(
+                        architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=True),
+                        "diagram-narrow"), unsafe_allow_html=True)
+        st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
+    st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
 
 
 # endregion
@@ -7794,24 +7693,20 @@ def show_devops_layer_dialog(heading, next_run):
 
 
 def show_devops_tab(mode):
-    """One screen (D-132): the always-animated lifecycle on the left and, on the right,
-    its layers as tiles; a click opens that layer's detail instead of stacking tabs."""
+    """The whole platform architecture, full width, and its layers as a row of tiles
+    that open their detail (D-132, D-136). The lifecycle drawing and the link to
+    Pipeline are gone: this page has its own architecture."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
-    diagram_column, layers_column = st.columns([2.2, 1], gap="large", vertical_alignment="center")
-    with diagram_column:
-        st.markdown(devops.build_html(states, mode, True), unsafe_allow_html=True)
-        st.caption("Responsabilidades de mantenimiento: código, pruebas, cargas, publicación y "
-                   "seguimiento. No es el orden de una carga; ese recorrido está en Pipeline. Los "
-                   "puntos de estado muestran la última evidencia disponible.")
-    with layers_column, st.container(key="devops_layers"):
-        st.markdown('<div class="devops-layers-title">Capas</div>', unsafe_allow_html=True)
+    st.markdown(zoom.build_zoom_frame_html(
+        architecture.build_devops_svg(states, build_devops_figures(figures), mode, animate_flow=True),
+        "diagram-devops"), unsafe_allow_html=True)
+    with st.container(key="devops_layers", horizontal=True, gap="small"):
         for heading, lead in [(group[0], group[1]) for group in ARCHITECTURE_GROUPS] + [
                 ("Coste y capacidad", "Qué cuesta operar y hasta dónde alcanza.")]:
             if st.button(heading, key=f"devops_layer_{heading}", icon=DEVOPS_LAYER_ICONS[heading],
                          help=lead, width="stretch"):
                 show_devops_layer_dialog(heading, figures["next_run"])
-        st.markdown(build_link_html("Ver el pipeline y la arquitectura →",
-                                    build_page_address(PAGE_DIAGRAMS)), unsafe_allow_html=True)
+    st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
 
 
 # endregion
