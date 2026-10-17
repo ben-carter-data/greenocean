@@ -7515,10 +7515,16 @@ def build_doc_profile_css(mode):
         color:{palette['strong_text']}; margin-bottom:7px;}}
     .doc-field-text {{font-size:.98rem; line-height:1.65; color:{palette['text']};}}
     .doc-field-text code {{word-break:break-word;}}
-    .doc-indicators {{display:flex; flex-direction:column; gap:16px; margin-top:4px;}}
-    .doc-indicator-name {{font-weight:650; color:{palette['strong_text']};}}
-    .doc-indicator-code {{font-weight:450; color:{palette['reference']}; font-size:.85rem;}}
-    .doc-indicator-text {{font-size:.95rem; line-height:1.6; color:{palette['text']}; margin-top:2px;}}
+    .doc-kpi-grid {{display:flex; flex-direction:column; gap:10px; margin-top:4px;}}
+    .doc-kpi-row {{display:flex; align-items:center; gap:14px; padding:13px 16px;
+        border-radius:14px; border-left:4px solid var(--kpi-color);
+        background:color-mix(in srgb, var(--kpi-color) 8%, transparent);}}
+    .doc-kpi-icon {{color:var(--kpi-color); flex-shrink:0;}}
+    .doc-kpi-icon .component-symbol {{width:26px; height:28px; margin:0; color:inherit;}}
+    .doc-kpi-name {{font-weight:650; color:{palette['strong_text']};}}
+    .doc-kpi-code {{font-weight:600; color:var(--kpi-color); font-size:.78rem;
+        margin-left:8px; letter-spacing:.02em;}}
+    .doc-kpi-text {{font-size:.9rem; line-height:1.55; color:{palette['text']}; margin-top:2px;}}
     .doc-profile-link {{display:inline-block; margin-top:26px; font-size:.95rem;}}
     .doc-github-link {{display:inline-flex; align-items:center;}}
     .doc-github-icon {{margin-right:6px;}}
@@ -7533,21 +7539,30 @@ def build_doc_field_html(label, text):
             f'<div class="doc-field-text">{format_inline(text)}</div></div>')
 
 
+# A distinct color per KPI (D-114), reusing the same eight hues the pipeline
+# diagrams already use for their layers — one visual language across the panel.
+KPI_COLORS = [color for layer, color in architecture.LAYER_COLORS.items() if layer != "orchestration"]
+
+
+def build_doc_kpi_row_html(kpi, name, icon, text, color):
+    return (f'<div class="doc-kpi-row" style="--kpi-color:{color}">'
+            f'<span class="doc-kpi-icon">{build_component_symbol(icon)}</span>'
+            f'<div class="doc-kpi-info"><div class="doc-kpi-name">{html.escape(name)}'
+            f'<span class="doc-kpi-code">{kpi}</span></div>'
+            f'<div class="doc-kpi-text">{html.escape(text)}</div></div></div>')
+
+
 def show_doc_bi_body(frame, mode):
-    """What a BI reader needs: the eight indicators and the data they cover, never SQL."""
+    """What a BI reader needs: the eight indicators and the data they cover, never SQL.
+    Each one real — the same name, icon and description used across the panel — in
+    its own colored row instead of a link out to another page (D-114)."""
     st.markdown(build_doc_profile_css(mode), unsafe_allow_html=True)
-    indicators = "".join(
-        f'<div><span class="doc-indicator-name">{html.escape(name)}</span> '
-        f'<span class="doc-indicator-code">· {kpi}</span>'
-        f'<div class="doc-indicator-text">{html.escape(text)}</div></div>'
-        for kpi, (name, _, text) in KPI_PRESENTATION.items())
+    rows = "".join(build_doc_kpi_row_html(kpi, name, icon, text, color) for (kpi, (name, icon, text)),
+                   color in zip(KPI_PRESENTATION.items(), KPI_COLORS))
     st.markdown('<div class="doc-profile">'
                 + build_doc_field_html("Alcance de los datos", frame["Alcance"])
                 + '<div class="doc-field"><div class="doc-field-label">Los ocho indicadores'
-                f'</div><div class="doc-indicators">{indicators}</div></div></div>',
-                unsafe_allow_html=True)
-    st.markdown('<div class="doc-profile-link">' + build_link_html(
-        "Ver cada indicador con su cálculo →", build_page_address(PAGE_KPI)) + '</div>',
+                f'</div><div class="doc-kpi-grid">{rows}</div></div></div>',
                 unsafe_allow_html=True)
 
 
