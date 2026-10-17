@@ -38,14 +38,14 @@ TILE_SIZE = 64
 COLUMN_X = {"sources": 110, "ingestion": 300, "bronze": 490, "cleaning": 680,
             "rules": 870, "quality": 1060, "gold": 1250, "consumption": 1440}
 COLUMN_HEADERS = [
-    ("sources", "FUENTES", "dónde nace el dato", "sources"),
-    ("ingestion", "INGESTA", "descarga y control", "ingestion"),
-    ("bronze", "BRONCE", "copia exacta", "bronze"),
-    ("cleaning", "LIMPIEZA", "tipos y validación", "processing"),
-    ("rules", "REGLAS", "unidades y semanas", "processing"),
-    ("quality", "CALIDAD", "controles de carga", "quality"),
-    ("gold", "ORO", "listo para analizar", "gold"),
-    ("consumption", "CONSUMO", "decisiones", "consumption"),
+    ("sources", "FUENTES", "HTTPS · CSV · sin API", "sources"),
+    ("ingestion", "INGESTA", "Python · requests", "ingestion"),
+    ("bronze", "BRONCE", "SQLite · copia exacta", "bronze"),
+    ("cleaning", "LIMPIEZA", "Python · pandas", "processing"),
+    ("rules", "REGLAS", "Python · pandas", "processing"),
+    ("quality", "CALIDAD", "Python · validaciones", "quality"),
+    ("gold", "ORO", "SQLite · modelo estrella", "gold"),
+    ("consumption", "CONSUMO", "Streamlit · GitHub · SQL", "consumption"),
 ]
 # The small version shown at the top of the project page.
 MINI_WIDTH = 1000
@@ -88,18 +88,22 @@ TOOLTIPS = {
     "ODEPA mayorista y consumidor": "Las dos fuentes de ODEPA (Oficina de Estudios y Políticas "
                                     "Agrarias): precios mayoristas diarios y precios al "
                                     "consumidor semanales, en archivos CSV.",
-    "Agente de descarga": "agent.py descarga los CSV, reintenta si falla y revisa el "
-                          "encabezado antes de guardar nada.",
+    "Agente de descarga": "Python y requests descargan los CSV por HTTPS, reintentan si "
+                          "falla y revisan el encabezado antes de guardar nada.",
     "raw.db": "Capa bronce: los archivos tal como llegan, con un hash por archivo para saber "
               "si cambiaron. No se sube al repositorio.",
-    "Limpieza": "Convierte tipos y textos y rechaza las filas inválidas con su motivo (RN-11; "
+    "Limpieza": "Python y pandas convierten tipos y textos y rechazan las filas inválidas con su motivo (RN-11; "
                 "RN = regla de negocio).",
-    "Reglas de negocio": "Lleva los precios a kilo o unidad, los agrupa por semana y marca los "
+    "Reglas de negocio": "Python y pandas llevan los precios a kilo o unidad, los agrupan por semana y marcan los "
                          "atípicos (RN-03 a RN-12).",
-    "Controles de carga": "Revisa filas, semanas, regiones y canales: si algo no cuadra, no se "
+    "Controles de carga": "Validaciones en Python revisan filas, semanas, regiones y canales: si algo no cuadra, no se "
                           "guarda nada.",
     "datos.db": "Capa oro: el data warehouse SQLite con el modelo estrella que leen el panel, "
                 "el informe y las consultas.",
+    "SQLite · raw.db": "Base SQLite local de la capa bronce: conserva los archivos tal como "
+                         "llegan y su hash. No se sube al repositorio.",
+    "SQLite · datos.db": "Base SQLite local de la capa oro: contiene el modelo estrella que "
+                           "leen el panel, el informe y las consultas.",
     "Rechazos": "Tabla rejection: cada fila descartada, tal como venía, con su motivo.",
     "Panel Streamlit": "Este panel: lee datos.db en modo solo lectura.",
     "Informe semanal": "Issue de GitHub con el estado de la carga y las alertas de la semana.",
@@ -115,6 +119,11 @@ TOOLTIPS = {
     "Logs del agente": "Un archivo de texto por ejecución con lo que hizo la descarga.",
     "Correo de GitHub": "GitHub avisa por correo al autor si el job semanal falla.",
     "Centro de control": "Página del panel con el historial de ejecuciones en vivo.",
+    "ODEPA · CSV": "Archivos CSV publicados por ODEPA y descargados por HTTPS; esta fuente "
+                     "no ofrece una API en el flujo utilizado por el proyecto.",
+    "Python · requests": "Python ejecuta el agente y requests descarga los CSV por HTTPS.",
+    "Python · pandas": "Python ejecuta el ETL y pandas limpia, transforma y agrupa los datos.",
+    "Streamlit": "Aplicación web que consulta SQLite y presenta el dashboard.",
     "Datos abiertos": "Portal de datos abiertos de ODEPA: un CSV por año y fuente, descargado "
                       "por HTTPS.",
     "VS Code · Claude Code": "Donde se escribe el código: el editor VS Code y el asistente "
@@ -138,6 +147,41 @@ TOOLTIPS = {
     "ETL": "Extraer, transformar y cargar: limpieza, reglas y controles.",
     "Data warehouse": "datos.db: la base lista para analizar.",
     "Panel": "Este panel, con los datos de la última carga.",
+}
+
+
+# Real technology per step (D-103): one list, used by every diagram instead of
+# scattering tool names through each node's own caption. "logo" names a file of
+# bi/assets/logos/ (already local, no network); when there is none, the badge is
+# a styled text pill instead of a fabricated logo (an explicit project choice,
+# not a missing asset).
+TECH = {
+    "python":    {"label": "Python", "logo": "python"},
+    "requests":  {"label": "requests", "logo": None},
+    "pandas":    {"label": "pandas", "logo": None},
+    "sqlite":    {"label": "SQLite", "logo": "sqlite"},
+    "streamlit": {"label": "Streamlit", "logo": "streamlit"},
+    "github":    {"label": "GitHub CLI", "logo": "github"},
+    "https":     {"label": "HTTPS", "logo": None},
+    "csv":       {"label": "CSV", "logo": None},
+    "markdown":  {"label": "Markdown", "logo": None},
+    "sql":       {"label": "SQL", "logo": None},
+}
+# {node title: [tech id, ...]}, 1 to 3 per step, keyed exactly like TOOLTIPS so
+# both the horizontal and the vertical diagram (which share these titles) pick
+# up the same badges without a second lookup table.
+PIPELINE_STACK = {
+    "ODEPA mayorista": ["https", "csv"],
+    "ODEPA consumidor": ["https", "csv"],
+    "Agente de descarga": ["python", "requests"],
+    "SQLite · raw.db": ["sqlite"],
+    "Limpieza": ["python", "pandas"],
+    "Reglas de negocio": ["python", "pandas"],
+    "Controles de carga": ["python", "pandas"],
+    "SQLite · datos.db": ["sqlite"],
+    "Panel Streamlit": ["streamlit"],
+    "Informe semanal": ["python", "markdown", "github"],
+    "Consultas SQL": ["sqlite", "sql"],
 }
 # Explanation of what travels through each link.
 CHIP_TOOLTIPS = {
@@ -249,6 +293,32 @@ def draw_code_icon(x, y, color):
             f'stroke-linejoin="round"/>')
 
 
+def draw_python_icon(x, y, color):
+    """The real Python logo, centered in a journey tile."""
+    return brand_icons.logo("python", x - 18, y - 18, color, 36)
+
+
+def draw_sqlite_icon(x, y, color):
+    """The real SQLite logo, centered in a journey tile."""
+    return brand_icons.logo("sqlite", x - 18, y - 18, color, 36)
+
+
+def draw_streamlit_icon(x, y, color):
+    """The real Streamlit logo, centered in a journey tile."""
+    return brand_icons.logo("streamlit", x - 18, y - 18, color, 36)
+
+
+def draw_github_icon(x, y, color):
+    """The real GitHub logo, centered in a journey tile."""
+    return brand_icons.logo("github", x - 18, y - 18, color, 36)
+
+
+# Which brand slug a node's own tile icon already shows, so a stack badge never
+# repeats the same logo right under it (D-103).
+ICON_LOGO_SLUG = {draw_python_icon: "python", draw_sqlite_icon: "sqlite",
+                  draw_streamlit_icon: "streamlit", draw_github_icon: "github"}
+
+
 def draw_warning_icon(x, y, color):
     """A triangle with an exclamation mark: rejected rows."""
     return (f'<path d="M{x} {y-15} l16 28 h-32 z" fill="none" stroke="{color}" '
@@ -320,8 +390,71 @@ def build_column_headers():
     return "".join(parts)
 
 
+def measure_stack_badge(tech_id):
+    """Width in SVG units of one technology pill, logo and label included."""
+    tech = TECH[tech_id]
+    icon_width = 13 if tech["logo"] else 0
+    return 6 + icon_width + (3 if tech["logo"] else 0) + len(tech["label"]) * 5.6 + 6
+
+
+def build_stack_badge(x, y, tech_id, palette):
+    """One pill: a local logo when there is one, a styled text label otherwise."""
+    tech = TECH[tech_id]
+    width = measure_stack_badge(tech_id)
+    height = 16
+    color = palette["text"]
+    parts = [f'<rect x="{x:.1f}" y="{y - height / 2:.1f}" width="{width:.1f}" height="{height}" '
+             f'rx="8" fill="{palette["field"]}" stroke="{palette["card_border"]}" stroke-width="1"/>']
+    cursor = x + 6
+    if tech["logo"]:
+        size = 13
+        parts.append(brand_icons.logo(tech["logo"], cursor, y - size / 2, color, size))
+        cursor += size + 3
+    parts.append(f'<text x="{cursor:.1f}" y="{y + 3.3:.1f}" font-size="9.5" font-weight="600" '
+                 f'fill="{color}">{html.escape(tech["label"])}</text>')
+    return "".join(parts)
+
+
+def build_stack_row(x, y, tech_ids, palette, align="center"):
+    """The real tools of one step, as 1 to 3 small pills (D-103, PIPELINE_STACK).
+
+    align="center" centers the row on x (the horizontal diagram); "left" starts
+    it at x (the narrow-screen diagram, which reads left to right from the tile).
+    """
+    gap = 5
+    widths = [measure_stack_badge(tech_id) for tech_id in tech_ids]
+    total = sum(widths) + gap * (len(widths) - 1)
+    cursor = x - total / 2 if align == "center" else x
+    parts = []
+    for tech_id, width in zip(tech_ids, widths):
+        parts.append(build_stack_badge(cursor, y, tech_id, palette))
+        cursor += width + gap
+    return add_tooltip(f'<g>{"".join(parts)}</g>', "Tecnología utilizada en este paso.")
+
+
+def visible_stack(title, draw_icon):
+    """PIPELINE_STACK for a node, without the logo its own tile icon already shows.
+
+    A node whose whole stack is that one already-pictured tool (SQLite · raw.db,
+    Panel Streamlit) gets no pill row at all: nothing new to say, so the node
+    stays exactly as it was before D-103.
+    """
+    stack = PIPELINE_STACK.get(title)
+    if not stack:
+        return None
+    icon_logo = ICON_LOGO_SLUG.get(draw_icon)
+    # Only drop a pill that has a real logo matching the tile's own icon; a text
+    # pill (no logo of its own) is never "the same" as an icon with no logo.
+    return [tech_id for tech_id in stack if not (TECH[tech_id]["logo"] and TECH[tech_id]["logo"] == icon_logo)]
+
+
 def build_node(x, y, layer, draw_icon, title, lines, palette, state=None):
-    """Icon tile, title, up to two lines of detail and, when known, a status dot."""
+    """Icon tile, title, up to two lines of detail and, when known, a status dot.
+
+    A node listed in PIPELINE_STACK also gets a row of technology pills (D-103),
+    in the same vertical space the first caption line used: the diagram keeps
+    its exact size, only the step's own tools become explicit.
+    """
     color = LAYER_COLORS[layer]
     half = TILE_SIZE / 2
     parts = [f'<rect x="{x-half}" y="{y-half}" width="{TILE_SIZE}" height="{TILE_SIZE}" '
@@ -329,8 +462,13 @@ def build_node(x, y, layer, draw_icon, title, lines, palette, state=None):
              draw_icon(x, y, color),
              f'<text x="{x}" y="{y+half+22}" text-anchor="middle" font-size="16" '
              f'font-weight="700" fill="{palette["strong_text"]}">{html.escape(title)}</text>']
-    for line_number, line in enumerate(lines[:2]):
-        parts.append(f'<text x="{x}" y="{y+half+42+line_number*17}" text-anchor="middle" '
+    stack = visible_stack(title, draw_icon)
+    shown_lines = lines[1:2] if stack else lines[:2]
+    if stack:
+        parts.append(build_stack_row(x, y + half + 36, stack, palette))
+    for line_number, line in enumerate(shown_lines):
+        base_y = y + half + 58 if stack else y + half + 42
+        parts.append(f'<text x="{x}" y="{base_y+line_number*17}" text-anchor="middle" '
                      f'font-size="13" fill="{palette["text"]}">{html.escape(line)}</text>')
     # Only a real state gets a dot; an unknown one gets none (a grey dot would
     # look like a state).
@@ -400,24 +538,24 @@ def build_main_nodes(states, figures, palette):
     column = COLUMN_X
     return "".join([
         build_node(column["sources"], 250, "sources", draw_file_icon, "ODEPA mayorista",
-                   ["precios diarios", figures["source_years"]], palette, states["sources"]),
+                   ["HTTPS · CSV · sin API", figures["source_years"]], palette, states["sources"]),
         build_node(column["sources"], 420, "sources", draw_file_icon, "ODEPA consumidor",
-                   ["precios semanales", figures["source_years"]], palette, states["sources"]),
-        build_node(column["ingestion"], MAIN_ROW_Y, "ingestion", draw_download_icon,
-                   "Agente de descarga", ["agent.py · reintentos", figures["last_run"]],
+                   ["HTTPS · CSV · sin API", figures["source_years"]], palette, states["sources"]),
+        build_node(column["ingestion"], MAIN_ROW_Y, "ingestion", draw_python_icon,
+                   "Agente de descarga", ["Python · requests", figures["last_run"]],
                    palette, states["download"]),
-        build_node(column["bronze"], MAIN_ROW_Y, "bronze", draw_database_icon, "raw.db",
-                   ["tal como viene", "hash por archivo"], palette),
-        build_node(column["cleaning"], MAIN_ROW_Y, "processing", draw_funnel_icon,
-                   "Limpieza", [figures["rows_read"], "tipos · textos · RN-11"],
+        build_node(column["bronze"], MAIN_ROW_Y, "bronze", draw_sqlite_icon, "SQLite · raw.db",
+                   ["base local · copia bruta", "hash por archivo"], palette),
+        build_node(column["cleaning"], MAIN_ROW_Y, "processing", draw_python_icon,
+                   "Limpieza", ["Python · pandas", figures["rows_read"]],
                    palette, states["etl"]),
-        build_node(column["rules"], MAIN_ROW_Y, "processing", draw_sliders_icon,
-                   "Reglas de negocio", ["unidades · semanas", "atípicos RN-12"],
+        build_node(column["rules"], MAIN_ROW_Y, "processing", draw_python_icon,
+                   "Reglas de negocio", ["Python · pandas", "unidades · semanas · RN-12"],
                    palette, states["etl"]),
-        build_node(column["quality"], MAIN_ROW_Y, "quality", draw_shield_icon,
-                   "Controles de carga", ["filas · semanas", "regiones · canales"],
+        build_node(column["quality"], MAIN_ROW_Y, "quality", draw_python_icon,
+                   "Controles de carga", ["Python · validaciones", "filas · semanas · regiones"],
                    palette, states["load"]),
-        build_node(column["gold"], MAIN_ROW_Y, "gold", draw_database_icon, "datos.db",
+        build_node(column["gold"], MAIN_ROW_Y, "gold", draw_sqlite_icon, "SQLite · datos.db",
                    [figures["weekly_prices"], figures["latest_week"]], palette, states["load"]),
     ])
 
@@ -426,12 +564,12 @@ def build_consumption_nodes(states, figures, palette):
     """Where the data is used: dashboard, weekly report and SQL queries."""
     x = COLUMN_X["consumption"]
     return "".join([
-        build_node(x, 210, "consumption", draw_chart_icon, "Panel Streamlit",
+        build_node(x, 210, "consumption", draw_streamlit_icon, "Panel Streamlit",
                    ["esta página", figures["panel_time"]], palette, states["panel"]),
-        build_node(x, 360, "consumption", draw_report_icon, "Informe semanal",
-                   ["issue en GitHub", "alertas y estado"], palette, states["report"]),
-        build_node(x, 510, "consumption", draw_code_icon, "Consultas SQL",
-                   ["queries.sql", "una por indicador"], palette),
+        build_node(x, 360, "consumption", draw_github_icon, "Informe semanal",
+                   ["GitHub Issue · Markdown", "alertas y estado"], palette, states["report"]),
+        build_node(x, 510, "consumption", draw_sqlite_icon, "Consultas SQL",
+                   ["SQLite · queries.sql", "una por indicador"], palette),
     ])
 
 
@@ -452,9 +590,9 @@ def build_links(palette, is_running):
 
     return "".join([
         build_link(right_of("sources", 250), left_of("ingestion"), LAYER_COLORS["sources"],
-                   palette, "CSV", moving_dot=is_running),
+                   palette, "HTTPS · CSV", moving_dot=is_running),
         build_link(right_of("sources", 420), left_of("ingestion"), LAYER_COLORS["sources"],
-                   palette, "CSV", moving_dot=is_running),
+                   palette, "HTTPS · CSV", moving_dot=is_running),
         build_link(right_of("ingestion"), left_of("bronze"), LAYER_COLORS["ingestion"],
                    palette, "manifest", moving_dot=is_running),
         build_link(right_of("bronze"), left_of("cleaning"), LAYER_COLORS["bronze"],
@@ -486,7 +624,7 @@ def build_quarantine(figures, palette):
             + build_chip(x, MAIN_ROW_Y + 128, "inválidas", LAYER_COLORS["quarantine"],
                          palette)
             + build_node(x, y, "quarantine", draw_warning_icon, "Rechazos",
-                         ["tabla rejection", figures["rows_rejected"]], palette))
+                         ["SQLite · tabla rejection", figures["rows_rejected"]], palette))
 
 
 def build_orchestration(states, figures, palette):
@@ -500,9 +638,9 @@ def build_orchestration(states, figures, palette):
                              f"cada martes · próxima {figures['next_run']}", palette,
                              states["workflow"]),
              build_band_item(left + 380, 128, "Pruebas automáticas",
-                             "si fallan, no se guarda nada", palette, states["tests"]),
+                             "pytest · si fallan, no se guarda", palette, states["tests"]),
              build_band_item(left + 720, 128, "Secretos",
-                             "clave y código del botón ejecutar", palette)]
+                             "GitHub Actions · Secrets", palette)]
     # Orders go down to the agent; they are commands, not data.
     agent_x = COLUMN_X["ingestion"]
     parts.append(f'<path class="journey-dashed" d="M{agent_x} 154 V{MAIN_ROW_Y - 34}" '
@@ -517,13 +655,13 @@ def build_observability(states, figures, palette):
     width = COLUMN_X["gold"] + 70 - left
     return (build_band(left, 618, width, 72, "OBSERVABILIDAD — cómo sabemos qué pasó",
                        palette["text"], palette)
-            + build_band_item(left + 30, 662, "etl_run", "una línea por carga", palette,
+            + build_band_item(left + 30, 662, "etl_run", "SQLite · una fila por carga", palette,
                               states.get("etl_run"))
-            + build_band_item(left + 220, 662, "Logs del agente", "un archivo por ejecución",
+            + build_band_item(left + 220, 662, "Logs del agente", "Python · texto por ejecución",
                               palette)
-            + build_band_item(left + 470, 662, "Correo de GitHub", "si el job semanal falla",
+            + build_band_item(left + 470, 662, "Correo de GitHub", "GitHub · si el job falla",
                               palette)
-            + build_band_item(left + 690, 662, "Centro de control", "historial en vivo",
+            + build_band_item(left + 690, 662, "Centro de control", "Streamlit · historial",
                               palette))
 
 
@@ -565,11 +703,11 @@ def build_mini_journey_svg(states, figures, mode, animate_flow=None):
     states and figures are the same as for build_journey_svg.
     """
     palette = charts.get_palette(mode)
-    steps = [("sources", draw_file_icon, "ODEPA", figures["source_years"], "sources"),
-             ("ingestion", draw_download_icon, "Ingesta", figures["last_run"], "download"),
-             ("processing", draw_funnel_icon, "ETL", figures["rows_read"], "etl"),
-             ("gold", draw_database_icon, "Data warehouse", figures["weekly_prices"], "load"),
-             ("consumption", draw_chart_icon, "Panel", figures["panel_time"], "panel")]
+    steps = [("sources", draw_file_icon, "ODEPA · CSV", figures["source_years"], "sources"),
+             ("ingestion", draw_python_icon, "Python · requests", figures["last_run"], "download"),
+             ("processing", draw_python_icon, "Python · pandas", figures["rows_read"], "etl"),
+             ("gold", draw_sqlite_icon, "SQLite · datos.db", figures["weekly_prices"], "load"),
+             ("consumption", draw_streamlit_icon, "Streamlit", figures["panel_time"], "panel")]
     is_running = (states.get("workflow") == control.RUN_IN_PROGRESS
                   if animate_flow is None else animate_flow)
     half = TILE_SIZE / 2
@@ -601,19 +739,19 @@ def list_vertical_steps(states, figures):
     """(layer header, layer, icon, title, lines, state, chip to the next step), in order."""
     return [
         ("FUENTES", "sources", draw_file_icon, "ODEPA mayorista y consumidor",
-         ["precios diarios y semanales", figures["source_years"]], states["sources"], "CSV"),
-        ("INGESTA", "ingestion", draw_download_icon, "Agente de descarga",
-         ["agent.py · reintentos", figures["last_run"]], states["download"], "manifest"),
-        ("BRONCE", "bronze", draw_database_icon, "raw.db",
-         ["tal como viene", "hash por archivo"], None, "raw_*"),
-        ("LIMPIEZA", "processing", draw_funnel_icon, "Limpieza",
-         [figures["rows_read"], f"inválidas → Rechazos · {figures['rows_rejected']}"],
+         ["HTTPS · CSV · sin API", figures["source_years"]], states["sources"], "HTTPS · CSV"),
+        ("INGESTA", "ingestion", draw_python_icon, "Agente de descarga",
+         ["Python · requests", figures["last_run"]], states["download"], "manifest"),
+        ("BRONCE", "bronze", draw_sqlite_icon, "SQLite · raw.db",
+         ["base local · copia bruta", "hash por archivo"], None, "raw_*"),
+        ("LIMPIEZA", "processing", draw_python_icon, "Limpieza",
+         ["Python · pandas", f"{figures['rows_read']} · Rechazos {figures['rows_rejected']}"],
          states["etl"], "válidas"),
-        ("REGLAS", "processing", draw_sliders_icon, "Reglas de negocio",
-         ["unidades · semanas", "atípicos RN-12"], states["etl"], "plata"),
-        ("CALIDAD", "quality", draw_shield_icon, "Controles de carga",
-         ["filas · semanas", "regiones · canales"], states["load"], "OK"),
-        ("ORO", "gold", draw_database_icon, "datos.db",
+        ("REGLAS", "processing", draw_python_icon, "Reglas de negocio",
+         ["Python · pandas", "unidades · semanas · RN-12"], states["etl"], "plata"),
+        ("CALIDAD", "quality", draw_python_icon, "Controles de carga",
+         ["Python · validaciones", "filas · semanas · regiones"], states["load"], "OK"),
+        ("ORO", "gold", draw_sqlite_icon, "SQLite · datos.db",
          [figures["weekly_prices"], figures["latest_week"]], states["load"], None),
     ]
 
@@ -632,10 +770,17 @@ def build_vertical_node(y, header, layer, draw_icon, title, lines, palette, stat
                      f'letter-spacing="1" fill="{color}">{header}</text>')
     parts.append(f'<text x="{text_x}" y="{y}" font-size="16" font-weight="700" '
                  f'fill="{palette["strong_text"]}">{html.escape(title)}</text>')
-    for line_number, line in enumerate(lines[:2]):
+    # A node of PIPELINE_STACK gets its technology pills where the first caption
+    # line would sit (D-103): same footprint, its real tools made explicit.
+    stack = visible_stack(title, draw_icon)
+    shown_lines = lines[1:2] if stack else lines[:2]
+    if stack:
+        parts.append(build_stack_row(text_x, y + 12, stack, palette, align="left"))
+    for line_number, line in enumerate(shown_lines):
         line_color = (LAYER_COLORS["quarantine"] if line.startswith("inválidas")
                       else palette["text"])
-        parts.append(f'<text x="{text_x}" y="{y+19+line_number*17}" font-size="13" '
+        base_y = y + 36 if stack else y + 19
+        parts.append(f'<text x="{text_x}" y="{base_y+line_number*17}" font-size="13" '
                      f'fill="{line_color}">{html.escape(line)}</text>')
     if has_real_state(state):
         pulse = ' class="journey-running"' if state == control.RUN_IN_PROGRESS else ""
@@ -679,7 +824,7 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
     half = TILE_SIZE / 2
     orchestration = [("GitHub Actions", f"cada martes · próxima {figures['next_run']}",
                       states["workflow"]),
-                     ("Pruebas automáticas", "si fallan, no se guarda nada", states["tests"])]
+                     ("Pruebas automáticas", "pytest · bloquea el guardado", states["tests"])]
     parts = [build_vertical_band(24, "ORQUESTACIÓN — da las órdenes", orchestration, palette)]
     y = VERTICAL_FIRST_Y
     steps = list_vertical_steps(states, figures)
@@ -693,12 +838,12 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
         y += VERTICAL_ROW
     # Consumption: three uses of datos.db, joined to it by one trunk on the left.
     gold_bottom = y - VERTICAL_ROW + half
-    consumption = [(draw_chart_icon, "Panel Streamlit", ["esta página", figures["panel_time"]],
+    consumption = [(draw_streamlit_icon, "Panel Streamlit", ["esta página", figures["panel_time"]],
                     states["panel"]),
-                   (draw_report_icon, "Informe semanal", ["issue en GitHub",
+                   (draw_github_icon, "Informe semanal", ["GitHub Issue · Markdown",
                                                           "alertas y estado"],
                     states["report"]),
-                   (draw_code_icon, "Consultas SQL", ["queries.sql", "una por indicador"],
+                   (draw_sqlite_icon, "Consultas SQL", ["SQLite · queries.sql", "una por indicador"],
                     None)]
     trunk_x = VERTICAL_TILE_X - half - 12
     last_y = y + (len(consumption) - 1) * VERTICAL_ROW
@@ -712,8 +857,8 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
         parts.append(build_vertical_node(row_y, "CONSUMO" if position == 0 else None,
                                          "consumption", draw_icon, title, lines, palette,
                                          state))
-    observability = [("etl_run", "una línea por carga", states.get("etl_run")),
-                     ("Centro de control", "historial en vivo", None)]
+    observability = [("etl_run", "SQLite · una fila por carga", states.get("etl_run")),
+                     ("Centro de control", "Streamlit · historial", None)]
     height = last_y + half + 150
     parts.append(build_vertical_band(last_y + half + 44, "OBSERVABILIDAD — qué pasó",
                                      observability, palette))
