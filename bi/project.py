@@ -46,7 +46,7 @@ TOKENS_URL = "https://github.com/settings/tokens"
 PROJECT_LINKS = [
     # «Código» is retired (D-118): the GitHub page's own repo-header strip already
     # opens the repository root, so a second link to the same place was redundant.
-    {"name": "Ejecuciones", "description": "Historial del job semanal y de los tests (Actions).",
+    {"name": "GitHub Actions", "description": "Logs completos de cada ejecución del workflow.",
      "url": ACTIONS_URL, "icon": "history", "group": "Código y operación"},
     {"name": "Informes semanales", "description": "El informe publicado tras cada ejecución (Issues).",
      "url": ISSUES_URL, "icon": "description", "group": "Código y operación"},

@@ -4422,16 +4422,21 @@ def build_console_css(mode):
     </style>"""
 
 
-def show_queries_page_header():
-    """A one-line header, like the Dashboard's: title and freshness together."""
+def show_compact_page_header(title, description):
+    """A one-line header, like the Dashboard's: title and freshness together; the
+    description shows on hover instead of taking a line of its own."""
     latest_run = read_latest_run()
     run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
     run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
     freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
-    st.markdown(f'<div class="compact-header"><h1 title="Consola SQL de solo lectura sobre '
-                f'datos.db.">Consola SQL</h1><span class="page-freshness">Datos al '
+    st.markdown(f'<div class="compact-header"><h1 title="{html.escape(description, quote=True)}">'
+                f'{html.escape(title)}</h1><span class="page-freshness">Datos al '
                 f'{freshness} {build_chip(run_text, run_kind)}</span></div>',
                 unsafe_allow_html=True)
+
+
+def show_queries_page_header():
+    show_compact_page_header("Consola SQL", "Consola SQL de solo lectura sobre datos.db.")
 
 
 def show_queries_tab(mode):
@@ -6964,37 +6969,35 @@ def build_run_chip(state):
     return build_chip(text, kind)
 
 
+def build_runs_metric_html(label, value, note=""):
+    return (f'<div class="runs-metric"><span class="runs-metric-label">{html.escape(label)}</span>'
+            f'<span class="runs-metric-value">{html.escape(value)}</span>'
+            f'<span class="runs-metric-note">{note}</span></div>')
+
+
 def show_pipeline_status(runs):
-    """Three cards: latest run, next automatic run and latest data load."""
-    status_column, next_column, data_column = st.columns(3)
-    with status_column, open_card("pipeline_latest"):
-        st.markdown('<div class="kpi-label">Última ejecución del pipeline</div>',
-                    unsafe_allow_html=True)
-        if runs:
-            latest = runs[0]
-            st.markdown(f'<div class="kpi-value">{format_chile_time(latest["started_at"])}</div>'
-                        f'{build_run_chip(latest["state"])}'
-                        f'<span class="kpi-note"> {latest["trigger"]}</span>',
-                        unsafe_allow_html=True)
-        else:
-            # Without GitHub, the latest load saved in the database is still a fact.
-            latest_load = read_latest_run()
-            st.markdown(f'<div class="kpi-value">'
-                        f'{format_chile_time(parse_run_start(latest_load["started_at"]))}</div>'
-                        f'<span class="kpi-note">última carga guardada en la base</span>',
-                        unsafe_allow_html=True)
-    with next_column, open_card("pipeline_next"):
-        next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc))
-        st.markdown('<div class="kpi-label">Próxima ejecución automática</div>'
-                    f'<div class="kpi-value">{format_chile_time(next_run)}</div>'
-                    '<div class="kpi-note">Cada martes, sin intervención</div>',
-                    unsafe_allow_html=True)
-    with data_column, open_card("pipeline_data"):
-        latest_run = read_latest_run()
-        st.markdown('<div class="kpi-label">Filas cargadas en la última carga</div>'
-                    f'<div class="kpi-value">{charts.format_thousands(latest_run["rows_loaded"])}'
-                    f'</div><div class="kpi-note">{latest_run["rows_rejected"]} rechazadas</div>',
-                    unsafe_allow_html=True)
+    """One strip of four figures, as the Dashboard's: latest run, next run, rows of
+    the latest load and how long the latest run took (D-129)."""
+    latest_load = read_latest_run()
+    if runs:
+        latest = runs[0]
+        last = build_runs_metric_html("Última ejecución", format_chile_time(latest["started_at"]),
+                                      f'{build_run_chip(latest["state"])} {html.escape(latest["trigger"])}')
+        took = format_duration(latest["duration"]) if latest["duration"] else "—"
+    else:
+        # Without GitHub, the latest load saved in the database is still a fact.
+        last = build_runs_metric_html("Última carga guardada",
+                                      format_chile_time(parse_run_start(latest_load["started_at"])),
+                                      "sin respuesta de GitHub")
+        took = "—"
+    next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc))
+    st.markdown('<div class="runs-metrics">' + last
+                + build_runs_metric_html("Próxima ejecución", format_chile_time(next_run),
+                                         "cada martes, sin intervención")
+                + build_runs_metric_html("Filas cargadas", charts.format_thousands(latest_load["rows_loaded"]),
+                                         f'{charts.format_thousands(latest_load["rows_rejected"])} rechazadas')
+                + build_runs_metric_html("Duración", took, "de la última ejecución")
+                + '</div>', unsafe_allow_html=True)
 
 
 def build_step_lines(steps):
@@ -7096,8 +7099,14 @@ def show_admin_unlocked(token):
 
 
 def show_admin_card():
-    """Administration, behind the control code: nothing of it shows without the code."""
-    with open_card("admin", "🔒 Administración"):
+    """Administration, behind the control code: nothing of it shows without the code.
+    A plain card with its own small title (D-129), not the shield-shaped frame."""
+    with st.container(border=True, key="runs_admin"):
+        st.markdown('<div class="runs-card-title">Administración</div>', unsafe_allow_html=True)
+        if st.button("Recargar datos del panel", icon=":material/refresh:", key="runs_reload",
+                     width="stretch"):
+            st.cache_data.clear()
+            st.rerun()
         access_code = get_secret(SECRET_CONTROL_CODE)
         if st.session_state.get(ADMIN_UNLOCKED) and access_code:
             show_admin_unlocked(get_secret(SECRET_GITHUB_TOKEN))
@@ -7117,39 +7126,75 @@ def show_admin_card():
 
 
 def show_run_history(runs, error_text):
-    """Card: latest pipeline runs with their state."""
-    with open_card("run_history", "Historial de ejecuciones"):
+    """The latest runs, visible at once as a clean table — the page's main content,
+    no longer folded behind «Ver historial» (D-129)."""
+    with st.container(border=True, key="runs_history"):
+        st.markdown('<div class="runs-card-title">Historial de ejecuciones</div>',
+                    unsafe_allow_html=True)
         if error_text:
             # The real cause, so a failure can be diagnosed from the public panel.
             st.warning(f"No se pudo consultar GitHub: {error_text}.")
             if not runs:
                 return
             st.caption("Se muestra la última respuesta guardada.")
-        table_rows = [[format_chile_time(run["started_at"]), html.escape(run["trigger"]),
-                       format_duration(run["duration"]) if run["duration"] else "—",
-                       build_run_chip(run["state"]),
-                       f'<a href="{html.escape(run["url"])}">Ver en GitHub ↗</a>']
-                      for run in runs]
-        show_foldable_table(build_html_table(["Inicio", "Tipo", "Duración", "Estado", ""],
-                                     table_rows), 'Ver historial de ejecuciones')
+        rows = "".join(
+            f'<tr><td>{format_chile_time(run["started_at"])}</td><td>{html.escape(run["trigger"])}</td>'
+            f'<td>{format_duration(run["duration"]) if run["duration"] else "—"}</td>'
+            f'<td>{build_run_chip(run["state"])}</td>'
+            f'<td class="runs-link"><a href="{html.escape(run["url"], quote=True)}" target="_blank" '
+            f'rel="noopener noreferrer" title="Ver los logs en GitHub Actions">Logs ↗</a></td></tr>'
+            for run in runs)
+        st.markdown('<table class="runs-table"><thead><tr><th>Inicio</th><th>Tipo</th>'
+                    '<th>Duración</th><th>Estado</th><th></th></tr></thead>'
+                    f'<tbody>{rows}</tbody></table>', unsafe_allow_html=True)
+
+
+def build_runs_css(mode):
+    palette = charts.get_palette(mode)
+    return f"""<style>
+    .runs-metrics {{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:6px 0 16px;}}
+    .runs-metric {{display:flex; flex-direction:column; gap:3px; padding:12px 16px; border-radius:14px;
+        background:{palette['card']}; border:1px solid {palette['card_border']};
+        box-shadow:0 10px 22px -16px rgba(0,0,0,.25);}}
+    .runs-metric-label {{font-size:.68rem; font-weight:650; letter-spacing:.06em; text-transform:uppercase;
+        color:{palette['reference']};}}
+    .runs-metric-value {{font-size:1.12rem; font-weight:650; letter-spacing:-.01em;
+        color:{palette['strong_text']}; font-variant-numeric:tabular-nums;}}
+    .runs-metric-note {{font-size:.76rem; color:{palette['text']};}}
+    .runs-card-title {{display:flex; align-items:center; gap:7px; font-size:.92rem; font-weight:650;
+        color:{palette['strong_text']}; margin:0 0 10px;}}
+    .runs-table {{width:100%; border-collapse:collapse; font-size:.84rem;}}
+    .runs-table th {{text-align:left; font-size:.68rem; font-weight:650; letter-spacing:.05em;
+        text-transform:uppercase; color:{palette['reference']}; padding:6px 8px;
+        border-bottom:1px solid {palette['card_border']};}}
+    .runs-table td {{padding:9px 8px; border-bottom:1px solid {palette['card_border']};
+        color:{palette['strong_text']}; font-variant-numeric:tabular-nums;}}
+    .runs-table tr:last-child td {{border-bottom:0;}}
+    .runs-table tbody tr:hover td {{background:color-mix(in srgb,{palette['accent']} 5%,transparent);}}
+    .runs-link {{text-align:right;}}
+    @media (max-width:900px) {{ .runs-metrics {{grid-template-columns:repeat(2,minmax(0,1fr));}} }}
+    </style>"""
+
+
+def show_runs_page(mode):
+    """Ejecuciones with the Dashboard's rhythm: a one-line header, a strip of
+    figures, the history as the main content and administration beside it (D-129)."""
+    show_compact_page_header("Ejecuciones", "Historial real del pipeline y ejecución manual "
+                             "con acceso de administración.")
+    show_runs_tab(mode)
 
 
 def show_runs_tab(mode):
     """The weekly pipeline: its state, its history and, behind the control code, the
     button to run it now and the administration links."""
-    show_section_intro("Ejecuciones", "El estado del job semanal: la última ejecución, la "
-                       "próxima, la última carga y el historial. Con la clave de control se "
-                       "puede lanzar ahora.")
+    st.markdown(build_runs_css(mode), unsafe_allow_html=True)
     runs, error_text = read_pipeline_runs()
     show_pipeline_status(runs)
-    run_column, history_column = st.columns([2, 3])
-    with run_column:
-        show_admin_card()
-        if st.button("Recargar datos del panel", icon=":material/refresh:"):
-            st.cache_data.clear()
-            st.rerun()
+    history_column, admin_column = st.columns([2.3, 1], gap="medium")
     with history_column:
         show_run_history(runs, error_text)
+    with admin_column:
+        show_admin_card()
 
 
 # endregion
@@ -7880,8 +7925,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_DEVOPS: lambda mode: show_document_page(mode, PAGE_DEVOPS,
         "Automatización, seguridad, observabilidad e informes.", show_devops_tab),
     PAGE_OPERATIONS: show_operations_page,
-    PAGE_RUNS: lambda mode: show_document_page(mode, PAGE_RUNS,
-        "Historial real del pipeline y ejecución manual con acceso de administración.", show_runs_tab),
+    PAGE_RUNS: show_runs_page,
     PAGE_RULES: lambda mode: show_document_page(mode, PAGE_RULES,
         "Qué se valida y qué ocurre cuando una fila no cumple las reglas.", show_rules_tab),
     PAGE_MANUAL: lambda mode: show_document_page(mode, PAGE_MANUAL,

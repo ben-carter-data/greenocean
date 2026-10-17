@@ -1757,3 +1757,18 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
     assert ".st-key-nav_alert" in css
     # The footer keeps only Apariencia and the GitHub mark.
     assert 'class="sidebar-github' in css
+
+
+@needs_database
+def test_d129_ejecuciones_reads_like_the_dashboard_and_shows_its_history_at_once():
+    app = draw_page(dashboard.PAGE_RUNS)
+    assert not app.exception
+    text = " ".join(block.value for block in app.markdown)
+    assert 'class="compact-header"' in text and text.count('class="runs-metric"') == 4
+    assert "Ver historial de ejecuciones" not in [expander.label for expander in app.expander]
+    assert "runs_reload" in [str(button.key) for button in app.button]
+
+
+def test_d129_the_github_page_names_actions_so_it_is_not_confused_with_ejecuciones():
+    names = [link["name"] for link in project.PROJECT_LINKS]
+    assert "GitHub Actions" in names and "Ejecuciones" not in names
