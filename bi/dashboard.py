@@ -4229,15 +4229,6 @@ CATALOG = [
 CATALOG_BY_NAME = {entry["name"]: entry for entry in CATALOG}
 
 
-def list_catalog_functions(name, build):
-    """The Python that serves a question: its result, the read-only reader and, when
-    there is one, the version a test reconciles with the SQL (D-049)."""
-    functions = list(project.PYTHON_VERSIONS.get(name, []))
-    if name == project.MATCH_COVERAGE_QUERY_NAME:
-        functions.append(etl.measure_match_coverage)
-    return functions + [build, build_catalog_sql, queries.run_sql, queries.open_database]
-
-
 def match_catalog_search(entry, text):
     """True when every word of the search is in the question, its theme or its name."""
     haystack = " ".join([entry["question"], entry["compares"], entry["theme"],
@@ -4264,23 +4255,13 @@ def build_github_link_html(text, address):
             f'class="doc-github-link">{icon}{html.escape(text)} ↗</a>')
 
 
-def show_catalog_python(entry):
-    """The Python that serves the question — its own tab, apart from SQL (D-121)."""
-    for function in list_catalog_functions(entry["name"], entry["build"]):
-        module = sys.modules[function.__module__]
-        file = Path(module.__file__).resolve().relative_to(project.PROJECT_DIR).as_posix()
-        st.markdown(f'<div class="query-meta"><code>{html.escape(function.__name__)}</code> · '
-                    f'{build_external_link_html(file, project.build_github_url(file))}</div>',
-                    unsafe_allow_html=True)
-        st.code(inspect.getsource(function), language="python", height=320)
-
-
 # The SQL console (D-126): an object explorer on the left (tables and saved
 # queries), an editor and its result grid on the right — the shape of SQL Server
 # Management Studio or DBeaver, instead of a list of questions to navigate.
 CONSOLE_TEXT = "sql_console_text"
 CONSOLE_SOURCE = "sql_console_source"
 CONSOLE_EXECUTED = "sql_console_executed"
+CONSOLE_ORIGINAL = "sql_console_original"
 CONSOLE_DEFAULT = ("table", "weekly_price")
 
 
@@ -4303,12 +4284,14 @@ def build_table_preview_sql(table):
     return f"SELECT *\nFROM {table}\nLIMIT 100"
 
 
-def load_console(source, sql):
-    """Put a table or a saved query in the editor and run it, as a click in a
-    database tool's explorer does."""
+def load_console(source, sql, run=False):
+    """Put a table or a saved query in the editor. A click in the explorer only
+    loads it, so «Ejecutar» is what runs it (D-127); arriving from a link or on a
+    first visit runs it too, so the page never opens empty."""
     st.session_state[CONSOLE_SOURCE] = source
     st.session_state[CONSOLE_TEXT] = sql
-    st.session_state[CONSOLE_EXECUTED] = sql
+    st.session_state[CONSOLE_ORIGINAL] = sql
+    st.session_state[CONSOLE_EXECUTED] = sql if run else ""
     if source[0] == "query":
         st.query_params[CATALOG_PARAMETER] = source[1]
     else:
@@ -4320,10 +4303,8 @@ def run_console():
 
 
 def restore_console():
-    source = st.session_state.get(CONSOLE_SOURCE, CONSOLE_DEFAULT)
-    sql = (read_catalog_sql(source[1]) if source[0] == "query"
-           else build_table_preview_sql(source[1]))
-    load_console(source, sql)
+    """Undo the edits: back to the query as it was loaded, without running it."""
+    st.session_state[CONSOLE_TEXT] = st.session_state.get(CONSOLE_ORIGINAL, "")
 
 
 def sync_console_with_address():
@@ -4331,9 +4312,9 @@ def sync_console_with_address():
     the price table."""
     requested = st.query_params.get(CATALOG_PARAMETER)
     if requested in CATALOG_BY_NAME and st.session_state.get(CONSOLE_SOURCE) != ("query", requested):
-        load_console(("query", requested), read_catalog_sql(requested))
+        load_console(("query", requested), read_catalog_sql(requested), run=True)
     if CONSOLE_TEXT not in st.session_state:
-        load_console(CONSOLE_DEFAULT, build_table_preview_sql(CONSOLE_DEFAULT[1]))
+        load_console(CONSOLE_DEFAULT, build_table_preview_sql(CONSOLE_DEFAULT[1]), run=True)
 
 
 def show_console_explorer(source):
@@ -4365,20 +4346,27 @@ def show_console_explorer(source):
 
 
 def describe_console_source(source):
-    """(title, metadata HTML) of what the editor holds."""
+    """(title, metadata HTML) of what the editor holds: for a saved query, what it
+    compares and where it lives in the repository."""
     if source[0] == "table":
         return f"Tabla {source[1]}", "Vista previa de la tabla · edita la consulta para filtrar o agrupar."
     entry = CATALOG_BY_NAME[source[1]]
     path, line = find_catalog_line(source[1])
     address = f"{project.build_github_url(path)}#L{line}"
-    meta = (f'<code>{html.escape(source[1])}</code> · {html.escape(path)}, línea {line} · '
-            f'{build_external_link_html("ver en GitHub", address)}')
+    meta = (f'{format_inline(entry["compares"])}<br><code>{html.escape(source[1])}</code> · '
+            f'{html.escape(path)}, línea {line} · {build_external_link_html("ver en GitHub", address)}')
     return entry["question"], meta
 
 
 def show_console_result(source, executed, mode):
-    """Bottom pane: the run's status line, then the grid — plus, for a saved query,
-    its chart, how to read it and its Python, each in its own tab."""
+    """Bottom pane: the run's status line, then the grid — plus, for a saved query
+    that has one, its chart in its own tab. Python and «Cómo leerlo» left the
+    console (D-127): the code lives in GitHub, what the query compares sits under
+    its title."""
+    if not executed:
+        st.markdown('<div class="console-status console-status-idle">Consulta cargada · pulsa '
+                    '<b>Ejecutar</b> para ver el resultado.</div>', unsafe_allow_html=True)
+        return
     result = read_cached_console_result(executed, get_database_version())
     if result["error"]:
         st.markdown(f'<div class="console-status console-status-error">✕ {html.escape(result["error"])}</div>',
@@ -4391,28 +4379,21 @@ def show_console_result(source, executed, mode):
     st.markdown(f'<div class="console-status">✓ {count} · {result["ms"]:.0f} ms · solo lectura</div>',
                 unsafe_allow_html=True)
     entry = CATALOG_BY_NAME.get(source[1]) if source[0] == "query" else None
-    names = ["Resultados"] + (["Gráfico"] if entry and entry["chart"] else []) + (
-        ["Cómo leerlo", "Python"] if entry else [])
+    # The chart only matches the saved query as written: an edited query keeps the grid.
+    charted = entry and entry["chart"] and executed == st.session_state.get(CONSOLE_ORIGINAL)
+    names = ["Resultados"] + (["Gráfico"] if charted else [])
     tabs = dict(zip(names, st.tabs(names)))
     with tabs["Resultados"]:
         st.dataframe(rows, hide_index=True, width="stretch", height=360)
         st.download_button("Descargar CSV", rows.to_csv(index=False).encode("utf-8"),
                            file_name="consulta.csv", mime="text/csv", icon=":material/download:",
                            on_click="ignore", key="console_download")
-    if not entry:
-        return
     if "Gráfico" in tabs:
         with tabs["Gráfico"]:
             example = entry["build"](mode)
             st.caption(" · ".join(str(fact) for fact in example["facts"]))
             if example["chart"] is not None:
                 show_chart(example["chart"])
-    with tabs["Cómo leerlo"]:
-        st.markdown(f'<div class="catalog-reading"><b>Qué compara.</b> {format_inline(entry["compares"])}'
-                    f'<br><b>Cómo leerlo.</b> {format_inline(entry["reading"])}</div>',
-                    unsafe_allow_html=True)
-    with tabs["Python"]:
-        show_catalog_python(entry)
 
 
 def build_console_css(mode):
@@ -4437,6 +4418,7 @@ def build_console_css(mode):
         padding:7px 12px; border-radius:8px; margin:6px 0 4px;
         background:color-mix(in srgb,#22b35a 10%,transparent); color:{palette['strong_text']};}}
     .console-status-error {{background:color-mix(in srgb,#e66767 14%,transparent);}}
+    .console-status-idle {{background:color-mix(in srgb,{palette['accent']} 10%,transparent);}}
     </style>"""
 
 
@@ -4464,14 +4446,17 @@ def show_queries_tab(mode):
         title, meta = describe_console_source(source)
         st.markdown(f'<p class="console-title">{html.escape(title)}</p>'
                     f'<div class="console-meta">{meta}</div>', unsafe_allow_html=True)
-        st.text_area("Consulta SQL", key=CONSOLE_TEXT, height=170, label_visibility="collapsed")
+        st.text_area("Consulta SQL", key=CONSOLE_TEXT, height=270, label_visibility="collapsed")
         executed = st.session_state.get(CONSOLE_EXECUTED, "")
+        text = st.session_state.get(CONSOLE_TEXT)
         with st.container(horizontal=True, vertical_alignment="center", key="console_actions"):
             st.button("Ejecutar", type="primary", icon=":material/play_arrow:", key="console_run",
                       on_click=run_console)
-            st.button("Restaurar", icon=":material/undo:", key="console_restore",
-                      on_click=restore_console, help="Vuelve a la consulta original")
-            if st.session_state.get(CONSOLE_TEXT) != executed:
+            # Only once there is something to undo (D-127).
+            if text != st.session_state.get(CONSOLE_ORIGINAL):
+                st.button("Restaurar", icon=":material/undo:", key="console_restore",
+                          on_click=restore_console, help="Deshace tus cambios a la consulta")
+            if executed and text != executed:
                 st.caption("Hay cambios sin ejecutar.")
             else:
                 st.caption(f"Solo lectura · SELECT o WITH · hasta "
@@ -8366,12 +8351,13 @@ def build_sidebar_css(mode):
     .st-key-sidebar_footer {{position:fixed; left:17px; bottom:0; width:266px; padding:13px 5px 12px;
         background:linear-gradient(180deg,transparent 0%,{sidebar_bottom} 18%); gap:7px !important; z-index:5;
         border-top:1px solid {hairline};}}
+    .st-key-nav_alert {{margin-top:1px;}}
     .st-key-home_alert_trigger button {{width:100%; justify-content:flex-start; border:0 !important;
         background:transparent !important; color:{alert_text} !important; border-radius:5px;
-        padding:7px 5px; min-height:30px; box-shadow:none !important;}}
-    .st-key-home_alert_trigger button:hover {{background:transparent !important; filter:brightness(1.12);}}
+        padding:3px 7px !important; min-height:27px; box-shadow:none !important;}}
+    .st-key-home_alert_trigger button:hover {{background:color-mix(in srgb,{alert_text} 10%,transparent) !important;}}
     .st-key-home_alert_trigger button p {{color:{alert_text} !important; -webkit-text-fill-color:{alert_text} !important;
-        font-weight:560; font-size:.79rem; text-align:left;}}
+        font-weight:560; font-size:.78rem; text-align:left; letter-spacing:-.005em;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button {{background:transparent !important;
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
@@ -8439,6 +8425,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
                 with st.sidebar.container(key=key):
                     st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
                                  query_params=keep_context() | {VIEW_PARAMETER: view})
+    show_sidebar_alert()
     show_sidebar_footer(current_window)
 
 
@@ -8451,21 +8438,27 @@ def build_sidebar_github_html(is_current):
             f'{build_github_icon_svg(20)}</a>')
 
 
-def show_sidebar_footer(current_window=None):
-    """The price alerts, apart from the navigation and always at the bottom, on every page."""
+def show_sidebar_alert():
+    """The price alerts as the list's last row, the only one in red (D-128): next
+    to the GitHub mark in the footer, one could press one meaning the other."""
     alerts_now = read_price_alerts()
     week = read_latest_week()
     count = int((alerts_now["week_start"] == week).sum()) if not alerts_now.empty else 0
     # The alert dialog's styling (shapes, legend, colors) lives in home_mockup's
-    # stylesheet, built only for the Resumen page before D-096. The trigger now
-    # sits in this sidebar on every page, so its CSS must load everywhere too,
-    # or the dialog renders as plain unstyled buttons (D-100).
+    # stylesheet, built only for the Resumen page before D-096. The trigger sits in
+    # this sidebar on every page, so its CSS must load everywhere too, or the
+    # dialog renders as plain unstyled buttons (D-100).
     st.markdown(home_mockup.style(get_mode(), charts.get_palette(get_mode())), unsafe_allow_html=True)
-    with st.sidebar.container(key="sidebar_footer"):
+    with st.sidebar.container(key="nav_alert"):
         if st.button(f"▲  Alerta de precio · {count}", key="home_alert_trigger",
                      help=f"{count} cambios de precio fuera de lo habitual esta semana. Abre el detalle por familia."):
             st.session_state["home_alert_selected_family"] = None
             show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())
+
+
+def show_sidebar_footer(current_window=None):
+    """Appearance and the GitHub mark, always at the bottom, on every page."""
+    with st.sidebar.container(key="sidebar_footer"):
         with st.container(key="sidebar_tools", horizontal=True, vertical_alignment="center"):
             with st.container(key="sidebar_appearance"):
                 show_theme_field()

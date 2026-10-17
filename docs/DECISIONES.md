@@ -942,3 +942,16 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** la página se rehace con la forma de SQL Server Management Studio o DBeaver: a la izquierda un **explorador** (las tablas de `datos.db` con su número de filas y las 15 consultas guardadas por tema, con un filtro); a la derecha un **editor SQL**, el botón **Ejecutar**, una línea de estado (filas · milisegundos · solo lectura) y la **grilla de resultados** con descarga CSV. Una consulta guardada suma sus pestañas Gráfico, Cómo leerlo y Python, y el enlace a su línea en GitHub. Abre con `SELECT * FROM weekly_price LIMIT 100`; `?consulta=` sigue abriendo una consulta guardada.
 - **Seguridad:** `queries.run_console_sql` ejecuta el texto del visitante sobre la conexión de solo lectura (`mode=ro`), acepta una sola sentencia que empiece con `SELECT` o `WITH`, aplica un autorizador de SQLite que niega todo salvo lectura (sin `ATTACH`, `PRAGMA` ni escritura), corta a las 1.000 filas y detiene la consulta a los 10 s.
 - **Validación:** 431 pruebas; nuevas pruebas `test_d126_*` cubren el explorador, la carga de una consulta guardada, la ejecución de SQL escrito a mano, el rechazo de seis consultas peligrosas, el corte por tiempo y el tope de filas.
+
+## D-127 · La consola carga al hacer clic y ejecuta solo con «Ejecutar»
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** al hacer clic en una pregunta la consulta se ejecutaba sola, así que «Ejecutar» y «Restaurar» no servían para nada; las pestañas «Cómo leerlo» y «Python» no tenían lugar en una consola SQL; el editor era chico.
+- **Decisión:** un clic en el explorador solo **carga** la consulta en el editor (la línea de estado pide pulsar «Ejecutar»); «Ejecutar» la corre. La primera visita y los enlaces con `?consulta=` sí ejecutan, para que la página no abra vacía. «Restaurar» aparece solo cuando el texto fue editado y vuelve a la consulta cargada. Se retiran las pestañas «Cómo leerlo» y «Python»: lo que compara la consulta pasa a una línea bajo su título, y el código Python vive en GitHub. «Gráfico» se muestra solo si lo ejecutado es la consulta guardada sin cambios. El editor pasa de 170 a 270 px.
+- **Por qué Python salió:** mostraba las funciones que sirven cada pregunta en el panel (la que arma el resultado, el lector de la base y, en algunas, una versión equivalente que una prueba compara con el SQL, D-049). Es evidencia técnica que ya está completa en el repositorio; en la consola distraía.
+
+## D-128 · «Alerta de precio» cierra la lista del menú, en rojo
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** en el pie, la alerta quedaba pegada al logo de GitHub (D-124) y se podía apretar una por otra.
+- **Decisión:** la alerta pasa a ser la última fila del árbol del menú, con la misma medida que las demás filas y el único color rojo de la lista; el pie queda solo con «Apariencia» y el logo de GitHub.

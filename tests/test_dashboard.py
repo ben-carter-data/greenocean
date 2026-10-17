@@ -351,17 +351,25 @@ def test_d126_the_console_lists_tables_and_every_saved_query_and_runs_the_first_
 
 
 @needs_database
-def test_d126_a_saved_query_loads_its_sql_runs_it_and_offers_its_reading_and_python():
+def test_d127_a_saved_query_loads_on_click_and_runs_only_on_ejecutar():
+    """A click in the explorer only loads the query; «Ejecutar» runs it. No Python
+    or «Cómo leerlo» tab; «Restaurar» only once the text is edited (D-127)."""
     app = draw_page(dashboard.PAGE_QUERIES)
     app.button(key="console_query_k1_margin").click().run()
     assert not app.exception
     assert app.query_params[dashboard.CATALOG_PARAMETER] == "k1_margin"
     assert app.text_area(key=dashboard.CONSOLE_TEXT).value == queries.load_queries()["k1_margin"].strip()
     text = " ".join(block.value for block in app.markdown)
-    assert "bi/queries.sql, línea" in text and "github.com" in text
-    assert [tab.label for tab in app.tabs] == ["Resultados", "Gráfico", "Cómo leerlo", "Python"]
-    assert "no mide ganancia" in text or "La brecha no mide" in text
-    assert any(block.language == "python" for block in app.code)
+    assert "pulsa <b>Ejecutar</b>" in text and not app.dataframe
+    assert "bi/queries.sql, línea" in text and dashboard.CATALOG_BY_NAME["k1_margin"]["compares"] in text
+    assert "console_restore" not in [str(button.key) for button in app.button]
+    app.button(key="console_run").click().run()
+    assert [tab.label for tab in app.tabs] == ["Resultados", "Gráfico"]
+    assert len(app.dataframe) == 1 and not any(block.language == "python" for block in app.code)
+    app.text_area(key=dashboard.CONSOLE_TEXT).set_value("SELECT * FROM dim_channel").run()
+    assert "console_restore" in [str(button.key) for button in app.button]
+    app.button(key="console_restore").click().run()
+    assert app.text_area(key=dashboard.CONSOLE_TEXT).value == queries.load_queries()["k1_margin"].strip()
 
 
 @needs_database
@@ -1737,3 +1745,15 @@ def test_alert_top_n_has_its_own_8_to_100_control_and_previous_prices():
     slider.set_value(100).run()
     assert not app.exception
     assert 'Precio anterior' in ' '.join(block.value for block in app.markdown)
+
+
+@needs_database
+def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    assert not app.exception
+    alert = app.button(key="home_alert_trigger")
+    assert alert.label.startswith("▲  Alerta de precio · ")
+    css = " ".join(block.value for block in app.sidebar.markdown)
+    assert ".st-key-nav_alert" in css
+    # The footer keeps only Apariencia and the GitHub mark.
+    assert 'class="sidebar-github' in css
