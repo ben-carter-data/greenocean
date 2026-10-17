@@ -955,3 +955,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-17.
 - **Problema reportado:** en el pie, la alerta quedaba pegada al logo de GitHub (D-124) y se podía apretar una por otra.
 - **Decisión:** la alerta pasa a ser la última fila del árbol del menú, con la misma medida que las demás filas y el único color rojo de la lista; el pie queda solo con «Apariencia» y el logo de GitHub.
+
+## D-129 · «Ejecuciones» con el ritmo del Dashboard; «GitHub Actions» en la página GitHub
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** la página Ejecuciones se veía con números grandes y tarjetas poco elegantes; y la página GitHub tenía también una tarjeta «Ejecuciones», con el mismo nombre que la página del menú.
+- **Decisión:** la página pasa a una cabecera de una línea (título y frescura, como el Dashboard y la Consola SQL, con `show_compact_page_header` compartida), una franja de cuatro cifras compactas (última ejecución, próxima, filas cargadas, duración), el historial a la vista como tabla limpia —antes estaba plegado detrás de «Ver historial»— y, al lado, una tarjeta simple de Administración con «Recargar datos del panel» adentro. La tarjeta de la página GitHub se llama ahora **«GitHub Actions»** («Logs completos de cada ejecución del workflow»): son contenidos distintos —los logs técnicos en GitHub frente al historial y el botón de administración del panel— y ya no comparten nombre.
+- **Validación:** 434 pruebas; nuevas `test_d129_*`.
