@@ -7828,12 +7828,19 @@ def build_sidebar_css(mode):
     [data-testid="stSidebarNav"] {{display:none;}}
     .nav-heading {{font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; font-weight:700;
         color:{text}; opacity:.62; margin:18px 8px 4px;}}
-    /* A folder row: icon + name, same indent and icon size as a page link (D-101). */
-    .nav-group {{display:flex; align-items:center; gap:9px; font-size:.86rem; font-weight:600;
-        color:{text}; margin:10px 0 1px; padding:5px 8px; cursor:default;}}
-    .nav-icon {{font-family:"Material Symbols Rounded"; font-weight:400; font-style:normal;
-        font-size:17px; line-height:1; width:17px; flex-shrink:0; color:{text}; opacity:.85;}}
-    .nav-icon-spacer {{width:17px; flex-shrink:0;}}
+    /* A folder row (D-102): a real button, styled as plain text, with a chevron that
+       folds it — the same affordance as VS Code's Explorer. Expanded by default. */
+    [class*="st-key-nav_group_"] button {{width:100%; justify-content:flex-start; gap:9px !important;
+        border:0 !important; background:transparent !important; box-shadow:none !important;
+        padding:5px 8px !important; border-radius:6px; min-height:0;}}
+    [class*="st-key-nav_group_"] button:hover:not(:disabled) {{background:{text}14 !important;}}
+    [class*="st-key-nav_group_"] button:disabled {{cursor:default; opacity:1;}}
+    [class*="st-key-nav_group_"] button p {{font-size:.86rem !important; font-weight:600 !important;
+        color:{text} !important; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
+    [class*="st-key-nav_group_"] button [data-testid="stIconMaterial"] {{font-size:17px !important;
+        width:17px !important; opacity:.85;}}
+    .st-key-nav_group_current button p {{color:{palette['accent']} !important;}}
+    .st-key-nav_group_current button [data-testid="stIconMaterial"] {{color:{palette['accent']}; opacity:1;}}
     [data-testid="stSidebar"] [data-testid="stPageLink"] a {{padding:5px 8px !important; border-radius:6px;
         background:transparent !important; box-shadow:none !important; min-height:0; gap:9px !important;}}
     [data-testid="stSidebar"] [data-testid="stPageLink"] p {{font-size:.86rem; color:{text} !important;
@@ -7860,15 +7867,13 @@ def build_sidebar_css(mode):
     </style>"""
 
 
-def build_nav_icon(icon):
-    """A Material Symbol as plain text in its ligature font, matching st.page_link's
-    own icons so a group header (plain text, not a link) lines up with them (D-101)."""
-    name = icon.strip(":").split("/")[-1] if icon else ""
-    return f'<span class="nav-icon">{name}</span>' if name else '<span class="nav-icon-spacer"></span>'
+def nav_open_key(window):
+    return f"nav_open_{WINDOW_PATHS[window]}"
 
 
 def show_sidebar_navigation(windows_by_title, current_window, order):
-    """Every section and view of the project, always unfolded, as a file tree (D-096, D-101)."""
+    """A file tree like VS Code's: every folder expanded by default, but a real
+    chevron folds it, exactly as there (D-096, D-101, D-102)."""
     st.sidebar.markdown(build_sidebar_css(get_mode()), unsafe_allow_html=True)
     current_view = read_current_view(current_window)
     for heading, sections in SIDEBAR_TREE:
@@ -7881,10 +7886,21 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
                     st.page_link(windows_by_title[window], label=label, icon=WINDOW_ICONS[window],
                                  query_params=keep_context())
                 continue
-            # A folder row (icon + name), then its pages indented under a guide line,
-            # the way a file tree reads (D-101).
-            st.sidebar.markdown(f'<div class="nav-group">{build_nav_icon(WINDOW_ICONS[window])}'
-                               f'{html.escape(label)}</div>', unsafe_allow_html=True)
+            # A folder row: chevron + icon + name. Expanded by default; a click folds
+            # it, same as VS Code's Explorer (D-102). The viewed window always forces
+            # itself open, so the current page is never hidden.
+            open_key = nav_open_key(window)
+            is_open = st.session_state.get(open_key, True) or window == current_window
+            group_key = "nav_group_current" if window == current_window else f"nav_group_{WINDOW_PATHS[window]}"
+            chevron = "▾" if is_open else "▸"
+            with st.sidebar.container(key=group_key):
+                if st.button(f"{chevron}  {label}", key=f"nav_toggle_{WINDOW_PATHS[window]}",
+                            icon=WINDOW_ICONS[window], disabled=window == current_window,
+                            help=None if window == current_window else ("Ocultar" if is_open else "Mostrar")):
+                    st.session_state[open_key] = not is_open
+                    st.rerun()
+            if not is_open:
+                continue
             for index, view in enumerate(views):
                 active = window == current_window and view == current_view
                 key = f"nav_child_{WINDOW_PATHS[window]}_{index}" + ("_nav_current" if active else "")
