@@ -1454,6 +1454,19 @@ def test_d114_bi_shows_every_kpi_with_a_real_icon_and_its_own_color_inline():
     assert 'Ver cada indicador con su cálculo' not in text
 
 
+@needs_database
+def test_d115_ba_shows_the_whole_business_frame_without_a_link_to_a_repeat():
+    """BA used to link to PAGE_BUSINESS, which repeats the same «Marco de negocio»
+    fields; it now shows every field itself, including «Criterios de aceptación»."""
+    app = draw_page(dashboard.PAGE_DOC_BA)
+    assert not app.exception
+    text = " ".join(block.value for block in app.markdown)
+    for element in ["Misión", "Visión", "Objetivo de negocio", "Alcance", "Fuera de alcance",
+                    "Criterios de aceptación"]:
+        assert element in text
+    assert 'Leer el marco de negocio completo' not in text
+
+
 def test_d111_the_weekly_run_sentence_never_ends_on_a_dangling_colon():
     sentence = dashboard.describe_weekly_run()
     assert sentence.endswith('.') and not sentence.rstrip('.').endswith(':')

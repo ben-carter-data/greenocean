@@ -7579,14 +7579,14 @@ def show_doc_bi_body(frame, mode):
 
 
 def show_doc_ba_body(frame, mode):
-    """What a BA reader needs: mission, vision and scope, in the business's own words."""
+    """What a BA reader needs: mission, vision and scope, in the business's own words
+    — the whole «Marco de negocio» table, not a subset with a link to the rest
+    (D-115): the link opened a page repeating the same fields."""
     st.markdown(build_doc_profile_css(mode), unsafe_allow_html=True)
     fields = "".join(build_doc_field_html(element, frame[element]) for element in
-                     ["Misión", "Visión", "Objetivo de negocio", "Alcance", "Fuera de alcance"])
+                     ["Misión", "Visión", "Objetivo de negocio", "Alcance", "Fuera de alcance",
+                      "Criterios de aceptación"])
     st.markdown(f'<div class="doc-profile">{fields}</div>', unsafe_allow_html=True)
-    st.markdown('<div class="doc-profile-link">' + build_link_html(
-        "Leer el marco de negocio completo →", build_page_address(PAGE_BUSINESS)) + '</div>',
-                unsafe_allow_html=True)
 
 
 def describe_weekly_run():
