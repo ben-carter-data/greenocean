@@ -174,14 +174,14 @@ PIPELINE_STACK = {
     "ODEPA mayorista": ["https", "csv"],
     "ODEPA consumidor": ["https", "csv"],
     "Agente de descarga": ["python", "requests"],
-    "SQLite · raw.db": ["sqlite"],
+    # «SQLite · raw.db» and «SQLite · datos.db» already spell out SQLite in their
+    # own title; no pill repeats a word the node already shows in bold.
     "Limpieza": ["python", "pandas"],
     "Reglas de negocio": ["python", "pandas"],
     "Controles de carga": ["python", "pandas"],
-    "SQLite · datos.db": ["sqlite"],
     "Panel Streamlit": ["streamlit"],
     "Informe semanal": ["python", "markdown", "github"],
-    "Consultas SQL": ["sqlite", "sql"],
+    "Consultas SQL": ["sql"],
 }
 # Explanation of what travels through each link.
 CHIP_TOOLTIPS = {
@@ -299,8 +299,10 @@ def draw_python_icon(x, y, color):
 
 
 def draw_sqlite_icon(x, y, color):
-    """The real SQLite logo, centered in a journey tile."""
-    return brand_icons.logo("sqlite", x - 18, y - 18, color, 36)
+    """The traditional cylinder, not the SQLite brand mark: the node's own title
+    already says «SQLite» in words, and a plain database shape reads clearer at
+    this size than the brand's lettering (explicit choice, not a missing asset)."""
+    return draw_database_icon(x, y, color)
 
 
 def draw_streamlit_icon(x, y, color):
@@ -315,8 +317,8 @@ def draw_github_icon(x, y, color):
 
 # Which brand slug a node's own tile icon already shows, so a stack badge never
 # repeats the same logo right under it (D-103).
-ICON_LOGO_SLUG = {draw_python_icon: "python", draw_sqlite_icon: "sqlite",
-                  draw_streamlit_icon: "streamlit", draw_github_icon: "github"}
+ICON_LOGO_SLUG = {draw_python_icon: "python", draw_streamlit_icon: "streamlit",
+                  draw_github_icon: "github"}
 
 
 def draw_warning_icon(x, y, color):
