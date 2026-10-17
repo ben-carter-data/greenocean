@@ -200,8 +200,9 @@ def test_c03_an_old_section_link_to_the_explorer_opens_the_catalog():
     app.query_params["perfil"] = "Reclutamiento"
     app.run()
     assert not app.exception
-    assert read_page_title(app) == dashboard.SECTION_QUERIES
-    assert app.radio(key=f"catalog_choice_{dashboard.CATALOG[0]['theme']}").value == dashboard.CATALOG[0]["name"]
+    assert read_page_title(app) == "Consola SQL"
+    # The console (D-126) opens on the price table.
+    assert app.session_state[dashboard.CONSOLE_SOURCE] == dashboard.CONSOLE_DEFAULT
 
 
 @needs_database
@@ -332,51 +333,70 @@ def test_d056_analysis_filters_show_once_and_hold_in_every_tab():
 
 
 @needs_database
-def test_c03_catalog_lists_every_question_and_shows_the_chosen_one_whole():
-    """The list holds every question; the chosen one shows its result, how to read it,
-    its SQL with the file on GitHub, the whole table, the CSV and its Python."""
+def test_d126_the_console_lists_tables_and_every_saved_query_and_runs_the_first_table():
+    """An object explorer (every table, with its rows; every saved query) and the
+    price table already in the editor and run, like a database tool on opening."""
     app = draw_page(dashboard.PAGE_QUERIES)
     assert not app.exception
-    # The list is grouped by theme (D-107), each option naming its real row count and
-    # whether it ends in a chart or a table (D-108), not just the bare question.
-    shown = [option for theme in dashboard.CATALOG_THEMES
-             for option in app.radio(key=f"catalog_choice_{theme}").options]
-    assert shown == [dashboard.describe_catalog_option(entry["name"],
-                                                        dashboard.read_catalog_row_counts())
-                     for entry in dashboard.CATALOG]
-    first = dashboard.CATALOG[0]
-    text = " ".join(block.value for block in app.markdown)
-    for words in [first["question"], "Resultado de la consulta", "Cómo leerlo",
-                  "Sin dato no significa precio cero", "Consulta SQL",
-                  "github.com", "bi/queries.sql en GitHub ↗"]:
-        assert words in text, words
-    assert any(block.value == queries.load_queries()[first["name"]].strip()
-               for block in app.code)
-    labels = [expander.label for expander in app.expander]
-    assert any(label.startswith("Ver tabla completa") for label in labels)
-    assert "Ver consulta completa · bi/queries.sql" in labels
-    # Resultado, SQL and Python are separate tabs, not stacked expanders (D-121).
-    assert [tab.label for tab in app.tabs] == ["Resultado", "SQL", "Python"]
-    assert any(block.language == "python" for block in app.code)
-    assert len(app.get("download_button")) == 1
+    keys = [str(button.key) for button in app.button]
+    for table, _ in dashboard.queries.list_tables():
+        assert f"console_table_{table}" in keys
+    for entry in dashboard.CATALOG:
+        assert f"console_query_{entry['name']}" in keys
+    assert app.text_area(key=dashboard.CONSOLE_TEXT).value.startswith("SELECT *\nFROM weekly_price")
+    status = " ".join(block.value for block in app.markdown if 'class="console-status' in block.value)
+    assert "✓ 100 filas" in status and "solo lectura" in status
+    assert [tab.label for tab in app.tabs] == ["Resultados"]
+    assert len(app.dataframe) == 1 and len(app.get("download_button")) == 1
 
 
 @needs_database
-def test_c03_choosing_a_question_shows_its_result_and_keeps_it_in_the_address():
+def test_d126_a_saved_query_loads_its_sql_runs_it_and_offers_its_reading_and_python():
     app = draw_page(dashboard.PAGE_QUERIES)
-    app.radio(key=f"catalog_choice_{dashboard.PRICE_THEME}").set_value("k1_margin").run()
+    app.button(key="console_query_k1_margin").click().run()
     assert not app.exception
     assert app.query_params[dashboard.CATALOG_PARAMETER] == "k1_margin"
+    assert app.text_area(key=dashboard.CONSOLE_TEXT).value == queries.load_queries()["k1_margin"].strip()
     text = " ".join(block.value for block in app.markdown)
-    assert "La brecha no mide" in text or "no mide ganancia" in text
-    app.text_input(key="catalog_search").input("carga").run()
-    assert not app.exception
-    # Every «carga» match is a quality question: the Precios group has none left to show.
-    with pytest.raises(KeyError):
-        app.radio(key=f"catalog_choice_{dashboard.PRICE_THEME}")
-    options = app.radio(key=f"catalog_choice_{dashboard.QUALITY_THEME}").options
-    assert any(option.startswith("¿La última carga funcionó?") for option in options)
-    assert len(options) < len(dashboard.CATALOG)
+    assert "bi/queries.sql, línea" in text and "github.com" in text
+    assert [tab.label for tab in app.tabs] == ["Resultados", "Gráfico", "Cómo leerlo", "Python"]
+    assert "no mide ganancia" in text or "La brecha no mide" in text
+    assert any(block.language == "python" for block in app.code)
+
+
+@needs_database
+def test_d126_the_console_runs_what_is_written_and_refuses_anything_but_reading():
+    app = draw_page(dashboard.PAGE_QUERIES)
+    app.text_area(key=dashboard.CONSOLE_TEXT).set_value(
+        "SELECT region FROM dim_region ORDER BY region").run()
+    app.button(key="console_run").click().run()
+    status = " ".join(block.value for block in app.markdown if 'class="console-status' in block.value)
+    assert "✓ 9 filas" in status
+    app.text_area(key=dashboard.CONSOLE_TEXT).set_value("DROP TABLE weekly_price").run()
+    app.button(key="console_run").click().run()
+    status = " ".join(block.value for block in app.markdown if 'class="console-status' in block.value)
+    assert "console-status-error" in status and "Solo se permiten consultas de lectura" in status
+    app.text_area(key=dashboard.CONSOLE_TEXT).set_value("SELECT * FROM dim_region").run()
+    app.text_input(key="console_filter").input("carga").run()
+    keys = [str(button.key) for button in app.button]
+    assert "console_query_quality_runs" in keys and "console_query_k1_margin" not in keys
+
+
+@pytest.mark.parametrize("sql", ["DELETE FROM weekly_price", "ATTACH 'x.db' AS other",
+                                 "PRAGMA table_info(weekly_price)", "SELECT 1; DROP TABLE dim_region",
+                                 "UPDATE dim_region SET region = 'x'", ""])
+def test_d126_console_refuses_anything_but_a_single_read(sql):
+    with pytest.raises(queries.ConsoleError):
+        queries.run_console_sql(sql)
+
+
+@needs_database
+def test_d126_console_stops_a_runaway_query_and_caps_rows():
+    with pytest.raises(queries.ConsoleError, match="se detuvo"):
+        queries.run_console_sql("WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c) "
+                                "SELECT COUNT(*) FROM c", timeout_seconds=1)
+    rows, truncated, _ = queries.run_console_sql("SELECT * FROM weekly_price", limit=50)
+    assert len(rows) == 50 and truncated
 
 
 def test_kpi_link_opens_the_kpi_view_with_that_indicator():
@@ -954,9 +974,9 @@ def test_a_kpi_link_opens_its_canonical_query_without_repeating_it():
               "from bi import dashboard\ndashboard.show_queries_tab(dashboard.charts.MODE_DARK)")
     catalog = AppTest.from_string(script, default_timeout=60).run()
     assert not catalog.exception
-    assert catalog.radio(key=f"catalog_choice_{dashboard.QUALITY_THEME}").value == "k7_match_coverage"
-    # The stored query in sight (the executed one, unfolded on demand, is the same text).
-    assert catalog.code[0].value == dashboard.etl.MATCH_COVERAGE_QUERY.strip()
+    # The console (D-126) opens that saved query in its editor.
+    assert catalog.session_state[dashboard.CONSOLE_SOURCE] == ("query", "k7_match_coverage")
+    assert catalog.text_area(key=dashboard.CONSOLE_TEXT).value == dashboard.etl.MATCH_COVERAGE_QUERY.strip()
 
 
 def test_retired_profiles_do_not_change_the_public_route():
@@ -1337,7 +1357,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_closed_by_default():
     # the word, as a markdown link rather than a page_link (D-117).
     assert raw_labels == []
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
-    assert 'nav-github-link' in sidebar_markup and 'aria-label="GitHub"' in sidebar_markup
+    assert 'class="sidebar-github' in sidebar_markup and 'aria-label="GitHub del proyecto"' in sidebar_markup
     for hidden_child in ['Resumen semanal', 'Pipeline', 'Modelo de datos', 'DevOps y seguridad',
                          'Calidad de datos', 'Ejecuciones', 'Archivos del proyecto',
                          'Preguntas y resultados', 'Descripción general', 'Manual', 'Glosario',
@@ -1392,7 +1412,7 @@ def test_code_sql_and_links_folders_reveal_real_destinations_without_tooltips():
     # «Código» merged into «GitHub»: a single destination, no folder to open (D-106).
     # It shows its own mark, not the word (D-117), so it is a markdown link, not a page_link.
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
-    assert 'nav-github-link' in sidebar_markup and 'aria-label="GitHub"' in sidebar_markup
+    assert 'class="sidebar-github' in sidebar_markup and 'aria-label="GitHub del proyecto"' in sidebar_markup
     key = 'nav_toggle_preguntas-y-resultados'
     toggle = next(button for button in app.sidebar.button if str(button.key) == key)
     assert not toggle.help
@@ -1479,9 +1499,11 @@ def test_d118_sources_is_its_own_folder_with_two_external_children():
 
 @needs_database
 def test_d117_the_sidebar_github_entry_is_a_logo_not_a_word():
+    # Since D-124 the mark sits in the sidebar footer on a light pill, not in the list.
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     markup = " ".join(block.value for block in app.sidebar.markdown)
-    assert markup.count('class="nav-github-link') == 1
+    assert markup.count('class="sidebar-github') == 1
+    assert 'nav_toggle_enlaces' not in [str(button.key) for button in app.sidebar.button]
     assert dashboard.architecture.brand_icons.logo_body("github") in markup
     assert '>GitHub<' not in markup
     assert 'href="enlaces' in markup and 'target="_self"' in markup
