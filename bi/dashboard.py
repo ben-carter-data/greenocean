@@ -7509,17 +7509,29 @@ def build_doc_profile_css(mode):
     palette = charts.get_palette(mode)
     return f"""<style>
     .doc-profile {{max-width:720px;}}
+    .doc-profile:has(.doc-kpi-grid) {{max-width:960px;}}
     .doc-field {{padding:22px 0; border-top:1px solid {palette['card_border']};}}
     .doc-field:first-child {{border-top:0; padding-top:4px;}}
     .doc-field-label {{font-size:1.05rem; font-weight:650; letter-spacing:-.015em;
         color:{palette['strong_text']}; margin-bottom:7px;}}
     .doc-field-text {{font-size:.98rem; line-height:1.65; color:{palette['text']};}}
     .doc-field-text code {{word-break:break-word;}}
-    .doc-kpi-grid {{display:flex; flex-direction:column; gap:10px; margin-top:4px;}}
-    .doc-kpi-row {{display:flex; align-items:center; gap:14px; padding:13px 16px;
-        border-radius:14px; border-left:4px solid var(--kpi-color);
-        background:color-mix(in srgb, var(--kpi-color) 8%, transparent);}}
-    .doc-kpi-icon {{color:var(--kpi-color); flex-shrink:0;}}
+    /* A floating gallery, not a flat list: each KPI its own elevated card, lifting
+       further on hover — the opposite of the tinted, flush rows this replaces. */
+    .doc-kpi-grid {{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+        gap:18px; margin-top:10px;}}
+    .doc-kpi-row {{display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+        padding:20px; border-radius:18px; background:{palette['card']};
+        border:1px solid {palette['card_border']};
+        box-shadow:0 14px 28px -14px color-mix(in srgb, var(--kpi-color) 55%, #0003),
+                   0 2px 7px -2px rgba(0,0,0,.14);
+        transition:transform .16s ease, box-shadow .16s ease;}}
+    .doc-kpi-row:hover {{transform:translateY(-5px);
+        box-shadow:0 22px 36px -14px color-mix(in srgb, var(--kpi-color) 60%, #0003),
+                   0 4px 10px -2px rgba(0,0,0,.16);}}
+    .doc-kpi-icon {{display:flex; align-items:center; justify-content:center;
+        width:48px; height:48px; border-radius:13px; margin-bottom:4px;
+        background:color-mix(in srgb, var(--kpi-color) 16%, transparent); color:var(--kpi-color);}}
     .doc-kpi-icon .component-symbol {{width:26px; height:28px; margin:0; color:inherit;}}
     .doc-kpi-name {{font-weight:650; color:{palette['strong_text']};}}
     .doc-kpi-code {{font-weight:600; color:var(--kpi-color); font-size:.78rem;
@@ -7547,9 +7559,9 @@ KPI_COLORS = [color for layer, color in architecture.LAYER_COLORS.items() if lay
 def build_doc_kpi_row_html(kpi, name, icon, text, color):
     return (f'<div class="doc-kpi-row" style="--kpi-color:{color}">'
             f'<span class="doc-kpi-icon">{build_component_symbol(icon)}</span>'
-            f'<div class="doc-kpi-info"><div class="doc-kpi-name">{html.escape(name)}'
+            f'<div class="doc-kpi-name">{html.escape(name)}'
             f'<span class="doc-kpi-code">{kpi}</span></div>'
-            f'<div class="doc-kpi-text">{html.escape(text)}</div></div></div>')
+            f'<div class="doc-kpi-text">{html.escape(text)}</div></div>')
 
 
 def show_doc_bi_body(frame, mode):
