@@ -201,7 +201,7 @@ def test_c03_an_old_section_link_to_the_explorer_opens_the_catalog():
     app.run()
     assert not app.exception
     assert read_page_title(app) == dashboard.SECTION_QUERIES
-    assert app.radio(key="catalog_choice").value == dashboard.CATALOG[0]["name"]
+    assert app.radio(key=f"catalog_choice_{dashboard.CATALOG[0]['theme']}").value == dashboard.CATALOG[0]["name"]
 
 
 @needs_database
@@ -333,8 +333,10 @@ def test_c03_catalog_lists_every_question_and_shows_the_chosen_one_whole():
     its SQL with the file on GitHub, the whole table, the CSV and its Python."""
     app = draw_page(dashboard.PAGE_QUERIES)
     assert not app.exception
-    choice = app.radio(key="catalog_choice")
-    assert choice.options == [entry["question"] for entry in dashboard.CATALOG]
+    # The list is grouped by theme (D-107): one radio per theme, not one flat stack.
+    shown = [question for theme in dashboard.CATALOG_THEMES
+             for question in app.radio(key=f"catalog_choice_{theme}").options]
+    assert shown == [entry["question"] for entry in dashboard.CATALOG]
     first = dashboard.CATALOG[0]
     text = " ".join(block.value for block in app.markdown)
     for words in [first["question"], "Resultado de la consulta", "Cómo leerlo",
@@ -353,14 +355,17 @@ def test_c03_catalog_lists_every_question_and_shows_the_chosen_one_whole():
 @needs_database
 def test_c03_choosing_a_question_shows_its_result_and_keeps_it_in_the_address():
     app = draw_page(dashboard.PAGE_QUERIES)
-    app.radio(key="catalog_choice").set_value("k1_margin").run()
+    app.radio(key=f"catalog_choice_{dashboard.PRICE_THEME}").set_value("k1_margin").run()
     assert not app.exception
     assert app.query_params[dashboard.CATALOG_PARAMETER] == "k1_margin"
     text = " ".join(block.value for block in app.markdown)
     assert "La brecha no mide" in text or "no mide ganancia" in text
     app.text_input(key="catalog_search").input("carga").run()
     assert not app.exception
-    options = app.radio(key="catalog_choice").options
+    # Every «carga» match is a quality question: the Precios group has none left to show.
+    with pytest.raises(KeyError):
+        app.radio(key=f"catalog_choice_{dashboard.PRICE_THEME}")
+    options = app.radio(key=f"catalog_choice_{dashboard.QUALITY_THEME}").options
     assert "¿La última carga funcionó?" in options and len(options) < len(dashboard.CATALOG)
 
 
@@ -931,7 +936,7 @@ def test_a_kpi_link_opens_its_canonical_query_without_repeating_it():
               "from bi import dashboard\ndashboard.show_queries_tab(dashboard.charts.MODE_DARK)")
     catalog = AppTest.from_string(script, default_timeout=60).run()
     assert not catalog.exception
-    assert catalog.radio(key="catalog_choice").value == "k7_match_coverage"
+    assert catalog.radio(key=f"catalog_choice_{dashboard.QUALITY_THEME}").value == "k7_match_coverage"
     # The stored query in sight (the executed one, unfolded on demand, is the same text).
     assert catalog.code[0].value == dashboard.etl.MATCH_COVERAGE_QUERY.strip()
 

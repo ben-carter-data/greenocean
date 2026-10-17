@@ -4212,17 +4212,25 @@ def choose_catalog_entry():
     return CATALOG_BY_NAME[st.session_state[CATALOG_SELECTED]]
 
 
-def keep_catalog_choice():
-    """The list changed: show that question and keep it in the address."""
-    chosen = st.session_state.get("catalog_choice")
+CATALOG_THEMES = [PRICE_THEME, QUALITY_THEME]
+
+
+def keep_catalog_choice(theme):
+    """One theme's list changed: show that question, keep it in the address and clear
+    the other theme's list so only one question ever reads as chosen (D-107)."""
+    chosen = st.session_state.get(f"catalog_choice_{theme}")
     if chosen in CATALOG_BY_NAME:
         st.session_state[CATALOG_SELECTED] = chosen
         st.session_state[f"{CATALOG_SELECTED}_synced"] = chosen
         st.query_params[CATALOG_PARAMETER] = chosen
+        for other in CATALOG_THEMES:
+            if other != theme:
+                st.session_state[f"catalog_choice_{other}"] = None
 
 
 def show_catalog_list(selected):
-    """Left: the questions of the project, with a search; stacks on top on a phone."""
+    """Left: the questions of the project, grouped by theme, with a search; stacks on
+    top on a phone (D-107: grouped so the list reads organized, not a flat stack)."""
     st.markdown('<div class="catalog-list-title">Consultas del proyecto</div>',
                 unsafe_allow_html=True)
     text = st.text_input("Buscar consulta", key="catalog_search", icon=":material/search:",
@@ -4232,11 +4240,16 @@ def show_catalog_list(selected):
     if not entries:
         st.caption("Ninguna consulta coincide con la búsqueda.")
         return
-    names = [entry["name"] for entry in entries]
-    st.session_state["catalog_choice"] = selected["name"] if selected["name"] in names else None
-    st.radio("Consultas del proyecto", names, key="catalog_choice",
-             format_func=lambda name: CATALOG_BY_NAME[name]["question"],
-             on_change=keep_catalog_choice, label_visibility="collapsed")
+    for theme in CATALOG_THEMES:
+        theme_entries = [entry for entry in entries if entry["theme"] == theme]
+        if not theme_entries:
+            continue
+        st.caption(f"{theme.upper()} · {len(theme_entries)}")
+        names = [entry["name"] for entry in theme_entries]
+        key = f"catalog_choice_{theme}"
+        st.session_state[key] = selected["name"] if selected["name"] in names else None
+        st.radio(theme, names, key=key, format_func=lambda name: CATALOG_BY_NAME[name]["question"],
+                 on_change=keep_catalog_choice, args=(theme,), label_visibility="collapsed")
     st.caption(f"{len(entries)} de {len(CATALOG)} consultas · precios y calidad de datos.")
     st.markdown(build_link_html("Funciones Python y archivos SQL →",
                                 build_page_address(PAGE_CODE)), unsafe_allow_html=True)
@@ -4325,6 +4338,21 @@ def show_catalog_detail(entry, mode):
     show_catalog_code(entry, result)
 
 
+def show_queries_page_header():
+    """A one-line header, like the Dashboard's: title and freshness together, so the
+    question list and its result are visible without scrolling past a tall title
+    block (D-107)."""
+    latest_run = read_latest_run()
+    run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
+    run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
+    freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
+    st.markdown(f'<div class="compact-header"><h1 title="Cada consulta, la pregunta que '
+                f'responde y su resultado real, en solo lectura.">'
+                f'{html.escape(SECTION_QUERIES)}</h1><span class="page-freshness">Datos al '
+                f'{freshness} {build_chip(run_text, run_kind)}</span></div>',
+                unsafe_allow_html=True)
+
+
 def show_queries_tab(mode):
     """Código y resultados (C03): the list of questions on the left; the chosen one
     with its real result, how to read it and its code on the right."""
@@ -4335,6 +4363,11 @@ def show_queries_tab(mode):
             show_catalog_list(entry)
         with detail_column:
             show_catalog_detail(entry, mode)
+
+
+def show_queries_page(mode):
+    show_queries_page_header()
+    show_queries_tab(mode)
 # endregion
 
 
@@ -7502,9 +7535,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_CHANNELS: lambda mode: show_analysis_view(mode, PAGE_CHANNELS, show_channels_tab),
     PAGE_SEASONALITY: show_price_context_page,
     PAGE_ALERTS: lambda mode: show_analysis_view(mode, PAGE_ALERTS, show_alerts_tab),
-    PAGE_QUERIES: lambda mode: show_document_page(mode, SECTION_QUERIES,
-        "Cada consulta, la pregunta que responde y su resultado real, en solo lectura.",
-        show_queries_tab),
+    PAGE_QUERIES: show_queries_page,
     PAGE_KPI: show_kpi_page,
     PAGE_ARCHITECTURE: show_architecture_page,
     PAGE_CODE: lambda mode: show_document_page(mode, PAGE_CODE,
