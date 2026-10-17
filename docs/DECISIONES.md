@@ -858,3 +858,16 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema reportado:** el enlace «Leer el marco de negocio completo →» del perfil BA llevaba a `PAGE_BUSINESS`, una página que muestra la misma tabla «Marco de negocio» (Misión, Visión, Objetivo, Alcance, Fuera de alcance) que BA ya tenía en pantalla, más algunas secciones adicionales (preguntas, audiencia, fuentes). El lector llegaba a lo mismo que ya estaba viendo.
 - **Decisión:** se retira el enlace, igual que en D-114 con BI; BA pasa a mostrar la tabla completa, agregando el campo que le faltaba —**Criterios de aceptación**— para que no quede nada relevante solo del otro lado de un clic.
 - **Validación:** 424 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d115_ba_shows_the_whole_business_frame_without_a_link_to_a_repeat` comprueba los seis campos y que el enlace viejo ya no está.
+
+## D-116 · La página GitHub se reorganiza: menos enlaces, logo real, se ve como un repo
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** la página tenía enlaces redundantes («Consultar ejecuciones dentro del proyecto →» repetía «Ver las ejecuciones en GitHub»; MANUAL mostraba dos enlaces en la misma fila: «Leer MANUAL en el panel» y «ver el original en GitHub»), no se veía organizada (una lista `<ul>` plana) y cada nombre decía «en GitHub» o «Ver»/«Abrir» en vez de mostrar el logo.
+- **Decisión:**
+  1. Se retira «Consultar ejecuciones dentro del proyecto →» (ya está Monitoreo → Ejecuciones) y el doble enlace de MANUAL; un destino, un enlace.
+  2. Los nombres se acortan («Ver el código en GitHub» → «Código», «Abrir fuente ODEPA: precios mayoristas» → «ODEPA: precios mayoristas»): el logo y el encabezado de la página ya dicen que es GitHub.
+  3. Cada enlace a github.com muestra el logo real de GitHub (`build_github_icon_svg`, mismo SVG de marca que ya usan los diagramas) en vez de un ícono de Material Symbols; ODEPA, que no es GitHub, conserva su ícono propio.
+  4. La lista `<ul class="resource-tree">` hecha a mano se reemplaza por la grilla de tarjetas ya existente (`show_link_cards` / `.link-grid`, la misma que usa la tarjeta de Administración), con un botón «Copiar enlace» en cada una.
+  5. Arriba de todo, una franja estilo cabecera de repositorio de GitHub (logo + `owner/repo` en monoespaciada + «Abrir repositorio ↗»), para que la página se sienta como una vista previa de GitHub antes de salir de verdad.
+- **De paso:** `build_link_card_html` (compartida con la tarjeta de Administración) pasa de abrir en la misma ventana (D-070) a abrir en una pestaña nueva — la misma corrección de D-113, porque el mismo patrón de enlace sin pestaña nueva produce el mismo «refused to connect» bajo un iframe.
+- **Validación:** 425 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab` comprueba el logo en cada enlace de GitHub, el ícono propio de ODEPA y que todos abren en pestaña nueva; se ajustan dos pruebas existentes a los nombres cortos y al nuevo marcado.

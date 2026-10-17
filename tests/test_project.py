@@ -183,12 +183,12 @@ def test_rule_evidence_has_a_sentence_for_each_rule_it_measures():
 # region Project links (T-54)
 def test_t54_project_links_have_the_agreed_names_and_hide_what_does_not_exist():
     names = [link["name"] for link in project.PROJECT_LINKS]
-    assert names == ["Ver el código en GitHub", "Ver las ejecuciones en GitHub",
-                     "Ver los informes semanales en GitHub",
-                     "Ver el historial de cambios en GitHub",
-                     "Abrir fuente ODEPA: precios mayoristas",
-                     "Abrir fuente ODEPA: precios al consumidor", "MANUAL", "DECISIONES",
-                     "Video", "Post de LinkedIn"]
+    # Names shortened (D-116): the page itself is titled «GitHub» and each GitHub
+    # link now carries the real brand mark, so the words «en GitHub» / «Ver» /
+    # «Abrir» no longer need repeating on every single link.
+    assert names == ["Código", "Ejecuciones", "Informes semanales", "Historial de cambios",
+                     "ODEPA: precios mayoristas", "ODEPA: precios al consumidor",
+                     "MANUAL", "DECISIONES", "Video", "Post de LinkedIn"]
     for link in project.PROJECT_LINKS:
         assert link["description"] and link["icon"]
     unpublished = {link["name"] for link in project.PROJECT_LINKS if not link["url"]}
