@@ -1322,8 +1322,11 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_closed_by_default():
     # profile views — BI, BA, IT — behind one folder, the same pattern as every
     # other section (D-105, D-110). «Código» merges into «GitHub», a single
     # destination: nobody browses source files in the sidebar when the real
-    # repository is one link away (D-106).
-    assert raw_labels == ['GitHub']
+    # repository is one link away (D-106). GitHub itself shows its own mark, not
+    # the word, as a markdown link rather than a page_link (D-117).
+    assert raw_labels == []
+    sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
+    assert 'nav-github-link' in sidebar_markup and 'aria-label="GitHub"' in sidebar_markup
     for hidden_child in ['Resumen semanal', 'Pipeline', 'Modelo de datos', 'DevOps y seguridad',
                          'Calidad de datos', 'Ejecuciones', 'Archivos del proyecto',
                          'Preguntas y resultados', 'Descripción general', 'Manual', 'Glosario',
@@ -1374,7 +1377,9 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
 def test_code_sql_and_links_folders_reveal_real_destinations_without_tooltips():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     # «Código» merged into «GitHub»: a single destination, no folder to open (D-106).
-    assert 'GitHub' in [link.proto.label for link in app.sidebar.get('page_link')]
+    # It shows its own mark, not the word (D-117), so it is a markdown link, not a page_link.
+    sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
+    assert 'nav-github-link' in sidebar_markup and 'aria-label="GitHub"' in sidebar_markup
     key = 'nav_toggle_preguntas-y-resultados'
     toggle = next(button for button in app.sidebar.button if str(button.key) == key)
     assert not toggle.help
@@ -1439,6 +1444,16 @@ def test_d113_the_global_click_handler_only_forces_internal_links():
     script = dashboard.build_visit_history_script()
     assert "anchor.hostname === location.hostname" in script
     assert "anchor.target = '_self'" in script
+
+
+@needs_database
+def test_d117_the_sidebar_github_entry_is_a_logo_not_a_word():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    markup = " ".join(block.value for block in app.sidebar.markdown)
+    assert markup.count('class="nav-github-link') == 1
+    assert dashboard.architecture.brand_icons.logo_body("github") in markup
+    assert '>GitHub<' not in markup
+    assert 'href="enlaces' in markup and 'target="_self"' in markup
 
 
 @needs_database

@@ -871,3 +871,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
   5. Arriba de todo, una franja estilo cabecera de repositorio de GitHub (logo + `owner/repo` en monoespaciada + «Abrir repositorio ↗»), para que la página se sienta como una vista previa de GitHub antes de salir de verdad.
 - **De paso:** `build_link_card_html` (compartida con la tarjeta de Administración) pasa de abrir en la misma ventana (D-070) a abrir en una pestaña nueva — la misma corrección de D-113, porque el mismo patrón de enlace sin pestaña nueva produce el mismo «refused to connect» bajo un iframe.
 - **Validación:** 425 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab` comprueba el logo en cada enlace de GitHub, el ícono propio de ODEPA y que todos abren en pestaña nueva; se ajustan dos pruebas existentes a los nombres cortos y al nuevo marcado.
+
+## D-117 · «GitHub» en el menú lateral es un logo, no una palabra
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** la entrada «GitHub» del menú, al no tener hijos, se veía en el color de texto apagado del sidebar (`sidebar_text`) en vez del blanco nítido de las carpetas con chevron, y en temas claros casi no se distinguía. Como no tiene subpáginas, no necesita una etiqueta de texto: un logo alcanza.
+- **Decisión:** esa entrada deja de ser un `st.page_link` con el texto «GitHub» y pasa a ser un enlace de marcado propio (`nav-github-link`) que muestra solo el logo real de GitHub (el mismo SVG de marca que ya usan los diagramas y la página GitHub), con su propio estado de hover y de «página actual» (color de acento) en vez de depender del color de texto genérico del sidebar.
+- **Alcance:** solo esta entrada; el resto del menú (Dashboard, Arquitectura, Análisis SQL, Documentación) sigue usando `st.page_link` sin cambios.
+- **Validación:** 426 pruebas (el único fallo, previo y no relacionado); nueva prueba `test_d117_the_sidebar_github_entry_is_a_logo_not_a_word` comprueba el logo, que la palabra «GitHub» ya no aparece como texto visible y que el enlace sigue apuntando a la página correcta; se ajustan dos pruebas que buscaban un `page_link` con esa etiqueta.

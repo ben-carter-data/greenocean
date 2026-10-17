@@ -8191,6 +8191,12 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_child_"] [data-testid="stPageLink"] p {{color:{child_green} !important;
         -webkit-text-fill-color:{child_green} !important; font-weight:460;
         text-shadow:0 0 10px color-mix(in srgb,{child_green} 18%,transparent);}}
+    /* GitHub has nothing underneath it, so its mark stands alone instead of the
+       word in the sidebar's muted text (D-117). */
+    .nav-github-link {{display:flex; align-items:center; padding:5px 7px; margin:1px 0;
+        border-radius:5px; color:{text}; opacity:.82; transition:background .12s ease,opacity .12s ease;}}
+    .nav-github-link:hover {{background:color-mix(in srgb,{text} 7%,transparent); opacity:1;}}
+    .nav-github-link-current {{color:{palette['accent']}; opacity:1;}}
     .st-key-sidebar_footer {{position:fixed; left:17px; bottom:0; width:266px; padding:13px 5px 12px;
         background:linear-gradient(180deg,transparent 0%,{sidebar_bottom} 18%); gap:7px !important; z-index:5;
         border-top:1px solid {hairline};}}
@@ -8234,7 +8240,17 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             if views is None:
                 key = "nav_current" if window == current_window else f"nav_{WINDOW_PATHS[window]}"
                 with st.sidebar.container(key=key):
-                    st.page_link(windows_by_title[window], label=label, query_params=keep_context())
+                    if window == SECTION_RESOURCES:
+                        # GitHub has no children, so its own mark reads clearer than
+                        # the word «GitHub» in the sidebar's muted text color (D-117).
+                        current_class = " nav-github-link-current" if window == current_window else ""
+                        st.markdown(
+                            f'<a class="nav-github-link{current_class}" '
+                            f'href="{html.escape(build_page_address(PAGE_LINKS), quote=True)}" '
+                            f'target="_self" aria-label="GitHub">{build_github_icon_svg(19)}</a>',
+                            unsafe_allow_html=True)
+                    else:
+                        st.page_link(windows_by_title[window], label=label, query_params=keep_context())
                 continue
             # Every folder starts closed, including the section that owns the current
             # page. Opening it never changes the alignment of the rows it reveals.
