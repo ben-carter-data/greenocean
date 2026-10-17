@@ -913,3 +913,32 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-17.
 - **Decisión:** el expander «Ver coste, capacidad, seguridad y observabilidad», que al abrirse apilaba cinco secciones, pasa a cinco pestañas (Coste y capacidad, Seguridad, DevOps, Observabilidad, Informes). Dentro de cada una, las filas técnicas dejan de ser una lista vertical y pasan a una grilla de tarjetas flotantes, panorámica y simétrica.
 - **Validación:** se ajustan dos pruebas: la de DevOps verifica las cinco pestañas, y la que prohibía pestañas en cualquier página ahora las permite solo donde reemplazan un scroll largo (KPIs, DevOps, Calidad, Análisis SQL).
+
+## D-123 · Elegir una región o una familia en el Resumen ya no recarga la página
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** al hacer clic en una región del mapa (o en una familia), la página se recargaba entera en vez de actualizarse en el lugar.
+- **Causa:** el mapa y la lista de familias son SVG/HTML hechos a mano con enlaces `<a href>`; cada clic era una navegación del navegador, que en Streamlit abre una sesión nueva.
+- **Decisión:** un componente `st.components.v2` de solo JavaScript (`HOME_LINKS_JS`) captura esos clics dentro de `.greenocean-mockup` cuando apuntan a la misma página, cancela la navegación y entrega los parámetros del enlace a Python (`apply_home_link_click`), que los escribe en `st.query_params`; el resto de la página los lee igual que antes. El componente se registra en cada ejecución, no al importar, porque cada runtime de Streamlit tiene su propio registro.
+- **Validación:** comprobado en un navegador real (Chrome por CDP): tras el clic la página conserva su estado de JavaScript (no hubo recarga) y el Resumen muestra la región elegida.
+
+## D-124 · El logo de GitHub pasa al pie del menú, sobre una pastilla clara
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** dentro de la lista, el logo azul se perdía sobre el azul marino de Corporativo y se leía como una sección más, aunque no lo es.
+- **Decisión:** sale del árbol del menú y queda en el pie, junto a «Apariencia», como una pastilla casi blanca con el logo casi negro; legible en cualquier tema. En la página GitHub, la pastilla muestra un contorno de acento.
+
+## D-125 · El conteo de filas por consulta se calcula en SQLite
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** «Análisis SQL» tardaba mucho en abrir.
+- **Causa:** D-108 contaba las filas de las 15 consultas cargando cada resultado completo en pandas (la mayor, unas 800 mil filas).
+- **Decisión:** se reemplazó por `COUNT(*)` y, con la consola de D-126, el conteo previo desaparece: como en un motor de base de datos, las filas se informan al ejecutar.
+
+## D-126 · «Análisis SQL» pasa a ser una consola SQL
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** la sección seguía viéndose como una lista de preguntas y respuestas, no como la interfaz de un motor de base de datos donde se escribe una consulta y se ve el resultado en una tabla.
+- **Decisión:** la página se rehace con la forma de SQL Server Management Studio o DBeaver: a la izquierda un **explorador** (las tablas de `datos.db` con su número de filas y las 15 consultas guardadas por tema, con un filtro); a la derecha un **editor SQL**, el botón **Ejecutar**, una línea de estado (filas · milisegundos · solo lectura) y la **grilla de resultados** con descarga CSV. Una consulta guardada suma sus pestañas Gráfico, Cómo leerlo y Python, y el enlace a su línea en GitHub. Abre con `SELECT * FROM weekly_price LIMIT 100`; `?consulta=` sigue abriendo una consulta guardada.
+- **Seguridad:** `queries.run_console_sql` ejecuta el texto del visitante sobre la conexión de solo lectura (`mode=ro`), acepta una sola sentencia que empiece con `SELECT` o `WITH`, aplica un autorizador de SQLite que niega todo salvo lectura (sin `ATTACH`, `PRAGMA` ni escritura), corta a las 1.000 filas y detiene la consulta a los 10 s.
+- **Validación:** 431 pruebas; nuevas pruebas `test_d126_*` cubren el explorador, la carga de una consulta guardada, la ejecución de SQL escrito a mano, el rechazo de seis consultas peligrosas, el corte por tiempo y el tope de filas.

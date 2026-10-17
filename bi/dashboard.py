@@ -19,7 +19,7 @@ import time
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode
 from zoneinfo import ZoneInfo
 
 import altair as alt
@@ -3866,7 +3866,6 @@ def show_repository_files():
 # it, its real result read from etl/datos.db on the read-only connection, how to read
 # it, its SQL and its Python. Only stored queries run: the reader never writes SQL.
 CATALOG_PARAMETER = "consulta"
-CATALOG_SELECTED = "catalog_selected"
 CATALOG_PREVIEW_ROWS = 12
 CATALOG_TREND_WEEKS = 26
 CATALOG_BAR_COUNT = 12
@@ -3918,18 +3917,6 @@ def read_cached_catalog_rows(name, filters, database_version):
 def read_catalog_rows(name, filters=()):
     """Rows of one catalog result for the current database."""
     return read_cached_catalog_rows(name, filters, get_database_version()).copy()
-
-
-@st.cache_data
-def read_cached_catalog_row_counts(database_version):
-    """Rows affected by every stored query, unfiltered: like a database engine's own
-    row count next to each query, so the list reads without opening any of them (D-108)."""
-    return {entry["name"]: len(read_cached_catalog_rows(entry["name"], (), database_version))
-            for entry in CATALOG}
-
-
-def read_catalog_row_counts():
-    return read_cached_catalog_row_counts(get_database_version())
 
 
 def build_example_filters(**columns):
@@ -4258,73 +4245,7 @@ def match_catalog_search(entry, text):
     return all(word in haystack for word in text.lower().split())
 
 
-def choose_catalog_entry():
-    """The question shown: from the address when a link asks for one, then the list."""
-    requested = st.query_params.get(CATALOG_PARAMETER)
-    if requested in CATALOG_BY_NAME and requested != st.session_state.get(
-            f"{CATALOG_SELECTED}_synced"):
-        st.session_state[CATALOG_SELECTED] = requested
-        st.session_state[f"{CATALOG_SELECTED}_synced"] = requested
-    if st.session_state.get(CATALOG_SELECTED) not in CATALOG_BY_NAME:
-        st.session_state[CATALOG_SELECTED] = CATALOG[0]["name"]
-    return CATALOG_BY_NAME[st.session_state[CATALOG_SELECTED]]
-
-
 CATALOG_THEMES = [PRICE_THEME, QUALITY_THEME]
-
-
-def keep_catalog_choice(theme):
-    """One theme's list changed: show that question, keep it in the address and clear
-    the other theme's list so only one question ever reads as chosen (D-107)."""
-    chosen = st.session_state.get(f"catalog_choice_{theme}")
-    if chosen in CATALOG_BY_NAME:
-        st.session_state[CATALOG_SELECTED] = chosen
-        st.session_state[f"{CATALOG_SELECTED}_synced"] = chosen
-        st.query_params[CATALOG_PARAMETER] = chosen
-        for other in CATALOG_THEMES:
-            if other != theme:
-                st.session_state[f"catalog_choice_{other}"] = None
-
-
-def describe_catalog_option(name, counts):
-    """A question as a database engine would list its query: the question, its real
-    row count (unfiltered, whole table) and whether it ends in a chart or a table
-    (D-108)."""
-    icon = "📊" if CATALOG_BY_NAME[name]["chart"] else "📋"
-    count = counts.get(name, 0)
-    word = "fila" if count == 1 else "filas"
-    return f'{CATALOG_BY_NAME[name]["question"]} · {charts.format_thousands(count)} {word} {icon}'
-
-
-def show_catalog_list(selected):
-    """Left: the questions of the project, grouped by theme, each with its real row
-    count and a 📊/📋 mark — a database engine's own summary next to each query —
-    with a search; stacks on top on a phone (D-107, D-108)."""
-    st.markdown('<div class="catalog-list-title">Consultas del proyecto</div>',
-                unsafe_allow_html=True)
-    text = st.text_input("Buscar consulta", key="catalog_search", icon=":material/search:",
-                         placeholder="Buscar: región, canal, carga…",
-                         label_visibility="collapsed")
-    entries = [entry for entry in CATALOG if match_catalog_search(entry, text or "")]
-    if not entries:
-        st.caption("Ninguna consulta coincide con la búsqueda.")
-        return
-    counts = read_catalog_row_counts()
-    for theme in CATALOG_THEMES:
-        theme_entries = [entry for entry in entries if entry["theme"] == theme]
-        if not theme_entries:
-            continue
-        st.caption(f"{theme.upper()} · {len(theme_entries)}")
-        names = [entry["name"] for entry in theme_entries]
-        key = f"catalog_choice_{theme}"
-        st.session_state[key] = selected["name"] if selected["name"] in names else None
-        st.radio(theme, names, key=key,
-                 format_func=lambda name: describe_catalog_option(name, counts),
-                 on_change=keep_catalog_choice, args=(theme,), label_visibility="collapsed")
-    st.caption(f"{len(entries)} de {len(CATALOG)} consultas · precios y calidad de datos.")
-    st.markdown(build_link_html("Funciones Python y archivos SQL →",
-                                build_page_address(PAGE_CODE)), unsafe_allow_html=True)
-
 
 
 def build_external_link_html(text, address):
@@ -4343,53 +4264,6 @@ def build_github_link_html(text, address):
             f'class="doc-github-link">{icon}{html.escape(text)} ↗</a>')
 
 
-def show_catalog_result(entry, result):
-    """2 · The real result: chart or table, how to read it, the whole table and the CSV."""
-    rows = result["rows"]
-    with st.container(border=True, key="catalog_result"):
-        st.markdown(f'<div class="catalog-block-title">Resultado de la consulta'
-                    f'<span>{charts.format_thousands(len(rows))} filas · solo lectura</span>'
-                    '</div>', unsafe_allow_html=True)
-        if rows.empty:
-            st.info("La consulta no devolvió filas con la base actual.")
-        elif result["chart"] is not None:
-            show_chart(result["chart"])
-        else:
-            st.caption("El resultado es una tabla. Abre el detalle para consultar sus filas.")
-        st.markdown(f'<div class="catalog-reading"><b>Cómo leerlo.</b> '
-                    f'{format_inline(entry["reading"])}</div>', unsafe_allow_html=True)
-        with st.expander(f"Ver tabla completa · {charts.format_thousands(len(rows))} filas", expanded=False):
-            st.dataframe(rows, hide_index=True, width="stretch")
-        st.download_button("Descargar resultado (CSV)", rows.to_csv(index=False).encode("utf-8"),
-                           file_name=f"{entry['name']}.csv", mime="text/csv",
-                           icon=":material/download:", on_click="ignore",
-                           key=f"catalog_download_{entry['name']}")
-
-
-def show_catalog_sql(entry, result):
-    """The stored SQL (copy button on hover), its file on GitHub and how this result
-    filtered it — its own tab, apart from Python (D-121)."""
-    name = entry["name"]
-    path, line = find_catalog_line(name)
-    address = f"{project.build_github_url(path)}#L{line}"
-    sql = read_catalog_sql(name)
-    st.markdown(f'<div class="catalog-block-title">Consulta SQL'
-                f'<span>{build_external_link_html(f"Abrir archivo · {path} en GitHub", address)}'
-                f'</span></div><div class="query-meta">Nombre en el código: '
-                f'<code>{html.escape(name)}</code> · {html.escape(path)}, línea {line} · '
-                f'{build_clause_chips(project.describe_query(sql))}</div>',
-                unsafe_allow_html=True)
-    st.code(sql, language="sql", line_numbers=True, wrap_lines=True,
-            height="content" if sql.count("\n") < 18 else 380)
-    with st.expander(f"Ver consulta completa · {path}", expanded=False):
-        executed, parameters = build_catalog_sql(name, result["filters"])
-        st.caption("La consulta guardada, sin comentarios, tal como corrió para este "
-                   "resultado en la conexión de solo lectura.")
-        st.code(executed, language="sql", wrap_lines=True)
-        if parameters:
-            st.caption(f"Valores de cada «?», enviados aparte del texto: {list(parameters)}")
-
-
 def show_catalog_python(entry):
     """The Python that serves the question — its own tab, apart from SQL (D-121)."""
     for function in list_catalog_functions(entry["name"], entry["build"]):
@@ -4401,53 +4275,209 @@ def show_catalog_python(entry):
         st.code(inspect.getsource(function), language="python", height=320)
 
 
-def show_catalog_detail(entry, mode):
-    """Right: the question and what it compares, then Resultado · SQL · Python as
-    tabs, like a database tool's result pane — one visible at a time instead of
-    three blocks stacked down the page (D-121)."""
-    result = entry["build"](mode)
-    facts = '<span aria-hidden="true"> · </span>'.join(
-        f"<span>{html.escape(str(fact))}</span>" for fact in result["facts"])
-    st.markdown(f'<div class="catalog-head"><div><h2 class="catalog-question">'
-                f'{html.escape(entry["question"])}</h2><p class="catalog-compares">'
-                f'{html.escape(entry["compares"])}</p><p class="catalog-facts">{facts}</p>'
-                f'</div></div>', unsafe_allow_html=True)
-    result_tab, sql_tab, python_tab = st.tabs(["Resultado", "SQL", "Python"])
-    with result_tab:
-        show_catalog_result(entry, result)
-    with sql_tab:
-        show_catalog_sql(entry, result)
-    with python_tab:
+# The SQL console (D-126): an object explorer on the left (tables and saved
+# queries), an editor and its result grid on the right — the shape of SQL Server
+# Management Studio or DBeaver, instead of a list of questions to navigate.
+CONSOLE_TEXT = "sql_console_text"
+CONSOLE_SOURCE = "sql_console_source"
+CONSOLE_EXECUTED = "sql_console_executed"
+CONSOLE_DEFAULT = ("table", "weekly_price")
+
+
+@st.cache_data(show_spinner=False)
+def read_cached_console_result(sql, database_version):
+    """One console run, cached per query text and database version."""
+    try:
+        rows, truncated, milliseconds = queries.run_console_sql(sql)
+        return {"rows": rows, "truncated": truncated, "ms": milliseconds, "error": None}
+    except queries.ConsoleError as error:
+        return {"rows": None, "truncated": False, "ms": 0.0, "error": str(error)}
+
+
+@st.cache_data(show_spinner=False)
+def read_cached_tables(database_version):
+    return queries.list_tables()
+
+
+def build_table_preview_sql(table):
+    return f"SELECT *\nFROM {table}\nLIMIT 100"
+
+
+def load_console(source, sql):
+    """Put a table or a saved query in the editor and run it, as a click in a
+    database tool's explorer does."""
+    st.session_state[CONSOLE_SOURCE] = source
+    st.session_state[CONSOLE_TEXT] = sql
+    st.session_state[CONSOLE_EXECUTED] = sql
+    if source[0] == "query":
+        st.query_params[CATALOG_PARAMETER] = source[1]
+    else:
+        st.query_params.pop(CATALOG_PARAMETER, None)
+
+
+def run_console():
+    st.session_state[CONSOLE_EXECUTED] = st.session_state.get(CONSOLE_TEXT, "")
+
+
+def restore_console():
+    source = st.session_state.get(CONSOLE_SOURCE, CONSOLE_DEFAULT)
+    sql = (read_catalog_sql(source[1]) if source[0] == "query"
+           else build_table_preview_sql(source[1]))
+    load_console(source, sql)
+
+
+def sync_console_with_address():
+    """A link that asks for a saved query (?consulta=) opens it; a first visit opens
+    the price table."""
+    requested = st.query_params.get(CATALOG_PARAMETER)
+    if requested in CATALOG_BY_NAME and st.session_state.get(CONSOLE_SOURCE) != ("query", requested):
+        load_console(("query", requested), read_catalog_sql(requested))
+    if CONSOLE_TEXT not in st.session_state:
+        load_console(CONSOLE_DEFAULT, build_table_preview_sql(CONSOLE_DEFAULT[1]))
+
+
+def show_console_explorer(source):
+    """Left pane: the database's tables with their row counts, then the project's
+    saved queries by theme; a filter narrows both."""
+    st.markdown('<div class="console-pane-title">Explorador</div>', unsafe_allow_html=True)
+    text = st.text_input("Filtrar", key="console_filter", icon=":material/search:",
+                         placeholder="Filtrar tablas y consultas…", label_visibility="collapsed")
+    words = (text or "").lower().split()
+    st.markdown('<div class="console-group">Tablas · datos.db</div>', unsafe_allow_html=True)
+    for table, count in read_cached_tables(get_database_version()):
+        if all(word in table.lower() for word in words):
+            st.button(f"{table}  ·  {charts.format_thousands(count)}", key=f"console_table_{table}",
+                      icon=":material/table:", width="stretch",
+                      type="primary" if source == ("table", table) else "secondary",
+                      on_click=load_console, args=(("table", table), build_table_preview_sql(table)))
+    for theme in CATALOG_THEMES:
+        entries = [entry for entry in CATALOG
+                   if entry["theme"] == theme and match_catalog_search(entry, text or "")]
+        if entries:
+            st.markdown(f'<div class="console-group">Consultas guardadas · {theme}</div>',
+                        unsafe_allow_html=True)
+        for entry in entries:
+            st.button(entry["question"], key=f"console_query_{entry['name']}",
+                      icon=":material/description:", width="stretch", help=entry["name"],
+                      type="primary" if source == ("query", entry["name"]) else "secondary",
+                      on_click=load_console,
+                      args=(("query", entry["name"]), read_catalog_sql(entry["name"])))
+
+
+def describe_console_source(source):
+    """(title, metadata HTML) of what the editor holds."""
+    if source[0] == "table":
+        return f"Tabla {source[1]}", "Vista previa de la tabla · edita la consulta para filtrar o agrupar."
+    entry = CATALOG_BY_NAME[source[1]]
+    path, line = find_catalog_line(source[1])
+    address = f"{project.build_github_url(path)}#L{line}"
+    meta = (f'<code>{html.escape(source[1])}</code> · {html.escape(path)}, línea {line} · '
+            f'{build_external_link_html("ver en GitHub", address)}')
+    return entry["question"], meta
+
+
+def show_console_result(source, executed, mode):
+    """Bottom pane: the run's status line, then the grid — plus, for a saved query,
+    its chart, how to read it and its Python, each in its own tab."""
+    result = read_cached_console_result(executed, get_database_version())
+    if result["error"]:
+        st.markdown(f'<div class="console-status console-status-error">✕ {html.escape(result["error"])}</div>',
+                    unsafe_allow_html=True)
+        return
+    rows = result["rows"]
+    shown = charts.format_thousands(len(rows))
+    count = (f"primeras {shown} filas (hay más; agrega LIMIT o filtros)" if result["truncated"]
+             else f"{shown} {'fila' if len(rows) == 1 else 'filas'}")
+    st.markdown(f'<div class="console-status">✓ {count} · {result["ms"]:.0f} ms · solo lectura</div>',
+                unsafe_allow_html=True)
+    entry = CATALOG_BY_NAME.get(source[1]) if source[0] == "query" else None
+    names = ["Resultados"] + (["Gráfico"] if entry and entry["chart"] else []) + (
+        ["Cómo leerlo", "Python"] if entry else [])
+    tabs = dict(zip(names, st.tabs(names)))
+    with tabs["Resultados"]:
+        st.dataframe(rows, hide_index=True, width="stretch", height=360)
+        st.download_button("Descargar CSV", rows.to_csv(index=False).encode("utf-8"),
+                           file_name="consulta.csv", mime="text/csv", icon=":material/download:",
+                           on_click="ignore", key="console_download")
+    if not entry:
+        return
+    if "Gráfico" in tabs:
+        with tabs["Gráfico"]:
+            example = entry["build"](mode)
+            st.caption(" · ".join(str(fact) for fact in example["facts"]))
+            if example["chart"] is not None:
+                show_chart(example["chart"])
+    with tabs["Cómo leerlo"]:
+        st.markdown(f'<div class="catalog-reading"><b>Qué compara.</b> {format_inline(entry["compares"])}'
+                    f'<br><b>Cómo leerlo.</b> {format_inline(entry["reading"])}</div>',
+                    unsafe_allow_html=True)
+    with tabs["Python"]:
         show_catalog_python(entry)
 
 
+def build_console_css(mode):
+    palette = charts.get_palette(mode)
+    return f"""<style>
+    .console-pane-title {{font-size:.72rem; font-weight:700; letter-spacing:.08em;
+        text-transform:uppercase; color:{palette['text']}; margin:2px 0 8px;}}
+    .console-group {{font-size:.68rem; font-weight:650; letter-spacing:.06em; text-transform:uppercase;
+        color:{palette['reference']}; margin:14px 0 4px;}}
+    .st-key-console_explorer [data-testid="stVerticalBlock"] {{gap:2px !important;}}
+    .st-key-console_explorer button {{justify-content:flex-start !important; text-align:left;
+        min-height:30px !important; padding:4px 10px !important; border-radius:8px;}}
+    .st-key-console_explorer button > div {{justify-content:flex-start !important; width:100%;}}
+    .st-key-console_explorer button p {{font-size:.82rem; text-align:left; white-space:normal;
+        line-height:1.3;}}
+    .st-key-console_explorer button[kind="secondary"] {{border-color:transparent; background:transparent;}}
+    .st-key-{CONSOLE_TEXT} textarea {{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+        font-size:.86rem; line-height:1.5;}}
+    .console-title {{font-size:1.05rem; font-weight:650; color:{palette['strong_text']}; margin:0;}}
+    .console-meta {{font-size:.78rem; color:{palette['text']}; margin:2px 0 8px;}}
+    .console-status {{font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:.8rem;
+        padding:7px 12px; border-radius:8px; margin:6px 0 4px;
+        background:color-mix(in srgb,#22b35a 10%,transparent); color:{palette['strong_text']};}}
+    .console-status-error {{background:color-mix(in srgb,#e66767 14%,transparent);}}
+    </style>"""
+
+
 def show_queries_page_header():
-    """A one-line header, like the Dashboard's: title and freshness together, so the
-    question list and its result are visible without scrolling past a tall title
-    block (D-107)."""
+    """A one-line header, like the Dashboard's: title and freshness together."""
     latest_run = read_latest_run()
     run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
     run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
     freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
-    st.markdown(f'<div class="compact-header"><h1 title="Cada consulta, la pregunta que '
-                f'responde y su resultado real, en solo lectura.">'
-                f'{html.escape(SECTION_QUERIES)}</h1><span class="page-freshness">Datos al '
+    st.markdown(f'<div class="compact-header"><h1 title="Consola SQL de solo lectura sobre '
+                f'datos.db.">Consola SQL</h1><span class="page-freshness">Datos al '
                 f'{freshness} {build_chip(run_text, run_kind)}</span></div>',
                 unsafe_allow_html=True)
 
 
 def show_queries_tab(mode):
-    """Código y resultados (C03): the list of questions on the left; the chosen one
-    with its real result, how to read it and its code on the right."""
-    entry = choose_catalog_entry()
-    with st.container(key="catalog"):
-        list_column, detail_column = st.columns([1, 2.7], gap="medium")
-        # A fixed-height pane that scrolls inside itself, like a database tool's
-        # object explorer, so the page around it does not grow (D-121).
-        with list_column, st.container(border=True, key="catalog_list", height=620):
-            show_catalog_list(entry)
-        with detail_column:
-            show_catalog_detail(entry, mode)
+    """The console: explorer | editor, its run button and the result grid (D-126)."""
+    st.markdown(build_console_css(mode), unsafe_allow_html=True)
+    sync_console_with_address()
+    source = st.session_state[CONSOLE_SOURCE]
+    explorer_column, work_column = st.columns([1, 3], gap="medium")
+    with explorer_column, st.container(border=True, key="console_explorer", height=700):
+        show_console_explorer(source)
+    with work_column:
+        title, meta = describe_console_source(source)
+        st.markdown(f'<p class="console-title">{html.escape(title)}</p>'
+                    f'<div class="console-meta">{meta}</div>', unsafe_allow_html=True)
+        st.text_area("Consulta SQL", key=CONSOLE_TEXT, height=170, label_visibility="collapsed")
+        executed = st.session_state.get(CONSOLE_EXECUTED, "")
+        with st.container(horizontal=True, vertical_alignment="center", key="console_actions"):
+            st.button("Ejecutar", type="primary", icon=":material/play_arrow:", key="console_run",
+                      on_click=run_console)
+            st.button("Restaurar", icon=":material/undo:", key="console_restore",
+                      on_click=restore_console, help="Vuelve a la consulta original")
+            if st.session_state.get(CONSOLE_TEXT) != executed:
+                st.caption("Hay cambios sin ejecutar.")
+            else:
+                st.caption(f"Solo lectura · SELECT o WITH · hasta "
+                           f"{charts.format_thousands(queries.CONSOLE_ROW_LIMIT)} filas · "
+                           f"{queries.CONSOLE_TIMEOUT_SECONDS} s")
+        show_console_result(source, executed, mode)
 
 
 def show_queries_page(mode):
@@ -5434,6 +5464,47 @@ def show_movement_proportions(rows, week, group, mode):
         st.caption(f"Cada serie es un producto y canal. {missing} series con precio esta semana no tienen comparación y quedan fuera del anillo. No representa ventas.")
 
 
+# The map and the family list are hand-drawn SVG/HTML with plain links, so a click
+# used to navigate the browser: a full page reload and a brand-new session. This
+# component catches those same-page clicks and hands the link's parameters to
+# Python instead, so the page reruns in place (D-123).
+HOME_LINKS_JS = """
+export default function(component) {
+    const { setTriggerValue } = component;
+    const handler = (event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey
+            || event.shiftKey || event.altKey) return;
+        const link = event.target.closest && event.target.closest('.greenocean-mockup a[href]');
+        if (!link) return;
+        const url = new URL(link.getAttribute('href'), window.location.href);
+        if (url.origin !== window.location.origin || url.pathname !== window.location.pathname) return;
+        event.preventDefault();
+        setTriggerValue('link', url.search);
+    };
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
+}
+"""
+HOME_LINK_PARAMETERS = ("_home_region", "_home_week", "familia")
+
+
+def apply_home_link_click():
+    """Turn a captured map or family click into the same query parameters its link
+    carried, without navigating; the rest of the page reads them as before."""
+    # Registered on every run, not at import: each Streamlit runtime keeps its own
+    # registry, and the same definition registers again silently.
+    home_links = st.components.v2.component("home_overview_links", js=HOME_LINKS_JS)
+    clicked = home_links(key="home_overview_links", on_link_change=lambda: None).link
+    if not clicked:
+        return
+    parameters = parse_qs(clicked.lstrip("?"))
+    for name in HOME_LINK_PARAMETERS:
+        if parameters.get(name):
+            st.query_params[name] = parameters[name][0]
+        else:
+            st.query_params.pop(name, None)
+
+
 def apply_home_focus(options):
     """Apply only validated deep-link selections, once; never override live widgets."""
     token = st.query_params.get("_home_key")
@@ -5830,6 +5901,7 @@ def show_market_overview(mode, prefix):
     importlib.reload(home_mockup)
     st.markdown(home_mockup.style(mode,charts.get_palette(mode)),unsafe_allow_html=True)
     options=read_cached_filter_options(get_database_version())
+    apply_home_link_click()
     apply_home_focus(options)
     if read_filter('week') not in options['week']:
         st.session_state['dashboard_week']=options['week'][0]
@@ -8173,11 +8245,11 @@ SIDEBAR_TREE = [
           (SECTION_QUERIES, [PAGE_QUERIES]),
           # «El proyecto» and the old «Documentación» folder of six pages are now
           # three, one per reader (D-105, D-110): the same folder pattern as every
-          # other section, not a special-cased flat link. «Código» merges into
-          # «GitHub»: nobody reads source files in the sidebar when the real
-          # repository, with every file and commit, is one link away (D-106).
+          # other section, not a special-cased flat link.
           (SECTION_LINKS, [PAGE_DOC_BI, PAGE_DOC_BA, PAGE_DOC_IT]),
-          (SECTION_RESOURCES, None)]),
+          # GitHub is not a section of the list: its mark lives in the sidebar
+          # footer, on a light pill, next to Apariencia (D-124).
+          ]),
 ]
 SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Arquitectura",
                       SECTION_QUERIES: "Análisis SQL",
@@ -8272,16 +8344,18 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_child_"] [data-testid="stPageLink"] p {{color:{child_green} !important;
         -webkit-text-fill-color:{child_green} !important; font-weight:460;
         text-shadow:0 0 10px color-mix(in srgb,{child_green} 18%,transparent);}}
-    /* GitHub has nothing underneath it, so its mark stands alone instead of the
-       word in the sidebar's muted text (D-117). inline-flex so the hover/active
-       background hugs the icon instead of stretching the full sidebar width,
-       which read as a washed-out, near-invisible button in Corporativo (D-119). */
-    .nav-github-link {{display:inline-flex; align-items:center; justify-content:center;
-        width:28px; height:28px; padding:4px; margin:2px 0 2px 1px; border-radius:7px;
-        color:{text}; transition:background .12s ease,color .12s ease;}}
-    .nav-github-link:hover {{background:color-mix(in srgb,{text} 10%,transparent); color:{palette['strong_text']};}}
-    .nav-github-link-current {{color:{palette['accent']};
-        background:color-mix(in srgb,{palette['accent']} 12%,transparent);}}
+    /* GitHub's mark on a light pill in the footer (D-124): a near-black logo on a
+       near-white background reads on every sidebar, navy included, where the
+       blue mark inside the list almost vanished. */
+    .st-key-sidebar_tools {{gap:8px !important; justify-content:flex-start !important;}}
+    .st-key-sidebar_tools > div {{flex:0 0 auto !important; width:auto !important;}}
+    .sidebar-github {{display:inline-flex; align-items:center; justify-content:center;
+        width:38px; height:38px; border-radius:11px; background:#f6f8fa;
+        border:1px solid rgba(255,255,255,.55); color:#1f2328 !important;
+        box-shadow:0 6px 14px -6px rgba(0,0,0,.45); transition:transform .12s ease, box-shadow .12s ease;}}
+    .sidebar-github svg {{fill:#1f2328;}}
+    .sidebar-github:hover {{transform:translateY(-1px); box-shadow:0 9px 18px -6px rgba(0,0,0,.5);}}
+    .sidebar-github-current {{outline:2px solid {palette['accent']}; outline-offset:2px;}}
     /* «Fuentes»: external children in the same green as every other child (D-118). */
     .nav-source-link {{display:block; padding:3px 7px; margin:1px 0; border-radius:5px;
         font-size:.78rem; font-weight:460; letter-spacing:-.005em; text-decoration:none;
@@ -8335,17 +8409,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             if views is None:
                 key = "nav_current" if window == current_window else f"nav_{WINDOW_PATHS[window]}"
                 with st.sidebar.container(key=key):
-                    if window == SECTION_RESOURCES:
-                        # GitHub has no children, so its own mark reads clearer than
-                        # the word «GitHub» in the sidebar's muted text color (D-117).
-                        current_class = " nav-github-link-current" if window == current_window else ""
-                        st.markdown(
-                            f'<a class="nav-github-link{current_class}" '
-                            f'href="{html.escape(build_page_address(PAGE_LINKS), quote=True)}" '
-                            f'target="_self" aria-label="GitHub">{build_github_icon_svg(19)}</a>',
-                            unsafe_allow_html=True)
-                    else:
-                        st.page_link(windows_by_title[window], label=label, query_params=keep_context())
+                    st.page_link(windows_by_title[window], label=label, query_params=keep_context())
                 continue
             # Every folder starts closed, including the section that owns the current
             # page. Opening it never changes the alignment of the rows it reveals.
@@ -8375,10 +8439,19 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
                 with st.sidebar.container(key=key):
                     st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
                                  query_params=keep_context() | {VIEW_PARAMETER: view})
-    show_sidebar_footer()
+    show_sidebar_footer(current_window)
 
 
-def show_sidebar_footer():
+def build_sidebar_github_html(is_current):
+    """GitHub's mark on a light pill in the sidebar footer (D-124): not a row of the
+    list, where it read as one more section and its blue mark sank into the navy."""
+    current = " sidebar-github-current" if is_current else ""
+    return (f'<a class="sidebar-github{current}" href="{html.escape(build_page_address(PAGE_LINKS), quote=True)}" '
+            f'target="_self" aria-label="GitHub del proyecto" title="GitHub del proyecto">'
+            f'{build_github_icon_svg(20)}</a>')
+
+
+def show_sidebar_footer(current_window=None):
     """The price alerts, apart from the navigation and always at the bottom, on every page."""
     alerts_now = read_price_alerts()
     week = read_latest_week()
@@ -8393,8 +8466,11 @@ def show_sidebar_footer():
                      help=f"{count} cambios de precio fuera de lo habitual esta semana. Abre el detalle por familia."):
             st.session_state["home_alert_selected_family"] = None
             show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())
-        with st.container(key="sidebar_appearance"):
-            show_theme_field()
+        with st.container(key="sidebar_tools", horizontal=True, vertical_alignment="center"):
+            with st.container(key="sidebar_appearance"):
+                show_theme_field()
+            st.markdown(build_sidebar_github_html(current_window == SECTION_RESOURCES),
+                        unsafe_allow_html=True)
         st.caption("Fuente: ODEPA · actualización automática cada martes.")
 
 
