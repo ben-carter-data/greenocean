@@ -71,14 +71,22 @@ TOP_ROW_Y = 185
 MIDDLE_ROW_Y = 380
 BOTTOM_ROW_Y = 605
 LEFT_COLUMN_X = 200
-# (x, y, width, height, title, subtitle, layer) of each platform frame.
+# (x, y, width, height, title, subtitle, layer, dev_only) of each platform frame.
+# dev_only marks a platform that only exists while developing, never in production.
 PLATFORMS = [
-    (40, 95, 320, 155, "ODEPA", "fuente pública", "sources"),
-    (40, 305, 320, 140, "TU COMPUTADOR", "desarrollo", "ingestion"),
-    (420, 95, 965, 350, "GITHUB", "código, automatización e informes", "processing"),
-    (40, 500, 720, 180, "STREAMLIT COMMUNITY CLOUD", "publicación del panel", "quality"),
-    (1110, 500, 275, 180, "USUARIOS", "quién lo usa", "consumption"),
+    (40, 95, 320, 155, "ODEPA", "fuente pública", "sources", False),
+    (40, 305, 320, 140, "TU COMPUTADOR", "desarrollo", "ingestion", True),
+    (420, 95, 965, 350, "GITHUB", "código, automatización e informes", "processing", False),
+    (40, 500, 720, 180, "STREAMLIT COMMUNITY CLOUD", "publicación del panel", "quality", False),
+    (1110, 500, 275, 180, "USUARIOS", "quién lo usa", "consumption", False),
 ]
+# Order of the six steps of the weekly, unattended flow (D-104): the rest of the
+# components (cache, issues, permissions, secrets, the local editor) support this
+# flow but are not part of its numbered sequence.
+MAIN_FLOW_STEPS = {
+    "Datos abiertos": 1, "Job semanal.yml": 2, "Repositorio": 3,
+    "Pruebas (CI)": 4, "App Streamlit": 5, "Visitantes": 6,
+}
 # Explanation shown on hover over each piece: what it does, with its acronyms.
 TOOLTIPS = {
     "ODEPA mayorista": "Precios diarios de los mercados mayoristas, publicados por ODEPA "
@@ -873,14 +881,21 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
 
 
 # region Infrastructure by platform
-def build_platform_frame(x, y, width, height, title, subtitle, layer, palette):
-    """A platform: a frame with its name in the layer color and what it is for."""
+def build_platform_frame(x, y, width, height, title, subtitle, layer, dev_only, palette):
+    """A platform: a frame with its name in the layer color and what it is for.
+    A dev-only platform (the author's own computer) gets a dashed, muted frame:
+    it never runs in production."""
+    dash = ' stroke-dasharray="6 5"' if dev_only else ""
+    opacity = ' stroke-opacity="0.55"' if dev_only else ""
+    name_color = f'{LAYER_COLORS[layer]}99' if dev_only else LAYER_COLORS[layer]
     return (f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="18" fill="none" '
-            f'stroke="{palette["card_border"]}" stroke-width="1.4"/>'
+            f'stroke="{palette["card_border"]}" stroke-width="1.4"{dash}{opacity}/>'
             f'<text x="{x + 16}" y="{y + 24}" font-size="14">'
-            f'<tspan font-weight="700" letter-spacing="1" fill="{LAYER_COLORS[layer]}">'
+            f'<tspan font-weight="700" letter-spacing="1" fill="{name_color}">'
             f'{html.escape(title)}</tspan><tspan dx="10" fill="#8a8984">'
-            f'{html.escape(subtitle)}</tspan></text>')
+            f'{html.escape(subtitle)}'
+            + (" · solo en desarrollo" if dev_only else "")
+            + '</tspan></text>')
 
 
 def build_component(x, y, layer, draw_icon, title, lines, palette, state=None):
@@ -901,6 +916,12 @@ def build_component(x, y, layer, draw_icon, title, lines, palette, state=None):
     for line_number, line in enumerate(lines[:2]):
         parts.append(f'<text x="{left + 66}" y="{y + 8 + line_number * 17}" font-size="12.5" '
                      f'fill="{palette["text"]}">{html.escape(line)}</text>')
+    step = MAIN_FLOW_STEPS.get(title)
+    if step:
+        parts.append(f'<circle cx="{left + 14}" cy="{top + 4}" r="11" fill="{color}"/>'
+                     f'<text x="{left + 14}" y="{top + 4}" font-size="12" font-weight="700" '
+                     f'text-anchor="middle" dominant-baseline="central" fill="#fff">'
+                     f'{step}</text>')
     if has_real_state(state):
         pulse = ' class="journey-running"' if state == control.RUN_IN_PROGRESS else ""
         parts.append(f'<circle{pulse} cx="{left + COMPONENT_WIDTH - 4}" cy="{top + 4}" r="7" '
@@ -933,7 +954,8 @@ def build_components(states, figures, palette):
         build_component(second, MIDDLE_ROW_Y, "processing", draw_shield_icon, "Pruebas (CI)",
                         ["pruebas.yml · cada push", figures["test_functions"]], palette),
         build_component(third, MIDDLE_ROW_Y, "processing", draw_shield_icon,
-                        "Permisos del job", ["contents: write", "issues: write"], palette),
+                        "Permisos del job", ["contents: write · issues: write",
+                                             "⤷ del Job semanal.yml"], palette),
         build_component(LEFT_COLUMN_X, BOTTOM_ROW_Y, "quality", draw_shield_icon, "Secretos",
                         ["token de GitHub y clave", "«Ejecutar ahora» → API"], palette),
         build_component(first, BOTTOM_ROW_Y, "quality", draw_cloud_icon, "App Streamlit",
@@ -944,11 +966,32 @@ def build_components(states, figures, palette):
     ])
 
 
-def build_connection(points, color, palette, chip_text, chip_at, moving_dot=False):
-    """A connection made of straight segments, with what travels through it."""
+def arrow_marker_id(color):
+    """The id of the arrowhead marker drawn in this color (D-104)."""
+    return "arrow-" + color.lstrip("#")
+
+
+def build_arrow_defs(colors):
+    """One arrowhead marker per connection color, defined once and reused by every
+    connection drawn in that color (D-104)."""
+    markers = "".join(
+        f'<marker id="{arrow_marker_id(color)}" viewBox="0 0 10 10" refX="8" refY="5" '
+        f'markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
+        f'<path d="M0,0 L10,5 L0,10 z" fill="{color}"/></marker>'
+        for color in sorted(set(colors)))
+    return f"<defs>{markers}</defs>"
+
+
+def build_connection(points, color, palette, chip_text, chip_at, moving_dot=False,
+                     bidirectional=False):
+    """A connection made of straight segments, with what travels through it and an
+    arrowhead showing the real direction of the flow (both ends when it truly goes
+    both ways, D-104)."""
     path = "M" + " L".join(f"{x} {y}" for x, y in points)
+    marker_id = arrow_marker_id(color)
+    marker_start = f'marker-start="url(#{marker_id})" ' if bidirectional else ""
     parts = [f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.6" '
-             f'opacity="0.85"/>']
+             f'opacity="0.85" {marker_start}marker-end="url(#{marker_id})"/>']
     if moving_dot:
         parts.append(f'<circle class="journey-flow" r="3.5" fill="{color}"><animateMotion dur="2.4s" '
                      f'repeatCount="indefinite" path="{path}"/></circle>')
@@ -972,9 +1015,10 @@ def build_connections(palette, is_running):
         build_connection([(first - 40, TOP_ROW_Y + half_height),
                           (first - 40, MIDDLE_ROW_Y - half_height)],
                          LAYER_COLORS["orchestration"], palette, "checkout · commit",
-                         (first - 40, 300), is_running),
+                         (first - 40, 300), is_running, bidirectional=True),
         build_connection([(first + half_width, TOP_ROW_Y), (second - half_width, TOP_ROW_Y)],
-                         weekly, palette, "cache", (730, TOP_ROW_Y), is_running),
+                         weekly, palette, "cache", (730, TOP_ROW_Y), is_running,
+                         bidirectional=True),
         build_connection([(first + 60, TOP_ROW_Y + half_height), (first + 60, 262),
                           (third, 262), (third, TOP_ROW_Y + half_height)],
                          weekly, palette, "gh issue create", (1070, 262), is_running),
@@ -1004,13 +1048,18 @@ def build_devops_svg(states, figures, mode, animate_flow=None):
                   if animate_flow is None else animate_flow)
     frames = "".join(build_platform_frame(*platform, palette) for platform in PLATFORMS)
     height = PLATFORM_HEIGHT - PLATFORM_TOP
+    legend_y = 478
+    legend = (f'<circle cx="970" cy="{legend_y}" r="5" fill="{STATE_COLORS[control.RUN_OK]}"/>'
+              f'<text x="982" y="{legend_y + 4}" font-size="12" fill="{palette["text"]}">'
+              '= componente activo</text>')
     return "".join([f'<svg xmlns="http://www.w3.org/2000/svg" '
                     f'viewBox="0 {PLATFORM_TOP} {PLATFORM_WIDTH} {height}" '
                     f'width="{PLATFORM_WIDTH}" height="{height}" role="img" '
                     f'aria-label="Arquitectura del proyecto por plataforma" '
-                    f'font-family="{charts.CHART_FONT}">', build_style(is_running), frames,
+                    f'font-family="{charts.CHART_FONT}">', build_style(is_running),
+                    build_arrow_defs(LAYER_COLORS.values()), frames,
                     build_connections(palette, is_running),
-                    build_components(states, figures, palette), "</svg>"])
+                    build_components(states, figures, palette), legend, "</svg>"])
 
 
 def build_platform_gallery_svg(states, figures, mode, animate_flow=False):

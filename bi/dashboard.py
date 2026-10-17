@@ -5876,7 +5876,7 @@ def show_focused_pipeline_diagram(diagram, mode, animate_flow, journey):
         else:
             st.markdown(zoom.build_zoom_frame_html(architecture.build_devops_svg(
                 states, build_devops_figures(figures), mode,
-                animate_flow=animate_flow)), unsafe_allow_html=True)
+                animate_flow=animate_flow), "diagram-devops"), unsafe_allow_html=True)
     st.markdown('<div class="pipeline-focus-return">'
                 + build_link_html("← Volver a los tres diagramas",
                                   build_page_address(PAGE_DIAGRAMS))
@@ -7172,7 +7172,8 @@ def show_infrastructure_diagram(mode, animate_flow=False, journey=None):
     states, figures, pipeline_run, latest_load, error_note = journey or read_journey()
     with open_card("devops_diagram", "Arquitectura por plataforma", hint=DEVOPS_HINT):
         st.markdown(zoom.build_zoom_frame_html(
-            architecture.build_devops_svg(states, build_devops_figures(figures), mode, animate_flow=animate_flow)),
+            architecture.build_devops_svg(states, build_devops_figures(figures), mode, animate_flow=animate_flow),
+            "diagram-devops"),
             unsafe_allow_html=True)
 
 
