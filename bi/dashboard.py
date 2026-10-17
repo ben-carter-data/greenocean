@@ -3880,6 +3880,18 @@ def read_catalog_rows(name, filters=()):
     return read_cached_catalog_rows(name, filters, get_database_version()).copy()
 
 
+@st.cache_data
+def read_cached_catalog_row_counts(database_version):
+    """Rows affected by every stored query, unfiltered: like a database engine's own
+    row count next to each query, so the list reads without opening any of them (D-108)."""
+    return {entry["name"]: len(read_cached_catalog_rows(entry["name"], (), database_version))
+            for entry in CATALOG}
+
+
+def read_catalog_row_counts():
+    return read_cached_catalog_row_counts(get_database_version())
+
+
 def build_example_filters(**columns):
     """The case the dashboard opens with (tomato, kilo), plus a few more columns."""
     return (tuple((column, project.EXAMPLE_KEY[column]) for column in queries.KEY_COLUMNS)
@@ -4079,69 +4091,75 @@ PRICE_THEME = "Precios"
 QUALITY_THEME = "Calidad de datos"
 LIMIT_NO_DATA = "Sin dato no significa precio cero: esa región, canal o semana no se informó."
 # Question, what it compares, how to read it, and the function that builds its result.
+# "chart" says whether the question's own result draws a chart (D-108): true for
+# every price question and the two quality ones with a chart_builder; the rest show
+# only a table, so the list marks them 📋 instead of 📊.
 CATALOG = [
     {"name": "k3_regional_index", "theme": PRICE_THEME, "question": "¿Dónde es más caro?",
      "compares": "Compara regiones para el mismo producto, canal, unidad y semana.",
      "reading": "100 es el promedio simple de las regiones con dato esa semana; 112 significa "
                 "12 % sobre ese promedio. " + LIMIT_NO_DATA,
-     "build": build_regional_result},
+     "build": build_regional_result, "chart": True},
     {"name": "k2_channel_gap", "theme": PRICE_THEME, "question": "¿Cuánto difieren los canales?",
      "compares": "Compara cada canal de venta con la feria libre: misma región, producto, "
                  "unidad y semana.",
      "reading": "+20 % significa que ese canal cobró un 20 % más que la feria libre esa semana. "
                 "Solo se comparan canales con precio en la misma semana.",
-     "build": build_channel_gap_result},
+     "build": build_channel_gap_result, "chart": True},
     {"name": "k1_margin", "theme": PRICE_THEME,
      "question": "¿Cuánto separa al consumidor del mayorista?",
      "compares": "Compara el precio al consumidor con el mayorista: misma región, producto, "
                  "unidad y semana.",
      "reading": GAP_MEANING + " Solo hay brecha donde existen los dos precios.",
-     "build": build_margin_result},
+     "build": build_margin_result, "chart": True},
     {"name": "k6_national_weekly_price", "theme": PRICE_THEME,
      "question": "¿Cómo evolucionó el precio?",
      "compares": "Sigue el precio nacional semana a semana, por canal, para el mismo producto "
                  "y unidad.",
      "reading": "El precio nacional es el promedio simple de las regiones con dato: no pondera "
                 "por población ni por volumen vendido. " + LIMIT_NO_DATA,
-     "build": build_national_price_result},
+     "build": build_national_price_result, "chart": True},
     {"name": "k6_usual_range_sql", "theme": PRICE_THEME,
      "question": "¿Qué precios cambiaron fuera de lo habitual?",
      "compares": "Compara el cambio de cada semana con las 12 semanas anteriores de la misma "
                  "serie: producto, canal y unidad.",
      "reading": ALERT_MEANING + " Una serie sin 12 semanas previas no se juzga.",
-     "build": build_usual_range_result},
+     "build": build_usual_range_result, "chart": True},
     {"name": "k4_seasonal_index", "theme": PRICE_THEME,
      "question": "¿En qué semanas del año es más caro?",
      "compares": "Compara el precio nacional de cada semana con el promedio de su año: mismo "
                  "producto, canal y unidad.",
      "reading": "100 es el promedio del año; un año en curso se compara solo con las semanas "
                 "ya cargadas.",
-     "build": build_seasonal_result},
+     "build": build_seasonal_result, "chart": True},
     {"name": "k5_weekly_variations_sql", "theme": PRICE_THEME,
      "question": "¿El precio mayorista anticipa al del consumidor?",
      "compares": "Pone lado a lado el cambio semanal del precio mayorista y del consumidor de "
                  "la misma serie: producto, región, canal y unidad.",
      "reading": "Muestra cambios, no causas. La relación entre ambos se mide en Python "
                 "(bi/lag.py) y es descriptiva. Una semana sin la anterior no tiene cambio.",
-     "build": build_weekly_variations_result},
+     "build": build_weekly_variations_result, "chart": True},
     {"name": "quality_runs", "theme": QUALITY_THEME, "question": "¿La última carga funcionó?",
      "compares": "Lista las últimas ejecuciones del ETL, de la más reciente a la más antigua.",
      "reading": "Cada fila es una ejecución: cuándo empezó, su estado y cuántas filas leyó, "
                 "cargó y rechazó.",
-     "build": build_table_result("quality_runs", ["Todas las fuentes", "Últimas 10 cargas"])},
+     "build": build_table_result("quality_runs", ["Todas las fuentes", "Últimas 10 cargas"]),
+     "chart": False},
     {"name": "k8_rejected_rows", "theme": QUALITY_THEME,
      "question": "¿Qué datos quedaron fuera en la última carga?",
      "compares": "Cuenta las filas rechazadas por fuente y motivo, sobre las filas leídas.",
      "reading": "Una fila rechazada se guarda con su motivo; no se corrige ni se reemplaza "
                 "por otro valor.",
-     "build": build_table_result("k8_rejected_rows", ["Por fuente y motivo", "Última carga"])},
+     "build": build_table_result("k8_rejected_rows", ["Por fuente y motivo", "Última carga"]),
+     "chart": False},
     {"name": "quality_rejected_rows", "theme": QUALITY_THEME,
      "question": "¿Cómo venían las filas rechazadas?",
      "compares": "Muestra cada fila rechazada tal como llegó, con su fuente y su motivo.",
      "reading": "Es la fila original del archivo de origen (RN-11): sirve para revisar la "
                 "fuente, no para recalcular indicadores.",
      "build": build_table_result("quality_rejected_rows", ["Por fuente y motivo",
-                                                           "Última carga"])},
+                                                           "Última carga"]),
+     "chart": False},
     {"name": "quality_flag_counts", "theme": QUALITY_THEME,
      "question": "¿Cuántos precios entran en los indicadores?",
      "compares": "Cuenta los precios semanales por fuente y por marca de calidad.",
@@ -4149,7 +4167,7 @@ CATALOG = [
                 "indicadores.",
      "build": build_table_result("quality_flag_counts", ["Mayorista y consumidor",
                                                          "Todas las semanas"],
-                                 draw_flag_count_bars)},
+                                 draw_flag_count_bars), "chart": True},
     {"name": "quality_outliers", "theme": QUALITY_THEME,
      "question": "¿Qué precios se marcaron como atípicos?",
      "compares": "Lista los precios semanales marcados como atípicos, del más reciente al más "
@@ -4157,7 +4175,7 @@ CATALOG = [
      "reading": "Atípico no significa error: el precio se conserva, pero queda fuera de los "
                 "indicadores (RN-12).",
      "build": build_table_result("quality_outliers", ["Todos los productos",
-                                                      "Todas las semanas"])},
+                                                      "Todas las semanas"]), "chart": False},
     {"name": "quality_unconvertible_units", "theme": QUALITY_THEME,
      "question": "¿Qué precios no tienen unidad comparable?",
      "compares": "Cuenta, por producto y canal, los precios cuya unidad no se convierte a kilo "
@@ -4166,20 +4184,20 @@ CATALOG = [
                 "(RN-05).",
      "build": build_table_result("quality_unconvertible_units", ["Por producto y canal",
                                                                  "Todas las semanas"],
-                                 draw_unconvertible_bars)},
+                                 draw_unconvertible_bars), "chart": True},
     {"name": "quality_week_range", "theme": QUALITY_THEME,
      "question": "¿Qué semanas cubre la base?",
      "compares": "Muestra la primera y la última semana cargadas, con su año.",
      "reading": "El año de una semana es el de su jueves (regla ISO), igual que en el índice "
                 "estacional.",
-     "build": build_table_result("quality_week_range", ["Toda la base"])},
+     "build": build_table_result("quality_week_range", ["Toda la base"]), "chart": False},
     {"name": project.MATCH_COVERAGE_QUERY_NAME, "theme": QUALITY_THEME,
      "question": "¿Cuántos productos tienen brecha calculable?",
      "compares": "Compara las claves de producto con precio al consumidor y las que además "
                  "tienen precio mayorista comparable.",
      "reading": "Una clave sin brecha no es un error: el mayorista no informa ese producto, "
                 "región o unidad. Vive en etl/etl.py porque cada carga la imprime.",
-     "build": build_match_coverage_result},
+     "build": build_match_coverage_result, "chart": False},
 ]
 CATALOG_BY_NAME = {entry["name"]: entry for entry in CATALOG}
 
@@ -4228,9 +4246,20 @@ def keep_catalog_choice(theme):
                 st.session_state[f"catalog_choice_{other}"] = None
 
 
+def describe_catalog_option(name, counts):
+    """A question as a database engine would list its query: the question, its real
+    row count (unfiltered, whole table) and whether it ends in a chart or a table
+    (D-108)."""
+    icon = "📊" if CATALOG_BY_NAME[name]["chart"] else "📋"
+    count = counts.get(name, 0)
+    word = "fila" if count == 1 else "filas"
+    return f'{CATALOG_BY_NAME[name]["question"]} · {charts.format_thousands(count)} {word} {icon}'
+
+
 def show_catalog_list(selected):
-    """Left: the questions of the project, grouped by theme, with a search; stacks on
-    top on a phone (D-107: grouped so the list reads organized, not a flat stack)."""
+    """Left: the questions of the project, grouped by theme, each with its real row
+    count and a 📊/📋 mark — a database engine's own summary next to each query —
+    with a search; stacks on top on a phone (D-107, D-108)."""
     st.markdown('<div class="catalog-list-title">Consultas del proyecto</div>',
                 unsafe_allow_html=True)
     text = st.text_input("Buscar consulta", key="catalog_search", icon=":material/search:",
@@ -4240,6 +4269,7 @@ def show_catalog_list(selected):
     if not entries:
         st.caption("Ninguna consulta coincide con la búsqueda.")
         return
+    counts = read_catalog_row_counts()
     for theme in CATALOG_THEMES:
         theme_entries = [entry for entry in entries if entry["theme"] == theme]
         if not theme_entries:
@@ -4248,7 +4278,8 @@ def show_catalog_list(selected):
         names = [entry["name"] for entry in theme_entries]
         key = f"catalog_choice_{theme}"
         st.session_state[key] = selected["name"] if selected["name"] in names else None
-        st.radio(theme, names, key=key, format_func=lambda name: CATALOG_BY_NAME[name]["question"],
+        st.radio(theme, names, key=key,
+                 format_func=lambda name: describe_catalog_option(name, counts),
                  on_change=keep_catalog_choice, args=(theme,), label_visibility="collapsed")
     st.caption(f"{len(entries)} de {len(CATALOG)} consultas · precios y calidad de datos.")
     st.markdown(build_link_html("Funciones Python y archivos SQL →",
