@@ -2744,7 +2744,7 @@ def show_cover_page(mode, pages=None):
         st.markdown('<div class="cover-eyebrow">Analítica de precios · Datos abiertos de ODEPA</div>',
                     unsafe_allow_html=True)
         st.markdown(f'<a class="cover-github" href="{html.escape(project.GITHUB_URL, quote=True)}" '
-                    'target="_self" rel="noopener noreferrer">Repositorio en GitHub ↗</a>',
+                    'target="_blank" rel="noopener noreferrer">Repositorio en GitHub ↗</a>',
                     unsafe_allow_html=True)
     text_column, figures_column = st.columns([1.5, 1], gap="large", vertical_alignment="center")
     with text_column, st.container(key="cover_hero"):
@@ -4307,8 +4307,18 @@ def build_catalog_steps_html():
 
 def build_external_link_html(text, address):
     """A link that leaves the app: it says where it goes and opens a new tab (↗)."""
-    return (f'<a href="{html.escape(address)}" target="_self" rel="noopener noreferrer">'
+    return (f'<a href="{html.escape(address)}" target="_blank" rel="noopener noreferrer">'
             f'{html.escape(text)} ↗</a>')
+
+
+def build_github_link_html(text, address):
+    """An external GitHub link with its brand mark, opening a new tab on a plain
+    click (D-113): the global click handler no longer forces external links into
+    the same frame, which GitHub refuses when this app runs behind an iframe."""
+    icon = (f'<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" '
+            f'aria-hidden="true" class="doc-github-icon">{architecture.brand_icons.logo_body("github")}</svg>')
+    return (f'<a href="{html.escape(address)}" target="_blank" rel="noopener noreferrer" '
+            f'class="doc-github-link">{icon}{html.escape(text)} ↗</a>')
 
 
 def show_catalog_result(entry, result):
@@ -7510,6 +7520,8 @@ def build_doc_profile_css(mode):
     .doc-indicator-code {{font-weight:450; color:{palette['reference']}; font-size:.85rem;}}
     .doc-indicator-text {{font-size:.95rem; line-height:1.6; color:{palette['text']}; margin-top:2px;}}
     .doc-profile-link {{display:inline-block; margin-top:26px; font-size:.95rem;}}
+    .doc-github-link {{display:inline-flex; align-items:center;}}
+    .doc-github-icon {{margin-right:6px;}}
     .doc-decisions {{display:flex; flex-direction:column; gap:8px; margin-top:10px;}}
     .doc-decision {{font-size:.95rem; line-height:1.55; color:{palette['text']};}}
     .doc-decision-id {{font-weight:650; color:{palette['accent']}; margin-right:4px;}}
@@ -7593,7 +7605,7 @@ def show_doc_it_body(mode):
     st.markdown(f'<div class="doc-profile">{decisions}'
                 + build_doc_field_html("Operación semanal", describe_weekly_run())
                 + '</div>', unsafe_allow_html=True)
-    st.markdown('<div class="doc-profile-link">' + build_external_link_html(
+    st.markdown('<div class="doc-profile-link">' + build_github_link_html(
         "Ver el registro completo de decisiones",
         f"{project.GITHUB_URL}/blob/main/docs/DECISIONES.md") + '</div>', unsafe_allow_html=True)
 
@@ -7953,7 +7965,11 @@ def build_visit_history_script():
             document.addEventListener('click', event => {
                 if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
                 const anchor = event.target.closest && event.target.closest('a[href]');
-                if (anchor && !anchor.hasAttribute('download')) anchor.target = '_self';
+                if (!anchor || anchor.hasAttribute('download')) return;
+                // Only internal navigation forces the same tab (D-113): this app may run
+                // behind an iframe wrapper, where forcing target=_self on an external
+                // link (GitHub, ODEPA…) makes the destination refuse to be framed.
+                if (anchor.hostname === location.hostname) anchor.target = '_self';
             }, true);
         }
         const url = new URL(location.href); url.searchParams.delete('_ctx');

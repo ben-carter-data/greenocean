@@ -1422,6 +1422,22 @@ def test_d112_the_it_profile_names_what_was_decided_not_only_its_category():
     assert 'D-046' in text and 'índice único' in text
 
 
+def test_d113_the_github_link_opens_a_new_tab_with_its_mark():
+    link = dashboard.build_github_link_html("Ver el registro completo de decisiones",
+                                            "https://github.com/example/example")
+    assert 'target="_blank"' in link and 'rel="noopener noreferrer"' in link
+    assert '<svg' in link and 'doc-github-icon' in link
+    app = draw_page(dashboard.PAGE_DOC_IT)
+    text = " ".join(block.value for block in app.markdown)
+    assert 'doc-github-link' in text and 'target="_blank"' in text
+
+
+def test_d113_the_global_click_handler_only_forces_internal_links():
+    script = dashboard.build_visit_history_script()
+    assert "anchor.hostname === location.hostname" in script
+    assert "anchor.target = '_self'" in script
+
+
 def test_d111_the_weekly_run_sentence_never_ends_on_a_dangling_colon():
     sentence = dashboard.describe_weekly_run()
     assert sentence.endswith('.') and not sentence.rstrip('.').endswith(':')
