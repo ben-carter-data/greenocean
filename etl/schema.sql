@@ -24,8 +24,21 @@ CREATE TABLE IF NOT EXISTS dim_channel (
     UNIQUE (channel, source)
 );
 
+-- One row per week, from the first to the last week of weekly_price, without
+-- gaps: weeks without prices are kept. Rebuilt by every load (D-095).
+-- week_start is an ISO date text ('YYYY-MM-DD'), the same type as in weekly_price.
+CREATE TABLE IF NOT EXISTS dim_date (
+    week_start TEXT PRIMARY KEY,             -- Monday of the week
+    iso_year INTEGER NOT NULL,               -- ISO 8601: 2024-12-30 is week 1 of 2025
+    iso_week INTEGER NOT NULL,
+    month INTEGER NOT NULL,                  -- month of week_start
+    month_name TEXT NOT NULL,
+    year INTEGER NOT NULL,                   -- calendar year of week_start
+    season TEXT NOT NULL                     -- southern hemisphere, by month
+);
+
 CREATE TABLE IF NOT EXISTS weekly_price (
-    week_start TEXT NOT NULL,                -- Monday of the week (RN-08)
+    week_start TEXT NOT NULL REFERENCES dim_date (week_start),  -- Monday of the week (RN-08)
     product_id INTEGER NOT NULL REFERENCES dim_product (product_id),
     region_id INTEGER NOT NULL REFERENCES dim_region (region_id),
     channel_id INTEGER NOT NULL REFERENCES dim_channel (channel_id),

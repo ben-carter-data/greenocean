@@ -6327,6 +6327,13 @@ def read_context_options(database_version):
 
 
 @st.cache_data
+def read_dim_date(database_version):
+    """The calendar dimension (D-095): ISO week, month and season of every week."""
+    rows = queries.run_sql("SELECT week_start, iso_year, iso_week, month, season FROM dim_date")
+    return rows.assign(week_start=pd.to_datetime(rows["week_start"]))
+
+
+@st.cache_data
 def read_context_model(database_version, key_items, week):
     """Everything the page shows for one product, computed once per weekly load."""
     key = dict(key_items)
@@ -6336,16 +6343,22 @@ def read_context_model(database_version, key_items, week):
         mask &= prices[field] == value
     product = prices[mask & prices["channel"].isin(CONTEXT_CHANNELS)]
     week = pd.Timestamp(week)
-    month = (week + pd.Timedelta(days=3)).month
+    dates = read_dim_date(database_version)
+    # ISO week and month come from dim_date, the calendar of the data warehouse.
     series = {channel: product[product["channel"] == channel][["week_start", "national_price"]]
+              .merge(dates, on="week_start", how="left")
               .sort_values("week_start").reset_index(drop=True) for channel in CONTEXT_CHANNELS}
+    dates = dates.set_index("week_start")
+    target = dates.loc[week] if week in dates.index else None
+    target_iso = (int(target["iso_year"]), int(target["iso_week"])) if target is not None else None
+    month = int(target["month"]) if target is not None else week.month
     series = {channel: rows for channel, rows in series.items() if not rows.empty}
     weekly = []
     now = {}
     for channel, rows in series.items():
-        context = price_context.weekly_context(rows, week)
+        context = price_context.weekly_context(rows, week, dates=dates)
         weekly.append(context.assign(channel=channel))
-        usual = price_context.rango_habitual(rows, week)
+        usual = price_context.rango_habitual(rows, week, target_iso)
         price = rows.loc[rows["week_start"] == week, "national_price"]
         price = float(price.iloc[0]) if not price.empty else None
         now[channel] = {"price": price, "usual": usual,
@@ -6356,11 +6369,14 @@ def read_context_model(database_version, key_items, week):
     if len(series) == 2:
         gaps = price_context.brecha(series["Feria libre"], series["Supermercado"])
         recent = gaps[gaps["week_start"] > week - pd.Timedelta(weeks=52)].copy()
-        recent["usual"] = [price_context.brecha_habitual(gaps, day) for day in recent["week_start"]]
+        recent["usual"] = [price_context.brecha_habitual(gaps, row.week_start, row.iso_year, row.month)
+                           for row in recent.itertuples()]
         current = gaps.loc[gaps["week_start"] == week, "gap"]
         gap = {"current": float(current.iloc[0]) if not current.empty else None,
-               "usual": price_context.brecha_habitual(gaps, week), "recent": recent}
+               "usual": price_context.brecha_habitual(gaps, week, target_iso and target_iso[0], month),
+               "recent": recent}
     seasonal = read_cached_rows_for_key("k4_seasonal_index", tuple(sorted(key.items())), database_version)
+    seasonal = seasonal.merge(dates[["month"]], left_on="week_start", right_index=True, how="left")
     year = week.isocalendar().year
     patterns, years = {}, {}
     for channel in CONTEXT_CHANNELS:

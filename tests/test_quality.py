@@ -33,4 +33,5 @@ def test_database_checks_detect_bad_values_duplicate_keys_and_broken_references(
     result = quality.check_database(path)
     assert result['integrity_ok']  # Structurally valid SQLite is not sufficient.
     assert result['duplicates'] == 1 and result['invalid'] == 2
-    assert result['foreign_keys'] == 6
+    # Two rows × four missing parents: product, region, channel and, since D-095, the week.
+    assert result['foreign_keys'] == 8

@@ -97,3 +97,13 @@ def test_answer_sentence_is_built_from_states_and_names_missing_history():
     assert pc.describe_gap_comparison(30, 20) == "mayor"
     assert pc.describe_gap_comparison(21, 20) == "similar"
     assert pc.describe_gap_comparison(None, 20) is None
+
+
+def test_calendar_columns_from_dim_date_drive_the_usual_range_and_the_month():
+    # Columns joined from dim_date win over the ones computed from week_start.
+    rows = series({"2023-03-06": 100, "2024-03-04": 300}).assign(iso_year=[2023, 2024], iso_week=[7, 7], month=[2, 2])
+    assert pc.rango_habitual(rows, "2026-03-02", iso=(2026, 7))[2] == 2
+    assert pc.rango_habitual(rows, "2026-03-02", iso=(2026, 10)) is None
+    seasonal = pd.DataFrame({"week_start": pd.to_datetime(["2024-03-04", "2025-03-03"]), "price_year": [2024, 2025],
+                             "seasonal_index": [1.0, 1.2], "month": [2, 2]})
+    assert set(pc.patron_estacional(seasonal)) == {2}
