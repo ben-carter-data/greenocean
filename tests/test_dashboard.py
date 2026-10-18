@@ -1006,6 +1006,13 @@ def test_d138_every_console_column_has_a_spanish_header_and_keeps_its_real_name(
     assert config["week_start"]["label"] == "Semana" and "`week_start`" in config["week_start"]["help"]
 
 
+def test_d140_every_explorer_entry_has_a_short_one_line_label():
+    from bi import python_console
+    names = [entry["name"] for entry in dashboard.CATALOG] + [q["name"] for q in python_console.QUESTIONS]
+    assert set(names) <= set(dashboard.EXPLORER_LABELS)
+    assert all(len(label) <= 30 for label in dashboard.EXPLORER_LABELS.values())
+
+
 def test_d135_a_parameter_is_written_as_data_and_never_as_code():
     from bi import python_console
     question = python_console.QUESTIONS_BY_NAME["rn03_units"]

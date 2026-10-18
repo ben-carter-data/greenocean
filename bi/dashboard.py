@@ -1554,7 +1554,12 @@ def build_style_css(mode):
 
 def apply_style(mode):
     """Add the dashboard CSS to the page."""
-    st.markdown(f"<style>{build_style_css(mode)}</style>", unsafe_allow_html=True)
+    palette = charts.get_palette(mode)
+    finish = Path(__file__).with_name("premium.css").read_text()
+    for token, key in {"CARD": "card", "BORDER": "card_border", "INK": "strong_text",
+                       "ACCENT": "accent", "BG": "background"}.items():
+        finish = finish.replace("__" + token + "__", palette[key])
+    st.markdown(f"<style>{build_style_css(mode)}{finish}</style>", unsafe_allow_html=True)
 
 
 
@@ -2167,8 +2172,12 @@ def component_kind(*texts):
 def build_component_symbol(kind):
     shape = COMPONENT_SYMBOLS.get(kind, COMPONENT_SYMBOLS["document"])
     return (f'<span class="component-symbol" data-kind="{kind}" aria-hidden="true">'
-            '<svg viewBox="0 0 32 36" fill="none" stroke="currentColor" stroke-width="1.8" '
-            'stroke-linecap="round" stroke-linejoin="round">' + shape + '</svg></span>')
+            '<svg viewBox="-3 -3 40 44" fill="none" stroke="currentColor" stroke-width="2.2" '
+            'stroke-linecap="round" stroke-linejoin="round">'
+            '<g transform="translate(1.2 2)" opacity=".24" stroke-width="3.3">' + shape + '</g>'
+            '<g fill="currentColor" fill-opacity=".13">' + shape + '</g>'
+            '<g transform="translate(-.45 -.55)" stroke="white" opacity=".65" stroke-width=".65">'
+            + shape + '</g></svg></span>')
 
 
 def build_info_card_html(title, text, label=None, note=None, link=None, is_warning=False,
@@ -4272,8 +4281,8 @@ CATALOG_BY_NAME = {entry["name"]: entry for entry in CATALOG}
 
 def match_catalog_search(entry, text):
     """True when every word of the search is in the question, its theme or its name."""
-    haystack = " ".join([entry["question"], entry["compares"], entry["theme"],
-                         entry["name"]]).lower()
+    haystack = " ".join([entry["question"], EXPLORER_LABELS.get(entry["name"], ""), entry["compares"],
+                         entry["theme"], entry["name"]]).lower()
     return all(word in haystack for word in text.lower().split())
 
 
@@ -4523,8 +4532,9 @@ def show_console_explorer(source):
             st.markdown(f'<div class="console-group">Consultas guardadas · {theme}</div>',
                         unsafe_allow_html=True)
         for entry in entries:
-            st.button(entry["question"], key=f"console_query_{entry['name']}",
-                      icon=":material/description:", width="stretch", help=entry["name"],
+            st.button(EXPLORER_LABELS.get(entry["name"], entry["question"]), key=f"console_query_{entry['name']}",
+                      icon=":material/description:", width="stretch",
+                      help=f'{entry["question"]} · {entry["name"]}',
                       type="primary" if source == ("query", entry["name"]) else "secondary",
                       on_click=load_console,
                       args=(("query", entry["name"]), read_catalog_sql(entry["name"])))
@@ -4596,6 +4606,23 @@ def build_console_column_config(columns):
     return config
 
 
+# Short names for the console explorers (D-140): one line each, aligned like the
+# objects of a database tool. The full question is the heading and the hover.
+EXPLORER_LABELS = {
+    "k3_regional_index": "Precio por región (K3)", "k2_channel_gap": "Diferencia entre canales (K2)",
+    "k1_margin": "Brecha con el mayorista (K1)", "k6_national_weekly_price": "Evolución del precio",
+    "k6_usual_range_sql": "Cambios fuera de lo habitual", "k4_seasonal_index": "Semanas más caras (K4)",
+    "k5_weekly_variations_sql": "Desfase del consumidor (K5)", "quality_runs": "Estado de las cargas",
+    "k8_rejected_rows": "Datos que quedaron fuera", "quality_rejected_rows": "Filas rechazadas, originales",
+    "quality_flag_counts": "Precios en los indicadores", "quality_outliers": "Precios atípicos",
+    "quality_unconvertible_units": "Unidades no comparables", "quality_week_range": "Semanas cubiertas",
+    "k7_match_coverage": "Cobertura del cruce (K7)",
+    "rn11_rejections": "Rechazos recalculados", "rn03_units": "Unidad a precio por kilo",
+    "k6_alerts": "Alertas de la semana (K6)", "k5_lag": "Desfase del consumidor (K5)",
+    "context_usual_range": "Precio frente a su rango", "k4_seasonal_pattern": "Meses más caros (K4)",
+}
+
+
 def describe_console_source(source):
     """(title, metadata HTML) of what the editor holds: for a saved query, what it
     compares and where it lives in the repository."""
@@ -4661,9 +4688,12 @@ def build_console_css(mode):
     .st-key-console_explorer [data-testid="stVerticalBlock"] {{gap:2px !important;}}
     .st-key-console_explorer button {{justify-content:flex-start !important; text-align:left;
         min-height:30px !important; padding:4px 10px !important; border-radius:8px;}}
-    .st-key-console_explorer button > div {{justify-content:flex-start !important; width:100%;}}
-    .st-key-console_explorer button p {{font-size:.82rem; text-align:left; white-space:normal;
-        line-height:1.3;}}
+    /* One line per entry (D-140): a long question ends in «…» and shows whole on hover. */
+    .st-key-console_explorer button > div {{justify-content:flex-start !important; width:100%;
+        min-width:0; overflow:hidden;}}
+    .st-key-console_explorer button div {{min-width:0;}}
+    .st-key-console_explorer button p {{font-size:.8rem; text-align:left; white-space:nowrap;
+        overflow:hidden; text-overflow:ellipsis; line-height:1.3;}}
     .st-key-console_explorer button[kind="secondary"] {{border-color:transparent; background:transparent;}}
     .console-title {{font-size:1.05rem; font-weight:650; color:{palette['strong_text']}; margin:0;}}
     .console-meta {{font-size:.78rem; color:{palette['text']}; margin:2px 0 8px;}}
@@ -4697,7 +4727,7 @@ def show_queries_tab(mode):
     st.markdown(build_console_css(mode), unsafe_allow_html=True)
     sync_console_with_address()
     source = st.session_state[CONSOLE_SOURCE]
-    explorer_column, work_column = st.columns([1, 3.6], gap="medium")
+    explorer_column, work_column = st.columns([1.5, 3.6], gap="medium")
     with explorer_column, st.container(border=True, key="console_explorer", height=700):
         show_console_explorer(source)
     with work_column:
@@ -4811,8 +4841,9 @@ def show_python_explorer(selected):
         st.markdown(f'<div class="console-group">{html.escape(group)}</div>', unsafe_allow_html=True)
         for question in python_console.QUESTIONS:
             if question["group"] == group:
-                st.button(question["question"], key=f"python_question_{question['name']}",
-                          icon=":material/terminal:", width="stretch",
+                st.button(EXPLORER_LABELS.get(question["name"], question["question"]),
+                          key=f"python_question_{question['name']}",
+                          icon=":material/terminal:", width="stretch", help=question["question"],
                           type="primary" if question["name"] == selected else "secondary",
                           on_click=select_python_question, args=(question["name"],))
 
@@ -4888,7 +4919,7 @@ def show_python_tab(mode):
     options = read_cached_python_options(get_database_version())
     question = python_console.QUESTIONS_BY_NAME[st.session_state[PYTHON_SELECTED]]
     values = read_python_values(question, options)
-    explorer_column, work_column = st.columns([1, 3.6], gap="medium")
+    explorer_column, work_column = st.columns([1.5, 3.6], gap="medium")
     with explorer_column, st.container(border=True, key="console_explorer", height=700):
         show_python_explorer(question["name"])
     with work_column:
