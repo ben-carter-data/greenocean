@@ -143,9 +143,9 @@ def test_a_national_change_compares_only_the_regions_present_in_both_weeks():
     key = dict(product_group="Hortalizas", product="Caigua", variety="Sin especificar",
                quality="Primera", normalized_unit="kilo", channel="Mayorista")
     # Santiago does not move; Arica sells only the week before, at a lower price.
-    before = pd.DataFrame([dict(key, region="Santiago", price=1000.0),
-                           dict(key, region="Arica", price=400.0)])
-    now = pd.DataFrame([dict(key, region="Santiago", price=1000.0)])
+    before = pd.DataFrame([dict(key, region="Santiago", price=1000.0, observation_count=5),
+                           dict(key, region="Arica", price=400.0, observation_count=3)])
+    now = pd.DataFrame([dict(key, region="Santiago", price=1000.0, observation_count=4)])
     plain = pd.DataFrame([dict(key, national_price=1000.0, _previous_price=700.0,
                                variation=1000 / 700 - 1, change_amount=300.0)])
     compared = dashboard.compare_same_regions(plain, now, before, join).iloc[0]
@@ -155,4 +155,79 @@ def test_a_national_change_compares_only_the_regions_present_in_both_weeks():
     alone = dashboard.compare_same_regions(plain, now.assign(region="Arica"),
                                            before[before.region == "Santiago"], join).iloc[0]
     assert pd.isna(alone["variation"])
+# endregion
+
+
+# region What the panel concludes is meaningful (D-146)
+def test_a_family_moves_like_its_typical_product_not_like_its_extremes():
+    from bi import home_mockup
+    rows = [{"product_group": "Frutas", "variation": value} for value in (0.0, 0.0, 0.001, 0.5)]
+    [(family, typical, members)] = home_mockup.family_averages(rows)
+    assert typical == pytest.approx(0.0005) and len(members) == 4
+
+
+def test_a_region_is_painted_only_when_its_direction_beats_chance():
+    assert dashboard.sign_test_p_value(285, 217) < 0.01
+    assert dashboard.sign_test_p_value(107, 104) > 0.5
+    key = dict(product_group="Frutas", product="Pera", variety="X", quality="Primera",
+               normalized_unit="kilo", channel="Feria libre")
+    def week(prices):
+        return pd.DataFrame([dict(key, product=f"P{index}", region=region, price=price)
+                             for index, (region, price) in enumerate(prices)])
+    before = week([("Maule", 100.0)] * 40 + [("Biobío", 100.0)] * 40)
+    after = week([("Maule", 110.0)] * 38 + [("Maule", 90.0)] * 2
+                 + [("Biobío", 110.0)] * 21 + [("Biobío", 90.0)] * 19)
+    states = {row["region"]: row["state"] for row in dashboard.build_regional_movement_model(after, before)}
+    assert states == {"Maule": "rise", "Biobío": "mixed"}
+
+
+def test_an_alert_must_be_unusual_and_material():
+    from bi import alerts
+    rows = pd.DataFrame({"variation": [0.06, 0.12, 0.12], "usual_variation": [0.0, 0.0, 0.0],
+                         "variation_deviation": [0.01, 0.01, 0.1]})
+    assert list(alerts.is_price_alert(rows)) == [False, True, False]
+
+
+def test_the_usual_range_follows_the_regions_present_this_week():
+    week = pd.Timestamp("2026-10-05")
+    regional = pd.DataFrame({"week_start": [week, week - pd.Timedelta(days=364), week - pd.Timedelta(days=364)],
+                             "region_id": [13, 13, 15], "price": [1000.0, 900.0, 300.0]})
+    series = dashboard.keep_regions_of_week(regional, week)
+    assert list(series["national_price"]) == [900.0, 1000.0]
+
+
+def test_a_seasonal_month_is_shown_only_when_years_agree():
+    from bi import price_context
+    rows = pd.DataFrame([{"price_year": year, "month": month, "seasonal_index": index}
+                         for year, (october, november) in {2022: (1.0, 1.1), 2023: (1.0, 1.1),
+                                                           2024: (1.0, 0.9), 2025: (1.0, 0.95)}.items()
+                         for month, index in ((10, october), (11, november))])
+    agreeing, compared = price_context.acuerdo_entre_anios(rows, 10, 11, current_year=2026)
+    assert (agreeing, compared) == (2, 4)
+    assert not price_context.tiene_patron_claro(agreeing, compared)
+    assert price_context.tiene_patron_claro(3, 4)
+
+
+@needs_database
+def test_the_margin_shown_is_the_average_of_the_regional_pairs():
+    week = read("SELECT MAX(week_start) AS w FROM weekly_price")["w"][0]
+    pairs = read("""SELECT p.product_group, p.product, p.variety, p.quality, c.normalized_unit,
+                           c.price / w.price - 1 AS margin
+                    FROM weekly_price c JOIN weekly_price w
+                      ON w.week_start = c.week_start AND w.product_id = c.product_id
+                     AND w.region_id = c.region_id AND w.normalized_unit = c.normalized_unit
+                    JOIN dim_channel cc ON cc.channel_id = c.channel_id
+                    JOIN dim_channel wc ON wc.channel_id = w.channel_id
+                    JOIN dim_product p ON p.product_id = c.product_id
+                    WHERE c.week_start = ? AND cc.channel = 'Feria libre' AND wc.channel = 'Mayorista'
+                      AND c.flag IS NULL AND w.flag IS NULL""", (week,))
+    key_columns = ["product_group", "product", "variety", "quality", "normalized_unit"]
+    key_values, group = next(iter(pairs.groupby(key_columns)))
+    key = dict(zip(key_columns, key_values))
+    dates = dashboard.read_dim_date(dashboard.get_database_version())
+    target_iso, _ = dashboard.describe_target_week(dates, pd.Timestamp(week))
+    margins = dashboard.read_context_margins(key, pd.Timestamp(week), dates, target_iso,
+                                             dashboard.get_database_version())
+    assert margins["Feria libre"]["value"] == pytest.approx(group["margin"].mean())
+    assert margins["Feria libre"]["regions"] == len(group)
 # endregion

@@ -1079,3 +1079,22 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** `k6_national_weekly_price` entrega, junto al precio nacional, el promedio de las regiones con precio en ambas semanas y el de esas mismas regiones la semana anterior; `bi/alerts.py` calcula la variación con ese par. La versión SQL (`k6_usual_range_sql`) hace lo mismo, y la prueba de D-049 sigue exigiendo que ambas den el mismo resultado. Una semana sin la anterior no tiene región en común, así que un hueco nunca produce un cambio, como antes.
 - **Resultado:** 46 alertas en la semana del 05-10-2026, todas sobre movimientos de precios reales.
 - **Costo:** la consulta tarda unos 2 s en vez de 0,8 s; el panel la guarda en caché una vez por carga semanal. Se descartó un índice permanente porque agrandaría `datos.db`, que se sube cada semana.
+
+## D-146 · Revisión de pertinencia: solo conclusiones que se sostienen
+
+- **Fecha:** 2026-10-18.
+- **Pedido:** verificar cifras, KPI y preguntas, y quitar lo que no aporta, para no mostrar conclusiones insignificantes.
+- **Medido en la semana del 05-10-2026 y corregido:**
+
+| Lo que decía el panel | Lo que mostró la medición | Decisión |
+|---|---|---|
+| «Frutas subió +1,7 %» (promedio) | La mediana era +0,02 %: unas pocas series de una región en ±50 % arrastraban el promedio; Carne bovina y Pan cambiaban de signo | Cada familia muestra la **mediana**: lo que hizo el producto típico |
+| Ranking «Mayor cambio» | 19 de los 20 primeros eran una sola región con una sola cotización | Un cambio apoyado en **una sola cotización** en alguna de las dos semanas va al final del orden, con la marca «1 cotización» (234 de 787 esta semana) |
+| Mapa: región pintada con 52 % | 3 de 9 regiones no se distinguían del azar | Una región se pinta solo si pasa una **prueba de signos** (p < 0,05); si no, «sin dirección clara» |
+| 46 alertas de precio (K6) | 8,6 % de las series alertaba cada semana, el nivel que da el azar | Una alerta debe ser inusual (2 desviaciones) **y** material (cambio ≥ 10 %): 22 alertas |
+| Contexto: «sobre lo habitual» | 8 % de los estados cambiaba al comparar las mismas regiones | El rango habitual usa la historia de **las regiones con precio esta semana** |
+| «Qué suele pasar en las próximas semanas» (K4) | Los años coincidían en la dirección de un mes solo el 35 % de las veces | Un mes se muestra solo si **al menos 3 años** coinciden; si no, «sin patrón» |
+
+- **Preguntas:** vuelve **P1/K1**, el margen del consumidor sobre el mayorista, que el panel ya no mostraba y es lo que solo este proyecto puede calcular al cruzar las dos fuentes: Contexto de precios suma la tarjeta «Sobre el precio mayorista», por canal y frente a su rango habitual (Tomate en Feria libre: +29,7 % frente a +46,5 % a +57,1 % habitual; recalculado a mano por región). Se retira **P5/K5**, el rezago mayorista → consumidor: en el 57 % de las 1.215 series no hay relación clara y el 18 % da «la misma semana», que datos semanales no pueden separar. P2 queda cubierta por Contexto (Feria libre frente a Supermercado) y P3 por el mapa.
+- **Calidad de datos:** la reconciliación fuente → base, el recálculo de indicadores y la concordancia con la pantalla pasan de «Pendiente» a verificados, con su evidencia; el contraste con otra fuente sigue pendiente, porque ODEPA es la única fuente oficial de estos precios.
+- **Verificable:** cada regla tiene su prueba en `tests/test_data_audit.py`.

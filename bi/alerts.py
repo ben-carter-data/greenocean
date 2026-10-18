@@ -8,6 +8,9 @@ SERIES_COLUMNS = ["product_group", "product", "variety", "quality", "channel",
 # K6: the usual range comes from the 12 weekly variations before the week judged.
 ALERT_WINDOW_WEEKS = 12
 ALERT_DEVIATIONS = 2
+# D-146: an alert must also be material. With 2 deviations alone, 8-10 % of the
+# series alerted every week, about what chance gives; a change under 10 % is not news.
+ALERT_MINIMUM_CHANGE = 0.10
 DAYS_IN_A_WEEK = 7
 # endregion
 
@@ -56,9 +59,15 @@ def add_usual_range(prices):
 
 
 def find_price_alerts(prices):
-    """K6: rows whose weekly variation is outside average +/- 2 standard deviations."""
+    """K6: rows whose weekly variation is outside average +/- 2 standard deviations
+    and moves the price by at least 10 %."""
     prices = add_usual_range(prices)
+    return prices[is_price_alert(prices)]
+
+
+def is_price_alert(prices):
+    """The K6 rule on rows that already carry their usual range: unusual and material."""
     distance = (prices["variation"] - prices["usual_variation"]).abs()
-    is_alert = distance > ALERT_DEVIATIONS * prices["variation_deviation"]
-    return prices[is_alert]
+    return ((distance > ALERT_DEVIATIONS * prices["variation_deviation"])
+            & (prices["variation"].abs() >= ALERT_MINIMUM_CHANGE))
 # endregion

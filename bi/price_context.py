@@ -150,6 +150,40 @@ def patron_estacional(rows, current_year=None):
     return {int(month): float(value) * 100 for month, value in monthly.items()}
 
 
+# D-146: a month's direction is shown only when most previous years agree on it.
+MINIMUM_AGREEMENT = 0.75
+MINIMUM_AGREEING_YEARS = 3
+
+
+def acuerdo_entre_anios(rows, month, following, current_year=None):
+    """(years that agree, years compared) on the direction from `month` to `following`.
+
+    rows: K4 rows of one channel (price_year, month, seasonal_index). Each previous
+    year gives its own change between the two months; a year agrees when its change
+    has the sign of the change of the average pattern.
+    """
+    if rows.empty:
+        return 0, 0
+    rows = rows.assign(year=rows["price_year"].astype(int))
+    if current_year is not None:
+        rows = rows[rows["year"] < current_year]
+    monthly = rows.groupby(["year", "month"])["seasonal_index"].mean().unstack()
+    if month not in monthly or following not in monthly:
+        return 0, 0
+    changes = (monthly[following] / monthly[month] - 1).dropna()
+    pattern = patron_estacional(rows)
+    if month not in pattern or following not in pattern:
+        return 0, len(changes)
+    direction = pattern[following] / pattern[month] - 1
+    agreeing = int(((changes > 0) == (direction > 0)).sum())
+    return agreeing, len(changes)
+
+
+def tiene_patron_claro(agreeing, compared):
+    """True when at least 3 years were compared and 75 % of them agree."""
+    return compared >= MINIMUM_AGREEING_YEARS and agreeing / compared >= MINIMUM_AGREEMENT
+
+
 def proximos_meses(pattern, month, count=3):
     """[(month, change in %)] from the current month to each of the next ones."""
     if month not in pattern:
