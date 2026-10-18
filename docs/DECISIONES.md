@@ -1052,3 +1052,9 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Causa:** la vista previa era `SELECT * … LIMIT 100` sin `ORDER BY`; SQLite devuelve las filas en el orden en que se guardaron, y las primeras 100 eran de la primera semana de 2022.
 - **Decisión:** las tablas con fecha se previsualizan de la más reciente a la más antigua (`weekly_price` y `dim_date` por `week_start`, `etl_run` por `started_at`, `rejection` por carga): la consola abre en la última semana cargada (60 ms sobre 811.578 filas). Una marca vacía se lee «Sin marca» (el precio entra en los indicadores) en vez de «None».
 - **Validación:** `test_d142_*`.
+
+## D-143 · Las consolas SQL y Python salen del proyecto
+
+- **Fecha:** 2026-10-18.
+- **Problema reportado:** las consolas mostraban tablas con identificadores (`product_id`, `region_id`) que no dicen nada al lector, y repetían en vivo código que ya está en GitHub.
+- **Decisión:** se retiran las dos (D-126, D-135 y sus ajustes D-127, D-133, D-134, D-138, D-140 a D-142). Las respuestas ya están en el panel, mejor presentadas (Resumen, Contexto de precios, Calidad de datos, Ejecuciones); el código vive en GitHub, la fuente de verdad. Los enlaces a una consulta abren su línea en GitHub. Las direcciones viejas abren el Resumen. Con la consola se va también su ejecutor de SQL (autorizador, límite de filas y de tiempo): un mecanismo menos que mantener y defender.

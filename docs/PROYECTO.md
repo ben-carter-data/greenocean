@@ -112,7 +112,6 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 | Medida | Qué protege | Archivo |
 |---|---|---|
 | Base en solo lectura | El panel abre `datos.db` con `mode=ro`: ninguna página puede cambiar los datos. | bi/queries.py |
-| Consola SQL de solo lectura | La consola acepta una sola consulta SELECT o WITH; un autorizador de SQLite niega todo salvo lectura (sin ATTACH, PRAGMA ni escritura), y cada consulta se corta a las 1.000 filas y a los 10 s. | bi/queries.py |
 | Secretos fuera del código | La clave de GitHub y el código de acceso de «Ejecutar ahora» viven en los secretos del panel; el código compara el código de acceso en tiempo constante. | bi/dashboard.py |
 | Permisos mínimos del workflow | El job semanal solo puede escribir contenido (el commit de la base) y crear issues (el informe). | .github/workflows/semanal.yml |
 | Datos crudos fuera del repositorio | Los CSV descargados, `raw.db` y los logs no se suben a GitHub (D-020). | .gitignore |
