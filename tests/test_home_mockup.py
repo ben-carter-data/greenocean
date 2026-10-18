@@ -320,10 +320,13 @@ st.session_state['week']=week
     app=AppTest.from_string(script,default_timeout=60).run()
     assert not app.exception
     model=app.session_state['model']; week=app.session_state['week']
-    sql='''WITH prices AS (SELECT week_start,product_id,channel_id,normalized_unit,AVG(price) price FROM weekly_price WHERE flag IS NULL GROUP BY 1,2,3,4)
-    SELECT a.price AS current_price,b.price AS previous_price FROM prices a JOIN prices b
+    # D-144: the national change averages only the regions with a price in both weeks.
+    sql='''SELECT AVG(a.price) AS current_price, AVG(b.price) AS previous_price
+    FROM weekly_price a JOIN weekly_price b
     ON b.product_id=a.product_id AND b.channel_id=a.channel_id AND b.normalized_unit=a.normalized_unit
-    AND b.week_start=date(a.week_start,'-7 days') WHERE a.week_start=?'''
+    AND b.region_id=a.region_id AND b.week_start=date(a.week_start,'-7 days')
+    WHERE a.week_start=? AND a.flag IS NULL AND b.flag IS NULL
+    GROUP BY a.product_id, a.channel_id, a.normalized_unit'''
     oracle=queries.run_sql(sql,parameters=[week])
     variation=oracle.current_price/oracle.previous_price-1
     assert model['counts']==[int((variation>0).sum()),int((variation<0).sum()),int((variation==0).sum())]
