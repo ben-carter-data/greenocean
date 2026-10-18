@@ -715,6 +715,18 @@ def test_d057_rejected_rows_show_readable_spanish_columns():
     table = dashboard.build_rejected_rows_table(rows)
     assert list(table.columns) == ["Fuente", "Motivo", "Fecha", "Producto", "Precio promedio"]
     assert table.iloc[0]["Fuente"] == "Mayorista"
+    assert table.iloc[0]["Motivo"] == "Precio cero o negativo"
+
+
+def test_d141_console_values_read_in_spanish_and_unknown_codes_stay():
+    rows = pd.DataFrame({"source": ["wholesale", "consumer", "otro"],
+                         "reason": ["NON_POSITIVE_PRICE", "NON_POSITIVE_VOLUME", None],
+                         "flag": ["ATIPICO", None, "UNIDAD_NO_CONVERTIBLE"]})
+    shown = dashboard.translate_console_values(rows)
+    assert list(shown["source"]) == ["Mayorista", "Consumidor", "otro"]
+    assert list(shown["reason"])[:2] == ["Precio cero o negativo", "Sin volumen"]
+    assert shown["flag"].iloc[0] == "Atípico" and shown["flag"].iloc[2] == "Unidad no convertible"
+    assert set(dashboard.REASON_NAMES) == set(dashboard.REASON_TEXTS)
 
 
 @needs_database

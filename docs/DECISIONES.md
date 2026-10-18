@@ -1037,3 +1037,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema reportado:** las preguntas de los exploradores (Consola SQL y Consola Python) ocupaban dos o tres líneas y no se alineaban.
 - **Decisión:** cada entrada lleva un nombre corto, de 30 caracteres como máximo (p. ej. «Precio por región (K3)», «Alertas de la semana (K6)»), en una sola línea, como los objetos de una herramienta de base de datos. La pregunta completa sigue como título de la consulta y al pasar el mouse; el filtro busca en ambos. El explorador es algo más ancho y se acortaron las preguntas de la Consola Python.
 - **Validación:** `test_d140_*`.
+
+## D-141 · Los códigos de la base se leen en español
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** no se entendía qué era `wholesale` en las tablas.
+- **Decisión:** en las grillas de las consolas, los valores codificados se muestran en español: fuente (`wholesale` → Mayorista, `consumer` → Consumidor), motivo de rechazo (`NON_POSITIVE_PRICE` → Precio cero o negativo…), marca (`ATIPICO` → Atípico), estado de la carga (`LOADED` → Cargada) y estado del precio. El SQL sigue usando los códigos reales (`WHERE source = 'wholesale'`); el tooltip del encabezado los indica. La página Calidad de datos muestra también el motivo en español.
+- **Validación:** `test_d141_*`.
