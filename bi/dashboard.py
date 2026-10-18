@@ -4542,7 +4542,8 @@ def show_console_explorer(source):
 
 # Coded column names of the base, explained on hover in the console grid.
 CONSOLE_COLUMN_HELP = {
-    "source": "Fuente ODEPA de la fila: wholesale = precios mayoristas; consumer = precios al consumidor.",
+    "source": "Fuente ODEPA de la fila. En la base: wholesale = Mayorista (mercados mayoristas); "
+              "consumer = Consumidor (venta al público).",
     "reason": "Regla de calidad que rechazó la fila (RN-11), p. ej. NON_POSITIVE_PRICE = precio cero o negativo.",
     "original_row": "La fila tal como llegó del archivo de origen, antes de limpiarla.",
     "channel": "Canal de venta: Mayorista para la fuente wholesale; feria, supermercado, etc. para consumer.",
@@ -4623,6 +4624,32 @@ EXPLORER_LABELS = {
 }
 
 
+# Coded values of the base, shown in Spanish in the console grids (D-141). The SQL
+# keeps the real codes (WHERE source = 'wholesale'); the header's hover says so.
+REASON_NAMES = {
+    etl.REASON_UNREADABLE_VALUE: "Valor ilegible", etl.REASON_NON_POSITIVE_PRICE: "Precio cero o negativo",
+    etl.REASON_MINIMUM_ABOVE_MAXIMUM: "Mínimo mayor que máximo",
+    etl.REASON_DATE_OUTSIDE_FILE_YEAR: "Fecha fuera del año del archivo",
+    etl.REASON_NON_POSITIVE_VOLUME: "Sin volumen",
+}
+CONSOLE_VALUE_NAMES = {
+    "source": SOURCE_NAMES, "reason": REASON_NAMES, "recalculated": REASON_NAMES,
+    "flag": {etl.FLAG_OUTLIER: "Atípico", etl.FLAG_UNIT_NOT_CONVERTIBLE: "Unidad no convertible"},
+    "status": {etl.STATUS_LOADED: "Cargada", etl.STATUS_UNCHANGED: "Sin cambios", etl.STATUS_FAILED: "Falló"},
+    "state": {"sobre": "Sobre el rango", "dentro": "Dentro del rango", "bajo": "Bajo el rango",
+              "sin_historia": "Sin historia"},
+}
+
+
+def translate_console_values(rows):
+    """The coded values in Spanish, column by column; an unknown code stays as it is."""
+    rows = rows.copy()
+    for column, names in CONSOLE_VALUE_NAMES.items():
+        if column in rows.columns:
+            rows[column] = rows[column].map(lambda value: names.get(value, value))
+    return rows
+
+
 def describe_console_source(source):
     """(title, metadata HTML) of what the editor holds: for a saved query, what it
     compares and where it lives in the repository."""
@@ -4651,6 +4678,7 @@ def show_console_result(source, executed, mode):
                     unsafe_allow_html=True)
         return
     rows, opened = expand_json_columns(result["rows"])
+    rows = translate_console_values(rows)
     shown = charts.format_thousands(len(rows))
     count = (f"primeras {shown} filas (hay más; agrega LIMIT o filtros)" if result["truncated"]
              else f"{shown} {'fila' if len(rows) == 1 else 'filas'}")
@@ -4896,7 +4924,7 @@ def show_python_result(question, executed, values):
         st.markdown(f'<div class="console-status console-status-error">✕ {html.escape(run["error"])}</div>',
                     unsafe_allow_html=True)
         return
-    rows = run["result"]
+    rows = translate_console_values(run["result"])
     count = f"{charts.format_thousands(len(rows))} {'fila' if len(rows) == 1 else 'filas'}"
     answer = f'{html.escape(run["answer"])} · ' if run["answer"] else ""
     st.markdown(f'<div class="console-status">✓ {answer}{count} · {run["ms"]:.0f} ms</div>',
@@ -7925,7 +7953,7 @@ def build_rejected_rows_table(rejected_rows):
     for row in rejected_rows.to_dict("records"):
         original = json.loads(row["original_row"])
         record = {"Fuente": SOURCE_NAMES.get(row["source"], row["source"]),
-                  "Motivo": row["reason"]}
+                  "Motivo": REASON_NAMES.get(row["reason"], row["reason"])}
         record.update({label: original[key] for key, label in REJECTED_ROW_LABELS.items()
                        if key in original})
         records.append(record)
