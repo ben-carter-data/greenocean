@@ -5364,6 +5364,36 @@ def clear_home_product():
     st.session_state['home_product_field'] = 'Todos los productos'
 
 
+def compare_same_regions(variations, snapshot, prior, join):
+    """National weekly change over the same regions in both weeks (D-144).
+
+    A national price averages the regions with data that week; when the set of
+    regions changes, the plain change mixes a price movement with a change of
+    composition (a product sold in Arica and Santiago, then only in Santiago, «moves»
+    without any regional price moving). Both prices shown and the change are the
+    averages of the regions present in both weeks; a key with no region in common
+    has no valid comparison. _coverage_changed marks the keys that left regions out.
+    """
+    regional = join + ['region', 'price']
+    matched = snapshot[regional].merge(prior[regional], on=join + ['region'], suffixes=('', '_before'))
+    same = matched.groupby(join, as_index=False).agg(_same_now=('price', 'mean'),
+                                                     _same_before=('price_before', 'mean'),
+                                                     _same_regions=('region', 'nunique'))
+    regions_now = snapshot.groupby(join).region.nunique().rename('_regions_now')
+    regions_before = prior.groupby(join).region.nunique().rename('_regions_before')
+    rows = (variations.drop(columns=['_previous_price', 'variation', 'change_amount'])
+            .merge(same, on=join, how='left')
+            .merge(regions_now, on=join, how='left').merge(regions_before, on=join, how='left'))
+    valid = rows['_same_before'].gt(0) & rows['_same_now'].notna()
+    rows['national_price'] = rows['_same_now'].where(valid, rows['national_price'])
+    rows['_previous_price'] = rows['_same_before'].where(valid)
+    rows['variation'] = (rows['_same_now'] / rows['_same_before'] - 1).where(valid)
+    rows['change_amount'] = (rows['_same_now'] - rows['_same_before']).where(valid)
+    rows['_coverage_changed'] = valid & ((rows['_regions_now'] != rows['_same_regions'])
+                                         | (rows['_regions_before'] != rows['_same_regions']))
+    return rows
+
+
 def read_home_model(week, group, region, count, order='Mayores cambios', product_filter=None):
     """Real regional or national series; K6 stays explicitly national."""
     version=get_database_version()
@@ -5399,10 +5429,7 @@ def read_home_model(week, group, region, count, order='Mayores cambios', product
     variations=home_mockup.compare_week(current,previous,join)
     variations['_coverage_changed']=False
     if region == ALL_VALUES:
-        regions_now=snapshot.groupby(join).region.agg(frozenset).rename('_regions_now')
-        regions_before=prior.groupby(join).region.agg(frozenset).rename('_regions_before')
-        variations=variations.merge(regions_now,on=join,how='left').merge(regions_before,on=join,how='left')
-        variations['_coverage_changed']=(variations['_regions_now'] != variations['_regions_before']) & variations.variation.notna()
+        variations=compare_same_regions(variations,snapshot,prior,join)
     valid=variations[variations.variation.notna() & variations.variation.abs().lt(float('inf'))].copy()
     parts=build_movement_proportions(valid)
     counts=[int(v) for v in parts.value]

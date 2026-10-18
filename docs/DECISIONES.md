@@ -1058,3 +1058,16 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-18.
 - **Problema reportado:** las consolas mostraban tablas con identificadores (`product_id`, `region_id`) que no dicen nada al lector, y repetían en vivo código que ya está en GitHub.
 - **Decisión:** se retiran las dos (D-126, D-135 y sus ajustes D-127, D-133, D-134, D-138, D-140 a D-142). Las respuestas ya están en el panel, mejor presentadas (Resumen, Contexto de precios, Calidad de datos, Ejecuciones); el código vive en GitHub, la fuente de verdad. Los enlaces a una consulta abren su línea en GitHub. Las direcciones viejas abren el Resumen. Con la consola se va también su ejecutor de SQL (autorizador, límite de filas y de tiempo): un mecanismo menos que mantener y defender.
+
+## D-144 · Auditoría de datos y variación nacional sobre las mismas regiones
+
+- **Fecha:** 2026-10-18.
+- **Pedido:** antes de redactar la documentación, asegurar que los datos sean fiables, verificables y respeten la temporalidad semanal.
+- **Auditoría:**
+  - Seis invariantes, sin excepciones: cada semana es un lunes; el calendario `dim_date` tiene 249 semanas sin huecos; una sola fila por semana, producto, región, canal y unidad; ningún precio ≤ 0; todo producto tiene familia; en cada carga, filas leídas = cargadas + rechazadas (2.512.298 = 2.512.097 + 201).
+  - La única semana sin precios es la del 02-05-2022 del consumidor, un hueco de la propia fuente ya registrado (D-042).
+  - 400 precios semanales elegidos al azar se reconstruyeron desde las filas crudas de ODEPA (`raw.db`), con un cálculo independiente del ETL: los 400 coinciden exactamente (diferencia máxima 2,5 × 10⁻¹⁶).
+- **Problema encontrado:** el precio nacional es el promedio de las regiones con dato esa semana, y la variación del Resumen comparaba dos promedios con regiones distintas. Un producto vendido en Arica y Santiago una semana y solo en Santiago la siguiente «cambiaba» sin que ningún precio regional se moviera. En la semana del 05-10-2026, 99 de 734 comparaciones se desviaban más de 5 puntos (Caigua Primera, Mayorista: +36 % frente a −5 % real) y Carne bovina aparecía «Subió» cuando bajó.
+- **Decisión:** la variación nacional semanal promedia solo las regiones con precio en ambas semanas (muestra emparejada, como los índices de precios oficiales); los dos precios mostrados son los de esas regiones, y una clave sin región en común no tiene comparación. Las familias del Resumen coinciden ahora con el cálculo independiente.
+- **Verificable:** `tests/test_data_audit.py` repite los invariantes y reconstruye 120 precios desde las filas crudas en cada ejecución de las pruebas (se omite donde no está `raw.db`, que no se sube al repositorio, D-020).
+- **Pendiente:** las alertas K6 leen la misma serie nacional: 8 de las 43 alertas de la semana vienen probablemente de un cambio de regiones. Se corrige aparte, porque cambia el indicador, su versión SQL (D-049) y el informe semanal.

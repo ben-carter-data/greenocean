@@ -214,7 +214,7 @@ def table(rows, focus_link, data_link, selected=None, scope='Promedio nacional',
         change=money(row.get('change_amount'),True) if valid else '—'
         signal='Sin comparación' if not valid else 'Cambio inusual' if row.get('is_alert') else 'Subió' if variation>0 else 'Bajó' if variation<0 else 'Sin cambio'
         selected_attr=' class="selected"' if selected is not None and row_key(row)==row_key(selected) else ''
-        changed = '<span class="mock-coverage-change">Cambió la cobertura regional</span>' if row.get('_coverage_changed') else ''
+        changed = '<span class="mock-coverage-change">Solo regiones con precio en ambas semanas</span>' if row.get('_coverage_changed') else ''
         bar=(f'<span class="mock-change-value">{mark} {percent(variation*100,True)}</span>'
              f'<span class="mock-change-track"><span style="width:{abs(variation)/maximum*100:.3f}%"></span></span>') if valid else 'Sin comparación'
         body.append(f'<tr{selected_attr}><td><a class="mock-product-link" href="{esc(focus_link(row))}" target="_self"'
@@ -654,8 +654,8 @@ def products_table(rows, history_link, week_label, previous_label, query=''):
 
 def coverage_note(model, quality_link, methodology_link):
     """What the figures cover, in one line under the table, with its two references."""
-    coverage = (f'{model["coverage_changed"]} comparaciones nacionales cambiaron de regiones entre semanas; '
-                'el promedio usa las regiones disponibles en cada fecha.' if model['national'] else
+    coverage = ('Cada variación nacional compara las mismas regiones en ambas semanas; '
+                f'en {model["coverage_changed"]} se dejaron fuera regiones con precio en una sola.' if model['national'] else
                 'Comparación de la misma región, producto, variedad, calidad, unidad y canal.')
     return (f'<p class="mock-coverage-note"><strong>Cobertura:</strong> {number(model["available"])} precios '
             f'disponibles · {number(model["missing"])} sin comparación válida. {esc(coverage)} '
@@ -771,8 +771,8 @@ def family_tables(model, count, order):
 
 
 def panels(model, scope, focus_link, data_link, history_link, order, count, quality_link, methodology_link):
-    coverage=(f'{model["coverage_changed"]} comparaciones nacionales cambiaron de regiones entre semanas. '
-              'El promedio usa las regiones disponibles en cada fecha; no mantiene una composición fija.'
+    coverage=('Cada variación nacional compara las mismas regiones en ambas semanas; '
+              f'en {model["coverage_changed"]} se dejaron fuera regiones con precio en una sola.'
               if model['national'] else 'Comparación de la misma región, producto, variedad, calidad, unidad y canal.')
     return (family_tables(model,count,order)+
             f'<footer class="mock-footer"><span><strong>Cobertura:</strong> {model["available"]} precios disponibles · {model["missing"]} sin comparación válida. {esc(coverage)}</span>'
