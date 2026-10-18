@@ -31,8 +31,8 @@ import streamlit.components.v1 as components
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import (alerts, price_context, architecture, charts, control, devops, data_browser, home_mockup, lag, market_charts, market_style, project, quality,  # noqa: E402
-                queries, star_model, zoom)
+from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag, project,  # noqa: E402
+                quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -56,13 +56,7 @@ PAGE_SEASONALITY = "Contexto del precio"
 RETIRED_VIEWS = {"Histórico y estacionalidad": "Contexto del precio"}
 PAGE_ALERTS = "Alertas"
 PAGE_KPI = "Indicadores explicados"
-PAGE_QUERIES = "Preguntas y resultados"
 PAGE_CODE = "Código Python y SQL"
-# The Python console (D-135): what the project does in Python, run on real data.
-PAGE_PYTHON = "Consola Python"
-# «Consulta de datos» (Consulta por clics) is retired (C03): the catalog of questions
-# answers with real results; its links and old addresses open the catalog.
-PAGE_DATA_AND_CODE = PAGE_QUERIES
 PAGE_DEVOPS = "DevOps y seguridad"
 PAGE_OPERATIONS = "Monitoreo"
 PAGE_RUNS = "Ejecuciones"
@@ -101,7 +95,6 @@ WINDOWS = {
     SECTION_KPI: [PAGE_KPI],
     REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY],
-    SECTION_CODE: [PAGE_CODE],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
     SECTION_LINKS: [PAGE_DOC_BI, PAGE_DOC_BA, PAGE_DOC_IT, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
                     PAGE_MANUAL],
@@ -109,22 +102,20 @@ WINDOWS = {
 }
 # The SQL and Python consoles left the app (D-143): the code lives in GitHub and the
 # answers in the dashboard; their old addresses open the Resumen.
-ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_CODE, SECTION_PROJECT]
+# «Código Python y SQL» left too (D-148): GitHub shows the code; its address opens the GitHub page.
+ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_PROJECT]
 # The former KPI page remains as a hidden compatibility destination for old links;
 # its business information now lives in the dashboard and documentation.
 WINDOWS = {window: WINDOWS[window] for window in ROUTE + [SECTION_LINKS, SECTION_RESOURCES, SECTION_KPI]}
 WINDOW_PATHS = {SECTION_PROJECT: "proyecto", REPORT_WINDOW: "dashboard", SECTION_KPI: "kpis",
-                SECTION_CODE: "codigo",
                 SECTION_TECHNICAL: "arquitectura-y-operacion",
                 SECTION_LINKS: "documentacion-y-enlaces", SECTION_RESOURCES: "enlaces"}
 WINDOW_ICONS = {SECTION_PROJECT: ":material/assignment:", REPORT_WINDOW: ":material/dashboard:",
                 SECTION_KPI: ":material/insights:",
-                SECTION_CODE: ":material/code:",
                 SECTION_TECHNICAL: ":material/account_tree:", SECTION_LINKS: ":material/menu_book:", SECTION_RESOURCES: ":material/link:"}
 ROUTE_LEADS = {SECTION_PROJECT: "qué problema resuelve y qué se construyó",
                SECTION_KPI: "qué mide cada KPI, cómo se calcula y qué límites tiene",
                REPORT_WINDOW: "los precios y cambios de la semana",
-               SECTION_CODE: "los archivos reales, agrupados por su función",
                SECTION_TECHNICAL: "pipeline, modelo estrella, DevOps y operación"}
 WINDOW_OF_VIEW = {view: window for window, views in WINDOWS.items() for view in views}
 VIEW_PARAMETER = "vista"
@@ -133,7 +124,6 @@ VIEW_PARAMETER = "vista"
 COMPACT_VIEW = "compact_view"
 # Tile heights of a report page, in pixels: two rows fit a 1440 x 900 screen.
 TILE_HEIGHT = 255
-ALERTS_SCREEN_COUNT = 8
 # A gap above +300 % does not compare the same thing: in street markets, which sell in
 # bulk like the wholesale market, 99 % of the gaps stay under +253 %; above +300 % the
 # consumer price is a packed format (supermarket trays of 250-500 g) against bulk
@@ -142,8 +132,6 @@ ALERTS_SCREEN_COUNT = 8
 MAXIMUM_COMPARABLE_GAP = 3.0
 # «Subió fuerte»: a weekly change above this share, in the sentence on top.
 STRONG_CHANGE = 0.10
-# The pulse shows three series by default; the reader adds the others.
-PULSE_CHANNELS = ["Mayorista", "Feria libre", "Supermercado"]
 # Filters of the whole report (D-069): one bar for every Dashboard view, kept while the
 # reader moves with ◀ ▶. The product comes from a click (cross filter or drill-down).
 ALL_VALUES = "Todas"
@@ -153,8 +141,6 @@ TOP_N_RANGE = (1, 100)
 DEFAULT_TOP_N = 20
 RANKING_TITLES = {"Mayores movimientos": "¿Qué precios cambiaron más?",
                   "Alzas": "¿Qué precios subieron más?", "Bajas": "¿Qué precios bajaron más?"}
-# The trend keeps one or two curves: more lines on top of each other no longer read.
-PULSE_MAXIMUM_CHANNELS = 2
 GAP_MEANING = ("La brecha de precio compara el precio al consumidor con el mayorista: no "
                "mide ganancia ni descuenta costos.")
 ALERT_MEANING = ("Una alerta señala un cambio poco habitual: invita a revisar, no prueba un "
@@ -178,7 +164,7 @@ PAGE_ICONS = {
     PAGE_ANALYSIS: ":material/monitoring:", PAGE_GAP: ":material/compare_arrows:",
     PAGE_CHANNELS: ":material/storefront:", PAGE_SEASONALITY: ":material/calendar_month:",
     PAGE_ALERTS: ":material/notifications_active:", PAGE_KPI: ":material/insights:",
-    PAGE_CODE: ":material/code:", PAGE_RULES: ":material/rule:", PAGE_DEVOPS: ":material/shield:",
+    PAGE_RULES: ":material/rule:", PAGE_DEVOPS: ":material/shield:",
     PAGE_OPERATIONS: ":material/health_and_safety:", PAGE_RUNS: ":material/play_circle:",
     PAGE_MANUAL: ":material/menu_book:",
     PAGE_GLOSSARY: ":material/dictionary:", PAGE_LINKS: ":material/link:",
@@ -192,7 +178,7 @@ PAGE_PATHS = {
     PAGE_ARCHITECTURE: "arquitectura", PAGE_ANALYSIS: "analisis", PAGE_GAP: "brecha",
     PAGE_CHANNELS: "canales", PAGE_SEASONALITY: "estacionalidad", PAGE_ALERTS: "alertas",
     PAGE_KPI: "indicadores",
-    PAGE_CODE: "codigo", PAGE_RULES: "reglas", PAGE_DEVOPS: "devops", PAGE_OPERATIONS: "operaciones",
+    PAGE_RULES: "reglas", PAGE_DEVOPS: "devops", PAGE_OPERATIONS: "operaciones",
     PAGE_RUNS: "ejecuciones", PAGE_MANUAL: "manual",
     PAGE_GLOSSARY: "glosario", PAGE_LINKS: "enlaces",
 }
@@ -220,7 +206,7 @@ PAGE_OF_TAB = {
     TAB_IDEA: PAGE_BUSINESS, TAB_KPI: PAGE_KPI, TAB_RULES: PAGE_RULES,
     TAB_MANUAL: PAGE_MANUAL, TAB_DECISIONS: PAGE_DOCUMENTATION, TAB_GLOSSARY: PAGE_GLOSSARY,
     TAB_PIPELINE: PAGE_DIAGRAMS, TAB_MODEL: PAGE_ARCHITECTURE, TAB_DEVOPS: PAGE_DEVOPS,
-    TAB_CODE: PAGE_CODE, TAB_RUNS: PAGE_RUNS, TAB_QUALITY: PAGE_OPERATIONS,
+    TAB_CODE: PAGE_LINKS, TAB_RUNS: PAGE_RUNS, TAB_QUALITY: PAGE_OPERATIONS,
     TAB_WEEK: PAGE_ANALYSIS, TAB_GAP: PAGE_GAP, TAB_CHANNELS: PAGE_CHANNELS,
     TAB_SEASONALITY: PAGE_SEASONALITY, TAB_ALERTS: PAGE_ALERTS,
     TAB_EXPLORER: PAGE_HOME, TAB_QUERIES: PAGE_HOME,
@@ -228,7 +214,7 @@ PAGE_OF_TAB = {
 OLD_PATHS = {
     "inicio": (PAGE_HOME, None), "el-proyecto": (PAGE_COVER, None), "panel": (PAGE_HOME, None),
     "margenes": (PAGE_GAP, None), "canales-y-regiones": (PAGE_CHANNELS, None),
-    "consultas": (PAGE_HOME, None), "pipeline": (PAGE_DIAGRAMS, None),
+    "consultas": (PAGE_HOME, None), "codigo": (PAGE_LINKS, None), "pipeline": (PAGE_DIAGRAMS, None),
     "preguntas-y-resultados": (PAGE_HOME, None), "analisis-python": (PAGE_HOME, None),
     "queries": (PAGE_HOME, None), "python": (PAGE_HOME, None),
     # The retired «Consulta de datos» screen (C03).
@@ -274,7 +260,6 @@ FLAG_NAMES = {"SIN_MARCA": "Usados en los indicadores",
               etl.FLAG_OUTLIER: "Atípicos"}
 # A channel gap that rests on this many regions or fewer names them next to its bar.
 MAXIMUM_REGIONS_NAMED = 2
-ALERTS_PAGE_BAR_COUNT = 15
 RUN_HISTORY_COUNT = 8
 MANIFEST_FILE = Path(__file__).resolve().parent.parent / "agent" / "downloads" / "manifest.json"
 CHILE_TIME_ZONE = "America/Santiago"
@@ -313,10 +298,6 @@ REGIONAL_INDEX_HINT = ("**1,00** es el promedio nacional de la semana. **1,46** 
 CHANNEL_GAP_HINT = ("Compara cada canal con el canal de referencia. **+62,7 %** = ese canal "
                     "es 62,7 % más caro; un valor **negativo** = más barato. Solo cuenta "
                     "semanas y regiones donde ambos tienen precio.")
-ALERTS_HINT = ("Productos cuyo precio cambió esta semana mucho más de lo que suele cambiar. "
-               "▲ en rojo: subió; ▼ en azul: bajó. «Variación habitual» es su cambio "
-               "semanal promedio de las 12 semanas anteriores. Son señales para revisar, "
-               "no conclusiones.")
 WEEK_RANKING_HINT = ("**Qué muestra:** los productos del grupo elegido cuyo precio más cambió "
                      "esta semana frente a la anterior, en los canales elegidos. **Cómo leerlo:"
                      "** ▲ en rojo subió, ▼ en azul bajó; la barra más larga es el mayor "
@@ -329,17 +310,11 @@ GAP_LINE_HINT = ("**Qué muestra:** la brecha de un canal (consumidor − mayori
                  "mayorista) semana a semana, en las últimas 52 semanas. **Cómo leerlo:** si "
                  "la línea sube, el consumidor paga proporcionalmente más; la línea punteada "
                  "es 0 %, sin brecha.")
-HEATMAP_HINT = ("**Qué muestra:** el índice estacional promedio de cada mes (1 = precio "
-                "promedio de su año), un año por fila. **Cómo leerlo:** más oscuro = más caro "
-                "ese mes; compara una columna de arriba abajo para ver si el mismo mes se "
-                "repite caro o barato cada año.")
 ALERT_LIST_HINT = ("**Qué muestra:** los productos cuyo cambio semanal se salió de su rango "
                    "habitual (más de 2 desviaciones estándar respecto de las 12 semanas "
                    "previas). **Cómo leerlo:** el semáforo dice cuán lejos: ● moderada (2 a 3"
                    "), ▲ alta (3 a 4), ◆ muy alta (4 o más); la barra mide esa distancia y la "
                    "marca vertical es el límite de 2.")
-NATIONAL_PRICE_HINT = ("Promedio simple de las regiones con dato, en pesos por kilo (o por "
-                       "unidad), semana a semana.")
 ARCHITECTURE_HINT = ("Los datos viajan de izquierda a derecha. **Bronce**: el archivo tal "
                      "como llega. **Limpieza y reglas**: se corrigen formatos y se aplican "
                      "las reglas de negocio. **Calidad**: si algo no cuadra, no se guarda "
@@ -349,24 +324,6 @@ ARCHITECTURE_HINT = ("Los datos viajan de izquierda a derecha. **Bronce**: el ar
                      "**Siglas**: ODEPA, Oficina de Estudios y Políticas Agrarias; CSV, archivo "
                      "de valores separados por comas; ETL, extraer, transformar y cargar; RN, "
                      "regla de negocio; SQL, lenguaje de consultas; MD, Markdown.")
-DEVOPS_HINT = ("Cada recuadro es una plataforma y, dentro, lo que corre en ella: ODEPA, tu "
-               "computador, GitHub (repositorio, Actions, caché e Issues), Streamlit Cloud y "
-               "quienes usan el panel. Cada línea dice cómo se comunican dos piezas. Las cifras "
-               "y los puntos de color son reales; sin punto, no hay un estado que leer. Pasa "
-               "el mouse sobre cada pieza para ver qué hace. **Siglas**: CI, integración "
-               "continua (pruebas automáticas en cada cambio); HTTPS, conexión web cifrada; "
-               "API, la puerta por la que un programa habla con GitHub; CSV, archivo de "
-               "valores separados por comas.")
-SEARCH_SUMMARY_HINT = ("**Qué muestra:** cuántos precios de la última semana de la búsqueda "
-                       "están en cada estado. **Dentro de lo habitual:** el cambio se parece a "
-                       "los cambios recientes; **Conviene revisar:** fue mayor de lo normal; "
-                       "**Cambio poco común:** se alejó claramente de su comportamiento "
-                       "reciente; **Aún sin historial:** faltan semanas para comparar. Toca una "
-                       "tarjeta o un número para ver solo ese grupo.")
-SEARCH_TABLE_HINT = ("**Qué muestra:** cada precio semanal que cumple la búsqueda, con su "
-                     "cambio frente a la semana anterior, la diferencia con el precio mayorista "
-                     "y si ese cambio se parece a lo ocurrido recientemente. Ordena con un clic "
-                     "en el título de una columna; selecciona una fila para ver su ficha.")
 # The project page. Texts come from docs/DISENO.md (sections 2 to 4) and DECISIONES.md.
 # Idea de negocio, in short pieces: what each card says, without repeating
 # «Empieza aquí» (the problem in three sentences lives there).
@@ -464,17 +421,6 @@ ARCHITECTURE_GROUPS = [
      "Dónde se ve"),
     ("Informes", "Qué se publica después de cada carga.", "Informe", "Qué contiene", "Cuándo"),
 ]
-# The folders of the repository in the order the data goes through them, each
-# with what it is for. «» is the root.
-FOLDER_PURPOSES = [
-    ("", "Raíz del repositorio", "Por dónde empezar: qué es el proyecto y cómo correrlo."),
-    ("agent/", "agent/", "Ingesta: descarga y valida los archivos de ODEPA."),
-    ("etl/", "etl/", "Limpieza, reglas de negocio y carga en las dos bases."),
-    ("bi/", "bi/", "Indicadores, panel, diagramas e informe semanal."),
-    ("tests/", "tests/", "Pruebas automáticas que corren en cada cambio y cada martes."),
-    (".github/workflows/", ".github/workflows/", "Automatización en GitHub Actions."),
-    ("docs/", "docs/", "Diseño, decisiones, manual y textos del panel."),
-]
 # Why a row is rejected (RN-11), in the words of validate_rows() in etl/etl.py.
 REASON_TEXTS = {
     etl.REASON_UNREADABLE_VALUE: "un precio, una fecha o la región no se pudo leer",
@@ -534,8 +480,6 @@ GAP_LINE_WEEKS = 52
 # Alertas: (lowest distance in standard deviations, label, icon, status color).
 ALERT_LEVELS = [(4, "Muy alta", "◆", "critical"), (3, "Alta", "▲", "serious"),
                 (0, "Moderada", "●", "warning")]
-FILTERS_NOTE = ("Los filtros valen para todas las pestañas. Canales y regiones compara todos "
-                "los canales y regiones del producto; Alertas muestra todos los productos.")
 NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
 ATTRIBUTION_TEXT = (
     "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de "
@@ -1823,26 +1767,6 @@ def build_chip(text, kind, hover_text=None):
             f'{html.escape(text)}</span>')
 
 
-def build_html_table(headers, rows):
-    """A simple table; cells are already-escaped HTML (they may contain chips)."""
-    header_cells = "".join(f"<th>{html.escape(header)}</th>" for header in headers)
-    body_rows = "".join("<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>"
-                        for row in rows)
-    return f'<table class="card-table"><tr>{header_cells}</tr>{body_rows}</table>'
-
-
-def build_svg_image_html(svg, css_class="", is_actual_size=False):
-    """An SVG drawing as an image tag, so CSS can show it only on some screens.
-
-    At actual size it keeps its own width (inside a box that scrolls sideways)
-    instead of shrinking to the screen, so its text stays readable.
-    """
-    data = base64.b64encode(svg.encode("utf-8")).decode("ascii")
-    size = "" if is_actual_size else ' style="width:100%"'
-    return (f'<div class="{css_class}"><img src="data:image/svg+xml;base64,{data}"{size} '
-            f'alt="Recorrido de los datos"></div>')
-
-
 # Copies the address of a link card without showing it. One listener for the
 # whole page, so a block drawn twice does not copy twice.
 COPY_LINK_SCRIPT = """<script>
@@ -2418,49 +2342,6 @@ def read_week_variations(week=None, group=None):
     return rows[rows["product_group"] == group] if group and group != ALL_VALUES else rows
 
 
-def read_cached_latest_variations(database_version):
-    """Weekly variation of every national price series in the latest week."""
-    return read_week_variations()
-
-
-@st.cache_data
-def read_cached_week_summary(database_version, week, group=ALL_VALUES, region=ALL_VALUES):
-    """The chosen week and the week before, in business terms: how many prices rose and
-    fell, the typical change, the comparable median gap and the active alerts (D-068).
-    The category applies to everything; the region only to the gap, the one figure
-    measured by region (changes and alerts are national)."""
-    variations = read_cached_all_variations(database_version)
-    if group != ALL_VALUES:
-        variations = variations[variations["product_group"] == group]
-    weeks = sorted(variations.loc[variations["week_start"] <= pd.Timestamp(week),
-                                  "week_start"].unique())[-2:]
-    alert_rows = read_price_alerts()
-    if group != ALL_VALUES:
-        alert_rows = alert_rows[alert_rows["product_group"] == group]
-    summary = {}
-    for name, current in zip(["previous", "latest"], weeks):
-        changes = variations.loc[variations["week_start"] == current, "variation"]
-        gaps = read_cached_week_gaps(database_version, f"{pd.Timestamp(current):%Y-%m-%d}")
-        if group != ALL_VALUES:
-            gaps = gaps[gaps["product_group"] == group]
-        if region != ALL_VALUES:
-            gaps = gaps[gaps["region"] == region]
-        comparable = gaps.loc[gaps["margin"] <= MAXIMUM_COMPARABLE_GAP, "margin"]
-        summary[name] = {
-            "rises": int((changes > 0).sum()), "falls": int((changes < 0).sum()),
-            # Without data the figure is missing, never 0 % (D-072).
-            "typical_change": float(changes.median() * 100) if len(changes) else None,
-            "median_gap": float(comparable.median() * 100) if len(comparable) else None,
-            "alerts": int((alert_rows["week_start"] == current).sum())}
-    summary.setdefault("previous", summary["latest"])
-    latest = variations[variations["week_start"] == weeks[-1]]
-    summary["week"] = pd.Timestamp(weeks[-1])
-    summary["strong_rises"] = int(latest.loc[latest["variation"] > STRONG_CHANGE,
-                                             "product"].nunique())
-    summary["top_rise"] = latest.loc[latest["variation"].idxmax()].to_dict()
-    return summary
-
-
 def build_summary_sentence(summary):
     """«Esta semana subieron 214 precios y bajaron 180. 46 productos subieron más de
     10 %; la mayor alza fue Manzana en Mayorista (+55,6 %).»"""
@@ -2535,14 +2416,6 @@ def build_kpi_strip_html(summary, coverage, latest_run, include_note=True):
     note = ('<span class="kpi-strip-item kpi-strip-meaning">ⓘ Una alerta invita a revisar; '
             'no explica la causa.</span>')
     return f'<div class="kpi-strip">{cells}{load}{note if include_note else ""}</div>'
-
-
-def build_context_line(summary, variations):
-    """The technical figures, small: the week, the series and the history."""
-    total = read_indicator("quality_flag_counts")["weekly_prices"].sum()
-    return (f'<div class="context-line">Semana del {summary["week"]:%d-%m-%Y} · '
-            f'{charts.format_thousands(len(variations))} series comparadas con la semana '
-            f'anterior · {charts.format_thousands(total)} precios semanales desde 2022</div>')
 
 
 def split_comparable_gaps(gaps):
@@ -2623,12 +2496,6 @@ def show_week_tab(mode, filters):
 def read_cached_rule_evidence(database_version):
     """Real figure of each quality rule, read once per database."""
     return project.read_rule_evidence()
-
-
-def read_week_alert_count():
-    """Number of K6 alerts in the latest week with prices."""
-    alert_rows = read_price_alerts()
-    return int((alert_rows["week_start"] == read_latest_week()).sum())
 
 
 def summarize_journey_state(states):
@@ -2873,11 +2740,6 @@ def show_cover_page(mode, pages=None):
                 "La implementación actual está especializada en precios ODEPA; todavía no es una plantilla intercambiable solo cambiando una URL.")
 
 
-def format_iso_date(text):
-    """«2026-10-05» as «05-10-2026»."""
-    return f"{pd.Timestamp(text):%d-%m-%Y}"
-
-
 TABLE_ROLES = {"weekly_price": "hechos", "dim_product": "dimensión", "dim_region": "dimensión",
               "dim_channel": "dimensión", "dim_date": "dimensión", "etl_run": "auditoría",
               "rejection": "auditoría"}
@@ -2914,10 +2776,11 @@ def build_architecture_css(mode):
     .arch-chip div {{font-size:13px; color:{palette['strong_text']}; font-weight:600; white-space:nowrap;}}
     .st-key-architecture_body [data-testid="stHorizontalBlock"] {{align-items:stretch; gap:14px;}}
     .st-key-architecture_diagram {{border:1px solid {palette['card_border']}; border-radius:14px;
-        background:{palette['card']}; padding:12px 16px 10px;}}
+        background:{palette['card']}; padding:14px 20px 18px;}}
     .st-key-architecture_diagram svg {{display:block; width:100%; height:auto;
-        max-height:calc(100vh - 300px);}}
-    .arch-legend {{display:flex; gap:16px; margin-top:6px; font-size:11.5px; color:{palette['text']};}}
+        max-height:calc(100vh - 360px);}}
+    .arch-legend {{display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
+        border-top:1px solid {palette['card_border']}; font-size:12px; line-height:1.5; color:{palette['text']};}}
     .arch-phrase {{font-size:.85rem; color:{palette['strong_text']}; margin:0 0 8px;}}
     .st-key-architecture_detail, .st-key-architecture_tables {{border:1px solid {palette['card_border']};
         border-radius:14px; background:{palette['card']}; padding:12px 16px 10px;}}
@@ -2929,8 +2792,6 @@ def build_architecture_css(mode):
     .arch-detail-text {{font-size:.86rem; line-height:1.5; color:{palette['strong_text']}; margin:7px 0 9px;}}
     .st-key-architecture_tables_list label p {{font-size:.86rem !important;}}
     </style>"""
-
-
 
 
 def show_architecture_page(mode):
@@ -2960,38 +2821,9 @@ def show_architecture_page(mode):
 
 
 @st.cache_data
-def build_cached_kpi_examples(database_version):
-    """Real examples of K1 to K8, computed once per database."""
-    return build_kpi_examples()
-
-
-@st.cache_data
 def count_cached_table_rows(database_version):
     """Rows of each table of the data warehouse, counted once per database."""
     return project.count_table_rows()
-
-
-def build_kpi_examples():
-    """{KPI: steps of its real example}, computed from the current database."""
-    key = project.EXAMPLE_KEY
-    margin_rows = read_indicator_for_key("k1_margin", key)
-    keys_with_margin, consumer_keys = read_match_coverage()
-    return {"K1": project.build_k1_example(margin_rows),
-            "K2": project.build_k2_example(read_indicator_for_key("k2_channel_gap", key)),
-            "K3": project.build_k3_example(read_indicator_for_key("k3_regional_index", key)),
-            "K4": project.build_k4_example(read_indicator_for_key("k4_seasonal_index", key)),
-            "K5": project.build_k5_example(margin_rows),
-            "K6": project.build_k6_example(read_price_alerts()),
-            "K7": project.build_k7_example(keys_with_margin, consumer_keys),
-            "K8": project.build_k8_example(read_latest_run(),
-                                           read_indicator("k8_rejected_rows"))}
-
-
-def read_kpi_query(query_name):
-    """(SQL text, file it lives in) of the query behind a KPI."""
-    if query_name == project.MATCH_COVERAGE_QUERY_NAME:
-        return etl.MATCH_COVERAGE_QUERY.strip(), "etl/etl.py"
-    return queries.load_queries()[query_name].strip(), "bi/queries.sql"
 
 
 KPI_LIMITS = {
@@ -3053,40 +2885,6 @@ def build_kpi_smart_html(identifier):
             + build_kpi_table_html(criteria) + '</div>')
 
 
-def build_kpi_card_html(indicator, guide_row):
-    """A short, scannable summary; formulas and evidence belong to its disclosure."""
-    title, symbol, summary = KPI_PRESENTATION[indicator["ID"]]
-    return (f'<div class="kpi-tile-summary">{build_component_symbol(symbol)}'
-            f'<h3>{html.escape(title)}</h3><p>{html.escape(summary)}</p></div>')
-
-
-KPI_ICONS = {"K1": ":material/compare_arrows:", "K2": ":material/hub:",
-             "K3": ":material/location_on:", "K4": ":material/calendar_month:",
-             "K5": ":material/schedule:", "K6": ":material/notification_important:",
-             "K7": ":material/join_inner:", "K8": ":material/verified_user:"}
-
-
-def build_kpi_relief_css(mode):
-    """Local vector relief, transparent background; no images or external assets."""
-    palette = charts.get_palette(mode)
-    rules = []
-    for identifier, (_, symbol, _) in KPI_PRESENTATION.items():
-        shape = COMPONENT_SYMBOLS[symbol]
-        for active in (False, True):
-            ink = palette["accent"] if active else palette["strong_text"]
-            svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="72" height="80" viewBox="0 0 72 80">'
-                   f'<ellipse cx="36" cy="70" rx="15" ry="1.5" fill="{ink}" opacity=".035"/>'
-                   f'<g fill="none" stroke-linecap="round" stroke-linejoin="round">'
-                   f'<g transform="translate(14.7 10) scale(1.3)" stroke="{ink}" opacity=".12" stroke-width="2.2">{shape}</g>'
-                   f'<g transform="translate(14 9) scale(1.3)" stroke="{ink}" stroke-width="2">{shape}</g>'
-                   '</g></svg>')
-            encoded = base64.b64encode(svg.encode()).decode()
-            qualifier = '[kind="primary"]' if active else ''
-            rules.append(f'.st-key-choose_{identifier} button{qualifier} [data-testid="stIconMaterial"] '
-                         + '{background-image:url("data:image/svg+xml;base64,' + encoded + '");}')
-    return "\n".join(rules)
-
-
 def select_kpi(identifier):
     st.session_state["selected_kpi"] = identifier
     st.query_params[KPI_PARAMETER] = identifier
@@ -3146,124 +2944,6 @@ def read_kpi_observation(database_version, identifier):
             ("Periodo del resultado", str(run["started_at"])),
             ("Comparación", f"{run['rows_rejected']:,} filas rechazadas de {run['rows_read']:,} filas leídas en esta carga."),
             ("Alcance", "Última carga registrada; comparación de proporción, no contra una meta.")]
-
-
-def show_kpi_details(indicator, guide_row, question, example_steps, is_requested=False):
-    """One full-width reading area, updated by the icon selector above it."""
-    identifier = indicator["ID"]
-    with st.container(key="kpi_reading"):
-        st.subheader(KPI_PRESENTATION[identifier][0])
-        st.caption("K1–K5 muestran una serie de referencia identificada en la ficha, no un promedio de todos los productos. K6–K8 muestran el alcance indicado en su resultado.")
-        summary_tab, smart_tab, example_tab = st.tabs(["Qué mide", "Objetivo y criterios SMART", "Ejemplo y consulta"])
-        with summary_tab:
-            measure, relevance, period = KPI_SMART_SCOPE[identifier]
-            if identifier in ("K1", "K2", "K7", "K8"):
-                measure += " La razón de la fórmula se multiplica por 100 para expresarla en %."
-            rows = [("Indicador", KPI_PRESENTATION[identifier][0]),
-                    ("Pregunta que responde", question),
-                    *read_kpi_observation(get_database_version(), identifier),
-                    ("Qué significa", guide_row["En palabras"]),
-                    ("Para qué sirve", relevance),
-                    ("Cómo se mide", measure),
-                    ("Fórmula", indicator["Fórmula"]),
-                    ("Periodo de análisis", period),
-                    ("Meta", "Sin meta de negocio acordada. Este indicador describe o controla los datos; no se asigna un objetivo artificial."),
-                    ("Límites", KPI_LIMITS[identifier])]
-            st.markdown(build_kpi_table_html(rows), unsafe_allow_html=True)
-            st.markdown(build_place_link(guide_row["Página"]), unsafe_allow_html=True)
-        with smart_tab:
-            st.markdown(build_kpi_smart_html(identifier), unsafe_allow_html=True)
-        with example_tab:
-            if example_steps:
-                st.caption("Ejemplo real, calculado con la base actual.")
-                st.markdown(build_kpi_table_html([(f"Paso {number}", step)
-                            for number, step in enumerate(example_steps, 1)]), unsafe_allow_html=True)
-            query_name = guide_row["Consulta"]
-            st.markdown(build_external_link_html(f"Ver la consulta {query_name} en GitHub",
-                                                 build_query_address(query_name)), unsafe_allow_html=True)
-
-
-def show_kpi_legacy(mode):
-    """Eight transparent icon buttons and a single shared detail area."""
-    palette = charts.get_palette(mode)
-    st.markdown(f"""<style>
-    .st-key-kpi_catalog [data-testid="stHorizontalBlock"] {{display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:12px;}}
-    .st-key-kpi_catalog [data-testid="stColumn"] {{width:100% !important; min-width:0;}}
-    .st-key-kpi_catalog button {{
-        width:100%; min-height:124px; padding:6px 4px; background:transparent !important;
-        border:0 !important; border-radius:0; box-shadow:none !important;
-        color:{palette['text']}; display:flex; flex-direction:column; gap:12px;
-    }}
-    .st-key-kpi_catalog button [data-testid="stIconMaterial"] {{
-        font-size:0 !important; width:72px !important; height:80px !important; flex-shrink:0;
-        background-repeat:no-repeat; background-position:center; background-size:contain;
-        transition:transform .18s ease;
-    }}
-    .st-key-kpi_catalog button span:has(> [data-testid="stIconMaterial"]) {{
-        width:72px; height:80px; flex-shrink:0;}}
-    .st-key-kpi_catalog button [data-has-shortcut] {{display:flex; flex-direction:column;
-        align-items:center; gap:3px;}}
-    .st-key-kpi_catalog button p {{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-        font-size:.85rem; font-weight:400; letter-spacing:-.015em; white-space:normal !important;
-        overflow:visible !important; overflow-wrap:normal !important; word-break:normal !important; line-height:1.5; text-overflow:clip !important; color:{palette['text']} !important;}}
-    .st-key-kpi_catalog button[kind="primary"] p {{color:{palette['accent']} !important;}}
-    .st-key-kpi_catalog button:hover {{color:{palette['accent']}; transform:translateY(-2px);}}
-    .st-key-kpi_catalog button:hover [data-testid="stIconMaterial"] {{transform:translateY(-2px);}}
-    .st-key-kpi_catalog button:focus-visible {{outline:2px solid {palette['accent']}; outline-offset:2px;}}
-    .st-key-kpi_catalog button[kind="primary"] {{border-bottom:2px solid {palette['accent']} !important;
-        color:{palette['accent']};}}
-    .st-key-kpi_reading {{border-top:1px solid {palette['card_border']}; padding-top:16px;}}
-    .st-key-kpi_reading h3 {{font-size:1.25rem;}}
-    .kpi-fact-table {{width:100%; table-layout:fixed; border-collapse:collapse;
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-size:.86rem;}}
-    .kpi-fact-table th, .kpi-fact-table td {{padding:10px 14px; text-align:left;
-        vertical-align:top; border-bottom:1px solid {palette['card_border']};
-        overflow-wrap:anywhere; white-space:normal; line-height:1.5;}}
-    .kpi-fact-table th:first-child {{width:22%; font-weight:500;}}
-    .kpi-fact-table thead th {{color:{palette['strong_text']}; background:{palette['card']};}}
-    .kpi-fact-table tbody th {{color:{palette['strong_text']};}}
-    .kpi-fact-table td {{color:{palette['text']};}}
-    @media(max-width:600px) {{
-        .kpi-fact-table th, .kpi-fact-table td {{padding:9px 7px; font-size:.8rem;}}
-        .kpi-fact-table th:first-child {{width:32%;}}
-    }}
-    @media(max-width:1100px) {{
-        .st-key-kpi_catalog [data-testid="stHorizontalBlock"] {{grid-template-columns:repeat(4,minmax(0,1fr));}}
-    }}
-    @media(max-width:600px) {{
-        .st-key-kpi_catalog [data-testid="stHorizontalBlock"] {{grid-template-columns:repeat(2,minmax(0,1fr));}}
-    }}
-    @media(prefers-reduced-motion:reduce) {{
-        .st-key-kpi_catalog button:hover,
-        .st-key-kpi_catalog button:hover [data-testid="stIconMaterial"] {{transform:none; transition:none;}}
-    }}
-    {build_kpi_relief_css(mode)}
-    </style>""", unsafe_allow_html=True)
-    questions = {row["#"]: row["Pregunta"]
-                 for row in project.read_design_table(project.QUESTIONS_HEADING)}
-    guide_rows = {row["KPI"]: row for row in project.read_guide_table("KPI")}
-    indicators = project.read_design_table(project.INDICATORS_HEADING)
-    by_id = {indicator["ID"]: indicator for indicator in indicators}
-    requested = st.query_params.get(KPI_PARAMETER)
-    selected = requested if requested in by_id else st.session_state.get("selected_kpi", "K1")
-    if selected not in by_id:
-        selected = "K1"
-    st.session_state["selected_kpi"] = selected
-    with st.container(key="kpi_catalog"):
-        for offset in range(0, len(indicators), 8):
-            columns = st.columns(8, gap="small")
-            for column, indicator in zip(columns, indicators[offset:offset + 8]):
-                identifier = indicator["ID"]
-                title, _, description = KPI_PRESENTATION[identifier]
-                with column:
-                    st.button(title, icon=KPI_ICONS[identifier], key=f"choose_{identifier}",
-                              type="primary" if identifier == selected else "secondary",
-                              help=description, use_container_width=True,
-                              on_click=select_kpi, args=(identifier,))
-    indicator = by_id[selected]
-    examples = build_cached_kpi_examples(get_database_version())
-    question = questions.get(indicator["Pregunta"], "¿La carga de datos es confiable?")
-    show_kpi_details(indicator, guide_rows[selected], question, examples[selected])
 
 
 @st.cache_data
@@ -3699,87 +3379,6 @@ def show_rules_tab(mode):
         show_rule_details(rules, design_rules, guide_rows, where)
 
 
-def show_sections_folded(text):
-    """Each '## ' section of a document in its own box, open by default."""
-    for heading, body in project.split_sections(text):
-        with st.expander(heading, expanded=False):
-            st.markdown(body)
-
-
-def split_bold_label(text):
-    """(label, rest) of a paragraph that starts with «**Label:**»."""
-    match = re.match(r"\*\*(.+?):\*\* ?(.*)", text, flags=re.DOTALL)
-    return (match.group(1), match.group(2)) if match else ("", text)
-
-
-def build_table_cards_html(rows, title_column, text_column, action_column=None):
-    """A lookup table as cards: one row per card, its action as the note."""
-    return [build_info_card_html(row[title_column], row[text_column],
-                                 note=f"Qué hacer: {row[action_column]}" if action_column
-                                 else None) for row in rows]
-
-
-def show_weekly_run(manual):
-    """What the weekly job does, in order, and what happens when a step fails."""
-    section = project.read_section(manual, "Qué pasa cada martes")
-    paragraphs = project.read_paragraphs(section)
-    show_section_intro("Qué pasa cada martes", paragraphs[0], True)
-    st.markdown(build_steps_html(project.read_numbered_items(section)),
-                unsafe_allow_html=True)
-    show_info_cards([build_info_card_html("Nada se guarda a medias", paragraphs[-1],
-                                          is_warning=True)])
-
-
-def show_owner_tasks(manual):
-    """What runs alone and the four tasks of the author."""
-    section = project.read_section(manual, "Tareas del autor y tareas automáticas")
-    automatic_label, automatic_text = split_bold_label(project.read_paragraphs(section)[0])
-    show_section_intro("Qué hace el autor", "Lo automático no necesita a nadie; estas "
-                       "tareas, sí.", True)
-    show_info_cards([build_info_card_html(automatic_label, automatic_text)]
-                    + [build_info_card_html(label, text)
-                       for label, text in project.parse_labeled_items(section)])
-
-
-def show_failures(manual):
-    """Where a failure shows, and what to do, folded by kind of failure."""
-    section = project.read_section(manual, "Cómo leer un aviso rojo")
-    paragraphs = project.read_paragraphs(section)
-    show_section_intro("Si algo falla", paragraphs[0].rstrip(":") + ".", True)
-    show_info_cards(build_table_cards_html(
-        project.parse_markdown_table(project.read_section_lead(section)), "Dónde", "Qué se ve"))
-    st.markdown(f'<div class="info-note">{format_inline(paragraphs[1])}</div>',
-                unsafe_allow_html=True)
-    for heading, title, text, action in [
-            ("Qué significa que falle cada paso y qué hacer", "Paso", "Qué suele significar",
-             "Qué hacer"),
-            ("Fallas del panel publicado", "Qué se ve", "Qué significa", "Qué hacer")]:
-        with st.expander(f"Ver detalles: {heading[0].lower() + heading[1:]}", expanded=False):
-            show_info_cards(build_table_cards_html(project.parse_markdown_table(
-                project.read_subsection(manual, heading)), title, text, action))
-
-
-def show_known_limits(manual):
-    """The limits of the current set-up, always in sight."""
-    show_section_intro("Límites conocidos", "Cuándo el diseño actual deja de alcanzar, y qué "
-                       "hacer entonces.", True)
-    show_info_cards([build_info_card_html(label, text, is_warning=True) for label, text in
-                     project.parse_labeled_items(project.read_section(manual,
-                                                                      "Límites conocidos"))])
-
-
-def show_manual_details(manual):
-    """The rest of the manual, folded: the live diagram and administration."""
-    show_section_intro("Más detalles", "Para quien quiere comprobar cómo funciona cada parte.",
-                       True)
-    for heading in ["Qué es real en el diagrama del pipeline", "Administración y enlaces"]:
-        with st.expander(f"Ver detalles: {heading.lower()}", expanded=False):
-            st.markdown(project.read_section(manual, heading).replace("### ", "#### "))
-    # The terms of the manual live once, in the glossary of Inicio.
-    st.markdown(f'<div class="info-note">Las siglas y los términos están en '
-                f'{build_place_link(TAB_GLOSSARY, "")}.</div>', unsafe_allow_html=True)
-
-
 def show_manual_tab(mode):
     """Read the operating manual as a document, without decorative cards."""
     manual = project.read_document(project.MANUAL_FILE)
@@ -3800,89 +3399,7 @@ def read_first_sentence(text):
     return re.split(r"(?<=[.!?])\s", text, maxsplit=1)[0]
 
 
-def build_decision_card_html(title, body):
-    """A key decision: its name and why it was taken, in one sentence."""
-    number, name = split_decision_title(title)
-    fields = dict(project.parse_labeled_items(body))
-    return build_info_card_html(name, f"Por qué: {read_first_sentence(fields['Por qué'])}",
-                                label=number)
-
-
-def show_decisions_tab(mode):
-    """A chronological engineering decision register, read as documentation."""
-    decisions = project.list_decisions()
-    st.caption("Registro de decisiones: alcance, justificación y consecuencias. Orden cronológico inverso.")
-    for title, body in sorted(decisions, key=lambda item: int(split_decision_title(item[0])[0][2:]), reverse=True):
-        with st.expander(title, expanded=False):
-            st.markdown(body)
-
-
-def build_clause_chips(query):
-    """The SQL clauses a query uses, as labels."""
-    explanations = {
-        "WITH": "Nombra resultados intermedios para leer el cálculo por etapas.",
-        "SELECT": "Elige las columnas y los cálculos que devuelve la consulta.",
-        "JOIN": "Une tablas por sus claves para comparar los datos que corresponden.",
-        "Auto-join": "Compara dos filas de la misma tabla, por ejemplo dos canales.",
-        "WHERE": "Filtra las filas antes de agrupar o calcular.",
-        "GROUP BY": "Agrupa filas de la misma serie para calcular su resumen.",
-        "Agregados": "Resume filas con sumas, promedios, conteos, mínimos o máximos.",
-        "HAVING": "Filtra grupos después del cálculo, por ejemplo por historia suficiente.",
-        "ORDER BY": "Ordena el resultado para comparar o seguir el tiempo.",
-        "Funciones de ventana": "Calcula sobre filas relacionadas sin perder cada observación.",
-        "LAG": "Obtiene el valor anterior de una serie para medir el cambio.",
-        "CASE": "Aplica una condición y devuelve el resultado que corresponde.",
-        "Subconsultas": "Usa el resultado de una consulta dentro de otra.",
-        "Funciones de fecha": "Interpreta fechas para agrupar o comparar semanas.",
-        project.PYTHON_RECONCILIATION: "Un test comprueba que SQL y Python dan el mismo resultado.",
-    }
-    return " ".join(build_chip(clause, "neutral", explanations.get(clause))
-                    for clause in query["clauses"])
-
-
-def find_folder(path):
-    """The folder of FOLDER_PURPOSES a file belongs to («» for the root)."""
-    folders = [folder for folder, _, _ in FOLDER_PURPOSES if folder and path.startswith(folder)]
-    return max(folders, key=len) if folders else ""
-
-
-def build_file_line_html(path, description, address):
-    """One file: its name (a link to it on GitHub when it is there) and what it does."""
-    name = path.rstrip("/").split("/")[-1] + ("/" if path.endswith("/") else "")
-    label = build_link_html(name, address) if address else f"<code>{html.escape(name)}</code>"
-    return f"<li>{label}{' — ' + format_inline(description) if description else ''}</li>"
-
-
-def show_repository_files():
-    """Read the actual public configuration, tests and workflows inside the app."""
-    groups = [
-        ("Configuración · entorno y dependencias", ":material/settings:",
-         ["requirements.txt", ".gitignore", ".devcontainer/devcontainer.json", ".streamlit/config.toml"]),
-        ("Pruebas · tests/", ":material/fact_check:",
-         [path.relative_to(project.PROJECT_DIR).as_posix() for path in
-          sorted((project.PROJECT_DIR / "tests").glob("test_*.py"))]),
-        ("Automatización · GitHub Actions", ":material/automation:",
-         [path.relative_to(project.PROJECT_DIR).as_posix() for path in
-          sorted((project.PROJECT_DIR / ".github/workflows").glob("*.yml"))]),
-    ]
-    languages = {".py": "python", ".sql": "sql", ".json": "json", ".toml": "toml", ".yml": "yaml"}
-    for title, icon, paths in groups:
-        with st.expander(title, expanded=False, icon=icon):
-            for path in paths:
-                file = project.PROJECT_DIR / path
-                if file.is_file():
-                    with st.expander(path, expanded=False):
-                        st.code(project.read_document(file), language=languages.get(file.suffix, "text"),
-                                line_numbers=True, height=420)
-    st.caption("La documentación técnica y los enlaces externos tienen secciones independientes en el menú.")
-
-
 # region Código y resultados (C03)
-# One catalog for the whole window: each question with the stored query that answers
-# it, its real result read from etl/datos.db on the read-only connection, how to read
-# it, its SQL and its Python. Only stored queries run: the reader never writes SQL.
-CATALOG_PARAMETER = "consulta"
-CATALOG_PREVIEW_ROWS = 12
 CATALOG_TREND_WEEKS = 26
 CATALOG_BAR_COUNT = 12
 CATALOG_FILES = {project.MATCH_COVERAGE_QUERY_NAME: "etl/etl.py"}
@@ -4243,12 +3760,6 @@ CATALOG = [
                 "región o unidad. Vive en etl/etl.py porque cada carga la imprime.",
      "build": build_match_coverage_result, "chart": False},
 ]
-CATALOG_BY_NAME = {entry["name"]: entry for entry in CATALOG}
-
-
-
-
-CATALOG_THEMES = [PRICE_THEME, QUALITY_THEME]
 
 
 def build_external_link_html(text, address):
@@ -4283,42 +3794,6 @@ def show_compact_page_header(title, description):
 # endregion
 
 
-FOLDER_CODE_LABELS = {
-    "agent": "Ingesta · agent/ — descargar y validar las fuentes",
-    "etl": "Transformación · etl/ — limpiar, normalizar y cargar",
-    "bi": "Análisis y visualización · bi/ — consultas, indicadores y dashboard",
-}
-
-
-def show_files_tab(mode):
-    """Code folders open initially, with purpose and actual source inside."""
-    show_section_intro("Python · del origen al dashboard", "Cada carpeta reúne archivos con su propósito y su código real. Puedes plegarlos cuando quieras. "
-                       "El orden sigue el recorrido de los datos.")
-    catalog = project.list_code_walkthrough()
-    for folder in dict.fromkeys(entry["folder"] for entry in catalog):
-        with st.expander(FOLDER_CODE_LABELS.get(folder, f"{folder}/"), expanded=False,
-                         icon={"agent": ":material/download:", "etl": ":material/filter_alt:",
-                               "bi": ":material/analytics:"}.get(folder, ":material/folder:")):
-            for entry in [entry for entry in catalog if entry["folder"] == folder]:
-                with st.expander(f"{entry['number']:02} · {entry['path']} — {entry['title']}",
-                                 expanded=False):
-                    st.write(entry["purpose"])
-                    st.caption(f"Entrada: {entry['input']} → Salida: {entry['output']}")
-                    st.info(f"Problema que resuelve: {entry['challenge']}", icon=":material/lightbulb:")
-                    st.code(entry["source"], language="python", line_numbers=True, height=420)
-    show_section_intro("SQL · consultas y modelo", "Abre queries.sql para explorar las consultas "
-                       "del proyecto, o un esquema para revisar las tablas. Los resultados "
-                       "tienen su propia sección: Preguntas y resultados SQL.")
-    for path, title in [("bi/queries.sql", "Consultas SQL: preguntas e indicadores del proyecto"),
-                        ("etl/raw_schema.sql", "Capa bronce: conservar el archivo original"),
-                        ("etl/schema.sql", "Modelo estrella: precios, dimensiones y auditoría")]:
-        with st.expander(f"{path} — {title}", expanded=False):
-            st.code(project.read_document(project.PROJECT_DIR / path), language="sql",
-                    line_numbers=True, height=420)
-    with st.expander("Configuración, pruebas y automatización", expanded=False):
-        show_repository_files()
-
-
 def show_idea_tab(mode):
     """Business definition, scope and acceptance criteria, read from the project brief."""
     brief = project.read_guide_table("Marco de negocio")
@@ -4327,7 +3802,6 @@ def show_idea_tab(mode):
             component=row["Forma"]), unsafe_allow_html=True)
     show_section_intro("Entregables", "Resultados verificables del proyecto.", True)
     st.markdown(build_place_link(PAGE_HOME, "Dashboard:") + " · "
-                + build_place_link(PAGE_CODE, "Implementación:") + " · "
                 + build_place_link(PAGE_RUNS, "Operación:"), unsafe_allow_html=True)
     for show_part in [show_questions, show_audience, show_sources, show_limits, show_why]:
         show_part(mode)
@@ -4410,19 +3884,6 @@ def build_mobile_ranking_html(rows, mode, is_variation=False):
     return '<ol class="mobile-rankings" aria-label="Ranking de precios">' + ''.join(items) + '</ol>'
 
 
-def show_ranking_chart(rows, mode, key, is_variation=False):
-    """The same ranked values in an interactive desktop chart and readable phone bars."""
-    with st.container(key=f"{key}_ranking_desktop"):
-        chart = (charts.draw_variation_bars(rows, mode, keep_rank_order=True) if is_variation
-                 else charts.draw_horizontal_bars(rows, "Brecha de precio (%)", mode))
-        if st.session_state.get(COMPACT_VIEW):
-            # Each bar already writes its value: the axis numbers only crowd a narrow tile.
-            chart = chart.properties(height=alt.Step(BAR_STEP)).configure_axisX(
-                labels=False, ticks=False, title=None)
-        show_chart(chart)
-    st.markdown(build_mobile_ranking_html(rows, mode, is_variation), unsafe_allow_html=True)
-
-
 @st.cache_data
 def read_cached_week_snapshot(database_version, week):
     """The regional index (K3) of one week of valid observations."""
@@ -4436,66 +3897,6 @@ def read_cached_market_snapshot(database_version):
     return read_cached_week_snapshot(database_version, f"{read_latest_week():%Y-%m-%d}")
 
 
-def choose_market_product(snapshot, prefix):
-    """The product of the trend and the territory: the one with most observations first."""
-    if snapshot.empty:
-        return None
-    coverage = snapshot.groupby(queries.KEY_COLUMNS).size().reset_index(name="row_count")
-    coverage = coverage.sort_values(["row_count"] + queries.KEY_COLUMNS,
-                                    ascending=[False] + [True] * len(queries.KEY_COLUMNS))
-    keys = [tuple(row[column] for column in queries.KEY_COLUMNS)
-            for row in coverage.to_dict("records")]
-    selected = st.selectbox(
-        "Producto del pulso y del territorio", keys, key=f"{prefix}_visual_product",
-        label_visibility="collapsed",
-        format_func=lambda values: describe_product(dict(zip(queries.KEY_COLUMNS, values)))
-                                  + f" · $/{values[-1]}",
-        help="Se muestra primero la combinación con más observaciones de esta semana. La "
-             "comparación conserva producto, variedad, calidad y unidad.")
-    return dict(zip(queries.KEY_COLUMNS, selected))
-
-
-def show_market_visuals(mode, prefix, latest_week, snapshot, key, trend_column, share_column):
-    """Price pulse and weekly composition in the first report row."""
-    if key is None:
-        st.info("No hay observaciones válidas en la última semana para el panorama.")
-        return
-    history = read_indicator_for_key("k6_national_weekly_price", key)
-    history = history[history["week_start"].between(latest_week - pd.Timedelta(weeks=11),
-                                                    latest_week)]
-    revision = "|".join(str(value) for value in key.values())
-    config = {"displaylogo": False, "scrollZoom": False, "responsive": True}
-    with trend_column, open_card(f"{prefix}_price_trend", "Pulso de precios · 12 semanas",
-        hint="Cada curva es un canal para el producto elegido arriba. El precio nacional es "
-             "el promedio simple de las regiones con dato. Las semanas sin dato quedan "
-             "interrumpidas; pulsa una leyenda para ocultar o mostrar un canal."):
-        channels = sorted(history["channel"].unique())
-        chosen = st.multiselect("Canales", channels, key=f"{prefix}_pulse_channels",
-                                default=[channel for channel in PULSE_CHANNELS
-                                         if channel in channels] or channels[:3],
-                                max_selections=3, label_visibility="collapsed",
-                                help="Hasta tres canales a la vez, para que las líneas se lean.")
-        history = history[history["channel"].isin(chosen)]
-        figure = market_charts.draw_price_trend(history, mode, revision)
-        # The legend in rows above the plot, so the lines keep the height of the tile.
-        figure.update_layout(height=TILE_HEIGHT, margin=dict(l=8, r=8, t=8, b=8),
-                             legend=dict(orientation="h", y=1.02, yanchor="bottom", x=0,
-                                         entrywidth=.33, entrywidthmode="fraction",
-                                         font=dict(size=10)))
-        st.plotly_chart(figure, theme=None,
-                        use_container_width=True, config=config, key=f"{prefix}_trend_plot")
-    with share_column, open_card(f"{prefix}_group_changes", "¿Qué grupo subió más?",
-        hint="El cambio típico (la mediana) de los precios de cada grupo de alimentos frente "
-             "a la semana anterior. ▲ en rojo: subió; ▼ en azul: bajó."):
-        changes = read_cached_group_changes(get_database_version())
-        bars = pd.DataFrame({"label": changes.index, "value": changes.to_numpy()})
-        chart = charts.draw_variation_bars(bars, mode)
-        if st.session_state.get(COMPACT_VIEW):
-            chart = chart.properties(height=alt.Step(BAR_STEP + 4)).configure_axisX(
-                labels=False, ticks=False, title=None)
-        show_chart(chart)
-
-
 def keep_covered_cells(points):
     """Channels and regions with data in at least half of the other axis: the map never
     shows rows or columns that are almost all «Sin dato»."""
@@ -4503,81 +3904,6 @@ def keep_covered_cells(points):
         coverage = points.groupby(axis)[other].nunique() / max(points[other].nunique(), 1)
         points = points[points[axis].isin(coverage[coverage >= MINIMUM_MAP_COVERAGE].index)]
     return points
-
-
-def show_market_territory(mode, prefix, snapshot, key):
-    """Readable regional matrix for the report; 3D remains an advanced view only."""
-    if key is None:
-        return
-    points = keep_covered_cells(
-        snapshot.loc[(snapshot[queries.KEY_COLUMNS] == pd.Series(key)).all(axis=1)])
-    revision = "|".join(str(value) for value in key.values())
-    with open_card(f"{prefix}_regional_map", "Territorio · precio relativo por región y canal",
-        hint="Cada celda compara una región con el promedio nacional del mismo canal, producto "
-             "y unidad. 100 es el promedio; 120 significa 20 % más caro. El color y el número "
-             "permiten leerlo sin girar una figura.", kpi="K3"):
-        figure = market_charts.draw_regional_heatmap(points, mode, revision)
-        figure.update_layout(height=TILE_HEIGHT, margin=dict(l=8, r=8, t=8, b=8))
-        st.plotly_chart(figure, theme=None, use_container_width=True,
-                        config={"displaylogo": False, "responsive": True},
-                        key=f"{prefix}_territory_plot")
-
-
-def build_mini_bars(values, color):
-    """Small accessible bars for a KPI; their heights come from the supplied data."""
-    values = [float(value) for value in values if pd.notna(value)]
-    if not values:
-        values = [0]
-    maximum = max(values) or 1
-    width = 100 / len(values)
-    bars = "".join(
-        f'<rect x="{index * width + width * .18:.2f}" y="{27 - value / maximum * 22:.2f}" '
-        f'width="{width * .64:.2f}" height="{max(value / maximum * 22, 1):.2f}" rx="1.5"/>'
-        for index, value in enumerate(values))
-    return (f'<svg class="metric-mini-chart" viewBox="0 0 100 30" role="img" '
-            f'aria-label="Distribución relativa"><g fill="{color}">{bars}</g></svg>')
-
-
-def build_overview_figures_html(latest_week, variations, week_alerts, snapshot, mode):
-    """Four useful and clickable figures, each with context from the real data."""
-    total = read_indicator("quality_flag_counts")["weekly_prices"].sum()
-    palette = charts.get_palette(mode)
-    group_counts = snapshot.groupby("product_group").size().sort_values(ascending=False)
-    variation_counts = variations.groupby("channel").size().sort_values(ascending=False)
-    alert_rate = len(week_alerts) / max(len(variations), 1) * 100
-    values = [
-        ("Observaciones históricas", charts.format_thousands(total), "database",
-         "Base disponible para explorar", group_counts.tolist(), PAGE_DATA_AND_CODE),
-        ("Semana observada", f"{latest_week:%d-%m-%Y}", "document",
-         "Última semana consolidada", [1, 1, 1, 1], PAGE_SEASONALITY),
-        ("Series con variación", charts.format_thousands(len(variations)), "chart",
-         "Comparadas con la semana anterior", variation_counts.tolist(), PAGE_ANALYSIS),
-        ("Alertas semanales", str(len(week_alerts)), "alert",
-         f"{charts.format_percent(alert_rate)} de las series", [100 - alert_rate, alert_rate], PAGE_ALERTS),
-    ]
-    cells = "".join(
-        f'<a class="overview-metric" href="{html.escape(build_page_address(page))}" target="_self" '
-        f'aria-label="Abrir {html.escape(label)}"><div class="market-metric-heading">'
-        f'{build_component_symbol(kind)}<span class="kpi-label">{html.escape(label)}</span>'
-        f'<span class="metric-arrow" aria-hidden="true">→</span></div>'
-        f'<div class="metric-value-row"><div><div class="kpi-value">{html.escape(value)}</div>'
-        f'<div class="market-metric-note">{html.escape(note)}</div></div>'
-        f'{build_mini_bars(points, palette["accent"])}</div></a>'
-        for label, value, kind, note, points, page in values)
-    return f'<div class="overview-metrics">{cells}</div>'
-
-
-def choose_ranking(prefix, count_column, direction_column):
-    """Top N and order of the ranking, in one compact row."""
-    count = count_column.selectbox("Top N", [5, 8, 10, 15], index=1, key=f"{prefix}_top_n",
-                                   label_visibility="collapsed",
-                                   format_func=lambda value: f"Top {value}",
-                                   help="Cuántos productos muestra cada ranking.")
-    direction = direction_column.segmented_control(
-        "Orden del ranking", ["Mayores movimientos", "Alzas", "Bajas"],
-        default="Mayores movimientos", key=f"{prefix}_ranking_direction",
-        label_visibility="collapsed") or "Mayores movimientos"
-    return count, direction
 
 
 def format_ranking_table(ranked):
@@ -4714,16 +4040,6 @@ def show_top_n_field():
     return st.session_state["dashboard_top_n"]
 
 
-def show_order_field():
-    """Which changes the ranking shows: both directions, only rises or only falls."""
-    with st.container(key="ranking_order", width=130):
-        st.selectbox(
-            "Orden del ranking", list(RANKING_TITLES), key="dashboard_ranking_direction",
-            label_visibility="collapsed",
-            format_func=lambda value: {"Mayores movimientos": "▲▼ Ambos", "Alzas": "▲ Alzas",
-                                       "Bajas": "▼ Bajas"}[value])
-
-
 def show_report_filters(with_summary_fields=False, include_product=True, include_region=True):
     """One bar for the whole report: group, region and week, kept across its views
     (D-069). The summary adds the product and Top N (D-072). Returns Top N."""
@@ -4742,26 +4058,6 @@ def show_report_filters(with_summary_fields=False, include_product=True, include
         if with_summary_fields:
             count = show_top_n_field()
     return count
-
-
-def show_breadcrumb_and_chips():
-    """«Todas › Frutas › Manzana» to go back up, and a chip per active filter to remove it."""
-    group, product = read_filter("group"), read_product_filter()
-    with st.container(key="report_breadcrumb", horizontal=True, vertical_alignment="center"):
-        st.button("Todas las categorías" if group == ALL_VALUES else "Todas", key="crumb_all", type="tertiary", on_click=set_filter,
-                  args=("group", ALL_VALUES), disabled=group == ALL_VALUES and not product)
-        if group != ALL_VALUES:
-            st.markdown('<span class="crumb-separator">›</span>', unsafe_allow_html=True)
-            st.button(group, key="crumb_group", type="tertiary", on_click=clear_product_filter,
-                      disabled=not product)
-        if product:
-            st.markdown('<span class="crumb-separator">›</span>', unsafe_allow_html=True)
-            st.button(f"Filtro: {product['name']} ✕", key="chip_product",
-                      on_click=clear_product_filter, help="Quitar el filtro de producto")
-        if read_filter("region") != ALL_VALUES:
-            st.button(f"Región: {charts.shorten_region_name(read_filter('region'))} ✕",
-                      key="chip_region", on_click=set_filter, args=("region", ALL_VALUES),
-                      help="Quitar el filtro de región")
 
 
 def read_picked(event):
@@ -4860,20 +4156,6 @@ def keep_product(rows, product):
     return rows
 
 
-def choose_default_key(ranked, week):
-    """The product of the pulse and the map before any click: the first of the ranking
-    with a price in two regions or more, so the map has something to compare."""
-    if ranked.empty:
-        return None
-    snapshot = read_cached_week_snapshot(get_database_version(), week)
-    regions = snapshot.groupby(queries.KEY_COLUMNS)["region"].nunique()
-    for row in ranked.to_dict("records"):
-        key = tuple(row[column] for column in queries.KEY_COLUMNS)
-        if regions.get(key, 0) >= 2:
-            return {column: row[column] for column in queries.KEY_COLUMNS}
-    return {column: ranked.iloc[0][column] for column in queries.KEY_COLUMNS}
-
-
 def describe_ranking_change(row):
     movement = "subió" if row["variation"] > 0 else "bajó" if row["variation"] < 0 else "no cambió"
     amount = " " + charts.format_percent(abs(row["variation"]) * 100) if row["variation"] else ""
@@ -4889,11 +4171,6 @@ def describe_regional_comparison(row):
     position = "por encima" if difference > 0 else "por debajo"
     return (f"{region} está {charts.format_percent(abs(difference))} {position} del promedio "
             f"nacional de {row['channel']}. Se compara el mismo producto y la misma unidad.")
-
-
-def show_foldable_table(table_html, label="Ver tabla de detalle"):
-    with st.expander(label, expanded=False):
-        st.markdown(table_html, unsafe_allow_html=True)
 
 
 def show_movements_card(prefix, ranked, count, mode, direction=None):
@@ -4991,50 +4268,6 @@ def compact_bar_chart(chart, step=None):
         labels=False, ticks=False, domain=False, titleFontSize=0, titlePadding=0)
 
 
-def show_pulse_card(prefix, key, week, mode):
-    """Card: the national price of the product, three channels at most, 12 weeks."""
-    history = keep_product(read_cached_national_prices(get_database_version()), {"key": key})
-    week = pd.Timestamp(week)
-    history = history[history["week_start"].between(week - pd.Timedelta(weeks=11), week)]
-    name = " ".join(part for part in (key["product"], key["variety"]) if part != UNSPECIFIED)
-    unit = key["normalized_unit"]
-    channels = sorted(history["channel"].unique())
-    initial_channels = ([channel for channel in PULSE_CHANNELS if channel in channels] or channels)[:PULSE_MAXIMUM_CHANNELS]
-    hint_channels = st.session_state.get(f"{prefix}_pulse_channels_{name}", initial_channels)
-    current = history[(history["week_start"] == week) & history["channel"].isin(hint_channels)]
-    prices = " · ".join(f"{row['channel']}: $ {charts.format_thousands(row['national_price'])}/{unit}"
-                        for row in current.to_dict("records"))
-    reading = ("Semana elegida: " + prices + ". " if prices else
-               "No hay precio en la semana elegida para los canales seleccionados. ")
-    with open_card(f"{prefix}_price_trend", "¿Cómo evolucionó el producto?",
-        caption=f"{name} · $/{unit} · promedio nacional · últimas 12 semanas",
-        hint=reading + "Cada línea muestra cómo cambió el precio de un canal durante las últimas 12 semanas. "
-             "El precio nacional es el promedio simple de las regiones con dato. "
-             "Un corte significa que falta un dato, no que el precio sea cero."):
-        channels = sorted(history["channel"].unique())
-        chosen = st.multiselect("Canales", channels, key=f"{prefix}_pulse_channels_{name}",
-                                default=([channel for channel in PULSE_CHANNELS
-                                          if channel in channels] or channels)[
-                                    :PULSE_MAXIMUM_CHANNELS],
-                                max_selections=PULSE_MAXIMUM_CHANNELS,
-                                label_visibility="collapsed")
-        figure = market_charts.draw_price_trend(history[history["channel"].isin(chosen)],
-                                                mode, name)
-        # The unit sits level over the axis, not as a vertical title to cut on a narrow
-        # card; no fill under the lines, so a week without data reads as a cut (D-072).
-        figure.update_yaxes(title=None)
-        figure.update_traces(fill=None)
-        figure.add_annotation(text=f"$/{unit}", xref="paper", yref="paper", x=0, y=1.0,
-                              xanchor="left", yanchor="bottom", showarrow=False,
-                              font=dict(size=11))
-        figure.update_layout(height=TILE_HEIGHT - 80, margin=dict(l=8, r=8, t=24, b=8),
-                             legend=dict(orientation="h", y=1.0, yanchor="bottom", x=1,
-                                         xanchor="right", font=dict(size=10)))
-        st.plotly_chart(figure, theme=None, use_container_width=True,
-                        config={"displaylogo": False, "responsive": True},
-                        key=f"{prefix}_trend_plot")
-
-
 def regional_week_changes(current, previous):
     """Compare the same product, channel and region in two exact consecutive weeks."""
     keys = list(queries.KEY_COLUMNS) + ["region", "channel"]
@@ -5043,98 +4276,6 @@ def regional_week_changes(current, previous):
     valid = merged["previous_price"].gt(0) & merged["price"].notna()
     merged["weekly_change"] = ((merged["price"] / merged["previous_price"] - 1) * 100).where(valid)
     return merged
-
-
-def show_map_card(prefix, key, week, mode, compact=False):
-    """Readable regional zones, colored by actual week-on-week price movement."""
-    version = get_database_version()
-    current = keep_covered_cells(keep_product(read_cached_week_snapshot(version, week), {"key": key}))
-    previous_week = f"{pd.Timestamp(week) - pd.Timedelta(days=7):%Y-%m-%d}"
-    previous = keep_covered_cells(keep_product(read_cached_week_snapshot(version, previous_week), {"key": key}))
-    points = regional_week_changes(current, previous)
-    short_name = " ".join(part for part in (key["product"], key["variety"]) if part != UNSPECIFIED)
-    with open_card(f"{prefix}_regional_map", "¿Dónde subieron o bajaron?",
-        caption=f"{short_name} · por {key['normalized_unit']} · semana del {pd.Timestamp(week):%d-%m-%Y}",
-        hint="Cada zona representa una región. Compara el mismo producto y canal con la semana anterior. "
-             "Rojo: subió; azul: bajó; gris: sin cambio. Las zonas vacías no tienen comparación disponible.", kpi="K6"):
-        channels = sorted(points["channel"].unique())
-        if not channels:
-            st.info("No hay precios disponibles para esta selección.")
-            return
-        field_key = f"{prefix}_map_channel"
-        if st.session_state.get(field_key) not in channels:
-            st.session_state[field_key] = channels[0]
-        channel = st.selectbox("Canal de comparación", channels, key=field_key)
-        selected = points[points["channel"] == channel].copy()
-        geometry = json.loads((Path(__file__).parent / "assets" / "chile-regions.geojson").read_text())
-        comparable = int(selected["weekly_change"].notna().sum())
-        with_price = int(selected["price"].notna().sum())
-        st.caption(f"{with_price} de 16 regiones con precio actual · {comparable} con comparación semanal · {channel}")
-        all_regions = pd.DataFrame({"region": [f["properties"]["region"] for f in sorted(geometry["features"], key=lambda f: -max(p[1] for poly in f["geometry"]["coordinates"] for ring in poly for p in ring))]})
-        detail = all_regions.merge(selected[["region", "price", "previous_price", "weekly_change"]], on="region", how="left", validate="one_to_one")
-        detail["Estado"] = detail.apply(lambda r: "Sin precio actual" if pd.isna(r["price"]) else "Sin precio anterior" if pd.isna(r["weekly_change"]) else "▲ Subió" if r["weekly_change"] > 0 else "▼ Bajó" if r["weekly_change"] < 0 else "= Sin cambio", axis=1)
-        detail["Región"] = detail["region"].map(charts.shorten_region_name)
-        for source, label in (("price", "Precio actual"), ("previous_price", "Precio anterior")):
-            detail[label] = detail[source].map(lambda v: "—" if pd.isna(v) else "$ " + f"{v:,.0f}".replace(",", "."))
-        detail["Variación"] = detail["weekly_change"].map(lambda v: "—" if pd.isna(v) else f"{v:+.1f} %".replace(".", ","))
-        visible = detail[detail["price"].notna()]
-        st.markdown(visible[["Región", "Precio actual", "Precio anterior", "Variación", "Estado"]].to_html(index=False, border=0, classes="regional-detail"), unsafe_allow_html=True)
-        st.caption(f"Precios en pesos por {key['normalized_unit']}. Las otras {16-with_price} regiones no tienen precio actual para esta selección.")
-        with st.expander("Ubicar estas regiones en el mapa de Chile", expanded=False):
-            chart = charts.draw_regional_change_map(selected, geometry, mode, full_country=True)
-            event = show_clickable_chart(chart, f"{prefix}_map_chart")
-            apply_click(f"{prefix}_map", read_picked(event),
-                        lambda picked: set_filter("region", picked.get("properties.region", picked.get("region")))
-                        if picked.get("properties.region", picked.get("region")) in set(selected["region"]) else None)
-            st.caption("Rojo ▲ Subió · Azul ▼ Bajó · Gris = Sin cambio · Sin relleno = Sin comparación")
-            st.caption("Las 16 regiones de Chile. Un precio actual sin precio de la semana anterior no permite calcular una variación.")
-
-
-def show_regional_overview(week, group, mode, prefix):
-    """Compare within each series first, then summarize changes by region."""
-    version = get_database_version()
-    current = keep_covered_cells(read_cached_week_snapshot(version, week))
-    previous = keep_covered_cells(read_cached_week_snapshot(version, f"{pd.Timestamp(week)-pd.Timedelta(days=7):%Y-%m-%d}"))
-    if group != ALL_VALUES:
-        current = current[current["product_group"] == group]
-        previous = previous[previous["product_group"] == group]
-    changes = regional_week_changes(current, previous)
-    valid = changes.dropna(subset=["weekly_change"])
-    with open_card(f"{prefix}_regional_overview", "¿Qué pasó en cada región?",
-                   caption="Todos los productos del grupo · comparación con la semana anterior",
-                   hint="Primero se compara cada producto, variedad, calidad, unidad y canal consigo mismo. Después se resume por región. La mediana es el cambio del centro: no es inflación ni una variación ponderada por ventas."):
-        if valid.empty:
-            st.info("No hay series regionales comparables esta semana.")
-            return
-        summary = valid.groupby("region").agg(series=("weekly_change", "size"), median=("weekly_change", "median"),
-                    rises=("weekly_change", lambda v: (v > 0).sum()), falls=("weekly_change", lambda v: (v < 0).sum()),
-                    stable=("weekly_change", lambda v: (v == 0).sum())).reset_index()
-        summary = summary.sort_values("median", ascending=False)
-        table = pd.DataFrame({"Región": summary["region"].map(charts.shorten_region_name),
-             "Series": summary["series"], "▲ Suben": summary["rises"], "▼ Bajan": summary["falls"],
-             "= Iguales": summary["stable"], "Cambio mediano": summary["median"].map(lambda v: f"{v:+.1f} %".replace(".", ","))})
-        st.caption(f"{len(summary)} regiones con comparación · {len(valid):,} series comparables".replace(",", "."))
-        st.markdown(table.to_html(index=False, border=0, classes="regional-detail"), unsafe_allow_html=True)
-        st.caption("La base cargada contiene precios válidos de 9 de las 16 regiones de Chile; no representa cobertura nacional completa.")
-        st.caption("Cada serie cuenta una vez. Se reúnen canales y productos distintos; no se suman ni promedian sus precios. Las regiones sin comparación quedan fuera del resumen.")
-
-
-def show_regional_ranking(points):
-    """Under the heat map (D-072): the dearest and the cheapest cell in words, and every
-    cell as a ranking table with its price, so nothing needs a hover."""
-    ranked = points.sort_values("regional_index", ascending=False)
-    describe = (lambda row: f"{charts.shorten_region_name(row['region'])} · {row['channel']} "
-                            f"({row['regional_index'] * 100:.0f})")
-    top, bottom = ranked.iloc[0], ranked.iloc[-1]
-    # The answer sits on the expander's own line: readable closed, the table when opened.
-    with st.expander(f"Ver tabla · mayor índice: {describe(top)} · menor índice: {describe(bottom)}", expanded=False):
-        st.dataframe(pd.DataFrame({
-            "Región": ranked["region"].map(charts.shorten_region_name),
-            "Canal": ranked["channel"],
-            "Precio": ["$ " + charts.format_thousands(value) for value in ranked["price"]],
-            "Unidad": ranked["normalized_unit"],
-            "Índice": (ranked["regional_index"] * 100).round().astype(int)}),
-            hide_index=True, use_container_width=True)
 
 
 def describe_week_span(week):
@@ -5147,31 +4288,6 @@ def describe_week_span(week):
     return f"{start:%d} {months[start.month - 1]} – {end:%d} {months[end.month - 1]} {end.year}"
 
 
-def show_dashboard_title(week, ranked, prefix):
-    """Title, the analyzed week apart from the date of the last load, and two actions:
-    how to read the data (in the panel) and the ranking as CSV (D-072)."""
-    latest_run = read_latest_run()
-    is_loaded = latest_run["status"] == etl.STATUS_LOADED
-    title_column, actions_column = st.columns([3, 1.25], vertical_alignment="bottom")
-    with title_column:
-        st.markdown(
-            f'<div class="report-title"><h1>Los precios esta semana</h1><p>Semana analizada: '
-            f'<strong>{describe_week_span(week)}</strong><span class="report-divider">│</span>'
-            f'Última carga: {format_chile_time(parse_run_start(latest_run["started_at"]))} '
-            f'{build_chip("Completada" if is_loaded else "Con falla", "ok" if is_loaded else "failed")}'
-            '</p></div>', unsafe_allow_html=True)
-    with actions_column, st.container(key="report_actions", horizontal=True,
-                                      horizontal_alignment="right"):
-        st.markdown(build_link_html("Definiciones y método →", build_page_address(PAGE_KPI)),
-                    unsafe_allow_html=True)
-        detail = format_ranking_table(ranked)
-        st.download_button("Descargar CSV", detail.to_csv(index=False).encode("utf-8-sig"),
-                           file_name=f"ranking-{week}.csv", mime="text/csv",
-                           icon=":material/download:", key=f"{prefix}_download",
-                           help="El ranking de la semana con su grupo, variedad, calidad, "
-                                "canal, unidad, precio y variación.")
-
-
 def read_report_gaps(week, group, region, product):
     """The week's gaps under the report's filters: (comparable, left out above +300 %)."""
     gaps = read_cached_week_gaps(get_database_version(), week)
@@ -5180,33 +4296,6 @@ def read_report_gaps(week, group, region, product):
     if region != ALL_VALUES:
         gaps = gaps[gaps["region"] == region]
     return split_comparable_gaps(keep_product(gaps, product))
-
-
-def show_usable_data_card(mode):
-    """Card: which weekly prices can be used. A whole with three parts, so a ring; its
-    scope is the whole history and it does not change with the filters (D-072)."""
-    totals = read_indicator("quality_flag_counts").groupby("flag")["weekly_prices"].sum()
-    totals = totals.sort_values(ascending=False)
-    with open_card("usable_data", "¿Qué datos podemos usar?",
-                   caption="Histórico 2022–2026 · todos los datos",
-                   hint="El resumen cuenta registros de precios, no ventas. Distingue partes "
-                        "del total histórico: usados, atípicos o con unidad no convertible. "
-                        "Cada registro corresponde a un producto, región, canal y semana. "
-                        "Los excluidos se conservan con su motivo; no se borran."):
-        used_count = int(totals.get("SIN_MARCA", 0))
-        total = int(totals.sum())
-        used = used_count / total * 100 if total else 0
-        rejected = total - used_count
-        palette = charts.get_palette(mode)
-        st.markdown(f'<div class="quality-summary"><strong class="quality-value">{charts.format_percent(used)}</strong>'
-                    f'<span>de los registros históricos se usan en los indicadores</span>'
-                    f'<div class="quality-meter" role="meter" aria-label="Registros utilizables" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{used}">'
-                    f'<span style="width:{used}%;background:{palette["accent"]}"></span></div>'
-                    f'<div class="quality-counts"><strong>{charts.format_thousands(used_count)}</strong> usados de {charts.format_thousands(total)} registros</div>'
-                    f'<div class="quality-counts">{charts.format_thousands(rejected)} excluidos: '
-                    f'{charts.format_thousands(int(totals.get(etl.FLAG_OUTLIER, 0)))} atípicos y '
-                    f'{charts.format_thousands(int(totals.get(etl.FLAG_UNIT_NOT_CONVERTIBLE, 0)))} con unidad no convertible.</div>'
-                    f'{build_link_html("Revisar calidad de datos →", build_page_address(PAGE_OPERATIONS))}</div>', unsafe_allow_html=True)
 
 
 def show_week_gap_ranking(mode):
@@ -5226,36 +4315,6 @@ def build_movement_proportions(rows):
     total = sum(counts)
     return pd.DataFrame({"label": ["Subieron", "Bajaron", "Sin cambio"], "value": counts,
                          "share": [count / total * 100 if total else 0 for count in counts]})
-
-
-def show_movement_proportions(rows, week, group, mode):
-    palette = charts.get_palette(mode)
-    parts = build_movement_proportions(rows)
-    total = int(parts["value"].sum())
-    current = read_cached_national_prices(get_database_version())
-    current = current[current["week_start"] == pd.Timestamp(week)]
-    if group != ALL_VALUES:
-        current = current[current["product_group"] == group]
-    missing = max(0, len(current) - total)
-    with open_card("movement_proportions", "¿Qué proporción subió o bajó?",
-                   caption="Todas las series nacionales comparables del grupo · no solo el Top N",
-                   hint="Cada porción cuenta series de un producto, variedad, calidad, unidad y canal. "
-                        "Rojo: subieron; azul: bajaron; gris: precio igual a la semana anterior. "
-                        "Cada serie cuenta una vez, sin ponderar por ventas. No son cuotas de mercado ni gasto."):
-        if not total:
-            st.info("No hay series con comparación frente a la semana anterior.")
-            return
-        colors = [palette["rise"], palette["fall"], palette["reference"]]
-        parts["value_label"] = [f"{count} series · {charts.format_percent(share)}" for count, share in zip(parts["value"], parts["share"])]
-        ring, explanation = st.columns([1, 1.3], vertical_alignment="center")
-        with ring:
-            show_chart(charts.draw_donut(parts, colors, mode, center=str(total), center_note="series", size=175))
-        with explanation:
-            for item, color in zip(parts.to_dict("records"), colors):
-                st.markdown(f'<div style="margin:8px 0"><span style="color:{color}">●</span> '
-                            f'{item["label"]} <strong>{charts.format_percent(item["share"])}</strong>'
-                            f' · {item["value"]} series</div>', unsafe_allow_html=True)
-        st.caption(f"Cada serie es un producto y canal. {missing} series con precio esta semana no tienen comparación y quedan fuera del anillo. No representa ventas.")
 
 
 # The map and the family list are hand-drawn SVG/HTML with plain links, so a click
@@ -5328,10 +4387,6 @@ def apply_home_focus(options):
                 st.session_state['mock_focus_key']=payload
         except (ValueError,TypeError,UnicodeError):
             return
-
-
-def clear_home_product():
-    st.session_state['home_product_field'] = 'Todos los productos'
 
 
 def compare_same_regions(variations, snapshot, prior, join):
@@ -7142,21 +6197,6 @@ def build_journey_figures(manifest, pipeline_run, latest_load):
     }
 
 
-def describe_last_run_time(pipeline_run, latest_load):
-    """Date and time of the latest pipeline run; without GitHub, of the latest saved load."""
-    if pipeline_run:
-        return format_chile_time(pipeline_run["started_at"])
-    return format_chile_time(parse_run_start(latest_load["started_at"]))
-
-
-def build_run_status_html(states, pipeline_run, latest_load):
-    """«Estado de la última ejecución (date) · se actualiza al recargar la página»."""
-    word, kind = summarize_journey_state(states)
-    return (f'<div class="run-status">{build_chip(word, kind)} Estado de la última '
-            f'ejecución ({describe_last_run_time(pipeline_run, latest_load)}) · se actualiza '
-            'al recargar la página</div>')
-
-
 def read_journey():
     """(states, figures, pipeline run, latest load, GitHub error) of the live diagram."""
     with st.spinner("Consultando el estado del pipeline…"):
@@ -7231,23 +6271,6 @@ def build_journey_legend_html():
             'el estado identifica la ejecución real.</div>')
 
 
-def show_pipeline_tab(mode, animate_flow=False, journey=None):
-    """The detailed live diagram of the data, from ODEPA to the dashboard."""
-    states, figures, pipeline_run, latest_load, error_note = journey or read_journey()
-    with open_card("journey", "Recorrido completo por capas", hint=ARCHITECTURE_HINT):
-        st.markdown(build_run_status_html(states, pipeline_run, latest_load),
-                    unsafe_allow_html=True)
-        if error_note:
-            st.caption(error_note)
-        # Inline SVG (not an image), so each piece shows its explanation on hover.
-        st.markdown(zoom.build_zoom_frame_html(
-                        architecture.build_journey_svg(states, figures, mode, animate_flow=animate_flow), "diagram-wide")
-                    + zoom.build_zoom_frame_html(
-                        architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=animate_flow),
-                        "diagram-narrow"), unsafe_allow_html=True)
-        st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
-
-
 def build_devops_figures(figures):
     """The pipeline figures plus the size of datos.db, the test functions and the
     prices of the latest week (what the weekly job added), all read now."""
@@ -7257,15 +6280,6 @@ def build_devops_figures(figures):
                 test_functions=f"{project.count_test_functions()} funciones de prueba",
                 week_prices=(f"semana {latest_week:%d-%m}: "
                              f"{charts.format_thousands(week_prices)} precios"))
-
-
-def show_infrastructure_diagram(mode, animate_flow=False, journey=None):
-    states, figures, pipeline_run, latest_load, error_note = journey or read_journey()
-    with open_card("devops_diagram", "Arquitectura por plataforma", hint=DEVOPS_HINT):
-        st.markdown(zoom.build_zoom_frame_html(
-            architecture.build_devops_svg(states, build_devops_figures(figures), mode, animate_flow=animate_flow),
-            "diagram-devops"),
-            unsafe_allow_html=True)
 
 
 DEVOPS_COST_TEXT = (
@@ -7815,8 +6829,6 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_ALERTS: lambda mode: show_analysis_view(mode, PAGE_ALERTS, show_alerts_tab),
     PAGE_KPI: show_kpi_page,
     PAGE_ARCHITECTURE: show_architecture_page,
-    PAGE_CODE: lambda mode: show_document_page(mode, PAGE_CODE,
-        "Del primer archivo que descarga datos al código que los presenta.", show_files_tab),
     PAGE_DEVOPS: lambda mode: (show_compact_page_header(
         PAGE_DEVOPS, "Automatización, seguridad, observabilidad e informes."), show_devops_tab(mode)),
     PAGE_OPERATIONS: show_operations_page,
