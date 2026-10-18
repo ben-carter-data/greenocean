@@ -485,9 +485,10 @@ ATTRIBUTION_TEXT = (
     "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de "
     "Agricultura de Chile, licencia Creative Commons Atribución. "
     "Este proyecto no es un producto oficial de ODEPA. "
-    "Lectura de los datos: el precio nacional es un promedio simple de las regiones disponibles, "
-    "sin ponderar por población o ventas. Los indicadores describen el histórico; no predicen precios. "
-    "Las pruebas verifican reglas concretas, no certifican cada dato de la fuente.")
+    "Lectura de los datos: el precio nacional es un promedio simple de las regiones, sin ponderar "
+    "por población o ventas; cada variación semanal compara las mismas regiones en ambas semanas. "
+    "Los indicadores describen el histórico; no predicen precios. Los precios se reconstruyen "
+    "desde la fuente en las pruebas automáticas.")
 # endregion
 
 
@@ -1247,6 +1248,13 @@ def build_style_css(mode):
         display:block; width:100%; height:100%;}}
     /* The complete SVG has room between its nodes: use it for larger labels
        in the preview without changing the focused diagram or its geometry. */
+    /* Pipeline labels a step larger (D-150): the 1560-unit drawing is shown at about
+       930 px, which made 13-unit labels near 8 px on screen. */
+    [class*="st-key-card_pipeline_main"] svg text[font-size="8"] {{font-size:9.5px;}}
+    [class*="st-key-card_pipeline_main"] svg text[font-size="9.5"] {{font-size:11px;}}
+    [class*="st-key-card_pipeline_main"] svg text[font-size="12"] {{font-size:13.5px;}}
+    [class*="st-key-card_pipeline_main"] svg text[font-size="13"] {{font-size:14.5px;}}
+    .st-key-card_pipeline_main {{margin-top:10px;}}
     .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="12"] {{font-size:13px;}}
     .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="13"] {{font-size:15px;}}
     .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="14"] {{font-size:15px;}}
@@ -1503,7 +1511,9 @@ def build_style_css(mode):
 def apply_style(mode):
     """Add the dashboard CSS to the page."""
     palette = charts.get_palette(mode)
-    finish = Path(__file__).with_name("premium.css").read_text()
+    # The shared finish is optional: without the file the base style still applies.
+    finish_file = Path(__file__).with_name("premium.css")
+    finish = finish_file.read_text() if finish_file.exists() else ""
     for token, key in {"CARD": "card", "BORDER": "card_border", "INK": "strong_text",
                        "ACCENT": "accent", "BG": "background"}.items():
         finish = finish.replace("__" + token + "__", palette[key])
@@ -4684,29 +4694,15 @@ def show_home_alerts_dialog(week, group, product_filter, mode):
     if selected is None:
         st.html('<div class="home-alert-overview-marker"></div>')
         st.caption(f'{len(rows)} cambios poco habituales · {len(families)} familias · datos nacionales de ODEPA')
-        st.html('<div class="home-alert-gallery-legend">'
-                '<span><i class="hot"></i>Más alertas</span>'
-                '<span><i class="warm"></i>Intermedio</span>'
-                '<span><i class="mild"></i>Menos alertas</span>'
-                '<small>El color indica cantidad, no gravedad.</small></div>')
         icons = {'Hortalizas': '🥬', 'Frutas': '🍎', 'Pan': '🍞',
                  'Carne bovina': '🥩', 'Abarrotes y otros': '🥫'}
-        max_count = int(counts.max())
+        # Every family gets the same tile (D-150): the number of alerts is written on it,
+        # so neither the shape nor the colour has to stand for a quantity.
         tile_css = []
-        shapes = ('circle(50%)',
-                  'polygon(18% 0%,82% 0%,100% 50%,82% 100%,18% 100%,0% 50%)',
-                  'polygon(50% 0%,100% 50%,50% 100%,0% 50%)',
-                  'polygon(50% 0%,100% 100%,0% 100%)',
-                  'polygon(25% 0%,75% 0%,100% 25%,100% 75%,75% 100%,25% 100%,0% 75%,0% 25%)',
-                  'inset(0 round 28%)',
-                  'polygon(50% 0%,95% 35%,80% 95%,20% 95%,5% 35%)')
         for index, family in enumerate(families):
             icon = icons.get(family, '🍗' if 'Cerdo' in family else '🥚')
-            ratio = int(counts[family]) / max_count
-            tone = ('#db3349' if ratio >= .75 else '#ed6b29' if ratio >= .45
-                    else '#f3a536' if ratio >= .25 else '#c6a062')
             tile_css.append(f'.st-key-home_alert_card_{index}'
-                            f'{{--alert-tone:{tone};--alert-shape:{shapes[index % len(shapes)]};}}'
+                            '{--alert-tone:#db3349;--alert-shape:inset(0 round 24%);}'
                             f'.st-key-home_alert_card_{index} button::after{{content:"{icon}";}}')
         st.html('<style>' + ''.join(tile_css) + '</style>')
         for start in range(0, len(families), 4):
@@ -4846,8 +4842,10 @@ def show_market_overview(mode, prefix):
             '_home_key':token,'_home_group':row['product_group'],'_home_region':region,'_home_week':week})
     st.markdown('<div class="greenocean-mockup">' + home_mockup.dashboard_header(
         describe_week_span(week), updated, latest['status']==etl.STATUS_LOADED, model['family_rows'],
-        regional_rows, None if region == ALL_VALUES else region) + '</div>', unsafe_allow_html=True)
-    map_column, detail_column = st.container(key='home_overview').columns([0.56, 1.44], gap='small')
+        regional_rows, None if region == ALL_VALUES else region, compared=sum(model['counts']),
+        available=model['available'], alerts=model['alert_count'] if region == ALL_VALUES else None)
+        + '</div>', unsafe_allow_html=True)
+    map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
     # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
     # sanitizer intentionally removes interactive SVG links.
     map_column.markdown('<div class="greenocean-mockup">' + home_mockup.regional_map(
@@ -4862,7 +4860,7 @@ def show_market_overview(mode, prefix):
             average=next((value for name, value, _ in averages if name == family), None)
             heading = st.empty()
             search_column, channel_column, order_column, history_column = st.columns(
-                [1.7, 1.25, 1.35, 0.95], vertical_alignment='center')
+                [1.35, 1.25, 1.5, 0.9], vertical_alignment='center')
             query = search_column.text_input('Buscar', key='home_products_search', icon=':material/search:',
                                              placeholder='Producto, ej.: lechuga', label_visibility='collapsed',
                                              type='search', live=True)
@@ -4888,13 +4886,15 @@ def show_market_overview(mode, prefix):
                 row['_regions']=directions.get(tuple(row[field] for field in queries.KEY_COLUMNS+['channel']))
             history_address=(context_link(PAGE_SEASONALITY, rows[0]) if rows else build_page_address(PAGE_SEASONALITY))
             history_column.markdown(f'<div class="greenocean-mockup"><a class="mock-history-button" '
-                                    f'href="{html.escape(history_address)}" target="_self">Contexto del precio</a></div>',
+                                    f'href="{html.escape(history_address)}" target="_self" title="¿Es normal este precio para la época?">Ver contexto</a></div>',
                                     unsafe_allow_html=True)
             st.markdown('<div class="greenocean-mockup">' + home_mockup.products_table(
                 rows, lambda row: context_link(PAGE_SEASONALITY, row), model['week_label'],
-                model['previous_label'], query.strip()) + home_mockup.coverage_note(
-                model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION))
-                + '</div>', unsafe_allow_html=True)
+                model['previous_label'], query.strip()) + '</div>', unsafe_allow_html=True)
+    # Under both columns, full width (D-150): the note no longer lengthens one side.
+    st.markdown('<div class="greenocean-mockup">' + home_mockup.coverage_note(
+        model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION))
+        + '</div>', unsafe_allow_html=True)
 
 
 def show_home_page(mode):
@@ -4904,9 +4904,8 @@ def show_home_page(mode):
 
 
 def show_pipeline_page_header():
-    """A clean title above the diagram; execution evidence lives in GitHub and Ejecuciones."""
-    st.markdown('<div class="compact-header pipeline-page-header">'
-                '<h1>Pipeline</h1></div>', unsafe_allow_html=True)
+    """The same one-line header as every technical page (D-150)."""
+    show_compact_page_header("Pipeline", "El recorrido de los datos, de ODEPA al panel, por capas.")
 
 
 def show_diagrams_page(mode):
@@ -5234,7 +5233,7 @@ def show_alerts_tab(mode, filters):
         shown_rows = shown_rows[shown_rows["product"] == selected_product]
     if selected_channel != "Todos":
         shown_rows = shown_rows[shown_rows["channel"] == selected_channel]
-    st.caption(f"{len(shown_rows)} alertas filtradas · se muestran {min(shown_count,len(shown_rows))}. Alcance nacional: promedio simple de las regiones disponibles, sin ponderación por ventas.")
+    st.caption(f"{len(shown_rows)} alertas filtradas · se muestran {min(shown_count,len(shown_rows))}. Alcance nacional: promedio simple de las mismas regiones en ambas semanas, sin ponderación por ventas.")
     with open_card("alert_list", f"Alertas de la semana ({len(week_rows)})",
                    "Primero, los cambios más inusuales. La barra muestra qué tanto se alejan de lo habitual; la marca negra es el umbral de alerta.",
                    hint=ALERT_LIST_HINT, kpi="K6"):
@@ -5716,6 +5715,19 @@ def build_context_css(mode):
     .ctx-keys i {{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle;}}
     .ctx-keys i.band {{height:9px;background:{palette['grid']};}}
     .ctx-card {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:12px 16px;}}
+    /* The chart and the two side cards end on the same line (D-150): the cards share
+       the chart's height. */
+    [data-testid="stHorizontalBlock"]:has(.st-key-ctx_main) {{align-items:stretch;}}
+    [data-testid="stColumn"]:has(.st-key-ctx_side) > [data-testid="stVerticalBlock"],
+    .st-key-ctx_side {{height:100%;}}
+    [data-testid="stColumn"]:has(.st-key-ctx_side) [data-testid="stLayoutWrapper"] {{height:100%;flex:1 1 auto;}}
+    .st-key-ctx_side {{display:flex;flex-direction:column;}}
+    .st-key-ctx_side > [data-testid="stElementContainer"] {{flex:1 1 0;display:flex;}}
+    .st-key-ctx_side [data-testid="stMarkdown"], .st-key-ctx_side [data-testid="stMarkdown"] > div,
+    .st-key-ctx_side [data-testid="stMarkdownContainer"] {{height:100%;width:100%;margin:0 !important;}}
+    .st-key-ctx_side [data-testid="stMarkdown"] > div {{align-items:stretch !important;}}
+    .st-key-ctx_side .ctx-card {{height:100%;margin:0 !important;box-sizing:border-box;display:flex;flex-direction:column;
+        justify-content:space-around;}}
     .ctx-card-wide {{padding-bottom:6px;}}
     .ctx-price-row {{display:grid;grid-template-columns:10px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid {palette['card_border']};}}
     .ctx-price-row i {{width:9px;height:9px;border-radius:50%;}}
@@ -5786,7 +5798,7 @@ def show_price_context_page(mode):
     notice = st.session_state.pop("context_notice", None)
     if notice:
         st.caption(notice)
-    left, right = st.columns([3.05, 1], gap="small")
+    left, right = st.columns([2.6, 1.2], gap="small")
     with left:
         with st.container(key="ctx_main"):
             hint = build_hint_icon("Línea: precio de cada semana. Banda: rango habitual de esa misma semana "
@@ -5811,9 +5823,12 @@ def show_price_context_page(mode):
                     show_full_history_dialog(model["series"], mode, label)
                 if st.button("Ver datos del gráfico →", key="ctx_data", type="tertiary"):
                     show_context_data_dialog(model)
+    # Beside the chart, the two readings of this week; the seasonal outlook gets a
+    # full-width strip below, where its months read on one line (D-150).
     with right, st.container(key="ctx_side"):
         st.markdown(build_context_price_card(model["now"], key["normalized_unit"]), unsafe_allow_html=True)
         st.markdown(build_context_margin_card(model["margins"]), unsafe_allow_html=True)
+    with st.container(key="ctx_next"):
         st.markdown(build_context_next_card(model["patterns"], model["pattern_years"], model["month"],
                                             model["seasonal"], model["year"]),
                     unsafe_allow_html=True)
@@ -6581,7 +6596,7 @@ def show_operations_page(mode):
     """Evidence first: implemented checks, independently checked storage, pending
     audits — as a card gallery, then the rest behind tabs instead of one long
     scroll (D-120)."""
-    show_page_header("Calidad y trazabilidad", "Origen, controles y evidencia disponible de los datos que alimentan el panel.")
+    show_compact_page_header("Calidad de datos", "Origen, controles y evidencia de los datos que alimentan el panel.")
     manifest = read_download_manifest()
     versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
                      for path in sorted(MANIFEST_FILE.parent.glob("*.csv")))
@@ -6606,14 +6621,20 @@ def show_operations_page(mode):
     st.markdown(build_quality_grid_css(mode), unsafe_allow_html=True)
     cards = "".join(build_quality_card_html(*row) for row in rows)
     st.markdown(f'<div class="quality-grid">{cards}</div>', unsafe_allow_html=True)
-    st.caption("Comprobación local de la base: " + format_chile_time(datetime.fromisoformat(checks["checked_at"])) + " (Chile). Se actualiza al cambiar los archivos o, como máximo, cada cinco minutos al consultar esta vista.")
     if not database_ok or failed:
         st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
     st.info("Los precios se reconstruyen desde la fuente y las cifras del panel se recalculan de forma independiente en las pruebas. Falta un contraste con otra fuente de precios: ODEPA es la única fuente oficial de estos datos.")
     files_tab, run_tab = st.tabs(["Evidencia de archivos", "Última carga"])
     with files_tab:
         if files:
-            st.dataframe(pd.DataFrame(files).rename(columns={"file": "Archivo", "status": "Comprobación", "expected": "SHA-256 registrado", "actual": "SHA-256 comprobado", "downloaded_at": "Fecha registrada"}), hide_index=True, width="stretch")
+            # One short fingerprint: the registered and the computed ones are equal when
+            # the check passes, so two 64-character columns said the same thing (D-150).
+            evidence = pd.DataFrame(files)
+            evidence["expected"] = evidence["expected"].map(lambda value: f"{str(value)[:12]}…" if value else "—")
+            evidence["downloaded_at"] = pd.to_datetime(evidence["downloaded_at"], errors="coerce").dt.strftime("%d-%m-%Y %H:%M")
+            st.dataframe(evidence[["file", "status", "expected", "downloaded_at"]].rename(columns={
+                "file": "Archivo", "status": "Comprobación", "expected": "Huella SHA-256",
+                "downloaded_at": "Descargado"}), hide_index=True, width="stretch")
         else:
             st.info("No hay manifiesto de descargas disponible.")
         st.markdown(build_link_html("Ver ejecuciones del pipeline →", build_page_address(PAGE_RUNS)), unsafe_allow_html=True)

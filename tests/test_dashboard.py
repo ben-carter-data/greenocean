@@ -218,9 +218,9 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     texts = " ".join(block.value for block in diagrams.markdown)
     assert not diagrams.exception and not diagrams.tabs
     pipeline_header = next(block.value for block in diagrams.markdown
-                           if 'compact-header pipeline-page-header' in block.value)
-    assert '<h1>Pipeline</h1>' in pipeline_header
-    assert 'page-freshness' not in pipeline_header and 'Carga correcta' not in pipeline_header
+                           if 'class="compact-header"' in block.value and '<h1' in block.value and 'Pipeline' in block.value)
+    # D-150: the same one-line header as every technical page, freshness included.
+    assert '>Pipeline</h1>' in pipeline_header and 'page-freshness' in pipeline_header
     assert not diagrams.toggle
     assert 'Animar el recorrido de los datos' not in texts
     assert 'ODEPA → indicadores · recorrido y plataformas' not in texts
@@ -255,7 +255,8 @@ def test_dashboard_territory_is_immediately_readable_without_a_3d_duplicate():
     types = {trace["type"] for figure in figures for trace in figure["data"]}
     assert "scatter3d" not in types
     texts = " ".join(block.value for block in app.markdown)
-    assert "Regiones (dirección dominante)" in texts and "Región seleccionada" in texts
+    # D-150: four KPI tiles of equal width; the selected region sits in the subtitle.
+    assert texts.count('class="mock-kpi"') == 4 and "Todo Chile" in texts
     assert "Mapa en proporción real" in texts
 
 @needs_database
@@ -1244,7 +1245,7 @@ def test_quality_page_does_not_claim_a_complete_audit_and_keeps_evidence_visible
     app = draw_page(dashboard.PAGE_OPERATIONS)
     assert not app.exception
     text = ' '.join(block.value for block in app.markdown)
-    assert read_page_title(app) == 'Calidad y trazabilidad'
+    assert read_page_title(app) == 'Calidad de datos'
     assert 'Reconciliación fuente → base' in text
     assert 'Recálculo independiente de indicadores' in text
     assert 'Concordancia cálculo → pantalla' in text

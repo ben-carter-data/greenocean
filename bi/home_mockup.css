@@ -412,3 +412,30 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-home_products [data-testid="stTextInput"] input {font-size:12.5px;}
 .st-key-home_products [data-testid="stTextInput"] [data-baseweb="input"] {min-height:32px;}
 .mock-products-table {max-height:calc(100vh - 590px);}
+
+/* KPI strip (D-150): four tiles of equal width under the title. */
+.mock-kpis {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:10px 0 12px;}
+.mock-kpi {border:1px solid var(--mock-border);border-radius:12px;background:__PANEL__;padding:10px 14px;
+  display:flex;flex-direction:column;gap:2px;min-width:0;}
+.mock-kpi span {font-size:10.5px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--mock-muted);}
+.mock-kpi strong {font-size:20px;line-height:1.25;color:var(--mock-ink);font-weight:700;white-space:nowrap;}
+.mock-kpi strong small {font-size:12px;font-weight:500;color:var(--mock-muted);}
+.mock-kpi strong b.rise {color:var(--mock-rise);}.mock-kpi strong b.fall {color:var(--mock-fall);}
+.mock-kpi strong b.alert {color:var(--mock-rise);}
+.mock-kpi small {font-size:11px;color:var(--mock-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+@media (max-width:900px) {.mock-kpis {grid-template-columns:repeat(2,minmax(0,1fr));}}
+/* Map and right column end at the same line (D-150): the map stretches to the
+   height of the family chart plus the products, and Chile scales inside it. */
+.st-key-home_overview [data-testid="stHorizontalBlock"] {align-items:stretch!important;}
+.st-key-home_overview [data-testid="stColumn"]:first-child [data-testid="stVerticalBlock"],
+.st-key-home_overview [data-testid="stColumn"]:first-child [data-testid="stElementContainer"],
+.st-key-home_overview [data-testid="stColumn"]:first-child [data-testid="stMarkdown"],
+.st-key-home_overview [data-testid="stColumn"]:first-child [data-testid="stMarkdown"] > div,
+.st-key-home_overview [data-testid="stColumn"]:first-child [data-testid="stMarkdownContainer"],
+.st-key-home_overview [data-testid="stColumn"]:first-child .greenocean-mockup {height:100%;}
+.st-key-home_overview .mock-regional {height:100%;box-sizing:border-box;display:flex;flex-direction:column;}
+.st-key-home_overview .mock-chile-map {flex:1 1 0;min-height:0;width:100%;}
+/* Compact family rows so the right column matches the map's own height (D-150). */
+.stApp .greenocean-mockup .mock-movement .mock-movement-row {min-height:42px;padding:2px 10px;}
+.stApp .greenocean-mockup .mock-movement .mock-movement-row.mock-movement-axis {min-height:16px;}
+.st-key-home_overview .mock-products-table {max-height:236px;min-height:0;}
