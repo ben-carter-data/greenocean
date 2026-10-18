@@ -900,6 +900,27 @@ def build_style_css(mode):
     .technical-rows {{ list-style:none; padding:0; margin:8px 0 20px; display:grid;
         grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px; }}
     .technical-rows .component-symbol {{ width:28px; height:30px; margin:0; }}
+    /* Layer cards (D-137): compact, floating, the real logo of each tool; auto-fit so
+       two cards fill the dialog instead of leaving half of it empty. */
+    .layer-cards {{ display:flex; flex-wrap:wrap; gap:16px;
+        margin:6px 0 10px; --github-ink:{palette["strong_text"]}; }}
+    .layer-card {{ flex:1 1 300px; display:flex; gap:14px; align-items:flex-start; padding:16px 18px;
+        border-radius:18px; background:{palette["card"]}; border:1px solid {palette["card_border"]};
+        box-shadow:0 14px 28px -16px color-mix(in srgb, var(--brand) 50%, #0004),
+                   0 2px 7px -2px rgba(0,0,0,.14);
+        transition:transform .16s ease, box-shadow .16s ease; }}
+    .layer-card:hover {{ transform:translateY(-4px);
+        box-shadow:0 22px 36px -16px color-mix(in srgb, var(--brand) 58%, #0004),
+                   0 4px 10px -2px rgba(0,0,0,.16); }}
+    .layer-logo {{ flex:none; display:flex; align-items:center; justify-content:center;
+        width:44px; height:44px; border-radius:12px; color:var(--brand);
+        background:color-mix(in srgb, var(--brand) 14%, transparent); }}
+    .layer-logo svg {{ width:24px; height:24px; }}
+    .layer-body {{ min-width:0; }}
+    .layer-body strong {{ display:block; font-size:.95rem; font-weight:650; line-height:1.3;
+        color:{palette["strong_text"]}; letter-spacing:-.01em; }}
+    .layer-body p {{ margin:4px 0 6px; font-size:.86rem; line-height:1.45; color:{palette["text"]}; }}
+    .layer-note {{ font-size:.75rem; color:{palette["reference"]}; }}
     .technical-rows li > div {{ min-width:0; }}
     .technical-rows p {{ margin:4px 0; font-size:.9rem; line-height:1.5; }}
     @media(max-width:640px) {{
@@ -7608,14 +7629,37 @@ def show_architecture_group(heading, lead, title_column, text_column, note_colum
         show_section_intro(heading, lead, True)
     else:
         st.caption(lead)
-    kind = {"Seguridad": "security", "DevOps": "workflow",
-            "Observabilidad": "chart", "Informes": "document"}[heading]
-    rows = ''.join(f'<li>{build_component_symbol(kind)}<div>'
-        f'<strong>{html.escape(row[title_column])}</strong>'
-        f'<p>{format_inline(row[text_column])}</p>'
-        f'<span class="kpi-note">{format_architecture_note(note_column, row[note_column])}</span>'
-        '</div></li>' for row in project.read_guide_table(heading))
-    st.markdown(f'<ul class="technical-rows">{rows}</ul>', unsafe_allow_html=True)
+    rows = ''.join(build_layer_card_html(row[title_column], row[text_column],
+                                         format_architecture_note(note_column, row[note_column]))
+                   for row in project.read_guide_table(heading))
+    st.markdown(f'<div class="technical-rows layer-cards">{rows}</div>', unsafe_allow_html=True)
+
+
+# The real tool behind each row of a layer (D-137): its own mark, in its brand colour.
+LAYER_ROW_LOGOS = {
+    "Base en solo lectura": "sqlite", "Consola SQL de solo lectura": "sqlite",
+    "Secretos fuera del código": "streamlit", "Permisos mínimos del workflow": "github",
+    "Datos crudos fuera del repositorio": "git", "Workflow semanal": "github",
+    "Tests en cada push": "pytest", "Caché de años cerrados": "github",
+    "Despliegue continuo": "streamlit", "Entorno de desarrollo": "python",
+    "Tabla `etl_run`": "sqlite", "Tabla `rejection`": "sqlite", "Logs del agente": "python",
+    "Historial de GitHub Actions": "github", "Correo de GitHub": "github",
+    "Issue «Informe semanal AAAA-MM-DD»": "github", "Este panel": "streamlit",
+}
+BRAND_COLOURS = {"github": "var(--github-ink)", "sqlite": "#0f80cc", "streamlit": "#ff4b4b",
+                 "git": "#f05032", "pytest": "#0a9edc", "python": "#3776ab"}
+
+
+def build_layer_card_html(title, text, note):
+    """One floating card: the tool's real logo on a tinted tile, the title, what it
+    does and where it lives, with no empty space below (D-137)."""
+    slug = LAYER_ROW_LOGOS.get(title, "github")
+    colour = BRAND_COLOURS[slug]
+    return (f'<div class="layer-card" style="--brand:{colour}">'
+            f'<span class="layer-logo"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
+            f'{architecture.brand_icons.logo_body(slug)}</svg></span>'
+            f'<div class="layer-body"><strong>{format_inline(title)}</strong>'
+            f'<p>{format_inline(text)}</p><span class="layer-note">{note}</span></div></div>')
 
 
 def build_journey_legend_html():
@@ -7687,8 +7731,10 @@ def show_devops_layer_dialog(heading, next_run):
             st.markdown(f'<div class="info-note">Próxima ejecución automática: {next_run}.</div>',
                         unsafe_allow_html=True)
         if heading == "Informes":
-            st.markdown(f'<div class="info-note">El enlace a los informes semanales está en '
-                        f'{build_place_link(PAGE_LINKS, "la página")}.</div>', unsafe_allow_html=True)
+            reports = next(link["url"] for link in project.PROJECT_LINKS
+                           if link["name"] == "Informes semanales")
+            st.markdown(f'<div class="info-note">{build_external_link_html("Ver los informes semanales en GitHub", reports)}'
+                        '</div>', unsafe_allow_html=True)
     st.dialog(heading, width="large")(body)()
 
 
