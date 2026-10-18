@@ -1188,15 +1188,27 @@ def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not app.exception
     assert app.selectbox(key='home_products_order').options == list(dashboard.PRODUCT_ORDERS)
-    def changes():
+    def rows():
         markup = ' '.join(block.value for block in app.markdown)
         table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
-        return [float(v.replace('−', '-').replace(',', '.'))
-                for v in re.findall(r'<td class="num (?:rise|fall|neutral)"><b>([+−]?[\d,]+) %</b>', table)]
+        return [('1 cotización' in row, float(value.replace('−', '-').replace(',', '.')))
+                for row in table.split('<tr')[2:]
+                for value in re.findall(r'<td class="num (?:rise|fall|neutral)"><b>([+−]?[\d,]+) %</b>', row)]
+    def changes():
+        return [value for _, value in rows()]
+    # D-146: changes resting on one quote go after the others; each group is sorted.
+    shown = rows()
+    flags = [thin for thin, _ in shown]
+    assert flags == sorted(flags)
+    for group in (True, False):
+        values = [abs(value) for thin, value in shown if thin == group]
+        assert values == sorted(values, reverse=True)
     largest = changes()
-    assert [abs(v) for v in largest] == sorted((abs(v) for v in largest), reverse=True)
     app.selectbox(key='home_products_order').set_value('Bajadas').run()
-    assert not app.exception and changes() == sorted(changes())
+    assert not app.exception
+    for group in (True, False):
+        values = [value for thin, value in rows() if thin == group]
+        assert values == sorted(values)
     # «Inusuales» keeps only national alerts.
     app.selectbox(key='home_products_order').set_value('Inusuales').run()
     assert not app.exception and len(changes()) < len(largest)
@@ -1234,7 +1246,9 @@ def test_quality_page_does_not_claim_a_complete_audit_and_keeps_evidence_visible
     assert 'Reconciliación fuente → base' in text
     assert 'Recálculo independiente de indicadores' in text
     assert 'Concordancia cálculo → pantalla' in text
-    assert text.count('Pendiente') >= 3
+    # D-146: the audited checks are verified; the contrast with another source is not.
+    assert text.count('Verificado · pruebas automáticas') == 2
+    assert 'Contraste con otra fuente' in text and text.count('>Pendiente<') == 1
     assert 'Verificado · alcance limitado' in text
     assert all(not item.proto.expanded for item in app.expander)
 

@@ -67,7 +67,8 @@ SELECT weekly_price.week_start,
        dim_product.product_group, dim_product.product, dim_product.variety,
        dim_product.quality, dim_channel.channel, dim_region.region,
        weekly_price.normalized_unit, weekly_price.price, national.national_price,
-       weekly_price.price / national.national_price AS regional_index
+       weekly_price.price / national.national_price AS regional_index,
+       weekly_price.observation_count
 FROM weekly_price
 JOIN national
   ON national.week_start = weekly_price.week_start
@@ -251,10 +252,12 @@ SELECT usual.week_start,
        -- Sample variance (divided by n - 1 = 11), the same definition as pandas.
        (usual.usual_square - usual.usual_variation * usual.usual_variation) * 12.0 / 11
            AS variation_variance,
+       -- D-146: unusual (2 deviations) and material (a change of at least 10 %).
        CASE WHEN (usual.variation - usual.usual_variation)
                  * (usual.variation - usual.usual_variation)
                  > 4 * (usual.usual_square - usual.usual_variation * usual.usual_variation)
                        * 12.0 / 11
+             AND ABS(usual.variation) >= 0.10
             THEN 1 ELSE 0
        END AS is_alert
 FROM usual

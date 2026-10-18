@@ -26,9 +26,7 @@ def calculate_k6_in_python():
     """Weeks judged by K6 in bi/alerts.py, with their alert flag."""
     prices = alerts.add_usual_range(queries.run_query("k6_national_weekly_price"))
     judged = prices.dropna(subset=["variation", "usual_variation"]).copy()
-    distance = (judged["variation"] - judged["usual_variation"]).abs()
-    judged["is_alert"] = (distance > alerts.ALERT_DEVIATIONS
-                          * judged["variation_deviation"]).astype(int)
+    judged["is_alert"] = alerts.is_price_alert(judged).astype(int)
     return judged
 
 

@@ -12,6 +12,7 @@ import hmac
 import html
 import importlib
 import json
+import math
 import re
 import sys
 import time
@@ -5374,11 +5375,13 @@ def compare_same_regions(variations, snapshot, prior, join):
     averages of the regions present in both weeks; a key with no region in common
     has no valid comparison. _coverage_changed marks the keys that left regions out.
     """
-    regional = join + ['region', 'price']
+    regional = join + ['region', 'price', 'observation_count']
     matched = snapshot[regional].merge(prior[regional], on=join + ['region'], suffixes=('', '_before'))
     same = matched.groupby(join, as_index=False).agg(_same_now=('price', 'mean'),
                                                      _same_before=('price_before', 'mean'),
-                                                     _same_regions=('region', 'nunique'))
+                                                     _same_regions=('region', 'nunique'),
+                                                     _quotes_now=('observation_count', 'sum'),
+                                                     _quotes_before=('observation_count_before', 'sum'))
     regions_now = snapshot.groupby(join).region.nunique().rename('_regions_now')
     regions_before = prior.groupby(join).region.nunique().rename('_regions_before')
     rows = (variations.drop(columns=['_previous_price', 'variation', 'change_amount'])
@@ -5465,7 +5468,13 @@ def read_home_model(week, group, region, count, order='Mayores cambios', product
                 f"{home_mockup.product_label(row, True)} · {row['channel']}"
                 for _, row in subset.head(2).iterrows()
             ]
-    ranked=home_mockup.order_movements(variations,count,order)
+    # D-146: a change resting on a single quote in either week is one isolated price,
+    # not a market movement; it stays in the family median but not in the ranking.
+    thin=pd.Series(False,index=variations.index)
+    if region == ALL_VALUES and '_quotes_now' in variations:
+        thin=variations.variation.notna() & ((variations._quotes_now<2) | (variations._quotes_before<2))
+    variations['_single_quote']=thin
+    ranked=home_mockup.order_movements(variations[~thin],count,order)
     if ranked.empty and valid.empty and order != 'Inusuales':
         ranked=variations.sort_values(join).head(count)
     # Default selection is the first displayed movement; clicks retain the exact key.
@@ -5507,7 +5516,23 @@ def read_home_model(week, group, region, count, order='Mayores cambios', product
                 history=history,subtitle=subtitle,coverage=coverage,missing=max(0,len(current)-sum(counts)),
                 available=len(current),national=region==ALL_VALUES,
                 coverage_changed=int(variations['_coverage_changed'].sum()),
+                single_quote=int(thin.sum()),
                 week_label=f'{week_date:%d-%m-%Y}',previous_label=f'{pd.Timestamp(previous_week):%d-%m-%Y}')
+
+
+# A region's direction must be told apart from a coin toss (D-146).
+REGION_DIRECTION_P_VALUE = 0.05
+
+
+def sign_test_p_value(up, down):
+    """Two-sided exact sign test: the chance of a split at least this uneven if a rise
+    and a fall were equally likely."""
+    up, down = int(up), int(down)
+    total = up + down
+    if not total:
+        return 1.0
+    tail = sum(math.comb(total, count) for count in range(max(up, down), total + 1))
+    return min(1.0, 2 * tail / 2 ** total)
 
 
 def build_regional_movement_model(current, previous):
@@ -5515,6 +5540,8 @@ def build_regional_movement_model(current, previous):
 
     A movement smaller than 0.05 % is displayed as unchanged, consistently with
     the product tables. The percentage is the share in the dominant direction.
+    A region is painted «rise» or «fall» only when its rises and falls differ more
+    than chance allows (sign test, p < 0.05, D-146); 52 % against 48 % is a coin toss.
     """
     join = queries.KEY_COLUMNS + ['channel', 'region']
     current = current[join + ['price']].rename(columns={'price': 'national_price'})
@@ -5538,6 +5565,8 @@ def build_regional_movement_model(current, previous):
             largest = max(counts.values())
             leaders = [name for name, value in counts.items() if value == largest]
             state = leaders[0] if len(leaders) == 1 else 'mixed'
+            if state in ('rise', 'fall') and sign_test_p_value(up, down) >= REGION_DIRECTION_P_VALUE:
+                state = 'mixed'
             share = largest / total * 100
         rows.append({'region': region, 'state': state, 'share': share, 'up': up,
                      'down': down, 'stable': stable, 'total': total, 'missing': missing})
@@ -5734,19 +5763,21 @@ def read_cached_region_directions(database_version, week):
 
 
 def sort_family_products(rows, order):
-    """The family table under the chosen order; ties stay in a stable, readable order."""
+    """The family table under the chosen order; ties stay in a stable, readable order.
+    A change resting on a single quote sorts after the others (D-146)."""
     names = lambda row: (str(row['product']), str(row['variety']), str(row['channel']))
+    thin = lambda row: bool(row.get('_single_quote'))
     if order == 'Nombre':
         return sorted(rows, key=names)
     if order == 'Subidas':
-        return sorted(rows, key=lambda row: (-row['variation'], names(row)))
+        return sorted(rows, key=lambda row: (thin(row), -row['variation'], names(row)))
     if order == 'Bajadas':
-        return sorted(rows, key=lambda row: (row['variation'], names(row)))
+        return sorted(rows, key=lambda row: (thin(row), row['variation'], names(row)))
     if order == 'Inusuales':
         # National alerts only, the most unusual first (distance to the usual range).
         return sorted((row for row in rows if row.get('is_alert')),
                       key=lambda row: (-row.get('_severity', 0), names(row)))
-    return sorted(rows, key=lambda row: (-abs(row['variation']), names(row)))
+    return sorted(rows, key=lambda row: (thin(row), -abs(row['variation']), names(row)))
 
 
 def show_market_overview(mode, prefix):
@@ -6288,19 +6319,43 @@ def describe_target_week(dates, week):
 
 
 @st.cache_data
+def read_context_regional_prices(database_version):
+    """Every valid regional price of the Contexto channels, read once per load."""
+    channels = ", ".join("?" for _ in CONTEXT_CHANNELS)
+    rows = queries.run_sql(f"""SELECT wp.week_start, p.product_group, p.product, p.variety, p.quality,
+                                      ch.channel, wp.normalized_unit, wp.region_id, wp.price
+                               FROM weekly_price wp JOIN dim_product p USING(product_id)
+                               JOIN dim_channel ch USING(channel_id)
+                               WHERE wp.flag IS NULL AND ch.channel IN ({channels})""",
+                           parameters=list(CONTEXT_CHANNELS))
+    rows["week_start"] = pd.to_datetime(rows["week_start"])
+    return rows
+
+
+def keep_regions_of_week(regional, week):
+    """One series over the regions with a price in `week` (D-146): every past week
+    averages those same regions, so a usual range compares like with like instead of
+    whichever regions reported each year. Returns week_start, national_price."""
+    regions = set(regional.loc[regional["week_start"] == week, "region_id"])
+    same = regional[regional["region_id"].isin(regions)]
+    return (same.groupby("week_start", as_index=False)["price"].mean()
+            .rename(columns={"price": "national_price"}))
+
+
+@st.cache_data
 def read_context_model(database_version, key_items, week):
     """Everything the page shows for one product, computed once per weekly load."""
     key = dict(key_items)
-    prices = read_cached_national_prices(database_version)
-    mask = pd.Series(True, index=prices.index)
+    regional = read_context_regional_prices(database_version)
+    mask = pd.Series(True, index=regional.index)
     for field, value in key.items():
-        mask &= prices[field] == value
-    product = prices[mask & prices["channel"].isin(CONTEXT_CHANNELS)]
+        mask &= regional[field] == value
+    product = regional[mask]
     week = pd.Timestamp(week)
     dates = read_dim_date(database_version)
     target_iso, month = describe_target_week(dates, week)
     # ISO week and month come from dim_date, the calendar of the data warehouse.
-    series = {channel: product[product["channel"] == channel][["week_start", "national_price"]]
+    series = {channel: keep_regions_of_week(product[product["channel"] == channel], week)
               .merge(dates, on="week_start", how="left")
               .sort_values("week_start").reset_index(drop=True) for channel in CONTEXT_CHANNELS}
     dates_indexed = dates.set_index("week_start")
@@ -6335,7 +6390,33 @@ def read_context_model(database_version, key_items, week):
         patterns[channel] = price_context.patron_estacional(rows, current_year=year)
         years[channel] = int((rows["price_year"].astype(int) < year).groupby(rows["price_year"]).any().sum())
     return {"series": series, "weekly": weekly, "now": now, "gap_now": gap_now, "gap_state": gap_state,
-            "patterns": patterns, "pattern_years": years, "seasonal": seasonal, "month": month}
+            "patterns": patterns, "pattern_years": years, "seasonal": seasonal, "month": month,
+            "year": year, "margins": read_context_margins(key, week, dates, target_iso, database_version)}
+
+
+def read_context_margins(key, week, dates, target_iso, database_version):
+    """K1 back in sight (D-146): what the consumer pays over the wholesale price, per
+    consumer channel, with its usual range. Both prices share week, region, product
+    key and unit (RN-06); the regions are those with a pair this week, in every week.
+    {channel: {value, usual, state, regions}}; empty for a product without wholesale price.
+    """
+    pairs = read_cached_rows_for_key("k1_margin", tuple(sorted(key.items())), database_version)
+    if pairs.empty:
+        return {}
+    pairs = pairs.assign(week_start=pd.to_datetime(pairs["week_start"]))
+    margins = {}
+    for channel in CONTEXT_CHANNELS:
+        rows = pairs[pairs["channel"] == channel].rename(columns={"margin": "price"})
+        if not rows["week_start"].eq(week).any():
+            continue
+        regions = set(rows.loc[rows["week_start"] == week, "region"])
+        series = (rows[rows["region"].isin(regions)].groupby("week_start", as_index=False)["price"].mean()
+                  .rename(columns={"price": "national_price"}).merge(dates, on="week_start", how="left"))
+        value = float(series.loc[series["week_start"] == week, "national_price"].iloc[0])
+        usual = price_context.rango_habitual(series, week, target_iso)
+        margins[channel] = {"value": value, "usual": usual, "regions": len(regions),
+                            "state": price_context.estado_precio(value, usual)}
+    return margins
 
 
 @st.cache_data
@@ -6346,10 +6427,9 @@ def read_family_outliers(database_version, product_group, week, exclude_product,
     habitual (the same ±1 ISO-week rule as the main chart), sorted by how far past
     the limit it is, farthest first (D-098).
     """
-    prices = read_cached_national_prices(database_version)
-    family = prices[(prices["product_group"] == product_group) & prices["channel"].isin(CONTEXT_CHANNELS)]
+    regional = read_context_regional_prices(database_version)
+    family = regional[regional["product_group"] == product_group]
     dates = read_dim_date(database_version)
-    family = family.merge(dates, on="week_start", how="left")
     week = pd.Timestamp(week)
     target_iso, _ = describe_target_week(dates, week)
     results = []
@@ -6358,6 +6438,9 @@ def read_family_outliers(database_version, product_group, week, exclude_product,
         product, variety, quality, unit, channel = key_values
         if product == exclude_product and variety == exclude_variety:
             continue
+        if not group["week_start"].eq(week).any():
+            continue
+        group = keep_regions_of_week(group, week).merge(dates, on="week_start", how="left")
         current = group.loc[group["week_start"] == week, "national_price"]
         if current.empty or pd.isna(current.iloc[0]):
             continue
@@ -6444,6 +6527,27 @@ def build_context_self_link(product_group, row):
     return address + ("&" if "?" in address else "?") + urlencode({"_home_key": token})
 
 
+def build_context_margin_card(margins):
+    """The consumer price over the wholesale price, per channel, against its usual range."""
+    if not margins:
+        return ('<section class="ctx-card"><h3>Sobre el precio mayorista</h3><div class="ctx-foot">'
+                'Este producto no tiene precio mayorista comparable: el cruce solo existe para frutas '
+                'y verduras con la misma unidad en ambas fuentes.</div></section>')
+    rows = []
+    for channel, item in margins.items():
+        usual = item["usual"]
+        habit = (f'Habitual: {charts.format_signed_percent(usual[0] * 100)} a '
+                 f'{charts.format_signed_percent(usual[1] * 100)}' if usual else 'Habitual: sin historia suficiente')
+        label, kind = STATE_CHIPS[item["state"]]
+        rows.append(f'<div class="ctx-price-row"><i style="background:{charts.CONTEXT_CHANNELS[channel]}"></i>'
+                    f'<div><strong>{channel}</strong><small>{habit}</small></div><div class="ctx-price">'
+                    f'<b>{charts.format_signed_percent(item["value"] * 100)}</b>'
+                    f'<span class="ctx-state {kind}">{label}</span></div></div>')
+    hint = build_hint_icon("Cuánto paga el consumidor sobre el precio mayorista, en la misma semana, región, "
+                           "producto y unidad (K1). No es ganancia: no descuenta transporte ni costos.")
+    return (f'<section class="ctx-card"><h3>Sobre el precio mayorista{hint}</h3>' + "".join(rows) + '</section>')
+
+
 def build_context_price_card(now, unit):
     rows = []
     for channel in CONTEXT_CHANNELS:
@@ -6466,8 +6570,10 @@ def build_context_price_card(now, unit):
     return (f'<section class="ctx-card"><h3>Precio esta semana{hint}</h3>' + "".join(rows) + '</section>')
 
 
-def build_context_next_card(patterns, pattern_years, month):
-    """3 months × 2 channels, as a compact strip: month, arrow and % change (D-098)."""
+def build_context_next_card(patterns, pattern_years, month, seasonal=None, year=None):
+    """3 months × 2 channels, as a compact strip: month, arrow and % change (D-098).
+    A month shows its change only when at least 3 previous years agree on its
+    direction (D-146); otherwise «sin patrón claro»."""
     months = [(month - 1 + step) % 12 + 1 for step in range(1, 4)]
     header = "".join(f'<th>{price_context.MONTHS[following - 1][:3].capitalize()}</th>' for following in months)
     channel_rows = []
@@ -6483,8 +6589,14 @@ def build_context_next_card(patterns, pattern_years, month):
             cells = ""
             for following in months:
                 change = changes.get(following)
+                agreeing, compared = (price_context.acuerdo_entre_anios(
+                    seasonal[seasonal["channel"] == channel], month, following, year)
+                    if seasonal is not None else (0, 0))
                 if change is None:
                     cells += '<td>—</td>'
+                elif seasonal is not None and not price_context.tiene_patron_claro(agreeing, compared):
+                    cells += (f'<td class="ctx-next-unclear" title="Solo {agreeing} de {compared} años '
+                              'coinciden en la dirección: sin patrón claro.">sin patrón</td>')
                 else:
                     arrow = "▲" if change > 0.05 else "▼" if change < -0.05 else "▬"
                     cells += f'<td class="{"rise" if change > 0.05 else "fall" if change < -0.05 else ""}">' \
@@ -6492,7 +6604,8 @@ def build_context_next_card(patterns, pattern_years, month):
         color = charts.CONTEXT_CHANNELS[channel]
         channel_rows.append(f'<tr><th><i style="background:{color}"></i>{channel}</th>{cells}</tr>')
     hint = build_hint_icon("Cambio típico del índice estacional frente a este mes, por canal, en años "
-                           "anteriores. Es un patrón histórico, no un pronóstico.")
+                           "anteriores. Se muestra solo si al menos 3 años coinciden en la dirección. "
+                           "Es un patrón histórico, no un pronóstico.")
     foot = ("Patrón de años anteriores. No es un pronóstico." if any_history else
             "Sin historia suficiente en ningún canal: hacen falta al menos dos años anteriores.")
     return ('<section class="ctx-card"><h3>Qué suele pasar en las próximas semanas' + hint + '</h3>'
@@ -6594,6 +6707,7 @@ def build_context_css(mode):
     .ctx-next-table tbody th i {{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}}
     .ctx-next-table td.rise {{color:#c0392b;}} .ctx-next-table td.fall {{color:#1f7a4d;}}
     .ctx-next-empty {{color:{palette['text']};font-style:italic;}}
+    .ctx-next-unclear {{color:{palette['text']};font-size:.75rem;font-style:italic;}}
     .ctx-foot {{font-size:10.5px;color:{palette['text']};margin:8px 0 0!important;}}
     .ctx-outlier-scroll {{overflow:auto;max-height:230px;}}
     .ctx-outlier-table {{width:100%;min-width:640px;border-collapse:collapse;font-size:12.5px;}}
@@ -6675,7 +6789,9 @@ def show_price_context_page(mode):
                     show_context_data_dialog(model)
     with right, st.container(key="ctx_side"):
         st.markdown(build_context_price_card(model["now"], key["normalized_unit"]), unsafe_allow_html=True)
-        st.markdown(build_context_next_card(model["patterns"], model["pattern_years"], model["month"]),
+        st.markdown(build_context_margin_card(model["margins"]), unsafe_allow_html=True)
+        st.markdown(build_context_next_card(model["patterns"], model["pattern_years"], model["month"],
+                                            model["seasonal"], model["year"]),
                     unsafe_allow_html=True)
     with st.container(key="ctx_bottom"):
         outliers = read_family_outliers(version, key["product_group"], week, key["product"], key["variety"])
@@ -7445,9 +7561,10 @@ def show_operations_page(mode):
         ["Última carga registrada", "Superada" if run["status"] == etl.STATUS_LOADED else "Falla registrada", f"Ejecución {run['run_id']} · {format_chile_time(parse_run_start(run['started_at']))} (Chile) · estado {run['status']}. Es evidencia de la carga guardada, no del último intento remoto."],
         ["Comprobación de la base actual", "Verificado · alcance limitado" if database_ok else "Falla detectada", f"SQLite: {'correcto' if checks['integrity_ok'] else 'error'}; referencias inválidas: {checks['foreign_keys']}; claves duplicadas: {checks['duplicates']}; precios utilizables con formato inválido: {checks['invalid']}."],
         ["Cobertura temporal", "Disponible", f"{checks['weeks']} semanas, desde {checks['first']} hasta {checks['last']}. Es cobertura registrada, no confirmación de que la fuente esté al día."],
-        ["Reconciliación fuente → base", "Pendiente", "Falta contrastar los precios originales y sus unidades con la transformación y los agregados almacenados."],
-        ["Recálculo independiente de indicadores", "Pendiente", "Las pruebas de software no sustituyen una reconciliación independiente de todos los indicadores contra la fuente."],
-        ["Concordancia cálculo → pantalla", "Pendiente", "Falta documentar una muestra auditada con producto, región, canal, periodo y valor mostrado."],
+        # D-144, D-146: the audit is automated in tests/test_data_audit.py.
+        ["Reconciliación fuente → base", "Verificado · pruebas automáticas", "Cada ejecución de las pruebas reconstruye 120 precios semanales desde las filas crudas de ODEPA, sin el ETL. En la auditoría del 18-10-2026 coincidieron 400 de 400."],
+        ["Recálculo independiente de indicadores", "Verificado · pruebas automáticas", "Las alertas K6 se calculan en Python y en SQL y deben coincidir (D-049); las variaciones del Resumen se comparan con un cálculo SQL independiente."],
+        ["Concordancia cálculo → pantalla", "Verificado · muestra", "Las cifras de familias, ranking y margen de la semana del 05-10-2026 se recalcularon a mano por región y coinciden con lo que muestra el panel (D-144, D-146)."],
         ["Contraste con otra fuente", "Pendiente", "No hay una comparación independiente de precios con otra fuente equivalente."],
     ]
     st.markdown(build_quality_grid_css(mode), unsafe_allow_html=True)
@@ -7456,7 +7573,7 @@ def show_operations_page(mode):
     st.caption("Comprobación local de la base: " + format_chile_time(datetime.fromisoformat(checks["checked_at"])) + " (Chile). Se actualiza al cambiar los archivos o, como máximo, cada cinco minutos al consultar esta vista.")
     if not database_ok or failed:
         st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
-    st.info("La carga aplica controles de calidad. La auditoría completa de origen a pantalla sigue pendiente; no se declara una garantía absoluta de exactitud.")
+    st.info("Los precios se reconstruyen desde la fuente y las cifras del panel se recalculan de forma independiente en las pruebas. Falta un contraste con otra fuente de precios: ODEPA es la única fuente oficial de estos datos.")
     files_tab, run_tab = st.tabs(["Evidencia de archivos", "Última carga"])
     with files_tab:
         if files:

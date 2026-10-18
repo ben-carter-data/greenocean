@@ -4,6 +4,7 @@ No raster charts, fabricated trend points, ETL changes, or remotely hosted asset
 """
 import html
 import math
+import statistics
 import base64
 import json
 from functools import lru_cache
@@ -108,7 +109,7 @@ def style(mode, palette):
 
 def title(week_label, updated, loaded):
     return ('<header class="mock-intro"><div><h1>¿Qué familias de alimentos subieron y bajaron?</h1>'
-            f'<p>Variación promedio por familia frente a la semana anterior · semana {esc(week_label)}</p></div>'
+            f'<p>Variación típica (mediana) por familia frente a la semana anterior · semana {esc(week_label)}</p></div>'
             f'<span class="mock-updated"><i class="{"loaded" if loaded else "failed"}"></i>'
             f'{"Actualizado" if loaded else "Carga con falla"} {esc(updated)}</span></header>')
 
@@ -351,7 +352,7 @@ def comparison_context(week_label, previous_label, scope, updated):
             '<div><span class="mock-fact-icon source" aria-hidden="true"></span><strong>Fuente</strong>'
             f'<span>ODEPA · actualizado {esc(updated)}</span></div>'
             '</div><p>Mostramos alimentos con precio en ambas semanas. El cambio de cada familia '
-            'es el promedio de esos cambios.</p></section>')
+            'es la mediana de esos cambios: lo que hizo el producto típico.</p></section>')
 
 
 @lru_cache(maxsize=1)
@@ -420,7 +421,7 @@ MAP_VIEW = (318, 620)
 MAP_BOX = (6, 8, 612)          # left edge, top and bottom of the country
 LIST_LEFT, LIST_RIGHT = 142, 314
 STATE_WORDS = {'rise': 'subieron', 'fall': 'bajaron', 'neutral': 'quedaron sin cambio',
-               'mixed': 'no tienen una dirección mayoritaria', 'missing': 'no tienen comparación'}
+               'mixed': 'no tienen una dirección clara (subidas y bajadas parejas)', 'missing': 'no tienen comparación'}
 STATE_SYMBOLS = {'rise': '↑', 'fall': '↓', 'neutral': '=', 'mixed': '=', 'missing': ''}
 
 
@@ -512,7 +513,7 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
         if state == 'missing':
             summary = 'Sin precios comparables entre ambas semanas.'
         elif state == 'mixed':
-            summary = 'Sin una dirección mayoritaria entre los precios comparados.'
+            summary = 'Sin dirección clara: subidas y bajadas no se distinguen del azar.'
         else:
             summary = f'{number(share)} % de los precios comparables {STATE_WORDS[state]}.'
         detail = (f'{row.get("down", 0)} bajaron · {row.get("up", 0)} subieron · '
@@ -539,7 +540,7 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
             f'<text class="mock-region-name" x="{LIST_LEFT + 2}" y="{y + 4:.1f}">{esc(short_region(region))}</text>'
             + badge + '</a>')
     legend = ('<span><i class="rise"></i>Subieron</span><span><i class="fall"></i>Bajaron</span>'
-              '<span><i class="neutral"></i>Sin dato o sin mayoría</span>')
+              '<span><i class="neutral"></i>Sin dato o sin dirección clara</span>')
     return ('<section class="mock-regional" id="pulso-regional"><span class="mock-kicker">Lectura territorial</span>'
             '<h2>¿En qué dirección se movieron los precios?</h2>'
             '<p>% de precios comparables que siguió la dirección dominante. Mapa en proporción real; '
@@ -552,13 +553,17 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
 
 
 def family_averages(rows):
-    """[(family, average change, rows)], highest rise first, from comparable series only."""
+    """[(family, typical change, rows)], highest rise first, from comparable series only.
+
+    The typical change is the median (D-146): a few thin series moving ±50 % pulled
+    the mean far from what most products did (Frutas: mean +1,7 %, median +0,02 %).
+    """
     groups = {}
     for row in rows:
         value = row.get('variation')
         if value is not None and math.isfinite(float(value)):
             groups.setdefault(str(row.get('product_group') or 'Sin grupo'), []).append(row)
-    summary = [(group, sum(float(r['variation']) for r in members) / len(members), members)
+    summary = [(group, statistics.median(float(r['variation']) for r in members), members)
                for group, members in groups.items()]
     return sorted(summary, key=lambda item: (-item[1], item[0]))
 
@@ -577,10 +582,10 @@ def dashboard_header(week_label, updated, loaded, family_rows, regional_rows, re
     chips = [('Familias', f'<b class="rise">{states.count("rise")} subieron</b> · '
                           f'<b class="fall">{states.count("fall")} bajaron</b>'),
              ('Regiones (dirección dominante)', f'<b class="rise">{rise} alza</b> · <b class="fall">{fall} baja</b>'
-                                                f' · {other} sin dato o sin mayoría'),
+                                                f' · {other} sin dato o sin dirección clara'),
              ('Región seleccionada', f'<b>{esc(short_region(region) if region else "Todo Chile")}</b>')]
     return ('<header class="mock-intro"><div><h1>¿Qué familias de alimentos subieron y bajaron?</h1>'
-            f'<p>Variación promedio por familia frente a la semana anterior · semana {esc(week_label)}</p></div>'
+            f'<p>Variación típica (mediana) por familia frente a la semana anterior · semana {esc(week_label)}</p></div>'
             '<div class="mock-head-side"><span class="mock-updated"><i class="'
             + ('loaded' if loaded else 'failed') + f'"></i>{"Actualizado" if loaded else "Carga con falla"} {esc(updated)}</span>'
             '<div class="mock-head-chips">'
@@ -603,13 +608,13 @@ def family_movement(rows, family_link, selected_family, scope):
         selected = ' selected' if group == selected_family else ''
         markup.append(
             f'<a class="mock-movement-row {state}{selected}" href="{esc(family_link(group))}" target="_self"'
-            f' title="{esc(group)}: promedio de {len(members)} precios comparables · {esc(scope)}">'
+            f' title="{esc(group)}: mediana de {len(members)} precios comparables · {esc(scope)}">'
             f'<i class="mock-movement-dot"></i><strong>{esc(short_family(group))}</strong>'
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(average * 100, True)}</b>'
             f'<span class="mock-movement-state">{word}</span><span class="mock-movement-chevron">›</span></a>')
     return ('<section class="mock-movement"><div class="mock-movement-heading"><div><h2>Movimiento por familia</h2>'
-            f'<p>Promedio simple de las variaciones de precios comparables · {esc(scope)}. Selecciona una familia para ver sus productos.</p></div>'
+            f'<p>Mediana de las variaciones de precios comparables: lo que hizo el producto típico · {esc(scope)}. Selecciona una familia para ver sus productos.</p></div>'
             '</div><div class="mock-movement-row mock-movement-axis" aria-hidden="true"><i></i><span></span>'
             f'<span class="mock-movement-scale"><span>−{limit} %</span><span>0</span><span>+{limit} %</span></span>'
             '<span></span><span></span><span></span></div>'
@@ -618,7 +623,7 @@ def family_movement(rows, family_link, selected_family, scope):
 
 def products_heading(family, average, scope, shown=None, total=None):
     state = change_state(average) if average is not None else 'neutral'
-    chip = '' if average is None else f'<span class="mock-products-chip {state}">{percent(average * 100, True)} promedio</span>'
+    chip = '' if average is None else f'<span class="mock-products-chip {state}">{percent(average * 100, True)} mediana</span>'
     count = ('' if total is None else f'<span class="mock-products-count">{number(shown)} de {number(total)} precios</span>'
              if shown != total else f'<span class="mock-products-count">{number(total)} precios</span>')
     return (f'<div class="mock-products-heading"><h2>Productos · {esc(short_family(family))}</h2>{chip}'
@@ -635,7 +640,8 @@ def products_table(rows, history_link, week_label, previous_label, query=''):
         regions_text = '—' if not regions else f'<b class="rise">{regions[0]} ↑</b> / <b class="fall">{regions[1]} ↓</b>'
         body.append('<tr>'
                     f'<td><strong>{esc(product_label(row))}</strong>'
-                    + (f'<small>{esc(row["quality"])} · $/{esc(row["normalized_unit"])}</small>' if row.get('quality') else '')
+                    + (f'<small>{esc(row["quality"])} · $/{esc(row["normalized_unit"])}'
+                       + (' · 1 cotización' if row.get('_single_quote') else '') + '</small>' if row.get('quality') else '')
                     + f'</td><td>{esc(row["channel"])}</td>'
                     f'<td class="num">{money(previous_price(row))}</td><td class="num">{money(row["national_price"])}</td>'
                     f'<td class="num {state}"><b>{"0,0 %" if state == "neutral" else percent(change, True)}</b></td>'
@@ -655,7 +661,8 @@ def products_table(rows, history_link, week_label, previous_label, query=''):
 def coverage_note(model, quality_link, methodology_link):
     """What the figures cover, in one line under the table, with its two references."""
     coverage = ('Cada variación nacional compara las mismas regiones en ambas semanas; '
-                f'en {model["coverage_changed"]} se dejaron fuera regiones con precio en una sola.' if model['national'] else
+                f'en {model["coverage_changed"]} se dejaron fuera regiones con precio en una sola. '
+                f'{model.get("single_quote", 0)} cambios apoyados en una sola cotización van al final del orden y llevan la marca «1 cotización».' if model['national'] else
                 'Comparación de la misma región, producto, variedad, calidad, unidad y canal.')
     return (f'<p class="mock-coverage-note"><strong>Cobertura:</strong> {number(model["available"])} precios '
             f'disponibles · {number(model["missing"])} sin comparación válida. {esc(coverage)} '
@@ -772,7 +779,8 @@ def family_tables(model, count, order):
 
 def panels(model, scope, focus_link, data_link, history_link, order, count, quality_link, methodology_link):
     coverage=('Cada variación nacional compara las mismas regiones en ambas semanas; '
-              f'en {model["coverage_changed"]} se dejaron fuera regiones con precio en una sola.'
+              f'en {model["coverage_changed"]} se dejaron fuera regiones con precio en una sola. '
+              f'{model.get("single_quote", 0)} cambios apoyados en una sola cotización van al final del orden y llevan la marca «1 cotización».'
               if model['national'] else 'Comparación de la misma región, producto, variedad, calidad, unidad y canal.')
     return (family_tables(model,count,order)+
             f'<footer class="mock-footer"><span><strong>Cobertura:</strong> {model["available"]} precios disponibles · {model["missing"]} sin comparación válida. {esc(coverage)}</span>'
