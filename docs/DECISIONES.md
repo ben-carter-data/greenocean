@@ -1018,3 +1018,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-17.
 - **Problema reportado:** en las ventanas de cada capa (p. ej. Informes) las tarjetas dejaban mucho espacio vacío y llevaban todas el mismo ícono genérico.
 - **Decisión:** tarjetas compactas y flotantes, con el mismo lenguaje de la galería de KPI (D-114b): el logo real de la herramienta detrás de cada fila (GitHub, SQLite, Streamlit, pytest, Python, Git) sobre un fondo de su color de marca, el título, qué hace y dónde vive. Se reparten a todo el ancho y la última fila se estira, sin huecos. La nota de Informes enlaza directo a los informes en GitHub en vez de a otra página del panel.
+
+## D-138 · Encabezados en español en las consolas
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** las tablas de resultado de las consolas mostraban encabezados en inglés (`week_start`, `product_id`…) en una aplicación en español.
+- **Decisión:** cada columna conocida —de las tablas, de las consultas guardadas, de las preguntas de Python y de los campos de una fila rechazada— se muestra con su nombre en español (Semana, ID producto, Precio…). El nombre real sigue en el tooltip del encabezado, porque es el que hay que escribir en una consulta; la base y el SQL no cambian. La huella del archivo (64 caracteres) va angosta para no empujar las demás columnas.
+- **Validación:** `test_d138_*` exige un encabezado en español para toda columna que las consolas pueden mostrar.

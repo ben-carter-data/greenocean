@@ -4546,6 +4546,56 @@ CONSOLE_COLUMN_HELP = {
 }
 
 
+# Spanish headers for the console grids (D-138). The real column name stays in the
+# tooltip: it is the one a query has to use.
+CONSOLE_COLUMN_LABELS = {
+    "week_start": "Semana", "product_id": "ID producto", "region_id": "ID región",
+    "channel_id": "ID canal", "normalized_unit": "Unidad", "price": "Precio", "volume": "Volumen",
+    "observation_count": "Observaciones", "flag": "Marca", "product_group": "Grupo",
+    "product": "Producto", "variety": "Variedad", "quality": "Calidad", "region": "Región",
+    "channel": "Canal", "source": "Fuente", "reason": "Motivo", "original_row": "Fila original",
+    "consumer_price": "Precio consumidor", "wholesale_price": "Precio mayorista",
+    "margin": "Brecha", "gap": "Brecha", "national_price": "Precio nacional",
+    "reference_channel": "Canal de referencia", "reference_price": "Precio de referencia",
+    "regional_index": "Índice regional", "seasonal_index": "Índice estacional",
+    "price_year": "Año", "year": "Año", "yearly_price": "Precio medio del año",
+    "week_count": "Semanas", "month": "Mes", "month_name": "Mes", "season": "Temporada",
+    "iso_week": "Semana ISO", "iso_year": "Año ISO", "first_week": "Primera semana",
+    "last_week": "Última semana", "first_year": "Primer año", "last_year": "Último año",
+    "variation": "Variación", "usual_variation": "Variación habitual",
+    "variation_deviation": "Desviación", "variation_variance": "Varianza",
+    "is_alert": "Alerta", "consumer_variation": "Variación consumidor",
+    "wholesale_variation": "Variación mayorista", "lag_weeks": "Desfase (semanas)",
+    "correlation": "Correlación", "pair_count": "Pares", "run_id": "Carga",
+    "started_at": "Inicio", "status": "Estado", "message": "Mensaje", "rows_read": "Filas leídas",
+    "rows_loaded": "Filas cargadas", "rows_rejected": "Filas rechazadas",
+    "rejected_rows": "Filas rechazadas", "rejected_share": "% rechazado",
+    "weekly_prices": "Precios semanales", "rows": "Filas", "recalculated": "Motivo recalculado",
+    "unit": "Unidad de venta", "divide_price_by": "Se divide por", "p25": "P25", "p75": "P75",
+    "years_compared": "Años comparados", "state": "Estado",
+    # Fields of a rejected row, as ODEPA sent them (opened from original_row, D-134).
+    "file_year": "Año del archivo", "file_hash": "Huella del archivo", "price_date": "Fecha",
+    "market": "Mercado", "subsector": "Subsector", "sale_unit": "Unidad de venta",
+    "origin": "Origen", "min_price": "Precio mínimo", "max_price": "Precio máximo",
+    "avg_price": "Precio promedio",
+}
+
+
+def build_console_column_config(columns):
+    """Spanish header for every known column; the hover shows its real name and, when
+    there is one, what it means."""
+    config = {}
+    for column in columns:
+        label = CONSOLE_COLUMN_LABELS.get(column)
+        meaning = CONSOLE_COLUMN_HELP.get(column)
+        if label or meaning:
+            help_text = f"Columna `{column}`" + (f" · {meaning}" if meaning else "")
+            # A 64-character hash would push every useful column off the screen.
+            width = "small" if column == "file_hash" else None
+            config[column] = st.column_config.Column(label=label or column, help=help_text, width=width)
+    return config
+
+
 def describe_console_source(source):
     """(title, metadata HTML) of what the editor holds: for a saved query, what it
     compares and where it lives in the repository."""
@@ -4586,10 +4636,10 @@ def show_console_result(source, executed, mode):
     tabs = dict(zip(names, st.tabs(names)))
     with tabs["Resultados"]:
         if opened:
-            st.caption(f"La columna {', '.join(opened)} trae JSON: se muestra abierta, un campo por columna.")
-        helps = {column: st.column_config.Column(help=CONSOLE_COLUMN_HELP[column])
-                 for column in rows.columns if column in CONSOLE_COLUMN_HELP}
-        st.dataframe(rows, hide_index=True, width="stretch", height=540, column_config=helps)
+            names = ", ".join(CONSOLE_COLUMN_LABELS.get(column, column) for column in opened)
+            st.caption(f"La columna «{names}» trae JSON: se muestra abierta, un campo por columna.")
+        st.dataframe(rows, hide_index=True, width="stretch", height=540,
+                     column_config=build_console_column_config(rows.columns))
         st.download_button("Descargar CSV", rows.to_csv(index=False).encode("utf-8"),
                            file_name="consulta.csv", mime="text/csv", icon=":material/download:",
                            on_click="ignore", key="console_download")
@@ -4822,7 +4872,8 @@ def show_python_result(question, executed, values):
                 unsafe_allow_html=True)
     result_tab, functions_tab = st.tabs(["Resultado", "Funciones usadas"])
     with result_tab:
-        st.dataframe(rows, hide_index=True, width="stretch", height=min(38 + 35 * max(len(rows), 1), 540))
+        st.dataframe(rows, hide_index=True, width="stretch", height=min(38 + 35 * max(len(rows), 1), 540),
+                     column_config=build_console_column_config(rows.columns))
     with functions_tab:
         for function in question["functions"]:
             path, line, source = python_console.describe_function(function)
