@@ -406,15 +406,23 @@ ADMIN_ADDRESSES = [link["url"] for link in dashboard.ADMIN_LINKS]
 FAKE_TOKEN = "github_pat_FAKE_SECRET_123"
 
 
-def draw_control_page(secrets):
-    """The Operaciones page with GitHub replaced by fixed answers, no network."""
+def draw_control_page(secrets, run_state="ok", dialog=False):
+    """The Operaciones page with GitHub replaced by fixed answers, no network. A manual
+    run is accepted and ends in run_state. With dialog, the script opens the manual-run
+    dialog itself: in a browser the dialog reruns alone (a fragment), which AppTest
+    does not reproduce."""
     script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
               "from datetime import datetime, timezone\n"
               "from bi import control, dashboard\n"
               "control.list_workflow_runs = lambda *args, **kwargs: []\n"
               "control.read_token_expiration = lambda token: datetime(2026, 10, 20, "
               "tzinfo=timezone.utc)\n"
-              "dashboard.render_page(dashboard.PAGE_RUNS)\n")
+              "control.start_workflow_run = lambda token: None\n"
+              "dashboard.wait_for_manual_run = lambda requested_at, token: {'id': 1}\n"
+              f"dashboard.follow_run_progress = lambda run_id, token, area: {run_state!r}\n"
+              + ("dashboard.show_run_now_dialog(dashboard.get_secret('GITHUB_TOKEN'), "
+                 "dashboard.get_secret('CONTROL_CODE'))\n" if dialog else
+                 "dashboard.render_page(dashboard.PAGE_RUNS)\n"))
     app = AppTest.from_string(script, default_timeout=60)
     for name, value in secrets.items():
         app.secrets[name] = value
@@ -429,29 +437,48 @@ def read_page_text(app):
     return "\n".join(parts)
 
 
+def open_run_dialog(app, code):
+    app.text_input(key="run_now_code").input(code).run()
+    app.button(key="run_now_confirm").click().run()
+    return read_page_text(app) + " ".join(str(element.proto) for element in app.get("success"))
+
+
 @needs_database
-def test_t54_administration_is_hidden_without_the_control_code():
+def test_d149_the_manual_run_is_one_visible_button_and_asks_for_the_code():
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN})
     assert not app.exception
-    text = read_page_text(app)
-    assert "Requiere clave de control" in text
-    assert not [address for address in ADMIN_ADDRESSES if address in text]
-    app.text_input[0].input("equivocada").run()
-    [button for button in app.button if button.label == "Desbloquear"][0].click().run()
+    button = app.button(key="runs_run_now")
+    assert button.label == "Ejecutar pipeline ahora" and not button.disabled
     assert not [address for address in ADMIN_ADDRESSES if address in read_page_text(app)]
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
+    text = open_run_dialog(app, "equivocada")
+    assert not app.exception and "Clave incorrecta" in text
+    assert not [address for address in ADMIN_ADDRESSES if address in text]
 
 
 @needs_database
-def test_t54_the_right_code_opens_administration_and_never_shows_the_token():
-    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN})
-    app.text_input[0].input("clave").run()
-    [button for button in app.button if button.label == "Desbloquear"][0].click().run()
+def test_d149_a_successful_run_says_so_and_never_shows_the_token():
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="ok", dialog=True)
+    text = open_run_dialog(app, "clave")
     assert not app.exception
-    text = read_page_text(app)
-    assert all(address in text for address in ADMIN_ADDRESSES)
-    assert "Tu token vence en" in text
-    assert FAKE_TOKEN not in text
-    assert FAKE_TOKEN[-6:] not in text
+    assert "Se ejecutó correctamente" in text and "Tu token vence en" in text
+    assert FAKE_TOKEN not in text and FAKE_TOKEN[-6:] not in text
+
+
+@needs_database
+def test_d149_a_failed_run_says_it_did_not_complete():
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="failed", dialog=True)
+    text = open_run_dialog(app, "clave")
+    assert not app.exception and "No se ejecutó completamente" in text
+
+
+@needs_database
+def test_d149_without_secrets_the_run_is_disabled_and_reload_confirms():
+    app = draw_control_page({})
+    assert app.button(key="runs_run_now").disabled
+    app.button(key="runs_reload").click().run()
+    assert not app.exception
+    assert any("Datos recargados" in str(toast.proto) for toast in app.get("toast"))
 
 
 @needs_database

@@ -1110,3 +1110,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-18.
 - **Problema reportado:** si GitHub tiene todo el código, ¿para qué una página que lo repite, con su enlace en la navegación? Y la leyenda del modelo de datos quedaba pegada al borde.
 - **Decisión:** se retira la página «Código Python y SQL» (ventana «Código del proyecto»); su dirección vieja abre la página GitHub. La navegación «Siguiente» del pie ya no pasa por ella. Con la limpieza se quitan 73 funciones y constantes de `bi/dashboard.py` que ninguna página usaba, restos de páginas retiradas: el archivo pasa de 8.474 a unas 7.500 líneas. La leyenda del modelo de datos lleva su propio margen y una línea que la separa del diagrama, y todo cabe en una pantalla.
+
+## D-149 · La ejecución manual es un botón visible, con su resultado
+
+- **Fecha:** 2026-10-18.
+- **Problema reportado:** en Ejecuciones no se veía dónde se ejecuta el pipeline a mano, ni si terminó bien. El único botón visible, «Recargar datos del panel», no ejecuta nada: solo vuelve a leer la base guardada. «Ejecutar ahora» existía, pero escondido detrás de la clave.
+- **Decisión:** la tarjeta se llama «Ejecución manual» y explica que el pipeline corre solo cada martes a las 09:00 (Chile). El primer botón es **«Ejecutar pipeline ahora»** (▶, color principal): pide la clave de control en una ventana, muestra los pasos en vivo y termina con un mensaje claro, «Se ejecutó correctamente» o «No se ejecutó completamente: un paso falló», además de un aviso flotante. Sin la clave y el token en los secretos se ve desactivado, con su motivo. «Recargar datos del panel» queda como botón secundario y confirma «Datos recargados · base del …».
+- **Error corregido:** al terminar una ejecución manual, el código limpiaba la caché de una función que no la tenía (`read_pipeline_runs.clear()`); toda ejecución manual exitosa terminaba con un error en pantalla. Ahora limpia `fetch_pipeline_runs`, la función guardada en caché.
+- **Validación:** pruebas `test_d149_*` (clave equivocada, ejecución exitosa, ejecución fallida, sin secretos), sin llamar a GitHub.
