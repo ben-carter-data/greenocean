@@ -1104,3 +1104,9 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-18.
 - **Problema reportado:** si el modelo estrella ya muestra todas las tablas, ¿para qué elegir una en una lista?
 - **Decisión:** se retiran la lista «Tablas de datos.db» y el panel «Detalle de la tabla seleccionada», que solo añadían una frase y una consulta SQL de ejemplo. El diagrama ocupa todo el ancho; cada tabla explica al pasar el mouse su papel (hechos, dimensión o auditoría), sus filas y para qué sirve. El enlace a `etl/schema.sql` abre GitHub, no una página fuera del menú.
+
+## D-148 · «Código Python y SQL» sale; limpieza del código sin uso
+
+- **Fecha:** 2026-10-18.
+- **Problema reportado:** si GitHub tiene todo el código, ¿para qué una página que lo repite, con su enlace en la navegación? Y la leyenda del modelo de datos quedaba pegada al borde.
+- **Decisión:** se retira la página «Código Python y SQL» (ventana «Código del proyecto»); su dirección vieja abre la página GitHub. La navegación «Siguiente» del pie ya no pasa por ella. Con la limpieza se quitan 73 funciones y constantes de `bi/dashboard.py` que ninguna página usaba, restos de páginas retiradas: el archivo pasa de 8.474 a unas 7.500 líneas. La leyenda del modelo de datos lleva su propio margen y una línea que la separa del diagrama, y todo cabe en una pantalla.

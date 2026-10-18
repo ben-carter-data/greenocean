@@ -51,7 +51,7 @@ def draw_page(title):
 
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     assert dashboard.ROUTE == ["Dashboard", "Arquitectura y operación",
-                               "Código del proyecto", "El proyecto"]
+                               "El proyecto"]
     assert list(dashboard.WINDOWS) == dashboard.ROUTE + [dashboard.SECTION_LINKS, dashboard.SECTION_RESOURCES,
                                                          dashboard.SECTION_KPI]
     views = [view for window in dashboard.WINDOWS.values() for view in window]
@@ -177,7 +177,9 @@ def test_c03_every_result_is_read_only_and_runs_only_stored_queries(monkeypatch)
 def test_d143_the_consoles_left_and_their_old_addresses_open_the_summary():
     assert dashboard.SECTION_QUERIES not in dashboard.WINDOWS
     assert dashboard.SECTION_PYTHON not in dashboard.WINDOWS
-    assert dashboard.WINDOWS[dashboard.SECTION_CODE] == [dashboard.PAGE_CODE]
+    # D-148: «Código Python y SQL» left as well; its address opens the GitHub page.
+    assert dashboard.SECTION_CODE not in dashboard.WINDOWS
+    assert dashboard.OLD_PATHS["codigo"] == (dashboard.PAGE_LINKS, None)
     for path in ["datos-y-codigo", "consultas", "preguntas-y-resultados", "analisis-python"]:
         assert dashboard.OLD_PATHS[path] == (dashboard.PAGE_HOME, None)
     assert dashboard.PAGE_OF_TAB[dashboard.TAB_EXPLORER] == dashboard.PAGE_HOME
@@ -598,17 +600,6 @@ def test_d057_every_theme_of_the_glossary_says_what_it_groups():
     assert themes == set(dashboard.GLOSSARY_THEME_LEADS)
 
 
-def test_d057_every_file_of_the_readme_falls_in_one_known_folder():
-    folders = [folder for folder, _, _ in dashboard.FOLDER_PURPOSES]
-    assert folders[:2] == ["", "agent/"] and folders[-1] == "docs/"
-    paths = [path for path, _, _ in project.list_repository_files()]
-    assert {dashboard.find_folder(path) for path in paths} <= set(folders)
-    assert dashboard.find_folder("bi/zoom.py") == "bi/"
-    assert "bi/zoom.py" in paths and "bi/star_model.py" in paths
-    line = dashboard.build_file_line_html("bi/zoom.py", "zoom", "https://github.com/x")
-    assert ">zoom.py</a> — zoom</li>" in line
-
-
 def test_d057_every_rejection_reason_of_the_etl_is_explained():
     from etl import etl
     reasons = {value for name, value in vars(etl).items() if name.startswith("REASON_")}
@@ -719,19 +710,6 @@ def test_market_ranking_handles_both_directions_missing_values_and_top_n():
     assert dashboard.rank_weekly_movements(rows, 2).variation.tolist() == [-0.8, 0.4]
     assert dashboard.rank_weekly_movements(rows, 2, "Alzas").variation.tolist() == [0.4, 0.1]
     assert dashboard.rank_weekly_movements(rows, 2, "Bajas").variation.tolist() == [-0.8]
-
-
-@needs_database
-def test_code_walkthrough_is_visible_and_collapsible_with_real_sources():
-    app = draw_page(dashboard.PAGE_CODE)
-    assert not app.exception
-    entries = project.list_code_walkthrough()
-    for entry in entries:
-        block = next(block for block in app.code if block.value.strip() == entry["source"].strip())
-        assert block.value.startswith('"""')
-        expander = next(expander for expander in app.expander if entry["path"] in expander.label)
-        assert not expander.proto.expanded
-    assert any(block.language == "sql" for block in app.code)
 
 
 @needs_database
@@ -1120,7 +1098,7 @@ def test_dashboard_explains_its_graphs_and_collapses_family_tables():
     # The coverage note moved under the products table, with its two references.
     assert 'sin comparación válida' in text and '>Calidad</a>' in text and '>Metodología</a>' in text
     assert not app.expander
-    for page in [dashboard.PAGE_OPERATIONS, dashboard.PAGE_CODE]:
+    for page in [dashboard.PAGE_OPERATIONS]:
         detail = draw_page(page)
         assert not detail.exception
         assert all(not block.proto.expanded for block in detail.expander)
@@ -1315,8 +1293,6 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
     toggle.click().run()
     assert not app.exception
     assert 'Pipeline' in [link.proto.label for link in app.sidebar.get('page_link')]
-
-
 
 
 @needs_database
