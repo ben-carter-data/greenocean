@@ -573,24 +573,31 @@ def change_state(value):
     return 'neutral' if abs(value) < .0005 else 'rise' if value > 0 else 'fall'
 
 
-def dashboard_header(week_label, updated, loaded, family_rows, regional_rows, region):
-    """Title on the left; on the right, three summaries a reader can check at once."""
+def dashboard_header(week_label, updated, loaded, family_rows, regional_rows, region,
+                     compared=None, available=None, alerts=None):
+    """Title, then four KPI tiles of equal width (D-150): every figure comes from the
+    same weekly model the charts below use, so the strip and the charts agree."""
     states = [change_state(average) for _, average, _ in family_averages(family_rows)]
     regions = [row.get('state') for row in regional_rows]
-    rise, fall = regions.count('rise'), regions.count('fall')
-    other = len(REGION_SHORT_NAMES) - rise - fall
-    chips = [('Familias', f'<b class="rise">{states.count("rise")} subieron</b> · '
-                          f'<b class="fall">{states.count("fall")} bajaron</b>'),
-             ('Regiones (dirección dominante)', f'<b class="rise">{rise} alza</b> · <b class="fall">{fall} baja</b>'
-                                                f' · {other} sin dato o sin dirección clara'),
-             ('Región seleccionada', f'<b>{esc(short_region(region) if region else "Todo Chile")}</b>')]
+    rise, fall, mixed = regions.count('rise'), regions.count('fall'), regions.count('mixed')
+    missing = len(REGION_SHORT_NAMES) - rise - fall - mixed
+    tiles = [('Precios comparados', f'{number(compared)} <small>de {number(available)}</small>'
+              if compared is not None else '—', 'con precio en ambas semanas'),
+             ('Familias', f'<b class="rise">{states.count("rise")} ↑</b> · <b class="fall">{states.count("fall")} ↓</b>'
+                          f' · {states.count("neutral")} =', 'variación típica (mediana)'),
+             ('Regiones', f'<b class="rise">{rise} ↑</b> · <b class="fall">{fall} ↓</b>',
+              f'{mixed} sin dirección clara · {missing} sin dato'),
+             ('Alertas de precio', f'<b class="alert">{number(alerts)}</b>' if alerts is not None else '—',
+              'inusuales y de al menos 10 %')]
+    place = esc(short_region(region) if region else 'Todo Chile')
     return ('<header class="mock-intro"><div><h1>¿Qué familias de alimentos subieron y bajaron?</h1>'
-            f'<p>Variación típica (mediana) por familia frente a la semana anterior · semana {esc(week_label)}</p></div>'
+            f'<p>Variación típica (mediana) por familia frente a la semana anterior · semana {esc(week_label)} · {place}</p></div>'
             '<div class="mock-head-side"><span class="mock-updated"><i class="'
             + ('loaded' if loaded else 'failed') + f'"></i>{"Actualizado" if loaded else "Carga con falla"} {esc(updated)}</span>'
-            '<div class="mock-head-chips">'
-            + ''.join(f'<div class="mock-head-chip"><span>{label}</span><div>{value}</div></div>' for label, value in chips)
-            + '</div></div></header>')
+            '</div></header><div class="mock-kpis">'
+            + ''.join(f'<div class="mock-kpi"><span>{label}</span><strong>{value}</strong><small>{note}</small></div>'
+                      for label, value, note in tiles)
+            + '</div>')
 
 
 def family_movement(rows, family_link, selected_family, scope):

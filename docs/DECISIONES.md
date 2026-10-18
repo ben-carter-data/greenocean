@@ -1118,3 +1118,15 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** la tarjeta se llama «Ejecución manual» y explica que el pipeline corre solo cada martes a las 09:00 (Chile). El primer botón es **«Ejecutar pipeline ahora»**: un botón redondo de encendido, azul con brillo, anillo metálico y el símbolo de encendido en blanco, con su texto debajo; pide la clave de control en una ventana, muestra los pasos en vivo y termina con un mensaje claro, «Se ejecutó correctamente» o «No se ejecutó completamente: un paso falló», además de un aviso flotante. Sin la clave y el token en los secretos se ve desactivado, con su motivo. «Recargar datos del panel» queda como botón secundario y confirma «Datos recargados · base del …».
 - **Error corregido:** al terminar una ejecución manual, el código limpiaba la caché de una función que no la tenía (`read_pipeline_runs.clear()`); toda ejecución manual exitosa terminaba con un error en pantalla. Ahora limpia `fetch_pipeline_runs`, la función guardada en caché.
 - **Validación:** pruebas `test_d149_*` (clave equivocada, ejecución exitosa, ejecución fallida, sin secretos), sin llamar a GitHub.
+
+## D-150 · Simetría y coherencia visual de todas las páginas
+
+- **Fecha:** 2026-10-18.
+- **Pedido:** tras la revisión página por página, que todas las correcciones sean simétricas, coherentes con los datos y sin espacios en blanco inútiles.
+- **Resumen semanal:** cuatro indicadores de igual ancho bajo el título (precios comparados, familias, regiones y alertas), todos leídos del mismo modelo semanal que los gráficos. El mapa se estira a la altura de la columna derecha y ambas terminan en la misma línea (se midió en el navegador: 37 px de diferencia, antes 249). Filas de familia más compactas, tabla de productos de altura fija con desplazamiento interno, nota de cobertura a todo el ancho debajo, filtros sin cortes y botón «Ver contexto».
+- **Contexto de precios:** el gráfico y las dos tarjetas de la semana («Precio esta semana», «Sobre el precio mayorista») empiezan y terminan en la misma línea (215 → 658 px, medido); «Qué suele pasar en las próximas semanas» pasa a una franja de ancho completo donde cada mes se lee en una línea.
+- **Cabeceras:** Pipeline y Calidad de datos usan la misma cabecera de una línea con la frescura de los datos que el resto de las páginas técnicas.
+- **Calidad de datos:** una sola columna de huella corta en vez de dos huellas idénticas de 64 caracteres; fechas legibles; se quita la línea técnica de la comprobación local.
+- **Pipeline:** etiquetas un paso más grandes; se quitan dos fichas «HTTPS · CSV» que tapaban los nombres de las fuentes y repetían el encabezado de la columna.
+- **Alertas de precio:** todas las familias con la misma tarjeta; el número de alertas está escrito, así que la forma y el color ya no representan una cantidad.
+- **Textos:** la nota del pie explica que cada variación semanal compara las mismas regiones; la hoja de estilo opcional (`premium.css`) se carga solo si existe.

@@ -600,9 +600,9 @@ def build_links(palette, is_running):
 
     return "".join([
         build_link(right_of("sources", 250), left_of("ingestion"), LAYER_COLORS["sources"],
-                   palette, "HTTPS · CSV", moving_dot=is_running),
+                   palette, moving_dot=is_running),
         build_link(right_of("sources", 420), left_of("ingestion"), LAYER_COLORS["sources"],
-                   palette, "HTTPS · CSV", moving_dot=is_running),
+                   palette, moving_dot=is_running),
         build_link(right_of("ingestion"), left_of("bronze"), LAYER_COLORS["ingestion"],
                    palette, "manifest", moving_dot=is_running),
         build_link(right_of("bronze"), left_of("cleaning"), LAYER_COLORS["bronze"],
