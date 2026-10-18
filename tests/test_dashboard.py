@@ -51,8 +51,7 @@ def draw_page(title):
 
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     assert dashboard.ROUTE == ["Dashboard", "Arquitectura y operación",
-                               "Código del proyecto", "Preguntas y resultados SQL",
-                               "Análisis con Python", "El proyecto"]
+                               "Código del proyecto", "El proyecto"]
     assert list(dashboard.WINDOWS) == dashboard.ROUTE + [dashboard.SECTION_LINKS, dashboard.SECTION_RESOURCES,
                                                          dashboard.SECTION_KPI]
     views = [view for window in dashboard.WINDOWS.values() for view in window]
@@ -175,26 +174,15 @@ def test_c03_every_result_is_read_only_and_runs_only_stored_queries(monkeypatch)
     dashboard.read_cached_catalog_rows.clear()
 
 
-def test_c03_old_addresses_of_the_retired_screen_open_the_catalog():
-    assert dashboard.PAGE_DATA_AND_CODE == dashboard.PAGE_QUERIES
-    assert dashboard.WINDOWS[dashboard.SECTION_QUERIES] == [dashboard.PAGE_QUERIES]
+def test_d143_the_consoles_left_and_their_old_addresses_open_the_summary():
+    assert dashboard.SECTION_QUERIES not in dashboard.WINDOWS
+    assert dashboard.SECTION_PYTHON not in dashboard.WINDOWS
     assert dashboard.WINDOWS[dashboard.SECTION_CODE] == [dashboard.PAGE_CODE]
-    for path in ["datos-y-codigo", "consultas"]:
-        assert dashboard.OLD_PATHS[path] == (dashboard.PAGE_QUERIES, None)
-    assert dashboard.PAGE_OF_TAB[dashboard.TAB_EXPLORER] == dashboard.PAGE_QUERIES
-    assert "datos-y-codigo" not in dashboard.PAGE_PATHS.values()
-
-
-@needs_database
-def test_c03_an_old_section_link_to_the_explorer_opens_the_catalog():
-    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    app.query_params["seccion"] = dashboard.TAB_EXPLORER
-    app.query_params["perfil"] = "Reclutamiento"
-    app.run()
-    assert not app.exception
-    assert read_page_title(app) == "Consola SQL"
-    # The console (D-126) opens on the price table.
-    assert app.session_state[dashboard.CONSOLE_SOURCE] == dashboard.CONSOLE_DEFAULT
+    for path in ["datos-y-codigo", "consultas", "preguntas-y-resultados", "analisis-python"]:
+        assert dashboard.OLD_PATHS[path] == (dashboard.PAGE_HOME, None)
+    assert dashboard.PAGE_OF_TAB[dashboard.TAB_EXPLORER] == dashboard.PAGE_HOME
+    assert not hasattr(dashboard.queries, "run_console_sql")
+    assert dashboard.build_query_address("k1_margin").startswith("https://github.com/")
 
 
 @needs_database
@@ -301,8 +289,8 @@ def test_d097_model_page_fits_one_screen_with_a_clickable_table_detail():
     app.button(key="devops_layer_Seguridad").click().run()
     assert not app.exception
     joined = " ".join(block.value for block in app.markdown)
-    assert joined.count('class="technical-rows layer-cards"') == 1 and "Consola SQL de solo lectura" in joined
-    assert joined.count('class="layer-card"') == 5 and 'class="layer-logo"' in joined
+    assert joined.count('class="technical-rows layer-cards"') == 1 and "Base en solo lectura" in joined
+    assert joined.count('class="layer-card"') == 4 and 'class="layer-logo"' in joined
 
 @needs_database
 def test_d056_analysis_filters_show_once_and_hold_in_every_tab():
@@ -316,84 +304,6 @@ def test_d056_analysis_filters_show_once_and_hold_in_every_tab():
     region.set_value(other_region).run()
     assert not app.exception
     assert app.session_state["analysis_region"] == other_region
-
-
-@needs_database
-def test_d126_the_console_lists_tables_and_every_saved_query_and_runs_the_first_table():
-    """An object explorer (every table, with its rows; every saved query) and the
-    price table already in the editor and run, like a database tool on opening."""
-    app = draw_page(dashboard.PAGE_QUERIES)
-    assert not app.exception
-    keys = [str(button.key) for button in app.button]
-    for table, _ in dashboard.queries.list_tables():
-        assert f"console_table_{table}" in keys
-    for entry in dashboard.CATALOG:
-        assert f"console_query_{entry['name']}" in keys
-    assert app.session_state[dashboard.CONSOLE_TEXT].startswith("SELECT *\nFROM weekly_price")
-    status = " ".join(block.value for block in app.markdown if 'class="console-status' in block.value)
-    assert "✓ 100 filas" in status and "solo lectura" in status
-    assert [tab.label for tab in app.tabs] == ["Resultados"]
-    assert len(app.dataframe) == 1 and len(app.get("download_button")) == 1
-
-
-@needs_database
-def test_d127_a_saved_query_loads_on_click_and_runs_only_on_ejecutar():
-    """A click in the explorer only loads the query; «Ejecutar» runs it. No Python
-    or «Cómo leerlo» tab; «Restaurar» only once the text is edited (D-127)."""
-    app = draw_page(dashboard.PAGE_QUERIES)
-    app.button(key="console_query_k1_margin").click().run()
-    assert not app.exception
-    assert app.query_params[dashboard.CATALOG_PARAMETER] == "k1_margin"
-    assert app.session_state[dashboard.CONSOLE_TEXT] == queries.load_queries()["k1_margin"].strip()
-    text = " ".join(block.value for block in app.markdown)
-    assert "pulsa <b>Ejecutar</b>" in text and not app.dataframe
-    assert "bi/queries.sql, línea" in text and dashboard.CATALOG_BY_NAME["k1_margin"]["compares"] in text
-    assert "console_restore" not in [str(button.key) for button in app.button]
-    app.button(key="console_run").click().run()
-    assert [tab.label for tab in app.tabs] == ["Resultados", "Gráfico"]
-    assert len(app.dataframe) == 1 and not any(block.language == "python" for block in app.code)
-    app.session_state[dashboard.CONSOLE_TEXT] = "SELECT * FROM dim_channel"
-    app.run()
-    assert "console_restore" in [str(button.key) for button in app.button]
-    app.button(key="console_restore").click().run()
-    assert app.session_state[dashboard.CONSOLE_TEXT] == queries.load_queries()["k1_margin"].strip()
-
-
-@needs_database
-def test_d126_the_console_runs_what_is_written_and_refuses_anything_but_reading():
-    app = draw_page(dashboard.PAGE_QUERIES)
-    app.session_state[dashboard.CONSOLE_TEXT] = "SELECT region FROM dim_region ORDER BY region"
-    app.run()
-    app.button(key="console_run").click().run()
-    status = " ".join(block.value for block in app.markdown if 'class="console-status' in block.value)
-    assert "✓ 9 filas" in status
-    app.session_state[dashboard.CONSOLE_TEXT] = "DROP TABLE weekly_price"
-    app.run()
-    app.button(key="console_run").click().run()
-    status = " ".join(block.value for block in app.markdown if 'class="console-status' in block.value)
-    assert "console-status-error" in status and "Solo se permiten consultas de lectura" in status
-    app.session_state[dashboard.CONSOLE_TEXT] = "SELECT * FROM dim_region"
-    app.run()
-    app.text_input(key="console_filter").input("carga").run()
-    keys = [str(button.key) for button in app.button]
-    assert "console_query_quality_runs" in keys and "console_query_k1_margin" not in keys
-
-
-@pytest.mark.parametrize("sql", ["DELETE FROM weekly_price", "ATTACH 'x.db' AS other",
-                                 "PRAGMA table_info(weekly_price)", "SELECT 1; DROP TABLE dim_region",
-                                 "UPDATE dim_region SET region = 'x'", ""])
-def test_d126_console_refuses_anything_but_a_single_read(sql):
-    with pytest.raises(queries.ConsoleError):
-        queries.run_console_sql(sql)
-
-
-@needs_database
-def test_d126_console_stops_a_runaway_query_and_caps_rows():
-    with pytest.raises(queries.ConsoleError, match="se detuvo"):
-        queries.run_console_sql("WITH RECURSIVE c(x) AS (SELECT 1 UNION ALL SELECT x + 1 FROM c) "
-                                "SELECT COUNT(*) FROM c", timeout_seconds=1)
-    rows, truncated, _ = queries.run_console_sql("SELECT * FROM weekly_price", limit=50)
-    assert len(rows) == 50 and truncated
 
 
 def test_kpi_link_opens_the_kpi_view_with_that_indicator():
@@ -718,24 +628,6 @@ def test_d057_rejected_rows_show_readable_spanish_columns():
     assert table.iloc[0]["Motivo"] == "Precio cero o negativo"
 
 
-def test_d141_console_values_read_in_spanish_and_unknown_codes_stay():
-    rows = pd.DataFrame({"source": ["wholesale", "consumer", "otro"],
-                         "reason": ["NON_POSITIVE_PRICE", "NON_POSITIVE_VOLUME", None],
-                         "flag": ["ATIPICO", None, "UNIDAD_NO_CONVERTIBLE"]})
-    shown = dashboard.translate_console_values(rows)
-    assert list(shown["source"]) == ["Mayorista", "Consumidor", "otro"]
-    assert list(shown["reason"])[:2] == ["Precio cero o negativo", "Sin volumen"]
-    assert shown["flag"].iloc[0] == "Atípico" and shown["flag"].iloc[2] == "Unidad no convertible"
-    assert set(dashboard.REASON_NAMES) == set(dashboard.REASON_TEXTS)
-    assert shown["flag"].iloc[1] == "Sin marca"
-
-
-def test_d142_a_table_preview_opens_on_its_newest_rows():
-    assert dashboard.build_table_preview_sql("weekly_price") == (
-        "SELECT *\nFROM weekly_price\nORDER BY week_start DESC\nLIMIT 100")
-    assert dashboard.build_table_preview_sql("dim_region") == "SELECT *\nFROM dim_region\nLIMIT 100"
-
-
 @needs_database
 def test_d057_quality_tab_explains_what_was_left_out_and_shows_it():
     script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
@@ -876,8 +768,7 @@ def test_displayed_source_blocks_are_unique_across_the_portfolio():
 @needs_database
 def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
     # Tabs are allowed only where they replace a long scroll (D-120, D-121, D-122).
-    tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_DEVOPS, dashboard.PAGE_OPERATIONS,
-              dashboard.PAGE_QUERIES, dashboard.PAGE_PYTHON}
+    tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_DEVOPS, dashboard.PAGE_OPERATIONS}
     for page in dashboard.PAGES:
         app = draw_page(page)
         assert not app.exception, page
@@ -914,7 +805,7 @@ def test_c01_the_cover_names_the_project_reads_real_figures_and_links_every_step
                   "Trazabilidad y operación", "Límites claros", "no mide ganancias"]:
         assert words in text
     # Every way out of the cover stays in the same window and names its destination.
-    for view in [dashboard.PAGE_HOME, dashboard.PAGE_QUERIES, dashboard.PAGE_RULES,
+    for view in [dashboard.PAGE_HOME, dashboard.PAGE_DIAGRAMS, dashboard.PAGE_RULES,
                  dashboard.PAGE_KPI, dashboard.PAGE_RUNS, dashboard.PAGE_BUSINESS]:
         assert f'href="{html.escape(dashboard.build_page_address(view))}" target="_self"' in text
     # The full definition keeps its own view, untouched.
@@ -982,80 +873,12 @@ def test_every_page_draws_without_errors_and_shows_the_attribution(title):
 
 
 @needs_database
-def test_d135_the_python_console_runs_the_real_functions_and_only_on_ejecutar():
-    """Its own sidebar folder; a first visit runs the first question; a click only
-    loads another one; Ejecutar runs it; a parameter change waits for Ejecutar."""
-    assert (dashboard.SECTION_PYTHON, [dashboard.PAGE_PYTHON]) in dashboard.SIDEBAR_TREE[0][1]
-    app = draw_page(dashboard.PAGE_PYTHON)
-    assert not app.exception
-    status = " ".join(block.value for block in app.markdown if 'class="console-status' in block.value)
-    assert "el ETL llega al mismo motivo en el 100%" in status
-    assert [tab.label for tab in app.tabs] == ["Resultado", "Funciones usadas"]
-    assert any("def validate_rows" in block.value for block in app.code)
-    app.button(key="python_question_k6_alerts").click().run()
-    assert app.query_params[dashboard.PYTHON_PARAMETER] == "k6_alerts"
-    assert "pulsa <b>Ejecutar</b>" in " ".join(block.value for block in app.markdown)
-    app.button(key="python_run").click().run()
-    status = " ".join(block.value for block in app.markdown if 'class="console-status' in block.value)
-    assert "fuera de su rango habitual en Feria libre" in status and len(app.dataframe) == 1
-    app.selectbox(key="python_param_k6_alerts_channel").set_value("Supermercado").run()
-    assert "pulsa <b>Ejecutar</b>" in " ".join(block.value for block in app.markdown)
-    app.button(key="python_run").click().run()
-    status = " ".join(block.value for block in app.markdown if 'class="console-status' in block.value)
-    assert "en Supermercado" in status
-
-
-@needs_database
-def test_d138_every_console_column_has_a_spanish_header_and_keeps_its_real_name():
-    from bi import python_console
-    columns = set()
-    for table, _ in dashboard.queries.list_tables():
-        columns |= set(dashboard.queries.run_console_sql(f"SELECT * FROM {table} LIMIT 1")[0].columns)
-    for entry in dashboard.CATALOG:
-        columns |= set(dashboard.queries.run_console_sql(dashboard.read_catalog_sql(entry["name"]))[0].columns)
-    options = {name: read() for name, read in python_console.OPTION_READERS.items()}
-    for question in python_console.QUESTIONS:
-        values = python_console.default_parameters(question, options)
-        columns |= set(python_console.run_script(question, values, options)["result"].columns)
-    rejected = dashboard.queries.run_console_sql("SELECT original_row FROM rejection")[0]
-    columns |= set(dashboard.expand_json_columns(rejected)[0].columns)
-    unnamed = {column for column in columns if column.startswith("(")}
-    assert columns - unnamed - set(dashboard.CONSOLE_COLUMN_LABELS) == set()
-    config = dashboard.build_console_column_config(["week_start"])
-    assert config["week_start"]["label"] == "Semana" and "`week_start`" in config["week_start"]["help"]
-
-
-def test_d140_every_explorer_entry_has_a_short_one_line_label():
-    from bi import python_console
-    names = [entry["name"] for entry in dashboard.CATALOG] + [q["name"] for q in python_console.QUESTIONS]
-    assert set(names) <= set(dashboard.EXPLORER_LABELS)
-    assert all(len(label) <= 30 for label in dashboard.EXPLORER_LABELS.values())
-
-
-def test_d135_a_parameter_is_written_as_data_and_never_as_code():
-    from bi import python_console
-    question = python_console.QUESTIONS_BY_NAME["rn03_units"]
-    hostile = '"); import os; os.remove("x") #'
-    assert repr(hostile) in python_console.build_script(question, {"unit": hostile})
-    run = python_console.run_script(question, {"unit": hostile}, {})
-    assert run["result"].loc[0, "unit"] == hostile
-    alerts_question = python_console.QUESTIONS_BY_NAME["k6_alerts"]
-    with pytest.raises(ValueError):
-        python_console.check_parameters(alerts_question, {"channel": hostile},
-                                        {"national_channel": ["Feria libre"]})
-
-
-@needs_database
 def test_a_kpi_link_opens_its_canonical_query_without_repeating_it():
     app = draw_page(dashboard.PAGE_KPI)
     assert not [block for block in app.code if block.language == "sql"]
-    script = ("import streamlit as st\nst.query_params['consulta']='k7_match_coverage'\n"
-              "from bi import dashboard\ndashboard.show_queries_tab(dashboard.charts.MODE_DARK)")
-    catalog = AppTest.from_string(script, default_timeout=60).run()
-    assert not catalog.exception
-    # The console (D-126) opens that saved query in its editor.
-    assert catalog.session_state[dashboard.CONSOLE_SOURCE] == ("query", "k7_match_coverage")
-    assert catalog.session_state[dashboard.CONSOLE_TEXT] == dashboard.etl.MATCH_COVERAGE_QUERY.strip()
+    # The query lives in GitHub (D-143): the link lands on its line there.
+    path, line = dashboard.find_catalog_line("k7_match_coverage")
+    assert dashboard.build_query_address("k7_match_coverage").endswith(f"{path}#L{line}")
 
 
 def test_retired_profiles_do_not_change_the_public_route():
@@ -1270,9 +1093,8 @@ def test_appearance_change_preserves_report_filters_without_a_profile_selector()
 
 
 def test_old_combined_code_and_technical_addresses_keep_their_destinations():
-    assert dashboard.OLD_PATHS['codigo-y-resultados'][0] == dashboard.PAGE_QUERIES
+    assert dashboard.OLD_PATHS['codigo-y-resultados'][0] == dashboard.PAGE_HOME
     assert dashboard.OLD_PATHS['detalle-tecnico'][0] == dashboard.PAGE_DIAGRAMS
-    assert dashboard.WINDOW_OF_VIEW[dashboard.PAGE_QUERIES] != dashboard.WINDOW_OF_VIEW[dashboard.PAGE_CODE]
 
 
 def test_plain_ranking_answer_keeps_the_direction_and_real_percentage():
@@ -1301,7 +1123,7 @@ def test_dashboard_explains_its_graphs_and_collapses_family_tables():
     # The coverage note moved under the products table, with its two references.
     assert 'sin comparación válida' in text and '>Calidad</a>' in text and '>Metodología</a>' in text
     assert not app.expander
-    for page in [dashboard.PAGE_OPERATIONS, dashboard.PAGE_QUERIES, dashboard.PAGE_CODE]:
+    for page in [dashboard.PAGE_OPERATIONS, dashboard.PAGE_CODE]:
         detail = draw_page(page)
         assert not detail.exception
         assert all(not block.proto.expanded for block in detail.expander)
@@ -1436,7 +1258,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # the word, as a markdown link rather than a page_link (D-117).
     # Every folder starts open (D-139): the whole map of the app at a glance.
     for child in ['Resumen semanal', 'Pipeline', 'Modelo de datos', 'DevOps y seguridad',
-                  'Calidad de datos', 'Ejecuciones', 'Preguntas y resultados',
+                  'Calidad de datos', 'Ejecuciones',
                   'Business Intelligence', 'Business Analyst', 'IT y operación']:
         assert child in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
@@ -1448,8 +1270,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     folder_buttons = [button for button in app.sidebar.button if str(button.key).startswith('nav_toggle_')]
     toggles = {button.label for button in folder_buttons}
     # «Fuentes» (D-118): the two ODEPA datasets, a folder like every other section.
-    assert toggles == {'⌄  Dashboard', '⌄  Arquitectura', '⌄  Fuentes', '⌄  Análisis SQL',
-                       '⌄  Análisis con Python', '⌄  Documentación'}
+    assert toggles == {'⌄  Dashboard', '⌄  Arquitectura', '⌄  Fuentes', '⌄  Documentación'}
     assert all(not button.help for button in folder_buttons)
     css = ' '.join(block.value for block in app.sidebar.markdown)
     assert '[class*="st-key-nav_child_"] {margin-left:0; padding-left:0; border-left:0;}' in css
@@ -1485,20 +1306,6 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
     assert 'Pipeline' in [link.proto.label for link in app.sidebar.get('page_link')]
 
 
-@needs_database
-def test_code_sql_and_links_folders_reveal_real_destinations_without_tooltips():
-    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
-    # «Código» merged into «GitHub»: a single destination, no folder to open (D-106).
-    # It shows its own mark, not the word (D-117), so it is a markdown link, not a page_link.
-    sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
-    assert 'class="sidebar-github' in sidebar_markup and 'aria-label="GitHub del proyecto"' in sidebar_markup
-    key = 'nav_toggle_preguntas-y-resultados'
-    toggle = next(button for button in app.sidebar.button if str(button.key) == key)
-    assert not toggle.help
-    toggle.click().run()
-    assert not app.exception
-    assert 'Preguntas y resultados' in [link.proto.label for link in app.sidebar.get('page_link')]
-    next(button for button in app.sidebar.button if str(button.key) == key).click().run()
 
 
 @needs_database
@@ -1666,7 +1473,6 @@ def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
     # The dialog opens here too (not only from Resumen), with the same styled markup.
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
     assert 'home-alert-overview-marker' in markup
-
 
 
 @needs_database
