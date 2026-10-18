@@ -14,9 +14,18 @@ DAYS_IN_A_WEEK = 7
 
 # region Alerts
 def add_weekly_variation(prices):
-    """Add the price change of each week against the week before, as a fraction."""
+    """Add the price change of each week against the week before, as a fraction.
+
+    D-144: when the rows carry the price of the regions present in both weeks
+    (same_region_price, same_region_previous_price), the change is theirs, so a
+    region that starts or stops reporting is not read as a price movement.
+    """
     prices = prices.sort_values(SERIES_COLUMNS + ["week_start"]).copy()
     prices["week_start"] = pd.to_datetime(prices["week_start"])
+    if "same_region_previous_price" in prices.columns:
+        previous = prices["same_region_previous_price"]
+        prices["variation"] = (prices["same_region_price"] / previous - 1).where(previous > 0)
+        return prices
     series = prices.groupby(SERIES_COLUMNS)
     previous_price = series["national_price"].shift(1)
     previous_week = series["week_start"].shift(1)
