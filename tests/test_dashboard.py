@@ -986,6 +986,26 @@ def test_d135_the_python_console_runs_the_real_functions_and_only_on_ejecutar():
     assert "en Supermercado" in status
 
 
+@needs_database
+def test_d138_every_console_column_has_a_spanish_header_and_keeps_its_real_name():
+    from bi import python_console
+    columns = set()
+    for table, _ in dashboard.queries.list_tables():
+        columns |= set(dashboard.queries.run_console_sql(f"SELECT * FROM {table} LIMIT 1")[0].columns)
+    for entry in dashboard.CATALOG:
+        columns |= set(dashboard.queries.run_console_sql(dashboard.read_catalog_sql(entry["name"]))[0].columns)
+    options = {name: read() for name, read in python_console.OPTION_READERS.items()}
+    for question in python_console.QUESTIONS:
+        values = python_console.default_parameters(question, options)
+        columns |= set(python_console.run_script(question, values, options)["result"].columns)
+    rejected = dashboard.queries.run_console_sql("SELECT original_row FROM rejection")[0]
+    columns |= set(dashboard.expand_json_columns(rejected)[0].columns)
+    unnamed = {column for column in columns if column.startswith("(")}
+    assert columns - unnamed - set(dashboard.CONSOLE_COLUMN_LABELS) == set()
+    config = dashboard.build_console_column_config(["week_start"])
+    assert config["week_start"]["label"] == "Semana" and "`week_start`" in config["week_start"]["help"]
+
+
 def test_d135_a_parameter_is_written_as_data_and_never_as_code():
     from bi import python_console
     question = python_console.QUESTIONS_BY_NAME["rn03_units"]
