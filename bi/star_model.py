@@ -133,12 +133,13 @@ def build_column_text(x, y, name, kind, colors, size=17):
             f'fill="{color}">{html.escape(label)}</text>')
 
 
-def build_card_frame(table, rect, colors, is_fact=False, selected=False):
-    """Focusable group with the card background; the selected table stands out."""
+def build_card_frame(table, rect, colors, is_fact=False, selected=False, tooltip=None):
+    """Card background; its explanation shows on hover (D-147)."""
     x, y, width, height = rect
     stroke_width = 3 if selected else 2.6 if is_fact else 1.4
     glow = f' filter="drop-shadow(0 0 5px {colors["cyan"]})"' if selected else ""
-    return (f'<g class="star-table star-{table}"{glow}>'
+    title = f'<title>{html.escape(tooltip)}</title>' if tooltip else ""
+    return (f'<g class="star-table star-{table}"{glow}>{title}'
             f'<rect class="star-card" x="{x:.1f}" y="{y:.1f}" width="{width:.1f}" '
             f'height="{height:.1f}" rx="16" fill="{colors["card"]}" '
             f'stroke="{colors["cyan"]}" stroke-width="{stroke_width}"/>')
@@ -160,16 +161,16 @@ def build_card_title(rect, title, colors, subtitle=None):
     return "".join(parts), line_y + FIRST_ROW_GAP
 
 
-def build_dimension_card(table, rect, columns, colors, selected=False):
+def build_dimension_card(table, rect, columns, colors, selected=False, tooltip=None):
     """A dimension: its name and every real column, the primary key in cyan."""
     x, y, _, _ = rect
     title, first_y = build_card_title(rect, table, colors)
     rows = "".join(build_column_text(x + 20, first_y + position * ROW_HEIGHT, name, kind, colors)
                    for position, (name, kind) in enumerate(columns))
-    return build_card_frame(table, rect, colors, selected=selected) + title + rows + "</g>"
+    return build_card_frame(table, rect, colors, selected=selected, tooltip=tooltip) + title + rows + "</g>"
 
 
-def build_fact_card(rect, columns, row_count, colors, selected=False):
+def build_fact_card(rect, columns, row_count, colors, selected=False, tooltip=None):
     """weekly_price: its keys and attributes, then the measures apart, in cyan."""
     x, y, width, _ = rect
     attributes, measures = list_fact_lines(columns)
@@ -183,7 +184,7 @@ def build_fact_card(rect, columns, row_count, colors, selected=False):
     rows += [build_column_text(x + 20, divider_y + FIRST_ROW_GAP + position * ROW_HEIGHT, name,
                                "MEASURE", colors)
              for position, (name, _) in enumerate(measures)]
-    return (build_card_frame(STAR_TABLE, rect, colors, is_fact=True, selected=selected) + title
+    return (build_card_frame(STAR_TABLE, rect, colors, is_fact=True, selected=selected, tooltip=tooltip) + title
             + "".join(rows) + "</g>")
 # endregion
 
@@ -214,7 +215,7 @@ def build_connector(colors, fact_rect, card_rect, side):
             f'stroke-width="1.4" stroke-dasharray="5 5"/>')
 
 
-def build_audit_group(row_counts, colors, top, bottom):
+def build_audit_group(row_counts, colors, top, bottom, tooltips=None):
     """weekly_price's load trail, apart from the star: etl_run → rejection."""
     x = WIDTH - MARGIN - AUDIT_WIDTH
     label = (f'<text x="{x:.1f}" y="{top - 10:.1f}" font-size="13" font-weight="700" '
@@ -222,13 +223,15 @@ def build_audit_group(row_counts, colors, top, bottom):
     boxes = []
     y = top
     for index, table in enumerate(AUDIT_TABLES):
-        boxes.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{AUDIT_WIDTH}" height="{AUDIT_HEIGHT}" '
+        tooltip = (tooltips or {}).get(table)
+        boxes.append((f'<g><title>{html.escape(tooltip)}</title>' if tooltip else '<g>')
+                     + f'<rect x="{x:.1f}" y="{y:.1f}" width="{AUDIT_WIDTH}" height="{AUDIT_HEIGHT}" '
                      f'rx="12" fill="{colors["card"]}" stroke="{colors["cyan"]}" stroke-width="1.4" '
                      f'stroke-dasharray="4 4"/>'
                      f'<text x="{x + 16:.1f}" y="{y + 23:.1f}" font-family="{MONO_FONT}" font-size="15" '
                      f'fill="{colors["strong_text"]}">{html.escape(table)}</text>'
                      f'<text x="{x + 16:.1f}" y="{y + 42:.1f}" font-size="12" fill="{colors["text"]}">'
-                     f'{charts.format_thousands(row_counts[table])} filas</text>')
+                     f'{charts.format_thousands(row_counts[table])} filas</text></g>')
         if index == 0:
             arrow_y = y + AUDIT_HEIGHT
             boxes.append(f'<path d="M{x + AUDIT_WIDTH / 2:.1f} {arrow_y:.1f} '
@@ -241,8 +244,10 @@ def build_audit_group(row_counts, colors, top, bottom):
     return label + "".join(boxes)
 
 
-def build_star_svg(columns_by_table, row_counts, mode, selected=None):
-    """The whole diagram: background, connectors, five cards and the audit trail."""
+def build_star_svg(columns_by_table, row_counts, mode, selected=None, tooltips=None):
+    """The whole diagram: background, connectors, five cards and the audit trail.
+    tooltips: {table: text shown on hover}."""
+    tooltips = tooltips or {}
     colors = get_colors(mode)
     layout, height = compute_layout(columns_by_table)
     fact_rect = layout[STAR_TABLE]
@@ -251,12 +256,12 @@ def build_star_svg(columns_by_table, row_counts, mode, selected=None):
 
     cards = [build_dimension_card(TOP_DIMENSION, layout[TOP_DIMENSION],
                                   columns_by_table[TOP_DIMENSION], colors,
-                                  selected=selected == TOP_DIMENSION)]
+                                  selected=selected == TOP_DIMENSION, tooltip=tooltips.get(TOP_DIMENSION))]
     for table in SIDE_DIMENSIONS + (BOTTOM_DIMENSION,):
         cards.append(build_dimension_card(table, layout[table], columns_by_table[table], colors,
-                                          selected=selected == table))
+                                          selected=selected == table, tooltip=tooltips.get(table)))
     cards.append(build_fact_card(fact_rect, columns_by_table[STAR_TABLE], row_counts[STAR_TABLE],
-                                 colors, selected=selected == STAR_TABLE))
+                                 colors, selected=selected == STAR_TABLE, tooltip=tooltips.get(STAR_TABLE)))
     connectors = "".join([
         build_connector(colors, fact_rect, layout[TOP_DIMENSION], "top"),
         build_connector(colors, fact_rect, layout[SIDE_DIMENSIONS[0]], "left"),
@@ -264,7 +269,7 @@ def build_star_svg(columns_by_table, row_counts, mode, selected=None):
         build_connector(colors, fact_rect, layout[BOTTOM_DIMENSION], "bottom"),
     ])
     audit = build_audit_group(row_counts, colors, layout[SIDE_DIMENSIONS[1]][1] + layout[SIDE_DIMENSIONS[1]][3]
-                              + GAP, height - MARGIN)
+                              + GAP, height - MARGIN, tooltips)
     defs = (f'<defs><marker id="audit-arrow" viewBox="0 0 10 10" refX="8" refY="5" '
             f'markerWidth="6" markerHeight="6" orient="auto-start-reverse">'
             f'<path d="M0 0 L10 5 L0 10 Z" fill="{colors["cyan"]}"/></marker></defs>')

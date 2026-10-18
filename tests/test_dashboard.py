@@ -257,23 +257,20 @@ def test_dashboard_territory_is_immediately_readable_without_a_3d_duplicate():
     assert "Mapa en proporción real" in texts
 
 @needs_database
-def test_d097_model_page_fits_one_screen_with_a_clickable_table_detail():
+def test_d097_model_page_is_one_panoramic_diagram():
     app = draw_page(dashboard.PAGE_ARCHITECTURE)
     assert not app.exception and not app.tabs and not app.expander
     joined = " ".join(block.value for block in app.markdown)
     assert joined.count('aria-label="Modelo estrella de datos.db"') == 1
     assert "<script" not in joined
     assert joined.count("Auditoría de cargas".upper()) == 1
-    options = app.radio(key=dashboard.ARCHITECTURE_TABLE_KEY).options
-    assert len(options) == len(dashboard.project.TABLE_NAMES)
-    assert options[0].startswith("weekly_price · hechos")
-    assert app.radio(key=dashboard.ARCHITECTURE_TABLE_KEY).value == "weekly_price"
-    assert app.code[0].value.startswith("SELECT COUNT(*) FROM weekly_price")
-    app.radio(key=dashboard.ARCHITECTURE_TABLE_KEY).set_value("dim_date").run()
-    assert not app.exception
-    assert app.code[0].value.startswith("SELECT * FROM dim_date")
-    joined = " ".join(block.value for block in app.markdown)
-    assert "Una fila por semana" in joined
+    # D-147: one panoramic diagram; no table picker and no SQL. Each table explains
+    # itself on hover, with its role and its rows.
+    assert not app.radio and not app.code
+    for table in dashboard.project.TABLE_NAMES:
+        assert f"<title>{table} · " in joined
+    assert "una fila por semana" in joined.lower()
+    assert "etl/schema.sql en GitHub" in joined
 
     app = draw_page(dashboard.PAGE_DEVOPS)
     assert not app.exception

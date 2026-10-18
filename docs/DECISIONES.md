@@ -1098,3 +1098,9 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Preguntas:** vuelve **P1/K1**, el margen del consumidor sobre el mayorista, que el panel ya no mostraba y es lo que solo este proyecto puede calcular al cruzar las dos fuentes: Contexto de precios suma la tarjeta «Sobre el precio mayorista», por canal y frente a su rango habitual (Tomate en Feria libre: +29,7 % frente a +46,5 % a +57,1 % habitual; recalculado a mano por región). Se retira **P5/K5**, el rezago mayorista → consumidor: en el 57 % de las 1.215 series no hay relación clara y el 18 % da «la misma semana», que datos semanales no pueden separar. P2 queda cubierta por Contexto (Feria libre frente a Supermercado) y P3 por el mapa.
 - **Calidad de datos:** la reconciliación fuente → base, el recálculo de indicadores y la concordancia con la pantalla pasan de «Pendiente» a verificados, con su evidencia; el contraste con otra fuente sigue pendiente, porque ODEPA es la única fuente oficial de estos precios.
 - **Verificable:** cada regla tiene su prueba en `tests/test_data_audit.py`.
+
+## D-147 · El modelo de datos es una sola vista panorámica
+
+- **Fecha:** 2026-10-18.
+- **Problema reportado:** si el modelo estrella ya muestra todas las tablas, ¿para qué elegir una en una lista?
+- **Decisión:** se retiran la lista «Tablas de datos.db» y el panel «Detalle de la tabla seleccionada», que solo añadían una frase y una consulta SQL de ejemplo. El diagrama ocupa todo el ancho; cada tabla explica al pasar el mouse su papel (hechos, dimensión o auditoría), sus filas y para qué sirve. El enlace a `etl/schema.sql` abre GitHub, no una página fuera del menú.
