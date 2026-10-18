@@ -8801,8 +8801,8 @@ def build_sidebar_css(mode):
     .sidebar-github:hover {{transform:translateY(-1px); box-shadow:0 9px 18px -6px rgba(0,0,0,.5);}}
     .sidebar-github-current {{outline:2px solid {palette['accent']}; outline-offset:2px;}}
     /* «Fuentes»: external children in the same green as every other child (D-118). */
-    .nav-source-link {{display:block; padding:3px 7px; margin:1px 0; border-radius:5px;
-        font-size:.78rem; font-weight:460; letter-spacing:-.005em; text-decoration:none;
+    .nav-source-link {{display:block; padding:3px 7px 3px 18px; margin:1px 0; border-radius:5px;
+        font-size:.84rem; font-weight:460; letter-spacing:-.005em; text-decoration:none !important;
         color:{child_green} !important; -webkit-text-fill-color:{child_green} !important;
         text-shadow:0 0 10px color-mix(in srgb,{child_green} 18%,transparent);
         transition:background .12s ease;}}
@@ -8832,7 +8832,7 @@ def nav_open_key(window):
     return f"nav_open_{path}"
 
 
-SIDEBAR_NAV_VERSION = 4
+SIDEBAR_NAV_VERSION = 5
 
 
 def show_sidebar_navigation(windows_by_title, current_window, order):
@@ -8843,7 +8843,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
         for _, sections in SIDEBAR_TREE:
             for window, views in sections:
                 if views is not None:
-                    st.session_state[nav_open_key(window)] = False
+                    st.session_state[nav_open_key(window)] = True
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
     for heading, sections in SIDEBAR_TREE:
@@ -8856,10 +8856,10 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
                 with st.sidebar.container(key=key):
                     st.page_link(windows_by_title[window], label=label, query_params=keep_context())
                 continue
-            # Every folder starts closed, including the section that owns the current
-            # page. Opening it never changes the alignment of the rows it reveals.
+            # Every folder starts open (D-139): the whole map of the app at a glance;
+            # a click folds it. Opening it never changes the alignment of its rows.
             open_key = nav_open_key(window)
-            is_open = st.session_state.get(open_key, False)
+            is_open = st.session_state.get(open_key, True)
             nav_path = "fuentes" if window == SECTION_SOURCES else WINDOW_PATHS[window]
             group_key = "nav_group_current" if window == current_window else f"nav_group_{nav_path}"
             chevron = "⌄" if is_open else "›"

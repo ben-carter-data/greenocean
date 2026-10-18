@@ -1025,3 +1025,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema reportado:** las tablas de resultado de las consolas mostraban encabezados en inglés (`week_start`, `product_id`…) en una aplicación en español.
 - **Decisión:** cada columna conocida —de las tablas, de las consultas guardadas, de las preguntas de Python y de los campos de una fila rechazada— se muestra con su nombre en español (Semana, ID producto, Precio…). El nombre real sigue en el tooltip del encabezado, porque es el que hay que escribir en una consulta; la base y el SQL no cambian. La huella del archivo (64 caracteres) va angosta para no empujar las demás columnas.
 - **Validación:** `test_d138_*` exige un encabezado en español para toda columna que las consolas pueden mostrar.
+
+## D-139 · El menú lateral empieza abierto
+
+- **Fecha:** 2026-10-17.
+- **Decisión:** todas las carpetas del menú (Dashboard, Arquitectura, Fuentes, Análisis SQL, Análisis con Python, Documentación) empiezan abiertas, en vez de cerradas (D-096): el mapa completo de la aplicación se ve de un vistazo y cabe en una pantalla de 900 px de alto. Un clic en la carpeta la pliega. Los dos enlaces de Fuentes quedan alineados y con el mismo tamaño que los demás.
