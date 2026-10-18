@@ -5941,25 +5941,40 @@ def follow_run_progress(run_id, token, progress_area):
 
 
 def run_pipeline_now(token):
-    """Start the pipeline and show its steps live until it finishes."""
+    """Start the pipeline, show its steps live and end with one clear sentence:
+    completed, or where it stopped (D-149). Returns True when it completed."""
     requested_at = datetime.now(timezone.utc)
-    control.start_workflow_run(token)
-    with st.status("El pipeline se está ejecutando…", expanded=True) as status_box:
+    try:
+        control.start_workflow_run(token)
+    except Exception as error:  # GitHub refused the request or did not answer
+        st.error(f"No se pudo iniciar la ejecución: {control.describe_github_error(error)}.",
+                 icon=":material/error:")
+        return False
+    with st.status("Ejecutando el pipeline en GitHub Actions…", expanded=True) as status_box:
         run = wait_for_manual_run(requested_at, token)
         if run is None:
-            status_box.update(label="GitHub no confirmó el inicio; revisa el historial "
-                              "en un minuto.", state="error", expanded=True)
-            return
+            status_box.update(label="GitHub no confirmó el inicio.", state="error", expanded=True)
+            st.error("La ejecución no se confirmó. Revisa el historial en un minuto.",
+                     icon=":material/error:")
+            return False
         state = follow_run_progress(run["id"], token, st.empty())
+        fetch_pipeline_runs.clear()
         if state == control.RUN_OK:
-            status_box.update(label="Listo: datos descargados, revisados y guardados.",
-                              state="complete", expanded=True)
-            st.success("El panel muestra los datos nuevos en cuanto recibe la base "
-                       "guardada, normalmente en 1 o 2 minutos. Usa «Recargar datos».")
-        else:
-            status_box.update(label="La ejecución terminó con una falla. Los datos anteriores "
-                              "siguen intactos.", state="error", expanded=True)
-    read_pipeline_runs.clear()
+            status_box.update(label="Ejecución completada.", state="complete", expanded=True)
+            st.success("Se ejecutó correctamente: datos descargados, revisados y guardados. "
+                       "El panel los muestra en 1 o 2 minutos, al recibir la base nueva.",
+                       icon=":material/check_circle:")
+            st.toast("Pipeline ejecutado correctamente.", icon=":material/check_circle:")
+            return True
+        if state == control.RUN_IN_PROGRESS:
+            status_box.update(label="Sigue en curso.", state="running", expanded=True)
+            st.info("La ejecución sigue en curso en GitHub; su resultado aparecerá en el historial.")
+            return False
+        status_box.update(label="La ejecución no terminó.", state="error", expanded=True)
+        st.error("No se ejecutó completamente: un paso falló (marcado con ❌). Los datos "
+                 "anteriores siguen intactos; los logs están en el historial.", icon=":material/error:")
+        st.toast("La ejecución falló.", icon=":material/error:")
+        return False
 
 
 ADMIN_UNLOCKED = "admin_unlocked"
@@ -5988,45 +6003,60 @@ def show_token_expiration(token):
         st.caption(sentence)
 
 
-def show_admin_unlocked(token):
-    """What the control code opens: admin links, token expiration and «Ejecutar ahora»."""
-    show_link_cards(ADMIN_LINKS)
-    if not token:
-        st.info("«Ejecutar ahora» se activa cuando el autor guarda su token de GitHub en "
-                "los secretos del panel («Crear token», arriba).")
-        return
+RELOADED_NOTICE = "panel_reloaded"
+
+
+def reload_panel_data():
+    """Read datos.db again (the weekly load or a manual run may have replaced it)."""
+    st.cache_data.clear()
+    st.session_state[RELOADED_NOTICE] = True
+
+
+@st.dialog("Ejecutar el pipeline ahora", width="medium")
+def show_run_now_dialog(token, access_code):
+    """The manual run behind the control code, in a layer above the page (D-149)."""
+    st.caption("Descarga los archivos de ODEPA, los limpia, los prueba y guarda la base, igual "
+               "que la ejecución automática de cada martes. Tarda unos 5 minutos.")
+    if not st.session_state.get(ADMIN_UNLOCKED):
+        typed_code = st.text_input("Clave de control", type="password", key="run_now_code")
+        if not st.button("Ejecutar", type="primary", icon=":material/play_arrow:", key="run_now_confirm"):
+            return
+        if not hmac.compare_digest(typed_code, access_code):
+            st.error("Clave incorrecta.", icon=":material/lock:")
+            return
+        st.session_state[ADMIN_UNLOCKED] = True
     show_token_expiration(token)
-    if st.button("Ejecutar ahora", type="primary", icon=":material/play_arrow:",
-                 help="Descarga los datos de ODEPA, los limpia, los prueba y actualiza el "
-                      "panel. Tarda alrededor de un minuto."):
-        run_pipeline_now(token)
+    run_pipeline_now(token)
 
 
 def show_admin_card():
-    """Administration, behind the control code: nothing of it shows without the code.
-    A plain card with its own small title (D-129), not the shield-shaped frame."""
+    """Manual run first and unmistakable (▶, primary), the reload apart, both with a
+    clear message when they end (D-149). The pipeline also runs by itself every Tuesday."""
     with st.container(border=True, key="runs_admin"):
-        st.markdown('<div class="runs-card-title">Administración</div>', unsafe_allow_html=True)
-        if st.button("Recargar datos del panel", icon=":material/refresh:", key="runs_reload",
-                     width="stretch"):
-            st.cache_data.clear()
-            st.rerun()
+        st.markdown('<div class="runs-card-title">Ejecución manual</div>', unsafe_allow_html=True)
+        st.caption("El pipeline corre solo cada martes a las 09:00 (Chile). Ejecútalo a mano "
+                   "solo si necesitas los datos antes.")
         access_code = get_secret(SECRET_CONTROL_CODE)
-        if st.session_state.get(ADMIN_UNLOCKED) and access_code:
-            show_admin_unlocked(get_secret(SECRET_GITHUB_TOKEN))
-            return
-        st.markdown('<div class="admin-locked">Requiere clave de control.</div>',
-                    unsafe_allow_html=True)
-        if not access_code:
-            st.caption("Se activa cuando el autor guarda la clave de control en los "
-                       "secretos del panel.")
-            return
-        typed_code = st.text_input("Clave de control", type="password")
-        if st.button("Desbloquear", icon=":material/lock_open:"):
-            if hmac.compare_digest(typed_code, access_code):
-                st.session_state[ADMIN_UNLOCKED] = True
-                st.rerun()
-            st.error("Clave incorrecta.")
+        token = get_secret(SECRET_GITHUB_TOKEN)
+        ready = bool(access_code and token)
+        if st.button("Ejecutar pipeline ahora", type="primary", icon=":material/play_arrow:",
+                     key="runs_run_now", width="stretch", disabled=not ready,
+                     help=("Pide la clave de control y lanza el pipeline en GitHub Actions." if ready else
+                           "Se activa cuando el autor guarda la clave de control y su token de "
+                           "GitHub en los secretos del panel.")):
+            show_run_now_dialog(token, access_code)
+        if not ready:
+            st.caption("Requiere la clave de control del autor.")
+        st.divider()
+        st.button("Recargar datos del panel", icon=":material/refresh:", key="runs_reload",
+                  width="stretch", on_click=reload_panel_data,
+                  help="Vuelve a leer la base guardada; no ejecuta el pipeline.")
+        if st.session_state.pop(RELOADED_NOTICE, False):
+            latest = read_latest_run()
+            st.toast(f"Datos recargados · base del {format_chile_time(parse_run_start(latest['started_at']))}.",
+                     icon=":material/check_circle:")
+        if st.session_state.get(ADMIN_UNLOCKED) and ready:
+            show_link_cards(ADMIN_LINKS)
 
 
 def show_run_history(runs, error_text):
@@ -6057,6 +6087,11 @@ def build_runs_css(mode):
     palette = charts.get_palette(mode)
     return f"""<style>
     .runs-metrics {{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:6px 0 16px;}}
+    /* The manual run reads as the run button even when locked (D-149). */
+    .st-key-runs_run_now button {{min-height:46px; font-weight:650; border-radius:12px;}}
+    .st-key-runs_run_now button:disabled {{background:{palette['accent']} !important; color:#fff !important;
+        border-color:{palette['accent']} !important; opacity:.45; cursor:not-allowed;}}
+    .st-key-runs_run_now button:disabled p {{color:#fff !important;}}
     .runs-metric {{display:flex; flex-direction:column; gap:3px; padding:12px 16px; border-radius:14px;
         background:{palette['card']}; border:1px solid {palette['card_border']};
         box-shadow:0 10px 22px -16px rgba(0,0,0,.25);}}
