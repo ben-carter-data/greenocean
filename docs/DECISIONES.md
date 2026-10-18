@@ -1012,3 +1012,9 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema reportado:** DevOps mostraba un ciclo animado y un enlace a Pipeline para ver la arquitectura; Pipeline repartía su espacio entre el recorrido, una miniatura «Estado de la última ejecución» (el mismo recorrido en pequeño, sin mostrar ninguna ejecución) y la arquitectura por plataforma.
 - **Decisión:** «Arquitectura por plataforma» pasa completa y a todo el ancho a **DevOps y seguridad**, con las cinco capas como fila de tarjetas debajo; se retiran el ciclo y el enlace. **Pipeline** queda con un solo diagrama, el recorrido por capas, a tamaño completo y con zoom, sin galería ni vista «Ampliar». El estado de cada ejecución está en Ejecuciones y en GitHub Actions. Los botones de zoom van bajo el diagrama, sin tapar los puntos de estado.
 - **Validación:** prueba `test_d136_*`; comprobado en Chrome.
+
+## D-137 · Las capas de DevOps en tarjetas flotantes con el logo real de cada herramienta
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** en las ventanas de cada capa (p. ej. Informes) las tarjetas dejaban mucho espacio vacío y llevaban todas el mismo ícono genérico.
+- **Decisión:** tarjetas compactas y flotantes, con el mismo lenguaje de la galería de KPI (D-114b): el logo real de la herramienta detrás de cada fila (GitHub, SQLite, Streamlit, pytest, Python, Git) sobre un fondo de su color de marca, el título, qué hace y dónde vive. Se reparten a todo el ancho y la última fila se estira, sin huecos. La nota de Informes enlaza directo a los informes en GitHub en vez de a otra página del panel.

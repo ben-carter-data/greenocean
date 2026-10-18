@@ -297,11 +297,12 @@ def test_d097_model_page_fits_one_screen_with_a_clickable_table_detail():
     joined = " ".join(block.value for block in app.markdown)
     assert joined.count('class="zoom-frame diagram-devops"') == 1
     # A tile opens its layer's detail; only then are its rows drawn.
-    assert 'class="technical-rows"' not in joined
+    assert 'class="technical-rows layer-cards"' not in joined
     app.button(key="devops_layer_Seguridad").click().run()
     assert not app.exception
     joined = " ".join(block.value for block in app.markdown)
-    assert joined.count('class="technical-rows"') == 1 and "Consola SQL de solo lectura" in joined
+    assert joined.count('class="technical-rows layer-cards"') == 1 and "Consola SQL de solo lectura" in joined
+    assert joined.count('class="layer-card"') == 5 and 'class="layer-logo"' in joined
 
 @needs_database
 def test_d056_analysis_filters_show_once_and_hold_in_every_tab():
