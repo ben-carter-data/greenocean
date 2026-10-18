@@ -6093,20 +6093,20 @@ def build_runs_css(mode):
     .st-key-runs_run_now {{display:flex; justify-content:center; align-self:center; margin:10px auto 2px;}}
     .st-key-runs_run_now > div, .st-key-runs_run_now [data-testid="stButton"],
     .st-key-runs_run_now [data-testid="stTooltipHoverTarget"] {{display:flex; justify-content:center; width:100%;}}
-    .st-key-runs_run_now button {{width:96px; height:96px; min-height:96px; padding:0; border-radius:50% !important;
-        border:3px solid #ffffff !important; color:#fff !important;
+    .st-key-runs_run_now button {{width:68px; height:68px; min-height:68px; padding:0; border-radius:50% !important;
+        border:2px solid #ffffff !important; color:#fff !important;
         background:radial-gradient(circle at 50% 30%, #4f8dff 0%, #1d5fe0 38%, #0a37a6 72%, #06246f 100%) !important;
-        box-shadow:0 0 0 7px #d9dee6, 0 0 0 9px #a9b2bf, 0 0 0 10px #eef1f5,
+        box-shadow:0 0 0 5px #d9dee6, 0 0 0 7px #a9b2bf, 0 0 0 8px #eef1f5,
                    inset 0 10px 14px -6px rgba(255,255,255,.55), inset 0 -10px 16px -6px rgba(0,0,0,.45),
                    0 14px 26px -10px rgba(10,55,166,.65);
         transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;}}
     .st-key-runs_run_now button:hover:not(:disabled) {{transform:translateY(-2px); filter:brightness(1.08);}}
     .st-key-runs_run_now button:active:not(:disabled) {{transform:translateY(1px) scale(.98);}}
     .st-key-runs_run_now button p {{display:none;}}
-    .st-key-runs_run_now button [data-testid="stIconMaterial"] {{font-size:46px !important; color:#fff;
+    .st-key-runs_run_now button [data-testid="stIconMaterial"] {{font-size:32px !important; color:#fff;
         text-shadow:0 1px 2px rgba(0,0,0,.35);}}
     .st-key-runs_run_now button:disabled {{opacity:.72; cursor:not-allowed;}}
-    .run-now-label {{text-align:center; font-weight:650; font-size:.92rem; color:{palette['strong_text']}; margin:12px 0 0;}}
+    .run-now-label {{text-align:center; font-weight:650; font-size:.92rem; color:{palette['strong_text']}; margin:10px 0 0;}}
     .run-now-note {{text-align:center; font-size:.78rem; color:{palette['text']}; margin-top:2px;}}
     .runs-metric {{display:flex; flex-direction:column; gap:3px; padding:12px 16px; border-radius:14px;
         background:{palette['card']}; border:1px solid {palette['card_border']};
