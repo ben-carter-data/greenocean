@@ -60,7 +60,7 @@ OPTION_READERS = {
 # region Questions
 QUESTIONS = [
     {"name": "rn11_rejections", "group": GROUP_ETL,
-     "question": "¿Por qué se rechazaron filas en la última carga?",
+     "question": "¿Por qué se rechazaron filas?",
      "does": "Vuelve a limpiar y validar cada fila rechazada con las mismas funciones del ETL "
              "y compara el motivo recalculado con el guardado (RN-11).",
      "functions": [etl.clean, etl.validate_rows], "params": [],
@@ -90,7 +90,7 @@ same = (checked["reason"] == checked["recalculated"]).mean()
 answer = f"{len(checked)} filas rechazadas; el ETL llega al mismo motivo en el {same:.0%}."
 '''},
     {"name": "rn03_units", "group": GROUP_ETL,
-     "question": "¿Cómo se lleva una unidad de venta a precio por kilo?",
+     "question": "¿Cómo se pasa una unidad a precio por kilo?",
      "does": "Lee la unidad de venta y devuelve la unidad común y la cantidad por la que se "
              "divide el precio (RN-03 a RN-05). Una unidad sin una sola cantidad no se compara.",
      "functions": [etl.convert_unit],
@@ -115,7 +115,7 @@ else:
     answer = f"{first['unit']}: no declara una sola cantidad; no se compara (RN-05)."
 '''},
     {"name": "k6_alerts", "group": GROUP_INDICATORS,
-     "question": "¿Qué precios se salieron de su rango habitual esta semana?",
+     "question": "¿Qué precios salieron de su rango habitual?",
      "does": "K6: la variación semanal de cada serie frente al promedio ± 2 desviaciones de "
              "sus 12 semanas anteriores. Va en Python porque SQLite no tiene desviación estándar.",
      "functions": [alerts.add_weekly_variation, alerts.add_usual_range, alerts.find_price_alerts],
@@ -133,7 +133,7 @@ result = latest[["week_start", "product", "variety", "normalized_unit",
 answer = f"{len(result)} precios fuera de su rango habitual en {$channel}."
 '''},
     {"name": "k5_lag", "group": GROUP_INDICATORS,
-     "question": "¿Cuántas semanas tarda el consumidor en seguir al mayorista?",
+     "question": "¿Con qué desfase sigue el consumidor?",
      "does": "K5: correlación entre los cambios semanales de ambos precios con desfases de 0 a "
              "8 semanas. Es descriptiva: no prueba que un precio cause el otro.",
      "functions": [lag.add_weekly_variations, lag.correlate_by_lag, lag.find_lag,
@@ -164,7 +164,7 @@ else:
     answer = "Sin relación clara: la correlación más alta no se distingue del ruido."
 '''},
     {"name": "context_usual_range", "group": GROUP_INDICATORS,
-     "question": "¿El precio de esta semana es normal para la época?",
+     "question": "¿Es normal el precio de esta semana?",
      "does": "Compara el precio de la última semana con el rango P25–P75 de las mismas "
              "semanas (± 1) de los años anteriores.",
      "functions": [price_context.rango_habitual, price_context.estado_precio],
