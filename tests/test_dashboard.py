@@ -727,6 +727,13 @@ def test_d141_console_values_read_in_spanish_and_unknown_codes_stay():
     assert list(shown["reason"])[:2] == ["Precio cero o negativo", "Sin volumen"]
     assert shown["flag"].iloc[0] == "Atípico" and shown["flag"].iloc[2] == "Unidad no convertible"
     assert set(dashboard.REASON_NAMES) == set(dashboard.REASON_TEXTS)
+    assert shown["flag"].iloc[1] == "Sin marca"
+
+
+def test_d142_a_table_preview_opens_on_its_newest_rows():
+    assert dashboard.build_table_preview_sql("weekly_price") == (
+        "SELECT *\nFROM weekly_price\nORDER BY week_start DESC\nLIMIT 100")
+    assert dashboard.build_table_preview_sql("dim_region") == "SELECT *\nFROM dim_region\nLIMIT 100"
 
 
 @needs_database

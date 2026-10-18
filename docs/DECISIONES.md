@@ -1044,3 +1044,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema reportado:** no se entendía qué era `wholesale` en las tablas.
 - **Decisión:** en las grillas de las consolas, los valores codificados se muestran en español: fuente (`wholesale` → Mayorista, `consumer` → Consumidor), motivo de rechazo (`NON_POSITIVE_PRICE` → Precio cero o negativo…), marca (`ATIPICO` → Atípico), estado de la carga (`LOADED` → Cargada) y estado del precio. El SQL sigue usando los códigos reales (`WHERE source = 'wholesale'`); el tooltip del encabezado los indica. La página Calidad de datos muestra también el motivo en español.
 - **Validación:** `test_d141_*`.
+
+## D-142 · La vista previa de una tabla abre en sus filas más recientes
+
+- **Fecha:** 2026-10-17.
+- **Problema reportado:** la tabla `weekly_price` de la Consola SQL solo mostraba 2022.
+- **Causa:** la vista previa era `SELECT * … LIMIT 100` sin `ORDER BY`; SQLite devuelve las filas en el orden en que se guardaron, y las primeras 100 eran de la primera semana de 2022.
+- **Decisión:** las tablas con fecha se previsualizan de la más reciente a la más antigua (`weekly_price` y `dim_date` por `week_start`, `etl_run` por `started_at`, `rejection` por carga): la consola abre en la última semana cargada (60 ms sobre 811.578 filas). Una marca vacía se lee «Sin marca» (el precio entra en los indicadores) en vez de «None».
+- **Validación:** `test_d142_*`.

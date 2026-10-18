@@ -4454,8 +4454,15 @@ def expand_json_columns(rows):
     return rows, opened
 
 
+# The column that orders each table's preview newest first (D-142): without it SQLite
+# returns rows in storage order, and the first 100 prices were all from January 2022.
+TABLE_PREVIEW_ORDER = {"weekly_price": "week_start DESC", "dim_date": "week_start DESC",
+                       "etl_run": "started_at DESC", "rejection": "run_id DESC"}
+
+
 def build_table_preview_sql(table):
-    return f"SELECT *\nFROM {table}\nLIMIT 100"
+    order = TABLE_PREVIEW_ORDER.get(table)
+    return f"SELECT *\nFROM {table}\n" + (f"ORDER BY {order}\n" if order else "") + "LIMIT 100"
 
 
 def load_console(source, sql, run=False):
@@ -4647,6 +4654,9 @@ def translate_console_values(rows):
     for column, names in CONSOLE_VALUE_NAMES.items():
         if column in rows.columns:
             rows[column] = rows[column].map(lambda value: names.get(value, value))
+    # An empty flag is a price used in the indicators, not a missing value («None»).
+    if "flag" in rows.columns:
+        rows["flag"] = rows["flag"].where(rows["flag"].notna(), "Sin marca")
     return rows
 
 
