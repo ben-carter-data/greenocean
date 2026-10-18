@@ -169,14 +169,33 @@ ORDER BY weekly_prices DESC, dim_product.product;
 -- name: k6_national_weekly_price
 -- K6 (P6): national weekly price of each product key and channel. The weekly
 -- variation and its usual range are computed in bi/alerts.py, because SQLite
--- has no standard deviation.
+-- has no standard deviation. D-144: the change against the week before uses only
+-- the regions with a price in both weeks (same_region_*), so a region that starts
+-- or stops reporting does not look like a price movement.
+WITH same_regions AS (
+    SELECT now.week_start, now.product_id, now.channel_id, now.normalized_unit,
+           AVG(now.price) AS same_region_price, AVG(before.price) AS same_region_previous_price
+    FROM weekly_price AS now
+    JOIN weekly_price AS before
+      ON before.product_id = now.product_id AND before.channel_id = now.channel_id
+     AND before.normalized_unit = now.normalized_unit AND before.region_id = now.region_id
+     AND before.week_start = date(now.week_start, '-7 days')
+    WHERE now.flag IS NULL AND before.flag IS NULL
+    GROUP BY now.week_start, now.product_id, now.channel_id, now.normalized_unit
+)
 SELECT weekly_price.week_start,
        dim_product.product_group, dim_product.product, dim_product.variety,
        dim_product.quality, dim_channel.channel, weekly_price.normalized_unit,
-       AVG(weekly_price.price) AS national_price
+       AVG(weekly_price.price) AS national_price,
+       same_regions.same_region_price, same_regions.same_region_previous_price
 FROM weekly_price
 JOIN dim_product ON dim_product.product_id = weekly_price.product_id
 JOIN dim_channel ON dim_channel.channel_id = weekly_price.channel_id
+LEFT JOIN same_regions
+  ON same_regions.week_start = weekly_price.week_start
+ AND same_regions.product_id = weekly_price.product_id
+ AND same_regions.channel_id = weekly_price.channel_id
+ AND same_regions.normalized_unit = weekly_price.normalized_unit
 WHERE weekly_price.flag IS NULL
 GROUP BY weekly_price.week_start, weekly_price.product_id, weekly_price.channel_id,
          weekly_price.normalized_unit;
@@ -197,15 +216,23 @@ WITH national AS (
     GROUP BY weekly_price.week_start, weekly_price.product_id, weekly_price.channel_id,
              weekly_price.normalized_unit
 ),
+-- D-144: the weekly change over the regions with a price in both weeks; a week
+-- without the one before has no such region, so a gap never yields a change.
+same_regions AS (
+    SELECT now.week_start, now.product_id, now.channel_id, now.normalized_unit,
+           AVG(now.price) / AVG(before.price) - 1 AS variation
+    FROM weekly_price AS now
+    JOIN weekly_price AS before
+      ON before.product_id = now.product_id AND before.channel_id = now.channel_id
+     AND before.normalized_unit = now.normalized_unit AND before.region_id = now.region_id
+     AND before.week_start = date(now.week_start, '-7 days')
+    WHERE now.flag IS NULL AND before.flag IS NULL
+    GROUP BY now.week_start, now.product_id, now.channel_id, now.normalized_unit
+),
 variations AS (
-    SELECT national.*,
-           -- A change across a gap of several weeks is not a weekly change.
-           CASE WHEN julianday(week_start) - julianday(LAG(week_start) OVER series) = 7
-                THEN national_price / LAG(national_price) OVER series - 1
-           END AS variation
+    SELECT national.*, same_regions.variation
     FROM national
-    WINDOW series AS (PARTITION BY product_id, channel_id, normalized_unit
-                      ORDER BY week_start)
+    LEFT JOIN same_regions USING (week_start, product_id, channel_id, normalized_unit)
 ),
 usual AS (
     SELECT variations.*,

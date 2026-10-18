@@ -1071,3 +1071,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** la variación nacional semanal promedia solo las regiones con precio en ambas semanas (muestra emparejada, como los índices de precios oficiales); los dos precios mostrados son los de esas regiones, y una clave sin región en común no tiene comparación. Las familias del Resumen coinciden ahora con el cálculo independiente.
 - **Verificable:** `tests/test_data_audit.py` repite los invariantes y reconstruye 120 precios desde las filas crudas en cada ejecución de las pruebas (se omite donde no está `raw.db`, que no se sube al repositorio, D-020).
 - **Pendiente:** las alertas K6 leen la misma serie nacional: 8 de las 43 alertas de la semana vienen probablemente de un cambio de regiones. Se corrige aparte, porque cambia el indicador, su versión SQL (D-049) y el informe semanal.
+
+## D-145 · Las alertas K6 miden el cambio sobre las mismas regiones
+
+- **Fecha:** 2026-10-18.
+- **Problema:** lo pendiente de D-144. K6 comparaba el precio nacional de una semana con el de la anterior aunque las regiones con dato fueran otras; 8 de las 43 alertas de la semana del 05-10-2026 venían probablemente de ese cambio de composición y no de un movimiento de precio.
+- **Decisión:** `k6_national_weekly_price` entrega, junto al precio nacional, el promedio de las regiones con precio en ambas semanas y el de esas mismas regiones la semana anterior; `bi/alerts.py` calcula la variación con ese par. La versión SQL (`k6_usual_range_sql`) hace lo mismo, y la prueba de D-049 sigue exigiendo que ambas den el mismo resultado. Una semana sin la anterior no tiene región en común, así que un hueco nunca produce un cambio, como antes.
+- **Resultado:** 46 alertas en la semana del 05-10-2026, todas sobre movimientos de precios reales.
+- **Costo:** la consulta tarda unos 2 s en vez de 0,8 s; el panel la guarda en caché una vez por carga semanal. Se descartó un índice permanente porque agrandaría `datos.db`, que se sube cada semana.
