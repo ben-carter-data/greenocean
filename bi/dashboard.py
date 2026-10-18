@@ -6039,14 +6039,15 @@ def show_admin_card():
         access_code = get_secret(SECRET_CONTROL_CODE)
         token = get_secret(SECRET_GITHUB_TOKEN)
         ready = bool(access_code and token)
-        if st.button("Ejecutar pipeline ahora", type="primary", icon=":material/play_arrow:",
-                     key="runs_run_now", width="stretch", disabled=not ready,
+        if st.button("Ejecutar pipeline ahora", type="primary", icon=":material/power_settings_new:",
+                     key="runs_run_now", disabled=not ready,
                      help=("Pide la clave de control y lanza el pipeline en GitHub Actions." if ready else
                            "Se activa cuando el autor guarda la clave de control y su token de "
                            "GitHub en los secretos del panel.")):
             show_run_now_dialog(token, access_code)
-        if not ready:
-            st.caption("Requiere la clave de control del autor.")
+        st.markdown('<div class="run-now-label">Ejecutar pipeline ahora</div>'
+                    + ('' if ready else '<div class="run-now-note">Requiere la clave de control del autor.</div>'),
+                    unsafe_allow_html=True)
         st.divider()
         st.button("Recargar datos del panel", icon=":material/refresh:", key="runs_reload",
                   width="stretch", on_click=reload_panel_data,
@@ -6087,11 +6088,26 @@ def build_runs_css(mode):
     palette = charts.get_palette(mode)
     return f"""<style>
     .runs-metrics {{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:6px 0 16px;}}
-    /* The manual run reads as the run button even when locked (D-149). */
-    .st-key-runs_run_now button {{min-height:46px; font-weight:650; border-radius:12px;}}
-    .st-key-runs_run_now button:disabled {{background:{palette['accent']} !important; color:#fff !important;
-        border-color:{palette['accent']} !important; opacity:.45; cursor:not-allowed;}}
-    .st-key-runs_run_now button:disabled p {{color:#fff !important;}}
+    /* The manual run is a round power button (D-149): deep glossy blue, a brushed
+       metal ring, the white power symbol. The words sit under it. */
+    .st-key-runs_run_now {{display:flex; justify-content:center; align-self:center; margin:10px auto 2px;}}
+    .st-key-runs_run_now > div, .st-key-runs_run_now [data-testid="stButton"],
+    .st-key-runs_run_now [data-testid="stTooltipHoverTarget"] {{display:flex; justify-content:center; width:100%;}}
+    .st-key-runs_run_now button {{width:96px; height:96px; min-height:96px; padding:0; border-radius:50% !important;
+        border:3px solid #ffffff !important; color:#fff !important;
+        background:radial-gradient(circle at 50% 30%, #4f8dff 0%, #1d5fe0 38%, #0a37a6 72%, #06246f 100%) !important;
+        box-shadow:0 0 0 7px #d9dee6, 0 0 0 9px #a9b2bf, 0 0 0 10px #eef1f5,
+                   inset 0 10px 14px -6px rgba(255,255,255,.55), inset 0 -10px 16px -6px rgba(0,0,0,.45),
+                   0 14px 26px -10px rgba(10,55,166,.65);
+        transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;}}
+    .st-key-runs_run_now button:hover:not(:disabled) {{transform:translateY(-2px); filter:brightness(1.08);}}
+    .st-key-runs_run_now button:active:not(:disabled) {{transform:translateY(1px) scale(.98);}}
+    .st-key-runs_run_now button p {{display:none;}}
+    .st-key-runs_run_now button [data-testid="stIconMaterial"] {{font-size:46px !important; color:#fff;
+        text-shadow:0 1px 2px rgba(0,0,0,.35);}}
+    .st-key-runs_run_now button:disabled {{opacity:.72; cursor:not-allowed;}}
+    .run-now-label {{text-align:center; font-weight:650; font-size:.92rem; color:{palette['strong_text']}; margin:12px 0 0;}}
+    .run-now-note {{text-align:center; font-size:.78rem; color:{palette['text']}; margin-top:2px;}}
     .runs-metric {{display:flex; flex-direction:column; gap:3px; padding:12px 16px; border-radius:14px;
         background:{palette['card']}; border:1px solid {palette['card_border']};
         box-shadow:0 10px 22px -16px rgba(0,0,0,.25);}}
