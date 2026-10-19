@@ -63,7 +63,7 @@ Todas son de código abierto o gratuitas **sin vencimiento**: el proyecto debe s
 | Databricks | Pensado para Spark; sobredimensionado para 34 MB |
 | PostgreSQL gratuito (Neon, Supabase) | Algunos planes gratuitos pausan proyectos inactivos |
 
-Se agregan dos dependencias nuevas: `dbt-core` y `dbt-duckdb` (más `duckdb`). Ninguna otra sin avisar al autor.
+Dependencias autorizadas por el autor para la refonte: `dbt-core`, `dbt-duckdb`, `duckdb` y, si hace falta para Parquet, `pyarrow`. Ninguna otra sin avisar.
 
 ---
 
@@ -79,18 +79,22 @@ El SAD (sección 12) y el ADR-31 dicen en pocas líneas cuándo se justificaría
 
 ---
 
-## 5. Plan por fases
+## 5. Plan de la refonte (en ejecución)
 
-Cada fase termina con sus pruebas en verde, su entrada D-xxx en `docs/DECISIONES.md` y el panel funcionando.
+La refonte se ejecuta ahora, no es una proyección. Cada paso termina con sus pruebas en verde, su entrada D-xxx en `docs/DECISIONES.md`, el panel funcionando y la validación del autor en local antes de cualquier push.
 
-| Fase | Contenido | Criterio de aceptación |
-|---|---|---|
-| **0** | Publicar el estado actual, validado | Panel publicado igual al revisado en local |
-| **1** | Parquet (bronce) y DuckDB en paralelo a SQLite; el panel sigue en SQLite | La auditoría compara SQLite y DuckDB: mismas filas, mismos precios |
-| **2** | Transformaciones migradas a dbt, modelo por modelo (staging → intermedio → marts), con las reglas como pruebas de dbt | `dbt build` en verde en GitHub Actions; resultados idénticos a la fase 1 |
-| **3** | El panel lee DuckDB; se retira SQLite | Todas las pruebas del panel y de la auditoría en verde; cifras del Resumen idénticas antes y después |
-| **4** | **IPC** del INE: precios reales junto a los nominales (limitación D-010) | Selector nominal / real en Contexto de precios; regla de alineación mes → semana documentada |
-| **5** | **Clima** por región y semana para explicar las alertas K6 | Cada alerta muestra el evento climático de su región y semana, si lo hubo, sin afirmar causalidad |
+| Paso | Contenido | Criterio de aceptación | Estado |
+|---|---|---|---|
+| **0** | Lectura completa y estrategia: se comparan al menos tres estrategias de refonte (con el skill «skills arena» si está disponible) según los criterios de la sección 2.2, y el autor valida la ganadora | Estrategia escrita y validada | En curso |
+| **1** | Auditoría de cifras y contradicciones: cada número del panel se recalcula de forma independiente y las páginas coinciden entre sí; se guarda una fotografía de las cifras clave | Informe de diferencias corregidas, con su prueba | Pendiente |
+| **2** | Migración a Parquet (bronce), dbt Core (staging → intermedio → marts, reglas como pruebas) y DuckDB, en paralelo a SQLite; el panel cambia de motor solo con cifras idénticas | Auditoría fila a fila y fotografía idénticas; `dbt build` en verde en GitHub Actions | Pendiente |
+| **3** | IPC del INE: precios reales junto a los nominales, con regla mes → semana documentada | Selector «Nominal / Real» en Contexto de precios; prueba de auditoría del deflactor | Pendiente |
+| **4** | Revisión de páginas «one view»: conservar, fusionar, mover o retirar, con la validación del autor | Cada página en una pantalla de 1440 × 900, simétrica, verificada en capturas | Pendiente |
+| **5** | Contexto de precios: búsqueda libre de producto como en el Resumen; sin el menú «Calidad · unidad» | Producto elegido desde la búsqueda o los diagramas | Pendiente |
+| **6** | PRD, SAD y ADR premium, descargables (PDF y Markdown), en la sección Documentación, describiendo la arquitectura entregada | Documentos con portada, índice y paginación; el panel y GitHub coinciden | Pendiente |
+| **7** | Sección «Escalabilidad»: clima (previsto) y criterios para un warehouse en la nube (ADR-31), como proyección y sin cifras inventadas | Cada extensión con su fuente, su estado y su decisión | Pendiente |
+
+El paso «publicar el estado validado» ya se hizo el 2026-10-19 (21 commits).
 
 ### Fuera de alcance
 
