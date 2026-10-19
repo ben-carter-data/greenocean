@@ -7,7 +7,7 @@ El registro completo del proyecto, `docs/DECISIONES.md`, tiene más de ciento cu
 | ADR | Título | Estado | Referencia |
 |---|---|---|---|
 | ADR-01 | Archivos oficiales de ODEPA, sin scraping | Aceptada | D-001, D-002 |
-| ADR-02 | SQLite, GitHub Actions y Streamlit Community Cloud | Aceptada | D-012, D-019 |
+| ADR-02 | SQLite, GitHub Actions y Streamlit Community Cloud | Reemplazada en parte por ADR-30 (el motor) | D-012, D-019 |
 | ADR-03 | Repositorio público con licencia MIT | Aceptada | D-013, D-036 |
 | ADR-04 | Capas bronce y oro; los datos crudos no se suben | Aceptada | D-020, D-023 |
 | ADR-05 | Clave exacta producto + variedad + calidad | Aceptada | D-007, D-030 |
@@ -35,7 +35,7 @@ El registro completo del proyecto, `docs/DECISIONES.md`, tiene más de ciento cu
 | ADR-27 | GitHub es la fuente de verdad del código | Aceptada | D-143, D-148 |
 | ADR-28 | Ejecución manual: el mismo workflow, tras una clave | Aceptada | D-038, D-149 |
 | ADR-29 | Sin vigilante de archivos en el servidor publicado | Aceptada | D-109 |
-| ADR-30 | dbt Core, DuckDB y Parquet, portables a otro motor | Propuesta | D-152 |
+| ADR-30 | dbt Core, DuckDB y Parquet, portables a otro motor | Aceptada | D-152, D-154 |
 | ADR-31 | Un warehouse en la nube solo si entran datos de empresa | Aceptada | D-152 |
 | ADR-32 | Sin comparación por cadena de supermercados | Aceptada | D-001, D-152 |
 
@@ -333,7 +333,7 @@ El registro completo del proyecto, `docs/DECISIONES.md`, tiene más de ciento cu
 
 ## ADR-30 · dbt Core, DuckDB y Parquet, portables a otro motor
 
-- **Estado:** Propuesta (planificada, no implementada).
+- **Estado:** Aceptada e implementada (D-154).
 - **Fecha:** 2026-10-19.
 - **Contexto:** SQLite cumple con el volumen actual, pero en ingeniería de datos se usa poco como warehouse, y las transformaciones viven en Python y consultas sueltas. Las nuevas fuentes previstas (IPC, clima) se integrarían mejor en un modelo por capas con pruebas declaradas.
 - **Decisión:** capa bronce en Parquet, transformaciones en dbt Core (staging → intermedio → marts, con las reglas como pruebas) y motor DuckDB en un solo archivo del repositorio. El motor se elige en la configuración de dbt; los modelos usan SQL estándar; el panel accede por una sola capa. La migración se hace en paralelo y solo se activa cuando la auditoría da cifras idénticas.

@@ -151,14 +151,15 @@ def test_c03_the_catalog_covers_every_stored_query_once():
 def test_c03_every_result_is_read_only_and_runs_only_stored_queries(monkeypatch):
     """Each result opens the database in read-only mode and runs a stored query, wrapped
     only by fixed filter columns whose values travel as parameters."""
-    import sqlite3
+    import duckdb
     opened = []
     original = queries.open_database
 
     def spy(database_file=queries.DATABASE_FILE):
         connection = original(database_file)
-        with pytest.raises(sqlite3.OperationalError):
-            connection.execute("CREATE TABLE written_by_catalog (x)")
+        # D-154: DuckDB opened read-only refuses any write.
+        with pytest.raises(duckdb.Error, match="read-only"):
+            connection.execute("CREATE TABLE written_by_catalog (x INTEGER)")
         opened.append(connection)
         return connection
     monkeypatch.setattr(queries, "open_database", spy)

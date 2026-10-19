@@ -3,3 +3,4 @@ pandas>=2.0
 streamlit>=1.36
 plotly>=5.24,<7
 pytest>=8.0
+duckdb>=1.1

@@ -1,6 +1,6 @@
 -- Precios al consumidor semanales, limpios y con las columnas comunes (etl.clean, RN-01, RN-02, RN-13).
 with raw as (
-    select *, {{ normalize_text('product') }} as clean_product from {{ bronze('odepa_consumer') }}
+    select *, {{ normalize_text('product') }} as clean_product from {{ source('bronze', 'odepa_consumer') }}
 ),
 split as (
     select *, string_split(clean_product, '|') as parts from raw

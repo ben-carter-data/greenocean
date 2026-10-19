@@ -4,8 +4,8 @@ greenocean:
   outputs:
     duckdb:
       type: duckdb
-      # El workflow construye en un archivo temporal y lo reemplaza solo si todo pasa.
-      path: "{{ env_var('GREENOCEAN_DUCKDB', '../etl/datos.duckdb') }}"
+      # Almacén de trabajo de dbt (no se sube); el panel lee etl/datos.duckdb, compacto.
+      path: "{{ env_var('GREENOCEAN_DUCKDB', '../etl/warehouse_build.duckdb') }}"
       threads: 4
 
     # Equivalentes en la nube, documentados y no activados (ADR-31):

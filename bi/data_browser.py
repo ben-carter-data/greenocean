@@ -22,7 +22,7 @@ def base_sql(mode):
  w.observation_count, COALESCE(w.flag,'SIN_MARCA') AS flag
  FROM weekly_price w JOIN dim_product p USING(product_id) JOIN dim_region r USING(region_id)
  JOIN dim_channel c USING(channel_id)
- LEFT JOIN weekly_price prev ON prev.week_start=date(w.week_start,'-7 days')
+ LEFT JOIN weekly_price prev ON prev.week_start=strftime(CAST(w.week_start AS DATE) - 7, '%Y-%m-%d')
  AND prev.product_id=w.product_id AND prev.region_id=w.region_id AND prev.channel_id=w.channel_id
  AND prev.normalized_unit=w.normalized_unit AND prev.flag IS NULL AND w.flag IS NULL'''
     if mode != 'Precios semanales':
@@ -54,14 +54,12 @@ def read_page(mode, filters=None, start=None, end=None, sort='week_start', desce
     base = '(' + base_sql(mode) + ')'
     tie = ['record_id'] if 'record_id' in available else ['week_start','product_group','product','variety','quality','region','channel','normalized_unit','wholesale_price','consumer_price']
     order = ', '.join([f'"{sort}" ' + ('DESC' if descending else 'ASC')] + [f'"{f}" ASC' for f in tie if f != sort])
-    import pandas as pd
     from contextlib import closing
     with closing(queries.open_database(database_file)) as conn:
-        conn.execute('BEGIN')
         count = conn.execute('SELECT COUNT(*) FROM '+base+where, params).fetchone()[0]
         page = min(page, max(0,(count-1)//size))
-        rows = pd.read_sql_query('SELECT * FROM '+base+where+' ORDER BY '+order+' LIMIT ? OFFSET ?', conn,
-                                 params=params+[size,page*size])
+        rows = queries.read_dataframe(conn, 'SELECT * FROM '+base+where+' ORDER BY '+order+' LIMIT ? OFFSET ?',
+                                      params+[size,page*size])
     return rows, count, page
 
 
@@ -70,5 +68,5 @@ def facets(database_file=queries.DATABASE_FILE):
     for field in FIELDS:
         rows = queries.run_sql('SELECT DISTINCT "'+field+'" AS value FROM ('+RAW+') WHERE "'+field+'" IS NOT NULL ORDER BY value', database_file)
         result[field] = rows['value'].tolist()
-    span = queries.run_sql('SELECT MIN(week_start) first, MAX(week_start) last FROM weekly_price', database_file).iloc[0]
+    span = queries.run_sql('SELECT MIN(week_start) AS "first", MAX(week_start) AS "last" FROM weekly_price', database_file).iloc[0]
     return result, span['first'], span['last']

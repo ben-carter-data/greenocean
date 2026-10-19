@@ -129,7 +129,7 @@ def read_search_rows(filters, database_file=queries.DATABASE_FILE):
     """The weekly prices that match the form, with their change and their gap."""
     sql, parameters = build_search_query(filters)
     connection = queries.open_database(database_file)
-    rows = pd.read_sql_query(sql, connection, params=parameters)
+    rows = queries.read_dataframe(connection, sql, parameters)
     connection.close()
     return add_changes(rows)
 
@@ -138,12 +138,12 @@ def read_search_options(database_file=queries.DATABASE_FILE):
     """The values each list field offers, and the weeks loaded: all from the base."""
     connection = queries.open_database(database_file)
     options = {field: [row[0] for row in connection.execute(
-                   f"SELECT DISTINCT {column} FROM {table} ORDER BY {column}")]
+                   f"SELECT DISTINCT {column} FROM {table} ORDER BY {column}").fetchall()]
                for field, (table, column) in LIST_FIELD_COLUMNS.items()}
     options["weeks"] = [row[0] for row in connection.execute(
-        "SELECT DISTINCT week_start FROM weekly_price ORDER BY week_start DESC")]
-    options["products"] = pd.read_sql_query(
-        "SELECT product_group, product, variety, quality FROM dim_product", connection)
+        "SELECT DISTINCT week_start FROM weekly_price ORDER BY week_start DESC").fetchall()]
+    options["products"] = queries.read_dataframe(
+        connection, "SELECT product_group, product, variety, quality FROM dim_product")
     connection.close()
     return options
 
@@ -151,7 +151,7 @@ def read_search_options(database_file=queries.DATABASE_FILE):
 def read_series_history(row, weeks=HISTORY_WEEKS, database_file=queries.DATABASE_FILE):
     """The last weeks of the price series of one result row, oldest first."""
     connection = queries.open_database(database_file)
-    history = pd.read_sql_query(HISTORY_QUERY, connection, params=(
+    history = queries.read_dataframe(connection, HISTORY_QUERY, (
         int(row["product_id"]), int(row["region_id"]), int(row["channel_id"]),
         row["normalized_unit"], str(row["week_start"])[:10], weeks))
     connection.close()
