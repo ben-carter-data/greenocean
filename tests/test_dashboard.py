@@ -1309,7 +1309,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Step 4 of the refonte: Ingeniería de datos, four pages; DevOps joined Ejecuciones.
     assert 'DevOps y seguridad' not in labels
     for child in ['Resumen semanal', 'Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría',
-                  'Ejecuciones y DevOps',
+                  'Centro de operación',
                   'PRD · Requisitos del producto', 'SAD · Arquitectura', 'ADR · Decisiones de arquitectura']:
         assert child in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
@@ -1555,11 +1555,13 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
 
 
 @needs_database
-def test_d129_ejecuciones_reads_like_the_dashboard_and_shows_its_history_at_once():
+def test_d165_the_operation_centre_reads_like_the_dashboard():
+    # D-165 replaced the strip of four figures and the history table (D-129) by the
+    # path of the run beside three facts and the latest runs.
     app = draw_page(dashboard.PAGE_RUNS)
-    assert not app.exception
+    assert not app.exception and app.get("iframe")
     text = " ".join(block.value for block in app.markdown)
-    assert 'class="compact-header"' in text and text.count('class="runs-metric"') == 4
+    assert 'class="compact-header"' in text and text.count('class="oc-fact"') == 3
     assert "Ver historial de ejecuciones" not in [expander.label for expander in app.expander]
     assert "runs_reload" in [str(button.key) for button in app.button]
 

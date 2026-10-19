@@ -1258,3 +1258,25 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** la raíz «emSign Root CA - G1» se guarda en `agent/certs/emsign_root_ca_g1.pem` y el agente la agrega a las raíces de certifi solo para sus descargas. El certificado de ODEPA se sigue verificando completo; nunca se desactiva la verificación (`verify=False`). Huella SHA-256 `40:F6:AF:03:46:A9:9A:A1:CD:1D:55:5A:4E:9C:CE:62:C7:F9:63:46:03:EE:40:66:15:83:3D:C8:C8:D0:03:67`, la misma en certifi 2026.7.22 y en el almacén de certificados de Ubuntu.
 - **Por qué no fijar certifi a una versión antigua:** dejaría desactualizadas las raíces de todas las conexiones (GitHub, INE), no solo la de ODEPA.
 - **Revisar:** cuando ODEPA cambie de emisor, este archivo deja de hacer falta y se retira.
+
+## D-165 · Centro de operación: el recorrido del martes es su propia guía
+
+- **Fecha:** 2026-10-19.
+- **Problema:** la ejecución del 19-10 falló dos veces y encontrar la causa obligó a saltar entre el panel, GitHub Actions, los logs y la configuración de Streamlit. «Ejecuciones y DevOps» mostraba una tabla de ejecuciones y una lista de pasos a la que le faltaban la limpieza y dbt: sus nombres habían cambiado en `semanal.yml` (D-154).
+- **Decisión:** la página pasa a llamarse «Centro de operación». El recorrido de cada martes se dibuja como nueve logos flotantes sobre una serpentina de tres filas: «Lanzar y descargar» (Lanzar, ODEPA, IPC del INE), «Transformar y probar» (Limpieza, dbt, Pruebas) y «Publicar» (Guardar, Informe, Panel). La luz bajo cada logo es el estado de su paso en la última ejecución: verde, rojo, azul que late (en curso) o gris (no corrió).
+- **El recorrido es la guía:** no hay textos fijos. Al pasar el cursor, cada paso dice qué hace y da sus enlaces: el log de ese paso en GitHub, abierto en su línea exacta (`#step:N:1`), y lo que corresponde (fuentes de ODEPA, sitio del INE, commits, informes). El logo abre el log. El paso que falló, o el que está en curso, deja su explicación abierta.
+- **Al lado:** próxima ejecución, semana publicada, última carga, el botón «Ejecutar pipeline ahora» y las últimas ejecuciones con su enlace.
+- **Mientras corre una ejecución** la página vuelve a preguntar a GitHub cada 15 segundos con clave, o cada 60 sin ella (GitHub permite 60 consultas por hora sin clave).
+- **Enlaces del autor:** los tokens de GitHub y la administración de la app en Streamlit solo aparecen después de escribir la clave de control.
+- **El IPC** no tiene paso propio en el workflow: se prepara al comienzo del paso de dbt (`etl/pipeline.py`), así que su logo toma ese estado.
+- **Lo que no se puede:** el texto de los logs no se lee dentro del panel. GitHub lo entrega recién al terminar la ejecución, y Streamlit no expone los suyos. Por eso cada paso lleva el enlace directo.
+- **Los cuatro temas:** el dibujo toma los colores de cada uno. Va en su propio marco (`st.iframe`), como la página GitHub, porque st.html quita los degradados y las explicaciones al pasar el cursor.
+
+## D-166 · El panel se lee en horizontal en los teléfonos
+
+- **Fecha:** 2026-10-19.
+- **Problema:** en un teléfono en vertical el panel se apila en una columna larga y se pierde la vista de conjunto.
+- **Decisión:** un teléfono en vertical (600 px de ancho o menos) ve una sola pantalla con el logo de GreenOcean, un teléfono que gira y «Gira tu teléfono». Ninguna página puede girar el teléfono; solo el lector, y el aviso desaparece solo al girar. Sin texto sobre el bloqueo de rotación: el público del panel sabe girar un teléfono.
+- **En horizontal** (500 px de alto o menos) el panel se dibuja con el ancho de un computador y se reduce al de la pantalla: menú, pipeline e información a la vista, sin franja vacía arriba. Si el menú se plegó al abrir en vertical, se vuelve a abrir al girar.
+- **Tablets y computadores** no cambian.
+- **Límite:** las páginas con reglas propias para pantallas estrechas, como el Resumen, siguen viendo 844 px de ancho y conservan esas reglas. Todo cabe, pero algunas tarjetas van de dos en dos.

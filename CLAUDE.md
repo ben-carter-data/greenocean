@@ -10,7 +10,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 - **Pipeline:** ingesta en Python → aterrizaje `etl/raw.db` (SQLite) → bronce en Parquet → dbt Core sobre DuckDB (staging → intermedio → marts, 31 pruebas) → base servida `etl/datos.duckdb`.
 - **Panel:** Streamlit (`bi/dashboard.py`), que lee `etl/datos.duckdb` en solo lectura.
 - **Orquestación:** GitHub Actions, cada martes (`.github/workflows/semanal.yml`).
-- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md` y `docs/ADR.md`. Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-158). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
+- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md` y `docs/ADR.md`. Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-166). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
 - `CLAUDE_HANDOFF.md` es un relevo antiguo (15-10-2026), conservado solo como historia. Este archivo y `docs/DECISIONES.md` mandan.
 
 ## Instalar y ejecutar
@@ -58,7 +58,10 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 - Streamlit (React) es dueño del DOM que dibuja: un script puede cambiar atributos y clases, pero nunca mover ni borrar nodos. Si no, al cambiar de vista aparece `NotFoundError: removeChild`.
 - `st.markdown` sanitiza SVG complejos (gradientes, filtros, botones). Por eso la página GitHub se dibuja en `st.iframe` con su propio HTML.
 - `streamlit run` guarda en memoria los módulos importados: después de editar `bi/*.py`, reiniciar el servidor antes de juzgar el resultado.
-- El historial de cargas (`etl_run`) tiene 4 ejecuciones reales. Una reconstrucción local debe usar `--local` para no agregar una carga falsa.
+- El historial de cargas (`etl_run`) solo guarda ejecuciones reales. Una reconstrucción local debe usar `--local` para no agregar una carga falsa.
+
+- Los teléfonos (D-166): en vertical, `PHONE_LAYOUT_HTML` tapa la app con «Gira tu teléfono»; en horizontal (alto de 500 px o menos) `.stApp` se dibuja más ancho y se reduce con `transform: scale(.62)`, y los contenedores que Streamlit mide con la altura de la pantalla crecen con la escala. Revisar los dos casos en 390 × 844 y 844 × 390.
+- Una dependencia sin versión máxima puede romper el martes: certifi 2026.10.18 retiró la raíz de ODEPA (D-164).
 
 ## Lo que la sesión en la nube NO tendrá
 
@@ -68,7 +71,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 | `agent/downloads/*.csv` | No hay CSV de ODEPA locales | `python agent/agent.py` los descarga, si hay red hacia datos.odepa.gob.cl |
 | `etl/bronze/` y `etl/warehouse_build.duckdb` | No se puede correr `dbt build` de inmediato | Necesita `raw.db` (ingesta) más `pip install -r requirements-pipeline.txt` |
 | `.venv` y `.venv-dbt` | Sin entornos | Crear uno nuevo con Python 3.11 o 3.12 e instalar los requirements |
-| `.streamlit/secrets.toml` (`GITHUB_TOKEN`, `CONTROL_CODE`) | La página Ejecuciones no lee GitHub y el botón «Ejecutar ahora» queda inactivo | Esperado; nunca crear ni subir secretos |
+| `.streamlit/secrets.toml` (`GITHUB_TOKEN`, `CONTROL_CODE`) | El Centro de operación lee GitHub sin clave (60 consultas por hora) y el botón «Ejecutar pipeline ahora» queda inactivo | Esperado; nunca crear ni subir secretos |
 | `docs/privado/` | Notas privadas del autor, ignoradas por git | Ninguna |
 | Chrome con depuración en el puerto 9333 | No hay capturas de pantalla automáticas | Revisar con AppTest y con las pruebas |
 
