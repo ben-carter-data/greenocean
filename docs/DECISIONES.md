@@ -1189,3 +1189,15 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Por qué la calidad sigue visible:** 112 de los 193 productos tienen más de una calidad (Primera, Segunda), con precios distintos. Quitarla escondería datos, así que pasa a formar parte del nombre en lugar de ser una lista aparte.
 - **La familia** queda en la ruta de navegación (Resumen › Hortalizas › …) y en el enlace de vuelta.
 - **Fila del título:** la pregunta, la respuesta y la búsqueda en una línea; el control Nominal / Real (D-155) va en la cabecera del gráfico, donde actúa.
+
+## D-157 · Ingeniería de datos en cuatro páginas, linaje dbt y documentos descargables
+
+- **Fecha:** 2026-10-19.
+- **Pasos 4, 6 y 7 de la refonte.**
+- **Menú:** Dashboard (Resumen semanal, Contexto de precios) · Ingeniería de datos (Pipeline y linaje, Modelo de datos, Calidad y auditoría, Ejecuciones y DevOps) · Fuentes (ODEPA ×2 e INE) · Documentación (PRD, SAD, ADR, Escalabilidad). DevOps y seguridad se une a Ejecuciones como pestaña «Plataforma y seguridad»; su dirección antigua sigue funcionando.
+- **Linaje leído, no dibujado a mano:** `etl/pipeline.py` copia el manifiesto y los resultados de la última construcción de dbt a la base servida (tablas `dbt_node` y `dbt_result`), porque `dbt/target` no se sube. Con ellas el panel dibuja el DAG (bronce → staging → intermedio → marts, cada modelo con sus pruebas superadas), la matriz «regla → pruebas dbt» de Calidad y auditoría y la insignia del pie de cada página. Un modelo o una prueba nueva aparece sola en la carga siguiente.
+- **Calidad y auditoría:** dos evidencias nuevas, el resultado de las pruebas dbt y la paridad SQLite ↔ DuckDB (precios, rechazos y suma de precios), comprobada en vivo. La fila que hablaba de SQLite describe ahora la base DuckDB.
+- **Diagramas:** el recorrido por capas, la plataforma DevOps y sus variantes describen la pila entregada: aterrizaje SQLite, bronce Parquet, dbt, DuckDB y el IPC del INE como segunda fuente.
+- **Documentos:** PRD, SAD (C4) y ADR reescritos sobre la arquitectura entregada (ADR-30 aceptada; ADR-33, regla del deflactor; ADR-34, almacén de trabajo, base servida y respaldo con paridad). Cada uno se descarga en PDF con portada, índice y paginación (`bi/document_pdf.py`, reportlab), generado desde el mismo Markdown que muestra el panel y GitHub.
+- **Escalabilidad:** página propia con la sección del SAD: clima previsto; nube solo con datos de una empresa (ADR-31), con los umbrales que la justificarían. Sin cifras inventadas.
+- **Fuentes:** el INE se suma a la barra lateral y a la atribución del pie.

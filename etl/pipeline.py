@@ -10,6 +10,7 @@
 
 On any failure the published database stays as it was; the failed run is recorded.
 """
+import json
 import os
 import shutil
 import sqlite3
@@ -30,6 +31,12 @@ SERVING_DATABASE_FILE = etl.BASE_DIR / "datos.duckdb"
 # The tables of the panel, in the order they are copied.
 SERVING_TABLES = ["dim_product", "dim_region", "dim_channel", "dim_date", "weekly_price", "rejection",
                   "ipc_monthly", "ipc_weekly", "ine_ipc_source"]
+DBT_TARGET_DIR = DBT_DIR / "target"
+# The lineage and the test results of the last dbt build travel with the serving file:
+# dbt/target is not committed, and the panel draws its DAG and quality matrix from them.
+DBT_NODE_COLUMNS = ["unique_id", "name", "resource_type", "layer", "materialized", "depends_on",
+                    "test_type", "column_name", "description"]
+DBT_RESULT_COLUMNS = ["unique_id", "status", "execution_time", "failures", "generated_at"]
 ETL_RUN_SCHEMA = """CREATE TABLE IF NOT EXISTS etl_run (
     run_id INTEGER PRIMARY KEY, started_at VARCHAR NOT NULL, status VARCHAR NOT NULL,
     rows_read INTEGER NOT NULL, rows_loaded INTEGER NOT NULL, rows_rejected INTEGER NOT NULL,
@@ -84,8 +91,42 @@ def count_rows(work_file=WORK_DATABASE_FILE):
             "count(*) FILTER (WHERE reason IS NOT NULL) FROM int_prices__validated").fetchone()
 
 
+def read_dbt_artifacts(target_dir=DBT_TARGET_DIR):
+    """(nodes, results) of the last dbt build: models, sources and tests with their
+    dependencies, and the status of each one. Empty lists if dbt left no artifacts."""
+    try:
+        manifest = json.loads((target_dir / "manifest.json").read_text(encoding="utf-8"))
+        run_results = json.loads((target_dir / "run_results.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return [], []
+    nodes = []
+    for unique_id, node in list(manifest["nodes"].items()) + list(manifest["sources"].items()):
+        kind = node["resource_type"]
+        if kind not in ("model", "test", "source"):
+            continue
+        layer = "bronze" if kind == "source" else node["fqn"][1] if kind == "model" and len(node["fqn"]) > 2 else ""
+        nodes.append((unique_id, node["name"], kind, layer, node.get("config", {}).get("materialized", ""),
+                      json.dumps(node.get("depends_on", {}).get("nodes", [])),
+                      (node.get("test_metadata") or {}).get("name", "singular" if kind == "test" else ""),
+                      node.get("column_name") or "", node.get("description") or ""))
+    generated_at = run_results["metadata"]["generated_at"][:19]
+    results = [(result["unique_id"], result["status"], float(result.get("execution_time") or 0),
+                int(result.get("failures") or 0), generated_at) for result in run_results["results"]]
+    return nodes, results
+
+
+def write_dbt_artifacts(connection, nodes, results):
+    connection.execute("CREATE TABLE dbt_node (" + ", ".join(f"{column} VARCHAR" for column in DBT_NODE_COLUMNS) + ")")
+    connection.execute("CREATE TABLE dbt_result (unique_id VARCHAR, status VARCHAR, execution_time DOUBLE, "
+                       "failures INTEGER, generated_at VARCHAR)")
+    if nodes:
+        connection.executemany(f"INSERT INTO dbt_node VALUES ({', '.join('?' for _ in DBT_NODE_COLUMNS)})", nodes)
+    if results:
+        connection.executemany("INSERT INTO dbt_result VALUES (?, ?, ?, ?, ?)", results)
+
+
 def write_serving_database(history, run, work_file=WORK_DATABASE_FILE,
-                           serving_file=SERVING_DATABASE_FILE):
+                           serving_file=SERVING_DATABASE_FILE, artifacts=None):
     """A fresh, compact copy of the panel's tables plus etl_run, swapped in at the end."""
     temporary = serving_file.with_suffix(".duckdb.tmp")
     temporary.unlink(missing_ok=True)
@@ -94,6 +135,7 @@ def write_serving_database(history, run, work_file=WORK_DATABASE_FILE,
         for table in SERVING_TABLES:
             connection.execute(f"CREATE TABLE {table} AS SELECT * FROM work.main.{table}")
         connection.execute("DETACH work")
+        write_dbt_artifacts(connection, *(artifacts if artifacts is not None else read_dbt_artifacts()))
         connection.execute(ETL_RUN_SCHEMA)
         connection.executemany("INSERT INTO etl_run VALUES (?, ?, ?, ?, ?, ?, ?)", history + [run])
         connection.execute("CHECKPOINT")

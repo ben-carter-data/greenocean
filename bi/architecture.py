@@ -1,7 +1,8 @@
-"""Live "data journey" diagram: how the data travels from ODEPA to the dashboard.
+"""Live "data journey" diagram: how the data travels from ODEPA and the INE to the dashboard.
 
-Layers from left to right (sources, ingestion, bronze, cleaning, rules, quality,
-gold, consumption), an orchestration band on top, observability at the bottom,
+Layers from left to right (sources, ingestion, landing, bronze, dbt staging,
+intermediate and marts, gold, consumption; D-154, D-155), an orchestration band
+on top, observability at the bottom,
 and a quarantine for rejected rows. Each step carries a status dot with its real
 state (latest pipeline run and current database); dots travel along the arrows
 and the dashed links move only while a run is in progress: every animation shows
@@ -32,19 +33,26 @@ LAYER_COLORS = {"sources": "#22b35a", "ingestion": "#3987e5", "bronze": "#c98500
 
 WIDTH = 1560
 HEIGHT = 720
-MAIN_ROW_Y = 330
+# The main row sits halfway between the two ODEPA sources, and the three sources
+# mirror the three uses on the right (same rows): the diagram stays symmetric.
+MAIN_ROW_Y = 285
+SIDE_ROWS_Y = [210, 360, 510]
+QUARANTINE_Y = 480
 TILE_SIZE = 64
-# Center x of each layer column.
-COLUMN_X = {"sources": 110, "ingestion": 300, "bronze": 490, "cleaning": 680,
-            "rules": 870, "quality": 1060, "gold": 1250, "consumption": 1440}
+# Center x of each layer column: nine columns 171 apart, with the same 96 margin
+# on both sides.
+COLUMN_X = {name: 96 + index * 171 for index, name in enumerate(
+    ["sources", "ingestion", "landing", "bronze", "staging", "intermediate", "marts",
+     "gold", "consumption"])}
 COLUMN_HEADERS = [
     ("sources", "FUENTES", "HTTPS · CSV · sin API", "sources"),
     ("ingestion", "INGESTA", "Python · requests", "ingestion"),
-    ("bronze", "BRONCE", "SQLite · copia exacta", "bronze"),
-    ("cleaning", "LIMPIEZA", "Python · pandas", "processing"),
-    ("rules", "REGLAS", "Python · pandas", "processing"),
-    ("quality", "CALIDAD", "Python · validaciones", "quality"),
-    ("gold", "ORO", "SQLite · modelo estrella", "gold"),
+    ("landing", "ATERRIZAJE", "SQLite · tal cual llega", "ingestion"),
+    ("bronze", "BRONCE", "Parquet · copia exacta", "bronze"),
+    ("staging", "STAGING", "dbt · tipos y textos", "processing"),
+    ("intermediate", "INTERMEDIO", "dbt · reglas de negocio", "processing"),
+    ("marts", "MARTS", "dbt · modelos y pruebas", "quality"),
+    ("gold", "ORO", "DuckDB · modelo estrella", "gold"),
     ("consumption", "CONSUMO", "Streamlit · GitHub · SQL", "consumption"),
 ]
 # The small version shown at the top of the project page.
@@ -71,10 +79,13 @@ TOP_ROW_Y = 185
 MIDDLE_ROW_Y = 380
 BOTTOM_ROW_Y = 605
 LEFT_COLUMN_X = 200
+# The two public sources share the top-left frame: one compact row each, above
+# and below the row of the connection that leaves them (TOP_ROW_Y).
+SOURCE_ROWS_Y = [155, 215]
 # (x, y, width, height, title, subtitle, layer, dev_only) of each platform frame.
 # dev_only marks a platform that only exists while developing, never in production.
 PLATFORMS = [
-    (40, 95, 320, 155, "ODEPA", "fuente pública", "sources", False),
+    (40, 95, 320, 155, "FUENTES", "datos públicos · ODEPA e INE", "sources", False),
     (40, 305, 320, 140, "TU COMPUTADOR", "desarrollo", "ingestion", True),
     (420, 95, 965, 350, "GITHUB", "código, automatización e informes", "processing", False),
     (40, 500, 720, 180, "STREAMLIT COMMUNITY CLOUD", "publicación del panel", "quality", False),
@@ -84,7 +95,7 @@ PLATFORMS = [
 # components (cache, issues, permissions, secrets, the local editor) support this
 # flow but are not part of its numbered sequence.
 MAIN_FLOW_STEPS = {
-    "Datos abiertos": 1, "Job semanal.yml": 2, "Repositorio": 3,
+    "ODEPA · precios": 1, "Job semanal.yml": 2, "Repositorio": 3,
     "Pruebas (CI)": 4, "App Streamlit": 5, "Visitantes": 6,
 }
 # Explanation shown on hover over each piece: what it does, with its acronyms.
@@ -93,67 +104,94 @@ TOOLTIPS = {
                        "(Oficina de Estudios y Políticas Agrarias) en archivos CSV.",
     "ODEPA consumidor": "Precios semanales al consumidor por región y canal, en archivos CSV "
                         "de ODEPA.",
+    "INE · IPC": "IPC (índice de precios al consumidor) del INE (Instituto Nacional de "
+                 "Estadísticas): división «Alimentos y bebidas no alcohólicas», mensual, en "
+                 "dos archivos CSV oficiales. Sirve para expresar los precios en pesos reales "
+                 "(D-155).",
     "ODEPA mayorista y consumidor": "Las dos fuentes de ODEPA (Oficina de Estudios y Políticas "
                                     "Agrarias): precios mayoristas diarios y precios al "
                                     "consumidor semanales, en archivos CSV.",
-    "Agente de descarga": "Python y requests descargan los CSV por HTTPS, reintentan si "
-                          "falla y revisan el encabezado antes de guardar nada.",
-    "raw.db": "Capa bronce: los archivos tal como llegan, con un hash por archivo para saber "
-              "si cambiaron. No se sube al repositorio.",
-    "Limpieza": "Python y pandas convierten tipos y textos y rechazan las filas inválidas con su motivo (RN-11; "
-                "RN = regla de negocio).",
-    "Reglas de negocio": "Python y pandas llevan los precios a kilo o unidad, los agrupan por semana y marcan los "
-                         "atípicos (RN-03 a RN-12).",
-    "Controles de carga": "Validaciones en Python revisan filas, semanas, regiones y canales: si algo no cuadra, no se "
-                          "guarda nada.",
-    "datos.db": "Capa oro: el data warehouse SQLite con el modelo estrella que leen el panel, "
-                "el informe y las consultas.",
-    "SQLite · raw.db": "Base SQLite local de la capa bronce: conserva los archivos tal como "
-                         "llegan y su hash. No se sube al repositorio.",
-    "SQLite · datos.db": "Base SQLite local de la capa oro: contiene el modelo estrella que "
-                           "leen el panel, el informe y las consultas.",
-    "Rechazos": "Tabla rejection: cada fila descartada, tal como venía, con su motivo.",
-    "Panel Streamlit": "Este panel: lee datos.db en modo solo lectura.",
+    "Agente ODEPA": "agent/agent.py: Python y requests descargan los CSV de ODEPA por HTTPS, "
+                    "reintentan si falla y revisan el encabezado antes de guardar nada.",
+    "Descarga INE": "etl/ine.py: Python y requests descargan los dos CSV del IPC y los guardan "
+                    "en bronce como texto. Si el INE no responde, la carga sigue con el IPC ya "
+                    "publicado.",
+    "Descarga ODEPA e INE": "agent/agent.py descarga los CSV de ODEPA y etl/ine.py los del IPC "
+                            "del INE, ambos con Python y requests por HTTPS.",
+    "raw.db": "Zona de aterrizaje: los CSV de ODEPA tal como llegan, con un hash por archivo "
+              "para saber si cambiaron. No se sube al repositorio.",
+    "SQLite · raw.db": "Base SQLite local de aterrizaje: conserva los CSV de ODEPA tal como "
+                       "llegan y su hash. No se sube al repositorio.",
+    "Parquet · bronce": "Capa bronce: copia exacta en Parquet, todas las columnas como texto, "
+                        "por fuente y año (ODEPA) y por archivo (INE). etl/bronze.py con pyarrow.",
+    "Staging": "Modelos dbt de staging (stg_odepa__wholesale, stg_odepa__consumer, "
+               "stg_ine__ipc_monthly): convierten tipos y normalizan textos (RN-01, RN-02, "
+               "RN-13; RN = regla de negocio).",
+    "Intermedio": "Modelos dbt intermedios: validan y apartan las filas inválidas (RN-11), "
+                  "llevan los precios a kilo o unidad, los agrupan por semana y marcan los "
+                  "atípicos (RN-03 a RN-12).",
+    "Marts y pruebas": "Marts de dbt: el modelo estrella (dim_product, dim_region, dim_channel, "
+                       "dim_date, weekly_price), rejection y el IPC mensual y semanal. Las "
+                       "pruebas de dbt revisan claves, relaciones y la conciliación: si una "
+                       "falla, no se publica nada.",
+    "datos.duckdb": "Capa oro: el data warehouse DuckDB que leen el panel, el informe y las "
+                    "consultas. Se reemplaza solo si todos los modelos y pruebas pasaron.",
+    "datos.db": "Respaldo SQLite que aún escribe etl/etl.py; una prueba de paridad lo compara "
+                "con datos.duckdb cada semana (D-154).",
+    "Rechazos": "Mart rejection: cada fila descartada, tal como venía, con su motivo (RN-11).",
+    "Panel Streamlit": "Este panel: lee datos.duckdb en modo solo lectura.",
     "Informe semanal": "Issue de GitHub con el estado de la carga y las alertas de la semana.",
     "Consultas SQL": "SQL (lenguaje de consultas estructurado): una consulta por indicador, en "
-                     "bi/queries.sql.",
-    "GitHub Actions": "Servicio de GitHub que ejecuta el job semanal cada martes, sin "
+                     "bi/queries.sql, ejecutada por DuckDB.",
+    "GitHub Actions": "Servicio de GitHub que ejecuta el workflow semanal cada martes, sin "
                       "intervención.",
-    "Pruebas automáticas": "pytest corre contra la base nueva: si una prueba falla, no se "
-                           "guarda nada.",
+    "etl/pipeline.py": "Copia bronce a Parquet, corre dbt build (modelos y pruebas) en una base "
+                       "de trabajo y solo si todo pasa reemplaza datos.duckdb.",
+    "Pruebas automáticas": "pytest corre contra la base nueva, con la paridad SQLite y DuckDB: "
+                           "si una prueba falla, no se guarda nada.",
     "Secretos": "Claves que no están en el código: el token de GitHub y la clave del botón "
                 "«Ejecutar ahora».",
     "etl_run": "Tabla con una fila por carga. ETL = extraer, transformar y cargar.",
+    "dbt_result": "Tablas dbt_node y dbt_result: el linaje de cada modelo y el resultado de "
+                  "cada prueba de dbt en la última carga.",
     "Logs del agente": "Un archivo de texto por ejecución con lo que hizo la descarga.",
-    "Correo de GitHub": "GitHub avisa por correo al autor si el job semanal falla.",
+    "Correo de GitHub": "GitHub avisa por correo al autor si el workflow semanal falla.",
     "Centro de control": "Página del panel con el historial de ejecuciones en vivo.",
-    "ODEPA · CSV": "Archivos CSV publicados por ODEPA y descargados por HTTPS; esta fuente "
-                     "no ofrece una API en el flujo utilizado por el proyecto.",
-    "Python · requests": "Python ejecuta el agente y requests descarga los CSV por HTTPS.",
-    "Python · pandas": "Python ejecuta el ETL y pandas limpia, transforma y agrupa los datos.",
-    "Streamlit": "Aplicación web que consulta SQLite y presenta el dashboard.",
+    "ODEPA e INE · CSV": "Archivos CSV publicados por ODEPA y por el INE, descargados por "
+                         "HTTPS; ninguna de las dos fuentes ofrece una API en el flujo "
+                         "utilizado por el proyecto.",
+    "Python · requests": "Python ejecuta la ingesta y requests descarga los CSV por HTTPS.",
+    "dbt · DuckDB": "dbt Core con dbt-duckdb transforma y prueba los datos: staging, "
+                    "intermedio y marts.",
+    "Streamlit": "Aplicación web que consulta DuckDB y presenta el dashboard.",
     "Datos abiertos": "Portal de datos abiertos de ODEPA: un CSV por año y fuente, descargado "
                       "por HTTPS.",
+    "ODEPA · precios": "Portal de datos abiertos de ODEPA: un CSV por año y fuente (mayorista "
+                       "y consumidor), descargado por HTTPS.",
+    "INE · IPC alimentos": "IPC mensual del INE, división «Alimentos y bebidas no "
+                           "alcohólicas»: dos CSV oficiales descargados por HTTPS (D-155).",
     "VS Code · Claude Code": "Donde se escribe el código: el editor VS Code y el asistente "
                              "Claude Code. pytest corre antes de cada commit.",
-    "Job semanal.yml": "Workflow de GitHub Actions: cada martes descarga, ejecuta el ETL, "
-                       "prueba, guarda datos.db y publica el informe.",
+    "Job semanal.yml": "Workflow de GitHub Actions: cada martes descarga, construye el data "
+                       "warehouse con dbt, prueba, guarda datos.duckdb y publica el informe.",
     "Caché de Actions": "Guarda los CSV de los años cerrados para no descargarlos cada semana "
                         "(D-047).",
     "Issues": "Donde se publica el informe semanal, uno por ejecución.",
-    "Repositorio": "La rama main en GitHub: el código y datos.db. Es la única fuente de la "
-                   "verdad.",
-    "Pruebas (CI)": "CI = integración continua: pruebas.yml corre pytest en cada push y avisa "
-                    "si algo se rompe.",
+    "Repositorio": "La rama main en GitHub: el código, datos.duckdb y el respaldo datos.db. "
+                   "Es la única fuente de la verdad.",
+    "Pruebas (CI)": "CI = integración continua: pruebas.yml compila el proyecto dbt (dbt parse) "
+                    "y corre pytest en cada push, y avisa si algo se rompe.",
     "Permisos del job": "Mínimo privilegio: el job solo puede escribir contenido (el commit de "
                         "la base) y crear issues.",
-    "App Streamlit": "El panel publicado en Streamlit Community Cloud; abre datos.db en solo "
-                     "lectura.",
+    "App Streamlit": "El panel publicado en Streamlit Community Cloud; abre datos.duckdb en "
+                     "solo lectura.",
     "Visitantes": "Quien abre el enlace público del panel desde su navegador.",
     "ODEPA": "Las dos fuentes de precios de ODEPA, en archivos CSV.",
+    "ODEPA · INE": "Las fuentes públicas: los precios de ODEPA y el IPC de alimentos del INE, "
+                   "en archivos CSV.",
     "Ingesta": "La descarga de los archivos, con reintentos y validación.",
-    "ETL": "Extraer, transformar y cargar: limpieza, reglas y controles.",
-    "Data warehouse": "datos.db: la base lista para analizar.",
+    "ETL": "Extraer, transformar y cargar: bronce en Parquet y modelos dbt con sus pruebas.",
+    "Data warehouse": "datos.duckdb: la base DuckDB lista para analizar.",
     "Panel": "Este panel, con los datos de la última carga.",
 }
 
@@ -167,7 +205,11 @@ TECH = {
     "python":    {"label": "Python", "logo": "python"},
     "requests":  {"label": "requests", "logo": None},
     "pandas":    {"label": "pandas", "logo": None},
+    "pyarrow":   {"label": "pyarrow", "logo": None},
     "sqlite":    {"label": "SQLite", "logo": "sqlite"},
+    "duckdb":    {"label": "DuckDB", "logo": "duckdb"},
+    "dbt":       {"label": "dbt", "logo": "dbt"},
+    "parquet":   {"label": "Parquet", "logo": "apacheparquet"},
     "streamlit": {"label": "Streamlit", "logo": "streamlit"},
     "github":    {"label": "GitHub CLI", "logo": "github"},
     "https":     {"label": "HTTPS", "logo": None},
@@ -181,26 +223,34 @@ TECH = {
 PIPELINE_STACK = {
     "ODEPA mayorista": ["https", "csv"],
     "ODEPA consumidor": ["https", "csv"],
-    "Agente de descarga": ["python", "requests"],
-    # «SQLite · raw.db» and «SQLite · datos.db» already spell out SQLite in their
-    # own title; no pill repeats a word the node already shows in bold.
-    "Limpieza": ["python", "pandas"],
-    "Reglas de negocio": ["python", "pandas"],
-    "Controles de carga": ["python", "pandas"],
+    "INE · IPC": ["https", "csv"],
+    "ODEPA mayorista y consumidor": ["https", "csv"],
+    "Agente ODEPA": ["python", "requests"],
+    "Descarga INE": ["python", "requests"],
+    "Descarga ODEPA e INE": ["python", "requests"],
+    # «SQLite · raw.db» already spells out SQLite in its own title, and the DuckDB
+    # logo of datos.duckdb is its own tile icon: no pill repeats them.
+    "Parquet · bronce": ["parquet", "python", "pyarrow"],
+    "Staging": ["dbt", "sql", "duckdb"],
+    "Intermedio": ["dbt", "sql", "duckdb"],
+    "Marts y pruebas": ["dbt", "sql"],
     "Panel Streamlit": ["streamlit"],
     "Informe semanal": ["python", "markdown", "github"],
-    "Consultas SQL": ["sql"],
+    "Consultas SQL": ["duckdb", "sql"],
 }
 # Explanation of what travels through each link.
 CHIP_TOOLTIPS = {
     "CSV": "CSV: archivo de texto con valores separados por comas.",
     "HTTPS · CSV": "HTTPS: conexión web cifrada; por ella llegan los archivos CSV.",
     "manifest": "manifest.json: registro de cada archivo descargado, con su hash.",
-    "raw_*": "Tablas crudas raw_wholesale y raw_consumer, en raw.db.",
-    "válidas": "Filas que pasaron la validación.",
-    "inválidas": "Filas rechazadas: van a la tabla rejection con su motivo.",
-    "plata": "Capa plata: datos limpios, con las reglas de negocio aplicadas.",
-    "OK": "La carga pasó todos los controles y se guarda.",
+    "raw_*": "Tablas crudas raw_wholesale y raw_consumer de raw.db, copiadas a Parquet como "
+             "texto.",
+    "ine_ipc": "Las filas del IPC del INE, como texto, en bronze/ine_ipc.",
+    "sources": "sources.yml: dbt lee los archivos Parquet de bronce como fuentes.",
+    "stg_*": "Modelos de staging: datos con tipos y textos normalizados.",
+    "int_*": "Capa plata: modelos intermedios, con las reglas de negocio aplicadas.",
+    "inválidas": "Filas rechazadas: van al mart rejection con su motivo.",
+    "OK": "Todos los modelos y pruebas de dbt pasaron: la base se publica.",
     "SQL": "SQL: consultas que leen el data warehouse.",
     "MD": "MD = Markdown: formato de texto del informe semanal.",
     "EJECUTA": "GitHub Actions da la orden de ejecutar; no toca los datos.",
@@ -323,10 +373,26 @@ def draw_github_icon(x, y, color):
     return brand_icons.logo("github", x - 18, y - 18, color, 36)
 
 
+def draw_duckdb_icon(x, y, color):
+    """The real DuckDB logo (Simple Icons), centered in a journey tile."""
+    return brand_icons.logo("duckdb", x - 18, y - 18, color, 36)
+
+
+def draw_dbt_icon(x, y, color):
+    """The real dbt logo (Simple Icons), centered in a journey tile."""
+    return brand_icons.logo("dbt", x - 18, y - 18, color, 36)
+
+
+def draw_parquet_icon(x, y, color):
+    """The real Apache Parquet logo (Simple Icons), centered in a journey tile."""
+    return brand_icons.logo("apacheparquet", x - 18, y - 18, color, 36)
+
+
 # Which brand slug a node's own tile icon already shows, so a stack badge never
 # repeats the same logo right under it (D-103).
 ICON_LOGO_SLUG = {draw_python_icon: "python", draw_streamlit_icon: "streamlit",
-                  draw_github_icon: "github"}
+                  draw_github_icon: "github", draw_duckdb_icon: "duckdb",
+                  draw_dbt_icon: "dbt", draw_parquet_icon: "apacheparquet"}
 
 
 def draw_warning_icon(x, y, color):
@@ -517,6 +583,23 @@ def build_link(start, end, color, palette, chip_text=None, dashed=False, moving_
     return "".join(parts)
 
 
+def build_routed_link(start, end, lane_x, color, palette, chip_text=None, moving_dot=False):
+    """Link that runs flat, climbs straight up a free lane at lane_x and turns into
+    its target: for a link that must pass beside, not through, another step."""
+    (x1, y1), (x2, y2) = start, end
+    radius = 14
+    path = (f"M{x1} {y1} H{lane_x - radius} Q{lane_x} {y1} {lane_x} {y1 - radius} "
+            f"V{y2 + radius} Q{lane_x} {y2} {lane_x + radius} {y2} H{x2}")
+    parts = [f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.6" '
+             f'opacity="0.85"/>']
+    if moving_dot:
+        parts.append(f'<circle class="journey-flow" r="3.5" fill="{color}"><animateMotion dur="2.4s" '
+                     f'repeatCount="indefinite" path="{path}"/></circle>')
+    if chip_text:
+        parts.append(build_chip((x1 + lane_x) / 2, y1, chip_text, color, palette))
+    return "".join(parts)
+
+
 def build_band(x, y, width, height, title, color, palette):
     """Dashed area with a title (orchestration, observability)."""
     return (f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="14" fill="none" '
@@ -543,29 +626,45 @@ def build_band_item(x, y, title, detail, palette, state=None):
 
 
 # region Diagram
+def read_dbt_state(states):
+    """State of the dbt transformation: its own state when the caller has one,
+    otherwise the ETL step of the same weekly run."""
+    return states.get("dbt", states["etl"])
+
+
 def build_main_nodes(states, figures, palette):
-    """The steps of the data, from the ODEPA files to the indicator database."""
+    """The steps of the data, from the ODEPA and INE files to the data warehouse."""
     column = COLUMN_X
+    odepa_wholesale_y, odepa_consumer_y, ine_y = SIDE_ROWS_Y
+    dbt_state = read_dbt_state(states)
     return "".join([
-        build_node(column["sources"], 250, "sources", draw_file_icon, "ODEPA mayorista",
-                   ["HTTPS · CSV · sin API", figures["source_years"]], palette, states["sources"]),
-        build_node(column["sources"], 420, "sources", draw_file_icon, "ODEPA consumidor",
-                   ["HTTPS · CSV · sin API", figures["source_years"]], palette, states["sources"]),
+        build_node(column["sources"], odepa_wholesale_y, "sources", draw_file_icon,
+                   "ODEPA mayorista", ["HTTPS · CSV · sin API", figures["source_years"]],
+                   palette, states["sources"]),
+        build_node(column["sources"], odepa_consumer_y, "sources", draw_file_icon,
+                   "ODEPA consumidor", ["HTTPS · CSV · sin API", figures["source_years"]],
+                   palette, states["sources"]),
+        build_node(column["sources"], ine_y, "sources", draw_file_icon, "INE · IPC",
+                   ["HTTPS · CSV · sin API", "alimentos · mensual"], palette),
         build_node(column["ingestion"], MAIN_ROW_Y, "ingestion", draw_python_icon,
-                   "Agente de descarga", ["Python · requests", figures["last_run"]],
+                   "Agente ODEPA", ["Python · requests", figures["last_run"]],
                    palette, states["download"]),
-        build_node(column["bronze"], MAIN_ROW_Y, "bronze", draw_sqlite_icon, "SQLite · raw.db",
-                   ["base local · copia bruta", "hash por archivo"], palette),
-        build_node(column["cleaning"], MAIN_ROW_Y, "processing", draw_python_icon,
-                   "Limpieza", ["Python · pandas", figures["rows_read"]],
-                   palette, states["etl"]),
-        build_node(column["rules"], MAIN_ROW_Y, "processing", draw_python_icon,
-                   "Reglas de negocio", ["Python · pandas", "unidades · semanas · RN-12"],
-                   palette, states["etl"]),
-        build_node(column["quality"], MAIN_ROW_Y, "quality", draw_python_icon,
-                   "Controles de carga", ["Python · validaciones", "filas · semanas · regiones"],
-                   palette, states["load"]),
-        build_node(column["gold"], MAIN_ROW_Y, "gold", draw_sqlite_icon, "SQLite · datos.db",
+        build_node(column["ingestion"], ine_y, "ingestion", draw_python_icon,
+                   "Descarga INE", ["Python · requests", "etl/ine.py"], palette),
+        build_node(column["landing"], MAIN_ROW_Y, "ingestion", draw_sqlite_icon,
+                   "SQLite · raw.db", ["zona de aterrizaje", "hash por archivo"], palette),
+        build_node(column["bronze"], MAIN_ROW_Y, "bronze", draw_parquet_icon,
+                   "Parquet · bronce", ["Python · pyarrow", "texto, por fuente y año"],
+                   palette),
+        build_node(column["staging"], MAIN_ROW_Y, "processing", draw_dbt_icon, "Staging",
+                   ["dbt · SQL", figures["rows_read"]], palette, dbt_state),
+        build_node(column["intermediate"], MAIN_ROW_Y, "processing", draw_dbt_icon,
+                   "Intermedio", ["dbt · SQL", "unidades · semanas · RN-12"], palette,
+                   dbt_state),
+        build_node(column["marts"], MAIN_ROW_Y, "quality", draw_shield_icon,
+                   "Marts y pruebas", ["dbt · SQL", "estrella · IPC · pruebas"], palette,
+                   states["load"]),
+        build_node(column["gold"], MAIN_ROW_Y, "gold", draw_duckdb_icon, "datos.duckdb",
                    [figures["weekly_prices"], figures["latest_week"]], palette, states["load"]),
     ])
 
@@ -573,13 +672,14 @@ def build_main_nodes(states, figures, palette):
 def build_consumption_nodes(states, figures, palette):
     """Where the data is used: dashboard, weekly report and SQL queries."""
     x = COLUMN_X["consumption"]
+    panel_y, report_y, queries_y = SIDE_ROWS_Y
     return "".join([
-        build_node(x, 210, "consumption", draw_streamlit_icon, "Panel Streamlit",
+        build_node(x, panel_y, "consumption", draw_streamlit_icon, "Panel Streamlit",
                    ["esta página", figures["panel_time"]], palette, states["panel"]),
-        build_node(x, 360, "consumption", draw_github_icon, "Informe semanal",
+        build_node(x, report_y, "consumption", draw_github_icon, "Informe semanal",
                    ["GitHub Issue · Markdown", "alertas y estado"], palette, states["report"]),
-        build_node(x, 510, "consumption", draw_sqlite_icon, "Consultas SQL",
-                   ["SQLite · queries.sql", "una por indicador"], palette),
+        build_node(x, queries_y, "consumption", draw_code_icon, "Consultas SQL",
+                   ["DuckDB · queries.sql", "bi/queries.sql"], palette),
     ])
 
 
@@ -591,6 +691,7 @@ def build_links(palette, is_running):
     column = COLUMN_X
     half = TILE_SIZE / 2
     gray = palette["text"]
+    first_y, second_y, third_y = SIDE_ROWS_Y
 
     def right_of(name, y=MAIN_ROW_Y):
         return (column[name] + half, y)
@@ -599,91 +700,105 @@ def build_links(palette, is_running):
         return (column[name] - half, y)
 
     return "".join([
-        build_link(right_of("sources", 250), left_of("ingestion"), LAYER_COLORS["sources"],
+        build_link(right_of("sources", first_y), left_of("ingestion"), LAYER_COLORS["sources"],
                    palette, moving_dot=is_running),
-        build_link(right_of("sources", 420), left_of("ingestion"), LAYER_COLORS["sources"],
-                   palette, moving_dot=is_running),
-        build_link(right_of("ingestion"), left_of("bronze"), LAYER_COLORS["ingestion"],
+        build_link(right_of("sources", second_y), left_of("ingestion"),
+                   LAYER_COLORS["sources"], palette, moving_dot=is_running),
+        build_link(right_of("sources", third_y), left_of("ingestion", third_y),
+                   LAYER_COLORS["sources"], palette, moving_dot=is_running),
+        # The INE files skip the landing database: etl/ine.py writes bronze directly,
+        # through the free lane between the landing and bronze captions.
+        build_routed_link(right_of("ingestion", third_y), left_of("bronze", MAIN_ROW_Y + 20),
+                          (column["landing"] + column["bronze"]) / 2,
+                          LAYER_COLORS["ingestion"], palette, "ine_ipc", moving_dot=is_running),
+        build_link(right_of("ingestion"), left_of("landing"), LAYER_COLORS["ingestion"],
                    palette, "manifest", moving_dot=is_running),
-        build_link(right_of("bronze"), left_of("cleaning"), LAYER_COLORS["bronze"],
+        build_link(right_of("landing"), left_of("bronze"), LAYER_COLORS["ingestion"],
                    palette, "raw_*", moving_dot=is_running),
-        build_link(right_of("cleaning"), left_of("rules"), LAYER_COLORS["processing"],
-                   palette, "válidas", moving_dot=is_running),
-        build_link(right_of("rules"), left_of("quality"), LAYER_COLORS["processing"],
-                   palette, "plata", moving_dot=is_running),
-        build_link(right_of("quality"), left_of("gold"), LAYER_COLORS["quality"],
+        build_link(right_of("bronze"), left_of("staging"), LAYER_COLORS["bronze"],
+                   palette, "sources", moving_dot=is_running),
+        build_link(right_of("staging"), left_of("intermediate"), LAYER_COLORS["processing"],
+                   palette, "stg_*", moving_dot=is_running),
+        build_link(right_of("intermediate"), left_of("marts"), LAYER_COLORS["processing"],
+                   palette, "int_*", moving_dot=is_running),
+        build_link(right_of("marts"), left_of("gold"), LAYER_COLORS["quality"],
                    palette, "OK", moving_dot=is_running),
-        build_link(right_of("gold"), left_of("consumption", 210), LAYER_COLORS["gold"],
+        build_link(right_of("gold"), left_of("consumption", first_y), LAYER_COLORS["gold"],
                    palette, "SQL", moving_dot=is_running),
-        build_link(right_of("gold"), left_of("consumption", 360), LAYER_COLORS["gold"],
+        build_link(right_of("gold"), left_of("consumption", second_y), LAYER_COLORS["gold"],
                    palette, "MD", moving_dot=is_running),
-        build_link(right_of("gold"), left_of("consumption", 510), gray, palette,
+        build_link(right_of("gold"), left_of("consumption", third_y), gray, palette,
                    moving_dot=False),
     ])
 
 
 def build_quarantine(figures, palette):
-    """Rejected rows go to the rejection table with their reason (RN-11)."""
-    x = (COLUMN_X["cleaning"] + COLUMN_X["rules"]) / 2
-    y = 520
-    start = (COLUMN_X["cleaning"] + TILE_SIZE / 2, MAIN_ROW_Y + 14)
+    """Rejected rows go to the rejection mart with their reason (RN-11)."""
+    x = (COLUMN_X["staging"] + COLUMN_X["intermediate"]) / 2
+    y = QUARANTINE_Y
+    start = (COLUMN_X["staging"] + TILE_SIZE / 2, MAIN_ROW_Y + 14)
     path = (f"M{start[0]} {start[1]} C{x} {start[1]} {x} {start[1] + 60} {x} "
             f"{y - TILE_SIZE / 2}")
     return (f'<path class="journey-dashed" d="{path}" fill="none" '
             f'stroke="{LAYER_COLORS["quarantine"]}" stroke-width="1.6"/>'
-            + build_chip(x, MAIN_ROW_Y + 128, "inválidas", LAYER_COLORS["quarantine"],
+            + build_chip(x, MAIN_ROW_Y + 132, "inválidas", LAYER_COLORS["quarantine"],
                          palette)
             + build_node(x, y, "quarantine", draw_warning_icon, "Rechazos",
-                         ["SQLite · tabla rejection", figures["rows_rejected"]], palette))
+                         ["DuckDB · mart rejection", figures["rows_rejected"]], palette))
 
 
 def build_orchestration(states, figures, palette):
     """Top band: who gives the orders. It never touches the data itself."""
     left = COLUMN_X["ingestion"] - 70
     width = COLUMN_X["gold"] + 70 - left
+    spacing = (width - 60) / 4
     parts = [build_band(left, 84, width, 70,
                         "ORQUESTACIÓN — da las órdenes; no toca los datos",
                         LAYER_COLORS["orchestration"], palette),
              build_band_item(left + 30, 128, "GitHub Actions",
                              f"cada martes · próxima {figures['next_run']}", palette,
                              states["workflow"]),
-             build_band_item(left + 380, 128, "Pruebas automáticas",
+             build_band_item(left + 30 + spacing, 128, "etl/pipeline.py",
+                             "dbt build · publica si todo pasa", palette),
+             build_band_item(left + 30 + 2 * spacing, 128, "Pruebas automáticas",
                              "pytest · si fallan, no se guarda", palette, states["tests"]),
-             build_band_item(left + 720, 128, "Secretos",
+             build_band_item(left + 30 + 3 * spacing, 128, "Secretos",
                              "GitHub Actions · Secrets", palette)]
     # Orders go down to the agent; they are commands, not data.
     agent_x = COLUMN_X["ingestion"]
     parts.append(f'<path class="journey-dashed" d="M{agent_x} 154 V{MAIN_ROW_Y - 34}" '
                  f'stroke="{LAYER_COLORS["orchestration"]}" stroke-width="1.4" fill="none"/>')
-    parts.append(build_chip(agent_x, 230, "EJECUTA", LAYER_COLORS["orchestration"], palette))
+    parts.append(build_chip(agent_x, (154 + MAIN_ROW_Y - 34) / 2, "EJECUTA",
+                            LAYER_COLORS["orchestration"], palette))
     return "".join(parts)
 
 
 def build_observability(states, figures, palette):
     """Bottom band: how we know what happened in each run."""
-    left = COLUMN_X["bronze"] - 70
+    left = COLUMN_X["landing"] - 70
     width = COLUMN_X["gold"] + 70 - left
+    items = [("etl_run", "DuckDB · una fila por carga", states.get("etl_run")),
+             ("dbt_result", "DuckDB · linaje y pruebas", None),
+             ("Logs del agente", "Python · por ejecución", None),
+             ("Correo de GitHub", "GitHub · si el job falla", None),
+             ("Centro de control", "Streamlit · historial", None)]
+    spacing = (width - 60) / len(items)
     return (build_band(left, 618, width, 72, "OBSERVABILIDAD — cómo sabemos qué pasó",
                        palette["text"], palette)
-            + build_band_item(left + 30, 662, "etl_run", "SQLite · una fila por carga", palette,
-                              states.get("etl_run"))
-            + build_band_item(left + 220, 662, "Logs del agente", "Python · texto por ejecución",
-                              palette)
-            + build_band_item(left + 470, 662, "Correo de GitHub", "GitHub · si el job falla",
-                              palette)
-            + build_band_item(left + 690, 662, "Centro de control", "Streamlit · historial",
-                              palette))
+            + "".join(build_band_item(left + 30 + index * spacing, 662, title, detail,
+                                      palette, state)
+                      for index, (title, detail, state) in enumerate(items)))
 
 
 def build_container(palette):
-    """Area that groups the transformation and storage steps."""
-    left = COLUMN_X["bronze"] - 85
+    """Area that groups the storage and transformation steps."""
+    left = COLUMN_X["landing"] - 85
     width = COLUMN_X["gold"] + 85 - left
     return (f'<rect x="{left}" y="186" width="{width}" height="410" rx="18" fill="none" '
             f'stroke="{palette["card_border"]}" stroke-width="1.2"/>'
             f'<text x="{left + 18}" y="212" font-size="13" font-weight="700" '
-            f'letter-spacing="1" fill="{palette["text"]}">TRANSFORMACIÓN Y ALMACENAMIENTO'
-            f'</text>')
+            f'letter-spacing="1" fill="{palette["text"]}">ALMACENAMIENTO Y TRANSFORMACIÓN · '
+            f'dbt Core sobre DuckDB</text>')
 
 
 def build_journey_svg(states, figures, mode, animate_flow=None):
@@ -708,16 +823,17 @@ def build_journey_svg(states, figures, mode, animate_flow=None):
 
 
 def build_mini_journey_svg(states, figures, mode, animate_flow=None):
-    """Five steps from ODEPA to the dashboard, with the real state and figures.
+    """Five steps from ODEPA and the INE to the dashboard, with the real state and figures.
 
     states and figures are the same as for build_journey_svg.
     """
     palette = charts.get_palette(mode)
-    steps = [("sources", draw_file_icon, "ODEPA · CSV", figures["source_years"], "sources"),
+    steps = [("sources", draw_file_icon, "ODEPA e INE · CSV", figures["source_years"], "sources"),
              ("ingestion", draw_python_icon, "Python · requests", figures["last_run"], "download"),
-             ("processing", draw_python_icon, "Python · pandas", figures["rows_read"], "etl"),
-             ("gold", draw_sqlite_icon, "SQLite · datos.db", figures["weekly_prices"], "load"),
+             ("processing", draw_dbt_icon, "dbt · DuckDB", figures["rows_read"], "dbt"),
+             ("gold", draw_duckdb_icon, "datos.duckdb", figures["weekly_prices"], "load"),
              ("consumption", draw_streamlit_icon, "Streamlit", figures["panel_time"], "panel")]
+    states = dict(states, dbt=read_dbt_state(states))
     is_running = (states.get("workflow") == control.RUN_IN_PROGRESS
                   if animate_flow is None else animate_flow)
     half = TILE_SIZE / 2
@@ -746,22 +862,30 @@ def build_mini_journey_svg(states, figures, mode, animate_flow=None):
 
 
 def list_vertical_steps(states, figures):
-    """(layer header, layer, icon, title, lines, state, chip to the next step), in order."""
+    """(layer header, layer, icon, title, lines, state, chip to the next step), in order.
+
+    The two sources come first: ODEPA joins the INE link through a trunk on the
+    left (build_vertical_journey_svg), so the INE row carries the chip.
+    """
+    dbt_state = read_dbt_state(states)
     return [
         ("FUENTES", "sources", draw_file_icon, "ODEPA mayorista y consumidor",
-         ["HTTPS · CSV · sin API", figures["source_years"]], states["sources"], "HTTPS · CSV"),
-        ("INGESTA", "ingestion", draw_python_icon, "Agente de descarga",
+         ["HTTPS · CSV · sin API", figures["source_years"]], states["sources"], None),
+        (None, "sources", draw_file_icon, "INE · IPC",
+         ["HTTPS · CSV · sin API", "alimentos · mensual"], None, "HTTPS · CSV"),
+        ("INGESTA", "ingestion", draw_python_icon, "Descarga ODEPA e INE",
          ["Python · requests", figures["last_run"]], states["download"], "manifest"),
-        ("BRONCE", "bronze", draw_sqlite_icon, "SQLite · raw.db",
-         ["base local · copia bruta", "hash por archivo"], None, "raw_*"),
-        ("LIMPIEZA", "processing", draw_python_icon, "Limpieza",
-         ["Python · pandas", f"{figures['rows_read']} · Rechazos {figures['rows_rejected']}"],
-         states["etl"], "válidas"),
-        ("REGLAS", "processing", draw_python_icon, "Reglas de negocio",
-         ["Python · pandas", "unidades · semanas · RN-12"], states["etl"], "plata"),
-        ("CALIDAD", "quality", draw_python_icon, "Controles de carga",
-         ["Python · validaciones", "filas · semanas · regiones"], states["load"], "OK"),
-        ("ORO", "gold", draw_sqlite_icon, "SQLite · datos.db",
+        ("ATERRIZAJE", "ingestion", draw_sqlite_icon, "SQLite · raw.db",
+         ["zona de aterrizaje · solo ODEPA", "hash por archivo"], None, "raw_*"),
+        ("BRONCE", "bronze", draw_parquet_icon, "Parquet · bronce",
+         ["Python · pyarrow", "texto, por fuente y año"], None, "sources"),
+        ("STAGING", "processing", draw_dbt_icon, "Staging",
+         ["dbt · SQL", figures["rows_read"]], dbt_state, "stg_*"),
+        ("INTERMEDIO", "processing", draw_dbt_icon, "Intermedio",
+         ["dbt · SQL", f"Rechazos {figures['rows_rejected']}"], dbt_state, "int_*"),
+        ("MARTS", "quality", draw_shield_icon, "Marts y pruebas",
+         ["dbt · SQL", "estrella · IPC · pruebas"], states["load"], "OK"),
+        ("ORO", "gold", draw_duckdb_icon, "datos.duckdb",
          [figures["weekly_prices"], figures["latest_week"]], states["load"], None),
     ]
 
@@ -787,7 +911,7 @@ def build_vertical_node(y, header, layer, draw_icon, title, lines, palette, stat
     if stack:
         parts.append(build_stack_row(text_x, y + 12, stack, palette, align="left"))
     for line_number, line in enumerate(shown_lines):
-        line_color = (LAYER_COLORS["quarantine"] if line.startswith("inválidas")
+        line_color = (LAYER_COLORS["quarantine"] if line.startswith(("inválidas", "Rechazos"))
                       else palette["text"])
         base_y = y + 36 if stack else y + 19
         parts.append(f'<text x="{text_x}" y="{base_y+line_number*17}" font-size="13" '
@@ -837,6 +961,13 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
                      ("Pruebas automáticas", "pytest · bloquea el guardado", states["tests"])]
     parts = [build_vertical_band(24, "ORQUESTACIÓN — da las órdenes", orchestration, palette)]
     y = VERTICAL_FIRST_Y
+    # ODEPA, the first source, joins the INE link below the INE tile through a
+    # trunk on the left: both sources feed the ingestion step.
+    trunk_x = VERTICAL_TILE_X - half - 12
+    junction_y = y + VERTICAL_ROW + half + 6
+    parts.append(f'<path d="M{VERTICAL_TILE_X - half} {y} H{trunk_x} V{junction_y} '
+                 f'H{VERTICAL_TILE_X}" fill="none" stroke="{LAYER_COLORS["sources"]}" '
+                 f'stroke-width="1.6" opacity="0.85"/>')
     steps = list_vertical_steps(states, figures)
     for header, layer, draw_icon, title, lines, state, chip_text in steps:
         parts.append(build_vertical_node(y, header, layer, draw_icon, title, lines, palette,
@@ -846,16 +977,15 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
                                              LAYER_COLORS[layer], palette, chip_text,
                                              is_running))
         y += VERTICAL_ROW
-    # Consumption: three uses of datos.db, joined to it by one trunk on the left.
+    # Consumption: three uses of datos.duckdb, joined to it by one trunk on the left.
     gold_bottom = y - VERTICAL_ROW + half
     consumption = [(draw_streamlit_icon, "Panel Streamlit", ["esta página", figures["panel_time"]],
                     states["panel"]),
                    (draw_github_icon, "Informe semanal", ["GitHub Issue · Markdown",
                                                           "alertas y estado"],
                     states["report"]),
-                   (draw_sqlite_icon, "Consultas SQL", ["SQLite · queries.sql", "una por indicador"],
+                   (draw_code_icon, "Consultas SQL", ["DuckDB · queries.sql", "bi/queries.sql"],
                     None)]
-    trunk_x = VERTICAL_TILE_X - half - 12
     last_y = y + (len(consumption) - 1) * VERTICAL_ROW
     parts.append(f'<path d="M{VERTICAL_TILE_X} {gold_bottom} V{gold_bottom + 14} '
                  f'H{trunk_x} V{last_y}" fill="none" stroke="{LAYER_COLORS["gold"]}" '
@@ -867,10 +997,12 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
         parts.append(build_vertical_node(row_y, "CONSUMO" if position == 0 else None,
                                          "consumption", draw_icon, title, lines, palette,
                                          state))
-    observability = [("etl_run", "SQLite · una fila por carga", states.get("etl_run")),
+    observability = [("etl_run", "DuckDB · una fila por carga", states.get("etl_run")),
+                     ("dbt_result", "DuckDB · linaje y pruebas", None),
                      ("Centro de control", "Streamlit · historial", None)]
-    height = last_y + half + 150
-    parts.append(build_vertical_band(last_y + half + 44, "OBSERVABILIDAD — qué pasó",
+    band_y = last_y + half + 44
+    height = band_y + 26 + (len(observability) - 1) * 40 + 36
+    parts.append(build_vertical_band(band_y, "OBSERVABILIDAD — qué pasó",
                                      observability, palette))
     return "".join([f'<svg xmlns="http://www.w3.org/2000/svg" '
                     f'viewBox="0 0 {VERTICAL_WIDTH} {height}" role="img" '
@@ -930,13 +1062,41 @@ def build_component(x, y, layer, draw_icon, title, lines, palette, state=None):
     return add_tooltip("".join(parts), TOOLTIPS.get(title))
 
 
+def build_source_row(y, title, detail, palette, state=None):
+    """One public source in the top-left frame: a small file tile, its name, one
+    line of detail, the step number when it has one and a dot only with a real state."""
+    color = LAYER_COLORS["sources"]
+    left = 56
+    parts = [f'<rect x="{left}" y="{y - 20}" width="40" height="40" rx="12" fill="{color}" '
+             f'fill-opacity=".08" stroke="{color}" stroke-opacity=".35" stroke-width="1"/>',
+             f'<g transform="translate({left + 20} {y}) scale(.72) translate({-left - 20} {-y})">'
+             + draw_file_icon(left + 20, y, color) + '</g>',
+             f'<text x="{left + 52}" y="{y - 3}" font-size="14" font-weight="700" '
+             f'fill="{palette["strong_text"]}">{html.escape(title)}</text>',
+             f'<text x="{left + 52}" y="{y + 14}" font-size="12.5" '
+             f'fill="{palette["text"]}">{html.escape(detail)}</text>']
+    step = MAIN_FLOW_STEPS.get(title)
+    if step:
+        parts.append(f'<circle cx="{left}" cy="{y - 20}" r="10" fill="{color}"/>'
+                     f'<text x="{left}" y="{y - 20}" font-size="11" font-weight="700" '
+                     f'text-anchor="middle" dominant-baseline="central" fill="#fff">'
+                     f'{step}</text>')
+    if has_real_state(state):
+        pulse = ' class="journey-running"' if state == control.RUN_IN_PROGRESS else ""
+        parts.append(f'<circle{pulse} cx="{left + 38}" cy="{y - 18}" r="6" '
+                     f'fill="{STATE_COLORS[state]}" stroke="{palette["card"]}" '
+                     f'stroke-width="2"/>')
+    return add_tooltip("".join(parts), TOOLTIPS.get(title))
+
+
 def build_components(states, figures, palette):
     """Every running piece of the project, inside the platform that hosts it."""
     first, second, third = GITHUB_COLUMN_X
+    odepa_y, ine_y = SOURCE_ROWS_Y
     return "".join([
-        build_component(LEFT_COLUMN_X, TOP_ROW_Y, "sources", draw_file_icon,
-                        "Datos abiertos", ["CSV por año · HTTPS", figures["source_years"]],
-                        palette, states["sources"]),
+        build_source_row(odepa_y, "ODEPA · precios", f"CSV por año · {figures['source_years']}",
+                         palette, states["sources"]),
+        build_source_row(ine_y, "INE · IPC alimentos", "CSV mensual · HTTPS", palette),
         build_component(LEFT_COLUMN_X, MIDDLE_ROW_Y, "ingestion", draw_laptop_icon,
                         "VS Code · Claude Code", ["desarrollo y pruebas locales",
                                                   "pytest antes de cada commit"], palette),
@@ -950,7 +1110,7 @@ def build_components(states, figures, palette):
                         ["informe semanal", "alertas y estado"], palette, states["report"]),
         build_component(first, MIDDLE_ROW_Y, "orchestration", draw_branch_icon,
                         "Repositorio", ["rama main · código",
-                                        f"datos.db · {figures['database_size']}"], palette),
+                                        f"datos.duckdb · {figures['database_size']}"], palette),
         build_component(second, MIDDLE_ROW_Y, "processing", draw_shield_icon, "Pruebas (CI)",
                         ["pruebas.yml · cada push", figures["test_functions"]], palette),
         build_component(third, MIDDLE_ROW_Y, "processing", draw_shield_icon,
@@ -1066,7 +1226,7 @@ def build_platform_gallery_svg(states, figures, mode, animate_flow=False):
     """Five actual platforms arranged across the gallery card's wide aspect ratio."""
     palette = charts.get_palette(mode)
     platforms = [
-        ("sources", draw_file_icon, "ODEPA", "Datos abiertos", states.get("sources")),
+        ("sources", draw_file_icon, "ODEPA · INE", "Datos abiertos", states.get("sources")),
         ("ingestion", draw_laptop_icon, "Tu computador", "Código y pruebas", None),
         ("processing", draw_clock_icon, "GitHub Actions", "Carga y CI", states.get("workflow")),
         ("quality", draw_cloud_icon, "Streamlit Cloud", "Panel publicado", states.get("panel")),
@@ -1101,15 +1261,15 @@ def build_execution_overview_html(mode, animate=False):
     """Separate scheduled data production from interactive reading of saved data."""
     palette = charts.get_palette(mode)
     stages = [
-        ("ODEPA", "Fuente externa", "Publica los archivos CSV.", "document"),
+        ("ODEPA · INE", "Fuentes externas", "Publican los archivos CSV.", "document"),
         ("1 · Descargar", "Runner Ubuntu · Actions", "El agente conserva los archivos originales.", "python"),
-        ("2 · Transformar", "Mismo runner", "El ETL limpia, normaliza y construye SQLite.", "sqlite"),
+        ("2 · Transformar", "Mismo runner", "Bronce en Parquet; dbt construye y prueba el data warehouse DuckDB.", "dbt"),
         ("3 · Probar", "Mismo runner", "pytest verifica la base recién construida.", "pytest"),
         ("4 · Guardar y reportar", "Repositorio · GitHub", "Solo tras pasar las pruebas: commit de la base y después informe como issue.", "github"),
     ]
     query = [
         ("1 · Solicitar", "Navegador del visitante", "La persona elige filtros.", "browser"),
-        ("2 · Consultar", "Aplicación Streamlit", "Python consulta la copia local de SQLite.", "streamlit"),
+        ("2 · Consultar", "Aplicación Streamlit", "Python consulta la copia local de DuckDB, en solo lectura.", "streamlit"),
         ("3 · Mostrar", "Navegador del visitante", "Recibe tablas y gráficos; no ejecuta el ETL.", "browser"),
     ]
     def lane(items, label):
@@ -1145,5 +1305,5 @@ def build_execution_overview_html(mode, animate=False):
         +lane(query,"Consulta del visitante")+
         '<p>La aplicación corre en el computador local o en Streamlit Community Cloud, según el despliegue. Cambiar un filtro vuelve a consultar los datos guardados; no inicia una descarga de ODEPA.</p>'
         '<p><strong>Git local</strong> guarda versiones del código. <strong>GitHub</strong> aloja el repositorio. '
-        '<strong>GitHub Actions</strong> obtiene ese código y ejecuta los workflows en una máquina Ubuntu temporal. SQLite + informe son salidas del proceso semanal.</p>'
+        '<strong>GitHub Actions</strong> obtiene ese código y ejecuta los workflows en una máquina Ubuntu temporal. DuckDB + informe son salidas del proceso semanal.</p>'
         '<p>Esquema explicativo · movimiento ilustrativo, no actividad en vivo. Los estados de la última ejecución se muestran en el detalle siguiente.</p></section>')

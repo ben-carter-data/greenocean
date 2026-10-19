@@ -79,20 +79,20 @@ El SAD (sección 12) y el ADR-31 dicen en pocas líneas cuándo se justificaría
 
 ---
 
-## 5. Plan de la refonte (en ejecución)
+## 5. Plan de la refonte (ejecutado el 2026-10-19)
 
 La refonte se ejecuta ahora, no es una proyección. Cada paso termina con sus pruebas en verde, su entrada D-xxx en `docs/DECISIONES.md`, el panel funcionando y la validación del autor en local antes de cualquier push.
 
 | Paso | Contenido | Criterio de aceptación | Estado |
 |---|---|---|---|
-| **0** | Lectura completa y estrategia: se comparan al menos tres estrategias de refonte (con el skill «skills arena» si está disponible) según los criterios de la sección 2.2, y el autor valida la ganadora | Estrategia escrita y validada | En curso |
-| **1** | Auditoría de cifras y contradicciones: cada número del panel se recalcula de forma independiente y las páginas coinciden entre sí; se guarda una fotografía de las cifras clave | Informe de diferencias corregidas, con su prueba | Pendiente |
-| **2** | Migración a Parquet (bronce), dbt Core (staging → intermedio → marts, reglas como pruebas) y DuckDB, en paralelo a SQLite; el panel cambia de motor solo con cifras idénticas | Auditoría fila a fila y fotografía idénticas; `dbt build` en verde en GitHub Actions | Pendiente |
-| **3** | IPC del INE: precios reales junto a los nominales, con regla mes → semana documentada | Selector «Nominal / Real» en Contexto de precios; prueba de auditoría del deflactor | Pendiente |
-| **4** | Revisión de páginas «one view»: conservar, fusionar, mover o retirar, con la validación del autor | Cada página en una pantalla de 1440 × 900, simétrica, verificada en capturas | Pendiente |
-| **5** | Contexto de precios: búsqueda libre de producto como en el Resumen; sin el menú «Calidad · unidad» | Producto elegido desde la búsqueda o los diagramas | Pendiente |
-| **6** | PRD, SAD y ADR premium, descargables (PDF y Markdown), en la sección Documentación, describiendo la arquitectura entregada | Documentos con portada, índice y paginación; el panel y GitHub coinciden | Pendiente |
-| **7** | Sección «Escalabilidad»: clima (previsto) y criterios para un warehouse en la nube (ADR-31), como proyección y sin cifras inventadas | Cada extensión con su fuente, su estado y su decisión | Pendiente |
+| **0** | Lectura completa y estrategia: se comparan al menos tres estrategias de refonte (con el skill «skills arena» si está disponible) según los criterios de la sección 2.2, y el autor valida la ganadora | Estrategia escrita y validada | Hecho: tres estrategias y un consejo; validado por el autor |
+| **1** | Auditoría de cifras y contradicciones: cada número del panel se recalcula de forma independiente y las páginas coinciden entre sí; se guarda una fotografía de las cifras clave | Informe de diferencias corregidas, con su prueba | Hecho (D-144 a D-146, D-153) |
+| **2** | Migración a Parquet (bronce), dbt Core (staging → intermedio → marts, reglas como pruebas) y DuckDB, en paralelo a SQLite; el panel cambia de motor solo con cifras idénticas | Auditoría fila a fila y fotografía idénticas; `dbt build` en verde en GitHub Actions | Hecho (D-154) |
+| **3** | IPC del INE: precios reales junto a los nominales, con regla mes → semana documentada | Selector «Nominal / Real» en Contexto de precios; prueba de auditoría del deflactor | Hecho (D-155) |
+| **4** | Revisión de páginas «one view»: conservar, fusionar, mover o retirar, con la validación del autor | Cada página en una pantalla de 1440 × 900, simétrica, verificada en capturas | Hecho (D-157) |
+| **5** | Contexto de precios: búsqueda libre de producto como en el Resumen; sin el menú «Calidad · unidad» | Producto elegido desde la búsqueda o los diagramas | Hecho (D-156) |
+| **6** | PRD, SAD y ADR premium, descargables (PDF y Markdown), en la sección Documentación, describiendo la arquitectura entregada | Documentos con portada, índice y paginación; el panel y GitHub coinciden | Hecho (D-157) |
+| **7** | Sección «Escalabilidad»: clima (previsto) y criterios para un warehouse en la nube (ADR-31), como proyección y sin cifras inventadas | Cada extensión con su fuente, su estado y su decisión | Hecho (D-157) |
 
 El paso «publicar el estado validado» ya se hizo el 2026-10-19 (21 commits).
 

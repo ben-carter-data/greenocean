@@ -5,7 +5,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
-@lru_cache(maxsize=6)
+@lru_cache(maxsize=16)
 def logo_body(slug):
     root = ET.fromstring((Path(__file__).with_name("assets") / "logos" / f"{slug}.svg").read_text())
     return "".join(f'<path d="{html.escape(node.attrib["d"], quote=True)}"/>'

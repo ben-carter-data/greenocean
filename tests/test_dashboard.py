@@ -42,16 +42,18 @@ def read_page_title(app):
     return None
 
 
-def draw_page(title):
-    """Draw one page alone, the way the navigation does."""
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              f"from bi import dashboard\ndashboard.render_page({title!r})\n")
+def draw_page(title, state=None):
+    """Draw one page alone, the way the navigation does; state: session values set first."""
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
+              f"from bi import dashboard\n"
+              + "".join(f"st.session_state[{key!r}] = {value!r}\n" for key, value in (state or {}).items())
+              + f"dashboard.render_page({title!r})\n")
     return AppTest.from_string(script, default_timeout=60).run()
 
 
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     # D-151: the route ends in the project's documents.
-    assert dashboard.ROUTE == ["Dashboard", "Arquitectura y operación", "Documentación"]
+    assert dashboard.ROUTE == ["Dashboard", "Ingeniería de datos", "Documentación"]
     assert list(dashboard.WINDOWS) == dashboard.ROUTE + [dashboard.SECTION_PROJECT, dashboard.SECTION_RESOURCES,
                                                          dashboard.SECTION_KPI]
     views = [view for window in dashboard.WINDOWS.values() for view in window]
@@ -59,7 +61,7 @@ def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     assert dashboard.WINDOWS["Dashboard"] == [
         dashboard.HOME_PAGE, dashboard.PAGE_DATA, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP, dashboard.PAGE_CHANNELS,
         dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY]
-    assert dashboard.WINDOWS["Arquitectura y operación"][0] == dashboard.PAGE_DIAGRAMS
+    assert dashboard.WINDOWS["Ingeniería de datos"][0] == dashboard.PAGE_DIAGRAMS
     # Old addresses of the retired windows and of the 3D view still open something.
     for path in ["operacion", "documentacion", "vista-3d"]:
         assert dashboard.OLD_PATHS[path][0] in views
@@ -218,10 +220,15 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     diagrams = draw_page(dashboard.PAGE_DIAGRAMS)
     texts = " ".join(block.value for block in diagrams.markdown)
     assert not diagrams.exception and not diagrams.tabs
+    # Step 4 of the refonte: the page opens on the dbt lineage, read from the build.
+    assert 'aria-label="Linaje dbt: de bronce a marts"' in texts and 'stg_odepa__wholesale' in texts
     pipeline_header = next(block.value for block in diagrams.markdown
                            if 'class="compact-header"' in block.value and '<h1' in block.value and 'Pipeline' in block.value)
     # D-150: the same one-line header as every technical page, freshness included.
-    assert '>Pipeline</h1>' in pipeline_header and 'page-freshness' in pipeline_header
+    assert '>Pipeline y linaje</h1>' in pipeline_header and 'page-freshness' in pipeline_header
+    assert 'Pruebas dbt' in texts and 'Modelos dbt' in texts
+    diagrams = draw_page(dashboard.PAGE_DIAGRAMS, {"pipeline_view": dashboard.PIPELINE_JOURNEY})
+    texts = " ".join(block.value for block in diagrams.markdown)
     assert not diagrams.toggle
     assert 'Animar el recorrido de los datos' not in texts
     assert 'ODEPA → indicadores · recorrido y plataformas' not in texts
@@ -234,7 +241,7 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
 
 @needs_database
 def test_d136_devops_shows_the_whole_platform_architecture_and_pipeline_only_the_journey():
-    pipeline = draw_page(dashboard.PAGE_DIAGRAMS)
+    pipeline = draw_page(dashboard.PAGE_DIAGRAMS, {"pipeline_view": dashboard.PIPELINE_JOURNEY})
     texts = " ".join(block.value for block in pipeline.markdown)
     assert not pipeline.exception
     assert 'aria-label="Recorrido de los datos de ODEPA al panel"' in texts
@@ -772,7 +779,7 @@ def test_displayed_source_blocks_are_unique_across_the_portfolio():
 @needs_database
 def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
     # Tabs are allowed only where they replace a long scroll (D-120, D-121, D-122).
-    tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_DEVOPS, dashboard.PAGE_OPERATIONS}
+    tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_DEVOPS, dashboard.PAGE_OPERATIONS, dashboard.PAGE_RUNS}
     for page in dashboard.PAGES:
         app = draw_page(page)
         assert not app.exception, page
@@ -780,9 +787,10 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
             assert not app.tabs, page
         texts = " ".join(block.value for block in app.markdown)
         assert ("<h1>¿Qué familias de alimentos subieron y bajaron?</h1>" in texts) == (page == dashboard.HOME_PAGE)
-        # The SAD draws the same journey inside the document (D-151).
-        assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (
-            page in (dashboard.PAGE_DIAGRAMS, dashboard.PAGE_SAD))
+        # The SAD draws the journey inside the document (D-151); Pipeline y linaje
+        # opens on the dbt lineage and shows the journey on request (step 4).
+        assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (page == dashboard.PAGE_SAD)
+        assert ('aria-label="Linaje dbt: de bronce a marts"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
 
 
 @needs_database
@@ -819,7 +827,7 @@ def test_c01_the_cover_names_the_project_reads_real_figures_and_links_every_step
 
 
 def test_d065_previous_and_next_go_round_the_views_of_a_window():
-    window = "Arquitectura y operación"
+    window = "Ingeniería de datos"
     key = dashboard.window_view_key(window)
     dashboard.st.session_state[key] = dashboard.PAGE_DIAGRAMS
     dashboard.step_view(window, -1)
@@ -1167,7 +1175,7 @@ def test_d096_header_shows_the_current_path_without_a_tab_bar():
     assert not app.exception
     assert 'graph-navigation' not in ' '.join(block.value for block in app.markdown)
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
-    assert 'Arquitectura › Modelo de datos' in markup
+    assert 'Ingeniería de datos › Modelo de datos' in markup
     assert app.button(key='return_to_previous').label == 'Volver'
 
 
@@ -1248,8 +1256,12 @@ def test_quality_page_does_not_claim_a_complete_audit_and_keeps_evidence_visible
     app = draw_page(dashboard.PAGE_OPERATIONS)
     assert not app.exception
     text = ' '.join(block.value for block in app.markdown)
-    assert read_page_title(app) == 'Calidad de datos'
+    assert read_page_title(app) == 'Calidad y auditoría'
     assert 'Reconciliación fuente → base' in text
+    # Step 4 of the refonte: the dbt tests, the SQLite ↔ DuckDB parity and the rule matrix.
+    assert 'Pruebas dbt de la última construcción' in text and 'Paridad SQLite ↔ DuckDB' in text
+    assert [tab.label for tab in app.tabs] == ['Reglas y pruebas dbt', 'Evidencia de archivos', 'Última carga (K8)']
+    assert 'RN-14' in list(app.dataframe[0].value['Regla'])
     assert 'Recálculo independiente de indicadores' in text
     assert 'Concordancia cálculo → pantalla' in text
     # D-146: the audited checks are verified; the contrast with another source is not.
@@ -1277,8 +1289,10 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # repository is one link away (D-106). GitHub itself shows its own mark, not
     # the word, as a markdown link rather than a page_link (D-117).
     # Every folder starts open (D-139): the whole map of the app at a glance.
-    for child in ['Resumen semanal', 'Pipeline', 'Modelo de datos', 'DevOps y seguridad',
-                  'Calidad de datos', 'Ejecuciones',
+    # Step 4 of the refonte: Ingeniería de datos, four pages; DevOps joined Ejecuciones.
+    assert 'DevOps y seguridad' not in labels
+    for child in ['Resumen semanal', 'Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría',
+                  'Ejecuciones y DevOps',
                   'PRD · Requisitos del producto', 'SAD · Arquitectura', 'ADR · Decisiones de arquitectura']:
         assert child in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
@@ -1290,7 +1304,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     folder_buttons = [button for button in app.sidebar.button if str(button.key).startswith('nav_toggle_')]
     toggles = {button.label for button in folder_buttons}
     # «Fuentes» (D-118): the two ODEPA datasets, a folder like every other section.
-    assert toggles == {'⌄  Dashboard', '⌄  Arquitectura', '⌄  Fuentes', '⌄  Documentación'}
+    assert toggles == {'⌄  Dashboard', '⌄  Ingeniería de datos', '⌄  Fuentes', '⌄  Documentación'}
     assert all(not button.help for button in folder_buttons)
     css = ' '.join(block.value for block in app.sidebar.markdown)
     assert '[class*="st-key-nav_child_"] {margin-left:0; padding-left:0; border-left:0;}' in css
@@ -1314,16 +1328,16 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.run()
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_arquitectura-y-operacion')
-    assert toggle.label == '⌄  Arquitectura'
-    assert 'Pipeline' in [link.proto.label for link in app.sidebar.get('page_link')]
+    assert toggle.label == '⌄  Ingeniería de datos'
+    assert 'Pipeline y linaje' in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
     assert not app.exception
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_arquitectura-y-operacion')
-    assert toggle.label == '›  Arquitectura'
-    assert 'Pipeline' not in [link.proto.label for link in app.sidebar.get('page_link')]
+    assert toggle.label == '›  Ingeniería de datos'
+    assert 'Pipeline y linaje' not in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
     assert not app.exception
-    assert 'Pipeline' in [link.proto.label for link in app.sidebar.get('page_link')]
+    assert 'Pipeline y linaje' in [link.proto.label for link in app.sidebar.get('page_link')]
 
 
 def test_d113_the_github_link_opens_a_new_tab_with_its_mark():
