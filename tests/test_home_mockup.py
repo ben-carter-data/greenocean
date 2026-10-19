@@ -330,9 +330,12 @@ st.session_state['week']=week
     oracle=queries.run_sql(sql,parameters=[week])
     variation=oracle.current_price/oracle.previous_price-1
     assert model['counts']==[int((variation>0).sum()),int((variation<0).sum()),int((variation==0).sum())]
+    # D-153: prices shown are each week's national price; when the regions are the same in
+    # both weeks they reproduce the change exactly, otherwise the row says so.
     for row in model['rows']:
-        assert row['national_price']/row['_previous_price']-1==pytest.approx(row['variation'])
-        assert row['change_amount']==pytest.approx(row['national_price']-row['_previous_price'])
+        if not row['_coverage_changed']:
+            assert row['national_price']/row['_previous_price']-1==pytest.approx(row['variation'])
+            assert row['change_amount']==pytest.approx(row['national_price']-row['_previous_price'])
     region=app.session_state['regional']
     assert all(row['region']=='Región de Coquimbo' for row in region['rows'])
     for row in region['rows']:

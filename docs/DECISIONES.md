@@ -1146,3 +1146,13 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-19.
 - **Decisión:** la próxima etapa usa solo tecnologías de código abierto o gratuitas sin vencimiento: Parquet (bronce), dbt Core (transformaciones y pruebas) y DuckDB (motor), portables a otro motor cambiando la configuración. Las nuevas fuentes previstas son el IPC del INE (precios reales) y el clima por región (contexto de las alertas). Un warehouse en la nube no se adopta en el alcance público: se justificaría solo si una empresa sumara sus propios datos. La comparación por cadena de supermercados queda fuera por falta de fuente oficial y por D-001.
 - **Documentado en:** `docs/PROMPT_EVOLUCION.md` (plan por fases y reglas), PRD (sección 13 y RNF-10), SAD (sección 12) y ADR-30 a ADR-32. Todo marcado como previsto, no entregado.
+
+## D-153 · Auditoría entre páginas: un solo precio por producto y semana
+
+- **Fecha:** 2026-10-19.
+- **Paso 1 de la refonte.** Se recalcularon y cruzaron las cifras de todas las páginas.
+- **Coinciden:** 22 alertas en el menú, en el indicador del Resumen, en la ventana de alertas y en el informe semanal; 728 de 787 precios comparados en el indicador y en la nota de cobertura; 3.163 precios de la semana en el diagrama de DevOps; 811.578 precios, 2.512.298 filas leídas, 2.512.097 cargadas y 201 rechazadas en Pipeline, Ejecuciones, Calidad y PRD.
+- **Contradicción encontrada:** 54 de 247 productos mostraban un precio de la semana distinto en el Resumen y en Contexto de precios (hasta 24 %, Naranja Lane Late en Supermercado: $1.332 frente a $1.761). Desde D-144 el Resumen mostraba el promedio de las regiones presentes en ambas semanas, y Contexto el de todas las regiones con precio esa semana.
+- **Decisión:** el precio que se muestra es siempre el precio nacional de la semana (todas las regiones con precio), en todas las páginas; la variación sigue comparando las mismas regiones en ambas semanas (D-144). Cuando las regiones cambian, la fila lo dice: «variación sobre N regiones comunes».
+- **Referencia para la migración:** `tests/fixtures/snapshot_2026-10-05.json` guarda las cifras clave de la semana (filas por fuente, suma de precios, marcas, rechazos, alertas, comparados, medianas por familia y estado de cada región); `tests/snapshot_figures.py` las calcula como el panel. La migración a DuckDB debe reproducirlas exactamente.
+- **Validación:** `test_the_resumen_and_contexto_show_the_same_price_this_week` y `test_the_panel_reproduces_the_reference_figures_of_its_week`.

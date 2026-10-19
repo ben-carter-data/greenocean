@@ -1,0 +1,41 @@
+{
+  "alerts_latest_week": 22,
+  "available": 787,
+  "compared": 728,
+  "family_medians": {
+    "Abarrotes y otros": 0.00625698,
+    "Carne bovina": 0.0,
+    "Carne de Cerdo - Ave - Cordero": -0.01804124,
+    "Frutas": 0.00017902,
+    "Hortalizas": 0.01202258,
+    "Lácteos - Huevos - Margarinas": -0.00143733,
+    "Pan": 0.0
+  },
+  "flags": {
+    "ATIPICO": 826,
+    "SIN_MARCA": 798280,
+    "UNIDAD_NO_CONVERTIBLE": 12472
+  },
+  "price_sum_by_source": {
+    "consumer": 2350178024.5871,
+    "wholesale": 251100343.7934
+  },
+  "region_states": {
+    "Región Metropolitana de Santiago": "rise",
+    "Región de Arica y Parinacota": "rise",
+    "Región de Coquimbo": "mixed",
+    "Región de La Araucanía": "fall",
+    "Región de Los Lagos": "mixed",
+    "Región de Valparaíso": "rise",
+    "Región de Ñuble": "fall",
+    "Región del Biobío": "mixed",
+    "Región del Maule": "rise"
+  },
+  "rejected_rows": 201,
+  "rows_by_source": {
+    "consumer": 564504,
+    "wholesale": 247074
+  },
+  "week": "2026-10-05",
+  "weekly_price_rows": 811578
+}
