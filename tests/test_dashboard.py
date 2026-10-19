@@ -1647,3 +1647,14 @@ def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
         assert "[[diagrama:" not in text and text.count('class="doc-diagram"') == diagrams
     for path, page in (("documentacion-bi", dashboard.PAGE_PRD), ("documentacion-it", dashboard.PAGE_SAD)):
         assert dashboard.OLD_PATHS[path] == (page, None)
+
+
+@needs_database
+def test_d160_the_ipc_itself_has_a_chart_with_its_real_figures():
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+              "from bi import dashboard\ndashboard.show_ipc_dialog('Claro')\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    captions = ' '.join(c.value for c in app.caption)
+    assert 'base 2023 = 100' in captions and 'en los últimos 12 meses' in captions
+    assert app.get('arrow_vega_lite_chart') or app.get('vega_lite_chart')
