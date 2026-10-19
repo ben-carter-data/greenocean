@@ -2,7 +2,7 @@
 .stApp {--premium-surface:__CARD__;--premium-line:__BORDER__;--premium-ink:__INK__;--premium-accent:__ACCENT__;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;}
 .stApp [data-testid="stMain"] {background:radial-gradient(ellipse at 85% 0%,color-mix(in srgb,__ACCENT__ 5%,transparent),transparent 42%),__BG__!important;}
 .stApp h1,.stApp h2,.stApp h3 {font-family:inherit;letter-spacing:-.035em;}
-.stApp [data-testid="stMain"] h1 {font-weight:500;}
+.stApp [data-testid="stMain"] h1 {font-weight:400;}
 .stApp [data-testid="stMain"] :is(.info-card,[class*="st-key-card_"]) {border:1px solid color-mix(in srgb,__BORDER__ 65%,transparent)!important;border-radius:22px!important;background:linear-gradient(155deg,color-mix(in srgb,__CARD__ 96%,white),__CARD__)!important;box-shadow:0 12px 36px -24px #071a3c40,inset 0 1px 0 #ffffff20!important;}
 .stApp .info-card {padding:22px!important;}
 .stApp :is(.card-title,.section-title) {letter-spacing:-.02em;}
@@ -51,14 +51,14 @@
 @media(prefers-reduced-motion:reduce) {.stApp .doc-kpi-row,.stApp .doc-kpi-row:hover {transition:none;transform:none;}}
 /* Type finish (D-170): fine weights, quiet labels, pill buttons — the Apple reading. */
 .stApp {font-weight:400;}
-.stApp [data-testid="stMain"] :is(h1,h2,h3,h4,.compact-header h1,.ctx-title h1,.section-title,.subsection-title) {font-weight:500!important;letter-spacing:-.025em;}
-.stApp [data-testid="stMain"] :is(b,strong) {font-weight:600;}
+.stApp [data-testid="stMain"] :is(h1,h2,h3,h4,.compact-header h1,.ctx-title h1,.section-title,.subsection-title) {font-weight:400!important;letter-spacing:-.022em;}
+.stApp [data-testid="stMain"] :is(b,strong) {font-weight:500;}
 .stApp :is(.mock-kpi strong,.kpi-value,.kpi-strip-value,.cover-figures dd,.oc-fact-value,.runs-metric-value) {font-weight:500!important;letter-spacing:-.02em;}
 .stApp :is(.mock-kpi span,.oc-fact-label,.runs-metric-label,.devops-layers-title,.sqlx-bar-label,.sqlx-side h4,.qa-step-name,.mock-scope-label) {font-weight:500!important;letter-spacing:.11em;}
-.stApp .greenocean-mockup :is(h1,h2,h3) {font-weight:500!important;}
-.stApp .greenocean-mockup :is(b,strong,.mock-movement-row strong) {font-weight:600;}
-.stApp .qa-page h1.qa-h1 {font-weight:500;}
-.stApp .qa-page .qa-title {font-weight:600;}
+.stApp .greenocean-mockup :is(h1,h2,h3) {font-weight:400!important;}
+.stApp .greenocean-mockup :is(b,strong,.mock-movement-row strong) {font-weight:500;}
+.stApp .qa-page h1.qa-h1 {font-weight:400;}
+.stApp .qa-page .qa-title {font-weight:500;}
 .stApp [data-testid="stMain"] [data-testid="stCaptionContainer"] p {font-weight:400;letter-spacing:0;}
 .stApp [data-testid="stButton"] button p,.stApp [data-testid="stDownloadButton"] button p,.stApp [data-testid="stPopover"]>button p {font-weight:400;}
 .stApp [data-testid="stButton"] button[kind="primary"] p {font-weight:500;}

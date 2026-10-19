@@ -3,6 +3,11 @@
 # so the app starts on the light base. Fields and cards keep their own contrast.
 [theme]
 base = "light"
+# The system font (San Francisco on Apple, Segoe UI on Windows), fine and quiet,
+# instead of Streamlit's Source Sans (D-175). Code keeps a monospace stack.
+font = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Helvetica, Arial, sans-serif"
+headingFont = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Helvetica, Arial, sans-serif"
+codeFont = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
 baseRadius = "large"
 showSidebarBorder = false
 
