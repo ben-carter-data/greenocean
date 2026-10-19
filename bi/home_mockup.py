@@ -327,15 +327,19 @@ def family_summary(rows, detail_link=None, product_filter=None):
                   'Promedio simple de las variaciones de precios comparables frente a la semana anterior.')
     empty_note = ('Este producto no tiene precios en ambas semanas con los filtros elegidos.' if selected_name else
                   'No hay familias con precio en ambas semanas.')
+    # Built apart: a backslash inside an f-string expression needs Python 3.12, and CI runs 3.11.
+    empty = f'<p class="mock-empty">{empty_note}</p>'
+    gallery_html = ''.join(gallery) or empty
+    single_class = ' is-single' if single else ''
     return ('<section class="mock-family-summary" id="familias">'
             f'<div class="mock-family-overview"><div class="mock-family-overview-heading"><h2>{overview_title}</h2>'
             f'<p>{overview_note}</p></div>'
-            f'<div class="mock-family-gallery{" is-single" if single else ""}">{"".join(gallery) or f"<p class=\"mock-empty\">{empty_note}</p>"}</div></div>'
+            f'<div class="mock-family-gallery{single_class}">{gallery_html}</div></div>'
             f'<div class="mock-family-chart"><div class="mock-family-heading"><div><h2>{chart_title}</h2>'
             f'<p>{chart_note}</p></div>'
             '<span class="mock-family-legend"><i></i> Subida <i></i> Bajada</span></div>'
             '<div class="mock-family-rows">'
-            + (''.join(chart_rows) or f'<p class="mock-empty">{empty_note}</p>')
+            + (''.join(chart_rows) or empty)
             + '</div></div></section>')
 
 
