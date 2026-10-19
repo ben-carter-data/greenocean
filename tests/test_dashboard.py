@@ -217,7 +217,7 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     assert '¿Qué estamos comparando?' not in texts and 'class="mock-family-tile ' not in texts
     assert 'id="pulso-regional"' in texts
     assert 'Registros históricos' not in texts
-    lineage_view = draw_page(dashboard.PAGE_DIAGRAMS)
+    lineage_view = draw_page(dashboard.PAGE_DIAGRAMS, {"pipeline_view": dashboard.PIPELINE_LINEAGE})
     texts = " ".join(block.value for block in lineage_view.markdown)
     # Step 4 of the refonte: the dbt lineage, read from the build, is the zoom of the journey.
     assert 'aria-label="Linaje dbt: de bronce a marts"' in texts and 'stg_odepa__wholesale' in texts
@@ -792,7 +792,8 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         # The journey lives only in Pipeline y linaje: the SAD points to it instead of
         # repeating it, and draws its own C4 views (step 6).
         assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
-        assert ('aria-label="Linaje dbt: de bronce a marts"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
+        # The lineage is the switch's second view, never drawn by default (step 4).
+        assert 'aria-label="Linaje dbt: de bronce a marts"' not in texts
 
 
 @needs_database
