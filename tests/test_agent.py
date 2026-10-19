@@ -96,3 +96,29 @@ def test_closed_year_is_not_downloaded_again(tmp_path):
         [closed_year_resource], downloader=downloader_that_must_not_run,
         seconds_between_retries=0)
     assert failures == 0
+
+
+def test_d164_odepa_root_is_trusted_on_top_of_certifi():
+    # datos.odepa.gob.cl chains to emSign Root CA - G1, which certifi dropped.
+    bundle = agent.build_certificate_bundle().read_text(encoding="utf-8")
+    assert bundle.startswith(Path(agent.certifi.where()).read_text(encoding="utf-8"))
+    assert "emSign Root CA - G1" in bundle
+    assert bundle.count("-----BEGIN CERTIFICATE-----") > 100
+
+
+def test_d164_download_verifies_the_certificate_with_that_bundle(tmp_path, monkeypatch):
+    calls = {}
+
+    class Response:
+        content = b"data"
+
+        def raise_for_status(self):
+            pass
+
+    def fake_get(url, **options):
+        calls.update(options)
+        return Response()
+
+    monkeypatch.setattr(agent.requests, "get", fake_get)
+    agent.download_file("https://datos.odepa.gob.cl/file.csv", tmp_path / "file.csv")
+    assert "emSign Root CA - G1" in Path(calls["verify"]).read_text(encoding="utf-8")

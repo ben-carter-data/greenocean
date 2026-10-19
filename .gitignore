@@ -23,3 +23,5 @@ etl/*.duckdb.wal
 .env.*
 *.pem
 *.key
+# Public root certificates trusted by the agent (D-164), not secrets.
+!agent/certs/*.pem
