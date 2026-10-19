@@ -86,7 +86,7 @@ WHERE weekly_price.flag IS NULL;
 -- that starts on 2025-12-29 belongs to 2026, like in the consumer source.
 WITH national AS (
     SELECT week_start, product_id, channel_id, normalized_unit,
-           strftime('%Y', week_start, '+3 days') AS price_year,
+           CAST(year(CAST(week_start AS DATE) + 3) AS VARCHAR) AS price_year,
            AVG(price) AS national_price
     FROM weekly_price
     WHERE flag IS NULL
@@ -180,7 +180,7 @@ WITH same_regions AS (
     JOIN weekly_price AS before
       ON before.product_id = now.product_id AND before.channel_id = now.channel_id
      AND before.normalized_unit = now.normalized_unit AND before.region_id = now.region_id
-     AND before.week_start = date(now.week_start, '-7 days')
+     AND before.week_start = strftime(CAST(now.week_start AS DATE) - 7, '%Y-%m-%d')
     WHERE now.flag IS NULL AND before.flag IS NULL
     GROUP BY now.week_start, now.product_id, now.channel_id, now.normalized_unit
 )
@@ -199,7 +199,9 @@ LEFT JOIN same_regions
  AND same_regions.normalized_unit = weekly_price.normalized_unit
 WHERE weekly_price.flag IS NULL
 GROUP BY weekly_price.week_start, weekly_price.product_id, weekly_price.channel_id,
-         weekly_price.normalized_unit;
+         weekly_price.normalized_unit, dim_product.product_group, dim_product.product,
+         dim_product.variety, dim_product.quality, dim_channel.channel,
+         same_regions.same_region_price, same_regions.same_region_previous_price;
 
 -- name: k6_usual_range_sql
 -- K6 (P6) in SQL, the alternative to bi/alerts.py (the version the dashboard
@@ -226,7 +228,7 @@ same_regions AS (
     JOIN weekly_price AS before
       ON before.product_id = now.product_id AND before.channel_id = now.channel_id
      AND before.normalized_unit = now.normalized_unit AND before.region_id = now.region_id
-     AND before.week_start = date(now.week_start, '-7 days')
+     AND before.week_start = strftime(CAST(now.week_start AS DATE) - 7, '%Y-%m-%d')
     WHERE now.flag IS NULL AND before.flag IS NULL
     GROUP BY now.week_start, now.product_id, now.channel_id, now.normalized_unit
 ),
@@ -297,7 +299,7 @@ long_series AS (
 ),
 ordered AS (
     SELECT pairs.*,
-           julianday(pairs.week_start) - julianday(LAG(pairs.week_start) OVER series)
+           date_diff('day', CAST(LAG(pairs.week_start) OVER series AS DATE), CAST(pairs.week_start AS DATE))
                AS days_since_previous_week,
            LAG(pairs.wholesale_price) OVER series AS previous_wholesale_price,
            LAG(pairs.consumer_price) OVER series AS previous_consumer_price
@@ -326,6 +328,6 @@ JOIN dim_channel ON dim_channel.channel_id = ordered.channel_id;
 -- First and last week loaded in the data warehouse, and their years (ISO rule,
 -- as K4): what the dashboard says about the years it covers.
 SELECT MIN(week_start) AS first_week, MAX(week_start) AS last_week,
-       strftime('%Y', MIN(week_start), '+3 days') AS first_year,
-       strftime('%Y', MAX(week_start), '+3 days') AS last_year
+       CAST(year(CAST(MIN(week_start) AS DATE) + 3) AS VARCHAR) AS first_year,
+       CAST(year(CAST(MAX(week_start) AS DATE) + 3) AS VARCHAR) AS last_year
 FROM weekly_price;

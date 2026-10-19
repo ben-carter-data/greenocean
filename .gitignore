@@ -15,3 +15,6 @@ etl/bronze/
 dbt/target/
 dbt/logs/
 dbt/dbt_packages/
+etl/warehouse_build.duckdb
+etl/*.duckdb.tmp
+etl/*.duckdb.wal

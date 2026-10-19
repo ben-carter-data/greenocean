@@ -7,8 +7,3 @@
 {% macro decimal_text(column) -%}
     try_cast(replace({{ column }}, ',', '.') as double)
 {%- endmacro %}
-
-{# Capa bronce: los Parquet de etl/bronze.py, con el año del archivo como partición. #}
-{% macro bronze(table) -%}
-    read_parquet('{{ var("bronze_dir") }}/{{ table }}/*/*.parquet', hive_partitioning = true)
-{%- endmacro %}

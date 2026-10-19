@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: weekly_price
+    description: Hechos. Un precio por semana (lunes, RN-08), producto, región, canal y unidad.
+    columns:
+      - name: week_start
+        data_tests: [not_null, {relationships: {to: ref('dim_date'), field: week_start}}]
+      - name: product_id
+        data_tests: [not_null, {relationships: {to: ref('dim_product'), field: product_id}}]
+      - name: region_id
+        data_tests: [not_null, {relationships: {to: ref('dim_region'), field: region_id}}]
+      - name: channel_id
+        data_tests: [not_null, {relationships: {to: ref('dim_channel'), field: channel_id}}]
+      - name: normalized_unit
+        description: RN-03 a RN-05; NULL cuando la unidad no se puede convertir.
+        data_tests: [{accepted_values: {values: ['kilo', 'unidad', 'litro']}}]
+      - name: observation_count
+        data_tests: [not_null]
+      - name: flag
+        description: RN-05 y RN-12; NULL cuando el precio entra a los indicadores.
+        data_tests: [{accepted_values: {values: ['UNIDAD_NO_CONVERTIBLE', 'ATIPICO']}}]
+  - name: dim_product
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+  - name: dim_channel
+    columns:
+      - name: channel_id
+        data_tests: [unique, not_null]
+      - name: channel
+        data_tests:
+          - accepted_values:
+              values: ['Mayorista', 'Supermercado', 'Feria libre', 'Carnicería', 'Panadería',
+                       'Mercado Minorista', 'Mercado Mayorista', 'Supermercado en Línea']
+  - name: dim_region
+    columns:
+      - name: region_id
+        description: Chile tiene 16 regiones, numeradas de 1 a 16.
+        data_tests:
+          - unique
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+              quote: false
+  - name: dim_date
+    columns:
+      - name: week_start
+        data_tests: [unique, not_null]
+  - name: rejection
+    columns:
+      - name: reason
+        data_tests:
+          - accepted_values:
+              values: ['UNREADABLE_VALUE', 'NON_POSITIVE_PRICE', 'MINIMUM_ABOVE_MAXIMUM',
+                       'DATE_OUTSIDE_FILE_YEAR', 'NON_POSITIVE_VOLUME']

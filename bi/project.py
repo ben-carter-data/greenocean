@@ -273,7 +273,7 @@ def build_preview_sql(sql):
 def run_preview(sql, parameters=(), database_file=queries.DATABASE_FILE):
     """First 20 rows of a query, run on the read-only connection."""
     connection = queries.open_database(database_file)
-    rows = pd.read_sql(build_preview_sql(sql), connection, params=list(parameters))
+    rows = queries.read_dataframe(connection, build_preview_sql(sql), parameters)
     connection.close()
     return rows
 
@@ -584,7 +584,7 @@ RULE_EVIDENCE = {
               "Cada precio semanal mayorista junta en promedio {average} precios diarios "
               "(máximo {maximum})."),
     "RN-08": ("SELECT COUNT(DISTINCT week_start) AS weeks, "
-              "COUNT(DISTINCT CASE WHEN strftime('%w', week_start) <> '1' THEN week_start END) "
+              "COUNT(DISTINCT CASE WHEN dayofweek(CAST(week_start AS DATE)) <> 1 THEN week_start END) "
               "AS other_days FROM weekly_price",
               "{weeks} semanas en la base; {other_days} empiezan en un día que no es lunes."),
     "RN-09": ("SELECT ROUND(AVG(observation_count), 1) AS average FROM weekly_price "
@@ -596,7 +596,7 @@ RULE_EVIDENCE = {
     "RN-12": ("SELECT COUNT(*) AS prices FROM weekly_price WHERE flag = 'ATIPICO'",
               "{prices} precios semanales marcados como atípicos y fuera de los indicadores."),
     "RN-13": ("SELECT COUNT(*) AS names FROM dim_product WHERE product LIKE '%  %' "
-              "OR product LIKE '%' || char(160) || '%' OR variety LIKE '%  %' "
+              "OR product LIKE '%' || chr(160) || '%' OR variety LIKE '%  %' "
               "OR quality LIKE '%  %'",
               "{names} nombres de producto con espacios repetidos o no separables en la base."),
     "RN-14": ("SELECT (SELECT COUNT(*) FROM etl_run WHERE status = 'LOADED') AS runs, "
@@ -619,7 +619,7 @@ def read_rule_evidence(database_file=queries.DATABASE_FILE):
     connection = queries.open_database(database_file)
     evidence = {}
     for rule, (sql, sentence) in RULE_EVIDENCE.items():
-        row = pd.read_sql(sql, connection).iloc[0]
+        row = queries.read_dataframe(connection, sql).iloc[0]
         evidence[rule] = sentence.format(**{column: format_evidence_value(row[column])
                                             for column in row.index})
     connection.close()

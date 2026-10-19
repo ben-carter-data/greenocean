@@ -324,7 +324,7 @@ st.session_state['week']=week
     sql='''SELECT AVG(a.price) AS current_price, AVG(b.price) AS previous_price
     FROM weekly_price a JOIN weekly_price b
     ON b.product_id=a.product_id AND b.channel_id=a.channel_id AND b.normalized_unit=a.normalized_unit
-    AND b.region_id=a.region_id AND b.week_start=date(a.week_start,'-7 days')
+    AND b.region_id=a.region_id AND b.week_start=strftime(CAST(a.week_start AS DATE) - 7, '%Y-%m-%d')
     WHERE a.week_start=? AND a.flag IS NULL AND b.flag IS NULL
     GROUP BY a.product_id, a.channel_id, a.normalized_unit'''
     oracle=queries.run_sql(sql,parameters=[week])

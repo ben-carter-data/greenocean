@@ -31,7 +31,7 @@ def read(sql, parameters=()):
 # region Weekly calendar and keys
 @needs_database
 def test_every_week_is_a_monday_and_the_calendar_has_no_gap():
-    assert read("SELECT COUNT(*) AS n FROM weekly_price WHERE strftime('%w', week_start) <> '1'")["n"][0] == 0
+    assert read("SELECT COUNT(*) AS n FROM weekly_price WHERE dayofweek(CAST(week_start AS DATE)) <> 1")["n"][0] == 0
     weeks = pd.to_datetime(read("SELECT week_start FROM dim_date ORDER BY week_start")["week_start"])
     assert (weeks.diff().dropna().dt.days == 7).all()
     missing = read("SELECT COUNT(DISTINCT week_start) AS n FROM weekly_price "
@@ -259,5 +259,10 @@ def test_the_panel_reproduces_the_reference_figures_of_its_week():
     current = snapshot_figures.compute_snapshot()
     if current["week"] != reference["week"]:
         pytest.skip("la base ya tiene otra semana; la referencia es de " + reference["week"])
+    # Sums of 800.000 decimals depend on the order of addition: same value to 1e-12.
+    current_sums, reference_sums = current.pop("price_sum_by_source"), reference.pop("price_sum_by_source")
     assert current == reference
+    assert current_sums.keys() == reference_sums.keys()
+    for source, total in reference_sums.items():
+        assert current_sums[source] == pytest.approx(total, rel=1e-12)
 # endregion

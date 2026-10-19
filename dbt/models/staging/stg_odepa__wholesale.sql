@@ -1,7 +1,7 @@
 -- Precios mayoristas diarios, limpios y con las columnas comunes (etl.clean, RN-01, RN-13).
 -- Conserva las columnas originales para guardar tal cual cada fila rechazada (RN-11).
 with raw as (
-    select * from {{ bronze('odepa_wholesale') }}
+    select * from {{ source('bronze', 'odepa_wholesale') }}
 )
 select
     'wholesale'                                         as source,

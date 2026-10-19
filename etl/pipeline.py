@@ -1,0 +1,129 @@
+"""Weekly load with dbt and DuckDB (D-154).
+
+1. The agent's CSV files go into the landing database raw.db (etl.load_raw_files).
+2. raw.db is copied to the bronze layer in Parquet (etl/bronze.py).
+3. dbt builds and tests every model in a work database that is never committed
+   (etl/warehouse_build.duckdb). If a model or a test fails, nothing else happens.
+4. RN-14 / D-029: a load that reads far fewer rows than the previous one is refused.
+5. The tables the panel reads are copied to a fresh, compact file, the run is
+   recorded in etl_run and only then the file replaces etl/datos.duckdb.
+
+On any failure the published database stays as it was; the failed run is recorded.
+"""
+import os
+import shutil
+import sqlite3
+import subprocess
+import sys
+from datetime import datetime
+from pathlib import Path
+
+import duckdb
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from etl import bronze, etl  # noqa: E402
+
+PROJECT_DIR = etl.BASE_DIR.parent
+DBT_DIR = PROJECT_DIR / "dbt"
+WORK_DATABASE_FILE = etl.BASE_DIR / "warehouse_build.duckdb"
+SERVING_DATABASE_FILE = etl.BASE_DIR / "datos.duckdb"
+# The tables of the panel, in the order they are copied.
+SERVING_TABLES = ["dim_product", "dim_region", "dim_channel", "dim_date", "weekly_price", "rejection"]
+ETL_RUN_SCHEMA = """CREATE TABLE IF NOT EXISTS etl_run (
+    run_id INTEGER PRIMARY KEY, started_at VARCHAR NOT NULL, status VARCHAR NOT NULL,
+    rows_read INTEGER NOT NULL, rows_loaded INTEGER NOT NULL, rows_rejected INTEGER NOT NULL,
+    message VARCHAR)"""
+
+
+def read_run_history(serving_file=SERVING_DATABASE_FILE, legacy_file=etl.DATABASE_FILE):
+    """Every recorded run: from the serving DuckDB, or the SQLite history on the first run."""
+    columns = "run_id, started_at, status, rows_read, rows_loaded, rows_rejected, message"
+    if serving_file.exists():
+        with duckdb.connect(str(serving_file), read_only=True) as connection:
+            return connection.execute(f"SELECT {columns} FROM etl_run ORDER BY run_id").fetchall()
+    if legacy_file.exists():
+        with sqlite3.connect(legacy_file) as connection:
+            return connection.execute(f"SELECT {columns} FROM etl_run ORDER BY run_id").fetchall()
+    return []
+
+
+def run_dbt(run_id, dbt_command=None):
+    """dbt build (models and tests) in the work database. Returns (ok, last output lines)."""
+    command = (dbt_command or os.environ.get("DBT_BIN", "dbt")).split() + [
+        "build", "--profiles-dir", ".", "--vars", f"{{run_id: {run_id}}}"]
+    environment = dict(os.environ, GREENOCEAN_DUCKDB=str(WORK_DATABASE_FILE))
+    result = subprocess.run(command, cwd=DBT_DIR, env=environment, capture_output=True, text=True)
+    output = (result.stdout + result.stderr).strip().splitlines()
+    return result.returncode == 0, "\n".join(output[-15:])
+
+
+def count_rows(work_file=WORK_DATABASE_FILE):
+    """(read, loaded, rejected) of the build, as dbt validated them (RNF-05)."""
+    with duckdb.connect(str(work_file), read_only=True) as connection:
+        return connection.execute(
+            "SELECT count(*), count(*) FILTER (WHERE reason IS NULL), "
+            "count(*) FILTER (WHERE reason IS NOT NULL) FROM int_prices__validated").fetchone()
+
+
+def write_serving_database(history, run, work_file=WORK_DATABASE_FILE,
+                           serving_file=SERVING_DATABASE_FILE):
+    """A fresh, compact copy of the panel's tables plus etl_run, swapped in at the end."""
+    temporary = serving_file.with_suffix(".duckdb.tmp")
+    temporary.unlink(missing_ok=True)
+    with duckdb.connect(str(temporary)) as connection:
+        connection.execute(f"ATTACH '{work_file}' AS work (READ_ONLY)")
+        for table in SERVING_TABLES:
+            connection.execute(f"CREATE TABLE {table} AS SELECT * FROM work.main.{table}")
+        connection.execute("DETACH work")
+        connection.execute(ETL_RUN_SCHEMA)
+        connection.executemany("INSERT INTO etl_run VALUES (?, ?, ?, ?, ?, ?, ?)", history + [run])
+        connection.execute("CHECKPOINT")
+    os.replace(temporary, serving_file)
+
+
+def record_failed_run(history, run, serving_file=SERVING_DATABASE_FILE):
+    """Keep the published tables; only add the failed run to etl_run."""
+    if not serving_file.exists():
+        return
+    with duckdb.connect(str(serving_file)) as connection:
+        connection.execute(ETL_RUN_SCHEMA)
+        connection.execute("INSERT INTO etl_run VALUES (?, ?, ?, ?, ?, ?, ?)", run)
+
+
+def main(dbt_command=None, load_raw=True):
+    started_at = datetime.now().isoformat(timespec="seconds")
+    if load_raw:
+        with etl.open_database() as raw_connection:
+            for file_name, status, row_count in etl.load_raw_files(raw_connection):
+                print(f"{status} | {file_name} | {row_count} filas")
+    raw_connection = sqlite3.connect(f"file:{etl.RAW_DATABASE_FILE}?mode=ro", uri=True)
+    try:
+        for source in etl.SOURCES:
+            bronze.export_source(raw_connection, source)
+    finally:
+        raw_connection.close()
+    history = read_run_history()
+    run_id = max((row[0] for row in history), default=0) + 1
+    ok, output = run_dbt(run_id, dbt_command)
+    if not ok:
+        record_failed_run(history, (run_id, started_at, etl.STATUS_FAILED, 0, 0, 0, "dbt build: " + output[-500:]))
+        print(output)
+        return 1
+    rows_read, rows_loaded, rows_rejected = count_rows()
+    previous = next((row[3] for row in reversed(history) if row[2] == etl.STATUS_LOADED), None)
+    if previous and rows_read < previous * etl.MINIMUM_ROWS_RATIO:
+        message = (f"{etl.PROBLEM_TOO_FEW_ROWS}: read {rows_read} rows, the previous successful"
+                   f" run read {previous}")
+        record_failed_run(history, (run_id, started_at, etl.STATUS_FAILED, rows_read, rows_loaded,
+                                    rows_rejected, message))
+        print(message)
+        return 1
+    write_serving_database(history, (run_id, started_at, etl.STATUS_LOADED, rows_read, rows_loaded,
+                                     rows_rejected, ""))
+    print(f"LOADED | leídas {rows_read} | cargadas {rows_loaded} | rechazadas {rows_rejected}"
+          f" | {SERVING_DATABASE_FILE.name} {SERVING_DATABASE_FILE.stat().st_size / 1e6:.1f} MB")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
