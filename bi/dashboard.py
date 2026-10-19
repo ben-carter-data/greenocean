@@ -32,7 +32,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                doc_diagrams, document_pdf, lineage, project, quality, queries, star_model, zoom)
+                doc_diagrams, document_pdf, github_page, lineage, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -6880,20 +6880,11 @@ def read_key_decision_sentences():
 
 def show_links_page(mode):
     """The repository is the single destination for commits, executions and full
-    documents: no separate «Código» section repeats what GitHub already shows (D-106).
-    The repo strip already opens the code itself, so «Código y operación» does not
-    repeat it; ODEPA is not GitHub, so it moved to its own sidebar folder, «Fuentes»
-    (D-118). One link per destination, a real GitHub mark instead of repeating the
-    word (D-116)."""
-    show_page_header("GitHub", "Las ejecuciones y los documentos completos del "
-                     "proyecto viven en el repositorio.")
-    st.markdown(build_github_repo_header_html(), unsafe_allow_html=True)
-    for group in ("Código y operación", "Documentos"):
-        entries = [link for link in project.PROJECT_LINKS if link["group"] == group and link["url"]]
-        if not entries:
-            continue
-        st.subheader(group)
-        show_link_cards(prepare_resource_cards(entries))
+    documents (D-106): one hero with the repository, then its three uses —
+    automatización, trazabilidad, documentación — each item opening GitHub in a new
+    tab (D-116) with its own copy button. ODEPA and the INE live in «Fuentes» (D-118)."""
+    st.html(github_page.build_github_page_html(mode) + github_page.GITHUB_PAGE_SCRIPT,
+            unsafe_allow_javascript=True)
 
 # endregion
 
