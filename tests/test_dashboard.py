@@ -217,18 +217,20 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     assert '¿Qué estamos comparando?' not in texts and 'class="mock-family-tile ' not in texts
     assert 'id="pulso-regional"' in texts
     assert 'Registros históricos' not in texts
+    lineage_view = draw_page(dashboard.PAGE_DIAGRAMS, {"pipeline_view": dashboard.PIPELINE_LINEAGE})
+    texts = " ".join(block.value for block in lineage_view.markdown)
+    # Step 4 of the refonte: the dbt lineage, read from the build, is the zoom of the journey.
+    assert 'aria-label="Linaje dbt: de bronce a marts"' in texts and 'stg_odepa__wholesale' in texts
     diagrams = draw_page(dashboard.PAGE_DIAGRAMS)
     texts = " ".join(block.value for block in diagrams.markdown)
     assert not diagrams.exception and not diagrams.tabs
-    # Step 4 of the refonte: the page opens on the dbt lineage, read from the build.
-    assert 'aria-label="Linaje dbt: de bronce a marts"' in texts and 'stg_odepa__wholesale' in texts
+    # The page opens on the whole journey, with the dbt steps framed and named.
+    assert 'dbt CORE · staging → intermedio → marts · 16 modelos' in texts
     pipeline_header = next(block.value for block in diagrams.markdown
                            if 'class="compact-header"' in block.value and '<h1' in block.value and 'Pipeline' in block.value)
     # D-150: the same one-line header as every technical page, freshness included.
     assert '>Pipeline y linaje</h1>' in pipeline_header and 'page-freshness' in pipeline_header
     assert 'Pruebas dbt' in texts and 'Modelos dbt' in texts
-    diagrams = draw_page(dashboard.PAGE_DIAGRAMS, {"pipeline_view": dashboard.PIPELINE_JOURNEY})
-    texts = " ".join(block.value for block in diagrams.markdown)
     assert not diagrams.toggle
     assert 'Animar el recorrido de los datos' not in texts
     assert 'ODEPA → indicadores · recorrido y plataformas' not in texts
@@ -788,9 +790,10 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         texts = " ".join(block.value for block in app.markdown)
         assert ("<h1>¿Qué familias de alimentos subieron y bajaron?</h1>" in texts) == (page == dashboard.HOME_PAGE)
         # The SAD draws the journey inside the document (D-151); Pipeline y linaje
-        # opens on the dbt lineage and shows the journey on request (step 4).
-        assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (page == dashboard.PAGE_SAD)
-        assert ('aria-label="Linaje dbt: de bronce a marts"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
+        # opens on it and shows the dbt lineage on request (step 4).
+        assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (
+            page in (dashboard.PAGE_DIAGRAMS, dashboard.PAGE_SAD))
+        assert 'aria-label="Linaje dbt: de bronce a marts"' not in texts
 
 
 @needs_database

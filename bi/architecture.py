@@ -801,6 +801,21 @@ def build_container(palette):
             f'dbt Core sobre DuckDB</text>')
 
 
+def build_dbt_frame(figures, palette):
+    """The three dbt steps inside their own named frame: the part of the journey that
+    the «Linaje dbt» view opens model by model."""
+    color = LAYER_COLORS["processing"]
+    left = COLUMN_X["staging"] - 92
+    width = COLUMN_X["marts"] + 92 - left
+    detail = figures.get("dbt", "")
+    label = "dbt CORE · staging → intermedio → marts" + (f" · {detail}" if detail else "")
+    return (f'<rect x="{left}" y="226" width="{width}" height="184" rx="14" '
+            f'fill="{color}" fill-opacity=".07" stroke="{color}" stroke-opacity=".7" '
+            f'stroke-width="1.4" stroke-dasharray="6 4"/>'
+            f'<text x="{left + width / 2}" y="243" text-anchor="middle" font-size="12" font-weight="700" '
+            f'letter-spacing=".6" fill="{color}">{html.escape(label)}</text>')
+
+
 def build_journey_svg(states, figures, mode, animate_flow=None):
     """The whole live diagram, in the colors of the active mode.
 
@@ -813,7 +828,7 @@ def build_journey_svg(states, figures, mode, animate_flow=None):
              f'aria-label="Recorrido de los datos de ODEPA al panel" '
              f'font-family="{charts.CHART_FONT}">',
              build_style((states.get("workflow") == control.RUN_IN_PROGRESS if animate_flow is None else animate_flow)),
-             build_column_headers(), build_container(palette),
+             build_column_headers(), build_container(palette), build_dbt_frame(figures, palette),
              build_orchestration(states, figures, palette),
              build_links(palette, (states.get("workflow") == control.RUN_IN_PROGRESS if animate_flow is None else animate_flow)),
              build_quarantine(figures, palette), build_main_nodes(states, figures, palette),
