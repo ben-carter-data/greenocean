@@ -175,7 +175,10 @@ ORDER BY weekly_prices DESC, dim_product.product;
 -- or stops reporting does not look like a price movement.
 WITH same_regions AS (
     SELECT now.week_start, now.product_id, now.channel_id, now.normalized_unit,
-           AVG(now.price) AS same_region_price, AVG(before.price) AS same_region_previous_price
+           AVG(now.price) AS same_region_price, AVG(before.price) AS same_region_previous_price,
+           -- D-158: the quotes behind each week of that comparison.
+           SUM(now.observation_count) AS same_region_quotes,
+           SUM(before.observation_count) AS same_region_previous_quotes
     FROM weekly_price AS now
     JOIN weekly_price AS before
       ON before.product_id = now.product_id AND before.channel_id = now.channel_id
@@ -188,7 +191,8 @@ SELECT weekly_price.week_start,
        dim_product.product_group, dim_product.product, dim_product.variety,
        dim_product.quality, dim_channel.channel, weekly_price.normalized_unit,
        AVG(weekly_price.price) AS national_price,
-       same_regions.same_region_price, same_regions.same_region_previous_price
+       same_regions.same_region_price, same_regions.same_region_previous_price,
+       same_regions.same_region_quotes, same_regions.same_region_previous_quotes
 FROM weekly_price
 JOIN dim_product ON dim_product.product_id = weekly_price.product_id
 JOIN dim_channel ON dim_channel.channel_id = weekly_price.channel_id
@@ -201,7 +205,8 @@ WHERE weekly_price.flag IS NULL
 GROUP BY weekly_price.week_start, weekly_price.product_id, weekly_price.channel_id,
          weekly_price.normalized_unit, dim_product.product_group, dim_product.product,
          dim_product.variety, dim_product.quality, dim_channel.channel,
-         same_regions.same_region_price, same_regions.same_region_previous_price;
+         same_regions.same_region_price, same_regions.same_region_previous_price,
+         same_regions.same_region_quotes, same_regions.same_region_previous_quotes;
 
 -- name: k6_usual_range_sql
 -- K6 (P6) in SQL, the alternative to bi/alerts.py (the version the dashboard
@@ -223,7 +228,8 @@ WITH national AS (
 -- without the one before has no such region, so a gap never yields a change.
 same_regions AS (
     SELECT now.week_start, now.product_id, now.channel_id, now.normalized_unit,
-           AVG(now.price) / AVG(before.price) - 1 AS variation
+           AVG(now.price) / AVG(before.price) - 1 AS variation,
+           SUM(now.observation_count) AS quotes, SUM(before.observation_count) AS previous_quotes
     FROM weekly_price AS now
     JOIN weekly_price AS before
       ON before.product_id = now.product_id AND before.channel_id = now.channel_id
@@ -233,7 +239,7 @@ same_regions AS (
     GROUP BY now.week_start, now.product_id, now.channel_id, now.normalized_unit
 ),
 variations AS (
-    SELECT national.*, same_regions.variation
+    SELECT national.*, same_regions.variation, same_regions.quotes, same_regions.previous_quotes
     FROM national
     LEFT JOIN same_regions USING (week_start, product_id, channel_id, normalized_unit)
 ),
@@ -260,6 +266,8 @@ SELECT usual.week_start,
                  > 4 * (usual.usual_square - usual.usual_variation * usual.usual_variation)
                        * 12.0 / 11
              AND ABS(usual.variation) >= 0.10
+             -- D-158: and resting on at least 2 quotes in each week, like the Resumen.
+             AND usual.quotes >= 2 AND usual.previous_quotes >= 2
             THEN 1 ELSE 0
        END AS is_alert
 FROM usual
