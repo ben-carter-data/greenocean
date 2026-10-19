@@ -616,7 +616,7 @@ def family_movement(rows, family_link, selected_family, scope):
         markup.append(
             f'<a class="mock-movement-row {state}{selected}" href="{esc(family_link(group))}" target="_self"'
             f' title="{esc(group)}: mediana de {len(members)} precios comparables · {esc(scope)}">'
-            f'<i class="mock-movement-dot"></i><strong>{esc(short_family(group))}</strong>'
+            f'{family_art(group, "mock-movement-art")}<strong>{esc(short_family(group))}</strong>'
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(average * 100, True)}</b>'
             f'<span class="mock-movement-state">{word}</span><span class="mock-movement-chevron">›</span></a>')
