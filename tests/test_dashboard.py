@@ -50,9 +50,9 @@ def draw_page(title):
 
 
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
-    assert dashboard.ROUTE == ["Dashboard", "Arquitectura y operación",
-                               "El proyecto"]
-    assert list(dashboard.WINDOWS) == dashboard.ROUTE + [dashboard.SECTION_LINKS, dashboard.SECTION_RESOURCES,
+    # D-151: the route ends in the project's documents.
+    assert dashboard.ROUTE == ["Dashboard", "Arquitectura y operación", "Documentación"]
+    assert list(dashboard.WINDOWS) == dashboard.ROUTE + [dashboard.SECTION_PROJECT, dashboard.SECTION_RESOURCES,
                                                          dashboard.SECTION_KPI]
     views = [view for window in dashboard.WINDOWS.values() for view in window]
     assert len(views) == len(set(views)) and set(views) == set(dashboard.SHOW_PAGE_BY_TITLE)
@@ -779,7 +779,9 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
             assert not app.tabs, page
         texts = " ".join(block.value for block in app.markdown)
         assert ("<h1>¿Qué familias de alimentos subieron y bajaron?</h1>" in texts) == (page == dashboard.HOME_PAGE)
-        assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
+        # The SAD draws the same journey inside the document (D-151).
+        assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (
+            page in (dashboard.PAGE_DIAGRAMS, dashboard.PAGE_SAD))
 
 
 @needs_database
@@ -1276,7 +1278,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Every folder starts open (D-139): the whole map of the app at a glance.
     for child in ['Resumen semanal', 'Pipeline', 'Modelo de datos', 'DevOps y seguridad',
                   'Calidad de datos', 'Ejecuciones',
-                  'Business Intelligence', 'Business Analyst', 'IT y operación']:
+                  'PRD · Requisitos del producto', 'SAD · Arquitectura', 'ADR · Decisiones de arquitectura']:
         assert child in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
     assert 'class="sidebar-github' in sidebar_markup and 'aria-label="GitHub del proyecto"' in sidebar_markup
@@ -1323,54 +1325,14 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
     assert 'Pipeline' in [link.proto.label for link in app.sidebar.get('page_link')]
 
 
-@needs_database
-def test_d110_documentation_folds_open_into_three_profile_views():
-    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
-    key = 'nav_toggle_documentacion-y-enlaces'
-    toggle = next(button for button in app.sidebar.button if str(button.key) == key)
-    # Open from the start (D-139): no click needed to see the three profiles.
-    assert toggle.label == '⌄  Documentación'
-    labels = [link.proto.label for link in app.sidebar.get('page_link')]
-    assert 'Business Intelligence' in labels
-    assert 'Business Analyst' in labels
-    assert 'IT y operación' in labels
-    for profile, must_have in [(dashboard.PAGE_DOC_BI, 'indicadores'),
-                               (dashboard.PAGE_DOC_BA, 'Misión'),
-                               (dashboard.PAGE_DOC_IT, 'Operación semanal')]:
-        page = draw_page(profile)
-        assert not page.exception
-        text = " ".join(block.value for block in page.markdown)
-        assert must_have in text
-        # No SQL query body or Python source; a decision may still name a file or
-        # a SQL clause in passing (e.g. «HAVING»), which is not the same as showing
-        # the query itself (D-112).
-        assert 'SELECT' not in text and 'FROM weekly_price' not in text
-    css = ' '.join(block.value for block in draw_page(dashboard.PAGE_DOC_IT).markdown)
-    assert 'doc-field-label' in css and 'doc-field-text' in css
-
-
-def test_d112_the_it_profile_names_what_was_decided_not_only_its_category():
-    """«Arquitectura y costo» alone says nothing concrete; each D-ID must carry its
-    own real sentence from the decisions register, not a repeat of the category."""
-    sentences = dashboard.read_key_decision_sentences()
-    for _, _, ids in dashboard.KEY_DECISIONS:
-        for identifier in ids:
-            assert sentences[identifier].endswith('.')
-            assert len(sentences[identifier]) > 20
-    app = draw_page(dashboard.PAGE_DOC_IT)
-    text = " ".join(block.value for block in app.markdown)
-    assert 'D-001' in text and 'ODEPA' in text
-    assert 'D-046' in text and 'índice único' in text
-
-
 def test_d113_the_github_link_opens_a_new_tab_with_its_mark():
     link = dashboard.build_github_link_html("Ver el registro completo de decisiones",
                                             "https://github.com/example/example")
     assert 'target="_blank"' in link and 'rel="noopener noreferrer"' in link
     assert '<svg' in link and 'doc-github-icon' in link
-    app = draw_page(dashboard.PAGE_DOC_IT)
+    app = draw_page(dashboard.PAGE_PRD)
     text = " ".join(block.value for block in app.markdown)
-    assert 'doc-github-link' in text and 'target="_blank"' in text
+    assert 'docs/PRD.md en GitHub' in text and 'target="_blank"' in text
 
 
 def test_d113_the_global_click_handler_only_forces_internal_links():
@@ -1422,35 +1384,6 @@ def test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab():
     assert len(github_links) >= 5
     assert markup.count(dashboard.architecture.brand_icons.logo_body("github")) == len(github_links) + 1
     assert markup.count('target="_blank"') >= len(github_links) + 1
-
-
-@needs_database
-def test_d114_bi_shows_every_kpi_with_a_real_icon_and_its_own_color_inline():
-    """BI used to link out to the old KPIs page; the eight indicators now show here,
-    each with the same name and icon used elsewhere, no two sharing a color."""
-    app = draw_page(dashboard.PAGE_DOC_BI)
-    assert not app.exception
-    text = " ".join(block.value for block in app.markdown)
-    assert text.count('class="doc-kpi-row"') == len(dashboard.KPI_PRESENTATION)
-    for kpi, (name, icon, _) in dashboard.KPI_PRESENTATION.items():
-        assert name in text and kpi in text
-        assert f'data-kind="{icon}"' in text
-    colors = re.findall(r'--kpi-color:(#[0-9a-f]{6})', text)
-    assert len(colors) == len(set(colors)) == len(dashboard.KPI_PRESENTATION)
-    assert 'Ver cada indicador con su cálculo' not in text
-
-
-@needs_database
-def test_d115_ba_shows_the_whole_business_frame_without_a_link_to_a_repeat():
-    """BA used to link to PAGE_BUSINESS, which repeats the same «Marco de negocio»
-    fields; it now shows every field itself, including «Criterios de aceptación»."""
-    app = draw_page(dashboard.PAGE_DOC_BA)
-    assert not app.exception
-    text = " ".join(block.value for block in app.markdown)
-    for element in ["Misión", "Visión", "Objetivo de negocio", "Alcance", "Fuera de alcance",
-                    "Criterios de aceptación"]:
-        assert element in text
-    assert 'Leer el marco de negocio completo' not in text
 
 
 def test_d111_the_weekly_run_sentence_never_ends_on_a_dangling_colon():
@@ -1661,3 +1594,15 @@ def test_d129_ejecuciones_reads_like_the_dashboard_and_shows_its_history_at_once
 def test_d129_the_github_page_names_actions_so_it_is_not_confused_with_ejecuciones():
     names = [link["name"] for link in project.PROJECT_LINKS]
     assert "GitHub Actions" in names and "Ejecuciones" not in names
+
+
+@needs_database
+def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
+    assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:3] == [dashboard.PAGE_PRD, dashboard.PAGE_SAD, dashboard.PAGE_ADR]
+    for page, diagrams in ((dashboard.PAGE_PRD, 0), (dashboard.PAGE_SAD, 3), (dashboard.PAGE_ADR, 0)):
+        app = draw_page(page)
+        assert not app.exception and not app.code
+        text = " ".join(block.value for block in app.markdown)
+        assert "[[diagrama:" not in text and text.count('class="doc-diagram"') == diagrams
+    for path, page in (("documentacion-bi", dashboard.PAGE_PRD), ("documentacion-it", dashboard.PAGE_SAD)):
+        assert dashboard.OLD_PATHS[path] == (page, None)

@@ -56,7 +56,6 @@ PAGE_SEASONALITY = "Contexto del precio"
 RETIRED_VIEWS = {"Histórico y estacionalidad": "Contexto del precio"}
 PAGE_ALERTS = "Alertas"
 PAGE_KPI = "Indicadores explicados"
-PAGE_CODE = "Código Python y SQL"
 PAGE_DEVOPS = "DevOps y seguridad"
 PAGE_OPERATIONS = "Monitoreo"
 PAGE_RUNS = "Ejecuciones"
@@ -68,9 +67,11 @@ PAGE_LINKS = "Enlaces"
 PAGE_DOCUMENTATION = "Documentación"
 # The three profile views of Documentación (D-110): one per reader, each its own
 # sidebar child, folded by default like every other section.
-PAGE_DOC_BI = "Business Intelligence"
-PAGE_DOC_BA = "Business Analyst"
-PAGE_DOC_IT = "IT y operación"
+# The documentation is the project's real documents (D-151): requirements,
+# architecture and decisions, read from docs/ so the panel shows what GitHub holds.
+PAGE_PRD = "PRD · Requisitos del producto"
+PAGE_SAD = "SAD · Arquitectura"
+PAGE_ADR = "ADR · Decisiones de arquitectura"
 SECTION_RESOURCES = "Enlaces"
 # A sidebar-only folder (D-118): two external links, no Streamlit page of its own,
 # so it is not part of WINDOWS/ROUTE — rendered specially in show_sidebar_navigation.
@@ -96,17 +97,17 @@ WINDOWS = {
     REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
-    SECTION_LINKS: [PAGE_DOC_BI, PAGE_DOC_BA, PAGE_DOC_IT, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
+    SECTION_LINKS: [PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
                     PAGE_MANUAL],
     SECTION_RESOURCES: [PAGE_LINKS],
 }
 # The SQL and Python consoles left the app (D-143): the code lives in GitHub and the
 # answers in the dashboard; their old addresses open the Resumen.
 # «Código Python y SQL» left too (D-148): GitHub shows the code; its address opens the GitHub page.
-ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_PROJECT]
+ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_LINKS]
 # The former KPI page remains as a hidden compatibility destination for old links;
 # its business information now lives in the dashboard and documentation.
-WINDOWS = {window: WINDOWS[window] for window in ROUTE + [SECTION_LINKS, SECTION_RESOURCES, SECTION_KPI]}
+WINDOWS = {window: WINDOWS[window] for window in ROUTE + [SECTION_PROJECT, SECTION_RESOURCES, SECTION_KPI]}
 WINDOW_PATHS = {SECTION_PROJECT: "proyecto", REPORT_WINDOW: "dashboard", SECTION_KPI: "kpis",
                 SECTION_TECHNICAL: "arquitectura-y-operacion",
                 SECTION_LINKS: "documentacion-y-enlaces", SECTION_RESOURCES: "enlaces"}
@@ -114,6 +115,7 @@ WINDOW_ICONS = {SECTION_PROJECT: ":material/assignment:", REPORT_WINDOW: ":mater
                 SECTION_KPI: ":material/insights:",
                 SECTION_TECHNICAL: ":material/account_tree:", SECTION_LINKS: ":material/menu_book:", SECTION_RESOURCES: ":material/link:"}
 ROUTE_LEADS = {SECTION_PROJECT: "qué problema resuelve y qué se construyó",
+               SECTION_LINKS: "los requisitos, la arquitectura y las decisiones del proyecto",
                SECTION_KPI: "qué mide cada KPI, cómo se calcula y qué límites tiene",
                REPORT_WINDOW: "los precios y cambios de la semana",
                SECTION_TECHNICAL: "pipeline, modelo estrella, DevOps y operación"}
@@ -156,8 +158,7 @@ PAGES = [page for pages in NAVIGATION_GROUPS.values() for page in pages]
 HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
     PAGE_DOCUMENTATION: ":material/menu_book:",
-    PAGE_DOC_BI: ":material/insights:", PAGE_DOC_BA: ":material/assignment:",
-    PAGE_DOC_IT: ":material/build:",
+    PAGE_PRD: ":material/assignment:", PAGE_SAD: ":material/account_tree:", PAGE_ADR: ":material/gavel:",
     PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
     PAGE_BUSINESS: ":material/assignment:",
     PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
@@ -171,8 +172,7 @@ PAGE_ICONS = {
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
-    PAGE_DOC_BI: "documentacion-bi", PAGE_DOC_BA: "documentacion-ba",
-    PAGE_DOC_IT: "documentacion-it",
+    PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr",
     PAGE_HOME: "dashboard", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura", PAGE_ANALYSIS: "analisis", PAGE_GAP: "brecha",
@@ -214,7 +214,10 @@ PAGE_OF_TAB = {
 OLD_PATHS = {
     "inicio": (PAGE_HOME, None), "el-proyecto": (PAGE_COVER, None), "panel": (PAGE_HOME, None),
     "margenes": (PAGE_GAP, None), "canales-y-regiones": (PAGE_CHANNELS, None),
-    "consultas": (PAGE_HOME, None), "codigo": (PAGE_LINKS, None), "pipeline": (PAGE_DIAGRAMS, None),
+    "consultas": (PAGE_HOME, None), "codigo": (PAGE_LINKS, None),
+    # The three profile pages became the real documents (D-151).
+    "documentacion-bi": (PAGE_PRD, None), "documentacion-ba": (PAGE_PRD, None),
+    "documentacion-it": (PAGE_SAD, None), "pipeline": (PAGE_DIAGRAMS, None),
     "preguntas-y-resultados": (PAGE_HOME, None), "analisis-python": (PAGE_HOME, None),
     "queries": (PAGE_HOME, None), "python": (PAGE_HOME, None),
     # The retired «Consulta de datos» screen (C03).
@@ -1254,6 +1257,30 @@ def build_style_css(mode):
     [class*="st-key-card_pipeline_main"] svg text[font-size="9.5"] {{font-size:11px;}}
     [class*="st-key-card_pipeline_main"] svg text[font-size="12"] {{font-size:13.5px;}}
     [class*="st-key-card_pipeline_main"] svg text[font-size="13"] {{font-size:14.5px;}}
+    /* Project documents (D-151): a readable column, clean tables, spaced headings. */
+    .doc-source {{font-size:.85rem; margin:-4px 0 14px;}}
+    .st-key-project_document {{max-width:980px; padding:6px 0 30px;}}
+    .st-key-project_document h2 {{font-size:1.35rem; font-weight:700; letter-spacing:-.02em;
+        margin:34px 0 10px; padding-top:14px; border-top:1px solid {palette['card_border']};
+        color:{palette['strong_text']};}}
+    .st-key-project_document h3 {{font-size:1.05rem; font-weight:650; margin:22px 0 6px;
+        color:{palette['strong_text']};}}
+    .st-key-project_document p, .st-key-project_document li {{font-size:.95rem; line-height:1.68;
+        color:{palette['text']};}}
+    .st-key-project_document strong {{color:{palette['strong_text']};}}
+    .st-key-project_document blockquote {{border-left:3px solid {palette['accent']}; margin:12px 0;
+        padding:8px 16px; background:color-mix(in srgb,{palette['accent']} 6%,transparent);
+        border-radius:0 10px 10px 0;}}
+    .st-key-project_document table {{width:100%; border-collapse:collapse; margin:10px 0 18px;
+        font-size:.86rem; border:1px solid {palette['card_border']}; border-radius:10px; overflow:hidden;}}
+    .st-key-project_document th {{background:color-mix(in srgb,{palette['accent']} 7%,{palette['card']});
+        color:{palette['strong_text']}; font-weight:650; text-align:left; padding:8px 12px;}}
+    .st-key-project_document td {{padding:8px 12px; border-top:1px solid {palette['card_border']};
+        vertical-align:top; line-height:1.5;}}
+    .st-key-project_document hr {{display:none;}}
+    .doc-diagram {{margin:12px 0 22px; padding:14px; border:1px solid {palette['card_border']};
+        border-radius:14px; background:{palette['card']};}}
+    .doc-diagram svg {{display:block; width:100%; height:auto; max-height:640px; margin:0 auto;}}
     .st-key-card_pipeline_main {{margin-top:10px;}}
     .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="12"] {{font-size:13px;}}
     .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="13"] {{font-size:15px;}}
@@ -2160,7 +2187,7 @@ def build_place_link(place, verb="Ver en"):
 def show_page_header(title, subtitle):
     """Page title, a one-line explanation and the freshness of the data."""
     if title in (PAGE_DOCUMENTATION, PAGE_MANUAL, PAGE_DECISIONS, PAGE_GLOSSARY, PAGE_LINKS, "GitHub",
-                PAGE_DOC_BI, PAGE_DOC_BA, PAGE_DOC_IT):
+                PAGE_PRD, PAGE_SAD, PAGE_ADR):
         st.title(title)
         st.markdown(f'<p class="page-subtitle">{html.escape(subtitle)}</p>', unsafe_allow_html=True)
         return
@@ -6669,105 +6696,6 @@ def build_github_repo_header_html():
             '<span class="gh-repo-open">Abrir repositorio ↗</span></a>')
 
 
-DOC_PROFILES = {
-    "BI": (PAGE_DOC_BI, "Qué mide el negocio: los indicadores y su alcance."),
-    "BA": (PAGE_DOC_BA, "Qué problema resuelve el proyecto, su misión y su alcance."),
-    "IT": (PAGE_DOC_IT, "Las decisiones técnicas clave y cómo opera cada semana."),
-}
-
-
-def build_business_frame_lookup():
-    """{Elemento → Definición} of the business frame («Marco de negocio»), read once."""
-    return {row["Elemento"]: row["Definición"] for row in project.read_guide_table("Marco de negocio")}
-
-
-def build_doc_profile_css(mode):
-    """Typography for a profile page: a label line per field, a muted paragraph under
-    it, generous spacing and a hairline between fields — the reading rhythm of a
-    product spec sheet instead of inline bold labels in a run of text (D-111)."""
-    palette = charts.get_palette(mode)
-    return f"""<style>
-    .doc-profile {{max-width:720px;}}
-    .doc-profile:has(.doc-kpi-grid) {{max-width:960px;}}
-    .doc-field {{padding:22px 0; border-top:1px solid {palette['card_border']};}}
-    .doc-field:first-child {{border-top:0; padding-top:4px;}}
-    .doc-field-label {{font-size:1.05rem; font-weight:650; letter-spacing:-.015em;
-        color:{palette['strong_text']}; margin-bottom:7px;}}
-    .doc-field-text {{font-size:.98rem; line-height:1.65; color:{palette['text']};}}
-    .doc-field-text code {{word-break:break-word;}}
-    /* A floating gallery, not a flat list: each KPI its own elevated card, lifting
-       further on hover — the opposite of the tinted, flush rows this replaces. */
-    .doc-kpi-grid {{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
-        gap:18px; margin-top:10px;}}
-    .doc-kpi-row {{display:flex; flex-direction:column; align-items:flex-start; gap:4px;
-        padding:20px; border-radius:18px; background:{palette['card']};
-        border:1px solid {palette['card_border']};
-        box-shadow:0 14px 28px -14px color-mix(in srgb, var(--kpi-color) 55%, #0003),
-                   0 2px 7px -2px rgba(0,0,0,.14);
-        transition:transform .16s ease, box-shadow .16s ease;}}
-    .doc-kpi-row:hover {{transform:translateY(-5px);
-        box-shadow:0 22px 36px -14px color-mix(in srgb, var(--kpi-color) 60%, #0003),
-                   0 4px 10px -2px rgba(0,0,0,.16);}}
-    .doc-kpi-icon {{display:flex; align-items:center; justify-content:center;
-        width:48px; height:48px; border-radius:13px; margin-bottom:4px;
-        background:color-mix(in srgb, var(--kpi-color) 16%, transparent); color:var(--kpi-color);}}
-    .doc-kpi-icon .component-symbol {{width:26px; height:28px; margin:0; color:inherit;}}
-    .doc-kpi-name {{font-weight:650; color:{palette['strong_text']};}}
-    .doc-kpi-code {{font-weight:600; color:var(--kpi-color); font-size:.78rem;
-        margin-left:8px; letter-spacing:.02em;}}
-    .doc-kpi-text {{font-size:.9rem; line-height:1.55; color:{palette['text']}; margin-top:2px;}}
-    .doc-profile-link {{display:inline-block; margin-top:26px; font-size:.95rem;}}
-    .doc-github-link {{display:inline-flex; align-items:center;}}
-    .doc-github-icon {{margin-right:6px;}}
-    .doc-decisions {{display:flex; flex-direction:column; gap:8px; margin-top:10px;}}
-    .doc-decision {{font-size:.95rem; line-height:1.55; color:{palette['text']};}}
-    .doc-decision-id {{font-weight:650; color:{palette['accent']}; margin-right:4px;}}
-    </style>"""
-
-
-def build_doc_field_html(label, text):
-    return (f'<div class="doc-field"><div class="doc-field-label">{html.escape(label)}</div>'
-            f'<div class="doc-field-text">{format_inline(text)}</div></div>')
-
-
-# A distinct color per KPI (D-114), reusing the same eight hues the pipeline
-# diagrams already use for their layers — one visual language across the panel.
-KPI_COLORS = [color for layer, color in architecture.LAYER_COLORS.items() if layer != "orchestration"]
-
-
-def build_doc_kpi_row_html(kpi, name, icon, text, color):
-    return (f'<div class="doc-kpi-row" style="--kpi-color:{color}">'
-            f'<span class="doc-kpi-icon">{build_component_symbol(icon)}</span>'
-            f'<div class="doc-kpi-name">{html.escape(name)}'
-            f'<span class="doc-kpi-code">{kpi}</span></div>'
-            f'<div class="doc-kpi-text">{html.escape(text)}</div></div>')
-
-
-def show_doc_bi_body(frame, mode):
-    """What a BI reader needs: the eight indicators and the data they cover, never SQL.
-    Each one real — the same name, icon and description used across the panel — in
-    its own colored row instead of a link out to another page (D-114)."""
-    st.markdown(build_doc_profile_css(mode), unsafe_allow_html=True)
-    rows = "".join(build_doc_kpi_row_html(kpi, name, icon, text, color) for (kpi, (name, icon, text)),
-                   color in zip(KPI_PRESENTATION.items(), KPI_COLORS))
-    st.markdown('<div class="doc-profile">'
-                + build_doc_field_html("Alcance de los datos", frame["Alcance"])
-                + '<div class="doc-field"><div class="doc-field-label">Los ocho indicadores'
-                f'</div><div class="doc-kpi-grid">{rows}</div></div></div>',
-                unsafe_allow_html=True)
-
-
-def show_doc_ba_body(frame, mode):
-    """What a BA reader needs: mission, vision and scope, in the business's own words
-    — the whole «Marco de negocio» table, not a subset with a link to the rest
-    (D-115): the link opened a page repeating the same fields."""
-    st.markdown(build_doc_profile_css(mode), unsafe_allow_html=True)
-    fields = "".join(build_doc_field_html(element, frame[element]) for element in
-                     ["Misión", "Visión", "Objetivo de negocio", "Alcance", "Fuera de alcance",
-                      "Criterios de aceptación"])
-    st.markdown(f'<div class="doc-profile">{fields}</div>', unsafe_allow_html=True)
-
-
 def describe_weekly_run():
     """What the weekly job does, in one sentence: the lead of «Qué pasa cada martes»,
     trimmed before its «Hace, en orden:» list so it never ends mid-thought (D-111)."""
@@ -6787,77 +6715,6 @@ def read_key_decision_sentences():
             fields = dict(project.parse_labeled_items(decisions[title]))
             sentences[identifier] = capitalize_first(read_first_sentence(fields["Decisión"]))
     return sentences
-
-
-def build_doc_decision_field_html(group, lead, ids, sentences):
-    """One KEY_DECISIONS group as a field: its category, then each real decision
-    sentence with its D-ID, so the page says what was decided, not only its theme."""
-    items = "".join(
-        f'<div class="doc-decision"><span class="doc-decision-id">{identifier}</span> '
-        f'{format_inline(sentences[identifier])}</div>' for identifier in ids)
-    return (f'<div class="doc-field"><div class="doc-field-label">{html.escape(group)}</div>'
-            f'<div class="doc-field-text">{format_inline(lead)}</div>'
-            f'<div class="doc-decisions">{items}</div></div>')
-
-
-def show_doc_it_body(mode):
-    """What an IT reader needs: why the system is built this way, with the real
-    decisions behind it — no code or SQL; the repository already shows both,
-    commit by commit."""
-    st.markdown(build_doc_profile_css(mode), unsafe_allow_html=True)
-    sentences = read_key_decision_sentences()
-    decisions = "".join(build_doc_decision_field_html(group, lead, ids, sentences)
-                        for group, lead, ids in KEY_DECISIONS)
-    st.markdown(f'<div class="doc-profile">{decisions}'
-                + build_doc_field_html("Operación semanal", describe_weekly_run())
-                + '</div>', unsafe_allow_html=True)
-    st.markdown('<div class="doc-profile-link">' + build_github_link_html(
-        "Ver el registro completo de decisiones",
-        f"{project.GITHUB_URL}/blob/main/docs/DECISIONES.md") + '</div>', unsafe_allow_html=True)
-
-
-def show_documentation_bi_page(mode):
-    show_page_header(*DOC_PROFILES["BI"])
-    show_doc_bi_body(build_business_frame_lookup(), mode)
-
-
-def show_documentation_ba_page(mode):
-    show_page_header(*DOC_PROFILES["BA"])
-    show_doc_ba_body(build_business_frame_lookup(), mode)
-
-
-def show_documentation_it_page(mode):
-    show_page_header(*DOC_PROFILES["IT"])
-    show_doc_it_body(mode)
-
-
-def show_documentation_bi_card(frame, mode):
-    with open_card("doc_bi", *DOC_PROFILES["BI"]):
-        show_doc_bi_body(frame, mode)
-
-
-def show_documentation_ba_card(frame, mode):
-    with open_card("doc_ba", *DOC_PROFILES["BA"]):
-        show_doc_ba_body(frame, mode)
-
-
-def show_documentation_it_card(mode):
-    with open_card("doc_it", *DOC_PROFILES["IT"]):
-        show_doc_it_body(mode)
-
-
-def show_documentation_page(mode):
-    """Kept for old addresses (D-105): the three profiles together, one screen. The
-    sidebar itself now opens each profile as its own page (D-110)."""
-    show_page_header("Documentación", "Qué resuelve el proyecto, para quién y cómo opera.")
-    frame = build_business_frame_lookup()
-    bi_column, ba_column, it_column = st.columns(3, gap="medium")
-    with bi_column:
-        show_documentation_bi_card(frame, mode)
-    with ba_column:
-        show_documentation_ba_card(frame, mode)
-    with it_column:
-        show_documentation_it_card(mode)
 
 
 def show_links_page(mode):
@@ -6880,6 +6737,53 @@ def show_links_page(mode):
 # endregion
 
 
+# region Project documents (D-151)
+PROJECT_DOCUMENTS = {
+    PAGE_PRD: ("PRD.md", "Qué resuelve el producto, para quién, con qué alcance y cómo se verifica."),
+    PAGE_SAD: ("SAD.md", "Cómo está construido: contexto, capas, modelo de datos, ejecución y calidad."),
+    PAGE_ADR: ("ADR.md", "Las decisiones que dieron forma a la arquitectura, con su contexto y sus consecuencias."),
+}
+DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
+
+
+def build_document_diagram_html(name, mode):
+    """The project's own diagram behind a [[diagrama:…]] marker of a document."""
+    states, figures, *_ = read_journey()
+    if name == "plataforma":
+        return zoom.build_zoom_frame_html(architecture.build_devops_svg(
+            states, build_devops_figures(figures), mode, animate_flow=False), "diagram-devops")
+    if name == "pipeline":
+        return zoom.build_zoom_frame_html(architecture.build_journey_svg(
+            states, figures, mode, animate_flow=False), "diagram-wide")
+    if name == "modelo":
+        row_counts = count_cached_table_rows(get_database_version())
+        columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
+        return star_model.build_star_svg(columns, row_counts, mode)
+    return ""
+
+
+def show_project_document(mode, title):
+    """A document of docs/ as a page: the same text as in GitHub, its diagrams drawn
+    from the live project, no code."""
+    filename, lead = PROJECT_DOCUMENTS[title]
+    text = (project.PROJECT_DIR / "docs" / filename).read_text(encoding="utf-8")
+    # The page header carries the title; the document's own H1 would repeat it.
+    text = re.sub(r"\A# .*\n", "", text)
+    show_compact_page_header(title, lead)
+    st.markdown('<div class="doc-source">' + build_external_link_html(
+        f"docs/{filename} en GitHub", project.build_github_url(f"docs/{filename}")) + '</div>',
+        unsafe_allow_html=True)
+    with st.container(key="project_document"):
+        position = 0
+        for marker in DOCUMENT_DIAGRAM.finditer(text):
+            st.markdown(text[position:marker.start()])
+            st.markdown('<div class="doc-diagram">' + build_document_diagram_html(marker.group(1), mode)
+                        + '</div>', unsafe_allow_html=True)
+            position = marker.end()
+        st.markdown(text[position:])
+    st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
+# endregion
+
 # region Entry point
 def show_document_page(mode, title, subtitle, renderer):
     show_page_header(title, subtitle)
@@ -6887,9 +6791,10 @@ def show_document_page(mode, title, subtitle, renderer):
 
 
 SHOW_PAGE_BY_TITLE = {
-    PAGE_DOCUMENTATION: show_documentation_page,
-    PAGE_DOC_BI: show_documentation_bi_page, PAGE_DOC_BA: show_documentation_ba_page,
-    PAGE_DOC_IT: show_documentation_it_page,
+    PAGE_DOCUMENTATION: lambda mode: show_project_document(mode, PAGE_PRD),
+    PAGE_PRD: lambda mode: show_project_document(mode, PAGE_PRD),
+    PAGE_SAD: lambda mode: show_project_document(mode, PAGE_SAD),
+    PAGE_ADR: lambda mode: show_project_document(mode, PAGE_ADR),
     PAGE_HOME: show_home_page,
     PAGE_DATA: show_data_page,
     PAGE_COVER: show_cover_page,
@@ -6975,7 +6880,7 @@ def show_attribution():
 
 def order_windows():
     """The data-first route, followed by documentation and links."""
-    return ROUTE + [SECTION_LINKS, SECTION_RESOURCES, SECTION_KPI]
+    return ROUTE + [SECTION_PROJECT, SECTION_RESOURCES, SECTION_KPI]
 
 
 def start_window(profile=None):
@@ -7280,7 +7185,7 @@ SIDEBAR_TREE = [
           # «El proyecto» and the old «Documentación» folder of six pages are now
           # three, one per reader (D-105, D-110): the same folder pattern as every
           # other section, not a special-cased flat link.
-          (SECTION_LINKS, [PAGE_DOC_BI, PAGE_DOC_BA, PAGE_DOC_IT]),
+          (SECTION_LINKS, [PAGE_PRD, PAGE_SAD, PAGE_ADR]),
           # GitHub is not a section of the list: its mark lives in the sidebar
           # footer, on a light pill, next to Apariencia (D-124).
           ]),
@@ -7538,8 +7443,9 @@ def main():
                   if path not in WINDOW_PATHS.values() and path not in PAGE_PATHS.values()]
     current_page = st.navigation({
         "Recorrido": [windows_by_title[window] for window in ROUTE],
-        "Referencias": [windows_by_title[SECTION_LINKS], windows_by_title[SECTION_RESOURCES]],
-        "Compatibilidad": [windows_by_title[SECTION_KPI]] + redirects}, position="hidden")
+        "Referencias": [windows_by_title[SECTION_RESOURCES]],
+        "Compatibilidad": [windows_by_title[SECTION_PROJECT], windows_by_title[SECTION_KPI]] + redirects},
+        position="hidden")
     # Historical root links may request a project view. Keep that exact destination
     # when Dashboard becomes the root, rather than silently showing another view.
     # Views renamed since: old links open the new title (D-094).
