@@ -131,14 +131,39 @@ def rule_of_test(test):
     return "Modelo estrella"
 
 
+GENERIC_TEST_PREFIXES = ("not_null_", "unique_", "relationships_", "accepted_values_")
+
+
+def owner_of_test(test, models):
+    """The one model a test belongs to, so each test counts once and the badges add up
+    to the total of the build. A generic test belongs to the model of its column, which
+    dbt writes in its name (relationships_weekly_price_week_start__… → weekly_price);
+    a singular test to its only model, or to weekly_price, the fact it guards, or else to
+    the first model it reads (rnf05 → int_prices__validated). Sources never own a test."""
+    reads = [node for node in test["depends_on"] if node in models]
+    name = test["name"]
+    for prefix in GENERIC_TEST_PREFIXES:
+        if name.startswith(prefix):
+            rest = name[len(prefix):]
+            owners = [node for node in reads if rest.startswith(models[node] + "_")]
+            if owners:
+                return max(owners, key=lambda node: len(models[node]))
+    fact = [node for node in reads if models[node] == "weekly_price"]
+    return (reads[0] if len(reads) == 1 else fact[0] if fact else reads[0]) if reads else None
+
+
 def tests_by_model(nodes, results):
-    """{model unique_id: (tests, passing)}: a test counts for every model it reads."""
+    """{model unique_id: (tests, passing)}: each test counts once, for its own model."""
     status = dict(zip(results["unique_id"], results["status"])) if not results.empty else {}
+    models = dict(zip(nodes.loc[nodes["resource_type"] == "model", "unique_id"],
+                      nodes.loc[nodes["resource_type"] == "model", "name"]))
     counts = {}
     for test in nodes[nodes["resource_type"] == "test"].to_dict("records"):
-        for model in test["depends_on"]:
-            total, passing = counts.get(model, (0, 0))
-            counts[model] = (total + 1, passing + (status.get(test["unique_id"]) in PASSING))
+        model = owner_of_test(test, models)
+        if model is None:
+            continue
+        total, passing = counts.get(model, (0, 0))
+        counts[model] = (total + 1, passing + (status.get(test["unique_id"]) in PASSING))
     return counts
 # endregion
 
