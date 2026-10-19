@@ -120,70 +120,78 @@ VIEW_NAMES = [name for name, _, _ in VIEWS]
 
 # Each example: (title, the question it answers, SQL). All run on the views above.
 EXAMPLES = [
-    ("Margen por región",
-     "¿Cuánto más paga el consumidor que el mayorista en cada región, la última semana con ambos precios?",
-     """-- Mismo producto, región, unidad y semana en los dos canales; solo precios válidos.
-WITH ultima AS (
-    SELECT max(semana) AS semana FROM precios WHERE fuente = 'mayorista'
+    ('Familias de la semana',
+     '¿Qué familia subió más y cuál bajó más la última semana, y cuántas series subieron frente a cuántas bajaron?',
+     """-- Cada serie (producto, calidad, canal, unidad y región) se compara con su semana anterior; la familia resume con la mediana.
+WITH pares AS (
+    SELECT p.familia, p.producto, p.variedad, p.calidad, p.canal, p.unidad, p.region,
+           p.semana, p.precio,
+           lag(p.precio) OVER w AS anterior, lag(p.semana) OVER w AS semana_anterior
+    FROM precios AS p WHERE p.marca = 'SIN_MARCA' AND p.fuente = 'consumidor'
+    WINDOW w AS (PARTITION BY p.producto, p.variedad, p.calidad, p.canal, p.unidad, p.region ORDER BY p.semana)
 ),
-pares AS (
-    SELECT c.region, c.precio AS consumidor, m.precio AS mayorista
-    FROM precios AS c
-    JOIN precios AS m
-      ON m.semana = c.semana AND m.region = c.region AND m.producto = c.producto
-     AND m.variedad = c.variedad AND m.calidad = c.calidad AND m.unidad = c.unidad
-    WHERE c.fuente = 'consumidor' AND m.fuente = 'mayorista'
-      AND c.marca = 'SIN_MARCA' AND m.marca = 'SIN_MARCA'
-      AND c.semana = (SELECT semana FROM ultima)
+ultima AS (SELECT max(semana) AS semana FROM precios WHERE fuente = 'consumidor')
+SELECT familia, count(*) AS series_comparadas,
+       round(median(precio / anterior - 1) * 100, 2) AS variacion_mediana_pct,
+       count(*) FILTER (WHERE precio > anterior) AS subieron,
+       count(*) FILTER (WHERE precio < anterior) AS bajaron
+FROM pares
+WHERE semana = (SELECT semana FROM ultima) AND semana_anterior = semana - INTERVAL 7 DAY
+GROUP BY familia ORDER BY variacion_mediana_pct DESC"""),
+    ('Más alzas que bajas en 2026',
+     '¿Qué productos tienen más probabilidad de subir de una semana a otra durante 2026?',
+     """-- Para otro año, cambia 2026. prob_alza_pct = semanas de alza sobre todas las comparaciones (producto × región); 50 = igual de probable subir que bajar.
+WITH pares AS (
+    SELECT familia, producto, variedad, calidad, canal, unidad, region, semana, precio,
+           lag(precio) OVER w AS anterior, lag(semana) OVER w AS semana_anterior
+    FROM precios WHERE marca = 'SIN_MARCA' AND fuente = 'consumidor'
+    WINDOW w AS (PARTITION BY producto, variedad, calidad, canal, unidad, region ORDER BY semana)
 )
-SELECT region,
+SELECT familia, producto, variedad, canal,
        count(*) AS comparaciones,
-       round(median((consumidor - mayorista) / mayorista) * 100, 1) AS margen_mediano_pct,
-       round(avg((consumidor - mayorista) / mayorista) * 100, 1) AS margen_promedio_pct
+       count(*) FILTER (WHERE precio > anterior) AS alzas,
+       count(*) FILTER (WHERE precio < anterior) AS bajas,
+       round(count(*) FILTER (WHERE precio > anterior) * 100.0 / count(*), 1) AS prob_alza_pct,
+       round(median(precio / anterior - 1) * 100, 2) AS variacion_semanal_mediana_pct
 FROM pares
-GROUP BY region
-ORDER BY margen_mediano_pct DESC"""),
-    ("Mayores subidas de la semana",
-     "¿Qué productos subieron más respecto de la semana anterior, comparando solo regiones presentes en ambas?",
-     """-- Cada región entra solo si tiene precio las dos semanas (regiones comunes).
-WITH semanas AS (
-    SELECT max(semana) AS actual, max(semana) - INTERVAL 7 DAY AS anterior FROM precios
-),
-pares AS (
-    SELECT a.producto, a.variedad, a.calidad, a.canal, a.unidad, a.region,
-           a.precio AS actual, b.precio AS anterior
-    FROM precios AS a
-    JOIN precios AS b
-      ON b.producto = a.producto AND b.variedad = a.variedad AND b.calidad = a.calidad
-     AND b.canal = a.canal AND b.unidad = a.unidad AND b.region = a.region
-    WHERE a.semana = (SELECT actual FROM semanas)
-      AND b.semana = (SELECT anterior FROM semanas)
-      AND a.marca = 'SIN_MARCA' AND b.marca = 'SIN_MARCA'
+WHERE year(semana) = 2026 AND semana_anterior = semana - INTERVAL 7 DAY
+GROUP BY familia, producto, variedad, canal
+HAVING count(*) >= 100
+ORDER BY prob_alza_pct DESC, comparaciones DESC
+LIMIT 100"""),
+    ('Los 100 que más subieron en 2026',
+     '¿Qué 100 productos acumulan la mayor alza de precio desde la primera semana de 2026?',
+     """-- Por serie (región incluida) se compara el primer y el último precio de 2026; el producto resume con la mediana de sus regiones.
+WITH anual AS (
+    SELECT familia, producto, variedad, calidad, canal, unidad, region,
+           arg_min(precio, semana) AS primero, arg_max(precio, semana) AS ultimo,
+           count(*) AS semanas
+    FROM precios
+    WHERE marca = 'SIN_MARCA' AND fuente = 'consumidor' AND year(semana) = 2026
+    GROUP BY ALL HAVING count(*) >= 10
 )
-SELECT producto, variedad, calidad, canal, unidad,
-       count(*) AS regiones_comunes,
-       round(avg(anterior)) AS precio_anterior,
-       round(avg(actual)) AS precio_actual,
-       round((avg(actual) / avg(anterior) - 1) * 100, 1) AS variacion_pct
-FROM pares
-GROUP BY ALL
-HAVING count(*) >= 3
-ORDER BY variacion_pct DESC
-LIMIT 10"""),
-    ("Precio real vs nominal",
-     "¿Cuánto subió el tomate en supermercado descontando la inflación de alimentos?",
-     """-- Promedio nacional simple de las regiones con precio esa semana.
--- precio real = precio × factor_real (pesos del último mes publicado del IPC).
-SELECT p.semana,
-       round(avg(p.precio)) AS precio_nominal,
-       round(avg(p.precio) * any_value(i.factor_real)) AS precio_real,
-       any_value(i.provisional) AS ipc_provisional
-FROM precios AS p
-JOIN ipc_semanal AS i ON i.semana = p.semana
-WHERE p.producto = 'Tomate' AND p.variedad = 'Larga vida' AND p.calidad = 'Primera'
-  AND p.unidad = 'kilo' AND p.canal = 'Supermercado' AND p.marca = 'SIN_MARCA'
-GROUP BY p.semana
-ORDER BY p.semana"""),
+SELECT familia, producto, variedad, canal, unidad, count(*) AS regiones,
+       round(avg(primero)) AS precio_inicio, round(avg(ultimo)) AS precio_actual,
+       round(median(ultimo / primero - 1) * 100, 1) AS variacion_pct
+FROM anual GROUP BY familia, producto, variedad, canal, unidad HAVING count(*) >= 3
+ORDER BY variacion_pct DESC LIMIT 100"""),
+    ('Sobre la inflación desde 2022',
+     '¿Qué productos subieron más que el IPC de alimentos entre 2022 y hoy, y por cuántos puntos?',
+     """-- Solo series con precio desde marzo de 2022 hasta hoy. sobre_inflacion_pp = alza del producto menos alza del IPC, en puntos porcentuales.
+WITH base AS (
+    SELECT familia, producto, variedad, calidad, canal, unidad, region,
+           arg_min(precio, semana) AS inicial, arg_max(precio, semana) AS actual, min(semana) AS desde, max(semana) AS hasta
+    FROM precios WHERE marca = 'SIN_MARCA' AND fuente = 'consumidor'
+    GROUP BY ALL HAVING min(semana) <= DATE '2022-03-01' AND max(semana) >= (SELECT max(semana) FROM precios) - INTERVAL 14 DAY
+),
+ipc AS (SELECT (SELECT indice_alimentos FROM ipc_semanal ORDER BY semana DESC LIMIT 1)
+             / (SELECT indice_alimentos FROM ipc_semanal ORDER BY semana LIMIT 1) - 1 AS alza)
+SELECT familia, producto, variedad, count(*) AS series,
+       round(median(actual / inicial - 1) * 100, 1) AS alza_producto_pct,
+       round(any_value(ipc.alza) * 100, 1) AS alza_ipc_pct,
+       round((median(actual / inicial - 1) - any_value(ipc.alza)) * 100, 1) AS sobre_inflacion_pp
+FROM base, ipc GROUP BY familia, producto, variedad HAVING count(*) >= 3
+ORDER BY sobre_inflacion_pp DESC LIMIT 100"""),
     ("Evolución anual por familia",
      "¿Cuánto subió cada familia de productos respecto del año anterior, en el mismo tramo del año?",
      """-- Compara de enero a la misma semana ISO de la última semana con datos, para no
@@ -215,51 +223,52 @@ FROM variaciones
 WHERE salto = 1
 GROUP BY familia, anio
 ORDER BY familia, anio"""),
-    ("Regiones más caras",
-     "¿En qué regiones el tomate es más caro al consumidor en las últimas 4 semanas?",
-     """WITH ventana AS (
-    SELECT * FROM precios
-    WHERE producto = 'Tomate' AND variedad = 'Larga vida' AND calidad = 'Primera'
-      AND unidad = 'kilo' AND fuente = 'consumidor' AND marca = 'SIN_MARCA'
-      AND semana > (SELECT max(semana) FROM precios) - INTERVAL 28 DAY
+    ('Brecha mayorista-consumidor',
+     '¿Cuánto más paga el consumidor que el mayorista en cada familia, y cómo se compara con hace un año?',
+     """-- Solo Frutas y Hortalizas tienen precio mayorista. Mismo producto, región, unidad y semana en los dos canales.
+WITH ultima AS (SELECT max(semana) AS s FROM precios WHERE fuente = 'mayorista'),
+pares AS (
+    SELECT c.familia, c.semana, (c.precio - m.precio) / m.precio AS margen
+    FROM precios AS c JOIN precios AS m
+      ON m.semana = c.semana AND m.region = c.region AND m.producto = c.producto
+     AND m.variedad = c.variedad AND m.calidad = c.calidad AND m.unidad = c.unidad
+    WHERE c.fuente = 'consumidor' AND m.fuente = 'mayorista' AND c.marca = 'SIN_MARCA' AND m.marca = 'SIN_MARCA'
 )
-SELECT region,
-       count(*) AS precios,
-       round(avg(precio)) AS precio_promedio,
-       round((avg(precio) / (SELECT avg(precio) FROM ventana) - 1) * 100, 1) AS sobre_promedio_nacional_pct
-FROM ventana
-GROUP BY region
-ORDER BY precio_promedio DESC"""),
-    ("Rechazos por motivo",
-     "¿Por qué se rechazaron filas de origen en la última carga, y de qué regiones venían?",
-     """SELECT fuente, motivo, region, count(*) AS filas, min(fecha_precio) AS primera_fecha,
-       max(fecha_precio) AS ultima_fecha
-FROM rechazos
-WHERE inicio_carga = (SELECT max(inicio_carga) FROM rechazos)
-GROUP BY ALL
-ORDER BY filas DESC"""),
-    ("Cobertura semanal",
-     "¿Cuántos precios, productos y regiones trae cada una de las últimas 12 semanas, y con qué IPC?",
-     """SELECT s.semana,
-       count(*) FILTER (WHERE p.fuente = 'consumidor') AS precios_consumidor,
-       count(*) FILTER (WHERE p.fuente = 'mayorista') AS precios_mayorista,
-       count(DISTINCT p.producto) AS productos,
-       count(DISTINCT p.region) AS regiones,
-       round(avg(CASE WHEN p.marca = 'SIN_MARCA' THEN 1 ELSE 0 END) * 100, 1) AS validos_pct,
-       any_value(i.provisional) AS ipc_provisional
-FROM semanas AS s
-LEFT JOIN precios AS p ON p.semana = s.semana
-LEFT JOIN ipc_semanal AS i ON i.semana = s.semana
-WHERE s.semana > (SELECT max(semana) FROM semanas) - INTERVAL 84 DAY
-GROUP BY s.semana
-ORDER BY s.semana DESC"""),
-    ("Pruebas de dbt",
-     "¿Qué modelos y pruebas de dbt construyen esta base y cómo terminó su última ejecución?",
-     """SELECT tipo, coalesce(capa, '—') AS capa, estado, count(*) AS nodos,
-       round(sum(segundos), 2) AS segundos_totales, sum(fallas) AS fallas
-FROM modelos_dbt
-GROUP BY ALL
-ORDER BY tipo, capa"""),
+SELECT familia,
+       round(median(margen) FILTER (WHERE semana > (SELECT s FROM ultima) - INTERVAL 28 DAY) * 100, 1) AS margen_ultimas_4_sem_pct,
+       round(median(margen) FILTER (WHERE semana BETWEEN (SELECT s FROM ultima) - INTERVAL 392 DAY AND (SELECT s FROM ultima) - INTERVAL 364 DAY) * 100, 1) AS margen_hace_un_anio_pct,
+       count(*) FILTER (WHERE semana > (SELECT s FROM ultima) - INTERVAL 28 DAY) AS comparaciones
+FROM pares GROUP BY familia ORDER BY margen_ultimas_4_sem_pct DESC"""),
+    ('Productos más volátiles',
+     '¿Qué productos cambian más de precio de una semana a otra en 2026?',
+     """-- volatilidad = desviación estándar de la variación semanal; salto_tipico_alto = el cambio que solo el 10 % de las semanas supera.
+WITH pares AS (
+    SELECT familia, producto, variedad, canal, semana, precio,
+           lag(precio) OVER w AS anterior, lag(semana) OVER w AS semana_anterior
+    FROM precios WHERE marca = 'SIN_MARCA' AND fuente = 'consumidor'
+    WINDOW w AS (PARTITION BY producto, variedad, calidad, canal, unidad, region ORDER BY semana)
+)
+SELECT familia, producto, variedad, canal, count(*) AS comparaciones,
+       round(stddev_samp(precio / anterior - 1) * 100, 1) AS volatilidad_semanal_pct,
+       round(quantile_cont(abs(precio / anterior - 1), 0.9) * 100, 1) AS salto_tipico_alto_pct
+FROM pares WHERE year(semana) = 2026 AND semana_anterior = semana - INTERVAL 7 DAY
+GROUP BY ALL HAVING count(*) >= 100 ORDER BY volatilidad_semanal_pct DESC LIMIT 30"""),
+    ('Regiones más caras por familia',
+     '¿En qué regiones cada familia cuesta más que la mediana del país, en las últimas 12 semanas?',
+     """-- Cada producto se compara con su mediana nacional; la región resume con la mediana de sus productos.
+WITH ventana AS (
+    SELECT familia, region, producto, variedad, calidad, canal, unidad, avg(precio) AS precio
+    FROM precios WHERE marca = 'SIN_MARCA' AND fuente = 'consumidor'
+      AND semana > (SELECT max(semana) FROM precios) - INTERVAL 84 DAY
+    GROUP BY ALL
+),
+relativo AS (
+    SELECT *, precio / median(precio) OVER (PARTITION BY producto, variedad, calidad, canal, unidad) AS indice
+    FROM ventana
+)
+SELECT familia, region, count(*) AS productos, round((median(indice) - 1) * 100, 1) AS sobre_mediana_pais_pct
+FROM relativo GROUP BY familia, region HAVING count(*) >= 5
+ORDER BY familia, sobre_mediana_pais_pct DESC"""),
 ]
 
 # Gold tables offered as CSV in «Llevar los datos a otra herramienta».
