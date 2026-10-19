@@ -138,3 +138,12 @@ def test_lineage_script_is_one_valid_script_without_markup():
     result = subprocess.run([node, "--check", handle.name], capture_output=True, text=True)
     Path(handle.name).unlink()
     assert result.returncode == 0, result.stderr
+
+
+def test_each_test_counts_once_so_the_badges_add_up_to_the_build_total():
+    nodes, results = lineage.read_tables(queries.run_sql)
+    counts = lineage.tests_by_model(nodes, results)
+    summary = lineage.summarize_build(nodes, results)
+    assert sum(total for total, _ in counts.values()) == summary["tests"]
+    sources = set(nodes.loc[nodes["resource_type"] == "source", "unique_id"])
+    assert not sources & set(counts)
