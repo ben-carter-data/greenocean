@@ -64,7 +64,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 
 | Falta | Consecuencia | Qué hacer |
 |---|---|---|
-| `etl/raw.db` (644 MB, fuera de git, D-020) | Las pruebas que recalculan precios desde las filas crudas se saltan (skip) | Normal; el resto de la auditoría corre con `datos.duckdb` |
+| `etl/raw.db` (unos 665 MB, fuera de git, D-020) | Las pruebas que recalculan precios desde las filas crudas se saltan (skip) | Normal; el resto de la auditoría corre con `datos.duckdb` |
 | `agent/downloads/*.csv` | No hay CSV de ODEPA locales | `python agent/agent.py` los descarga, si hay red hacia datos.odepa.gob.cl |
 | `etl/bronze/` y `etl/warehouse_build.duckdb` | No se puede correr `dbt build` de inmediato | Necesita `raw.db` (ingesta) más `pip install -r requirements-pipeline.txt` |
 | `.venv` y `.venv-dbt` | Sin entornos | Crear uno nuevo con Python 3.11 o 3.12 e instalar los requirements |
