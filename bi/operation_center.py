@@ -24,6 +24,8 @@ ROWS = [100, 320, 540]
 # Three straight rows joined by half circles: the middle row runs right to left.
 TRACK = "M120 100 H620 A110 110 0 0 1 620 320 H120 A110 110 0 0 0 120 540 H620"
 PHASES = ["Lanzar y descargar", "Transformar y probar", "Publicar"]
+# The phase names start right of the half circle on the left, which reaches x = 10.
+PHASE_LEFT = 30
 
 STATE_OK = "ok"
 STATE_FAILED = "fail"
@@ -60,7 +62,7 @@ STEPS = [
      "workflow": [], "log": False,
      "hint": "Corre solo cada martes a las 09:00 (Chile). Para adelantarlo: «Ejecutar pipeline "
              "ahora», a la derecha, con tu clave de control, o «Run workflow» en GitHub.",
-     "links": [("Run workflow", project.WORKFLOW_PAGE_URL, False),
+     "links": [("Run workflow", project.WORKFLOW_PAGE_URL, True),
                ("Tokens de GitHub", project.TOKENS_URL, True)]},
     {"key": "odepa", "label": "ODEPA", "title": "Descarga de ODEPA", "place": (1, 0),
      "workflow": ["Download the ODEPA files"], "log": True,
@@ -100,8 +102,8 @@ STEPS = [
      "links": [("Informes", project.ISSUES_URL, False)]},
     {"key": "panel", "label": "Panel", "title": "Panel en Streamlit", "place": (2, 2),
      "workflow": [], "log": False,
-     "hint": "Lee la base nueva en uno o dos minutos; si no la ves, «Recargar datos del "
-             "panel», a la derecha. Registros, secretos y reinicio están en Streamlit.",
+     "hint": "Lee la base nueva en uno o dos minutos; si no la ves, «Recargar datos», "
+             "a la derecha. Registros, secretos y reinicio están en Streamlit.",
      "links": [("Administrar la app", project.STREAMLIT_ADMIN_URL, True)]},
 ]
 # endregion
@@ -177,7 +179,7 @@ a {{color:{palette['accent']}; text-decoration:none;}} a:hover {{text-decoration
 .oc-stage {{position:relative; width:100%; max-width:{STAGE_WIDTH}px; aspect-ratio:{STAGE_WIDTH}/{STAGE_HEIGHT};
   margin:0 auto;}}
 .oc-stage > svg {{position:absolute; inset:0; width:100%; height:100%;}}
-.oc-phase {{position:absolute; left:0; font-size:11px; font-weight:700; letter-spacing:1.4px;
+.oc-phase {{position:absolute; left:{PHASE_LEFT / STAGE_WIDTH * 100:.2f}%; font-size:11px; font-weight:700; letter-spacing:1.4px;
   text-transform:uppercase; color:{palette['reference']};}}
 .oc-phase b {{color:{palette['accent']}; margin-right:6px;}}
 .oc-node {{position:absolute; width:132px; margin-left:-66px; margin-top:-38px; display:flex;
