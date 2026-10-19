@@ -7,7 +7,7 @@ from bi.brand_icons import logo, logo_body
 STAGES = [
     ("Código", "Git · GitHub", "Versionado y revisión", ("git", "github"), "ingestion", 290, 65),
     ("Pruebas", "pytest", "Pruebas en cada push", ("pytest",), "quality", 100, 245),
-    ("Carga", "Python · SQLite", "ETL y base validada", ("python", "sqlite"), "gold", 290, 430),
+    ("Carga", "dbt · DuckDB", "Modelos y pruebas, base validada", ("dbt", "duckdb"), "gold", 290, 430),
     ("Publicación", "Streamlit", "Panel desde main", ("streamlit",), "consumption", 710, 65),
     ("Operación", "GitHub Actions", "Job semanal y caché", ("github",), "processing", 900, 245),
     ("Monitoreo", "GitHub Issues", "Informe, alertas y logs", ("github",), "orchestration", 710, 430),

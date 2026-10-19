@@ -1,9 +1,14 @@
 """Read-only evidence checks. Passing checks are not a source-price certification."""
 import hashlib
+import math
+import sqlite3
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from bi import queries
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from bi import queries  # noqa: E402
+from etl import etl  # noqa: E402
 
 
 def check_database(database_file=queries.DATABASE_FILE):
@@ -52,3 +57,18 @@ def check_source_files(manifest, directory):
         evidence.append(dict(file=name, status=status, expected=expected, actual=actual,
                              downloaded_at=metadata.get('downloaded_at', '') if isinstance(metadata, dict) else ''))
     return evidence
+
+
+def check_parity(backup_file=etl.DATABASE_FILE, database_file=queries.DATABASE_FILE):
+    """The SQLite backup and the DuckDB warehouse hold the same figures (D-154): rows,
+    rejections and the sum of the prices. None when the backup is not there."""
+    if not Path(backup_file).exists():
+        return None
+    sql = ("SELECT (SELECT COUNT(*) FROM weekly_price), (SELECT COUNT(*) FROM rejection), "
+           "(SELECT SUM(price) FROM weekly_price)")
+    with sqlite3.connect(f"file:{backup_file}?mode=ro", uri=True) as connection:
+        backup = connection.execute(sql).fetchone()
+    with queries.open_database(database_file) as connection:
+        current = connection.execute(sql).fetchone()
+    return dict(rows=(backup[0], current[0]), rejections=(backup[1], current[1]),
+                ok=backup[:2] == current[:2] and math.isclose(backup[2], current[2], rel_tol=1e-9))

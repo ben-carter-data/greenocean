@@ -1,0 +1,107 @@
+"""PRD, SAD and ADR as downloadable PDF files (step 6 of the refonte)."""
+import base64
+import re
+import zlib
+from datetime import date
+from pathlib import Path
+
+import pytest
+
+from bi import document_pdf
+
+DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
+DOCUMENTS = {
+    "PRD.md": ("Documento de requisitos del producto", "PRD · Qué resuelve, para quién y cómo se verifica"),
+    "SAD.md": ("Documento de arquitectura de software", "SAD · Contexto, contenedores, componentes y linaje"),
+    "ADR.md": ("Registros de decisiones de arquitectura", "ADR · Una ficha por decisión"),
+}
+
+
+def count_pages(pdf_bytes):
+    return len(re.findall(rb"/Type /Page[^s]", pdf_bytes))
+
+
+def page_text(pdf_bytes):
+    """The drawn text of every page: reportlab's content streams, ASCII85 then Flate."""
+    texts = []
+    for stream in re.findall(rb"stream\r?\n(.*?)\s*endstream", pdf_bytes, re.DOTALL):
+        data = stream.strip()
+        try:
+            if data.endswith(b"~>"):
+                data = base64.a85decode(data[:-2])
+            texts.append(zlib.decompress(data).decode("latin-1"))
+        except (ValueError, zlib.error):
+            continue  # fonts and images
+    return "\n".join(texts)
+
+
+@pytest.fixture(scope="module")
+def pdfs():
+    return {name: document_pdf.build_pdf((DOCS_DIR / name).read_text(encoding="utf-8"), title, subtitle,
+                                         issued=date(2026, 10, 19))
+            for name, (title, subtitle) in DOCUMENTS.items()}
+
+
+@pytest.mark.parametrize("name", DOCUMENTS)
+def test_each_document_builds_a_pdf_with_cover_contents_and_pages(pdfs, name):
+    pdf = pdfs[name]
+    assert pdf.startswith(b"%PDF")
+    assert count_pages(pdf) >= 3
+    text = page_text(pdf)
+    assert "GREENOCEAN" in text and "Contenido" in text and "19 de octubre de 2026" in text
+    assert f"de {count_pages(pdf)})" in text  # «Página n de N» in the footer
+
+
+@pytest.mark.parametrize("name", DOCUMENTS)
+def test_markdown_never_leaks_into_the_pdf(pdfs, name):
+    text = page_text(pdfs[name])
+    drawn = " ".join(re.findall(r"\((.*?)\) Tj", text))
+    assert drawn, "the PDF should draw text"
+    assert "|" not in drawn and "**" not in drawn and "`" not in drawn and "[[diagrama" not in drawn
+
+
+def test_diagram_markers_become_a_note():
+    pdf = document_pdf.build_pdf("# T\n\n## Uno\n\nTexto.\n\n[[diagrama:pipeline]]\n", "T", "S")
+    assert document_pdf.DIAGRAM_NOTE in page_text(pdf)
+
+
+def test_tables_lists_and_inline_marks_are_parsed():
+    blocks = document_pdf.parse_blocks(
+        "## Título\n\n| A | B |\n|---|---|\n| **x** | `y` |\n\n- uno\n- dos\n\n1. tres\n\nTexto *suave*.")
+    kinds = [kind for kind, _ in blocks]
+    assert kinds == ["heading", "table", "bullets", "numbers", "paragraph"]
+    assert blocks[1][1] == (["A", "B"], [["**x**", "`y`"]])
+    markup = document_pdf.inline_markup("**negrita**, *cursiva* y `código` con 10⁻¹² y 3 − 1 < 4")
+    assert "<b>negrita</b>" in markup and "<i>cursiva</i>" in markup and 'name="Courier"' in markup
+    assert "<super>-12</super>" in markup and "&lt;" in markup and "−" not in markup
+
+
+def test_build_pdf_does_not_depend_on_streamlit():
+    source = Path(document_pdf.__file__).read_text(encoding="utf-8")
+    assert "streamlit" not in source
+
+
+@pytest.mark.parametrize("name", DOCUMENTS)
+def test_documents_have_no_code_blocks_and_use_the_project_vocabulary(name):
+    text = (DOCS_DIR / name).read_text(encoding="utf-8")
+    assert "```" not in text and "~~~" not in text
+    assert "robot" not in text.lower()
+
+
+def test_the_sad_keeps_its_three_live_diagrams_and_the_others_none():
+    counts = {name: len(re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"),
+                                   re.MULTILINE)) for name in DOCUMENTS}
+    assert counts == {"PRD.md": 0, "SAD.md": 3, "ADR.md": 0}
+
+
+def test_the_adr_has_one_card_per_decision_with_status_and_reference():
+    text = (DOCS_DIR / "ADR.md").read_text(encoding="utf-8")
+    cards = re.split(r"^## (?=ADR-\d+)", text, flags=re.MULTILINE)[1:]
+    numbers = [card.split(" ", 1)[0] for card in cards]
+    assert {"ADR-30", "ADR-31", "ADR-32", "ADR-33", "ADR-34"} <= set(numbers)
+    for card in cards:
+        assert "| Estado | Fecha | Referencia |" in card
+        assert re.search(r"D-\d{3}", card)
+        for part in ("**Contexto.**", "**Decisión.**", "**Consecuencias.**"):
+            assert part in card, (card.split("\n", 1)[0], part)
+    assert "Aceptada e implementada | 19-10-2026 | D-155" in text

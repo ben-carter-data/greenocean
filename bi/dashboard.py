@@ -31,8 +31,8 @@ import streamlit.components.v1 as components
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag, project,  # noqa: E402
-                quality, queries, star_model, zoom)
+from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
+                document_pdf, lineage, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -72,6 +72,8 @@ PAGE_DOCUMENTATION = "Documentación"
 PAGE_PRD = "PRD · Requisitos del producto"
 PAGE_SAD = "SAD · Arquitectura"
 PAGE_ADR = "ADR · Decisiones de arquitectura"
+# Step 7 of the refonte: the SAD's scalability section, on its own page.
+PAGE_SCALABILITY = "Escalabilidad"
 SECTION_RESOURCES = "Enlaces"
 # A sidebar-only folder (D-118): two external links, no Streamlit page of its own,
 # so it is not part of WINDOWS/ROUTE — rendered specially in show_sidebar_navigation.
@@ -79,6 +81,7 @@ SECTION_SOURCES = "Fuentes"
 SOURCE_LINKS = [
     ("ODEPA: precios mayoristas", project.WHOLESALE_SOURCE_URL),
     ("ODEPA: precios al consumidor", project.CONSUMER_SOURCE_URL),
+    ("INE: IPC de alimentos", project.INE_IPC_SOURCE_URL),
 ]
 # The visit is a portfolio route, like a CV with its evidence: the project, then the
 # dashboard, the code with its results and, for whoever wants more, the technical detail.
@@ -89,7 +92,7 @@ REPORT_WINDOW = "Dashboard"
 SECTION_QUERIES = "Preguntas y resultados SQL"
 SECTION_CODE = "Código del proyecto"
 SECTION_PYTHON = "Análisis con Python"
-SECTION_TECHNICAL = "Arquitectura y operación"
+SECTION_TECHNICAL = "Ingeniería de datos"
 SECTION_LINKS = "Documentación"
 WINDOWS = {
     SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES],
@@ -97,7 +100,7 @@ WINDOWS = {
     REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
-    SECTION_LINKS: [PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
+    SECTION_LINKS: [PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
                     PAGE_MANUAL],
     SECTION_RESOURCES: [PAGE_LINKS],
 }
@@ -159,6 +162,7 @@ HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
     PAGE_DOCUMENTATION: ":material/menu_book:",
     PAGE_PRD: ":material/assignment:", PAGE_SAD: ":material/account_tree:", PAGE_ADR: ":material/gavel:",
+    PAGE_SCALABILITY: ":material/trending_up:",
     PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
     PAGE_BUSINESS: ":material/assignment:",
     PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
@@ -172,7 +176,7 @@ PAGE_ICONS = {
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
-    PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr",
+    PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SCALABILITY: "escalabilidad",
     PAGE_HOME: "dashboard", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura", PAGE_ANALYSIS: "analisis", PAGE_GAP: "brecha",
@@ -487,10 +491,13 @@ NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
 # Contexto: nominal prices or real prices deflated with the INE IPC (D-155).
 CONTEXT_BASIS_KEY = "context_price_basis"
 BASIS_NOMINAL, BASIS_REAL = "Nominal", "Real"
+PIPELINE_LINEAGE, PIPELINE_JOURNEY = "Linaje dbt", "Recorrido por capas"
+LINEAGE_HINT = ("Se dibuja con el manifiesto de la última construcción de dbt, que el pipeline guarda en la "
+                "base: si se agrega un modelo o una prueba, aparece aquí en la carga siguiente.")
 ATTRIBUTION_TEXT = (
     "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de "
-    "Agricultura de Chile, licencia Creative Commons Atribución. "
-    "Este proyecto no es un producto oficial de ODEPA. "
+    "Agricultura de Chile, licencia Creative Commons Atribución; IPC de alimentos: Instituto "
+    "Nacional de Estadísticas (INE). Este proyecto no es un producto oficial de ODEPA ni del INE. "
     "Lectura de los datos: el precio nacional es un promedio simple de las regiones, sin ponderar "
     "por población o ventas; cada variación semanal compara las mismas regiones en ambas semanas. "
     "Los indicadores describen el histórico; no predicen precios. Los precios se reconstruyen "
@@ -1148,6 +1155,14 @@ def build_style_css(mode):
         [class*="st-key-search_kpis"] .kpi-value {{ font-size: 1.5rem; }}
     }}
     .search-count {{ font-size: 13px; color: {palette["text"]}; padding-bottom: 10px; }}
+    .page-lineage {{ margin: -4px 0 4px; }}
+    .lineage-badge {{ display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
+        padding: 3px 10px; border-radius: 999px; border: 1px solid {palette["card_border"]};
+        color: {palette["text"]}; background: {palette["card"]}; }}
+    .lineage-badge::before {{ content: ""; width: 7px; height: 7px; border-radius: 50%; background: #9aa4b2; }}
+    .lineage-badge.ok::before {{ background: #16a34a; }}
+    .lineage-badge.failed::before {{ background: #dc2626; }}
+    .lineage-frame {{ max-width: 1100px; margin: 0 auto; }}
     .detail-facts {{ display: grid; gap: 10px 18px; margin-bottom: 8px;
                      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }}
     .detail-value {{ font-size: 15px; font-weight: 600; color: {palette["strong_text"]}; }}
@@ -4935,16 +4950,54 @@ def show_home_page(mode):
 
 def show_pipeline_page_header():
     """The same one-line header as every technical page (D-150)."""
-    show_compact_page_header("Pipeline", "El recorrido de los datos, de ODEPA al panel, por capas.")
+    show_compact_page_header("Pipeline y linaje", "El recorrido de los datos, de ODEPA y el INE al panel, "
+                             "y el linaje de dbt con el estado de sus pruebas.")
+
+
+@st.cache_data
+def read_lineage(database_version):
+    """(nodes, results) of the last dbt build, as the pipeline saved them."""
+    return lineage.read_tables(queries.run_sql)
+
+
+def show_pipeline_figures(summary):
+    """One strip of four real figures: the latest load and the latest dbt build."""
+    run = read_latest_run()
+    tests = (f'{summary["passing"]}/{summary["tests"]}', "superadas en la última construcción") if summary \
+        else ("—", "linaje dbt en migración")
+    st.markdown('<div class="runs-metrics">'
+                + build_runs_metric_html("Filas leídas", charts.format_thousands(run["rows_read"]),
+                                         "de los archivos de ODEPA")
+                + build_runs_metric_html("Filas cargadas", charts.format_thousands(run["rows_loaded"]),
+                                         f'{charts.format_thousands(run["rows_rejected"])} rechazadas, con su motivo')
+                + build_runs_metric_html("Modelos dbt", str(summary["models"]) if summary else "—",
+                                         "staging, intermedio y marts")
+                + build_runs_metric_html("Pruebas dbt", *tests)
+                + '</div>', unsafe_allow_html=True)
 
 
 def show_diagrams_page(mode):
-    """Only the complete journey, as large as the screen allows (D-136): the platform
-    architecture moved to DevOps y seguridad, and the small «Estado de la última
-    ejecución» repeated this diagram in miniature without showing any run."""
+    """Pipeline y linaje (step 4 of the refonte): the figures of the latest load and
+    build, then one card that switches between the dbt lineage, drawn from the
+    build's own manifest, and the journey by layers (D-136)."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
     show_pipeline_page_header()
-    with open_card("pipeline_main", "Recorrido completo por capas", hint=ARCHITECTURE_HINT):
+    nodes, results = read_lineage(get_database_version())
+    summary = lineage.summarize_build(nodes, results)
+    st.markdown(build_runs_css(mode), unsafe_allow_html=True)
+    show_pipeline_figures(summary)
+    view = st.session_state.get("pipeline_view", PIPELINE_LINEAGE) if summary else PIPELINE_JOURNEY
+    title = "Linaje dbt: de bronce a marts" if view == PIPELINE_LINEAGE else "Recorrido completo por capas"
+    with open_card("pipeline_main", title, hint=LINEAGE_HINT if view == PIPELINE_LINEAGE else ARCHITECTURE_HINT):
+        if summary:
+            st.segmented_control("Vista", [PIPELINE_LINEAGE, PIPELINE_JOURNEY], default=PIPELINE_LINEAGE,
+                                 key="pipeline_view", label_visibility="collapsed")
+        if view == PIPELINE_LINEAGE:
+            st.markdown(f'<div class="lineage-frame">{lineage.build_lineage_svg(nodes, results, mode)}</div>',
+                        unsafe_allow_html=True)
+            st.caption("Cada tarjeta es un modelo o una fuente del proyecto dbt; ✓ n/m son sus pruebas superadas. "
+                       "Las relaciones entre marts están en Modelo de datos.")
+            return
         # Inline SVG (not an image), so each piece shows its explanation on hover.
         st.markdown(zoom.build_zoom_frame_html(
                         architecture.build_journey_svg(states, figures, mode, animate_flow=True),
@@ -4953,7 +5006,7 @@ def show_diagrams_page(mode):
                         architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=True),
                         "diagram-narrow"), unsafe_allow_html=True)
         st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
-    st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
+        st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
 
 
 # endregion
@@ -6228,9 +6281,13 @@ def build_runs_css(mode):
 def show_runs_page(mode):
     """Ejecuciones with the Dashboard's rhythm: a one-line header, a strip of
     figures, the history as the main content and administration beside it (D-129)."""
-    show_compact_page_header("Ejecuciones", "Historial real del pipeline y ejecución manual "
-                             "con acceso de administración.")
-    show_runs_tab(mode)
+    show_compact_page_header("Ejecuciones y DevOps", "Historial real del pipeline, ejecución manual "
+                             "y la plataforma que lo opera: automatización, seguridad y observabilidad.")
+    runs_tab, platform_tab = st.tabs(["Ejecuciones", "Plataforma y seguridad"])
+    with runs_tab:
+        show_runs_tab(mode)
+    with platform_tab:
+        show_devops_tab(mode)
 
 
 def show_runs_tab(mode):
@@ -6622,6 +6679,12 @@ def show_quality_tab(mode):
     show_excluded_rows(latest_run)
 
 
+@st.cache_data
+def read_parity(database_version):
+    """SQLite backup against DuckDB, once per load (D-154)."""
+    return quality.check_parity()
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def read_quality_evidence(database_version, manifest_text, file_versions):
     """Invalidate checks when either the database, manifest or local source files change."""
@@ -6673,12 +6736,16 @@ def show_operations_page(mode):
     """Evidence first: implemented checks, independently checked storage, pending
     audits — as a card gallery, then the rest behind tabs instead of one long
     scroll (D-120)."""
-    show_compact_page_header("Calidad de datos", "Origen, controles y evidencia de los datos que alimentan el panel.")
+    show_compact_page_header("Calidad y auditoría", "Origen, controles, pruebas dbt y evidencia de los datos "
+                             "que alimentan el panel.")
     manifest = read_download_manifest()
     versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
                      for path in sorted(MANIFEST_FILE.parent.glob("*.csv")))
     checks, files = read_quality_evidence(get_database_version(), json.dumps(manifest, sort_keys=True), versions)
     run = read_latest_run()
+    nodes, results = read_lineage(get_database_version())
+    build = lineage.summarize_build(nodes, results)
+    parity = read_parity(get_database_version())
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
     matching = sum(item["status"].startswith("Verificado") for item in files)
     failed = sum(item["status"].startswith("Falla") for item in files)
@@ -6687,7 +6754,13 @@ def show_operations_page(mode):
         ["Origen y archivos", "Registro disponible" if manifest else "Sin registro disponible", f"{len(files)} archivos registrados en manifest.json, con fecha y huella SHA-256. Esto identifica las descargas; no certifica cada precio."],
         ["Integridad de archivos originales", source_state, f"{matching} de {len(files)} archivos locales coinciden con su huella; {failed} discrepancias. Los archivos ausentes no se consideran verificados."],
         ["Última carga registrada", "Superada" if run["status"] == etl.STATUS_LOADED else "Falla registrada", f"Ejecución {run['run_id']} · {format_chile_time(parse_run_start(run['started_at']))} (Chile) · estado {run['status']}. Es evidencia de la carga guardada, no del último intento remoto."],
-        ["Comprobación de la base actual", "Verificado · alcance limitado" if database_ok else "Falla detectada", f"SQLite: {'correcto' if checks['integrity_ok'] else 'error'}; referencias inválidas: {checks['foreign_keys']}; claves duplicadas: {checks['duplicates']}; precios utilizables con formato inválido: {checks['invalid']}."],
+        ["Pruebas dbt de la última construcción", ("Superadas" if build["ok"] else "Falla detectada") if build else "Pendiente",
+         (f"{build['passing']} de {build['tests']} pruebas superadas sobre {build['models']} modelos, el {build['built_at']:%d-%m-%Y}. "
+          "Si una falla, la base publicada no se reemplaza.") if build else "La base aún no trae el resultado de dbt."],
+        ["Comprobación de la base actual", "Verificado · alcance limitado" if database_ok else "Falla detectada", f"DuckDB, leída completa: {'correcta' if checks['integrity_ok'] else 'error'}; referencias inválidas: {checks['foreign_keys']}; claves duplicadas: {checks['duplicates']}; precios utilizables con formato inválido: {checks['invalid']}."],
+        ["Paridad SQLite ↔ DuckDB", ("Verificado" if parity["ok"] else "Falla detectada") if parity else "Pendiente",
+         (f"El respaldo SQLite y el data warehouse DuckDB tienen {charts.format_thousands(parity['rows'][1])} precios y "
+          f"{parity['rejections'][1]} rechazos, y la misma suma de precios (D-154).") if parity else "Sin respaldo SQLite para comparar."],
         ["Cobertura temporal", "Disponible", f"{checks['weeks']} semanas, desde {checks['first']} hasta {checks['last']}. Es cobertura registrada, no confirmación de que la fuente esté al día."],
         # D-144, D-146: the audit is automated in tests/test_data_audit.py.
         ["Reconciliación fuente → base", "Verificado · pruebas automáticas", "Cada ejecución de las pruebas reconstruye 120 precios semanales desde las filas crudas de ODEPA, sin el ETL. En la auditoría del 18-10-2026 coincidieron 400 de 400."],
@@ -6701,7 +6774,14 @@ def show_operations_page(mode):
     if not database_ok or failed:
         st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
     st.info("Los precios se reconstruyen desde la fuente y las cifras del panel se recalculan de forma independiente en las pruebas. Falta un contraste con otra fuente de precios: ODEPA es la única fuente oficial de estos datos.")
-    files_tab, run_tab = st.tabs(["Evidencia de archivos", "Última carga"])
+    rules_tab, files_tab, run_tab = st.tabs(["Reglas y pruebas dbt", "Evidencia de archivos", "Última carga (K8)"])
+    with rules_tab:
+        matrix = lineage.build_rule_matrix(nodes, results)
+        st.dataframe(matrix, hide_index=True, width="stretch",
+                     column_config={"Regla": st.column_config.TextColumn(width="small"),
+                                    "Pruebas dbt": st.column_config.NumberColumn(width="small")})
+        st.caption("Cada regla del PRD con las pruebas de dbt que la comprueban en cada carga, leídas del "
+                   "resultado de la última construcción.")
     with files_tab:
         if files:
             # One short fingerprint: the registered and the computed ones are equal when
@@ -6812,6 +6892,24 @@ def build_document_diagram_html(name, mode):
     return ""
 
 
+@st.cache_data(show_spinner=False)
+def build_document_pdf(path, modified, title, subtitle):
+    """The document as a PDF with cover, contents and page numbers, once per version."""
+    return document_pdf.build_pdf(Path(path).read_text(encoding="utf-8"), title, subtitle)
+
+
+def show_scalability_page(mode):
+    """Escalabilidad: the SAD's own section, so the page and GitHub say the same."""
+    text = (project.PROJECT_DIR / "docs" / "SAD.md").read_text(encoding="utf-8")
+    match = re.search(r"^## \d+\. Escalabilidad\n(.*?)(?=^## |\Z)", text, re.MULTILINE | re.DOTALL)
+    show_compact_page_header(PAGE_SCALABILITY, "Qué se agregaría y cuándo: clima previsto; nube solo con datos "
+                             "de una empresa (ADR-31).")
+    st.markdown('<div class="doc-source">' + build_external_link_html(
+        "Sección completa en docs/SAD.md", project.build_github_url("docs/SAD.md")) + '</div>', unsafe_allow_html=True)
+    with st.container(key="project_document"):
+        st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/SAD.md.")
+
+
 def show_project_document(mode, title):
     """A document of docs/ as a page: the same text as in GitHub, its diagrams drawn
     from the live project, no code."""
@@ -6820,9 +6918,14 @@ def show_project_document(mode, title):
     # The page header carries the title; the document's own H1 would repeat it.
     text = re.sub(r"\A# .*\n", "", text)
     show_compact_page_header(title, lead)
-    st.markdown('<div class="doc-source">' + build_external_link_html(
+    source, download = st.columns([4, 1], vertical_alignment="center")
+    source.markdown('<div class="doc-source">' + build_external_link_html(
         f"docs/{filename} en GitHub", project.build_github_url(f"docs/{filename}")) + '</div>',
         unsafe_allow_html=True)
+    path = project.PROJECT_DIR / "docs" / filename
+    download.download_button("Descargar PDF", build_document_pdf(str(path), path.stat().st_mtime, title, lead),
+                             file_name=f"GreenOcean_{filename.removesuffix('.md')}.pdf", mime="application/pdf",
+                             icon=":material/download:", width="stretch", key=f"pdf_{filename}")
     with st.container(key="project_document"):
         position = 0
         for marker in DOCUMENT_DIAGRAM.finditer(text):
@@ -6845,6 +6948,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_PRD: lambda mode: show_project_document(mode, PAGE_PRD),
     PAGE_SAD: lambda mode: show_project_document(mode, PAGE_SAD),
     PAGE_ADR: lambda mode: show_project_document(mode, PAGE_ADR),
+    PAGE_SCALABILITY: show_scalability_page,
     PAGE_HOME: show_home_page,
     PAGE_DATA: show_data_page,
     PAGE_COVER: show_cover_page,
@@ -6925,6 +7029,8 @@ def show_attribution():
     """Footer of every page: the data source. The project links live only in
     Operaciones (D-056)."""
     st.divider()
+    summary = lineage.summarize_build(*read_lineage(get_database_version()))
+    st.markdown(f'<div class="page-lineage">{lineage.build_badge_html(summary)}</div>', unsafe_allow_html=True)
     st.caption(ATTRIBUTION_TEXT)
 
 
@@ -7227,7 +7333,9 @@ SIDEBAR_TREE = [
     # «Datos» left the menu (D-130): the Resumen's search and the SQL console cover
     # what its raw, paginated browser offered; its address still works for old links.
     ("", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY]),
-          (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS]),
+          # Step 4 of the refonte: four pages in the order of the data, from the
+          # lineage to the model, its checks and its operation (DevOps joined Ejecuciones).
+          (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS]),
           # The two ODEPA datasets get their own folder (D-118): they are not
           # GitHub, so they do not belong on the GitHub page, and they are the
           # source the whole pipeline starts from, so they sit near Arquitectura.
@@ -7235,16 +7343,17 @@ SIDEBAR_TREE = [
           # «El proyecto» and the old «Documentación» folder of six pages are now
           # three, one per reader (D-105, D-110): the same folder pattern as every
           # other section, not a special-cased flat link.
-          (SECTION_LINKS, [PAGE_PRD, PAGE_SAD, PAGE_ADR]),
+          (SECTION_LINKS, [PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY]),
           # GitHub is not a section of the list: its mark lives in the sidebar
           # footer, on a light pill, next to Apariencia (D-124).
           ]),
 ]
-SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Arquitectura",
+SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingeniería de datos",
                       SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación",
                       SECTION_RESOURCES: "GitHub"}
 SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Contexto de precios",
-                  PAGE_DIAGRAMS: "Pipeline", PAGE_OPERATIONS: "Calidad de datos",
+                  PAGE_DIAGRAMS: "Pipeline y linaje", PAGE_OPERATIONS: "Calidad y auditoría",
+                  PAGE_RUNS: "Ejecuciones y DevOps",
                   PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual",
                   PAGE_COVER: "Descripción general", PAGE_BUSINESS: "Alcance del proyecto"}
 
@@ -7375,7 +7484,7 @@ def nav_open_key(window):
     return f"nav_open_{path}"
 
 
-SIDEBAR_NAV_VERSION = 5
+SIDEBAR_NAV_VERSION = 6
 
 
 def show_sidebar_navigation(windows_by_title, current_window, order):

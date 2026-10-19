@@ -34,6 +34,8 @@ ISSUES_URL = f"{GITHUB_URL}/issues"
 WHOLESALE_SOURCE_URL = ("https://datos.odepa.gob.cl/dataset/"
                         "precios-mayoristas-de-frutas-y-hortalizas")
 CONSUMER_SOURCE_URL = "https://datos.odepa.gob.cl/dataset/precios-consumidor"
+INE_IPC_SOURCE_URL = ("https://www.ine.gob.cl/estadisticas/economia/indices-de-precio-e-inflacion/"
+                      "indice-de-precios-al-consumidor")
 # Administration (T-54): its links are shown only after the control code is typed.
 WORKFLOW_PAGE_URL = f"{GITHUB_URL}/actions/workflows/semanal.yml"
 STREAMLIT_ADMIN_URL = "https://share.streamlit.io"

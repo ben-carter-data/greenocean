@@ -1,4 +1,5 @@
 """Tests for the live data journey diagram."""
+import re
 import sys
 from pathlib import Path
 
@@ -19,10 +20,31 @@ def make_states(state):
 def test_every_layer_and_step_is_drawn():
     svg = architecture.build_journey_svg(make_states(control.RUN_OK), FIGURES,
                                          charts.MODE_DARK)
-    for text in ["FUENTES", "INGESTA", "BRONCE", "LIMPIEZA", "REGLAS", "CALIDAD", "ORO",
-                 "CONSUMO", "raw.db", "datos.db", "Rechazos", "GitHub Actions",
-                 "OBSERVABILIDAD"]:
+    for text in ["FUENTES", "INGESTA", "ATERRIZAJE", "BRONCE", "STAGING", "INTERMEDIO",
+                 "MARTS", "ORO", "CONSUMO", "raw.db", "Parquet · bronce", "datos.duckdb",
+                 "Rechazos", "GitHub Actions", "OBSERVABILIDAD", "INE · IPC", "Descarga INE"]:
         assert text in svg
+
+
+def test_d154_d155_the_delivered_stack_replaces_sqlite_except_in_the_landing_zone():
+    """Bronze is Parquet, dbt transforms and tests, DuckDB serves; only the landing
+    database raw.db is still SQLite, and the INE IPC is the second source."""
+    states = make_states(control.RUN_OK)
+    for build in [architecture.build_journey_svg, architecture.build_vertical_journey_svg]:
+        svg = build(states, FIGURES, charts.MODE_DARK)
+        # Visible text only: hover explanations may still name the SQLite backup.
+        visible = re.sub(r"<title>[^<]*</title>", "", svg)
+        assert visible.count("SQLite") == (visible.count("SQLite · raw.db")
+                                           + visible.count("SQLite · tal cual"))
+        assert "datos.db<" not in visible and "datos.db " not in visible
+        for text in ["Staging", "Intermedio", "Marts y pruebas", "datos.duckdb", "INE · IPC"]:
+            assert text in svg
+    for slug in ["duckdb", "dbt", "apacheparquet"]:
+        assert architecture.brand_icons.logo_body(slug) in architecture.build_journey_svg(
+            states, FIGURES, charts.MODE_DARK)
+    devops = architecture.build_devops_svg(states, DEVOPS_FIGURES, charts.MODE_DARK)
+    assert "INE · IPC alimentos" in devops and "datos.duckdb · 33,9 MB" in devops
+    assert "SQLite" not in devops
 
 
 def test_pipeline_names_the_real_technology_used_at_each_stage():
@@ -31,14 +53,15 @@ def test_pipeline_names_the_real_technology_used_at_each_stage():
     # Informe semanal and Consultas SQL now show their first line as technology
     # pills (D-103: GitHub CLI/Markdown, SQL); every other label is untouched
     # because its own pills added nothing beyond what the node already said.
-    for label in ["HTTPS · CSV · sin API", "Python · requests", "Python · pandas",
-                  "Python · validaciones", "SQLite · raw.db", "SQLite · datos.db",
-                  "pytest · si fallan", "GitHub Actions · Secrets",
-                  "Streamlit · historial"]:
+    for label in ["HTTPS · CSV · sin API", "Python · requests", "SQLite · raw.db",
+                  "Parquet · copia exacta", "dbt · tipos y textos", "dbt · modelos y pruebas",
+                  "DuckDB · modelo estrella", "dbt build", "pytest · si fallan",
+                  "GitHub Actions · Secrets", "Streamlit · historial",
+                  "DuckDB · una fila por carga"]:
         assert label in svg
     # SQLite's own node draws the traditional database cylinder, not the brand
     # mark (D-103 follow-up): its title already spells out "SQLite" in words.
-    for slug in ["python", "streamlit", "github"]:
+    for slug in ["python", "streamlit", "github", "duckdb", "dbt", "apacheparquet"]:
         assert architecture.brand_icons.logo_body(slug) in svg
     assert architecture.brand_icons.logo_body("sqlite") not in svg
 
@@ -46,13 +69,15 @@ def test_pipeline_names_the_real_technology_used_at_each_stage():
 def test_d103_stack_pills_name_the_real_tools_without_inventing_any():
     """Every id in PIPELINE_STACK is a real, declared dependency (D-103)."""
     import re
-    requirements = (Path(__file__).resolve().parent.parent / "requirements.txt").read_text()
+    root = Path(__file__).resolve().parent.parent
+    requirements = ((root / "requirements.txt").read_text()
+                    + (root / "requirements-pipeline.txt").read_text())
     declared = {line.split(">=")[0].split("==")[0].split("<")[0].strip().lower()
                for line in requirements.splitlines() if line.strip()}
-    # pandas/requests are pip packages that must be declared; "python" names the
-    # interpreter itself and sqlite3/markdown-text/https/csv/sql/github-cli are
-    # not pip packages, so only these two are checked against requirements.txt.
-    library_ids = {"pandas", "requests"}
+    # These are pip packages that must be declared (dbt as dbt-core); "python" names
+    # the interpreter itself and sqlite3/parquet/markdown-text/https/csv/sql/github-cli
+    # are not pip packages, so they are not checked against the requirements.
+    library_ids = {"pandas", "requests", "pyarrow", "duckdb", "dbt-core"}
     for tech_id in library_ids:
         assert tech_id in declared, f"{tech_id} is not in requirements.txt"
     for stack in architecture.PIPELINE_STACK.values():
@@ -61,10 +86,14 @@ def test_d103_stack_pills_name_the_real_tools_without_inventing_any():
 
 
 def test_d103_a_node_gets_pills_only_for_tools_its_own_icon_does_not_already_show():
-    # Agente de descarga's icon is Python; the pill row should add "requests" but
+    # Agente ODEPA's icon is Python; the pill row should add "requests" but
     # not repeat "Python".
-    stack = architecture.visible_stack("Agente de descarga", architecture.draw_python_icon)
+    stack = architecture.visible_stack("Agente ODEPA", architecture.draw_python_icon)
     assert stack == ["requests"]
+    # The dbt models show dbt as their tile: the pills add SQL and DuckDB.
+    assert architecture.visible_stack("Staging", architecture.draw_dbt_icon) == ["sql", "duckdb"]
+    assert architecture.visible_stack("Parquet · bronce",
+                                      architecture.draw_parquet_icon) == ["python", "pyarrow"]
     # SQLite · raw.db already spells "SQLite" out in its own title: no pill needed.
     assert architecture.visible_stack("SQLite · raw.db", architecture.draw_sqlite_icon) is None
     # Informe semanal's icon is GitHub; python and markdown are new information.
@@ -77,13 +106,13 @@ def test_d103_a_node_gets_pills_only_for_tools_its_own_icon_does_not_already_sho
 def test_d103_pills_render_as_local_logos_or_styled_text_never_a_broken_image():
     svg = architecture.build_journey_svg(make_states(control.RUN_OK), FIGURES,
                                          charts.MODE_DARK)
-    assert ">requests<" in svg and ">pandas<" in svg and ">CSV<" in svg and ">HTTPS<" in svg
-    assert ">Markdown<" in svg and ">SQL<" in svg
+    assert ">requests<" in svg and ">pyarrow<" in svg and ">CSV<" in svg and ">HTTPS<" in svg
+    assert ">Markdown<" in svg and ">SQL<" in svg and ">DuckDB<" in svg and ">dbt<" in svg
     # No <image>/CDN reference: logos are inlined <path> data from bi/assets/logos/.
     assert "<image" not in svg
     vertical = architecture.build_vertical_journey_svg(make_states(control.RUN_OK), FIGURES,
                                                         charts.MODE_DARK)
-    assert ">pandas<" in vertical and ">requests<" in vertical
+    assert ">pyarrow<" in vertical and ">requests<" in vertical
 
 
 def test_figures_from_the_data_appear_under_their_steps():
@@ -97,7 +126,7 @@ def test_status_dots_follow_the_real_state_and_only_running_steps_pulse():
     states = make_states(control.RUN_OK)
     states["etl"] = control.RUN_IN_PROGRESS
     svg = architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK)
-    # The ETL state is shown on two steps: cleaning and business rules.
+    # The ETL state is shown on the two dbt transformation steps: staging and intermediate.
     assert svg.count('class="journey-running"') == 2
     states["load"] = control.RUN_FAILED
     svg = architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK)
@@ -164,9 +193,10 @@ def test_vertical_journey_has_every_step_figure_and_real_state():
     states = dict(make_states(control.RUN_OK), load=control.RUN_FAILED,
                   report=architecture.STATE_UNKNOWN)
     svg = architecture.build_vertical_journey_svg(states, FIGURES, charts.MODE_DARK)
-    for text in ["FUENTES", "INGESTA", "BRONCE", "LIMPIEZA", "REGLAS", "CALIDAD", "ORO",
-                 "CONSUMO", "raw.db", "datos.db", "Rechazos", "GitHub Actions",
-                 "OBSERVABILIDAD", "Panel Streamlit", "Informe semanal", "Consultas SQL"]:
+    for text in ["FUENTES", "INGESTA", "ATERRIZAJE", "BRONCE", "STAGING", "INTERMEDIO",
+                 "MARTS", "ORO", "CONSUMO", "raw.db", "datos.duckdb", "INE · IPC", "Rechazos",
+                 "GitHub Actions", "OBSERVABILIDAD", "Panel Streamlit", "Informe semanal",
+                 "Consultas SQL"]:
         assert text in svg
     for figure in FIGURES.values():
         assert figure in svg
@@ -203,7 +233,7 @@ DEVOPS_FIGURES = dict(FIGURES, database_size="33,9 MB", test_functions="180 func
 def test_d054_infrastructure_draws_each_platform_its_components_and_figures():
     states = dict(make_states(control.RUN_OK), report=control.RUN_FAILED)
     svg = architecture.build_devops_svg(states, DEVOPS_FIGURES, charts.MODE_DARK)
-    for text in ["ODEPA", "TU COMPUTADOR", "GITHUB", "STREAMLIT COMMUNITY CLOUD", "USUARIOS",
+    for text in ["ODEPA", "INE", "FUENTES", "TU COMPUTADOR", "GITHUB", "STREAMLIT COMMUNITY CLOUD", "USUARIOS",
                  "Claude Code", "Repositorio", "Pruebas (CI)", "Job semanal.yml",
                  "Caché de Actions", "Issues", "Permisos del job", "Secretos",
                  "App Streamlit", "Visitantes", "HTTPS · CSV", "git push",
@@ -221,8 +251,8 @@ def test_pipeline_gallery_previews_cover_every_layer_and_platform():
     journey = architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK)
     platform = architecture.build_platform_gallery_svg(states, DEVOPS_FIGURES,
                                                        charts.MODE_DARK)
-    for label in ["ODEPA", "INGESTA", "BRONCE", "Limpieza", "Reglas",
-                  "CALIDAD", "ORO", "Panel", "GitHub Actions", "Pruebas automáticas"]:
+    for label in ["ODEPA", "INE", "INGESTA", "BRONCE", "Staging", "Intermedio",
+                  "MARTS", "ORO", "Panel", "GitHub Actions", "Pruebas automáticas"]:
         assert label in journey
     for label in ["ODEPA", "Tu computador", "GitHub Actions",
                   "Streamlit Cloud", "Usuarios"]:
@@ -260,7 +290,8 @@ def test_every_piece_of_every_diagram_explains_itself_on_hover():
     assert "HTTPS: conexión web cifrada" in devops
     journey = architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK)
     assert "ETL = extraer, transformar y cargar" in journey
-    assert all(text in architecture.TOOLTIPS for text in ["Pruebas (CI)", "datos.db", "raw.db"])
+    assert all(text in architecture.TOOLTIPS
+               for text in ["Pruebas (CI)", "datos.duckdb", "raw.db", "INE · IPC"])
 
 
 def test_explicit_flow_illustration_moves_without_changing_the_recorded_state():
@@ -288,7 +319,7 @@ def test_execution_overview_has_real_platform_roles_and_optional_illustrative_mo
     for theme in charts.THEMES:
         still = architecture.build_execution_overview_html(theme, False)
         moving = architecture.build_execution_overview_html(theme, True)
-        for label in ("Git local", "GitHub Actions", "máquina Ubuntu temporal", "SQLite + informe", "Streamlit", "Navegador", "ODEPA"):
+        for label in ("Git local", "GitHub Actions", "máquina Ubuntu temporal", "DuckDB + informe", "Streamlit", "Navegador", "ODEPA"):
             assert label in still
         assert 'class="execution-overview execution-animated"' not in still
         assert 'class="execution-overview execution-animated"' in moving
