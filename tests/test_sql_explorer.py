@@ -124,3 +124,29 @@ def test_page_renders_and_runs_an_example():
     assert app.error and "Solo se permiten" in app.error[0].value
     page_text = " ".join(str(element.value) for element in app.markdown).lower()
     assert "robot" not in page_text
+
+
+def test_d180_every_template_runs_with_other_parameters():
+    values = {"anio": 2025, "producto": "Asado Carnicero", "canal": "Carnicería"}
+    for index, (title, _, template, names) in enumerate(sql_explorer.TEMPLATES):
+        sql = sql_explorer.render_example(index, values)
+        assert "{" not in sql, title
+        assert not sql_explorer.run_user_query(sql).rows.empty, title
+        if "anio" in names:
+            assert "2025" in sql and "2026" not in sql, title
+
+
+@needs_database
+def test_d180_one_click_writes_the_sql_and_runs_it_with_the_chosen_product():
+    from streamlit.testing.v1 import AppTest
+    script = (f"import sys; sys.path.insert(0, {str(REPOSITORY)!r})\n"
+              "from bi import sql_explorer\n"
+              "sql_explorer.show_sql_explorer_page('Claro')\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    ficha = next(i for i, t in enumerate(sql_explorer.TEMPLATES) if t[0] == "Ficha de un producto")
+    app.button(key=f"sqlx_chip_{ficha}").click().run()
+    assert not app.exception and len(app.dataframe) == 1
+    app.selectbox(key="sqlx_param_producto").select("Asado Carnicero").run()
+    assert not app.exception
+    assert "'Asado Carnicero'" in app.text_area[0].value
+    assert set(app.dataframe[0].value["canal"]) >= {"Carnicería"}

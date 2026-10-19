@@ -119,7 +119,9 @@ LEFT JOIN dbt_result AS r ON r.unique_id = n.unique_id"""),
 VIEW_NAMES = [name for name, _, _ in VIEWS]
 
 # Each example: (title, the question it answers, SQL). All run on the views above.
-EXAMPLES = [
+# Each example: (title, question, SQL template, parameters). Parameters are filled
+# from the selectors above the editor (D-180); render_example writes the final SQL.
+TEMPLATES = [
     ('Familias de la semana',
      '¿Qué familia subió más y cuál bajó más la última semana, y cuántas series subieron frente a cuántas bajaron?',
      """-- Cada serie (producto, calidad, canal, unidad y región) se compara con su semana anterior; la familia resume con la mediana.
@@ -137,10 +139,11 @@ SELECT familia, count(*) AS series_comparadas,
        count(*) FILTER (WHERE precio < anterior) AS bajaron
 FROM pares
 WHERE semana = (SELECT semana FROM ultima) AND semana_anterior = semana - INTERVAL 7 DAY
-GROUP BY familia ORDER BY variacion_mediana_pct DESC"""),
-    ('Más alzas que bajas en 2026',
-     '¿Qué productos tienen más probabilidad de subir de una semana a otra durante 2026?',
-     """-- Para otro año, cambia 2026. prob_alza_pct = semanas de alza sobre todas las comparaciones (producto × región); 50 = igual de probable subir que bajar.
+GROUP BY familia ORDER BY variacion_mediana_pct DESC""",
+     ()),
+    ('Más alzas que bajas del año',
+     '¿Qué productos tienen más probabilidad de subir de una semana a otra en el año elegido?',
+     """-- Año elegido arriba del editor: {anio}. prob_alza_pct = semanas de alza sobre todas las comparaciones (producto × región); 50 = igual de probable subir que bajar.
 WITH pares AS (
     SELECT familia, producto, variedad, calidad, canal, unidad, region, semana, precio,
            lag(precio) OVER w AS anterior, lag(semana) OVER w AS semana_anterior
@@ -154,27 +157,29 @@ SELECT familia, producto, variedad, canal,
        round(count(*) FILTER (WHERE precio > anterior) * 100.0 / count(*), 1) AS prob_alza_pct,
        round(median(precio / anterior - 1) * 100, 2) AS variacion_semanal_mediana_pct
 FROM pares
-WHERE year(semana) = 2026 AND semana_anterior = semana - INTERVAL 7 DAY
+WHERE year(semana) = {anio} AND semana_anterior = semana - INTERVAL 7 DAY
 GROUP BY familia, producto, variedad, canal
 HAVING count(*) >= 100
 ORDER BY prob_alza_pct DESC, comparaciones DESC
-LIMIT 100"""),
-    ('Los 100 que más subieron en 2026',
-     '¿Qué 100 productos acumulan la mayor alza de precio desde la primera semana de 2026?',
-     """-- Por serie (región incluida) se compara el primer y el último precio de 2026; el producto resume con la mediana de sus regiones.
+LIMIT 100""",
+     ('anio',)),
+    ('Los 100 que más subieron',
+     '¿Qué 100 productos acumulan la mayor alza de precio en el año elegido?',
+     """-- Por serie (región incluida) se compara el primer y el último precio de {anio}; el producto resume con la mediana de sus regiones.
 WITH anual AS (
     SELECT familia, producto, variedad, calidad, canal, unidad, region,
            arg_min(precio, semana) AS primero, arg_max(precio, semana) AS ultimo,
            count(*) AS semanas
     FROM precios
-    WHERE marca = 'SIN_MARCA' AND fuente = 'consumidor' AND year(semana) = 2026
+    WHERE marca = 'SIN_MARCA' AND fuente = 'consumidor' AND year(semana) = {anio}
     GROUP BY ALL HAVING count(*) >= 10
 )
 SELECT familia, producto, variedad, canal, unidad, count(*) AS regiones,
        round(avg(primero)) AS precio_inicio, round(avg(ultimo)) AS precio_actual,
        round(median(ultimo / primero - 1) * 100, 1) AS variacion_pct
 FROM anual GROUP BY familia, producto, variedad, canal, unidad HAVING count(*) >= 3
-ORDER BY variacion_pct DESC LIMIT 100"""),
+ORDER BY variacion_pct DESC LIMIT 100""",
+     ('anio',)),
     ('Sobre la inflación desde 2022',
      '¿Qué productos subieron más que el IPC de alimentos entre 2022 y hoy, y por cuántos puntos?',
      """-- Solo series con precio desde marzo de 2022 hasta hoy. sobre_inflacion_pp = alza del producto menos alza del IPC, en puntos porcentuales.
@@ -191,49 +196,66 @@ SELECT familia, producto, variedad, count(*) AS series,
        round(any_value(ipc.alza) * 100, 1) AS alza_ipc_pct,
        round((median(actual / inicial - 1) - any_value(ipc.alza)) * 100, 1) AS sobre_inflacion_pp
 FROM base, ipc GROUP BY familia, producto, variedad HAVING count(*) >= 3
-ORDER BY sobre_inflacion_pp DESC LIMIT 100"""),
+ORDER BY sobre_inflacion_pp DESC LIMIT 100""",
+     ()),
     ('Ficha de un producto',
-     '¿Cómo viene un producto concreto (la carne, el tomate…), sin importar su familia: precio por canal, alza en 12 meses y probabilidad de subir?',
-     """-- Cambia el nombre del producto en la primera línea (el nombre empieza por ese texto: 'Asado', 'Tomate', 'Papa').
-WITH elegido AS (SELECT 'Asado%' AS patron),
+     '¿Cómo viene un producto, sin importar su familia: precio por canal, alza en 12 meses y probabilidad de subir?',
+     """-- Parámetros elegidos arriba del editor: producto {producto} y año {anio}.
+WITH parametros AS (SELECT {producto_sql} AS producto, {anio} AS anio),
 pares AS (
-    SELECT p.producto, p.variedad, p.canal, p.semana, p.precio,
+    SELECT p.variedad, p.calidad, p.canal, p.unidad, p.semana, p.precio,
            lag(p.precio) OVER w AS anterior, lag(p.semana) OVER w AS semana_anterior
-    FROM precios AS p, elegido
-    WHERE p.marca = 'SIN_MARCA' AND p.fuente = 'consumidor' AND p.producto ILIKE elegido.patron
-    WINDOW w AS (PARTITION BY p.producto, p.variedad, p.calidad, p.canal, p.unidad, p.region ORDER BY p.semana)
+    FROM precios AS p
+    JOIN parametros AS par ON p.producto = par.producto
+    WHERE p.marca = 'SIN_MARCA' AND p.fuente = 'consumidor'
+    WINDOW w AS (PARTITION BY p.variedad, p.calidad, p.canal, p.unidad, p.region ORDER BY p.semana)
 ),
 ultimo AS (SELECT max(semana) AS semana FROM precios)
-SELECT producto, variedad, canal,
+SELECT variedad, calidad, canal, unidad,
        round(avg(precio) FILTER (WHERE semana > (SELECT semana FROM ultimo) - INTERVAL 28 DAY)) AS precio_ultimas_4_sem,
        round(avg(precio) FILTER (WHERE semana BETWEEN (SELECT semana FROM ultimo) - INTERVAL 392 DAY
                                                   AND (SELECT semana FROM ultimo) - INTERVAL 364 DAY)) AS precio_hace_un_anio,
        round((avg(precio) FILTER (WHERE semana > (SELECT semana FROM ultimo) - INTERVAL 28 DAY)
             / avg(precio) FILTER (WHERE semana BETWEEN (SELECT semana FROM ultimo) - INTERVAL 392 DAY
                                                    AND (SELECT semana FROM ultimo) - INTERVAL 364 DAY) - 1) * 100, 1) AS alza_12_meses_pct,
-       round(count(*) FILTER (WHERE year(semana) = 2026 AND semana_anterior = semana - INTERVAL 7 DAY AND precio > anterior) * 100.0
-             / nullif(count(*) FILTER (WHERE year(semana) = 2026 AND semana_anterior = semana - INTERVAL 7 DAY), 0), 1) AS prob_alza_2026_pct
+       round(count(*) FILTER (WHERE year(semana) = (SELECT anio FROM parametros)
+                                AND semana_anterior = semana - INTERVAL 7 DAY AND precio > anterior) * 100.0
+             / nullif(count(*) FILTER (WHERE year(semana) = (SELECT anio FROM parametros)
+                                         AND semana_anterior = semana - INTERVAL 7 DAY), 0), 1) AS prob_alza_semanal_pct
 FROM pares
-GROUP BY producto, variedad, canal
+GROUP BY variedad, calidad, canal, unidad
 HAVING count(*) FILTER (WHERE semana > (SELECT semana FROM ultimo) - INTERVAL 28 DAY) > 0
-ORDER BY producto, variedad, canal"""),
+ORDER BY canal, variedad""",
+     ('producto', 'anio')),
     ('Historia de un producto',
-     '¿Cómo cambió semana a semana el precio de un producto, en pesos de cada día y en pesos reales frente al IPC?',
-     """-- Cambia el producto y el canal en la primera línea. Precio promedio de las regiones con dato esa semana.
-WITH elegido AS (SELECT 'Tomate' AS producto, 'Larga vida' AS variedad, 'Supermercado' AS canal)
-SELECT p.semana,
+     '¿Cómo cambió semana a semana el precio de un producto en un canal, en pesos de cada día y en pesos reales?',
+     """-- Parámetros elegidos arriba del editor: producto {producto} en {canal}.
+-- Se sigue una sola serie (la variedad, calidad y unidad con más precios) para no mezclar presentaciones.
+WITH parametros AS (SELECT {producto_sql} AS producto, {canal_sql} AS canal),
+serie AS (
+    SELECT p.variedad, p.calidad, p.unidad
+    FROM precios AS p
+    JOIN parametros AS par ON p.producto = par.producto AND p.canal = par.canal
+    WHERE p.fuente = 'consumidor' AND p.marca = 'SIN_MARCA'
+    GROUP BY ALL
+    ORDER BY count(*) DESC
+    LIMIT 1
+)
+SELECT p.semana, s.variedad, s.unidad,
        round(avg(p.precio)) AS precio_nominal,
        round(avg(p.precio) * any_value(i.factor_real)) AS precio_real,
        round(any_value(i.indice_alimentos), 1) AS ipc_alimentos,
        count(*) AS regiones
 FROM precios AS p
-JOIN elegido AS e ON p.producto = e.producto AND p.variedad = e.variedad AND p.canal = e.canal
+JOIN parametros AS par ON p.producto = par.producto AND p.canal = par.canal
+JOIN serie AS s ON p.variedad = s.variedad AND p.calidad = s.calidad AND p.unidad = s.unidad
 JOIN ipc_semanal AS i ON i.semana = p.semana
-WHERE p.fuente = 'consumidor' AND p.marca = 'SIN_MARCA' AND p.calidad = 'Primera' AND p.unidad = 'kilo'
-GROUP BY p.semana
-ORDER BY p.semana DESC"""),
-    ("Evolución anual por familia",
-     "¿Cuánto subió cada familia de productos respecto del año anterior, en el mismo tramo del año?",
+WHERE p.fuente = 'consumidor' AND p.marca = 'SIN_MARCA'
+GROUP BY p.semana, s.variedad, s.unidad
+ORDER BY p.semana DESC""",
+     ('producto', 'canal')),
+    ('Evolución anual por familia',
+     '¿Cuánto subió cada familia de productos respecto del año anterior, en el mismo tramo del año?',
      """-- Compara de enero a la misma semana ISO de la última semana con datos, para no
 -- mezclar un año completo con uno en curso. Por producto, canal y unidad se toma el
 -- promedio nacional del tramo; la familia resume con la mediana de esas variaciones.
@@ -262,7 +284,8 @@ SELECT familia, anio,
 FROM variaciones
 WHERE salto = 1
 GROUP BY familia, anio
-ORDER BY familia, anio"""),
+ORDER BY familia, anio""",
+     ()),
     ('Brecha mayorista-consumidor',
      '¿Cuánto más paga el consumidor que el mayorista en cada familia, y cómo se compara con hace un año?',
      """-- Solo Frutas y Hortalizas tienen precio mayorista. Mismo producto, región, unidad y semana en los dos canales.
@@ -278,9 +301,10 @@ SELECT familia,
        round(median(margen) FILTER (WHERE semana > (SELECT s FROM ultima) - INTERVAL 28 DAY) * 100, 1) AS margen_ultimas_4_sem_pct,
        round(median(margen) FILTER (WHERE semana BETWEEN (SELECT s FROM ultima) - INTERVAL 392 DAY AND (SELECT s FROM ultima) - INTERVAL 364 DAY) * 100, 1) AS margen_hace_un_anio_pct,
        count(*) FILTER (WHERE semana > (SELECT s FROM ultima) - INTERVAL 28 DAY) AS comparaciones
-FROM pares GROUP BY familia ORDER BY margen_ultimas_4_sem_pct DESC"""),
+FROM pares GROUP BY familia ORDER BY margen_ultimas_4_sem_pct DESC""",
+     ()),
     ('Productos más volátiles',
-     '¿Qué productos cambian más de precio de una semana a otra en 2026?',
+     '¿Qué productos cambian más de precio de una semana a otra en el año elegido?',
      """-- volatilidad = desviación estándar de la variación semanal; salto_tipico_alto = el cambio que solo el 10 % de las semanas supera.
 WITH pares AS (
     SELECT familia, producto, variedad, canal, semana, precio,
@@ -291,8 +315,9 @@ WITH pares AS (
 SELECT familia, producto, variedad, canal, count(*) AS comparaciones,
        round(stddev_samp(precio / anterior - 1) * 100, 1) AS volatilidad_semanal_pct,
        round(quantile_cont(abs(precio / anterior - 1), 0.9) * 100, 1) AS salto_tipico_alto_pct
-FROM pares WHERE year(semana) = 2026 AND semana_anterior = semana - INTERVAL 7 DAY
-GROUP BY ALL HAVING count(*) >= 100 ORDER BY volatilidad_semanal_pct DESC LIMIT 30"""),
+FROM pares WHERE year(semana) = {anio} AND semana_anterior = semana - INTERVAL 7 DAY
+GROUP BY ALL HAVING count(*) >= 100 ORDER BY volatilidad_semanal_pct DESC LIMIT 30""",
+     ('anio',)),
     ('Regiones más caras por familia',
      '¿En qué regiones cada familia cuesta más que la mediana del país, en las últimas 12 semanas?',
      """-- Cada producto se compara con su mediana nacional; la región resume con la mediana de sus productos.
@@ -308,8 +333,31 @@ relativo AS (
 )
 SELECT familia, region, count(*) AS productos, round((median(indice) - 1) * 100, 1) AS sobre_mediana_pais_pct
 FROM relativo GROUP BY familia, region HAVING count(*) >= 5
-ORDER BY familia, sobre_mediana_pais_pct DESC"""),
+ORDER BY familia, sobre_mediana_pais_pct DESC""",
+     ()),
 ]
+PARAMETER_DEFAULTS = {"anio": 2026, "producto": "Tomate", "canal": "Supermercado"}
+
+
+def sql_text(value):
+    """A SQL string literal; the values come from our own lists, quoted anyway."""
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def render_example(index, values=None):
+    """The example's SQL with its parameters filled in (the year as a number)."""
+    values = {**PARAMETER_DEFAULTS, **(values or {})}
+    _, _, template, _ = TEMPLATES[index]
+    return (template.replace("{producto_sql}", sql_text(values["producto"]))
+            .replace("{canal_sql}", sql_text(values["canal"]))
+            .replace("{anio}", str(int(values["anio"])))
+            .replace("{producto}", str(values["producto"]))
+            .replace("{canal}", str(values["canal"])))
+
+
+# (title, question, SQL with the default parameters), as the tests and the chips read them.
+EXAMPLES = [(title, question, render_example(index)) for index, (title, question, _, _) in enumerate(TEMPLATES)]
+
 
 # Gold tables offered as CSV in «Llevar los datos a otra herramienta».
 EXPORTS = [
@@ -714,6 +762,11 @@ def build_css(palette):
 .st-key-sqlx_explorer [data-testid="stPopover"]>button {{ width:100%; min-height:28px !important; box-shadow:{raised} !important; }}
 .st-key-sqlx_explorer [data-testid="stPopover"]>button p {{ font-size:.76rem !important; }}
 .st-key-sqlx_main {{ gap:6px !important; padding:8px 12px 10px 10px; }}
+.st-key-sqlx_params {{ flex-wrap:wrap !important; gap:6px 8px !important; padding:2px 0 4px; }}
+.st-key-sqlx_params .sqlx-bar-label {{ margin-right:6px; }}
+.st-key-sqlx_params [data-testid="stSelectbox"] {{ width:auto !important; min-width:150px; max-width:260px; }}
+.st-key-sqlx_params [data-baseweb="select"] > div {{ min-height:28px !important; border-radius:999px !important;
+  background:{field} !important; border:1px solid {border} !important; box-shadow:{raised}; font-size:.78rem; }}
 .sqlx-tabstrip {{ display:flex; align-items:flex-end; gap:8px; margin:0; }}
 .sqlx-tab {{ display:inline-flex; align-items:center; gap:7px; padding:5px 14px 5px 11px; border-radius:9px 9px 0 0;
   background:{editor}; border:1px solid {border}; border-bottom:0; font-size:.76rem; color:{ink}; font-family:{mono};
@@ -869,11 +922,92 @@ def load_catalog():
     return cached(database_file, modified)
 
 
-def choose_example(index):
+PARAMETER_KEYS = {"anio": "sqlx_param_anio", "producto": "sqlx_param_producto", "canal": "sqlx_param_canal"}
+PARAMETER_LABELS = {"anio": "Año", "producto": "Producto", "canal": "Canal"}
+
+
+def parameter_values():
     import streamlit as st
-    st.session_state["sqlx_editor"] = EXAMPLES[index][2]
+    return {name: st.session_state.get(key, PARAMETER_DEFAULTS[name]) for name, key in PARAMETER_KEYS.items()}
+
+
+def outcome_of(sql):
+    """Run a query and keep what the page shows: the rows, or the message for the visitor."""
+    try:
+        return run_user_query(sql)
+    except (QueryRejected, QueryTimeout) as error:
+        return str(error)
+    except duckdb.Error as error:
+        return f"DuckDB devolvió un error: {error}"
+
+
+def choose_example(index):
+    """One click (D-180): the example's SQL, with the chosen parameters, is written in
+    the editor and run, so the answer and the code that gives it appear together."""
+    import streamlit as st
+    sql = render_example(index, parameter_values())
+    st.session_state["sqlx_editor"] = sql
     st.session_state["sqlx_example"] = index
-    st.session_state.pop("sqlx_result", None)
+    st.session_state["sqlx_rendered"] = sql
+    st.session_state["sqlx_result"] = outcome_of(sql)
+
+
+def apply_parameters():
+    """A selector changed: the current example is written and run again with it."""
+    import streamlit as st
+    index = st.session_state.get("sqlx_example")
+    try:
+        _, channels = load_parameter_options()
+    except Exception:
+        channels = {}
+    product = st.session_state.get(PARAMETER_KEYS["producto"], PARAMETER_DEFAULTS["producto"])
+    if channels.get(product) and st.session_state.get(PARAMETER_KEYS["canal"]) not in channels[product]:
+        st.session_state[PARAMETER_KEYS["canal"]] = channels[product][0]  # a channel that sells it
+    if index is not None:
+        choose_example(index)
+
+
+def load_parameter_options():
+    """Years with prices, consumer products, and each product's channels (cached per database)."""
+    import streamlit as st
+
+    @st.cache_data(ttl=600, show_spinner=False)
+    def cached(database_file, modified):
+        years = read_view("SELECT DISTINCT anio FROM semanas WHERE anio IS NOT NULL ORDER BY anio DESC", database_file)
+        channels = read_view("SELECT producto, canal, count(*) AS n FROM precios WHERE fuente = 'consumidor' "
+                             "AND marca = 'SIN_MARCA' GROUP BY ALL ORDER BY producto, n DESC", database_file)
+        by_product = {}
+        for row in channels.itertuples():
+            by_product.setdefault(row.producto, []).append(row.canal)
+        return [int(year) for year in years["anio"]], by_product
+    database_file = str(queries.DATABASE_FILE)
+    modified = os.path.getmtime(database_file) if os.path.exists(database_file) else 0
+    return cached(database_file, modified)
+
+
+def show_parameters(st, index):
+    """The template parameters of the chosen example, in one quiet row above the editor
+    (as SQL Server's «Specify values for template parameters»)."""
+    names = TEMPLATES[index][3]
+    if not names:
+        return
+    try:
+        years, channels = load_parameter_options()
+    except Exception:  # the defaults still work without the lists
+        return
+    options = {"anio": years, "producto": sorted(channels)}
+    product = st.session_state.get(PARAMETER_KEYS["producto"], PARAMETER_DEFAULTS["producto"])
+    options["canal"] = channels.get(product, [PARAMETER_DEFAULTS["canal"]])
+    with st.container(key="sqlx_params", horizontal=True, vertical_alignment="center", gap="small"):
+        st.markdown('<span class="sqlx-bar-label">Parámetros</span>', unsafe_allow_html=True)
+        for name in names:
+            key = PARAMETER_KEYS[name]
+            choices = options[name]
+            if st.session_state.get(key) not in choices:
+                default = PARAMETER_DEFAULTS[name]
+                st.session_state[key] = default if default in choices else choices[0]
+            st.selectbox(PARAMETER_LABELS[name], choices, key=key, on_change=apply_parameters,
+                         label_visibility="collapsed", help=PARAMETER_LABELS[name])
 
 
 def choose_view(name):
@@ -965,9 +1099,12 @@ def show_sql_explorer_page(mode):
                 show_exports(st)
             with main, st.container(key="sqlx_main"):
                 example = st.session_state.get("sqlx_example")
-                if example is not None and st.session_state["sqlx_editor"] != EXAMPLES[example][2]:
+                written = st.session_state.get("sqlx_rendered", EXAMPLES[0][2])
+                if example is not None and st.session_state["sqlx_editor"] not in (written, EXAMPLES[example][2]):
                     example = None
                 st.markdown(build_tab_html(example), unsafe_allow_html=True)
+                if example is not None:
+                    show_parameters(st, example)
                 with st.container(key="sqlx_editor_box"):
                     st.html(EDITOR_HTML, unsafe_allow_javascript=True)
                     sql = st.text_area("Consulta SQL", key="sqlx_editor", label_visibility="collapsed",
