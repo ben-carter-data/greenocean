@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: int_prices__validated
+    description: >
+      Une los precios mayoristas y al consumidor y da a cada fila su motivo de rechazo, o
+      ninguno si es válida (RN-11): cada fila leída queda cargada o rechazada una sola vez.
+  - name: int_prices__units_normalized
+    description: >
+      Lee la unidad de venta de cada fila válida y lleva su precio a kilo, unidad o litro
+      (RN-03 a RN-05); una unidad sin una sola cantidad declarada queda sin precio comparable.
+  - name: int_prices__weekly
+    description: >
+      Un precio por semana (lunes, RN-08), producto, región, canal y unidad: promedio ponderado
+      por volumen en mayorista (RN-07) y promedio simple al consumidor (RN-09).
+  - name: int_prices__outlier_flagged
+    description: >
+      Marca ATIPICO el precio que está a más de 5 veces, o a menos de un quinto, de la mediana
+      de su producto esa semana en la misma fuente (RN-12); no entra a los indicadores.

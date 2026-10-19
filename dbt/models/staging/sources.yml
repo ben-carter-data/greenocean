@@ -7,9 +7,9 @@ sources:
       external_location: "read_parquet('{{ var('bronze_dir') }}/{name}/*/*.parquet', hive_partitioning = true, union_by_name = true)"
     tables:
       - name: odepa_wholesale
-        description: Precios mayoristas diarios por mercado, un archivo por año.
+        description: Precios mayoristas diarios de ODEPA por mercado, copiados de raw.db a Parquet como texto, un archivo por año.
       - name: odepa_consumer
-        description: Precios al consumidor semanales por canal y región, un archivo por año.
+        description: Precios al consumidor semanales de ODEPA por canal y región, copiados de raw.db a Parquet como texto, un archivo por año.
       - name: ine_ipc
         description: >
           IPC del INE, división «Alimentos y bebidas no alcohólicas», tal como se publica:
