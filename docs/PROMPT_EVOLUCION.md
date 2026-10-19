@@ -75,7 +75,7 @@ Se agregan dos dependencias nuevas: `dbt-core` y `dbt-duckdb` (más `duckdb`). N
 4. **Datos en Parquet**, legibles directamente por los warehouses en la nube.
 5. **La auditoría corre sobre cualquier motor** y debe dar exactamente las mismas cifras antes de cualquier cambio.
 
-El SAD tendrá una sección «Camino de migración a un warehouse en la nube», paso a paso, y `profiles.yml` mostrará comentada la configuración de cada motor.
+El SAD (sección 12) y el ADR-31 dicen en pocas líneas cuándo se justificaría un warehouse en la nube y por qué hoy no; no se escribe una guía de migración detallada para una migración que, en el alcance público, probablemente nunca hará falta.
 
 ---
 
@@ -119,4 +119,4 @@ Cada fase termina con sus pruebas en verde, su entrada D-xxx en `docs/DECISIONES
 
 Lo que el proyecto **no** demuestra, y conviene decirlo en el SAD como límite consciente, es operar un warehouse en la nube con permisos, costos y volumen real. Por eso la portabilidad (sección 4) es parte del diseño: muestra que la migración está pensada, aunque hoy no haga falta.
 
-Si el objetivo del autor cambia hacia un puesto que exija explícitamente un warehouse en la nube, basta con agregar BigQuery como segundo destino del mismo proyecto dbt, sin que el panel dependa de él.
+Por su naturaleza (datos públicos, semanales y pequeños), el proyecto probablemente nunca necesitará la nube. La competencia en un warehouse en la nube se demuestra mejor en otro proyecto del portafolio, donde el volumen la justifique. Si un puesto lo exige, se puede agregar BigQuery como segundo destino del mismo proyecto dbt, sin que el panel dependa de él y declarándolo así en el ADR.

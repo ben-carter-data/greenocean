@@ -35,6 +35,9 @@ El registro completo del proyecto, `docs/DECISIONES.md`, tiene más de ciento cu
 | ADR-27 | GitHub es la fuente de verdad del código | Aceptada | D-143, D-148 |
 | ADR-28 | Ejecución manual: el mismo workflow, tras una clave | Aceptada | D-038, D-149 |
 | ADR-29 | Sin vigilante de archivos en el servidor publicado | Aceptada | D-109 |
+| ADR-30 | dbt Core, DuckDB y Parquet, portables a otro motor | Propuesta | D-152 |
+| ADR-31 | Un warehouse en la nube solo si entran datos de empresa | Aceptada | D-152 |
+| ADR-32 | Sin comparación por cadena de supermercados | Aceptada | D-001, D-152 |
 
 ---
 
@@ -327,3 +330,33 @@ El registro completo del proyecto, `docs/DECISIONES.md`, tiene más de ciento cu
 - **Alternativas:** no registradas.
 - **Consecuencias:** el panel arranca. Nadie edita archivos en el servidor, así que no se pierde ninguna función.
 - **Referencia:** D-109.
+
+## ADR-30 · dbt Core, DuckDB y Parquet, portables a otro motor
+
+- **Estado:** Propuesta (planificada, no implementada).
+- **Fecha:** 2026-10-19.
+- **Contexto:** SQLite cumple con el volumen actual, pero en ingeniería de datos se usa poco como warehouse, y las transformaciones viven en Python y consultas sueltas. Las nuevas fuentes previstas (IPC, clima) se integrarían mejor en un modelo por capas con pruebas declaradas.
+- **Decisión:** capa bronce en Parquet, transformaciones en dbt Core (staging → intermedio → marts, con las reglas como pruebas) y motor DuckDB en un solo archivo del repositorio. El motor se elige en la configuración de dbt; los modelos usan SQL estándar; el panel accede por una sola capa. La migración se hace en paralelo y solo se activa cuando la auditoría da cifras idénticas.
+- **Alternativas:** BigQuery en modo sandbox (las tablas y particiones vencen a los 60 días: el panel quedaría vacío si el pipeline se detiene); Snowflake y Redshift (solo periodos de prueba); Databricks (sobredimensionado para 34 MB); PostgreSQL gratuito (algunos planes pausan proyectos inactivos).
+- **Consecuencias:** se agregan dbt-core, dbt-duckdb y duckdb; costo cero y sin vencimientos; el commit semanal sigue manteniendo activo el workflow programado.
+- **Referencia:** D-152; plan en `docs/PROMPT_EVOLUCION.md`.
+
+## ADR-31 · Un warehouse en la nube solo si entran datos de empresa
+
+- **Estado:** Aceptada.
+- **Fecha:** 2026-10-19.
+- **Contexto:** se evaluó llevar el proyecto a un warehouse en la nube para mostrar esa competencia.
+- **Decisión:** no hacerlo mientras el alcance sea público. Con ~34 MB, carga semanal y un solo panel de lectura, la nube agregaría costo, secretos y riesgos (vencimientos, pausas) sin beneficio, incluso al sumar el IPC y el clima. Se adoptaría si una empresa sumara sus propios datos (ventas, costos, inventario) con varios GB, varios equipos, permisos o cargas frecuentes (criterios en el SAD, sección 12).
+- **Alternativas:** agregar BigQuery como segundo destino de dbt solo para demostrarlo; se deja como opción declarada, nunca como dependencia del panel.
+- **Consecuencias:** el proyecto se dimensiona según su necesidad real; la portabilidad de ADR-30 deja la migración a un cambio de configuración.
+- **Referencia:** D-152.
+
+## ADR-32 · Sin comparación por cadena de supermercados
+
+- **Estado:** Aceptada.
+- **Fecha:** 2026-10-19.
+- **Contexto:** se evaluó comparar precios por cadena (Lider, Jumbo, Unimarc) o indicar dónde conviene comprar.
+- **Decisión:** no hacerlo. ODEPA publica por canal y región, no por cadena; no se conoce una fuente abierta oficial por cadena, y el scraping de sitios comerciales contradice ADR-01 y es frágil. La vista «dónde comprar» por canal serviría al consumidor, que no es el usuario del producto, y repetiría la brecha que Contexto de precios ya muestra.
+- **Alternativas:** scraping de supermercados en línea; vista para el consumidor por canal.
+- **Consecuencias:** el producto sigue centrado en decisiones profesionales; se revisaría si apareciera una fuente oficial por cadena.
+- **Referencia:** D-001, D-152.

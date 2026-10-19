@@ -1140,3 +1140,9 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
   - **SAD** (`docs/SAD.md`): contexto, contenedores, flujo por capas, modelo de datos, escenarios de ejecución, despliegue, conceptos transversales, atributos de calidad y deuda técnica.
   - **ADR** (`docs/ADR.md`): 29 decisiones arquitectónicas en formato estándar (contexto, decisión, alternativas, consecuencias), cada una con su referencia D-xxx; cuando el registro no guarda las alternativas, lo dice.
 - **Cómo se muestran:** el panel lee los archivos de `docs/`, así que muestra lo mismo que GitHub; cada `[[diagrama:…]]` se reemplaza por el diagrama vivo (plataforma, pipeline o modelo estrella). La navegación «Siguiente» termina en la documentación. Las direcciones viejas de los tres perfiles abren el PRD o el SAD. Se quitan las páginas de perfil y su código.
+
+## D-152 · Evolución prevista: dbt, DuckDB, Parquet, IPC y clima; la nube solo con datos de empresa
+
+- **Fecha:** 2026-10-19.
+- **Decisión:** la próxima etapa usa solo tecnologías de código abierto o gratuitas sin vencimiento: Parquet (bronce), dbt Core (transformaciones y pruebas) y DuckDB (motor), portables a otro motor cambiando la configuración. Las nuevas fuentes previstas son el IPC del INE (precios reales) y el clima por región (contexto de las alertas). Un warehouse en la nube no se adopta en el alcance público: se justificaría solo si una empresa sumara sus propios datos. La comparación por cadena de supermercados queda fuera por falta de fuente oficial y por D-001.
+- **Documentado en:** `docs/PROMPT_EVOLUCION.md` (plan por fases y reglas), PRD (sección 13 y RNF-10), SAD (sección 12) y ADR-30 a ADR-32. Todo marcado como previsto, no entregado.

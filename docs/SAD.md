@@ -180,9 +180,31 @@ En el servidor publicado el vigilante de archivos de Streamlit está desactivado
 | Código de K5 residual | `bi/lag.py` y la consulta `k5_weekly_variations_sql` siguen en el repositorio aunque el indicador salió del producto | D-146 |
 | Token con vencimiento | Si vence, la ejecución manual deja de funcionar | D-038, D-053 |
 | Cuatro martes seguidos | La operación sin intervención aún no se observó cuatro semanas consecutivas | T-26 |
-| Migración futura | PostgreSQL gestionado queda como alternativa documentada, no implementada | DISENO.md §9, T-36 |
+| Warehouse en la nube | No hace falta en el alcance actual; los criterios para adoptarlo están en la sección 12 | ADR-31 |
 
-## 12. Glosario breve
+## 12. Evolución prevista
+
+Esta sección describe una arquitectura **planificada, no entregada** (ADR-30). El plan por fases está en `docs/PROMPT_EVOLUCION.md`.
+
+| Capa | Hoy | Prevista |
+|---|---|---|
+| Bronce | SQLite `raw.db`, fuera del repositorio | Parquet por fuente y año |
+| Transformación | Python (`etl/etl.py`) y consultas con nombre | dbt Core: staging → intermedio → marts, con las reglas como pruebas |
+| Oro | SQLite `datos.db` | DuckDB, un solo archivo en el repositorio |
+| Nuevas fuentes | — | IPC del INE (precios reales) y clima por región |
+
+**Portabilidad.** El motor se elige en la configuración de dbt; los modelos usan SQL estándar y macros donde los motores difieren; el panel accede a los datos por una sola capa (`bi/queries.py`). Así, pasar a BigQuery, Snowflake, PostgreSQL o Databricks sería un cambio de configuración, verificado con la misma auditoría.
+
+**¿Y un warehouse en la nube?** En su alcance público actual el proyecto no lo necesita y probablemente nunca lo necesitará: datos abiertos, semanales y pequeños, leídos por un solo panel. Se justificaría si una empresa lo adoptara y le sumara sus propios datos:
+
+| Criterio | Hoy | Umbral que justificaría la nube |
+|---|---|---|
+| Volumen | ~34 MB | Varios GB: ventas por tienda y día, costos, inventario |
+| Usuarios | Un panel de solo lectura | Varios equipos o herramientas BI sobre los mismos datos |
+| Acceso | Público | Permisos distintos por persona o datos sensibles |
+| Frescura | Semanal | Tiempo real o varias cargas al día |
+
+## 13. Glosario breve
 
 | Término | Significado |
 |---|---|
