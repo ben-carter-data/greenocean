@@ -1,4 +1,3 @@
-import base64
 """Tests for the dashboard: navigation, appearance, key figures and evidence."""
 import html
 import re
@@ -715,7 +714,7 @@ def test_analysis_sections_are_direct_destinations_without_tabs():
         dashboard.PAGE_ANALYSIS: "¿Qué precios subieron más?",
         dashboard.PAGE_GAP: "Mayorista y consumidor, la última semana",
         dashboard.PAGE_CHANNELS: "Precio por región",
-        dashboard.PAGE_SEASONALITY: "Índice mensual, enero 2022 = 100",
+        dashboard.PAGE_SEASONALITY: "Índice mensual por familia, enero 2022 = 100",
         dashboard.PAGE_ALERTS: "Alertas de la semana",
     }
     for page, title in expected.items():
@@ -1443,12 +1442,14 @@ def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
     app.query_params['vista'] = dashboard.PAGE_ARCHITECTURE
     app.run()
     assert not app.exception
-    # The alert dialog's shapes/legend CSS loads globally now, not only on Resumen.
+    # D-169: the trigger lives on top of the Resumen only; other pages carry neither it
+    # nor the dialog's stylesheet.
+    assert not [button for button in app.button if str(button.key) == 'home_alert_trigger']
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
     assert '.home-alert-gallery-legend' in markup and '[class*="st-key-home_alert_card_"]' in markup
     app.button(key='home_alert_trigger').click().run()
     assert not app.exception
-    # The dialog opens here too (not only from Resumen), with the same styled markup.
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
     assert 'home-alert-overview-marker' in markup
 
@@ -1548,8 +1549,10 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
     assert not app.exception
     alert = app.button(key="home_alert_trigger")
     assert alert.label.startswith("▲  Alerta de precio · ")
+    # D-169: the trigger sits on top of the Resumen, out of the sidebar.
+    assert alert not in app.sidebar.button
     css = " ".join(block.value for block in app.sidebar.markdown)
-    assert ".st-key-nav_alert" in css
+    assert ".st-key-home_alert_bar" in css
     # The footer keeps only Apariencia and the GitHub mark.
     assert 'class="sidebar-github' in css
 
@@ -1610,13 +1613,18 @@ def test_d163_the_page_answers_one_question_with_families_against_the_ipc():
     app = draw_page(dashboard.PAGE_SEASONALITY)
     assert not app.exception and not app.expander and not app.tabs
     text = ' '.join(block.value for block in app.markdown)
-    for expected in ['¿Qué alimentos subieron más que la inflación?', 'Índice mensual, enero 2022 = 100',
-                     'Desde enero 2022, frente a la inflación', 'toda su historia']:
+    for expected in ['¿Qué alimentos subieron más que la inflación?', 'Índice mensual por familia, enero 2022 = 100']:
         assert expected in text, expected
-    assert text.count('class="inf-row"') == 7  # every family, once
     assert 'la canasta de alimentos del INE subió' in text
-    # Retired as noise: the usual-range band, the next-months strip, the outlier table.
-    for gone in ['Rango habitual', 'Qué suele pasar', 'con precio fuera de lo habitual para la época']:
+    # D-167: one small chart per family, the same size and scale, in one faceted chart.
+    charts_drawn = app.get('vega_lite_chart')
+    assert len(charts_drawn) == 1
+    panels = json.loads(charts_drawn[0].proto.spec)['facet']['sort']
+    assert len(panels) == 7 and all('|' in panel and 'inflación' in panel for panel in panels)
+    # Retired as noise: the usual-range band, the next-months strip, the outlier table,
+    # the ranking card and the product history (D-167).
+    for gone in ['Rango habitual', 'Qué suele pasar', 'con precio fuera de lo habitual para la época',
+                 'Desde enero 2022, frente a la inflación', 'toda su historia']:
         assert gone not in text
 
 
@@ -1627,21 +1635,4 @@ def test_d163_without_inflation_the_ipc_is_the_flat_reference_and_the_pesos_are_
               "dashboard.render_page(dashboard.PAGE_SEASONALITY)\n")
     app = AppTest.from_string(script, default_timeout=60).run()
     assert not app.exception
-    captions = ' '.join(c.value for c in app.caption)
-    assert re.search(r'Pesos de [a-z]+ \d{4}, descontada la inflación', captions)
     assert 'Sin inflación: la línea punteada es la canasta del INE (100)' in ' '.join(b.value for b in app.markdown)
-
-
-@needs_database
-def test_d163_a_product_from_the_summary_opens_preselected():
-    options = dashboard.read_context_options(dashboard.get_database_version())
-    row = options[options['product'] == 'Palta'].iloc[0].to_dict() if (options['product'] == 'Palta').any() \
-        else options.iloc[0].to_dict()
-    payload = dict(row, channel='Feria libre')
-    token = base64.urlsafe_b64encode(json.dumps(payload, ensure_ascii=False).encode()).decode()
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
-              f"st.query_params['_home_key'] = {token!r}\n"
-              "from bi import dashboard\ndashboard.render_page(dashboard.PAGE_SEASONALITY)\n")
-    app = AppTest.from_string(script, default_timeout=60).run()
-    assert not app.exception
-    assert app.selectbox[0].value[1] == row['product']

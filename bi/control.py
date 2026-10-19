@@ -226,7 +226,8 @@ def describe_github_error(error, now=None):
         return "no hubo conexión con GitHub"
     response = getattr(error, "response", None)
     if response is None:
-        return "error inesperado al consultar GitHub"
+        # Not a GitHub answer: a bug or an unexpected payload. Its class names it.
+        return f"error inesperado al consultar GitHub ({type(error).__name__})"
     code = response.status_code
     if code in (403, 429) and response.headers.get("X-RateLimit-Remaining") == "0":
         limit = response.headers.get("X-RateLimit-Limit")

@@ -127,7 +127,7 @@ def test_alert_button_opens_family_overview_without_leaving_dashboard():
     app = AppTest.from_file(ROOT/'bi/dashboard.py', default_timeout=60).run()
     assert not app.exception
     assert not app.dataframe
-    assert app.button(key='home_alert_trigger') in app.sidebar.button
+    assert app.button(key='home_alert_trigger') not in app.sidebar.button  # on top of the Resumen (D-169)
     app.button(key='home_alert_trigger').click().run()
     assert not app.exception
     week = dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]
@@ -160,7 +160,7 @@ def test_d096_sidebar_footer_shows_the_real_alert_count():
     app = AppTest.from_file(ROOT/'bi/dashboard.py', default_timeout=60)
     app.run()
     assert not app.exception
-    button = next(b for b in app.sidebar.button if str(b.key) == 'home_alert_trigger')
+    button = app.button(key='home_alert_trigger')
     week = dashboard.read_latest_week()
     count = int((dashboard.read_price_alerts()['week_start'] == week).sum())
     assert button.label == f'▲  Alerta de precio · {count}'

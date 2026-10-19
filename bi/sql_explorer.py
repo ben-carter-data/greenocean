@@ -453,21 +453,31 @@ def export_csv(sql, database_file=queries.DATABASE_FILE):
 # region Page
 def build_css(palette):
     return f"""<style>
-.sqlx-lead {{ color: {palette['text']}; margin: 0 0 .6rem 0; font-size: .95rem; }}
-.sqlx-question {{ color: {palette['text']}; font-size: .9rem; margin: .2rem 0 .4rem 0; }}
-.sqlx-question b {{ color: {palette['strong_text']}; }}
-.sqlx-view {{ border: 1px solid {palette['card_border']}; background: {palette['card']};
-  border-radius: 8px; padding: .55rem .75rem; margin-bottom: .55rem; }}
-.sqlx-view h4 {{ margin: 0; font-size: .95rem; color: {palette['strong_text']};
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }}
-.sqlx-view h4 span {{ font-family: inherit; font-weight: 400; color: {palette['text']};
-  font-size: .8rem; margin-left: .4rem; }}
-.sqlx-view p {{ margin: .25rem 0 .35rem 0; font-size: .85rem; color: {palette['text']}; }}
-.sqlx-columns code {{ font-size: .78rem; margin: 0 .25rem .25rem 0; display: inline-block; }}
-.sqlx-columns code small {{ opacity: .65; }}
+.sqlx-bar {{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin:2px 0 10px; }}
+.sqlx-bar .sqlx-bar-label {{ font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:{palette['reference']}; margin-right:4px; }}
+[class*="st-key-sqlx_chip_"] button {{ min-height:28px !important; padding:2px 11px !important; border-radius:999px !important;
+  border:1px solid {palette['card_border']} !important; background:{palette['card']} !important;
+  box-shadow:none !important; }}
+[class*="st-key-sqlx_chip_"] button p {{ font-size:.8rem !important; color:{palette['strong_text']} !important; }}
+[class*="st-key-sqlx_chip_"] button:hover {{ border-color:{palette['accent']} !important; }}
+.st-key-sqlx_chips {{ flex-wrap:wrap !important; gap:6px 8px !important; }}
+.sqlx-side h4 {{ margin:0 0 4px; font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  color:{palette['reference']}; }}
+[class*="st-key-sqlx_view_"] button {{ width:100%; justify-content:flex-start; min-height:26px !important;
+  padding:2px 6px !important; border:0 !important; background:transparent !important; box-shadow:none !important;
+  border-radius:6px; }}
+[class*="st-key-sqlx_view_"] button:hover {{ background:color-mix(in srgb,{palette['accent']} 8%,transparent) !important; }}
+[class*="st-key-sqlx_view_"] button p {{ font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:.8rem !important;
+  color:{palette['strong_text']} !important; }}
+.sqlx-side small {{ display:block; font-size:.72rem; color:{palette['reference']}; line-height:1.3; margin:-8px 0 2px 6px; }}
+.sqlx-question {{ color:{palette['text']}; font-size:.86rem; margin:0 0 .3rem; }}
+.sqlx-question b {{ color:{palette['strong_text']}; }}
 div[data-testid="stTextArea"] textarea {{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .85rem; }}
-.sqlx-note {{ color: {palette['text']}; font-size: .85rem; }}
+  font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.85rem; line-height:1.5; }}
+.st-key-sqlx_editor_box {{ border:1px solid {palette['card_border']}; border-radius:10px; background:{palette['card']};
+  padding:8px 10px 6px; }}
+.sqlx-note {{ color:{palette['text']}; font-size:.82rem; margin:0; }}
 </style>"""
 
 
@@ -482,11 +492,9 @@ def build_header_html():
 
 
 def build_view_html(name, description, count, columns):
-    column_html = "".join(f"<code>{html.escape(column)} <small>{html.escape(kind.lower())}</small></code>"
-                          for column, kind in columns)
+    """One quiet line under a table's name: its rows; the rest waits in the tooltip."""
     count_text = f"{count:,}".replace(",", ".")
-    return (f'<div class="sqlx-view"><h4>{html.escape(name)}<span>{count_text} filas</span></h4>'
-            f'<p>{html.escape(description)}</p><div class="sqlx-columns">{column_html}</div></div>')
+    return f'<small>{count_text} filas · {len(columns)} columnas</small>' 
 
 
 def load_catalog():
@@ -507,6 +515,14 @@ def choose_example(index):
     st.session_state.pop("sqlx_result", None)
 
 
+def choose_view(name):
+    """A table clicked in the side list: its first rows, as a SQL client would."""
+    import streamlit as st
+    st.session_state["sqlx_editor"] = f"SELECT *\nFROM {name}\nLIMIT 100"
+    st.session_state["sqlx_example"] = None
+    st.session_state.pop("sqlx_result", None)
+
+
 def show_result(st, outcome):
     if isinstance(outcome, str):
         st.error(outcome)
@@ -514,86 +530,72 @@ def show_result(st, outcome):
     rows, truncated, seconds = outcome.rows, outcome.truncated, outcome.seconds
     count_text = f"{len(rows):,}".replace(",", ".")
     note = f" · se muestran las primeras {ROW_LIMIT:,}".replace(",", ".") if truncated else ""
-    st.caption(f"{count_text} filas · {seconds * 1000:,.0f} ms{note}".replace(",", "."))
+    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+        st.caption(f"{count_text} filas · {seconds * 1000:,.0f} ms{note}".replace(",", "."))
+        if not rows.empty:
+            st.download_button("CSV", to_csv_bytes(rows), "consulta.csv", "text/csv", key="sqlx_csv",
+                               on_click="ignore", icon=":material/download:")
+            st.download_button("Parquet", partial(to_parquet_bytes, rows), "consulta.parquet",
+                               "application/vnd.apache.parquet", key="sqlx_parquet", on_click="ignore",
+                               icon=":material/download:")
     st.dataframe(rows, use_container_width=True, hide_index=True)
-    if rows.empty:
-        return
-    left, right, _ = st.columns([1, 1, 3])
-    left.download_button("Descargar CSV", to_csv_bytes(rows), "consulta.csv", "text/csv",
-                         key="sqlx_csv", on_click="ignore")
-    right.download_button("Descargar Parquet", partial(to_parquet_bytes, rows), "consulta.parquet",
-                          "application/vnd.apache.parquet", key="sqlx_parquet", on_click="ignore")
 
 
 def show_exports(st):
-    st.markdown("#### Llevar los datos a otra herramienta")
-    st.markdown(
-        '<p class="sqlx-note">Las tablas gold principales, con las mismas columnas legibles de '
-        f'las vistas. Los precios se limitan a las últimas {EXPORT_WEEKS} semanas para que el '
-        'archivo tenga un tamaño razonable; el historial completo está en la base.</p>',
-        unsafe_allow_html=True)
-    columns = st.columns(3)
-    for position, (file_name, label, sql) in enumerate(EXPORTS):
-        columns[position % 3].download_button(
-            label, partial(export_csv, sql), file_name, "text/csv", key=f"sqlx_export_{file_name}",
-            on_click="ignore", icon=":material/download:")
-    st.markdown(
-        '<p class="sqlx-note">El archivo <code>etl/datos.duckdb</code> también se abre '
-        'directamente con herramientas compatibles con DuckDB (DBeaver, Python, R), y con '
-        'Power BI o Excel mediante el driver ODBC de DuckDB.</p>', unsafe_allow_html=True)
+    """The main gold tables as CSV, behind one small button (D-168)."""
+    with st.popover("Descargar tablas", icon=":material/download:", help="Las tablas gold en CSV, para Excel o Power BI."):
+        st.markdown(f'<p class="sqlx-note">Los precios se limitan a las últimas {EXPORT_WEEKS} semanas; el historial '
+                    'completo está en la base. El archivo <code>etl/datos.duckdb</code> también se abre con DBeaver, '
+                    'Python, R, o con Power BI y Excel mediante el driver ODBC de DuckDB.</p>', unsafe_allow_html=True)
+        for file_name, label, sql in EXPORTS:
+            st.download_button(label, partial(export_csv, sql), file_name, "text/csv",
+                               key=f"sqlx_export_{file_name}", on_click="ignore", icon=":material/download:")
 
 
 def show_sql_explorer_page(mode):
-    """The «Consultas SQL» page: views, examples, editor, results and exports."""
+    """The «Consultas SQL» page as a small SQL client (D-168): the examples as labels
+    on top, the tables beside the editor, the result under it."""
     import streamlit as st
 
     palette = charts.get_palette(mode)
     st.markdown(build_css(palette), unsafe_allow_html=True)
     st.markdown(build_header_html(), unsafe_allow_html=True)
-    st.markdown(
-        '<p class="sqlx-lead">Escribe SQL de DuckDB sobre vistas con nombres legibles '
-        '(<code>precios</code>, <code>ipc_semanal</code>, <code>cargas</code>…) o parte de un '
-        'ejemplo. Cada consulta abre una conexión nueva de solo lectura.</p>',
-        unsafe_allow_html=True)
-
+    if "sqlx_editor" not in st.session_state:
+        st.session_state["sqlx_editor"] = EXAMPLES[0][2]
+        st.session_state["sqlx_example"] = 0
+    with st.container(key="sqlx_chips", horizontal=True, vertical_alignment="center"):
+        st.markdown('<span class="sqlx-bar-label">Ejemplos</span>', unsafe_allow_html=True)
+        for index, (title, question, _) in enumerate(EXAMPLES):
+            st.button(title, key=f"sqlx_chip_{index}", help=question, on_click=choose_example, args=(index,))
     try:
         catalog = load_catalog()
     except Exception as error:  # the page still explains itself without the database
         catalog = []
         st.warning(f"No se pudo leer la base de datos: {error}")
-    with st.expander("Tablas disponibles", expanded=False):
+    side, main = st.columns([1, 3.6], gap="medium")
+    with side:
+        st.markdown('<div class="sqlx-side"><h4>Tablas</h4></div>', unsafe_allow_html=True)
         for name, description, count, columns in catalog:
-            st.markdown(build_view_html(name, description, count, columns), unsafe_allow_html=True)
-        st.caption("Las tablas originales del modelo estrella (weekly_price, dim_product…) "
-                   "también se pueden consultar, pero las vistas evitan los identificadores.")
-
-    st.markdown("#### Ejemplos")
-    chip_columns = st.columns(4)
-    for index, (title, question, _) in enumerate(EXAMPLES):
-        chip_columns[index % 4].button(title, key=f"sqlx_chip_{index}", help=question,
-                                       on_click=choose_example, args=(index,),
-                                       use_container_width=True)
-    if "sqlx_editor" not in st.session_state:
-        st.session_state["sqlx_editor"] = EXAMPLES[0][2]
-        st.session_state["sqlx_example"] = 0
-    example = st.session_state.get("sqlx_example")
-    if example is not None and st.session_state["sqlx_editor"] == EXAMPLES[example][2]:
-        st.markdown(f'<p class="sqlx-question"><b>{html.escape(EXAMPLES[example][0])}.</b> '
-                    f'{html.escape(EXAMPLES[example][1])}</p>', unsafe_allow_html=True)
-
-    sql = st.text_area("Consulta SQL", key="sqlx_editor", height=280,
-                       label_visibility="collapsed")
-    if st.button("Ejecutar", type="primary", key="sqlx_run", icon=":material/play_arrow:"):
-        try:
-            with st.spinner("Ejecutando…"):
-                st.session_state["sqlx_result"] = run_user_query(sql)
-        except (QueryRejected, QueryTimeout) as error:
-            st.session_state["sqlx_result"] = str(error)
-        except duckdb.Error as error:
-            st.session_state["sqlx_result"] = f"DuckDB devolvió un error: {error}"
-    if "sqlx_result" in st.session_state:
-        show_result(st, st.session_state["sqlx_result"])
-
-    st.divider()
-    show_exports(st)
+            st.button(name, key=f"sqlx_view_{name}", on_click=choose_view, args=(name,),
+                      help=f"{description} Columnas: " + ", ".join(column for column, _ in columns))
+            st.markdown('<div class="sqlx-side">' + build_view_html(name, description, count, columns)
+                        + '</div>', unsafe_allow_html=True)
+        show_exports(st)
+    with main:
+        example = st.session_state.get("sqlx_example")
+        if example is not None and st.session_state["sqlx_editor"] == EXAMPLES[example][2]:
+            st.markdown(f'<p class="sqlx-question"><b>{html.escape(EXAMPLES[example][0])}.</b> '
+                        f'{html.escape(EXAMPLES[example][1])}</p>', unsafe_allow_html=True)
+        with st.container(key="sqlx_editor_box"):
+            sql = st.text_area("Consulta SQL", key="sqlx_editor", height=230, label_visibility="collapsed")
+            if st.button("Ejecutar", type="primary", key="sqlx_run", icon=":material/play_arrow:"):
+                try:
+                    with st.spinner("Ejecutando…"):
+                        st.session_state["sqlx_result"] = run_user_query(sql)
+                except (QueryRejected, QueryTimeout) as error:
+                    st.session_state["sqlx_result"] = str(error)
+                except duckdb.Error as error:
+                    st.session_state["sqlx_result"] = f"DuckDB devolvió un error: {error}"
+        if "sqlx_result" in st.session_state:
+            show_result(st, st.session_state["sqlx_result"])
 # endregion

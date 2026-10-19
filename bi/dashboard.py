@@ -12,6 +12,7 @@ import hmac
 import html
 import importlib
 import json
+import logging
 import math
 import re
 import sys
@@ -4921,6 +4922,7 @@ def show_market_overview(mode, prefix):
         address=build_page_address(page)
         return address+('&' if '?' in address else '?')+urlencode({
             '_home_key':token,'_home_group':row['product_group'],'_home_region':region,'_home_week':week})
+    show_alert_trigger()
     st.markdown('<div class="greenocean-mockup">' + home_mockup.dashboard_header(
         describe_week_span(week), updated, latest['status']==etl.STATUS_LOADED, model['family_rows'],
         regional_rows, None if region == ALL_VALUES else region, compared=sum(model['counts']),
@@ -4940,8 +4942,8 @@ def show_market_overview(mode, prefix):
             rows=[row for row in model['family_rows'] if row['product_group'] == family]
             average=next((value for name, value, _ in averages if name == family), None)
             heading = st.empty()
-            search_column, channel_column, order_column, history_column = st.columns(
-                [1.35, 1.25, 1.5, 0.9], vertical_alignment='center')
+            search_column, channel_column, order_column = st.columns(
+                [1.35, 1.25, 1.5], vertical_alignment='center')
             query = search_column.text_input('Buscar', key='home_products_search', icon=':material/search:',
                                              placeholder='Producto, ej.: lechuga', label_visibility='collapsed',
                                              type='search', live=True)
@@ -4965,13 +4967,8 @@ def show_market_overview(mode, prefix):
             directions=read_cached_region_directions(get_database_version(), week)
             for row in rows:
                 row['_regions']=directions.get(tuple(row[field] for field in queries.KEY_COLUMNS+['channel']))
-            history_address=(context_link(PAGE_SEASONALITY, rows[0]) if rows else build_page_address(PAGE_SEASONALITY))
-            history_column.markdown(f'<div class="greenocean-mockup"><a class="mock-history-button" '
-                                    f'href="{html.escape(history_address)}" target="_self" title="Este producto frente a la inflación de alimentos">Ver contexto</a></div>',
-                                    unsafe_allow_html=True)
             st.markdown('<div class="greenocean-mockup">' + home_mockup.products_table(
-                rows, lambda row: context_link(PAGE_SEASONALITY, row), model['week_label'],
-                model['previous_label'], query.strip()) + '</div>', unsafe_allow_html=True)
+                rows, model['week_label'], model['previous_label'], query.strip()) + '</div>', unsafe_allow_html=True)
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown('<div class="greenocean-mockup">' + home_mockup.coverage_note(
         model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION), family)
@@ -6057,39 +6054,23 @@ def read_family_inflation(database_version):
     return rows, last, summary, ipc_total, ipc_year
 
 
-def build_family_ranking_html(summary, ipc_total, ipc_year):
-    """Each family against the food IPC: change since January 2022, 12 months, verdict."""
+def build_family_panel_titles(summary):
+    """{family: "Hortalizas|+60,2 % · más que la inflación"}, biggest gap first."""
     percent = lambda value: "—" if value is None or pd.isna(value) else charts.format_signed_percent(value)
-    kinds = {"más que la inflación": "rise", "menos que la inflación": "fall", "al ritmo de la inflación": "neutral"}
-    top = max([abs(value) for value in summary["total"].dropna()] + [abs(ipc_total), 1])
-    rows = []
-    for row in summary.itertuples():
-        color = inflation_view.FAMILY_COLORS.get(row.family, "#94a3b8")
-        width = 0 if pd.isna(row.total) else abs(row.total) / top * 100
-        rows.append(f'<div class="inf-row"><i style="background:{color}"></i>'
-                    f'<span class="inf-name">{html.escape(home_mockup.short_family(row.family))}</span>'
-                    f'<span class="inf-bar"><b style="width:{width:.1f}%;background:{color}"></b>'
-                    f'<em style="left:{abs(ipc_total) / top * 100:.1f}%"></em></span>'
-                    f'<span class="inf-total">{percent(row.total)}</span>'
-                    f'{build_chip(row.verdict.capitalize(), kinds.get(row.verdict, "neutral"))}'
-                    f'<span class="inf-year">12 m: {percent(row.yearly)}</span></div>')
-    return (f'<section class="inf-card"><h3>Desde enero 2022, frente a la inflación</h3>'
-            f'<p class="inf-lead">La marca vertical es el IPC de alimentos: {percent(ipc_total)} '
-            f'(12 m: {percent(ipc_year)}).</p>' + "".join(rows) + '</section>')
+    return {row.family: f"{home_mockup.short_family(row.family)}|{percent(row.total)} · {row.verdict}"
+            for row in summary.itertuples()}
 
 
 def show_price_context_page(mode):
-    """Precios e inflación (D-163): one question — which food families rose more than the
-    food IPC of the INE — then one product, its whole series, today's pesos or without
-    inflation. Everything that did not give a clear insight left the page."""
+    """Precios e inflación (D-163, D-167): one question — which food families rose more
+    than the food IPC of the INE — answered by one small chart per family, the same
+    size and scale, each against the IPC. Nothing else on the page."""
     st.markdown(build_context_css(mode), unsafe_allow_html=True)
     version = get_database_version()
-    options = read_context_options(version)
-    if options.empty:
+    rows, last, summary, ipc_total, ipc_year = read_family_inflation(version)
+    if rows.empty:
         st.info(NO_DATA_TEXT)
         return
-    key = read_context_key(options)
-    rows, last, summary, ipc_total, ipc_year = read_family_inflation(version)
     latest = read_latest_run()
     run_kind = "ok" if latest["status"] == etl.STATUS_LOADED else "failed"
     month = lambda pair: f"{price_context.MONTHS[pair[1] - 1]} {pair[0]}"
@@ -6097,7 +6078,7 @@ def show_price_context_page(mode):
     below = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "menos que la inflación", "family"]]
     join = lambda names: ", ".join(names[:-1]) + " y " + names[-1] if len(names) > 1 else "".join(names)
     answer = (f'De enero 2022 a {month(last)}, la canasta de alimentos del INE subió '
-              f'<b>{charts.format_signed_percent(ipc_total)}</b>.'
+              f'<b>{charts.format_signed_percent(ipc_total)}</b> ({charts.format_signed_percent(ipc_year)} en 12 meses).'
               + (f' Subieron más: <b>{html.escape(join(above))}</b>.' if above else '')
               + (f' Subieron menos: <b>{html.escape(join(below))}</b>.' if below else ''))
     title, basis = st.columns([2.9, 1.1], vertical_alignment="bottom")
@@ -6108,49 +6089,17 @@ def show_price_context_page(mode):
     basis.segmented_control("Precios", [BASIS_NOMINAL, BASIS_REAL], default=BASIS_NOMINAL,
                             key=CONTEXT_BASIS_KEY, label_visibility="collapsed", help=BASIS_HELP)
     real = st.session_state.get(CONTEXT_BASIS_KEY) == BASIS_REAL
-    left, right = st.columns([2.1, 1.25], gap="small")
-    with left, st.container(key="ctx_main"):
+    with st.container(key="ctx_main"):
         lead = ("Sin inflación: la línea punteada es la canasta del INE (100). Arriba de ella, la familia subió más."
-                if real else "Precios de consumidor de ODEPA, mediana por familia; línea punteada: IPC de alimentos.")
-        st.markdown(f'<div class="ctx-head"><h3>Índice mensual, enero 2022 = 100</h3></div>'
+                if real else "Precios de consumidor de ODEPA, mediana por familia; la línea punteada es el IPC de alimentos. "
+                "Misma escala en todos los gráficos.")
+        st.markdown(f'<div class="ctx-head"><h3>Índice mensual por familia, enero 2022 = 100</h3></div>'
                     f'<p class="ctx-reading">{lead}</p>', unsafe_allow_html=True)
-        show_chart(inflation_view.draw_family_chart(rows, mode, real=real))
-    with right:
-        st.markdown(build_family_ranking_html(summary, ipc_total, ipc_year), unsafe_allow_html=True)
+        st.altair_chart(inflation_view.draw_family_grid(rows, build_family_panel_titles(summary), mode, real=real),
+                        width="content", theme=None)
     st.caption(f"Cada familia compara los mismos productos de enero 2022 a {month(last)} (series de consumidor con "
                "precio en ambos meses). El IPC de alimentos se calcula con precios de alimentos: subir con él no "
                "prueba que la inflación cause la subida; dice si la familia subió más o menos que la canasta.")
-    # One product, its whole history: the detail below the big picture.
-    with st.container(key="ctx_product"):
-        head, field = st.columns([2.1, 1.25], vertical_alignment="bottom")
-        key = choose_context_product(options, key, field)
-        label = describe_context_product(key)
-        prices = read_cached_national_prices(version)
-        mask = prices["channel"].isin(CONTEXT_CHANNELS)
-        for column in queries.KEY_COLUMNS:
-            mask &= prices[column] == key[column]
-        product = prices.loc[mask, ["week_start", "channel", "national_price"]].copy()
-        ipc = read_ipc_weekly(version)
-        product = product.merge(ipc[["week_start", "real_factor"]], on="week_start", how="left")
-        product["real_price"] = product["national_price"] * product["real_factor"]
-        week = read_latest_week()
-        splits = [(channel, split_yearly_change(group, ipc, week)) for channel, group in product.groupby("channel")]
-        money = lambda value: ("+" if value >= 0 else "−") + "$" + charts.format_thousands(abs(value))
-        sentence = "; ".join(f"en {channel.lower()}, {money(split['change'])} = inflación {money(split['inflation'])}"
-                             f" · propio {money(split['own'])}" for channel, split in splits if split)
-        head.markdown(f'<div class="ctx-head"><h3>{html.escape(label)}: toda su historia</h3></div>'
-                      + (f'<p class="ctx-reading">En 12 meses {sentence}.</p>' if sentence else ''),
-                      unsafe_allow_html=True)
-        if product.empty:
-            st.info("Este producto no tiene precios de feria ni de supermercado.")
-        else:
-            show_chart(inflation_view.draw_product_chart(product, mode, real=real))
-            st.caption((f"Pesos de {describe_ipc_reference(ipc)}, descontada la inflación de alimentos semana a semana."
-                        if real else "Precios del día, promedio de las regiones con precio cada semana.")
-                       + " Las semanas sin dato quedan en blanco.")
-
-
-# endregion
 
 
 def show_analysis_page(mode):
@@ -6351,13 +6300,37 @@ def show_admin_card():
         st.markdown('<div class="run-now-label">Ejecutar pipeline ahora</div><div class="run-now-note">'
                     + ("Con tu clave de control." if ready else "Requiere la clave de control del autor.")
                     + '</div>', unsafe_allow_html=True)
-    st.button("Recargar datos", icon=":material/refresh:", key="runs_reload",
-              width="stretch", on_click=reload_panel_data,
-              help="Vuelve a leer la base guardada; no ejecuta el pipeline.")
+    with st.container(key="runs_tools", horizontal=True, gap="small"):
+        st.button("Recargar datos", icon=":material/refresh:", key="runs_reload",
+                  width="stretch", on_click=reload_panel_data,
+                  help="Vuelve a leer la base guardada; no ejecuta el pipeline.")
+        show_author_accesses(access_code)
     if st.session_state.pop(RELOADED_NOTICE, False):
         latest = read_latest_run()
         st.toast(f"Datos recargados · base del {format_chile_time(parse_run_start(latest['started_at']))}.",
                  icon=":material/check_circle:")
+
+
+def show_author_accesses(access_code):
+    """«Accesos del autor» (D-165): Streamlit (manage app, secrets), the GitHub tokens and
+    the workflow, behind the control code (T-54), without having to run the pipeline."""
+    with st.popover("Accesos del autor", icon=":material/lock:", width="stretch",
+                    help="Dónde administrar la app publicada, los secretos y los tokens. Pide la clave de control."):
+        if not access_code:
+            st.caption("Se activan cuando el autor guarda la clave de control en los secretos del panel.")
+            return
+        if not st.session_state.get(ADMIN_UNLOCKED):
+            typed_code = st.text_input("Clave de control", type="password", key="author_access_code")
+            if st.button("Abrir", key="author_access_open", icon=":material/lock_open:"):
+                if hmac.compare_digest(typed_code, access_code):
+                    st.session_state[ADMIN_UNLOCKED] = True
+                    st.rerun()
+                st.error("Clave incorrecta.", icon=":material/lock:")
+            return
+        for link in ADMIN_LINKS:
+            st.markdown(f'<a href="{html.escape(link["url"], quote=True)}" target="_blank" rel="noopener noreferrer">'
+                        f'<b>{html.escape(link["name"])}</b></a> · {html.escape(link["description"])}',
+                        unsafe_allow_html=True)
 
 
 def build_runs_css(mode):
@@ -6450,6 +6423,9 @@ def read_operation_runs(live):
     try:
         details = fetch_run_step_details(runs[0]["id"])
     except Exception as error:  # GitHub unreachable or refused
+        # The traceback goes to the server log (Streamlit Cloud: «Manage app»).
+        logging.getLogger(__name__).exception("Centro de operación: los pasos de la ejecución %s no se pudieron leer",
+                                              runs[0]["id"])
         details = last_answers.get(("details", runs[0]["id"]), {})
         return runs, details, error_text or control.describe_github_error(error)
     last_answers[("details", runs[0]["id"])] = details
@@ -7760,8 +7736,9 @@ def build_sidebar_css(mode):
     .st-key-sidebar_footer {{position:fixed; left:17px; bottom:0; width:266px; padding:13px 5px 12px;
         background:linear-gradient(180deg,transparent 0%,{sidebar_bottom} 18%); gap:7px !important; z-index:5;
         border-top:1px solid {hairline};}}
-    .st-key-nav_alert {{margin-top:1px;}}
-    .st-key-home_alert_trigger button {{width:100%; justify-content:flex-start; border:0 !important;
+    /* The alert trigger, now on top of the Resumen (D-169), keeps its red, quiet look. */
+    .st-key-home_alert_bar {{margin:-4px 0 -10px;}}
+    .st-key-home_alert_trigger button {{justify-content:flex-start; border:0 !important;
         background:transparent !important; color:{alert_text} !important; border-radius:5px;
         padding:3px 7px !important; min-height:27px; box-shadow:none !important;}}
     .st-key-home_alert_trigger button:hover {{background:color-mix(in srgb,{alert_text} 10%,transparent) !important;}}
@@ -7834,7 +7811,6 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
                 with st.sidebar.container(key=key):
                     st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
                                  query_params=keep_context() | {VIEW_PARAMETER: view})
-    show_sidebar_alert()
     show_sidebar_footer(current_window)
 
 
@@ -7847,18 +7823,14 @@ def build_sidebar_github_html(is_current):
             f'{build_github_icon_svg(20)}</a>')
 
 
-def show_sidebar_alert():
-    """The price alerts as the list's last row, the only one in red (D-128): next
-    to the GitHub mark in the footer, one could press one meaning the other."""
+def show_alert_trigger():
+    """The price alerts, at the top of the Resumen (D-169): the same button and dialog
+    the sidebar held since D-096, now where the week's figures are."""
     alerts_now = read_price_alerts()
     week = read_latest_week()
     count = int((alerts_now["week_start"] == week).sum()) if not alerts_now.empty else 0
-    # The alert dialog's styling (shapes, legend, colors) lives in home_mockup's
-    # stylesheet, built only for the Resumen page before D-096. The trigger sits in
-    # this sidebar on every page, so its CSS must load everywhere too, or the
-    # dialog renders as plain unstyled buttons (D-100).
-    st.markdown(home_mockup.style(get_mode(), charts.get_palette(get_mode())), unsafe_allow_html=True)
-    with st.sidebar.container(key="nav_alert"):
+    with st.container(key="home_alert_bar", horizontal=True, horizontal_alignment="right",
+                      vertical_alignment="center"):
         if st.button(f"▲  Alerta de precio · {count}", key="home_alert_trigger",
                      help=f"{count} cambios de precio fuera de lo habitual esta semana. Abre el detalle por familia."):
             st.session_state["home_alert_selected_family"] = None
