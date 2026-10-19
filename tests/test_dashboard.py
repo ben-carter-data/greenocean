@@ -44,13 +44,20 @@ def read_page_title(app):
     return None
 
 
-def draw_page(title, state=None):
-    """Draw one page alone, the way the navigation does; state: session values set first."""
+def draw_page(title, state=None, query=None):
+    """Draw one page alone, the way the navigation does; state: session values set first;
+    query: address parameters, as a link would carry them."""
     script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
               f"from bi import dashboard\n"
               + "".join(f"st.session_state[{key!r}] = {value!r}\n" for key, value in (state or {}).items())
+              + "".join(f"st.query_params[{key!r}] = {value!r}\n" for key, value in (query or {}).items())
               + f"dashboard.render_page({title!r})\n")
     return AppTest.from_string(script, default_timeout=60).run()
+
+
+# The home page opens on the latest week and its most moved family, both of which
+# change every Tuesday; tests that read figures pin the week of 2026-10-05.
+PINNED_HOME = {"_home_region": "Todas", "_home_week": "2026-10-05", "familia": "Hortalizas"}
 
 
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
@@ -203,7 +210,7 @@ def test_gap_tab_shows_k5_with_its_descriptive_note():
 
 @needs_database
 def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
-    app = draw_page(dashboard.HOME_PAGE)
+    app = draw_page(dashboard.HOME_PAGE, query=PINNED_HOME)
     assert not app.exception and not app.tabs
     texts = " ".join(block.value for block in app.markdown)
     assert 'Productos · Hortalizas' in texts and 'Producto seleccionado' not in texts
@@ -1064,7 +1071,9 @@ def read_product_names(app):
 
 @needs_database
 def test_d093_search_ignores_case_and_accents_and_matches_the_start_of_any_word():
-    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params.update(PINNED_HOME)
+    app.run()
     assert not app.exception
     every = read_product_names(app)
     app.text_input(key="home_products_search").set_value("LECH").run()
