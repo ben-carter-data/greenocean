@@ -149,7 +149,9 @@ def test_a_national_change_compares_only_the_regions_present_in_both_weeks():
     plain = pd.DataFrame([dict(key, national_price=1000.0, _previous_price=700.0,
                                variation=1000 / 700 - 1, change_amount=300.0)])
     compared = dashboard.compare_same_regions(plain, now, before, join).iloc[0]
-    assert compared["variation"] == 0 and compared["_previous_price"] == 1000.0
+    # The change is like for like; the prices shown stay each week's national price (D-153).
+    assert compared["variation"] == 0 and compared["_previous_price"] == 700.0
+    assert compared["_same_regions"] == 1
     assert bool(compared["_coverage_changed"])
     # With no region in common there is no valid comparison, never a guessed one.
     alone = dashboard.compare_same_regions(plain, now.assign(region="Arica"),
@@ -230,4 +232,32 @@ def test_the_margin_shown_is_the_average_of_the_regional_pairs():
                                              dashboard.get_database_version())
     assert margins["Feria libre"]["value"] == pytest.approx(group["margin"].mean())
     assert margins["Feria libre"]["regions"] == len(group)
+# endregion
+
+
+# region One price per product and week across pages (D-153)
+@needs_database
+def test_the_resumen_and_contexto_show_the_same_price_this_week():
+    week = f"{dashboard.read_latest_week():%Y-%m-%d}"
+    model = dashboard.read_home_model(week, dashboard.ALL_VALUES, dashboard.ALL_VALUES, 8)
+    rows = pd.DataFrame(model["family_rows"])
+    keys = ["product_group", "product", "variety", "quality", "normalized_unit", "channel"]
+    regional = dashboard.read_context_regional_prices(dashboard.get_database_version())
+    context = (regional[regional["week_start"] == pd.Timestamp(week)]
+               .groupby(keys)["price"].mean().rename("context").reset_index())
+    both = rows[keys + ["national_price"]].merge(context, on=keys)
+    assert len(both) > 100
+    assert (both["national_price"] - both["context"]).abs().max() < 1e-6
+
+
+@needs_database
+def test_the_panel_reproduces_the_reference_figures_of_its_week():
+    """The target of the migration: same week, same figures (D-153)."""
+    sys.path.insert(0, str(Path(__file__).parent))
+    import snapshot_figures
+    reference = snapshot_figures.read_reference()
+    current = snapshot_figures.compute_snapshot()
+    if current["week"] != reference["week"]:
+        pytest.skip("la base ya tiene otra semana; la referencia es de " + reference["week"])
+    assert current == reference
 # endregion

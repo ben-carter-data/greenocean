@@ -215,7 +215,7 @@ def table(rows, focus_link, data_link, selected=None, scope='Promedio nacional',
         change=money(row.get('change_amount'),True) if valid else '—'
         signal='Sin comparación' if not valid else 'Cambio inusual' if row.get('is_alert') else 'Subió' if variation>0 else 'Bajó' if variation<0 else 'Sin cambio'
         selected_attr=' class="selected"' if selected is not None and row_key(row)==row_key(selected) else ''
-        changed = '<span class="mock-coverage-change">Solo regiones con precio en ambas semanas</span>' if row.get('_coverage_changed') else ''
+        changed = '<span class="mock-coverage-change">Variación sobre las regiones de ambas semanas</span>' if row.get('_coverage_changed') else ''
         bar=(f'<span class="mock-change-value">{mark} {percent(variation*100,True)}</span>'
              f'<span class="mock-change-track"><span style="width:{abs(variation)/maximum*100:.3f}%"></span></span>') if valid else 'Sin comparación'
         body.append(f'<tr{selected_attr}><td><a class="mock-product-link" href="{esc(focus_link(row))}" target="_self"'
@@ -648,7 +648,10 @@ def products_table(rows, history_link, week_label, previous_label, query=''):
         body.append('<tr>'
                     f'<td><strong>{esc(product_label(row))}</strong>'
                     + (f'<small>{esc(row["quality"])} · $/{esc(row["normalized_unit"])}'
-                       + (' · 1 cotización' if row.get('_single_quote') else '') + '</small>' if row.get('quality') else '')
+                       + (' · 1 cotización' if row.get('_single_quote') else '')
+                       + (f' · variación sobre {int(row["_same_regions"])} regiones comunes'
+                          if row.get('_coverage_changed') and row.get('_same_regions') == row.get('_same_regions') else '')
+                       + '</small>' if row.get('quality') else '')
                     + f'</td><td>{esc(row["channel"])}</td>'
                     f'<td class="num">{money(previous_price(row))}</td><td class="num">{money(row["national_price"])}</td>'
                     f'<td class="num {state}"><b>{"0,0 %" if state == "neutral" else percent(change, True)}</b></td>'

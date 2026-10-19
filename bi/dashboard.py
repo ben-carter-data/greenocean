@@ -4445,12 +4445,12 @@ def compare_same_regions(variations, snapshot, prior, join):
                                                      _quotes_before=('observation_count_before', 'sum'))
     regions_now = snapshot.groupby(join).region.nunique().rename('_regions_now')
     regions_before = prior.groupby(join).region.nunique().rename('_regions_before')
-    rows = (variations.drop(columns=['_previous_price', 'variation', 'change_amount'])
+    # The prices shown stay the national price of each week (every region with a price),
+    # the same figure Contexto de precios shows; only the change is like for like (D-153).
+    rows = (variations.drop(columns=['variation', 'change_amount'])
             .merge(same, on=join, how='left')
             .merge(regions_now, on=join, how='left').merge(regions_before, on=join, how='left'))
     valid = rows['_same_before'].gt(0) & rows['_same_now'].notna()
-    rows['national_price'] = rows['_same_now'].where(valid, rows['national_price'])
-    rows['_previous_price'] = rows['_same_before'].where(valid)
     rows['variation'] = (rows['_same_now'] / rows['_same_before'] - 1).where(valid)
     rows['change_amount'] = (rows['_same_now'] - rows['_same_before']).where(valid)
     rows['_coverage_changed'] = valid & ((rows['_regions_now'] != rows['_same_regions'])
