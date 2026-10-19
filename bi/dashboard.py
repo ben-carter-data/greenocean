@@ -14,6 +14,7 @@ import importlib
 import json
 import logging
 import math
+import os
 import re
 import sys
 import time
@@ -5787,7 +5788,7 @@ def build_context_next_card(patterns, pattern_years, month, seasonal=None, year=
         years = pattern_years.get(channel, 0)
         pattern = patterns.get(channel, {})
         if years < price_context.MINIMUM_YEARS:
-            cells = f'<td colspan="3" class="ctx-next-empty">Sin historia suficiente</td>'
+            cells = '<td colspan="3" class="ctx-next-empty">Sin historia suficiente</td>'
         else:
             any_history = True
             changes = dict(price_context.proximos_meses(pattern, month, count=3))
@@ -7912,8 +7913,40 @@ def show_sidebar_footer(current_window=None):
         st.caption("Fuente: ODEPA · actualización automática cada martes.")
 
 
+# D-172: Streamlit reloads this file on each run but keeps the imported bi/* modules
+# as they were; on Streamlit Cloud a push then shows a new menu with old pages until
+# someone reboots the app. Each run compares the modules' files with the time they
+# were loaded and reloads the ones that changed, dependencies first.
+MODULE_TIMES = {}
+
+
+def reload_changed_modules():
+    """Reload every bi/* module whose file changed since it was loaded."""
+    package = Path(__file__).resolve().parent
+    changed = []
+    for name, module in sorted(sys.modules.items()):
+        file = getattr(module, "__file__", None)
+        if not name.startswith("bi.") or name == __name__ or not file or not file.startswith(str(package)):
+            continue
+        try:
+            modified = os.stat(file).st_mtime_ns
+        except OSError:
+            continue
+        if name not in MODULE_TIMES:
+            MODULE_TIMES[name] = modified
+        elif modified != MODULE_TIMES[name]:
+            MODULE_TIMES[name] = modified
+            changed.append(module)
+    # brand_icons feeds devops: reload the ones without bi.* imports first.
+    for module in sorted(changed, key=lambda module: sum(1 for value in vars(module).values()
+                                                         if getattr(value, "__name__", "").startswith("bi."))):
+        importlib.reload(module)
+    return [module.__name__ for module in changed]
+
+
 def main():
     """Theme, navigation with icons and the chosen page."""
+    reload_changed_modules()
     st.set_page_config(page_title="Monitor de precios de alimentos", layout="wide",
                        # A green tile with white bars: the Material glyph was dark and
                        # nearly invisible on a dark browser tab.
