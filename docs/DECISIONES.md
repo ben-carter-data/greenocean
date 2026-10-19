@@ -1374,3 +1374,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 
 - **Fecha:** 2026-10-19.
 - **Decisión:** a los ocho ejemplos por familia de D-178 se suman dos que parten de un producto: «Ficha de un producto» (precio por canal de las últimas 4 semanas y de hace un año, alza en 12 meses y probabilidad de subir en 2026) e «Historia de un producto» (precio semanal nominal y real frente al IPC). El producto se elige editando la primera línea de la consulta; el nombre se busca por su inicio (por ejemplo «Asado», «Tomate», «Papa»), para que «Asado» no traiga «Pan amasado». Quedan diez ejemplos.
+
+## D-180 · Un clic escribe y ejecuta la consulta, con producto, canal y año elegidos
+
+- **Fecha:** 2026-10-19.
+- **Problema:** para consultar otro producto u otro año había que editar el SQL a mano; un usuario de negocio no lo hace.
+- **Decisión:** los diez ejemplos son plantillas con parámetros. Al elegir uno, el panel escribe en el editor el SQL completo, con sus alias y comentarios y con los valores ya puestos, y lo ejecuta: la respuesta y el código que la da aparecen juntos. Los ejemplos con parámetros muestran sobre el editor una fila «Parámetros» (como la de plantillas de SQL Server) con año, producto y canal; cambiar un valor vuelve a escribir y ejecutar la consulta. El canal ofrece solo los canales donde se vende el producto elegido. La vista del estudio (D-173) no cambia.
+- **Diez preguntas:** familias de la semana; más alzas que bajas del año; los 100 que más subieron; sobre la inflación desde 2022; ficha de un producto; historia de un producto; evolución anual por familia; brecha mayorista-consumidor; productos más volátiles; regiones más caras por familia. La historia de un producto sigue una sola serie (la variedad, calidad y unidad con más precios) para no mezclar presentaciones.
+- **Seguridad:** los valores vienen de listas leídas de la base y se escriben como literales SQL escapados; la consulta pasa por la misma validación de solo lectura de siempre.
