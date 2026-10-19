@@ -789,8 +789,10 @@ def test_displayed_source_blocks_are_unique_across_the_portfolio():
 
 @needs_database
 def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
-    # Tabs are allowed only where they replace a long scroll (D-120, D-121, D-122).
-    tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_DEVOPS, dashboard.PAGE_OPERATIONS, dashboard.PAGE_RUNS}
+    # Tabs are allowed only where they replace a long scroll (D-120, D-121, D-122) and
+    # in the SQL studio, whose Resultados / Mensajes tabs are the client's own (D-173).
+    tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_DEVOPS, dashboard.PAGE_OPERATIONS, dashboard.PAGE_RUNS,
+              dashboard.PAGE_SQL}
     for page in dashboard.PAGES:
         app = draw_page(page)
         assert not app.exception, page
@@ -1635,11 +1637,14 @@ def test_d163_the_page_answers_one_question_with_families_against_the_ipc():
     for expected in ['¿Qué alimentos subieron más que la inflación?', 'Índice mensual por familia, enero 2022 = 100']:
         assert expected in text, expected
     assert 'la canasta de alimentos del INE subió' in text
-    # D-167: one small chart per family, the same size and scale, in one faceted chart.
+    # D-167 / D-174: one card per family, the same chart size and the same y scale.
     charts_drawn = app.get('vega_lite_chart')
-    assert len(charts_drawn) == 1
-    panels = json.loads(charts_drawn[0].proto.spec)['facet']['sort']
-    assert len(panels) == 7 and all('|' in panel and 'inflación' in panel for panel in panels)
+    assert len(charts_drawn) == 8  # seven families and the IPC basket itself
+    domains = {json.dumps(json.loads(chart.proto.spec)['encoding']['y']['scale']['domain']) for chart in charts_drawn}
+    assert len(domains) == 1
+    heads = [block.value for block in app.markdown if block.value.startswith('<div class="inf-panel-head">')]
+    assert len(heads) == 8 and sum('inflación' in head for head in heads) == 7
+    assert 'la canasta de referencia' in heads[-1]
     # Retired as noise: the usual-range band, the next-months strip, the outlier table,
     # the ranking card and the product history (D-167).
     for gone in ['Rango habitual', 'Qué suele pasar', 'con precio fuera de lo habitual para la época',

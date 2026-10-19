@@ -13,6 +13,8 @@ against the food IPC of the INE on the same base:
 The IPC is itself computed from food prices, so a family moving with it is not proof
 that inflation moved it: the comparison says «more or less than the food basket».
 """
+import math
+
 import altair as alt
 import pandas as pd
 
@@ -122,31 +124,35 @@ def draw_family_chart(rows, mode, real=False, height=360):
     return charts.apply_chart_style(alt.layer(families, reference).properties(height=height), mode)
 
 
-def draw_family_grid(rows, titles, mode, real=False, columns=4, width=214, height=150):
-    """One small chart per family, the same size and the same scale, each against the
-    food IPC (dashed); titles: {family: "Nombre|segunda línea"}, in the order shown.
-    Real: the IPC is the flat 100 line and a family above it rose more than the basket."""
+def family_domain(rows, real=False, step=10):
+    """The shared y range of the family cards: every family and the IPC fit in it, so
+    the cards compare at a glance; rounded outward to the nearest step."""
+    values = rows["real" if real else "index"].dropna()
+    if values.empty:
+        return [90, 110]
+    low = math.floor(values.min() / step) * step
+    high = math.ceil(values.max() / step) * step
+    return [low, high if high > low else low + step]
+
+
+def draw_family_card(rows, family, mode, real=False, domain=None, height=186):
+    """One family against the food IPC (dashed), for a card of the grid (D-174): the
+    chart fills its card and shares the y domain with the other cards. Real: the IPC
+    is the flat 100 line and a family above it rose more than the basket."""
     palette = charts.get_palette(mode)
     value = "real" if real else "index"
-    ipc = rows[rows["product_group"] == IPC_NAME]
-    panels = pd.concat([pd.concat([rows[rows["product_group"] == family], ipc]).assign(panel=title)
-                        for family, title in titles.items()], ignore_index=True)
-    domain = list(titles) + [IPC_NAME]
-    colors = [FAMILY_COLORS.get(family, "#94a3b8") for family in titles] + [palette["strong_text"]]
-    dashes = [[1, 0]] * len(titles) + [[5, 4]]
-    chart = alt.Chart(panels).mark_line(interpolate="monotone", strokeWidth=2.2).encode(
+    panel = rows[rows["product_group"].isin([family, IPC_NAME])]
+    names = [family, IPC_NAME] if family != IPC_NAME else [IPC_NAME]
+    colors = [FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names):]
+    dashes = [[1, 0], [5, 4]][-len(names):]
+    scale = alt.Scale(zero=False, domain=domain) if domain else alt.Scale(zero=False)
+    chart = alt.Chart(panel).mark_line(interpolate="monotone", strokeWidth=2.2).encode(
         x=alt.X("month_start:T", title=None, axis=alt.Axis(format="%Y", tickCount=5, labelPadding=4)),
-        y=alt.Y(f"{value}:Q", title=None, scale=alt.Scale(zero=False), axis=alt.Axis(labelFontSize=10)),
-        color=alt.Color("product_group:N", scale=alt.Scale(domain=domain, range=colors), legend=None),
-        strokeDash=alt.StrokeDash("product_group:N", scale=alt.Scale(domain=domain, range=dashes), legend=None),
-        opacity=alt.condition(alt.datum.product_group == IPC_NAME, alt.value(.75), alt.value(1)),
+        y=alt.Y(f"{value}:Q", title=None, scale=scale, axis=alt.Axis(labelFontSize=10, tickCount=4)),
+        color=alt.Color("product_group:N", scale=alt.Scale(domain=names, range=colors), legend=None),
+        strokeDash=alt.StrokeDash("product_group:N", scale=alt.Scale(domain=names, range=dashes), legend=None),
+        opacity=alt.condition(alt.datum.product_group == IPC_NAME, alt.value(.7), alt.value(1)),
         tooltip=[alt.Tooltip("product_group:N", title="Serie"),
                  alt.Tooltip("month_start:T", title="Mes", format="%m-%Y"),
                  alt.Tooltip(f"{value}:Q", title="Índice", format=",.1f")])
-    header = alt.Header(title=None, labelExpr="split(datum.value, '|')", labelFontSize=13,
-                        labelFontWeight="bold", labelColor=palette["strong_text"], labelAnchor="start",
-                        labelAlign="left", labelLineHeight=16, labelPadding=4)
-    grid = chart.properties(width=width, height=height).facet(
-        facet=alt.Facet("panel:N", sort=list(titles.values()), header=header),
-        columns=columns, spacing={"row": 22, "column": 16})
-    return charts.apply_chart_style(grid, mode)
+    return charts.apply_chart_style(chart.properties(width="container", height=height), mode)

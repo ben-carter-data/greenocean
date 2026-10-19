@@ -33,6 +33,7 @@ import streamlit.components.v1 as components
 # Streamlit runs this file as a script, so the project folder is added to the
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import bi  # noqa: E402
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
                 doc_diagrams, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
@@ -5928,7 +5929,19 @@ def build_context_css(mode):
     .ctx-crumb b {{color:{palette['strong_text']};}}
     .ctx-back {{display:inline-flex;float:right;padding:5px 12px;border:1px solid {palette['card_border']};border-radius:8px;
         font-size:12.5px;color:{palette['strong_text']}!important;text-decoration:none!important;background:{palette['card']};}}
-    .ctx-title h1 {{font-size:21px!important;font-weight:600;margin:0!important;padding:0!important;display:inline;}}
+    .ctx-title h1 {{font-size:21px!important;font-weight:500;margin:0!important;padding:0!important;display:inline;}}
+    .ctx-answer b {{font-weight:500;}}
+    [class*="st-key-inf_card_"] {{gap:2px!important;border:1px solid {palette['card_border']};border-radius:16px;padding:10px 12px 2px;
+        background:linear-gradient(180deg,color-mix(in srgb,{palette['card']} 92%,{'#fff' if palette['base'] != charts.BASE_DARK else '#000'}) 0%,{palette['card']} 100%);
+        box-shadow:{'0 1px 0 rgba(255,255,255,.07) inset, 0 22px 40px -28px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03)' if palette['base'] == charts.BASE_DARK else '0 1px 0 #fff inset, 0 22px 40px -30px rgba(15,27,45,.45), 0 6px 14px -10px rgba(15,27,45,.18)'};
+        transition:transform .25s ease,box-shadow .25s ease;}}
+    [class*="st-key-inf_card_"]:hover {{transform:translateY(-3px);
+        box-shadow:{'0 1px 0 rgba(255,255,255,.09) inset, 0 30px 50px -28px rgba(0,0,0,.95), 0 0 0 1px rgba(255,255,255,.05)' if palette['base'] == charts.BASE_DARK else '0 1px 0 #fff inset, 0 30px 50px -28px rgba(15,27,45,.5), 0 10px 18px -10px rgba(15,27,45,.2)'};}}
+    .inf-panel-head {{display:flex;flex-direction:column;gap:1px;line-height:1.25;}}
+    .inf-panel-head b {{font-size:14px;font-weight:500;color:{palette['strong_text']};letter-spacing:-.01em;}}
+    .inf-panel-head span {{font-size:12px;font-weight:400;}}
+    [class*="st-key-inf_card_"] [data-testid="stMarkdownContainer"] {{margin-bottom:0!important;}}
+    [class*="st-key-inf_card_"] [data-testid="stVegaLiteChart"] {{margin-top:2px;}}
     .ctx-title .page-freshness {{display:inline-flex;gap:6px;margin-left:12px;font-size:12px;}}
     .ctx-answer {{font-size:14px;line-height:1.45;color:{palette['strong_text']};margin:4px 0 0;max-width:900px;}}
     .ctx-split {{margin-top:5px;}}
@@ -5960,10 +5973,11 @@ def build_context_css(mode):
         margin-right:6px;border-radius:999px;color:{palette['accent']};
         background:color-mix(in srgb,{palette['accent']} 12%,transparent);vertical-align:1px;}}
     .st-key-ctx_main p.ctx-reading {{font-size:12px!important;line-height:1.4!important;color:{palette['text']};margin:-6px 0 0!important;}}
-    .st-key-ctx_main {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:10px 16px 4px;}}
+    .st-key-ctx_main {{gap:10px!important;padding:2px 0 0;}}
+    .st-key-ctx_main [data-testid="stHorizontalBlock"] {{gap:14px;}}
     .st-key-ctx_side {{gap:10px;}}
     .st-key-ctx_bottom {{margin-top:10px;}}
-    .ctx-head h3, .ctx-card h3 {{font-size:15px!important;font-weight:600;margin:0!important;padding:0!important;
+    .ctx-head h3, .ctx-card h3 {{font-size:15px!important;font-weight:500;margin:0!important;padding:0!important;
         color:{palette['strong_text']};display:flex;align-items:center;gap:6px;}}
     .ctx-head {{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}}
     .ctx-keys {{display:flex;gap:14px;font-size:11px;color:{palette['text']};white-space:nowrap;}}
@@ -6055,11 +6069,41 @@ def read_family_inflation(database_version):
     return rows, last, summary, ipc_total, ipc_year
 
 
-def build_family_panel_titles(summary):
-    """{family: "Hortalizas|+60,2 % · más que la inflación"}, biggest gap first."""
+def build_family_panel_titles(summary, ipc_total=None):
+    """{family: "Hortalizas|+60,2 % · más que la inflación"}, biggest gap first; with
+    ipc_total, the food IPC closes the list as the basket every family is measured against."""
     percent = lambda value: "—" if value is None or pd.isna(value) else charts.format_signed_percent(value)
-    return {row.family: f"{home_mockup.short_family(row.family)}|{percent(row.total)} · {row.verdict}"
-            for row in summary.itertuples()}
+    titles = {row.family: f"{home_mockup.short_family(row.family)}|{percent(row.total)} · {row.verdict}"
+              for row in summary.itertuples()}
+    if ipc_total is not None:
+        titles[inflation_view.IPC_NAME] = f"IPC de alimentos (INE)|{percent(ipc_total)} · la canasta de referencia"
+    return titles
+
+
+FAMILY_CARD_COLUMNS = 4
+
+
+def build_family_card_title_html(family, title):
+    """The head of a family card: the name, and under it the rise and the verdict in
+    the family's color."""
+    name, verdict = title.split("|", 1)
+    color = inflation_view.FAMILY_COLORS.get(family, "var(--text-color)")
+    return (f'<div class="inf-panel-head"><b>{html.escape(name)}</b>'
+            f'<span style="color:{color}">{html.escape(verdict)}</span></div>')
+
+
+def show_family_cards(rows, titles, mode, real):
+    """One raised card per family (D-174), four per row, the same chart size and
+    the same y scale in every card."""
+    domain = inflation_view.family_domain(rows, real)
+    families = list(titles)
+    for start in range(0, len(families), FAMILY_CARD_COLUMNS):
+        columns = st.columns(FAMILY_CARD_COLUMNS, gap="small")
+        for offset, family in enumerate(families[start:start + FAMILY_CARD_COLUMNS]):
+            with columns[offset], st.container(key=f"inf_card_{start + offset}"):
+                st.markdown(build_family_card_title_html(family, titles[family]), unsafe_allow_html=True)
+                st.altair_chart(inflation_view.draw_family_card(rows, family, mode, real=real, domain=domain),
+                                width="stretch", theme=None)
 
 
 def show_price_context_page(mode):
@@ -6096,8 +6140,7 @@ def show_price_context_page(mode):
                 "Misma escala en todos los gráficos.")
         st.markdown(f'<div class="ctx-head"><h3>Índice mensual por familia, enero 2022 = 100</h3></div>'
                     f'<p class="ctx-reading">{lead}</p>', unsafe_allow_html=True)
-        st.altair_chart(inflation_view.draw_family_grid(rows, build_family_panel_titles(summary), mode, real=real),
-                        width="content", theme=None)
+        show_family_cards(rows, build_family_panel_titles(summary, ipc_total), mode, real)
     st.caption(f"Cada familia compara los mismos productos de enero 2022 a {month(last)} (series de consumidor con "
                "precio en ambos meses). El IPC de alimentos se calcula con precios de alimentos: subir con él no "
                "prueba que la inflación cause la subida; dice si la familia subió más o menos que la canasta.")
@@ -7917,7 +7960,9 @@ def show_sidebar_footer(current_window=None):
 # as they were; on Streamlit Cloud a push then shows a new menu with old pages until
 # someone reboots the app. Each run compares the modules' files with the time they
 # were loaded and reloads the ones that changed, dependencies first.
-MODULE_TIMES = {}
+# The times live on the bi package, which outlives the script runs: Streamlit
+# re-executes this file on every run, so a global here would start empty each time.
+MODULE_TIMES = vars(bi).setdefault("MODULE_TIMES", {})
 
 
 def reload_changed_modules():
