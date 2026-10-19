@@ -1362,3 +1362,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-19.
 - **Problema:** el botón de pantalla completa que Streamlit pone sobre cada gráfico dejaba la carta en negro, porque los gráficos se ajustan al ancho de su carta. Además la frase y la lectura quedaban pegadas a las cartas.
 - **Decisión:** se oculta esa barra de herramientas en las cartas y cada una lleva su botón «Ampliar»: muestra solo esa familia, grande y con la misma escala, y «Ver todas» vuelve a la cuadrícula. Los márgenes entre la frase, la lectura y las cartas suben, y los botones nuevos usan el peso fino de D-170.
+
+## D-178 · Ejemplos de SQL que responden preguntas de gestión, por familia y producto
+
+- **Fecha:** 2026-10-19.
+- **Problema:** los ocho ejemplos describían (márgenes, rankings de una semana) pero no permitían concluir qué tiende a subir, y no seguían la unidad con que trabaja el panel: la familia.
+- **Decisión:** ocho ejemplos nuevos. Por familia: cuál subió y cuál bajó más la última semana; evolución anual; brecha mayorista-consumidor (solo Frutas y Hortalizas tienen mayorista); regiones más caras. Por producto: los de más alzas que bajas en 2026 (probabilidad de subir de una semana a otra); los 100 que más subieron en 2026; los que subieron más que el IPC desde 2022; los más volátiles. Los años se cambian editando la consulta. Todos usan solo precios válidos, comparan semanas consecutivas de la misma serie y corren en menos de un segundo; las pruebas los ejecutan.
+- **Límite dicho:** la mejor probabilidad de alza de 2026 ronda el 57 %: la mayoría de los productos sube y baja casi por igual de una semana a otra, y la consulta lo muestra en vez de ocultarlo.
