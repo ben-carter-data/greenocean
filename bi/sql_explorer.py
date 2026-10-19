@@ -1020,7 +1020,17 @@ def execute_editor(st, sql):
         st.session_state["sqlx_result"] = f"DuckDB devolvió un error: {error}"
 
 
-def show_result(st, outcome):
+# Editor and results share one height (D-183): a short query leaves its room to the rows.
+STUDIO_HEIGHT = 560
+
+
+def results_height(sql, row_count):
+    """The grid's height: what the editor leaves free, never more than the rows need."""
+    room = max(250, STUDIO_HEIGHT - editor_height(sql))
+    return min(room, 35 * (row_count + 1) + 3)
+
+
+def show_result(st, outcome, sql=""):
     if outcome is None:
         st.markdown('<p class="sqlx-empty">El resultado aparecerá aquí.</p>', unsafe_allow_html=True)
         return
@@ -1039,7 +1049,7 @@ def show_result(st, outcome):
                                "application/vnd.apache.parquet", key="sqlx_parquet", on_click="ignore",
                                icon=":material/download:")
     numbered = rows.set_axis(range(1, len(rows) + 1))  # rows count from 1, as a SQL client
-    st.dataframe(numbered, width="stretch", hide_index=False, height=min(250, 35 * (len(rows) + 1) + 3))
+    st.dataframe(numbered, width="stretch", hide_index=False, height=results_height(sql, len(rows)))
 
 
 def show_exports(st):
@@ -1118,7 +1128,7 @@ def show_sql_explorer_page(mode):
                 with st.container(key="sqlx_results"):
                     results, messages = st.tabs(["Resultados", "Mensajes"])
                     with results:
-                        show_result(st, outcome)
+                        show_result(st, outcome, st.session_state.get("sqlx_editor", ""))
                     with messages:
                         st.markdown(build_messages_html(outcome), unsafe_allow_html=True)
         st.markdown(build_status_html(st.session_state.get("sqlx_result")), unsafe_allow_html=True)
