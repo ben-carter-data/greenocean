@@ -1201,3 +1201,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Documentos:** PRD, SAD (C4) y ADR reescritos sobre la arquitectura entregada (ADR-30 aceptada; ADR-33, regla del deflactor; ADR-34, almacén de trabajo, base servida y respaldo con paridad). Cada uno se descarga en PDF con portada, índice y paginación (`bi/document_pdf.py`, reportlab), generado desde el mismo Markdown que muestra el panel y GitHub.
 - **Escalabilidad:** página propia con la sección del SAD: clima previsto; nube solo con datos de una empresa (ADR-31), con los umbrales que la justificarían. Sin cifras inventadas.
 - **Fuentes:** el INE se suma a la barra lateral y a la atribución del pie.
+
+## D-158 · Una alerta necesita al menos dos cotizaciones en cada semana
+
+- **Fecha:** 2026-10-19.
+- **Problema:** el Resumen deja fuera de su tabla los cambios que descansan en una sola cotización en alguna de las dos semanas (D-146): un precio aislado no es un movimiento de mercado. La regla K6 no aplicaba ese filtro, así que 9 de las 22 alertas de la semana del 05-10-2026 no se podían encontrar en la tabla. Ejemplo que lo reveló: Pimiento Zafiro verde · Primera · Supermercado en Línea, +11,9 % con un solo precio en cada semana.
+- **Decisión:** una alerta K6 es inusual (2 desviaciones), material (cambio ≥ 10 %) **y** descansa en al menos 2 cotizaciones en cada una de las dos semanas comparadas, contadas sobre las mismas regiones (D-144). Se aplica igual en `bi/alerts.py` y en su versión SQL (`k6_usual_range_sql`), que la prueba de D-049 sigue comparando. El rango habitual se sigue calculando con todas las variaciones; solo el juicio de la semana exige dos cotizaciones.
+- **Resultado:** 13 alertas en la semana del 05-10-2026 (Hortalizas 6, Frutas 5, Carne de Cerdo - Ave - Cordero 2), y cada una aparece en la tabla de su familia en el Resumen. La fotografía de cifras de D-153 se actualiza solo en ese número.

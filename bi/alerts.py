@@ -11,6 +11,9 @@ ALERT_DEVIATIONS = 2
 # D-146: an alert must also be material. With 2 deviations alone, 8-10 % of the
 # series alerted every week, about what chance gives; a change under 10 % is not news.
 ALERT_MINIMUM_CHANGE = 0.10
+# D-158: a change resting on a single quote in either week is one isolated price, not a
+# market movement: the Resumen leaves it out of its table (D-146), so it cannot alert.
+ALERT_MINIMUM_QUOTES = 2
 DAYS_IN_A_WEEK = 7
 # endregion
 
@@ -66,8 +69,13 @@ def find_price_alerts(prices):
 
 
 def is_price_alert(prices):
-    """The K6 rule on rows that already carry their usual range: unusual and material."""
+    """The K6 rule on rows that already carry their usual range: unusual, material
+    and resting on at least two quotes in each of the two weeks compared."""
     distance = (prices["variation"] - prices["usual_variation"]).abs()
-    return ((distance > ALERT_DEVIATIONS * prices["variation_deviation"])
-            & (prices["variation"].abs() >= ALERT_MINIMUM_CHANGE))
+    alert = ((distance > ALERT_DEVIATIONS * prices["variation_deviation"])
+             & (prices["variation"].abs() >= ALERT_MINIMUM_CHANGE))
+    if "same_region_quotes" in prices.columns:
+        alert &= ((prices["same_region_quotes"] >= ALERT_MINIMUM_QUOTES)
+                  & (prices["same_region_previous_quotes"] >= ALERT_MINIMUM_QUOTES))
+    return alert
 # endregion

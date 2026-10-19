@@ -154,7 +154,7 @@ Tras la revisión de pertinencia del 18-10-2026 (D-146), el panel se ordena en t
 | K3 | Índice regional | Precio de la región sobre el promedio de las regiones con dato | Calculado, no mostrado |
 | K4 | Índice estacional | Precio de la semana sobre el promedio de su año | Vigente, con acuerdo de al menos tres años |
 | K5 | Rezago | Desfase con mayor correlación entre cambios semanales | Retirado (D-146) |
-| K6 | Alerta de variación | Variación sobre las mismas regiones, a más de dos desviaciones estándar de sus 12 anteriores y de al menos 10 % | Vigente |
+| K6 | Alerta de variación | Variación sobre las mismas regiones, a más de dos desviaciones estándar de sus 12 anteriores, de al menos 10 % y con al menos 2 cotizaciones en cada semana (D-158) | Vigente |
 | K7 | Cobertura del cruce | Claves de frutas y verduras del consumidor con margen sobre el total de esas claves | 219 de 257 |
 | K8 | Filas rechazadas | Filas rechazadas sobre filas leídas, por motivo | 201 de 2.512.298, todas por precio no positivo |
 
