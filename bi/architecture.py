@@ -12,7 +12,7 @@ Only steps that really exist in this project are drawn.
 """
 import html
 
-from bi import brand_icons, charts, control
+from bi import brand_icons, charts, control, tech_glossary
 
 # region Constants
 STATE_UNKNOWN = "unknown"
@@ -277,6 +277,20 @@ def add_tooltip(svg_part, explanation):
     if not explanation:
         return svg_part
     return f'<g class="has-tooltip"><title>{html.escape(explanation)}</title>{svg_part}</g>'
+
+
+def add_tech_tooltip(svg_part, key):
+    """Group a technology (pill, logo, chip, label) with its glossary entry: the browser
+    shows it on hover, and the inner title wins over the step's own explanation."""
+    return add_tech_explanation(svg_part, tech_glossary.describe(key))
+
+
+def add_tech_explanation(svg_part, explanation):
+    """The same group for a ready text (several glossary entries, one per line)."""
+    if not explanation:
+        return svg_part
+    return (f'<g class="tech-tip" style="cursor:help"><title>{html.escape(explanation)}</title>'
+            f'{svg_part}</g>')
 # endregion
 
 
@@ -395,6 +409,13 @@ ICON_LOGO_SLUG = {draw_python_icon: "python", draw_streamlit_icon: "streamlit",
                   draw_dbt_icon: "dbt", draw_parquet_icon: "apacheparquet"}
 
 
+def draw_tile_icon(draw_icon, x, y, color):
+    """A tile icon; a brand logo also explains its technology on hover."""
+    slug = ICON_LOGO_SLUG.get(draw_icon)
+    icon = draw_icon(x, y, color)
+    return add_tech_tooltip(icon, tech_glossary.LOGO_KEYS[slug]) if slug else icon
+
+
 def draw_warning_icon(x, y, color):
     """A triangle with an exclamation mark: rejected rows."""
     return (f'<path d="M{x} {y-15} l16 28 h-32 z" fill="none" stroke="{color}" '
@@ -461,8 +482,10 @@ def build_column_headers():
         parts.append(f'<text x="{x}" y="40" text-anchor="middle" font-size="15" '
                      f'font-weight="700" letter-spacing="1" fill="{LAYER_COLORS[layer]}">'
                      f'{title}</text>'
-                     f'<text x="{x}" y="60" text-anchor="middle" font-size="13" '
-                     f'fill="#8a8984">{subtitle}</text>')
+                     + add_tech_explanation(
+                         f'<text x="{x}" y="60" text-anchor="middle" font-size="13" '
+                         f'fill="#8a8984">{subtitle}</text>',
+                         tech_glossary.describe_words(subtitle)))
     return "".join(parts)
 
 
@@ -488,7 +511,7 @@ def build_stack_badge(x, y, tech_id, palette):
         cursor += size + 3
     parts.append(f'<text x="{cursor:.1f}" y="{y + 3.3:.1f}" font-size="9.5" font-weight="600" '
                  f'fill="{color}">{html.escape(tech["label"])}</text>')
-    return "".join(parts)
+    return add_tech_tooltip("".join(parts), tech_glossary.TECH_KEYS.get(tech_id, tech_id))
 
 
 def build_stack_row(x, y, tech_ids, palette, align="center"):
@@ -505,7 +528,8 @@ def build_stack_row(x, y, tech_ids, palette, align="center"):
     for tech_id, width in zip(tech_ids, widths):
         parts.append(build_stack_badge(cursor, y, tech_id, palette))
         cursor += width + gap
-    return add_tooltip(f'<g>{"".join(parts)}</g>', "Tecnología utilizada en este paso.")
+    # Each pill carries its own glossary entry (bi/tech_glossary.py).
+    return f'<g>{"".join(parts)}</g>'
 
 
 def visible_stack(title, draw_icon):
@@ -535,7 +559,7 @@ def build_node(x, y, layer, draw_icon, title, lines, palette, state=None):
     half = TILE_SIZE / 2
     parts = [f'<rect x="{x-half}" y="{y-half}" width="{TILE_SIZE}" height="{TILE_SIZE}" '
              f'rx="16" fill="{palette["card"]}" stroke="{color}" stroke-width="1.5"/>',
-             draw_icon(x, y, color),
+             draw_tile_icon(draw_icon, x, y, color),
              f'<text x="{x}" y="{y+half+22}" text-anchor="middle" font-size="16" '
              f'font-weight="700" fill="{palette["strong_text"]}">{html.escape(title)}</text>']
     stack = visible_stack(title, draw_icon)
@@ -559,12 +583,19 @@ def build_node(x, y, layer, draw_icon, title, lines, palette, state=None):
 def build_chip(x, y, text, color, palette):
     """Small label on a link that says what kind of data travels through it."""
     width = len(text) * 7.6 + 16
-    return add_tooltip(
+    chip = (
         f'<rect x="{x-width/2}" y="{y-11}" width="{width}" height="22" rx="6" '
         f'fill="{palette["card"]}" stroke="{color}" stroke-width="1"/>'
         f'<text x="{x}" y="{y+4}" text-anchor="middle" font-size="12" font-weight="700" '
-        f'font-family="monospace" fill="{color}">{html.escape(text)}</text>',
-        CHIP_TOOLTIPS.get(text))
+        f'font-family="monospace" fill="{color}">{html.escape(text)}</text>')
+    if text in tech_glossary.CHIP_KEYS:
+        return add_tech_tooltip(chip, tech_glossary.CHIP_KEYS[text])
+    # A chip that names several technologies («HTTPS · CSV») keeps its own line and
+    # adds the glossary entry of each one.
+    words = tech_glossary.describe_words(text)
+    if words:
+        return add_tech_explanation(chip, "\n".join(filter(None, [CHIP_TOOLTIPS.get(text), words])))
+    return add_tooltip(chip, CHIP_TOOLTIPS.get(text))
 
 
 def build_link(start, end, color, palette, chip_text=None, dashed=False, moving_dot=False):
@@ -617,8 +648,11 @@ def build_band_item(x, y, title, detail, palette, state=None):
     if has_real_state(state):
         pulse = ' class="journey-running"' if state == control.RUN_IN_PROGRESS else ""
         dot = f'<circle{pulse} cx="{x}" cy="{y-4}" r="5" fill="{STATE_COLORS[state]}"/>'
-    return add_tooltip(f'{dot}<text x="{x+12}" y="{y}" font-size="14" font-weight="700" '
-                       f'fill="{palette["strong_text"]}">{html.escape(title)}</text>'
+    name = (f'<text x="{x+12}" y="{y}" font-size="14" font-weight="700" '
+            f'fill="{palette["strong_text"]}">{html.escape(title)}</text>')
+    if title in tech_glossary.LABEL_KEYS:
+        name = add_tech_tooltip(name, tech_glossary.LABEL_KEYS[title])
+    return add_tooltip(f'{dot}{name}'
                        f'<text x="{x+12}" y="{y+18}" font-size="13" '
                        f'fill="{palette["text"]}">{html.escape(detail)}</text>',
                        TOOLTIPS.get(title))
@@ -912,7 +946,7 @@ def build_vertical_node(y, header, layer, draw_icon, title, lines, palette, stat
     color = LAYER_COLORS[layer]
     parts = [f'<rect x="{x-half}" y="{y-half}" width="{TILE_SIZE}" height="{TILE_SIZE}" '
              f'rx="16" fill="{palette["card"]}" stroke="{color}" stroke-width="1.5"/>',
-             draw_icon(x, y, color)]
+             draw_tile_icon(draw_icon, x, y, color)]
     text_x = x + half + 18
     if header:
         parts.append(f'<text x="{text_x}" y="{y-20}" font-size="12" font-weight="700" '
@@ -1035,14 +1069,22 @@ def build_platform_frame(x, y, width, height, title, subtitle, layer, dev_only, 
     dash = ' stroke-dasharray="6 5"' if dev_only else ""
     opacity = ' stroke-opacity="0.55"' if dev_only else ""
     name_color = f'{LAYER_COLORS[layer]}99' if dev_only else LAYER_COLORS[layer]
-    return (f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="18" fill="none" '
-            f'stroke="{palette["card_border"]}" stroke-width="1.4"{dash}{opacity}/>'
-            f'<text x="{x + 16}" y="{y + 24}" font-size="14">'
+    name = (f'<text x="{x + 16}" y="{y + 24}" font-size="14">'
             f'<tspan font-weight="700" letter-spacing="1" fill="{name_color}">'
             f'{html.escape(title)}</tspan><tspan dx="10" fill="#8a8984">'
             f'{html.escape(subtitle)}'
             + (" · solo en desarrollo" if dev_only else "")
             + '</tspan></text>')
+    if title in tech_glossary.LABEL_KEYS:
+        name = add_tech_tooltip(name, tech_glossary.LABEL_KEYS[title])
+    return (f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="18" fill="none" '
+            f'stroke="{palette["card_border"]}" stroke-width="1.4"{dash}{opacity}/>' + name)
+
+
+# Glossary entry of the brand logo each component shows (what that logo stands for here).
+COMPONENT_LOGO_KEYS = {"Job semanal.yml": "github_actions", "Caché de Actions": "actions_cache",
+                       "Issues": "github_issues", "Repositorio": "git", "Pruebas (CI)": "pytest",
+                       "App Streamlit": "streamlit"}
 
 
 def build_component(x, y, layer, draw_icon, title, lines, palette, state=None):
@@ -1052,7 +1094,8 @@ def build_component(x, y, layer, draw_icon, title, lines, palette, state=None):
     left, top = x - COMPONENT_WIDTH / 2, y - COMPONENT_HEIGHT / 2
     brand = {"Job semanal.yml": "github", "Caché de Actions": "github", "Issues": "github",
              "Repositorio": "git", "Pruebas (CI)": "pytest", "App Streamlit": "streamlit"}.get(title)
-    icon = (brand_icons.logo(brand, left + 19, y - 15, color, 30)
+    icon = (add_tech_tooltip(brand_icons.logo(brand, left + 19, y - 15, color, 30),
+                             COMPONENT_LOGO_KEYS[title])
             if brand else draw_icon(left + 34, y, color))
     parts = [f'<rect x="{left + 8}" y="{y - 26}" width="52" '
              f'height="52" rx="16" fill="{color}" fill-opacity=".08" '

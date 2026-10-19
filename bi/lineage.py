@@ -14,7 +14,7 @@ import re
 
 import pandas as pd
 
-from bi import brand_icons, charts
+from bi import brand_icons, charts, tech_glossary
 
 LAYERS = [("bronze", "Bronce", "Parquet"), ("staging", "Staging", "vistas"),
           ("intermediate", "Intermedio", "tablas"), ("marts", "Marts", "servidas al panel")]
@@ -23,6 +23,10 @@ PASSING = {"pass", "success"}
 # The colours and logos of the journey diagram (bi/architecture.py), so the lineage
 # reads as its zoom: orange Parquet bronze, violet dbt models, pink tested marts.
 LAYER_COLORS = {"bronze": "#c98500", "staging": "#9085e9", "intermediate": "#9085e9", "marts": "#d55181"}
+# Glossary entries (bi/tech_glossary.py) shown on hover over each layer header, and
+# over the materialization written in each card.
+LAYER_KEYS = {"bronze": "bronze", "staging": "stg", "intermediate": "int", "marts": "marts"}
+MATERIALIZED_KEYS = {"vista": "view", "tabla": "table", "parquet": "parquet"}
 LAYER_LOGOS = {"bronze": "apacheparquet", "staging": "dbt", "intermediate": "dbt", "marts": "dbt"}
 
 WIDTH = 1000
@@ -132,6 +136,13 @@ def build_badge_html(summary):
 
 
 # region DAG
+def tech_tip(svg_part, explanation):
+    """A piece that explains its technology on hover (inner title: it wins over the card's)."""
+    if not explanation:
+        return svg_part
+    return f'<g class="tech-tip" style="cursor:help"><title>{html.escape(explanation)}</title>{svg_part}</g>'
+
+
 def order_layers(nodes):
     """{layer: [node records]}. Inside a column a model comes after the models of the
     same layer it reads (the intermediate chain reads top-down); otherwise by the mean
@@ -195,9 +206,12 @@ def build_lineage_svg(nodes, results, mode):
         center = SIDE + index * step + CARD_WIDTH / 2
         label = title.upper()
         logo = brand_icons.logo(LAYER_LOGOS[layer], center - len(label) * 4.6 - 30, 9, color, 20)
-        parts.append(f'{logo}<text x="{center:.0f}" y="25" text-anchor="middle" font-size="14" font-weight="700" '
-                     f'letter-spacing="1" fill="{color}">{label}</text><text x="{center:.0f}" y="45" '
-                     f'text-anchor="middle" font-size="11" fill="{text}">{note} · {len(columns[layer])}</text>')
+        logo_key = tech_glossary.LOGO_KEYS[LAYER_LOGOS[layer]]
+        parts.append(tech_tip(logo, tech_glossary.describe(logo_key))
+                     + tech_tip(f'<text x="{center:.0f}" y="25" text-anchor="middle" font-size="14" font-weight="700" '
+                                f'letter-spacing="1" fill="{color}">{label}</text><text x="{center:.0f}" y="45" '
+                                f'text-anchor="middle" font-size="11" fill="{text}">{note} · {len(columns[layer])}</text>',
+                                tech_glossary.describe(LAYER_KEYS[layer])))
     flow = 0
     for node_id, (x, y) in position.items():
         node = nodes[nodes["unique_id"] == node_id].iloc[0]
@@ -246,8 +260,9 @@ def build_lineage_svg(nodes, results, mode):
                      f'<rect x="{x + 1:.1f}" y="{y + 8:.1f}" width="3.5" height="{CARD_HEIGHT - 16}" rx="1.75" fill="{color}"/>'
                      f'<text x="{x + 13:.1f}" y="{y + 17:.1f}" font-size="11.5" font-weight="600" '
                      f'fill="{strong}">{html.escape(node["name"])}</text>'
-                     f'<text x="{x + 13:.1f}" y="{y + 31:.1f}" font-size="10" fill="{text}">{kind}</text>'
-                     f'{extra}</g>')
+                     + tech_tip(f'<text x="{x + 13:.1f}" y="{y + 31:.1f}" font-size="10" fill="{text}">{kind}</text>',
+                                tech_glossary.describe(MATERIALIZED_KEYS[kind]) if kind in MATERIALIZED_KEYS else "")
+                     + f'{extra}</g>')
     parts.append("</svg>")
     return "".join(parts)
 # endregion
