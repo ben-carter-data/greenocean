@@ -32,7 +32,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                doc_diagrams, document_pdf, github_page, lineage, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
+                doc_diagrams, document_pdf, github_page, inflation_view, lineage, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -4960,7 +4960,7 @@ def show_market_overview(mode, prefix):
                 row['_regions']=directions.get(tuple(row[field] for field in queries.KEY_COLUMNS+['channel']))
             history_address=(context_link(PAGE_SEASONALITY, rows[0]) if rows else build_page_address(PAGE_SEASONALITY))
             history_column.markdown(f'<div class="greenocean-mockup"><a class="mock-history-button" '
-                                    f'href="{html.escape(history_address)}" target="_self" title="¿Es normal este precio para la época?">Ver contexto</a></div>',
+                                    f'href="{html.escape(history_address)}" target="_self" title="Este producto frente a la inflación de alimentos">Ver contexto</a></div>',
                                     unsafe_allow_html=True)
             st.markdown('<div class="greenocean-mockup">' + home_mockup.products_table(
                 rows, lambda row: context_link(PAGE_SEASONALITY, row), model['week_label'],
@@ -5934,6 +5934,22 @@ def build_context_css(mode):
     .ctx-split-bar b.inf {{background:{palette['reference']};}}
     .ctx-split-bar b.up {{background:#e66767;}} .ctx-split-bar b.down {{background:#3987e5;}}
     .ctx-table-lead {{font-size:12px!important;color:{palette['text']};margin:-4px 0 8px!important;}}
+    .inf-card {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:14px 16px;}}
+    .inf-card h3 {{font-size:15px!important;font-weight:700;margin:0!important;padding:0!important;color:{palette['strong_text']};}}
+    .inf-lead {{font-size:12px!important;color:{palette['text']};margin:2px 0 10px!important;}}
+    .inf-row {{display:grid;grid-template-columns:10px 1fr 78px;grid-template-areas:"dot name total" ". bar bar" ". chip year";
+        column-gap:8px;row-gap:3px;padding:7px 0;border-top:1px solid {palette['card_border']};align-items:center;}}
+    .inf-row > i {{grid-area:dot;width:9px;height:9px;border-radius:50%;}}
+    .inf-name {{grid-area:name;font-weight:650;font-size:13px;color:{palette['strong_text']};}}
+    .inf-total {{grid-area:total;text-align:right;font-weight:700;font-size:13px;color:{palette['strong_text']};}}
+    .inf-bar {{grid-area:bar;position:relative;height:6px;border-radius:3px;background:{palette['grid']};}}
+    .inf-bar b {{display:block;height:100%;border-radius:3px;}}
+    .inf-bar em {{position:absolute;top:-3px;width:2px;height:12px;background:{palette['strong_text']};}}
+    .inf-row .chip {{grid-area:chip;justify-self:start;font-size:10.5px;}}
+    .inf-year {{grid-area:year;text-align:right;font-size:11.5px;color:{palette['text']};white-space:nowrap;}}
+    .st-key-ctx_main .ctx-head h3 {{margin-bottom:4px!important;}}
+    .st-key-ctx_main p.ctx-reading {{margin:0 0 8px!important;}}
+    .st-key-ctx_product {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:10px 16px 6px;margin-top:6px;}}
     .ctx-ipc-note {{display:block;margin-top:4px;font-size:13px;color:{palette['text']};}}
     .ctx-ipc-note b:first-child {{display:inline-block;font-size:10.5px;letter-spacing:.06em;padding:1px 7px;
         margin-right:6px;border-radius:999px;color:{palette['accent']};
@@ -6024,8 +6040,41 @@ def build_inflation_note(model, other, real, wrap):
     return f'<span class="ctx-ipc-note"><b>IPC</b> {lead}{"; ".join(parts)}.</span>'
 
 
+@st.cache_data
+def read_family_inflation(database_version):
+    """(monthly index per family and IPC, last IPC month, summary, IPC total, IPC 12 m) (D-163)."""
+    rows, last = inflation_view.build_family_index(
+        queries.run_sql(inflation_view.SERIES_SQL),
+        queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"))
+    summary, ipc_total, ipc_year = inflation_view.summarize_families(rows, last)
+    return rows, last, summary, ipc_total, ipc_year
+
+
+def build_family_ranking_html(summary, ipc_total, ipc_year):
+    """Each family against the food IPC: change since January 2022, 12 months, verdict."""
+    percent = lambda value: "—" if value is None or pd.isna(value) else charts.format_signed_percent(value)
+    kinds = {"más que la inflación": "rise", "menos que la inflación": "fall", "al ritmo de la inflación": "neutral"}
+    top = max([abs(value) for value in summary["total"].dropna()] + [abs(ipc_total), 1])
+    rows = []
+    for row in summary.itertuples():
+        color = inflation_view.FAMILY_COLORS.get(row.family, "#94a3b8")
+        width = 0 if pd.isna(row.total) else abs(row.total) / top * 100
+        rows.append(f'<div class="inf-row"><i style="background:{color}"></i>'
+                    f'<span class="inf-name">{html.escape(home_mockup.short_family(row.family))}</span>'
+                    f'<span class="inf-bar"><b style="width:{width:.1f}%;background:{color}"></b>'
+                    f'<em style="left:{abs(ipc_total) / top * 100:.1f}%"></em></span>'
+                    f'<span class="inf-total">{percent(row.total)}</span>'
+                    f'{build_chip(row.verdict.capitalize(), kinds.get(row.verdict, "neutral"))}'
+                    f'<span class="inf-year">12 m: {percent(row.yearly)}</span></div>')
+    return (f'<section class="inf-card"><h3>Desde enero 2022, frente a la inflación</h3>'
+            f'<p class="inf-lead">La marca vertical es el IPC de alimentos: {percent(ipc_total)} '
+            f'(12 m: {percent(ipc_year)}).</p>' + "".join(rows) + '</section>')
+
+
 def show_price_context_page(mode):
-    """¿El precio de esta semana es normal? One screen, no scroll at 1920×1080 (D-098)."""
+    """Precios e inflación (D-163): one question — which food families rose more than the
+    food IPC of the INE — then one product, its whole series, today's pesos or without
+    inflation. Everything that did not give a clear insight left the page."""
     st.markdown(build_context_css(mode), unsafe_allow_html=True)
     version = get_database_version()
     options = read_context_options(version)
@@ -6033,100 +6082,67 @@ def show_price_context_page(mode):
         st.info(NO_DATA_TEXT)
         return
     key = read_context_key(options)
-    week = f"{read_latest_week():%Y-%m-%d}"
-    crumb, back = st.columns([5, 1], vertical_alignment="center")
-    home = build_page_address(PAGE_HOME)
-    home_family = home + ("&" if "?" in home else "?") + urlencode({"familia": key["product_group"]})
-    label = describe_context_product(key)
-    crumb.markdown(f'<div class="ctx-crumb"><a href="{html.escape(home)}" target="_self">Resumen</a> › '
-                   f'<a href="{html.escape(home_family)}" target="_self">{html.escape(key["product_group"])}</a> › '
-                   f'<b>{html.escape(label)}</b></div>', unsafe_allow_html=True)
-    back.markdown(f'<a class="ctx-back" href="{html.escape(home_family)}" target="_self">← Volver al resumen</a>',
-                  unsafe_allow_html=True)
-    title, field = st.columns([2.6, 1.2], vertical_alignment="bottom")
-    key = choose_context_product(options, key, field)
-    label = describe_context_product(key)
-    real = st.session_state.get(CONTEXT_BASIS_KEY) == BASIS_REAL
-    model = read_context_model(version, tuple(sorted(key.items())), week, real)
+    rows, last, summary, ipc_total, ipc_year = read_family_inflation(version)
     latest = read_latest_run()
     run_kind = "ok" if latest["status"] == etl.STATUS_LOADED else "failed"
-    states = {channel: model["now"][channel]["state"] for channel in CONTEXT_CHANNELS
-              if channel in model["now"] and model["now"][channel]["price"] is not None}
-    # The gap only earns a mention when it is outside its own habitual range (D-098).
-    gap_word = {"sobre": "mayor", "bajo": "menor"}.get(model["gap_state"])
-    def wrap(channel, phrase):
-        return f'<b style="color:{charts.CONTEXT_CHANNELS.get(channel, "inherit")}">{html.escape(phrase)}</b>'
-    sentence = price_context.answer_sentence(html.escape(label.lower()), model["month"], states, gap_word, wrap=wrap)
-    # When removing food inflation changes the answer, say so: that is what the IPC adds.
-    other = read_context_model(version, tuple(sorted(key.items())), week, not real)
-    sentence += build_inflation_note(model, other, real, wrap)
-    title.markdown(f'<div class="ctx-title compact-header"><h1>¿El precio de esta semana es normal?</h1>'
+    month = lambda pair: f"{price_context.MONTHS[pair[1] - 1]} {pair[0]}"
+    above = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "más que la inflación", "family"]]
+    below = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "menos que la inflación", "family"]]
+    join = lambda names: ", ".join(names[:-1]) + " y " + names[-1] if len(names) > 1 else "".join(names)
+    answer = (f'De enero 2022 a {month(last)}, la canasta de alimentos del INE subió '
+              f'<b>{charts.format_signed_percent(ipc_total)}</b>.'
+              + (f' Subieron más: <b>{html.escape(join(above))}</b>.' if above else '')
+              + (f' Subieron menos: <b>{html.escape(join(below))}</b>.' if below else ''))
+    title, basis = st.columns([2.9, 1.1], vertical_alignment="bottom")
+    title.markdown(f'<div class="ctx-title compact-header"><h1>¿Qué alimentos subieron más que la inflación?</h1>'
                    f'<span class="page-freshness">Datos al {format_chile_time(parse_run_start(latest["started_at"]))} '
                    f'{build_chip("Carga correcta" if run_kind == "ok" else "Última carga con falla", run_kind)}</span></div>'
-                   f'<p class="ctx-answer">{sentence}</p>', unsafe_allow_html=True)
-    notice = st.session_state.pop("context_notice", None)
-    if notice:
-        st.caption(notice)
-    left, right = st.columns([2.6, 1.2], gap="small")
-    with left:
-        with st.container(key="ctx_main"):
-            hint = build_hint_icon("Línea: precio de cada semana. Banda: rango habitual de esa misma semana "
-                                   "(y la semana antes y después) en años anteriores, percentil 25 a 75. Si la "
-                                   "línea sale de la banda, el precio es inusual.")
-            head, basis = st.columns([4.1, 1.9], vertical_alignment="center", gap="small")
-            head.markdown(f'<div class="ctx-head"><h3>Últimas 52 semanas frente a lo habitual{hint}</h3>'
-                          '<div class="ctx-keys">'
-                          + ''.join(f'<span><i style="background:{color}"></i>{channel}</span>'
-                                    for channel, color in charts.CONTEXT_CHANNELS.items() if channel in model["series"])
-                          + ('<span><i class="nominal"></i>Precio del día</span>' if real else '')
-                          + '<span><i class="band"></i>Rango habitual</span></div></div>',
-                          unsafe_allow_html=True)
-            # D-155: the same chart in nominal pesos or deflated with the INE IPC.
-            basis.segmented_control("Precios", [BASIS_NOMINAL, BASIS_REAL], default=BASIS_NOMINAL,
-                                    key=CONTEXT_BASIS_KEY, label_visibility="collapsed", help=BASIS_HELP)
-            st.markdown('<p class="ctx-reading">Línea: precio de cada semana · Banda: lo habitual en esa misma '
-                        'semana de años anteriores. Si la línea sale de la banda, el precio es inusual.</p>',
-                        unsafe_allow_html=True)
-            if model["weekly"].empty:
-                st.info("Este producto no tiene precios de feria ni de supermercado.")
-            else:
-                show_chart(charts.draw_price_context(model["weekly"], mode, height=350))
-            with st.container(key="ctx_links", horizontal=True, vertical_alignment="center"):
-                missing = int(model["weekly"]["price"].isna().sum()) if not model["weekly"].empty else 0
-                gaps = f" {missing} semanas sin dato quedan en blanco; no se interpolan." if missing else ""
-                if real:
-                    ipc = read_ipc_weekly(version)
-                    shown = ipc[ipc["week_start"].isin(model["weekly"]["week_start"])]
-                    provisional = int(shown["provisional"].sum())
-                    st.caption(f"Pesos de {describe_ipc_reference(ipc)}, IPC de alimentos del INE (mes del lunes)"
-                               + (f" · {provisional} {'semana provisional' if provisional == 1 else 'semanas provisionales'}"
-                                  if provisional else "") + "." + gaps)
-                else:
-                    st.caption(NOMINAL_PRICES_TEXT + gaps)
-                years = sorted({day.year for rows in model["series"].values() for day in rows["week_start"]})
-                span = f"{years[0]}–{years[-1]}" if years else ""
-                if st.button(f"Ver serie completa {span} →", key="ctx_full", type="tertiary"):
-                    show_full_history_dialog(model["series"], mode, label)
-                if st.button("Ver datos del gráfico →", key="ctx_data", type="tertiary"):
-                    show_context_data_dialog(model)
-                if st.button("Ver el IPC →", key="ctx_ipc", type="tertiary", help="IPC de alimentos del INE, mes a mes"):
-                    show_ipc_dialog(mode)
-    # Beside the chart, the two readings of this week; the seasonal outlook gets a
-    # full-width strip below, where its months read on one line (D-150).
-    with right, st.container(key="ctx_side"):
-        nominal = other if real else model
+                   f'<p class="ctx-answer">{answer}</p>', unsafe_allow_html=True)
+    basis.segmented_control("Precios", [BASIS_NOMINAL, BASIS_REAL], default=BASIS_NOMINAL,
+                            key=CONTEXT_BASIS_KEY, label_visibility="collapsed", help=BASIS_HELP)
+    real = st.session_state.get(CONTEXT_BASIS_KEY) == BASIS_REAL
+    left, right = st.columns([2.1, 1.25], gap="small")
+    with left, st.container(key="ctx_main"):
+        lead = ("Sin inflación: la línea punteada es la canasta del INE (100). Arriba de ella, la familia subió más."
+                if real else "Precios de consumidor de ODEPA, mediana por familia; línea punteada: IPC de alimentos.")
+        st.markdown(f'<div class="ctx-head"><h3>Índice mensual, enero 2022 = 100</h3></div>'
+                    f'<p class="ctx-reading">{lead}</p>', unsafe_allow_html=True)
+        show_chart(inflation_view.draw_family_chart(rows, mode, real=real))
+    with right:
+        st.markdown(build_family_ranking_html(summary, ipc_total, ipc_year), unsafe_allow_html=True)
+    st.caption(f"Cada familia compara los mismos productos de enero 2022 a {month(last)} (series de consumidor con "
+               "precio en ambos meses). El IPC de alimentos se calcula con precios de alimentos: subir con él no "
+               "prueba que la inflación cause la subida; dice si la familia subió más o menos que la canasta.")
+    # One product, its whole history: the detail below the big picture.
+    with st.container(key="ctx_product"):
+        head, field = st.columns([2.1, 1.25], vertical_alignment="bottom")
+        key = choose_context_product(options, key, field)
+        label = describe_context_product(key)
+        prices = read_cached_national_prices(version)
+        mask = prices["channel"].isin(CONTEXT_CHANNELS)
+        for column in queries.KEY_COLUMNS:
+            mask &= prices[column] == key[column]
+        product = prices.loc[mask, ["week_start", "channel", "national_price"]].copy()
         ipc = read_ipc_weekly(version)
-        now = {channel: dict(item, split=split_yearly_change(nominal["series"][channel], ipc, week))
-               if channel in nominal["series"] else item for channel, item in model["now"].items()}
-        st.markdown(build_context_price_card(now, key["normalized_unit"]), unsafe_allow_html=True)
-        st.markdown(build_context_margin_card(model["margins"]), unsafe_allow_html=True)
-    with st.container(key="ctx_next"):
-        st.markdown(build_context_next_card(model["patterns"], model["pattern_years"], model["month"],
-                                            model["seasonal"], model["year"]),
-                    unsafe_allow_html=True)
-    with st.container(key="ctx_bottom"):
-        outliers = read_family_outliers(version, key["product_group"], week, key["product"], key["variety"])
-        st.markdown(build_context_outliers_table(outliers, key["product_group"]), unsafe_allow_html=True)
+        product = product.merge(ipc[["week_start", "real_factor"]], on="week_start", how="left")
+        product["real_price"] = product["national_price"] * product["real_factor"]
+        week = read_latest_week()
+        splits = [(channel, split_yearly_change(group, ipc, week)) for channel, group in product.groupby("channel")]
+        money = lambda value: ("+" if value >= 0 else "−") + "$" + charts.format_thousands(abs(value))
+        sentence = "; ".join(f"en {channel.lower()}, {money(split['change'])} = inflación {money(split['inflation'])}"
+                             f" · propio {money(split['own'])}" for channel, split in splits if split)
+        head.markdown(f'<div class="ctx-head"><h3>{html.escape(label)}: toda su historia</h3></div>'
+                      + (f'<p class="ctx-reading">En 12 meses {sentence}.</p>' if sentence else ''),
+                      unsafe_allow_html=True)
+        if product.empty:
+            st.info("Este producto no tiene precios de feria ni de supermercado.")
+        else:
+            show_chart(inflation_view.draw_product_chart(product, mode, real=real))
+            st.caption((f"Pesos de {describe_ipc_reference(ipc)}, descontada la inflación de alimentos semana a semana."
+                        if real else "Precios del día, promedio de las regiones con precio cada semana.")
+                       + " Las semanas sin dato quedan en blanco.")
+
+
 # endregion
 
 
@@ -7500,7 +7516,7 @@ SIDEBAR_TREE = [
 SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingeniería de datos",
                       SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación",
                       SECTION_RESOURCES: "GitHub"}
-SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Contexto de precios",
+SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Precios e inflación",
                   PAGE_DIAGRAMS: "Pipeline y linaje", PAGE_OPERATIONS: "Calidad y auditoría",
                   PAGE_RUNS: "Ejecuciones y DevOps",
                   PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual",
