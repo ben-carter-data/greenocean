@@ -2,7 +2,7 @@ version: 2
 
 models:
   - name: weekly_price
-    description: Hechos. Un precio por semana (lunes, RN-08), producto, región, canal y unidad.
+    description: "Hechos del modelo estrella: un precio por semana (lunes, RN-08), producto, región, canal y unidad, con su volumen, sus observaciones y su marca."
     columns:
       - name: week_start
         data_tests: [not_null, {relationships: {to: ref('dim_date'), field: week_start}}]
@@ -21,10 +21,12 @@ models:
         description: RN-05 y RN-12; NULL cuando el precio entra a los indicadores.
         data_tests: [{accepted_values: {values: ['UNIDAD_NO_CONVERTIBLE', 'ATIPICO']}}]
   - name: dim_product
+    description: "Dimensión de productos: una clave por grupo, producto, variedad y calidad con precios."
     columns:
       - name: product_id
         data_tests: [unique, not_null]
   - name: dim_channel
+    description: "Dimensión de canales de venta; el mayorista es un canal más, así el margen compara dos canales."
     columns:
       - name: channel_id
         data_tests: [unique, not_null]
@@ -34,6 +36,7 @@ models:
               values: ['Mayorista', 'Supermercado', 'Feria libre', 'Carnicería', 'Panadería',
                        'Mercado Minorista', 'Mercado Mayorista', 'Supermercado en Línea']
   - name: dim_region
+    description: "Dimensión de regiones con datos válidos, con su número oficial de 1 a 16."
     columns:
       - name: region_id
         description: Chile tiene 16 regiones, numeradas de 1 a 16.
@@ -43,10 +46,12 @@ models:
               values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
               quote: false
   - name: dim_date
+    description: "Dimensión de fechas: una fila por semana, sin huecos, con su año y semana ISO, mes y estación (D-095)."
     columns:
       - name: week_start
         data_tests: [unique, not_null]
   - name: rejection
+    description: "Las filas rechazadas de la última carga, tal como venían, con su motivo (RN-11)."
     columns:
       - name: reason
         data_tests:
@@ -54,13 +59,16 @@ models:
               values: ['UNREADABLE_VALUE', 'NON_POSITIVE_PRICE', 'MINIMUM_ABOVE_MAXIMUM',
                        'DATE_OUTSIDE_FILE_YEAR', 'NON_POSITIVE_VOLUME']
   - name: ipc_monthly
-    description: IPC de alimentos del INE, mensual, base 2023 = 100, enlazado (D-155).
+    description: "IPC de alimentos del INE, una sola serie mensual en base 2023 = 100: la serie empalmada anterior a 2024 se enlaza por la variación oficial de enero 2024 (D-155)."
     columns:
       - name: food_index
         data_tests: [not_null]
   - name: ipc_weekly
+    description: "El deflactor de cada semana: el IPC del mes de su lunes frente al último mes publicado, para expresar los precios en pesos reales (D-155)."
     columns:
       - name: week_start
         data_tests: [unique, not_null, {relationships: {to: ref('dim_date'), field: week_start}}]
       - name: real_factor
         data_tests: [not_null]
+  - name: ine_ipc_source
+    description: "Las filas del IPC tal como se leyeron del INE, guardadas en la base publicada para rehacer la capa bronce si el INE no responde una semana."

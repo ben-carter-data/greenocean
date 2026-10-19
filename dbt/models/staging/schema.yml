@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: stg_odepa__wholesale
+    description: >
+      Precios mayoristas diarios de ODEPA con tipos y textos normalizados (RN-01, RN-13),
+      en las columnas comunes a las dos fuentes; guarda la fila original para un posible rechazo (RN-11).
+  - name: stg_odepa__consumer
+    description: >
+      Precios al consumidor semanales de ODEPA con tipos y textos normalizados; separa
+      «Producto|Variedad|Calidad» en tres columnas (RN-02) y guarda la fila original.
+  - name: stg_ine__ipc_monthly
+    description: >
+      IPC mensual de alimentos del INE con tipos: año, mes, índice y variación mensual de
+      cada archivo publicado, junto a los valores tal como se leyeron.
