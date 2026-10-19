@@ -1391,3 +1391,9 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Rigor:** la comparación de época se hace en pesos reales (precio × factor_real). En pesos nominales, con un 45 % de inflación desde 2022, todo lo actual parecía «más caro que nunca». El veredicto tiene cinco niveles: más caro o más barato que cualquier año anterior, caro o barato (más de 10 % sobre o bajo el promedio) y normal. Con tres o cuatro años de historia, la época es orientativa.
 - **Salen:** historia de un producto, los 100 que más subieron, evolución anual por familia, brecha mayorista-consumidor, productos más volátiles, regiones más caras y familias de la semana. La etiqueta «Ejemplos» pasa a «Preguntas».
 
+## D-182 · El explorador muestra las tablas reales; la cabecera, nombres cortos
+
+- **Fecha:** 2026-10-19.
+- **Decisión:** como en SQL Server, el explorador de objetos muestra primero la carpeta «Tablas» con las tablas reales del data warehouse (`main.weekly_price`, `main.dim_product`, `main.dim_region`, …), leídas de `information_schema` con sus filas y columnas; un clic corre «SELECT * … LIMIT 100» sobre la tabla, con sus claves internas visibles. Debajo, la carpeta «Vistas» con las vistas de análisis de columnas legibles sobre las que corren las preguntas. Esto deja atrás, solo para el explorador, la regla de D-143 de no mostrar claves internas: quien abre una tabla real ve su estructura real.
+- **Cabecera:** las preguntas toman nombres cortos (Precio vs. época, Inflación del año, Inflación desde 2022, Ficha de producto, Tendencia al alza). La pestaña del editor lleva el nombre de archivo de la consulta (por ejemplo `precio_vs_epoca.sql`) y un ícono «i» que, al pasar el cursor, muestra la pregunta completa; el texto largo ya no ocupa la cabecera.
+
