@@ -1685,12 +1685,14 @@ def show_app_header(window):
     .st-key-report_page [data-testid="stCaptionContainer"] {{overflow-wrap:anywhere;}}
     /* The page's path, Volver and the theme choice: the only header on every page (D-096). */
     .st-key-app_header {{background:transparent; border:0; border-bottom:1px solid {palette['card_border']};
-        border-radius:0; padding:4px 0 8px !important; margin:0 0 6px; justify-content:space-between;
+        border-radius:0; padding:4px 0 8px !important; margin:0 0 6px; justify-content:flex-start; column-gap:14px;
         flex-wrap:wrap !important; row-gap:6px;}}
     .st-key-app_header .app-brand {{font-size:.86rem; font-weight:600; color:{palette['strong_text']};
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
+    /* Volver opens the row, beside the path: Streamlit Cloud draws its own toolbar
+       (Share, star, edit, GitHub) over the top right corner. */
     .st-key-header_preferences {{flex-wrap:nowrap !important; align-items:center; gap:8px; width:auto !important;
-        margin-left:auto;}}
+        order:-1; margin-right:4px;}}
     .st-key-header_preferences > div {{flex:none; min-width:0;}}
     .st-key-header_preferences [data-testid="stPopover"] button {{width:40px; min-width:40px; padding:8px;}}
     .st-key-header_preferences [data-testid="stPopover"] button p {{position:absolute; width:1px;
@@ -1704,7 +1706,7 @@ def show_app_header(window):
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-weight:400; letter-spacing:-.015em;}}
     @media(max-width:700px) {{
         .st-key-app_header .app-brand {{white-space:normal; flex:1 1 100%; order:1;}}
-        .st-key-header_preferences {{order:2; margin-left:0;}}
+        .st-key-header_preferences {{order:0; margin-left:0;}}
     }}
     </style>""", unsafe_allow_html=True)
     view = read_current_view(window)
@@ -6333,34 +6335,29 @@ def show_run_now_dialog(token, access_code):
 
 
 def show_admin_card():
-    """Manual run first and unmistakable (▶, primary), the reload apart, both with a
-    clear message when they end (D-149). The pipeline also runs by itself every Tuesday."""
-    with st.container(border=True, key="runs_admin"):
-        st.markdown('<div class="runs-card-title">Ejecución manual</div>', unsafe_allow_html=True)
-        st.caption("El pipeline corre solo cada martes a las 09:00 (Chile). Ejecútalo a mano "
-                   "solo si necesitas los datos antes.")
-        access_code = get_secret(SECRET_CONTROL_CODE)
-        token = get_secret(SECRET_GITHUB_TOKEN)
-        ready = bool(access_code and token)
+    """The manual run beside its name, the reload under it (D-149); compact, so the
+    page fits one screen beside the run's path (D-165). The pipeline also runs by
+    itself every Tuesday."""
+    access_code = get_secret(SECRET_CONTROL_CODE)
+    token = get_secret(SECRET_GITHUB_TOKEN)
+    ready = bool(access_code and token)
+    with st.container(key="runs_admin", horizontal=True, vertical_alignment="center", gap="small"):
         if st.button("Ejecutar pipeline ahora", type="primary", icon=":material/power_settings_new:",
                      key="runs_run_now", disabled=not ready,
                      help=("Pide la clave de control y lanza el pipeline en GitHub Actions." if ready else
                            "Se activa cuando el autor guarda la clave de control y su token de "
                            "GitHub en los secretos del panel.")):
             show_run_now_dialog(token, access_code)
-        st.markdown('<div class="run-now-label">Ejecutar pipeline ahora</div>'
-                    + ('' if ready else '<div class="run-now-note">Requiere la clave de control del autor.</div>'),
-                    unsafe_allow_html=True)
-        st.divider()
-        st.button("Recargar datos del panel", icon=":material/refresh:", key="runs_reload",
-                  width="stretch", on_click=reload_panel_data,
-                  help="Vuelve a leer la base guardada; no ejecuta el pipeline.")
-        if st.session_state.pop(RELOADED_NOTICE, False):
-            latest = read_latest_run()
-            st.toast(f"Datos recargados · base del {format_chile_time(parse_run_start(latest['started_at']))}.",
-                     icon=":material/check_circle:")
-        if st.session_state.get(ADMIN_UNLOCKED) and ready:
-            show_link_cards(ADMIN_LINKS)
+        st.markdown('<div class="run-now-label">Ejecutar pipeline ahora</div><div class="run-now-note">'
+                    + ("Con tu clave de control." if ready else "Requiere la clave de control del autor.")
+                    + '</div>', unsafe_allow_html=True)
+    st.button("Recargar datos", icon=":material/refresh:", key="runs_reload",
+              width="stretch", on_click=reload_panel_data,
+              help="Vuelve a leer la base guardada; no ejecuta el pipeline.")
+    if st.session_state.pop(RELOADED_NOTICE, False):
+        latest = read_latest_run()
+        st.toast(f"Datos recargados · base del {format_chile_time(parse_run_start(latest['started_at']))}.",
+                 icon=":material/check_circle:")
 
 
 def build_runs_css(mode):
@@ -6510,9 +6507,13 @@ def show_operation_center(mode, live=False):
     states = operation_center.build_step_states(runs[0] if runs else None, details,
                                                 latest_load["status"] == etl.STATUS_LOADED)
     unlocked = bool(st.session_state.get(ADMIN_UNLOCKED))
+    # The latest runs go under the path and the manual run beside the facts, so both
+    # columns end together and the page fits one screen.
     stage_column, side_column = st.columns([2.4, 1], gap="large")
     with stage_column:
         st.iframe(operation_center.build_stage_html(palette, states, unlocked), height="content")
+        if runs:
+            st.markdown(build_recent_runs_html(runs), unsafe_allow_html=True)
     with side_column:
         if error_text:
             st.caption(f"GitHub no respondió ({error_text}); se muestra la última respuesta guardada.")
@@ -6520,8 +6521,6 @@ def show_operation_center(mode, live=False):
                     + build_operation_facts(latest_load, read_published_figures(get_database_version()),
                                             datetime.now(timezone.utc)), unsafe_allow_html=True)
         show_admin_card()
-        if runs:
-            st.markdown(build_recent_runs_html(runs), unsafe_allow_html=True)
 
 
 def build_operation_side_css(palette):
@@ -6533,12 +6532,16 @@ def build_operation_side_css(palette):
     .oc-fact-value {{font-size:1.15rem; font-weight:700; color:{palette['strong_text']};
         font-variant-numeric:tabular-nums;}}
     .oc-fact-note {{font-size:.8rem; color:{palette['text']};}}
-    .oc-runs {{display:flex; flex-direction:column; gap:2px; padding-top:4px;}}
+    .oc-runs {{display:flex; flex-wrap:wrap; align-items:center; gap:4px 20px; padding-top:10px;
+        border-top:1px solid {palette['card_border']};}}
+    .oc-runs .oc-fact-label {{flex-basis:100%;}}
     .oc-run {{display:flex; align-items:center; font-size:.82rem; color:{palette['text']} !important;
-        text-decoration:none !important; padding:3px 0;}}
+        text-decoration:none !important; padding:2px 0;}}
     .oc-run:hover {{color:{palette['strong_text']} !important;}}
     .oc-dot {{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; flex-shrink:0;}}
-    .st-key-runs_admin {{border:0 !important; padding:4px 0 0 !important; background:transparent !important;}}
+    .st-key-runs_admin {{padding:14px 0 6px;}}
+    .st-key-runs_admin .st-key-runs_run_now {{margin:0 6px 0 4px; flex:none;}}
+    .st-key-runs_admin .run-now-label, .st-key-runs_admin .run-now-note {{text-align:left; margin:0;}}
     </style>"""
 
 

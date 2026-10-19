@@ -1271,6 +1271,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **El IPC** no tiene paso propio en el workflow: se prepara al comienzo del paso de dbt (`etl/pipeline.py`), así que su logo toma ese estado.
 - **Lo que no se puede:** el texto de los logs no se lee dentro del panel. GitHub lo entrega recién al terminar la ejecución, y Streamlit no expone los suyos. Por eso cada paso lleva el enlace directo.
 - **Los cuatro temas:** el dibujo toma los colores de cada uno. Va en su propio marco (`st.iframe`), como la página GitHub, porque st.html quita los degradados y las explicaciones al pasar el cursor.
+- **Ajuste del mismo día:** la página cabe en una pantalla. Las últimas ejecuciones pasan debajo del recorrido, en una franja, y la ejecución manual queda compacta junto a las cifras: botón redondo con su nombre al lado y «Recargar datos» debajo. Antes, la columna derecha bajaba mucho más que el dibujo y dejaba un vacío grande a la izquierda. «Run workflow» se suma a los enlaces del autor, como en la administración (T-54).
+- **«Volver» abre la cabecera de cada página, junto a la ruta:** en la app publicada, Streamlit Cloud dibuja su propia barra (Share, estrella, editar, GitHub) en la esquina superior derecha, encima de donde estaba «Volver».
 
 ## D-166 · El panel se lee en horizontal en los teléfonos
 

@@ -79,9 +79,10 @@ def test_d165_private_addresses_show_only_after_the_control_code():
     palette = charts.get_palette(charts.MODE_CORPORATE)
     public = operation_center.build_stage_html(palette, states)
     private = operation_center.build_stage_html(palette, states, unlocked=True)
-    for address in (project.TOKENS_URL, project.STREAMLIT_ADMIN_URL):
+    # The same rule as the administration links (T-54): only after the control code.
+    for address in (project.TOKENS_URL, project.STREAMLIT_ADMIN_URL, project.WORKFLOW_PAGE_URL):
         assert address not in public and address in private
-    assert project.WORKFLOW_PAGE_URL in public and project.WHOLESALE_SOURCE_URL in public
+    assert project.WHOLESALE_SOURCE_URL in public
     assert 'href="https://github.com/x/y/actions/runs/7/job/70#step:7:1"' in public
     assert public.count('class="oc-node ') == 9
     assert 'class="oc-tip below pinned"' in public
