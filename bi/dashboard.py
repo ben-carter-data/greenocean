@@ -5572,25 +5572,22 @@ def read_context_key(options):
     return key
 
 
-def choose_context_product(options, key, columns):
-    """Familia, producto and calidad · unidad, each limited by the previous choice."""
-    def pick(column, label, values, current, render):
-        values = list(dict.fromkeys(values))
-        index = values.index(current) if current in values else 0
-        return column.selectbox(label, values, index=index, format_func=render,
-                                key=f"context_{label}_{key['product_group']}_{key['product']}_{key['variety']}")
-    group = pick(columns[0], "Familia", options["product_group"], key["product_group"], str)
-    rows = options[options["product_group"] == group]
-    names = list(zip(rows["product"], rows["variety"]))
-    current = (key["product"], key["variety"]) if group == key["product_group"] else names[0]
-    product, variety = pick(columns[1], "Producto", names, current,
-                            lambda pair: pair[0] if pair[1] == UNSPECIFIED else f"{pair[0]} · {pair[1]}")
-    rows = rows[(rows["product"] == product) & (rows["variety"] == variety)]
-    pairs = list(zip(rows["quality"], rows["normalized_unit"]))
-    current = (key["quality"], key["normalized_unit"]) if (product, variety) == (key["product"], key["variety"]) else pairs[0]
-    quality, unit = pick(columns[2], "Calidad · unidad", pairs, current, lambda pair: f"{pair[0]} · {pair[1]}")
-    chosen = {"product_group": group, "product": product, "variety": variety,
-              "quality": quality, "normalized_unit": unit}
+def describe_context_option(option):
+    """«Tomate · Larga vida — Primera, kilo»: what the search field shows and matches."""
+    name = option["product"] if option["variety"] == UNSPECIFIED else f"{option['product']} · {option['variety']}"
+    return f"{name} — {option['quality']}, {option['normalized_unit']}"
+
+
+def choose_context_product(options, key, column):
+    """One search field over every product, quality and unit (step 5 of the refonte):
+    typing filters the list, as in the Resumen; the family is in the breadcrumb."""
+    choices = [tuple(row) for row in options[queries.KEY_COLUMNS].itertuples(index=False)]
+    current = tuple(key[field] for field in queries.KEY_COLUMNS)
+    labels = {choice: describe_context_option(dict(zip(queries.KEY_COLUMNS, choice))) for choice in choices}
+    chosen = column.selectbox("Buscar producto", choices, index=choices.index(current) if current in choices else 0,
+                              format_func=labels.get, key=f"context_search_{'_'.join(map(str, current))}",
+                              placeholder="Escribe un producto…")
+    chosen = dict(zip(queries.KEY_COLUMNS, chosen))
     if chosen != key:
         st.session_state[CONTEXT_KEY] = chosen
         st.rerun()
@@ -5844,8 +5841,8 @@ def show_price_context_page(mode):
                    f'<b>{html.escape(label)}</b></div>', unsafe_allow_html=True)
     back.markdown(f'<a class="ctx-back" href="{html.escape(home_family)}" target="_self">← Volver al resumen</a>',
                   unsafe_allow_html=True)
-    title, *fields = st.columns([2.6, 0.9, 1.1, 0.9], vertical_alignment="bottom")
-    key = choose_context_product(options, key, fields)
+    title, field = st.columns([2.6, 1.2], vertical_alignment="bottom")
+    key = choose_context_product(options, key, field)
     label = describe_context_product(key)
     real = st.session_state.get(CONTEXT_BASIS_KEY) == BASIS_REAL
     model = read_context_model(version, tuple(sorted(key.items())), week, real)
