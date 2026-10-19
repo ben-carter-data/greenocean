@@ -1130,3 +1130,13 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Pipeline:** etiquetas un paso más grandes; se quitan dos fichas «HTTPS · CSV» que tapaban los nombres de las fuentes y repetían el encabezado de la columna.
 - **Alertas de precio:** todas las familias con la misma tarjeta; el número de alertas está escrito, así que la forma y el color ya no representan una cantidad.
 - **Textos:** la nota del pie explica que cada variación semanal compara las mismas regiones; la hoja de estilo opcional (`premium.css`) se carga solo si existe.
+
+## D-151 · La documentación es el PRD, el SAD y el ADR
+
+- **Fecha:** 2026-10-18.
+- **Problema reportado:** las páginas Business Intelligence, Business Analyst e IT y operación eran resúmenes de texto que repetían lo que el panel ya muestra (y la de BI aún listaba K5, retirado en D-146).
+- **Decisión:** la carpeta Documentación tiene tres documentos reales, escritos en español, sin código, con tablas y los diagramas del propio proyecto:
+  - **PRD** (`docs/PRD.md`): problema, perfiles (marcados como hipótesis de diseño), preguntas P1–P6 con su estado final, alcance, requisitos funcionales y no funcionales trazados a reglas, KPI y pruebas, criterios de aceptación, limitaciones y riesgos. Declara que se reconstruyó después de construir el producto y muestra lo previsto frente a lo entregado.
+  - **SAD** (`docs/SAD.md`): contexto, contenedores, flujo por capas, modelo de datos, escenarios de ejecución, despliegue, conceptos transversales, atributos de calidad y deuda técnica.
+  - **ADR** (`docs/ADR.md`): 29 decisiones arquitectónicas en formato estándar (contexto, decisión, alternativas, consecuencias), cada una con su referencia D-xxx; cuando el registro no guarda las alternativas, lo dice.
+- **Cómo se muestran:** el panel lee los archivos de `docs/`, así que muestra lo mismo que GitHub; cada `[[diagrama:…]]` se reemplaza por el diagrama vivo (plataforma, pipeline o modelo estrella). La navegación «Siguiente» termina en la documentación. Las direcciones viejas de los tres perfiles abren el PRD o el SAD. Se quitan las páginas de perfil y su código.
