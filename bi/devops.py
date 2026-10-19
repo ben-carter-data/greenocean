@@ -1,6 +1,6 @@
 """Compact DevOps lifecycle, with locally bundled logos of the tools actually used."""
 import html
-from bi import architecture, charts
+from bi import architecture, charts, tech_glossary
 from bi.brand_icons import logo, logo_body
 
 
@@ -12,6 +12,8 @@ STAGES = [
     ("Operación", "GitHub Actions", "Job semanal y caché", ("github",), "processing", 900, 245),
     ("Monitoreo", "GitHub Issues", "Informe, alertas y logs", ("github",), "orchestration", 710, 430),
 ]
+# The GitHub logo stands for a different GitHub service in each stage.
+STAGE_LOGO_KEYS = {("Operación", "github"): "github_actions", ("Monitoreo", "github"): "github_issues"}
 SEGMENTS = [
     ("M500 245 C420 120 300 110 240 170", 345, 167),
     ("M240 170 C155 250 210 345 300 345", 225, 267),
@@ -44,7 +46,9 @@ def build_svg(states, mode, animate_flow=False):
         color = architecture.LAYER_COLORS[layer]
         pieces.append(f'<g><title>{html.escape(phase + ": " + title + ". " + note)}</title>')
         for offset, slug in enumerate(slugs):
-            pieces.append(logo(slug, x - len(slugs) * 18 + offset * 36, y - 29, color))
+            key = STAGE_LOGO_KEYS.get((phase, slug), tech_glossary.LOGO_KEYS[slug])
+            pieces.append(architecture.add_tech_tooltip(
+                logo(slug, x - len(slugs) * 18 + offset * 36, y - 29, color), key))
         pieces.append(f'<text x="{x}" y="{y + 17}" text-anchor="middle" font-size="14" '
                       f'font-weight="600" fill="{palette["strong_text"]}">{html.escape(title)}</text>'
                       f'<text x="{x}" y="{y + 37}" text-anchor="middle" font-size="12" '
