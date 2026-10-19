@@ -21,18 +21,37 @@ from pathlib import Path
 import duckdb
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from etl import bronze, etl  # noqa: E402
+from etl import bronze, etl, ine  # noqa: E402
 
 PROJECT_DIR = etl.BASE_DIR.parent
 DBT_DIR = PROJECT_DIR / "dbt"
 WORK_DATABASE_FILE = etl.BASE_DIR / "warehouse_build.duckdb"
 SERVING_DATABASE_FILE = etl.BASE_DIR / "datos.duckdb"
 # The tables of the panel, in the order they are copied.
-SERVING_TABLES = ["dim_product", "dim_region", "dim_channel", "dim_date", "weekly_price", "rejection"]
+SERVING_TABLES = ["dim_product", "dim_region", "dim_channel", "dim_date", "weekly_price", "rejection",
+                  "ipc_monthly", "ipc_weekly", "ine_ipc_source"]
 ETL_RUN_SCHEMA = """CREATE TABLE IF NOT EXISTS etl_run (
     run_id INTEGER PRIMARY KEY, started_at VARCHAR NOT NULL, status VARCHAR NOT NULL,
     rows_read INTEGER NOT NULL, rows_loaded INTEGER NOT NULL, rows_rejected INTEGER NOT NULL,
     message VARCHAR)"""
+
+
+def prepare_ipc(serving_file=SERVING_DATABASE_FILE):
+    """IPC of the INE into the bronze layer (D-155). If the INE does not answer, the
+    rows kept in the published database rebuild it: the load never stops for the IPC."""
+    if ine.main() == 0:
+        return
+    if not serving_file.exists():
+        raise RuntimeError("Sin IPC: el INE no respondió y no hay una base publicada con sus filas")
+    with duckdb.connect(str(serving_file), read_only=True) as connection:
+        rows = connection.execute("SELECT file, year, month, index_value, monthly_change "
+                                  "FROM ine_ipc_source").fetchall()
+    files = {}
+    for file, year, month, index_value, monthly_change in rows:
+        files.setdefault(file, []).append({"year": year, "month": month, "index_value": index_value,
+                                           "monthly_change": monthly_change})
+    ine.write_bronze(files)
+    print("IPC | bronce reconstruido desde la base publicada")
 
 
 def read_run_history(serving_file=SERVING_DATABASE_FILE, legacy_file=etl.DATABASE_FILE):
@@ -90,7 +109,8 @@ def record_failed_run(history, run, serving_file=SERVING_DATABASE_FILE):
         connection.execute("INSERT INTO etl_run VALUES (?, ?, ?, ?, ?, ?, ?)", run)
 
 
-def main(dbt_command=None, load_raw=True):
+def main(dbt_command=None, load_raw=True, record=True):
+    """record=False (--local): a development build keeps the published run history as it is."""
     started_at = datetime.now().isoformat(timespec="seconds")
     if load_raw:
         with etl.open_database() as raw_connection:
@@ -102,6 +122,7 @@ def main(dbt_command=None, load_raw=True):
             bronze.export_source(raw_connection, source)
     finally:
         raw_connection.close()
+    prepare_ipc()
     history = read_run_history()
     run_id = max((row[0] for row in history), default=0) + 1
     ok, output = run_dbt(run_id, dbt_command)
@@ -118,12 +139,17 @@ def main(dbt_command=None, load_raw=True):
                                     rows_rejected, message))
         print(message)
         return 1
-    write_serving_database(history, (run_id, started_at, etl.STATUS_LOADED, rows_read, rows_loaded,
-                                     rows_rejected, ""))
+    if record:
+        write_serving_database(history, (run_id, started_at, etl.STATUS_LOADED, rows_read, rows_loaded,
+                                         rows_rejected, ""))
+    else:
+        write_serving_database(history[:-1], history[-1])
+        with duckdb.connect(str(SERVING_DATABASE_FILE)) as connection:
+            connection.execute("UPDATE rejection SET run_id = ?", [history[-1][0]])
     print(f"LOADED | leídas {rows_read} | cargadas {rows_loaded} | rechazadas {rows_rejected}"
           f" | {SERVING_DATABASE_FILE.name} {SERVING_DATABASE_FILE.stat().st_size / 1e6:.1f} MB")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(record="--local" not in sys.argv))

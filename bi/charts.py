@@ -721,7 +721,9 @@ def draw_price_context(rows, mode, height=380):
     palette = get_palette(mode)
     domain = [channel for channel in CONTEXT_CHANNELS if channel in set(rows["channel"])]
     colors = alt.Scale(domain=domain, range=[CONTEXT_CHANNELS[channel] for channel in domain])
-    values = pd.concat([rows["price"], rows["p25"], rows["p75"]]).dropna()
+    real = "nominal_price" in rows
+    values = pd.concat([rows["price"], rows["p25"], rows["p75"]]
+                       + ([rows["nominal_price"]] if real else [])).dropna()
     span = max(values.max() - values.min(), values.max() * .05, 1) if not values.empty else 1
     scale = alt.Scale(zero=False, nice=False,
                       domain=[max(0, values.min() - span * .12), values.max() + span * .12] if not values.empty else None)
@@ -739,13 +741,21 @@ def draw_price_context(rows, mode, height=380):
                  alt.Tooltip("channel:N", title="Canal"),
                  alt.Tooltip("price:Q", title="Precio", format=",.0f"),
                  alt.Tooltip("p25:Q", title="Habitual desde", format=",.0f"),
-                 alt.Tooltip("p75:Q", title="Habitual hasta", format=",.0f")])
+                 alt.Tooltip("p75:Q", title="Habitual hasta", format=",.0f")]
+                + ([alt.Tooltip("nominal_price:Q", title="Nominal", format=",.0f")] if real else []))
     last = lines.sort_values("week_start").groupby("channel").tail(1)
     point = alt.Chart(last).mark_point(filled=True, size=70, stroke=palette["card"], strokeWidth=1.5).encode(
         x=x, y=alt.Y("price:Q", scale=scale), color=alt.Color("channel:N", scale=colors, legend=None))
     # The state (sobre/dentro/bajo) is already in the summary sentence and the
     # «Precio esta semana» card; the chart itself stays free of text labels (D-098).
-    chart = alt.layer(band, line, point).properties(height=height)
+    layers = [band, line, point]
+    if real:
+        # D-155: the nominal price, thin and grey, behind the real one.
+        nominal = alt.Chart(split_gaps(rows, "nominal_price")).mark_line(
+            strokeWidth=1.4, strokeDash=[4, 3], color=palette["reference"], opacity=.9).encode(
+            x=x, y=alt.Y("nominal_price:Q", scale=scale), detail=["channel:N", "segment:N"])
+        layers = [band, nominal, line, point]
+    chart = alt.layer(*layers).properties(height=height)
     return apply_chart_style(chart, mode)
 
 

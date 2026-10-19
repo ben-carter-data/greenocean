@@ -4,9 +4,14 @@ sources:
   - name: bronze
     description: Filas crudas de ODEPA, tal como se leyeron, en Parquet (etl/bronze.py).
     meta:
-      external_location: "read_parquet('{{ var('bronze_dir') }}/{name}/*/*.parquet', hive_partitioning = true)"
+      external_location: "read_parquet('{{ var('bronze_dir') }}/{name}/*/*.parquet', hive_partitioning = true, union_by_name = true)"
     tables:
       - name: odepa_wholesale
         description: Precios mayoristas diarios por mercado, un archivo por año.
       - name: odepa_consumer
         description: Precios al consumidor semanales por canal y región, un archivo por año.
+      - name: ine_ipc
+        description: >
+          IPC del INE, división «Alimentos y bebidas no alcohólicas», tal como se publica:
+          la serie base 2023 = 100 (desde enero 2024) y la serie empalmada de divisiones
+          (diciembre 2009 a diciembre 2023), etl/ine.py.

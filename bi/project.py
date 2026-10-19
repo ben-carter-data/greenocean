@@ -85,7 +85,7 @@ INDICATORS_HEADING = "7. Indicadores"
 # A table cell may contain an escaped pipe (\|), which is not a column border.
 CELL_BORDER_PATTERN = re.compile(r"(?<!\\)\|")
 DEFINITION_PATTERN = re.compile(r"^- `([^`]+)`: (.+)$", re.MULTILINE)
-DECISION_HEADING_PATTERN = re.compile(r"^## (D-\d+ · .+)$", re.MULTILINE)
+DECISION_HEADING_PATTERN = re.compile(r"^## (D-\d+[a-z]? · .+)$", re.MULTILINE)
 
 # Clauses shown as labels, with the pattern that finds them in a query without
 # comments. Only clauses really present are shown.
