@@ -48,13 +48,25 @@ COLUMN_HEADERS = [
     ("sources", "FUENTES", "HTTPS · CSV · sin API", "sources"),
     ("ingestion", "INGESTA", "Python · requests", "ingestion"),
     ("landing", "ATERRIZAJE", "SQLite · tal cual llega", "ingestion"),
-    ("bronze", "BRONCE", "Parquet · copia exacta", "bronze"),
+    ("bronze", "BRONZE", "Parquet · copia exacta", "bronze"),
     ("staging", "STAGING", "dbt · tipos y textos", "processing"),
     ("intermediate", "INTERMEDIO", "dbt · reglas de negocio", "processing"),
     ("marts", "MARTS", "dbt · modelos y pruebas", "quality"),
-    ("gold", "ORO", "DuckDB · modelo estrella", "gold"),
+    ("gold", "SERVING", "DuckDB · modelo estrella", "gold"),
     ("consumption", "CONSUMO", "Streamlit · GitHub · SQL", "consumption"),
 ]
+# The medallion architecture over those columns: bronze (the Parquet copy), silver (the
+# dbt staging and intermediate models) and gold (the marts and datos.duckdb). Each band
+# is (key, first column, last column, label detail); the silver ink depends on the mode.
+MEDALLION = [("bronze", "bronze", "bronze", "Parquet"),
+             ("silver", "staging", "intermediate", "Transformación dbt"),
+             ("gold", "marts", "gold", "Marts → datos.duckdb")]
+SILVER_INK = {charts.BASE_DARK: "#aab6c6", charts.BASE_LIGHT: "#6f7c8e"}
+# Bands of the journey (SVG units): half widths around their columns, so that each band
+# holds the texts of its steps and the three sit 7 apart.
+MEDALLION_SPAN = {"bronze": (535, 683), "silver": (690, 1041), "gold": (1048, 1362)}
+MEDALLION_TOP = 224
+MEDALLION_BOTTOM = 394
 # The small version shown at the top of the project page.
 MINI_WIDTH = 1000
 MINI_HEIGHT = 160
@@ -65,6 +77,8 @@ VERTICAL_WIDTH = 400
 VERTICAL_TILE_X = 64
 VERTICAL_FIRST_Y = 170
 VERTICAL_ROW = 112
+VERTICAL_BAND_ABOVE = 46   # a medallion band starts this far above its first tile centre
+VERTICAL_BAND_BELOW = 44   # and ends this far below its last one
 # The infrastructure: one frame per platform with its components inside, and
 # each connection labelled with how the two pieces talk (D-054).
 PLATFORM_WIDTH = 1420
@@ -831,23 +845,65 @@ def build_container(palette):
     return (f'<rect x="{left}" y="186" width="{width}" height="410" rx="18" fill="none" '
             f'stroke="{palette["card_border"]}" stroke-width="1.2"/>'
             f'<text x="{left + 18}" y="212" font-size="13" font-weight="700" '
-            f'letter-spacing="1" fill="{palette["text"]}">ALMACENAMIENTO Y TRANSFORMACIÓN · '
-            f'dbt Core sobre DuckDB</text>')
+            f'letter-spacing="1" fill="{palette["text"]}">ALMACENAMIENTO Y TRANSFORMACIÓN</text>')
+
+
+def medallion_color(key, palette):
+    """Ink of a medallion band: the bronze and gold layer colours, a cool silver."""
+    return SILVER_INK[palette["base"]] if key == "silver" else LAYER_COLORS[key]
+
+
+def build_medallion_label(x, y, key, detail, palette, anchor="middle"):
+    """«SILVER · Transformación dbt»: the medallion name in its ink, small and spaced,
+    then what the band holds; it explains the medallion layer on hover."""
+    color = medallion_color(key, palette)
+    text = (f'<text x="{x}" y="{y}" text-anchor="{anchor}" font-size="11" letter-spacing="1.3">'
+            f'<tspan font-weight="700" fill="{color}">{key.upper()}</tspan>'
+            f'<tspan font-weight="600" letter-spacing=".3" fill="{palette["text"]}"> · '
+            f'{html.escape(detail)}</tspan></text>')
+    return add_tech_tooltip(text, tech_glossary.LABEL_KEYS[key.upper()])
+
+
+def build_medallion_band(left, top, width, height, key, palette, radius=12):
+    """A sober container: thin rounded outline and a very faint tint of its medallion."""
+    color = medallion_color(key, palette)
+    dark = palette["base"] == charts.BASE_DARK
+    return (f'<rect class="medallion-band medallion-{key}" x="{left}" y="{top}" width="{width}" '
+            f'height="{height}" rx="{radius}" fill="{color}" fill-opacity="{.05 if dark else .035}" '
+            f'stroke="{color}" stroke-opacity="{.42 if dark else .5}" stroke-width="1"/>')
+
+
+def build_medallion_bands(palette):
+    """Bronze, silver and gold as background containers of the main row, left to right,
+    each named at its top: the medallion reading of the transformation steps."""
+    parts = []
+    for key, _, _, detail in MEDALLION:
+        left, right = MEDALLION_SPAN[key]
+        parts.append(build_medallion_band(left, MEDALLION_TOP, right - left,
+                                          MEDALLION_BOTTOM - MEDALLION_TOP, key, palette))
+        parts.append(build_medallion_label((left + right) / 2, MEDALLION_TOP + 14, key, detail,
+                                           palette))
+    return "".join(parts)
 
 
 def build_dbt_frame(figures, palette):
-    """The three dbt steps inside their own named frame: the part of the journey that
-    the «Linaje dbt» view opens model by model."""
+    """The three dbt steps named by a thin bracket above them, staging to marts: the part
+    of the journey that the «Linaje dbt» view opens model by model. It straddles the
+    silver and gold bands, as dbt builds both."""
     color = LAYER_COLORS["processing"]
-    left = COLUMN_X["staging"] - 92
-    width = COLUMN_X["marts"] + 92 - left
+    left = MEDALLION_SPAN["silver"][0]
+    right = COLUMN_X["marts"] + 74
+    middle = (left + right) / 2
     detail = figures.get("dbt", "")
     label = "dbt CORE · staging → intermedio → marts" + (f" · {detail}" if detail else "")
-    return (f'<rect x="{left}" y="226" width="{width}" height="184" rx="14" '
-            f'fill="{color}" fill-opacity=".07" stroke="{color}" stroke-opacity=".7" '
-            f'stroke-width="1.4" stroke-dasharray="6 4"/>'
-            f'<text x="{left + width / 2}" y="243" text-anchor="middle" font-size="12" font-weight="700" '
-            f'letter-spacing=".6" fill="{color}">{html.escape(label)}</text>')
+    half = len(label) * 3.35 + 10  # half the label, bold 11, and a little air
+    line_y = MEDALLION_TOP - 16
+    stroke = f'stroke="{color}" stroke-opacity=".75" stroke-width="1.2" fill="none"'
+    return (f'<path d="M{left} {MEDALLION_TOP - 4} V{line_y} H{middle - half}" {stroke}/>'
+            f'<path d="M{middle + half} {line_y} H{right} V{MEDALLION_TOP - 4}" {stroke}/>'
+            + add_tech_tooltip(f'<text x="{middle}" y="{line_y + 4}" text-anchor="middle" font-size="11" '
+                               f'font-weight="700" letter-spacing=".5" fill="{color}">{html.escape(label)}</text>',
+                               "dbt"))
 
 
 def build_journey_svg(states, figures, mode, animate_flow=None):
@@ -862,7 +918,8 @@ def build_journey_svg(states, figures, mode, animate_flow=None):
              f'aria-label="Recorrido de los datos de ODEPA al panel" '
              f'font-family="{charts.CHART_FONT}">',
              build_style((states.get("workflow") == control.RUN_IN_PROGRESS if animate_flow is None else animate_flow)),
-             build_column_headers(), build_container(palette), build_dbt_frame(figures, palette),
+             build_column_headers(), build_container(palette), build_medallion_bands(palette),
+             build_dbt_frame(figures, palette),
              build_orchestration(states, figures, palette),
              build_links(palette, (states.get("workflow") == control.RUN_IN_PROGRESS if animate_flow is None else animate_flow)),
              build_quarantine(figures, palette), build_main_nodes(states, figures, palette),
@@ -926,7 +983,7 @@ def list_vertical_steps(states, figures):
          ["Python · requests", figures["last_run"]], states["download"], "manifest"),
         ("ATERRIZAJE", "ingestion", draw_sqlite_icon, "SQLite · raw.db",
          ["zona de aterrizaje · solo ODEPA", "hash por archivo"], None, "raw_*"),
-        ("BRONCE", "bronze", draw_parquet_icon, "Parquet · bronce",
+        ("BRONZE", "bronze", draw_parquet_icon, "Parquet · bronce",
          ["Python · pyarrow", "texto, por fuente y año"], None, "sources"),
         ("STAGING", "processing", draw_dbt_icon, "Staging",
          ["dbt · SQL", figures["rows_read"]], dbt_state, "stg_*"),
@@ -934,7 +991,7 @@ def list_vertical_steps(states, figures):
          ["dbt · SQL", f"Rechazos {figures['rows_rejected']}"], dbt_state, "int_*"),
         ("MARTS", "quality", draw_shield_icon, "Marts y pruebas",
          ["dbt · SQL", "estrella · IPC · pruebas"], states["load"], "OK"),
-        ("ORO", "gold", draw_duckdb_icon, "datos.duckdb",
+        ("SERVING", "gold", draw_duckdb_icon, "datos.duckdb",
          [figures["weekly_prices"], figures["latest_week"]], states["load"], None),
     ]
 
@@ -996,6 +1053,21 @@ def build_vertical_band(y, title, items, palette):
     return "".join(parts)
 
 
+def build_vertical_medallion(first_y, headers, palette):
+    """The bronze, silver and gold bands behind their rows, each named at its top right;
+    the chips between two bands sit in the gap between them."""
+    row_of = {header: first_y + index * VERTICAL_ROW for index, header in enumerate(headers) if header}
+    column_header = {column: title for column, title, _, _ in COLUMN_HEADERS}
+    parts = []
+    for key, first, last, detail in MEDALLION:
+        top = row_of[column_header[first]] - VERTICAL_BAND_ABOVE
+        bottom = row_of[column_header[last]] + VERTICAL_BAND_BELOW
+        parts.append(build_medallion_band(8, top, VERTICAL_WIDTH - 16, bottom - top, key, palette))
+        parts.append(build_medallion_label(VERTICAL_WIDTH - 20, top + 15, key, detail, palette,
+                                           anchor="end"))
+    return "".join(parts)
+
+
 def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
     """The whole live diagram from top to bottom, readable on a phone.
 
@@ -1018,6 +1090,7 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
                  f'H{VERTICAL_TILE_X}" fill="none" stroke="{LAYER_COLORS["sources"]}" '
                  f'stroke-width="1.6" opacity="0.85"/>')
     steps = list_vertical_steps(states, figures)
+    parts.append(build_vertical_medallion(y, [step[0] for step in steps], palette))
     for header, layer, draw_icon, title, lines, state, chip_text in steps:
         parts.append(build_vertical_node(y, header, layer, draw_icon, title, lines, palette,
                                          state))
@@ -1036,7 +1109,7 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
                    (draw_code_icon, "Consultas SQL", ["DuckDB · queries.sql", "bi/queries.sql"],
                     None)]
     last_y = y + (len(consumption) - 1) * VERTICAL_ROW
-    parts.append(f'<path d="M{VERTICAL_TILE_X} {gold_bottom} V{gold_bottom + 14} '
+    parts.append(f'<path d="M{VERTICAL_TILE_X} {gold_bottom} V{gold_bottom + 22} '
                  f'H{trunk_x} V{last_y}" fill="none" stroke="{LAYER_COLORS["gold"]}" '
                  f'stroke-width="1.6" opacity="0.85"/>')
     for position, (draw_icon, title, lines, state) in enumerate(consumption):

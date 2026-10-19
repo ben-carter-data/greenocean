@@ -10,6 +10,7 @@ serving database (tables dbt_node and dbt_result). This module turns them into:
 - the one-line lineage badge at the foot of every page.
 Nothing here is typed by hand: a new model or test appears on the next build.
 """
+import colorsys
 import html
 import json
 import re
@@ -37,11 +38,21 @@ MATERIALIZED_KEYS = {"vista": "view", "tabla": "table", "parquet": "parquet"}
 LAYER_LOGOS = {"bronze": "apacheparquet", "staging": "dbt", "intermediate": "dbt", "marts": "dbt",
                "serving": "duckdb"}
 # Title and subtitle of each column, as the journey names its steps.
-FRAME_TITLES = {"bronze": ("BRONCE", "Parquet · {count} fuentes"),
+FRAME_TITLES = {"bronze": ("FUENTES", "Parquet · {count} tablas"),
                 "staging": ("STAGING", "dbt · {count} vistas"),
                 "intermediate": ("INTERMEDIO", "dbt · {count} tablas"),
                 "marts": ("MARTS", "dbt · {count} modelos y pruebas"),
-                "serving": ("ORO", "DuckDB · servida al panel")}
+                "serving": ("SERVING", "DuckDB · servida al panel")}
+# The explanation of each column title: the bronze column holds the dbt sources.
+HEADER_KEYS = dict(LAYER_KEYS, bronze="sources")
+# The medallion containers, left to right: (key, its columns, what it holds, left, right).
+# Bronze is the Parquet copy, silver the dbt staging and intermediate models, gold the
+# marts and the datos.duckdb they are copied to. Each is named on a tab on its top edge.
+MEDALLION = [("bronze", ("bronze",), "Parquet", 12, 220),
+             ("silver", ("staging", "intermediate"), "Transformación dbt", 232, 1000),
+             ("gold", ("marts", "serving"), "Marts → datos.duckdb", 1012, 1588)]
+MEDALLION_TOP = 44
+MEDALLION_BOTTOM = 748
 # The tile icon of each node, from the journey's own set: the dbt logo for the views,
 # and a picture of what each table does after them.
 NODE_ICONS = {"int_prices__validated": architecture.draw_funnel_icon,
@@ -61,8 +72,8 @@ LAYER_ICONS = {"bronze": architecture.draw_parquet_icon, "staging": architecture
 WIDTH = 1600
 HEIGHT = 800
 SIDE = 18
-SUBTITLE_Y = 24        # the line «dbt Core · staging → intermedio → marts · …»
-HEADER_Y = 70          # baseline of a column title; its subtitle goes 19 below
+SUBTITLE_Y = 21        # the line «dbt Core · staging → intermedio → marts · …»
+HEADER_Y = 80          # baseline of a column title; its subtitle goes 19 below
 FIRST_ROW = 156        # centre of the highest model
 LAST_ROW = 700         # lowest centre a model may take
 MART_PITCH = 70
@@ -72,8 +83,8 @@ GOLD = 92
 NAME_SIZE = 14
 PORT = 9               # intermediate links run over the tile's name, 9 above its centre
 COLUMN_X = {"bronze": 92, "staging": 352, "intermediate": 604, "marts": 1114, "serving": 1494}
-HEADER_X = {"bronze": 40, "staging": 304, "intermediate": 562, "marts": 1074, "serving": 1400}
-DIVIDERS = [222, 478, 990, 1384]
+HEADER_X = {"bronze": 40, "staging": 304, "intermediate": 562, "marts": 1074, "serving": 1392}
+DIVIDERS = [478, 1378]  # inside silver and gold, between their two columns
 STAGING_BUS = 524      # where the staging views meet before the intermediate chain
 MART_LANE = 1046       # where a model turns down or up to its marts
 GOLD_BUS = 1346        # where the marts meet before datos.duckdb
@@ -371,10 +382,34 @@ TOOLTIPS_SERVING = architecture.TOOLTIPS["datos.duckdb"]
 TILE_KEYS = {"bronze": "bronze", "staging": "dbt", "intermediate": "dbt", "marts": "marts", "serving": "gold"}
 TILE_COLORS = {"bronze": LAYER_COLORS["bronze"], "dbt": LAYER_COLORS["staging"],
                "marts": LAYER_COLORS["marts"], "gold": LAYER_COLORS["serving"]}
+# The violet and pink tiles shine less than the journey's flat tiles would: 18 % less
+# saturation and 10 % less light, and an 18 % softer glow on dark themes.
+TONED = ("dbt", "marts")
+TONE_SATURATION = .82
+TONE_LIGHTNESS = .9
+GLOW = {"opacity": .55, "blur": 9}
+TONED_GLOW = {"opacity": .45, "blur": 8}
+# Links stay quiet until a selection lights its own path.
+EDGE_WIDTH = 1.3
+EDGE_OPACITY = {"dark": .5, "light": .58}
+LIT_WIDTH = 2.4
 
 
 def is_dark(palette):
     return palette.get("base") == charts.BASE_DARK
+
+
+def tone(color):
+    """color with less saturation and light (TONE_SATURATION, TONE_LIGHTNESS)."""
+    red, green, blue = (int(color[index:index + 2], 16) / 255 for index in (1, 3, 5))
+    hue, lightness, saturation = colorsys.rgb_to_hls(red, green, blue)
+    rgb = colorsys.hls_to_rgb(hue, lightness * TONE_LIGHTNESS, saturation * TONE_SATURATION)
+    return "#" + "".join(f"{round(value * 255):02x}" for value in rgb)
+
+
+def tile_color(key):
+    """The face colour of a tile: violet and pink toned down, bronze and gold as they are."""
+    return tone(TILE_COLORS[key]) if key in TONED else TILE_COLORS[key]
 
 
 def build_defs(suffix, palette):
@@ -385,15 +420,18 @@ def build_defs(suffix, palette):
              f'<linearGradient id="lin-gloss-{suffix}" x1="0" y1="0" x2="0" y2="1">'
              '<stop offset="0" stop-color="#ffffff" stop-opacity=".62"/>'
              '<stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>']
-    for key, color in TILE_COLORS.items():
+    for key in TILE_COLORS:
+        color = tile_color(key)
+        glow = TONED_GLOW if key in TONED else GLOW
+        highlight = .3 if key in TONED else .38
         parts.append(f'<linearGradient id="lin-face-{key}-{suffix}" x1="0" y1="0" x2="1" y2="1">'
-                     f'<stop offset="0" stop-color="{mix(color, "#ffffff", .38)}"/>'
+                     f'<stop offset="0" stop-color="{mix(color, "#ffffff", highlight)}"/>'
                      f'<stop offset=".5" stop-color="{color}"/>'
                      f'<stop offset="1" stop-color="{mix(color, "#000000", .42)}"/></linearGradient>')
         if dark:
             parts.append(f'<filter id="lin-glow-{key}-{suffix}" x="-60%" y="-60%" width="220%" height="220%">'
-                         f'<feGaussianBlur in="SourceAlpha" stdDeviation="9" result="blur"/>'
-                         f'<feFlood flood-color="{color}" flood-opacity=".55"/>'
+                         f'<feGaussianBlur in="SourceAlpha" stdDeviation="{glow["blur"]}" result="blur"/>'
+                         f'<feFlood flood-color="{color}" flood-opacity="{glow["opacity"]}"/>'
                          '<feComposite in2="blur" operator="in" result="glow"/>'
                          '<feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge></filter>')
         else:
@@ -406,13 +444,10 @@ def build_defs(suffix, palette):
                  f'<stop offset=".32" stop-color="{mix(gold, "#ffffff", .42)}"/>'
                  f'<stop offset=".62" stop-color="{gold}"/>'
                  f'<stop offset="1" stop-color="{mix(gold, "#000000", .5)}"/></linearGradient>')
-    if dark:
-        parts.append(f'<filter id="lin-wire-{suffix}" filterUnits="userSpaceOnUse" x="0" y="0" '
-                     f'width="{WIDTH}" height="{HEIGHT}"><feGaussianBlur stdDeviation="2.4" result="blur"/>'
-                     '<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>')
     for key, color in arrow_colors(palette).items():
+        size = 9 if key == "lit" else 7
         parts.append(f'<marker id="lin-arrow-{key}-{suffix}" viewBox="0 0 10 10" refX="8.5" refY="5" '
-                     f'markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto">'
+                     f'markerWidth="{size}" markerHeight="{size}" markerUnits="userSpaceOnUse" orient="auto">'
                      f'<path d="M0,0.6 L10,5 L0,9.4 z" fill="{color}"/></marker>')
     parts.append('</defs>')
     return "".join(parts)
@@ -420,7 +455,7 @@ def build_defs(suffix, palette):
 
 def arrow_colors(palette):
     """The colour of each kind of link: the layer it leaves, and the two states of a selection."""
-    return {"bronze": LAYER_COLORS["bronze"], "dbt": LAYER_COLORS["staging"], "marts": LAYER_COLORS["marts"],
+    return {"bronze": LAYER_COLORS["bronze"], "dbt": tile_color("dbt"), "marts": tile_color("marts"),
             "lit": LIT["dark" if is_dark(palette) else "light"], "dim": palette["reference"]}
 
 
@@ -429,6 +464,8 @@ def build_style(suffix, palette):
     classes are toggled by LINEAGE_SCRIPT."""
     lit, dim = arrow_colors(palette)["lit"], arrow_colors(palette)["dim"]
     graph = f".lin-{suffix}"
+    halo = "0 0 3px rgba({}, .6)" if is_dark(palette) else "0 0 2px rgba({}, .35)"
+    halo = halo.format(", ".join(str(int(lit[index:index + 2], 16)) for index in (1, 3, 5)))
     return f"""<style>
     {graph} .lin-node, {graph} .lin-edge, {graph} .lin-joint {{ transition: opacity .18s ease, stroke .18s ease, fill .18s ease; }}
     {graph} .lin-node {{ cursor: pointer; }}
@@ -436,14 +473,14 @@ def build_style(suffix, palette):
     {graph} .lin-edge.lin-extra, {graph} .lin-joint.lin-extra {{ opacity: 0; }}
     {graph}.lin-active .lin-node {{ opacity: .2; }}
     {graph}.lin-active .lin-node.lin-on {{ opacity: 1; }}
-    {graph}.lin-active .lin-edge {{ stroke: {dim}; opacity: .3; marker-end: url(#lin-arrow-dim-{suffix}); }}
-    {graph}.lin-active .lin-edge.lin-on {{ stroke: {lit}; opacity: 1; stroke-width: 2.6;
-                                          marker-end: url(#lin-arrow-lit-{suffix}); }}
-    {graph}.lin-active .lin-joint {{ fill: {dim}; opacity: .3; }}
-    {graph}.lin-active .lin-joint.lin-on {{ fill: {lit}; opacity: 1; }}
+    {graph}.lin-active .lin-edge {{ stroke: {dim}; opacity: .2; marker-end: url(#lin-arrow-dim-{suffix}); }}
+    {graph}.lin-active .lin-edge.lin-on {{ stroke: {lit}; opacity: 1; stroke-width: {LIT_WIDTH};
+                                          marker-end: url(#lin-arrow-lit-{suffix}); filter: drop-shadow({halo}); }}
+    {graph}.lin-active .lin-joint {{ fill: {dim}; opacity: .2; }}
+    {graph}.lin-active .lin-joint.lin-on {{ fill: {lit}; opacity: 1; r: 3.4px; }}
     {graph}.lin-active .lin-extra:not(.lin-on) {{ opacity: 0; }}
     {graph}.lin-active .lin-flow {{ display: none; }}
-    {graph}.lin-active .lin-flow.lin-on {{ display: inline; fill: {lit}; }}
+    {graph}.lin-active .lin-flow.lin-on {{ display: inline; fill: {lit}; opacity: 1; }}
     {graph} .lin-node.lin-focus .lin-face {{ stroke: {lit}; stroke-width: 2.4; stroke-opacity: 1; }}
     @media (prefers-reduced-motion: reduce) {{
       {graph} .lin-flow {{ display: none !important; }}
@@ -471,7 +508,7 @@ def build_header(layer, count, palette):
     subtitle = subtitle.format(count=count)
     x = HEADER_X[layer]
     slug = LAYER_LOGOS[layer]
-    explanation = tech_glossary.describe(LAYER_KEYS[layer]) if layer in LAYER_KEYS else TOOLTIPS_SERVING
+    explanation = tech_glossary.describe(HEADER_KEYS[layer]) if layer in HEADER_KEYS else TOOLTIPS_SERVING
     logo = brand_icons.logo(slug, x, HEADER_Y - 22, color, 30)
     return (tech_tip(logo, tech_glossary.describe(tech_glossary.LOGO_KEYS[slug]))
             + tech_tip(f'<text x="{x + 40}" y="{HEADER_Y}" font-size="16" font-weight="700" '
@@ -484,8 +521,25 @@ def build_header(layer, count, palette):
 def build_dividers(palette):
     """Subtle vertical lines between the columns, no heavy frames."""
     color = palette["card_border"] if is_dark(palette) else palette["grid"]
-    return "".join(f'<path d="M{x} {HEADER_Y - 28} V{LEGEND_Y - 30}" stroke="{color}" stroke-width="1" '
-                   f'stroke-dasharray="3 5" opacity=".9"/>' for x in DIVIDERS)
+    return "".join(f'<path d="M{x} {MEDALLION_TOP + 18} V{MEDALLION_BOTTOM - 14}" stroke="{color}" '
+                   f'stroke-width="1" stroke-dasharray="3 5" opacity=".7"/>' for x in DIVIDERS)
+
+
+def build_medallion(palette):
+    """Bronze, silver and gold as three sober containers behind the columns, each named
+    on a small tab centred on its top edge: «SILVER · Transformación dbt»."""
+    parts = []
+    for key, _, detail, left, right in MEDALLION:
+        color = architecture.medallion_color(key, palette)
+        middle = (left + right) / 2
+        width = len(key) * 8.4 + (len(detail) + 3) * 6.2 + 22
+        parts.append(architecture.build_medallion_band(left, MEDALLION_TOP, right - left,
+                                                       MEDALLION_BOTTOM - MEDALLION_TOP, key, palette, 16))
+        parts.append(f'<rect x="{middle - width / 2:.1f}" y="{MEDALLION_TOP - 10}" width="{width:.1f}" '
+                     f'height="20" rx="10" fill="{palette["card"]}" stroke="{color}" stroke-opacity=".5" '
+                     f'stroke-width="1"/>')
+        parts.append(architecture.build_medallion_label(middle, MEDALLION_TOP + 4, key, detail, palette))
+    return f'<g class="lin-medallion">{"".join(parts)}</g>'
 
 
 def draw_tile(x, y, key, suffix, palette, size=TILE):
@@ -714,23 +768,23 @@ def build_edges(edges, palette, suffix):
     """Paths (data-from, data-to), their junction dots and, unless the reader asked for
     less motion, one dot of data travelling along each."""
     colors = arrow_colors(palette)
+    opacity = EDGE_OPACITY["dark" if is_dark(palette) else "light"]
     paths, joints, flows = [], [], []
     for index, (source, target, path, key, points, extra) in enumerate(edges):
         ends = f'data-from="{html.escape(source)}" data-to="{html.escape(target)}"'
         extra_class = " lin-extra" if extra else ""
         dash = ' stroke-dasharray="4 3"' if extra else ""
         paths.append(f'<path class="lin-edge{extra_class}" {ends} d="{path}" fill="none" stroke="{colors[key]}" '
-                     f'stroke-width="1.8" stroke-linejoin="round"{dash} opacity=".92" '
+                     f'stroke-width="{EDGE_WIDTH}" stroke-linejoin="round"{dash} opacity="{opacity}" '
                      f'marker-end="url(#lin-arrow-{key}-{suffix})"/>')
         for x, y in points:
-            joints.append(f'<circle class="lin-joint{extra_class}" {ends} cx="{x:.1f}" cy="{y:.1f}" r="3.6" '
-                          f'fill="{colors[key]}"/>')
+            joints.append(f'<circle class="lin-joint{extra_class}" {ends} cx="{x:.1f}" cy="{y:.1f}" r="2.6" '
+                          f'fill="{colors[key]}" opacity="{opacity}"/>')
         if not extra:
-            flows.append(f'<circle class="lin-flow" {ends} r="2.6" fill="{colors[key]}" opacity=".9">'
+            flows.append(f'<circle class="lin-flow" {ends} r="2.2" fill="{colors[key]}" opacity=".6">'
                          f'<animateMotion dur="{FLOW_SECONDS}s" begin="-{index * .53 % FLOW_SECONDS:.2f}s" '
                          f'repeatCount="indefinite" path="{path}"/></circle>')
-    wire = f' filter="url(#lin-wire-{suffix})"' if is_dark(palette) else ""
-    return (f'<g class="lin-edges"{wire}>{"".join(paths)}</g><g class="lin-joints">{"".join(joints)}</g>'
+    return (f'<g class="lin-edges">{"".join(paths)}</g><g class="lin-joints">{"".join(joints)}</g>'
             f'<g class="lin-flows">{"".join(flows)}</g>')
 
 
@@ -797,7 +851,7 @@ def build_lineage_svg(nodes, results, mode):
     parts = [f'<svg class="lin-graph lin-{suffix}" viewBox="0 0 {WIDTH} {HEIGHT}" width="100%" role="img" '
              f'aria-label="Linaje dbt: de bronce a marts" font-family="{charts.CHART_FONT}">',
              build_style(suffix, palette), build_defs(suffix, palette), build_subtitle(summary, palette),
-             build_dividers(palette)]
+             build_medallion(palette), build_dividers(palette)]
     for layer, _, _ in LAYERS:
         parts.append(build_header(layer, len(columns[layer]), palette))
     parts.append(build_header("serving", 1, palette))
