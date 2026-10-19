@@ -123,6 +123,7 @@ El diseño planteó seis preguntas. Tras la revisión de pertinencia del 18-10-2
 | RNF-06 | Integridad ante fallas | Si un paso falla, los siguientes no corren y la base del repositorio no cambia | D-034 |
 | RNF-07 | Lectura en una pantalla | Cada vista del Dashboard se lee completa sin desplazarse en 1440 × 900 y 1920 × 1080; en pantallas menores la grilla se apila | D-067, D-092, D-094 |
 | RNF-08 | Accesibilidad de lectura | Paleta de canales comprobada para daltonismo; números y fechas en formato chileno; ayudas ⓘ en cada tarjeta | D-037, D-040 |
+| RNF-10 | Portabilidad (prevista) | Cambiar de motor de base de datos debe ser un cambio de configuración, no de código; la auditoría confirma cifras idénticas en cualquier motor | ADR-30, D-152 |
 | RNF-09 | Sin tecnologías de apariencia | No se agregan nube, contenedores ni modelos predictivos que no respondan mejor una pregunta | D-019 |
 
 ## 8. Indicadores
@@ -196,3 +197,17 @@ Los nueve criterios de `DISENO.md` §11, con su estado según el repositorio.
 | Crecimiento de `datos.db` y del historial de Git | Límites de tamaño de GitHub | Sin índice único y compactación tras cada carga (D-046) |
 | Vencimiento del token de la ejecución manual | El botón deja de funcionar | Aviso de vencimiento en la administración (D-053) |
 | Caché de Actions vencida | Descarga completa algunas semanas | Comportamiento previsto, sin falla (D-047) |
+
+## 13. Evolución prevista
+
+Lo que sigue está **planificado, no entregado**. El detalle y las reglas de ejecución están en `docs/PROMPT_EVOLUCION.md`.
+
+| Fase | Contenido | Para qué usuario | Estado |
+|---|---|---|---|
+| 1 | Capa bronce en Parquet y motor DuckDB en paralelo a SQLite | Equipo de datos | Prevista |
+| 2 | Transformaciones en dbt Core; las reglas RN-01 a RN-14 pasan a ser pruebas de dbt | Equipo de datos | Prevista |
+| 3 | El panel lee DuckDB; se retira SQLite tras una auditoría con cifras idénticas | Todos | Prevista |
+| 4 | IPC del INE: precios reales junto a los nominales (resuelve la limitación D-010) | Pricing, compras | Prevista |
+| 5 | Clima por región y semana junto a las alertas K6, sin afirmar causalidad | Pricing, gerencia | Prevista |
+
+**Fuera de alcance, con su motivo:** comparación por cadena de supermercados (no hay fuente abierta oficial conocida y el scraping contradice ADR-01); vista para el consumidor (no responde a los usuarios de la sección 2); predicción de precios (el producto describe, no pronostica); warehouse en la nube (ADR-31).
