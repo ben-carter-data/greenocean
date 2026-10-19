@@ -727,7 +727,13 @@ def draw_price_context(rows, mode, height=380):
     span = max(values.max() - values.min(), values.max() * .05, 1) if not values.empty else 1
     scale = alt.Scale(zero=False, nice=False,
                       domain=[max(0, values.min() - span * .12), values.max() + span * .12] if not values.empty else None)
-    x = alt.X("week_start:T", title=None, axis=alt.Axis(format="%b %Y", tickCount=6, labelPadding=6))
+    # Every month is labelled, with its year on January and on the first month: an axis
+    # with only «ene, abr, jul, oct» read as if the year started in January (D-161).
+    months = pd.date_range(rows["week_start"].min(), rows["week_start"].max(), freq="MS") if not rows.empty else []
+    x = alt.X("week_start:T", title=None, axis=alt.Axis(
+        values=[month.isoformat() for month in months], labelPadding=6, labelAngle=0,
+        labelExpr="(month(datum.value) == 0 || datum.index == 0) ? timeFormat(datum.value, '%b %Y') "
+                  ": timeFormat(datum.value, '%b')"))
     bands = split_gaps(rows.assign(band=rows["p25"]), "band")
     lines = split_gaps(rows, "price")
     band = alt.Chart(bands).mark_area(opacity=.16, interpolate="monotone").encode(

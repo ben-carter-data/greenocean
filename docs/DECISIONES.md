@@ -1222,3 +1222,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema:** el IPC del INE estaba en los datos (D-155) y en la frase de Contexto (D-159), pero ningún gráfico mostraba el índice mismo: no se podía ver cuánto subieron los alimentos ni con qué serie se calculan los precios sin inflación.
 - **Decisión:** en Contexto de precios, «Ver el IPC →» abre la serie mensual del INE (división 1, base 2023 = 100) desde enero 2022, cuando empiezan los precios. Muestra la inflación acumulada del período y la de los últimos 12 meses, calculadas de la misma tabla `ipc_monthly` que usa el deflactor, y explica la regla mes → semana, el mes de referencia y el enlace de la serie empalmada. Sin área bajo la curva: anclaría el eje en 0 y aplanaría la subida.
 - **Cifras al 19-10-2026:** de enero 2022 a septiembre 2026 los alimentos subieron +44,8 %; en los últimos 12 meses, +4,3 %.
+
+## D-161 · Cuánto de una subida es inflación; meses completos en el eje; la tabla final no son las alertas
+
+- **Fecha:** 2026-10-19.
+- **Subida separada:** en «Precio esta semana», cada canal muestra cuánto cambió el precio desde la misma semana del año pasado y cómo se reparte: la parte que equivale a la inflación de alimentos (lo que habría subido el precio de entonces con el IPC del INE) y la parte propia del producto, con una barra de dos colores. Ejemplo real, tomate larga vida: en feria libre +$298 = inflación +$48 · propio +$250; en supermercado +$38 = inflación +$74 · propio −$37. Es una cuenta, no una causa, y lo dice la ayuda. Se mide sobre 12 meses porque de una semana a otra la inflación es despreciable.
+- **Eje del gráfico:** cada mes lleva su etiqueta (nov 2025, dic, ene 2026 … oct). Antes solo aparecían «ene, abr, jul, oct» y la ventana de 52 semanas, de octubre a octubre, se leía como si empezara en enero y faltaran meses.
+- **Tabla final de Contexto:** se titula «… con precio fuera de lo habitual para la época» y aclara que no son las alertas: una alerta (K6) es un cambio brusco de una semana a otra; esta tabla, un precio alto o bajo para esta época del año.

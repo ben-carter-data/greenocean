@@ -5712,6 +5712,39 @@ def build_context_margin_card(margins):
     return (f'<section class="ctx-card"><h3>Sobre el precio mayorista{hint}</h3>' + "".join(rows) + '</section>')
 
 
+def split_yearly_change(rows, ipc, week):
+    """What a year of price change owes to food inflation (D-161). rows: one channel's
+    nominal national prices. Between the same week a year ago and this week, the
+    inflation part is what the old price would have risen with the food IPC; the rest is
+    the product's own movement. An accounting split, not a cause. None without both prices."""
+    week = pd.Timestamp(week)
+    before = week - pd.Timedelta(weeks=52)
+    prices = rows.set_index("week_start")["nominal_price" if "nominal_price" in rows else "national_price"]
+    factors = ipc.set_index("week_start")["real_factor"]
+    if not {week, before} <= set(prices.dropna().index) or not {week, before} <= set(factors.index):
+        return None
+    now, then = float(prices[week]), float(prices[before])
+    inflation = then * factors[before] / factors[week] - then
+    return {"before": before, "then": then, "now": now, "change": now - then,
+            "inflation": inflation, "own": now - then - inflation}
+
+
+def build_split_html(split):
+    """One line and a two-part bar: inflation in grey, the product's own part in colour."""
+    if not split:
+        return ""
+    money = lambda value: ("+" if value >= 0 else "−") + "$" + charts.format_thousands(abs(value))
+    total = abs(split["inflation"]) + abs(split["own"]) or 1
+    inflation_width = abs(split["inflation"]) / total * 100
+    own_kind = "up" if split["own"] >= 0 else "down"
+    return (f'<div class="ctx-split" title="Desde la semana del {split["before"]:%d-%m-%Y}: '
+            f'${charts.format_thousands(split["then"])} → ${charts.format_thousands(split["now"])}">'
+            f'<small>12 meses: <b>{money(split["change"])}</b> = inflación {money(split["inflation"])} · '
+            f'propio {money(split["own"])}</small>'
+            f'<span class="ctx-split-bar"><b class="inf" style="width:{inflation_width:.1f}%"></b>'
+            f'<b class="{own_kind}" style="width:{100 - inflation_width:.1f}%"></b></span></div>')
+
+
 def build_context_price_card(now, unit):
     rows = []
     for channel in CONTEXT_CHANNELS:
@@ -5727,10 +5760,12 @@ def build_context_price_card(now, unit):
         label, kind = STATE_CHIPS[item["state"]] if item["price"] is not None else ("Sin precio esta semana", "neutral")
         price = '—' if item["price"] is None else '$' + charts.format_thousands(item["price"])
         rows.append(f'<div class="ctx-price-row"><i style="background:{color}"></i><div><strong>{channel}</strong>'
-                    f'<small>{habit}</small></div><div class="ctx-price"><b>{price}</b>'
+                    f'<small>{habit}</small>{build_split_html(item.get("split"))}</div><div class="ctx-price"><b>{price}</b>'
                     f'<span class="ctx-state {kind}">{label}</span></div></div>')
     hint = build_hint_icon(f"Precio por {unit}. Habitual = percentil 25 a 75 de la misma semana ISO "
-                           "(y la semana antes y después) en años anteriores.")
+                           "(y la semana antes y después) en años anteriores. 12 meses: cuánto cambió el precio "
+                           "desde la misma semana del año pasado, y qué parte equivale a la inflación de "
+                           "alimentos (IPC del INE) y qué parte es propia del producto. Es una cuenta, no una causa.")
     return (f'<section class="ctx-card"><h3>Precio esta semana{hint}</h3>' + "".join(rows) + '</section>')
 
 
@@ -5783,7 +5818,11 @@ def build_context_outliers_table(rows, product_group):
     hint = build_hint_icon("Productos de la misma familia cuyo precio de esta semana, en cualquier "
                            "canal, está fuera de su propio percentil 25 a 75 habitual (misma ventana "
                            "de ±1 semana ISO). Ordenados por qué tan lejos están del límite.")
-    title = f'<h3>Otros productos de {html.escape(product_group)} fuera de lo habitual{hint}</h3>'
+    # Not the alerts: an alert is an unusual change from one week to the next (K6); this
+    # table is a price level unusual for the time of year, as the chart above.
+    title = (f'<h3>Otros productos de {html.escape(product_group)} con precio fuera de lo habitual para la época{hint}</h3>'
+             '<p class="ctx-table-lead">No son las alertas: una alerta es un cambio brusco de una semana a otra; '
+             'aquí, un precio alto o bajo para esta época del año, como en el gráfico de arriba.</p>')
     if rows.empty:
         return (f'<section class="ctx-card ctx-card-wide">{title}'
                 f'<div class="ctx-note">Ningún otro producto de {html.escape(product_group)} está '
@@ -5885,6 +5924,14 @@ def build_context_css(mode):
     .ctx-title h1 {{font-size:21px!important;font-weight:700;margin:0!important;padding:0!important;display:inline;}}
     .ctx-title .page-freshness {{display:inline-flex;gap:6px;margin-left:12px;font-size:12px;}}
     .ctx-answer {{font-size:14px;line-height:1.45;color:{palette['strong_text']};margin:4px 0 0;max-width:900px;}}
+    .ctx-split {{margin-top:5px;}}
+    .ctx-split small {{display:block;font-size:11px!important;}}
+    .ctx-split-bar {{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:3px;max-width:190px;
+        background:{palette['grid']};}}
+    .ctx-split-bar b {{display:block;height:100%;}}
+    .ctx-split-bar b.inf {{background:{palette['reference']};}}
+    .ctx-split-bar b.up {{background:#e66767;}} .ctx-split-bar b.down {{background:#3987e5;}}
+    .ctx-table-lead {{font-size:12px!important;color:{palette['text']};margin:-4px 0 8px!important;}}
     .ctx-ipc-note {{display:block;margin-top:4px;font-size:13px;color:{palette['text']};}}
     .ctx-ipc-note b:first-child {{display:inline-block;font-size:10.5px;letter-spacing:.06em;padding:1px 7px;
         margin-right:6px;border-radius:999px;color:{palette['accent']};
@@ -6065,7 +6112,11 @@ def show_price_context_page(mode):
     # Beside the chart, the two readings of this week; the seasonal outlook gets a
     # full-width strip below, where its months read on one line (D-150).
     with right, st.container(key="ctx_side"):
-        st.markdown(build_context_price_card(model["now"], key["normalized_unit"]), unsafe_allow_html=True)
+        nominal = other if real else model
+        ipc = read_ipc_weekly(version)
+        now = {channel: dict(item, split=split_yearly_change(nominal["series"][channel], ipc, week))
+               if channel in nominal["series"] else item for channel, item in model["now"].items()}
+        st.markdown(build_context_price_card(now, key["normalized_unit"]), unsafe_allow_html=True)
         st.markdown(build_context_margin_card(model["margins"]), unsafe_allow_html=True)
     with st.container(key="ctx_next"):
         st.markdown(build_context_next_card(model["patterns"], model["pattern_years"], model["month"],
