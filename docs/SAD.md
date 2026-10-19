@@ -5,9 +5,9 @@ Cómo está construido GreenOcean hoy: del archivo oficial al panel, capa por ca
 | Ficha del documento | |
 |---|---|
 | Sistema | GreenOcean, pipeline semanal de precios de alimentos y panel de BI |
-| Versión | Arquitectura entregada al 19-10-2026 (decisiones hasta D-155) |
+| Versión | Arquitectura entregada al 19-10-2026 (decisiones hasta D-158) |
 | Autoría | El autor |
-| Método | Vistas C4 (contexto, contenedores, componentes) y secciones de arc42 |
+| Método | Vistas C4 (contexto, contenedores, componentes) y secciones de arc42, con sus vistas de ejecución y de despliegue |
 | Documentos hermanos | PRD (qué y para quién) y ADR (por qué así) |
 
 ---
@@ -52,9 +52,9 @@ El sistema tiene dos proveedores de datos oficiales, una plataforma de código y
 | Visitantes del panel | Usuario | Leen el Dashboard, la arquitectura y la documentación; no escriben nada |
 | El autor | Operador | Mantiene el código, administra los secretos y puede lanzar una ejecución manual |
 
-[[diagrama:plataforma]]
+[[diagrama:contexto]]
 
-El diagrama dibuja cada plataforma como un recuadro con sus componentes dentro y cómo se comunican: descargas por HTTPS, git push y secretos del panel.
+GreenOcean es una sola caja: su interior es la vista de contenedores de la sección 4. Cada flecha dice qué pasa entre el sistema y su vecino.
 
 ## 4. Nivel 2 · Contenedores
 
@@ -74,6 +74,10 @@ Cada contenedor es una unidad que se ejecuta o se guarda por separado.
 | Panel | `bi/` | Dashboard, arquitectura, operación y documentación, en solo lectura | Streamlit, Plotly |
 | Workflow semanal | `.github/workflows/semanal.yml` | Orquesta la carga completa cada martes y publica el informe | GitHub Actions |
 | Workflow de pruebas | `.github/workflows/pruebas.yml` | En cada cambio compila el proyecto dbt y corre la suite de pruebas | GitHub Actions, pytest |
+
+[[diagrama:contenedores]]
+
+Las flechas siguen el camino de los datos: de las fuentes a bronce, de bronce a dbt, y del orquestador a la base de servicio que lee el panel. Los dos workflows solo ejecutan; no tocan los datos.
 
 ## 5. Nivel 3 · Componentes
 
@@ -102,7 +106,7 @@ Cada contenedor es una unidad que se ejecuta o se guarda por separado.
 | Acceso a datos | `bi/queries.py`, `bi/queries.sql` | Único punto de conexión a DuckDB, en solo lectura; una consulta con nombre por indicador |
 | Alertas | `bi/alerts.py` | Alertas K6 como funciones puras, con una versión SQL gemela que se reconcilia fila a fila |
 | Contexto de precios | `bi/price_context.py` | Rango habitual, brechas, margen, patrón de temporada y precios reales |
-| Diagramas | `bi/architecture.py`, `bi/star_model.py`, `bi/devops.py` | Los diagramas vivos de plataforma, pipeline y modelo estrella |
+| Diagramas | `bi/architecture.py`, `bi/star_model.py`, `bi/lineage.py`, `bi/doc_diagrams.py` | Los diagramas vivos de plataforma, recorrido, linaje dbt y modelo estrella, y las vistas propias de estos documentos |
 | Calidad y operación | `bi/quality.py`, `bi/control.py` | Calidad de datos, historial de ejecuciones y ejecución manual protegida |
 | Informe semanal | `bi/report.py` | Estado de la carga, K7 y alertas, publicado como issue |
 | Documentos en PDF | `bi/document_pdf.py` | PRD, SAD y ADR con portada, índice y paginación, generados desde los mismos archivos |
@@ -110,9 +114,7 @@ Cada contenedor es una unidad que se ejecuta o se guarda por separado.
 
 ## 6. Linaje de los datos
 
-[[diagrama:pipeline]]
-
-Los datos atraviesan seis capas. Cada una tiene un solo propósito y un solo lugar.
+Los datos atraviesan seis capas. Cada una tiene un solo propósito y un solo lugar. El recorrido completo, con el estado real de cada paso, y el linaje dbt modelo a modelo, con sus pruebas, viven en la página Pipeline y linaje del panel; este documento no los repite, porque la vista de contenedores de la sección 4 ya muestra por dónde pasan los datos.
 
 | Capa | Dónde | Qué contiene | Se sube al repositorio |
 |---|---|---|---|
@@ -143,7 +145,7 @@ Si el INE no responde, la carga no se detiene: se usa el bronce previo o se reco
 
 [[diagrama:modelo]]
 
-Un hecho al centro, cuatro dimensiones alrededor, el IPC como tabla puente por semana y un grupo de auditoría aparte. El mayorista es un canal más: el margen es una comparación entre dos canales de la misma tabla.
+Es el mismo diagrama de la página Modelo de datos del panel: el modelo estrella es la vista canónica de los datos y se dibuja desde el esquema real. Un hecho al centro, cuatro dimensiones alrededor, el IPC como tabla puente por semana y un grupo de auditoría aparte. El mayorista es un canal más: el margen es una comparación entre dos canales de la misma tabla.
 
 | Tabla | Rol | Grano | Filas |
 |---|---|---|---|
@@ -157,12 +159,18 @@ Un hecho al centro, cuatro dimensiones alrededor, el IPC como tabla puente por s
 | `ine_ipc_source` | Auditoría | Fila original del INE | 202 |
 | `etl_run` | Auditoría | Carga: inicio, estado, filas leídas, cargadas y rechazadas | 4 |
 | `rejection` | Auditoría | Fila rechazada de la última carga, con su motivo | 201 |
+| `dbt_node` | Linaje | Modelo, fuente o prueba del proyecto dbt (16 modelos, 3 fuentes, 31 pruebas) | 50 |
+| `dbt_result` | Linaje | Resultado de cada modelo y prueba en la última construcción | 47 |
 
 Cada precio guarda su unidad normalizada, el volumen en el mayorista, el número de observaciones de origen y una marca: 826 precios están marcados como atípicos y 12.472 sin unidad convertible. Ninguno se borra.
 
 ## 9. Vista de ejecución
 
 ### 9.1 El martes automático
+
+[[diagrama:secuencia]]
+
+El diagrama sigue los mensajes entre los participantes; la tabla dice qué pasa si cada paso falla.
 
 | Paso | Qué ocurre | Si falla |
 |---|---|---|
@@ -179,19 +187,19 @@ Cada precio guarda su unidad normalizada, el volumen en el mayorista, el número
 
 GitHub Actions se detiene en el primer paso que falla, avisa al autor por correo y la base del repositorio queda como estaba.
 
-### 9.2 Un cambio de código
+### 9.2 Otros escenarios
 
-El workflow de pruebas compila el proyecto dbt y corre la suite. Streamlit Community Cloud publica la rama principal en paralelo: una prueba en rojo avisa, no detiene la publicación.
-
-### 9.3 Una ejecución manual
-
-En Ejecuciones, el botón «Ejecutar pipeline ahora» pide la clave de control, lanza el mismo workflow semanal mediante la API de GitHub con un token limitado al repositorio, muestra los pasos en vivo y termina con un mensaje claro de éxito o de falla (D-149).
-
-### 9.4 Una visita al panel
-
-El panel abre la base de servicio en solo lectura, pide solo las filas del producto elegido y guarda los resultados en caché hasta que cambia la base. El estado del pipeline se lee de la API pública de GitHub y, si no responde, de `etl_run`.
+| Escenario | Lo inicia | Qué ocurre | Resultado |
+|---|---|---|---|
+| Un cambio de código | Un push a la rama principal | El workflow de pruebas compila el proyecto dbt y corre la suite; Streamlit Community Cloud publica la rama principal en paralelo | Una prueba en rojo avisa, no detiene la publicación |
+| Una ejecución manual | El autor, con la clave de control, en Ejecuciones | El botón «Ejecutar pipeline ahora» lanza el mismo workflow semanal mediante la API de GitHub, con un token limitado al repositorio, y muestra los pasos en vivo | Un mensaje claro de éxito o de falla (D-149) |
+| Una visita al panel | Un visitante | El panel abre la base de servicio en solo lectura, pide solo las filas del producto elegido y guarda los resultados en caché hasta que cambia la base | El estado del pipeline se lee de la API pública de GitHub y, si no responde, de `etl_run` |
 
 ## 10. Vista de despliegue
+
+[[diagrama:plataforma]]
+
+Es el mismo diagrama de la pestaña Plataforma y seguridad de Ejecuciones y DevOps: cada plataforma es un nodo de despliegue con sus componentes dentro, y cada conexión dice cómo se comunican (descargas por HTTPS, git push, despliegue de main y secretos del panel).
 
 | Nodo | Qué corre | Qué guarda |
 |---|---|---|
@@ -215,17 +223,14 @@ El panel abre la base de servicio en solo lectura, pide solo las filas del produ
 
 **Auditoría independiente.** Fuera de dbt, la suite de Python reconstruye precios desde las filas crudas, repite las invariantes del modelo, vuelve a enlazar el IPC y a calcular el factor de cada semana desde el texto del INE, y compara fila a fila DuckDB con el respaldo SQLite. Una fotografía de las cifras de la semana del 05-10-2026 debe reproducirse exacta.
 
-**Integridad.** dbt construye en un almacén de trabajo; la base de servicio se escribe en un archivo temporal y solo entonces reemplaza la publicada. Una falla deja la base intacta y queda registrada.
-
-**Idempotencia.** Cada carga reconstruye todas las tablas desde bronce; ejecutar dos veces la misma semana deja las mismas filas, y una prueba lo vigila.
-
-**Comparación justa.** Toda variación semanal compara solo regiones con precio en ambas semanas; todo rango habitual usa la historia de las regiones presentes esta semana.
-
-**Seguridad.** El panel abre la base en solo lectura y no ejecuta texto de un visitante. El token de GitHub y la clave de control viven en los secretos del panel; la clave se compara en tiempo constante. El workflow semanal solo puede escribir contenido e issues.
-
-**Observabilidad.** `etl_run` y `rejection` en la base, el historial de GitHub Actions visible en Ejecuciones, el issue semanal y el correo de GitHub ante una falla.
-
-**Portabilidad.** El motor se elige en la configuración de dbt, que ya documenta los equivalentes para BigQuery, Snowflake y PostgreSQL sin activarlos. Los modelos usan SQL lo más estándar posible y macros donde los motores difieren; las pocas funciones propias de DuckDB (fechas, expresiones regulares) son lo que habría que adaptar; el panel se conecta en un solo punto.
+| Concepto | Cómo se aplica |
+|---|---|
+| Integridad | dbt construye en un almacén de trabajo; la base de servicio se escribe en un archivo temporal y solo entonces reemplaza la publicada. Una falla deja la base intacta y queda registrada |
+| Idempotencia | Cada carga reconstruye todas las tablas desde bronce; ejecutar dos veces la misma semana deja las mismas filas, y una prueba lo vigila |
+| Comparación justa | Toda variación semanal compara solo regiones con precio en ambas semanas; todo rango habitual usa la historia de las regiones presentes esta semana |
+| Seguridad | El panel abre la base en solo lectura y no ejecuta texto de un visitante. El token de GitHub y la clave de control viven en los secretos del panel; la clave se compara en tiempo constante. El workflow semanal solo puede escribir contenido e issues |
+| Observabilidad | `etl_run`, `rejection`, `dbt_node` y `dbt_result` en la base, el historial de GitHub Actions visible en Ejecuciones, el issue semanal y el correo de GitHub ante una falla |
+| Portabilidad | El motor se elige en la configuración de dbt, que ya documenta los equivalentes para BigQuery, Snowflake y PostgreSQL sin activarlos. Los modelos usan SQL lo más estándar posible y macros donde los motores difieren; las pocas funciones propias de DuckDB (fechas, expresiones regulares) son lo que habría que adaptar; el panel se conecta en un solo punto |
 
 ## 12. Atributos de calidad
 
