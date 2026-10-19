@@ -1369,3 +1369,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema:** los ocho ejemplos describían (márgenes, rankings de una semana) pero no permitían concluir qué tiende a subir, y no seguían la unidad con que trabaja el panel: la familia.
 - **Decisión:** ocho ejemplos nuevos. Por familia: cuál subió y cuál bajó más la última semana; evolución anual; brecha mayorista-consumidor (solo Frutas y Hortalizas tienen mayorista); regiones más caras. Por producto: los de más alzas que bajas en 2026 (probabilidad de subir de una semana a otra); los 100 que más subieron en 2026; los que subieron más que el IPC desde 2022; los más volátiles. Los años se cambian editando la consulta. Todos usan solo precios válidos, comparan semanas consecutivas de la misma serie y corren en menos de un segundo; las pruebas los ejecutan.
 - **Límite dicho:** la mejor probabilidad de alza de 2026 ronda el 57 %: la mayoría de los productos sube y baja casi por igual de una semana a otra, y la consulta lo muestra en vez de ocultarlo.
+
+## D-179 · Dos ejemplos para consultar un producto, sin importar su familia
+
+- **Fecha:** 2026-10-19.
+- **Decisión:** a los ocho ejemplos por familia de D-178 se suman dos que parten de un producto: «Ficha de un producto» (precio por canal de las últimas 4 semanas y de hace un año, alza en 12 meses y probabilidad de subir en 2026) e «Historia de un producto» (precio semanal nominal y real frente al IPC). El producto se elige editando la primera línea de la consulta; el nombre se busca por su inicio (por ejemplo «Asado», «Tomate», «Papa»), para que «Asado» no traiga «Pan amasado». Quedan diez ejemplos.

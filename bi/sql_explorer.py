@@ -192,6 +192,46 @@ SELECT familia, producto, variedad, count(*) AS series,
        round((median(actual / inicial - 1) - any_value(ipc.alza)) * 100, 1) AS sobre_inflacion_pp
 FROM base, ipc GROUP BY familia, producto, variedad HAVING count(*) >= 3
 ORDER BY sobre_inflacion_pp DESC LIMIT 100"""),
+    ('Ficha de un producto',
+     '¿Cómo viene un producto concreto (la carne, el tomate…), sin importar su familia: precio por canal, alza en 12 meses y probabilidad de subir?',
+     """-- Cambia el nombre del producto en la primera línea (el nombre empieza por ese texto: 'Asado', 'Tomate', 'Papa').
+WITH elegido AS (SELECT 'Asado%' AS patron),
+pares AS (
+    SELECT p.producto, p.variedad, p.canal, p.semana, p.precio,
+           lag(p.precio) OVER w AS anterior, lag(p.semana) OVER w AS semana_anterior
+    FROM precios AS p, elegido
+    WHERE p.marca = 'SIN_MARCA' AND p.fuente = 'consumidor' AND p.producto ILIKE elegido.patron
+    WINDOW w AS (PARTITION BY p.producto, p.variedad, p.calidad, p.canal, p.unidad, p.region ORDER BY p.semana)
+),
+ultimo AS (SELECT max(semana) AS semana FROM precios)
+SELECT producto, variedad, canal,
+       round(avg(precio) FILTER (WHERE semana > (SELECT semana FROM ultimo) - INTERVAL 28 DAY)) AS precio_ultimas_4_sem,
+       round(avg(precio) FILTER (WHERE semana BETWEEN (SELECT semana FROM ultimo) - INTERVAL 392 DAY
+                                                  AND (SELECT semana FROM ultimo) - INTERVAL 364 DAY)) AS precio_hace_un_anio,
+       round((avg(precio) FILTER (WHERE semana > (SELECT semana FROM ultimo) - INTERVAL 28 DAY)
+            / avg(precio) FILTER (WHERE semana BETWEEN (SELECT semana FROM ultimo) - INTERVAL 392 DAY
+                                                   AND (SELECT semana FROM ultimo) - INTERVAL 364 DAY) - 1) * 100, 1) AS alza_12_meses_pct,
+       round(count(*) FILTER (WHERE year(semana) = 2026 AND semana_anterior = semana - INTERVAL 7 DAY AND precio > anterior) * 100.0
+             / nullif(count(*) FILTER (WHERE year(semana) = 2026 AND semana_anterior = semana - INTERVAL 7 DAY), 0), 1) AS prob_alza_2026_pct
+FROM pares
+GROUP BY producto, variedad, canal
+HAVING count(*) FILTER (WHERE semana > (SELECT semana FROM ultimo) - INTERVAL 28 DAY) > 0
+ORDER BY producto, variedad, canal"""),
+    ('Historia de un producto',
+     '¿Cómo cambió semana a semana el precio de un producto, en pesos de cada día y en pesos reales frente al IPC?',
+     """-- Cambia el producto y el canal en la primera línea. Precio promedio de las regiones con dato esa semana.
+WITH elegido AS (SELECT 'Tomate' AS producto, 'Larga vida' AS variedad, 'Supermercado' AS canal)
+SELECT p.semana,
+       round(avg(p.precio)) AS precio_nominal,
+       round(avg(p.precio) * any_value(i.factor_real)) AS precio_real,
+       round(any_value(i.indice_alimentos), 1) AS ipc_alimentos,
+       count(*) AS regiones
+FROM precios AS p
+JOIN elegido AS e ON p.producto = e.producto AND p.variedad = e.variedad AND p.canal = e.canal
+JOIN ipc_semanal AS i ON i.semana = p.semana
+WHERE p.fuente = 'consumidor' AND p.marca = 'SIN_MARCA' AND p.calidad = 'Primera' AND p.unidad = 'kilo'
+GROUP BY p.semana
+ORDER BY p.semana DESC"""),
     ("Evolución anual por familia",
      "¿Cuánto subió cada familia de productos respecto del año anterior, en el mismo tramo del año?",
      """-- Compara de enero a la misma semana ISO de la última semana con datos, para no
