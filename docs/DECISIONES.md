@@ -1179,3 +1179,13 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Si el INE no responde:** la carga no se detiene. Se usa el bronce previo, o se reconstruye desde `ine_ipc_source` de la base publicada.
 - **Auditoría:** `tests/test_ipc_audit.py` vuelve a enlazar las series y a calcular el factor de cada semana en Python, sin dbt, desde el texto publicado por el INE, con diferencia relativa < 10⁻¹². dbt prueba un solo IPC por mes.
 - **Construcción local:** `python etl/pipeline.py --local` reconstruye la base sin registrar una carga nueva en `etl_run`.
+
+## D-156 · Contexto: una sola búsqueda de producto
+
+- **Fecha:** 2026-10-19.
+- **Paso 5 de la refonte.**
+- **Antes:** tres listas encadenadas (Familia, Producto, Calidad · unidad). Elegir un producto de otra familia pedía tres clics y la tercera lista no decía nada por sí sola.
+- **Ahora:** un solo campo «Buscar producto» sobre los 332 productos con precio de feria o supermercado. Se escribe para filtrar, como en el Resumen. Cada opción se lee completa: «Tomate · Larga vida — Primera, kilo».
+- **Por qué la calidad sigue visible:** 112 de los 193 productos tienen más de una calidad (Primera, Segunda), con precios distintos. Quitarla escondería datos, así que pasa a formar parte del nombre en lugar de ser una lista aparte.
+- **La familia** queda en la ruta de navegación (Resumen › Hortalizas › …) y en el enlace de vuelta.
+- **Fila del título:** la pregunta, la respuesta y la búsqueda en una línea; el control Nominal / Real (D-155) va en la cabecera del gráfico, donde actúa.

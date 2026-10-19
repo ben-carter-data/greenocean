@@ -1495,9 +1495,24 @@ def test_d098_price_context_answers_on_one_screen_without_the_removed_cards():
     assert sentence.startswith('Esta semana, el precio de tomate larga vida en feria libre está')
     assert '<b style="color:#2563C9">' in sentence
     assert 'Cambiar el producto del análisis' not in text
-    assert [box.label for box in app.selectbox] == ['Familia', 'Producto', 'Calidad · unidad']
+    # Step 5 of the refonte: one search field instead of three dropdowns.
+    assert [box.label for box in app.selectbox] == ['Buscar producto']
+    assert dashboard.describe_context_option(dict(zip(dashboard.queries.KEY_COLUMNS, app.selectbox[0].value))) \
+        == 'Tomate · Larga vida — Primera, kilo'
     assert 'Precios nominales, sin ajuste por inflación.' in ' '.join(c.value for c in app.caption)
     assert 'class="hint"' in text  # long paragraphs became ⓘ tooltips (D-098)
+
+
+@needs_database
+def test_d155_real_prices_name_the_reference_month_and_draw_the_nominal_line():
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
+              "from bi import dashboard\nst.session_state[dashboard.CONTEXT_BASIS_KEY] = dashboard.BASIS_REAL\n"
+              "dashboard.render_page(dashboard.PAGE_SEASONALITY)\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    captions = ' '.join(c.value for c in app.caption)
+    assert re.search(r'Pesos de [a-z]+ \d{4}, IPC de alimentos del INE', captions)
+    assert '<i class="nominal"></i>Nominal' in ' '.join(block.value for block in app.markdown)
 
 
 @needs_database
@@ -1529,7 +1544,7 @@ def test_d094_a_product_chosen_in_the_summary_opens_preselected():
               "from bi import dashboard\ndashboard.render_page(dashboard.PAGE_SEASONALITY)\n")
     app = AppTest.from_string(script, default_timeout=60).run()
     assert not app.exception
-    assert app.selectbox[1].value == ('Palta', 'Hass')
+    assert app.selectbox[0].value[1:3] == ('Palta', 'Hass')
     assert 'Resumen</a> › ' in ' '.join(block.value for block in app.markdown)
 
 
