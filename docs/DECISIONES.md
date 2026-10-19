@@ -1382,3 +1382,12 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** los diez ejemplos son plantillas con parámetros. Al elegir uno, el panel escribe en el editor el SQL completo, con sus alias y comentarios y con los valores ya puestos, y lo ejecuta: la respuesta y el código que la da aparecen juntos. Los ejemplos con parámetros muestran sobre el editor una fila «Parámetros» (como la de plantillas de SQL Server) con año, producto y canal; cambiar un valor vuelve a escribir y ejecutar la consulta. El canal ofrece solo los canales donde se vende el producto elegido. La vista del estudio (D-173) no cambia.
 - **Diez preguntas:** familias de la semana; más alzas que bajas del año; los 100 que más subieron; sobre la inflación desde 2022; ficha de un producto; historia de un producto; evolución anual por familia; brecha mayorista-consumidor; productos más volátiles; regiones más caras por familia. La historia de un producto sigue una sola serie (la variedad, calidad y unidad con más precios) para no mezclar presentaciones.
 - **Seguridad:** los valores vienen de listas leídas de la base y se escriben como literales SQL escapados; la consulta pasa por la misma validación de solo lectura de siempre.
+
+## D-181 · Cinco preguntas para decidir; el resto, en el editor
+
+- **Fecha:** 2026-10-19.
+- **Criterio:** cada pregunta de ejemplo debe tener al menos 8 sobre 10 en pertinencia para tomar una decisión. Quedan las cinco mejor calificadas; quien quiera ir más lejos escribe su propia consulta sobre las vistas del explorador.
+- **Las cinco:** «¿Está caro para la época?» (comprar ahora o esperar: compara las últimas 4 semanas con las mismas semanas de los años anteriores y da un veredicto); «Más que la inflación este año» (alza de cada producto en el año elegido frente al IPC de alimentos de las mismas fechas); «Sobre la inflación desde 2022»; «Ficha de un producto»; «Más alzas que bajas del año».
+- **Rigor:** la comparación de época se hace en pesos reales (precio × factor_real). En pesos nominales, con un 45 % de inflación desde 2022, todo lo actual parecía «más caro que nunca». El veredicto tiene cinco niveles: más caro o más barato que cualquier año anterior, caro o barato (más de 10 % sobre o bajo el promedio) y normal. Con tres o cuatro años de historia, la época es orientativa.
+- **Salen:** historia de un producto, los 100 que más subieron, evolución anual por familia, brecha mayorista-consumidor, productos más volátiles, regiones más caras y familias de la semana. La etiqueta «Ejemplos» pasa a «Preguntas».
+

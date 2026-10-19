@@ -150,3 +150,14 @@ def test_d180_one_click_writes_the_sql_and_runs_it_with_the_chosen_product():
     assert not app.exception
     assert "'Asado Carnicero'" in app.text_area[0].value
     assert set(app.dataframe[0].value["canal"]) >= {"Carnicería"}
+
+
+def test_d181_five_questions_and_the_season_compares_real_prices():
+    assert [title for title, *_ in sql_explorer.TEMPLATES] == [
+        "¿Está caro para la época?", "Más que la inflación este año", "Sobre la inflación desde 2022",
+        "Ficha de un producto", "Más alzas que bajas del año"]
+    sql = sql_explorer.render_example(0, {"producto": "Tomate"})
+    assert "factor_real" in sql
+    verdicts = set(sql_explorer.run_user_query(sql).rows["veredicto"])
+    assert verdicts and verdicts <= {"Más caro que cualquier año anterior", "Más barato que cualquier año anterior",
+                                     "Caro para la época", "Barato para la época", "Normal para la época"}
