@@ -1,0 +1,36 @@
+# El motor del data warehouse se elige aquí; los modelos no cambian (ADR-30).
+greenocean:
+  target: duckdb
+  outputs:
+    duckdb:
+      type: duckdb
+      # El workflow construye en un archivo temporal y lo reemplaza solo si todo pasa.
+      path: "{{ env_var('GREENOCEAN_DUCKDB', '../etl/datos.duckdb') }}"
+      threads: 4
+
+    # Equivalentes en la nube, documentados y no activados (ADR-31):
+    #
+    # bigquery:
+    #   type: bigquery
+    #   method: service-account
+    #   project: "<proyecto-gcp>"
+    #   dataset: greenocean
+    #   keyfile: "{{ env_var('GCP_KEYFILE') }}"
+    #
+    # snowflake:
+    #   type: snowflake
+    #   account: "<cuenta>"
+    #   user: "{{ env_var('SNOWFLAKE_USER') }}"
+    #   password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+    #   database: GREENOCEAN
+    #   warehouse: COMPUTE_WH
+    #   schema: PUBLIC
+    #
+    # postgres:
+    #   type: postgres
+    #   host: "<host>"
+    #   user: "{{ env_var('PG_USER') }}"
+    #   password: "{{ env_var('PG_PASSWORD') }}"
+    #   dbname: greenocean
+    #   schema: public
+    #   port: 5432
