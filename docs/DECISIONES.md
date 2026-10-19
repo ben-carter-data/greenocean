@@ -1273,6 +1273,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Los cuatro temas:** el dibujo toma los colores de cada uno. Va en su propio marco (`st.iframe`), como la página GitHub, porque st.html quita los degradados y las explicaciones al pasar el cursor.
 - **Ajuste del mismo día:** la página cabe en una pantalla. Las últimas ejecuciones pasan debajo del recorrido, en una franja, y la ejecución manual queda compacta junto a las cifras: botón redondo con su nombre al lado y «Recargar datos» debajo. Antes, la columna derecha bajaba mucho más que el dibujo y dejaba un vacío grande a la izquierda. «Run workflow» se suma a los enlaces del autor, como en la administración (T-54).
 - **«Volver» abre la cabecera de cada página, junto a la ruta:** en la app publicada, Streamlit Cloud dibuja su propia barra (Share, estrella, editar, GitHub) en la esquina superior derecha, encima de donde estaba «Volver».
+- **Accesos del autor:** junto a «Recargar datos», un botón con candado abre, con la clave de control, los enlaces del autor: administrar la app en Streamlit (reinicio, secretos, registros), lanzar el workflow, crear un token y ver los tokens. Antes solo se veían después de ejecutar el pipeline.
+- **Si GitHub no responde,** el aviso nombra el tipo de error y el detalle queda en el registro del servidor («Manage app» en Streamlit Cloud).
 
 ## D-166 · El panel se lee en horizontal en los teléfonos
 
@@ -1282,3 +1284,21 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **En horizontal** (500 px de alto o menos) el panel se dibuja con el ancho de un computador y se reduce al de la pantalla: menú, pipeline e información a la vista, sin franja vacía arriba. Si el menú se plegó al abrir en vertical, se vuelve a abrir al girar.
 - **Tablets y computadores** no cambian.
 - **Límite:** las páginas con reglas propias para pantallas estrechas, como el Resumen, siguen viendo 844 px de ancho y conservan esas reglas. Todo cabe, pero algunas tarjetas van de dos en dos.
+
+## D-167 · Precios e inflación: un gráfico por familia
+
+- **Fecha:** 2026-10-19.
+- **Problema:** las siete familias y el IPC en un solo gráfico se cruzaban y no se leían; el ranking de al lado repetía las cifras, y la historia semanal de un producto, debajo, no respondía la pregunta de la página.
+- **Decisión:** un gráfico pequeño por familia, todos del mismo tamaño y con la misma escala, en una cuadrícula de cuatro columnas, ordenados de la que más subió sobre el IPC a la que menos. Cada uno lleva su línea frente al IPC de alimentos punteado, y su título dice la subida desde enero 2022 y el veredicto (más, menos o al ritmo de la inflación). La frase de arriba suma la inflación de 12 meses. El interruptor «Precios del día / Sin inflación» sigue igual.
+- **Retirado:** el ranking lateral y la sección «toda su historia» de un producto, con su frase de inflación y parte propia (D-161; el cálculo `split_yearly_change` queda en el código, con su prueba). Con ella se van el botón «Ver contexto» y la flecha de cada fila de la tabla de productos del Resumen, que solo llevaban a esa sección.
+
+## D-168 · Consultas SQL como un cliente SQL
+
+- **Fecha:** 2026-10-19.
+- **Problema:** la página apilaba un párrafo de explicación, un desplegable de tablas, los ejemplos en dos filas de botones grandes, el editor y, debajo, una sección de descargas: mucho desplazamiento para escribir una consulta.
+- **Decisión:** la página se organiza como un cliente SQL simple. Arriba, los ejemplos como etiquetas en una sola fila. A la izquierda, la lista de tablas: cada nombre, con sus filas y columnas, y al pasar el cursor su descripción; un clic escribe `SELECT * FROM tabla LIMIT 100`. A la derecha, el editor con «Ejecutar» y el resultado debajo, con sus descargas en CSV y Parquet en la misma línea. Las tablas gold completas se descargan desde un botón «Descargar tablas», sin ocupar la página.
+
+## D-169 · La alerta de precio vive arriba del Resumen
+
+- **Fecha:** 2026-10-19.
+- **Decisión:** el botón «▲ Alerta de precio · N» deja el menú lateral (D-096, D-128) y pasa a la esquina superior derecha del Resumen semanal, sobre la fecha de actualización, con el mismo diálogo por familia. La alerta es una cifra de la semana: va con las demás cifras de la semana, no con la navegación. Las otras páginas ya no cargan la hoja de estilos del diálogo (D-100).

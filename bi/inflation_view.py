@@ -122,19 +122,31 @@ def draw_family_chart(rows, mode, real=False, height=360):
     return charts.apply_chart_style(alt.layer(families, reference).properties(height=height), mode)
 
 
-def draw_product_chart(rows, mode, real=False, height=280):
-    """One product, its whole weekly series, one line per channel: today's pesos or
-    pesos of the last IPC month."""
-    value = "real_price" if real else "national_price"
-    domain = [channel for channel in charts.CONTEXT_CHANNELS if channel in set(rows["channel"])]
-    color = alt.Color("channel:N", scale=alt.Scale(domain=domain, range=[charts.CONTEXT_CHANNELS[c] for c in domain]),
-                      legend=alt.Legend(title=None, orient="top"))
-    chart = alt.Chart(rows).mark_line(strokeWidth=2, interpolate="monotone").encode(
-        x=alt.X("week_start:T", title=None, axis=alt.Axis(format="%b %Y", tickCount=10)),
-        y=alt.Y(f"{value}:Q", title="$ por unidad", scale=alt.Scale(zero=False),
-                axis=alt.Axis(format=charts.MONEY_AXIS_FORMAT)),
-        color=color,
-        tooltip=[alt.Tooltip("week_start:T", title="Semana", format="%d-%m-%Y"),
-                 alt.Tooltip("channel:N", title="Canal"),
-                 alt.Tooltip(f"{value}:Q", title="Precio", format=",.0f")])
-    return charts.apply_chart_style(chart.properties(height=height), mode)
+def draw_family_grid(rows, titles, mode, real=False, columns=4, width=214, height=150):
+    """One small chart per family, the same size and the same scale, each against the
+    food IPC (dashed); titles: {family: "Nombre|segunda línea"}, in the order shown.
+    Real: the IPC is the flat 100 line and a family above it rose more than the basket."""
+    palette = charts.get_palette(mode)
+    value = "real" if real else "index"
+    ipc = rows[rows["product_group"] == IPC_NAME]
+    panels = pd.concat([pd.concat([rows[rows["product_group"] == family], ipc]).assign(panel=title)
+                        for family, title in titles.items()], ignore_index=True)
+    domain = list(titles) + [IPC_NAME]
+    colors = [FAMILY_COLORS.get(family, "#94a3b8") for family in titles] + [palette["strong_text"]]
+    dashes = [[1, 0]] * len(titles) + [[5, 4]]
+    chart = alt.Chart(panels).mark_line(interpolate="monotone", strokeWidth=2.2).encode(
+        x=alt.X("month_start:T", title=None, axis=alt.Axis(format="%Y", tickCount=5, labelPadding=4)),
+        y=alt.Y(f"{value}:Q", title=None, scale=alt.Scale(zero=False), axis=alt.Axis(labelFontSize=10)),
+        color=alt.Color("product_group:N", scale=alt.Scale(domain=domain, range=colors), legend=None),
+        strokeDash=alt.StrokeDash("product_group:N", scale=alt.Scale(domain=domain, range=dashes), legend=None),
+        opacity=alt.condition(alt.datum.product_group == IPC_NAME, alt.value(.75), alt.value(1)),
+        tooltip=[alt.Tooltip("product_group:N", title="Serie"),
+                 alt.Tooltip("month_start:T", title="Mes", format="%m-%Y"),
+                 alt.Tooltip(f"{value}:Q", title="Índice", format=",.1f")])
+    header = alt.Header(title=None, labelExpr="split(datum.value, '|')", labelFontSize=13,
+                        labelFontWeight="bold", labelColor=palette["strong_text"], labelAnchor="start",
+                        labelAlign="left", labelLineHeight=16, labelPadding=4)
+    grid = chart.properties(width=width, height=height).facet(
+        facet=alt.Facet("panel:N", sort=list(titles.values()), header=header),
+        columns=columns, spacing={"row": 22, "column": 16})
+    return charts.apply_chart_style(grid, mode)

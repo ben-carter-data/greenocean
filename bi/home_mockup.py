@@ -641,7 +641,7 @@ def products_heading(family, average, scope, shown=None, total=None):
             f'<span class="mock-products-scope">en {esc(scope)}</span>{count}</div>')
 
 
-def products_table(rows, history_link, week_label, previous_label, query=''):
+def products_table(rows, week_label, previous_label, query=''):
     """The comparable prices of one family; the last column counts regions up and down."""
     body = []
     for row in rows:
@@ -659,8 +659,7 @@ def products_table(rows, history_link, week_label, previous_label, query=''):
                     + f'</td><td>{esc(row["channel"])}</td>'
                     f'<td class="num">{money(previous_price(row))}</td><td class="num">{money(row["national_price"])}</td>'
                     f'<td class="num {state}"><b>{"0,0 %" if state == "neutral" else percent(change, True)}</b></td>'
-                    f'<td class="num">{regions_text}</td>'
-                    f'<td class="link"><a href="{esc(history_link(row))}" target="_self" title="¿Es normal su precio? Abrir el contexto del precio">↗</a></td></tr>')
+                    f'<td class="num">{regions_text}</td></tr>')
     if not body:
         empty = (f'Ningún producto empieza por «{esc(query)}» en esta familia.' if query else
                  'No hay productos con precio en ambas semanas para esta selección.')
@@ -668,7 +667,7 @@ def products_table(rows, history_link, week_label, previous_label, query=''):
     return ('<div class="mock-products-table" role="region" tabindex="0" aria-label="Productos de la familia"><table><thead><tr>'
             f'<th>Producto</th><th>Canal</th><th class="num">Precio {esc(previous_label[:5])}</th>'
             f'<th class="num">Precio {esc(week_label[:5])}</th><th class="num">Variación</th>'
-            '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó">Regiones ↑ / ↓</th><th></th></tr></thead>'
+            '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó">Regiones ↑ / ↓</th></tr></thead>'
             '<tbody>' + ''.join(body) + '</tbody></table></div>')
 
 
