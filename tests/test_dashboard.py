@@ -217,7 +217,7 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     assert '¿Qué estamos comparando?' not in texts and 'class="mock-family-tile ' not in texts
     assert 'id="pulso-regional"' in texts
     assert 'Registros históricos' not in texts
-    lineage_view = draw_page(dashboard.PAGE_DIAGRAMS, {"pipeline_view": dashboard.PIPELINE_LINEAGE})
+    lineage_view = draw_page(dashboard.PAGE_DIAGRAMS)
     texts = " ".join(block.value for block in lineage_view.markdown)
     # Step 4 of the refonte: the dbt lineage, read from the build, is the zoom of the journey.
     assert 'aria-label="Linaje dbt: de bronce a marts"' in texts and 'stg_odepa__wholesale' in texts
@@ -243,7 +243,7 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
 
 @needs_database
 def test_d136_devops_shows_the_whole_platform_architecture_and_pipeline_only_the_journey():
-    pipeline = draw_page(dashboard.PAGE_DIAGRAMS, {"pipeline_view": dashboard.PIPELINE_JOURNEY})
+    pipeline = draw_page(dashboard.PAGE_DIAGRAMS)
     texts = " ".join(block.value for block in pipeline.markdown)
     assert not pipeline.exception
     assert 'aria-label="Recorrido de los datos de ODEPA al panel"' in texts
@@ -793,7 +793,7 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         # opens on it and shows the dbt lineage on request (step 4).
         assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (
             page in (dashboard.PAGE_DIAGRAMS, dashboard.PAGE_SAD))
-        assert 'aria-label="Linaje dbt: de bronce a marts"' not in texts
+        assert ('aria-label="Linaje dbt: de bronce a marts"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
 
 
 @needs_database
