@@ -18,3 +18,8 @@ dbt/dbt_packages/
 etl/warehouse_build.duckdb
 etl/*.duckdb.tmp
 etl/*.duckdb.wal
+# Secretos: nunca en el repositorio.
+.env
+.env.*
+*.pem
+*.key
