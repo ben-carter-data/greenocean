@@ -32,7 +32,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                doc_diagrams, document_pdf, github_page, lineage, quality_view, project, quality, queries, star_model, zoom)
+                doc_diagrams, document_pdf, github_page, lineage, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -53,6 +53,8 @@ PAGE_ANALYSIS = "Esta semana"
 PAGE_GAP = "Brecha de precio"
 PAGE_CHANNELS = "Canales y regiones"
 PAGE_SEASONALITY = "Contexto del precio"
+# D-162: read-only SQL on the gold layer, the destination of «Consultas SQL» in the pipeline.
+PAGE_SQL = "Consultas SQL"
 RETIRED_VIEWS = {"Histórico y estacionalidad": "Contexto del precio"}
 PAGE_ALERTS = "Alertas"
 PAGE_KPI = "Indicadores explicados"
@@ -98,7 +100,7 @@ WINDOWS = {
     SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES],
     SECTION_KPI: [PAGE_KPI],
     REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
-                    PAGE_SEASONALITY],
+                    PAGE_SEASONALITY, PAGE_SQL],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
     SECTION_LINKS: [PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
                     PAGE_MANUAL],
@@ -162,7 +164,7 @@ HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
     PAGE_DOCUMENTATION: ":material/menu_book:",
     PAGE_PRD: ":material/assignment:", PAGE_SAD: ":material/account_tree:", PAGE_ADR: ":material/gavel:",
-    PAGE_SCALABILITY: ":material/trending_up:",
+    PAGE_SCALABILITY: ":material/trending_up:", PAGE_SQL: ":material/terminal:",
     PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
     PAGE_BUSINESS: ":material/assignment:",
     PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
@@ -176,7 +178,7 @@ PAGE_ICONS = {
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
-    PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SCALABILITY: "escalabilidad",
+    PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SCALABILITY: "escalabilidad", PAGE_SQL: "consultas-sql",
     PAGE_HOME: "dashboard", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura", PAGE_ANALYSIS: "analisis", PAGE_GAP: "brecha",
@@ -7095,6 +7097,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_SAD: lambda mode: show_project_document(mode, PAGE_SAD),
     PAGE_ADR: lambda mode: show_project_document(mode, PAGE_ADR),
     PAGE_SCALABILITY: show_scalability_page,
+    PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(mode),
     PAGE_HOME: show_home_page,
     PAGE_DATA: show_data_page,
     PAGE_COVER: show_cover_page,
@@ -7478,7 +7481,7 @@ RELOAD_HOME_SCRIPT = """<script>
 SIDEBAR_TREE = [
     # «Datos» left the menu (D-130): the Resumen's search and the SQL console cover
     # what its raw, paginated browser offered; its address still works for old links.
-    ("", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY]),
+    ("", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY, PAGE_SQL]),
           # Step 4 of the refonte: four pages in the order of the data, from the
           # lineage to the model, its checks and its operation (DevOps joined Ejecuciones).
           (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS]),

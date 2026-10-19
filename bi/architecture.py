@@ -155,8 +155,9 @@ TOOLTIPS = {
     "Rechazos": "Mart rejection: cada fila descartada, tal como venía, con su motivo (RN-11).",
     "Panel Streamlit": "Este panel: lee datos.duckdb en modo solo lectura.",
     "Informe semanal": "Issue de GitHub con el estado de la carga y las alertas de la semana.",
-    "Consultas SQL": "SQL (lenguaje de consultas estructurado): una consulta por indicador, en "
-                     "bi/queries.sql, ejecutada por DuckDB.",
+    "Consultas SQL": "SQL (lenguaje de consultas estructurado) sobre la capa oro: los indicadores de "
+                     "bi/queries.sql y la página «Consultas SQL», donde cualquiera cruza las tablas en "
+                     "solo lectura y descarga el resultado en CSV, por ejemplo para Excel o Power BI.",
     "GitHub Actions": "Servicio de GitHub que ejecuta el workflow semanal cada martes, sin "
                       "intervención.",
     "etl/pipeline.py": "Copia bronce a Parquet, corre dbt build (modelos y pruebas) en una base "
@@ -727,7 +728,7 @@ def build_consumption_nodes(states, figures, palette):
         build_node(x, report_y, "consumption", draw_github_icon, "Informe semanal",
                    ["GitHub Issue · Markdown", "alertas y estado"], palette, states["report"]),
         build_node(x, queries_y, "consumption", draw_code_icon, "Consultas SQL",
-                   ["DuckDB · queries.sql", "bi/queries.sql"], palette),
+                   ["DuckDB · queries.sql", "página Consultas SQL"], palette),
     ])
 
 
@@ -738,7 +739,6 @@ def build_links(palette, is_running):
     """
     column = COLUMN_X
     half = TILE_SIZE / 2
-    gray = palette["text"]
     first_y, second_y, third_y = SIDE_ROWS_Y
 
     def right_of(name, y=MAIN_ROW_Y):
@@ -775,8 +775,9 @@ def build_links(palette, is_running):
                    palette, "SQL", moving_dot=is_running),
         build_link(right_of("gold"), left_of("consumption", second_y), LAYER_COLORS["gold"],
                    palette, "MD", moving_dot=is_running),
-        build_link(right_of("gold"), left_of("consumption", third_y), gray, palette,
-                   moving_dot=False),
+        # D-162: the gold layer is queried for real now, so this link flows like the others.
+        build_link(right_of("gold"), left_of("consumption", third_y), LAYER_COLORS["gold"],
+                   palette, "consultas", moving_dot=is_running),
     ])
 
 

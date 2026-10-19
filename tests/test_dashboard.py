@@ -62,7 +62,7 @@ def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     assert len(views) == len(set(views)) and set(views) == set(dashboard.SHOW_PAGE_BY_TITLE)
     assert dashboard.WINDOWS["Dashboard"] == [
         dashboard.HOME_PAGE, dashboard.PAGE_DATA, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP, dashboard.PAGE_CHANNELS,
-        dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY]
+        dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY, dashboard.PAGE_SQL]
     assert dashboard.WINDOWS["Ingeniería de datos"][0] == dashboard.PAGE_DIAGRAMS
     # Old addresses of the retired windows and of the 3D view still open something.
     for path in ["operacion", "documentacion", "vista-3d"]:
