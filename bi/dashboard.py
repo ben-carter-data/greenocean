@@ -6952,6 +6952,12 @@ def read_parity(database_version):
 
 
 @st.cache_data(ttl=300, show_spinner=False)
+def read_rejection_count(database_version):
+    """Rows the validation set apart, for the anomalies box of the quality page (D-176)."""
+    return int(queries.run_sql("SELECT count(*) AS n FROM rejection").iloc[0, 0])
+
+
+@st.cache_data(ttl=300, show_spinner=False)
 def read_quality_evidence(database_version, manifest_text, file_versions):
     """Invalidate checks when either the database, manifest or local source files change."""
     return quality.check_database(), quality.check_source_files(json.loads(manifest_text), MANIFEST_FILE.parent)
@@ -7017,9 +7023,9 @@ def recheck_quality():
 
 
 def show_operations_page(mode):
-    """Evidence end to end, as in the author's mockup: a four-step line (sources, run and
-    dbt, warehouse, results), each step with its checks as illustrated cards. Every card
-    opens its evidence: the rows that prove it, the method, and the checks run again (D-171)."""
+    """The data quality story (D-176): the method (six DAMA dimensions), four stages of
+    the pipeline with their role, figure, verdict and controls, the anomalies box and
+    the status bar. Every control opens its evidence from the pills (D-171)."""
     manifest = read_download_manifest()
     versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
                      for path in sorted(MANIFEST_FILE.parent.glob("*.csv")))
@@ -7029,7 +7035,8 @@ def show_operations_page(mode):
     build = lineage.summarize_build(nodes, results)
     parity = read_parity(get_database_version())
     evidence = quality_view.build_evidence(checks, files, manifest, run, build, parity,
-                                           lambda value: format_chile_time(parse_run_start(value)))
+                                           lambda value: format_chile_time(parse_run_start(value)),
+                                           rejections=read_rejection_count(get_database_version()))
     st.markdown(quality_view.build_quality_overview_html(evidence, mode), unsafe_allow_html=True)
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
     if not database_ok or any(item["status"].startswith("Falla") for item in files):
