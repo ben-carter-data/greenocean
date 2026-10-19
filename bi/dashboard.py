@@ -5016,6 +5016,7 @@ def show_diagrams_page(mode):
                         "diagram-narrow"), unsafe_allow_html=True)
         st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
         st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
+        st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
     if summary:
         with open_card("pipeline_lineage", "Dentro del tramo dbt: modelo por modelo", hint=LINEAGE_HINT):
             st.markdown(f'<div class="lineage-frame">{lineage.build_lineage_svg(nodes, results, mode)}</div>',
@@ -6547,6 +6548,7 @@ def show_devops_tab(mode):
                          help=lead, width="stretch"):
                 show_devops_layer_dialog(heading, figures["next_run"])
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
+    st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
 
 
 # endregion
@@ -6959,6 +6961,7 @@ def show_project_document(mode, title):
             position = marker.end()
         st.markdown(text[position:])
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
+    st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
 # endregion
 
 # region Entry point

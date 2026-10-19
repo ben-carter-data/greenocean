@@ -48,6 +48,8 @@ Las decisiones que dieron forma a la arquitectura entregada, una ficha por decis
 | ADR-32 | Sin comparación por cadena de supermercados | Aceptada | D-001, D-152 |
 | ADR-33 | Precios reales con el IPC de alimentos del INE | Aceptada e implementada | D-155 |
 | ADR-34 | Almacén de trabajo, base de servicio y respaldo con paridad | Aceptada e implementada | D-154 |
+| ADR-35 | Panel en Streamlit, con gráficos en Altair | Aceptada | D-012, D-037, D-069, D-070 |
+| ADR-36 | Informe semanal y avisos con las herramientas de GitHub | Aceptada | D-017, D-034 |
 
 Las decisiones ADR-24 (rezago K5 descriptivo) y ADR-26 (consolas SQL y Python en el panel) fueron reemplazadas; se resumen al final.
 
@@ -500,6 +502,34 @@ Las decisiones ADR-24 (rezago K5 descriptivo) y ADR-26 (consolas SQL y Python en
 **Alternativas.** Que el panel lea directamente el almacén de dbt; retirar SQLite el mismo día de la migración.
 
 **Consecuencias.** Base publicada pequeña y siempre completa. La paridad inicial dio 811.578 precios iguales, con una diferencia máxima de 4,9 × 10⁻¹⁶. Mientras el autor no retire el respaldo, cada carga escribe dos bases.
+
+## ADR-35 · Panel en Streamlit, con gráficos en Altair
+
+| Estado | Fecha | Referencia |
+|---|---|---|
+| Aceptada | Diseño inicial; gráficos desde T-38 | D-012, D-032, D-035, D-037, D-064, D-069, D-070 |
+
+**Contexto.** El panel debe abrirse desde un enlace público, sin costo ni servidor que mantener, y leer la base con el mismo acceso a datos que el informe semanal. Sus gráficos deben mostrar el detalle al pasar el cursor y responder a un clic.
+
+**Decisión.** El panel es una aplicación de Streamlit publicada en Streamlit Community Cloud. Los gráficos se dibujan con Altair, que viene instalado con Streamlit; un clic en una barra o en el mapa vuelve al panel y filtra el resto de las vistas. El acceso a datos vive en un módulo propio, que el informe usa sin importar Streamlit.
+
+**Alternativas.** Power BI, que no se abre desde un enlace público sin licencia; Matplotlib, que dibuja imágenes fijas sin información al pasar el cursor; Plotly, que entró para una vista 3D y salió con ella, y para el mapa no hace falta, porque Altair devuelve el clic sin otra librería.
+
+**Consecuencias.** Ninguna dependencia extra para los gráficos y respuestas al clic de 0,46 a 0,77 s medidas en el navegador. El código del panel es más largo, por sus estilos y tarjetas, y algunos detalles del tema dependen de cómo Streamlit dibuja sus controles.
+
+## ADR-36 · Informe semanal y avisos con las herramientas de GitHub
+
+| Estado | Fecha | Referencia |
+|---|---|---|
+| Aceptada | Diseño inicial y hito 4 | D-017, D-034 |
+
+**Contexto.** Un pipeline que corre sin supervisión debe dejar constancia de cada carga y avisar cuando algo sale mal.
+
+**Decisión.** El workflow semanal publica cada martes un issue «Informe semanal» con el estado de la carga y las alertas. El aviso de falla es el correo que GitHub envía por defecto al autor.
+
+**Alternativas.** Correo propio; un servicio de mensajería externo.
+
+**Consecuencias.** Sin servidor de correo, claves ni servicios externos; el workflow solo necesita permiso para escribir contenido e issues. El canal es menos cómodo para un usuario de negocio y puede agregarse otro después.
 
 ---
 

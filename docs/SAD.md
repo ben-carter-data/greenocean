@@ -71,7 +71,7 @@ Cada contenedor es una unidad que se ejecuta o se guarda por separado.
 | Orquestador de la carga | `etl/pipeline.py` | Encadena bronce, IPC, dbt build y el control de volumen; escribe la base de servicio y registra la carga | Python |
 | Base de servicio | `etl/datos.duckdb` | Las tablas que lee el panel más el registro `etl_run`; unos 13 MB, se sube cada semana | DuckDB |
 | Respaldo | `etl/datos.db` | El data warehouse anterior, construido en paralelo y comparado con DuckDB por una prueba de paridad | SQLite |
-| Panel | `bi/` | Dashboard, arquitectura, operación y documentación, en solo lectura | Streamlit, Plotly |
+| Panel | `bi/` | Dashboard, arquitectura, operación y documentación, en solo lectura | Streamlit, Altair |
 | Workflow semanal | `.github/workflows/semanal.yml` | Orquesta la carga completa cada martes y publica el informe | GitHub Actions |
 | Workflow de pruebas | `.github/workflows/pruebas.yml` | En cada cambio compila el proyecto dbt y corre la suite de pruebas | GitHub Actions, pytest |
 
@@ -79,9 +79,33 @@ Cada contenedor es una unidad que se ejecuta o se guarda por separado.
 
 Las flechas siguen el camino de los datos: de las fuentes a bronce, de bronce a dbt, y del orquestador a la base de servicio que lee el panel. Los dos workflows solo ejecutan; no tocan los datos.
 
-## 5. Nivel 3 · Componentes
+## 5. Elección de tecnologías
 
-### 5.1 El proyecto dbt
+Por qué cada herramienta de los contenedores es la que es. Cada razón sale de una decisión registrada o de un hecho comprobable en el repositorio; cuando el registro no guarda las alternativas, la tabla lo dice.
+
+| Herramienta | Para qué se usa aquí | Por qué esta | Alternativas descartadas | Decisión |
+|---|---|---|---|---|
+| Python 3.11 | Ingesta, ETL de respaldo, orquestador, panel, informe y pruebas | Un solo lenguaje de punta a punta: dbt Core, Streamlit, pandas y pytest son paquetes de Python. Código propio con librerías públicas | No registradas; la elección del lenguaje no tiene entrada propia | D-014, D-015, D-022 |
+| requests | Descarga por HTTPS de los archivos de ODEPA y de las series del INE | Los datos ya existen como archivos oficiales: basta una descarga, estable y sin depender de la estructura de una página | Scraping de supermercados | ADR-01 · D-001 |
+| SQLite (`raw.db`, `datos.db`) | Zona de aterrizaje de las filas de ODEPA y respaldo del data warehouse anterior | Base en un archivo, sin servidor, que cualquiera puede clonar y ejecutar. En la migración se conservó como aterrizaje y como respaldo para comparar fila a fila | Servidor propio; base en la nube; retirar SQLite el mismo día de la migración | ADR-02, ADR-34 · D-012, D-154 |
+| Parquet con pyarrow | Capa bronce, una partición por fuente y año, más las series del INE | Copia literal en columnas que dbt lee directo desde DuckDB: 16 MB frente a 644 MB del aterrizaje, reconstruida en cada ejecución | Subir los datos crudos al repositorio; almacenamiento de archivos grandes | ADR-04, ADR-30 · D-154 |
+| dbt Core con dbt-duckdb | Staging, intermedio y marts, con 31 pruebas de datos | Transformaciones declarativas por capas, con las reglas de negocio como pruebas que corren en cada construcción. El motor se elige en la configuración | Transformaciones en Python y consultas sueltas, como antes de la migración | ADR-30, ADR-11 · D-152, D-154 |
+| DuckDB | Almacén de trabajo de dbt y base de servicio del panel | Motor analítico en columnas, en un archivo, abierto y sin vencimientos. Pipeline en 16 s en vez de unos 4 minutos, pruebas en 40 s en vez de 140 s, base de unos 13 MB frente a 34 MB | Seguir en SQLite; BigQuery sandbox (las tablas vencen a los 60 días); Snowflake y Redshift (solo períodos de prueba); Databricks (sobredimensionado); PostgreSQL gratuito (algunos planes pausan proyectos inactivos) | ADR-30, ADR-31, ADR-34 · D-152, D-154 |
+| pandas | Tipos, fechas y validación en el ETL de respaldo; cálculo de las alertas K6 y filtros del panel | La alerta necesita una desviación estándar móvil, que el motor original no traía. Una versión SQL gemela la vigila fila a fila | Escribir la desviación estándar a mano en SQL; reemplazar Python por SQL en el panel | ADR-18 · D-031, D-033, D-049 |
+| SQL (`bi/queries.sql`) | Una consulta con nombre por indicador, leída por el panel y el informe | Cada cifra se comprueba ejecutando su consulta en la base; una sola definición por indicador. El panel pide solo el producto elegido | Consultas con parámetros por producto; vistas dentro de la base; tablas precalculadas | ADR-16, ADR-17 · D-031, D-050 |
+| Streamlit | Panel web de solo lectura: Dashboard, ingeniería de datos y documentación | Se publica gratis desde un enlace público, sin servidor que mantener, y comparte con el informe el mismo acceso a datos en Python | Power BI (no se abre desde un enlace público sin licencia) | ADR-02, ADR-35 · D-012, D-032, D-035 |
+| Altair | Gráficos del panel | Viene instalado con Streamlit, sin dependencia extra; muestra el detalle al pasar el cursor y devuelve el clic al panel para el filtro cruzado | Matplotlib (imágenes fijas); Plotly para el mapa (la vista 3D que lo usaba salió en D-070) | ADR-35 · D-037, D-069 |
+| GitHub Actions | Orquestación: workflow semanal cada martes a las 12:00 UTC y workflow de pruebas en cada cambio | Gratuito en un repositorio público y sin servidor. Se detiene en el primer paso que falla, así la base solo cambia con una carga completa; su caché evita bajar los años cerrados | Servidor propio; guardar la base en otra rama o como artefacto; descargar todo cada semana | ADR-02, ADR-14, ADR-15 · D-012, D-034, D-047 |
+| GitHub (repositorio e Issues) | Código, base publicada, informe semanal como issue y aviso de falla por correo | Una sola fuente de verdad del código, abierta y con la autoría en el historial. El informe y los avisos no necesitan servidor de correo, claves ni servicios externos | Repositorio privado o mixto; correo propio; mensajería externa | ADR-03, ADR-27, ADR-36 · D-013, D-017 |
+| Streamlit Community Cloud | Publicación del panel desde la rama principal | Gratuito, sin servidor que mantener; el panel publicado solo agrega `duckdb` a sus dependencias, sin dbt | Servidor propio; ejecutar la carga dentro del servidor del panel | ADR-02, ADR-28, ADR-29 · D-012, D-038, D-154 |
+| pytest | Suite de pruebas: auditoría independiente, paridad DuckDB ↔ SQLite y gemela SQL de K6 | Las pruebas corren solas en cada cambio y antes de cada commit semanal; una prueba en rojo impide subir la base. La herramienta concreta no tiene entrada propia | Agregar las pruebas al final | ADR-15, ADR-18, ADR-34 · D-016, D-154 |
+| reportlab | PDF de PRD, SAD y ADR, con portada, índice y paginación | Genera el PDF desde el mismo Markdown que muestran el panel y GitHub | No registradas | D-157 |
+
+Lo descartado para todo el sistema: nube, contenedores y modelos predictivos que no respondan mejor una pregunta (D-019); un warehouse en la nube mientras los datos sean públicos (ADR-31); la comparación por cadena de supermercados (ADR-32), y el scraping (ADR-01). Las dependencias se instalan con pip desde `requirements.txt` (panel) y `requirements-pipeline.txt` (workflows).
+
+## 6. Nivel 3 · Componentes
+
+### 6.1 El proyecto dbt
 
 | Capa | Modelo | Lee de | Qué hace | Regla |
 |---|---|---|---|---|
@@ -99,7 +123,7 @@ Las flechas siguen el camino de los datos: de las fuentes a bronce, de bronce a 
 | Marts | `ipc_weekly` | `ipc_monthly` y `dim_date` | Factor real de cada semana y marca provisional | D-155 |
 | Marts | `ine_ipc_source` | Staging del INE | Las filas originales del INE, para auditoría y respaldo | D-155 |
 
-### 5.2 El panel
+### 6.2 El panel
 
 | Componente | Ubicación | Responsabilidad |
 |---|---|---|
@@ -112,7 +136,7 @@ Las flechas siguen el camino de los datos: de las fuentes a bronce, de bronce a 
 | Documentos en PDF | `bi/document_pdf.py` | PRD, SAD y ADR con portada, índice y paginación, generados desde los mismos archivos |
 | Aplicación | `bi/dashboard.py` | Navegación, páginas y composición |
 
-## 6. Linaje de los datos
+## 7. Linaje de los datos
 
 Los datos atraviesan seis capas. Cada una tiene un solo propósito y un solo lugar. El recorrido completo, con el estado real de cada paso, y el linaje dbt modelo a modelo, con sus pruebas, viven en la página Pipeline y linaje del panel; este documento no los repite, porque la vista de contenedores de la sección 4 ya muestra por dónde pasan los datos.
 
@@ -127,7 +151,7 @@ Los datos atraviesan seis capas. Cada una tiene un solo propósito y un solo lug
 
 El paso de marts a servicio es deliberado: el almacén de trabajo de dbt guarda vistas y tablas intermedias que el panel no usa; la base de servicio copia solo las tablas necesarias en un archivo nuevo y lo reemplaza de una vez, cuando todo pasó (ADR-34).
 
-## 7. Flujo del IPC
+## 8. Flujo del IPC
 
 | Paso | Qué ocurre | Dónde |
 |---|---|---|
@@ -141,7 +165,7 @@ El paso de marts a servicio es deliberado: el almacén de trabajo de dbt guarda 
 
 Si el INE no responde, la carga no se detiene: se usa el bronce previo o se reconstruye desde las filas del INE guardadas en la base publicada. Hoy la serie enlazada tiene 202 meses, de diciembre 2009 a septiembre 2026, y una sola semana provisional, la del 05-10-2026.
 
-## 8. Modelo de datos
+## 9. Modelo de datos
 
 [[diagrama:modelo]]
 
@@ -164,9 +188,9 @@ Es el mismo diagrama de la página Modelo de datos del panel: el modelo estrella
 
 Cada precio guarda su unidad normalizada, el volumen en el mayorista, el número de observaciones de origen y una marca: 826 precios están marcados como atípicos y 12.472 sin unidad convertible. Ninguno se borra.
 
-## 9. Vista de ejecución
+## 10. Vista de ejecución
 
-### 9.1 El martes automático
+### 10.1 El martes automático
 
 [[diagrama:secuencia]]
 
@@ -187,7 +211,7 @@ El diagrama sigue los mensajes entre los participantes; la tabla dice qué pasa 
 
 GitHub Actions se detiene en el primer paso que falla, avisa al autor por correo y la base del repositorio queda como estaba.
 
-### 9.2 Otros escenarios
+### 10.2 Otros escenarios
 
 | Escenario | Lo inicia | Qué ocurre | Resultado |
 |---|---|---|---|
@@ -195,7 +219,7 @@ GitHub Actions se detiene en el primer paso que falla, avisa al autor por correo
 | Una ejecución manual | El autor, con la clave de control, en Ejecuciones | El botón «Ejecutar pipeline ahora» lanza el mismo workflow semanal mediante la API de GitHub, con un token limitado al repositorio, y muestra los pasos en vivo | Un mensaje claro de éxito o de falla (D-149) |
 | Una visita al panel | Un visitante | El panel abre la base de servicio en solo lectura, pide solo las filas del producto elegido y guarda los resultados en caché hasta que cambia la base | El estado del pipeline se lee de la API pública de GitHub y, si no responde, de `etl_run` |
 
-## 10. Vista de despliegue
+## 11. Vista de despliegue
 
 [[diagrama:plataforma]]
 
@@ -209,7 +233,7 @@ Es el mismo diagrama de la pestaña Plataforma y seguridad de Ejecuciones y DevO
 | Streamlit Community Cloud | Panel | Secretos: token de GitHub y clave de control |
 | Equipo del autor | Desarrollo y pruebas locales | Aterrizaje, bronce y almacén de trabajo, fuera del repositorio |
 
-## 11. Conceptos transversales
+## 12. Conceptos transversales
 
 **Calidad de datos como pruebas.** Las reglas son pruebas de dbt que corren en cada construcción. Ninguna base se publica con una prueba en rojo.
 
@@ -232,7 +256,7 @@ Es el mismo diagrama de la pestaña Plataforma y seguridad de Ejecuciones y DevO
 | Observabilidad | `etl_run`, `rejection`, `dbt_node` y `dbt_result` en la base, el historial de GitHub Actions visible en Ejecuciones, el issue semanal y el correo de GitHub ante una falla |
 | Portabilidad | El motor se elige en la configuración de dbt, que ya documenta los equivalentes para BigQuery, Snowflake y PostgreSQL sin activarlos. Los modelos usan SQL lo más estándar posible y macros donde los motores difieren; las pocas funciones propias de DuckDB (fechas, expresiones regulares) son lo que habría que adaptar; el panel se conecta en un solo punto |
 
-## 12. Atributos de calidad
+## 13. Atributos de calidad
 
 | Atributo | Cómo se logra | Cómo se verifica |
 |---|---|---|
@@ -244,7 +268,7 @@ Es el mismo diagrama de la pestaña Plataforma y seguridad de Ejecuciones y DevO
 | Rendimiento | Motor en columnas y caché por versión de la base | Pipeline completo en 16 s y pruebas en 40 s, frente a unos 4 minutos y 140 s antes (D-154) |
 | Costo | Herramientas abiertas y servicios gratuitos | Ningún servicio de pago |
 
-## 13. Riesgos y deuda técnica
+## 14. Riesgos y deuda técnica
 
 | Tema | Descripción | Referencia |
 |---|---|---|
@@ -258,7 +282,7 @@ Es el mismo diagrama de la pestaña Plataforma y seguridad de Ejecuciones y DevO
 | Token con vencimiento | Si vence, la ejecución manual deja de funcionar | ADR-28 |
 | Cuatro martes seguidos | La operación sin intervención aún no se observó cuatro semanas consecutivas | PRD, criterio 1 |
 
-## 14. Escalabilidad
+## 15. Escalabilidad
 
 La arquitectura está pensada para crecer cambiando configuración, no código. Lo que sigue es una proyección, no una entrega.
 
@@ -276,7 +300,7 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 | Acceso | Público | Permisos por persona o datos sensibles |
 | Frescura | Semanal | Varias cargas al día o tiempo real |
 
-## 15. Glosario
+## 16. Glosario
 
 | Término | Significado |
 |---|---|
