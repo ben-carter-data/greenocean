@@ -490,7 +490,11 @@ ALERT_LEVELS = [(4, "Muy alta", "◆", "critical"), (3, "Alta", "▲", "serious"
 NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
 # Contexto: nominal prices or real prices deflated with the INE IPC (D-155).
 CONTEXT_BASIS_KEY = "context_price_basis"
-BASIS_NOMINAL, BASIS_REAL = "Nominal", "Real"
+BASIS_NOMINAL, BASIS_REAL = "Precios del día", "Sin inflación"
+BASIS_HELP = ("Precios del día: lo que se pagó cada semana. Sin inflación (IPC): todos los precios en pesos del "
+              "último mes publicado por el INE, descontada la inflación de alimentos, para comparar con años "
+              "anteriores sin que la inflación los haga parecer caros.")
+STATE_ORDER = {"bajo": 0, "dentro": 1, "sobre": 2}
 # The switch of Pipeline y linaje: the whole journey first, its dbt stretch on demand.
 PIPELINE_VIEW_KEY = "pipeline_view"
 PIPELINE_JOURNEY, PIPELINE_LINEAGE = "Recorrido por capas", "Linaje dbt"
@@ -5842,6 +5846,11 @@ def build_context_css(mode):
     .ctx-title h1 {{font-size:21px!important;font-weight:700;margin:0!important;padding:0!important;display:inline;}}
     .ctx-title .page-freshness {{display:inline-flex;gap:6px;margin-left:12px;font-size:12px;}}
     .ctx-answer {{font-size:14px;line-height:1.45;color:{palette['strong_text']};margin:4px 0 0;max-width:900px;}}
+    .ctx-ipc-note {{display:block;margin-top:4px;font-size:13px;color:{palette['text']};}}
+    .ctx-ipc-note b:first-child {{display:inline-block;font-size:10.5px;letter-spacing:.06em;padding:1px 7px;
+        margin-right:6px;border-radius:999px;color:{palette['accent']};
+        background:color-mix(in srgb,{palette['accent']} 12%,transparent);vertical-align:1px;}}
+    .st-key-ctx_main p.ctx-reading {{font-size:12px!important;line-height:1.4!important;color:{palette['text']};margin:-6px 0 0!important;}}
     .st-key-ctx_main {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:10px 16px 4px;}}
     .st-key-ctx_side {{gap:10px;}}
     .st-key-ctx_bottom {{margin-top:10px;}}
@@ -5902,6 +5911,31 @@ def build_context_css(mode):
     </style>"""
 
 
+def build_inflation_note(model, other, real, wrap):
+    """One sentence when food inflation changes the answer for a channel (D-155): in
+    real pesos the price reads otherwise than in today's pesos. Empty when it does not."""
+    nominal, deflated = (other, model) if real else (model, other)
+    changed = []
+    for channel in CONTEXT_CHANNELS:
+        before = nominal["now"].get(channel, {}).get("state")
+        after = deflated["now"].get(channel, {}).get("state")
+        if before in STATE_ORDER and after in STATE_ORDER and before != after:
+            changed.append((channel, after, STATE_ORDER[after] < STATE_ORDER[before]))
+    if not changed:
+        return ""
+    if real:
+        lead = "Con los precios del día, "
+        parts = [f'en {channel.lower()} estaría '
+                 f'{wrap(channel, price_context.STATES[nominal["now"][channel]["state"]])}'
+                 for channel, _, _ in changed]
+    else:
+        lead = "Descontada la inflación de alimentos (IPC del INE), "
+        parts = [f'en {channel.lower()} está {wrap(channel, price_context.STATES[state])}: subió '
+                 + ('menos' if lower else 'más') + ' que la inflación de alimentos'
+                 for channel, state, lower in changed]
+    return f'<span class="ctx-ipc-note"><b>IPC</b> {lead}{"; ".join(parts)}.</span>'
+
+
 def show_price_context_page(mode):
     """¿El precio de esta semana es normal? One screen, no scroll at 1920×1080 (D-098)."""
     st.markdown(build_context_css(mode), unsafe_allow_html=True)
@@ -5935,6 +5969,9 @@ def show_price_context_page(mode):
     def wrap(channel, phrase):
         return f'<b style="color:{charts.CONTEXT_CHANNELS.get(channel, "inherit")}">{html.escape(phrase)}</b>'
     sentence = price_context.answer_sentence(html.escape(label.lower()), model["month"], states, gap_word, wrap=wrap)
+    # When removing food inflation changes the answer, say so: that is what the IPC adds.
+    other = read_context_model(version, tuple(sorted(key.items())), week, not real)
+    sentence += build_inflation_note(model, other, real, wrap)
     title.markdown(f'<div class="ctx-title compact-header"><h1>¿El precio de esta semana es normal?</h1>'
                    f'<span class="page-freshness">Datos al {format_chile_time(parse_run_start(latest["started_at"]))} '
                    f'{build_chip("Carga correcta" if run_kind == "ok" else "Última carga con falla", run_kind)}</span></div>'
@@ -5948,16 +5985,20 @@ def show_price_context_page(mode):
             hint = build_hint_icon("Línea: precio de cada semana. Banda: rango habitual de esa misma semana "
                                    "(y la semana antes y después) en años anteriores, percentil 25 a 75. Si la "
                                    "línea sale de la banda, el precio es inusual.")
-            head, basis = st.columns([4.6, 1.2], vertical_alignment="center", gap="small")
+            head, basis = st.columns([4.1, 1.9], vertical_alignment="center", gap="small")
             head.markdown(f'<div class="ctx-head"><h3>Últimas 52 semanas frente a lo habitual{hint}</h3>'
                           '<div class="ctx-keys">'
                           + ''.join(f'<span><i style="background:{color}"></i>{channel}</span>'
                                     for channel, color in charts.CONTEXT_CHANNELS.items() if channel in model["series"])
-                          + ('<span><i class="nominal"></i>Nominal</span>' if real else '')
-                          + '<span><i class="band"></i>Rango habitual</span></div></div>', unsafe_allow_html=True)
+                          + ('<span><i class="nominal"></i>Precio del día</span>' if real else '')
+                          + '<span><i class="band"></i>Rango habitual</span></div></div>',
+                          unsafe_allow_html=True)
             # D-155: the same chart in nominal pesos or deflated with the INE IPC.
             basis.segmented_control("Precios", [BASIS_NOMINAL, BASIS_REAL], default=BASIS_NOMINAL,
-                                    key=CONTEXT_BASIS_KEY, label_visibility="collapsed")
+                                    key=CONTEXT_BASIS_KEY, label_visibility="collapsed", help=BASIS_HELP)
+            st.markdown('<p class="ctx-reading">Línea: precio de cada semana · Banda: lo habitual en esa misma '
+                        'semana de años anteriores. Si la línea sale de la banda, el precio es inusual.</p>',
+                        unsafe_allow_html=True)
             if model["weekly"].empty:
                 st.info("Este producto no tiene precios de feria ni de supermercado.")
             else:
