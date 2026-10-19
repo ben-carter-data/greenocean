@@ -1503,7 +1503,7 @@ def test_d098_price_context_answers_on_one_screen_without_the_removed_cards():
     text = ' '.join(block.value for block in app.markdown)
     for heading in ['¿El precio de esta semana es normal?', 'Últimas 52 semanas frente a lo habitual',
                     'Precio esta semana', 'Qué suele pasar en las próximas semanas',
-                    'Otros productos de Hortalizas fuera de lo habitual']:
+                    'Otros productos de Hortalizas con precio fuera de lo habitual para la época']:
         assert heading in text, heading
     # Retired by D-098: the standalone gap card and the seasonal-pattern bar chart.
     assert '¿Dónde conviene comprar?' not in text and 'Patrón de temporada' not in text
@@ -1522,6 +1522,8 @@ def test_d098_price_context_answers_on_one_screen_without_the_removed_cards():
     assert 'Precios nominales, sin ajuste por inflación.' in ' '.join(c.value for c in app.caption)
     markup = ' '.join(block.value for block in app.markdown)
     assert 'class="ctx-reading"' in markup and 'Descontada la inflación de alimentos (IPC del INE)' in markup
+    # D-161: a year of change split into food inflation and the product's own part.
+    assert '12 meses: <b>' in markup and 'inflación' in markup and 'propio' in markup
     assert 'class="hint"' in text  # long paragraphs became ⓘ tooltips (D-098)
 
 
@@ -1658,3 +1660,14 @@ def test_d160_the_ipc_itself_has_a_chart_with_its_real_figures():
     captions = ' '.join(c.value for c in app.caption)
     assert 'base 2023 = 100' in captions and 'en los últimos 12 meses' in captions
     assert app.get('arrow_vega_lite_chart') or app.get('vega_lite_chart')
+
+
+def test_d161_a_yearly_change_splits_into_inflation_and_own_part():
+    weeks = pd.to_datetime(["2025-10-06", "2026-10-05"])
+    rows = pd.DataFrame({"week_start": weeks, "national_price": [1000.0, 1150.0]})
+    ipc = pd.DataFrame({"week_start": weeks, "real_factor": [1.10, 1.0]})
+    split = dashboard.split_yearly_change(rows, ipc, "2026-10-05")
+    assert split["change"] == pytest.approx(150)
+    assert split["inflation"] == pytest.approx(100)  # the old price risen with a +10 % food IPC
+    assert split["own"] == pytest.approx(50)
+    assert dashboard.split_yearly_change(rows.iloc[1:], ipc, "2026-10-05") is None
