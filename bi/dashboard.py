@@ -32,7 +32,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                document_pdf, lineage, project, quality, queries, star_model, zoom)
+                doc_diagrams, document_pdf, lineage, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -6896,7 +6896,12 @@ DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 
 
 def build_document_diagram_html(name, mode):
-    """The project's own diagram behind a [[diagrama:…]] marker of a document."""
+    """The project's own diagram behind a [[diagrama:…]] marker of a document: the
+    document's own views (actors, C4, sequence, wireframe) or a live panel diagram."""
+    if name in doc_diagrams.DOC_DIAGRAMS:
+        build = lineage.summarize_build(*read_lineage(get_database_version()))
+        figures = {"dbt_models": build["models"], "dbt_tests": build["tests"]} if build else None
+        return zoom.build_zoom_frame_html(doc_diagrams.DOC_DIAGRAMS[name](mode, figures), "diagram-wide")
     states, figures, *_ = read_journey()
     if name == "plataforma":
         return zoom.build_zoom_frame_html(architecture.build_devops_svg(

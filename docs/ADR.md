@@ -5,7 +5,7 @@ Las decisiones que dieron forma a la arquitectura entregada, una ficha por decis
 | Ficha del documento | |
 |---|---|
 | Alcance | Fuentes, almacenamiento, transformación, calidad, operación, seguridad y evolución |
-| Versión | Arquitectura entregada al 19-10-2026 (decisiones hasta D-155) |
+| Versión | Arquitectura entregada al 19-10-2026 (decisiones hasta D-158) |
 | Autoría | El autor |
 | Fuente | El registro completo, `docs/DECISIONES.md`, con más de ciento cincuenta entradas; aquí queda solo lo que tiene peso arquitectónico |
 | Convención | Cada ficha cita sus entradas D-xxx. Cuando el registro no guarda las alternativas o la fecha, se dice |
@@ -373,7 +373,7 @@ Las decisiones ADR-24 (rezago K5 descriptivo) y ADR-26 (consolas SQL y Python en
 
 **Alternativas.** No registradas.
 
-**Consecuencias.** Menos afirmaciones, todas sostenibles: las alertas de esa semana pasaron de 46 a 22.
+**Consecuencias.** Menos afirmaciones, todas sostenibles: las alertas de esa semana pasaron de 46 a 22, y a 13 cuando una alerta pasó a exigir al menos dos cotizaciones en cada semana (D-158).
 
 ## ADR-25 · Retiro del rezago K5
 

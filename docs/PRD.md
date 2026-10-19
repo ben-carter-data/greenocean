@@ -5,7 +5,7 @@ Monitor semanal de precios de alimentos en Chile, construido sobre los datos abi
 | Ficha del documento | |
 |---|---|
 | Producto | GreenOcean, panel de inteligencia de precios de alimentos |
-| Versión | Arquitectura entregada al 19-10-2026 (decisiones hasta D-155) |
+| Versión | Arquitectura entregada al 19-10-2026 (decisiones hasta D-158) |
 | Autoría | El autor, con el registro completo de decisiones en `docs/DECISIONES.md` |
 | Documentos hermanos | SAD (cómo está construido) y ADR (por qué se decidió así) |
 | Carácter | Reconstruido después de construir el producto: compara lo diseñado al inicio (`docs/DISENO.md`) con lo entregado |
@@ -33,7 +33,16 @@ El producto responde tres preguntas a profesionales que deciden con estos precio
 
 ## 2. Problema
 
-Las fuentes existen, pero no son comparables entre sí sin trabajo. El mercado mayorista publica precios diarios por caja, bandeja o malla; el consumidor, precios semanales por kilo, unidad o envase, separados por canal y región. Cruzarlas exige una clave de producto común, una unidad común y una semana común. Y comparar un precio de hoy con el de hace tres años sin descontar la inflación lleva a conclusiones equivocadas.
+Las fuentes existen, pero no son comparables entre sí sin trabajo:
+
+| | Precios mayoristas (ODEPA) | Precios al consumidor (ODEPA) | IPC de alimentos (INE) |
+|---|---|---|---|
+| Frecuencia | Diaria | Semanal | Mensual |
+| Unidad | Caja, bandeja o malla | Kilo, unidad o envase | Índice, base 2023 = 100 |
+| Desagregación | Mercado y región | Canal y región | Nacional, división de alimentos |
+| Qué exige para cruzarla | Agregar a semana, ponderando por volumen, y llevar la unidad de venta a kilo o unidad | Separar producto, variedad y calidad, y llevar la unidad a kilo, unidad o litro | Asignar a cada semana el mes de su lunes |
+
+Cruzarlas exige una clave de producto común, una unidad común y una semana común. Y comparar un precio de hoy con el de hace tres años sin descontar la inflación lleva a conclusiones equivocadas.
 
 GreenOcean resuelve las tres cosas de forma reproducible: cada cifra del panel se puede reconstruir desde el archivo oficial, con la regla que la produjo y la prueba que la vigila.
 
@@ -49,6 +58,12 @@ El panel sirve a profesionales que toman decisiones con estos precios, no al con
 | Equipo de datos | Si la carga es confiable | Estado de cada ejecución, rechazos, cobertura del cruce y pruebas |
 
 Toda funcionalidad nueva debe responder a una decisión de uno de estos usuarios; si no responde a ninguna, no se construye. No hay inicio de sesión ni datos personales.
+
+Quién usa el sistema, para qué, y de qué sistemas externos depende:
+
+[[diagrama:actores]]
+
+El visitante solo lee. El autor opera: mantiene el código y los secretos y puede lanzar una ejecución manual protegida por clave. ODEPA y el INE entregan los datos; GitHub Actions ejecuta el workflow, el repositorio guarda el código y la base publicada, y Streamlit Community Cloud publica el panel.
 
 ## 4. Visión y objetivos
 
@@ -68,9 +83,13 @@ No se fijaron metas numéricas de negocio ni fechas comerciales (D-080).
 
 Tras la revisión de pertinencia del 18-10-2026 (D-146), el panel se ordena en torno a tres preguntas centrales:
 
-1. **¿Qué se movió esta semana y es inusual?** Variación semanal sobre las mismas regiones en ambas semanas, familia representada por su mediana y alertas K6.
-2. **¿Es normal el precio de hoy para la temporada?** Rango habitual P25–P75 de las mismas semanas ISO (±1) en años anteriores, en precios nominales o reales.
-3. **¿Cuánto paga el consumidor sobre el precio mayorista?** Margen K1 por canal, frente a su propio rango habitual.
+| Pregunta central | Cómo se responde | Dónde |
+|---|---|---|
+| ¿Qué se movió esta semana y es inusual? | Variación semanal sobre las mismas regiones en ambas semanas, familia representada por su mediana y alertas K6 | Resumen semanal |
+| ¿Es normal el precio de hoy para la temporada? | Rango habitual P25–P75 de las mismas semanas ISO (±1) en años anteriores, en precios nominales o reales | Contexto de precios |
+| ¿Cuánto paga el consumidor sobre el precio mayorista? | Margen K1 por canal, frente a su propio rango habitual | Contexto de precios |
+
+Las preguntas del diseño original quedaron así:
 
 | # | Pregunta del diseño | Estado | Dónde, o por qué no | Referencia |
 |---|---|---|---|---|
@@ -129,6 +148,10 @@ Tras la revisión de pertinencia del 18-10-2026 (D-146), el panel se ordena en t
 | RF-18 | Mostrar el historial de ejecuciones y permitir una ejecución manual protegida | Ejecuciones (D-149) |
 | RF-19 | Publicar un informe semanal con estado de la carga y alertas | Issue «Informe semanal» (D-017) |
 | RF-20 | Explicar el producto, la arquitectura y las decisiones dentro del panel, descargables en PDF | PRD, SAD y ADR en Documentación (D-151) |
+
+**La pantalla principal.** El Resumen semanal reúne en una pantalla los requisitos RF-12 a RF-14 y RF-17. El boceto marca qué requisito satisface cada zona; los rectángulos grises son marcadores de posición, no datos.
+
+[[diagrama:pantalla]]
 
 ## 8. Requisitos no funcionales
 

@@ -88,10 +88,14 @@ def test_documents_have_no_code_blocks_and_use_the_project_vocabulary(name):
     assert "robot" not in text.lower()
 
 
-def test_the_sad_keeps_its_three_live_diagrams_and_the_others_none():
-    counts = {name: len(re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"),
-                                   re.MULTILINE)) for name in DOCUMENTS}
-    assert counts == {"PRD.md": 0, "SAD.md": 3, "ADR.md": 0}
+def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
+    """PRD: actors and the main screen. SAD: C4 context and containers, the data
+    model, the weekly run and the deployment. ADR: none (doc_diagrams)."""
+    names = {name: re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"),
+                              re.MULTILINE) for name in DOCUMENTS}
+    assert names == {"PRD.md": ["actores", "pantalla"],
+                     "SAD.md": ["contexto", "contenedores", "modelo", "secuencia", "plataforma"],
+                     "ADR.md": []}
 
 
 def test_the_adr_has_one_card_per_decision_with_status_and_reference():
