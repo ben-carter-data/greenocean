@@ -5941,6 +5941,16 @@ def build_context_css(mode):
     .inf-panel-head b {{font-size:14px;font-weight:400;color:{palette['strong_text']};letter-spacing:-.01em;}}
     .inf-panel-head span {{font-size:12px;font-weight:400;}}
     [class*="st-key-inf_card_"] [data-testid="stMarkdownContainer"] {{margin-bottom:0!important;}}
+    [class*="st-key-inf_card_"] [data-testid="stElementToolbar"] {{display:none!important;}}
+    [class*="st-key-inf_card_"] [class*="st-key-inf_zoom_"] button, .st-key-inf_unfocus button {{min-height:26px!important;padding:0 12px!important;}}
+    [class*="st-key-inf_card_"] [class*="st-key-inf_zoom_"] button p, .st-key-inf_unfocus button p {{font-size:12px!important;font-weight:300!important;}}
+    .st-key-inf_card_focus {{border:1px solid {palette['card_border']};border-radius:18px;padding:18px 22px 10px;gap:14px!important;
+        background:{palette['card']};box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 28px 50px -32px rgba(0,0,0,.6);}}
+    .st-key-inf_card_focus .inf-panel-head b {{font-size:20px;}} .st-key-inf_card_focus .inf-panel-head span {{font-size:14px;}}
+    .ctx-answer {{margin:10px 0 22px!important;}}
+    .st-key-ctx_main .ctx-head h3 {{margin:8px 0 6px!important;}}
+    .st-key-ctx_main p.ctx-reading {{margin:0 0 20px!important;}}
+    .st-key-ctx_main {{gap:16px!important;}}
     [class*="st-key-inf_card_"] [data-testid="stVegaLiteChart"] {{margin-top:2px;}}
     .ctx-title .page-freshness {{display:inline-flex;gap:6px;margin-left:12px;font-size:12px;}}
     .ctx-answer {{font-size:15px;line-height:1.5;font-weight:300;color:{palette['text']};margin:4px 0 0;max-width:900px;}}
@@ -5972,7 +5982,7 @@ def build_context_css(mode):
     .ctx-ipc-note b:first-child {{display:inline-block;font-size:10.5px;letter-spacing:.06em;padding:1px 7px;
         margin-right:6px;border-radius:999px;color:{palette['accent']};
         background:color-mix(in srgb,{palette['accent']} 12%,transparent);vertical-align:1px;}}
-    .st-key-ctx_main p.ctx-reading {{font-size:12.5px!important;line-height:1.45!important;font-weight:300;color:{palette['text']};margin:-6px 0 0!important;}}
+    .st-key-ctx_main p.ctx-reading {{font-size:12.5px!important;line-height:1.45!important;font-weight:300;color:{palette['text']};margin:0 0 20px!important;}}
     .st-key-ctx_main {{gap:10px!important;padding:2px 0 0;}}
     .st-key-ctx_main [data-testid="stHorizontalBlock"] {{gap:14px;}}
     .st-key-ctx_side {{gap:10px;}}
@@ -6092,10 +6102,26 @@ def build_family_card_title_html(family, title):
             f'<span style="color:{color}">{html.escape(verdict)}</span></div>')
 
 
+FAMILY_FOCUS_KEY = "inf_focus"
+
+
+def focus_family(family):
+    st.session_state[FAMILY_FOCUS_KEY] = family
+
+
 def show_family_cards(rows, titles, mode, real):
-    """One raised card per family (D-174), four per row, the same chart size and
-    the same y scale in every card."""
+    """One raised card per family (D-174), four per row, the same chart size and the
+    same y scale. A card's «Ampliar» shows that family alone, large (D-177)."""
     domain = inflation_view.family_domain(rows, real)
+    focus = st.session_state.get(FAMILY_FOCUS_KEY)
+    if focus in titles:
+        with st.container(key="inf_card_focus"):
+            with st.container(horizontal=True, vertical_alignment="center"):
+                st.markdown(build_family_card_title_html(focus, titles[focus]), unsafe_allow_html=True)
+                st.button("Ver todas", key="inf_unfocus", icon=":material/close:", on_click=focus_family, args=(None,))
+            st.altair_chart(inflation_view.draw_family_card(rows, focus, mode, real=real, domain=domain, height=420),
+                            width="stretch", theme=None)
+        return
     families = list(titles)
     for start in range(0, len(families), FAMILY_CARD_COLUMNS):
         columns = st.columns(FAMILY_CARD_COLUMNS, gap="small")
@@ -6104,6 +6130,8 @@ def show_family_cards(rows, titles, mode, real):
                 st.markdown(build_family_card_title_html(family, titles[family]), unsafe_allow_html=True)
                 st.altair_chart(inflation_view.draw_family_card(rows, family, mode, real=real, domain=domain),
                                 width="stretch", theme=None)
+                st.button("Ampliar", key=f"inf_zoom_{start + offset}", icon=":material/open_in_full:",
+                          on_click=focus_family, args=(family,))
 
 
 def show_price_context_page(mode):
