@@ -240,7 +240,7 @@ TECH_KEYS = {"github": "github_cli"}
 # listed here keeps its own explanation (architecture.CHIP_TOOLTIPS).
 CHIP_KEYS = {
     "CSV": "csv", "manifest": "manifest", "raw_*": "raw", "ine_ipc": "ine_ipc",
-    "sources": "sources", "stg_*": "stg", "int_*": "int", "OK": "dbt_build", "SQL": "sql",
+    "sources": "sources", "stg_*": "stg", "int_*": "int", "OK": "dbt_build", "SQL": "sql", "consultas": "sql",
     "MD": "markdown", "HTTPS": "https", "git push": "git", "checkout · commit": "git",
     "cache": "actions_cache", "gh issue create": "github_cli", "on: push": "ci",
     "st.secrets": "secrets", "despliegue de main": "streamlit_cloud",
