@@ -1,0 +1,26 @@
+# GreenOcean · transformaciones del data warehouse (D-154).
+# Bronce (Parquet) → staging → intermediate → marts, con las reglas RN-01 a RN-14
+# como pruebas de dbt. El motor se elige en profiles.yml.
+name: greenocean
+version: "1.0.0"
+config-version: 2
+profile: greenocean
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Carpeta de la capa bronce, relativa a este proyecto.
+  bronze_dir: "../etl/bronze"
+
+models:
+  greenocean:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: table
+    marts:
+      +materialized: table

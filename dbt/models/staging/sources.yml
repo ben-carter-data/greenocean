@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Filas crudas de ODEPA, tal como se leyeron, en Parquet (etl/bronze.py).
+    tables:
+      - name: odepa_wholesale
+        description: Precios mayoristas diarios por mercado.
+        meta:
+          path: "{{ var('bronze_dir') }}/odepa_wholesale/*/*.parquet"
+      - name: odepa_consumer
+        description: Precios al consumidor semanales por canal y región.
+        meta:
+          path: "{{ var('bronze_dir') }}/odepa_consumer/*/*.parquet"

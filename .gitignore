@@ -10,3 +10,8 @@ report.md
 .DS_Store
 docs/privado/
 .streamlit/secrets.toml
+.venv-dbt/
+etl/bronze/
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
