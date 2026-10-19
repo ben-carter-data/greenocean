@@ -98,7 +98,7 @@ STATUS_TEXT_ON_LIGHT = {"good": "#15803d", "warning": "#a16207", "serious": "#c2
                         "critical": "#b91c1c", "running": "#1d4ed8", "unknown": "#57534e"}
 MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov",
                "dic"]
-CHART_FONT = "Source Sans Pro, sans-serif"
+CHART_FONT = "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
 CHART_HEIGHT = 300
 SPARKLINE_HEIGHT = 70
 BAR_HEIGHT = 28

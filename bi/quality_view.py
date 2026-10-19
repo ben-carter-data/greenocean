@@ -419,7 +419,7 @@ def build_overview_css(mode):
 .qa-page .qa-defs{{position:absolute;width:0;height:0;overflow:hidden;}}
 {pills}
 .qa-page .qa-head{{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:10px 24px;margin-bottom:22px;}}
-.qa-page h1.qa-h1{{margin:0;padding:0;font-size:2.05rem;line-height:1.15;font-weight:800;letter-spacing:-.02em;color:{palette['strong_text']};}}
+.qa-page h1.qa-h1{{margin:0;padding:0;font-size:2.05rem;line-height:1.15;font-weight:600;letter-spacing:-.02em;color:{palette['strong_text']};}}
 .qa-page .qa-sub{{margin:6px 0 0;font-size:1.02rem;color:{soft};}}
 .qa-page .qa-run{{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding-top:6px;font-size:.9rem;color:{palette['strong_text']};}}
 .qa-page .qa-chip{{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-weight:600;font-size:.88rem;
@@ -432,7 +432,7 @@ def build_overview_css(mode):
 .qa-page .qa-col+.qa-col .qa-step{{border-left:0;}}
 .qa-page .qa-step::before,.qa-page .qa-step::after{{content:"";flex:1;height:2px;border-radius:2px;background:var(--qa-line,{line});}}
 .qa-page .qa-col:first-child .qa-step::before,.qa-page .qa-col:last-child .qa-step::after{{flex:.15;opacity:0;}}
-.qa-page .qa-step-name{{font-size:.86rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:{palette['strong_text']};white-space:nowrap;}}
+.qa-page .qa-step-name{{font-size:.86rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:{palette['strong_text']};white-space:nowrap;}}
 .qa-page .qa-step .qa-mark{{position:absolute;right:-14px;top:50%;transform:translateY(-50%);z-index:1;}}
 .qa-page .qa-step.qa-ok{{--qa-line:linear-gradient(90deg,{line},color-mix(in srgb,{PILL_COLORS['ok']} 75%,transparent));}}
 .qa-page .qa-mark{{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;
@@ -443,10 +443,10 @@ def build_overview_css(mode):
 .qa-page .qa-card:hover{{background:{hover};transform:translateY(-2px);}}
 .qa-page .qa-icon{{width:84px;height:84px;flex:none;filter:drop-shadow(0 10px 12px {icon_shadow});}}
 .qa-page .qa-body{{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;}}
-.qa-page .qa-pill{{display:inline-block;max-width:100%;padding:3px 11px;border-radius:12px;font-size:.72rem;text-wrap:balance;font-weight:650;line-height:1.5;
+.qa-page .qa-pill{{display:inline-block;max-width:100%;padding:3px 11px;border-radius:12px;font-size:.72rem;text-wrap:balance;font-weight:500;line-height:1.5;
   color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--qa-c) 82%,#fff),var(--qa-c));
   box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 8px -3px color-mix(in srgb,var(--qa-c) 70%,transparent);text-align:center;}}
-.qa-page .qa-title{{align-self:stretch;margin-top:4px;font-size:1.02rem;font-weight:750;line-height:1.25;color:{palette['strong_text']};}}
+.qa-page .qa-title{{align-self:stretch;margin-top:4px;font-size:1.02rem;font-weight:600;line-height:1.25;color:{palette['strong_text']};}}
 .qa-page .qa-detail{{align-self:stretch;font-size:.9rem;line-height:1.45;color:{soft};overflow-wrap:anywhere;}}
 .qa-page .qa-compact{{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:6px 6px 14px;}}
 .qa-page .qa-compact .qa-icon{{width:62px;height:62px;}}
@@ -482,7 +482,7 @@ def build_overview_css(mode):
 .st-key-{EXPANDER_KEY} details{{border:1px solid {palette['card_border']};border-radius:14px;background:{bar};
   box-shadow:0 8px 20px -16px rgba(0,0,0,.45);}}
 .st-key-{EXPANDER_KEY} details summary{{padding-top:14px;padding-bottom:14px;}}
-.st-key-{EXPANDER_KEY} details summary p{{font-size:1rem;font-weight:600;color:{palette['strong_text']};}}
+.st-key-{EXPANDER_KEY} .qa-open-label{{font-size:.72rem;font-weight:500;letter-spacing:.11em;text-transform:uppercase;color:{palette['reference']};white-space:nowrap;}}
 </style>"""
 
 

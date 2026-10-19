@@ -202,19 +202,19 @@ def _style(palette):
 }}
 .gh-page *, .gh-page *::before, .gh-page *::after {{ box-sizing: border-box; }}
 .gh-top {{ display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; gap: 24px; }}
-.gh-head h1 {{ margin: 34px 0 10px; font-size: 2.6rem; line-height: 1.05; font-weight: 750;
+.gh-head h1 {{ margin: 34px 0 10px; font-size: 2.6rem; line-height: 1.05; font-weight: 500;
   letter-spacing: -.035em; color: var(--gh-ink); padding: 0; }}
 .gh-head p {{ margin: 0; font-size: .98rem; line-height: 1.5; color: var(--gh-text); max-width: 25rem; }}
 .gh-hero {{ display: flex; flex-direction: column; align-items: center; text-align: center; }}
 .gh-hero-art {{ width: 214px; height: auto; display: block;
   filter: drop-shadow(0 22px 30px {"rgba(56,189,248,.18)" if dark else "rgba(59,130,246,.16)"}); }}
-.gh-slug {{ margin: 8px 0 12px; font-size: 1.32rem; font-weight: 700; letter-spacing: -.015em;
+.gh-slug {{ margin: 8px 0 12px; font-size: 1.32rem; font-weight: 600; letter-spacing: -.015em;
   color: var(--gh-ink); word-break: break-word; }}
 .gh-actions {{ display: flex; align-items: center; justify-content: center; gap: 10px; }}
 .gh-btn {{ display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 18px;
   border-radius: 12px; border: 1.5px solid color-mix(in srgb, var(--gh-accent) 55%, transparent);
   background: var(--gh-btn-bg); color: var(--gh-accent) !important; text-decoration: none !important;
-  font-weight: 650; font-size: .95rem; letter-spacing: -.005em;
+  font-weight: 500; font-size: .95rem; letter-spacing: -.005em;
   box-shadow: 0 1px 2px rgba(15,40,90,.06), inset 0 1px 0 rgba(255,255,255,{".06" if dark else "1"});
   transition: transform .15s ease, box-shadow .15s ease, background .15s ease; }}
 .gh-btn:hover {{ transform: translateY(-1px); background: color-mix(in srgb, var(--gh-accent) 9%, var(--gh-btn-bg));
@@ -250,7 +250,7 @@ def _style(palette):
 .gh-group[data-cat="docs"] {{ --c: var(--gh-docs); }}
 .gh-dot {{ width: 9px; height: 9px; border-radius: 50%; background: var(--c);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent), 0 0 10px color-mix(in srgb, var(--c) 60%, transparent); }}
-.gh-pill {{ margin: 8px 0 0; padding: 8px 20px; border-radius: 999px; font-size: .8rem; font-weight: 750;
+.gh-pill {{ margin: 8px 0 0; padding: 8px 20px; border-radius: 999px; font-size: .8rem; font-weight: 600;
   letter-spacing: .06em; text-transform: uppercase;
   color: color-mix(in srgb, var(--c) {"88%, white" if dark else "78%, black"});
   background: color-mix(in srgb, var(--c) {"16%" if dark else "13%"}, transparent);
@@ -277,7 +277,7 @@ def _style(palette):
   filter: blur(10px); }}
 .gh-item:hover .gh-tile {{ transform: translateY(-3px); }}
 .gh-glyph {{ position: relative; width: 74px; height: 74px; }}
-.gh-item h3 {{ margin: 0 0 4px; padding: 0; font-size: 1.08rem; font-weight: 700; letter-spacing: -.015em;
+.gh-item h3 {{ margin: 0 0 4px; padding: 0; font-size: 1.08rem; font-weight: 600; letter-spacing: -.015em;
   color: var(--gh-ink); line-height: 1.25; }}
 .gh-item p {{ margin: 0 0 14px; font-size: .9rem; line-height: 1.4; color: var(--gh-text); max-width: 13.5rem;
   min-height: 2.8em; }}
