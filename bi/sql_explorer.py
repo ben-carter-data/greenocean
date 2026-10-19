@@ -454,7 +454,7 @@ def export_csv(sql, database_file=queries.DATABASE_FILE):
 def build_css(palette):
     return f"""<style>
 .sqlx-bar {{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin:2px 0 10px; }}
-.sqlx-bar .sqlx-bar-label {{ font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+.sqlx-bar .sqlx-bar-label {{ font-size:.72rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
   color:{palette['reference']}; margin-right:4px; }}
 [class*="st-key-sqlx_chip_"] button {{ min-height:28px !important; padding:2px 11px !important; border-radius:999px !important;
   border:1px solid {palette['card_border']} !important; background:{palette['card']} !important;
@@ -462,7 +462,7 @@ def build_css(palette):
 [class*="st-key-sqlx_chip_"] button p {{ font-size:.8rem !important; color:{palette['strong_text']} !important; }}
 [class*="st-key-sqlx_chip_"] button:hover {{ border-color:{palette['accent']} !important; }}
 .st-key-sqlx_chips {{ flex-wrap:wrap !important; gap:6px 8px !important; }}
-.sqlx-side h4 {{ margin:0 0 4px; font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+.sqlx-side h4 {{ margin:0 0 4px; font-size:.72rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
   color:{palette['reference']}; }}
 [class*="st-key-sqlx_view_"] button {{ width:100%; justify-content:flex-start; min-height:26px !important;
   padding:2px 6px !important; border:0 !important; background:transparent !important; box-shadow:none !important;

@@ -2,7 +2,7 @@
 .stApp {--premium-surface:__CARD__;--premium-line:__BORDER__;--premium-ink:__INK__;--premium-accent:__ACCENT__;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;}
 .stApp [data-testid="stMain"] {background:radial-gradient(ellipse at 85% 0%,color-mix(in srgb,__ACCENT__ 5%,transparent),transparent 42%),__BG__!important;}
 .stApp h1,.stApp h2,.stApp h3 {font-family:inherit;letter-spacing:-.035em;}
-.stApp [data-testid="stMain"] h1 {font-weight:700;}
+.stApp [data-testid="stMain"] h1 {font-weight:500;}
 .stApp [data-testid="stMain"] :is(.info-card,[class*="st-key-card_"]) {border:1px solid color-mix(in srgb,__BORDER__ 65%,transparent)!important;border-radius:22px!important;background:linear-gradient(155deg,color-mix(in srgb,__CARD__ 96%,white),__CARD__)!important;box-shadow:0 12px 36px -24px #071a3c40,inset 0 1px 0 #ffffff20!important;}
 .stApp .info-card {padding:22px!important;}
 .stApp :is(.card-title,.section-title) {letter-spacing:-.02em;}
@@ -11,13 +11,13 @@
 .stApp .st-key-market_dashboard .card-title .component-symbol {display:inline-flex!important;width:32px;height:36px;margin:0 8px 0 0;}
 .stApp .question-item {background:transparent!important;border:0!important;box-shadow:none!important;}
 .stApp .question-item .component-symbol {width:82px;height:92px;}
-.stApp [data-testid="stButton"] button,.stApp [data-testid="stDownloadButton"] button {border-radius:12px;transition:box-shadow .2s ease,transform .2s ease;}
+.stApp [data-testid="stButton"] button,.stApp [data-testid="stDownloadButton"] button,.stApp [data-testid="stPopover"]>button {border-radius:999px;font-weight:400;transition:box-shadow .2s ease,transform .2s ease;}
 .stApp [data-testid="stButton"] button:hover {box-shadow:0 5px 15px -9px #071a3c55;}
 .stApp :is([data-testid="stExpander"] details,[data-testid="stDataFrame"]) {border-radius:16px!important;}
 .stApp :is(.st-key-report_filters,.st-key-dashboard_filter_bar,.st-key-mock_filters) {border-radius:16px!important;background:color-mix(in srgb,__CARD__ 88%,__BG__)!important;border-color:__BORDER__!important;}
 .stApp [data-testid="stMain"] :is(.st-key-report_page,.st-key-market_dashboard) {gap:16px!important;}
 .stApp .greenocean-mockup .mock-intro {padding:18px 0 16px;}
-.stApp .greenocean-mockup .mock-intro h1 {font-size:clamp(26px,2.5vw,38px)!important;letter-spacing:-.045em;font-weight:700;}
+.stApp .greenocean-mockup .mock-intro h1 {font-size:clamp(26px,2.5vw,38px)!important;letter-spacing:-.045em;font-weight:500;}
 .stApp .greenocean-mockup .mock-intro p {color:var(--mock-muted);}
 .stApp .greenocean-mockup .mock-family-gallery {gap:16px;padding:14px 0;}
 .stApp .greenocean-mockup .mock-family-tile {overflow:visible;isolation:auto;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:18px;min-height:156px;padding:10px 6px;}
@@ -49,3 +49,17 @@
 .stApp .doc-kpi-icon {background:transparent;border-radius:0;width:72px;height:76px;margin-bottom:12px;}
 .stApp .doc-kpi-icon .component-symbol {width:62px;height:68px;color:var(--kpi-color);filter:drop-shadow(1px 2px 0 color-mix(in srgb,var(--kpi-color) 65%,black)) drop-shadow(0 10px 7px #071a3c30);}
 @media(prefers-reduced-motion:reduce) {.stApp .doc-kpi-row,.stApp .doc-kpi-row:hover {transition:none;transform:none;}}
+/* Type finish (D-170): fine weights, quiet labels, pill buttons — the Apple reading. */
+.stApp {font-weight:400;}
+.stApp [data-testid="stMain"] :is(h1,h2,h3,h4,.compact-header h1,.ctx-title h1,.section-title,.subsection-title) {font-weight:500!important;letter-spacing:-.025em;}
+.stApp [data-testid="stMain"] :is(b,strong) {font-weight:600;}
+.stApp :is(.mock-kpi strong,.kpi-value,.kpi-strip-value,.cover-figures dd,.oc-fact-value,.runs-metric-value) {font-weight:500!important;letter-spacing:-.02em;}
+.stApp :is(.mock-kpi span,.oc-fact-label,.runs-metric-label,.devops-layers-title,.sqlx-bar-label,.sqlx-side h4,.qa-step-name,.mock-scope-label) {font-weight:500!important;letter-spacing:.11em;}
+.stApp .greenocean-mockup :is(h1,h2,h3) {font-weight:500!important;}
+.stApp .greenocean-mockup :is(b,strong,.mock-movement-row strong) {font-weight:600;}
+.stApp .qa-page h1.qa-h1 {font-weight:500;}
+.stApp .qa-page .qa-title {font-weight:600;}
+.stApp [data-testid="stMain"] [data-testid="stCaptionContainer"] p {font-weight:400;letter-spacing:0;}
+.stApp [data-testid="stButton"] button p,.stApp [data-testid="stDownloadButton"] button p,.stApp [data-testid="stPopover"]>button p {font-weight:400;}
+.stApp [data-testid="stButton"] button[kind="primary"] p {font-weight:500;}
+.stApp [data-baseweb="tab"] p {font-weight:400;}

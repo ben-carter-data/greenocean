@@ -1274,17 +1274,36 @@ def test_quality_page_does_not_claim_a_complete_audit_and_keeps_evidence_visible
     assert 'Reconciliación fuente → base' in text
     # Step 4 of the refonte: the dbt tests, the SQLite ↔ DuckDB parity and the rule matrix.
     assert 'Pruebas dbt de la última construcción' in text and 'Paridad SQLite ↔ DuckDB' in text
-    assert [tab.label for tab in app.tabs] == ['Reglas y pruebas dbt', 'Evidencia de archivos', 'Última carga (K8)']
-    # The detail is folded under the four-step overview (author's mockup).
-    assert app.expander and not app.expander[0].proto.expanded
-    assert 'RN-14' in list(app.dataframe[0].value['Regla'])
+    # D-171: no tabs nor folded detail; every card opens its evidence from the pills.
+    assert not app.tabs and not app.expander
+    assert 'Abrir la evidencia de' in text and 'Objetivo de esta página' in ' '.join(c.value for c in app.caption)
     assert 'Recálculo independiente de indicadores' in text
     assert 'Concordancia cálculo → pantalla' in text
     # D-146: the audited checks are verified; the contrast with another source is not.
     assert text.count('Verificado · pruebas automáticas') == 2
     assert 'Contraste con otra fuente' in text and text.count('>Pendiente<') == 1
     assert 'Verificado · alcance limitado' in text
-    assert all(not item.proto.expanded for item in app.expander)
+
+
+@needs_database
+def test_d171_a_card_opens_its_evidence_with_the_rows_the_method_and_a_recheck():
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
+              "from bi import dashboard\n"
+              "st.session_state[dashboard.QUALITY_OPEN_KEY] = 'Pruebas dbt de la última construcción'\n"
+              "dashboard.render_page(dashboard.PAGE_OPERATIONS)\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    assert 'RN-14' in list(app.dataframe[0].value['Regla'])
+    assert 'estado' in list(app.dataframe[1].value.columns)
+    assert any(block.value.startswith('SELECT') for block in app.code)
+    assert app.button(key='qa_recheck')
+    script = script.replace("'Pruebas dbt de la última construcción'", "'Comprobación de la base actual'")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    assert list(app.dataframe[0].value['casos']) == [0, 0, 0]
+    script = script.replace("'Comprobación de la base actual'", "'Cobertura temporal'")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception and app.success
 
 
 @needs_database

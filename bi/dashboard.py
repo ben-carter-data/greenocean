@@ -33,7 +33,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                doc_diagrams, document_pdf, github_page, inflation_view, lineage, operation_center, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
+                doc_diagrams, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -610,8 +610,8 @@ def build_theme_css(palette):
     [data-testid="stMain"] p, [data-testid="stMain"] h1, [data-testid="stMain"] h2,
     [data-testid="stMain"] h3, [data-testid="stMain"] label, [data-testid="stMain"] input {{
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }}
-    [data-testid="stMain"] h1 {{font-weight:610 !important; letter-spacing:-.035em;}}
-    [data-testid="stMain"] h2, [data-testid="stMain"] h3 {{font-weight:560 !important; letter-spacing:-.02em;}}
+    [data-testid="stMain"] h1 {{font-weight:500 !important; letter-spacing:-.035em;}}
+    [data-testid="stMain"] h2, [data-testid="stMain"] h3 {{font-weight:500 !important; letter-spacing:-.02em;}}
     [data-testid="stMain"], [data-testid="stMainBlockContainer"] {{ color:{palette["text"]}; }}
     [data-testid="stMarkdownContainer"], [data-testid="stWidgetLabel"],
     [data-testid="stWidgetLabel"] p, [data-testid="stCaptionContainer"],
@@ -711,7 +711,7 @@ def build_style_css(mode):
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), inset 0 1px 0 {palette["glow"]};
     }}
     [data-testid="stMainBlockContainer"] {{ padding-top:1.1rem; }}
-    .devops-layers-title {{ font-size:.7rem; font-weight:700; letter-spacing:.08em;
+    .devops-layers-title {{ font-size:.7rem; font-weight:600; letter-spacing:.08em;
         text-transform:uppercase; color:{palette["reference"]}; margin:0 0 6px; }}
     .st-key-devops_layers {{ margin-top:10px; }}
     .st-key-devops_layers button {{ justify-content:flex-start !important; min-height:52px;
@@ -758,7 +758,7 @@ def build_style_css(mode):
         border-left:1px solid {palette["card_border"]}; }}
     .kpi-strip-item:first-child {{ border-left:none; padding-left:4px; }}
     .kpi-strip-item:hover .kpi-strip-label {{ color:{palette["accent"]}; }}
-    .kpi-strip-value {{ font-size:1.5rem; font-weight:750; line-height:1.15;
+    .kpi-strip-value {{ font-size:1.5rem; font-weight:600; line-height:1.15;
         color:{palette["strong_text"]}; white-space:nowrap; }}
     .kpi-strip-rise {{ color:{charts.get_status_text_color("critical", mode)}; }}
     .kpi-strip-accent {{ color:{palette["accent"]}; }}
@@ -893,7 +893,7 @@ def build_style_css(mode):
         background:color-mix(in srgb, var(--brand) 14%, transparent); }}
     .layer-logo svg {{ width:24px; height:24px; }}
     .layer-body {{ min-width:0; }}
-    .layer-body strong {{ display:block; font-size:.95rem; font-weight:650; line-height:1.3;
+    .layer-body strong {{ display:block; font-size:.95rem; font-weight:500; line-height:1.3;
         color:{palette["strong_text"]}; letter-spacing:-.01em; }}
     .layer-body p {{ margin:4px 0 6px; font-size:.86rem; line-height:1.45; color:{palette["text"]}; }}
     .layer-note {{ font-size:.75rem; color:{palette["reference"]}; }}
@@ -927,7 +927,7 @@ def build_style_css(mode):
     .card-title {{ font-size: 1.05rem; font-weight: 600; color: {palette["strong_text"]}; }}
     .page-subtitle {{ color: {palette["text"]}; margin-top: 0; line-height:1.5; }}
     .kpi-label {{ color: {palette["text"]}; font-size: 0.9rem; }}
-    .kpi-value {{ font-size: 2rem; font-weight: 700; color: {palette["strong_text"]};
+    .kpi-value {{ font-size: 2rem; font-weight: 600; color: {palette["strong_text"]};
                  line-height: 1.2; }}
     .kpi-note {{ color: {palette["text"]}; font-size: 0.8rem; }}
     .kpi-link {{ margin-left: 10px; font-size: 0.8rem; font-weight: 400; }}
@@ -1010,11 +1010,11 @@ def build_style_css(mode):
     /* Text sections (D-057): a title with one sentence, cards in a grid that stack
        by themselves on narrow screens, numbered steps and folded details. */
     .section-head {{ margin: 22px 0 10px 0; text-align: left; }}
-    .section-title {{ font-size: 1.3rem; font-weight: 700; color: {palette["strong_text"]};
+    .section-title {{ font-size: 1.3rem; font-weight: 600; color: {palette["strong_text"]};
                       margin: 0; line-height: 1.3; }}
     .section-lead {{ font-size: 1rem; color: {palette["text"]}; margin: 4px 0 0 0;
                      max-width: 72ch; line-height: 1.5; }}
-    .subsection-title {{ font-size: 1.08rem; font-weight: 650; color: {palette["strong_text"]};
+    .subsection-title {{ font-size: 1.08rem; font-weight: 500; color: {palette["strong_text"]};
                          margin: 0; }}
     .info-grid {{ display: grid; gap: 12px; margin: 6px 0 8px 0;
                   grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }}
@@ -1031,13 +1031,13 @@ def build_style_css(mode):
         transition:transform .28s ease, filter .28s ease; }}
     .question-item:hover .component-symbol {{ transform:translateY(-6px) scale(1.025);
         filter:drop-shadow(0 18px 24px {palette["glow"]}); }}
-    .question-number {{ color:{palette["text"]}; font-size:.75rem; font-weight:650;
+    .question-number {{ color:{palette["text"]}; font-size:.75rem; font-weight:500;
         letter-spacing:.055em; text-transform:uppercase; margin-bottom:10px; }}
     .question-title {{ color:{palette["strong_text"]}; font-size:clamp(1.15rem,1.45vw,1.48rem);
         font-weight:720; line-height:1.28; max-width:24ch; }}
     .question-scope {{ color:{palette["text"]}; font-size:.94rem; line-height:1.5;
         margin:12px 0 15px; max-width:34ch; }}
-    .question-action a {{ color:{palette["accent"]}; font-weight:650;
+    .question-action a {{ color:{palette["accent"]}; font-weight:500;
         text-decoration:none; }}
     .question-action a:hover {{ text-decoration:underline; text-underline-offset:4px; }}
     @media(max-width:900px) {{ .question-showcase {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} }}
@@ -1075,7 +1075,7 @@ def build_style_css(mode):
                  background: {palette["card"]}; border: 1px solid {palette["card_border"]};
                  color: {palette["strong_text"]}; font-size: 0.94rem; }}
     .steps li::before {{ content: counter(step); position: absolute; left: 16px; top: 13px;
-                         width: 28px; height: 28px; border-radius: 50%; font-weight: 700;
+                         width: 28px; height: 28px; border-radius: 50%; font-weight: 600;
                          display: flex; align-items: center; justify-content: center;
                          background: {palette["accent"]}; color: {palette["background"]}; }}
     .stat-line {{ display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
@@ -1298,10 +1298,10 @@ def build_style_css(mode):
     .st-key-project_document > div > div:first-child h2:first-child {{border-top:none; margin-top:0;}}
     .st-key-project_document .doc-diagram {{background:transparent;}}
     @media (max-width:900px) {{ .st-key-project_document {{padding:22px 18px 26px;}} }}
-    .st-key-project_document h2 {{font-size:1.35rem; font-weight:700; letter-spacing:-.02em;
+    .st-key-project_document h2 {{font-size:1.35rem; font-weight:600; letter-spacing:-.02em;
         margin:34px 0 10px; padding-top:14px; border-top:1px solid {palette['card_border']};
         color:{palette['strong_text']};}}
-    .st-key-project_document h3 {{font-size:1.05rem; font-weight:650; margin:22px 0 6px;
+    .st-key-project_document h3 {{font-size:1.05rem; font-weight:500; margin:22px 0 6px;
         color:{palette['strong_text']};}}
     .st-key-project_document p, .st-key-project_document li {{font-size:.95rem; line-height:1.68;
         color:{palette['text']};}}
@@ -1312,7 +1312,7 @@ def build_style_css(mode):
     .st-key-project_document table {{width:100%; border-collapse:collapse; margin:10px 0 18px;
         font-size:.86rem; border:1px solid {palette['card_border']}; border-radius:10px; overflow:hidden;}}
     .st-key-project_document th {{background:color-mix(in srgb,{palette['accent']} 7%,{palette['card']});
-        color:{palette['strong_text']}; font-weight:650; text-align:left; padding:8px 12px;}}
+        color:{palette['strong_text']}; font-weight:500; text-align:left; padding:8px 12px;}}
     .st-key-project_document td {{padding:8px 12px; border-top:1px solid {palette['card_border']};
         vertical-align:top; line-height:1.5;}}
     .st-key-project_document hr {{display:none;}}
@@ -1329,7 +1329,7 @@ def build_style_css(mode):
     .stApp:has(.overview-pipeline) .pipeline-open-label {{
         position:absolute; right:8px; bottom:6px; padding:3px 8px; border-radius:999px;
         color:{palette["strong_text"]}; background:{palette["card"]};
-        border:1px solid {palette["card_border"]}; font-size:.68rem; font-weight:650;
+        border:1px solid {palette["card_border"]}; font-size:.68rem; font-weight:500;
         box-shadow:0 2px 10px rgba(0,0,0,.18);}}
     .stApp:has(.overview-pipeline) .run-status {{margin-bottom:2px; font-size:.7rem;}}
     .stApp:has(.overview-pipeline) .pipeline-focus-toolbar {{
@@ -1349,7 +1349,7 @@ def build_style_css(mode):
         border-radius:999px; border:1px solid {palette["card_border"]};
         background:{palette["card"]}; color:{palette["accent"]};
         box-shadow:0 3px 12px rgba(0,0,0,.15); text-decoration:none; font-size:.76rem;
-        font-weight:650;}}
+        font-weight:500;}}
     .stApp:has(.overview-pipeline) .pipeline-focus-return a:hover {{
         border-color:{palette["accent"]};}}
     .stApp:has(.overview-pipeline) [class*="st-key-pipeline_focus_"] .zoom-buttons {{
@@ -1475,10 +1475,10 @@ def build_style_css(mode):
         font-weight:600; text-decoration:none; white-space:nowrap; }}
     a.cover-github:hover, a.cover-github:focus-visible {{ border-color:{palette["accent"]}; }}
     [data-testid="stMain"] .st-key-cover_hero h1 {{ font-size:clamp(2.5rem,5vw,3.7rem);
-        font-weight:800; letter-spacing:-.02em; line-height:1.05; padding:0; margin:0 0 10px;
+        font-weight:600; letter-spacing:-.02em; line-height:1.05; padding:0; margin:0 0 10px;
         color:{palette["strong_text"]}; }}
     .cover-tagline {{ color:{palette["strong_text"]}; font-size:clamp(1.2rem,2.1vw,1.6rem);
-        font-weight:700; line-height:1.25; margin:0 0 12px; }}
+        font-weight:600; line-height:1.25; margin:0 0 12px; }}
     .cover-tagline span {{ display:block; color:{palette["accent"]}; }}
     /* Links of the cover say where they go: the icon of the target window is noise. */
     [class*="st-key-cover_"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]) {{
@@ -1501,12 +1501,12 @@ def build_style_css(mode):
     .st-key-cover_secondary a:hover {{ border-color:{palette["accent"]}; }}
     .cover-figures {{ border:1px solid {palette["card_border"]}; border-radius:14px;
         background:{palette["card"]}; padding:18px 22px 14px; }}
-    .cover-figures-title {{ color:{palette["strong_text"]}; font-weight:700; font-size:.95rem;
+    .cover-figures-title {{ color:{palette["strong_text"]}; font-weight:600; font-size:.95rem;
         margin-bottom:10px; }}
     .cover-figures dl {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
         gap:16px 22px; margin:0; }}
     .cover-figures dt {{ color:{palette["text"]}; font-size:.8rem; font-weight:600; }}
-    .cover-figures dd {{ color:{palette["strong_text"]}; font-size:1.75rem; font-weight:700;
+    .cover-figures dd {{ color:{palette["strong_text"]}; font-size:1.75rem; font-weight:600;
         margin:2px 0 0; line-height:1.15; font-variant-numeric:tabular-nums; }}
     .cover-figures dl span {{ color:{palette["text"]}; font-size:.78rem; }}
     .cover-figures p {{ color:{palette["text"]}; font-size:.74rem; margin:14px 0 0;
@@ -1520,18 +1520,18 @@ def build_style_css(mode):
         border-left:1px solid {palette["card_border"]}; }}
     .cover-statement {{ display:flex; gap:14px; align-items:flex-start; }}
     .cover-statement .component-symbol {{ width:28px; height:32px; margin:2px 0 0; }}
-    .cover-statement h3 {{ color:{palette["strong_text"]}; font-size:1.08rem; font-weight:700;
+    .cover-statement h3 {{ color:{palette["strong_text"]}; font-size:1.08rem; font-weight:600;
         margin:0 0 4px; padding:0; }}
     .cover-statement p {{ color:{palette["text"]}; margin:0; line-height:1.45; }}
     .cover-heading {{ color:{palette["strong_text"]}; font-size:1.5rem !important;
-        font-weight:700; margin:22px 0 4px !important; padding:0 !important; }}
+        font-weight:600; margin:22px 0 4px !important; padding:0 !important; }}
     .st-key-cover_evidence {{ gap:0 !important; flex-wrap:nowrap !important;
         padding-bottom:18px; border-bottom:1px solid {palette["card_border"]}; }}
     .st-key-cover_evidence > div {{ flex:1 1 0 !important; min-width:0; }}
     [class*="st-key-cover_evidence_"]:not([class*="_link_"]) {{ padding:0 22px; height:100%; }}
     .st-key-cover_evidence > div:first-child [class*="st-key-cover_evidence_"] {{ padding-left:0; }}
     .st-key-cover_evidence > div + div {{ border-left:1px solid {palette["card_border"]}; }}
-    .cover-evidence-title {{ color:{palette["strong_text"]}; font-weight:700; font-size:1.05rem;
+    .cover-evidence-title {{ color:{palette["strong_text"]}; font-weight:600; font-size:1.05rem;
         margin-bottom:4px; }}
     .cover-evidence-title span {{ color:{palette["accent"]}; margin-right:10px;
         font-variant-numeric:tabular-nums; }}
@@ -2862,7 +2862,7 @@ def build_architecture_css(mode):
     .st-key-architecture_detail, .st-key-architecture_tables {{border:1px solid {palette['card_border']};
         border-radius:14px; background:{palette['card']}; padding:12px 16px 10px;}}
     .arch-detail-head {{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}}
-    .arch-detail-head code {{font-size:1.05rem; font-weight:700; color:{palette['accent']};}}
+    .arch-detail-head code {{font-size:1.05rem; font-weight:600; color:{palette['accent']};}}
     .arch-detail-role {{font-size:11px; padding:2px 9px; border-radius:999px;
         background:{palette['field']}; color:{palette['text']};}}
     .arch-detail-rows {{margin-left:auto; font-size:12px; color:{palette['text']};}}
@@ -4754,10 +4754,10 @@ def style_home_alert_table(table, mode):
                'Moderada': ('#fef3c7', '#854d0e')})
     def level_css(value):
         background, foreground = colors[value]
-        return f'background-color:{background};color:{foreground};font-weight:700'
+        return f'background-color:{background};color:{foreground};font-weight:600'
     def change_css(value):
         foreground = ('#ff8a96' if dark else '#b91c1c') if value.startswith('+') else ('#83baff' if dark else '#1d4ed8')
-        return f'color:{foreground};font-weight:700'
+        return f'color:{foreground};font-weight:600'
     return table.style.map(level_css, subset=['Nivel']).map(change_css, subset=['Cambio'])
 
 
@@ -5927,7 +5927,7 @@ def build_context_css(mode):
     .ctx-crumb b {{color:{palette['strong_text']};}}
     .ctx-back {{display:inline-flex;float:right;padding:5px 12px;border:1px solid {palette['card_border']};border-radius:8px;
         font-size:12.5px;color:{palette['strong_text']}!important;text-decoration:none!important;background:{palette['card']};}}
-    .ctx-title h1 {{font-size:21px!important;font-weight:700;margin:0!important;padding:0!important;display:inline;}}
+    .ctx-title h1 {{font-size:21px!important;font-weight:600;margin:0!important;padding:0!important;display:inline;}}
     .ctx-title .page-freshness {{display:inline-flex;gap:6px;margin-left:12px;font-size:12px;}}
     .ctx-answer {{font-size:14px;line-height:1.45;color:{palette['strong_text']};margin:4px 0 0;max-width:900px;}}
     .ctx-split {{margin-top:5px;}}
@@ -5939,13 +5939,13 @@ def build_context_css(mode):
     .ctx-split-bar b.up {{background:#e66767;}} .ctx-split-bar b.down {{background:#3987e5;}}
     .ctx-table-lead {{font-size:12px!important;color:{palette['text']};margin:-4px 0 8px!important;}}
     .inf-card {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:14px 16px;}}
-    .inf-card h3 {{font-size:15px!important;font-weight:700;margin:0!important;padding:0!important;color:{palette['strong_text']};}}
+    .inf-card h3 {{font-size:15px!important;font-weight:600;margin:0!important;padding:0!important;color:{palette['strong_text']};}}
     .inf-lead {{font-size:12px!important;color:{palette['text']};margin:2px 0 10px!important;}}
     .inf-row {{display:grid;grid-template-columns:10px 1fr 78px;grid-template-areas:"dot name total" ". bar bar" ". chip year";
         column-gap:8px;row-gap:3px;padding:7px 0;border-top:1px solid {palette['card_border']};align-items:center;}}
     .inf-row > i {{grid-area:dot;width:9px;height:9px;border-radius:50%;}}
-    .inf-name {{grid-area:name;font-weight:650;font-size:13px;color:{palette['strong_text']};}}
-    .inf-total {{grid-area:total;text-align:right;font-weight:700;font-size:13px;color:{palette['strong_text']};}}
+    .inf-name {{grid-area:name;font-weight:500;font-size:13px;color:{palette['strong_text']};}}
+    .inf-total {{grid-area:total;text-align:right;font-weight:600;font-size:13px;color:{palette['strong_text']};}}
     .inf-bar {{grid-area:bar;position:relative;height:6px;border-radius:3px;background:{palette['grid']};}}
     .inf-bar b {{display:block;height:100%;border-radius:3px;}}
     .inf-bar em {{position:absolute;top:-3px;width:2px;height:12px;background:{palette['strong_text']};}}
@@ -5962,7 +5962,7 @@ def build_context_css(mode):
     .st-key-ctx_main {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:10px 16px 4px;}}
     .st-key-ctx_side {{gap:10px;}}
     .st-key-ctx_bottom {{margin-top:10px;}}
-    .ctx-head h3, .ctx-card h3 {{font-size:15px!important;font-weight:700;margin:0!important;padding:0!important;
+    .ctx-head h3, .ctx-card h3 {{font-size:15px!important;font-weight:600;margin:0!important;padding:0!important;
         color:{palette['strong_text']};display:flex;align-items:center;gap:6px;}}
     .ctx-head {{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}}
     .ctx-keys {{display:flex;gap:14px;font-size:11px;color:{palette['text']};white-space:nowrap;}}
@@ -6357,20 +6357,20 @@ def build_runs_css(mode):
     .st-key-runs_run_now button [data-testid="stIconMaterial"] {{font-size:24px !important; width:24px; height:24px; line-height:1; margin:0 !important; color:#fff;
         text-shadow:0 1px 2px rgba(0,0,0,.35);}}
     .st-key-runs_run_now button:disabled {{opacity:.72; cursor:not-allowed;}}
-    .run-now-label {{text-align:center; font-weight:650; font-size:.92rem; color:{palette['strong_text']}; margin:10px 0 0;}}
+    .run-now-label {{text-align:center; font-weight:500; font-size:.92rem; color:{palette['strong_text']}; margin:10px 0 0;}}
     .run-now-note {{text-align:center; font-size:.78rem; color:{palette['text']}; margin-top:2px;}}
     .runs-metric {{display:flex; flex-direction:column; gap:3px; padding:12px 16px; border-radius:14px;
         background:{palette['card']}; border:1px solid {palette['card_border']};
         box-shadow:0 10px 22px -16px rgba(0,0,0,.25);}}
-    .runs-metric-label {{font-size:.68rem; font-weight:650; letter-spacing:.06em; text-transform:uppercase;
+    .runs-metric-label {{font-size:.68rem; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
         color:{palette['reference']};}}
-    .runs-metric-value {{font-size:1.12rem; font-weight:650; letter-spacing:-.01em;
+    .runs-metric-value {{font-size:1.12rem; font-weight:500; letter-spacing:-.01em;
         color:{palette['strong_text']}; font-variant-numeric:tabular-nums;}}
     .runs-metric-note {{font-size:.76rem; color:{palette['text']};}}
-    .runs-card-title {{display:flex; align-items:center; gap:7px; font-size:.92rem; font-weight:650;
+    .runs-card-title {{display:flex; align-items:center; gap:7px; font-size:.92rem; font-weight:500;
         color:{palette['strong_text']}; margin:0 0 10px;}}
     .runs-table {{width:100%; border-collapse:collapse; font-size:.84rem;}}
-    .runs-table th {{text-align:left; font-size:.68rem; font-weight:650; letter-spacing:.05em;
+    .runs-table th {{text-align:left; font-size:.68rem; font-weight:500; letter-spacing:.05em;
         text-transform:uppercase; color:{palette['reference']}; padding:6px 8px;
         border-bottom:1px solid {palette['card_border']};}}
     .runs-table td {{padding:9px 8px; border-bottom:1px solid {palette['card_border']};
@@ -6503,9 +6503,9 @@ def build_operation_side_css(palette):
     return f"""<style>
     .oc-fact {{display:flex; flex-direction:column; gap:1px; padding:10px 0;
         border-bottom:1px solid {palette['card_border']};}}
-    .oc-fact-label {{font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    .oc-fact-label {{font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
         color:{palette['reference']};}}
-    .oc-fact-value {{font-size:1.15rem; font-weight:700; color:{palette['strong_text']};
+    .oc-fact-value {{font-size:1.15rem; font-weight:600; color:{palette['strong_text']};
         font-variant-numeric:tabular-nums;}}
     .oc-fact-note {{font-size:.8rem; color:{palette['text']};}}
     .oc-runs {{display:flex; flex-wrap:wrap; align-items:center; gap:4px 20px; padding-top:10px;
@@ -6938,9 +6938,9 @@ def build_quality_grid_css(mode):
                    0 2px 6px -1px rgba(0,0,0,.12);
         transition:transform .15s ease, box-shadow .15s ease;}}
     .quality-card:hover {{transform:translateY(-4px);}}
-    .quality-card-title {{font-weight:650; color:{palette['strong_text']}; font-size:.92rem;}}
+    .quality-card-title {{font-weight:500; color:{palette['strong_text']}; font-size:.92rem;}}
     .quality-badge {{display:inline-block; align-self:flex-start; padding:3px 10px;
-        border-radius:999px; font-size:.72rem; font-weight:650; color:#fff;
+        border-radius:999px; font-size:.72rem; font-weight:500; color:#fff;
         background:var(--q-color);}}
     .quality-card-text {{font-size:.83rem; line-height:1.5; color:{palette['text']};}}
     </style>"""
@@ -6954,10 +6954,28 @@ def build_quality_card_html(title, status, evidence):
             f'<div class="quality-card-text">{html.escape(evidence)}</div></div>')
 
 
+QUALITY_PICK_KEY = "qa_pick"
+QUALITY_OPEN_KEY = "qa_open"
+
+
+def open_quality_evidence():
+    """A card chosen in the pills opens its dialog once; the pills clear themselves."""
+    st.session_state[QUALITY_OPEN_KEY] = st.session_state.get(QUALITY_PICK_KEY)
+    st.session_state[QUALITY_PICK_KEY] = None
+
+
+def recheck_quality():
+    """Run every check again, now: the caches of the board are dropped (D-171)."""
+    read_quality_evidence.clear()
+    read_parity.clear()
+    read_lineage.clear()
+    st.session_state["qa_rechecked_at"] = datetime.now(timezone.utc)
+
+
 def show_operations_page(mode):
     """Evidence end to end, as in the author's mockup: a four-step line (sources, run and
-    dbt, warehouse, results), each step with its checks as illustrated cards, and the
-    detail — dbt rule matrix, file fingerprints, last load (K8) — folded below (D-120)."""
+    dbt, warehouse, results), each step with its checks as illustrated cards. Every card
+    opens its evidence: the rows that prove it, the method, and the checks run again (D-171)."""
     manifest = read_download_manifest()
     versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
                      for path in sorted(MANIFEST_FILE.parent.glob("*.csv")))
@@ -6972,31 +6990,77 @@ def show_operations_page(mode):
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
     if not database_ok or any(item["status"].startswith("Falla") for item in files):
         st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
-    with st.container(key=quality_view.EXPANDER_KEY):
-        with st.expander(quality_view.EXPANDER_LABEL, expanded=False, icon=quality_view.EXPANDER_ICON):
-            rules_tab, files_tab, run_tab = st.tabs(["Reglas y pruebas dbt", "Evidencia de archivos", "Última carga (K8)"])
-            with rules_tab:
-                matrix = lineage.build_rule_matrix(nodes, results)
-                st.dataframe(matrix, hide_index=True, width="stretch",
-                             column_config={"Regla": st.column_config.TextColumn(width="small"),
-                                            "Pruebas dbt": st.column_config.NumberColumn(width="small")})
-                st.caption("Cada regla del PRD con las pruebas de dbt que la comprueban en cada carga, leídas del "
-                           "resultado de la última construcción.")
-            with files_tab:
-                if files:
-                    # One short fingerprint: the registered and the computed ones are equal when
-                    # the check passes, so two 64-character columns said the same thing (D-150).
-                    evidence = pd.DataFrame(files)
-                    evidence["expected"] = evidence["expected"].map(lambda value: f"{str(value)[:12]}…" if value else "—")
-                    evidence["downloaded_at"] = pd.to_datetime(evidence["downloaded_at"], errors="coerce").dt.strftime("%d-%m-%Y %H:%M")
-                    st.dataframe(evidence[["file", "status", "expected", "downloaded_at"]].rename(columns={
-                        "file": "Archivo", "status": "Comprobación", "expected": "Huella SHA-256",
-                        "downloaded_at": "Descargado"}), hide_index=True, width="stretch")
-                else:
-                    st.info("No hay manifiesto de descargas disponible.")
-                st.markdown(build_link_html("Ver ejecuciones del pipeline →", build_page_address(PAGE_RUNS)), unsafe_allow_html=True)
-            with run_tab:
-                show_quality_tab(mode)
+    with st.container(key=quality_view.EXPANDER_KEY, horizontal=True, vertical_alignment="center", gap="small"):
+        st.markdown('<span class="qa-open-label">Abrir la evidencia de</span>', unsafe_allow_html=True)
+        st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
+                 on_change=open_quality_evidence, label_visibility="collapsed")
+    st.caption("Objetivo de esta página: que cada cifra publicada se pueda recomprobar. Cada tarjeta abre los "
+               "datos que la respaldan y el método; «Volver a comprobar» corre los controles de nuevo.")
+    chosen = st.session_state.pop(QUALITY_OPEN_KEY, None)
+    if chosen in quality_evidence.TITLES.values():
+        key = next(key for key, title in quality_evidence.TITLES.items() if title == chosen)
+        show_quality_evidence_dialog(key, mode, dict(manifest=manifest, files=files, checks=checks, parity=parity,
+                                                     nodes=nodes, results=results, evidence=evidence))
+
+
+@st.dialog("Evidencia", width="large")
+def show_quality_evidence_dialog(key, mode, context):
+    """One card's evidence: what it checks, its rows, its method, and a recheck."""
+    st.markdown(f"### {quality_evidence.TITLES[key]}")
+    st.markdown(quality_evidence.EXPLANATIONS[key])
+    if key == "files":
+        st.dataframe(quality_evidence.manifest_frame(context["manifest"]), hide_index=True, width="stretch")
+        st.caption(f"Registro: agent/downloads/manifest.json · {len(context['manifest'])} archivos.")
+    elif key == "shield":
+        st.dataframe(quality_evidence.files_frame(context["files"]), hide_index=True, width="stretch")
+        if any(item["actual"] is None for item in context["files"]):
+            st.caption("Los archivos CSV no viven en el servidor del panel (no se suben al repositorio): aquí la "
+                       "huella solo se comprueba cuando el panel corre junto a las descargas.")
+    elif key == "calendar":
+        checks = context["checks"]
+        st.markdown(f"**{checks['weeks']} semanas**, del {quality_view.format_week(checks['first'])} "
+                    f"al {quality_view.format_week(checks['last'])}.")
+        missing = queries.run_sql(quality_evidence.MISSING_WEEKS_SQL)
+        if missing.empty:
+            st.success("Ninguna semana falta entre la primera y la última.", icon=":material/check_circle:")
+        else:
+            st.dataframe(missing, hide_index=True, width="stretch")
+        show_evidence_method(quality_evidence.MISSING_WEEKS_SQL)
+    elif key == "gear":
+        st.dataframe(queries.run_sql(quality_evidence.RUNS_SQL), hide_index=True, width="stretch")
+        show_quality_tab(mode)
+    elif key == "layers":
+        st.dataframe(lineage.build_rule_matrix(context["nodes"], context["results"]), hide_index=True, width="stretch",
+                     column_config={"Regla": st.column_config.TextColumn(width="small"),
+                                    "Pruebas dbt": st.column_config.NumberColumn(width="small")})
+        st.caption("Cada regla del PRD con las pruebas de dbt que la comprueban en cada carga.")
+        st.dataframe(queries.run_sql(quality_evidence.DBT_TESTS_SQL), hide_index=True, width="stretch")
+        show_evidence_method(quality_evidence.DBT_TESTS_SQL)
+    elif key == "database":
+        frame = quality_evidence.checks_frame(context["checks"])
+        st.dataframe(frame[["comprobación", "casos"]], hide_index=True, width="stretch")
+        show_evidence_method("\n\n".join(frame["sql"]))
+    elif key == "parity":
+        st.dataframe(quality_evidence.parity_frame(context["parity"]), hide_index=True, width="stretch")
+        show_evidence_method(quality.PARITY_SQL + "  -- en SQLite y en DuckDB")
+    elif key in quality_evidence.TEST_LINKS:
+        st.markdown("Esta auditoría corre con las pruebas automáticas en cada cambio del repositorio y en cada "
+                    "carga semanal. Su código y su último resultado:")
+        for label, address in quality_evidence.test_links(key):
+            st.markdown(build_link_html(f"{label} ↗", address), unsafe_allow_html=True)
+    else:
+        st.info("Sin evidencia que mostrar: es un límite declarado, no una comprobación.")
+    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+        st.button("Volver a comprobar", icon=":material/refresh:", key="qa_recheck", on_click=recheck_quality,
+                  help="Corre de nuevo los controles sobre la base publicada y los archivos.")
+        rechecked = st.session_state.get("qa_rechecked_at")
+        if rechecked:
+            st.caption(f"Comprobado de nuevo a las {to_chile_time(rechecked):%H:%M:%S}.")
+
+
+def show_evidence_method(sql):
+    with st.expander("Método: la consulta que lo comprueba", expanded=False, icon=":material/code:"):
+        st.code(sql, language="sql")
 
 
 
@@ -7383,7 +7447,7 @@ PHONE_LAYOUT_HTML = """<style>
     background:#174a7c; border:5px solid #c3ccd8; box-shadow:0 24px 30px rgba(0,0,0,.45);
     animation:go-turn 3.2s cubic-bezier(.65,0,.35,1) infinite;}
   .go-rotate .go-phone i {position:absolute; display:block; border-radius:3px;}
-  .go-rotate h2 {margin:0; font-size:30px; font-weight:700; color:#ffffff; line-height:1.2;}
+  .go-rotate h2 {margin:0; font-size:30px; font-weight:600; color:#ffffff; line-height:1.2;}
   .go-rotate p {margin:0; max-width:300px; font-size:16px; line-height:1.45;}
   @keyframes go-turn {0%,18% {transform:rotate(0deg);} 45%,72% {transform:rotate(-90deg);} 100% {transform:rotate(0deg);}}
 }

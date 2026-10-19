@@ -1302,3 +1302,18 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 
 - **Fecha:** 2026-10-19.
 - **Decisión:** el botón «▲ Alerta de precio · N» deja el menú lateral (D-096, D-128) y pasa a la esquina superior derecha del Resumen semanal, sobre la fecha de actualización, con el mismo diálogo por familia. La alerta es una cifra de la semana: va con las demás cifras de la semana, no con la navegación. Las otras páginas ya no cargan la hoja de estilos del diálogo (D-100).
+
+## D-170 · Acabado tipográfico: pesos finos y botones de píldora
+
+- **Fecha:** 2026-10-19.
+- **Problema:** el panel abusaba de la negrita (pesos 650 a 800 en títulos, cifras, etiquetas y píldoras), y el conjunto se veía pesado frente a la referencia del autor: la tipografía de apple.com, fina y con aire.
+- **Decisión:** un solo acabado tipográfico para todas las páginas. Los títulos pasan a peso 500 con interletrado negativo; las cifras grandes a 500; las negritas del texto a 600; las etiquetas en mayúsculas a 500 con interletrado amplio; el cuerpo queda en 400. Los botones y los desplegables toman la forma de píldora, con texto en peso normal. La fuente del panel sigue siendo la del sistema (San Francisco en Apple, Segoe UI en Windows), y los gráficos y diagramas SVG usan ahora la misma en vez de Source Sans Pro. Las páginas en su propio marco (GitHub, Centro de operación) llevan los mismos pesos.
+- **Dónde:** `bi/premium.css` concentra las reglas compartidas; los pesos 650–800 de `bi/dashboard.py`, `bi/home_mockup.css`, `bi/quality_view.py`, `bi/github_page.py`, `bi/operation_center.py` y `bi/sql_explorer.py` bajan a 500–600.
+
+## D-171 · Calidad y auditoría: cada tarjeta abre su evidencia
+
+- **Fecha:** 2026-10-19.
+- **Problema:** la página era una lámina fija. Mostraba que los datos se comprueban, pero no dejaba ver con qué ni volver a comprobar; el detalle estaba plegado en tres pestañas al final, y no se entendía su objetivo.
+- **Decisión:** la página dice su objetivo (que cada cifra publicada se pueda recomprobar) y cada tarjeta se abre. Bajo el tablero, una fila de píldoras con las once tarjetas; elegir una abre un diálogo con qué comprueba, los datos que lo respaldan como tabla y el método: la consulta SQL que corre, o el enlace a la prueba automática en el repositorio y a su último resultado en GitHub Actions. «Volver a comprobar» descarta lo guardado y corre los controles de nuevo, con la hora.
+- **Evidencia por tarjeta:** el manifiesto de descargas; las huellas SHA-256 registradas y calculadas (en Streamlit Cloud no hay CSV, y así se dice); las semanas cubiertas y las que faltan; las ejecuciones de `etl_run` con las filas excluidas y su motivo; las reglas del PRD y cada prueba de dbt con su estado; las tres comprobaciones de la base con su SQL; la paridad SQLite ↔ DuckDB cifra por cifra; y, para las auditorías automáticas, sus archivos de prueba. El contraste con otra fuente sigue pendiente y explica por qué.
+- **Código:** `bi/quality_evidence.py` prepara las tablas; `bi/quality.py` expone las consultas que ya corría, para que el diálogo muestre exactamente lo que se ejecuta. Las tres pestañas plegadas desaparecen: su contenido vive en los diálogos.
