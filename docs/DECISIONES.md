@@ -1167,3 +1167,15 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Panel:** `bi/queries.py` abre DuckDB en solo lectura, en un solo punto. Las consultas se adaptaron al dialecto (fechas, palabras reservadas y un `GROUP BY` que SQLite toleraba incompleto). Las pruebas pasan en 40 s en vez de 140 s y el pipeline completo tarda 16 s en vez de unos 4 minutos.
 - **Operación:** el workflow semanal instala `requirements-pipeline.txt` (dbt-core, dbt-duckdb, pyarrow), corre el ETL de respaldo, luego `etl/pipeline.py`, luego las pruebas (con la paridad) y sube `datos.db` y `datos.duckdb`. El panel publicado solo agrega `duckdb`. En local, dbt corre en un entorno Python 3.12 aparte (`.venv-dbt`), porque aún no se instala en Python 3.14; GitHub Actions usa 3.11.
 - **Historial:** `etl_run` conserva las cuatro cargas registradas; la construcción local de la migración no se publica como una carga nueva.
+
+## D-155 · Precios reales con el IPC de alimentos del INE
+
+- **Fecha:** 2026-10-19.
+- **Paso 3 de la refonte (PRD «Evolución prevista»).**
+- **Fuente:** dos archivos CSV oficiales del INE, leídos tal como se publican: la serie del IPC base 2023 = 100 (desde enero 2024) y la serie empalmada de divisiones (diciembre 2009 a diciembre 2023). Solo se usa la división 1, «Alimentos y bebidas no alcohólicas». `etl/ine.py` los descarga y los guarda en bronce (`bronze/ine_ipc`), con todas las columnas como texto.
+- **Enlace de las series:** la serie empalmada está en otra base (salto de −33,7 % si se pegan sin más). Se enlaza con la variación mensual oficial de enero 2024 (+1,0 %): diciembre 2023 queda en el valor desde el cual enero 2024 sube exactamente lo publicado, y toda la serie anterior se escala por el mismo factor. Modelos dbt: `stg_ine__ipc_monthly`, `ipc_monthly`, `ipc_weekly`, y `ine_ipc_source` (las filas originales, para la auditoría).
+- **Regla mes → semana:** cada semana toma el IPC del mes de su lunes (el mes de `dim_date`, RN-08). Precio real = nominal × IPC del último mes publicado ÷ IPC del mes de la semana: los precios reales quedan en pesos del último mes publicado. Una semana de un mes que el INE aún no publica usa ese último mes y queda marcada **provisional**; nunca se inventa un índice.
+- **Panel:** Contexto agrega un control Nominal / Real. En Real, la serie, su rango habitual y su estado se calculan sobre precios reales; el precio nominal queda como línea gris fina detrás, y la nota indica el mes de referencia y las semanas provisionales. El precio de esta semana es el mismo en ambos modos (su factor es 1), así que no cambia ninguna cifra entre páginas; solo cambia con qué se compara.
+- **Si el INE no responde:** la carga no se detiene. Se usa el bronce previo, o se reconstruye desde `ine_ipc_source` de la base publicada.
+- **Auditoría:** `tests/test_ipc_audit.py` vuelve a enlazar las series y a calcular el factor de cada semana en Python, sin dbt, desde el texto publicado por el INE, con diferencia relativa < 10⁻¹². dbt prueba un solo IPC por mes.
+- **Construcción local:** `python etl/pipeline.py --local` reconstruye la base sin registrar una carga nueva en `etl_run`.

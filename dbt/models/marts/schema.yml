@@ -53,3 +53,14 @@ models:
           - accepted_values:
               values: ['UNREADABLE_VALUE', 'NON_POSITIVE_PRICE', 'MINIMUM_ABOVE_MAXIMUM',
                        'DATE_OUTSIDE_FILE_YEAR', 'NON_POSITIVE_VOLUME']
+  - name: ipc_monthly
+    description: IPC de alimentos del INE, mensual, base 2023 = 100, enlazado (D-155).
+    columns:
+      - name: food_index
+        data_tests: [not_null]
+  - name: ipc_weekly
+    columns:
+      - name: week_start
+        data_tests: [unique, not_null, {relationships: {to: ref('dim_date'), field: week_start}}]
+      - name: real_factor
+        data_tests: [not_null]

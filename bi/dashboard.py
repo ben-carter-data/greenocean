@@ -484,6 +484,9 @@ GAP_LINE_WEEKS = 52
 ALERT_LEVELS = [(4, "Muy alta", "◆", "critical"), (3, "Alta", "▲", "serious"),
                 (0, "Moderada", "●", "warning")]
 NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
+# Contexto: nominal prices or real prices deflated with the INE IPC (D-155).
+CONTEXT_BASIS_KEY = "context_price_basis"
+BASIS_NOMINAL, BASIS_REAL = "Nominal", "Real"
 ATTRIBUTION_TEXT = (
     "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de "
     "Agricultura de Chile, licencia Creative Commons Atribución. "
@@ -5393,8 +5396,32 @@ def keep_regions_of_week(regional, week):
 
 
 @st.cache_data
-def read_context_model(database_version, key_items, week):
-    """Everything the page shows for one product, computed once per weekly load."""
+def read_ipc_weekly(database_version):
+    """The deflator of every week (D-155): IPC de alimentos del INE, month of the Monday."""
+    rows = queries.run_sql("SELECT week_start, real_factor, provisional, reference_year, reference_month "
+                           "FROM ipc_weekly")
+    return rows.assign(week_start=pd.to_datetime(rows["week_start"]))
+
+
+def describe_ipc_reference(ipc):
+    """«septiembre 2026», the month whose pesos the real prices are in."""
+    first = ipc.iloc[0]
+    return f"{price_context.MONTHS[int(first['reference_month']) - 1]} {int(first['reference_year'])}"
+
+
+def deflate_series(rows, ipc):
+    """Real prices (D-155): each week's national price × its IPC factor, in pesos of the
+    last published month. The nominal price stays beside it as nominal_price."""
+    rows = rows.merge(ipc[["week_start", "real_factor"]], on="week_start", how="left")
+    rows["nominal_price"] = rows["national_price"]
+    rows["national_price"] = rows["national_price"] * rows["real_factor"]
+    return rows.drop(columns="real_factor")
+
+
+@st.cache_data
+def read_context_model(database_version, key_items, week, real=False):
+    """Everything the page shows for one product, computed once per weekly load.
+    real=True: the series, its usual range and its states, in real pesos (D-155)."""
     key = dict(key_items)
     regional = read_context_regional_prices(database_version)
     mask = pd.Series(True, index=regional.index)
@@ -5410,11 +5437,17 @@ def read_context_model(database_version, key_items, week):
               .sort_values("week_start").reset_index(drop=True) for channel in CONTEXT_CHANNELS}
     dates_indexed = dates.set_index("week_start")
     series = {channel: rows for channel, rows in series.items() if not rows.empty}
+    if real:
+        ipc = read_ipc_weekly(database_version)
+        series = {channel: deflate_series(rows, ipc) for channel, rows in series.items()}
     weekly = []
     now = {}
     for channel, rows in series.items():
         context = price_context.weekly_context(rows, week, dates=dates_indexed)
-        weekly.append(context.assign(channel=channel))
+        context = context.assign(channel=channel)
+        if real:
+            context = context.merge(rows[["week_start", "nominal_price"]], on="week_start", how="left")
+        weekly.append(context)
         usual = price_context.rango_habitual(rows, week, target_iso)
         price = rows.loc[rows["week_start"] == week, "national_price"]
         price = float(price.iloc[0]) if not price.empty else None
@@ -5741,6 +5774,12 @@ def build_context_css(mode):
     .ctx-keys {{display:flex;gap:14px;font-size:11px;color:{palette['text']};white-space:nowrap;}}
     .ctx-keys i {{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle;}}
     .ctx-keys i.band {{height:9px;background:{palette['grid']};}}
+    .st-key-ctx_main .ctx-head h3 {{white-space:nowrap;}}
+    .st-key-ctx_main .ctx-keys {{flex-wrap:wrap;justify-content:flex-end;row-gap:2px;gap:4px 12px;}}
+    .ctx-keys i.nominal {{height:0;border-top:2px dashed {palette['reference']};border-radius:0;}}
+    .st-key-ctx_main [data-testid="stButtonGroup"] {{justify-content:flex-end;display:flex;flex-wrap:nowrap;}}
+    .st-key-ctx_main [data-testid="stButtonGroup"] button {{min-height:26px!important;padding:0 10px!important;}}
+    .st-key-ctx_main [data-testid="stButtonGroup"] button p {{font-size:12px!important;}}
     .ctx-card {{border:1px solid {palette['card_border']};border-radius:12px;background:{palette['card']};padding:12px 16px;}}
     /* The chart and the two side cards end on the same line (D-150): the cards share
        the chart's height. */
@@ -5808,7 +5847,8 @@ def show_price_context_page(mode):
     title, *fields = st.columns([2.6, 0.9, 1.1, 0.9], vertical_alignment="bottom")
     key = choose_context_product(options, key, fields)
     label = describe_context_product(key)
-    model = read_context_model(version, tuple(sorted(key.items())), week)
+    real = st.session_state.get(CONTEXT_BASIS_KEY) == BASIS_REAL
+    model = read_context_model(version, tuple(sorted(key.items())), week, real)
     latest = read_latest_run()
     run_kind = "ok" if latest["status"] == etl.STATUS_LOADED else "failed"
     states = {channel: model["now"][channel]["state"] for channel in CONTEXT_CHANNELS
@@ -5831,19 +5871,32 @@ def show_price_context_page(mode):
             hint = build_hint_icon("Línea: precio de cada semana. Banda: rango habitual de esa misma semana "
                                    "(y la semana antes y después) en años anteriores, percentil 25 a 75. Si la "
                                    "línea sale de la banda, el precio es inusual.")
-            st.markdown(f'<div class="ctx-head"><h3>Últimas 52 semanas frente a lo habitual{hint}</h3>'
-                        '<div class="ctx-keys">'
-                        + ''.join(f'<span><i style="background:{color}"></i>{channel}</span>'
-                                  for channel, color in charts.CONTEXT_CHANNELS.items() if channel in model["series"])
-                        + '<span><i class="band"></i>Rango habitual</span></div></div>', unsafe_allow_html=True)
+            head, basis = st.columns([4.6, 1.2], vertical_alignment="center", gap="small")
+            head.markdown(f'<div class="ctx-head"><h3>Últimas 52 semanas frente a lo habitual{hint}</h3>'
+                          '<div class="ctx-keys">'
+                          + ''.join(f'<span><i style="background:{color}"></i>{channel}</span>'
+                                    for channel, color in charts.CONTEXT_CHANNELS.items() if channel in model["series"])
+                          + ('<span><i class="nominal"></i>Nominal</span>' if real else '')
+                          + '<span><i class="band"></i>Rango habitual</span></div></div>', unsafe_allow_html=True)
+            # D-155: the same chart in nominal pesos or deflated with the INE IPC.
+            basis.segmented_control("Precios", [BASIS_NOMINAL, BASIS_REAL], default=BASIS_NOMINAL,
+                                    key=CONTEXT_BASIS_KEY, label_visibility="collapsed")
             if model["weekly"].empty:
                 st.info("Este producto no tiene precios de feria ni de supermercado.")
             else:
                 show_chart(charts.draw_price_context(model["weekly"], mode, height=350))
             with st.container(key="ctx_links", horizontal=True, vertical_alignment="center"):
                 missing = int(model["weekly"]["price"].isna().sum()) if not model["weekly"].empty else 0
-                st.caption("Precios nominales, sin ajuste por inflación."
-                           + (f" {missing} semanas sin dato quedan en blanco; no se interpolan." if missing else ""))
+                gaps = f" {missing} semanas sin dato quedan en blanco; no se interpolan." if missing else ""
+                if real:
+                    ipc = read_ipc_weekly(version)
+                    shown = ipc[ipc["week_start"].isin(model["weekly"]["week_start"])]
+                    provisional = int(shown["provisional"].sum())
+                    st.caption(f"Pesos de {describe_ipc_reference(ipc)}, IPC de alimentos del INE (mes del lunes)"
+                               + (f" · {provisional} {'semana provisional' if provisional == 1 else 'semanas provisionales'}"
+                                  if provisional else "") + "." + gaps)
+                else:
+                    st.caption(NOMINAL_PRICES_TEXT + gaps)
                 years = sorted({day.year for rows in model["series"].values() for day in rows["week_start"]})
                 span = f"{years[0]}–{years[-1]}" if years else ""
                 if st.button(f"Ver serie completa {span} →", key="ctx_full", type="tertiary"):
