@@ -122,7 +122,7 @@ VIEW_NAMES = [name for name, _, _ in VIEWS]
 # Each example: (title, question, SQL template, parameters). Parameters are filled
 # from the selectors above the editor (D-180); render_example writes the final SQL.
 TEMPLATES = [
-    ('¿Está caro para la época?',
+    ('Precio vs. época',
      '¿Un producto está caro o barato frente a la misma época de los años anteriores, en pesos reales?',
      """-- Parámetro elegido arriba del editor: producto {producto}.
 -- Compara las últimas 4 semanas con las mismas semanas del año (ISO) en los años anteriores,
@@ -173,7 +173,7 @@ FROM comparacion
 WHERE precio_actual IS NOT NULL AND anios_comparados >= 2
 ORDER BY canal, variedad""",
      ('producto',)),
-    ('Más que la inflación este año',
+    ('Inflación del año',
      '¿Qué productos subieron más que el IPC de alimentos en el año elegido, y por cuántos puntos?',
      """-- Parámetro elegido arriba del editor: año {anio}.
 -- Por serie (región incluida) se compara el primer y el último precio del año; el producto resume con la mediana.
@@ -204,7 +204,7 @@ HAVING count(*) >= 3
 ORDER BY sobre_inflacion_pp DESC
 LIMIT 100""",
      ('anio',)),
-    ('Sobre la inflación desde 2022',
+    ('Inflación desde 2022',
      '¿Qué productos subieron más que el IPC de alimentos entre 2022 y hoy, y por cuántos puntos?',
      """-- Solo series con precio desde marzo de 2022 hasta hoy. sobre_inflacion_pp = alza del producto menos alza del IPC, en puntos porcentuales.
 WITH base AS (
@@ -222,7 +222,7 @@ SELECT familia, producto, variedad, count(*) AS series,
 FROM base, ipc GROUP BY familia, producto, variedad HAVING count(*) >= 3
 ORDER BY sobre_inflacion_pp DESC LIMIT 100""",
      ()),
-    ('Ficha de un producto',
+    ('Ficha de producto',
      '¿Cómo viene un producto, sin importar su familia: precio por canal, alza en 12 meses y probabilidad de subir?',
      """-- Parámetros elegidos arriba del editor: producto {producto} y año {anio}.
 WITH parametros AS (SELECT {producto_sql} AS producto, {anio} AS anio),
@@ -251,7 +251,7 @@ GROUP BY variedad, calidad, canal, unidad
 HAVING count(*) FILTER (WHERE semana > (SELECT semana FROM ultimo) - INTERVAL 28 DAY) > 0
 ORDER BY canal, variedad""",
      ('producto', 'anio')),
-    ('Más alzas que bajas del año',
+    ('Tendencia al alza',
      '¿Qué productos tienen más probabilidad de subir de una semana a otra en el año elegido?',
      """-- Año elegido arriba del editor: {anio}. prob_alza_pct = semanas de alza sobre todas las comparaciones (producto × región); 50 = igual de probable subir que bajar.
 WITH pares AS (
@@ -274,6 +274,10 @@ ORDER BY prob_alza_pct DESC, comparaciones DESC
 LIMIT 100""",
      ('anio',)),
 ]
+# The script name of each example in the editor's tab, as a SQL Server file (D-182).
+SCRIPT_NAMES = {"Precio vs. época": "precio_vs_epoca.sql", "Inflación del año": "inflacion_del_anio.sql",
+                "Inflación desde 2022": "inflacion_desde_2022.sql", "Ficha de producto": "ficha_producto.sql",
+                "Tendencia al alza": "tendencia_alza.sql"}
 PARAMETER_DEFAULTS = {"anio": 2026, "producto": "Tomate", "canal": "Supermercado"}
 
 
@@ -687,14 +691,14 @@ def build_css(palette):
 .sqlx-ico {{ width:14px; height:11px; border-radius:3px; flex:none; box-shadow:{raised}; }}
 .sqlx-ico.db {{ background:linear-gradient(180deg, color-mix(in srgb, {accent} 65%, #fff), {accent}); border-radius:4px; height:13px; width:13px; }}
 .sqlx-ico.folder {{ background:linear-gradient(180deg, #ffd97a, #f0b429); }}
-[class*="st-key-sqlx_view_"] button {{ width:100%; justify-content:flex-start; min-height:25px !important;
+:is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button {{ width:100%; justify-content:flex-start; min-height:25px !important;
   padding:1px 6px 1px 30px !important; border:0 !important; background:transparent !important; box-shadow:none !important;
   border-radius:7px !important; position:relative; }}
-[class*="st-key-sqlx_view_"] button::before {{ content:""; position:absolute; left:14px; top:0; bottom:0; width:1px;
+:is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button::before {{ content:""; position:absolute; left:14px; top:0; bottom:0; width:1px;
   background:{border}; }}
-[class*="st-key-sqlx_view_"] button:hover {{ background:color-mix(in srgb, {accent} 10%, transparent) !important; transform:none; }}
-[class*="st-key-sqlx_view_"] button span[data-testid="stIconMaterial"] {{ color:{accent}; font-size:15px; }}
-[class*="st-key-sqlx_view_"] button p {{ font-family:{mono}; font-size:.78rem !important; color:{ink} !important; }}
+:is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button:hover {{ background:color-mix(in srgb, {accent} 10%, transparent) !important; transform:none; }}
+:is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button span[data-testid="stIconMaterial"] {{ color:{accent}; font-size:15px; }}
+:is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button p {{ font-family:{mono}; font-size:.78rem !important; color:{ink} !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
 .sqlx-rows {{ font-size:.66rem; color:{muted}; margin:-6px 0 2px 52px; line-height:1.2; white-space:nowrap; }}
 .st-key-sqlx_explorer [data-testid="stPopover"] {{ margin-top:8px; }}
 .st-key-sqlx_explorer [data-testid="stPopover"]>button {{ width:100%; min-height:28px !important; box-shadow:{raised} !important; }}
@@ -709,6 +713,15 @@ def build_css(palette):
 .sqlx-tab {{ display:inline-flex; align-items:center; gap:7px; padding:5px 14px 5px 11px; border-radius:9px 9px 0 0;
   background:{editor}; border:1px solid {border}; border-bottom:0; font-size:.76rem; color:{ink}; font-family:{mono};
   box-shadow:0 1px 0 rgba(255,255,255,{'.06' if dark else '.9'}) inset; }}
+.sqlx-info {{ position:relative; display:inline-grid; place-items:center; width:18px; height:18px; margin:0 0 4px 2px;
+  border-radius:50%; border:1px solid {border}; color:{muted}; font-size:.68rem; font-style:italic; font-family:Georgia, serif;
+  cursor:help; background:{card}; box-shadow:{raised}; }}
+.sqlx-info:hover, .sqlx-info:focus {{ color:{accent}; border-color:{accent}; }}
+.sqlx-info-tip {{ position:absolute; z-index:20; left:26px; top:-6px; width:320px; padding:10px 12px; border-radius:12px;
+  background:{card}; border:1px solid {border}; box-shadow:0 16px 34px -16px rgba(0,0,0,.5); color:{text};
+  font:300 .78rem/1.45 {charts.CHART_FONT}; font-style:normal; opacity:0; pointer-events:none; transition:opacity .15s ease; }}
+.sqlx-info-tip b {{ display:block; font-weight:500; color:{ink}; margin-bottom:2px; }}
+.sqlx-info:hover .sqlx-info-tip, .sqlx-info:focus .sqlx-info-tip {{ opacity:1; }}
 .sqlx-tab .dot {{ width:7px; height:7px; border-radius:50%; background:{accent}; }}
 .sqlx-question {{ flex:1; min-width:0; color:{text}; font-size:.8rem; margin:0 0 4px; line-height:1.3; white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis; }}
@@ -783,11 +796,15 @@ def build_database_html():
             'solo lectura</small></span>')
 
 
-def build_tree_html(count):
-    """The top of the object explorer: the database and its «Vistas» folder."""
+def build_tree_html():
+    """The top of the object explorer: its title and the database (D-182)."""
     return ('<div class="sqlx-tree-title">Explorador de objetos</div>'
-            f'<div class="sqlx-node"><span class="tw">▾</span><span class="sqlx-ico db"></span>{DATABASE_LABEL}</div>'
-            f'<div class="sqlx-node branch"><span class="tw">▾</span><span class="sqlx-ico folder"></span>Vistas '
+            f'<div class="sqlx-node"><span class="tw">▾</span><span class="sqlx-ico db"></span>{DATABASE_LABEL}</div>')
+
+
+def build_folder_html(name, count):
+    """A folder of the tree, as SQL Server's «Tables» and «Views»."""
+    return (f'<div class="sqlx-node branch"><span class="tw">▾</span><span class="sqlx-ico folder"></span>{html.escape(name)} '
             f'<small>({count})</small></div>')
 
 
@@ -798,14 +815,16 @@ def build_view_html(name, description, count, columns):
 
 
 def build_tab_html(example):
-    """The editor's tab strip: the script tab and, beside it, the example's question."""
-    strip = (f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>consulta.sql · '
-             f'{DATABASE_LABEL}</span>')
-    if example is not None:
-        title, question, _ = EXAMPLES[example]
-        strip += (f'<p class="sqlx-question" title="{html.escape(question, quote=True)}"><b>{html.escape(title)}{"" if title.endswith("?") else "."}</b> '
-                  f'{html.escape(question)}</p>')
-    return strip + "</div>"
+    """The editor's tab strip: the script's file name and an «i» that tells, on hover,
+    which question it answers (D-182)."""
+    if example is None:
+        return (f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>consulta.sql · '
+                f'{DATABASE_LABEL}</span></div>')
+    title, question, _ = EXAMPLES[example]
+    script = SCRIPT_NAMES.get(title, "consulta.sql")
+    return (f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>{html.escape(script)} · '
+            f'{DATABASE_LABEL}</span><span class="sqlx-info" tabindex="0" title="{html.escape(question, quote=True)}">'
+            f'i<span class="sqlx-info-tip" role="tooltip"><b>{html.escape(title)}</b>{html.escape(question)}</span></span></div>')
 
 
 def editor_height(sql):
@@ -847,6 +866,31 @@ def build_messages_html(outcome):
             if outcome.truncated else "")
     return (f'<pre class="sqlx-msg">({count_text} filas afectadas){note}\n\n<span class="ok">✓ Consulta ejecutada '
             f'correctamente.</span>  Tiempo: {outcome.seconds * 1000:,.0f} ms'.replace(",", ".") + '</pre>')
+
+
+def describe_tables(database_file=queries.DATABASE_FILE):
+    """[(table, row count, [(column, type)])] of the real tables of the database (D-182)."""
+    connection = open_explorer_connection(database_file)
+    try:
+        names = [row[0] for row in connection.execute(
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' "
+            "AND table_type = 'BASE TABLE' ORDER BY table_name").fetchall()]
+        return [(name, connection.execute(f'SELECT count(*) FROM main."{name}"').fetchone()[0],
+                 [(row[0], row[1]) for row in connection.execute(f'DESCRIBE main."{name}"').fetchall()])
+                for name in names]
+    finally:
+        connection.close()
+
+
+def load_tables():
+    import streamlit as st
+
+    @st.cache_data(ttl=600, show_spinner=False)
+    def cached(database_file, modified):
+        return describe_tables(database_file)
+    database_file = str(queries.DATABASE_FILE)
+    modified = os.path.getmtime(database_file) if os.path.exists(database_file) else 0
+    return cached(database_file, modified)
 
 
 def load_catalog():
@@ -948,6 +992,15 @@ def show_parameters(st, index):
                          label_visibility="collapsed", help=PARAMETER_LABELS[name])
 
 
+def choose_table(name):
+    """A real table clicked in the explorer: its first rows, as SQL Server's «Select Top 100 Rows»."""
+    import streamlit as st
+    sql = f"SELECT *\nFROM main.{name}\nLIMIT 100"
+    st.session_state["sqlx_editor"] = sql
+    st.session_state["sqlx_example"] = None
+    st.session_state["sqlx_result"] = outcome_of(sql)
+
+
 def choose_view(name):
     """A view clicked in the explorer: its first rows, as a SQL client would."""
     import streamlit as st
@@ -1030,9 +1083,20 @@ def show_sql_explorer_page(mode):
         with st.container(key="sqlx_body"):
             side, main = st.columns([1, 3.5], gap="small")
             with side, st.container(key="sqlx_explorer"):
-                st.markdown(build_tree_html(len(catalog)), unsafe_allow_html=True)
+                try:
+                    tables = load_tables()
+                except Exception:  # the views still work without the listing
+                    tables = []
+                st.markdown(build_tree_html(), unsafe_allow_html=True)
+                st.markdown(build_folder_html("Tablas", len(tables)), unsafe_allow_html=True)
+                for name, count, columns in tables:
+                    st.button(f"main.{name}", key=f"sqlx_table_{name}", icon=":material/table:", on_click=choose_table,
+                              args=(name,), help="Tabla del data warehouse. Columnas: "
+                              + ", ".join(column for column, _ in columns))
+                    st.markdown(build_view_html(name, "", count, columns), unsafe_allow_html=True)
+                st.markdown(build_folder_html("Vistas", len(catalog)), unsafe_allow_html=True)
                 for name, description, count, columns in catalog:
-                    st.button(name, key=f"sqlx_view_{name}", icon=":material/table:", on_click=choose_view, args=(name,),
+                    st.button(name, key=f"sqlx_view_{name}", icon=":material/view_list:", on_click=choose_view, args=(name,),
                               help=f"{description} Columnas: " + ", ".join(column for column, _ in columns))
                     st.markdown(build_view_html(name, description, count, columns), unsafe_allow_html=True)
                 show_exports(st)

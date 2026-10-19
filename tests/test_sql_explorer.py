@@ -143,7 +143,7 @@ def test_d180_one_click_writes_the_sql_and_runs_it_with_the_chosen_product():
               "from bi import sql_explorer\n"
               "sql_explorer.show_sql_explorer_page('Claro')\n")
     app = AppTest.from_string(script, default_timeout=60).run()
-    ficha = next(i for i, t in enumerate(sql_explorer.TEMPLATES) if t[0] == "Ficha de un producto")
+    ficha = next(i for i, t in enumerate(sql_explorer.TEMPLATES) if t[0] == "Ficha de producto")
     app.button(key=f"sqlx_chip_{ficha}").click().run()
     assert not app.exception and len(app.dataframe) == 1
     app.selectbox(key="sqlx_param_producto").select("Asado Carnicero").run()
@@ -154,10 +154,19 @@ def test_d180_one_click_writes_the_sql_and_runs_it_with_the_chosen_product():
 
 def test_d181_five_questions_and_the_season_compares_real_prices():
     assert [title for title, *_ in sql_explorer.TEMPLATES] == [
-        "¿Está caro para la época?", "Más que la inflación este año", "Sobre la inflación desde 2022",
-        "Ficha de un producto", "Más alzas que bajas del año"]
+        "Precio vs. época", "Inflación del año", "Inflación desde 2022", "Ficha de producto", "Tendencia al alza"]
     sql = sql_explorer.render_example(0, {"producto": "Tomate"})
     assert "factor_real" in sql
     verdicts = set(sql_explorer.run_user_query(sql).rows["veredicto"])
     assert verdicts and verdicts <= {"Más caro que cualquier año anterior", "Más barato que cualquier año anterior",
                                      "Caro para la época", "Barato para la época", "Normal para la época"}
+
+
+def test_d182_the_explorer_lists_the_real_tables_and_one_opens():
+    tables = {name: count for name, count, _ in sql_explorer.describe_tables()}
+    assert {"weekly_price", "dim_product", "dim_region", "dim_channel", "dim_date"} <= set(tables)
+    assert tables["weekly_price"] > 100_000
+    rows = sql_explorer.run_user_query("SELECT *\nFROM main.dim_region\nLIMIT 100").rows
+    assert "region_id" in rows.columns and len(rows) == tables["dim_region"]
+    tab = sql_explorer.build_tab_html(0)
+    assert "precio_vs_epoca.sql" in tab and "sqlx-info" in tab and sql_explorer.EXAMPLES[0][1] in tab
