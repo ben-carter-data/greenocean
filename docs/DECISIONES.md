@@ -1215,3 +1215,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-19.
 - **Problema:** la página no se entendía a simple vista: la banda del gráfico solo se explicaba en un ícono ⓘ, el selector «Nominal / Real» no decía qué cambiaba y el aporte del IPC (D-155) pasaba desapercibido, aun cuando cambiaba la respuesta.
 - **Decisión:** una línea de lectura bajo el título del gráfico («Línea: precio de cada semana · Banda: lo habitual en esa misma semana de años anteriores…»); el selector pasa a «Precios del día / Sin inflación», con una ayuda que nombra el IPC del INE; y una frase marcada «IPC» bajo la respuesta cuando, para algún canal, el estado (bajo, dentro o sobre lo habitual) es distinto con y sin inflación. Ejemplo real: el tomate larga vida en supermercado está sobre lo habitual con los precios del día y bajo lo habitual descontada la inflación de alimentos, porque subió menos que ella. Si la inflación no cambia nada, no se muestra.
+
+## D-160 · El IPC de alimentos tiene su propio gráfico
+
+- **Fecha:** 2026-10-19.
+- **Problema:** el IPC del INE estaba en los datos (D-155) y en la frase de Contexto (D-159), pero ningún gráfico mostraba el índice mismo: no se podía ver cuánto subieron los alimentos ni con qué serie se calculan los precios sin inflación.
+- **Decisión:** en Contexto de precios, «Ver el IPC →» abre la serie mensual del INE (división 1, base 2023 = 100) desde enero 2022, cuando empiezan los precios. Muestra la inflación acumulada del período y la de los últimos 12 meses, calculadas de la misma tabla `ipc_monthly` que usa el deflactor, y explica la regla mes → semana, el mes de referencia y el enlace de la serie empalmada. Sin área bajo la curva: anclaría el eje en 0 y aplanaría la subida.
+- **Cifras al 19-10-2026:** de enero 2022 a septiembre 2026 los alimentos subieron +44,8 %; en los últimos 12 meses, +4,3 %.

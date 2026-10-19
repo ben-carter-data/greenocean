@@ -5806,6 +5806,45 @@ def build_context_outliers_table(rows, product_group):
             '<th>Distancia al límite</th></tr></thead><tbody>' + "".join(body) + '</tbody></table></div></section>')
 
 
+@st.cache_data
+def read_ipc_monthly(database_version):
+    """The food IPC of the INE, month by month since prices start (2022), base 2023 = 100."""
+    rows = queries.run_sql("SELECT year, month, food_index, origin FROM ipc_monthly WHERE year >= 2022 "
+                           "ORDER BY year, month")
+    rows["month_start"] = pd.to_datetime(dict(year=rows["year"], month=rows["month"], day=1))
+    rows["yearly"] = rows["food_index"].pct_change(12) * 100
+    return rows
+
+
+@st.dialog("IPC de alimentos del INE", width="large")
+def show_ipc_dialog(mode):
+    """The deflator itself (D-155): the monthly food IPC the real prices are computed with."""
+    rows = read_ipc_monthly(get_database_version())
+    first, last = rows.iloc[0], rows.iloc[-1]
+    year_ago = rows.iloc[-13] if len(rows) > 12 else first
+    month = lambda row: f"{price_context.MONTHS[int(row['month']) - 1]} {int(row['year'])}"
+    total = (last["food_index"] / first["food_index"] - 1) * 100
+    yearly = (last["food_index"] / year_ago["food_index"] - 1) * 100
+    st.caption(f"División 1 «Alimentos y bebidas no alcohólicas», base 2023 = 100. De {month(first)} a "
+               f"{month(last)} los alimentos subieron {charts.format_signed_percent(total)}; en los últimos 12 meses, "
+               f"{charts.format_signed_percent(yearly)}.")
+    palette = charts.get_palette(mode)
+    x = alt.X("month_start:T", title=None, axis=alt.Axis(format="%b %Y", tickCount=8))
+    tooltip = [alt.Tooltip("month_start:T", title="Mes", format="%m-%Y"),
+               alt.Tooltip("food_index:Q", title="Índice", format=",.2f"),
+               alt.Tooltip("yearly:Q", title="Variación 12 meses (%)", format="+.1f")]
+    # No area: an area anchors the axis at 0 and flattens a +45 % rise into a flat line.
+    line = alt.Chart(rows).mark_line(strokeWidth=2.6, color=palette["accent"], interpolate="monotone").encode(
+        x=x, y=alt.Y("food_index:Q", title="Índice (2023 = 100)", scale=alt.Scale(zero=False)), tooltip=tooltip)
+    point = alt.Chart(rows.tail(1)).mark_point(filled=True, size=70, color=palette["accent"]).encode(
+        x=x, y="food_index:Q", tooltip=tooltip)
+    show_chart(charts.apply_chart_style(alt.layer(line, point).properties(height=300), mode))
+    st.caption(f"Cada semana usa el IPC del mes de su lunes; los precios «sin inflación» quedan en pesos de "
+               f"{month(last)}. Las semanas de un mes que el INE aún no publica usan ese último mes y se marcan "
+               "provisionales. Antes de 2024, la serie empalmada del INE enlazada por la variación oficial de "
+               "enero 2024 (D-155).")
+
+
 @st.dialog("Serie completa", width="large")
 def show_full_history_dialog(series, mode, label):
     rows = pd.concat([rows.assign(channel=channel) for channel, rows in series.items()])
@@ -6021,6 +6060,8 @@ def show_price_context_page(mode):
                     show_full_history_dialog(model["series"], mode, label)
                 if st.button("Ver datos del gráfico →", key="ctx_data", type="tertiary"):
                     show_context_data_dialog(model)
+                if st.button("Ver el IPC →", key="ctx_ipc", type="tertiary", help="IPC de alimentos del INE, mes a mes"):
+                    show_ipc_dialog(mode)
     # Beside the chart, the two readings of this week; the seasonal outlook gets a
     # full-width strip below, where its months read on one line (D-150).
     with right, st.container(key="ctx_side"):
