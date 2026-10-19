@@ -32,7 +32,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                doc_diagrams, document_pdf, github_page, inflation_view, lineage, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
+                doc_diagrams, document_pdf, github_page, inflation_view, lineage, operation_center, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -275,6 +275,11 @@ CHILE_TIME_ZONE = "America/Santiago"
 # GitHub allows 60 questions per hour without a key, shared by every app on the
 # same server: an answer is kept 5 minutes before asking again.
 GITHUB_CACHE_SECONDS = 300
+# Centro de operación (D-165): while a run is in progress the stage asks GitHub again
+# this often; without a token GitHub allows 60 requests an hour, so it waits longer.
+LIVE_SECONDS_WITH_TOKEN = 15
+LIVE_SECONDS_WITHOUT_TOKEN = 60
+OPERATION_RECENT_RUNS = 5
 # The database is saved only after these steps passed (D-034), so a saved load
 # proves their state when GitHub does not answer.
 STEPS_PROVED_BY_A_SAVED_LOAD = {"Download the ODEPA files", "Run the ETL",
@@ -6202,31 +6207,6 @@ def build_runs_metric_html(label, value, note=""):
             f'<span class="runs-metric-note">{note}</span></div>')
 
 
-def show_pipeline_status(runs):
-    """One strip of four figures, as the Dashboard's: latest run, next run, rows of
-    the latest load and how long the latest run took (D-129)."""
-    latest_load = read_latest_run()
-    if runs:
-        latest = runs[0]
-        last = build_runs_metric_html("Última ejecución", format_chile_time(latest["started_at"]),
-                                      f'{build_run_chip(latest["state"])} {html.escape(latest["trigger"])}')
-        took = format_duration(latest["duration"]) if latest["duration"] else "—"
-    else:
-        # Without GitHub, the latest load saved in the database is still a fact.
-        last = build_runs_metric_html("Última carga guardada",
-                                      format_chile_time(parse_run_start(latest_load["started_at"])),
-                                      "sin respuesta de GitHub")
-        took = "—"
-    next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc))
-    st.markdown('<div class="runs-metrics">' + last
-                + build_runs_metric_html("Próxima ejecución", format_chile_time(next_run),
-                                         "cada martes, sin intervención")
-                + build_runs_metric_html("Filas cargadas", charts.format_thousands(latest_load["rows_loaded"]),
-                                         f'{charts.format_thousands(latest_load["rows_rejected"])} rechazadas')
-                + build_runs_metric_html("Duración", took, "de la última ejecución")
-                + '</div>', unsafe_allow_html=True)
-
-
 def build_step_lines(steps):
     """Progress of a run as text lines with an icon per step."""
     icons = {control.RUN_OK: "✅", control.RUN_FAILED: "❌",
@@ -6383,30 +6363,6 @@ def show_admin_card():
             show_link_cards(ADMIN_LINKS)
 
 
-def show_run_history(runs, error_text):
-    """The latest runs, visible at once as a clean table — the page's main content,
-    no longer folded behind «Ver historial» (D-129)."""
-    with st.container(border=True, key="runs_history"):
-        st.markdown('<div class="runs-card-title">Historial de ejecuciones</div>',
-                    unsafe_allow_html=True)
-        if error_text:
-            # The real cause, so a failure can be diagnosed from the public panel.
-            st.warning(f"No se pudo consultar GitHub: {error_text}.")
-            if not runs:
-                return
-            st.caption("Se muestra la última respuesta guardada.")
-        rows = "".join(
-            f'<tr><td>{format_chile_time(run["started_at"])}</td><td>{html.escape(run["trigger"])}</td>'
-            f'<td>{format_duration(run["duration"]) if run["duration"] else "—"}</td>'
-            f'<td>{build_run_chip(run["state"])}</td>'
-            f'<td class="runs-link"><a href="{html.escape(run["url"], quote=True)}" target="_blank" '
-            f'rel="noopener noreferrer" title="Ver los logs en GitHub Actions">Logs ↗</a></td></tr>'
-            for run in runs)
-        st.markdown('<table class="runs-table"><thead><tr><th>Inicio</th><th>Tipo</th>'
-                    '<th>Duración</th><th>Estado</th><th></th></tr></thead>'
-                    f'<tbody>{rows}</tbody></table>', unsafe_allow_html=True)
-
-
 def build_runs_css(mode):
     palette = charts.get_palette(mode)
     return f"""<style>
@@ -6457,11 +6413,11 @@ def build_runs_css(mode):
 
 
 def show_runs_page(mode):
-    """Ejecuciones with the Dashboard's rhythm: a one-line header, a strip of
-    figures, the history as the main content and administration beside it (D-129)."""
-    show_compact_page_header("Ejecuciones y DevOps", "Historial real del pipeline, ejecución manual "
-                             "y la plataforma que lo opera: automatización, seguridad y observabilidad.")
-    runs_tab, platform_tab = st.tabs(["Ejecuciones", "Plataforma y seguridad"])
+    """Centro de operación (D-165): the weekly run as a path of floating logos, each
+    with what it does and where to act, and beside it the facts and the manual run."""
+    show_compact_page_header("Centro de operación", "El recorrido de cada martes, del lanzamiento "
+                             "al panel: el estado de cada paso, su log y dónde actuar.")
+    runs_tab, platform_tab = st.tabs(["Operación", "Plataforma y seguridad"])
     with runs_tab:
         show_runs_tab(mode)
     with platform_tab:
@@ -6469,16 +6425,121 @@ def show_runs_page(mode):
 
 
 def show_runs_tab(mode):
-    """The weekly pipeline: its state, its history and, behind the control code, the
-    button to run it now and the administration links."""
+    """The stage, refreshed by itself every few seconds while a run is in progress."""
     st.markdown(build_runs_css(mode), unsafe_allow_html=True)
+    runs, _ = read_pipeline_runs()
+    live = bool(runs) and runs[0]["state"] == control.RUN_IN_PROGRESS
+    st.fragment(lambda: show_operation_center(mode, live),
+                run_every=(LIVE_SECONDS_WITH_TOKEN if get_secret(SECRET_GITHUB_TOKEN)
+                           else LIVE_SECONDS_WITHOUT_TOKEN) if live else None)()
+
+
+@st.cache_data(ttl=GITHUB_CACHE_SECONDS, show_spinner=False)
+def fetch_run_step_details(run_id):
+    """Steps of one run with their log addresses. A failure raises, and is not cached."""
+    return control.list_run_step_details(run_id, get_secret(SECRET_GITHUB_TOKEN))
+
+
+def read_operation_runs(live):
+    """(runs, step details of the latest, why GitHub failed or ""). While a run is in
+    progress GitHub is asked directly, not through the five-minute cache."""
+    if live:
+        fetch_pipeline_runs.clear()
+        fetch_run_step_details.clear()
     runs, error_text = read_pipeline_runs()
-    show_pipeline_status(runs)
-    history_column, admin_column = st.columns([2.3, 1], gap="medium")
-    with history_column:
-        show_run_history(runs, error_text)
-    with admin_column:
+    if not runs:
+        return runs, {}, error_text
+    last_answers = get_last_github_answers()
+    try:
+        details = fetch_run_step_details(runs[0]["id"])
+    except Exception as error:  # GitHub unreachable or refused
+        details = last_answers.get(("details", runs[0]["id"]), {})
+        return runs, details, error_text or control.describe_github_error(error)
+    last_answers[("details", runs[0]["id"])] = details
+    return runs, details, error_text
+
+
+@st.cache_data(show_spinner=False)
+def read_published_figures(database_version):
+    """Last week, prices and weeks of the published database."""
+    return queries.run_sql("SELECT max(week_start) AS last_week, count(*) AS prices, "
+                           "count(DISTINCT week_start) AS weeks FROM weekly_price").iloc[0]
+
+
+def build_operation_fact(label, value, note=""):
+    return (f'<div class="oc-fact"><span class="oc-fact-label">{html.escape(label)}</span>'
+            f'<span class="oc-fact-value">{html.escape(value)}</span>'
+            f'<span class="oc-fact-note">{note}</span></div>')
+
+
+def build_operation_facts(latest_load, published, now):
+    """Next run, published data and latest load: what to know before acting."""
+    next_run = control.calculate_next_scheduled_run(now)
+    hours = int((next_run - now).total_seconds() // 3600)
+    wait = f"faltan {hours} h" if hours < 48 else f"faltan {hours // 24} días"
+    last_week = pd.Timestamp(published["last_week"])
+    return (build_operation_fact("Próxima ejecución", f"{to_chile_time(next_run):%d-%m · %H:%M}",
+                                 f"automática, cada martes · {wait}")
+            + build_operation_fact("Datos publicados", f"Semana del {last_week:%d-%m-%Y}",
+                                   f"{charts.format_thousands(published['prices'])} precios · "
+                                   f"{charts.format_thousands(published['weeks'])} semanas")
+            + build_operation_fact("Última carga", f"{charts.format_thousands(latest_load['rows_loaded'])} filas",
+                                   f"de {charts.format_thousands(latest_load['rows_read'])} leídas · "
+                                   f"{charts.format_thousands(latest_load['rows_rejected'])} rechazadas"))
+
+
+def build_recent_runs_html(runs):
+    """The latest runs, one line each with its colour and a link to its logs."""
+    colors = {control.RUN_OK: charts.STATUS_COLORS["good"], control.RUN_FAILED: charts.STATUS_COLORS["critical"],
+              control.RUN_IN_PROGRESS: charts.STATUS_COLORS["running"]}
+    words = {control.RUN_OK: "correcta", control.RUN_FAILED: "falló", control.RUN_IN_PROGRESS: "en curso",
+             control.RUN_SIMULATED_FAILURE: "falla simulada"}
+    lines = "".join(
+        f'<a class="oc-run" href="{html.escape(run["url"], quote=True)}" target="_blank" rel="noopener noreferrer">'
+        f'<span class="oc-dot" style="background:{colors.get(run["state"], charts.STATUS_COLORS["unknown"])}"></span>'
+        f'{to_chile_time(run["started_at"]):%d-%m %H:%M} · {html.escape(run["trigger"].lower())} · '
+        f'{words.get(run["state"], "")} ↗</a>'
+        for run in runs[:OPERATION_RECENT_RUNS])
+    return f'<div class="oc-runs"><span class="oc-fact-label">Últimas ejecuciones</span>{lines}</div>'
+
+
+def show_operation_center(mode, live=False):
+    palette = charts.get_palette(mode)
+    runs, details, error_text = read_operation_runs(live)
+    latest_load = read_latest_run()
+    states = operation_center.build_step_states(runs[0] if runs else None, details,
+                                                latest_load["status"] == etl.STATUS_LOADED)
+    unlocked = bool(st.session_state.get(ADMIN_UNLOCKED))
+    stage_column, side_column = st.columns([2.4, 1], gap="large")
+    with stage_column:
+        st.iframe(operation_center.build_stage_html(palette, states, unlocked), height="content")
+    with side_column:
+        if error_text:
+            st.caption(f"GitHub no respondió ({error_text}); se muestra la última respuesta guardada.")
+        st.markdown(build_operation_side_css(palette)
+                    + build_operation_facts(latest_load, read_published_figures(get_database_version()),
+                                            datetime.now(timezone.utc)), unsafe_allow_html=True)
         show_admin_card()
+        if runs:
+            st.markdown(build_recent_runs_html(runs), unsafe_allow_html=True)
+
+
+def build_operation_side_css(palette):
+    return f"""<style>
+    .oc-fact {{display:flex; flex-direction:column; gap:1px; padding:10px 0;
+        border-bottom:1px solid {palette['card_border']};}}
+    .oc-fact-label {{font-size:.68rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+        color:{palette['reference']};}}
+    .oc-fact-value {{font-size:1.15rem; font-weight:700; color:{palette['strong_text']};
+        font-variant-numeric:tabular-nums;}}
+    .oc-fact-note {{font-size:.8rem; color:{palette['text']};}}
+    .oc-runs {{display:flex; flex-direction:column; gap:2px; padding-top:4px;}}
+    .oc-run {{display:flex; align-items:center; font-size:.82rem; color:{palette['text']} !important;
+        text-decoration:none !important; padding:3px 0;}}
+    .oc-run:hover {{color:{palette['strong_text']} !important;}}
+    .oc-dot {{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; flex-shrink:0;}}
+    .st-key-runs_admin {{border:0 !important; padding:4px 0 0 !important; background:transparent !important;}}
+    </style>"""
 
 
 # endregion
@@ -7170,6 +7231,25 @@ IDLE_ANIMATION_SCRIPT = """<script>(() => {
 })();</script>"""
 FOLD_SIDEBAR_SCRIPT = f"""<script>
 (() => {{
+// D-166: a phone turned sideways shows the computer layout, menu included. Streamlit
+// folded the menu when the page opened upright, so it opens again on turning.
+const phoneLandscape = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
+const openMenu = () => {{
+    let attempts = 0;
+    const open = () => {{
+        const sidebar = document.querySelector('[data-testid="stSidebar"]');
+        const button = document.querySelector('[data-testid="stExpandSidebarButton"]');
+        if (sidebar && sidebar.getAttribute("aria-expanded") === "true") {{ return; }}
+        if (button) {{ button.click(); }} else if (attempts++ < 40) {{ setTimeout(open, 100); }}
+    }};
+    open();
+}};
+if (!window.greenoceanPhoneTurnBound) {{
+    window.greenoceanPhoneTurnBound = true;
+    phoneLandscape.addEventListener("change", (event) => {{ if (event.matches) {{ openMenu(); }} }});
+    if (phoneLandscape.matches) {{ openMenu(); }}
+}}
+if (phoneLandscape.matches) {{ return; }}
 if (window.innerWidth >= {NARROW_SCREEN_WIDTH}) {{ return; }}
 try {{ if (sessionStorage.getItem("sidebarFolded")) {{ return; }} }} catch (error) {{ return; }}
 let tries = 0;
@@ -7301,8 +7381,58 @@ def render_window(window, pages=None):
         if pages:
             show_route_footer(window, pages)
         show_attribution()
-    st.html(FOLD_SIDEBAR_SCRIPT + RELOAD_HOME_SCRIPT + IDLE_ANIMATION_SCRIPT + build_visit_history_script(),
+    st.html(PHONE_LAYOUT_HTML + FOLD_SIDEBAR_SCRIPT + RELOAD_HOME_SCRIPT + IDLE_ANIMATION_SCRIPT + build_visit_history_script(),
             unsafe_allow_javascript=True)
+
+
+# D-166: the panel is read in landscape. A phone held upright sees one screen asking to
+# turn it (no page can rotate a phone: only the reader can); turned, the phone gets
+# the computer layout in miniature, every page whole, and no empty band on top.
+# Tablets and computers never match these queries. Plain fills only: st.html strips
+# SVG gradients.
+PHONE_LAYOUT_HTML = """<style>
+.go-rotate {display:none;}
+@media (max-width:600px) and (orientation:portrait) {
+  .go-rotate {display:flex; position:fixed; inset:0; z-index:2147483647; flex-direction:column;
+    align-items:center; justify-content:center; gap:10px; padding:48px 32px 72px; text-align:center;
+    background:radial-gradient(120% 70% at 50% 30%, #17406f 0%, #0f2747 55%, #0a1b33 100%);
+    color:#cfd6e2; font-family:"Source Sans Pro",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
+  .go-rotate .go-brand {font-size:26px; font-weight:600; color:#6ee7b7;}
+  .go-rotate .go-brand span {color:#7dd3fc;}
+  .go-rotate .go-sub {font-size:13px; color:#98a2b3;}
+  .go-rotate .go-phone {position:relative; width:80px; height:150px; margin:56px 0 44px; border-radius:16px;
+    background:#174a7c; border:5px solid #c3ccd8; box-shadow:0 24px 30px rgba(0,0,0,.45);
+    animation:go-turn 3.2s cubic-bezier(.65,0,.35,1) infinite;}
+  .go-rotate .go-phone i {position:absolute; display:block; border-radius:3px;}
+  .go-rotate h2 {margin:0; font-size:30px; font-weight:700; color:#ffffff; line-height:1.2;}
+  .go-rotate p {margin:0; max-width:300px; font-size:16px; line-height:1.45;}
+  @keyframes go-turn {0%,18% {transform:rotate(0deg);} 45%,72% {transform:rotate(-90deg);} 100% {transform:rotate(0deg);}}
+}
+@media (orientation:landscape) and (max-height:500px) {
+  /* The computer layout drawn at 1/0.62 the width, then shrunk back to the screen. */
+  .stApp {transform:scale(.62); transform-origin:0 0; width:161.3vw !important; height:161.3vh !important;}
+  /* Streamlit sizes its scrolling area to the screen height: it must grow with the scale. */
+  [data-testid="stAppViewContainer"] > div, [data-testid="stMain"], [data-testid="stSidebar"] {height:161.3vh !important; max-height:none !important;}
+  [data-testid="stHeader"] {display:none !important;}
+  [data-testid="stMainBlockContainer"] {padding-top:.4rem !important;}
+}
+</style>
+<div class="go-rotate" role="alertdialog" aria-label="Gira tu teléfono">
+  <div class="go-brand">Green<span>Ocean</span></div>
+  <div class="go-sub">Monitor de precios de alimentos</div>
+  <div class="go-phone" aria-hidden="true">
+    <i style="left:24px;top:4px;width:22px;height:5px;background:#0a1b33"></i>
+    <i style="left:7px;top:18px;width:10px;height:110px;background:#6ee7b7;opacity:.6"></i>
+    <i style="left:23px;top:18px;width:40px;height:9px;background:#ffffff;opacity:.5"></i>
+    <i style="left:25px;top:44px;width:12px;height:12px;border-radius:50%;background:#7dd3fc"></i>
+    <i style="left:45px;top:44px;width:12px;height:12px;border-radius:50%;background:#6ee7b7"></i>
+    <i style="left:25px;top:66px;width:12px;height:12px;border-radius:50%;background:#fda4af"></i>
+    <i style="left:45px;top:66px;width:12px;height:12px;border-radius:50%;background:#fde68a"></i>
+    <i style="left:23px;top:94px;width:40px;height:6px;background:#ffffff;opacity:.35"></i>
+  </div>
+  <h2>Gira tu teléfono</h2>
+  <p>El panel se lee en horizontal: así ves el pipeline completo y el menú de un vistazo.</p>
+</div>"""
 
 
 def keep_context():
@@ -7518,7 +7648,7 @@ SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingenierí
                       SECTION_RESOURCES: "GitHub"}
 SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Precios e inflación",
                   PAGE_DIAGRAMS: "Pipeline y linaje", PAGE_OPERATIONS: "Calidad y auditoría",
-                  PAGE_RUNS: "Ejecuciones y DevOps",
+                  PAGE_RUNS: "Centro de operación",
                   PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual",
                   PAGE_COVER: "Descripción general", PAGE_BUSINESS: "Alcance del proyecto"}
 

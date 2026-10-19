@@ -223,7 +223,7 @@ GitHub Actions se detiene en el primer paso que falla, avisa al autor por correo
 
 [[diagrama:plataforma]]
 
-Es el mismo diagrama de la pestaña Plataforma y seguridad de Ejecuciones y DevOps: cada plataforma es un nodo de despliegue con sus componentes dentro, y cada conexión dice cómo se comunican (descargas por HTTPS, git push, despliegue de main y secretos del panel).
+Es el mismo diagrama de la pestaña Plataforma y seguridad del Centro de operación: cada plataforma es un nodo de despliegue con sus componentes dentro, y cada conexión dice cómo se comunican (descargas por HTTPS, git push, despliegue de main y secretos del panel).
 
 | Nodo | Qué corre | Qué guarda |
 |---|---|---|

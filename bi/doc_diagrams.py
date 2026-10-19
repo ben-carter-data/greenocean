@@ -277,7 +277,7 @@ def build_screen_svg(mode, figures=None):
     # Sidebar: the real menu of D-157.
     menu = [("DASHBOARD", None), ("Resumen semanal", True), ("Contexto de precios", False),
             ("INGENIERÍA DE DATOS", None), ("Pipeline y linaje", False), ("Modelo de datos", False),
-            ("Calidad y auditoría", False), ("Ejecuciones y DevOps", False),
+            ("Calidad y auditoría", False), ("Centro de operación", False),
             ("FUENTES", None), ("ODEPA e INE", False),
             ("DOCUMENTACIÓN", None), ("PRD · SAD · ADR", False)]
     sidebar = [f'<rect x="10" y="10" width="190" height="{height - 20}" rx="18" '

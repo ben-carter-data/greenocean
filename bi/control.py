@@ -34,6 +34,9 @@ STEP_NAMES = {
     "Restore the closed-year files": "Archivos de años cerrados (caché)",
     "Download the ODEPA files": "Descarga de ODEPA",
     "Run the ETL": "Limpieza y reglas de negocio",
+    # D-154 renamed the ETL step and added dbt; the old name stays for older runs.
+    "Run the ETL (SQLite backup)": "Limpieza y reglas de negocio",
+    "Build the data warehouse with dbt": "Data warehouse con dbt",
     "Simulate a failure": "Falla simulada",
     "Run the tests against the new database": "Pruebas automáticas",
     "Save the updated database": "Guardar la base actualizada",
@@ -130,6 +133,33 @@ def list_run_steps(run_id, token=None):
     response.raise_for_status()
     jobs = response.json()["jobs"]
     return simplify_steps(jobs[0]) if jobs else []
+
+
+def describe_job_steps(job):
+    """{workflow step name: state, seconds and the address of its own log} (D-165).
+
+    GitHub opens a job's log on one step with #step:<number>:1, unfolded."""
+    details = {}
+    for step in job.get("steps", []):
+        state = classify_run(step["status"], step.get("conclusion"))
+        if step.get("conclusion") == "skipped":
+            state = "skipped"
+        started_at = parse_github_time(step.get("started_at"))
+        finished_at = parse_github_time(step.get("completed_at"))
+        seconds = ((finished_at - started_at).total_seconds()
+                   if started_at and finished_at and state != "skipped" else None)
+        details[step["name"]] = {"state": state, "seconds": seconds,
+                                 "url": f"{job['html_url']}#step:{step['number']}:1"}
+    return details
+
+
+def list_run_step_details(run_id, token=None):
+    """Every step of a run with its state, duration and log address; {} without a job."""
+    response = requests.get(f"{API_URL}/repos/{REPOSITORY}/actions/runs/{run_id}/jobs",
+                            headers=build_headers(token), timeout=REQUEST_TIMEOUT_SECONDS)
+    response.raise_for_status()
+    jobs = response.json()["jobs"]
+    return describe_job_steps(jobs[0]) if jobs else {}
 
 
 def is_simulated_failure(steps):

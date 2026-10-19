@@ -4,7 +4,7 @@ Para quien opera el proyecto sin ser técnico: qué pasa solo, qué hay que revi
 
 ## Qué pasa cada martes
 
-El job semanal (`.github/workflows/semanal.yml`) corre solo cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. También se puede lanzar a mano desde GitHub o con el botón «Ejecutar ahora» de «Operaciones» → «Ejecuciones». Hace, en orden:
+El job semanal (`.github/workflows/semanal.yml`) corre solo cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. También se puede lanzar a mano desde GitHub o con el botón «Ejecutar pipeline ahora» de «Ingeniería de datos» → «Centro de operación». Hace, en orden:
 
 1. **Prepara el entorno:** descarga el código del repositorio e instala Python y las librerías.
 2. **Recupera los años cerrados de la caché** (D-047): los archivos de años anteriores no cambian y se guardan en la caché de GitHub Actions.
@@ -44,7 +44,7 @@ Hay cinco lugares donde se nota una falla:
 
 | Dónde | Qué se ve |
 |---|---|
-| «Operaciones» → «Ejecuciones» del panel | La última ejecución aparece como «Falla»; «detalle» abre la ejecución en GitHub. |
+| «Centro de operación» del panel | El logo del paso que falló queda en rojo con su explicación abierta; «Log del paso» abre en GitHub la línea exacta de ese paso. |
 | Correo de GitHub | Llega un correo «Run failed: semanal» a la cuenta del autor. |
 | Informe semanal | Esa semana no aparece un issue nuevo. |
 | Calidad de datos del panel | La fecha de la última carga sigue siendo la de la semana anterior. |
@@ -68,7 +68,7 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 | Qué se ve | Qué significa | Qué hacer |
 |---|---|---|
 | Después de un push, una página muestra `AttributeError` en producción | Streamlit Cloud mezcló archivos nuevos con otros que tenía en memoria (ocurrió el 12-10-2026; el código en GitHub estaba bien) | Abrir el panel, «Manage app» (abajo a la derecha) → ⋮ → **Reboot**. Esperar uno o dos minutos |
-| «Operaciones» → «Ejecuciones» dice «No se pudo consultar GitHub: …» | El mensaje trae la causa real. La más común es «GitHub respondió 403: se agotó el límite de consultas sin clave»: GitHub permite 60 consultas por hora sin clave, compartidas por todas las apps del mismo servidor | Nada: el panel muestra la última respuesta guardada o, si no hay, los estados de la última carga guardada en la base, y vuelve a preguntar cada 5 minutos. Con la clave de «Ejecutar ahora» configurada el límite sube |
+| «Centro de operación» dice «GitHub no respondió (…)» | El mensaje trae la causa real. La más común es «GitHub respondió 403: se agotó el límite de consultas sin clave»: GitHub permite 60 consultas por hora sin clave, compartidas por todas las apps del mismo servidor | Nada: el panel muestra la última respuesta guardada o, si no hay, los estados de la última carga guardada en la base, y vuelve a preguntar cada 5 minutos. Con la clave de «Ejecutar ahora» configurada el límite sube |
 | Con un tema claro (Corporativo o Blue Light) las listas, tablas o bloques de código se ven oscuros, o al revés con Vantablack | El panel cambia el modo base de Streamlit solo, una vez por página; si una versión nueva de Streamlit cambió cómo guarda ese modo, el cambio no ocurre (D-052) | Elegir el modo a mano: ⋮ (arriba a la derecha) → Settings → Light para Corporativo y Blue Light, Dark para Vantablack |
 
 ## Tareas del autor y tareas automáticas
@@ -77,7 +77,7 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 
 **Del autor:**
 
-- **Cada martes:** mirar «Operaciones» → «Ejecuciones» o el correo. Si está en verde, no hay nada que hacer.
+- **Cada martes:** mirar el «Centro de operación» o el correo. Si está en verde, no hay nada que hacer.
 - **Cada enero:** agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL de descarga que publica ODEPA en las páginas de cada conjunto de datos (`DISENO.md`, sección 5).
 - **Respaldar `agent/downloads`:** los CSV descargados no se suben al repositorio (D-020) y la caché de GitHub no es un respaldo, porque se borra si no se usa en 7 días. Conviene copiar esa carpeta a otro disco de vez en cuando.
 - **Renovar la clave de GitHub** del botón «Ejecutar ahora» antes de que venza (D-038).
@@ -86,7 +86,7 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 
 Los enlaces del proyecto están en la página «GitHub» del menú, agrupados en código y operación (ejecuciones, informes, historial de cambios: el repositorio en sí ya se abre desde la cabecera de la página) y documentos (este MANUAL y las DECISIONES). Cada recurso tiene una descripción y se abre en una pestaña nueva. El explorador de archivos del panel se retiró: se navega el código directamente en el repositorio. Las dos fuentes de ODEPA tienen su propia carpeta en el menú, «Fuentes».
 
-La tarjeta «🔒 Administración» de «Operaciones» → «Ejecuciones» se abre con la clave de control (secreto `CONTROL_CODE` del panel). Muestra: administrar la app en Streamlit (Reboot, secretos, registros), lanzar el workflow en GitHub, crear un token, ver los tokens, el aviso «Tu token vence en X días» (destacado si faltan menos de 14) y el botón «Ejecutar ahora». El panel nunca muestra el token ni una parte de él.
+En el «Centro de operación», el botón «Ejecutar pipeline ahora» pide la clave de control (secreto `CONTROL_CODE` del panel) y muestra el aviso «Tu token vence en X días» (destacado si faltan menos de 14). Una vez escrita la clave, las explicaciones de «Lanzar» y «Panel» suman los enlaces del autor, con un candado: los tokens de GitHub y la administración de la app en Streamlit (reinicio, secretos, registros). El panel nunca muestra el token ni una parte de él.
 
 **La clave ordena el acceso, pero no es la seguridad real.** Los enlaces de administración llevan a páginas de GitHub y Streamlit que piden su propio inicio de sesión: quien vea la tarjeta sin tener la cuenta del autor no puede cambiar nada. Lo que protege el proyecto es el inicio de sesión de GitHub y Streamlit (con verificación en dos pasos) y que el token tenga solo el permiso de lanzar el workflow de este repositorio. La clave sirve para que el botón «Ejecutar ahora» no lo use cualquier visitante del panel público.
 
@@ -130,7 +130,7 @@ El Dashboard es la página de inicio para todas las visitas. Al recargar se vuel
 
 Las tablas y el código se abren bajo demanda. Las ayudas ⓘ se leen al pasar el mouse, enfocar con teclado o tocar el icono.
 
-La administración (ejecutar el job, tokens y administración de la app publicada) queda en «Arquitectura y operación» → «Ejecuciones», detrás de la clave de control.
+La administración (ejecutar el job, tokens y administración de la app publicada) queda en «Ingeniería de datos» → «Centro de operación», detrás de la clave de control.
 
 
 ### Calidad y trazabilidad
