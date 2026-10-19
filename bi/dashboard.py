@@ -32,7 +32,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                doc_diagrams, document_pdf, github_page, lineage, project, quality, queries, star_model, zoom)
+                doc_diagrams, document_pdf, github_page, lineage, quality_view, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -6764,11 +6764,9 @@ def build_quality_card_html(title, status, evidence):
 
 
 def show_operations_page(mode):
-    """Evidence first: implemented checks, independently checked storage, pending
-    audits — as a card gallery, then the rest behind tabs instead of one long
-    scroll (D-120)."""
-    show_compact_page_header("Calidad y auditoría", "Origen, controles, pruebas dbt y evidencia de los datos "
-                             "que alimentan el panel.")
+    """Evidence end to end, as in the author's mockup: a four-step line (sources, run and
+    dbt, warehouse, results), each step with its checks as illustrated cards, and the
+    detail — dbt rule matrix, file fingerprints, last load (K8) — folded below (D-120)."""
     manifest = read_download_manifest()
     versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
                      for path in sorted(MANIFEST_FILE.parent.glob("*.csv")))
@@ -6777,57 +6775,39 @@ def show_operations_page(mode):
     nodes, results = read_lineage(get_database_version())
     build = lineage.summarize_build(nodes, results)
     parity = read_parity(get_database_version())
+    evidence = quality_view.build_evidence(checks, files, manifest, run, build, parity,
+                                           lambda value: format_chile_time(parse_run_start(value)))
+    st.markdown(quality_view.build_quality_overview_html(evidence, mode), unsafe_allow_html=True)
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
-    matching = sum(item["status"].startswith("Verificado") for item in files)
-    failed = sum(item["status"].startswith("Falla") for item in files)
-    source_state = "Falla detectada" if failed else "Verificado" if files and matching == len(files) else "Pendiente de comprobación"
-    rows = [
-        ["Origen y archivos", "Registro disponible" if manifest else "Sin registro disponible", f"{len(files)} archivos registrados en manifest.json, con fecha y huella SHA-256. Esto identifica las descargas; no certifica cada precio."],
-        ["Integridad de archivos originales", source_state, f"{matching} de {len(files)} archivos locales coinciden con su huella; {failed} discrepancias. Los archivos ausentes no se consideran verificados."],
-        ["Última carga registrada", "Superada" if run["status"] == etl.STATUS_LOADED else "Falla registrada", f"Ejecución {run['run_id']} · {format_chile_time(parse_run_start(run['started_at']))} (Chile) · estado {run['status']}. Es evidencia de la carga guardada, no del último intento remoto."],
-        ["Pruebas dbt de la última construcción", ("Superadas" if build["ok"] else "Falla detectada") if build else "Pendiente",
-         (f"{build['passing']} de {build['tests']} pruebas superadas sobre {build['models']} modelos, el {build['built_at']:%d-%m-%Y}. "
-          "Si una falla, la base publicada no se reemplaza.") if build else "La base aún no trae el resultado de dbt."],
-        ["Comprobación de la base actual", "Verificado · alcance limitado" if database_ok else "Falla detectada", f"DuckDB, leída completa: {'correcta' if checks['integrity_ok'] else 'error'}; referencias inválidas: {checks['foreign_keys']}; claves duplicadas: {checks['duplicates']}; precios utilizables con formato inválido: {checks['invalid']}."],
-        ["Paridad SQLite ↔ DuckDB", ("Verificado" if parity["ok"] else "Falla detectada") if parity else "Pendiente",
-         (f"El respaldo SQLite y el data warehouse DuckDB tienen {charts.format_thousands(parity['rows'][1])} precios y "
-          f"{parity['rejections'][1]} rechazos, y la misma suma de precios (D-154).") if parity else "Sin respaldo SQLite para comparar."],
-        ["Cobertura temporal", "Disponible", f"{checks['weeks']} semanas, desde {checks['first']} hasta {checks['last']}. Es cobertura registrada, no confirmación de que la fuente esté al día."],
-        # D-144, D-146: the audit is automated in tests/test_data_audit.py.
-        ["Reconciliación fuente → base", "Verificado · pruebas automáticas", "Cada ejecución de las pruebas reconstruye 120 precios semanales desde las filas crudas de ODEPA, sin el ETL. En la auditoría del 18-10-2026 coincidieron 400 de 400."],
-        ["Recálculo independiente de indicadores", "Verificado · pruebas automáticas", "Las alertas K6 se calculan en Python y en SQL y deben coincidir (D-049); las variaciones del Resumen se comparan con un cálculo SQL independiente."],
-        ["Concordancia cálculo → pantalla", "Verificado · muestra", "Las cifras de familias, ranking y margen de la semana del 05-10-2026 se recalcularon a mano por región y coinciden con lo que muestra el panel (D-144, D-146)."],
-        ["Contraste con otra fuente", "Pendiente", "No hay una comparación independiente de precios con otra fuente equivalente."],
-    ]
-    st.markdown(build_quality_grid_css(mode), unsafe_allow_html=True)
-    cards = "".join(build_quality_card_html(*row) for row in rows)
-    st.markdown(f'<div class="quality-grid">{cards}</div>', unsafe_allow_html=True)
-    if not database_ok or failed:
+    if not database_ok or any(item["status"].startswith("Falla") for item in files):
         st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
-    st.info("Los precios se reconstruyen desde la fuente y las cifras del panel se recalculan de forma independiente en las pruebas. Falta un contraste con otra fuente de precios: ODEPA es la única fuente oficial de estos datos.")
-    rules_tab, files_tab, run_tab = st.tabs(["Reglas y pruebas dbt", "Evidencia de archivos", "Última carga (K8)"])
-    with rules_tab:
-        matrix = lineage.build_rule_matrix(nodes, results)
-        st.dataframe(matrix, hide_index=True, width="stretch",
-                     column_config={"Regla": st.column_config.TextColumn(width="small"),
-                                    "Pruebas dbt": st.column_config.NumberColumn(width="small")})
-        st.caption("Cada regla del PRD con las pruebas de dbt que la comprueban en cada carga, leídas del "
-                   "resultado de la última construcción.")
-    with files_tab:
-        if files:
-            # One short fingerprint: the registered and the computed ones are equal when
-            # the check passes, so two 64-character columns said the same thing (D-150).
-            evidence = pd.DataFrame(files)
-            evidence["expected"] = evidence["expected"].map(lambda value: f"{str(value)[:12]}…" if value else "—")
-            evidence["downloaded_at"] = pd.to_datetime(evidence["downloaded_at"], errors="coerce").dt.strftime("%d-%m-%Y %H:%M")
-            st.dataframe(evidence[["file", "status", "expected", "downloaded_at"]].rename(columns={
-                "file": "Archivo", "status": "Comprobación", "expected": "Huella SHA-256",
-                "downloaded_at": "Descargado"}), hide_index=True, width="stretch")
-        else:
-            st.info("No hay manifiesto de descargas disponible.")
-        st.markdown(build_link_html("Ver ejecuciones del pipeline →", build_page_address(PAGE_RUNS)), unsafe_allow_html=True)
-    with run_tab:
-        show_quality_tab(mode)
+    with st.container(key=quality_view.EXPANDER_KEY):
+        with st.expander(quality_view.EXPANDER_LABEL, expanded=False, icon=quality_view.EXPANDER_ICON):
+            rules_tab, files_tab, run_tab = st.tabs(["Reglas y pruebas dbt", "Evidencia de archivos", "Última carga (K8)"])
+            with rules_tab:
+                matrix = lineage.build_rule_matrix(nodes, results)
+                st.dataframe(matrix, hide_index=True, width="stretch",
+                             column_config={"Regla": st.column_config.TextColumn(width="small"),
+                                            "Pruebas dbt": st.column_config.NumberColumn(width="small")})
+                st.caption("Cada regla del PRD con las pruebas de dbt que la comprueban en cada carga, leídas del "
+                           "resultado de la última construcción.")
+            with files_tab:
+                if files:
+                    # One short fingerprint: the registered and the computed ones are equal when
+                    # the check passes, so two 64-character columns said the same thing (D-150).
+                    evidence = pd.DataFrame(files)
+                    evidence["expected"] = evidence["expected"].map(lambda value: f"{str(value)[:12]}…" if value else "—")
+                    evidence["downloaded_at"] = pd.to_datetime(evidence["downloaded_at"], errors="coerce").dt.strftime("%d-%m-%Y %H:%M")
+                    st.dataframe(evidence[["file", "status", "expected", "downloaded_at"]].rename(columns={
+                        "file": "Archivo", "status": "Comprobación", "expected": "Huella SHA-256",
+                        "downloaded_at": "Descargado"}), hide_index=True, width="stretch")
+                else:
+                    st.info("No hay manifiesto de descargas disponible.")
+                st.markdown(build_link_html("Ver ejecuciones del pipeline →", build_page_address(PAGE_RUNS)), unsafe_allow_html=True)
+            with run_tab:
+                show_quality_tab(mode)
+
+
 
 
 # endregion
@@ -6883,8 +6863,13 @@ def show_links_page(mode):
     documents (D-106): one hero with the repository, then its three uses —
     automatización, trazabilidad, documentación — each item opening GitHub in a new
     tab (D-116) with its own copy button. ODEPA and the INE live in «Fuentes» (D-118)."""
-    st.html(github_page.build_github_page_html(mode) + github_page.GITHUB_PAGE_SCRIPT,
-            unsafe_allow_javascript=True)
+    # Our own trusted markup, in its own frame: st.html sanitises the SVG gradients,
+    # filters and buttons the page is made of.
+    st.iframe('<!doctype html><html lang="es"><head><meta charset="utf-8">'
+              '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+              '<body style="margin:0;background:transparent">'
+              + github_page.build_github_page_html(mode) + github_page.GITHUB_PAGE_SCRIPT + '</body></html>',
+              height="content")
 
 # endregion
 

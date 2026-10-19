@@ -37,6 +37,8 @@ def read_page_title(app):
         match = re.search(r'class="(?:compact-header|report-title)"><h1[^>]*>([^<]+)</h1>', block.value)
         if not match:
             match=re.search(r'<header class="mock-intro"><div><h1>([^<]+)',block.value)
+        if not match:
+            match = re.search(r'<h1 class="qa-h1">([^<]+)</h1>', block.value)
         if match:
             return html.unescape(match.group(1))
     return None
@@ -1264,6 +1266,8 @@ def test_quality_page_does_not_claim_a_complete_audit_and_keeps_evidence_visible
     # Step 4 of the refonte: the dbt tests, the SQLite ↔ DuckDB parity and the rule matrix.
     assert 'Pruebas dbt de la última construcción' in text and 'Paridad SQLite ↔ DuckDB' in text
     assert [tab.label for tab in app.tabs] == ['Reglas y pruebas dbt', 'Evidencia de archivos', 'Última carga (K8)']
+    # The detail is folded under the four-step overview (author's mockup).
+    assert app.expander and not app.expander[0].proto.expanded
     assert 'RN-14' in list(app.dataframe[0].value['Regla'])
     assert 'Recálculo independiente de indicadores' in text
     assert 'Concordancia cálculo → pantalla' in text

@@ -2,8 +2,10 @@
 
 etl/pipeline.py copies the manifest and the results of the last dbt build into the
 serving database (tables dbt_node and dbt_result). This module turns them into:
-- the DAG of the project, one column per layer (bronze → staging → intermediate → marts),
-  each model with its materialization and the state of its tests;
+- the DAG of the project, one column per layer (bronze → staging → intermediate → marts
+  → the gold datos.duckdb), each model as a tile with its materialization and the state
+  of its tests, the links routed along buses between the columns; hovering a model
+  follows only its inputs and outputs (LINEAGE_SCRIPT), a click pins them;
 - the matrix «business rule → dbt tests → state» of Calidad y auditoría;
 - the one-line lineage badge at the foot of every page.
 Nothing here is typed by hand: a new model or test appears on the next build.
@@ -34,14 +36,14 @@ LAYER_KEYS = {"bronze": "bronze", "staging": "stg", "intermediate": "int", "mart
 MATERIALIZED_KEYS = {"vista": "view", "tabla": "table", "parquet": "parquet"}
 LAYER_LOGOS = {"bronze": "apacheparquet", "staging": "dbt", "intermediate": "dbt", "marts": "dbt",
                "serving": "duckdb"}
-# Title and subtitle of each layer frame, as the journey names its columns.
+# Title and subtitle of each column, as the journey names its steps.
 FRAME_TITLES = {"bronze": ("BRONCE", "Parquet · {count} fuentes"),
                 "staging": ("STAGING", "dbt · {count} vistas"),
                 "intermediate": ("INTERMEDIO", "dbt · {count} tablas"),
                 "marts": ("MARTS", "dbt · {count} modelos y pruebas"),
                 "serving": ("ORO", "DuckDB · servida al panel")}
-# The tile icon of each node, from the journey's own set: the Parquet and dbt logos
-# for the files and the views, and a picture of what each table does after them.
+# The tile icon of each node, from the journey's own set: the dbt logo for the views,
+# and a picture of what each table does after them.
 NODE_ICONS = {"int_prices__validated": architecture.draw_funnel_icon,
               "int_prices__units_normalized": architecture.draw_sliders_icon,
               "int_prices__weekly": architecture.draw_clock_icon,
@@ -54,18 +56,35 @@ NODE_ICONS = {"int_prices__validated": architecture.draw_funnel_icon,
               "ine_ipc_source": architecture.draw_file_icon}
 LAYER_ICONS = {"bronze": architecture.draw_parquet_icon, "staging": architecture.draw_dbt_icon,
                "intermediate": architecture.draw_dbt_icon, "marts": architecture.draw_database_icon}
-# The chip of the links that leave each layer, as on the journey.
-LAYER_CHIPS = {"bronze": "sources", "staging": "stg_*", "intermediate": "int_*", "marts": "OK"}
 
-TILE = 48           # the journey's 64 px tile, at three quarters
-PITCH = 66          # one row: a tile and the gap under it
-TOP = 40            # above the frames: the dbt bracket, as the journey frames dbt
-HEAD = 62           # frame title and subtitle, above the first row
-PAD = 16            # inside a frame, around its nodes
-GAP = 78            # between two frames: room for the links and their chip
-SIDE = 14
+# Geometry of the drawing (SVG units): five columns, the marts set the rows.
+WIDTH = 1600
+HEIGHT = 800
+SIDE = 18
+SUBTITLE_Y = 24        # the line «dbt Core · staging → intermedio → marts · …»
+HEADER_Y = 70          # baseline of a column title; its subtitle goes 19 below
+FIRST_ROW = 156        # centre of the highest model
+LAST_ROW = 700         # lowest centre a model may take
+MART_PITCH = 70
+LEGEND_Y = 772
+TILE = 54
+GOLD = 92
 NAME_SIZE = 14
-SERVING_WIDTH = 200
+PORT = 9               # intermediate links run over the tile's name, 9 above its centre
+COLUMN_X = {"bronze": 92, "staging": 352, "intermediate": 604, "marts": 1114, "serving": 1494}
+HEADER_X = {"bronze": 40, "staging": 304, "intermediate": 562, "marts": 1074, "serving": 1400}
+DIVIDERS = [222, 478, 990, 1384]
+STAGING_BUS = 524      # where the staging views meet before the intermediate chain
+MART_LANE = 1046       # where a model turns down or up to its marts
+GOLD_BUS = 1346        # where the marts meet before datos.duckdb
+LANE_STEP = 14
+MIN_GAP = {"bronze": 190, "staging": 190, "intermediate": 116}
+BELOW = ("bronze", "staging")   # name under the tile; the dbt tables carry it beside
+LIT = {"dark": "#ff5ca8", "light": "#d6337a"}
+FLOW_SECONDS = 3.6
+HINT = ("Pasa el mouse por un modelo para seguir únicamente sus entradas y salidas. "
+        "Haz clic para fijar el recorrido.")
+GOLD_ID = "datos.duckdb"
 
 # What each rule guarantees, in the words of the PRD. A singular test carries its rule
 # in its name (rn14_…, rnf05_…, d155_…); generic tests are grouped by what they check.
@@ -166,10 +185,28 @@ def build_badge_html(summary):
 # endregion
 
 
+
+
 # region DAG
 def tech_tip(svg_part, explanation):
     """A piece that explains its technology on hover (inner title: it wins over the node's)."""
     return architecture.add_tech_explanation(svg_part, explanation)
+
+
+def depth_in_layer(columns):
+    """{node id: how many models of its own layer it reads through} (0 for the first)."""
+    depth = {}
+    for items in columns.values():
+        same = {node["unique_id"]: node for node in items}
+
+        def depth_of(node_id):
+            if node_id not in depth:
+                depth[node_id] = 1 + max((depth_of(parent) for parent in same[node_id]["depends_on"]
+                                          if parent in same), default=-1)
+            return depth[node_id]
+        for node_id in same:
+            depth_of(node_id)
+    return depth
 
 
 def order_layers(nodes):
@@ -180,50 +217,99 @@ def order_layers(nodes):
     for node in nodes[nodes["resource_type"].isin(["model", "source"])].to_dict("records"):
         if node["layer"] in columns:
             columns[node["layer"]].append(node)
+    depth = depth_in_layer(columns)
     row = {}
     for layer, _, _ in LAYERS:
-        same = {node["unique_id"]: node for node in columns[layer]}
-        depth = {}
-        def depth_of(node_id):
-            if node_id not in depth:
-                depth[node_id] = 1 + max((depth_of(parent) for parent in same[node_id]["depends_on"]
-                                          if parent in same), default=-1)
-            return depth[node_id]
         def weight(node):
             parents = [row[parent] for parent in node["depends_on"] if parent in row]
-            return (depth_of(node["unique_id"]), sum(parents) / len(parents) if parents else 0, node["name"])
+            return depth[node["unique_id"]], sum(parents) / len(parents) if parents else 0, node["name"]
         columns[layer].sort(key=weight)
         for index, node in enumerate(columns[layer]):
             row[node["unique_id"]] = index
     return columns
 
 
+def place_rows(ids, wishes, gap):
+    """Centres of one column, in order: each as close to its wish (the mean row of what it
+    feeds) as the gap to the one above allows, all inside the drawing."""
+    rows = []
+    for node_id in ids:
+        wish = wishes.get(node_id)
+        if not rows:
+            rows.append(max(FIRST_ROW, wish if wish is not None else FIRST_ROW))
+        else:
+            rows.append(max(rows[-1] + gap, wish if wish is not None else rows[-1] + gap))
+    for index in range(len(rows) - 1, -1, -1):  # too low: slide back up, keeping the gap
+        rows[index] = min(rows[index], LAST_ROW - (len(rows) - 1 - index) * gap)
+    return dict(zip(ids, rows))
+
+
+def lay_out(columns):
+    """{node id: (x, y)}. The marts set the rows; every other column sits level with what
+    it feeds, so most links run straight. Twice: the marts then follow their parents."""
+    layer_of = {node["unique_id"]: layer for layer, items in columns.items() for node in items}
+    children = {node_id: [] for node_id in layer_of}
+    for items in columns.values():
+        for node in items:
+            for parent in node["depends_on"]:
+                if parent in children:
+                    children[parent].append(node["unique_id"])
+    depth = depth_in_layer(columns)
+    marts = [node["unique_id"] for node in columns["marts"]]
+    y = {}
+    for _ in range(2):
+        pitch = min(MART_PITCH, (LAST_ROW - FIRST_ROW) / max(1, len(marts) - 1))
+        y.update({node_id: FIRST_ROW + index * pitch for index, node_id in enumerate(marts)})
+        for layer in ("intermediate", "staging", "bronze"):
+            ids = [node["unique_id"] for node in columns[layer]]
+            wishes = {}
+            for node_id in ids:
+                fed = [y[child] for child in children[node_id] if layer_of[child] != layer and child in y]
+                if fed:
+                    wishes[node_id] = sum(fed) / len(fed) + (PORT if layer == "intermediate" else 0)
+            y.update(place_rows(ids, wishes, MIN_GAP[layer]))
+        parents_of = {node["unique_id"]: [y[parent] for parent in node["depends_on"]
+                                          if parent in y and layer_of[parent] != "marts"]
+                      for node in columns["marts"]}
+        before = {node_id: index for index, node_id in enumerate(marts)}
+        marts.sort(key=lambda node_id: (depth[node_id], sum(parents_of[node_id]) / len(parents_of[node_id])
+                                        if parents_of[node_id] else LAST_ROW, before[node_id]))
+    return {node_id: (COLUMN_X[layer_of[node_id]], y[node_id]) for node_id in layer_of}
+
+
 def text_width(text, size):
-    """Approximate width in SVG units of a bold label (Source Sans Pro)."""
-    return len(text) * size * 0.5
+    """Approximate width in SVG units of a bold label (Source Sans Pro or its fallback)."""
+    return len(text) * size * 0.56
+
+
+def mix(color, other, share):
+    """color moved share of the way towards other (both #rrggbb)."""
+    first = [int(color[index:index + 2], 16) for index in (1, 3, 5)]
+    second = [int(other[index:index + 2], 16) for index in (1, 3, 5)]
+    return "#" + "".join(f"{round(a + (b - a) * share):02x}" for a, b in zip(first, second))
 
 
 def measure_pill(label, mark=None, slug=None):
     """Width of a pill: its label, plus its mark or its logo."""
-    return 12 + len(label) * 5.6 + (9 if mark else 0) + (16 if slug else 0)
+    return 14 + len(label) * 5.9 + (10 if mark else 0) + (17 if slug else 0)
 
 
 def build_pill(x, y, label, palette, explanation, mark=None, mark_color=None, slug=None):
     """A pill of the journey's technology row (architecture.build_stack_badge): the
     same field, border, logo and type, or a coloured mark before the label."""
     width = measure_pill(label, mark, slug)
-    cursor = x + 6
-    parts = [f'<rect x="{x:.1f}" y="{y - 8:.1f}" width="{width:.1f}" height="16" rx="8" '
+    cursor = x + 7
+    parts = [f'<rect x="{x:.1f}" y="{y - 9:.1f}" width="{width:.1f}" height="18" rx="9" '
              f'fill="{palette["field"]}" stroke="{palette["card_border"]}" stroke-width="1"/>']
     if slug:
-        parts.append(brand_icons.logo(slug, cursor, y - 6.5, palette["text"], 13))
-        cursor += 16
+        parts.append(brand_icons.logo(slug, round(cursor, 1), round(y - 6.5, 1), palette["strong_text"], 13))
+        cursor += 17
     if mark:
-        parts.append(f'<text x="{cursor:.1f}" y="{y + 3.3:.1f}" font-size="9.5" font-weight="700" '
+        parts.append(f'<text x="{cursor:.1f}" y="{y + 3.6:.1f}" font-size="10.5" font-weight="700" '
                      f'fill="{mark_color}">{mark}</text>')
-        cursor += 9
-    parts.append(f'<text x="{cursor:.1f}" y="{y + 3.3:.1f}" font-size="9.5" font-weight="600" '
-                 f'fill="{palette["text"]}">{html.escape(label)}</text>')
+        cursor += 10
+    parts.append(f'<text x="{cursor:.1f}" y="{y + 3.6:.1f}" font-size="10" font-weight="600" '
+                 f'fill="{palette["strong_text"]}">{html.escape(label)}</text>')
     return tech_tip("".join(parts), explanation), width
 
 
@@ -235,10 +321,13 @@ def node_pills(kind, total, passing):
     return pills
 
 
+def pills_width(kind, total, passing):
+    return sum(measure_pill(label, mark, slug) + 6 for label, mark, _, slug in node_pills(kind, total, passing)) - 6
+
+
 def node_width(node, kind, total, passing):
-    """Tile, name and pills of a node, from the tile's left edge to the end of its text."""
-    pills = sum(measure_pill(label, mark, slug) + 5 for label, mark, _, slug in node_pills(kind, total, passing))
-    return TILE + 10 + max(text_width(node["name"], NAME_SIZE), pills - 5)
+    """Name or pills, whichever is wider."""
+    return max(text_width(node["name"], NAME_SIZE), pills_width(kind, total, passing))
 
 
 def node_tooltip(node, kind, total, passing, reads):
@@ -253,63 +342,194 @@ def node_tooltip(node, kind, total, passing, reads):
     return "\n".join(line for line in lines if line)
 
 
-def build_frame(x, y, width, height, layer, count, palette):
-    """A layer in the journey's dashed, tinted frame, with its logo, name and subtitle."""
+TOOLTIPS_SERVING = architecture.TOOLTIPS["datos.duckdb"]
+TILE_KEYS = {"bronze": "bronze", "staging": "dbt", "intermediate": "dbt", "marts": "marts", "serving": "gold"}
+TILE_COLORS = {"bronze": LAYER_COLORS["bronze"], "dbt": LAYER_COLORS["staging"],
+               "marts": LAYER_COLORS["marts"], "gold": LAYER_COLORS["serving"]}
+
+
+def is_dark(palette):
+    return palette.get("base") == charts.BASE_DARK
+
+
+def build_defs(suffix, palette):
+    """Gradients of the glossy tiles, their glow (dark themes) or soft shadow (light
+    themes), and one arrowhead per link colour."""
+    dark = is_dark(palette)
+    parts = ['<defs>',
+             f'<linearGradient id="lin-gloss-{suffix}" x1="0" y1="0" x2="0" y2="1">'
+             '<stop offset="0" stop-color="#ffffff" stop-opacity=".62"/>'
+             '<stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>']
+    for key, color in TILE_COLORS.items():
+        parts.append(f'<linearGradient id="lin-face-{key}-{suffix}" x1="0" y1="0" x2="1" y2="1">'
+                     f'<stop offset="0" stop-color="{mix(color, "#ffffff", .38)}"/>'
+                     f'<stop offset=".5" stop-color="{color}"/>'
+                     f'<stop offset="1" stop-color="{mix(color, "#000000", .42)}"/></linearGradient>')
+        if dark:
+            parts.append(f'<filter id="lin-glow-{key}-{suffix}" x="-60%" y="-60%" width="220%" height="220%">'
+                         f'<feGaussianBlur in="SourceAlpha" stdDeviation="9" result="blur"/>'
+                         f'<feFlood flood-color="{color}" flood-opacity=".55"/>'
+                         '<feComposite in2="blur" operator="in" result="glow"/>'
+                         '<feMerge><feMergeNode in="glow"/><feMergeNode in="SourceGraphic"/></feMerge></filter>')
+        else:
+            parts.append(f'<filter id="lin-glow-{key}-{suffix}" x="-40%" y="-40%" width="180%" height="190%">'
+                         '<feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#0f172a" '
+                         'flood-opacity=".16"/></filter>')
+    gold = TILE_COLORS["gold"]
+    parts.append(f'<linearGradient id="lin-barrel-{suffix}" x1="0" y1="0" x2="1" y2="0">'
+                 f'<stop offset="0" stop-color="{mix(gold, "#000000", .38)}"/>'
+                 f'<stop offset=".32" stop-color="{mix(gold, "#ffffff", .42)}"/>'
+                 f'<stop offset=".62" stop-color="{gold}"/>'
+                 f'<stop offset="1" stop-color="{mix(gold, "#000000", .5)}"/></linearGradient>')
+    if dark:
+        parts.append(f'<filter id="lin-wire-{suffix}" filterUnits="userSpaceOnUse" x="0" y="0" '
+                     f'width="{WIDTH}" height="{HEIGHT}"><feGaussianBlur stdDeviation="2.4" result="blur"/>'
+                     '<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>')
+    for key, color in arrow_colors(palette).items():
+        parts.append(f'<marker id="lin-arrow-{key}-{suffix}" viewBox="0 0 10 10" refX="8.5" refY="5" '
+                     f'markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto">'
+                     f'<path d="M0,0.6 L10,5 L0,9.4 z" fill="{color}"/></marker>')
+    parts.append('</defs>')
+    return "".join(parts)
+
+
+def arrow_colors(palette):
+    """The colour of each kind of link: the layer it leaves, and the two states of a selection."""
+    return {"bronze": LAYER_COLORS["bronze"], "dbt": LAYER_COLORS["staging"], "marts": LAYER_COLORS["marts"],
+            "lit": LIT["dark" if is_dark(palette) else "light"], "dim": palette["reference"]}
+
+
+def build_style(suffix, palette):
+    """How a selection looks: its models and links lit, everything else dimmed. The
+    classes are toggled by LINEAGE_SCRIPT."""
+    lit, dim = arrow_colors(palette)["lit"], arrow_colors(palette)["dim"]
+    graph = f".lin-{suffix}"
+    return f"""<style>
+    {graph} .lin-node, {graph} .lin-edge, {graph} .lin-joint {{ transition: opacity .18s ease, stroke .18s ease, fill .18s ease; }}
+    {graph} .lin-node {{ cursor: pointer; }}
+    {graph} .lin-node:focus {{ outline: none; }}
+    {graph} .lin-edge.lin-extra, {graph} .lin-joint.lin-extra {{ opacity: 0; }}
+    {graph}.lin-active .lin-node {{ opacity: .2; }}
+    {graph}.lin-active .lin-node.lin-on {{ opacity: 1; }}
+    {graph}.lin-active .lin-edge {{ stroke: {dim}; opacity: .3; marker-end: url(#lin-arrow-dim-{suffix}); }}
+    {graph}.lin-active .lin-edge.lin-on {{ stroke: {lit}; opacity: 1; stroke-width: 2.6;
+                                          marker-end: url(#lin-arrow-lit-{suffix}); }}
+    {graph}.lin-active .lin-joint {{ fill: {dim}; opacity: .3; }}
+    {graph}.lin-active .lin-joint.lin-on {{ fill: {lit}; opacity: 1; }}
+    {graph}.lin-active .lin-extra:not(.lin-on) {{ opacity: 0; }}
+    {graph}.lin-active .lin-flow {{ display: none; }}
+    {graph}.lin-active .lin-flow.lin-on {{ display: inline; fill: {lit}; }}
+    {graph} .lin-node.lin-focus .lin-face {{ stroke: {lit}; stroke-width: 2.4; stroke-opacity: 1; }}
+    @media (prefers-reduced-motion: reduce) {{
+      {graph} .lin-flow {{ display: none !important; }}
+      {graph} .lin-node, {graph} .lin-edge, {graph} .lin-joint {{ transition: none; }}
+    }}
+    </style>"""
+
+
+def build_subtitle(summary, palette):
+    """«dbt Core · staging → intermedio → marts · 16 modelos · 31/31 pruebas»."""
+    rest = " · staging → intermedio → marts"
+    rest += (f" · {summary['models']} modelos · {summary['passing']}/{summary['tests']} pruebas"
+             if summary else " · sin construcción")
+    text = (f'<text x="{SIDE}" y="{SUBTITLE_Y}" font-size="14"><tspan font-weight="700" '
+            f'fill="{LAYER_COLORS["staging"]}">dbt Core</tspan><tspan fill="{palette["text"]}">'
+            f'{html.escape(rest)}</tspan></text>')
+    return tech_tip(text, tech_glossary.describe("dbt"))
+
+
+def build_header(layer, count, palette):
+    """A column's logo, name in its layer colour and subtitle, as the journey heads its steps."""
     color = LAYER_COLORS[layer]
+    ink = color if is_dark(palette) else mix(color, "#000000", .22)
     title, subtitle = FRAME_TITLES[layer]
     subtitle = subtitle.format(count=count)
-    center = x + width / 2
-    title_width = len(title) * 13 * 0.62 + len(title)
+    x = HEADER_X[layer]
     slug = LAYER_LOGOS[layer]
-    logo = brand_icons.logo(slug, center - title_width / 2 - 24, y + 11, color, 18)
     explanation = tech_glossary.describe(LAYER_KEYS[layer]) if layer in LAYER_KEYS else TOOLTIPS_SERVING
-    return (f'<rect x="{x:.1f}" y="{y:.1f}" width="{width:.1f}" height="{height:.1f}" rx="14" '
-            f'fill="{color}" fill-opacity=".07" stroke="{color}" stroke-opacity=".7" '
-            f'stroke-width="1.4" stroke-dasharray="6 4"/>'
-            + tech_tip(logo, tech_glossary.describe(tech_glossary.LOGO_KEYS[slug]))
-            + tech_tip(f'<text x="{center:.1f}" y="{y + 25:.1f}" text-anchor="middle" font-size="13" '
-                       f'font-weight="700" letter-spacing="1" fill="{color}">{title}</text>', explanation)
-            + tech_tip(f'<text x="{center:.1f}" y="{y + 44:.1f}" text-anchor="middle" font-size="12" '
+    logo = brand_icons.logo(slug, x, HEADER_Y - 22, color, 30)
+    return (tech_tip(logo, tech_glossary.describe(tech_glossary.LOGO_KEYS[slug]))
+            + tech_tip(f'<text x="{x + 40}" y="{HEADER_Y}" font-size="16" font-weight="700" '
+                       f'letter-spacing="1.3" fill="{ink}">{title}</text>', explanation)
+            + tech_tip(f'<text x="{x + 40}" y="{HEADER_Y + 19}" font-size="12.5" '
                        f'fill="{palette["text"]}">{html.escape(subtitle)}</text>',
                        tech_glossary.describe_words(subtitle)))
 
 
-TOOLTIPS_SERVING = architecture.TOOLTIPS["datos.duckdb"]
+def build_dividers(palette):
+    """Subtle vertical lines between the columns, no heavy frames."""
+    color = palette["card_border"] if is_dark(palette) else palette["grid"]
+    return "".join(f'<path d="M{x} {HEADER_Y - 28} V{LEGEND_Y - 30}" stroke="{color}" stroke-width="1" '
+                   f'stroke-dasharray="3 5" opacity=".9"/>' for x in DIVIDERS)
 
 
-def build_dbt_bracket(left, right, summary):
-    """The journey's dbt frame label over the three dbt layers: these are the three
-    steps of the journey that this view opens model by model."""
-    color = architecture.LAYER_COLORS["processing"]
-    label = "dbt CORE · staging → intermedio → marts"
-    if summary:
-        label += f" · {summary['models']} modelos · {summary['passing']}/{summary['tests']} pruebas"
-    center = (left + right) / 2
-    half = len(label) * 12 * 0.3 + 12
-    y = TOP - 18
-    line = (f'<path d="M{left + 14:.1f} {TOP:.1f} V{y:.1f} H{center - half:.1f} M{center + half:.1f} {y:.1f} '
-            f'H{right - 14:.1f} V{TOP:.1f}" fill="none" stroke="{color}" stroke-opacity=".7" stroke-width="1.4" '
-            f'stroke-dasharray="6 4"/>')
-    text = (f'<text x="{center:.1f}" y="{y + 4:.1f}" text-anchor="middle" font-size="12" font-weight="700" '
-            f'letter-spacing=".6" fill="{color}">{html.escape(label)}</text>')
-    return line + tech_tip(text, tech_glossary.describe("dbt"))
+def draw_tile(x, y, key, suffix, palette, size=TILE):
+    """A glossy, raised tile: a darker side under it, the face lit from the top left, a
+    gloss over its top and a glow (dark themes) or a soft shadow (light themes)."""
+    color = TILE_COLORS[key]
+    half = size / 2
+    return (f'<g filter="url(#lin-glow-{key}-{suffix})">'
+            f'<rect x="{x - half + 3:.1f}" y="{y - half + 5:.1f}" width="{size}" height="{size}" rx="13" '
+            f'fill="{mix(color, "#000000", .55)}"/>'
+            f'<rect class="lin-face" x="{x - half:.1f}" y="{y - half:.1f}" width="{size}" height="{size}" rx="13" '
+            f'fill="url(#lin-face-{key}-{suffix})" stroke="{mix(color, "#ffffff", .5)}" stroke-opacity=".75" '
+            f'stroke-width="1.2"/>'
+            f'<rect x="{x - half + 3:.1f}" y="{y - half + 3:.1f}" width="{size - 6}" height="{size * .44:.1f}" '
+            f'rx="10" fill="url(#lin-gloss-{suffix})" opacity=".55"/></g>')
 
 
-def build_lineage_node(x, y, node, layer, kind, total, passing, reads, palette):
-    """A model as a journey step: the tile with its icon and status dot, its name beside
-    it and, under the name, the journey's pills (materialization, tests)."""
-    color = LAYER_COLORS[layer]
-    half = TILE / 2
-    left = x - half
-    draw_icon = NODE_ICONS.get(node["name"], LAYER_ICONS[layer])
-    scale = TILE / architecture.TILE_SIZE
-    parts = [f'<rect x="{left:.1f}" y="{y - half:.1f}" width="{TILE}" height="{TILE}" rx="12" '
-             f'fill="{palette["card"]}" stroke="{color}" stroke-width="1.5"/>',
-             f'<g transform="translate({x:.1f} {y:.1f}) scale({scale}) translate({-x:.1f} {-y:.1f})">'
-             f'{architecture.draw_tile_icon(draw_icon, x, y, color)}</g>',
-             f'<text x="{left + TILE + 10:.1f}" y="{y - 4:.1f}" font-size="{NAME_SIZE}" font-weight="700" '
-             f'fill="{palette["strong_text"]}">{html.escape(node["name"])}</text>']
-    cursor = left + TILE + 10
+def draw_stack(x, y, suffix):
+    """Bronze: four glossy Parquet slabs, one on the other."""
+    color = TILE_COLORS["bronze"]
+    parts = [f'<g filter="url(#lin-glow-bronze-{suffix})">']
+    for level in range(4):
+        middle = y + 14 - level * 10
+        side = (f"M{x - 26} {middle - 1} L{x} {middle + 9} L{x + 26} {middle - 1} V{middle + 5} "
+                f"L{x} {middle + 15} L{x - 26} {middle + 5} Z")
+        top = f"M{x} {middle - 11} L{x + 26} {middle - 1} L{x} {middle + 9} L{x - 26} {middle - 1} Z"
+        face = ' class="lin-face"' if level == 3 else ""
+        parts.append(f'<path d="{side}" fill="{mix(color, "#000000", .4)}"/>'
+                     f'<path{face} d="{top}" fill="url(#lin-face-bronze-{suffix})" '
+                     f'stroke="{mix(color, "#ffffff", .55)}" stroke-width="1" stroke-opacity=".8"/>')
+    top = y + 14 - 30
+    parts.append(f'<path d="M{x - 13} {top - 6} L{x + 13} {top + 4} M{x - 13} {top + 4} L{x + 13} {top - 6}" '
+                 f'stroke="#ffffff" stroke-opacity=".35" stroke-width="1"/></g>')
+    return "".join(parts)
+
+
+def draw_barrel(x, y, suffix):
+    """The gold datos.duckdb: a glossy cylinder with the DuckDB logo on its front."""
+    color = TILE_COLORS["gold"]
+    rx, ry, top, bottom = 42, 13, y - 32, y + 32
+    body = f"M{x - rx} {top} V{bottom} A{rx} {ry} 0 0 0 {x + rx} {bottom} V{top} Z"
+    logo = brand_icons.logo("duckdb", x - 18, y - 12, mix(color, "#000000", .72), 36)
+    return (f'<g filter="url(#lin-glow-gold-{suffix})">'
+            f'<path d="{body}" fill="url(#lin-barrel-{suffix})" stroke="{mix(color, "#ffffff", .35)}" '
+            f'stroke-width="1.2"/>'
+            f'<path d="M{x - rx} {y + 2} A{rx} {ry} 0 0 0 {x + rx} {y + 2}" fill="none" '
+            f'stroke="{mix(color, "#000000", .3)}" stroke-opacity=".5" stroke-width="1"/>'
+            f'<ellipse class="lin-face" cx="{x}" cy="{top}" rx="{rx}" ry="{ry}" fill="{mix(color, "#ffffff", .45)}" '
+            f'stroke="{mix(color, "#ffffff", .7)}" stroke-width="1.2"/>'
+            f'<ellipse cx="{x}" cy="{top}" rx="{rx - 9}" ry="{ry - 4}" fill="{mix(color, "#000000", .12)}" '
+            f'opacity=".55"/>'
+            f'<rect x="{x - 30}" y="{top + 8}" width="7" height="{bottom - top - 2}" rx="3.5" fill="#ffffff" '
+            f'opacity=".28"/></g>'
+            + tech_tip(logo, tech_glossary.describe(tech_glossary.LOGO_KEYS["duckdb"])))
+
+
+def draw_status(x, y, ok, palette):
+    """The journey's status dot: green when every test passes, red otherwise."""
+    color = architecture.STATE_COLORS[control.RUN_OK if ok else control.RUN_FAILED]
+    halo = (f'<circle cx="{x:.1f}" cy="{y:.1f}" r="11" fill="{color}" opacity=".28"/>'
+            if is_dark(palette) else "")
+    return halo + (f'<circle class="lin-status" cx="{x:.1f}" cy="{y:.1f}" r="6.5" fill="{color}" '
+                   f'stroke="{palette["card"]}" stroke-width="2.5"/>')
+
+
+def build_pill_row(x, y, kind, total, passing, node, palette, centered):
+    """Materialization and tests, side by side; centred on x or starting at it."""
+    cursor = x - pills_width(kind, total, passing) / 2 if centered else x
+    parts = []
     for label, mark, ok, slug in node_pills(kind, total, passing):
         if mark:
             explanation = (f"Pruebas de dbt que leen {node['name']}: {passing} de {total} superadas "
@@ -318,131 +538,382 @@ def build_lineage_node(x, y, node, layer, kind, total, passing, reads, palette):
         else:
             explanation = tech_glossary.describe(MATERIALIZED_KEYS[label]) if label in MATERIALIZED_KEYS else ""
             mark_color = None
-        pill, width = build_pill(cursor, y + 13, label, palette, explanation, mark, mark_color,
-                                 None if mark else slug)
+        pill, width = build_pill(cursor, y, label, palette, explanation, mark, mark_color, None if mark else slug)
         parts.append(pill)
-        cursor += width + 5
-    # The journey's status dot: only a model with tests has a real state.
-    if total:
-        state = control.RUN_OK if passing == total else control.RUN_FAILED
-        parts.append(f'<circle cx="{x + half - 4:.1f}" cy="{y - half + 4:.1f}" r="7" '
-                     f'fill="{architecture.STATE_COLORS[state]}" stroke="{palette["card"]}" stroke-width="2.5"/>')
-    return architecture.add_tooltip("".join(parts), node_tooltip(node, kind, total, passing, reads))
+        cursor += width + 6
+    return "".join(parts)
 
 
-def flow_dot(path, color, index):
-    """A dot travelling along a link, like the journey's (hidden with reduced motion)."""
-    return (f'<circle class="journey-flow" r="3.5" fill="{color}"><animateMotion dur="2.4s" '
-            f'begin="-{index * .37 % 2.4:.2f}s" repeatCount="indefinite" path="{path}"/></circle>')
+def node_attributes(node_id, up, down):
+    """What LINEAGE_SCRIPT reads: the node and its direct inputs and outputs."""
+    return (f'class="lin-node" tabindex="0" data-node="{html.escape(node_id)}" '
+            f'data-up="{html.escape(" ".join(up))}" data-down="{html.escape(" ".join(down))}"')
+
+
+def build_lineage_node(x, y, node, layer, kind, total, passing, reads, up, down, palette, suffix):
+    """A model: its glossy tile with an icon and status dot, its name (under the tile for
+    bronze and staging, beside it for the dbt tables) and its pills."""
+    half = TILE / 2
+    if layer == "bronze":
+        tile = draw_stack(x, y, suffix)
+        dot = (x + 26, y - 22)
+    else:
+        draw_icon = NODE_ICONS.get(node["name"], LAYER_ICONS[layer])
+        icon = architecture.draw_tile_icon(draw_icon, x, y, "#ffffff")
+        scale = .84 if draw_icon in architecture.ICON_LOGO_SLUG else .8
+        tile = (draw_tile(x, y, TILE_KEYS[layer], suffix, palette)
+                + f'<g transform="translate({x} {y}) scale({scale}) translate({-x} {-y})" '
+                  f'opacity=".96">{icon}</g>')
+        dot = (x + half - 1, y - half + 1)
+    width = node_width(node, kind, total, passing)
+    if layer in BELOW:
+        name = (f'<text x="{x}" y="{y + half + 24}" text-anchor="middle" font-size="{NAME_SIZE}" '
+                f'font-weight="700" fill="{palette["strong_text"]}">{html.escape(node["name"])}</text>')
+        pills = build_pill_row(x, y + half + 44, kind, total, passing, node, palette, True)
+        box = (x - width / 2 - 6, y - half - 8, width + 12, TILE + 64)
+    else:
+        left = x + half + 16
+        name_y, pills_y = (y + 15, y + 38) if layer == "intermediate" else (y - 5, y + 16)
+        name = (f'<text x="{left}" y="{name_y}" font-size="{NAME_SIZE}" font-weight="700" '
+                f'fill="{palette["strong_text"]}">{html.escape(node["name"])}</text>')
+        pills = build_pill_row(left, pills_y, kind, total, passing, node, palette, False)
+        box = (x - half - 6, y - half - 6, half + 22 + width + 6, max(TILE + 14, pills_y + 12 - (y - half - 6)))
+    hit = (f'<rect x="{box[0]:.1f}" y="{box[1]:.1f}" width="{box[2]:.1f}" height="{box[3]:.1f}" rx="10" '
+           f'fill="#000" fill-opacity="0"/>')
+    status = draw_status(*dot, passing == total, palette) if total else ""
+    return (f'<g {node_attributes(node["unique_id"], up, down)}>'
+            f'<title>{html.escape(node_tooltip(node, kind, total, passing, reads))}</title>'
+            f'{hit}{tile}{status}{name}{pills}</g>')
+
+
+def build_gold_node(x, y, marts, summary, palette, suffix):
+    """datos.duckdb, the gold node where the journey goes on: what every mart feeds."""
+    half = GOLD / 2
+    detail = f"{summary['passing']}/{summary['tests']} pruebas" if summary else "sin construcción"
+    pill, width = build_pill(x - measure_pill("DuckDB", slug="duckdb") / 2, y + half + 40, "DuckDB", palette,
+                             tech_glossary.describe(tech_glossary.LOGO_KEYS["duckdb"]), slug="duckdb")
+    status = (draw_status(x + 38, y - 40, summary["ok"], palette) if summary else "")
+    lines = "".join(f'<text x="{x}" y="{y + half + 70 + index * 18}" text-anchor="middle" font-size="13" '
+                    f'fill="{palette["text"]}">{html.escape(line)}</text>'
+                    for index, line in enumerate(["capa oro · modelo estrella", detail]))
+    hit = (f'<rect x="{x - 92}" y="{y - half - 8}" width="184" height="{GOLD + 108}" rx="12" '
+           f'fill="#000" fill-opacity="0"/>')
+    return (f'<g {node_attributes(GOLD_ID, marts, [])}><title>{html.escape(TOOLTIPS_SERVING)}</title>{hit}'
+            f'{draw_barrel(x, y, suffix)}{status}'
+            f'<text x="{x}" y="{y + half + 20}" text-anchor="middle" font-size="16" font-weight="700" '
+            f'fill="{palette["strong_text"]}">datos.duckdb</text>{pill}{lines}</g>')
+
+
+def allocate_lanes(spans, base):
+    """{key: x}: one vertical lane per key, its span (top, bottom) never overlapping
+    another on the same lane; lanes step left of base."""
+    lanes, taken = {}, []
+    for key, (top, bottom) in sorted(spans.items(), key=lambda item: item[1]):
+        index = 0
+        while any(lane == index and top < used_bottom + 12 and bottom > used_top - 12
+                  for lane, used_top, used_bottom in taken):
+            index += 1
+        taken.append((index, top, bottom))
+        lanes[key] = base - index * LANE_STEP
+    return lanes
+
+
+def route_edges(position, by_id, layer_of, ends, gold):
+    """Every link as orthogonal segments: bronze straight into staging, staging along a
+    bus into the intermediate chain, the chain down its column, elbows into the marts and
+    the marts along a bus into datos.duckdb. A link inside the marts is drawn only when a
+    selection includes it. [(from, to, path, colour key, joints, extra)]."""
+    half = TILE / 2
+
+    def port(node_id):
+        x, y = position[node_id]
+        return y - PORT if layer_of[node_id] == "intermediate" else y
+
+    def out_x(node_id):
+        x, _ = position[node_id]
+        return ends[node_id] + 8 if layer_of[node_id] == "marts" else x + half + 4
+
+    links = [(parent, node["unique_id"]) for node in by_id.values() for parent in node["depends_on"]
+             if parent in position]
+    color_key = {"bronze": "bronze", "staging": "dbt", "intermediate": "dbt", "marts": "marts"}
+    to_int = {}
+    to_marts = {}
+    for parent, child in links:
+        if layer_of[child] == "intermediate" and layer_of[parent] != "intermediate":
+            to_int.setdefault(child, []).append(port(parent))
+        if layer_of[child] == "marts" and layer_of[parent] != "marts":
+            to_marts.setdefault(parent, []).append(position[child][1])
+    int_lanes = allocate_lanes({child: (min(ys + [port(child)]), max(ys + [port(child)]))
+                                for child, ys in to_int.items()}, STAGING_BUS)
+    mart_lanes = allocate_lanes({parent: (min(ys + [port(parent)]), max(ys + [port(parent)]))
+                                 for parent, ys in to_marts.items()}, MART_LANE)
+    edges = []
+    for parent, child in links:
+        (px, _), (cx, cy) = position[parent], position[child]
+        start_y, end_y = port(parent), port(child)
+        start_x, end_x = out_x(parent), cx - half - 3
+        source, target = layer_of[parent], layer_of[child]
+        joints, extra = [], False
+        if source == target == "intermediate" and position[child][1] > position[parent][1]:
+            path = f"M{px} {position[parent][1] + half + 8} V{cy - half - 3}"
+        elif source == target:
+            # Inside the marts (a fact reading its dimensions): a bracket left of the tiles.
+            bulge = 22 + abs(cy - position[parent][1]) / MART_PITCH * 5
+            left = px - half - 4
+            path = (f"M{left} {position[parent][1] + 6} C{left - bulge} {position[parent][1] + 6} "
+                    f"{left - bulge} {cy - 6} {left} {cy - 6}")
+            extra = True
+        elif target == "intermediate":
+            lane = int_lanes[child]
+            path = f"M{start_x} {start_y} H{lane} V{end_y} H{end_x}"
+            joints = [(lane, start_y), (lane, end_y)] if abs(start_y - end_y) > 1 else []
+        elif target == "marts":
+            lane = mart_lanes[parent]
+            path = f"M{start_x} {start_y} H{lane} V{end_y} H{end_x}"
+            joints = [(lane, start_y), (lane, end_y)] if abs(start_y - end_y) > 1 else []
+        elif abs(start_y - end_y) < 1:
+            path = f"M{start_x} {start_y} H{end_x}"
+        else:
+            middle = (start_x + end_x) / 2
+            path = f"M{start_x} {start_y} H{middle} V{end_y} H{end_x}"
+        edges.append((parent, child, path, color_key[source], joints, extra))
+    gold_x, gold_y = gold
+    for node_id, (x, y) in position.items():
+        if layer_of[node_id] == "marts":
+            path = f"M{out_x(node_id)} {y} H{GOLD_BUS} V{gold_y} H{gold_x - GOLD / 2 - 10}"
+            edges.append((node_id, GOLD_ID, path, "marts", [(GOLD_BUS, y), (GOLD_BUS, gold_y)], False))
+    return edges
+
+
+def build_edges(edges, palette, suffix):
+    """Paths (data-from, data-to), their junction dots and, unless the reader asked for
+    less motion, one dot of data travelling along each."""
+    colors = arrow_colors(palette)
+    paths, joints, flows = [], [], []
+    for index, (source, target, path, key, points, extra) in enumerate(edges):
+        ends = f'data-from="{html.escape(source)}" data-to="{html.escape(target)}"'
+        extra_class = " lin-extra" if extra else ""
+        dash = ' stroke-dasharray="4 3"' if extra else ""
+        paths.append(f'<path class="lin-edge{extra_class}" {ends} d="{path}" fill="none" stroke="{colors[key]}" '
+                     f'stroke-width="1.8" stroke-linejoin="round"{dash} opacity=".92" '
+                     f'marker-end="url(#lin-arrow-{key}-{suffix})"/>')
+        for x, y in points:
+            joints.append(f'<circle class="lin-joint{extra_class}" {ends} cx="{x:.1f}" cy="{y:.1f}" r="3.6" '
+                          f'fill="{colors[key]}"/>')
+        if not extra:
+            flows.append(f'<circle class="lin-flow" {ends} r="2.6" fill="{colors[key]}" opacity=".9">'
+                         f'<animateMotion dur="{FLOW_SECONDS}s" begin="-{index * .53 % FLOW_SECONDS:.2f}s" '
+                         f'repeatCount="indefinite" path="{path}"/></circle>')
+    wire = f' filter="url(#lin-wire-{suffix})"' if is_dark(palette) else ""
+    return (f'<g class="lin-edges"{wire}>{"".join(paths)}</g><g class="lin-joints">{"".join(joints)}</g>'
+            f'<g class="lin-flows">{"".join(flows)}</g>')
+
+
+def build_legend(palette, suffix):
+    """The hint on the left; what a green dot, a pink and a grey arrow mean on the right."""
+    colors = arrow_colors(palette)
+    y = LEGEND_Y
+    pointer = (f'<path d="M{SIDE + 2} {y - 9} L{SIDE + 2} {y + 7} L{SIDE + 6} {y + 3} L{SIDE + 9} {y + 9} '
+               f'L{SIDE + 11.5} {y + 8} L{SIDE + 8.5} {y + 2} L{SIDE + 14} {y + 2} Z" '
+               f'fill="{palette["strong_text"]}" opacity=".85"/>')
+    hint = (f'<text x="{SIDE + 26}" y="{y + 4.5}" font-size="13" fill="{palette["text"]}">'
+            f'{html.escape(HINT)}</text>')
+    items = [("dot", "Pruebas superadas"), ("lit", "Dependencia (seleccionada)"), ("dim", "Fuera de la selección")]
+    widths = [(14 if kind == "dot" else 40) + text_width(label, 12.5) * .92 for kind, label in items]
+    total = sum(widths) + 26 * (len(items) - 1) + 36
+    left = WIDTH - SIDE - total
+    parts = [f'<rect x="{left:.1f}" y="{y - 17}" width="{total:.1f}" height="34" rx="17" '
+             f'fill="{palette["card"]}" fill-opacity=".6" stroke="{palette["card_border"]}"/>']
+    cursor = left + 18
+    for (kind, label), width in zip(items, widths):
+        if kind == "dot":
+            parts.append(f'<circle cx="{cursor + 5}" cy="{y}" r="5.5" '
+                         f'fill="{architecture.STATE_COLORS[control.RUN_OK]}"/>')
+            text_x = cursor + 16
+        else:
+            parts.append(f'<path d="M{cursor} {y} H{cursor + 30}" stroke="{colors[kind]}" stroke-width="2.2" '
+                         f'marker-end="url(#lin-arrow-{kind}-{suffix})"/>')
+            text_x = cursor + 40
+        parts.append(f'<text x="{text_x:.1f}" y="{y + 4.2}" font-size="12.5" fill="{palette["text"]}">'
+                     f'{html.escape(label)}</text>')
+        cursor += width + 26
+    return f'<g class="lin-legend">{pointer}{hint}{"".join(parts)}</g>'
 
 
 def build_lineage_svg(nodes, results, mode):
-    """The dbt part of the journey, model by model, in the journey's own language: one
-    dashed frame per layer, each model as a tile with its icon and status dot, the
-    journey's pills and chips, data flowing along the links, and the marts flowing
-    into datos.duckdb, the gold node where the journey goes on."""
+    """The dbt part of the journey, model by model: five columns (bronze, staging,
+    intermediate, marts, gold), each model a glossy tile with its icon, status dot and
+    pills, the links routed along buses between columns into datos.duckdb. Each node
+    carries data-node, data-up and data-down and each link data-from and data-to, so
+    LINEAGE_SCRIPT can follow a model's inputs and outputs on hover."""
     palette = charts.get_palette(mode)
+    suffix = re.sub(r"[^a-z0-9]", "", str(mode).lower()) or "mode"
     columns = order_layers(nodes)
     counts = tests_by_model(nodes, results)
     names = dict(zip(nodes["unique_id"], nodes["name"]))
     by_id = {node["unique_id"]: node for items in columns.values() for node in items}
     layer_of = {node["unique_id"]: layer for layer, items in columns.items() for node in items}
     kind_of = {node_id: MATERIALIZED.get(node["materialized"], node["materialized"]) for node_id, node in by_id.items()}
-    tallest = max((len(items) for items in columns.values()), default=1)
-    centered = {layer: (tallest - len(items)) * PITCH / 2 for layer, items in columns.items()}
-    # Bronze and staging sit a row and a half above the intermediate chain: the IPC
-    # branch, which skips that chain, then runs clear above it instead of behind it.
-    lifted = max(0, centered["intermediate"] - 1.5 * PITCH)
-    frame_height = HEAD + tallest * PITCH - (PITCH - TILE) + 2 * PAD - 6
-    first_row = TOP + HEAD + PAD - 6 + TILE / 2
-    # One frame per layer, as wide as its widest model, then the gold column.
-    frames, cursor = {}, SIDE
-    for layer, _, _ in LAYERS:
-        widths = [node_width(node, kind_of[node["unique_id"]], *counts.get(node["unique_id"], (0, 0)))
-                  for node in columns[layer]] or [TILE]
-        frames[layer] = (cursor, max(widths) + 2 * PAD)
-        cursor += frames[layer][1] + GAP
-    frames["serving"] = (cursor, SERVING_WIDTH)
-    width = cursor + SERVING_WIDTH + SIDE
-    height = TOP + frame_height + 14
-    position = {}
-    for layer, _, _ in LAYERS:
-        offset = lifted if layer in ("bronze", "staging") else centered[layer]
-        for row, node in enumerate(columns[layer]):
-            position[node["unique_id"]] = (frames[layer][0] + PAD + TILE / 2, first_row + offset + row * PITCH)
-    serving = (frames["serving"][0] + SERVING_WIDTH / 2, first_row + (tallest - 1) * PITCH / 2)
-    ends = {node_id: x - TILE / 2 + node_width(by_id[node_id], kind_of[node_id], *counts.get(node_id, (0, 0))) + 8
+    position = lay_out(columns)
+    marts = [node_id for node_id in position if layer_of[node_id] == "marts"]
+    mart_rows = [position[node_id][1] for node_id in marts] or [(FIRST_ROW + LAST_ROW) / 2]
+    gold = (COLUMN_X["serving"], (min(mart_rows) + max(mart_rows)) / 2 - 20)
+    ends = {node_id: x + TILE / 2 + 16 + node_width(by_id[node_id], kind_of[node_id], *counts.get(node_id, (0, 0)))
             for node_id, (x, _) in position.items()}
-
-    parts = [f'<svg viewBox="0 0 {width:.0f} {height:.0f}" width="100%" role="img" '
-             f'aria-label="Linaje dbt: de bronce a marts" font-family="{charts.CHART_FONT}">',
-             architecture.build_style(False),
-             '<defs>' + "".join(
-                 f'<marker id="lineage-arrow-{layer}" viewBox="0 0 6 6" refX="3" refY="5" markerWidth="6" '
-                 f'markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L3,6 L6,0" fill="none" '
-                 f'stroke="{color}" stroke-width="1.3"/></marker>' for layer, color in LAYER_COLORS.items()) + '</defs>']
-    for layer, _, _ in LAYERS:
-        x, frame_width = frames[layer]
-        parts.append(build_frame(x, TOP, frame_width, frame_height, layer, len(columns[layer]), palette))
-    parts.append(build_frame(frames["serving"][0], TOP, SERVING_WIDTH, frame_height, "serving", 1, palette))
+    up = {node_id: [parent for parent in by_id[node_id]["depends_on"] if parent in position] for node_id in position}
+    down = {node_id: [] for node_id in position}
+    for node_id, parents in up.items():
+        for parent in parents:
+            down[parent].append(node_id)
+    for node_id in marts:
+        down[node_id].append(GOLD_ID)
     summary = summarize_build(nodes, results)
-    parts.append(build_dbt_bracket(frames["staging"][0], sum(frames["marts"]), summary))
 
-    # Links: out of a model along its row to the frame's edge, a curve across the gap
-    # (straight through a frame it skips, above the intermediate chain), into the tile.
-    links, chips, flow = [], {}, 0
-    for node_id, (x, y) in position.items():
-        for parent in by_id[node_id]["depends_on"]:
-            if parent not in position:
-                continue
-            px, py = position[parent]
-            color = LAYER_COLORS[layer_of[parent]]
-            if layer_of[parent] == layer_of[node_id]:
-                # Inside a column only the chain shows, as a short arrow to the tile
-                # below; the relations among marts are the star of Modelo de datos.
-                if abs(y - (py + PITCH)) < 1:
-                    links.append(f'<path d="M{x:.1f},{py + TILE / 2 + 2:.1f} V{y - TILE / 2 - 3:.1f}" '
-                                 f'stroke="{color}" stroke-width="1.6" marker-end="url(#lineage-arrow-{layer_of[parent]})"/>')
-                continue
-            target = x - TILE / 2
-            gap_left = target - PAD - GAP
-            gap_right = target - PAD
-            middle = (gap_left + gap_right) / 2
-            path = (f"M{ends[parent]:.1f} {py:.1f} H{gap_left:.1f} C{middle:.1f} {py:.1f} {middle:.1f} {y:.1f} "
-                    f"{gap_right:.1f} {y:.1f} H{target:.1f}")
-            links.append(f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.6" opacity="0.85"/>'
-                         + flow_dot(path, color, flow))
-            flow += 1
-            chips.setdefault(layer_of[parent], []).append((middle, (py + y) / 2, color))
-    # The marts flow into the data warehouse, as on the journey after «Marts y pruebas».
-    gold_left = serving[0] - architecture.TILE_SIZE / 2
-    for node_id in [node["unique_id"] for node in columns["marts"]]:
-        _, y = position[node_id]
-        gap_left = frames["serving"][0] - GAP
-        middle = gap_left + GAP / 2
-        path = (f"M{ends[node_id]:.1f} {y:.1f} H{gap_left:.1f} C{middle:.1f} {y:.1f} {middle:.1f} {serving[1]:.1f} "
-                f"{frames['serving'][0]:.1f} {serving[1]:.1f} H{gold_left:.1f}")
-        color = LAYER_COLORS["marts"]
-        links.append(f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.6" opacity="0.85"/>'
-                     + flow_dot(path, color, flow))
-        flow += 1
-    chips["marts"] = [(frames["serving"][0] - GAP / 2, serving[1], LAYER_COLORS["marts"])]
-    parts.extend(links)
-    # One chip per gap, on the link closest to the middle of its bundle, as the journey
-    # names what travels between two steps.
-    for layer, spots in chips.items():
-        mean = sum(spot[1] for spot in spots) / len(spots)
-        x, y, color = min(spots, key=lambda spot: abs(spot[1] - mean))
-        parts.append(architecture.build_chip(x, y, LAYER_CHIPS[layer], color, palette))
+    parts = [f'<svg class="lin-graph lin-{suffix}" viewBox="0 0 {WIDTH} {HEIGHT}" width="100%" role="img" '
+             f'aria-label="Linaje dbt: de bronce a marts" font-family="{charts.CHART_FONT}">',
+             build_style(suffix, palette), build_defs(suffix, palette), build_subtitle(summary, palette),
+             build_dividers(palette)]
+    for layer, _, _ in LAYERS:
+        parts.append(build_header(layer, len(columns[layer]), palette))
+    parts.append(build_header("serving", 1, palette))
+    parts.append(build_edges(route_edges(position, by_id, layer_of, ends, gold), palette, suffix))
+    parts.append('<g class="lin-nodes">')
     for node_id, (x, y) in position.items():
         total, passing = counts.get(node_id, (0, 0))
         reads = [names[parent] for parent in by_id[node_id]["depends_on"] if parent in names]
-        parts.append(build_lineage_node(x, y, by_id[node_id], layer_of[node_id], kind_of[node_id],
-                                        total, passing, reads, palette))
-    state = None if summary is None else control.RUN_OK if summary["ok"] else control.RUN_FAILED
-    detail = (f"{summary['passing']}/{summary['tests']} pruebas" if summary else "sin construcción")
-    parts.append(architecture.build_node(serving[0], serving[1], "gold", architecture.draw_duckdb_icon,
-                                         "datos.duckdb", ["capa oro · modelo estrella", detail], palette, state))
+        parts.append(build_lineage_node(x, y, by_id[node_id], layer_of[node_id], kind_of[node_id], total, passing,
+                                        reads, up[node_id], down[node_id], palette, suffix))
+    parts.append(build_gold_node(*gold, marts, summary, palette, suffix))
+    parts.append('</g>')
+    parts.append(build_legend(palette, suffix))
     parts.append("</svg>")
     return "".join(parts)
+
+
+# Hovering a model lights only its upstream and downstream paths (models and links) and
+# dims the rest; a click pins that selection, a click on empty space or Escape clears it.
+# One script for the whole page, listening on document, so diagrams Streamlit draws
+# later work too. It builds no markup: it only toggles classes (st.html drops a script
+# whose strings look like tags). bi/zoom.py TIP_SCRIPT may answer the same click with
+# the node's card; both are meant to.
+LINEAGE_SCRIPT = r"""<script>
+(() => {
+if (window.lineageReady) { return; }
+window.lineageReady = true;
+const GRAPH = 'svg[aria-label="Linaje dbt: de bronce a marts"]';
+const split = (text) => (text || "").split(" ").filter(Boolean);
+
+// The graph of one drawing, read once from its data attributes.
+const graphOf = (svg) => {
+    if (svg.lineageGraph) { return svg.lineageGraph; }
+    const up = new Map();
+    const down = new Map();
+    svg.querySelectorAll("[data-node]").forEach((node) => {
+        up.set(node.dataset.node, split(node.dataset.up));
+        down.set(node.dataset.node, split(node.dataset.down));
+    });
+    svg.lineageGraph = {up, down};
+    return svg.lineageGraph;
+};
+// Every node reachable from start along links (transitive inputs or outputs).
+const reach = (start, links) => {
+    const seen = new Set([start]);
+    const queue = [start];
+    while (queue.length) {
+        for (const next of links.get(queue.pop()) || []) {
+            if (!seen.has(next)) { seen.add(next); queue.push(next); }
+        }
+    }
+    return seen;
+};
+
+const light = (svg, id) => {
+    const graph = graphOf(svg);
+    const before = reach(id, graph.up);
+    const after = reach(id, graph.down);
+    svg.classList.add("lin-active");
+    svg.querySelectorAll("[data-node]").forEach((node) => {
+        const name = node.dataset.node;
+        node.classList.toggle("lin-on", before.has(name) || after.has(name));
+        node.classList.toggle("lin-focus", name === id);
+    });
+    const lit = [];
+    svg.querySelectorAll("[data-from]").forEach((part) => {
+        const from = part.dataset.from;
+        const to = part.dataset.to;
+        const on = (before.has(from) && before.has(to)) || (after.has(from) && after.has(to));
+        part.classList.toggle("lin-on", on);
+        if (on && part.classList.contains("lin-edge")) { lit.push(part); }
+    });
+    // Lit links over the dimmed ones that share their buses.
+    // Nodes never move: Streamlit (React) owns this markup and must find it where it left it.
+};
+const clear = (svg) => {
+    svg.classList.remove("lin-active");
+    svg.querySelectorAll(".lin-on, .lin-focus").forEach((part) => part.classList.remove("lin-on", "lin-focus"));
+};
+const nodeOf = (element) => (element && element.closest ? element.closest("[data-node]") : null);
+const graphAround = (element) => (element && element.closest ? element.closest(GRAPH) : null);
+
+document.addEventListener("pointerover", (event) => {
+    const node = nodeOf(event.target);
+    const svg = graphAround(node);
+    if (svg && !svg.dataset.lineagePinned) { light(svg, node.dataset.node); }
+});
+document.addEventListener("pointerout", (event) => {
+    const node = nodeOf(event.target);
+    const svg = graphAround(node);
+    if (!svg || svg.dataset.lineagePinned) { return; }
+    const next = nodeOf(event.relatedTarget);
+    if (next && svg.contains(next)) { return; }
+    clear(svg);
+});
+document.addEventListener("click", (event) => {
+    const svg = graphAround(event.target);
+    if (!svg) { return; }
+    const node = nodeOf(event.target);
+    if (!node) {
+        delete svg.dataset.lineagePinned;
+        clear(svg);
+    } else if (svg.dataset.lineagePinned === node.dataset.node) {
+        delete svg.dataset.lineagePinned;
+        light(svg, node.dataset.node);
+    } else {
+        svg.dataset.lineagePinned = node.dataset.node;
+        light(svg, node.dataset.node);
+    }
+});
+// The keyboard: Tab onto a model lights it, Enter pins it, Escape clears.
+document.addEventListener("focusin", (event) => {
+    const node = nodeOf(event.target);
+    const svg = graphAround(node);
+    if (svg && !svg.dataset.lineagePinned) { light(svg, node.dataset.node); }
+});
+document.addEventListener("focusout", (event) => {
+    const svg = graphAround(nodeOf(event.target));
+    if (svg && !svg.dataset.lineagePinned) { clear(svg); }
+});
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+        const node = nodeOf(event.target);
+        const svg = graphAround(node);
+        if (svg) { svg.dataset.lineagePinned = node.dataset.node; light(svg, node.dataset.node); }
+    }
+    if (event.key === "Escape") {
+        document.querySelectorAll(GRAPH).forEach((svg) => { delete svg.dataset.lineagePinned; clear(svg); });
+    }
+});
+
+// Streamlit draws the page in steps and redraws it on every rerun: a new drawing
+// starts unselected, and its graph is read again on first use.
+const prepare = () => document.querySelectorAll(GRAPH).forEach((svg) => {
+    if (svg.dataset.lineageReady) { return; }
+    svg.dataset.lineageReady = "yes";
+    delete svg.lineageGraph;
+    clear(svg);
+});
+prepare();
+new MutationObserver(prepare).observe(document.body, {childList: true, subtree: true});
+})();
+</script>"""
 # endregion

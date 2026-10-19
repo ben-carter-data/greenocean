@@ -195,10 +195,11 @@ const render = (text) => {
 const prepare = () => document.querySelectorAll(AREAS).forEach((svg) => {
     svg.querySelectorAll("title").forEach((title) => {
         const owner = title.parentElement;
-        if (!owner || owner.tagName.toLowerCase() === "svg") { return; }
+        if (!owner || owner.tagName.toLowerCase() === "svg" || !title.textContent.trim()) { return; }
         owner.dataset.tip = title.textContent.trim();
         owner.style.cursor = "help";
-        title.remove();
+        // Emptied, never removed: React owns these nodes and removes them itself later.
+        title.textContent = "";
     });
 });
 
