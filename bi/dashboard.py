@@ -4986,17 +4986,18 @@ def show_diagrams_page(mode):
     summary = lineage.summarize_build(nodes, results)
     st.markdown(build_runs_css(mode), unsafe_allow_html=True)
     show_pipeline_figures(summary)
-    view = st.session_state.get("pipeline_view", PIPELINE_LINEAGE) if summary else PIPELINE_JOURNEY
+    # The whole journey first; the dbt lineage is its zoom on the dbt steps.
+    view = st.session_state.get("pipeline_view", PIPELINE_JOURNEY) if summary else PIPELINE_JOURNEY
     title = "Linaje dbt: de bronce a marts" if view == PIPELINE_LINEAGE else "Recorrido completo por capas"
     with open_card("pipeline_main", title, hint=LINEAGE_HINT if view == PIPELINE_LINEAGE else ARCHITECTURE_HINT):
         if summary:
-            st.segmented_control("Vista", [PIPELINE_LINEAGE, PIPELINE_JOURNEY], default=PIPELINE_LINEAGE,
+            st.segmented_control("Vista", [PIPELINE_JOURNEY, PIPELINE_LINEAGE], default=PIPELINE_JOURNEY,
                                  key="pipeline_view", label_visibility="collapsed")
         if view == PIPELINE_LINEAGE:
             st.markdown(f'<div class="lineage-frame">{lineage.build_lineage_svg(nodes, results, mode)}</div>',
                         unsafe_allow_html=True)
-            st.caption("Cada tarjeta es un modelo o una fuente del proyecto dbt; ✓ n/m son sus pruebas superadas. "
-                       "Las relaciones entre marts están en Modelo de datos.")
+            st.caption("Zoom del tramo dbt del recorrido, de Parquet a datos.duckdb: cada tarjeta es un modelo "
+                       "o una fuente; ✓ n/m son sus pruebas superadas. Las relaciones entre marts están en Modelo de datos.")
             return
         # Inline SVG (not an image), so each piece shows its explanation on hover.
         st.markdown(zoom.build_zoom_frame_html(
@@ -6407,6 +6408,9 @@ def read_journey():
     manifest = read_download_manifest()
     states = build_journey_states(step_states, pipeline_run, latest_load, manifest)
     figures = build_journey_figures(manifest, pipeline_run, latest_load)
+    build = lineage.summarize_build(*read_lineage(get_database_version()))
+    if build:
+        figures["dbt"] = f"{build['models']} modelos · {build['passing']}/{build['tests']} pruebas"
     error_note = (describe_state_source(error_text, step_states, latest_load)
                   if error_text else None)
     return states, figures, pipeline_run, latest_load, error_note
