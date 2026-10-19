@@ -1,6 +1,8 @@
-"""«Calidad y auditoría» as the author's mockup: a four-step timeline of the evidence
-(Fuentes → Ejecución y dbt → Warehouse → Resultados) and, under each step, its cards:
-a glossy illustration, a status pill, a title and the real figure behind it.
+"""«Calidad y auditoría» as a story (D-176): the method (the six data quality dimensions
+of the DAMA-DMBOK), four stages of the pipeline (Fuentes → Transformación → Warehouse →
+Resultados), each with its role in quality, its figure, its verdict and the controls it
+runs as small glossy illustrations, then the anomalies box (the rejected rows) and the
+status bar. Hovering a dimension, a stage, a control or the box explains its part.
 
 Nothing here reads data. bi/dashboard.py computes the same evidence it always did
 (bi.quality, bi.lineage, the latest etl_run row) and hands it over through
@@ -23,11 +25,10 @@ build_evidence(); build_overview_html() only draws it. The evidence dict:
     checks          dict     integrity_ok (bool), foreign_keys, duplicates, invalid (int)
     parity          dict|None  rows, rejections (DuckDB), backup_rows, backup_rejections
                                (SQLite), ok (bool); None without a SQLite backup
+    rejections      int|None rows in the rejection table (None: taken from parity)
 
 The page is one block of HTML with its CSS scoped under .qa-page (no script), for
-st.markdown(unsafe_allow_html=True). The detailed evidence goes in a collapsed
-st.expander labelled EXPANDER_LABEL, inside st.container(key=EXPANDER_KEY): the CSS
-also dresses that expander as the full-width bar of the mockup.
+st.markdown(unsafe_allow_html=True); the hover explanations are CSS only.
 """
 import html
 import math
@@ -38,9 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import charts  # noqa: E402
 from etl import etl  # noqa: E402
 
-EXPANDER_LABEL = "Evidencia detallada · Reglas dbt · Archivos · Última carga →"
 EXPANDER_KEY = "qa_evidence"
-EXPANDER_ICON = ":material/description:"
 
 # Pill colors, the same in every theme: solid with white text (≥ 4.5:1 on each).
 PILL_COLORS = {"ok": "#15934a", "pending": "#d97706", "fail": "#d02f2f"}
@@ -75,7 +74,7 @@ def format_week(value):
     return f"{parts[2]}-{parts[1]}-{parts[0]}" if len(parts) == 3 and len(parts[0]) == 4 else text
 
 
-def build_evidence(checks, files, manifest, run, build, parity, format_time):
+def build_evidence(checks, files, manifest, run, build, parity, format_time, rejections=None):
     """The evidence dict from the objects show_operations_page already holds:
     checks and files from read_quality_evidence, manifest from read_download_manifest,
     run = read_latest_run() (row with run_id, started_at, status), build =
@@ -96,6 +95,7 @@ def build_evidence(checks, files, manifest, run, build, parity, format_time):
                            backup_rows=int(parity["rows"][0]), backup_rejections=int(parity["rejections"][0]),
                            ok=bool(parity["ok"]))
     return dict(
+        rejections=int(rejections) if rejections is not None else None,
         run_id=int(run["run_id"]) if str(run["run_id"]).isdigit() else run["run_id"], run_started=format_time(run["started_at"]), run_status=str(run["status"]),
         run_ok=run["status"] == etl.STATUS_LOADED,
         manifest_present=bool(manifest), manifest_files=len(files),
@@ -380,20 +380,45 @@ def build_icon_svg(name):
 STEP_MARKS = {"ok": "M7 12.5 l3.2 3.2 L17 9", "pending": "M12 7 v6 M12 16.6 v.4", "fail": "M8.5 8.5 l7 7 M15.5 8.5 l-7 7"}
 STEP_WORDS = {"ok": "comprobaciones superadas", "pending": "con comprobaciones pendientes",
               "fail": "con una falla detectada"}
+# The story (D-176): four stages of the pipeline, each with its role in data quality,
+# its main figure, its verdict and, as small illustrations, the controls it runs.
+STAGES = [
+    ("files", "Fuentes", "Archivos identificados",
+     "Prevenir: cada archivo de ODEPA queda identificado antes de entrar. Si no se sabe qué entró, "
+     "no se puede auditar nada después."),
+    ("gear", "Transformación", "Reglas de calidad",
+     "Detectar y aislar: la validación rechaza la fila que no cumple una regla y la guarda con su motivo; "
+     "dbt prueba cada modelo en cada construcción."),
+    ("database", "Warehouse", "Consistencia de la base",
+     "Verificar: la base publicada se lee completa y se compara con el respaldo. Si una prueba falla, "
+     "la base anterior sigue publicada."),
+    ("chart", "Resultados", "Cálculos contrastados",
+     "Publicar con prueba: las cifras del panel se recalculan por otro camino (SQL frente a Python, "
+     "filas crudas frente a la base) antes de confiar en ellas."),
+]
+# The method: the six data quality dimensions of the DAMA-DMBOK, each with the
+# controls of this project that measure it. Status comes from the evidence.
+DIMENSIONS = [
+    ("Completitud", "Están todos los datos esperados: cada semana entre la primera y la última, y los "
+                    "precios de cada región que ODEPA publicó.", "Cobertura temporal · pruebas dbt not_null."),
+    ("Unicidad", "Ningún precio aparece dos veces: una fila por producto, región, canal y semana.",
+                 "Claves duplicadas en la base · prueba dbt unique."),
+    ("Validez", "Cada valor tiene el formato y el rango permitidos: precio numérico y positivo, unidad "
+                "convertible, fecha real.", "Validación del ETL (rechazos) · formato de precios · accepted_values."),
+    ("Consistencia", "Los datos concuerdan entre sí y entre copias: referencias entre tablas, y el mismo "
+                     "total en SQLite y en DuckDB.", "Referencias entre tablas · paridad SQLite ↔ DuckDB."),
+    ("Exactitud", "Las cifras reflejan la fuente: se reconstruyen desde las filas crudas y por otro "
+                  "camino de cálculo. Sin segunda fuente oficial, el contraste externo queda pendiente.",
+                  "Reconciliación fuente → base · recálculo SQL y Python · muestra manual."),
+    ("Actualidad", "Los datos son los últimos disponibles: la carga semanal corre cada martes y queda "
+                   "registrada con su resultado.", "Última carga registrada · cobertura hasta la última semana."),
+]
+DIMENSION_WORDS = {"ok": "cumplida", "pending": "pendiente", "fail": "con falla"}
 
 
 def build_step_mark(kind, step):
     return (f'<span class="qa-mark qa-{kind}" role="img" aria-label="{html.escape(step)}: {STEP_WORDS[kind]}">'
             f'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="{STEP_MARKS[kind]}"/></svg></span>')
-
-
-def build_card_html(icon, title, status, detail, explanation, compact):
-    kind = classify(status)
-    return (f'<div class="qa-card{" qa-compact" if compact else ""}" title="{html.escape(explanation, quote=True)}">'
-            f'{build_icon_svg(icon)}<div class="qa-body">'
-            f'<span class="qa-pill qa-{kind}">{html.escape(status)}</span>'
-            f'<div class="qa-title">{html.escape(title)}</div>'
-            f'<div class="qa-detail">{build_detail_html(detail)}</div></div></div>')
 
 
 def build_detail_html(detail):
@@ -405,109 +430,248 @@ def build_detail_html(detail):
                       else html.escape(part) for part in parts)
 
 
+def build_control_html(icon, title, status, detail, explanation, edge):
+    """A small illustration of one control; hovering it tells what it checks."""
+    kind = classify(status)
+    return (f'<div class="qa-control qa-control-{kind}" tabindex="0"><span class="qa-control-dot"></span>'
+            f'{build_icon_svg(icon)}<span class="qa-control-name">{html.escape(title)}</span>'
+            f'<div class="qa-tip qa-tip-{edge}" role="tooltip"><h4>{html.escape(title)}</h4>'
+            f'<span class="qa-pill qa-{kind}">{html.escape(status)}</span>'
+            f'<p class="qa-tip-figure">{build_detail_html(detail)}</p>'
+            f'<p>{html.escape(explanation)}</p></div></div>')
+
+
+def stage_verdicts(evidence, columns):
+    """Per stage: (kind, chip text, figure lines, footnote)."""
+    files_total, matching, failed = evidence["files_total"], evidence["files_matching"], evidence["files_failed"]
+    integrity_kind = "fail" if failed else "ok" if files_total and matching == files_total else "pending"
+    build, checks, parity = evidence["build"], evidence["checks"], evidence["parity"]
+    sources = (integrity_kind,
+               {"ok": "Integridad verificada", "pending": "Integridad pendiente", "fail": "Discrepancia en archivos"}[integrity_kind],
+               [f"{evidence['manifest_files']} archivos registrados en manifest.json.",
+                f"{evidence['weeks']} semanas · {evidence['first_week']} → {evidence['last_week']}."],
+               f"Huellas: {matching} de {files_total} coinciden." if integrity_kind == "ok"
+               else "Huellas: control pendiente." if integrity_kind == "pending" else f"Huellas: {plural(failed, 'discrepancia', 'discrepancias')}.")
+    run_kind = summarize_step(columns[1][1])
+    transformation = (run_kind,
+                      {"ok": "Pruebas superadas", "pending": "Sin resultado dbt", "fail": "Falla detectada"}[run_kind],
+                      [f"{build['passing']} de {build['tests']} pruebas dbt · {build['models']} modelos." if build
+                       else "La base aún no trae el resultado de dbt.",
+                       f"Ejecución {evidence['run_id']} · {evidence['run_status']}."],
+                      f"Construcción del {build['built_at']}." if build and build.get("built_at") else "Cada carga vuelve a probar.")
+    warehouse_kind = summarize_step(columns[2][1])
+    warehouse = (warehouse_kind,
+                 {"ok": "Consistencia verificada", "pending": "Sin respaldo SQLite", "fail": "Falla detectada"}[warehouse_kind],
+                 [f"{checks['foreign_keys']} referencias inválidas · {checks['duplicates']} duplicados · "
+                  f"{checks['invalid']} formatos inválidos.",
+                  ("SQLite ↔ DuckDB: misma suma." if parity["ok"] else "SQLite ↔ DuckDB: no coinciden.") if parity
+                  else "Sin respaldo SQLite para comparar."],
+                 f"{thousands(parity['rows'])} precios publicados." if parity else "Lectura completa de la base.")
+    results_kind = summarize_step([card for card in columns[3][1] if card[0] != "warning"])
+    results = (results_kind, {"ok": "Verificado", "pending": "Pendiente de auditoría", "fail": "Falla detectada"}[results_kind],
+               ["SQL y Python coinciden.", "Auditoría: 400 de 400 precios."],
+               "Pantalla: verificación por muestra · otra fuente: pendiente.")
+    return [sources, transformation, warehouse, results]
+
+
+def dimension_kinds(evidence):
+    """The six dimensions, each 'ok', 'pending' or 'fail' from the evidence."""
+    checks, parity, build = evidence["checks"], evidence["parity"], evidence["build"]
+    files_total, matching, failed = evidence["files_total"], evidence["files_matching"], evidence["files_failed"]
+    tests_kind = ("ok" if build["ok"] else "fail") if build else "pending"
+    return {
+        "Completitud": "ok" if evidence["weeks"] and tests_kind == "ok" else tests_kind if tests_kind != "ok" else "pending",
+        "Unicidad": "fail" if checks["duplicates"] else "ok",
+        "Validez": "fail" if checks["invalid"] or failed else "ok" if files_total and matching == files_total else "pending",
+        "Consistencia": "fail" if checks["foreign_keys"] or not checks["integrity_ok"] or (parity and not parity["ok"])
+                        else "ok" if parity else "pending",
+        "Exactitud": "ok",
+        "Actualidad": "ok" if evidence["run_ok"] else "fail",
+    }
+
+
+def build_dimension_html(name, definition, controls, kind):
+    return (f'<div class="qa-dim qa-dim-{kind}" tabindex="0"><span class="qa-dim-dot"></span>{html.escape(name)}'
+            f'<div class="qa-tip qa-tip-center" role="tooltip"><h4>{html.escape(name)} · {DIMENSION_WORDS[kind]}</h4>'
+            f'<p>{html.escape(definition)}</p><p class="qa-tip-figure">Controles: {html.escape(controls)}</p></div></div>')
+
+
 def build_overview_css(mode):
     palette = charts.get_palette(mode)
     dark = palette["base"] != charts.BASE_LIGHT
     line = "rgba(148,163,184,.22)" if dark else "rgba(15,40,80,.10)"
     soft = palette["reference"] if dark else palette["text"]
-    hover = "rgba(255,255,255,.035)" if dark else "rgba(21,101,216,.045)"
     icon_shadow = "rgba(0,0,0,.55)" if dark else "rgba(15,40,90,.18)"
-    bar = palette["card"]
-    pills = "".join(f".qa-page .qa-{kind}{{--qa-c:{color};}}" for kind, color in PILL_COLORS.items())
+    card, border, ink, accent = palette["card"], palette["card_border"], palette["strong_text"], palette["accent"]
+    raised = ("0 1px 0 rgba(255,255,255,.06) inset, 0 24px 48px -30px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03)" if dark
+              else "0 1px 0 #fff inset, 0 24px 48px -32px rgba(15,27,45,.45), 0 6px 14px -10px rgba(15,27,45,.18)")
+    tip_shadow = "0 18px 40px -16px rgba(0,0,0,.85)" if dark else "0 18px 40px -18px rgba(15,27,45,.45)"
+    pills = "".join(f".qa-page .qa-{kind}{{--qa-c:{color};}} .qa-page .qa-control-{kind},.qa-page .qa-dim-{kind},.qa-page .qa-stage-{kind}{{--qa-c:{color};}}"
+                    for kind, color in PILL_COLORS.items())
     return f"""<style>
 .qa-page{{container-type:inline-size;color:{palette['text']};font-family:inherit;margin:0 0 6px;}}
 .qa-page .qa-defs{{position:absolute;width:0;height:0;overflow:hidden;}}
 {pills}
-.qa-page .qa-head{{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:10px 24px;margin-bottom:22px;}}
-.qa-page h1.qa-h1{{margin:0;padding:0;font-size:2.05rem;line-height:1.15;font-weight:600;letter-spacing:-.02em;color:{palette['strong_text']};}}
-.qa-page .qa-sub{{margin:6px 0 0;font-size:1.02rem;color:{soft};}}
-.qa-page .qa-run{{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding-top:6px;font-size:.9rem;color:{palette['strong_text']};}}
-.qa-page .qa-chip{{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-weight:600;font-size:.88rem;
-  color:var(--qa-c);background:color-mix(in srgb,var(--qa-c) {"18%" if dark else "12%"},transparent);}}
+.qa-page .qa-head{{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:8px 24px;margin-bottom:12px;}}
+.qa-page .qa-head > div:first-child{{flex:1 1 380px;}} .qa-page .qa-head .qa-run{{flex:0 0 auto;}}
+.qa-page h1.qa-h1{{margin:0;padding:0;font-size:1.9rem;line-height:1.15;font-weight:400;letter-spacing:-.025em;color:{ink};}}
+.qa-page .qa-sub{{margin:4px 0 0;font-size:.98rem;font-weight:300;color:{soft};}}
+.qa-page .qa-run{{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding-top:8px;font-size:.84rem;color:{ink};}}
+.qa-page .qa-chip{{display:inline-flex;align-items:center;gap:8px;padding:5px 13px;border-radius:999px;font-weight:500;font-size:.8rem;
+  color:var(--qa-c);background:color-mix(in srgb,var(--qa-c) {"18%" if dark else "11%"},transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--qa-c) 35%,transparent);}}
 .qa-page .qa-chip::before{{content:"";width:8px;height:8px;border-radius:50%;background:var(--qa-c);box-shadow:0 0 0 3px color-mix(in srgb,var(--qa-c) 25%,transparent);}}
-.qa-page .qa-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));}}
-.qa-page .qa-col{{position:relative;padding:0 14px 8px;min-width:0;}}
-.qa-page .qa-col+.qa-col{{border-left:1px solid {line};}}
-.qa-page .qa-step{{position:relative;display:flex;align-items:center;gap:12px;height:34px;margin:0 -14px 14px;padding:0 14px;}}
-.qa-page .qa-col+.qa-col .qa-step{{border-left:0;}}
-.qa-page .qa-step::before,.qa-page .qa-step::after{{content:"";flex:1;height:2px;border-radius:2px;background:var(--qa-line,{line});}}
-.qa-page .qa-col:first-child .qa-step::before,.qa-page .qa-col:last-child .qa-step::after{{flex:.15;opacity:0;}}
-.qa-page .qa-step-name{{font-size:.86rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:{palette['strong_text']};white-space:nowrap;}}
-.qa-page .qa-step .qa-mark{{position:absolute;right:-14px;top:50%;transform:translateY(-50%);z-index:1;}}
-.qa-page .qa-step.qa-ok{{--qa-line:linear-gradient(90deg,{line},color-mix(in srgb,{PILL_COLORS['ok']} 75%,transparent));}}
-.qa-page .qa-mark{{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;
+.qa-page .qa-method{{position:relative;z-index:3;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;padding:8px 14px;margin-bottom:12px;border-radius:14px;
+  border:1px solid {border};background:{card};box-shadow:{raised};}}
+.qa-page .qa-method-label{{font-size:.68rem;font-weight:500;letter-spacing:.11em;text-transform:uppercase;color:{soft};margin-right:6px;white-space:nowrap;}}
+.qa-page .qa-method-label b{{display:block;font-size:.78rem;letter-spacing:0;text-transform:none;font-weight:400;color:{ink};}}
+.qa-page .qa-dim{{position:relative;display:inline-flex;align-items:center;gap:7px;padding:4px 12px 4px 9px;border-radius:999px;font-size:.8rem;color:{ink};
+  background:color-mix(in srgb,var(--qa-c) {"14%" if dark else "9%"},{card});border:1px solid color-mix(in srgb,var(--qa-c) 40%,transparent);cursor:default;
+  transition:transform .18s ease,box-shadow .18s ease;}}
+.qa-page .qa-dim:hover,.qa-page .qa-dim:focus-within{{z-index:30;transform:translateY(-2px);box-shadow:0 10px 18px -12px color-mix(in srgb,var(--qa-c) 70%,transparent);}}
+.qa-page .qa-dim-dot{{width:8px;height:8px;border-radius:50%;background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--qa-c) 55%,#fff),var(--qa-c) 70%);
+  box-shadow:0 1px 2px rgba(0,0,0,.3);}}
+.qa-page .qa-method-flow{{margin-left:auto;font-size:.74rem;color:{soft};white-space:nowrap;}}
+.qa-page .qa-grid{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 12px;}}
+.qa-page .qa-stage{{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;padding:6px 8px 8px;border-radius:18px;
+  border:1px solid {border};background:linear-gradient(180deg,color-mix(in srgb,{card} 92%,{'#fff' if not dark else '#000'}),{card});box-shadow:{raised};
+  transition:transform .22s ease,box-shadow .22s ease;}}
+.qa-page .qa-stage:hover,.qa-page .qa-stage:focus-within{{z-index:20;transform:translateY(-3px);}}
+.qa-page .qa-step{{display:flex;align-items:center;gap:10px;align-self:stretch;height:30px;margin-bottom:4px;}}
+.qa-page .qa-step-number{{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;font-size:.72rem;font-weight:500;color:var(--qa-c);
+  border:1.5px solid var(--qa-c);background:color-mix(in srgb,var(--qa-c) 10%,transparent);}}
+.qa-page .qa-step-name{{font-size:.74rem;font-weight:500;letter-spacing:.11em;text-transform:uppercase;color:{ink};white-space:nowrap;}}
+.qa-page .qa-step::after{{content:"";flex:1;height:2px;border-radius:2px;background:linear-gradient(90deg,{line},color-mix(in srgb,var(--qa-c) 75%,transparent));}}
+.qa-page .qa-stage:last-child .qa-step::after{{opacity:0;}}
+.qa-page .qa-step .qa-mark{{position:absolute;right:-20px;top:9px;z-index:2;}}
+.qa-page .qa-mark{{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--qa-c) 55%,#fff),var(--qa-c) 70%);
   box-shadow:0 0 0 4px {palette['background']},0 4px 10px -2px color-mix(in srgb,var(--qa-c) 60%,transparent);}}
-.qa-page .qa-mark svg{{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;}}
-.qa-page .qa-card{{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 8px 18px;border-radius:16px;transition:background .18s ease,transform .18s ease;}}
-.qa-page .qa-card:hover{{background:{hover};transform:translateY(-2px);}}
-.qa-page .qa-icon{{width:84px;height:84px;flex:none;filter:drop-shadow(0 10px 12px {icon_shadow});}}
-.qa-page .qa-body{{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;}}
-.qa-page .qa-pill{{display:inline-block;max-width:100%;padding:3px 11px;border-radius:12px;font-size:.72rem;text-wrap:balance;font-weight:500;line-height:1.5;
+.qa-page .qa-mark svg{{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;}}
+.qa-page .qa-icon{{width:82px;height:82px;flex:none;filter:drop-shadow(0 10px 12px {icon_shadow});transition:transform .22s ease;}}
+.qa-page .qa-stage:hover > .qa-icon{{transform:translateY(-4px) scale(1.04);}}
+.qa-page .qa-title{{margin-top:2px;font-size:1rem;font-weight:500;line-height:1.25;color:{ink};}}
+.qa-page .qa-figure{{font-size:.8rem;line-height:1.4;color:{soft};margin:0;}}
+.qa-page .qa-stage .qa-chip{{margin-top:6px;}}
+.qa-page .qa-foot{{font-size:.74rem;color:{soft};margin:4px 0 0;}}
+.qa-page .qa-controls{{display:flex;justify-content:center;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid {line};align-self:stretch;}}
+.qa-page .qa-control{{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;width:58px;padding:4px 2px;border-radius:10px;cursor:default;
+  transition:background .18s ease;}}
+.qa-page .qa-control:hover,.qa-page .qa-control:focus-within{{z-index:25;background:color-mix(in srgb,{accent} 8%,transparent);}}
+.qa-page .qa-control .qa-icon{{width:34px;height:34px;filter:drop-shadow(0 4px 5px {icon_shadow});}}
+.qa-page .qa-control:hover .qa-icon{{transform:translateY(-3px) scale(1.08);}}
+.qa-page .qa-control-name{{font-size:.6rem;line-height:1.15;color:{soft};text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}}
+.qa-page .qa-control-dot{{position:absolute;top:4px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--qa-c);box-shadow:0 0 0 2px {card};}}
+.qa-page .qa-tip{{position:absolute;z-index:8;top:calc(100% + 6px);left:50%;width:272px;padding:12px 14px;border-radius:14px;text-align:left;
+  background:{card};border:1px solid {border};box-shadow:{tip_shadow};opacity:0;pointer-events:none;transform:translate(-50%,6px);
+  transition:opacity .18s ease,transform .18s ease;font-size:.78rem;line-height:1.45;color:{palette['text']};}}
+.qa-page .qa-tip-start{{left:0;transform:translate(0,6px);}} .qa-page .qa-tip-end{{left:auto;right:0;transform:translate(0,6px);}}
+.qa-page :is(.qa-control,.qa-dim,.qa-anomaly):hover > .qa-tip,.qa-page :is(.qa-control,.qa-dim,.qa-anomaly):focus-within > .qa-tip,
+.qa-page .qa-stage:hover > .qa-tip{{opacity:1;pointer-events:auto;transform:translate(-50%,0);}}
+.qa-page :is(.qa-control,.qa-dim,.qa-anomaly):hover > .qa-tip-start,.qa-page .qa-stage:hover > .qa-tip-start{{transform:translate(0,0);}}
+.qa-page :is(.qa-control,.qa-dim,.qa-anomaly):hover > .qa-tip-end,.qa-page .qa-stage:hover > .qa-tip-end{{transform:translate(0,0);}}
+.qa-page .qa-stage > .qa-tip,.qa-page .qa-anomaly > .qa-tip{{top:auto;bottom:calc(100% - 2px);width:300px;transform:translate(-50%,-6px);}}
+.qa-page .qa-anomaly:hover > .qa-tip,.qa-page .qa-anomaly:focus-within > .qa-tip{{transform:translate(-50%,0);}}
+.qa-page .qa-stage:hover > .qa-tip{{transform:translate(-50%,0);}}
+.qa-page .qa-stage:hover > .qa-tip-start,.qa-page .qa-stage:hover > .qa-tip-end{{transform:translate(0,0);}}
+.qa-page .qa-stage:has(.qa-control:hover) > .qa-tip{{opacity:0;}}
+.qa-page .qa-tip h4{{margin:0 0 4px;font-size:.84rem;font-weight:500;color:{ink};}}
+.qa-page .qa-tip p{{margin:4px 0 0;}}
+.qa-page .qa-tip .qa-tip-figure{{color:{ink};}}
+.qa-page .qa-tip .qa-tip-role{{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:{soft};margin:0 0 2px;}}
+.qa-page .qa-pill{{display:inline-block;max-width:100%;padding:2px 10px;border-radius:12px;font-size:.7rem;font-weight:500;line-height:1.5;
   color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--qa-c) 82%,#fff),var(--qa-c));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 8px -3px color-mix(in srgb,var(--qa-c) 70%,transparent);text-align:center;}}
-.qa-page .qa-title{{align-self:stretch;margin-top:4px;font-size:1.02rem;font-weight:600;line-height:1.25;color:{palette['strong_text']};}}
-.qa-page .qa-detail{{align-self:stretch;font-size:.9rem;line-height:1.45;color:{soft};overflow-wrap:anywhere;}}
-.qa-page .qa-compact{{flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:6px 6px 14px;}}
-.qa-page .qa-compact .qa-icon{{width:62px;height:62px;}}
-.qa-page .qa-compact .qa-body{{display:contents;}}
-.qa-page .qa-compact .qa-pill{{flex:0 1 auto;}}
-.qa-page .qa-compact .qa-title{{flex:1 0 100%;font-size:.98rem;margin-top:0;}}
-.qa-page .qa-compact .qa-detail{{flex:1 0 100%;font-size:.88rem;}}
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 8px -3px color-mix(in srgb,var(--qa-c) 70%,transparent);}}
 .qa-page .qa-seg{{white-space:nowrap;}}
-@container (max-width:700px){{
-  .qa-page .qa-grid{{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:18px;}}
-  .qa-page .qa-col:nth-child(3){{border-left:0;}}
-  .qa-page .qa-step{{margin:0 0 14px;padding:0;}}
-  .qa-page .qa-step::before{{display:none;}}
-  .qa-page .qa-col:last-child .qa-step::after{{flex:1;opacity:1;}}
-  .qa-page .qa-step .qa-mark{{position:static;transform:none;order:3;}}
-  .qa-page .qa-step::after{{order:2;}}
+.qa-page .qa-anomaly{{position:relative;z-index:1;}} .qa-page .qa-anomaly:hover,.qa-page .qa-anomaly:focus-within{{z-index:25;}}
+.qa-page .qa-anomaly{{grid-column:2 / 4;display:flex;align-items:center;gap:14px;margin:12px 40px 0;padding:8px 16px;border-radius:14px;
+  border:1px solid color-mix(in srgb,{PILL_COLORS['pending']} 55%,transparent);background:color-mix(in srgb,{PILL_COLORS['pending']} {"12%" if dark else "7%"},{card});
+  box-shadow:{raised};cursor:default;}}
+.qa-page .qa-anomaly .qa-icon{{width:46px;height:46px;filter:drop-shadow(0 6px 8px {icon_shadow});}}
+.qa-page .qa-anomaly-label{{font-size:.64rem;letter-spacing:.11em;text-transform:uppercase;color:{PILL_COLORS['pending']};font-weight:500;}}
+.qa-page .qa-anomaly-figure{{font-size:1rem;color:{ink};font-weight:500;line-height:1.3;}}
+.qa-page .qa-anomaly-note{{font-size:.76rem;color:{soft};}}
+.qa-page .qa-anomaly-link{{position:absolute;left:-40px;top:-14px;width:40px;height:28px;border-left:2px dashed {PILL_COLORS['pending']};
+  border-bottom:2px dashed {PILL_COLORS['pending']};border-radius:0 0 0 10px;opacity:.8;}}
+.qa-page .qa-anomaly-word{{position:absolute;left:-150px;top:-6px;width:104px;text-align:right;font-size:.7rem;color:{PILL_COLORS['pending']};}}
+.qa-page .qa-bar{{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:14px;padding:9px 16px;border-radius:12px;border:1px solid {border};
+  background:linear-gradient(180deg,color-mix(in srgb,var(--qa-c) {"16%" if dark else "9%"},{card}),color-mix(in srgb,var(--qa-c) {"8%" if dark else "4%"},{card}));
+  font-size:.8rem;color:{ink};}}
+.qa-page .qa-bar .qa-bar-mark{{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--qa-c);color:#fff;font-size:.66rem;}}
+.qa-page .qa-bar b{{font-weight:500;}}
+.qa-page .qa-bar .qa-bar-flow{{margin-left:auto;font-size:.74rem;color:{soft};}}
+@container (max-width:860px){{
+  .qa-page .qa-grid{{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:14px;}}
+  .qa-page .qa-step .qa-mark{{display:none;}}
+  .qa-page .qa-anomaly{{grid-column:1 / 3;margin:0;}}
+  .qa-page .qa-anomaly-link,.qa-page .qa-anomaly-word{{display:none;}}
 }}
-@container (max-width:520px){{
-  .qa-page .qa-grid{{grid-template-columns:minmax(0,1fr);row-gap:8px;}}
-  .qa-page .qa-col{{padding:0 0 4px 22px;border-left:2px solid {line}!important;}}
-  .qa-page .qa-col:last-child{{border-left-color:transparent!important;}}
-  .qa-page .qa-step{{margin-left:-22px;padding-left:0;}}
-  .qa-page .qa-step .qa-mark{{order:-1;margin-left:-14px;}}
-  .qa-page .qa-col:last-child .qa-step::before{{display:block;flex:none;width:14px;height:14px;margin-left:-7px;border-radius:50%;
-    background:{palette['background']};border:2px solid {line};order:-1;}}
-  .qa-page .qa-card{{flex-direction:row;align-items:flex-start;gap:14px;padding:6px 0 14px;}}
-  .qa-page .qa-icon,.qa-page .qa-compact .qa-icon{{width:64px;height:64px;}}
-  .qa-page .qa-body,.qa-page .qa-compact .qa-body{{display:flex;align-items:flex-start;}}
-  .qa-page .qa-compact{{flex-wrap:nowrap;}}
-  .qa-page .qa-compact .qa-title{{flex:none;}}
-  .qa-page h1.qa-h1{{font-size:1.65rem;}}
-}}
-.st-key-{EXPANDER_KEY} details{{border:1px solid {palette['card_border']};border-radius:14px;background:{bar};
-  box-shadow:0 8px 20px -16px rgba(0,0,0,.45);}}
-.st-key-{EXPANDER_KEY} details summary{{padding-top:14px;padding-bottom:14px;}}
 .st-key-{EXPANDER_KEY} .qa-open-label{{font-size:.72rem;font-weight:500;letter-spacing:.11em;text-transform:uppercase;color:{palette['reference']};white-space:nowrap;}}
 </style>"""
 
 
 def build_overview_html(evidence, mode):
-    """The page header, the timeline and the four columns of cards, as one HTML block."""
+    """The page as one HTML block: the head, the method strip, the four stages with
+    their controls, the anomalies box and the status bar (D-176)."""
     columns = build_columns(evidence)
-    chip_kind = "ok" if evidence["run_ok"] else "fail"
-    chip = "Carga correcta" if evidence["run_ok"] else "Carga con falla"
+    verdicts = stage_verdicts(evidence, columns)
+    kinds = [kind for kind, *_ in verdicts]
+    overall = "fail" if "fail" in kinds else "pending" if "pending" in kinds else "ok"
     run_line = (f"Ejecución {evidence['run_id']} · {evidence['run_started']} (Chile) · "
                 f"{evidence['run_status']}")
+    head_chip = {"ok": "Verificación completa", "pending": "Verificación parcial", "fail": "Verificación con falla"}[overall]
     head = (f'<div class="qa-head"><div><h1 class="qa-h1">Calidad y auditoría</h1>'
-            '<p class="qa-sub">Evidencia de extremo a extremo sobre los datos publicados.</p></div>'
+            '<p class="qa-sub">Cómo verificamos los datos, desde el origen hasta la pantalla.</p></div>'
             f'<div class="qa-run"><span>{html.escape(run_line)}</span>'
-            f'<span class="qa-chip qa-{chip_kind}">{chip}</span></div></div>')
-    body = []
-    for position, (step, cards) in enumerate(columns):
-        last = position == len(columns) - 1
-        kind = summarize_step(cards)
+            f'<span class="qa-chip qa-{"ok" if evidence["run_ok"] else "fail"}">'
+            f'{"Carga correcta" if evidence["run_ok"] else "Carga con falla"}</span>'
+            f'<span class="qa-chip qa-{overall}">{head_chip}</span></div></div>')
+    dimension_kind = dimension_kinds(evidence)
+    method = ('<div class="qa-method"><span class="qa-method-label">Método<b>Seis dimensiones de calidad · DAMA-DMBOK</b></span>'
+              + "".join(build_dimension_html(name, definition, controls, dimension_kind[name])
+                        for name, definition, controls in DIMENSIONS)
+              + '<span class="qa-method-flow">prevenir → detectar → aislar → verificar → publicar</span></div>')
+    stages = []
+    for position, ((icon, step, title, role), (kind, chip, figures, foot), (_, cards)) in enumerate(zip(STAGES, verdicts, columns)):
+        last = position == len(STAGES) - 1
+        edge = "start" if position == 0 else "end" if last else "center"
         mark = "" if last else build_step_mark(kind, step)
-        cards_html = "".join(build_card_html(*card, compact=last) for card in cards)
-        body.append(f'<section class="qa-col" aria-label="{html.escape(step)}">'
-                    f'<div class="qa-step{"" if last else " qa-" + kind}"><span class="qa-step-name">'
-                    f'{html.escape(step)}</span>{mark}</div>{cards_html}</section>')
-    return (build_overview_css(mode) + f'<div class="qa-page">{DEFS}{head}'
-            f'<div class="qa-grid">{"".join(body)}</div></div>')
+        controls = "".join(build_control_html(*card, edge=edge) for card in cards)
+        stages.append(
+            f'<section class="qa-stage qa-stage-{kind}" aria-label="{html.escape(step)}">'
+            f'<div class="qa-step"><span class="qa-step-number">0{position + 1}</span>'
+            f'<span class="qa-step-name">{html.escape(step)}</span>{mark}</div>'
+            f'{build_icon_svg(icon)}<div class="qa-title">{html.escape(title)}</div>'
+            + "".join(f'<p class="qa-figure">{html.escape(figure)}</p>' for figure in figures)
+            + f'<span class="qa-chip qa-{kind}">{html.escape(chip)}</span><p class="qa-foot">{html.escape(foot)}</p>'
+            f'<div class="qa-controls">{controls}</div>'
+            f'<div class="qa-tip qa-tip-{edge}" role="tooltip"><p class="qa-tip-role">Rol en la calidad</p>'
+            f'<h4>{html.escape(step)} · {html.escape(title)}</h4><p>{html.escape(role)}</p></div></section>')
+    rejections = evidence.get("rejections")
+    if rejections is None and evidence["parity"]:
+        rejections = evidence["parity"]["rejections"]
+    rejection_text = f"{thousands(rejections)} rechazos registrados" if rejections is not None else "Rechazos registrados en la base"
+    anomaly = (f'<div class="qa-anomaly" tabindex="0"><span class="qa-anomaly-word">Registros rechazados</span><span class="qa-anomaly-link"></span>'
+               f'{build_icon_svg("warning")}<div><div class="qa-anomaly-label">Anomalías detectadas</div>'
+               f'<div class="qa-anomaly-figure">{html.escape(rejection_text)}</div>'
+               '<div class="qa-anomaly-note">Filas de origen que no cumplieron una regla. Consultar motivos y registros.</div></div>'
+               '<div class="qa-tip qa-tip-center" role="tooltip"><h4>Aislar, no corregir</h4>'
+               '<p>Una fila que no cumple una regla (precio no numérico, unidad no convertible, fecha inválida) no se '
+               'arregla a mano ni se interpola: se aparta con su motivo y su fila original en la tabla rejection, y no entra '
+               'al data warehouse. Así cada cifra publicada se puede reconstruir desde la fuente.</p>'
+               '<p class="qa-tip-figure">Evidencia: «Última carga registrada».</p></div></div>')
+    pending = [text for kind, text in ((kinds[0], "integridad de archivos pendiente"), (kinds[1], "sin resultado dbt"),
+                                       (kinds[2], "sin respaldo SQLite")) if kind == "pending"]
+    if overall == "fail":
+        verdict = "Verificación con fallas · revisa la evidencia antes de usar las cifras"
+    elif pending:
+        verdict = "Verificación completada · " + " · ".join(pending)
+    else:
+        verdict = "Verificación completada · todos los controles superados"
+    bar = (f'<div class="qa-bar qa-{overall}"><span class="qa-bar-mark">{"✓" if overall == "ok" else "!"}</span>'
+           f'<b>{html.escape(verdict)}</b><span class="qa-bar-flow">Contraste con otra fuente: pendiente (ODEPA es la única oficial)</span></div>')
+    return (build_overview_css(mode) + f'<div class="qa-page">{DEFS}{head}{method}'
+            f'<div class="qa-grid">{"".join(stages)}{anomaly}</div>{bar}</div>')
 
 
 build_quality_overview_html = build_overview_html
