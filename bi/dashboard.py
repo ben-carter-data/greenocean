@@ -7594,7 +7594,9 @@ def show_sidebar_footer(current_window=None):
 def main():
     """Theme, navigation with icons and the chosen page."""
     st.set_page_config(page_title="Monitor de precios de alimentos", layout="wide",
-                       page_icon=":material/monitoring:")
+                       # A green tile with white bars: the Material glyph was dark and
+                       # nearly invisible on a dark browser tab.
+                       page_icon=str(Path(__file__).resolve().parent / "assets" / "favicon.png"))
     if not queries.DATABASE_FILE.exists():
         st.error("Falta etl/datos.db. Ejecuta primero: python etl/etl.py")
         return
