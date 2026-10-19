@@ -708,7 +708,7 @@ def test_analysis_sections_are_direct_destinations_without_tabs():
         dashboard.PAGE_ANALYSIS: "¿Qué precios subieron más?",
         dashboard.PAGE_GAP: "Mayorista y consumidor, la última semana",
         dashboard.PAGE_CHANNELS: "Precio por región",
-        dashboard.PAGE_SEASONALITY: "Últimas 52 semanas frente a lo habitual",
+        dashboard.PAGE_SEASONALITY: "Índice mensual, enero 2022 = 100",
         dashboard.PAGE_ALERTS: "Alertas de la semana",
     }
     for page, title in expected.items():
@@ -1496,85 +1496,6 @@ def test_movement_ring_parts_cover_comparable_series_not_the_top_n():
     assert empty['value'].sum() == 0 and empty['share'].sum() == 0
 
 
-@needs_database
-def test_d098_price_context_answers_on_one_screen_without_the_removed_cards():
-    app = draw_page(dashboard.PAGE_SEASONALITY)
-    assert not app.exception and not app.expander and not app.tabs
-    text = ' '.join(block.value for block in app.markdown)
-    for heading in ['¿El precio de esta semana es normal?', 'Últimas 52 semanas frente a lo habitual',
-                    'Precio esta semana', 'Qué suele pasar en las próximas semanas',
-                    'Otros productos de Hortalizas con precio fuera de lo habitual para la época']:
-        assert heading in text, heading
-    # Retired by D-098: the standalone gap card and the seasonal-pattern bar chart.
-    assert '¿Dónde conviene comprar?' not in text and 'Patrón de temporada' not in text
-    assert 'Resumen</a> › ' in text and 'Volver al resumen' in text
-    # The generic path/Volver header is suppressed here: only the theme switcher remains.
-    assert '<div class="app-brand"' not in text
-    assert not any(button.key == 'return_to_previous' for button in app.button)
-    sentence = re.search(r'class="ctx-answer">(.*?)</p>', text).group(1)
-    assert sentence.startswith('Esta semana, el precio de tomate larga vida en feria libre está')
-    assert '<b style="color:#2563C9">' in sentence
-    assert 'Cambiar el producto del análisis' not in text
-    # Step 5 of the refonte: one search field instead of three dropdowns.
-    assert [box.label for box in app.selectbox] == ['Buscar producto']
-    assert dashboard.describe_context_option(dict(zip(dashboard.queries.KEY_COLUMNS, app.selectbox[0].value))) \
-        == 'Tomate · Larga vida — Primera, kilo'
-    assert 'Precios nominales, sin ajuste por inflación.' in ' '.join(c.value for c in app.caption)
-    markup = ' '.join(block.value for block in app.markdown)
-    assert 'class="ctx-reading"' in markup and 'Descontada la inflación de alimentos (IPC del INE)' in markup
-    # D-161: a year of change split into food inflation and the product's own part.
-    assert '12 meses: <b>' in markup and 'inflación' in markup and 'propio' in markup
-    assert 'class="hint"' in text  # long paragraphs became ⓘ tooltips (D-098)
-
-
-@needs_database
-def test_d155_real_prices_name_the_reference_month_and_draw_the_nominal_line():
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
-              "from bi import dashboard\nst.session_state[dashboard.CONTEXT_BASIS_KEY] = dashboard.BASIS_REAL\n"
-              "dashboard.render_page(dashboard.PAGE_SEASONALITY)\n")
-    app = AppTest.from_string(script, default_timeout=60).run()
-    assert not app.exception
-    captions = ' '.join(c.value for c in app.caption)
-    assert re.search(r'Pesos de [a-z]+ \d{4}, IPC de alimentos del INE', captions)
-    markup = ' '.join(block.value for block in app.markdown)
-    assert '<i class="nominal"></i>Precio del día' in markup
-    # The tomato reads «sobre» in today's pesos and «bajo» without inflation: the page says so.
-    assert 'class="ctx-ipc-note"' in markup and 'Con los precios del día' in markup
-
-
-@needs_database
-def test_d098_next_months_cover_both_channels_and_the_outlier_table_links_back():
-    app = draw_page(dashboard.PAGE_SEASONALITY)
-    assert not app.exception
-    text = ' '.join(block.value for block in app.markdown)
-    table = re.search(r'<table class="ctx-next-table">.*?</table>', text).group(0)
-    assert table.count('<th>') >= 3  # three month headers
-    assert 'Feria libre' in table and 'Supermercado' in table
-    outliers = re.search(r'<section class="ctx-card ctx-card-wide">.*?</section>', text).group(0)
-    rows = re.findall(r'<tr><td><a href="([^"]+)"', outliers)
-    if rows:
-        assert '_home_key=' in rows[0]
-
-
-@needs_database
-def test_d094_a_product_chosen_in_the_summary_opens_preselected():
-    payload = {'product_group': 'Frutas', 'product': 'Palta', 'variety': 'Hass', 'quality': 'Primera',
-               'normalized_unit': 'kilo', 'channel': 'Feria libre'}
-    options = dashboard.read_context_options(dashboard.get_database_version())
-    match = options[(options['product'] == 'Palta') & (options['variety'] == 'Hass')]
-    if match.empty:
-        pytest.skip('Sin Palta Hass en feria o supermercado en esta base')
-    payload.update(match.iloc[0].to_dict())
-    token = base64.urlsafe_b64encode(json.dumps(payload, ensure_ascii=False).encode()).decode()
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
-              f"st.query_params['_home_key'] = {token!r}\n"
-              "from bi import dashboard\ndashboard.render_page(dashboard.PAGE_SEASONALITY)\n")
-    app = AppTest.from_string(script, default_timeout=60).run()
-    assert not app.exception
-    assert app.selectbox[0].value[1:3] == ('Palta', 'Hass')
-    assert 'Resumen</a> › ' in ' '.join(block.value for block in app.markdown)
-
-
 def test_d094_old_history_links_open_the_new_page():
     assert dashboard.RETIRED_VIEWS['Histórico y estacionalidad'] == dashboard.PAGE_SEASONALITY == 'Contexto del precio'
 
@@ -1671,3 +1592,45 @@ def test_d161_a_yearly_change_splits_into_inflation_and_own_part():
     assert split["inflation"] == pytest.approx(100)  # the old price risen with a +10 % food IPC
     assert split["own"] == pytest.approx(50)
     assert dashboard.split_yearly_change(rows.iloc[1:], ipc, "2026-10-05") is None
+
+
+@needs_database
+def test_d163_the_page_answers_one_question_with_families_against_the_ipc():
+    app = draw_page(dashboard.PAGE_SEASONALITY)
+    assert not app.exception and not app.expander and not app.tabs
+    text = ' '.join(block.value for block in app.markdown)
+    for expected in ['¿Qué alimentos subieron más que la inflación?', 'Índice mensual, enero 2022 = 100',
+                     'Desde enero 2022, frente a la inflación', 'toda su historia']:
+        assert expected in text, expected
+    assert text.count('class="inf-row"') == 7  # every family, once
+    assert 'la canasta de alimentos del INE subió' in text
+    # Retired as noise: the usual-range band, the next-months strip, the outlier table.
+    for gone in ['Rango habitual', 'Qué suele pasar', 'con precio fuera de lo habitual para la época']:
+        assert gone not in text
+
+
+@needs_database
+def test_d163_without_inflation_the_ipc_is_the_flat_reference_and_the_pesos_are_named():
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
+              "from bi import dashboard\nst.session_state[dashboard.CONTEXT_BASIS_KEY] = dashboard.BASIS_REAL\n"
+              "dashboard.render_page(dashboard.PAGE_SEASONALITY)\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    captions = ' '.join(c.value for c in app.caption)
+    assert re.search(r'Pesos de [a-z]+ \d{4}, descontada la inflación', captions)
+    assert 'Sin inflación: la línea punteada es la canasta del INE (100)' in ' '.join(b.value for b in app.markdown)
+
+
+@needs_database
+def test_d163_a_product_from_the_summary_opens_preselected():
+    options = dashboard.read_context_options(dashboard.get_database_version())
+    row = options[options['product'] == 'Palta'].iloc[0].to_dict() if (options['product'] == 'Palta').any() \
+        else options.iloc[0].to_dict()
+    payload = dict(row, channel='Feria libre')
+    token = base64.urlsafe_b64encode(json.dumps(payload, ensure_ascii=False).encode()).decode()
+    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
+              f"st.query_params['_home_key'] = {token!r}\n"
+              "from bi import dashboard\ndashboard.render_page(dashboard.PAGE_SEASONALITY)\n")
+    app = AppTest.from_string(script, default_timeout=60).run()
+    assert not app.exception
+    assert app.selectbox[0].value[1] == row['product']

@@ -1240,3 +1240,13 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Diagrama:** el enlace de la capa oro a «Consultas SQL» fluye como los demás, con la etiqueta «consultas», y su explicación nombra la página.
 - **Fuera de alcance:** machine learning y modelos predictivos (D-019): con datos semanales públicos y sin una pregunta de predicción, no aportan.
 - **requirements.txt:** `streamlit>=1.65`, porque las descargas usan funciones de esa versión.
+
+## D-163 · «Precios e inflación»: una pregunta grande en vez de una página por producto
+
+- **Fecha:** 2026-10-19.
+- **Problema:** «Contexto de precios» reunía demasiado (banda habitual, tarjetas, próximos meses, tablas de datos, tabla de productos fuera de lo habitual) y nadie sabía por dónde empezar. Mostraba 52 semanas «de noviembre a octubre» sin explicar por qué, y lo individual ya está en el Resumen.
+- **Decisión:** la página pasa a llamarse «Precios e inflación» y responde una sola pregunta: ¿qué alimentos subieron más que la inflación? Arriba, un gráfico con el índice mensual de cada familia (enero 2022 = 100, mediana de sus series de consumidor) frente al IPC de alimentos del INE, y al lado un ranking: cambio desde enero 2022, cambio en 12 meses y si subió más, menos o al ritmo de la inflación. Un solo selector, «Precios del día / Sin inflación», divide cada índice por el IPC: la canasta del INE queda en 100 y lo que está arriba subió más. Abajo, un buscador de producto con toda su historia semanal (enero 2022 a hoy), un gráfico por canal y la frase de los 12 meses separados en inflación y parte propia (D-161).
+- **Cómo se calcula:** una serie cuenta solo si tiene precio en enero 2022 y en el último mes del IPC, para comparar siempre los mismos productos (409 series). El índice de una familia es la mediana de los índices de sus series. Todo son datos históricos reales, sin regresión ni predicción.
+- **Resultado al 19-10-2026:** el IPC de alimentos subió +44,8 %. Subieron más: Lácteos, Huevos y Margarinas (+70,8 %), Hortalizas (+60,2 %) y Pan (+50,8 %). Menos: Abarrotes (+40,5 %), Frutas (+37,7 %), Carne bovina (+37,2 %) y Cerdo, Ave y Cordero (+30,7 %).
+- **Límite dicho en la página:** el IPC de alimentos se calcula con precios de alimentos; subir con él no prueba que la inflación cause la subida de una familia.
+- **Retirado:** la banda de lo habitual, las tarjetas de precio, margen y próximos meses, la tabla de productos fuera de lo habitual, y los diálogos de datos y de serie completa (la serie completa se ve de entrada). El código de los indicadores K4 sigue en el proyecto.
