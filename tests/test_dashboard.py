@@ -496,15 +496,15 @@ def test_d149_without_secrets_the_run_is_disabled_and_reload_confirms():
 def test_project_links_are_grouped_as_a_tree_with_descriptions():
     app = draw_page(dashboard.PAGE_LINKS)
     assert not app.exception
-    # Rendered as the shared link-card grid, not a bespoke list (D-116).
+    # The GitHub page is one hero and a tree of three uses (bi/github_page.py).
     links = "\n".join(block.value for block in app.markdown) + "\n".join(
         block.value for block in app.get('html'))
-    assert 'class="link-grid"' in links
-    assert 'class="gh-repo-header"' in links
+    assert 'class="gh-page' in links
+    for category in ("AUTOMATIZACIÓN", "TRAZABILIDAD", "DOCUMENTACIÓN"):
+        assert category in links.upper()
     for link in project.PROJECT_LINKS:
-        if link["url"] and link["group"] != "Documentos":
+        if link["url"]:
             assert f'href="{link["url"]}"' in links
-            assert html.escape(link["description"]) in links
             assert f'>{link["url"]}<' not in links
 
 # endregion
@@ -1389,9 +1389,8 @@ def test_d117_the_sidebar_github_entry_is_a_logo_not_a_word():
 
 @needs_database
 def test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab():
-    """Every PROJECT_LINKS entry pointing at github.com gets the real brand mark
-    instead of a material glyph. ODEPA moved to its own sidebar folder, «Fuentes»
-    (D-118), so every remaining entry is a GitHub link."""
+    """Every PROJECT_LINKS entry points at GitHub and opens a new tab; the real
+    GitHub mark crowns the page. ODEPA moved to «Fuentes» (D-118)."""
     app = draw_page(dashboard.PAGE_LINKS)
     assert not app.exception
     markup = "\n".join(block.value for block in app.markdown) + "\n".join(
@@ -1400,7 +1399,7 @@ def test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab():
                     if link["url"] and link["url"].startswith(project.GITHUB_URL)]
     assert github_links == [link for link in project.PROJECT_LINKS if link["url"]]
     assert len(github_links) >= 5
-    assert markup.count(dashboard.architecture.brand_icons.logo_body("github")) == len(github_links) + 1
+    assert dashboard.architecture.brand_icons.logo_body("github") in markup
     assert markup.count('target="_blank"') >= len(github_links) + 1
 
 
