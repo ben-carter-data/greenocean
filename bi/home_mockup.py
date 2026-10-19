@@ -668,17 +668,32 @@ def products_table(rows, history_link, week_label, previous_label, query=''):
             '<tbody>' + ''.join(body) + '</tbody></table></div>')
 
 
-def coverage_note(model, quality_link, methodology_link):
-    """What the figures cover, in one line under the table, with its two references."""
-    coverage = ('Cada variación nacional compara las mismas regiones en ambas semanas; '
-                f'en {model["coverage_changed"]} se dejaron fuera regiones con precio en una sola. '
-                f'{model.get("single_quote", 0)} cambios apoyados en una sola cotización van al final del orden y llevan la marca «1 cotización».' if model['national'] else
-                'Comparación de la misma región, producto, variedad, calidad, unidad y canal.')
-    return (f'<p class="mock-coverage-note"><strong>Cobertura:</strong> {number(model["available"])} precios '
-            f'disponibles · {number(model["missing"])} sin comparación válida. {esc(coverage)} '
-            'Precios nominales de ODEPA, redondeados; cambios calculados antes de redondear. '
-            f'<a href="{esc(quality_link)}" target="_self">Calidad</a> · '
-            f'<a href="{esc(methodology_link)}" target="_self">Metodología</a></p>')
+def coverage_note(model, quality_link, methodology_link, family=None):
+    """What the figures cover, in one line under the table, with its two references.
+    The first figures are those of the family the table shows, so «288 precios» above
+    and the note below count the same rows; the whole week follows for scale."""
+    links = (f'<a href="{esc(quality_link)}" target="_self">Calidad</a> · '
+             f'<a href="{esc(methodology_link)}" target="_self">Metodología</a>')
+    total_missing = number(model["missing"])
+    week = (f'Toda la semana, {len(model.get("family_coverage", {})) or "todas las"} familias: '
+            f'{number(model["available"])} precios, {total_missing} sin comparación válida.')
+    stats = model.get('family_coverage', {}).get(family)
+    if stats and model['national']:
+        detail = (f'<strong>Cobertura · {esc(short_family(family))}:</strong> {number(stats["available"])} precios '
+                  f'esta semana; {number(stats["comparable"])} con comparación válida, los de la tabla. '
+                  f'Cada variación compara las mismas regiones en ambas semanas; en {number(stats["coverage_changed"])} '
+                  f'se dejaron fuera regiones con precio en una sola. {number(stats["single_quote"])} cambios apoyados '
+                  'en una sola cotización van al final del orden con la marca «1 cotización». ')
+    else:
+        coverage = ('Cada variación nacional compara las mismas regiones en ambas semanas; '
+                    f'en {model["coverage_changed"]} se dejaron fuera regiones con precio en una sola. '
+                    f'{model.get("single_quote", 0)} cambios apoyados en una sola cotización van al final del orden y llevan la marca «1 cotización».' if model['national'] else
+                    'Comparación de la misma región, producto, variedad, calidad, unidad y canal.')
+        detail = (f'<strong>Cobertura:</strong> {number(model["available"])} precios disponibles · '
+                  f'{total_missing} sin comparación válida. {esc(coverage)} ')
+        week = ''
+    return (f'<p class="mock-coverage-note">{detail}{esc(week)} '
+            f'Precios nominales de ODEPA, redondeados; cambios calculados antes de redondear. {links}</p>')
 
 
 def history_chart(rows, subtitle, scope, history_link):

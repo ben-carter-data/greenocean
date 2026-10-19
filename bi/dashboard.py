@@ -491,7 +491,6 @@ NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
 # Contexto: nominal prices or real prices deflated with the INE IPC (D-155).
 CONTEXT_BASIS_KEY = "context_price_basis"
 BASIS_NOMINAL, BASIS_REAL = "Nominal", "Real"
-PIPELINE_LINEAGE, PIPELINE_JOURNEY = "Linaje dbt", "Recorrido por capas"
 LINEAGE_HINT = ("Se dibuja con el manifiesto de la última construcción de dbt, que el pipeline guarda en la "
                 "base: si se agrega un modelo o una prueba, aparece aquí en la carga siguiente.")
 ATTRIBUTION_TEXT = (
@@ -1277,7 +1276,13 @@ def build_style_css(mode):
     [class*="st-key-card_pipeline_main"] svg text[font-size="13"] {{font-size:14.5px;}}
     /* Project documents (D-151): a readable column, clean tables, spaced headings. */
     .doc-source {{font-size:.85rem; margin:-4px 0 14px;}}
-    .st-key-project_document {{max-width:980px; padding:6px 0 30px;}}
+    /* A sheet (step 6): centred, with margins on both sides, like a printed page. */
+    .st-key-project_document {{max-width:900px; margin:6px auto 30px; padding:44px 60px 48px;
+        background:{palette['card']}; border:1px solid {palette['card_border']}; border-radius:16px;
+        box-shadow:0 18px 40px -24px rgba(0,0,0,.45), 0 2px 6px -2px rgba(0,0,0,.12);}}
+    .st-key-project_document > div > div:first-child h2:first-child {{border-top:none; margin-top:0;}}
+    .st-key-project_document .doc-diagram {{background:transparent;}}
+    @media (max-width:900px) {{ .st-key-project_document {{padding:22px 18px 26px;}} }}
     .st-key-project_document h2 {{font-size:1.35rem; font-weight:700; letter-spacing:-.02em;
         margin:34px 0 10px; padding-top:14px; border-top:1px solid {palette['card_border']};
         color:{palette['strong_text']};}}
@@ -4476,6 +4481,20 @@ def compare_same_regions(variations, snapshot, prior, join):
     return rows
 
 
+def summarize_family_coverage(variations):
+    """Per family, the same counts as the coverage note: prices this week, those with a
+    valid change (the rows of the family table), single-quote changes and changes that
+    left a region out, so the note can speak of the family the table shows."""
+    valid = variations.variation.notna() & variations.variation.abs().lt(float('inf'))
+    rows = variations.assign(_valid=valid,
+                             _thin=variations.get('_single_quote', False),
+                             _changed=variations.get('_coverage_changed', False))
+    return {family: {'available': len(group), 'comparable': int(group._valid.sum()),
+                     'single_quote': int((group._thin & group._valid).sum()),
+                     'coverage_changed': int((group._changed & group._valid).sum())}
+            for family, group in rows.groupby('product_group')}
+
+
 def read_home_model(week, group, region, count, order='Mayores cambios', product_filter=None):
     """Real regional or national series; K6 stays explicitly national."""
     version=get_database_version()
@@ -4596,6 +4615,7 @@ def read_home_model(week, group, region, count, order='Mayores cambios', product
                 available=len(current),national=region==ALL_VALUES,
                 coverage_changed=int(variations['_coverage_changed'].sum()),
                 single_quote=int(thin.sum()),
+                family_coverage=summarize_family_coverage(variations),
                 week_label=f'{week_date:%d-%m-%Y}',previous_label=f'{pd.Timestamp(previous_week):%d-%m-%Y}')
 
 
@@ -4938,7 +4958,7 @@ def show_market_overview(mode, prefix):
                 model['previous_label'], query.strip()) + '</div>', unsafe_allow_html=True)
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown('<div class="greenocean-mockup">' + home_mockup.coverage_note(
-        model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION))
+        model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION), family)
         + '</div>', unsafe_allow_html=True)
 
 
@@ -4978,27 +4998,15 @@ def show_pipeline_figures(summary):
 
 def show_diagrams_page(mode):
     """Pipeline y linaje (step 4 of the refonte): the figures of the latest load and
-    build, then one card that switches between the dbt lineage, drawn from the
-    build's own manifest, and the journey by layers (D-136)."""
+    build, the whole journey by layers (D-136) with its dbt stretch framed, and right
+    under it that same stretch opened model by model, from the build's own manifest."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
     show_pipeline_page_header()
     nodes, results = read_lineage(get_database_version())
     summary = lineage.summarize_build(nodes, results)
     st.markdown(build_runs_css(mode), unsafe_allow_html=True)
     show_pipeline_figures(summary)
-    # The whole journey first; the dbt lineage is its zoom on the dbt steps.
-    view = st.session_state.get("pipeline_view", PIPELINE_JOURNEY) if summary else PIPELINE_JOURNEY
-    title = "Linaje dbt: de bronce a marts" if view == PIPELINE_LINEAGE else "Recorrido completo por capas"
-    with open_card("pipeline_main", title, hint=LINEAGE_HINT if view == PIPELINE_LINEAGE else ARCHITECTURE_HINT):
-        if summary:
-            st.segmented_control("Vista", [PIPELINE_JOURNEY, PIPELINE_LINEAGE], default=PIPELINE_JOURNEY,
-                                 key="pipeline_view", label_visibility="collapsed")
-        if view == PIPELINE_LINEAGE:
-            st.markdown(f'<div class="lineage-frame">{lineage.build_lineage_svg(nodes, results, mode)}</div>',
-                        unsafe_allow_html=True)
-            st.caption("Zoom del tramo dbt del recorrido, de Parquet a datos.duckdb: cada tarjeta es un modelo "
-                       "o una fuente; ✓ n/m son sus pruebas superadas. Las relaciones entre marts están en Modelo de datos.")
-            return
+    with open_card("pipeline_main", "Recorrido completo por capas", hint=ARCHITECTURE_HINT):
         # Inline SVG (not an image), so each piece shows its explanation on hover.
         st.markdown(zoom.build_zoom_frame_html(
                         architecture.build_journey_svg(states, figures, mode, animate_flow=True),
@@ -5008,6 +5016,13 @@ def show_diagrams_page(mode):
                         "diagram-narrow"), unsafe_allow_html=True)
         st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
         st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
+    if summary:
+        with open_card("pipeline_lineage", "Dentro del tramo dbt: modelo por modelo", hint=LINEAGE_HINT):
+            st.markdown(f'<div class="lineage-frame">{lineage.build_lineage_svg(nodes, results, mode)}</div>',
+                        unsafe_allow_html=True)
+            st.caption("El recuadro violeta del recorrido, abierto: de Parquet (bronce) a los marts que copia "
+                       "datos.duckdb. ✓ n/m son las pruebas superadas de cada modelo; las relaciones entre marts "
+                       "están en Modelo de datos.")
 
 
 # endregion
