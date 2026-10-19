@@ -5929,8 +5929,8 @@ def build_context_css(mode):
     .ctx-crumb b {{color:{palette['strong_text']};}}
     .ctx-back {{display:inline-flex;float:right;padding:5px 12px;border:1px solid {palette['card_border']};border-radius:8px;
         font-size:12.5px;color:{palette['strong_text']}!important;text-decoration:none!important;background:{palette['card']};}}
-    .ctx-title h1 {{font-size:21px!important;font-weight:500;margin:0!important;padding:0!important;display:inline;}}
-    .ctx-answer b {{font-weight:500;}}
+    .ctx-title h1 {{font-size:23px!important;font-weight:400;margin:0!important;padding:0!important;display:inline;}}
+    .ctx-answer b {{font-weight:500;color:{palette['strong_text']};}}
     [class*="st-key-inf_card_"] {{gap:2px!important;border:1px solid {palette['card_border']};border-radius:16px;padding:10px 12px 2px;
         background:linear-gradient(180deg,color-mix(in srgb,{palette['card']} 92%,{'#fff' if palette['base'] != charts.BASE_DARK else '#000'}) 0%,{palette['card']} 100%);
         box-shadow:{'0 1px 0 rgba(255,255,255,.07) inset, 0 22px 40px -28px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.03)' if palette['base'] == charts.BASE_DARK else '0 1px 0 #fff inset, 0 22px 40px -30px rgba(15,27,45,.45), 0 6px 14px -10px rgba(15,27,45,.18)'};
@@ -5938,12 +5938,12 @@ def build_context_css(mode):
     [class*="st-key-inf_card_"]:hover {{transform:translateY(-3px);
         box-shadow:{'0 1px 0 rgba(255,255,255,.09) inset, 0 30px 50px -28px rgba(0,0,0,.95), 0 0 0 1px rgba(255,255,255,.05)' if palette['base'] == charts.BASE_DARK else '0 1px 0 #fff inset, 0 30px 50px -28px rgba(15,27,45,.5), 0 10px 18px -10px rgba(15,27,45,.2)'};}}
     .inf-panel-head {{display:flex;flex-direction:column;gap:1px;line-height:1.25;}}
-    .inf-panel-head b {{font-size:14px;font-weight:500;color:{palette['strong_text']};letter-spacing:-.01em;}}
+    .inf-panel-head b {{font-size:14px;font-weight:400;color:{palette['strong_text']};letter-spacing:-.01em;}}
     .inf-panel-head span {{font-size:12px;font-weight:400;}}
     [class*="st-key-inf_card_"] [data-testid="stMarkdownContainer"] {{margin-bottom:0!important;}}
     [class*="st-key-inf_card_"] [data-testid="stVegaLiteChart"] {{margin-top:2px;}}
     .ctx-title .page-freshness {{display:inline-flex;gap:6px;margin-left:12px;font-size:12px;}}
-    .ctx-answer {{font-size:14px;line-height:1.45;color:{palette['strong_text']};margin:4px 0 0;max-width:900px;}}
+    .ctx-answer {{font-size:15px;line-height:1.5;font-weight:300;color:{palette['text']};margin:4px 0 0;max-width:900px;}}
     .ctx-split {{margin-top:5px;}}
     .ctx-split small {{display:block;font-size:11px!important;}}
     .ctx-split-bar {{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:3px;max-width:190px;
@@ -5972,7 +5972,7 @@ def build_context_css(mode):
     .ctx-ipc-note b:first-child {{display:inline-block;font-size:10.5px;letter-spacing:.06em;padding:1px 7px;
         margin-right:6px;border-radius:999px;color:{palette['accent']};
         background:color-mix(in srgb,{palette['accent']} 12%,transparent);vertical-align:1px;}}
-    .st-key-ctx_main p.ctx-reading {{font-size:12px!important;line-height:1.4!important;color:{palette['text']};margin:-6px 0 0!important;}}
+    .st-key-ctx_main p.ctx-reading {{font-size:12.5px!important;line-height:1.45!important;font-weight:300;color:{palette['text']};margin:-6px 0 0!important;}}
     .st-key-ctx_main {{gap:10px!important;padding:2px 0 0;}}
     .st-key-ctx_main [data-testid="stHorizontalBlock"] {{gap:14px;}}
     .st-key-ctx_side {{gap:10px;}}
@@ -7836,9 +7836,9 @@ def build_sidebar_css(mode):
     .sidebar-github-current {{outline:2px solid {palette['accent']}; outline-offset:2px;}}
     /* «Fuentes»: external children in the same green as every other child (D-118). */
     .nav-source-link {{display:block; padding:3px 7px 3px 18px; margin:1px 0; border-radius:5px;
-        font-size:.84rem; font-weight:460; letter-spacing:-.005em; text-decoration:none !important;
+        font-size:.78rem; font-weight:400; letter-spacing:-.005em; text-decoration:none !important;
         color:{child_green} !important; -webkit-text-fill-color:{child_green} !important;
-        text-shadow:0 0 10px color-mix(in srgb,{child_green} 18%,transparent);
+        line-height:1.5;
         transition:background .12s ease;}}
     .nav-source-link:hover {{background:color-mix(in srgb,{text} 7%,transparent);}}
     .st-key-sidebar_footer {{position:fixed; left:17px; bottom:0; width:266px; padding:13px 5px 12px;
