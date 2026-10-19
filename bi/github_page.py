@@ -282,6 +282,11 @@ def _style(palette):
 .gh-item p {{ margin: 0 0 14px; font-size: .9rem; line-height: 1.4; color: var(--gh-text); max-width: 13.5rem;
   min-height: 2.8em; }}
 .gh-item .gh-btn {{ height: 36px; padding: 0 18px; }}
+/* The buttons share one baseline even when a title wraps onto two lines. */
+@media (min-width: 761px) {{
+  .gh-item h3 {{ min-height: 2.5em; display: flex; align-items: flex-start; justify-content: center; }}
+  .gh-item p {{ min-height: 2.9em; }}
+}}
 @media (max-width: 760px) {{
   .gh-top {{ grid-template-columns: 1fr; gap: 10px; }}
   .gh-head h1 {{ margin-top: 8px; font-size: 2.2rem; }}
