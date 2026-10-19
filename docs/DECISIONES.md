@@ -1397,3 +1397,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** como en SQL Server, el explorador de objetos muestra primero la carpeta «Tablas» con las tablas reales del data warehouse (`main.weekly_price`, `main.dim_product`, `main.dim_region`, …), leídas de `information_schema` con sus filas y columnas; un clic corre «SELECT * … LIMIT 100» sobre la tabla, con sus claves internas visibles. Debajo, la carpeta «Vistas» con las vistas de análisis de columnas legibles sobre las que corren las preguntas. Esto deja atrás, solo para el explorador, la regla de D-143 de no mostrar claves internas: quien abre una tabla real ve su estructura real.
 - **Cabecera:** las preguntas toman nombres cortos (Precio vs. época, Inflación del año, Inflación desde 2022, Ficha de producto, Tendencia al alza). La pestaña del editor lleva el nombre de archivo de la consulta (por ejemplo `precio_vs_epoca.sql`) y un ícono «i» que, al pasar el cursor, muestra la pregunta completa; el texto largo ya no ocupa la cabecera.
 
+## D-183 · Editor y resultados comparten la altura
+
+- **Fecha:** 2026-10-19.
+- **Decisión:** el editor y la grilla de resultados suman siempre la misma altura. Una consulta corta, como abrir una tabla, deja su espacio a las filas en vez de dejar un hueco bajo los resultados; una consulta larga conserva al menos 250 px de resultados. Si hay pocas filas, la grilla mide lo que ellas necesitan.
+
