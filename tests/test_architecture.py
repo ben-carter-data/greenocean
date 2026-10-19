@@ -20,10 +20,32 @@ def make_states(state):
 def test_every_layer_and_step_is_drawn():
     svg = architecture.build_journey_svg(make_states(control.RUN_OK), FIGURES,
                                          charts.MODE_DARK)
-    for text in ["FUENTES", "INGESTA", "ATERRIZAJE", "BRONCE", "STAGING", "INTERMEDIO",
-                 "MARTS", "ORO", "CONSUMO", "raw.db", "Parquet · bronce", "datos.duckdb",
+    for text in ["FUENTES", "INGESTA", "ATERRIZAJE", "BRONZE", "STAGING", "INTERMEDIO",
+                 "MARTS", "SERVING", "CONSUMO", "raw.db", "Parquet · bronce", "datos.duckdb",
                  "Rechazos", "GitHub Actions", "OBSERVABILIDAD", "INE · IPC", "Descarga INE"]:
         assert text in svg
+
+
+def test_medallion_bands_read_bronze_silver_gold_left_to_right_without_overlap():
+    """Bronze is the Parquet copy, silver the dbt staging and intermediate steps, gold the
+    marts and datos.duckdb; dbt is a bracket over staging to marts, across silver and gold."""
+    states = make_states(control.RUN_OK)
+    for mode in [charts.MODE_DARK, charts.MODE_LIGHT]:
+        svg = architecture.build_journey_svg(states, dict(FIGURES, dbt="16 modelos"), mode)
+        bands = re.findall(r'class="medallion-band medallion-(\w+)" x="([\d.]+)" y="[\d.]+" width="([\d.]+)"', svg)
+        assert [key for key, _, _ in bands] == ["bronze", "silver", "gold"]
+        spans = [(float(x), float(x) + float(width)) for _, x, width in bands]
+        assert all(right < next_left for (_, right), (next_left, _) in zip(spans, spans[1:]))
+        column = architecture.COLUMN_X
+        for (left, right), columns in zip(spans, [["bronze"], ["staging", "intermediate"], ["marts", "gold"]]):
+            assert all(left < column[name] < right for name in columns)
+        for key, detail in [("BRONZE", "Parquet"), ("SILVER", "Transformación dbt"),
+                            ("GOLD", "Marts → datos.duckdb")]:
+            assert f">{key}</tspan>" in svg and f"· {detail}</tspan>" in svg
+            assert architecture.tech_glossary.describe(key.lower()) in svg
+        assert "dbt CORE · staging → intermedio → marts · 16 modelos" in svg
+    vertical = architecture.build_vertical_journey_svg(states, FIGURES, charts.MODE_DARK)
+    assert [key for key in re.findall(r'class="medallion-band medallion-(\w+)"', vertical)] == ["bronze", "silver", "gold"]
 
 
 def test_d154_d155_the_delivered_stack_replaces_sqlite_except_in_the_landing_zone():
@@ -193,8 +215,8 @@ def test_vertical_journey_has_every_step_figure_and_real_state():
     states = dict(make_states(control.RUN_OK), load=control.RUN_FAILED,
                   report=architecture.STATE_UNKNOWN)
     svg = architecture.build_vertical_journey_svg(states, FIGURES, charts.MODE_DARK)
-    for text in ["FUENTES", "INGESTA", "ATERRIZAJE", "BRONCE", "STAGING", "INTERMEDIO",
-                 "MARTS", "ORO", "CONSUMO", "raw.db", "datos.duckdb", "INE · IPC", "Rechazos",
+    for text in ["FUENTES", "INGESTA", "ATERRIZAJE", "BRONZE", "STAGING", "INTERMEDIO",
+                 "MARTS", "SERVING", "CONSUMO", "raw.db", "datos.duckdb", "INE · IPC", "Rechazos",
                  "GitHub Actions", "OBSERVABILIDAD", "Panel Streamlit", "Informe semanal",
                  "Consultas SQL"]:
         assert text in svg
@@ -251,8 +273,8 @@ def test_pipeline_gallery_previews_cover_every_layer_and_platform():
     journey = architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK)
     platform = architecture.build_platform_gallery_svg(states, DEVOPS_FIGURES,
                                                        charts.MODE_DARK)
-    for label in ["ODEPA", "INE", "INGESTA", "BRONCE", "Staging", "Intermedio",
-                  "MARTS", "ORO", "Panel", "GitHub Actions", "Pruebas automáticas"]:
+    for label in ["ODEPA", "INE", "INGESTA", "BRONZE", "Staging", "Intermedio",
+                  "MARTS", "SERVING", "Panel", "GitHub Actions", "Pruebas automáticas"]:
         assert label in journey
     for label in ["ODEPA", "Tu computador", "GitHub Actions",
                   "Streamlit Cloud", "Usuarios"]:

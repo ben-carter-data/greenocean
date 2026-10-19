@@ -84,10 +84,22 @@ TECH_GLOSSARY = {
                "(etl/pipeline.py), y el respaldo SQLite de etl/etl.py."},
     # Layers and models
     "bronze": {
-        "nombre": "Bronce", "sigla": "",
-        "que_es": "capa de un data warehouse con los datos crudos, sin limpiar.",
+        "nombre": "Bronze (bronce)", "sigla": "",
+        "que_es": "primera capa de la arquitectura medallón (bronze → silver → gold): los "
+                  "datos crudos, sin limpiar.",
         "rol": "copia exacta en Parquet, todas las columnas como texto (etl/bronze.py y "
                "etl/ine.py); dbt la lee como fuentes."},
+    "silver": {
+        "nombre": "Silver (plata)", "sigla": "",
+        "que_es": "capa media de la arquitectura medallón: datos limpios, tipados y validados.",
+        "rol": "los modelos dbt de staging (tipos y textos) e intermedios: validan y apartan "
+               "las filas inválidas, llevan a kilo, unidad o litro, agrupan por semana y "
+               "marcan los precios atípicos."},
+    "gold": {
+        "nombre": "Gold (oro)", "sigla": "",
+        "que_es": "capa final de la arquitectura medallón: datos listos para el consumo.",
+        "rol": "los marts de dbt (el modelo estrella, rejection y las tablas del IPC), copiados "
+               "a datos.duckdb, que leen el panel, el informe y las consultas SQL."},
     "manifest": {
         "nombre": "manifest.json", "sigla": "",
         "que_es": "registro en JSON de los archivos descargados.",
@@ -238,6 +250,7 @@ LABEL_KEYS = {
     "GitHub Actions": "github_actions", "Secretos": "secrets", "etl_run": "etl_run",
     "dbt_result": "dbt_result", "Pruebas automáticas": "pytest", "etl/pipeline.py": "etl",
     "GITHUB": "github", "STREAMLIT COMMUNITY CLOUD": "streamlit_cloud",
+    "BRONZE": "bronze", "SILVER": "silver", "GOLD": "gold",
 }
 # Brand logos (bi/assets/logos) -> glossary key.
 LOGO_KEYS = {

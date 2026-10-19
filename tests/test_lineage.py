@@ -99,8 +99,16 @@ def test_layout_subtitle_headers_and_legend(build):
     assert svg.count('class="lin-status"') == tested + 1  # every tested model, and datos.duckdb
     width, height = map(float, re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', svg).groups())
     assert 1450 <= width <= 1600 and height <= 820
-    for title in ["BRONCE", "STAGING", "INTERMEDIO", "MARTS", "ORO"]:
+    for title in ["FUENTES", "STAGING", "INTERMEDIO", "MARTS", "SERVING"]:
         assert f">{title}</text>" in svg
+    # The medallion containers, left to right, each holding its columns.
+    bands = re.findall(r'class="medallion-band medallion-(\w+)" x="([\d.]+)" y="[\d.]+" width="([\d.]+)"', svg)
+    assert [key for key, _, _ in bands] == ["bronze", "silver", "gold"]
+    spans = dict((key, (float(x), float(x) + float(width))) for key, x, width in bands)
+    for key, columns, detail, _, _ in lineage.MEDALLION:
+        assert f">{key.upper()}</tspan>" in svg and f"· {detail}</tspan>" in svg
+        assert all(spans[key][0] < lineage.COLUMN_X[column] < spans[key][1] for column in columns)
+    assert spans["bronze"][1] < spans["silver"][0] and spans["silver"][1] < spans["gold"][0]
     summary = lineage.summarize_build(nodes, results)
     assert (f"staging → intermedio → marts · {summary['models']} modelos · "
             f"{summary['passing']}/{summary['tests']} pruebas") in svg
