@@ -1520,6 +1520,8 @@ def test_d098_price_context_answers_on_one_screen_without_the_removed_cards():
     assert dashboard.describe_context_option(dict(zip(dashboard.queries.KEY_COLUMNS, app.selectbox[0].value))) \
         == 'Tomate · Larga vida — Primera, kilo'
     assert 'Precios nominales, sin ajuste por inflación.' in ' '.join(c.value for c in app.caption)
+    markup = ' '.join(block.value for block in app.markdown)
+    assert 'class="ctx-reading"' in markup and 'Descontada la inflación de alimentos (IPC del INE)' in markup
     assert 'class="hint"' in text  # long paragraphs became ⓘ tooltips (D-098)
 
 
@@ -1532,7 +1534,10 @@ def test_d155_real_prices_name_the_reference_month_and_draw_the_nominal_line():
     assert not app.exception
     captions = ' '.join(c.value for c in app.caption)
     assert re.search(r'Pesos de [a-z]+ \d{4}, IPC de alimentos del INE', captions)
-    assert '<i class="nominal"></i>Nominal' in ' '.join(block.value for block in app.markdown)
+    markup = ' '.join(block.value for block in app.markdown)
+    assert '<i class="nominal"></i>Precio del día' in markup
+    # The tomato reads «sobre» in today's pesos and «bajo» without inflation: the page says so.
+    assert 'class="ctx-ipc-note"' in markup and 'Con los precios del día' in markup
 
 
 @needs_database
