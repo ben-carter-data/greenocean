@@ -12,7 +12,7 @@ from streamlit.testing.v1 import AppTest
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
-from bi import charts, control, dashboard, project, queries  # noqa: E402
+from bi import github_page, charts, control, dashboard, project, queries  # noqa: E402
 
 DASHBOARD_FILE = str(PROJECT_DIR / "bi" / "dashboard.py")
 # These tests draw the real dashboard, so they need the committed database.
@@ -498,9 +498,10 @@ def test_d149_without_secrets_the_run_is_disabled_and_reload_confirms():
 def test_project_links_are_grouped_as_a_tree_with_descriptions():
     app = draw_page(dashboard.PAGE_LINKS)
     assert not app.exception
-    # The GitHub page is one hero and a tree of three uses (bi/github_page.py).
-    links = "\n".join(block.value for block in app.markdown) + "\n".join(
-        block.value for block in app.get('html'))
+    # The GitHub page is one hero and a tree of three uses (bi/github_page.py), drawn in
+    # its own frame because st.html sanitises its SVG; the frame holds this markup.
+    assert app.get('iframe')
+    links = github_page.build_github_page_html(dashboard.get_mode())
     assert 'class="gh-page' in links
     for category in ("AUTOMATIZACIÓN", "TRAZABILIDAD", "DOCUMENTACIÓN"):
         assert category in links.upper()
@@ -1396,9 +1397,8 @@ def test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab():
     """Every PROJECT_LINKS entry points at GitHub and opens a new tab; the real
     GitHub mark crowns the page. ODEPA moved to «Fuentes» (D-118)."""
     app = draw_page(dashboard.PAGE_LINKS)
-    assert not app.exception
-    markup = "\n".join(block.value for block in app.markdown) + "\n".join(
-        block.value for block in app.get('html'))
+    assert not app.exception and app.get('iframe')
+    markup = github_page.build_github_page_html(dashboard.get_mode())
     github_links = [link for link in project.PROJECT_LINKS
                     if link["url"] and link["url"].startswith(project.GITHUB_URL)]
     assert github_links == [link for link in project.PROJECT_LINKS if link["url"]]
