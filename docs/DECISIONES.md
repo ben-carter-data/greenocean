@@ -1356,3 +1356,9 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **La vista:** arriba, la franja del método con las seis dimensiones. Luego cuatro etapas en tarjetas elevadas —01 Fuentes (archivos identificados), 02 Transformación (reglas de calidad), 03 Warehouse (consistencia de la base), 04 Resultados (cálculos contrastados)—, cada una con su ilustración, su cifra real, su veredicto y, en pequeño, los controles que corre (las once tarjetas anteriores, ahora ilustraciones con su explicación al pasar el cursor). Al pasar el cursor por una etapa se lee su rol en la calidad. Bajo las etapas, el aviso de anomalías con los rechazos registrados, unido a la etapa 02 (aislar, no corregir: la fila que no cumple una regla se aparta con su motivo). Al pie, la barra de veredicto, que dice lo pendiente y recuerda que no hay segunda fuente oficial.
 - **Se mantiene:** cada control abre su evidencia desde las píldoras (D-171), con sus datos, su método y «Volver a comprobar». Ninguna cifra nueva: todas salen de la misma evidencia; la cuenta de rechazos se lee de la tabla `rejection`.
 - **Cómo se dibuja:** un solo bloque HTML con CSS, sin script; las explicaciones son tooltips CSS, y el elemento bajo el cursor sube de capa para que ningún vecino lo tape.
+
+## D-177 · Ampliar una carta de inflación, con aire
+
+- **Fecha:** 2026-10-19.
+- **Problema:** el botón de pantalla completa que Streamlit pone sobre cada gráfico dejaba la carta en negro, porque los gráficos se ajustan al ancho de su carta. Además la frase y la lectura quedaban pegadas a las cartas.
+- **Decisión:** se oculta esa barra de herramientas en las cartas y cada una lleva su botón «Ampliar»: muestra solo esa familia, grande y con la misma escala, y «Ver todas» vuelve a la cuadrícula. Los márgenes entre la frase, la lectura y las cartas suben, y los botones nuevos usan el peso fino de D-170.
