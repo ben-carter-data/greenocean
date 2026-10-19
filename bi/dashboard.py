@@ -491,6 +491,9 @@ NOMINAL_PRICES_TEXT = "Precios nominales, sin ajuste por inflación."
 # Contexto: nominal prices or real prices deflated with the INE IPC (D-155).
 CONTEXT_BASIS_KEY = "context_price_basis"
 BASIS_NOMINAL, BASIS_REAL = "Nominal", "Real"
+# The switch of Pipeline y linaje: the whole journey first, its dbt stretch on demand.
+PIPELINE_VIEW_KEY = "pipeline_view"
+PIPELINE_JOURNEY, PIPELINE_LINEAGE = "Recorrido por capas", "Linaje dbt"
 LINEAGE_HINT = ("Se dibuja con el manifiesto de la última construcción de dbt, que el pipeline guarda en la "
                 "base: si se agrega un modelo o una prueba, aparece aquí en la carga siguiente.")
 ATTRIBUTION_TEXT = (
@@ -4998,32 +5001,39 @@ def show_pipeline_figures(summary):
 
 def show_diagrams_page(mode):
     """Pipeline y linaje (step 4 of the refonte): the figures of the latest load and
-    build, the whole journey by layers (D-136) with its dbt stretch framed, and right
-    under it that same stretch opened model by model, from the build's own manifest."""
+    build, then one card with a switch. It opens on the whole journey by layers
+    (D-136), with its dbt stretch framed; «Linaje dbt» opens that stretch model by
+    model, from the build's own manifest."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
     show_pipeline_page_header()
     nodes, results = read_lineage(get_database_version())
     summary = lineage.summarize_build(nodes, results)
     st.markdown(build_runs_css(mode), unsafe_allow_html=True)
     show_pipeline_figures(summary)
-    with open_card("pipeline_main", "Recorrido completo por capas", hint=ARCHITECTURE_HINT):
-        # Inline SVG (not an image), so each piece shows its explanation on hover.
-        st.markdown(zoom.build_zoom_frame_html(
-                        architecture.build_journey_svg(states, figures, mode, animate_flow=True),
-                        "diagram-wide")
-                    + zoom.build_zoom_frame_html(
-                        architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=True),
-                        "diagram-narrow"), unsafe_allow_html=True)
-        st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
+    view = st.session_state.get(PIPELINE_VIEW_KEY, PIPELINE_JOURNEY) if summary else PIPELINE_JOURNEY
+    lineage_view = view == PIPELINE_LINEAGE
+    title = "Dentro del tramo dbt: modelo por modelo" if lineage_view else "Recorrido completo por capas"
+    with open_card("pipeline_main", title, hint=LINEAGE_HINT if lineage_view else ARCHITECTURE_HINT):
+        if summary:
+            st.segmented_control("Vista", [PIPELINE_JOURNEY, PIPELINE_LINEAGE], default=PIPELINE_JOURNEY,
+                                 key=PIPELINE_VIEW_KEY, label_visibility="collapsed")
+        if lineage_view:
+            st.markdown(zoom.build_zoom_frame_html(lineage.build_lineage_svg(nodes, results, mode),
+                                                   "diagram-wide"), unsafe_allow_html=True)
+            if getattr(lineage, "LINEAGE_SCRIPT", ""):
+                # Hovering a model follows only its inputs and outputs; a click pins them.
+                st.html(lineage.LINEAGE_SCRIPT, unsafe_allow_javascript=True)
+        else:
+            # Inline SVG (not an image), so each piece shows its explanation on hover.
+            st.markdown(zoom.build_zoom_frame_html(
+                            architecture.build_journey_svg(states, figures, mode, animate_flow=True),
+                            "diagram-wide")
+                        + zoom.build_zoom_frame_html(
+                            architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=True),
+                            "diagram-narrow"), unsafe_allow_html=True)
+            st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
         st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
         st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
-    if summary:
-        with open_card("pipeline_lineage", "Dentro del tramo dbt: modelo por modelo", hint=LINEAGE_HINT):
-            st.markdown(f'<div class="lineage-frame">{lineage.build_lineage_svg(nodes, results, mode)}</div>',
-                        unsafe_allow_html=True)
-            st.caption("El recuadro violeta del recorrido, abierto: de Parquet (bronce) a los marts que copia "
-                       "datos.duckdb. ✓ n/m son las pruebas superadas de cada modelo; las relaciones entre marts "
-                       "están en Modelo de datos.")
 
 
 # endregion
