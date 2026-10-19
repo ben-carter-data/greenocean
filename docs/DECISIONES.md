@@ -1250,3 +1250,11 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Resultado al 19-10-2026:** el IPC de alimentos subió +44,8 %. Subieron más: Lácteos, Huevos y Margarinas (+70,8 %), Hortalizas (+60,2 %) y Pan (+50,8 %). Menos: Abarrotes (+40,5 %), Frutas (+37,7 %), Carne bovina (+37,2 %) y Cerdo, Ave y Cordero (+30,7 %).
 - **Límite dicho en la página:** el IPC de alimentos se calcula con precios de alimentos; subir con él no prueba que la inflación cause la subida de una familia.
 - **Retirado:** la banda de lo habitual, las tarjetas de precio, margen y próximos meses, la tabla de productos fuera de lo habitual, y los diálogos de datos y de serie completa (la serie completa se ve de entrada). El código de los indicadores K4 sigue en el proyecto.
+
+## D-164 · La descarga de ODEPA confía en la raíz emSign que certifi retiró
+
+- **Fecha:** 2026-10-19.
+- **Problema:** la ejecución manual del 19-10-2026 falló en «Download the ODEPA files» con `CERTIFICATE_VERIFY_FAILED`. El certificado de datos.odepa.gob.cl lo emite «emSign SSL CA - G1», que depende de la raíz «emSign Root CA - G1». La versión 2026.10.18 de certifi, la lista de raíces que usa Python, retiró las raíces emSign; la 2026.7.22 las tenía. GitHub Actions instala la última versión, así que la ejecución automática del martes habría fallado igual.
+- **Decisión:** la raíz «emSign Root CA - G1» se guarda en `agent/certs/emsign_root_ca_g1.pem` y el agente la agrega a las raíces de certifi solo para sus descargas. El certificado de ODEPA se sigue verificando completo; nunca se desactiva la verificación (`verify=False`). Huella SHA-256 `40:F6:AF:03:46:A9:9A:A1:CD:1D:55:5A:4E:9C:CE:62:C7:F9:63:46:03:EE:40:66:15:83:3D:C8:C8:D0:03:67`, la misma en certifi 2026.7.22 y en el almacén de certificados de Ubuntu.
+- **Por qué no fijar certifi a una versión antigua:** dejaría desactualizadas las raíces de todas las conexiones (GitHub, INE), no solo la de ODEPA.
+- **Revisar:** cuando ODEPA cambie de emisor, este archivo deja de hacer falta y se retira.

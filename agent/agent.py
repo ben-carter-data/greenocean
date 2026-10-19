@@ -11,10 +11,12 @@ import hashlib
 import json
 import logging
 import sys
+import tempfile
 import time
 from datetime import date, datetime
 from pathlib import Path
 
+import certifi
 import requests
 
 # region Constants
@@ -37,6 +39,10 @@ INPUT_FILE = BASE_DIR / "input.csv"
 DOWNLOAD_DIR = BASE_DIR / "downloads"
 LOG_DIR = BASE_DIR / "logs"
 MANIFEST_FILE = DOWNLOAD_DIR / "manifest.json"
+# D-164: datos.odepa.gob.cl chains to «emSign Root CA - G1», which certifi dropped
+# on 2026-10-18. The root is kept here and trusted in addition to certifi, so
+# the certificate is still fully verified.
+EXTRA_ROOT_CERTIFICATES = [BASE_DIR / "certs" / "emsign_root_ca_g1.pem"]
 
 # Maximum failed attempts per resource before it counts as a harvest failure.
 FETCH_WARNINGS_THRESHOLD = 3
@@ -99,9 +105,19 @@ def load_input_resources(input_file=INPUT_FILE):
 
 
 # region Download and validation
+def build_certificate_bundle(extra_certificates=EXTRA_ROOT_CERTIFICATES):
+    """Path of a CA bundle: certifi's roots plus the extra ones (D-164)."""
+    bundle = Path(tempfile.gettempdir()) / f"{AGENT_ID}_ca_bundle.pem"
+    parts = [Path(certifi.where()).read_text(encoding="utf-8")]
+    parts += [certificate.read_text(encoding="utf-8") for certificate in extra_certificates]
+    bundle.write_text("\n".join(parts), encoding="utf-8")
+    return bundle
+
+
 def download_file(url, destination_path):
     """Download the url into a file. Raises an exception if anything fails."""
-    response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS)
+    response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS,
+                            verify=str(build_certificate_bundle()))
     response.raise_for_status()
     destination_path.write_bytes(response.content)
 
