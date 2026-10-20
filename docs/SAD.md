@@ -223,7 +223,7 @@ GitHub Actions se detiene en el primer paso que falla, avisa al autor por correo
 
 [[diagrama:plataforma]]
 
-Es el mismo diagrama de la pestaña Plataforma y seguridad del Centro de operación: cada plataforma es un nodo de despliegue con sus componentes dentro, y cada conexión dice cómo se comunican (descargas por HTTPS, git push, despliegue de main y secretos del panel).
+Es el mismo diagrama de la pestaña Plataforma del Centro de operación: cada plataforma es un nodo de despliegue con sus componentes dentro, y cada conexión dice cómo se comunican (descargas por HTTPS, git push, despliegue de main y secretos del panel).
 
 | Nodo | Qué corre | Qué guarda |
 |---|---|---|
@@ -252,7 +252,7 @@ Es el mismo diagrama de la pestaña Plataforma y seguridad del Centro de operaci
 | Integridad | dbt construye en un almacén de trabajo; la base de servicio se escribe en un archivo temporal y solo entonces reemplaza la publicada. Una falla deja la base intacta y queda registrada |
 | Idempotencia | Cada carga reconstruye todas las tablas desde bronce; ejecutar dos veces la misma semana deja las mismas filas, y una prueba lo vigila |
 | Comparación justa | Toda variación semanal compara solo regiones con precio en ambas semanas; todo rango habitual usa la historia de las regiones presentes esta semana |
-| Seguridad | El panel abre la base en solo lectura y no ejecuta texto de un visitante. El token de GitHub y la clave de control viven en los secretos del panel; la clave se compara en tiempo constante. El workflow semanal solo puede escribir contenido e issues |
+| Seguridad | El panel abre la base en solo lectura. La página Consultas SQL sí ejecuta el SQL de un visitante, pero detrás de dos barreras: un filtro que solo deja pasar una consulta de lectura sin funciones de archivos ni direcciones web, y un motor DuckDB abierto sin acceso externo y con la configuración bloqueada, con límites de tiempo, memoria y filas. La clave de control admite 5 intentos cada 15 minutos para todos los visitantes. La pestaña Seguridad del Centro de operación muestra cada barrera con la prueba automática que la ataca en cada push. El token de GitHub y la clave de control viven en los secretos del panel; la clave se compara en tiempo constante. El workflow semanal solo puede escribir contenido e issues |
 | Observabilidad | `etl_run`, `rejection`, `dbt_node` y `dbt_result` en la base, el historial de GitHub Actions visible en Ejecuciones, el issue semanal y el correo de GitHub ante una falla |
 | Portabilidad | El motor se elige en la configuración de dbt, que ya documenta los equivalentes para BigQuery, Snowflake y PostgreSQL sin activarlos. Los modelos usan SQL lo más estándar posible y macros donde los motores difieren; las pocas funciones propias de DuckDB (fechas, expresiones regulares) son lo que habría que adaptar; el panel se conecta en un solo punto |
 
