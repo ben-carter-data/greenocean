@@ -1432,3 +1432,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema:** en la aplicación, el verde dice «verificado» y el ámbar «pendiente». Con Ingeniería de datos en ámbar, el menú podía leerse como una advertencia.
 - **Decisión:** el Dashboard conserva el verde de la marca GreenOcean; Ingeniería de datos pasa a violeta; Documentación, a un gris pizarra discreto, porque son páginas de consulta; las Fuentes siguen en azul de enlace y subrayadas. Ningún color del menú coincide con un color de estado. Contraste de 5,7:1 o más en todos los temas.
 
+## D-189 · Mapa de la base: de dónde viene cada tabla
+
+- **Fecha:** 2026-10-20.
+- **Problema:** el panel mostraba el modelo estrella y el pipeline completo, pero no respondía una pregunta directa: de dónde viene cada una de las 12 tablas de la base servida, y qué papel tiene SQLite ahora que el panel lee DuckDB.
+- **Decisión:** la página Modelo de datos tiene dos vistas, con un selector arriba: «Mapa de la base» (por defecto) y «Modelo estrella» (la de D-147, sin cambios). El mapa recorre de izquierda a derecha las fuentes (ODEPA mayorista y consumidor, IPC del INE), el aterrizaje (SQLite `raw.db` y la capa bronce en Parquet), la transformación (dbt sobre una DuckDB de trabajo: modelos por capa y pruebas, leídos de `dbt_node`), la base servida `etl/datos.duckdb` con sus 12 tablas agrupadas por origen (9 modelos de dbt, `etl_run` escrita por el pipeline, `dbt_node` y `dbt_result` como traza de dbt), y el consumo (las 8 vistas que el panel crea al conectar, y el panel en solo lectura). Debajo, el respaldo SQLite `datos.db` y la paridad que lo compara con DuckDB. Cada caja explica su papel al pasar el cursor; las filas de cada tabla se leen de la base.
+- **Cómo se dibuja:** un documento HTML propio en `st.iframe` (`bi/database_map.py`), solo con CSS, como el Centro de operación.
+

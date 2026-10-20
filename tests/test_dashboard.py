@@ -278,8 +278,20 @@ def test_dashboard_territory_is_immediately_readable_without_a_3d_duplicate():
     assert "Mapa en proporción real" in texts
 
 @needs_database
-def test_d097_model_page_is_one_panoramic_diagram():
+def test_d189_model_page_opens_on_the_database_map():
     app = draw_page(dashboard.PAGE_ARCHITECTURE)
+    assert not app.exception and not app.tabs
+    # The map is drawn in an iframe; the star model waits behind the view selector.
+    joined = " ".join(block.value for block in app.markdown)
+    assert 'aria-label="Modelo estrella de datos.db"' not in joined
+    counts, layers, tests = dashboard.read_database_map(dashboard.get_database_version())
+    assert len(counts) == 12 and counts["weekly_price"] > 100_000
+    assert layers == {"staging": 3, "intermediate": 4, "marts": 9} and tests > 0
+
+
+@needs_database
+def test_d097_model_page_is_one_panoramic_diagram():
+    app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: "Modelo estrella"})
     assert not app.exception and not app.tabs and not app.expander
     joined = " ".join(block.value for block in app.markdown)
     assert joined.count('aria-label="Modelo estrella de datos.db"') == 1
