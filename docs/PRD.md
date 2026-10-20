@@ -20,16 +20,16 @@ El producto responde tres preguntas a profesionales que deciden con estos precio
 
 | Cifra del data warehouse publicado | Valor |
 |---|---|
-| Precios semanales | 811.578 |
-| Semanas cubiertas | 249, del 03-01-2022 al 05-10-2026 |
-| Filas leídas en la última carga | 2.512.298 |
-| Filas cargadas · rechazadas | 2.512.097 · 201 |
+| Precios semanales | 814.610 |
+| Semanas cubiertas | 250, del 03-01-2022 al 12-10-2026 |
+| Filas leídas en la última carga | 2.521.012 |
+| Filas cargadas · rechazadas | 2.520.811 · 201 |
 | Regiones con datos | 9 de 16 |
 | Canales | 8 (Mayorista y 7 puntos de venta al consumidor) |
 | Claves de producto | 1.609 |
 | Meses del IPC de alimentos | 202, de diciembre 2009 a septiembre 2026 |
 | Pruebas de datos en dbt | 31, todas en verde en la última construcción |
-| Tamaño de la base que lee el panel | unos 13 MB en DuckDB (34 MB en el antiguo SQLite) |
+| Tamaño de la base que lee el panel | unos 14 MB en DuckDB (34 MB en el antiguo SQLite) |
 
 ## 2. Problema
 
@@ -179,7 +179,7 @@ Las preguntas del diseño original quedaron así:
 | K5 | Rezago | Desfase con mayor correlación entre cambios semanales | Retirado (D-146) |
 | K6 | Alerta de variación | Variación sobre las mismas regiones, a más de dos desviaciones estándar de sus 12 anteriores, de al menos 10 % y con al menos 2 cotizaciones en cada semana (D-158) | Vigente |
 | K7 | Cobertura del cruce | Claves de frutas y verduras del consumidor con margen sobre el total de esas claves | 219 de 257 |
-| K8 | Filas rechazadas | Filas rechazadas sobre filas leídas, por motivo | 201 de 2.512.298, todas por precio no positivo |
+| K8 | Filas rechazadas | Filas rechazadas sobre filas leídas, por motivo | 201 de 2.521.012, todas por precio no positivo |
 
 **Precio real.** No es un indicador nuevo, sino otra unidad de medida: el precio nominal multiplicado por el cociente entre el IPC de alimentos del último mes publicado y el del mes de la semana. El rango habitual y el estado de la semana se recalculan sobre esa serie.
 
@@ -210,7 +210,7 @@ Las preguntas del diseño original quedaron así:
 |---|---|---|---|
 | 1 | El workflow semanal corre solo cuatro semanas seguidas | Pendiente | Revisiones previstas hasta el 03-11-2026 (T-26) |
 | 2 | Dos ejecuciones de la misma semana dejan las mismas filas | Cumplido | Las dos últimas cargas registran las mismas cifras |
-| 3 | Leídas = cargadas + rechazadas | Cumplido | 2.512.298 = 2.512.097 + 201, verificado por dbt y por la auditoría |
+| 3 | Leídas = cargadas + rechazadas | Cumplido | 2.521.012 = 2.520.811 + 201, verificado por dbt y por la auditoría |
 | 4 | K7 medido y publicado | Cumplido | Calidad de datos |
 | 5 | Los cinco productos de prueba muestran margen | Cumplido en parte | Cuatro de cinco: la papa no tiene margen por la clave exacta (D-030) |
 | 6 | Cada regla RN tiene al menos una prueba y corren en cada cambio | Cumplido | Pruebas de Python y de dbt en el workflow de pruebas |
@@ -226,7 +226,7 @@ Las preguntas del diseño original quedaron así:
 | ODEPA publica 9 de las 16 regiones | Los promedios nacionales y el mapa cubren solo esas 9 |
 | La semana del 02-05-2022 no existe en la fuente consumidor | Esa semana no tiene precio al consumidor ni margen (D-042) |
 | El margen exige la misma clave y unidad | Solo frutas y verduras tienen K1; la papa no |
-| Unidades sin cantidad declarada no se convierten | 12.472 precios semanales quedan sin precio comparable |
+| Unidades sin cantidad declarada no se convierten | 12.519 precios semanales quedan sin precio comparable |
 | El IPC es nacional y de toda la división de alimentos | El precio real descuenta la inflación general de alimentos, no la de cada producto o región |
 | El INE publica con un mes de rezago | La semana más reciente suele quedar marcada como provisional |
 | ODEPA es la única fuente oficial de estos precios | No hay contraste con una segunda fuente |

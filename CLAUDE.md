@@ -20,7 +20,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 | Panel y pruebas | `pip install -r requirements.txt` |
 | Pipeline con dbt | `pip install -r requirements-pipeline.txt` (dbt no se instala en Python 3.14: usar 3.11 o 3.12) |
 | Abrir el panel | `streamlit run bi/dashboard.py` |
-| Pruebas | `python -m pytest -q` (unas 510, alrededor de 1 minuto) |
+| Pruebas | `python -m pytest -q` (unas 640, entre 2 y 4 minutos) |
 | Compilar el proyecto dbt | `dbt parse --project-dir dbt --profiles-dir dbt` |
 | Descargar ODEPA | `python agent/agent.py` |
 | ETL de respaldo (SQLite) | `python etl/etl.py` |
