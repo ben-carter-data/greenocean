@@ -121,7 +121,7 @@ El panel empieza por los datos y se recorre en cinco pasos:
 1. **Dashboard**: precios de la semana, gráficos, filtros y ayudas contextuales.
 2. **KPIs · Qué medimos**: las ocho medidas, sus fórmulas, ejemplos reales, límites y enlaces al resultado y SQL.
 3. **Arquitectura y operación**: pipeline animado, arquitectura por plataforma, modelo estrella, DevOps y seguimiento de las cargas.
-4. **Preguntas y resultados SQL**: cada pregunta con el resultado real y la consulta que lo produce.
+4. **Consultas SQL**: un estudio SQL de solo lectura con cinco consultas listas (precio frente a la época, inflación del año y desde 2022, ficha de producto y tendencia al alza), el explorador con las tablas reales y un editor para escribir consultas propias.
 5. **Documentación**: una carpeta con tres vistas propias, una por perfil —Business Intelligence, Business Analyst e IT—, cada una con qué resuelve el proyecto, su misión, su alcance, sus indicadores o sus decisiones clave, según a quién le hable; sin SQL ni código.
 
 **GitHub** reúne el código completo, los registros de ejecución, las fuentes originales y los documentos (manual, decisiones). El explorador de archivos del panel se retiró: el código se navega en el repositorio. La navegación al pie de página sigue el orden del recorrido; las vistas de cada sección tienen enlaces directos.

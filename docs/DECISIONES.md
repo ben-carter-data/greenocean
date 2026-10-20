@@ -1402,3 +1402,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-19.
 - **Decisión:** el editor y la grilla de resultados suman siempre la misma altura. Una consulta corta, como abrir una tabla, deja su espacio a las filas en vez de dejar un hueco bajo los resultados; una consulta larga conserva al menos 250 px de resultados. Si hay pocas filas, la grilla mide lo que ellas necesitan.
 
+## D-184 · «Consultas», no «Preguntas», y en su propia fila
+
+- **Fecha:** 2026-10-20.
+- **Decisión:** en el estudio SQL, la fila de ejemplos se llama «Consultas», el término técnico del proyecto; «preguntas» queda para las preguntas de negocio del PRD. Las cinco consultas van en una fila propia, bajo la conexión y «Ejecutar», para que ninguna quede escondida en una segunda línea. El manual deja de nombrar la antigua sección «Preguntas y resultados SQL».
+
