@@ -1547,3 +1547,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 ## D-206 · «Entorno local» en el diagrama de plataforma; el campo de la clave no invita a generar contraseñas
 - **Decisión:** en el diagrama Plataforma, la zona de desarrollo se llama «Entorno local» en vez de «Tu computador», un nombre profesional para un portafolio. Los campos de la clave de control se marcan como código de un solo uso (`autocomplete="one-time-code"`), para que el navegador no ofrezca crear y guardar una contraseña nueva: la clave no es la de una cuenta.
 - **Pruebas:** `tests/test_architecture.py`.
+
+## D-207 · La clave de control ya no es un campo de contraseña
+- **Problema:** desde que el acceso se abre con Enter (D-203), el campo de la clave quedó solo, sin usuario al lado, y Chrome lo tomó por un formulario de registro: ofrecía crear y guardar una contraseña nueva. Marcarlo como código de un solo uso (D-206) no bastó.
+- **Decisión:** los dos campos de la clave son campos de texto comunes que muestran puntos en vez de letras (`-webkit-text-security`), sin autocompletar. El navegador ya no los reconoce como contraseña y no ofrece nada. La comprobación, el límite de 5 intentos y el vaciado del campo no cambian.
+- **Pruebas:** `tests/test_dashboard.py` (D-202, D-207).
