@@ -1421,3 +1421,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-20.
 - **Decisión:** las páginas de cada sección del menú lateral tienen su propio color, para que se lea a qué sección pertenecen: verde para Dashboard, azul para Ingeniería de datos, violeta para Documentación y ámbar para Fuentes. Cada color tiene un tono claro para los menús oscuros y uno profundo para los claros, con contraste de 4,5:1 o más en todos los temas. El orden pasa a ser Dashboard, Ingeniería de datos, Documentación y Fuentes: las fuentes cierran el menú porque llevan fuera de la aplicación.
 
+## D-187 · Las fuentes se ven como enlaces
+
+- **Fecha:** 2026-10-20.
+- **Decisión:** las fuentes del menú abren los sitios oficiales de ODEPA e INE en una pestaña nueva, como corresponde a una fuente pública: se ve de dónde vienen los datos y no depende de que esos sitios permitan mostrarse dentro de otra página. Para que se reconozcan como enlaces, toman el azul de enlace y un subrayado fino; Ingeniería de datos pasa al ámbar que tenían. Ninguna otra entrada del menú va subrayada, porque las demás no salen de la aplicación.
+
