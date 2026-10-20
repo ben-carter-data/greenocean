@@ -7756,11 +7756,12 @@ SIDEBAR_TREE = [
           # The two ODEPA datasets get their own folder (D-118): they are not
           # GitHub, so they do not belong on the GitHub page, and they are the
           # source the whole pipeline starts from, so they sit near Arquitectura.
-          (SECTION_SOURCES, SOURCE_LINKS),
           # «El proyecto» and the old «Documentación» folder of six pages are now
           # three, one per reader (D-105, D-110): the same folder pattern as every
           # other section, not a special-cased flat link.
           (SECTION_LINKS, [PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY]),
+          # The sources close the menu (D-186): they lead out of the app.
+          (SECTION_SOURCES, SOURCE_LINKS),
           # GitHub is not a section of the list: its mark lives in the sidebar
           # footer, on a light pill, next to Apariencia (D-124).
           ]),
@@ -7780,6 +7781,30 @@ def read_current_view(window):
     views = read_window_views(window)
     view = st.query_params.get(VIEW_PARAMETER, st.session_state.get(window_view_key(window), views[0]))
     return view if view in views else views[0]
+
+
+# One color per menu section (D-186), so each child says where it belongs: green for the
+# dashboard, blue for engineering, violet for documents, amber for the external sources.
+# Bright steps on a dark sidebar, deep steps on a light one (4.5:1 or more on each).
+SECTION_COLORS = {
+    REPORT_WINDOW: ("#72e7ad", "#167046"),
+    SECTION_TECHNICAL: ("#7cc4ff", "#1d5fbf"),
+    SECTION_LINKS: ("#c9b2ff", "#6b3fc0"),
+    SECTION_SOURCES: ("#ffc27a", "#9a4f00"),
+}
+
+
+def build_section_colors_css(dark):
+    """The color of each section's children, by the path in their container key."""
+    rules = []
+    for section, (on_dark, on_light) in SECTION_COLORS.items():
+        color = on_dark if dark else on_light
+        path = "fuentes" if section == SECTION_SOURCES else WINDOW_PATHS[section]
+        rules.append(f'[class*="st-key-nav_child_{path}_"] [data-testid="stPageLink"] p, '
+                     f'[class*="st-key-nav_child_{path}_"] .nav-source-link '
+                     f'{{color:{color} !important; -webkit-text-fill-color:{color} !important; '
+                     f'text-shadow:0 0 10px color-mix(in srgb,{color} 16%,transparent);}}')
+    return "\n    ".join(rules)
 
 
 def build_sidebar_css(mode):
@@ -7857,6 +7882,7 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_child_"] [data-testid="stPageLink"] p {{color:{child_green} !important;
         -webkit-text-fill-color:{child_green} !important; font-weight:460;
         text-shadow:0 0 10px color-mix(in srgb,{child_green} 18%,transparent);}}
+    {build_section_colors_css(dark)}
     /* GitHub's mark on a light pill in the footer (D-124): a near-black logo on a
        near-white background reads on every sidebar, navy included, where the
        blue mark inside the list almost vanished. */

@@ -1416,3 +1416,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Reglas de rigor del consejo, aplicadas:** toda comparación se hace dentro de la misma serie (producto, variedad, calidad, canal, unidad y región) y luego se resume con la mediana, para que la mezcla de productos o regiones no sesgue el resultado; lo que compara tiempos usa pesos reales; la inflación se mide en las mismas dos semanas que el precio de cada serie; la brecha mayorista se rotula como brecha y no como margen, porque no incluye costos. Cada consulta de decisión termina con una columna «lectura» en palabras o con el ahorro.
 - **Una sola base:** el explorador y todas las consultas leen `etl/datos.duckdb`, construida por dbt. El respaldo SQLite (`etl/datos.db`) no se consulta aquí: solo sirve para la paridad de la página de calidad (D-154).
 
+## D-186 · Un color por sección del menú; Fuentes al final
+
+- **Fecha:** 2026-10-20.
+- **Decisión:** las páginas de cada sección del menú lateral tienen su propio color, para que se lea a qué sección pertenecen: verde para Dashboard, azul para Ingeniería de datos, violeta para Documentación y ámbar para Fuentes. Cada color tiene un tono claro para los menús oscuros y uno profundo para los claros, con contraste de 4,5:1 o más en todos los temas. El orden pasa a ser Dashboard, Ingeniería de datos, Documentación y Fuentes: las fuentes cierran el menú porque llevan fuera de la aplicación.
+
