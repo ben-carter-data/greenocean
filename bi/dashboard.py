@@ -7783,14 +7783,15 @@ def read_current_view(window):
     return view if view in views else views[0]
 
 
-# One color per menu section (D-186), so each child says where it belongs: green for the
-# dashboard, amber for engineering, violet for documents, and link blue for the external
-# sources, which are also underlined as links (D-187). Bright steps on a dark sidebar,
-# deep steps on a light one (4.5:1 or more on each).
+# One color per menu section (D-186, D-188), none of them a status color of the app
+# (green verified, amber pending, red failure): the brand green for the dashboard,
+# violet for engineering, a quiet slate for the reference documents, and link blue,
+# underlined, for the external sources. Bright steps on a dark sidebar, deep steps on a
+# light one (5.7:1 or more on each).
 SECTION_COLORS = {
     REPORT_WINDOW: ("#72e7ad", "#167046"),
-    SECTION_TECHNICAL: ("#ffc27a", "#9a4f00"),
-    SECTION_LINKS: ("#c9b2ff", "#6b3fc0"),
+    SECTION_TECHNICAL: ("#d4b5ff", "#7a2fc8"),
+    SECTION_LINKS: ("#c3cbd8", "#4a5568"),
     SECTION_SOURCES: ("#7cc4ff", "#1d5fbf"),
 }
 

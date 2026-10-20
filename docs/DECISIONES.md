@@ -1426,3 +1426,9 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-20.
 - **Decisión:** las fuentes del menú abren los sitios oficiales de ODEPA e INE en una pestaña nueva, como corresponde a una fuente pública: se ve de dónde vienen los datos y no depende de que esos sitios permitan mostrarse dentro de otra página. Para que se reconozcan como enlaces, toman el azul de enlace y un subrayado fino; Ingeniería de datos pasa al ámbar que tenían. Ninguna otra entrada del menú va subrayada, porque las demás no salen de la aplicación.
 
+## D-188 · Colores del menú sin significado de estado
+
+- **Fecha:** 2026-10-20.
+- **Problema:** en la aplicación, el verde dice «verificado» y el ámbar «pendiente». Con Ingeniería de datos en ámbar, el menú podía leerse como una advertencia.
+- **Decisión:** el Dashboard conserva el verde de la marca GreenOcean; Ingeniería de datos pasa a violeta; Documentación, a un gris pizarra discreto, porque son páginas de consulta; las Fuentes siguen en azul de enlace y subrayadas. Ningún color del menú coincide con un color de estado. Contraste de 5,7:1 o más en todos los temas.
+
