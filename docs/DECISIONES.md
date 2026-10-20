@@ -1532,3 +1532,7 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema:** después de escribir la clave había que pulsar además «Abrir», un paso de más.
 - **Decisión:** la clave se comprueba al pulsar Enter en el campo, y el botón «Abrir» desaparece. El campo se vacía después de cada intento, correcto o no, para que la clave no quede en pantalla. El límite de 5 intentos (D-199) se aplica igual. La ventana de ejecución del pipeline conserva su botón «Ejecutar», porque ahí el botón es la confirmación de una acción real.
 - **Pruebas:** `tests/test_dashboard.py` (D-202, con Enter en lugar del botón).
+
+## D-204 · La sección Seguridad sin la palabra «vulnerabilidad»
+- **Decisión:** la página «Seguridad y vulnerabilidades» pasa a llamarse **«Mapa de seguridad»**, y el plan de pruebas habla de «puntos débiles» y de «problemas sin corregir». La palabra sugería fallas abiertas, cuando la sección muestra justamente que están cerradas y probadas.
+- **Pruebas:** las del menú, actualizadas.

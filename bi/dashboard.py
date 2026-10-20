@@ -79,7 +79,7 @@ PAGE_ADR = "ADR · Decisiones de arquitectura"
 # Step 7 of the refonte: the SAD's scalability section, on its own page.
 PAGE_SCALABILITY = "Escalabilidad"
 # D-201: security has its own section, the attack view and the test plan that backs it.
-PAGE_SECURITY = "Seguridad y vulnerabilidades"
+PAGE_SECURITY = "Mapa de seguridad"
 PAGE_SECURITY_PLAN = "Plan de pruebas de seguridad"
 SECTION_RESOURCES = "Enlaces"
 # A sidebar-only folder (D-118): two external links, no Streamlit page of its own,
@@ -187,7 +187,7 @@ PAGE_ICONS = {
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
-    PAGE_SECURITY: "seguridad-y-vulnerabilidades", PAGE_SECURITY_PLAN: "plan-de-pruebas-de-seguridad",
+    PAGE_SECURITY: "mapa-de-seguridad", PAGE_SECURITY_PLAN: "plan-de-pruebas-de-seguridad",
     PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SCALABILITY: "escalabilidad", PAGE_SQL: "consultas-sql",
     PAGE_HOME: "dashboard", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
@@ -7430,7 +7430,7 @@ PROJECT_DOCUMENTS = {
     PAGE_PRD: ("PRD.md", "Qué resuelve el producto, para quién, con qué alcance y cómo se verifica."),
     PAGE_SAD: ("SAD.md", "Cómo está construido: contexto, capas, modelo de datos, ejecución y calidad."),
     PAGE_ADR: ("ADR.md", "Las decisiones que dieron forma a la arquitectura, con su contexto y sus consecuencias."),
-    PAGE_SECURITY_PLAN: ("SEGURIDAD.md", "Cómo se buscan las vulnerabilidades, cómo se corrigen y cómo se demuestra en cada push que siguen cerradas."),
+    PAGE_SECURITY_PLAN: ("SEGURIDAD.md", "Cómo se buscan los puntos débiles, cómo se corrigen y cómo se demuestra en cada push que siguen cerradas."),
 }
 DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 
