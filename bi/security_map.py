@@ -42,9 +42,11 @@ ROWS = [
                   how="Tras 5 claves incorrectas en 15 minutos, el acceso se bloquea 15 minutos, incluso para la clave "
                       "correcta. El contador es uno para todos: abrir otra sesión no lo reinicia.",
                   test="tests/test_control.py::test_d199_five_wrong_codes_lock_even_the_right_one_for_fifteen_minutes"),
-             dict(icon="files", title="Desbloqueo por sesión", line="no queda en la URL ni en cookies",
-                  how="Abrir con la clave vale solo para esa pestaña del navegador. Un enlace copiado no lleva el acceso.",
-                  test="tests/test_dashboard.py::test_d199_the_code_box_survives_any_character_and_locks_after_five_wrong_codes"),
+             dict(icon="files", title="Una sola puerta", line="el botón aparece solo tras la clave",
+                  how="Antes de la clave, el visitante no ve el botón del pipeline ni los enlaces: solo «Acceso del autor». "
+                      "Abrir vale solo para esa pestaña y no queda en la URL ni en cookies; la ventana de ejecución vuelve "
+                      "a pedir la clave si la sesión no está abierta.",
+                  test="tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code"),
          ]),
     dict(door="Código público", asset=("secret", "Secretos", "token de GitHub y clave de control"),
          attempt="Buscar claves en el repositorio, en los mensajes de error o abusar de los permisos del workflow.",
