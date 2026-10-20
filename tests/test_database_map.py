@@ -81,13 +81,22 @@ def test_d192_only_the_stores_that_hold_data_carry_the_cylinder():
     assert "\\n" not in markup.split("</style>")[0]  # no stray escape inside the stylesheet
 
 
-def test_d192_the_parity_line_ends_on_the_duckdb_file_not_on_a_table_group():
+def test_d194_parity_is_one_straight_line_between_the_duckdb_file_and_the_backup():
     served_x, served_y = database_map.PLACES["served"]
-    _, _, side, down, end = database_map.PARITY_PATH.split()  # M<x> <y>  H<side>  V<down>  H<end>
-    side_x, last_y, end_x = int(side[1:]), int(down[1:]), int(end[1:])
-    assert abs(end_x - served_x) <= database_map.HALF + 10  # under the DuckDB logo itself (its edge, cylinder included)
-    assert served_y + database_map.HALF < last_y < database_map.BRACE_Y  # between the file and the group
-    assert side_x < served_x - 190  # round the left of the group, never through one of its three logos
+    backup_x, backup_y = database_map.PLACES["backup"]
+    assert served_x == backup_x  # the backup sits right under the file it is compared with
+    move, from_y, down = database_map.PARITY_PATH.split()  # M<x> <y> V<y>: vertical, nothing else
+    assert move == f"M{served_x}" and down.startswith("V") and "H" not in database_map.PARITY_PATH
+    assert served_y + database_map.HALF < int(from_y) < int(down[1:]) < backup_y - database_map.HALF + 1
+    assert 'marker-start="url(#head)" marker-end="url(#head)"' in build()  # a head at each end
+    assert database_map.PARITY_LABEL[0] == served_x  # the label sits on the line
+
+
+def test_d194_the_ine_skips_sqlite_and_says_so_and_the_three_table_groups_hang_over_the_file():
+    markup = build()
+    assert "sin pasar por SQLite" in markup and "ine_ipc_source" in markup  # label and hover
+    assert database_map.GROUP_TOP < database_map.BRACE_Y < database_map.PLACES["served"][1]  # group above the file
+    assert database_map.TABLES_PATH.startswith(f"M{database_map.PLACES['served'][0]} ")
 
 
 def test_d193_the_three_sources_are_three_logos_with_their_own_name_and_all_feed_the_flow():
