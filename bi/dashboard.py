@@ -35,7 +35,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                database_map, doc_diagrams, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
+                database_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -2902,6 +2902,13 @@ def show_architecture_page(mode):
         st.iframe(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests,
                                               read_store_sizes()), height=660)
         return
+    if view == MODEL_VIEWS[2]:
+        schema = read_er_schema(get_database_version())
+        st.markdown('<p class="arch-phrase">El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las '
+                    'relaciones entre ellas. Los tipos se leen de la base.</p>', unsafe_allow_html=True)
+        with st.container(key="architecture_diagram"):
+            st.markdown(er_diagram.build_er_svg(schema, row_counts, mode, tooltips), unsafe_allow_html=True)
+        return
     st.markdown('<p class="arch-phrase">1 fila de weekly_price = un producto '
                 '(variedad y calidad) × región × canal × unidad × semana. '
                 'Pasa el mouse por una tabla para ver para qué sirve.</p>', unsafe_allow_html=True)
@@ -2915,7 +2922,13 @@ def show_architecture_page(mode):
                     + '</span></div>', unsafe_allow_html=True)
 
 
-MODEL_VIEWS = ["Dónde viven los datos", "Modelo estrella"]
+@st.cache_data(show_spinner=False)
+def read_er_schema(database_version):
+    """Columns and DuckDB types of the tables of the entity-relationship diagram (D-195)."""
+    return er_diagram.read_schema()
+
+
+MODEL_VIEWS = ["Dónde viven los datos", "Modelo estrella", "Entidad-relación"]
 MODEL_VIEW_KEY = "model_view"
 
 

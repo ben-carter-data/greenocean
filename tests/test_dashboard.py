@@ -1678,3 +1678,14 @@ def test_d191_file_sizes_for_the_storage_diagram():
     sizes = dashboard.read_store_sizes()
     assert sizes["served"].endswith("MB") and sizes["backup"].endswith("MB") and "MB" in sizes["raw"]
     assert dashboard.format_file_size(18_624_512) == "19 MB" and dashboard.format_file_size(2_500_000) == "2,5 MB"
+
+
+@needs_database
+def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relationship_diagram():
+    assert dashboard.MODEL_VIEWS == ["Dónde viven los datos", "Modelo estrella", "Entidad-relación"]
+    app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: "Entidad-relación"})
+    assert not app.exception and not app.tabs
+    joined = " ".join(block.value for block in app.markdown)
+    assert 'aria-label="Modelo entidad-relación de datos.duckdb"' in joined
+    assert joined.count('class="er-table ') == 9 and "PK, FK" in joined
+    assert 'aria-label="Modelo estrella de datos.duckdb"' not in joined  # one view at a time
