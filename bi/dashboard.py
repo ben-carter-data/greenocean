@@ -6477,6 +6477,23 @@ def show_admin_card():
                  icon=":material/check_circle:")
 
 
+AUTHOR_CODE_MESSAGE = "author_code_message"
+
+
+def check_author_code(access_code):
+    """The code typed in «Acceso del autor», checked by the shared guard (D-199); the field is
+    emptied either way, so the code never stays on screen."""
+    typed_code = st.session_state.get("author_access_code", "")
+    st.session_state["author_access_code"] = ""
+    if not typed_code:
+        return
+    ok, message = get_login_guard().check(typed_code, access_code)
+    if ok:
+        st.session_state[ADMIN_UNLOCKED] = True
+    else:
+        st.session_state[AUTHOR_CODE_MESSAGE] = message
+
+
 def lock_author_access():
     st.session_state[ADMIN_UNLOCKED] = False
 
@@ -6499,12 +6516,11 @@ def show_author_access(access_code, unlocked):
         if not access_code:
             st.caption("Se activa cuando el autor guarda la clave de control en los secretos del panel.")
             return
-        typed_code = st.text_input("Clave de control", type="password", key="author_access_code")
-        if st.button("Abrir", key="author_access_open", icon=":material/lock_open:"):
-            ok, message = get_login_guard().check(typed_code, access_code)
-            if ok:
-                st.session_state[ADMIN_UNLOCKED] = True
-                st.rerun()
+        # Enter opens it (D-203): the code is checked when the field commits, no extra button.
+        st.text_input("Clave de control", type="password", key="author_access_code",
+                      on_change=check_author_code, args=(access_code,), placeholder="Escribe la clave y pulsa Enter")
+        message = st.session_state.pop(AUTHOR_CODE_MESSAGE, None)
+        if message:
             st.error(message, icon=":material/lock:")
 
 

@@ -487,8 +487,8 @@ def button_keys(app):
 
 
 def open_author_access(app, code):
+    """D-203: Enter in the field opens the door; there is no «Abrir» button."""
     app.text_input(key="author_access_code").input(code).run()
-    app.button(key="author_access_open").click().run()
     return read_page_text(app)
 
 
@@ -497,7 +497,8 @@ def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN})
     assert not app.exception
     # Before the code: no run button and no administration address, only the door.
-    assert "runs_run_now" not in button_keys(app) and "author_access_open" in button_keys(app)
+    assert "runs_run_now" not in button_keys(app) and app.text_input(key="author_access_code")
+    assert "author_access_open" not in button_keys(app)
     assert not [address for address in ADMIN_ADDRESSES if address in read_page_text(app)]
     text = open_author_access(app, "equivocada")
     assert not app.exception and "Clave incorrecta" in text and "runs_run_now" not in button_keys(app)
@@ -556,7 +557,7 @@ def test_d149_a_failed_run_says_it_did_not_complete():
 @needs_database
 def test_d149_without_secrets_the_run_is_disabled_and_reload_confirms():
     app = draw_control_page({})
-    assert "runs_run_now" not in button_keys(app) and "author_access_open" not in button_keys(app)
+    assert "runs_run_now" not in button_keys(app) and not [box for box in app.text_input if box.key == "author_access_code"]
     assert "Se activa cuando el autor guarda la clave" in read_page_text(app)
     app.button(key="runs_reload").click().run()
     assert not app.exception

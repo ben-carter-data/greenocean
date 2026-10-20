@@ -1527,3 +1527,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** una sola puerta, «Acceso del autor». Antes de la clave, el visitante solo ve «Recargar datos» y esa puerta. Con la clave correcta aparecen juntos el botón del pipeline y «Enlaces del autor», con la nota de que cada enlace pide su propia sesión, y un botón «Cerrar acceso». La ventana de ejecución vuelve a pedir la clave si la sesión no está abierta (defensa en profundidad), y la clave sigue limitada a 5 intentos (D-199).
 - **Seguridad:** la barrera «Desbloqueo por sesión» de la vista pasa a ser «Una sola puerta», y el plan de pruebas suma el caso S-10 (lanzar el pipeline sin la clave).
 - **Pruebas:** `tests/test_dashboard.py` (D-202) y `tests/test_operation_center.py`.
+
+## D-203 · El acceso del autor se abre con Enter
+- **Problema:** después de escribir la clave había que pulsar además «Abrir», un paso de más.
+- **Decisión:** la clave se comprueba al pulsar Enter en el campo, y el botón «Abrir» desaparece. El campo se vacía después de cada intento, correcto o no, para que la clave no quede en pantalla. El límite de 5 intentos (D-199) se aplica igual. La ventana de ejecución del pipeline conserva su botón «Ejecutar», porque ahí el botón es la confirmación de una acción real.
+- **Pruebas:** `tests/test_dashboard.py` (D-202, con Enter en lugar del botón).
