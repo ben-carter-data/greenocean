@@ -6,6 +6,10 @@ permission to run workflows, kept in the dashboard secrets, never in the code.
 """
 from datetime import datetime, timedelta, timezone
 
+import hmac
+import threading
+import time
+
 import requests
 
 # region Constants
@@ -256,3 +260,43 @@ def find_run_started_after(runs, requested_at):
             return run
     return None
 # endregion
+
+
+# The control code (D-199): compared in constant time, as bytes so any character works, and
+# guarded against guessing. The count is shared by every visitor, so opening new sessions
+# does not reset it; while it is locked, the pipeline still runs from GitHub.
+LOGIN_MAX_FAILURES = 5
+LOGIN_WINDOW_SECONDS = 15 * 60
+LOGIN_LOCK_SECONDS = 15 * 60
+LOGIN_FAILURE_DELAY_SECONDS = 1.0
+
+
+class LoginGuard:
+    """At most LOGIN_MAX_FAILURES wrong codes in LOGIN_WINDOW_SECONDS, then a lock."""
+
+    def __init__(self, clock=time.time, sleep=time.sleep):
+        self.clock, self.sleep = clock, sleep
+        self.failures, self.locked_until = [], 0.0
+        self.lock = threading.Lock()
+
+    def seconds_locked(self):
+        return max(0.0, self.locked_until - self.clock())
+
+    def check(self, typed, expected):
+        """(ok, message in Spanish). A locked guard refuses even the right code."""
+        with self.lock:
+            now = self.clock()
+            if now < self.locked_until:
+                minutes = int((self.locked_until - now) // 60) + 1
+                return False, f"Demasiados intentos. Vuelve a intentarlo en {minutes} min."
+            if expected and hmac.compare_digest((typed or "").encode("utf-8"), str(expected).encode("utf-8")):
+                self.failures.clear()
+                return True, ""
+            self.failures = [moment for moment in self.failures if now - moment < LOGIN_WINDOW_SECONDS] + [now]
+            if len(self.failures) >= LOGIN_MAX_FAILURES:
+                self.locked_until, self.failures = now + LOGIN_LOCK_SECONDS, []
+                return False, (f"Clave incorrecta. Demasiados intentos: el acceso queda bloqueado "
+                               f"{LOGIN_LOCK_SECONDS // 60} min.")
+            left = LOGIN_MAX_FAILURES - len(self.failures)
+        self.sleep(LOGIN_FAILURE_DELAY_SECONDS)  # slows a script down, outside the lock
+        return False, f"Clave incorrecta. Quedan {left} intento{'s' if left != 1 else ''}."

@@ -21,6 +21,14 @@ ALL_PAGES = [p for views in dashboard.WINDOWS.values() for p in views]
 
 
 @pytest.fixture(autouse=True)
+def reset_login_guard():
+    """The control-code guard is shared by every session (D-199): each test starts clean."""
+    dashboard.get_login_guard.clear()
+    yield
+    dashboard.get_login_guard.clear()
+
+
+@pytest.fixture(autouse=True)
 def fixed_github_answers(monkeypatch):
     monkeypatch.setattr(control, "list_workflow_runs", lambda *args, **kwargs: [])
     dashboard.fetch_pipeline_runs.clear()
@@ -485,6 +493,18 @@ def test_d149_the_manual_run_is_one_visible_button_and_asks_for_the_code():
     text = open_run_dialog(app, "equivocada")
     assert not app.exception and "Clave incorrecta" in text
     assert not [address for address in ADMIN_ADDRESSES if address in text]
+
+
+@needs_database
+def test_d199_the_code_box_survives_any_character_and_locks_after_five_wrong_codes():
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
+    text = open_run_dialog(app, "contraseña ñ")
+    assert not app.exception and "Clave incorrecta" in text
+    for attempt in range(control.LOGIN_MAX_FAILURES - 1):
+        text = open_run_dialog(app, f"intento{attempt}")
+    assert "bloqueado" in text
+    text = open_run_dialog(app, "clave")
+    assert not app.exception and "Demasiados intentos" in text and "Se ejecutó" not in text
 
 
 @needs_database
