@@ -431,11 +431,11 @@ def draw_control_page(secrets, run_state="ok", dialog=False):
     dialog itself: in a browser the dialog reruns alone (a fragment), which AppTest
     does not reproduce."""
     script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "from datetime import datetime, timezone\n"
+              "from datetime import datetime, timedelta, timezone\n"
               "from bi import control, dashboard\n"
               "control.list_workflow_runs = lambda *args, **kwargs: []\n"
-              "control.read_token_expiration = lambda token: datetime(2026, 10, 20, "
-              "tzinfo=timezone.utc)\n"
+              # Relative to today: a fixed date made this test fail the day it arrived.
+              "control.read_token_expiration = lambda token: datetime.now(timezone.utc) + timedelta(days=60)\n"
               "control.start_workflow_run = lambda token: None\n"
               "dashboard.wait_for_manual_run = lambda requested_at, token: {'id': 1}\n"
               f"dashboard.follow_run_progress = lambda run_id, token, area: {run_state!r}\n"
