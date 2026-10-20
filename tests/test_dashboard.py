@@ -499,6 +499,9 @@ def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
     # Before the code: no run button and no administration address, only the door.
     assert "runs_run_now" not in button_keys(app) and app.text_input(key="author_access_code")
     assert "author_access_open" not in button_keys(app)
+    # D-207: a plain field shown as dots; a password field makes the browser offer to create one.
+    assert app.text_input(key="author_access_code").proto.type != app.text_input(key="author_access_code").proto.PASSWORD
+    assert "-webkit-text-security:disc" in dashboard.build_runs_css(charts.MODE_DARK)
     assert not [address for address in ADMIN_ADDRESSES if address in read_page_text(app)]
     text = open_author_access(app, "equivocada")
     assert not app.exception and "Clave incorrecta" in text and "runs_run_now" not in button_keys(app)
