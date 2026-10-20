@@ -55,7 +55,7 @@ El panel sirve a profesionales que toman decisiones con estos precios, no al con
 | Analista de pricing | Ajustar sus precios de venta | ¿El precio de esta semana es normal para la época, en pesos de hoy? |
 | Comprador o abastecimiento | Cuándo comprar y qué negociar | ¿Cuánto paga el consumidor sobre el mayorista, y es lo habitual? |
 | Gerencia | Dónde mirar esta semana | ¿Qué se movió y qué es inusual? |
-| Equipo de datos | Si la carga es confiable | Estado de cada ejecución, rechazos, cobertura del cruce y pruebas |
+| Revisor técnico (por ejemplo, un reclutador) | Si el proyecto es confiable y está bien construido | Estado de cada ejecución, rechazos, cobertura del cruce, pruebas y documentos |
 
 Toda funcionalidad nueva debe responder a una decisión de uno de estos usuarios; si no responde a ninguna, no se construye. No hay inicio de sesión ni datos personales.
 
@@ -63,7 +63,7 @@ Quién usa el sistema, para qué, y de qué sistemas externos depende:
 
 [[diagrama:actores]]
 
-El visitante solo lee. El autor opera: mantiene el código y los secretos y puede lanzar una ejecución manual protegida por clave. ODEPA y el INE entregan los datos; GitHub Actions ejecuta el workflow, el repositorio guarda el código y la base publicada, y Streamlit Community Cloud publica el panel.
+El visitante solo lee: usa las preguntas de negocio y, si es un revisor técnico, la calidad y los documentos. El autor opera: responde las consultas SQL que alguien le pida, mantiene el código y los secretos y puede lanzar una ejecución manual protegida por clave. ODEPA y el INE entregan los datos; GitHub Actions ejecuta el workflow, el repositorio guarda el código y la base publicada, y Streamlit Community Cloud publica el panel.
 
 ## 4. Visión y objetivos
 
@@ -246,8 +246,8 @@ Las preguntas del diseño original quedaron así:
 
 | Extensión | Para qué usuario | Estado | Decisión |
 |---|---|---|---|
-| Parquet, dbt Core y DuckDB | Equipo de datos | Entregada | ADR-30 |
+| Parquet, dbt Core y DuckDB | El autor | Entregada | ADR-30 |
 | IPC del INE y precios reales | Pricing, compras | Entregada | ADR-33 |
 | Clima por región y semana, junto a las alertas, sin afirmar causalidad | Pricing, gerencia | Prevista | D-152 |
 | Warehouse en la nube | Solo si una empresa suma sus propios datos | No adoptada | ADR-31 |
-| Retiro del respaldo SQLite | Equipo de datos | Pendiente de la decisión del autor | D-154 |
+| Retiro del respaldo SQLite | El autor | Pendiente de la decisión del autor | D-154 |
