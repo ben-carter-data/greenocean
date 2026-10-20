@@ -1481,3 +1481,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Coherente con los datos:** los tipos y las columnas se leen de la base (`DESCRIBE`); las relaciones son las que prueba dbt en `schema.yml`, más la de `rejection` que comprueba la página de calidad; una prueba falla si el diagrama dibuja una que dbt no prueba o si dbt prueba una que no está dibujada. La clave primaria compuesta de `weekly_price` es la que comprueba la consulta de duplicados.
 - **Fuera del diagrama, y dicho en la leyenda:** `ine_ipc_source` (copia cruda de los archivos del INE) y `dbt_node` y `dbt_result` (la traza de dbt): son almacenamiento y registro, no parte del modelo.
 
+
+## D-196 · Calidad y auditoría rehechas: medir de verdad y demostrar el origen de cada cifra
+- **Problema:** la página mostraba tarjetas con textos y figuras fijas (entre ellas una auditoría manual sin fecha). Parecía de adorno: no medía nada al abrir y no dejaba seguir una cifra hasta su origen.
+- **Decisión:** la página se divide en dos vistas con un selector. **Calidad** mide en cada carga, sobre la base publicada, once indicadores en las seis dimensiones de DAMA-DMBOK (completitud, unicidad, validez, consistencia, oportunidad y trazabilidad). Cada cifra lleva al lado su umbral, que es un parámetro del proyecto, y un veredicto global; el historial de cargas y los rechazos y marcas se leen de `etl_run`, `rejection` y `weekly_price`. **Auditoría** elige un producto, un canal y una región, y sigue su último precio en seis pasos: archivo de origen, aterrizaje, reglas, dbt, base servida y panel.
+- **Honestidad:** si el archivo CSV de origen no está en el servidor, el paso lo dice («no se puede comprobar aquí») en vez de mostrarlo como verificado. La cifra de la auditoría manual lleva su fecha (18-10-2026: 400 de 400).
+- **Código:** `bi/quality_live.py` y `bi/audit_trace.py`; `bi/quality_view.py` conserva la vista de evidencias dentro de Auditoría.
+- **Pruebas:** `tests/test_quality_audit.py` (umbrales, degradación, huella del archivo, traza de seis pasos) y las pruebas de página actualizadas.
