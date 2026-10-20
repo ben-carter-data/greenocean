@@ -7794,6 +7794,8 @@ def keep_context():
     context = {}
     if st.session_state.get(THEME_STATE) in charts.THEMES:
         context[THEME_PARAMETER] = st.session_state[THEME_STATE]
+    if st.session_state.get(VIEW_AS_STATE) in VIEW_AS:
+        context[VIEW_AS_PARAMETER] = st.session_state[VIEW_AS_STATE]
     return context
 
 
@@ -7999,6 +8001,47 @@ SIDEBAR_TREE = [
           # footer, on a light pill, next to Apariencia (D-124).
           ]),
 ]
+
+# D-209 (stage 1): «Ver como» picks whose menu the sidebar shows. It never locks a page:
+# an address outside the chosen menu still opens.
+VIEW_AS_PARAMETER = "ver"
+VIEW_AS_STATE = "view_as"
+VIEW_AS = {"visitante": "Visitante", "analista": "Analista de negocio",
+           "ingenieria": "Ingeniería de datos", "reclutador": "Reclutador"}
+DEFAULT_VIEW_AS = "visitante"
+# Folders that start folded: the sources and, for engineering, the documents (D-209).
+FOLDED_SECTIONS = {SECTION_SOURCES, SECTION_LINKS}
+
+
+def build_view_as_tree(view_as):
+    """The (section, pages) rows of one profile's menu."""
+    if view_as == "ingenieria":
+        sections = [row for row in SIDEBAR_TREE[0][1] if row[0] != SECTION_LINKS]
+        return sections + [row for row in SIDEBAR_TREE[0][1] if row[0] == SECTION_LINKS]
+    if view_as == "analista":
+        return [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY]), (SECTION_TECHNICAL, [PAGE_OPERATIONS]),
+                (SECTION_LINKS, [PAGE_PRD, PAGE_SAD]), (SECTION_SOURCES, SOURCE_LINKS)]
+    if view_as == "reclutador":
+        return [(REPORT_WINDOW, [PAGE_HOME])]
+    return [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY]), (SECTION_SOURCES, SOURCE_LINKS)]
+
+
+def read_view_as():
+    """The profile from the address first, then the session; Visitante by default."""
+    requested = st.query_params.get(VIEW_AS_PARAMETER)
+    view_as = requested if requested in VIEW_AS else st.session_state.get(VIEW_AS_STATE, DEFAULT_VIEW_AS)
+    view_as = view_as if view_as in VIEW_AS else DEFAULT_VIEW_AS
+    st.session_state[VIEW_AS_STATE] = view_as
+    st.query_params[VIEW_AS_PARAMETER] = view_as
+    return view_as
+
+
+def remember_view_as():
+    st.query_params[VIEW_AS_PARAMETER] = st.session_state[VIEW_AS_STATE]
+
+
+SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">'
+                   '<path fill="currentColor" d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>')
 SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingeniería de datos",
                       SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación", SECTION_SECURITY: "Seguridad",
                       SECTION_RESOURCES: "GitHub"}
@@ -8037,6 +8080,7 @@ def build_section_colors_css(dark):
         color = on_dark if dark else on_light
         path = "fuentes" if section == SECTION_SOURCES else WINDOW_PATHS[section]
         rules.append(f'[class*="st-key-nav_child_{path}_"] [data-testid="stPageLink"] p, '
+                     f'[class*="st-key-nav_child_{path}_"] [data-testid="stPageLink"] [data-testid="stIconMaterial"], '
                      f'[class*="st-key-nav_child_{path}_"] .nav-source-link '
                      f'{{color:{color} !important; -webkit-text-fill-color:{color} !important; '
                      f'text-shadow:0 0 10px color-mix(in srgb,{color} 16%,transparent);}}')
@@ -8092,11 +8136,14 @@ def build_sidebar_css(mode):
         background:transparent !important; box-shadow:none !important; min-height:27px; gap:0 !important;
         border:1px solid transparent; transition:background .12s ease,border-color .12s ease;}}
     [data-testid="stSidebar"] [data-testid="stPageLink"] p {{font-size:.78rem; color:{text} !important;
-        font-weight:400; letter-spacing:-.005em; padding-left:10px;
+        font-weight:400; letter-spacing:-.01em; padding-left:5px;
+        white-space:normal; overflow:visible; text-overflow:clip; line-height:1.3;
         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{display:none !important;}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]) {{
-        display:none !important;}}
+    /* D-209: a small icon before each page says what it is, in its section's color. */
+    [data-testid="stSidebar"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{font-size:15px !important;
+        width:15px; color:currentColor; opacity:.9;}}
+    [class*="st-key-nav_child_"] [data-testid="stPageLink"] a {{color:{child_green} !important;}}
+    .nav-source-icon {{vertical-align:-3px; margin-right:8px;}}
     [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {{
         background:color-mix(in srgb,{text} 7%,transparent) !important;
         border-color:{hairline};}}
@@ -8136,7 +8183,7 @@ def build_sidebar_css(mode):
     .sidebar-github:hover {{transform:translateY(-1px); box-shadow:0 9px 18px -6px rgba(0,0,0,.5);}}
     .sidebar-github-current {{outline:2px solid {palette['accent']}; outline-offset:2px;}}
     /* «Fuentes»: external children in the same green as every other child (D-118). */
-    .nav-source-link {{display:block; padding:3px 7px 3px 18px; margin:1px 0; border-radius:5px;
+    .nav-source-link {{display:block; padding:3px 7px 3px 7px; margin:1px 0; border-radius:5px;
         font-size:.78rem; font-weight:400; letter-spacing:-.005em; text-decoration:none !important;
         color:{child_green} !important; -webkit-text-fill-color:{child_green} !important;
         line-height:1.5;
@@ -8168,7 +8215,7 @@ def nav_open_key(window):
     return f"nav_open_{path}"
 
 
-SIDEBAR_NAV_VERSION = 6
+SIDEBAR_NAV_VERSION = 7
 
 
 def show_sidebar_navigation(windows_by_title, current_window, order):
@@ -8179,10 +8226,14 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
         for _, sections in SIDEBAR_TREE:
             for window, views in sections:
                 if views is not None:
-                    st.session_state[nav_open_key(window)] = True
+                    st.session_state[nav_open_key(window)] = window not in FOLDED_SECTIONS
+        st.session_state[nav_open_key(SECTION_SOURCES)] = False
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
-    for heading, sections in SIDEBAR_TREE:
+    st.sidebar.selectbox("Ver como", list(VIEW_AS), format_func=VIEW_AS.get, key=VIEW_AS_STATE,
+                         on_change=remember_view_as,
+                         help="Muestra el menú de cada lector. Ninguna página se bloquea.")
+    for heading, sections in [("", build_view_as_tree(st.session_state[VIEW_AS_STATE]))]:
         if heading:
             st.sidebar.markdown(f'<div class="nav-heading">{heading}</div>', unsafe_allow_html=True)
         for window, views in sections:
@@ -8211,7 +8262,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
                 for index, (name, url) in enumerate(views):
                     with st.sidebar.container(key=f"nav_child_{nav_path}_{index}"):
                         st.markdown(f'<a class="nav-source-link" href="{html.escape(url, quote=True)}" '
-                                   f'target="_blank" rel="noopener noreferrer">{html.escape(name)}</a>',
+                                   f'target="_blank" rel="noopener noreferrer">{SOURCE_ICON_SVG}{html.escape(name)}</a>',
                                    unsafe_allow_html=True)
                 continue
             for index, view in enumerate(views):
@@ -8219,7 +8270,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
                 key = f"nav_child_{nav_path}_{index}" + ("_nav_current" if active else "")
                 with st.sidebar.container(key=key):
                     st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
-                                 query_params=keep_context() | {VIEW_PARAMETER: view})
+                                 icon=PAGE_ICONS.get(view), query_params=keep_context() | {VIEW_PARAMETER: view})
     show_sidebar_footer(current_window)
 
 
@@ -8304,6 +8355,7 @@ def main():
     st.session_state.pop(PROFILE_PARAMETER, None)
     st.query_params.pop("perfil", None)
     restore_return_context()
+    read_view_as()
     profile = None
     order = order_windows()
     start = start_window(profile)
