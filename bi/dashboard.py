@@ -7784,13 +7784,14 @@ def read_current_view(window):
 
 
 # One color per menu section (D-186), so each child says where it belongs: green for the
-# dashboard, blue for engineering, violet for documents, amber for the external sources.
-# Bright steps on a dark sidebar, deep steps on a light one (4.5:1 or more on each).
+# dashboard, amber for engineering, violet for documents, and link blue for the external
+# sources, which are also underlined as links (D-187). Bright steps on a dark sidebar,
+# deep steps on a light one (4.5:1 or more on each).
 SECTION_COLORS = {
     REPORT_WINDOW: ("#72e7ad", "#167046"),
-    SECTION_TECHNICAL: ("#7cc4ff", "#1d5fbf"),
+    SECTION_TECHNICAL: ("#ffc27a", "#9a4f00"),
     SECTION_LINKS: ("#c9b2ff", "#6b3fc0"),
-    SECTION_SOURCES: ("#ffc27a", "#9a4f00"),
+    SECTION_SOURCES: ("#7cc4ff", "#1d5fbf"),
 }
 
 
@@ -7804,6 +7805,10 @@ def build_section_colors_css(dark):
                      f'[class*="st-key-nav_child_{path}_"] .nav-source-link '
                      f'{{color:{color} !important; -webkit-text-fill-color:{color} !important; '
                      f'text-shadow:0 0 10px color-mix(in srgb,{color} 16%,transparent);}}')
+    # Only the sources leave the app, so only they look like web links: a fine underline.
+    rules.append('[data-testid="stSidebar"] a.nav-source-link {text-decoration:underline !important; text-decoration-thickness:1px; '
+                 'text-underline-offset:3px; text-decoration-color:color-mix(in srgb, currentColor 55%, transparent);}')
+    rules.append('[data-testid="stSidebar"] a.nav-source-link:hover {text-decoration-color:currentColor;}')
     return "\n    ".join(rules)
 
 
