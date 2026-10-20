@@ -656,8 +656,10 @@ def build_css(palette):
 .st-key-sqlx_studio [data-testid="stMarkdownContainer"] > p {{ margin:0; }}
 .st-key-sqlx_studio {{ gap:0 !important; border-radius:18px; background:{card}; border:1px solid {border};
   box-shadow:{panel_shadow}; overflow:hidden; margin-top:4px; }}
-.st-key-sqlx_toolbar {{ flex-wrap:wrap !important; gap:6px 10px !important; padding:9px 14px 9px 12px;
+.st-key-sqlx_toolbar {{ gap:7px !important; padding:9px 14px 9px 12px;
   background:{toolbar}; border-bottom:1px solid {border}; box-shadow:0 1px 0 rgba(255,255,255,{'.06' if dark else '.9'}) inset; }}
+.st-key-sqlx_toolbar_main, .st-key-sqlx_chips_row {{ flex-wrap:wrap !important; gap:6px 10px !important; }}
+.st-key-sqlx_chips_row .sqlx-bar-label {{ margin-right:4px; min-width:84px; }}
 .sqlx-db {{ display:inline-flex; align-items:center; gap:7px; padding:4px 12px 4px 9px; border-radius:999px;
   background:{field}; border:1px solid {border}; box-shadow:{raised}; font-size:.78rem; color:{ink};
   font-family:{mono}; white-space:nowrap; }}
@@ -1081,15 +1083,18 @@ def show_sql_explorer_page(mode):
         catalog = []
         st.warning(f"No se pudo leer la base de datos: {error}")
     with st.container(key="sqlx_studio"):
-        with st.container(key="sqlx_toolbar", horizontal=True, vertical_alignment="center"):
-            st.markdown(build_database_html(), unsafe_allow_html=True)
-            run = st.button("Ejecutar", type="primary", key="sqlx_run", icon=":material/play_arrow:",
-                            help="Ejecuta la consulta del editor (también Ctrl + Enter).")
-            st.markdown('<span class="sqlx-sep"></span><span class="sqlx-bar-label" title="Cinco preguntas para decidir. Para ir más '
-                        'lejos, escribe tu propia consulta en el editor: las vistas están a la izquierda.">Preguntas</span>',
-                        unsafe_allow_html=True)
-            for index, (title, question, _) in enumerate(EXAMPLES):
-                st.button(title, key=f"sqlx_chip_{index}", help=question, on_click=choose_example, args=(index,))
+        with st.container(key="sqlx_toolbar"):
+            with st.container(key="sqlx_toolbar_main", horizontal=True, vertical_alignment="center"):
+                st.markdown(build_database_html(), unsafe_allow_html=True)
+                run = st.button("Ejecutar", type="primary", key="sqlx_run", icon=":material/play_arrow:",
+                                help="Ejecuta la consulta del editor (también Ctrl + Enter).")
+            # The five queries on a row of their own, so none hides under the others (D-184).
+            with st.container(key="sqlx_chips_row", horizontal=True, vertical_alignment="center"):
+                st.markdown('<span class="sqlx-bar-label" title="Cinco consultas para decidir. Para ir más lejos, '
+                            'escribe tu propia consulta en el editor: las tablas y vistas están a la izquierda.">'
+                            'Consultas</span>', unsafe_allow_html=True)
+                for index, (title, question, _) in enumerate(EXAMPLES):
+                    st.button(title, key=f"sqlx_chip_{index}", help=question, on_click=choose_example, args=(index,))
         with st.container(key="sqlx_body"):
             side, main = st.columns([1, 3.5], gap="small")
             with side, st.container(key="sqlx_explorer"):
