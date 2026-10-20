@@ -445,7 +445,7 @@ Las decisiones ADR-24 (rezago K5 descriptivo) y ADR-26 (consolas SQL y Python en
 
 **Alternativas.** BigQuery en modo sandbox (las tablas vencen a los 60 días: el panel quedaría vacío si el pipeline se detiene); Snowflake y Redshift (solo periodos de prueba); Databricks (sobredimensionado); PostgreSQL gratuito (algunos planes pausan proyectos inactivos).
 
-**Consecuencias.** 16 modelos y 31 pruebas de datos; bronce de 16 MB frente a 644 MB de la zona de aterrizaje; base de servicio de unos 14 MB frente a 34 MB; pipeline completo en 16 s en vez de unos 4 minutos. Costo cero y sin vencimientos. dbt solo se instala en el workflow, no en el panel publicado.
+**Consecuencias.** 16 modelos y 31 pruebas de datos; bronce de 16 MB frente a 665 MB de la zona de aterrizaje; base de servicio de unos 14 MB frente a 34 MB; pipeline completo en 16 s en vez de unos 4 minutos. Costo cero y sin vencimientos. dbt solo se instala en el workflow, no en el panel publicado.
 
 ## ADR-31 · Un warehouse en la nube solo con datos de empresa
 
