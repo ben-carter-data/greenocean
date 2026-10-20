@@ -122,163 +122,214 @@ VIEW_NAMES = [name for name, _, _ in VIEWS]
 # Each example: (title, question, SQL template, parameters). Parameters are filled
 # from the selectors above the editor (D-180); render_example writes the final SQL.
 TEMPLATES = [
+    ('Tabla completa',
+     'Todos los precios semanales con cada dimensión (familia, producto, variedad, calidad, canal, región) y el precio real según el IPC de alimentos; los filtros de arriba acotan la tabla.',
+     """-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y región,
+-- cruzado con el IPC de alimentos del INE. precio_real = precio × factor_real
+-- (pesos del último mes publicado). Filtros elegidos arriba del editor; «Todas» no filtra.
+SELECT p.semana, p.familia, p.producto, p.variedad, p.calidad, p.canal, p.fuente, p.region,
+       p.unidad, p.precio,
+       round(p.precio * i.factor_real) AS precio_real,
+       i.indice_alimentos AS ipc_alimentos,
+       i.provisional AS ipc_provisional,
+       p.marca
+FROM precios AS p
+LEFT JOIN ipc_semanal AS i ON i.semana = p.semana{where}
+ORDER BY p.semana DESC, p.familia, p.producto, p.region, p.canal""",
+     ('familia', 'producto_filtro', 'canal_filtro', 'region', 'anio_filtro')),
     ('Precio vs. época',
-     '¿Un producto está caro o barato frente a la misma época de los años anteriores, en pesos reales?',
-     """-- Parámetro elegido arriba del editor: producto {producto}.
--- Compara las últimas 4 semanas con las mismas semanas del año (ISO) en los años anteriores,
--- en pesos reales (precio × factor_real): sin eso, la inflación haría parecer caro todo lo actual.
-WITH parametros AS (SELECT {producto_sql} AS producto),
-ultima AS (
-    SELECT s.semana, s.anio_iso
-    FROM semanas AS s
-    WHERE s.semana = (SELECT max(semana) FROM precios WHERE fuente = 'consumidor')
+     '¿Qué productos están caros o baratos frente a la misma época de los años anteriores, en pesos reales? Conviene comprar lo barato y esperar lo caro.',
+     """-- Precio vs. época: ¿está caro o barato frente a la misma época de años anteriores?
+-- Cada serie (producto, variedad, calidad, canal, unidad y región) se compara consigo misma:
+-- últimas 4 semanas frente a las mismas semanas ISO de los años anteriores, en pesos reales.
+WITH ultima AS (
+    SELECT semana, anio_iso FROM semanas
+    WHERE semana = (SELECT max(semana) FROM precios WHERE fuente = 'consumidor')
 ),
 epoca AS (
     SELECT semana_iso FROM semanas
     WHERE semana BETWEEN (SELECT semana FROM ultima) - INTERVAL 21 DAY AND (SELECT semana FROM ultima)
 ),
-por_anio AS (
-    SELECT p.variedad, p.calidad, p.canal, p.unidad, s.anio_iso AS anio, avg(p.precio * i.factor_real) AS precio
+real AS (
+    SELECT p.familia, p.producto, p.variedad, p.calidad, p.canal, p.unidad, p.region,
+           s.anio_iso AS anio, p.precio * i.factor_real AS precio_real
     FROM precios AS p
     JOIN semanas AS s ON s.semana = p.semana
     JOIN ipc_semanal AS i ON i.semana = p.semana
-    JOIN parametros AS par ON p.producto = par.producto
     WHERE p.fuente = 'consumidor' AND p.marca = 'SIN_MARCA'
-      AND s.semana_iso IN (SELECT semana_iso FROM epoca)
+      AND s.semana_iso IN (SELECT semana_iso FROM epoca){filtros}
+),
+series AS (
+    SELECT familia, producto, variedad, calidad, canal, unidad, region,
+           avg(precio_real) FILTER (WHERE anio = (SELECT anio_iso FROM ultima)) AS actual,
+           avg(precio_real) FILTER (WHERE anio < (SELECT anio_iso FROM ultima)) AS habitual,
+           count(DISTINCT anio) FILTER (WHERE anio < (SELECT anio_iso FROM ultima)) AS anios
+    FROM real
+    GROUP BY ALL
+    HAVING actual IS NOT NULL AND anios >= 2
+)
+SELECT familia, producto, variedad, calidad, unidad,
+       count(*) AS series_comparadas,
+       round(median(actual / habitual - 1) * 100, 1) AS diferencia_real_pct,
+       CASE WHEN median(actual / habitual - 1) >= 0.15 THEN 'Caro para la época: conviene esperar'
+            WHEN median(actual / habitual - 1) >= 0.05 THEN 'Algo caro para la época'
+            WHEN median(actual / habitual - 1) <= -0.15 THEN 'Barato para la época: buen momento para comprar'
+            WHEN median(actual / habitual - 1) <= -0.05 THEN 'Algo barato para la época'
+            ELSE 'Normal para la época' END AS lectura
+FROM series
+GROUP BY familia, producto, variedad, calidad, unidad
+HAVING count(*) >= 3
+ORDER BY diferencia_real_pct DESC""",
+     ('familia',)),
+    ('Canal más barato',
+     '¿En qué canal conviene comprar cada producto y cuánto se ahorra frente al canal más caro, en la misma región y semanas?',
+     """-- Canal más barato: ¿dónde comprar cada producto y cuánto se ahorra?
+-- Se comparan canales con el mismo producto, variedad, calidad, unidad, región y semanas
+-- (promedio de las últimas 4 semanas, para no depender de una sola semana).
+WITH ventana AS (
+    SELECT p.familia, p.producto, p.variedad, p.calidad, p.unidad, p.region, p.canal,
+           avg(p.precio) AS precio
+    FROM precios AS p
+    WHERE p.fuente = 'consumidor' AND p.marca = 'SIN_MARCA'
+      AND p.semana > (SELECT max(semana) FROM precios) - INTERVAL 28 DAY{filtros}
     GROUP BY ALL
 ),
-comparacion AS (
-    SELECT variedad, calidad, canal, unidad,
-           any_value(precio) FILTER (WHERE anio = (SELECT anio_iso FROM ultima)) AS precio_actual,
-           avg(precio) FILTER (WHERE anio < (SELECT anio_iso FROM ultima)) AS promedio_anios_previos,
-           min(precio) FILTER (WHERE anio < (SELECT anio_iso FROM ultima)) AS minimo_anios_previos,
-           max(precio) FILTER (WHERE anio < (SELECT anio_iso FROM ultima)) AS maximo_anios_previos,
-           count(*) FILTER (WHERE anio < (SELECT anio_iso FROM ultima)) AS anios_comparados
-    FROM por_anio
+por_region AS (
+    SELECT familia, producto, variedad, calidad, unidad, region,
+           arg_min(canal, precio) AS canal_mas_barato,
+           arg_max(canal, precio) AS canal_mas_caro,
+           min(precio) AS precio_minimo, max(precio) AS precio_maximo
+    FROM ventana
     GROUP BY ALL
+    HAVING count(*) >= 2
 )
-SELECT canal, variedad, calidad, unidad,
-       round(precio_actual) AS precio_real_esta_epoca,
-       round(promedio_anios_previos) AS promedio_real_misma_epoca,
-       round(minimo_anios_previos) AS minimo_real_misma_epoca,
-       round(maximo_anios_previos) AS maximo_real_misma_epoca,
-       anios_comparados,
-       round((precio_actual / promedio_anios_previos - 1) * 100, 1) AS diferencia_pct,
-       CASE WHEN precio_actual > maximo_anios_previos THEN 'Más caro que cualquier año anterior'
-            WHEN precio_actual < minimo_anios_previos THEN 'Más barato que cualquier año anterior'
-            WHEN precio_actual > promedio_anios_previos * 1.10 THEN 'Caro para la época'
-            WHEN precio_actual < promedio_anios_previos * 0.90 THEN 'Barato para la época'
-            ELSE 'Normal para la época' END AS veredicto
-FROM comparacion
-WHERE precio_actual IS NOT NULL AND anios_comparados >= 2
-ORDER BY canal, variedad""",
-     ('producto',)),
-    ('Inflación del año',
-     '¿Qué productos subieron más que el IPC de alimentos en el año elegido, y por cuántos puntos?',
-     """-- Parámetro elegido arriba del editor: año {anio}.
--- Por serie (región incluida) se compara el primer y el último precio del año; el producto resume con la mediana.
--- El IPC se mide en las mismas fechas; en los meses aún no publicados repite el último dato (provisional).
-WITH parametros AS (SELECT {anio} AS anio),
+SELECT familia, producto, variedad, calidad, unidad,
+       mode(canal_mas_barato) AS canal_mas_barato,
+       mode(canal_mas_caro) AS canal_mas_caro,
+       count(*) AS regiones,
+       round(median(precio_minimo)) AS precio_mas_barato,
+       round(median(precio_maximo)) AS precio_mas_caro,
+       round(median(1 - precio_minimo / precio_maximo) * 100, 1) AS ahorro_pct
+FROM por_region
+GROUP BY familia, producto, variedad, calidad, unidad
+HAVING count(*) >= {min_regiones}  -- 3 regiones en todo el país; 1 si se eligió una región
+ORDER BY ahorro_pct DESC""",
+     ('familia', 'region')),
+    ('Inflación vs IPC',
+     '¿Qué productos subieron más que el IPC de alimentos en el período elegido, medido serie a serie en las mismas fechas?',
+     """-- Inflación vs IPC: ¿qué productos subieron más que la inflación de alimentos?
+-- Período elegido arriba ({periodo}). Cada serie se mide entre su primer y su último precio
+-- del período, y el IPC entre esas mismas dos semanas: la comparación es exacta, serie a serie.
+WITH periodo AS (
+    SELECT {desde} AS desde, {hasta} AS hasta
+),
 series AS (
     SELECT p.familia, p.producto, p.variedad, p.calidad, p.canal, p.unidad, p.region,
-           arg_min(p.precio, p.semana) AS inicial, arg_max(p.precio, p.semana) AS final
-    FROM precios AS p
-    JOIN parametros AS par ON year(p.semana) = par.anio
-    WHERE p.marca = 'SIN_MARCA' AND p.fuente = 'consumidor'
+           arg_min(p.precio, p.semana) AS precio_inicial, arg_max(p.precio, p.semana) AS precio_final,
+           min(p.semana) AS semana_inicial, max(p.semana) AS semana_final
+    FROM precios AS p, periodo
+    WHERE p.fuente = 'consumidor' AND p.marca = 'SIN_MARCA'
+      AND p.semana BETWEEN periodo.desde AND periodo.hasta{filtros}
     GROUP BY ALL
     HAVING count(*) >= 10
+       AND min(p.semana) <= any_value(periodo.desde) + INTERVAL 56 DAY
+       AND max(p.semana) >= least(any_value(periodo.hasta), (SELECT max(semana) FROM precios)) - INTERVAL 28 DAY
 ),
-ipc AS (
-    SELECT arg_max(i.indice_alimentos, i.semana) / arg_min(i.indice_alimentos, i.semana) - 1 AS alza
-    FROM ipc_semanal AS i
-    JOIN parametros AS par ON year(i.semana) = par.anio
+comparacion AS (
+    SELECT s.*,
+           s.precio_final / s.precio_inicial - 1 AS alza,
+           f.indice_alimentos / i.indice_alimentos - 1 AS alza_ipc
+    FROM series AS s
+    JOIN ipc_semanal AS i ON i.semana = s.semana_inicial
+    JOIN ipc_semanal AS f ON f.semana = s.semana_final
 )
-SELECT s.familia, s.producto, s.variedad, s.canal,
-       count(*) AS regiones,
-       round(median(s.final / s.inicial - 1) * 100, 1) AS alza_producto_pct,
-       round(any_value(ipc.alza) * 100, 1) AS alza_ipc_pct,
-       round((median(s.final / s.inicial - 1) - any_value(ipc.alza)) * 100, 1) AS sobre_inflacion_pp
-FROM series AS s, ipc
-GROUP BY s.familia, s.producto, s.variedad, s.canal
+SELECT familia, producto, variedad, calidad, unidad,
+       count(*) AS series_comparadas,
+       round(median(alza) * 100, 1) AS alza_producto_pct,
+       round(median(alza_ipc) * 100, 1) AS alza_ipc_pct,
+       round((median(alza) - median(alza_ipc)) * 100, 1) AS sobre_inflacion_pp,
+       CASE WHEN median(alza) - median(alza_ipc) >= 0.10 THEN 'Subió mucho más que la inflación'
+            WHEN median(alza) - median(alza_ipc) >= 0.02 THEN 'Subió más que la inflación'
+            WHEN median(alza) - median(alza_ipc) > -0.02 THEN 'Al ritmo de la inflación'
+            ELSE 'Subió menos: se abarató en pesos reales' END AS lectura
+FROM comparacion
+GROUP BY familia, producto, variedad, calidad, unidad
 HAVING count(*) >= 3
-ORDER BY sobre_inflacion_pp DESC
-LIMIT 100""",
-     ('anio',)),
-    ('Inflación desde 2022',
-     '¿Qué productos subieron más que el IPC de alimentos entre 2022 y hoy, y por cuántos puntos?',
-     """-- Solo series con precio desde marzo de 2022 hasta hoy. sobre_inflacion_pp = alza del producto menos alza del IPC, en puntos porcentuales.
-WITH base AS (
-    SELECT familia, producto, variedad, calidad, canal, unidad, region,
-           arg_min(precio, semana) AS inicial, arg_max(precio, semana) AS actual, min(semana) AS desde, max(semana) AS hasta
-    FROM precios WHERE marca = 'SIN_MARCA' AND fuente = 'consumidor'
-    GROUP BY ALL HAVING min(semana) <= DATE '2022-03-01' AND max(semana) >= (SELECT max(semana) FROM precios) - INTERVAL 14 DAY
-),
-ipc AS (SELECT (SELECT indice_alimentos FROM ipc_semanal ORDER BY semana DESC LIMIT 1)
-             / (SELECT indice_alimentos FROM ipc_semanal ORDER BY semana LIMIT 1) - 1 AS alza)
-SELECT familia, producto, variedad, count(*) AS series,
-       round(median(actual / inicial - 1) * 100, 1) AS alza_producto_pct,
-       round(any_value(ipc.alza) * 100, 1) AS alza_ipc_pct,
-       round((median(actual / inicial - 1) - any_value(ipc.alza)) * 100, 1) AS sobre_inflacion_pp
-FROM base, ipc GROUP BY familia, producto, variedad HAVING count(*) >= 3
-ORDER BY sobre_inflacion_pp DESC LIMIT 100""",
-     ()),
-    ('Ficha de producto',
-     '¿Cómo viene un producto, sin importar su familia: precio por canal, alza en 12 meses y probabilidad de subir?',
-     """-- Parámetros elegidos arriba del editor: producto {producto} y año {anio}.
-WITH parametros AS (SELECT {producto_sql} AS producto, {anio} AS anio),
+ORDER BY sobre_inflacion_pp DESC""",
+     ('periodo', 'familia')),
+    ('Brecha mayorista',
+     '¿Cuánto más paga el consumidor que el mayorista por el mismo producto, y cómo cambió en un año? Solo Frutas y Hortalizas.',
+     """-- Brecha mayorista-consumidor: ¿cuánto más paga el consumidor que el mayorista?
+-- Solo Frutas y Hortalizas tienen precio mayorista. Se emparejan el mismo producto, variedad,
+-- calidad, unidad, región y semana en los dos canales. Es una brecha, no un margen:
+-- no incluye transporte, mermas ni costos del comercio.
+WITH ultima AS (SELECT max(semana) AS semana FROM precios WHERE fuente = 'mayorista'),
 pares AS (
-    SELECT p.variedad, p.calidad, p.canal, p.unidad, p.semana, p.precio,
-           lag(p.precio) OVER w AS anterior, lag(p.semana) OVER w AS semana_anterior
-    FROM precios AS p
-    JOIN parametros AS par ON p.producto = par.producto
-    WHERE p.marca = 'SIN_MARCA' AND p.fuente = 'consumidor'
-    WINDOW w AS (PARTITION BY p.variedad, p.calidad, p.canal, p.unidad, p.region ORDER BY p.semana)
-),
-ultimo AS (SELECT max(semana) AS semana FROM precios)
-SELECT variedad, calidad, canal, unidad,
-       round(avg(precio) FILTER (WHERE semana > (SELECT semana FROM ultimo) - INTERVAL 28 DAY)) AS precio_ultimas_4_sem,
-       round(avg(precio) FILTER (WHERE semana BETWEEN (SELECT semana FROM ultimo) - INTERVAL 392 DAY
-                                                  AND (SELECT semana FROM ultimo) - INTERVAL 364 DAY)) AS precio_hace_un_anio,
-       round((avg(precio) FILTER (WHERE semana > (SELECT semana FROM ultimo) - INTERVAL 28 DAY)
-            / avg(precio) FILTER (WHERE semana BETWEEN (SELECT semana FROM ultimo) - INTERVAL 392 DAY
-                                                   AND (SELECT semana FROM ultimo) - INTERVAL 364 DAY) - 1) * 100, 1) AS alza_12_meses_pct,
-       round(count(*) FILTER (WHERE year(semana) = (SELECT anio FROM parametros)
-                                AND semana_anterior = semana - INTERVAL 7 DAY AND precio > anterior) * 100.0
-             / nullif(count(*) FILTER (WHERE year(semana) = (SELECT anio FROM parametros)
-                                         AND semana_anterior = semana - INTERVAL 7 DAY), 0), 1) AS prob_alza_semanal_pct
-FROM pares
-GROUP BY variedad, calidad, canal, unidad
-HAVING count(*) FILTER (WHERE semana > (SELECT semana FROM ultimo) - INTERVAL 28 DAY) > 0
-ORDER BY canal, variedad""",
-     ('producto', 'anio')),
-    ('Tendencia al alza',
-     '¿Qué productos tienen más probabilidad de subir de una semana a otra en el año elegido?',
-     """-- Año elegido arriba del editor: {anio}. prob_alza_pct = semanas de alza sobre todas las comparaciones (producto × región); 50 = igual de probable subir que bajar.
-WITH pares AS (
-    SELECT familia, producto, variedad, calidad, canal, unidad, region, semana, precio,
-           lag(precio) OVER w AS anterior, lag(semana) OVER w AS semana_anterior
-    FROM precios WHERE marca = 'SIN_MARCA' AND fuente = 'consumidor'
-    WINDOW w AS (PARTITION BY producto, variedad, calidad, canal, unidad, region ORDER BY semana)
+    SELECT c.familia, c.producto, c.variedad, c.calidad, c.unidad, c.region, c.semana,
+           c.precio AS consumidor, m.precio AS mayorista
+    FROM precios AS c
+    JOIN precios AS m
+      ON m.semana = c.semana AND m.region = c.region AND m.producto = c.producto
+     AND m.variedad = c.variedad AND m.calidad = c.calidad AND m.unidad = c.unidad
+    WHERE c.fuente = 'consumidor' AND m.fuente = 'mayorista'
+      AND c.marca = 'SIN_MARCA' AND m.marca = 'SIN_MARCA'
 )
-SELECT familia, producto, variedad, canal,
-       count(*) AS comparaciones,
-       count(*) FILTER (WHERE precio > anterior) AS alzas,
-       count(*) FILTER (WHERE precio < anterior) AS bajas,
-       round(count(*) FILTER (WHERE precio > anterior) * 100.0 / count(*), 1) AS prob_alza_pct,
-       round(median(precio / anterior - 1) * 100, 2) AS variacion_semanal_mediana_pct
+SELECT familia, producto, variedad, calidad, unidad,
+       count(DISTINCT region) FILTER (WHERE semana > (SELECT semana FROM ultima) - INTERVAL 28 DAY) AS regiones,
+       round(median(consumidor / mayorista - 1) FILTER (WHERE semana > (SELECT semana FROM ultima) - INTERVAL 28 DAY) * 100, 1) AS brecha_actual_pct,
+       round(median(consumidor / mayorista - 1) FILTER (WHERE semana BETWEEN (SELECT semana FROM ultima) - INTERVAL 392 DAY
+                                                                AND (SELECT semana FROM ultima) - INTERVAL 364 DAY) * 100, 1) AS brecha_hace_un_anio_pct,
+       round((median(consumidor / mayorista - 1) FILTER (WHERE semana > (SELECT semana FROM ultima) - INTERVAL 28 DAY)
+            - median(consumidor / mayorista - 1) FILTER (WHERE semana BETWEEN (SELECT semana FROM ultima) - INTERVAL 392 DAY
+                                                                AND (SELECT semana FROM ultima) - INTERVAL 364 DAY)) * 100, 1) AS cambio_pp,
+       CASE WHEN brecha_actual_pct - brecha_hace_un_anio_pct >= 10 THEN 'La brecha creció'
+            WHEN brecha_actual_pct - brecha_hace_un_anio_pct <= -10 THEN 'La brecha se achicó'
+            ELSE 'Brecha estable' END AS lectura
 FROM pares
-WHERE year(semana) = {anio} AND semana_anterior = semana - INTERVAL 7 DAY
-GROUP BY familia, producto, variedad, canal
-HAVING count(*) >= 100
-ORDER BY prob_alza_pct DESC, comparaciones DESC
-LIMIT 100""",
-     ('anio',)),
+GROUP BY familia, producto, variedad, calidad, unidad
+HAVING brecha_actual_pct IS NOT NULL AND brecha_hace_un_anio_pct IS NOT NULL AND regiones >= 2
+ORDER BY cambio_pp DESC""",
+     ()),
+    ('Calendario de compra',
+     '¿En qué mes cada producto suele estar más barato y más caro, en pesos reales, y cuánto se ahorra comprando en el mes barato?',
+     """-- Calendario de compra: ¿en qué mes cada producto suele estar más barato y más caro?
+-- Índice estacional en pesos reales: en cada serie y año, el precio de cada mes se divide por la
+-- mediana de ese año; luego se toma la mediana por mes. 100 = precio típico del año.
+WITH real AS (
+    SELECT p.familia, p.producto, p.variedad, p.calidad, p.canal, p.unidad, p.region,
+           p.anio, p.mes, p.precio * i.factor_real AS precio_real
+    FROM precios AS p
+    JOIN ipc_semanal AS i ON i.semana = p.semana
+    WHERE p.fuente = 'consumidor' AND p.marca = 'SIN_MARCA'{filtros}
+),
+indice AS (
+    SELECT familia, producto, variedad, calidad, unidad, mes,
+           median(precio_real) / median(median(precio_real)) OVER (
+               PARTITION BY familia, producto, variedad, calidad, canal, unidad, region, anio) AS indice
+    FROM real
+    GROUP BY familia, producto, variedad, calidad, canal, unidad, region, anio, mes
+),
+por_mes AS (
+    SELECT familia, producto, variedad, calidad, unidad, mes, median(indice) * 100 AS indice, count(*) AS observaciones
+    FROM indice
+    GROUP BY ALL
+)
+SELECT familia, producto, variedad, calidad, unidad,
+       (['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'])[arg_min(mes, indice)] AS mes_mas_barato,
+       round(min(indice)) AS indice_mes_barato,
+       (['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'])[arg_max(mes, indice)] AS mes_mas_caro,
+       round(max(indice)) AS indice_mes_caro,
+       round((1 - min(indice) / max(indice)) * 100, 1) AS ahorro_comprando_en_el_mes_barato_pct
+FROM por_mes
+GROUP BY familia, producto, variedad, calidad, unidad
+HAVING count(*) = 12 AND min(observaciones) >= 6
+ORDER BY ahorro_comprando_en_el_mes_barato_pct DESC""",
+     ('familia',)),
 ]
-# The script name of each example in the editor's tab, as a SQL Server file (D-182).
-SCRIPT_NAMES = {"Precio vs. época": "precio_vs_epoca.sql", "Inflación del año": "inflacion_del_anio.sql",
-                "Inflación desde 2022": "inflacion_desde_2022.sql", "Ficha de producto": "ficha_producto.sql",
-                "Tendencia al alza": "tendencia_alza.sql"}
-PARAMETER_DEFAULTS = {"anio": 2026, "producto": "Tomate", "canal": "Supermercado"}
+# The script name of each query in the editor's tab, as a SQL Server file (D-182).
+SCRIPT_NAMES = {"Tabla completa": "tabla_completa.sql", "Precio vs. época": "precio_vs_epoca.sql",
+                "Canal más barato": "canal_mas_barato.sql", "Inflación vs IPC": "inflacion_vs_ipc.sql",
+                "Brecha mayorista": "brecha_mayorista.sql", "Calendario de compra": "calendario_compra.sql"}
 
 
 def sql_text(value):
@@ -286,15 +337,47 @@ def sql_text(value):
     return "'" + str(value).replace("'", "''") + "'"
 
 
+ALL_VALUES = "Todas"
+SINCE_2022 = "Desde 2022"
+PARAMETER_DEFAULTS = {"periodo": SINCE_2022, "familia": ALL_VALUES,
+                      "producto_filtro": ALL_VALUES, "canal_filtro": ALL_VALUES, "region": ALL_VALUES,
+                      "anio_filtro": ALL_VALUES}
+# Filter parameter -> the column it filters in the full table (D-185).
+FILTER_COLUMNS = {"familia": "p.familia", "producto_filtro": "p.producto", "canal_filtro": "p.canal",
+                  "region": "p.region", "anio_filtro": "year(p.semana)"}
+
+
+def build_conditions(values, names):
+    """One SQL condition per chosen filter among the template's own parameters; none for «Todas»."""
+    conditions = []
+    for name in names:
+        column = FILTER_COLUMNS.get(name)
+        value = values.get(name, ALL_VALUES)
+        if column is None or value == ALL_VALUES:
+            continue
+        literal = str(int(value)) if name == "anio_filtro" else sql_text(value)
+        conditions.append(f"{column} = {literal}")
+    return conditions
+
+
+def period_bounds(period):
+    """(text, from, to) of the inflation period: a calendar year, or since January 2022."""
+    if str(period) == SINCE_2022:
+        return "desde enero de 2022", "DATE '2022-01-01'", "DATE '2099-12-31'"
+    year = int(period)
+    return f"año {year}", f"DATE '{year}-01-01'", f"DATE '{year}-12-31'"
+
+
 def render_example(index, values=None):
-    """The example's SQL with its parameters filled in (the year as a number)."""
+    """The example's SQL with its parameters filled in (D-180, D-185)."""
     values = {**PARAMETER_DEFAULTS, **(values or {})}
-    _, _, template, _ = TEMPLATES[index]
-    return (template.replace("{producto_sql}", sql_text(values["producto"]))
-            .replace("{canal_sql}", sql_text(values["canal"]))
-            .replace("{anio}", str(int(values["anio"])))
-            .replace("{producto}", str(values["producto"]))
-            .replace("{canal}", str(values["canal"])))
+    _, _, template, names = TEMPLATES[index]
+    conditions = build_conditions(values, names)
+    text, start, end = period_bounds(values["periodo"])
+    return (template.replace("{where}", ("\nWHERE " + "\n  AND ".join(conditions)) if conditions else "")
+            .replace("{filtros}", "".join(f"\n      AND {condition}" for condition in conditions))
+            .replace("{periodo}", text).replace("{desde}", start).replace("{hasta}", end)
+            .replace("{min_regiones}", "1" if values.get("region", ALL_VALUES) != ALL_VALUES and "region" in names else "3"))
 
 
 # (title, question, SQL with the default parameters), as the tests and the chips read them.
@@ -673,7 +756,7 @@ def build_css(palette):
 .st-key-sqlx_run button p {{ font-size:.84rem !important; }}
 .sqlx-sep {{ width:1px; height:22px; background:{border}; margin:0 2px; }}
 .sqlx-bar-label {{ font-size:.68rem; font-weight:500; letter-spacing:.11em; text-transform:uppercase; color:{muted}; }}
-[class*="st-key-sqlx_chip_"] button {{ min-height:26px !important; padding:1px 11px !important; border-radius:999px !important;
+[class*="st-key-sqlx_chip_"] button {{ min-height:26px !important; padding:1px 10px !important; border-radius:999px !important;
   border:1px solid {border} !important; background:{card} !important; box-shadow:{raised} !important; }}
 [class*="st-key-sqlx_chip_"] button p {{ font-size:.76rem !important; color:{ink} !important; }}
 [class*="st-key-sqlx_chip_"] button:hover {{ border-color:{accent} !important; transform:translateY(-1px); }}
@@ -708,7 +791,8 @@ def build_css(palette):
 .st-key-sqlx_main {{ gap:6px !important; padding:8px 12px 10px 10px; }}
 .st-key-sqlx_params {{ flex-wrap:wrap !important; gap:6px 8px !important; padding:2px 0 4px; }}
 .st-key-sqlx_params .sqlx-bar-label {{ margin-right:6px; }}
-.st-key-sqlx_params [data-testid="stSelectbox"] {{ width:auto !important; min-width:150px; max-width:260px; }}
+.st-key-sqlx_params [data-testid="stSelectbox"] {{ flex:0 0 150px !important; width:150px !important; }}
+.st-key-sqlx_params [data-testid="stSelectbox"] [data-baseweb="select"] div {{ font-size:.78rem; }}
 .st-key-sqlx_params [data-baseweb="select"] > div {{ min-height:28px !important; border-radius:999px !important;
   background:{field} !important; border:1px solid {border} !important; box-shadow:{raised}; font-size:.78rem; }}
 .sqlx-tabstrip {{ display:flex; align-items:flex-end; gap:8px; margin:0; }}
@@ -906,8 +990,11 @@ def load_catalog():
     return cached(database_file, modified)
 
 
-PARAMETER_KEYS = {"anio": "sqlx_param_anio", "producto": "sqlx_param_producto", "canal": "sqlx_param_canal"}
-PARAMETER_LABELS = {"anio": "Año", "producto": "Producto", "canal": "Canal"}
+PARAMETER_KEYS = {"periodo": "sqlx_param_periodo", "familia": "sqlx_param_familia", "producto_filtro": "sqlx_param_producto_filtro",
+                  "canal_filtro": "sqlx_param_canal_filtro", "region": "sqlx_param_region",
+                  "anio_filtro": "sqlx_param_anio_filtro"}
+PARAMETER_LABELS = {"periodo": "Período", "familia": "Familia",
+                    "producto_filtro": "Producto", "canal_filtro": "Canal", "region": "Región", "anio_filtro": "Año"}
 
 
 def parameter_values():
@@ -937,36 +1024,60 @@ def choose_example(index):
 
 
 def apply_parameters():
-    """A selector changed: the current example is written and run again with it."""
+    """A selector changed: values that no longer fit are reset, then the current
+    example is written and run again."""
     import streamlit as st
     index = st.session_state.get("sqlx_example")
     try:
-        _, channels = load_parameter_options()
+        choices = parameter_choices(load_parameter_options(), st.session_state)
     except Exception:
-        channels = {}
-    product = st.session_state.get(PARAMETER_KEYS["producto"], PARAMETER_DEFAULTS["producto"])
-    if channels.get(product) and st.session_state.get(PARAMETER_KEYS["canal"]) not in channels[product]:
-        st.session_state[PARAMETER_KEYS["canal"]] = channels[product][0]  # a channel that sells it
+        choices = {}
+    for name, options in choices.items():
+        key = PARAMETER_KEYS[name]
+        if key in st.session_state and options and st.session_state[key] not in options:
+            st.session_state[key] = options[0]
     if index is not None:
         choose_example(index)
 
 
 def load_parameter_options():
-    """Years with prices, consumer products, and each product's channels (cached per database)."""
+    """Every list the selectors offer, read from the database once (cached per database)."""
     import streamlit as st
 
     @st.cache_data(ttl=600, show_spinner=False)
     def cached(database_file, modified):
         years = read_view("SELECT DISTINCT anio FROM semanas WHERE anio IS NOT NULL ORDER BY anio DESC", database_file)
-        channels = read_view("SELECT producto, canal, count(*) AS n FROM precios WHERE fuente = 'consumidor' "
-                             "AND marca = 'SIN_MARCA' GROUP BY ALL ORDER BY producto, n DESC", database_file)
-        by_product = {}
-        for row in channels.itertuples():
-            by_product.setdefault(row.producto, []).append(row.canal)
-        return [int(year) for year in years["anio"]], by_product
+        combos = read_view("SELECT familia, producto, canal, count(*) AS n FROM precios WHERE marca = 'SIN_MARCA' "
+                           "GROUP BY ALL ORDER BY familia, producto, n DESC", database_file)
+        regions = read_view("SELECT DISTINCT region FROM precios ORDER BY region", database_file)
+        channels, by_family = {}, {}
+        for row in combos.itertuples():
+            channels.setdefault(row.producto, [])
+            if row.canal not in channels[row.producto]:
+                channels[row.producto].append(row.canal)
+            by_family.setdefault(row.familia, set()).add(row.producto)
+        return dict(years=[int(year) for year in years["anio"]], channels=channels,
+                    families={family: sorted(products) for family, products in by_family.items()},
+                    regions=list(regions["region"]))
     database_file = str(queries.DATABASE_FILE)
     modified = os.path.getmtime(database_file) if os.path.exists(database_file) else 0
     return cached(database_file, modified)
+
+
+def parameter_choices(options, state):
+    """The choices of each selector, narrowed by the ones above it (family → product → channel)."""
+    family = state.get(PARAMETER_KEYS["familia"], ALL_VALUES)
+    products = (options["families"].get(family, []) if family != ALL_VALUES
+                else sorted(product for names in options["families"].values() for product in names))
+    product = state.get(PARAMETER_KEYS["producto_filtro"], ALL_VALUES)
+    if product != ALL_VALUES and product in options["channels"]:
+        channels = options["channels"][product]
+    else:
+        channels = sorted({channel for product_channels in options["channels"].values() for channel in product_channels})
+    return {"periodo": [SINCE_2022] + options["years"],
+            "familia": [ALL_VALUES] + sorted(options["families"]), "producto_filtro": [ALL_VALUES] + products,
+            "canal_filtro": [ALL_VALUES] + channels, "region": [ALL_VALUES] + options["regions"],
+            "anio_filtro": [ALL_VALUES] + options["years"]}
 
 
 def show_parameters(st, index):
@@ -976,14 +1087,12 @@ def show_parameters(st, index):
     if not names:
         return
     try:
-        years, channels = load_parameter_options()
+        options = parameter_choices(load_parameter_options(), st.session_state)
     except Exception:  # the defaults still work without the lists
         return
-    options = {"anio": years, "producto": sorted(channels)}
-    product = st.session_state.get(PARAMETER_KEYS["producto"], PARAMETER_DEFAULTS["producto"])
-    options["canal"] = channels.get(product, [PARAMETER_DEFAULTS["canal"]])
+    label = "Filtros" if "familia" in names else "Parámetros"
     with st.container(key="sqlx_params", horizontal=True, vertical_alignment="center", gap="small"):
-        st.markdown('<span class="sqlx-bar-label">Parámetros</span>', unsafe_allow_html=True)
+        st.markdown(f'<span class="sqlx-bar-label">{label}</span>', unsafe_allow_html=True)
         for name in names:
             key = PARAMETER_KEYS[name]
             choices = options[name]
@@ -991,7 +1100,9 @@ def show_parameters(st, index):
                 default = PARAMETER_DEFAULTS[name]
                 st.session_state[key] = default if default in choices else choices[0]
             st.selectbox(PARAMETER_LABELS[name], choices, key=key, on_change=apply_parameters,
-                         label_visibility="collapsed", help=PARAMETER_LABELS[name])
+                         label_visibility="collapsed", help=PARAMETER_LABELS[name],
+                         format_func=lambda value, name=name: (f"{PARAMETER_LABELS[name]}: todas"
+                                                               if value == ALL_VALUES else str(value)))
 
 
 def choose_table(name):
@@ -1051,7 +1162,10 @@ def show_result(st, outcome, sql=""):
                                "application/vnd.apache.parquet", key="sqlx_parquet", on_click="ignore",
                                icon=":material/download:")
     numbered = rows.set_axis(range(1, len(rows) + 1))  # rows count from 1, as a SQL client
-    st.dataframe(numbered, width="stretch", hide_index=False, height=results_height(sql, len(rows)))
+    # Weeks are dates: show them without a midnight time.
+    dates = {column: st.column_config.DateColumn(column, format="YYYY-MM-DD") for column in rows.columns
+             if pd.api.types.is_datetime64_any_dtype(rows[column]) and (rows[column].dropna().dt.normalize() == rows[column].dropna()).all()}
+    st.dataframe(numbered, width="stretch", hide_index=False, height=results_height(sql, len(rows)), column_config=dates)
 
 
 def show_exports(st):
