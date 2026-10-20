@@ -255,6 +255,8 @@ PIPELINE_STACK = {
 }
 # Explanation of what travels through each link.
 CHIP_TOOLTIPS = {
+    "API de GitHub": "El Centro de operación lee las ejecuciones del workflow y, con la clave guardada en los secretos, "
+                     "lo lanza con «Ejecutar pipeline ahora». Va en los dos sentidos: pregunta y recibe.",
     "CSV": "CSV: archivo de texto con valores separados por comas.",
     "HTTPS · CSV": "HTTPS: conexión web cifrada; por ella llegan los archivos CSV.",
     "manifest": "manifest.json: registro de cada archivo descargado, con su hash.",
@@ -1324,7 +1326,11 @@ def build_connections(palette, is_running):
                          LAYER_COLORS["quality"], palette, "st.secrets", (380, BOTTOM_ROW_Y)),
         build_connection([(first + half_width, BOTTOM_ROW_Y),
                           (1248 - half_width, BOTTOM_ROW_Y)],
-                         LAYER_COLORS["consumption"], palette, "HTTPS", (930, BOTTOM_ROW_Y)),
+                         LAYER_COLORS["consumption"], palette, "HTTPS", (930, BOTTOM_ROW_Y),
+                         bidirectional=True),
+        build_connection([(first + 95, BOTTOM_ROW_Y - half_height), (first + 95, MIDDLE_ROW_Y + 65)],
+                         LAYER_COLORS["orchestration"], palette, "API de GitHub", (first + 95, 520),
+                         bidirectional=True),
     ])
 
 

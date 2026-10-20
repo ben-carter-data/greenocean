@@ -70,3 +70,26 @@ def test_the_trace_follows_one_real_price_through_six_steps():
     run = {"run_id": 1, "started_at": "2026-10-19", "rows_read": 10, "rows_loaded": 9, "rows_rejected": 1}
     steps = audit_trace.build_trace_steps(row, {}, run, None, ("pending", "no disponible"))
     assert len(steps) == 6
+
+
+@needs_database
+def test_quality_view_hangs_each_dimension_from_the_pipeline_without_cards(measures):
+    indicators = quality_live.build_indicators(measures, NOW)
+    page = quality_live.build_page_html(charts.get_palette("Vantablack"), indicators, measures["runs"],
+                                        measures["rejections"], measures["flags"])
+    assert page.count('class="cell spine"') == len(quality_live.SPINE) == 4
+    assert set(quality_live.PLACES) == set(quality_live.ICONS)
+    assert 'class="group' not in page and "Qué se apartó" in page and "Cargas" in page
+
+
+def test_audit_trace_shows_the_controls_as_small_icons_with_their_status():
+    from bi import quality_view
+    evidence = dict(rejections=201, run_id=5, run_started="19-10-2026", run_status="LOADED", run_ok=True,
+                    manifest_present=True, manifest_files=10, files_matching=0, files_total=10, files_failed=0,
+                    weeks=250, first_week="03-01-2022", last_week="12-10-2026",
+                    build=dict(models=16, tests=31, passing=31, ok=True, built_at="19-10-2026"),
+                    checks=dict(integrity_ok=True, foreign_keys=0, duplicates=0, invalid=0), parity=None)
+    controls = quality_view.build_columns(evidence)
+    html = audit_trace.build_controls_html(controls)
+    assert html.count('class="ctl s-') == sum(len(cards) for _, cards in controls)
+    assert 'class="ctl s-pending"' in html  # the file hashes cannot be checked here: said, not hidden

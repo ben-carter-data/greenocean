@@ -12,7 +12,8 @@ needs_database = pytest.mark.skipif(not Path(queries.DATABASE_FILE).exists(), re
 
 def test_every_crossing_names_how_what_travels_and_what_both_sides_share():
     keys = [row[0] for row in database_crossings.CROSSINGS]
-    assert len(keys) == len(set(keys)) == 7
+    assert len(keys) == len(set(keys)) == 8
+    assert set(keys) == set(database_crossings.EDGES)
     for row in database_crossings.CROSSINGS:
         assert all(str(part).strip() for part in row), row[0]
 
@@ -31,4 +32,11 @@ def test_the_live_checks_hold_on_the_real_database_and_say_what_cannot_be_measur
     if not Path(etl.RAW_DATABASE_FILE).exists():
         assert checks["raw"][0] == "pending" and "no se puede comprobar" in checks["raw"][1]
     html = database_crossings.build_crossings_html(charts.get_palette(next(iter(charts.PALETTES))), checks)
-    assert len(re.findall(r'class="row"', html)) == 7 and "<script" not in html
+    assert len(re.findall(r'class="x s-', html)) == 8 and "<script" not in html
+    assert html.count('class="node"') == len(database_crossings.STORES)
+
+
+def test_the_python_etl_and_the_parity_are_two_different_crossings_of_the_backup():
+    rows = {row[0]: row for row in database_crossings.CROSSINGS}
+    assert rows["raw_backup"][3:5] == ("raw.db", "datos.db")
+    assert database_crossings.EDGES["served_backup"][4:] == (True, True)

@@ -1290,7 +1290,8 @@ def test_d196_quality_view_measures_the_real_database_and_audit_view_traces_one_
               "dashboard.render_page(dashboard.PAGE_OPERATIONS)\n")
     audit = AppTest.from_string(script, default_timeout=90).run()
     assert not audit.exception
-    assert audit.selectbox
+    # D-198: the family comes first, as on the rest of the panel.
+    assert [box.label for box in audit.selectbox][:2] == ['Familia', 'Producto']
 
 
 @needs_database

@@ -13,7 +13,7 @@ import html
 import hashlib
 from pathlib import Path
 
-from bi import charts, database_map, queries
+from bi import quality_view, charts, database_map, queries
 
 DOWNLOADS = Path(__file__).resolve().parent.parent / "agent" / "downloads"
 # The dbt models a price goes through, in order; the first depends on the source.
@@ -119,6 +119,13 @@ def build_trace_steps(row, manifest, run, build, file_status):
     ]
 
 
+VISIBLE = {"file": (0, 3), "landing": (0, 1), "rules": (2, 3), "dbt": (1,), "served": (0, 1), "panel": (0,)}
+ABOUT = (("Propósito", "Demostrar de dónde sale una cifra y que cualquiera puede comprobarlo."),
+         ("Cómo se lee", "Elige un precio arriba. El camino va de izquierda a derecha, del archivo que ODEPA publicó hasta el "
+                         "panel. Pasa el cursor por cada paso y por cada control."),
+         ("Quién la usa", "Quien debe rendir cuentas o revisar: un jefe, un revisor, alguien que duda de una cifra."))
+
+
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
     ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"], palette["card"],
@@ -126,40 +133,49 @@ def build_css(palette):
     shade = "rgba(0,0,0,.55)" if dark else "rgba(15,39,71,.22)"
     colors = {"ok": "#22b35a", "pending": "#d97706", "fail": "#d03b3b"}
     states = "".join(f".s-{key}{{--c:{color};}}" for key, color in colors.items())
+    tip_shadow = "rgba(0,0,0,.5)" if dark else "rgba(0,0,0,.18)"
     return f"""<style>
 * {{ box-sizing:border-box; }}
-html, body {{ margin:0; background:transparent; color:{text}; font:300 13.5px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
 {states}
-.about {{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px 22px; margin:2px 0 8px; }}
-.about div {{ padding-left:12px; border-left:2px solid color-mix(in srgb, {accent} 55%, transparent); }}
-.about b {{ display:block; font-size:10px; font-weight:500; letter-spacing:.11em; text-transform:uppercase; color:{muted}; margin-bottom:2px; }}
-.figure {{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 14px; margin:12px 0 10px; padding:10px 16px; border-radius:14px;
-  border:1px solid {border}; background:{card}; color:{ink}; }}
-.figure strong {{ font-size:19px; font-weight:500; }}
-.figure span {{ color:{muted}; font-size:12.5px; }}
-.path {{ position:relative; display:grid; grid-template-columns:repeat(6, 1fr); gap:0 8px; padding:16px 0 4px; }}
-.path::before {{ content:""; position:absolute; left:8%; right:8%; top:68px; height:2px; background:linear-gradient(90deg, color-mix(in srgb, {accent} 20%, transparent), {accent}); }}
+.top {{ display:flex; align-items:baseline; gap:4px 14px; margin:2px 0 4px; color:{ink}; }}
+.top strong {{ font-size:19px; font-weight:500; }}
+.top span {{ color:{muted}; font-size:12.5px; }}
+.about {{ position:relative; margin-left:auto; flex:none; align-self:center; }}
+.about > i {{ display:grid; place-items:center; width:20px; height:20px; border-radius:50%; border:1px solid {muted}; color:{muted}; font:500 12px/1 serif; cursor:default; }}
+.about .tip {{ left:auto; right:0; top:calc(100% + 6px); width:330px; transform:none; text-align:left; }}
+.about:hover .tip, .about:focus .tip {{ display:block; }}
+.path {{ position:relative; display:grid; grid-template-columns:repeat(6, 1fr); gap:0 8px; padding:14px 0 2px; }}
+.path::before {{ content:""; position:absolute; left:8%; right:8%; top:62px; height:2px; background:linear-gradient(90deg, color-mix(in srgb, {accent} 20%, transparent), {accent}); }}
 .step {{ position:relative; text-align:center; outline:none; padding:0 4px; }}
-.step .num {{ position:absolute; left:50%; top:-4px; transform:translateX(-52px); width:20px; height:20px; border-radius:50%; font-size:11px; font-weight:500;
-  display:grid; place-items:center; color:var(--c); background:{card}; border:1.5px solid var(--c); z-index:2; }}
-.logo {{ display:block; width:80px; height:80px; margin:0 auto; filter:drop-shadow(0 14px 12px {shade}); transition:transform .25s ease; position:relative; z-index:1; }}
-.step:hover .logo, .step:focus .logo {{ transform:translateY(-6px) scale(1.05); }}
-.mark {{ position:absolute; z-index:3; left:50%; top:58px; transform:translateX(18px); width:20px; height:20px; border-radius:50%; background:var(--c); color:#fff;
-  font:700 11px/20px sans-serif; text-align:center; box-shadow:0 0 0 3px {palette['background']}; }}
-.step b {{ display:block; margin-top:10px; font-size:14.5px; font-weight:500; color:{ink}; }}
-.step p {{ margin:3px 0 0; font-size:12px; color:{muted}; line-height:1.4; overflow-wrap:anywhere; }}
-.step p:first-of-type {{ color:{text}; }}
-.tip {{ position:absolute; z-index:40; left:50%; top:calc(100% + 4px); width:280px; padding:12px 14px; border-radius:14px; text-align:left; background:{card};
-  border:1px solid {border}; box-shadow:0 18px 40px rgba(0,0,0,{'.5' if dark else '.18'}); color:{text}; font-size:12.5px; line-height:1.45; opacity:0; pointer-events:none;
-  transform:translate(-50%, 6px); transition:opacity .18s ease, transform .18s ease; }}
+.step .num {{ position:absolute; left:50%; top:-4px; transform:translateX(-48px); width:19px; height:19px; border-radius:50%; font-size:11px; font-weight:500;
+  display:grid; place-items:center; color:var(--c); background:{palette['background']}; border:1.5px solid var(--c); z-index:2; }}
+.logo {{ display:block; width:72px; height:72px; margin:0 auto; filter:drop-shadow(0 12px 10px {shade}); transition:transform .25s ease; position:relative; z-index:1; }}
+.step:hover .logo, .step:focus .logo {{ transform:translateY(-5px) scale(1.05); }}
+.mark {{ position:absolute; z-index:3; left:50%; top:52px; transform:translateX(16px); width:19px; height:19px; border-radius:50%; background:var(--c); color:#fff;
+  font:700 11px/19px sans-serif; text-align:center; box-shadow:0 0 0 3px {palette['background']}; }}
+.step b {{ display:block; margin-top:8px; font-size:14px; font-weight:500; color:{ink}; }}
+.step p {{ margin:2px 0 0; font-size:11.5px; color:{muted}; line-height:1.35; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }}
+.step p.warn {{ color:var(--c); }}
+.tip {{ position:absolute; z-index:60; left:50%; top:calc(100% + 4px); width:290px; padding:12px 14px; border-radius:14px; text-align:left; background:{card};
+  border:1px solid {border}; box-shadow:0 18px 40px {tip_shadow}; color:{text}; font-size:12.5px; line-height:1.45; display:none; pointer-events:none; transform:translateX(-50%); }}
 .tip i {{ display:block; margin:8px 0 2px; font:500 10px/1 sans-serif; font-style:normal; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
 .tip i:first-child {{ margin-top:0; }}
-.step:nth-child(1) .tip {{ left:0; transform:translate(0, 6px); }} .step:nth-child(6) .tip {{ left:auto; right:0; transform:translate(0, 6px); }}
-.step:hover .tip, .step:focus .tip {{ opacity:1; transform:translate(-50%, 0); }}
-.step:nth-child(1):hover .tip, .step:nth-child(1):focus .tip, .step:nth-child(6):hover .tip, .step:nth-child(6):focus .tip {{ transform:translate(0, 0); }}
+.step:nth-child(1) .tip {{ left:0; transform:none; }} .step:nth-child(6) .tip {{ left:auto; right:0; transform:none; }}
+.step:hover .tip, .step:focus .tip {{ display:block; }}
 .step:hover, .step:focus {{ z-index:50; }}
-.verify {{ margin:10px 0 0; font-size:12px; color:{muted}; }}
-@media (max-width:900px) {{ .path {{ grid-template-columns:repeat(2, 1fr); gap:18px 8px; }} .path::before {{ display:none; }} .about {{ grid-template-columns:1fr; }} }}
+.controls {{ display:flex; gap:6px 22px; flex-wrap:wrap; justify-content:center; margin-top:10px; padding-top:8px; border-top:1px solid color-mix(in srgb, {border} 70%, transparent); }}
+.group h4 {{ margin:0 0 3px; text-align:center; font-size:10px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
+.group .row {{ display:flex; gap:10px; justify-content:center; }}
+.ctl {{ position:relative; width:74px; text-align:center; outline:none; }}
+.ctl .qa-icon {{ width:34px; height:34px; filter:drop-shadow(0 5px 5px {shade}); }}
+.ctl .dot {{ position:absolute; top:0; left:calc(50% + 8px); width:10px; height:10px; border-radius:50%; background:var(--c); box-shadow:0 0 0 2px {palette['background']}; }}
+.ctl small {{ display:block; font-size:10.5px; line-height:1.2; color:{muted}; margin-top:1px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }}
+.ctl .tip {{ top:auto; bottom:calc(100% + 4px); left:50%; }}
+.ctl:hover .tip, .ctl:focus .tip {{ display:block; }}
+.ctl:hover, .ctl:focus {{ z-index:50; }}
+.legend {{ margin:6px 0 0; font-size:11px; color:{muted}; text-align:center; }}
+@media (max-width:900px) {{ .path {{ grid-template-columns:repeat(2, 1fr); gap:16px 8px; }} .path::before {{ display:none; }} }}
 </style>"""
 
 
@@ -177,23 +193,37 @@ def build_logo(key):
     return database_map.source_logo("panel")
 
 
-def build_trace_html(palette, row, steps):
-    """The whole view: purpose strip, the chosen price, and the six steps as logos."""
-    about = ('<div class="about"><div><b>Propósito</b>Demostrar de dónde sale una cifra y que cualquiera puede comprobarlo.</div>'
-             '<div><b>Cómo se lee</b>Elige un precio arriba. El camino va de izquierda a derecha, del archivo que ODEPA publicó hasta el '
-             'panel. Pasa el cursor por cada paso.</div>'
-             '<div><b>Quién la usa</b>Quien debe rendir cuentas o revisar: un jefe, un revisor, alguien que duda de una cifra.</div></div>')
-    figure = (f'<div class="figure"><strong>{html.escape(money(row["price"]))} por {html.escape(str(row["normalized_unit"]))}</strong>'
+def build_controls_html(columns):
+    """The controls that hold the chain up, as small icons with their status: [(step, [(icon, title, status, detail, why)])]."""
+    kinds = {"ok": "ok", "pending": "pending", "fail": "fail"}
+    groups = []
+    for step, cards in columns:
+        items = "".join(
+            f'<div class="ctl s-{kinds[quality_view.classify(status)]}" tabindex="0">{quality_view.build_icon_svg(icon)}'
+            f'<span class="dot"></span><small>{html.escape(title)}</small><span class="tip" role="tooltip"><i>{html.escape(status)}</i>'
+            f'{html.escape(detail)}<i>Qué comprueba</i>{html.escape(why)}</span></div>' for icon, title, status, detail, why in cards)
+        groups.append(f'<div class="group"><h4>{html.escape(step)}</h4><div class="row">{items}</div></div>')
+    return '<div class="controls">' + "".join(groups) + "</div>"
+
+
+def build_trace_html(palette, row, steps, controls=None):
+    """The whole view: the chosen price, the six steps as logos and, under them, the controls that hold the chain up."""
+    about = ('<div class="about" tabindex="0"><i>i</i><span class="tip" role="tooltip">'
+             + "".join(f"<i>{title}</i>{html.escape(text)}" for title, text in ABOUT) + "</span></div>")
+    figure = (f'<div class="top"><strong>{html.escape(money(row["price"]))} por {html.escape(str(row["normalized_unit"]))}</strong>'
               f'<span>{html.escape(str(row["product"]))} · {html.escape(str(row["variety"]))} · {html.escape(str(row["quality"]))} · '
-              f'{html.escape(str(row["channel"]))} · {html.escape(str(row["region"]))} · semana {html.escape(str(row["week_start"])[:10])}</span></div>')
+              f'{html.escape(str(row["channel"]))} · {html.escape(str(row["region"]))} · semana {html.escape(str(row["week_start"])[:10])}</span>{about}</div>')
     marks = {"ok": "✓", "pending": "!", "fail": "✕"}
     body = []
     for number, (key, title, lines, what, why, status) in enumerate(steps, start=1):
-        paragraphs = "".join(f"<p>{html.escape(line)}</p>" for line in lines)
+        shown = "".join(f'<p class="{"warn" if status != "ok" and index == len(lines) - 1 else ""}">{html.escape(lines[index])}</p>'
+                        for index in VISIBLE[key] if index < len(lines))
+        detail = "<br>".join(html.escape(line) for line in lines)
         body.append(f'<div class="step s-{status}" tabindex="0"><span class="num">{number}</span>{build_logo(key)}'
-                    f'<span class="mark">{marks[status]}</span><b>{html.escape(title)}</b>{paragraphs}'
-                    f'<span class="tip" role="tooltip"><i>Qué hace en la cadena</i>{html.escape(what)}<i>Por qué</i>{html.escape(why)}</span></div>')
-    note = ('<p class="verify">✓ comprobado aquí · ! no se puede comprobar en este servidor o tiene una observación · '
-            'nada se muestra como verificado sin haberse comprobado.</p>')
+                    f'<span class="mark">{marks[status]}</span><b>{html.escape(title)}</b>{shown}'
+                    f'<span class="tip" role="tooltip"><i>Qué hace en la cadena</i>{html.escape(what)}<i>Por qué</i>{html.escape(why)}'
+                    f'<i>Detalle de esta fila</i>{detail}</span></div>')
+    note = '<p class="legend">✓ comprobado aquí · ! no se puede comprobar en este servidor o tiene una observación · nada se muestra como verificado sin comprobarse.</p>'
+    extra = build_controls_html(controls) if controls else ""
     return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            + build_css(palette) + f'</head><body>{about}{figure}<div class="path">{"".join(body)}</div>{note}</body></html>')
+            + build_css(palette) + f'</head><body>{quality_view.DEFS}{figure}<div class="path">{"".join(body)}</div>{extra}{note}</body></html>')

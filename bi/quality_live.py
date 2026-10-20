@@ -12,7 +12,7 @@ document for st.iframe (CSS only, no script). Both are pure enough to test witho
 import html
 from datetime import date, datetime, timezone
 
-from bi import charts, queries, quality, quality_view
+from bi import charts, database_map, queries, quality, quality_view
 
 # The project's thresholds, shown next to each figure so a verdict can be disputed.
 LAST_WEEK_MIN_SHARE = 0.75   # rows of the latest week vs the median of the 8 before
@@ -59,6 +59,11 @@ def read_measures(database_file=queries.DATABASE_FILE, backup_file=None):
     parity = quality.check_parity(**({"backup_file": backup_file} if backup_file else {}), database_file=database_file)
     measures["parity"] = parity
     return measures
+
+
+def compact(sql):
+    """A query on one line, so its tooltip stays short."""
+    return " ".join(sql.split())
 
 
 def share(part, whole):
@@ -108,7 +113,7 @@ def build_indicators(measures, now=None):
     # Uniqueness
     rows.append(("unicidad", "Claves duplicadas", thousands(measures["duplicates"]),
                  "producto, región, canal, unidad y semana: una sola fila", "ok" if measures["duplicates"] == 0 else "fail",
-                 "Combinaciones de semana, producto, región, canal y unidad con más de una fila.\n" + quality.DUPLICATES_SQL))
+                 "Combinaciones de semana, producto, región, canal y unidad con más de una fila.\n" + compact(quality.DUPLICATES_SQL)))
     # Validity
     read = measures["runs"][-1][3] if measures["runs"] else 0
     rejected = sum(count for _, _, count in measures["rejections"])
@@ -125,11 +130,11 @@ def build_indicators(measures, now=None):
                  "indicadores."))
     rows.append(("validez", "Formatos inválidos", thousands(measures["invalid"]), "precio positivo, unidad y lunes válidos",
                  "ok" if measures["invalid"] == 0 else "fail",
-                 "Precios utilizables con precio nulo o no positivo, unidad vacía o fecha que no es lunes.\n" + quality.INVALID_SQL))
+                 "Precios utilizables con precio nulo o no positivo, unidad vacía o fecha que no es lunes.\n" + compact(quality.INVALID_SQL)))
     # Consistency
     rows.append(("consistencia", "Referencias sin destino", thousands(measures["foreign_keys"]),
                  "toda clave apunta a una fila que existe", "ok" if measures["foreign_keys"] == 0 else "fail",
-                 "Precios sin producto, región, canal o fecha, y rechazos sin carga.\n" + quality.FOREIGN_KEYS_SQL))
+                 "Precios sin producto, región, canal o fecha, y rechazos sin carga.\n" + compact(quality.FOREIGN_KEYS_SQL)))
     parity = measures.get("parity")
     if parity:
         rows.append(("consistencia", "Paridad SQLite ↔ DuckDB", "misma suma" if parity["ok"] else "no coinciden",
@@ -181,116 +186,158 @@ def build_verdict(indicators):
 
 
 # region Markup
+# Where each dimension is watched along the pipeline: (column, row) in a 4-column stage.
+PLACES = {"completitud": (0, "top"), "actualidad": (1, "top"), "validez": (2, "top"), "consistencia": (3, "top"),
+          "pruebas": (2, "bottom"), "unicidad": (3, "bottom")}
+SPINE = [
+    ("Fuentes", "ODEPA e INE", ["odepa", "ine"], "descarga"),
+    ("Aterrizaje y bronce", "raw.db y Parquet", ["sqlite", "apacheparquet"], "lee dbt"),
+    ("dbt", "reglas, modelos y pruebas", ["dbt"], "publica"),
+    ("datos.duckdb", "la base que lee el panel", ["duckdb"], ""),
+]
+ABOUT = (("Propósito", "Detectar a tiempo que algo está mal, antes de usar una cifra."),
+         ("Cómo se lee", "Cada dimensión cuelga del punto del pipeline donde se vigila. Cada cifra se mide en la base de esta "
+                         "carga y se juzga contra el umbral que lleva debajo. Pasa el cursor para ver cómo se mide."),
+         ("Quién la usa", "Quien opera el pipeline y decide si una carga puede publicarse."))
+
+
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
     ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"], palette["card"],
                                               palette["card_border"], palette["accent"])
     colors = {"ok": quality_view.PILL_COLORS["ok"], "warn": quality_view.PILL_COLORS["pending"],
               "fail": quality_view.PILL_COLORS["fail"], "info": muted}
-    raised = ("0 1px 0 rgba(255,255,255,.06) inset, 0 22px 44px -28px rgba(0,0,0,.9)" if dark
-              else "0 1px 0 #fff inset, 0 22px 44px -30px rgba(15,27,45,.45), 0 6px 12px -10px rgba(15,27,45,.2)")
-    shade = "rgba(0,0,0,.55)" if dark else "rgba(15,40,90,.18)"
+    shade = "rgba(0,0,0,.55)" if dark else "rgba(15,40,90,.2)"
     states = "".join(f".ql .s-{key}{{--c:{color};}}" for key, color in colors.items())
     return f"""<style>
 * {{ box-sizing:border-box; }}
-html, body {{ margin:0; background:transparent; color:{text}; font:300 13.5px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
 {states}
-.ql {{ padding:4px 2px 8px; }}
-.ql .about {{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px 22px; margin:2px 0 14px; }}
-.ql .about div {{ padding-left:12px; border-left:2px solid color-mix(in srgb, {accent} 55%, transparent); }}
-.ql .about b {{ display:block; font-size:10px; font-weight:500; letter-spacing:.11em; text-transform:uppercase; color:{muted}; margin-bottom:2px; }}
-.ql .verdict {{ display:flex; align-items:center; gap:10px; margin:0 0 16px; padding:9px 16px; border-radius:12px; border:1px solid {border};
-  background:linear-gradient(180deg, color-mix(in srgb, var(--c) {'16%' if dark else '9%'}, {card}), {card}); color:{ink}; font-size:14px; }}
-.ql .verdict i {{ width:18px; height:18px; border-radius:50%; background:var(--c); color:#fff; display:inline-grid; place-items:center;
-  font:700 11px/1 sans-serif; font-style:normal; flex:none; }}
-.ql .grid {{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; }}
-.ql .group {{ position:relative; padding:14px 16px 12px; border-radius:18px; border:1px solid {border}; box-shadow:{raised};
-  background:linear-gradient(180deg, color-mix(in srgb, {card} 92%, {'#fff' if not dark else '#000'}), {card}); }}
-.ql .group:hover, .ql .group:focus-within {{ z-index:20; }}
-.ql .head {{ display:flex; align-items:center; gap:12px; margin-bottom:8px; }}
-.ql .qa-icon {{ width:56px; height:56px; flex:none; filter:drop-shadow(0 8px 8px {shade}); }}
-.ql .head b {{ display:block; font-size:15.5px; font-weight:500; color:{ink}; }}
-.ql .head small {{ display:block; color:{muted}; font-size:12px; line-height:1.3; }}
-.ql .badge {{ margin-left:auto; padding:2px 10px; border-radius:999px; font-size:11px; font-weight:500; color:#fff; white-space:nowrap;
-  background:linear-gradient(180deg, color-mix(in srgb, var(--c) 82%, #fff), var(--c)); }}
-.ql .ind {{ position:relative; display:grid; grid-template-columns:10px 1fr auto; gap:0 10px; padding:7px 0; border-top:1px solid color-mix(in srgb, {border} 70%, transparent);
-  cursor:default; outline:none; }}
-.ql .ind > i {{ width:9px; height:9px; margin-top:6px; border-radius:50%; background:var(--c); box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent); }}
-.ql .ind span {{ color:{ink}; font-size:13px; }}
-.ql .ind em {{ grid-column:2; color:{muted}; font-size:11.5px; font-style:normal; line-height:1.35; }}
-.ql .ind strong {{ grid-row:1; grid-column:3; font-weight:500; color:{ink}; font-variant-numeric:tabular-nums; font-size:13.5px; text-align:right; }}
-.ql .tip {{ position:absolute; z-index:30; left:10px; right:10px; top:calc(100% + 2px); padding:10px 12px; border-radius:12px; background:{card};
-  border:1px solid {border}; box-shadow:0 18px 36px -16px rgba(0,0,0,.6); font-size:12px; line-height:1.45; color:{text}; white-space:pre-wrap;
-  opacity:0; pointer-events:none; transition:opacity .15s ease; font-family:inherit; }}
-.ql .ind:hover .tip, .ql .ind:focus .tip {{ opacity:1; }}
-.ql .tip code {{ font:400 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }}
-.ql h3 {{ margin:20px 0 8px; font-size:10.5px; font-weight:500; letter-spacing:.11em; text-transform:uppercase; color:{muted}; }}
-.ql .bottom {{ display:grid; grid-template-columns:1.1fr 1fr; gap:14px; }}
-.ql .panel {{ padding:12px 16px 10px; border-radius:18px; border:1px solid {border}; box-shadow:{raised}; background:{card}; }}
-.ql .panel h3 {{ margin:0 0 8px; }}
-.ql table {{ width:100%; border-collapse:collapse; font-size:12.5px; }}
-.ql th {{ text-align:right; font-weight:400; color:{muted}; font-size:11px; padding:2px 6px 5px; }} .ql th:first-child, .ql td:first-child {{ text-align:left; }}
-.ql td {{ text-align:right; padding:4px 6px; border-top:1px solid color-mix(in srgb, {border} 60%, transparent); font-variant-numeric:tabular-nums; color:{ink}; }}
-.ql td.change {{ color:{muted}; }}
-.ql .reason {{ display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-top:1px solid color-mix(in srgb, {border} 60%, transparent); color:{ink}; font-size:13px; }}
-.ql .reason code {{ font:400 11.5px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; }}
-.ql .reason small {{ display:block; color:{muted}; font-size:11.5px; }}
-.ql .note {{ margin:8px 0 0; color:{muted}; font-size:11.5px; }}
-@media (max-width:900px) {{ .ql .grid, .ql .about, .ql .bottom {{ grid-template-columns:1fr; }} }}
+.ql {{ padding:2px 2px 6px; }}
+.ql .top {{ display:flex; align-items:center; gap:10px; margin:0 0 6px; color:{ink}; font-size:14px; }}
+.ql .top i.ok {{ width:20px; height:20px; border-radius:50%; background:var(--c); color:#fff; display:inline-grid; place-items:center;
+  font:700 12px/1 sans-serif; font-style:normal; flex:none; box-shadow:0 0 0 4px color-mix(in srgb, var(--c) 22%, transparent); }}
+.ql .about {{ position:relative; margin-left:auto; flex:none; }}
+.ql .about > span {{ display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%; border:1px solid {muted}; color:{muted};
+  font:500 12px/1 serif; font-style:italic; cursor:default; }}
+.ql .about .tip {{ top:calc(100% + 6px); right:0; left:auto; width:340px; }}
+.ql .about:hover .tip, .ql .about:focus-within .tip {{ display:block; }}
+.ql .stage {{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); column-gap:26px; align-items:start; }}
+.ql .cell {{ position:relative; min-height:0; }}
+.ql .gate {{ position:relative; padding:4px 2px 0; }}
+.ql .gate:hover, .ql .gate:focus-within {{ z-index:30; }}
+.ql .gh {{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }}
+.ql .qa-icon {{ width:46px; height:46px; flex:none; filter:drop-shadow(0 7px 7px {shade}); }}
+.ql .gh b {{ display:block; font-size:15px; font-weight:500; color:{ink}; line-height:1.2; }}
+.ql .gh small {{ display:block; color:{muted}; font-size:11.5px; line-height:1.25; }}
+.ql .ind {{ position:relative; display:grid; grid-template-columns:9px 1fr auto; gap:0 8px; padding:3px 0; cursor:default; outline:none; }}
+.ql .ind > i {{ width:8px; height:8px; margin-top:6px; border-radius:50%; background:var(--c); box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent); }}
+.ql .ind span {{ color:{ink}; font-size:12.5px; }}
+.ql .ind strong {{ font-weight:500; color:{ink}; font-variant-numeric:tabular-nums; font-size:13px; text-align:right; }}
+.ql .ind em {{ grid-column:2 / 4; color:{muted}; font-size:11px; font-style:normal; line-height:1.3; }}
+.ql .tip {{ position:absolute; z-index:60; left:0; top:calc(100% + 2px); width:270px; padding:10px 12px; border-radius:12px; background:{card};
+  border:1px solid {border}; box-shadow:0 18px 36px -14px rgba(0,0,0,.65); font-size:12px; line-height:1.45; color:{text}; white-space:pre-wrap;
+  display:none; pointer-events:none; text-align:left; font-weight:300; }}
+.ql .ind:hover .tip, .ql .ind:focus .tip {{ display:block; }}
+.ql .c3 .tip, .ql .c4 .tip, .ql .c2 .gate .tip {{ left:auto; right:0; }}
+.ql .low .tip {{ top:auto; bottom:calc(100% + 2px); }}
+.ql .spine {{ position:relative; display:flex; flex-direction:column; align-items:center; text-align:center; padding:0; }}
+.ql .stem {{ width:2px; height:16px; background:var(--c, {accent}); opacity:.75; border-radius:2px; }}
+.ql .stem.none {{ background:transparent; }}
+.ql .logos {{ display:flex; gap:6px; justify-content:center; }}
+.ql .logos .logo {{ width:58px; height:58px; filter:drop-shadow(0 9px 8px {shade}); }}
+.ql .logos.two .logo {{ width:50px; height:50px; }}
+.ql .spine b {{ margin-top:3px; font-size:13px; font-weight:500; color:{ink}; }}
+.ql .spine small {{ color:{muted}; font-size:11px; line-height:1.2; }}
+.ql .link {{ position:absolute; top:calc(16px + 29px); left:calc(50% + 62px); width:calc(100% - 124px + 26px); height:2px; background:{accent}; opacity:.85; }}
+.ql .link::after {{ content:""; position:absolute; right:-1px; top:-4px; border:5px solid transparent; border-left:8px solid {accent}; border-right:0; }}
+.ql .link span {{ position:absolute; left:0; right:0; top:-17px; text-align:center; font-size:10.5px; color:{muted}; }}
+.ql .side h4 {{ margin:2px 0 3px; font-size:10.5px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
+.ql .line {{ display:flex; justify-content:space-between; gap:8px; padding:2px 0; color:{ink}; font-size:12px; font-variant-numeric:tabular-nums; position:relative; outline:none; }}
+.ql .line code {{ font:400 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; }}
+.ql .line small {{ color:{muted}; font-size:11px; }}
+.ql .line:hover .tip, .ql .line:focus .tip {{ display:block; }}
+.ql .side {{ padding-top:6px; }}
+@media (max-width:820px) {{ .ql .stage {{ grid-template-columns:repeat(2, minmax(0, 1fr)); row-gap:10px; }} .ql .link {{ display:none; }} }}
 </style>"""
 
 
-def build_group_html(key, rows):
+def build_gate_html(key, rows, low=False):
     status = dimension_status([row[4] for row in rows])
     indicators = "".join(
         f'<div class="ind s-{state}" tabindex="0"><i></i><span>{html.escape(label)}</span><strong>{html.escape(value)}</strong>'
         f'<em>{html.escape(reference)}</em><div class="tip" role="tooltip">{html.escape(detail)}</div></div>'
         for _, label, value, reference, state, detail in rows)
-    return (f'<section class="group s-{status}"><div class="head">{quality_view.build_icon_svg(ICONS[key])}'
-            f'<div><b>{TITLES[key]}</b><small>{QUESTIONS[key]}</small></div>'
-            f'<span class="badge">{STATUS_WORDS[status]}</span></div>{indicators}</section>')
+    return (f'<div class="gate s-{status}{" low" if low else ""}" title="{html.escape(STATUS_WORDS[status])}">'
+            f'<div class="gh">{quality_view.build_icon_svg(ICONS[key])}<div><b>{TITLES[key]}</b>'
+            f'<small>{QUESTIONS[key]}</small></div></div>{indicators}</div>')
 
 
-def build_runs_html(runs):
-    """The load history with the change of each load against the one before."""
+def build_loads_html(runs):
+    """The last loads as short lines: number, day, rows read and the change against the load before."""
     if not runs:
         return ""
-    body = []
-    for position, (run_id, started, status, read, loaded, rejected) in enumerate(runs):
+    lines = []
+    for position in range(len(runs) - 1, max(len(runs) - 5, -1), -1):
+        run_id, started, status, read, loaded, rejected = runs[position]
         previous = runs[position - 1][3] if position else None
-        change = "—" if previous is None else (f"+{thousands(read - previous)}" if read >= previous else f"−{thousands(previous - read)}")
-        body.append(f"<tr><td>{run_id} · {html.escape(str(started)[:10])}{'' if status == 'LOADED' else ' · ' + html.escape(status)}</td>"
-                    f"<td>{thousands(read)}</td><td class=\"change\">{change}</td><td>{thousands(loaded)}</td><td>{thousands(rejected)}</td></tr>")
-    return ('<table><tr><th>Carga</th><th>Leídas</th><th>Cambio</th><th>Cargadas</th><th>Rechazadas</th></tr>'
-            + "".join(reversed(body)) + "</table>")
+        change = "" if previous is None else (f" (+{thousands(read - previous)})" if read >= previous else f" (−{thousands(previous - read)})")
+        day = str(started)[:10]
+        tip = (f"Carga {run_id} · {day} · {status}: leyó {thousands(read)} filas, cargó {thousands(loaded)} y rechazó {thousands(rejected)}.")
+        lines.append(f'<div class="line" tabindex="0"><span>{run_id} · {html.escape(day[5:])}'
+                     f'{"" if status == "LOADED" else " · " + html.escape(status)}</span>'
+                     f'<span>{thousands(read)}<small>{change}</small></span><div class="tip" role="tooltip">{html.escape(tip)}</div></div>')
+    return '<div class="side low"><h4>Cargas · filas leídas</h4>' + "".join(lines) + "</div>"
 
 
-def build_rejections_html(rejections):
-    if not rejections:
-        return '<div class="reason"><span>Ninguna fila rechazada en la base.</span></div>'
-    return "".join(
-        f'<div class="reason"><span><code>{html.escape(reason)}</code><small>{html.escape(REASONS.get(reason, "motivo registrado por la validación"))}'
-        f' · fuente {"mayorista" if source == "wholesale" else "consumidor"}</small></span><b>{thousands(count)}</b></div>'
-        for reason, source, count in rejections)
+def build_apart_html(rejections, flags):
+    """What was set aside and why: rejected rows and marked prices, one line each."""
+    lines = []
+    for reason, source, count in rejections:
+        what = REASONS.get(reason, "motivo registrado por la validación")
+        origin = "mayorista" if source == "wholesale" else "consumidor"
+        lines.append(f'<div class="line" tabindex="0"><span><code>{html.escape(reason)}</code></span><span>{thousands(count)}</span>'
+                     f'<div class="tip" role="tooltip">Filas rechazadas: {html.escape(what)}, fuente {origin}. No entran a la base; '
+                     f'quedan en la tabla rejection con su fila original.</div></div>')
+    for name, count in sorted(flags.items(), key=lambda item: -item[1]):
+        if name != "SIN_MARCA":
+            lines.append(f'<div class="line" tabindex="0"><span><code>{html.escape(name)}</code></span><span>{thousands(count)}</span>'
+                         f'<div class="tip" role="tooltip">Precios marcados: {html.escape(FLAGS.get(name, "marca de calidad"))}. '
+                         'Entran a la base, pero quedan fuera de los indicadores.</div></div>')
+    return '<div class="side low"><h4>Qué se apartó y por qué</h4>' + ("".join(lines) or '<div class="line"><span>Nada apartado.</span></div>') + "</div>"
+
+
+def build_node_html(index, title, subtitle, logos, label, up, down):
+    """A pipeline stop: the stems carry the status of the gate that hangs above or below it."""
+    marks = "".join(database_map.source_logo(slug) if slug in ("odepa", "ine") else database_map.brand_logo(slug, f"-q{index}")
+                    for slug in logos)
+    link = f'<span class="link"><span>{html.escape(label)}</span></span>' if label else ""
+    return (f'<div class="cell spine"><div class="stem s-{up or "info"}{"" if up else " none"}"></div>'
+            f'<div class="logos{" two" if len(logos) > 1 else ""}">{marks}</div><b>{html.escape(title)}</b>'
+            f'<small>{html.escape(subtitle)}</small><div class="stem s-{down or "info"}{"" if down else " none"}"></div>{link}</div>')
 
 
 def build_page_html(palette, indicators, runs, rejections, flags):
-    """The whole «Calidad» view as one HTML document for st.iframe."""
+    """The whole «Calidad» view as one HTML document for st.iframe: the pipeline in one line,
+    each dimension hanging from the stop where it is watched. No cards."""
     kind, sentence = build_verdict(indicators)
-    groups = "".join(build_group_html(key, rows) for key, rows in group_indicators(indicators).items() if rows)
-    about = ('<div class="about"><div><b>Propósito</b>Detectar a tiempo que algo está mal, antes de usar una cifra.</div>'
-             '<div><b>Cómo se lee</b>Cada indicador se mide en la base de esta carga y se juzga contra el umbral que aparece '
-             'debajo. Pasa el cursor para ver cómo se mide.</div>'
-             '<div><b>Quién la usa</b>Quien opera el pipeline y decide si una carga puede publicarse.</div></div>')
-    verdict = f'<div class="verdict s-{kind}"><i>{"✓" if kind == "ok" else "!"}</i>{html.escape(sentence)}</div>'
-    marks = "".join(f'<div class="reason"><span><code>{html.escape(name)}</code><small>{html.escape(FLAGS.get(name, "marca de calidad"))}</small></span>'
-                    f'<b>{thousands(count)}</b></div>' for name, count in sorted(flags.items(), key=lambda item: -item[1])
-                    if name != "SIN_MARCA")
-    bottom = ('<div class="bottom"><div class="panel"><h3>Historial de cargas</h3>' + build_runs_html(runs)
-              + '</div><div class="panel"><h3>Qué se apartó y por qué</h3>' + build_rejections_html(rejections) + marks
-              + '<p class="note">Las filas rechazadas no entran a la base. Los precios marcados sí entran, pero quedan fuera de los '
-                'indicadores.</p></div></div>')
+    groups = {key: rows for key, rows in group_indicators(indicators).items() if rows}
+    status = {key: dimension_status([row[4] for row in rows]) for key, rows in groups.items()}
+    top, bottom = [""] * 4, [""] * 4
+    for key, rows in groups.items():
+        column, row_name = PLACES[key]
+        (top if row_name == "top" else bottom)[column] += build_gate_html(key, rows, low=row_name == "bottom")
+    bottom[0] = build_apart_html(rejections, flags)
+    bottom[1] = build_loads_html(runs)
+    up = [status.get(key) for key in ("completitud", "actualidad", "validez", "consistencia")]
+    down = [None, None, status.get("pruebas"), status.get("unicidad")]
+    spine = "".join(build_node_html(index, *node[:3], node[3], up[index], down[index]) for index, node in enumerate(SPINE))
+    cells = ("".join(f'<div class="cell c{index + 1}">{html_}</div>' for index, html_ in enumerate(top)) + spine
+             + "".join(f'<div class="cell c{index + 1}">{html_}</div>' for index, html_ in enumerate(bottom)))
+    about = ('<div class="about" tabindex="0"><span>i</span><div class="tip" role="tooltip">'
+             + "".join(f"<b>{title}.</b> {html.escape(text)}\n" for title, text in ABOUT).rstrip("\n") + '</div></div>')
+    verdict = f'<div class="top s-{kind}"><i class="ok">{"✓" if kind == "ok" else "!"}</i>{html.escape(sentence)}{about}</div>'
     return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             + build_css(palette) + '</head><body>' + quality_view.DEFS
-            + f'<div class="ql">{about}{verdict}<div class="grid">{groups}</div>{bottom}</div></body></html>')
+            + f'<div class="ql">{verdict}<div class="stage">{cells}</div></div></body></html>')
 # endregion
