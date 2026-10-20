@@ -49,7 +49,7 @@ STEP_NAMES = ["Fuentes", "Ejecución y dbt", "Warehouse", "Resultados"]
 # (D-144, D-146, D-049): their figures are the ones the page always stated.
 RESULT_CARDS = [
     ("reconcile", "Reconciliación fuente → base", "Verificado · pruebas automáticas",
-     "120 precios por ejecución · auditoría 400 de 400.",
+     "120 precios por ejecución · auditoría manual del 18-10-2026: 400 de 400.",
      "Cada ejecución de las pruebas reconstruye 120 precios semanales desde las filas crudas de "
      "ODEPA, sin el ETL. En la auditoría del 18-10-2026 coincidieron 400 de 400."),
     ("calculator", "Recálculo independiente de indicadores", "Verificado · pruebas automáticas",
@@ -469,7 +469,7 @@ def stage_verdicts(evidence, columns):
                  f"{thousands(parity['rows'])} precios publicados." if parity else "Lectura completa de la base.")
     results_kind = summarize_step([card for card in columns[3][1] if card[0] != "warning"])
     results = (results_kind, {"ok": "Verificado", "pending": "Pendiente de auditoría", "fail": "Falla detectada"}[results_kind],
-               ["SQL y Python coinciden.", "Auditoría: 400 de 400 precios."],
+               ["SQL y Python coinciden (pruebas).", "Auditoría manual 18-10-2026: 400 de 400."],
                "Pantalla: verificación por muestra · otra fuente: pendiente.")
     return [sources, transformation, warehouse, results]
 
@@ -606,13 +606,16 @@ def build_overview_css(mode):
   .qa-page .qa-anomaly{{grid-column:1 / 3;margin:0;}}
   .qa-page .qa-anomaly-link,.qa-page .qa-anomaly-word{{display:none;}}
 }}
+.qa-section{{margin:26px 0 6px;font-size:.68rem;font-weight:500;letter-spacing:.11em;text-transform:uppercase;color:{palette['reference']};}}
 .st-key-{EXPANDER_KEY} .qa-open-label{{font-size:.72rem;font-weight:500;letter-spacing:.11em;text-transform:uppercase;color:{palette['reference']};white-space:nowrap;}}
 </style>"""
 
 
-def build_overview_html(evidence, mode):
+def build_overview_html(evidence, mode, head=True, method=True):
+    show_head, show_method = head, method
     """The page as one HTML block: the head, the method strip, the four stages with
-    their controls, the anomalies box and the status bar (D-176)."""
+    their controls, the anomalies box and the status bar (D-176). head and method can be
+    left out, for the audit view that carries its own header (D-196)."""
     columns = build_columns(evidence)
     verdicts = stage_verdicts(evidence, columns)
     kinds = [kind for kind, *_ in verdicts]
@@ -670,7 +673,7 @@ def build_overview_html(evidence, mode):
         verdict = "Verificación completada · todos los controles superados"
     bar = (f'<div class="qa-bar qa-{overall}"><span class="qa-bar-mark">{"✓" if overall == "ok" else "!"}</span>'
            f'<b>{html.escape(verdict)}</b><span class="qa-bar-flow">Contraste con otra fuente: pendiente (ODEPA es la única oficial)</span></div>')
-    return (build_overview_css(mode) + f'<div class="qa-page">{DEFS}{head}{method}'
+    return (build_overview_css(mode) + f'<div class="qa-page">{DEFS}{head if show_head else ""}{method if show_method else ""}'
             f'<div class="qa-grid">{"".join(stages)}{anomaly}</div>{bar}</div>')
 
 
