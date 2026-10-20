@@ -69,7 +69,7 @@ Cada contenedor es una unidad que se ejecuta o se guarda por separado.
 | Proyecto de transformación | `dbt/` | Staging, intermedio y marts, con 31 pruebas de datos | dbt Core, dbt-duckdb |
 | Almacén de trabajo | `etl/warehouse_build.duckdb` | Donde dbt construye y prueba cada modelo; no se sube | DuckDB |
 | Orquestador de la carga | `etl/pipeline.py` | Encadena bronce, IPC, dbt build y el control de volumen; escribe la base de servicio y registra la carga | Python |
-| Base de servicio | `etl/datos.duckdb` | Las tablas que lee el panel más el registro `etl_run`; unos 13 MB, se sube cada semana | DuckDB |
+| Base de servicio | `etl/datos.duckdb` | Las tablas que lee el panel más el registro `etl_run`; unos 14 MB, se sube cada semana | DuckDB |
 | Respaldo | `etl/datos.db` | El data warehouse anterior, construido en paralelo y comparado con DuckDB por una prueba de paridad | SQLite |
 | Panel | `bi/` | Dashboard, arquitectura, operación y documentación, en solo lectura | Streamlit, Altair |
 | Workflow semanal | `.github/workflows/semanal.yml` | Orquesta la carga completa cada martes y publica el informe | GitHub Actions |
@@ -90,7 +90,7 @@ Por qué cada herramienta de los contenedores es la que es. Cada razón sale de 
 | SQLite (`raw.db`, `datos.db`) | Zona de aterrizaje de las filas de ODEPA y respaldo del data warehouse anterior | Base en un archivo, sin servidor, que cualquiera puede clonar y ejecutar. En la migración se conservó como aterrizaje y como respaldo para comparar fila a fila | Servidor propio; base en la nube; retirar SQLite el mismo día de la migración | ADR-02, ADR-34 · D-012, D-154 |
 | Parquet con pyarrow | Capa bronce, una partición por fuente y año, más las series del INE | Copia literal en columnas que dbt lee directo desde DuckDB: 16 MB frente a 644 MB del aterrizaje, reconstruida en cada ejecución | Subir los datos crudos al repositorio; almacenamiento de archivos grandes | ADR-04, ADR-30 · D-154 |
 | dbt Core con dbt-duckdb | Staging, intermedio y marts, con 31 pruebas de datos | Transformaciones declarativas por capas, con las reglas de negocio como pruebas que corren en cada construcción. El motor se elige en la configuración | Transformaciones en Python y consultas sueltas, como antes de la migración | ADR-30, ADR-11 · D-152, D-154 |
-| DuckDB | Almacén de trabajo de dbt y base de servicio del panel | Motor analítico en columnas, en un archivo, abierto y sin vencimientos. Pipeline en 16 s en vez de unos 4 minutos, pruebas en 40 s en vez de 140 s, base de unos 13 MB frente a 34 MB | Seguir en SQLite; BigQuery sandbox (las tablas vencen a los 60 días); Snowflake y Redshift (solo períodos de prueba); Databricks (sobredimensionado); PostgreSQL gratuito (algunos planes pausan proyectos inactivos) | ADR-30, ADR-31, ADR-34 · D-152, D-154 |
+| DuckDB | Almacén de trabajo de dbt y base de servicio del panel | Motor analítico en columnas, en un archivo, abierto y sin vencimientos. Pipeline en 16 s en vez de unos 4 minutos, pruebas en 40 s en vez de 140 s, base de unos 14 MB frente a 34 MB | Seguir en SQLite; BigQuery sandbox (las tablas vencen a los 60 días); Snowflake y Redshift (solo períodos de prueba); Databricks (sobredimensionado); PostgreSQL gratuito (algunos planes pausan proyectos inactivos) | ADR-30, ADR-31, ADR-34 · D-152, D-154 |
 | pandas | Tipos, fechas y validación en el ETL de respaldo; cálculo de las alertas K6 y filtros del panel | La alerta necesita una desviación estándar móvil, que el motor original no traía. Una versión SQL gemela la vigila fila a fila | Escribir la desviación estándar a mano en SQL; reemplazar Python por SQL en el panel | ADR-18 · D-031, D-033, D-049 |
 | SQL (`bi/queries.sql`) | Una consulta con nombre por indicador, leída por el panel y el informe | Cada cifra se comprueba ejecutando su consulta en la base; una sola definición por indicador. El panel pide solo el producto elegido | Consultas con parámetros por producto; vistas dentro de la base; tablas precalculadas | ADR-16, ADR-17 · D-031, D-050 |
 | Streamlit | Panel web de solo lectura: Dashboard, ingeniería de datos y documentación | Se publica gratis desde un enlace público, sin servidor que mantener, y comparte con el informe el mismo acceso a datos en Python | Power BI (no se abre desde un enlace público sin licencia) | ADR-02, ADR-35 · D-012, D-032, D-035 |
@@ -175,20 +175,20 @@ Es el mismo diagrama de la página Modelo de datos del panel: el modelo estrella
 
 | Tabla | Rol | Grano | Filas |
 |---|---|---|---|
-| `weekly_price` | Hechos | Semana, producto, región, canal y unidad normalizada | 811.578 |
+| `weekly_price` | Hechos | Semana, producto, región, canal y unidad normalizada | 814.610 |
 | `dim_product` | Dimensión | Familia, producto, variedad y calidad | 1.609 |
 | `dim_region` | Dimensión | Región con datos y su número oficial | 9 |
 | `dim_channel` | Dimensión | Canal y fuente | 8 |
-| `dim_date` | Dimensión | Semana (lunes), sin huecos, con semana ISO, mes y estación | 249 |
+| `dim_date` | Dimensión | Semana (lunes), sin huecos, con semana ISO, mes y estación | 250 |
 | `ipc_monthly` | IPC | Mes, base 2023 = 100 | 202 |
-| `ipc_weekly` | IPC | Semana, con factor real y marca provisional | 249 |
+| `ipc_weekly` | IPC | Semana, con factor real y marca provisional | 250 |
 | `ine_ipc_source` | Auditoría | Fila original del INE | 202 |
 | `etl_run` | Auditoría | Carga: inicio, estado, filas leídas, cargadas y rechazadas | 4 |
 | `rejection` | Auditoría | Fila rechazada de la última carga, con su motivo | 201 |
 | `dbt_node` | Linaje | Modelo, fuente o prueba del proyecto dbt (16 modelos, 3 fuentes, 31 pruebas) | 50 |
 | `dbt_result` | Linaje | Resultado de cada modelo y prueba en la última construcción | 47 |
 
-Cada precio guarda su unidad normalizada, el volumen en el mayorista, el número de observaciones de origen y una marca: 826 precios están marcados como atípicos y 12.472 sin unidad convertible. Ninguno se borra.
+Cada precio guarda su unidad normalizada, el volumen en el mayorista, el número de observaciones de origen y una marca: 828 precios están marcados como atípicos y 12.519 sin unidad convertible. Ninguno se borra.
 
 ## 10. Vista de ejecución
 
@@ -297,7 +297,7 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 
 | Criterio | Hoy | Umbral que justificaría la nube |
 |---|---|---|
-| Volumen | Unos 13 MB en la base de servicio | Varios GB: ventas por tienda y día, costos, inventario |
+| Volumen | Unos 14 MB en la base de servicio | Varios GB: ventas por tienda y día, costos, inventario |
 | Usuarios | Un panel de solo lectura | Varios equipos o herramientas de BI sobre los mismos datos |
 | Acceso | Público | Permisos por persona o datos sensibles |
 | Frescura | Semanal | Varias cargas al día o tiempo real |
