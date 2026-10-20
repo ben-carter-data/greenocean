@@ -2899,7 +2899,8 @@ def show_architecture_page(mode):
                                 label_visibility="collapsed") or MODEL_VIEWS[0]
     if view == MODEL_VIEWS[0]:
         counts, layers, tests = read_database_map(get_database_version())
-        st.iframe(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests), height=640)
+        st.iframe(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests,
+                                              read_store_sizes()), height=600)
         return
     st.markdown('<p class="arch-phrase">1 fila de weekly_price = un producto '
                 '(variedad y calidad) × región × canal × unidad × semana. '
@@ -2926,6 +2927,27 @@ def read_database_map(database_version):
     layers = {row.layer: int(row.n) for row in nodes.itertuples() if row.resource_type == "model"}
     tests = int(nodes.loc[nodes["resource_type"] == "test", "n"].sum())
     return counts, layers, tests
+
+
+# raw.db is 665 MB on the author's computer and never in the repository (D-020); where
+# the file is missing, the documented size is shown with an approximation sign.
+RAW_DATABASE_SIZE_TEXT = "≈ 665 MB"
+
+
+def format_file_size(size):
+    megabytes = size / 1_000_000
+    return f"{megabytes:,.0f} MB".replace(",", ".") if megabytes >= 10 else f"{megabytes:.1f} MB".replace(".", ",")
+
+
+def read_store_sizes():
+    """{store key: size text} of the files of the storage diagram that exist here (D-191)."""
+    sizes = {}
+    for key, path in (("served", queries.DATABASE_FILE), ("backup", etl.BASE_DIR / "datos.db")):
+        if Path(path).exists():
+            sizes[key] = format_file_size(Path(path).stat().st_size)
+    raw = etl.RAW_DATABASE_FILE
+    sizes["raw"] = format_file_size(raw.stat().st_size) if raw.exists() else RAW_DATABASE_SIZE_TEXT
+    return sizes
 
 
 @st.cache_data
