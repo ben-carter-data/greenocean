@@ -25,7 +25,8 @@ def build_zoom_css(palette):
     .zoom-viewport {{ overflow: hidden; touch-action: pan-y; border-radius: 12px; }}
     .zoom-frame.zoomed .zoom-viewport {{ touch-action: none; cursor: grab; }}
     .zoom-content {{ width: 100%; }}
-    .zoom-content img, .zoom-content svg {{ display: block; width: 100%; height: auto; }}
+    /* Only the diagram itself: a logo nested inside it keeps its own size. */
+    .zoom-content > img, .zoom-content > svg {{ display: block; width: 100%; height: auto; }}
     .zoom-content .has-tooltip {{ cursor: help; }}
     /* A row under the frame, aligned right: the buttons never cover the diagram. */
     .zoom-buttons {{ display: flex; justify-content: flex-end; gap: 4px; margin-top: 6px;

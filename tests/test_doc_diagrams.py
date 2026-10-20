@@ -1,16 +1,14 @@
 """Diagrams of the PRD and the SAD (bi/doc_diagrams.py) and the markers that place them."""
 import re
-import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import pytest
 
-from bi import charts, doc_diagrams
+from bi import charts, doc_diagrams, doc_views
 
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
-DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md"]
+DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "SEGURIDAD.md"]
 MARKER = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
-SVG = "{http://www.w3.org/2000/svg}"
 
 
 def read_markers():
@@ -35,26 +33,31 @@ def test_every_document_diagram_is_used_by_a_document():
 
 @pytest.mark.parametrize("mode", [charts.MODE_LIGHT, charts.MODE_DARK])
 @pytest.mark.parametrize("name", list(doc_diagrams.DOC_DIAGRAMS))
-def test_each_diagram_is_a_well_formed_svg_with_a_tooltip_on_its_boxes(name, mode):
-    svg = doc_diagrams.DOC_DIAGRAMS[name](mode)
-    root = ET.fromstring(svg)
-    assert root.tag == SVG + "svg" and root.get("viewBox") and root.get("aria-label")
-    assert len(root.findall(f".//{SVG}title")) >= 5
-    assert "robot" not in svg.lower()
+def test_d205_each_view_is_one_html_document_without_script(name, mode):
+    page = doc_diagrams.DOC_DIAGRAMS[name](mode)
+    assert page.startswith("<!doctype html>") and "<script" not in page
+    assert "robot" not in page.lower() and name in doc_diagrams.HEIGHTS
 
 
-def test_the_diagrams_follow_the_theme():
-    for function in doc_diagrams.DOC_DIAGRAMS.values():
-        light, dark = function(charts.MODE_LIGHT), function(charts.MODE_DARK)
-        assert charts.get_palette(charts.MODE_LIGHT)["card"] in light
-        assert charts.get_palette(charts.MODE_DARK)["card"] in dark
+@pytest.mark.parametrize("name", ["actores", "contexto", "contenedores", "secuencia"])
+def test_d205_the_diagrams_use_the_pipeline_tiles_and_explain_each_piece(name):
+    page = doc_diagrams.DOC_DIAGRAMS[name](charts.MODE_DARK)
+    # Logos in the pipeline's tile, no card boxes; every piece explains itself on hover.
+    assert page.count('class="logo"') >= 6 and page.count('role="tooltip"') >= 6
+    assert charts.get_palette(charts.MODE_DARK)["card"] in page
 
 
-def test_the_sequence_prints_the_dbt_counts_it_is_given():
-    svg = doc_diagrams.build_sequence_svg(charts.MODE_DARK, {"dbt_models": 17, "dbt_tests": 33})
-    assert "17 modelos y 33 pruebas" in svg
+def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
+    page = doc_diagrams.DOC_DIAGRAMS["mockups"](charts.MODE_DARK)
+    assert page.count("data:image/jpeg;base64,") == 4
+    assert {"Vantablack", "Claro", "Corporativo", "Blue Light"} <= {word for row in doc_views.MOCKUPS for word in
+                                                                    ["Vantablack", "Claro", "Corporativo", "Blue Light"] if word in row[2]}
+    assert any(row[3] == "phone" for row in doc_views.MOCKUPS)
+    for file_name, *_ in doc_views.MOCKUPS:
+        assert (doc_views.MOCKUP_DIR / file_name).stat().st_size < 400_000
 
 
 def test_doc_diagrams_does_not_depend_on_streamlit():
-    source = Path(doc_diagrams.__file__).read_text(encoding="utf-8")
-    assert "streamlit as st" not in source and "import streamlit" not in source
+    for module in (doc_diagrams, doc_views):
+        source = Path(module.__file__).read_text(encoding="utf-8")
+        assert "streamlit as st" not in source and "import streamlit" not in source

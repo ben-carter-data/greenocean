@@ -93,9 +93,14 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
     model, the weekly run and the deployment. ADR: none (doc_diagrams)."""
     names = {name: re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"),
                               re.MULTILINE) for name in DOCUMENTS}
-    assert names == {"PRD.md": ["actores", "pantalla"],
-                     "SAD.md": ["contexto", "contenedores", "modelo", "secuencia", "plataforma"],
+    assert names == {"PRD.md": ["actores", "mockups"],
+                     "SAD.md": ["contexto", "contenedores", "pipeline", "modelo", "secuencia", "plataforma"],
                      "ADR.md": []}
+
+
+def test_d205_the_prd_pdf_carries_the_four_real_screens():
+    pdf = document_pdf.build_pdf((DOCS_DIR / "PRD.md").read_text(encoding="utf-8"), "PRD", "x")
+    assert pdf.count(b"/Subtype /Image") >= 4
 
 
 def test_the_adr_has_one_card_per_decision_with_status_and_reference():
