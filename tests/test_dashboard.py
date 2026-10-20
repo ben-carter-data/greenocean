@@ -1381,7 +1381,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Step 4 of the refonte: Ingeniería de datos, four pages; DevOps joined Ejecuciones.
     assert 'DevOps y seguridad' not in labels
     for child in ['Resumen semanal', 'Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría',
-                  'Centro de operación', 'Seguridad y vulnerabilidades', 'Plan de pruebas de seguridad',
+                  'Centro de operación', 'Mapa de seguridad', 'Plan de pruebas de seguridad',
                   'PRD · Requisitos del producto', 'SAD · Arquitectura', 'ADR · Decisiones de arquitectura']:
         assert child in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)

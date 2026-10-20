@@ -1,6 +1,6 @@
 # GreenOcean · Plan de pruebas de seguridad
 
-Cómo se buscan las vulnerabilidades del panel publicado, cómo se corrigen y cómo se demuestra, en cada cambio del código, que siguen cerradas.
+Cómo se buscan los puntos débiles del panel publicado, cómo se corrigen y cómo se demuestra, en cada cambio del código, que siguen cerradas.
 
 | Ficha del documento | |
 |---|---|
@@ -9,7 +9,7 @@ Cómo se buscan las vulnerabilidades del panel publicado, cómo se corrigen y c�
 | Autoría | El autor, con el registro completo de decisiones en `docs/DECISIONES.md` |
 | Documentos hermanos | PRD (qué resuelve), SAD (cómo está construido) y ADR (por qué se decidió así) |
 | Referencia | OWASP Top 10 (2021), la lista estándar de los riesgos más comunes de una aplicación web |
-| Vista en el panel | Seguridad · Seguridad y vulnerabilidades: cada puerta, sus barreras y la prueba de cada una |
+| Vista en el panel | Seguridad · Mapa de seguridad: cada puerta, sus barreras y la prueba de cada una |
 
 ---
 
@@ -44,7 +44,7 @@ La revisión sigue cinco pasos, siempre en este orden.
 
 1. **Inventario.** Se listan las puertas de entrada de un visitante y lo que hay detrás de cada una (secciones 2 y 3).
 2. **Ataque como intruso.** Se ataca cada puerta como lo haría alguien de afuera, con el mismo código que usa el panel y sobre la misma base. El secreto atacado es un archivo falso con un valor de prueba, nunca el real.
-3. **Corrección antes de publicar.** Un hallazgo se corrige primero y se documenta después, con su entrada en `docs/DECISIONES.md`. Nunca se publica una vulnerabilidad abierta.
+3. **Corrección antes de publicar.** Un hallazgo se corrige primero y se documenta después, con su entrada en `docs/DECISIONES.md`. Nunca se publica un problema sin corregir.
 4. **Cada ataque se vuelve una prueba.** Cada intento queda escrito como prueba automática, que debe seguir fallando para el atacante.
 5. **Repetición en cada cambio.** Las pruebas corren en GitHub Actions en cada push. Un cambio que reabra una puerta deja las pruebas en rojo y no llega a la versión publicada sin que se note.
 
