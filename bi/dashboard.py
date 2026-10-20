@@ -6438,7 +6438,7 @@ def show_run_now_dialog(token, access_code):
     st.caption("Descarga los archivos de ODEPA, los limpia, los prueba y guarda la base, igual "
                "que la ejecución automática de cada martes. Tarda unos 5 minutos.")
     if not st.session_state.get(ADMIN_UNLOCKED):
-        typed_code = st.text_input("Clave de control", type="password", key="run_now_code")
+        typed_code = st.text_input("Clave de control", type="password", key="run_now_code", autocomplete="one-time-code")
         if not st.button("Ejecutar", type="primary", icon=":material/play_arrow:", key="run_now_confirm"):
             return
         ok, message = get_login_guard().check(typed_code, access_code)
@@ -6517,7 +6517,7 @@ def show_author_access(access_code, unlocked):
             st.caption("Se activa cuando el autor guarda la clave de control en los secretos del panel.")
             return
         # Enter opens it (D-203): the code is checked when the field commits, no extra button.
-        st.text_input("Clave de control", type="password", key="author_access_code",
+        st.text_input("Clave de control", type="password", key="author_access_code", autocomplete="one-time-code",
                       on_change=check_author_code, args=(access_code,), placeholder="Escribe la clave y pulsa Enter")
         message = st.session_state.pop(AUTHOR_CODE_MESSAGE, None)
         if message:

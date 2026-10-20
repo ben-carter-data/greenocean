@@ -1543,3 +1543,7 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **PDF:** el PRD descargable incluye las cuatro capturas.
 - **Corrección:** la regla del zoom solo da el ancho completo al diagrama, no a los logos que lleva dentro.
 - **Pruebas:** `tests/test_doc_diagrams.py` y `tests/test_document_pdf.py` (D-205).
+
+## D-206 · «Entorno local» en el diagrama de plataforma; el campo de la clave no invita a generar contraseñas
+- **Decisión:** en el diagrama Plataforma, la zona de desarrollo se llama «Entorno local» en vez de «Tu computador», un nombre profesional para un portafolio. Los campos de la clave de control se marcan como código de un solo uso (`autocomplete="one-time-code"`), para que el navegador no ofrezca crear y guardar una contraseña nueva: la clave no es la de una cuenta.
+- **Pruebas:** `tests/test_architecture.py`.
