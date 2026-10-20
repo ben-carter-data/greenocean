@@ -153,7 +153,8 @@ def build_crossings_html(palette, checks):
     arrows, numbers = [], []
     for number, (key, origin, target, from_label, to_label, how, travels, shared, check) in enumerate(CROSSINGS, start=1):
         path, label, (lx, ly), (nx, ny), dashed, both = EDGES[key]
-        arrows.append(f'<path class="arrow{" dashed" if dashed else ""}" d="{path}"{" marker-start=\"url(#head)\"" if both else ""} '
+        start = ' marker-start="url(#head)"' if both else ""
+        arrows.append(f'<path class="arrow{" dashed" if dashed else ""}" d="{path}"{start} '
                       f'marker-end="url(#head)"/><text class="arrow-label" x="{lx}" y="{ly}">{html.escape(label)}</text>')
         status, text = checks.get(check, ("pending", "sin medir"))
         side = " end" if nx > 700 else " start" if nx < 250 else ""
