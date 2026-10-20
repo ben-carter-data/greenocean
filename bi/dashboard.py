@@ -2863,7 +2863,7 @@ def build_architecture_css(mode):
     .st-key-architecture_diagram {{border:1px solid {palette['card_border']}; border-radius:14px;
         background:{palette['card']}; padding:14px 20px 18px;}}
     .st-key-architecture_diagram svg {{display:block; width:100%; height:auto;
-        max-height:calc(100vh - 360px);}}
+        max-height:calc((100vh - 360px) * 1.2);}}
     .arch-legend {{display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
         border-top:1px solid {palette['card_border']}; font-size:12px; line-height:1.5; color:{palette['text']};}}
     .arch-phrase {{font-size:.85rem; color:{palette['strong_text']}; margin:0 0 8px;}}
@@ -2903,10 +2903,10 @@ def show_architecture_page(mode):
                                               read_store_sizes()), height=660)
         return
     if view == MODEL_VIEWS[3]:
-        st.markdown('<p class="arch-phrase">Cada punto donde dos bases se tocan: cómo pasa, qué viaja, qué comparten '
-                    'y, donde se puede medir aquí, la comprobación de ahora.</p>', unsafe_allow_html=True)
+        st.markdown('<p class="arch-phrase">Cada flecha es un punto donde dos bases se tocan, con su número y su comprobación de ahora. '
+                    'Pasa el cursor por un número o por un logo.</p>', unsafe_allow_html=True)
         st.iframe(database_crossings.build_crossings_html(charts.get_palette(mode), read_crossing_checks(get_database_version())),
-                  height=700)
+                  height=640)
         return
     if view == MODEL_VIEWS[2]:
         schema = read_er_schema(get_database_version())
@@ -7134,7 +7134,7 @@ def recheck_quality():
 
 QUALITY_VIEWS = ["Calidad", "Auditoría"]
 QUALITY_VIEW_KEY = "quality_view"
-AUDIT_KEYS = {"product": "audit_product", "channel": "audit_channel", "region": "audit_region", "series": "audit_series"}
+AUDIT_KEYS = {"family": "audit_family", "product": "audit_product", "channel": "audit_channel", "region": "audit_region", "series": "audit_series"}
 AUDIT_DEFAULTS = {"product": "Tomate", "channel": "Supermercado", "region": "Región Metropolitana de Santiago"}
 
 
@@ -7169,7 +7169,7 @@ def show_quality_view(mode):
     indicators = quality_live.build_indicators(measures)
     flags = measures["flags"]
     st.iframe(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"], flags),
-              height=900)
+              height=500)
     with st.container(horizontal=True, vertical_alignment="center", gap="small"):
         st.button("Volver a medir", icon=":material/refresh:", key="qa_recheck_page", on_click=recheck_quality,
                   help="Descarta lo guardado y mide de nuevo sobre la base publicada.")
@@ -7192,10 +7192,14 @@ def show_audit_view(mode):
     if options is None:
         st.info("No se pudo leer la base de datos para elegir un precio.")
         return
-    products = sorted(options["channels"])
+    families = sorted(options["families"])
     with st.container(key="audit_pickers", horizontal=True, vertical_alignment="bottom", gap="small"):
-        product = st.selectbox("Producto", products, key=AUDIT_KEYS["product"], index=products.index(AUDIT_DEFAULTS["product"])
-                               if AUDIT_DEFAULTS["product"] in products else 0)
+        default_family = next((name for name, items in options["families"].items() if AUDIT_DEFAULTS["product"] in items), families[0])
+        family = st.selectbox("Familia", families, key=AUDIT_KEYS["family"], index=families.index(default_family))
+        products = options["families"][family]
+        if st.session_state.get(AUDIT_KEYS["product"]) not in products:
+            st.session_state[AUDIT_KEYS["product"]] = AUDIT_DEFAULTS["product"] if AUDIT_DEFAULTS["product"] in products else products[0]
+        product = st.selectbox("Producto", products, key=AUDIT_KEYS["product"])
         channels = options["channels"].get(product, [])
         if st.session_state.get(AUDIT_KEYS["channel"]) not in channels:
             st.session_state[AUDIT_KEYS["channel"]] = AUDIT_DEFAULTS["channel"] if AUDIT_DEFAULTS["channel"] in channels else channels[0]
@@ -7209,6 +7213,15 @@ def show_audit_view(mode):
         if labels and st.session_state.get(AUDIT_KEYS["series"]) not in labels:
             st.session_state[AUDIT_KEYS["series"]] = labels[0]
         chosen = st.selectbox("Serie", labels or ["—"], key=AUDIT_KEYS["series"])
+    # The controls that hold the chain up, as in the evidence dialogs of D-171.
+    versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
+                     for path in sorted(MANIFEST_FILE.parent.glob("*.csv")))
+    checks, files = read_quality_evidence(get_database_version(), json.dumps(manifest, sort_keys=True), versions)
+    parity = read_parity(get_database_version())
+    evidence = quality_view.build_evidence(checks, files, manifest, run, build, parity,
+                                           lambda value: format_chile_time(parse_run_start(value)),
+                                           rejections=read_rejection_count(get_database_version()))
+    controls = quality_view.build_columns(evidence)
     if series.empty:
         st.info("Ese producto no tiene precios en ese canal y región. Prueba con otra región.")
     else:
@@ -7220,17 +7233,7 @@ def show_audit_view(mode):
         file_version = (path.stat().st_size, path.stat().st_mtime_ns) if path.is_file() else None
         status = check_trace_file(name, json.dumps(entry, sort_keys=True), file_version)
         steps = audit_trace.build_trace_steps(row, manifest, run, build_part, status)
-        st.iframe(audit_trace.build_trace_html(charts.get_palette(mode), row, steps), height=560)
-    # The controls that hold the chain up, as in the evidence dialogs of D-171.
-    versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
-                     for path in sorted(MANIFEST_FILE.parent.glob("*.csv")))
-    checks, files = read_quality_evidence(get_database_version(), json.dumps(manifest, sort_keys=True), versions)
-    parity = read_parity(get_database_version())
-    evidence = quality_view.build_evidence(checks, files, manifest, run, build, parity,
-                                           lambda value: format_chile_time(parse_run_start(value)),
-                                           rejections=read_rejection_count(get_database_version()))
-    st.markdown('<p class="qa-section">Los controles que sostienen la cadena</p>', unsafe_allow_html=True)
-    st.markdown(quality_view.build_quality_overview_html(evidence, mode, head=False, method=False), unsafe_allow_html=True)
+        st.iframe(audit_trace.build_trace_html(charts.get_palette(mode), row, steps, controls), height=380)
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
     if not database_ok or any(item["status"].startswith("Falla") for item in files):
         st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
@@ -7238,7 +7241,7 @@ def show_audit_view(mode):
         st.markdown('<span class="qa-open-label">Abrir la evidencia de</span>', unsafe_allow_html=True)
         st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
                  on_change=open_quality_evidence, label_visibility="collapsed")
-    st.caption("Cada tarjeta abre los datos que la respaldan y el método; «Volver a comprobar» corre los controles de nuevo.")
+    st.caption("Cada control abre los datos que lo respaldan y su método; «Volver a comprobar» corre los controles de nuevo.")
     chosen_card = st.session_state.pop(QUALITY_OPEN_KEY, None)
     if chosen_card in quality_evidence.TITLES.values():
         key = next(key for key, title in quality_evidence.TITLES.items() if title == chosen_card)
