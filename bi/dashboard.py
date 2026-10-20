@@ -353,7 +353,7 @@ ARCHITECTURE_HINT = ("Los datos viajan de izquierda a derecha. **Bronce**: el ar
 # «Empieza aquí» (the problem in three sentences lives there).
 AUDIENCE_CARDS = [
     ("Analista de pricing o compras", "Márgenes, canales, regiones y alertas.", PAGE_ANALYSIS),
-    ("Equipo de datos", "Si la carga funcionó y qué quedó fuera.", TAB_QUALITY),
+    ("Revisor técnico", "Si el proyecto es confiable: calidad, pruebas y documentos.", TAB_QUALITY),
     ("Más adelante", "Un resumen para gerencia y una vista simple para consumidores.", None),
 ]
 # The cover (C01): three short statements, three things a visitor can check, and the

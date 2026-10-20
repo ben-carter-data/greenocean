@@ -140,8 +140,8 @@ USE_CASES = [
     ("icon", "chart", "Qué se movió esta semana", "Resumen semanal · alertas", "visitor"),
     ("icon", "calendar", "¿Es normal para la época?", "Precios e inflación · nominal o real", "visitor"),
     ("icon", "parity", "Consumidor frente a mayorista", "brecha de precio por canal", "visitor"),
-    ("icon", "database", "Consultar con SQL", "Consultas SQL · descarga CSV", "visitor"),
     ("icon", "shield", "Revisar calidad y documentos", "Ingeniería de datos · PRD, SAD, ADR", "visitor"),
+    ("icon", "database", "Consultas SQL a pedido", "el autor responde con un CSV", "author"),
     ("icon", "gear", "Lanzar una carga manual", "Centro de operación · clave de control", "author"),
     ("icon", "files", "Mantener código y secretos", "git push · secretos del panel", "author"),
 ]
@@ -152,7 +152,7 @@ def build_actors_html(mode):
     PALETTE_NOW.update(card=palette['card'])
     width, height = 1000, 600
     rows = [95 + index * 72 for index in range(len(USE_CASES))]
-    visitor, author = (95, sum(rows[:5]) / 5), (95, (rows[5] + rows[6]) / 2)
+    visitor, author = (95, sum(rows[:4]) / 4), (95, sum(rows[4:]) / 3)
     nodes = [build_node(("person", "visitor"), *visitor, "Visitante", "analista, compras, gerencia",
                         "Abre el enlace público: no necesita cuenta ni clave.", "El panel es de solo lectura.", width=width, height=height),
              build_node(("person", "author"), *author, "El autor", "opera y mantiene el sistema",

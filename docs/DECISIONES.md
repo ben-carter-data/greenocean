@@ -1552,3 +1552,8 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema:** desde que el acceso se abre con Enter (D-203), el campo de la clave quedó solo, sin usuario al lado, y Chrome lo tomó por un formulario de registro: ofrecía crear y guardar una contraseña nueva. Marcarlo como código de un solo uso (D-206) no bastó.
 - **Decisión:** los dos campos de la clave son campos de texto comunes que muestran puntos en vez de letras (`-webkit-text-security`), sin autocompletar. El navegador ya no los reconoce como contraseña y no ofrece nada. La comprobación, el límite de 5 intentos y el vaciado del campo no cambian.
 - **Pruebas:** `tests/test_dashboard.py` (D-202, D-207).
+
+## D-208 · En el diagrama de actores, las consultas SQL las hace el autor
+- **Problema:** el diagrama de actores del PRD unía al visitante (analista, compras, gerencia) con «Consultar con SQL». El panel es para usuarios de negocio, no para ingenieros de datos: un visitante no escribe consultas.
+- **Decisión:** el caso pasa al autor como «Consultas SQL a pedido»: si alguien necesita un dato, el autor lo consulta y responde con un CSV. El visitante conserva las tres preguntas de negocio y la revisión de calidad y documentos, que es lo que mira un revisor técnico. El texto del PRD bajo el diagrama lo dice igual. El perfil «Equipo de datos» del PRD y de la página del proyecto pasa a «Revisor técnico» (por ejemplo, un reclutador), y en la tabla de evolución del PRD el responsable es «El autor».
+- **Pruebas:** `tests/test_doc_diagrams.py`, `tests/test_document_pdf.py` y `tests/test_dashboard.py`, sin cambios.
