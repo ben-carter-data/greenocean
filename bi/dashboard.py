@@ -8,7 +8,6 @@ Texts shown to the user are in Spanish; code and comments are in English.
 The color modes and chart palettes live in bi/charts.py.
 """
 import base64
-import hmac
 import html
 import importlib
 import json
@@ -6385,6 +6384,12 @@ def run_pipeline_now(token):
 
 
 ADMIN_UNLOCKED = "admin_unlocked"
+
+
+@st.cache_resource
+def get_login_guard():
+    """One guard for every visitor of this server (D-199)."""
+    return control.LoginGuard()
 ADMIN_LINKS = project.ADMIN_LINKS
 
 
@@ -6428,8 +6433,9 @@ def show_run_now_dialog(token, access_code):
         typed_code = st.text_input("Clave de control", type="password", key="run_now_code")
         if not st.button("Ejecutar", type="primary", icon=":material/play_arrow:", key="run_now_confirm"):
             return
-        if not hmac.compare_digest(typed_code, access_code):
-            st.error("Clave incorrecta.", icon=":material/lock:")
+        ok, message = get_login_guard().check(typed_code, access_code)
+        if not ok:
+            st.error(message, icon=":material/lock:")
             return
         st.session_state[ADMIN_UNLOCKED] = True
     show_token_expiration(token)
@@ -6475,10 +6481,11 @@ def show_author_accesses(access_code):
         if not st.session_state.get(ADMIN_UNLOCKED):
             typed_code = st.text_input("Clave de control", type="password", key="author_access_code")
             if st.button("Abrir", key="author_access_open", icon=":material/lock_open:"):
-                if hmac.compare_digest(typed_code, access_code):
+                ok, message = get_login_guard().check(typed_code, access_code)
+                if ok:
                     st.session_state[ADMIN_UNLOCKED] = True
                     st.rerun()
-                st.error("Clave incorrecta.", icon=":material/lock:")
+                st.error(message, icon=":material/lock:")
             return
         for link in ADMIN_LINKS:
             st.markdown(f'<a href="{html.escape(link["url"], quote=True)}" target="_blank" rel="noopener noreferrer">'
