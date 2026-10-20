@@ -100,7 +100,7 @@ SOURCE_ROWS_Y = [155, 215]
 # dev_only marks a platform that only exists while developing, never in production.
 PLATFORMS = [
     (40, 95, 320, 155, "FUENTES", "datos públicos · ODEPA e INE", "sources", False),
-    (40, 305, 320, 140, "TU COMPUTADOR", "desarrollo", "ingestion", True),
+    (40, 305, 320, 140, "ENTORNO LOCAL", "desarrollo", "ingestion", True),
     (420, 95, 965, 350, "GITHUB", "código, automatización e informes", "processing", False),
     (40, 500, 720, 180, "STREAMLIT COMMUNITY CLOUD", "publicación del panel", "quality", False),
     (1110, 500, 275, 180, "USUARIOS", "quién lo usa", "consumption", False),
@@ -1365,7 +1365,7 @@ def build_platform_gallery_svg(states, figures, mode, animate_flow=False):
     palette = charts.get_palette(mode)
     platforms = [
         ("sources", draw_file_icon, "ODEPA · INE", "Datos abiertos", states.get("sources")),
-        ("ingestion", draw_laptop_icon, "Tu computador", "Código y pruebas", None),
+        ("ingestion", draw_laptop_icon, "Entorno local", "Código y pruebas", None),
         ("processing", draw_clock_icon, "GitHub Actions", "Carga y CI", states.get("workflow")),
         ("quality", draw_cloud_icon, "Streamlit Cloud", "Panel publicado", states.get("panel")),
         ("consumption", draw_chart_icon, "Usuarios", "Consulta web", None),

@@ -255,7 +255,7 @@ DEVOPS_FIGURES = dict(FIGURES, database_size="33,9 MB", test_functions="180 func
 def test_d054_infrastructure_draws_each_platform_its_components_and_figures():
     states = dict(make_states(control.RUN_OK), report=control.RUN_FAILED)
     svg = architecture.build_devops_svg(states, DEVOPS_FIGURES, charts.MODE_DARK)
-    for text in ["ODEPA", "INE", "FUENTES", "TU COMPUTADOR", "GITHUB", "STREAMLIT COMMUNITY CLOUD", "USUARIOS",
+    for text in ["ODEPA", "INE", "FUENTES", "ENTORNO LOCAL", "GITHUB", "STREAMLIT COMMUNITY CLOUD", "USUARIOS",
                  "Claude Code", "Repositorio", "Pruebas (CI)", "Job semanal.yml",
                  "Caché de Actions", "Issues", "Permisos del job", "Secretos",
                  "App Streamlit", "Visitantes", "HTTPS · CSV", "git push",
@@ -276,7 +276,7 @@ def test_pipeline_gallery_previews_cover_every_layer_and_platform():
     for label in ["ODEPA", "INE", "INGESTA", "BRONZE", "Staging", "Intermedio",
                   "MARTS", "SERVING", "Panel", "GitHub Actions", "Pruebas automáticas"]:
         assert label in journey
-    for label in ["ODEPA", "Tu computador", "GitHub Actions",
+    for label in ["ODEPA", "Entorno local", "GitHub Actions",
                   "Streamlit Cloud", "Usuarios"]:
         assert label in platform
     assert FIGURES["rows_read"] in journey
