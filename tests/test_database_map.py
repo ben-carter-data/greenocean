@@ -52,3 +52,21 @@ def test_sqlite_appears_twice_with_different_jobs_and_the_parity_links_the_backu
 def test_the_light_themes_draw_too():
     markup = build(charts.MODE_CORPORATE, layers={"staging": 0, "intermediate": 0, "marts": 0}, tests=0)
     assert "etl/datos.duckdb" in markup and "0 modelos" in markup
+
+
+def test_d191_each_store_shows_the_size_of_its_file_and_none_is_invented():
+    markup = database_map.build_map_html(charts.get_palette(charts.MODE_DARK), COUNTS, {}, 0,
+                                         {"raw": "≈ 665 MB", "served": "19 MB", "backup": "34 MB"})
+    for size in ("≈ 665 MB", "19 MB", "34 MB"):
+        assert f'<div class="size">{size}</div>' in markup
+    assert markup.count('class="size"') == 3  # the work database and Parquet have no size here
+    assert 'class="size"' not in build()  # without sizes, none is drawn
+
+
+def test_d191_arrows_start_and_end_at_the_edges_of_the_logos():
+    for path, label, (x, y) in database_map.ARROWS:
+        assert path.startswith("M") and label
+        assert 0 <= x <= database_map.STAGE_WIDTH and 0 <= y <= database_map.STAGE_HEIGHT
+    assert len(database_map.ARROWS) == len(database_map.FLOW) + 2  # plus the IPC and the ETL
+    for _, _, _, _, (x, y), _, _ in database_map.NODES:
+        assert 0 < x < database_map.STAGE_WIDTH and 0 < y < database_map.STAGE_HEIGHT

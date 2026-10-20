@@ -1448,3 +1448,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Textos:** donde «datos.db» decía la base que lee el panel, ahora dice `datos.duckdb` (reglas de calidad, módulos del proyecto); donde se refiere al respaldo, se conserva.
 - **Robustez:** el conteo de filas que usa el modelo estrella lleva la lista de tablas en su clave de caché, porque una tabla nueva tras un despliegue chocaba con una cuenta guardada.
 
+## D-191 · El diagrama de almacenamiento aprovecha el espacio y muestra el tamaño de los archivos
+
+- **Fecha:** 2026-10-20.
+- **Problema:** el diagrama de D-190 dejaba cerca de un tercio de la zona sin usar, con logos y textos pequeños frente al ancho de la página.
+- **Decisión:** logos de 92 px (antes 76), textos más grandes y el respaldo SQLite más cerca de la fila principal; las flechas se calculan desde las posiciones de los almacenes, así que no se descuadran si se mueve uno. Cada almacén cuyo archivo existe muestra su tamaño real bajo el logo (`datos.duckdb`, `datos.db`); `raw.db` no está en el servidor del panel, y ahí se muestra el tamaño documentado (≈ 665 MB, D-020) con signo de aproximación. La base de trabajo de dbt y la capa Parquet no muestran tamaño porque tampoco están en el servidor: no se inventa ninguno.
+- **Sin cilindros:** cada almacén lleva el logo de su tecnología, que dice qué es; un cilindro genérico habría vuelto iguales `raw.db` y `datos.duckdb`, justo lo que el diagrama distingue.
+

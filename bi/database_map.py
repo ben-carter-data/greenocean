@@ -15,7 +15,11 @@ import html
 from bi import brand_icons, charts, operation_center
 
 STAGE_WIDTH = 1000
-STAGE_HEIGHT = 560
+STAGE_HEIGHT = 540
+MAIN_Y = 195
+LOGO = 92
+HALF = LOGO // 2
+GAP = 8  # between a logo and the tip of an arrow
 # Brand marks on a soft gradient disc: (top, bottom, glyph color).
 BRANDS = {
     "sqlite": ("#5db7f2", "#0b6aa8", "#ffffff"),
@@ -41,44 +45,59 @@ ORIGINS = [
 ]
 # The stores, left to right: (key, logo, label, file, place (x, y), what, why).
 NODES = [
-    ("odepa", "odepa", "ODEPA", "CSV por año", (85, 190),
+    ("odepa", "odepa", "ODEPA", "CSV por año", (85, MAIN_Y),
      "Los precios mayoristas y al consumidor que ODEPA publica cada semana, en archivos CSV por año.",
      "Es la fuente oficial. El agente los descarga y anota su huella SHA-256 en manifest.json."),
-    ("ine", "ine", "INE", "IPC de alimentos", (85, 50),
+    ("ine", "ine", "INE", "IPC de alimentos", (85, 44),
      "El índice de precios de alimentos, un valor por mes.",
      "Sirve para pasar los precios a pesos reales y separar la inflación de una subida de verdad."),
-    ("raw", "sqlite", "SQLite", "etl/raw.db", (250, 190),
+    ("raw", "sqlite", "SQLite", "etl/raw.db", (250, MAIN_Y),
      "Las filas de los CSV exactamente como se publican, sin limpiar. Es un archivo de unos 665 MB.",
      "Una copia fiel permite auditar y reconstruir todo desde el origen. No se sube a GitHub por su tamaño."),
-    ("bronze", "apacheparquet", "Parquet", "capa bronce", (415, 190),
+    ("bronze", "apacheparquet", "Parquet", "capa bronce", (415, MAIN_Y),
      "Las mismas filas, más el IPC del INE, en archivos Parquet: uno por fuente y año.",
      "Parquet guarda los datos por columnas y comprimidos, y casi cualquier herramienta de datos lo lee. "
      "dbt parte de aquí."),
-    ("dbt", "dbt", "dbt + DuckDB", "warehouse_build.duckdb", (580, 190),
+    ("dbt", "dbt", "dbt + DuckDB", "warehouse_build.duckdb", (580, MAIN_Y),
      "Una base de trabajo con las capas staging, intermedio y marts, más las pruebas de datos de dbt.",
      "Se construye y se prueba aparte. Si una prueba falla, la base publicada no se toca. No se sube a GitHub."),
-    ("served", "duckdb", "DuckDB", "etl/datos.duckdb", (755, 190),
+    ("served", "duckdb", "DuckDB", "etl/datos.duckdb", (755, MAIN_Y),
      "La base que el panel lee: 12 tablas, agrupadas por quién las escribe (abajo).",
      "Es un solo archivo, rápido para consultas analíticas y de solo lectura para el panel."),
-    ("github", "github", "GitHub", "el repositorio", (920, 190),
+    ("github", "github", "GitHub", "el repositorio", (920, MAIN_Y),
      "Los dos archivos de base de datos publicados, con todo su historial.",
      "La carga semanal los sube con un commit: así quedan versionados y la app publicada los recibe."),
-    ("backup", "sqlite", "SQLite", "etl/datos.db · respaldo", (250, 430),
+    ("backup", "sqlite", "SQLite · respaldo", "etl/datos.db", (250, 435),
      "Los mismos precios semanales, calculados otra vez por el ETL en Python (etl/etl.py), sin dbt.",
      "Es una segunda opinión independiente: si dbt y el ETL no coinciden, algo está mal. El panel no lo lee."),
 ]
-# Arrows between stores, in stage coordinates: (path, label, label position).
-ARROWS = [
-    ("M135 190 H205", "descarga", (170, 176)),
-    ("M300 190 H370", "copia exacta", (335, 176)),
-    ("M465 190 H535", "a Parquet", (500, 176)),
-    ("M630 190 H710", "construye y prueba", (670, 176)),
-    ("M805 190 H875", "se publica", (840, 176)),
-    ("M135 52 H415 V140", "índice mensual", (275, 40)),
-    ("M250 296 V366", "ETL en Python", (292, 335)),
-]
-PARITY_PATH = "M335 430 H572 V312"
-PARITY_LABEL = (455, 418)
+# Arrows between stores, from the edge of one logo to the edge of the next: (from, to, label).
+FLOW = [("odepa", "raw", "descarga"), ("raw", "bronze", "copia exacta"), ("bronze", "dbt", "a Parquet"),
+        ("dbt", "served", "construye"), ("served", "github", "se publica")]
+PLACES = {key: place for key, _, _, _, place, _, _ in NODES}
+
+
+def build_arrows():
+    """[(path, label, (x, y))] in stage coordinates, computed from the stores' places."""
+    arrows = []
+    for start, end, label in FLOW:
+        (x1, y), (x2, _) = PLACES[start], PLACES[end]
+        arrows.append((f"M{x1 + HALF + GAP} {y} H{x2 - HALF - GAP}", label, ((x1 + x2) / 2, y - 14)))
+    ine_x, ine_y = PLACES["ine"]
+    bronze_x, bronze_y = PLACES["bronze"]
+    arrows.append((f"M{ine_x + HALF + GAP} {ine_y} H{bronze_x} V{bronze_y - HALF - 4}", "índice mensual",
+                   ((ine_x + bronze_x) / 2, ine_y - 12)))
+    raw_x, raw_y = PLACES["raw"]
+    backup_y = PLACES["backup"][1]
+    arrows.append((f"M{raw_x} {raw_y + 140} V{backup_y - HALF - 6}", "ETL en Python", (raw_x + 56, (raw_y + 140 + backup_y - HALF) / 2 + 4)))
+    return arrows
+
+
+ARROWS = build_arrows()
+# The parity line: from the backup to the left end of the group's brace.
+BRACE_Y = MAIN_Y + 142
+PARITY_PATH = f"M{PLACES['backup'][0] + HALF + GAP} {PLACES['backup'][1]} H575 V{BRACE_Y + 8}"
+PARITY_LABEL = (430, PLACES["backup"][1] - 13)
 
 
 def thousands(value):
@@ -115,21 +134,23 @@ def build_css(palette):
     return f"""<style>
 * {{ box-sizing:border-box; }}
 html, body {{ margin:0; background:transparent; color:{text};
-  font:300 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }}
+  font:300 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }}
 .stage {{ position:relative; width:100%; max-width:{STAGE_WIDTH}px; aspect-ratio:{STAGE_WIDTH}/{STAGE_HEIGHT}; margin:0 auto; }}
 .stage > svg {{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }}
 .arrow {{ fill:none; stroke:{accent}; stroke-width:2; stroke-linecap:round; }}
 .arrow.dashed {{ stroke-dasharray:5 6; opacity:.85; }}
-.arrow-label {{ font-size:11px; fill:{muted}; text-anchor:middle; }}
-.node {{ position:absolute; width:150px; margin-left:-75px; margin-top:-38px; display:flex; flex-direction:column;
+.arrow-label {{ font-size:12px; fill:{muted}; text-anchor:middle; }}
+.node {{ position:absolute; width:156px; margin-left:-78px; margin-top:-{HALF}px; display:flex; flex-direction:column;
   align-items:center; text-align:center; outline:none; }}
-.logo {{ display:block; width:76px; height:76px; filter:drop-shadow(0 16px 14px {shadow}); transition:transform .25s ease; }}
+.logo {{ display:block; width:{LOGO}px; height:{LOGO}px; filter:drop-shadow(0 16px 14px {shadow}); transition:transform .25s ease; }}
 .node:hover .logo, .node:focus .logo, .mini:hover .logo, .mini:focus .logo {{ transform:translateY(-6px) scale(1.05); }}
-.halo {{ width:62px; height:12px; border-radius:50%; margin-top:4px; filter:blur(4px);
+.halo {{ width:70px; height:12px; border-radius:50%; margin-top:4px; filter:blur(4px);
   background:{'rgba(255,255,255,.12)' if dark else 'rgba(15,39,71,.16)'}; }}
 .served .halo {{ background:rgba(244,208,63,.6); }}
-.label {{ margin-top:8px; font-weight:500; font-size:14px; color:{ink}; }}
-.file {{ margin-top:1px; font:400 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
+.label {{ margin-top:8px; font-weight:500; font-size:15.5px; color:{ink}; }}
+.file {{ margin-top:1px; font:400 12px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
+.size {{ margin-top:3px; padding:1px 9px; border-radius:999px; font-size:11.5px; font-weight:500; color:{ink};
+  background:color-mix(in srgb, {accent} 12%, transparent); }}
 .tip {{ position:absolute; z-index:30; left:50%; top:calc(100% + 6px); width:272px; padding:12px 14px; border-radius:14px;
   text-align:left; background:{card}; border:1px solid {border}; box-shadow:0 18px 40px rgba(0,0,0,{'.5' if dark else '.18'});
   color:{text}; font-size:12.5px; line-height:1.45; opacity:0; pointer-events:none; transform:translate(-50%, 6px);
@@ -143,34 +164,35 @@ html, body {{ margin:0; background:transparent; color:{text};
   opacity:1; transform:translate(-50%, 0); }}
 .node:hover .tip.start, .node:focus .tip.start, .node:hover .tip.end, .node:focus .tip.end {{ transform:translate(0, 0); }}
 .node:hover, .node:focus, .mini:hover, .mini:focus, .parity:hover, .parity:focus {{ z-index:40; }}
-.group {{ z-index:5; position:absolute; display:flex; gap:6px; left:{755 / STAGE_WIDTH * 100}%; top:{318 / STAGE_HEIGHT * 100}%;
+.group {{ z-index:5; position:absolute; display:flex; gap:6px; left:{755 / STAGE_WIDTH * 100}%; top:{(MAIN_Y + 158) / STAGE_HEIGHT * 100}%;
   transform:translateX(-50%); }}
-.mini {{ position:relative; width:112px; display:flex; flex-direction:column; align-items:center; text-align:center; outline:none; }}
-.mini .logo {{ width:46px; height:46px; filter:drop-shadow(0 8px 8px {shadow}); }}
-.mini b {{ margin-top:4px; font-weight:500; font-size:12px; color:{ink}; }}
-.mini small {{ font-size:11px; color:{muted}; }}
+.mini {{ position:relative; width:124px; display:flex; flex-direction:column; align-items:center; text-align:center; outline:none; }}
+.mini .logo {{ width:58px; height:58px; filter:drop-shadow(0 8px 8px {shadow}); }}
+.mini b {{ margin-top:5px; font-weight:500; font-size:13.5px; color:{ink}; }}
+.mini small {{ font-size:12px; color:{muted}; }}
 .mini .tip {{ width:340px; }}
 .mini .tip ul {{ margin:6px 0 0; padding:0; list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:0 18px;
   font:400 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; }}
 .mini .tip li {{ display:flex; justify-content:space-between; gap:10px; }}
 .mini .tip li span {{ color:{muted}; }}
-.brace {{ position:absolute; left:{755 / STAGE_WIDTH * 100}%; top:{300 / STAGE_HEIGHT * 100}%; width:350px; height:8px;
+.brace {{ position:absolute; left:{755 / STAGE_WIDTH * 100}%; top:{BRACE_Y / STAGE_HEIGHT * 100}%; width:384px; height:8px;
   transform:translateX(-50%); border:1px solid {border}; border-bottom:0; border-radius:8px 8px 0 0; }}
 .parity {{ position:absolute; left:{PARITY_LABEL[0] / STAGE_WIDTH * 100}%; top:{PARITY_LABEL[1] / STAGE_HEIGHT * 100}%;
   transform:translate(-50%, -50%); padding:3px 12px; border-radius:999px; border:1px solid {border}; background:{card};
-  font-size:11.5px; color:{ink}; outline:none; cursor:default; z-index:2; }}
+  font-size:12.5px; color:{ink}; outline:none; cursor:default; z-index:2; }}
 .parity .tip {{ top:auto; bottom:calc(100% + 8px); }}
 .legend {{ margin:6px 4px 0; font-size:11.5px; color:{muted}; text-align:center; }}
 </style>"""
 
 
-def build_node_html(key, logo, label, file, place, what, why):
+def build_node_html(key, logo, label, file, place, what, why, size=""):
     left, top = place[0] / STAGE_WIDTH * 100, place[1] / STAGE_HEIGHT * 100
     side = "start" if place[0] < 200 else "end" if place[0] > 850 else ""
     mark = source_logo(logo) if logo in ("odepa", "ine") else brand_logo(logo, "-" + key)
     return (f'<div class="node {key}" tabindex="0" style="left:{left:.3f}%;top:{top:.3f}%">'
             f'{tip(what, why, side)}{mark}<div class="halo"></div><div class="label">{html.escape(label)}</div>'
-            f'<div class="file">{html.escape(file)}</div></div>')
+            f'<div class="file">{html.escape(file)}</div>'
+            + (f'<div class="size">{html.escape(size)}</div>' if size else '') + '</div>')
 
 
 def build_group_html(counts):
@@ -187,9 +209,10 @@ def build_group_html(counts):
     return f'<div class="brace"></div><div class="group">{"".join(minis)}</div>'
 
 
-def build_map_html(palette, counts, layers, tests):
+def build_map_html(palette, counts, layers, tests, sizes=None):
     """The whole diagram as one HTML document. counts: {table: rows} of the served file;
-    layers: {"staging": n, "intermediate": n, "marts": n}; tests: dbt tests in the build."""
+    layers: {"staging": n, "intermediate": n, "marts": n}; tests: dbt tests in the build;
+    sizes: {store key: "14 MB"} of the files that exist, shown under each logo."""
     served_total = sum(counts.get(name, 0) for *_, names, _, _ in ORIGINS for name in names)
     models = sum(layers.values())
     notes = {
@@ -197,7 +220,7 @@ def build_map_html(palette, counts, layers, tests):
                f"{layers.get('intermediate', 0)} y marts {layers.get('marts', 0)}) y {tests} pruebas de datos de dbt.",
         "served": f"La base que el panel lee: 12 tablas y {thousands(served_total)} filas, agrupadas por quién las escribe (abajo).",
     }
-    nodes = "".join(build_node_html(key, logo, label, file, place, notes.get(key, what), why)
+    nodes = "".join(build_node_html(key, logo, label, file, place, notes.get(key, what), why, (sizes or {}).get(key, ""))
                     for key, logo, label, file, place, what, why in NODES)
     marker = (f'<defs><marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
               f'orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="{palette["accent"]}"/></marker></defs>')
