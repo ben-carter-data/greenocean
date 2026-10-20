@@ -1,4 +1,4 @@
-"""Star model of datos.db drawn as a real star (T-59, redesigned for D-097).
+"""Star model of datos.duckdb drawn as a real star (T-59, redesigned for D-097, D-190).
 
 A soft four-pointed star behind the cards, the fact table weekly_price in the
 middle and one dimension on each point: dim_date on top, dim_product on the
@@ -6,7 +6,8 @@ left, dim_region on the right and dim_channel at the bottom. Each card lists
 every real column of etl/schema.sql, with primary and foreign keys in cyan;
 the measures of the fact table sit apart at its foot. Below and to the right,
 separated from the star, a small group shows the audit trail of a load:
-etl_run → rejection.
+etl_run → rejection. At the top left, a second group shows the food IPC of the INE
+(ine_ipc_source → ipc_monthly → ipc_weekly), joined to dim_date by week_start (D-190).
 
 Positions are computed from the real column counts of each table, so the
 diagram never overlaps even if a table gains or loses a column. The result is
@@ -33,7 +34,7 @@ GAP = 46
 MEASURES = ["price", "volume", "observation_count"]
 ROW_HEIGHT = 27
 TITLE_HEIGHT = 52       # from the card top to the divider line under a plain title
-TITLE_HEIGHT_SUBTITLE = 58  # same, when the title also carries a subtitle
+TITLE_HEIGHT_SUBTITLE = 66  # same, when the title also carries a subtitle
 FIRST_ROW_GAP = 28      # from the divider line to the first content row
 
 STAR_TABLE = "weekly_price"
@@ -46,6 +47,11 @@ AUDIT_TABLES = ("etl_run", "rejection")
 AUDIT_WIDTH = 230
 AUDIT_HEIGHT = 56
 AUDIT_GAP = 34
+# The food IPC, top left: source rows → monthly series → weekly deflator (D-190).
+IPC_TABLES = ("ine_ipc_source", "ipc_monthly", "ipc_weekly")
+IPC_GAP = 26
+IPC_NOTES = {"ine_ipc_source": "tal como las publica", "ipc_monthly": "base 2023 = 100",
+             "ipc_weekly": "week_start → dim_date"}
 # endregion
 
 
@@ -154,7 +160,7 @@ def build_card_title(rect, title, colors, subtitle=None):
              f'font-weight="700" fill="{color}">{html.escape(title)}</text>']
     line_y = y + (TITLE_HEIGHT_SUBTITLE if subtitle else TITLE_HEIGHT)
     if subtitle:
-        parts.append(f'<text x="{middle:.1f}" y="{y + 58:.1f}" text-anchor="middle" font-size="15" '
+        parts.append(f'<text x="{middle:.1f}" y="{y + 56:.1f}" text-anchor="middle" font-size="15" '
                      f'fill="{colors["text"]}">{html.escape(subtitle)}</text>')
     parts.append(f'<path d="M{x + 18:.1f} {line_y:.1f} H{x + width - 18:.1f}" '
                  f'stroke="{colors["line"]}" stroke-width="1"/>')
@@ -244,6 +250,37 @@ def build_audit_group(row_counts, colors, top, bottom, tooltips=None):
     return label + "".join(boxes)
 
 
+def build_ipc_group(row_counts, colors, date_rect, tooltips=None):
+    """The food IPC beside dim_date: three dashed boxes in a chain and a dashed link from
+    ipc_weekly to dim_date (D-190). Drawn only when the counts of its tables are known."""
+    if not all(table in row_counts for table in IPC_TABLES):
+        return ""
+    x, top = MARGIN, MARGIN + 34
+    parts = [f'<text x="{x:.1f}" y="{top - 12:.1f}" font-size="13" font-weight="700" letter-spacing=".04em" '
+             f'fill="{colors["text"]}">IPC DE ALIMENTOS (INE)</text>']
+    y = top
+    for index, table in enumerate(IPC_TABLES):
+        tooltip = (tooltips or {}).get(table)
+        parts.append((f'<g><title>{html.escape(tooltip)}</title>' if tooltip else '<g>')
+                     + f'<rect x="{x:.1f}" y="{y:.1f}" width="{AUDIT_WIDTH}" height="{AUDIT_HEIGHT}" rx="12" '
+                     f'fill="{colors["card"]}" stroke="{colors["cyan"]}" stroke-width="1.4" stroke-dasharray="4 4"/>'
+                     f'<text x="{x + 16:.1f}" y="{y + 23:.1f}" font-family="{MONO_FONT}" font-size="15" '
+                     f'fill="{colors["strong_text"]}">{html.escape(table)}</text>'
+                     f'<text x="{x + 16:.1f}" y="{y + 42:.1f}" font-size="12" fill="{colors["text"]}">'
+                     f'{charts.format_thousands(row_counts[table])} filas · {html.escape(IPC_NOTES[table])}</text></g>')
+        if index < len(IPC_TABLES) - 1:
+            arrow_y = y + AUDIT_HEIGHT
+            parts.append(f'<path d="M{x + AUDIT_WIDTH / 2:.1f} {arrow_y:.1f} L{x + AUDIT_WIDTH / 2:.1f} '
+                         f'{arrow_y + IPC_GAP - 6:.1f}" stroke="{colors["cyan"]}" stroke-width="1.4" '
+                         f'marker-end="url(#audit-arrow)"/>')
+        y += AUDIT_HEIGHT + IPC_GAP
+    weekly_y = top + 2 * (AUDIT_HEIGHT + IPC_GAP) + AUDIT_HEIGHT / 2
+    dx, dy, _, dh = date_rect
+    parts.append(f'<path d="M{x + AUDIT_WIDTH:.1f} {weekly_y:.1f} L{dx:.1f} {dy + dh / 2:.1f}" stroke="{colors["cyan"]}" '
+                 f'stroke-width="1.4" stroke-dasharray="5 5"/>')
+    return "".join(parts)
+
+
 def build_star_svg(columns_by_table, row_counts, mode, selected=None, tooltips=None):
     """The whole diagram: background, connectors, five cards and the audit trail.
     tooltips: {table: text shown on hover}."""
@@ -270,13 +307,14 @@ def build_star_svg(columns_by_table, row_counts, mode, selected=None, tooltips=N
     ])
     audit = build_audit_group(row_counts, colors, layout[SIDE_DIMENSIONS[1]][1] + layout[SIDE_DIMENSIONS[1]][3]
                               + GAP, height - MARGIN, tooltips)
+    ipc = build_ipc_group(row_counts, colors, layout[TOP_DIMENSION], tooltips)
     defs = (f'<defs><marker id="audit-arrow" viewBox="0 0 10 10" refX="8" refY="5" '
             f'markerWidth="6" markerHeight="6" orient="auto-start-reverse">'
             f'<path d="M0 0 L10 5 L0 10 Z" fill="{colors["cyan"]}"/></marker></defs>')
     return ''.join([
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {height:.0f}" '
-        f'width="100%" role="img" aria-label="Modelo estrella de datos.db" '
+        f'width="100%" role="img" aria-label="Modelo estrella de datos.duckdb" '
         f'font-family="{charts.CHART_FONT}">', defs,
         build_star_background(colors, center_x, center_y, spread),
-        connectors, audit, *cards, "</svg>"])
+        connectors, audit, ipc, *cards, "</svg>"])
 # endregion

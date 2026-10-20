@@ -8,6 +8,7 @@ from bi import charts, project, star_model  # noqa: E402
 COLUMNS = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
 ROW_COUNTS = {"weekly_price": 811578, "dim_product": 1609, "dim_region": 9,
               "dim_channel": 8, "dim_date": 249, "etl_run": 4, "rejection": 201}
+IPC_COUNTS = {"ine_ipc_source": 202, "ipc_monthly": 202, "ipc_weekly": 250}
 
 
 def rect_overlap(a, b):
@@ -103,3 +104,18 @@ def test_t59_text_from_the_data_is_escaped():
     hostile["weekly_price"] = [("<b>col</b>", "PK")]
     svg = star_model.build_star_svg(hostile, ROW_COUNTS, charts.MODE_DARK)
     assert "<b>col</b>" not in svg and "&lt;b&gt;col&lt;/b&gt;" in svg
+
+
+def test_d190_the_ipc_group_hangs_from_dim_date_and_never_overlaps_the_star():
+    svg = star_model.build_star_svg(COLUMNS, {**ROW_COUNTS, **IPC_COUNTS}, charts.MODE_DARK)
+    assert "IPC DE ALIMENTOS (INE)" in svg
+    assert svg.index("ine_ipc_source") < svg.index("ipc_monthly") < svg.index("ipc_weekly")
+    assert "202 filas" in svg and "250 filas" in svg and "dim_date" in svg
+    assert 'aria-label="Modelo estrella de datos.duckdb"' in svg
+    layout, _ = star_model.compute_layout(COLUMNS)
+    ipc_rect = (star_model.MARGIN, star_model.MARGIN + 34, star_model.AUDIT_WIDTH,
+                3 * star_model.AUDIT_HEIGHT + 2 * star_model.IPC_GAP)
+    for rect in layout.values():
+        assert not rect_overlap(rect, ipc_rect)
+    # Without the counts of its tables (the schema file has none) the group is not drawn.
+    assert "IPC DE ALIMENTOS" not in star_model.build_star_svg(COLUMNS, ROW_COUNTS, charts.MODE_DARK)

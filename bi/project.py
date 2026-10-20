@@ -144,6 +144,9 @@ EXPLORER_EXAMPLE_FILTERS = dict(
 TABLE_NAMES = ["weekly_price", "dim_product", "dim_region", "dim_channel", "dim_date",
                "etl_run", "rejection"]
 DIMENSION_TABLES = ["dim_product", "dim_region", "dim_channel", "dim_date"]
+# The food IPC of the INE, drawn beside the star (D-190): not in etl/schema.sql, which is the
+# SQLite backup's; dbt builds them in the served DuckDB.
+IPC_TABLE_NAMES = ["ipc_weekly", "ipc_monthly", "ine_ipc_source"]
 RUN_TABLES = ["etl_run", "rejection"]
 
 # The case every KPI example uses: the one the dashboard opens with.
@@ -334,7 +337,7 @@ def count_table_rows(database_file=queries.DATABASE_FILE):
     """{table: number of rows} for every table of the data warehouse."""
     connection = queries.open_database(database_file)
     counts = {table: connection.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-              for table in TABLE_NAMES}
+              for table in TABLE_NAMES + IPC_TABLE_NAMES}
     connection.close()
     return counts
 
@@ -675,7 +678,7 @@ CODE_WALKTHROUGH = [
      "Evitar comparar unidades distintas y guardar una carga que no pasa los controles de calidad."),
     ("bi/queries.py", "Accès aux données", "Leer los indicadores en modo solo lectura",
      "Ejecuta consultas SQL por nombre y limita los datos al producto solicitado.",
-     "datos.db y queries.sql", "tablas de resultados para el panel",
+     "datos.duckdb y queries.sql", "tablas de resultados para el panel",
      "Consultar sin modificar la base y pasar los filtros como parámetros, sin concatenar sus valores."),
     ("bi/alerts.py", "Analyse", "Detectar variaciones fuera de lo habitual",
      "Calcula cambios semanales y compara cada uno con las 12 variaciones anteriores.",
@@ -731,7 +734,7 @@ CODE_WALKTHROUGH = [
      "Dar contexto antes de pedir filtros y conservar un recorrido claro desde el resultado hasta su implementación."),
     ("bi/report.py", "Opération", "Publicar el informe semanal",
      "Resume el estado de la carga y las alertas de la semana para el informe automatizado.",
-     "datos.db y ejecución semanal", "informe para GitHub Issues",
+     "datos.duckdb y ejecución semanal", "informe para GitHub Issues",
      "Dejar un resultado verificable de cada ejecución además de actualizar la base."),
 ]
 

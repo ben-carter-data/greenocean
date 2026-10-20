@@ -1,173 +1,217 @@
-"""«Mapa de la base» (D-189): where every table of the served database comes from.
+"""«Dónde viven los datos» (D-189, D-190): where the data is stored, why, and how the stores relate.
 
-One diagram, left to right, with the real names and row counts:
-sources (ODEPA, INE) → landing in SQLite (raw.db) and bronze Parquet → dbt on a work
-DuckDB (staging, intermediate, marts, tests) → the served file etl/datos.duckdb, whose
-12 tables come from three places (dbt marts, the pipeline's load log, dbt's own trace)
-→ what reads it (the panel's views, the panel). Under it, the SQLite backup datos.db and
-the parity check that compares it with DuckDB. Every box explains its role on hover.
+One diagram of floating logos, no cards, like the operation center: the sources, the SQLite
+landing database, the bronze layer in Parquet, dbt over its work DuckDB, the served DuckDB
+file with the three groups of its 12 tables, and GitHub, where the published files are kept.
+Under the landing database, the SQLite backup and the parity check that compares it with the
+served file. Every logo answers on hover what it stores and why. The pipeline's steps and the
+panel are not repeated: they are in «Pipeline y linaje».
 
 Nothing here reads data: bi/dashboard.py hands over the counts. The page is a full HTML
 document for st.iframe (CSS only, no script), like the operation center.
 """
 import html
 
-from bi import charts
+from bi import brand_icons, charts, operation_center
 
-# The engine of each store, with its own mark color (fixed in every theme).
-ENGINES = {
-    "csv": ("CSV", "#94a3b8"),
-    "api": ("API", "#94a3b8"),
-    "sqlite": ("SQLite", "#3b9ae1"),
-    "parquet": ("Parquet", "#52b788"),
-    "duckdb": ("DuckDB", "#f4d03f"),
-    "dbt": ("dbt", "#ff694b"),
-    "streamlit": ("Streamlit", "#ff4b4b"),
-    "python": ("Python", "#4b8bbe"),
+STAGE_WIDTH = 1000
+STAGE_HEIGHT = 560
+# Brand marks on a soft gradient disc: (top, bottom, glyph color).
+BRANDS = {
+    "sqlite": ("#5db7f2", "#0b6aa8", "#ffffff"),
+    "apacheparquet": ("#5fd7a4", "#13825a", "#ffffff"),
+    "dbt": ("#ff9a7a", "#e2431a", "#ffffff"),
+    "duckdb": ("#ffe66d", "#e6b800", "#1f1f1f"),
+    "python": ("#6fa8dc", "#2a5d96", "#ffffff"),
+    "github": ("#59616b", "#1b1f24", "#ffffff"),
 }
-# The three origins of the served tables.
+# The three origins of the 12 served tables: (key, label, brand, tables, what, why).
 ORIGINS = [
-    ("marts", "Modelos dbt", "dbt", "Construidas y probadas por dbt en cada carga; el pipeline las copia tal cual.",
+    ("marts", "Modelos dbt", "dbt",
      ["weekly_price", "dim_product", "dim_region", "dim_channel", "dim_date", "rejection", "ipc_weekly",
-      "ipc_monthly", "ine_ipc_source"]),
-    ("log", "Registro de cargas", "pipeline", "La escribe el pipeline: una fila por ejecución real, con lo que "
-     "leyó, cargó y rechazó. Una reconstrucción local no la toca.", ["etl_run"]),
-    ("trace", "Trazas de dbt", "dbt", "La huella de la última construcción: cada modelo y prueba de dbt y su "
-     "resultado. La usan el linaje y la página de calidad.", ["dbt_node", "dbt_result"]),
+      "ipc_monthly", "ine_ipc_source"],
+     "Las nueve tablas del modelo: los precios semanales, sus dimensiones, las filas rechazadas y el IPC.",
+     "dbt las construye y las prueba en cada carga; el pipeline las copia tal cual a la base servida."),
+    ("log", "Registro de cargas", "python", ["etl_run"],
+     "Una fila por ejecución real: cuándo empezó, qué leyó, qué cargó y qué rechazó.",
+     "La escribe el pipeline en Python al terminar. Una reconstrucción local no la toca, para no inventar cargas."),
+    ("trace", "Trazas de dbt", "dbt", ["dbt_node", "dbt_result"],
+     "Cada modelo y prueba de dbt de la última construcción, con su resultado.",
+     "El linaje y la página de calidad las leen para mostrar qué se probó. No son datos de precios."),
 ]
+# The stores, left to right: (key, logo, label, file, place (x, y), what, why).
+NODES = [
+    ("odepa", "odepa", "ODEPA", "CSV por año", (85, 190),
+     "Los precios mayoristas y al consumidor que ODEPA publica cada semana, en archivos CSV por año.",
+     "Es la fuente oficial. El agente los descarga y anota su huella SHA-256 en manifest.json."),
+    ("ine", "ine", "INE", "IPC de alimentos", (85, 50),
+     "El índice de precios de alimentos, un valor por mes.",
+     "Sirve para pasar los precios a pesos reales y separar la inflación de una subida de verdad."),
+    ("raw", "sqlite", "SQLite", "etl/raw.db", (250, 190),
+     "Las filas de los CSV exactamente como se publican, sin limpiar. Es un archivo de unos 665 MB.",
+     "Una copia fiel permite auditar y reconstruir todo desde el origen. No se sube a GitHub por su tamaño."),
+    ("bronze", "apacheparquet", "Parquet", "capa bronce", (415, 190),
+     "Las mismas filas, más el IPC del INE, en archivos Parquet: uno por fuente y año.",
+     "Parquet guarda los datos por columnas y comprimidos, y casi cualquier herramienta de datos lo lee. "
+     "dbt parte de aquí."),
+    ("dbt", "dbt", "dbt + DuckDB", "warehouse_build.duckdb", (580, 190),
+     "Una base de trabajo con las capas staging, intermedio y marts, más las pruebas de datos de dbt.",
+     "Se construye y se prueba aparte. Si una prueba falla, la base publicada no se toca. No se sube a GitHub."),
+    ("served", "duckdb", "DuckDB", "etl/datos.duckdb", (755, 190),
+     "La base que el panel lee: 12 tablas, agrupadas por quién las escribe (abajo).",
+     "Es un solo archivo, rápido para consultas analíticas y de solo lectura para el panel."),
+    ("github", "github", "GitHub", "el repositorio", (920, 190),
+     "Los dos archivos de base de datos publicados, con todo su historial.",
+     "La carga semanal los sube con un commit: así quedan versionados y la app publicada los recibe."),
+    ("backup", "sqlite", "SQLite", "etl/datos.db · respaldo", (250, 430),
+     "Los mismos precios semanales, calculados otra vez por el ETL en Python (etl/etl.py), sin dbt.",
+     "Es una segunda opinión independiente: si dbt y el ETL no coinciden, algo está mal. El panel no lo lee."),
+]
+# Arrows between stores, in stage coordinates: (path, label, label position).
+ARROWS = [
+    ("M135 190 H205", "descarga", (170, 176)),
+    ("M300 190 H370", "copia exacta", (335, 176)),
+    ("M465 190 H535", "a Parquet", (500, 176)),
+    ("M630 190 H710", "construye y prueba", (670, 176)),
+    ("M805 190 H875", "se publica", (840, 176)),
+    ("M135 52 H415 V140", "índice mensual", (275, 40)),
+    ("M250 296 V366", "ETL en Python", (292, 335)),
+]
+PARITY_PATH = "M335 430 H572 V312"
+PARITY_LABEL = (455, 418)
 
 
 def thousands(value):
     return charts.format_thousands(value) if value is not None else "—"
 
 
-def badge(engine):
-    name, color = ENGINES[engine]
-    return f'<span class="badge" style="--c:{color}">{name}</span>'
+def brand_logo(slug, suffix=""):
+    """A real brand mark in white (or ink) on a lit disc, with a gloss and a drop shadow."""
+    top, bottom, glyph = BRANDS[slug]
+    gradient = f"disc-{slug}{suffix}"
+    return (f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true"><defs>'
+            f'<radialGradient id="{gradient}" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="{top}"/>'
+            f'<stop offset="1" stop-color="{bottom}"/></radialGradient></defs>'
+            f'<circle cx="36" cy="36" r="31" fill="url(#{gradient})"/>'
+            f'<ellipse cx="29" cy="19" rx="16" ry="8" fill="#fff" opacity=".3"/>'
+            f'<g fill="{glyph}" transform="translate(17 17) scale(1.58)">{brand_icons.logo_body(slug)}</g></svg>')
 
 
-def node(title, subtitle, engine, tip, extra="", kind=""):
-    """One box of the map: an engine badge, a name, a line, and its role on hover."""
-    return (f'<div class="node {kind}" tabindex="0">{badge(engine)}<b>{html.escape(title)}</b>'
-            f'<small>{html.escape(subtitle)}</small>{extra}'
-            f'<span class="tip" role="tooltip">{html.escape(tip)}</span></div>')
+def source_logo(key):
+    """ODEPA's and the INE's marks, the ones of the operation center."""
+    return (f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true"><defs>{operation_center.LOGOS[key]}</svg>')
 
 
-def table_rows(names, counts):
-    return "".join(f'<li><code>{html.escape(name)}</code><span>{thousands(counts.get(name))}</span></li>'
-                   for name in names)
+def tip(what, why, side=""):
+    return (f'<span class="tip {side}" role="tooltip"><b>Qué guarda</b>{html.escape(what)}'
+            f'<b>Por qué</b>{html.escape(why)}</span>')
 
 
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
-    card, border, ink, text, muted = (palette["card"], palette["card_border"], palette["strong_text"],
-                                      palette["text"], palette["reference"])
-    raised = ("0 1px 0 rgba(255,255,255,.06) inset, 0 20px 40px -26px rgba(0,0,0,.9)" if dark
-              else "0 1px 0 #fff inset, 0 20px 40px -28px rgba(15,27,45,.45), 0 4px 10px -8px rgba(15,27,45,.2)")
-    glow = "0 0 0 1px color-mix(in srgb, #f4d03f 45%, transparent), 0 30px 60px -30px rgba(244,208,63,.45)"
+    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
+                                              palette["card"], palette["card_border"], palette["accent"])
+    shadow = "rgba(0,0,0,.55)" if dark else "rgba(15,39,71,.22)"
     return f"""<style>
 * {{ box-sizing:border-box; }}
 html, body {{ margin:0; background:transparent; color:{text};
-  font:300 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-.map {{ display:grid; grid-template-columns:.9fr 24px .95fr 24px 1.05fr 24px 2.15fr 24px .95fr; align-items:stretch;
-  padding:10px 4px 6px; }}
-.lane {{ display:flex; flex-direction:column; gap:10px; min-width:0; }}
-.lane h3 {{ margin:0 0 2px; font-size:10px; font-weight:500; line-height:1.2; letter-spacing:.08em; text-transform:uppercase;
-  color:{muted}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.lane h3 i {{ font-style:normal; color:{ink}; margin-right:5px; }}
-.arrow {{ position:relative; }}
-.arrow::before {{ content:""; position:absolute; left:2px; right:6px; top:50%; height:2px; border-radius:2px;
-  background:linear-gradient(90deg, color-mix(in srgb, {palette['accent']} 15%, transparent), {palette['accent']}); }}
-.arrow::after {{ content:""; position:absolute; right:1px; top:calc(50% - 5px); border:6px solid transparent;
-  border-left:8px solid {palette['accent']}; border-right:0; }}
-.node {{ position:relative; display:flex; flex-direction:column; gap:3px; padding:10px 12px; border-radius:14px;
-  background:linear-gradient(180deg, color-mix(in srgb, {card} 90%, {'#fff' if not dark else '#000'}), {card});
-  border:1px solid {border}; box-shadow:{raised}; transition:transform .2s ease, box-shadow .2s ease; cursor:default; }}
-.node:hover, .node:focus {{ transform:translateY(-3px); z-index:20; outline:none; }}
-.node b {{ font-weight:500; color:{ink}; font-size:13px; }}
-.node small {{ color:{muted}; font-size:11.5px; }}
-.node code, .served code {{ font:400 11.5px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; }}
-.badge {{ align-self:flex-start; padding:1px 8px; border-radius:999px; font-size:10px; font-weight:500; letter-spacing:.04em;
-  color:var(--c); background:color-mix(in srgb, var(--c) {'16%' if dark else '12%'}, transparent);
-  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--c) 40%, transparent); }}
-.layers {{ display:flex; flex-direction:column; gap:4px; margin-top:4px; }}
-.layers span {{ display:flex; justify-content:space-between; gap:8px; padding:3px 8px; border-radius:8px; font-size:11.5px;
-  background:color-mix(in srgb, #ff694b {'10%' if dark else '7%'}, transparent); color:{ink}; }}
-.layers span em {{ font-style:normal; color:{muted}; }}
-.served {{ position:relative; padding:12px 12px 10px; border-radius:18px; border:1px solid color-mix(in srgb, #f4d03f 55%, {border});
-  background:linear-gradient(180deg, color-mix(in srgb, #f4d03f {'7%' if dark else '5%'}, {card}), {card}); box-shadow:{glow}; }}
-.served-head {{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; margin-bottom:8px; }}
-.served-head b {{ font-weight:500; color:{ink}; font-size:14px; }}
-.served-head small {{ flex-basis:100%; color:{muted}; font-size:11px; }}
-.origin {{ position:relative; margin-top:7px; padding:7px 9px; border-radius:11px; border:1px dashed {border};
-  background:color-mix(in srgb, {card} 70%, transparent); }}
-.origin:hover {{ border-style:solid; z-index:20; }}
-.origin-head {{ display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:11.5px; color:{ink}; font-weight:500; }}
-.origin-head .count {{ margin-left:auto; font-weight:400; color:{muted}; }}
-.origin ul {{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:2px 16px; }}
-.origin li {{ display:flex; justify-content:space-between; gap:6px; font-size:10.5px; color:{muted}; min-width:0; }}
-.origin li code {{ font-size:10.5px !important; }}
-.origin li code {{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
-.tip {{ position:absolute; z-index:30; left:50%; top:calc(100% + 8px); width:250px; padding:10px 12px; border-radius:12px;
-  background:{card}; border:1px solid {border}; box-shadow:0 18px 36px -16px rgba(0,0,0,.55); color:{text};
-  font-size:12px; line-height:1.45; opacity:0; pointer-events:none; transform:translate(-50%, 6px); transition:opacity .15s ease, transform .15s ease; }}
-.node:hover > .tip, .node:focus > .tip, .origin:hover > .tip {{ opacity:1; transform:translate(-50%, 0); }}
-.backup-row {{ display:grid; grid-template-columns:.9fr 24px .95fr 24px 1.05fr 24px 2.15fr 24px .95fr; margin-top:14px; padding:0 4px; }}
-.backup {{ grid-column:3 / 6; }}
-.parity {{ grid-column:7 / 10; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px;
-  border:1px dashed {border}; color:{text}; font-size:12px; position:relative; }}
-.parity b {{ font-weight:500; color:{ink}; }}
-.parity::before {{ content:"⇅"; font-size:18px; color:{palette['accent']}; }}
-.legend {{ display:flex; flex-wrap:wrap; gap:6px 14px; margin:12px 4px 2px; font-size:11px; color:{muted}; }}
+  font:300 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }}
+.stage {{ position:relative; width:100%; max-width:{STAGE_WIDTH}px; aspect-ratio:{STAGE_WIDTH}/{STAGE_HEIGHT}; margin:0 auto; }}
+.stage > svg {{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }}
+.arrow {{ fill:none; stroke:{accent}; stroke-width:2; stroke-linecap:round; }}
+.arrow.dashed {{ stroke-dasharray:5 6; opacity:.85; }}
+.arrow-label {{ font-size:11px; fill:{muted}; text-anchor:middle; }}
+.node {{ position:absolute; width:150px; margin-left:-75px; margin-top:-38px; display:flex; flex-direction:column;
+  align-items:center; text-align:center; outline:none; }}
+.logo {{ display:block; width:76px; height:76px; filter:drop-shadow(0 16px 14px {shadow}); transition:transform .25s ease; }}
+.node:hover .logo, .node:focus .logo, .mini:hover .logo, .mini:focus .logo {{ transform:translateY(-6px) scale(1.05); }}
+.halo {{ width:62px; height:12px; border-radius:50%; margin-top:4px; filter:blur(4px);
+  background:{'rgba(255,255,255,.12)' if dark else 'rgba(15,39,71,.16)'}; }}
+.served .halo {{ background:rgba(244,208,63,.6); }}
+.label {{ margin-top:8px; font-weight:500; font-size:14px; color:{ink}; }}
+.file {{ margin-top:1px; font:400 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
+.tip {{ position:absolute; z-index:30; left:50%; top:calc(100% + 6px); width:272px; padding:12px 14px; border-radius:14px;
+  text-align:left; background:{card}; border:1px solid {border}; box-shadow:0 18px 40px rgba(0,0,0,{'.5' if dark else '.18'});
+  color:{text}; font-size:12.5px; line-height:1.45; opacity:0; pointer-events:none; transform:translate(-50%, 6px);
+  transition:opacity .18s ease, transform .18s ease; }}
+.tip b {{ display:block; margin:8px 0 2px; font-size:10px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
+.tip b:first-child {{ margin-top:0; }}
+.tip.start {{ left:0; transform:translate(0, 6px); }} .tip.end {{ left:auto; right:0; transform:translate(0, 6px); }}
+.tip.up {{ top:auto; bottom:calc(100% + 6px); }}
+.tip.up.end {{ transform:translate(0, 6px); }}
+.node:hover .tip, .node:focus .tip, .mini:hover .tip, .mini:focus .tip, .parity:hover .tip, .parity:focus .tip {{
+  opacity:1; transform:translate(-50%, 0); }}
+.node:hover .tip.start, .node:focus .tip.start, .node:hover .tip.end, .node:focus .tip.end {{ transform:translate(0, 0); }}
+.node:hover, .node:focus, .mini:hover, .mini:focus, .parity:hover, .parity:focus {{ z-index:40; }}
+.group {{ z-index:5; position:absolute; display:flex; gap:6px; left:{755 / STAGE_WIDTH * 100}%; top:{318 / STAGE_HEIGHT * 100}%;
+  transform:translateX(-50%); }}
+.mini {{ position:relative; width:112px; display:flex; flex-direction:column; align-items:center; text-align:center; outline:none; }}
+.mini .logo {{ width:46px; height:46px; filter:drop-shadow(0 8px 8px {shadow}); }}
+.mini b {{ margin-top:4px; font-weight:500; font-size:12px; color:{ink}; }}
+.mini small {{ font-size:11px; color:{muted}; }}
+.mini .tip {{ width:340px; }}
+.mini .tip ul {{ margin:6px 0 0; padding:0; list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:0 18px;
+  font:400 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; }}
+.mini .tip li {{ display:flex; justify-content:space-between; gap:10px; }}
+.mini .tip li span {{ color:{muted}; }}
+.brace {{ position:absolute; left:{755 / STAGE_WIDTH * 100}%; top:{300 / STAGE_HEIGHT * 100}%; width:350px; height:8px;
+  transform:translateX(-50%); border:1px solid {border}; border-bottom:0; border-radius:8px 8px 0 0; }}
+.parity {{ position:absolute; left:{PARITY_LABEL[0] / STAGE_WIDTH * 100}%; top:{PARITY_LABEL[1] / STAGE_HEIGHT * 100}%;
+  transform:translate(-50%, -50%); padding:3px 12px; border-radius:999px; border:1px solid {border}; background:{card};
+  font-size:11.5px; color:{ink}; outline:none; cursor:default; z-index:2; }}
+.parity .tip {{ top:auto; bottom:calc(100% + 8px); }}
+.legend {{ margin:6px 4px 0; font-size:11.5px; color:{muted}; text-align:center; }}
 </style>"""
 
 
+def build_node_html(key, logo, label, file, place, what, why):
+    left, top = place[0] / STAGE_WIDTH * 100, place[1] / STAGE_HEIGHT * 100
+    side = "start" if place[0] < 200 else "end" if place[0] > 850 else ""
+    mark = source_logo(logo) if logo in ("odepa", "ine") else brand_logo(logo, "-" + key)
+    return (f'<div class="node {key}" tabindex="0" style="left:{left:.3f}%;top:{top:.3f}%">'
+            f'{tip(what, why, side)}{mark}<div class="halo"></div><div class="label">{html.escape(label)}</div>'
+            f'<div class="file">{html.escape(file)}</div></div>')
+
+
+def build_group_html(counts):
+    """The three origins of the served tables, as small logos under the DuckDB file."""
+    minis = []
+    for position, (key, label, brand, names, what, why) in enumerate(ORIGINS):
+        side = "up end" if position == len(ORIGINS) - 1 else "up"
+        rows = "".join(f'<li>{html.escape(name)}<span>{thousands(counts.get(name))}</span></li>' for name in names)
+        total = sum(counts.get(name, 0) for name in names)
+        minis.append(f'<div class="mini" tabindex="0">{brand_logo(brand, "-" + key)}<b>{html.escape(label)}</b>'
+                     f'<small>{len(names)} tabla{"s" if len(names) > 1 else ""} · {thousands(total)} filas</small>'
+                     f'<span class="tip {side}" role="tooltip"><b>Qué guarda</b>{html.escape(what)}'
+                     f'<b>Por qué</b>{html.escape(why)}<ul>{rows}</ul></span></div>')
+    return f'<div class="brace"></div><div class="group">{"".join(minis)}</div>'
+
+
 def build_map_html(palette, counts, layers, tests):
-    """The whole map as one HTML document. counts: {table: rows} of the served file;
+    """The whole diagram as one HTML document. counts: {table: rows} of the served file;
     layers: {"staging": n, "intermediate": n, "marts": n}; tests: dbt tests in the build."""
-    served_total = sum(counts.get(name, 0) for _, _, _, _, names in ORIGINS for name in names)
-    sources = (node("ODEPA · mayoristas", "CSV por año, precios de frutas y hortalizas", "csv",
-                    "Precios mayoristas publicados por ODEPA. El agente los descarga y registra su huella SHA-256 "
-                    "en manifest.json.")
-               + node("ODEPA · consumidor", "CSV por año, siete familias de alimentos", "csv",
-                      "Precios al consumidor por región y canal. Mismo agente y mismo registro de huellas.")
-               + node("INE · IPC de alimentos", "Índice mensual", "api",
-                      "El IPC de alimentos del INE: convierte los precios a pesos reales."))
-    landing = (node("etl/raw.db", "Aterrizaje: filas tal como se publican", "sqlite",
-                    "Base de aterrizaje en SQLite. Copia exacta de los CSV, sin limpiar. No se sube al repositorio "
-                    "(unos 665 MB); se reconstruye en cada carga.")
-               + node("Capa bronce", "Las mismas filas en Parquet, una por fuente y año", "parquet",
-                      "Formato estándar de data lake: dbt lee desde aquí, y cualquier otro warehouse podría hacerlo."))
-    layer_rows = "".join(f'<span>{label}<em>{layers.get(key, 0)} modelos</em></span>'
-                         for key, label in (("staging", "staging"), ("intermediate", "intermedio"), ("marts", "marts")))
-    transform = node("dbt sobre DuckDB", "Base de trabajo warehouse_build.duckdb", "dbt",
-                     f"dbt limpia, valida, normaliza unidades, marca atípicos y arma el modelo estrella. Corre "
-                     f"{tests} pruebas; si una falla, la base publicada no se reemplaza.",
-                     extra=f'<div class="layers">{layer_rows}<span>pruebas<em>{tests}</em></span></div>')
-    origins = "".join(
-        f'<div class="origin"><div class="origin-head">{badge("python" if engine == "pipeline" else engine)}'
-        f'{html.escape(title)}<span class="count">{len(names)} tabla{"s" if len(names) > 1 else ""}</span></div>'
-        f'<ul>{table_rows(names, counts)}</ul><span class="tip" role="tooltip">{html.escape(tip)}</span></div>'
-        for _, title, engine, tip, names in ORIGINS)
-    served = (f'<div class="served"><div class="served-head">{badge("duckdb")}<b>etl/datos.duckdb</b>'
-              f'<small>12 tablas · {thousands(served_total)} filas</small></div>{origins}</div>')
-    consumers = (node("Vistas del panel", "8 vistas en español, creadas al conectar", "duckdb",
-                      "precios, semanas, productos, ipc_semanal… No se guardan en la base: el panel las crea en cada "
-                      "conexión, sobre las tablas, con columnas legibles.")
-                 + node("Panel GreenOcean", "Lee la base en solo lectura", "streamlit",
-                        "Streamlit abre datos.duckdb en solo lectura: el panel nunca escribe en la base."))
-    lanes = [("1", "Fuentes", sources), ("2", "Aterrizaje", landing), ("3", "Transformación", transform),
-             ("4", "Base servida", served), ("5", "Consumo", consumers)]
-    body = '<div class="arrow"></div>'.join(f'<section class="lane"><h3><i>{number}</i>{title}</h3>{content}</section>'
-                                            for number, title, content in lanes)
-    backup = ('<div class="backup-row"><div class="backup">'
-              + node("etl/datos.db", "Respaldo: el mismo resultado calculado con el ETL en Python", "sqlite",
-                     "El ETL de respaldo (etl/etl.py) lee raw.db y calcula los mismos precios semanales en SQLite. "
-                     "No lo lee el panel: solo sirve para comprobar el resultado de dbt.", kind="backup-node")
-              + '</div><div class="parity"><span><b>Paridad SQLite ↔ DuckDB.</b> Mismos precios, mismos rechazos y '
-                'misma suma en las dos bases; la página Calidad y auditoría lo comprueba en cada carga.</span></div></div>')
-    legend = ('<div class="legend"><span>Pasa el cursor por cada caja para ver su papel.</span>'
-              + "".join(badge(engine) for engine in ("sqlite", "parquet", "dbt", "duckdb", "python", "streamlit")) + '</div>')
+    served_total = sum(counts.get(name, 0) for *_, names, _, _ in ORIGINS for name in names)
+    models = sum(layers.values())
+    notes = {
+        "dbt": f"Una base de trabajo con {models} modelos en tres capas (staging {layers.get('staging', 0)}, intermedio "
+               f"{layers.get('intermediate', 0)} y marts {layers.get('marts', 0)}) y {tests} pruebas de datos de dbt.",
+        "served": f"La base que el panel lee: 12 tablas y {thousands(served_total)} filas, agrupadas por quién las escribe (abajo).",
+    }
+    nodes = "".join(build_node_html(key, logo, label, file, place, notes.get(key, what), why)
+                    for key, logo, label, file, place, what, why in NODES)
+    marker = (f'<defs><marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
+              f'orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="{palette["accent"]}"/></marker></defs>')
+    arrows = "".join(f'<path class="arrow" d="{path}" marker-end="url(#head)"/>'
+                     f'<text class="arrow-label" x="{x}" y="{y}">{html.escape(label)}</text>'
+                     for path, label, (x, y) in ARROWS)
+    parity = f'<path class="arrow dashed" d="{PARITY_PATH}" marker-start="url(#head)" marker-end="url(#head)"/>'
+    parity_label = ('<div class="parity" tabindex="0">Paridad<span class="tip" role="tooltip"><b>Qué hace</b>'
+                    'Compara el respaldo SQLite con DuckDB: mismos precios, mismos rechazos y misma suma.'
+                    '<b>Por qué</b>Si dos caminos independientes dan lo mismo, la carga es confiable. La página '
+                    'Calidad y auditoría lo comprueba en cada carga.</span></div>')
     return ('<!doctype html><html lang="es"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1">' + build_css(palette)
-            + f'</head><body><div class="map" aria-label="Mapa de la base de datos">{body}</div>{backup}{legend}</body></html>')
+            + '</head><body><div class="stage" aria-label="Dónde viven los datos">'
+              f'<svg viewBox="0 0 {STAGE_WIDTH} {STAGE_HEIGHT}" aria-hidden="true">{marker}{arrows}{parity}</svg>'
+              f'{nodes}{build_group_html(counts)}{parity_label}</div>'
+              '<p class="legend">Pasa el cursor por cada logo para ver qué guarda y por qué.</p></body></html>')
