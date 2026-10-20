@@ -35,7 +35,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                audit_trace, database_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
+                audit_trace, database_crossings, database_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -2902,6 +2902,12 @@ def show_architecture_page(mode):
         st.iframe(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests,
                                               read_store_sizes()), height=660)
         return
+    if view == MODEL_VIEWS[3]:
+        st.markdown('<p class="arch-phrase">Cada punto donde dos bases se tocan: cómo pasa, qué viaja, qué comparten '
+                    'y, donde se puede medir aquí, la comprobación de ahora.</p>', unsafe_allow_html=True)
+        st.iframe(database_crossings.build_crossings_html(charts.get_palette(mode), read_crossing_checks(get_database_version())),
+                  height=700)
+        return
     if view == MODEL_VIEWS[2]:
         schema = read_er_schema(get_database_version())
         st.markdown('<p class="arch-phrase">El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las '
@@ -2923,12 +2929,18 @@ def show_architecture_page(mode):
 
 
 @st.cache_data(show_spinner=False)
+def read_crossing_checks(database_version):
+    """The live checks of the «Cruces entre bases» view (D-197)."""
+    return database_crossings.read_checks()
+
+
+@st.cache_data(show_spinner=False)
 def read_er_schema(database_version):
     """Columns and DuckDB types of the tables of the entity-relationship diagram (D-195)."""
     return er_diagram.read_schema()
 
 
-MODEL_VIEWS = ["Dónde viven los datos", "Modelo estrella", "Entidad-relación"]
+MODEL_VIEWS = ["Dónde viven los datos", "Modelo estrella", "Entidad-relación", "Cruces entre bases"]
 MODEL_VIEW_KEY = "model_view"
 
 
