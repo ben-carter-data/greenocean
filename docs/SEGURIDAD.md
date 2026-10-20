@@ -38,6 +38,10 @@ Un visitante tiene tres puertas. Cada una tiene tres barreras independientes: si
 | Clave de control | Adivinar la clave probando sin parar | Comparación en tiempo constante · 5 intentos cada 15 minutos para todos los visitantes · una sola puerta: el botón del pipeline y los enlaces aparecen solo tras la clave, y solo en esa sesión |
 | Código público | Encontrar claves en el repositorio o en los mensajes de error | Secretos fuera de git · token nunca en pantalla · permisos mínimos del workflow |
 
+El mismo mapa de la página Mapa de seguridad del panel: cada puerta, sus tres barreras y la prueba automática de cada una.
+
+[[diagrama:seguridad]]
+
 ## 4. Método
 
 La revisión sigue cinco pasos, siempre en este orden.

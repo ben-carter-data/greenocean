@@ -4,70 +4,65 @@ few or no boxes, arrows that say what travels, and an explanation on hover.
 Each build_* function returns one HTML document for st.iframe (gradients and hover tips do
 not survive st.markdown). Positions are in a fixed stage that scales with the width.
 """
+import base64
 import html
-import re
+from pathlib import Path
 
-from bi import brand_icons, charts, operation_center, quality_view
+from bi import architecture, brand_icons, charts, quality_view
 
-# Disc colors per brand mark: (top, bottom, glyph).
-BRANDS = {
-    "sqlite": ("#5db7f2", "#0b6aa8", "#ffffff"),
-    "apacheparquet": ("#5fd7a4", "#13825a", "#ffffff"),
-    "dbt": ("#ff9a7a", "#e2431a", "#ffffff"),
-    "duckdb": ("#ffe66d", "#e6b800", "#1f1f1f"),
-    "python": ("#6fa8dc", "#2a5d96", "#ffffff"),
-    "github": ("#59616b", "#1b1f24", "#ffffff"),
-    "git": ("#ffa36b", "#d84a1b", "#ffffff"),
-    "pytest": ("#d29cf0", "#7b2fa8", "#ffffff"),
-    "streamlit": ("#ff8a8a", "#e0313b", "#ffffff"),
-}
-PEOPLE = {"visitor": ("#7fe0b0", "#1d8a5b"), "author": ("#ffd27a", "#c47f12"), "team": ("#9fb3c8", "#3d4f66")}
-LAYER = {"source": "#22b35a", "flow": "#38bdf8", "build": "#a78bfa", "ops": "#f59e0b", "serve": "#f472b6"}
+LAYER = {"source": "#22b35a", "flow": "#3987e5", "build": "#9085e9", "ops": "#c98500", "serve": "#199e70"}  # architecture.LAYER_COLORS
 
 
 def esc(value):
     return html.escape(str(value))
 
 
-def brand(slug, suffix):
-    top, bottom, glyph = BRANDS[slug]
-    gradient = f"g-{slug}-{suffix}"
-    return (f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true"><defs><radialGradient id="{gradient}" cx="35%" '
-            f'cy="28%" r="85%"><stop offset="0" stop-color="{top}"/><stop offset="1" stop-color="{bottom}"/></radialGradient>'
-            f'</defs><circle cx="36" cy="36" r="31" fill="url(#{gradient})"/><ellipse cx="29" cy="19" rx="16" ry="8" fill="#fff" '
-            f'opacity=".3"/><g fill="{glyph}" transform="translate(17 17) scale(1.58)">{brand_icons.logo_body(slug)}</g></svg>')
+# The pipeline's own visual language (D-205): a rounded tile with a colored border and the
+# mark in the color of its layer, as in «Pipeline y linaje».
+TILE_COLORS = {"python": "ingestion", "sqlite": "ingestion", "apacheparquet": "bronze", "dbt": "processing",
+               "duckdb": "gold", "github": "orchestration", "git": "orchestration", "pytest": "quality",
+               "streamlit": "consumption"}
+ICON_DRAWERS = {"chart": architecture.draw_chart_icon, "calendar": architecture.draw_clock_icon,
+                "parity": architecture.draw_sliders_icon, "database": architecture.draw_database_icon,
+                "shield": architecture.draw_shield_icon, "gear": architecture.draw_laptop_icon,
+                "files": architecture.draw_code_icon, "odepa": architecture.draw_file_icon,
+                "ine": architecture.draw_file_icon, "panel": architecture.draw_chart_icon}
+PALETTE_NOW = {}
 
 
-def person(kind, suffix):
-    top, bottom = PEOPLE[kind]
-    gradient = f"p-{kind}-{suffix}"
-    return (f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true"><defs><radialGradient id="{gradient}" cx="35%" '
-            f'cy="28%" r="85%"><stop offset="0" stop-color="{top}"/><stop offset="1" stop-color="{bottom}"/></radialGradient>'
-            f'</defs><circle cx="36" cy="36" r="31" fill="url(#{gradient})"/><ellipse cx="29" cy="19" rx="16" ry="8" fill="#fff" '
-            f'opacity=".3"/><circle cx="36" cy="29" r="8" fill="#fff"/><path d="M21 52c2-9 8-13 15-13s13 4 15 13z" fill="#fff"/></svg>')
-
-
-def mark(key):
-    """The operation center's 3D marks (odepa, ine, etl, report, panel, tests, save, launch, dbt)."""
-    return f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true"><defs>{operation_center.LOGOS[key]}</svg>'
-
-
-def icon(name):
-    return quality_view.build_icon_svg(name).replace('class="qa-icon"', 'class="logo"')
-
-
-def logo(spec, suffix):
+def tile_color(spec):
     kind, name = spec
-    suffix = re.sub(r"[^A-Za-z0-9]", "", str(suffix))  # a gradient id with spaces breaks url(#…)
-    return {"brand": lambda: brand(name, suffix), "person": lambda: person(name, suffix),
-            "mark": lambda: mark(name), "icon": lambda: icon(name)}[kind]()
+    if kind == "brand":
+        return architecture.LAYER_COLORS[TILE_COLORS[name]]
+    if kind == "person":
+        return architecture.LAYER_COLORS["sources" if name == "visitor" else "orchestration"]
+    if name in ("odepa", "ine"):
+        return architecture.LAYER_COLORS["sources"]
+    if name == "panel":
+        return architecture.LAYER_COLORS["consumption"]
+    return PALETTE_NOW.get("icon_color", architecture.LAYER_COLORS["consumption"])
+
+
+def logo(spec, suffix="", color=None):
+    kind, name = spec
+    color = color or tile_color(spec)
+    card = PALETTE_NOW.get("card", "#161b22")
+    tile = (f'<rect x="2" y="2" width="60" height="60" rx="16" fill="{card}" stroke="{color}" stroke-width="1.6"/>'
+            f'<rect x="2" y="2" width="60" height="60" rx="16" fill="{color}" fill-opacity=".07"/>')
+    if kind == "brand":
+        glyph = f'<g transform="translate(17 17) scale(1.25)" fill="{color}">{brand_icons.logo_body(name)}</g>'
+    elif kind == "person":
+        glyph = (f'<circle cx="32" cy="25" r="7" fill="none" stroke="{color}" stroke-width="2.4"/>'
+                 f'<path d="M18 46c1.5-8 7-12 14-12s12.5 4 14 12" fill="none" stroke="{color}" stroke-width="2.4" stroke-linecap="round"/>')
+    else:
+        glyph = ICON_DRAWERS[name](32, 32, color)
+    return f'<svg class="logo" viewBox="0 0 64 64" aria-hidden="true">{tile}{glyph}</svg>'
 
 
 def build_css(palette, width, height, logo_size):
     dark = palette["base"] == charts.BASE_DARK
     ink, text, muted, card, border = (palette["strong_text"], palette["text"], palette["reference"],
                                       palette["card"], palette["card_border"])
-    shadow = "rgba(0,0,0,.55)" if dark else "rgba(15,39,71,.22)"
     return f"""<style>
 * {{ box-sizing:border-box; }}
 html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }}
@@ -75,18 +70,18 @@ html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 
 .stage > svg {{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }}
 .edge {{ fill:none; stroke-width:2; stroke-linecap:round; opacity:.9; }}
 .edge.dashed {{ stroke-dasharray:5 6; }}
-.edge-label {{ font:500 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; text-anchor:middle; }}
-.edge-chip {{ fill:{palette['background']}; }}
+.edge-label {{ font:700 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; text-anchor:middle; }}
+.edge-chip {{ fill:{card}; }}
 .zone {{ fill:none; stroke:{border}; stroke-width:1.4; stroke-dasharray:6 6; }}
 .zone-title {{ font:600 11px -apple-system, sans-serif; letter-spacing:.12em; fill:{muted}; }}
 .node {{ position:absolute; width:150px; margin-left:-75px; margin-top:-{logo_size // 2}px; display:flex; flex-direction:column;
   align-items:center; text-align:center; outline:none; }}
 .node.wide {{ width:190px; margin-left:-95px; }}
-.node .logo {{ display:block; width:{logo_size}px; height:{logo_size}px; filter:drop-shadow(0 12px 10px {shadow}); transition:transform .25s ease; }}
+.node .logo {{ display:block; width:{logo_size}px; height:{logo_size}px; transition:transform .25s ease; }}
 .node.small .logo {{ width:{int(logo_size * .78)}px; height:{int(logo_size * .78)}px; }}
 .node.big .logo {{ width:{int(logo_size * 1.3)}px; height:{int(logo_size * 1.3)}px; }}
 .node:hover .logo, .node:focus .logo {{ transform:translateY(-5px) scale(1.05); }}
-.node b {{ margin-top:6px; font-weight:500; font-size:13.5px; color:{ink}; line-height:1.2; }}
+.node b {{ margin-top:6px; font-weight:600; font-size:14px; color:{ink}; line-height:1.2; }}
 .node small {{ color:{muted}; font-size:11.5px; line-height:1.25; }}
 .node code {{ color:{muted}; font:400 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; }}
 .node.row {{ flex-direction:row; width:280px; margin-left:-30px; text-align:left; gap:10px; align-items:center; }}
@@ -104,13 +99,14 @@ html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 
 </style>"""
 
 
-def build_node(spec, x, y, title, subtitle, what, why="", style="", suffix="", width=1000, height=600, code=False):
+def build_node(spec, x, y, title, subtitle, what, why="", style="", suffix="", width=1000, height=600, code=False,
+               color=None):
     side = " start" if x < width * .2 else " end" if x > width * .8 else ""
     up = " up" if y > height * .62 else ""
     sub = f"<code>{esc(subtitle)}</code>" if code else f"<small>{esc(subtitle)}</small>"
     tip = f'<span class="tip{side}{up}" role="tooltip"><i>Qué hace</i>{esc(what)}' + (f'<i>Por qué</i>{esc(why)}' if why else "") + "</span>"
-    body = (f'{logo(spec, suffix or title)}<div><b>{esc(title)}</b>{sub}</div>' if "row" in style
-            else f'{logo(spec, suffix or title)}<b>{esc(title)}</b>{sub}')
+    mark_svg = logo(spec, suffix or title, color)
+    body = f'{mark_svg}<div><b>{esc(title)}</b>{sub}</div>' if "row" in style else f'{mark_svg}<b>{esc(title)}</b>{sub}'
     return (f'<div class="node {style}" tabindex="0" style="left:{x / width * 100:.3f}%;top:{y / height * 100:.3f}%">'
             f'{tip}{body}</div>')
 
@@ -153,6 +149,7 @@ USE_CASES = [
 
 def build_actors_html(mode):
     palette = charts.get_palette(mode)
+    PALETTE_NOW.update(card=palette['card'])
     width, height = 1000, 600
     rows = [95 + index * 72 for index in range(len(USE_CASES))]
     visitor, author = (95, sum(rows[:5]) / 5), (95, (rows[5] + rows[6]) / 2)
@@ -163,13 +160,14 @@ def build_actors_html(mode):
     svg = [f'<rect class="zone" x="300" y="30" width="400" height="{rows[-1] + 50 - 30}" rx="18"/>'
            f'<text class="zone-title" x="318" y="52">GREENOCEAN · PANEL Y PIPELINE</text>']
     for (kind, name, title, subtitle, actor), y in zip(USE_CASES, rows):
+        tint = architecture.LAYER_COLORS["consumption" if actor == "visitor" else "orchestration"]
         nodes.append(build_node((kind, name), 345, y + 6, title, subtitle, f"Caso de uso: {title}. Dónde: {subtitle}.",
-                                style="row small", width=width, height=height))
+                                style="row small", width=width, height=height, color=tint))
         sx, sy = visitor if actor == "visitor" else author
         color = LAYER["source"] if actor == "visitor" else LAYER["ops"]
         svg.append(f'<path class="edge" d="M{sx + 40} {sy} C {sx + 140} {sy}, {290 - 70} {y + 6}, {316} {y + 6}" stroke="{color}" '
                    f'opacity=".55" marker-end="url(#h-{color[1:]})"/>')
-    systems = [(("mark", "odepa"), "ODEPA", "precios mayorista y consumidor", "CSV", LAYER["source"],
+    systems = [(("mark", "odepa"), "ODEPA", "precios en CSV", "CSV", LAYER["source"],
                 "Publica los CSV de precios que el pipeline descarga cada martes."),
                (("mark", "ine"), "INE", "IPC de alimentos", "IPC", LAYER["source"], "Publica el índice para expresar precios reales."),
                (("brand", "github"), "GitHub Actions", "workflow semanal y de pruebas", "martes", LAYER["build"],
@@ -191,6 +189,7 @@ def build_actors_html(mode):
 # region System context (SAD, C4 level 1)
 def build_context_html(mode):
     palette = charts.get_palette(mode)
+    PALETTE_NOW.update(card=palette['card'])
     width, height = 1000, 520
     center = (500, 285)
     nodes = [
@@ -226,6 +225,7 @@ def build_context_html(mode):
 # region Containers (SAD, C4 level 2)
 def build_containers_html(mode):
     palette = charts.get_palette(mode)
+    PALETTE_NOW.update(card=palette['card'])
     width, height = 1200, 600
     main_y, top_y, low_y = 300, 95, 485
     columns = [70, 210, 355, 500, 645, 790, 935, 1090]
@@ -311,6 +311,7 @@ SEQUENCE_STEPS = [
 
 def build_sequence_html(mode):
     palette = charts.get_palette(mode)
+    PALETTE_NOW.update(card=palette['card'])
     first_x, spacing = 90, 145
     x_of = {lane[0]: first_x + index * spacing for index, lane in enumerate(SEQUENCE_LANES)}
     width = first_x * 2 + spacing * (len(SEQUENCE_LANES) - 1)
@@ -345,3 +346,48 @@ def build_sequence_html(mode):
     return build_page(palette, width, height, 56, "".join(svg), "".join(nodes),
                       "El martes automático, paso a paso. Pasa el cursor por un logo o por un paso.", "Secuencia del martes")
 # endregion
+
+
+# region Mockups (PRD): real screens of the running panel
+MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
+MOCKUPS = [
+    ("m1-resumen-vantablack.jpg", "M-1 · Resumen semanal", "tema Vantablack · computador", "laptop"),
+    ("m2-precios-claro.jpg", "M-2 · Precios e inflación", "tema Claro · computador", "laptop"),
+    ("m3-sql-corporativo.jpg", "M-3 · Consultas SQL", "tema Corporativo · computador", "laptop"),
+    ("m4-telefono-bluelight.jpg", "M-4 · Resumen semanal", "tema Blue Light · teléfono horizontal", "phone"),
+]
+
+
+def build_mockups_html(mode):
+    """The four captures in a computer or phone frame, two per row."""
+    palette = charts.get_palette(mode)
+    figures = []
+    for file_name, title, detail, device in MOCKUPS:
+        data = base64.b64encode((MOCKUP_DIR / file_name).read_bytes()).decode()
+        image = f'<img src="data:image/jpeg;base64,{data}" alt="{esc(title)}">'
+        frame = (f'<div class="screen">{image}</div><div class="base"></div>' if device == "laptop"
+                 else f'<div class="phone">{image}</div>')
+        figures.append(f'<figure class="{device}">{frame}<figcaption><b>{esc(title)}</b> · {esc(detail)}</figcaption></figure>')
+    css = f"""<style>
+* {{ box-sizing:border-box; }}
+html, body {{ margin:0; background:transparent; font:300 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:{palette['text']}; }}
+.grid {{ display:grid; grid-template-columns:1fr 1fr; gap:26px 30px; align-items:end; padding:6px 4px; }}
+figure {{ margin:0; text-align:center; }}
+figcaption {{ margin-top:10px; color:{palette['reference']}; }} figcaption b {{ color:{palette['strong_text']}; font-weight:500; }}
+.screen {{ width:88%; margin:0 auto; border:9px solid #1d2229; border-bottom-width:11px; border-radius:12px 12px 3px 3px;
+  background:#000; box-shadow:0 22px 40px rgba(0,0,0,.45); }}
+.screen img {{ display:block; width:100%; }}
+.base {{ width:100%; height:11px; background:linear-gradient(#c3c9d2,#7d8590); border-radius:0 0 14px 14px; }}
+.phone {{ width:92%; margin:0 auto; padding:9px 26px; background:#111418; border:2px solid #2f353d; border-radius:34px;
+  box-shadow:0 22px 40px rgba(0,0,0,.45); }}
+.phone img {{ display:block; width:100%; border-radius:18px; }}
+@media (max-width:640px) {{ .grid {{ grid-template-columns:1fr; }} }}
+</style>"""
+    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            + css + '</head><body><div class="grid">' + "".join(figures) + "</div></body></html>")
+# endregion
+
+
+# The document views by marker, with the height of their frame in the page.
+VIEWS = {"actores": (build_actors_html, 560), "mockups": (build_mockups_html, 720), "contexto": (build_context_html, 470),
+         "contenedores": (build_containers_html, 480), "secuencia": (build_sequence_html, 520)}

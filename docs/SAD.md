@@ -138,7 +138,9 @@ Lo descartado para todo el sistema: nube, contenedores y modelos predictivos que
 
 ## 7. Linaje de los datos
 
-Los datos atraviesan seis capas. Cada una tiene un solo propósito y un solo lugar. El recorrido completo, con el estado real de cada paso, y el linaje dbt modelo a modelo, con sus pruebas, viven en la página Pipeline y linaje del panel; este documento no los repite, porque la vista de contenedores de la sección 4 ya muestra por dónde pasan los datos.
+Los datos atraviesan seis capas. Cada una tiene un solo propósito y un solo lugar. El recorrido completo, el mismo de la página Pipeline y linaje del panel, muestra cada capa con su herramienta y lo que viaja entre ellas; el linaje dbt modelo a modelo, con sus pruebas, vive en esa misma página.
+
+[[diagrama:pipeline]]
 
 | Capa | Dónde | Qué contiene | Se sube al repositorio |
 |---|---|---|---|

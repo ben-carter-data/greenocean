@@ -12,6 +12,7 @@ import re
 import unicodedata
 from datetime import date
 from io import BytesIO
+from pathlib import Path
 from xml.sax.saxutils import escape
 
 from reportlab.lib import colors
@@ -20,7 +21,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase.pdfmetrics import stringWidth
-from reportlab.platypus import (BaseDocTemplate, CondPageBreak, Frame, KeepTogether, ListFlowable,
+from reportlab.platypus import (Image, BaseDocTemplate, CondPageBreak, Frame, KeepTogether, ListFlowable,
                                 ListItem, NextPageTemplate, PageBreak, PageTemplate, Paragraph,
                                 Spacer, Table, TableStyle)
 from reportlab.platypus.tableofcontents import TableOfContents
@@ -283,6 +284,8 @@ def build_story(markdown_text, styles):
             story.append(Paragraph(inline_markup(payload), styles["body"]))
         elif kind == "quote":
             story.append(Paragraph(inline_markup(payload), styles["quote"]))
+        elif kind == "diagram" and payload == "mockups":
+            story += build_mockup_flowables(styles)
         elif kind == "diagram":
             story.append(Paragraph(DIAGRAM_NOTE + f" ({payload}).", styles["note"]))
         elif kind == "table":
@@ -376,6 +379,28 @@ class _Document(BaseDocTemplate):
 
 def _issued_text(issued):
     return f"{issued.day} de {MONTHS[issued.month - 1]} de {issued.year}"
+
+
+# The real screens of the PRD (D-205): the same captures the panel shows, two per row.
+MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
+MOCKUP_FILES = [("m1-resumen-vantablack.jpg", "M-1 · Resumen semanal · tema Vantablack"),
+                ("m2-precios-claro.jpg", "M-2 · Precios e inflación · tema Claro"),
+                ("m3-sql-corporativo.jpg", "M-3 · Consultas SQL · tema Corporativo"),
+                ("m4-telefono-bluelight.jpg", "M-4 · Resumen semanal · teléfono, tema Blue Light")]
+
+
+def build_mockup_flowables(styles):
+    """The captures as images under each other, with a caption; a missing file is skipped."""
+    flowables = []
+    for file_name, caption in MOCKUP_FILES:
+        path = MOCKUP_DIR / file_name
+        if not path.exists():
+            continue
+        image = Image(str(path))
+        scale = CONTENT_WIDTH * 0.9 / image.imageWidth
+        image.drawWidth, image.drawHeight = image.imageWidth * scale, image.imageHeight * scale
+        flowables.append(KeepTogether([image, Paragraph(escape(caption), styles["note"])]))
+    return flowables
 
 
 def build_pdf(markdown_text, title, subtitle, issued=None):

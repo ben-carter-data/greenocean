@@ -1327,7 +1327,7 @@ def build_style_css(mode):
     .st-key-project_document hr {{display:none;}}
     .doc-diagram {{margin:12px 0 22px; padding:14px; border:1px solid {palette['card_border']};
         border-radius:14px; background:{palette['card']};}}
-    .doc-diagram svg {{display:block; width:100%; height:auto; max-height:640px; margin:0 auto;}}
+    .doc-diagram .zoom-content > svg {{display:block; width:100%; height:auto; max-height:640px; margin:0 auto;}}
     .st-key-card_pipeline_main {{margin-top:10px;}}
     .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="12"] {{font-size:13px;}}
     .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="13"] {{font-size:15px;}}
@@ -7436,17 +7436,13 @@ DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 
 
 def build_document_diagram_html(name, mode):
-    """The project's own diagram behind a [[diagrama:…]] marker of a document: the
-    document's own views (actors, C4, sequence, wireframe) or a live panel diagram."""
-    if name in doc_diagrams.DOC_DIAGRAMS:
-        build = lineage.summarize_build(*read_lineage(get_database_version()))
-        figures = {"dbt_models": build["models"], "dbt_tests": build["tests"]} if build else None
-        return zoom.build_zoom_frame_html(doc_diagrams.DOC_DIAGRAMS[name](mode, figures), "diagram-wide")
-    states, figures, *_ = read_journey()
-    if name == "plataforma":
-        return zoom.build_zoom_frame_html(architecture.build_devops_svg(
-            states, build_devops_figures(figures), mode, animate_flow=False), "diagram-devops")
-    if name == "pipeline":
+    """A live panel diagram behind a [[diagrama:…]] marker (platform, pipeline, star model),
+    as markup for st.markdown; "" when the marker is drawn in its own frame instead."""
+    if name in ("plataforma", "pipeline"):
+        states, figures, *_ = read_journey()
+        if name == "plataforma":
+            return zoom.build_zoom_frame_html(architecture.build_devops_svg(
+                states, build_devops_figures(figures), mode, animate_flow=False), "diagram-devops")
         return zoom.build_zoom_frame_html(architecture.build_journey_svg(
             states, figures, mode, animate_flow=False), "diagram-wide")
     if name == "modelo":
@@ -7454,6 +7450,19 @@ def build_document_diagram_html(name, mode):
         columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
         return star_model.build_star_svg(columns, row_counts, mode)
     return ""
+
+
+def show_document_diagram(name, mode):
+    """One marker of a document: the document views and the security map in their own frame
+    (hover tips and gradients need it, D-205), the live diagrams inline."""
+    palette = charts.get_palette(mode)
+    if name in doc_diagrams.DOC_DIAGRAMS:
+        st.iframe(doc_diagrams.DOC_DIAGRAMS[name](mode), height=doc_diagrams.HEIGHTS[name])
+    elif name == "seguridad":
+        st.iframe(security_map.build_security_html(palette), height=590)
+    else:
+        st.markdown('<div class="doc-diagram">' + build_document_diagram_html(name, mode) + '</div>',
+                    unsafe_allow_html=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -7494,8 +7503,7 @@ def show_project_document(mode, title):
         position = 0
         for marker in DOCUMENT_DIAGRAM.finditer(text):
             st.markdown(text[position:marker.start()])
-            st.markdown('<div class="doc-diagram">' + build_document_diagram_html(marker.group(1), mode)
-                        + '</div>', unsafe_allow_html=True)
+            show_document_diagram(marker.group(1), mode)
             position = marker.end()
         st.markdown(text[position:])
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)

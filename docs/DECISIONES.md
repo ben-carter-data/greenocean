@@ -1536,3 +1536,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 ## D-204 · La sección Seguridad sin la palabra «vulnerabilidad»
 - **Decisión:** la página «Seguridad y vulnerabilidades» pasa a llamarse **«Mapa de seguridad»**, y el plan de pruebas habla de «puntos débiles» y de «problemas sin corregir». La palabra sugería fallas abiertas, cuando la sección muestra justamente que están cerradas y probadas.
 - **Pruebas:** las del menú, actualizadas.
+
+## D-205 · Diagramas de los documentos con el estilo del pipeline y pantallas reales
+- **Problema:** los diagramas del PRD y del SAD estaban hechos con cajas y no se parecían a los del panel; la «pantalla principal» del PRD era un boceto con rectángulos grises, sin un solo dato; el SAD no mostraba el recorrido del pipeline y el plan de seguridad no tenía su mapa. Los PDF no mostraban ninguna imagen. Además, una regla de estilo del zoom estiraba al 100 % los logos dentro de los diagramas del panel (Pipeline y linaje se veía con logos gigantes).
+- **Decisión:** las vistas de los documentos se rehacen en `bi/doc_views.py` con el lenguaje del pipeline: mosaicos con borde del color de su capa, chips que dicen qué viaja, sin cajas y con explicación al pasar el cursor. Actores y casos de uso (PRD); contexto C4, contenedores C4 y la secuencia del martes (SAD). El boceto se reemplaza por cuatro capturas reales del panel en marcos de computador y teléfono, en cuatro temas: Resumen semanal (Vantablack), Precios e inflación (Claro), Consultas SQL (Corporativo) y el Resumen en un teléfono horizontal (Blue Light). El SAD suma el recorrido del pipeline y el plan de seguridad su mapa: los diagramas que ya existen en el panel se muestran también en los documentos.
+- **PDF:** el PRD descargable incluye las cuatro capturas.
+- **Corrección:** la regla del zoom solo da el ancho completo al diagrama, no a los logos que lleva dentro.
+- **Pruebas:** `tests/test_doc_diagrams.py` y `tests/test_document_pdf.py` (D-205).

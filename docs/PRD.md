@@ -149,9 +149,9 @@ Las preguntas del diseño original quedaron así:
 | RF-19 | Publicar un informe semanal con estado de la carga y alertas | Issue «Informe semanal» (D-017) |
 | RF-20 | Explicar el producto, la arquitectura y las decisiones dentro del panel, descargables en PDF | PRD, SAD y ADR en Documentación (D-151) |
 
-**La pantalla principal.** El Resumen semanal reúne en una pantalla los requisitos RF-12 a RF-14 y RF-17. El boceto marca qué requisito satisface cada zona; los rectángulos grises son marcadores de posición, no datos.
+**Las pantallas reales.** Cuatro capturas del panel publicado, con los datos de la carga del 19-10-2026, cada una en un tema de color distinto: el Resumen semanal (RF-12 a RF-14 y RF-17), Precios e inflación con el IPC (RF-16), la página Consultas SQL y el mismo Resumen en un teléfono en horizontal (RNF-07). No son bocetos: son la aplicación tal como la ve un visitante.
 
-[[diagrama:pantalla]]
+[[diagrama:mockups]]
 
 ## 8. Requisitos no funcionales
 
