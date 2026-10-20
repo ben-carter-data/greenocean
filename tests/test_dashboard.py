@@ -69,7 +69,7 @@ PINNED_HOME = {"_home_region": "Todas", "_home_week": "2026-10-05", "familia": "
 
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     # D-151: the route ends in the project's documents.
-    assert dashboard.ROUTE == ["Dashboard", "Ingeniería de datos", "Documentación"]
+    assert dashboard.ROUTE == ["Dashboard", "Ingeniería de datos", "Seguridad", "Documentación"]  # D-201
     assert list(dashboard.WINDOWS) == dashboard.ROUTE + [dashboard.SECTION_PROJECT, dashboard.SECTION_RESOURCES,
                                                          dashboard.SECTION_KPI]
     views = [view for window in dashboard.WINDOWS.values() for view in window]
@@ -508,10 +508,15 @@ def test_d199_the_code_box_survives_any_character_and_locks_after_five_wrong_cod
 
 
 @needs_database
-def test_d200_the_operation_center_has_a_security_tab():
+def test_d201_security_has_its_own_section_with_the_view_and_the_test_plan():
+    assert dashboard.SIDEBAR_TOP_LABELS[dashboard.SECTION_SECURITY] == "Seguridad"
+    assert dashboard.WINDOWS[dashboard.SECTION_SECURITY] == [dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN]
     app = draw_control_page({})
-    assert not app.exception
-    assert [tab.label for tab in app.tabs][:3] == ["Operación", "Plataforma", "Seguridad"]
+    assert not app.exception and [tab.label for tab in app.tabs][:2] == ["Operación", "Plataforma"]
+    for page in (dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN):
+        app = draw_page(page)
+        assert not app.exception and read_page_title(app) == page
+    assert "S-01" in " ".join(block.value for block in app.markdown)
 
 
 @needs_database
@@ -1356,7 +1361,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Step 4 of the refonte: Ingeniería de datos, four pages; DevOps joined Ejecuciones.
     assert 'DevOps y seguridad' not in labels
     for child in ['Resumen semanal', 'Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría',
-                  'Centro de operación',
+                  'Centro de operación', 'Seguridad y vulnerabilidades', 'Plan de pruebas de seguridad',
                   'PRD · Requisitos del producto', 'SAD · Arquitectura', 'ADR · Decisiones de arquitectura']:
         assert child in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
@@ -1368,7 +1373,8 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     folder_buttons = [button for button in app.sidebar.button if str(button.key).startswith('nav_toggle_')]
     toggles = {button.label for button in folder_buttons}
     # «Fuentes» (D-118): the two ODEPA datasets, a folder like every other section.
-    assert toggles == {'⌄  Dashboard', '⌄  Ingeniería de datos', '⌄  Fuentes', '⌄  Documentación'}
+    # D-201: security has its own folder.
+    assert toggles == {'⌄  Dashboard', '⌄  Ingeniería de datos', '⌄  Seguridad', '⌄  Fuentes', '⌄  Documentación'}
     assert all(not button.help for button in folder_buttons)
     css = ' '.join(block.value for block in app.sidebar.markdown)
     assert '[class*="st-key-nav_child_"] {margin-left:0; padding-left:0; border-left:0;}' in css

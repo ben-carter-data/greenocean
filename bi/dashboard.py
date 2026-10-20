@@ -78,6 +78,9 @@ PAGE_SAD = "SAD · Arquitectura"
 PAGE_ADR = "ADR · Decisiones de arquitectura"
 # Step 7 of the refonte: the SAD's scalability section, on its own page.
 PAGE_SCALABILITY = "Escalabilidad"
+# D-201: security has its own section, the attack view and the test plan that backs it.
+PAGE_SECURITY = "Seguridad y vulnerabilidades"
+PAGE_SECURITY_PLAN = "Plan de pruebas de seguridad"
 SECTION_RESOURCES = "Enlaces"
 # A sidebar-only folder (D-118): two external links, no Streamlit page of its own,
 # so it is not part of WINDOWS/ROUTE — rendered specially in show_sidebar_navigation.
@@ -98,12 +101,14 @@ SECTION_CODE = "Código del proyecto"
 SECTION_PYTHON = "Análisis con Python"
 SECTION_TECHNICAL = "Ingeniería de datos"
 SECTION_LINKS = "Documentación"
+SECTION_SECURITY = "Seguridad"
 WINDOWS = {
     SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES],
     SECTION_KPI: [PAGE_KPI],
     REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY, PAGE_SQL],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
+    SECTION_SECURITY: [PAGE_SECURITY, PAGE_SECURITY_PLAN],
     SECTION_LINKS: [PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
                     PAGE_MANUAL],
     SECTION_RESOURCES: [PAGE_LINKS],
@@ -111,21 +116,22 @@ WINDOWS = {
 # The SQL and Python consoles left the app (D-143): the code lives in GitHub and the
 # answers in the dashboard; their old addresses open the Resumen.
 # «Código Python y SQL» left too (D-148): GitHub shows the code; its address opens the GitHub page.
-ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_LINKS]
+ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_SECURITY, SECTION_LINKS]
 # The former KPI page remains as a hidden compatibility destination for old links;
 # its business information now lives in the dashboard and documentation.
 WINDOWS = {window: WINDOWS[window] for window in ROUTE + [SECTION_PROJECT, SECTION_RESOURCES, SECTION_KPI]}
 WINDOW_PATHS = {SECTION_PROJECT: "proyecto", REPORT_WINDOW: "dashboard", SECTION_KPI: "kpis",
-                SECTION_TECHNICAL: "arquitectura-y-operacion",
+                SECTION_TECHNICAL: "arquitectura-y-operacion", SECTION_SECURITY: "seguridad",
                 SECTION_LINKS: "documentacion-y-enlaces", SECTION_RESOURCES: "enlaces"}
 WINDOW_ICONS = {SECTION_PROJECT: ":material/assignment:", REPORT_WINDOW: ":material/dashboard:",
                 SECTION_KPI: ":material/insights:",
-                SECTION_TECHNICAL: ":material/account_tree:", SECTION_LINKS: ":material/menu_book:", SECTION_RESOURCES: ":material/link:"}
+                SECTION_TECHNICAL: ":material/account_tree:", SECTION_SECURITY: ":material/lock:", SECTION_LINKS: ":material/menu_book:", SECTION_RESOURCES: ":material/link:"}
 ROUTE_LEADS = {SECTION_PROJECT: "qué problema resuelve y qué se construyó",
                SECTION_LINKS: "los requisitos, la arquitectura y las decisiones del proyecto",
                SECTION_KPI: "qué mide cada KPI, cómo se calcula y qué límites tiene",
                REPORT_WINDOW: "los precios y cambios de la semana",
-               SECTION_TECHNICAL: "pipeline, modelo estrella, DevOps y operación"}
+               SECTION_TECHNICAL: "pipeline, modelo estrella, DevOps y operación",
+               SECTION_SECURITY: "qué podría intentar un atacante y las pruebas que lo detienen"}
 WINDOW_OF_VIEW = {view: window for window, views in WINDOWS.items() for view in views}
 VIEW_PARAMETER = "vista"
 # Session flag: the window being drawn is a report (Dashboard), so every view fits one
@@ -167,6 +173,7 @@ PAGE_ICONS = {
     PAGE_DOCUMENTATION: ":material/menu_book:",
     PAGE_PRD: ":material/assignment:", PAGE_SAD: ":material/account_tree:", PAGE_ADR: ":material/gavel:",
     PAGE_SCALABILITY: ":material/trending_up:", PAGE_SQL: ":material/terminal:",
+    PAGE_SECURITY: ":material/lock:", PAGE_SECURITY_PLAN: ":material/fact_check:",
     PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
     PAGE_BUSINESS: ":material/assignment:",
     PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
@@ -180,6 +187,7 @@ PAGE_ICONS = {
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
+    PAGE_SECURITY: "seguridad-y-vulnerabilidades", PAGE_SECURITY_PLAN: "plan-de-pruebas-de-seguridad",
     PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SCALABILITY: "escalabilidad", PAGE_SQL: "consultas-sql",
     PAGE_HOME: "dashboard", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
@@ -6547,21 +6555,23 @@ def show_runs_page(mode):
     with what it does and where to act, and beside it the facts and the manual run."""
     show_compact_page_header("Centro de operación", "El recorrido de cada martes, del lanzamiento "
                              "al panel: el estado de cada paso, su log y dónde actuar.")
-    runs_tab, platform_tab, security_tab = st.tabs(["Operación", "Plataforma", "Seguridad"])
+    runs_tab, platform_tab = st.tabs(["Operación", "Plataforma"])
     with runs_tab:
         show_runs_tab(mode)
     with platform_tab:
         show_devops_tab(mode)
-    with security_tab:
-        show_security_tab(mode)
 
 
-def show_security_tab(mode):
-    """What a visitor could try, the barriers that stop it and the test behind each (D-200)."""
+def show_security_page(mode):
+    """What a visitor could try, the barriers that stop it and the test behind each (D-200, D-201)."""
+    show_compact_page_header(PAGE_SECURITY, "Qué podría intentar un visitante y qué lo detiene.")
     st.caption("Cada puerta que podría tentar a un atacante, las barreras que la cierran y la prueba automática que "
                "las ataca en cada push. El código es público: la seguridad no depende de esconder cómo está hecho, "
                "sino de las claves, que nunca aparecen.")
     st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=590)
+    st.markdown('<p class="doc-source">El método, los casos de prueba y los resultados de la última revisión: '
+                + build_link_html(f"{PAGE_SECURITY_PLAN} →", build_page_address(PAGE_SECURITY_PLAN)) + '</p>',
+                unsafe_allow_html=True)
 
 
 def show_runs_tab(mode):
@@ -7397,6 +7407,7 @@ PROJECT_DOCUMENTS = {
     PAGE_PRD: ("PRD.md", "Qué resuelve el producto, para quién, con qué alcance y cómo se verifica."),
     PAGE_SAD: ("SAD.md", "Cómo está construido: contexto, capas, modelo de datos, ejecución y calidad."),
     PAGE_ADR: ("ADR.md", "Las decisiones que dieron forma a la arquitectura, con su contexto y sus consecuencias."),
+    PAGE_SECURITY_PLAN: ("SEGURIDAD.md", "Cómo se buscan las vulnerabilidades, cómo se corrigen y cómo se demuestra en cada push que siguen cerradas."),
 }
 DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 
@@ -7480,6 +7491,8 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_SAD: lambda mode: show_project_document(mode, PAGE_SAD),
     PAGE_ADR: lambda mode: show_project_document(mode, PAGE_ADR),
     PAGE_SCALABILITY: show_scalability_page,
+    PAGE_SECURITY: lambda mode: show_security_page(mode),
+    PAGE_SECURITY_PLAN: lambda mode: show_project_document(mode, PAGE_SECURITY_PLAN),
     PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(mode),
     PAGE_HOME: show_home_page,
     PAGE_DATA: show_data_page,
@@ -7943,6 +7956,8 @@ SIDEBAR_TREE = [
           # «El proyecto» and the old «Documentación» folder of six pages are now
           # three, one per reader (D-105, D-110): the same folder pattern as every
           # other section, not a special-cased flat link.
+          # Security has its own folder (D-201): what a visitor could try and the method that proves it is stopped.
+          (SECTION_SECURITY, [PAGE_SECURITY, PAGE_SECURITY_PLAN]),
           (SECTION_LINKS, [PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY]),
           # The sources close the menu (D-186): they lead out of the app.
           (SECTION_SOURCES, SOURCE_LINKS),
@@ -7951,7 +7966,7 @@ SIDEBAR_TREE = [
           ]),
 ]
 SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingeniería de datos",
-                      SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación",
+                      SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación", SECTION_SECURITY: "Seguridad",
                       SECTION_RESOURCES: "GitHub"}
 SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Precios e inflación",
                   PAGE_DIAGRAMS: "Pipeline y linaje", PAGE_OPERATIONS: "Calidad y auditoría",
@@ -7975,6 +7990,7 @@ def read_current_view(window):
 SECTION_COLORS = {
     REPORT_WINDOW: ("#72e7ad", "#167046"),
     SECTION_TECHNICAL: ("#d4b5ff", "#7a2fc8"),
+    SECTION_SECURITY: ("#ffb3d9", "#b0256f"),
     SECTION_LINKS: ("#c3cbd8", "#4a5568"),
     SECTION_SOURCES: ("#7cc4ff", "#1d5fbf"),
 }
