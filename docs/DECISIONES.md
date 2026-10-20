@@ -1466,3 +1466,10 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Problema:** el diagrama dibujaba un solo CSV de ODEPA y el rótulo del INE quedaba pegado al logo de ODEPA, así que no se veía que el pipeline consume tres fuentes.
 - **Decisión:** cada fuente tiene su logo y su nombre: «ODEPA consumidor» y «ODEPA mayorista», cada una con su hoja CSV, y «INE · IPC». Los dos CSV de ODEPA llegan a `raw.db`; el índice del INE va directo a la capa Parquet. El diagrama gana altura (más separación entre las tres fuentes) y las columnas se separan para que ninguna etiqueta de flecha toque un logo.
 
+## D-194 · Paridad sin ambigüedad y el IPC que no pasa por SQLite
+
+- **Fecha:** 2026-10-20.
+- **Problema:** la línea de paridad terminaba en un hueco entre logos y no se sabía qué comparaba; y no se entendía por qué el IPC del INE va a Parquet sin pasar por SQLite como los CSV de ODEPA.
+- **Decisión (paridad):** el respaldo SQLite pasa a estar justo bajo `datos.duckdb` y la paridad es una línea recta vertical entre los dos, con punta en cada extremo y su etiqueta en medio. El grupo de las tres procedencias de tablas cuelga sobre el archivo, con una flecha que baja a él: las tablas viven dentro de ese archivo. La flecha del ETL en Python va de `raw.db` al respaldo.
+- **Decisión (IPC):** no es un paso saltado sino de diseño. `raw.db` es el aterrizaje de los CSV de ODEPA, que baja el agente; el IPC son dos CSV pequeños del INE que `etl/ine.py` escribe directo en Parquet. Si el INE no responde, el pipeline rehace ese Parquet desde `ine_ipc_source`, que se guarda en la base servida. La flecha del INE dice «directo a Parquet, sin pasar por SQLite» y su ayuda lo explica.
+

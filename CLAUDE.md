@@ -10,7 +10,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 - **Pipeline:** ingesta en Python → aterrizaje `etl/raw.db` (SQLite) → bronce en Parquet → dbt Core sobre DuckDB (staging → intermedio → marts, 31 pruebas) → base servida `etl/datos.duckdb`.
 - **Panel:** Streamlit (`bi/dashboard.py`), que lee `etl/datos.duckdb` en solo lectura.
 - **Orquestación:** GitHub Actions, cada martes (`.github/workflows/semanal.yml`).
-- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md` y `docs/ADR.md`. Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-193). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
+- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md` y `docs/ADR.md`. Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-194). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
 - `CLAUDE_HANDOFF.md` es un relevo antiguo (15-10-2026), conservado solo como historia. Este archivo y `docs/DECISIONES.md` mandan.
 
 ## Instalar y ejecutar

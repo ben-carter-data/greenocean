@@ -17,6 +17,7 @@ from bi import brand_icons, charts, operation_center
 STAGE_WIDTH = 1000
 STAGE_HEIGHT = 640
 MAIN_Y = 235
+BACKUP_Y = MAIN_Y + 270
 LOGO = 92
 HALF = LOGO // 2
 GAP = 8  # between a logo and the tip of an arrow
@@ -53,7 +54,9 @@ NODES = [
      "Es la otra fuente oficial: permite comparar lo que paga el consumidor con lo que cuesta al por mayor."),
     ("ine", "ine", "INE · IPC", "índice mensual", (95, 52),
      "El índice de precios de alimentos, un valor por mes.",
-     "Sirve para pasar los precios a pesos reales y separar la inflación de una subida de verdad."),
+     "Sirve para pasar los precios a pesos reales y separar la inflación de una subida de verdad. No pasa por SQLite: "
+     "son dos CSV pequeños que el pipeline escribe directo en Parquet. Si el INE no responde una semana, se rehace "
+     "desde ine_ipc_source, que se guarda en la base servida."),
     ("raw", "sqlite", "SQLite", "etl/raw.db", (275, MAIN_Y),
      "Las filas de los CSV exactamente como se publican, sin limpiar. Es un archivo de unos 665 MB.",
      "Una copia fiel permite auditar y reconstruir todo desde el origen. No se sube a GitHub por su tamaño."),
@@ -70,7 +73,7 @@ NODES = [
     ("github", "github", "GitHub", "el repositorio", (915, MAIN_Y),
      "Los dos archivos de base de datos publicados, con todo su historial.",
      "La carga semanal los sube con un commit: así quedan versionados y la app publicada los recibe."),
-    ("backup", "sqlite", "SQLite · respaldo", "etl/datos.db", (275, 505),
+    ("backup", "sqlite", "SQLite · respaldo", "etl/datos.db", (755, BACKUP_Y),
      "Los mismos precios semanales, calculados otra vez por el ETL en Python (etl/etl.py), sin dbt.",
      "Es una segunda opinión independiente: si dbt y el ETL no coinciden, algo está mal. El panel no lo lee."),
 ]
@@ -88,28 +91,31 @@ def build_arrows():
         arrows.append((f"M{x1 + HALF + GAP} {y} H{x2 - HALF - GAP}", label, ((x1 + x2) / 2, y - 14)))
     ine_x, ine_y = PLACES["ine"]
     bronze_x, bronze_y = PLACES["bronze"]
-    arrows.append((f"M{ine_x + HALF + GAP} {ine_y} H{bronze_x} V{bronze_y - HALF - 4}", "índice mensual",
-                   ((ine_x + bronze_x) / 2, ine_y - 12)))
+    arrows.append((f"M{ine_x + HALF + GAP} {ine_y} H{bronze_x} V{bronze_y - HALF - 4}", "directo a Parquet, sin pasar por SQLite",
+                   ((ine_x + bronze_x) / 2 + 40, ine_y - 12)))
     wholesale_x, wholesale_y = PLACES["wholesale"]
     raw_edge = PLACES["raw"][0] - HALF - GAP
     arrows.append((f"M{wholesale_x + HALF + GAP} {wholesale_y} H{(wholesale_x + PLACES['raw'][0]) / 2 + 20} V{PLACES['raw'][1] + 14} "
                    f"H{raw_edge}", "descarga", (wholesale_x + HALF + GAP + 28, wholesale_y - 14)))
     raw_x, raw_y = PLACES["raw"]
     backup_y = PLACES["backup"][1]
-    arrows.append((f"M{raw_x} {raw_y + 140} V{backup_y - HALF - 6}", "ETL en Python", (raw_x + 56, (raw_y + 140 + backup_y - HALF) / 2 + 4)))
+    backup_x = PLACES["backup"][0]
+    arrows.append((f"M{raw_x} {raw_y + 140} V{backup_y} H{backup_x - HALF - GAP}", "ETL en Python en SQLite",
+                   ((raw_x + backup_x) / 2 - 40, backup_y - 14)))
     return arrows
 
 
 ARROWS = build_arrows()
-# The parity line: from the backup to the left end of the group's brace.
-BRACE_Y = MAIN_Y + 142
-# It goes round the left of the group of three and ends on the DuckDB file itself, under
-# its size, so it points at the whole database and not at one of its table groups.
-SERVED_BOTTOM = MAIN_Y + 128
-PARITY_X = PLACES["served"][0] - 205
-PARITY_PATH = (f"M{PLACES['backup'][0] + HALF + GAP} {PLACES['backup'][1]} H{PARITY_X} "
-               f"V{SERVED_BOTTOM} H{PLACES['served'][0] - 52}")
-PARITY_LABEL = (440, PLACES["backup"][1] - 13)
+# The group of the three table origins hangs above the DuckDB file, with a brace under it.
+GROUP_TOP = 22
+BRACE_Y = 150
+SERVED_X = PLACES["served"][0]
+# Parity: one straight line between the DuckDB file (under its size) and the SQLite backup,
+# with a head at each end, so it is plain which two stores are compared.
+PARITY_PATH = f"M{SERVED_X} {MAIN_Y + 142} V{PLACES['backup'][1] - HALF - 8}"
+PARITY_LABEL = (SERVED_X, (MAIN_Y + 142 + PLACES["backup"][1] - HALF - 8) / 2)
+# The brace to the file: the tables live inside it.
+TABLES_PATH = f"M{SERVED_X} {BRACE_Y + 8} V{MAIN_Y - HALF - 8}"
 
 
 def thousands(value):
@@ -179,7 +185,7 @@ html, body {{ margin:0; background:transparent; color:{text};
   opacity:1; transform:translate(-50%, 0); }}
 .node:hover .tip.start, .node:focus .tip.start, .node:hover .tip.end, .node:focus .tip.end {{ transform:translate(0, 0); }}
 .node:hover, .node:focus, .mini:hover, .mini:focus, .parity:hover, .parity:focus {{ z-index:40; }}
-.group {{ z-index:5; position:absolute; display:flex; gap:6px; left:{755 / STAGE_WIDTH * 100}%; top:{(MAIN_Y + 158) / STAGE_HEIGHT * 100}%;
+.group {{ z-index:5; position:absolute; display:flex; gap:6px; left:{755 / STAGE_WIDTH * 100}%; top:{GROUP_TOP / STAGE_HEIGHT * 100}%;
   transform:translateX(-50%); }}
 .mini {{ position:relative; width:124px; display:flex; flex-direction:column; align-items:center; text-align:center; outline:none; }}
 .mini .logo {{ width:58px; height:58px; filter:drop-shadow(0 8px 8px {shadow}); }}
@@ -191,7 +197,7 @@ html, body {{ margin:0; background:transparent; color:{text};
 .mini .tip li {{ display:flex; justify-content:space-between; gap:10px; }}
 .mini .tip li span {{ color:{muted}; }}
 .brace {{ position:absolute; left:{755 / STAGE_WIDTH * 100}%; top:{BRACE_Y / STAGE_HEIGHT * 100}%; width:344px; height:8px;
-  transform:translateX(-50%); border:1px solid {border}; border-bottom:0; border-radius:8px 8px 0 0; }}
+  transform:translateX(-50%); border:1px solid {border}; border-top:0; border-radius:0 0 8px 8px; }}
 .parity {{ position:absolute; left:{PARITY_LABEL[0] / STAGE_WIDTH * 100}%; top:{PARITY_LABEL[1] / STAGE_HEIGHT * 100}%;
   transform:translate(-50%, -50%); padding:3px 12px; border-radius:999px; border:1px solid {border}; background:{card};
   font-size:12.5px; color:{ink}; outline:none; cursor:default; z-index:2; }}
@@ -224,7 +230,7 @@ def build_group_html(counts):
     """The three origins of the served tables, as small logos under the DuckDB file."""
     minis = []
     for position, (key, label, brand, names, what, why) in enumerate(ORIGINS):
-        side = "up end" if position == len(ORIGINS) - 1 else "up"
+        side = "end" if position == len(ORIGINS) - 1 else ""
         rows = "".join(f'<li>{html.escape(name)}<span>{thousands(counts.get(name))}</span></li>' for name in names)
         total = sum(counts.get(name, 0) for name in names)
         minis.append(f'<div class="mini" tabindex="0">{brand_logo(brand, "-" + key)}<b>{html.escape(label)}</b>'
@@ -252,7 +258,8 @@ def build_map_html(palette, counts, layers, tests, sizes=None):
     arrows = "".join(f'<path class="arrow" d="{path}" marker-end="url(#head)"/>'
                      f'<text class="arrow-label" x="{x}" y="{y}">{html.escape(label)}</text>'
                      for path, label, (x, y) in ARROWS)
-    parity = f'<path class="arrow dashed" d="{PARITY_PATH}" marker-start="url(#head)" marker-end="url(#head)"/>'
+    parity = (f'<path class="arrow dashed" d="{PARITY_PATH}" marker-start="url(#head)" marker-end="url(#head)"/>'
+              f'<path class="arrow" d="{TABLES_PATH}" marker-end="url(#head)"/>')
     parity_label = ('<div class="parity" tabindex="0">Paridad<span class="tip" role="tooltip"><b>Qué hace</b>'
                     'Compara el respaldo SQLite con DuckDB: mismos precios, mismos rechazos y misma suma.'
                     '<b>Por qué</b>Si dos caminos independientes dan lo mismo, la carga es confiable. La página '
