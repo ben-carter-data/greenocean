@@ -294,7 +294,7 @@ def test_d097_model_page_is_one_panoramic_diagram():
     app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: "Modelo estrella"})
     assert not app.exception and not app.tabs and not app.expander
     joined = " ".join(block.value for block in app.markdown)
-    assert joined.count('aria-label="Modelo estrella de datos.db"') == 1
+    assert joined.count('aria-label="Modelo estrella de datos.duckdb"') == 1
     assert "<script" not in joined
     assert joined.count("Auditoría de cargas".upper()) == 1
     # D-147: one panoramic diagram; no table picker and no SQL. Each table explains

@@ -386,7 +386,7 @@ MATCH_DETAILS = (
     "**Reglas que lo hacen:** RN-02 (nombres), RN-03 a RN-05 (unidades), RN-07 y RN-08 "
     "(semanas) y RN-06 (margen solo con la misma unidad).  \n"
     "**Dónde ocurre:** `etl/etl.py` lee `raw_wholesale` y `raw_consumer` de `raw.db` y deja "
-    "el resultado en `weekly_price` de `datos.db`.")
+    "el resultado en `weekly_price` del respaldo `datos.db`; dbt hace lo mismo en `datos.duckdb`, la base que lee el panel.")
 # The quality rules in the order the ETL applies them (etl/etl.py), then the one
 # that lives in the margin query: (stage, what it does, rules, where it happens).
 RULE_STAGES = [
@@ -2819,9 +2819,15 @@ def show_cover_page(mode, pages=None):
                 "La implementación actual está especializada en precios ODEPA; todavía no es una plantilla intercambiable solo cambiando una URL.")
 
 
+IPC_TABLE_DEFINITIONS = {
+    "ipc_weekly": "el deflactor de cada semana: el IPC del mes de su lunes frente al último mes publicado, "
+                  "para expresar los precios en pesos reales",
+    "ipc_monthly": "el IPC de alimentos del INE como una sola serie mensual, base 2023 = 100",
+    "ine_ipc_source": "las filas del IPC tal como se leyeron del INE, para rehacer la capa bronce si el INE no responde",
+}
 TABLE_ROLES = {"weekly_price": "hechos", "dim_product": "dimensión", "dim_region": "dimensión",
               "dim_channel": "dimensión", "dim_date": "dimensión", "etl_run": "auditoría",
-              "rejection": "auditoría"}
+              "rejection": "auditoría", "ipc_weekly": "IPC", "ipc_monthly": "IPC", "ine_ipc_source": "IPC"}
 
 
 def build_architecture_header(row_counts, latest_run):
@@ -2877,13 +2883,14 @@ def show_architecture_page(mode):
     """The star model as one panoramic view (D-147): every table, column, key and row
     count is in the drawing; each table explains itself on hover. No table picker,
     no SQL."""
-    row_counts = count_cached_table_rows(get_database_version())
+    row_counts = read_table_row_counts()
     definitions = project.parse_definitions(project.read_section(
         project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos"))
     columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
+    definitions = {**IPC_TABLE_DEFINITIONS, **definitions}
     tooltips = {table: f"{table} · {TABLE_ROLES[table]} · {charts.format_thousands(row_counts[table])} filas\n"
                        f"{definitions.get(table, '').capitalize()}"
-                for table in project.TABLE_NAMES}
+                for table in project.TABLE_NAMES + project.IPC_TABLE_NAMES}
     st.markdown(build_architecture_css(mode), unsafe_allow_html=True)
     st.markdown(build_architecture_header(row_counts, read_latest_run()), unsafe_allow_html=True)
     # Two views of the same database (D-189): where each table comes from, and how
@@ -2907,7 +2914,7 @@ def show_architecture_page(mode):
                     + '</span></div>', unsafe_allow_html=True)
 
 
-MODEL_VIEWS = ["Mapa de la base", "Modelo estrella"]
+MODEL_VIEWS = ["Dónde viven los datos", "Modelo estrella"]
 MODEL_VIEW_KEY = "model_view"
 
 
@@ -2922,9 +2929,14 @@ def read_database_map(database_version):
 
 
 @st.cache_data
-def count_cached_table_rows(database_version):
-    """Rows of each table of the data warehouse, counted once per database."""
+def count_cached_table_rows(database_version, tables):
+    """Rows of each table of the data warehouse, counted once per database. The list of
+    tables is part of the cache key: a table added by a deploy never meets an old count."""
     return project.count_table_rows()
+
+
+def read_table_row_counts():
+    return count_cached_table_rows(get_database_version(), tuple(project.TABLE_NAMES + project.IPC_TABLE_NAMES))
 
 
 KPI_LIMITS = {
@@ -3447,7 +3459,7 @@ def build_rule_card_html(rule, guide_row):
     if evidence[:2].istitle():
         # After the colon a sentence goes on in lower case; codes and numbers stay.
         evidence = evidence[0].lower() + evidence[1:]
-    text = (f"En datos.db: {evidence}" if evidence != "—"
+    text = (f"En datos.duckdb: {evidence}" if evidence != "—"
             else "La base no guarda una cifra para esta regla.")
     return build_info_card_html(guide_row["Qué hace con la fila"], text, label=rule)
 
@@ -7254,7 +7266,7 @@ def build_document_diagram_html(name, mode):
         return zoom.build_zoom_frame_html(architecture.build_journey_svg(
             states, figures, mode, animate_flow=False), "diagram-wide")
     if name == "modelo":
-        row_counts = count_cached_table_rows(get_database_version())
+        row_counts = read_table_row_counts()
         columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
         return star_model.build_star_svg(columns, row_counts, mode)
     return ""
