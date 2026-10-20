@@ -508,6 +508,13 @@ def test_d199_the_code_box_survives_any_character_and_locks_after_five_wrong_cod
 
 
 @needs_database
+def test_d200_the_operation_center_has_a_security_tab():
+    app = draw_control_page({})
+    assert not app.exception
+    assert [tab.label for tab in app.tabs][:3] == ["Operación", "Plataforma", "Seguridad"]
+
+
+@needs_database
 def test_d149_a_successful_run_says_so_and_never_shows_the_token():
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="ok", dialog=True)
     text = open_run_dialog(app, "clave")

@@ -34,7 +34,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                audit_trace, database_crossings, database_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
+                audit_trace, database_crossings, database_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -6547,11 +6547,21 @@ def show_runs_page(mode):
     with what it does and where to act, and beside it the facts and the manual run."""
     show_compact_page_header("Centro de operación", "El recorrido de cada martes, del lanzamiento "
                              "al panel: el estado de cada paso, su log y dónde actuar.")
-    runs_tab, platform_tab = st.tabs(["Operación", "Plataforma y seguridad"])
+    runs_tab, platform_tab, security_tab = st.tabs(["Operación", "Plataforma", "Seguridad"])
     with runs_tab:
         show_runs_tab(mode)
     with platform_tab:
         show_devops_tab(mode)
+    with security_tab:
+        show_security_tab(mode)
+
+
+def show_security_tab(mode):
+    """What a visitor could try, the barriers that stop it and the test behind each (D-200)."""
+    st.caption("Cada puerta que podría tentar a un atacante, las barreras que la cierran y la prueba automática que "
+               "las ataca en cada push. El código es público: la seguridad no depende de esconder cómo está hecho, "
+               "sino de las claves, que nunca aparecen.")
+    st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=590)
 
 
 def show_runs_tab(mode):
