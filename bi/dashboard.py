@@ -6451,54 +6451,61 @@ def show_run_now_dialog(token, access_code):
 
 
 def show_admin_card():
-    """The manual run beside its name, the reload under it (D-149); compact, so the
-    page fits one screen beside the run's path (D-165). The pipeline also runs by
-    itself every Tuesday."""
+    """One door for the author (D-202): before the control code, only «Acceso del autor»; after
+    it, the manual run (D-149) and the administration links. The reload is harmless and stays
+    for everyone. The pipeline also runs by itself every Tuesday."""
     access_code = get_secret(SECRET_CONTROL_CODE)
     token = get_secret(SECRET_GITHUB_TOKEN)
-    ready = bool(access_code and token)
-    with st.container(key="runs_admin", horizontal=True, vertical_alignment="center", gap="small"):
-        if st.button("Ejecutar pipeline ahora", type="primary", icon=":material/power_settings_new:",
-                     key="runs_run_now", disabled=not ready,
-                     help=("Pide la clave de control y lanza el pipeline en GitHub Actions." if ready else
-                           "Se activa cuando el autor guarda la clave de control y su token de "
-                           "GitHub en los secretos del panel.")):
-            show_run_now_dialog(token, access_code)
-        st.markdown('<div class="run-now-label">Ejecutar pipeline ahora</div><div class="run-now-note">'
-                    + ("Con tu clave de control." if ready else "Requiere la clave de control del autor.")
-                    + '</div>', unsafe_allow_html=True)
+    unlocked = bool(access_code and st.session_state.get(ADMIN_UNLOCKED))
+    if unlocked:
+        with st.container(key="runs_admin", horizontal=True, vertical_alignment="center", gap="small"):
+            if st.button("Ejecutar pipeline ahora", type="primary", icon=":material/power_settings_new:",
+                         key="runs_run_now", disabled=not token,
+                         help="Lanza el pipeline en GitHub Actions." if token else
+                              "Falta el token de GitHub en los secretos del panel."):
+                show_run_now_dialog(token, access_code)
+            st.markdown('<div class="run-now-label">Ejecutar pipeline ahora</div><div class="run-now-note">'
+                        'Acceso del autor abierto.</div>', unsafe_allow_html=True)
     with st.container(key="runs_tools", horizontal=True, gap="small"):
         st.button("Recargar datos", icon=":material/refresh:", key="runs_reload",
                   width="stretch", on_click=reload_panel_data,
                   help="Vuelve a leer la base guardada; no ejecuta el pipeline.")
-        show_author_accesses(access_code)
+        show_author_access(access_code, unlocked)
     if st.session_state.pop(RELOADED_NOTICE, False):
         latest = read_latest_run()
         st.toast(f"Datos recargados · base del {format_chile_time(parse_run_start(latest['started_at']))}.",
                  icon=":material/check_circle:")
 
 
-def show_author_accesses(access_code):
-    """«Accesos del autor» (D-165): Streamlit (manage app, secrets), the GitHub tokens and
-    the workflow, behind the control code (T-54), without having to run the pipeline."""
-    with st.popover("Accesos del autor", icon=":material/lock:", width="stretch",
-                    help="Dónde administrar la app publicada, los secretos y los tokens. Pide la clave de control."):
+def lock_author_access():
+    st.session_state[ADMIN_UNLOCKED] = False
+
+
+def show_author_access(access_code, unlocked):
+    """«Acceso del autor» (D-165, D-202): the control code opens the manual run and the
+    administration links together; each link still asks for its own login."""
+    if unlocked:
+        with st.popover("Enlaces del autor", icon=":material/lock_open:", width="stretch",
+                        help="Administrar la app publicada, los secretos y los tokens."):
+            for link in ADMIN_LINKS:
+                st.markdown(f'<a href="{html.escape(link["url"], quote=True)}" target="_blank" rel="noopener noreferrer">'
+                            f'<b>{html.escape(link["name"])}</b></a> · {html.escape(link["description"])}',
+                            unsafe_allow_html=True)
+            st.caption("Cada enlace pide tu propia sesión de GitHub o de Streamlit.")
+            st.button("Cerrar acceso", icon=":material/lock:", key="author_access_close", on_click=lock_author_access)
+        return
+    with st.popover("Acceso del autor", icon=":material/lock:", width="stretch",
+                    help="Lanzar el pipeline y los enlaces de administración, con la clave de control."):
         if not access_code:
-            st.caption("Se activan cuando el autor guarda la clave de control en los secretos del panel.")
+            st.caption("Se activa cuando el autor guarda la clave de control en los secretos del panel.")
             return
-        if not st.session_state.get(ADMIN_UNLOCKED):
-            typed_code = st.text_input("Clave de control", type="password", key="author_access_code")
-            if st.button("Abrir", key="author_access_open", icon=":material/lock_open:"):
-                ok, message = get_login_guard().check(typed_code, access_code)
-                if ok:
-                    st.session_state[ADMIN_UNLOCKED] = True
-                    st.rerun()
-                st.error(message, icon=":material/lock:")
-            return
-        for link in ADMIN_LINKS:
-            st.markdown(f'<a href="{html.escape(link["url"], quote=True)}" target="_blank" rel="noopener noreferrer">'
-                        f'<b>{html.escape(link["name"])}</b></a> · {html.escape(link["description"])}',
-                        unsafe_allow_html=True)
+        typed_code = st.text_input("Clave de control", type="password", key="author_access_code")
+        if st.button("Abrir", key="author_access_open", icon=":material/lock_open:"):
+            ok, message = get_login_guard().check(typed_code, access_code)
+            if ok:
+                st.session_state[ADMIN_UNLOCKED] = True
+                st.rerun()
+            st.error(message, icon=":material/lock:")
 
 
 def build_runs_css(mode):

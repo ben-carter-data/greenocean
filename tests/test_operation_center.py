@@ -122,4 +122,5 @@ def test_d165_the_page_draws_the_stage_beside_the_facts_and_the_manual_run():
     text = " ".join(block.value for block in app.markdown)
     assert "Centro de operación" in text and "Próxima ejecución" in text
     assert "Datos publicados" in text and "Última carga" in text
-    assert app.button(key="runs_run_now").label == "Ejecutar pipeline ahora"
+    # D-202: the manual run waits behind «Acceso del autor».
+    assert "runs_run_now" not in [button.key for button in app.button] and app.get("popover")

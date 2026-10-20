@@ -5,7 +5,7 @@ Cómo se buscan las vulnerabilidades del panel publicado, cómo se corrigen y c�
 | Ficha del documento | |
 |---|---|
 | Producto | GreenOcean, panel de inteligencia de precios de alimentos |
-| Versión | Revisión del 20-10-2026 (decisiones D-199 y D-200) |
+| Versión | Revisión del 20-10-2026 (decisiones D-199 a D-202) |
 | Autoría | El autor, con el registro completo de decisiones en `docs/DECISIONES.md` |
 | Documentos hermanos | PRD (qué resuelve), SAD (cómo está construido) y ADR (por qué se decidió así) |
 | Referencia | OWASP Top 10 (2021), la lista estándar de los riesgos más comunes de una aplicación web |
@@ -35,7 +35,7 @@ Un visitante tiene tres puertas. Cada una tiene tres barreras independientes: si
 | Puerta | Qué intentaría un atacante | Barreras |
 |---|---|---|
 | Consultas SQL | Leer el archivo de secretos del servidor, escribir archivos o salir a internet desde el motor | Filtro de la consulta · motor sin acceso externo y con la configuración bloqueada · solo lectura con topes de tiempo, memoria y filas |
-| Clave de control | Adivinar la clave probando sin parar | Comparación en tiempo constante · 5 intentos cada 15 minutos para todos los visitantes · desbloqueo solo para esa sesión |
+| Clave de control | Adivinar la clave probando sin parar | Comparación en tiempo constante · 5 intentos cada 15 minutos para todos los visitantes · una sola puerta: el botón del pipeline y los enlaces aparecen solo tras la clave, y solo en esa sesión |
 | Código público | Encontrar claves en el repositorio o en los mensajes de error | Secretos fuera de git · token nunca en pantalla · permisos mínimos del workflow |
 
 ## 4. Método
@@ -61,6 +61,7 @@ La revisión sigue cinco pasos, siempre en este orden.
 | S-07 | Código público | Provocar un error de GitHub para leer el token | El mensaje dice el código y la causa, nunca el token | A09 Fallas de registro | `test_control.py` |
 | S-08 | Código público | Abusar de los permisos del workflow semanal | Solo puede escribir contenido y crear issues | A01 Control de acceso | `test_security.py` |
 | S-09 | Vista Seguridad | Afirmar una barrera sin prueba | Cada barrera de la vista apunta a una prueba que existe | Rigor del método | `test_security.py` |
+| S-10 | Clave de control | Lanzar el pipeline sin la clave | El botón no existe antes de la clave; la ventana de ejecución vuelve a pedirla | A01 Control de acceso | `test_dashboard.py` |
 
 ## 6. Criterios de aceptación
 

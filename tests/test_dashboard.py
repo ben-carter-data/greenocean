@@ -482,17 +482,35 @@ def open_run_dialog(app, code):
     return read_page_text(app) + " ".join(str(element.proto) for element in app.get("success"))
 
 
+def button_keys(app):
+    return [button.key for button in app.button]
+
+
+def open_author_access(app, code):
+    app.text_input(key="author_access_code").input(code).run()
+    app.button(key="author_access_open").click().run()
+    return read_page_text(app)
+
+
 @needs_database
-def test_d149_the_manual_run_is_one_visible_button_and_asks_for_the_code():
+def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN})
     assert not app.exception
-    button = app.button(key="runs_run_now")
-    assert button.label == "Ejecutar pipeline ahora" and not button.disabled
+    # Before the code: no run button and no administration address, only the door.
+    assert "runs_run_now" not in button_keys(app) and "author_access_open" in button_keys(app)
     assert not [address for address in ADMIN_ADDRESSES if address in read_page_text(app)]
+    text = open_author_access(app, "equivocada")
+    assert not app.exception and "Clave incorrecta" in text and "runs_run_now" not in button_keys(app)
+    text = open_author_access(app, "clave")
+    assert not app.exception
+    assert app.button(key="runs_run_now").label == "Ejecutar pipeline ahora" and not app.button(key="runs_run_now").disabled
+    assert all(address in read_page_text(app) for address in ADMIN_ADDRESSES)
+    app.button(key="author_access_close").click().run()
+    assert "runs_run_now" not in button_keys(app)
+    # The dialog itself still asks for the code when the session is not open (defense in depth).
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
     text = open_run_dialog(app, "equivocada")
     assert not app.exception and "Clave incorrecta" in text
-    assert not [address for address in ADMIN_ADDRESSES if address in text]
 
 
 @needs_database
@@ -538,7 +556,8 @@ def test_d149_a_failed_run_says_it_did_not_complete():
 @needs_database
 def test_d149_without_secrets_the_run_is_disabled_and_reload_confirms():
     app = draw_control_page({})
-    assert app.button(key="runs_run_now").disabled
+    assert "runs_run_now" not in button_keys(app) and "author_access_open" not in button_keys(app)
+    assert "Se activa cuando el autor guarda la clave" in read_page_text(app)
     app.button(key="runs_reload").click().run()
     assert not app.exception
     assert any("Datos recargados" in str(toast.proto) for toast in app.get("toast"))
