@@ -1669,7 +1669,7 @@ def test_d191_file_sizes_for_the_storage_diagram():
 
 @needs_database
 def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relationship_diagram():
-    assert dashboard.MODEL_VIEWS == ["Dónde viven los datos", "Modelo estrella", "Entidad-relación"]
+    assert dashboard.MODEL_VIEWS == ["Dónde viven los datos", "Modelo estrella", "Entidad-relación", "Cruces entre bases"]
     app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: "Entidad-relación"})
     assert not app.exception and not app.tabs
     joined = " ".join(block.value for block in app.markdown)

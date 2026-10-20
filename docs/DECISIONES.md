@@ -1488,3 +1488,9 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Honestidad:** si el archivo CSV de origen no está en el servidor, el paso lo dice («no se puede comprobar aquí») en vez de mostrarlo como verificado. La cifra de la auditoría manual lleva su fecha (18-10-2026: 400 de 400).
 - **Código:** `bi/quality_live.py` y `bi/audit_trace.py`; `bi/quality_view.py` conserva la vista de evidencias dentro de Auditoría.
 - **Pruebas:** `tests/test_quality_audit.py` (umbrales, degradación, huella del archivo, traza de seis pasos) y las pruebas de página actualizadas.
+
+## D-197 · Cruces entre bases: dónde dos bases se tocan
+- **Problema:** el modelo estrella y el entidad-relación describen una sola base, `datos.duckdb`. Pero el proyecto tiene varias (raw.db, Parquet de bronce, la base de trabajo de dbt, `datos.duckdb` y el respaldo `datos.db`), y faltaba mostrar dónde se cruzan.
+- **Decisión:** la página del modelo gana una cuarta pestaña, «Cruces entre bases», con los siete cruces reales: ODEPA → raw.db, raw.db → bronce, INE → bronce (directo, sin SQLite, por diseño), bronce → base de trabajo (donde se cruzan ODEPA e INE por semana), base de trabajo → `datos.duckdb` (ATTACH y CREATE TABLE AS), `datos.duckdb` ↔ `datos.db` (solo comparación de tres cifras) y el historial `etl_run` que pasa de una carga a la siguiente. Cada fila dice cómo pasa, qué viaja, con qué clave se cruzan y la comprobación de ahora.
+- **Honestidad:** lo que no se puede medir en el servidor (raw.db) se marca «Pendiente» con su motivo; no se muestra como comprobado.
+- **Código y pruebas:** `bi/database_crossings.py`, `tests/test_database_crossings.py`.
