@@ -35,7 +35,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                doc_diagrams, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
+                database_map, doc_diagrams, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_view, sql_explorer, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -2834,7 +2834,7 @@ def build_architecture_header(row_counts, latest_run):
                            f"{charts.format_thousands(row_counts['rejection'])} rechazos"),
              ("Última carga", f"{freshness} · {run_text}")]
     return (f'<div class="arch-head compact-header"><h1>{html.escape(PAGE_ARCHITECTURE)}</h1>'
-            '<span class="page-freshness">Modelo estrella que convierte los precios en '
+            '<span class="page-freshness">De dónde viene cada tabla de la base y cómo se relacionan: el modelo estrella convierte los precios en '
             'indicadores comparables. Las líneas relacionan tablas; no son pasos de '
             'ejecución.</span></div><div class="arch-chips">'
             + "".join(f'<div class="arch-chip"><span>{html.escape(label)}</span>'
@@ -2886,6 +2886,14 @@ def show_architecture_page(mode):
                 for table in project.TABLE_NAMES}
     st.markdown(build_architecture_css(mode), unsafe_allow_html=True)
     st.markdown(build_architecture_header(row_counts, read_latest_run()), unsafe_allow_html=True)
+    # Two views of the same database (D-189): where each table comes from, and how
+    # the tables relate. Each keeps the whole screen.
+    view = st.segmented_control("Vista del modelo", MODEL_VIEWS, default=MODEL_VIEWS[0], key=MODEL_VIEW_KEY,
+                                label_visibility="collapsed") or MODEL_VIEWS[0]
+    if view == MODEL_VIEWS[0]:
+        counts, layers, tests = read_database_map(get_database_version())
+        st.iframe(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests), height=640)
+        return
     st.markdown('<p class="arch-phrase">1 fila de weekly_price = un producto '
                 '(variedad y calidad) × región × canal × unidad × semana. '
                 'Pasa el mouse por una tabla para ver para qué sirve.</p>', unsafe_allow_html=True)
@@ -2897,6 +2905,20 @@ def show_architecture_page(mode):
                     '<span>' + build_external_link_html("etl/schema.sql en GitHub",
                                                         project.build_github_url("etl/schema.sql"))
                     + '</span></div>', unsafe_allow_html=True)
+
+
+MODEL_VIEWS = ["Mapa de la base", "Modelo estrella"]
+MODEL_VIEW_KEY = "model_view"
+
+
+@st.cache_data(show_spinner=False)
+def read_database_map(database_version):
+    """Rows of every served table, dbt models per layer and dbt tests, for the map (D-189)."""
+    counts = {name: count for name, count, _ in sql_explorer.describe_tables()}
+    nodes = queries.run_sql("SELECT resource_type, layer, count(*) AS n FROM dbt_node GROUP BY ALL")
+    layers = {row.layer: int(row.n) for row in nodes.itertuples() if row.resource_type == "model"}
+    tests = int(nodes.loc[nodes["resource_type"] == "test", "n"].sum())
+    return counts, layers, tests
 
 
 @st.cache_data
