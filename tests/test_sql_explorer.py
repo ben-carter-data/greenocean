@@ -15,7 +15,8 @@ needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(),
 def test_every_example_query_returns_rows(example):
     result = sql_explorer.run_user_query(example[2])
     assert len(result.rows) > 0
-    assert not result.truncated
+    # The full table (D-185) holds every price: it shows the latest 5.000 rows by design.
+    assert not result.truncated or example[0] == "Tabla completa"
     assert not [column for column in result.rows.columns if column.endswith("_id")]
 
 
@@ -126,41 +127,49 @@ def test_page_renders_and_runs_an_example():
     assert "robot" not in page_text
 
 
-def test_d180_every_template_runs_with_other_parameters():
-    values = {"anio": 2025, "producto": "Asado Carnicero", "canal": "Carnicería"}
-    for index, (title, _, template, names) in enumerate(sql_explorer.TEMPLATES):
-        sql = sql_explorer.render_example(index, values)
-        assert "{" not in sql, title
-        assert not sql_explorer.run_user_query(sql).rows.empty, title
-        if "anio" in names:
-            assert "2025" in sql and "2026" not in sql, title
+
+def test_d185_every_query_runs_with_and_without_filters():
+    chosen = {"familia": "Frutas", "region": "Región del Maule", "periodo": 2025, "anio_filtro": 2026,
+              "producto_filtro": "Naranja", "canal_filtro": "Feria libre"}
+    for index, (title, _, _, names) in enumerate(sql_explorer.TEMPLATES):
+        for values in (None, chosen):
+            sql = sql_explorer.render_example(index, values)
+            assert "{" not in sql, title
+            assert not sql_explorer.run_user_query(sql).rows.empty, title
+        # A filter never leaks into a query that does not offer it.
+        if "region" not in names:
+            assert "Región del Maule" not in sql_explorer.render_example(index, chosen), title
+
+
+def test_d185_the_full_table_comes_first_and_the_council_picks_follow():
+    assert [title for title, *_ in sql_explorer.TEMPLATES] == [
+        "Tabla completa", "Precio vs. época", "Canal más barato", "Inflación vs IPC",
+        "Brecha mayorista", "Calendario de compra"]
+    rows = sql_explorer.run_user_query(sql_explorer.EXAMPLES[0][2]).rows
+    for column in ("familia", "producto", "variedad", "calidad", "canal", "region", "precio", "precio_real"):
+        assert column in rows.columns
+    filtered = sql_explorer.render_example(0, {"familia": "Carne bovina", "anio_filtro": 2026})
+    assert "WHERE p.familia = 'Carne bovina'\n  AND year(p.semana) = 2026" in filtered
+    # Every decision query ends with a reading in words, and compares real pesos where it compares time.
+    for index in range(1, len(sql_explorer.TEMPLATES)):
+        sql = sql_explorer.EXAMPLES[index][2]
+        assert "lectura" in sql or "mes_mas_barato" in sql or "ahorro_pct" in sql
+    assert "factor_real" in sql_explorer.EXAMPLES[1][2] and "factor_real" in sql_explorer.EXAMPLES[5][2]
 
 
 @needs_database
-def test_d180_one_click_writes_the_sql_and_runs_it_with_the_chosen_product():
+def test_d185_one_click_writes_the_sql_and_a_filter_narrows_it():
     from streamlit.testing.v1 import AppTest
     script = (f"import sys; sys.path.insert(0, {str(REPOSITORY)!r})\n"
               "from bi import sql_explorer\n"
               "sql_explorer.show_sql_explorer_page('Claro')\n")
     app = AppTest.from_string(script, default_timeout=60).run()
-    ficha = next(i for i, t in enumerate(sql_explorer.TEMPLATES) if t[0] == "Ficha de producto")
-    app.button(key=f"sqlx_chip_{ficha}").click().run()
+    app.button(key="sqlx_chip_0").click().run()
     assert not app.exception and len(app.dataframe) == 1
-    app.selectbox(key="sqlx_param_producto").select("Asado Carnicero").run()
+    app.selectbox(key="sqlx_param_familia").select("Carne bovina").run()
     assert not app.exception
-    assert "'Asado Carnicero'" in app.text_area[0].value
-    assert set(app.dataframe[0].value["canal"]) >= {"Carnicería"}
-
-
-def test_d181_five_questions_and_the_season_compares_real_prices():
-    assert [title for title, *_ in sql_explorer.TEMPLATES] == [
-        "Precio vs. época", "Inflación del año", "Inflación desde 2022", "Ficha de producto", "Tendencia al alza"]
-    sql = sql_explorer.render_example(0, {"producto": "Tomate"})
-    assert "factor_real" in sql
-    verdicts = set(sql_explorer.run_user_query(sql).rows["veredicto"])
-    assert verdicts and verdicts <= {"Más caro que cualquier año anterior", "Más barato que cualquier año anterior",
-                                     "Caro para la época", "Barato para la época", "Normal para la época"}
-
+    assert "p.familia = 'Carne bovina'" in app.text_area[0].value
+    assert set(app.dataframe[0].value["familia"]) == {"Carne bovina"}
 
 def test_d182_the_explorer_lists_the_real_tables_and_one_opens():
     tables = {name: count for name, count, _ in sql_explorer.describe_tables()}
@@ -168,8 +177,8 @@ def test_d182_the_explorer_lists_the_real_tables_and_one_opens():
     assert tables["weekly_price"] > 100_000
     rows = sql_explorer.run_user_query("SELECT *\nFROM main.dim_region\nLIMIT 100").rows
     assert "region_id" in rows.columns and len(rows) == tables["dim_region"]
-    tab = sql_explorer.build_tab_html(0)
-    assert "precio_vs_epoca.sql" in tab and "sqlx-info" in tab and sql_explorer.EXAMPLES[0][1] in tab
+    tab = sql_explorer.build_tab_html(1)
+    assert "precio_vs_epoca.sql" in tab and "sqlx-info" in tab and sql_explorer.EXAMPLES[1][1] in tab
 
 
 def test_d183_a_short_query_gives_its_room_to_the_results():
