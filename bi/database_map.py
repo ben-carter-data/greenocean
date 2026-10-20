@@ -15,8 +15,8 @@ import html
 from bi import brand_icons, charts, operation_center
 
 STAGE_WIDTH = 1000
-STAGE_HEIGHT = 540
-MAIN_Y = 195
+STAGE_HEIGHT = 640
+MAIN_Y = 235
 LOGO = 92
 HALF = LOGO // 2
 GAP = 8  # between a logo and the tip of an arrow
@@ -45,29 +45,32 @@ ORIGINS = [
 ]
 # The stores, left to right: (key, logo, label, file, place (x, y), what, why).
 NODES = [
-    ("odepa", "odepa", "ODEPA", "CSV por año", (85, MAIN_Y),
-     "Los precios mayoristas y al consumidor que ODEPA publica cada semana, en archivos CSV por año.",
+    ("odepa", "odepa", "ODEPA consumidor", "CSV por año", (95, MAIN_Y),
+     "Los precios al consumidor que ODEPA publica cada semana, por región y canal, en archivos CSV por año.",
      "Es la fuente oficial. El agente los descarga y anota su huella SHA-256 en manifest.json."),
-    ("ine", "ine", "INE", "IPC de alimentos", (85, 44),
+    ("wholesale", "odepa", "ODEPA mayorista", "CSV por año", (95, MAIN_Y + 165),
+     "Los precios mayoristas que ODEPA publica cada semana, solo de frutas y hortalizas, en archivos CSV por año.",
+     "Es la otra fuente oficial: permite comparar lo que paga el consumidor con lo que cuesta al por mayor."),
+    ("ine", "ine", "INE · IPC", "índice mensual", (95, 52),
      "El índice de precios de alimentos, un valor por mes.",
      "Sirve para pasar los precios a pesos reales y separar la inflación de una subida de verdad."),
-    ("raw", "sqlite", "SQLite", "etl/raw.db", (250, MAIN_Y),
+    ("raw", "sqlite", "SQLite", "etl/raw.db", (275, MAIN_Y),
      "Las filas de los CSV exactamente como se publican, sin limpiar. Es un archivo de unos 665 MB.",
      "Una copia fiel permite auditar y reconstruir todo desde el origen. No se sube a GitHub por su tamaño."),
-    ("bronze", "apacheparquet", "Parquet", "capa bronce", (415, MAIN_Y),
+    ("bronze", "apacheparquet", "Parquet", "capa bronce", (435, MAIN_Y),
      "Las mismas filas, más el IPC del INE, en archivos Parquet: uno por fuente y año.",
      "Parquet guarda los datos por columnas y comprimidos, y casi cualquier herramienta de datos lo lee. "
      "dbt parte de aquí."),
-    ("dbt", "dbt", "dbt + DuckDB", "warehouse_build.duckdb", (580, MAIN_Y),
+    ("dbt", "dbt", "dbt + DuckDB", "warehouse_build.duckdb", (595, MAIN_Y),
      "Una base de trabajo con las capas staging, intermedio y marts, más las pruebas de datos de dbt.",
      "Se construye y se prueba aparte. Si una prueba falla, la base publicada no se toca. No se sube a GitHub."),
     ("served", "duckdb", "DuckDB", "etl/datos.duckdb", (755, MAIN_Y),
      "La base que el panel lee: 12 tablas, agrupadas por quién las escribe (abajo).",
      "Es un solo archivo, rápido para consultas analíticas y de solo lectura para el panel."),
-    ("github", "github", "GitHub", "el repositorio", (920, MAIN_Y),
+    ("github", "github", "GitHub", "el repositorio", (915, MAIN_Y),
      "Los dos archivos de base de datos publicados, con todo su historial.",
      "La carga semanal los sube con un commit: así quedan versionados y la app publicada los recibe."),
-    ("backup", "sqlite", "SQLite · respaldo", "etl/datos.db", (250, 435),
+    ("backup", "sqlite", "SQLite · respaldo", "etl/datos.db", (275, 505),
      "Los mismos precios semanales, calculados otra vez por el ETL en Python (etl/etl.py), sin dbt.",
      "Es una segunda opinión independiente: si dbt y el ETL no coinciden, algo está mal. El panel no lo lee."),
 ]
@@ -87,6 +90,10 @@ def build_arrows():
     bronze_x, bronze_y = PLACES["bronze"]
     arrows.append((f"M{ine_x + HALF + GAP} {ine_y} H{bronze_x} V{bronze_y - HALF - 4}", "índice mensual",
                    ((ine_x + bronze_x) / 2, ine_y - 12)))
+    wholesale_x, wholesale_y = PLACES["wholesale"]
+    raw_edge = PLACES["raw"][0] - HALF - GAP
+    arrows.append((f"M{wholesale_x + HALF + GAP} {wholesale_y} H{(wholesale_x + PLACES['raw'][0]) / 2 + 20} V{PLACES['raw'][1] + 14} "
+                   f"H{raw_edge}", "descarga", (wholesale_x + HALF + GAP + 28, wholesale_y - 14)))
     raw_x, raw_y = PLACES["raw"]
     backup_y = PLACES["backup"][1]
     arrows.append((f"M{raw_x} {raw_y + 140} V{backup_y - HALF - 6}", "ETL en Python", (raw_x + 56, (raw_y + 140 + backup_y - HALF) / 2 + 4)))
@@ -99,7 +106,7 @@ BRACE_Y = MAIN_Y + 142
 # It goes round the left of the group of three and ends on the DuckDB file itself, under
 # its size, so it points at the whole database and not at one of its table groups.
 SERVED_BOTTOM = MAIN_Y + 128
-PARITY_X = PLACES["served"][0] - 215
+PARITY_X = PLACES["served"][0] - 205
 PARITY_PATH = (f"M{PLACES['backup'][0] + HALF + GAP} {PLACES['backup'][1]} H{PARITY_X} "
                f"V{SERVED_BOTTOM} H{PLACES['served'][0] - 52}")
 PARITY_LABEL = (440, PLACES["backup"][1] - 13)

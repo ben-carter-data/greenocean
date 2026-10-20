@@ -19,7 +19,7 @@ def test_every_store_is_a_logo_with_what_it_holds_and_why_and_there_are_no_cards
     for store in ("etl/raw.db", "capa bronce", "warehouse_build.duckdb", "etl/datos.duckdb", "etl/datos.db"):
         assert store in text, store
     # One brand mark per store, and for each one a «Qué guarda» and a «Por qué».
-    assert markup.count('class="node ') == len(database_map.NODES) == 8
+    assert markup.count('class="node ') == len(database_map.NODES) == 9
     assert markup.count("Qué guarda") >= len(database_map.NODES) + len(database_map.ORIGINS)
     assert markup.count("Por qué") >= len(database_map.NODES) + len(database_map.ORIGINS)
     for brand in ("sqlite", "apacheparquet", "dbt", "duckdb", "github", "python"):
@@ -67,7 +67,7 @@ def test_d191_arrows_start_and_end_at_the_edges_of_the_logos():
     for path, label, (x, y) in database_map.ARROWS:
         assert path.startswith("M") and label
         assert 0 <= x <= database_map.STAGE_WIDTH and 0 <= y <= database_map.STAGE_HEIGHT
-    assert len(database_map.ARROWS) == len(database_map.FLOW) + 2  # plus the IPC and the ETL
+    assert len(database_map.ARROWS) == len(database_map.FLOW) + 3  # plus the IPC, the wholesale and the ETL
     for _, _, _, _, (x, y), _, _ in database_map.NODES:
         assert 0 < x < database_map.STAGE_WIDTH and 0 < y < database_map.STAGE_HEIGHT
 
@@ -88,3 +88,21 @@ def test_d192_the_parity_line_ends_on_the_duckdb_file_not_on_a_table_group():
     assert abs(end_x - served_x) <= database_map.HALF + 10  # under the DuckDB logo itself (its edge, cylinder included)
     assert served_y + database_map.HALF < last_y < database_map.BRACE_Y  # between the file and the group
     assert side_x < served_x - 190  # round the left of the group, never through one of its three logos
+
+
+def test_d193_the_three_sources_are_three_logos_with_their_own_name_and_all_feed_the_flow():
+    markup = build()
+    text = re.sub(r"<[^>]+>", " ", markup)
+    for name in ("ODEPA consumidor", "ODEPA mayorista", "INE · IPC"):
+        assert name in text, name
+    sources = [node for node in database_map.NODES if node[0] in ("odepa", "wholesale", "ine")]
+    assert len(sources) == 3 and len({node[4] for node in sources}) == 3  # three different places
+    # Both ODEPA files end in raw.db; the INE index goes to the Parquet layer.
+    ends = [path for path, *_ in database_map.ARROWS]
+    raw_x, raw_y = database_map.PLACES["raw"]
+    edge = raw_x - database_map.HALF - database_map.GAP
+    assert sum(path.endswith(f"H{edge}") for path in ends) == 2
+    assert any(path.endswith(f"V{database_map.PLACES['bronze'][1] - database_map.HALF - 4}") for path in ends)
+    # Nothing is drawn over a neighbor: the three sources keep their distance.
+    ys = sorted(node[4][1] for node in sources)
+    assert all(b - a >= 150 for a, b in zip(ys, ys[1:])) or ys[1] - ys[0] >= 150

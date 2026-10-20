@@ -1460,3 +1460,9 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Fecha:** 2026-10-20.
 - **Decisión:** a petición del autor, los cinco almacenes (`raw.db`, la capa Parquet, la base de trabajo de dbt, `datos.duckdb` y `datos.db`) llevan un cilindro miniatura en la esquina de su logo, el símbolo universal de «aquí se guardan datos». El logo de la tecnología sigue siendo lo principal: dice qué herramienta es. Las fuentes (ODEPA, INE) y GitHub no llevan cilindro, porque no son bases de datos. Esto corrige D-191, que los había dejado fuera por el motivo contrario: el cilindro solo, sin el logo, volvía iguales a `raw.db` y `datos.duckdb`; junto al logo no tiene ese problema.- **Flecha de paridad:** la línea punteada subía hasta el grupo «Modelos dbt» y parecía comparar el respaldo con una de las tres partes. Ahora rodea el grupo por la izquierda y termina bajo el logo de DuckDB, en el archivo entero, con punta en ambos extremos: la paridad compara dos bases completas.
 
+## D-193 · Las tres fuentes se ven como tres
+
+- **Fecha:** 2026-10-20.
+- **Problema:** el diagrama dibujaba un solo CSV de ODEPA y el rótulo del INE quedaba pegado al logo de ODEPA, así que no se veía que el pipeline consume tres fuentes.
+- **Decisión:** cada fuente tiene su logo y su nombre: «ODEPA consumidor» y «ODEPA mayorista», cada una con su hoja CSV, y «INE · IPC». Los dos CSV de ODEPA llegan a `raw.db`; el índice del INE va directo a la capa Parquet. El diagrama gana altura (más separación entre las tres fuentes) y las columnas se separan para que ninguna etiqueta de flecha toque un logo.
+

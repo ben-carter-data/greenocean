@@ -2900,7 +2900,7 @@ def show_architecture_page(mode):
     if view == MODEL_VIEWS[0]:
         counts, layers, tests = read_database_map(get_database_version())
         st.iframe(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests,
-                                              read_store_sizes()), height=600)
+                                              read_store_sizes()), height=660)
         return
     st.markdown('<p class="arch-phrase">1 fila de weekly_price = un producto '
                 '(variedad y calidad) × región × canal × unidad × semana. '
