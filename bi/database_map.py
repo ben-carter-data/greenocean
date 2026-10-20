@@ -96,8 +96,13 @@ def build_arrows():
 ARROWS = build_arrows()
 # The parity line: from the backup to the left end of the group's brace.
 BRACE_Y = MAIN_Y + 142
-PARITY_PATH = f"M{PLACES['backup'][0] + HALF + GAP} {PLACES['backup'][1]} H575 V{BRACE_Y + 8}"
-PARITY_LABEL = (430, PLACES["backup"][1] - 13)
+# It goes round the left of the group of three and ends on the DuckDB file itself, under
+# its size, so it points at the whole database and not at one of its table groups.
+SERVED_BOTTOM = MAIN_Y + 128
+PARITY_X = PLACES["served"][0] - 215
+PARITY_PATH = (f"M{PLACES['backup'][0] + HALF + GAP} {PLACES['backup'][1]} H{PARITY_X} "
+               f"V{SERVED_BOTTOM} H{PLACES['served'][0] - 52}")
+PARITY_LABEL = (440, PLACES["backup"][1] - 13)
 
 
 def thousands(value):
@@ -144,6 +149,9 @@ html, body {{ margin:0; background:transparent; color:{text};
   align-items:center; text-align:center; outline:none; }}
 .logo {{ display:block; width:{LOGO}px; height:{LOGO}px; filter:drop-shadow(0 16px 14px {shadow}); transition:transform .25s ease; }}
 .node:hover .logo, .node:focus .logo, .mini:hover .logo, .mini:focus .logo {{ transform:translateY(-6px) scale(1.05); }}
+.logo-wrap {{ position:relative; width:{LOGO}px; height:{LOGO}px; }}
+.cyl {{ position:absolute; right:-9px; bottom:-4px; width:30px; height:35px; filter:drop-shadow(0 4px 4px {shadow}); transition:transform .25s ease; }}
+.node:hover .cyl, .node:focus .cyl {{ transform:translateY(-4px); }}
 .halo {{ width:70px; height:12px; border-radius:50%; margin-top:4px; filter:blur(4px);
   background:{'rgba(255,255,255,.12)' if dark else 'rgba(15,39,71,.16)'}; }}
 .served .halo {{ background:rgba(244,208,63,.6); }}
@@ -175,7 +183,7 @@ html, body {{ margin:0; background:transparent; color:{text};
   font:400 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; }}
 .mini .tip li {{ display:flex; justify-content:space-between; gap:10px; }}
 .mini .tip li span {{ color:{muted}; }}
-.brace {{ position:absolute; left:{755 / STAGE_WIDTH * 100}%; top:{BRACE_Y / STAGE_HEIGHT * 100}%; width:384px; height:8px;
+.brace {{ position:absolute; left:{755 / STAGE_WIDTH * 100}%; top:{BRACE_Y / STAGE_HEIGHT * 100}%; width:344px; height:8px;
   transform:translateX(-50%); border:1px solid {border}; border-bottom:0; border-radius:8px 8px 0 0; }}
 .parity {{ position:absolute; left:{PARITY_LABEL[0] / STAGE_WIDTH * 100}%; top:{PARITY_LABEL[1] / STAGE_HEIGHT * 100}%;
   transform:translate(-50%, -50%); padding:3px 12px; border-radius:999px; border:1px solid {border}; background:{card};
@@ -185,12 +193,22 @@ html, body {{ margin:0; background:transparent; color:{text};
 </style>"""
 
 
+# The stores that hold data in a database or a lake, which carry the cylinder (D-192).
+STORES = ("raw", "bronze", "dbt", "served", "backup")
+CYLINDER = ('<svg class="cyl" viewBox="0 0 24 28" aria-hidden="true"><defs><linearGradient id="cyl-body" x1="0" x2="1">'
+            '<stop offset="0" stop-color="#9aa7b8"/><stop offset=".45" stop-color="#f4f7fb"/><stop offset="1" stop-color="#8794a6"/>'
+            '</linearGradient></defs><path d="M2 6v16c0 2.2 4.5 4 10 4s10-1.8 10-4V6z" fill="url(#cyl-body)"/>'
+            '<path d="M2 12.5c0 2.2 4.5 4 10 4s10-1.8 10-4M2 18.5c0 2.2 4.5 4 10 4s10-1.8 10-4" fill="none" '
+            'stroke="#5b6b7f" stroke-width="1.2" opacity=".75"/><ellipse cx="12" cy="6" rx="10" ry="4" fill="#ffffff" '
+            'stroke="#5b6b7f" stroke-width="1.2"/></svg>')
+
+
 def build_node_html(key, logo, label, file, place, what, why, size=""):
     left, top = place[0] / STAGE_WIDTH * 100, place[1] / STAGE_HEIGHT * 100
     side = "start" if place[0] < 200 else "end" if place[0] > 850 else ""
     mark = source_logo(logo) if logo in ("odepa", "ine") else brand_logo(logo, "-" + key)
     return (f'<div class="node {key}" tabindex="0" style="left:{left:.3f}%;top:{top:.3f}%">'
-            f'{tip(what, why, side)}{mark}<div class="halo"></div><div class="label">{html.escape(label)}</div>'
+            f'{tip(what, why, side)}<div class="logo-wrap">{mark}{CYLINDER if key in STORES else ""}</div><div class="halo"></div><div class="label">{html.escape(label)}</div>'
             f'<div class="file">{html.escape(file)}</div>'
             + (f'<div class="size">{html.escape(size)}</div>' if size else '') + '</div>')
 

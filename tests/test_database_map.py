@@ -70,3 +70,21 @@ def test_d191_arrows_start_and_end_at_the_edges_of_the_logos():
     assert len(database_map.ARROWS) == len(database_map.FLOW) + 2  # plus the IPC and the ETL
     for _, _, _, _, (x, y), _, _ in database_map.NODES:
         assert 0 < x < database_map.STAGE_WIDTH and 0 < y < database_map.STAGE_HEIGHT
+
+
+def test_d192_only_the_stores_that_hold_data_carry_the_cylinder():
+    markup = build()
+    assert markup.count('class="cyl"') == len(database_map.STORES) == 5
+    for key in ("odepa", "ine", "github"):  # a source and the repository are not databases
+        node = markup.split(f'class="node {key}"')[1].split('class="halo"')[0]
+        assert 'class="cyl"' not in node, key
+    assert "\\n" not in markup.split("</style>")[0]  # no stray escape inside the stylesheet
+
+
+def test_d192_the_parity_line_ends_on_the_duckdb_file_not_on_a_table_group():
+    served_x, served_y = database_map.PLACES["served"]
+    _, _, side, down, end = database_map.PARITY_PATH.split()  # M<x> <y>  H<side>  V<down>  H<end>
+    side_x, last_y, end_x = int(side[1:]), int(down[1:]), int(end[1:])
+    assert abs(end_x - served_x) <= database_map.HALF + 10  # under the DuckDB logo itself (its edge, cylinder included)
+    assert served_y + database_map.HALF < last_y < database_map.BRACE_Y  # between the file and the group
+    assert side_x < served_x - 190  # round the left of the group, never through one of its three logos
