@@ -7187,10 +7187,6 @@ def recheck_quality():
     st.session_state["qa_rechecked_at"] = datetime.now(timezone.utc)
 
 
-QUALITY_VIEWS = ["Calidad", "Auditoría"]
-QUALITY_VIEW_KEY = "quality_view"
-AUDIT_KEYS = {"family": "audit_family", "product": "audit_product", "channel": "audit_channel", "region": "audit_region", "series": "audit_series"}
-AUDIT_DEFAULTS = {"product": "Tomate", "channel": "Supermercado", "region": "Región Metropolitana de Santiago"}
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -7199,76 +7195,19 @@ def read_quality_measures(database_version):
     return quality_live.read_measures()
 
 
-@st.cache_data(show_spinner=False)
-def check_trace_file(name, entry_text, file_version):
-    """The registered SHA-256 of a source file against the file itself, where the file exists."""
-    return audit_trace.check_file(name, json.loads(entry_text))
-
 
 def show_operations_page(mode):
-    """Calidad y auditoría in two views (D-196). Calidad: is the data good today, measured on
-    the real database against thresholds shown beside each figure. Auditoría: where one price
-    comes from, step by step, with what could not be checked here said as such."""
-    show_compact_page_header("Calidad y auditoría", "Calidad mide si los datos están bien hoy; auditoría prueba que lo "
-                             "publicado se puede rastrear y repetir.")
-    view = st.segmented_control("Vista de calidad y auditoría", QUALITY_VIEWS, default=QUALITY_VIEWS[0], key=QUALITY_VIEW_KEY,
-                                label_visibility="collapsed") or QUALITY_VIEWS[0]
-    if view == QUALITY_VIEWS[0]:
-        show_quality_view(mode)
-    else:
-        show_audit_view(mode)
-
-
-def show_quality_view(mode):
+    """Calidad y auditoría in one view (D-220): the quality measured on the real database, each
+    dimension under the pipeline stop where it is watched, and the audit controls that back it,
+    each opening its evidence. The single-price trace and its pickers left (D-196 → D-220)."""
+    show_compact_page_header("Calidad y auditoría", "La calidad medida en cada carga y los controles que demuestran que "
+                             "lo publicado se puede rastrear y repetir.")
     measures = read_quality_measures(get_database_version())
     indicators = quality_live.build_indicators(measures)
-    flags = measures["flags"]
-    st.iframe(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"], flags),
-              height=500)
-    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
-        st.button("Volver a medir", icon=":material/refresh:", key="qa_recheck_page", on_click=recheck_quality,
-                  help="Descarta lo guardado y mide de nuevo sobre la base publicada.")
-        rechecked = st.session_state.get("qa_rechecked_at")
-        st.caption(f"Medido de nuevo a las {to_chile_time(rechecked):%H:%M:%S}." if rechecked else
-                   "Cada indicador se mide en la base de la última carga.")
-
-
-def show_audit_view(mode):
     manifest = read_download_manifest()
     run = read_latest_run()
     nodes, results = read_lineage(get_database_version())
     build = lineage.summarize_build(nodes, results)
-    build_part = (dict(tests=int(build["tests"]), passing=int(build["passing"]), ok=bool(build["ok"]),
-                       built_at=f"{build['built_at']:%d-%m-%Y}" if build.get("built_at") is not None else "") if build else None)
-    try:
-        options = sql_explorer.load_parameter_options()
-    except Exception:
-        options = None
-    if options is None:
-        st.info("No se pudo leer la base de datos para elegir un precio.")
-        return
-    families = sorted(options["families"])
-    with st.container(key="audit_pickers", horizontal=True, vertical_alignment="bottom", gap="small"):
-        default_family = next((name for name, items in options["families"].items() if AUDIT_DEFAULTS["product"] in items), families[0])
-        family = st.selectbox("Familia", families, key=AUDIT_KEYS["family"], index=families.index(default_family))
-        products = options["families"][family]
-        if st.session_state.get(AUDIT_KEYS["product"]) not in products:
-            st.session_state[AUDIT_KEYS["product"]] = AUDIT_DEFAULTS["product"] if AUDIT_DEFAULTS["product"] in products else products[0]
-        product = st.selectbox("Producto", products, key=AUDIT_KEYS["product"])
-        channels = options["channels"].get(product, [])
-        if st.session_state.get(AUDIT_KEYS["channel"]) not in channels:
-            st.session_state[AUDIT_KEYS["channel"]] = AUDIT_DEFAULTS["channel"] if AUDIT_DEFAULTS["channel"] in channels else channels[0]
-        channel = st.selectbox("Canal", channels, key=AUDIT_KEYS["channel"])
-        regions = options["regions"]
-        if st.session_state.get(AUDIT_KEYS["region"]) not in regions:
-            st.session_state[AUDIT_KEYS["region"]] = AUDIT_DEFAULTS["region"] if AUDIT_DEFAULTS["region"] in regions else regions[0]
-        region = st.selectbox("Región", regions, key=AUDIT_KEYS["region"])
-        series = audit_trace.find_series(product, channel, region)
-        labels = [f"{row.variety} · {row.quality} · {row.normalized_unit}" for row in series.itertuples()]
-        if labels and st.session_state.get(AUDIT_KEYS["series"]) not in labels:
-            st.session_state[AUDIT_KEYS["series"]] = labels[0]
-        chosen = st.selectbox("Serie", labels or ["—"], key=AUDIT_KEYS["series"])
-    # The controls that hold the chain up, as in the evidence dialogs of D-171.
     versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
                      for path in sorted(MANIFEST_FILE.parent.glob("*.csv")))
     checks, files = read_quality_evidence(get_database_version(), json.dumps(manifest, sort_keys=True), versions)
@@ -7276,19 +7215,9 @@ def show_audit_view(mode):
     evidence = quality_view.build_evidence(checks, files, manifest, run, build, parity,
                                            lambda value: format_chile_time(parse_run_start(value)),
                                            rejections=read_rejection_count(get_database_version()))
-    controls = quality_view.build_columns(evidence)
-    if series.empty:
-        st.info("Ese producto no tiene precios en ese canal y región. Prueba con otra región.")
-    else:
-        item = series.iloc[labels.index(chosen)]
-        row = audit_trace.read_trace(product, item["variety"], item["quality"], channel, region, item["normalized_unit"])
-        name = audit_trace.source_file_name(row)
-        entry = manifest.get(name) or {}
-        path = audit_trace.DOWNLOADS / name
-        file_version = (path.stat().st_size, path.stat().st_mtime_ns) if path.is_file() else None
-        status = check_trace_file(name, json.dumps(entry, sort_keys=True), file_version)
-        steps = audit_trace.build_trace_steps(row, manifest, run, build_part, status)
-        st.iframe(audit_trace.build_trace_html(charts.get_palette(mode), row, steps, controls), height=380)
+    controls = audit_trace.build_controls_html(quality_view.build_columns(evidence))
+    st.iframe(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"],
+                                           measures["flags"], controls), height=830)
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
     if not database_ok or any(item["status"].startswith("Falla") for item in files):
         st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
@@ -7296,7 +7225,12 @@ def show_audit_view(mode):
         st.markdown('<span class="qa-open-label">Abrir la evidencia de</span>', unsafe_allow_html=True)
         st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
                  on_change=open_quality_evidence, label_visibility="collapsed")
-    st.caption("Cada control abre los datos que lo respaldan y su método; «Volver a comprobar» corre los controles de nuevo.")
+    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+        st.button("Volver a medir", icon=":material/refresh:", key="qa_recheck_page", on_click=recheck_quality,
+                  help="Descarta lo guardado y mide de nuevo sobre la base publicada.")
+        rechecked = st.session_state.get("qa_rechecked_at")
+        st.caption(f"Medido de nuevo a las {to_chile_time(rechecked):%H:%M:%S}." if rechecked else
+                   "Cada indicador se mide en la base de la última carga; cada control abre los datos que lo respaldan.")
     chosen_card = st.session_state.pop(QUALITY_OPEN_KEY, None)
     if chosen_card in quality_evidence.TITLES.values():
         key = next(key for key, title in quality_evidence.TITLES.items() if title == chosen_card)

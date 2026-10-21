@@ -1,4 +1,4 @@
-"""Calidad (live measures) and Auditoría (price trace), D-196."""
+"""Calidad (live measures) and its audit controls, D-196 and D-220."""
 import copy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -48,30 +48,6 @@ def test_quality_page_renders_every_dimension_and_escapes_nothing_unsafe(measure
     assert "<script" not in html
 
 
-def test_the_file_check_is_honest_when_the_file_is_missing_or_altered(tmp_path):
-    assert audit_trace.check_file("x.csv", {}, tmp_path)[0] == "pending"
-    assert audit_trace.check_file("x.csv", {"hash": "abc"}, tmp_path)[0] == "pending"
-    assert "no se puede comprobar" in audit_trace.check_file("x.csv", {"hash": "abc"}, tmp_path)[1]
-    (tmp_path / "x.csv").write_bytes(b"hola")
-    assert audit_trace.check_file("x.csv", {"hash": "abc"}, tmp_path)[0] == "fail"
-    import hashlib
-    good = hashlib.sha256(b"hola").hexdigest()
-    assert audit_trace.check_file("x.csv", {"hash": good}, tmp_path)[0] == "ok"
-
-
-@needs_database
-def test_the_trace_follows_one_real_price_through_six_steps():
-    series = audit_trace.find_series("Tomate", "Supermercado", "Región Metropolitana de Santiago")
-    assert len(series)
-    first = series.iloc[0]
-    row = audit_trace.read_trace("Tomate", first["variety"], first["quality"], "Supermercado",
-                                 "Región Metropolitana de Santiago", first["normalized_unit"])
-    assert row and row["price"] > 0
-    run = {"run_id": 1, "started_at": "2026-10-19", "rows_read": 10, "rows_loaded": 9, "rows_rejected": 1}
-    steps = audit_trace.build_trace_steps(row, {}, run, None, ("pending", "no disponible"))
-    assert len(steps) == 6
-
-
 @needs_database
 def test_quality_view_hangs_each_dimension_from_the_pipeline_without_cards(measures):
     indicators = quality_live.build_indicators(measures, NOW)
@@ -80,9 +56,24 @@ def test_quality_view_hangs_each_dimension_from_the_pipeline_without_cards(measu
     assert page.count('class="cell spine"') == len(quality_live.SPINE) == 4
     assert set(quality_live.PLACES) == set(quality_live.ICONS)
     assert 'class="group' not in page and "Qué se apartó" in page and "Cargas" in page
+    # D-220: one column per stop, its dimensions stacked under it, in the pipeline's order.
+    assert page.count('class="gates"') == 4
+    for keys in quality_live.COLUMNS:
+        titles = [quality_live.TITLES[key] for key in keys]
+        assert [page.index(title) for title in titles] == sorted(page.index(title) for title in titles)
+    assert page.index('class="cell spine"') < page.index('class="gates"') < page.index('class="bottom"')
 
 
-def test_audit_trace_shows_the_controls_as_small_icons_with_their_status():
+@needs_database
+def test_d220_the_audit_controls_close_the_quality_view_without_a_filter(measures):
+    indicators = quality_live.build_indicators(measures, NOW)
+    page = quality_live.build_page_html(charts.get_palette("Vantablack"), indicators, measures["runs"],
+                                        measures["rejections"], measures["flags"], '<div class="controls">x</div>')
+    assert "Controles de auditoría" in page and page.index('class="bottom"') < page.index('class="audit"')
+    assert not hasattr(audit_trace, "read_trace") and not hasattr(audit_trace, "find_series")
+
+
+def test_the_audit_controls_are_small_icons_with_their_status():
     from bi import quality_view
     evidence = dict(rejections=201, run_id=5, run_started="19-10-2026", run_status="LOADED", run_ok=True,
                     manifest_present=True, manifest_files=10, files_matching=0, files_total=10, files_failed=0,

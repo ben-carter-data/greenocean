@@ -12,7 +12,7 @@ document for st.iframe (CSS only, no script). Both are pure enough to test witho
 import html
 from datetime import date, datetime, timezone
 
-from bi import charts, database_map, queries, quality, quality_view
+from bi import audit_trace, charts, database_map, queries, quality, quality_view
 
 # The project's thresholds, shown next to each figure so a verdict can be disputed.
 LAST_WEEK_MIN_SHARE = 0.75   # rows of the latest week vs the median of the 8 before
@@ -186,9 +186,9 @@ def build_verdict(indicators):
 
 
 # region Markup
-# Where each dimension is watched along the pipeline: (column, row) in a 4-column stage.
-PLACES = {"completitud": (0, "top"), "actualidad": (1, "top"), "validez": (2, "top"), "consistencia": (3, "top"),
-          "pruebas": (2, "bottom"), "unicidad": (3, "bottom")}
+# D-220: the pipeline on top and, under each stop, the dimensions watched there, in order.
+COLUMNS = [["completitud"], ["actualidad"], ["validez", "pruebas"], ["consistencia", "unicidad"]]
+PLACES = {key: index for index, keys in enumerate(COLUMNS) for key in keys}
 SPINE = [
     ("Fuentes", "ODEPA e INE", ["odepa", "ine"], "descarga"),
     ("Aterrizaje y bronce", "raw.db y Parquet", ["sqlite", "apacheparquet"], "lee dbt"),
@@ -196,7 +196,7 @@ SPINE = [
     ("datos.duckdb", "la base que lee el panel", ["duckdb"], ""),
 ]
 ABOUT = (("Propósito", "Detectar a tiempo que algo está mal, antes de usar una cifra."),
-         ("Cómo se lee", "Cada dimensión cuelga del punto del pipeline donde se vigila. Cada cifra se mide en la base de esta "
+         ("Cómo se lee", "Bajo cada etapa del pipeline van las dimensiones que se vigilan en ella. Cada cifra se mide en la base de esta "
                          "carga y se juzga contra el umbral que lleva debajo. Pasa el cursor para ver cómo se mide."),
          ("Quién la usa", "Quien opera el pipeline y decide si una carga puede publicarse."))
 
@@ -244,7 +244,7 @@ html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 
 .ql .spine {{ position:relative; display:flex; flex-direction:column; align-items:center; text-align:center; padding:0; }}
 .ql .stem {{ width:2px; height:16px; background:var(--c, {accent}); opacity:.75; border-radius:2px; }}
 .ql .stem.none {{ background:transparent; }}
-.ql .logos {{ display:flex; gap:6px; justify-content:center; }}
+.ql .logos {{ display:flex; gap:6px; justify-content:center; align-items:center; height:58px; }}
 .ql .logos .logo {{ width:58px; height:58px; filter:drop-shadow(0 9px 8px {shade}); }}
 .ql .logos.two .logo {{ width:50px; height:50px; }}
 .ql .spine b {{ margin-top:3px; font-size:13px; font-weight:500; color:{ink}; }}
@@ -258,6 +258,13 @@ html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 
 .ql .line small {{ color:{muted}; font-size:11px; }}
 .ql .line:hover .tip, .ql .line:focus .tip {{ display:block; }}
 .ql .side {{ padding-top:6px; }}
+.ql .gates {{ display:flex; flex-direction:column; gap:14px; }}
+.ql .bottom {{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:26px; margin-top:16px; padding-top:10px;
+  border-top:1px solid color-mix(in srgb, {border} 70%, transparent); }}
+.ql .audit {{ margin-top:16px; padding-top:10px; border-top:1px solid color-mix(in srgb, {border} 70%, transparent); }}
+.ql .audit > h4, .ql .bottom h4 {{ margin:2px 0 3px; font-size:10.5px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
+.ql .audit > h4 {{ text-align:center; }}
+.ql .legend {{ margin:6px 0 0; font-size:11px; color:{muted}; text-align:center; }}
 @media (max-width:820px) {{ .ql .stage {{ grid-template-columns:repeat(2, minmax(0, 1fr)); row-gap:10px; }} .ql .link {{ display:none; }} }}
 </style>"""
 
@@ -317,27 +324,28 @@ def build_node_html(index, title, subtitle, logos, label, up, down):
             f'<small>{html.escape(subtitle)}</small><div class="stem s-{down or "info"}{"" if down else " none"}"></div>{link}</div>')
 
 
-def build_page_html(palette, indicators, runs, rejections, flags):
-    """The whole «Calidad» view as one HTML document for st.iframe: the pipeline in one line,
-    each dimension hanging from the stop where it is watched. No cards."""
+def build_page_html(palette, indicators, runs, rejections, flags, controls_html=""):
+    """The whole «Calidad» view as one HTML document for st.iframe (D-220): the pipeline in one
+    line, each stop's dimensions in its column under it, then what was set apart and the loads
+    side by side, and the audit controls last. No cards."""
     kind, sentence = build_verdict(indicators)
     groups = {key: rows for key, rows in group_indicators(indicators).items() if rows}
     status = {key: dimension_status([row[4] for row in rows]) for key, rows in groups.items()}
-    top, bottom = [""] * 4, [""] * 4
-    for key, rows in groups.items():
-        column, row_name = PLACES[key]
-        (top if row_name == "top" else bottom)[column] += build_gate_html(key, rows, low=row_name == "bottom")
-    bottom[0] = build_apart_html(rejections, flags)
-    bottom[1] = build_loads_html(runs)
-    up = [status.get(key) for key in ("completitud", "actualidad", "validez", "consistencia")]
-    down = [None, None, status.get("pruebas"), status.get("unicidad")]
-    spine = "".join(build_node_html(index, *node[:3], node[3], up[index], down[index]) for index, node in enumerate(SPINE))
-    cells = ("".join(f'<div class="cell c{index + 1}">{html_}</div>' for index, html_ in enumerate(top)) + spine
-             + "".join(f'<div class="cell c{index + 1}">{html_}</div>' for index, html_ in enumerate(bottom)))
+    down = [dimension_status([status[key] for key in keys if key in status]) if any(key in status for key in keys) else None
+            for keys in COLUMNS]
+    spine = "".join(build_node_html(index, *node[:3], node[3], None, down[index]) for index, node in enumerate(SPINE))
+    gates = "".join(f'<div class="cell c{index + 1}"><div class="gates">'
+                    + "".join(build_gate_html(key, groups[key]) for key in keys if key in groups) + "</div></div>"
+                    for index, keys in enumerate(COLUMNS))
+    bottom = f'<div class="bottom">{build_apart_html(rejections, flags)}{build_loads_html(runs)}</div>'
+    audit = (f'<div class="audit"><h4>Controles de auditoría</h4>{controls_html}<p class="legend">✓ comprobado aquí · '
+             '! no se puede comprobar en este servidor o tiene una observación · nada se muestra como verificado sin '
+             'comprobarse.</p></div>') if controls_html else ""
     about = ('<div class="about" tabindex="0"><span>i</span><div class="tip" role="tooltip">'
              + "".join(f"<b>{title}.</b> {html.escape(text)}\n" for title, text in ABOUT).rstrip("\n") + '</div></div>')
     verdict = f'<div class="top s-{kind}"><i class="ok">{"✓" if kind == "ok" else "!"}</i>{html.escape(sentence)}{about}</div>'
     return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            + build_css(palette) + '</head><body>' + quality_view.DEFS
-            + f'<div class="ql">{verdict}<div class="stage">{cells}</div></div></body></html>')
+            + build_css(palette) + (f"<style>{audit_trace.build_controls_css(palette)}</style>" if controls_html else "")
+            + '</head><body>' + quality_view.DEFS
+            + f'<div class="ql">{verdict}<div class="stage">{spine}{gates}</div>{bottom}{audit}</div></body></html>')
 # endregion

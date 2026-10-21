@@ -1336,25 +1336,18 @@ def test_all_kpi_observations_have_real_results_and_explicit_periods():
 
 
 @needs_database
-def test_d196_quality_view_measures_the_real_database_and_audit_view_traces_one_price():
+def test_d220_quality_and_audit_are_one_view_without_pickers():
     app = draw_page(dashboard.PAGE_OPERATIONS)
     assert not app.exception
     assert read_page_title(app) == 'Calidad y auditoría'
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
-              "from bi import dashboard\n"
-              "st.session_state[dashboard.QUALITY_VIEW_KEY] = 'Auditoría'\n"
-              "dashboard.render_page(dashboard.PAGE_OPERATIONS)\n")
-    audit = AppTest.from_string(script, default_timeout=90).run()
-    assert not audit.exception
-    # D-198: the family comes first, as on the rest of the panel.
-    assert [box.label for box in audit.selectbox][:2] == ['Familia', 'Producto']
+    assert not app.selectbox and not app.get('segmented_control')
+    assert len(app.get('iframe')) == 1
 
 
 @needs_database
 def test_d171_a_card_opens_its_evidence_with_the_rows_the_method_and_a_recheck():
     script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
               "from bi import dashboard\n"
-              "st.session_state[dashboard.QUALITY_VIEW_KEY] = 'Auditoría'\n"
               "st.session_state[dashboard.QUALITY_OPEN_KEY] = 'Pruebas dbt de la última construcción'\n"
               "dashboard.render_page(dashboard.PAGE_OPERATIONS)\n")
     app = AppTest.from_string(script, default_timeout=90).run()

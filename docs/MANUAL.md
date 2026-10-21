@@ -4,7 +4,7 @@ Para quien opera el proyecto sin ser técnico: qué pasa solo, qué hay que revi
 
 ## Qué pasa cada martes
 
-El job semanal (`.github/workflows/semanal.yml`) corre solo cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. También se puede lanzar a mano desde GitHub o con el botón «Ejecutar pipeline ahora» de «Ingeniería de datos» → «Centro de operación». Hace, en orden:
+El job semanal (`.github/workflows/semanal.yml`) corre solo cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. También se puede lanzar a mano desde GitHub o con el botón «Ejecutar pipeline ahora» de «DevOps y seguridad» → «Centro de operación». Hace, en orden:
 
 1. **Prepara el entorno:** descarga el código del repositorio e instala Python y las librerías.
 2. **Recupera los años cerrados de la caché** (D-047): los archivos de años anteriores no cambian y se guardan en la caché de GitHub Actions.
@@ -84,9 +84,9 @@ La tabla `etl_run` registra cada ejecución, pero una ejecución con falla queda
 
 ## Administración y enlaces
 
-Los enlaces del proyecto están en la página «GitHub» del menú, agrupados en código y operación (ejecuciones, informes, historial de cambios: el repositorio en sí ya se abre desde la cabecera de la página) y documentos (este MANUAL y las DECISIONES). Cada recurso tiene una descripción y se abre en una pestaña nueva. El explorador de archivos del panel se retiró: se navega el código directamente en el repositorio. Las dos fuentes de ODEPA tienen su propia carpeta en el menú, «Fuentes».
+Los enlaces del proyecto están en la página GitHub, que abre el logo de GitHub al pie del menú, agrupados en código y operación (ejecuciones, informes, historial de cambios: el repositorio en sí ya se abre desde la cabecera de la página) y documentos (este MANUAL y las DECISIONES). Cada recurso tiene una descripción y se abre en una pestaña nueva. El explorador de archivos del panel se retiró: se navega el código directamente en el repositorio. Las fuentes (ODEPA e INE) tienen su propia tarjeta en el menú, «Fuentes».
 
-En el «Centro de operación», el botón «Ejecutar pipeline ahora» pide la clave de control (secreto `CONTROL_CODE` del panel) y muestra el aviso «Tu token vence en X días» (destacado si faltan menos de 14). Una vez escrita la clave, las explicaciones de «Lanzar» y «Panel» suman los enlaces del autor, con un candado: los tokens de GitHub y la administración de la app en Streamlit (reinicio, secretos, registros). El panel nunca muestra el token ni una parte de él.
+En el «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso «Tu token vence en X días» (destacado si faltan menos de 14) y «Enlaces del autor»: los tokens de GitHub y la administración de la app en Streamlit (reinicio, secretos, registros). El panel nunca muestra el token ni una parte de él.
 
 **La clave ordena el acceso, pero no es la seguridad real.** Los enlaces de administración llevan a páginas de GitHub y Streamlit que piden su propio inicio de sesión: quien vea la tarjeta sin tener la cuenta del autor no puede cambiar nada. Lo que protege el proyecto es el inicio de sesión de GitHub y Streamlit (con verificación en dos pasos) y que el token tenga solo el permiso de lanzar el workflow de este repositorio. La clave sirve para que el botón «Ejecutar ahora» no lo use cualquier visitante del panel público.
 
@@ -130,12 +130,12 @@ El Dashboard es la página de inicio para todas las visitas. Al recargar se vuel
 
 Las tablas y el código se abren bajo demanda. Las ayudas ⓘ se leen al pasar el mouse, enfocar con teclado o tocar el icono.
 
-La administración (ejecutar el job, tokens y administración de la app publicada) queda en «Ingeniería de datos» → «Centro de operación», detrás de la clave de control.
+La administración (ejecutar el job, tokens y administración de la app publicada) queda en «DevOps y seguridad» → «Centro de operación», detrás de la clave de control.
 
 
 ### Calidad y trazabilidad
 
-En **Arquitectura y operación → Calidad y trazabilidad**, el panel muestra la evidencia de la última carga guardada y comprueba en solo lectura la integridad SQLite, las referencias, las claves duplicadas y el formato de los precios utilizables. El acceso **Ver calidad** del Dashboard abre esta misma vista.
+En **Ingeniería de datos → Calidad y auditoría**, el panel mide en cada carga once indicadores de calidad, cada uno bajo la etapa del pipeline donde se vigila, y muestra los controles de auditoría (origen de los archivos, integridad, paridad SQLite ↔ DuckDB, reconciliación y recálculo independiente); cada control abre su evidencia.
 
 Las huellas SHA-256 solo se consideran verificadas cuando el archivo original está disponible y coincide con el manifiesto. Un archivo ausente queda pendiente. Los controles se actualizan al cambiar la base o los archivos y tienen una caché máxima de cinco minutos al consultar la vista.
 
