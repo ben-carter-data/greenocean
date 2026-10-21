@@ -4,7 +4,7 @@ Cómo se buscan los puntos débiles del panel publicado, cómo se corrigen y có
 
 ## 1. Objetivo y alcance
 
-Demostrar, mediante pruebas reproducibles, que un visitante no puede leer los secretos, modificar los datos ni ejecutar el pipeline sin la clave del autor. El alcance comprende la superficie expuesta a internet: el panel, su página Consultas SQL, la clave de control y el código público. Quedan excluidas las cuentas del autor en GitHub y Streamlit, protegidas por contraseña y verificación en dos pasos.
+Demostrar, mediante pruebas reproducibles, que un visitante no puede leer los secretos, modificar los datos ni ejecutar el pipeline sin la clave de control. El alcance comprende la superficie expuesta a internet: el panel, su página Consultas SQL, la clave de control y el código público. Quedan excluidas las cuentas de administración en GitHub y Streamlit, protegidas por contraseña y verificación en dos pasos.
 
 ## 2. Puertas y barreras
 
@@ -43,4 +43,4 @@ Cada puerta tiene tres barreras independientes: si una fallara, las otras siguen
 
 ## 5. Resultados y límites
 
-La revisión del 20-10-2026 encontró dos puntos débiles en la clave de control (sin límite de intentos; error con caracteres no ASCII), corregidos en D-199, y una frase inexacta del SAD, corregida en D-200. Depende del autor que la clave sea larga, que el token de GitHub sea de grano fino y se renueve a tiempo, y que sus cuentas tengan verificación en dos pasos. Nunca se publican los valores secretos ni un problema sin corregir.
+La revisión del 20-10-2026 encontró dos puntos débiles en la clave de control (sin límite de intentos; error con caracteres no ASCII), corregidos en D-199, y una frase inexacta del SAD, corregida en D-200. Requisitos operativos: clave de control larga, token de GitHub de grano fino renovado antes de su vencimiento y verificación en dos pasos en las cuentas de administración. Los valores secretos y los problemas sin corregir no se publican.

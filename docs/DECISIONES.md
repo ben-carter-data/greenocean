@@ -1622,3 +1622,8 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Problema:** las tarjetas de D-215 usaban acentos verde, violeta y rosado, colores que no pertenecen a los cuatro tonos pedidos, y quedaban casi pegadas unas a otras.
 - **Decisión:** el acento de cada tarjeta es un paso más claro u oscuro de su propio tono: azul claro en las azules, plata en la Vantablack, gris medio en la gris oscura y pizarra en las grises claras; la marca de la página actual usa ese mismo acento. Entre tarjetas queda un espacio de 12 px. El fondo del menú no cambia: sigue el tema elegido. Las tarjetas siguen abiertas por defecto y plegables con un clic.
 - **Pruebas:** `tests/test_dashboard.py` (D-213: los acentos pertenecen solo a los cuatro tonos).
+
+## D-217 · El PRD y el SAD, escritos como un equipo describe su producto
+- **Problema:** el PRD hablaba de «perfiles de diseño (hipótesis, sin entrevistas)» y de lo que el sistema no es, y su redacción sonaba a plantilla. Un documento de producto describe qué es el sistema, qué hace, qué no hace y para quién, sin comentarios sobre el propio documento.
+- **Decisión:** el PRD se ordena en contexto, visión y misión, alcance (qué hace y qué no hace), usuarios, preguntas de negocio, requisitos y pantallas, en frases directas. El SAD conserva sus tres diagramas con párrafos más simples. «El autor» pasa a «el administrador» en el PRD y en el plan de seguridad. Las cifras siguen siendo las de la base y cada documento cabe en dos páginas.
+- **Pruebas:** `tests/test_document_pdf.py` y `tests/test_doc_diagrams.py`, sin cambios.
