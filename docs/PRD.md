@@ -1,51 +1,53 @@
 # GreenOcean · Documento de requisitos del producto (PRD)
 
-Monitor semanal de precios de alimentos en Chile, sobre los datos abiertos de ODEPA y el IPC del INE. Versión del 20-10-2026; el detalle de cada decisión está en `docs/DECISIONES.md`.
+Versión 20-10-2026. Define el propósito, los usuarios y los requisitos verificables de GreenOcean. Las decisiones de detalle se registran en `docs/DECISIONES.md`.
 
-## 1. Problema
+## 1. Propósito y problema
 
-Los precios mayoristas y al consumidor de ODEPA son públicos, pero no se pueden comparar sin trabajo: uno es diario y por caja o malla, el otro semanal y por kilo o unidad, y ninguno descuenta la inflación. Cruzarlos a mano cada semana es lento y no deja rastro. GreenOcean lo hace solo cada martes y publica un panel de lectura donde cada cifra se puede seguir hasta el archivo oficial.
+GreenOcean es un sistema de monitoreo semanal de precios de alimentos en Chile. Integra dos fuentes oficiales de datos abiertos: los precios mayoristas y al consumidor de ODEPA y el IPC de alimentos del INE.
 
-Hoy la base publicada tiene 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC de alimentos. La última carga leyó 2.521.012 filas: 2.520.811 cargadas y 201 rechazadas con su motivo.
+Las series de ODEPA no son comparables de forma directa: difieren en frecuencia (diaria y semanal), en unidad de venta (caja, bandeja o malla frente a kilo o unidad) y en desagregación (mercado y canal), y ninguna está ajustada por inflación. La consolidación manual es lenta, propensa a errores y no trazable. El sistema la reemplaza por un pipeline semanal automatizado que normaliza unidades, semanas y claves de producto, valida la calidad y publica un panel de consulta de solo lectura con trazabilidad de cada cifra hasta su archivo de origen.
 
-## 2. Usuarios
+Volumen a la fecha: 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC. Última carga: 2.521.012 filas leídas, 2.520.811 cargadas y 201 rechazadas con motivo.
 
-Perfiles de diseño, no entrevistas: el panel es para quien decide con estos precios, no para el consumidor final.
+## 2. Partes interesadas
 
-| Usuario | Su decisión | Qué le responde el panel |
+Perfiles de diseño (hipótesis, sin entrevistas). El sistema no está dirigido al consumidor final.
+
+| Perfil | Decisión que apoya | Información entregada |
 |---|---|---|
-| Analista de pricing | Ajustar precios de venta | ¿El precio de hoy es normal para la época, en pesos de hoy? |
-| Compras | Cuándo comprar y qué negociar | ¿Cuánto paga el consumidor sobre el mayorista? |
-| Gerencia | Dónde mirar esta semana | ¿Qué se movió y qué es inusual? |
-| Revisor técnico | Si el proyecto es confiable | Calidad, pruebas, linaje y documentos |
+| Analista de pricing | Fijación de precios | Precio actual frente a su rango estacional, nominal y real |
+| Compras y abastecimiento | Oportunidad de compra | Diferencia consumidor–mayorista por canal |
+| Gerencia | Priorización semanal | Variaciones y alertas de la semana |
+| Revisor técnico | Confiabilidad del sistema | Calidad, pruebas, linaje y documentación |
 
 [[diagrama:actores]]
 
-El visitante solo lee. El autor opera: responde consultas SQL a pedido, mantiene el código y los secretos y puede lanzar una carga manual con clave.
+Los usuarios acceden en modo de solo lectura. El autor opera el sistema: atiende consultas SQL a pedido, mantiene código y secretos, y ejecuta cargas manuales con clave de control.
 
 ## 3. Preguntas de negocio
 
-| Pregunta | Cómo se responde | Dónde |
+| ID | Pregunta | Método | Vista |
+|---|---|---|---|
+| P-1 | ¿Qué precios variaron esta semana y cuáles son atípicos? | Variación sobre las mismas regiones; alertas K6 | Resumen semanal |
+| P-2 | ¿El precio actual es normal para la temporada? | Rango P25–P75 de las mismas semanas ISO en años anteriores | Precios e inflación |
+| P-3 | ¿Cuál es el margen consumidor sobre mayorista? | Indicador K1 por canal frente a su rango habitual | Precios e inflación |
+
+## 4. Requisitos
+
+| ID | Requisito | Criterio de verificación |
 |---|---|---|
-| ¿Qué se movió esta semana y es inusual? | Variación sobre las mismas regiones y alertas K6 | Resumen semanal |
-| ¿Es normal el precio de hoy para la época? | Rango habitual P25–P75 de las mismas semanas en años anteriores, nominal o real | Precios e inflación |
-| ¿Cuánto paga el consumidor sobre el mayorista? | Margen K1 por canal frente a su rango habitual | Precios e inflación |
+| RF-01 | Carga semanal automática de ODEPA e INE | Workflow de GitHub Actions programado los martes |
+| RF-02 | Rechazo con motivo, sin pérdida de filas | Filas leídas = cargadas + rechazadas, probado en dbt |
+| RF-03 | Publicación solo de cargas válidas | 31 pruebas de dbt; reemplazo atómico de la base |
+| RF-04 | Precios reales junto a los nominales | Deflactor del IPC recalculado en la auditoría |
+| RF-05 | Trazabilidad de cada cifra | Página Calidad y auditoría |
+| RNF-01 | Costo cero, sin vencimientos | Solo servicios gratuitos permanentes |
+| RNF-02 | Solo lectura para usuarios | DuckDB en modo lectura; carga manual con clave |
+| RNF-03 | Legibilidad en 1440 × 900 | Revisión visual en cada cambio del panel |
 
-## 4. Requisitos clave
+## 5. Pantallas
 
-| ID | Requisito | Cómo se cumple |
-|---|---|---|
-| RF-01 | Cargar ODEPA y el IPC cada semana sin intervención | Workflow de GitHub Actions cada martes |
-| RF-02 | Rechazar filas inválidas con motivo, sin borrar nada | Tabla `rejection`; leídas = cargadas + rechazadas |
-| RF-03 | No publicar una carga que no pasó sus pruebas | 31 pruebas de dbt y reemplazo atómico de la base |
-| RF-04 | Mostrar precios reales junto a los nominales | Selector Nominal / Real con el IPC del INE |
-| RF-05 | Mostrar la calidad y el origen de cada cifra | Calidad y auditoría |
-| RNF-01 | Costo cero y sin vencimientos | Parquet, dbt Core, DuckDB, GitHub Actions y Streamlit Community Cloud |
-| RNF-02 | Solo lectura para el visitante | DuckDB en modo lectura; la carga manual pide clave |
-| RNF-03 | Cada vista se lee en una pantalla de 1440 × 900 | Revisado en cada cambio del panel |
-
-## 5. Pantallas reales
-
-Capturas del panel publicado, cada una en un tema distinto. No son bocetos.
+Capturas del panel en producción, en cuatro temas de color.
 
 [[diagrama:mockups]]

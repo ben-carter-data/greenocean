@@ -104,7 +104,7 @@ def test_d205_the_prd_pdf_carries_the_four_real_screens():
 
 def test_d210_the_adr_is_one_table_of_the_ten_decisions_that_weigh_most():
     text = (DOCS_DIR / "ADR.md").read_text(encoding="utf-8")
-    assert "| ADR | Decisión | Motivo | Alternativa descartada |" in text
+    assert "| ADR | Decisión | Justificación | Alternativa descartada |" in text
     rows = re.findall(r"^\| (ADR-\d+) \|(.*)\|$", text, flags=re.MULTILINE)
     assert len(rows) == 10 and len({number for number, _ in rows}) == 10
     for number, row in rows:

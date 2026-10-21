@@ -1607,3 +1607,8 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **El autor:** no hay un bloque «Autor»: lo único suyo es la clave, que ya protege el botón del pipeline y los enlaces dentro del Centro de operación (D-199, D-202). Un bloque propio indicaría a cualquiera dónde está la puerta; el menú no protege nada, la clave sí.
 - **Enlaces:** una dirección vieja con `?ver=` sigue abriendo su página; el parámetro se descarta.
 - **Pruebas:** `tests/test_dashboard.py` (D-213: bloques en orden, cada página una vez, colores distintos, direcciones viejas) y las del menú, actualizadas; las de D-209 sobre perfiles se retiran con el selector.
+
+## D-214 · PRD, SAD y ADR con redacción de documento de ingeniería
+- **Problema:** los documentos de D-210 usaban un tono coloquial («no se pueden comparar sin trabajo», «lo hace solo») impropio de un documento técnico corporativo.
+- **Decisión:** el PRD, el SAD y el ADR se reescriben en registro de ingeniería: propósito, partes interesadas, preguntas con identificador y requisitos con criterio de verificación (PRD); vistas de datos, despliegue y lógica (SAD); justificación y alternativa descartada por decisión (ADR). El objetivo y el alcance del plan de seguridad se ajustan al mismo registro. Las cifras siguen siendo las de la base y cada documento cabe en dos páginas de PDF.
+- **Pruebas:** `tests/test_document_pdf.py` (encabezado de la tabla del ADR) sin otros cambios.

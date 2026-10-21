@@ -4,7 +4,7 @@ Cómo se buscan los puntos débiles del panel publicado, cómo se corrigen y có
 
 ## 1. Objetivo y alcance
 
-Demostrar, con pruebas que cualquiera puede repetir, que un visitante no puede leer los secretos, cambiar los datos ni lanzar el pipeline sin la clave del autor. El alcance es lo que se alcanza desde internet: el panel, su página Consultas SQL, la clave de control y el código público. Las cuentas del autor en GitHub y Streamlit quedan fuera: las protegen su contraseña y la verificación en dos pasos.
+Demostrar, mediante pruebas reproducibles, que un visitante no puede leer los secretos, modificar los datos ni ejecutar el pipeline sin la clave del autor. El alcance comprende la superficie expuesta a internet: el panel, su página Consultas SQL, la clave de control y el código público. Quedan excluidas las cuentas del autor en GitHub y Streamlit, protegidas por contraseña y verificación en dos pasos.
 
 ## 2. Puertas y barreras
 
