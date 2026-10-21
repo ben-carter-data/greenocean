@@ -1799,6 +1799,7 @@ def test_d222_every_page_fits_the_window_with_a_readable_floor():
     script = dashboard.FIT_SCREEN_SCRIPT
     assert script.startswith("<script>") and script.count("<script") == 1
     assert str(dashboard.FIT_MIN_ZOOM) in script and 0.6 <= dashboard.FIT_MIN_ZOOM < 1
+    assert "fitMenu" in script and str(dashboard.FIT_MENU_MIN_ZOOM) in script
     # Phones keep their own layout (D-166); the folded menu is read from data-collapsed.
     assert "innerHeight <= 500" in script
     assert 'aria-expanded' not in dashboard.build_sidebar_css(charts.MODE_DARK)

@@ -1663,3 +1663,8 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Problema:** la escala de D-223 terminaba en dos tarjetas casi blancas que, sobre un menú oscuro, se veían pesadas y fuera de lugar.
 - **Decisión:** las tarjetas pasan a ser un velo muy tenue sobre el fondo del menú, como una barra lateral de macOS: en un menú oscuro, un blanco del 3 % al 10,5 % que aumenta de arriba abajo; en uno claro, un gris equivalente. Texto y títulos en grises del tema, borde fino y sombra mínima. Nunca una tarjeta clara sobre un menú oscuro.
 - **Pruebas:** `tests/test_dashboard.py` (D-213: velos en orden, sin tarjetas claras en el menú oscuro).
+
+## D-225 · El menú también cabe en la pantalla, y el zoom baja hasta 0,6
+- **Problema:** en una pantalla de 1440 × 900 con el Dock visible quedan unos 700 px útiles: el menú de la izquierda obligaba a desplazarse (el primer bloque quedaba cortado arriba) y el Resumen todavía pasaba la altura con el zoom mínimo de D-222.
+- **Decisión:** el mismo script ajusta también las tarjetas del menú, juntas, para que la última termine sobre el pie (nunca por debajo de 0,7). El zoom mínimo de las páginas baja de 0,66 a 0,6. Medido a 1440 × 700: el menú completo y el Resumen caben sin desplazarse; Pipeline, Calidad, Consultas SQL y Centro de operación todavía piden un poco de desplazamiento.
+- **Pruebas:** `tests/test_dashboard.py` (D-222, ampliada).

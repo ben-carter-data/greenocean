@@ -7544,7 +7544,9 @@ IDLE_ANIMATION_SCRIPT = """<script>(() => {
 # it out just enough to show it whole, never under FIT_MIN_ZOOM so the text stays readable.
 # Phones keep their own layout (D-166). The content is widened by the same factor, so the
 # page still fills the window from side to side. Only attributes change: React owns the nodes.
-FIT_MIN_ZOOM = 0.66
+FIT_MIN_ZOOM = 0.6
+# D-225: the menu's cards shrink too, down to this factor, so no part of the menu scrolls.
+FIT_MENU_MIN_ZOOM = 0.7
 FIT_SCREEN_SCRIPT = r"""<script>
 (function () {
   const doc = window.parent && window.parent.document ? window.parent.document : document;
@@ -7584,7 +7586,21 @@ FIT_SCREEN_SCRIPT = r"""<script>
     }
     setTimeout(function () { busy = false; }, 200);
   }
-  function later() { clearTimeout(timer); timer = setTimeout(fit, 120); }
+  // The menu fits too (D-225): its cards shrink together so the last one ends above the footer.
+  function fitMenu() {
+    const blocks = Array.from(doc.querySelectorAll('[data-testid="stSidebar"] [class*="st-key-nav_block_"]'));
+    const footer = doc.querySelector('.st-key-sidebar_footer');
+    if (!blocks.length || !footer) return;
+    blocks.forEach(function (block) { block.style.zoom = ''; });
+    if (win.innerHeight <= 500) return;
+    const top = blocks[0].getBoundingClientRect().top;
+    const bottom = blocks[blocks.length - 1].getBoundingClientRect().bottom;
+    const room = footer.getBoundingClientRect().top - 8 - top;
+    if (bottom - top <= room) return;
+    const zoom = Math.max(MENU_MIN, room / (bottom - top));
+    blocks.forEach(function (block) { block.style.zoom = String(zoom); });
+  }
+  function later() { clearTimeout(timer); timer = setTimeout(function () { fitMenu(); fit(); }, 120); }
   win.__greenoceanFit = later;
   win.addEventListener('resize', later);
   new win.MutationObserver(later).observe(doc.body, {childList: true, subtree: true});
@@ -7604,7 +7620,7 @@ FIT_SCREEN_SCRIPT = r"""<script>
   })();
   later();
 })();
-</script>""".replace("MIN", str(FIT_MIN_ZOOM))
+</script>""".replace("MENU_MIN", str(FIT_MENU_MIN_ZOOM)).replace("MIN", str(FIT_MIN_ZOOM))
 
 
 FOLD_SIDEBAR_SCRIPT = f"""<script>
