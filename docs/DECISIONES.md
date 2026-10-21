@@ -1643,3 +1643,7 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Decisión:** la página es una sola vista, sin pestañas ni filtros. Arriba, el pipeline en una línea (Fuentes, Aterrizaje y bronce, dbt, datos.duckdb) con sus logos alineados; debajo de cada etapa, en su columna, las dimensiones que se vigilan ahí (Completitud; Actualidad; Validez y Pruebas dbt; Consistencia y Unicidad). Luego, a todo el ancho, «Qué se apartó y por qué» y «Cargas» lado a lado. Al final, los 11 **controles de auditoría** en sus cuatro grupos (fuentes, ejecución y dbt, warehouse, resultados), que no dependían del precio elegido: cada uno con su estado y su evidencia al hacer clic. Se retira la traza de un precio y su código (`audit_trace` conserva solo los controles).
 - **Manual:** las rutas del menú se actualizan a las tarjetas de D-213 (Centro de operación en «DevOps y seguridad») y a la puerta única de la clave (D-202).
 - **Pruebas:** `tests/test_quality_audit.py` (columnas en el orden del pipeline, controles al final) y `tests/test_dashboard.py` (D-220: una vista, sin selectores; la evidencia se abre igual).
+
+## D-221 · La guía del proyecto sin el rezago y con el IPC
+- **Decisión:** `docs/PROYECTO.md`, que alimenta la portada y la definición del proyecto, ya no menciona el rezago (K5, retirado en D-146) y suma el IPC de alimentos del INE y los precios reales al resumen y al alcance.
+- **Pruebas:** las de la portada y del proyecto, sin cambios.

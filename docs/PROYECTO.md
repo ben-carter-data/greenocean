@@ -9,15 +9,15 @@ Textos de Definición del proyecto, Indicadores, Reglas, Glosario y DevOps y seg
 | Misión | Transformar los precios públicos de ODEPA en información semanal comparable para apoyar el seguimiento de precios, compras y abastecimiento en Chile. | mission |
 | Visión | Disponer de una base trazable y de un seguimiento sostenido que permita entender las diferencias de precio y anticipar qué situaciones merecen revisión por el equipo de negocio. | vision |
 | Objetivo de negocio | Reducir la consolidación manual de archivos y facilitar la detección de brechas, patrones estacionales y variaciones inusuales. El proyecto entrega evidencia descriptiva para la decisión humana. | mission |
-| Alcance | Ingesta de las dos fuentes oficiales de ODEPA, conservación del original, limpieza, normalización de unidades, controles de calidad, modelo estrella, indicadores, dashboard y automatización semanal para los años cargados en la base. | scope |
+| Alcance | Ingesta de las dos fuentes oficiales de ODEPA y del IPC de alimentos del INE, conservación del original, limpieza, normalización de unidades, controles de calidad, modelo estrella, indicadores, dashboard y automatización semanal para los años cargados en la base. | scope |
 | Fuera de alcance | Predecir precios, atribuir causalidad, medir la utilidad del comercio, recomendar compras de forma automática o representar todos los precios efectivos de cada establecimiento. | scope |
 | Criterios de aceptación | Comparaciones con semana, región y unidad compatibles; reglas y rechazos explicados; indicadores trazables a sus consultas; ejecuciones auditables y conservación de la última base válida cuando falla una carga. | rule |
 
 ## Resumen
 
 - **Problema:** quien sigue los precios de los alimentos en Chile tiene que bajar cada semana dos archivos de ODEPA, convertir unidades distintas y cruzarlos a mano.
-- **Qué hace:** un pipeline semanal descarga los precios mayoristas y al consumidor, los limpia con reglas de negocio, revisa su calidad y los carga en un data warehouse.
-- **Resultado:** un panel público con márgenes, diferencias por canal y región, estacionalidad, rezago y alertas, que se actualiza solo cada martes.
+- **Qué hace:** un pipeline semanal descarga los precios mayoristas y al consumidor y el IPC de alimentos, los limpia con reglas de negocio, revisa su calidad y los carga en un data warehouse.
+- **Resultado:** un panel público con márgenes, diferencias por canal y región, estacionalidad, precios reales con el IPC del INE y alertas, que se actualiza solo cada martes.
 
 ## Fuentes y cruces
 
