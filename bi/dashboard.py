@@ -33,6 +33,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
+from bi import viewport
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
                 audit_trace, database_crossings, database_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
@@ -140,7 +141,6 @@ VIEW_PARAMETER = "vista"
 # screen, like a page of Looker or Power BI (D-067).
 COMPACT_VIEW = "compact_view"
 # Tile heights of a report page, in pixels: two rows fit a 1440 x 900 screen.
-TILE_HEIGHT = 255
 # A gap above +300 % does not compare the same thing: in street markets, which sell in
 # bulk like the wholesale market, 99 % of the gaps stay under +253 %; above +300 % the
 # consumer price is a packed format (supermarket trays of 250-500 g) against bulk
@@ -1919,7 +1919,7 @@ def show_link_cards(links):
 
 def show_chart(chart):
     """Draw an Altair chart with its own colors (not Streamlit's chart theme)."""
-    st.altair_chart(chart, use_container_width=True, theme=None)
+    st.altair_chart(chart, use_container_width=True, height="stretch", theme=None)
 # endregion
 
 
@@ -2913,33 +2913,45 @@ def show_architecture_page(mode):
                                 label_visibility="collapsed") or MODEL_VIEWS[0]
     if view == MODEL_VIEWS[0]:
         counts, layers, tests = read_database_map(get_database_version())
-        st.iframe(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests,
-                                              read_store_sizes()), height=660)
+        st.iframe(viewport.frame(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests,
+                                              read_store_sizes())), height="stretch")
         return
     if view == MODEL_VIEWS[3]:
         st.markdown('<p class="arch-phrase">Cada flecha es un punto donde dos bases se tocan, con su número y su comprobación de ahora. '
                     'Pasa el cursor por un número o por un logo.</p>', unsafe_allow_html=True)
-        st.iframe(database_crossings.build_crossings_html(charts.get_palette(mode), read_crossing_checks(get_database_version())),
-                  height=640)
+        st.iframe(viewport.frame(database_crossings.build_crossings_html(charts.get_palette(mode), read_crossing_checks(get_database_version()))),
+                  height="stretch")
         return
     if view == MODEL_VIEWS[2]:
         schema = read_er_schema(get_database_version())
         st.markdown('<p class="arch-phrase">El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las '
                     'relaciones entre ellas. Los tipos se leen de la base.</p>', unsafe_allow_html=True)
-        with st.container(key="architecture_diagram"):
-            st.markdown(er_diagram.build_er_svg(schema, row_counts, mode, tooltips), unsafe_allow_html=True)
+        show_model_workspace(mode, row_counts, schema,
+                             er_diagram.build_er_svg(schema, row_counts, mode, tooltips),
+                             "Modelo entidad-relación de datos.duckdb")
         return
     st.markdown('<p class="arch-phrase">1 fila de weekly_price = un producto '
                 '(variedad y calidad) × región × canal × unidad × semana. '
                 'Pasa el mouse por una tabla para ver para qué sirve.</p>', unsafe_allow_html=True)
-    with st.container(key="architecture_diagram"):
-        st.markdown(star_model.build_star_svg(columns, row_counts, mode, tooltips=tooltips),
-                    unsafe_allow_html=True)
-        st.markdown('<div class="arch-legend"><span><b>PK</b> clave primaria</span>'
-                    '<span><b>FK</b> clave foránea</span><span><b>cian</b> medida</span>'
-                    '<span>' + build_external_link_html("etl/schema.sql en GitHub",
-                                                        project.build_github_url("etl/schema.sql"))
-                    + '</span></div>', unsafe_allow_html=True)
+    show_model_workspace(mode, row_counts, read_er_schema(get_database_version()),
+                         star_model.build_star_svg(columns, row_counts, mode, tooltips=tooltips),
+                         "Modelo estrella de datos.duckdb")
+
+
+def show_model_workspace(mode, row_counts, schema, detailed_svg, label):
+    with st.container(key="model_workspace", height="stretch"):
+        drawing, details = st.columns([2.1, 1], gap="small")
+        with drawing, st.container(key="architecture_diagram", height="stretch"):
+            st.markdown(viewport.model_overview(row_counts, mode, "Resumen · " + label), unsafe_allow_html=True)
+        with details, st.container(key="model_columns", height="stretch"):
+            with st.popover("Diagrama completo", icon=":material/open_in_full:", width="content"):
+                st.markdown(zoom.build_zoom_frame_html(detailed_svg, "model-detail"), unsafe_allow_html=True)
+            st.markdown(build_external_link_html("etl/schema.sql en GitHub", project.build_github_url("etl/schema.sql")),
+                        unsafe_allow_html=True)
+            for table, columns in schema.items():
+                st.markdown(f"**{table}**")
+                st.markdown("\n".join(f"- `{name}` · {kind}" for name, kind in columns))
+
 
 
 @st.cache_data(show_spinner=False)
@@ -5047,12 +5059,12 @@ def show_market_overview(mode, prefix):
             channels=['Todos'] + sorted({str(row['channel']) for row in rows})
             if st.session_state.get('home_products_channel') not in channels:
                 st.session_state['home_products_channel']='Todos'
-            channel=channel_column.selectbox('Canal', channels, key='home_products_channel')
+            channel=channel_column.selectbox('Canal', channels, key='home_products_channel', label_visibility='collapsed')
             # Alerts are national: «Inusuales» only applies to the whole country.
             orders=PRODUCT_ORDERS if region == ALL_VALUES else PRODUCT_ORDERS[:-1]
             if st.session_state.get('home_products_order') not in orders:
                 st.session_state['home_products_order']=orders[0]
-            order=order_column.selectbox('Orden', orders, key='home_products_order')
+            order=order_column.selectbox('Orden', orders, key='home_products_order', label_visibility='collapsed')
             total=len(rows)
             if channel != 'Todos':
                 rows=[row for row in rows if row['channel'] == channel]
@@ -5125,20 +5137,19 @@ def show_diagrams_page(mode):
             st.segmented_control("Vista", [PIPELINE_JOURNEY, PIPELINE_LINEAGE], default=PIPELINE_JOURNEY,
                                  key=PIPELINE_VIEW_KEY, label_visibility="collapsed")
         if lineage_view:
-            st.markdown(zoom.build_zoom_frame_html(lineage.build_lineage_svg(nodes, results, mode),
-                                                   "diagram-wide"), unsafe_allow_html=True)
-            if getattr(lineage, "LINEAGE_SCRIPT", ""):
-                # Hovering a model follows only its inputs and outputs; a click pins them.
+            with st.container(key="lineage_canvas", height="stretch"):
+                st.markdown(viewport.lineage_overview(nodes, results, mode), unsafe_allow_html=True)
+            with st.popover("Diagrama de dependencias", icon=":material/open_in_full:", width="content"):
+                st.markdown(zoom.build_zoom_frame_html(lineage.build_lineage_svg(nodes, results, mode),
+                                                       "lineage-detail"), unsafe_allow_html=True)
                 st.html(lineage.LINEAGE_SCRIPT, unsafe_allow_javascript=True)
         else:
-            # Inline SVG (not an image), so each piece shows its explanation on hover.
-            st.markdown(zoom.build_zoom_frame_html(
-                            architecture.build_journey_svg(states, figures, mode, animate_flow=True),
-                            "diagram-wide")
-                        + zoom.build_zoom_frame_html(
-                            architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=True),
-                            "diagram-narrow"), unsafe_allow_html=True)
+            st.markdown(zoom.build_zoom_frame_html(viewport.pipeline_overview(states, figures, mode),
+                                                   "pipeline-overview"), unsafe_allow_html=True)
             st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
+            with st.popover("Detalle del recorrido", icon=":material/open_in_full:", width="content"):
+                st.markdown(zoom.build_zoom_frame_html(architecture.build_journey_svg(
+                    states, figures, mode, animate_flow=True), "pipeline-detail"), unsafe_allow_html=True)
         st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
         st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
 
@@ -5178,7 +5189,7 @@ def show_gap_line(rows, channel, mode, weeks=None, key_prefix="gap_line"):
             line_rows, "Brecha (%)", line_rows["value"].map(charts.format_percent), mode,
             reference_value=0)
         if st.session_state.get(COMPACT_VIEW) and key_prefix == "gap_line":
-            chart = chart.properties(height=TILE_HEIGHT - 60)
+            chart = chart.properties(height="container")
         show_chart(chart)
 
 
@@ -6214,8 +6225,8 @@ def show_family_cards(rows, titles, mode, real):
             with st.container(horizontal=True, vertical_alignment="center"):
                 st.markdown(build_family_card_title_html(focus, titles[focus]), unsafe_allow_html=True)
                 st.button("Ver todas", key="inf_unfocus", icon=":material/close:", on_click=focus_family, args=(None,))
-            st.altair_chart(inflation_view.draw_family_card(rows, focus, mode, real=real, domain=domain, height=420),
-                            width="stretch", theme=None)
+            st.altair_chart(inflation_view.draw_family_card(rows, focus, mode, real=real, domain=domain, height="container"),
+                            width="stretch", height="stretch", theme=None)
         return
     families = list(titles)
     for start in range(0, len(families), FAMILY_CARD_COLUMNS):
@@ -6223,8 +6234,8 @@ def show_family_cards(rows, titles, mode, real):
         for offset, family in enumerate(families[start:start + FAMILY_CARD_COLUMNS]):
             with columns[offset], st.container(key=f"inf_card_{start + offset}"):
                 st.markdown(build_family_card_title_html(family, titles[family]), unsafe_allow_html=True)
-                st.altair_chart(inflation_view.draw_family_card(rows, family, mode, real=real, domain=domain),
-                                width="stretch", theme=None)
+                st.altair_chart(inflation_view.draw_family_card(rows, family, mode, real=real, domain=domain, height="container"),
+                                width="stretch", height="stretch", theme=None)
                 st.button("Ampliar", key=f"inf_zoom_{start + offset}", icon=":material/open_in_full:",
                           on_click=focus_family, args=(family,))
 
@@ -6601,7 +6612,7 @@ def show_security_page(mode):
     st.caption("Cada puerta que podría tentar a un atacante, las barreras que la cierran y la prueba automática que "
                "las ataca en cada push. El código es público: la seguridad no depende de esconder cómo está hecho, "
                "sino de las claves, que nunca aparecen.")
-    st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=590)
+    st.iframe(viewport.frame(security_map.build_security_html(charts.get_palette(mode))), height="stretch")
     st.markdown('<p class="doc-source">El método, los casos de prueba y los resultados de la última revisión: '
                 + build_link_html(f"{PAGE_SECURITY_PLAN} →", build_page_address(PAGE_SECURITY_PLAN)) + '</p>',
                 unsafe_allow_html=True)
@@ -6698,18 +6709,20 @@ def show_operation_center(mode, live=False):
     unlocked = bool(st.session_state.get(ADMIN_UNLOCKED))
     # The latest runs go under the path and the manual run beside the facts, so both
     # columns end together and the page fits one screen.
-    stage_column, side_column = st.columns([2.4, 1], gap="large")
-    with stage_column:
-        st.iframe(operation_center.build_stage_html(palette, states, unlocked), height="content")
-        if runs:
-            st.markdown(build_recent_runs_html(runs), unsafe_allow_html=True)
-    with side_column:
-        if error_text:
-            st.caption(f"GitHub no respondió ({error_text}); se muestra la última respuesta guardada.")
-        st.markdown(build_operation_side_css(palette)
-                    + build_operation_facts(latest_load, read_published_figures(get_database_version()),
-                                            datetime.now(timezone.utc)), unsafe_allow_html=True)
-        show_admin_card()
+    with st.container(key="operation_body", height="stretch"):
+        stage_column, side_column = st.columns([2.4, 1], gap="large")
+        with stage_column, st.container(key="operation_stage", height="stretch"):
+            st.iframe(viewport.frame(operation_center.build_stage_html(palette, states, unlocked)), height="stretch")
+            if runs:
+                st.markdown(build_recent_runs_html(runs), unsafe_allow_html=True)
+        with side_column, st.container(key="operation_side", height="stretch"):
+            if error_text:
+                st.caption(f"GitHub no respondió ({error_text}); se muestra la última respuesta guardada.")
+            st.markdown(build_operation_side_css(palette)
+                        + build_operation_facts(latest_load, read_published_figures(get_database_version()),
+                                                datetime.now(timezone.utc)), unsafe_allow_html=True)
+            show_admin_card()
+
 
 
 def build_operation_side_css(palette):
@@ -6952,15 +6965,17 @@ def show_devops_tab(mode):
     that open their detail (D-132, D-136). The lifecycle drawing and the link to
     Pipeline are gone: this page has its own architecture."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
-    st.markdown(zoom.build_zoom_frame_html(
-        architecture.build_devops_svg(states, build_devops_figures(figures), mode, animate_flow=True),
-        "diagram-devops"), unsafe_allow_html=True)
-    with st.container(key="devops_layers", horizontal=True, gap="small"):
-        for heading, lead in [(group[0], group[1]) for group in ARCHITECTURE_GROUPS] + [
-                ("Coste y capacidad", "Qué cuesta operar y hasta dónde alcanza.")]:
-            if st.button(heading, key=f"devops_layer_{heading}", icon=DEVOPS_LAYER_ICONS[heading],
-                         help=lead, width="stretch"):
-                show_devops_layer_dialog(heading, figures["next_run"])
+    with st.container(key="platform_canvas", height="stretch"):
+        st.markdown(zoom.build_zoom_frame_html(viewport.platform_overview(mode), "platform-overview"), unsafe_allow_html=True)
+        with st.container(key="devops_layers", horizontal=True, gap="small"):
+            for heading, lead in [(group[0], group[1]) for group in ARCHITECTURE_GROUPS] + [
+                    ("Coste y capacidad", "Qué cuesta operar y hasta dónde alcanza.")]:
+                if st.button(heading, key=f"devops_layer_{heading}", icon=DEVOPS_LAYER_ICONS[heading],
+                             help=lead, width="stretch"):
+                    show_devops_layer_dialog(heading, figures["next_run"])
+        with st.popover("Arquitectura completa", icon=":material/open_in_full:", width="content"):
+            st.markdown(zoom.build_zoom_frame_html(architecture.build_devops_svg(
+                states, build_devops_figures(figures), mode, animate_flow=True), "platform-detail"), unsafe_allow_html=True)
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
     st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
 
@@ -7221,21 +7236,20 @@ def show_operations_page(mode):
                                            lambda value: format_chile_time(parse_run_start(value)),
                                            rejections=read_rejection_count(get_database_version()))
     controls = audit_trace.build_controls_html(quality_view.build_columns(evidence))
-    st.iframe(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"],
-                                           measures["flags"], controls), height=830)
+    st.iframe(viewport.frame(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"],
+                                           measures["flags"], controls), "quality"), height="stretch")
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
     if not database_ok or any(item["status"].startswith("Falla") for item in files):
         st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
     with st.container(key=quality_view.EXPANDER_KEY, horizontal=True, vertical_alignment="center", gap="small"):
-        st.markdown('<span class="qa-open-label">Abrir la evidencia de</span>', unsafe_allow_html=True)
-        st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
-                 on_change=open_quality_evidence, label_visibility="collapsed")
-    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
+        with st.popover("Abrir evidencia", icon=":material/fact_check:", width="content"):
+            st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
+                     on_change=open_quality_evidence, label_visibility="collapsed")
         st.button("Volver a medir", icon=":material/refresh:", key="qa_recheck_page", on_click=recheck_quality,
                   help="Descarta lo guardado y mide de nuevo sobre la base publicada.")
-        rechecked = st.session_state.get("qa_rechecked_at")
-        st.caption(f"Medido de nuevo a las {to_chile_time(rechecked):%H:%M:%S}." if rechecked else
-                   "Cada indicador se mide en la base de la última carga; cada control abre los datos que lo respaldan.")
+    rechecked = st.session_state.get("qa_rechecked_at")
+    st.caption(f"Medido de nuevo a las {to_chile_time(rechecked):%H:%M:%S}." if rechecked else
+               "Cada indicador se mide en la base de la última carga; cada control abre los datos que lo respaldan.")
     chosen_card = st.session_state.pop(QUALITY_OPEN_KEY, None)
     if chosen_card in quality_evidence.TITLES.values():
         key = next(key for key, title in quality_evidence.TITLES.items() if title == chosen_card)
@@ -7360,11 +7374,11 @@ def show_links_page(mode):
     tab (D-116) with its own copy button. ODEPA and the INE live in «Fuentes» (D-118)."""
     # Our own trusted markup, in its own frame: st.html sanitises the SVG gradients,
     # filters and buttons the page is made of.
-    st.iframe('<!doctype html><html lang="es"><head><meta charset="utf-8">'
+    st.iframe(viewport.frame('<!doctype html><html lang="es"><head><meta charset="utf-8">'
               '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
               '<body style="margin:0;background:transparent">'
-              + github_page.build_github_page_html(mode) + github_page.GITHUB_PAGE_SCRIPT + '</body></html>',
-              height="content")
+              + github_page.build_github_page_html(mode) + github_page.GITHUB_PAGE_SCRIPT + '</body></html>', 'github'),
+              height="stretch")
 
 # endregion
 
@@ -7385,28 +7399,28 @@ def build_document_diagram_html(name, mode):
     if name in ("plataforma", "pipeline"):
         states, figures, *_ = read_journey()
         if name == "plataforma":
-            return zoom.build_zoom_frame_html(architecture.build_devops_svg(
-                states, build_devops_figures(figures), mode, animate_flow=False), "diagram-devops")
-        return zoom.build_zoom_frame_html(architecture.build_journey_svg(
-            states, figures, mode, animate_flow=False), "diagram-wide")
+            return zoom.build_zoom_frame_html(viewport.platform_overview(mode), "diagram-devops")
+        return zoom.build_zoom_frame_html(viewport.pipeline_overview(states, figures, mode), "pipeline-overview")
     if name == "modelo":
         row_counts = read_table_row_counts()
         columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
-        return star_model.build_star_svg(columns, row_counts, mode)
+        return viewport.model_overview(row_counts, mode, "Modelo estrella de datos.duckdb")
     return ""
 
 
 def show_document_diagram(name, mode):
     """One marker of a document: the document views and the security map in their own frame
     (hover tips and gradients need it, D-205), the live diagrams inline."""
-    palette = charts.get_palette(mode)
-    if name in doc_diagrams.DOC_DIAGRAMS:
-        st.iframe(doc_diagrams.DOC_DIAGRAMS[name](mode), height=doc_diagrams.HEIGHTS[name])
-    elif name == "seguridad":
-        st.iframe(security_map.build_security_html(palette), height=590)
-    else:
-        st.markdown('<div class="doc-diagram">' + build_document_diagram_html(name, mode) + '</div>',
-                    unsafe_allow_html=True)
+    with st.container(key=f"document_figure_{name}"):
+        palette = charts.get_palette(mode)
+        if name in doc_diagrams.DOC_DIAGRAMS:
+            st.iframe(viewport.frame(doc_diagrams.DOC_DIAGRAMS[name](mode)), height="stretch")
+        elif name == "seguridad":
+            st.iframe(viewport.frame(security_map.build_security_html(palette)), height="stretch")
+        else:
+            st.markdown('<div class="doc-diagram">' + build_document_diagram_html(name, mode) + '</div>',
+                        unsafe_allow_html=True)
+
 
 
 @st.cache_data(show_spinner=False)
@@ -7425,8 +7439,13 @@ def show_scalability_page(mode):
     st.markdown('<div class="doc-source">' + build_external_link_html(
         "Sección completa en docs/DECISIONES.md", project.build_github_url("docs/DECISIONES.md")) + '</div>',
         unsafe_allow_html=True)
-    with st.container(key="project_document"):
-        st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/DECISIONES.md.")
+    with st.container(key="document_body", height="stretch"):
+        sheet, index = st.columns([3, 1], gap="medium")
+        with sheet, st.container(key="project_document", height="stretch"):
+            st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/DECISIONES.md.")
+        with index, st.container(key="document_index", height="stretch"):
+            st.markdown("**En esta página**\n\nExtensiones previstas\n\nCriterios para adoptar la nube")
+
 
 
 @st.cache_data(show_spinner=False)
@@ -7459,13 +7478,22 @@ def show_project_document(mode, title):
     download.download_button("Descargar PDF", build_document_pdf(str(path), path.stat().st_mtime, title, lead),
                              file_name=f"GreenOcean_{filename.removesuffix('.md')}.pdf", mime="application/pdf",
                              icon=":material/download:", width="stretch", key=f"pdf_{filename}")
-    with st.container(key="project_document"):
-        position = 0
-        for marker in DOCUMENT_DIAGRAM.finditer(text):
-            st.markdown(text[position:marker.start()])
-            show_document_diagram(marker.group(1), mode)
-            position = marker.end()
-        st.markdown(text[position:])
+    with st.container(key="document_body", height="stretch"):
+        sheet, index = st.columns([3, 1], gap="medium")
+        with sheet:
+            with st.container(key="project_document", height="stretch"):
+                position = 0
+                for marker in DOCUMENT_DIAGRAM.finditer(text):
+                    st.markdown(text[position:marker.start()])
+                    show_document_diagram(marker.group(1), mode)
+                    position = marker.end()
+                st.markdown(text[position:])
+        with index, st.container(key="document_index", height="stretch"):
+            st.markdown("**En este documento**")
+            headings = re.findall(r"^## (.+)$", text, re.MULTILINE)
+            for heading in headings:
+                anchor = re.sub(r"[^\w -]", "", heading.lower()).replace(" ", "-")
+                st.markdown(f"[{heading}](#{anchor})")
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
     st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
 # endregion
@@ -7540,87 +7568,6 @@ IDLE_ANIMATION_SCRIPT = """<script>(() => {
         window.addEventListener(name, wake, { passive: true, capture: true }));
     wake();
 })();</script>"""
-# D-222: every page fits the window, like a dashboard: the page measures its content and zooms
-# it out just enough to show it whole, never under FIT_MIN_ZOOM so the text stays readable.
-# Phones keep their own layout (D-166). The content is widened by the same factor, so the
-# page still fills the window from side to side. Only attributes change: React owns the nodes.
-FIT_MIN_ZOOM = 0.6
-# D-225: the menu's cards shrink too, down to this factor, so no part of the menu scrolls.
-FIT_MENU_MIN_ZOOM = 0.7
-FIT_SCREEN_SCRIPT = r"""<script>
-(function () {
-  const doc = window.parent && window.parent.document ? window.parent.document : document;
-  const win = doc.defaultView || window;
-  if (win.__greenoceanFit) { win.__greenoceanFit(); return; }
-  let timer = null, busy = false;
-  function apply(box, zoom, widen) {
-    box.style.zoom = zoom === 1 ? '' : String(zoom);
-    const room = box.parentElement ? box.parentElement.clientWidth : 0;
-    box.style.width = zoom !== 1 && widen && room ? (room / zoom) + 'px' : '';
-    box.style.maxWidth = zoom !== 1 && widen ? 'none' : '';
-    // Widened, the box starts at the left edge; centred, it would spill out on both sides.
-    box.style.marginLeft = zoom !== 1 && widen ? '0' : '';
-    box.style.marginRight = zoom !== 1 && widen ? '0' : '';
-    box.style.alignSelf = zoom !== 1 && widen ? 'flex-start' : '';
-  }
-  function fit() {
-    const main = doc.querySelector('[data-testid="stMain"]');
-    const box = doc.querySelector('[data-testid="stMainBlockContainer"]');
-    if (!main || !box || busy) return;
-    busy = true;
-    apply(box, 1, false);
-    if (win.innerHeight <= 500 || win.innerWidth < 900) { busy = false; return; }
-    const available = main.clientHeight - (parseFloat(win.getComputedStyle(main).paddingTop) || 0);
-    let zoom = 1, widen = true;
-    // Zoom out in steps: blocks sized to the window (vh) do not shrink with the zoom, so each
-    // step measures again; a page whose diagrams grow with the width is not widened.
-    for (let step = 0; step < 6; step++) {
-      const height = box.getBoundingClientRect().height;
-      if (height <= available + 2) break;
-      if (zoom <= MIN) {
-        if (!widen) break;
-        widen = false; apply(box, zoom, widen); continue;
-      }
-      zoom = Math.max(MIN, zoom * available / height);
-      apply(box, zoom, widen);
-    }
-    setTimeout(function () { busy = false; }, 200);
-  }
-  // The menu fits too (D-225): its cards shrink together so the last one ends above the footer.
-  function fitMenu() {
-    const blocks = Array.from(doc.querySelectorAll('[data-testid="stSidebar"] [class*="st-key-nav_block_"]'));
-    const footer = doc.querySelector('.st-key-sidebar_footer');
-    if (!blocks.length || !footer) return;
-    blocks.forEach(function (block) { block.style.zoom = ''; });
-    if (win.innerHeight <= 500) return;
-    const top = blocks[0].getBoundingClientRect().top;
-    const bottom = blocks[blocks.length - 1].getBoundingClientRect().bottom;
-    const room = footer.getBoundingClientRect().top - 8 - top;
-    if (bottom - top <= room) return;
-    const zoom = Math.max(MENU_MIN, room / (bottom - top));
-    blocks.forEach(function (block) { block.style.zoom = String(zoom); });
-  }
-  function later() { clearTimeout(timer); timer = setTimeout(function () { fitMenu(); fit(); }, 120); }
-  win.__greenoceanFit = later;
-  win.addEventListener('resize', later);
-  new win.MutationObserver(later).observe(doc.body, {childList: true, subtree: true});
-  // A diagram that finishes drawing after the first measure changes the page's height: fit again.
-  let lastHeight = 0;
-  const observer = new win.ResizeObserver(function () {
-    const box = doc.querySelector('[data-testid="stMainBlockContainer"]');
-    if (!box || busy) return;
-    const height = Math.round(box.getBoundingClientRect().height);
-    const available = (doc.querySelector('[data-testid="stMain"]') || {}).clientHeight || 0;
-    if (Math.abs(height - lastHeight) > 4 && height > available + 2) { lastHeight = height; later(); }
-  });
-  // The page's content box: observed once it exists, so a late redraw triggers a new fit.
-  (function watch() {
-    const box = doc.querySelector('[data-testid="stMainBlockContainer"]');
-    if (box) observer.observe(box); else setTimeout(watch, 300);
-  })();
-  later();
-})();
-</script>""".replace("MENU_MIN", str(FIT_MENU_MIN_ZOOM)).replace("MIN", str(FIT_MIN_ZOOM))
 
 
 FOLD_SIDEBAR_SCRIPT = f"""<script>
@@ -7761,25 +7708,36 @@ def render_window(window, pages=None):
     apply_style(mode)
     st.session_state[COMPACT_VIEW] = window == REPORT_WINDOW
     synchronize_window_view(window)
-    show_app_header(window)
     view = choose_window_view(window)
-    with st.container(key="report_page" if window == REPORT_WINDOW else "window_page"):
-        overview_class = OVERVIEW_CLASS_BY_VIEW.get(view)
-        if overview_class:
-            st.markdown(f'<span class="overview-viewport-marker {overview_class}" '
-                        'aria-hidden="true"></span>', unsafe_allow_html=True)
-        if view == PAGE_COVER:
-            # The cover links with the navigation pages, so a visit keeps its session.
-            show_cover_page(mode, pages)
-        else:
-            SHOW_PAGE_BY_TITLE[view](mode)
-    if view not in OVERVIEW_CLASS_BY_VIEW:
-        if pages:
-            show_route_footer(window, pages)
-        show_attribution()
+    slug = PAGE_PATHS.get(view, "legacy")
+    if view not in {PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE,
+                    PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS, PAGE_SECURITY, PAGE_LINKS,
+                    PAGE_STACK, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SECURITY_PLAN, PAGE_SCALABILITY}:
+        slug = "legacy"
+    st.markdown(viewport.css(), unsafe_allow_html=True)
+    with st.container(key="app_canvas", height="stretch"):
+        with st.container(key="canvas_header"):
+            show_app_header(window)
+        with st.container(key=f"screen_{slug}", height="stretch"):
+            with st.container(key="report_page" if window == REPORT_WINDOW else "window_page", height="stretch"):
+                overview_class = OVERVIEW_CLASS_BY_VIEW.get(view)
+                if overview_class:
+                    st.markdown(f'<span class="overview-viewport-marker {overview_class}" '
+                                'aria-hidden="true"></span>', unsafe_allow_html=True)
+                if view == PAGE_COVER:
+                    show_cover_page(mode, pages)
+                else:
+                    SHOW_PAGE_BY_TITLE[view](mode)
+        with st.container(key="canvas_footer"):
+            if view not in OVERVIEW_CLASS_BY_VIEW:
+                if pages:
+                    show_route_footer(window, pages)
+                show_attribution()
+    st.markdown(viewport.css(), unsafe_allow_html=True)
+    st.html(f'<span data-viewport-ready="{html.escape(view, quote=True)}"></span>')
     st.html(PHONE_LAYOUT_HTML + FOLD_SIDEBAR_SCRIPT + RELOAD_HOME_SCRIPT + IDLE_ANIMATION_SCRIPT + build_visit_history_script(),
             unsafe_allow_javascript=True)
-    st.html(FIT_SCREEN_SCRIPT, unsafe_allow_javascript=True)
+
 
 
 # D-166: the panel is read in landscape. A phone held upright sees one screen asking to
@@ -7846,7 +7804,6 @@ def show_route_footer(window, pages):
     if window not in ROUTE:
         return
     position = ROUTE.index(window)
-    st.divider()
     with st.container(key="route_footer", horizontal=True, horizontal_alignment="distribute",
                       vertical_alignment="center"):
         if position > 0:
@@ -7856,8 +7813,6 @@ def show_route_footer(window, pages):
             following = ROUTE[position + 1]
             st.page_link(pages[following], label=f"Siguiente: {following} →",
                          help=f"Muestra {ROUTE_LEADS[following]}.", query_params=keep_context())
-    if position < len(ROUTE) - 1:
-        st.caption(f"Siguiente paso: {ROUTE_LEADS[ROUTE[position + 1]]}.")
 
 
 def render_page(title):

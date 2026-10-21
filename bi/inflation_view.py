@@ -148,7 +148,7 @@ def draw_family_card(rows, family, mode, real=False, domain=None, height=186):
     scale = alt.Scale(zero=False, domain=domain) if domain else alt.Scale(zero=False)
     chart = alt.Chart(panel).mark_line(interpolate="monotone", strokeWidth=2.2).encode(
         x=alt.X("month_start:T", title=None, axis=alt.Axis(format="%Y", tickCount=5, labelPadding=4)),
-        y=alt.Y(f"{value}:Q", title=None, scale=scale, axis=alt.Axis(labelFontSize=10, tickCount=4)),
+        y=alt.Y(f"{value}:Q", title=None, scale=scale, axis=alt.Axis(labelFontSize=11, tickCount=4)),
         color=alt.Color("product_group:N", scale=alt.Scale(domain=names, range=colors), legend=None),
         strokeDash=alt.StrokeDash("product_group:N", scale=alt.Scale(domain=names, range=dashes), legend=None),
         opacity=alt.condition(alt.datum.product_group == IPC_NAME, alt.value(.7), alt.value(1)),

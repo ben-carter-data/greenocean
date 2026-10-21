@@ -506,7 +506,7 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
     never a price average, consumption basket, or inflation estimate.
     """
     indexed = {str(row['region']): row for row in rows}
-    shapes, rows_markup = [], []
+    shapes, rows_markup, readable_rows = [], [], []
     width, height = MAP_VIEW
     for item in region_layout(chile_regions_geometry()):
         region = item['region']
@@ -536,6 +536,9 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
                  f'{number(share)} % {STATE_SYMBOLS[state]}</text>')
         shapes.append(f'<a href="{href}" target="_self" aria-label="{esc(hint)}"><path class="mock-region-shape {css}" '
                       f'd="{item["path"]}"><title>{esc(hint)}</title></path></a>')
+        readable_rows.append(
+            f'<a class="mock-region-readable {css}" href="{href}" target="_self" title="{esc(hint)}">'
+            f'<span>{esc(short_region(region))}</span><b>{"sin dato" if share is None else f"{number(share)} % {STATE_SYMBOLS[state]}"}</b></a>')
         rows_markup.append(
             f'<a class="mock-region-row {css}" href="{href}" target="_self" aria-label="{esc(hint)}"><title>{esc(hint)}</title>'
             f'<rect class="mock-region-hit" x="{LIST_LEFT - 4}" y="{y - 12:.1f}" width="{LIST_RIGHT - LIST_LEFT + 8}" height="24" rx="6"/>'
@@ -550,10 +553,11 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
             '<p>% de precios comparables que siguió la dirección dominante. Mapa en proporción real; '
             'cada región se lee en su fila.</p>'
             f'<div class="mock-regional-legend">{legend}</div>'
+            '<div class="mock-map-body">'
             f'<svg class="mock-chile-map" preserveAspectRatio="xMidYMin meet" viewBox="0 0 {width} {height}" role="img" '
             'aria-label="Mapa de Chile con la dirección dominante de los precios por región">'
             '<g class="mock-region-land">' + ''.join(shapes) + '</g>'
-            '<g class="mock-region-rows">' + ''.join(rows_markup) + '</g></svg></section>')
+            '<g class="mock-region-rows">' + ''.join(rows_markup) + f'</g></svg><svg class="mock-chile-shape" viewBox="0 0 {LIST_LEFT - 10} {height}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + ''.join(shapes) + '</svg><div class="mock-region-list">' + ''.join(readable_rows) + '</div></div></section>')
 
 
 def family_averages(rows):

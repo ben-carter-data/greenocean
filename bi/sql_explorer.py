@@ -913,10 +913,6 @@ def build_tab_html(example):
             f'i<span class="sqlx-info-tip" role="tooltip"><b>{html.escape(title)}</b>{html.escape(question)}</span></span></div>')
 
 
-def editor_height(sql):
-    """Enough lines to show the query without an inner scroll, within one screen."""
-    lines = (sql or "").count("\n") + 1
-    return max(150, min(290, 21 * lines + 24))
 
 
 def format_elapsed(seconds):
@@ -1133,14 +1129,6 @@ def execute_editor(st, sql):
         st.session_state["sqlx_result"] = f"DuckDB devolvió un error: {error}"
 
 
-# Editor and results share one height (D-183): a short query leaves its room to the rows.
-STUDIO_HEIGHT = 560
-
-
-def results_height(sql, row_count):
-    """The grid's height: what the editor leaves free, never more than the rows need."""
-    room = max(250, STUDIO_HEIGHT - editor_height(sql))
-    return min(room, 35 * (row_count + 1) + 3)
 
 
 def show_result(st, outcome, sql=""):
@@ -1165,7 +1153,7 @@ def show_result(st, outcome, sql=""):
     # Weeks are dates: show them without a midnight time.
     dates = {column: st.column_config.DateColumn(column, format="YYYY-MM-DD") for column in rows.columns
              if pd.api.types.is_datetime64_any_dtype(rows[column]) and (rows[column].dropna().dt.normalize() == rows[column].dropna()).all()}
-    st.dataframe(numbered, width="stretch", hide_index=False, height=results_height(sql, len(rows)), column_config=dates)
+    st.dataframe(numbered, width="stretch", hide_index=False, height="stretch", column_config=dates)
 
 
 def show_exports(st):
@@ -1240,7 +1228,7 @@ def show_sql_explorer_page(mode):
                 with st.container(key="sqlx_editor_box"):
                     st.html(EDITOR_HTML, unsafe_allow_javascript=True)
                     sql = st.text_area("Consulta SQL", key="sqlx_editor", label_visibility="collapsed",
-                                       height=editor_height(st.session_state["sqlx_editor"]))
+                                       height="stretch")
                 if run:
                     execute_editor(st, sql)
                 outcome = st.session_state.get("sqlx_result")

@@ -15,6 +15,8 @@ MAXIMUM_ZOOM = 6
 
 def build_zoom_frame_html(inner_html, css_class=""):
     """A frame the zoom script turns into a zoomable view of inner_html."""
+    from bi.viewport import contain_svg
+    inner_html = contain_svg(inner_html)
     return (f'<div class="zoom-frame {css_class}"><div class="zoom-viewport">'
             f'<div class="zoom-content">{inner_html}</div></div></div>')
 

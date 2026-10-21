@@ -322,7 +322,8 @@ def test_d097_model_page_is_one_panoramic_diagram():
     for heading in [group[0] for group in dashboard.ARCHITECTURE_GROUPS] + ["Coste y capacidad"]:
         assert f"devops_layer_{heading}" in keys
     joined = " ".join(block.value for block in app.markdown)
-    assert joined.count('class="zoom-frame diagram-devops"') == 1
+    assert joined.count('class="zoom-frame platform-overview"') == 1
+    assert joined.count('class="zoom-frame platform-detail"') == 1
     # A tile opens its layer's detail; only then are its rows drawn.
     assert 'class="technical-rows layer-cards"' not in joined
     app.button(key="devops_layer_Seguridad").click().run()
@@ -1795,13 +1796,12 @@ def test_d211_stack_page_shows_every_logo_linked_to_its_page_and_real_figures():
         assert stack_page.format_number(value) in page
 
 
-def test_d222_every_page_fits_the_window_with_a_readable_floor():
-    script = dashboard.FIT_SCREEN_SCRIPT
-    assert script.startswith("<script>") and script.count("<script") == 1
-    assert str(dashboard.FIT_MIN_ZOOM) in script and 0.6 <= dashboard.FIT_MIN_ZOOM < 1
-    assert "fitMenu" in script and str(dashboard.FIT_MENU_MIN_ZOOM) in script
-    # Phones keep their own layout (D-166); the folded menu is read from data-collapsed.
-    assert "innerHeight <= 500" in script
+def test_d226_layout_uses_the_viewport_without_fit_script():
+    from bi import viewport
+    assert not hasattr(dashboard, "FIT_SCREEN_SCRIPT")
+    css = viewport.css()
+    assert "100dvh" in css and "minmax(0,1fr)" in css
+    assert "zoom:" not in css and "scale(" not in css
     assert 'aria-expanded' not in dashboard.build_sidebar_css(charts.MODE_DARK)
 
 

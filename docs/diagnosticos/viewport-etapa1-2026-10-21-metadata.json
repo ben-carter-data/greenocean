@@ -1,0 +1,16 @@
+{
+  "fullMatrix": {
+    "appUrl": "http://localhost:8511/",
+    "cloudWrapper": true,
+    "browser": "155.0.8059.85",
+    "codeSha256": "696101a0d20996f939860a0a0ea94197d556f3dc5040bacd8f8dc78095c5dcd7",
+    "startedAt": "2026-10-21T11:51:17.998Z"
+  },
+  "focusedOperationRetest": {
+    "appUrl": "http://localhost:8511/",
+    "cloudWrapper": true,
+    "browser": "155.0.8059.85",
+    "codeSha256": "f731aa43a0ba17f4352b36158e8f25e44edf04d9bc0a7fd1cdafbd9d171a8d5f",
+    "startedAt": "2026-10-21T17:01:38.708Z"
+  }
+}
