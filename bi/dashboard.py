@@ -519,6 +519,7 @@ PIPELINE_VIEW_KEY = "pipeline_view"
 PIPELINE_JOURNEY, PIPELINE_LINEAGE = "Recorrido por capas", "Linaje dbt"
 LINEAGE_HINT = ("Se dibuja con el manifiesto de la última construcción de dbt, que el pipeline guarda en la "
                 "base: si se agrega un modelo o una prueba, aparece aquí en la carga siguiente.")
+ATTRIBUTION_SHORT = "Datos: ODEPA e INE, licencia Creative Commons Atribución · cómo leer los datos"
 ATTRIBUTION_TEXT = (
     "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de "
     "Agricultura de Chile, licencia Creative Commons Atribución; IPC de alimentos: Instituto "
@@ -1181,6 +1182,9 @@ def build_style_css(mode):
     }}
     .search-count {{ font-size: 13px; color: {palette["text"]}; padding-bottom: 10px; }}
     .page-lineage {{ margin: -4px 0 4px; }}
+    .page-attribution {{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; margin:10px 0 0;
+        padding-top:8px; border-top:1px solid {palette["card_border"]}; }}
+    .attribution-short {{ font-size:.72rem; color:{palette["reference"]}; cursor:help; }}
     .lineage-badge {{ display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
         padding: 3px 10px; border-radius: 999px; border: 1px solid {palette["card_border"]};
         color: {palette["text"]}; background: {palette["card"]}; }}
@@ -1680,7 +1684,8 @@ def show_app_header(window):
             icon_image=build_greenocean_logo(get_mode()), size="large")
     st.markdown(f"""<style>
     [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {{display:none;}}
-    .stApp:has([data-testid="stSidebar"][aria-expanded="false"]) [data-testid="stMainBlockContainer"] {{padding-top:54px !important;}}
+    /* D-223: with the menu folded, the logo sits in the top bar; the page starts under it. */
+    .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMain"] {{padding-top:52px !important;}}
     .reading-guide {{font-size:.8rem; margin:5px 0 14px; color:{palette['text']};}}
     .reading-term {{font-size:inherit; margin-left:0; border-bottom:1px dotted currentColor; font-weight:400;}}
     .regional-detail {{width:100%; font-size:.75rem; border-collapse:collapse;}}
@@ -7535,6 +7540,73 @@ IDLE_ANIMATION_SCRIPT = """<script>(() => {
         window.addEventListener(name, wake, { passive: true, capture: true }));
     wake();
 })();</script>"""
+# D-222: every page fits the window, like a dashboard: the page measures its content and zooms
+# it out just enough to show it whole, never under FIT_MIN_ZOOM so the text stays readable.
+# Phones keep their own layout (D-166). The content is widened by the same factor, so the
+# page still fills the window from side to side. Only attributes change: React owns the nodes.
+FIT_MIN_ZOOM = 0.66
+FIT_SCREEN_SCRIPT = r"""<script>
+(function () {
+  const doc = window.parent && window.parent.document ? window.parent.document : document;
+  const win = doc.defaultView || window;
+  if (win.__greenoceanFit) { win.__greenoceanFit(); return; }
+  let timer = null, busy = false;
+  function apply(box, zoom, widen) {
+    box.style.zoom = zoom === 1 ? '' : String(zoom);
+    const room = box.parentElement ? box.parentElement.clientWidth : 0;
+    box.style.width = zoom !== 1 && widen && room ? (room / zoom) + 'px' : '';
+    box.style.maxWidth = zoom !== 1 && widen ? 'none' : '';
+    // Widened, the box starts at the left edge; centred, it would spill out on both sides.
+    box.style.marginLeft = zoom !== 1 && widen ? '0' : '';
+    box.style.marginRight = zoom !== 1 && widen ? '0' : '';
+    box.style.alignSelf = zoom !== 1 && widen ? 'flex-start' : '';
+  }
+  function fit() {
+    const main = doc.querySelector('[data-testid="stMain"]');
+    const box = doc.querySelector('[data-testid="stMainBlockContainer"]');
+    if (!main || !box || busy) return;
+    busy = true;
+    apply(box, 1, false);
+    if (win.innerHeight <= 500 || win.innerWidth < 900) { busy = false; return; }
+    const available = main.clientHeight - (parseFloat(win.getComputedStyle(main).paddingTop) || 0);
+    let zoom = 1, widen = true;
+    // Zoom out in steps: blocks sized to the window (vh) do not shrink with the zoom, so each
+    // step measures again; a page whose diagrams grow with the width is not widened.
+    for (let step = 0; step < 6; step++) {
+      const height = box.getBoundingClientRect().height;
+      if (height <= available + 2) break;
+      if (zoom <= MIN) {
+        if (!widen) break;
+        widen = false; apply(box, zoom, widen); continue;
+      }
+      zoom = Math.max(MIN, zoom * available / height);
+      apply(box, zoom, widen);
+    }
+    setTimeout(function () { busy = false; }, 200);
+  }
+  function later() { clearTimeout(timer); timer = setTimeout(fit, 120); }
+  win.__greenoceanFit = later;
+  win.addEventListener('resize', later);
+  new win.MutationObserver(later).observe(doc.body, {childList: true, subtree: true});
+  // A diagram that finishes drawing after the first measure changes the page's height: fit again.
+  let lastHeight = 0;
+  const observer = new win.ResizeObserver(function () {
+    const box = doc.querySelector('[data-testid="stMainBlockContainer"]');
+    if (!box || busy) return;
+    const height = Math.round(box.getBoundingClientRect().height);
+    const available = (doc.querySelector('[data-testid="stMain"]') || {}).clientHeight || 0;
+    if (Math.abs(height - lastHeight) > 4 && height > available + 2) { lastHeight = height; later(); }
+  });
+  // The page's content box: observed once it exists, so a late redraw triggers a new fit.
+  (function watch() {
+    const box = doc.querySelector('[data-testid="stMainBlockContainer"]');
+    if (box) observer.observe(box); else setTimeout(watch, 300);
+  })();
+  later();
+})();
+</script>""".replace("MIN", str(FIT_MIN_ZOOM))
+
+
 FOLD_SIDEBAR_SCRIPT = f"""<script>
 (() => {{
 // D-166: a phone turned sideways shows the computer layout, menu included. Streamlit
@@ -7545,7 +7617,7 @@ const openMenu = () => {{
     const open = () => {{
         const sidebar = document.querySelector('[data-testid="stSidebar"]');
         const button = document.querySelector('[data-testid="stExpandSidebarButton"]');
-        if (sidebar && sidebar.getAttribute("aria-expanded") === "true") {{ return; }}
+        if (sidebar && sidebar.getAttribute("data-collapsed") === "false") {{ return; }}
         if (button) {{ button.click(); }} else if (attempts++ < 40) {{ setTimeout(open, 100); }}
     }};
     open();
@@ -7562,10 +7634,10 @@ let tries = 0;
 const fold = () => {{
     const sidebar = document.querySelector('[data-testid="stSidebar"]');
     const button = document.querySelector('[data-testid="stSidebarCollapseButton"] button');
-    if (sidebar && button && sidebar.getAttribute("aria-expanded") === "true") {{
+    if (sidebar && button && sidebar.getAttribute("data-collapsed") === "false") {{
         button.click();
         try {{ sessionStorage.setItem("sidebarFolded", "yes"); }} catch (error) {{}}
-    }} else if (sidebar && sidebar.getAttribute("aria-expanded") === "false") {{
+    }} else if (sidebar && sidebar.getAttribute("data-collapsed") === "true") {{
         try {{ sessionStorage.setItem("sidebarFolded", "yes"); }} catch (error) {{}}
     }} else if (tries++ < 40) {{
         setTimeout(fold, 100);
@@ -7579,10 +7651,12 @@ fold();
 def show_attribution():
     """Footer of every page: the data source. The project links live only in
     Operaciones (D-056)."""
-    st.divider()
+    # D-222: one line, so the footer does not push a page past the window; the full reading
+    # notes open on hover.
     summary = lineage.summarize_build(*read_lineage(get_database_version()))
-    st.markdown(f'<div class="page-lineage">{lineage.build_badge_html(summary)}</div>', unsafe_allow_html=True)
-    st.caption(ATTRIBUTION_TEXT)
+    st.markdown(f'<div class="page-lineage page-attribution">{lineage.build_badge_html(summary)}'
+                f'<span class="attribution-short" title="{html.escape(ATTRIBUTION_TEXT, quote=True)}" tabindex="0">'
+                f'{ATTRIBUTION_SHORT} ⓘ</span></div>', unsafe_allow_html=True)
 
 
 def order_windows():
@@ -7689,6 +7763,7 @@ def render_window(window, pages=None):
         show_attribution()
     st.html(PHONE_LAYOUT_HTML + FOLD_SIDEBAR_SCRIPT + RELOAD_HOME_SCRIPT + IDLE_ANIMATION_SCRIPT + build_visit_history_script(),
             unsafe_allow_javascript=True)
+    st.html(FIT_SCREEN_SCRIPT, unsafe_allow_javascript=True)
 
 
 # D-166: the panel is read in landscape. A phone held upright sees one screen asking to
@@ -7931,23 +8006,23 @@ RELOAD_HOME_SCRIPT = """<script>
 # D-213: the menu is a stack of colored blocks, one per kind of reader, always visible and
 # open by default; each page lives in exactly one block. «Ver como» (D-209) is gone: every
 # reader sees everything, so whoever wants the breadth of the work sees it at a glance.
-# (key, title, (color on a dark sidebar, color on a light one), pages or source links)
-# D-215, D-216: each block is a card in one of the panel's four tones (blue, Vantablack, dark
-# grey, light grey), its accent a lighter or darker step of that same tone, nothing else; the documents sit at the end of their block and the
-# documents' block closes the menu, just before the sources.
-# (key, title, tone, accent, pages or source links)
+# D-215, D-223: each block is a card in one step of a grey scale (CARD_TONES); the documents sit
+# at the end of their block and the documents' block closes the menu, just before the sources.
+# (key, title, tone index, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BI", "azul", "#9cc8ff", [PAGE_HOME, PAGE_SEASONALITY]),
-    ("ingenieria", "Ingeniería de datos", "vantablack", "#c7cdd6",
+    ("negocio", "Negocio · BI", 0, [PAGE_HOME, PAGE_SEASONALITY]),
+    ("ingenieria", "Ingeniería de datos", 1,
      [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_SAD]),
-    ("devops", "DevOps y seguridad", "grafito", "#aab3bf", [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
-    ("stack", "Stack y evidencia", "azul", "#9cc8ff", [PAGE_STACK]),
-    ("analisis", "Análisis de negocio · BA", "gris", "#334155", [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
-    ("fuentes", "Fuentes", "gris", "#334155", SOURCE_LINKS),
+    ("devops", "DevOps y seguridad", 2, [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
+    ("stack", "Stack y evidencia", 3, [PAGE_STACK]),
+    ("analisis", "Análisis de negocio · BA", 4, [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
+    ("fuentes", "Fuentes", 5, SOURCE_LINKS),
 ]
-# Card tone → (background, text). Fixed in every theme, so each card reads the same everywhere.
-CARD_TONES = {"azul": ("#12325a", "#e8f1ff"), "vantablack": ("#050607", "#e6e8ec"),
-              "grafito": ("#2b2f36", "#eceff3"), "gris": ("#e6e9ee", "#1f2933")}
+# D-223: one grey scale from Vantablack to almost white, top to bottom: (background, text, title).
+# Fixed in every theme, so each card reads the same everywhere; the sidebar keeps its theme.
+CARD_TONES = [("#0b0c0e", "#eceef1", "#9ba1ab"), ("#18191d", "#eceef1", "#9ba1ab"),
+              ("#26282d", "#eceef1", "#a3a9b2"), ("#383b41", "#f1f2f4", "#b3b8c0"),
+              ("#d5d8dd", "#1c1e22", "#5d636c"), ("#eef0f3", "#1c1e22", "#666c75")]
 
 
 SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">'
@@ -7970,43 +8045,39 @@ def read_current_view(window):
 
 
 def build_section_colors_css(dark):
-    """Each block as a HUD-like card (D-215): its tone, a glowing border in its accent and
-    corner brackets; the title in the accent and the pages in the card's text color."""
+    """Each block as a quiet card (D-223): a step of one grey scale, a hairline border, soft
+    rounded corners and a faint shadow; the title in small capitals, the pages with their icon."""
     rules = []
-    for key, _, tone, accent, _ in MENU_BLOCKS:
-        background, text = CARD_TONES[tone]
-        rules.append(f'.st-key-nav_block_{key} {{position:relative; margin:0 0 12px !important; padding:3px 6px 4px !important;'
-                     f' background:linear-gradient(160deg,color-mix(in srgb,{background} 92%,{accent}) 0%,{background} 60%);'
-                     f' border:1px solid color-mix(in srgb,{accent} 55%,transparent); border-radius:6px;'
-                     f' box-shadow:0 0 14px color-mix(in srgb,{accent} 22%,transparent), inset 0 0 18px color-mix(in srgb,{accent} 8%,transparent);'
-                     f' gap:0 !important;}}')
-        rules.append(f'.st-key-nav_block_{key}::before, .st-key-nav_block_{key}::after {{content:""; position:absolute;'
-                     f' width:12px; height:12px; pointer-events:none;}}')
-        rules.append(f'.st-key-nav_block_{key}::before {{top:-1px; left:-1px; border-top:2px solid {accent};'
-                     f' border-left:2px solid {accent}; border-top-left-radius:6px;}}')
-        rules.append(f'.st-key-nav_block_{key}::after {{bottom:-1px; right:-1px; border-bottom:2px solid {accent};'
-                     f' border-right:2px solid {accent}; border-bottom-right-radius:6px;}}')
+    for key, _, tone, _ in MENU_BLOCKS:
+        background, text, title = CARD_TONES[tone]
+        light = tone >= 4
+        line = "rgba(0,0,0,.08)" if light else "rgba(255,255,255,.07)"
+        hover = "rgba(0,0,0,.05)" if light else "rgba(255,255,255,.06)"
+        current = "rgba(0,0,0,.08)" if light else "rgba(255,255,255,.10)"
+        rules.append(f'.st-key-nav_block_{key} {{margin:0 0 8px !important; padding:4px 6px !important; gap:0 !important;'
+                     f' background:{background}; border:1px solid {line}; border-radius:12px;'
+                     f' box-shadow:0 1px 2px rgba(0,0,0,.18), 0 10px 24px -14px rgba(0,0,0,.45);}}')
         rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] p, .st-key-nav_block_{key} .nav-source-link '
                      f'{{color:{text} !important; -webkit-text-fill-color:{text} !important; text-shadow:none !important;}}')
         rules.append(f'.st-key-nav_block_{key} [data-testid="stIconMaterial"], .st-key-nav_block_{key} .nav-source-icon '
-                     f'{{color:{accent} !important;}}')
-        # The current page: a bar in the card's accent.
+                     f'{{color:{title} !important;}}')
+        rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] a {{border-radius:8px !important; border-color:transparent !important;'
+                     f' min-height:23px !important; padding:1px 7px !important;}}')
+        rules.append(f'.st-key-nav_block_{key} .nav-source-link {{padding:1px 7px !important; margin:0 !important;}}')
+        rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] a:hover {{background:{hover} !important;}}')
         rules.append(f'.st-key-nav_block_{key} [class*="_nav_current"] [data-testid="stPageLink"] a '
-                     f'{{box-shadow:inset 2px 0 {accent} !important; border-color:transparent !important;}}')
-        rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] a:hover {{background:color-mix(in srgb,{accent} 14%,transparent) !important;}}')
-        rules.append(f'.st-key-nav_group_{key} button {{border-bottom:1px solid color-mix(in srgb,{accent} 40%,transparent) !important;'
-                     f' border-radius:0 !important; margin-bottom:3px;}}')
-        rules.append(f'.st-key-nav_group_{key} button p {{color:{accent} !important; -webkit-text-fill-color:{accent} !important;'
-                     f' font-size:.7rem !important; font-weight:650 !important; letter-spacing:.08em !important;'
+                     f'{{background:{current} !important; box-shadow:none !important;}}')
+        rules.append(f'.st-key-nav_group_{key} button {{border:0 !important; margin-bottom:2px;}}')
+        rules.append(f'.st-key-nav_group_{key} button p {{color:{title} !important; -webkit-text-fill-color:{title} !important;'
+                     f' font-size:.66rem !important; font-weight:600 !important; letter-spacing:.07em !important;'
                      f' text-transform:uppercase;}}')
     rules.append('[class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div, '
                  '[class*="st-key-nav_group_"] button {width:100% !important; box-sizing:border-box;}')
     rules.append('[class*="st-key-nav_group_"] button > div, [class*="st-key-nav_group_"] button p '
                  '{justify-content:flex-start !important; text-align:left !important;}')
-
     # Only the sources leave the app, so only they look like web links: a fine underline.
     rules.append('[data-testid="stSidebar"] a.nav-source-link {text-decoration:underline !important; text-decoration-thickness:1px; '
-                 'text-underline-offset:3px; text-decoration-color:color-mix(in srgb, currentColor 55%, transparent);}')
+                 'text-underline-offset:3px; text-decoration-color:color-mix(in srgb, currentColor 40%, transparent);}')
     rules.append('[data-testid="stSidebar"] a.nav-source-link:hover {text-decoration-color:currentColor;}')
     return "\n    ".join(rules)
 
@@ -8027,7 +8098,7 @@ def build_sidebar_css(mode):
     [data-testid="stSidebar"] {{
         background:linear-gradient(180deg,{sidebar_top} 0%,{palette['sidebar']} 38%,{sidebar_bottom} 100%);
         border-right:1px solid {hairline}; box-shadow:10px 0 32px rgba(0,0,0,.12);}}
-    [data-testid="stSidebar"][aria-expanded="true"] {{min-width:300px !important; max-width:300px !important;}}
+    [data-testid="stSidebar"][data-collapsed="false"] {{min-width:300px !important; max-width:300px !important;}}
     [data-testid="stSidebarContent"] {{background:transparent;}}
     [data-testid="stSidebarHeader"] {{height:66px; padding:10px 17px 7px !important;
         border-bottom:1px solid {hairline};}}
@@ -8141,7 +8212,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             st.session_state[f"nav_open_{key}"] = True
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
-    for key, title, _, _, pages in MENU_BLOCKS:
+    for key, title, _, pages in MENU_BLOCKS:
         open_key = f"nav_open_{key}"
         is_open = st.session_state.get(open_key, True)
         with st.sidebar.container(key=f"nav_block_{key}"):

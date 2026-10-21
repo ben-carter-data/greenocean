@@ -965,7 +965,8 @@ def test_d056_old_addresses_open_their_new_tab():
 def test_every_page_draws_without_errors_and_shows_the_attribution(title):
     app = draw_page(title)
     assert not app.exception
-    assert dashboard.ATTRIBUTION_TEXT in [caption.value for caption in app.caption]
+    # D-222: one line; the full notes open on hover.
+    assert html.escape(dashboard.ATTRIBUTION_TEXT, quote=True) in " ".join(block.value for block in app.markdown)
 
 
 @needs_database
@@ -1759,11 +1760,14 @@ def test_d213_the_menu_is_colored_blocks_open_by_default_with_every_page_once():
     markup = " ".join(block.value for block in app.sidebar.markdown)
     assert markup.count('class="nav-source-link"') == len(dashboard.SOURCE_LINKS)
     # D-215: every block is a card in one of the four tones, with its own accent and corner brackets.
-    # D-216: only the four tones and steps of them: no pink, violet or green accents.
-    assert {accent for *_, accent, _ in dashboard.MENU_BLOCKS} <= {'#9cc8ff', '#c7cdd6', '#aab3bf', '#334155'}
-    assert {tone for _, _, tone, *_ in dashboard.MENU_BLOCKS} == set(dashboard.CARD_TONES)
+    # D-223: one grey scale, darkest on top, each card a different step; no colored accents.
+    tones = [tone for _, _, tone, _ in dashboard.MENU_BLOCKS]
+    assert tones == sorted(tones) and len(set(tones)) == len(tones)
+    for background, text, title in dashboard.CARD_TONES:
+        red, green, blue = (int(background[i:i + 2], 16) for i in (1, 3, 5))
+        assert max(red, green, blue) - min(red, green, blue) <= 12  # a grey, not a color
     for key, *_ in dashboard.MENU_BLOCKS:
-        assert f'.st-key-nav_group_{key} button p' in markup and f'.st-key-nav_block_{key}::before' in markup
+        assert f'.st-key-nav_group_{key} button p' in markup and f'.st-key-nav_block_{key} {{' in markup
 
 
 @needs_database
@@ -1788,3 +1792,18 @@ def test_d211_stack_page_shows_every_logo_linked_to_its_page_and_real_figures():
     assert "vista=Consultas+SQL" in page
     for value in stack_page.read_figures().values():
         assert stack_page.format_number(value) in page
+
+
+def test_d222_every_page_fits_the_window_with_a_readable_floor():
+    script = dashboard.FIT_SCREEN_SCRIPT
+    assert script.startswith("<script>") and script.count("<script") == 1
+    assert str(dashboard.FIT_MIN_ZOOM) in script and 0.6 <= dashboard.FIT_MIN_ZOOM < 1
+    # Phones keep their own layout (D-166); the folded menu is read from data-collapsed.
+    assert "innerHeight <= 500" in script
+    assert 'aria-expanded' not in dashboard.build_sidebar_css(charts.MODE_DARK)
+
+
+def test_d223_the_folded_menu_pushes_the_page_under_the_logo():
+    import inspect
+    source = inspect.getsource(dashboard.show_app_header)
+    assert '[data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMain"] {{padding-top:52px' in source

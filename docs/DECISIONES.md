@@ -1647,3 +1647,14 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 ## D-221 · La guía del proyecto sin el rezago y con el IPC
 - **Decisión:** `docs/PROYECTO.md`, que alimenta la portada y la definición del proyecto, ya no menciona el rezago (K5, retirado en D-146) y suma el IPC de alimentos del INE y los precios reales al resumen y al alcance.
 - **Pruebas:** las de la portada y del proyecto, sin cambios.
+
+## D-222 · Cada página se ajusta a la ventana, como un dashboard
+- **Problema:** a 1440 × 900 con las barras del navegador (unos 780 px útiles) casi todas las páginas obligaban a hacer scroll: el Resumen medía 1.200 px y Calidad 1.476. Un dashboard se lee de una mirada.
+- **Decisión:** un script mide el contenido de cada página y reduce el zoom lo justo para que quepa en la ventana, nunca por debajo de 0,66 para que el texto siga legible. Las páginas de bloques fijos se ensanchan en la misma proporción y siguen ocupando todo el ancho; las de diagramas que crecen con el ancho solo se reducen. Vuelve a ajustar al cambiar el tamaño de la ventana o cuando un diagrama termina de dibujarse. Los teléfonos conservan su diseño (D-166). El pie de fuentes pasa a una sola línea, con las notas completas al pasar el cursor.
+- **Resultado medido a 1440 × 780:** Resumen, Precios e inflación, Modelo de datos, Mapa de seguridad y Stack y evidencia caben enteros. Pipeline (821 px), Centro de operación (806), Calidad (885) y Consultas SQL (925) quedan cerca, pero aún piden un poco de scroll con el zoom mínimo.
+- **Pruebas:** `tests/test_dashboard.py` (D-222 y el pie de fuentes).
+
+## D-223 · El menú en escala de grises y el logo que ya no se monta al plegarlo
+- **Problema:** las tarjetas de D-216 se veían como bloques pesados, y al plegar el menú el logo GreenOcean quedaba encima de la ruta de la página. La causa: Streamlit marca ahora el menú plegado con `data-collapsed`, no con `aria-expanded`, así que esa regla y el plegado automático en pantallas angostas no se aplicaban.
+- **Decisión:** las seis tarjetas siguen una sola escala de grises de arriba abajo, de Vantablack a casi blanco, con borde fino, esquinas redondeadas, sombra suave, títulos en versalitas grises y filas más compactas; la página actual se marca con un fondo tenue. El fondo del menú sigue el tema. Con el menú plegado, la página empieza bajo el logo; las reglas y el script de plegado usan `data-collapsed`.
+- **Pruebas:** `tests/test_dashboard.py` (D-213 actualizada: grises en orden; D-223).
