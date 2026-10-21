@@ -8,10 +8,11 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
+import html
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
-from bi import github_page, charts, control, dashboard, project, queries  # noqa: E402
+from bi import github_page, charts, control, dashboard, project, queries, stack_page  # noqa: E402
 
 DASHBOARD_FILE = str(PROJECT_DIR / "bi" / "dashboard.py")
 # These tests draw the real dashboard, so they need the committed database.
@@ -1400,7 +1401,8 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     toggles = {button.label for button in folder_buttons}
     # «Fuentes» (D-118): the two ODEPA datasets, a folder like every other section.
     # D-201: security has its own folder.
-    assert toggles == {'⌄  Dashboard', '⌄  Ingeniería de datos', '⌄  Seguridad', '›  Fuentes', '⌄  Documentación'}
+    assert toggles == {'⌄  Dashboard', '⌄  Ingeniería de datos', '⌄  Seguridad', '›  Fuentes', '⌄  Documentación',
+                       '⌄  Proyecto'}
     assert all(not button.help for button in folder_buttons)
     css = ' '.join(block.value for block in app.sidebar.markdown)
     assert '[class*="st-key-nav_child_"] {margin-left:0; padding-left:0; border-left:0;}' in css
@@ -1749,7 +1751,7 @@ VIEW_AS_MENUS = {
     'visitante': {'Resumen semanal', 'Precios e inflación'},
     'analista': {'Resumen semanal', 'Precios e inflación', 'Calidad y auditoría',
                  'PRD · Requisitos del producto', 'SAD · Arquitectura'},
-    'reclutador': {'Resumen semanal'},
+    'reclutador': {'Resumen semanal', 'Stack y evidencia'},
 }
 
 
@@ -1797,3 +1799,17 @@ def test_d209_changing_the_profile_redraws_the_menu():
     assert {'Pipeline y linaje', 'Consultas SQL', 'Centro de operación'} <= labels
     keys = [str(b.key) for b in app.sidebar.button if str(b.key).startswith('nav_toggle_')]
     assert keys[-1] == 'nav_toggle_documentacion-y-enlaces'
+
+
+@needs_database
+def test_d211_stack_page_shows_every_logo_linked_to_its_page_and_real_figures():
+    app = draw_page(dashboard.PAGE_STACK)
+    assert not app.exception
+    page = " ".join(block.proto.body for block in app.get("html"))
+    assert page.count('class="stack-item"') == 9 and page.count('role="tooltip"') == 9
+    for key, name, what, target in stack_page.STACK:
+        assert target in dashboard.WINDOW_OF_VIEW, target
+        assert html.escape(what) in page
+    assert "vista=Consultas+SQL" in page and "ver=" in page
+    for value in stack_page.read_figures().values():
+        assert stack_page.format_number(value) in page

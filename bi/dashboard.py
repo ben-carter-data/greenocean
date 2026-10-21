@@ -34,7 +34,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                audit_trace, database_crossings, database_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, project, quality, queries, star_model, zoom)
+                audit_trace, database_crossings, database_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -81,6 +81,8 @@ PAGE_SCALABILITY = "Escalabilidad"
 # D-201: security has its own section, the attack view and the test plan that backs it.
 PAGE_SECURITY = "Mapa de seguridad"
 PAGE_SECURITY_PLAN = "Plan de pruebas de seguridad"
+# D-211: the stack in 30 seconds, for a recruiter.
+PAGE_STACK = "Stack y evidencia"
 SECTION_RESOURCES = "Enlaces"
 # A sidebar-only folder (D-118): two external links, no Streamlit page of its own,
 # so it is not part of WINDOWS/ROUTE — rendered specially in show_sidebar_navigation.
@@ -103,7 +105,7 @@ SECTION_TECHNICAL = "Ingeniería de datos"
 SECTION_LINKS = "Documentación"
 SECTION_SECURITY = "Seguridad"
 WINDOWS = {
-    SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES],
+    SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES, PAGE_STACK],
     SECTION_KPI: [PAGE_KPI],
     REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY, PAGE_SQL],
@@ -173,7 +175,7 @@ PAGE_ICONS = {
     PAGE_DOCUMENTATION: ":material/menu_book:",
     PAGE_PRD: ":material/assignment:", PAGE_SAD: ":material/account_tree:", PAGE_ADR: ":material/gavel:",
     PAGE_SCALABILITY: ":material/trending_up:", PAGE_SQL: ":material/terminal:",
-    PAGE_SECURITY: ":material/lock:", PAGE_SECURITY_PLAN: ":material/fact_check:",
+    PAGE_SECURITY: ":material/lock:", PAGE_STACK: ":material/stacks:", PAGE_SECURITY_PLAN: ":material/fact_check:",
     PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
     PAGE_BUSINESS: ":material/assignment:",
     PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
@@ -187,7 +189,7 @@ PAGE_ICONS = {
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
-    PAGE_SECURITY: "mapa-de-seguridad", PAGE_SECURITY_PLAN: "plan-de-pruebas-de-seguridad",
+    PAGE_SECURITY: "mapa-de-seguridad", PAGE_STACK: "stack-y-evidencia", PAGE_SECURITY_PLAN: "plan-de-pruebas-de-seguridad",
     PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SCALABILITY: "escalabilidad", PAGE_SQL: "consultas-sql",
     PAGE_HOME: "dashboard", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
@@ -7488,6 +7490,24 @@ def show_scalability_page(mode):
         st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/DECISIONES.md.")
 
 
+@st.cache_data(show_spinner=False)
+def read_stack_figures(database_version):
+    """The three figures of «Stack y evidencia», once per database."""
+    return stack_page.read_figures()
+
+
+def show_stack_page(mode):
+    """«Stack y evidencia» (D-211): each logo explains itself and opens the page where it works."""
+    show_compact_page_header(PAGE_STACK, "Las herramientas del proyecto y dónde se ven en uso.")
+    view_as = st.session_state.get(VIEW_AS_STATE, DEFAULT_VIEW_AS)
+    addresses = {}
+    for *_, page in stack_page.STACK:
+        address = build_page_address(page)
+        addresses[page] = address + ("&" if "?" in address else "?") + urlencode({VIEW_AS_PARAMETER: view_as})
+    st.html(stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()),
+                                        addresses))
+
+
 def show_project_document(mode, title):
     """A document of docs/ as a page: the same text as in GitHub, its diagrams drawn
     from the live project, no code."""
@@ -7527,6 +7547,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_SAD: lambda mode: show_project_document(mode, PAGE_SAD),
     PAGE_ADR: lambda mode: show_project_document(mode, PAGE_ADR),
     PAGE_SCALABILITY: show_scalability_page,
+    PAGE_STACK: lambda mode: show_stack_page(mode),
     PAGE_SECURITY: lambda mode: show_security_page(mode),
     PAGE_SECURITY_PLAN: lambda mode: show_project_document(mode, PAGE_SECURITY_PLAN),
     PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(mode),
@@ -8018,13 +8039,13 @@ FOLDED_SECTIONS = {SECTION_SOURCES, SECTION_LINKS}
 def build_view_as_tree(view_as):
     """The (section, pages) rows of one profile's menu."""
     if view_as == "ingenieria":
-        sections = [row for row in SIDEBAR_TREE[0][1] if row[0] != SECTION_LINKS]
+        sections = [row for row in SIDEBAR_TREE[0][1] if row[0] != SECTION_LINKS] + [(SECTION_PROJECT, [PAGE_STACK])]
         return sections + [row for row in SIDEBAR_TREE[0][1] if row[0] == SECTION_LINKS]
     if view_as == "analista":
         return [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY]), (SECTION_TECHNICAL, [PAGE_OPERATIONS]),
                 (SECTION_LINKS, [PAGE_PRD, PAGE_SAD]), (SECTION_SOURCES, SOURCE_LINKS)]
     if view_as == "reclutador":
-        return [(REPORT_WINDOW, [PAGE_HOME])]
+        return [(REPORT_WINDOW, [PAGE_HOME]), (SECTION_PROJECT, [PAGE_STACK])]
     return [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY]), (SECTION_SOURCES, SOURCE_LINKS)]
 
 

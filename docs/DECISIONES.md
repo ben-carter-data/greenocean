@@ -1589,3 +1589,9 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 | Usuarios | Un panel de solo lectura | Varios equipos o herramientas de BI sobre los mismos datos |
 | Acceso | Público | Permisos por persona o datos sensibles |
 | Frescura | Semanal | Varias cargas al día o tiempo real |
+
+## D-211 · Página «Stack y evidencia» para el reclutador
+- **Problema:** un reclutador tenía que recorrer varias páginas para saber con qué está hecho el proyecto y si funciona de verdad.
+- **Decisión:** una página nueva, «Stack y evidencia», en el menú del perfil Reclutador (D-209) y en el de Ingeniería de datos. Muestra en una fila los logos 3D del stack, en el orden en que los datos los encuentran: Python, SQLite, Parquet, dbt, SQL, DuckDB, pytest, GitHub Actions y Streamlit. Al pasar el cursor, cada logo dice qué hace en el proyecto; un clic abre la página donde se ve en uso (por ejemplo, SQL → Consultas SQL, dbt → Pipeline y linaje, pytest → Calidad y auditoría, GitHub Actions → Centro de operación). Debajo, tres cifras reales: precios semanales procesados (`weekly_price`), pruebas automáticas (funciones de pytest del repositorio más las pruebas de dbt de `dbt_node`) y cargas semanales registradas (`etl_run`). Ninguna se escribe a mano.
+- **Detalle técnico:** `st.html` quita los degradados de un SVG en línea, así que cada logo va como imagen `data:` que conserva el disco 3D.
+- **Código y pruebas:** `bi/stack_page.py`; `tests/test_stack_page.py` y `tests/test_dashboard.py` (D-211, y el menú del Reclutador en D-209).
