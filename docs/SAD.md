@@ -6,7 +6,7 @@ Versión del 20-10-2026. Los tres diagramas se generan desde el sistema real, as
 
 [[diagrama:pipeline]]
 
-Cada martes, un proceso en Python descarga los CSV de ODEPA y el IPC del INE y los guarda sin cambios en SQLite (aterrizaje) y en Parquet (bronce). Después, dbt Core sobre DuckDB arma las capas staging, intermedio y marts, y corre 31 pruebas de datos. Si todas pasan, las tablas que usa el panel se copian a `etl/datos.duckdb`, que reemplaza a la versión anterior de una sola vez.
+Cada martes, un proceso en Python descarga los CSV de ODEPA, los guarda sin cambios en SQLite (aterrizaje) y los copia a Parquet (bronce). El IPC del INE se descarga aparte y va directo a Parquet, sin pasar por SQLite. Después, dbt Core sobre DuckDB arma las capas staging, intermedio y marts, y corre 31 pruebas de datos. Si todas pasan, las tablas que usa el panel se copian a `etl/datos.duckdb`, que reemplaza a la versión anterior de una sola vez.
 
 ## 2. Plataforma
 

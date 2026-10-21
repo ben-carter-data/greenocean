@@ -1631,3 +1631,4 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 ## D-218 · El ADR y el plan de seguridad, con el mismo tono que el PRD
 - **Decisión:** el ADR y el plan de seguridad se reescriben en frases directas, sin jerga innecesaria («artefacto compacto», «sesgo inflacionario», «superficie expuesta»), igual que el PRD y el SAD de D-217. El contenido, las cifras y las referencias D-xxx no cambian.
 - **Pruebas:** `tests/test_document_pdf.py` (encabezado de la tabla del ADR).
+- **Corrección:** el SAD decía que el IPC del INE pasa por SQLite; va directo a Parquet (D-197).
