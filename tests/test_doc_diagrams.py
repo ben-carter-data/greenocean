@@ -48,9 +48,9 @@ def test_d210_the_actors_view_follows_the_pipeline_standard():
     # Orthogonal arrows only: straight runs with right angles, never a curve.
     for path, *_ in doc_views.ACTOR_EDGES:
         assert re.fullmatch(r"M\d+ \d+( [HV]\d+)+", path), path
-    assert {name for name in ("ODEPA", "INE", "GitHub Actions", "Repositorio", "Panel", "Visitante", "El autor")
+    assert {name for name in ("ODEPA", "INE", "GitHub Actions", "Repositorio", "Panel", "Visitante", "Administrador")
             if f"<b>{name}</b>" in page} == {"ODEPA", "INE", "GitHub Actions", "Repositorio", "Panel", "Visitante",
-                                              "El autor"}
+                                              "Administrador"}
 
 
 def test_d210_the_weak_views_are_gone():

@@ -373,13 +373,13 @@ COVER_STATEMENTS = [
 ]
 COVER_OFFER = ("Comparaciones por canal y región, evolución de precios y cambios de la semana "
                "que conviene revisar.")
-COVER_LIMITS = ("Precios nominales, sin ajuste por inflación. La brecha de precio no mide "
+COVER_LIMITS = ("Precios nominales y reales, con el IPC de alimentos del INE. La brecha de precio no mide "
                 "ganancias. Los datos describen; no prueban causas.")
 SOURCE_LABELS = {"Precios mayoristas": "Diario · frutas y hortalizas",
                  "Precios al consumidor": "Semanal · todos los grupos"}
 LIMIT_CARDS = [
-    ("Precios nominales", "Sin ajuste por inflación: al comparar años, parte de la subida es "
-                          "inflación."),
+    ("Nominales y reales", "Precios e inflación descuenta la inflación de alimentos con el IPC del INE; "
+                           "el Resumen compara en pesos de cada semana."),
     ("Desde enero de 2022", "Los datos cargados empiezan en enero de 2022."),
     ("La papa no tiene margen", "Sus calidades no coinciden entre las dos fuentes."),
     ("Cálculos, no hallazgos", "Las cifras del panel son cálculos sobre datos oficiales; los "

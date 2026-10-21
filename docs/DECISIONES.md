@@ -1632,3 +1632,8 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Decisión:** el ADR y el plan de seguridad se reescriben en frases directas, sin jerga innecesaria («artefacto compacto», «sesgo inflacionario», «superficie expuesta»), igual que el PRD y el SAD de D-217. El contenido, las cifras y las referencias D-xxx no cambian.
 - **Pruebas:** `tests/test_document_pdf.py` (encabezado de la tabla del ADR).
 - **Corrección:** el SAD decía que el IPC del INE pasa por SQLite; va directo a Parquet (D-197).
+
+## D-219 · El README y la portada, al día con la arquitectura actual
+- **Problema:** el README, que es lo primero que ve un visitante en GitHub, describía el proyecto de los primeros hitos: un pipeline SQLite → consultas → panel, precios «sin ajuste por inflación», el rezago K5 (retirado en D-146), un estado al 12-10-2026 y un stack sin dbt, DuckDB ni Parquet. La portada antigua del panel repetía «precios nominales, sin ajuste por inflación». El diagrama de actores del PRD decía «El autor» mientras el texto decía «el administrador».
+- **Decisión:** el README se reescribe con la arquitectura real (ingesta, aterrizaje, bronce, dbt sobre DuckDB, base servida), las tres preguntas de negocio, el stack completo, la tabla de documentos, los comandos actuales, el alcance y límites vigentes y las dos fuentes (ODEPA e INE); la sección «Estructura», que el panel lee, lista los archivos actuales. La portada habla de precios nominales y reales. El diagrama de actores dice «Administrador», igual que el texto.
+- **Pruebas:** `tests/test_project.py` (cada ruta de «Estructura» existe y lo que no se sube no tiene enlace) y `tests/test_doc_diagrams.py`.

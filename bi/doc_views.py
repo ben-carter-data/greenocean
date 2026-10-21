@@ -124,7 +124,7 @@ ACTOR_EDGES = [
     ("M545 225 H655", "ops", 600, 225, "main", "Cada cambio de main vuelve a publicar el panel."),
     ("M745 210 H790 V110 H865", "serve", 828, 110, "HTTPS", "El visitante lee el panel; no necesita cuenta ni clave."),
     ("M865 340 H790 V240 H745", "ops", 828, 340, "clave", "Con la clave de control, el autor lanza una carga manual."),
-    ("M910 405 V440 H500 V292", "ops", 705, 440, "git push", "El autor cambia el código y los secretos del panel."),
+    ("M910 405 V440 H500 V292", "ops", 705, 440, "git push", "El administrador cambia el código y los secretos del panel."),
 ]
 
 
@@ -133,7 +133,7 @@ def build_actors_html(mode):
     palette = charts.get_palette(mode)
     nodes = [build_node(kind, name, COLUMNS[column], row, title, [("Qué hace", what), ("Por qué", why)])
              for kind, name, column, row, title, what, why in ACTOR_NODES]
-    for person, row, title in (("visitor", ROW_TOP, "Visitante"), ("author", ROW_LOW, "El autor")):
+    for person, row, title in (("visitor", ROW_TOP, "Visitante"), ("author", ROW_LOW, "Administrador")):
         nodes.append(build_node("person", person, COLUMNS[4], row, title,
                                 [("Para qué usa el panel", " · ".join(USE_CASES[person]))]))
     edges, chips = [], []

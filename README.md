@@ -1,10 +1,8 @@
-# Monitor de precios y márgenes de la cadena alimentaria en Chile
+# GreenOcean · Monitor de precios de alimentos en Chile
 
-Integración automatizada de datos públicos, del mercado mayorista al consumidor.
+Pipeline semanal y panel de BI sobre los precios mayoristas y al consumidor de ODEPA, con precios reales calculados con el IPC de alimentos del INE.
 
-Cada semana el sistema descarga los precios mayoristas y los precios al consumidor que publica ODEPA, los limpia, aplica reglas de negocio y actualiza un panel con indicadores para análisis de pricing y abastecimiento.
-
-> Estado al 12-10-2026: ejecución manual semanal comprobada en GitHub, informe automático publicado y panel público funcionando. Pendiente: observar cuatro ejecuciones semanales automáticas consecutivas (T-26).
+Cada martes el pipeline descarga las fuentes oficiales, las deja en una misma unidad y una misma semana, valida su calidad con 31 pruebas de datos y publica la base solo si todo pasa. El panel permite seguir cada cifra hasta el archivo de origen.
 
 [**Abrir el panel público**](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/)
 
@@ -13,102 +11,89 @@ Cada semana el sistema descarga los precios mayoristas y los precios al consumid
 
 ## Qué responde
 
-- Margen entre precio mayorista y precio al consumidor, por producto y canal.
-- Diferencia de precios entre canales (supermercado, feria, carnicería y otros) y entre regiones.
-- Estacionalidad de cada producto.
-- Rezago con que el precio al consumidor sigue al mayorista (indicador descriptivo).
-- Alertas de productos con variaciones fuera de su rango normal.
-- Calidad de datos: filas cargadas, rechazadas y motivo.
+- ¿Qué precios cambiaron esta semana y cuáles son inusuales?
+- ¿El precio de hoy es normal para la temporada, en pesos nominales o reales?
+- ¿Cuánto paga el consumidor sobre el precio mayorista, por canal?
 
-## Hallazgos
-
-Pendiente. Se publican cuando estén verificados, cada uno con la consulta que lo reproduce.
+Además muestra la calidad de cada carga (filas leídas, cargadas y rechazadas con su motivo) y permite auditar cualquier precio paso a paso.
 
 ## Cómo funciona
 
-Para operarlo sin ser técnico: [manual de operación](docs/MANUAL.md).
+1. **Ingesta** en Python: descarga los CSV de ODEPA y el IPC del INE.
+2. **Aterrizaje** en SQLite (`etl/raw.db`): las filas de ODEPA tal como llegan.
+3. **Bronce** en Parquet: copia literal de cada fuente, por año; el IPC llega aquí directo.
+4. **Transformación** con dbt Core sobre DuckDB: staging, intermedio y marts, con 31 pruebas.
+5. **Publicación** en `etl/datos.duckdb`, que el panel de Streamlit lee en solo lectura.
 
-```
-ODEPA (CSV) → agente de descarga → datos crudos → ETL (limpieza y reglas) → SQLite → consultas SQL → panel
-```
-
-Un job semanal de GitHub Actions ejecuta todo y guarda la base actualizada.
+GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los diagramas completos (pipeline, plataforma y modelo estrella) están en el panel y en el [SAD](docs/SAD.md).
 
 ## Estructura
 
 ```
-├── README.md
-├── LICENSE              licencia MIT del código
-├── run_download.command lanzador para macOS: descarga y ETL con doble clic
-├── docs/
-│   ├── DISENO.md        documento de diseño
-│   ├── BACKLOG.md       tareas y criterios de terminado
-│   ├── DECISIONES.md    registro de decisiones
-│   ├── MANUAL.md        manual de operación: qué pasa cada martes y qué hacer si falla
-│   └── PROYECTO.md      textos del panel: «Inicio», glosario y tablas de «Arquitectura»
 ├── agent/
-│   ├── agent.py         descarga y validación de archivos
-│   ├── input.csv      recursos a descargar
-│   └── logs/
+│   ├── agent.py         descarga y validación de los archivos de ODEPA
+│   └── input.csv        recursos a descargar
 ├── etl/
-│   ├── etl.py           clean, apply_business_rules, load
-│   ├── schema.sql       tablas de datos.db
-│   ├── raw_schema.sql   tablas de raw.db
-│   ├── raw.db         datos crudos (no se sube; lo genera el ETL)
-│   └── datos.db         indicadores semanales
+│   ├── etl.py           aterrizaje en SQLite y respaldo datos.db
+│   ├── raw.db           aterrizaje de ODEPA (no se sube; lo genera la ingesta)
+│   ├── bronze.py        capa bronce en Parquet
+│   ├── ine.py           IPC de alimentos del INE
+│   ├── pipeline.py      dbt build y publicación de la base
+│   ├── datos.duckdb     base servida que lee el panel
+│   └── datos.db         respaldo en SQLite
+├── dbt/                 proyecto dbt: staging, intermedio, marts y pruebas
 ├── bi/
-│   ├── queries.sql      una consulta por indicador
-│   ├── queries.py       lectura de la base por nombre de consulta
-│   ├── quality.py       comprobaciones de integridad y trazabilidad, en solo lectura
-│   ├── alerts.py        alertas de variación (K6)
-│   ├── lag.py           rezago entre precio mayorista y consumidor (K5)
-│   ├── charts.py        gráficos y colores del panel (Altair)
-│   ├── control.py       estado y lanzamiento del job semanal (API de GitHub)
-│   ├── architecture.py  diagramas en vivo: pipeline e infraestructura por plataforma
-│   ├── star_model.py    modelo estrella dibujado como estrella, con su panel de explicación
-│   ├── zoom.py          zoom y arrastre dentro del marco de cada diagrama
-│   ├── explorer.py      constructor de consultas por clics (Datos y código › Consulta por clics)
-│   ├── project.py       contenido del panel: documentos, SQL, glosario y ejemplos reales
 │   ├── dashboard.py     panel Streamlit
-│   └── report.py        informe semanal de alertas y estado
+│   ├── queries.sql      consultas del panel
+│   └── architecture.py  diagramas en vivo del pipeline y la plataforma
+├── docs/                PRD, SAD, ADR, plan de seguridad, decisiones y manual
 ├── tests/               pruebas automáticas (pytest)
-└── .github/workflows/   semanal.yml, pruebas.yml
-```
-
-## Cómo ejecutarlo
-
-```bash
-git clone <url-del-repositorio>
-cd <carpeta>
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-
-python agent/agent.py        # descarga
-python etl/etl.py             # limpia y carga
-streamlit run bi/dashboard.py # abre el panel
-python bi/report.py           # imprime el informe semanal
-pytest                        # pruebas
+└── .github/workflows/   semanal.yml y pruebas.yml
 ```
 
 ## Stack
 
-Python (pandas, requests) · SQL (SQLite) · Streamlit · GitHub Actions · pytest
+Python · SQL · dbt Core · DuckDB · Parquet · SQLite · GitHub Actions · pytest · Streamlit
+
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [PRD](docs/PRD.md) | Contexto, visión, alcance, usuarios y requisitos |
+| [SAD](docs/SAD.md) | Arquitectura: pipeline, plataforma y modelo de datos |
+| [ADR](docs/ADR.md) | Las diez decisiones de arquitectura más importantes |
+| [Plan de seguridad](docs/SEGURIDAD.md) | Cómo se prueba que el panel resiste ataques |
+| [Decisiones](docs/DECISIONES.md) | Registro completo de decisiones |
+| [Manual](docs/MANUAL.md) | Qué pasa cada martes y qué hacer si falla |
+
+## Cómo ejecutarlo
+
+| Para qué | Comando |
+|---|---|
+| Instalar el panel y las pruebas | `pip install -r requirements.txt` |
+| Instalar el pipeline con dbt (Python 3.11 o 3.12) | `pip install -r requirements-pipeline.txt` |
+| Abrir el panel | `streamlit run bi/dashboard.py` |
+| Correr las pruebas | `python -m pytest -q` |
+| Descargar ODEPA | `python agent/agent.py` |
+| Construir el data warehouse | `python etl/pipeline.py` |
 
 ## Alcance y límites
 
-- Frutas y verduras: análisis completo con margen desde el mayorista.
-- Carnes, lácteos, huevos, abarrotes y pan: comparación por canal, región y tiempo, sin margen mayorista.
-- Precios nominales, sin ajuste por inflación.
-- El rezago entre precios es descriptivo y no prueba causalidad.
-- No incluye pescados ni mariscos.
+- Frutas y verduras: margen entre mayorista y consumidor. Carnes, lácteos, huevos, abarrotes y pan: solo precio al consumidor.
+- ODEPA publica 9 de las 16 regiones; los promedios nacionales cubren esas 9.
+- El precio real descuenta la inflación general de alimentos, no la de cada producto.
+- Los indicadores describen lo ocurrido; no predicen precios ni atribuyen causas.
 
-## Fuente de los datos
+## Fuentes de los datos
 
-Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de Agricultura de Chile, [portal de datos abiertos](https://datos.odepa.gob.cl/), licencia Creative Commons Atribución. Este proyecto no es un producto oficial de ODEPA.
+- Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de Agricultura de Chile, [portal de datos abiertos](https://datos.odepa.gob.cl/), licencia Creative Commons Atribución.
+- Instituto Nacional de Estadísticas (INE), IPC de alimentos y bebidas no alcohólicas.
+
+Este proyecto no es un producto oficial de ODEPA ni del INE.
 
 ## Licencia
 
-El código está bajo licencia MIT (`LICENSE`). Los datos son de ODEPA y mantienen su licencia Creative Commons Atribución.
+El código está bajo licencia MIT (`LICENSE`). Los datos mantienen la licencia de sus fuentes.
 
 ## Autor
 
