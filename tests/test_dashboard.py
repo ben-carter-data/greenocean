@@ -1745,11 +1745,11 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 MENU_BLOCKS = {
     'Negocio · BI': ['Resumen semanal', 'Precios e inflación'],
-    'Análisis de negocio · BA': ['PRD · Requisitos del producto', 'ADR · Decisiones de arquitectura', 'Escalabilidad'],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL',
                             'SAD · Arquitectura'],
     'DevOps y seguridad': ['Centro de operación', 'Mapa de seguridad', 'Plan de pruebas de seguridad'],
     'Stack y evidencia': ['Stack y evidencia'],
+    'Análisis de negocio · BA': ['PRD · Requisitos del producto', 'ADR · Decisiones de arquitectura', 'Escalabilidad'],
 }
 
 
@@ -1765,10 +1765,12 @@ def test_d213_the_menu_is_colored_blocks_open_by_default_with_every_page_once():
     assert all(link.proto.icon for link in app.sidebar.get('page_link'))
     markup = " ".join(block.value for block in app.sidebar.markdown)
     assert markup.count('class="nav-source-link"') == len(dashboard.SOURCE_LINKS)
-    colors = [colors for _, _, colors, _ in dashboard.MENU_BLOCKS]
-    assert len(set(colors)) == len(colors)
+    # D-215: every block is a card in one of the four tones, with its own accent and corner brackets.
+    accents = [accent for *_, accent, _ in dashboard.MENU_BLOCKS]
+    assert len(set(accents)) == len(accents)
+    assert {tone for _, _, tone, *_ in dashboard.MENU_BLOCKS} == set(dashboard.CARD_TONES)
     for key, *_ in dashboard.MENU_BLOCKS:
-        assert f'.st-key-nav_group_{key} button p' in markup
+        assert f'.st-key-nav_group_{key} button p' in markup and f'.st-key-nav_block_{key}::before' in markup
 
 
 @needs_database

@@ -7998,15 +7998,22 @@ RELOAD_HOME_SCRIPT = """<script>
 # open by default; each page lives in exactly one block. «Ver como» (D-209) is gone: every
 # reader sees everything, so whoever wants the breadth of the work sees it at a glance.
 # (key, title, (color on a dark sidebar, color on a light one), pages or source links)
+# D-215: each block is a card in one of the panel's four tones (blue, Vantablack, dark grey,
+# light grey) with its own accent; the documents sit at the end of their block and the
+# documents' block closes the menu, just before the sources.
+# (key, title, tone, accent, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BI", ("#72e7ad", "#167046"), [PAGE_HOME, PAGE_SEASONALITY]),
-    ("analisis", "Análisis de negocio · BA", ("#c3cbd8", "#4a5568"), [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
-    ("ingenieria", "Ingeniería de datos", ("#d4b5ff", "#7a2fc8"),
+    ("negocio", "Negocio · BI", "azul", "#7ee2b0", [PAGE_HOME, PAGE_SEASONALITY]),
+    ("ingenieria", "Ingeniería de datos", "vantablack", "#c9a8ff",
      [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_SAD]),
-    ("devops", "DevOps y seguridad", ("#ffb3d9", "#b0256f"), [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
-    ("stack", "Stack y evidencia", ("#6fe3e8", "#0b6e78"), [PAGE_STACK]),
-    ("fuentes", "Fuentes", ("#7cc4ff", "#1d5fbf"), SOURCE_LINKS),
+    ("devops", "DevOps y seguridad", "grafito", "#ff9ccc", [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
+    ("stack", "Stack y evidencia", "azul", "#6fe3e8", [PAGE_STACK]),
+    ("analisis", "Análisis de negocio · BA", "gris", "#334155", [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
+    ("fuentes", "Fuentes", "gris", "#1d5fbf", SOURCE_LINKS),
 ]
+# Card tone → (background, text). Fixed in every theme, so each card reads the same everywhere.
+CARD_TONES = {"azul": ("#12325a", "#e8f1ff"), "vantablack": ("#050607", "#e6e8ec"),
+              "grafito": ("#2b2f36", "#eceff3"), "gris": ("#e6e9ee", "#1f2933")}
 
 
 SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">'
@@ -8029,24 +8036,38 @@ def read_current_view(window):
 
 
 def build_section_colors_css(dark):
-    """Each block's title and children in its own color, by the key of their container (D-213)."""
+    """Each block as a HUD-like card (D-215): its tone, a glowing border in its accent and
+    corner brackets; the title in the accent and the pages in the card's text color."""
     rules = []
-    for key, _, (on_dark, on_light), _ in MENU_BLOCKS:
-        color = on_dark if dark else on_light
-        rules.append(f'[class*="st-key-nav_child_{key}_"] [data-testid="stPageLink"] p, '
-                     f'[class*="st-key-nav_child_{key}_"] [data-testid="stPageLink"] [data-testid="stIconMaterial"], '
-                     f'[class*="st-key-nav_child_{key}_"] .nav-source-link '
-                     f'{{color:{color} !important; -webkit-text-fill-color:{color} !important; '
-                     f'text-shadow:0 0 10px color-mix(in srgb,{color} 16%,transparent);}}')
-        # The block title: small capitals in the block's color over a fine rule of the same color.
-        rules.append(f'.st-key-nav_group_{key} button {{border-bottom:1px solid color-mix(in srgb,{color} 45%,transparent) !important;'
-                     f' border-radius:0 !important; margin-top:8px;}}')
-        rules.append(f'.st-key-nav_group_{key} button p {{color:{color} !important; -webkit-text-fill-color:{color} !important;'
+    for key, _, tone, accent, _ in MENU_BLOCKS:
+        background, text = CARD_TONES[tone]
+        rules.append(f'.st-key-nav_block_{key} {{position:relative; margin:0 0 8px; padding:3px 6px 4px !important;'
+                     f' background:linear-gradient(160deg,color-mix(in srgb,{background} 92%,{accent}) 0%,{background} 60%);'
+                     f' border:1px solid color-mix(in srgb,{accent} 55%,transparent); border-radius:6px;'
+                     f' box-shadow:0 0 14px color-mix(in srgb,{accent} 22%,transparent), inset 0 0 18px color-mix(in srgb,{accent} 8%,transparent);'
+                     f' gap:0 !important;}}')
+        rules.append(f'.st-key-nav_block_{key}::before, .st-key-nav_block_{key}::after {{content:""; position:absolute;'
+                     f' width:12px; height:12px; pointer-events:none;}}')
+        rules.append(f'.st-key-nav_block_{key}::before {{top:-1px; left:-1px; border-top:2px solid {accent};'
+                     f' border-left:2px solid {accent}; border-top-left-radius:6px;}}')
+        rules.append(f'.st-key-nav_block_{key}::after {{bottom:-1px; right:-1px; border-bottom:2px solid {accent};'
+                     f' border-right:2px solid {accent}; border-bottom-right-radius:6px;}}')
+        rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] p, .st-key-nav_block_{key} .nav-source-link '
+                     f'{{color:{text} !important; -webkit-text-fill-color:{text} !important; text-shadow:none !important;}}')
+        rules.append(f'.st-key-nav_block_{key} [data-testid="stIconMaterial"], .st-key-nav_block_{key} .nav-source-icon '
+                     f'{{color:{accent} !important;}}')
+        rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] a:hover {{background:color-mix(in srgb,{accent} 14%,transparent) !important;}}')
+        rules.append(f'.st-key-nav_group_{key} button {{border-bottom:1px solid color-mix(in srgb,{accent} 40%,transparent) !important;'
+                     f' border-radius:0 !important; margin-bottom:3px;}}')
+        rules.append(f'.st-key-nav_group_{key} button p {{color:{accent} !important; -webkit-text-fill-color:{accent} !important;'
                      f' font-size:.7rem !important; font-weight:650 !important; letter-spacing:.08em !important;'
                      f' text-transform:uppercase;}}')
-    # Every block title spans the menu, so its rule lines up with the others.
-    rules.append('[class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div, '
-                 '[class*="st-key-nav_group_"] button {width:100% !important;}')
+    rules.append('[class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div, '
+                 '[class*="st-key-nav_group_"] button {width:100% !important; box-sizing:border-box;}')
+    rules.append('[class*="st-key-nav_group_"] button > div, [class*="st-key-nav_group_"] button p '
+                 '{justify-content:flex-start !important; text-align:left !important;}')
+    # The current page: a bar in the card's accent.
+    rules.append('[class*="_nav_current"] [data-testid="stPageLink"] a {box-shadow:inset 2px 0 currentColor !important;}')
     # Only the sources leave the app, so only they look like web links: a fine underline.
     rules.append('[data-testid="stSidebar"] a.nav-source-link {text-decoration:underline !important; text-decoration-thickness:1px; '
                  'text-underline-offset:3px; text-decoration-color:color-mix(in srgb, currentColor 55%, transparent);}')
@@ -8079,7 +8100,8 @@ def build_sidebar_css(mode):
         border:1px solid {hairline} !important; border-radius:10px !important;
         background:color-mix(in srgb,{palette['field']} 72%,transparent) !important;
         box-shadow:inset 0 1px rgba(255,255,255,.04);}}
-    [data-testid="stSidebarUserContent"] {{padding:6px 17px 0 !important;}}
+    /* D-215: a narrow inner margin, so the menu cards hold long page names on one line. */
+    [data-testid="stSidebarUserContent"] {{padding:6px 4px 0 !important;}}
     [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important;
         min-height:calc(100vh - 86px); padding-bottom:116px;}}
     [data-testid="stSidebarNav"] {{display:none;}}
@@ -8183,30 +8205,36 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             st.session_state[f"nav_open_{key}"] = True
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
-    for key, title, _, pages in MENU_BLOCKS:
+    for key, title, _, _, pages in MENU_BLOCKS:
         open_key = f"nav_open_{key}"
         is_open = st.session_state.get(open_key, True)
-        with st.sidebar.container(key=f"nav_group_{key}"):
-            if st.button(f"{'⌄' if is_open else '›'}  {title}", key=f"nav_toggle_{key}"):
-                st.session_state[open_key] = not is_open
-                st.rerun()
-        if not is_open:
-            continue
-        if pages is SOURCE_LINKS:
-            # They leave the app (D-118): plain external links, not Streamlit pages.
-            for index, (name, url) in enumerate(pages):
-                with st.sidebar.container(key=f"nav_child_{key}_{index}"):
-                    st.markdown(f'<a class="nav-source-link" href="{html.escape(url, quote=True)}" '
-                                f'target="_blank" rel="noopener noreferrer">{SOURCE_ICON_SVG}{html.escape(name)}</a>',
-                                unsafe_allow_html=True)
-            continue
-        for index, view in enumerate(pages):
-            window = WINDOW_OF_VIEW[view]
-            active = window == current_window and view == current_view
-            with st.sidebar.container(key=f"nav_child_{key}_{index}" + ("_nav_current" if active else "")):
-                st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
-                             icon=PAGE_ICONS.get(view), query_params=keep_context() | {VIEW_PARAMETER: view})
+        with st.sidebar.container(key=f"nav_block_{key}"):
+            show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open)
     show_sidebar_footer(current_window)
+
+
+def show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open):
+    """One card of the menu: its title, which folds it, and its pages (D-215)."""
+    with st.container(key=f"nav_group_{key}"):
+        if st.button(f"{'⌄' if is_open else '›'}  {title}", key=f"nav_toggle_{key}"):
+            st.session_state[open_key] = not is_open
+            st.rerun()
+    if not is_open:
+        return
+    if pages is SOURCE_LINKS:
+        # They leave the app (D-118): plain external links, not Streamlit pages.
+        for index, (name, url) in enumerate(pages):
+            with st.container(key=f"nav_child_{key}_{index}"):
+                st.markdown(f'<a class="nav-source-link" href="{html.escape(url, quote=True)}" '
+                            f'target="_blank" rel="noopener noreferrer">{SOURCE_ICON_SVG}{html.escape(name)}</a>',
+                            unsafe_allow_html=True)
+        return
+    for index, view in enumerate(pages):
+        window = WINDOW_OF_VIEW[view]
+        active = window == current_window and view == current_view
+        with st.container(key=f"nav_child_{key}_{index}" + ("_nav_current" if active else "")):
+            st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
+                         icon=PAGE_ICONS.get(view), query_params=keep_context() | {VIEW_PARAMETER: view})
 
 
 def build_sidebar_github_html(is_current):
