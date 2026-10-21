@@ -1627,3 +1627,7 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Problema:** el PRD hablaba de «perfiles de diseño (hipótesis, sin entrevistas)» y de lo que el sistema no es, y su redacción sonaba a plantilla. Un documento de producto describe qué es el sistema, qué hace, qué no hace y para quién, sin comentarios sobre el propio documento.
 - **Decisión:** el PRD se ordena en contexto, visión y misión, alcance (qué hace y qué no hace), usuarios, preguntas de negocio, requisitos y pantallas, en frases directas. El SAD conserva sus tres diagramas con párrafos más simples. «El autor» pasa a «el administrador» en el PRD y en el plan de seguridad. Las cifras siguen siendo las de la base y cada documento cabe en dos páginas.
 - **Pruebas:** `tests/test_document_pdf.py` y `tests/test_doc_diagrams.py`, sin cambios.
+
+## D-218 · El ADR y el plan de seguridad, con el mismo tono que el PRD
+- **Decisión:** el ADR y el plan de seguridad se reescriben en frases directas, sin jerga innecesaria («artefacto compacto», «sesgo inflacionario», «superficie expuesta»), igual que el PRD y el SAD de D-217. El contenido, las cifras y las referencias D-xxx no cambian.
+- **Pruebas:** `tests/test_document_pdf.py` (encabezado de la tabla del ADR).

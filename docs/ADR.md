@@ -1,16 +1,16 @@
 # GreenOcean · Registros de decisiones de arquitectura (ADR)
 
-Versión 20-10-2026. Resume las diez decisiones de mayor impacto arquitectónico. Cada una conserva su identificador original; el contexto completo y las consecuencias están en las entradas D-xxx de `docs/DECISIONES.md`.
+Versión del 20-10-2026. Estas son las diez decisiones que más pesan en la arquitectura. Cada una mantiene su número original; el contexto completo está en la entrada D-xxx correspondiente de `docs/DECISIONES.md`.
 
-| ADR | Decisión | Justificación | Alternativa descartada |
+| ADR | Decisión | Por qué | Alternativa descartada |
 |---|---|---|---|
-| ADR-01 | Ingesta exclusiva de archivos oficiales (ODEPA, INE) | Fuente de verdad con licencia abierta (D-001) | Scraping de supermercados |
-| ADR-02 | Orquestación en GitHub Actions y despliegue en Streamlit Community Cloud | Costo cero, sin infraestructura propia y acceso público (D-012) | Servidor propio; Power BI, que requiere licencia para compartir |
-| ADR-04 | Datos crudos fuera del repositorio | Archivos anuales de hasta 46 MB, reconstruibles en cada carga (D-020) | Versionar todo; almacenamiento de archivos grandes |
-| ADR-10 | Carga idempotente por reconstrucción completa | Una re-ejecución no duplica filas (D-024) | Cargas incrementales |
-| ADR-11 | Pruebas de calidad como condición de publicación | Ninguna carga truncada o inválida llega al panel (D-029, D-154) | Umbrales fijos de filas por semana |
-| ADR-19 | Modelo estrella con dimensión de fechas continua | El rango estacional requiere semana ISO, mes y estación sin huecos (D-023, D-095) | No registrada |
-| ADR-30 | Parquet, dbt Core y DuckDB | Capas con pruebas declaradas; motor intercambiable por configuración (D-154) | BigQuery sandbox, con expiración de tablas a 60 días |
-| ADR-31 | Sin data warehouse en la nube con datos públicos | Con 14 MB, carga semanal y un consumidor, la nube agrega costo y riesgo sin beneficio (D-152) | BigQuery como segundo destino de dbt |
-| ADR-33 | Precios reales con el IPC de alimentos del INE | Comparación temporal sin sesgo inflacionario (D-155) | Unión directa de las dos series del INE: discontinuidad de −33,7 % |
-| ADR-34 | Separación entre almacén de trabajo, base servida y respaldo con paridad | El panel consume un artefacto compacto y nunca una construcción parcial (D-154) | Lectura directa del almacén de dbt |
+| ADR-01 | Usar solo los archivos oficiales de ODEPA y del INE | Son la fuente de verdad y tienen licencia abierta (D-001) | Scraping de sitios de supermercados |
+| ADR-02 | Orquestar con GitHub Actions y publicar en Streamlit Community Cloud | No cuesta nada, no hay servidor que mantener y el panel queda en un enlace público (D-012) | Un servidor propio; Power BI, que exige licencia para compartir |
+| ADR-04 | No subir los datos crudos al repositorio | Cada archivo anual pesa hasta 46 MB y se vuelve a descargar en cada carga (D-020) | Versionar todo o usar almacenamiento de archivos grandes |
+| ADR-10 | Reconstruir todo en cada carga | Repetir una semana nunca duplica filas (D-024) | Cargas incrementales semana a semana |
+| ADR-11 | Publicar solo si pasan las pruebas | Una carga incompleta o con errores nunca llega al panel (D-029, D-154) | Límites fijos de filas por semana |
+| ADR-19 | Modelo estrella con una dimensión de fechas sin huecos | El rango de temporada necesita semana ISO, mes y estación para cada semana (D-023, D-095) | No registrada |
+| ADR-30 | Parquet, dbt Core y DuckDB | Cada capa tiene sus pruebas y el motor se puede cambiar desde la configuración (D-154) | BigQuery en modo sandbox, que borra las tablas a los 60 días |
+| ADR-31 | No usar un data warehouse en la nube | Con 14 MB, una carga semanal y un solo panel, la nube suma costo y riesgos sin aportar nada (D-152) | BigQuery como segundo destino de dbt |
+| ADR-33 | Calcular precios reales con el IPC de alimentos del INE | Sin descontar la inflación, un precio de hoy parece caro solo porque todo subió (D-155) | Pegar las dos series del INE sin empalmar, que deja un salto falso de −33,7 % |
+| ADR-34 | Separar la base de trabajo de dbt, la base que lee el panel y el respaldo | El panel lee un archivo liviano y nunca ve una construcción a medias (D-154) | Que el panel lea directamente la base de trabajo de dbt |

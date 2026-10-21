@@ -1,10 +1,10 @@
 # GreenOcean · Plan de pruebas de seguridad
 
-Cómo se buscan los puntos débiles del panel publicado, cómo se corrigen y cómo se demuestra en cada push que siguen cerrados. Revisión del 20-10-2026 (D-199 a D-202), con el OWASP Top 10 (2021) como referencia.
+Cómo se buscan los puntos débiles del panel, cómo se corrigen y cómo se comprueba en cada cambio que siguen cerrados. Revisión del 20-10-2026 (D-199 a D-202), usando el OWASP Top 10 (2021) como referencia.
 
 ## 1. Objetivo y alcance
 
-Demostrar, mediante pruebas reproducibles, que un visitante no puede leer los secretos, modificar los datos ni ejecutar el pipeline sin la clave de control. El alcance comprende la superficie expuesta a internet: el panel, su página Consultas SQL, la clave de control y el código público. Quedan excluidas las cuentas de administración en GitHub y Streamlit, protegidas por contraseña y verificación en dos pasos.
+El objetivo es comprobar, con pruebas que cualquiera puede repetir, que un visitante no puede leer los secretos, cambiar los datos ni lanzar el pipeline sin la clave de control. La revisión cubre todo lo que se alcanza desde internet: el panel, la página Consultas SQL, la clave de control y el código público. Las cuentas de GitHub y Streamlit quedan fuera, porque las protegen su contraseña y la verificación en dos pasos.
 
 ## 2. Puertas y barreras
 
@@ -43,4 +43,4 @@ Cada puerta tiene tres barreras independientes: si una fallara, las otras siguen
 
 ## 5. Resultados y límites
 
-La revisión del 20-10-2026 encontró dos puntos débiles en la clave de control (sin límite de intentos; error con caracteres no ASCII), corregidos en D-199, y una frase inexacta del SAD, corregida en D-200. Requisitos operativos: clave de control larga, token de GitHub de grano fino renovado antes de su vencimiento y verificación en dos pasos en las cuentas de administración. Los valores secretos y los problemas sin corregir no se publican.
+La revisión del 20-10-2026 encontró dos puntos débiles en la clave de control (sin límite de intentos; error con caracteres no ASCII), corregidos en D-199, y una frase inexacta del SAD, corregida en D-200. Para que todo esto se sostenga, la clave de control debe ser larga, el token de GitHub debe tener solo los permisos necesarios y renovarse antes de vencer, y las cuentas de administración deben usar verificación en dos pasos. Los valores secretos y los problemas aún sin corregir nunca se publican.
