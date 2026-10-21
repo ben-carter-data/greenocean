@@ -7499,11 +7499,7 @@ def read_stack_figures(database_version):
 def show_stack_page(mode):
     """«Stack y evidencia» (D-211): each logo explains itself and opens the page where it works."""
     show_compact_page_header(PAGE_STACK, "Las herramientas del proyecto y dónde se ven en uso.")
-    view_as = st.session_state.get(VIEW_AS_STATE, DEFAULT_VIEW_AS)
-    addresses = {}
-    for *_, page in stack_page.STACK:
-        address = build_page_address(page)
-        addresses[page] = address + ("&" if "?" in address else "?") + urlencode({VIEW_AS_PARAMETER: view_as})
+    addresses = {page: build_page_address(page) for *_, page in stack_page.STACK}
     st.html(stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()),
                                         addresses))
 
@@ -7817,8 +7813,6 @@ def keep_context():
     context = {}
     if st.session_state.get(THEME_STATE) in charts.THEMES:
         context[THEME_PARAMETER] = st.session_state[THEME_STATE]
-    if st.session_state.get(VIEW_AS_STATE) in VIEW_AS:
-        context[VIEW_AS_PARAMETER] = st.session_state[VIEW_AS_STATE]
     return context
 
 
@@ -7999,68 +7993,20 @@ RELOAD_HOME_SCRIPT = """<script>
 </script>"""
 
 
-# The side menu follows the VS Code explorer model: one flat stack of short,
-# conventional section names. Only a section's chevron carries visual meaning;
-# pages appear underneath after expansion.
-SIDEBAR_TREE = [
-    # «Datos» left the menu (D-130): the Resumen's search and the SQL console cover
-    # what its raw, paginated browser offered; its address still works for old links.
-    ("", [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY, PAGE_SQL]),
-          # Step 4 of the refonte: four pages in the order of the data, from the
-          # lineage to the model, its checks and its operation (DevOps joined Ejecuciones).
-          (SECTION_TECHNICAL, [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS]),
-          # The two ODEPA datasets get their own folder (D-118): they are not
-          # GitHub, so they do not belong on the GitHub page, and they are the
-          # source the whole pipeline starts from, so they sit near Arquitectura.
-          # «El proyecto» and the old «Documentación» folder of six pages are now
-          # three, one per reader (D-105, D-110): the same folder pattern as every
-          # other section, not a special-cased flat link.
-          # Security has its own folder (D-201): what a visitor could try and the method that proves it is stopped.
-          (SECTION_SECURITY, [PAGE_SECURITY, PAGE_SECURITY_PLAN]),
-          (SECTION_LINKS, [PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY]),
-          # The sources close the menu (D-186): they lead out of the app.
-          (SECTION_SOURCES, SOURCE_LINKS),
-          # GitHub is not a section of the list: its mark lives in the sidebar
-          # footer, on a light pill, next to Apariencia (D-124).
-          ]),
+
+# D-213: the menu is a stack of colored blocks, one per kind of reader, always visible and
+# open by default; each page lives in exactly one block. «Ver como» (D-209) is gone: every
+# reader sees everything, so whoever wants the breadth of the work sees it at a glance.
+# (key, title, (color on a dark sidebar, color on a light one), pages or source links)
+MENU_BLOCKS = [
+    ("negocio", "Negocio · BI", ("#72e7ad", "#167046"), [PAGE_HOME, PAGE_SEASONALITY]),
+    ("analisis", "Análisis de negocio · BA", ("#c3cbd8", "#4a5568"), [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
+    ("ingenieria", "Ingeniería de datos", ("#d4b5ff", "#7a2fc8"),
+     [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_SAD]),
+    ("devops", "DevOps y seguridad", ("#ffb3d9", "#b0256f"), [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
+    ("stack", "Stack y evidencia", ("#6fe3e8", "#0b6e78"), [PAGE_STACK]),
+    ("fuentes", "Fuentes", ("#7cc4ff", "#1d5fbf"), SOURCE_LINKS),
 ]
-
-# D-209 (stage 1): «Ver como» picks whose menu the sidebar shows. It never locks a page:
-# an address outside the chosen menu still opens.
-VIEW_AS_PARAMETER = "ver"
-VIEW_AS_STATE = "view_as"
-VIEW_AS = {"visitante": "Visitante", "analista": "Analista de negocio",
-           "ingenieria": "Ingeniería de datos", "reclutador": "Reclutador"}
-DEFAULT_VIEW_AS = "visitante"
-# Folders that start folded: the sources and, for engineering, the documents (D-209).
-FOLDED_SECTIONS = {SECTION_SOURCES, SECTION_LINKS}
-
-
-def build_view_as_tree(view_as):
-    """The (section, pages) rows of one profile's menu."""
-    if view_as == "ingenieria":
-        sections = [row for row in SIDEBAR_TREE[0][1] if row[0] != SECTION_LINKS] + [(SECTION_PROJECT, [PAGE_STACK])]
-        return sections + [row for row in SIDEBAR_TREE[0][1] if row[0] == SECTION_LINKS]
-    if view_as == "analista":
-        return [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY]), (SECTION_TECHNICAL, [PAGE_OPERATIONS]),
-                (SECTION_LINKS, [PAGE_PRD, PAGE_SAD]), (SECTION_SOURCES, SOURCE_LINKS)]
-    if view_as == "reclutador":
-        return [(REPORT_WINDOW, [PAGE_HOME]), (SECTION_PROJECT, [PAGE_STACK])]
-    return [(REPORT_WINDOW, [PAGE_HOME, PAGE_SEASONALITY]), (SECTION_SOURCES, SOURCE_LINKS)]
-
-
-def read_view_as():
-    """The profile from the address first, then the session; Visitante by default."""
-    requested = st.query_params.get(VIEW_AS_PARAMETER)
-    view_as = requested if requested in VIEW_AS else st.session_state.get(VIEW_AS_STATE, DEFAULT_VIEW_AS)
-    view_as = view_as if view_as in VIEW_AS else DEFAULT_VIEW_AS
-    st.session_state[VIEW_AS_STATE] = view_as
-    st.query_params[VIEW_AS_PARAMETER] = view_as
-    return view_as
-
-
-def remember_view_as():
-    st.query_params[VIEW_AS_PARAMETER] = st.session_state[VIEW_AS_STATE]
 
 
 SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">'
@@ -8082,33 +8028,25 @@ def read_current_view(window):
     return view if view in views else views[0]
 
 
-# One color per menu section (D-186, D-188), none of them a status color of the app
-# (green verified, amber pending, red failure): the brand green for the dashboard,
-# violet for engineering, a quiet slate for the reference documents, and link blue,
-# underlined, for the external sources. Bright steps on a dark sidebar, deep steps on a
-# light one (5.7:1 or more on each).
-SECTION_COLORS = {
-    REPORT_WINDOW: ("#72e7ad", "#167046"),
-    SECTION_TECHNICAL: ("#d4b5ff", "#7a2fc8"),
-    SECTION_SECURITY: ("#ffb3d9", "#b0256f"),
-    SECTION_LINKS: ("#c3cbd8", "#4a5568"),
-    SECTION_SOURCES: ("#7cc4ff", "#1d5fbf"),
-    # D-212: teal for the project's own page (Stack y evidencia), apart from every other section.
-    SECTION_PROJECT: ("#6fe3e8", "#0b6e78"),
-}
-
-
 def build_section_colors_css(dark):
-    """The color of each section's children, by the path in their container key."""
+    """Each block's title and children in its own color, by the key of their container (D-213)."""
     rules = []
-    for section, (on_dark, on_light) in SECTION_COLORS.items():
+    for key, _, (on_dark, on_light), _ in MENU_BLOCKS:
         color = on_dark if dark else on_light
-        path = "fuentes" if section == SECTION_SOURCES else WINDOW_PATHS[section]
-        rules.append(f'[class*="st-key-nav_child_{path}_"] [data-testid="stPageLink"] p, '
-                     f'[class*="st-key-nav_child_{path}_"] [data-testid="stPageLink"] [data-testid="stIconMaterial"], '
-                     f'[class*="st-key-nav_child_{path}_"] .nav-source-link '
+        rules.append(f'[class*="st-key-nav_child_{key}_"] [data-testid="stPageLink"] p, '
+                     f'[class*="st-key-nav_child_{key}_"] [data-testid="stPageLink"] [data-testid="stIconMaterial"], '
+                     f'[class*="st-key-nav_child_{key}_"] .nav-source-link '
                      f'{{color:{color} !important; -webkit-text-fill-color:{color} !important; '
                      f'text-shadow:0 0 10px color-mix(in srgb,{color} 16%,transparent);}}')
+        # The block title: small capitals in the block's color over a fine rule of the same color.
+        rules.append(f'.st-key-nav_group_{key} button {{border-bottom:1px solid color-mix(in srgb,{color} 45%,transparent) !important;'
+                     f' border-radius:0 !important; margin-top:8px;}}')
+        rules.append(f'.st-key-nav_group_{key} button p {{color:{color} !important; -webkit-text-fill-color:{color} !important;'
+                     f' font-size:.7rem !important; font-weight:650 !important; letter-spacing:.08em !important;'
+                     f' text-transform:uppercase;}}')
+    # Every block title spans the menu, so its rule lines up with the others.
+    rules.append('[class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div, '
+                 '[class*="st-key-nav_group_"] button {width:100% !important;}')
     # Only the sources leave the app, so only they look like web links: a fine underline.
     rules.append('[data-testid="stSidebar"] a.nav-source-link {text-decoration:underline !important; text-decoration-thickness:1px; '
                  'text-underline-offset:3px; text-decoration-color:color-mix(in srgb, currentColor 55%, transparent);}')
@@ -8233,69 +8171,41 @@ def build_sidebar_css(mode):
     </style>"""
 
 
-def nav_open_key(window):
-    # SECTION_SOURCES is sidebar-only (D-118): it has no Streamlit page, so no entry
-    # in WINDOW_PATHS.
-    path = "fuentes" if window == SECTION_SOURCES else WINDOW_PATHS[window]
-    return f"nav_open_{path}"
-
-
-SIDEBAR_NAV_VERSION = 7
+SIDEBAR_NAV_VERSION = 8
 
 
 def show_sidebar_navigation(windows_by_title, current_window, order):
-    """A VS Code-like explorer: aligned top-level titles, no numbering or item
-    icons, and a chevron only for sections that contain pages."""
+    """The menu (D-213): colored blocks by kind of reader, open by default, each a folder
+    that a click folds; under each title, its pages with their icon (D-209)."""
     st.sidebar.markdown(build_sidebar_css(get_mode()), unsafe_allow_html=True)
     if st.session_state.get("sidebar_nav_version") != SIDEBAR_NAV_VERSION:
-        for _, sections in SIDEBAR_TREE:
-            for window, views in sections:
-                if views is not None:
-                    st.session_state[nav_open_key(window)] = window not in FOLDED_SECTIONS
-        st.session_state[nav_open_key(SECTION_SOURCES)] = False
+        for key, *_ in MENU_BLOCKS:
+            st.session_state[f"nav_open_{key}"] = True
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
-    st.sidebar.selectbox("Ver como", list(VIEW_AS), format_func=VIEW_AS.get, key=VIEW_AS_STATE,
-                         on_change=remember_view_as,
-                         help="Muestra el menú de cada lector. Ninguna página se bloquea.")
-    for heading, sections in [("", build_view_as_tree(st.session_state[VIEW_AS_STATE]))]:
-        if heading:
-            st.sidebar.markdown(f'<div class="nav-heading">{heading}</div>', unsafe_allow_html=True)
-        for window, views in sections:
-            label = SIDEBAR_TOP_LABELS.get(window, window)
-            if views is None:
-                key = "nav_current" if window == current_window else f"nav_{WINDOW_PATHS[window]}"
-                with st.sidebar.container(key=key):
-                    st.page_link(windows_by_title[window], label=label, query_params=keep_context())
-                continue
-            # Every folder starts open (D-139): the whole map of the app at a glance;
-            # a click folds it. Opening it never changes the alignment of its rows.
-            open_key = nav_open_key(window)
-            is_open = st.session_state.get(open_key, True)
-            nav_path = "fuentes" if window == SECTION_SOURCES else WINDOW_PATHS[window]
-            group_key = "nav_group_current" if window == current_window else f"nav_group_{nav_path}"
-            chevron = "⌄" if is_open else "›"
-            with st.sidebar.container(key=group_key):
-                if st.button(f"{chevron}  {label}", key=f"nav_toggle_{nav_path}"):
-                    st.session_state[open_key] = not is_open
-                    st.rerun()
-            if not is_open:
-                continue
-            if window == SECTION_SOURCES:
-                # Both leave the app (D-118): a plain external link in the same
-                # green as every other child, not a page_link to a Streamlit view.
-                for index, (name, url) in enumerate(views):
-                    with st.sidebar.container(key=f"nav_child_{nav_path}_{index}"):
-                        st.markdown(f'<a class="nav-source-link" href="{html.escape(url, quote=True)}" '
-                                   f'target="_blank" rel="noopener noreferrer">{SOURCE_ICON_SVG}{html.escape(name)}</a>',
-                                   unsafe_allow_html=True)
-                continue
-            for index, view in enumerate(views):
-                active = window == current_window and view == current_view
-                key = f"nav_child_{nav_path}_{index}" + ("_nav_current" if active else "")
-                with st.sidebar.container(key=key):
-                    st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
-                                 icon=PAGE_ICONS.get(view), query_params=keep_context() | {VIEW_PARAMETER: view})
+    for key, title, _, pages in MENU_BLOCKS:
+        open_key = f"nav_open_{key}"
+        is_open = st.session_state.get(open_key, True)
+        with st.sidebar.container(key=f"nav_group_{key}"):
+            if st.button(f"{'⌄' if is_open else '›'}  {title}", key=f"nav_toggle_{key}"):
+                st.session_state[open_key] = not is_open
+                st.rerun()
+        if not is_open:
+            continue
+        if pages is SOURCE_LINKS:
+            # They leave the app (D-118): plain external links, not Streamlit pages.
+            for index, (name, url) in enumerate(pages):
+                with st.sidebar.container(key=f"nav_child_{key}_{index}"):
+                    st.markdown(f'<a class="nav-source-link" href="{html.escape(url, quote=True)}" '
+                                f'target="_blank" rel="noopener noreferrer">{SOURCE_ICON_SVG}{html.escape(name)}</a>',
+                                unsafe_allow_html=True)
+            continue
+        for index, view in enumerate(pages):
+            window = WINDOW_OF_VIEW[view]
+            active = window == current_window and view == current_view
+            with st.sidebar.container(key=f"nav_child_{key}_{index}" + ("_nav_current" if active else "")):
+                st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
+                             icon=PAGE_ICONS.get(view), query_params=keep_context() | {VIEW_PARAMETER: view})
     show_sidebar_footer(current_window)
 
 
@@ -8380,7 +8290,8 @@ def main():
     st.session_state.pop(PROFILE_PARAMETER, None)
     st.query_params.pop("perfil", None)
     restore_return_context()
-    read_view_as()
+    # «Ver como» left the menu (D-213); an old ?ver= address still opens, without it.
+    st.query_params.pop("ver", None)
     profile = None
     order = order_windows()
     start = start_window(profile)

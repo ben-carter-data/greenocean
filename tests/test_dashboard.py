@@ -1371,8 +1371,6 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     app.query_params['ver'] = 'ingenieria'
     app.run()
     assert not app.exception
-    # D-209: Documentación starts folded; open it to see its pages.
-    next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_documentacion-y-enlaces').click().run()
     # Every section, including the current one, starts closed. Top-level rows are
     # folders because each one exposes at least one real destination.
     assert not app.sidebar.expander
@@ -1401,8 +1399,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     toggles = {button.label for button in folder_buttons}
     # «Fuentes» (D-118): the two ODEPA datasets, a folder like every other section.
     # D-201: security has its own folder.
-    assert toggles == {'⌄  Dashboard', '⌄  Ingeniería de datos', '⌄  Seguridad', '›  Fuentes', '⌄  Documentación',
-                       '⌄  Proyecto'}
+    assert toggles == {'⌄  ' + title for title in MENU_BLOCKS} | {'⌄  Fuentes'}
     assert all(not button.help for button in folder_buttons)
     css = ' '.join(block.value for block in app.sidebar.markdown)
     assert '[class*="st-key-nav_child_"] {margin-left:0; padding-left:0; border-left:0;}' in css
@@ -1426,12 +1423,12 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params['ver'] = 'ingenieria'
     app.run()
-    toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_arquitectura-y-operacion')
+    toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_ingenieria')
     assert toggle.label == '⌄  Ingeniería de datos'
     assert 'Pipeline y linaje' in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
     assert not app.exception
-    toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_arquitectura-y-operacion')
+    toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_ingenieria')
     assert toggle.label == '›  Ingeniería de datos'
     assert 'Pipeline y linaje' not in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
@@ -1462,8 +1459,7 @@ def test_d118_sources_is_its_own_folder_with_two_external_children():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     toggle = next(button for button in app.sidebar.button if str(button.key) == 'nav_toggle_fuentes')
     # D-209: Fuentes starts folded; a click opens it.
-    assert toggle.label == '›  Fuentes'
-    toggle.click().run()
+    assert toggle.label == '⌄  Fuentes'
     markup = " ".join(block.value for block in app.sidebar.markdown)
     for name, url in dashboard.SOURCE_LINKS:
         assert f'class="nav-source-link" href="{url}"' in markup
@@ -1511,13 +1507,13 @@ def test_d111_the_weekly_run_sentence_never_ends_on_a_dangling_colon():
 def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.run()
-    toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_dashboard')
+    toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio')
     assert not toggle.disabled
-    assert toggle.label == '⌄  Dashboard'
+    assert toggle.label == '⌄  Negocio · BI'
     assert 'Resumen semanal' in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
     assert not app.exception
-    assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_dashboard').label == '›  Dashboard'
+    assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio').label == '›  Negocio · BI'
     assert 'Resumen semanal' not in [link.proto.label for link in app.sidebar.get('page_link')]
 
 
@@ -1747,58 +1743,42 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
     assert 'aria-label="Modelo estrella de datos.duckdb"' not in joined  # one view at a time
 
 
-VIEW_AS_MENUS = {
-    'visitante': {'Resumen semanal', 'Precios e inflación'},
-    'analista': {'Resumen semanal', 'Precios e inflación', 'Calidad y auditoría',
-                 'PRD · Requisitos del producto', 'SAD · Arquitectura'},
-    'reclutador': {'Resumen semanal', 'Stack y evidencia'},
+MENU_BLOCKS = {
+    'Negocio · BI': ['Resumen semanal', 'Precios e inflación'],
+    'Análisis de negocio · BA': ['PRD · Requisitos del producto', 'ADR · Decisiones de arquitectura', 'Escalabilidad'],
+    'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL',
+                            'SAD · Arquitectura'],
+    'DevOps y seguridad': ['Centro de operación', 'Mapa de seguridad', 'Plan de pruebas de seguridad'],
+    'Stack y evidencia': ['Stack y evidencia'],
 }
 
 
 @needs_database
-@pytest.mark.parametrize('view_as', VIEW_AS_MENUS)
-def test_d209_each_profile_sees_only_its_menu(view_as):
-    """«Ver como» (D-209): each profile has its own menu; folded folders opened."""
+def test_d213_the_menu_is_colored_blocks_open_by_default_with_every_page_once():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    assert not app.exception
+    assert not app.sidebar.selectbox
+    toggles = [b.label for b in app.sidebar.button if str(b.key).startswith('nav_toggle_')]
+    assert toggles == [f'⌄  {title}' for title in list(MENU_BLOCKS) + ['Fuentes']]
+    labels = [link.proto.label for link in app.sidebar.get('page_link')]
+    assert labels == [page for pages in MENU_BLOCKS.values() for page in pages]
+    assert all(link.proto.icon for link in app.sidebar.get('page_link'))
+    markup = " ".join(block.value for block in app.sidebar.markdown)
+    assert markup.count('class="nav-source-link"') == len(dashboard.SOURCE_LINKS)
+    colors = [colors for _, _, colors, _ in dashboard.MENU_BLOCKS]
+    assert len(set(colors)) == len(colors)
+    for key, *_ in dashboard.MENU_BLOCKS:
+        assert f'.st-key-nav_group_{key} button p' in markup
+
+
+@needs_database
+def test_d213_an_old_profile_address_still_opens_its_page():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    app.query_params['ver'] = view_as
+    app.query_params['ver'] = 'reclutador'
+    app.query_params['vista'] = dashboard.PAGE_RUNS
     app.run()
     assert not app.exception
-    while folded := [b for b in app.sidebar.button if b.label.startswith('›')]:
-        folded[0].click().run()
-    labels = {link.proto.label for link in app.sidebar.get('page_link')}
-    assert labels == VIEW_AS_MENUS[view_as]
-    assert app.sidebar.selectbox(key='view_as').value == view_as
-    assert app.query_params['ver'] == [view_as] or app.query_params['ver'] == view_as
-    markup = " ".join(block.value for block in app.sidebar.markdown)
-    assert ('class="nav-source-link"' in markup) == (view_as != 'reclutador')
-
-
-@needs_database
-def test_d209_the_app_opens_as_visitor_on_the_weekly_summary_and_links_keep_working():
-    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
-    assert not app.exception
-    assert app.sidebar.selectbox(key='view_as').value == 'visitante'
-    links = app.sidebar.get('page_link')
-    assert all(link.proto.icon for link in links)
-    assert all(dict(link.proto.query_string and [kv.split('=') for kv in link.proto.query_string.split('&')]
-                    or []).get('ver') == 'visitante' for link in links)
-    # An address outside the visitor's menu still opens its page.
-    hidden = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    hidden.query_params['vista'] = dashboard.PAGE_RUNS
-    hidden.run()
-    assert not hidden.exception
-    assert hidden.sidebar.selectbox(key='view_as').value == 'visitante'
-
-
-@needs_database
-def test_d209_changing_the_profile_redraws_the_menu():
-    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
-    app.sidebar.selectbox(key='view_as').set_value('ingenieria').run()
-    assert not app.exception
-    labels = {link.proto.label for link in app.sidebar.get('page_link')}
-    assert {'Pipeline y linaje', 'Consultas SQL', 'Centro de operación'} <= labels
-    keys = [str(b.key) for b in app.sidebar.button if str(b.key).startswith('nav_toggle_')]
-    assert keys[-1] == 'nav_toggle_documentacion-y-enlaces'
+    assert 'ver' not in app.query_params
 
 
 @needs_database
@@ -1810,12 +1790,6 @@ def test_d211_stack_page_shows_every_logo_linked_to_its_page_and_real_figures():
     for key, name, what, target in stack_page.STACK:
         assert target in dashboard.WINDOW_OF_VIEW, target
         assert html.escape(what) in page
-    assert "vista=Consultas+SQL" in page and "ver=" in page
+    assert "vista=Consultas+SQL" in page
     for value in stack_page.read_figures().values():
         assert stack_page.format_number(value) in page
-
-
-def test_d212_the_project_folder_has_its_own_color():
-    colors = [pair for section, pair in dashboard.SECTION_COLORS.items() if section != dashboard.SECTION_PROJECT]
-    assert dashboard.SECTION_COLORS[dashboard.SECTION_PROJECT] not in colors
-    assert 'st-key-nav_child_proyecto_' in dashboard.build_sidebar_css(charts.MODE_DARK)
