@@ -1813,3 +1813,9 @@ def test_d211_stack_page_shows_every_logo_linked_to_its_page_and_real_figures():
     assert "vista=Consultas+SQL" in page and "ver=" in page
     for value in stack_page.read_figures().values():
         assert stack_page.format_number(value) in page
+
+
+def test_d212_the_project_folder_has_its_own_color():
+    colors = [pair for section, pair in dashboard.SECTION_COLORS.items() if section != dashboard.SECTION_PROJECT]
+    assert dashboard.SECTION_COLORS[dashboard.SECTION_PROJECT] not in colors
+    assert 'st-key-nav_child_proyecto_' in dashboard.build_sidebar_css(charts.MODE_DARK)

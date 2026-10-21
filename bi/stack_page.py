@@ -85,7 +85,10 @@ def build_css(palette):
                                       palette["card"], palette["card_border"])
     shadow = "rgba(0,0,0,.55)" if dark else "rgba(15,39,71,.22)"
     return f"""<style>
-.stack {{ display:flex; flex-wrap:wrap; justify-content:center; gap:18px 6px; margin:18px 0 30px; }}
+.stack {{ display:flex; flex-wrap:wrap; justify-content:center; gap:18px 6px; margin:18px 0 0; }}
+/* D-212: the hover explanation opens in its own band, so it never covers the figures. */
+.hint {{ height:104px; margin:0; display:flex; align-items:center; justify-content:center; color:{muted}; font-size:12.5px; }}
+.stack:has(a:hover) + .hint, .stack:has(a:focus) + .hint {{ visibility:hidden; }}
 .stack a {{ position:relative; width:102px; display:flex; flex-direction:column; align-items:center; text-decoration:none !important;
   outline:none; }}
 .stack .logo {{ width:78px; height:78px; filter:drop-shadow(0 14px 12px {shadow}); transition:transform .25s ease; }}
@@ -117,4 +120,6 @@ def build_stack_html(palette, figures, addresses):
                 (figures["loads"], "cargas semanales registradas")]
     numbers = "".join(f'<div><strong>{format_number(value)}</strong><span>{html.escape(label)}</span></div>'
                       for value, label in evidence)
-    return build_css(palette) + f'<div class="stack">{"".join(logos)}</div><div class="evidence">{numbers}</div>'
+    return (build_css(palette) + f'<div class="stack">{"".join(logos)}</div>'
+            '<p class="hint">Pasa el cursor por un logo para ver qué hace; un clic lo muestra en uso.</p>'
+            f'<div class="evidence">{numbers}</div>')

@@ -8093,6 +8093,8 @@ SECTION_COLORS = {
     SECTION_SECURITY: ("#ffb3d9", "#b0256f"),
     SECTION_LINKS: ("#c3cbd8", "#4a5568"),
     SECTION_SOURCES: ("#7cc4ff", "#1d5fbf"),
+    # D-212: teal for the project's own page (Stack y evidencia), apart from every other section.
+    SECTION_PROJECT: ("#6fe3e8", "#0b6e78"),
 }
 
 

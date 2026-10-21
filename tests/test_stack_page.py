@@ -22,3 +22,10 @@ def test_the_stack_is_nine_3d_logos_in_every_theme():
         page = stack_page.build_stack_html(charts.get_palette(mode), {"prices": 1, "tests": 2, "loads": 3}, addresses)
         assert page.count('class="logo"') == 9 and page.count("data:image/svg+xml;base64,") == 9
     assert all("<radialGradient" in stack_page.disc_svg(key) for key, *_ in stack_page.STACK)
+
+
+def test_d212_the_hover_band_keeps_the_figures_clear():
+    page = stack_page.build_stack_html(charts.get_palette(charts.MODE_DARK), {"prices": 1, "tests": 2, "loads": 3},
+                                       {page: "./" for *_, page in stack_page.STACK})
+    assert page.index('class="stack"') < page.index('class="hint"') < page.index('class="evidence"')
+    assert ".stack:has(a:hover) + .hint" in page
