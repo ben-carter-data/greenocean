@@ -7998,18 +7998,18 @@ RELOAD_HOME_SCRIPT = """<script>
 # open by default; each page lives in exactly one block. «Ver como» (D-209) is gone: every
 # reader sees everything, so whoever wants the breadth of the work sees it at a glance.
 # (key, title, (color on a dark sidebar, color on a light one), pages or source links)
-# D-215: each block is a card in one of the panel's four tones (blue, Vantablack, dark grey,
-# light grey) with its own accent; the documents sit at the end of their block and the
+# D-215, D-216: each block is a card in one of the panel's four tones (blue, Vantablack, dark
+# grey, light grey), its accent a lighter or darker step of that same tone, nothing else; the documents sit at the end of their block and the
 # documents' block closes the menu, just before the sources.
 # (key, title, tone, accent, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BI", "azul", "#7ee2b0", [PAGE_HOME, PAGE_SEASONALITY]),
-    ("ingenieria", "Ingeniería de datos", "vantablack", "#c9a8ff",
+    ("negocio", "Negocio · BI", "azul", "#9cc8ff", [PAGE_HOME, PAGE_SEASONALITY]),
+    ("ingenieria", "Ingeniería de datos", "vantablack", "#c7cdd6",
      [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_SAD]),
-    ("devops", "DevOps y seguridad", "grafito", "#ff9ccc", [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
-    ("stack", "Stack y evidencia", "azul", "#6fe3e8", [PAGE_STACK]),
+    ("devops", "DevOps y seguridad", "grafito", "#aab3bf", [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
+    ("stack", "Stack y evidencia", "azul", "#9cc8ff", [PAGE_STACK]),
     ("analisis", "Análisis de negocio · BA", "gris", "#334155", [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
-    ("fuentes", "Fuentes", "gris", "#1d5fbf", SOURCE_LINKS),
+    ("fuentes", "Fuentes", "gris", "#334155", SOURCE_LINKS),
 ]
 # Card tone → (background, text). Fixed in every theme, so each card reads the same everywhere.
 CARD_TONES = {"azul": ("#12325a", "#e8f1ff"), "vantablack": ("#050607", "#e6e8ec"),
@@ -8041,7 +8041,7 @@ def build_section_colors_css(dark):
     rules = []
     for key, _, tone, accent, _ in MENU_BLOCKS:
         background, text = CARD_TONES[tone]
-        rules.append(f'.st-key-nav_block_{key} {{position:relative; margin:0 0 8px; padding:3px 6px 4px !important;'
+        rules.append(f'.st-key-nav_block_{key} {{position:relative; margin:0 0 12px !important; padding:3px 6px 4px !important;'
                      f' background:linear-gradient(160deg,color-mix(in srgb,{background} 92%,{accent}) 0%,{background} 60%);'
                      f' border:1px solid color-mix(in srgb,{accent} 55%,transparent); border-radius:6px;'
                      f' box-shadow:0 0 14px color-mix(in srgb,{accent} 22%,transparent), inset 0 0 18px color-mix(in srgb,{accent} 8%,transparent);'
@@ -8056,6 +8056,9 @@ def build_section_colors_css(dark):
                      f'{{color:{text} !important; -webkit-text-fill-color:{text} !important; text-shadow:none !important;}}')
         rules.append(f'.st-key-nav_block_{key} [data-testid="stIconMaterial"], .st-key-nav_block_{key} .nav-source-icon '
                      f'{{color:{accent} !important;}}')
+        # The current page: a bar in the card's accent.
+        rules.append(f'.st-key-nav_block_{key} [class*="_nav_current"] [data-testid="stPageLink"] a '
+                     f'{{box-shadow:inset 2px 0 {accent} !important; border-color:transparent !important;}}')
         rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] a:hover {{background:color-mix(in srgb,{accent} 14%,transparent) !important;}}')
         rules.append(f'.st-key-nav_group_{key} button {{border-bottom:1px solid color-mix(in srgb,{accent} 40%,transparent) !important;'
                      f' border-radius:0 !important; margin-bottom:3px;}}')
@@ -8066,8 +8069,7 @@ def build_section_colors_css(dark):
                  '[class*="st-key-nav_group_"] button {width:100% !important; box-sizing:border-box;}')
     rules.append('[class*="st-key-nav_group_"] button > div, [class*="st-key-nav_group_"] button p '
                  '{justify-content:flex-start !important; text-align:left !important;}')
-    # The current page: a bar in the card's accent.
-    rules.append('[class*="_nav_current"] [data-testid="stPageLink"] a {box-shadow:inset 2px 0 currentColor !important;}')
+
     # Only the sources leave the app, so only they look like web links: a fine underline.
     rules.append('[data-testid="stSidebar"] a.nav-source-link {text-decoration:underline !important; text-decoration-thickness:1px; '
                  'text-underline-offset:3px; text-decoration-color:color-mix(in srgb, currentColor 55%, transparent);}')

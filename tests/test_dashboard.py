@@ -1766,8 +1766,8 @@ def test_d213_the_menu_is_colored_blocks_open_by_default_with_every_page_once():
     markup = " ".join(block.value for block in app.sidebar.markdown)
     assert markup.count('class="nav-source-link"') == len(dashboard.SOURCE_LINKS)
     # D-215: every block is a card in one of the four tones, with its own accent and corner brackets.
-    accents = [accent for *_, accent, _ in dashboard.MENU_BLOCKS]
-    assert len(set(accents)) == len(accents)
+    # D-216: only the four tones and steps of them: no pink, violet or green accents.
+    assert {accent for *_, accent, _ in dashboard.MENU_BLOCKS} <= {'#9cc8ff', '#c7cdd6', '#aab3bf', '#334155'}
     assert {tone for _, _, tone, *_ in dashboard.MENU_BLOCKS} == set(dashboard.CARD_TONES)
     for key, *_ in dashboard.MENU_BLOCKS:
         assert f'.st-key-nav_group_{key} button p' in markup and f'.st-key-nav_block_{key}::before' in markup
