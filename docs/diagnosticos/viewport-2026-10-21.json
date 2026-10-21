@@ -1,0 +1,6020 @@
+[
+  {
+    "theme": "Vantablack",
+    "path": "dashboard",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Vantablack",
+    "scroll": 1200,
+    "client": 700,
+    "box": 1200,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1188,
+        "text": "Dashboard › Resumen semanal\narrow_back\n\nVolver\n\n▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1129,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-market_dashboard st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1129,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_overview st-emotion-cache-q25c8l e1a2occc3",
+        "h": 834,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 834,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 834,
+        "text": "Movimiento por familia\n\nMediana de las variaciones de precios comparables: lo que hizo el producto típico · to"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "mock-chile-map",
+        "h": 720
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_products st-emotion-cache-q25c8l e1a2occc3",
+        "h": 330,
+        "text": "Productos · Carne bovina\n+0,2 % mediana\nen todo Chile\n68 precios\nsearch\n\nCanal\n\nOrden\n\nProducto\tCanal\tPrecio 0"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "search"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "Canal"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "dashboard",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Vantablack",
+    "scroll": 1219,
+    "client": 900,
+    "box": 1219,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1195,
+        "text": "Dashboard › Resumen semanal\narrow_back\n\nVolver\n\n▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1136,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-market_dashboard st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1136,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_overview st-emotion-cache-q25c8l e1a2occc3",
+        "h": 834,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 834,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 834,
+        "text": "Movimiento por familia\n\nMediana de las variaciones de precios comparables: lo que hizo el producto típico · to"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "mock-chile-map",
+        "h": 720
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_products st-emotion-cache-q25c8l e1a2occc3",
+        "h": 330,
+        "text": "Productos · Carne bovina\n+0,2 % mediana\nen todo Chile\n68 precios\nsearch\n\nCanal\n\nOrden\n\nProducto\tCanal\tPrecio 0"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "search"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "Canal"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "dashboard",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Vantablack",
+    "scroll": 1191,
+    "client": 1080,
+    "box": 1191,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1167,
+        "text": "Dashboard › Resumen semanal\narrow_back\n\nVolver\n\n▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1108,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-market_dashboard st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1108,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_overview st-emotion-cache-q25c8l e1a2occc3",
+        "h": 818,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 818,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 818,
+        "text": "Movimiento por familia\n\nMediana de las variaciones de precios comparables: lo que hizo el producto típico · to"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "mock-chile-map",
+        "h": 704
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_products st-emotion-cache-q25c8l e1a2occc3",
+        "h": 330,
+        "text": "Productos · Carne bovina\n+0,2 % mediana\nen todo Chile\n68 precios\nsearch\n\nCanal\n\nOrden\n\nProducto\tCanal\tPrecio 0"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "search"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "Canal"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "estacionalidad",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Vantablack&vista=Contexto+del+precio",
+    "scroll": 936,
+    "client": 700,
+    "box": 936,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 912,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 864,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-ctx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 626,
+        "text": "Índice mensual por familia, enero 2022 = 100\n\nPrecios de consumidor de ODEPA, mediana por familia; la línea pu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_0 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_1 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_2 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Abarrotes y otros\n+40,5 % · menos que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\n"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "estacionalidad",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Vantablack&vista=Contexto+del+precio",
+    "scroll": 936,
+    "client": 900,
+    "box": 936,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 912,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 864,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-ctx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 626,
+        "text": "Índice mensual por familia, enero 2022 = 100\n\nPrecios de consumidor de ODEPA, mediana por familia; la línea pu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_0 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_1 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_2 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Abarrotes y otros\n+40,5 % · menos que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\n"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "estacionalidad",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Vantablack&vista=Contexto+del+precio",
+    "scroll": 1080,
+    "client": 1080,
+    "box": 911,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 887,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 839,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-ctx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 626,
+        "text": "Índice mensual por familia, enero 2022 = 100\n\nPrecios de consumidor de ODEPA, mediana por familia; la línea pu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_0 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_1 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_2 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Abarrotes y otros\n+40,5 % · menos que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\n"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "diagramas",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack",
+    "scroll": 1010,
+    "client": 700,
+    "box": 1010,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 990,
+        "text": "Ingeniería de datos › Pipeline y linaje\narrow_back\n\nVolver\n\nPipeline y linaje\nDatos al 20-10-2026 12:54 Carga "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 867,
+        "text": "Pipeline y linaje\nDatos al 20-10-2026 12:54 Carga correcta\nFILAS LEÍDAS\n2.521.012\nde los archivos de ODEPA\nFIL"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-card_pipeline_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 705,
+        "text": "Recorrido completo por capas\nⓘ\n\nRecorrido por capas\n\nLinaje dbt\n\nFUENTES\nHTTPS · CSV · sin API\nINGESTA\nPython "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 433
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 42
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "diagramas",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack",
+    "scroll": 1010,
+    "client": 900,
+    "box": 1010,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 990,
+        "text": "Ingeniería de datos › Pipeline y linaje\narrow_back\n\nVolver\n\nPipeline y linaje\nDatos al 20-10-2026 12:54 Carga "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 867,
+        "text": "Pipeline y linaje\nDatos al 20-10-2026 12:54 Carga correcta\nFILAS LEÍDAS\n2.521.012\nde los archivos de ODEPA\nFIL"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-card_pipeline_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 705,
+        "text": "Recorrido completo por capas\nⓘ\n\nRecorrido por capas\n\nLinaje dbt\n\nFUENTES\nHTTPS · CSV · sin API\nINGESTA\nPython "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 433
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 42
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "diagramas",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack",
+    "scroll": 1191,
+    "client": 1080,
+    "box": 1191,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1171,
+        "text": "Ingeniería de datos › Pipeline y linaje\narrow_back\n\nVolver\n\nPipeline y linaje\nDatos al 20-10-2026 12:54 Carga "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1048,
+        "text": "Pipeline y linaje\nDatos al 20-10-2026 12:54 Carga correcta\nFILAS LEÍDAS\n2.521.012\nde los archivos de ODEPA\nFIL"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-card_pipeline_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 906,
+        "text": "Recorrido completo por capas\nⓘ\n\nRecorrido por capas\n\nLinaje dbt\n\nFUENTES\nHTTPS · CSV · sin API\nINGESTA\nPython "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 654
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 42
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 33
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 33
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 33
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 33
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 33
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "arquitectura",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack&vista=Modelo+de+datos",
+    "scroll": 982,
+    "client": 700,
+    "box": 982,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 958,
+        "text": "Ingeniería de datos › Modelo de datos\narrow_back\n\nVolver\n\nModelo de datos\nDe dónde viene cada tabla de la base"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 835,
+        "text": "Modelo de datos\nDe dónde viene cada tabla de la base y cómo se relacionan: el modelo estrella convierte los pr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 660,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "arquitectura",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack&vista=Modelo+de+datos",
+    "scroll": 982,
+    "client": 900,
+    "box": 982,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 958,
+        "text": "Ingeniería de datos › Modelo de datos\narrow_back\n\nVolver\n\nModelo de datos\nDe dónde viene cada tabla de la base"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 835,
+        "text": "Modelo de datos\nDe dónde viene cada tabla de la base y cómo se relacionan: el modelo estrella convierte los pr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 660,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "arquitectura",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack&vista=Modelo+de+datos",
+    "scroll": 1080,
+    "client": 1080,
+    "box": 952,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 928,
+        "text": "Ingeniería de datos › Modelo de datos\narrow_back\n\nVolver\n\nModelo de datos\nDe dónde viene cada tabla de la base"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 805,
+        "text": "Modelo de datos\nDe dónde viene cada tabla de la base y cómo se relacionan: el modelo estrella convierte los pr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 660,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "operaciones",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack&vista=Monitoreo",
+    "scroll": 1339,
+    "client": 700,
+    "box": 1339,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1315,
+        "text": "Ingeniería de datos › Calidad y auditoría\narrow_back\n\nVolver\n\nCalidad y auditoría\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1007,
+        "text": "Calidad y auditoría\nDatos al 20-10-2026 12:54 Carga correcta\n\nAbrir la evidencia de\n\nOrigen y archivos\n\nIntegr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 830,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "operaciones",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack&vista=Monitoreo",
+    "scroll": 1339,
+    "client": 900,
+    "box": 1339,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1315,
+        "text": "Ingeniería de datos › Calidad y auditoría\narrow_back\n\nVolver\n\nCalidad y auditoría\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1007,
+        "text": "Calidad y auditoría\nDatos al 20-10-2026 12:54 Carga correcta\n\nAbrir la evidencia de\n\nOrigen y archivos\n\nIntegr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 830,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "operaciones",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack&vista=Monitoreo",
+    "scroll": 1339,
+    "client": 1080,
+    "box": 1339,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1315,
+        "text": "Ingeniería de datos › Calidad y auditoría\narrow_back\n\nVolver\n\nCalidad y auditoría\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1007,
+        "text": "Calidad y auditoría\nDatos al 20-10-2026 12:54 Carga correcta\n\nAbrir la evidencia de\n\nOrigen y archivos\n\nIntegr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 830,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "consultas-sql",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Vantablack&vista=Consultas+SQL",
+    "scroll": 1395,
+    "client": 700,
+    "box": 1395,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1371,
+        "text": "Dashboard › Consultas SQL\narrow_back\n\nVolver\n\nConsultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\nd"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1064,
+        "text": "Consultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\ndatos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_studio st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1031,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_body st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_explorer st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 472,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_editor_box st-emotion-cache-q25c8l e1a2occc3",
+        "h": 278,
+        "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y regió"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_toolbar st-emotion-cache-q25c8l e1a2occc3",
+        "h": 82,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "consultas-sql",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Vantablack&vista=Consultas+SQL",
+    "scroll": 1395,
+    "client": 900,
+    "box": 1395,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1371,
+        "text": "Dashboard › Consultas SQL\narrow_back\n\nVolver\n\nConsultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\nd"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1064,
+        "text": "Consultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\ndatos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_studio st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1031,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_body st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_explorer st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 472,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_editor_box st-emotion-cache-q25c8l e1a2occc3",
+        "h": 278,
+        "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y regió"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_toolbar st-emotion-cache-q25c8l e1a2occc3",
+        "h": 82,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "consultas-sql",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Vantablack&vista=Consultas+SQL",
+    "scroll": 1395,
+    "client": 1080,
+    "box": 1395,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1371,
+        "text": "Dashboard › Consultas SQL\narrow_back\n\nVolver\n\nConsultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\nd"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1064,
+        "text": "Consultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\ndatos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_studio st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1031,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_body st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_explorer st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 472,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_editor_box st-emotion-cache-q25c8l e1a2occc3",
+        "h": 278,
+        "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y regió"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_toolbar st-emotion-cache-q25c8l e1a2occc3",
+        "h": 82,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "sad",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack&vista=SAD+%C2%B7+Arquitectura",
+    "scroll": 2770,
+    "client": 700,
+    "box": 2770,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2746,
+        "text": "Documentación › SAD · Arquitectura\narrow_back\n\nVolver\n\nSAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga corr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2477,
+        "text": "SAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SAD.md en GitHub ↗\ndownload\n\nDescargar PDF\n\nV"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2323,
+        "text": "Versión del 20-10-2026. Los tres diagramas se generan desde el sistema real, así que siempre coinciden con lo "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 692
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 345
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 327
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "sad",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack&vista=SAD+%C2%B7+Arquitectura",
+    "scroll": 2770,
+    "client": 900,
+    "box": 2770,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2746,
+        "text": "Documentación › SAD · Arquitectura\narrow_back\n\nVolver\n\nSAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga corr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2477,
+        "text": "SAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SAD.md en GitHub ↗\ndownload\n\nDescargar PDF\n\nV"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2323,
+        "text": "Versión del 20-10-2026. Los tres diagramas se generan desde el sistema real, así que siempre coinciden con lo "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 692
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 345
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 327
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "sad",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack&vista=SAD+%C2%B7+Arquitectura",
+    "scroll": 2770,
+    "client": 1080,
+    "box": 2770,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2746,
+        "text": "Documentación › SAD · Arquitectura\narrow_back\n\nVolver\n\nSAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga corr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2477,
+        "text": "SAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SAD.md en GitHub ↗\ndownload\n\nDescargar PDF\n\nV"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2323,
+        "text": "Versión del 20-10-2026. Los tres diagramas se generan desde el sistema real, así que siempre coinciden con lo "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 692
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 345
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 327
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "ejecuciones",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack&vista=Ejecuciones",
+    "scroll": 1118,
+    "client": 700,
+    "box": 1118,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1094,
+        "text": "Ingeniería de datos › Centro de operación\narrow_back\n\nVolver\n\nCentro de operación\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 786,
+        "text": "Centro de operación\nDatos al 20-10-2026 12:54 Carga correcta\n\nOperación\n\nPlataforma\n\nÚLTIMAS EJECUCIONES\n20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-q25c8l e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 700,
+        "text": "PRÓXIMA EJECUCIÓN\n27-10 · 09:00\nautomática, cada martes · faltan 6 días\nDATOS PUBLICADOS\nSemana del 12-10-2026"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-16t3vv4 ei36xw10",
+        "h": 577,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 0,
+        "text": "\n    .journey-running { animation: journey-pulse 1.2s ease-in-out infinite; }\n    .journey-dashed { stroke-das"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "ejecuciones",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack&vista=Ejecuciones",
+    "scroll": 1118,
+    "client": 900,
+    "box": 1118,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1094,
+        "text": "Ingeniería de datos › Centro de operación\narrow_back\n\nVolver\n\nCentro de operación\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 786,
+        "text": "Centro de operación\nDatos al 20-10-2026 12:54 Carga correcta\n\nOperación\n\nPlataforma\n\nÚLTIMAS EJECUCIONES\n20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-q25c8l e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 700,
+        "text": "PRÓXIMA EJECUCIÓN\n27-10 · 09:00\nautomática, cada martes · faltan 6 días\nDATOS PUBLICADOS\nSemana del 12-10-2026"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-16t3vv4 ei36xw10",
+        "h": 577,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 0,
+        "text": "\n    .journey-running { animation: journey-pulse 1.2s ease-in-out infinite; }\n    .journey-dashed { stroke-das"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "ejecuciones",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Vantablack&vista=Ejecuciones",
+    "scroll": 1152,
+    "client": 1080,
+    "box": 1152,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1128,
+        "text": "Ingeniería de datos › Centro de operación\narrow_back\n\nVolver\n\nCentro de operación\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 820,
+        "text": "Centro de operación\nDatos al 20-10-2026 12:54 Carga correcta\n\nOperación\n\nPlataforma\n\nÚLTIMAS EJECUCIONES\n20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 734,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-q25c8l e1a2occc3",
+        "h": 734,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 734,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 734,
+        "text": "PRÓXIMA EJECUCIÓN\n27-10 · 09:00\nautomática, cada martes · faltan 6 días\nDATOS PUBLICADOS\nSemana del 12-10-2026"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-aizl2j ei36xw10",
+        "h": 640,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 0,
+        "text": "\n    .journey-running { animation: journey-pulse 1.2s ease-in-out infinite; }\n    .journey-dashed { stroke-das"
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "mapa-de-seguridad",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Vantablack",
+    "scroll": 1053,
+    "client": 700,
+    "box": 1053,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1029,
+        "text": "Seguridad › Mapa de seguridad\narrow_back\n\nVolver\n\nMapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 722,
+        "text": "Mapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\nCada puerta que podría tentar a un atacante, las b"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "mapa-de-seguridad",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Vantablack",
+    "scroll": 1053,
+    "client": 900,
+    "box": 1053,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1029,
+        "text": "Seguridad › Mapa de seguridad\narrow_back\n\nVolver\n\nMapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 722,
+        "text": "Mapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\nCada puerta que podría tentar a un atacante, las b"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "mapa-de-seguridad",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Vantablack",
+    "scroll": 1080,
+    "client": 1080,
+    "box": 1053,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1029,
+        "text": "Seguridad › Mapa de seguridad\narrow_back\n\nVolver\n\nMapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 722,
+        "text": "Mapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\nCada puerta que podría tentar a un atacante, las b"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "plan-de-pruebas-de-seguridad",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Vantablack&vista=Plan+de+pruebas+de+seguridad",
+    "scroll": 2892,
+    "client": 700,
+    "box": 2892,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2868,
+        "text": "Seguridad › Plan de pruebas de seguridad\narrow_back\n\nVolver\n\nPlan de pruebas de seguridad\nDatos al 20-10-2026 "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2560,
+        "text": "Plan de pruebas de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SEGURIDAD.md en GitHub ↗\ndownload\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2406,
+        "text": "Cómo se buscan los puntos débiles del panel, cómo se corrigen y cómo se comprueba en cada cambio que siguen ce"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SEGURIDAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "plan-de-pruebas-de-seguridad",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Vantablack&vista=Plan+de+pruebas+de+seguridad",
+    "scroll": 2892,
+    "client": 900,
+    "box": 2892,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2868,
+        "text": "Seguridad › Plan de pruebas de seguridad\narrow_back\n\nVolver\n\nPlan de pruebas de seguridad\nDatos al 20-10-2026 "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2560,
+        "text": "Plan de pruebas de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SEGURIDAD.md en GitHub ↗\ndownload\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2406,
+        "text": "Cómo se buscan los puntos débiles del panel, cómo se corrigen y cómo se comprueba en cada cambio que siguen ce"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SEGURIDAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "plan-de-pruebas-de-seguridad",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Vantablack&vista=Plan+de+pruebas+de+seguridad",
+    "scroll": 2892,
+    "client": 1080,
+    "box": 2892,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2868,
+        "text": "Seguridad › Plan de pruebas de seguridad\narrow_back\n\nVolver\n\nPlan de pruebas de seguridad\nDatos al 20-10-2026 "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2560,
+        "text": "Plan de pruebas de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SEGURIDAD.md en GitHub ↗\ndownload\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2406,
+        "text": "Cómo se buscan los puntos débiles del panel, cómo se corrigen y cómo se comprueba en cada cambio que siguen ce"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SEGURIDAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "stack-y-evidencia",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/proyecto?tema=Vantablack&vista=Stack+y+evidencia",
+    "scroll": 700,
+    "client": 700,
+    "box": 519,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 495,
+        "text": "Proyecto › Stack y evidencia\narrow_back\n\nVolver\n\nStack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPy"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 326,
+        "text": "Stack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPython\nSQLite\nParquet\ndbt\nSQL\nDuckDB\npytest\nGitHub "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "stack-y-evidencia",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/proyecto?tema=Vantablack&vista=Stack+y+evidencia",
+    "scroll": 900,
+    "client": 900,
+    "box": 519,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 495,
+        "text": "Proyecto › Stack y evidencia\narrow_back\n\nVolver\n\nStack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPy"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 326,
+        "text": "Stack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPython\nSQLite\nParquet\ndbt\nSQL\nDuckDB\npytest\nGitHub "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "stack-y-evidencia",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/proyecto?tema=Vantablack&vista=Stack+y+evidencia",
+    "scroll": 1080,
+    "client": 1080,
+    "box": 519,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 495,
+        "text": "Proyecto › Stack y evidencia\narrow_back\n\nVolver\n\nStack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPy"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 326,
+        "text": "Stack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPython\nSQLite\nParquet\ndbt\nSQL\nDuckDB\npytest\nGitHub "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "prd",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack",
+    "scroll": 3595,
+    "client": 700,
+    "box": 3595,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 3571,
+        "text": "Documentación › PRD · Requisitos del producto\narrow_back\n\nVolver\n\nPRD · Requisitos del producto\nDatos al 20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3302,
+        "text": "PRD · Requisitos del producto\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/PRD.md en GitHub ↗\ndownload\n\nDesca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3147,
+        "text": "Versión del 20-10-2026. El registro completo de decisiones está en docs/DECISIONES.md.\n\n1. Contexto\n\nODEPA pub"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 720,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 500,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/PRD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "prd",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack",
+    "scroll": 3595,
+    "client": 900,
+    "box": 3595,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 3571,
+        "text": "Documentación › PRD · Requisitos del producto\narrow_back\n\nVolver\n\nPRD · Requisitos del producto\nDatos al 20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3302,
+        "text": "PRD · Requisitos del producto\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/PRD.md en GitHub ↗\ndownload\n\nDesca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3147,
+        "text": "Versión del 20-10-2026. El registro completo de decisiones está en docs/DECISIONES.md.\n\n1. Contexto\n\nODEPA pub"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 720,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 500,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/PRD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "prd",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack",
+    "scroll": 3595,
+    "client": 1080,
+    "box": 3595,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 3571,
+        "text": "Documentación › PRD · Requisitos del producto\narrow_back\n\nVolver\n\nPRD · Requisitos del producto\nDatos al 20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3302,
+        "text": "PRD · Requisitos del producto\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/PRD.md en GitHub ↗\ndownload\n\nDesca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3147,
+        "text": "Versión del 20-10-2026. El registro completo de decisiones está en docs/DECISIONES.md.\n\n1. Contexto\n\nODEPA pub"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 720,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 500,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/PRD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "adr",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack&vista=ADR+%C2%B7+Decisiones+de+arquitectura",
+    "scroll": 1398,
+    "client": 700,
+    "box": 1398,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1374,
+        "text": "Documentación › ADR · Decisiones de arquitectura\narrow_back\n\nVolver\n\nADR · Decisiones de arquitectura\nDatos al"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1105,
+        "text": "ADR · Decisiones de arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/ADR.md en GitHub ↗\ndownload\n\nDe"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 950,
+        "text": "Versión del 20-10-2026. Estas son las diez decisiones que más pesan en la arquitectura. Cada una mantiene su n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/ADR.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "adr",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack&vista=ADR+%C2%B7+Decisiones+de+arquitectura",
+    "scroll": 1398,
+    "client": 900,
+    "box": 1398,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1374,
+        "text": "Documentación › ADR · Decisiones de arquitectura\narrow_back\n\nVolver\n\nADR · Decisiones de arquitectura\nDatos al"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1105,
+        "text": "ADR · Decisiones de arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/ADR.md en GitHub ↗\ndownload\n\nDe"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 950,
+        "text": "Versión del 20-10-2026. Estas son las diez decisiones que más pesan en la arquitectura. Cada una mantiene su n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/ADR.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "adr",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack&vista=ADR+%C2%B7+Decisiones+de+arquitectura",
+    "scroll": 1398,
+    "client": 1080,
+    "box": 1398,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1374,
+        "text": "Documentación › ADR · Decisiones de arquitectura\narrow_back\n\nVolver\n\nADR · Decisiones de arquitectura\nDatos al"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1105,
+        "text": "ADR · Decisiones de arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/ADR.md en GitHub ↗\ndownload\n\nDe"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 950,
+        "text": "Versión del 20-10-2026. Estas son las diez decisiones que más pesan en la arquitectura. Cada una mantiene su n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/ADR.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "escalabilidad",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack&vista=Escalabilidad",
+    "scroll": 1010,
+    "client": 700,
+    "box": 1010,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 986,
+        "text": "Documentación › Escalabilidad\narrow_back\n\nVolver\n\nEscalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSecci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 717,
+        "text": "Escalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSección completa en docs/DECISIONES.md ↗\n\nLa arquitectu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 619,
+        "text": "La arquitectura está pensada para crecer cambiando configuración, no código. Lo que sigue es una proyección, n"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "escalabilidad",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack&vista=Escalabilidad",
+    "scroll": 1010,
+    "client": 900,
+    "box": 1010,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 986,
+        "text": "Documentación › Escalabilidad\narrow_back\n\nVolver\n\nEscalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSecci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 717,
+        "text": "Escalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSección completa en docs/DECISIONES.md ↗\n\nLa arquitectu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 619,
+        "text": "La arquitectura está pensada para crecer cambiando configuración, no código. Lo que sigue es una proyección, n"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "escalabilidad",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Vantablack&vista=Escalabilidad",
+    "scroll": 1080,
+    "client": 1080,
+    "box": 1010,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 986,
+        "text": "Documentación › Escalabilidad\narrow_back\n\nVolver\n\nEscalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSecci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 717,
+        "text": "Escalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSección completa en docs/DECISIONES.md ↗\n\nLa arquitectu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 619,
+        "text": "La arquitectura está pensada para crecer cambiando configuración, no código. Lo que sigue es una proyección, n"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "dashboard",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Blue+Light",
+    "scroll": 1200,
+    "client": 700,
+    "box": 1200,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1188,
+        "text": "Dashboard › Resumen semanal\narrow_back\n\nVolver\n\n▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1129,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-market_dashboard st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1129,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_overview st-emotion-cache-q25c8l e1a2occc3",
+        "h": 834,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 834,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 834,
+        "text": "Movimiento por familia\n\nMediana de las variaciones de precios comparables: lo que hizo el producto típico · to"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "mock-chile-map",
+        "h": 720
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_products st-emotion-cache-q25c8l e1a2occc3",
+        "h": 330,
+        "text": "Productos · Carne bovina\n+0,2 % mediana\nen todo Chile\n68 precios\nsearch\n\nCanal\n\nOrden\n\nProducto\tCanal\tPrecio 0"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "search"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "Canal"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "dashboard",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Blue+Light",
+    "scroll": 1219,
+    "client": 900,
+    "box": 1219,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1195,
+        "text": "Dashboard › Resumen semanal\narrow_back\n\nVolver\n\n▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1136,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-market_dashboard st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1136,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_overview st-emotion-cache-q25c8l e1a2occc3",
+        "h": 834,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 834,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 834,
+        "text": "Movimiento por familia\n\nMediana de las variaciones de precios comparables: lo que hizo el producto típico · to"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "mock-chile-map",
+        "h": 720
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_products st-emotion-cache-q25c8l e1a2occc3",
+        "h": 330,
+        "text": "Productos · Carne bovina\n+0,2 % mediana\nen todo Chile\n68 precios\nsearch\n\nCanal\n\nOrden\n\nProducto\tCanal\tPrecio 0"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "search"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "Canal"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "dashboard",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Blue+Light",
+    "scroll": 1191,
+    "client": 1080,
+    "box": 1191,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1167,
+        "text": "Dashboard › Resumen semanal\narrow_back\n\nVolver\n\n▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1108,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-market_dashboard st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1108,
+        "text": "▲ Alerta de precio · 17\n\n¿Qué familias de alimentos subieron y bajaron?\n\nVariación típica (mediana) por famili"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_overview st-emotion-cache-q25c8l e1a2occc3",
+        "h": 818,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 818,
+        "text": "LECTURA TERRITORIAL\n¿En qué dirección se movieron los precios?\n\n% de precios comparables que siguió la direcci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 818,
+        "text": "Movimiento por familia\n\nMediana de las variaciones de precios comparables: lo que hizo el producto típico · to"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "mock-chile-map",
+        "h": 704
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-home_products st-emotion-cache-q25c8l e1a2occc3",
+        "h": 330,
+        "text": "Productos · Carne bovina\n+0,2 % mediana\nen todo Chile\n68 precios\nsearch\n\nCanal\n\nOrden\n\nProducto\tCanal\tPrecio 0"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "search"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "Canal"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "estacionalidad",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Blue+Light&vista=Contexto+del+precio",
+    "scroll": 936,
+    "client": 700,
+    "box": 936,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 912,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 864,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-ctx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 626,
+        "text": "Índice mensual por familia, enero 2022 = 100\n\nPrecios de consumidor de ODEPA, mediana por familia; la línea pu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_0 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_1 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_2 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Abarrotes y otros\n+40,5 % · menos que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\n"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "estacionalidad",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Blue+Light&vista=Contexto+del+precio",
+    "scroll": 936,
+    "client": 900,
+    "box": 936,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 912,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 864,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-ctx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 626,
+        "text": "Índice mensual por familia, enero 2022 = 100\n\nPrecios de consumidor de ODEPA, mediana por familia; la línea pu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_0 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_1 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_2 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Abarrotes y otros\n+40,5 % · menos que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\n"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "estacionalidad",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Blue+Light&vista=Contexto+del+precio",
+    "scroll": 1080,
+    "client": 1080,
+    "box": 911,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 887,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 839,
+        "text": "¿Qué alimentos subieron más que la inflación?\nDatos al 20-10-2026 12:54\nCarga correcta\n\nDe enero 2022 a septie"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-ctx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 626,
+        "text": "Índice mensual por familia, enero 2022 = 100\n\nPrecios de consumidor de ODEPA, mediana por familia; la línea pu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_0 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Lácteos · Huevos · Margarinas\n+70,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_1 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Hortalizas\n+60,2 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-inf_card_2 st-emotion-cache-q25c8l e1a2occc3",
+        "h": 276,
+        "text": "Pan\n+50,8 % · más que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\nAmpliar"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 276,
+        "text": "Abarrotes y otros\n+40,5 % · menos que la inflación\n2022\n2023\n2024\n2025\n2026\n100\n120\n140\n160\n180\nopen_in_full\n\n"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "diagramas",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light",
+    "scroll": 1010,
+    "client": 700,
+    "box": 1010,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 990,
+        "text": "Ingeniería de datos › Pipeline y linaje\narrow_back\n\nVolver\n\nPipeline y linaje\nDatos al 20-10-2026 12:54 Carga "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 867,
+        "text": "Pipeline y linaje\nDatos al 20-10-2026 12:54 Carga correcta\nFILAS LEÍDAS\n2.521.012\nde los archivos de ODEPA\nFIL"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-card_pipeline_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 705,
+        "text": "Recorrido completo por capas\nⓘ\n\nRecorrido por capas\n\nLinaje dbt\n\nFUENTES\nHTTPS · CSV · sin API\nINGESTA\nPython "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 433
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 42
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "diagramas",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light",
+    "scroll": 1010,
+    "client": 900,
+    "box": 1010,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 990,
+        "text": "Ingeniería de datos › Pipeline y linaje\narrow_back\n\nVolver\n\nPipeline y linaje\nDatos al 20-10-2026 12:54 Carga "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 867,
+        "text": "Pipeline y linaje\nDatos al 20-10-2026 12:54 Carga correcta\nFILAS LEÍDAS\n2.521.012\nde los archivos de ODEPA\nFIL"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-card_pipeline_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 705,
+        "text": "Recorrido completo por capas\nⓘ\n\nRecorrido por capas\n\nLinaje dbt\n\nFUENTES\nHTTPS · CSV · sin API\nINGESTA\nPython "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 433
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 42
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 22
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "diagramas",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light",
+    "scroll": 1191,
+    "client": 1080,
+    "box": 1191,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1171,
+        "text": "Ingeniería de datos › Pipeline y linaje\narrow_back\n\nVolver\n\nPipeline y linaje\nDatos al 20-10-2026 12:54 Carga "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1048,
+        "text": "Pipeline y linaje\nDatos al 20-10-2026 12:54 Carga correcta\nFILAS LEÍDAS\n2.521.012\nde los archivos de ODEPA\nFIL"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-card_pipeline_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 906,
+        "text": "Recorrido completo por capas\nⓘ\n\nRecorrido por capas\n\nLinaje dbt\n\nFUENTES\nHTTPS · CSV · sin API\nINGESTA\nPython "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 654
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 42
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 33
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 33
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 33
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 33
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 33
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "arquitectura",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light&vista=Modelo+de+datos",
+    "scroll": 982,
+    "client": 700,
+    "box": 982,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 958,
+        "text": "Ingeniería de datos › Modelo de datos\narrow_back\n\nVolver\n\nModelo de datos\nDe dónde viene cada tabla de la base"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 835,
+        "text": "Modelo de datos\nDe dónde viene cada tabla de la base y cómo se relacionan: el modelo estrella convierte los pr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 660,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "arquitectura",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light&vista=Modelo+de+datos",
+    "scroll": 982,
+    "client": 900,
+    "box": 982,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 958,
+        "text": "Ingeniería de datos › Modelo de datos\narrow_back\n\nVolver\n\nModelo de datos\nDe dónde viene cada tabla de la base"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 835,
+        "text": "Modelo de datos\nDe dónde viene cada tabla de la base y cómo se relacionan: el modelo estrella convierte los pr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 660,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "arquitectura",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light&vista=Modelo+de+datos",
+    "scroll": 1080,
+    "client": 1080,
+    "box": 952,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 928,
+        "text": "Ingeniería de datos › Modelo de datos\narrow_back\n\nVolver\n\nModelo de datos\nDe dónde viene cada tabla de la base"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 805,
+        "text": "Modelo de datos\nDe dónde viene cada tabla de la base y cómo se relacionan: el modelo estrella convierte los pr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 660,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "operaciones",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light&vista=Monitoreo",
+    "scroll": 1339,
+    "client": 700,
+    "box": 1339,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1315,
+        "text": "Ingeniería de datos › Calidad y auditoría\narrow_back\n\nVolver\n\nCalidad y auditoría\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1007,
+        "text": "Calidad y auditoría\nDatos al 20-10-2026 12:54 Carga correcta\n\nAbrir la evidencia de\n\nOrigen y archivos\n\nIntegr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 830,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "operaciones",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light&vista=Monitoreo",
+    "scroll": 1339,
+    "client": 900,
+    "box": 1339,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1315,
+        "text": "Ingeniería de datos › Calidad y auditoría\narrow_back\n\nVolver\n\nCalidad y auditoría\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1007,
+        "text": "Calidad y auditoría\nDatos al 20-10-2026 12:54 Carga correcta\n\nAbrir la evidencia de\n\nOrigen y archivos\n\nIntegr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 830,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "operaciones",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light&vista=Monitoreo",
+    "scroll": 1339,
+    "client": 1080,
+    "box": 1339,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1315,
+        "text": "Ingeniería de datos › Calidad y auditoría\narrow_back\n\nVolver\n\nCalidad y auditoría\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1007,
+        "text": "Calidad y auditoría\nDatos al 20-10-2026 12:54 Carga correcta\n\nAbrir la evidencia de\n\nOrigen y archivos\n\nIntegr"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 830,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "consultas-sql",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Blue+Light&vista=Consultas+SQL",
+    "scroll": 1395,
+    "client": 700,
+    "box": 1395,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1371,
+        "text": "Dashboard › Consultas SQL\narrow_back\n\nVolver\n\nConsultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\nd"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1064,
+        "text": "Consultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\ndatos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_studio st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1031,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_body st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_explorer st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 472,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_editor_box st-emotion-cache-q25c8l e1a2occc3",
+        "h": 278,
+        "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y regió"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_toolbar st-emotion-cache-q25c8l e1a2occc3",
+        "h": 82,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "consultas-sql",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Blue+Light&vista=Consultas+SQL",
+    "scroll": 1395,
+    "client": 900,
+    "box": 1395,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1371,
+        "text": "Dashboard › Consultas SQL\narrow_back\n\nVolver\n\nConsultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\nd"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1064,
+        "text": "Consultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\ndatos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_studio st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1031,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_body st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_explorer st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 472,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_editor_box st-emotion-cache-q25c8l e1a2occc3",
+        "h": 278,
+        "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y regió"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_toolbar st-emotion-cache-q25c8l e1a2occc3",
+        "h": 82,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "consultas-sql",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/?tema=Blue+Light&vista=Consultas+SQL",
+    "scroll": 1395,
+    "client": 1080,
+    "box": 1395,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1371,
+        "text": "Dashboard › Consultas SQL\narrow_back\n\nVolver\n\nConsultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\nd"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-report_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1064,
+        "text": "Consultas SQL\nDuckDB · solo lectura · máx. 5.000 filas · 10 s\n\ndatos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_studio st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1031,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_body st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_explorer st-emotion-cache-q25c8l e1a2occc3",
+        "h": 915,
+        "text": "EXPLORADOR DE OBJETOS\n▾\ndatos.duckdb\n▾\nTablas\n(12)\ntable\n\nmain.dbt_node\n\n50 filas · 9 col.\ntable\n\nmain.dbt_res"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 915,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_main st-emotion-cache-q25c8l e1a2occc3",
+        "h": 472,
+        "text": "tabla_completa.sql · datos.duckdb\ni\nTabla completa\nTodos los precios semanales con cada dimensión (familia, pr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_editor_box st-emotion-cache-q25c8l e1a2occc3",
+        "h": 278,
+        "text": "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y regió"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-sqlx_toolbar st-emotion-cache-q25c8l e1a2occc3",
+        "h": 82,
+        "text": "datos.duckdb\nDuckDB 1.5.6 · solo lectura\n\nplay_arrow\n\nEjecutar\n\nCONSULTAS\n\nTabla completa\n\nPrecio vs. época\n\nC"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "sad",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light&vista=SAD+%C2%B7+Arquitectura",
+    "scroll": 2770,
+    "client": 700,
+    "box": 2770,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2746,
+        "text": "Documentación › SAD · Arquitectura\narrow_back\n\nVolver\n\nSAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga corr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2477,
+        "text": "SAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SAD.md en GitHub ↗\ndownload\n\nDescargar PDF\n\nV"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2323,
+        "text": "Versión del 20-10-2026. Los tres diagramas se generan desde el sistema real, así que siempre coinciden con lo "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 692
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 345
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 327
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "sad",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light&vista=SAD+%C2%B7+Arquitectura",
+    "scroll": 2770,
+    "client": 900,
+    "box": 2770,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2746,
+        "text": "Documentación › SAD · Arquitectura\narrow_back\n\nVolver\n\nSAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga corr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2477,
+        "text": "SAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SAD.md en GitHub ↗\ndownload\n\nDescargar PDF\n\nV"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2323,
+        "text": "Versión del 20-10-2026. Los tres diagramas se generan desde el sistema real, así que siempre coinciden con lo "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 692
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 345
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 327
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "sad",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light&vista=SAD+%C2%B7+Arquitectura",
+    "scroll": 2770,
+    "client": 1080,
+    "box": 2770,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2746,
+        "text": "Documentación › SAD · Arquitectura\narrow_back\n\nVolver\n\nSAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga corr"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2477,
+        "text": "SAD · Arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SAD.md en GitHub ↗\ndownload\n\nDescargar PDF\n\nV"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2323,
+        "text": "Versión del 20-10-2026. Los tres diagramas se generan desde el sistema real, así que siempre coinciden con lo "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 692
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 345
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 327
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 17
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "ejecuciones",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light&vista=Ejecuciones",
+    "scroll": 1118,
+    "client": 700,
+    "box": 1118,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1094,
+        "text": "Ingeniería de datos › Centro de operación\narrow_back\n\nVolver\n\nCentro de operación\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 786,
+        "text": "Centro de operación\nDatos al 20-10-2026 12:54 Carga correcta\n\nOperación\n\nPlataforma\n\nÚLTIMAS EJECUCIONES\n20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-q25c8l e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 700,
+        "text": "PRÓXIMA EJECUCIÓN\n27-10 · 09:00\nautomática, cada martes · faltan 6 días\nDATOS PUBLICADOS\nSemana del 12-10-2026"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-16t3vv4 ei36xw10",
+        "h": 577,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 0,
+        "text": "\n    .journey-running { animation: journey-pulse 1.2s ease-in-out infinite; }\n    .journey-dashed { stroke-das"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "ejecuciones",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light&vista=Ejecuciones",
+    "scroll": 1118,
+    "client": 900,
+    "box": 1118,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1094,
+        "text": "Ingeniería de datos › Centro de operación\narrow_back\n\nVolver\n\nCentro de operación\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 786,
+        "text": "Centro de operación\nDatos al 20-10-2026 12:54 Carga correcta\n\nOperación\n\nPlataforma\n\nÚLTIMAS EJECUCIONES\n20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-q25c8l e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 700,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 700,
+        "text": "PRÓXIMA EJECUCIÓN\n27-10 · 09:00\nautomática, cada martes · faltan 6 días\nDATOS PUBLICADOS\nSemana del 12-10-2026"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-16t3vv4 ei36xw10",
+        "h": 577,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 0,
+        "text": "\n    .journey-running { animation: journey-pulse 1.2s ease-in-out infinite; }\n    .journey-dashed { stroke-das"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "ejecuciones",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/arquitectura-y-operacion?tema=Blue+Light&vista=Ejecuciones",
+    "scroll": 1152,
+    "client": 1080,
+    "box": 1152,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1128,
+        "text": "Ingeniería de datos › Centro de operación\narrow_back\n\nVolver\n\nCentro de operación\nDatos al 20-10-2026 12:54 Ca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 820,
+        "text": "Centro de operación\nDatos al 20-10-2026 12:54 Carga correcta\n\nOperación\n\nPlataforma\n\nÚLTIMAS EJECUCIONES\n20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 734,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-q25c8l e1a2occc3",
+        "h": 734,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 734,
+        "text": "ÚLTIMAS EJECUCIONES\n20-10 12:53 · automática · correcta ↗\n19-10 14:30 · manual · correcta ↗\n19-10 14:17 · manu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1bnbo98 e1a2occc3",
+        "h": 734,
+        "text": "PRÓXIMA EJECUCIÓN\n27-10 · 09:00\nautomática, cada martes · faltan 6 días\nDATOS PUBLICADOS\nSemana del 12-10-2026"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-aizl2j ei36xw10",
+        "h": 640,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 0,
+        "text": "\n    .journey-running { animation: journey-pulse 1.2s ease-in-out infinite; }\n    .journey-dashed { stroke-das"
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "mapa-de-seguridad",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Blue+Light",
+    "scroll": 1053,
+    "client": 700,
+    "box": 1053,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1029,
+        "text": "Seguridad › Mapa de seguridad\narrow_back\n\nVolver\n\nMapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 722,
+        "text": "Mapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\nCada puerta que podría tentar a un atacante, las b"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "mapa-de-seguridad",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Blue+Light",
+    "scroll": 1053,
+    "client": 900,
+    "box": 1053,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1029,
+        "text": "Seguridad › Mapa de seguridad\narrow_back\n\nVolver\n\nMapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 722,
+        "text": "Mapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\nCada puerta que podría tentar a un atacante, las b"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "mapa-de-seguridad",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Blue+Light",
+    "scroll": 1080,
+    "client": 1080,
+    "box": 1053,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1029,
+        "text": "Seguridad › Mapa de seguridad\narrow_back\n\nVolver\n\nMapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 722,
+        "text": "Mapa de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\n\nCada puerta que podría tentar a un atacante, las b"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "plan-de-pruebas-de-seguridad",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Blue+Light&vista=Plan+de+pruebas+de+seguridad",
+    "scroll": 2892,
+    "client": 700,
+    "box": 2892,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2868,
+        "text": "Seguridad › Plan de pruebas de seguridad\narrow_back\n\nVolver\n\nPlan de pruebas de seguridad\nDatos al 20-10-2026 "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2560,
+        "text": "Plan de pruebas de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SEGURIDAD.md en GitHub ↗\ndownload\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2406,
+        "text": "Cómo se buscan los puntos débiles del panel, cómo se corrigen y cómo se comprueba en cada cambio que siguen ce"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SEGURIDAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "plan-de-pruebas-de-seguridad",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Blue+Light&vista=Plan+de+pruebas+de+seguridad",
+    "scroll": 2892,
+    "client": 900,
+    "box": 2892,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2868,
+        "text": "Seguridad › Plan de pruebas de seguridad\narrow_back\n\nVolver\n\nPlan de pruebas de seguridad\nDatos al 20-10-2026 "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2560,
+        "text": "Plan de pruebas de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SEGURIDAD.md en GitHub ↗\ndownload\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2406,
+        "text": "Cómo se buscan los puntos débiles del panel, cómo se corrigen y cómo se comprueba en cada cambio que siguen ce"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SEGURIDAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "plan-de-pruebas-de-seguridad",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/seguridad?tema=Blue+Light&vista=Plan+de+pruebas+de+seguridad",
+    "scroll": 2892,
+    "client": 1080,
+    "box": 2892,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 2868,
+        "text": "Seguridad › Plan de pruebas de seguridad\narrow_back\n\nVolver\n\nPlan de pruebas de seguridad\nDatos al 20-10-2026 "
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2560,
+        "text": "Plan de pruebas de seguridad\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/SEGURIDAD.md en GitHub ↗\ndownload\n\n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 2406,
+        "text": "Cómo se buscan los puntos débiles del panel, cómo se corrigen y cómo se comprueba en cada cambio que siguen ce"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 590,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/SEGURIDAD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "stack-y-evidencia",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/proyecto?tema=Blue+Light&vista=Stack+y+evidencia",
+    "scroll": 700,
+    "client": 700,
+    "box": 519,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 495,
+        "text": "Proyecto › Stack y evidencia\narrow_back\n\nVolver\n\nStack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPy"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 326,
+        "text": "Stack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPython\nSQLite\nParquet\ndbt\nSQL\nDuckDB\npytest\nGitHub "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "stack-y-evidencia",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/proyecto?tema=Blue+Light&vista=Stack+y+evidencia",
+    "scroll": 900,
+    "client": 900,
+    "box": 519,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 495,
+        "text": "Proyecto › Stack y evidencia\narrow_back\n\nVolver\n\nStack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPy"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 326,
+        "text": "Stack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPython\nSQLite\nParquet\ndbt\nSQL\nDuckDB\npytest\nGitHub "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "stack-y-evidencia",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/proyecto?tema=Blue+Light&vista=Stack+y+evidencia",
+    "scroll": 1080,
+    "client": 1080,
+    "box": 519,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 495,
+        "text": "Proyecto › Stack y evidencia\narrow_back\n\nVolver\n\nStack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPy"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 326,
+        "text": "Stack y evidencia\nDatos al 20-10-2026 12:54 Carga correcta\nPython\nSQLite\nParquet\ndbt\nSQL\nDuckDB\npytest\nGitHub "
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "prd",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light",
+    "scroll": 3595,
+    "client": 700,
+    "box": 3595,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 3571,
+        "text": "Documentación › PRD · Requisitos del producto\narrow_back\n\nVolver\n\nPRD · Requisitos del producto\nDatos al 20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3302,
+        "text": "PRD · Requisitos del producto\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/PRD.md en GitHub ↗\ndownload\n\nDesca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3147,
+        "text": "Versión del 20-10-2026. El registro completo de decisiones está en docs/DECISIONES.md.\n\n1. Contexto\n\nODEPA pub"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 720,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 500,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/PRD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "prd",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light",
+    "scroll": 3595,
+    "client": 900,
+    "box": 3595,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 3571,
+        "text": "Documentación › PRD · Requisitos del producto\narrow_back\n\nVolver\n\nPRD · Requisitos del producto\nDatos al 20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3302,
+        "text": "PRD · Requisitos del producto\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/PRD.md en GitHub ↗\ndownload\n\nDesca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3147,
+        "text": "Versión del 20-10-2026. El registro completo de decisiones está en docs/DECISIONES.md.\n\n1. Contexto\n\nODEPA pub"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 720,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 500,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/PRD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "prd",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light",
+    "scroll": 3595,
+    "client": 1080,
+    "box": 3595,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 3571,
+        "text": "Documentación › PRD · Requisitos del producto\narrow_back\n\nVolver\n\nPRD · Requisitos del producto\nDatos al 20-10"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3302,
+        "text": "PRD · Requisitos del producto\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/PRD.md en GitHub ↗\ndownload\n\nDesca"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 3147,
+        "text": "Versión del 20-10-2026. El registro completo de decisiones está en docs/DECISIONES.md.\n\n1. Contexto\n\nODEPA pub"
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 720,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-kxabqf ei36xw10",
+        "h": 500,
+        "text": ""
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/PRD.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "adr",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light&vista=ADR+%C2%B7+Decisiones+de+arquitectura",
+    "scroll": 1398,
+    "client": 700,
+    "box": 1398,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1374,
+        "text": "Documentación › ADR · Decisiones de arquitectura\narrow_back\n\nVolver\n\nADR · Decisiones de arquitectura\nDatos al"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1105,
+        "text": "ADR · Decisiones de arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/ADR.md en GitHub ↗\ndownload\n\nDe"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 950,
+        "text": "Versión del 20-10-2026. Estas son las diez decisiones que más pesan en la arquitectura. Cada una mantiene su n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/ADR.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "adr",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light&vista=ADR+%C2%B7+Decisiones+de+arquitectura",
+    "scroll": 1398,
+    "client": 900,
+    "box": 1398,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1374,
+        "text": "Documentación › ADR · Decisiones de arquitectura\narrow_back\n\nVolver\n\nADR · Decisiones de arquitectura\nDatos al"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1105,
+        "text": "ADR · Decisiones de arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/ADR.md en GitHub ↗\ndownload\n\nDe"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 950,
+        "text": "Versión del 20-10-2026. Estas son las diez decisiones que más pesan en la arquitectura. Cada una mantiene su n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/ADR.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "adr",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light&vista=ADR+%C2%B7+Decisiones+de+arquitectura",
+    "scroll": 1398,
+    "client": 1080,
+    "box": 1398,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 1374,
+        "text": "Documentación › ADR · Decisiones de arquitectura\narrow_back\n\nVolver\n\nADR · Decisiones de arquitectura\nDatos al"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 1105,
+        "text": "ADR · Decisiones de arquitectura\nDatos al 20-10-2026 12:54 Carga correcta\ndocs/ADR.md en GitHub ↗\ndownload\n\nDe"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 950,
+        "text": "Versión del 20-10-2026. Estas son las diez decisiones que más pesan en la arquitectura. Cada una mantiene su n"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "docs/ADR.md en GitHub ↗"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1j909bg e1a2occc3",
+        "h": 40,
+        "text": "download\n\nDescargar PDF"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "escalabilidad",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light&vista=Escalabilidad",
+    "scroll": 1010,
+    "client": 700,
+    "box": 1010,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 986,
+        "text": "Documentación › Escalabilidad\narrow_back\n\nVolver\n\nEscalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSecci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 717,
+        "text": "Escalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSección completa en docs/DECISIONES.md ↗\n\nLa arquitectu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 619,
+        "text": "La arquitectura está pensada para crecer cambiando configuración, no código. Lo que sigue es una proyección, n"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "escalabilidad",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light&vista=Escalabilidad",
+    "scroll": 1010,
+    "client": 900,
+    "box": 1010,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 986,
+        "text": "Documentación › Escalabilidad\narrow_back\n\nVolver\n\nEscalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSecci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 717,
+        "text": "Escalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSección completa en docs/DECISIONES.md ↗\n\nLa arquitectu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 619,
+        "text": "La arquitectura está pensada para crecer cambiando configuración, no código. Lo que sigue es una proyección, n"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "escalabilidad",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/documentacion-y-enlaces?tema=Blue+Light&vista=Escalabilidad",
+    "scroll": 1080,
+    "client": 1080,
+    "box": 1010,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 986,
+        "text": "Documentación › Escalabilidad\narrow_back\n\nVolver\n\nEscalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSecci"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 717,
+        "text": "Escalabilidad\nDatos al 20-10-2026 12:54 Carga correcta\nSección completa en docs/DECISIONES.md ↗\n\nLa arquitectu"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-project_document st-emotion-cache-q25c8l e1a2occc3",
+        "h": 619,
+        "text": "La arquitectura está pensada para crecer cambiando configuración, no código. Lo que sigue es una proyección, n"
+      },
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "",
+        "h": 16
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "enlaces",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/enlaces?tema=Vantablack",
+    "scroll": 958,
+    "client": 700,
+    "box": 958,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 934,
+        "text": "GitHub\narrow_back\n\nVolver\n\ndbt · 16 modelos · 31/31 pruebas superadas\nDatos: ODEPA e INE, licencia Creative Co"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 766,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-1tb0ioe ei36xw10",
+        "h": 758,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "enlaces",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/enlaces?tema=Vantablack",
+    "scroll": 958,
+    "client": 700,
+    "box": 958,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 934,
+        "text": "GitHub\narrow_back\n\nVolver\n\ndbt · 16 modelos · 31/31 pruebas superadas\nDatos: ODEPA e INE, licencia Creative Co"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 766,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-1tb0ioe ei36xw10",
+        "h": 758,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Vantablack",
+    "path": "enlaces",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/enlaces?tema=Vantablack",
+    "scroll": 958,
+    "client": 700,
+    "box": 958,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 934,
+        "text": "GitHub\narrow_back\n\nVolver\n\ndbt · 16 modelos · 31/31 pruebas superadas\nDatos: ODEPA e INE, licencia Creative Co"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 766,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-1tb0ioe ei36xw10",
+        "h": 758,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "enlaces",
+    "w": 1440,
+    "h": 700,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/enlaces?tema=Blue+Light",
+    "scroll": 958,
+    "client": 700,
+    "box": 958,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 934,
+        "text": "GitHub\narrow_back\n\nVolver\n\ndbt · 16 modelos · 31/31 pruebas superadas\nDatos: ODEPA e INE, licencia Creative Co"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 766,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-1tb0ioe ei36xw10",
+        "h": 758,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "enlaces",
+    "w": 1440,
+    "h": 900,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/enlaces?tema=Blue+Light",
+    "scroll": 958,
+    "client": 700,
+    "box": 958,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 934,
+        "text": "GitHub\narrow_back\n\nVolver\n\ndbt · 16 modelos · 31/31 pruebas superadas\nDatos: ODEPA e INE, licencia Creative Co"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 766,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-1tb0ioe ei36xw10",
+        "h": 758,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  },
+  {
+    "theme": "Blue Light",
+    "path": "enlaces",
+    "w": 1920,
+    "h": 1080,
+    "url": "https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/~/+/enlaces?tema=Blue+Light",
+    "scroll": 958,
+    "client": 700,
+    "box": 958,
+    "zoom": "1",
+    "fit": "undefined",
+    "parentFit": "function",
+    "panel": [
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-emotion-cache-1ndxyp5 e1a2occc3",
+        "h": 934,
+        "text": "GitHub\narrow_back\n\nVolver\n\ndbt · 16 modelos · 31/31 pruebas superadas\nDatos: ODEPA e INE, licencia Creative Co"
+      },
+      {
+        "tag": "DIV",
+        "id": "stVerticalBlock",
+        "cls": "stVerticalBlock st-key-window_page st-emotion-cache-q25c8l e1a2occc3",
+        "h": 766,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-1tb0ioe ei36xw10",
+        "h": 758,
+        "text": ""
+      },
+      {
+        "tag": "IFRAME",
+        "id": "stIFrame",
+        "cls": "stIFrame st-emotion-cache-fsrfgf ei36xw10",
+        "h": 0,
+        "text": ""
+      }
+    ]
+  }
+]
