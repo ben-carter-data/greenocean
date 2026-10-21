@@ -1658,3 +1658,8 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Problema:** las tarjetas de D-216 se veían como bloques pesados, y al plegar el menú el logo GreenOcean quedaba encima de la ruta de la página. La causa: Streamlit marca ahora el menú plegado con `data-collapsed`, no con `aria-expanded`, así que esa regla y el plegado automático en pantallas angostas no se aplicaban.
 - **Decisión:** las seis tarjetas siguen una sola escala de grises de arriba abajo, de Vantablack a casi blanco, con borde fino, esquinas redondeadas, sombra suave, títulos en versalitas grises y filas más compactas; la página actual se marca con un fondo tenue. El fondo del menú sigue el tema. Con el menú plegado, la página empieza bajo el logo; las reglas y el script de plegado usan `data-collapsed`.
 - **Pruebas:** `tests/test_dashboard.py` (D-213 actualizada: grises en orden; D-223).
+
+## D-224 · Tarjetas del menú discretas, que siguen el tema
+- **Problema:** la escala de D-223 terminaba en dos tarjetas casi blancas que, sobre un menú oscuro, se veían pesadas y fuera de lugar.
+- **Decisión:** las tarjetas pasan a ser un velo muy tenue sobre el fondo del menú, como una barra lateral de macOS: en un menú oscuro, un blanco del 3 % al 10,5 % que aumenta de arriba abajo; en uno claro, un gris equivalente. Texto y títulos en grises del tema, borde fino y sombra mínima. Nunca una tarjeta clara sobre un menú oscuro.
+- **Pruebas:** `tests/test_dashboard.py` (D-213: velos en orden, sin tarjetas claras en el menú oscuro).

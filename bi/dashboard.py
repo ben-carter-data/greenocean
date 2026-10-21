@@ -8006,7 +8006,7 @@ RELOAD_HOME_SCRIPT = """<script>
 # D-213: the menu is a stack of colored blocks, one per kind of reader, always visible and
 # open by default; each page lives in exactly one block. «Ver como» (D-209) is gone: every
 # reader sees everything, so whoever wants the breadth of the work sees it at a glance.
-# D-215, D-223: each block is a card in one step of a grey scale (CARD_TONES); the documents sit
+# D-215, D-224: each block is a quiet card, one step of a veil that follows the theme (CARD_VEILS); the documents sit
 # at the end of their block and the documents' block closes the menu, just before the sources.
 # (key, title, tone index, pages or source links)
 MENU_BLOCKS = [
@@ -8018,11 +8018,11 @@ MENU_BLOCKS = [
     ("analisis", "Análisis de negocio · BA", 4, [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
     ("fuentes", "Fuentes", 5, SOURCE_LINKS),
 ]
-# D-223: one grey scale from Vantablack to almost white, top to bottom: (background, text, title).
-# Fixed in every theme, so each card reads the same everywhere; the sidebar keeps its theme.
-CARD_TONES = [("#0b0c0e", "#eceef1", "#9ba1ab"), ("#18191d", "#eceef1", "#9ba1ab"),
-              ("#26282d", "#eceef1", "#a3a9b2"), ("#383b41", "#f1f2f4", "#b3b8c0"),
-              ("#d5d8dd", "#1c1e22", "#5d636c"), ("#eef0f3", "#1c1e22", "#666c75")]
+# D-224: quiet cards that follow the theme, like a macOS sidebar: on a dark menu a faint white
+# veil that grows a little from top to bottom, on a light one a faint grey veil; never a light
+# card on a dark menu. (veil opacity per tone index, text, title) for dark and light menus.
+CARD_VEILS = [.03, .045, .06, .075, .09, .105]
+CARD_INK = {True: ("#e8eaee", "#8e949d"), False: ("#1d1f23", "#6b717a")}
 
 
 SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">'
@@ -8049,14 +8049,15 @@ def build_section_colors_css(dark):
     rounded corners and a faint shadow; the title in small capitals, the pages with their icon."""
     rules = []
     for key, _, tone, _ in MENU_BLOCKS:
-        background, text, title = CARD_TONES[tone]
-        light = tone >= 4
+        text, title = CARD_INK[dark]
+        light = not dark
+        background = f"rgba(255,255,255,{CARD_VEILS[tone]})" if dark else f"rgba(15,23,42,{CARD_VEILS[tone] * .6:.3f})"
         line = "rgba(0,0,0,.08)" if light else "rgba(255,255,255,.07)"
         hover = "rgba(0,0,0,.05)" if light else "rgba(255,255,255,.06)"
         current = "rgba(0,0,0,.08)" if light else "rgba(255,255,255,.10)"
         rules.append(f'.st-key-nav_block_{key} {{margin:0 0 8px !important; padding:4px 6px !important; gap:0 !important;'
                      f' background:{background}; border:1px solid {line}; border-radius:12px;'
-                     f' box-shadow:0 1px 2px rgba(0,0,0,.18), 0 10px 24px -14px rgba(0,0,0,.45);}}')
+                     f' box-shadow:0 1px 2px rgba(0,0,0,{".25" if dark else ".06"});}}')
         rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] p, .st-key-nav_block_{key} .nav-source-link '
                      f'{{color:{text} !important; -webkit-text-fill-color:{text} !important; text-shadow:none !important;}}')
         rules.append(f'.st-key-nav_block_{key} [data-testid="stIconMaterial"], .st-key-nav_block_{key} .nav-source-icon '

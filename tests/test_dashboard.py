@@ -1763,9 +1763,10 @@ def test_d213_the_menu_is_colored_blocks_open_by_default_with_every_page_once():
     # D-223: one grey scale, darkest on top, each card a different step; no colored accents.
     tones = [tone for _, _, tone, _ in dashboard.MENU_BLOCKS]
     assert tones == sorted(tones) and len(set(tones)) == len(tones)
-    for background, text, title in dashboard.CARD_TONES:
-        red, green, blue = (int(background[i:i + 2], 16) for i in (1, 3, 5))
-        assert max(red, green, blue) - min(red, green, blue) <= 12  # a grey, not a color
+    # D-224: veils that follow the theme, growing from top to bottom; no light card on a dark menu.
+    assert dashboard.CARD_VEILS == sorted(dashboard.CARD_VEILS) and max(dashboard.CARD_VEILS) <= .12
+    assert "rgba(255,255,255,0.105)" in dashboard.build_section_colors_css(True)
+    assert "rgba(255,255,255" not in dashboard.build_section_colors_css(False).split("a.nav-source-link")[0]
     for key, *_ in dashboard.MENU_BLOCKS:
         assert f'.st-key-nav_group_{key} button p' in markup and f'.st-key-nav_block_{key} {{' in markup
 
