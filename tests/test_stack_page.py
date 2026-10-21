@@ -7,9 +7,9 @@ from bi import charts, queries, stack_page
 def test_the_figures_come_from_the_database_and_the_repository():
     figures = stack_page.read_figures()
     with duckdb.connect(str(queries.DATABASE_FILE), read_only=True) as connection:
-        assert figures["prices"] == connection.sql("SELECT count(*) FROM weekly_price").fetchone()[0]
-        assert figures["loads"] == connection.sql("SELECT count(*) FROM etl_run").fetchone()[0]
-        dbt_tests = connection.sql("SELECT count(*) FROM dbt_node WHERE resource_type = 'test'").fetchone()[0]
+        assert figures["prices"] == connection.execute("SELECT count(*) FROM weekly_price").fetchone()[0]
+        assert figures["loads"] == connection.execute("SELECT count(*) FROM etl_run").fetchone()[0]
+        dbt_tests = connection.execute("SELECT count(*) FROM dbt_node WHERE resource_type = 'test'").fetchone()[0]
     assert figures["tests"] == stack_page.count_pytest_tests() + dbt_tests
     assert stack_page.count_pytest_tests() > 300
 

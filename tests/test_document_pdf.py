@@ -117,11 +117,11 @@ def test_d210_the_prd_figures_match_the_served_database():
     text = (DOCS_DIR / "PRD.md").read_text(encoding="utf-8")
     database = Path(__file__).resolve().parent.parent / "etl" / "datos.duckdb"
     with duckdb.connect(str(database), read_only=True) as connection:
-        prices, weeks = connection.sql("SELECT count(*), count(DISTINCT week_start) FROM weekly_price").fetchone()
-        read, loaded, rejected = connection.sql(
+        prices, weeks = connection.execute("SELECT count(*), count(DISTINCT week_start) FROM weekly_price").fetchone()
+        read, loaded, rejected = connection.execute(
             "SELECT rows_read, rows_loaded, rows_rejected FROM etl_run ORDER BY run_id DESC LIMIT 1").fetchone()
-        products = connection.sql("SELECT count(*) FROM dim_product").fetchone()[0]
-        months = connection.sql("SELECT count(*) FROM ipc_monthly").fetchone()[0]
+        products = connection.execute("SELECT count(*) FROM dim_product").fetchone()[0]
+        months = connection.execute("SELECT count(*) FROM ipc_monthly").fetchone()[0]
     for value, unit in ((prices, "precios semanales"), (weeks, "semanas"), (products, "claves de producto"),
                         (months, "meses del IPC")):
         assert f"{value:,}".replace(",", ".") + " " + unit in text, unit

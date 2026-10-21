@@ -10,7 +10,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 - **Pipeline:** ingesta en Python → aterrizaje `etl/raw.db` (SQLite) → bronce en Parquet → dbt Core sobre DuckDB (staging → intermedio → marts, 31 pruebas) → base servida `etl/datos.duckdb`.
 - **Panel:** Streamlit (`bi/dashboard.py`), que lee `etl/datos.duckdb` en solo lectura.
 - **Orquestación:** GitHub Actions, cada martes (`.github/workflows/semanal.yml`).
-- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md` y `docs/SEGURIDAD.md` (plan de pruebas de seguridad). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-226). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
+- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md` y `docs/SEGURIDAD.md` (plan de pruebas de seguridad). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-227). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
 
 ## Instalar y ejecutar
 
@@ -61,7 +61,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 - El historial de cargas (`etl_run`) solo guarda ejecuciones reales. Una reconstrucción local debe usar `--local` para no agregar una carga falsa.
 
 - Los teléfonos (D-166): en vertical, `PHONE_LAYOUT_HTML` tapa la app con «Gira tu teléfono»; en horizontal (alto de 500 px o menos) `.stApp` se dibuja más ancho y se reduce con `transform: scale(.62)`, y los contenedores que Streamlit mide con la altura de la pantalla crecen con la escala. Revisar los dos casos en 390 × 844 y 844 × 390.
-- Una dependencia sin versión máxima puede romper el martes: certifi 2026.10.18 retiró la raíz de ODEPA (D-164).
+- Una dependencia sin versión máxima puede romper el martes: certifi 2026.10.18 retiró la raíz de ODEPA (D-164); DuckDB 2.0.0 volvió `k2_channel_gap` de 0,1 s a más de 60 s, por eso `requirements.txt` pide `duckdb<2` (D-227). Con DuckDB 2 una relación (`connection.sql`) ya no tiene `fetchone()`: usar `connection.execute(...)`.
 
 ## Lo que la sesión en la nube NO tendrá
 
