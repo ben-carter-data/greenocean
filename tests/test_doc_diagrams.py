@@ -39,12 +39,22 @@ def test_d205_each_view_is_one_html_document_without_script(name, mode):
     assert "robot" not in page.lower() and name in doc_diagrams.HEIGHTS
 
 
-@pytest.mark.parametrize("name", ["actores", "contexto", "contenedores", "secuencia"])
-def test_d205_the_diagrams_use_the_pipeline_tiles_and_explain_each_piece(name):
-    page = doc_diagrams.DOC_DIAGRAMS[name](charts.MODE_DARK)
-    # Logos in the pipeline's tile, no card boxes; every piece explains itself on hover.
-    assert page.count('class="logo"') >= 6 and page.count('role="tooltip"') >= 6
-    assert charts.get_palette(charts.MODE_DARK)["card"] in page
+def test_d210_the_actors_view_follows_the_pipeline_standard():
+    page = doc_diagrams.DOC_DIAGRAMS["actores"](charts.MODE_DARK)
+    # 3D logos on lit discs, no tiles or zones; every logo and every chip explains itself.
+    assert page.count('class="logo"') == 7 and "radialGradient" in page and 'class="zone"' not in page
+    assert page.count('class="chip"') == len(doc_views.ACTOR_EDGES)
+    assert page.count('role="tooltip"') == 7 + len(doc_views.ACTOR_EDGES)
+    # Orthogonal arrows only: straight runs with right angles, never a curve.
+    for path, *_ in doc_views.ACTOR_EDGES:
+        assert re.fullmatch(r"M\d+ \d+( [HV]\d+)+", path), path
+    assert {name for name in ("ODEPA", "INE", "GitHub Actions", "Repositorio", "Panel", "Visitante", "El autor")
+            if f"<b>{name}</b>" in page} == {"ODEPA", "INE", "GitHub Actions", "Repositorio", "Panel", "Visitante",
+                                              "El autor"}
+
+
+def test_d210_the_weak_views_are_gone():
+    assert set(doc_diagrams.DOC_DIAGRAMS) == {"actores", "mockups"}
 
 
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():

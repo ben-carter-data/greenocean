@@ -1662,7 +1662,7 @@ def test_d129_the_github_page_names_actions_so_it_is_not_confused_with_ejecucion
 def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
     assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:3] == [dashboard.PAGE_PRD, dashboard.PAGE_SAD, dashboard.PAGE_ADR]
     # D-205: the document views in their own frame, the live panel diagrams inline.
-    for page, framed, inline in ((dashboard.PAGE_PRD, 2, 0), (dashboard.PAGE_SAD, 3, 3), (dashboard.PAGE_ADR, 0, 0),
+    for page, framed, inline in ((dashboard.PAGE_PRD, 2, 0), (dashboard.PAGE_SAD, 0, 3), (dashboard.PAGE_ADR, 0, 0),
                                  (dashboard.PAGE_SECURITY_PLAN, 1, 0)):
         app = draw_page(page)
         assert not app.exception and not app.code

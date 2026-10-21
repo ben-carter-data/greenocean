@@ -7430,10 +7430,10 @@ def show_links_page(mode):
 
 # region Project documents (D-151)
 PROJECT_DOCUMENTS = {
-    PAGE_PRD: ("PRD.md", "Qué resuelve el producto, para quién, con qué alcance y cómo se verifica."),
-    PAGE_SAD: ("SAD.md", "Cómo está construido: contexto, capas, modelo de datos, ejecución y calidad."),
-    PAGE_ADR: ("ADR.md", "Las decisiones que dieron forma a la arquitectura, con su contexto y sus consecuencias."),
-    PAGE_SECURITY_PLAN: ("SEGURIDAD.md", "Cómo se buscan los puntos débiles, cómo se corrigen y cómo se demuestra en cada push que siguen cerradas."),
+    PAGE_PRD: ("PRD.md", "Qué resuelve el producto, para quién y con qué requisitos."),
+    PAGE_SAD: ("SAD.md", "Cómo está construido: pipeline, plataforma y modelo de datos."),
+    PAGE_ADR: ("ADR.md", "Las diez decisiones de arquitectura que más pesan, con su motivo."),
+    PAGE_SECURITY_PLAN: ("SEGURIDAD.md", "Cómo se buscan, se corrigen y se prueban en cada push los puntos débiles."),
 }
 DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 
@@ -7476,14 +7476,16 @@ def build_document_pdf(path, modified, title, subtitle):
 
 def show_scalability_page(mode):
     """Escalabilidad: the SAD's own section, so the page and GitHub say the same."""
-    text = (project.PROJECT_DIR / "docs" / "SAD.md").read_text(encoding="utf-8")
-    match = re.search(r"^## \d+\. Escalabilidad\n(.*?)(?=^## |\Z)", text, re.MULTILINE | re.DOTALL)
+    # D-210: the section left the two-page SAD for the decision log, unchanged.
+    text = (project.PROJECT_DIR / "docs" / "DECISIONES.md").read_text(encoding="utf-8")
+    match = re.search(r"^### Escalabilidad\n(.*?)(?=^##|\Z)", text, re.MULTILINE | re.DOTALL)
     show_compact_page_header(PAGE_SCALABILITY, "Qué se agregaría y cuándo: clima previsto; nube solo con datos "
                              "de una empresa (ADR-31).")
     st.markdown('<div class="doc-source">' + build_external_link_html(
-        "Sección completa en docs/SAD.md", project.build_github_url("docs/SAD.md")) + '</div>', unsafe_allow_html=True)
+        "Sección completa en docs/DECISIONES.md", project.build_github_url("docs/DECISIONES.md")) + '</div>',
+        unsafe_allow_html=True)
     with st.container(key="project_document"):
-        st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/SAD.md.")
+        st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/DECISIONES.md.")
 
 
 def show_project_document(mode, title):

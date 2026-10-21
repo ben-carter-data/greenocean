@@ -1563,3 +1563,29 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 - **Decisión:** cada página del menú lleva un ícono pequeño a la izquierda, del color de su sección; las fuentes llevan el de enlace externo. Arriba del menú, un selector «Ver como» que no bloquea nada: **Visitante** (por defecto: Resumen semanal, Precios e inflación, Fuentes), **Analista de negocio** (lo del visitante más Calidad y auditoría, PRD y SAD), **Ingeniería de datos** (todo, con Documentación al final) y **Reclutador** (Resumen semanal; la página «Stack y evidencia» llega en una etapa siguiente). La app abre en el Resumen semanal como Visitante. El perfil queda en la sesión y en la dirección (`?ver=`), y cada enlace del menú lo conserva. Fuentes y Documentación empiezan plegadas.
 - **Enlaces:** una dirección de una página que el perfil no muestra sigue abriéndose; el perfil solo decide el menú.
 - **Pruebas:** `tests/test_dashboard.py` (D-209: el menú de cada perfil, la apertura como Visitante con íconos, una página fuera del menú y el cambio de perfil) y las del menú, actualizadas.
+
+## D-210 · Documentos de dos páginas como máximo
+- **Problema:** el PRD, el SAD, el ADR y el plan de seguridad sumaban más de mil líneas para un proyecto pequeño: nadie los leía enteros, repetían lo que ya está en este registro y sus PDF abrían con portada e índice. Los diagramas `contexto`, `contenedores` y `secuencia` del SAD eran débiles y repetían lo que el recorrido del pipeline muestra mejor.
+- **Decisión:** cada documento cabe en dos páginas de PDF. **PRD:** problema con las cifras de la base actual, usuarios, preguntas de negocio, ocho requisitos clave, el diagrama de actores y las capturas reales. **SAD:** solo los diagramas vivos `pipeline`, `plataforma` y `modelo`, con un párrafo cada uno. **ADR:** una tabla con las diez decisiones que más pesan (decisión, motivo, alternativa descartada), con su número original. **Plan de seguridad:** puertas y barreras, su mapa, el método, los diez casos de prueba y los resultados. El detalle extenso queda en este registro.
+- **Diagramas:** se quitan `contexto`, `contenedores` y `secuencia` de `bi/doc_views.py` y de los documentos. El diagrama `actores` se rehace con el estándar del pipeline: logos 3D en discos con brillo y sombra, sin cajas, flechas ortogonales con un chip de lo que viaja, lectura de izquierda a derecha (fuentes → GitHub Actions → repositorio → panel → visitante y autor) y explicación al pasar el cursor por cada logo y cada chip.
+- **PDF:** sin portada ni índice: una franja con el título en la primera página y las capturas del PRD de dos en dos.
+- **Escalabilidad:** la página del mismo nombre lee ahora la sección de abajo, que sale del SAD sin cambios.
+- **Pruebas:** `tests/test_doc_diagrams.py` y `tests/test_document_pdf.py` (D-210: dos páginas como máximo, actores sin curvas y con explicación en cada chip, ADR de diez filas) y `tests/test_dashboard.py`.
+
+### Escalabilidad
+
+La arquitectura está pensada para crecer cambiando configuración, no código. Lo que sigue es una proyección, no una entrega.
+
+| Extensión | Fuente | Estado | Cómo entraría |
+|---|---|---|---|
+| Clima por región y semana | Fuente oficial por definir | Prevista | Nueva carpeta de bronce, un staging y un mart por semana y región, junto a las alertas K6, sin afirmar causalidad |
+| Warehouse en la nube | — | No adoptado | Un nuevo destino en la configuración de dbt, con los mismos modelos y la misma auditoría |
+
+**¿Por qué no hay nube?** Con datos públicos, semanales y de pocos megabytes, leídos por un solo panel, un warehouse en la nube agregaría costo, secretos y riesgos de vencimiento sin beneficio (ADR-31). Se justificaría solo si una empresa sumara sus propios datos:
+
+| Criterio | Hoy | Umbral que justificaría la nube |
+|---|---|---|
+| Volumen | Unos 14 MB en la base de servicio | Varios GB: ventas por tienda y día, costos, inventario |
+| Usuarios | Un panel de solo lectura | Varios equipos o herramientas de BI sobre los mismos datos |
+| Acceso | Público | Permisos por persona o datos sensibles |
+| Frescura | Semanal | Varias cargas al día o tiempo real |

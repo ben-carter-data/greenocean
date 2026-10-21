@@ -14,6 +14,7 @@ DOCUMENTS = {
     "PRD.md": ("Documento de requisitos del producto", "PRD · Qué resuelve, para quién y cómo se verifica"),
     "SAD.md": ("Documento de arquitectura de software", "SAD · Contexto, contenedores, componentes y linaje"),
     "ADR.md": ("Registros de decisiones de arquitectura", "ADR · Una ficha por decisión"),
+    "SEGURIDAD.md": ("Plan de pruebas de seguridad", "Puertas, barreras y pruebas"),
 }
 
 
@@ -43,12 +44,12 @@ def pdfs():
 
 
 @pytest.mark.parametrize("name", DOCUMENTS)
-def test_each_document_builds_a_pdf_with_cover_contents_and_pages(pdfs, name):
+def test_d210_each_document_fits_two_pages_with_its_title_band(pdfs, name):
     pdf = pdfs[name]
     assert pdf.startswith(b"%PDF")
-    assert count_pages(pdf) >= 3
+    assert 1 <= count_pages(pdf) <= 2
     text = page_text(pdf)
-    assert "GREENOCEAN" in text and "Contenido" in text and "19 de octubre de 2026" in text
+    assert "GREENOCEAN" in text and "Contenido" not in text and "19 de octubre de 2026" in text
     assert f"de {count_pages(pdf)})" in text  # «Página n de N» in the footer
 
 
@@ -89,13 +90,11 @@ def test_documents_have_no_code_blocks_and_use_the_project_vocabulary(name):
 
 
 def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
-    """PRD: actors and the main screen. SAD: C4 context and containers, the data
-    model, the weekly run and the deployment. ADR: none (doc_diagrams)."""
+    """PRD: actors and the real screens. SAD: only the live diagrams (D-210). ADR: none."""
     names = {name: re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"),
                               re.MULTILINE) for name in DOCUMENTS}
-    assert names == {"PRD.md": ["actores", "mockups"],
-                     "SAD.md": ["contexto", "contenedores", "pipeline", "modelo", "secuencia", "plataforma"],
-                     "ADR.md": []}
+    assert names == {"PRD.md": ["actores", "mockups"], "SAD.md": ["pipeline", "plataforma", "modelo"],
+                     "ADR.md": [], "SEGURIDAD.md": ["seguridad"]}
 
 
 def test_d205_the_prd_pdf_carries_the_four_real_screens():
@@ -103,14 +102,28 @@ def test_d205_the_prd_pdf_carries_the_four_real_screens():
     assert pdf.count(b"/Subtype /Image") >= 4
 
 
-def test_the_adr_has_one_card_per_decision_with_status_and_reference():
+def test_d210_the_adr_is_one_table_of_the_ten_decisions_that_weigh_most():
     text = (DOCS_DIR / "ADR.md").read_text(encoding="utf-8")
-    cards = re.split(r"^## (?=ADR-\d+)", text, flags=re.MULTILINE)[1:]
-    numbers = [card.split(" ", 1)[0] for card in cards]
-    assert {"ADR-30", "ADR-31", "ADR-32", "ADR-33", "ADR-34"} <= set(numbers)
-    for card in cards:
-        assert "| Estado | Fecha | Referencia |" in card
-        assert re.search(r"D-\d{3}", card)
-        for part in ("**Contexto.**", "**Decisión.**", "**Consecuencias.**"):
-            assert part in card, (card.split("\n", 1)[0], part)
-    assert "Aceptada e implementada | 19-10-2026 | D-155" in text
+    assert "| ADR | Decisión | Motivo | Alternativa descartada |" in text
+    rows = re.findall(r"^\| (ADR-\d+) \|(.*)\|$", text, flags=re.MULTILINE)
+    assert len(rows) == 10 and len({number for number, _ in rows}) == 10
+    for number, row in rows:
+        assert len(row.split("|")) == 3 and all(cell.strip() for cell in row.split("|")), number
+        assert re.search(r"D-\d{3}", row), number
+
+
+def test_d210_the_prd_figures_match_the_served_database():
+    import duckdb
+    text = (DOCS_DIR / "PRD.md").read_text(encoding="utf-8")
+    database = Path(__file__).resolve().parent.parent / "etl" / "datos.duckdb"
+    with duckdb.connect(str(database), read_only=True) as connection:
+        prices, weeks = connection.sql("SELECT count(*), count(DISTINCT week_start) FROM weekly_price").fetchone()
+        read, loaded, rejected = connection.sql(
+            "SELECT rows_read, rows_loaded, rows_rejected FROM etl_run ORDER BY run_id DESC LIMIT 1").fetchone()
+        products = connection.sql("SELECT count(*) FROM dim_product").fetchone()[0]
+        months = connection.sql("SELECT count(*) FROM ipc_monthly").fetchone()[0]
+    for value, unit in ((prices, "precios semanales"), (weeks, "semanas"), (products, "claves de producto"),
+                        (months, "meses del IPC")):
+        assert f"{value:,}".replace(",", ".") + " " + unit in text, unit
+    for value in (read, loaded, rejected):
+        assert f"{value:,}".replace(",", ".") in text

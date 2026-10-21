@@ -1,7 +1,7 @@
 """The project documents (PRD, SAD, ADR) as premium PDF files (step 6 of the refonte).
 
-build_pdf turns the Markdown of docs/ into a PDF with a cover page, a table of
-contents, styled headings and tables, and numbered pages. It reads only the subset of
+build_pdf turns the Markdown of docs/ into a short PDF (two pages at most, D-210): a title
+band on the first page, styled headings and tables, and numbered pages. It reads only the subset of
 Markdown the documents use: headings, paragraphs, tables, bullet and numbered lists,
 quotes, horizontal rules, bold, italic and inline code. A [[diagrama:…]] marker
 becomes a short note, because the diagram is drawn live in the panel.
@@ -22,9 +22,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.platypus import (Image, BaseDocTemplate, CondPageBreak, Frame, KeepTogether, ListFlowable,
-                                ListItem, NextPageTemplate, PageBreak, PageTemplate, Paragraph,
-                                Spacer, Table, TableStyle)
-from reportlab.platypus.tableofcontents import TableOfContents
+                                ListItem, NextPageTemplate, PageTemplate, Paragraph, Spacer, Table, TableStyle)
 
 PROJECT_NAME = "GreenOcean"
 DIAGRAM_NOTE = "Diagrama interactivo disponible en el panel"
@@ -43,6 +41,8 @@ ZEBRA = colors.HexColor("#f7f9fa")
 PAGE_WIDTH, PAGE_HEIGHT = A4
 MARGIN = 20 * mm
 CONTENT_WIDTH = PAGE_WIDTH - 2 * MARGIN
+# The title band on top of the first page, instead of a cover (D-210).
+BAND_HEIGHT = 30 * mm
 
 DIAGRAM_MARKER = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$")
 TABLE_SEPARATOR = re.compile(r"^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$")
@@ -55,9 +55,9 @@ SUPERSCRIPTS = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹⁻", "0123456789-")
 def _styles():
     base = dict(fontName="Helvetica", textColor=INK, alignment=TA_LEFT)
     return {
-        "body": ParagraphStyle("body", fontSize=10, leading=14.5, spaceAfter=6, **base),
-        "h1": ParagraphStyle("h1", fontName="Helvetica-Bold", fontSize=17, leading=21, textColor=GREEN_DARK,
-                             spaceBefore=14, spaceAfter=8),
+        "body": ParagraphStyle("body", fontSize=9.6, leading=13.4, spaceAfter=5, **base),
+        "h1": ParagraphStyle("h1", fontName="Helvetica-Bold", fontSize=13.5, leading=17, textColor=GREEN_DARK,
+                             spaceBefore=8, spaceAfter=5),
         "h2": ParagraphStyle("h2", fontName="Helvetica-Bold", fontSize=13, leading=17, textColor=GREEN,
                              spaceBefore=10, spaceAfter=5),
         "h3": ParagraphStyle("h3", fontName="Helvetica-Bold", fontSize=11, leading=15, textColor=INK,
@@ -69,12 +69,6 @@ def _styles():
                                 textColor=MUTED, leftIndent=10, spaceAfter=6),
         "note": ParagraphStyle("note", fontName="Helvetica-Oblique", fontSize=9.4, leading=13,
                                textColor=GREEN, spaceBefore=2, spaceAfter=8),
-        "toc_title": ParagraphStyle("toc_title", fontName="Helvetica-Bold", fontSize=20, leading=24,
-                                    textColor=GREEN_DARK, spaceAfter=14),
-        "toc1": ParagraphStyle("toc1", fontName="Helvetica", fontSize=10.5, leading=17, textColor=INK,
-                               leftIndent=0),
-        "toc2": ParagraphStyle("toc2", fontName="Helvetica", fontSize=9.5, leading=14, textColor=MUTED,
-                               leftIndent=14),
     }
 
 
@@ -275,7 +269,7 @@ def build_story(markdown_text, styles):
             level, text = payload
             heading_number += 1
             if level <= 2:
-                story.append(CondPageBreak(45 * mm))
+                story.append(CondPageBreak(30 * mm))
                 story.append(_Heading(text, styles["h1"], 0, f"h{heading_number}"))
             else:
                 story.append(CondPageBreak(30 * mm))
@@ -314,42 +308,45 @@ class _Document(BaseDocTemplate):
         self.subtitle = subtitle
         self.issued = issued
         self.total_pages = None
-        frame = Frame(MARGIN, MARGIN, CONTENT_WIDTH, PAGE_HEIGHT - 2 * MARGIN - 4 * mm, id="body")
-        cover = Frame(MARGIN, MARGIN, CONTENT_WIDTH, PAGE_HEIGHT - 2 * MARGIN, id="cover")
-        self.addPageTemplates([PageTemplate("cover", [cover], onPage=self._draw_cover),
+        body_height = PAGE_HEIGHT - 2 * MARGIN - 4 * mm
+        first = Frame(MARGIN, MARGIN, CONTENT_WIDTH, body_height - BAND_HEIGHT + 4 * mm, id="first")
+        frame = Frame(MARGIN, MARGIN, CONTENT_WIDTH, body_height, id="body")
+        self.addPageTemplates([PageTemplate("first", [first], onPage=self._draw_first),
                                PageTemplate("body", [frame], onPage=self._draw_page)])
 
-    def _draw_cover(self, canvas, _document):
+    def _draw_first(self, canvas, document):
+        """A green band with the project, the title, the subtitle and the date."""
         canvas.saveState()
+        top = PAGE_HEIGHT - BAND_HEIGHT
         canvas.setFillColor(GREEN_DARK)
-        canvas.rect(0, PAGE_HEIGHT * 0.38, PAGE_WIDTH, PAGE_HEIGHT * 0.62, stroke=0, fill=1)
+        canvas.rect(0, top, PAGE_WIDTH, BAND_HEIGHT, stroke=0, fill=1)
         canvas.setFillColor(GREEN)
-        canvas.rect(0, PAGE_HEIGHT * 0.38 - 3 * mm, PAGE_WIDTH, 3 * mm, stroke=0, fill=1)
+        canvas.rect(0, top - 1.2 * mm, PAGE_WIDTH, 1.2 * mm, stroke=0, fill=1)
         canvas.setFillColor(colors.HexColor("#72e7ad"))
-        canvas.setFont("Helvetica-Bold", 13)
-        canvas.drawString(MARGIN, PAGE_HEIGHT - 32 * mm, PROJECT_NAME.upper())
-        canvas.setFillColor(colors.white)
-        title_style = ParagraphStyle("cover_title", fontName="Helvetica-Bold", fontSize=30, leading=35,
-                                     textColor=colors.white)
-        subtitle_style = ParagraphStyle("cover_subtitle", fontName="Helvetica", fontSize=13, leading=18,
-                                        textColor=colors.HexColor("#d7efe2"))
-        title = Paragraph(inline_markup(self.document_title), title_style)
-        _, title_height = title.wrap(CONTENT_WIDTH, PAGE_HEIGHT)
-        title_top = PAGE_HEIGHT * 0.38 + 70 * mm
-        title.drawOn(canvas, MARGIN, title_top)
-        subtitle = Paragraph(inline_markup(self.subtitle), subtitle_style)
-        _, subtitle_height = subtitle.wrap(CONTENT_WIDTH * 0.85, PAGE_HEIGHT)
-        subtitle.drawOn(canvas, MARGIN, title_top - subtitle_height - 8 * mm)
-        canvas.setFillColor(INK)
-        canvas.setFont("Helvetica", 10)
-        canvas.drawString(MARGIN, PAGE_HEIGHT * 0.38 - 20 * mm, "Monitor semanal de precios de alimentos en Chile")
-        canvas.setFillColor(MUTED)
-        canvas.drawString(MARGIN, PAGE_HEIGHT * 0.38 - 27 * mm, "Datos abiertos de ODEPA e IPC del INE")
-        canvas.setStrokeColor(RULE)
-        canvas.line(MARGIN, 30 * mm, PAGE_WIDTH - MARGIN, 30 * mm)
+        canvas.setFont("Helvetica-Bold", 9)
+        canvas.drawString(MARGIN, PAGE_HEIGHT - 9 * mm, PROJECT_NAME.upper())
+        canvas.setFillColor(colors.HexColor("#d7efe2"))
         canvas.setFont("Helvetica", 9)
-        canvas.drawString(MARGIN, 23 * mm, self.issued)
-        canvas.drawRightString(PAGE_WIDTH - MARGIN, 23 * mm, PROJECT_NAME)
+        canvas.drawRightString(PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 9 * mm, self.issued)
+        canvas.setFillColor(colors.white)
+        canvas.setFont("Helvetica-Bold", 17)
+        canvas.drawString(MARGIN, PAGE_HEIGHT - 18 * mm, _plain(self.document_title))
+        canvas.setFillColor(colors.HexColor("#d7efe2"))
+        canvas.setFont("Helvetica", 10)
+        canvas.drawString(MARGIN, PAGE_HEIGHT - 25 * mm, _plain(self.subtitle))
+        canvas.restoreState()
+        self._draw_footer(canvas)
+
+    def _draw_footer(self, canvas):
+        canvas.saveState()
+        canvas.setFont("Helvetica", 8)
+        canvas.setFillColor(MUTED)
+        canvas.setStrokeColor(RULE)
+        canvas.setLineWidth(0.5)
+        canvas.line(MARGIN, 15 * mm, PAGE_WIDTH - MARGIN, 15 * mm)
+        canvas.drawString(MARGIN, 11 * mm, f"{PROJECT_NAME} · {_plain(self.document_title)}")
+        total = f" de {self.total_pages}" if self.total_pages else ""
+        canvas.drawRightString(PAGE_WIDTH - MARGIN, 11 * mm, f"Página {canvas.getPageNumber()}{total}")
         canvas.restoreState()
 
     def _draw_page(self, canvas, _document):
@@ -363,15 +360,11 @@ class _Document(BaseDocTemplate):
         canvas.setStrokeColor(RULE)
         canvas.setLineWidth(0.5)
         canvas.line(MARGIN, PAGE_HEIGHT - 14 * mm, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 14 * mm)
-        canvas.line(MARGIN, 15 * mm, PAGE_WIDTH - MARGIN, 15 * mm)
-        canvas.drawString(MARGIN, 11 * mm, f"{PROJECT_NAME} · {_plain(self.document_title)}")
-        total = f" de {self.total_pages}" if self.total_pages else ""
-        canvas.drawRightString(PAGE_WIDTH - MARGIN, 11 * mm, f"Página {canvas.getPageNumber()}{total}")
         canvas.restoreState()
+        self._draw_footer(canvas)
 
     def afterFlowable(self, flowable):
         if isinstance(flowable, _Heading):
-            self.notify("TOCEntry", (flowable.toc_level, flowable.toc_text, self.page, flowable.toc_key))
             self.canv.bookmarkPage(flowable.toc_key)
             self.canv.addOutlineEntry(flowable.toc_text, flowable.toc_key, level=flowable.toc_level,
                                       closed=True)
@@ -390,22 +383,28 @@ MOCKUP_FILES = [("m1-resumen-vantablack.jpg", "M-1 · Resumen semanal · tema Va
 
 
 def build_mockup_flowables(styles):
-    """The captures as images under each other, with a caption; a missing file is skipped."""
-    flowables = []
+    """The captures two per row, each with its caption; a missing file is skipped."""
+    cells = []
     for file_name, caption in MOCKUP_FILES:
         path = MOCKUP_DIR / file_name
         if not path.exists():
             continue
         image = Image(str(path))
-        scale = CONTENT_WIDTH * 0.9 / image.imageWidth
+        scale = min(CONTENT_WIDTH * 0.47 / image.imageWidth, 52 * mm / image.imageHeight)
         image.drawWidth, image.drawHeight = image.imageWidth * scale, image.imageHeight * scale
-        flowables.append(KeepTogether([image, Paragraph(escape(caption), styles["note"])]))
-    return flowables
+        cells.append([image, Paragraph(escape(caption), styles["note"])])
+    if not cells:
+        return []
+    rows = [cells[index:index + 2] + [""] * (2 - len(cells[index:index + 2])) for index in range(0, len(cells), 2)]
+    grid = Table(rows, colWidths=[CONTENT_WIDTH / 2] * 2)
+    grid.setStyle(TableStyle([("ALIGN", (0, 0), (-1, -1), "CENTER"), ("VALIGN", (0, 0), (-1, -1), "BOTTOM"),
+                              ("LEFTPADDING", (0, 0), (-1, -1), 2), ("RIGHTPADDING", (0, 0), (-1, -1), 2)]))
+    return [grid]
 
 
 def build_pdf(markdown_text, title, subtitle, issued=None):
-    """The Markdown document as PDF bytes: cover (project, title, subtitle, date),
-    table of contents, styled content and numbered pages."""
+    """The Markdown document as PDF bytes: a title band (project, title, subtitle, date),
+    styled content and numbered pages."""
     styles = _styles()
     issued_text = _issued_text(issued or date.today())
     total_pages = None
@@ -414,10 +413,7 @@ def build_pdf(markdown_text, title, subtitle, issued=None):
         buffer = BytesIO()
         document = _Document(buffer, title, subtitle, issued_text)
         document.total_pages = total_pages
-        contents = TableOfContents(levelStyles=[styles["toc1"], styles["toc2"]], dotsMinLevel=0)
-        story = [NextPageTemplate("body"), PageBreak(),
-                 Paragraph("Contenido", styles["toc_title"]), contents, PageBreak()]
-        story += build_story(markdown_text, styles)
+        story = [NextPageTemplate("body")] + build_story(markdown_text, styles)
         document.multiBuild(story)
         total_pages = document.page
     return buffer.getvalue()

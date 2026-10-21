@@ -10,7 +10,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 - **Pipeline:** ingesta en Python → aterrizaje `etl/raw.db` (SQLite) → bronce en Parquet → dbt Core sobre DuckDB (staging → intermedio → marts, 31 pruebas) → base servida `etl/datos.duckdb`.
 - **Panel:** Streamlit (`bi/dashboard.py`), que lee `etl/datos.duckdb` en solo lectura.
 - **Orquestación:** GitHub Actions, cada martes (`.github/workflows/semanal.yml`).
-- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md` y `docs/SEGURIDAD.md` (plan de pruebas de seguridad). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-209). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
+- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md` y `docs/SEGURIDAD.md` (plan de pruebas de seguridad). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-210). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
 
 ## Instalar y ejecutar
 
@@ -47,7 +47,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 - **Autoría:** «el autor». Ningún nombre personal en el panel ni en los documentos, y nada inventado sobre él.
 - **Datos:** nunca inventar una cifra ni interpolar un precio; nunca borrar histórico. Cada cifra del panel debe poder recalcularse desde la fuente; las pruebas lo verifican.
 - **Cada cambio de comportamiento** lleva su entrada `## D-xxx · título` en `docs/DECISIONES.md`, con sus pruebas en verde.
-- **Documentos:** sin bloques de código. Diagramas con marcadores `[[diagrama:nombre]]` en su propia línea: las vistas de `bi/doc_views.py` (actores, mockups, contexto, contenedores, secuencia, con el estilo del pipeline) o los diagramas vivos `plataforma`, `pipeline`, `modelo` y `seguridad`. Los mockups son capturas reales en `docs/img/`.
+- **Documentos:** sin bloques de código. Diagramas con marcadores `[[diagrama:nombre]]` en su propia línea: las vistas de `bi/doc_views.py` (actores y mockups, con el estilo del pipeline) o los diagramas vivos `plataforma`, `pipeline`, `modelo` y `seguridad`. Los mockups son capturas reales en `docs/img/`.
 - **Dependencias:** no agregar ninguna sin acuerdo del autor. Solo herramientas gratuitas y sin vencimiento; no hay nube de pago (ADR-31).
 - **Commits libres; push solo después de que el autor revise la app en local.**
 
