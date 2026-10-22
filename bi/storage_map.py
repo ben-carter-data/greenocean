@@ -114,7 +114,7 @@ def source_mark(key, x, y, size):
     return mark.replace('<svg class="logo" ', f'<svg x="{x}" y="{y}" width="{size}" height="{size}" ', 1)
 
 
-def cylinder(x, y, width, height, slug, key, mark=True):
+def cylinder(x, y, width, height, slug, key, mark=True, glyph_size=24):
     """The engine's database: a cylinder in the brand's colors with its mark in the middle."""
     top, bottom, glyph = database_map.BRANDS[slug]
     ry = 9
@@ -127,7 +127,20 @@ def cylinder(x, y, width, height, slug, key, mark=True):
             f'<ellipse cx="{mid}" cy="{y + ry}" rx="{width / 2}" ry="{ry}" fill="{top}" stroke="{bottom}" stroke-width="1"/>'
             f'<path d="M{x} {y + ry + 14} A{width / 2} {ry} 0 0 0 {x + width} {y + ry + 14}" fill="none" '
             f'stroke="{glyph}" stroke-opacity=".22"/>'
-            + (brand_icons.logo(slug, mid - 12, y + height / 2 - 2, glyph, 24) if mark else ""))
+            + (brand_icons.logo(slug, mid - glyph_size / 2, y + height / 2 - 2, glyph, glyph_size) if mark else ""))
+
+
+def mini_mark(kind, slug, key):
+    """A store's mark at the size of a table row: the same cylinder, folder or source logo of the map."""
+    if kind == "source":
+        body = source_mark(slug, 0, 3, 32)
+    elif slug == "apacheparquet":
+        body = folder(1, 3, 30, 30, slug)
+    elif slug == "python":
+        body = disc("python", 0, 2, 32, f"-{key}")
+    else:
+        body = cylinder(3, 2, 26, 32, slug, key, glyph_size=14)
+    return f'<svg class="mark" width="32" height="36" viewBox="0 0 32 36" aria-hidden="true">{body}</svg>'
 
 
 def folder(x, y, width, height, slug):

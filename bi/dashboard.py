@@ -2911,7 +2911,7 @@ def build_architecture_css(mode):
     .st-key-architecture_diagram .arch-legend {{margin:4px 4px 0; padding-top:6px;}}
     .arch-legend {{display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
         border-top:1px solid {palette['card_border']}; font-size:12px; line-height:1.5; color:{palette['text']};}}
-    .arch-phrase {{font-size:.85rem; color:{palette['strong_text']}; margin:0 0 8px;}}
+    .arch-phrase {{font-size:.85rem !important; line-height:1.4 !important; color:{palette['strong_text']}; margin:0 0 6px !important;}}
     .st-key-architecture_detail, .st-key-architecture_tables {{border:1px solid {palette['card_border']};
         border-radius:14px; background:{palette['card']}; padding:12px 16px 10px;}}
     .arch-detail-head {{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}}
@@ -2954,10 +2954,16 @@ def show_architecture_page(mode):
                   height=600)
         return
     if view == MODEL_VIEWS[3]:
-        st.markdown('<p class="arch-phrase">Cada flecha es un punto donde dos bases se tocan, con su número y su comprobación de ahora. '
-                    'Pasa el cursor por un número o por un logo.</p>', unsafe_allow_html=True)
+        st.markdown('<p class="arch-phrase">Un cruce es el punto donde un dato sale de un almacén y entra en otro. Cada fila dice cómo pasa, '
+                    'qué viaja, por qué clave se unen los dos lados y si se comprobó ahora.</p>', unsafe_allow_html=True)
+        # D-237: the page fits the height the window leaves: the iframe right after this marker takes it.
+        st.markdown('<span class="fit-cruces" aria-hidden="true"></span><style>'
+                    '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"],'
+                    '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"] iframe '
+                    '{height:max(calc(100vh - 340px), 380px) !important; flex:none !important; min-height:0 !important;}'
+                    '</style>', unsafe_allow_html=True)
         st.iframe(database_crossings.build_crossings_html(charts.get_palette(mode), read_crossing_checks(get_database_version())),
-                  height=640)
+                  height=600)
         return
     if view == MODEL_VIEWS[1]:
         schema = read_er_schema(get_database_version())
