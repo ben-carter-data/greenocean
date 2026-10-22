@@ -1661,3 +1661,10 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Decisión:** el árbol de la app es el de `d1b6a53` (D-220) más dos cambios que no son de diseño: el ajuste del CI (`26f2ec0`) y D-227 (`duckdb<2`). Se hace con un commit que fija ese árbol sobre `main`, sin reescribir el historial: D-221 a D-228 siguen en Git, y el último `main` anterior es `85ca26b`.
 - **Queda fuera, a propósito:** `bi/viewport.css`, `bi/viewport.py`, `bi/viewport_frames.css`, el menú plano de D-228 y `docs/diagnosticos/`. El ajuste de alto y el menú se aplicarán después sobre esta base, una pantalla a la vez y sin reemplazar vistas existentes.
 - **Pruebas:** 613 pasan y 3 se omiten. Fallan 25 que necesitan red: 20 descargan la extensión `sqlite_scanner` de DuckDB y 5 abren enlaces de GitHub; el entorno de esta sesión las bloquea y el CI sí puede hacerlas. Son las mismas 25 antes y después de D-227.
+
+## D-230 · Etapa 0: medición de las 15 páginas y prueba de no regresión de vistas
+
+- **Problema:** D-226 escondió el modelo estrella y la entidad-relación en un botón y ninguna prueba lo notó; el ajuste de alto se hizo a ojo y rompió otras páginas.
+- **Decisión:** antes de tocar el panel se mide. `tests/medicion/medir.cjs` (Playwright, fuera del proyecto) mide las 15 páginas en dos temas y cinco pantallas: alto natural, desplazamiento, vacío inferior, texto menor de 11 px, superposiciones y recortes. El informe y las capturas «golden» (1440 × 900, dos temas) quedan en `docs/diagnosticos/etapa-0/`. Resultado: ninguna página cumple en las tres pantallas; el detalle decide qué se toca en cada etapa.
+- **Prueba:** `tests/test_view_regression.py` exige que el SVG de la estrella, de la entidad-relación y del pipeline esté abierto en su página (no dentro de un popover, expander o dialog). Falla en `85ca26b` y pasa en esta base.
+- **No cambia** ningún comportamiento del panel, ni `etl/`, `dbt/` ni `agent/`.
