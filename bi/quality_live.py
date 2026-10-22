@@ -324,6 +324,23 @@ def build_node_html(index, title, subtitle, logos, label, up, down):
             f'<small>{html.escape(subtitle)}</small><div class="stem s-{down or "info"}{"" if down else " none"}"></div>{link}</div>')
 
 
+# D-235: the view is a flowing page inside an iframe whose height the page sets from the screen; when
+# the content is taller, it is zoomed down a little (never below 80 %, to stay readable) and the
+# rest scrolls inside the panel.
+FIT_SCRIPT = """<script>
+(() => {
+  const fit = () => {
+    document.body.style.zoom = 1;
+    const need = document.documentElement.scrollHeight;
+    document.body.style.zoom = Math.max(.8, Math.min(1, innerHeight / need));
+  };
+  addEventListener("resize", fit);
+  addEventListener("load", fit);
+  fit();
+})();
+</script>"""
+
+
 def build_page_html(palette, indicators, runs, rejections, flags, controls_html=""):
     """The whole «Calidad» view as one HTML document for st.iframe (D-220): the pipeline in one
     line, each stop's dimensions in its column under it, then what was set apart and the loads
@@ -347,5 +364,5 @@ def build_page_html(palette, indicators, runs, rejections, flags, controls_html=
     return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             + build_css(palette) + (f"<style>{audit_trace.build_controls_css(palette)}</style>" if controls_html else "")
             + '</head><body>' + quality_view.DEFS
-            + f'<div class="ql">{verdict}<div class="stage">{spine}{gates}</div>{bottom}{audit}</div></body></html>')
+            + f'<div class="ql">{verdict}<div class="stage">{spine}{gates}</div>{bottom}{audit}</div>' + FIT_SCRIPT + '</body></html>')
 # endregion

@@ -45,7 +45,8 @@ def test_quality_page_renders_every_dimension_and_escapes_nothing_unsafe(measure
                                         indicators, measures["runs"], measures["rejections"], measures["flags"])
     for title in quality_live.TITLES.values():
         assert title in html
-    assert "<script" not in html
+    # D-235: the only script is the page's own fixed zoom-to-fit, with no data in it.
+    assert html.count("<script") == 1 and quality_live.FIT_SCRIPT in html
 
 
 @needs_database

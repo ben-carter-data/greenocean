@@ -1182,6 +1182,7 @@ def build_style_css(mode):
     .search-count {{ font-size: 13px; color: {palette["text"]}; padding-bottom: 10px; }}
     .page-lineage {{ margin: -4px 0 4px; }}
     .st-key-compact_footer {{ gap: 2px !important; margin-top: 6px; padding-top: 4px; border-top: 1px solid {palette["card_border"]}; }}
+    .st-key-compact_footer [data-testid="stCaptionContainer"] {{ margin-top: 10px; }}
     .st-key-compact_footer [data-testid="stCaptionContainer"] p {{ font-size: .7rem; line-height: 1.35; }}
     .st-key-compact_footer .page-lineage {{ margin: 0; }}
     .lineage-badge {{ display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
@@ -6749,7 +6750,8 @@ def show_operation_center(mode, live=False):
     # columns end together and the page fits one screen.
     stage_column, side_column = st.columns([2.4, 1], gap="large")
     with stage_column:
-        st.iframe(operation_center.build_stage_html(palette, states, unlocked), height="content")
+        st.markdown('<span class="fit-centro" aria-hidden="true"></span>', unsafe_allow_html=True)
+        st.iframe(operation_center.build_stage_html(palette, states, unlocked), height=560)
         if runs:
             st.markdown(build_recent_runs_html(runs), unsafe_allow_html=True)
     with side_column:
@@ -6763,6 +6765,10 @@ def show_operation_center(mode, live=False):
 
 def build_operation_side_css(palette):
     return f"""<style>
+    /* Centro de operación (D-234): the path takes the height the window leaves; it scales inside. */
+    .stApp:has(.fit-centro) [data-testid="stColumn"] [data-testid="stElementContainer"]:has(iframe),
+    .stApp:has(.fit-centro) [data-testid="stColumn"] iframe {{height:max(calc(100vh - 470px), 225px) !important;
+        flex:none !important; min-height:0 !important;}}
     .oc-fact {{display:flex; flex-direction:column; gap:1px; padding:10px 0;
         border-bottom:1px solid {palette['card_border']};}}
     .oc-fact-label {{font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
@@ -7270,6 +7276,12 @@ def show_operations_page(mode):
                                            lambda value: format_chile_time(parse_run_start(value)),
                                            rejections=read_rejection_count(get_database_version()))
     controls = audit_trace.build_controls_html(quality_view.build_columns(evidence))
+    # D-235: the iframe, which comes right after this marker, takes the height the window leaves.
+    st.markdown('<span class="fit-calidad" aria-hidden="true"></span><style>'
+                '[data-testid="stElementContainer"]:has(.fit-calidad) + [data-testid="stElementContainer"],'
+                '[data-testid="stElementContainer"]:has(.fit-calidad) + [data-testid="stElementContainer"] iframe '
+                '{height:max(calc(100vh - 520px), 360px) !important; flex:none !important; min-height:0 !important;}'
+                '</style>', unsafe_allow_html=True)
     st.iframe(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"],
                                            measures["flags"], controls), height=830)
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))

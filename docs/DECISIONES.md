@@ -1695,3 +1695,19 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Pie compacto:** `COMPACT_FOOTER_VIEWS` (SQL, Calidad y auditoría, Centro de operación, Mapa de seguridad y Stack y evidencia) cierra con una fila de enlaces más la cita de la fuente, en vez de los dos pies largos (unos 340 px). Los documentos largos conservan el pie completo.
 - **Límite conocido:** con resultados en pantalla el estudio pide unos 900 px solo para él (cabecera, filtros, editor, tabla y barra de estado), así que a 1440 × 900 la página aún se desplaza unos 270 px; la tabla muestra 8 filas a 900 y 13 a 1080 (el prompt pedía 12 a 900, que no cabe con el resto de la página). Para lograrlo habría que quitar la fila de filtros o la de consultas de ejemplo, y no se hizo.
 - **Pruebas:** 646 pasan y 1 se omite.
+
+## D-234 · Etapa 5: el recorrido del Centro de operación se escala a la ventana
+
+- **Medido antes:** 1027 px a 1440 × 900 y 1440 × 700; el recorrido (iframe de 740 × 640) no se reducía y dejaba 127 px de más.
+- **Decisión:** el iframe de la pestaña «Operación» toma el alto que deja la ventana (`max(100vh − 470 px, 225 px)`, con una marca `fit-centro` propia de la página) y el recorrido se escala dentro de él, centrado, con un script fijo (`operation_center.FIT_SCRIPT`: `min(1, ancho/740, alto/640)`). Conserva sus íconos, conexiones y las tres etapas. La pestaña «Plataforma» no se toca.
+- **Pie compacto** (D-233): la insignia de dbt ya no se monta sobre el texto de la fuente (había un `margin-top` de 0 en el pie).
+- **Medido después:** 900 / 900 y 1080 / 1080 en los dos temas; a 1440 × 700 sobran 8 a 18 px porque el piso de 225 px mantiene el recorrido legible.
+
+## D-235 · Etapa 6: Calidad y auditoría con el alto de la ventana
+
+- **Medido antes:** 1550 px; un iframe fijo de 830 px, y debajo el aviso, las píldoras de evidencia y «Volver a medir», fuera de la pantalla.
+- **Decisión:** el iframe toma `max(100vh − 520 px, 360 px)` y su contenido se reduce con un zoom suave (`quality_live.FIT_SCRIPT`, nunca bajo 80 % para mantener el texto legible); lo que no cabe se desplaza dentro del propio panel. Los controles «Abrir la evidencia» y «Volver a medir» quedan visibles sin desplazar la página. No cambia ninguna cifra ni el contenido de la vista.
+- **Hallazgo, no regresión:** en este equipo el aviso rojo «Se detectó una discrepancia en los controles locales» es real: `consumer_2026.csv` y `wholesale_2026.csv` locales (12-10) no coinciden con el SHA-256 del manifiesto versionado (descarga del 20-10). Antes quedaba fuera de pantalla. `python agent/agent.py` los vuelve a bajar.
+- **Medido después:** 900 / 900 y 1080 / 1080; a 1440 × 700 no cabe (878).
+- **Pruebas:** `tests/test_quality_audit.py` ahora acepta un único `<script>`, el zoom fijo, sin datos. 646 pasan y 1 se omite.
+- **Queda pendiente de las etapas 5 y 6:** los diagramas nuevos D8 (CI/CD con logos reales) y D10 (puertas de calidad), y los textos de 11 px dentro de los iframes.
