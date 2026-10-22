@@ -287,12 +287,13 @@ def test_dashboard_territory_is_immediately_readable_without_a_3d_duplicate():
     assert "Mapa en proporción real" in texts
 
 @needs_database
-def test_d189_model_page_opens_on_the_database_map():
+def test_d189_model_page_opens_on_the_star_model_and_the_storage_map_comes_third():
     app = draw_page(dashboard.PAGE_ARCHITECTURE)
     assert not app.exception and not app.tabs
-    # The map is drawn in an iframe; the star model waits behind the view selector.
+    # D-236: the star first, then the entity-relation, then where the data lives; the storage
+    # drawing is in an iframe behind its view.
     joined = " ".join(block.value for block in app.markdown)
-    assert 'aria-label="Modelo estrella de datos.db"' not in joined
+    assert 'aria-label="Modelo estrella de datos.duckdb"' in joined
     counts, layers, tests = dashboard.read_database_map(dashboard.get_database_version())
     assert len(counts) == 12 and counts["weekly_price"] > 100_000
     assert layers == {"staging": 3, "intermediate": 4, "marts": 9} and tests > 0
@@ -1722,7 +1723,7 @@ def test_d191_file_sizes_for_the_storage_diagram():
 
 @needs_database
 def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relationship_diagram():
-    assert dashboard.MODEL_VIEWS == ["Dónde viven los datos", "Modelo estrella", "Entidad-relación", "Cruces entre bases"]
+    assert dashboard.MODEL_VIEWS == ["Modelo estrella", "Entidad-relación", "Dónde viven los datos", "Cruces entre bases"]
     app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: "Entidad-relación"})
     assert not app.exception and not app.tabs
     joined = " ".join(block.value for block in app.markdown)

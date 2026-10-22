@@ -34,7 +34,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                audit_trace, database_crossings, database_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
+                audit_trace, database_crossings, database_map, storage_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -2938,14 +2938,20 @@ def show_architecture_page(mode):
                 for table in project.TABLE_NAMES + project.IPC_TABLE_NAMES}
     st.markdown(build_architecture_css(mode), unsafe_allow_html=True)
     st.markdown(build_architecture_header(row_counts, read_latest_run()), unsafe_allow_html=True)
-    # Two views of the same database (D-189): where each table comes from, and how
-    # the tables relate. Each keeps the whole screen.
+    # The views of the same database, from the model to where it lives (D-189, D-236): the star, the
+    # entity-relation, the storage architecture and, last, where two databases touch.
     view = st.segmented_control("Vista del modelo", MODEL_VIEWS, default=MODEL_VIEWS[0], key=MODEL_VIEW_KEY,
                                 label_visibility="collapsed") or MODEL_VIEWS[0]
-    if view == MODEL_VIEWS[0]:
+    if view == MODEL_VIEWS[2]:
         counts, layers, tests = read_database_map(get_database_version())
-        st.iframe(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests,
-                                              read_store_sizes()), height=660)
+        # D-236: the drawing scales to the height the window leaves: the iframe right after this marker takes it.
+        st.markdown('<span class="fit-donde" aria-hidden="true"></span><style>'
+                    '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"],'
+                    '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"] iframe '
+                    '{height:max(calc(100vh - 316px), 380px) !important; flex:none !important; min-height:0 !important;}'
+                    '</style>', unsafe_allow_html=True)
+        st.iframe(storage_map.build_map_html(charts.get_palette(mode), counts, layers, tests, read_store_sizes()),
+                  height=600)
         return
     if view == MODEL_VIEWS[3]:
         st.markdown('<p class="arch-phrase">Cada flecha es un punto donde dos bases se tocan, con su número y su comprobación de ahora. '
@@ -2953,7 +2959,7 @@ def show_architecture_page(mode):
         st.iframe(database_crossings.build_crossings_html(charts.get_palette(mode), read_crossing_checks(get_database_version())),
                   height=640)
         return
-    if view == MODEL_VIEWS[2]:
+    if view == MODEL_VIEWS[1]:
         schema = read_er_schema(get_database_version())
         st.markdown('<p class="arch-phrase">El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las '
                     'relaciones entre ellas. Los tipos se leen de la base.</p>', unsafe_allow_html=True)
@@ -2988,7 +2994,7 @@ def read_er_schema(database_version):
     return er_diagram.read_schema()
 
 
-MODEL_VIEWS = ["Dónde viven los datos", "Modelo estrella", "Entidad-relación", "Cruces entre bases"]
+MODEL_VIEWS = ["Modelo estrella", "Entidad-relación", "Dónde viven los datos", "Cruces entre bases"]
 MODEL_VIEW_KEY = "model_view"
 
 

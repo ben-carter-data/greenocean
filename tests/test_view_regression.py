@@ -39,7 +39,7 @@ def find_open_markdown(node, label, ancestors=()):
 
 @needs_database
 def test_d230_the_star_model_page_draws_the_star_svg():
-    app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: dashboard.MODEL_VIEWS[1]})
+    app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: dashboard.MODEL_VIEWS[0]})
     assert not app.exception
     page = read_markdown(app)
     assert find_open_markdown(app.main, STAR_LABEL), "the star SVG is not open on its page"
@@ -51,7 +51,7 @@ def test_d230_the_star_model_page_draws_the_star_svg():
 
 @needs_database
 def test_d230_the_entity_relation_page_draws_the_er_svg():
-    app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: dashboard.MODEL_VIEWS[2]})
+    app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: dashboard.MODEL_VIEWS[1]})
     assert not app.exception
     assert find_open_markdown(app.main, ER_LABEL), "the ER SVG is not open on its page"
     assert STAR_LABEL not in read_markdown(app)
@@ -67,7 +67,7 @@ def test_d230_the_pipeline_page_draws_the_journey_svg():
 
 @needs_database
 def test_d232_star_er_and_pipeline_sit_in_a_frame_that_keeps_their_proportion():
-    for state, label in ((dashboard.MODEL_VIEWS[1], STAR_LABEL), (dashboard.MODEL_VIEWS[2], ER_LABEL)):
+    for state, label in ((dashboard.MODEL_VIEWS[0], STAR_LABEL), (dashboard.MODEL_VIEWS[1], ER_LABEL)):
         app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: state})
         page = read_markdown(app)
         assert label in page and 'class="zoom-frame fit-modelo"' in page and "--ratio:" in page
