@@ -1673,14 +1673,26 @@ def build_greenocean_logo(mode, sidebar=False):
             f'<tspan fill="{green}">Green</tspan><tspan fill="{ocean}">Ocean</tspan></text></svg>')
 
 
+def build_greenocean_icon(mode):
+    """The folded menu's mark: the wordmark's own colors in a small monogram, so nothing
+    sits over the page route (D-231)."""
+    dark = is_dark_surface(charts.get_palette(mode)["background"])
+    green, ocean = (BRAND_GREEN_DARK, "#80baff") if dark else (BRAND_GREEN_LIGHT, "#185ca8")
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="40" height="36" viewBox="0 0 40 36">'
+            '<title>GreenOcean</title>'
+            '<text x="1" y="27" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" '
+            'font-size="28" font-weight="600" letter-spacing="-1">'
+            f'<tspan fill="{green}">G</tspan><tspan fill="{ocean}">O</tspan></text></svg>')
+
+
 def show_app_header(window):
     """Shared, sober graphic navigation, followed by preferences and location."""
     palette = charts.get_palette(get_mode())
     st.logo(build_greenocean_logo(get_mode(), sidebar=True),
-            icon_image=build_greenocean_logo(get_mode()), size="large")
+            icon_image=build_greenocean_icon(get_mode()), size="large")
     st.markdown(f"""<style>
     [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {{display:none;}}
-    .stApp:has([data-testid="stSidebar"][aria-expanded="false"]) [data-testid="stMainBlockContainer"] {{padding-top:54px !important;}}
+    .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMainBlockContainer"] {{padding-top:54px !important;}}
     .reading-guide {{font-size:.8rem; margin:5px 0 14px; color:{palette['text']};}}
     .reading-term {{font-size:inherit; margin-left:0; border-bottom:1px dotted currentColor; font-weight:400;}}
     .regional-detail {{width:100%; font-size:.75rem; border-collapse:collapse;}}
@@ -7928,29 +7940,38 @@ RELOAD_HOME_SCRIPT = """<script>
 
 
 
-# D-213: the menu is a stack of colored blocks, one per kind of reader, always visible and
-# open by default; each page lives in exactly one block. «Ver como» (D-209) is gone: every
-# reader sees everything, so whoever wants the breadth of the work sees it at a glance.
-# (key, title, (color on a dark sidebar, color on a light one), pages or source links)
-# D-215, D-216: each block is a card in one of the panel's four tones (blue, Vantablack, dark
-# grey, light grey), its accent a lighter or darker step of that same tone, nothing else; the documents sit at the end of their block and the
-# documents' block closes the menu, just before the sources.
-# (key, title, tone, accent, pages or source links)
+# D-213: one section per kind of reader, open by default; each page lives in exactly one section.
+# D-231: a flat menu, like the sidebar of a chat app: no cards, borders, shadows or gradients;
+# small grey headings, a hairline between sections, a thin icon per page, and the current page
+# with a faint fill and a blue bar on its left. The documents close the list, before the sources.
+# (key, title, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BI", "azul", "#9cc8ff", [PAGE_HOME, PAGE_SEASONALITY]),
-    ("ingenieria", "Ingeniería de datos", "vantablack", "#c7cdd6",
+    ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_SEASONALITY]),
+    ("ingenieria", "Ingeniería de datos",
      [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_SAD]),
-    ("devops", "DevOps y seguridad", "grafito", "#aab3bf", [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
-    ("stack", "Stack y evidencia", "azul", "#9cc8ff", [PAGE_STACK]),
-    ("analisis", "Análisis de negocio · BA", "gris", "#334155", [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
-    ("fuentes", "Fuentes", "gris", "#334155", SOURCE_LINKS),
+    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
+    ("stack", "Stack y evidencia", [PAGE_STACK]),
+    ("analisis", "Análisis de negocio · BA", [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
+    ("fuentes", "Fuentes de datos", SOURCE_LINKS),
 ]
-# Card tone → (background, text). Fixed in every theme, so each card reads the same everywhere.
-CARD_TONES = {"azul": ("#12325a", "#e8f1ff"), "vantablack": ("#050607", "#e6e8ec"),
-              "grafito": ("#2b2f36", "#eceff3"), "gris": ("#e6e9ee", "#1f2933")}
+# The menu's own glyphs, one per page, thin lines (Material Symbols).
+SIDEBAR_ICONS = {
+    PAGE_HOME: ":material/grid_view:", PAGE_SEASONALITY: ":material/calendar_month:",
+    PAGE_DIAGRAMS: ":material/share:", PAGE_ARCHITECTURE: ":material/database:",
+    PAGE_OPERATIONS: ":material/verified_user:", PAGE_SQL: ":material/terminal:",
+    PAGE_SAD: ":material/lan:", PAGE_RUNS: ":material/radio_button_checked:",
+    PAGE_SECURITY: ":material/lock:", PAGE_SECURITY_PLAN: ":material/assignment:",
+    PAGE_STACK: ":material/layers:", PAGE_PRD: ":material/description:",
+    PAGE_ADR: ":material/gavel:", PAGE_SCALABILITY: ":material/trending_up:",
+}
+# (text, heading, icon, hover fill, current fill, accent bar, hairline) for dark and light sidebars.
+MENU_INK = {True: ("#cfd4dc", "#8b929c", "#aeb5bf", "rgba(255,255,255,.04)", "rgba(255,255,255,.07)",
+                   "#3b9eff", "rgba(255,255,255,.08)"),
+            False: ("#2b3340", "#6b717a", "#4b5563", "rgba(15,23,42,.04)", "rgba(15,23,42,.07)",
+                    "#1d5fbf", "rgba(15,23,42,.09)")}
 
 
-SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">'
+SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">'
                    '<path fill="currentColor" d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>')
 SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingeniería de datos",
                       SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación", SECTION_SECURITY: "Seguridad",
@@ -7970,149 +7991,86 @@ def read_current_view(window):
 
 
 def build_section_colors_css(dark):
-    """Each block as a HUD-like card (D-215): its tone, a glowing border in its accent and
-    corner brackets; the title in the accent and the pages in the card's text color."""
-    rules = []
-    for key, _, tone, accent, _ in MENU_BLOCKS:
-        background, text = CARD_TONES[tone]
-        rules.append(f'.st-key-nav_block_{key} {{position:relative; margin:0 0 12px !important; padding:3px 6px 4px !important;'
-                     f' background:linear-gradient(160deg,color-mix(in srgb,{background} 92%,{accent}) 0%,{background} 60%);'
-                     f' border:1px solid color-mix(in srgb,{accent} 55%,transparent); border-radius:6px;'
-                     f' box-shadow:0 0 14px color-mix(in srgb,{accent} 22%,transparent), inset 0 0 18px color-mix(in srgb,{accent} 8%,transparent);'
-                     f' gap:0 !important;}}')
-        rules.append(f'.st-key-nav_block_{key}::before, .st-key-nav_block_{key}::after {{content:""; position:absolute;'
-                     f' width:12px; height:12px; pointer-events:none;}}')
-        rules.append(f'.st-key-nav_block_{key}::before {{top:-1px; left:-1px; border-top:2px solid {accent};'
-                     f' border-left:2px solid {accent}; border-top-left-radius:6px;}}')
-        rules.append(f'.st-key-nav_block_{key}::after {{bottom:-1px; right:-1px; border-bottom:2px solid {accent};'
-                     f' border-right:2px solid {accent}; border-bottom-right-radius:6px;}}')
-        rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] p, .st-key-nav_block_{key} .nav-source-link '
-                     f'{{color:{text} !important; -webkit-text-fill-color:{text} !important; text-shadow:none !important;}}')
-        rules.append(f'.st-key-nav_block_{key} [data-testid="stIconMaterial"], .st-key-nav_block_{key} .nav-source-icon '
-                     f'{{color:{accent} !important;}}')
-        # The current page: a bar in the card's accent.
-        rules.append(f'.st-key-nav_block_{key} [class*="_nav_current"] [data-testid="stPageLink"] a '
-                     f'{{box-shadow:inset 2px 0 {accent} !important; border-color:transparent !important;}}')
-        rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] a:hover {{background:color-mix(in srgb,{accent} 14%,transparent) !important;}}')
-        rules.append(f'.st-key-nav_group_{key} button {{border-bottom:1px solid color-mix(in srgb,{accent} 40%,transparent) !important;'
-                     f' border-radius:0 !important; margin-bottom:3px;}}')
-        rules.append(f'.st-key-nav_group_{key} button p {{color:{accent} !important; -webkit-text-fill-color:{accent} !important;'
-                     f' font-size:.7rem !important; font-weight:650 !important; letter-spacing:.08em !important;'
-                     f' text-transform:uppercase;}}')
-    rules.append('[class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div, '
-                 '[class*="st-key-nav_group_"] button {width:100% !important; box-sizing:border-box;}')
-    rules.append('[class*="st-key-nav_group_"] button > div, [class*="st-key-nav_group_"] button p '
-                 '{justify-content:flex-start !important; text-align:left !important;}')
-
-    # Only the sources leave the app, so only they look like web links: a fine underline.
-    rules.append('[data-testid="stSidebar"] a.nav-source-link {text-decoration:underline !important; text-decoration-thickness:1px; '
-                 'text-underline-offset:3px; text-decoration-color:color-mix(in srgb, currentColor 55%, transparent);}')
-    rules.append('[data-testid="stSidebar"] a.nav-source-link:hover {text-decoration-color:currentColor;}')
-    return "\n    ".join(rules)
+    """The flat menu (D-231): sections divided by a hairline, grey small-capital headings,
+    rows with a thin icon; the current page has a faint fill and a blue bar on its left."""
+    text, heading, icon, hover, current, accent, line = MENU_INK[dark]
+    return f"""[class*="st-key-nav_block_"] {{margin:0 !important; padding:12px 0 !important; gap:1px !important;
+        background:transparent !important; border:0; border-bottom:1px solid {line}; border-radius:0; box-shadow:none;}}
+    .st-key-nav_block_fuentes {{border-bottom:0;}}
+    [class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div,
+    [class*="st-key-nav_group_"] button {{width:100% !important; box-sizing:border-box;}}
+    [class*="st-key-nav_group_"] button {{justify-content:flex-start !important; padding:4px 10px !important;
+        min-height:26px !important; background:transparent !important; border:0 !important; margin:0 0 4px;}}
+    [class*="st-key-nav_group_"] button:hover:not(:disabled) {{background:transparent !important;}}
+    [class*="st-key-nav_group_"] button > div {{justify-content:flex-start !important;}}
+    [class*="st-key-nav_group_"] button p {{color:{heading} !important; -webkit-text-fill-color:{heading} !important;
+        font-size:.72rem !important; font-weight:500 !important; letter-spacing:.12em !important; white-space:nowrap;
+        text-transform:uppercase; text-align:left !important;}}
+    [class*="st-key-nav_group_"] button:hover p {{color:{text} !important; -webkit-text-fill-color:{text} !important;}}
+    [class*="st-key-nav_group_"] button p::after {{content:"⌄"; margin-left:8px; opacity:0; transition:opacity .12s ease;}}
+    [class*="st-key-nav_group_"] button:hover p::after {{opacity:.8;}}
+    [class*="st-key-nav_group_"][class*="_folded"] button p::after {{content:"›"; opacity:.8;}}
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a {{position:relative; padding:5px 10px !important;
+        min-height:36px !important; border-radius:10px !important; border:0 !important;
+        background:transparent !important; box-shadow:none !important; gap:0 !important;}}
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a:hover {{background:{hover} !important;}}
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
+        font-size:.9375rem !important; font-weight:400 !important; padding-left:12px; text-shadow:none !important;
+        white-space:normal; overflow:visible; text-overflow:clip; line-height:1.3;}}
+    [class*="st-key-nav_block_"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{color:{icon} !important;
+        font-size:20px !important; width:20px; opacity:1; font-variation-settings:"wght" 300;}}
+    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] a {{background:{current} !important;}}
+    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] a::before {{content:""; position:absolute;
+        left:0; top:7px; bottom:7px; width:3px; border-radius:3px; background:{accent};}}
+    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] p {{font-weight:500 !important;}}
+    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stIconMaterial"] {{color:{accent} !important;}}
+    [data-testid="stSidebar"] a.nav-source-link {{display:flex; align-items:center; padding:6px 10px !important; margin:0 !important;
+        font-size:.9375rem; color:{text} !important; -webkit-text-fill-color:{text} !important; text-decoration:none !important;
+        border-radius:10px; line-height:1.3;}}
+    [data-testid="stSidebar"] a.nav-source-link:hover {{background:{hover};}}
+    [data-testid="stSidebar"] .nav-source-icon {{margin-right:12px; color:{icon}; flex:0 0 auto;}}"""
 
 
 def build_sidebar_css(mode):
     palette = charts.get_palette(mode)
-    text = palette["sidebar_text"]
-    # The wordmark and its child links sit on the sidebar, so their contrast must
-    # follow that surface. Corporativo has a light page but a dark navy sidebar.
+    # The sidebar is flat (D-231): one plain surface, no gradient, border or shadow. Its text
+    # follows that surface: Corporativo has a light page but a dark navy sidebar.
     dark = is_dark_surface(palette["sidebar"])
-    child_green = BRAND_GREEN_DARK if dark else BRAND_GREEN_LIGHT
-    sidebar_top = "#101824" if dark else "#ffffff"
-    sidebar_bottom = "#080d15" if dark else "#f5f7fb"
-    hairline = "rgba(148, 163, 184, .18)" if dark else "rgba(15, 23, 42, .12)"
+    text = MENU_INK[dark][0]
+    hairline = MENU_INK[dark][6]
     quiet = "rgba(214, 218, 227, .68)" if dark else "rgba(31, 41, 55, .68)"
     alert_text = "#ff9ca4" if dark else "#9d1f2c"
     return f"""<style>
-    [data-testid="stSidebar"] {{
-        background:linear-gradient(180deg,{sidebar_top} 0%,{palette['sidebar']} 38%,{sidebar_bottom} 100%);
-        border-right:1px solid {hairline}; box-shadow:10px 0 32px rgba(0,0,0,.12);}}
-    [data-testid="stSidebar"][aria-expanded="true"] {{min-width:300px !important; max-width:300px !important;}}
+    [data-testid="stSidebar"] {{background:{palette['sidebar']}; border-right:0; box-shadow:none;}}
+    [data-testid="stSidebar"][data-collapsed="false"] {{min-width:300px !important; max-width:300px !important;}}
     [data-testid="stSidebarContent"] {{background:transparent;}}
-    [data-testid="stSidebarHeader"] {{height:66px; padding:10px 17px 7px !important;
-        border-bottom:1px solid {hairline};}}
-    [data-testid="stSidebarHeader"] img {{max-width:144px !important;}}
+    [data-testid="stSidebarHeader"] {{height:66px; padding:14px 14px 8px 20px !important; border-bottom:0;}}
+    [data-testid="stSidebarHeader"] img {{max-width:190px !important; height:34px !important;}}
     [data-testid="stSidebarCollapseButton"] button {{width:32px; height:32px; min-height:32px;
-        border:1px solid {hairline} !important; border-radius:10px !important;
-        background:color-mix(in srgb,{palette['field']} 72%,transparent) !important;
-        box-shadow:inset 0 1px rgba(255,255,255,.04);}}
-    /* D-215: a narrow inner margin, so the menu cards hold long page names on one line. */
-    [data-testid="stSidebarUserContent"] {{padding:6px 4px 0 !important;}}
+        border:0 !important; border-radius:8px !important; background:transparent !important; box-shadow:none;}}
+    /* The menu is the only thing that scrolls when it does not fit; its bar shows on hover. */
+    [data-testid="stSidebarContent"] {{overflow-y:auto; scrollbar-width:none;}}
+    [data-testid="stSidebarContent"]:hover {{scrollbar-width:thin; scrollbar-color:{hairline} transparent;}}
+    [data-testid="stSidebarContent"]::-webkit-scrollbar {{width:0;}}
+    [data-testid="stSidebarContent"]:hover::-webkit-scrollbar {{width:6px;}}
+    [data-testid="stSidebarContent"]:hover::-webkit-scrollbar-thumb {{background:{hairline}; border-radius:3px;}}
+    [data-testid="stSidebarUserContent"] {{padding:4px 10px 0 !important;}}
     [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important;
         min-height:calc(100vh - 86px); padding-bottom:116px;}}
     [data-testid="stSidebarNav"] {{display:none;}}
-    /* A folder row (D-102): a real button, styled as plain text, with a chevron that
-       folds it — the same affordance as VS Code's Explorer. */
-    [class*="st-key-nav_group_"] button {{width:100%; justify-content:flex-start; gap:0 !important;
-        border:0 !important; background:transparent !important; box-shadow:none !important;
-        padding:3px 7px !important; border-radius:5px; min-height:27px; transition:background .12s ease;}}
-    [class*="st-key-nav_group_"] button:hover:not(:disabled) {{background:color-mix(in srgb,{text} 7%,transparent) !important;}}
-    [class*="st-key-nav_group_"] button:disabled {{cursor:default; opacity:1;}}
-    [class*="st-key-nav_group_"] button p {{font-size:.78rem !important; font-weight:430 !important;
-        letter-spacing:-.005em; color:{text} !important;
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
-    .st-key-nav_group_current button p {{color:{text} !important;}}
-    .st-key-nav_group_current button [data-testid="stIconMaterial"] {{color:{palette['accent']}; opacity:1;}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a {{padding:3px 7px !important; border-radius:5px;
-        background:transparent !important; box-shadow:none !important; min-height:27px; gap:0 !important;
-        border:1px solid transparent; transition:background .12s ease,border-color .12s ease;}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] p {{font-size:.78rem; color:{text} !important;
-        font-weight:400; letter-spacing:-.01em; padding-left:5px;
-        white-space:normal; overflow:visible; text-overflow:clip; line-height:1.3;
-        font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}}
-    /* D-209: a small icon before each page says what it is, in its section's color. */
-    [data-testid="stSidebar"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{font-size:15px !important;
-        width:15px; color:currentColor; opacity:.9;}}
-    [class*="st-key-nav_child_"] [data-testid="stPageLink"] a {{color:{child_green} !important;}}
-    .nav-source-icon {{vertical-align:-3px; margin-right:8px;}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {{
-        background:color-mix(in srgb,{text} 7%,transparent) !important;
-        border-color:{hairline};}}
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a:focus,
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a:active,
-    [data-testid="stSidebar"] [data-testid="stPageLink"] a:visited {{
-        background:transparent !important; color:{text} !important; box-shadow:none !important;}}
-    /* Expanded rows remain on the same axis as their parent: this is a flat,
-       aligned explorer rather than an indented tree. */
-    [class*="st-key-nav_child_"] {{margin-left:0; padding-left:0; border-left:0;}}
-    [class*="st-key-nav_"]:not([class*="st-key-nav_child_"]) {{margin:1px 0;}}
-    [class*="st-key-nav_current"] [data-testid="stPageLink"] a,
-    [class*="_nav_current"] [data-testid="stPageLink"] a {{
-        background:transparent !important; border-color:transparent; box-shadow:none !important;}}
-    [class*="st-key-nav_current"] [data-testid="stPageLink"] a:hover,
-    [class*="_nav_current"] [data-testid="stPageLink"] a:hover {{
-        background:transparent !important; border-color:transparent !important;}}
-    [class*="st-key-nav_current"] [data-testid="stPageLink"] p,
-    [class*="_nav_current"] [data-testid="stPageLink"] p {{font-weight:500; color:{palette['strong_text']} !important;}}
-    [class*="st-key-nav_current"] [data-testid="stPageLink"] [data-testid="stIconMaterial"],
-    [class*="_nav_current"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{
-        opacity:1; color:{palette['accent']};}}
-    [class*="st-key-nav_child_"] [data-testid="stPageLink"] p {{color:{child_green} !important;
-        -webkit-text-fill-color:{child_green} !important; font-weight:460;
-        text-shadow:0 0 10px color-mix(in srgb,{child_green} 18%,transparent);}}
     {build_section_colors_css(dark)}
     /* GitHub's mark on a light pill in the footer (D-124): a near-black logo on a
-       near-white background reads on every sidebar, navy included, where the
-       blue mark inside the list almost vanished. */
+       near-white background reads on every sidebar, where the blue mark almost vanished. */
     .st-key-sidebar_tools {{gap:8px !important; justify-content:flex-start !important;}}
     .st-key-sidebar_tools > div {{flex:0 0 auto !important; width:auto !important;}}
     .sidebar-github {{display:inline-flex; align-items:center; justify-content:center;
         width:38px; height:38px; border-radius:11px; background:#f6f8fa;
-        border:1px solid rgba(255,255,255,.55); color:#1f2328 !important;
-        box-shadow:0 6px 14px -6px rgba(0,0,0,.45); transition:transform .12s ease, box-shadow .12s ease;}}
+        border:1px solid rgba(255,255,255,.55); color:#1f2328 !important; transition:transform .12s ease;}}
     .sidebar-github svg {{fill:#1f2328;}}
-    .sidebar-github:hover {{transform:translateY(-1px); box-shadow:0 9px 18px -6px rgba(0,0,0,.5);}}
+    .sidebar-github:hover {{transform:translateY(-1px);}}
     .sidebar-github-current {{outline:2px solid {palette['accent']}; outline-offset:2px;}}
-    /* «Fuentes»: external children in the same green as every other child (D-118). */
-    .nav-source-link {{display:block; padding:3px 7px 3px 7px; margin:1px 0; border-radius:5px;
-        font-size:.78rem; font-weight:400; letter-spacing:-.005em; text-decoration:none !important;
-        color:{child_green} !important; -webkit-text-fill-color:{child_green} !important;
-        line-height:1.5;
-        transition:background .12s ease;}}
-    .nav-source-link:hover {{background:color-mix(in srgb,{text} 7%,transparent);}}
-    .st-key-sidebar_footer {{position:fixed; left:17px; bottom:0; width:266px; padding:13px 5px 12px;
-        background:linear-gradient(180deg,transparent 0%,{sidebar_bottom} 18%); gap:7px !important; z-index:5;
-        border-top:1px solid {hairline};}}
+    .st-key-sidebar_footer {{position:fixed; left:0; bottom:0; width:300px; padding:12px 22px 12px;
+        background:{palette['sidebar']}; gap:7px !important; z-index:5; border-top:1px solid {hairline};}}
     /* The alert trigger, now on top of the Resumen (D-169), keeps its red, quiet look. */
     .st-key-home_alert_bar {{margin:-4px 0 -10px;}}
     .st-key-home_alert_trigger button {{justify-content:flex-start; border:0 !important;
@@ -8125,23 +8083,23 @@ def build_sidebar_css(mode):
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
     .st-key-sidebar_footer [data-testid="stCaptionContainer"] p {{color:{text} !important; opacity:.75;
-        font-size:.67rem; line-height:1.35; padding:0 3px;}}
+        font-size:.69rem; line-height:1.35; padding:0 3px;}}
     </style>"""
 
 
-SIDEBAR_NAV_VERSION = 8
+SIDEBAR_NAV_VERSION = 9
 
 
 def show_sidebar_navigation(windows_by_title, current_window, order):
-    """The menu (D-213): colored blocks by kind of reader, open by default, each a folder
-    that a click folds; under each title, its pages with their icon (D-209)."""
+    """The menu (D-213, D-231): flat sections by kind of reader, open by default, each a folder
+    that a click folds; under each title, its pages with their icon."""
     st.sidebar.markdown(build_sidebar_css(get_mode()), unsafe_allow_html=True)
     if st.session_state.get("sidebar_nav_version") != SIDEBAR_NAV_VERSION:
         for key, *_ in MENU_BLOCKS:
             st.session_state[f"nav_open_{key}"] = True
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
-    for key, title, _, _, pages in MENU_BLOCKS:
+    for key, title, pages in MENU_BLOCKS:
         open_key = f"nav_open_{key}"
         is_open = st.session_state.get(open_key, True)
         with st.sidebar.container(key=f"nav_block_{key}"):
@@ -8150,9 +8108,9 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
 
 
 def show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open):
-    """One card of the menu: its title, which folds it, and its pages (D-215)."""
-    with st.container(key=f"nav_group_{key}"):
-        if st.button(f"{'⌄' if is_open else '›'}  {title}", key=f"nav_toggle_{key}"):
+    """One section of the menu: its title, which folds it, and its pages."""
+    with st.container(key=f"nav_group_{key}" + ("" if is_open else "_folded")):
+        if st.button(title, key=f"nav_toggle_{key}"):
             st.session_state[open_key] = not is_open
             st.rerun()
     if not is_open:
@@ -8170,7 +8128,8 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
         active = window == current_window and view == current_view
         with st.container(key=f"nav_child_{key}_{index}" + ("_nav_current" if active else "")):
             st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
-                         icon=PAGE_ICONS.get(view), query_params=keep_context() | {VIEW_PARAMETER: view})
+                         icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
+                         query_params=keep_context() | {VIEW_PARAMETER: view})
 
 
 def build_sidebar_github_html(is_current):
