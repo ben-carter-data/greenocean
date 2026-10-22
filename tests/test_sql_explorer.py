@@ -181,8 +181,10 @@ def test_d182_the_explorer_lists_the_real_tables_and_one_opens():
     assert "precio_vs_epoca.sql" in tab and "sqlx-info" in tab and sql_explorer.EXAMPLES[1][1] in tab
 
 
-def test_editor_and_results_take_their_grid_cell_height():
-    import inspect
-    source = inspect.getsource(sql_explorer.show_sql_explorer_page)
-    assert 'height="stretch"' in source
-    assert 'height="stretch"' in inspect.getsource(sql_explorer.show_result)
+def test_d183_a_short_query_gives_its_room_to_the_results():
+    long_sql = sql_explorer.EXAMPLES[0][2]
+    short_sql = "SELECT *\nFROM main.weekly_price\nLIMIT 100"
+    assert sql_explorer.results_height(short_sql, 100) > sql_explorer.results_height(long_sql, 100)
+    assert (sql_explorer.editor_height(short_sql) + sql_explorer.results_height(short_sql, 100)
+            == sql_explorer.STUDIO_HEIGHT)
+    assert sql_explorer.results_height(short_sql, 2) == 35 * 3 + 3

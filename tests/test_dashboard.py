@@ -322,8 +322,7 @@ def test_d097_model_page_is_one_panoramic_diagram():
     for heading in [group[0] for group in dashboard.ARCHITECTURE_GROUPS] + ["Coste y capacidad"]:
         assert f"devops_layer_{heading}" in keys
     joined = " ".join(block.value for block in app.markdown)
-    assert joined.count('class="zoom-frame platform-overview"') == 1
-    assert joined.count('class="zoom-frame platform-detail"') == 1
+    assert joined.count('class="zoom-frame diagram-devops"') == 1
     # A tile opens its layer's detail; only then are its rows drawn.
     assert 'class="technical-rows layer-cards"' not in joined
     app.button(key="devops_layer_Seguridad").click().run()
@@ -966,8 +965,7 @@ def test_d056_old_addresses_open_their_new_tab():
 def test_every_page_draws_without_errors_and_shows_the_attribution(title):
     app = draw_page(title)
     assert not app.exception
-    # D-222: one line; the full notes open on hover.
-    assert html.escape(dashboard.ATTRIBUTION_TEXT, quote=True) in " ".join(block.value for block in app.markdown)
+    assert dashboard.ATTRIBUTION_TEXT in [caption.value for caption in app.caption]
 
 
 @needs_database
@@ -1394,17 +1392,21 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     toggles = {button.label for button in folder_buttons}
     # «Fuentes» (D-118): the two ODEPA datasets, a folder like every other section.
     # D-201: security has its own folder.
-    assert toggles == set(MENU_BLOCKS) | {'Fuentes de datos'}
+    assert toggles == {'⌄  ' + title for title in MENU_BLOCKS} | {'⌄  Fuentes'}
     assert all(not button.help for button in folder_buttons)
     css = ' '.join(block.value for block in app.sidebar.markdown)
     assert '[class*="st-key-nav_child_"] {margin-left:0; padding-left:0; border-left:0;}' in css
-    # D-228: the wordmark keeps the brand green that suits its surface; the rows are neutral text.
+    assert f'color:{dashboard.BRAND_GREEN_DARK} !important;' in dashboard.build_sidebar_css(charts.MODE_DARK)
+    # Corporativo's page is light, but its navy sidebar uses the same luminous
+    # green as the wordmark. Blue Light keeps the darker green on its light sidebar.
+    assert f'color:{dashboard.BRAND_GREEN_DARK} !important;' in dashboard.build_sidebar_css(charts.MODE_CORPORATE)
+    assert f'color:{dashboard.BRAND_GREEN_LIGHT} !important;' in dashboard.build_sidebar_css(charts.MODE_BLUE_LIGHT)
     for mode in charts.THEMES:
-        dark = dashboard.is_dark_surface(charts.get_palette(mode)['sidebar'])
-        expected = dashboard.BRAND_GREEN_DARK if dark else dashboard.BRAND_GREEN_LIGHT
+        expected = (dashboard.BRAND_GREEN_DARK if
+                    dashboard.is_dark_surface(charts.get_palette(mode)['sidebar']) else
+                    dashboard.BRAND_GREEN_LIGHT)
         assert expected in dashboard.build_greenocean_logo(mode, sidebar=True)
-        assert f'color:{expected} !important;' not in dashboard.build_sidebar_css(mode)
-        assert f'color:{dashboard.MENU_INK[dark][0]} !important;' in dashboard.build_sidebar_css(mode)
+        assert f'color:{expected} !important;' in dashboard.build_sidebar_css(mode)
     assert 'background:transparent !important; border-color:transparent; box-shadow:none !important;' in css
 
 
@@ -1415,12 +1417,12 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
     app.query_params['ver'] = 'ingenieria'
     app.run()
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_ingenieria')
-    assert toggle.label == 'Ingeniería de datos'
+    assert toggle.label == '⌄  Ingeniería de datos'
     assert 'Pipeline y linaje' in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
     assert not app.exception
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_ingenieria')
-    assert toggle.label == 'Ingeniería de datos'
+    assert toggle.label == '›  Ingeniería de datos'
     assert 'Pipeline y linaje' not in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
     assert not app.exception
@@ -1450,7 +1452,7 @@ def test_d118_sources_is_its_own_folder_with_two_external_children():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     toggle = next(button for button in app.sidebar.button if str(button.key) == 'nav_toggle_fuentes')
     # D-209: Fuentes starts folded; a click opens it.
-    assert toggle.label == 'Fuentes de datos'
+    assert toggle.label == '⌄  Fuentes'
     markup = " ".join(block.value for block in app.sidebar.markdown)
     for name, url in dashboard.SOURCE_LINKS:
         assert f'class="nav-source-link" href="{url}"' in markup
@@ -1500,11 +1502,11 @@ def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
     app.run()
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio')
     assert not toggle.disabled
-    assert toggle.label == 'Negocio · BI'
+    assert toggle.label == '⌄  Negocio · BI'
     assert 'Resumen semanal' in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
     assert not app.exception
-    assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio').label == 'Negocio · BI'
+    assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio').label == '›  Negocio · BI'
     assert 'Resumen semanal' not in [link.proto.label for link in app.sidebar.get('page_link')]
 
 
@@ -1750,25 +1752,18 @@ def test_d213_the_menu_is_colored_blocks_open_by_default_with_every_page_once():
     assert not app.exception
     assert not app.sidebar.selectbox
     toggles = [b.label for b in app.sidebar.button if str(b.key).startswith('nav_toggle_')]
-    assert toggles == list(MENU_BLOCKS) + ['Fuentes de datos']
+    assert toggles == [f'⌄  {title}' for title in list(MENU_BLOCKS) + ['Fuentes']]
     labels = [link.proto.label for link in app.sidebar.get('page_link')]
     assert labels == [page for pages in MENU_BLOCKS.values() for page in pages]
     assert all(link.proto.icon for link in app.sidebar.get('page_link'))
     markup = " ".join(block.value for block in app.sidebar.markdown)
     assert markup.count('class="nav-source-link"') == len(dashboard.SOURCE_LINKS)
-    # D-228: a flat menu: no card background, border, radius or shadow on the sections, only a hairline;
-    # the current page has a faint fill and an accent bar; every page has its own sidebar glyph.
-    for dark in (True, False):
-        css = dashboard.build_section_colors_css(dark)
-        section = css.split('}')[0]
-        assert 'background:transparent !important' in section and 'border-radius:0' in section
-        assert 'box-shadow:none' in section and 'linear-gradient' not in css
-        assert dashboard.MENU_INK[dark][6] in css and 'a::before' in css
-    assert 'linear-gradient' not in dashboard.build_sidebar_css(charts.MODE_DARK).split('[data-testid="stSidebarContent"]')[0]
-    assert set(dashboard.SIDEBAR_ICONS) == {page for _, _, pages in dashboard.MENU_BLOCKS
-                                            if pages is not dashboard.SOURCE_LINKS for page in pages}
-    icons = [link.proto.icon for link in app.sidebar.get('page_link')]
-    assert len(set(icons)) == len(icons)
+    # D-215: every block is a card in one of the four tones, with its own accent and corner brackets.
+    # D-216: only the four tones and steps of them: no pink, violet or green accents.
+    assert {accent for *_, accent, _ in dashboard.MENU_BLOCKS} <= {'#9cc8ff', '#c7cdd6', '#aab3bf', '#334155'}
+    assert {tone for _, _, tone, *_ in dashboard.MENU_BLOCKS} == set(dashboard.CARD_TONES)
+    for key, *_ in dashboard.MENU_BLOCKS:
+        assert f'.st-key-nav_group_{key} button p' in markup and f'.st-key-nav_block_{key}::before' in markup
 
 
 @needs_database
@@ -1793,18 +1788,3 @@ def test_d211_stack_page_shows_every_logo_linked_to_its_page_and_real_figures():
     assert "vista=Consultas+SQL" in page
     for value in stack_page.read_figures().values():
         assert stack_page.format_number(value) in page
-
-
-def test_d226_layout_uses_the_viewport_without_fit_script():
-    from bi import viewport
-    assert not hasattr(dashboard, "FIT_SCREEN_SCRIPT")
-    css = viewport.css()
-    assert "100dvh" in css and "minmax(0,1fr)" in css
-    assert "zoom:" not in css and "scale(" not in css
-    assert 'aria-expanded' not in dashboard.build_sidebar_css(charts.MODE_DARK)
-
-
-def test_d223_the_folded_menu_pushes_the_page_under_the_logo():
-    import inspect
-    source = inspect.getsource(dashboard.show_app_header)
-    assert '[data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMain"] {{padding-top:52px' in source

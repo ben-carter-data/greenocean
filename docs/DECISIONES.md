@@ -1644,43 +1644,6 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Manual:** las rutas del menú se actualizan a las tarjetas de D-213 (Centro de operación en «DevOps y seguridad») y a la puerta única de la clave (D-202).
 - **Pruebas:** `tests/test_quality_audit.py` (columnas en el orden del pipeline, controles al final) y `tests/test_dashboard.py` (D-220: una vista, sin selectores; la evidencia se abre igual).
 
-## D-221 · La guía del proyecto sin el rezago y con el IPC
-- **Decisión:** `docs/PROYECTO.md`, que alimenta la portada y la definición del proyecto, ya no menciona el rezago (K5, retirado en D-146) y suma el IPC de alimentos del INE y los precios reales al resumen y al alcance.
-- **Pruebas:** las de la portada y del proyecto, sin cambios.
-
-## D-222 · Cada página se ajusta a la ventana, como un dashboard
-- **Problema:** a 1440 × 900 con las barras del navegador (unos 780 px útiles) casi todas las páginas obligaban a hacer scroll: el Resumen medía 1.200 px y Calidad 1.476. Un dashboard se lee de una mirada.
-- **Decisión:** un script mide el contenido de cada página y reduce el zoom lo justo para que quepa en la ventana, nunca por debajo de 0,66 para que el texto siga legible. Las páginas de bloques fijos se ensanchan en la misma proporción y siguen ocupando todo el ancho; las de diagramas que crecen con el ancho solo se reducen. Vuelve a ajustar al cambiar el tamaño de la ventana o cuando un diagrama termina de dibujarse. Los teléfonos conservan su diseño (D-166). El pie de fuentes pasa a una sola línea, con las notas completas al pasar el cursor.
-- **Resultado medido a 1440 × 780:** Resumen, Precios e inflación, Modelo de datos, Mapa de seguridad y Stack y evidencia caben enteros. Pipeline (821 px), Centro de operación (806), Calidad (885) y Consultas SQL (925) quedan cerca, pero aún piden un poco de scroll con el zoom mínimo.
-- **Pruebas:** `tests/test_dashboard.py` (D-222 y el pie de fuentes).
-
-## D-223 · El menú en escala de grises y el logo que ya no se monta al plegarlo
-- **Problema:** las tarjetas de D-216 se veían como bloques pesados, y al plegar el menú el logo GreenOcean quedaba encima de la ruta de la página. La causa: Streamlit marca ahora el menú plegado con `data-collapsed`, no con `aria-expanded`, así que esa regla y el plegado automático en pantallas angostas no se aplicaban.
-- **Decisión:** las seis tarjetas siguen una sola escala de grises de arriba abajo, de Vantablack a casi blanco, con borde fino, esquinas redondeadas, sombra suave, títulos en versalitas grises y filas más compactas; la página actual se marca con un fondo tenue. El fondo del menú sigue el tema. Con el menú plegado, la página empieza bajo el logo; las reglas y el script de plegado usan `data-collapsed`.
-- **Pruebas:** `tests/test_dashboard.py` (D-213 actualizada: grises en orden; D-223).
-
-## D-224 · Tarjetas del menú discretas, que siguen el tema
-- **Problema:** la escala de D-223 terminaba en dos tarjetas casi blancas que, sobre un menú oscuro, se veían pesadas y fuera de lugar.
-- **Decisión:** las tarjetas pasan a ser un velo muy tenue sobre el fondo del menú, como una barra lateral de macOS: en un menú oscuro, un blanco del 3 % al 10,5 % que aumenta de arriba abajo; en uno claro, un gris equivalente. Texto y títulos en grises del tema, borde fino y sombra mínima. Nunca una tarjeta clara sobre un menú oscuro.
-- **Pruebas:** `tests/test_dashboard.py` (D-213: velos en orden, sin tarjetas claras en el menú oscuro).
-
-## D-225 · El menú también cabe en la pantalla, y el zoom baja hasta 0,6
-- **Problema:** en una pantalla de 1440 × 900 con el Dock visible quedan unos 700 px útiles: el menú de la izquierda obligaba a desplazarse (el primer bloque quedaba cortado arriba) y el Resumen todavía pasaba la altura con el zoom mínimo de D-222.
-- **Decisión:** el mismo script ajusta también las tarjetas del menú, juntas, para que la última termine sobre el pie (nunca por debajo de 0,7). El zoom mínimo de las páginas baja de 0,66 a 0,6. Medido a 1440 × 700: el menú completo y el Resumen caben sin desplazarse; Pipeline, Calidad, Consultas SQL y Centro de operación todavía piden un poco de desplazamiento.
-- **Pruebas:** `tests/test_dashboard.py` (D-222, ampliada).
-
-## D-226 · El alto pertenece a la ventana; los paneles reciben el espacio restante
-
-- **Fecha:** 2026-10-21. Etapa 1, posterior al diagnóstico de producción de `docs/diagnosticos/viewport-2026-10-21.md`.
-- **Problema confirmado:** Cloud contiene la app en un iframe. `FIT_SCREEN_SCRIPT` sí llegaba a producción, pero elegía `window.parent.document`, donde no existe `stMain`; por ello no ajustaba ni las páginas ni el menú. Reducir todo por zoom también hacía ilegibles los diagramas densos.
-- **Decisión:** el contenedor de la app ocupa `100dvh`; una grilla reserva la altura natural de la cabecera y del pie y entrega `minmax(0,1fr)` a la página. Equivale al alto de ventana menos cabecera y pie, sin medirlos con JavaScript. Las grillas internas usan `fr`, `minmax()` y mínimos de cero. `bi/viewport.css` expresa el contrato común y resuelve los envoltorios de Streamlit sin mover ni borrar nodos de React.
-- **Componentes:** se retira `TILE_HEIGHT`; todos los `st.iframe` del contenido usan `height="stretch"`. También los gráficos, el editor SQL y su resultado toman la altura de su celda. Las tablas de productos, el explorador de SQL, resultados, listas de modelos, columnas, cargas y evidencias se desplazan en sus propios paneles. Se retiran los cálculos de alto fijo del estudio SQL y `FIT_SCREEN_SCRIPT`, con sus mínimos de zoom. Los scripts de interacción existentes no deciden el alto de las páginas.
-- **Legibilidad:** tipografía con `clamp()` y mínimo de 11 px. El mapa mantiene la geografía real y presenta los 16 nombres regionales como texto junto al SVG. El recorrido del pipeline se resume en nueve etapas; el linaje mantiene cada modelo real en una lista por capa, con sus pruebas y dependencias. Modelo estrella y Entidad-relación muestran las relaciones y las cifras, y conservan las columnas y tipos en un panel lateral. Los diagramas detallados siguen disponibles en paneles ampliados. Los SVG declaran `viewBox` y `preserveAspectRatio`; los documentos embebidos conservan la proporción del escenario que contiene los nodos y las flechas.
-- **Documentos:** PRD, SAD, ADR, Plan de pruebas de seguridad y Escalabilidad tienen una hoja con desplazamiento propio y un índice fijo al lado. El índice del SAD desplaza la hoja, nunca la ventana. Los documentos fuente y sus PDF conservan su contenido. El recorrido y el despliegue del SAD usan vistas resumidas legibles; el detalle sigue en las páginas técnicas. La navegación del pie se compacta y conserva sus enlaces; la explicación del paso siguiente permanece en su ayuda.
-- **Pruebas:** `tests/viewport.cjs` recorre las 15 páginas del menú y las variantes de inflación, ampliación de gráficos, linaje, las cuatro vistas de modelo, resultados SQL con una consulta larga y las dos pestañas de operación: 138 medidas en Vantablack y Blue Light, a 1440 × 700, 1440 × 900 y 1920 × 1080. Se ejecuta dentro de un iframe que reproduce el contenedor de Cloud, sin `stMain` en el padre. Comprueba altura, zoom 1, presencia de gráficos e iframes, texto recortado, superposición, colisión entre rótulos e íconos y tamaño efectivo de letra (incluida la transformación SVG). `tests/viewport_interactions.cjs` comprueba el desplazamiento del producto y del índice en los seis escenarios de tamaño y tema, con `stMain.scrollTop == 0`. Las pruebas Python conservan la auditoría de datos y los PDF y sustituyen las aserciones del zoom retirado.
-- **Entorno de prueba:** `/opt/pw-browsers/chromium` no existe en el Mac de esta sesión. Playwright usa Chromium de Chrome instalado, sin agregar dependencias de producción. El ejecutor admite `CHROMIUM_EXECUTABLE` y emplea la ruta indicada cuando existe.
-- **Alcance de la etapa:** el contenido de las páginas. El rediseño visual del menú corresponde a la etapa 2 y requiere una aprobación posterior.
-
 ## D-227 · DuckDB 2.0 queda fuera hasta revisar la consulta de brecha entre canales
 
 - **Fecha:** 2026-10-21. Recuperación posterior a D-226; el CI quedó bloqueado 52 minutos y luego falló.
@@ -1691,10 +1654,10 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Pendiente:** subir el tope a 2.x cuando `k2_channel_gap` tarde segundos en esa versión (con una reescritura aprobada por el autor o una versión corregida de DuckDB).
 - **Pruebas:** con DuckDB 1.5.6, 619 pasan y 3 se omiten; fallan 21 que necesitan red (20 descargan la extensión `sqlite_scanner` y 1 abre GitHub), que este entorno bloquea y que el CI sí puede hacer.
 
-## D-228 · Menú lateral plano, como ChatGPT o Claude
+## D-229 · La app vuelve a la base de D-220, sin el ajuste de alto de D-221 a D-226 ni el menú de D-228
 
-- **Fecha:** 2026-10-21. Etapa 2 de la recuperación, con la referencia visual aprobada por el autor.
-- **Problema:** desde D-213 cada sección del menú era una tarjeta (bloques de color, luego grises en D-223 y velos con borde y sombra en D-224). Las tarjetas pesaban, ocupaban espacio y competían con el contenido.
-- **Decisión:** un menú plano sobre un fondo uniforme: sin tarjetas, bordes, sombras ni degradados. Cada sección tiene un encabezado pequeño, gris y espaciado, y se separa de la siguiente con una línea fina. Las filas llevan un ícono fino propio (`SIDEBAR_ICONS`: cuadrícula, calendario, nodos, base de datos, escudo, terminal, jerarquía, radar, candado, portapapeles, capas, documento, mazo y tendencia). La página actual se marca con un fondo tenue y una barra de acento a la izquierda. Las secciones siguen plegándose con un clic en su título; el chevrón aparece al pasar el cursor y queda visible en una sección plegada. «Fuentes» pasa a «Fuentes de datos», en gris y sin subrayado. El logo suma un ícono de barras antes de GreenOcean. El menú mide 316 px; un nombre largo pasa a una segunda línea y nunca se corta con «…». Apariencia y GitHub quedan fijos abajo, sobre el mismo fondo, y solo el menú se desplaza.
-- **Medido:** a 1440 × 700, en Vantablack y Blue Light, con el menú desplazado hasta el final, la última fuente termina 25 px sobre el pie fijo y la página principal no se mueve.
-- **Pruebas:** `tests/test_dashboard.py` (D-213 reescrita: secciones planas, barra de acento, un ícono distinto por página; D-102 y D-118 con los títulos sin chevrón).
+- **Fecha:** 2026-10-21. Recuperación a petición del autor.
+- **Problema:** el ajuste «cada página cabe en la ventana» (D-222 a D-226) reemplazó vistas que funcionaban: el modelo estrella y la entidad-relación pasaron a un resumen genérico, y el estudio SQL, el Centro de operación y Precios e inflación quedaron con vacíos o con la tabla creciendo. `etl/`, `dbt/` y `agent/` no cambiaron entre D-220 y D-228; el daño está solo en `bi/`, las pruebas y los documentos.
+- **Decisión:** el árbol de la app es el de `d1b6a53` (D-220) más dos cambios que no son de diseño: el ajuste del CI (`26f2ec0`) y D-227 (`duckdb<2`). Se hace con un commit que fija ese árbol sobre `main`, sin reescribir el historial: D-221 a D-228 siguen en Git, y el último `main` anterior es `85ca26b`.
+- **Queda fuera, a propósito:** `bi/viewport.css`, `bi/viewport.py`, `bi/viewport_frames.css`, el menú plano de D-228 y `docs/diagnosticos/`. El ajuste de alto y el menú se aplicarán después sobre esta base, una pantalla a la vez y sin reemplazar vistas existentes.
+- **Pruebas:** 613 pasan y 3 se omiten. Fallan 25 que necesitan red: 20 descargan la extensión `sqlite_scanner` de DuckDB y 5 abren enlaces de GitHub; el entorno de esta sesión las bloquea y el CI sí puede hacerlas. Son las mismas 25 antes y después de D-227.

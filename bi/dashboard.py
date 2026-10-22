@@ -33,7 +33,6 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
-from bi import viewport
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
                 audit_trace, database_crossings, database_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
@@ -141,6 +140,7 @@ VIEW_PARAMETER = "vista"
 # screen, like a page of Looker or Power BI (D-067).
 COMPACT_VIEW = "compact_view"
 # Tile heights of a report page, in pixels: two rows fit a 1440 x 900 screen.
+TILE_HEIGHT = 255
 # A gap above +300 % does not compare the same thing: in street markets, which sell in
 # bulk like the wholesale market, 99 % of the gaps stay under +253 %; above +300 % the
 # consumer price is a packed format (supermarket trays of 250-500 g) against bulk
@@ -519,7 +519,6 @@ PIPELINE_VIEW_KEY = "pipeline_view"
 PIPELINE_JOURNEY, PIPELINE_LINEAGE = "Recorrido por capas", "Linaje dbt"
 LINEAGE_HINT = ("Se dibuja con el manifiesto de la última construcción de dbt, que el pipeline guarda en la "
                 "base: si se agrega un modelo o una prueba, aparece aquí en la carga siguiente.")
-ATTRIBUTION_SHORT = "Datos: ODEPA e INE, licencia Creative Commons Atribución · cómo leer los datos"
 ATTRIBUTION_TEXT = (
     "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de "
     "Agricultura de Chile, licencia Creative Commons Atribución; IPC de alimentos: Instituto "
@@ -1182,9 +1181,6 @@ def build_style_css(mode):
     }}
     .search-count {{ font-size: 13px; color: {palette["text"]}; padding-bottom: 10px; }}
     .page-lineage {{ margin: -4px 0 4px; }}
-    .page-attribution {{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; margin:10px 0 0;
-        padding-top:8px; border-top:1px solid {palette["card_border"]}; }}
-    .attribution-short {{ font-size:.72rem; color:{palette["reference"]}; cursor:help; }}
     .lineage-badge {{ display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
         padding: 3px 10px; border-radius: 999px; border: 1px solid {palette["card_border"]};
         color: {palette["text"]}; background: {palette["card"]}; }}
@@ -1670,16 +1666,10 @@ def build_greenocean_logo(mode, sidebar=False):
     background = charts.get_palette(mode)["sidebar" if sidebar else "background"]
     dark = is_dark_surface(background)
     green, ocean = (BRAND_GREEN_DARK, "#80baff") if dark else (BRAND_GREEN_LIGHT, "#185ca8")
-    bar = "#c9ced6" if dark else "#9aa3af"
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="214" height="36" viewBox="0 0 214 36">'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="190" height="36" viewBox="0 0 190 36">'
             '<title>GreenOcean</title>'
-            '<defs><linearGradient id="go-bar" x1="0" y1="0" x2="0" y2="1">'
-            '<stop offset="0" stop-color="#4fb3ff"/><stop offset="1" stop-color="#1d6fe0"/></linearGradient></defs>'
-            f'<rect x="1" y="19" width="7" height="15" rx="3.5" fill="{bar}"/>'
-            f'<rect x="11" y="11" width="7" height="23" rx="3.5" fill="{bar}"/>'
-            '<rect x="21" y="2" width="7" height="32" rx="3.5" fill="url(#go-bar)"/>'
-            '<text x="40" y="27" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" '
-            'font-size="27" font-weight="600" letter-spacing="-.6">'
+            '<text x="0" y="27" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" '
+            'font-size="28" font-weight="500" letter-spacing="-.8">'
             f'<tspan fill="{green}">Green</tspan><tspan fill="{ocean}">Ocean</tspan></text></svg>')
 
 
@@ -1690,8 +1680,7 @@ def show_app_header(window):
             icon_image=build_greenocean_logo(get_mode()), size="large")
     st.markdown(f"""<style>
     [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {{display:none;}}
-    /* D-223: with the menu folded, the logo sits in the top bar; the page starts under it. */
-    .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMain"] {{padding-top:52px !important;}}
+    .stApp:has([data-testid="stSidebar"][aria-expanded="false"]) [data-testid="stMainBlockContainer"] {{padding-top:54px !important;}}
     .reading-guide {{font-size:.8rem; margin:5px 0 14px; color:{palette['text']};}}
     .reading-term {{font-size:inherit; margin-left:0; border-bottom:1px dotted currentColor; font-weight:400;}}
     .regional-detail {{width:100%; font-size:.75rem; border-collapse:collapse;}}
@@ -1925,7 +1914,7 @@ def show_link_cards(links):
 
 def show_chart(chart):
     """Draw an Altair chart with its own colors (not Streamlit's chart theme)."""
-    st.altair_chart(chart, use_container_width=True, height="stretch", theme=None)
+    st.altair_chart(chart, use_container_width=True, theme=None)
 # endregion
 
 
@@ -2919,45 +2908,33 @@ def show_architecture_page(mode):
                                 label_visibility="collapsed") or MODEL_VIEWS[0]
     if view == MODEL_VIEWS[0]:
         counts, layers, tests = read_database_map(get_database_version())
-        st.iframe(viewport.frame(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests,
-                                              read_store_sizes())), height="stretch")
+        st.iframe(database_map.build_map_html(charts.get_palette(mode), counts, layers, tests,
+                                              read_store_sizes()), height=660)
         return
     if view == MODEL_VIEWS[3]:
         st.markdown('<p class="arch-phrase">Cada flecha es un punto donde dos bases se tocan, con su número y su comprobación de ahora. '
                     'Pasa el cursor por un número o por un logo.</p>', unsafe_allow_html=True)
-        st.iframe(viewport.frame(database_crossings.build_crossings_html(charts.get_palette(mode), read_crossing_checks(get_database_version()))),
-                  height="stretch")
+        st.iframe(database_crossings.build_crossings_html(charts.get_palette(mode), read_crossing_checks(get_database_version())),
+                  height=640)
         return
     if view == MODEL_VIEWS[2]:
         schema = read_er_schema(get_database_version())
         st.markdown('<p class="arch-phrase">El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las '
                     'relaciones entre ellas. Los tipos se leen de la base.</p>', unsafe_allow_html=True)
-        show_model_workspace(mode, row_counts, schema,
-                             er_diagram.build_er_svg(schema, row_counts, mode, tooltips),
-                             "Modelo entidad-relación de datos.duckdb")
+        with st.container(key="architecture_diagram"):
+            st.markdown(er_diagram.build_er_svg(schema, row_counts, mode, tooltips), unsafe_allow_html=True)
         return
     st.markdown('<p class="arch-phrase">1 fila de weekly_price = un producto '
                 '(variedad y calidad) × región × canal × unidad × semana. '
                 'Pasa el mouse por una tabla para ver para qué sirve.</p>', unsafe_allow_html=True)
-    show_model_workspace(mode, row_counts, read_er_schema(get_database_version()),
-                         star_model.build_star_svg(columns, row_counts, mode, tooltips=tooltips),
-                         "Modelo estrella de datos.duckdb")
-
-
-def show_model_workspace(mode, row_counts, schema, detailed_svg, label):
-    with st.container(key="model_workspace", height="stretch"):
-        drawing, details = st.columns([2.1, 1], gap="small")
-        with drawing, st.container(key="architecture_diagram", height="stretch"):
-            st.markdown(viewport.model_overview(row_counts, mode, "Resumen · " + label), unsafe_allow_html=True)
-        with details, st.container(key="model_columns", height="stretch"):
-            with st.popover("Diagrama completo", icon=":material/open_in_full:", width="content"):
-                st.markdown(zoom.build_zoom_frame_html(detailed_svg, "model-detail"), unsafe_allow_html=True)
-            st.markdown(build_external_link_html("etl/schema.sql en GitHub", project.build_github_url("etl/schema.sql")),
-                        unsafe_allow_html=True)
-            for table, columns in schema.items():
-                st.markdown(f"**{table}**")
-                st.markdown("\n".join(f"- `{name}` · {kind}" for name, kind in columns))
-
+    with st.container(key="architecture_diagram"):
+        st.markdown(star_model.build_star_svg(columns, row_counts, mode, tooltips=tooltips),
+                    unsafe_allow_html=True)
+        st.markdown('<div class="arch-legend"><span><b>PK</b> clave primaria</span>'
+                    '<span><b>FK</b> clave foránea</span><span><b>cian</b> medida</span>'
+                    '<span>' + build_external_link_html("etl/schema.sql en GitHub",
+                                                        project.build_github_url("etl/schema.sql"))
+                    + '</span></div>', unsafe_allow_html=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -5065,12 +5042,12 @@ def show_market_overview(mode, prefix):
             channels=['Todos'] + sorted({str(row['channel']) for row in rows})
             if st.session_state.get('home_products_channel') not in channels:
                 st.session_state['home_products_channel']='Todos'
-            channel=channel_column.selectbox('Canal', channels, key='home_products_channel', label_visibility='collapsed')
+            channel=channel_column.selectbox('Canal', channels, key='home_products_channel')
             # Alerts are national: «Inusuales» only applies to the whole country.
             orders=PRODUCT_ORDERS if region == ALL_VALUES else PRODUCT_ORDERS[:-1]
             if st.session_state.get('home_products_order') not in orders:
                 st.session_state['home_products_order']=orders[0]
-            order=order_column.selectbox('Orden', orders, key='home_products_order', label_visibility='collapsed')
+            order=order_column.selectbox('Orden', orders, key='home_products_order')
             total=len(rows)
             if channel != 'Todos':
                 rows=[row for row in rows if row['channel'] == channel]
@@ -5143,19 +5120,20 @@ def show_diagrams_page(mode):
             st.segmented_control("Vista", [PIPELINE_JOURNEY, PIPELINE_LINEAGE], default=PIPELINE_JOURNEY,
                                  key=PIPELINE_VIEW_KEY, label_visibility="collapsed")
         if lineage_view:
-            with st.container(key="lineage_canvas", height="stretch"):
-                st.markdown(viewport.lineage_overview(nodes, results, mode), unsafe_allow_html=True)
-            with st.popover("Diagrama de dependencias", icon=":material/open_in_full:", width="content"):
-                st.markdown(zoom.build_zoom_frame_html(lineage.build_lineage_svg(nodes, results, mode),
-                                                       "lineage-detail"), unsafe_allow_html=True)
+            st.markdown(zoom.build_zoom_frame_html(lineage.build_lineage_svg(nodes, results, mode),
+                                                   "diagram-wide"), unsafe_allow_html=True)
+            if getattr(lineage, "LINEAGE_SCRIPT", ""):
+                # Hovering a model follows only its inputs and outputs; a click pins them.
                 st.html(lineage.LINEAGE_SCRIPT, unsafe_allow_javascript=True)
         else:
-            st.markdown(zoom.build_zoom_frame_html(viewport.pipeline_overview(states, figures, mode),
-                                                   "pipeline-overview"), unsafe_allow_html=True)
+            # Inline SVG (not an image), so each piece shows its explanation on hover.
+            st.markdown(zoom.build_zoom_frame_html(
+                            architecture.build_journey_svg(states, figures, mode, animate_flow=True),
+                            "diagram-wide")
+                        + zoom.build_zoom_frame_html(
+                            architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=True),
+                            "diagram-narrow"), unsafe_allow_html=True)
             st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
-            with st.popover("Detalle del recorrido", icon=":material/open_in_full:", width="content"):
-                st.markdown(zoom.build_zoom_frame_html(architecture.build_journey_svg(
-                    states, figures, mode, animate_flow=True), "pipeline-detail"), unsafe_allow_html=True)
         st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
         st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
 
@@ -5195,7 +5173,7 @@ def show_gap_line(rows, channel, mode, weeks=None, key_prefix="gap_line"):
             line_rows, "Brecha (%)", line_rows["value"].map(charts.format_percent), mode,
             reference_value=0)
         if st.session_state.get(COMPACT_VIEW) and key_prefix == "gap_line":
-            chart = chart.properties(height="container")
+            chart = chart.properties(height=TILE_HEIGHT - 60)
         show_chart(chart)
 
 
@@ -6231,8 +6209,8 @@ def show_family_cards(rows, titles, mode, real):
             with st.container(horizontal=True, vertical_alignment="center"):
                 st.markdown(build_family_card_title_html(focus, titles[focus]), unsafe_allow_html=True)
                 st.button("Ver todas", key="inf_unfocus", icon=":material/close:", on_click=focus_family, args=(None,))
-            st.altair_chart(inflation_view.draw_family_card(rows, focus, mode, real=real, domain=domain, height="container"),
-                            width="stretch", height="stretch", theme=None)
+            st.altair_chart(inflation_view.draw_family_card(rows, focus, mode, real=real, domain=domain, height=420),
+                            width="stretch", theme=None)
         return
     families = list(titles)
     for start in range(0, len(families), FAMILY_CARD_COLUMNS):
@@ -6240,8 +6218,8 @@ def show_family_cards(rows, titles, mode, real):
         for offset, family in enumerate(families[start:start + FAMILY_CARD_COLUMNS]):
             with columns[offset], st.container(key=f"inf_card_{start + offset}"):
                 st.markdown(build_family_card_title_html(family, titles[family]), unsafe_allow_html=True)
-                st.altair_chart(inflation_view.draw_family_card(rows, family, mode, real=real, domain=domain, height="container"),
-                                width="stretch", height="stretch", theme=None)
+                st.altair_chart(inflation_view.draw_family_card(rows, family, mode, real=real, domain=domain),
+                                width="stretch", theme=None)
                 st.button("Ampliar", key=f"inf_zoom_{start + offset}", icon=":material/open_in_full:",
                           on_click=focus_family, args=(family,))
 
@@ -6618,7 +6596,7 @@ def show_security_page(mode):
     st.caption("Cada puerta que podría tentar a un atacante, las barreras que la cierran y la prueba automática que "
                "las ataca en cada push. El código es público: la seguridad no depende de esconder cómo está hecho, "
                "sino de las claves, que nunca aparecen.")
-    st.iframe(viewport.frame(security_map.build_security_html(charts.get_palette(mode))), height="stretch")
+    st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=590)
     st.markdown('<p class="doc-source">El método, los casos de prueba y los resultados de la última revisión: '
                 + build_link_html(f"{PAGE_SECURITY_PLAN} →", build_page_address(PAGE_SECURITY_PLAN)) + '</p>',
                 unsafe_allow_html=True)
@@ -6715,20 +6693,18 @@ def show_operation_center(mode, live=False):
     unlocked = bool(st.session_state.get(ADMIN_UNLOCKED))
     # The latest runs go under the path and the manual run beside the facts, so both
     # columns end together and the page fits one screen.
-    with st.container(key="operation_body", height="stretch"):
-        stage_column, side_column = st.columns([2.4, 1], gap="large")
-        with stage_column, st.container(key="operation_stage", height="stretch"):
-            st.iframe(viewport.frame(operation_center.build_stage_html(palette, states, unlocked)), height="stretch")
-            if runs:
-                st.markdown(build_recent_runs_html(runs), unsafe_allow_html=True)
-        with side_column, st.container(key="operation_side", height="stretch"):
-            if error_text:
-                st.caption(f"GitHub no respondió ({error_text}); se muestra la última respuesta guardada.")
-            st.markdown(build_operation_side_css(palette)
-                        + build_operation_facts(latest_load, read_published_figures(get_database_version()),
-                                                datetime.now(timezone.utc)), unsafe_allow_html=True)
-            show_admin_card()
-
+    stage_column, side_column = st.columns([2.4, 1], gap="large")
+    with stage_column:
+        st.iframe(operation_center.build_stage_html(palette, states, unlocked), height="content")
+        if runs:
+            st.markdown(build_recent_runs_html(runs), unsafe_allow_html=True)
+    with side_column:
+        if error_text:
+            st.caption(f"GitHub no respondió ({error_text}); se muestra la última respuesta guardada.")
+        st.markdown(build_operation_side_css(palette)
+                    + build_operation_facts(latest_load, read_published_figures(get_database_version()),
+                                            datetime.now(timezone.utc)), unsafe_allow_html=True)
+        show_admin_card()
 
 
 def build_operation_side_css(palette):
@@ -6971,17 +6947,15 @@ def show_devops_tab(mode):
     that open their detail (D-132, D-136). The lifecycle drawing and the link to
     Pipeline are gone: this page has its own architecture."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
-    with st.container(key="platform_canvas", height="stretch"):
-        st.markdown(zoom.build_zoom_frame_html(viewport.platform_overview(mode), "platform-overview"), unsafe_allow_html=True)
-        with st.container(key="devops_layers", horizontal=True, gap="small"):
-            for heading, lead in [(group[0], group[1]) for group in ARCHITECTURE_GROUPS] + [
-                    ("Coste y capacidad", "Qué cuesta operar y hasta dónde alcanza.")]:
-                if st.button(heading, key=f"devops_layer_{heading}", icon=DEVOPS_LAYER_ICONS[heading],
-                             help=lead, width="stretch"):
-                    show_devops_layer_dialog(heading, figures["next_run"])
-        with st.popover("Arquitectura completa", icon=":material/open_in_full:", width="content"):
-            st.markdown(zoom.build_zoom_frame_html(architecture.build_devops_svg(
-                states, build_devops_figures(figures), mode, animate_flow=True), "platform-detail"), unsafe_allow_html=True)
+    st.markdown(zoom.build_zoom_frame_html(
+        architecture.build_devops_svg(states, build_devops_figures(figures), mode, animate_flow=True),
+        "diagram-devops"), unsafe_allow_html=True)
+    with st.container(key="devops_layers", horizontal=True, gap="small"):
+        for heading, lead in [(group[0], group[1]) for group in ARCHITECTURE_GROUPS] + [
+                ("Coste y capacidad", "Qué cuesta operar y hasta dónde alcanza.")]:
+            if st.button(heading, key=f"devops_layer_{heading}", icon=DEVOPS_LAYER_ICONS[heading],
+                         help=lead, width="stretch"):
+                show_devops_layer_dialog(heading, figures["next_run"])
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
     st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
 
@@ -7242,20 +7216,21 @@ def show_operations_page(mode):
                                            lambda value: format_chile_time(parse_run_start(value)),
                                            rejections=read_rejection_count(get_database_version()))
     controls = audit_trace.build_controls_html(quality_view.build_columns(evidence))
-    st.iframe(viewport.frame(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"],
-                                           measures["flags"], controls), "quality"), height="stretch")
+    st.iframe(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"],
+                                           measures["flags"], controls), height=830)
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
     if not database_ok or any(item["status"].startswith("Falla") for item in files):
         st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
     with st.container(key=quality_view.EXPANDER_KEY, horizontal=True, vertical_alignment="center", gap="small"):
-        with st.popover("Abrir evidencia", icon=":material/fact_check:", width="content"):
-            st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
-                     on_change=open_quality_evidence, label_visibility="collapsed")
+        st.markdown('<span class="qa-open-label">Abrir la evidencia de</span>', unsafe_allow_html=True)
+        st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
+                 on_change=open_quality_evidence, label_visibility="collapsed")
+    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
         st.button("Volver a medir", icon=":material/refresh:", key="qa_recheck_page", on_click=recheck_quality,
                   help="Descarta lo guardado y mide de nuevo sobre la base publicada.")
-    rechecked = st.session_state.get("qa_rechecked_at")
-    st.caption(f"Medido de nuevo a las {to_chile_time(rechecked):%H:%M:%S}." if rechecked else
-               "Cada indicador se mide en la base de la última carga; cada control abre los datos que lo respaldan.")
+        rechecked = st.session_state.get("qa_rechecked_at")
+        st.caption(f"Medido de nuevo a las {to_chile_time(rechecked):%H:%M:%S}." if rechecked else
+                   "Cada indicador se mide en la base de la última carga; cada control abre los datos que lo respaldan.")
     chosen_card = st.session_state.pop(QUALITY_OPEN_KEY, None)
     if chosen_card in quality_evidence.TITLES.values():
         key = next(key for key, title in quality_evidence.TITLES.items() if title == chosen_card)
@@ -7380,11 +7355,11 @@ def show_links_page(mode):
     tab (D-116) with its own copy button. ODEPA and the INE live in «Fuentes» (D-118)."""
     # Our own trusted markup, in its own frame: st.html sanitises the SVG gradients,
     # filters and buttons the page is made of.
-    st.iframe(viewport.frame('<!doctype html><html lang="es"><head><meta charset="utf-8">'
+    st.iframe('<!doctype html><html lang="es"><head><meta charset="utf-8">'
               '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
               '<body style="margin:0;background:transparent">'
-              + github_page.build_github_page_html(mode) + github_page.GITHUB_PAGE_SCRIPT + '</body></html>', 'github'),
-              height="stretch")
+              + github_page.build_github_page_html(mode) + github_page.GITHUB_PAGE_SCRIPT + '</body></html>',
+              height="content")
 
 # endregion
 
@@ -7405,28 +7380,28 @@ def build_document_diagram_html(name, mode):
     if name in ("plataforma", "pipeline"):
         states, figures, *_ = read_journey()
         if name == "plataforma":
-            return zoom.build_zoom_frame_html(viewport.platform_overview(mode), "diagram-devops")
-        return zoom.build_zoom_frame_html(viewport.pipeline_overview(states, figures, mode), "pipeline-overview")
+            return zoom.build_zoom_frame_html(architecture.build_devops_svg(
+                states, build_devops_figures(figures), mode, animate_flow=False), "diagram-devops")
+        return zoom.build_zoom_frame_html(architecture.build_journey_svg(
+            states, figures, mode, animate_flow=False), "diagram-wide")
     if name == "modelo":
         row_counts = read_table_row_counts()
         columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
-        return viewport.model_overview(row_counts, mode, "Modelo estrella de datos.duckdb")
+        return star_model.build_star_svg(columns, row_counts, mode)
     return ""
 
 
 def show_document_diagram(name, mode):
     """One marker of a document: the document views and the security map in their own frame
     (hover tips and gradients need it, D-205), the live diagrams inline."""
-    with st.container(key=f"document_figure_{name}"):
-        palette = charts.get_palette(mode)
-        if name in doc_diagrams.DOC_DIAGRAMS:
-            st.iframe(viewport.frame(doc_diagrams.DOC_DIAGRAMS[name](mode)), height="stretch")
-        elif name == "seguridad":
-            st.iframe(viewport.frame(security_map.build_security_html(palette)), height="stretch")
-        else:
-            st.markdown('<div class="doc-diagram">' + build_document_diagram_html(name, mode) + '</div>',
-                        unsafe_allow_html=True)
-
+    palette = charts.get_palette(mode)
+    if name in doc_diagrams.DOC_DIAGRAMS:
+        st.iframe(doc_diagrams.DOC_DIAGRAMS[name](mode), height=doc_diagrams.HEIGHTS[name])
+    elif name == "seguridad":
+        st.iframe(security_map.build_security_html(palette), height=590)
+    else:
+        st.markdown('<div class="doc-diagram">' + build_document_diagram_html(name, mode) + '</div>',
+                    unsafe_allow_html=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -7445,13 +7420,8 @@ def show_scalability_page(mode):
     st.markdown('<div class="doc-source">' + build_external_link_html(
         "Sección completa en docs/DECISIONES.md", project.build_github_url("docs/DECISIONES.md")) + '</div>',
         unsafe_allow_html=True)
-    with st.container(key="document_body", height="stretch"):
-        sheet, index = st.columns([3, 1], gap="medium")
-        with sheet, st.container(key="project_document", height="stretch"):
-            st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/DECISIONES.md.")
-        with index, st.container(key="document_index", height="stretch"):
-            st.markdown("**En esta página**\n\nExtensiones previstas\n\nCriterios para adoptar la nube")
-
+    with st.container(key="project_document"):
+        st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/DECISIONES.md.")
 
 
 @st.cache_data(show_spinner=False)
@@ -7484,22 +7454,13 @@ def show_project_document(mode, title):
     download.download_button("Descargar PDF", build_document_pdf(str(path), path.stat().st_mtime, title, lead),
                              file_name=f"GreenOcean_{filename.removesuffix('.md')}.pdf", mime="application/pdf",
                              icon=":material/download:", width="stretch", key=f"pdf_{filename}")
-    with st.container(key="document_body", height="stretch"):
-        sheet, index = st.columns([3, 1], gap="medium")
-        with sheet:
-            with st.container(key="project_document", height="stretch"):
-                position = 0
-                for marker in DOCUMENT_DIAGRAM.finditer(text):
-                    st.markdown(text[position:marker.start()])
-                    show_document_diagram(marker.group(1), mode)
-                    position = marker.end()
-                st.markdown(text[position:])
-        with index, st.container(key="document_index", height="stretch"):
-            st.markdown("**En este documento**")
-            headings = re.findall(r"^## (.+)$", text, re.MULTILINE)
-            for heading in headings:
-                anchor = re.sub(r"[^\w -]", "", heading.lower()).replace(" ", "-")
-                st.markdown(f"[{heading}](#{anchor})")
+    with st.container(key="project_document"):
+        position = 0
+        for marker in DOCUMENT_DIAGRAM.finditer(text):
+            st.markdown(text[position:marker.start()])
+            show_document_diagram(marker.group(1), mode)
+            position = marker.end()
+        st.markdown(text[position:])
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
     st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
 # endregion
@@ -7574,8 +7535,6 @@ IDLE_ANIMATION_SCRIPT = """<script>(() => {
         window.addEventListener(name, wake, { passive: true, capture: true }));
     wake();
 })();</script>"""
-
-
 FOLD_SIDEBAR_SCRIPT = f"""<script>
 (() => {{
 // D-166: a phone turned sideways shows the computer layout, menu included. Streamlit
@@ -7586,7 +7545,7 @@ const openMenu = () => {{
     const open = () => {{
         const sidebar = document.querySelector('[data-testid="stSidebar"]');
         const button = document.querySelector('[data-testid="stExpandSidebarButton"]');
-        if (sidebar && sidebar.getAttribute("data-collapsed") === "false") {{ return; }}
+        if (sidebar && sidebar.getAttribute("aria-expanded") === "true") {{ return; }}
         if (button) {{ button.click(); }} else if (attempts++ < 40) {{ setTimeout(open, 100); }}
     }};
     open();
@@ -7603,10 +7562,10 @@ let tries = 0;
 const fold = () => {{
     const sidebar = document.querySelector('[data-testid="stSidebar"]');
     const button = document.querySelector('[data-testid="stSidebarCollapseButton"] button');
-    if (sidebar && button && sidebar.getAttribute("data-collapsed") === "false") {{
+    if (sidebar && button && sidebar.getAttribute("aria-expanded") === "true") {{
         button.click();
         try {{ sessionStorage.setItem("sidebarFolded", "yes"); }} catch (error) {{}}
-    }} else if (sidebar && sidebar.getAttribute("data-collapsed") === "true") {{
+    }} else if (sidebar && sidebar.getAttribute("aria-expanded") === "false") {{
         try {{ sessionStorage.setItem("sidebarFolded", "yes"); }} catch (error) {{}}
     }} else if (tries++ < 40) {{
         setTimeout(fold, 100);
@@ -7620,12 +7579,10 @@ fold();
 def show_attribution():
     """Footer of every page: the data source. The project links live only in
     Operaciones (D-056)."""
-    # D-222: one line, so the footer does not push a page past the window; the full reading
-    # notes open on hover.
+    st.divider()
     summary = lineage.summarize_build(*read_lineage(get_database_version()))
-    st.markdown(f'<div class="page-lineage page-attribution">{lineage.build_badge_html(summary)}'
-                f'<span class="attribution-short" title="{html.escape(ATTRIBUTION_TEXT, quote=True)}" tabindex="0">'
-                f'{ATTRIBUTION_SHORT} ⓘ</span></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="page-lineage">{lineage.build_badge_html(summary)}</div>', unsafe_allow_html=True)
+    st.caption(ATTRIBUTION_TEXT)
 
 
 def order_windows():
@@ -7714,36 +7671,24 @@ def render_window(window, pages=None):
     apply_style(mode)
     st.session_state[COMPACT_VIEW] = window == REPORT_WINDOW
     synchronize_window_view(window)
+    show_app_header(window)
     view = choose_window_view(window)
-    slug = PAGE_PATHS.get(view, "legacy")
-    if view not in {PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE,
-                    PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS, PAGE_SECURITY, PAGE_LINKS,
-                    PAGE_STACK, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SECURITY_PLAN, PAGE_SCALABILITY}:
-        slug = "legacy"
-    st.markdown(viewport.css(), unsafe_allow_html=True)
-    with st.container(key="app_canvas", height="stretch"):
-        with st.container(key="canvas_header"):
-            show_app_header(window)
-        with st.container(key=f"screen_{slug}", height="stretch"):
-            with st.container(key="report_page" if window == REPORT_WINDOW else "window_page", height="stretch"):
-                overview_class = OVERVIEW_CLASS_BY_VIEW.get(view)
-                if overview_class:
-                    st.markdown(f'<span class="overview-viewport-marker {overview_class}" '
-                                'aria-hidden="true"></span>', unsafe_allow_html=True)
-                if view == PAGE_COVER:
-                    show_cover_page(mode, pages)
-                else:
-                    SHOW_PAGE_BY_TITLE[view](mode)
-        with st.container(key="canvas_footer"):
-            if view not in OVERVIEW_CLASS_BY_VIEW:
-                if pages:
-                    show_route_footer(window, pages)
-                show_attribution()
-    st.markdown(viewport.css(), unsafe_allow_html=True)
-    st.html(f'<span data-viewport-ready="{html.escape(view, quote=True)}"></span>')
+    with st.container(key="report_page" if window == REPORT_WINDOW else "window_page"):
+        overview_class = OVERVIEW_CLASS_BY_VIEW.get(view)
+        if overview_class:
+            st.markdown(f'<span class="overview-viewport-marker {overview_class}" '
+                        'aria-hidden="true"></span>', unsafe_allow_html=True)
+        if view == PAGE_COVER:
+            # The cover links with the navigation pages, so a visit keeps its session.
+            show_cover_page(mode, pages)
+        else:
+            SHOW_PAGE_BY_TITLE[view](mode)
+    if view not in OVERVIEW_CLASS_BY_VIEW:
+        if pages:
+            show_route_footer(window, pages)
+        show_attribution()
     st.html(PHONE_LAYOUT_HTML + FOLD_SIDEBAR_SCRIPT + RELOAD_HOME_SCRIPT + IDLE_ANIMATION_SCRIPT + build_visit_history_script(),
             unsafe_allow_javascript=True)
-
 
 
 # D-166: the panel is read in landscape. A phone held upright sees one screen asking to
@@ -7810,6 +7755,7 @@ def show_route_footer(window, pages):
     if window not in ROUTE:
         return
     position = ROUTE.index(window)
+    st.divider()
     with st.container(key="route_footer", horizontal=True, horizontal_alignment="distribute",
                       vertical_alignment="center"):
         if position > 0:
@@ -7819,6 +7765,8 @@ def show_route_footer(window, pages):
             following = ROUTE[position + 1]
             st.page_link(pages[following], label=f"Siguiente: {following} →",
                          help=f"Muestra {ROUTE_LEADS[following]}.", query_params=keep_context())
+    if position < len(ROUTE) - 1:
+        st.caption(f"Siguiente paso: {ROUTE_LEADS[ROUTE[position + 1]]}.")
 
 
 def render_page(title):
@@ -7980,34 +7928,26 @@ RELOAD_HOME_SCRIPT = """<script>
 
 
 
-# D-213: one section per kind of reader, open by default; each page lives in exactly one section.
-# D-228: a flat sidebar like ChatGPT's or Claude's: no cards, small grey headings, thin icons,
-# hairlines between sections; the documents close the list, just before the data sources.
-# (key, title, pages or source links)
+# D-213: the menu is a stack of colored blocks, one per kind of reader, always visible and
+# open by default; each page lives in exactly one block. «Ver como» (D-209) is gone: every
+# reader sees everything, so whoever wants the breadth of the work sees it at a glance.
+# (key, title, (color on a dark sidebar, color on a light one), pages or source links)
+# D-215, D-216: each block is a card in one of the panel's four tones (blue, Vantablack, dark
+# grey, light grey), its accent a lighter or darker step of that same tone, nothing else; the documents sit at the end of their block and the
+# documents' block closes the menu, just before the sources.
+# (key, title, tone, accent, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_SEASONALITY]),
-    ("ingenieria", "Ingeniería de datos",
+    ("negocio", "Negocio · BI", "azul", "#9cc8ff", [PAGE_HOME, PAGE_SEASONALITY]),
+    ("ingenieria", "Ingeniería de datos", "vantablack", "#c7cdd6",
      [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_SAD]),
-    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
-    ("stack", "Stack y evidencia", [PAGE_STACK]),
-    ("analisis", "Análisis de negocio · BA", [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
-    ("fuentes", "Fuentes de datos", SOURCE_LINKS),
+    ("devops", "DevOps y seguridad", "grafito", "#aab3bf", [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
+    ("stack", "Stack y evidencia", "azul", "#9cc8ff", [PAGE_STACK]),
+    ("analisis", "Análisis de negocio · BA", "gris", "#334155", [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
+    ("fuentes", "Fuentes", "gris", "#334155", SOURCE_LINKS),
 ]
-# D-228: the sidebar's own glyphs, one per page, fine and recognisable (Material Symbols).
-SIDEBAR_ICONS = {
-    PAGE_HOME: ":material/grid_view:", PAGE_SEASONALITY: ":material/calendar_month:",
-    PAGE_DIAGRAMS: ":material/share:", PAGE_ARCHITECTURE: ":material/database:",
-    PAGE_OPERATIONS: ":material/verified_user:", PAGE_SQL: ":material/terminal:",
-    PAGE_SAD: ":material/lan:", PAGE_RUNS: ":material/radio_button_checked:",
-    PAGE_SECURITY: ":material/lock:", PAGE_SECURITY_PLAN: ":material/assignment:",
-    PAGE_STACK: ":material/layers:", PAGE_PRD: ":material/description:",
-    PAGE_ADR: ":material/gavel:", PAGE_SCALABILITY: ":material/trending_up:",
-}
-# (text, heading, icon, hover, current row, current border, accent bar) for dark and light sidebars.
-MENU_INK = {True: ("#e6e8ec", "#8b929c", "#c3c8d0", "rgba(255,255,255,.04)", "rgba(255,255,255,.06)",
-                   "rgba(255,255,255,.08)", "#3b9eff"),
-            False: ("#1d1f23", "#6b717a", "#4b5563", "rgba(15,23,42,.04)", "rgba(15,23,42,.06)",
-                    "rgba(15,23,42,.08)", "#1d5fbf")}
+# Card tone → (background, text). Fixed in every theme, so each card reads the same everywhere.
+CARD_TONES = {"azul": ("#12325a", "#e8f1ff"), "vantablack": ("#050607", "#e6e8ec"),
+              "grafito": ("#2b2f36", "#eceff3"), "gris": ("#e6e9ee", "#1f2933")}
 
 
 SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">'
@@ -8030,47 +7970,45 @@ def read_current_view(window):
 
 
 def build_section_colors_css(dark):
-    """The flat menu (D-228): sections divided by a hairline, grey small-capital headings,
-    rows with a thin icon; the current page has a faint fill and a blue bar on its left."""
-    text, heading, icon, hover, current, current_border, accent = MENU_INK[dark]
-    line = "rgba(255,255,255,.07)" if dark else "rgba(15,23,42,.08)"
-    return f"""[class*="st-key-nav_block_"] {{margin:0 !important; padding:10px 0 9px !important; gap:2px !important;
-        background:transparent !important; border:0; border-bottom:1px solid {line}; border-radius:0; box-shadow:none;}}
-    .st-key-nav_block_fuentes {{border-bottom:0;}}
-    [class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div,
-    [class*="st-key-nav_group_"] button {{width:100% !important; box-sizing:border-box;}}
-    [class*="st-key-nav_group_"] button {{justify-content:flex-start !important; padding:4px 10px !important;
-        min-height:24px !important; background:transparent !important; border:0 !important; margin:0 0 4px;}}
-    [class*="st-key-nav_group_"] button:hover:not(:disabled) {{background:transparent !important;}}
-    [class*="st-key-nav_group_"] button > div {{justify-content:flex-start !important;}}
-    [class*="st-key-nav_group_"] button p {{color:{heading} !important; -webkit-text-fill-color:{heading} !important;
-        font-size:.68rem !important; font-weight:500 !important; letter-spacing:.12em !important; white-space:nowrap;
-        text-transform:uppercase; text-align:left !important;}}
-    [class*="st-key-nav_group_"] button:hover p {{color:{text} !important; -webkit-text-fill-color:{text} !important;}}
-    [class*="st-key-nav_group_"] button p::after {{content:"⌄"; margin-left:8px; opacity:0; transition:opacity .12s ease;}}
-    [class*="st-key-nav_group_"] button:hover p::after {{opacity:.8;}}
-    [class*="st-key-nav_group_"][class*="_folded"] button p::after {{content:"›"; opacity:.8;}}
-    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a {{position:relative; padding:5px 8px !important;
-        min-height:34px !important; border-radius:9px !important; border:1px solid transparent !important;
-        background:transparent !important; box-shadow:none !important; gap:0 !important;}}
-    [class*="st-key-nav_block_"] [data-testid="stPageLink"] a:hover {{background:{hover} !important;}}
-    [class*="st-key-nav_block_"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:.86rem !important; font-weight:400 !important; padding-left:12px; text-shadow:none !important;
-        white-space:normal; overflow:visible; text-overflow:clip; line-height:1.3;}}
-    [class*="st-key-nav_block_"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{color:{icon} !important;
-        font-size:19px !important; width:20px; opacity:1; font-variation-settings:"wght" 300;}}
-    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] a {{background:{current} !important;
-        border-color:{current_border} !important;}}
-    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] a::before {{content:""; position:absolute;
-        left:-1px; top:8px; bottom:8px; width:3px; border-radius:3px; background:{accent};}}
-    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stPageLink"] p {{font-weight:500 !important;}}
-    [class*="st-key-nav_block_"] [class*="_nav_current"] [data-testid="stIconMaterial"] {{color:{accent} !important;}}
-    [data-testid="stSidebar"] a.nav-source-link {{display:flex; align-items:center; padding:3px 10px !important; margin:0 !important;
-        font-size:.8rem; color:{heading} !important; -webkit-text-fill-color:{heading} !important; text-decoration:none !important;
-        border-radius:7px;}}
-    [data-testid="stSidebar"] a.nav-source-link:hover {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        background:{hover};}}
-    [data-testid="stSidebar"] .nav-source-icon {{margin-right:12px; color:{icon};}}"""
+    """Each block as a HUD-like card (D-215): its tone, a glowing border in its accent and
+    corner brackets; the title in the accent and the pages in the card's text color."""
+    rules = []
+    for key, _, tone, accent, _ in MENU_BLOCKS:
+        background, text = CARD_TONES[tone]
+        rules.append(f'.st-key-nav_block_{key} {{position:relative; margin:0 0 12px !important; padding:3px 6px 4px !important;'
+                     f' background:linear-gradient(160deg,color-mix(in srgb,{background} 92%,{accent}) 0%,{background} 60%);'
+                     f' border:1px solid color-mix(in srgb,{accent} 55%,transparent); border-radius:6px;'
+                     f' box-shadow:0 0 14px color-mix(in srgb,{accent} 22%,transparent), inset 0 0 18px color-mix(in srgb,{accent} 8%,transparent);'
+                     f' gap:0 !important;}}')
+        rules.append(f'.st-key-nav_block_{key}::before, .st-key-nav_block_{key}::after {{content:""; position:absolute;'
+                     f' width:12px; height:12px; pointer-events:none;}}')
+        rules.append(f'.st-key-nav_block_{key}::before {{top:-1px; left:-1px; border-top:2px solid {accent};'
+                     f' border-left:2px solid {accent}; border-top-left-radius:6px;}}')
+        rules.append(f'.st-key-nav_block_{key}::after {{bottom:-1px; right:-1px; border-bottom:2px solid {accent};'
+                     f' border-right:2px solid {accent}; border-bottom-right-radius:6px;}}')
+        rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] p, .st-key-nav_block_{key} .nav-source-link '
+                     f'{{color:{text} !important; -webkit-text-fill-color:{text} !important; text-shadow:none !important;}}')
+        rules.append(f'.st-key-nav_block_{key} [data-testid="stIconMaterial"], .st-key-nav_block_{key} .nav-source-icon '
+                     f'{{color:{accent} !important;}}')
+        # The current page: a bar in the card's accent.
+        rules.append(f'.st-key-nav_block_{key} [class*="_nav_current"] [data-testid="stPageLink"] a '
+                     f'{{box-shadow:inset 2px 0 {accent} !important; border-color:transparent !important;}}')
+        rules.append(f'.st-key-nav_block_{key} [data-testid="stPageLink"] a:hover {{background:color-mix(in srgb,{accent} 14%,transparent) !important;}}')
+        rules.append(f'.st-key-nav_group_{key} button {{border-bottom:1px solid color-mix(in srgb,{accent} 40%,transparent) !important;'
+                     f' border-radius:0 !important; margin-bottom:3px;}}')
+        rules.append(f'.st-key-nav_group_{key} button p {{color:{accent} !important; -webkit-text-fill-color:{accent} !important;'
+                     f' font-size:.7rem !important; font-weight:650 !important; letter-spacing:.08em !important;'
+                     f' text-transform:uppercase;}}')
+    rules.append('[class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div, '
+                 '[class*="st-key-nav_group_"] button {width:100% !important; box-sizing:border-box;}')
+    rules.append('[class*="st-key-nav_group_"] button > div, [class*="st-key-nav_group_"] button p '
+                 '{justify-content:flex-start !important; text-align:left !important;}')
+
+    # Only the sources leave the app, so only they look like web links: a fine underline.
+    rules.append('[data-testid="stSidebar"] a.nav-source-link {text-decoration:underline !important; text-decoration-thickness:1px; '
+                 'text-underline-offset:3px; text-decoration-color:color-mix(in srgb, currentColor 55%, transparent);}')
+    rules.append('[data-testid="stSidebar"] a.nav-source-link:hover {text-decoration-color:currentColor;}')
+    return "\n    ".join(rules)
 
 
 def build_sidebar_css(mode):
@@ -8079,20 +8017,27 @@ def build_sidebar_css(mode):
     # The wordmark and its child links sit on the sidebar, so their contrast must
     # follow that surface. Corporativo has a light page but a dark navy sidebar.
     dark = is_dark_surface(palette["sidebar"])
+    child_green = BRAND_GREEN_DARK if dark else BRAND_GREEN_LIGHT
+    sidebar_top = "#101824" if dark else "#ffffff"
+    sidebar_bottom = "#080d15" if dark else "#f5f7fb"
     hairline = "rgba(148, 163, 184, .18)" if dark else "rgba(15, 23, 42, .12)"
     quiet = "rgba(214, 218, 227, .68)" if dark else "rgba(31, 41, 55, .68)"
     alert_text = "#ff9ca4" if dark else "#9d1f2c"
     return f"""<style>
     [data-testid="stSidebar"] {{
-        background:{palette['sidebar']}; border-right:0; box-shadow:none;}}
-    [data-testid="stSidebar"][data-collapsed="false"] {{min-width:316px !important; max-width:316px !important;}}
+        background:linear-gradient(180deg,{sidebar_top} 0%,{palette['sidebar']} 38%,{sidebar_bottom} 100%);
+        border-right:1px solid {hairline}; box-shadow:10px 0 32px rgba(0,0,0,.12);}}
+    [data-testid="stSidebar"][aria-expanded="true"] {{min-width:300px !important; max-width:300px !important;}}
     [data-testid="stSidebarContent"] {{background:transparent;}}
-    [data-testid="stSidebarHeader"] {{height:70px; padding:14px 14px 8px 20px !important; border-bottom:0;}}
-    [data-testid="stSidebarHeader"] img {{max-width:210px !important; height:34px !important;}}
+    [data-testid="stSidebarHeader"] {{height:66px; padding:10px 17px 7px !important;
+        border-bottom:1px solid {hairline};}}
+    [data-testid="stSidebarHeader"] img {{max-width:144px !important;}}
     [data-testid="stSidebarCollapseButton"] button {{width:32px; height:32px; min-height:32px;
-        border:0 !important; border-radius:8px !important; background:transparent !important; box-shadow:none;}}
+        border:1px solid {hairline} !important; border-radius:10px !important;
+        background:color-mix(in srgb,{palette['field']} 72%,transparent) !important;
+        box-shadow:inset 0 1px rgba(255,255,255,.04);}}
     /* D-215: a narrow inner margin, so the menu cards hold long page names on one line. */
-    [data-testid="stSidebarUserContent"] {{padding:4px 10px 0 !important;}}
+    [data-testid="stSidebarUserContent"] {{padding:6px 4px 0 !important;}}
     [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important;
         min-height:calc(100vh - 86px); padding-bottom:116px;}}
     [data-testid="stSidebarNav"] {{display:none;}}
@@ -8118,6 +8063,7 @@ def build_sidebar_css(mode):
     /* D-209: a small icon before each page says what it is, in its section's color. */
     [data-testid="stSidebar"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{font-size:15px !important;
         width:15px; color:currentColor; opacity:.9;}}
+    [class*="st-key-nav_child_"] [data-testid="stPageLink"] a {{color:{child_green} !important;}}
     .nav-source-icon {{vertical-align:-3px; margin-right:8px;}}
     [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {{
         background:color-mix(in srgb,{text} 7%,transparent) !important;
@@ -8141,6 +8087,9 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_current"] [data-testid="stPageLink"] [data-testid="stIconMaterial"],
     [class*="_nav_current"] [data-testid="stPageLink"] [data-testid="stIconMaterial"] {{
         opacity:1; color:{palette['accent']};}}
+    [class*="st-key-nav_child_"] [data-testid="stPageLink"] p {{color:{child_green} !important;
+        -webkit-text-fill-color:{child_green} !important; font-weight:460;
+        text-shadow:0 0 10px color-mix(in srgb,{child_green} 18%,transparent);}}
     {build_section_colors_css(dark)}
     /* GitHub's mark on a light pill in the footer (D-124): a near-black logo on a
        near-white background reads on every sidebar, navy included, where the
@@ -8157,11 +8106,13 @@ def build_sidebar_css(mode):
     /* «Fuentes»: external children in the same green as every other child (D-118). */
     .nav-source-link {{display:block; padding:3px 7px 3px 7px; margin:1px 0; border-radius:5px;
         font-size:.78rem; font-weight:400; letter-spacing:-.005em; text-decoration:none !important;
+        color:{child_green} !important; -webkit-text-fill-color:{child_green} !important;
         line-height:1.5;
         transition:background .12s ease;}}
     .nav-source-link:hover {{background:color-mix(in srgb,{text} 7%,transparent);}}
-    .st-key-sidebar_footer {{position:fixed; left:0; bottom:0; width:316px; padding:12px 22px 12px;
-        background:{palette['sidebar']}; gap:7px !important; z-index:5; border-top:1px solid {hairline};}}
+    .st-key-sidebar_footer {{position:fixed; left:17px; bottom:0; width:266px; padding:13px 5px 12px;
+        background:linear-gradient(180deg,transparent 0%,{sidebar_bottom} 18%); gap:7px !important; z-index:5;
+        border-top:1px solid {hairline};}}
     /* The alert trigger, now on top of the Resumen (D-169), keeps its red, quiet look. */
     .st-key-home_alert_bar {{margin:-4px 0 -10px;}}
     .st-key-home_alert_trigger button {{justify-content:flex-start; border:0 !important;
@@ -8178,7 +8129,7 @@ def build_sidebar_css(mode):
     </style>"""
 
 
-SIDEBAR_NAV_VERSION = 9
+SIDEBAR_NAV_VERSION = 8
 
 
 def show_sidebar_navigation(windows_by_title, current_window, order):
@@ -8190,7 +8141,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             st.session_state[f"nav_open_{key}"] = True
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
-    for key, title, pages in MENU_BLOCKS:
+    for key, title, _, _, pages in MENU_BLOCKS:
         open_key = f"nav_open_{key}"
         is_open = st.session_state.get(open_key, True)
         with st.sidebar.container(key=f"nav_block_{key}"):
@@ -8200,8 +8151,8 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
 
 def show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open):
     """One card of the menu: its title, which folds it, and its pages (D-215)."""
-    with st.container(key=f"nav_group_{key}" + ("" if is_open else "_folded")):
-        if st.button(title, key=f"nav_toggle_{key}", help=None):
+    with st.container(key=f"nav_group_{key}"):
+        if st.button(f"{'⌄' if is_open else '›'}  {title}", key=f"nav_toggle_{key}"):
             st.session_state[open_key] = not is_open
             st.rerun()
     if not is_open:
@@ -8219,8 +8170,7 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
         active = window == current_window and view == current_view
         with st.container(key=f"nav_child_{key}_{index}" + ("_nav_current" if active else "")):
             st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
-                         icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
-                         query_params=keep_context() | {VIEW_PARAMETER: view})
+                         icon=PAGE_ICONS.get(view), query_params=keep_context() | {VIEW_PARAMETER: view})
 
 
 def build_sidebar_github_html(is_current):

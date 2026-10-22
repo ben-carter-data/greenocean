@@ -219,8 +219,7 @@ def test_regional_map_keeps_the_surface_minimal_and_exact_counts_in_the_hint():
     markup = home_mockup.regional_map(
         rows, lambda region: '/dashboard?_home_region=' + str(region),
         '05-10-2026', '28-09-2026', 'Región de Coquimbo')
-    assert markup.count('mock-region-shape ') == 32  # desktop and phone projections
-    assert markup.count('class="mock-region-readable ') == 16
+    assert markup.count('mock-region-shape ') == 16
     assert markup.count('<a class="mock-region-row ') == 16
     assert '62 % ↓' in markup
     assert '91 bajaron · 42 subieron · 13 sin cambio · 146 comparados' in markup
