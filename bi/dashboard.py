@@ -2860,22 +2860,37 @@ def build_architecture_header(row_counts, latest_run):
              ("Auditoría", f"{charts.format_thousands(row_counts['etl_run'])} cargas · "
                            f"{charts.format_thousands(row_counts['rejection'])} rechazos"),
              ("Última carga", f"{freshness} · {run_text}")]
-    return (f'<div class="arch-head compact-header"><h1>{html.escape(PAGE_ARCHITECTURE)}</h1>'
+    return (f'<div class="arch-top fit-modelo"><div class="arch-head compact-header"><h1>{html.escape(PAGE_ARCHITECTURE)}</h1>'
             '<span class="page-freshness">De dónde viene cada tabla de la base y cómo se relacionan: el modelo estrella convierte los precios en '
             'indicadores comparables. Las líneas relacionan tablas; no son pasos de '
             'ejecución.</span></div><div class="arch-chips">'
             + "".join(f'<div class="arch-chip"><span>{html.escape(label)}</span>'
                       f'<div>{html.escape(value)}</div></div>' for label, value in chips)
-            + "</div>")
+            + "</div></div>")
+
+
+def build_fit_frame_html(svg, css_class):
+    """A diagram in a zoom frame that keeps its own proportion (--ratio), so a page can
+    size it by the height the window leaves (D-232)."""
+    box = re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', svg)
+    ratio = float(box.group(1)) / float(box.group(2)) if box else 1.45
+    return zoom.build_zoom_frame_html(svg, css_class, f"--ratio:{ratio:.3f}")
+
+
+def build_model_frame_html(svg):
+    """A model diagram (star or entity-relation) in a zoom frame that keeps its proportion."""
+    return build_fit_frame_html(svg, "fit-modelo")
 
 
 def build_architecture_css(mode):
     palette = charts.get_palette(mode)
     return f"""<style>
+    .arch-top {{display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:8px 24px;}}
+    .arch-top .arch-head {{flex:1 1 520px; min-width:0;}}
     .arch-head {{display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 18px; margin:0;}}
     .arch-head h1 {{font-size:1.5rem !important; margin:0 !important; padding:0 !important;}}
     .arch-head .page-freshness {{margin:2px 0 0; font-size:.86rem; max-width:900px;}}
-    .arch-chips {{display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 4px;}}
+    .arch-chips {{display:flex; gap:10px; flex-wrap:wrap; margin:0 0 4px;}}
     .arch-chip {{border:1px solid {palette['card_border']}; border-radius:9px; background:{palette['card']};
         padding:6px 13px; min-width:150px;}}
     .arch-chip span {{display:block; font-size:10.5px; color:{palette['text']}; line-height:1.3;}}
@@ -2883,8 +2898,13 @@ def build_architecture_css(mode):
     .st-key-architecture_body [data-testid="stHorizontalBlock"] {{align-items:stretch; gap:14px;}}
     .st-key-architecture_diagram {{border:1px solid {palette['card_border']}; border-radius:14px;
         background:{palette['card']}; padding:14px 20px 18px;}}
-    .st-key-architecture_diagram svg {{display:block; width:100%; height:auto;
-        max-height:calc((100vh - 360px) * 1.2);}}
+    .st-key-architecture_diagram svg {{display:block; width:100%; height:auto;}}
+    /* The diagram always fits the window (D-232): the viewport is as wide as the height left
+       allows, by the drawing's own proportion; the zoom buttons bring it closer inside the panel. */
+    .fit-modelo {{position:relative;}}
+    .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 420px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
+    .fit-modelo .zoom-buttons {{position:absolute; top:0; right:0; margin:0; z-index:2;}}
+    .st-key-architecture_diagram .arch-legend {{margin:4px 4px 0; padding-top:6px;}}
     .arch-legend {{display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
         border-top:1px solid {palette['card_border']}; font-size:12px; line-height:1.5; color:{palette['text']};}}
     .arch-phrase {{font-size:.85rem; color:{palette['strong_text']}; margin:0 0 8px;}}
@@ -2934,14 +2954,17 @@ def show_architecture_page(mode):
         st.markdown('<p class="arch-phrase">El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las '
                     'relaciones entre ellas. Los tipos se leen de la base.</p>', unsafe_allow_html=True)
         with st.container(key="architecture_diagram"):
-            st.markdown(er_diagram.build_er_svg(schema, row_counts, mode, tooltips), unsafe_allow_html=True)
+            st.markdown(build_model_frame_html(er_diagram.build_er_svg(schema, row_counts, mode, tooltips)),
+                        unsafe_allow_html=True)
+            st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
         return
     st.markdown('<p class="arch-phrase">1 fila de weekly_price = un producto '
                 '(variedad y calidad) × región × canal × unidad × semana. '
                 'Pasa el mouse por una tabla para ver para qué sirve.</p>', unsafe_allow_html=True)
     with st.container(key="architecture_diagram"):
-        st.markdown(star_model.build_star_svg(columns, row_counts, mode, tooltips=tooltips),
+        st.markdown(build_model_frame_html(star_model.build_star_svg(columns, row_counts, mode, tooltips=tooltips)),
                     unsafe_allow_html=True)
+        st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
         st.markdown('<div class="arch-legend"><span><b>PK</b> clave primaria</span>'
                     '<span><b>FK</b> clave foránea</span><span><b>cian</b> medida</span>'
                     '<span>' + build_external_link_html("etl/schema.sql en GitHub",
@@ -5102,7 +5125,7 @@ def show_pipeline_figures(summary):
     run = read_latest_run()
     tests = (f'{summary["passing"]}/{summary["tests"]}', "superadas en la última construcción") if summary \
         else ("—", "linaje dbt en migración")
-    st.markdown('<div class="runs-metrics">'
+    st.markdown('<div class="runs-metrics fit-pipeline">'
                 + build_runs_metric_html("Filas leídas", charts.format_thousands(run["rows_read"]),
                                          "de los archivos de ODEPA")
                 + build_runs_metric_html("Filas cargadas", charts.format_thousands(run["rows_loaded"]),
@@ -5132,16 +5155,16 @@ def show_diagrams_page(mode):
             st.segmented_control("Vista", [PIPELINE_JOURNEY, PIPELINE_LINEAGE], default=PIPELINE_JOURNEY,
                                  key=PIPELINE_VIEW_KEY, label_visibility="collapsed")
         if lineage_view:
-            st.markdown(zoom.build_zoom_frame_html(lineage.build_lineage_svg(nodes, results, mode),
-                                                   "diagram-wide"), unsafe_allow_html=True)
+            st.markdown(build_fit_frame_html(lineage.build_lineage_svg(nodes, results, mode),
+                                             "diagram-wide fit-pipeline"), unsafe_allow_html=True)
             if getattr(lineage, "LINEAGE_SCRIPT", ""):
                 # Hovering a model follows only its inputs and outputs; a click pins them.
                 st.html(lineage.LINEAGE_SCRIPT, unsafe_allow_javascript=True)
         else:
             # Inline SVG (not an image), so each piece shows its explanation on hover.
-            st.markdown(zoom.build_zoom_frame_html(
+            st.markdown(build_fit_frame_html(
                             architecture.build_journey_svg(states, figures, mode, animate_flow=True),
-                            "diagram-wide")
+                            "diagram-wide fit-pipeline")
                         + zoom.build_zoom_frame_html(
                             architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=True),
                             "diagram-narrow"), unsafe_allow_html=True)
@@ -6587,6 +6610,13 @@ def build_runs_css(mode):
     .runs-table tbody tr:hover td {{background:color-mix(in srgb,{palette['accent']} 5%,transparent);}}
     .runs-link {{text-align:right;}}
     @media (max-width:900px) {{ .runs-metrics {{grid-template-columns:repeat(2,minmax(0,1fr));}} }}
+    /* Pipeline y linaje (D-232): the figures in two short lines, and the diagram as wide as the
+       height left allows; the zoom buttons bring it closer inside the panel. */
+    .stApp:has(.fit-pipeline) .runs-metrics {{margin:10px 0 8px; gap:10px;}}
+    .stApp:has(.fit-pipeline) .runs-metric {{padding:7px 14px; gap:0; display:grid; grid-template-columns:auto 1fr;
+        column-gap:10px; align-items:baseline;}}
+    .stApp:has(.fit-pipeline) .runs-metric-note {{grid-column:1 / -1;}}
+    .zoom-frame.fit-pipeline .zoom-viewport {{max-width:calc(max(100vh - 510px, 190px) * var(--ratio, 2.1)); margin:0 auto;}}
     </style>"""
 
 

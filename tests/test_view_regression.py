@@ -63,3 +63,18 @@ def test_d230_the_pipeline_page_draws_the_journey_svg():
     assert not app.exception
     assert find_open_markdown(app.main, JOURNEY_LABEL), "the pipeline SVG is not open on its page"
 
+
+
+@needs_database
+def test_d232_star_er_and_pipeline_sit_in_a_frame_that_keeps_their_proportion():
+    for state, label in ((dashboard.MODEL_VIEWS[1], STAR_LABEL), (dashboard.MODEL_VIEWS[2], ER_LABEL)):
+        app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: state})
+        page = read_markdown(app)
+        assert label in page and 'class="zoom-frame fit-modelo"' in page and "--ratio:" in page
+    page = read_markdown(draw_page(dashboard.PAGE_DIAGRAMS))
+    assert 'zoom-frame diagram-wide fit-pipeline' in page and "--ratio:" in page
+
+
+def test_d232_the_frame_ratio_comes_from_the_svg_viewbox():
+    frame = dashboard.build_fit_frame_html('<svg viewBox="0 0 1560 720"></svg>', "x")
+    assert "--ratio:2.167" in frame
