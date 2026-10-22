@@ -761,6 +761,11 @@ def build_css(palette):
 [class*="st-key-sqlx_chip_"] button p {{ font-size:.76rem !important; color:{ink} !important; }}
 [class*="st-key-sqlx_chip_"] button:hover {{ border-color:{accent} !important; transform:translateY(-1px); }}
 .st-key-sqlx_body {{ gap:0 !important; }}
+/* D-233: the studio fits the window: the explorer scrolls by itself (its bar shows on hover) and the grid takes
+   what the editor leaves; below a floor the page scrolls rather than squash them. */
+.st-key-sqlx_explorer {{ max-height:max(calc(100vh - 290px), 360px); overflow-y:auto; scrollbar-width:none; }}
+.st-key-sqlx_explorer:hover {{ scrollbar-width:thin; scrollbar-color:{border} transparent; }}
+.st-key-sqlx_results [data-testid="stDataFrame"] {{ height:max(calc(100vh - 600px), 200px) !important; }}
 .st-key-sqlx_body [data-testid="stHorizontalBlock"] {{ align-items:stretch; gap:0 !important; }}
 [data-testid="stColumn"]:has(.st-key-sqlx_explorer) > [data-testid="stVerticalBlock"],
 [data-testid="stColumn"]:has(.st-key-sqlx_explorer) [data-testid="stLayoutWrapper"] {{ height:100%; flex:1 1 auto; }}
@@ -916,7 +921,8 @@ def build_tab_html(example):
 def editor_height(sql):
     """Enough lines to show the query without an inner scroll, within one screen."""
     lines = (sql or "").count("\n") + 1
-    return max(150, min(290, 21 * lines + 24))
+    # D-233: six to eight lines; a longer query scrolls inside the editor.
+    return max(130, min(170, 21 * lines + 24))
 
 
 def format_elapsed(seconds):

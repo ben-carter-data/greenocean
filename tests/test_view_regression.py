@@ -78,3 +78,11 @@ def test_d232_star_er_and_pipeline_sit_in_a_frame_that_keeps_their_proportion():
 def test_d232_the_frame_ratio_comes_from_the_svg_viewbox():
     frame = dashboard.build_fit_frame_html('<svg viewBox="0 0 1560 720"></svg>', "x")
     assert "--ratio:2.167" in frame
+
+
+@needs_database
+def test_d233_the_fitted_pages_close_with_the_compact_footer():
+    for page in (dashboard.PAGE_SQL, dashboard.PAGE_OPERATIONS):
+        assert page in dashboard.COMPACT_FOOTER_VIEWS
+    # The long pages keep both footers.
+    assert dashboard.PAGE_PRD not in dashboard.COMPACT_FOOTER_VIEWS

@@ -1181,6 +1181,9 @@ def build_style_css(mode):
     }}
     .search-count {{ font-size: 13px; color: {palette["text"]}; padding-bottom: 10px; }}
     .page-lineage {{ margin: -4px 0 4px; }}
+    .st-key-compact_footer {{ gap: 2px !important; margin-top: 6px; padding-top: 4px; border-top: 1px solid {palette["card_border"]}; }}
+    .st-key-compact_footer [data-testid="stCaptionContainer"] p {{ font-size: .7rem; line-height: 1.35; }}
+    .st-key-compact_footer .page-lineage {{ margin: 0; }}
     .lineage-badge {{ display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
         padding: 3px 10px; border-radius: 999px; border: 1px solid {palette["card_border"]};
         color: {palette["text"]}; background: {palette["card"]}; }}
@@ -6076,6 +6079,14 @@ def build_context_css(mode):
     .st-key-ctx_main .ctx-head h3 {{margin:8px 0 6px!important;}}
     .st-key-ctx_main p.ctx-reading {{margin:0 0 20px!important;}}
     .st-key-ctx_main {{gap:16px!important;}}
+    /* Precios e inflación (D-233): the two rows of cards take the height the window leaves, and each
+       chart fills its card; below a floor the page scrolls rather than squash the charts. */
+    [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) {{min-height:max(calc((100vh - 374px) / 2), 165px);}}
+    [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stElementContainer"]:has([data-testid="stVegaLiteChart"]) {{
+        flex:1 1 0; min-height:0; display:flex; flex-direction:column;}}
+    [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stFullScreenFrame"],
+    [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stFullScreenFrame"] > div,
+    [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stVegaLiteChart"] {{flex:1 1 auto; height:100%; min-height:0;}}
     [class*="st-key-inf_card_"] [data-testid="stVegaLiteChart"] {{margin-top:2px;}}
     .ctx-title .page-freshness {{display:inline-flex;gap:6px;margin-left:12px;font-size:12px;}}
     .ctx-answer {{font-size:15px;line-height:1.5;font-weight:300;color:{palette['text']};margin:4px 0 0;max-width:900px;}}
@@ -6253,8 +6264,9 @@ def show_family_cards(rows, titles, mode, real):
         for offset, family in enumerate(families[start:start + FAMILY_CARD_COLUMNS]):
             with columns[offset], st.container(key=f"inf_card_{start + offset}"):
                 st.markdown(build_family_card_title_html(family, titles[family]), unsafe_allow_html=True)
-                st.altair_chart(inflation_view.draw_family_card(rows, family, mode, real=real, domain=domain),
-                                width="stretch", theme=None)
+                st.altair_chart(inflation_view.draw_family_card(rows, family, mode, real=real, domain=domain,
+                                                                height="container"),
+                                width="stretch", height="stretch", theme=None)
                 st.button("Ampliar", key=f"inf_zoom_{start + offset}", icon=":material/open_in_full:",
                           on_click=focus_family, args=(family,))
 
@@ -7725,7 +7737,9 @@ def render_window(window, pages=None):
             show_cover_page(mode, pages)
         else:
             SHOW_PAGE_BY_TITLE[view](mode)
-    if view not in OVERVIEW_CLASS_BY_VIEW:
+    if view in COMPACT_FOOTER_VIEWS:
+        show_compact_footer(window, pages)
+    elif view not in OVERVIEW_CLASS_BY_VIEW:
         if pages:
             show_route_footer(window, pages)
         show_attribution()
@@ -7809,6 +7823,28 @@ def show_route_footer(window, pages):
                          help=f"Muestra {ROUTE_LEADS[following]}.", query_params=keep_context())
     if position < len(ROUTE) - 1:
         st.caption(f"Siguiente paso: {ROUTE_LEADS[ROUTE[position + 1]]}.")
+
+
+# D-233: the pages that fit the window close with one short footer instead of the two long ones.
+COMPACT_FOOTER_VIEWS = {PAGE_SQL, PAGE_OPERATIONS, PAGE_RUNS, PAGE_SECURITY, PAGE_STACK}
+
+
+def show_compact_footer(window, pages):
+    """The route links and the data source in two short lines."""
+    summary = lineage.summarize_build(*read_lineage(get_database_version()))
+    with st.container(key="compact_footer"):
+        with st.container(horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
+            if pages and window in ROUTE:
+                position = ROUTE.index(window)
+                if position > 0:
+                    back = ROUTE[position - 1]
+                    st.page_link(pages[back], label=f"← Volver: {back}", query_params=keep_context())
+                if position < len(ROUTE) - 1:
+                    following = ROUTE[position + 1]
+                    st.page_link(pages[following], label=f"Siguiente: {following} →",
+                                 help=f"Siguiente paso: {ROUTE_LEADS[following]}.", query_params=keep_context())
+            st.markdown(f'<div class="page-lineage">{lineage.build_badge_html(summary)}</div>', unsafe_allow_html=True)
+        st.caption(ATTRIBUTION_TEXT)
 
 
 def render_page(title):
