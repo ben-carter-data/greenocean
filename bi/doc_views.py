@@ -16,7 +16,7 @@ from bi import brand_icons, charts, database_map
 DISCS = dict(database_map.BRANDS, git=("#ff9b7d", "#d6402a", "#ffffff"),
              streamlit=("#ff8f98", "#e0303f", "#ffffff"))
 PERSON_DISCS = {"visitor": ("#7ee2b0", "#14855a"), "author": ("#ffcf70", "#c98500")}
-WIDTH, HEIGHT, LOGO = 1000, 470, 76
+WIDTH, HEIGHT, LOGO = 1000, 480, 76
 
 
 def esc(value):
@@ -73,6 +73,13 @@ html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 
 .tip.start {{ left:0; transform:none; }} .tip.end {{ left:auto; right:0; transform:none; }} .tip.up {{ top:auto; bottom:calc(100% + 8px); }}
 .node:hover .tip, .node:focus .tip, .chip:hover .tip, .chip:focus .tip {{ display:block; }}
 .node:hover, .node:focus, .chip:hover, .chip:focus {{ z-index:50; }}
+.system {{ position:absolute; z-index:2; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  padding:16px 26px; text-align:center; border-radius:22px; border:2px solid {palette['accent']}; background:{card};
+  box-shadow:0 18px 36px {shadow}; outline:none; cursor:default; }}
+.system b {{ font-size:26px; font-weight:600; letter-spacing:-.02em; color:{ink}; }}
+.system span {{ font-size:13.5px; line-height:1.45; color:{text}; }}
+.system:hover .tip, .system:focus .tip {{ display:block; }}
+.system:hover, .system:focus {{ z-index:50; }}
 .legend {{ margin:2px 4px 0; font-size:11.5px; color:{muted}; text-align:center; }}
 </style>"""
 
@@ -94,60 +101,61 @@ def build_chip(x, y, label, color, parts):
             f'{esc(label)}{tip_html(x, y, parts)}</span>')
 
 
-# region Actors and use cases (PRD)
-USE_CASES = {
-    "visitor": ["Qué se movió esta semana (Resumen semanal)", "¿Es normal para la época? (Precios e inflación)",
-                "Consumidor frente a mayorista (brecha por canal)", "Revisar calidad y documentos"],
-    "author": ["Consultas SQL a pedido, respondidas con un CSV", "Lanzar una carga manual con la clave de control",
-               "Mantener el código y los secretos"],
-}
-ROW_TOP, ROW_MID, ROW_LOW, ROW_ROUTE = 110, 225, 340, 440
-COLUMNS = (90, 300, 500, 700, 910)
+# region Context (SAD, D-242)
+# The system as one box, the people who use it and the external systems it depends on. Nothing inside the box is
+# drawn here (the pipeline, the platform and the data model are the next views), and an arrow goes from the one
+# that uses to the one that is used.
 COLORS = {"source": "#22b35a", "flow": "#3987e5", "build": "#9085e9", "ops": "#c98500", "serve": "#199e70"}
-# (kind, name, column, row, title, what, why)
-ACTOR_NODES = [
-    ("source", "odepa", 0, ROW_TOP, "ODEPA", "Publica los CSV de precios mayoristas y al consumidor.",
-     "Es la fuente oficial y abierta de estos precios."),
-    ("source", "ine", 0, ROW_LOW, "INE", "Publica el IPC de alimentos.", "Permite expresar los precios en pesos de hoy."),
-    ("brand", "github", 1, ROW_MID, "GitHub Actions", "Ejecuta el pipeline cada martes y las pruebas en cada push.",
-     "Orquestación gratuita, sin servidor que mantener."),
-    ("brand", "git", 2, ROW_MID, "Repositorio", "Guarda el código, la base servida y los informes semanales.",
-     "Es la fuente de verdad del proyecto."),
-    ("brand", "streamlit", 3, ROW_MID, "Panel", "Publica el panel de solo lectura desde la rama main.",
-     "Streamlit Community Cloud lo sirve con un enlace público."),
+SYSTEM_BOX = (330, 190, 340, 230)
+PEOPLE_Y, SIDE_Y = 55, (225, 365)
+# (kind, name, x, y, title, what it is, relation with GreenOcean)
+CONTEXT_NODES = [
+    ("source", "odepa", 90, SIDE_Y[0], "ODEPA", "Publica cada semana los CSV de precios mayoristas y al consumidor.",
+     "GreenOcean los descarga cada martes. Es la fuente oficial y abierta de estos precios."),
+    ("source", "ine", 90, SIDE_Y[1], "INE", "Publica el IPC de alimentos.",
+     "GreenOcean lo descarga para expresar los precios en pesos de hoy."),
+    ("brand", "github", 910, SIDE_Y[0], "GitHub", "Guarda el código, la base publicada y los informes semanales, y ejecuta la carga con Actions.",
+     "GreenOcean vive ahí: cada cambio se prueba y cada martes se carga sin servidor propio."),
+    ("brand", "streamlit", 910, SIDE_Y[1], "Streamlit Community Cloud", "Sirve el panel con un enlace público.",
+     "GreenOcean se publica ahí desde la rama main y guarda sus secretos en esa plataforma."),
+    ("person", "visitor", 430, PEOPLE_Y, "Visitante", "Analista de pricing, compras y abastecimiento, gerencia o revisor técnico.",
+     "Lee el panel de solo lectura; no necesita cuenta ni clave."),
+    ("person", "author", 570, PEOPLE_Y, "Administrador", "Quien mantiene el proyecto.",
+     "Cambia el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control."),
 ]
-# (path, color, chip x, chip y, label, what travels)
-ACTOR_EDGES = [
-    ("M128 110 H205 V210 H255", "source", 167, 110, "CSV", "Los archivos anuales de ODEPA, descargados por HTTPS."),
-    ("M128 340 H205 V240 H255", "source", 167, 340, "IPC", "Las series del IPC de alimentos del INE, por HTTPS."),
-    ("M345 225 H455", "build", 400, 225, "commit", "La base servida y el informe de la semana, si todo pasó."),
-    ("M545 225 H655", "ops", 600, 225, "main", "Cada cambio de main vuelve a publicar el panel."),
-    ("M745 210 H790 V110 H865", "serve", 828, 110, "HTTPS", "El visitante lee el panel; no necesita cuenta ni clave."),
-    ("M865 340 H790 V240 H745", "ops", 828, 340, "clave", "Con la clave de control, el autor lanza una carga manual."),
-    ("M910 405 V440 H500 V292", "ops", 705, 440, "git push", "El administrador cambia el código y los secretos del panel."),
+# (path, color, chip x, chip y, label, what it says)
+CONTEXT_EDGES = [
+    ("M330 225 H142", "source", 236, 225, "CSV", "GreenOcean descarga los archivos anuales de ODEPA, por HTTPS."),
+    ("M330 365 H142", "source", 236, 365, "IPC", "GreenOcean descarga las series del IPC de alimentos del INE, por HTTPS."),
+    ("M430 124 V190", "serve", 430, 157, "lee", "El visitante lee el panel por HTTPS."),
+    ("M570 124 V190", "ops", 570, 157, "mantiene", "El administrador cambia el código y los secretos, y con la clave lanza una carga."),
+    ("M670 225 H868", "build", 724, 225, "aloja", "GreenOcean guarda su código, la base publicada y los informes en GitHub, y GitHub Actions los ejecuta."),
+    ("M670 365 H868", "flow", 724, 365, "publica", "GreenOcean publica el panel en Streamlit Community Cloud desde la rama main."),
 ]
 
 
-def build_actors_html(mode):
-    """Who uses GreenOcean and the systems it depends on, read from left to right."""
+def build_context_html(mode):
+    """The whole system in one box, with the people who use it and the systems it depends on."""
     palette = charts.get_palette(mode)
-    nodes = [build_node(kind, name, COLUMNS[column], row, title, [("Qué hace", what), ("Por qué", why)])
-             for kind, name, column, row, title, what, why in ACTOR_NODES]
-    for person, row, title in (("visitor", ROW_TOP, "Visitante"), ("author", ROW_LOW, "Administrador")):
-        nodes.append(build_node("person", person, COLUMNS[4], row, title,
-                                [("Para qué usa el panel", " · ".join(USE_CASES[person]))]))
+    nodes = [build_node(kind, name, x, y, title, [("Qué es", what), ("Relación con GreenOcean", relation)])
+             for kind, name, x, y, title, what, relation in CONTEXT_NODES]
+    left, top, width, height = SYSTEM_BOX
+    system = (f'<div class="system" tabindex="0" style="left:{left / WIDTH * 100:.3f}%;top:{top / HEIGHT * 100:.3f}%;'
+              f'width:{width / WIDTH * 100:.3f}%;height:{height / HEIGHT * 100:.3f}%">'
+              f'{tip_html(left + width / 2, top + height / 2, [("Qué es", "Un pipeline semanal y un panel de BI sobre los precios de alimentos de Chile."), ("Qué hace", "Integra los precios de ODEPA con el IPC del INE, revisa su calidad y publica un panel de solo lectura donde cada cifra se puede seguir hasta el archivo original.")])}'
+              '<b>GreenOcean</b><span>Pipeline semanal y panel de BI sobre los precios de alimentos de Chile</span></div>')
     edges, chips = [], []
-    for path, layer, x, y, label, what in ACTOR_EDGES:
+    for path, layer, x, y, label, what in CONTEXT_EDGES:
         color = COLORS[layer]
         edges.append(f'<path class="edge" d="{path}" stroke="{color}" marker-end="url(#a-{layer})"/>')
-        chips.append(build_chip(x, y, label, color, [("Qué viaja", what)]))
+        chips.append(build_chip(x, y, label, color, [("Qué dice", what)]))
     markers = "".join(f'<marker id="a-{layer}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
                       f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{color}"/></marker>' for layer, color in COLORS.items())
     return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            + build_css(palette) + f'</head><body><div class="stage" aria-label="Actores y sistemas">'
+            + build_css(palette) + f'</head><body><div class="stage" aria-label="Contexto del sistema">'
             f'<svg viewBox="0 0 {WIDTH} {HEIGHT}" aria-hidden="true"><defs>{markers}</defs>{"".join(edges)}</svg>'
-            + "".join(nodes) + "".join(chips) + '</div><p class="legend">Quién usa GreenOcean y de qué sistemas depende. '
-            'Pasa el cursor por cada logo y cada flecha.</p></body></html>')
+            + system + "".join(nodes) + "".join(chips) + '</div><p class="legend">La flecha va de quien usa a quien es usado. '
+            'Lo que hay dentro de GreenOcean está en las vistas siguientes. Pasa el cursor por cada logo y cada flecha.</p></body></html>')
 # endregion
 
 
@@ -285,5 +293,5 @@ figcaption {{ margin-top:10px; color:{palette['reference']}; }} figcaption b {{ 
 # endregion
 
 # The document views by marker, with the height of their frame in the page.
-VIEWS = {"actores": (build_actors_html, 500), "casos": (build_use_cases_html, 520),
+VIEWS = {"contexto": (build_context_html, 520), "casos": (build_use_cases_html, 520),
          "mockups": (build_mockups_html, 720)}

@@ -39,22 +39,31 @@ def test_d205_each_view_is_one_html_document_without_script(name, mode):
     assert "robot" not in page.lower() and name in doc_diagrams.HEIGHTS
 
 
-def test_d210_the_actors_view_follows_the_pipeline_standard():
-    page = doc_diagrams.DOC_DIAGRAMS["actores"](charts.MODE_DARK)
-    # 3D logos on lit discs, no tiles or zones; every logo and every chip explains itself.
-    assert page.count('class="logo"') == 7 and "radialGradient" in page and 'class="zone"' not in page
-    assert page.count('class="chip"') == len(doc_views.ACTOR_EDGES)
-    assert page.count('role="tooltip"') == 7 + len(doc_views.ACTOR_EDGES)
-    # Orthogonal arrows only: straight runs with right angles, never a curve.
-    for path, *_ in doc_views.ACTOR_EDGES:
+def test_d242_the_context_view_is_the_system_as_one_box_with_its_people_and_external_systems():
+    page = doc_diagrams.DOC_DIAGRAMS["contexto"](charts.MODE_DARK)
+    # 3D logos on lit discs; the system is one box and nothing of its inside is drawn.
+    assert page.count('class="logo"') == 6 and "radialGradient" in page and 'class="zone"' not in page
+    assert page.count('class="system"') == 1 and "<b>GreenOcean</b>" in page
+    assert page.count('class="chip"') == len(doc_views.CONTEXT_EDGES) == 6
+    assert page.count('role="tooltip"') == 6 + len(doc_views.CONTEXT_EDGES) + 1
+    # Orthogonal arrows only, and every one touches the system box: the others are not drawn against each other.
+    left, top, width, height = doc_views.SYSTEM_BOX
+    for path, *_ in doc_views.CONTEXT_EDGES:
         assert re.fullmatch(r"M\d+ \d+( [HV]\d+)+", path), path
-    assert {name for name in ("ODEPA", "INE", "GitHub Actions", "Repositorio", "Panel", "Visitante", "Administrador")
-            if f"<b>{name}</b>" in page} == {"ODEPA", "INE", "GitHub Actions", "Repositorio", "Panel", "Visitante",
+        x, y = map(int, path[1:].split(" ")[:2])
+        ends_on_top = path.endswith(f"V{top}") and left <= x <= left + width  # a person reaches the top of the box
+        leaves_a_side = x in (left, left + width) and top <= y <= top + height  # or the box reaches a source or a platform
+        assert ends_on_top or leaves_a_side, path
+    assert {name for name in ("ODEPA", "INE", "GitHub", "Streamlit Community Cloud", "Visitante", "Administrador")
+            if f"<b>{name}</b>" in page} == {"ODEPA", "INE", "GitHub", "Streamlit Community Cloud", "Visitante",
                                               "Administrador"}
+    # The delivery flow (Actions, repository, main) is the CI/CD diagram's, not the context's.
+    for inside in ("GitHub Actions", "Repositorio", "git push"):
+        assert f"<b>{inside}</b>" not in page and f">{inside}<" not in page
 
 
 def test_d210_the_weak_views_are_gone():
-    assert set(doc_diagrams.DOC_DIAGRAMS) == {"actores", "casos", "mockups"}
+    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "casos", "mockups"}
 
 
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():

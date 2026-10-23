@@ -95,7 +95,7 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
     """PRD: the use cases and the real screens. SAD: the context and the live diagrams (D-210, D-240). ADR: none."""
     names = {name: re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"),
                               re.MULTILINE) for name in DOCUMENTS}
-    assert names == {"PRD.md": ["casos", "mockups"], "SAD.md": ["actores", "pipeline", "plataforma", "modelo"],
+    assert names == {"PRD.md": ["casos", "mockups"], "SAD.md": ["contexto", "pipeline", "plataforma", "modelo"],
                      "ADR.md": [], "SEGURIDAD.md": ["seguridad"]}
 
 

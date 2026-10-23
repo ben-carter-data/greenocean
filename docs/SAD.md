@@ -4,9 +4,9 @@ Versión del 20-10-2026. Los cuatro diagramas se generan desde el sistema real, 
 
 ## 1. Contexto
 
-[[diagrama:actores]]
+[[diagrama:contexto]]
 
-GreenOcean depende de dos fuentes públicas, ODEPA y el INE, y de tres servicios gratuitos: GitHub Actions ejecuta la carga, el repositorio guarda el código y la base publicada, y Streamlit Community Cloud publica el panel. El visitante solo lee el panel; el administrador cambia el código y los secretos.
+GreenOcean es un pipeline semanal y un panel de solo lectura. Lee dos fuentes públicas, ODEPA y el INE, y se apoya en dos servicios gratuitos: GitHub guarda el código, la base publicada y ejecuta la carga, y Streamlit Community Cloud publica el panel. El visitante solo lee el panel; el administrador mantiene el código y los secretos. Lo que hay dentro del sistema se explica en las vistas siguientes.
 
 ## 2. Pipeline
 
