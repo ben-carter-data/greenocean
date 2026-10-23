@@ -6233,7 +6233,7 @@ def show_cicd_tab(mode):
     .cicd-term span {{font-size:.86rem; line-height:1.45; color:{palette['text']};}}
     @media (max-width:900px) {{ .cicd-define {{grid-template-columns:1fr;}} }}
     </style><div class="cicd-define">{definitions}</div>""", unsafe_allow_html=True)
-    st.iframe(devops.build_cicd_html(palette), height=620)
+    st.iframe(devops.build_cicd_html(palette), height=760)
 
 
 def show_devops_tab(mode):
