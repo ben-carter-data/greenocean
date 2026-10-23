@@ -7297,17 +7297,25 @@ def show_operations_page(mode):
                                            lambda value: format_chile_time(parse_run_start(value)),
                                            rejections=read_rejection_count(get_database_version()))
     controls = audit_trace.build_controls_html(quality_view.build_columns(evidence))
-    # D-235: the iframe, which comes right after this marker, takes the height the window leaves.
+    # D-235: the iframe, which comes right after this marker, shows the whole page without its own scroll (D-241).
     st.markdown('<span class="fit-calidad" aria-hidden="true"></span><style>'
                 '[data-testid="stElementContainer"]:has(.fit-calidad) + [data-testid="stElementContainer"],'
                 '[data-testid="stElementContainer"]:has(.fit-calidad) + [data-testid="stElementContainer"] iframe '
-                '{height:max(calc(100vh - 520px), 360px) !important; flex:none !important; min-height:0 !important;}'
+                '{height:600px !important; flex:none !important; min-height:0 !important;}'
+                # The evidence pills wrap onto a second line instead of running off the edge.
+                '.st-key-qa_evidence [data-testid="stButtonGroup"] > div {flex-wrap:wrap !important; overflow:visible !important; row-gap:6px;}'
                 '</style>', unsafe_allow_html=True)
     st.iframe(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"],
                                            measures["flags"], controls), height=830)
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
-    if not database_ok or any(item["status"].startswith("Falla") for item in files):
-        st.error("Se detectó una discrepancia en los controles locales. Revisa la evidencia antes de utilizar los resultados.")
+    changed_files = [item["file"] for item in files if item["status"].startswith("Falla")]
+    if not database_ok:
+        st.error("La base publicada no pasa sus controles de integridad. Revisa la evidencia antes de utilizar los resultados.")
+    elif changed_files:
+        # The indicators above are measured on the published database; only the local copies of the source files differ.
+        names = " y ".join(changed_files)
+        st.warning(f"En este equipo, {names} no coincide con la huella SHA-256 de la última descarga (manifest.json). "
+                   "Los indicadores se miden en la base publicada y no cambian.", icon=":material/warning:")
     with st.container(key=quality_view.EXPANDER_KEY, horizontal=True, vertical_alignment="center", gap="small"):
         st.markdown('<span class="qa-open-label">Abrir la evidencia de</span>', unsafe_allow_html=True)
         st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,

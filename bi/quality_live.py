@@ -251,18 +251,17 @@ html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 
 .ql .spine small {{ color:{muted}; font-size:11px; line-height:1.2; }}
 .ql .link {{ position:absolute; top:calc(16px + 29px); left:calc(50% + 62px); width:calc(100% - 124px + 26px); height:2px; background:{accent}; opacity:.85; }}
 .ql .link::after {{ content:""; position:absolute; right:-1px; top:-4px; border:5px solid transparent; border-left:8px solid {accent}; border-right:0; }}
-.ql .link span {{ position:absolute; left:0; right:0; top:-17px; text-align:center; font-size:10.5px; color:{muted}; }}
-.ql .side h4 {{ margin:2px 0 3px; font-size:10.5px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
+.ql .link span {{ position:absolute; left:0; right:0; top:-17px; text-align:center; font-size:11px; color:{muted}; }}
+.ql .gates .side {{ margin-top:4px; padding-top:10px; border-top:1px solid color-mix(in srgb, {border} 70%, transparent); }}
+.ql .side h4 {{ margin:2px 0 3px; font-size:11px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
 .ql .line {{ display:flex; justify-content:space-between; gap:8px; padding:2px 0; color:{ink}; font-size:12px; font-variant-numeric:tabular-nums; position:relative; outline:none; }}
 .ql .line code {{ font:400 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; }}
 .ql .line small {{ color:{muted}; font-size:11px; }}
 .ql .line:hover .tip, .ql .line:focus .tip {{ display:block; }}
 .ql .side {{ padding-top:6px; }}
 .ql .gates {{ display:flex; flex-direction:column; gap:14px; }}
-.ql .bottom {{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:26px; margin-top:16px; padding-top:10px;
-  border-top:1px solid color-mix(in srgb, {border} 70%, transparent); }}
 .ql .audit {{ margin-top:16px; padding-top:10px; border-top:1px solid color-mix(in srgb, {border} 70%, transparent); }}
-.ql .audit > h4, .ql .bottom h4 {{ margin:2px 0 3px; font-size:10.5px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
+.ql .audit > h4 {{ margin:2px 0 3px; font-size:11px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
 .ql .audit > h4 {{ text-align:center; }}
 .ql .legend {{ margin:6px 0 0; font-size:11px; color:{muted}; text-align:center; }}
 @media (max-width:820px) {{ .ql .stage {{ grid-template-columns:repeat(2, minmax(0, 1fr)); row-gap:10px; }} .ql .link {{ display:none; }} }}
@@ -351,10 +350,13 @@ def build_page_html(palette, indicators, runs, rejections, flags, controls_html=
     down = [dimension_status([status[key] for key in keys if key in status]) if any(key in status for key in keys) else None
             for keys in COLUMNS]
     spine = "".join(build_node_html(index, *node[:3], node[3], None, down[index]) for index, node in enumerate(SPINE))
+    # The two lists that used to run under the whole page fill the free space of the first two columns:
+    # what was set apart under «Completitud» (rows read = loaded + rejected), the loads under «Actualidad».
+    extras = {0: build_apart_html(rejections, flags), 1: build_loads_html(runs)}
     gates = "".join(f'<div class="cell c{index + 1}"><div class="gates">'
-                    + "".join(build_gate_html(key, groups[key]) for key in keys if key in groups) + "</div></div>"
+                    + "".join(build_gate_html(key, groups[key]) for key in keys if key in groups)
+                    + extras.get(index, "") + "</div></div>"
                     for index, keys in enumerate(COLUMNS))
-    bottom = f'<div class="bottom">{build_apart_html(rejections, flags)}{build_loads_html(runs)}</div>'
     audit = (f'<div class="audit"><h4>Controles de auditoría</h4>{controls_html}<p class="legend">✓ comprobado aquí · '
              '! no se puede comprobar en este servidor o tiene una observación · nada se muestra como verificado sin '
              'comprobarse.</p></div>') if controls_html else ""
@@ -364,5 +366,5 @@ def build_page_html(palette, indicators, runs, rejections, flags, controls_html=
     return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
             + build_css(palette) + (f"<style>{audit_trace.build_controls_css(palette)}</style>" if controls_html else "")
             + '</head><body>' + quality_view.DEFS
-            + f'<div class="ql">{verdict}<div class="stage">{spine}{gates}</div>{bottom}{audit}</div>' + FIT_SCRIPT + '</body></html>')
+            + f'<div class="ql">{verdict}<div class="stage">{spine}{gates}</div>{audit}</div>' + FIT_SCRIPT + '</body></html>')
 # endregion

@@ -62,7 +62,11 @@ def test_quality_view_hangs_each_dimension_from_the_pipeline_without_cards(measu
     for keys in quality_live.COLUMNS:
         titles = [quality_live.TITLES[key] for key in keys]
         assert [page.index(title) for title in titles] == sorted(page.index(title) for title in titles)
-    assert page.index('class="cell spine"') < page.index('class="gates"') < page.index('class="bottom"')
+    assert page.index('class="cell spine"') < page.index('class="gates"') < page.index("Qué se apartó")
+    # D-241: the lists of what was set apart and of the loads fill the free space of the first two columns.
+    first, second = page.split('class="cell c2"')[0], page.split('class="cell c2"')[1].split('class="cell c3"')[0]
+    assert "Qué se apartó" in first and "Cargas · filas leídas" in second
+    assert 'class="bottom"' not in page
 
 
 @needs_database
@@ -70,7 +74,7 @@ def test_d220_the_audit_controls_close_the_quality_view_without_a_filter(measure
     indicators = quality_live.build_indicators(measures, NOW)
     page = quality_live.build_page_html(charts.get_palette("Vantablack"), indicators, measures["runs"],
                                         measures["rejections"], measures["flags"], '<div class="controls">x</div>')
-    assert "Controles de auditoría" in page and page.index('class="bottom"') < page.index('class="audit"')
+    assert "Controles de auditoría" in page and page.index("Qué se apartó") < page.index('class="audit"')
     assert not hasattr(audit_trace, "read_trace") and not hasattr(audit_trace, "find_series")
 
 
