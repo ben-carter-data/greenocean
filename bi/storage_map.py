@@ -191,7 +191,7 @@ svg.map {{ display:block; width:100%; height:100vh; overflow:visible; }}
 .tip {{ opacity:0; pointer-events:none; transition:opacity .15s ease; }}
 .tip div {{ position:absolute; width:270px; padding:12px 14px; border-radius:14px; background:{card}; border:1px solid {border};
   box-shadow:0 18px 40px rgba(0,0,0,{'.55' if dark else '.2'}); color:{text}; font-size:12.5px; line-height:1.45; }}
-.tip b {{ display:block; margin:8px 0 2px; font-size:10.5px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
+.tip b {{ display:block; margin:8px 0 2px; font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
 .tip b:first-child {{ margin-top:0; }}
 .tip code {{ font:400 12px ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; }}
 {"".join(f"svg:has(#n-{key}:hover, #n-{key}:focus) #t-{key} {{ opacity:1; }}" for key in TIP_KEYS)}

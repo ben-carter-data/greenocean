@@ -2865,9 +2865,8 @@ def build_architecture_header(row_counts, latest_run):
                            f"{charts.format_thousands(row_counts['rejection'])} rechazos"),
              ("Última carga", f"{freshness} · {run_text}")]
     return (f'<div class="arch-top fit-modelo"><div class="arch-head compact-header"><h1>{html.escape(PAGE_ARCHITECTURE)}</h1>'
-            '<span class="page-freshness">De dónde viene cada tabla de la base y cómo se relacionan: el modelo estrella convierte los precios en '
-            'indicadores comparables. Las líneas relacionan tablas; no son pasos de '
-            'ejecución.</span></div><div class="arch-chips">'
+            '<span class="page-freshness">Cómo se organizan los datos: las tablas y sus claves, dónde viven y cómo se cruzan las bases.'
+            '</span></div><div class="arch-chips">'
             + "".join(f'<div class="arch-chip"><span>{html.escape(label)}</span>'
                       f'<div>{html.escape(value)}</div></div>' for label, value in chips)
             + "</div></div>")
@@ -2889,14 +2888,15 @@ def build_model_frame_html(svg):
 def build_architecture_css(mode):
     palette = charts.get_palette(mode)
     return f"""<style>
-    .arch-top {{display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:8px 24px;}}
-    .arch-top .arch-head {{flex:1 1 520px; min-width:0;}}
-    .arch-head {{display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 18px; margin:0;}}
-    .arch-head h1 {{font-size:1.5rem !important; margin:0 !important; padding:0 !important;}}
-    .arch-head .page-freshness {{margin:2px 0 0; font-size:.86rem; max-width:900px;}}
+    /* Title and the three figures on one row, the description under them (nothing overlaps). */
+    .arch-top {{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:0 24px;}}
+    .arch-top .arch-head {{display:contents;}}
+    .arch-top .arch-head h1 {{grid-area:1 / 1;}}
+    .arch-top .arch-chips {{grid-area:1 / 2;}}
+    .arch-top .arch-head .page-freshness {{grid-area:2 / 1 / 3 / 3; margin:0 0 6px;}}
     .arch-chips {{display:flex; gap:10px; flex-wrap:wrap; margin:0 0 4px;}}
     .arch-chip {{border:1px solid {palette['card_border']}; border-radius:9px; background:{palette['card']};
-        padding:6px 13px; min-width:150px;}}
+        padding:6px 13px; min-width:130px;}}
     .arch-chip span {{display:block; font-size:10.5px; color:{palette['text']}; line-height:1.3;}}
     .arch-chip div {{font-size:13px; color:{palette['strong_text']}; font-weight:600; white-space:nowrap;}}
     .st-key-architecture_body [data-testid="stHorizontalBlock"] {{align-items:stretch; gap:14px;}}
@@ -2906,8 +2906,8 @@ def build_architecture_css(mode):
     /* The diagram always fits the window (D-232): the viewport is as wide as the height left
        allows, by the drawing's own proportion; the zoom buttons bring it closer inside the panel. */
     .fit-modelo {{position:relative;}}
-    .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 420px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
-    .fit-modelo .zoom-buttons {{position:absolute; top:0; right:0; margin:0; z-index:2;}}
+    .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 360px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
+    .fit-modelo .zoom-buttons {{position:absolute; bottom:-46px; right:0; margin:0; z-index:2;}}
     .st-key-architecture_diagram .arch-legend {{margin:4px 4px 0; padding-top:6px;}}
     .arch-legend {{display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
         border-top:1px solid {palette['card_border']}; font-size:12px; line-height:1.5; color:{palette['text']};}}
@@ -2954,8 +2954,9 @@ def show_architecture_page(mode):
                   height=600)
         return
     if view == MODEL_VIEWS[3]:
-        st.markdown('<p class="arch-phrase">Un cruce es el punto donde un dato sale de un almacén y entra en otro. Cada fila dice cómo pasa, '
-                    'qué viaja, por qué clave se unen los dos lados y si se comprobó ahora.</p>', unsafe_allow_html=True)
+        st.markdown('<p class="arch-phrase">Cada línea es un cruce: el punto donde dos bases se tocan, con lo que las une. '
+                    'El número muestra si se comprobó ahora; pasa el cursor por un número para ver el detalle.</p>',
+                    unsafe_allow_html=True)
         # D-237: the page fits the height the window leaves: the iframe right after this marker takes it.
         st.markdown('<span class="fit-cruces" aria-hidden="true"></span><style>'
                     '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"],'
@@ -6641,7 +6642,11 @@ def build_runs_css(mode):
     .stApp:has(.fit-pipeline) .runs-metric {{padding:7px 14px; gap:0; display:grid; grid-template-columns:auto 1fr;
         column-gap:10px; align-items:baseline;}}
     .stApp:has(.fit-pipeline) .runs-metric-note {{grid-column:1 / -1;}}
-    .zoom-frame.fit-pipeline .zoom-viewport {{max-width:calc(max(100vh - 510px, 190px) * var(--ratio, 2.1)); margin:0 auto;}}
+    .zoom-frame.fit-pipeline .zoom-viewport {{max-width:min(100%, calc(max(100vh - 440px, 190px) * var(--ratio, 2.1))); margin:0 auto;}}
+    /* The tabs sit on the title row, so the drawing keeps the whole width of its card. */
+    .stApp:has(.fit-pipeline) .st-key-card_pipeline_main {{position:relative;}}
+    .stApp:has(.fit-pipeline) .st-key-card_pipeline_main [data-testid="stElementContainer"]:has([data-testid="stButtonGroup"]) {{
+        position:absolute; top:18px; right:170px; margin:0; z-index:3;}}
     </style>"""
 
 
