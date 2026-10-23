@@ -200,8 +200,6 @@ def family_anchor(group):
     return 'familia-' + base64.urlsafe_b64encode(group.encode('utf-8')).decode('ascii').rstrip('=')
 
 
-
-
 def table(rows, focus_link, data_link, selected=None, scope='Promedio nacional', order='Mayores cambios', count=8):
     """A readable ranking with real prices, in-cell bars and exact-series links."""
     body=[]
@@ -236,129 +234,6 @@ def table(rows, focus_link, data_link, selected=None, scope='Promedio nacional',
             '</tbody></table></div></section>')
 
 
-def product_scope(product_name, family):
-    """Visible scope reminder when a product narrows the family result."""
-    return ('<div class="mock-product-scope" role="status">'
-            '<span class="mock-product-scope-kicker">Vista de producto</span>'
-            f'<strong>{esc(product_name)}</strong><span>Familia: {esc(family)}. '
-            'El porcentaje usa solo este producto; no representa el cambio de toda la familia.</span></div>')
-
-
-def active_scope(region, family, product_filter=None):
-    """Compact reminder after the map replaces the three permanent selectors."""
-    place = 'Todo Chile' if region == 'Todas' else region.replace('Región de ', '').replace('Región del ', '')
-    family_label = 'Todas las familias' if family == 'Todas' else family
-    product = 'Todos los productos'
-    if product_filter:
-        _, name, variety = product_filter
-        product = name if variety == 'Sin especificar' else f'{name} · {variety}'
-    return ('<div class="mock-active-scope" role="status"><span class="mock-scope-label">Selección actual</span>'
-            f'<span><b>Región</b>{esc(place)}</span><i></i>'
-            f'<span><b>Familia</b>{esc(family_label)}</span><i></i>'
-            f'<span><b>Producto</b>{esc(product)}</span></div>')
-
-
-def movement_icon(state):
-    """Dimensional bars and arrow; the adjacent word carries the meaning."""
-    return (f'<span class="mock-movement-icon {state}" aria-hidden="true">'
-            '<i></i><i></i><i></i><b></b></span>')
-
-
-def family_summary(rows, detail_link=None, product_filter=None):
-    """Seven-family overview and diverging chart from actual weekly changes."""
-    family_icons = {
-        'Frutas': '🍎', 'Hortalizas': '🥬', 'Carne bovina': '🥩',
-        'Carne de Cerdo - Ave - Cordero': '🍗', 'Lácteos - Huevos - Margarinas': '🥚',
-        'Abarrotes y otros': '🥫', 'Pan': '🍞',
-    }
-    valid = [row for row in rows if row.get('variation') is not None and
-             math.isfinite(float(row['variation']))]
-    groups = {}
-    for row in valid:
-        group = str(row.get('product_group') or 'Sin grupo')
-        groups.setdefault(group, []).append(row)
-    summary = [(group, sum(float(row['variation']) for row in members) / len(members), members)
-               for group, members in groups.items()]
-    summary.sort(key=lambda item: (-item[1], item[0]))
-    scale = max((abs(average) for _, average, _ in summary), default=1) or 1
-    selected_name = None
-    if product_filter:
-        _, product, variety = product_filter
-        selected_name = product if variety == 'Sin especificar' else f'{product} · {variety}'
-    gallery = []
-    chart_rows = []
-    for group, average, members in summary:
-        # A value that rounds to 0.0% must not be described as a fall or rise.
-        state = 'neutral' if abs(average * 100) < .05 else 'rise' if average > 0 else 'fall'
-        word = {'rise': 'Subió', 'fall': 'Bajó', 'neutral': 'Sin variación'}[state]
-        displayed_change = '0,0 %' if state == 'neutral' else percent(average * 100, True)
-        size = min(50, abs(average) / scale * 50)
-        bar = (f'<span class="mock-family-bar {state}" style="width:{size:.2f}%"></span>'
-               if state != 'neutral' else '<span class="mock-family-zero"></span>')
-        detail = (f'<a href="{esc(detail_link(group))}" target="_self">Ver detalle →</a>'
-                  if detail_link else '')
-        display_name = selected_name or group
-        card_content = (f'<span class="mock-family-product" aria-hidden="true">'
-                        f'{family_art(group, "mock-family-product-image", family_icons.get(group, "📦"))}</span>'
-                        f'<strong class="mock-family-tile-name">{esc(display_name)}</strong>'
-                        + (f'<span class="mock-family-tile-family">{esc(group)}</span>' if selected_name else '')
-                        + f'<span class="mock-family-tile-change">{word} <b>{displayed_change}</b></span>'
-                        '<span class="mock-family-tile-action">Ver detalle →</span>')
-        if detail_link:
-            gallery.append(f'<a class="mock-family-tile {state}" href="{esc(detail_link(group))}" target="_self"'
-                           f' aria-label="Ver detalle de {esc(group)}: {word.lower()} {displayed_change}">{card_content}</a>')
-        else:
-            gallery.append(f'<div class="mock-family-tile {state}">{card_content}</div>')
-        chart_rows.append(f'<div class="mock-family-row {state}">'
-                     f'<span class="mock-family-name">{family_art(group, "mock-family-row-image", family_icons.get(group, "📦"))}'
-                     f'<strong>{esc(display_name)}</strong></span>'
-                     f'<span class="mock-family-track" role="img" aria-label="{esc(group)}: {word.lower()} {displayed_change}">{bar}</span>'
-                     f'<span class="mock-family-value">{displayed_change}</span>'
-                     f'<span class="mock-family-state">{movement_icon(state)}<span>{word}</span></span>{detail}'
-                     '</div>')
-    single = len(summary) == 1
-    overview_title = (f'Resultado de {esc(selected_name)}' if selected_name else
-                      'Familia seleccionada' if single else f'Las {len(summary)} familias de alimentos')
-    overview_note = ('Cambios de este producto en las series con precio en ambas semanas.' if selected_name else
-                     'Revisa los productos de esta familia más abajo.' if single else
-                     'Ordenadas desde la mayor subida hasta la mayor baja. Selecciona una para ver sus productos.')
-    chart_title = 'Cambio del producto seleccionado' if selected_name else 'Movimiento por familia'
-    chart_note = ('Promedio simple de los cambios de este producto por calidad, unidad y canal.' if selected_name else
-                  'Promedio simple de las variaciones de precios comparables frente a la semana anterior.')
-    empty_note = ('Este producto no tiene precios en ambas semanas con los filtros elegidos.' if selected_name else
-                  'No hay familias con precio en ambas semanas.')
-    # Built apart: a backslash inside an f-string expression needs Python 3.12, and CI runs 3.11.
-    empty = f'<p class="mock-empty">{empty_note}</p>'
-    gallery_html = ''.join(gallery) or empty
-    single_class = ' is-single' if single else ''
-    return ('<section class="mock-family-summary" id="familias">'
-            f'<div class="mock-family-overview"><div class="mock-family-overview-heading"><h2>{overview_title}</h2>'
-            f'<p>{overview_note}</p></div>'
-            f'<div class="mock-family-gallery{single_class}">{gallery_html}</div></div>'
-            f'<div class="mock-family-chart"><div class="mock-family-heading"><div><h2>{chart_title}</h2>'
-            f'<p>{chart_note}</p></div>'
-            '<span class="mock-family-legend"><i></i> Subida <i></i> Bajada</span></div>'
-            '<div class="mock-family-rows">'
-            + (''.join(chart_rows) or empty)
-            + '</div></div></section>')
-
-
-def comparison_context(week_label, previous_label, scope, updated):
-    """Tell readers which observations can be compared and where they came from."""
-    return ('<section class="mock-comparison-context"><h2>¿Qué estamos comparando?</h2>'
-            '<div class="mock-comparison-facts">'
-            '<div><span class="mock-fact-icon what" aria-hidden="true">?</span><strong>Qué</strong>'
-            '<span>El precio de cada alimento.</span></div>'
-            '<div><span class="mock-fact-icon when" aria-hidden="true"></span><strong>Cuándo</strong>'
-            f'<span>Semana {esc(previous_label)} → semana {esc(week_label)}</span></div>'
-            '<div><span class="mock-fact-icon where" aria-hidden="true"></span><strong>Dónde</strong>'
-            f'<span>{esc(scope)} · por tipo de comercio, no por tienda</span></div>'
-            '<div><span class="mock-fact-icon source" aria-hidden="true"></span><strong>Fuente</strong>'
-            f'<span>ODEPA · actualizado {esc(updated)}</span></div>'
-            '</div><p>Mostramos alimentos con precio en ambas semanas. El cambio de cada familia '
-            'es la mediana de esos cambios: lo que hizo el producto típico.</p></section>')
-
-
 @lru_cache(maxsize=1)
 def chile_regions_geometry():
     """Local, simplified administrative geometry; prices are joined at runtime."""
@@ -373,20 +248,6 @@ def _geometry_points(geometry):
     for polygon in polygons:
         for ring in polygon:
             yield from ring
-
-
-def _geometry_paths(geometry, project):
-    """Convert GeoJSON rings to compact SVG paths while preserving holes."""
-    coordinates = geometry['coordinates']
-    polygons = coordinates if geometry['type'] == 'MultiPolygon' else [coordinates]
-    paths = []
-    for polygon in polygons:
-        for ring in polygon:
-            if len(ring) < 3:
-                continue
-            points = [project(lon, lat) for lon, lat in ring]
-            paths.append('M' + 'L'.join(f'{x:.1f},{y:.1f}' for x, y in points) + 'Z')
-    return ''.join(paths)
 
 
 def _ring_centroid(ring):
@@ -699,52 +560,6 @@ def coverage_note(model, quality_link, methodology_link, family=None):
             f'Precios nominales de ODEPA, redondeados; cambios calculados antes de redondear. {links}</p>')
 
 
-def history_chart(rows, subtitle, scope, history_link):
-    """Exact weekly points; gaps split paths. No smoothing or fabricated values."""
-    import pandas as pd
-    data=rows.dropna(subset=['national_price']).sort_values('week_start')
-    if data.empty:
-        graphic='<p class="mock-empty">No hay historia comparable para esta selección.</p>'
-    else:
-        width,height=520,168
-        left,right,top,bottom=49,14,16,30
-        start,end=data.week_start.min(),data.week_start.max()
-        days=max((end-start).days,7)
-        low,high=float(data.national_price.min()),float(data.national_price.max())
-        span=max(high-low,high*.1,1)
-        low=max(0,math.floor((low-span*.2)/100)*100)
-        high=math.ceil((high+span*.2)/100)*100
-        span=max(high-low,1)
-        x=lambda day:left+(day-start).days/days*(width-left-right)
-        y=lambda price:top+(high-price)/span*(height-top-bottom)
-        svg=[f'<svg class="mock-history-svg" viewBox="0 0 {width} {height}" role="img" aria-label="Evolución semanal del precio; los cortes indican semanas sin dato">']
-        for tick in (low,(low+high)/2,high):
-            yy=y(tick)
-            svg.append(f'<path d="M{left} {yy}H{width-right}" class="mock-grid-line"/><text x="{left-9}" y="{yy+4}" text-anchor="end" class="mock-axis">{number(tick)}</text>')
-        segments=[];segment=[];last=None
-        for row in data.to_dict('records'):
-            if last is not None and (row['week_start']-last).days!=7:
-                segments.append(segment);segment=[]
-            segment.append((x(row['week_start']),y(row['national_price']),row))
-            last=row['week_start']
-        if segment:segments.append(segment)
-        for seg in segments:
-            coords=' '.join(f'{xx:.2f},{yy:.2f}' for xx,yy,_ in seg)
-            svg.append(f'<polygon points="{seg[0][0]},{height-bottom} {coords} {seg[-1][0]},{height-bottom}" fill="{BLUE}" opacity=".11"/>')
-            svg.append(f'<polyline points="{coords}" fill="none" stroke="{BLUE}" stroke-width="2"/>')
-            for xx,yy,row in seg:
-                svg.append(f'<circle cx="{xx}" cy="{yy}" r="3" fill="{BLUE}"><title>{row["week_start"]:%d-%m-%Y}: ${number(row["national_price"])}</title></circle>')
-        for day in [start]+[t for t in pd.date_range(start,end,freq='MS') if (t-start).days>7]:
-            svg.append(f'<text x="{x(day)}" y="{height-7}" text-anchor="middle" class="mock-axis">'+['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][day.month-1]+'</text>')
-        last=data.iloc[-1]
-        svg.append(f'<circle cx="{x(last.week_start)}" cy="{y(last.national_price)}" r="6" fill="{BLUE}" stroke="white" stroke-width="2"/>')
-        svg.append(f'<text x="{width-right}" y="{max(12,y(last.national_price)-15)}" text-anchor="end" class="mock-last-price">${number(last.national_price)}</text></svg>')
-        graphic=''.join(svg)
-    return ('<section class="mock-history"><h3>Evolución · últimas 12 semanas</h3>'
-            f'<p class="mock-panel-subtitle mock-history-title">{esc(subtitle)}</p>'+graphic+
-            f'<p class="mock-history-note">Últimas 12 semanas · {esc(scope)}</p></section>')
-
-
 def family_table_rows(rows, order):
     """The rows eligible for one family's table under the selected ranking."""
     if order == 'Subidas':
@@ -754,14 +569,6 @@ def family_table_rows(rows, order):
     if order == 'Inusuales':
         return [row for row in rows if row.get('is_alert')]
     return list(rows)
-
-
-def family_table_limit(rows, order):
-    """Largest family table available under the current filters and order."""
-    groups = {}
-    for row in rows:
-        groups.setdefault(str(row['product_group']), []).append(row)
-    return max((len(family_table_rows(group_rows, order)) for group_rows in groups.values()), default=0)
 
 
 def family_tables(model, count, order):

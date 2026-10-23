@@ -163,13 +163,14 @@ def build_context_html(mode):
 # Each case is read from the PRD: the four profiles of «3. Usuarios» with the question each one asks («4. Preguntas
 # de negocio»), the administrator's duties and the automatic load (RF-01 to RF-04). The screen of each case is
 # a page of the menu; the one case that is not a screen of the panel says so.
-USE_CASE_ROWS = (96, 216, 336, 456)
+USE_CASE_ROWS = (104, 200, 296, 392, 488)
 # (actor, row, case, PRD id, screen)
 USER_CASES = [
     ("Gerencia", 0, "Revisar qué se movió en la semana y qué es inusual", "P-1", "Resumen semanal"),
     ("Analista de pricing", 1, "Saber si el precio de hoy es normal para la época", "P-2", "Consultas SQL · Precio vs. época"),
-    ("Compras y abastecimiento", 2, "Ver cuánto paga el consumidor sobre el mayorista", "P-3", "Consultas SQL · Brecha mayorista"),
-    ("Revisor técnico", 3, "Comprobar la calidad, las pruebas, el linaje y la documentación", "", "Calidad y auditoría"),
+    ("Analista de pricing", 2, "Ver qué alimentos subieron más que la inflación", "P-4", "Precios e inflación"),
+    ("Compras y abastecimiento", 3, "Ver cuánto paga el consumidor sobre el mayorista", "P-3", "Consultas SQL · Brecha mayorista"),
+    ("Revisor técnico", 4, "Comprobar la calidad, las pruebas, el linaje y la documentación", "", "Calidad y auditoría"),
 ]
 SYSTEM_CASES = [
     ("GitHub Actions", 0, "Cargar y publicar cada martes", "RF-01 a RF-04", "Centro de operación"),
@@ -177,10 +178,10 @@ SYSTEM_CASES = [
     ("Administrador", 2, "Lanzar una carga manual con la clave de control", "", "Centro de operación"),
     ("Administrador", 3, "Mantener el código y los secretos", "", "GitHub, fuera del panel"),
 ]
-USE_WIDTH, USE_HEIGHT = 1000, 520
+USE_WIDTH, USE_HEIGHT = 1000, 566
 LEFT_ACTOR_X, RIGHT_ACTOR_X = 66, 934
-OVAL = {"left": 344, "right": 668, "rx": 126, "ry": 46}
-BOUNDARY = (176, 18, 648, 484)
+OVAL = {"left": 344, "right": 668, "rx": 126, "ry": 44}
+BOUNDARY = (176, 18, 648, 530)
 
 
 def wrap(text, width):
@@ -216,22 +217,25 @@ def build_use_cases_html(mode):
              f'stroke="{border}" stroke-width="1.4" stroke-dasharray="6 6"/>'
              f'<text x="{BOUNDARY[0] + 20}" y="{BOUNDARY[1] + 26}" font-size="13" font-weight="700" letter-spacing=".1em" '
              f'fill="{ink}">GREENOCEAN</text>']
-    # Left: the four profiles, each on the row of its case.
+    # Each actor sits level with its cases; one with several reaches them through a straight bus.
     actors = []
-    for actor, row, *_ in USER_CASES:
-        y = USE_CASE_ROWS[row]
-        parts.append(f'<path d="M{LEFT_ACTOR_X + 32} {y} H{OVAL["left"] - OVAL["rx"]}" stroke="{accent}" stroke-width="1.8"/>')
-        actors.append(f'<g>{actor_figure(LEFT_ACTOR_X, y, "visitor", actor, ink, muted)}</g>')
-    # Right: GitHub Actions on its row; the administrator on the third, with a bus to his three cases.
-    bus_x = RIGHT_ACTOR_X - 78
-    admin_rows = [row for actor, row, *_ in SYSTEM_CASES if actor == "Administrador"]
-    parts.append(f'<path d="M{OVAL["right"] + OVAL["rx"]} {USE_CASE_ROWS[0]} H{RIGHT_ACTOR_X - 32}" stroke="{accent}" stroke-width="1.8"/>')
-    parts.append(f'<path d="M{bus_x} {USE_CASE_ROWS[admin_rows[0]]} V{USE_CASE_ROWS[admin_rows[-1]]}" stroke="{accent}" stroke-width="1.8"/>')
-    for row in admin_rows:
-        parts.append(f'<path d="M{OVAL["right"] + OVAL["rx"]} {USE_CASE_ROWS[row]} H{bus_x}" stroke="{accent}" stroke-width="1.8"/>')
-    parts.append(f'<path d="M{bus_x} {USE_CASE_ROWS[2]} H{RIGHT_ACTOR_X - 32}" stroke="{accent}" stroke-width="1.8"/>')
-    actors.append(f'<g>{actor_figure(RIGHT_ACTOR_X, USE_CASE_ROWS[0], "github", "GitHub Actions", ink, muted, brand=True)}</g>')
-    actors.append(f'<g>{actor_figure(RIGHT_ACTOR_X, USE_CASE_ROWS[2], "author", "Administrador", ink, muted)}</g>')
+    for side, cases, actor_x, edge_x, bus_x in (("left", USER_CASES, LEFT_ACTOR_X, OVAL["left"] - OVAL["rx"], LEFT_ACTOR_X + 78),
+                                                ("right", SYSTEM_CASES, RIGHT_ACTOR_X, OVAL["right"] + OVAL["rx"], RIGHT_ACTOR_X - 78)):
+        names = list(dict.fromkeys(actor for actor, *_ in cases))
+        for actor in names:
+            rows = [row for name, row, *_ in cases if name == actor]
+            ys = [USE_CASE_ROWS[row] for row in rows]
+            y = ys[len(ys) // 2] if len(ys) % 2 else (ys[0] + ys[-1]) / 2
+            near = actor_x + 32 if side == "left" else actor_x - 32
+            if len(ys) == 1:
+                parts.append(f'<path d="M{near} {y} H{edge_x}" stroke="{accent}" stroke-width="1.8"/>')
+            else:
+                parts.append(f'<path d="M{near} {y} H{bus_x}" stroke="{accent}" stroke-width="1.8"/>'
+                             f'<path d="M{bus_x} {ys[0]} V{ys[-1]}" stroke="{accent}" stroke-width="1.8"/>')
+                parts.extend(f'<path d="M{bus_x} {row_y} H{edge_x}" stroke="{accent}" stroke-width="1.8"/>' for row_y in ys)
+            brand = actor == "GitHub Actions"
+            person = "author" if actor == "Administrador" else "visitor"
+            actors.append(f'<g>{actor_figure(actor_x, y, "github" if brand else person, actor, ink, muted, brand=brand)}</g>')
     cases = [build_use_case("left", row, case, identifier, screen, ink, muted, accent, card)
              for _, row, case, identifier, screen in USER_CASES]
     cases += [build_use_case("right", row, case, identifier, screen, ink, muted, accent, card)
@@ -293,5 +297,5 @@ figcaption {{ margin-top:10px; color:{palette['reference']}; }} figcaption b {{ 
 # endregion
 
 # The document views by marker, with the height of their frame in the page.
-VIEWS = {"contexto": (build_context_html, 520), "casos": (build_use_cases_html, 520),
+VIEWS = {"contexto": (build_context_html, 520), "casos": (build_use_cases_html, 580),
          "mockups": (build_mockups_html, 720)}

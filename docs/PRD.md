@@ -21,7 +21,7 @@ Hoy la base tiene 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2
 
 | Perfil | Para qué lo usa |
 |---|---|
-| Analista de pricing | Saber si el precio de hoy es normal para la época, en pesos de hoy |
+| Analista de pricing | Saber si el precio de hoy es normal para la época y qué alimentos subieron más que la inflación, en pesos de hoy |
 | Compras y abastecimiento | Ver cuánto paga el consumidor sobre el precio mayorista, por canal |
 | Gerencia | Revisar qué se movió en la semana y qué está fuera de lo habitual |
 | Revisor técnico | Comprobar la calidad, las pruebas, el linaje y la documentación |
@@ -32,13 +32,14 @@ El panel es de consulta. El administrador mantiene el código y los secretos, re
 
 ## 4. Preguntas de negocio
 
-Cada pregunta apunta a la pantalla que la responde y a la prueba que lo respalda.
+Cada pregunta apunta a la pantalla que la responde y a la prueba que recalcula su respuesta por otro camino.
 
 | ID | Pregunta | Pantalla que la responde | Evidencia |
 |---|---|---|---|
-| P-1 | ¿Qué precios cambiaron esta semana y cuáles son inusuales? | Resumen semanal | `tests/test_home_mockup.py::test_dashboard_alerts_follow_week_and_family_and_keep_severity_order`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
-| P-2 | ¿El precio de hoy es normal para la temporada? | Consultas SQL · Precio vs. época | `tests/test_sql_explorer.py::test_every_example_query_returns_rows`, `tests/test_price_context.py::test_price_state_against_p25_and_p75` |
-| P-3 | ¿Cuánto paga el consumidor sobre el mayorista? | Consultas SQL · Brecha mayorista | `tests/test_sql_explorer.py::test_every_example_query_returns_rows`, `tests/test_price_context.py::test_gap_is_supermarket_over_street_market_on_common_weeks` |
+| P-1 | ¿Qué precios cambiaron esta semana y cuáles son inusuales? | Resumen semanal | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
+| P-2 | ¿El precio de hoy es normal para la temporada? | Consultas SQL · Precio vs. época | `tests/test_sql_explorer.py::test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas` |
+| P-3 | ¿Cuánto paga el consumidor sobre el mayorista? | Consultas SQL · Brecha mayorista | `tests/test_sql_explorer.py::test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas` |
+| P-4 | ¿Qué alimentos subieron más que la inflación? | Precios e inflación | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_dashboard.py::test_d163_the_page_answers_one_question_with_families_against_the_ipc` |
 
 ## 5. Requisitos
 

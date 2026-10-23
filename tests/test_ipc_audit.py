@@ -8,7 +8,6 @@ import sys
 from datetime import date
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -86,14 +85,3 @@ def test_only_weeks_after_the_last_published_month_are_provisional():
     assert all(flags[first:]) and not any(flags[:first])
 
 
-@needs_database
-def test_real_prices_keep_this_week_and_deflate_the_past():
-    from bi import dashboard
-    ipc = dashboard.read_ipc_weekly(0)
-    latest = ipc["week_start"].max()
-    rows = pd.DataFrame({"week_start": [ipc["week_start"].min(), latest], "national_price": [1000.0, 1000.0]})
-    real = dashboard.deflate_series(rows, ipc)
-    first_factor = ipc.loc[ipc["week_start"].idxmin(), "real_factor"]
-    assert real["national_price"].tolist() == pytest.approx([1000.0 * first_factor, 1000.0])
-    assert real["nominal_price"].tolist() == [1000.0, 1000.0]
-    assert dashboard.describe_ipc_reference(ipc).split()[0] in dashboard.price_context.MONTHS

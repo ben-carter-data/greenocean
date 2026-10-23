@@ -102,28 +102,6 @@ def summarize_families(rows, last):
     return summary, ipc_total, ipc_year
 
 
-def draw_family_chart(rows, mode, real=False, height=360):
-    """Each family against the food IPC since January 2022. Real: the IPC is the flat 100
-    line and a family above it rose more than the food basket."""
-    palette = charts.get_palette(mode)
-    value = "real" if real else "index"
-    domain = [family for family in FAMILY_COLORS if family in set(rows["product_group"])] + [IPC_NAME]
-    colors = [FAMILY_COLORS[family] for family in domain[:-1]] + [palette["strong_text"]]
-    x = alt.X("month_start:T", title=None, axis=alt.Axis(format="%b %Y", tickCount=10, labelPadding=6))
-    y = alt.Y(f"{value}:Q", title="Índice (enero 2022 = 100)" if not real else "Frente a la inflación (100 = igual)",
-              scale=alt.Scale(zero=False))
-    color = alt.Color("product_group:N", scale=alt.Scale(domain=domain, range=colors),
-                      legend=alt.Legend(title=None, orient="bottom", columns=4, symbolStrokeWidth=3))
-    tooltip = [alt.Tooltip("product_group:N", title="Familia"),
-               alt.Tooltip("month_start:T", title="Mes", format="%m-%Y"),
-               alt.Tooltip(f"{value}:Q", title="Índice", format=",.1f")]
-    families = alt.Chart(rows[rows["product_group"] != IPC_NAME]).mark_line(
-        strokeWidth=2, interpolate="monotone", opacity=.9).encode(x=x, y=y, color=color, tooltip=tooltip)
-    reference = alt.Chart(rows[rows["product_group"] == IPC_NAME]).mark_line(
-        strokeWidth=3.4, strokeDash=[7, 4], interpolate="monotone").encode(x=x, y=y, color=color, tooltip=tooltip)
-    return charts.apply_chart_style(alt.layer(families, reference).properties(height=height), mode)
-
-
 def family_domain(rows, real=False, step=10):
     """The shared y range of the family cards: every family and the IPC fit in it, so
     the cards compare at a glance; rounded outward to the nearest step."""

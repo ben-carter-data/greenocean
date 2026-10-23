@@ -1,6 +1,5 @@
 import re
 """Data fidelity and SVG geometry of the approved initial-screen mockup."""
-import json
 from pathlib import Path
 import pandas as pd
 import pytest
@@ -8,16 +7,6 @@ from streamlit.testing.v1 import AppTest
 from bi import dashboard, home_mockup, queries
 
 ROOT=Path(__file__).resolve().parents[1]
-
-
-def test_history_keeps_real_points_and_breaks_missing_weeks():
-    rows=pd.DataFrame({'week_start':pd.to_datetime(['2026-01-05','2026-01-19']), 'national_price':[1000.,1400.]})
-    markup=home_mockup.history_chart(rows,'Tomate · kilo','promedio regional simple','./')
-    assert markup.count('<polyline')==2
-    assert markup.count('<circle')==3 # two real points and the latest-point highlight
-    assert '05-01-2026: $1.000' in markup and '19-01-2026: $1.400' in markup
-    assert '12-01-2026' not in markup
-    assert 'No hay historia comparable' in home_mockup.history_chart(rows.iloc[:0],'','','./')
 
 
 def test_counts_are_explicit_comparisons_and_not_money_or_unique_products():
@@ -64,43 +53,6 @@ def test_ranking_orders_severity_and_breaks_ties_without_duplicates():
     assert home_mockup.order_movements(rows,8,'Subidas')['product'].tolist()==['A','B']
     assert home_mockup.order_movements(rows,8,'Bajadas')['product'].tolist()==['C']
     assert home_mockup.order_movements(rows,8,'Inusuales')['product'].tolist()==['A','B']
-
-
-def test_family_chart_shows_direction_without_negative_zero_or_ambiguous_counts():
-    rows = [
-        {'product_group': 'Hortalizas', 'variation': .024},
-        {'product_group': 'Cerdo, ave y cordero', 'variation': -.03},
-        {'product_group': 'Pan', 'variation': -.0001},
-    ]
-    markup = home_mockup.family_summary(rows, lambda group: f'/?familia={group}')
-    assert 'mock-family-bar rise' in markup and 'mock-family-bar fall' in markup
-    assert 'mock-family-zero' in markup
-    assert 'Las 3 familias de alimentos' in markup
-    assert 'Hortalizas' in markup and '+2,4 %' in markup
-    assert 'Cerdo, ave y cordero' in markup and '−3,0 %' in markup
-    assert 'Sin variación' in markup and '0,0 %' in markup and '−0,0 %' not in markup
-    assert markup.count('class="mock-family-tile ') == 3
-    assert markup.count('class="mock-family-product"') == 3
-    assert 'data:image/webp;base64,' in markup
-    assert 'class="mock-family-row-image"' in markup
-    assert markup.index('mock-family-tile rise') < markup.index('mock-family-tile neutral') < markup.index('mock-family-tile fall')
-    assert markup.count('>Ver detalle →') == 6
-    assert markup.count('class="mock-movement-icon ') == 3
-    assert 'mock-movement-icon rise' in markup
-    assert 'mock-movement-icon fall' in markup
-    assert 'mock-movement-icon neutral' in markup
-    assert '<span>Subió</span>' in markup and '<span>Bajó</span>' in markup
-    assert 'comparaciones válidas' not in markup
-
-
-def test_family_table_limit_matches_the_selected_order():
-    rows = ([{'product_group': 'Frutas', 'variation': .03, 'is_alert': True}] * 3
-            + [{'product_group': 'Frutas', 'variation': -.02, 'is_alert': False}] * 2
-            + [{'product_group': 'Pan', 'variation': .01, 'is_alert': False}] * 8)
-    assert home_mockup.family_table_limit(rows, 'Mayores cambios') == 8
-    assert home_mockup.family_table_limit(rows, 'Subidas') == 8
-    assert home_mockup.family_table_limit(rows, 'Bajadas') == 2
-    assert home_mockup.family_table_limit(rows, 'Inusuales') == 3
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
@@ -170,28 +122,6 @@ def test_d096_sidebar_footer_shows_the_real_alert_count():
     assert 'background:transparent !important; color:#ff9ca4 !important;' in dark_css
     assert 'background:transparent !important; color:#9d1f2c !important;' in light_css
     assert 'box-shadow:none !important;' in dark_css
-
-
-def test_product_view_names_the_selected_product_instead_of_claiming_a_family_result():
-    rows = [{'product_group': 'Pan', 'variation': .012}]
-    markup = home_mockup.family_summary(rows, product_filter=('Pan', 'Marraqueta', 'Sin especificar'))
-    assert 'Resultado de Marraqueta' in markup
-    assert 'Cambio del producto seleccionado' in markup
-    assert 'Las 1 familias' not in markup
-    scope = home_mockup.product_scope('Marraqueta', 'Pan')
-    assert 'no representa el cambio de toda la familia' in scope
-
-
-def test_single_family_is_centered_and_comparison_context_is_plain_language():
-    markup = home_mockup.family_summary([{'product_group': 'Pan', 'variation': -.031}])
-    assert 'Familia seleccionada' in markup
-    assert 'mock-family-gallery is-single' in markup
-    assert 'Las 1 familias' not in markup
-    context = home_mockup.comparison_context('05-10-2026', '28-09-2026', 'Arica y Parinacota', '13 oct')
-    assert 'El precio de cada alimento.' in context
-    assert 'Semana 28-09-2026 → semana 05-10-2026' in context
-    assert 'por tipo de comercio, no por tienda' in context
-    assert context.count('class="mock-fact-icon ') == 4
 
 
 def test_regional_summary_counts_equivalent_prices_and_uses_a_display_threshold():

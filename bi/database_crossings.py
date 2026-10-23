@@ -86,8 +86,6 @@ def read_checks(database_file=queries.DATABASE_FILE, backup_file=None):
     return checks
 
 
-
-
 WIDTH, HEIGHT = 1000, 614
 SMALL = storage_map.SMALL
 # Columns of the tables: A is the IPC chain, B the consumer prices, C the wholesale prices.
@@ -134,11 +132,6 @@ def chip_box(layer, row, column):
     left = COLUMNS[column[0]][0]
     right = COLUMNS[column[-1]][1]
     return (left, layer_top(layer) + row, right - left, CHIP_HEIGHT)
-
-
-def chip_edge(layer, row, column, side):
-    x, y, w, h = chip_box(layer, row, column)
-    return {"top": (x + w / 2, y), "bottom": (x + w / 2, y + h), "right": (x + w, y + h / 2), "left": (x, y + h / 2)}[side]
 
 
 # The crossings on the drawing: (crossing key, [(from, to)] lines, number badge place, label, label place, dashed).

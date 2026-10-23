@@ -4,8 +4,6 @@ The data of the storage architecture: each store with what it holds and why (NOD
 three groups of the 12 served tables (ORIGINS) and the brand discs. The drawing itself is in
 bi/storage_map.py; the other views take their logos from here.
 """
-import html
-
 from bi import brand_icons, charts, operation_center
 
 MAIN_Y = 235

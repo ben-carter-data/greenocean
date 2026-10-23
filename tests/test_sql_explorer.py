@@ -1,6 +1,7 @@
 """Consultas SQL page: example queries, read-only guard, timeout and rendering."""
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from bi import queries, sql_explorer
@@ -188,3 +189,66 @@ def test_d183_a_short_query_gives_its_room_to_the_results():
     assert (sql_explorer.editor_height(short_sql) + sql_explorer.results_height(short_sql, 100)
             == sql_explorer.STUDIO_HEIGHT)
     assert sql_explorer.results_height(short_sql, 2) == 35 * 3 + 3
+
+
+# region The answers of the PRD, recomputed another way (D-244)
+def example_sql(title):
+    return next(sql for name, _, sql in sql_explorer.EXAMPLES if name == title)
+
+
+def literal(value):
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+@needs_database
+def test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas():
+    """P-3: the consumer over the wholesale price, paired by product, unit, region and week."""
+    result = sql_explorer.run_user_query(example_sql("Brecha mayorista")).rows
+    assert not result.empty
+    latest = pd.Timestamp(sql_explorer.read_view("SELECT max(semana) AS s FROM precios WHERE fuente = 'mayorista'")["s"][0])
+    for row in result.head(3).itertuples():
+        key = " AND ".join(f"{column} = {literal(getattr(row, column))}"
+                           for column in ("familia", "producto", "variedad", "calidad", "unidad"))
+        prices = sql_explorer.read_view(f"SELECT region, semana, fuente, precio FROM precios WHERE {key} AND marca = 'SIN_MARCA'")
+        prices["semana"] = pd.to_datetime(prices["semana"])
+        consumer = prices[prices["fuente"] == "consumidor"]
+        wholesale = prices[prices["fuente"] == "mayorista"]
+        pairs = consumer.merge(wholesale, on=["region", "semana"], suffixes=("_c", "_m"))
+        gap = pairs["precio_c"] / pairs["precio_m"] - 1
+        now = pairs["semana"] > latest - pd.Timedelta(days=28)
+        year_ago = pairs["semana"].between(latest - pd.Timedelta(days=392), latest - pd.Timedelta(days=364))
+        assert row.regiones == pairs.loc[now, "region"].nunique()
+        assert abs(row.brecha_actual_pct - gap[now].median() * 100) <= 0.051
+        assert abs(row.brecha_hace_un_anio_pct - gap[year_ago].median() * 100) <= 0.051
+
+
+@needs_database
+def test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas():
+    """P-2: the last four ISO weeks against the same weeks of earlier years, series by series, in real pesos."""
+    result = sql_explorer.run_user_query(example_sql("Precio vs. época")).rows
+    assert not result.empty
+    weeks = sql_explorer.read_view("SELECT semana, anio_iso, semana_iso FROM semanas")
+    weeks["semana"] = pd.to_datetime(weeks["semana"])
+    latest = pd.Timestamp(sql_explorer.read_view("SELECT max(semana) AS s FROM precios WHERE fuente = 'consumidor'")["s"][0])
+    latest_year = int(weeks.loc[weeks["semana"] == latest, "anio_iso"].iloc[0])
+    season = set(weeks.loc[weeks["semana"].between(latest - pd.Timedelta(days=21), latest), "semana_iso"])
+    factors = sql_explorer.read_view("SELECT semana, factor_real FROM ipc_semanal")
+    factors["semana"] = pd.to_datetime(factors["semana"])
+    for row in result.head(3).itertuples():
+        key = " AND ".join(f"{column} = {literal(getattr(row, column))}"
+                           for column in ("familia", "producto", "variedad", "calidad", "unidad"))
+        prices = sql_explorer.read_view(
+            f"SELECT canal, region, semana, precio FROM precios WHERE {key} AND fuente = 'consumidor' AND marca = 'SIN_MARCA'")
+        prices["semana"] = pd.to_datetime(prices["semana"])
+        prices = prices.merge(weeks, on="semana").merge(factors, on="semana")
+        prices = prices[prices["semana_iso"].isin(season)]
+        prices["real"] = prices["precio"] * prices["factor_real"]
+        series = []
+        for _, group in prices.groupby(["canal", "region"]):
+            now = group.loc[group["anio_iso"] == latest_year, "real"]
+            before = group[group["anio_iso"] < latest_year]
+            if len(now) and before["anio_iso"].nunique() >= 2:
+                series.append(now.mean() / before["real"].mean() - 1)
+        assert row.series_comparadas == len(series)
+        assert abs(row.diferencia_real_pct - pd.Series(series).median() * 100) <= 0.051
+# endregion

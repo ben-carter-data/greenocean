@@ -111,11 +111,6 @@ def test_change_chip_is_red_for_rises_and_blue_for_falls():
     assert "chip-fall" in dashboard.build_change_chip(-2.0)
 
 
-def test_durations_are_written_for_people():
-    assert dashboard.format_duration(pd.Timedelta(seconds=57)) == "57 s"
-    assert dashboard.format_duration(pd.Timedelta(seconds=125)) == "2 min 5 s"
-
-
 @needs_database
 def test_direct_entry_opens_corporate_dashboard_without_profile_dialog():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
@@ -362,19 +357,6 @@ def test_d065_a_place_named_in_a_document_opens_its_window_and_view():
         "./")
 
 
-def test_t52_every_link_of_the_project_points_to_a_window_that_exists():
-    """The first window lives at './'; any other one at its own path."""
-    paths = set(dashboard.WINDOW_PATHS.values())
-    for journey in [dashboard.JOURNEY_MANAGER, dashboard.JOURNEY_ANALYST,
-                    dashboard.JOURNEY_TECHNICAL]:
-        for _, address in dashboard.list_journey_steps(journey):
-            path = address.split("?")[0]
-            assert path == "./" or path in paths, address
-    assert dashboard.build_page_address(dashboard.PAGE_COVER) == "proyecto"
-    assert dashboard.build_page_address(dashboard.PAGE_BUSINESS).startswith("proyecto?")
-    assert dashboard.build_page_address(dashboard.HOME_PAGE) == "./"
-
-
 def test_t52_each_channel_gap_says_how_many_regions_stand_behind_it():
     rows = pd.DataFrame({"channel": ["Supermercado"] * 3 + ["Mercado Minorista"] * 2,
                          "region": ["Región de Arica y Parinacota", "Región del Maule",
@@ -386,13 +368,6 @@ def test_t52_each_channel_gap_says_how_many_regions_stand_behind_it():
     assert dashboard.list_channels_without_pairs(
         rows, ["Supermercado", "Mercado Minorista", "Supermercado en Línea", "Feria libre"],
         "Feria libre") == ["Supermercado en Línea"]
-
-
-def test_t52_pipeline_summary_shows_its_worst_real_state():
-    states = {name: control.RUN_OK for name in ["sources", "download", "etl", "load", "panel"]}
-    assert dashboard.summarize_journey_state(states) == ("OK", "ok")
-    states["etl"] = control.RUN_FAILED
-    assert dashboard.summarize_journey_state(states) == ("con falla", "failed")
 
 
 def test_t52_a_bar_resting_on_one_or_two_regions_names_them_next_to_it():
@@ -692,25 +667,6 @@ def test_manual_is_a_procedural_document_without_presentation_cards():
     assert '.github/workflows/semanal.yml' in text
 
 
-def test_d057_key_decisions_exist_and_the_rest_go_newest_first():
-    numbers = {dashboard.split_decision_title(title)[0] for title, _ in project.list_decisions()}
-    key_numbers = [number for _, _, group in dashboard.KEY_DECISIONS for number in group]
-    assert len(key_numbers) == len(set(key_numbers)) == 12
-    assert set(key_numbers) <= numbers
-    assert dashboard.read_first_sentence("Uno. Dos.") == "Uno."
-
-
-@needs_database
-def test_decisions_are_not_a_public_section_and_old_links_open_documentation():
-    assert dashboard.PAGE_DECISIONS not in [p for views in dashboard.WINDOWS.values() for p in views]
-    assert dashboard.PAGE_DECISIONS not in dashboard.SHOW_PAGE_BY_TITLE
-    assert dashboard.OLD_PATHS["decisiones"] == (dashboard.PAGE_DOCUMENTATION, None)
-    app = draw_page(dashboard.PAGE_DOCUMENTATION)
-    assert not app.exception
-    assert "Registro de decisiones" not in " ".join(block.value for block in app.markdown)
-    assert project.list_decisions()  # The source engineering history is preserved.
-
-
 def test_d057_every_theme_of_the_glossary_says_what_it_groups():
     themes = {row["Tema"] for row in project.read_guide_table("Glosario")}
     assert themes == set(dashboard.GLOSSARY_THEME_LEADS)
@@ -828,14 +784,6 @@ def test_market_ranking_handles_both_directions_missing_values_and_top_n():
     assert dashboard.rank_weekly_movements(rows, 2, "Bajas").variation.tolist() == [-0.8]
 
 
-@needs_database
-def test_latest_gaps_keep_only_the_current_week_and_match_their_prices():
-    rows = dashboard.read_cached_latest_gaps(dashboard.get_database_version())
-    assert set(rows.week_start) == {dashboard.read_latest_week()}
-    assert rows.margin.is_monotonic_decreasing
-    assert ((rows.consumer_price / rows.wholesale_price - 1) - rows.margin).abs().max() < 1e-12
-
-
 def test_mobile_rankings_keep_full_labels_and_signed_values_without_injecting_html():
     rows = pd.DataFrame({"label": ["<script>Tomate</script>", "Lechuga"], "value": [-25.0, 50.0]})
     html_text = dashboard.build_mobile_ranking_html(rows, charts.MODE_DARK, True)
@@ -907,16 +855,6 @@ def test_c01_the_cover_names_the_project_reads_real_figures_and_links_every_step
         assert f'href="{html.escape(dashboard.build_page_address(view))}" target="_self"' in text
     # The full definition keeps its own view, untouched.
     assert "Misión" not in text
-
-
-def test_d065_previous_and_next_go_round_the_views_of_a_window():
-    window = "Ingeniería de datos"
-    key = dashboard.window_view_key(window)
-    dashboard.st.session_state[key] = dashboard.PAGE_DIAGRAMS
-    dashboard.step_view(window, -1)
-    assert dashboard.st.session_state[key] == dashboard.read_window_views(window)[-1]
-    dashboard.step_view(window, 1)
-    assert dashboard.st.session_state[key] == dashboard.PAGE_DIAGRAMS
 
 
 def test_security_and_database_have_distinct_functional_symbols():
@@ -1040,36 +978,6 @@ def test_d068_short_labels_stay_unique_and_the_detail_goes_to_the_tooltip():
     assert "'title': 'Detalle'" in spec
 
 
-def test_d068_the_map_hides_channels_and_regions_almost_without_data():
-    points = pd.DataFrame({"channel": ["A", "A", "A", "B"], "region": ["R1", "R2", "R3", "R1"],
-                           "regional_index": [1.0, 1.1, 0.9, 1.2]})
-    kept = dashboard.keep_covered_cells(points)
-    assert set(kept["channel"]) == {"A"}
-
-
-def test_d068_the_summary_sentence_and_figures_read_real_weekly_data():
-    summary = {"latest": {"rises": 214, "falls": 180, "typical_change": 0.4, "median_gap": 61,
-                          "alerts": 43},
-               "previous": {"rises": 200, "falls": 190, "typical_change": 1.0,
-                            "median_gap": 58, "alerts": 50},
-               "strong_rises": 46, "week": pd.Timestamp("2026-10-05"),
-               "top_rise": {"product": "Manzana", "channel": "Mayorista", "variation": 0.556}}
-    sentence = dashboard.build_summary_sentence(summary)
-    assert sentence == ("Esta semana subieron 214 series de precios y bajaron 180. 46 productos "
-                        "subieron más de 10 %; la mayor alza fue Manzana en Mayorista (+55,6 %).")
-    # D-072: the business figures became the summary's strip, as in the mockup.
-    run = pd.Series({"status": dashboard.etl.STATUS_LOADED,
-                     "started_at": "2026-10-13T18:35:00+00:00"})
-    strip = dashboard.build_kpi_strip_html(summary, (219, 257), run)
-    assert ">43<" in strip and "▼ 7 vs. semana anterior" in strip
-    assert "85,2 %" in strip and "219 de 257" in strip and "Carga correcta" in strip
-    assert "no son errores confirmados" in strip
-    assert "Revisar alertas →" in strip and "Ver cobertura →" in strip
-    assert strip.index("Alertas semanales") < strip.index(">43<")
-    assert "Una alerta invita a revisar; no explica la causa." in strip
-    assert "Observaciones históricas" not in strip
-
-
 def test_d069_a_product_filter_keeps_its_key_channel_and_a_short_name():
     row = {"product_group": "Frutas", "product": "Manzana", "variety": "Cripps Pink",
            "quality": "Calibre 80", "normalized_unit": "kilo", "channel": "Mayorista"}
@@ -1078,17 +986,6 @@ def test_d069_a_product_filter_keeps_its_key_channel_and_a_short_name():
     rows = pd.DataFrame([row, dict(row, product="Pera")])
     assert dashboard.keep_product(rows, product)["product"].tolist() == ["Manzana"]
     assert len(dashboard.keep_product(rows, None)) == 2
-
-
-def test_d069_clickable_bars_carry_a_selection_and_the_map_too():
-    rows = pd.DataFrame({"label": ["A", "B"], "value": [5.0, -2.0], "pick": ["0", "1"]})
-    spec = charts.draw_variation_bars(rows, charts.MODE_DARK, select_field="pick").to_dict()
-    assert "'name': 'pick'" in str(spec) and "'fields': ['pick']" in str(spec)
-    points = pd.DataFrame({"region": ["Región del Maule"], "channel": ["Feria libre"],
-                           "regional_index": [1.2], "detail": ["x"]})
-    spec = str(charts.draw_region_channel_map(points, charts.MODE_DARK, "Región del Maule")
-               .to_dict())
-    assert "'fields': ['region']" in spec and "120" in spec
 
 
 @needs_database
@@ -1204,13 +1101,6 @@ def test_plain_ranking_answer_keeps_the_direction_and_real_percentage():
     assert 'no cambió' in dashboard.describe_ranking_change(base | {'variation': 0})
 
 
-def test_plain_regional_answer_distinguishes_above_below_and_average():
-    base = {'region': 'Región de Valparaíso', 'channel': 'Feria libre', 'regional_index': 1.15}
-    assert '15,0 % por encima' in dashboard.describe_regional_comparison(base)
-    assert 'por debajo' in dashboard.describe_regional_comparison(base | {'regional_index': .83})
-    assert 'igual al promedio' in dashboard.describe_regional_comparison(base | {'regional_index': 1})
-
-
 @needs_database
 def test_dashboard_explains_its_graphs_and_collapses_family_tables():
     app = draw_page(dashboard.PAGE_HOME)
@@ -1237,19 +1127,6 @@ def test_historical_root_link_keeps_the_requested_project_view_after_route_chang
     assert read_page_title(app) == dashboard.SECTION_KPI
     assert app.query_params['kpi'] == 'K5'
     assert 'perfil' not in app.query_params
-
-
-def test_smart_criteria_cover_each_kpi_without_inventing_goals():
-    for identifier in dashboard.KPI_PRESENTATION:
-        detail = dashboard.build_kpi_smart_html(identifier)
-        for criterion in ("S · Específico", "M · Medible", "A · Alcanzable", "R · Relevante", "T · Temporal"):
-            assert criterion in detail
-        assert "metas que todavía no se han acordado" in detail
-        assert "No hay meta acordada" in detail
-        assert "El plazo de una meta se define" in detail
-    assert "26 semanas" in dashboard.build_kpi_smart_html("K5")
-    assert "12 semanas" in dashboard.build_kpi_smart_html("K6")
-    assert "histórico disponible" in dashboard.build_kpi_smart_html("K7")
 
 
 @needs_database
@@ -1314,17 +1191,6 @@ def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
     app.query_params['_home_region'] = 'Región de Coquimbo'
     app.run()
     assert 'Inusuales' not in app.selectbox(key='home_products_order').options
-
-
-def test_regional_changes_match_region_channel_and_require_previous_week_price():
-    common = {column: "same" for column in dashboard.queries.KEY_COLUMNS}
-    current = pd.DataFrame([{**common, "region": "A", "channel": "X", "price": 120},
-                            {**common, "region": "B", "channel": "X", "price": 100}])
-    previous = pd.DataFrame([{**common, "region": "A", "channel": "X", "price": 100},
-                             {**common, "region": "B", "channel": "Y", "price": 50}])
-    result = dashboard.regional_week_changes(current, previous)
-    assert result.iloc[0]["weekly_change"] == pytest.approx(20)
-    assert pd.isna(result.iloc[1]["weekly_change"])
 
 
 @needs_database
@@ -1425,16 +1291,6 @@ def test_d102_a_folder_row_really_folds_like_vs_code():
     assert 'Pipeline y linaje' in [link.proto.label for link in app.sidebar.get('page_link')]
 
 
-def test_d113_the_github_link_opens_a_new_tab_with_its_mark():
-    link = dashboard.build_github_link_html("Ver el registro completo de decisiones",
-                                            "https://github.com/example/example")
-    assert 'target="_blank"' in link and 'rel="noopener noreferrer"' in link
-    assert '<svg' in link and 'doc-github-icon' in link
-    app = draw_page(dashboard.PAGE_PRD)
-    text = " ".join(block.value for block in app.markdown)
-    assert 'docs/PRD.md en GitHub' in text and 'target="_blank"' in text
-
-
 def test_d113_the_global_click_handler_only_forces_internal_links():
     script = dashboard.build_visit_history_script()
     assert "anchor.hostname === location.hostname" in script
@@ -1484,12 +1340,6 @@ def test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab():
     assert len(github_links) >= 5
     assert dashboard.architecture.brand_icons.logo_body("github") in markup
     assert markup.count('target="_blank"') >= len(github_links) + 1
-
-
-def test_d111_the_weekly_run_sentence_never_ends_on_a_dangling_colon():
-    sentence = dashboard.describe_weekly_run()
-    assert sentence.endswith('.') and not sentence.rstrip('.').endswith(':')
-    assert 'Hace, en orden' not in sentence
 
 
 @needs_database
@@ -1658,28 +1508,6 @@ def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
         assert len(app.get("iframe")) == framed, page
     for path, page in (("documentacion-bi", dashboard.PAGE_PRD), ("documentacion-it", dashboard.PAGE_SAD)):
         assert dashboard.OLD_PATHS[path] == (page, None)
-
-
-@needs_database
-def test_d160_the_ipc_itself_has_a_chart_with_its_real_figures():
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "from bi import dashboard\ndashboard.show_ipc_dialog('Claro')\n")
-    app = AppTest.from_string(script, default_timeout=60).run()
-    assert not app.exception
-    captions = ' '.join(c.value for c in app.caption)
-    assert 'base 2023 = 100' in captions and 'en los últimos 12 meses' in captions
-    assert app.get('arrow_vega_lite_chart') or app.get('vega_lite_chart')
-
-
-def test_d161_a_yearly_change_splits_into_inflation_and_own_part():
-    weeks = pd.to_datetime(["2025-10-06", "2026-10-05"])
-    rows = pd.DataFrame({"week_start": weeks, "national_price": [1000.0, 1150.0]})
-    ipc = pd.DataFrame({"week_start": weeks, "real_factor": [1.10, 1.0]})
-    split = dashboard.split_yearly_change(rows, ipc, "2026-10-05")
-    assert split["change"] == pytest.approx(150)
-    assert split["inflation"] == pytest.approx(100)  # the old price risen with a +10 % food IPC
-    assert split["own"] == pytest.approx(50)
-    assert dashboard.split_yearly_change(rows.iloc[1:], ipc, "2026-10-05") is None
 
 
 @needs_database

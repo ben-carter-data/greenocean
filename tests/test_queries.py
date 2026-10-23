@@ -1,4 +1,5 @@
 """Tests for bi/queries.sql (K1 to K4, K8). The SQL K5 and K6: test_reconciliation."""
+import re
 import sys
 from pathlib import Path
 
@@ -135,3 +136,24 @@ def test_week_range_gives_the_years_really_loaded(database_file):
     week_range = queries.run_query("quality_week_range", database_file).iloc[0]
     assert (week_range["first_week"], week_range["last_week"]) == ("2026-01-05", "2026-01-12")
     assert (week_range["first_year"], week_range["last_year"]) == ("2026", "2026")
+
+
+@pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="the served database is not here")
+@pytest.mark.parametrize("query_name", sorted(queries.load_queries()))
+def test_every_named_query_runs_read_only_on_the_served_database(query_name):
+    # D-244: every named query the panel uses still runs on the database it reads.
+    rows = queries.run_sql(f"SELECT * FROM ({queries.read_query_body(query_name)}) LIMIT 20")
+    assert list(rows.columns)
+
+
+def test_every_github_link_of_the_panel_points_to_a_file_in_the_repository():
+    # D-244: a literal path given to build_github_url must exist, so no link of the panel is broken.
+    root = Path(__file__).resolve().parent.parent
+    paths = set()
+    for source in (root / "bi").glob("*.py"):
+        paths |= set(re.findall(r'build_github_url\(\s*"([^"{}]+)"', source.read_text(encoding="utf-8")))
+    assert paths
+    for path in paths:
+        assert (root / path).exists(), path
+    for name in ("PRD.md", "SAD.md", "ADR.md", "SEGURIDAD.md", "DECISIONES.md"):
+        assert (root / "docs" / name).exists(), name

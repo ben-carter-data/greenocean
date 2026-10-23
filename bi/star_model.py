@@ -30,7 +30,6 @@ WIDTH = 1000
 MARGIN = 20
 # Vertical gap between two cards of a column; horizontal gap between the columns.
 GAP = 26
-COLUMN_GAP = 60
 # The measures of the fact table: what the indicators analyze.
 MEASURES = ["price", "volume", "observation_count"]
 ROW_HEIGHT = 24

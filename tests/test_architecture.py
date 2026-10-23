@@ -172,29 +172,6 @@ def test_d043_dots_travel_along_the_arrows_only_while_a_run_is_in_progress():
     assert "animateMotion" in running_svg
 
 
-def test_mini_journey_shows_real_figures_and_states():
-    states = dict(make_states(control.RUN_OK), load=control.RUN_FAILED)
-    svg = architecture.build_mini_journey_svg(states, FIGURES, charts.MODE_LIGHT)
-    for figure in ["año 2026", "131.144 precios", "397.814 filas leídas"]:
-        assert figure in svg
-    assert architecture.STATE_COLORS[control.RUN_FAILED] in svg
-    assert "animateMotion" not in svg
-
-
-def test_mini_journey_can_show_illustrative_flow_and_floating_nodes():
-    states = make_states(control.RUN_OK)
-    still = architecture.build_mini_journey_svg(
-        states, FIGURES, charts.MODE_DARK, animate_flow=False)
-    moving = architecture.build_mini_journey_svg(
-        states, FIGURES, charts.MODE_DARK, animate_flow=True)
-    assert 'class="mini-animated"' not in still
-    assert "animateMotion" not in still
-    assert 'class="mini-animated"' in moving
-    assert "animateMotion" in moving
-    assert "@keyframes mini-float" in moving
-    assert moving.count('class="mini-floating"') == 5
-
-
 def test_only_real_states_get_a_dot_and_an_unknown_one_gets_none():
     states = dict(make_states(control.RUN_OK), report=architecture.STATE_UNKNOWN,
                   etl_run=control.RUN_FAILED)
@@ -236,18 +213,6 @@ def test_vertical_journey_moves_its_dots_only_while_a_run_is_in_progress():
         running_states, FIGURES, charts.MODE_LIGHT)
 
 
-def test_d051_diagram_stays_still_unless_a_run_is_in_progress():
-    """Idle: no travelling dots and no moving dashes; only the status dots speak."""
-    idle_states = make_states(control.RUN_OK)
-    running_states = dict(idle_states, workflow=control.RUN_IN_PROGRESS)
-    for build in [architecture.build_journey_svg, architecture.build_mini_journey_svg,
-                  architecture.build_vertical_journey_svg]:
-        idle_svg = build(idle_states, FIGURES, charts.MODE_DARK)
-        assert "animateMotion" not in idle_svg
-        assert "animation: journey-dash" not in idle_svg
-        assert "animation: journey-dash" in build(running_states, FIGURES, charts.MODE_DARK)
-
-
 DEVOPS_FIGURES = dict(FIGURES, database_size="33,9 MB", test_functions="180 funciones de prueba",
                       week_prices="semana 05-10: 4.211 precios")
 
@@ -266,25 +231,6 @@ def test_d054_infrastructure_draws_each_platform_its_components_and_figures():
                    FIGURES["source_years"], FIGURES["next_run"], FIGURES["panel_time"]]:
         assert figure in svg
     assert architecture.STATE_COLORS[control.RUN_FAILED] in svg
-
-
-def test_pipeline_gallery_previews_cover_every_layer_and_platform():
-    states = make_states(control.RUN_OK)
-    journey = architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK)
-    platform = architecture.build_platform_gallery_svg(states, DEVOPS_FIGURES,
-                                                       charts.MODE_DARK)
-    for label in ["ODEPA", "INE", "INGESTA", "BRONZE", "Staging", "Intermedio",
-                  "MARTS", "SERVING", "Panel", "GitHub Actions", "Pruebas automáticas"]:
-        assert label in journey
-    for label in ["ODEPA", "Entorno local", "GitHub Actions",
-                  "Streamlit Cloud", "Usuarios"]:
-        assert label in platform
-    assert FIGURES["rows_read"] in journey
-    for label in ["ODEPA mayorista", "ODEPA consumidor", "Informe semanal",
-                  "Consultas SQL", "OBSERVABILIDAD"]:
-        assert label in journey
-    assert 'viewBox="0 0 1560 720"' in journey
-    assert 'viewBox="0 0 1420 310"' in platform
 
 
 def test_d054_devops_diagram_moves_only_while_the_job_runs():
@@ -337,16 +283,3 @@ def test_flow_can_be_paused_without_changing_a_real_running_status():
     assert states["workflow"] == control.RUN_IN_PROGRESS
 
 
-def test_execution_overview_has_real_platform_roles_and_optional_illustrative_motion():
-    for theme in charts.THEMES:
-        still = architecture.build_execution_overview_html(theme, False)
-        moving = architecture.build_execution_overview_html(theme, True)
-        for label in ("Git local", "GitHub Actions", "máquina Ubuntu temporal", "DuckDB + informe", "Streamlit", "Navegador", "ODEPA"):
-            assert label in still
-        assert 'class="execution-overview execution-animated"' not in still
-        assert 'class="execution-overview execution-animated"' in moving
-        assert "no actividad en vivo" in moving
-        assert "prefers-reduced-motion" in moving
-        assert 'aria-label="Actualización semanal"' in still and 'aria-label="Consulta del visitante"' in still
-        assert still.index('1 · Descargar') < still.index('2 · Transformar') < still.index('3 · Probar') < still.index('4 · Guardar')
-        assert 'Si falla una etapa' in still and 'no ejecuta el ETL' in still

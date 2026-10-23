@@ -21,10 +21,6 @@ STATE_COLORS = {
     control.RUN_OK: "#22b35a", control.RUN_FAILED: "#e66767",
     control.RUN_IN_PROGRESS: "#5b9cf0", STATE_SKIPPED: "#8a8984", STATE_UNKNOWN: "#8a8984",
 }
-STATE_LABELS = {
-    control.RUN_OK: "OK", control.RUN_FAILED: "Falla", control.RUN_IN_PROGRESS: "En curso",
-    STATE_SKIPPED: "Omitido", STATE_UNKNOWN: "Sin datos",
-}
 # One color per layer, the same in both modes.
 LAYER_COLORS = {"sources": "#22b35a", "ingestion": "#3987e5", "bronze": "#c98500",
                 "processing": "#9085e9", "quality": "#d55181", "gold": "#eda100",
@@ -67,11 +63,6 @@ SILVER_INK = {charts.BASE_DARK: "#aab6c6", charts.BASE_LIGHT: "#6f7c8e"}
 MEDALLION_SPAN = {"bronze": (535, 683), "silver": (690, 1041), "gold": (1048, 1362)}
 MEDALLION_TOP = 224
 MEDALLION_BOTTOM = 394
-# The small version shown at the top of the project page.
-MINI_WIDTH = 1000
-MINI_HEIGHT = 160
-MINI_ROW_Y = 64
-MINI_COLUMN_X = [100, 300, 500, 700, 900]
 # The vertical version, for narrow screens: one step per row.
 VERTICAL_WIDTH = 400
 VERTICAL_TILE_X = 64
@@ -320,13 +311,6 @@ def draw_file_icon(x, y, color):
             f'<path d="M{x+4} {y-16} v8 h8" fill="none" stroke="{color}" stroke-width="2.2"/>'
             f'<text x="{x}" y="{y+9}" text-anchor="middle" font-size="8" font-weight="700" '
             f'fill="{color}">CSV</text>')
-
-
-def draw_download_icon(x, y, color):
-    """An arrow going down into a tray."""
-    return (f'<path d="M{x} {y-16} v20 M{x-8} {y-3} l8 8 l8 -8 M{x-15} {y+6} v8 h30 v-8" '
-            f'fill="none" stroke="{color}" stroke-width="2.4" stroke-linecap="round" '
-            f'stroke-linejoin="round"/>')
 
 
 def draw_database_icon(x, y, color):
@@ -931,45 +915,6 @@ def build_journey_svg(states, figures, mode, animate_flow=None):
     return "".join(parts)
 
 
-def build_mini_journey_svg(states, figures, mode, animate_flow=None):
-    """Five steps from ODEPA and the INE to the dashboard, with the real state and figures.
-
-    states and figures are the same as for build_journey_svg.
-    """
-    palette = charts.get_palette(mode)
-    steps = [("sources", draw_file_icon, "ODEPA e INE · CSV", figures["source_years"], "sources"),
-             ("ingestion", draw_python_icon, "Python · requests", figures["last_run"], "download"),
-             ("processing", draw_dbt_icon, "dbt · DuckDB", figures["rows_read"], "dbt"),
-             ("gold", draw_duckdb_icon, "datos.duckdb", figures["weekly_prices"], "load"),
-             ("consumption", draw_streamlit_icon, "Streamlit", figures["panel_time"], "panel")]
-    states = dict(states, dbt=read_dbt_state(states))
-    is_running = (states.get("workflow") == control.RUN_IN_PROGRESS
-                  if animate_flow is None else animate_flow)
-    half = TILE_SIZE / 2
-    links = [build_link((MINI_COLUMN_X[position] + half, MINI_ROW_Y),
-                        (MINI_COLUMN_X[position + 1] - half, MINI_ROW_Y),
-                        LAYER_COLORS[steps[position][0]], palette, moving_dot=is_running)
-             for position in range(len(steps) - 1)]
-    nodes = [f'<g class="mini-floating" style="animation-delay:-{index * .32:.2f}s">'
-             + build_node(x, MINI_ROW_Y, layer, draw_icon, title, [figure], palette,
-                          states.get(state_name)) + '</g>'
-             for index, (x, (layer, draw_icon, title, figure, state_name))
-             in enumerate(zip(MINI_COLUMN_X, steps))]
-    floating_style = ("<style>"
-        ".mini-floating{transform-box:fill-box;transform-origin:center;"
-        "filter:drop-shadow(0 8px 8px rgba(0,0,0,.18));}"
-        ".mini-animated .mini-floating{animation:mini-float 3.2s ease-in-out infinite;}"
-        "@keyframes mini-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}"
-        "@media(prefers-reduced-motion:reduce){.mini-animated .mini-floating{animation:none}}"
-        "</style>")
-    return "".join([f'<svg xmlns="http://www.w3.org/2000/svg" '
-                    f'viewBox="0 0 {MINI_WIDTH} {MINI_HEIGHT}" role="img" '
-                    f'class="{"mini-animated" if is_running else ""}" '
-                    f'aria-label="Estado real del pipeline, de ODEPA al panel" '
-                    f'font-family="{charts.CHART_FONT}">', build_style(is_running), floating_style, *links,
-                    *nodes, "</svg>"])
-
-
 def list_vertical_steps(states, figures):
     """(layer header, layer, icon, title, lines, state, chip to the next step), in order.
 
@@ -1360,88 +1305,6 @@ def build_devops_svg(states, figures, mode, animate_flow=None):
                     build_components(states, figures, palette), legend, "</svg>"])
 
 
-def build_platform_gallery_svg(states, figures, mode, animate_flow=False):
-    """Five actual platforms arranged across the gallery card's wide aspect ratio."""
-    palette = charts.get_palette(mode)
-    platforms = [
-        ("sources", draw_file_icon, "ODEPA · INE", "Datos abiertos", states.get("sources")),
-        ("ingestion", draw_laptop_icon, "Entorno local", "Código y pruebas", None),
-        ("processing", draw_clock_icon, "GitHub Actions", "Carga y CI", states.get("workflow")),
-        ("quality", draw_cloud_icon, "Streamlit Cloud", "Panel publicado", states.get("panel")),
-        ("consumption", draw_chart_icon, "Usuarios", "Consulta web", None),
-    ]
-    positions = [145 + index * 280 for index in range(len(platforms))]
-    groups = []
-    for x, (layer, icon, title, detail, state) in zip(positions, platforms):
-        color = LAYER_COLORS[layer]
-        dot = (f'<circle cx="{x + 104}" cy="82" r="7" fill="{STATE_COLORS[state]}"/>'
-               if has_real_state(state) else "")
-        contents = (f'<rect x="{x - 120}" y="70" width="240" height="190" rx="22" '
-                    f'fill="{palette["card"]}" stroke="{palette["card_border"]}" stroke-width="2"/>'
-                    f'<circle cx="{x}" cy="128" r="36" fill="{color}" fill-opacity=".10"/>'
-                    + icon(x, 128, color)
-                    + f'<text x="{x}" y="204" text-anchor="middle" font-size="27" font-weight="700" '
-                    f'fill="{palette["strong_text"]}">{html.escape(title)}</text>'
-                    f'<text x="{x}" y="234" text-anchor="middle" font-size="20" '
-                    f'fill="{palette["text"]}">{html.escape(detail)}</text>' + dot)
-        groups.append(add_tooltip(contents, TOOLTIPS.get(title)))
-    links = [f'<path d="M{positions[index] + 120} 165 H{positions[index + 1] - 120}" '
-             f'fill="none" stroke="{LAYER_COLORS[platforms[index][0]]}" stroke-width="3"/>'
-             for index in range(len(positions) - 1)]
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1420 310" '
-            'role="img" aria-label="Arquitectura del proyecto por plataforma" '
-            f'font-family="{charts.CHART_FONT}">'
-            + build_style(animate_flow) + "".join(links) + "".join(groups) + '</svg>')
 # endregion
 
 
-def build_execution_overview_html(mode, animate=False):
-    """Separate scheduled data production from interactive reading of saved data."""
-    palette = charts.get_palette(mode)
-    stages = [
-        ("ODEPA · INE", "Fuentes externas", "Publican los archivos CSV.", "document"),
-        ("1 · Descargar", "Runner Ubuntu · Actions", "El agente conserva los archivos originales.", "python"),
-        ("2 · Transformar", "Mismo runner", "Bronce en Parquet; dbt construye y prueba el data warehouse DuckDB.", "dbt"),
-        ("3 · Probar", "Mismo runner", "pytest verifica la base recién construida.", "pytest"),
-        ("4 · Guardar y reportar", "Repositorio · GitHub", "Solo tras pasar las pruebas: commit de la base y después informe como issue.", "github"),
-    ]
-    query = [
-        ("1 · Solicitar", "Navegador del visitante", "La persona elige filtros.", "browser"),
-        ("2 · Consultar", "Aplicación Streamlit", "Python consulta la copia local de DuckDB, en solo lectura.", "streamlit"),
-        ("3 · Mostrar", "Navegador del visitante", "Recibe tablas y gráficos; no ejecuta el ETL.", "browser"),
-    ]
-    def lane(items, label):
-        nodes=[]
-        for title, place, text, logo in items:
-            if logo in ('document','browser'):
-                path = '<path d="M8 3h14l7 7v23H8ZM22 3v8h7M12 17h13M12 23h13"/>' if logo=='document' else '<rect x="3" y="6" width="30" height="24" rx="3"/><path d="M3 13h30"/>'
-                symbol=f'<g fill="none" stroke="{palette["accent"]}" stroke-width="2">{path}</g>'
-            else:
-                symbol=brand_icons.logo(logo,0,0,palette['accent'],size=30)
-            nodes.append('<li><svg width="34" height="34" viewBox="0 0 36 36" aria-hidden="true">'+symbol+'</svg>'
-                         f'<strong>{html.escape(title)}</strong><small>{html.escape(place)}</small>'
-                         f'<p>{html.escape(text)}</p></li>')
-        return f'<ol class="execution-lane" aria-label="{label}">'+''.join(nodes)+'</ol>'
-    return (f'<section class="execution-overview{" execution-animated" if animate else ""}">'
-        f'<style>.execution-overview{{color:{palette["strong_text"]};font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;}}'
-        '.execution-overview h3{font-size:1.05rem!important;margin:22px 0 8px!important;}'
-        '.execution-overview p{font-size:.85rem!important;line-height:1.5!important;margin:6px 0!important;}'
-        '.execution-lane{display:flex;list-style:none;padding:12px 0!important;margin:0!important;gap:28px;}'
-        '.execution-lane li{flex:1;min-width:0;position:relative;padding:0 12px 0 0;}'
-        '.execution-lane strong,.execution-lane small{display:block;margin:8px 0;line-height:1.4;}'
-        f'.execution-lane small{{font-size:.75rem;color:{palette["text"]};}}'
-        f'.execution-lane li:not(:last-child)::after{{content:"→";position:absolute;right:-20px;top:45px;color:{palette["accent"]};font-size:24px;}}'
-        '.execution-animated .execution-lane li:not(:last-child)::after{animation:execution-pulse 2.5s ease-in-out infinite;}'
-        '@keyframes execution-pulse{50%{opacity:.35;}}'
-        '@media(prefers-reduced-motion:reduce){.execution-animated .execution-lane li::after{animation:none;}}'
-        '@media(max-width:850px){.execution-lane{flex-direction:column;gap:25px;}.execution-lane li:not(:last-child)::after{content:"↓";left:0;top:auto;bottom:-27px;}}</style>'
-        '<h3>Actualización semanal · produce una nueva base</h3>'
-        '<p>Inicio: martes a las 12:00 UTC o ejecución manual en GitHub Actions. Descarga, ETL y pruebas se ejecutan en orden.</p>'
-        +lane(stages,"Actualización semanal")+
-        '<p><strong>Si falla una etapa, las siguientes no se ejecutan.</strong> La base del repositorio conserva su versión anterior si la descarga, el ETL o las pruebas fallan. El informe se publica después de guardar la base.</p>'
-        '<h3>Consulta del visitante · lee la base disponible</h3>'
-        +lane(query,"Consulta del visitante")+
-        '<p>La aplicación corre en el computador local o en Streamlit Community Cloud, según el despliegue. Cambiar un filtro vuelve a consultar los datos guardados; no inicia una descarga de ODEPA.</p>'
-        '<p><strong>Git local</strong> guarda versiones del código. <strong>GitHub</strong> aloja el repositorio. '
-        '<strong>GitHub Actions</strong> obtiene ese código y ejecuta los workflows en una máquina Ubuntu temporal. DuckDB + informe son salidas del proceso semanal.</p>'
-        '<p>Esquema explicativo · movimiento ilustrativo, no actividad en vivo. Los estados de la última ejecución se muestran en el detalle siguiente.</p></section>')

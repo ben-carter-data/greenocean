@@ -677,5 +677,4 @@ def build_overview_html(evidence, mode, head=True, method=True):
             f'<div class="qa-grid">{"".join(stages)}{anomaly}</div>{bar}</div>')
 
 
-build_quality_overview_html = build_overview_html
 # endregion

@@ -15,7 +15,7 @@ st.iframe (CSS only, no script) whose SVG scales to the height the page gives it
 """
 import html
 
-from bi import brand_icons, charts, database_map, operation_center
+from bi import brand_icons, charts, database_map
 
 WIDTH, HEIGHT = 1000, 620
 CARD_HEIGHT = 88
