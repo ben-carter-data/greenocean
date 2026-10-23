@@ -201,6 +201,11 @@ TECH_GLOSSARY = {
         "nombre": "CI", "sigla": "Continuous Integration",
         "que_es": "integración continua: probar automáticamente cada cambio del código.",
         "rol": "pruebas.yml corre dbt parse y pytest en cada push y pull request."},
+    "cd": {
+        "nombre": "CD", "sigla": "Continuous Delivery",
+        "que_es": "entrega continua: llevar a producción, sin pasos manuales, lo que ya pasó todas las pruebas.",
+        "rol": "semanal.yml construye la carga cada martes y, solo si pytest pasa sobre la base nueva, la guarda "
+               "en main con un commit; el panel se publica desde main."},
     "pytest": {
         "nombre": "pytest", "sigla": "",
         "que_es": "framework de pruebas automáticas para Python.",

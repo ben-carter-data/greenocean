@@ -1,77 +1,185 @@
-"""Compact DevOps lifecycle, with locally bundled logos of the tools actually used."""
+"""CI/CD of the project (D-243): how a change reaches production, from the workflows that exist.
+
+Three lanes, each box tied to a step of a real workflow in .github/workflows/:
+  CI, continuous integration (pruebas.yml): every push and pull request is tested alone.
+  CD, continuous delivery (semanal.yml): every Tuesday the load is built, tested against the new database and, only if
+      everything passed, saved with a commit.
+  Publication: the panel in Streamlit Community Cloud is served from main (a setting of that platform, drawn dashed
+      because it is not in the repository).
+Nothing is drawn that the workflows do not do. The page is one HTML document for st.iframe (CSS only, no script)
+whose SVG keeps its proportion; the definition of CI/CD is in DEFINITION, shown over it by the page.
+"""
 import html
-from bi import architecture, charts, tech_glossary
-from bi.brand_icons import logo, logo_body
 
+from bi import brand_icons, charts, database_map
 
-STAGES = [
-    ("Código", "Git · GitHub", "Versionado y revisión", ("git", "github"), "ingestion", 290, 65),
-    ("Pruebas", "pytest", "Pruebas en cada push", ("pytest",), "quality", 100, 245),
-    ("Carga", "dbt · DuckDB", "Modelos y pruebas, base validada", ("dbt", "duckdb"), "gold", 290, 430),
-    ("Publicación", "Streamlit", "Panel desde main", ("streamlit",), "consumption", 710, 65),
-    ("Operación", "GitHub Actions", "Job semanal y caché", ("github",), "processing", 900, 245),
-    ("Monitoreo", "GitHub Issues", "Informe, alertas y logs", ("github",), "orchestration", 710, 430),
+WIDTH, HEIGHT = 1000, 612
+CARD_HEIGHT = 96
+# What CI and CD mean, in two short sentences each (shown over the diagram and in the glossary).
+DEFINITION = (
+    ("CI · integración continua", "Cada vez que alguien sube un cambio, un servidor lo prueba solo. Si algo se rompe, "
+     "se ve en el momento y no a fin de mes."),
+    ("CD · entrega continua", "Lo que pasa todas las pruebas llega a producción sin pasos manuales. Aquí, la base de cada "
+     "martes y el panel que la muestra."),
+)
+DISCS = dict(database_map.BRANDS, git=("#ff9b7d", "#d6402a", "#ffffff"), streamlit=("#ff8f98", "#e0303f", "#ffffff"),
+             pytest=("#7fc4ff", "#1f6fb5", "#ffffff"), check=("#7ee2b0", "#14855a", "#ffffff"))
+# Lanes: (key, title, subtitle, workflow file, band top, band height).
+LANES = [
+    ("ci", "CI · integración continua", "en cada push y pull request · pruebas.yml", "pruebas.yml", 36, 174),
+    ("cd", "CD · entrega continua", "cada martes, o a mano · semanal.yml", "semanal.yml", 234, 190),
+    ("pub", "Publicación", "el panel, desde la rama main", None, 450, 148),
 ]
-# The GitHub logo stands for a different GitHub service in each stage.
-STAGE_LOGO_KEYS = {("Operación", "github"): "github_actions", ("Monitoreo", "github"): "github_issues"}
-SEGMENTS = [
-    ("M500 245 C420 120 300 110 240 170", 345, 167),
-    ("M240 170 C155 250 210 345 300 345", 225, 267),
-    ("M300 345 C390 345 440 300 500 245", 360, 328),
-    ("M500 245 C580 120 700 110 760 170", 655, 167),
-    ("M760 170 C845 250 790 345 700 345", 775, 267),
-    ("M700 345 C610 345 560 300 500 245", 640, 328),
+# Steps: (key, lane, column, columns in the lane, mark, name, detail, what it does, where it is, marker in the workflow, gate).
+STEPS = [
+    ("ci_change", "ci", 0, 5, "git", "Cambio", "push o pull request",
+     "Alguien sube un cambio al repositorio o abre un pull request.", "on: push, pull_request", "pruebas.yml::pull_request", False),
+    ("ci_actions", "ci", 1, 5, "github", "GitHub Actions", "lanza el job pytest",
+     "GitHub arranca una máquina limpia con Python 3.11 e instala las dependencias.", "job pytest", "pruebas.yml::pip install", False),
+    ("ci_parse", "ci", 2, 5, "dbt", "dbt parse", "el proyecto compila",
+     "Comprueba que los modelos, las pruebas y las fuentes de dbt compilan.", "dbt parse --project-dir dbt", "pruebas.yml::dbt parse", False),
+    ("ci_pytest", "ci", 3, 5, "pytest", "pytest", "toda la batería",
+     "Corre todas las pruebas de tests/; si una falla, el job se detiene.", "pytest -vv -x", "pruebas.yml::pytest -vv -x", False),
+    ("ci_result", "ci", 4, 5, "check", "Resultado", "pasa o falla",
+     "GitHub deja el resultado junto al commit: verde si todo pasó, rojo si no.", "estado del commit en GitHub", "pruebas.yml::name: pruebas", False),
+    ("cd_trigger", "cd", 0, 7, "github", "Disparo", "martes 12:00 UTC",
+     "El cron lo lanza solo cada martes a las 12:00 UTC; también se puede lanzar a mano, con una falla simulada opcional.",
+     "on: schedule y workflow_dispatch", "semanal.yml::0 12 * * 2", False),
+    ("cd_download", "cd", 1, 7, "python", "Descarga", "ODEPA (agent.py)",
+     "Descarga los CSV de ODEPA; los de años cerrados vienen del caché de Actions.", "Download the ODEPA files", "semanal.yml::Download the ODEPA files", False),
+    ("cd_etl", "cd", 2, 7, "sqlite", "ETL", "respaldo SQLite",
+     "Construye el respaldo en SQLite (datos.db) con un camino independiente de dbt.", "Run the ETL (SQLite backup)", "semanal.yml::Run the ETL (SQLite backup)", False),
+    ("cd_dbt", "cd", 3, 7, "dbt", "dbt build", "31 pruebas",
+     "Escribe el bronce en Parquet y dbt construye y prueba todos los modelos; solo si todo pasa se reemplaza datos.duckdb.",
+     "Build the data warehouse with dbt", "semanal.yml::Build the data warehouse with dbt", False),
+    ("cd_pytest", "cd", 4, 7, "pytest", "pytest", "contra la base",
+     "Corre las pruebas contra la base nueva, incluida la paridad SQLite ↔ DuckDB. Es la puerta: si falla, no se guarda nada.",
+     "Run the tests against the new database", "semanal.yml::Run the tests against the new database", True),
+    ("cd_save", "cd", 5, 7, "git", "Guardar", "commit de la base",
+     "Hace un commit de datos.db, datos.duckdb y manifest.json en main.", "Save the updated database", "semanal.yml::Save the updated database", False),
+    ("cd_report", "cd", 6, 7, "github", "Informe", "issue semanal",
+     "Publica el informe de la semana como un issue de GitHub.", "Publish the weekly report", "semanal.yml::Publish the weekly report", False),
+    ("pub_main", "pub", 5, 7, "git", "Rama main", "la base nueva",
+     "La rama main queda con el código y la base de esa semana.", "git push de Save the updated database", "semanal.yml::git push", False),
+    ("pub_streamlit", "pub", 6, 7, "streamlit", "Streamlit Cloud", "panel desde main",
+     "Streamlit Community Cloud publica el panel desde main. Es una configuración de esa plataforma, no del repositorio.",
+     "declarado por el autor; no verificable en el repositorio", None, False),
 ]
+# Lines: (from key, to key, label or None, dashed, vertical).
+LINKS = [("ci_change", "ci_actions"), ("ci_actions", "ci_parse"), ("ci_parse", "ci_pytest"), ("ci_pytest", "ci_result"),
+         ("cd_trigger", "cd_download"), ("cd_download", "cd_etl"), ("cd_etl", "cd_dbt"), ("cd_dbt", "cd_pytest"),
+         ("cd_pytest", "cd_save"), ("cd_save", "cd_report"), ("cd_save", "pub_main"), ("pub_main", "pub_streamlit")]
+CARD_TOPS = {"ci": 96, "cd": 296, "pub": 508}
+ROW_NOTE = "Si un paso falla, los siguientes no corren y la base publicada no cambia."
 
 
-def build_svg(states, mode, animate_flow=False):
-    palette = charts.get_palette(mode)
-    pieces = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 490" '
-              'role="img" aria-label="Ciclo DevOps del proyecto: código, pruebas, carga, '
-              f'publicación, operación y monitoreo" font-family="{charts.CHART_FONT}">',
-              '<style>@media(prefers-reduced-motion:reduce){.devops-flow{display:none}}</style>']
-    for stage, (path, tx, ty) in zip(STAGES, SEGMENTS):
-        color = architecture.LAYER_COLORS[stage[4]]
-        pieces.append(f'<path d="{path}" fill="none" stroke="{color}" stroke-opacity=".60" '
-                      'stroke-width="22" stroke-linecap="round"/>')
-        pieces.append(f'<text x="{tx}" y="{ty}" text-anchor="middle" font-size="14" '
-                      f'font-weight="600" fill="{palette["strong_text"]}">{stage[0]}</text>')
-    if animate_flow:
-        cycle = ("M500 245 C420 120 300 110 240 170 C155 250 210 345 300 345 "
-                 "C390 345 440 300 500 245 C580 120 700 110 760 170 "
-                 "C845 250 790 345 700 345 C610 345 560 300 500 245")
-        pieces.append(f'<circle class="devops-flow" r="4" fill="{palette["strong_text"]}">'
-                      f'<animateMotion dur="14s" repeatCount="indefinite" path="{cycle}"/></circle>')
-    for index, (phase, title, note, slugs, layer, x, y) in enumerate(STAGES):
-        color = architecture.LAYER_COLORS[layer]
-        pieces.append(f'<g><title>{html.escape(phase + ": " + title + ". " + note)}</title>')
-        for offset, slug in enumerate(slugs):
-            key = STAGE_LOGO_KEYS.get((phase, slug), tech_glossary.LOGO_KEYS[slug])
-            pieces.append(architecture.add_tech_tooltip(
-                logo(slug, x - len(slugs) * 18 + offset * 36, y - 29, color), key))
-        pieces.append(f'<text x="{x}" y="{y + 17}" text-anchor="middle" font-size="14" '
-                      f'font-weight="600" fill="{palette["strong_text"]}">{html.escape(title)}</text>'
-                      f'<text x="{x}" y="{y + 37}" text-anchor="middle" font-size="12" '
-                      f'fill="{palette["text"]}">{html.escape(note)}</text>')
-        state = {3: states.get("panel"), 4: states.get("workflow"), 5: states.get("report")}.get(index)
-        if architecture.has_real_state(state):
-            pieces.append(f'<circle cx="{x + 46}" cy="{y - 17}" r="4" '
-                          f'fill="{architecture.STATE_COLORS[state]}">'
-                          f'<title>{architecture.STATE_LABELS[state]}</title></circle>')
-        pieces.append('</g>')
-    pieces.append('</svg>')
-    return "".join(pieces)
+def esc(value):
+    return html.escape(str(value))
 
 
-def build_html(states, mode, animate_flow=False):
-    """Desktop diagram and exclusive mobile list, with the same six stages."""
-    rows = []
-    for phase, title, note, slugs, layer, _, _ in STAGES:
-        color = architecture.LAYER_COLORS[layer]
-        icons = ''.join(f'<svg viewBox="0 0 24 24" aria-hidden="true" fill="{color}">'
-                        f'{logo_body(slug)}</svg>' for slug in slugs)
-        rows.append(f'<li><div class="devops-logos">{icons}</div><div>'
-                    f'<strong>{phase} · {html.escape(title)}</strong>'
-                    f'<span>{html.escape(note)}</span></div></li>')
-    return ('<div class="devops-cycle">' + build_svg(states, mode, animate_flow) + '</div>'
-            '<ol class="devops-cycle-mobile">' + ''.join(rows) + '</ol>')
+def card_box(lane, column, columns):
+    width, gap = (150, 40) if columns == 5 else (126, 12)
+    left = (WIDTH - (columns * width + (columns - 1) * gap)) / 2 + column * (width + gap)
+    return left, CARD_TOPS[lane], width, CARD_HEIGHT
+
+
+def disc(slug, x, y, size, key):
+    """A brand on a lit disc, placed at x, y; the check is a plain tick."""
+    top, bottom, glyph = DISCS[slug]
+    gradient = f"disc-{slug}-{key}"
+    body = ('<path d="M7 12.5l3.2 3.2L17 8.8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" '
+            'stroke-linejoin="round"/>' if slug == "check" else brand_icons.logo_body(slug))
+    return (f'<svg x="{x}" y="{y}" width="{size}" height="{size}" viewBox="0 0 72 72" aria-hidden="true"><defs>'
+            f'<radialGradient id="{gradient}" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="{top}"/>'
+            f'<stop offset="1" stop-color="{bottom}"/></radialGradient></defs>'
+            f'<circle cx="36" cy="36" r="31" fill="url(#{gradient})"/><ellipse cx="29" cy="19" rx="16" ry="8" fill="#fff" opacity=".3"/>'
+            f'<g fill="{glyph}" transform="translate(17 17) scale(1.58)">{body}</g></svg>')
+
+
+def build_css(palette):
+    dark = palette["base"] == charts.BASE_DARK
+    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
+                                              palette["card"], palette["card_border"], palette["accent"])
+    shadow = "rgba(0,0,0,.45)" if dark else "rgba(15,39,71,.15)"
+    tips = "".join(f"svg:has(#s-{step[0]}:hover, #s-{step[0]}:focus) #t-{step[0]} {{ opacity:1; }}" for step in STEPS)
+    return f"""<style>
+* {{ box-sizing:border-box; }}
+html, body {{ margin:0; height:100%; background:transparent; color:{text};
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }}
+svg.map {{ display:block; width:100%; height:100vh; overflow:visible; }}
+.lane {{ fill:{'rgba(255,255,255,.03)' if dark else 'rgba(15,39,71,.035)'}; stroke:{border}; stroke-width:1; }}
+.lane-title {{ font-size:12.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; fill:{ink}; }}
+.lane-sub {{ font-size:12.5px; fill:{muted}; }}
+.step {{ outline:none; cursor:default; }}
+.card {{ fill:{card}; stroke:{border}; stroke-width:1; filter:drop-shadow(0 8px 10px {shadow}); }}
+.gate .card {{ stroke:{accent}; stroke-width:2; }}
+.dashed .card {{ stroke-dasharray:5 5; }}
+.step:hover .card, .step:focus .card {{ stroke:{accent}; }}
+.name {{ font-size:13.5px; font-weight:600; fill:{ink}; }}
+.detail {{ font-size:12.5px; fill:{muted}; }}
+.tag {{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; fill:{accent}; text-anchor:end; }}
+.line {{ fill:none; stroke:{accent}; stroke-width:2; stroke-linecap:round; }}
+.line.dashed {{ stroke-dasharray:5 5; }}
+.line-label {{ font-size:12.5px; fill:{ink}; paint-order:stroke; stroke:{palette['background']}; stroke-width:5px; }}
+.note {{ font-size:12.5px; fill:{muted}; }}
+.tip {{ opacity:0; pointer-events:none; transition:opacity .15s ease; }}
+.tip div {{ position:absolute; width:280px; padding:12px 14px; border-radius:14px; background:{card}; border:1px solid {border};
+  box-shadow:0 18px 40px rgba(0,0,0,{'.55' if dark else '.2'}); color:{text}; font-size:12.5px; line-height:1.45; }}
+.tip b {{ display:block; margin:8px 0 2px; font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
+.tip b:first-child {{ margin-top:0; }}
+.tip code {{ font:400 12px ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; }}
+{tips}
+</style>"""
+
+
+def build_step(step):
+    key, lane, column, columns, mark, name, detail, what, where, marker, gate = step
+    left, top, width, height = card_box(lane, column, columns)
+    classes = "step" + (" gate" if gate else "") + (" dashed" if marker is None else "")
+    tag = f'<text class="tag" x="{left + width - 10}" y="{top + 20}">puerta</text>' if gate else ""
+    return (f'<g class="{classes}" id="s-{key}" tabindex="0"><rect class="card" x="{left}" y="{top}" width="{width}" '
+            f'height="{height}" rx="14"/>{disc(mark, left + 10, top + 10, 38, key)}{tag}'
+            f'<text class="name" x="{left + 12}" y="{top + 68}">{esc(name)}</text>'
+            f'<text class="detail" x="{left + 12}" y="{top + 86}">{esc(detail)}</text></g>')
+
+
+def build_tip(step):
+    key, lane, column, columns, mark, name, detail, what, where, marker, gate = step
+    left, top, width, height = card_box(lane, column, columns)
+    above = lane == "pub"
+    x = min(max(left + width / 2 - 140, 8), WIDTH - 288)
+    y = top - 8 if above else top + height + 8
+    anchor = "bottom:0" if above else "top:0"
+    return (f'<g class="tip" id="t-{key}"><foreignObject x="{x:.0f}" y="{y:.0f}" width="280" height="1" overflow="visible">'
+            f'<div xmlns="http://www.w3.org/1999/xhtml" style="{anchor}"><b>Qué hace</b>{esc(what)}'
+            f'<b>Dónde está</b><code>{esc(where)}</code></div></foreignObject></g>')
+
+
+def build_link(start_key, end_key):
+    boxes = {step[0]: card_box(step[1], step[2], step[3]) for step in STEPS}
+    dashed = start_key == "pub_main" and end_key == "pub_streamlit"
+    (x1, y1, w1, h1), (x2, y2, w2, h2) = boxes[start_key], boxes[end_key]
+    if y1 == y2:
+        path = f'M{x1 + w1} {y1 + h1 / 2} L{x2} {y2 + h2 / 2}'
+        label = ""
+    else:  # down, from the middle of the lower edge to the top of the card under it
+        x = x1 + w1 / 2
+        path = f'M{x} {y1 + h1} L{x} {y2}'
+        label = f'<text class="line-label" x="{x + 10}" y="{(y1 + h1 + y2) / 2 + 4}">git push</text>'
+    return f'<path class="line{" dashed" if dashed else ""}" d="{path}" marker-end="url(#head)"/>' + label
+
+
+def build_cicd_html(palette):
+    """The three lanes of the CI/CD of the project, from the workflows."""
+    head = (f'<defs><marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
+            f'orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" fill="{palette["accent"]}"/></marker></defs>')
+    lanes = "".join(f'<rect class="lane" x="12" y="{top}" width="976" height="{height}" rx="18"/>'
+                    f'<text class="lane-title" x="30" y="{top + 24}">{esc(title)}</text>'
+                    f'<text class="lane-sub" x="30" y="{top + 42}">{esc(sub)}</text>'
+                    for _, title, sub, _, top, height in LANES)
+    note = f'<text class="note" x="30" y="{CARD_TOPS["cd"] + CARD_HEIGHT + 24}">{esc(ROW_NOTE)}</text>'
+    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            + build_css(palette) + f'</head><body><svg class="map" viewBox="0 0 {WIDTH} {HEIGHT}" preserveAspectRatio="xMidYMid meet" '
+            f'role="img" aria-label="CI/CD del proyecto">{head}{lanes}{note}'
+            f'{"".join(build_link(*link) for link in LINKS)}{"".join(build_step(step) for step in STEPS)}'
+            f'{"".join(build_tip(step) for step in STEPS)}</svg></body></html>')

@@ -45,10 +45,10 @@ def test_every_key_used_by_the_diagrams_has_a_complete_entry():
     used = set(tech_glossary.TECH_KEYS.get(tech_id, tech_id) for tech_id in architecture.TECH)
     used |= set(tech_glossary.CHIP_KEYS.values()) | set(tech_glossary.LABEL_KEYS.values())
     used |= set(tech_glossary.LOGO_KEYS.values()) | set(tech_glossary.WORD_KEYS.values())
-    used |= set(architecture.COMPONENT_LOGO_KEYS.values()) | set(devops.STAGE_LOGO_KEYS.values())
+    used |= set(architecture.COMPONENT_LOGO_KEYS.values())
     used |= set(lineage.LAYER_KEYS.values()) | set(lineage.MATERIALIZED_KEYS.values())
     used |= {tech_glossary.LOGO_KEYS[slug] for slug in architecture.ICON_LOGO_SLUG.values()}
-    used |= {tech_glossary.LOGO_KEYS[slug] for _, _, _, slugs, *_ in devops.STAGES for slug in slugs}
+    used |= {tech_glossary.LOGO_KEYS[step[4]] for step in devops.STEPS if step[4] in tech_glossary.LOGO_KEYS}
     assert used <= set(tech_glossary.TECH_GLOSSARY)
     for key, entry in tech_glossary.TECH_GLOSSARY.items():
         assert set(entry) == {"nombre", "sigla", "que_es", "rol"}, key
@@ -61,6 +61,7 @@ def test_every_key_used_by_the_diagrams_has_a_complete_entry():
 def test_acronyms_are_spelled_out():
     for key, expansion in [("csv", "Comma-Separated Values"), ("sql", "Structured Query Language"),
                            ("etl", "Extract, Transform, Load"), ("ci", "Continuous Integration"),
+                           ("cd", "Continuous Delivery"),
                            ("odepa", "Oficina de Estudios y Políticas Agrarias"),
                            ("ine", "Instituto Nacional de Estadísticas"),
                            ("ipc", "Índice de Precios al Consumidor")]:
@@ -104,17 +105,6 @@ def test_a_pill_title_wins_over_the_title_of_its_step():
     # The step's own explanation is still there, one level up.
     outer, _ = nearest_title(group, parents)
     assert outer == architecture.TOOLTIPS["Parquet · bronce"]
-
-
-def test_devops_cycle_logos_explain_their_tool():
-    for mode in charts.THEMES:
-        root, parents = parse(devops.build_svg({}, mode))
-        logos = [element for element in root.iter() if tag(element) == "svg" and element is not root]
-        assert len(logos) == sum(len(stage[3]) for stage in devops.STAGES)
-        titles = [nearest_title(logo, parents)[0] for logo in logos]
-        assert all(title and "Aquí:" in title for title in titles)
-        assert tech_glossary.describe("github_actions") in titles
-        assert tech_glossary.describe("github_issues") in titles
 
 
 def test_lineage_layer_headers_and_materializations_explain_themselves():

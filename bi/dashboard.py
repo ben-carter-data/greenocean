@@ -34,7 +34,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, price_context, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                audit_trace, database_crossings, database_map, storage_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
+                audit_trace, database_crossings, database_map, devops, storage_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -863,17 +863,6 @@ def build_style_css(mode):
         .mobile-rankings {{ display:block; }}
     }}
     .resource-tree {{ list-style:none; padding:0 0 0 18px; border-left:1px solid {palette["card_border"]}; }}
-    .devops-cycle {{
-        width:min(100%,780px,calc((100vh - 220px) * 2.04));
-        margin:6px auto 14px;
-    }}
-    .devops-cycle > svg {{
-        width:100%; height:auto; max-height:calc(100vh - 220px);
-        display:block; margin:0 auto;
-    }}
-    .devops-cycle-mobile {{ display:none; list-style:none; padding:0; }}
-    .devops-cycle-mobile li {{ display:flex; align-items:flex-start;
-        gap:14px; padding:12px 0; border-bottom:1px solid {palette["card_border"]}; }}
     /* A grid of floating cards, not a long list (D-122): the same elevated-card
        language as the KPI gallery and the GitHub page. */
     .technical-rows li {{ display:flex; align-items:flex-start; gap:12px; padding:16px;
@@ -883,7 +872,6 @@ def build_style_css(mode):
     .technical-rows li:hover {{ transform:translateY(-3px); }}
     .devops-logos {{ display:flex; gap:6px; flex-shrink:0; width:66px; }}
     .devops-logos svg {{ width:28px; height:28px; }}
-    .devops-cycle-mobile span {{ display:block; font-size:.85rem; color:{palette["text"]}; }}
     .technical-rows {{ list-style:none; padding:0; margin:8px 0 20px; display:grid;
         grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:14px; }}
     .technical-rows .component-symbol {{ width:28px; height:30px; margin:0; }}
@@ -911,8 +899,6 @@ def build_style_css(mode):
     .technical-rows li > div {{ min-width:0; }}
     .technical-rows p {{ margin:4px 0; font-size:.9rem; line-height:1.5; }}
     @media(max-width:640px) {{
-        .devops-cycle {{ display:none; }}
-        .devops-cycle-mobile {{ display:block; }}
     }}
     .resource-tree li {{ display:grid; grid-template-columns:minmax(160px,1fr) 2fr;
         gap:12px; margin:0; padding:14px 8px; border-bottom:1px solid {palette["card_border"]}; }}
@@ -1420,9 +1406,6 @@ def build_style_css(mode):
             height:auto; min-height:150px;}}
     }}
     .stApp:has(.overview-history) [data-testid="stVegaLiteChart"] {{max-height:52vh; overflow:hidden;}}
-    .stApp:has(.overview-devops) .devops-cycle {{
-        width:min(100%,720px,calc((100vh - 260px) * 2.04)); margin:0 auto 3px;}}
-    .stApp:has(.overview-devops) .devops-cycle > svg {{max-height:calc(100vh - 260px);}}
     .stApp:has(.overview-kpis) .kpi-register td,
     .stApp:has(.overview-kpis) .kpi-register th {{padding:5px 7px!important; line-height:1.2;}}
     /* The report starts right under the header: the invisible script frame between them
@@ -6659,11 +6642,13 @@ def show_runs_page(mode):
     with what it does and where to act, and beside it the facts and the manual run."""
     show_compact_page_header("Centro de operación", "El recorrido de cada martes, del lanzamiento "
                              "al panel: el estado de cada paso, su log y dónde actuar.")
-    runs_tab, platform_tab = st.tabs(["Operación", "Plataforma"])
+    runs_tab, platform_tab, cicd_tab = st.tabs(["Operación", "Plataforma", "CI/CD"])
     with runs_tab:
         show_runs_tab(mode)
     with platform_tab:
         show_devops_tab(mode)
+    with cicd_tab:
+        show_cicd_tab(mode)
 
 
 def show_security_page(mode):
@@ -7021,6 +7006,22 @@ def show_devops_layer_dialog(heading, next_run):
             st.markdown(f'<div class="info-note">{build_external_link_html("Ver los informes semanales en GitHub", reports)}'
                         '</div>', unsafe_allow_html=True)
     st.dialog(heading, width="large")(body)()
+
+
+def show_cicd_tab(mode):
+    """How a change reaches production (D-243): what CI and CD mean, and the three lanes of the real workflows."""
+    palette = charts.get_palette(mode)
+    definitions = "".join(f'<div class="cicd-term"><b>{html.escape(term)}</b><span>{html.escape(text)}</span></div>'
+                          for term, text in devops.DEFINITION)
+    st.markdown(f"""<style>
+    .cicd-define {{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:4px 0 10px;}}
+    .cicd-term {{border:1px solid {palette['card_border']}; border-radius:12px; background:{palette['card']}; padding:10px 14px;
+        display:flex; flex-direction:column; gap:3px;}}
+    .cicd-term b {{font-size:.95rem; color:{palette['strong_text']};}}
+    .cicd-term span {{font-size:.86rem; line-height:1.45; color:{palette['text']};}}
+    @media (max-width:900px) {{ .cicd-define {{grid-template-columns:1fr;}} }}
+    </style><div class="cicd-define">{definitions}</div>""", unsafe_allow_html=True)
+    st.iframe(devops.build_cicd_html(palette), height=620)
 
 
 def show_devops_tab(mode):
