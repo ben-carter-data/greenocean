@@ -1312,6 +1312,10 @@ def build_style_css(mode):
         box-shadow:0 18px 40px -24px rgba(0,0,0,.45), 0 2px 6px -2px rgba(0,0,0,.12);}}
     .st-key-project_document > div > div:first-child h2:first-child {{border-top:none; margin-top:0;}}
     .st-key-project_document .doc-diagram {{background:transparent;}}
+    /* Evidence cells hold long file and test names: they wrap instead of widening the table. */
+    .st-key-project_document table {{table-layout:auto; width:100%;}}
+    .st-key-project_document td code {{white-space:normal; overflow-wrap:anywhere; font-size:.78rem;}}
+    .st-key-project_document td:first-child, .st-key-project_document th:first-child {{white-space:nowrap;}}
     @media (max-width:900px) {{ .st-key-project_document {{padding:22px 18px 26px;}} }}
     .st-key-project_document h2 {{font-size:1.35rem; font-weight:600; letter-spacing:-.02em;
         margin:34px 0 10px; padding-top:14px; border-top:1px solid {palette['card_border']};

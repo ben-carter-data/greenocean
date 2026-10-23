@@ -151,6 +151,101 @@ def build_actors_html(mode):
 # endregion
 
 
+# region Use cases (PRD, D-240)
+# Each case is read from the PRD: the four profiles of «3. Usuarios» with the question each one asks («4. Preguntas
+# de negocio»), the administrator's duties and the automatic load (RF-01 to RF-04). The screen of each case is
+# a page of the menu; the one case that is not a screen of the panel says so.
+USE_CASE_ROWS = (96, 216, 336, 456)
+# (actor, row, case, PRD id, screen)
+USER_CASES = [
+    ("Gerencia", 0, "Revisar qué se movió en la semana y qué es inusual", "P-1", "Resumen semanal"),
+    ("Analista de pricing", 1, "Saber si el precio de hoy es normal para la época", "P-2", "Consultas SQL · Precio vs. época"),
+    ("Compras y abastecimiento", 2, "Ver cuánto paga el consumidor sobre el mayorista", "P-3", "Consultas SQL · Brecha mayorista"),
+    ("Revisor técnico", 3, "Comprobar la calidad, las pruebas, el linaje y la documentación", "", "Calidad y auditoría"),
+]
+SYSTEM_CASES = [
+    ("GitHub Actions", 0, "Cargar y publicar cada martes", "RF-01 a RF-04", "Centro de operación"),
+    ("Administrador", 1, "Responder consultas SQL puntuales", "", "Consultas SQL"),
+    ("Administrador", 2, "Lanzar una carga manual con la clave de control", "", "Centro de operación"),
+    ("Administrador", 3, "Mantener el código y los secretos", "", "GitHub, fuera del panel"),
+]
+USE_WIDTH, USE_HEIGHT = 1000, 520
+LEFT_ACTOR_X, RIGHT_ACTOR_X = 66, 934
+OVAL = {"left": 344, "right": 668, "rx": 126, "ry": 46}
+BOUNDARY = (176, 18, 648, 484)
+
+
+def wrap(text, width):
+    lines, line = [], ""
+    for word in text.split():
+        if line and len(line) + 1 + len(word) > width:
+            lines.append(line)
+            line = word
+        else:
+            line = f"{line} {word}".strip()
+    return lines + [line]
+
+
+def build_use_case(side, row, case, identifier, screen, ink, muted, accent, card):
+    cx, cy = OVAL[side], USE_CASE_ROWS[row]
+    lines = wrap(case, 30)
+    top = cy - 6 - 8 * (len(lines) - 1)
+    text = "".join(f'<text x="{cx}" y="{top + 15 * index}" text-anchor="middle" font-size="13" font-weight="600" '
+                   f'fill="{ink}">{esc(line)}</text>' for index, line in enumerate(lines))
+    tag = f"{identifier} · " if identifier else ""
+    detail = f'<text x="{cx}" y="{top + 15 * len(lines) + 4}" text-anchor="middle" font-size="12" fill="{muted}">{esc(tag + screen)}</text>'
+    return (f'<ellipse cx="{cx}" cy="{cy}" rx="{OVAL["rx"]}" ry="{OVAL["ry"]}" fill="{card}" stroke="{accent}" stroke-width="1.6"/>'
+            + text + detail)
+
+
+def build_use_cases_html(mode):
+    """Who does what with GreenOcean: the actors of the PRD, the cases inside the system and, under each, the
+    screen of the menu that serves it. Straight lines only."""
+    palette = charts.get_palette(mode)
+    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
+                                              palette["card"], palette["card_border"], palette["accent"])
+    parts = [f'<rect x="{BOUNDARY[0]}" y="{BOUNDARY[1]}" width="{BOUNDARY[2]}" height="{BOUNDARY[3]}" rx="22" fill="none" '
+             f'stroke="{border}" stroke-width="1.4" stroke-dasharray="6 6"/>'
+             f'<text x="{BOUNDARY[0] + 20}" y="{BOUNDARY[1] + 26}" font-size="13" font-weight="700" letter-spacing=".1em" '
+             f'fill="{ink}">GREENOCEAN</text>']
+    # Left: the four profiles, each on the row of its case.
+    actors = []
+    for actor, row, *_ in USER_CASES:
+        y = USE_CASE_ROWS[row]
+        parts.append(f'<path d="M{LEFT_ACTOR_X + 32} {y} H{OVAL["left"] - OVAL["rx"]}" stroke="{accent}" stroke-width="1.8"/>')
+        actors.append(f'<g>{actor_figure(LEFT_ACTOR_X, y, "visitor", actor, ink, muted)}</g>')
+    # Right: GitHub Actions on its row; the administrator on the third, with a bus to his three cases.
+    bus_x = RIGHT_ACTOR_X - 78
+    admin_rows = [row for actor, row, *_ in SYSTEM_CASES if actor == "Administrador"]
+    parts.append(f'<path d="M{OVAL["right"] + OVAL["rx"]} {USE_CASE_ROWS[0]} H{RIGHT_ACTOR_X - 32}" stroke="{accent}" stroke-width="1.8"/>')
+    parts.append(f'<path d="M{bus_x} {USE_CASE_ROWS[admin_rows[0]]} V{USE_CASE_ROWS[admin_rows[-1]]}" stroke="{accent}" stroke-width="1.8"/>')
+    for row in admin_rows:
+        parts.append(f'<path d="M{OVAL["right"] + OVAL["rx"]} {USE_CASE_ROWS[row]} H{bus_x}" stroke="{accent}" stroke-width="1.8"/>')
+    parts.append(f'<path d="M{bus_x} {USE_CASE_ROWS[2]} H{RIGHT_ACTOR_X - 32}" stroke="{accent}" stroke-width="1.8"/>')
+    actors.append(f'<g>{actor_figure(RIGHT_ACTOR_X, USE_CASE_ROWS[0], "github", "GitHub Actions", ink, muted, brand=True)}</g>')
+    actors.append(f'<g>{actor_figure(RIGHT_ACTOR_X, USE_CASE_ROWS[2], "author", "Administrador", ink, muted)}</g>')
+    cases = [build_use_case("left", row, case, identifier, screen, ink, muted, accent, card)
+             for _, row, case, identifier, screen in USER_CASES]
+    cases += [build_use_case("right", row, case, identifier, screen, ink, muted, accent, card)
+              for _, row, case, identifier, screen in SYSTEM_CASES]
+    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            f'<style>*{{box-sizing:border-box}}html,body{{margin:0;height:100%;background:transparent;color:{text};'
+            f'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}}'
+            f'svg.uc{{display:block;width:100%;height:100vh}}</style></head><body>'
+            f'<svg class="uc" viewBox="0 0 {USE_WIDTH} {USE_HEIGHT}" preserveAspectRatio="xMidYMid meet" role="img" '
+            f'aria-label="Casos de uso">{"".join(parts)}{"".join(cases)}{"".join(actors)}</svg></body></html>')
+
+
+def actor_figure(x, y, name, label, ink, muted, brand=False):
+    """An actor: its mark and its name under it."""
+    mark = disc_logo("brand" if brand else "person", name).replace('<svg class="logo" ', f'<svg x="{x - 30}" y="{y - 42}" width="60" height="60" ', 1)
+    lines = wrap(label, 16)
+    names = "".join(f'<text x="{x}" y="{y + 32 + 14 * index}" text-anchor="middle" font-size="12.5" font-weight="600" '
+                    f'fill="{ink}">{esc(line)}</text>' for index, line in enumerate(lines))
+    return mark + names
+# endregion
+
+
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 MOCKUPS = [
     ("m1-resumen-vantablack.jpg", "M-1 · Resumen semanal", "tema Vantablack · computador", "laptop"),
@@ -190,4 +285,5 @@ figcaption {{ margin-top:10px; color:{palette['reference']}; }} figcaption b {{ 
 # endregion
 
 # The document views by marker, with the height of their frame in the page.
-VIEWS = {"actores": (build_actors_html, 500), "mockups": (build_mockups_html, 720)}
+VIEWS = {"actores": (build_actors_html, 500), "casos": (build_use_cases_html, 520),
+         "mockups": (build_mockups_html, 720)}

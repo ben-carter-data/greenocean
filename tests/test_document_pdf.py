@@ -47,7 +47,9 @@ def pdfs():
 def test_d210_each_document_fits_two_pages_with_its_title_band(pdfs, name):
     pdf = pdfs[name]
     assert pdf.startswith(b"%PDF")
-    assert 1 <= count_pages(pdf) <= 2
+    # D-240: the PRD carries the traceability of its questions and the evidence of its requirements, and takes a
+    # third page until the PDF is a print of the page (the decision of the author, step 10).
+    assert 1 <= count_pages(pdf) <= (3 if name == "PRD.md" else 2)
     text = page_text(pdf)
     assert "GREENOCEAN" in text and "Contenido" not in text and "19 de octubre de 2026" in text
     assert f"de {count_pages(pdf)})" in text  # «Página n de N» in the footer
@@ -90,10 +92,10 @@ def test_documents_have_no_code_blocks_and_use_the_project_vocabulary(name):
 
 
 def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
-    """PRD: actors and the real screens. SAD: only the live diagrams (D-210). ADR: none."""
+    """PRD: the use cases and the real screens. SAD: the context and the live diagrams (D-210, D-240). ADR: none."""
     names = {name: re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"),
                               re.MULTILINE) for name in DOCUMENTS}
-    assert names == {"PRD.md": ["actores", "mockups"], "SAD.md": ["pipeline", "plataforma", "modelo"],
+    assert names == {"PRD.md": ["casos", "mockups"], "SAD.md": ["actores", "pipeline", "plataforma", "modelo"],
                      "ADR.md": [], "SEGURIDAD.md": ["seguridad"]}
 
 

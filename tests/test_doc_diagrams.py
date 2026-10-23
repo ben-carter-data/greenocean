@@ -54,7 +54,7 @@ def test_d210_the_actors_view_follows_the_pipeline_standard():
 
 
 def test_d210_the_weak_views_are_gone():
-    assert set(doc_diagrams.DOC_DIAGRAMS) == {"actores", "mockups"}
+    assert set(doc_diagrams.DOC_DIAGRAMS) == {"actores", "casos", "mockups"}
 
 
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
