@@ -47,9 +47,9 @@ def pdfs():
 def test_d210_each_document_fits_two_pages_with_its_title_band(pdfs, name):
     pdf = pdfs[name]
     assert pdf.startswith(b"%PDF")
-    # D-240: the PRD carries the traceability of its questions and the evidence of its requirements, and takes a
-    # third page until the PDF is a print of the page (the decision of the author, step 10).
-    assert 1 <= count_pages(pdf) <= (3 if name == "PRD.md" else 2)
+    # D-240, D-245: the PRD carries the traceability of its questions and the evidence of its requirements; the author
+    # puts coherence before length, so it has no page cap.
+    assert 1 <= count_pages(pdf) <= (99 if name == "PRD.md" else 2)
     text = page_text(pdf)
     assert "GREENOCEAN" in text and "Contenido" not in text and "19 de octubre de 2026" in text
     assert f"de {count_pages(pdf)})" in text  # «Página n de N» in the footer

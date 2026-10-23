@@ -190,10 +190,29 @@ def build_verdict(indicators):
 COLUMNS = [["completitud"], ["actualidad"], ["validez", "pruebas"], ["consistencia", "unicidad"]]
 PLACES = {key: index for index, keys in enumerate(COLUMNS) for key in keys}
 SPINE = [
-    ("Fuentes", "ODEPA e INE", ["odepa", "ine"], "descarga"),
-    ("Aterrizaje y bronce", "raw.db y Parquet", ["sqlite", "apacheparquet"], "lee dbt"),
-    ("dbt", "reglas, modelos y pruebas", ["dbt"], "publica"),
-    ("datos.duckdb", "la base que lee el panel", ["duckdb"], ""),
+    ("Fuentes", "ODEPA e INE", ["odepa", "ine"]),
+    ("Aterrizaje y bronce", "raw.db y Parquet", ["sqlite", "apacheparquet"]),
+    ("dbt", "reglas, modelos y pruebas", ["dbt"]),
+    ("datos.duckdb", "la base que lee el panel", ["duckdb"]),
+]
+# D-245: the quality gates (D10) sit on the three links of the spine: where a bad record is stopped, what happens to it
+# and where that is written. (title, what is stopped, what happens to the data, where, evidence)
+GATES = [
+    ("Puerta 1 · el archivo",
+     "Un CSV vacío o con columnas distintas no se guarda; un archivo con muchas menos filas que el anterior o una semana "
+     "faltante detiene la carga.",
+     "No entra nada de ese archivo y la base publicada no cambia.",
+     "agent/agent.py y etl/etl.py", "tests/test_agent.py, tests/test_etl_run.py"),
+    ("Puerta 2 · cada fila",
+     "Un precio no positivo o con formato inválido se rechaza; una unidad no convertible o un precio atípico se marca.",
+     "La fila rechazada queda en la tabla rejection con su motivo; el precio marcado queda en la base, fuera de los "
+     "indicadores.",
+     "modelos intermedios de dbt (int_prices__validated, int_prices__outlier_flagged)", "pruebas de dbt"),
+    ("Puerta 3 · la base",
+     "Si falla una prueba de dbt, si la carga lee menos del 90 % de la anterior o si pytest falla sobre la base nueva "
+     "(incluida la paridad con SQLite), la base no se publica.",
+     "La base publicada sigue igual y la carga queda en etl_run como fallida.",
+     "etl/pipeline.py y .github/workflows/semanal.yml", "tests/test_pipeline_gate.py"),
 ]
 ABOUT = (("Propósito", "Detectar a tiempo que algo está mal, antes de usar una cifra."),
          ("Cómo se lee", "Bajo cada etapa del pipeline van las dimensiones que se vigilan en ella. Cada cifra se mide en la base de esta "
@@ -249,9 +268,14 @@ html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 
 .ql .logos.two .logo {{ width:50px; height:50px; }}
 .ql .spine b {{ margin-top:3px; font-size:13px; font-weight:500; color:{ink}; }}
 .ql .spine small {{ color:{muted}; font-size:11px; line-height:1.2; }}
-.ql .link {{ position:absolute; top:calc(16px + 29px); left:calc(50% + 62px); width:calc(100% - 124px + 26px); height:2px; background:{accent}; opacity:.85; }}
+.ql .link {{ position:absolute; top:calc(16px + 29px); left:calc(50% + 62px); width:calc(100% - 124px + 26px); height:2px; background:color-mix(in srgb, {accent} 85%, transparent); z-index:20; }}
 .ql .link::after {{ content:""; position:absolute; right:-1px; top:-4px; border:5px solid transparent; border-left:8px solid {accent}; border-right:0; }}
-.ql .link span {{ position:absolute; left:0; right:0; top:-17px; text-align:center; font-size:11px; color:{muted}; }}
+.ql .link .qgate {{ position:absolute; left:0; right:0; top:-19px; text-align:center; font-size:11.5px; font-weight:600;
+  color:{ink}; outline:none; cursor:help; line-height:1.25; }}
+.ql .link .qgate em {{ position:absolute; left:0; right:0; top:25px; font-style:normal; font-weight:500; color:var(--c, {muted}); }}
+.ql .link .qgate .tip {{ left:50%; top:calc(100% + 40px); transform:translateX(-50%); width:300px; text-align:left; }}
+.ql .link .qgate:hover .tip, .ql .link .qgate:focus .tip {{ display:block; }}
+.ql .link .qgate .tip b {{ display:block; margin-bottom:4px; color:{ink}; }}
 .ql .gates .side {{ margin-top:4px; padding-top:10px; border-top:1px solid color-mix(in srgb, {border} 70%, transparent); }}
 .ql .side h4 {{ margin:2px 0 3px; font-size:11px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:{muted}; }}
 .ql .line {{ display:flex; justify-content:space-between; gap:8px; padding:2px 0; color:{ink}; font-size:12px; font-variant-numeric:tabular-nums; position:relative; outline:none; }}
@@ -313,11 +337,32 @@ def build_apart_html(rejections, flags):
     return '<div class="side low"><h4>Qué se apartó y por qué</h4>' + ("".join(lines) or '<div class="line"><span>Nada apartado.</span></div>') + "</div>"
 
 
+def build_gate_html_link(index, indicators, rejections, flags):
+    """The arrow to the next stop, with its quality gate: name, live figure and, on hover, what it stops (D-245)."""
+    title, stops, outcome, where, evidence = GATES[index]
+    by_label = {row[1]: row for row in indicators}
+    if index == 0:
+        figure, status = "encabezado y filas", "info"
+    elif index == 1:
+        rejected = sum(count for _, _, count in rejections)
+        flagged = sum(count for name, count in flags.items() if name != "SIN_MARCA")
+        status = dimension_status([by_label[label][4] for label in ("Filas rechazadas", "Precios apartados de los indicadores")
+                                   if label in by_label])
+        figure = f"{thousands(rejected)} rechazadas · {thousands(flagged)} marcadas"
+    else:
+        tests = by_label.get("Pruebas de dbt")
+        figure, status = (f"{tests[2]} pruebas dbt", tests[4]) if tests else ("pruebas dbt", "info")
+    tip = (f'<div class="tip" role="tooltip"><b>{html.escape(title)}</b>\nQué frena: {html.escape(stops)}\n'
+           f'Qué pasa con el dato: {html.escape(outcome)}\nDónde: {html.escape(where)}\nEvidencia: {html.escape(evidence)}</div>')
+    return (f'<span class="link"><span class="qgate s-{status}" tabindex="0">{html.escape(title)}'
+            f'<em>{html.escape(figure)}</em>{tip}</span></span>')
+
+
 def build_node_html(index, title, subtitle, logos, label, up, down):
     """A pipeline stop: the stems carry the status of the gate that hangs above or below it."""
     marks = "".join(database_map.source_logo(slug) if slug in ("odepa", "ine") else database_map.brand_logo(slug, f"-q{index}")
                     for slug in logos)
-    link = f'<span class="link"><span>{html.escape(label)}</span></span>' if label else ""
+    link = label
     return (f'<div class="cell spine"><div class="stem s-{up or "info"}{"" if up else " none"}"></div>'
             f'<div class="logos{" two" if len(logos) > 1 else ""}">{marks}</div><b>{html.escape(title)}</b>'
             f'<small>{html.escape(subtitle)}</small><div class="stem s-{down or "info"}{"" if down else " none"}"></div>{link}</div>')
@@ -349,7 +394,9 @@ def build_page_html(palette, indicators, runs, rejections, flags, controls_html=
     status = {key: dimension_status([row[4] for row in rows]) for key, rows in groups.items()}
     down = [dimension_status([status[key] for key in keys if key in status]) if any(key in status for key in keys) else None
             for keys in COLUMNS]
-    spine = "".join(build_node_html(index, *node[:3], node[3], None, down[index]) for index, node in enumerate(SPINE))
+    spine = "".join(build_node_html(index, *node, build_gate_html_link(index, indicators, rejections, flags)
+                                    if index < len(GATES) else "", None, down[index])
+                    for index, node in enumerate(SPINE))
     # The two lists that used to run under the whole page fill the free space of the first two columns:
     # what was set apart under «Completitud» (rows read = loaded + rejected), the loads under «Actualidad».
     extras = {0: build_apart_html(rejections, flags), 1: build_loads_html(runs)}

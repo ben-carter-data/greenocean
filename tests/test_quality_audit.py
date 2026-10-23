@@ -89,3 +89,21 @@ def test_the_audit_controls_are_small_icons_with_their_status():
     html = audit_trace.build_controls_html(controls)
     assert html.count('class="ctl s-') == sum(len(cards) for _, cards in controls)
     assert 'class="ctl s-pending"' in html  # the file hashes cannot be checked here: said, not hidden
+
+
+@needs_database
+def test_d245_the_three_quality_gates_carry_the_same_figures_as_the_indicators(measures):
+    indicators = quality_live.build_indicators(measures, NOW)
+    page = quality_live.build_page_html(charts.get_palette("Vantablack"), indicators, measures["runs"],
+                                        measures["rejections"], measures["flags"])
+    assert page.count('class="qgate s-') == len(quality_live.GATES) == 3
+    by_label = {row[1]: row[2] for row in indicators}
+    rejected = sum(count for _, _, count in measures["rejections"])
+    flagged = sum(count for name, count in measures["flags"].items() if name != "SIN_MARCA")
+    assert by_label["Filas rechazadas"] == quality_live.thousands(rejected)
+    assert f"{quality_live.thousands(rejected)} rechazadas · {quality_live.thousands(flagged)} marcadas" in page
+    assert f"{by_label['Pruebas de dbt']} pruebas dbt" in page
+    for title, stops, outcome, where, evidence in quality_live.GATES:
+        assert title in page and "Qué frena" in page
+        for path in [part.strip() for part in evidence.split(",") if part.strip().startswith("tests/")]:
+            assert (Path(__file__).resolve().parent / path.split("/", 1)[1]).exists(), path

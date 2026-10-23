@@ -14,7 +14,6 @@ Desde D-163 esa página responde «¿Qué alimentos subieron más que la inflaci
 
 | Requisito | Qué falta |
 |---|---|
-| RF-03 · Solo se publica una carga válida | Ninguna prueba de pytest verifica que `etl/pipeline.py` no reemplaza `datos.duckdb` cuando falla una prueba de dbt. Hoy lo respalda el diseño del pipeline y el workflow. |
 | RNF-01 · Costo cero y sin vencimientos | Solo lo respalda ADR-31; no hay una comprobación automática. |
 | RNF-02 · Cada vista en una pantalla de 1440 × 900 | Se mide con `tests/medicion/medir.cjs`, que no es pytest. Varias vistas se siguen desplazando (los documentos largos, el Resumen semanal y Consultas SQL con resultados, entre otras); la medición completa está en `docs/diagnosticos/etapa-0/informe.md`, hecha antes de las etapas 1 a 6, y se repite en la Etapa 11. |
 
@@ -25,3 +24,8 @@ Desde D-163 esa página responde «¿Qué alimentos subieron más que la inflaci
 ## 4. El PRD pasa de 2 a 3 páginas en el PDF
 
 La regla de D-210 es de dos páginas como máximo. Las tablas de trazabilidad y de requisitos medibles añaden una página y ningún recorte de una sola sección la devuelve a dos. Se permite 3 solo para el PRD hasta que el PDF sea una impresión de la página (Etapa 10). Se retiró «Visión y misión», que no es problema, usuarios ni requisitos. Las cuatro capturas de pantallas siguen en el PRD: salen o se quedan cuando apruebes la tabla de la Etapa 10.
+
+## Resuelto después
+
+- RF-03 ya tiene prueba: `tests/test_pipeline_gate.py` (D-245).
+- P-4 entró al PRD y el código sin pantalla se borró (D-244).
