@@ -6491,12 +6491,6 @@ def show_operations_page(mode):
         with st.container(key="qa_hub"):
             st.iframe(quality_live.build_quality_html(palette, indicators, columns, measures), height="content")
     with audit_tab:
-        if changed_files:
-            # The indicators are measured on the published database; only the local copies of the source files differ.
-            names = " y ".join(changed_files)
-            # D-271: one line.
-            st.warning(f"En este equipo, {names} no coincide con su huella en manifest.json; los indicadores no cambian.",
-                       icon=":material/warning:")
         st.iframe(quality_live.build_audit_page_html(palette, columns), height="content")
         with st.container(key=quality_view.EXPANDER_KEY, horizontal=True, vertical_alignment="center", gap="small"):
             # D-272: the eleven buttons wait behind one, so they do not take two rows of the screen (and no picker
@@ -6504,6 +6498,13 @@ def show_operations_page(mode):
             with st.popover("Abrir la evidencia de un control", icon=":material/folder_open:"):
                 st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
                          on_change=open_quality_evidence, label_visibility="collapsed")
+            if changed_files:
+                # The indicators are measured on the published database; only the local copies of the source files
+                # differ. D-273: one small line beside the button, not a banner over the controls.
+                names = " y ".join(changed_files)
+                st.markdown(f'<span class="qa-local-note" style="font-size:12.5px; color:{quality_view.PILL_COLORS["pending"]}">'
+                            f'⚠ En este equipo, {html.escape(names)} no coincide con su huella '
+                            'en manifest.json; los indicadores no cambian.</span>', unsafe_allow_html=True)
     with apart_tab:
         st.iframe(quality_live.build_tables_html(palette, measures["runs"], measures["rejections"], measures["flags"]),
                   height="content")

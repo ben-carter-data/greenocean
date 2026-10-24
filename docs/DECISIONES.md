@@ -2083,3 +2083,13 @@ GreenOcean está hecho a la medida de lo que hace hoy: datos públicos, semanale
 - **Un texto falso, corregido:** la ventana de la puerta 3 decía que una carga fallida «queda en etl_run como fallida», y el glosario, que pipeline.py registra «también las fallidas». No es así desde siempre en producción (D-269): ahora dicen que la carga se detiene antes de publicarse y queda en el historial de GitHub Actions, que avisa al autor por correo.
 - **Adaptable:** el dibujo es HTML y CSS, no una imagen que se encoge, así que las letras conservan su tamaño. Entre 760 y 960 px se compacta y bajo 760 px los tramos se apilan de arriba abajo. Cabe sin desplazar a 1440 × 900 y 1920 × 1080; a 1280 × 800 solo queda fuera la línea de créditos del pie. La captura M-4 del PRD se tomó de nuevo.
 - **Pruebas:** `tests/test_quality_audit.py::test_d273_*` (las filas de cada tramo vienen de la última carga y cuadran; cada dimensión está en una sola puerta; ninguna puerta dice que una falla queda en etl_run; el veredicto cuenta los indicadores y nombra los controles de exactitud pendientes), además de las de D-257, que siguen pasando.
+
+## D-274 · La medida es la ventana real del navegador (1440 × 790); Calidad y auditoría cabe en ella
+
+- **Problema:** el autor vio la pestaña Calidad con desplazamiento. D-271 a D-273 se midieron a 1440 × 900, el tamaño de la pantalla; pero en un navegador quedan unos 1440 × 790 para la página (la barra de menús, las pestañas y la dirección se llevan el resto), la medida que ya usaba D-265 para el Resumen. A esa altura, Calidad sobraba 98 px, Arquitectura de seguridad 94, el Centro de operación 50, Pipeline y linaje 42 y Stack y evidencia 19.
+- **Decisión:** desde ahora, «cabe en una pantalla» se mide a 1440 × 790. En Calidad y auditoría:
+  - el esquema se compacta sin cambiar su forma: el rechazo va en una sola línea sobre la puerta 2, las puertas hacen preguntas cortas («¿Completo y al día?», «¿Cada fila es válida?», «¿Coherente y probada?»; la ventana y el cursor dan la pregunta completa), la indicación «pulsa cada pieza» se une a la línea del título y las líneas entre piezas son más cortas;
+  - en Auditoría, cada control ocupa una línea (su hallazgo completo, al pasar el cursor) y las etiquetas de estado no pasan de dos líneas;
+  - el aviso de un archivo local distinto de su huella pasa a una línea pequeña junto al botón de la evidencia.
+- **Resultado:** las tres pestañas de Calidad y auditoría caben sin desplazar a 1440 × 790 y a 1920 × 1000, también en el computador del autor, con el aviso local. Las otras páginas que sobraban se corrigen en las decisiones siguientes.
+- **Pruebas:** las de D-257, D-272 y D-273 siguen pasando.

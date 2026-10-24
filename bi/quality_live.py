@@ -294,9 +294,15 @@ html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45
 .qp .legend {{ margin:10px 0 0; font-size:12.5px; color:{muted}; }}
 .qp .audit-pair {{ display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:16px; align-items:start; }}
 .qp .audit-pair .audit tr.step:first-child td {{ padding-top:8px; }}
-.qp .audit-pair td.st {{ width:118px; white-space:normal; }}
-.qp .audit-pair .tag {{ white-space:normal; text-align:center; line-height:1.3; padding:2px 8px; }}
-.qp .audit-pair td {{ padding-top:6px; padding-bottom:6px; }}
+.qp .audit-pair table {{ table-layout:fixed; }}
+.qp .audit-pair col.c-ic {{ width:34px; }} .qp .audit-pair col.c-st {{ width:136px; }}
+.qp .audit-pair td.ic .qa-icon {{ width:24px; height:24px; }}
+.qp .audit-pair td.st {{ white-space:normal; }}
+.qp .audit-pair .tag {{ white-space:normal; text-align:center; line-height:1.25; padding:2px 8px; font-size:11.5px; }}
+.qp .audit-pair td {{ padding-top:5px; padding-bottom:5px; vertical-align:middle; }}
+/* D-273: each control on one line; its whole finding on hover. */
+.qp .audit-pair td small {{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+.qp .audit-pair tr.step td {{ padding:9px 0 3px; }}
 @media (max-width:900px) {{ .qp .two {{ grid-template-columns:1fr; }} }}
 @media (max-width:640px) {{ .qp .audit-pair {{ grid-template-columns:1fr; }} }}
 </style>"""
@@ -332,6 +338,8 @@ def gate_measure(index, indicators):
     return dimension_status([row[4] for row in rows]) if rows else "info", f"{sum(row[4] == 'ok' for row in judged)} de {len(judged)} bien"
 
 
+# What each gate box asks, short, so the diagram fits one screen; its pop-up and its hover ask the whole question.
+GATE_BOX_QUESTIONS = ["¿Completo y al día?", "¿Cada fila es válida?", "¿Coherente y probada?"]
 NUMBER_WORDS = {1: "un", 2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis", 7: "siete"}
 
 
@@ -386,19 +394,19 @@ def build_pipeline_css(palette):
     glow = (lambda color: f"0 0 0 1px color-mix(in srgb, {color} 35%, transparent), 0 0 24px -6px color-mix(in srgb, {color} 70%, transparent)"
             if dark else f"0 8px 18px -14px rgba(15,40,90,.35)")
     return f"""
-.qp .pq {{ --accent-ok:{accent}; position:relative; padding:14px 22px 16px; border:1px solid {border}; border-radius:18px; background-color:{surface};
+.qp .pq {{ --accent-ok:{accent}; position:relative; padding:11px 22px 12px; border:1px solid {border}; border-radius:18px; background-color:{surface};
   background-image:linear-gradient({grid} 1px, transparent 1px), linear-gradient(90deg, {grid} 1px, transparent 1px);
   background-size:30px 30px; }}
 .qp .pq-head {{ display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 14px; }}
 .qp .pq-head h2 {{ margin:0; font-size:20px; font-weight:700; letter-spacing:-.01em; color:{ink}; }}
 .qp .pq-head p {{ margin:0; font:400 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
-.qp .pq-head p.hint {{ flex-basis:100%; font-family:inherit; font-size:12.5px; }}
-.qp .pq-grid {{ display:grid; margin-top:6px; align-items:center; column-gap:0; row-gap:0;
+.qp .pq-head p.hint {{ font-family:inherit; font-size:12.5px; }}
+.qp .pq-grid {{ display:grid; margin-top:4px; align-items:center; column-gap:0; row-gap:0;
   grid-template-columns:minmax(0, .85fr) minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(0, 1.3fr)
     minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(0, .85fr);
-  grid-template-rows:auto 32px auto 28px auto 28px auto;
+  grid-template-rows:auto 22px auto 22px auto 22px auto;
   grid-template-areas:
-    ".   .  .  .  rej .  .  .  .   "
+    ".   .  .  rej rej rej .  .  .   "
     ".   .  .  .  vr  .  .  .  .   "
     "org a1 g1 a2 g2  a3 g3 a4 base"
     ".   .  v1 .  v2  .  v3 .  .   "
@@ -412,28 +420,29 @@ def build_pipeline_css(palette):
 .qp .pq .box small {{ display:block; margin-top:2px; font-size:12.5px; line-height:1.35; color:{muted}; }}
 .qp .pq .kicker {{ display:block; margin-bottom:3px; font:600 10.5px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing:.18em; text-transform:uppercase; color:{muted}; }}
-.qp .pq .gate {{ --c:{accent}; border-color:var(--c); box-shadow:{glow("var(--c)")}; padding:12px 10px; align-self:stretch;
+.qp .pq .gate {{ --c:{accent}; border-color:var(--c); box-shadow:{glow("var(--c)")}; padding:10px 8px; align-self:stretch;
   display:flex; flex-direction:column; justify-content:center; }}
 .qp .pq .gate.s-warn {{ --c:{quality_view.PILL_COLORS["pending"]}; }} .qp .pq .gate.s-fail {{ --c:{quality_view.PILL_COLORS["fail"]}; }}
 .qp .pq .gate .kicker {{ color:var(--c); }}
-.qp .pq .gate b {{ font-size:19px; }}
+.qp .pq .gate b {{ font-size:18px; }}
 .qp .pq a.box:hover, .qp .pq a.box:focus-visible {{ border-color:{accent}; background:color-mix(in srgb, {accent} 9%, {card}); }}
 .qp .pq .gate:hover, .qp .pq .gate:focus-visible {{ border-color:var(--c); background:color-mix(in srgb, var(--c) 10%, {card}); }}
 .qp .pq .rej {{ --c:{quality_view.PILL_COLORS["pending"]}; border-color:color-mix(in srgb, var(--c) 70%, transparent);
   background:color-mix(in srgb, var(--c) {'14' if dark else '9'}%, {card}); box-shadow:{glow("var(--c)")}; }}
-.qp .pq .rej .kicker {{ color:var(--c); }}
-.qp .pq .rej b {{ font-size:18px; }}
-.qp .pq .mide {{ height:100%; padding:10px 10px 12px; }}
-.qp .pq .mide a {{ display:block; padding:2px 0; font-size:15.5px; font-weight:700; color:{ink}; }}
+.qp .pq .rej {{ display:flex; flex-wrap:wrap; align-items:baseline; justify-content:center; gap:2px 9px; padding:8px 12px; }}
+.qp .pq .rej .kicker {{ margin:0; color:var(--c); }}
+.qp .pq .rej b {{ font-size:16px; }} .qp .pq .rej small {{ margin:0; font-size:13px; }}
+.qp .pq .mide {{ height:100%; padding:8px 10px 9px; }}
+.qp .pq .mide a {{ display:block; padding:0; font-size:15px; line-height:1.45; font-weight:700; color:{ink}; }}
 .qp .pq .mide a:hover, .qp .pq .mide a:focus-visible {{ color:{accent}; }}
 .qp .pq .mide a.s-warn::after, .qp .pq .mide a.s-fail::after {{ content:""; display:inline-block; width:12px; height:12px; margin-left:7px;
   border-radius:50%; background:var(--c); vertical-align:-1px; box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent); }}
-.qp .pq .ds {{ --c:{accent}; padding:12px 14px; border-color:var(--c); box-shadow:{glow("var(--c)")}; }}
+.qp .pq .ds {{ --c:{accent}; padding:8px 14px 9px; border-color:var(--c); box-shadow:{glow("var(--c)")}; }}
 .qp .pq .ds.s-warn {{ --c:{quality_view.PILL_COLORS["pending"]}; }} .qp .pq .ds.s-fail {{ --c:{quality_view.PILL_COLORS["fail"]}; }}
-.qp .pq .ds b {{ font-size:23px; letter-spacing:-.01em; }}
+.qp .pq .ds b {{ font-size:21px; letter-spacing:-.01em; }}
 .qp .pq .ds small {{ font-size:13.5px; color:{ink}; opacity:.85; }}
 .qp .pq .ds:hover, .qp .pq .ds:focus-visible {{ background:color-mix(in srgb, var(--c) 10%, {card}); }}
-.qp .pq .end {{ padding:10px 8px; }}
+.qp .pq .end {{ padding:9px 8px; }}
 .qp .pq .end b {{ font-size:16px; }}
 /* The dashed lines: a horizontal stretch carries its rows above it; a vertical one goes down (or up, to the rejected rows). */
 .qp .pq .h {{ position:relative; height:44px; }}
@@ -469,6 +478,7 @@ def build_pipeline_css(palette):
   .qp .pq .h::after {{ left:calc(50% - 4px); right:auto; top:auto; bottom:2px; border:5px solid transparent; border-top:8px solid {accent}; }}
   .qp .pq .h span {{ left:calc(50% + 12px); right:auto; top:13px; text-align:left; }}
   .qp .pq .ds {{ margin-top:12px; }} .qp .pq .legend-box {{ padding-top:8px; }}
+  .qp .pq .rej {{ flex-direction:column; align-items:center; gap:2px; }}
 }}
 """
 
@@ -489,16 +499,18 @@ def build_pipeline_html(indicators, columns, measures=None):
              for area, value, note in stretches]
     parts.append('<div class="box end" style="grid-area:org" title="Los CSV anuales de ODEPA, descargados por HTTPS">'
                  '<span class="kicker">Origen</span><b>Archivos</b><small>CSV de ODEPA</small></div>')
-    prices = f"{number(flow['prices'])} precios semanales" if flow and flow["prices"] is not None else "base servida"
-    parts.append(f'<div class="box end" style="grid-area:base" title="Las filas válidas, agrupadas por semana, producto, región, '
-                 f'canal y unidad"><span class="kicker">Carga</span><b>Base</b><small>{html.escape(prices)}</small></div>')
+    prices = f"{number(flow['prices'])} precios" if flow and flow["prices"] is not None else "base servida"
+    parts.append(f'<div class="box end" style="grid-area:base" title="{html.escape(prices)} semanales: las filas válidas, agrupadas '
+                 f'por semana, producto, región, canal y unidad"><span class="kicker">Carga</span><b>Base</b>'
+                 f'<small>{html.escape(prices)}</small></div>')
     for index, (title, question, _) in enumerate(GATE_VIEW):
         status, measure = gate_measure(index, indicators)
         kicker, _, name = title.partition(" · ")
         parts.append(f'<a class="box gate s-{status}" href="#g-{index}" style="grid-area:g{index + 1}" '
-                     f'title="{html.escape(title)}: {html.escape(measure)}" aria-label="{html.escape(title)}: {html.escape(question)}">'
+                     f'title="{html.escape(title)}: {html.escape(question)} {html.escape(measure)}" '
+                     f'aria-label="{html.escape(title)}: {html.escape(question)}">'
                      f'<span class="kicker">{html.escape(kicker)}</span><b>{html.escape(name[:1].upper() + name[1:])}</b>'
-                     f'<small>{html.escape(question)}</small></a>')
+                     f'<small>{html.escape(GATE_BOX_QUESTIONS[index])}</small></a>')
         links = []
         for key in gate_dimensions(index):
             dim_status, headline = hub_measure(key, indicators, columns)
@@ -524,7 +536,7 @@ def build_pipeline_html(indicators, columns, measures=None):
     words = NUMBER_WORDS
     head = (f'<div class="pq-head"><h2>Pipeline de calidad de datos</h2>'
             f'<p>{words[len(GATE_VIEW)].capitalize()} puertas · {words[len(HUB)]} dimensiones · un veredicto</p>'
-            '<p class="hint">Pulsa una puerta, una dimensión, el rechazo o el veredicto para ver su detalle.</p></div>')
+            '<p class="hint">· pulsa cada pieza para ver su detalle</p></div>')
     return f'<div class="pq">{head}<div class="pq-grid">{"".join(parts)}</div></div>'
 
 
@@ -647,9 +659,11 @@ def build_audit_html(columns):
             for icon, title, status, detail, why in cards:
                 kind = quality_view.classify(status)
                 rows.append(f'<tr title="{html.escape(why)}"><td class="ic">{quality_view.build_icon_svg(icon)}</td>'
-                            f'<td>{html.escape(title)}<small>{html.escape(detail)}</small></td>'
+                            f'<td>{html.escape(title)}<small title="{html.escape(detail)}">{html.escape(detail)}</small></td>'
                             f'<td class="st"><span class="tag k-{kind}">{html.escape(status)}</span></td></tr>')
-        panels.append(f'<div class="audit"><table><tbody>{"".join(rows)}</tbody></table></div>')
+        # The widths go first: a fixed table takes them from its first row, which here is a step's heading.
+        panels.append('<div class="audit"><table><colgroup><col class="c-ic"><col><col class="c-st"></colgroup>'
+                      f'<tbody>{"".join(rows)}</tbody></table></div>')
     return f'<div class="audit-pair">{"".join(panels)}</div>'
 
 
