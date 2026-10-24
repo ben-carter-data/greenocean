@@ -2058,3 +2058,17 @@ GreenOcean está hecho a la medida de lo que hace hoy: datos públicos, semanale
 - **Resultado:** sin desplazarse a 1920 × 1080, 1440 × 900, 1280 × 800 y 1440 × 700. En la tableta horizontal la página se desplaza, porque las dos columnas se apilan, pero ya nada se monta.
 - **Sin cambios:** el dibujo del recorrido (D-229), sus nueve pasos, sus estados, sus ventanas y los datos de la columna derecha.
 - **Pruebas:** `tests/test_operation_center.py::test_d271_*`.
+
+## D-272 · Calidad y auditoría: las tres pestañas caben en una pantalla
+
+- **Pedido del autor:** aplicar a Calidad y auditoría lo mismo que a la pestaña Operación (D-271): que se adapte a la ventana y se vea entera.
+- **Antes:** el marco del esquema de Calidad tenía un alto fijo de 560 px; en una ventana ancha el dibujo crecía y las tres puertas quedaban cortadas dentro del marco (a 1920 px medía 625 px). Auditoría medía 1.338 px en todas las pantallas: una sola tabla larga, once botones de evidencia en dos filas y la fila «Volver a medir» debajo.
+- **Decisión:**
+  - el marco del esquema toma el alto del dibujo, y el dibujo nunca es más ancho que lo que lo deja dentro de la ventana;
+  - los controles de Auditoría se reparten en dos paneles lado a lado, en su orden, tan parejos como lo permiten sus filas, y las etiquetas largas de estado pasan a dos líneas para dejar el ancho a los títulos (bajo 640 px, un panel bajo el otro);
+  - los once botones de evidencia esperan detrás de uno solo, «Abrir la evidencia de un control», sin volver a un selector (D-220);
+  - «Volver a medir» sube a la barra de la página (D-267), con su explicación al pasar el cursor;
+  - el aviso de un archivo local distinto de su huella, que solo aparece en el computador del autor, cabe en una línea.
+- **Resultado:** a 1440 × 900 y 1920 × 1080, Calidad, Auditoría y Rechazos y cargas se ven sin desplazar (Auditoría, en el servidor, sin el aviso local). En pantallas de 800 px de alto o menos todavía se desplazan un poco.
+- **Sin cambios:** los once indicadores, los controles y sus estados, las ventanas de detalle y la evidencia de cada control.
+- **Pruebas:** `tests/test_quality_audit.py::test_d272_*` y `tests/test_dashboard.py::test_d220_*`.

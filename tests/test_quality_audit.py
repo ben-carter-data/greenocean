@@ -123,3 +123,14 @@ def test_d257_the_number_of_the_verdict_opens_the_list_of_all_the_indicators(mea
     assert page.count('href="#d-todos"') == 1 and "<u>" not in page  # one door only: the centre, not a hidden link on the side
     assert all(row[1] in modal and row[2] in modal for row in indicators)
     assert str(len([row for row in indicators if row[4] != "info"])) in sentence  # the 11 of the sentence are the 11 of the list
+
+
+def test_d272_the_audit_steps_sit_in_two_panels_in_timeline_order_and_as_even_as_their_rows_allow():
+    columns = quality_view.build_columns(EVIDENCE)
+    left, right = quality_live.split_steps(columns)
+    assert left + right == columns and left and right  # every step, once, in order
+    weight = lambda half: sum(len(cards) + 1 for _, cards in half)
+    best = min(abs(weight(columns[:i]) - weight(columns[i:])) for i in range(1, len(columns)))
+    assert abs(weight(left) - weight(right)) == best
+    page = quality_live.build_audit_page_html(charts.get_palette("Vantablack"), columns)
+    assert page.count('class="audit"') == 2 and 'class="audit-pair"' in page

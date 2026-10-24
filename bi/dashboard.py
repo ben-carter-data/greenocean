@@ -6431,6 +6431,15 @@ def open_quality_evidence():
     st.session_state[QUALITY_PICK_KEY] = None
 
 
+def show_recheck_button():
+    """«Volver a medir», in the page bar (D-271): every tab can use it and none loses a row to it."""
+    rechecked = st.session_state.get("qa_rechecked_at")
+    st.button("Volver a medir", icon=":material/refresh:", key="qa_recheck_page", on_click=recheck_quality,
+              help="Descarta lo guardado y mide de nuevo sobre la base publicada. Cada indicador se mide en la base de la "
+                   "última carga; cada control abre los datos que lo respaldan."
+                   + (f" Medido de nuevo a las {to_chile_time(rechecked):%H:%M:%S}." if rechecked else ""))
+
+
 def recheck_quality():
     """Run every check again, now: the caches of the board are dropped (D-171)."""
     read_quality_evidence.clear()
@@ -6451,7 +6460,7 @@ def show_operations_page(mode):
     dimension under the pipeline stop where it is watched, and the audit controls that back it,
     each opening its evidence. The single-price trace and its pickers left (D-196 → D-220)."""
     show_page_bar(PAGE_OPERATIONS, "Calidad y auditoría", "La calidad medida en cada carga y los controles que demuestran que "
-                             "lo publicado se puede rastrear y repetir.")
+                             "lo publicado se puede rastrear y repetir.", side=show_recheck_button)
     measures = read_quality_measures(get_database_version())
     indicators = quality_live.build_indicators(measures)
     manifest = read_download_manifest()
@@ -6475,29 +6484,29 @@ def show_operations_page(mode):
     palette = charts.get_palette(mode)
     quality_tab, audit_tab, apart_tab = st.tabs(["Calidad", "Auditoría", "Rechazos y cargas"])
     with quality_tab:
-        # D-267: 30 px less, the empty band under the three gates; the detail sheets still fit the frame.
-        st.iframe(quality_live.build_quality_html(palette, indicators, columns), height=560)
+        # D-271: the frame takes the drawing's own height (a fixed one cut the three gates on a wide window) and the
+        # drawing is never wider than what keeps it inside the window, so the tab fits one screen.
+        st.markdown('<style>.st-key-qa_hub iframe {display:block; margin:0 auto; '
+                    'max-width:max(640px, calc((100vh - 330px) * 1.75));}</style>', unsafe_allow_html=True)
+        with st.container(key="qa_hub"):
+            st.iframe(quality_live.build_quality_html(palette, indicators, columns), height="content")
     with audit_tab:
         if changed_files:
             # The indicators are measured on the published database; only the local copies of the source files differ.
             names = " y ".join(changed_files)
-            st.warning(f"En este equipo, {names} no coincide con la huella SHA-256 que anotó la descarga de la base publicada "
-                       "(manifest.json): es de otra descarga o fue alterado. Los indicadores se miden en la base publicada y no "
-                       "cambian.", icon=":material/warning:")
+            # D-271: one line.
+            st.warning(f"En este equipo, {names} no coincide con su huella en manifest.json; los indicadores no cambian.",
+                       icon=":material/warning:")
         st.iframe(quality_live.build_audit_page_html(palette, columns), height="content")
         with st.container(key=quality_view.EXPANDER_KEY, horizontal=True, vertical_alignment="center", gap="small"):
-            st.markdown('<span class="qa-open-label">Abrir la evidencia de</span>', unsafe_allow_html=True)
-            st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
-                     on_change=open_quality_evidence, label_visibility="collapsed")
+            # D-272: the eleven buttons wait behind one, so they do not take two rows of the screen (and no picker
+            # comes back, D-220).
+            with st.popover("Abrir la evidencia de un control", icon=":material/folder_open:"):
+                st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
+                         on_change=open_quality_evidence, label_visibility="collapsed")
     with apart_tab:
         st.iframe(quality_live.build_tables_html(palette, measures["runs"], measures["rejections"], measures["flags"]),
                   height="content")
-    with st.container(horizontal=True, vertical_alignment="center", gap="small"):
-        st.button("Volver a medir", icon=":material/refresh:", key="qa_recheck_page", on_click=recheck_quality,
-                  help="Descarta lo guardado y mide de nuevo sobre la base publicada.")
-        rechecked = st.session_state.get("qa_rechecked_at")
-        st.caption(f"Medido de nuevo a las {to_chile_time(rechecked):%H:%M:%S}." if rechecked else
-                   "Cada indicador se mide en la base de la última carga; cada control abre los datos que lo respaldan.")
     chosen_card = st.session_state.pop(QUALITY_OPEN_KEY, None)
     if chosen_card in quality_evidence.TITLES.values():
         key = next(key for key, title in quality_evidence.TITLES.items() if title == chosen_card)

@@ -303,7 +303,13 @@ html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45
 .qp .audit tr.step td {{ padding:14px 0 4px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:{muted}; border-bottom:1px solid {border}; }}
 .qp .audit td.st {{ white-space:nowrap; text-align:right; }}
 .qp .legend {{ margin:10px 0 0; font-size:12.5px; color:{muted}; }}
+.qp .audit-pair {{ display:grid; grid-template-columns:minmax(0, 1fr) minmax(0, 1fr); gap:16px; align-items:start; }}
+.qp .audit-pair .audit tr.step:first-child td {{ padding-top:8px; }}
+.qp .audit-pair td.st {{ width:118px; white-space:normal; }}
+.qp .audit-pair .tag {{ white-space:normal; text-align:center; line-height:1.3; padding:2px 8px; }}
+.qp .audit-pair td {{ padding-top:6px; padding-bottom:6px; }}
 @media (max-width:900px) {{ .qp .gatebar, .qp .two {{ grid-template-columns:1fr; }} }}
+@media (max-width:640px) {{ .qp .audit-pair {{ grid-template-columns:1fr; }} }}
 </style>"""
 
 
@@ -477,17 +483,32 @@ def build_tables_html(palette, runs, rejections, flags):
     return wrap_document(palette, f'<div class="two">{build_apart_html(rejections, flags)}{build_loads_html(runs)}</div>')
 
 
+def split_steps(columns):
+    """The steps in two runs, in their order, as even as their rows allow (D-271): the tab fits one screen."""
+    weights = [len(cards) + 1 for _, cards in columns]  # the step's own heading counts as a row
+    total, best, cut = sum(weights), None, 1
+    for index in range(1, len(columns)):
+        difference = abs(total - 2 * sum(weights[:index]))
+        if best is None or difference < best:
+            best, cut = difference, index
+    return columns[:cut], columns[cut:]
+
+
 def build_audit_html(columns):
-    """The audit controls by step, one row each: its mark, what it is, its status and what it found."""
-    rows = []
-    for step, cards in columns:
-        rows.append(f'<tr class="step"><td colspan="3">{html.escape(step)}</td></tr>')
-        for icon, title, status, detail, why in cards:
-            kind = quality_view.classify(status)
-            rows.append(f'<tr title="{html.escape(why)}"><td class="ic">{quality_view.build_icon_svg(icon)}</td>'
-                        f'<td>{html.escape(title)}<small>{html.escape(detail)}</small></td>'
-                        f'<td class="st"><span class="tag k-{kind}">{html.escape(status)}</span></td></tr>')
-    return f'<div class="audit"><table><tbody>{"".join(rows)}</tbody></table></div>'
+    """The audit controls by step, one row each: its mark, what it is, its status and what it found. The steps sit in
+    two panels side by side, in timeline order, so the tab fits one screen; a narrow window stacks them."""
+    panels = []
+    for half in split_steps(columns):
+        rows = []
+        for step, cards in half:
+            rows.append(f'<tr class="step"><td colspan="3">{html.escape(step)}</td></tr>')
+            for icon, title, status, detail, why in cards:
+                kind = quality_view.classify(status)
+                rows.append(f'<tr title="{html.escape(why)}"><td class="ic">{quality_view.build_icon_svg(icon)}</td>'
+                            f'<td>{html.escape(title)}<small>{html.escape(detail)}</small></td>'
+                            f'<td class="st"><span class="tag k-{kind}">{html.escape(status)}</span></td></tr>')
+        panels.append(f'<div class="audit"><table><tbody>{"".join(rows)}</tbody></table></div>')
+    return f'<div class="audit-pair">{"".join(panels)}</div>'
 
 
 def build_audit_page_html(palette, columns):
