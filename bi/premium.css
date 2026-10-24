@@ -48,7 +48,7 @@
 @media(prefers-reduced-motion:reduce) {.stApp .doc-kpi-row,.stApp .doc-kpi-row:hover {transition:none;transform:none;}}
 /* Type finish (D-170): fine weights, quiet labels, pill buttons — the Apple reading. */
 .stApp {font-weight:400;}
-.stApp [data-testid="stMain"] :is(h1,h2,h3,h4,.compact-header h1,.ctx-title h1,.section-title,.subsection-title) {font-weight:400!important;letter-spacing:-.022em;}
+.stApp [data-testid="stMain"] :is(h1,h2,h3,h4,.compact-header h1,.section-title,.subsection-title) {font-weight:400!important;letter-spacing:-.022em;}
 .stApp [data-testid="stMain"] :is(b,strong) {font-weight:500;}
 .stApp :is(.kpi-value,.kpi-strip-value,.cover-figures dd,.oc-fact-value) {font-weight:500!important;letter-spacing:-.02em;}
 .stApp :is(.oc-fact-label,.devops-layers-title,.sqlx-bar-label,.sqlx-side h4,.qa-step-name,.mock-scope-label) {font-weight:500!important;letter-spacing:.11em;}

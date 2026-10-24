@@ -34,7 +34,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                database_crossings, deployment, devops, monitoring, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
+                database_crossings, deployment, devops, monitoring, page_bar, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -1138,6 +1138,11 @@ def build_style_css(mode):
     .st-key-compact_footer {{ gap: 2px !important; margin-top: 6px; padding-top: 4px; border-top: 1px solid {palette["card_border"]}; }}
     .st-key-compact_footer [data-testid="stCaptionContainer"] {{ margin-top: 10px; }}
     .st-key-compact_footer [data-testid="stCaptionContainer"] p {{ font-size: .7rem; line-height: 1.35; }}
+    /* D-267: on the pages that fit the window, the attribution shows its first line; the pointer opens it whole. */
+    .st-key-compact_footer [data-testid="stCaptionContainer"] p {{ display: -webkit-box; -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1; overflow: hidden; cursor: default; }}
+    .st-key-compact_footer [data-testid="stCaptionContainer"]:hover p {{ -webkit-line-clamp: unset; }}
+    @media print {{ .st-key-compact_footer [data-testid="stCaptionContainer"] p {{ -webkit-line-clamp: unset; }} }}
     .st-key-compact_footer .page-lineage {{ margin: 0; }}
     .lineage-badge {{ display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;
         padding: 3px 10px; border-radius: 999px; border: 1px solid {palette["card_border"]};
@@ -1700,13 +1705,8 @@ def show_app_header(window):
     }}
     </style>""", unsafe_allow_html=True)
     view = read_current_view(window)
-    # Contexto del precio draws its own route and «Volver al resumen»: showing the
-    # generic path and Volver here too would duplicate them (D-098). Appearance now
-    # lives in the shared sidebar footer, where it stays available without competing
-    # with the page title.
-    minimal = view == PAGE_SEASONALITY
-    # The Resumen draws the path and Volver in its own bar, with the week's figures (D-264).
-    if not minimal and view != PAGE_HOME:
+    # The Resumen (D-264) and the main pages (D-267) draw the path and Volver in their own bar.
+    if view not in BAR_VIEWS:
         with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
             st.markdown(f'<div class="app-brand" aria-label="Página actual">{html.escape(build_view_path(window, view))}</div>',
                         unsafe_allow_html=True)
@@ -1715,6 +1715,11 @@ def show_app_header(window):
     theme = get_mode()
     match_base_mode(theme)
     return theme
+
+
+# The pages whose only header is one thin bar (D-264, D-267).
+BAR_VIEWS = {PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS,
+             PAGE_SECURITY, PAGE_STACK}
 
 
 def build_view_path(window, view):
@@ -2665,21 +2670,18 @@ TABLE_ROLES = {"weekly_price": "hechos", "dim_product": "dimensión", "dim_regio
               "rejection": "auditoría", "ipc_weekly": "IPC", "ipc_monthly": "IPC", "ine_ipc_source": "IPC"}
 
 
-def build_architecture_header(row_counts, latest_run):
-    """Title, a one-line description and three real figures, on the right (D-097)."""
-    run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
-    run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
-    freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
-    chips = [("weekly_price", f"{charts.format_thousands(row_counts['weekly_price'])} filas"),
-             ("Auditoría", f"{charts.format_thousands(row_counts['etl_run'])} cargas · "
-                           f"{charts.format_thousands(row_counts['rejection'])} rechazos"),
-             ("Última carga", f"{freshness} · {run_text}")]
-    return (f'<div class="arch-top fit-modelo"><div class="arch-head compact-header"><h1>{html.escape(PAGE_ARCHITECTURE)}</h1>'
-            '<span class="page-freshness">Cómo se organizan los datos: las tablas y sus claves, dónde viven y cómo se cruzan las bases.'
-            '</span></div><div class="arch-chips">'
-            + "".join(f'<div class="arch-chip"><span>{html.escape(label)}</span>'
-                      f'<div>{html.escape(value)}</div></div>' for label, value in chips)
-            + "</div></div>")
+MODEL_DESCRIPTION = "Cómo se organizan los datos: las tablas y sus claves, dónde viven y cómo se cruzan las bases."
+
+
+def build_architecture_chips(row_counts):
+    """The real figures of the model (D-097), as chips of the page bar (D-267); the last load is the bar's own time."""
+    number = charts.format_thousands
+    return [(f"<em>weekly_price</em><b>{number(row_counts['weekly_price'])}</b><small>filas</small>",
+             f"weekly_price, la tabla de hechos: {number(row_counts['weekly_price'])} filas"),
+            (f"<em>Auditoría</em><b>{number(row_counts['etl_run'])}</b><small>cargas ·</small>"
+             f"<b>{number(row_counts['rejection'])}</b><small>rechazos</small>",
+             f"Auditoría: {number(row_counts['etl_run'])} cargas registradas en etl_run y "
+             f"{number(row_counts['rejection'])} filas rechazadas en rejection")]
 
 
 def build_fit_frame_html(svg, css_class):
@@ -2698,26 +2700,15 @@ def build_model_frame_html(svg):
 def build_architecture_css(mode):
     palette = charts.get_palette(mode)
     return f"""<style>
-    /* Title and the three figures on one row, the description under them (nothing overlaps). */
-    .arch-top {{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:0 24px;}}
-    .arch-top .arch-head {{display:contents;}}
-    .arch-top .arch-head h1 {{grid-area:1 / 1;}}
-    .arch-top .arch-chips {{grid-area:1 / 2;}}
-    .arch-top .arch-head .page-freshness {{grid-area:2 / 1 / 3 / 3; margin:0 0 6px;}}
-    .arch-chips {{display:flex; gap:10px; flex-wrap:wrap; margin:0 0 4px;}}
-    .arch-chip {{border:1px solid {palette['card_border']}; border-radius:9px; background:{palette['card']};
-        padding:6px 13px; min-width:130px;}}
-    .arch-chip span {{display:block; font-size:10.5px; color:{palette['text']}; line-height:1.3;}}
-    .arch-chip div {{font-size:13px; color:{palette['strong_text']}; font-weight:600; white-space:nowrap;}}
     .st-key-architecture_body [data-testid="stHorizontalBlock"] {{align-items:stretch; gap:14px;}}
     .st-key-architecture_diagram {{border:1px solid {palette['card_border']}; border-radius:14px;
         background:{palette['card']}; padding:14px 20px 18px;}}
     .st-key-architecture_diagram svg {{display:block; width:100%; height:auto;}}
-    .st-key-architecture_diagram svg:not(.zoom-frame svg) {{max-height:calc((100vh - 360px) * 1.2);}}
+    .st-key-architecture_diagram svg:not(.zoom-frame svg) {{max-height:calc(100vh - 267px);}}
     /* The diagram always fits the window (D-232): the viewport is as wide as the height left
        allows, by the drawing's own proportion; the zoom buttons bring it closer inside the panel. */
     .fit-modelo {{position:relative;}}
-    .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 360px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
+    .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 372px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
     .fit-modelo .zoom-buttons {{position:absolute; bottom:-46px; right:0; margin:0; z-index:2;}}
     .arch-legend {{display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
         border-top:1px solid {palette['card_border']}; font-size:12px; line-height:1.5; color:{palette['text']};}}
@@ -2747,7 +2738,7 @@ def show_architecture_page(mode):
                        f"{definitions.get(table, '').capitalize()}"
                 for table in project.TABLE_NAMES + project.IPC_TABLE_NAMES}
     st.markdown(build_architecture_css(mode), unsafe_allow_html=True)
-    st.markdown(build_architecture_header(row_counts, read_latest_run()), unsafe_allow_html=True)
+    show_page_bar(PAGE_ARCHITECTURE, PAGE_ARCHITECTURE, MODEL_DESCRIPTION, build_architecture_chips(row_counts))
     # The views of the same database, from the model to where it lives (D-189, D-236): the star, the
     # entity-relation, the storage architecture and, last, where two databases touch.
     view = st.segmented_control("Vista del modelo", MODEL_VIEWS, default=MODEL_VIEWS[0], key=MODEL_VIEW_KEY,
@@ -3776,6 +3767,31 @@ def show_compact_page_header(title, description):
                 f'{html.escape(title)}</h1><span class="page-freshness">Datos al '
                 f'{freshness} {build_chip(run_text, run_kind)}</span></div>',
                 unsafe_allow_html=True)
+
+
+def format_load_time(latest):
+    """«20 oct · 12:54»: the time of a load, short, as the Resumen's bar shows it (D-264)."""
+    stamp = to_chile_time(parse_run_start(latest["started_at"]))
+    month = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][stamp.month - 1]
+    return f"{stamp.day} {month} · {stamp:%H:%M}"
+
+
+def show_page_bar(view, title, description, chips=(), side=None, terms=()):
+    """The only header of a main page (D-267), like the Resumen's (D-264): one thin bar with Volver, the path, the
+    title (its description on hover), the page's figures as chips, what it measures and the time of the load. side
+    draws Streamlit elements of the page (a button, a switch) inside the bar, before the time."""
+    latest = read_latest_run()
+    st.markdown(page_bar.build_css(charts.get_palette(get_mode())), unsafe_allow_html=True)
+    with st.container(key="page_bar", horizontal=True, vertical_alignment="center"):
+        show_return_button()
+        st.markdown(page_bar.build_bar_html(build_view_path(WINDOW_OF_VIEW.get(view, view), view), title, description,
+                                            chips), unsafe_allow_html=True, width="stretch")
+        if side:
+            side()
+        if terms:
+            st.markdown(page_bar.build_terms_html(terms), unsafe_allow_html=True, width="content")
+        st.markdown(page_bar.build_updated_html(format_load_time(latest), latest["status"] == etl.STATUS_LOADED),
+                    unsafe_allow_html=True, width="content")
 
 
 # endregion
@@ -4861,10 +4877,10 @@ def show_home_page(mode):
         show_market_overview(mode, "home")
 
 
-def show_pipeline_page_header():
-    """The same one-line header as every technical page (D-150)."""
-    show_compact_page_header("Pipeline y linaje", "El recorrido de los datos, de ODEPA y el INE al panel, "
-                             "y el linaje de dbt con el estado de sus pruebas.")
+def show_pipeline_page_header(summary):
+    """The page bar (D-267), with the four figures of the latest load and build."""
+    show_page_bar(PAGE_DIAGRAMS, "Pipeline y linaje", "El recorrido de los datos, de ODEPA y el INE al panel, "
+                  "y el linaje de dbt con el estado de sus pruebas.", build_pipeline_chips(summary))
 
 
 @st.cache_data
@@ -4873,29 +4889,24 @@ def read_lineage(database_version):
     return lineage.read_tables(queries.run_sql)
 
 
-def build_pipeline_figure_html(value, caption, layer):
-    """One figure of the pipeline (D-253): its number alone, in 3D, in the colour of its layer in the diagram."""
-    value = html.escape(value)
-    return (f'<div class="pipe-figure" style="--c:{architecture.LAYER_COLORS[layer]}">'
-            f'<span class="pipe-number" data-value="{value}"><span>{value}</span></span>'
-            f'<span class="pipe-caption">{html.escape(caption)}</span></div>')
-
-
-def show_pipeline_figures(summary):
-    """One strip of four real figures: the latest load and the latest dbt build."""
+def build_pipeline_chips(summary):
+    """The four real figures of the latest load and dbt build (D-253), as chips of the page bar (D-267), each number in
+    the colour of its layer in the diagram."""
     run = read_latest_run()
-    tests = (f'{summary["passing"]}/{summary["tests"]}', "pruebas dbt superadas") if summary \
-        else ("—", "linaje dbt en migración")
-    st.markdown('<div class="pipe-figures">'
-                + build_pipeline_figure_html(charts.format_thousands(run["rows_read"]),
-                                             "filas leídas de ODEPA", "ingestion")
-                + build_pipeline_figure_html(charts.format_thousands(run["rows_loaded"]),
-                                             f'filas cargadas · {charts.format_thousands(run["rows_rejected"])} rechazadas',
-                                             "gold")
-                + build_pipeline_figure_html(str(summary["models"]) if summary else "—",
-                                             "modelos dbt, de staging a marts", "processing")
-                + build_pipeline_figure_html(*tests, "quality")
-                + '</div>', unsafe_allow_html=True)
+    number = charts.format_thousands
+    color = lambda layer: f' style="color:{architecture.LAYER_COLORS[layer]}"'
+    chips = [(f'<b{color("ingestion")}>{number(run["rows_read"])}</b><small>leídas</small>',
+              f'{number(run["rows_read"])} filas leídas de ODEPA en la última carga'),
+             (f'<b{color("gold")}>{number(run["rows_loaded"])}</b><small>cargadas</small>',
+              f'{number(run["rows_loaded"])} filas cargadas y {number(run["rows_rejected"])} rechazadas en la última carga')]
+    if summary:
+        chips += [(f'<b{color("processing")}>{summary["models"]}</b><small>modelos</small>',
+                   f'{summary["models"]} modelos dbt, de staging a marts'),
+                  (f'<b{color("quality")}>{summary["passing"]}/{summary["tests"]}</b><small>pruebas</small>',
+                   f'{summary["passing"]} de {summary["tests"]} pruebas dbt superadas en el último build')]
+    else:
+        chips.append(("<b>—</b><small>linaje dbt en migración</small>", "El linaje de dbt todavía no está en la base."))
+    return chips
 
 
 def show_diagrams_page(mode):
@@ -4904,11 +4915,10 @@ def show_diagrams_page(mode):
     (D-136), with its dbt stretch framed; «Linaje dbt» opens that stretch model by
     model, from the build's own manifest."""
     states, figures, pipeline_run, latest_load, error_note = read_journey()
-    show_pipeline_page_header()
     nodes, results = read_lineage(get_database_version())
     summary = lineage.summarize_build(nodes, results)
+    show_pipeline_page_header(summary)
     st.markdown(build_runs_css(mode), unsafe_allow_html=True)
-    show_pipeline_figures(summary)
     view = st.session_state.get(PIPELINE_VIEW_KEY, PIPELINE_JOURNEY) if summary else PIPELINE_JOURNEY
     lineage_view = view == PIPELINE_LINEAGE
     title = "Dentro del tramo dbt: modelo por modelo" if lineage_view else "Recorrido completo por capas"
@@ -5328,7 +5338,6 @@ def build_context_css(mode):
     .ctx-crumb b {{color:{palette['strong_text']};}}
     .ctx-back {{display:inline-flex;float:right;padding:5px 12px;border:1px solid {palette['card_border']};border-radius:8px;
         font-size:12.5px;color:{palette['strong_text']}!important;text-decoration:none!important;background:{palette['card']};}}
-    .ctx-title h1 {{font-size:23px!important;font-weight:400;margin:0!important;padding:0!important;display:inline;}}
     .ctx-answer b {{font-weight:500;color:{palette['strong_text']};}}
     [class*="st-key-inf_card_"] {{gap:2px!important;border:1px solid {palette['card_border']};border-radius:16px;padding:10px 12px 2px;
         background:linear-gradient(180deg,color-mix(in srgb,{palette['card']} 92%,{'#fff' if palette['base'] != charts.BASE_DARK else '#000'}) 0%,{palette['card']} 100%);
@@ -5346,7 +5355,6 @@ def build_context_css(mode):
     .st-key-inf_card_focus {{border:1px solid {palette['card_border']};border-radius:18px;padding:18px 22px 10px;gap:14px!important;
         background:{palette['card']};box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 28px 50px -32px rgba(0,0,0,.6);}}
     .st-key-inf_card_focus .inf-panel-head b {{font-size:20px;}} .st-key-inf_card_focus .inf-panel-head span {{font-size:14px;}}
-    .ctx-answer {{margin:10px 0 22px!important;}}
     .st-key-ctx_main .ctx-head h3 {{margin:8px 0 6px!important;}}
     .st-key-ctx_main p.ctx-reading {{margin:0 0 20px!important;}}
     .st-key-ctx_main {{gap:16px!important;}}
@@ -5359,8 +5367,12 @@ def build_context_css(mode):
     [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stFullScreenFrame"] > div,
     [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stVegaLiteChart"] {{flex:1 1 auto; height:100%; min-height:0;}}
     [class*="st-key-inf_card_"] [data-testid="stVegaLiteChart"] {{margin-top:2px;}}
-    .ctx-title .page-freshness {{display:inline-flex;gap:6px;margin-left:12px;font-size:12px;}}
-    .ctx-answer {{font-size:15px;line-height:1.5;font-weight:300;color:{palette['text']};margin:4px 0 0;max-width:900px;}}
+    /* D-267: the reading of an enlarged family, beside its chart. */
+    .inf-insights {{border-left:3px solid var(--c);padding:2px 0 2px 14px;}}
+    .inf-insights h4 {{margin:0 0 8px!important;padding:0!important;font-size:12px!important;font-weight:600!important;
+        letter-spacing:.08em;text-transform:uppercase;color:{palette['reference']};}}
+    .inf-insights p {{margin:0 0 9px!important;font-size:13px;line-height:1.45;color:{palette['text']};}}
+    .inf-insights em {{display:block;font-style:normal;font-size:11px;font-weight:600;color:{palette['strong_text']};}}
     .ctx-split {{margin-top:5px;}}
     .ctx-split small {{display:block;font-size:11px!important;}}
     .ctx-split-bar {{display:flex;height:5px;border-radius:3px;overflow:hidden;margin-top:3px;max-width:190px;
@@ -5473,6 +5485,16 @@ def build_family_panel_titles(summary, ipc_total=None):
 
 
 FAMILY_CARD_COLUMNS = 4
+# What Precios e inflación measures (D-267), in the right corner of its bar, with its definition on hover.
+INFLATION_TERMS = [
+    ("KPI", "Variación vs IPC",
+     "Diferencia, en puntos, entre lo que subió la familia desde enero 2022 y lo que subió el IPC de alimentos del INE. "
+     f"Más de {inflation_view.SAME_PACE_POINTS:.0f} puntos arriba: subió más que la inflación; más de "
+     f"{inflation_view.SAME_PACE_POINTS:.0f} abajo: menos."),
+    ("Métrica", "Índice ene 2022 = 100",
+     "Cada mes, el precio promedio de cada serie de consumidor de ODEPA sobre su precio de enero 2022, por 100; "
+     "la familia toma la mediana de sus series."),
+]
 
 
 def build_family_card_title_html(family, title):
@@ -5491,9 +5513,18 @@ def focus_family(family):
     st.session_state[FAMILY_FOCUS_KEY] = family
 
 
-def show_family_cards(rows, titles, mode, real):
+def build_family_insights_html(insights, family):
+    """The reading of an enlarged family (D-267): what its own numbers say, one short line per fact."""
+    color = inflation_view.FAMILY_COLORS.get(family, "#94a3b8")
+    return (f'<div class="inf-insights" style="--c:{color}"><h4>Lectura de los datos</h4>'
+            + "".join(f'<p><em>{html.escape(label)}</em>{html.escape(text)}</p>' for label, text in insights)
+            + "</div>")
+
+
+def show_family_cards(rows, titles, mode, real, summary=None, last=None):
     """One raised card per family (D-174), four per row, the same chart size and the
-    same y scale. A card's «Ampliar» shows that family alone, large (D-177)."""
+    same y scale. A card's «Ampliar» shows that family alone, large (D-177), beside
+    the reading of its own numbers (D-267)."""
     domain = inflation_view.family_domain(rows, real)
     focus = st.session_state.get(FAMILY_FOCUS_KEY)
     if focus in titles:
@@ -5501,8 +5532,12 @@ def show_family_cards(rows, titles, mode, real):
             with st.container(horizontal=True, vertical_alignment="center"):
                 st.markdown(build_family_card_title_html(focus, titles[focus]), unsafe_allow_html=True)
                 st.button("Ver todas", key="inf_unfocus", icon=":material/close:", on_click=focus_family, args=(None,))
-            st.altair_chart(inflation_view.draw_family_card(rows, focus, mode, real=real, domain=domain, height=420),
-                            width="stretch", theme=None)
+            chart_column, reading_column = st.columns([2.5, 1], gap="medium")
+            chart_column.altair_chart(inflation_view.draw_family_card(rows, focus, mode, real=real, domain=domain,
+                                                                      height=420), width="stretch", theme=None)
+            if summary is not None and last is not None:
+                reading_column.markdown(build_family_insights_html(
+                    inflation_view.family_insights(rows, summary, focus, last, real), focus), unsafe_allow_html=True)
         return
     families = list(titles)
     for start in range(0, len(families), FAMILY_CARD_COLUMNS):
@@ -5527,8 +5562,6 @@ def show_price_context_page(mode):
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
-    latest = read_latest_run()
-    run_kind = "ok" if latest["status"] == etl.STATUS_LOADED else "failed"
     month = lambda pair: f"{charts.CHILE_LOCALE['time']['months'][pair[1] - 1]} {pair[0]}"
     above = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "más que la inflación", "family"]]
     below = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "menos que la inflación", "family"]]
@@ -5537,21 +5570,27 @@ def show_price_context_page(mode):
               f'<b>{charts.format_signed_percent(ipc_total)}</b> ({charts.format_signed_percent(ipc_year)} en 12 meses).'
               + (f' Subieron más: <b>{html.escape(join(above))}</b>.' if above else '')
               + (f' Subieron menos: <b>{html.escape(join(below))}</b>.' if below else ''))
-    title, basis = st.columns([2.9, 1.1], vertical_alignment="bottom")
-    title.markdown(f'<div class="ctx-title compact-header"><h1>¿Qué alimentos subieron más que la inflación?</h1>'
-                   f'<span class="page-freshness">Datos al {format_chile_time(parse_run_start(latest["started_at"]))} '
-                   f'{build_chip("Carga correcta" if run_kind == "ok" else "Última carga con falla", run_kind)}</span></div>'
-                   f'<p class="ctx-answer">{answer}</p>', unsafe_allow_html=True)
-    basis.segmented_control("Precios", [BASIS_NOMINAL, BASIS_REAL], default=BASIS_NOMINAL,
-                            key=CONTEXT_BASIS_KEY, label_visibility="collapsed", help=BASIS_HELP)
+    # D-267: the answer leaves the page for the bar: the title says it on hover and three chips count it.
+    show_page_bar(PAGE_SEASONALITY, "¿Qué alimentos subieron más que la inflación?", re.sub(r"<[^>]+>", "", answer), [
+        (f'<em>IPC</em><b>{charts.format_signed_percent(ipc_total)}</b>',
+         f"De enero 2022 a {month(last)}, el último mes que publicó el INE, la canasta de alimentos del INE subió {charts.format_signed_percent(ipc_total)} desde enero 2022 y "
+         f"{charts.format_signed_percent(ipc_year)} en los últimos 12 meses."),
+        (f'<b class="rise">{len(above)} más</b><b class="fall">{len(below)} menos</b>',
+         (f"Subieron más que la inflación: {join(above)}. " if above else "")
+         + (f"Subieron menos: {join(below)}." if below else ""))],
+        terms=INFLATION_TERMS)
     real = st.session_state.get(CONTEXT_BASIS_KEY) == BASIS_REAL
     with st.container(key="ctx_main"):
         lead = ("Sin inflación: la línea punteada es la canasta del INE (100). Arriba de ella, la familia subió más."
                 if real else "Precios de consumidor de ODEPA, mediana por familia; la línea punteada es el IPC de alimentos. "
                 "Misma escala en todos los gráficos.")
-        st.markdown(f'<div class="ctx-head"><h3>Índice mensual por familia, enero 2022 = 100</h3></div>'
-                    f'<p class="ctx-reading">{lead}</p>', unsafe_allow_html=True)
-        show_family_cards(rows, build_family_panel_titles(summary, ipc_total), mode, real)
+        head, basis = st.columns([3, 1], vertical_alignment="center")
+        head.markdown(f'<div class="ctx-head"><h3>Índice mensual por familia, enero 2022 = 100</h3></div>'
+                      f'<p class="ctx-reading">{lead}</p>', unsafe_allow_html=True)
+        with basis.container(horizontal=True, horizontal_alignment="right"):
+            st.segmented_control("Precios", [BASIS_NOMINAL, BASIS_REAL], default=BASIS_NOMINAL,
+                                 key=CONTEXT_BASIS_KEY, label_visibility="collapsed", help=BASIS_HELP)
+        show_family_cards(rows, build_family_panel_titles(summary, ipc_total), mode, real, summary, last)
     st.caption(f"Cada familia compara los mismos productos de enero 2022 a {month(last)} (series de consumidor con "
                "precio en ambos meses). El IPC de alimentos se calcula con precios de alimentos: subir con él no "
                "prueba que la inflación cause la subida; dice si la familia subió más o menos que la canasta.")
@@ -5803,31 +5842,10 @@ def show_author_access(access_code, unlocked):
 def build_runs_css(mode):
     palette = charts.get_palette(mode)
     dark = palette["base"] == charts.BASE_DARK
-    # The extruded body of each 3D figure: three thin layers, each a little lower than the one before (D-261).
-    depth = ", ".join(f"{index * 0.4:.1f}px {index}px 0 var(--deep)" for index in range(1, 4))
     return f"""<style>
     /* D-207: the control code is a plain text field shown as dots, so the browser never takes
        it for an account password and never offers to generate or save one. */
     .st-key-author_access_code input, .st-key-run_now_code input {{-webkit-text-security:disc; text-security:disc;}}
-    /* Pipeline y linaje (D-253): each figure is its number alone, in 3D: a lit face over an extruded body in
-       the colour of its layer in the diagram, tilted back; the pointer turns it. The caption says what it counts.
-       D-261: a thin strip, small numbers and fine dividers, so the diagram below starts higher. */
-    .pipe-figures {{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; margin:4px 0 12px;
-        perspective:700px;}}
-    .pipe-figure {{display:flex; flex-direction:column; align-items:center; text-align:center; padding:0 10px;}}
-    .pipe-figure + .pipe-figure {{border-left:1px solid {palette['card_border']};}}
-    .pipe-number {{--deep:color-mix(in srgb, var(--c) 40%, #000); position:relative; display:inline-block;
-        font-size:clamp(1.1rem, 1.45vw, 1.35rem); font-weight:800; line-height:1.15; letter-spacing:-.01em;
-        font-variant-numeric:tabular-nums; white-space:nowrap; transform:rotateX(18deg); transform-origin:50% 100%;
-        transition:transform .45s cubic-bezier(.2,.8,.2,1);}}
-    .pipe-number::before {{content:attr(data-value); position:absolute; left:0; top:0; color:var(--deep);
-        text-shadow:{depth}, 2px 5px 7px rgba(0,0,0,{'.5' if dark else '.18'});}}
-    .pipe-number span {{position:relative; color:transparent; -webkit-background-clip:text; background-clip:text;
-        background-image:linear-gradient(180deg, color-mix(in srgb, var(--c) {'30' if dark else '55'}%, #fff) 0%,
-            var(--c) 58%, color-mix(in srgb, var(--c) 80%, #000) 100%);}}
-    .pipe-figure:hover .pipe-number {{transform:rotateX(6deg) rotateY(-16deg);}}
-    .pipe-caption {{margin-top:3px; font-size:.72rem; line-height:1.3; color:{palette['text']};}}
-    @media (prefers-reduced-motion:reduce) {{ .pipe-number {{transition:none;}} }}
     /* The manual run is a round power button (D-149): deep glossy blue, a brushed
        metal ring, the white power symbol. The words sit under it. */
     .st-key-runs_run_now {{display:flex; justify-content:center; align-self:center; margin:10px auto 2px;}}
@@ -5861,21 +5879,16 @@ def build_runs_css(mode):
     .runs-table tr:last-child td {{border-bottom:0;}}
     .runs-table tbody tr:hover td {{background:color-mix(in srgb,{palette['accent']} 5%,transparent);}}
     .runs-link {{text-align:right;}}
-    @media (max-width:900px) {{ .pipe-figures {{grid-template-columns:repeat(2,minmax(0,1fr)); row-gap:10px;}}
-        .pipe-figure:nth-child(3) {{border-left:0;}} }}
     </style>"""
 
 
 def show_runs_page(mode):
     """Centro de operación (D-165): the weekly run as a path of floating logos, each
     with what it does and where to act, and beside it the facts and the manual run."""
-    show_compact_page_header("Centro de operación", "Dónde corre cada pieza, cómo llega un cambio a producción y el "
-                             "estado de cada paso de la carga semanal, con su log y dónde actuar.")
     # D-255 (the author's decision): the page opens on where each piece runs; «Acceso del autor» sits above the tabs,
-    # so the control code and the links are one click away in every one of them.
-    _, access_column = st.columns([1, 1], gap="large")
-    with access_column:
-        show_admin_card()
+    # so the control code and the links are one click away in every one of them. D-267: in the page bar.
+    show_page_bar(PAGE_RUNS, "Centro de operación", "Dónde corre cada pieza, cómo llega un cambio a producción y el "
+                  "estado de cada paso de la carga semanal, con su log y dónde actuar.", side=show_admin_card)
     platform_tab, runs_tab, cicd_tab, monitoring_tab = st.tabs(["Despliegue", "Operación", "CI/CD", "Monitoreo"])
     with platform_tab:
         show_devops_tab(mode)
@@ -5890,13 +5903,14 @@ def show_runs_page(mode):
 def show_security_page(mode):
     """The security architecture as a threat model (D-200, D-249): threat, mitigation, verification, asset, and the
     loop of continuous improvement."""
-    show_compact_page_header(SIDEBAR_LABELS[PAGE_SECURITY], "Qué amenaza al sistema, qué lo mitiga, qué prueba lo "
+    show_page_bar(PAGE_SECURITY, SIDEBAR_LABELS[PAGE_SECURITY], "Qué amenaza al sistema, qué lo mitiga, qué prueba lo "
                              "verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de "
-                             "esconderlo, sino de las claves, que nunca aparecen.")
-    st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=690)
-    st.markdown('<p class="doc-source">El procedimiento, los casos de prueba y los resultados de la última revisión: '
-                + build_link_html(f"{PAGE_SECURITY_PLAN} →", build_page_address(PAGE_SECURITY_PLAN)) + '</p>',
-                unsafe_allow_html=True)
+                             "esconderlo, sino de las claves, que nunca aparecen.",
+                  side=lambda: st.markdown(page_bar.build_link_html(
+                      f"{PAGE_SECURITY_PLAN} →", build_page_address(PAGE_SECURITY_PLAN),
+                      "El procedimiento, los casos de prueba y los resultados de la última revisión."),
+                      unsafe_allow_html=True, width="content"))
+    st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=680)
 
 
 def show_runs_tab(mode):
@@ -6402,7 +6416,7 @@ def show_operations_page(mode):
     """Calidad y auditoría in one view (D-220): the quality measured on the real database, each
     dimension under the pipeline stop where it is watched, and the audit controls that back it,
     each opening its evidence. The single-price trace and its pickers left (D-196 → D-220)."""
-    show_compact_page_header("Calidad y auditoría", "La calidad medida en cada carga y los controles que demuestran que "
+    show_page_bar(PAGE_OPERATIONS, "Calidad y auditoría", "La calidad medida en cada carga y los controles que demuestran que "
                              "lo publicado se puede rastrear y repetir.")
     measures = read_quality_measures(get_database_version())
     indicators = quality_live.build_indicators(measures)
@@ -6427,7 +6441,8 @@ def show_operations_page(mode):
     palette = charts.get_palette(mode)
     quality_tab, audit_tab, apart_tab = st.tabs(["Calidad", "Auditoría", "Rechazos y cargas"])
     with quality_tab:
-        st.iframe(quality_live.build_quality_html(palette, indicators, columns), height=590)
+        # D-267: 30 px less, the empty band under the three gates; the detail sheets still fit the frame.
+        st.iframe(quality_live.build_quality_html(palette, indicators, columns), height=560)
     with audit_tab:
         if changed_files:
             # The indicators are measured on the published database; only the local copies of the source files differ.
@@ -6632,7 +6647,7 @@ def read_stack_figures(database_version):
 def show_stack_page(mode):
     """«Stack y evidencia» (D-211, D-266): the stack as an architecture diagram; each tool explains itself and
     opens the page where it works."""
-    show_compact_page_header(PAGE_STACK, "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.")
+    show_page_bar(PAGE_STACK, PAGE_STACK, "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.")
     addresses = {page: build_page_address(page) for *_, page in stack_page.STACK}
     st.html(stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()),
                                         addresses))
@@ -6673,7 +6688,8 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_STACK: lambda mode: show_stack_page(mode),
     PAGE_SECURITY: lambda mode: show_security_page(mode),
     PAGE_SECURITY_PLAN: lambda mode: show_project_document(mode, PAGE_SECURITY_PLAN),
-    PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(mode),
+    PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(mode, header=lambda: show_page_bar(
+        PAGE_SQL, "Consultas SQL", sql_explorer.DESCRIPTION, sql_explorer.build_bar_chips())),
     PAGE_HOME: show_home_page,
     PAGE_DATA: show_data_page,
     PAGE_COVER: show_cover_page,

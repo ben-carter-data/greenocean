@@ -93,9 +93,11 @@ def test_d233_the_fitted_pages_close_with_the_compact_footer():
 
 
 @needs_database
-def test_d253_the_pipeline_figures_are_3d_numbers_read_from_the_latest_load():
+def test_d267_the_pipeline_figures_are_chips_of_the_bar_read_from_the_latest_load():
     page = read_markdown(draw_page(dashboard.PAGE_DIAGRAMS))
-    assert page.count('class="pipe-figure"') == 4 and "runs-metric" not in page
+    bar = page[page.index('class="page-bar-main"'):]
+    bar = bar[:bar.index("</div>")]
+    assert bar.count('class="page-chip"') == 4 and "pipe-figure" not in page and "runs-metric" not in page
     run = dashboard.read_latest_run()
-    assert f'data-value="{dashboard.charts.format_thousands(run["rows_read"])}"' in page
-    assert f'data-value="{dashboard.charts.format_thousands(run["rows_loaded"])}"' in page
+    for value in (run["rows_read"], run["rows_loaded"], run["rows_rejected"]):
+        assert dashboard.charts.format_thousands(value) in bar

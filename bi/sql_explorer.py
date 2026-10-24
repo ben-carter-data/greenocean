@@ -761,11 +761,11 @@ def build_css(palette):
 [class*="st-key-sqlx_chip_"] button p {{ font-size:.76rem !important; color:{ink} !important; }}
 [class*="st-key-sqlx_chip_"] button:hover {{ border-color:{accent} !important; transform:translateY(-1px); }}
 .st-key-sqlx_body {{ gap:0 !important; }}
-/* D-233: the studio fits the window: the explorer scrolls by itself (its bar shows on hover) and the grid takes
+/* D-233, D-267: the studio and the short footer fit the window: the explorer scrolls by itself (its bar shows on hover) and the grid takes
    what the editor leaves; below a floor the page scrolls rather than squash them. */
-.st-key-sqlx_explorer {{ max-height:max(calc(100vh - 290px), 360px); overflow-y:auto; scrollbar-width:none; }}
+.st-key-sqlx_explorer {{ max-height:max(calc(100vh - 334px), 360px); overflow-y:auto; scrollbar-width:none; }}
 .st-key-sqlx_explorer:hover {{ scrollbar-width:thin; scrollbar-color:{border} transparent; }}
-.st-key-sqlx_results [data-testid="stDataFrame"] {{ height:max(calc(100vh - 600px), 200px) !important; }}
+.st-key-sqlx_results [data-testid="stDataFrame"] {{ height:max(calc(100vh - 644px), 200px) !important; }}
 .st-key-sqlx_body [data-testid="stHorizontalBlock"] {{ align-items:stretch; gap:0 !important; }}
 [data-testid="stColumn"]:has(.st-key-sqlx_explorer) > [data-testid="stVerticalBlock"],
 [data-testid="stColumn"]:has(.st-key-sqlx_explorer) [data-testid="stLayoutWrapper"] {{ height:100%; flex:1 1 auto; }}
@@ -873,14 +873,16 @@ def build_css(palette):
 </style>"""
 
 
-def build_header_html():
-    """The compact header of the technical pages (same classes as the dashboard)."""
-    description = ("SQL de solo lectura sobre la capa gold del data warehouse, con vistas de "
-                   "columnas legibles; nada de identificadores internos.")
+DESCRIPTION = ("SQL de solo lectura sobre la capa gold del data warehouse, con vistas de "
+               "columnas legibles; nada de identificadores internos.")
+
+
+def build_bar_chips():
+    """The studio's limits, as chips of the page bar (D-267)."""
     limit = f"{ROW_LIMIT:,}".replace(",", ".")
-    return (f'<div class="compact-header"><h1 title="{html.escape(description, quote=True)}">'
-            f'Consultas SQL</h1><span class="page-freshness">DuckDB · solo lectura · '
-            f'máx. {limit} filas · {TIMEOUT_SECONDS} s</span></div>')
+    return [("<b>DuckDB</b><small>solo lectura</small>", "La consulta corre en DuckDB con la base abierta en solo lectura."),
+            (f"<small>máx.</small><b>{limit}</b><small>filas</small>", f"Muestra como máximo {limit} filas por consulta."),
+            (f"<b>{TIMEOUT_SECONDS} s</b>", f"Una consulta se detiene a los {TIMEOUT_SECONDS} segundos.")]
 
 
 def build_database_html():
@@ -1187,7 +1189,7 @@ def show_exports(st):
                                key=f"sqlx_export_{file_name}", on_click="ignore", icon=":material/download:")
 
 
-def show_sql_explorer_page(mode):
+def show_sql_explorer_page(mode, header=None):
     """«Consultas SQL» as a small SQL studio (D-173): a toolbar with «Ejecutar» and
     the examples, the object explorer on the left, the painted editor and the
     Resultados / Mensajes tabs on the right, and a status bar at the bottom."""
@@ -1195,7 +1197,8 @@ def show_sql_explorer_page(mode):
 
     palette = charts.get_palette(mode)
     st.markdown(build_css(palette), unsafe_allow_html=True)
-    st.markdown(build_header_html(), unsafe_allow_html=True)
+    if header:  # the page bar of the dashboard (D-267)
+        header()
     if "sqlx_editor" not in st.session_state:
         st.session_state["sqlx_editor"] = EXAMPLES[0][2]
         st.session_state["sqlx_example"] = 0

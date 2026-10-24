@@ -43,7 +43,7 @@ def cell(rows):
     return out[0] if len(set(out)) == 1 else " / ".join(out)
 
 
-CHROME = ("app_header", "header_preferences", "report_page", "window_page", "return_to_previous")
+CHROME = ("app_header", "page_bar", "header_preferences", "report_page", "window_page", "return_to_previous")
 
 
 def grower(row):

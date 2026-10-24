@@ -134,3 +134,71 @@ def draw_family_card(rows, family, mode, real=False, domain=None, height=186):
                  alt.Tooltip("month_start:T", title="Mes", format="%m-%Y"),
                  alt.Tooltip(f"{value}:Q", title="Índice", format=",.1f")])
     return charts.apply_chart_style(chart.properties(width="container", height=height), mode)
+
+
+def month_name(year, month):
+    return f"{charts.CHILE_LOCALE['time']['months'][month - 1]} {year}"
+
+
+def points(value):
+    return f"{abs(value):.1f}".replace(".", ",") + (" punto" if round(abs(value), 1) == 1 else " puntos")
+
+
+def family_insights(rows, summary, family, last, real=False):
+    """The reading of one family when its card is enlarged (D-267): [(label, sentence)], every number recomputed
+    from the same monthly index the chart draws, so the text always matches the line. With real, the peak and the
+    biggest monthly move are read on the line without inflation, the one the chart then draws."""
+    base, year_ago = (BASE_YEAR, BASE_MONTH), (last[0] - 1, last[1])
+    ipc_total, ipc_year = change(rows, IPC_NAME, base, last), change(rows, IPC_NAME, year_ago, last)
+    series = rows[rows["product_group"] == family].sort_values("month_start")
+    if series.empty or ipc_total is None:
+        return []
+    percent = charts.format_signed_percent
+    since = f"Desde {month_name(*base)}"
+    line = "real" if real else "index"
+    note = " (sin inflación)" if real else ""
+    monthly = series.assign(step=series[line].pct_change() * 100).dropna(subset=["step"])
+    jump = monthly.loc[monthly["step"].abs().idxmax()] if not monthly.empty else None
+    jump_text = (None if jump is None else
+                 (f"Mayor movimiento mensual{note}", f"{percent(jump['step'])} en {month_name(int(jump['year']), int(jump['month']))}."))
+    if family == IPC_NAME and real:
+        jump_text = None  # without inflation the IPC is the flat 100 line: it has no move of its own
+    if family == IPC_NAME:
+        counts = summary["verdict"].value_counts()
+        insights = [(since, f"La canasta de alimentos del INE subió {percent(ipc_total)}."),
+                    ("Últimos 12 meses", f"{percent(ipc_year)}."),
+                    ("Frente a las familias", f"{counts.get('más que la inflación', 0)} subieron más que ella, "
+                                              f"{counts.get('menos que la inflación', 0)} menos y "
+                                              f"{counts.get('al ritmo de la inflación', 0)} a su ritmo "
+                                              f"(± {points(SAME_PACE_POINTS)}).")]
+        return insights + ([jump_text] if jump_text else [])
+    total, yearly = change(rows, family, base, last), change(rows, family, year_ago, last)
+    gap = total - ipc_total
+    verdict = ("más que" if gap > SAME_PACE_POINTS else "menos que" if gap < -SAME_PACE_POINTS else "al ritmo de")
+    # The difference of the two rounded rises, so it adds up with the figures the cards show.
+    shown_gap = round(total, 1) - round(ipc_total, 1)
+    insights = [(since, f"Subió {percent(total)}: {points(shown_gap)} {'más' if shown_gap >= 0 else 'menos'} que el IPC de "
+                        f"alimentos ({percent(ipc_total)}). Subió {verdict} la inflación.")]
+    if yearly is not None and ipc_year is not None:
+        pace = "más rápido" if yearly > ipc_year else "más lento" if yearly < ipc_year else "igual"
+        insights.append(("Últimos 12 meses", f"{percent(yearly)} frente a {percent(ipc_year)} del IPC: hoy sube {pace} "
+                                             "que la canasta." if pace != "igual" else
+                                             f"{percent(yearly)}, igual que el IPC."))
+    peak = series.loc[series[line].idxmax()]
+    latest = series.iloc[-1]
+    peak_month = month_name(int(peak["year"]), int(peak["month"]))
+    if (int(peak["year"]), int(peak["month"])) == last:
+        insights.append((f"Máximo{note}", f"El último mes, {peak_month}, es su punto más alto (índice "
+                                          f"{peak[line]:.1f}".replace(".", ",") + ")."))
+    else:
+        below = (latest[line] / peak[line] - 1) * 100
+        insights.append((f"Máximo{note}", f"Índice {peak[line]:.1f}".replace(".", ",") + f" en {peak_month}; hoy está "
+                                   + f"{abs(below):.1f} % bajo ese punto.".replace(".", ",", 1)))
+    if jump_text:
+        insights.append(jump_text)
+    real = (latest["real"] - 100)
+    insights.append(("Sin inflación", f"Descontado el IPC, vale {percent(real)} frente a {month_name(*base)}."))
+    count = int(series["series"].max()) if series["series"].notna().any() else 0
+    insights.append(("Base del cálculo", f"{count} series de consumidor con precio en {month_name(*base)} y en "
+                                         f"{month_name(*last)}; cada mes, la mediana de sus índices."))
+    return insights

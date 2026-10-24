@@ -36,7 +36,7 @@ def read_page_title(app):
     for block in app.markdown:
         match = re.search(r'class="(?:compact-header|report-title)"><h1[^>]*>([^<]+)</h1>', block.value)
         if not match:
-            match=re.search(r'<span class="home-bar-title" role="heading"[^>]*>([^<]+)</span>',block.value)
+            match=re.search(r'<span class="(?:home|page)-bar-title" role="heading"[^>]*>([^<]+)</span>',block.value)
         if not match:
             match = re.search(r'<h1 class="qa-h1">([^<]+)</h1>', block.value)
         if match:
@@ -230,11 +230,10 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     assert not diagrams.exception and not diagrams.tabs
     # The page opens on the whole journey, with the dbt steps framed and named.
     assert 'dbt CORE · staging → intermedio → marts · 16 modelos' in texts
-    pipeline_header = next(block.value for block in diagrams.markdown
-                           if 'class="compact-header"' in block.value and '<h1' in block.value and 'Pipeline' in block.value)
-    # D-150: the same one-line header as every technical page, freshness included.
-    assert '>Pipeline y linaje</h1>' in pipeline_header and 'page-freshness' in pipeline_header
-    assert 'pruebas dbt superadas' in texts and 'modelos dbt, de staging a marts' in texts
+    pipeline_header = next(block.value for block in diagrams.markdown if 'class="page-bar-main"' in block.value)
+    # D-267: the page bar, like the Resumen's: the title and the figures of the latest build, the time of the load.
+    assert '>Pipeline y linaje</span>' in pipeline_header and 'page-bar-updated' in texts
+    assert 'pruebas dbt superadas en el último build' in pipeline_header and 'modelos dbt, de staging a marts' in pipeline_header
     assert not diagrams.toggle
     assert 'Animar el recorrido de los datos' not in texts
     assert 'ODEPA → indicadores · recorrido y plataformas' not in texts
@@ -1460,7 +1459,7 @@ def test_d165_the_operation_centre_reads_like_the_dashboard():
     app = draw_page(dashboard.PAGE_RUNS)
     assert not app.exception and app.get("iframe")
     text = " ".join(block.value for block in app.markdown)
-    assert 'class="compact-header"' in text and text.count('class="oc-fact"') == 3
+    assert 'class="page-bar-title"' in text and text.count('class="oc-fact"') == 3
     assert "Ver historial de ejecuciones" not in [expander.label for expander in app.expander]
     assert "runs_reload" in [str(button.key) for button in app.button]
 
