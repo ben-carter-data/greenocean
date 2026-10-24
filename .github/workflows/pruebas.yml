@@ -14,4 +14,6 @@ jobs:
       - run: pip install -r requirements-pipeline.txt
       # The dbt project must compile on every change (models, tests, sources).
       - run: dbt parse --project-dir dbt --profiles-dir dbt
+      # The served database is not in git (D-270): the tests read the one the last load published.
+      - run: python bi/served_database.py
       - run: pytest -vv -x -o faulthandler_timeout=90

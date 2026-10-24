@@ -42,8 +42,8 @@ FLOW_Y = 268
 COLORS = {"flow": "#3987e5", "ops": "#c98500", "sql": "#9085e9", "test": "#199e70"}
 # key: (x, y, stage, role in GreenOcean, when it acts). The centre of the logo is at (x, y).
 NODES = {
-    "github": (120, 62, "Orquestación", "semanal.yml corre la carga completa, prueba la base nueva y la sube al "
-               "repositorio; pruebas.yml corre pytest y dbt parse.", "Cada martes (semanal.yml) y en cada push (pruebas.yml)."),
+    "github": (120, 62, "Orquestación", "semanal.yml corre la carga completa, prueba la base nueva y la publica en "
+               "un release; pruebas.yml corre pytest y dbt parse.", "Cada martes (semanal.yml) y en cada push (pruebas.yml)."),
     "sql": (910, 72, "Lenguaje común", "Los modelos de dbt, las reglas de calidad y los indicadores del panel "
             "(bi/queries.sql) son consultas SQL; la página Consultas SQL deja escribir las propias.",
             "En cada transformación y en cada página que muestra una cifra."),

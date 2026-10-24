@@ -1,8 +1,10 @@
 name: semanal
 
-# Weekly load: download, ETL, dbt build, tests, save the database and publish the report.
-# If a step fails the next ones do not run, so the database in the repository
-# is only replaced by a load that passed every check.
+# Weekly load: download, ETL, dbt build, tests, publish the database and the report.
+# If a step fails the next ones do not run, so the published database is only
+# replaced by a load that passed every check.
+# D-270: the served database lives in the release «base-actual», replaced every week;
+# git keeps only its pointer, etl/datos.version, so the history no longer grows with it.
 on:
   schedule:
     # Tuesdays at 12:00 UTC (09:00 in Chile in summer time, 08:00 in winter time).
@@ -43,10 +45,15 @@ jobs:
           path: agent/downloads/*.csv
           key: odepa-files-${{ steps.current_year.outputs.year }}-${{ hashFiles('agent/input.csv') }}
 
+      # The load history (etl_run) and the 90 % check read the database published last week.
+      - name: Get the published database
+        run: python bi/served_database.py
+
       - name: Download the ODEPA files
         run: python agent/agent.py
 
-      # The SQLite backup (etl/datos.db), kept while the author decides to retire it (D-154).
+      # The SQLite backup (etl/datos.db), built on this machine for the parity test and never
+      # published (D-154, D-270).
       - name: Run the ETL (SQLite backup)
         run: python etl/etl.py
 
@@ -63,11 +70,17 @@ jobs:
       - name: Run the tests against the new database
         run: pytest -q
 
-      - name: Save the updated database
+      # First the file replaces the one in the release, then the pointer is committed: the panel
+      # never reads a pointer whose file is not there yet.
+      - name: Publish the database
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          gh release upload base-actual etl/datos.duckdb --clobber
+          python bi/served_database.py --pointer
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add etl/datos.db etl/datos.duckdb agent/downloads/manifest.json
+          git add etl/datos.version agent/downloads/manifest.json
           git commit -m "Weekly data update"
           git push
 

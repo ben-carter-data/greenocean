@@ -7,7 +7,7 @@ Guía para trabajar en este repositorio, también desde una sesión en la nube q
 GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline semanal y un panel de BI sobre los precios de alimentos de Chile.
 
 - **Fuentes:** ODEPA (precios mayoristas y al consumidor, CSV públicos) y el IPC de alimentos del INE (para precios reales).
-- **Pipeline:** ingesta en Python → aterrizaje `etl/raw.db` (SQLite) → bronce en Parquet → dbt Core sobre DuckDB (staging → intermedio → marts, 31 pruebas) → base servida `etl/datos.duckdb`.
+- **Pipeline:** ingesta en Python → aterrizaje `etl/raw.db` (SQLite) → bronce en Parquet → dbt Core sobre DuckDB (staging → intermedio → marts, 31 pruebas) → base servida `etl/datos.duckdb`, publicada en el release «base-actual» de GitHub, que cada carga reemplaza; git guarda solo su puntero `etl/datos.version` (D-270, ADR-35).
 - **Panel:** Streamlit (`bi/dashboard.py`), que lee `etl/datos.duckdb` en solo lectura.
 - **Orquestación:** GitHub Actions, cada martes (`.github/workflows/semanal.yml`).
 - **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md` y `docs/SEGURIDAD.md` (plan de pruebas de seguridad). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-269). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
@@ -19,7 +19,8 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 | Panel y pruebas | `pip install -r requirements.txt` |
 | Pipeline con dbt | `pip install -r requirements-pipeline.txt` (dbt no se instala en Python 3.14: usar 3.11 o 3.12) |
 | Abrir el panel | `streamlit run bi/dashboard.py` |
-| Pruebas | `python -m pytest -q` (unas 590, alrededor de un minuto) |
+| Descargar la base de la última carga | `python bi/served_database.py` (el panel lo hace solo al arrancar) |
+| Pruebas | `python -m pytest -q` (unas 630, alrededor de un minuto) |
 | Compilar el proyecto dbt | `dbt parse --project-dir dbt --profiles-dir dbt` |
 | Descargar ODEPA | `python agent/agent.py` |
 | ETL de respaldo (SQLite) | `python etl/etl.py` |
@@ -33,7 +34,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 | Carpeta | Contenido |
 |---|---|
 | `agent/` | Descarga de ODEPA (`agent.py`, `input.csv`, `downloads/manifest.json`) |
-| `etl/` | `etl.py` (respaldo SQLite), `bronze.py` (Parquet), `ine.py` (IPC), `pipeline.py` (dbt build y publicación), `datos.duckdb` (base servida), `datos.db` (respaldo) |
+| `etl/` | `etl.py` (respaldo SQLite), `bronze.py` (Parquet), `ine.py` (IPC), `pipeline.py` (dbt build y publicación), `datos.version` (puntero de la base publicada); `datos.duckdb` (base servida) y `datos.db` (respaldo) no se suben a git |
 | `dbt/` | Proyecto dbt: `models/staging`, `models/intermediate`, `models/marts`, `tests/`, `macros/`, `profiles.yml` |
 | `bi/` | Panel: `dashboard.py` (páginas y navegación), `queries.sql` y `queries.py` (SQL), diagramas (`architecture.py` pipeline y despliegue, `lineage.py`, `star_model.py`, `er_diagram.py`, `storage_map.py` dónde viven los datos, `database_crossings.py` cruces entre bases, `deployment.py` despliegue, `devops.py` CI/CD y orquestación, `monitoring.py` monitoreo, `security_map.py` arquitectura de seguridad, `doc_views.py` contexto, contenedores, casos de uso y procedimiento de los documentos), vistas (`home_mockup.py`, `quality_live.py`, `quality_view.py`, `github_page.py`), `page_bar.py` (la barra de encabezado de las páginas principales, D-267), `tech_glossary.py`, `zoom.py` (zoom y explicaciones al pasar el cursor) |
 | `tests/` | pytest: auditoría de cifras (`test_data_audit.py`), paridad SQLite ↔ DuckDB, IPC, linaje, diagramas, documentos y su trazabilidad (`test_prd_traceability.py`), puerta de publicación (`test_pipeline_gate.py`) y panel (AppTest). `tests/medicion/`: medición del diseño con Playwright (`medir.cjs`) y comparación de cada documento impreso con su página (`imprimir.cjs`), que corren con Playwright instalado fuera del proyecto |
@@ -67,6 +68,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 
 | Falta | Consecuencia | Qué hacer |
 |---|---|---|
+| `etl/datos.duckdb` (fuera de git, D-270) | El panel la descarga solo al arrancar; las pruebas que la leen se saltan hasta que exista | `python bi/served_database.py` (necesita red hacia github.com) |
 | `etl/raw.db` (unos 665 MB, fuera de git, D-020) | Las pruebas que recalculan precios desde las filas crudas se saltan (skip) | Normal; el resto de la auditoría corre con `datos.duckdb` |
 | `agent/downloads/*.csv` | No hay CSV de ODEPA locales | `python agent/agent.py` los descarga, si hay red hacia datos.odepa.gob.cl |
 | `etl/bronze/` y `etl/warehouse_build.duckdb` | No se puede correr `dbt build` de inmediato | Necesita `raw.db` (ingesta) más `pip install -r requirements-pipeline.txt` |
@@ -75,4 +77,4 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 | `docs/privado/` | Notas privadas del autor, ignoradas por git | Ninguna |
 | Chrome con depuración en el puerto 9333 | No hay capturas de pantalla automáticas | Revisar con AppTest y con las pruebas |
 
-Sí están en el repositorio: `etl/datos.duckdb` (la base servida, unos 14 MB), `etl/datos.db` (respaldo SQLite) y `agent/downloads/manifest.json`. Con ellos el panel y casi todas las pruebas funcionan sin red.
+Sí están en el repositorio: `etl/datos.version` (el puntero de la base publicada) y `agent/downloads/manifest.json`. La base servida (`etl/datos.duckdb`, unos 14 MB) no está en git: `python bi/served_database.py` la descarga del release «base-actual» y comprueba su huella; con ella el panel y casi todas las pruebas funcionan. El respaldo `etl/datos.db` tampoco está: lo construye `python etl/etl.py` (necesita `raw.db`), y sin él las pruebas de paridad se saltan.

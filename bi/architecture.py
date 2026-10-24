@@ -150,12 +150,12 @@ TOOLTIPS = {
     "Caché de Actions": "Guarda los CSV de los años cerrados para no descargarlos cada semana "
                         "(D-047).",
     "Issues": "Donde se publica el informe semanal, uno por ejecución.",
-    "Repositorio": "La rama main en GitHub: el código, datos.duckdb y el respaldo datos.db. "
-                   "Es la única fuente de la verdad.",
+    "Repositorio": "La rama main en GitHub: el código y el puntero de la base (etl/datos.version); la base servida "
+                   "vive en el release «base-actual», que cada carga reemplaza (D-270).",
     "Pruebas (CI)": "CI = integración continua: pruebas.yml compila el proyecto dbt (dbt parse) "
                     "y corre pytest en cada push, y avisa si algo se rompe.",
-    "Permisos del job": "Mínimo privilegio: el job solo puede escribir contenido (el commit de "
-                        "la base) y crear issues.",
+    "Permisos del job": "Mínimo privilegio: el job solo puede escribir contenido (la base en el release "
+                        "y su puntero) y crear issues.",
     "App Streamlit": "El panel publicado en Streamlit Community Cloud; abre datos.duckdb en "
                      "solo lectura.",
     "Visitantes": "Quien abre el enlace público del panel desde su navegador.",
@@ -230,7 +230,7 @@ CHIP_TOOLTIPS = {
     "MD": "MD = Markdown: formato de texto del informe semanal.",
     "EJECUTA": "GitHub Actions da la orden de ejecutar; no toca los datos.",
     "git push": "Sube los cambios del computador al repositorio.",
-    "checkout · commit": "El job baja el repositorio (checkout) y guarda la base nueva (commit).",
+    "checkout · commit": "El job baja el repositorio (checkout), reemplaza la base en el release y sube su puntero (commit).",
     "cache": "El job restaura y guarda los CSV de los años cerrados.",
     "gh issue create": "Comando de GitHub que publica el informe como issue.",
     "on: push": "pruebas.yml se activa con cada push.",

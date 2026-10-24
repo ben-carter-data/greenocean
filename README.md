@@ -23,7 +23,7 @@ Además muestra la calidad de cada carga (filas leídas, cargadas y rechazadas c
 2. **Aterrizaje** en SQLite (`etl/raw.db`): las filas de ODEPA tal como llegan.
 3. **Bronce** en Parquet: copia literal de cada fuente, por año; el IPC llega aquí directo.
 4. **Transformación** con dbt Core sobre DuckDB: staging, intermedio y marts, con 31 pruebas.
-5. **Publicación** en `etl/datos.duckdb`, que el panel de Streamlit lee en solo lectura.
+5. **Publicación** de `etl/datos.duckdb` en el release «base-actual» de GitHub, que cada carga reemplaza; el panel de Streamlit la descarga y la lee en solo lectura.
 
 GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los diagramas completos (pipeline y linaje, modelo estrella, despliegue, CI/CD, monitoreo y arquitectura de seguridad) están en el panel; el [SAD](docs/SAD.md) describe la arquitectura por vistas y enlaza a ellos.
 
@@ -39,8 +39,9 @@ GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los 
 │   ├── bronze.py        capa bronce en Parquet
 │   ├── ine.py           IPC de alimentos del INE
 │   ├── pipeline.py      dbt build y publicación de la base
-│   ├── datos.duckdb     base servida que lee el panel
-│   └── datos.db         respaldo en SQLite
+│   ├── datos.version    puntero de la base servida (la base vive en el release «base-actual»)
+│   ├── datos.duckdb     base servida (no se sube; python bi/served_database.py la descarga)
+│   └── datos.db         respaldo en SQLite (no se sube; lo rehace cada carga)
 ├── dbt/                 proyecto dbt: staging, intermedio, marts y pruebas
 ├── bi/
 │   ├── dashboard.py     panel Streamlit

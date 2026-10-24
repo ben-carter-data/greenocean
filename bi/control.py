@@ -34,6 +34,7 @@ SIMULATED_FAILURE_STEP = "Simulate a failure"
 # Workflow steps the reader cares about, in Spanish. Setup steps are left out.
 STEP_NAMES = {
     "Restore the closed-year files": "Archivos de años cerrados (caché)",
+    "Get the published database": "Base publicada la semana anterior",
     "Download the ODEPA files": "Descarga de ODEPA",
     "Run the ETL": "Limpieza y reglas de negocio",
     # D-154 renamed the ETL step and added dbt; the old name stays for older runs.
@@ -41,6 +42,8 @@ STEP_NAMES = {
     "Build the data warehouse with dbt": "Data warehouse con dbt",
     "Simulate a failure": "Falla simulada",
     "Run the tests against the new database": "Pruebas automáticas",
+    "Publish the database": "Publicar la base",
+    # D-270 replaced the commit of the database by the release; the old name stays for older runs.
     "Save the updated database": "Guardar la base actualizada",
     "Publish the weekly report": "Publicar el informe semanal",
 }

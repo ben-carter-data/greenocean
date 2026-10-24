@@ -291,7 +291,7 @@ CONTAINERS = [
     ("odepa", "external", 10, 196, 110, 64, "ODEPA", ["precios"], "", "Publica los CSV de precios cada semana."),
     ("ine", "external", 10, 356, 110, 64, "INE", ["IPC de alimentos"], "", "Publica el IPC de alimentos cada mes."),
     ("github", "external", 156, 580, 720, 64, "GitHub", ["repositorio · Actions · API REST"], "",
-     "Guarda el código y la base publicada, ejecuta la carga cada martes y responde a la API del panel."),
+     "Guarda el código en main y la base publicada en un release, ejecuta la carga cada martes y responde a la API del panel."),
     ("visitor", "person", 746, 26, 0, 0, "Visitante", [], "", "Analista, compras, gerencia o revisor técnico."),
     ("author", "person", 846, 26, 0, 0, "Administrador", [], "", "Mantiene el código y los secretos."),
 ]
@@ -307,7 +307,7 @@ C4_LINKS = [
     ("M846 96 V316", "lanza la carga", 846, 262, "middle"),
     ("M801 416 V580", "lanza el workflow · API REST", 801, 500, "middle"),
     ("M200 580 V520", "ejecuta cada martes", 192, 560, "end"),
-    ("M300 520 V580", "commit de la base", 308, 560, "start"),
+    ("M300 520 V580", "release de la base", 308, 560, "start"),
 ]
 C4_SUBLABELS = [("solo lectura", 681, 384)]
 

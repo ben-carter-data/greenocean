@@ -8,15 +8,16 @@ El job semanal (`.github/workflows/semanal.yml`) corre solo cada martes a las 12
 
 1. **Año vigente:** calcula el año en curso, que fija la clave de la caché.
 2. **Caché:** recupera de la caché de GitHub Actions los CSV de los años cerrados, que ya no cambian (D-047).
-3. **Descarga:** el agente de ingesta (`agent/agent.py`) baja de ODEPA el año en curso y los años cerrados que no estén en la caché, revisa que cada archivo traiga las columnas esperadas y anota su huella SHA-256 en `manifest.json`.
-4. **ETL de respaldo:** `etl/etl.py` guarda las filas sin cambios en el aterrizaje (`etl/raw.db`) y construye el respaldo `etl/datos.db` con las reglas de negocio.
-5. **dbt build:** `etl/pipeline.py` copia el aterrizaje al bronce en Parquet, descarga el IPC del INE y dbt construye y prueba todos los modelos. Solo si todo pasa, y si la carga leyó al menos el 90 % de las filas de la anterior, reemplaza `etl/datos.duckdb`.
-6. **Falla simulada:** solo corre cuando una ejecución manual desde GitHub la pide, para comprobar que la base publicada no cambia.
-7. **Pruebas:** corre todas las pruebas contra la base nueva, incluida la paridad entre el respaldo y la base servida.
-8. **Guardar:** hace un commit «Weekly data update» con `etl/datos.db`, `etl/datos.duckdb` y `agent/downloads/manifest.json`. El panel publicado lo lee uno o dos minutos después.
-9. **Informe:** crea un issue «Informe semanal AAAA-MM-DD» con el estado de la carga y las alertas de la semana.
+3. **Base publicada:** descarga del release «base-actual» la base de la semana anterior y comprueba su huella; de ella salen el historial de cargas y la comparación del 90 % (D-270).
+4. **Descarga:** el agente de ingesta (`agent/agent.py`) baja de ODEPA el año en curso y los años cerrados que no estén en la caché, revisa que cada archivo traiga las columnas esperadas y anota su huella SHA-256 en `manifest.json`.
+5. **ETL de respaldo:** `etl/etl.py` guarda las filas sin cambios en el aterrizaje (`etl/raw.db`) y construye en la máquina de la carga el respaldo `etl/datos.db`, con las reglas de negocio, para la prueba de paridad. No se publica.
+6. **dbt build:** `etl/pipeline.py` copia el aterrizaje al bronce en Parquet, descarga el IPC del INE y dbt construye y prueba todos los modelos. Solo si todo pasa, y si la carga leyó al menos el 90 % de las filas de la anterior, reemplaza `etl/datos.duckdb`.
+7. **Falla simulada:** solo corre cuando una ejecución manual desde GitHub la pide, para comprobar que la base publicada no cambia.
+8. **Pruebas:** corre todas las pruebas contra la base nueva, incluida la paridad entre el respaldo y la base servida.
+9. **Publicar:** reemplaza `etl/datos.duckdb` en el release «base-actual» y después hace un commit «Weekly data update» con su puntero (`etl/datos.version`) y `agent/downloads/manifest.json`. El panel publicado ve el puntero nuevo, descarga la base, comprueba su huella y la muestra uno o dos minutos después.
+10. **Informe:** crea un issue «Informe semanal AAAA-MM-DD» con el estado de la carga y las alertas de la semana.
 
-Si un paso falla, los siguientes no se ejecutan: la base del repositorio queda como estaba y no se publica informe (D-034). El dibujo de estos pasos, con su línea en el workflow, está en «Centro de operación» → «CI/CD».
+Si un paso falla, los siguientes no se ejecutan: la base publicada queda como estaba y no se publica informe (D-034). El dibujo de estos pasos, con su línea en el workflow, está en «Centro de operación» → «CI/CD».
 
 ## Cómo leer un aviso rojo
 
@@ -70,8 +71,9 @@ En el «Centro de operación», «Acceso del autor» pide la clave de control (s
 
 ## Límites conocidos
 
-- **Tamaño de las bases:** GitHub avisa cuando un archivo pasa de 50 MB y lo rechaza sobre 100 MB. El tamaño real de `etl/datos.duckdb` y de `etl/datos.db` se ve en «Modelo de datos» → «Dónde viven los datos».
-- **Historial de Git:** cada commit semanal agrega al historial una versión nueva de las dos bases. GitHub recomienda repositorios de menos de 1 GB.
+- **Tamaño de la base:** un archivo de un release de GitHub puede pesar hasta 2 GB; la base servida pesa unos 14 MB. Su tamaño real se ve en «Modelo de datos» → «Dónde viven los datos».
+- **Historial de Git:** desde D-270 la base ya no se versiona en Git: cada carga reemplaza el archivo del release y solo sube su puntero, de unos pocos bytes. Las versiones anteriores a D-270 siguen en el historial; borrarlas exigiría reescribirlo, y se decidió no hacerlo.
+- **Una copia nueva del repositorio:** `python bi/served_database.py` descarga la base de la última carga (el panel lo hace solo al arrancar).
 - **Cuándo cambiar de arquitectura:** con datos públicos, semanales y de pocos megabytes, no se usa un data warehouse en la nube (ADR-31). La página «Escalabilidad» dice qué umbrales lo justificarían.
 - **Caché de GitHub:** se borra si no se usa en 7 días; algunas semanas el job descargará todos los años. Funciona igual, solo tarda más.
 

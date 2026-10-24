@@ -34,7 +34,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                database_crossings, deployment, devops, monitoring, page_bar, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
+                database_crossings, deployment, devops, monitoring, page_bar, served_database, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -281,7 +281,7 @@ GITHUB_CACHE_SECONDS = 300
 LIVE_SECONDS_WITH_TOKEN = 15
 LIVE_SECONDS_WITHOUT_TOKEN = 60
 OPERATION_RECENT_RUNS = 5
-# The database is saved only after these steps passed (D-034), so a saved load
+# The database is published only after these steps passed (D-034), so a published load
 # proves their state when GitHub does not answer.
 STEPS_PROVED_BY_A_SAVED_LOAD = {"Download the ODEPA files", "Run the ETL",
                                 "Run the tests against the new database"}
@@ -1863,6 +1863,23 @@ def show_chart(chart):
 
 
 # region Data access
+@st.cache_resource(show_spinner="Descargando la base de la última carga…")
+def ensure_published_database(pointer_text):
+    """Once per pointer (D-270): the weekly job commits etl/datos.version, so a new load reruns this."""
+    return served_database.ensure_database()
+
+
+def follow_published_database():
+    """Download the database of the latest load when the local one is missing or older; None, or what failed.
+    A failed download keeps the local file, if there is one: the panel shows the previous load."""
+    pointer = served_database.POINTER_FILE
+    try:
+        ensure_published_database(pointer.read_text(encoding="utf-8") if pointer.exists() else "")
+    except Exception as error:  # no network, or the release is not there yet
+        return f"{type(error).__name__}"
+    return None
+
+
 def get_database_version():
     """Changes when the weekly job saves a new database, so cached data is read again."""
     return queries.DATABASE_FILE.stat().st_mtime
@@ -7444,8 +7461,10 @@ def main():
                        # A green tile with white bars: the Material glyph was dark and
                        # nearly invisible on a dark browser tab.
                        page_icon=str(Path(__file__).resolve().parent / "assets" / "favicon.png"))
+    problem = follow_published_database()
     if not queries.DATABASE_FILE.exists():
-        st.error("Falta etl/datos.db. Ejecuta primero: python etl/etl.py")
+        st.error("Falta la base servida etl/datos.duckdb y no se pudo descargar de GitHub"
+                 + (f" ({problem})" if problem else "") + ". En local: python bi/served_database.py")
         return
     settle_theme()
     st.session_state.pop(PROFILE_PARAMETER, None)

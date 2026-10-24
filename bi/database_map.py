@@ -57,12 +57,14 @@ NODES = [
     ("served", "duckdb", "DuckDB", "etl/datos.duckdb", (755, MAIN_Y),
      "La base que el panel lee: 12 tablas, agrupadas por quién las escribe (abajo).",
      "Es un solo archivo, rápido para consultas analíticas y de solo lectura para el panel."),
-    ("github", "github", "GitHub", "el repositorio", (915, MAIN_Y),
-     "Los dos archivos de base de datos publicados, con todo su historial.",
-     "La carga semanal los sube con un commit: así quedan versionados y la app publicada los recibe."),
+    ("github", "github", "GitHub", "release y repositorio", (915, MAIN_Y),
+     "La base servida, en el release «base-actual»: una sola copia, que cada carga reemplaza.",
+     "Git guardaría cada versión para siempre; así el historial no crece y el panel toma del release la base de la "
+     "última carga, tras comprobar su huella (D-270)."),
     ("backup", "sqlite", "SQLite · respaldo", "etl/datos.db", (755, BACKUP_Y),
      "Los mismos precios semanales, calculados otra vez por el ETL en Python (etl/etl.py), sin dbt.",
-     "Es una segunda opinión independiente: si dbt y el ETL no coinciden, algo está mal. El panel no lo lee."),
+     "Es una segunda opinión independiente: si dbt y el ETL no coinciden, algo está mal. El panel no lo lee y no se "
+     "publica: se rehace en la máquina de cada carga para la prueba de paridad (D-270)."),
 ]
 def thousands(value):
     return charts.format_thousands(value) if value is not None else "—"

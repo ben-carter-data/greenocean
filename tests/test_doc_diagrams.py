@@ -102,7 +102,8 @@ def test_d247_the_containers_view_is_c4_level_2_with_real_files_and_straight_lin
     for key, kind, *_, files, what in doc_views.CONTAINERS:
         assert what, key
         for path in [part.strip() for part in files.split("·") if part.strip()]:
-            if path not in ("etl/raw.db", "etl/bronze/", "etl/warehouse_build.duckdb"):  # rebuilt on each load, not in Git
+            # Rebuilt on each load and not in Git; the backup too since D-270.
+            if path not in ("etl/raw.db", "etl/bronze/", "etl/warehouse_build.duckdb", "etl/datos.db"):
                 assert (root / path).exists(), path
         assert f'id="c-{key}"' in page and f'id="ct-{key}"' in page
     for path, label, *_ in doc_views.C4_LINKS:  # (path, label, x, y, anchor)

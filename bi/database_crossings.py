@@ -77,7 +77,8 @@ def read_checks(database_file=queries.DATABASE_FILE, backup_file=None):
                          f"{runs} cargas registradas; {rejection_runs} rechazos sin su carga.")
     parity = quality.check_parity(**({"backup_file": backup_file} if backup_file else {}), database_file=database_file)
     if parity is None:
-        checks["parity"] = ("pending", "datos.db no está en este servidor")
+        # D-270: the backup is never published; each load compares it before publishing.
+        checks["parity"] = ("pending", "el respaldo no se publica: cada carga lo compara antes de publicar")
     else:
         text = (f"{database_map.thousands(parity['rows'][1])} filas y {database_map.thousands(parity['rejections'][1])} rechazos "
                 f"en la base servida; {database_map.thousands(parity['rows'][0])} y "

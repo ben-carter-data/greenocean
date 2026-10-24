@@ -1,6 +1,6 @@
 # GreenOcean · Registros de decisiones de arquitectura (ADR)
 
-Versión del 24-10-2026. Estas son las diez decisiones que más pesan en la arquitectura. Cada una cuenta el problema que había, lo que se decidió, qué otras opciones había y qué se gana y se pierde con ella. Los números saltan porque cada ADR conserva el suyo original; las decisiones menores están en `docs/DECISIONES.md`, y cada ADR apunta a su entrada D-xxx con el detalle completo.
+Versión del 24-10-2026. Estas son las once decisiones que más pesan en la arquitectura. Cada una cuenta el problema que había, lo que se decidió, qué otras opciones había y qué se gana y se pierde con ella. Los números saltan porque cada ADR conserva el suyo original; las decisiones menores están en `docs/DECISIONES.md`, y cada ADR apunta a su entrada D-xxx con el detalle completo.
 
 ## ADR-01 · Usar solo los archivos oficiales de ODEPA y del INE
 
@@ -20,11 +20,11 @@ Versión del 24-10-2026. Estas son las diez decisiones que más pesan en la arqu
 
 ## ADR-04 · No subir los datos crudos al repositorio
 
-- **Estado:** aceptada (D-020).
+- **Estado:** aceptada (D-020); la base servida y el respaldo salieron del repositorio en D-270 (ADR-35).
 - **Contexto:** cada CSV anual de ODEPA pesa hasta unos 65 MB y la base cruda de todos los años pesa cientos de MB; GitHub rechaza archivos de más de 100 MB y el repositorio crecería en cada carga.
-- **Decisión:** los CSV y la base de aterrizaje (`etl/raw.db`) se reconstruyen en cada carga y quedan fuera del repositorio. Solo se versionan la base servida, el respaldo y el registro de descargas (`manifest.json`, con la huella SHA-256 de cada archivo).
+- **Decisión:** los CSV y la base de aterrizaje (`etl/raw.db`) se reconstruyen en cada carga y quedan fuera del repositorio. Se versiona el registro de descargas (`manifest.json`, con la huella SHA-256 de cada archivo).
 - **Alternativas:** versionar todo; usar almacenamiento de archivos grandes.
-- **Consecuencias:** el repositorio no carga con los cientos de MB de datos crudos, y cada archivo descargado se puede verificar contra su huella. Quien clone el proyecto debe ejecutar el agente para tener los datos crudos; los indicadores sí vienen incluidos. La base servida y el respaldo sí se versionan, así que cada carga agrega una versión nueva de ambos al historial de Git; cómo se contendría ese crecimiento está en la página Escalabilidad.
+- **Consecuencias:** el repositorio no carga con los cientos de MB de datos crudos, y cada archivo descargado se puede verificar contra su huella. Quien clone el proyecto debe ejecutar el agente para tener los datos crudos; la base de los indicadores se descarga con un comando (ADR-35).
 
 ## ADR-10 · Reconstruir todo en cada carga
 
@@ -81,3 +81,11 @@ Versión del 24-10-2026. Estas son las diez decisiones que más pesan en la arqu
 - **Decisión:** dbt construye en una base de trabajo que no se sube (`etl/warehouse_build.duckdb`); al final de una carga válida, las tablas del panel se copian a un archivo nuevo y compacto que reemplaza de una vez a `etl/datos.duckdb`. El ETL en Python escribe aparte el respaldo `etl/datos.db`.
 - **Alternativas:** que el panel lea directamente la base de trabajo de dbt.
 - **Consecuencias:** el panel lee un archivo liviano y siempre completo, y el respaldo permite comprobar que dos caminos independientes dan las mismas cifras.
+
+## ADR-35 · Publicar la base servida en un release que cada carga reemplaza
+
+- **Estado:** aceptada (D-270).
+- **Contexto:** cada martes la carga subía con un commit la base servida y el respaldo, unos 48 MB. Git guarda para siempre cada versión de un archivo, así que el historial crecía cerca de 1 GB por año con copias que nadie lee: cada base nueva ya trae la historia completa (ADR-10). GitHub recomienda repositorios de menos de 1 GB, y clonar el proyecto, también para desplegar el panel, se hacía cada vez más lento.
+- **Decisión:** la base servida se publica como el archivo del release «base-actual» de GitHub, que cada carga reemplaza. En Git queda solo su puntero, `etl/datos.version`, con la huella SHA-256, el tamaño y la hora de la base publicada. El panel, las pruebas de cada push y una copia nueva del proyecto comparan su archivo con el puntero y descargan el del release cuando falta o es más antiguo, y lo usan solo si su huella coincide. El respaldo SQLite deja de subirse: se rehace en la máquina de cada carga, que es donde corre la prueba de paridad.
+- **Alternativas:** dejar de subir solo el respaldo, que reduce el crecimiento a unos 300 MB por año pero no lo detiene; Git LFS, que también guarda cada versión y tiene una cuota gratuita limitada; reescribir el historial cada cierto tiempo, que rompe las copias de quien ya clonó el proyecto.
+- **Consecuencias:** el historial deja de crecer con los datos, y siempre hay una sola copia publicada. El panel depende de poder descargar la base al arrancar; si no puede, sigue con la que tiene. Las versiones anteriores a D-270 siguen en el historial: borrarlas exigiría reescribirlo, y se decidió no hacerlo. Una reconstrucción local más nueva que el puntero (`etl/pipeline.py --local`) se conserva y no se reemplaza.

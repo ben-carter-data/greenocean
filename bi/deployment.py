@@ -62,12 +62,12 @@ TIPS = {
     "runner": "Una máquina Ubuntu de GitHub Actions que nace y se borra en cada ejecución: el job semanal de cada martes "
               "(semanal.yml) y las pruebas de cada push (pruebas.yml).",
     "python": "El entorno Python 3.11 del runner: descarga, aterrizaje en SQLite, bronce en Parquet y dbt build sobre DuckDB.",
-    "repo": "El repositorio público, rama main: el código y la base servida. La carga semanal hace un commit «Weekly data update» "
-            "con la base nueva solo si pasan todas las pruebas.",
+    "repo": "El repositorio público: el código en la rama main y la base servida en el release «base-actual». Solo si pasan "
+            "todas las pruebas, la carga reemplaza la base del release y sube su puntero con un commit «Weekly data update» (D-270).",
     "cache": "Guarda los CSV de los años cerrados, que ya no cambian, para no descargarlos cada semana. Se borra si no se usa en 7 días.",
     "issues": "El workflow crea un issue «Informe semanal AAAA-MM-DD» con el estado de la carga y las alertas de precio.",
-    "app": "Streamlit ejecuta bi/dashboard.py desde la rama main. Lee la base en solo lectura y guarda los secretos del panel; "
-           "con la clave de control, lanza la carga por la API de GitHub.",
+    "app": "Streamlit ejecuta bi/dashboard.py desde la rama main. Descarga del release la base de la última carga, comprueba su "
+           "huella y la lee en solo lectura; guarda los secretos del panel y, con la clave de control, lanza la carga por la API de GitHub.",
     "browser": "Cualquier visitante, o el autor. El panel público no pide cuenta; la clave solo abre el botón «Ejecutar pipeline ahora».",
 }
 
@@ -167,10 +167,10 @@ def build_contents(states, figures):
         "python": (heading(356, 234, "entorno de ejecución", "Python 3.11")
                    + artifact(356, 270, "agent.py · etl.py") + artifact(356, 286, "bronze.py")
                    + artifact(356, 302, "dbt build · DuckDB")),
-        "repo": (heading(348, 378, "entorno de ejecución", "Repositorio · rama main")
+        "repo": (heading(348, 378, "entorno de ejecución", "Repositorio · main y release")
                  + artifact(348, 414, "código del proyecto")
                  + artifact(348, 430, f"datos.duckdb · {project.describe_file_size(queries.DATABASE_FILE)}")
-                 + artifact(348, 446, "datos.db · respaldo")
+                 + artifact(348, 446, "datos.version · puntero")
                  + artifact(348, 462, "manifest.json")
                  + f'<text class="live" x="348" y="486">{esc(figures.get("week_prices", ""))}</text>'),
         "cache": heading(602, 100, "entorno de ejecución", "Caché de Actions") + artifact(602, 134, "CSV de años cerrados"),

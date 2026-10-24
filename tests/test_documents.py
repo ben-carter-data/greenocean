@@ -33,7 +33,7 @@ def test_d248_each_adr_has_the_standard_parts_and_points_to_its_decision():
     text = (DOCS_DIR / "ADR.md").read_text(encoding="utf-8")
     entries = re.split(r"^## ", text, flags=re.MULTILINE)[1:]
     numbers = [entry.split(" ", 1)[0] for entry in entries]
-    assert len(numbers) == 10 and len(set(numbers)) == 10 and all(re.fullmatch(r"ADR-\d{2}", n) for n in numbers)
+    assert len(numbers) == 11 and len(set(numbers)) == 11 and all(re.fullmatch(r"ADR-\d{2}", n) for n in numbers)
     decisions = (DOCS_DIR / "DECISIONES.md").read_text(encoding="utf-8")
     for entry in entries:
         for part in ("**Estado:**", "**Contexto:**", "**Decisión:**", "**Alternativas:**", "**Consecuencias:**"):

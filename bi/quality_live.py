@@ -143,6 +143,15 @@ def build_indicators(measures, now=None):
                      f"{thousands(parity['rows'][1])} precios y {thousands(parity['rejections'][1])} rechazos en las dos",
                      "ok" if parity["ok"] else "fail",
                      "El ETL en Python y dbt, por caminos independientes, deben dar los mismos precios, rechazos y suma."))
+    elif measures["runs"] and measures["runs"][-1][2] == "LOADED":
+        # D-270: the backup is never published, so a server has none. The published load built it on its own machine
+        # and passed the parity test there: a load that fails it never reaches the release.
+        run_id = measures["runs"][-1][0]
+        rows.append(("consistencia", "Paridad SQLite ↔ DuckDB", "comprobada en la carga",
+                     f"la carga {run_id} pasó la prueba de paridad antes de publicarse", "ok",
+                     f"El respaldo SQLite no se publica, así que este servidor no lo tiene. La carga {run_id} lo construyó en "
+                     "su máquina y pasó ahí la prueba de paridad (tests/test_migration_parity.py) antes de publicar la base: "
+                     "una carga que no la pasa no se publica."))
     else:
         rows.append(("consistencia", "Paridad SQLite ↔ DuckDB", "sin respaldo aquí", "se comprueba donde está datos.db",
                      "info", "El respaldo SQLite no está en este servidor, así que esta comparación no se puede hacer aquí."))

@@ -26,6 +26,8 @@ TESTS_DIR = PROJECT_DIR / "tests"
 GITHUB_URL = "https://github.com/cben6514-boop/monitor-precios-hito1"
 GITHUB_BRANCH = "main"
 COMMITS_URL = f"{GITHUB_URL}/commits/{GITHUB_BRANCH}"
+# The release that holds the served database, replaced by every load (D-270).
+RELEASE_URL = f"{GITHUB_URL}/releases/tag/base-actual"
 ACTIONS_URL = f"{GITHUB_URL}/actions"
 ISSUES_URL = f"{GITHUB_URL}/issues"
 WHOLESALE_SOURCE_URL = ("https://datos.odepa.gob.cl/dataset/"

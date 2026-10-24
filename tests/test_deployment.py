@@ -33,11 +33,14 @@ def test_what_is_drawn_exists_in_the_workflows_and_the_repository():
     assert "workflow_dispatch" in weekly and "runs-on: ubuntu-latest" in weekly and 'python-version: "3.11"' in weekly
     assert "runs-on: ubuntu-latest" in tests and "actions/cache" in weekly
     assert "gh issue create" in weekly or "issues" in weekly
-    for path in ("etl/datos.duckdb", "etl/datos.db", "agent/downloads/manifest.json", "bi/dashboard.py",
+    # D-270: the repository keeps the pointer of the served database; the file itself is in the release.
+    for path in ("etl/datos.version", "bi/served_database.py", "agent/downloads/manifest.json", "bi/dashboard.py",
                  ".github/workflows/semanal.yml", ".github/workflows/pruebas.yml"):
         assert (REPOSITORY / path).exists(), path
+    assert "gh release upload base-actual" in weekly
     page = draw()
-    for artifact in ("semanal.yml", "pruebas.yml", "dashboard.py", "manifest.json", "datos.db", "st.secrets"):
+    for artifact in ("semanal.yml", "pruebas.yml", "dashboard.py", "manifest.json", "datos.version", "release",
+                     "st.secrets"):
         assert artifact in page, artifact
 
 

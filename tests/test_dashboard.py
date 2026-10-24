@@ -1519,7 +1519,9 @@ def test_d163_without_inflation_the_ipc_is_the_flat_reference_and_the_pesos_are_
 
 def test_d191_file_sizes_for_the_storage_diagram():
     sizes = dashboard.read_store_sizes()
-    assert sizes["served"].endswith("MB") and sizes["backup"].endswith("MB") and "MB" in sizes["raw"]
+    assert sizes["served"].endswith("MB") and "MB" in sizes["raw"]
+    # D-270: the backup is not published; where it was built, its size is shown too.
+    assert sizes["backup"].endswith("MB") if (dashboard.etl.BASE_DIR / "datos.db").exists() else "backup" not in sizes
     assert dashboard.format_file_size(18_624_512) == "19 MB" and dashboard.format_file_size(2_500_000) == "2,5 MB"
 
 

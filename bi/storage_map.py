@@ -28,8 +28,8 @@ SOURCES_X, WORK_X, SERVED_X, REPO_X = (28, 178), (242, 488), (552, 752), (816, 9
 ZONES = [
     ("sources", "Fuentes externas", "fuera del proyecto", (14, 192), "outside"),
     ("work", "Zona de trabajo", "fuera de Git · se rehace cada carga", (228, 502), "plain"),
-    ("served", "Base servida", "versionada en Git", (538, 766), "accent"),
-    ("repo", "Repositorio", "GitHub · público", (802, 990), "plain"),
+    ("served", "Base servida", "el resultado de cada carga", (538, 766), "accent"),
+    ("repo", "GitHub", "release y repositorio · público", (802, 990), "plain"),
 ]
 # Stores: (key, kind, row, x range, mark, name, file).
 STORES = [
@@ -55,16 +55,18 @@ TIPS = {
     "dbt": (database_map.NODES[5][5], database_map.NODES[5][6], "etl/pipeline.py"),
     "backup": (database_map.NODES[8][5], database_map.NODES[8][6], "etl/etl.py"),
     "served": (database_map.NODES[6][5], database_map.NODES[6][6], "etl/pipeline.py"),
-    "github": ("Los archivos de datos publicados, con todo su historial: la base servida, su respaldo y el registro "
-               "de las descargas.", database_map.NODES[7][6], ".github/workflows/semanal.yml"),
+    "github": ("Lo que la carga publica: la base servida, en el release «base-actual», con una sola copia que cada "
+               "carga reemplaza; en la rama main, su puntero y el registro de las descargas (D-270).",
+               database_map.NODES[7][6], ".github/workflows/semanal.yml"),
     "streamlit": ("El panel público, en Streamlit Community Cloud. Lee etl/datos.duckdb en solo lectura; no escribe "
                   "ninguna base.", "Se despliega solo desde la rama main: un cambio publicado en GitHub llega al "
                   "panel sin servidores que mantener.", "bi/dashboard.py"),
 }
-# Files kept in the repository, drawn as chips: (key, text, file path for the hover).
-REPO_FILES = [("repo_backup", "etl/datos.db", "etl/datos.db"),
+# What GitHub keeps, drawn as chips: (key, text, file path for the hover). The served file goes to the release
+# (D-270): git keeps its pointer and the download record; the SQLite backup stays on the machine of each load.
+REPO_FILES = [("repo_pointer", "etl/datos.version", "etl/datos.version"),
               ("repo_manifest", "manifest.json", "agent/downloads/manifest.json"),
-              ("repo_served", "etl/datos.duckdb", "etl/datos.duckdb")]
+              ("repo_served", "datos.duckdb", "bi/served_database.py")]
 # Straight lines: (key, start, end, label, side of the label, dashed). Start and end are drawn so
 # that each is a single horizontal or vertical segment.
 LINES = [
@@ -76,8 +78,7 @@ LINES = [
      ((WORK_X[0] + WORK_X[1]) // 2, ROWS[2] - CARD_HEIGHT // 2), "dbt lee", "right", False),
     ("a_backup", (WORK_X[1], ROWS[0]), (SERVED_X[0], ROWS[0]), "ETL", "above", False),
     ("a_publish", (WORK_X[1], ROWS[2]), (SERVED_X[0], ROWS[2]), "publica", "above", False),
-    ("a_commit_backup", (SERVED_X[1], ROWS[0]), (REPO_X[0], ROWS[0]), "commit", "above", False),
-    ("a_commit_served", (SERVED_X[1], ROWS[2]), (REPO_X[0], ROWS[2]), "commit", "above", False),
+    ("a_release_served", (SERVED_X[1], ROWS[2]), (REPO_X[0], ROWS[2]), "release", "above", False),
 ]
 SERVED_CARD = (312, 470)  # the DuckDB card is taller: it holds the twelve tables
 PARITY_X = (SERVED_X[0] + SERVED_X[1]) // 2
@@ -319,7 +320,7 @@ def build_map_html(palette, counts, layers, tests, sizes=None):
     what, why, produced_by = TIPS["served"]
     tables = [(name, counts.get(name)) for *_, names, _, _ in database_map.ORIGINS for name in names]
     tips.append(build_tip("served", served_box, "left", notes["served"], why, produced_by, tables))
-    # The repository: a title, then its three data files as chips at the height of the lines that reach them.
+    # GitHub: a title, then what it keeps as chips, the release at the height of the line that reaches it.
     left, right = REPO_X
     repo = []
     for (key, text, path), row in zip(REPO_FILES, range(3)):

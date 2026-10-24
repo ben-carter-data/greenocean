@@ -42,7 +42,7 @@ def test_the_steps_of_the_weekly_load_come_in_the_order_of_the_workflow_and_none
     # The gates: dbt and the tests against the new database run before it is saved.
     gates = [step[0] for step in devops.STEPS if step[11] == "gate"]
     assert gates == ["ci_pytest", "cd_dbt", "cd_pytest"]
-    assert semanal.index("Run the tests against") < semanal.index("Save the updated database")
+    assert semanal.index("Run the tests against") < semanal.index("Publish the database")
 
 
 def test_each_step_says_on_which_line_of_its_workflow_it_is():
@@ -82,10 +82,11 @@ def test_the_diagram_has_one_card_and_one_hover_per_step_with_real_logos_and_no_
     assert devops.ROW_NOTE in page
 
 
-def test_the_lines_join_each_step_with_the_next_in_its_lane_and_the_load_with_main():
+def test_the_lines_join_each_step_with_the_next_in_its_lane_and_the_load_with_the_release():
     for start, end in devops.LINKS:
         assert {start, end} <= {step[0] for step in devops.STEPS}
-    assert ("cd_save", "pub_main") in devops.LINKS and ("pub_main", "pub_streamlit") in devops.LINKS
+    # D-270: the load publishes the database in the release, and the panel takes it from there.
+    assert ("cd_publish", "pub_release") in devops.LINKS and ("pub_release", "pub_streamlit") in devops.LINKS
     page = devops.build_cicd_html(charts.get_palette(charts.MODE_DARK))
     for x1, y1, x2, y2 in re.findall(r'd="M(\S+) (\S+) L(\S+) (\S+)"', page):
         assert x1 == x2 or y1 == y2  # straight, horizontal or vertical

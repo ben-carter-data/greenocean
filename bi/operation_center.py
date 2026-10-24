@@ -90,11 +90,11 @@ STEPS = [
      "hint": "pytest recalcula las cifras desde la fuente. Si una prueba falla, la base "
              "publicada no se toca; el final del log nombra la prueba con FAILED.",
      "links": []},
-    {"key": "save", "label": "Guardar", "title": "Guardar la base", "place": (0, 2),
-     "workflow": ["Save the updated database"], "log": True,
-     "hint": "Sube la base nueva al repositorio con el commit «Weekly data update». Solo "
-             "ocurre si todo lo anterior pasó.",
-     "links": [("Commits", project.COMMITS_URL, False)]},
+    {"key": "save", "label": "Publicar", "title": "Publicar la base", "place": (0, 2),
+     "workflow": ["Publish the database", "Save the updated database"], "log": True,
+     "hint": "Reemplaza la base en el release «base-actual» y sube su puntero a main con el "
+             "commit «Weekly data update». Solo ocurre si todo lo anterior pasó.",
+     "links": [("Release", project.RELEASE_URL, False), ("Commits", project.COMMITS_URL, False)]},
     {"key": "report", "label": "Informe", "title": "Informe semanal", "place": (1, 2),
      "workflow": ["Publish the weekly report"], "log": True,
      "hint": "Publica el informe de la semana como issue en GitHub, con sus alertas; GitHub "

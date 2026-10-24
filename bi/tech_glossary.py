@@ -166,8 +166,8 @@ TECH_GLOSSARY = {
     "git": {
         "nombre": "Git", "sigla": "",
         "que_es": "sistema de control de versiones.",
-        "rol": "versiona el código; el workflow semanal hace checkout, commit y push de "
-               "datos.duckdb, datos.db y manifest.json."},
+        "rol": "versiona el código; el workflow semanal hace checkout, commit y push del puntero de la base "
+               "(etl/datos.version) y de manifest.json. La base misma va a un release, fuera del historial (D-270)."},
     "github": {
         "nombre": "GitHub", "sigla": "",
         "que_es": "plataforma que aloja repositorios Git.",
@@ -204,8 +204,8 @@ TECH_GLOSSARY = {
     "cd": {
         "nombre": "CD", "sigla": "Continuous Delivery",
         "que_es": "entrega continua: llevar a producción, sin pasos manuales, lo que ya pasó todas las pruebas.",
-        "rol": "semanal.yml construye la carga cada martes y, solo si pytest pasa sobre la base nueva, la guarda "
-               "en main con un commit; el panel se publica desde main."},
+        "rol": "semanal.yml construye la carga cada martes y, solo si pytest pasa sobre la base nueva, la publica "
+               "en el release «base-actual» y sube su puntero a main; el panel se publica desde main."},
     "pytest": {
         "nombre": "pytest", "sigla": "",
         "que_es": "framework de pruebas automáticas para Python.",

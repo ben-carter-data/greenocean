@@ -26,3 +26,7 @@ etl/*.duckdb.wal
 # Public root certificates trusted by the agent (D-164), not secrets.
 !agent/certs/*.pem
 dbt/.user.yml
+# The served database lives in the release «base-actual»; git keeps its pointer, etl/datos.version (D-270).
+etl/datos.duckdb
+# The SQLite backup is built by every load for the parity test and never published (D-270).
+etl/datos.db
