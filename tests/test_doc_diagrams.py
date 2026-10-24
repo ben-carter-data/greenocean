@@ -65,7 +65,7 @@ def test_d242_the_context_view_is_the_system_as_one_box_with_its_people_and_exte
 
 
 def test_d210_the_weak_views_are_gone():
-    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups", "sop"}
+    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups", "sop", "pruebas"}
 
 
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
@@ -113,27 +113,43 @@ def test_d247_every_view_a_document_links_to_is_a_page_of_the_menu():
             assert dashboard.find_menu_page(label), (name, label)
 
 
-def test_d249_the_security_test_plan_points_each_case_to_a_test_that_exists_and_the_architecture_uses_them():
-    from bi import security_map
+def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architecture_uses_them():
+    from bi import security_map, security_plan
     root = Path(__file__).resolve().parent.parent
     text = (DOCS_DIR / "SEGURIDAD.md").read_text(encoding="utf-8")
-    rows = re.findall(r"^\| (S-\d{2}) \|(.*)\|$", text, flags=re.MULTILINE)
-    assert [case for case, _ in rows] == [f"S-{n:02d}" for n in range(1, 11)]
-    for case, row in rows:
-        references = re.findall(r"`([^`]+::[^`]+)`", row)
-        assert references, case
-        for reference in references:
+    assert [case[0] for case in security_plan.CASES] == [f"S-{n:02d}" for n in range(1, 11)]
+    for case_id, short, attack, expected, owasp, tests in security_plan.CASES:
+        assert owasp in security_map.OWASP or owasp == "—", case_id
+        assert tests, case_id
+        for reference in tests:
             path, name = reference.split("::")
             assert re.search(rf"^def {re.escape(name)}\(", (root / path).read_text(encoding="utf-8"), re.MULTILINE), reference
-    cases = {case for case, _ in rows}
+    cases = {case[0] for case in security_plan.CASES}
     for threat in security_map.THREATS:
         assert set(threat[4]) <= cases, threat[0]
     assert "límite de intentos" in text and "riesgo aceptado" in text  # the accepted risk is written, not hidden
+    assert "| S-01 |" not in text  # the long table is gone: the cases live in one place, the diagram
 
 
-def test_d249_the_sop_has_five_steps_and_says_that_ci_warns_but_does_not_stop_main():
+def test_d258_the_ten_cases_open_their_attack_result_owasp_threat_and_test():
+    from bi import security_map, security_plan
+    page = doc_diagrams.DOC_DIAGRAMS["pruebas"](charts.MODE_DARK)
+    for case_id, short, attack, expected, owasp, tests in security_plan.CASES:
+        assert f'href="#c-{case_id}"' in page and f'id="c-{case_id}"' in page, case_id
+        for text in (attack, expected, *tests):
+            assert text.replace("&", "&amp;") in page or text in page, (case_id, text)
+    assert page.count('class="modal"') == 10 and page.count("OWASP Top 10 (2021)") == 10 and "<script" not in page
+    assert '<base href="about:srcdoc">' in page
+    # the threat of a case is the one of the architecture that lists it
+    assert security_plan.threat_of("S-01")[0] == "T1" and security_plan.threat_of("S-09") is None
+    assert "T3 · " in page and "Ninguna en concreto" in page
+
+
+def test_d258_the_procedure_is_a_cycle_of_five_steps_and_says_that_ci_warns_but_does_not_stop_main():
+    from bi import security_plan
     page = doc_diagrams.DOC_DIAGRAMS["sop"](charts.MODE_DARK)
-    assert [step[1] for step in doc_views.SOP_STEPS] == ["Preparar", "Ejecutar", "Comprobar", "Registrar", "Decidir"]
+    assert [step[1] for step in security_plan.SOP_STEPS] == ["Preparar", "Ejecutar", "Comprobar", "Registrar", "Decidir"]
     for index in range(5):
-        assert f'id="sop-{index}"' in page and f'id="sop-tip-{index}"' in page
+        assert f'href="#p-{index}"' in page and f'id="p-{index}"' in page
+    assert "falla: se corrige y se repite desde el 2" in page and "pasa: el cambio queda verificado" in page
     assert "no detiene la publicación de main" in page and "<script" not in page

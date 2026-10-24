@@ -412,93 +412,6 @@ svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
 # endregion
 
 
-# region Security test procedure (Plan de pruebas de seguridad, D-249)
-# The standard operating procedure (SOP) to verify the security controls, step by step, left to right; each step says
-# what is done and, on hover, how. The cases are S-01 to S-10 of docs/SEGURIDAD.md; nothing is added to them.
-SOP_STEPS = [
-    ("git", "Preparar", "copia limpia y secreto falso",
-     "Clonar el repositorio e instalar requirements.txt. Las pruebas crean su propio secreto falso: el real nunca se usa."),
-    ("pytest", "Ejecutar", "los diez casos con pytest",
-     "python -m pytest -q tests/test_security.py tests/test_control.py tests/test_sql_explorer.py tests/test_dashboard.py"),
-    ("reconcile", "Comprobar", "contra el resultado esperado",
-     "Cada caso S-01 a S-10 tiene su resultado esperado en la tabla de casos; cada prueba lo compara y falla si no se cumple."),
-    ("github", "Registrar", "la evidencia",
-     "La salida de pytest en local y, en GitHub, el resultado de pruebas.yml junto al commit. Toda corrección queda en "
-     "docs/DECISIONES.md."),
-    ("shield", "Decidir", "pasa o falla",
-     "Pasa: el cambio queda verificado. Falla: se corrige y se vuelve al paso 2."),
-]
-SOP_WIDTH, SOP_HEIGHT = 900, 276
-
-
-def build_sop_html(mode):
-    """The security test procedure as five numbered steps, with the way back when a case fails."""
-    palette = charts.get_palette(mode)
-    dark = palette["base"] == charts.BASE_DARK
-    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
-                                              palette["card"], palette["card_border"], palette["accent"])
-    width, gap, top = 148, 30, 36
-    parts = [f'<defs><marker id="sop-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
-             f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{accent}"/></marker></defs>']
-    tips = []
-    for index, (mark, title, line, how) in enumerate(SOP_STEPS):
-        x = 20 + index * (width + gap)
-        if mark in DISCS:
-            icon = disc_logo("brand", mark).replace('<svg class="logo" ', f'<svg x="{x + width / 2 - 22}" y="{top + 14}" width="44" height="44" ', 1)
-        else:
-            icon = quality_view.build_icon_svg(mark).replace('<svg class="qa-icon" ', f'<svg x="{x + width / 2 - 22}" y="{top + 14}" width="44" height="44" ', 1)
-        parts.append(f'<g class="sop-step" id="sop-{index}" tabindex="0"><rect x="{x}" y="{top}" width="{width}" height="132" rx="14"/>'
-                     f'<circle cx="{x + 18}" cy="{top + 18}" r="11" class="sop-n"/><text x="{x + 18}" y="{top + 22.5}" class="sop-n-text">{index + 1}</text>'
-                     f'{icon}<text class="sop-title" x="{x + width / 2}" y="{top + 82}">{esc(title)}</text>'
-                     + "".join(f'<text class="sop-line" x="{x + width / 2}" y="{top + 102 + 15 * k}">{esc(part)}</text>'
-                               for k, part in enumerate(wrap(line, 22)[:2])) + '</g>')
-        if index < len(SOP_STEPS) - 1:
-            parts.append(f'<path class="sop-arrow" d="M{x + width} {top + 66} L{x + width + gap - 2} {top + 66}" marker-end="url(#sop-head)"/>')
-        tx = min(max(x + width / 2 - 170, 8), SOP_WIDTH - 348)
-        tips.append(f'<g class="sop-tip" id="sop-tip-{index}"><foreignObject x="{tx:.0f}" y="{top + 134}" width="340" height="1" '
-                    f'overflow="visible"><div xmlns="http://www.w3.org/1999/xhtml"><b>{index + 1} · {esc(title)}</b>{esc(how)}</div>'
-                    '</foreignObject></g>')
-    # Falla: back to step 2. Pasa: the change is verified.
-    last_x = 20 + 4 * (width + gap) + width / 2
-    second_x = 20 + 1 * (width + gap) + width / 2
-    bottom = top + 132
-    parts.append(f'<path class="sop-arrow fail" d="M{last_x} {bottom} V{bottom + 34} H{second_x} V{bottom + 2}" marker-end="url(#sop-head)"/>'
-                 f'<text class="sop-label" x="{(last_x + second_x) / 2}" y="{bottom + 38}">falla: se corrige y se repite</text>'
-                 f'<text class="sop-pass" x="{20 + 5 * width + 4 * gap}" y="{top - 14}" text-anchor="end">pasa: el cambio queda verificado ✓</text>'
-                 f'<text class="sop-note" x="20" y="{SOP_HEIGHT - 6}">En GitHub, pruebas.yml hace los pasos 2 a 4 en cada push; su resultado avisa, '
-                 'pero no detiene la publicación de main.</text>')
-    hovers = "".join(f"svg:has(#sop-{i}:hover, #sop-{i}:focus) #sop-tip-{i} {{ opacity:1; }}" for i in range(len(SOP_STEPS)))
-    css = f"""<style>
-* {{ box-sizing:border-box; }}
-html, body {{ margin:0; background:transparent; color:{text}; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
-svg.sop {{ display:block; width:100%; height:auto; overflow:visible; }}
-.sop-step {{ outline:none; cursor:default; }}
-.sop-step rect {{ fill:{card}; stroke:{border}; stroke-width:1.2; }}
-.sop-step:hover rect, .sop-step:focus rect {{ stroke:{accent}; }}
-.sop-n {{ fill:{accent}; }}
-.sop-n-text {{ font-size:12.5px; font-weight:700; fill:{palette['background']}; text-anchor:middle; }}
-.sop-title {{ font-size:15px; font-weight:600; fill:{ink}; text-anchor:middle; }}
-.sop-line {{ font-size:12.5px; fill:{muted}; text-anchor:middle; }}
-.sop-arrow {{ fill:none; stroke:{accent}; stroke-width:1.8; }}
-.sop-arrow.fail {{ stroke-dasharray:5 5; }}
-.sop-label, .sop-pass {{ font-size:12.5px; fill:{ink}; text-anchor:middle; paint-order:stroke; stroke:{palette['background']}; stroke-width:5px; }}
-.sop-pass {{ text-anchor:end; }}
-.sop-pass {{ fill:#22b35a; }}
-.sop-note {{ font-size:12.5px; fill:{muted}; }}
-.sop-tip {{ opacity:0; pointer-events:none; transition:opacity .15s ease; }}
-.sop-tip div {{ position:absolute; top:0; width:340px; padding:12px 14px; border-radius:14px; background:{card}; border:1px solid {border};
-  box-shadow:0 18px 40px rgba(0,0,0,{'.55' if dark else '.2'}); color:{text}; font-size:12.5px; line-height:1.45; overflow-wrap:anywhere; }}
-.sop-tip b {{ display:block; margin-bottom:4px; color:{ink}; }}
-@media print {{ .sop-tip {{ display:none !important; }} }}
-{hovers}
-</style>"""
-    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            + css + f'</head><body>{quality_view.DEFS}<svg class="sop" viewBox="0 0 {SOP_WIDTH} {SOP_HEIGHT}" '
-            f'preserveAspectRatio="xMidYMid meet" role="img" aria-label="Procedimiento de pruebas de seguridad">{"".join(parts)}'
-            f'{"".join(tips)}</svg></body></html>')
-# endregion
-
-
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 MOCKUPS = [
     ("m1-resumen-vantablack.jpg", "M-1 · Resumen semanal", "tema Vantablack · computador", "laptop"),
@@ -539,5 +452,5 @@ figcaption {{ margin-top:10px; color:{palette['reference']}; }} figcaption b {{ 
 
 # The document views by marker, with the height of their frame in the page.
 VIEWS = {"contexto": (build_context_html, 470), "contenedores": (build_containers_html, 650),
-         "casos": (build_use_cases_html, 580), "sop": (build_sop_html, 290),
+         "casos": (build_use_cases_html, 580),
          "mockups": (build_mockups_html, 720)}

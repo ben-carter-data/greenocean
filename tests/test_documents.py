@@ -26,7 +26,7 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
     names = {name: re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"),
                               re.MULTILINE) for name in DOCUMENTS}
     assert names == {"PRD.md": ["casos", "mockups"], "SAD.md": ["contexto", "contenedores"],
-                     "ADR.md": [], "SEGURIDAD.md": ["sop"]}
+                     "ADR.md": [], "SEGURIDAD.md": ["sop", "pruebas"]}
 
 
 def test_d248_each_adr_has_the_standard_parts_and_points_to_its_decision():
@@ -97,7 +97,8 @@ def test_d252_the_glossary_names_only_pages_and_tabs_that_exist():
 
 
 def test_d252_the_security_plan_counts_the_attacks_its_tests_run():
+    from bi import security_plan
     from tests import test_security
-    text = (DOCS_DIR / "SEGURIDAD.md").read_text(encoding="utf-8")
-    assert f"| S-01 | {len(test_security.FILE_ATTACKS)} consultas SQL" in text
-    assert f"| S-02 | {len(test_security.ENGINE_ATTACKS)} órdenes directas" in text
+    attacks = {case[0]: case[2] for case in security_plan.CASES}
+    assert attacks["S-01"].startswith(f"{len(test_security.FILE_ATTACKS)} consultas SQL")
+    assert attacks["S-02"].startswith(f"{len(test_security.ENGINE_ATTACKS)} órdenes directas")

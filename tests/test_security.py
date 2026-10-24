@@ -121,10 +121,11 @@ def test_d254_the_security_architecture_is_a_network_of_trust_zones_with_every_c
         assert bool(cases) == all(security_map.CONTROLS[n - 1][7] for n in controls), tid
     assert used == numbers
     # the cases written under each piece are the ones of its controls and threats
-    plan = (REPOSITORY / "docs" / "SEGURIDAD.md").read_text(encoding="utf-8")
+    from bi import security_plan
+    known = {case[0] for case in security_plan.CASES}
     for node in security_map.NODES.values():
         for case in re.findall(r"S-\d{2}", node[8]):
-            assert f"| {case} |" in plan, case
+            assert case in known, case
     assert [step[0] for step in security_map.LOOP] == ["Revisar", "Atacar", "Corregir", "Probar", "Repetir"]
     assert "cada revisión vuelve a empezar" in page
     assert page.count('class="num declared"') == 1 and "declarado por el autor" in page and "no verificable" in page
