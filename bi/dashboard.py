@@ -1705,24 +1705,33 @@ def show_app_header(window):
     # lives in the shared sidebar footer, where it stays available without competing
     # with the page title.
     minimal = view == PAGE_SEASONALITY
-    window_label = SIDEBAR_TOP_LABELS.get(window, window)
-    path = window_label if len(read_window_views(window)) == 1 else f"{window_label} › {SIDEBAR_LABELS.get(view, view)}"
-    if view in MENU_BLOCK_OF_VIEW:
-        # D-250: the same names as the menu.
-        label = SIDEBAR_LABELS.get(view, view)
-        path = label if MENU_BLOCK_OF_VIEW[view] == label else f"{MENU_BLOCK_OF_VIEW[view]} › {label}"
-    with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
-        if not minimal:
-            st.markdown(f'<div class="app-brand" aria-label="Página actual">{html.escape(path)}</div>',
+    # The Resumen draws the path and Volver in its own bar, with the week's figures (D-264).
+    if not minimal and view != PAGE_HOME:
+        with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
+            st.markdown(f'<div class="app-brand" aria-label="Página actual">{html.escape(build_view_path(window, view))}</div>',
                         unsafe_allow_html=True)
-        if not minimal:
             with st.container(key="header_preferences", horizontal=True):
-                if st.button("Volver", icon=":material/arrow_back:", key="return_to_previous",
-                             help="Volver al punto anterior del proyecto, con su selección."):
-                    st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
+                show_return_button()
     theme = get_mode()
     match_base_mode(theme)
     return theme
+
+
+def build_view_path(window, view):
+    """«Section › Page», with the same names as the menu (D-250)."""
+    window_label = SIDEBAR_TOP_LABELS.get(window, window)
+    path = window_label if len(read_window_views(window)) == 1 else f"{window_label} › {SIDEBAR_LABELS.get(view, view)}"
+    if view in MENU_BLOCK_OF_VIEW:
+        label = SIDEBAR_LABELS.get(view, view)
+        path = label if MENU_BLOCK_OF_VIEW[view] == label else f"{MENU_BLOCK_OF_VIEW[view]} › {label}"
+    return path
+
+
+def show_return_button():
+    """Volver: back to the previous point of the project, with its selection."""
+    if st.button("Volver", icon=":material/arrow_back:", key="return_to_previous",
+                 help="Volver al punto anterior del proyecto, con su selección."):
+        st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
 
 
 def show_theme_field():
@@ -4789,12 +4798,16 @@ def show_market_overview(mode, prefix):
         address=build_page_address(page)
         return address+('&' if '?' in address else '?')+urlencode({
             '_home_key':token,'_home_group':row['product_group'],'_home_region':region,'_home_week':week})
-    show_alert_trigger()
-    st.markdown('<div class="greenocean-mockup">' + home_mockup.dashboard_header(
-        describe_week_span(week), updated, latest['status']==etl.STATUS_LOADED, model['family_rows'],
-        regional_rows, None if region == ALL_VALUES else region, compared=sum(model['counts']),
-        available=model['available'], alerts=model['alert_count'] if region == ALL_VALUES else None)
-        + '</div>', unsafe_allow_html=True)
+    # D-264: the only header of the Resumen, one thin bar.
+    with st.container(key="home_bar", horizontal=True, vertical_alignment="center"):
+        show_return_button()
+        st.markdown(home_mockup.dashboard_bar(
+            build_view_path(WINDOW_OF_VIEW[PAGE_HOME], PAGE_HOME), describe_week_span(week), model['family_rows'],
+            regional_rows, None if region == ALL_VALUES else region, compared=sum(model['counts']),
+            available=model['available']), unsafe_allow_html=True, width="stretch")
+        show_alert_trigger(week)
+        st.markdown(home_mockup.dashboard_updated(updated, latest['status']==etl.STATUS_LOADED),
+                    unsafe_allow_html=True, width="content")
     map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
     # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
     # sanitizer intentionally removes interactive SVG links.
@@ -7244,7 +7257,8 @@ def build_sidebar_css(mode):
     text = MENU_INK[dark][0]
     hairline = MENU_INK[dark][6]
     quiet = "rgba(214, 218, 227, .68)" if dark else "rgba(31, 41, 55, .68)"
-    alert_text = "#ff9ca4" if dark else "#9d1f2c"
+    # The price alert sits on the page, not in the sidebar (D-264): its red follows the page's surface.
+    alert_text = "#ff9ca4" if is_dark_surface(palette["background"]) else "#9d1f2c"
     return f"""<style>
     [data-testid="stSidebar"] {{background:{palette['sidebar']}; border-right:0; box-shadow:none;}}
     [data-testid="stSidebar"][data-collapsed="false"] {{min-width:300px !important; max-width:300px !important;}}
@@ -7276,14 +7290,12 @@ def build_sidebar_css(mode):
     .sidebar-github-current {{outline:2px solid {palette['accent']}; outline-offset:2px;}}
     .st-key-sidebar_footer {{position:fixed; left:0; bottom:0; width:300px; padding:12px 22px 12px;
         background:{palette['sidebar']}; gap:7px !important; z-index:5; border-top:1px solid {hairline};}}
-    /* The alert trigger, now on top of the Resumen (D-169), keeps its red, quiet look. */
-    .st-key-home_alert_bar {{margin:-4px 0 -10px;}}
-    .st-key-home_alert_trigger button {{justify-content:flex-start; border:0 !important;
-        background:transparent !important; color:{alert_text} !important; border-radius:5px;
-        padding:3px 7px !important; min-height:27px; box-shadow:none !important;}}
-    .st-key-home_alert_trigger button:hover {{background:color-mix(in srgb,{alert_text} 10%,transparent) !important;}}
+    /* The price alerts, a red chip in the Resumen's bar (D-169, D-264). */
+    .st-key-home_alert_trigger button {{border:0 !important; background:color-mix(in srgb,{alert_text} 14%,transparent) !important;
+        color:{alert_text} !important; border-radius:8px; padding:3px 10px !important; min-height:28px; box-shadow:none !important;}}
+    .st-key-home_alert_trigger button:hover {{background:color-mix(in srgb,{alert_text} 24%,transparent) !important;}}
     .st-key-home_alert_trigger button p {{color:{alert_text} !important; -webkit-text-fill-color:{alert_text} !important;
-        font-weight:560; font-size:.78rem; text-align:left; letter-spacing:-.005em;}}
+        font-weight:600; font-size:13.5px; letter-spacing:0; font-variant-numeric:tabular-nums;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button {{background:transparent !important;
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
@@ -7346,18 +7358,17 @@ def build_sidebar_github_html(is_current):
             f'{build_github_icon_svg(20)}</a>')
 
 
-def show_alert_trigger():
-    """The price alerts, at the top of the Resumen (D-169): the same button and dialog
-    the sidebar held since D-096, now where the week's figures are."""
+def show_alert_trigger(week):
+    """The price alerts of the week shown, a red chip in the Resumen's bar (D-169, D-264): the same
+    dialog the sidebar held since D-096. The count is national, like the dialog."""
     alerts_now = read_price_alerts()
-    week = read_latest_week()
+    week = pd.Timestamp(week)
     count = int((alerts_now["week_start"] == week).sum()) if not alerts_now.empty else 0
-    with st.container(key="home_alert_bar", horizontal=True, horizontal_alignment="right",
-                      vertical_alignment="center"):
-        if st.button(f"▲  Alerta de precio · {count}", key="home_alert_trigger",
-                     help=f"{count} cambios de precio fuera de lo habitual esta semana. Abre el detalle por familia."):
-            st.session_state["home_alert_selected_family"] = None
-            show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())
+    if st.button(f"▲ {count}", key="home_alert_trigger",
+                 help=f"Alertas de precio: {count} cambios fuera de lo habitual y de al menos 10 % esta semana, "
+                      "en todo Chile. Abre el detalle por familia."):
+        st.session_state["home_alert_selected_family"] = None
+        show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())
 
 
 def show_sidebar_footer(current_window=None):

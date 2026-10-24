@@ -36,7 +36,7 @@ def read_page_title(app):
     for block in app.markdown:
         match = re.search(r'class="(?:compact-header|report-title)"><h1[^>]*>([^<]+)</h1>', block.value)
         if not match:
-            match=re.search(r'<header class="mock-intro"><div><h1>([^<]+)',block.value)
+            match=re.search(r'<span class="home-bar-title" role="heading"[^>]*>([^<]+)</span>',block.value)
         if not match:
             match = re.search(r'<h1 class="qa-h1">([^<]+)</h1>', block.value)
         if match:
@@ -269,8 +269,8 @@ def test_dashboard_territory_is_immediately_readable_without_a_3d_duplicate():
     types = {trace["type"] for figure in figures for trace in figure["data"]}
     assert "scatter3d" not in types
     texts = " ".join(block.value for block in app.markdown)
-    # D-150: four KPI tiles of equal width; the selected region sits in the subtitle.
-    assert texts.count('class="mock-kpi"') == 4 and "Todo Chile" in texts
+    # D-264: the week and three figures are chips of the bar; the place is in the week's hover.
+    assert texts.count('class="home-chip"') == 4 and "Todo Chile" in texts
     assert "Mapa en proporción real" in texts
 
 @needs_database
@@ -774,7 +774,7 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         if page not in tabbed:
             assert not app.tabs, page
         texts = " ".join(block.value for block in app.markdown)
-        assert ("<h1>¿Qué familias de alimentos subieron y bajaron?</h1>" in texts) == (page == dashboard.HOME_PAGE)
+        assert (">¿Qué familias de alimentos subieron y bajaron?</span>" in texts) == (page == dashboard.HOME_PAGE)
         # The journey lives only in Pipeline y linaje; the SAD links to it (D-247).
         assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
         # The lineage is the switch's second view, never drawn by default (step 4).
@@ -1444,11 +1444,11 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not app.exception
     alert = app.button(key="home_alert_trigger")
-    assert alert.label.startswith("▲  Alerta de precio · ")
+    assert re.fullmatch(r"▲ \d+", alert.label) and "Alertas de precio" in alert.help
     # D-169: the trigger sits on top of the Resumen, out of the sidebar.
     assert alert not in app.sidebar.button
     css = " ".join(block.value for block in app.sidebar.markdown)
-    assert ".st-key-home_alert_bar" in css
+    assert ".st-key-home_alert_trigger button" in css
     # The footer keeps only Apariencia and the GitHub mark.
     assert 'class="sidebar-github' in css
 
@@ -1595,3 +1595,22 @@ def test_d211_stack_page_shows_every_logo_linked_to_its_page_and_real_figures():
     assert "vista=Consultas+SQL" in page
     for value in stack_page.read_figures().values():
         assert stack_page.format_number(value) in page
+
+
+@needs_database
+def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_alerts():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    assert not app.exception
+    markup = " ".join(block.value for block in app.markdown)
+    # the bar replaces the shared header on this page: one path, one Volver
+    assert 'class="app-brand"' not in markup
+    assert "Negocio · BI › <b>Resumen semanal</b>" in markup
+    assert app.button(key="return_to_previous").label == "Volver"
+    assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
+    # each chip says in full what it counts, and the alerts are the week's national ones
+    for note in ("con precio en ambas semanas", "variación típica (mediana)", "sin dirección clara", "sin dato"):
+        assert note in markup, note
+    week = dashboard.read_latest_week()
+    count = int((dashboard.read_price_alerts()["week_start"] == week).sum())
+    assert app.button(key="home_alert_trigger").label == f"▲ {count}"
+    assert 'class="home-bar-updated"' in markup

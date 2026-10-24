@@ -107,13 +107,6 @@ def style(mode, palette):
     return '<style>'+css+'</style>' 
 
 
-def title(week_label, updated, loaded):
-    return ('<header class="mock-intro"><div><h1>¿Qué familias de alimentos subieron y bajaron?</h1>'
-            f'<p>Variación típica (mediana) por familia frente a la semana anterior · semana {esc(week_label)}</p></div>'
-            f'<span class="mock-updated"><i class="{"loaded" if loaded else "failed"}"></i>'
-            f'{"Actualizado" if loaded else "Carga con falla"} {esc(updated)}</span></header>')
-
-
 def metrics(counts, alert_count, alert_delta, regional=False, examples=None):
     notes = [
         'combinaciones de producto y canal cuyo precio subió',
@@ -438,32 +431,46 @@ def change_state(value):
     return 'neutral' if abs(value) < .0005 else 'rise' if value > 0 else 'fall'
 
 
-def dashboard_header(week_label, updated, loaded, family_rows, regional_rows, region,
-                     compared=None, available=None, alerts=None):
-    """Title, then four KPI tiles of equal width (D-150): every figure comes from the
-    same weekly model the charts below use, so the strip and the charts agree."""
+QUESTION = '¿Qué familias de alimentos subieron y bajaron?'
+
+
+def dashboard_bar(path, week_label, family_rows, regional_rows, region, compared=None, available=None):
+    """The Resumen's only header (D-264): one thin bar with the path, the question and the week's figures as chips.
+    Every figure comes from the same weekly model the charts below use; each chip says in full what it counts on hover.
+    The «Volver» and price-alert buttons and the time of the load are Streamlit elements beside it."""
     states = [change_state(average) for _, average, _ in family_averages(family_rows)]
     regions = [row.get('state') for row in regional_rows]
     rise, fall, mixed = regions.count('rise'), regions.count('fall'), regions.count('mixed')
     missing = len(REGION_SHORT_NAMES) - rise - fall - mixed
-    tiles = [('Precios comparados', f'{number(compared)} <small>de {number(available)}</small>'
-              if compared is not None else '—', 'con precio en ambas semanas'),
-             ('Familias', f'<b class="rise">{states.count("rise")} ↑</b> · <b class="fall">{states.count("fall")} ↓</b>'
-                          f' · {states.count("neutral")} =', 'variación típica (mediana)'),
-             ('Regiones', f'<b class="rise">{rise} ↑</b> · <b class="fall">{fall} ↓</b>',
-              f'{mixed} sin dirección clara · {missing} sin dato'),
-             ('Alertas de precio', f'<b class="alert">{number(alerts)}</b>' if alerts is not None else '—',
-              'inusuales y de al menos 10 %')]
-    place = esc(short_region(region) if region else 'Todo Chile')
-    return ('<header class="mock-intro"><div><h1>¿Qué familias de alimentos subieron y bajaron?</h1>'
-            f'<p>Variación típica (mediana) por familia frente a la semana anterior · semana {esc(week_label)} · {place}</p></div>'
-            '<div class="mock-head-side"><span class="mock-updated"><i class="'
-            + ('loaded' if loaded else 'failed') + f'"></i>{"Actualizado" if loaded else "Carga con falla"} {esc(updated)}</span>'
-            '</div></header><div class="mock-kpis">'
-            + ''.join(f'<div class="mock-kpi" title="{esc(label)}: {esc(note)}"><span>{label}</span><strong>{value}</strong>'
-                      f'<small>{note}</small></div>'
-                      for label, value, note in tiles)
+    place = short_region(region) if region else 'Todo Chile'
+    family_rise, family_fall, family_same = states.count('rise'), states.count('fall'), states.count('neutral')
+    section, _, page = path.rpartition(' › ')
+    chips = [
+        (f'Semana {week_label} · {place}',
+         esc(week_label.rsplit(' ', 1)[0]) + (f' · {esc(place)}' if region else '')),
+        (f'Precios comparados: {number(compared)} de {number(available)}, con precio en ambas semanas',
+         f'<b>{number(compared)}</b><small>/{number(available)}</small>' if compared is not None else '—'),
+        (f'Familias: {family_rise} subieron, {family_fall} bajaron y {family_same} sin cambio · variación típica (mediana)',
+         f'<em>Fam</em><b class="rise">{family_rise}↑</b><b class="fall">{family_fall}↓</b><b>{family_same}=</b>'),
+        (f'Regiones: {rise} subieron y {fall} bajaron · {mixed} sin dirección clara · {missing} sin dato',
+         f'<em>Reg</em><b class="rise">{rise}↑</b><b class="fall">{fall}↓</b>'),
+    ]
+    question = (f'{QUESTION} Variación típica (mediana) por familia frente a la semana anterior · '
+                f'semana {week_label} · {place}')
+    return ('<div class="greenocean-mockup home-bar-main">'
+            + (f'<span class="home-bar-path">{esc(section)} › <b>{esc(page)}</b></span>' if section
+               else f'<span class="home-bar-path"><b>{esc(page)}</b></span>')
+            # A heading by role: Streamlit wraps a markdown <h1> in a block of its own, which would not shrink.
+            + f'<span class="home-bar-title" role="heading" aria-level="1" title="{esc(question)}">{esc(QUESTION)}</span>'
+            + ''.join(f'<span class="home-chip" title="{esc(note)}">{value}</span>' for note, value in chips)
             + '</div>')
+
+
+def dashboard_updated(updated, loaded):
+    """The time of the latest load, at the end of the bar: a green dot, or red when it failed."""
+    state = 'Actualizado' if loaded else 'Carga con falla'
+    return (f'<span class="home-bar-updated" title="{state} {esc(updated)}"><i class="{"loaded" if loaded else "failed"}"></i>'
+            f'{esc(updated)}</span>')
 
 
 def family_movement(rows, family_link, selected_family, scope):

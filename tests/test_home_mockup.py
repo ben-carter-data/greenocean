@@ -115,12 +115,12 @@ def test_d096_sidebar_footer_shows_the_real_alert_count():
     button = app.button(key='home_alert_trigger')
     week = dashboard.read_latest_week()
     count = int((dashboard.read_price_alerts()['week_start'] == week).sum())
-    assert button.label == f'▲  Alerta de precio · {count}'
+    assert button.label == f'▲ {count}'
     dark_css = dashboard.build_sidebar_css(dashboard.charts.MODE_DARK)
     light_css = dashboard.build_sidebar_css(dashboard.charts.MODE_BLUE_LIGHT)
     assert '.st-key-home_alert_trigger button' in dark_css
-    assert 'background:transparent !important; color:#ff9ca4 !important;' in dark_css
-    assert 'background:transparent !important; color:#9d1f2c !important;' in light_css
+    assert 'background:color-mix(in srgb,#ff9ca4 14%,transparent) !important;' in dark_css
+    assert 'background:color-mix(in srgb,#9d1f2c 14%,transparent) !important;' in light_css
     assert 'box-shadow:none !important;' in dark_css
 
 

@@ -16,9 +16,6 @@
 .stApp :is([data-testid="stExpander"] details,[data-testid="stDataFrame"]) {border-radius:16px!important;}
 .stApp :is(.st-key-report_filters,.st-key-dashboard_filter_bar,.st-key-mock_filters) {border-radius:16px!important;background:color-mix(in srgb,__CARD__ 88%,__BG__)!important;border-color:__BORDER__!important;}
 .stApp [data-testid="stMain"] :is(.st-key-report_page,.st-key-market_dashboard) {gap:16px!important;}
-.stApp .greenocean-mockup .mock-intro {padding:18px 0 16px;}
-.stApp .greenocean-mockup .mock-intro h1 {font-size:clamp(26px,2.5vw,38px)!important;letter-spacing:-.045em;font-weight:500;}
-.stApp .greenocean-mockup .mock-intro p {color:var(--mock-muted);}
 .stApp .greenocean-mockup .mock-family-gallery {gap:16px;padding:14px 0;}
 .stApp .greenocean-mockup .mock-family-tile {overflow:visible;isolation:auto;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:18px;min-height:156px;padding:10px 6px;}
 .stApp .greenocean-mockup .mock-family-tile::after {display:none;}
@@ -53,8 +50,8 @@
 .stApp {font-weight:400;}
 .stApp [data-testid="stMain"] :is(h1,h2,h3,h4,.compact-header h1,.ctx-title h1,.section-title,.subsection-title) {font-weight:400!important;letter-spacing:-.022em;}
 .stApp [data-testid="stMain"] :is(b,strong) {font-weight:500;}
-.stApp :is(.mock-kpi strong,.kpi-value,.kpi-strip-value,.cover-figures dd,.oc-fact-value) {font-weight:500!important;letter-spacing:-.02em;}
-.stApp :is(.mock-kpi span,.oc-fact-label,.devops-layers-title,.sqlx-bar-label,.sqlx-side h4,.qa-step-name,.mock-scope-label) {font-weight:500!important;letter-spacing:.11em;}
+.stApp :is(.kpi-value,.kpi-strip-value,.cover-figures dd,.oc-fact-value) {font-weight:500!important;letter-spacing:-.02em;}
+.stApp :is(.oc-fact-label,.devops-layers-title,.sqlx-bar-label,.sqlx-side h4,.qa-step-name,.mock-scope-label) {font-weight:500!important;letter-spacing:.11em;}
 .stApp .greenocean-mockup :is(h1,h2,h3) {font-weight:400!important;}
 .stApp .greenocean-mockup :is(b,strong,.mock-movement-row strong) {font-weight:500;}
 .stApp .qa-page h1.qa-h1 {font-weight:400;}
@@ -63,34 +60,3 @@
 .stApp [data-testid="stButton"] button p,.stApp [data-testid="stDownloadButton"] button p,.stApp [data-testid="stPopover"]>button p {font-weight:400;}
 .stApp [data-testid="stButton"] button[kind="primary"] p {font-weight:500;}
 .stApp [data-baseweb="tab"] p {font-weight:400;}
-
-/* D-259: the header of the Resumen is one thin band; its four figures are 3D numbers in a single row, with no cards. */
-.stApp .greenocean-mockup .mock-intro {padding:2px 0 0;align-items:center;}
-.stApp .greenocean-mockup .mock-intro h1 {font-size:clamp(19px,1.7vw,24px)!important;line-height:1.15!important;}
-.stApp .greenocean-mockup .mock-intro p {font-size:12.5px!important;line-height:1.3!important;margin-top:1px!important;}
-.stApp .greenocean-mockup .mock-kpis {gap:0;margin:2px 0 6px;padding:6px 0 4px;border-top:1px solid var(--mock-border);border-bottom:1px solid var(--mock-border);}
-.stApp .greenocean-mockup .mock-kpi {display:flex;flex-direction:row;flex-wrap:wrap;align-items:baseline;column-gap:8px;row-gap:0;border:0;border-radius:0;background:transparent;box-shadow:none;padding:0 16px;min-width:0;}
-.stApp .greenocean-mockup .mock-kpi + .mock-kpi {border-left:1px solid var(--mock-border);}
-.stApp .greenocean-mockup .mock-kpi strong {flex:1 0 100%;order:-1;font-size:clamp(22px,2vw,28px)!important;font-weight:800!important;line-height:1.15;letter-spacing:-.01em!important;white-space:nowrap;
-  text-shadow:1px 1px 0 color-mix(in srgb,var(--mock-ink) 30%,transparent),2px 2px 0 color-mix(in srgb,var(--mock-ink) 22%,transparent),3px 3px 3px color-mix(in srgb,var(--mock-ink) 14%,transparent);}
-.stApp .greenocean-mockup .mock-kpi strong b {text-shadow:inherit;font-weight:800;}
-.stApp .greenocean-mockup .mock-kpi span {font-size:11px;line-height:1.3;white-space:nowrap;letter-spacing:.06em!important;}
-.stApp .greenocean-mockup .mock-kpi > small {font-size:11.5px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
-.stApp .greenocean-mockup .mock-kpi strong small {font-size:13px;font-weight:600;white-space:nowrap;text-shadow:none;}
-@media (max-width:900px) {.stApp .greenocean-mockup .mock-kpi + .mock-kpi {border-left:0;}}
-.stApp .st-key-home_alert_bar {margin:-6px 0 -38px!important;position:relative;z-index:3;}
-.stApp .greenocean-mockup .mock-head-side {justify-content:flex-end;align-self:stretch;}
-.stApp .greenocean-mockup .mock-intro {min-height:46px;}
-
-/* D-263: thinner still. The title is smaller and each figure is its 3D number with its label and note in two small lines
-   beside it, so the strip is one number high. A figure that does not fit goes to a second row; each shows its note on hover. */
-.stApp .greenocean-mockup .mock-intro {min-height:38px;padding:0;}
-.stApp .greenocean-mockup .mock-intro h1 {font-size:clamp(17px,1.35vw,20px)!important;line-height:1.15!important;}
-.stApp .greenocean-mockup .mock-intro p {font-size:12px!important;line-height:1.25!important;margin-top:0!important;}
-.stApp .greenocean-mockup .mock-kpis {display:flex;flex-wrap:wrap;row-gap:4px;margin:2px 0 6px;padding:3px 0;}
-.stApp .greenocean-mockup .mock-kpi {flex:1 1 auto;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:9px;align-items:center;padding:0 14px;}
-.stApp .greenocean-mockup .mock-kpi strong {grid-row:1 / span 2;font-size:clamp(17px,1.4vw,21px)!important;line-height:1.1;
-  text-shadow:1px 1px 0 color-mix(in srgb,var(--mock-ink) 30%,transparent),2px 2px 2px color-mix(in srgb,var(--mock-ink) 16%,transparent);}
-.stApp .greenocean-mockup .mock-kpi span {grid-column:2;font-size:10px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;}
-.stApp .greenocean-mockup .mock-kpi > small {grid-column:2;font-size:11px;line-height:1.25;}
-.stApp .greenocean-mockup .mock-kpi strong small {font-size:11px;}
