@@ -1705,8 +1705,9 @@ def show_app_header(window):
     }}
     </style>""", unsafe_allow_html=True)
     view = read_current_view(window)
-    # The Resumen (D-264) and the main pages (D-267) draw the path and Volver in their own bar.
-    if view not in BAR_VIEWS:
+    # The Resumen (D-264) and the main pages (D-267) draw the path and Volver in their own bar. The documents have
+    # neither (D-269): the menu, always in sight, already says where the reader is and takes them anywhere.
+    if view not in BAR_VIEWS | DOCUMENT_VIEWS:
         with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
             st.markdown(f'<div class="app-brand" aria-label="Página actual">{html.escape(build_view_path(window, view))}</div>',
                         unsafe_allow_html=True)
@@ -1720,6 +1721,10 @@ def show_app_header(window):
 # The pages whose only header is one thin bar (D-264, D-267).
 BAR_VIEWS = {PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS,
              PAGE_SECURITY, PAGE_STACK}
+
+
+# The project documents: no path row and no Volver (D-269).
+DOCUMENT_VIEWS = {PAGE_DOCUMENTATION, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY, PAGE_SECURITY_PLAN}
 
 
 def build_view_path(window, view):
@@ -6631,8 +6636,8 @@ def show_scalability_page(mode):
     # D-210: the section left the two-page SAD for the decision log, unchanged.
     text = (project.PROJECT_DIR / "docs" / "DECISIONES.md").read_text(encoding="utf-8")
     match = re.search(r"^### Escalabilidad\n(.*?)(?=^##|\Z)", text, re.MULTILINE | re.DOTALL)
-    show_compact_page_header(PAGE_SCALABILITY, "Qué se agregaría y cuándo: clima previsto; nube solo con datos "
-                             "de una empresa (ADR-31).")
+    show_compact_page_header(PAGE_SCALABILITY, "Qué se le podría agregar, qué cedería primero si creciera y cuándo "
+                             "valdría la pena una nube (ADR-31).")
     show_document_actions("Sección completa en docs/DECISIONES.md", project.build_github_url("docs/DECISIONES.md"))
     with st.container(key="project_document"):
         st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/DECISIONES.md.")

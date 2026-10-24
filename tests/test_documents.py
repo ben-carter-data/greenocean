@@ -102,3 +102,21 @@ def test_d252_the_security_plan_counts_the_attacks_its_tests_run():
     attacks = {case[0]: case[2] for case in security_plan.CASES}
     assert attacks["S-01"].startswith(f"{len(test_security.FILE_ATTACKS)} consultas SQL")
     assert attacks["S-02"].startswith(f"{len(test_security.ENGINE_ATTACKS)} órdenes directas")
+
+
+def test_d269_the_documents_count_the_quality_indicators_and_dimensions_the_panel_measures():
+    from bi import quality_live
+    indicators = quality_live.build_indicators(quality_live.read_measures())
+    count, dimensions = len(indicators), len({row[0] for row in indicators})
+    words = {6: "seis", 11: "Once"}
+    sad = (DOCS_DIR / "SAD.md").read_text(encoding="utf-8")
+    assert f"{words[count]} indicadores, repartidos en {words[dimensions]} dimensiones" in sad
+    assert f"los {count} indicadores de calidad" in (DOCS_DIR / "PRD.md").read_text(encoding="utf-8")
+
+
+def test_d269_the_documents_say_where_a_failed_load_is_recorded():
+    """A failed load stops before the commit: etl_run keeps only published loads, GitHub Actions keeps the failures."""
+    for name in ("PRD.md", "ADR.md"):
+        text = (DOCS_DIR / name).read_text(encoding="utf-8")
+        assert "queda registrada como fallida" not in text, name
+        assert "avisa al autor por correo" in text, name

@@ -1,6 +1,6 @@
 # GreenOcean · Registros de decisiones de arquitectura (ADR)
 
-Versión del 23-10-2026. Las diez decisiones que más pesan en la arquitectura, cada una con su contexto, la decisión, las alternativas consideradas y sus consecuencias. Cada ADR conserva su número original y apunta a su entrada D-xxx de `docs/DECISIONES.md`, que tiene el detalle completo.
+Versión del 24-10-2026. Estas son las diez decisiones que más pesan en la arquitectura. Cada una cuenta el problema que había, lo que se decidió, qué otras opciones había y qué se gana y se pierde con ella. Los números saltan porque cada ADR conserva el suyo original; las decisiones menores están en `docs/DECISIONES.md`, y cada ADR apunta a su entrada D-xxx con el detalle completo.
 
 ## ADR-01 · Usar solo los archivos oficiales de ODEPA y del INE
 
@@ -24,7 +24,7 @@ Versión del 23-10-2026. Las diez decisiones que más pesan en la arquitectura, 
 - **Contexto:** cada CSV anual de ODEPA pesa hasta unos 65 MB y la base cruda de todos los años pesa cientos de MB; GitHub rechaza archivos de más de 100 MB y el repositorio crecería en cada carga.
 - **Decisión:** los CSV y la base de aterrizaje (`etl/raw.db`) se reconstruyen en cada carga y quedan fuera del repositorio. Solo se versionan la base servida, el respaldo y el registro de descargas (`manifest.json`, con la huella SHA-256 de cada archivo).
 - **Alternativas:** versionar todo; usar almacenamiento de archivos grandes.
-- **Consecuencias:** el repositorio se mantiene liviano y cada archivo descargado se puede verificar contra su huella. Quien clone el proyecto debe ejecutar el agente para tener los datos crudos; los indicadores sí vienen incluidos.
+- **Consecuencias:** el repositorio no carga con los cientos de MB de datos crudos, y cada archivo descargado se puede verificar contra su huella. Quien clone el proyecto debe ejecutar el agente para tener los datos crudos; los indicadores sí vienen incluidos. La base servida y el respaldo sí se versionan, así que cada carga agrega una versión nueva de ambos al historial de Git; cómo se contendría ese crecimiento está en la página Escalabilidad.
 
 ## ADR-10 · Reconstruir todo en cada carga
 
@@ -38,16 +38,16 @@ Versión del 23-10-2026. Las diez decisiones que más pesan en la arquitectura, 
 
 - **Estado:** aceptada (D-029, D-154).
 - **Contexto:** un archivo truncado o una regla rota no deben llegar nunca al panel.
-- **Decisión:** la base servida se reemplaza solo si pasan todas las pruebas de dbt, si la carga lee al menos el 90 % de las filas de la última carga correcta y si pytest pasa sobre la base nueva. Si algo falla, la carga queda registrada como fallida y la base publicada no cambia.
+- **Decisión:** la base servida se reemplaza solo si pasan todas las pruebas de dbt, si la carga lee al menos el 90 % de las filas de la última carga correcta y si pytest pasa sobre la base nueva. Si algo falla, la base publicada no cambia: el workflow se detiene antes de subirla, GitHub Actions marca la ejecución en rojo y avisa al autor por correo.
 - **Alternativas:** límites fijos de filas por semana.
-- **Consecuencias:** el panel siempre muestra la última carga válida. La primera carga no tiene con qué compararse y un archivo duplicado no se detecta por conteo; lo detectan las pruebas de unicidad.
+- **Consecuencias:** el panel siempre muestra la última carga válida. Como la falla se detiene antes de subir nada, `etl_run` guarda solo las cargas publicadas; las fallidas quedan en el historial de GitHub Actions, que el Centro de operación muestra paso a paso. La primera carga no tiene con qué compararse y un archivo duplicado no se detecta por conteo; lo detectan las pruebas de unicidad.
 
 ## ADR-19 · Modelo estrella con una dimensión de fechas sin huecos
 
 - **Estado:** aceptada (D-023, D-095).
 - **Contexto:** comparar un precio con la misma época de otros años exige saber, para cada semana, su semana ISO, su mes y su estación, aunque esa semana no tenga precios.
 - **Decisión:** un modelo estrella con `weekly_price` al centro y las dimensiones de producto, región, canal y fecha; `dim_date` tiene una fila por semana, sin huecos, desde la primera hasta la última.
-- **Alternativas:** no se registró una alternativa en su momento.
+- **Alternativas:** en su momento no se registró ninguna. La opción obvia habría sido una sola tabla ancha con el nombre del producto, la región y el canal repetidos en cada fila: más simple de consultar, pero más pesada y sin un calendario propio para las semanas sin precios.
 - **Consecuencias:** los cálculos por época y el IPC semanal se unen por `week_start` con una clave foránea real. Las tablas y columnas van en inglés, así que el modelo no coincide letra por letra con los nombres del diseño original.
 
 ## ADR-30 · Parquet, dbt Core y DuckDB

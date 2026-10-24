@@ -129,7 +129,7 @@ TOOLTIPS = {
                   "cada prueba de dbt en la última carga.",
     "Logs del agente": "Un archivo de texto por ejecución con lo que hizo la descarga.",
     "Correo de GitHub": "GitHub avisa por correo al autor si el workflow semanal falla.",
-    "Centro de control": "Página del panel con el historial de ejecuciones en vivo.",
+    "Centro de operación": "Página del panel con el historial de ejecuciones en vivo.",
     "ODEPA e INE · CSV": "Archivos CSV publicados por ODEPA y por el INE, descargados por "
                          "HTTPS; ninguna de las dos fuentes ofrece una API en el flujo "
                          "utilizado por el proyecto.",
@@ -760,7 +760,7 @@ def build_observability(states, figures, palette):
              ("dbt_result", "DuckDB · linaje y pruebas", None),
              ("Logs del agente", "Python · por ejecución", None),
              ("Correo de GitHub", "GitHub · si el job falla", None),
-             ("Centro de control", "Streamlit · historial", None)]
+             ("Centro de operación", "Streamlit · historial", None)]
     spacing = (width - 60) / len(items)
     return (build_band(left, 618, width, 72, "OBSERVABILIDAD — cómo sabemos qué pasó",
                        palette["text"], palette)
@@ -1013,7 +1013,7 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
                                          state))
     observability = [("etl_run", "DuckDB · una fila por carga", states.get("etl_run")),
                      ("dbt_result", "DuckDB · linaje y pruebas", None),
-                     ("Centro de control", "Streamlit · historial", None)]
+                     ("Centro de operación", "Streamlit · historial", None)]
     band_y = last_y + half + 44
     height = band_y + 26 + (len(observability) - 1) * 40 + 36
     parts.append(build_vertical_band(band_y, "OBSERVABILIDAD — qué pasó",

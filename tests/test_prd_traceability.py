@@ -36,8 +36,8 @@ def assert_reference_exists(reference):
 
 
 def test_every_business_question_names_a_screen_of_the_menu_and_evidence_that_exists():
-    rows = read_table("4. Preguntas de negocio")
-    assert [row[0] for row in rows] == ["P-1", "P-2", "P-3", "P-4"]
+    rows = read_table("5. Preguntas de negocio")
+    assert [row[0] for row in rows] == ["P-1", "P-2", "P-3", "P-4", "P-5"]
     examples = {title for title, *_ in sql_explorer.EXAMPLES}
     for identifier, question, screen, evidence in rows:
         page, _, example = screen.partition(" · ")
@@ -51,8 +51,8 @@ def test_every_business_question_names_a_screen_of_the_menu_and_evidence_that_ex
 
 
 def test_every_requirement_has_a_measurable_criterion_and_evidence_that_exists():
-    rows = read_table("5. Requisitos")
-    assert [row[0] for row in rows] == ["RF-01", "RF-02", "RF-03", "RF-04", "RNF-01", "RNF-02"]
+    rows = read_table("6. Requisitos")
+    assert [row[0] for row in rows] == [f"RF-0{n}" for n in range(1, 9)] + [f"RNF-0{n}" for n in range(1, 7)]
     for identifier, requirement, criterion, evidence in rows:
         assert criterion and re.search(r"\d|=|≤|Ningún|Ninguna|cada", criterion), identifier
         references = REFERENCE.findall(evidence)
@@ -62,10 +62,10 @@ def test_every_requirement_has_a_measurable_criterion_and_evidence_that_exists()
 
 
 def test_the_use_cases_follow_the_prd_and_each_points_to_a_real_screen():
-    users = {row[0] for row in read_table("3. Usuarios")}
+    users = {row[0] for row in read_table("4. Usuarios")}
     actors = {actor for actor, *_ in doc_views.USER_CASES}
     assert actors == users  # the four profiles of «3. Usuarios», nothing else
-    questions = {row[0]: row for row in read_table("4. Preguntas de negocio")}
+    questions = {row[0]: row for row in read_table("5. Preguntas de negocio")}
     for actor, row, case, identifier, screen in doc_views.USER_CASES + doc_views.SYSTEM_CASES:
         page = screen.partition(" · ")[0]
         assert page in menu_labels() or page == "GitHub, fuera del panel", (case, page)

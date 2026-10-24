@@ -75,7 +75,13 @@ def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
     assert set(charts.THEMES) == {word for row in doc_views.MOCKUPS for word in charts.THEMES if word in row[2]}
     for file_name, *_ in doc_views.MOCKUPS:
         assert (doc_views.MOCKUP_DIR / file_name).exists(), file_name
-    assert any(row[3] == "phone" for row in doc_views.MOCKUPS)
+    # D-269: each capture is a main page of the menu at the desktop size, one per profile of the PRD.
+    from PIL import Image
+    from bi import dashboard
+    menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.MENU_ORDER}
+    for file_name, title, _ in doc_views.MOCKUPS:
+        assert title.split(" · ", 1)[1] in menu, title
+        assert Image.open(doc_views.MOCKUP_DIR / file_name).size == (1440, 900), file_name
     for file_name, *_ in doc_views.MOCKUPS:
         assert (doc_views.MOCKUP_DIR / file_name).stat().st_size < 400_000
 

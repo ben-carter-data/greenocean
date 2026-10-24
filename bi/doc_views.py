@@ -180,7 +180,7 @@ USER_CASES = [
     ("Analista de pricing", 1, "Saber si el precio de hoy es normal para la época", "P-2", "Consultas SQL · Precio vs. época"),
     ("Analista de pricing", 2, "Ver qué alimentos subieron más que la inflación", "P-4", "Precios e inflación"),
     ("Compras y abastecimiento", 3, "Ver cuánto paga el consumidor sobre el mayorista", "P-3", "Consultas SQL · Brecha mayorista"),
-    ("Revisor técnico", 4, "Comprobar la calidad, las pruebas, el linaje y la documentación", "", "Calidad y auditoría"),
+    ("Revisor técnico", 4, "Comprobar que las cifras son confiables", "P-5", "Calidad y auditoría"),
 ]
 SYSTEM_CASES = [
     ("GitHub Actions", 0, "Cargar y publicar cada martes", "RF-01 a RF-04", "Centro de operación"),
@@ -414,23 +414,22 @@ svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
 
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 MOCKUPS = [
-    ("m1-resumen-vantablack.jpg", "M-1 · Resumen semanal", "tema Vantablack · computador", "laptop"),
-    ("m2-precios-darkgrey.jpg", "M-2 · Precios e inflación", "tema Dark Grey · computador", "laptop"),
-    ("m3-sql-corporativo.jpg", "M-3 · Consultas SQL", "tema Corporativo · computador", "laptop"),
-    ("m4-telefono-bluelight.jpg", "M-4 · Resumen semanal", "tema Blue Light · teléfono horizontal", "phone"),
+    ("m1-resumen-vantablack.jpg", "M-1 · Resumen semanal", "tema Vantablack"),
+    ("m2-precios-darkgrey.jpg", "M-2 · Precios e inflación", "tema Dark Grey"),
+    ("m3-sql-corporativo.jpg", "M-3 · Consultas SQL", "tema Corporativo"),
+    ("m4-calidad-bluelight.jpg", "M-4 · Calidad y auditoría", "tema Blue Light"),
 ]
 
 
 def build_mockups_html(mode):
-    """The four captures in a computer or phone frame, two per row."""
+    """The four captures of the panel, one per theme, in a computer frame, two per row."""
     palette = charts.get_palette(mode)
     figures = []
-    for file_name, title, detail, device in MOCKUPS:
+    for file_name, title, detail in MOCKUPS:
         data = base64.b64encode((MOCKUP_DIR / file_name).read_bytes()).decode()
         image = f'<img src="data:image/jpeg;base64,{data}" alt="{esc(title)}">'
-        frame = (f'<div class="screen">{image}</div><div class="base"></div>' if device == "laptop"
-                 else f'<div class="phone">{image}</div>')
-        figures.append(f'<figure class="{device}">{frame}<figcaption><b>{esc(title)}</b> · {esc(detail)}</figcaption></figure>')
+        frame = f'<div class="screen">{image}</div><div class="base"></div>'
+        figures.append(f'<figure>{frame}<figcaption><b>{esc(title)}</b> · {esc(detail)}</figcaption></figure>')
     css = f"""<style>
 * {{ box-sizing:border-box; }}
 html, body {{ margin:0; background:transparent; font:300 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color:{palette['text']}; }}
@@ -441,9 +440,6 @@ figcaption {{ margin-top:10px; color:{palette['reference']}; }} figcaption b {{ 
   background:#000; box-shadow:0 22px 40px rgba(0,0,0,.45); }}
 .screen img {{ display:block; width:100%; }}
 .base {{ width:100%; height:11px; background:linear-gradient(#c3c9d2,#7d8590); border-radius:0 0 14px 14px; }}
-.phone {{ width:92%; margin:0 auto; padding:9px 26px; background:#111418; border:2px solid #2f353d; border-radius:34px;
-  box-shadow:0 22px 40px rgba(0,0,0,.45); }}
-.phone img {{ display:block; width:100%; border-radius:18px; }}
 @media (max-width:640px) {{ .grid {{ grid-template-columns:1fr; }} }}
 </style>"""
     return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'

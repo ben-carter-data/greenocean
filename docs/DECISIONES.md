@@ -1574,12 +1574,22 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 
 ### Escalabilidad
 
-La arquitectura está pensada para crecer cambiando configuración, no código. Lo que sigue es una proyección, no una entrega.
+GreenOcean está hecho a la medida de lo que hace hoy: datos públicos, semanales y de pocos megabytes, leídos por un solo panel. Esta página dice qué se le podría agregar, qué se resentiría primero si creciera y cuándo valdría la pena una nube. Es una proyección, no una entrega.
 
-| Extensión | Fuente | Estado | Cómo entraría |
-|---|---|---|---|
-| Clima por región y semana | Fuente oficial por definir | Prevista | Nueva carpeta de bronce, un staging y un mart por semana y región, junto a las alertas K6, sin afirmar causalidad |
-| Warehouse en la nube | — | No adoptado | Un nuevo destino en la configuración de dbt, con los mismos modelos y la misma auditoría |
+**Qué se le podría agregar.** Una fuente nueva entra como entraron las actuales: una carpeta en el bronce y sus modelos de dbt, sin tocar los que ya existen.
+
+| Extensión | Estado | Cómo entraría |
+|---|---|---|
+| Clima por región y semana | Prevista; fuente oficial por definir | Un staging y un mart por semana y región, al lado de las alertas de precio, sin afirmar que el clima cause un precio |
+| Warehouse en la nube | No adoptado (ADR-31) | Un destino nuevo en la configuración de dbt, con los mismos modelos y la misma auditoría |
+
+**Qué cedería primero.**
+
+| Límite | Hoy | Qué se haría |
+|---|---|---|
+| Historial de Git | Cada carga sube una versión nueva de la base servida y del respaldo; a este ritmo, el historial crece cerca de 1 GB por año | Retirar del repositorio el respaldo SQLite, el más pesado, o guardar las bases como archivos de cada versión (*releases*) en vez de en el historial |
+| Duración de la carga | Cada carga rehace la historia completa desde 2022 (ADR-10), así que tarda un poco más cada año | Pasar a cargas incrementales cuando el tiempo lo justifique |
+| Visitantes a la vez | Una aplicación gratuita de Streamlit que lee un archivo pequeño en solo lectura | Si varios equipos lo usaran a diario, el plan gratuito se quedaría corto: es uno de los umbrales de la tabla siguiente |
 
 **¿Por qué no hay nube?** Con datos públicos, semanales y de pocos megabytes, leídos por un solo panel, un warehouse en la nube agregaría costo, secretos y riesgos de vencimiento sin beneficio (ADR-31). Se justificaría solo si una empresa sumara sus propios datos:
 
@@ -2012,3 +2022,17 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Resultado:** ninguna página desborda a lo ancho y ninguna barra recorta texto en esas seis medidas. A 1440 × 900 y 1920 × 1080 todas las barras siguen en una línea y las páginas caben sin desplazar.
 - **Se deja así (menor):** en pantallas más bajas que 900 px, las páginas con un diagrama de alto fijo (Calidad, seguridad, el Centro de operación) se desplazan un poco, y las pestañas Operación, CI/CD y Monitoreo del Centro de operación pasan la pantalla, como se informó en D-267.
 - **Pruebas:** `tests/test_page_bar.py::test_d268_*`.
+
+## D-269 · Los documentos, revisados contra el producto: PRD, SAD, ADR y Escalabilidad
+
+- **Pedido del autor:** dejar los documentos impecables, porque los revisará gente importante: que cubran todo el producto creado, que sean rigurosos y coherentes con el proyecto, y que estén escritos de la forma más humana posible. La captura M-4 del PRD no representaba el panel. Las páginas de documentos no necesitan flecha de retorno, porque el menú está siempre a la vista.
+- **Una afirmación falsa, corregida:** el PRD (RF-03) y el ADR-11 decían que una carga fallida «queda registrada como fallida». En producción no es así: `pipeline.py` anota la falla en su copia, pero el workflow se detiene antes de subirla, así que `etl_run` guarda solo las cargas publicadas. Los documentos dicen ahora dónde queda la falla: en el historial de GitHub Actions, que avisa al autor por correo y que el Centro de operación muestra paso a paso.
+- **PRD:** objetivos nuevos; una quinta pregunta de negocio, la del revisor técnico («¿Puedo confiar en estas cifras?» → Calidad y auditoría); los requisitos pasan de 6 a 14. Se agregan, cada uno con su criterio medible y las pruebas que ya lo comprobaban: alertas de precio, consultas SQL de solo lectura con sus límites, carga manual protegida, informe semanal, trazabilidad de cada cifra, seguridad, calidad vigilada en cada cambio, lectura en tableta y una pantalla por página. Una sección nueva de supuestos y límites: el promedio simple de las regiones, la ausencia de predicciones y de causas, el IPC provisional, la dependencia de las fuentes y de los planes gratuitos.
+- **Pantallas:** las cuatro capturas se retomaron de las páginas actuales. M-4 deja el Resumen en el teléfono por Calidad y auditoría (tema Blue Light), la pantalla del revisor técnico, así hay una por perfil del PRD. Se retira el marco de teléfono, que ya no usaba ninguna captura.
+- **SAD:** cuatro secciones nuevas: los cinco principios que explican las decisiones, la vista de ejecución (la carga de cada martes paso a paso, con su compuerta y qué pasa si algo falla), calidad y observabilidad (las tres puertas, los once indicadores y los cuatro lugares donde queda el rastro de cada carga), y los riesgos técnicos con su mitigación actual. La sección de datos explica las capas en una frase cada una.
+- **ADR:** además del ADR-11, el ADR-19 deja de decir «no se registró una alternativa» sin más: lo sigue reconociendo y nombra la opción obvia (una tabla ancha), sin inventar que se evaluó. El ADR-04 agrega su consecuencia real: la base servida y el respaldo se versionan en cada carga.
+- **Escalabilidad:** decía que el proyecto crecía «cambiando configuración, no código», y su propia tabla agregaba modelos nuevos. Ahora dice lo que es: una fuente nueva entra con sus modelos sin tocar los existentes. Agrega qué cedería primero: el historial de Git (cada carga sube las dos bases; medido, cerca de 1 GB por año), la duración de la carga y los visitantes simultáneos, con qué se haría en cada caso.
+- **Navegación:** las páginas de documentos (PRD, SAD, ADR, Escalabilidad y Plan de pruebas de seguridad) ya no tienen la fila de ruta con «Volver». Las vistas que los documentos enlazan conservan su «Volver» en la barra (D-267), así quien sigue un enlace puede regresar.
+- **Coherencia:** el diagrama del pipeline llamaba «Centro de control» a la página que el menú llama «Centro de operación».
+- **Sin cambios:** el Plan de pruebas de seguridad, revisado sin hallazgos.
+- **Pruebas:** `tests/test_prd_traceability.py` (cinco preguntas y catorce requisitos, cada evidencia existe), `tests/test_doc_diagrams.py` (cada captura es una página del menú a 1440 × 900), `tests/test_documents.py::test_d269_*` (el número de indicadores y de dimensiones del PRD y el SAD es el que mide el panel; ningún documento dice que una falla queda registrada en la base).
