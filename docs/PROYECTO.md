@@ -1,6 +1,6 @@
 # Guía del proyecto
 
-Textos de Definición del proyecto, Indicadores, Reglas, Glosario y DevOps y seguridad. El dashboard abre con los resultados; Pipeline y arquitectura tiene su propia sección. El panel lee este archivo: para cambiar una explicación se cambia aquí. Las reglas (RN), los indicadores (K) y las preguntas (P) se leen de `DISENO.md`; las cifras salen de la base.
+Textos de Definición del proyecto, Indicadores, Reglas, Glosario y DevOps y seguridad. El dashboard abre con los resultados; Pipeline y linaje tiene su propia sección. El panel lee este archivo: para cambiar una explicación se cambia aquí. Las reglas (RN), los indicadores (K) y las preguntas (P) se leen de `DISENO.md`; las cifras salen de la base.
 
 ## Marco de negocio
 
@@ -36,7 +36,7 @@ Solo hay margen cuando las dos fuentes coinciden en clave, región, semana y uni
 
 ## Modelo de datos
 
-El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con los precios semanales al centro y tres dimensiones alrededor. Dos tablas aparte registran cada ejecución y sus rechazos.
+El data warehouse (`etl/datos.duckdb`, la base servida) es un modelo estrella: una tabla de hechos con los precios semanales al centro y cuatro dimensiones alrededor (producto, región, canal y fecha). Aparte, tres tablas guardan el IPC del INE y dos registran cada carga y sus rechazos.
 
 - `weekly_price`: un precio por semana, producto, región, canal y unidad. Es la tabla de hechos que leen todos los indicadores.
 - `dim_product`: cada clave de producto: grupo, producto, variedad y calidad.
@@ -101,7 +101,7 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 
 | Pieza | Qué hace | Archivo |
 |---|---|---|
-| Workflow semanal | Cada martes a las 12:00 UTC descarga, ejecuta el ETL, corre los tests, guarda el data warehouse y publica el informe. Si un paso falla, los siguientes no corren (D-034). | .github/workflows/semanal.yml |
+| Workflow semanal | Cada martes a las 12:00 UTC descarga, ejecuta el ETL de respaldo, construye y prueba el data warehouse con dbt, corre los tests contra la base nueva, la guarda y publica el informe. Si un paso falla, los siguientes no corren (D-034). | .github/workflows/semanal.yml |
 | Tests en cada push | `pytest` corre en cada push y pull request. Streamlit publica la rama `main` en paralelo, sin esperar el resultado: una prueba en rojo avisa, no detiene la publicación. | .github/workflows/pruebas.yml |
 | Caché de años cerrados | Los archivos de años que ya no cambian se guardan en la caché de GitHub Actions (D-047). | .github/workflows/semanal.yml |
 | Despliegue continuo | Streamlit Community Cloud publica el panel desde la rama `main`: cada push lo actualiza. | requirements.txt |
@@ -111,8 +111,8 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 
 | Medida | Qué protege | Archivo |
 |---|---|---|
-| Base en solo lectura | El panel abre `datos.db` con `mode=ro`: ninguna página puede cambiar los datos. | bi/queries.py |
-| Secretos fuera del código | La clave de GitHub y el código de acceso de «Ejecutar ahora» viven en los secretos del panel; el código compara el código de acceso en tiempo constante. | bi/dashboard.py |
+| Base en solo lectura | El panel abre `etl/datos.duckdb` en solo lectura (`read_only=True`); el estudio SQL, además, sin acceso a archivos ni a internet y con la configuración bloqueada: ninguna página puede cambiar los datos. | bi/queries.py |
+| Secretos fuera del código | La clave de GitHub y el código de acceso de «Ejecutar ahora» viven en los secretos del panel; el código compara el código de acceso en tiempo constante y bloquea 15 minutos tras 5 intentos fallidos. | bi/control.py |
 | Permisos mínimos del workflow | El job semanal solo puede escribir contenido (el commit de la base) y crear issues (el informe). | .github/workflows/semanal.yml |
 | Datos crudos fuera del repositorio | Los CSV descargados, `raw.db` y los logs no se suben a GitHub (D-020). | .gitignore |
 
@@ -120,10 +120,10 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 
 | Fuente | Qué registra | Dónde se ve |
 |---|---|---|
-| Tabla `etl_run` | Una fila por carga: inicio, estado, filas leídas, cargadas y rechazadas. | Calidad de datos |
-| Tabla `rejection` | Cada fila rechazada con su motivo (RN-11). | Calidad de datos |
+| Tabla `etl_run` | Una fila por carga: inicio, estado, filas leídas, cargadas y rechazadas. | Calidad y auditoría |
+| Tabla `rejection` | Cada fila rechazada con su motivo (RN-11). | Calidad y auditoría |
 | Logs del agente | Un archivo por ejecución de la ingesta, con una línea por archivo descargado y su resultado. | agent/logs |
-| Historial de GitHub Actions | Cada ejecución del workflow con el resultado de cada paso. | Ejecuciones |
+| Historial de GitHub Actions | Cada ejecución del workflow con el resultado de cada paso. | Centro de operación |
 | Correo de GitHub | Aviso al autor si el job semanal falla. | Correo |
 
 ## Informes
@@ -131,7 +131,7 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 | Informe | Qué contiene | Cuándo |
 |---|---|---|
 | Issue «Informe semanal AAAA-MM-DD» | Estado de la carga, filas leídas, cargadas y rechazadas, cobertura del cruce (K7) y alertas de la semana (K6). | Cada martes, solo si todos los pasos anteriores pasaron. |
-| Este panel | Las cifras de la última carga, leídas de `datos.db` en cada visita. | Uno o dos minutos después del commit semanal. |
+| Este panel | Las cifras de la última carga, leídas de `etl/datos.duckdb` en cada visita. | Uno o dos minutos después del commit semanal. |
 
 ## Glosario
 
@@ -139,9 +139,9 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 |---|---|---|---|
 | ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Dashboard, Arquitectura | Fuentes |
 | CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Arquitectura | Fuentes |
-| Pipeline | El flujo completo de cada martes, de ODEPA al panel: descarga, ETL, pruebas, guardado e informe. | Dashboard, Arquitectura | Pipeline |
+| Pipeline | El flujo completo de cada martes, de ODEPA al panel: descarga, ETL de respaldo, construcción con dbt, pruebas, guardado e informe. | Dashboard, Arquitectura | Pipeline |
 | Ingesta | La descarga de los archivos de ODEPA; la hace el agente de ingesta (`agent/agent.py`), que revisa que cada archivo traiga las columnas esperadas. | Arquitectura | Pipeline |
-| ETL | Extraer, transformar y cargar (`etl/etl.py`): limpia los datos, aplica las reglas y los guarda. | Arquitectura, Monitoreo y Ejecuciones | Pipeline |
+| ETL | Extraer, transformar y cargar. `etl/etl.py` limpia los datos y aplica las reglas para el respaldo `etl/datos.db`; las mismas reglas corren en dbt para la base servida. | Arquitectura, Monitoreo y Ejecuciones | Pipeline |
 | Data quality checks | Los controles que detienen la carga si algo no cuadra. | Reglas de calidad, Monitoreo y Ejecuciones | Pipeline |
 | Job, workflow | Tarea automática de GitHub Actions; el job semanal (`semanal.yml`) ejecuta el pipeline cada martes. | Arquitectura, Monitoreo y Ejecuciones | Pipeline |
 | Cron | La programación del job semanal: cada martes a las 12:00 UTC. | Monitoreo y Ejecuciones | Pipeline |
@@ -149,8 +149,8 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 | Tests, CI | Las pruebas automáticas (tests); la integración continua (CI) las corre solas en cada cambio del código (`pruebas.yml`). | DevOps y seguridad | Pipeline |
 | Commit, push | Guardar un cambio en el historial del código, y subirlo a GitHub. | Arquitectura | Pipeline |
 | Issue | Publicación en GitHub; aquí, el informe semanal. | Monitoreo y Ejecuciones | Pipeline |
-| Bronce, plata, oro | Las capas de los datos: tal como llegan (bronce o staging, `raw.db`, que se reconstruye en cada ejecución y no se sube al repositorio), limpios con reglas (plata) y listos para analizar (oro). | Arquitectura | Base de datos |
-| Data warehouse | La base lista para analizar (`datos.db`), con el modelo estrella. | Arquitectura | Base de datos |
+| Bronce, plata, oro | Las capas de los datos: el aterrizaje (`etl/raw.db`, las filas tal como llegan, que no se sube al repositorio), bronce (Parquet, copia exacta), plata (staging e intermedio de dbt: tipos, reglas y marcas) y oro (marts: el modelo estrella que lee el panel). | Arquitectura | Base de datos |
+| Data warehouse | La base lista para analizar (`etl/datos.duckdb`, la base servida), con el modelo estrella. | Arquitectura | Base de datos |
 | PK | Clave primaria: la columna que identifica cada fila de una tabla. | Modelo de datos | Base de datos |
 | FK | Clave foránea: la columna que apunta a la clave primaria de otra tabla. | Modelo de datos | Base de datos |
 | JOIN | Unión de dos tablas por su clave. | Arquitectura, Datos y SQL | Base de datos |
@@ -160,4 +160,4 @@ El data warehouse (`datos.db`) es un modelo estrella: una tabla de hechos con lo
 | Alertas, notificaciones | Las alertas K6 de precios, y el correo de GitHub cuando el job semanal falla. | Análisis, Monitoreo y Ejecuciones | Indicadores |
 | API | La puerta por la que un programa habla con otro; el panel la usa para consultar GitHub. | Monitoreo y Ejecuciones | Conexiones |
 | HTTPS | Conexión web cifrada. | Arquitectura | Conexiones |
-| UTC | Hora universal; el job corre a las 12:00 UTC, 09:00 en Chile. | Arquitectura | Conexiones |
+| UTC | Hora universal; el job corre a las 12:00 UTC: las 09:00 en Chile en horario de verano y las 08:00 en invierno. | Arquitectura | Conexiones |

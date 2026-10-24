@@ -19,7 +19,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 | Panel y pruebas | `pip install -r requirements.txt` |
 | Pipeline con dbt | `pip install -r requirements-pipeline.txt` (dbt no se instala en Python 3.14: usar 3.11 o 3.12) |
 | Abrir el panel | `streamlit run bi/dashboard.py` |
-| Pruebas | `python -m pytest -q` (unas 640, entre 2 y 4 minutos) |
+| Pruebas | `python -m pytest -q` (unas 585, alrededor de un minuto) |
 | Compilar el proyecto dbt | `dbt parse --project-dir dbt --profiles-dir dbt` |
 | Descargar ODEPA | `python agent/agent.py` |
 | ETL de respaldo (SQLite) | `python etl/etl.py` |
@@ -35,8 +35,8 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 | `agent/` | Descarga de ODEPA (`agent.py`, `input.csv`, `downloads/manifest.json`) |
 | `etl/` | `etl.py` (respaldo SQLite), `bronze.py` (Parquet), `ine.py` (IPC), `pipeline.py` (dbt build y publicación), `datos.duckdb` (base servida), `datos.db` (respaldo) |
 | `dbt/` | Proyecto dbt: `models/staging`, `models/intermediate`, `models/marts`, `tests/`, `macros/`, `profiles.yml` |
-| `bi/` | Panel: `dashboard.py` (páginas y navegación), `queries.sql` y `queries.py` (SQL), diagramas SVG (`architecture.py`, `lineage.py`, `star_model.py`, `doc_diagrams.py`, `devops.py`), vistas (`home_mockup.py`, `quality_view.py`, `github_page.py`), `tech_glossary.py`, `zoom.py` (zoom y explicaciones al pasar el cursor), `document_pdf.py` (PDF de los documentos) |
-| `tests/` | pytest: auditoría de cifras (`test_data_audit.py`), paridad SQLite ↔ DuckDB, IPC, linaje, diagramas, documentos y panel (AppTest) |
+| `bi/` | Panel: `dashboard.py` (páginas y navegación), `queries.sql` y `queries.py` (SQL), diagramas (`architecture.py` pipeline y despliegue, `lineage.py`, `star_model.py`, `er_diagram.py`, `storage_map.py` dónde viven los datos, `database_crossings.py` cruces entre bases, `devops.py` CI/CD y orquestación, `doc_views.py` contexto, contenedores y casos de uso de los documentos), vistas (`home_mockup.py`, `quality_live.py`, `quality_view.py`, `github_page.py`), `tech_glossary.py`, `zoom.py` (zoom y explicaciones al pasar el cursor) |
+| `tests/` | pytest: auditoría de cifras (`test_data_audit.py`), paridad SQLite ↔ DuckDB, IPC, linaje, diagramas, documentos y su trazabilidad (`test_prd_traceability.py`), puerta de publicación (`test_pipeline_gate.py`) y panel (AppTest). `tests/medicion/`: medición del diseño con Playwright (`medir.cjs`) y comparación de cada documento impreso con su página (`imprimir.cjs`), que corren con Playwright instalado fuera del proyecto |
 | `docs/` | PRD, SAD, ADR, DECISIONES, MANUAL, plan de evolución |
 | `.github/workflows/` | `semanal.yml` (carga semanal), `pruebas.yml` (pytest + dbt parse en cada push) |
 
@@ -47,7 +47,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 - **Autoría:** «el autor». Ningún nombre personal en el panel ni en los documentos, y nada inventado sobre él.
 - **Datos:** nunca inventar una cifra ni interpolar un precio; nunca borrar histórico. Cada cifra del panel debe poder recalcularse desde la fuente; las pruebas lo verifican.
 - **Cada cambio de comportamiento** lleva su entrada `## D-xxx · título` en `docs/DECISIONES.md`, con sus pruebas en verde.
-- **Documentos:** sin bloques de código. Diagramas con marcadores `[[diagrama:nombre]]` en su propia línea: las vistas de `bi/doc_views.py` (actores y mockups, con el estilo del pipeline) o los diagramas vivos `plataforma`, `pipeline`, `modelo` y `seguridad`. Los mockups son capturas reales en `docs/img/`.
+- **Documentos:** sin bloques de código. Diagramas con marcadores `[[diagrama:nombre]]` en su propia línea: las vistas de `bi/doc_views.py` (`contexto`, `contenedores`, `casos` y `mockups`) o el diagrama vivo `seguridad`. Para no copiar una vista, un documento enlaza a su página con `[[vista:Página del menú]]`. Los mockups son capturas reales de las páginas actuales en `docs/img/`, una por tema. El PDF de un documento es la página misma impresa por el navegador (botón «Imprimir o guardar como PDF», D-248).
 - **Dependencias:** no agregar ninguna sin acuerdo del autor. Solo herramientas gratuitas y sin vencimiento; no hay nube de pago (ADR-31).
 - **Commits libres; push solo después de que el autor revise la app en local.**
 
@@ -56,7 +56,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 - `st.html` ejecuta solo el primer `<script>` de un bloque y descarta los scripts cuyos textos JavaScript contienen etiquetas HTML. Construir el DOM con APIs (`createElement`, `textContent`) y escribir los scripts como cadenas crudas de Python (`r"""…"""`).
 - Streamlit (React) es dueño del DOM que dibuja: un script puede cambiar atributos y clases, pero nunca mover ni borrar nodos. Si no, al cambiar de vista aparece `NotFoundError: removeChild`.
 - `st.markdown` sanitiza SVG complejos (gradientes, filtros, botones). Por eso la página GitHub se dibuja en `st.iframe` con su propio HTML.
-- `streamlit run` guarda en memoria los módulos importados y el vigilante de archivos está apagado en `.streamlit/config.toml`; desde D-172 el panel recarga en cada ejecución los `bi/*.py` que cambiaron (las fechas viven en el paquete `bi`, porque `bi/dashboard.py` se ejecuta desde cero cada vez), así que basta con volver a cargar la página.
+- `streamlit run` guarda en memoria los módulos importados y el vigilante de archivos está apagado en `.streamlit/config.toml`; desde D-172 el panel recarga en cada ejecución los `bi/*.py` que cambiaron (las fechas viven en el paquete `bi`, porque `bi/dashboard.py` se ejecuta desde cero cada vez), así que basta con volver a cargar la página. En la práctica, un cambio en `bi/dashboard.py` mismo no siempre se ve hasta reiniciar `streamlit run`: si una página no cambia, reiniciar el servidor antes de medir.
 - El contenedor de `st.markdown` lleva `margin-bottom: -1rem` para compensar el párrafo final. Un bloque HTML que termina en `div` no trae ese margen y el elemento siguiente se le monta encima: anular el margen del contenedor o cerrar con un párrafo (D-173).
 - El historial de cargas (`etl_run`) solo guarda ejecuciones reales. Una reconstrucción local debe usar `--local` para no agregar una carga falsa.
 

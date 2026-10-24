@@ -5,7 +5,7 @@ name: semanal
 # is only replaced by a load that passed every check.
 on:
   schedule:
-    # Tuesdays at 12:00 UTC (09:00 in Chile, standard time).
+    # Tuesdays at 12:00 UTC (09:00 in Chile in summer time, 08:00 in winter time).
     - cron: "0 12 * * 2"
   workflow_dispatch:
     inputs:

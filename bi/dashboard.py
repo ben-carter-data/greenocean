@@ -34,7 +34,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                audit_trace, database_crossings, devops, storage_map, doc_diagrams, er_diagram, document_pdf, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
+                audit_trace, database_crossings, devops, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -1269,6 +1269,11 @@ def build_style_css(mode):
     [class*="st-key-card_pipeline_main"] svg text[font-size="13"] {{font-size:14.5px;}}
     /* Project documents (D-151): a readable column, clean tables, spaced headings. */
     .doc-source {{font-size:.85rem; margin:-4px 0 14px;}}
+    .st-key-doc_actions .doc-source {{margin:0;}}
+    .st-key-doc_actions {{margin:0 0 10px;}}
+    .doc-print {{font:inherit; font-size:.86rem; padding:7px 16px; border-radius:10px; cursor:pointer;
+        border:1px solid {palette['card_border']}; background:{palette['card']}; color:{palette['strong_text']};}}
+    .doc-print:hover {{border-color:{palette['accent']}; color:{palette['accent']};}}
     /* A sheet (step 6): centred, with margins on both sides, like a printed page. */
     .st-key-project_document {{max-width:900px; margin:6px auto 30px; padding:44px 60px 48px;
         background:{palette['card']}; border:1px solid {palette['card_border']}; border-radius:16px;
@@ -6593,8 +6598,8 @@ def show_links_page(mode):
 # region Project documents (D-151)
 PROJECT_DOCUMENTS = {
     PAGE_PRD: ("PRD.md", "Qué resuelve el producto, para quién y con qué requisitos."),
-    PAGE_SAD: ("SAD.md", "Cómo está construido: pipeline, plataforma y modelo de datos."),
-    PAGE_ADR: ("ADR.md", "Las diez decisiones de arquitectura que más pesan, con su motivo."),
+    PAGE_SAD: ("SAD.md", "Cómo está construido, por vistas: contexto, contenedores, datos, despliegue y seguridad."),
+    PAGE_ADR: ("ADR.md", "Las diez decisiones de arquitectura que más pesan: contexto, decisión, alternativas y consecuencias."),
     PAGE_SECURITY_PLAN: ("SEGURIDAD.md", "Cómo se buscan, se corrigen y se prueban en cada push los puntos débiles."),
 }
 DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
@@ -6649,10 +6654,39 @@ def show_document_diagram(name, mode):
                     unsafe_allow_html=True)
 
 
-@st.cache_data(show_spinner=False)
-def build_document_pdf(path, modified, title, subtitle):
-    """The document as a PDF with cover, contents and page numbers, once per version."""
-    return document_pdf.build_pdf(Path(path).read_text(encoding="utf-8"), title, subtitle)
+# D-248: the downloadable document is the page itself, printed by the browser: the same text, diagrams and order.
+# Only the document pages carry this stylesheet; it hides the menu and the navigation and lets the page run on.
+PRINT_DOCUMENT_CSS = """<style>
+@media print {
+  @page { size: A4; margin: 12mm; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
+  .st-key-app_header, .st-key-doc_actions, .st-key-compact_footer, .st-key-route_footer,
+  [data-testid="stElementContainer"]:has(.page-lineage), [data-testid="stCaptionContainer"],
+  hr { display: none !important; }
+  html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"] {
+    height: auto !important; min-height: 0 !important; overflow: visible !important; position: static !important; }
+  /* The page is laid out at its screen width and scaled to the sheet, so the paper shows the same lines as the screen. */
+  [data-testid="stMainBlockContainer"] { padding: 0 !important; max-width: none !important; zoom: 0.86; }
+  .st-key-project_document { max-width: none !important; margin: 0 !important; box-shadow: none !important;
+    padding: 40px 50px 44px !important; }
+  [data-testid="stIFrame"], table, figure { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+}
+</style>"""
+PRINT_BUTTON_HTML = r"""<button class="doc-print" type="button">Imprimir o guardar como PDF</button>
+<script>
+document.querySelectorAll(".doc-print").forEach((button) => { button.onclick = () => window.print(); });
+</script>"""
+
+
+def show_document_actions(source_label, source_url):
+    """The document's source in GitHub and the button that prints the page itself (D-248)."""
+    with st.container(key="doc_actions", horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
+        st.markdown('<div class="doc-source">' + build_external_link_html(source_label, source_url) + '</div>',
+                    unsafe_allow_html=True)
+        st.html(PRINT_BUTTON_HTML, unsafe_allow_javascript=True)
+    st.markdown(PRINT_DOCUMENT_CSS, unsafe_allow_html=True)
 
 
 def show_scalability_page(mode):
@@ -6662,9 +6696,7 @@ def show_scalability_page(mode):
     match = re.search(r"^### Escalabilidad\n(.*?)(?=^##|\Z)", text, re.MULTILINE | re.DOTALL)
     show_compact_page_header(PAGE_SCALABILITY, "Qué se agregaría y cuándo: clima previsto; nube solo con datos "
                              "de una empresa (ADR-31).")
-    st.markdown('<div class="doc-source">' + build_external_link_html(
-        "Sección completa en docs/DECISIONES.md", project.build_github_url("docs/DECISIONES.md")) + '</div>',
-        unsafe_allow_html=True)
+    show_document_actions("Sección completa en docs/DECISIONES.md", project.build_github_url("docs/DECISIONES.md"))
     with st.container(key="project_document"):
         st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/DECISIONES.md.")
 
@@ -6691,14 +6723,7 @@ def show_project_document(mode, title):
     # The page header carries the title; the document's own H1 would repeat it.
     text = re.sub(r"\A# .*\n", "", text)
     show_compact_page_header(title, lead)
-    source, download = st.columns([4, 1], vertical_alignment="center")
-    source.markdown('<div class="doc-source">' + build_external_link_html(
-        f"docs/{filename} en GitHub", project.build_github_url(f"docs/{filename}")) + '</div>',
-        unsafe_allow_html=True)
-    path = project.PROJECT_DIR / "docs" / filename
-    download.download_button("Descargar PDF", build_document_pdf(str(path), path.stat().st_mtime, title, lead),
-                             file_name=f"GreenOcean_{filename.removesuffix('.md')}.pdf", mime="application/pdf",
-                             icon=":material/download:", width="stretch", key=f"pdf_{filename}")
+    show_document_actions(f"docs/{filename} en GitHub", project.build_github_url(f"docs/{filename}"))
     with st.container(key="project_document"):
         position = 0
         for marker in DOCUMENT_DIAGRAM.finditer(text):

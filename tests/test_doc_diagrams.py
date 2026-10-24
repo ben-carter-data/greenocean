@@ -69,8 +69,10 @@ def test_d210_the_weak_views_are_gone():
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
     page = doc_diagrams.DOC_DIAGRAMS["mockups"](charts.MODE_DARK)
     assert page.count("data:image/jpeg;base64,") == 4
-    assert {"Vantablack", "Claro", "Corporativo", "Blue Light"} <= {word for row in doc_views.MOCKUPS for word in
-                                                                    ["Vantablack", "Claro", "Corporativo", "Blue Light"] if word in row[2]}
+    # D-248: one capture per theme the panel offers today, retaken from the current pages.
+    assert set(charts.THEMES) == {word for row in doc_views.MOCKUPS for word in charts.THEMES if word in row[2]}
+    for file_name, *_ in doc_views.MOCKUPS:
+        assert (doc_views.MOCKUP_DIR / file_name).exists(), file_name
     assert any(row[3] == "phone" for row in doc_views.MOCKUPS)
     for file_name, *_ in doc_views.MOCKUPS:
         assert (doc_views.MOCKUP_DIR / file_name).stat().st_size < 400_000

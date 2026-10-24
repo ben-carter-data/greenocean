@@ -81,6 +81,7 @@ html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 
 .system:hover .tip, .system:focus .tip {{ display:block; }}
 .system:hover, .system:focus {{ z-index:50; }}
 .legend {{ margin:2px 4px 0; font-size:11.5px; color:{muted}; text-align:center; }}
+@media print {{ .tip {{ display:none !important; }} .system {{ box-shadow:none !important; }} }}
 </style>"""
 
 
@@ -127,8 +128,8 @@ CONTEXT_NODES = [
 CONTEXT_EDGES = [
     ("M330 225 H142", "source", 236, 225, "CSV", "GreenOcean descarga los archivos anuales de ODEPA, por HTTPS."),
     ("M330 365 H142", "source", 236, 365, "IPC", "GreenOcean descarga las series del IPC de alimentos del INE, por HTTPS."),
-    ("M430 124 V190", "serve", 430, 157, "lee", "El visitante lee el panel por HTTPS."),
-    ("M570 124 V190", "ops", 570, 157, "mantiene", "El administrador cambia el código y los secretos, y con la clave lanza una carga."),
+    ("M430 150 V190", "serve", 430, 168, "lee", "El visitante lee el panel por HTTPS."),
+    ("M570 150 V190", "ops", 570, 168, "mantiene", "El administrador cambia el código y los secretos, y con la clave lanza una carga."),
     ("M670 225 H868", "build", 724, 225, "aloja", "GreenOcean guarda su código, la base publicada y los informes en GitHub, y GitHub Actions los ejecuta."),
     ("M670 365 H868", "flow", 724, 365, "publica", "GreenOcean publica el panel en Streamlit Community Cloud desde la rama main."),
 ]
@@ -387,6 +388,7 @@ svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
 .c4-line {{ fill:none; stroke:{accent}; stroke-width:1.8; }}
 .c4-label {{ font-size:12px; fill:{ink}; paint-order:stroke; stroke:{palette['background']}; stroke-width:5px; }}
 .c4-tip {{ opacity:0; pointer-events:none; transition:opacity .15s ease; }}
+@media print {{ .c4-tip {{ display:none !important; }} }}
 .c4-tip div {{ position:absolute; width:280px; padding:12px 14px; border-radius:14px; background:{card}; border:1px solid {border};
   box-shadow:0 18px 40px rgba(0,0,0,{'.55' if dark else '.2'}); color:{text}; font-size:12.5px; line-height:1.45; }}
 .c4-tip b {{ display:block; margin:6px 0 2px; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
@@ -404,7 +406,7 @@ svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 MOCKUPS = [
     ("m1-resumen-vantablack.jpg", "M-1 · Resumen semanal", "tema Vantablack · computador", "laptop"),
-    ("m2-precios-claro.jpg", "M-2 · Precios e inflación", "tema Claro · computador", "laptop"),
+    ("m2-precios-darkgrey.jpg", "M-2 · Precios e inflación", "tema Dark Grey · computador", "laptop"),
     ("m3-sql-corporativo.jpg", "M-3 · Consultas SQL", "tema Corporativo · computador", "laptop"),
     ("m4-telefono-bluelight.jpg", "M-4 · Resumen semanal", "tema Blue Light · teléfono horizontal", "phone"),
 ]

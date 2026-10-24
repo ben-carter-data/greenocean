@@ -60,7 +60,7 @@ LOGOS = {
 STEPS = [
     {"key": "launch", "label": "Lanzar", "title": "Lanzar el pipeline", "place": (0, 0),
      "workflow": [], "log": False,
-     "hint": "Corre solo cada martes a las 09:00 (Chile). Para adelantarlo: «Ejecutar pipeline "
+     "hint": "Corre solo cada martes a las 12:00 UTC (09:00 en Chile en verano, 08:00 en invierno). Para adelantarlo: «Ejecutar pipeline "
              "ahora», a la derecha, con tu clave de control, o «Run workflow» en GitHub.",
      "links": [("Run workflow", project.WORKFLOW_PAGE_URL, True),
                ("Tokens de GitHub", project.TOKENS_URL, True)]},

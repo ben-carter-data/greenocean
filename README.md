@@ -25,7 +25,7 @@ Además muestra la calidad de cada carga (filas leídas, cargadas y rechazadas c
 4. **Transformación** con dbt Core sobre DuckDB: staging, intermedio y marts, con 31 pruebas.
 5. **Publicación** en `etl/datos.duckdb`, que el panel de Streamlit lee en solo lectura.
 
-GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los diagramas completos (pipeline, plataforma y modelo estrella) están en el panel y en el [SAD](docs/SAD.md).
+GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los diagramas completos (pipeline y linaje, modelo estrella, despliegue y CI/CD) están en el panel; el [SAD](docs/SAD.md) describe la arquitectura por vistas y enlaza a ellos.
 
 ## Estructura
 

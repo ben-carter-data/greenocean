@@ -20,7 +20,7 @@ El recorrido del dato por capas (fuentes, aterrizaje, bronce, staging, intermedi
 
 ## 4. Despliegue
 
-Cada pieza corre en un servicio gratuito, sin servidor propio. El job semanal y las pruebas de cada cambio corren en máquinas de GitHub Actions (Ubuntu, Python 3.11), que se crean y se descartan en cada ejecución; los CSV de los años cerrados se guardan en la caché de Actions. La base servida vive en el repositorio de GitHub, en la rama `main`, junto al código. Streamlit Community Cloud ejecuta el panel desde esa rama y guarda los secretos (el token de GitHub y la clave de control). El aterrizaje de 665 MB solo existe en el computador del autor y en la máquina de cada carga. El diagrama de despliegue, con el estado en vivo de cada pieza, está en la pestaña «Despliegue» de [[vista:Centro de operación]]; el camino de un cambio hasta producción, en su pestaña «CI/CD».
+Cada pieza corre en un servicio gratuito, sin servidor propio. El job semanal y las pruebas de cada cambio corren en máquinas de GitHub Actions (Ubuntu, Python 3.11), que se crean y se descartan en cada ejecución; los CSV de los años cerrados se guardan en la caché de Actions. La base servida vive en el repositorio de GitHub, en la rama `main`, junto al código. Streamlit Community Cloud ejecuta el panel desde esa rama y guarda los secretos (el token de GitHub y la clave de control). El aterrizaje (`etl/raw.db`, de cientos de MB) solo existe en el computador del autor y en la máquina de cada carga. El diagrama de despliegue, con el estado en vivo de cada pieza, está en la pestaña «Despliegue» de [[vista:Centro de operación]]; el camino de un cambio hasta producción, en su pestaña «CI/CD».
 
 ## 5. Seguridad
 

@@ -29,7 +29,7 @@ DISCS = dict(database_map.BRANDS, git=("#ff9b7d", "#d6402a", "#ffffff"), streaml
              fail=("#ffb3a7", "#c2410c", "#ffffff"))
 # Lanes: (key, title, subtitle, band top, band height).
 LANES = [
-    ("ci", "CI · integración continua", "en cada push y pull request · pruebas.yml", 36, 174),
+    ("ci", "CI · integración continua", "en cada push y pull request · pruebas.yml · avisa; no detiene la publicación de main", 36, 174),
     ("cd", "CD · entrega continua y orquestación", "cada martes o a mano · semanal.yml, sus nueve pasos en orden", 230, 324),
     ("pub", "Publicación", "el panel, desde la rama main", 574, 156),
 ]
@@ -47,10 +47,10 @@ STEPS = [
     ("ci_pytest", "ci", 0, 3, 5, "pytest", "pytest", "toda la batería",
      "Corre todas las pruebas de tests/; si una falla, el job se detiene.", "pytest -vv -x", "pruebas.yml::pytest -vv -x", "gate"),
     ("ci_result", "ci", 0, 4, 5, "check", "Resultado", "pasa o falla",
-     "GitHub deja el resultado junto al commit: verde si todo pasó, rojo si no.", "estado del commit en GitHub",
+     "GitHub deja el resultado junto al commit: verde si todo pasó, rojo si no. Avisa, pero no detiene la publicación: Streamlit publica main sin esperarlo.", "estado del commit en GitHub",
      "pruebas.yml::name: pruebas", ""),
     ("cd_trigger", "cd", 0, 0, 5, "github", "Disparo", "martes o a mano",
-     "El cron lo lanza cada martes a las 12:00 UTC (09:00 en Chile, horario estándar). También se lanza a mano: desde el "
+     "El cron lo lanza cada martes a las 12:00 UTC (09:00 en Chile en horario de verano, 08:00 en invierno). También se lanza a mano: desde el "
      "Centro de operación, con la clave de control, por la API de GitHub; o desde GitHub, donde se puede pedir una falla simulada.",
      "on: schedule, workflow_dispatch", "semanal.yml::0 12 * * 2", ""),
     ("cd_year", "cd", 0, 1, 5, "github", "1 · Año vigente", "clave de la caché",

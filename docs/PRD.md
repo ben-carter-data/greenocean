@@ -1,6 +1,6 @@
 # GreenOcean · Documento de requisitos del producto (PRD)
 
-Versión del 20-10-2026. El registro completo de decisiones está en `docs/DECISIONES.md`.
+Versión del 23-10-2026. El registro completo de decisiones está en `docs/DECISIONES.md`.
 
 ## 1. Contexto
 
@@ -22,7 +22,7 @@ Hoy la base tiene 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2
 | Perfil | Para qué lo usa |
 |---|---|
 | Analista de pricing | Saber si el precio de hoy es normal para la época y qué alimentos subieron más que la inflación, en pesos de hoy |
-| Compras y abastecimiento | Ver cuánto paga el consumidor sobre el precio mayorista, por canal |
+| Compras y abastecimiento | Ver cuánto paga el consumidor sobre el precio mayorista del mismo producto |
 | Gerencia | Revisar qué se movió en la semana y qué está fuera de lo habitual |
 | Revisor técnico | Comprobar la calidad, las pruebas, el linaje y la documentación |
 
