@@ -4944,6 +4944,11 @@ def show_diagrams_page(mode):
     view = st.session_state.get(PIPELINE_VIEW_KEY, PIPELINE_JOURNEY) if summary else PIPELINE_JOURNEY
     lineage_view = view == PIPELINE_LINEAGE
     title = "Dentro del tramo dbt: modelo por modelo" if lineage_view else "Recorrido completo por capas"
+    # D-277: the switch sits on the card's title row, which had room for it, instead of a row of its own.
+    st.markdown('<style>.st-key-card_pipeline_main {position:relative;} .st-key-card_pipeline_main .st-key-pipeline_view '
+                '{position:absolute; top:18px; right:24px; z-index:3; width:auto !important;} '
+                '.journey-legend {margin:0 !important; line-height:1.9;} .journey-legend span {margin-left:6px;}</style>',
+                unsafe_allow_html=True)
     with open_card("pipeline_main", title, hint=LINEAGE_HINT if lineage_view else ARCHITECTURE_HINT):
         if summary:
             st.segmented_control("Vista", [PIPELINE_JOURNEY, PIPELINE_LINEAGE], default=PIPELINE_JOURNEY,
@@ -5932,7 +5937,12 @@ def show_security_page(mode):
                       f"{PAGE_SECURITY_PLAN} →", build_page_address(PAGE_SECURITY_PLAN),
                       "El procedimiento, los casos de prueba y los resultados de la última revisión."),
                       unsafe_allow_html=True, width="content"))
-    st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=680)
+    # D-277: the drawing keeps its proportion and is never taller than what the window leaves.
+    st.markdown('<style>.st-key-sec_frame iframe {display:block; margin:0 auto; '
+                f'max-width:calc((100vh - 228px) * {security_map.WIDTH} / {security_map.HEIGHT});}}</style>',
+                unsafe_allow_html=True)
+    with st.container(key="sec_frame"):
+        st.iframe(security_map.build_security_html(charts.get_palette(mode)), height="content")
 
 
 def show_runs_tab(mode):
@@ -6202,12 +6212,13 @@ BRAND_COLOURS = {"github": "var(--github-ink)", "sqlite": "#0f80cc", "streamlit"
 
 def build_journey_legend_html():
     """What the colored dot of each step and the moving arrows mean."""
-    return (f'{build_chip("OK", "ok")} {build_chip("En curso", "running")} '
-            f'{build_chip("Falla", "failed")} {build_chip("Sin datos", "neutral")}'
-            '<div class="kpi-note" style="margin-top:8px">Punto de color en cada '
+    # D-277: the four colours and what they mean share one line, so the page fits the window.
+    return (f'<div class="kpi-note journey-legend">{build_chip("OK", "ok")} {build_chip("En curso", "running")} '
+            f'{build_chip("Falla", "failed")} {build_chip("Sin datos", "neutral")} '
+            '<span>Punto de color en cada '
             'paso: estado de la última ejecución del pipeline y de la base actual. '
             'El movimiento ilustrativo, no actividad en vivo, muestra el recorrido; '
-            'el estado identifica la ejecución real.</div>')
+            'el estado identifica la ejecución real.</span></div>')
 
 
 def build_devops_figures(figures):

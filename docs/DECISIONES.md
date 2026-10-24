@@ -2109,3 +2109,12 @@ GreenOcean está hecho a la medida de lo que hace hoy: datos públicos, semanale
 - **Sin cambios:** los dieciocho pasos, sus textos, sus puertas y la línea de cada uno, que siguen leyéndose de los workflows.
 - **Resultado:** cabe sin desplazar a 1440 × 790 y 1920 × 1000.
 - **Pruebas:** `tests/test_devops.py::test_d276_*`: las cuatro fases tienen cada paso una vez, en el orden del workflow; cada paso tiene su pieza y su texto al pasar el cursor.
+
+## D-277 · Las demás páginas caben en la ventana real: Despliegue, Pipeline y linaje, Arquitectura de seguridad y Stack
+
+- **Problema:** medidas a 1440 × 790 (D-274), la pestaña Despliegue sobraba 50 px, Pipeline y linaje 42, Arquitectura de seguridad 94 y Stack y evidencia 19.
+- **Decisión, sin cambiar ningún dibujo:**
+  - **Despliegue, Arquitectura de seguridad y Stack:** el dibujo conserva su proporción y nunca es más alto que lo que la ventana deja bajo el encabezado; su marco toma el alto del dibujo;
+  - **Pipeline y linaje:** el selector «Recorrido por capas / Linaje dbt» sube a la línea del título de la tarjeta, que tenía espacio, y los cuatro colores del recorrido comparten una línea con lo que significan. El recorrido sigue como en D-229.
+- **Resultado:** las nueve páginas principales, las cuatro pestañas del Centro de operación, las tres de Calidad y auditoría, las cuatro vistas de Modelo de datos, el linaje dbt y una familia ampliada de Precios e inflación se ven sin desplazar a 1440 × 790 y a 1920 × 1000.
+- **Pruebas:** la suite completa pasa (633).
