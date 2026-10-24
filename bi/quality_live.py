@@ -241,14 +241,12 @@ html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45
 .qp .verdict {{ display:flex; align-items:center; gap:12px; margin:0 0 12px; font-size:16px; color:{ink}; }}
 .qp .verdict i {{ width:24px; height:24px; border-radius:50%; background:var(--c); color:#fff; display:inline-grid; place-items:center;
   font:700 14px/1 sans-serif; font-style:normal; flex:none; box-shadow:0 0 0 5px color-mix(in srgb, var(--c) 22%, transparent); }}
-.qp a.verdict {{ text-decoration:none; }}
-.qp .verdict u {{ margin-left:auto; padding:2px 12px; border:1px solid {border}; border-radius:999px; font-size:13px; color:{accent}; text-decoration:none; }}
-.qp a.verdict:hover u, .qp a.verdict:focus u {{ border-color:{accent}; }}
 .qp .hint {{ margin:0 0 4px; color:{muted}; font-size:13px; }}
 .qp svg.hub {{ display:block; width:100%; height:auto; }}
 .qp svg.hub a {{ cursor:pointer; outline:none; }}
 .qp svg.hub a:hover .pill, .qp svg.hub a:focus .pill {{ stroke-width:3.4; }}
 .qp svg.hub a:hover .core, .qp svg.hub a:focus .core {{ filter:brightness(1.15); }}
+.qp svg.hub a:hover .count, .qp svg.hub a:focus .count {{ fill-opacity:.38; }}
 .qp .gatebar {{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin-top:6px; }}
 .qp .gatebtn {{ display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid {border}; border-radius:14px; background:{card};
   color:{ink}; text-decoration:none; box-shadow:0 10px 20px -16px {shade}; }}
@@ -337,6 +335,7 @@ def build_hub_html(palette, indicators, columns):
               "fail": quality_view.PILL_COLORS["fail"], "info": muted}
     width, height, cx, cy, radius = 1000, 318, 500, 159, 84
     box_w, box_h = 292, 70
+    count = len([row for row in indicators if row[4] != "info"])
     parts, lines = [], []
     rows = {"left": 0, "right": 0}
     for key, name, icon, side in HUB:
@@ -357,12 +356,13 @@ def build_hub_html(palette, indicators, columns):
                      f'<circle cx="{x + box_w - 26}" cy="{y + box_h / 2}" r="7" fill="{color}"/></a>')
     centre = (f'<defs><radialGradient id="qa-hub" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="#4a8df0"/>'
               f'<stop offset="1" stop-color="#0d3b96"/></radialGradient></defs>'
-              f'<a href="#d-centro" aria-label="Datos sanos: cómo se lee"><title>Datos sanos: cómo se lee</title>'
+              f'<a href="#d-todos" aria-label="Datos sanos: ver los {count} indicadores"><title>Ver los {count} indicadores</title>'
               f'<circle cx="{cx}" cy="{cy}" r="{radius + 10}" fill="{accent}" fill-opacity=".14"/>'
               f'<circle class="core" cx="{cx}" cy="{cy}" r="{radius}" fill="url(#qa-hub)"/>'
               + quality_view.build_icon_svg("database").replace('<svg class="qa-icon" ', f'<svg x="{cx - 28}" y="{cy - 52}" width="56" height="56" ', 1)
-              + f'<text x="{cx}" y="{cy + 32}" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">Datos sanos</text>'
-              f'<text x="{cx}" y="{cy + 52}" text-anchor="middle" font-size="12.5" fill="#cfe0ff">6 dimensiones</text></a>')
+              + f'<text x="{cx}" y="{cy + 26}" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">Datos sanos</text>'
+              f'<rect class="count" x="{cx - 58}" y="{cy + 36}" width="116" height="28" rx="14" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-opacity=".7"/>'
+              f'<text x="{cx}" y="{cy + 55}" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">{count} indicadores</text></a>')
     return (f'<svg class="hub" viewBox="0 0 {width} {height}" role="img" aria-label="Las seis dimensiones de la calidad de los datos" '
             f'font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">{"".join(lines)}{centre}{"".join(parts)}</svg>')
 
@@ -406,29 +406,25 @@ def build_gate_modal(index, indicators):
     return build_modal(f"g-{index}", title, question, body)
 
 
-def build_all_modal(indicators):
-    """Every measured indicator in one list, by dimension: where the number of the verdict comes from."""
-    body = "".join(f'<h4>{html.escape(TITLES[key])}</h4>' + "".join(build_indicator_html(*row[1:]) for row in indicators if row[0] == key)
-                   for key in ICONS if any(row[0] == key for row in indicators))
+def build_all_modal(indicators, sentence):
+    """Every measured indicator in one list, by dimension: where the number of the verdict comes from, and how to read it."""
+    body = ('<p>' + html.escape(sentence) + ' Verde: dentro del umbral. Ámbar: a revisar o con un control pendiente. Rojo: falla.</p>'
+            + "".join(f'<h4>{html.escape(TITLES[key])}</h4>' + "".join(build_indicator_html(*row[1:]) for row in indicators if row[0] == key)
+                      for key in ICONS if any(row[0] == key for row in indicators)))
     return build_modal("d-todos", f"Los {len(indicators)} indicadores", "Cada uno se mide en cada carga y se juzga contra el umbral que lleva debajo.", body)
 
 
 def build_quality_html(palette, indicators, columns):
     """The main view: the verdict, the six dimensions, the three gates and a pop-up behind each piece."""
     kind, sentence = build_verdict(indicators)
-    verdict = (f'<a class="verdict s-{kind}" href="#d-todos"><i>{"✓" if kind == "ok" else "!"}</i>{html.escape(sentence)}'
-               f'<u>ver los {len(indicators)}</u></a>')
+    verdict = f'<div class="verdict s-{kind}"><i>{"✓" if kind == "ok" else "!"}</i>{html.escape(sentence)}</div>'
     gates = "".join(f'<a class="gatebtn s-{gate_measure(index, indicators)[0]}" href="#g-{index}"><i></i><span><b>{html.escape(title)}</b>'
                     f'<small>{html.escape(question)} · {html.escape(gate_measure(index, indicators)[1])}</small></span></a>'
                     for index, (title, question, _) in enumerate(GATE_VIEW))
     modals = "".join(build_dimension_modal(key, name, indicators, columns) for key, name, _, _ in HUB)
     modals += "".join(build_gate_modal(index, indicators) for index in range(len(GATE_VIEW)))
-    modals += build_all_modal(indicators)
-    modals += build_modal("d-centro", "Datos sanos", "¿Cómo se lee este esquema?",
-                          f'<p>{html.escape(sentence)}</p><p>Cada eje se mide en cada carga sobre la base publicada y se juzga contra su umbral. '
-                          'Verde: dentro del umbral. Ámbar: a revisar o con un control pendiente. Rojo: falla.</p>'
-                          '<p>Pulsa un eje o una puerta para ver sus cifras y cómo se miden.</p>')
-    return wrap_document(palette, f'{verdict}<p class="hint">Pulsa un eje o una puerta para ver su detalle.</p>'
+    modals += build_all_modal(indicators, sentence)
+    return wrap_document(palette, f'{verdict}<p class="hint">Pulsa un eje, una puerta o el centro para ver su detalle.</p>'
                                   f'{build_hub_html(palette, indicators, columns)}<div class="gatebar">{gates}</div>{modals}')
 
 

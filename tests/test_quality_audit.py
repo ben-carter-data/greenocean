@@ -57,7 +57,7 @@ def test_d257_the_diagram_is_the_page_and_every_piece_opens_its_popup(measures):
     assert "Datos sanos" in page and [name for _, name, _, _ in quality_live.HUB] == [
         "Exactitud", "Validez", "Unicidad", "Actualidad", "Completitud", "Consistencia"]
     # each dimension, each gate and the centre is a link to a pop-up that exists, and closing it needs no script
-    targets = [f"d-{key}" for key, *_ in quality_live.HUB] + [f"g-{index}" for index in range(3)] + ["d-centro", "d-todos"]
+    targets = [f"d-{key}" for key, *_ in quality_live.HUB] + [f"g-{index}" for index in range(3)] + ["d-todos"]
     for target in targets:
         assert f'href="#{target}"' in page and f'id="{target}"' in page, target
     assert page.count('class="modal"') == len(targets) and page.count('class="close"') == len(targets)
@@ -117,7 +117,9 @@ def test_d257_a_query_in_a_popup_spans_the_whole_row_and_not_the_dot_column():
 def test_d257_the_number_of_the_verdict_opens_the_list_of_all_the_indicators(measures):
     indicators, page = draw(measures)
     kind, sentence = quality_live.build_verdict(indicators)
-    modal = page.split('id="d-todos"')[1].split('id="d-centro"')[0]
-    assert f"Los {len(indicators)} indicadores" in modal and f"ver los {len(indicators)}" in page
+    modal = page.split('id="d-todos"')[1]
+    centre = page.split('href="#d-todos"')[1].split("</a>")[0]  # the count sits in the middle of the diagram and opens the list
+    assert f"Los {len(indicators)} indicadores" in modal and f"{len(indicators)} indicadores" in centre and "Datos sanos" in centre
+    assert page.count('href="#d-todos"') == 1 and "<u>" not in page  # one door only: the centre, not a hidden link on the side
     assert all(row[1] in modal and row[2] in modal for row in indicators)
     assert str(len([row for row in indicators if row[4] != "info"])) in sentence  # the 11 of the sentence are the 11 of the list
