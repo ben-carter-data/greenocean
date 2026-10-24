@@ -34,7 +34,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                audit_trace, database_crossings, devops, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
+                audit_trace, database_crossings, devops, monitoring, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -416,15 +416,6 @@ GLOSSARY_THEME_LEADS = {
 # The tables of «DevOps y seguridad» by priority: what protects the data first,
 # then what runs the project, how a run is observed and what gets published.
 # (heading in docs/PROYECTO.md, sentence, title column, text column, note column)
-ARCHITECTURE_GROUPS = [
-    ("Seguridad", "Qué protege los datos y las claves del proyecto.", "Medida",
-     "Qué protege", "Archivo"),
-    ("DevOps", "Qué hace correr el proyecto solo: cada semana y en cada cambio del código.",
-     "Pieza", "Qué hace", "Archivo"),
-    ("Observabilidad", "Cómo se sabe qué pasó en cada carga.", "Fuente", "Qué registra",
-     "Dónde se ve"),
-    ("Informes", "Qué se publica después de cada carga.", "Informe", "Qué contiene", "Cuándo"),
-]
 # Why a row is rejected (RN-11), in the words of validate_rows() in etl/etl.py.
 REASON_TEXTS = {
     etl.REASON_UNREADABLE_VALUE: "un precio, una fecha o la región no se pudo leer",
@@ -5663,10 +5654,6 @@ def run_pipeline_now(token):
 ADMIN_UNLOCKED = "admin_unlocked"
 
 
-@st.cache_resource
-def get_login_guard():
-    """One guard for every visitor of this server (D-199)."""
-    return control.LoginGuard()
 ADMIN_LINKS = project.ADMIN_LINKS
 
 
@@ -5710,7 +5697,7 @@ def show_run_now_dialog(token, access_code):
         typed_code = st.text_input("Clave de control", key="run_now_code", autocomplete="off")
         if not st.button("Ejecutar", type="primary", icon=":material/play_arrow:", key="run_now_confirm"):
             return
-        ok, message = get_login_guard().check(typed_code, access_code)
+        ok, message = control.check_control_code(typed_code, access_code)
         if not ok:
             st.error(message, icon=":material/lock:")
             return
@@ -5750,13 +5737,13 @@ AUTHOR_CODE_MESSAGE = "author_code_message"
 
 
 def check_author_code(access_code):
-    """The code typed in «Acceso del autor», checked by the shared guard (D-199); the field is
+    """The code typed in «Acceso del autor», compared in constant time (D-199); the field is
     emptied either way, so the code never stays on screen."""
     typed_code = st.session_state.get("author_access_code", "")
     st.session_state["author_access_code"] = ""
     if not typed_code:
         return
-    ok, message = get_login_guard().check(typed_code, access_code)
+    ok, message = control.check_control_code(typed_code, access_code)
     if ok:
         st.session_state[ADMIN_UNLOCKED] = True
     else:
@@ -5859,25 +5846,28 @@ def build_runs_css(mode):
 def show_runs_page(mode):
     """Centro de operación (D-165): the weekly run as a path of floating logos, each
     with what it does and where to act, and beside it the facts and the manual run."""
-    show_compact_page_header("Centro de operación", "El recorrido de cada martes, del lanzamiento "
-                             "al panel: el estado de cada paso, su log y dónde actuar.")
-    runs_tab, platform_tab, cicd_tab = st.tabs(["Operación", "Despliegue", "CI/CD"])
-    with runs_tab:
-        show_runs_tab(mode)
+    show_compact_page_header("Centro de operación", "Dónde corre cada pieza, cómo llega un cambio a producción y el "
+                             "estado de cada paso de la carga semanal, con su log y dónde actuar.")
+    # D-249 (the author's order): where each piece runs, how a change reaches it, and then each run.
+    platform_tab, cicd_tab, runs_tab, monitoring_tab = st.tabs(["Despliegue", "CI/CD", "Operación", "Monitoreo"])
     with platform_tab:
         show_devops_tab(mode)
     with cicd_tab:
         show_cicd_tab(mode)
+    with runs_tab:
+        show_runs_tab(mode)
+    with monitoring_tab:
+        show_monitoring_tab(mode)
 
 
 def show_security_page(mode):
-    """What a visitor could try, the barriers that stop it and the test behind each (D-200, D-201)."""
-    show_compact_page_header(PAGE_SECURITY, "Qué podría intentar un visitante y qué lo detiene.")
-    st.caption("Cada puerta que podría tentar a un atacante, las barreras que la cierran y la prueba automática que "
-               "las ataca en cada push. El código es público: la seguridad no depende de esconder cómo está hecho, "
-               "sino de las claves, que nunca aparecen.")
-    st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=590)
-    st.markdown('<p class="doc-source">El método, los casos de prueba y los resultados de la última revisión: '
+    """The security architecture as a threat model (D-200, D-249): threat, mitigation, verification, asset, and the
+    loop of continuous improvement."""
+    show_compact_page_header(SIDEBAR_LABELS[PAGE_SECURITY], "Qué amenaza al sistema, qué lo mitiga, qué prueba lo "
+                             "verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de "
+                             "esconderlo, sino de las claves, que nunca aparecen.")
+    st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=620)
+    st.markdown('<p class="doc-source">El procedimiento, los casos de prueba y los resultados de la última revisión: '
                 + build_link_html(f"{PAGE_SECURITY_PLAN} →", build_page_address(PAGE_SECURITY_PLAN)) + '</p>',
                 unsafe_allow_html=True)
 
@@ -6126,30 +6116,6 @@ def read_journey():
     return states, figures, pipeline_run, latest_load, error_note
 
 
-def format_architecture_note(column, text):
-    """The note of an architecture card: a file by its name (whole path on hover), a
-    place of the panel as a named link, or plain text."""
-    if text in PAGE_PATHS or text in PAGE_OF_TAB:
-        return build_place_link(text)
-    if project.is_in_repository(text):
-        return (f'{html.escape(column)}: <code title="{html.escape(text)}">'
-                f'{html.escape(text.rstrip("/").split("/")[-1])}</code>')
-    return f"{html.escape(column)}: {format_inline(text)}"
-
-
-def show_architecture_group(heading, lead, title_column, text_column, note_column, titled=True):
-    """Technical details as compact rows, rather than oversized uniform cards. In a
-    dialog the dialog already carries the heading, so only the lead shows."""
-    if titled:
-        show_section_intro(heading, lead, True)
-    else:
-        st.caption(lead)
-    rows = ''.join(build_layer_card_html(row[title_column], row[text_column],
-                                         format_architecture_note(note_column, row[note_column]))
-                   for row in project.read_guide_table(heading))
-    st.markdown(f'<div class="technical-rows layer-cards">{rows}</div>', unsafe_allow_html=True)
-
-
 # The real tool behind each row of a layer (D-137): its own mark, in its brand colour.
 LAYER_ROW_LOGOS = {
     "Base en solo lectura": "sqlite", "Consola SQL de solo lectura": "sqlite",
@@ -6163,18 +6129,6 @@ LAYER_ROW_LOGOS = {
 }
 BRAND_COLOURS = {"github": "var(--github-ink)", "sqlite": "#0f80cc", "streamlit": "#ff4b4b",
                  "git": "#f05032", "pytest": "#0a9edc", "python": "#3776ab"}
-
-
-def build_layer_card_html(title, text, note):
-    """One floating card: the tool's real logo on a tinted tile, the title, what it
-    does and where it lives, with no empty space below (D-137)."""
-    slug = LAYER_ROW_LOGOS.get(title, "github")
-    colour = BRAND_COLOURS[slug]
-    return (f'<div class="layer-card" style="--brand:{colour}">'
-            f'<span class="layer-logo"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">'
-            f'{architecture.brand_icons.logo_body(slug)}</svg></span>'
-            f'<div class="layer-body"><strong>{format_inline(title)}</strong>'
-            f'<p>{format_inline(text)}</p><span class="layer-note">{note}</span></div></div>')
 
 
 def build_journey_legend_html():
@@ -6198,33 +6152,6 @@ def build_devops_figures(figures):
                              f"{charts.format_thousands(week_prices)} precios"))
 
 
-DEVOPS_COST_TEXT = (
-    "SQLite permite almacenar los datos sin un servidor de base de datos dedicado. GitHub Actions "
-    "coordina las ejecuciones y Streamlit publica el panel. La capacidad depende del volumen, la "
-    "duración de las cargas y las cuotas de cada servicio. La arquitectura debe revisarse antes de "
-    "aumentar la frecuencia o incorporar fuentes de mayor tamaño.")
-DEVOPS_LAYER_ICONS = {"Seguridad": ":material/shield:", "DevOps": ":material/autorenew:",
-                      "Observabilidad": ":material/monitoring:", "Informes": ":material/description:",
-                      "Coste y capacidad": ":material/savings:"}
-
-
-def show_devops_layer_dialog(heading, next_run):
-    """One layer's detail in a dialog, so the page itself stays the diagram (D-132)."""
-    def body():
-        if heading == "Coste y capacidad":
-            st.markdown(DEVOPS_COST_TEXT)
-            return
-        show_architecture_group(*next(group for group in ARCHITECTURE_GROUPS if group[0] == heading),
-                                titled=False)
-        if heading == "DevOps":
-            st.markdown(f'<div class="info-note">Próxima ejecución automática: {next_run}.</div>',
-                        unsafe_allow_html=True)
-        if heading == "Informes":
-            reports = next(link["url"] for link in project.PROJECT_LINKS
-                           if link["name"] == "Informes semanales")
-            st.markdown(f'<div class="info-note">{build_external_link_html("Ver los informes semanales en GitHub", reports)}'
-                        '</div>', unsafe_allow_html=True)
-    st.dialog(heading, width="large")(body)()
 
 
 def show_cicd_tab(mode):
@@ -6244,21 +6171,22 @@ def show_cicd_tab(mode):
 
 
 def show_devops_tab(mode):
-    """The whole platform architecture, full width, and its layers as a row of tiles
-    that open their detail (D-132, D-136). The lifecycle drawing and the link to
-    Pipeline are gone: this page has its own architecture."""
-    states, figures, pipeline_run, latest_load, error_note = read_journey()
+    """Where each piece runs (D-132, D-136): the deployment diagram, full width, with the live state of each piece.
+    Security, CI/CD, monitoring and capacity have their own views (D-249), so they are not repeated here."""
+    states, figures, *_ = read_journey()
     st.markdown(zoom.build_zoom_frame_html(
         architecture.build_devops_svg(states, build_devops_figures(figures), mode, animate_flow=True),
         "diagram-devops"), unsafe_allow_html=True)
-    with st.container(key="devops_layers", horizontal=True, gap="small"):
-        for heading, lead in [(group[0], group[1]) for group in ARCHITECTURE_GROUPS] + [
-                ("Coste y capacidad", "Qué cuesta operar y hasta dónde alcanza.")]:
-            if st.button(heading, key=f"devops_layer_{heading}", icon=DEVOPS_LAYER_ICONS[heading],
-                         help=lead, width="stretch"):
-                show_devops_layer_dialog(heading, figures["next_run"])
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
     st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
+
+
+def show_monitoring_tab(mode):
+    """How we know that something failed (D-249): every signal, where it is left and who reads it."""
+    st.markdown('<p class="arch-phrase">Cada señal que deja el proyecto, dónde queda y quién la lee. La banda de '
+                'observabilidad de ' + build_link_html("Pipeline y linaje", build_page_address(PAGE_DIAGRAMS))
+                + ' muestra las mismas señales sobre el recorrido.</p>', unsafe_allow_html=True)
+    st.iframe(monitoring.build_monitoring_html(charts.get_palette(mode)), height=610)
 
 
 # endregion
@@ -6624,34 +6552,10 @@ def link_document_views(text):
                              if find_menu_page(match.group(1)) else match.group(1), text)
 
 
-def build_document_diagram_html(name, mode):
-    """A live panel diagram behind a [[diagrama:…]] marker (platform, pipeline, star model),
-    as markup for st.markdown; "" when the marker is drawn in its own frame instead."""
-    if name in ("plataforma", "pipeline"):
-        states, figures, *_ = read_journey()
-        if name == "plataforma":
-            return zoom.build_zoom_frame_html(architecture.build_devops_svg(
-                states, build_devops_figures(figures), mode, animate_flow=False), "diagram-devops")
-        return zoom.build_zoom_frame_html(architecture.build_journey_svg(
-            states, figures, mode, animate_flow=False), "diagram-wide")
-    if name == "modelo":
-        row_counts = read_table_row_counts()
-        columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
-        return star_model.build_star_svg(columns, row_counts, mode)
-    return ""
-
-
 def show_document_diagram(name, mode):
     """One marker of a document: the document views and the security map in their own frame
     (hover tips and gradients need it, D-205), the live diagrams inline."""
-    palette = charts.get_palette(mode)
-    if name in doc_diagrams.DOC_DIAGRAMS:
-        st.iframe(doc_diagrams.DOC_DIAGRAMS[name](mode), height=doc_diagrams.HEIGHTS[name])
-    elif name == "seguridad":
-        st.iframe(security_map.build_security_html(palette), height=590)
-    else:
-        st.markdown('<div class="doc-diagram">' + build_document_diagram_html(name, mode) + '</div>',
-                    unsafe_allow_html=True)
+    st.iframe(doc_diagrams.DOC_DIAGRAMS[name](mode), height=doc_diagrams.HEIGHTS[name])
 
 
 # D-248: the downloadable document is the page itself, printed by the browser: the same text, diagrams and order.
@@ -7252,7 +7156,7 @@ SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingenierí
                       SECTION_RESOURCES: "GitHub"}
 SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Precios e inflación",
                   PAGE_DIAGRAMS: "Pipeline y linaje", PAGE_OPERATIONS: "Calidad y auditoría",
-                  PAGE_RUNS: "Centro de operación",
+                  PAGE_RUNS: "Centro de operación", PAGE_SECURITY: "Arquitectura de seguridad",
                   PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual",
                   PAGE_COVER: "Descripción general", PAGE_BUSINESS: "Alcance del proyecto"}
 

@@ -184,50 +184,17 @@ def test_t54_only_the_expiration_date_leaves_the_github_answer(monkeypatch):
 # endregion
 
 
-class FakeClock:
-    def __init__(self):
-        self.now, self.slept = 1000.0, 0.0
-
-    def __call__(self):
-        return self.now
-
-    def sleep(self, seconds):
-        self.slept += seconds
-
-
-def make_guard():
-    clock = FakeClock()
-    return control.LoginGuard(clock=clock, sleep=clock.sleep), clock
-
-
 def test_d199_the_right_code_opens_and_any_character_is_safe():
-    guard, _ = make_guard()
-    assert guard.check("clave", "clave") == (True, "")
-    ok, message = guard.check("contraseña ñ ü 🔑", "clave")  # used to raise TypeError
-    assert not ok and "Clave incorrecta" in message
-    assert guard.check("piña", "piña")[0]
-    assert not guard.check("", "clave")[0] and not guard.check("clave", None)[0]
+    assert control.check_control_code("clave", "clave") == (True, "")
+    ok, message = control.check_control_code("contraseña ñ ü 🔑", "clave")  # used to raise TypeError
+    assert not ok and message == "Clave incorrecta."
+    assert control.check_control_code("piña", "piña")[0]
+    assert not control.check_control_code("", "clave")[0] and not control.check_control_code("clave", None)[0]
 
 
-def test_d199_five_wrong_codes_lock_even_the_right_one_for_fifteen_minutes():
-    guard, clock = make_guard()
-    for attempt in range(control.LOGIN_MAX_FAILURES - 1):
-        ok, message = guard.check(f"intento{attempt}", "clave")
-        assert not ok and "Quedan" in message
-    ok, message = guard.check("otro", "clave")
-    assert not ok and "bloqueado" in message
-    assert clock.slept >= (control.LOGIN_MAX_FAILURES - 1) * control.LOGIN_FAILURE_DELAY_SECONDS
-    ok, message = guard.check("clave", "clave")
-    assert not ok and "Demasiados intentos" in message
-    clock.now += control.LOGIN_LOCK_SECONDS + 1
-    assert guard.check("clave", "clave")[0]
-
-
-def test_d199_old_failures_leave_the_window_and_a_success_resets_the_count():
-    guard, clock = make_guard()
-    for _ in range(control.LOGIN_MAX_FAILURES - 1):
-        guard.check("mal", "clave")
-    clock.now += control.LOGIN_WINDOW_SECONDS + 1
-    assert "Quedan 4" in guard.check("mal", "clave")[1]
-    assert guard.check("clave", "clave")[0]
-    assert "Quedan 4" in guard.check("mal", "clave")[1]
+def test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time():
+    for _ in range(20):
+        assert control.check_control_code("mal", "clave") == (False, "Clave incorrecta.")
+    assert control.check_control_code("clave", "clave")[0]
+    source = (Path(__file__).resolve().parent.parent / "bi" / "control.py").read_text(encoding="utf-8")
+    assert "hmac.compare_digest" in source and not hasattr(control, "LoginGuard")

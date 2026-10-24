@@ -16,7 +16,7 @@ def read_markers():
 
 
 def test_every_marker_names_a_diagram_that_exists():
-    known = set(doc_diagrams.DOC_DIAGRAMS) | set(doc_diagrams.LIVE_DIAGRAMS)
+    known = set(doc_diagrams.DOC_DIAGRAMS)
     for name, markers in read_markers().items():
         assert set(markers) <= known, (name, set(markers) - known)
 
@@ -41,8 +41,10 @@ def test_d205_each_view_is_one_html_document_without_script(name, mode):
 
 def test_d242_the_context_view_is_the_system_as_one_box_with_its_people_and_external_systems():
     page = doc_diagrams.DOC_DIAGRAMS["contexto"](charts.MODE_DARK)
-    # 3D logos on lit discs; the system is one box and nothing of its inside is drawn.
-    assert page.count('class="logo"') == 6 and "radialGradient" in page and 'class="zone"' not in page
+    # 3D logos on lit discs; the system is one box that names the tools it is built with (D-249), in the order of
+    # its pipeline, but draws none of its parts: those are the next views.
+    assert page.count('class="logo"') == 6 + len(doc_views.SYSTEM_TOOLS) and "radialGradient" in page and 'class="zone"' not in page
+    assert [name for _, name in doc_views.SYSTEM_TOOLS] == ["Python", "SQLite", "Parquet", "dbt", "DuckDB", "Streamlit"]
     assert page.count('class="system"') == 1 and "<b>GreenOcean</b>" in page
     assert page.count('class="chip"') == len(doc_views.CONTEXT_EDGES) == 6
     assert page.count('role="tooltip"') == 6 + len(doc_views.CONTEXT_EDGES) + 1
@@ -63,7 +65,7 @@ def test_d242_the_context_view_is_the_system_as_one_box_with_its_people_and_exte
 
 
 def test_d210_the_weak_views_are_gone():
-    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups"}
+    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups", "sop"}
 
 
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
@@ -109,3 +111,29 @@ def test_d247_every_view_a_document_links_to_is_a_page_of_the_menu():
         text = (DOCS_DIR / name).read_text(encoding="utf-8")
         for label in re.findall(r"\[\[vista:([^\]]+)\]\]", text):
             assert dashboard.find_menu_page(label), (name, label)
+
+
+def test_d249_the_security_test_plan_points_each_case_to_a_test_that_exists_and_the_architecture_uses_them():
+    from bi import security_map
+    root = Path(__file__).resolve().parent.parent
+    text = (DOCS_DIR / "SEGURIDAD.md").read_text(encoding="utf-8")
+    rows = re.findall(r"^\| (S-\d{2}) \|(.*)\|$", text, flags=re.MULTILINE)
+    assert [case for case, _ in rows] == [f"S-{n:02d}" for n in range(1, 11)]
+    for case, row in rows:
+        references = re.findall(r"`([^`]+::[^`]+)`", row)
+        assert references, case
+        for reference in references:
+            path, name = reference.split("::")
+            assert re.search(rf"^def {re.escape(name)}\(", (root / path).read_text(encoding="utf-8"), re.MULTILINE), reference
+    cases = {case for case, _ in rows}
+    for threat in security_map.THREATS:
+        assert set(threat[4]) <= cases, threat[0]
+    assert "límite de intentos" in text and "riesgo aceptado" in text  # the accepted risk is written, not hidden
+
+
+def test_d249_the_sop_has_five_steps_and_says_that_ci_warns_but_does_not_stop_main():
+    page = doc_diagrams.DOC_DIAGRAMS["sop"](charts.MODE_DARK)
+    assert [step[1] for step in doc_views.SOP_STEPS] == ["Preparar", "Ejecutar", "Comprobar", "Registrar", "Decidir"]
+    for index in range(5):
+        assert f'id="sop-{index}"' in page and f'id="sop-tip-{index}"' in page
+    assert "no detiene la publicación de main" in page and "<script" not in page

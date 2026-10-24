@@ -26,7 +26,7 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
     names = {name: re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"),
                               re.MULTILINE) for name in DOCUMENTS}
     assert names == {"PRD.md": ["casos", "mockups"], "SAD.md": ["contexto", "contenedores"],
-                     "ADR.md": [], "SEGURIDAD.md": ["seguridad"]}
+                     "ADR.md": [], "SEGURIDAD.md": ["sop"]}
 
 
 def test_d248_each_adr_has_the_standard_parts_and_points_to_its_decision():

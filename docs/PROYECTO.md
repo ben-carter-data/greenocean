@@ -1,6 +1,6 @@
 # Guía del proyecto
 
-Textos de Definición del proyecto, Indicadores, Reglas, Glosario y DevOps y seguridad. El dashboard abre con los resultados; Pipeline y linaje tiene su propia sección. El panel lee este archivo: para cambiar una explicación se cambia aquí. Las reglas (RN), los indicadores (K) y las preguntas (P) se leen de `DISENO.md`; las cifras salen de la base.
+Textos de Definición del proyecto, Indicadores, Reglas y Glosario. La seguridad, el CI/CD y el monitoreo tienen su propia vista en el panel. El dashboard abre con los resultados; Pipeline y linaje tiene su propia sección. El panel lee este archivo: para cambiar una explicación se cambia aquí. Las reglas (RN), los indicadores (K) y las preguntas (P) se leen de `DISENO.md`; las cifras salen de la base.
 
 ## Marco de negocio
 
@@ -96,42 +96,6 @@ El data warehouse (`etl/datos.duckdb`, la base servida) es un modelo estrella: u
 | k6_national_weekly_price | ¿Cuál es el precio nacional de cada producto y canal, semana a semana? | Alertas |
 | k6_usual_range_sql | ¿Qué cambios semanales salen de su rango habitual? (versión SQL de K6) | Alertas |
 | k5_weekly_variations_sql | ¿Cuánto cambió cada precio frente a la semana anterior, en las series largas? (versión SQL de K5) | Brecha de precio |
-
-## DevOps
-
-| Pieza | Qué hace | Archivo |
-|---|---|---|
-| Workflow semanal | Cada martes a las 12:00 UTC descarga, ejecuta el ETL de respaldo, construye y prueba el data warehouse con dbt, corre los tests contra la base nueva, la guarda y publica el informe. Si un paso falla, los siguientes no corren (D-034). | .github/workflows/semanal.yml |
-| Tests en cada push | `pytest` corre en cada push y pull request. Streamlit publica la rama `main` en paralelo, sin esperar el resultado: una prueba en rojo avisa, no detiene la publicación. | .github/workflows/pruebas.yml |
-| Caché de años cerrados | Los archivos de años que ya no cambian se guardan en la caché de GitHub Actions (D-047). | .github/workflows/semanal.yml |
-| Despliegue continuo | Streamlit Community Cloud publica el panel desde la rama `main`: cada push lo actualiza. | requirements.txt |
-| Entorno de desarrollo | Dev container con Python 3.11 y las librerías de `requirements.txt`. | .devcontainer/devcontainer.json |
-
-## Seguridad
-
-| Medida | Qué protege | Archivo |
-|---|---|---|
-| Base en solo lectura | El panel abre `etl/datos.duckdb` en solo lectura (`read_only=True`); el estudio SQL, además, sin acceso a archivos ni a internet y con la configuración bloqueada: ninguna página puede cambiar los datos. | bi/queries.py |
-| Secretos fuera del código | La clave de GitHub y el código de acceso de «Ejecutar ahora» viven en los secretos del panel; el código compara el código de acceso en tiempo constante y bloquea 15 minutos tras 5 intentos fallidos. | bi/control.py |
-| Permisos mínimos del workflow | El job semanal solo puede escribir contenido (el commit de la base) y crear issues (el informe). | .github/workflows/semanal.yml |
-| Datos crudos fuera del repositorio | Los CSV descargados, `raw.db` y los logs no se suben a GitHub (D-020). | .gitignore |
-
-## Observabilidad
-
-| Fuente | Qué registra | Dónde se ve |
-|---|---|---|
-| Tabla `etl_run` | Una fila por carga: inicio, estado, filas leídas, cargadas y rechazadas. | Calidad y auditoría |
-| Tabla `rejection` | Cada fila rechazada con su motivo (RN-11). | Calidad y auditoría |
-| Logs del agente | Un archivo por ejecución de la ingesta, con una línea por archivo descargado y su resultado. | agent/logs |
-| Historial de GitHub Actions | Cada ejecución del workflow con el resultado de cada paso. | Centro de operación |
-| Correo de GitHub | Aviso al autor si el job semanal falla. | Correo |
-
-## Informes
-
-| Informe | Qué contiene | Cuándo |
-|---|---|---|
-| Issue «Informe semanal AAAA-MM-DD» | Estado de la carga, filas leídas, cargadas y rechazadas, cobertura del cruce (K7) y alertas de la semana (K6). | Cada martes, solo si todos los pasos anteriores pasaron. |
-| Este panel | Las cifras de la última carga, leídas de `etl/datos.duckdb` en cada visita. | Uno o dos minutos después del commit semanal. |
 
 ## Glosario
 

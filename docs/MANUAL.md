@@ -64,9 +64,9 @@ La tabla `etl_run` registra cada carga, pero una carga fallida queda escrita sol
 
 Los enlaces del proyecto están en la página GitHub, que abre el logo de GitHub al pie del menú: el código, las ejecuciones, los informes, el historial de cambios y los documentos (este manual y las decisiones). Las fuentes (ODEPA e INE) están en el menú, en «Fuentes de datos».
 
-En el «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. Después de 5 intentos fallidos en 15 minutos, el acceso se bloquea 15 minutos. Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso del vencimiento del token y los enlaces del autor (tokens de GitHub y administración de la app en Streamlit). El panel nunca muestra el token ni una parte de él.
+En el «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. No hay límite de intentos: la clave solo evita ejecuciones accidentales (D-249). Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso del vencimiento del token y los enlaces del autor (tokens de GitHub y administración de la app en Streamlit). El panel nunca muestra el token ni una parte de él.
 
-**La clave evita ejecuciones accidentales; no es la barrera principal.** Con el botón, lo máximo que se puede hacer es lanzar el workflow. Los enlaces de administración llevan a páginas de GitHub y de Streamlit que piden el inicio de sesión del autor: quien vea la tarjeta sin esa cuenta no puede cambiar nada. Lo que protege el proyecto es ese inicio de sesión (con verificación en dos pasos) y que el token tenga solo el permiso de lanzar el workflow de este repositorio. El mapa completo está en «Mapa de seguridad».
+**La clave evita ejecuciones accidentales; no es la barrera principal.** Con el botón, lo máximo que se puede hacer es lanzar el workflow. Los enlaces de administración llevan a páginas de GitHub y de Streamlit que piden el inicio de sesión del autor: quien vea la tarjeta sin esa cuenta no puede cambiar nada. Lo que protege el proyecto es ese inicio de sesión (con verificación en dos pasos) y que el token tenga solo el permiso de lanzar el workflow de este repositorio. La arquitectura completa está en «Arquitectura de seguridad».
 
 ## Límites conocidos
 
@@ -97,7 +97,7 @@ El menú lateral reúne las páginas en cinco grupos:
 
 1. **Negocio · BI:** «Resumen semanal» (qué se movió esta semana y qué es inusual) y «Precios e inflación» (qué familias de alimentos subieron más o menos que el IPC de alimentos del INE).
 2. **Ingeniería de datos:** «Pipeline y linaje» (el recorrido por capas y el linaje de dbt), «Modelo de datos» (modelo estrella, entidad-relación, dónde viven los datos y cruces entre bases), «Calidad y auditoría» (los once indicadores, las puertas de calidad y los controles de auditoría), «Consultas SQL» (un estudio SQL de solo lectura con consultas de ejemplo) y «SAD · Arquitectura».
-3. **DevOps y seguridad:** «Centro de operación» (operación, despliegue y CI/CD), «Mapa de seguridad» y «Plan de pruebas de seguridad».
+3. **DevOps y seguridad:** «Centro de operación» (despliegue, CI/CD, operación y monitoreo), «Arquitectura de seguridad» y «Plan de pruebas de seguridad».
 4. **Stack y evidencia:** las herramientas del proyecto y las cifras que las respaldan.
 5. **Análisis de negocio · BA:** «PRD · Requisitos del producto», «ADR · Decisiones de arquitectura» y «Escalabilidad».
 

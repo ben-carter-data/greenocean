@@ -24,7 +24,7 @@ Cada pieza corre en un servicio gratuito, sin servidor propio. El job semanal y 
 
 ## 5. Seguridad
 
-Las fronteras del sistema, el control que protege cada una y la prueba que lo verifica están en [[vista:Mapa de seguridad]]; el procedimiento para comprobarlas, en [[vista:Plan de pruebas de seguridad]].
+Las amenazas, el control que mitiga cada una, la prueba que lo verifica y la mejora continua que los mantiene están en [[vista:Arquitectura de seguridad]]; el procedimiento para comprobarlas, en [[vista:Plan de pruebas de seguridad]].
 
 ## 6. Componentes
 

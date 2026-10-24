@@ -95,18 +95,41 @@ def test_the_weekly_job_has_least_privilege():
     assert granted == {"contents": "write", "issues": "write"}
 
 
-def test_every_barrier_of_the_view_points_to_a_test_that_exists():
-    for row in security_map.ROWS:
-        for barrier in row["barriers"]:
-            path, name = barrier["test"].split("::")
-            assert f"def {name}(" in (REPOSITORY / path).read_text(), barrier["test"]
+def test_every_control_of_the_map_points_to_a_test_that_exists():
+    for number, title, *_, tests, verifiable in security_map.CONTROLS:
+        assert bool(tests) == verifiable, title  # only the platform's own sign-in has no test, and it says so
+        for test in tests:
+            path, name = test.split("::")
+            assert f"def {name}(" in (REPOSITORY / path).read_text(), test
 
 
-def test_the_security_view_draws_every_barrier_with_its_test_and_no_secret():
+def test_d249_the_security_architecture_reads_threat_mitigation_verification_and_asset_with_the_improvement_loop():
     from bi import charts
     page = security_map.build_security_html(charts.get_palette("Vantablack"))
-    barriers = [barrier for row in security_map.ROWS for barrier in row["barriers"]]
-    assert page.count("prueba ↗") == len(barriers) == 9
-    for barrier in barriers:
-        assert barrier["test"].split("::")[1] in page
+    assert [name for name, _ in security_map.COLUMNS] == ["Amenaza · OWASP", "Mitigación", "Verificación", "Activo protegido"]
+    numbers = {control[0] for control in security_map.CONTROLS}
+    assert numbers == set(range(1, 8))
+    used = set()
+    for tid, title, owasp, controls, cases, asset in security_map.THREATS:
+        assert f'id="row-{tid}"' in page and f'id="tip-{tid}"' in page and title in page
+        assert all(code in security_map.OWASP for code in owasp.split(" · ")), tid
+        used |= set(controls)
+        # a threat is verified by tests exactly when its controls have tests
+        assert bool(cases) == all(security_map.CONTROLS[n - 1][7] for n in controls), tid
+    assert used == numbers  # every control mitigates some threat
+    assert [step[0] for step in security_map.LOOP] == ["Revisar", "Atacar", "Corregir", "Probar", "Repetir"]
+    assert "Mejora continua" in page and "cada revisión vuelve a empezar" in page
+    assert page.count('class="num declared"') == 1 and "No verificable aquí" in page
     assert "<script" not in page and "secreto-de-prueba" not in page and "ghp_" not in page
+
+
+def test_d249_the_map_says_what_the_author_decided_about_the_code_and_the_sql_studio():
+    controls = {control[1]: control for control in security_map.CONTROLS}
+    code = controls["Clave de control"]
+    assert "evita ejecuciones accidentales" in code[2] and "hmac.compare_digest" in code[4]
+    assert "No hay límite de intentos" in code[4]  # the accepted risk is stated, not hidden
+    sql = controls["SQL público con límites"]
+    assert "abierto a cualquier visitante" in sql[3] and "10 segundos" in sql[4] and "5.000 filas" in sql[4]
+    assert sql_explorer.TIMEOUT_SECONDS == 10 and sql_explorer.ROW_LIMIT == 5000 and sql_explorer.MEMORY_LIMIT == "1GB"
+    declared = controls["Inicio de sesión externo"]
+    assert not declared[7] and "no verificable" in declared[2]

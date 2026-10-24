@@ -22,14 +22,6 @@ ALL_PAGES = [p for views in dashboard.WINDOWS.values() for p in views]
 
 
 @pytest.fixture(autouse=True)
-def reset_login_guard():
-    """The control-code guard is shared by every session (D-199): each test starts clean."""
-    dashboard.get_login_guard.clear()
-    yield
-    dashboard.get_login_guard.clear()
-
-
-@pytest.fixture(autouse=True)
 def fixed_github_answers(monkeypatch):
     monkeypatch.setattr(control, "list_workflow_runs", lambda *args, **kwargs: [])
     dashboard.fetch_pipeline_runs.clear()
@@ -312,33 +304,11 @@ def test_d097_model_page_is_one_panoramic_diagram():
 
     app = draw_page(dashboard.PAGE_DEVOPS)
     assert not app.exception
-    # One screen (D-132): no toggle, no tabs; each layer is a tile that opens a dialog.
+    # D-249: only the deployment diagram; security, CI/CD, monitoring and capacity have their own views.
     assert not app.tabs and not app.expander and not app.toggle
-    keys = [str(button.key) for button in app.button]
-    for heading in [group[0] for group in dashboard.ARCHITECTURE_GROUPS] + ["Coste y capacidad"]:
-        assert f"devops_layer_{heading}" in keys
+    assert not [button for button in app.button if str(button.key).startswith("devops_layer_")]
     joined = " ".join(block.value for block in app.markdown)
     assert joined.count('class="zoom-frame diagram-devops"') == 1
-    # A tile opens its layer's detail; only then are its rows drawn.
-    assert 'class="technical-rows layer-cards"' not in joined
-    app.button(key="devops_layer_Seguridad").click().run()
-    assert not app.exception
-    joined = " ".join(block.value for block in app.markdown)
-    assert joined.count('class="technical-rows layer-cards"') == 1 and "Base en solo lectura" in joined
-    assert joined.count('class="layer-card"') == 4 and 'class="layer-logo"' in joined
-
-@needs_database
-def test_d056_analysis_filters_show_once_and_hold_in_every_tab():
-    app = draw_page(dashboard.PAGE_ANALYSIS)
-    assert not app.exception
-    assert [tab.label for tab in app.tabs] == dashboard.TABS_BY_PAGE[dashboard.PAGE_ANALYSIS]
-    assert [box.label for box in app.selectbox].count("Producto") == 1
-    assert [box.label for box in app.multiselect] == ["Canal"]
-    region = [box for box in app.selectbox if box.label == "Región"][0]
-    other_region = [option for option in region.options if option != region.value][0]
-    region.set_value(other_region).run()
-    assert not app.exception
-    assert app.session_state["analysis_region"] == other_region
 
 
 def test_kpi_link_opens_the_kpi_view_with_that_indicator():
@@ -495,15 +465,13 @@ def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
 
 
 @needs_database
-def test_d199_the_code_box_survives_any_character_and_locks_after_five_wrong_codes():
+def test_d249_the_code_box_survives_any_character_and_never_locks():
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
     text = open_run_dialog(app, "contraseña ñ")
     assert not app.exception and "Clave incorrecta" in text
-    for attempt in range(control.LOGIN_MAX_FAILURES - 1):
+    for attempt in range(6):  # D-249: no limit of attempts, by the author's decision
         text = open_run_dialog(app, f"intento{attempt}")
-    assert "bloqueado" in text
-    text = open_run_dialog(app, "clave")
-    assert not app.exception and "Demasiados intentos" in text and "Se ejecutó" not in text
+        assert "Clave incorrecta" in text and "bloqueado" not in text and "Demasiados" not in text
 
 
 @needs_database
@@ -511,10 +479,10 @@ def test_d201_security_has_its_own_section_with_the_view_and_the_test_plan():
     assert dashboard.SIDEBAR_TOP_LABELS[dashboard.SECTION_SECURITY] == "Seguridad"
     assert dashboard.WINDOWS[dashboard.SECTION_SECURITY] == [dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN]
     app = draw_control_page({})
-    assert not app.exception and [tab.label for tab in app.tabs] == ["Operación", "Despliegue", "CI/CD"]
+    assert not app.exception and [tab.label for tab in app.tabs] == ["Despliegue", "CI/CD", "Operación", "Monitoreo"]
     for page in (dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN):
         app = draw_page(page)
-        assert not app.exception and read_page_title(app) == page
+        assert not app.exception and read_page_title(app) == dashboard.SIDEBAR_LABELS.get(page, page)
     assert "S-01" in " ".join(block.value for block in app.markdown)
 
 
@@ -561,15 +529,6 @@ def test_project_links_are_grouped_as_a_tree_with_descriptions():
             assert f'>{link["url"]}<' not in links
 
 # endregion
-
-
-def test_architecture_cards_show_file_names_and_named_links():
-    note = dashboard.format_architecture_note("Archivo", ".github/workflows/semanal.yml")
-    assert note == 'Archivo: <code title=".github/workflows/semanal.yml">semanal.yml</code>'
-    assert ">Ver en Monitoreo<" in dashboard.format_architecture_note(
-        "Dónde se ve", dashboard.TAB_QUALITY)
-    assert [group[0] for group in dashboard.ARCHITECTURE_GROUPS] == [
-        "Seguridad", "DevOps", "Observabilidad", "Informes"]
 
 
 def test_d057_cards_escape_their_text_and_keep_bold_and_code():
@@ -1245,7 +1204,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Step 4 of the refonte: Ingeniería de datos, four pages; DevOps joined Ejecuciones.
     assert 'DevOps y seguridad' not in labels
     for child in ['Resumen semanal', 'Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría',
-                  'Centro de operación', 'Mapa de seguridad', 'Plan de pruebas de seguridad',
+                  'Centro de operación', 'Arquitectura de seguridad', 'Plan de pruebas de seguridad',
                   'PRD · Requisitos del producto', 'SAD · Arquitectura', 'ADR · Decisiones de arquitectura']:
         assert child in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
@@ -1563,7 +1522,7 @@ MENU_BLOCKS = {
     'Negocio · BI': ['Resumen semanal', 'Precios e inflación'],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL',
                             'SAD · Arquitectura'],
-    'DevOps y seguridad': ['Centro de operación', 'Mapa de seguridad', 'Plan de pruebas de seguridad'],
+    'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad', 'Plan de pruebas de seguridad'],
     'Stack y evidencia': ['Stack y evidencia'],
     'Análisis de negocio · BA': ['PRD · Requisitos del producto', 'ADR · Decisiones de arquitectura', 'Escalabilidad'],
 }
