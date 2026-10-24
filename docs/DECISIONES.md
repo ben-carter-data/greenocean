@@ -2049,3 +2049,12 @@ GreenOcean está hecho a la medida de lo que hace hoy: datos públicos, semanale
 - **Puesta en marcha (una vez, al hacer el push):** crear el release con la base que nombra el puntero: `gh release create base-actual etl/datos.duckdb`. Si la base local cambió desde el último puntero, escribirlo antes con `python bi/served_database.py --pointer` y hacer commit. Sin el release, el panel publicado y el workflow no encuentran la base.
 - **Textos y diagramas actualizados:** CI/CD (diez pasos, el release y Streamlit), Despliegue, Dónde viven los datos, Arquitectura de seguridad, contenedores del SAD, Stack y evidencia, Operación, glosario, SAD, ADR-04, Escalabilidad, MANUAL, README y CLAUDE.md.
 - **Pruebas:** `tests/test_served_database.py` (descarga si falta o es más antigua; conserva una reconstrucción local más nueva; rechaza un archivo cuya huella no coincide sin tocar la base; el workflow trae la base antes de construir y publica el archivo antes que su puntero; git guarda el puntero y ninguna de las dos bases). La suite pasa con y sin el respaldo local, como en GitHub.
+
+## D-271 · Centro de operación, pestaña Operación: cabe en una pantalla y se adapta a la ventana
+
+- **Pedido del autor:** que la pestaña Operación sea más adaptable y se vea entera, sin desplazarse.
+- **Antes:** a 1440 × 900 medía 960 px: el recorrido tenía un alto fijo y la lista de las últimas ejecuciones iba debajo. A 1024 px, los logos del recorrido conservaban su tamaño en una escena más angosta y se montaban unos sobre otros.
+- **Decisión:** las últimas ejecuciones pasan a la columna derecha, bajo los datos de la carga, una por línea (si la columna es angosta, se cortan con «…» y el puntero las muestra enteras). El recorrido conserva su proporción y nunca es más alto que lo que la ventana deja bajo las pestañas. Los logos, los nombres y los tiempos se achican con la escena, sin pasar nunca de su tamaño actual. En una tableta (ventana de menos de 1100 px), los datos pasan bajo el recorrido, que toma todo el ancho.
+- **Resultado:** sin desplazarse a 1920 × 1080, 1440 × 900, 1280 × 800 y 1440 × 700. En la tableta horizontal la página se desplaza, porque las dos columnas se apilan, pero ya nada se monta.
+- **Sin cambios:** el dibujo del recorrido (D-229), sus nueve pasos, sus estados, sus ventanas y los datos de la columna derecha.
+- **Pruebas:** `tests/test_operation_center.py::test_d271_*`.

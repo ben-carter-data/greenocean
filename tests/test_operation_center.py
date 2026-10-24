@@ -124,3 +124,10 @@ def test_d165_the_page_draws_the_stage_beside_the_facts_and_the_manual_run():
     assert "Datos publicados" in text and "Última carga" in text
     # D-202: the manual run waits behind «Acceso del autor».
     assert "runs_run_now" not in [button.key for button in app.button] and app.get("popover")
+
+
+def test_d271_the_path_shrinks_with_its_stage_and_never_grows_past_its_size():
+    from bi import charts
+    css = operation_center.build_css(charts.get_palette(charts.MODE_DARK))
+    assert "container-type:inline-size" in css
+    assert "width:min(76px, calc(76 * var(--u)))" in css and "width:min(132px, calc(132 * var(--u)))" in css

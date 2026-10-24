@@ -6008,11 +6008,14 @@ def build_recent_runs_html(runs):
               control.RUN_IN_PROGRESS: charts.STATUS_COLORS["running"]}
     words = {control.RUN_OK: "correcta", control.RUN_FAILED: "falló", control.RUN_IN_PROGRESS: "en curso",
              control.RUN_SIMULATED_FAILURE: "falla simulada"}
+    describe = lambda run: (f'{to_chile_time(run["started_at"]):%d-%m %H:%M} · {run["trigger"].lower()} · '
+                            f'{words.get(run["state"], "")}')
+    # One line each; a narrow column cuts it with «…» and the pointer shows it whole (D-271).
     lines = "".join(
-        f'<a class="oc-run" href="{html.escape(run["url"], quote=True)}" target="_blank" rel="noopener noreferrer">'
+        f'<a class="oc-run" href="{html.escape(run["url"], quote=True)}" target="_blank" rel="noopener noreferrer" '
+        f'title="{html.escape(describe(run), quote=True)}">'
         f'<span class="oc-dot" style="background:{colors.get(run["state"], charts.STATUS_COLORS["unknown"])}"></span>'
-        f'{to_chile_time(run["started_at"]):%d-%m %H:%M} · {html.escape(run["trigger"].lower())} · '
-        f'{words.get(run["state"], "")} ↗</a>'
+        f'{html.escape(describe(run))} ↗</a>'
         for run in runs[:OPERATION_RECENT_RUNS])
     return f'<div class="oc-runs"><span class="oc-fact-label">Últimas ejecuciones</span>{lines}</div>'
 
@@ -6024,23 +6027,32 @@ def show_operation_center(mode, live=False):
     states = operation_center.build_step_states(runs[0] if runs else None, details,
                                                 latest_load["status"] == etl.STATUS_LOADED)
     unlocked = bool(st.session_state.get(ADMIN_UNLOCKED))
-    # The latest runs go under the path and the manual run beside the facts, so both
-    # columns end together and the page fits one screen.
+    # D-271: the latest runs join the facts in the side column, and the path never grows taller than the window
+    # leaves, so the whole tab fits one screen.
     stage_column, side_column = st.columns([2.4, 1], gap="large")
-    with stage_column:
+    with stage_column, st.container(key="oc_stage_column"):
         st.iframe(operation_center.build_stage_html(palette, states, unlocked), height="content")
-        if runs:
-            st.markdown(build_recent_runs_html(runs), unsafe_allow_html=True)
     with side_column:
         if error_text:
             st.caption(f"GitHub no respondió ({error_text}); se muestra la última respuesta guardada.")
         st.markdown(build_operation_side_css(palette)
                     + build_operation_facts(latest_load, read_published_figures(get_database_version()),
-                                            datetime.now(timezone.utc)), unsafe_allow_html=True)
+                                            datetime.now(timezone.utc))
+                    + (build_recent_runs_html(runs) if runs else ""), unsafe_allow_html=True)
 
 
 def build_operation_side_css(palette):
     return f"""<style>
+    /* D-271: the path keeps its proportion (740 × 640) and takes the height the window leaves: the tabs above, the
+       short footer below. Its frame follows the drawing's height, so a narrower path is also a shorter page. */
+    .st-key-oc_stage_column iframe {{display:block; margin:0 auto; max-width:max(420px, calc((100vh - 270px) * 740 / 640));}}
+    /* On a tablet the facts go under the path, which then takes the whole width. */
+    @media (max-width:1100px) {{
+        [data-testid="stHorizontalBlock"]:has(.st-key-oc_stage_column) {{flex-wrap:wrap !important;}}
+        [data-testid="stHorizontalBlock"]:has(.st-key-oc_stage_column) > [data-testid="stColumn"] {{flex:1 1 100% !important; min-width:100% !important;}}
+    }}
+    .oc-runs .oc-run {{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block;}}
+    .oc-runs .oc-run .oc-dot {{vertical-align:middle;}}
     .oc-fact {{display:flex; flex-direction:column; gap:1px; padding:10px 0;
         border-bottom:1px solid {palette['card_border']};}}
     .oc-fact-label {{font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
