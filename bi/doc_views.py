@@ -9,7 +9,7 @@ import base64
 import html
 from pathlib import Path
 
-from bi import brand_icons, charts, database_map
+from bi import brand_icons, charts, database_map, storage_map
 
 # Disc colors (light top, dark bottom, glyph) of the brands the actors view needs, as in
 # database_map.BRANDS.
@@ -258,6 +258,149 @@ def actor_figure(x, y, name, label, ink, muted, brand=False):
 # endregion
 
 
+# region Containers (SAD, D-247)
+# Level 2 of the C4 model: what runs and what stores data inside GreenOcean, the technology of each, and how they talk.
+# The weekly load is one container: agent, ETL and dbt run in the same job. Every arrow goes from the one that uses to
+# the one that is used, with what it does and how.
+C4_WIDTH, C4_HEIGHT = 900, 664
+C4_BOUNDARY = (136, 128, 754, 412)
+# (key, kind, x, y, w, h, name, technology lines, files, what it does). kind: app, store, external, person.
+CONTAINERS = [
+    ("load", "app", 156, 160, 190, 360, "Carga semanal", ["Python · requests ·", "dbt Core · DuckDB"],
+     "agent/agent.py · etl/etl.py · etl/pipeline.py · dbt/",
+     "Descarga los CSV, los guarda sin cambios, los transforma y prueba con dbt y publica la base solo si todo pasa."),
+    ("work", "store", 426, 156, 210, 124, "Archivos de trabajo", ["SQLite · Parquet · DuckDB"],
+     "etl/raw.db · etl/bronze/ · etl/warehouse_build.duckdb",
+     "Aterrizaje, bronce y base de trabajo de dbt. Se rehacen en cada carga y no se suben a GitHub."),
+    ("served", "store", 426, 316, 210, 100, "Base servida", ["DuckDB"], "etl/datos.duckdb",
+     "Las 12 tablas que lee el panel. Se reemplaza entera al final de una carga válida."),
+    ("backup", "store", 426, 438, 210, 82, "Respaldo", ["SQLite"], "etl/datos.db",
+     "Los mismos precios calculados por el ETL en Python, sin dbt, para comprobar la paridad."),
+    ("panel", "app", 726, 316, 150, 100, "Panel web", ["Streamlit · Python"], "bi/dashboard.py",
+     "Muestra los indicadores y los documentos, y abre el estudio SQL; lee la base en solo lectura."),
+    ("odepa", "external", 10, 196, 110, 64, "ODEPA", ["precios"], "", "Publica los CSV de precios cada semana."),
+    ("ine", "external", 10, 356, 110, 64, "INE", ["IPC de alimentos"], "", "Publica el IPC de alimentos cada mes."),
+    ("github", "external", 156, 580, 720, 64, "GitHub", ["repositorio · Actions · API REST"], "",
+     "Guarda el código y la base publicada, ejecuta la carga cada martes y responde a la API del panel."),
+    ("visitor", "person", 746, 26, 0, 0, "Visitante", [], "", "Analista, compras, gerencia o revisor técnico."),
+    ("author", "person", 846, 26, 0, 0, "Administrador", [], "", "Mantiene el código y los secretos."),
+]
+# (path, label, label x, label y, anchor). One straight segment each, from the one that uses to the one that is used.
+C4_LINKS = [
+    ("M156 228 H120", "HTTPS", 138, 220, "middle"),
+    ("M156 388 H120", "HTTPS", 138, 380, "middle"),
+    ("M346 210 H426", "lee y escribe", 386, 202, "middle"),
+    ("M346 366 H426", "publica", 386, 358, "middle"),
+    ("M346 479 H426", "escribe", 386, 471, "middle"),
+    ("M726 366 H636", "lee", 681, 358, "middle"),
+    ("M746 96 V316", "consulta · HTTPS", 746, 206, "middle"),
+    ("M846 96 V316", "lanza la carga", 846, 262, "middle"),
+    ("M801 416 V580", "lanza el workflow · API REST", 801, 500, "middle"),
+    ("M200 580 V520", "ejecuta cada martes", 192, 560, "end"),
+    ("M300 520 V580", "commit de la base", 308, 560, "start"),
+]
+C4_SUBLABELS = [("solo lectura", 681, 384)]
+
+
+def build_containers_html(mode):
+    """The containers of GreenOcean (C4 level 2): applications and data stores with their technology and links."""
+    palette = charts.get_palette(mode)
+    dark = palette["base"] == charts.BASE_DARK
+    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
+                                              palette["card"], palette["card_border"], palette["accent"])
+    shadow = "rgba(0,0,0,.45)" if dark else "rgba(15,39,71,.15)"
+    left, top, width, height = C4_BOUNDARY
+    parts = [f'<defs><marker id="c4-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
+             f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{accent}"/></marker></defs>',
+             f'<rect x="{left}" y="{top}" width="{width}" height="{height}" rx="20" fill="none" stroke="{border}" '
+             f'stroke-width="1.4" stroke-dasharray="6 6"/>'
+             f'<text x="{left + 18}" y="{top + 22}" class="c4-sys">GREENOCEAN · SISTEMA</text>']
+    for path, *_ in C4_LINKS:
+        parts.append(f'<path class="c4-line" d="{path}" marker-end="url(#c4-head)"/>')
+    boxes, tips = [], []
+    for key, kind, x, y, w, h, name, technology, files, what in CONTAINERS:
+        if kind == "person":
+            mark = disc_logo("person", "visitor" if key == "visitor" else "author").replace(
+                '<svg class="logo" ', f'<svg x="{x - 26}" y="{y - 10}" width="52" height="52" ', 1)
+            boxes.append(f'<g class="c4-node" id="c-{key}" tabindex="0">{mark}<text class="c4-name" x="{x}" y="{y + 60}" '
+                         f'text-anchor="middle">{esc(name)}</text></g>')
+            box = (x - 55, y - 10, 110, 80)
+        else:
+            dashed = ' stroke-dasharray="5 5"' if kind == "external" else ""
+            fill = "transparent" if kind == "external" else card
+            icon, name_x = "", x + 12
+            if kind == "store":
+                slug = {"work": "sqlite", "served": "duckdb", "backup": "sqlite"}[key]
+                icon = storage_map.cylinder(x + 12, y + 10, 24, 34, slug, f"c4{key}", glyph_size=13)
+                name_x = x + 46
+            elif kind == "app":
+                icon = storage_map.disc("streamlit" if key == "panel" else "python", x + 10, y + 10, 32, f"-c4{key}")
+                name_x = x + 48
+            lines = [f'<text class="c4-name" x="{name_x}" y="{y + 31}">{esc(name)}</text>']
+            line_y = y + 31 if kind == "external" else y + 60
+            if kind == "external":
+                lines.append(f'<text class="c4-tech" x="{x + 12}" y="{y + 50}">[{esc(" ".join(technology))}]</text>')
+            else:
+                for index, part in enumerate(technology):
+                    first, last = index == 0, index == len(technology) - 1
+                    lines.append(f'<text class="c4-tech" x="{x + 12}" y="{line_y}">{"[" if first else ""}{esc(part)}'
+                                 f'{"]" if last else ""}</text>')
+                    line_y += 16
+                for part in [piece.strip() for piece in files.split("·") if piece.strip()]:
+                    line_y += 2
+                    lines.append(f'<text class="c4-file" x="{x + 12}" y="{line_y}">{esc(part)}</text>')
+                    line_y += 15
+            if key == "load":
+                line_y += 18
+                for part in wrap(what, 26):
+                    lines.append(f'<text class="c4-what" x="{x + 12}" y="{line_y}">{esc(part)}</text>')
+                    line_y += 17
+            boxes.append(f'<g class="c4-node c4-{kind}" id="c-{key}" tabindex="0"><rect x="{x}" y="{y}" width="{w}" '
+                         f'height="{h}" rx="14" fill="{fill}" stroke="{accent if kind == "app" else border}"'
+                         f'{dashed} stroke-width="{1.6 if kind == "app" else 1.2}"/>{icon}{"".join(lines)}</g>')
+            box = (x, y, w, h)
+        bx, by, bw, bh = box
+        tx = min(max(bx + bw / 2 - 140, 8), C4_WIDTH - 288)
+        above = by > 300
+        tips.append(f'<g class="c4-tip" id="ct-{key}"><foreignObject x="{tx:.0f}" y="{(by - 8) if above else (by + bh + 8):.0f}" '
+                    f'width="280" height="1" overflow="visible"><div xmlns="http://www.w3.org/1999/xhtml" '
+                    f'style="{"bottom:0" if above else "top:0"}"><b>{esc(name)}</b>{esc(what)}'
+                    + (f'<b>Fuente</b><code>{esc(files)}</code>' if files else "") + '</div></foreignObject></g>')
+    chips = "".join(f'<text class="c4-label" x="{x}" y="{y}" text-anchor="{anchor}">{esc(label)}</text>'
+                    for _, label, x, y, anchor in C4_LINKS)
+    chips += "".join(f'<text class="c4-label" x="{x}" y="{y}" text-anchor="middle">{esc(label)}</text>'
+                     for label, x, y in C4_SUBLABELS)
+    hovers = "".join(f"svg:has(#c-{row[0]}:hover, #c-{row[0]}:focus) #ct-{row[0]} {{ opacity:1; }}" for row in CONTAINERS)
+    css = f"""<style>
+* {{ box-sizing:border-box; }}
+html, body {{ margin:0; height:100%; background:transparent; color:{text}; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
+svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
+.c4-sys {{ font-size:12.5px; font-weight:700; letter-spacing:.1em; fill:{ink}; }}
+.c4-node {{ outline:none; cursor:default; }}
+.c4-node rect {{ filter:drop-shadow(0 8px 10px {shadow}); }}
+.c4-external rect {{ filter:none; }}
+.c4-node:hover rect, .c4-node:focus rect {{ stroke:{accent}; }}
+.c4-name {{ font-size:14.5px; font-weight:600; fill:{ink}; }}
+.c4-tech {{ font-size:12.5px; fill:{muted}; }}
+.c4-file {{ font:400 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill:{text}; }}
+.c4-what {{ font-size:12.5px; fill:{text}; }}
+.c4-line {{ fill:none; stroke:{accent}; stroke-width:1.8; }}
+.c4-label {{ font-size:12px; fill:{ink}; paint-order:stroke; stroke:{palette['background']}; stroke-width:5px; }}
+.c4-tip {{ opacity:0; pointer-events:none; transition:opacity .15s ease; }}
+.c4-tip div {{ position:absolute; width:280px; padding:12px 14px; border-radius:14px; background:{card}; border:1px solid {border};
+  box-shadow:0 18px 40px rgba(0,0,0,{'.55' if dark else '.2'}); color:{text}; font-size:12.5px; line-height:1.45; }}
+.c4-tip b {{ display:block; margin:6px 0 2px; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
+.c4-tip b:first-child {{ margin-top:0; color:{ink}; font-size:12.5px; letter-spacing:0; text-transform:none; }}
+.c4-tip code {{ font:400 12px ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; }}
+{hovers}
+</style>"""
+    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            + css + f'</head><body><svg class="c4" viewBox="0 0 {C4_WIDTH} {C4_HEIGHT}" preserveAspectRatio="xMidYMid meet" '
+            f'role="img" aria-label="Contenedores de GreenOcean">{"".join(parts)}{"".join(boxes)}{chips}{"".join(tips)}'
+            '</svg></body></html>')
+# endregion
+
+
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 MOCKUPS = [
     ("m1-resumen-vantablack.jpg", "M-1 · Resumen semanal", "tema Vantablack · computador", "laptop"),
@@ -297,5 +440,6 @@ figcaption {{ margin-top:10px; color:{palette['reference']}; }} figcaption b {{ 
 # endregion
 
 # The document views by marker, with the height of their frame in the page.
-VIEWS = {"contexto": (build_context_html, 520), "casos": (build_use_cases_html, 580),
+VIEWS = {"contexto": (build_context_html, 470), "contenedores": (build_containers_html, 650),
+         "casos": (build_use_cases_html, 580),
          "mockups": (build_mockups_html, 720)}

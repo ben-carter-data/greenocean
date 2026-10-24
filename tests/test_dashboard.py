@@ -511,7 +511,7 @@ def test_d201_security_has_its_own_section_with_the_view_and_the_test_plan():
     assert dashboard.SIDEBAR_TOP_LABELS[dashboard.SECTION_SECURITY] == "Seguridad"
     assert dashboard.WINDOWS[dashboard.SECTION_SECURITY] == [dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN]
     app = draw_control_page({})
-    assert not app.exception and [tab.label for tab in app.tabs][:2] == ["Operación", "Plataforma"]
+    assert not app.exception and [tab.label for tab in app.tabs] == ["Operación", "Despliegue", "CI/CD"]
     for page in (dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN):
         app = draw_page(page)
         assert not app.exception and read_page_title(app) == page
@@ -817,9 +817,8 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
             assert not app.tabs, page
         texts = " ".join(block.value for block in app.markdown)
         assert ("<h1>¿Qué familias de alimentos subieron y bajaron?</h1>" in texts) == (page == dashboard.HOME_PAGE)
-        # The journey lives in Pipeline y linaje and, since D-205, also in the SAD.
-        assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (page in (dashboard.PAGE_DIAGRAMS,
-                                                                                              dashboard.PAGE_SAD))
+        # The journey lives only in Pipeline y linaje; the SAD links to it (D-247).
+        assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
         # The lineage is the switch's second view, never drawn by default (step 4).
         assert 'aria-label="Linaje dbt: de bronce a marts"' not in texts
 
@@ -1499,7 +1498,7 @@ def test_d129_the_github_page_names_actions_so_it_is_not_confused_with_ejecucion
 def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
     assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:3] == [dashboard.PAGE_PRD, dashboard.PAGE_SAD, dashboard.PAGE_ADR]
     # D-205: the document views in their own frame, the live panel diagrams inline.
-    for page, framed, inline in ((dashboard.PAGE_PRD, 2, 0), (dashboard.PAGE_SAD, 1, 3), (dashboard.PAGE_ADR, 0, 0),
+    for page, framed, inline in ((dashboard.PAGE_PRD, 2, 0), (dashboard.PAGE_SAD, 2, 0), (dashboard.PAGE_ADR, 0, 0),
                                  (dashboard.PAGE_SECURITY_PLAN, 1, 0)):
         app = draw_page(page)
         assert not app.exception and not app.code

@@ -76,6 +76,7 @@ def _styles():
 def _clean_text(text):
     """Characters the built-in PDF fonts can draw: superscripts become <super>, the
     minus sign a dash, anything else outside Windows-1252 its closest ASCII form."""
+    text = re.sub(r"\[\[vista:([^\]]+)\]\]", r"«\1» (página del panel)", text)  # D-247
     text = re.sub(r"[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]+", lambda m: "\x00" + m.group(0).translate(SUPERSCRIPTS) + "\x01", text)
     text = text.replace("−", "–")
     cleaned = []

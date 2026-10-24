@@ -63,7 +63,7 @@ def test_d242_the_context_view_is_the_system_as_one_box_with_its_people_and_exte
 
 
 def test_d210_the_weak_views_are_gone():
-    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "casos", "mockups"}
+    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups"}
 
 
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
@@ -80,3 +80,30 @@ def test_doc_diagrams_does_not_depend_on_streamlit():
     for module in (doc_diagrams, doc_views):
         source = Path(module.__file__).read_text(encoding="utf-8")
         assert "streamlit as st" not in source and "import streamlit" not in source
+
+
+def test_d247_the_containers_view_is_c4_level_2_with_real_files_and_straight_links():
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    page = doc_diagrams.DOC_DIAGRAMS["contenedores"](charts.MODE_DARK)
+    kinds = {row[1] for row in doc_views.CONTAINERS}
+    assert kinds == {"app", "store", "external", "person"}
+    assert [row[6] for row in doc_views.CONTAINERS if row[1] == "app"] == ["Carga semanal", "Panel web"]
+    for key, kind, *_, files, what in doc_views.CONTAINERS:
+        assert what, key
+        for path in [part.strip() for part in files.split("·") if part.strip()]:
+            if path not in ("etl/raw.db", "etl/bronze/", "etl/warehouse_build.duckdb"):  # rebuilt on each load, not in Git
+                assert (root / path).exists(), path
+        assert f'id="c-{key}"' in page and f'id="ct-{key}"' in page
+    for path, label, *_ in doc_views.C4_LINKS:  # (path, label, x, y, anchor)
+        assert re.fullmatch(r"M\d+ \d+ [HV]\d+", path), path  # one straight segment
+        assert label
+    assert "<script" not in page and page.count('class="c4-line"') == len(doc_views.C4_LINKS)
+
+
+def test_d247_every_view_a_document_links_to_is_a_page_of_the_menu():
+    from bi import dashboard
+    for name in DOCUMENTS:
+        text = (DOCS_DIR / name).read_text(encoding="utf-8")
+        for label in re.findall(r"\[\[vista:([^\]]+)\]\]", text):
+            assert dashboard.find_menu_page(label), (name, label)

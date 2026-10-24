@@ -1275,6 +1275,8 @@ def build_style_css(mode):
         box-shadow:0 18px 40px -24px rgba(0,0,0,.45), 0 2px 6px -2px rgba(0,0,0,.12);}}
     .st-key-project_document > div > div:first-child h2:first-child {{border-top:none; margin-top:0;}}
     .st-key-project_document .doc-diagram {{background:transparent;}}
+    /* The document views use the whole card, padding included, so their text stays at full size (D-247). */
+    .st-key-project_document [data-testid="stIFrame"] {{width:calc(100% + 80px) !important; margin:0 -40px;}}
     /* Evidence cells hold long file and test names: they wrap instead of widening the table. */
     .st-key-project_document table {{table-layout:auto; width:100%;}}
     .st-key-project_document td code {{white-space:normal; overflow-wrap:anywhere; font-size:.78rem;}}
@@ -5854,7 +5856,7 @@ def show_runs_page(mode):
     with what it does and where to act, and beside it the facts and the manual run."""
     show_compact_page_header("Centro de operación", "El recorrido de cada martes, del lanzamiento "
                              "al panel: el estado de cada paso, su log y dónde actuar.")
-    runs_tab, platform_tab, cicd_tab = st.tabs(["Operación", "Plataforma", "CI/CD"])
+    runs_tab, platform_tab, cicd_tab = st.tabs(["Operación", "Despliegue", "CI/CD"])
     with runs_tab:
         show_runs_tab(mode)
     with platform_tab:
@@ -6596,6 +6598,25 @@ PROJECT_DOCUMENTS = {
     PAGE_SECURITY_PLAN: ("SEGURIDAD.md", "Cómo se buscan, se corrigen y se prueban en cada push los puntos débiles."),
 }
 DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
+# D-247: a document points to the page of the panel where a view lives, instead of copying it: [[vista:Modelo de datos]].
+DOCUMENT_VIEW = re.compile(r"\[\[vista:([^\]]+)\]\]")
+
+
+def find_menu_page(label):
+    """The page whose label in the menu is `label`, or None."""
+    for _, _, pages in MENU_BLOCKS:
+        if pages is SOURCE_LINKS:
+            continue
+        for view in pages:
+            if SIDEBAR_LABELS.get(view, view) == label:
+                return view
+    return None
+
+
+def link_document_views(text):
+    """Each [[vista:…]] of a document as a link to its page in the panel."""
+    return DOCUMENT_VIEW.sub(lambda match: f"[{match.group(1)}]({build_page_address(find_menu_page(match.group(1)))})"
+                             if find_menu_page(match.group(1)) else match.group(1), text)
 
 
 def build_document_diagram_html(name, mode):
@@ -6681,10 +6702,10 @@ def show_project_document(mode, title):
     with st.container(key="project_document"):
         position = 0
         for marker in DOCUMENT_DIAGRAM.finditer(text):
-            st.markdown(text[position:marker.start()])
+            st.markdown(link_document_views(text[position:marker.start()]))
             show_document_diagram(marker.group(1), mode)
             position = marker.end()
-        st.markdown(text[position:])
+        st.markdown(link_document_views(text[position:]))
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
     st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
 # endregion
