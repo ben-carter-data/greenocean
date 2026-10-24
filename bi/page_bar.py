@@ -24,9 +24,12 @@ def build_css(palette):
     rise, fall = ("#ff8a96", "#83baff") if dark else ("#c81e3a", "#1d5fbf")
     return f"""<style>
 .stApp .st-key-page_bar {{ background:{card}; border:1px solid {border}; border-radius:14px; padding:5px 14px 5px 6px !important;
-  margin:4px 0 10px !important; gap:10px !important; flex-wrap:nowrap !important; align-items:center !important; min-height:44px; }}
+  margin:4px 0 10px !important; gap:4px 10px !important; flex-wrap:wrap !important; align-items:center !important; min-height:44px; }}
 .stApp .st-key-page_bar > * {{ flex:0 0 auto; min-width:0; width:auto !important; }}
-.stApp .st-key-page_bar > :has(.page-bar-main) {{ flex:1 1 0 !important; }}
+/* The title and the chips keep at least 240 px: when the buttons, the terms or the time do not fit beside them,
+   those go to a second line (pushed to the right) instead of covering the title. */
+.stApp .st-key-page_bar > :has(.page-bar-main) {{ flex:1 1 0 !important; min-width:min(100%, 240px) !important; }}
+.stApp .st-key-page_bar > :last-child {{ margin-left:auto; }}
 .stApp .st-key-page_bar [data-testid="stMarkdownContainer"] {{ margin-bottom:0 !important; }}
 .stApp .st-key-page_bar .st-key-return_to_previous button {{ border:0 !important; background:transparent !important;
   box-shadow:none !important; min-height:32px; width:32px; padding:0 !important; color:{ink}; }}
@@ -55,8 +58,11 @@ def build_css(palette):
 .page-bar-terms {{ display:grid; grid-template-columns:auto auto; gap:0 6px; align-items:baseline; padding-left:10px;
   border-left:1px solid {border}; font-size:11.5px; line-height:1.3; white-space:nowrap; color:{ink}; cursor:default; }}
 .page-bar-terms em {{ font-style:normal; font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
-@media (max-width:1100px) {{ .stApp .st-key-page_bar {{ flex-wrap:wrap !important; }}
-  .page-bar-main {{ flex-wrap:wrap; row-gap:6px; }} .page-bar-title {{ flex:1 1 100%; order:-1; white-space:normal; }} }}
+/* Narrow windows (a tablet, a laptop with the menu open): the menu already shows where the page is, so the path
+   leaves (it stays in the bar's aria-label); the title keeps its line and the chips that do not fit go to a second one. */
+@media (max-width:1320px) {{ .page-bar-path {{ display:none; }}
+  .page-bar-main {{ flex-wrap:wrap; row-gap:4px; }} .page-bar-title {{ flex:1 1 auto; }}
+  .page-bar-title + .page-chip {{ margin-left:0; }} }}
 </style>"""
 
 

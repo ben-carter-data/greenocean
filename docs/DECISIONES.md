@@ -1998,3 +1998,17 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Sin cambios:** los diagramas, las tarjetas y las tablas de cada página, sus datos y sus pruebas.
 - **Código:** `bi/page_bar.py` (nuevo), `show_page_bar` en `bi/dashboard.py`, `inflation_view.family_insights`. Se retiran la franja de cifras del pipeline (D-253, D-261) y las fichas de Modelo de datos (D-097).
 - **Pruebas:** `tests/test_page_bar.py`: una sola barra y un solo «Volver» por página, sin el encabezado anterior; las fichas de Precios e inflación contra la base; cada frase de la lectura recalculada desde el índice, también sin inflación; «Ampliar» muestra el gráfico y su lectura. `tests/test_view_regression.py::test_d267_*`: las cifras del pipeline vienen de la última carga.
+
+## D-268 · La barra de encabezado y Consultas SQL en tableta y en ventanas angostas
+
+- **Pedido del autor:** dejar lo menor que no se nota, pero corregir todo lo que se vea mal en celular, tableta o computador.
+- **Revisión:** las nueve páginas principales, en 1920 × 1080, 1440 × 900, 1280 × 800, tableta horizontal (1024 × 768) y vertical (768 × 1024), y teléfono horizontal (844 × 390), midiendo el desborde horizontal y si la barra recorta algo.
+- **Lo que estaba mal y se corrige:**
+  - a 1024 px, la barra pasaba a dos o tres líneas, el título «Centro de operación» quedaba debajo de sus botones y la ruta quedaba suelta bajo el título;
+  - a 1280 px, la barra de Pipeline y linaje recortaba sus fichas;
+  - a 1024 px, el selector «Precios del día / Sin inflación» quedaba cortado a la derecha;
+  - en Consultas SQL (de antes de D-267), un filtro salía del marco del editor y el cronómetro de la barra de estado quedaba cortado.
+- **Decisión:** el título y las fichas guardan al menos 240 px; si los botones, los términos o la hora no caben a su lado, pasan a una segunda línea alineados a la derecha, en vez de taparlo. Bajo 1320 px la ruta sale de la barra (el menú ya marca la página; la ruta sigue en la etiqueta accesible) y las fichas que no caben bajan bajo el título. El selector toma el ancho que necesita. En Consultas SQL, los filtros pasan de línea dentro del marco y, en ventanas angostas, la barra de estado deja el motor, el modo y el archivo (la barra de la página ya los dice) para que siempre se vean el tiempo y las filas.
+- **Resultado:** ninguna página desborda a lo ancho y ninguna barra recorta texto en esas seis medidas. A 1440 × 900 y 1920 × 1080 todas las barras siguen en una línea y las páginas caben sin desplazar.
+- **Se deja así (menor):** en pantallas más bajas que 900 px, las páginas con un diagrama de alto fijo (Calidad, seguridad, el Centro de operación) se desplazan un poco, y las pestañas Operación, CI/CD y Monitoreo del Centro de operación pasan la pantalla, como se informó en D-267.
+- **Pruebas:** `tests/test_page_bar.py::test_d268_*`.

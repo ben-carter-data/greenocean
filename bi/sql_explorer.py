@@ -797,6 +797,10 @@ def build_css(palette):
 .st-key-sqlx_params {{ flex-wrap:wrap !important; gap:6px 8px !important; padding:2px 0 4px; }}
 .st-key-sqlx_params .sqlx-bar-label {{ margin-right:6px; }}
 .st-key-sqlx_params [data-testid="stSelectbox"] {{ flex:0 0 150px !important; width:150px !important; }}
+/* The row wraps the Streamlit containers, not the selects inside them: they take the fixed width, so on a narrow
+   window a filter goes to the next line instead of leaving the editor's frame. */
+.st-key-sqlx_params > [data-testid="stElementContainer"]:has([data-testid="stSelectbox"]) {{ flex:0 0 150px !important;
+  width:150px !important; max-width:150px; }}
 .st-key-sqlx_params [data-testid="stSelectbox"] [data-baseweb="select"] div {{ font-size:.78rem; }}
 .st-key-sqlx_params [data-baseweb="select"] > div {{ min-height:28px !important; border-radius:999px !important;
   background:{field} !important; border:1px solid {border} !important; box-shadow:{raised}; font-size:.78rem; }}
@@ -860,7 +864,10 @@ def build_css(palette):
   box-shadow:0 1px 0 rgba(255,255,255,{'.05' if dark else '.7'}) inset; }}
 .sqlx-status.err {{ background:linear-gradient(180deg, color-mix(in srgb, {charts.STATUS_COLORS['critical']} 16%, {card}), color-mix(in srgb, {charts.STATUS_COLORS['critical']} 8%, {card})); }}
 .sqlx-status span {{ padding:6px 14px; border-right:1px solid color-mix(in srgb, {border} 70%, transparent); white-space:nowrap; }}
-.sqlx-status span:first-child {{ flex:1; display:flex; align-items:center; gap:8px; }}
+.sqlx-status span:first-child {{ flex:1; display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden; }}
+/* D-267: on a narrow window the engine, the mode and the file leave the status bar (the page bar says them), so the
+   time and the rows of the result always show. */
+@media (max-width:1320px) {{ .sqlx-status span:nth-child(2), .sqlx-status span:nth-child(3), .sqlx-status span:nth-child(4) {{ display:none; }} }}
 .sqlx-status span:last-child {{ border-right:0; }}
 .sqlx-status .mark {{ width:15px; height:15px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
   color:#fff; font-size:.62rem; background:{charts.STATUS_COLORS['good']}; box-shadow:0 1px 2px rgba(0,0,0,.25); }}

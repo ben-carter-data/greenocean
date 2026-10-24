@@ -5584,11 +5584,11 @@ def show_price_context_page(mode):
         lead = ("Sin inflación: la línea punteada es la canasta del INE (100). Arriba de ella, la familia subió más."
                 if real else "Precios de consumidor de ODEPA, mediana por familia; la línea punteada es el IPC de alimentos. "
                 "Misma escala en todos los gráficos.")
-        head, basis = st.columns([3, 1], vertical_alignment="center")
-        head.markdown(f'<div class="ctx-head"><h3>Índice mensual por familia, enero 2022 = 100</h3></div>'
-                      f'<p class="ctx-reading">{lead}</p>', unsafe_allow_html=True)
-        with basis.container(horizontal=True, horizontal_alignment="right"):
-            st.segmented_control("Precios", [BASIS_NOMINAL, BASIS_REAL], default=BASIS_NOMINAL,
+        # The switch takes the width it needs, so it is never cut on a narrow window.
+        with st.container(horizontal=True, vertical_alignment="center"):
+            st.markdown(f'<div class="ctx-head"><h3>Índice mensual por familia, enero 2022 = 100</h3></div>'
+                        f'<p class="ctx-reading">{lead}</p>', unsafe_allow_html=True, width="stretch")
+            st.segmented_control("Precios", [BASIS_NOMINAL, BASIS_REAL], default=BASIS_NOMINAL, width="content",
                                  key=CONTEXT_BASIS_KEY, label_visibility="collapsed", help=BASIS_HELP)
         show_family_cards(rows, build_family_panel_titles(summary, ipc_total), mode, real, summary, last)
     st.caption(f"Cada familia compara los mismos productos de enero 2022 a {month(last)} (series de consumidor con "

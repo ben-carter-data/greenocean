@@ -104,3 +104,16 @@ def test_d267_ampliar_shows_the_chart_beside_its_reading():
     markup = " ".join(block.value for block in app.markdown)
     assert 'class="inf-insights"' in markup and "Lectura de los datos" in markup
     assert len(app.get("vega_lite_chart")) == 1
+
+
+def test_d268_on_a_narrow_window_the_bar_wraps_instead_of_covering_the_title():
+    css = page_bar.build_css(charts.get_palette(charts.MODE_DARK))
+    assert "flex-wrap:wrap !important" in css and "min-width:min(100%, 240px)" in css
+    assert "@media (max-width:1320px) {{ .page-bar-path {{ display:none; }}".replace("{{", "{").replace("}}", "}") in css
+
+
+def test_d268_the_sql_filters_and_status_bar_fit_a_narrow_window():
+    from bi import sql_explorer
+    css = sql_explorer.build_css(charts.get_palette(charts.MODE_DARK))
+    assert '.st-key-sqlx_params > [data-testid="stElementContainer"]:has([data-testid="stSelectbox"])' in css
+    assert ".sqlx-status span:nth-child(4) { display:none; }" in css
