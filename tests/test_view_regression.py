@@ -66,13 +66,17 @@ def test_d230_the_pipeline_page_draws_the_journey_svg():
 
 
 @needs_database
-def test_d232_star_er_and_pipeline_sit_in_a_frame_that_keeps_their_proportion():
-    for state, label in ((dashboard.MODEL_VIEWS[0], STAR_LABEL), (dashboard.MODEL_VIEWS[1], ER_LABEL)):
-        app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: state})
-        page = read_markdown(app)
-        assert label in page and 'class="zoom-frame fit-modelo"' in page and "--ratio:" in page
+def test_d251_the_star_and_the_pipeline_are_drawn_as_in_d229():
+    # The author's decision: the star and the pipeline stay as they were in D-229. Only the
+    # entity-relation keeps the frame of D-232.
+    app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: dashboard.MODEL_VIEWS[1]})
+    page = read_markdown(app)
+    assert ER_LABEL in page and 'class="zoom-frame fit-modelo"' in page and "--ratio:" in page
+    page = read_markdown(draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: dashboard.MODEL_VIEWS[0]}))
+    assert STAR_LABEL in page and '<div class="zoom-frame' not in page
     page = read_markdown(draw_page(dashboard.PAGE_DIAGRAMS))
-    assert 'zoom-frame diagram-wide fit-pipeline' in page and "--ratio:" in page
+    assert '<div class="zoom-frame diagram-wide">' in page and "fit-pipeline" not in page
+    assert "fit-pipeline" not in Path(dashboard.__file__).read_text(encoding="utf-8")
 
 
 def test_d232_the_frame_ratio_comes_from_the_svg_viewbox():

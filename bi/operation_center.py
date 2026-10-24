@@ -176,7 +176,8 @@ def build_css(palette):
 body {{margin:0; background:transparent; color:{palette['text']};
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;}}
 a {{color:{palette['accent']}; text-decoration:none;}} a:hover {{text-decoration:underline;}}
-.oc-stage {{position:relative; width:{STAGE_WIDTH}px; height:{STAGE_HEIGHT}px; transform-origin:top left;}}
+.oc-stage {{position:relative; width:100%; max-width:{STAGE_WIDTH}px; aspect-ratio:{STAGE_WIDTH}/{STAGE_HEIGHT};
+  margin:0 auto;}}
 .oc-stage > svg {{position:absolute; inset:0; width:100%; height:100%;}}
 .oc-phase {{position:absolute; left:{PHASE_LEFT / STAGE_WIDTH * 100:.2f}%; font-size:11px; font-weight:600; letter-spacing:1.4px;
   text-transform:uppercase; color:{palette['reference']};}}
@@ -263,21 +264,6 @@ def build_node_html(step, state, text, log_url, pinned, unlocked):
             f'<div class="oc-state">{html.escape(text)}</div></div>')
 
 
-# D-234: the stage is a fixed 740 x 640 drawing; the window it sits in (an iframe whose height the
-# page sets from the screen) scales it down to fit, centred, so it is never cut and never leaves a gap.
-FIT_SCRIPT = f"""<script>
-(() => {{
-  const stage = document.querySelector(".oc-stage");
-  const fit = () => {{
-    const scale = Math.min(1, innerWidth / {STAGE_WIDTH}, innerHeight / {STAGE_HEIGHT});
-    stage.style.transform = "translateX(" + Math.max(0, (innerWidth - {STAGE_WIDTH} * scale) / 2) + "px) scale(" + scale + ")";
-  }};
-  addEventListener("resize", fit);
-  fit();
-}})();
-</script>"""
-
-
 def build_stage_html(palette, states, unlocked=False):
     """The whole stage: track, phase names and the nine logos, as one HTML document."""
     pinned = pick_pinned_step(states)
@@ -297,5 +283,5 @@ def build_stage_html(palette, states, unlocked=False):
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
             + build_css(palette) + '</head><body>'
             f'<div class="oc-stage" aria-label="Recorrido del pipeline semanal">{track}{phases}{nodes}</div>'
-            + FIT_SCRIPT + '</body></html>')
+            '</body></html>')
 # endregion

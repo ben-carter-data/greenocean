@@ -1,6 +1,6 @@
 # Etapa 11 · Revisión global de la optimización
 
-Fecha: 24-10-2026. Punto de partida: D-229 (commit `53d9cc7`, el último publicado en GitHub). Resultado: D-230 a D-250, en commits locales que esperan la revisión del autor antes del push.
+Fecha: 24-10-2026. Punto de partida: D-229 (commit `53d9cc7`, el último publicado en GitHub). Resultado: D-230 a D-251, en commits locales que esperan la revisión del autor antes del push.
 
 ## 1. Qué cambió, etapa por etapa
 
@@ -127,3 +127,7 @@ pytest: 589 pasan y 1 se omite, en unos 46 segundos. GitHub Actions (consultado 
 ## 8. Límites de esta revisión
 
 La medición corre en Chrome sin ventana, en macOS, contra el panel local con la base del 20-10-2026; otro sistema puede tener otras fuentes y medir distinto. La app publicada en Streamlit Community Cloud no se midió: tendrá estos cambios cuando el autor los revise y los suba.
+
+## 9. Después del informe: D-251
+
+El autor pidió que el pipeline, el modelo estrella y el Centro de operación volvieran a como estaban en D-229. Se restauraron y se comprobaron contra D-229 (ver D-251). Por eso, en las tablas de arriba cambian tres filas: Pipeline y linaje vuelve a desplazarse a 1440 × 900 (como en D-229); el Centro de operación abre en «Operación», sin el texto chico del diagrama de despliegue en la primera vista; y la estrella vuelve a su tamaño de D-229, con la página que se desplaza para verla completa.

@@ -2682,7 +2682,7 @@ def build_fit_frame_html(svg, css_class):
 
 
 def build_model_frame_html(svg):
-    """A model diagram (star or entity-relation) in a zoom frame that keeps its proportion."""
+    """The entity-relation diagram in a zoom frame that keeps its proportion."""
     return build_fit_frame_html(svg, "fit-modelo")
 
 
@@ -2704,12 +2704,12 @@ def build_architecture_css(mode):
     .st-key-architecture_diagram {{border:1px solid {palette['card_border']}; border-radius:14px;
         background:{palette['card']}; padding:14px 20px 18px;}}
     .st-key-architecture_diagram svg {{display:block; width:100%; height:auto;}}
+    .st-key-architecture_diagram svg:not(.zoom-frame svg) {{max-height:calc((100vh - 360px) * 1.2);}}
     /* The diagram always fits the window (D-232): the viewport is as wide as the height left
        allows, by the drawing's own proportion; the zoom buttons bring it closer inside the panel. */
     .fit-modelo {{position:relative;}}
     .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 360px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
     .fit-modelo .zoom-buttons {{position:absolute; bottom:-46px; right:0; margin:0; z-index:2;}}
-    .st-key-architecture_diagram .arch-legend {{margin:4px 4px 0; padding-top:6px;}}
     .arch-legend {{display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
         border-top:1px solid {palette['card_border']}; font-size:12px; line-height:1.5; color:{palette['text']};}}
     .arch-phrase {{font-size:.85rem !important; line-height:1.4 !important; color:{palette['strong_text']}; margin:0 0 6px !important;}}
@@ -2780,9 +2780,9 @@ def show_architecture_page(mode):
                 '(variedad y calidad) × región × canal × unidad × semana. '
                 'Pasa el mouse por una tabla para ver para qué sirve.</p>', unsafe_allow_html=True)
     with st.container(key="architecture_diagram"):
-        st.markdown(build_model_frame_html(star_model.build_star_svg(columns, row_counts, mode, tooltips=tooltips)),
+        # D-251: the star stays as it was in D-229, by the author's decision: no frame, its own size.
+        st.markdown(star_model.build_star_svg(columns, row_counts, mode, tooltips=tooltips),
                     unsafe_allow_html=True)
-        st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
         st.markdown('<div class="arch-legend"><span><b>PK</b> clave primaria</span>'
                     '<span><b>FK</b> clave foránea</span><span><b>cian</b> medida</span>'
                     '<span>' + build_external_link_html("etl/schema.sql en GitHub",
@@ -4865,7 +4865,7 @@ def show_pipeline_figures(summary):
     run = read_latest_run()
     tests = (f'{summary["passing"]}/{summary["tests"]}', "superadas en la última construcción") if summary \
         else ("—", "linaje dbt en migración")
-    st.markdown('<div class="runs-metrics fit-pipeline">'
+    st.markdown('<div class="runs-metrics">'
                 + build_runs_metric_html("Filas leídas", charts.format_thousands(run["rows_read"]),
                                          "de los archivos de ODEPA")
                 + build_runs_metric_html("Filas cargadas", charts.format_thousands(run["rows_loaded"]),
@@ -4895,16 +4895,16 @@ def show_diagrams_page(mode):
             st.segmented_control("Vista", [PIPELINE_JOURNEY, PIPELINE_LINEAGE], default=PIPELINE_JOURNEY,
                                  key=PIPELINE_VIEW_KEY, label_visibility="collapsed")
         if lineage_view:
-            st.markdown(build_fit_frame_html(lineage.build_lineage_svg(nodes, results, mode),
-                                             "diagram-wide fit-pipeline"), unsafe_allow_html=True)
+            st.markdown(zoom.build_zoom_frame_html(lineage.build_lineage_svg(nodes, results, mode),
+                                                   "diagram-wide"), unsafe_allow_html=True)
             if getattr(lineage, "LINEAGE_SCRIPT", ""):
                 # Hovering a model follows only its inputs and outputs; a click pins them.
                 st.html(lineage.LINEAGE_SCRIPT, unsafe_allow_javascript=True)
         else:
             # Inline SVG (not an image), so each piece shows its explanation on hover.
-            st.markdown(build_fit_frame_html(
+            st.markdown(zoom.build_zoom_frame_html(
                             architecture.build_journey_svg(states, figures, mode, animate_flow=True),
-                            "diagram-wide fit-pipeline")
+                            "diagram-wide")
                         + zoom.build_zoom_frame_html(
                             architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=True),
                             "diagram-narrow"), unsafe_allow_html=True)
@@ -5833,17 +5833,6 @@ def build_runs_css(mode):
     .runs-table tbody tr:hover td {{background:color-mix(in srgb,{palette['accent']} 5%,transparent);}}
     .runs-link {{text-align:right;}}
     @media (max-width:900px) {{ .runs-metrics {{grid-template-columns:repeat(2,minmax(0,1fr));}} }}
-    /* Pipeline y linaje (D-232): the figures in two short lines, and the diagram as wide as the
-       height left allows; the zoom buttons bring it closer inside the panel. */
-    .stApp:has(.fit-pipeline) .runs-metrics {{margin:10px 0 8px; gap:10px;}}
-    .stApp:has(.fit-pipeline) .runs-metric {{padding:7px 14px; gap:0; display:grid; grid-template-columns:auto 1fr;
-        column-gap:10px; align-items:baseline;}}
-    .stApp:has(.fit-pipeline) .runs-metric-note {{grid-column:1 / -1;}}
-    .zoom-frame.fit-pipeline .zoom-viewport {{max-width:min(100%, calc(max(100vh - 440px, 190px) * var(--ratio, 2.1))); margin:0 auto;}}
-    /* The tabs sit on the title row, so the drawing keeps the whole width of its card. */
-    .stApp:has(.fit-pipeline) .st-key-card_pipeline_main {{position:relative;}}
-    .stApp:has(.fit-pipeline) .st-key-card_pipeline_main [data-testid="stElementContainer"]:has([data-testid="stButtonGroup"]) {{
-        position:absolute; top:18px; right:170px; margin:0; z-index:3;}}
     </style>"""
 
 
@@ -5852,14 +5841,15 @@ def show_runs_page(mode):
     with what it does and where to act, and beside it the facts and the manual run."""
     show_compact_page_header("Centro de operación", "Dónde corre cada pieza, cómo llega un cambio a producción y el "
                              "estado de cada paso de la carga semanal, con su log y dónde actuar.")
-    # D-249 (the author's order): where each piece runs, how a change reaches it, and then each run.
-    platform_tab, cicd_tab, runs_tab, monitoring_tab = st.tabs(["Despliegue", "CI/CD", "Operación", "Monitoreo"])
+    # D-251 (the author's decision): the page opens on the weekly run, with «Acceso del autor», as in D-229;
+    # then where each piece runs, how a change reaches it, and how a failure is known (D-249).
+    runs_tab, platform_tab, cicd_tab, monitoring_tab = st.tabs(["Operación", "Despliegue", "CI/CD", "Monitoreo"])
+    with runs_tab:
+        show_runs_tab(mode)
     with platform_tab:
         show_devops_tab(mode)
     with cicd_tab:
         show_cicd_tab(mode)
-    with runs_tab:
-        show_runs_tab(mode)
     with monitoring_tab:
         show_monitoring_tab(mode)
 
@@ -5969,8 +5959,7 @@ def show_operation_center(mode, live=False):
     # columns end together and the page fits one screen.
     stage_column, side_column = st.columns([2.4, 1], gap="large")
     with stage_column:
-        st.markdown('<span class="fit-centro" aria-hidden="true"></span>', unsafe_allow_html=True)
-        st.iframe(operation_center.build_stage_html(palette, states, unlocked), height=560)
+        st.iframe(operation_center.build_stage_html(palette, states, unlocked), height="content")
         if runs:
             st.markdown(build_recent_runs_html(runs), unsafe_allow_html=True)
     with side_column:
@@ -5984,10 +5973,6 @@ def show_operation_center(mode, live=False):
 
 def build_operation_side_css(palette):
     return f"""<style>
-    /* Centro de operación (D-234): the path takes the height the window leaves; it scales inside. */
-    .stApp:has(.fit-centro) [data-testid="stColumn"] [data-testid="stElementContainer"]:has(iframe),
-    .stApp:has(.fit-centro) [data-testid="stColumn"] iframe {{height:max(calc(100vh - 470px), 225px) !important;
-        flex:none !important; min-height:0 !important;}}
     .oc-fact {{display:flex; flex-direction:column; gap:1px; padding:10px 0;
         border-bottom:1px solid {palette['card_border']};}}
     .oc-fact-label {{font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase;

@@ -479,7 +479,7 @@ def test_d201_security_has_its_own_section_with_the_view_and_the_test_plan():
     assert dashboard.SIDEBAR_TOP_LABELS[dashboard.SECTION_SECURITY] == "Seguridad"
     assert dashboard.WINDOWS[dashboard.SECTION_SECURITY] == [dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN]
     app = draw_control_page({})
-    assert not app.exception and [tab.label for tab in app.tabs] == ["Despliegue", "CI/CD", "Operación", "Monitoreo"]
+    assert not app.exception and [tab.label for tab in app.tabs] == ["Operación", "Despliegue", "CI/CD", "Monitoreo"]
     for page in (dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN):
         app = draw_page(page)
         assert not app.exception and read_page_title(app) == dashboard.SIDEBAR_LABELS.get(page, page)
