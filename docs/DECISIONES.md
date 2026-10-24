@@ -1944,3 +1944,10 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Decisión:** los números pasan de 27 a 40 px a 18 a 22 px, con una extrusión 3D de tres capas en vez de siete y una sombra más corta; la leyenda baja a 11,5 px, pegada al número, y las cuatro cifras quedan separadas por líneas finas, sin cajas, como en el Resumen semanal (D-259). Los márgenes de arriba y de abajo se reducen.
 - **Resultado:** la franja mide unos 42 px de alto a 1440 × 900, en lugar de unos 110, y la tarjeta del recorrido empieza unos 50 px más arriba.
 - **Sin cambios:** las cuatro cifras, de dónde vienen (la última carga y el último dbt build), el color de cada una según su capa y el giro al pasar el cursor.
+
+## D-262 · Consultas SQL: el cuadro aprovecha parte de los márgenes
+
+- **Pedido del autor:** el cuadro de consultas está bien, pero los márgenes a los dos lados dejan espacio sin usar; debía verse solo un poco más grande.
+- **Decisión:** en esta página, y en pantallas de 1024 px o más, el margen lateral de la página baja de 80 a 40 px por lado. El título se mueve con el cuadro, así siguen alineados.
+- **Resultado:** a 1440 × 900 el cuadro pasa de 980 a 1060 px de ancho (un 8 % más); el editor y la tabla de resultados ganan ese ancho, y el comentario de la consulta «Tabla completa» cabe completo.
+- **Sin cambios:** el contenido del cuadro, las otras páginas y los teléfonos (D-166).

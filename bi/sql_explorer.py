@@ -868,6 +868,8 @@ def build_css(palette):
 .sqlx-status.idle .mark {{ background:{muted}; }}
 .sqlx-status .num {{ font-family:{mono}; font-variant-numeric:tabular-nums; }}
 @media (max-width: 900px) {{ .st-key-sqlx_explorer {{ border-right:0; border-bottom:1px solid {border}; }} }}
+/* D-262: the studio takes half of the page's side margins (80 px → 40 px), a little wider; the header moves with it. */
+@media (min-width: 1024px) {{ [data-testid="stMainBlockContainer"] {{ padding-left:2.5rem !important; padding-right:2.5rem !important; }} }}
 </style>"""
 
 
