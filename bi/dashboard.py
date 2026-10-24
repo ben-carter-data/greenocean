@@ -5790,28 +5790,30 @@ def show_author_access(access_code, unlocked):
 def build_runs_css(mode):
     palette = charts.get_palette(mode)
     dark = palette["base"] == charts.BASE_DARK
-    # The extruded body of each 3D figure: seven thin layers, each a little lower than the one before.
-    depth = ", ".join(f"{index * 0.4:.1f}px {index}px 0 var(--deep)" for index in range(1, 8))
+    # The extruded body of each 3D figure: three thin layers, each a little lower than the one before (D-261).
+    depth = ", ".join(f"{index * 0.4:.1f}px {index}px 0 var(--deep)" for index in range(1, 4))
     return f"""<style>
     /* D-207: the control code is a plain text field shown as dots, so the browser never takes
        it for an account password and never offers to generate or save one. */
     .st-key-author_access_code input, .st-key-run_now_code input {{-webkit-text-security:disc; text-security:disc;}}
     /* Pipeline y linaje (D-253): each figure is its number alone, in 3D: a lit face over an extruded body in
-       the colour of its layer in the diagram, tilted back; the pointer turns it. The caption says what it counts. */
-    .pipe-figures {{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:16px 0 22px;
+       the colour of its layer in the diagram, tilted back; the pointer turns it. The caption says what it counts.
+       D-261: a thin strip, small numbers and fine dividers, so the diagram below starts higher. */
+    .pipe-figures {{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; margin:4px 0 12px;
         perspective:700px;}}
-    .pipe-figure {{display:flex; flex-direction:column; align-items:center; text-align:center;}}
+    .pipe-figure {{display:flex; flex-direction:column; align-items:center; text-align:center; padding:0 10px;}}
+    .pipe-figure + .pipe-figure {{border-left:1px solid {palette['card_border']};}}
     .pipe-number {{--deep:color-mix(in srgb, var(--c) 40%, #000); position:relative; display:inline-block;
-        font-size:clamp(1.7rem, 2.6vw, 2.5rem); font-weight:800; line-height:1.1; letter-spacing:-.015em;
+        font-size:clamp(1.1rem, 1.45vw, 1.35rem); font-weight:800; line-height:1.15; letter-spacing:-.01em;
         font-variant-numeric:tabular-nums; white-space:nowrap; transform:rotateX(18deg); transform-origin:50% 100%;
         transition:transform .45s cubic-bezier(.2,.8,.2,1);}}
     .pipe-number::before {{content:attr(data-value); position:absolute; left:0; top:0; color:var(--deep);
-        text-shadow:{depth}, 3px 11px 14px rgba(0,0,0,{'.55' if dark else '.2'});}}
+        text-shadow:{depth}, 2px 5px 7px rgba(0,0,0,{'.5' if dark else '.18'});}}
     .pipe-number span {{position:relative; color:transparent; -webkit-background-clip:text; background-clip:text;
         background-image:linear-gradient(180deg, color-mix(in srgb, var(--c) {'30' if dark else '55'}%, #fff) 0%,
             var(--c) 58%, color-mix(in srgb, var(--c) 80%, #000) 100%);}}
     .pipe-figure:hover .pipe-number {{transform:rotateX(6deg) rotateY(-16deg);}}
-    .pipe-caption {{margin-top:10px; font-size:.8rem; line-height:1.35; color:{palette['text']};}}
+    .pipe-caption {{margin-top:3px; font-size:.72rem; line-height:1.3; color:{palette['text']};}}
     @media (prefers-reduced-motion:reduce) {{ .pipe-number {{transition:none;}} }}
     /* The manual run is a round power button (D-149): deep glossy blue, a brushed
        metal ring, the white power symbol. The words sit under it. */
@@ -5846,7 +5848,8 @@ def build_runs_css(mode):
     .runs-table tr:last-child td {{border-bottom:0;}}
     .runs-table tbody tr:hover td {{background:color-mix(in srgb,{palette['accent']} 5%,transparent);}}
     .runs-link {{text-align:right;}}
-    @media (max-width:900px) {{ .pipe-figures {{grid-template-columns:repeat(2,minmax(0,1fr)); row-gap:18px;}} }}
+    @media (max-width:900px) {{ .pipe-figures {{grid-template-columns:repeat(2,minmax(0,1fr)); row-gap:10px;}}
+        .pipe-figure:nth-child(3) {{border-left:0;}} }}
     </style>"""
 
 

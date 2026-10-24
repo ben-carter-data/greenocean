@@ -1937,3 +1937,10 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Líneas:** del candado sale un tronco horizontal a cada lado y de él una rama vertical hacia cada caso, con un punto donde se separa; solo hay tramos horizontales y verticales. En el ciclo del procedimiento, las flechas también doblan en ángulo recto: de Preparar a Ejecutar sale por el costado y baja; las demás son verticales u horizontales.
 - **Sin cambios:** los diez casos, sus ventanas, el ciclo de cinco pasos y el camino de vuelta al paso 2.
 - **Pruebas:** `tests/test_doc_diagrams.py::test_d260_*`: cada caso tiene una tecnología con logo y la ventana la nombra, y ninguna línea de los dos diagramas es diagonal.
+
+## D-261 · Pipeline y linaje: las cuatro cifras en una franja fina
+
+- **Pedido del autor:** la parte de las cifras se veía demasiado grande. Debía ser minimalista y más baja, para que se vea más del diagrama de abajo, que es lo importante; los números se leen igual sin ser tan grandes.
+- **Decisión:** los números pasan de 27 a 40 px a 18 a 22 px, con una extrusión 3D de tres capas en vez de siete y una sombra más corta; la leyenda baja a 11,5 px, pegada al número, y las cuatro cifras quedan separadas por líneas finas, sin cajas, como en el Resumen semanal (D-259). Los márgenes de arriba y de abajo se reducen.
+- **Resultado:** la franja mide unos 42 px de alto a 1440 × 900, en lugar de unos 110, y la tarjeta del recorrido empieza unos 50 px más arriba.
+- **Sin cambios:** las cuatro cifras, de dónde vienen (la última carga y el último dbt build), el color de cada una según su capa y el giro al pasar el cursor.
