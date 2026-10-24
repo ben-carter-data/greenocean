@@ -106,3 +106,8 @@ def test_the_audit_controls_are_rows_with_their_status():
     page = quality_live.build_audit_page_html(charts.get_palette("Vantablack"), columns)
     assert page.count('class="tag k-') == sum(len(cards) for _, cards in columns)
     assert 'class="tag k-pending"' in page  # the file hashes cannot be checked here: said, not hidden
+
+
+def test_d257_a_query_in_a_popup_spans_the_whole_row_and_not_the_dot_column():
+    css = quality_live.build_css(charts.get_palette("Vantablack"))
+    assert ".qp .ind pre {" in css and "grid-column:2 / 4" in css.split(".qp .ind pre {")[1].split("}")[0]

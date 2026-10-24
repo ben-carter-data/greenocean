@@ -273,6 +273,7 @@ html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45
 .qp .ind span {{ color:{ink}; font-size:14.5px; }}
 .qp .ind strong {{ font-size:17px; font-weight:600; color:{ink}; font-variant-numeric:tabular-nums; text-align:right; }}
 .qp .ind em {{ grid-column:2 / 4; color:{muted}; font-size:13px; font-style:normal; line-height:1.35; }}
+.qp .ind pre {{ grid-column:2 / 4; min-width:0; }}
 .qp .ind small {{ grid-column:2 / 4; color:{text}; font-size:12.5px; line-height:1.4; }}
 .qp table {{ width:100%; border-collapse:collapse; font-size:13.5px; }}
 .qp .panel {{ border:1px solid {border}; border-radius:16px; background:{card}; padding:6px 16px 10px; }}
