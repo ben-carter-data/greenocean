@@ -6630,8 +6630,9 @@ def read_stack_figures(database_version):
 
 
 def show_stack_page(mode):
-    """«Stack y evidencia» (D-211): each logo explains itself and opens the page where it works."""
-    show_compact_page_header(PAGE_STACK, "Las herramientas del proyecto y dónde se ven en uso.")
+    """«Stack y evidencia» (D-211, D-266): the stack as an architecture diagram; each tool explains itself and
+    opens the page where it works."""
+    show_compact_page_header(PAGE_STACK, "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.")
     addresses = {page: build_page_address(page) for *_, page in stack_page.STACK}
     st.html(stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()),
                                         addresses))

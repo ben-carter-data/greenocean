@@ -1588,7 +1588,9 @@ def test_d211_stack_page_shows_every_logo_linked_to_its_page_and_real_figures():
     app = draw_page(dashboard.PAGE_STACK)
     assert not app.exception
     page = " ".join(block.proto.body for block in app.get("html"))
-    assert page.count('class="stack-item"') == 9 and page.count('role="tooltip"') == 9
+    # D-266: nine tools as links, two sources and one explanation per arrow.
+    assert page.count('<a class="sk-node"') == 9
+    assert page.count('role="tooltip"') == 9 + len(stack_page.SOURCES) + len(stack_page.EDGES)
     for key, name, what, target in stack_page.STACK:
         assert target in dashboard.WINDOW_OF_VIEW, target
         assert html.escape(what) in page

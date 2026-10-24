@@ -98,7 +98,7 @@ El menú lateral reúne las páginas en cinco grupos:
 1. **Negocio · BI:** «Resumen semanal» (qué se movió esta semana y qué es inusual) y «Precios e inflación» (qué familias de alimentos subieron más o menos que el IPC de alimentos del INE).
 2. **Ingeniería de datos:** «Pipeline y linaje» (el recorrido por capas y el linaje de dbt), «Modelo de datos» (modelo estrella, entidad-relación, dónde viven los datos y cruces entre bases), «Calidad y auditoría» (los once indicadores, las puertas de calidad y los controles de auditoría), «Consultas SQL» (un estudio SQL de solo lectura con consultas de ejemplo) y «SAD · Arquitectura».
 3. **DevOps y seguridad:** «Centro de operación» (despliegue, operación, CI/CD y monitoreo), «Arquitectura de seguridad» y «Plan de pruebas de seguridad».
-4. **Stack y evidencia:** las herramientas del proyecto y las cifras que las respaldan.
+4. **Stack y evidencia:** el diagrama de arquitectura del stack (qué es cada herramienta, cuándo actúa y con cuáles se conecta) y las cifras que lo respaldan.
 5. **Análisis de negocio · BA:** «PRD · Requisitos del producto», «ADR · Decisiones de arquitectura» y «Escalabilidad».
 
 Al pie del menú están «Apariencia» (Corporativo, Vantablack, Blue Light y Dark Grey) y el logo de GitHub. Cada documento tiene el botón «Imprimir o guardar como PDF», que imprime la página tal como se ve. Las ayudas ⓘ y las explicaciones de los diagramas se leen al pasar el cursor.
