@@ -10,4 +10,4 @@ DOC_DIAGRAMS = {name: builder for name, (builder, _) in doc_views.VIEWS.items()}
 DOC_DIAGRAMS.update(sop=security_plan.build_cycle_html, pruebas=security_plan.build_cases_html)
 # Marker → height of its frame in the page, in pixels.
 HEIGHTS = {name: height for name, (_, height) in doc_views.VIEWS.items()}
-HEIGHTS.update(sop=440, pruebas=600)
+HEIGHTS.update(sop=440, pruebas=620)

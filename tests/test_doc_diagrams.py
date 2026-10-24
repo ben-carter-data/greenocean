@@ -153,3 +153,23 @@ def test_d258_the_procedure_is_a_cycle_of_five_steps_and_says_that_ci_warns_but_
         assert f'href="#p-{index}"' in page and f'id="p-{index}"' in page
     assert "falla: se corrige y se repite desde el 2" in page and "pasa: el cambio queda verificado" in page
     assert "no detiene la publicación de main" in page and "<script" not in page
+
+
+def test_d260_each_case_shows_the_logo_of_its_technology_and_every_line_turns_at_right_angles():
+    from bi import security_plan
+    page = doc_diagrams.DOC_DIAGRAMS["pruebas"](charts.MODE_DARK)
+    assert set(security_plan.TECH) == set(security_plan.CASE_PLACES) == {case[0] for case in security_plan.CASES}
+    for case_id, tech in security_plan.TECH.items():
+        assert tech in doc_views.DISCS, case_id
+        assert f"Tecnología</h4><p>{security_plan.TECH_NAMES[tech]}</p>" in page, case_id
+        assert f"{case_id} · {security_plan.TECH_NAMES[tech]} · " in page, case_id
+    assert page.count('<circle class="node"') == 10
+    # no diagonal: every line and arrow of both diagrams moves only horizontally or vertically
+    cycle = doc_diagrams.DOC_DIAGRAMS["sop"](charts.MODE_DARK)
+    for html in (page, cycle):
+        assert "<line " not in html
+        lines = re.findall(r'<path d="(M[^"]*)" fill="none" stroke="[^"]*" stroke-width="[\d.]+"[^>]*stroke-linejoin="miter"', html)
+        assert lines
+        for d in lines:
+            assert re.fullmatch(r"M[\d.]+ [\d.]+( [HV][\d.]+)+", d), d
+    assert len(re.findall(r'<path d="M[^"]*" fill="none"[^>]*marker-end="url\(#cy-head\)"', cycle)) == 4

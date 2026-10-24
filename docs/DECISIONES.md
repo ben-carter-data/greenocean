@@ -1929,3 +1929,11 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Decisión:** el título pasa de 38 px a un máximo de 24 px y su subtítulo a 12,5 px. Las cuatro tarjetas (precios comparados, familias, regiones y alertas) se reemplazan por una sola franja con separadores finos, sin cajas: cada cifra es un número en 3D de 22 a 28 px, con su etiqueta y su nota en una línea debajo. La sombra de la extrusión sigue el color de la tinta del tema, así se ve limpia en Vantablack y en Blue Light. El botón «Alerta de precio» sube a la misma franja del título, en vez de ocupar una fila propia.
 - **Resultado:** el panel de abajo empieza unos 14 px más arriba que con las tarjetas y la fila del botón, a 1440 × 900. Las cifras son las mismas y vienen del mismo modelo semanal que los gráficos.
 - **Sin cambios:** el mapa, el movimiento por familia y la tabla de productos.
+
+## D-260 · Plan de pruebas de seguridad: el logo de cada tecnología y líneas en ángulo recto
+
+- **Pedido del autor:** cada círculo del esquema de casos debía mostrar el logo de la tecnología que involucra, y las líneas eran demasiado rectas (diagonales): debían doblar en ángulo, como en el diagrama entidad-relación.
+- **Decisión:** cada caso lleva dentro el logo 3D de la tecnología que ataca: DuckDB en S-01 a S-03 (el motor SQL), Python en S-04 y S-05 (la comparación de la clave con `hmac.compare_digest`), Git en S-06, GitHub en S-07 y S-08 (la API y el workflow), pytest en S-09 y Streamlit en S-10. El código del caso y su categoría OWASP pasan a una línea junto al nombre, hacia afuera del esquema, y la ventana de cada caso dice su tecnología. El candado sigue al centro: es el plan, no una tecnología.
+- **Líneas:** del candado sale un tronco horizontal a cada lado y de él una rama vertical hacia cada caso, con un punto donde se separa; solo hay tramos horizontales y verticales. En el ciclo del procedimiento, las flechas también doblan en ángulo recto: de Preparar a Ejecutar sale por el costado y baja; las demás son verticales u horizontales.
+- **Sin cambios:** los diez casos, sus ventanas, el ciclo de cinco pasos y el camino de vuelta al paso 2.
+- **Pruebas:** `tests/test_doc_diagrams.py::test_d260_*`: cada caso tiene una tecnología con logo y la ventana la nombra, y ninguna línea de los dos diagramas es diagonal.
