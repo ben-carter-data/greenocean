@@ -103,24 +103,39 @@ def test_every_control_of_the_map_points_to_a_test_that_exists():
             assert f"def {name}(" in (REPOSITORY / path).read_text(), test
 
 
-def test_d249_the_security_architecture_reads_threat_mitigation_verification_and_asset_with_the_improvement_loop():
+def test_d254_the_security_architecture_is_a_network_of_trust_zones_with_every_control_and_threat_in_place():
     from bi import charts
     page = security_map.build_security_html(charts.get_palette("Vantablack"))
-    assert [name for name, _ in security_map.COLUMNS] == ["Amenaza · OWASP", "Mitigación", "Verificación", "Activo protegido"]
+    for zone in ("Internet", "Streamlit Community Cloud", "GitHub · repositorio público", "Pública · sin cuenta",
+                 "Del autor · con clave", "Mejora continua"):
+        assert zone in page, zone
+    # every control is a numbered piece of the drawing, and each is the one badge of its number
     numbers = {control[0] for control in security_map.CONTROLS}
-    assert numbers == set(range(1, 8))
+    assert numbers == set(range(1, 8)) == {node[5] for node in security_map.NODES.values() if node[5]}
+    # every threat is a marker with its hover explanation, and every control it names exists
     used = set()
     for tid, title, owasp, controls, cases, asset in security_map.THREATS:
-        assert f'id="row-{tid}"' in page and f'id="tip-{tid}"' in page and title in page
+        assert f'id="t-{tid}"' in page and f'id="tip-{tid}"' in page and tid in security_map.THREAT_SPOTS and title in page
         assert all(code in security_map.OWASP for code in owasp.split(" · ")), tid
         used |= set(controls)
-        # a threat is verified by tests exactly when its controls have tests
         assert bool(cases) == all(security_map.CONTROLS[n - 1][7] for n in controls), tid
-    assert used == numbers  # every control mitigates some threat
+    assert used == numbers
+    # the cases written under each piece are the ones of its controls and threats
+    plan = (REPOSITORY / "docs" / "SEGURIDAD.md").read_text(encoding="utf-8")
+    for node in security_map.NODES.values():
+        for case in re.findall(r"S-\d{2}", node[8]):
+            assert f"| {case} |" in plan, case
     assert [step[0] for step in security_map.LOOP] == ["Revisar", "Atacar", "Corregir", "Probar", "Repetir"]
-    assert "Mejora continua" in page and "cada revisión vuelve a empezar" in page
-    assert page.count('class="num declared"') == 1 and "No verificable aquí" in page
+    assert "cada revisión vuelve a empezar" in page
+    assert page.count('class="num declared"') == 1 and "declarado por el autor" in page and "no verificable" in page
     assert "<script" not in page and "secreto-de-prueba" not in page and "ghp_" not in page
+
+
+def test_d254_the_pieces_of_the_diagram_exist_in_the_repository():
+    for path in ("bi/dashboard.py", "etl/datos.duckdb", ".github/workflows/pruebas.yml", ".github/workflows/semanal.yml"):
+        assert (REPOSITORY / path).exists(), path
+    assert "workflow_dispatch" in (REPOSITORY / ".github/workflows/semanal.yml").read_text(encoding="utf-8")
+    assert "pytest" in (REPOSITORY / ".github/workflows/pruebas.yml").read_text(encoding="utf-8")
 
 
 def test_d249_the_map_says_what_the_author_decided_about_the_code_and_the_sql_studio():

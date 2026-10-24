@@ -5874,7 +5874,7 @@ def show_security_page(mode):
     show_compact_page_header(SIDEBAR_LABELS[PAGE_SECURITY], "Qué amenaza al sistema, qué lo mitiga, qué prueba lo "
                              "verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de "
                              "esconderlo, sino de las claves, que nunca aparecen.")
-    st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=620)
+    st.iframe(security_map.build_security_html(charts.get_palette(mode)), height=690)
     st.markdown('<p class="doc-source">El procedimiento, los casos de prueba y los resultados de la última revisión: '
                 + build_link_html(f"{PAGE_SECURITY_PLAN} →", build_page_address(PAGE_SECURITY_PLAN)) + '</p>',
                 unsafe_allow_html=True)
