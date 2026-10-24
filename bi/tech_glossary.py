@@ -146,8 +146,8 @@ TECH_GLOSSARY = {
     "etl_run": {
         "nombre": "etl_run", "sigla": "",
         "que_es": "tabla de control con una fila por carga.",
-        "rol": "etl/pipeline.py registra en datos.duckdb cada ejecución, también las fallidas; "
-               "el centro de control la muestra."},
+        "rol": "etl/pipeline.py registra en datos.duckdb cada carga publicada; una carga que falla se detiene antes de "
+               "publicarse y queda en el historial de GitHub Actions, que el Centro de operación muestra."},
     "dbt_result": {
         "nombre": "dbt_node y dbt_result", "sigla": "",
         "que_es": "tablas con el manifest y los resultados del último dbt build.",

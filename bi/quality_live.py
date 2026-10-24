@@ -7,9 +7,10 @@ can be compared with the previous load, it is. Nothing here is written by hand e
 the thresholds, which are the project's own and are shown beside each figure.
 
 read_measures() reads the database; the build_*_html() functions draw the measures as HTML documents for st.iframe
-(CSS only, no script). D-257: the main view is one diagram, the six dimensions of data quality and the three gates, where
-each piece opens its detail in a pop-up (a CSS :target sheet); what was set aside, the loads and the audit controls have
-their own tabs. All are pure enough to test without a server.
+(CSS only, no script). D-257: the main view is one diagram where each piece opens its detail in a pop-up (a CSS :target
+sheet); what was set aside, the loads and the audit controls have their own tabs. D-273: that diagram is the pipeline of
+quality: the rows of the latest load go through the three gates, each gate says which dimensions it measures, the rejected
+rows leave at the second, and every gate flows into the verdict. All are pure enough to test without a server.
 """
 import html
 from datetime import date, datetime, timezone
@@ -197,11 +198,12 @@ def build_verdict(indicators):
 
 
 # region Markup
-# The three gates of D-245 and the dimensions each watches: (gate, question it answers, dimensions).
+# The three gates of D-245 and the dimensions each watches: (gate, question it answers, dimensions). Accuracy has no
+# indicator of its own: its controls run in pytest on the new base, before it is published, so it is watched at the third.
 GATE_VIEW = [
     ("Puerta 1 · el archivo", "¿Llegó completo y al día?", ["completitud", "actualidad"]),
     ("Puerta 2 · cada fila", "¿Cada fila es válida?", ["validez"]),
-    ("Puerta 3 · la base", "¿La base es coherente y pasó sus pruebas?", ["consistencia", "unicidad", "pruebas"]),
+    ("Puerta 3 · la base", "¿La base es coherente y pasó sus pruebas?", ["consistencia", "unicidad", "pruebas", "exactitud"]),
 ]
 # The three gates: (title, what is stopped, what happens to the data, where, evidence).
 GATES = [
@@ -218,7 +220,8 @@ GATES = [
     ("Puerta 3 · la base",
      "Si falla una prueba de dbt, si la carga lee menos del 90 % de la anterior o si pytest falla sobre la base nueva "
      "(incluida la paridad con SQLite), la base no se publica.",
-     "La base publicada sigue igual y la carga queda en etl_run como fallida.",
+     "La base publicada sigue igual: el workflow se detiene antes de publicarla, GitHub Actions lo marca en rojo y avisa "
+     "al autor por correo (D-269).",
      "etl/pipeline.py y .github/workflows/semanal.yml", "tests/test_pipeline_gate.py"),
 ]
 SOURCES = {"wholesale": "mayorista", "consumer": "consumidor"}
@@ -247,22 +250,8 @@ def build_css(palette):
 html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
 {states}
 .qp {{ padding:2px 2px 8px; }}
-.qp .verdict {{ display:flex; align-items:center; gap:12px; margin:0 0 12px; font-size:16px; color:{ink}; }}
-.qp .verdict i {{ width:24px; height:24px; border-radius:50%; background:var(--c); color:#fff; display:inline-grid; place-items:center;
-  font:700 14px/1 sans-serif; font-style:normal; flex:none; box-shadow:0 0 0 5px color-mix(in srgb, var(--c) 22%, transparent); }}
 .qp .hint {{ margin:0 0 4px; color:{muted}; font-size:13px; }}
-.qp svg.hub {{ display:block; width:100%; height:auto; }}
-.qp svg.hub a {{ cursor:pointer; outline:none; }}
-.qp svg.hub a:hover .pill, .qp svg.hub a:focus .pill {{ stroke-width:3.4; }}
-.qp svg.hub a:hover .core, .qp svg.hub a:focus .core {{ filter:brightness(1.15); }}
-.qp svg.hub a:hover .count, .qp svg.hub a:focus .count {{ fill-opacity:.38; }}
-.qp .gatebar {{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin-top:6px; }}
-.qp .gatebtn {{ display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid {border}; border-radius:14px; background:{card};
-  color:{ink}; text-decoration:none; box-shadow:0 10px 20px -16px {shade}; }}
-.qp .gatebtn:hover, .qp .gatebtn:focus {{ border-color:{accent}; outline:none; }}
-.qp .gatebtn i {{ width:12px; height:12px; border-radius:50%; background:var(--c); flex:none; box-shadow:0 0 0 4px color-mix(in srgb, var(--c) 22%, transparent); }}
-.qp .gatebtn b {{ display:block; font-size:15px; font-weight:600; }}
-.qp .gatebtn small {{ display:block; color:{muted}; font-size:13px; }}
+{build_pipeline_css(palette)}
 .qp .modal {{ display:none; position:fixed; inset:0; z-index:50; align-items:center; justify-content:center; padding:10px; background:rgba(0,0,0,.55); }}
 .qp .modal:target {{ display:flex; }}
 .qp .modal .back {{ position:absolute; inset:0; cursor:default; }}
@@ -308,7 +297,7 @@ html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45
 .qp .audit-pair td.st {{ width:118px; white-space:normal; }}
 .qp .audit-pair .tag {{ white-space:normal; text-align:center; line-height:1.3; padding:2px 8px; }}
 .qp .audit-pair td {{ padding-top:6px; padding-bottom:6px; }}
-@media (max-width:900px) {{ .qp .gatebar, .qp .two {{ grid-template-columns:1fr; }} }}
+@media (max-width:900px) {{ .qp .two {{ grid-template-columns:1fr; }} }}
 @media (max-width:640px) {{ .qp .audit-pair {{ grid-template-columns:1fr; }} }}
 </style>"""
 
@@ -343,43 +332,200 @@ def gate_measure(index, indicators):
     return dimension_status([row[4] for row in rows]) if rows else "info", f"{sum(row[4] == 'ok' for row in judged)} de {len(judged)} bien"
 
 
-def build_hub_html(palette, indicators, columns):
-    """The six dimensions around healthy data; each is a link to its pop-up."""
-    ink, muted, card, accent = palette["strong_text"], palette["reference"], palette["card"], palette["accent"]
-    colors = {"ok": quality_view.PILL_COLORS["ok"], "warn": quality_view.PILL_COLORS["pending"],
-              "fail": quality_view.PILL_COLORS["fail"], "info": muted}
-    width, height, cx, cy, radius = 1000, 318, 500, 159, 84
-    box_w, box_h = 292, 70
+NUMBER_WORDS = {1: "un", 2: "dos", 3: "tres", 4: "cuatro", 5: "cinco", 6: "seis", 7: "siete"}
+
+
+def gate_dimensions(index):
+    """The dimensions of the diagram one gate watches, in its order: the dbt tests count with consistency."""
+    keys = []
+    for key in GATE_VIEW[index][2]:
+        key = next((hub for hub, parts in HUB_DIMENSIONS.items() if key in parts), key)
+        if key not in keys:
+            keys.append(key)
+    return keys
+
+
+def build_flow(measures):
+    """The rows of the latest published load at each stretch of the pipeline, and why the rejected ones were.
+    None when there is no load to read them from."""
+    loads = [run for run in (measures or {}).get("runs", []) if run[2] == "LOADED"]
+    if not loads:
+        return None
+    run_id, _, _, read, loaded, rejected = loads[-1]
+    reasons = [REASONS.get(reason, reason.replace("_", " ").lower()) for reason, _, _ in measures.get("rejections", [])]
+    return {"run": run_id, "read": read, "loaded": loaded, "rejected": rejected,
+            "reasons": list(dict.fromkeys(reasons)), "prices": measures.get("total_rows")}
+
+
+def build_verdict_box(indicators, columns):
+    """(status, name, line) of the box every gate flows into: the indicators within their threshold, and the
+    accuracy controls still pending, said by name, so the box claims nothing the pop-ups do not show."""
+    kind, _ = build_verdict(indicators)
+    judged = [row for row in indicators if row[4] != "info"]
+    outside = [row for row in judged if row[4] != "ok"]
+    name = {"ok": "Datos sanos", "warn": "Datos a revisar", "fail": "Datos con fallas"}[kind]
+    line = f"{len(judged)} indicadores" + (" dentro de su umbral" if not outside else f" · {len(outside)} fuera de su umbral")
+    cards = next((cards for step, cards in columns if step == RESULTS_STEP), [])
+    kinds = [quality_view.classify(card[2]) for card in cards]
+    failed, pending = kinds.count("fail"), kinds.count("pending")
+    if failed:
+        line += f" · {failed} control{'es' if failed > 1 else ''} con falla: exactitud"
+    elif pending:
+        line += f" · {pending} control{'es' if pending > 1 else ''} pendiente{'s' if pending > 1 else ''}: exactitud"
+    return ("fail" if failed and kind == "ok" else kind), name, line
+
+
+def build_pipeline_css(palette):
+    """The pipeline of quality (D-273): boxes and dashed lines drawn with HTML and CSS, so the words keep their size on
+    any window; under 760 px the stretches stack from top to bottom."""
+    dark = palette["base"] == charts.BASE_DARK
+    ink, muted, card, border, accent = (palette["strong_text"], palette["reference"], palette["card"],
+                                        palette["card_border"], palette["accent"])
+    grid = f"color-mix(in srgb, {border} {'38' if dark else '45'}%, transparent)"
+    surface = f"color-mix(in srgb, {card} 72%, #000)" if dark else card
+    glow = (lambda color: f"0 0 0 1px color-mix(in srgb, {color} 35%, transparent), 0 0 24px -6px color-mix(in srgb, {color} 70%, transparent)"
+            if dark else f"0 8px 18px -14px rgba(15,40,90,.35)")
+    return f"""
+.qp .pq {{ --accent-ok:{accent}; position:relative; padding:14px 22px 16px; border:1px solid {border}; border-radius:18px; background-color:{surface};
+  background-image:linear-gradient({grid} 1px, transparent 1px), linear-gradient(90deg, {grid} 1px, transparent 1px);
+  background-size:30px 30px; }}
+.qp .pq-head {{ display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 14px; }}
+.qp .pq-head h2 {{ margin:0; font-size:20px; font-weight:700; letter-spacing:-.01em; color:{ink}; }}
+.qp .pq-head p {{ margin:0; font:400 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
+.qp .pq-head p.hint {{ flex-basis:100%; font-family:inherit; font-size:12.5px; }}
+.qp .pq-grid {{ display:grid; margin-top:6px; align-items:center; column-gap:0; row-gap:0;
+  grid-template-columns:minmax(0, .85fr) minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(0, 1.3fr)
+    minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(0, .85fr);
+  grid-template-rows:auto 32px auto 28px auto 28px auto;
+  grid-template-areas:
+    ".   .  .  .  rej .  .  .  .   "
+    ".   .  .  .  vr  .  .  .  .   "
+    "org a1 g1 a2 g2  a3 g3 a4 base"
+    ".   .  v1 .  v2  .  v3 .  .   "
+    ".   .  m1 .  m2  .  m3 .  .   "
+    ".   .  w1 .  w2  .  w3 .  .   "
+    "leg leg ds ds ds ds ds .  .   "; }}
+.qp .pq a {{ text-decoration:none; color:inherit; outline:none; }}
+.qp .pq .box {{ display:block; padding:12px 10px; border:1px solid {border}; border-radius:14px; background:color-mix(in srgb, {card} 92%, transparent);
+  text-align:center; color:{ink}; }}
+.qp .pq .box b {{ display:block; font-size:17px; font-weight:700; line-height:1.25; }}
+.qp .pq .box small {{ display:block; margin-top:2px; font-size:12.5px; line-height:1.35; color:{muted}; }}
+.qp .pq .kicker {{ display:block; margin-bottom:3px; font:600 10.5px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing:.18em; text-transform:uppercase; color:{muted}; }}
+.qp .pq .gate {{ --c:{accent}; border-color:var(--c); box-shadow:{glow("var(--c)")}; padding:12px 10px; align-self:stretch;
+  display:flex; flex-direction:column; justify-content:center; }}
+.qp .pq .gate.s-warn {{ --c:{quality_view.PILL_COLORS["pending"]}; }} .qp .pq .gate.s-fail {{ --c:{quality_view.PILL_COLORS["fail"]}; }}
+.qp .pq .gate .kicker {{ color:var(--c); }}
+.qp .pq .gate b {{ font-size:19px; }}
+.qp .pq a.box:hover, .qp .pq a.box:focus-visible {{ border-color:{accent}; background:color-mix(in srgb, {accent} 9%, {card}); }}
+.qp .pq .gate:hover, .qp .pq .gate:focus-visible {{ border-color:var(--c); background:color-mix(in srgb, var(--c) 10%, {card}); }}
+.qp .pq .rej {{ --c:{quality_view.PILL_COLORS["pending"]}; border-color:color-mix(in srgb, var(--c) 70%, transparent);
+  background:color-mix(in srgb, var(--c) {'14' if dark else '9'}%, {card}); box-shadow:{glow("var(--c)")}; }}
+.qp .pq .rej .kicker {{ color:var(--c); }}
+.qp .pq .rej b {{ font-size:18px; }}
+.qp .pq .mide {{ height:100%; padding:10px 10px 12px; }}
+.qp .pq .mide a {{ display:block; padding:2px 0; font-size:15.5px; font-weight:700; color:{ink}; }}
+.qp .pq .mide a:hover, .qp .pq .mide a:focus-visible {{ color:{accent}; }}
+.qp .pq .mide a.s-warn::after, .qp .pq .mide a.s-fail::after {{ content:""; display:inline-block; width:12px; height:12px; margin-left:7px;
+  border-radius:50%; background:var(--c); vertical-align:-1px; box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent); }}
+.qp .pq .ds {{ --c:{accent}; padding:12px 14px; border-color:var(--c); box-shadow:{glow("var(--c)")}; }}
+.qp .pq .ds.s-warn {{ --c:{quality_view.PILL_COLORS["pending"]}; }} .qp .pq .ds.s-fail {{ --c:{quality_view.PILL_COLORS["fail"]}; }}
+.qp .pq .ds b {{ font-size:23px; letter-spacing:-.01em; }}
+.qp .pq .ds small {{ font-size:13.5px; color:{ink}; opacity:.85; }}
+.qp .pq .ds:hover, .qp .pq .ds:focus-visible {{ background:color-mix(in srgb, var(--c) 10%, {card}); }}
+.qp .pq .end {{ padding:10px 8px; }}
+.qp .pq .end b {{ font-size:16px; }}
+/* The dashed lines: a horizontal stretch carries its rows above it; a vertical one goes down (or up, to the rejected rows). */
+.qp .pq .h {{ position:relative; height:44px; }}
+.qp .pq .h::before {{ content:""; position:absolute; left:6px; right:9px; top:31px; border-top:2px dashed {accent}; opacity:.85; }}
+.qp .pq .h::after {{ content:""; position:absolute; right:2px; top:27px; border:5px solid transparent; border-left:8px solid {accent}; }}
+.qp .pq .h span {{ position:absolute; left:0; right:0; top:6px; text-align:center; white-space:nowrap;
+  font:600 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; color:{accent}; font-variant-numeric:tabular-nums; }}
+.qp .pq .v {{ position:relative; height:100%; min-height:28px; }}
+.qp .pq .v::before {{ content:""; position:absolute; left:50%; top:2px; bottom:9px; border-left:2px dashed {accent}; opacity:.85; }}
+.qp .pq .v::after {{ content:""; position:absolute; left:calc(50% - 4px); bottom:1px; border:5px solid transparent; border-top:8px solid {accent}; }}
+.qp .pq .v.up::before {{ top:9px; bottom:2px; border-left-color:{quality_view.PILL_COLORS["pending"]}; }}
+.qp .pq .v.up::after {{ top:-3px; bottom:auto; border-top-color:transparent; border-bottom:8px solid {quality_view.PILL_COLORS["pending"]}; }}
+.qp .pq .legend-box {{ align-self:end; padding:0 12px 4px 0; font-size:12px; line-height:1.7; color:{muted}; white-space:nowrap; }}
+.qp .pq .legend-box i {{ display:inline-block; width:9px; height:9px; margin-right:6px; border-radius:50%; background:var(--c); }}
+@media (min-width:761px) and (max-width:960px) {{
+  .qp .pq {{ padding:12px 14px 14px; }}
+  .qp .pq-grid {{ grid-template-columns:minmax(0, .8fr) minmax(74px, .6fr) minmax(0, 1.3fr) minmax(74px, .6fr) minmax(0, 1.3fr)
+    minmax(74px, .6fr) minmax(0, 1.3fr) minmax(74px, .6fr) minmax(0, .8fr); }}
+  .qp .pq .box {{ padding:9px 7px; }} .qp .pq .gate {{ padding:10px 7px; }}
+  .qp .pq .box b {{ font-size:14.5px; }} .qp .pq .gate b {{ font-size:16px; }} .qp .pq .rej b {{ font-size:15.5px; }}
+  .qp .pq .box small {{ font-size:11.5px; }} .qp .pq .kicker {{ font-size:9.5px; letter-spacing:.14em; }}
+  .qp .pq .mide a {{ font-size:14px; }} .qp .pq .ds b {{ font-size:20px; }} .qp .pq .ds small {{ font-size:12.5px; }}
+  .qp .pq .h span {{ font-size:11px; }} .qp .pq-head p.hint {{ display:none; }}
+}}
+@media (max-width:760px) {{
+  .qp .pq {{ padding:14px; }}
+  .qp .pq-grid {{ grid-template-columns:minmax(0, 1fr) minmax(0, 1fr) minmax(0, .8fr); grid-template-rows:none; row-gap:0; column-gap:10px;
+    grid-template-areas: "org org org" "a1 a1 a1" "g1 m1 ." "a2 a2 a2" "g2 m2 rej" "a3 a3 a3" "g3 m3 ." "a4 a4 a4" "base base base"
+      "ds ds ds" "leg leg leg"; align-items:stretch; }}
+  .qp .pq .vertical-only {{ display:none; }}
+  .qp .pq .h {{ height:42px; }}
+  .qp .pq .h::before {{ left:50%; right:auto; top:4px; bottom:10px; border-top:0; border-left:2px dashed {accent}; }}
+  .qp .pq .h::after {{ left:calc(50% - 4px); right:auto; top:auto; bottom:2px; border:5px solid transparent; border-top:8px solid {accent}; }}
+  .qp .pq .h span {{ left:calc(50% + 12px); right:auto; top:13px; text-align:left; }}
+  .qp .pq .ds {{ margin-top:12px; }} .qp .pq .legend-box {{ padding-top:8px; }}
+}}
+"""
+
+
+def build_pipeline_html(indicators, columns, measures=None):
+    """The pipeline of quality (D-273): the rows of the latest load go through the three gates; each gate says what it
+    measures and every gate flows into the verdict. Each gate, each dimension, the rejected rows and the verdict open
+    their pop-up."""
+    flow = build_flow(measures)
+    number = (lambda value: thousands(value) if value is not None else "—")
+    read, loaded = (flow["read"], flow["loaded"]) if flow else (None, None)
+    run = f" de la carga {flow['run']}" if flow else ""
+    stretches = [("a1", read, f"Filas leídas de los archivos de ODEPA{run}"),
+                 ("a2", read, "Las mismas filas: la puerta 1 acepta o detiene un archivo entero, no filas sueltas"),
+                 ("a3", loaded, f"Filas que pasaron la puerta 2: {number(read)} leídas menos {number(flow['rejected'] if flow else None)} rechazadas"),
+                 ("a4", loaded, "Las mismas filas: si la puerta 3 falla, no se publica ninguna")]
+    parts = [f'<div class="h" style="grid-area:{area}" title="{html.escape(note)}"><span>{number(value)}</span></div>'
+             for area, value, note in stretches]
+    parts.append('<div class="box end" style="grid-area:org" title="Los CSV anuales de ODEPA, descargados por HTTPS">'
+                 '<span class="kicker">Origen</span><b>Archivos</b><small>CSV de ODEPA</small></div>')
+    prices = f"{number(flow['prices'])} precios semanales" if flow and flow["prices"] is not None else "base servida"
+    parts.append(f'<div class="box end" style="grid-area:base" title="Las filas válidas, agrupadas por semana, producto, región, '
+                 f'canal y unidad"><span class="kicker">Carga</span><b>Base</b><small>{html.escape(prices)}</small></div>')
+    for index, (title, question, _) in enumerate(GATE_VIEW):
+        status, measure = gate_measure(index, indicators)
+        kicker, _, name = title.partition(" · ")
+        parts.append(f'<a class="box gate s-{status}" href="#g-{index}" style="grid-area:g{index + 1}" '
+                     f'title="{html.escape(title)}: {html.escape(measure)}" aria-label="{html.escape(title)}: {html.escape(question)}">'
+                     f'<span class="kicker">{html.escape(kicker)}</span><b>{html.escape(name[:1].upper() + name[1:])}</b>'
+                     f'<small>{html.escape(question)}</small></a>')
+        links = []
+        for key in gate_dimensions(index):
+            dim_status, headline = hub_measure(key, indicators, columns)
+            dim_name = dict((hub_key, hub_name) for hub_key, hub_name, *_ in HUB)[key]
+            links.append(f'<a class="s-{dim_status}" href="#d-{key}" title="{html.escape(dim_name)}: {html.escape(headline)}" '
+                         f'aria-label="{html.escape(dim_name)}: {html.escape(headline)}">{html.escape(dim_name)}</a>')
+        parts.append(f'<div class="box mide" style="grid-area:m{index + 1}"><span class="kicker">Mide</span>{"".join(links)}</div>')
+        parts.append(f'<i class="v vertical-only" style="grid-area:v{index + 1}"></i><i class="v vertical-only" style="grid-area:w{index + 1}"></i>')
+    if flow:
+        reasons = ", ".join(flow["reasons"]) or "motivo registrado en rejection"
+        parts.append(f'<a class="box rej" href="#g-1" style="grid-area:rej" title="Filas rechazadas por la puerta 2{run}, con su motivo">'
+                     f'<span class="kicker">Rechazo</span><b>{number(flow["rejected"])} filas</b><small>{html.escape(reasons)}</small></a>'
+                     '<i class="v up vertical-only" style="grid-area:vr"></i>')
+    status, name, line = build_verdict_box(indicators, columns)
     count = len([row for row in indicators if row[4] != "info"])
-    parts, lines = [], []
-    rows = {"left": 0, "right": 0}
-    for key, name, icon, side in HUB:
-        row = rows[side]
-        rows[side] += 1
-        x = 12 if side == "left" else width - 12 - box_w
-        y = 14 + row * 100
-        status, headline = hub_measure(key, indicators, columns)
-        color = colors[status]
-        edge = x + box_w if side == "left" else x
-        lines.append(f'<line x1="{edge}" y1="{y + box_h / 2}" x2="{cx}" y2="{cy}" stroke="{color}" stroke-width="1.8" stroke-opacity=".75"/>'
-                     f'<circle cx="{edge}" cy="{y + box_h / 2}" r="5" fill="{card}" stroke="{color}" stroke-width="2"/>')
-        icon_svg = quality_view.build_icon_svg(icon).replace('<svg class="qa-icon" ', f'<svg x="{x + 14}" y="{y + 15}" width="40" height="40" ', 1)
-        parts.append(f'<a href="#d-{key}" aria-label="{html.escape(name)}: {html.escape(headline)}"><title>{html.escape(name)}: {html.escape(headline)}</title>'
-                     f'<rect class="pill" x="{x}" y="{y}" width="{box_w}" height="{box_h}" rx="35" fill="{card}" stroke="{color}" stroke-width="1.6"/>'
-                     f'{icon_svg}<text x="{x + 66}" y="{y + 31}" font-size="17" font-weight="700" fill="{ink}">{html.escape(name)}</text>'
-                     f'<text x="{x + 66}" y="{y + 53}" font-size="13.5" fill="{muted}">{html.escape(headline)}</text>'
-                     f'<circle cx="{x + box_w - 26}" cy="{y + box_h / 2}" r="7" fill="{color}"/></a>')
-    centre = (f'<defs><radialGradient id="qa-hub" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="#4a8df0"/>'
-              f'<stop offset="1" stop-color="#0d3b96"/></radialGradient></defs>'
-              f'<a href="#d-todos" aria-label="Datos sanos: ver los {count} indicadores"><title>Ver los {count} indicadores</title>'
-              f'<circle cx="{cx}" cy="{cy}" r="{radius + 10}" fill="{accent}" fill-opacity=".14"/>'
-              f'<circle class="core" cx="{cx}" cy="{cy}" r="{radius}" fill="url(#qa-hub)"/>'
-              + quality_view.build_icon_svg("database").replace('<svg class="qa-icon" ', f'<svg x="{cx - 28}" y="{cy - 52}" width="56" height="56" ', 1)
-              + f'<text x="{cx}" y="{cy + 26}" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">Datos sanos</text>'
-              f'<rect class="count" x="{cx - 58}" y="{cy + 36}" width="116" height="28" rx="14" fill="#fff" fill-opacity=".18" stroke="#fff" stroke-opacity=".7"/>'
-              f'<text x="{cx}" y="{cy + 55}" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">{count} indicadores</text></a>')
-    return (f'<svg class="hub" viewBox="0 0 {width} {height}" role="img" aria-label="Las seis dimensiones de la calidad de los datos" '
-            f'font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">{"".join(lines)}{centre}{"".join(parts)}</svg>')
+    parts.append(f'<a class="box ds s-{status}" href="#d-todos" style="grid-area:ds" aria-label="{html.escape(name)}: ver los {count} '
+                 f'indicadores"><b>{html.escape(name)}</b><small>{html.escape(line)}</small></a>')
+    legend = [("Dentro del umbral", "var(--accent-ok)"), ("Rechazo o a revisar", quality_view.PILL_COLORS["pending"]),
+              ("Falla", quality_view.PILL_COLORS["fail"])]
+    parts.append('<div class="legend-box" style="grid-area:leg">'
+                 + "".join(f'<div><i style="--c:{color}"></i>{html.escape(text)}</div>' for text, color in legend)
+                 + '<div title="Las filas de la última carga publicada, en cada tramo">Cifras: filas por tramo</div></div>')
+    words = NUMBER_WORDS
+    head = (f'<div class="pq-head"><h2>Pipeline de calidad de datos</h2>'
+            f'<p>{words[len(GATE_VIEW)].capitalize()} puertas · {words[len(HUB)]} dimensiones · un veredicto</p>'
+            '<p class="hint">Pulsa una puerta, una dimensión, el rechazo o el veredicto para ver su detalle.</p></div>')
+    return f'<div class="pq">{head}<div class="pq-grid">{"".join(parts)}</div></div>'
 
 
 def build_indicator_html(label, value, reference, state, detail):
@@ -429,18 +575,14 @@ def build_all_modal(indicators, sentence):
     return build_modal("d-todos", f"Los {len(indicators)} indicadores", "Cada uno se mide en cada carga y se juzga contra el umbral que lleva debajo.", body)
 
 
-def build_quality_html(palette, indicators, columns):
-    """The main view: the verdict, the six dimensions, the three gates and a pop-up behind each piece."""
-    kind, sentence = build_verdict(indicators)
-    verdict = f'<div class="verdict s-{kind}"><i>{"✓" if kind == "ok" else "!"}</i>{html.escape(sentence)}</div>'
-    gates = "".join(f'<a class="gatebtn s-{gate_measure(index, indicators)[0]}" href="#g-{index}"><i></i><span><b>{html.escape(title)}</b>'
-                    f'<small>{html.escape(question)} · {html.escape(gate_measure(index, indicators)[1])}</small></span></a>'
-                    for index, (title, question, _) in enumerate(GATE_VIEW))
+def build_quality_html(palette, indicators, columns, measures=None):
+    """The main view (D-273): the pipeline of quality, and a pop-up behind each gate, each dimension and the verdict.
+    measures gives the rows of the latest load at each stretch; without it the stretches show a dash."""
+    _, sentence = build_verdict(indicators)
     modals = "".join(build_dimension_modal(key, name, indicators, columns) for key, name, _, _ in HUB)
     modals += "".join(build_gate_modal(index, indicators) for index in range(len(GATE_VIEW)))
     modals += build_all_modal(indicators, sentence)
-    return wrap_document(palette, f'{verdict}<p class="hint">Pulsa un eje, una puerta o el centro para ver su detalle.</p>'
-                                  f'{build_hub_html(palette, indicators, columns)}<div class="gatebar">{gates}</div>{modals}')
+    return wrap_document(palette, build_pipeline_html(indicators, columns, measures) + modals)
 
 
 def build_apart_html(rejections, flags):

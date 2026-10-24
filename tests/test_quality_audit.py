@@ -1,5 +1,6 @@
 """Calidad (live measures) and its audit controls, D-196 and D-220."""
 import copy
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -47,7 +48,7 @@ EVIDENCE = dict(rejections=201, run_id=5, run_started="19-10-2026", run_status="
 
 def draw(measures, columns=()):
     indicators = quality_live.build_indicators(measures, NOW)
-    return indicators, quality_live.build_quality_html(charts.get_palette("Vantablack"), indicators, columns)
+    return indicators, quality_live.build_quality_html(charts.get_palette("Vantablack"), indicators, columns, measures)
 
 
 @needs_database
@@ -134,3 +135,40 @@ def test_d272_the_audit_steps_sit_in_two_panels_in_timeline_order_and_as_even_as
     assert abs(weight(left) - weight(right)) == best
     page = quality_live.build_audit_page_html(charts.get_palette("Vantablack"), columns)
     assert page.count('class="audit"') == 2 and 'class="audit-pair"' in page
+
+
+@needs_database
+def test_d273_the_pipeline_carries_the_rows_of_the_latest_load_through_the_three_gates(measures):
+    columns = quality_view.build_columns(EVIDENCE)
+    indicators, page = draw(measures, columns)
+    run_id, _, status, read, loaded, rejected = [run for run in measures["runs"] if run[2] == "LOADED"][-1]
+    assert read == loaded + rejected  # no row is lost between the stretches (RF-02)
+    stretches = re.findall(r'<div class="h" style="grid-area:a(\d)"[^>]*><span>([^<]+)</span>', page)
+    assert stretches == [("1", quality_live.thousands(read)), ("2", quality_live.thousands(read)),
+                         ("3", quality_live.thousands(loaded)), ("4", quality_live.thousands(loaded))]
+    assert f"<b>{quality_live.thousands(rejected)} filas</b>" in page
+    assert sum(count for _, _, count in measures["rejections"]) == rejected
+    for reason, _, _ in measures["rejections"]:
+        assert quality_live.REASONS.get(reason, reason) in page and reason not in page.split('class="modal"')[0]
+    assert f"{quality_live.thousands(measures['total_rows'])} precios semanales" in page
+
+
+def test_d273_each_dimension_is_measured_at_exactly_one_gate_and_the_gates_say_where_a_failure_ends():
+    placed = [key for index in range(len(quality_live.GATE_VIEW)) for key in quality_live.gate_dimensions(index)]
+    assert sorted(placed) == sorted(key for key, *_ in quality_live.HUB)  # all six, once each
+    assert quality_live.gate_dimensions(2)[-1] == "exactitud" and "unicidad" in quality_live.gate_dimensions(2)
+    assert not any("etl_run como fallida" in outcome for _, _, outcome, _, _ in quality_live.GATES)
+
+
+@needs_database
+def test_d273_the_verdict_box_counts_the_indicators_and_names_the_pending_accuracy_controls(measures):
+    columns = quality_view.build_columns(EVIDENCE)
+    indicators = quality_live.build_indicators(measures, NOW)
+    status, name, line = quality_live.build_verdict_box(indicators, columns)
+    judged = [row for row in indicators if row[4] != "info"]
+    assert line.startswith(f"{len(judged)} indicadores")
+    pending = [card for card in dict(columns)[quality_live.RESULTS_STEP] if quality_view.classify(card[2]) == "pending"]
+    assert (f"{len(pending)} control" in line and "exactitud" in line) == bool(pending)
+    broken = copy.deepcopy(measures)
+    broken["duplicates"] = 5
+    assert quality_live.build_verdict_box(quality_live.build_indicators(broken, NOW), columns)[1] != "Datos sanos"

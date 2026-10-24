@@ -6484,12 +6484,12 @@ def show_operations_page(mode):
     palette = charts.get_palette(mode)
     quality_tab, audit_tab, apart_tab = st.tabs(["Calidad", "Auditoría", "Rechazos y cargas"])
     with quality_tab:
-        # D-271: the frame takes the drawing's own height (a fixed one cut the three gates on a wide window) and the
-        # drawing is never wider than what keeps it inside the window, so the tab fits one screen.
-        st.markdown('<style>.st-key-qa_hub iframe {display:block; margin:0 auto; '
-                    'max-width:max(640px, calc((100vh - 330px) * 1.75));}</style>', unsafe_allow_html=True)
+        # D-272: the frame takes the drawing's own height (a fixed one cut the gates on a wide window). D-273: the drawing
+        # is HTML, so its words keep their size; past 1180 px it would only spread out, so it stops growing there.
+        st.markdown('<style>.st-key-qa_hub iframe {display:block; margin:0 auto; max-width:1180px;}</style>',
+                    unsafe_allow_html=True)
         with st.container(key="qa_hub"):
-            st.iframe(quality_live.build_quality_html(palette, indicators, columns), height="content")
+            st.iframe(quality_live.build_quality_html(palette, indicators, columns, measures), height="content")
     with audit_tab:
         if changed_files:
             # The indicators are measured on the published database; only the local copies of the source files differ.
