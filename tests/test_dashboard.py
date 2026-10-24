@@ -257,7 +257,7 @@ def test_d136_devops_shows_the_whole_platform_architecture_and_pipeline_only_the
     devops = draw_page(dashboard.PAGE_DEVOPS)
     texts = " ".join(block.value for block in devops.markdown)
     assert not devops.exception
-    assert texts.count('aria-label="Arquitectura del proyecto por plataforma"') == 1
+    assert devops.get("iframe") and 'aria-label="Arquitectura del proyecto por plataforma"' not in texts  # D-255
     assert "Ciclo DevOps" not in texts and "Ver el pipeline" not in texts
 
 
@@ -304,11 +304,10 @@ def test_d097_model_page_is_one_panoramic_diagram():
 
     app = draw_page(dashboard.PAGE_DEVOPS)
     assert not app.exception
-    # D-249: only the deployment diagram; security, CI/CD, monitoring and capacity have their own views.
+    # D-249, D-255: only the deployment diagram, drawn in its own frame; security, CI/CD, monitoring and capacity have their own views.
     assert not app.tabs and not app.expander and not app.toggle
     assert not [button for button in app.button if str(button.key).startswith("devops_layer_")]
-    joined = " ".join(block.value for block in app.markdown)
-    assert joined.count('class="zoom-frame diagram-devops"') == 1
+    assert len(app.get("iframe")) == 1
 
 
 def test_kpi_link_opens_the_kpi_view_with_that_indicator():
@@ -479,7 +478,7 @@ def test_d201_security_has_its_own_section_with_the_view_and_the_test_plan():
     assert dashboard.SIDEBAR_TOP_LABELS[dashboard.SECTION_SECURITY] == "Seguridad"
     assert dashboard.WINDOWS[dashboard.SECTION_SECURITY] == [dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN]
     app = draw_control_page({})
-    assert not app.exception and [tab.label for tab in app.tabs] == ["Operación", "Despliegue", "CI/CD", "Monitoreo"]
+    assert not app.exception and [tab.label for tab in app.tabs] == ["Despliegue", "Operación", "CI/CD", "Monitoreo"]
     for page in (dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN):
         app = draw_page(page)
         assert not app.exception and read_page_title(app) == dashboard.SIDEBAR_LABELS.get(page, page)

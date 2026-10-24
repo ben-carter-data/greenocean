@@ -34,7 +34,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                audit_trace, database_crossings, devops, monitoring, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
+                audit_trace, database_crossings, deployment, devops, monitoring, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -5855,13 +5855,16 @@ def show_runs_page(mode):
     with what it does and where to act, and beside it the facts and the manual run."""
     show_compact_page_header("Centro de operación", "Dónde corre cada pieza, cómo llega un cambio a producción y el "
                              "estado de cada paso de la carga semanal, con su log y dónde actuar.")
-    # D-251 (the author's decision): the page opens on the weekly run, with «Acceso del autor», as in D-229;
-    # then where each piece runs, how a change reaches it, and how a failure is known (D-249).
-    runs_tab, platform_tab, cicd_tab, monitoring_tab = st.tabs(["Operación", "Despliegue", "CI/CD", "Monitoreo"])
-    with runs_tab:
-        show_runs_tab(mode)
+    # D-255 (the author's decision): the page opens on where each piece runs; «Acceso del autor» sits above the tabs,
+    # so the control code and the links are one click away in every one of them.
+    _, access_column = st.columns([1, 1], gap="large")
+    with access_column:
+        show_admin_card()
+    platform_tab, runs_tab, cicd_tab, monitoring_tab = st.tabs(["Despliegue", "Operación", "CI/CD", "Monitoreo"])
     with platform_tab:
         show_devops_tab(mode)
+    with runs_tab:
+        show_runs_tab(mode)
     with cicd_tab:
         show_cicd_tab(mode)
     with monitoring_tab:
@@ -5982,7 +5985,6 @@ def show_operation_center(mode, live=False):
         st.markdown(build_operation_side_css(palette)
                     + build_operation_facts(latest_load, read_published_figures(get_database_version()),
                                             datetime.now(timezone.utc)), unsafe_allow_html=True)
-        show_admin_card()
 
 
 def build_operation_side_css(palette):
@@ -6177,11 +6179,7 @@ def show_devops_tab(mode):
     """Where each piece runs (D-132, D-136): the deployment diagram, full width, with the live state of each piece.
     Security, CI/CD, monitoring and capacity have their own views (D-249), so they are not repeated here."""
     states, figures, *_ = read_journey()
-    st.markdown(zoom.build_zoom_frame_html(
-        architecture.build_devops_svg(states, build_devops_figures(figures), mode, animate_flow=True),
-        "diagram-devops"), unsafe_allow_html=True)
-    st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
-    st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
+    st.iframe(deployment.build_deployment_html(charts.get_palette(mode), states, build_devops_figures(figures)), height=580)
 
 
 def show_monitoring_tab(mode):

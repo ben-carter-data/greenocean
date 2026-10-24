@@ -97,7 +97,7 @@ El menú lateral reúne las páginas en cinco grupos:
 
 1. **Negocio · BI:** «Resumen semanal» (qué se movió esta semana y qué es inusual) y «Precios e inflación» (qué familias de alimentos subieron más o menos que el IPC de alimentos del INE).
 2. **Ingeniería de datos:** «Pipeline y linaje» (el recorrido por capas y el linaje de dbt), «Modelo de datos» (modelo estrella, entidad-relación, dónde viven los datos y cruces entre bases), «Calidad y auditoría» (los once indicadores, las puertas de calidad y los controles de auditoría), «Consultas SQL» (un estudio SQL de solo lectura con consultas de ejemplo) y «SAD · Arquitectura».
-3. **DevOps y seguridad:** «Centro de operación» (operación, despliegue, CI/CD y monitoreo), «Arquitectura de seguridad» y «Plan de pruebas de seguridad».
+3. **DevOps y seguridad:** «Centro de operación» (despliegue, operación, CI/CD y monitoreo), «Arquitectura de seguridad» y «Plan de pruebas de seguridad».
 4. **Stack y evidencia:** las herramientas del proyecto y las cifras que las respaldan.
 5. **Análisis de negocio · BA:** «PRD · Requisitos del producto», «ADR · Decisiones de arquitectura» y «Escalabilidad».
 

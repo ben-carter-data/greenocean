@@ -70,39 +70,6 @@ VERTICAL_FIRST_Y = 170
 VERTICAL_ROW = 112
 VERTICAL_BAND_ABOVE = 46   # a medallion band starts this far above its first tile centre
 VERTICAL_BAND_BELOW = 44   # and ends this far below its last one
-# The infrastructure: one frame per platform with its components inside, and
-# each connection labelled with how the two pieces talk (D-054).
-PLATFORM_WIDTH = 1420
-PLATFORM_HEIGHT = 700
-# The frames start below this line: the space above it is not drawn.
-PLATFORM_TOP = 80
-COMPONENT_WIDTH = 250
-COMPONENT_HEIGHT = 90
-# Center x of the three component columns inside GitHub, and center y of the rows.
-GITHUB_COLUMN_X = [560, 900, 1240]
-TOP_ROW_Y = 185
-MIDDLE_ROW_Y = 380
-BOTTOM_ROW_Y = 605
-LEFT_COLUMN_X = 200
-# The two public sources share the top-left frame: one compact row each, above
-# and below the row of the connection that leaves them (TOP_ROW_Y).
-SOURCE_ROWS_Y = [155, 215]
-# (x, y, width, height, title, subtitle, layer, dev_only) of each platform frame.
-# dev_only marks a platform that only exists while developing, never in production.
-PLATFORMS = [
-    (40, 95, 320, 155, "FUENTES", "datos públicos · ODEPA e INE", "sources", False),
-    (40, 305, 320, 140, "ENTORNO LOCAL", "desarrollo", "ingestion", True),
-    (420, 95, 965, 350, "GITHUB", "código, automatización e informes", "processing", False),
-    (40, 500, 720, 180, "STREAMLIT COMMUNITY CLOUD", "publicación del panel", "quality", False),
-    (1110, 500, 275, 180, "USUARIOS", "quién lo usa", "consumption", False),
-]
-# Order of the six steps of the weekly, unattended flow (D-104): the rest of the
-# components (cache, issues, permissions, secrets, the local editor) support this
-# flow but are not part of its numbered sequence.
-MAIN_FLOW_STEPS = {
-    "ODEPA · precios": 1, "Job semanal.yml": 2, "Repositorio": 3,
-    "Pruebas (CI)": 4, "App Streamlit": 5, "Visitantes": 6,
-}
 # Explanation shown on hover over each piece: what it does, with its acronyms.
 TOOLTIPS = {
     "ODEPA mayorista": "Precios diarios de los mercados mayoristas, publicados por ODEPA "
@@ -425,24 +392,6 @@ def draw_warning_icon(x, y, color):
             f'stroke-linecap="round"/><circle cx="{x}" cy="{y+9}" r="1.6" fill="{color}"/>')
 
 
-def draw_laptop_icon(x, y, color):
-    """A laptop: the computer where the code is written."""
-    return (f'<rect x="{x-14}" y="{y-13}" width="28" height="19" rx="2" fill="none" '
-            f'stroke="{color}" stroke-width="2.2"/>'
-            f'<path d="M{x-19} {y+11} h38" stroke="{color}" stroke-width="2.4" '
-            f'stroke-linecap="round"/>')
-
-
-def draw_branch_icon(x, y, color):
-    """Two branches joined: a git repository."""
-    return (f'<circle cx="{x-8}" cy="{y-12}" r="4" fill="none" stroke="{color}" '
-            f'stroke-width="2.2"/><circle cx="{x-8}" cy="{y+12}" r="4" fill="none" '
-            f'stroke="{color}" stroke-width="2.2"/><circle cx="{x+9}" cy="{y-6}" r="4" '
-            f'fill="none" stroke="{color}" stroke-width="2.2"/>'
-            f'<path d="M{x-8} {y-8} v16 M{x+9} {y-2} c0 8 -17 4 -17 10" fill="none" '
-            f'stroke="{color}" stroke-width="2.2"/>')
-
-
 def draw_clock_icon(x, y, color):
     """A clock: the job that runs on a schedule."""
     return (f'<circle cx="{x}" cy="{y}" r="15" fill="none" stroke="{color}" '
@@ -451,11 +400,6 @@ def draw_clock_icon(x, y, color):
             f'stroke-linejoin="round"/>')
 
 
-def draw_cloud_icon(x, y, color):
-    """A cloud: the service that hosts the dashboard."""
-    return (f'<path d="M{x-12} {y+10} a8 8 0 0 1 -1 -16 a11 11 0 0 1 21 -3 '
-            f'a8 8 0 0 1 4 19 z" fill="none" stroke="{color}" stroke-width="2.2" '
-            f'stroke-linejoin="round"/>')
 # endregion
 
 
@@ -1082,227 +1026,10 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
 # endregion
 
 
-# region Infrastructure by platform
-def build_platform_frame(x, y, width, height, title, subtitle, layer, dev_only, palette):
-    """A platform: a frame with its name in the layer color and what it is for.
-    A dev-only platform (the author's own computer) gets a dashed, muted frame:
-    it never runs in production."""
-    dash = ' stroke-dasharray="6 5"' if dev_only else ""
-    opacity = ' stroke-opacity="0.55"' if dev_only else ""
-    name_color = f'{LAYER_COLORS[layer]}99' if dev_only else LAYER_COLORS[layer]
-    name = (f'<text x="{x + 16}" y="{y + 24}" font-size="14">'
-            f'<tspan font-weight="700" letter-spacing="1" fill="{name_color}">'
-            f'{html.escape(title)}</tspan><tspan dx="10" fill="#8a8984">'
-            f'{html.escape(subtitle)}'
-            + (" · solo en desarrollo" if dev_only else "")
-            + '</tspan></text>')
-    if title in tech_glossary.LABEL_KEYS:
-        name = add_tech_tooltip(name, tech_glossary.LABEL_KEYS[title])
-    return (f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="18" fill="none" '
-            f'stroke="{palette["card_border"]}" stroke-width="1.4"{dash}{opacity}/>' + name)
-
-
 # Glossary entry of the brand logo each component shows (what that logo stands for here).
 COMPONENT_LOGO_KEYS = {"Job semanal.yml": "github_actions", "Caché de Actions": "actions_cache",
                        "Issues": "github_issues", "Repositorio": "git", "Pruebas (CI)": "pytest",
                        "App Streamlit": "streamlit"}
-
-
-def build_component(x, y, layer, draw_icon, title, lines, palette, state=None):
-    """A component inside a platform: icon on the left, name and two lines of detail,
-    and a status dot only when its state is known."""
-    color = LAYER_COLORS[layer]
-    left, top = x - COMPONENT_WIDTH / 2, y - COMPONENT_HEIGHT / 2
-    brand = {"Job semanal.yml": "github", "Caché de Actions": "github", "Issues": "github",
-             "Repositorio": "git", "Pruebas (CI)": "pytest", "App Streamlit": "streamlit"}.get(title)
-    icon = (add_tech_tooltip(brand_icons.logo(brand, left + 19, y - 15, color, 30),
-                             COMPONENT_LOGO_KEYS[title])
-            if brand else draw_icon(left + 34, y, color))
-    parts = [f'<rect x="{left + 8}" y="{y - 26}" width="52" '
-             f'height="52" rx="16" fill="{color}" fill-opacity=".08" '
-             f'stroke="{color}" stroke-opacity=".35" stroke-width="1"/>',
-             icon,
-             f'<text x="{left + 66}" y="{y - 12}" font-size="15" font-weight="700" '
-             f'fill="{palette["strong_text"]}">{html.escape(title)}</text>']
-    for line_number, line in enumerate(lines[:2]):
-        parts.append(f'<text x="{left + 66}" y="{y + 8 + line_number * 17}" font-size="12.5" '
-                     f'fill="{palette["text"]}">{html.escape(line)}</text>')
-    step = MAIN_FLOW_STEPS.get(title)
-    if step:
-        parts.append(f'<circle cx="{left + 14}" cy="{top + 4}" r="11" fill="{color}"/>'
-                     f'<text x="{left + 14}" y="{top + 4}" font-size="12" font-weight="700" '
-                     f'text-anchor="middle" dominant-baseline="central" fill="#fff">'
-                     f'{step}</text>')
-    if has_real_state(state):
-        pulse = ' class="journey-running"' if state == control.RUN_IN_PROGRESS else ""
-        parts.append(f'<circle{pulse} cx="{left + COMPONENT_WIDTH - 4}" cy="{top + 4}" r="7" '
-                     f'fill="{STATE_COLORS[state]}" stroke="{palette["card"]}" '
-                     f'stroke-width="2.5"/>')
-    return add_tooltip("".join(parts), TOOLTIPS.get(title))
-
-
-def build_source_row(y, title, detail, palette, state=None):
-    """One public source in the top-left frame: a small file tile, its name, one
-    line of detail, the step number when it has one and a dot only with a real state."""
-    color = LAYER_COLORS["sources"]
-    left = 56
-    parts = [f'<rect x="{left}" y="{y - 20}" width="40" height="40" rx="12" fill="{color}" '
-             f'fill-opacity=".08" stroke="{color}" stroke-opacity=".35" stroke-width="1"/>',
-             f'<g transform="translate({left + 20} {y}) scale(.72) translate({-left - 20} {-y})">'
-             + draw_file_icon(left + 20, y, color) + '</g>',
-             f'<text x="{left + 52}" y="{y - 3}" font-size="14" font-weight="700" '
-             f'fill="{palette["strong_text"]}">{html.escape(title)}</text>',
-             f'<text x="{left + 52}" y="{y + 14}" font-size="12.5" '
-             f'fill="{palette["text"]}">{html.escape(detail)}</text>']
-    step = MAIN_FLOW_STEPS.get(title)
-    if step:
-        parts.append(f'<circle cx="{left}" cy="{y - 20}" r="10" fill="{color}"/>'
-                     f'<text x="{left}" y="{y - 20}" font-size="11" font-weight="700" '
-                     f'text-anchor="middle" dominant-baseline="central" fill="#fff">'
-                     f'{step}</text>')
-    if has_real_state(state):
-        pulse = ' class="journey-running"' if state == control.RUN_IN_PROGRESS else ""
-        parts.append(f'<circle{pulse} cx="{left + 38}" cy="{y - 18}" r="6" '
-                     f'fill="{STATE_COLORS[state]}" stroke="{palette["card"]}" '
-                     f'stroke-width="2"/>')
-    return add_tooltip("".join(parts), TOOLTIPS.get(title))
-
-
-def build_components(states, figures, palette):
-    """Every running piece of the project, inside the platform that hosts it."""
-    first, second, third = GITHUB_COLUMN_X
-    odepa_y, ine_y = SOURCE_ROWS_Y
-    return "".join([
-        build_source_row(odepa_y, "ODEPA · precios", f"CSV por año · {figures['source_years']}",
-                         palette, states["sources"]),
-        build_source_row(ine_y, "INE · IPC alimentos", "CSV mensual · HTTPS", palette),
-        build_component(LEFT_COLUMN_X, MIDDLE_ROW_Y, "ingestion", draw_laptop_icon,
-                        "VS Code · Claude Code", ["desarrollo y pruebas locales",
-                                                  "pytest antes de cada commit"], palette),
-        build_component(first, TOP_ROW_Y, "processing", draw_clock_icon, "Job semanal.yml",
-                        [f"martes · próxima {figures['next_run']}", figures["week_prices"]],
-                        palette, states["workflow"]),
-        build_component(second, TOP_ROW_Y, "processing", draw_database_icon,
-                        "Caché de Actions", ["CSV de años cerrados", "se guarda 7 días sin uso"],
-                        palette),
-        build_component(third, TOP_ROW_Y, "processing", draw_report_icon, "Issues",
-                        ["informe semanal", "alertas y estado"], palette, states["report"]),
-        build_component(first, MIDDLE_ROW_Y, "orchestration", draw_branch_icon,
-                        "Repositorio", ["rama main · código",
-                                        f"datos.duckdb · {figures['database_size']}"], palette),
-        build_component(second, MIDDLE_ROW_Y, "processing", draw_shield_icon, "Pruebas (CI)",
-                        ["pruebas.yml · cada push", figures["test_functions"]], palette),
-        build_component(third, MIDDLE_ROW_Y, "processing", draw_shield_icon,
-                        "Permisos del job", ["contents: write · issues: write",
-                                             "⤷ del Job semanal.yml"], palette),
-        build_component(LEFT_COLUMN_X, BOTTOM_ROW_Y, "quality", draw_shield_icon, "Secretos",
-                        ["token de GitHub y clave", "«Ejecutar ahora» → API"], palette),
-        build_component(first, BOTTOM_ROW_Y, "quality", draw_cloud_icon, "App Streamlit",
-                        ["bi/dashboard.py · solo lectura", figures["panel_time"]], palette,
-                        states["panel"]),
-        build_component(1248, BOTTOM_ROW_Y, "consumption", draw_chart_icon, "Visitantes",
-                        ["navegador · enlace público", "autor: correo si falla"], palette),
-    ])
-
-
-def arrow_marker_id(color):
-    """The id of the arrowhead marker drawn in this color (D-104)."""
-    return "arrow-" + color.lstrip("#")
-
-
-def build_arrow_defs(colors):
-    """One arrowhead marker per connection color, defined once and reused by every
-    connection drawn in that color (D-104)."""
-    markers = "".join(
-        f'<marker id="{arrow_marker_id(color)}" viewBox="0 0 10 10" refX="8" refY="5" '
-        f'markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
-        f'<path d="M0,0 L10,5 L0,10 z" fill="{color}"/></marker>'
-        for color in sorted(set(colors)))
-    return f"<defs>{markers}</defs>"
-
-
-def build_connection(points, color, palette, chip_text, chip_at, moving_dot=False,
-                     bidirectional=False):
-    """A connection made of straight segments, with what travels through it and an
-    arrowhead showing the real direction of the flow (both ends when it truly goes
-    both ways, D-104)."""
-    path = "M" + " L".join(f"{x} {y}" for x, y in points)
-    marker_id = arrow_marker_id(color)
-    marker_start = f'marker-start="url(#{marker_id})" ' if bidirectional else ""
-    parts = [f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.6" '
-             f'opacity="0.85" {marker_start}marker-end="url(#{marker_id})"/>']
-    if moving_dot:
-        parts.append(f'<circle class="journey-flow" r="3.5" fill="{color}"><animateMotion dur="2.4s" '
-                     f'repeatCount="indefinite" path="{path}"/></circle>')
-    parts.append(build_chip(*chip_at, chip_text, color, palette))
-    return "".join(parts)
-
-
-def build_connections(palette, is_running):
-    """How the pieces talk. Only the weekly data connections move, and only while the
-    weekly job runs. None crosses another."""
-    first, second, third = GITHUB_COLUMN_X
-    half_width, half_height = COMPONENT_WIDTH / 2, COMPONENT_HEIGHT / 2
-    left_edge = LEFT_COLUMN_X + half_width
-    weekly = LAYER_COLORS["processing"]
-    return "".join([
-        build_connection([(left_edge, TOP_ROW_Y), (first - half_width, TOP_ROW_Y)],
-                         LAYER_COLORS["sources"], palette, "HTTPS · CSV", (380, TOP_ROW_Y),
-                         is_running),
-        build_connection([(left_edge, MIDDLE_ROW_Y), (first - half_width, MIDDLE_ROW_Y)],
-                         LAYER_COLORS["ingestion"], palette, "git push", (380, MIDDLE_ROW_Y)),
-        build_connection([(first - 40, TOP_ROW_Y + half_height),
-                          (first - 40, MIDDLE_ROW_Y - half_height)],
-                         LAYER_COLORS["orchestration"], palette, "checkout · commit",
-                         (first - 40, 300), is_running, bidirectional=True),
-        build_connection([(first + half_width, TOP_ROW_Y), (second - half_width, TOP_ROW_Y)],
-                         weekly, palette, "cache", (730, TOP_ROW_Y), is_running,
-                         bidirectional=True),
-        build_connection([(first + 60, TOP_ROW_Y + half_height), (first + 60, 262),
-                          (third, 262), (third, TOP_ROW_Y + half_height)],
-                         weekly, palette, "gh issue create", (1070, 262), is_running),
-        build_connection([(first + half_width, MIDDLE_ROW_Y),
-                          (second - half_width, MIDDLE_ROW_Y)],
-                         weekly, palette, "on: push", (730, MIDDLE_ROW_Y)),
-        build_connection([(first, MIDDLE_ROW_Y + half_height),
-                          (first, BOTTOM_ROW_Y - half_height)],
-                         LAYER_COLORS["quality"], palette, "despliegue de main", (first, 472)),
-        build_connection([(left_edge, BOTTOM_ROW_Y), (first - half_width, BOTTOM_ROW_Y)],
-                         LAYER_COLORS["quality"], palette, "st.secrets", (380, BOTTOM_ROW_Y)),
-        build_connection([(first + half_width, BOTTOM_ROW_Y),
-                          (1248 - half_width, BOTTOM_ROW_Y)],
-                         LAYER_COLORS["consumption"], palette, "HTTPS", (930, BOTTOM_ROW_Y),
-                         bidirectional=True),
-        build_connection([(first + 95, BOTTOM_ROW_Y - half_height), (first + 95, MIDDLE_ROW_Y + 65)],
-                         LAYER_COLORS["orchestration"], palette, "API de GitHub", (first + 95, 520),
-                         bidirectional=True),
-    ])
-
-
-def build_devops_svg(states, figures, mode, animate_flow=None):
-    """The infrastructure: each platform with its components and how they connect.
-
-    states holds the state of: sources, workflow, report and panel. figures
-    holds the texts of build_journey_svg plus database_size, test_functions and
-    week_prices.
-    """
-    palette = charts.get_palette(mode)
-    is_running = (states.get("workflow") == control.RUN_IN_PROGRESS
-                  if animate_flow is None else animate_flow)
-    frames = "".join(build_platform_frame(*platform, palette) for platform in PLATFORMS)
-    height = PLATFORM_HEIGHT - PLATFORM_TOP
-    legend_y = 478
-    legend = (f'<circle cx="970" cy="{legend_y}" r="5" fill="{STATE_COLORS[control.RUN_OK]}"/>'
-              f'<text x="982" y="{legend_y + 4}" font-size="12" fill="{palette["text"]}">'
-              '= componente activo</text>')
-    return "".join([f'<svg xmlns="http://www.w3.org/2000/svg" '
-                    f'viewBox="0 {PLATFORM_TOP} {PLATFORM_WIDTH} {height}" '
-                    f'width="{PLATFORM_WIDTH}" height="{height}" role="img" '
-                    f'aria-label="Arquitectura del proyecto por plataforma" '
-                    f'font-family="{charts.CHART_FONT}">', build_style(is_running),
-                    build_arrow_defs(LAYER_COLORS.values()), frames,
-                    build_connections(palette, is_running),
-                    build_components(states, figures, palette), legend, "</svg>"])
 
 
 # endregion

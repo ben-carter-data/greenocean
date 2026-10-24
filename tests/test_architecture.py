@@ -64,9 +64,6 @@ def test_d154_d155_the_delivered_stack_replaces_sqlite_except_in_the_landing_zon
     for slug in ["duckdb", "dbt", "apacheparquet"]:
         assert architecture.brand_icons.logo_body(slug) in architecture.build_journey_svg(
             states, FIGURES, charts.MODE_DARK)
-    devops = architecture.build_devops_svg(states, DEVOPS_FIGURES, charts.MODE_DARK)
-    assert "INE · IPC alimentos" in devops and "datos.duckdb · 33,9 MB" in devops
-    assert "SQLite" not in devops
 
 
 def test_pipeline_names_the_real_technology_used_at_each_stage():
@@ -213,49 +210,16 @@ def test_vertical_journey_moves_its_dots_only_while_a_run_is_in_progress():
         running_states, FIGURES, charts.MODE_LIGHT)
 
 
-DEVOPS_FIGURES = dict(FIGURES, database_size="33,9 MB", test_functions="180 funciones de prueba",
-                      week_prices="semana 05-10: 4.211 precios")
-
-
-def test_d054_infrastructure_draws_each_platform_its_components_and_figures():
-    states = dict(make_states(control.RUN_OK), report=control.RUN_FAILED)
-    svg = architecture.build_devops_svg(states, DEVOPS_FIGURES, charts.MODE_DARK)
-    for text in ["ODEPA", "INE", "FUENTES", "ENTORNO LOCAL", "GITHUB", "STREAMLIT COMMUNITY CLOUD", "USUARIOS",
-                 "Claude Code", "Repositorio", "Pruebas (CI)", "Job semanal.yml",
-                 "Caché de Actions", "Issues", "Permisos del job", "Secretos",
-                 "App Streamlit", "Visitantes", "HTTPS · CSV", "git push",
-                 "checkout · commit", "gh issue create", "on: push", "despliegue de main",
-                 "st.secrets"]:
-        assert text in svg
-    for figure in ["33,9 MB", "180 funciones de prueba", "semana 05-10: 4.211 precios",
-                   FIGURES["source_years"], FIGURES["next_run"], FIGURES["panel_time"]]:
-        assert figure in svg
-    assert architecture.STATE_COLORS[control.RUN_FAILED] in svg
-
-
-def test_d054_devops_diagram_moves_only_while_the_job_runs():
-    idle_svg = architecture.build_devops_svg(make_states(control.RUN_OK), DEVOPS_FIGURES,
-                                             charts.MODE_LIGHT)
-    assert "animateMotion" not in idle_svg
-    running_states = dict(make_states(control.RUN_OK), workflow=control.RUN_IN_PROGRESS)
-    assert "animateMotion" in architecture.build_devops_svg(running_states, DEVOPS_FIGURES,
-                                                            charts.MODE_LIGHT)
-
-
 def test_every_piece_of_every_diagram_explains_itself_on_hover():
     """Each card, band item and link label carries a <title>: the browser shows it on
     hover. Acronyms are spelled out where they appear."""
     import re
     states = make_states(control.RUN_OK)
     for svg in [architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK),
-                architecture.build_vertical_journey_svg(states, FIGURES, charts.MODE_DARK),
-                architecture.build_devops_svg(states, DEVOPS_FIGURES, charts.MODE_DARK)]:
+                architecture.build_vertical_journey_svg(states, FIGURES, charts.MODE_DARK)]:
         titles = re.findall(r'font-weight="700" fill="[^"]+">([^<]+)</text>', svg)
         explained = set(re.findall(r"<title>([^<]+)</title>", svg))
         assert titles and len(explained) >= len(set(titles)) // 2
-    devops = architecture.build_devops_svg(states, DEVOPS_FIGURES, charts.MODE_DARK)
-    assert "CI = integración continua" in devops
-    assert "HTTPS: conexión web cifrada" in devops
     journey = architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK)
     assert "ETL = extraer, transformar y cargar" in journey
     assert all(text in architecture.TOOLTIPS

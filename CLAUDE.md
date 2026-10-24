@@ -10,7 +10,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 - **Pipeline:** ingesta en Python → aterrizaje `etl/raw.db` (SQLite) → bronce en Parquet → dbt Core sobre DuckDB (staging → intermedio → marts, 31 pruebas) → base servida `etl/datos.duckdb`.
 - **Panel:** Streamlit (`bi/dashboard.py`), que lee `etl/datos.duckdb` en solo lectura.
 - **Orquestación:** GitHub Actions, cada martes (`.github/workflows/semanal.yml`).
-- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md` y `docs/SEGURIDAD.md` (plan de pruebas de seguridad). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-254). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
+- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md` y `docs/SEGURIDAD.md` (plan de pruebas de seguridad). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-255). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
 
 ## Instalar y ejecutar
 
@@ -35,7 +35,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 | `agent/` | Descarga de ODEPA (`agent.py`, `input.csv`, `downloads/manifest.json`) |
 | `etl/` | `etl.py` (respaldo SQLite), `bronze.py` (Parquet), `ine.py` (IPC), `pipeline.py` (dbt build y publicación), `datos.duckdb` (base servida), `datos.db` (respaldo) |
 | `dbt/` | Proyecto dbt: `models/staging`, `models/intermediate`, `models/marts`, `tests/`, `macros/`, `profiles.yml` |
-| `bi/` | Panel: `dashboard.py` (páginas y navegación), `queries.sql` y `queries.py` (SQL), diagramas (`architecture.py` pipeline y despliegue, `lineage.py`, `star_model.py`, `er_diagram.py`, `storage_map.py` dónde viven los datos, `database_crossings.py` cruces entre bases, `devops.py` CI/CD y orquestación, `monitoring.py` monitoreo, `security_map.py` arquitectura de seguridad, `doc_views.py` contexto, contenedores, casos de uso y procedimiento de los documentos), vistas (`home_mockup.py`, `quality_live.py`, `quality_view.py`, `github_page.py`), `tech_glossary.py`, `zoom.py` (zoom y explicaciones al pasar el cursor) |
+| `bi/` | Panel: `dashboard.py` (páginas y navegación), `queries.sql` y `queries.py` (SQL), diagramas (`architecture.py` pipeline y despliegue, `lineage.py`, `star_model.py`, `er_diagram.py`, `storage_map.py` dónde viven los datos, `database_crossings.py` cruces entre bases, `deployment.py` despliegue, `devops.py` CI/CD y orquestación, `monitoring.py` monitoreo, `security_map.py` arquitectura de seguridad, `doc_views.py` contexto, contenedores, casos de uso y procedimiento de los documentos), vistas (`home_mockup.py`, `quality_live.py`, `quality_view.py`, `github_page.py`), `tech_glossary.py`, `zoom.py` (zoom y explicaciones al pasar el cursor) |
 | `tests/` | pytest: auditoría de cifras (`test_data_audit.py`), paridad SQLite ↔ DuckDB, IPC, linaje, diagramas, documentos y su trazabilidad (`test_prd_traceability.py`), puerta de publicación (`test_pipeline_gate.py`) y panel (AppTest). `tests/medicion/`: medición del diseño con Playwright (`medir.cjs`) y comparación de cada documento impreso con su página (`imprimir.cjs`), que corren con Playwright instalado fuera del proyecto |
 | `docs/` | PRD, SAD, ADR, DECISIONES, MANUAL, plan de evolución |
 | `.github/workflows/` | `semanal.yml` (carga semanal), `pruebas.yml` (pytest + dbt parse en cada push) |

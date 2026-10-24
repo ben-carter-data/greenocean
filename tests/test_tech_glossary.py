@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import architecture, charts, control, devops, lineage, queries, tech_glossary  # noqa: E402
-from tests.test_architecture import DEVOPS_FIGURES, FIGURES, make_states  # noqa: E402
+from tests.test_architecture import FIGURES, make_states  # noqa: E402
 
 SVG = "{http://www.w3.org/2000/svg}"
 
@@ -37,8 +37,7 @@ def nearest_title(element, parents):
 def journey_svgs():
     states = make_states(control.RUN_OK)
     return {"journey": architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK),
-            "vertical": architecture.build_vertical_journey_svg(states, FIGURES, charts.MODE_DARK),
-            "devops": architecture.build_devops_svg(states, DEVOPS_FIGURES, charts.MODE_DARK)}
+            "vertical": architecture.build_vertical_journey_svg(states, FIGURES, charts.MODE_DARK)}
 
 
 def test_every_key_used_by_the_diagrams_has_a_complete_entry():
@@ -68,7 +67,7 @@ def test_acronyms_are_spelled_out():
         assert expansion in tech_glossary.describe(key)
 
 
-@pytest.mark.parametrize("name", ["journey", "vertical", "devops"])
+@pytest.mark.parametrize("name", ["journey", "vertical"])
 def test_every_pill_logo_and_chip_of_the_architecture_diagrams_has_its_own_title(name):
     root, parents = parse(journey_svgs()[name])
     labels = {tech["label"] for tech in architecture.TECH.values()}
