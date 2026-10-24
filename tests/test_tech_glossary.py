@@ -47,7 +47,7 @@ def test_every_key_used_by_the_diagrams_has_a_complete_entry():
     used |= set(architecture.COMPONENT_LOGO_KEYS.values())
     used |= set(lineage.LAYER_KEYS.values()) | set(lineage.MATERIALIZED_KEYS.values())
     used |= {tech_glossary.LOGO_KEYS[slug] for slug in architecture.ICON_LOGO_SLUG.values()}
-    used |= {tech_glossary.LOGO_KEYS[step[4]] for step in devops.STEPS if step[4] in tech_glossary.LOGO_KEYS}
+    used |= {tech_glossary.LOGO_KEYS[step[2]] for step in devops.STEPS if step[2] in tech_glossary.LOGO_KEYS}
     assert used <= set(tech_glossary.TECH_GLOSSARY)
     for key, entry in tech_glossary.TECH_GLOSSARY.items():
         assert set(entry) == {"nombre", "sigla", "que_es", "rol"}, key

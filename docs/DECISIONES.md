@@ -2093,3 +2093,19 @@ GreenOcean está hecho a la medida de lo que hace hoy: datos públicos, semanale
   - el aviso de un archivo local distinto de su huella pasa a una línea pequeña junto al botón de la evidencia.
 - **Resultado:** las tres pestañas de Calidad y auditoría caben sin desplazar a 1440 × 790 y a 1920 × 1000, también en el computador del autor, con el aviso local. Las otras páginas que sobraban se corrigen en las decisiones siguientes.
 - **Pruebas:** las de D-257, D-272 y D-273 siguen pasando.
+
+## D-275 · Monitoreo: las señales cuelgan de la carga semanal, no de ocho cadenas iguales
+
+- **Pedido del autor:** que la pestaña Monitoreo se vea entera, sin desplazar, y que su esquema sea menos lineal: eran ocho filas idénticas de flechas (origen → señal → qué registra → dónde se lee).
+- **Decisión:** la carga semanal va por el medio, en cinco etapas: Descarga, Construcción, Pruebas, Publicación y Panel. Cada señal cuelga de la etapa donde nace. Arriba, lo que ve el panel (dbt_result, etl_run y el aviso de huellas); abajo, lo que solo ve el autor (el log del agente, el correo «Run failed», el issue del informe semanal y el aviso de vencimiento del token). Al pie, una banda para el estado y el log que GitHub Actions guarda de cada paso. Cada tarjeta dice qué es y dónde se lee; al pasar el cursor, qué registra y qué archivo la produce. La frase que la presentaba es ahora su subtítulo.
+- **Sin cambios:** las ocho señales, sus archivos, sus lectores y la prueba que exige que cada una exista en el código.
+- **Resultado:** cabe sin desplazar a 1440 × 790 y 1920 × 1000.
+- **Pruebas:** `tests/test_monitoring.py::test_d275_*`: cada señal cuelga de su etapa, del lado de su lector.
+
+## D-276 · CI/CD: una fila para la integración y cuatro fases para la entrega
+
+- **Pedido del autor:** lo mismo para CI/CD: una vista sin desplazar y un esquema menos lineal. Medía 1.123 px: cinco cajas de CI, diez cajas de la carga en zigzag y la publicación, más dos tarjetas de definición arriba.
+- **Decisión:** la CI ocupa una fila (cambio, GitHub Actions, dbt parse, pytest, resultado). La entrega, otra: el disparo y cuatro fases, cada una con sus pasos numerados como en `semanal.yml`: Preparar (1 a 3), Ingerir (4 y 5), Construir y probar (6 a 8, con las dos puertas y la falla simulada opcional) y Publicar (9 y 10). Bajo Publicar, el release y Streamlit Cloud. Lo que significan CI y CD va en el encabezado de su fila, y cada paso dice, al pasar el cursor, qué hace y en qué línea de su workflow está.
+- **Sin cambios:** los dieciocho pasos, sus textos, sus puertas y la línea de cada uno, que siguen leyéndose de los workflows.
+- **Resultado:** cabe sin desplazar a 1440 × 790 y 1920 × 1000.
+- **Pruebas:** `tests/test_devops.py::test_d276_*`: las cuatro fases tienen cada paso una vez, en el orden del workflow; cada paso tiene su pieza y su texto al pasar el cursor.

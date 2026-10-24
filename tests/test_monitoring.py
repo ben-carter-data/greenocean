@@ -27,9 +27,19 @@ def test_the_two_tables_the_panel_reads_are_in_the_served_database():
     assert {"etl_run", "dbt_result"} <= tables
 
 
-def test_the_view_draws_one_row_per_signal_with_its_reader_and_no_script():
+def test_d275_each_signal_hangs_from_the_stage_where_it_is_born_on_the_side_of_its_reader():
     page = monitoring.build_monitoring_html(charts.get_palette(charts.MODE_DARK))
-    for key, *_ in monitoring.SIGNALS:
-        assert f'id="signal-{key}"' in page
+    stages = [key for key, *_ in monitoring.STAGES]
+    for key, _, origin, name, records, where, who, produced_by in monitoring.SIGNALS:
+        card = page.split(f'id="signal-{key}"')[1].split("</div>")[0]
+        classes = page.split(f'id="signal-{key}"')[0].rsplit("<div", 1)[1].split('"')[1].split()
+        assert "card" in classes and who in classes  # its colour is its reader's
+        assert name in card and where in card and produced_by in card and records in card  # what it records: on hover
+        if key == monitoring.EVERY_STEP:
+            continue  # born at every step: the band under the run
+        assert monitoring.STAGE_OF_SIGNAL[key] in stages
+        row = int(card.split("grid-row:")[1].split(";")[0])
+        assert row == (1 if who == "panel" else 5)  # above the run what the panel shows, below what only the author sees
+    assert set(monitoring.STAGE_OF_SIGNAL) | {monitoring.EVERY_STEP} == {signal[0] for signal in monitoring.SIGNALS}
     assert {signal[6] for signal in monitoring.SIGNALS} == {"panel", "autor"}
-    assert "<script" not in page and page.count('class="line"') == 3 * len(monitoring.SIGNALS)
+    assert "<script" not in page and page.count('class="stage"') == len(monitoring.STAGES)

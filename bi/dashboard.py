@@ -6224,34 +6224,27 @@ def build_devops_figures(figures):
 
 
 def show_cicd_tab(mode):
-    """How a change reaches production (D-243): what CI and CD mean, and the three lanes of the real workflows."""
-    palette = charts.get_palette(mode)
-    definitions = "".join(f'<div class="cicd-term"><b>{html.escape(term)}</b><span>{html.escape(text)}</span></div>'
-                          for term, text in devops.DEFINITION)
-    st.markdown(f"""<style>
-    .cicd-define {{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:4px 0 10px;}}
-    .cicd-term {{border:1px solid {palette['card_border']}; border-radius:12px; background:{palette['card']}; padding:10px 14px;
-        display:flex; flex-direction:column; gap:3px;}}
-    .cicd-term b {{font-size:.95rem; color:{palette['strong_text']};}}
-    .cicd-term span {{font-size:.86rem; line-height:1.45; color:{palette['text']};}}
-    @media (max-width:900px) {{ .cicd-define {{grid-template-columns:1fr;}} }}
-    </style><div class="cicd-define">{definitions}</div>""", unsafe_allow_html=True)
-    st.iframe(devops.build_cicd_html(palette), height=760)
+    """How a change reaches production (D-243, D-276): CI on one row, the weekly load in four phases, and what CI and CD
+    mean in the headings of their rows, so the tab fits one screen."""
+    st.iframe(devops.build_cicd_html(charts.get_palette(mode)), height="content")
 
 
 def show_devops_tab(mode):
     """Where each piece runs (D-132, D-136): the deployment diagram, full width, with the live state of each piece.
     Security, CI/CD, monitoring and capacity have their own views (D-249), so they are not repeated here."""
     states, figures, *_ = read_journey()
-    st.iframe(deployment.build_deployment_html(charts.get_palette(mode), states, build_devops_figures(figures)), height=580)
+    # D-277: the drawing keeps its proportion and is never taller than what the window leaves under the tabs.
+    st.markdown('<style>.st-key-dep_frame iframe {display:block; margin:0 auto; '
+                f'max-width:calc((100vh - 292px) * {deployment.WIDTH} / {deployment.HEIGHT});}}</style>', unsafe_allow_html=True)
+    with st.container(key="dep_frame"):
+        st.iframe(deployment.build_deployment_html(charts.get_palette(mode), states, build_devops_figures(figures)),
+                  height="content")
 
 
 def show_monitoring_tab(mode):
     """How we know that something failed (D-249): every signal, where it is left and who reads it."""
-    st.markdown('<p class="arch-phrase">Cada señal que deja el proyecto, dónde queda y quién la lee. La banda de '
-                'observabilidad de ' + build_link_html("Pipeline y linaje", build_page_address(PAGE_DIAGRAMS))
-                + ' resume cinco de ellas sobre el recorrido.</p>', unsafe_allow_html=True)
-    st.iframe(monitoring.build_monitoring_html(charts.get_palette(mode)), height=610)
+    # D-275: the sentence that introduced it is now the drawing's own subtitle, and the frame takes its height.
+    st.iframe(monitoring.build_monitoring_html(charts.get_palette(mode)), height="content")
 
 
 # endregion
