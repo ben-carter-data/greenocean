@@ -1182,7 +1182,8 @@ def test_d220_quality_and_audit_are_one_view_without_pickers():
     assert not app.exception
     assert read_page_title(app) == 'Calidad y auditoría'
     assert not app.selectbox and not app.get('segmented_control')
-    assert len(app.get('iframe')) == 1
+    # D-257: the diagram, the audit controls and what was set aside each have their own tab.
+    assert [tab.label for tab in app.tabs] == ["Calidad", "Auditoría", "Rechazos y cargas"] and len(app.get('iframe')) == 3
 
 
 @needs_database

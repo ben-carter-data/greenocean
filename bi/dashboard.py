@@ -6401,25 +6401,32 @@ def show_operations_page(mode):
     evidence = quality_view.build_evidence(checks, files, manifest, run, build, parity,
                                            lambda value: format_chile_time(parse_run_start(value)),
                                            rejections=read_rejection_count(get_database_version()))
-    # D-256: the page flows at its natural height inside its frame, in normal-size text, with no zoom or inner scroll.
-    st.markdown('<style>.st-key-qa_evidence [data-testid="stButtonGroup"] > div {flex-wrap:wrap !important; overflow:visible !important; row-gap:6px;}</style>',
-                unsafe_allow_html=True)
-    st.iframe(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"],
-                                           measures["flags"], quality_view.build_columns(evidence)), height="content")
+    # D-257: the diagram is the page; every piece opens its detail in a pop-up. What was set aside and the audit controls
+    # have their own tabs, and a failure shows up in all of them.
+    columns = quality_view.build_columns(evidence)
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
     changed_files = [item["file"] for item in files if item["status"].startswith("Falla")]
     if not database_ok:
         st.error("La base publicada no pasa sus controles de integridad. Revisa la evidencia antes de utilizar los resultados.")
-    elif changed_files:
-        # The indicators above are measured on the published database; only the local copies of the source files differ.
-        names = " y ".join(changed_files)
-        st.warning(f"En este equipo, {names} no coincide con la huella SHA-256 que anotó la descarga de la base publicada "
-                   "(manifest.json): es de otra descarga o fue alterado. Los indicadores se miden en la base publicada y no "
-                   "cambian.", icon=":material/warning:")
-    with st.container(key=quality_view.EXPANDER_KEY, horizontal=True, vertical_alignment="center", gap="small"):
-        st.markdown('<span class="qa-open-label">Abrir la evidencia de</span>', unsafe_allow_html=True)
-        st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
-                 on_change=open_quality_evidence, label_visibility="collapsed")
+    palette = charts.get_palette(mode)
+    quality_tab, audit_tab, apart_tab = st.tabs(["Calidad", "Auditoría", "Rechazos y cargas"])
+    with quality_tab:
+        st.iframe(quality_live.build_quality_html(palette, indicators, columns), height=590)
+    with audit_tab:
+        if changed_files:
+            # The indicators are measured on the published database; only the local copies of the source files differ.
+            names = " y ".join(changed_files)
+            st.warning(f"En este equipo, {names} no coincide con la huella SHA-256 que anotó la descarga de la base publicada "
+                       "(manifest.json): es de otra descarga o fue alterado. Los indicadores se miden en la base publicada y no "
+                       "cambian.", icon=":material/warning:")
+        st.iframe(quality_live.build_audit_page_html(palette, columns), height="content")
+        with st.container(key=quality_view.EXPANDER_KEY, horizontal=True, vertical_alignment="center", gap="small"):
+            st.markdown('<span class="qa-open-label">Abrir la evidencia de</span>', unsafe_allow_html=True)
+            st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
+                     on_change=open_quality_evidence, label_visibility="collapsed")
+    with apart_tab:
+        st.iframe(quality_live.build_tables_html(palette, measures["runs"], measures["rejections"], measures["flags"]),
+                  height="content")
     with st.container(horizontal=True, vertical_alignment="center", gap="small"):
         st.button("Volver a medir", icon=":material/refresh:", key="qa_recheck_page", on_click=recheck_quality,
                   help="Descarta lo guardado y mide de nuevo sobre la base publicada.")

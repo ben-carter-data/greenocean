@@ -47,36 +47,36 @@ EVIDENCE = dict(rejections=201, run_id=5, run_started="19-10-2026", run_status="
 
 def draw(measures, columns=()):
     indicators = quality_live.build_indicators(measures, NOW)
-    return indicators, quality_live.build_page_html(charts.get_palette("Vantablack"), indicators, measures["runs"],
-                                                    measures["rejections"], measures["flags"], columns)
+    return indicators, quality_live.build_quality_html(charts.get_palette("Vantablack"), indicators, columns)
 
 
 @needs_database
-def test_d256_the_page_follows_the_data_six_dimensions_three_gates_what_was_set_aside_and_the_controls(measures):
+def test_d257_the_diagram_is_the_page_and_every_piece_opens_its_popup(measures):
     columns = quality_view.build_columns(EVIDENCE)
     indicators, page = draw(measures, columns)
-    # the six dimensions around healthy data, then the three gates, then the lists, then the controls
     assert "Datos sanos" in page and [name for _, name, _, _ in quality_live.HUB] == [
         "Exactitud", "Validez", "Unicidad", "Actualidad", "Completitud", "Consistencia"]
-    order = ["Las seis dimensiones", "Las tres puertas", "Lo que se apartó", "Controles de auditoría"]
-    assert [page.index(text) for text in order] == sorted(page.index(text) for text in order)
-    for number in "1234":
-        assert f"<b>{number}</b>" in page
-    # every indicator is under the gate that watches it, each gate with what it stops
-    assert page.count('<div class="gate"') == len(quality_live.GATE_VIEW) == len(quality_live.GATES) == 3
-    assert {key for _, _, keys in quality_live.GATE_VIEW for key in keys} == set(quality_live.ICONS)
-    for _, label, value, *_ in indicators:
-        assert label in page and value in page, label
-    assert page.count("Detiene:") == 3 and "<script" not in page
+    # each dimension, each gate and the centre is a link to a pop-up that exists, and closing it needs no script
+    targets = [f"d-{key}" for key, *_ in quality_live.HUB] + [f"g-{index}" for index in range(3)] + ["d-centro"]
+    for target in targets:
+        assert f'href="#{target}"' in page and f'id="{target}"' in page, target
+    assert page.count('class="modal"') == len(targets) and page.count('class="close"') == len(targets)
+    assert "<script" not in page and '<base href="about:srcdoc">' in page
+    # every indicator is in the pop-up of its dimension and of its gate, with its value and how it is measured
+    for _, label, value, reference, status, detail in indicators:
+        assert label in page and value in page and reference in page, label
     for title, stops, outcome, where, evidence in quality_live.GATES:
-        assert title in page and stops[:30] in page
+        assert title in page and stops in page and outcome in page
         for path in [part.strip() for part in evidence.split(",") if part.strip().startswith("tests/")]:
             assert (Path(__file__).resolve().parent / path.split("/", 1)[1]).exists(), path
+    # the main view stays short: the lists of what was set aside and the controls live in their own tabs
+    assert "NON_POSITIVE_PRICE" not in page and "Controles de auditoría" not in page
 
 
 @needs_database
-def test_d256_the_figures_of_what_was_set_aside_are_the_database_ones(measures):
-    indicators, page = draw(measures)
+def test_d257_what_was_set_aside_and_the_loads_are_the_database_ones(measures):
+    indicators = quality_live.build_indicators(measures, NOW)
+    page = quality_live.build_tables_html(charts.get_palette("Vantablack"), measures["runs"], measures["rejections"], measures["flags"])
     by_label = {row[1]: row[2] for row in indicators}
     rejected = sum(count for _, _, count in measures["rejections"])
     flagged = sum(count for name, count in measures["flags"].items() if name != "SIN_MARCA")
@@ -85,8 +85,7 @@ def test_d256_the_figures_of_what_was_set_aside_are_the_database_ones(measures):
     for reason, _, count in measures["rejections"]:
         assert reason in page and quality_live.thousands(count) in page
     assert page.count('class="tag s-fail">Rechazada') == len(measures["rejections"]) and "Marcada" in page
-    last = measures["runs"][-1]
-    assert f"{quality_live.thousands(last[3])}" in page and "Últimas cargas" in page
+    assert quality_live.thousands(measures["runs"][-1][3]) in page and "Últimas cargas" in page
 
 
 @needs_database
@@ -104,6 +103,6 @@ def test_d256_accuracy_is_the_audit_controls_of_the_results_and_a_pending_one_is
 
 def test_the_audit_controls_are_rows_with_their_status():
     columns = quality_view.build_columns(EVIDENCE)
-    page = quality_live.build_audit_html(columns)
+    page = quality_live.build_audit_page_html(charts.get_palette("Vantablack"), columns)
     assert page.count('class="tag k-') == sum(len(cards) for _, cards in columns)
     assert 'class="tag k-pending"' in page  # the file hashes cannot be checked here: said, not hidden

@@ -6,10 +6,10 @@ every load, the reference it is judged against and a verdict in words. Where a f
 can be compared with the previous load, it is. Nothing here is written by hand except
 the thresholds, which are the project's own and are shown beside each figure.
 
-read_measures() reads the database; build_page_html() draws the measures as one HTML
-document for st.iframe (CSS only, no script), laid out by the three quality gates of the pipeline (D-245, D-256):
-each indicator under the gate that watches it, then what was set aside, the last loads and the audit controls.
-Both are pure enough to test without a server.
+read_measures() reads the database; the build_*_html() functions draw the measures as HTML documents for st.iframe
+(CSS only, no script). D-257: the main view is one diagram, the six dimensions of data quality and the three gates, where
+each piece opens its detail in a pop-up (a CSS :target sheet); what was set aside, the loads and the audit controls have
+their own tabs. All are pure enough to test without a server.
 """
 import html
 from datetime import date, datetime, timezone
@@ -188,14 +188,13 @@ def build_verdict(indicators):
 
 
 # region Markup
-# D-256: the page follows the path of the data. Each of the three gates of D-245 shows what it stops and, under it,
-# the dimensions watched there: (gate, question it answers, dimensions).
+# The three gates of D-245 and the dimensions each watches: (gate, question it answers, dimensions).
 GATE_VIEW = [
-    ("Puerta 1 · el archivo", "¿El dato llegó completo y al día?", ["completitud", "actualidad"]),
+    ("Puerta 1 · el archivo", "¿Llegó completo y al día?", ["completitud", "actualidad"]),
     ("Puerta 2 · cada fila", "¿Cada fila es válida?", ["validez"]),
-    ("Puerta 3 · la base", "¿La base publicada es coherente y pasó sus pruebas?", ["consistencia", "unicidad", "pruebas"]),
+    ("Puerta 3 · la base", "¿La base es coherente y pasó sus pruebas?", ["consistencia", "unicidad", "pruebas"]),
 ]
-# The three gates of D-245: (title, what is stopped, what happens to the data, where, evidence).
+# The three gates: (title, what is stopped, what happens to the data, where, evidence).
 GATES = [
     ("Puerta 1 · el archivo",
      "Un CSV vacío o con columnas distintas no se guarda; un archivo con muchas menos filas que el anterior o una semana "
@@ -214,11 +213,14 @@ GATES = [
      "etl/pipeline.py y .github/workflows/semanal.yml", "tests/test_pipeline_gate.py"),
 ]
 SOURCES = {"wholesale": "mayorista", "consumer": "consumidor"}
-# The six dimensions of data quality around healthy data (D-256): (key, name, icon, side). The first five are measured by the
-# indicators; accuracy is measured by the audit controls of the «Resultados» step, which check the figures against the source.
+# The six dimensions of data quality around healthy data: (key, name, icon, side). Five are measured by the indicators (the dbt
+# tests count with consistency); accuracy is measured by the audit controls of the «Resultados» step, which check the
+# figures against the source.
 HUB = [("exactitud", "Exactitud", "calculator", "left"), ("validez", "Validez", "shield", "left"),
        ("unicidad", "Unicidad", "database", "left"), ("actualidad", "Actualidad", "gear", "right"),
        ("completitud", "Completitud", "calendar", "right"), ("consistencia", "Consistencia", "parity", "right")]
+HUB_DIMENSIONS = {"consistencia": ["consistencia", "pruebas"]}
+HUB_QUESTIONS = dict(QUESTIONS, exactitud="¿Las cifras coinciden con la fuente?", consistencia="¿Los datos concuerdan entre sí y pasaron sus pruebas?")
 RESULTS_STEP = "Resultados"
 
 
@@ -236,35 +238,46 @@ def build_css(palette):
 html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
 {states}
 .qp {{ padding:2px 2px 8px; }}
-.qp .verdict {{ display:flex; align-items:center; gap:12px; margin:0 0 20px; font-size:16px; color:{ink}; }}
+.qp .verdict {{ display:flex; align-items:center; gap:12px; margin:0 0 12px; font-size:16px; color:{ink}; }}
 .qp .verdict i {{ width:24px; height:24px; border-radius:50%; background:var(--c); color:#fff; display:inline-grid; place-items:center;
   font:700 14px/1 sans-serif; font-style:normal; flex:none; box-shadow:0 0 0 5px color-mix(in srgb, var(--c) 22%, transparent); }}
-.qp h2 {{ display:flex; align-items:center; gap:10px; margin:26px 0 4px; font-size:17px; font-weight:600; color:{ink}; }}
-.qp h2 b {{ display:inline-grid; place-items:center; width:26px; height:26px; border-radius:50%; background:{accent}; color:{palette['background']};
-  font:700 13px/1 sans-serif; flex:none; }}
-.qp .lead {{ margin:0 0 14px 36px; color:{muted}; font-size:13.5px; }}
-.qp svg.hub {{ display:block; width:100%; height:auto; margin:0 0 4px; }}
-.qp .gates {{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; align-items:stretch; }}
-.qp .gate {{ display:flex; flex-direction:column; border:1px solid {border}; border-radius:16px; background:{card}; padding:16px 18px;
-  box-shadow:0 12px 24px -18px {shade}; }}
-.qp .gate h3 {{ margin:0; font-size:16px; font-weight:600; color:{ink}; }}
-.qp .gate .q {{ margin:2px 0 8px; color:{accent}; font-size:13.5px; font-weight:500; }}
-.qp .gate .stops {{ margin:0 0 4px; font-size:13px; color:{text}; }}
-.qp .gate .stops b, .qp .gate .where b {{ color:{ink}; font-weight:600; }}
-.qp .gate .where {{ margin:auto 0 0; padding-top:10px; border-top:1px solid {border}; font-size:12.5px; color:{muted}; }}
-.qp .gate .where code {{ font:400 12px ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; overflow-wrap:anywhere; }}
-.qp .dim {{ display:flex; align-items:center; gap:8px; margin:14px 0 2px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
-.qp .dim .qa-icon {{ width:24px; height:24px; flex:none; filter:drop-shadow(0 3px 3px {shade}); }}
-.qp .ind {{ display:grid; grid-template-columns:10px 1fr auto; gap:0 10px; align-items:baseline; padding:7px 0; border-bottom:1px solid color-mix(in srgb, {border} 60%, transparent); cursor:default; }}
+.qp .hint {{ margin:0 0 4px; color:{muted}; font-size:13px; }}
+.qp svg.hub {{ display:block; width:100%; height:auto; }}
+.qp svg.hub a {{ cursor:pointer; outline:none; }}
+.qp svg.hub a:hover .pill, .qp svg.hub a:focus .pill {{ stroke-width:3.4; }}
+.qp svg.hub a:hover .core, .qp svg.hub a:focus .core {{ filter:brightness(1.15); }}
+.qp .gatebar {{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px; margin-top:6px; }}
+.qp .gatebtn {{ display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid {border}; border-radius:14px; background:{card};
+  color:{ink}; text-decoration:none; box-shadow:0 10px 20px -16px {shade}; }}
+.qp .gatebtn:hover, .qp .gatebtn:focus {{ border-color:{accent}; outline:none; }}
+.qp .gatebtn i {{ width:12px; height:12px; border-radius:50%; background:var(--c); flex:none; box-shadow:0 0 0 4px color-mix(in srgb, var(--c) 22%, transparent); }}
+.qp .gatebtn b {{ display:block; font-size:15px; font-weight:600; }}
+.qp .gatebtn small {{ display:block; color:{muted}; font-size:13px; }}
+.qp .modal {{ display:none; position:fixed; inset:0; z-index:50; align-items:center; justify-content:center; padding:10px; background:rgba(0,0,0,.55); }}
+.qp .modal:target {{ display:flex; }}
+.qp .modal .back {{ position:absolute; inset:0; cursor:default; }}
+.qp .sheet {{ position:relative; z-index:1; width:100%; max-width:720px; max-height:100%; overflow:auto; padding:18px 22px 14px; border-radius:18px;
+  background:{card}; border:1px solid {border}; box-shadow:0 24px 60px rgba(0,0,0,{'.6' if dark else '.25'}); }}
+.qp .sheet h3 {{ margin:0 36px 2px 0; font-size:19px; font-weight:600; color:{ink}; }}
+.qp .sheet .q {{ margin:0 0 10px; color:{accent}; font-size:14px; font-weight:500; }}
+.qp .sheet .close {{ position:absolute; top:12px; right:14px; width:30px; height:30px; display:grid; place-items:center; border-radius:50%;
+  border:1px solid {border}; color:{ink}; text-decoration:none; font-size:15px; }}
+.qp .sheet .close:hover {{ border-color:{accent}; }}
+.qp .sheet h4 {{ margin:12px 0 2px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
+.qp .sheet p {{ margin:0 0 6px; font-size:13.5px; }}
+.qp .sheet pre {{ margin:4px 0 0; padding:8px 10px; border-radius:10px; background:color-mix(in srgb, {border} 40%, transparent); white-space:pre-wrap;
+  font:400 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; overflow-wrap:anywhere; }}
+.qp .ind {{ display:grid; grid-template-columns:10px 1fr auto; gap:0 10px; align-items:baseline; padding:8px 0; border-bottom:1px solid color-mix(in srgb, {border} 60%, transparent); }}
 .qp .ind:last-of-type {{ border-bottom:0; }}
 .qp .ind > i {{ width:10px; height:10px; border-radius:50%; background:var(--c); box-shadow:0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent); align-self:center; }}
-.qp .ind span {{ color:{ink}; font-size:14px; }}
-.qp .ind strong {{ font-size:16px; font-weight:600; color:{ink}; font-variant-numeric:tabular-nums; text-align:right; }}
-.qp .ind em {{ grid-column:2 / 4; color:{muted}; font-size:12.5px; font-style:normal; line-height:1.35; }}
-.qp .two {{ display:grid; grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); gap:16px; margin-top:6px; }}
+.qp .ind span {{ color:{ink}; font-size:14.5px; }}
+.qp .ind strong {{ font-size:17px; font-weight:600; color:{ink}; font-variant-numeric:tabular-nums; text-align:right; }}
+.qp .ind em {{ grid-column:2 / 4; color:{muted}; font-size:13px; font-style:normal; line-height:1.35; }}
+.qp .ind small {{ grid-column:2 / 4; color:{text}; font-size:12.5px; line-height:1.4; }}
 .qp table {{ width:100%; border-collapse:collapse; font-size:13.5px; }}
 .qp .panel {{ border:1px solid {border}; border-radius:16px; background:{card}; padding:6px 16px 10px; }}
-.qp caption {{ text-align:left; padding:10px 0 6px; font-size:13px; font-weight:600; color:{ink}; }}
+.qp .two {{ display:grid; grid-template-columns:minmax(0, 1.25fr) minmax(0, 1fr); gap:16px; }}
+.qp caption {{ text-align:left; padding:10px 0 6px; font-size:14px; font-weight:600; color:{ink}; }}
 .qp th {{ text-align:left; padding:6px 8px 6px 0; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:{muted}; border-bottom:1px solid {border}; }}
 .qp td {{ padding:8px 8px 8px 0; border-bottom:1px solid color-mix(in srgb, {border} 55%, transparent); vertical-align:top; color:{ink}; }}
 .qp tr:last-child td {{ border-bottom:0; }}
@@ -277,10 +290,16 @@ html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45
 .qp .audit td.ic {{ width:40px; padding-right:6px; }}
 .qp .audit td.ic .qa-icon {{ width:30px; height:30px; filter:drop-shadow(0 3px 3px {shade}); }}
 .qp .audit tr.step td {{ padding:14px 0 4px; font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:{muted}; border-bottom:1px solid {border}; }}
-.qp .audit td.st {{ white-space:nowrap; }}
+.qp .audit td.st {{ white-space:nowrap; text-align:right; }}
 .qp .legend {{ margin:10px 0 0; font-size:12.5px; color:{muted}; }}
-@media (max-width:900px) {{ .qp .gates, .qp .two {{ grid-template-columns:1fr; }} }}
+@media (max-width:900px) {{ .qp .gatebar, .qp .two {{ grid-template-columns:1fr; }} }}
 </style>"""
+
+
+def wrap_document(palette, body):
+    # The base keeps the #links of the pop-ups inside this document: in an srcdoc frame they would resolve against the page around it.
+    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><base href="about:srcdoc"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            + build_css(palette) + '</head><body>' + quality_view.DEFS + f'<div class="qp">{body}</div></body></html>')
 
 
 def hub_measure(key, indicators, columns):
@@ -292,17 +311,24 @@ def hub_measure(key, indicators, columns):
         kinds = [quality_view.classify(card[2]) for card in cards]
         status = "fail" if "fail" in kinds else "warn" if "pending" in kinds else "ok"
         return status, f"{kinds.count('ok')} de {len(kinds)} controles verificados"
-    rows = [row for row in indicators if row[0] == key]
+    keys = HUB_DIMENSIONS.get(key, [key])
+    rows = [row for row in indicators if row[0] in keys]
     judged = [row for row in rows if row[4] != "info"]
     if not rows:
         return "info", "sin indicadores"
     return dimension_status([row[4] for row in rows]), f"{sum(row[4] == 'ok' for row in judged)} de {len(judged)} indicadores bien"
 
 
+def gate_measure(index, indicators):
+    keys = GATE_VIEW[index][2]
+    rows = [row for row in indicators if row[0] in keys]
+    judged = [row for row in rows if row[4] != "info"]
+    return dimension_status([row[4] for row in rows]) if rows else "info", f"{sum(row[4] == 'ok' for row in judged)} de {len(judged)} bien"
+
+
 def build_hub_html(palette, indicators, columns):
-    """The six dimensions around healthy data, each with its status and how many of its measures pass."""
-    ink, muted, card, border, accent = (palette["strong_text"], palette["reference"], palette["card"], palette["card_border"],
-                                        palette["accent"])
+    """The six dimensions around healthy data; each is a link to its pop-up."""
+    ink, muted, card, accent = palette["strong_text"], palette["reference"], palette["card"], palette["accent"]
     colors = {"ok": quality_view.PILL_COLORS["ok"], "warn": quality_view.PILL_COLORS["pending"],
               "fail": quality_view.PILL_COLORS["fail"], "info": muted}
     width, height, cx, cy, radius = 1000, 318, 500, 159, 84
@@ -320,35 +346,77 @@ def build_hub_html(palette, indicators, columns):
         lines.append(f'<line x1="{edge}" y1="{y + box_h / 2}" x2="{cx}" y2="{cy}" stroke="{color}" stroke-width="1.8" stroke-opacity=".75"/>'
                      f'<circle cx="{edge}" cy="{y + box_h / 2}" r="5" fill="{card}" stroke="{color}" stroke-width="2"/>')
         icon_svg = quality_view.build_icon_svg(icon).replace('<svg class="qa-icon" ', f'<svg x="{x + 14}" y="{y + 15}" width="40" height="40" ', 1)
-        parts.append(f'<g><title>{html.escape(name)}: {html.escape(headline)}</title>'
-                     f'<rect x="{x}" y="{y}" width="{box_w}" height="{box_h}" rx="35" fill="{card}" stroke="{color}" stroke-width="1.6"/>'
+        parts.append(f'<a href="#d-{key}" aria-label="{html.escape(name)}: {html.escape(headline)}"><title>{html.escape(name)}: {html.escape(headline)}</title>'
+                     f'<rect class="pill" x="{x}" y="{y}" width="{box_w}" height="{box_h}" rx="35" fill="{card}" stroke="{color}" stroke-width="1.6"/>'
                      f'{icon_svg}<text x="{x + 66}" y="{y + 31}" font-size="17" font-weight="700" fill="{ink}">{html.escape(name)}</text>'
                      f'<text x="{x + 66}" y="{y + 53}" font-size="13.5" fill="{muted}">{html.escape(headline)}</text>'
-                     f'<circle cx="{x + box_w - 26}" cy="{y + box_h / 2}" r="7" fill="{color}"/></g>')
+                     f'<circle cx="{x + box_w - 26}" cy="{y + box_h / 2}" r="7" fill="{color}"/></a>')
     centre = (f'<defs><radialGradient id="qa-hub" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="#4a8df0"/>'
               f'<stop offset="1" stop-color="#0d3b96"/></radialGradient></defs>'
+              f'<a href="#d-centro" aria-label="Datos sanos: cómo se lee"><title>Datos sanos: cómo se lee</title>'
               f'<circle cx="{cx}" cy="{cy}" r="{radius + 10}" fill="{accent}" fill-opacity=".14"/>'
-              f'<circle cx="{cx}" cy="{cy}" r="{radius}" fill="url(#qa-hub)"/>'
+              f'<circle class="core" cx="{cx}" cy="{cy}" r="{radius}" fill="url(#qa-hub)"/>'
               + quality_view.build_icon_svg("database").replace('<svg class="qa-icon" ', f'<svg x="{cx - 28}" y="{cy - 52}" width="56" height="56" ', 1)
               + f'<text x="{cx}" y="{cy + 32}" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">Datos sanos</text>'
-              f'<text x="{cx}" y="{cy + 52}" text-anchor="middle" font-size="12.5" fill="#cfe0ff">6 dimensiones</text>')
+              f'<text x="{cx}" y="{cy + 52}" text-anchor="middle" font-size="12.5" fill="#cfe0ff">6 dimensiones</text></a>')
     return (f'<svg class="hub" viewBox="0 0 {width} {height}" role="img" aria-label="Las seis dimensiones de la calidad de los datos" '
             f'font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">{"".join(lines)}{centre}{"".join(parts)}</svg>')
 
 
 def build_indicator_html(label, value, reference, state, detail):
-    return (f'<div class="ind s-{state}" title="{html.escape(STATUS_WORDS[state])} · {html.escape(detail)}"><i></i>'
-            f'<span>{html.escape(label)}</span><strong>{html.escape(value)}</strong><em>{html.escape(reference)}</em></div>')
+    """One indicator with how it is measured: its text and, when the measure is a query, the query."""
+    text, _, query = detail.partition("\n")
+    sql = f"<pre>{html.escape(query)}</pre>" if query else ""
+    return (f'<div class="ind s-{state}"><i></i><span>{html.escape(label)}</span><strong>{html.escape(value)}</strong>'
+            f'<em>{html.escape(reference)}</em><small>{html.escape(text)}</small>{sql}</div>')
 
 
-def build_gate_html(index, groups):
+def build_modal(identifier, title, question, body):
+    return (f'<div class="modal" id="{identifier}"><a class="back" href="#" aria-label="Cerrar"></a><div class="sheet" role="dialog" '
+            f'aria-label="{html.escape(title)}"><a class="close" href="#" aria-label="Cerrar">✕</a><h3>{html.escape(title)}</h3>'
+            f'<div class="q">{html.escape(question)}</div>{body}</div></div>')
+
+
+def build_dimension_modal(key, name, indicators, columns):
+    status, headline = hub_measure(key, indicators, columns)
+    if key == "exactitud":
+        cards = next((cards for step, cards in columns if step == RESULTS_STEP), [])
+        body = "".join(f'<div class="ind k-{quality_view.classify(status_text)}"><i></i><span>{html.escape(title)}</span>'
+                       f'<strong>{html.escape(status_text)}</strong><em>{html.escape(detail)}</em><small>{html.escape(why)}</small></div>'
+                       for _, title, status_text, detail, why in cards) or "<p>Sin controles aquí.</p>"
+        body = ("<p>No hay un indicador de exactitud: se mide con los controles que comparan las cifras con la fuente.</p>" + body)
+    else:
+        keys = HUB_DIMENSIONS.get(key, [key])
+        body = "".join(build_indicator_html(*row[1:]) for row in indicators if row[0] in keys)
+        gate = next((GATE_VIEW[i][0] for i in range(len(GATE_VIEW)) if set(keys) & set(GATE_VIEW[i][2])), "")
+        body += f'<h4>Dónde se vigila</h4><p>{html.escape(gate)}. Se mide en cada carga, sobre la base publicada.</p>'
+    return build_modal(f"d-{key}", name, f"{HUB_QUESTIONS[key]} {headline}.", body)
+
+
+def build_gate_modal(index, indicators):
     title, question, keys = GATE_VIEW[index]
     _, stops, outcome, where, evidence = GATES[index]
-    body = "".join(f'<div class="dim">{quality_view.build_icon_svg(ICONS[key])}{html.escape(TITLES[key])}</div>'
-                   + "".join(build_indicator_html(*row[1:]) for row in groups[key]) for key in keys if key in groups)
-    return (f'<div class="gate" title="Si no pasa: {html.escape(outcome)}"><h3>{html.escape(title)}</h3>'
-            f'<div class="q">{html.escape(question)}</div><p class="stops"><b>Detiene:</b> {html.escape(stops)}</p>{body}'
-            f'<p class="where"><b>Dónde:</b> <code>{html.escape(where)}</code></p></div>')
+    body = (f'<h4>Qué detiene</h4><p>{html.escape(stops)}</p><h4>Si no pasa</h4><p>{html.escape(outcome)}</p>'
+            f'<h4>Dónde está</h4><p><code>{html.escape(where)}</code><br>Pruebas: <code>{html.escape(evidence)}</code></p><h4>Lo que se mide aquí</h4>'
+            + "".join(build_indicator_html(*row[1:]) for row in indicators if row[0] in keys))
+    return build_modal(f"g-{index}", title, question, body)
+
+
+def build_quality_html(palette, indicators, columns):
+    """The main view: the verdict, the six dimensions, the three gates and a pop-up behind each piece."""
+    kind, sentence = build_verdict(indicators)
+    verdict = f'<div class="verdict s-{kind}"><i>{"✓" if kind == "ok" else "!"}</i>{html.escape(sentence)}</div>'
+    gates = "".join(f'<a class="gatebtn s-{gate_measure(index, indicators)[0]}" href="#g-{index}"><i></i><span><b>{html.escape(title)}</b>'
+                    f'<small>{html.escape(question)} · {html.escape(gate_measure(index, indicators)[1])}</small></span></a>'
+                    for index, (title, question, _) in enumerate(GATE_VIEW))
+    modals = "".join(build_dimension_modal(key, name, indicators, columns) for key, name, _, _ in HUB)
+    modals += "".join(build_gate_modal(index, indicators) for index in range(len(GATE_VIEW)))
+    modals += build_modal("d-centro", "Datos sanos", "¿Cómo se lee este esquema?",
+                          f'<p>{html.escape(sentence)}</p><p>Cada eje se mide en cada carga sobre la base publicada y se juzga contra su umbral. '
+                          'Verde: dentro del umbral. Ámbar: a revisar o con un control pendiente. Rojo: falla.</p>'
+                          '<p>Pulsa un eje o una puerta para ver sus cifras y cómo se miden.</p>')
+    return wrap_document(palette, f'{verdict}<p class="hint">Pulsa un eje o una puerta para ver su detalle.</p>'
+                                  f'{build_hub_html(palette, indicators, columns)}<div class="gatebar">{gates}</div>{modals}')
 
 
 def build_apart_html(rejections, flags):
@@ -386,11 +454,16 @@ def build_loads_html(runs):
             f'<th class="n">Filas leídas</th><th class="n">Cambio</th></tr></thead><tbody>{body}</tbody></table></div>')
 
 
+def build_tables_html(palette, runs, rejections, flags):
+    """The tab of what was set aside and the last loads."""
+    return wrap_document(palette, f'<div class="two">{build_apart_html(rejections, flags)}{build_loads_html(runs)}</div>')
+
+
 def build_audit_html(columns):
     """The audit controls by step, one row each: its mark, what it is, its status and what it found."""
     rows = []
     for step, cards in columns:
-        rows.append(f'<tr class="step"><td colspan="4">{html.escape(step)}</td></tr>')
+        rows.append(f'<tr class="step"><td colspan="3">{html.escape(step)}</td></tr>')
         for icon, title, status, detail, why in cards:
             kind = quality_view.classify(status)
             rows.append(f'<tr title="{html.escape(why)}"><td class="ic">{quality_view.build_icon_svg(icon)}</td>'
@@ -399,24 +472,8 @@ def build_audit_html(columns):
     return f'<div class="audit"><table><tbody>{"".join(rows)}</tbody></table></div>'
 
 
-def build_page_html(palette, indicators, runs, rejections, flags, columns=()):
-    """The whole «Calidad y auditoría» view as one HTML document for st.iframe (D-256): the verdict, the three
-    gates with their indicators, what was set aside beside the last loads, and the audit controls last."""
-    kind, sentence = build_verdict(indicators)
-    groups = {key: rows for key, rows in group_indicators(indicators).items() if rows}
-    verdict = f'<div class="verdict s-{kind}"><i>{"✓" if kind == "ok" else "!"}</i>{html.escape(sentence)}</div>'
-    gates = "".join(build_gate_html(index, groups) for index in range(len(GATE_VIEW)))
-    audit = (f'<h2><b>4</b> Controles de auditoría</h2><p class="lead">Lo que demuestra que lo publicado se puede rastrear y repetir. '
-             f'Pasa el cursor por una fila para ver qué comprueba.</p>{build_audit_html(columns)}'
-             '<p class="legend">Verificado: comprobado en este servidor · Pendiente: no se puede comprobar aquí o tiene una '
-             'observación · nada se muestra como verificado sin comprobarse.</p>') if columns else ""
-    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            + build_css(palette) + '</head><body>' + quality_view.DEFS
-            + f'<div class="qp">{verdict}<h2><b>1</b> Las seis dimensiones de la calidad</h2>'
-            '<p class="lead">Cada eje se mide en cada carga y se juzga contra su umbral. Pasa el cursor por un eje para ver cuántas de sus medidas pasan.</p>'
-            f'{build_hub_html(palette, indicators, columns)}<h2><b>2</b> Las tres puertas: dónde se vigila el dato</h2>'
-            '<p class="lead">El dato pasa por tres puertas antes de publicarse. Cada una detiene lo que no cumple, y debajo se '
-            f'mide cuánto pasó.</p><div class="gates">{gates}</div>'
-            f'<h2><b>3</b> Lo que se apartó y las últimas cargas</h2><div class="two">{build_apart_html(rejections, flags)}'
-            f'{build_loads_html(runs)}</div>{audit}</div></body></html>')
+def build_audit_page_html(palette, columns):
+    """The audit tab: every control with its status; the row explains what it checks on hover."""
+    return wrap_document(palette, build_audit_html(columns) + '<p class="legend">Verificado: comprobado en este servidor · '
+                         'Pendiente: no se puede comprobar aquí o tiene una observación · nada se muestra como verificado sin comprobarse.</p>')
 # endregion
