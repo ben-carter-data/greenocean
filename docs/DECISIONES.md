@@ -1922,3 +1922,10 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Una sola fuente:** la tabla larga de `docs/SEGURIDAD.md` se retira; los casos viven solo en `CASES`. El código del procedimiento anterior sale de `bi/doc_views.py`.
 - **Amenazas:** la sección «Amenazas y controles» sigue enlazando a la Arquitectura de seguridad. Las seis amenazas cubren lo que se alcanza desde internet (D-249); no pretenden ser todas las que existen, y el alcance (sección 1) lo dice.
 - **Pruebas:** `tests/test_doc_diagrams.py::test_d258_*`: los diez casos tienen su ventana, cada prueba nombrada existe, cada amenaza de la arquitectura apunta a casos que existen y el ciclo dice que el CI avisa pero no detiene `main`. 597 pasan y 1 se omite.
+
+## D-259 · Resumen semanal: encabezado fino con las cifras en 3D
+
+- **Pedido del autor:** la parte de arriba ocupaba mucho espacio y obligaba a un desplazamiento más largo. Debía ser un encabezado más fino y más pequeño, donde lo único grande fueran los números, en 3D, pero no tan grandes, para que el panel de abajo se vea más completo.
+- **Decisión:** el título pasa de 38 px a un máximo de 24 px y su subtítulo a 12,5 px. Las cuatro tarjetas (precios comparados, familias, regiones y alertas) se reemplazan por una sola franja con separadores finos, sin cajas: cada cifra es un número en 3D de 22 a 28 px, con su etiqueta y su nota en una línea debajo. La sombra de la extrusión sigue el color de la tinta del tema, así se ve limpia en Vantablack y en Blue Light. El botón «Alerta de precio» sube a la misma franja del título, en vez de ocupar una fila propia.
+- **Resultado:** el panel de abajo empieza unos 14 px más arriba que con las tarjetas y la fila del botón, a 1440 × 900. Las cifras son las mismas y vienen del mismo modelo semanal que los gráficos.
+- **Sin cambios:** el mapa, el movimiento por familia y la tabla de productos.
