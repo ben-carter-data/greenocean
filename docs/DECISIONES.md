@@ -1951,3 +1951,10 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Decisión:** en esta página, y en pantallas de 1024 px o más, el margen lateral de la página baja de 80 a 40 px por lado. El título se mueve con el cuadro, así siguen alineados.
 - **Resultado:** a 1440 × 900 el cuadro pasa de 980 a 1060 px de ancho (un 8 % más); el editor y la tabla de resultados ganan ese ancho, y el comentario de la consulta «Tabla completa» cabe completo.
 - **Sin cambios:** el contenido del cuadro, las otras páginas y los teléfonos (D-166).
+
+## D-263 · Resumen semanal: el encabezado, aún más fino
+
+- **Pedido del autor:** después de D-259 el encabezado seguía viéndose demasiado grande; debía ser una franja fina, para subir el contenido de abajo.
+- **Decisión:** el título baja a un máximo de 20 px y su subtítulo a 12 px. En la franja, cada cifra es su número en 3D (17 a 21 px, con menos relieve) y, a su lado, la etiqueta y la nota en dos líneas pequeñas, en vez de debajo: la franja tiene el alto de un número. Cada cifra toma el ancho que necesita, así ninguna nota se corta a 1440 px; si no caben las cuatro en una fila, las que sobran pasan a una segunda fila. Al pasar el cursor, cada cifra muestra su etiqueta y su nota completas.
+- **Resultado:** a 1440 × 900 el encabezado mide 72 px (38 del título y 34 de la franja) en vez de 120, y el mapa y el movimiento por familia empiezan unos 48 px más arriba.
+- **Sin cambios:** las cuatro cifras y su origen, el botón «Alerta de precio» y la fecha de actualización.

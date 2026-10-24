@@ -81,3 +81,16 @@
 .stApp .st-key-home_alert_bar {margin:-6px 0 -38px!important;position:relative;z-index:3;}
 .stApp .greenocean-mockup .mock-head-side {justify-content:flex-end;align-self:stretch;}
 .stApp .greenocean-mockup .mock-intro {min-height:46px;}
+
+/* D-263: thinner still. The title is smaller and each figure is its 3D number with its label and note in two small lines
+   beside it, so the strip is one number high. A figure that does not fit goes to a second row; each shows its note on hover. */
+.stApp .greenocean-mockup .mock-intro {min-height:38px;padding:0;}
+.stApp .greenocean-mockup .mock-intro h1 {font-size:clamp(17px,1.35vw,20px)!important;line-height:1.15!important;}
+.stApp .greenocean-mockup .mock-intro p {font-size:12px!important;line-height:1.25!important;margin-top:0!important;}
+.stApp .greenocean-mockup .mock-kpis {display:flex;flex-wrap:wrap;row-gap:4px;margin:2px 0 6px;padding:3px 0;}
+.stApp .greenocean-mockup .mock-kpi {flex:1 1 auto;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:9px;align-items:center;padding:0 14px;}
+.stApp .greenocean-mockup .mock-kpi strong {grid-row:1 / span 2;font-size:clamp(17px,1.4vw,21px)!important;line-height:1.1;
+  text-shadow:1px 1px 0 color-mix(in srgb,var(--mock-ink) 30%,transparent),2px 2px 2px color-mix(in srgb,var(--mock-ink) 16%,transparent);}
+.stApp .greenocean-mockup .mock-kpi span {grid-column:2;font-size:10px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;}
+.stApp .greenocean-mockup .mock-kpi > small {grid-column:2;font-size:11px;line-height:1.25;}
+.stApp .greenocean-mockup .mock-kpi strong small {font-size:11px;}

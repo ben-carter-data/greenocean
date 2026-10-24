@@ -460,7 +460,8 @@ def dashboard_header(week_label, updated, loaded, family_rows, regional_rows, re
             '<div class="mock-head-side"><span class="mock-updated"><i class="'
             + ('loaded' if loaded else 'failed') + f'"></i>{"Actualizado" if loaded else "Carga con falla"} {esc(updated)}</span>'
             '</div></header><div class="mock-kpis">'
-            + ''.join(f'<div class="mock-kpi"><span>{label}</span><strong>{value}</strong><small>{note}</small></div>'
+            + ''.join(f'<div class="mock-kpi" title="{esc(label)}: {esc(note)}"><span>{label}</span><strong>{value}</strong>'
+                      f'<small>{note}</small></div>'
                       for label, value, note in tiles)
             + '</div>')
 
