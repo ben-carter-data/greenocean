@@ -34,7 +34,7 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (alerts, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
-                audit_trace, database_crossings, deployment, devops, monitoring, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
+                database_crossings, deployment, devops, monitoring, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
 
@@ -6401,17 +6401,11 @@ def show_operations_page(mode):
     evidence = quality_view.build_evidence(checks, files, manifest, run, build, parity,
                                            lambda value: format_chile_time(parse_run_start(value)),
                                            rejections=read_rejection_count(get_database_version()))
-    controls = audit_trace.build_controls_html(quality_view.build_columns(evidence))
-    # D-235: the iframe, which comes right after this marker, shows the whole page without its own scroll (D-241).
-    st.markdown('<span class="fit-calidad" aria-hidden="true"></span><style>'
-                '[data-testid="stElementContainer"]:has(.fit-calidad) + [data-testid="stElementContainer"],'
-                '[data-testid="stElementContainer"]:has(.fit-calidad) + [data-testid="stElementContainer"] iframe '
-                '{height:600px !important; flex:none !important; min-height:0 !important;}'
-                # The evidence pills wrap onto a second line instead of running off the edge.
-                '.st-key-qa_evidence [data-testid="stButtonGroup"] > div {flex-wrap:wrap !important; overflow:visible !important; row-gap:6px;}'
-                '</style>', unsafe_allow_html=True)
+    # D-256: the page flows at its natural height inside its frame, in normal-size text, with no zoom or inner scroll.
+    st.markdown('<style>.st-key-qa_evidence [data-testid="stButtonGroup"] > div {flex-wrap:wrap !important; overflow:visible !important; row-gap:6px;}</style>',
+                unsafe_allow_html=True)
     st.iframe(quality_live.build_page_html(charts.get_palette(mode), indicators, measures["runs"], measures["rejections"],
-                                           measures["flags"], controls), height=830)
+                                           measures["flags"], quality_view.build_columns(evidence)), height="content")
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
     changed_files = [item["file"] for item in files if item["status"].startswith("Falla")]
     if not database_ok:
