@@ -2,7 +2,7 @@
 
 Each row is one signal, read from left to right: where it starts, what it leaves and where, and where it is read and by
 whom. Only signals that exist in the code are drawn; each names the file that produces it (a test checks it). The
-observability band of the pipeline diagram shows the same signals along the run; this view is their full detail.
+observability band of the pipeline diagram sums up five of them along the run; this view is their full detail.
 
 build_monitoring_html() returns one HTML document for st.iframe (CSS only, no script).
 """

@@ -6174,7 +6174,7 @@ def show_monitoring_tab(mode):
     """How we know that something failed (D-249): every signal, where it is left and who reads it."""
     st.markdown('<p class="arch-phrase">Cada señal que deja el proyecto, dónde queda y quién la lee. La banda de '
                 'observabilidad de ' + build_link_html("Pipeline y linaje", build_page_address(PAGE_DIAGRAMS))
-                + ' muestra las mismas señales sobre el recorrido.</p>', unsafe_allow_html=True)
+                + ' resume cinco de ellas sobre el recorrido.</p>', unsafe_allow_html=True)
     st.iframe(monitoring.build_monitoring_html(charts.get_palette(mode)), height=610)
 
 

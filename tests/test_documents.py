@@ -81,3 +81,23 @@ def test_d210_the_prd_figures_match_the_served_database():
         assert f"{value:,}".replace(",", ".") + " " + unit in text, unit
     for value in (read, loaded, rejected):
         assert f"{value:,}".replace(",", ".") in text
+
+
+def test_d252_the_glossary_names_only_pages_and_tabs_that_exist():
+    menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.MENU_ORDER}
+    tabs = {"Operación", "Despliegue", "CI/CD", "Monitoreo"}
+    text = (DOCS_DIR / "PROYECTO.md").read_text(encoding="utf-8")
+    rows = [line.split(" | ") for line in text[text.index("| Sigla o término"):].splitlines()[2:] if line.startswith("| ")]
+    assert len(rows) > 20
+    for row in rows:
+        for place in row[2].split(", "):
+            page, _, tab = place.partition(" (")
+            assert page in menu, f"{row[0]}: «{page}» is not a page of the menu"
+            assert not tab or tab.rstrip(")") in tabs, f"{row[0]}: «{tab}» is not a tab"
+
+
+def test_d252_the_security_plan_counts_the_attacks_its_tests_run():
+    from tests import test_security
+    text = (DOCS_DIR / "SEGURIDAD.md").read_text(encoding="utf-8")
+    assert f"| S-01 | {len(test_security.FILE_ATTACKS)} consultas SQL" in text
+    assert f"| S-02 | {len(test_security.ENGINE_ATTACKS)} órdenes directas" in text

@@ -52,7 +52,7 @@ Cada requisito tiene un criterio que se puede medir y la evidencia que lo compru
 | RF-03 | Solo se publica una carga válida | Si falla una prueba de dbt (31) o la carga lee menos del 90 % de la anterior, la base publicada no cambia y la carga queda registrada como fallida | `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, `tests/test_pipeline_gate.py::test_rf03_a_load_with_far_fewer_rows_than_the_last_good_one_is_refused` |
 | RF-04 | Precios reales junto a los nominales | El factor de cada semana sale del IPC del mes del lunes; las semanas posteriores al último mes publicado se marcan provisionales | `tests/test_ipc_audit.py::test_weekly_factor_uses_the_month_of_the_monday_and_the_last_published_month`, `tests/test_ipc_audit.py::test_only_weeks_after_the_last_published_month_are_provisional` |
 | RNF-01 | Costo cero y sin vencimientos | Ningún servicio de pago; solo planes gratuitos permanentes (ADR-31) | `docs/ADR.md` |
-| RNF-02 | Cada vista se lee en una pantalla de 1440 × 900 | El contenido de la vista no supera el alto de la ventana a 1440 × 900 | `tests/medicion/medir.cjs` |
+| RNF-02 | El panel se lee en un computador y en un teléfono en horizontal | Ninguna página se desplaza a lo ancho entre 1440 × 700 y 1920 × 1080 ni a 844 × 390; en vertical, el panel pide girar el teléfono (D-166) | `tests/medicion/medir.cjs` |
 
 ## 6. Pantallas
 

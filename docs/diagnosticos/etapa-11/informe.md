@@ -120,7 +120,7 @@ pytest: 589 pasan y 1 se omite, en unos 46 segundos. GitHub Actions (consultado 
 |---|---|---|
 | Diagramas densos: Pipeline y linaje (8,7 a 10,9 px), Despliegue (9,7 px y menos) y la franja de puertas de Calidad y auditoría (9,5 a 10,4 px) | Se leen con su zoom (+ y −). | Rediseñarlos con menos texto por caja o en más de una vista; subir la letra sin rediseñar desborda las cajas. Es el lugar natural para el diagrama global de arquitectura que propuso el autor. |
 | Textos de 10 a 10,9 px en el Resumen (21), Precios e inflación (5, números del eje) y Consultas SQL (23) | A medio punto del mínimo. | El Resumen es la referencia fija; los otros dos son ajustes pequeños. |
-| Modelo de datos a 1440 × 700 | La estrella se reduce para caber y su texto baja de 11 px. | Elegir entre caber en la ventana o mantener 11 px en pantallas bajas. |
+| Modelo de datos a 1440 × 700 | Resuelto en D-251: la estrella vuelve a su tamaño de D-229 y la página se desplaza. | Nada. |
 | Once vistas antiguas sin enlace desde el menú: Datos, Esta semana, Brecha de precio, Canales y regiones, Alertas, Portada, Definición del proyecto, Reglas de calidad, Manual, Glosario y la antigua DevOps y seguridad | Se abren solo desde direcciones guardadas (D-065). Usan 27 funciones (369 líneas) que ninguna página del menú usa. «Indicadores explicados» y «Documentación» sí tienen enlaces desde el Resumen y se mantienen. | Retirarlas y llevar sus direcciones a la página del menú más cercana. Cambia adónde llegan esos enlaces antiguos, así que lo decide el autor. |
 | Teléfono en vertical | Las superposiciones medidas son con el aviso «Gira tu teléfono», que tapa la app a propósito (D-166). | Nada. |
 

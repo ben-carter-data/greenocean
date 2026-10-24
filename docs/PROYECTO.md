@@ -101,27 +101,27 @@ El data warehouse (`etl/datos.duckdb`, la base servida) es un modelo estrella: u
 
 | Sigla o término | Significado | Dónde aparece | Tema |
 |---|---|---|---|
-| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Dashboard, Arquitectura | Fuentes |
-| CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Arquitectura | Fuentes |
-| Pipeline | El flujo completo de cada martes, de ODEPA al panel: descarga, ETL de respaldo, construcción con dbt, pruebas, guardado e informe. | Dashboard, Arquitectura | Pipeline |
-| Ingesta | La descarga de los archivos de ODEPA; la hace el agente de ingesta (`agent/agent.py`), que revisa que cada archivo traiga las columnas esperadas. | Arquitectura | Pipeline |
-| ETL | Extraer, transformar y cargar. `etl/etl.py` limpia los datos y aplica las reglas para el respaldo `etl/datos.db`; las mismas reglas corren en dbt para la base servida. | Arquitectura, Monitoreo y Ejecuciones | Pipeline |
-| Data quality checks | Los controles que detienen la carga si algo no cuadra. | Reglas de calidad, Monitoreo y Ejecuciones | Pipeline |
-| Job, workflow | Tarea automática de GitHub Actions; el job semanal (`semanal.yml`) ejecuta el pipeline cada martes. | Arquitectura, Monitoreo y Ejecuciones | Pipeline |
-| Cron | La programación del job semanal: cada martes a las 12:00 UTC. | Monitoreo y Ejecuciones | Pipeline |
-| Ejecución (run) | Una pasada completa del job semanal. | Monitoreo y Ejecuciones | Pipeline |
-| Tests, CI | Las pruebas automáticas (tests); la integración continua (CI) las corre solas en cada cambio del código (`pruebas.yml`). | DevOps y seguridad | Pipeline |
-| Commit, push | Guardar un cambio en el historial del código, y subirlo a GitHub. | Arquitectura | Pipeline |
-| Issue | Publicación en GitHub; aquí, el informe semanal. | Monitoreo y Ejecuciones | Pipeline |
-| Bronce, plata, oro | Las capas de los datos: el aterrizaje (`etl/raw.db`, las filas tal como llegan, que no se sube al repositorio), bronce (Parquet, copia exacta), plata (staging e intermedio de dbt: tipos, reglas y marcas) y oro (marts: el modelo estrella que lee el panel). | Arquitectura | Base de datos |
-| Data warehouse | La base lista para analizar (`etl/datos.duckdb`, la base servida), con el modelo estrella. | Arquitectura | Base de datos |
+| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Resumen semanal, Pipeline y linaje | Fuentes |
+| CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Pipeline y linaje | Fuentes |
+| Pipeline | El flujo completo de cada martes, de ODEPA al panel: descarga, ETL de respaldo, construcción con dbt, pruebas, guardado e informe. | Pipeline y linaje, Centro de operación | Pipeline |
+| Ingesta | La descarga de los archivos de ODEPA; la hace el agente de ingesta (`agent/agent.py`), que revisa que cada archivo traiga las columnas esperadas. | Pipeline y linaje | Pipeline |
+| ETL | Extraer, transformar y cargar. `etl/etl.py` limpia los datos y aplica las reglas para el respaldo `etl/datos.db`; las mismas reglas corren en dbt para la base servida. | Pipeline y linaje, Centro de operación | Pipeline |
+| Data quality checks | Los controles que detienen la carga si algo no cuadra. | Calidad y auditoría | Pipeline |
+| Job, workflow | Tarea automática de GitHub Actions; el job semanal (`semanal.yml`) ejecuta el pipeline cada martes. | Centro de operación | Pipeline |
+| Cron | La programación del job semanal: cada martes a las 12:00 UTC. | Centro de operación | Pipeline |
+| Ejecución (run) | Una pasada completa del job semanal. | Centro de operación | Pipeline |
+| Tests, CI | Las pruebas automáticas (tests); la integración continua (CI) las corre solas en cada cambio del código (`pruebas.yml`). | Centro de operación (CI/CD) | Pipeline |
+| Commit, push | Guardar un cambio en el historial del código, y subirlo a GitHub. | Centro de operación (CI/CD) | Pipeline |
+| Issue | Publicación en GitHub; aquí, el informe semanal. | Centro de operación (Monitoreo) | Pipeline |
+| Bronce, plata, oro | Las capas de los datos: el aterrizaje (`etl/raw.db`, las filas tal como llegan, que no se sube al repositorio), bronce (Parquet, copia exacta), plata (staging e intermedio de dbt: tipos, reglas y marcas) y oro (marts: el modelo estrella que lee el panel). | Pipeline y linaje | Base de datos |
+| Data warehouse | La base lista para analizar (`etl/datos.duckdb`, la base servida), con el modelo estrella. | Pipeline y linaje, Modelo de datos | Base de datos |
 | PK | Clave primaria: la columna que identifica cada fila de una tabla. | Modelo de datos | Base de datos |
 | FK | Clave foránea: la columna que apunta a la clave primaria de otra tabla. | Modelo de datos | Base de datos |
-| JOIN | Unión de dos tablas por su clave. | Arquitectura, Datos y SQL | Base de datos |
-| SQL | Lenguaje de consultas estructurado: con él se leen los datos de la base. | Datos y SQL | Base de datos |
-| KPI | Indicador clave: cada cifra que mide algo del negocio (K1 a K8). | Dashboard, Análisis | Indicadores |
-| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Reglas de calidad | Indicadores |
-| Alertas, notificaciones | Las alertas K6 de precios, y el correo de GitHub cuando el job semanal falla. | Análisis, Monitoreo y Ejecuciones | Indicadores |
-| API | La puerta por la que un programa habla con otro; el panel la usa para consultar GitHub. | Monitoreo y Ejecuciones | Conexiones |
-| HTTPS | Conexión web cifrada. | Arquitectura | Conexiones |
-| UTC | Hora universal; el job corre a las 12:00 UTC: las 09:00 en Chile en horario de verano y las 08:00 en invierno. | Arquitectura | Conexiones |
+| JOIN | Unión de dos tablas por su clave. | Modelo de datos, Consultas SQL | Base de datos |
+| SQL | Lenguaje de consultas estructurado: con él se leen los datos de la base. | Consultas SQL | Base de datos |
+| KPI | Indicador clave: cada cifra que mide algo del negocio (K1 a K8). | Resumen semanal | Indicadores |
+| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Calidad y auditoría | Indicadores |
+| Alertas, notificaciones | Las alertas K6 de precios, y el correo de GitHub cuando el job semanal falla. | Resumen semanal, Centro de operación (Monitoreo) | Indicadores |
+| API | La puerta por la que un programa habla con otro; el panel la usa para consultar GitHub. | Centro de operación | Conexiones |
+| HTTPS | Conexión web cifrada. | Pipeline y linaje, Centro de operación (Despliegue) | Conexiones |
+| UTC | Hora universal; el job corre a las 12:00 UTC: las 09:00 en Chile en horario de verano y las 08:00 en invierno. | Centro de operación | Conexiones |
