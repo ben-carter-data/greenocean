@@ -4860,19 +4860,28 @@ def read_lineage(database_version):
     return lineage.read_tables(queries.run_sql)
 
 
+def build_pipeline_figure_html(value, caption, layer):
+    """One figure of the pipeline (D-253): its number alone, in 3D, in the colour of its layer in the diagram."""
+    value = html.escape(value)
+    return (f'<div class="pipe-figure" style="--c:{architecture.LAYER_COLORS[layer]}">'
+            f'<span class="pipe-number" data-value="{value}"><span>{value}</span></span>'
+            f'<span class="pipe-caption">{html.escape(caption)}</span></div>')
+
+
 def show_pipeline_figures(summary):
     """One strip of four real figures: the latest load and the latest dbt build."""
     run = read_latest_run()
-    tests = (f'{summary["passing"]}/{summary["tests"]}', "superadas en la última construcción") if summary \
+    tests = (f'{summary["passing"]}/{summary["tests"]}', "pruebas dbt superadas") if summary \
         else ("—", "linaje dbt en migración")
-    st.markdown('<div class="runs-metrics">'
-                + build_runs_metric_html("Filas leídas", charts.format_thousands(run["rows_read"]),
-                                         "de los archivos de ODEPA")
-                + build_runs_metric_html("Filas cargadas", charts.format_thousands(run["rows_loaded"]),
-                                         f'{charts.format_thousands(run["rows_rejected"])} rechazadas, con su motivo')
-                + build_runs_metric_html("Modelos dbt", str(summary["models"]) if summary else "—",
-                                         "staging, intermedio y marts")
-                + build_runs_metric_html("Pruebas dbt", *tests)
+    st.markdown('<div class="pipe-figures">'
+                + build_pipeline_figure_html(charts.format_thousands(run["rows_read"]),
+                                             "filas leídas de ODEPA", "ingestion")
+                + build_pipeline_figure_html(charts.format_thousands(run["rows_loaded"]),
+                                             f'filas cargadas · {charts.format_thousands(run["rows_rejected"])} rechazadas',
+                                             "gold")
+                + build_pipeline_figure_html(str(summary["models"]) if summary else "—",
+                                             "modelos dbt, de staging a marts", "processing")
+                + build_pipeline_figure_html(*tests, "quality")
                 + '</div>', unsafe_allow_html=True)
 
 
@@ -5576,12 +5585,6 @@ def read_pipeline_runs():
     return runs, ""
 
 
-def build_runs_metric_html(label, value, note=""):
-    return (f'<div class="runs-metric"><span class="runs-metric-label">{html.escape(label)}</span>'
-            f'<span class="runs-metric-value">{html.escape(value)}</span>'
-            f'<span class="runs-metric-note">{note}</span></div>')
-
-
 def build_step_lines(steps):
     """Progress of a run as text lines with an icon per step."""
     icons = {control.RUN_OK: "✅", control.RUN_FAILED: "❌",
@@ -5786,11 +5789,30 @@ def show_author_access(access_code, unlocked):
 
 def build_runs_css(mode):
     palette = charts.get_palette(mode)
+    dark = palette["base"] == charts.BASE_DARK
+    # The extruded body of each 3D figure: seven thin layers, each a little lower than the one before.
+    depth = ", ".join(f"{index * 0.4:.1f}px {index}px 0 var(--deep)" for index in range(1, 8))
     return f"""<style>
     /* D-207: the control code is a plain text field shown as dots, so the browser never takes
        it for an account password and never offers to generate or save one. */
     .st-key-author_access_code input, .st-key-run_now_code input {{-webkit-text-security:disc; text-security:disc;}}
-    .runs-metrics {{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:6px 0 16px;}}
+    /* Pipeline y linaje (D-253): each figure is its number alone, in 3D: a lit face over an extruded body in
+       the colour of its layer in the diagram, tilted back; the pointer turns it. The caption says what it counts. */
+    .pipe-figures {{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:16px 0 22px;
+        perspective:700px;}}
+    .pipe-figure {{display:flex; flex-direction:column; align-items:center; text-align:center;}}
+    .pipe-number {{--deep:color-mix(in srgb, var(--c) 40%, #000); position:relative; display:inline-block;
+        font-size:clamp(1.7rem, 2.6vw, 2.5rem); font-weight:800; line-height:1.1; letter-spacing:-.015em;
+        font-variant-numeric:tabular-nums; white-space:nowrap; transform:rotateX(18deg); transform-origin:50% 100%;
+        transition:transform .45s cubic-bezier(.2,.8,.2,1);}}
+    .pipe-number::before {{content:attr(data-value); position:absolute; left:0; top:0; color:var(--deep);
+        text-shadow:{depth}, 3px 11px 14px rgba(0,0,0,{'.55' if dark else '.2'});}}
+    .pipe-number span {{position:relative; color:transparent; -webkit-background-clip:text; background-clip:text;
+        background-image:linear-gradient(180deg, color-mix(in srgb, var(--c) {'30' if dark else '55'}%, #fff) 0%,
+            var(--c) 58%, color-mix(in srgb, var(--c) 80%, #000) 100%);}}
+    .pipe-figure:hover .pipe-number {{transform:rotateX(6deg) rotateY(-16deg);}}
+    .pipe-caption {{margin-top:10px; font-size:.8rem; line-height:1.35; color:{palette['text']};}}
+    @media (prefers-reduced-motion:reduce) {{ .pipe-number {{transition:none;}} }}
     /* The manual run is a round power button (D-149): deep glossy blue, a brushed
        metal ring, the white power symbol. The words sit under it. */
     .st-key-runs_run_now {{display:flex; justify-content:center; align-self:center; margin:10px auto 2px;}}
@@ -5813,14 +5835,6 @@ def build_runs_css(mode):
     .st-key-runs_run_now button:disabled {{opacity:.72; cursor:not-allowed;}}
     .run-now-label {{text-align:center; font-weight:500; font-size:.92rem; color:{palette['strong_text']}; margin:10px 0 0;}}
     .run-now-note {{text-align:center; font-size:.78rem; color:{palette['text']}; margin-top:2px;}}
-    .runs-metric {{display:flex; flex-direction:column; gap:3px; padding:12px 16px; border-radius:14px;
-        background:{palette['card']}; border:1px solid {palette['card_border']};
-        box-shadow:0 10px 22px -16px rgba(0,0,0,.25);}}
-    .runs-metric-label {{font-size:.68rem; font-weight:500; letter-spacing:.06em; text-transform:uppercase;
-        color:{palette['reference']};}}
-    .runs-metric-value {{font-size:1.12rem; font-weight:500; letter-spacing:-.01em;
-        color:{palette['strong_text']}; font-variant-numeric:tabular-nums;}}
-    .runs-metric-note {{font-size:.76rem; color:{palette['text']};}}
     .runs-card-title {{display:flex; align-items:center; gap:7px; font-size:.92rem; font-weight:500;
         color:{palette['strong_text']}; margin:0 0 10px;}}
     .runs-table {{width:100%; border-collapse:collapse; font-size:.84rem;}}
@@ -5832,7 +5846,7 @@ def build_runs_css(mode):
     .runs-table tr:last-child td {{border-bottom:0;}}
     .runs-table tbody tr:hover td {{background:color-mix(in srgb,{palette['accent']} 5%,transparent);}}
     .runs-link {{text-align:right;}}
-    @media (max-width:900px) {{ .runs-metrics {{grid-template-columns:repeat(2,minmax(0,1fr));}} }}
+    @media (max-width:900px) {{ .pipe-figures {{grid-template-columns:repeat(2,minmax(0,1fr)); row-gap:18px;}} }}
     </style>"""
 
 

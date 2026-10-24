@@ -90,3 +90,12 @@ def test_d233_the_fitted_pages_close_with_the_compact_footer():
         assert page in dashboard.COMPACT_FOOTER_VIEWS
     # The long pages keep both footers.
     assert dashboard.PAGE_PRD not in dashboard.COMPACT_FOOTER_VIEWS
+
+
+@needs_database
+def test_d253_the_pipeline_figures_are_3d_numbers_read_from_the_latest_load():
+    page = read_markdown(draw_page(dashboard.PAGE_DIAGRAMS))
+    assert page.count('class="pipe-figure"') == 4 and "runs-metric" not in page
+    run = dashboard.read_latest_run()
+    assert f'data-value="{dashboard.charts.format_thousands(run["rows_read"])}"' in page
+    assert f'data-value="{dashboard.charts.format_thousands(run["rows_loaded"])}"' in page

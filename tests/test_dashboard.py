@@ -234,7 +234,7 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
                            if 'class="compact-header"' in block.value and '<h1' in block.value and 'Pipeline' in block.value)
     # D-150: the same one-line header as every technical page, freshness included.
     assert '>Pipeline y linaje</h1>' in pipeline_header and 'page-freshness' in pipeline_header
-    assert 'Pruebas dbt' in texts and 'Modelos dbt' in texts
+    assert 'pruebas dbt superadas' in texts and 'modelos dbt, de staging a marts' in texts
     assert not diagrams.toggle
     assert 'Animar el recorrido de los datos' not in texts
     assert 'ODEPA → indicadores · recorrido y plataformas' not in texts
