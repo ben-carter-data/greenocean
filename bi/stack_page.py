@@ -8,10 +8,9 @@ Pure functions: no Streamlit. bi/dashboard.py draws the HTML and hands over the 
 """
 import base64
 import html
-import re
 from pathlib import Path
 
-from bi import brand_icons, charts, database_map, queries
+from bi import brand_icons, charts, database_map, project, queries
 
 REPOSITORY = Path(__file__).resolve().parent.parent
 # Disc colors (light top, dark bottom, glyph) beyond database_map.BRANDS.
@@ -37,12 +36,6 @@ STACK = [
 ]
 
 
-def count_pytest_tests(tests_dir=REPOSITORY / "tests"):
-    """Test functions written in the repository (a parametrized one counts once)."""
-    return sum(len(re.findall(r"^def test_", path.read_text(encoding="utf-8"), re.MULTILINE))
-               for path in Path(tests_dir).glob("test_*.py"))
-
-
 def read_figures(database_file=queries.DATABASE_FILE, tests_dir=REPOSITORY / "tests"):
     """{prices, tests, loads}: weekly prices served, automatic tests (pytest + dbt) and recorded loads."""
     connection = queries.open_database(database_file)
@@ -52,7 +45,7 @@ def read_figures(database_file=queries.DATABASE_FILE, tests_dir=REPOSITORY / "te
         loads = connection.execute("SELECT count(*) FROM etl_run").fetchone()[0]
     finally:
         connection.close()
-    return {"prices": prices, "tests": count_pytest_tests(tests_dir) + dbt_tests, "loads": loads}
+    return {"prices": prices, "tests": project.count_test_functions(Path(tests_dir)) + dbt_tests, "loads": loads}
 
 
 def format_number(value):

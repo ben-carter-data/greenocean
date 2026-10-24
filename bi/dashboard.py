@@ -1707,6 +1707,10 @@ def show_app_header(window):
     minimal = view == PAGE_SEASONALITY
     window_label = SIDEBAR_TOP_LABELS.get(window, window)
     path = window_label if len(read_window_views(window)) == 1 else f"{window_label} › {SIDEBAR_LABELS.get(view, view)}"
+    if view in MENU_BLOCK_OF_VIEW:
+        # D-250: the same names as the menu.
+        label = SIDEBAR_LABELS.get(view, view)
+        path = label if MENU_BLOCK_OF_VIEW[view] == label else f"{MENU_BLOCK_OF_VIEW[view]} › {label}"
     with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
         if not minimal:
             st.markdown(f'<div class="app-brand" aria-label="Página actual">{html.escape(path)}</div>',
@@ -6851,10 +6855,10 @@ def render_window(window, pages=None):
         else:
             SHOW_PAGE_BY_TITLE[view](mode)
     if view in COMPACT_FOOTER_VIEWS:
-        show_compact_footer(window, pages)
+        show_compact_footer(window, pages, view)
     elif view not in OVERVIEW_CLASS_BY_VIEW:
         if pages:
-            show_route_footer(window, pages)
+            show_route_footer(window, pages, view)
         show_attribution()
     st.html(PHONE_LAYOUT_HTML + FOLD_SIDEBAR_SCRIPT + RELOAD_HOME_SCRIPT + IDLE_ANIMATION_SCRIPT + build_visit_history_script(),
             unsafe_allow_javascript=True)
@@ -6919,8 +6923,25 @@ def keep_context():
     return context
 
 
-def show_route_footer(window, pages):
+def show_menu_steps(view, pages):
+    """«← Anterior» and «Siguiente →»: the pages before and after this one in the menu (D-250)."""
+    position = MENU_ORDER.index(view)
+    for step, text in ((-1, "← Anterior: {}"), (1, "Siguiente: {} →")):
+        if 0 <= position + step < len(MENU_ORDER):
+            neighbour = MENU_ORDER[position + step]
+            st.page_link(pages[WINDOW_OF_VIEW[neighbour]], label=text.format(SIDEBAR_LABELS.get(neighbour, neighbour)),
+                         icon=SIDEBAR_ICONS.get(neighbour, PAGE_ICONS.get(neighbour)),
+                         query_params=keep_context() | {VIEW_PARAMETER: neighbour})
+
+
+def show_route_footer(window, pages, view=None):
     """«← Volver» and «Siguiente →» with what the next step proves; same window."""
+    if view in MENU_BLOCK_OF_VIEW:
+        st.divider()
+        with st.container(key="route_footer", horizontal=True, horizontal_alignment="distribute",
+                          vertical_alignment="center"):
+            show_menu_steps(view, pages)
+        return
     if window not in ROUTE:
         return
     position = ROUTE.index(window)
@@ -6942,12 +6963,14 @@ def show_route_footer(window, pages):
 COMPACT_FOOTER_VIEWS = {PAGE_SQL, PAGE_OPERATIONS, PAGE_RUNS, PAGE_SECURITY, PAGE_STACK}
 
 
-def show_compact_footer(window, pages):
+def show_compact_footer(window, pages, view=None):
     """The route links and the data source in two short lines."""
     summary = lineage.summarize_build(*read_lineage(get_database_version()))
     with st.container(key="compact_footer"):
         with st.container(horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
-            if pages and window in ROUTE:
+            if pages and view in MENU_BLOCK_OF_VIEW:
+                show_menu_steps(view, pages)
+            elif pages and window in ROUTE:
                 position = ROUTE.index(window)
                 if position > 0:
                     back = ROUTE[position - 1]
@@ -7132,6 +7155,9 @@ MENU_BLOCKS = [
     ("analisis", "Análisis de negocio · BA", [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
 ]
+# D-250: the breadcrumb and the footer follow the menu, in its order and with its names.
+MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages]
+MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages}
 # The menu's own glyphs, one per page, thin lines (Material Symbols).
 SIDEBAR_ICONS = {
     PAGE_HOME: ":material/grid_view:", PAGE_SEASONALITY: ":material/calendar_month:",

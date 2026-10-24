@@ -1,7 +1,7 @@
 """«Stack y evidencia» (D-211): logos, links and figures read, never typed."""
 import duckdb
 
-from bi import charts, queries, stack_page
+from bi import charts, project, queries, stack_page
 
 
 def test_the_figures_come_from_the_database_and_the_repository():
@@ -10,8 +10,8 @@ def test_the_figures_come_from_the_database_and_the_repository():
         assert figures["prices"] == connection.execute("SELECT count(*) FROM weekly_price").fetchone()[0]
         assert figures["loads"] == connection.execute("SELECT count(*) FROM etl_run").fetchone()[0]
         dbt_tests = connection.execute("SELECT count(*) FROM dbt_node WHERE resource_type = 'test'").fetchone()[0]
-    assert figures["tests"] == stack_page.count_pytest_tests() + dbt_tests
-    assert stack_page.count_pytest_tests() > 300
+    assert figures["tests"] == project.count_test_functions() + dbt_tests  # the same count as the CI/CD diagram
+    assert project.count_test_functions() > 300
 
 
 def test_the_stack_is_nine_3d_logos_in_every_theme():

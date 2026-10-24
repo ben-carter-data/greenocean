@@ -1088,6 +1088,23 @@ def test_historical_root_link_keeps_the_requested_project_view_after_route_chang
 
 
 @needs_database
+def test_d250_the_path_and_the_footer_follow_the_menu():
+    order = dashboard.MENU_ORDER
+    assert len(order) == len(set(order)) and order[0] == dashboard.PAGE_HOME
+    assert dashboard.MENU_BLOCK_OF_VIEW[dashboard.PAGE_SAD] == "Ingeniería de datos"
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params['vista'] = dashboard.PAGE_RUNS
+    app.run()
+    assert not app.exception
+    markup = ' '.join(block.value for block in app.markdown)
+    assert 'DevOps y seguridad › Centro de operación' in markup
+    footer = app.main.get('page_link')
+    assert [link.proto.label for link in footer] == ['← Anterior: SAD · Arquitectura', 'Siguiente: Arquitectura de seguridad →']
+    assert [link.proto.icon for link in footer] == [dashboard.SIDEBAR_ICONS[dashboard.PAGE_SAD],
+                                                    dashboard.SIDEBAR_ICONS[dashboard.PAGE_SECURITY]]
+
+
+@needs_database
 def test_d096_header_shows_the_current_path_without_a_tab_bar():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params['vista'] = dashboard.PAGE_ARCHITECTURE

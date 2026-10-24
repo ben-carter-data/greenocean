@@ -190,7 +190,7 @@ SYSTEM_CASES = [
 ]
 USE_WIDTH, USE_HEIGHT = 1000, 566
 LEFT_ACTOR_X, RIGHT_ACTOR_X = 66, 934
-OVAL = {"left": 344, "right": 668, "rx": 126, "ry": 44}
+OVAL = {"left": 344, "right": 668, "rx": 138, "ry": 44}
 BOUNDARY = (176, 18, 648, 530)
 
 
@@ -212,7 +212,7 @@ def build_use_case(side, row, case, identifier, screen, ink, muted, accent, card
     text = "".join(f'<text x="{cx}" y="{top + 15 * index}" text-anchor="middle" font-size="13" font-weight="600" '
                    f'fill="{ink}">{esc(line)}</text>' for index, line in enumerate(lines))
     tag = f"{identifier} · " if identifier else ""
-    detail = f'<text x="{cx}" y="{top + 15 * len(lines) + 4}" text-anchor="middle" font-size="12" fill="{muted}">{esc(tag + screen)}</text>'
+    detail = f'<text x="{cx}" y="{top + 15 * len(lines) + 4}" text-anchor="middle" font-size="13" fill="{muted}">{esc(tag + screen)}</text>'
     return (f'<ellipse cx="{cx}" cy="{cy}" rx="{OVAL["rx"]}" ry="{OVAL["ry"]}" fill="{card}" stroke="{accent}" stroke-width="1.6"/>'
             + text + detail)
 
@@ -262,7 +262,7 @@ def actor_figure(x, y, name, label, ink, muted, brand=False):
     """An actor: its mark and its name under it."""
     mark = disc_logo("brand" if brand else "person", name).replace('<svg class="logo" ', f'<svg x="{x - 30}" y="{y - 42}" width="60" height="60" ', 1)
     lines = wrap(label, 16)
-    names = "".join(f'<text x="{x}" y="{y + 32 + 14 * index}" text-anchor="middle" font-size="12.5" font-weight="600" '
+    names = "".join(f'<text x="{x}" y="{y + 32 + 14 * index}" text-anchor="middle" font-size="13" font-weight="600" '
                     f'fill="{ink}">{esc(line)}</text>' for index, line in enumerate(lines))
     return mark + names
 # endregion

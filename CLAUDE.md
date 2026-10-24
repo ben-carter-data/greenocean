@@ -10,7 +10,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 - **Pipeline:** ingesta en Python → aterrizaje `etl/raw.db` (SQLite) → bronce en Parquet → dbt Core sobre DuckDB (staging → intermedio → marts, 31 pruebas) → base servida `etl/datos.duckdb`.
 - **Panel:** Streamlit (`bi/dashboard.py`), que lee `etl/datos.duckdb` en solo lectura.
 - **Orquestación:** GitHub Actions, cada martes (`.github/workflows/semanal.yml`).
-- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md` y `docs/SEGURIDAD.md` (plan de pruebas de seguridad). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-229). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
+- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md` y `docs/SEGURIDAD.md` (plan de pruebas de seguridad). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-250). `docs/PROMPT_EVOLUCION.md` es el plan de la refonte (pasos 0 a 7, hechos).
 
 ## Instalar y ejecutar
 
@@ -19,7 +19,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 | Panel y pruebas | `pip install -r requirements.txt` |
 | Pipeline con dbt | `pip install -r requirements-pipeline.txt` (dbt no se instala en Python 3.14: usar 3.11 o 3.12) |
 | Abrir el panel | `streamlit run bi/dashboard.py` |
-| Pruebas | `python -m pytest -q` (unas 585, alrededor de un minuto) |
+| Pruebas | `python -m pytest -q` (unas 590, alrededor de un minuto) |
 | Compilar el proyecto dbt | `dbt parse --project-dir dbt --profiles-dir dbt` |
 | Descargar ODEPA | `python agent/agent.py` |
 | ETL de respaldo (SQLite) | `python etl/etl.py` |

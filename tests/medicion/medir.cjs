@@ -175,8 +175,10 @@ function measureFrame(isChild) {
 
 async function settle(page) {
   // Streamlit marks the stale elements while it reruns.
+  // The first load redirects to the first page's address; an evaluation cut by it counts as busy.
   for (let i = 0; i < 80; i++) {
-    const busy = await page.evaluate(() => !!document.querySelector('[data-stale="true"], [data-testid="stStatusWidget"]'));
+    const busy = await page.evaluate(() => !!document.querySelector('[data-stale="true"], [data-testid="stStatusWidget"]'))
+      .catch(() => true);
     if (!busy) break;
     await page.waitForTimeout(250);
   }
