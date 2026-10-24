@@ -1968,3 +1968,10 @@ La arquitectura está pensada para crecer cambiando configuración, no código. 
 - **Resultado:** a 1440 × 900 el mapa y el movimiento por familia empiezan en el píxel 84, en vez de unos 200. En pantallas angostas la pregunta pasa a su propia línea y las fichas se acomodan debajo; en el teléfono horizontal (D-166) cabe en dos líneas.
 - **Código retirado:** `home_mockup.dashboard_header` y `home_mockup.title`, y los estilos de la franja anterior en `bi/premium.css` y `bi/home_mockup.css`.
 - **Pruebas:** `tests/test_dashboard.py::test_d264_*`: una sola ruta y un solo «Volver», la pregunta como título de la página, cada nota en el texto de su ficha, la cuenta de alertas contra la base y la hora de la carga.
+
+## D-265 · Resumen semanal: todo cabe en una pantalla
+
+- **Pedido del autor:** reducir la altura de los bloques para que el Resumen se vea entero, sin desplazar la página.
+- **Decisión:** las filas de «Movimiento por familia» bajan de unos 68 a 38 px, con imágenes de 38 px; las tarjetas tienen menos relleno (14 × 18 px), y el eje de la escala se acorta. La tabla de productos toma el alto que queda en la pantalla (todo lo demás suma 642 px) y se desplaza por dentro, con un mínimo de 150 px; el mapa sigue estirándose al alto de la columna derecha (D-150).
+- **Resultado:** sin desplazar la página a 1440 × 800 (lo que deja el navegador en una pantalla de 1440 × 900), a 1440 × 900 y a 1920 × 1080: la barra, el mapa, las siete familias, la tabla de productos y la nota de cobertura. Antes, a 1440 × 900, la página medía 1000 px. En pantallas de menos de unos 790 px de alto, la página vuelve a desplazarse.
+- **Sin cambios:** los datos, las siete familias, el orden y los filtros de la tabla.
