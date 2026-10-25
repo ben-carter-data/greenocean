@@ -56,7 +56,7 @@ GreenOcean does that work automatically and leaves each step in view.
 
 [[diagrama:casos]]
 
-The panel is read-only and needs no account. The administrator maintains the code and the secrets, answers ad hoc SQL queries and can launch a manual load with the control code.
+The panel is read-only and needs no account. The administrator, the author of the project, maintains the code and the secrets, answers ad hoc SQL queries and can launch a manual load with the control code.
 
 ## 4. Business questions
 

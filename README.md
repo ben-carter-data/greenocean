@@ -60,12 +60,14 @@ Python · SQL · dbt Core · DuckDB · Parquet · SQLite · GitHub Actions · py
 
 | Documento | Contenido |
 |---|---|
-| [PRD](docs/PRD.md) | Contexto, visión, alcance, usuarios y requisitos |
-| [SAD](docs/SAD.md) | Arquitectura: pipeline, plataforma y modelo de datos |
+| [PRD](docs/PRD.md) | Qué problema resuelve, para quién, qué preguntas responde y sus requisitos |
+| [SAD](docs/SAD.md) | Cómo está construido: la carga de cada semana, los datos con su diccionario, el despliegue y la capacidad |
 | [ADR](docs/ADR.md) | Las decisiones de arquitectura más importantes |
-| [Plan de seguridad](docs/SEGURIDAD.md) | Cómo se prueba que el panel resiste ataques |
-| [Decisiones](docs/DECISIONES.md) | Registro completo de decisiones |
+| [Plan de pruebas y seguridad](docs/PLAN_PRUEBAS.md) | Qué se prueba, quién participa en la seguridad y los ataques que se repiten en cada cambio |
 | [Manual](docs/MANUAL.md) | Qué pasa cada martes y qué hacer si falla |
+| [Índice de decisiones](docs/INDICE_DECISIONES.md) | Las decisiones principales, por tema |
+| [Glosario](docs/GLOSARIO.md) | Las siglas y los términos del panel y de los documentos |
+| [Decisiones](docs/DECISIONES.md) | Registro completo de decisiones |
 
 ## Cómo ejecutarlo
 

@@ -2229,3 +2229,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **trazado:** pytest · CI pasa a la franja «Lo que vigila»; dos líneas entre los mismos nodos se separan, una línea que salta un nodo lo rodea hacia el centro del dibujo, y cada etiqueta busca a lo largo de su línea el lugar que menos tapa otras etiquetas, nodos y títulos. Se quita la línea redundante del repositorio a GitHub Actions;
   - las etiquetas de las líneas son texto de la página, así se traducen al inglés como el resto.
 - **Pruebas:** `tests/test_app_map.py::test_d291_*`: cada filtro enciende los actores y las conexiones de su tema (Seguridad: autor, panel, secretos, GitHub Actions, repositorio, base, visitante, pruebas); cada línea une nodos encendidos; sin filtro solo se dibuja el flujo de datos y cada línea lleva su etiqueta. `tests/test_i18n.py`: el mapa en inglés sin textos en español.
+
+## D-292 · Revisión de coherencia entre los documentos, sus diagramas y la app
+
+- **Pedido del autor:** que no haya contradicción entre ningún documento, ni entre los documentos y la app.
+- **Revisado contra el código:** el horario del workflow (`0 12 * * 2`), los permisos del job (contenido e issues), el aviso del token (14 días), los límites del estudio SQL (una sentencia, 10 s, 5.000 filas, 1 GB), la puerta del 90 % de filas, las 31 pruebas de dbt, los casos S-01 a S-10 y las tablas de la base servida.
+- **Corregido:**
+  - el diagrama «Qué se prueba y cuándo» decía que en cada push cada cifra se recalcula desde la fuente; la reconstrucción desde las filas crudas corre en cada carga, donde existen, y en cada push la auditoría compara las cifras del panel con la base;
+  - el PRD y el SAD dicen que el administrador de los diagramas C4 y de la arquitectura de seguridad es el autor del proyecto, el mismo actor que nombran el plan, el manual y el mapa de la app;
+  - el README enlaza los siete documentos actuales en lugar del plan de seguridad retirado.
+- **Pruebas:** la suite completa en verde; las pruebas de documentos comprueban las cifras, los casos, las tablas y los enlaces entre documentos.

@@ -44,7 +44,7 @@ To reach them, the load rebuilds the whole history every Tuesday from the offici
 
 [[diagrama:contexto]]
 
-The system reads two public sources, ODEPA and the INE, and relies on two free services: GitHub keeps the code and the served database and runs the load; Streamlit Community Cloud publishes the panel. The visitor only reads the panel. The administrator maintains the code and the secrets.
+The system reads two public sources, ODEPA and the INE, and relies on two free services: GitHub keeps the code and the served database and runs the load; Streamlit Community Cloud publishes the panel. The visitor only reads the panel. The administrator, the author of the project, maintains the code and the secrets.
 
 ## 3. Containers
 

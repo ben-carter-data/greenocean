@@ -44,7 +44,7 @@ Para lograrlos, la carga rehace toda la historia cada martes desde los archivos 
 
 [[diagrama:contexto]]
 
-El sistema lee dos fuentes públicas, ODEPA y el INE, y se apoya en dos servicios gratuitos: GitHub guarda el código y la base servida y ejecuta la carga; Streamlit Community Cloud publica el panel. El visitante solo lee el panel. El administrador mantiene el código y los secretos.
+El sistema lee dos fuentes públicas, ODEPA y el INE, y se apoya en dos servicios gratuitos: GitHub guarda el código y la base servida y ejecuta la carga; Streamlit Community Cloud publica el panel. El visitante solo lee el panel. El administrador, el autor del proyecto, mantiene el código y los secretos.
 
 ## 3. Contenedores
 

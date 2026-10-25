@@ -56,7 +56,7 @@ GreenOcean hace ese trabajo de forma automática y deja cada paso a la vista.
 
 [[diagrama:casos]]
 
-El panel es de consulta y no pide cuenta. El administrador mantiene el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.
+El panel es de consulta y no pide cuenta. El administrador, el autor del proyecto, mantiene el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.
 
 ## 4. Preguntas de negocio
 
