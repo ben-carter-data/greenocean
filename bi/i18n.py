@@ -64,6 +64,7 @@ EN = {
     "Fuente: ODEPA · actualización automática cada martes.": "Source: ODEPA · automatic update every Tuesday.",
     "GitHub del proyecto": "The project on GitHub",
     "Idioma": "Language",
+    "Fuentes": "Sources",
     "Cambiar el idioma del panel y de los documentos.": "Change the language of the panel and of the documents.",
     # Header bar, freshness and footers
     "Volver": "Back",

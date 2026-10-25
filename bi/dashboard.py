@@ -7501,17 +7501,34 @@ def build_sidebar_css(mode):
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
     [data-testid="stSidebar"] .st-key-language_switch button p {{color:{text} !important; -webkit-text-fill-color:{text} !important;}}
-    [class*="st-key-nav_folder_tile"] {{margin:0 0 6px !important;}}
-    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a {{display:flex !important; flex-direction:row;
-        align-items:center; gap:12px; padding:6px 10px !important; border-radius:12px; background:transparent !important;
-        border:1px solid {MENU_INK[dark][6]};}}
-    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:46px; height:36px;
+    .st-key-sidebar_tools {{flex-wrap:nowrap !important; gap:8px !important;}}
+    .st-key-sidebar_appearance [data-testid="stPopover"] button {{padding:6px 6px !important;}}
+    .st-key-sidebar_tiles {{margin:0 0 6px !important;}}
+    .st-key-sidebar_tiles > div {{flex:1 1 0 !important; min-width:0 !important;}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a, .st-key-sources_tile button {{
+        display:flex !important; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+        width:100% !important; height:74px; min-height:74px !important; padding:6px 4px !important; gap:3px !important;
+        border-radius:12px; background:transparent !important;
+        border:1px solid {MENU_INK[dark][6]} !important; box-shadow:none !important;}}
+    .st-key-sources_tile, .st-key-sources_tile [data-testid="stLayoutWrapper"], .st-key-sources_tile [data-testid="stPopover"],
+    .st-key-sources_tile [data-testid="stPopover"] > div {{width:100% !important;}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] {{margin:4px 0 0 !important;}}
+    .st-key-sources_tile button::before {{content:""; flex:none; width:40px; height:30px;
+        background:url("data:image/svg+xml;base64,{base64.b64encode(SOURCES_TILE_SVG.encode()).decode()}") center / contain no-repeat;
+        transition:transform .18s ease;}}
+    .st-key-sources_tile button:hover {{background:{MENU_INK[dark][3]} !important;}}
+    .st-key-sources_tile button:hover::before {{transform:translateY(-2px);}}
+    .st-key-sources_tile button p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
+        font-size:.88rem !important; font-weight:600 !important; line-height:1.15 !important; white-space:nowrap; margin:0 !important;}}
+    .st-key-sources_tile button [data-testid="stIconMaterial"], .st-key-sources_tile button svg {{display:none !important;}}
+    .st-key-sources_tile button > div {{display:contents;}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:40px; height:30px;
         background:url("data:image/svg+xml;base64,{base64.b64encode(FOLDER_TILE_SVG.encode()).decode()}") center / contain no-repeat;
         transition:transform .18s ease;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover {{background:{MENU_INK[dark][3]} !important;}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover::before {{transform:translateY(-2px);}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
-        font-size:.98rem !important; font-weight:600 !important;}}
+        font-size:.88rem !important; font-weight:600 !important; line-height:1.15 !important; margin:0 !important;}}
     .st-key-nav_folder_tile_nav_current [data-testid="stPageLink"] a {{background:{MENU_INK[dark][4]} !important;
         border-color:{MENU_INK[dark][5]};}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
@@ -7525,6 +7542,14 @@ SIDEBAR_NAV_VERSION = 10
 # D-286: the sources start folded; the documents are a folder at the end of the menu, not a section.
 FOLDED_BY_DEFAULT = {"fuentes"}
 FOLDER_TILE_BLOCK = "documentos"
+# D-287: the sources are a tile of their own beside the folder; their links open in a floating panel.
+SOURCES_TILE_BLOCK = "fuentes"
+TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK}
+SOURCES_TILE_SVG = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><ellipse cx="28" cy="10" rx="20" ry="6" '
+                    'fill="#5fd39b"/><path d="M8 10v28c0 3.3 9 6 20 6s20-2.7 20-6V10c0 3.3-9 6-20 6S8 13.3 8 10z" '
+                    'fill="#2fb57a"/><path d="M8 24c0 3.3 9 6 20 6s20-2.7 20-6" fill="none" stroke="#5fd39b" stroke-width="2"/>'
+                    '<circle cx="50" cy="38" r="10" fill="#1f8f5f"/><path d="M46 42l8-8M49 34h5v5" fill="none" stroke="#fff" '
+                    'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>')
 # A Finder-like folder, two blues, drawn once as an image the menu shows above «Documentos».
 FOLDER_TILE_SVG = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><path d="M3 9a5 5 0 0 1 5-5h15.5'
                    'a4 4 0 0 1 3 1.3L30 9h26a5 5 0 0 1 5 5v4H3z" fill="#5aa9ea"/><rect x="3" y="14" width="58" height="33" '
@@ -7541,13 +7566,13 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
     for key, title, pages in MENU_BLOCKS:
-        if key == FOLDER_TILE_BLOCK:
-            continue  # D-286: the folder lives in the footer, always in sight
+        if key in TILE_BLOCKS:
+            continue  # D-286, D-287: the folder and the sources live in the footer, always in sight
         open_key = f"nav_open_{key}"
         is_open = st.session_state.get(open_key, True)
         with st.sidebar.container(key=f"nav_block_{key}"):
             show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open)
-    show_sidebar_footer(current_window, lambda: show_folder_tile(windows_by_title, current_window, current_view))
+    show_sidebar_footer(current_window, lambda: show_footer_tiles(windows_by_title, current_window, current_view))
 
 
 SHOW_SOURCES_SCRIPT = r"""<script>
@@ -7560,6 +7585,18 @@ setTimeout(() => {
   if (hidden > 0) { menu.scrollBy({top: hidden, behavior: "smooth"}); }
 }, 200);
 </script>"""
+
+
+def show_footer_tiles(windows_by_title, current_window, current_view):
+    """The two large tiles of the footer (D-287): the documents folder and the data sources, side by side."""
+    with st.container(key="sidebar_tiles", horizontal=True, gap="small"):
+        show_folder_tile(windows_by_title, current_window, current_view)
+        with st.container(key="sources_tile"):
+            with st.popover(tr("Fuentes")):
+                st.markdown(f"**{tr('Fuentes de datos')}**")
+                for name, url in SOURCE_LINKS:
+                    st.markdown(buttons.build_link_html(tr(name), url, icon="external", variant="text", external=True),
+                                unsafe_allow_html=True)
 
 
 def show_folder_tile(windows_by_title, current_window, current_view):
@@ -7632,7 +7669,6 @@ def show_sidebar_footer(current_window=None, folder=None):
             st.markdown(build_sidebar_github_html(current_window == SECTION_RESOURCES),
                         unsafe_allow_html=True)
             show_language_switch()
-        st.caption(tr("Fuente: ODEPA · actualización automática cada martes."))
 
 
 # D-172: Streamlit reloads this file on each run but keeps the imported bi/* modules

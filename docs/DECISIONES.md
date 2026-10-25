@@ -2186,3 +2186,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** la carpeta de documentos más abajo y más grande, como una carpeta, y las fuentes plegadas por omisión.
 - **Decisión:** «Documentos» deja de ser una sección del menú y pasa al pie del menú, encima de «Apariencia», como una carpeta azul grande con su nombre: siempre a la vista, sin desplazar, y encendida con el borde de acento mientras hay un documento abierto. «Fuentes de datos» empieza plegada y se abre con un clic. Para dejar sitio, el selector de idioma pasa a la línea de «Apariencia» y GitHub. El menú se desplaza por encima del pie fijo: al abrir las fuentes, se mueve solo hasta que sus enlaces quedan a la vista, en cualquier alto de ventana (comprobado a 1024 × 700, 1280 × 650, 1366 × 600 y 1440 × 790).
 - **Pruebas:** `tests/test_dashboard.py`: el menú termina con la carpeta en el pie; las fuentes empiezan plegadas y un clic las abre.
+
+## D-287 · Las fuentes, un ícono propio junto a la carpeta
+
+- **Pedido del autor:** «Fuentes de datos» quedaba muy pequeño; mejor un ícono propio y grande como la carpeta de documentos.
+- **Decisión:** el pie del menú lleva dos fichas del mismo tamaño, lado a lado: la carpeta «Documentos» y «Fuentes», con un ícono de base de datos verde. Un clic en «Fuentes» abre un panel flotante con los tres archivos oficiales (ODEPA mayorista, ODEPA consumidor e IPC del INE), que se abren en una pestaña nueva; el panel no ocupa sitio en el menú, así que nada queda tapado en ninguna altura de ventana. La sección plegable «Fuentes de datos» y la línea «Fuente: ODEPA · actualización automática cada martes» salen del menú: la ficha las reemplaza.
+- **Pruebas:** `tests/test_dashboard.py::test_d118_*`: las fuentes son una ficha del pie con sus tres enlaces externos; el menú ya no tiene la sección plegable.

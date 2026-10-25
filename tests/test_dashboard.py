@@ -1230,7 +1230,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     toggles = {button.label for button in folder_buttons}
     # «Fuentes» (D-118): the two ODEPA datasets, a folder like every other section.
     # D-201: security has its own folder.
-    assert toggles == set(MENU_BLOCKS) | {'Fuentes de datos'}
+    assert toggles == set(MENU_BLOCKS)
     assert all(not button.help for button in folder_buttons)
     css = ' '.join(block.value for block in app.sidebar.markdown)
     assert 'border-left' not in dashboard.build_section_colors_css(True)  # no tree indent: a flat list
@@ -1270,21 +1270,16 @@ def test_d113_the_global_click_handler_only_forces_internal_links():
 
 @needs_database
 def test_d118_sources_is_its_own_folder_with_two_external_children():
-    """ODEPA is not GitHub: it gets its own sidebar folder, «Fuentes», with the
-    two datasets as external children in the same green as every other child."""
+    """ODEPA is not GitHub: the sources have their own place. D-287: a large tile in the footer, beside the documents
+    folder, whose floating panel holds the official files as external links."""
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
-    toggle = next(button for button in app.sidebar.button if str(button.key) == 'nav_toggle_fuentes')
-    # D-209, D-286: Fuentes starts folded; a click opens it.
-    assert toggle.label == 'Fuentes de datos'
-    folded = " ".join(block.value for block in app.sidebar.markdown)
-    assert 'class="nav-source-link"' not in folded
-    toggle.click().run()
+    assert not any(str(button.key) == 'nav_toggle_fuentes' for button in app.sidebar.button)
+    assert [element.label for element in app.sidebar.get('popover') if getattr(element, 'label', '') == 'Fuentes'] \
+        or 'Fuentes' in str([element.proto for element in app.sidebar.get('popover')])
     markup = " ".join(block.value for block in app.sidebar.markdown)
     for name, url in dashboard.SOURCE_LINKS:
-        assert f'class="nav-source-link" href="{url}"' in markup
-        assert name in markup
-    assert markup.count('target="_blank"') >= 2
-    assert 'nav-source-icon' in markup
+        assert f'href="{html.escape(url, quote=True)}"' in markup and name in markup
+    assert markup.count('target="_blank" rel="noopener noreferrer"') >= len(dashboard.SOURCE_LINKS)
 
 
 @needs_database
@@ -1549,13 +1544,13 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
     assert not app.exception
     assert not app.sidebar.selectbox
     toggles = [b.label for b in app.sidebar.button if str(b.key).startswith('nav_toggle_')]
-    assert toggles == list(MENU_BLOCKS) + ['Fuentes de datos']
+    assert toggles == list(MENU_BLOCKS)
     labels = [link.proto.label for link in app.sidebar.get('page_link')]
     # D-286: the documents folder closes the menu as a larger tile in the footer, always in sight.
     assert labels == [page for pages in MENU_BLOCKS.values() for page in pages] + ['Documentos']
     assert all(link.proto.icon for link in app.sidebar.get('page_link')[:-1])
     markup = " ".join(block.value for block in app.sidebar.markdown)
-    assert 'class="nav-source-link"' not in markup  # the sources start folded
+    assert 'class="nav-source-link"' not in markup  # the sources are a tile with a floating panel (D-287)
     # D-231: a flat menu: no card background, border, radius or shadow on the sections, only a hairline;
     # the current page has a faint fill and an accent bar; every page has its own sidebar glyph.
     for dark in (True, False):
