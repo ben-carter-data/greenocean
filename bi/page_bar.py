@@ -10,7 +10,7 @@ Pure functions: no Streamlit. bi/dashboard.py lays the Streamlit buttons around 
 """
 import html
 
-from bi import charts
+from bi import buttons, charts
 
 
 def esc(value):
@@ -48,8 +48,6 @@ def build_css(palette):
 .page-chip small {{ font-size:12px; color:{muted}; }}
 .page-chip em {{ font-style:normal; font-size:10.5px; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:{muted}; }}
 .page-chip b.rise {{ color:{rise}; }} .page-chip b.fall {{ color:{fall}; }}
-.page-bar-link {{ font-size:13px; font-weight:500; white-space:nowrap; color:{palette["accent"]} !important; text-decoration:none !important; }}
-.page-bar-link:hover {{ text-decoration:underline !important; }}
 .stApp .st-key-page_bar p {{ margin:0 !important; }}
 .stApp .st-key-page_bar button {{ min-height:30px !important; padding:2px 12px !important; }}
 .page-bar-updated {{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; font-size:12.5px; color:{muted}; }}
@@ -91,7 +89,7 @@ def build_terms_html(terms):
 
 def build_link_html(text, address, note):
     """A link to another page, inside the bar: what it opens says itself on hover."""
-    return f'<a class="page-bar-link" href="{esc(address)}" target="_self" title="{esc(note)}">{esc(text)}</a>'
+    return buttons.build_link_html(text, address, icon="arrow", size="compact", note=note)
 
 
 def build_updated_html(updated, loaded):

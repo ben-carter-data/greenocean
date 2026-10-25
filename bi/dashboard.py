@@ -33,7 +33,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
-from bi import (alerts, architecture, charts, control, data_browser, home_mockup, lag,  # noqa: E402
+from bi import (alerts, architecture, buttons, charts, control, data_browser, home_mockup, lag,  # noqa: E402
                 database_crossings, deployment, devops, monitoring, page_bar, served_database, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
@@ -1269,9 +1269,6 @@ def build_style_css(mode):
     .doc-source {{font-size:.85rem; margin:-4px 0 14px;}}
     .st-key-doc_actions .doc-source {{margin:0;}}
     .st-key-doc_actions {{margin:0 0 10px;}}
-    .doc-print {{font:inherit; font-size:.86rem; padding:7px 16px; border-radius:10px; cursor:pointer;
-        border:1px solid {palette['card_border']}; background:{palette['card']}; color:{palette['strong_text']};}}
-    .doc-print:hover {{border-color:{palette['accent']}; color:{palette['accent']};}}
     /* A sheet (step 6): centred, with margins on both sides, like a printed page. */
     .st-key-project_document {{max-width:900px; margin:6px auto 30px; padding:44px 60px 48px;
         background:{palette['card']}; border:1px solid {palette['card_border']}; border-radius:16px;
@@ -1566,7 +1563,7 @@ def apply_style(mode):
     for token, key in {"CARD": "card", "BORDER": "card_border", "INK": "strong_text",
                        "ACCENT": "accent", "BG": "background"}.items():
         finish = finish.replace("__" + token + "__", palette[key])
-    st.markdown(f"<style>{build_style_css(mode)}{finish}</style>", unsafe_allow_html=True)
+    st.markdown(f"<style>{build_style_css(mode)}{finish}{buttons.build_icon_css()}</style>", unsafe_allow_html=True)
 
 
 OVERVIEW_CLASS_BY_VIEW = {
@@ -3765,10 +3762,10 @@ CATALOG = [
 ]
 
 
-def build_external_link_html(text, address):
-    """A link that leaves the app: it says where it goes and opens a new tab (↗)."""
-    return (f'<a href="{html.escape(address)}" target="_blank" rel="noopener noreferrer">'
-            f'{html.escape(text)} ↗</a>')
+def build_external_link_html(text, address, variant="text"):
+    """A link that leaves the app, drawn as the shared component (D-281): it says where it goes and opens a new tab (↗)."""
+    return buttons.build_link_html(text, address, icon="github" if "GitHub" in text else "external", variant=variant,
+                                   external=True)
 
 
 def show_compact_page_header(title, description):
@@ -5927,7 +5924,7 @@ def show_security_page(mode):
                              "verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de "
                              "esconderlo, sino de las claves, que nunca aparecen.",
                   side=lambda: st.markdown(page_bar.build_link_html(
-                      f"{PAGE_SECURITY_PLAN} →", build_page_address(PAGE_SECURITY_PLAN),
+                      PAGE_SECURITY_PLAN, build_page_address(PAGE_SECURITY_PLAN),
                       "El procedimiento, los casos de prueba y los resultados de la última revisión."),
                       unsafe_allow_html=True, width="content"))
     # D-277: the drawing keeps its proportion and is never taller than what the window leaves.
@@ -6556,7 +6553,7 @@ def show_quality_evidence_dialog(key, mode, context):
         st.markdown("Esta auditoría corre con las pruebas automáticas en cada cambio del repositorio y en cada "
                     "carga semanal. Su código y su último resultado:")
         for label, address in quality_evidence.test_links(key):
-            st.markdown(build_link_html(f"{label} ↗", address), unsafe_allow_html=True)
+            st.markdown(build_external_link_html(label, address), unsafe_allow_html=True)
     else:
         st.info("Sin evidencia que mostrar: es un límite declarado, no una comprobación.")
     with st.container(horizontal=True, vertical_alignment="center", gap="small"):
@@ -6679,7 +6676,8 @@ PRINT_DOCUMENT_CSS = """<style>
 # «imprimir=<theme>», which prints it and comes back to the reader's theme.
 PRINT_PARAMETER = "imprimir"
 PRINT_THEME = charts.MODE_CORPORATE
-PRINT_BUTTON_HTML = r"""<button class="doc-print" type="button">Imprimir o guardar como PDF</button>
+PRINT_BUTTON_HTML = buttons.build_button_html("Imprimir o guardar como PDF", icon="print", variant="primary",
+                                              extra="doc-print") + r"""
 <script>
 document.querySelectorAll(".doc-print").forEach((button) => { button.onclick = () => {
   const light = "__LIGHT__";
@@ -6717,7 +6715,7 @@ def build_print_button_html(mode):
 def show_document_actions(mode, source_label, source_url):
     """The document's source in GitHub and the button that prints the page itself (D-248)."""
     with st.container(key="doc_actions", horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
-        st.markdown('<div class="doc-source">' + build_external_link_html(source_label, source_url) + '</div>',
+        st.markdown('<div class="doc-source">' + build_external_link_html(source_label, source_url, "secondary") + '</div>',
                     unsafe_allow_html=True)
         st.html(build_print_button_html(mode), unsafe_allow_javascript=True)
     st.markdown(PRINT_DOCUMENT_CSS, unsafe_allow_html=True)

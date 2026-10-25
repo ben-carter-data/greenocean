@@ -2121,3 +2121,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **PDF en hoja blanca:** desde un tema oscuro, «Imprimir o guardar como PDF» vuelve a abrir la página en el tema Corporativo, la imprime y regresa al tema del lector. El PDF tiene así el mismo aspecto desde cualquier tema;
   - **impresión limpia:** Chrome imprime una sombra difuminada como un rectángulo gris, así que en papel los diagramas no llevan sombras ni filtros. Una tabla larga se corta entre filas y repite su encabezado, en vez de dejar una página en blanco.
 - **Pruebas:** `tests/test_doc_diagrams.py::test_d280_*`: ningún diagrama de documento tiene un rectángulo de fondo que cubra su lienzo, en ninguno de los cuatro temas; los logos son planos; los archivos de logos no tienen fondo; el botón de impresión pasa al tema claro desde los oscuros, y en papel no hay sombras.
+
+## D-281 · Un solo componente para botones y enlaces
+
+- **Pedido del autor:** un solo componente fino y de aire moderno para las acciones de documento, «Anterior / Siguiente», los enlaces a GitHub, la impresión a PDF y los enlaces de las barras, legible en los cuatro temas.
+- **Decisión:**
+  - **definido una vez:** el aspecto vive en `bi/premium.css` (`.go-btn`): borde de 1 px, esquinas suaves, relleno casi transparente con un leve brillo de vidrio, ícono fino a la izquierda y, al pasar el cursor o con el foco del teclado, el borde y un halo en el color de acento del tema. `bi/buttons.py` escribe el marcado;
+  - **variantes y tamaños:** principal (imprimir), secundario (GitHub, barras) y de texto (enlaces a GitHub dentro de una página); compacto para las barras y normal para las páginas. La misma regla viste los enlaces de página que Streamlit dibuja para «Anterior / Siguiente»;
+  - **íconos como máscaras CSS:** `st.html` descarta el SVG en línea, así que cada ícono es una máscara pintada con el color del texto;
+  - **se retiran** los estilos sueltos del botón de impresión y del enlace de la barra.
+- **Pruebas:** `tests/test_buttons.py`: el componente se define una sola vez y no quedan estilos de enlace sueltos; cada variante y tamaño escribe el componente; las barras, los documentos y la impresión lo usan; cada ícono tiene su máscara; el texto, el acento y el borde cumplen el contraste AA en los cuatro temas.
