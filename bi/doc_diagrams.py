@@ -5,9 +5,17 @@ containers (SAD), the use cases and the real screens of the panel (PRD) and, in 
 """
 from bi import doc_views, security_plan
 
+# D-280: Chrome prints a blurred shadow as a grey rectangle; on paper the diagrams have no shadows or filters.
+PRINT_STYLE = "<style>@media print { *, *::before, *::after { box-shadow:none !important; filter:none !important; } }</style>"
+
+
+def for_print(builder):
+    return lambda mode: builder(mode).replace("</head>", PRINT_STYLE + "</head>", 1)
+
+
 # Marker → function(mode) returning one HTML document for st.iframe.
-DOC_DIAGRAMS = {name: builder for name, (builder, _) in doc_views.VIEWS.items()}
-DOC_DIAGRAMS.update(sop=security_plan.build_cycle_html, pruebas=security_plan.build_cases_html)
+DOC_DIAGRAMS = {name: for_print(builder) for name, (builder, _) in doc_views.VIEWS.items()}
+DOC_DIAGRAMS.update(sop=for_print(security_plan.build_cycle_html), pruebas=for_print(security_plan.build_cases_html))
 # Marker → height of its frame in the page, in pixels.
 HEIGHTS = {name: height for name, (_, height) in doc_views.VIEWS.items()}
 HEIGHTS.update(sop=440, pruebas=620)

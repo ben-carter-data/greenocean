@@ -2112,3 +2112,12 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **el Manual se dibuja como los demás documentos**, desde `docs/MANUAL.md`, con sus enlaces internos;
   - **los enlaces entre documentos** abren la página del documento en el panel, o el archivo en GitHub si aún no tiene página, y llegan a la sección exacta.
 - **Pruebas:** `tests/test_documents.py::test_d279_*`: la redacción, el encabezado, el índice, el historial contra el historial de git, los enlaces y sus secciones, el diccionario de datos contra la base servida y el plan de seguridad contra el código; `tests/test_project.py::test_d279_every_acronym_of_the_documents_is_in_the_glossary`. `tests/medicion/medir.cjs` mide por omisión a 1440 × 790 y 1920 × 1000. La suite completa pasa (666).
+
+## D-280 · Diagramas y logos de los documentos sin fondo; el PDF siempre en hoja blanca
+
+- **Pedido del autor:** que los diagramas de los documentos se integren con la hoja blanca del PDF y con el tema del panel, con los logos sin fondo y en su color propio, y que ningún diagrama parezca una foto pegada sobre un rectángulo negro.
+- **Decisión:**
+  - **logos planos:** en los diagramas de los documentos (contexto, contenedores, casos de uso, procedimiento y casos de seguridad) cada tecnología es su logo en su color, sin el disco iluminado. GitHub, cuyo logo es negro o blanco, toma el color del texto del tema. El núcleo del plan de seguridad es un borde con relleno translucido. Las vistas del panel (pipeline, mapa de seguridad, Monitoreo y Stack) conservan sus discos, como fueron aprobadas;
+  - **PDF en hoja blanca:** desde un tema oscuro, «Imprimir o guardar como PDF» vuelve a abrir la página en el tema Corporativo, la imprime y regresa al tema del lector. El PDF tiene así el mismo aspecto desde cualquier tema;
+  - **impresión limpia:** Chrome imprime una sombra difuminada como un rectángulo gris, así que en papel los diagramas no llevan sombras ni filtros. Una tabla larga se corta entre filas y repite su encabezado, en vez de dejar una página en blanco.
+- **Pruebas:** `tests/test_doc_diagrams.py::test_d280_*`: ningún diagrama de documento tiene un rectángulo de fondo que cubra su lienzo, en ninguno de los cuatro temas; los logos son planos; los archivos de logos no tienen fondo; el botón de impresión pasa al tema claro desde los oscuros, y en papel no hay sombras.

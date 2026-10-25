@@ -126,8 +126,11 @@ def build_case_modal(case):
     return build_modal(f"c-{case_id}", f"{case_id} · {short}", "Se repite en cada push y pull request.", body)
 
 
-def lock_mark(cx, cy, size):
-    return security_map.lock_mark(cx - size / 2, cy - size / 2, size)
+def lock_mark(cx, cy, size, color):
+    """The padlock of the plan as a flat mark in the accent color, with no disc (D-280)."""
+    return (f'<svg x="{cx - size / 2:.1f}" y="{cy - size / 2:.1f}" width="{size}" height="{size}" viewBox="0 0 72 72" '
+            f'aria-hidden="true"><rect x="22" y="33" width="28" height="21" rx="4" fill="{color}"/>'
+            f'<path d="M27 33v-6a9 9 0 0 1 18 0v6" fill="none" stroke="{color}" stroke-width="4.5"/></svg>')
 
 
 def place_logo(svg, x, y, size):
@@ -171,17 +174,19 @@ def build_cases_html(mode):
                         for line, line_y in zip(names, name_ys))
         chip = (f'<text x="{x}" y="{chip_y}" text-anchor="middle" font-size="15" fill="{muted}">'
                 f'<tspan font-weight="700" fill="{ink}">{esc(case_id)}</tspan> · {esc(owasp)}</text>')
-        logo = place_logo(doc_views.disc_logo("brand", tech), x - 32, y - 32, 64)
+        logo = place_logo(doc_views.flat_logo("brand", tech), x - 32, y - 32, 64)
         nodes.append(f'<a href="#c-{case_id}" aria-label="{esc(case_id)}: {esc(short)} ({esc(TECH_NAMES[tech])})">'
                      f'<title>{esc(case_id)} · {esc(TECH_NAMES[tech])} · {esc(attack)}</title>'
                      f'<circle class="node" cx="{x}" cy="{y}" r="{radius}" fill="{card}" stroke="{accent}" stroke-width="2"/>'
                      f'{logo}{chip}{label}</a>')
-    centre = (f'<defs><radialGradient id="plan-core" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="#4a8df0"/>'
-              f'<stop offset="1" stop-color="#0d3b96"/></radialGradient></defs>'
-              f'<circle cx="{cx}" cy="{cy}" r="96" fill="{accent}" fill-opacity=".14"/>'
-              f'<circle class="core" cx="{cx}" cy="{cy}" r="82" fill="url(#plan-core)"/>' + lock_mark(cx, cy - 14, 64)
-              + f'<text x="{cx}" y="{cy + 42}" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">Plan de pruebas</text>'
-              f'<text x="{cx}" y="{cy + 60}" text-anchor="middle" font-size="14" fill="#cfe0ff">{len(CASES)} casos · pytest</text>')
+    # D-280: the core is a border with a translucent fill, so it sits on the white sheet and on every theme.
+    # The card under it hides the lines that meet at its centre.
+    centre = (f'<circle cx="{cx}" cy="{cy}" r="96" fill="{accent}" fill-opacity=".08"/>'
+              f'<circle cx="{cx}" cy="{cy}" r="82" fill="{card}"/>'
+              f'<circle class="core" cx="{cx}" cy="{cy}" r="82" fill="{accent}" fill-opacity=".14" stroke="{accent}" '
+              f'stroke-width="2"/>' + lock_mark(cx, cy - 14, 64, accent)
+              + f'<text x="{cx}" y="{cy + 42}" text-anchor="middle" font-size="18" font-weight="700" fill="{ink}">Plan de pruebas</text>'
+              f'<text x="{cx}" y="{cy + 60}" text-anchor="middle" font-size="14" fill="{muted}">{len(CASES)} casos · pytest</text>')
     body = (f'<svg class="plan" viewBox="0 0 {width} {height}" role="img" aria-label="Los diez casos de prueba de seguridad" '
             f'font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">{"".join(lines)}{centre}{"".join(nodes)}</svg>'
             '<p class="note">Pulsa un caso para ver su ataque, su resultado esperado y la prueba que lo verifica.</p>'
@@ -220,7 +225,7 @@ def build_cycle_html(mode):
         if index < len(SOP_STEPS) - 1:
             path = orthogonal(centres[index], centres[index + 1], box_w / 2, box_h / 2)
             arrows.append(f'<path d="{path}" fill="none" stroke="{accent}" stroke-width="3" stroke-linejoin="miter" marker-end="url(#cy-head)"/>')
-        icon = place_logo(doc_views.disc_logo("brand", mark) if mark in doc_views.DISCS else quality_view.build_icon_svg(mark),
+        icon = place_logo(doc_views.flat_logo("brand", mark) if mark in doc_views.DISCS else quality_view.build_icon_svg(mark),
                           x - box_w / 2 + 12, y - 24, 48)
         steps.append(f'<a href="#p-{index}" aria-label="Paso {index + 1}: {esc(title)}"><title>{index + 1} · {esc(title)}: {esc(line)}</title>'
                      f'<rect class="node" x="{x - box_w / 2:.1f}" y="{y - box_h / 2:.1f}" width="{box_w}" height="{box_h}" rx="{box_h / 2}" '

@@ -6670,23 +6670,59 @@ PRINT_DOCUMENT_CSS = """<style>
   [data-testid="stMainBlockContainer"] { padding: 0 !important; max-width: none !important; zoom: 0.86; }
   .st-key-project_document { max-width: none !important; margin: 0 !important; box-shadow: none !important;
     padding: 40px 50px 44px !important; }
-  [data-testid="stIFrame"], table, figure { break-inside: avoid; }
+  [data-testid="stIFrame"], figure, tr { break-inside: avoid; }
+  thead { display: table-header-group; }
   h2, h3 { break-after: avoid; }
 }
 </style>"""
+# D-280: the PDF is always a white sheet. From a dark theme the button reopens the page in the light theme with
+# «imprimir=<theme>», which prints it and comes back to the reader's theme.
+PRINT_PARAMETER = "imprimir"
+PRINT_THEME = charts.MODE_CORPORATE
 PRINT_BUTTON_HTML = r"""<button class="doc-print" type="button">Imprimir o guardar como PDF</button>
 <script>
-document.querySelectorAll(".doc-print").forEach((button) => { button.onclick = () => window.print(); });
+document.querySelectorAll(".doc-print").forEach((button) => { button.onclick = () => {
+  const light = "__LIGHT__";
+  if (!light) { window.print(); return; }
+  const url = new URL(window.location.href);
+  url.searchParams.set("imprimir", url.searchParams.get("tema") || "");
+  url.searchParams.set("tema", light);
+  window.location.assign(url.toString());
+}; });
+</script>"""
+AUTO_PRINT_SCRIPT = r"""<script>
+(() => {
+  if (window.__documentPrinted) return;
+  window.__documentPrinted = true;
+  window.addEventListener("afterprint", () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("tema", url.searchParams.get("imprimir"));
+    url.searchParams.delete("imprimir");
+    window.location.replace(url.toString());
+  }, { once: true });
+  setTimeout(() => window.print(), 3000);
+})();
 </script>"""
 
 
-def show_document_actions(source_label, source_url):
+def is_dark_theme(mode):
+    return charts.get_palette(mode)["base"] == charts.BASE_DARK
+
+
+def build_print_button_html(mode):
+    """The print button; from a dark theme it prints the light version of the page (D-280)."""
+    return PRINT_BUTTON_HTML.replace("__LIGHT__", PRINT_THEME if is_dark_theme(mode) else "")
+
+
+def show_document_actions(mode, source_label, source_url):
     """The document's source in GitHub and the button that prints the page itself (D-248)."""
     with st.container(key="doc_actions", horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
         st.markdown('<div class="doc-source">' + build_external_link_html(source_label, source_url) + '</div>',
                     unsafe_allow_html=True)
-        st.html(PRINT_BUTTON_HTML, unsafe_allow_javascript=True)
+        st.html(build_print_button_html(mode), unsafe_allow_javascript=True)
     st.markdown(PRINT_DOCUMENT_CSS, unsafe_allow_html=True)
+    if st.query_params.get(PRINT_PARAMETER) in charts.THEMES:
+        st.html(AUTO_PRINT_SCRIPT, unsafe_allow_javascript=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -6712,7 +6748,7 @@ def show_project_document(mode, title):
     # The page header carries the title; the document's own H1 would repeat it.
     text = re.sub(r"\A# .*\n", "", text)
     show_compact_page_header(title, lead)
-    show_document_actions(f"docs/{filename} en GitHub", project.build_github_url(f"docs/{filename}"))
+    show_document_actions(mode, f"docs/{filename} en GitHub", project.build_github_url(f"docs/{filename}"))
     with st.container(key="project_document"):
         position = 0
         for marker in DOCUMENT_DIAGRAM.finditer(text):

@@ -1,5 +1,5 @@
-"""The diagrams of the project documents (D-205, D-210), drawn like the pipeline: 3D logos
-on lit discs, no boxes, orthogonal arrows with a chip that says what travels, and an
+"""The diagrams of the project documents (D-205, D-210): flat brand logos on a transparent
+background (D-280), no boxes, orthogonal arrows with a chip that says what travels, and an
 explanation on hover of every logo and every chip.
 
 Each build_* function returns one HTML document for st.iframe (gradients and hover tips do
@@ -24,7 +24,7 @@ def esc(value):
 
 
 def disc_logo(kind, name):
-    """A brand, a person or a source as a 3D mark: lit disc, gloss and drop shadow."""
+    """A brand, a person or a source as a 3D mark: lit disc, gloss and drop shadow (the panel views)."""
     if kind == "brand":
         if name in database_map.BRANDS:
             return database_map.brand_logo(name, "-actors")
@@ -47,6 +47,23 @@ def _disc(name, top, bottom, glyph, body, scale=1.58):
             f'<g fill="{glyph}" transform="translate({offset} {offset}) scale({scale})">{body}</g></svg>')
 
 
+# D-280: brands whose own color is black or white take the text color of the theme, as GitHub asks for its mark.
+INK_BRANDS = {"github"}
+
+
+def flat_logo(kind, name):
+    """A brand, a person or a source as its own mark in its own color, with no disc or background (D-280)."""
+    if kind == "source":
+        return database_map.source_logo(name)
+    if kind == "brand":
+        color = "currentColor" if name in INK_BRANDS else DISCS[name][1]
+        return (f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true">'
+                f'<g fill="{color}" transform="translate(9 9) scale(2.25)">{brand_icons.logo_body(name)}</g></svg>')
+    person = '<circle cx="18" cy="12" r="6"/><path d="M6 31c1-8 6-12 12-12s11 4 12 12z"/>'
+    return (f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true">'
+            f'<g fill="{PERSON_DISCS[name][1]}" transform="translate(9 9) scale(1.5)">{person}</g></svg>')
+
+
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
     ink, text, muted, card, border = (palette["strong_text"], palette["text"], palette["reference"],
@@ -60,7 +77,7 @@ html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 
 .edge {{ fill:none; stroke-width:2; stroke-linejoin:miter; opacity:.9; }}
 .node, .chip {{ position:absolute; outline:none; }}
 .node {{ width:130px; margin-left:-65px; margin-top:-{LOGO // 2}px; display:flex; flex-direction:column; align-items:center; text-align:center; }}
-.logo {{ display:block; width:{LOGO}px; height:{LOGO}px; filter:drop-shadow(0 14px 12px {shadow}); transition:transform .25s ease; }}
+.logo {{ display:block; width:{LOGO}px; height:{LOGO}px; color:{ink}; transition:transform .25s ease; }}
 .node:hover .logo, .node:focus .logo {{ transform:translateY(-5px) scale(1.05); }}
 .node b {{ margin-top:4px; font-weight:600; font-size:14px; color:{ink}; line-height:1.2; }}
 .chip {{ transform:translate(-50%,-50%); padding:2px 8px; border-radius:7px; background:{card}; border:1px solid currentColor;
@@ -98,7 +115,7 @@ def tip_html(x, y, parts):
 
 def build_node(kind, name, x, y, title, parts):
     return (f'<div class="node" tabindex="0" style="left:{x / WIDTH * 100:.3f}%;top:{y / HEIGHT * 100:.3f}%">'
-            f'{tip_html(x, y, parts)}{disc_logo(kind, name)}<b>{esc(title)}</b></div>')
+            f'{tip_html(x, y, parts)}{flat_logo(kind, name)}<b>{esc(title)}</b></div>')
 
 
 def build_chip(x, y, label, color, parts):
@@ -152,7 +169,7 @@ def build_context_html(mode):
               f'width:{width / WIDTH * 100:.3f}%;height:{height / HEIGHT * 100:.3f}%">'
               f'{tip_html(left + width / 2, top + height / 2, [("Qué es", "Un pipeline semanal y un panel de BI sobre los precios de alimentos de Chile."), ("Qué hace", "Integra los precios de ODEPA con el IPC del INE, revisa su calidad y publica un panel de solo lectura donde cada cifra se puede seguir hasta el archivo original.")])}'
               '<b>GreenOcean</b><span>Pipeline semanal y panel de BI sobre los precios de alimentos de Chile</span>'
-              '<div class="tools">' + "".join(f'<div class="tool">{disc_logo("brand", slug)}<small>{esc(name)}</small></div>'
+              '<div class="tools">' + "".join(f'<div class="tool">{flat_logo("brand", slug)}<small>{esc(name)}</small></div>'
                                               for slug, name in SYSTEM_TOOLS) + '</div></div>')
     edges, chips = [], []
     for path, layer, x, y, label, what in CONTEXT_EDGES:
@@ -260,7 +277,7 @@ def build_use_cases_html(mode):
 
 def actor_figure(x, y, name, label, ink, muted, brand=False):
     """An actor: its mark and its name under it."""
-    mark = disc_logo("brand" if brand else "person", name).replace('<svg class="logo" ', f'<svg x="{x - 30}" y="{y - 42}" width="60" height="60" ', 1)
+    mark = flat_logo("brand" if brand else "person", name).replace('<svg class="logo" ', f'<svg x="{x - 30}" y="{y - 42}" width="60" height="60" ', 1)
     lines = wrap(label, 16)
     names = "".join(f'<text x="{x}" y="{y + 32 + 14 * index}" text-anchor="middle" font-size="13" font-weight="600" '
                     f'fill="{ink}">{esc(line)}</text>' for index, line in enumerate(lines))
@@ -330,7 +347,7 @@ def build_containers_html(mode):
     boxes, tips = [], []
     for key, kind, x, y, w, h, name, technology, files, what in CONTAINERS:
         if kind == "person":
-            mark = disc_logo("person", "visitor" if key == "visitor" else "author").replace(
+            mark = flat_logo("person", "visitor" if key == "visitor" else "author").replace(
                 '<svg class="logo" ', f'<svg x="{x - 26}" y="{y - 10}" width="52" height="52" ', 1)
             boxes.append(f'<g class="c4-node" id="c-{key}" tabindex="0">{mark}<text class="c4-name" x="{x}" y="{y + 60}" '
                          f'text-anchor="middle">{esc(name)}</text></g>')
@@ -344,7 +361,8 @@ def build_containers_html(mode):
                 icon = storage_map.cylinder(x + 12, y + 10, 24, 34, slug, f"c4{key}", glyph_size=13)
                 name_x = x + 46
             elif kind == "app":
-                icon = storage_map.disc("streamlit" if key == "panel" else "python", x + 10, y + 10, 32, f"-c4{key}")
+                icon = flat_logo("brand", "streamlit" if key == "panel" else "python").replace(
+                    '<svg class="logo" ', f'<svg x="{x + 10}" y="{y + 10}" width="32" height="32" ', 1)
                 name_x = x + 48
             lines = [f'<text class="c4-name" x="{name_x}" y="{y + 31}">{esc(name)}</text>']
             line_y = y + 31 if kind == "external" else y + 60

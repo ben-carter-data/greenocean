@@ -41,9 +41,10 @@ def test_d205_each_view_is_one_html_document_without_script(name, mode):
 
 def test_d242_the_context_view_is_the_system_as_one_box_with_its_people_and_external_systems():
     page = doc_diagrams.DOC_DIAGRAMS["contexto"](charts.MODE_DARK)
-    # 3D logos on lit discs; the system is one box that names the tools it is built with (D-249), in the order of
-    # its pipeline, but draws none of its parts: those are the next views.
-    assert page.count('class="logo"') == 6 + len(doc_views.SYSTEM_TOOLS) and "radialGradient" in page and 'class="zone"' not in page
+    # Flat logos without discs (D-280); the system is one box that names the tools it is built with (D-249), in the
+    # order of its pipeline, but draws none of its parts: those are the next views.
+    assert page.count('class="logo"') == 6 + len(doc_views.SYSTEM_TOOLS) and "radialGradient" not in page
+    assert 'class="zone"' not in page
     assert [name for _, name in doc_views.SYSTEM_TOOLS] == ["Python", "SQLite", "Parquet", "dbt", "DuckDB", "Streamlit"]
     assert page.count('class="system"') == 1 and "<b>GreenOcean</b>" in page
     assert page.count('class="chip"') == len(doc_views.CONTEXT_EDGES) == 6
@@ -180,3 +181,59 @@ def test_d260_each_case_shows_the_logo_of_its_technology_and_every_line_turns_at
         for d in lines:
             assert re.fullmatch(r"M[\d.]+ [\d.]+( [HV][\d.]+)+", d), d
     assert len(re.findall(r'<path d="M[^"]*" fill="none"[^>]*marker-end="url\(#cy-head\)"', cycle)) == 4
+
+
+# D-280: the document diagrams have no background; they sit on the white sheet of the PDF and on every theme.
+def filled_canvas_rects(page):
+    """The rectangles that fill at least 95 % of the canvas of their SVG, with a fill that is not none."""
+    found = []
+    for svg in re.finditer(r'<svg[^>]*viewBox="[\d.-]+ [\d.-]+ ([\d.]+) ([\d.]+)"[^>]*>(.*?)</svg>', page, re.DOTALL):
+        width, height = float(svg.group(1)), float(svg.group(2))
+        for rect in re.finditer(r"<rect\b([^>]*)>", svg.group(3)):
+            attributes = dict(re.findall(r'([\w-]+)="([^"]*)"', rect.group(1)))
+            fill = attributes.get("fill", "black")
+            try:
+                size = float(attributes.get("width", 0)), float(attributes.get("height", 0))
+            except ValueError:
+                continue
+            if fill not in ("none", "transparent") and size[0] >= .95 * width and size[1] >= .95 * height:
+                found.append(rect.group(0))
+    return found
+
+
+@pytest.mark.parametrize("theme", charts.THEMES)
+@pytest.mark.parametrize("name", sorted(doc_diagrams.DOC_DIAGRAMS))
+def test_d280_no_document_diagram_has_a_background(name, theme):
+    page = doc_diagrams.DOC_DIAGRAMS[name](theme)
+    assert not filled_canvas_rects(page), name
+    for rule in re.findall(r"html, ?body ?\{([^}]*)\}", page):
+        assert "background:transparent" in rule.replace(" ", ""), (name, rule)
+
+
+@pytest.mark.parametrize("name", ["contexto", "contenedores", "casos", "pruebas", "sop"])
+def test_d280_the_document_logos_are_flat_marks_in_their_own_color(name):
+    page = doc_diagrams.DOC_DIAGRAMS[name](charts.MODE_CORPORATE)
+    assert 'fill="url(#disc-' not in page and "-actors" not in page, name
+
+
+def test_d280_the_logo_files_have_no_background():
+    for path in (Path(doc_views.__file__).with_name("assets") / "logos").glob("*.svg"):
+        text = path.read_text(encoding="utf-8")
+        assert "<rect" not in text and "background" not in text, path.name
+    assert doc_views.flat_logo("brand", "github").count('fill="currentColor"') == 1  # black on white, white on dark
+
+
+def test_d280_the_pdf_is_a_white_sheet_in_every_theme():
+    from bi import dashboard
+    for theme in charts.THEMES:
+        button = dashboard.build_print_button_html(theme)
+        light = dashboard.PRINT_THEME if dashboard.is_dark_theme(theme) else ""
+        assert f'const light = "{light}";' in button, theme
+    assert not dashboard.is_dark_theme(dashboard.PRINT_THEME)
+    script = dashboard.AUTO_PRINT_SCRIPT.split("<script>")[1].split("</script>")[0]
+    assert "window.print()" in script and "afterprint" in script and "<" not in script
+
+
+def test_d280_on_paper_the_diagrams_have_no_shadows():
+    for name, builder in doc_diagrams.DOC_DIAGRAMS.items():
+        assert doc_diagrams.PRINT_STYLE in builder(charts.MODE_CORPORATE), name
