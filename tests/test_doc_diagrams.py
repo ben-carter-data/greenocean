@@ -7,7 +7,7 @@ import pytest
 from bi import charts, doc_diagrams, doc_views
 
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
-DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "SEGURIDAD.md"]
+DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md", "MANUAL.md", "GLOSARIO.md", "INDICE_DECISIONES.md"]
 MARKER = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 
 
@@ -66,7 +66,9 @@ def test_d242_the_context_view_is_the_system_as_one_box_with_its_people_and_exte
 
 
 def test_d210_the_weak_views_are_gone():
-    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups", "sop", "pruebas"}
+    # D-289: the figures of bi/doc_figures.py joined the views; nothing else is a document diagram.
+    from bi import doc_figures
+    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups", "sop", "pruebas"} | set(doc_figures.FIGURES)
 
 
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
@@ -124,7 +126,7 @@ def test_d247_every_view_a_document_links_to_is_a_page_of_the_menu():
 def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architecture_uses_them():
     from bi import security_map, security_plan
     root = Path(__file__).resolve().parent.parent
-    text = (DOCS_DIR / "SEGURIDAD.md").read_text(encoding="utf-8")
+    text = (DOCS_DIR / "PLAN_PRUEBAS.md").read_text(encoding="utf-8")
     assert [case[0] for case in security_plan.CASES] == [f"S-{n:02d}" for n in range(1, 11)]
     for case_id, short, attack, expected, owasp, tests in security_plan.CASES:
         assert owasp in security_map.OWASP or owasp == "—", case_id

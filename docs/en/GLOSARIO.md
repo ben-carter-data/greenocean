@@ -4,25 +4,44 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 1.0 |
+| Version | 2.0 |
 | Date | 2026-10-25 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Define once the acronyms and terms used by the panel and the documents. |
 | Audience | Every reader of the panel and of the documentation. |
-| Related documents | [PRD](PRD.md) · [SAD](SAD.md) · [ADR](ADR.md) · [Data Dictionary](DICCIONARIO_DATOS.md) |
+| Related documents | [PRD](PRD.md) · [SAD](SAD.md) · [ADR](ADR.md) · [Test and Security Plan](PLAN_PRUEBAS.md) |
 
 ## Contents
 
-1. [Terms](#1-terms)
-2. [Version history](#2-version-history)
+1. [In summary](#1-in-summary)
+2. [Terms](#2-terms)
+3. [Version history](#3-version-history)
 
-## 1. Terms
+## 1. In summary
 
-The «Where it appears» column names the pages of the panel where each term is used; «—» means it appears only in the documents.
+This glossary defines once each technical word of the panel and the documents. The three diagrams show how they relate: the path of a figure, from the row ODEPA publishes to the alert of the panel; the layers the data goes through, and the actors that take part.
+
+[[diagrama:terminos_cifra]]
+
+[[diagrama:terminos_capas]]
+
+[[diagrama:terminos_actores]]
+
+## 2. Terms
+
+The terms are ordered by theme, from what is read in the panel to the documents. The column «Where it appears» names the pages of the panel that use each term; «—» means it appears only in the documents.
 
 | Acronym or term | Meaning | Where it appears | Theme |
 |---|---|---|---|
+| KPI | Key performance indicator: each figure that measures something of the business. | Weekly summary, Prices and inflation | Indicators |
+| BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
+| RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
+| Price alert | A weekly change that is unusual for a product and of at least 10 %. | Weekly summary | Indicators |
+| Real price | A price expressed in pesos of the last published month of the CPI. | Prices and inflation | Indicators |
+| Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | Prices and inflation | Indicators |
+| Quality dimension | An aspect of quality that is measured: completeness, timeliness, validity, uniqueness, consistency and accuracy. | Quality and audit | Indicators |
+| DAMA-DMBOK | Data management guide of DAMA International (*Data Management Body of Knowledge*); the quality dimensions come from it. | — | Indicators |
 | ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Weekly summary, Pipeline and lineage | Sources |
 | INE | Chile's National Statistics Institute (*Instituto Nacional de Estadísticas*). It publishes the food CPI. | Prices and inflation, Pipeline and lineage | Sources |
 | CPI (IPC) | Consumer price index (*índice de precios al consumidor*); here, the «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division published by the INE. | Prices and inflation | Sources |
@@ -56,22 +75,14 @@ The «Where it appears» column names the pages of the panel where each term is 
 | Parquet | Open, compressed, columnar file format. | Pipeline and lineage | Database |
 | Git LFS | Git extension for large files (*Large File Storage*), which keeps them outside the history. | — | Database |
 | ISO | International Organization for Standardization; here, the ISO week (Monday to Sunday, numbered according to ISO 8601) and the dates in YYYY-MM-DD format. | — | Database |
-| KPI | Key performance indicator: each figure that measures something of the business. | Weekly summary, Prices and inflation | Indicators |
-| BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
-| RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
-| Price alert | A weekly change that is unusual for a product and of at least 10 %. | Weekly summary | Indicators |
-| Real price | A price expressed in pesos of the last published month of the CPI. | Prices and inflation | Indicators |
-| Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | Prices and inflation | Indicators |
-| Quality dimension | An aspect of quality that is measured: completeness, timeliness, validity, uniqueness, consistency and accuracy. | Quality and audit | Indicators |
-| DAMA-DMBOK | Data management guide of DAMA International (*Data Management Body of Knowledge*); the quality dimensions come from it. | — | Indicators |
-| API | Interface through which one program talks to another; the panel uses it to query GitHub. | Operations center | Connections |
-| HTTPS | Encrypted web connection. | Pipeline and lineage, Operations center (Deployment) | Connections |
-| URL | Address of a page or a file on the web. | — | Connections |
-| UTC | Coordinated universal time; the job runs at 12:00 UTC: 09:00 in Chile in summer time and 08:00 in winter. | Operations center | Connections |
 | Token | Credential that lets the panel query GitHub and launch the workflow; it is never shown. | Operations center | Security |
 | Control code | Secret that opens the author's access in the panel. | Operations center | Security |
 | OWASP | Open Worldwide Application Security Project; its Top 10 list classifies the security risks of web applications. | Security architecture | Security |
 | ASCII | Basic English character set, without ñ or accents. | — | Security |
+| API | Interface through which one program talks to another; the panel uses it to query GitHub. | Operations center | Connections |
+| HTTPS | Encrypted web connection. | Pipeline and lineage, Operations center (Deployment) | Connections |
+| URL | Address of a page or a file on the web. | — | Connections |
+| UTC | Coordinated universal time; the job runs at 12:00 UTC: 09:00 in Chile in summer time and 08:00 in winter. | Operations center | Connections |
 | PRD | Product Requirements Document. | — | Documents |
 | SAD | Software Architecture Document. | — | Documents |
 | ADR | Architecture Decision Record. | — | Documents |
@@ -83,8 +94,9 @@ The «Where it appears» column names the pages of the panel where each term is 
 | PDF | Document format for printing; the PDF of each document is its page of the panel printed by the browser. | — | Documents |
 | Runbook | Operations manual: what to do about each failure, step by step. | — | Documents |
 
-## 2. Version history
+## 3. Version history
 
 | Version | Date | Changes |
 |---|---|---|
 | 1.0 | 2026-10-25 | First version as a document of its own, from the glossary of the project guide (D-279, professional documentation) |
+| 2.0 | 2026-10-25 | A summary with three diagrams and the terms ordered by theme, from the indicators (D-290, documents for every reader) |

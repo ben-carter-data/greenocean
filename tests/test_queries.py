@@ -155,5 +155,5 @@ def test_every_github_link_of_the_panel_points_to_a_file_in_the_repository():
     assert paths
     for path in paths:
         assert (root / path).exists(), path
-    for name in ("PRD.md", "SAD.md", "ADR.md", "SEGURIDAD.md", "DECISIONES.md"):
+    for name in ("PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md", "DECISIONES.md"):
         assert (root / "docs" / name).exists(), name

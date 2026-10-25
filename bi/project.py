@@ -159,7 +159,7 @@ GLOSSARY_FILE = DOCS_DIR / "GLOSARIO.md"
 
 def read_glossary():
     """The rows of the common glossary, docs/GLOSARIO.md (D-279)."""
-    return parse_markdown_table(read_section(read_document(GLOSSARY_FILE), "1. Términos"))
+    return parse_markdown_table(read_section(read_document(GLOSSARY_FILE), "2. Términos"))
 
 
 def read_design_table(heading):

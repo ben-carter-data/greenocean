@@ -1,4 +1,4 @@
-"""«Plan de pruebas de seguridad» (D-258, D-260): the ten test cases and the procedure that runs them, as two clickable diagrams.
+"""«Plan de pruebas y seguridad» (D-258, D-260, D-290): the ten test cases and the procedure that runs them, as two clickable diagrams.
 
 The cases S-01 to S-10 live here and only here (the document used to hold them in a long table): each is a node around the
 lock of the plan, with the logo of the technology it attacks, and a click opens its attack, its expected result, its OWASP Top 10 (2021) category, the threat it

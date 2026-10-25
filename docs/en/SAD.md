@@ -4,33 +4,33 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 2.0 |
+| Version | 3.0 |
 | Date | 2026-10-25 |
 | Status | Current |
 | Owner | The author |
-| Purpose | Describe how the system is built, view by view, and why it has that shape. |
-| Audience | Architecture, data engineering, operations and technical review. |
-| Related documents | [Product Requirements Document (PRD)](PRD.md) · [Architecture Decision Records (ADR)](ADR.md) · [Data Dictionary](DICCIONARIO_DATOS.md) · [Security Test Plan](SEGURIDAD.md) · [Glossary](GLOSARIO.md) |
+| Purpose | Explain how GreenOcean is built, how it runs each week, where its data lives and why it has that shape. |
+| Audience | Architecture, data engineering, operations, management and technical review. |
+| Related documents | [Product Requirements Document (PRD)](PRD.md) · [Architecture Decision Records (ADR)](ADR.md) · [Test and Security Plan](PLAN_PRUEBAS.md) · [Glossary](GLOSARIO.md) |
 
 ## Contents
 
-1. [Introduction and goals](#1-introduction-and-goals)
-2. [Constraints](#2-constraints)
-3. [Context and scope](#3-context-and-scope)
-4. [Solution strategy](#4-solution-strategy)
-5. [Building block view](#5-building-block-view)
-6. [Runtime view](#6-runtime-view)
-7. [Deployment view](#7-deployment-view)
-8. [Crosscutting concepts](#8-crosscutting-concepts)
-9. [Architecture decisions](#9-architecture-decisions)
-10. [Quality requirements](#10-quality-requirements)
+1. [In summary](#1-in-summary)
+2. [Context](#2-context)
+3. [Containers](#3-containers)
+4. [The load of each week](#4-the-load-of-each-week)
+5. [The panel when it opens](#5-the-panel-when-it-opens)
+6. [The data](#6-the-data)
+7. [Deployment](#7-deployment)
+8. [Quality, security and observability](#8-quality-security-and-observability)
+9. [Capacity and growth](#9-capacity-and-growth)
+10. [Constraints and decisions](#10-constraints-and-decisions)
 11. [Risks and technical debt](#11-risks-and-technical-debt)
 12. [Glossary](#12-glossary)
 13. [Version history](#13-version-history)
 
-## 1. Introduction and goals
+## 1. In summary
 
-GreenOcean is a weekly pipeline and a read-only panel on food prices in Chile. The requirements are in the [PRD](PRD.md). This document focuses on how they are met. The quality goals that weigh most on the architecture are three:
+GreenOcean is a weekly pipeline and a read-only panel on food prices in Chile. Its architecture pursues three goals, in this order:
 
 | Priority | Quality goal | What it means here |
 |---|---|---|
@@ -38,33 +38,15 @@ GreenOcean is a weekly pipeline and a read-only panel on food prices in Chile. T
 | 2 | Reliability of publication | A load with errors never replaces the served database |
 | 3 | Zero cost and minimal maintenance | Only permanent free services and no servers of its own |
 
-## 2. Constraints
+To reach them, the load rebuilds the whole history every Tuesday from the official files, checks it along two independent paths and only then replaces the database the panel reads. Everything runs on free services, with no servers of its own.
 
-| Constraint | Origin |
-|---|---|
-| Only free services without expiry | [ADR-02 · Orchestrate with GitHub Actions and publish on Streamlit Community Cloud](ADR.md#adr-02--orchestrate-with-github-actions-and-publish-on-streamlit-community-cloud) and [ADR-31 · Do not use a cloud data warehouse](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse) |
-| Only official, open sources | [ADR-01 · Use only the official files of ODEPA and the INE](ADR.md#adr-01--use-only-the-official-files-of-odepa-and-the-ine) |
-| No figure is invented or interpolated, and the history is not deleted | Project rule |
-| Python 3.11 or 3.12 for the pipeline with dbt | dbt Core compatibility |
-| Public repository | Open portfolio; security depends on the secrets, not on hidden code |
-
-## 3. Context and scope
+## 2. Context
 
 [[diagrama:contexto]]
 
 The system reads two public sources, ODEPA and the INE, and relies on two free services: GitHub keeps the code and the served database and runs the load; Streamlit Community Cloud publishes the panel. The visitor only reads the panel. The administrator maintains the code and the secrets.
 
-## 4. Solution strategy
-
-| Principle | How it is applied | Decision |
-|---|---|---|
-| Rebuild everything on each load | Every Tuesday the whole history is recomputed from the official files; repeating a load never duplicates data | [ADR-10](ADR.md#adr-10--rebuild-everything-on-each-load) |
-| Publish only what is validated | The served database changes only if all the tests pass | [ADR-11](ADR.md#adr-11--publish-only-if-the-tests-pass) |
-| Check along a second path | A Python ETL, independent of dbt, computes the same prices | [ADR-34](ADR.md#adr-34--separate-the-dbt-working-database-the-database-the-panel-reads-and-the-backup) |
-| Declarative, tested layers | Bronze in Parquet; staging, intermediate and marts in dbt Core on DuckDB | [ADR-30](ADR.md#adr-30--parquet-dbt-core-and-duckdb) |
-| A single published copy | The served database lives in a release that each load replaces | [ADR-35](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) |
-
-## 5. Building block view
+## 3. Containers
 
 [[diagrama:contenedores]]
 
@@ -78,11 +60,11 @@ The system has two applications and three data stores:
 | Backup | SQLite (`etl/datos.db`) | The same prices computed without dbt, for the parity test; rebuilt on the machine of each load and not published |
 | Web panel | Streamlit, Python | Shows the indicators and the documents, and offers the SQL studio; reads the served database read-only and, with the control code, launches the load through the GitHub API |
 
-The component view (level 3 of the C4 model) is omitted: the modules of `bi/` are not deployed separately, and the load is already described step by step in section 6 and in the dbt lineage.
+## 4. The load of each week
 
-## 6. Runtime view
+[[diagrama:secuencia_carga]]
 
-Each step of the weekly load starts only if the previous one ended well:
+Each step starts only if the previous one ended well:
 
 | Step | What happens |
 |---|---|
@@ -96,9 +78,176 @@ Each step of the weekly load starts only if the previous one ended well:
 | 8 | The machine replaces the database in the release and pushes its pointer, `etl/datos.version`, to the `main` branch; the panel detects the new pointer, downloads the database and verifies its fingerprint before using it |
 | 9 | The weekly report is published as an issue of the repository |
 
-If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass)). The run and its steps can be followed in the «Operations» tab of [[vista:Operations center]]; the administrator can also launch the load from the panel, with the control code.
+If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass)). The run and its steps can be followed in the «Operations» tab of [[vista:Operations center]].
 
-## 7. Deployment view
+## 5. The panel when it opens
+
+[[diagrama:secuencia_panel]]
+
+When it opens, the panel compares its database with the pointer of the `main` branch. If its copy is older, it downloads the database from the «base-actual» release and uses it only if its SHA-256 fingerprint matches. Then it opens the database read-only: no page can change a value. If GitHub does not respond, the panel carries on with the database it already has.
+
+## 6. The data
+
+[[diagrama:capas]]
+
+Landing keeps the rows as they arrive; bronze is their literal copy in Parquet, by source and year; staging normalizes types and text; intermediate applies the business rules (units, weeks, rejections); the marts form the star schema the panel reads. The journey and the lineage are in [[vista:Pipeline and lineage]], and the model, in [[vista:Data model]]. Dates are stored as ISO text (`YYYY-MM-DD`).
+
+### 6.1 Tables of the served database
+
+| Table | Role | Content |
+|---|---|---|
+| `weekly_price` | Facts | One price per week, product, region, channel and unit |
+| `dim_product` | Dimension | Product, variety, quality and family |
+| `dim_region` | Dimension | Regions with prices |
+| `dim_channel` | Dimension | Sales channels and their source |
+| `dim_date` | Dimension | One row per week, with no gaps |
+| `ipc_monthly` | CPI | Monthly food CPI as a single series |
+| `ipc_weekly` | CPI | Deflator of each week |
+| `ine_ipc_source` | CPI | CPI rows as they were read from the INE |
+| `etl_run` | Audit | One row per published load |
+| `rejection` | Audit | Rows rejected by the last load, with their reason |
+| `dbt_node` | Lineage | Models, sources and tests of the last `dbt build` |
+| `dbt_result` | Lineage | Result of each model and test of the last `dbt build` |
+
+### 6.2 Facts and dimensions
+
+### weekly_price
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `week_start` | VARCHAR | FK → `dim_date` | Monday of the week |
+| `product_id` | BIGINT | FK → `dim_product` | Product, variety and quality |
+| `region_id` | INTEGER | FK → `dim_region` | Region |
+| `channel_id` | BIGINT | FK → `dim_channel` | Sales channel |
+| `normalized_unit` | VARCHAR | | Normalized unit: `kilo`, `litro` or `unidad`; empty if it cannot be converted |
+| `price` | DOUBLE | | Weekly price in nominal pesos, per normalized unit |
+| `volume` | DOUBLE | | Volume reported by the source, when it exists |
+| `observation_count` | BIGINT | | Number of quotes that make up the price of the week |
+| `flag` | VARCHAR | | Empty if the price enters the indicators; `ATIPICO` (outlier) or `UNIDAD_NO_CONVERTIBLE` (unit that cannot be converted) if it stays out of them |
+
+### dim_product
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `product_id` | BIGINT | PK | Product identifier |
+| `product_group` | VARCHAR | | Food family |
+| `product` | VARCHAR | | Product |
+| `variety` | VARCHAR | | Variety |
+| `quality` | VARCHAR | | Quality |
+
+### dim_region
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `region_id` | INTEGER | PK | Region identifier |
+| `region` | VARCHAR | | Name of the region |
+
+### dim_channel
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `channel_id` | BIGINT | PK | Channel identifier |
+| `channel` | VARCHAR | | Sales channel, for example «Supermercado» or «Feria libre» |
+| `source` | VARCHAR | | ODEPA source: `wholesale` or `consumer` |
+
+### dim_date
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `week_start` | VARCHAR | PK | Monday of the week |
+| `iso_year` | BIGINT | | ISO year of the week |
+| `iso_week` | BIGINT | | ISO week number |
+| `month` | BIGINT | | Month of the Monday |
+| `month_name` | VARCHAR | | Name of the month, in Spanish |
+| `year` | BIGINT | | Year of the Monday |
+| `season` | VARCHAR | | Season in Chile: `verano`, `otoño`, `invierno` or `primavera` (summer, autumn, winter or spring) |
+
+### 6.3 CPI
+
+**Real prices.** Each week takes the food CPI of the month of its Monday; real prices are expressed in pesos of the last published month ([ADR-33 · Compute real prices with the INE food CPI](ADR.md#adr-33--compute-real-prices-with-the-ine-food-cpi)).
+
+### ipc_monthly
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `year` | INTEGER | PK (with `month`) | Year |
+| `month` | INTEGER | PK (with `year`) | Month |
+| `food_index` | DOUBLE | | Food CPI, base 2023 = 100 |
+| `origin` | VARCHAR | | Series of origin: the 2023 base or the spliced series, linked in January 2024 |
+
+### ipc_weekly
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `week_start` | VARCHAR | PK, FK → `dim_date` | Monday of the week |
+| `ipc_year` | INTEGER | | Year of the CPI used for that week |
+| `ipc_month` | INTEGER | | Month of the CPI used for that week |
+| `food_index` | DOUBLE | | Food CPI of that month |
+| `reference_year` | INTEGER | | Year of the last published month, to which prices are brought |
+| `reference_month` | INTEGER | | Last published month |
+| `real_factor` | DOUBLE | | Factor that turns a nominal price of the week into pesos of the reference month |
+| `provisional` | BOOLEAN | | True if the week is after the last published month |
+
+### ine_ipc_source
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `file` | VARCHAR | | INE file of origin |
+| `year` | VARCHAR | | Year, as the INE publishes it |
+| `month` | VARCHAR | | Month, as the INE publishes it |
+| `index_value` | VARCHAR | | Index value, as the INE publishes it |
+| `monthly_change` | VARCHAR | | Monthly change, as the INE publishes it |
+
+### 6.4 Audit and lineage
+
+### etl_run
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `run_id` | INTEGER | PK | Number of the load |
+| `started_at` | VARCHAR | | Start of the load, in UTC |
+| `status` | VARCHAR | | Status: `LOADED` for a published load |
+| `rows_read` | INTEGER | | Rows read from ODEPA |
+| `rows_loaded` | INTEGER | | Rows loaded |
+| `rows_rejected` | INTEGER | | Rows rejected; read = loaded + rejected |
+| `message` | VARCHAR | | Message of the load, if any |
+
+### rejection
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `run_id` | INTEGER | FK → `etl_run` | Load that rejected the row |
+| `source` | VARCHAR | | Source: `wholesale` or `consumer` |
+| `reason` | VARCHAR | | Reason for the rejection, for example `NON_POSITIVE_PRICE` (zero or negative price) |
+| `original_row` | JSON | | The row as it arrived |
+
+### dbt_node
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `unique_id` | VARCHAR | PK | Identifier of the node in dbt |
+| `name` | VARCHAR | | Name of the model, the source or the test |
+| `resource_type` | VARCHAR | | `model`, `source` or `test` |
+| `layer` | VARCHAR | | Layer: `bronze`, `staging`, `intermediate` or `marts`; empty for the tests |
+| `materialized` | VARCHAR | | How the model is materialized |
+| `depends_on` | VARCHAR | | Nodes it depends on |
+| `test_type` | VARCHAR | | Type of test, for the tests |
+| `column_name` | VARCHAR | | Column it tests, if any |
+| `description` | VARCHAR | | Description of the node in the dbt project |
+
+### dbt_result
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `unique_id` | VARCHAR | FK → `dbt_node` | Node executed |
+| `status` | VARCHAR | | Result: `success` for a model built, `pass` for a test passed |
+| `execution_time` | DOUBLE | | Duration in seconds |
+| `failures` | INTEGER | | Rows that do not meet the test |
+| `generated_at` | VARCHAR | | Date of the `dbt build` |
+
+## 7. Deployment
+
+[[diagrama:despliegue]]
 
 | Piece | Where it runs | Detail |
 |---|---|---|
@@ -108,25 +257,17 @@ If a step fails, the following ones do not run and the served database does not 
 | Panel | Streamlit Community Cloud, from `main` | Keeps the secrets: the GitHub token and the control code |
 | Landing (`etl/raw.db`) | The author's computer and the machine of each load | Not versioned |
 
-The deployment diagram, with the live status of each piece, is in the «Deployment» tab of [[vista:Operations center]]; the path of a change to production, in its «CI/CD» tab.
+The diagram with the live status of each piece is in the «Deployment» tab of [[vista:Operations center]]; the path of a change to production, in its «CI/CD» tab.
 
-## 8. Crosscutting concepts
-
-**Data layers.** Landing keeps the rows as they arrive; bronze is their literal copy in Parquet, by source and year; staging normalizes types and text; intermediate applies the business rules (units, weeks, rejections); the marts form the star schema the panel reads. The journey and the lineage are in [[vista:Pipeline and lineage]]; the tables and their keys, in [[vista:Data model]] and in the [Data Dictionary](DICCIONARIO_DATOS.md).
-
-**Real prices.** Each week takes the food CPI of the month of its Monday; real prices are expressed in pesos of the last published month ([ADR-33 · Compute real prices with the INE food CPI](ADR.md#adr-33--compute-real-prices-with-the-ine-food-cpi)).
+## 8. Quality, security and observability
 
 **Quality.** Three gates: the file (did it arrive complete and on time?), each row (is it valid?) and the database (is it consistent, and did it pass its tests?). Eleven indicators, in five dimensions, are measured on each load against their threshold; accuracy, the sixth dimension, is measured with four controls that compare the figures with the source. The detail is in [[vista:Quality and audit]].
 
 **Observability.** Each load leaves a trace in four places: `etl_run` (rows read, loaded and rejected by each published load), `dbt_result` (the result of each model and test), the GitHub Actions log (each step, including the ones that fail) and the email GitHub sends the author if the load fails. The «Monitoring» tab of [[vista:Operations center]] brings them together.
 
-**Security.** The threats, their controls and the tests that verify them are in [[vista:Security architecture]]; the verification procedure, in the [Security Test Plan](SEGURIDAD.md).
+**Security.** The threats, their controls and the tests that verify them are in [[vista:Security architecture]]; the verification procedure, in the [Test and Security Plan](PLAN_PRUEBAS.md).
 
-## 9. Architecture decisions
-
-The decisions that shape this architecture, with their context, their alternatives and their consequences, are in the [Architecture Decision Records (ADR)](ADR.md).
-
-## 10. Quality requirements
+**Quality requirements**
 
 | Attribute | Scenario | Expected response |
 |---|---|---|
@@ -135,6 +276,67 @@ The decisions that shape this architecture, with their context, their alternativ
 | Availability | GitHub does not respond when the panel opens | The panel keeps the database it already has, and says so if it has none |
 | Security | A visitor tries to read server files with SQL | The query is rejected and the engine has no access to files or to the network |
 | Usability | A 1440 × 900 screen | Each main page is seen whole in the browser window (1440 × 790) |
+
+## 9. Capacity and growth
+
+### 9.1 Current capacity
+
+| Measure | Value | Origin |
+|---|---|---|
+| Served database | About 14 MB in the served database | Size of `etl/datos.duckdb` |
+| Data | Volume and coverage of the last load | [PRD, section 6](PRD.md#6-scope) |
+| Frequency | One load per week | [RF-01](PRD.md#5-requirements) |
+| Users | One public, read-only panel | [PRD, section 3](PRD.md#3-who-it-is-for) |
+
+### 9.2 What gives way first
+
+| Limit | Current situation | Planned response |
+|---|---|---|
+| Size of the served database | A single copy in a release, replaced by each load ([ADR-35](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces)); the Git history no longer grows with the data | A release file can hold up to 2 GB; long before that, the option of section 9.4 would be advisable |
+| Duration of the load | Each load rebuilds the whole history since 2022 ([ADR-10](ADR.md#adr-10--rebuild-everything-on-each-load)) and takes a little longer every year | Incremental loads when the duration justifies them |
+| Simultaneous visitors | A free Streamlit app that reads a small file read-only | If several teams used it daily, the free plan would not be enough: it is one of the thresholds of section 9.4 |
+
+### 9.3 Growth options
+
+A new source is added like the current ones: a folder in bronze and its dbt models, without changing the existing ones.
+
+| Extension | Status | How it would be added |
+|---|---|---|
+| Weather by region and week | Planned; official source to be defined | A staging model and a mart by week and region, next to the price alerts, without claiming that the weather causes a price |
+| Cloud data warehouse | Not adopted ([ADR-31](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse)) | A new target in the dbt configuration, with the same models and the same audit |
+
+### 9.4 When a cloud would be justified
+
+With public, weekly and small data, read by a single panel, a cloud data warehouse would add cost, secrets and expiry risks with no benefit ([ADR-31](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse)). It would be justified if a company added its own data:
+
+| Criterion | Today | Threshold |
+|---|---|---|
+| Volume | About 14 MB | Several GB: sales by store and day, costs, inventory |
+| Users | One read-only panel | Several teams or BI tools on the same data |
+| Access | Public | Permissions per person or sensitive data |
+| Freshness | Weekly | Several loads a day or real time |
+
+## 10. Constraints and decisions
+
+| Constraint | Origin |
+|---|---|
+| Only free services without expiry | [ADR-02 · Orchestrate with GitHub Actions and publish on Streamlit Community Cloud](ADR.md#adr-02--orchestrate-with-github-actions-and-publish-on-streamlit-community-cloud) and [ADR-31 · Do not use a cloud data warehouse](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse) |
+| Only official, open sources | [ADR-01 · Use only the official files of ODEPA and the INE](ADR.md#adr-01--use-only-the-official-files-of-odepa-and-the-ine) |
+| No figure is invented or interpolated, and the history is not deleted | Project rule |
+| Python 3.11 or 3.12 for the pipeline with dbt | dbt Core compatibility |
+| Public repository | Open portfolio; security depends on the secrets, not on hidden code |
+
+**Solution strategy**
+
+| Principle | How it is applied | Decision |
+|---|---|---|
+| Rebuild everything on each load | Every Tuesday the whole history is recomputed from the official files; repeating a load never duplicates data | [ADR-10](ADR.md#adr-10--rebuild-everything-on-each-load) |
+| Publish only what is validated | The served database changes only if all the tests pass | [ADR-11](ADR.md#adr-11--publish-only-if-the-tests-pass) |
+| Check along a second path | A Python ETL, independent of dbt, computes the same prices | [ADR-34](ADR.md#adr-34--separate-the-dbt-working-database-the-database-the-panel-reads-and-the-backup) |
+| Declarative, tested layers | Bronze in Parquet; staging, intermediate and marts in dbt Core on DuckDB | [ADR-30](ADR.md#adr-30--parquet-dbt-core-and-duckdb) |
+| A single published copy | The served database lives in a release that each load replaces | [ADR-35](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) |
+
+The decisions that shape this architecture, with their context, their alternatives and their consequences, are in the [Architecture Decision Records (ADR)](ADR.md).
 
 ## 11. Risks and technical debt
 
@@ -162,3 +364,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 1.4 | 2026-10-23 | Context diagram (D-242); C4 views without copying diagrams (D-247); download as the printed page (D-248); security as a process (D-249) |
 | 1.5 | 2026-10-24 | Principles, runtime view, quality and observability, risks (D-269); served database in a release (D-270) |
 | 2.0 | 2026-10-25 | Complete arc42 structure: constraints, solution strategy, crosscutting concepts, quality requirements, technical debt, glossary and history (D-279, professional documentation) |
+| 3.0 | 2026-10-25 | From the most important to the least: summary, context, containers, the load and the panel as sequences, the data with its dictionary, deployment, quality and security, capacity and growth (formerly documents of their own); six diagrams (D-290, documents for every reader) |

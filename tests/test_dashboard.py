@@ -475,10 +475,10 @@ def test_d249_the_code_box_survives_any_character_and_never_locks():
 @needs_database
 def test_d201_security_has_its_own_section_with_the_view_and_the_test_plan():
     assert dashboard.SIDEBAR_TOP_LABELS[dashboard.SECTION_SECURITY] == "Seguridad"
-    assert dashboard.WINDOWS[dashboard.SECTION_SECURITY] == [dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN]
+    assert dashboard.WINDOWS[dashboard.SECTION_SECURITY] == [dashboard.PAGE_SECURITY, dashboard.PAGE_TEST_PLAN]
     app = draw_control_page({})
     assert not app.exception and [tab.label for tab in app.tabs] == ["Despliegue", "Operación", "CI/CD", "Monitoreo"]
-    for page in (dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY_PLAN):
+    for page in (dashboard.PAGE_SECURITY, dashboard.PAGE_TEST_PLAN):
         app = draw_page(page)
         assert not app.exception and read_page_title(app) == dashboard.SIDEBAR_LABELS.get(page, page)
     assert "S-01" in " ".join(block.value for block in app.markdown)
@@ -618,7 +618,7 @@ def test_manual_is_a_procedural_document_without_presentation_cards():
     app = draw_page(dashboard.PAGE_MANUAL)
     assert not app.exception
     text = " ".join(block.value for block in app.markdown)
-    for heading in ("## 1. Qué ocurre automáticamente", "## 3. Fallas de la carga semanal", "## 8. Límites conocidos"):
+    for heading in ("## 2. Qué ocurre automáticamente", "## 4. Fallas de la carga semanal", "## 8. Límites conocidos"):
         assert heading in text
     assert 'class="info-card"' not in text
     assert '.github/workflows/semanal.yml' in text
@@ -1218,7 +1218,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
                   'Centro de operación', 'Arquitectura de seguridad', 'Documentos']:
         assert child in labels
     # D-282: the documents live in their folder, not in the menu.
-    for document in ['Plan de pruebas de seguridad', 'PRD · Requisitos del producto', 'SAD · Arquitectura']:
+    for document in ['Plan de pruebas y seguridad', 'PRD · Requisitos del producto', 'SAD · Arquitectura']:
         assert document not in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
     assert 'class="sidebar-github' in sidebar_markup and 'aria-label="GitHub del proyecto"' in sidebar_markup
@@ -1467,8 +1467,8 @@ def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
     assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:4] == [dashboard.PAGE_FOLDER, dashboard.PAGE_PRD, dashboard.PAGE_SAD,
                                                                dashboard.PAGE_ADR]
     # D-205: the document views in their own frame, the live panel diagrams inline.
-    for page, framed, inline in ((dashboard.PAGE_PRD, 2, 0), (dashboard.PAGE_SAD, 2, 0), (dashboard.PAGE_ADR, 0, 0),
-                                 (dashboard.PAGE_SECURITY_PLAN, 2, 0)):
+    for page, framed, inline in ((dashboard.PAGE_PRD, 4, 0), (dashboard.PAGE_SAD, 6, 0), (dashboard.PAGE_ADR, 3, 0),
+                                 (dashboard.PAGE_TEST_PLAN, 6, 0)):
         app = draw_page(page)
         assert not app.exception and not app.code
         text = " ".join(block.value for block in app.markdown)
@@ -1619,8 +1619,8 @@ def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_f
     app = draw_page(dashboard.PAGE_FOLDER)
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    assert markup.count('class="df-file"') == len(dashboard.FOLDER_DOCUMENTS) == 10
-    assert "GreenOcean <i>/</i> <b>docs</b>" in markup and "10 documentos" in markup
+    assert markup.count('class="df-file"') == len(dashboard.FOLDER_DOCUMENTS) == 7
+    assert "GreenOcean <i>/</i> <b>docs</b>" in markup and "7 documentos" in markup
     for page in dashboard.FOLDER_ORDER:
         filename = dashboard.PROJECT_DOCUMENTS[page][0]
         text = (PROJECT_DIR / "docs" / filename).read_text(encoding="utf-8")
@@ -1628,7 +1628,7 @@ def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_f
         assert f"<span>v{header['Versión']}</span><span>{header['Fecha']}</span>" in markup, filename
         assert documents_folder.read_title(text) in markup, filename
         assert project.build_github_url(f"docs/{filename}") in markup, filename
-    assert markup.count('class="go-icon go-icon-print"') == 10 and markup.count('class="df-preview"') == 10
+    assert markup.count('class="go-icon go-icon-print"') == 7 and markup.count('class="df-preview"') == 7
 
 
 def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_menu():
@@ -1640,7 +1640,7 @@ def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_me
 
 
 @needs_database
-@pytest.mark.parametrize("page", ["PRD · Requisitos del producto", "Glosario", "Plan de pruebas"])
+@pytest.mark.parametrize("page", ["PRD · Requisitos del producto", "Glosario", "Plan de pruebas y seguridad"])
 def test_d282_a_document_opens_its_page_with_its_path_its_pdf_and_its_neighbours(page):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params['vista'] = page
@@ -1662,7 +1662,7 @@ def test_d282_the_old_addresses_of_the_documents_still_open_them():
     for page in dashboard.FOLDER_ORDER:
         window = dashboard.WINDOW_OF_VIEW[page]
         assert page in dashboard.read_window_views(window), page
-    assert dashboard.WINDOW_OF_VIEW[dashboard.PAGE_SECURITY_PLAN] == dashboard.SECTION_SECURITY  # «seguridad?vista=…»
+    assert dashboard.WINDOW_OF_VIEW[dashboard.PAGE_TEST_PLAN] == dashboard.SECTION_SECURITY  # «seguridad?vista=…»
     assert dashboard.OLD_PATHS["documentacion-bi"] == (dashboard.PAGE_PRD, None)
 
 

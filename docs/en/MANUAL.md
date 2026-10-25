@@ -4,44 +4,55 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 2.0 |
+| Version | 3.0 |
 | Date | 2026-10-25 |
 | Status | Current |
 | Owner | The author |
 | Purpose | State what happens automatically, what is checked and when, and what to do about each failure. |
 | Audience | Operation of the project, also without technical training. |
-| Related documents | [Software Architecture Document (SAD)](SAD.md) · [Security Test Plan](SEGURIDAD.md) · [Glossary](GLOSARIO.md) |
+| Related documents | [Software Architecture Document (SAD)](SAD.md) · [Test and Security Plan](PLAN_PRUEBAS.md) · [Glossary](GLOSARIO.md) |
 
 ## Contents
 
-1. [What happens automatically](#1-what-happens-automatically)
-2. [What is checked and when](#2-what-is-checked-and-when)
-3. [Failures of the weekly load](#3-failures-of-the-weekly-load)
-4. [Failures of the published panel](#4-failures-of-the-published-panel)
-5. [Recovery](#5-recovery)
-6. [Periodic tasks](#6-periodic-tasks)
+1. [In summary](#1-in-summary)
+2. [What happens automatically](#2-what-happens-automatically)
+3. [What is checked and when](#3-what-is-checked-and-when)
+4. [Failures of the weekly load](#4-failures-of-the-weekly-load)
+5. [Failures of the published panel](#5-failures-of-the-published-panel)
+6. [Recovery](#6-recovery)
 7. [Author access and administration](#7-author-access-and-administration)
 8. [Known limits](#8-known-limits)
 9. [Glossary](#9-glossary)
 10. [Version history](#10-version-history)
 
-## 1. What happens automatically
+## 1. In summary
 
-The weekly job (`.github/workflows/semanal.yml`) runs every Tuesday at 12:00 UTC: 09:00 in Chilean summer time and 08:00 in winter time. It downloads the sources, builds and tests the database, publishes it in the «base-actual» release and creates the weekly report. The full sequence, step by step, is in the [runtime view of the SAD](SAD.md#6-runtime-view).
+GreenOcean almost runs itself. Every Tuesday the load runs without intervention and, if something fails, the panel keeps showing the last valid load: a half-finished figure is never published. The operations work comes down to looking at one result a week, four tasks on the calendar and, if a failure warning arrives, following the table of section 4.
+
+[[diagrama:calendario]]
+
+## 2. What happens automatically
+
+The weekly job (`.github/workflows/semanal.yml`) runs every Tuesday at 12:00 UTC: 09:00 in Chilean summer time and 08:00 in winter time. It downloads the sources, builds and tests the database, publishes it in the «base-actual» release and creates the weekly report. The full sequence, step by step, is in the [load sequence of the SAD](SAD.md#4-the-load-of-each-week).
 
 It can also be launched by hand: from «Operations center», with the «Run pipeline now» button (it requires the control code), or from the workflow page on GitHub.
 
 If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass)).
 
-## 2. What is checked and when
+## 3. What is checked and when
 
-| When | What is checked | Where |
+| When | What is checked or done | Where |
 |---|---|---|
 | Every Tuesday, after 12:00 UTC | That the run ended green | «Operations» tab of «Operations center», or the GitHub email if it failed |
 | Every Tuesday | That the issue «Informe semanal YYYY-MM-DD» (weekly report) exists | Issues of the repository |
 | When in doubt about the figures | The quality verdict and the audit controls | «Quality and audit» |
+| Every January | Add to `agent/input.csv` the two lines of the new year (wholesale and consumer), with the URL ODEPA publishes on the page of each dataset | `agent/input.csv` |
+| Periodically | Copy `agent/downloads` to another disk: the CSV files are not versioned ([ADR-04 · Do not commit the raw data to the repository](ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository)) and the GitHub cache is deleted if it is not used for 7 days | Another disk of the author |
+| Before it expires | Renew the panel's GitHub token; the panel warns when fewer than 14 days are left | App secrets on Streamlit |
 
-## 3. Failures of the weekly load
+## 4. Failures of the weekly load
+
+[[diagrama:arbol_fallas]]
 
 Each row is a step of the workflow, with its name in `semanal.yml`. The warning reaches the author through GitHub's «Run failed: semanal» email, and the failed step shows in red in «Operations center». The `etl_run` table records only the published loads: the message of a failure is read in the log of the step.
 
@@ -56,7 +67,7 @@ Each row is a step of the workflow, with its name in `semanal.yml`. The warning 
 | Publish the database | GitHub rejects the upload of the file or of the pointer | Workflow permissions, or a change on `main` during the load | Check Settings → Actions → Workflow permissions («Read and write») and launch again |
 | Publish the weekly report | The issue is not created | Workflow permissions | Check the permissions; the database is already published |
 
-## 4. Failures of the published panel
+## 5. Failures of the published panel
 
 | Symptom | Probable cause | Action |
 |---|---|---|
@@ -65,28 +76,21 @@ Each row is a step of the workflow, with its name in `semanal.yml`. The warning 
 | The panel reports that it does not have the served database | It could not download it from the release when it started | Check that the «base-actual» release exists; the panel downloads it on the next visit |
 | The «Run pipeline now» button says the token is missing | The panel's token expired or is not configured | Create a token allowed to launch workflows of this repository and store it as `GITHUB_TOKEN` in the app secrets on Streamlit |
 
-## 5. Recovery
+## 6. Recovery
+
+[[diagrama:secuencia_recuperacion]]
 
 | Situation | Procedure |
 |---|---|
-| A load failed | Fix the cause as in section 3 and launch the job again; meanwhile, the panel shows the last valid load |
+| A load failed | Fix the cause as in section 4 and launch the job again; meanwhile, the panel shows the last valid load |
 | The release lost its file | Rebuild the database on a computer with the data (`python etl/pipeline.py --local`), check that the suite passes and upload the file to the «base-actual» release together with its pointer (`python bi/served_database.py --pointer`) |
 | A new copy of the repository has no database | `python bi/served_database.py` downloads the database of the last load and verifies its fingerprint |
-
-## 6. Periodic tasks
-
-| Frequency | Task |
-|---|---|
-| Every Tuesday | Check «Operations center» or the email; if it is green, there is nothing to do |
-| Every January | Add to `agent/input.csv` the two lines of the new year (wholesale and consumer), with the URL ODEPA publishes on the page of each dataset |
-| Periodically | Copy `agent/downloads` to another disk: the CSV files are not versioned ([ADR-04 · Do not commit the raw data to the repository](ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository)) and the GitHub cache is deleted if it is not used for 7 days |
-| Before it expires | Renew the panel's GitHub token; the panel warns when fewer than 14 days are left |
 
 ## 7. Author access and administration
 
 In «Operations center», «Author access» asks for the control code (the panel's `CONTROL_CODE` secret) and opens with Enter. With the right code, the «Run pipeline now» button, the token-expiry warning and the administration links appear (GitHub tokens, runs and the administration of the app on Streamlit). Without the secret configured, for example in a local copy, the access stays closed.
 
-The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. There is no limit of attempts for the code: it is an accepted risk, described in the [Security Test Plan](SEGURIDAD.md). The panel never shows the token or any part of it.
+The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. There is no limit of attempts for the code: it is an accepted risk, described in the [Test and Security Plan](PLAN_PRUEBAS.md#11-accepted-risks-and-limits). The panel never shows the token or any part of it.
 
 ## 8. Known limits
 
@@ -95,7 +99,7 @@ The code prevents accidental runs; it is not the main barrier. What protects the
 | Maximum size of a release file | 2 GB; the served database weighs about 14 MB | GitHub documentation on releases, read on 2026-10-24 |
 | GitHub Actions cache | Deleted if it is not used for 7 days; that week the job downloads every year | GitHub Actions documentation, read on 2026-10-24 |
 | GitHub API requests without a token | 60 per hour | GitHub API documentation |
-| Cloud architecture | Not adopted while the data is public, weekly and small | [ADR-31 · Do not use a cloud data warehouse](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse) and [Capacity and Scalability Plan](ESCALABILIDAD.md) |
+| Cloud architecture | Not adopted while the data is public, weekly and small | [ADR-31 · Do not use a cloud data warehouse](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse) and [Capacity and growth in the SAD](SAD.md#9-capacity-and-growth) |
 
 ## 9. Glossary
 
@@ -114,3 +118,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 1.6 | 2026-10-23 | Security as a process and monitoring (D-249); download as the printed page (D-248) |
 | 1.7 | 2026-10-24 | Deployment and pipeline (D-251, D-255); Stack and evidence (D-266); served database in a release (D-270) |
 | 2.0 | 2026-10-25 | Runbook format: symptom, cause, action, recovery, periodic tasks and limits with their source (D-279, professional documentation) |
+| 3.0 | 2026-10-25 | A summary at the start, the calendar, the fault tree and the recovery sequence as diagrams (D-290, documents for every reader) |

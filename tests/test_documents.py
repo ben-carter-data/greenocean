@@ -11,10 +11,11 @@ from bi import dashboard
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS_DIR = ROOT / "docs"
-DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "SEGURIDAD.md"]
+DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md"]
 # The reading documents of the project (D-279): every one has a header, an index, a glossary and a version history.
-READING = DOCUMENTS + ["MANUAL.md", "ESCALABILIDAD.md", "PLAN_PRUEBAS.md", "DICCIONARIO_DATOS.md", "GLOSARIO.md",
-                      "INDICE_DECISIONES.md"]
+# D-290: the scalability plan and the data dictionary live in the SAD; the security plan, in the test plan.
+READING = DOCUMENTS + ["MANUAL.md", "GLOSARIO.md", "INDICE_DECISIONES.md"]
+MERGED = {"PLAN_PRUEBAS.md": ["SEGURIDAD.md"], "SAD.md": ["ESCALABILIDAD.md", "DICCIONARIO_DATOS.md"]}
 
 
 @pytest.mark.parametrize("name", DOCUMENTS)
@@ -25,14 +26,34 @@ def test_documents_have_no_code_blocks_and_use_the_project_vocabulary(name):
 
 
 def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
-    """PRD: the use cases and the real screens. SAD: its own views, context and containers; the rest is linked (D-247)."""
+    """D-290: every document, in its reading order, with at least three diagrams; the SAD with at least five."""
     names = {name: re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"),
-                              re.MULTILINE) for name in DOCUMENTS}
-    assert names == {"PRD.md": ["casos", "mockups"], "SAD.md": ["contexto", "contenedores"],
-                     "ADR.md": [], "SEGURIDAD.md": ["sop", "pruebas"]}
-    for name in READING:
-        assert not re.findall(r"^\[\[diagrama:", (DOCS_DIR / name).read_text(encoding="utf-8"), re.MULTILINE) \
-            or name in DOCUMENTS, name
+                              re.MULTILINE) for name in READING}
+    assert names == {
+        "PRD.md": ["valor", "casos", "requisitos", "mockups"],
+        "SAD.md": ["contexto", "contenedores", "secuencia_carga", "secuencia_panel", "capas", "despliegue"],
+        "ADR.md": ["mapa_adr", "tiempo_adr", "antes_despues"],
+        "PLAN_PRUEBAS.md": ["niveles", "actores", "pruebas", "sop", "secuencia_manual", "secuencia_ci"],
+        "MANUAL.md": ["calendario", "arbol_fallas", "secuencia_recuperacion"],
+        "GLOSARIO.md": ["terminos_cifra", "terminos_capas", "terminos_actores"],
+        "INDICE_DECISIONES.md": ["temas", "mapa_temas", "adr_decisiones"]}
+    for name, markers in names.items():
+        assert len(markers) >= (5 if name == "SAD.md" else 3) and len(set(markers)) == len(markers), name
+    assert {marker for markers in names.values() for marker in markers} <= set(dashboard.doc_diagrams.DOC_DIAGRAMS)
+
+
+def test_d290_the_merged_documents_are_gone_and_their_addresses_open_the_document_that_holds_them():
+    for name, old in MERGED.items():
+        for gone in old:
+            assert not (DOCS_DIR / gone).exists() and not (DOCS_DIR / "en" / gone).exists(), gone
+    assert len(dashboard.FOLDER_DOCUMENTS) == 7
+    for path, page in (("escalabilidad", dashboard.PAGE_SAD), ("diccionario-de-datos", dashboard.PAGE_SAD),
+                       ("plan-de-pruebas-de-seguridad", dashboard.PAGE_TEST_PLAN)):
+        assert dashboard.OLD_PATHS[path] == (page, None)
+    for title, page in (("Escalabilidad", dashboard.PAGE_SAD), ("Diccionario de datos", dashboard.PAGE_SAD),
+                        ("Plan de pruebas de seguridad", dashboard.PAGE_TEST_PLAN),
+                        ("Plan de pruebas", dashboard.PAGE_TEST_PLAN)):
+        assert dashboard.RETIRED_VIEWS[title] == page
 
 
 def test_d248_each_adr_has_the_standard_parts_and_points_to_its_decision():
@@ -57,8 +78,8 @@ def test_d248_the_file_sizes_the_documents_state_are_the_real_ones():
     if largest:
         assert f"hasta unos {round(largest / 5e6) * 5} MB" in adr  # rounded to 5 MB
     served = (ROOT / "etl" / "datos.duckdb").stat().st_size / 1e6
-    scalability = (DOCS_DIR / "ESCALABILIDAD.md").read_text(encoding="utf-8")
-    assert f"Unos {served:.0f} MB en la base servida" in scalability
+    sad = (DOCS_DIR / "SAD.md").read_text(encoding="utf-8")
+    assert f"Unos {served:.0f} MB en la base servida" in sad
 
 
 def test_d248_the_print_stylesheet_keeps_the_document_and_drops_only_the_navigation():
@@ -189,8 +210,10 @@ def test_d279_the_history_dates_are_dates_the_file_really_changed():
     if shallow.stdout.strip() != "false":
         pytest.skip("the history is not here (a shallow clone)")
     for name in DOCUMENTS + ["MANUAL.md"]:
-        log = subprocess.run(["git", "log", "--follow", "--date=short", "--format=%ad", "--", f"docs/{name}"], cwd=ROOT,
-                             capture_output=True, text=True).stdout.split()
+        log = []
+        for source in [name] + MERGED.get(name, []):  # a merged document keeps the history of the ones it absorbed
+            log += subprocess.run(["git", "log", "--follow", "--date=short", "--format=%ad", "--", f"docs/{source}"],
+                                  cwd=ROOT, capture_output=True, text=True).stdout.split()
         changed = {"-".join(reversed(day.split("-"))) for day in log} | {date.today().strftime("%d-%m-%Y")}
         history = (DOCS_DIR / name).read_text(encoding="utf-8").split("Historial de versiones")[-1]
         for day in re.findall(r"^\| [\d.]+ \| (\d{2}-\d{2}-\d{4}) \|", history, re.MULTILINE):
@@ -199,7 +222,7 @@ def test_d279_the_history_dates_are_dates_the_file_really_changed():
 
 def test_d279_the_security_plan_carries_the_threats_and_cases_of_the_code():
     from bi import security_map, security_plan
-    text = (DOCS_DIR / "SEGURIDAD.md").read_text(encoding="utf-8")
+    text = (DOCS_DIR / "PLAN_PRUEBAS.md").read_text(encoding="utf-8")
     for identifier, title, owasp, *_ in security_map.THREATS:
         assert f"| {identifier} | {title} | {owasp} |" in text, identifier
     for identifier, name, attack, expected, owasp, tests in security_plan.CASES:
@@ -213,7 +236,7 @@ def test_d279_the_data_dictionary_describes_every_table_and_column_of_the_served
     from bi import queries
     if not queries.DATABASE_FILE.exists():
         pytest.skip("datos.duckdb is not here")
-    text = (DOCS_DIR / "DICCIONARIO_DATOS.md").read_text(encoding="utf-8")
+    text = (DOCS_DIR / "SAD.md").read_text(encoding="utf-8")
     with duckdb.connect(str(queries.DATABASE_FILE), read_only=True) as connection:
         columns = connection.execute("SELECT table_name, column_name, data_type FROM information_schema.columns "
                                      "WHERE table_schema = 'main'").fetchall()

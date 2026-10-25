@@ -4,25 +4,44 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 1.0 |
+| Versión | 2.0 |
 | Fecha | 25-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Definir una sola vez las siglas y los términos que usan el panel y los documentos. |
 | Audiencia | Todo lector del panel y de la documentación. |
-| Documentos relacionados | [PRD](PRD.md) · [SAD](SAD.md) · [ADR](ADR.md) · [Diccionario de datos](DICCIONARIO_DATOS.md) |
+| Documentos relacionados | [PRD](PRD.md) · [SAD](SAD.md) · [ADR](ADR.md) · [Plan de pruebas y seguridad](PLAN_PRUEBAS.md) |
 
 ## Índice
 
-1. [Términos](#1-términos)
-2. [Historial de versiones](#2-historial-de-versiones)
+1. [En resumen](#1-en-resumen)
+2. [Términos](#2-términos)
+3. [Historial de versiones](#3-historial-de-versiones)
 
-## 1. Términos
+## 1. En resumen
 
-La columna «Dónde aparece» indica las páginas del panel en las que se usa cada término; «—» indica que solo aparece en los documentos.
+Este glosario define una sola vez cada palabra técnica del panel y de los documentos. Los tres esquemas muestran cómo se relacionan: el camino de una cifra, desde la fila que publica ODEPA hasta la alerta del panel; las capas por las que pasan los datos, y los actores que intervienen.
+
+[[diagrama:terminos_cifra]]
+
+[[diagrama:terminos_capas]]
+
+[[diagrama:terminos_actores]]
+
+## 2. Términos
+
+Los términos van ordenados por tema, desde lo que se lee en el panel hasta los documentos. La columna «Dónde aparece» indica las páginas del panel en las que se usa cada término; «—» indica que solo aparece en los documentos.
 
 | Sigla o término | Significado | Dónde aparece | Tema |
 |---|---|---|---|
+| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. | Resumen semanal, Precios e inflación | Indicadores |
+| BI | Inteligencia de negocios (*business intelligence*): el análisis de datos para tomar decisiones; aquí, el panel. | — | Indicadores |
+| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Calidad y auditoría | Indicadores |
+| Alerta de precio | Cambio semanal inusual para un producto y de al menos 10 %. | Resumen semanal | Indicadores |
+| Precio real | Precio expresado en pesos del último mes publicado del IPC. | Precios e inflación | Indicadores |
+| Semana provisional | Semana de un mes cuyo IPC aún no se publica; usa el último mes disponible. | Precios e inflación | Indicadores |
+| Dimensión de calidad | Aspecto de la calidad que se mide: completitud, actualidad, validez, unicidad, consistencia y exactitud. | Calidad y auditoría | Indicadores |
+| DAMA-DMBOK | Guía de gestión de datos de DAMA International (*Data Management Body of Knowledge*); de ella vienen las dimensiones de calidad. | — | Indicadores |
 | ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Resumen semanal, Pipeline y linaje | Fuentes |
 | INE | Instituto Nacional de Estadísticas de Chile. Publica el IPC de alimentos. | Precios e inflación, Pipeline y linaje | Fuentes |
 | IPC | Índice de precios al consumidor; aquí, la división «Alimentos y bebidas no alcohólicas» que publica el INE. | Precios e inflación | Fuentes |
@@ -56,22 +75,14 @@ La columna «Dónde aparece» indica las páginas del panel en las que se usa ca
 | Parquet | Formato abierto de archivos por columnas, comprimido. | Pipeline y linaje | Base de datos |
 | Git LFS | Extensión de Git para archivos grandes (*Large File Storage*), que los guarda fuera del historial. | — | Base de datos |
 | ISO | Organización Internacional de Normalización; aquí, la semana ISO (de lunes a domingo, numerada según la norma ISO 8601) y las fechas en formato AAAA-MM-DD. | — | Base de datos |
-| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. | Resumen semanal, Precios e inflación | Indicadores |
-| BI | Inteligencia de negocios (*business intelligence*): el análisis de datos para tomar decisiones; aquí, el panel. | — | Indicadores |
-| RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Calidad y auditoría | Indicadores |
-| Alerta de precio | Cambio semanal inusual para un producto y de al menos 10 %. | Resumen semanal | Indicadores |
-| Precio real | Precio expresado en pesos del último mes publicado del IPC. | Precios e inflación | Indicadores |
-| Semana provisional | Semana de un mes cuyo IPC aún no se publica; usa el último mes disponible. | Precios e inflación | Indicadores |
-| Dimensión de calidad | Aspecto de la calidad que se mide: completitud, actualidad, validez, unicidad, consistencia y exactitud. | Calidad y auditoría | Indicadores |
-| DAMA-DMBOK | Guía de gestión de datos de DAMA International (*Data Management Body of Knowledge*); de ella vienen las dimensiones de calidad. | — | Indicadores |
-| API | Interfaz por la que un programa se comunica con otro; el panel la usa para consultar GitHub. | Centro de operación | Conexiones |
-| HTTPS | Conexión web cifrada. | Pipeline y linaje, Centro de operación (Despliegue) | Conexiones |
-| URL | Dirección de una página o de un archivo en la web. | — | Conexiones |
-| UTC | Tiempo universal coordinado; el job corre a las 12:00 UTC: las 09:00 en Chile en horario de verano y las 08:00 en invierno. | Centro de operación | Conexiones |
 | Token | Credencial que permite al panel consultar GitHub y lanzar el workflow; nunca se muestra. | Centro de operación | Seguridad |
 | Clave de control | Secreto que abre el acceso del autor en el panel. | Centro de operación | Seguridad |
 | OWASP | Open Worldwide Application Security Project; su lista Top 10 clasifica los riesgos de seguridad de aplicaciones web. | Arquitectura de seguridad | Seguridad |
 | ASCII | Juego de caracteres básico del inglés, sin ñ ni tildes. | — | Seguridad |
+| API | Interfaz por la que un programa se comunica con otro; el panel la usa para consultar GitHub. | Centro de operación | Conexiones |
+| HTTPS | Conexión web cifrada. | Pipeline y linaje, Centro de operación (Despliegue) | Conexiones |
+| URL | Dirección de una página o de un archivo en la web. | — | Conexiones |
+| UTC | Tiempo universal coordinado; el job corre a las 12:00 UTC: las 09:00 en Chile en horario de verano y las 08:00 en invierno. | Centro de operación | Conexiones |
 | PRD | Documento de requisitos del producto (*Product Requirements Document*). | — | Documentos |
 | SAD | Documento de arquitectura de software (*Software Architecture Document*). | — | Documentos |
 | ADR | Registro de decisión de arquitectura (*Architecture Decision Record*). | — | Documentos |
@@ -83,8 +94,9 @@ La columna «Dónde aparece» indica las páginas del panel en las que se usa ca
 | PDF | Formato de documento para imprimir; el PDF de cada documento es su página del panel impresa por el navegador. | — | Documentos |
 | Runbook | Manual de operación: qué hacer ante cada falla, paso a paso. | — | Documentos |
 
-## 2. Historial de versiones
+## 3. Historial de versiones
 
 | Versión | Fecha | Cambios |
 |---|---|---|
 | 1.0 | 25-10-2026 | Primera versión como documento propio, a partir del glosario de la guía del proyecto (D-279, documentación profesional) |
+| 2.0 | 25-10-2026 | Un resumen con tres esquemas y los términos ordenados por tema, desde los indicadores (D-290, documentos para todo lector) |

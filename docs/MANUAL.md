@@ -4,44 +4,55 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 2.0 |
+| Versión | 3.0 |
 | Fecha | 25-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Indicar qué ocurre de forma automática, qué se revisa y cuándo, y qué hacer ante cada falla. |
 | Audiencia | Operación del proyecto, también sin formación técnica. |
-| Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Plan de pruebas de seguridad](SEGURIDAD.md) · [Glosario](GLOSARIO.md) |
+| Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Plan de pruebas y seguridad](PLAN_PRUEBAS.md) · [Glosario](GLOSARIO.md) |
 
 ## Índice
 
-1. [Qué ocurre automáticamente](#1-qué-ocurre-automáticamente)
-2. [Qué se revisa y cuándo](#2-qué-se-revisa-y-cuándo)
-3. [Fallas de la carga semanal](#3-fallas-de-la-carga-semanal)
-4. [Fallas del panel publicado](#4-fallas-del-panel-publicado)
-5. [Recuperación](#5-recuperación)
-6. [Tareas periódicas](#6-tareas-periódicas)
+1. [En resumen](#1-en-resumen)
+2. [Qué ocurre automáticamente](#2-qué-ocurre-automáticamente)
+3. [Qué se revisa y cuándo](#3-qué-se-revisa-y-cuándo)
+4. [Fallas de la carga semanal](#4-fallas-de-la-carga-semanal)
+5. [Fallas del panel publicado](#5-fallas-del-panel-publicado)
+6. [Recuperación](#6-recuperación)
 7. [Acceso del autor y administración](#7-acceso-del-autor-y-administración)
 8. [Límites conocidos](#8-límites-conocidos)
 9. [Glosario](#9-glosario)
 10. [Historial de versiones](#10-historial-de-versiones)
 
-## 1. Qué ocurre automáticamente
+## 1. En resumen
 
-El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. Descarga las fuentes, construye y prueba la base, la publica en el release «base-actual» y crea el informe semanal. La secuencia completa, paso a paso, está en la [vista de ejecución del SAD](SAD.md#6-vista-de-ejecución).
+GreenOcean se opera casi solo. Cada martes la carga corre sin intervención y, si algo falla, el panel sigue mostrando la última carga válida: nunca se publica una cifra a medias. El trabajo de operación se reduce a mirar un resultado por semana, a cuatro tareas del calendario y, si llega el aviso de una falla, a seguir la tabla de la sección 4.
+
+[[diagrama:calendario]]
+
+## 2. Qué ocurre automáticamente
+
+El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. Descarga las fuentes, construye y prueba la base, la publica en el release «base-actual» y crea el informe semanal. La secuencia completa, paso a paso, está en la [secuencia de la carga del SAD](SAD.md#4-la-carga-de-cada-semana).
 
 También se puede lanzar a mano: desde «Centro de operación», con el botón «Ejecutar pipeline ahora» (requiere la clave de control), o desde la página del workflow en GitHub.
 
 Si un paso falla, los siguientes no se ejecutan y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)).
 
-## 2. Qué se revisa y cuándo
+## 3. Qué se revisa y cuándo
 
-| Cuándo | Qué se revisa | Dónde |
+| Cuándo | Qué se revisa o se hace | Dónde |
 |---|---|---|
 | Cada martes, después de las 12:00 UTC | Que la ejecución terminó en verde | Pestaña «Operación» de «Centro de operación», o el correo de GitHub si falló |
 | Cada martes | Que existe el issue «Informe semanal AAAA-MM-DD» | Issues del repositorio |
 | Ante una duda sobre las cifras | El veredicto de calidad y los controles de auditoría | «Calidad y auditoría» |
+| Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos | `agent/input.csv` |
+| Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días | Otro disco del autor |
+| Antes de su vencimiento | Renovar el token de GitHub del panel; el panel avisa cuando faltan menos de 14 días | Secretos de la app en Streamlit |
 
-## 3. Fallas de la carga semanal
+## 4. Fallas de la carga semanal
+
+[[diagrama:arbol_fallas]]
 
 Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El aviso llega al autor por el correo «Run failed: semanal» de GitHub, y el paso fallido aparece en rojo en «Centro de operación». La tabla `etl_run` registra solo las cargas publicadas: el mensaje de una falla se lee en el log del paso.
 
@@ -56,7 +67,7 @@ Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El
 | Publish the database | GitHub rechaza la subida del archivo o del puntero | Permisos del workflow o un cambio en `main` durante la carga | Revisar Settings → Actions → Workflow permissions («Read and write») y volver a lanzar |
 | Publish the weekly report | No se crea el issue | Permisos del workflow | Revisar los permisos; la base ya quedó publicada |
 
-## 4. Fallas del panel publicado
+## 5. Fallas del panel publicado
 
 | Síntoma | Causa probable | Acción |
 |---|---|---|
@@ -65,28 +76,21 @@ Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El
 | El panel informa que no tiene la base servida | No pudo descargarla del release al arrancar | Verificar que el release «base-actual» existe; el panel la descarga en la siguiente visita |
 | El botón «Ejecutar pipeline ahora» indica que falta el token | El token del panel venció o no está configurado | Crear un token con permiso para lanzar workflows de este repositorio y guardarlo como `GITHUB_TOKEN` en los secretos de la app en Streamlit |
 
-## 5. Recuperación
+## 6. Recuperación
+
+[[diagrama:secuencia_recuperacion]]
 
 | Situación | Procedimiento |
 |---|---|
-| Una carga falló | Corregir la causa según la sección 3 y volver a lanzar el job; mientras tanto, el panel muestra la última carga válida |
+| Una carga falló | Corregir la causa según la sección 4 y volver a lanzar el job; mientras tanto, el panel muestra la última carga válida |
 | El release perdió su archivo | Reconstruir la base en un equipo con los datos (`python etl/pipeline.py --local`), verificar que la suite pasa y subir el archivo al release «base-actual» junto con su puntero (`python bi/served_database.py --pointer`) |
 | Una copia nueva del repositorio no tiene la base | `python bi/served_database.py` descarga la base de la última carga y verifica su huella |
-
-## 6. Tareas periódicas
-
-| Frecuencia | Tarea |
-|---|---|
-| Cada martes | Revisar «Centro de operación» o el correo; si está en verde, no hay nada que hacer |
-| Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos |
-| Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días |
-| Antes de su vencimiento | Renovar el token de GitHub del panel; el panel avisa cuando faltan menos de 14 días |
 
 ## 7. Acceso del autor y administración
 
 En «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso del vencimiento del token y los enlaces de administración (tokens de GitHub, ejecuciones y administración de la app en Streamlit). Sin el secreto configurado, por ejemplo en una copia local, el acceso permanece cerrado.
 
-La clave evita ejecuciones accidentales; no es la barrera principal. Lo que protege el proyecto es el inicio de sesión del autor en GitHub y en Streamlit (con verificación en dos pasos) y un token con los permisos mínimos. No hay límite de intentos de la clave: es un riesgo aceptado, descrito en el [Plan de pruebas de seguridad](SEGURIDAD.md). El panel nunca muestra el token ni una parte de él.
+La clave evita ejecuciones accidentales; no es la barrera principal. Lo que protege el proyecto es el inicio de sesión del autor en GitHub y en Streamlit (con verificación en dos pasos) y un token con los permisos mínimos. No hay límite de intentos de la clave: es un riesgo aceptado, descrito en el [Plan de pruebas y seguridad](PLAN_PRUEBAS.md#11-riesgos-aceptados-y-límites). El panel nunca muestra el token ni una parte de él.
 
 ## 8. Límites conocidos
 
@@ -95,7 +99,7 @@ La clave evita ejecuciones accidentales; no es la barrera principal. Lo que prot
 | Tamaño máximo de un archivo de release | 2 GB; la base servida pesa unos 14 MB | Documentación de GitHub sobre releases, consultada el 24-10-2026 |
 | Caché de GitHub Actions | Se borra si no se usa en 7 días; esa semana el job descarga todos los años | Documentación de GitHub Actions, consultada el 24-10-2026 |
 | Consultas a la API de GitHub sin token | 60 por hora | Documentación de la API de GitHub |
-| Arquitectura en la nube | No se adopta mientras los datos sean públicos, semanales y pequeños | [ADR-31 · No usar un data warehouse en la nube](ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube) y [Plan de capacidad y escalabilidad](ESCALABILIDAD.md) |
+| Arquitectura en la nube | No se adopta mientras los datos sean públicos, semanales y pequeños | [ADR-31 · No usar un data warehouse en la nube](ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube) y [Capacidad y crecimiento del SAD](SAD.md#9-capacidad-y-crecimiento) |
 
 ## 9. Glosario
 
@@ -114,3 +118,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 1.6 | 23-10-2026 | Seguridad como proceso y monitoreo (D-249); descarga como página impresa (D-248) |
 | 1.7 | 24-10-2026 | Despliegue y pipeline (D-251, D-255); Stack y evidencia (D-266); base servida en un release (D-270) |
 | 2.0 | 25-10-2026 | Formato de runbook: síntoma, causa, acción, recuperación, tareas periódicas y límites con su fuente (D-279, documentación profesional) |
+| 3.0 | 25-10-2026 | Un resumen al inicio, el calendario, el árbol de fallas y la secuencia de recuperación como diagramas (D-290, documentos para todo lector) |

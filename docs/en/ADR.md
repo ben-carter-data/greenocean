@@ -4,31 +4,43 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Architecture Decision Records (ADR), MADR format |
-| Version | 2.0 |
+| Version | 3.0 |
 | Date | 2026-10-25 |
 | Status | Current |
 | Owner | The author |
-| Purpose | Record the decisions that weigh most on the architecture: their context, the decision, the options considered and their consequences. |
-| Audience | Architecture, engineering and technical review. |
+| Purpose | Explain the eleven decisions that weigh most on the architecture of GreenOcean: why they were taken, which alternatives there were and what consequences they have. |
+| Audience | Architecture, engineering, management and technical review. |
 | Related documents | [Software Architecture Document (SAD)](SAD.md) · [Decision Index](INDICE_DECISIONES.md) · [Glossary](GLOSARIO.md) |
 
 Each record keeps its original number, which is why the numbering is not consecutive. The minor decisions are in the [Decision Index](INDICE_DECISIONES.md) and in the full log, `docs/DECISIONES.md`. The options considered are only those recorded in that log or in the history of the repository.
 
 ## Contents
 
-| ADR | Title | Status | Date |
+| Decision | Record | Status | Date |
 |---|---|---|---|
-| [ADR-01](#adr-01--use-only-the-official-files-of-odepa-and-the-ine) | Use only the official files of ODEPA and the INE | Accepted | 2026-10-11 |
-| [ADR-02](#adr-02--orchestrate-with-github-actions-and-publish-on-streamlit-community-cloud) | Orchestrate with GitHub Actions and publish on Streamlit Community Cloud | Accepted | 2026-10-11 |
-| [ADR-04](#adr-04--do-not-commit-the-raw-data-to-the-repository) | Do not commit the raw data to the repository | Accepted, amended by ADR-35 | 2026-10-11 |
-| [ADR-10](#adr-10--rebuild-everything-on-each-load) | Rebuild everything on each load | Accepted | 2026-10-11 |
-| [ADR-11](#adr-11--publish-only-if-the-tests-pass) | Publish only if the tests pass | Accepted | 2026-10-11 |
-| [ADR-19](#adr-19--star-schema-with-a-gapless-date-dimension) | Star schema with a gapless date dimension | Accepted | 2026-10-11 |
-| [ADR-30](#adr-30--parquet-dbt-core-and-duckdb) | Parquet, dbt Core and DuckDB | Accepted | 2026-10-19 |
-| [ADR-31](#adr-31--do-not-use-a-cloud-data-warehouse) | Do not use a cloud data warehouse | Accepted | 2026-10-19 |
-| [ADR-33](#adr-33--compute-real-prices-with-the-ine-food-cpi) | Compute real prices with the INE food CPI | Accepted | 2026-10-19 |
-| [ADR-34](#adr-34--separate-the-dbt-working-database-the-database-the-panel-reads-and-the-backup) | Separate the dbt working database, the database the panel reads and the backup | Accepted | 2026-10-19 |
-| [ADR-35](#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) | Publish the served database in a release that each load replaces | Accepted | 2026-10-24 |
+| [Use only the official files of ODEPA and the INE](#adr-01--use-only-the-official-files-of-odepa-and-the-ine) | ADR-01 | Accepted | 2026-10-11 |
+| [Orchestrate with GitHub Actions and publish on Streamlit Community Cloud](#adr-02--orchestrate-with-github-actions-and-publish-on-streamlit-community-cloud) | ADR-02 | Accepted | 2026-10-11 |
+| [Do not commit the raw data to the repository](#adr-04--do-not-commit-the-raw-data-to-the-repository) | ADR-04 | Accepted, amended by ADR-35 | 2026-10-11 |
+| [Rebuild everything on each load](#adr-10--rebuild-everything-on-each-load) | ADR-10 | Accepted | 2026-10-11 |
+| [Publish only if the tests pass](#adr-11--publish-only-if-the-tests-pass) | ADR-11 | Accepted | 2026-10-11 |
+| [Star schema with a gapless date dimension](#adr-19--star-schema-with-a-gapless-date-dimension) | ADR-19 | Accepted | 2026-10-11 |
+| [Parquet, dbt Core and DuckDB](#adr-30--parquet-dbt-core-and-duckdb) | ADR-30 | Accepted | 2026-10-19 |
+| [Do not use a cloud data warehouse](#adr-31--do-not-use-a-cloud-data-warehouse) | ADR-31 | Accepted | 2026-10-19 |
+| [Compute real prices with the INE food CPI](#adr-33--compute-real-prices-with-the-ine-food-cpi) | ADR-33 | Accepted | 2026-10-19 |
+| [Separate the dbt working database, the database the panel reads and the backup](#adr-34--separate-the-dbt-working-database-the-database-the-panel-reads-and-the-backup) | ADR-34 | Accepted | 2026-10-19 |
+| [Publish the served database in a release that each load replaces](#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) | ADR-35 | Accepted | 2026-10-24 |
+
+## In summary
+
+Each decision of this document answers a concrete question: where the data comes from, how it is loaded, how it is stored, when it is published and how much it costs. Three ideas join them:
+
+- **Only official data, recomputed from scratch.** Nothing is interpolated, and repeating a load never duplicates data.
+- **Nothing is published without tests.** A load with errors stops before it reaches the panel.
+- **Zero cost and no expiry.** Permanent free services and a single published copy of the database.
+
+[[diagrama:mapa_adr]]
+
+[[diagrama:tiempo_adr]]
 
 ## ADR-01 · Use only the official files of ODEPA and the INE
 
@@ -100,7 +112,7 @@ Each record keeps its original number, which is why the numbering is not consecu
 - **Context:** public, weekly data of a few megabytes, read by a single panel.
 - **Decision:** the served database is a DuckDB file; there is no cloud data warehouse.
 - **Considered options:** BigQuery as a second dbt target, declared as an option and never as a dependency of the panel.
-- **Consequences:** there is no cost, no cloud secrets and no expiry. It would be reconsidered only if a company added its own data; the thresholds are in the [Capacity and Scalability Plan](ESCALABILIDAD.md).
+- **Consequences:** there is no cost, no cloud secrets and no expiry. It would be reconsidered only if a company added its own data; the thresholds are in the [SAD, capacity and growth](SAD.md#9-capacity-and-growth).
 
 ## ADR-33 · Compute real prices with the INE food CPI
 
@@ -125,6 +137,9 @@ Each record keeps its original number, which is why the numbering is not consecu
 - **Status:** accepted (D-270, served database in a release).
 - **Date:** 2026-10-24.
 - **Context:** each load committed the served database and the backup, about 48 MB. Git keeps every version of a file: the history grew by about 1 GB per year with copies nobody reads, because each new database already contains the whole history ([ADR-10](#adr-10--rebuild-everything-on-each-load)). Measurements of 2026-10-24.
+
+[[diagrama:antes_despues]]
+
 - **Decision:** the served database is published as a file of the «base-actual» GitHub release, replaced by each load. Git keeps only its pointer, `etl/datos.version`, with the SHA-256 fingerprint, the size and the date of the published database. The panel, the tests of each push and a new copy of the project download the file when it is missing or older, and use it only if its fingerprint matches. The SQLite backup is rebuilt on the machine of each load, where the parity test runs, and is not published.
 - **Considered options:** no longer versioning only the backup, which reduced the growth to about 300 MB per year without stopping it; large-file storage (Git LFS), which also keeps every version and has a limited free quota; rewriting the history periodically, which invalidates the copies already cloned.
 - **Consequences:** the history stops growing with the data and there is a single published copy. The panel depends on being able to download the database when it starts; if it cannot, it keeps the one it has. The earlier versions stay in the history. A local rebuild newer than the pointer is kept.
@@ -144,3 +159,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 1.4 | 2026-10-23 | The ten decisions with their standard parts (D-248) |
 | 1.5 | 2026-10-24 | ADR-11 corrected and alternatives of ADR-19 (D-269); ADR-35 (D-270) |
 | 2.0 | 2026-10-25 | MADR format with date and options considered, contents first, ADR-30 options completed from the history, ADR-19 without unrecorded alternatives (D-279, professional documentation) |
+| 3.0 | 2026-10-25 | Summary in plain language, map of where each decision acts, timeline and the before and after of ADR-35; index by the name of each decision (D-290, documents for every reader) |

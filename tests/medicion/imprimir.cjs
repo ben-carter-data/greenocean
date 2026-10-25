@@ -13,10 +13,7 @@ const base = process.env.BASE || 'http://localhost:8599/';
 const DOCS = [['documentacion-y-enlaces', 'PRD · Requisitos del producto', 'PRD.md'],
               ['documentacion-y-enlaces', 'SAD · Arquitectura', 'SAD.md'],
               ['documentacion-y-enlaces', 'ADR · Decisiones de arquitectura', 'ADR.md'],
-              ['documentacion-y-enlaces', 'Diccionario de datos', 'DICCIONARIO_DATOS.md'],
-              ['documentacion-y-enlaces', 'Escalabilidad', 'ESCALABILIDAD.md'],
-              ['documentacion-y-enlaces', 'Plan de pruebas', 'PLAN_PRUEBAS.md'],
-              ['seguridad', 'Plan de pruebas de seguridad', 'SEGURIDAD.md'],
+              ['seguridad', 'Plan de pruebas y seguridad', 'PLAN_PRUEBAS.md'],
               ['documentacion-y-enlaces', 'Manual', 'MANUAL.md'],
               ['documentacion-y-enlaces', 'Índice de decisiones', 'INDICE_DECISIONES.md'],
               ['documentacion-y-enlaces', 'Glosario', 'GLOSARIO.md']];

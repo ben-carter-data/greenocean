@@ -931,7 +931,8 @@ PAGES = {
     # Security architecture (bi/security_map.py) and the security test plan diagrams (bi/security_plan.py)
     "Qué amenaza al sistema, qué lo mitiga, qué prueba lo verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de esconderlo, sino de las claves, que nunca aparecen.":
         "What threatens the system, what mitigates it, which test verifies it on every push and how it improves. The code is public: security does not depend on hiding it, but on the keys, which never appear.",
-    "El procedimiento, los casos de prueba y los resultados de la última revisión.": "The procedure, the test cases and the results of the last review.",
+    "Quién participa, los casos de prueba, el procedimiento y los resultados de la última revisión.":
+        "Who takes part, the test cases, the procedure and the results of the last review.",
     "SQL público con límites": "Public SQL with limits",
     "Base en solo lectura": "Read-only database",
     "Clave de control": "Control code",
@@ -1038,8 +1039,8 @@ PAGES = {
         "The Streamlit application (bi/dashboard.py). It reads etl/datos.duckdb read-only: no page can change a value.",
     "etl/datos.duckdb: la base servida. Solo se publica si pasan las 31 pruebas de dbt y la carga lee al menos el 90 % de las filas de la anterior.":
         "etl/datos.duckdb: the served database. It is published only if the 31 dbt tests pass and the load reads at least 90 % of the rows of the previous one.",
-    "El workflow pruebas.yml corre pytest en cada push y pull request: los casos S-01 a S-10 de docs/SEGURIDAD.md. Su resultado avisa; no detiene la publicación de main.":
-        "The pruebas.yml workflow runs pytest on every push and pull request: the cases S-01 to S-10 of docs/SEGURIDAD.md. Its result warns; it does not stop the publication of main.",
+    "El workflow pruebas.yml corre pytest en cada push y pull request: los casos S-01 a S-10 de docs/PLAN_PRUEBAS.md. Su resultado avisa; no detiene la publicación de main.":
+        "The pruebas.yml workflow runs pytest on every push and pull request: the cases S-01 to S-10 of docs/PLAN_PRUEBAS.md. Its result warns; it does not stop the publication of main.",
     "consulta SQL": "SQL query",
     "una sentencia": "one statement",
     "HTTPS · clave": "HTTPS · code",

@@ -52,12 +52,9 @@ EN = {
     "PRD · Requisitos del producto": "PRD · Product requirements",
     "SAD · Arquitectura": "SAD · Architecture",
     "ADR · Decisiones de arquitectura": "ADR · Architecture decisions",
-    "Escalabilidad": "Scalability",
-    "Plan de pruebas de seguridad": "Security test plan",
     "Manual de operación": "Operations runbook",
     "Índice de decisiones": "Decision index",
-    "Diccionario de datos": "Data dictionary",
-    "Plan de pruebas": "Test plan",
+    "Plan de pruebas y seguridad": "Test and security plan",
     "Glosario": "Glossary",
     # Sidebar footer
     "Apariencia": "Appearance",
@@ -137,20 +134,15 @@ EN = {
     "Imprimir o guardar como PDF": "Print or save as PDF",
     "en GitHub": "on GitHub",
     "Qué resuelve el producto, para quién y con qué requisitos.": "What the product solves, for whom and with which requirements.",
-    "Cómo está construido, por vistas: contexto, contenedores, datos, despliegue y seguridad.":
-        "How it is built, view by view: context, containers, data, deployment and security.",
+    "Cómo está construido, cómo corre cada semana, dónde viven sus datos y cómo puede crecer.":
+        "How it is built, how it runs each week, where its data lives and how it can grow.",
     "Las decisiones de arquitectura que más pesan: contexto, decisión, opciones y consecuencias.":
         "The architecture decisions that weigh most: context, decision, options and consequences.",
-    "Cómo se buscan, se corrigen y se prueban en cada push los puntos débiles.":
-        "How weak points are found, fixed and tested on every push.",
-    "Capacidad actual, qué cede primero y cuándo se justificaría una nube.":
-        "Current capacity, what gives way first and when a cloud would be justified.",
     "Cómo operar el proyecto y resolver sus fallas.": "How to operate the project and solve its failures.",
     "Las decisiones que cambian la arquitectura, los datos, la seguridad o la operación, por tema.":
         "The decisions that change the architecture, the data, the security or the operations, by theme.",
-    "Cada tabla y cada columna de la base servida.": "Each table and each column of the served database.",
-    "Qué se prueba, cómo y con qué criterios se acepta un cambio.":
-        "What is tested, how, and with which criteria a change is accepted.",
+    "Qué se prueba, quién participa en la seguridad y con qué criterios se acepta un cambio.":
+        "What is tested, who takes part in security and with which criteria a change is accepted.",
     "Las siglas y los términos del panel y de los documentos.": "The acronyms and terms of the panel and the documents.",
 }
 

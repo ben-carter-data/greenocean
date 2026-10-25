@@ -4,7 +4,7 @@ The drawing is a topology like a security network diagram: the Internet with its
 Community Cloud zone (a public part, open to anyone, and the author's part, behind the control code), the GitHub zone
 and, at the bottom, the loop of continuous improvement. Every piece is a real one of this project. The numbered green
 badges are the controls (CONTROLS), the red triangles the threats T1 to T6 (THREATS, OWASP Top 10 2021) placed on the
-path where each one acts, and under each piece the cases S-01 to S-10 of docs/SEGURIDAD.md that verify it on every
+path where each one acts, and under each piece the cases S-01 to S-10 of docs/PLAN_PRUEBAS.md that verify it on every
 push. The platform's own sign-in is dashed and labelled as declared by the author, because the repository cannot
 verify it. Secret values never appear.
 
@@ -59,7 +59,7 @@ CONTROLS = [
      "declarada por el autor y no verificable desde el repositorio.",
      "", [], False),
 ]
-# Threats: (id, threat, OWASP categories, numbers of its controls, its test cases in docs/SEGURIDAD.md, asset (mark, name)).
+# Threats: (id, threat, OWASP categories, numbers of its controls, its test cases in docs/PLAN_PRUEBAS.md, asset (mark, name)).
 THREATS = [
     ("T1", "Leer secretos o archivos del servidor con SQL", "A03 · A05", [1, 2], ["S-01", "S-02"],
      ("duckdb", "Servidor y base servida")),
@@ -72,7 +72,7 @@ THREATS = [
 OWASP = {"A01": "Pérdida de control de acceso", "A02": "Fallas criptográficas", "A03": "Inyección",
          "A04": "Diseño inseguro", "A05": "Configuración de seguridad incorrecta",
          "A07": "Fallas de identificación y autenticación", "A09": "Fallas en el registro y el monitoreo"}
-# The loop of continuous improvement, as docs/SEGURIDAD.md «3. Método» describes it: (title, line, detail).
+# The loop of continuous improvement, as the procedure of docs/PLAN_PRUEBAS.md describes it: (title, line, detail).
 LOOP = [
     ("Revisar", "puertas y activos", "Inventario de lo que se alcanza desde internet y de lo que protege, con el OWASP Top 10 como guía."),
     ("Atacar", "como un intruso", "Cada puerta se ataca con el código del panel y un secreto falso, nunca el real."),
@@ -101,7 +101,7 @@ NODE_TIPS = {
     "author": "El autor. Mantiene el código y los secretos; para lanzar la carga a mano desde el panel usa la clave de control.",
     "panel": "La aplicación de Streamlit (bi/dashboard.py). Lee etl/datos.duckdb en solo lectura: ninguna página puede cambiar un dato.",
     "base": "etl/datos.duckdb: la base servida. Solo se publica si pasan las 31 pruebas de dbt y la carga lee al menos el 90 % de las filas de la anterior.",
-    "ci": "El workflow pruebas.yml corre pytest en cada push y pull request: los casos S-01 a S-10 de docs/SEGURIDAD.md. Su resultado avisa; no detiene la publicación de main.",
+    "ci": "El workflow pruebas.yml corre pytest en cada push y pull request: los casos S-01 a S-10 de docs/PLAN_PRUEBAS.md. Su resultado avisa; no detiene la publicación de main.",
 }
 # Threat markers: threat id -> (x, y, line label, label side).
 THREAT_SPOTS = {"T1": (120, 258), "T2": (120, 112), "T3": (400, 112), "T4": (364, 352), "T5": (622, 430), "T6": (696, 32)}

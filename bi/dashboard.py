@@ -78,11 +78,8 @@ PAGE_DOCUMENTATION = "Documentación"
 PAGE_PRD = "PRD · Requisitos del producto"
 PAGE_SAD = "SAD · Arquitectura"
 PAGE_ADR = "ADR · Decisiones de arquitectura"
-# Step 7 of the refonte: the SAD's scalability section, on its own page.
-PAGE_SCALABILITY = "Escalabilidad"
 # D-201: security has its own section, the attack view and the test plan that backs it.
 PAGE_SECURITY = "Mapa de seguridad"
-PAGE_SECURITY_PLAN = "Plan de pruebas de seguridad"
 # D-211: the stack in 30 seconds, for a recruiter.
 PAGE_STACK = "Stack y evidencia"
 # D-282: one folder holds every document; the documents added with it have their own page.
@@ -90,8 +87,10 @@ PAGE_FOLDER = "Documentos"
 # D-285: the whole system in one view, next to the stack.
 PAGE_APP_MAP = "Mapa de la app"
 PAGE_DECISION_INDEX = "Índice de decisiones"
-PAGE_DATA_DICTIONARY = "Diccionario de datos"
-PAGE_TEST_PLAN = "Plan de pruebas"
+# D-290: the test plan and the security plan are one document; the scalability plan and the data dictionary live in the SAD.
+PAGE_TEST_PLAN = "Plan de pruebas y seguridad"
+RETIRED_VIEWS.update({"Plan de pruebas de seguridad": PAGE_TEST_PLAN, "Plan de pruebas": PAGE_TEST_PLAN,
+                      "Escalabilidad": PAGE_SAD, "Diccionario de datos": PAGE_SAD})
 SECTION_RESOURCES = "Enlaces"
 SOURCE_LINKS = [
     ("ODEPA: precios mayoristas", project.WHOLESALE_SOURCE_URL),
@@ -116,9 +115,9 @@ WINDOWS = {
     REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY, PAGE_SQL],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
-    SECTION_SECURITY: [PAGE_SECURITY, PAGE_SECURITY_PLAN],
-    SECTION_LINKS: [PAGE_FOLDER, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
-                    PAGE_MANUAL, PAGE_DECISION_INDEX, PAGE_DATA_DICTIONARY, PAGE_TEST_PLAN],
+    SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
+    SECTION_LINKS: [PAGE_FOLDER, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
+                    PAGE_MANUAL, PAGE_DECISION_INDEX],
     SECTION_RESOURCES: [PAGE_LINKS],
 }
 # The SQL and Python consoles left the app (D-143): the code lives in GitHub and the
@@ -175,8 +174,8 @@ HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
     PAGE_DOCUMENTATION: ":material/menu_book:",
     PAGE_PRD: ":material/assignment:", PAGE_SAD: ":material/account_tree:", PAGE_ADR: ":material/gavel:",
-    PAGE_SCALABILITY: ":material/trending_up:", PAGE_SQL: ":material/terminal:",
-    PAGE_SECURITY: ":material/lock:", PAGE_STACK: ":material/stacks:", PAGE_SECURITY_PLAN: ":material/fact_check:",
+    PAGE_SQL: ":material/terminal:",
+    PAGE_SECURITY: ":material/lock:", PAGE_STACK: ":material/stacks:",
     PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
     PAGE_BUSINESS: ":material/assignment:",
     PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
@@ -188,12 +187,12 @@ PAGE_ICONS = {
     PAGE_MANUAL: ":material/menu_book:",
     PAGE_GLOSSARY: ":material/dictionary:", PAGE_LINKS: ":material/link:",
     PAGE_FOLDER: ":material/folder_open:", PAGE_DECISION_INDEX: ":material/list_alt:", PAGE_APP_MAP: ":material/hub:",
-    PAGE_DATA_DICTIONARY: ":material/table_chart:", PAGE_TEST_PLAN: ":material/checklist:",
+    PAGE_TEST_PLAN: ":material/fact_check:",
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
-    PAGE_SECURITY: "mapa-de-seguridad", PAGE_STACK: "stack-y-evidencia", PAGE_SECURITY_PLAN: "plan-de-pruebas-de-seguridad",
-    PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SCALABILITY: "escalabilidad", PAGE_SQL: "consultas-sql",
+    PAGE_SECURITY: "mapa-de-seguridad", PAGE_STACK: "stack-y-evidencia",
+    PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SQL: "consultas-sql",
     PAGE_HOME: "dashboard", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura", PAGE_ANALYSIS: "analisis", PAGE_GAP: "brecha",
@@ -202,7 +201,7 @@ PAGE_PATHS = {
     PAGE_RULES: "reglas", PAGE_DEVOPS: "devops", PAGE_OPERATIONS: "operaciones",
     PAGE_RUNS: "ejecuciones", PAGE_MANUAL: "manual",
     PAGE_GLOSSARY: "glosario", PAGE_LINKS: "enlaces",
-    PAGE_FOLDER: "documentos", PAGE_APP_MAP: "mapa-de-la-app", PAGE_DECISION_INDEX: "indice-de-decisiones", PAGE_DATA_DICTIONARY: "diccionario-de-datos",
+    PAGE_FOLDER: "documentos", PAGE_APP_MAP: "mapa-de-la-app", PAGE_DECISION_INDEX: "indice-de-decisiones",
     PAGE_TEST_PLAN: "plan-de-pruebas",
 }
 TAB_IDEA = "Idea de negocio"
@@ -241,6 +240,9 @@ OLD_PATHS = {
     # The three profile pages became the real documents (D-151).
     "documentacion-bi": (PAGE_PRD, None), "documentacion-ba": (PAGE_PRD, None),
     "documentacion-it": (PAGE_SAD, None), "pipeline": (PAGE_DIAGRAMS, None),
+    # D-290: the documents merged into others.
+    "escalabilidad": (PAGE_SAD, None), "diccionario-de-datos": (PAGE_SAD, None),
+    "plan-de-pruebas-de-seguridad": (PAGE_TEST_PLAN, None),
     "preguntas-y-resultados": (PAGE_HOME, None), "analisis-python": (PAGE_HOME, None),
     "queries": (PAGE_HOME, None), "python": (PAGE_HOME, None),
     # The retired «Consulta de datos» screen (C03).
@@ -1287,7 +1289,8 @@ def build_style_css(mode):
     /* Evidence cells hold long file and test names: they wrap instead of widening the table. */
     .st-key-project_document table {{table-layout:auto; width:100%;}}
     .st-key-project_document td code {{white-space:normal; overflow-wrap:anywhere; font-size:.78rem;}}
-    .st-key-project_document td:first-child, .st-key-project_document th:first-child {{white-space:nowrap;}}
+    /* D-290: a first cell may be a whole sentence; an identifier such as RF-01 never breaks at its hyphen anyway. */
+    .st-key-project_document td:first-child, .st-key-project_document th:first-child {{white-space:normal; min-width:6.5em;}}
     @media (max-width:900px) {{ .st-key-project_document {{padding:22px 18px 26px;}} }}
     .st-key-project_document h2 {{font-size:1.35rem; font-weight:600; letter-spacing:-.02em;
         margin:34px 0 10px; padding-top:14px; border-top:1px solid {palette['card_border']};
@@ -1734,8 +1737,8 @@ BAR_VIEWS = {PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE
 
 
 # The project documents: no path row and no Volver (D-269); the folder's path leads back (D-282).
-DOCUMENT_VIEWS = {PAGE_DOCUMENTATION, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY, PAGE_SECURITY_PLAN, PAGE_MANUAL,
-                  PAGE_GLOSSARY, PAGE_DECISION_INDEX, PAGE_DATA_DICTIONARY, PAGE_TEST_PLAN}
+DOCUMENT_VIEWS = {PAGE_DOCUMENTATION, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_MANUAL, PAGE_GLOSSARY, PAGE_DECISION_INDEX,
+                  PAGE_TEST_PLAN}
 
 
 def build_view_path(window, view):
@@ -5941,8 +5944,8 @@ def show_security_page(mode):
                              "verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de "
                              "esconderlo, sino de las claves, que nunca aparecen.",
                   side=lambda: st.markdown(page_bar.build_link_html(
-                      PAGE_SECURITY_PLAN, build_page_address(PAGE_SECURITY_PLAN),
-                      "El procedimiento, los casos de prueba y los resultados de la última revisión."),
+                      PAGE_TEST_PLAN, build_page_address(PAGE_TEST_PLAN),
+                      "Quién participa, los casos de prueba, el procedimiento y los resultados de la última revisión."),
                       unsafe_allow_html=True, width="content"))
     # D-277: the drawing keeps its proportion and is never taller than what the window leaves.
     st.markdown('<style>.st-key-sec_frame iframe {display:block; margin:0 auto; '
@@ -6614,20 +6617,16 @@ def show_links_page(mode):
 # region Project documents (D-151)
 PROJECT_DOCUMENTS = {
     PAGE_PRD: ("PRD.md", "Qué resuelve el producto, para quién y con qué requisitos."),
-    PAGE_SAD: ("SAD.md", "Cómo está construido, por vistas: contexto, contenedores, datos, despliegue y seguridad."),
+    PAGE_SAD: ("SAD.md", "Cómo está construido, cómo corre cada semana, dónde viven sus datos y cómo puede crecer."),
     PAGE_ADR: ("ADR.md", "Las decisiones de arquitectura que más pesan: contexto, decisión, opciones y consecuencias."),
-    PAGE_SECURITY_PLAN: ("SEGURIDAD.md", "Cómo se buscan, se corrigen y se prueban en cada push los puntos débiles."),
-    PAGE_SCALABILITY: ("ESCALABILIDAD.md", "Capacidad actual, qué cede primero y cuándo se justificaría una nube."),
     PAGE_MANUAL: ("MANUAL.md", "Cómo operar el proyecto y resolver sus fallas."),
     PAGE_DECISION_INDEX: ("INDICE_DECISIONES.md", "Las decisiones que cambian la arquitectura, los datos, la seguridad o la operación, por tema."),
-    PAGE_DATA_DICTIONARY: ("DICCIONARIO_DATOS.md", "Cada tabla y cada columna de la base servida."),
-    PAGE_TEST_PLAN: ("PLAN_PRUEBAS.md", "Qué se prueba, cómo y con qué criterios se acepta un cambio."),
+    PAGE_TEST_PLAN: ("PLAN_PRUEBAS.md", "Qué se prueba, quién participa en la seguridad y con qué criterios se acepta un cambio."),
     PAGE_GLOSSARY: ("GLOSARIO.md", "Las siglas y los términos del panel y de los documentos."),
 }
 # D-282: the folder, in reading order, with the family that colors each file.
 FOLDER_DOCUMENTS = [(PAGE_PRD, "producto"), (PAGE_SAD, "arquitectura"), (PAGE_ADR, "arquitectura"),
-                    (PAGE_DATA_DICTIONARY, "arquitectura"), (PAGE_SCALABILITY, "arquitectura"),
-                    (PAGE_TEST_PLAN, "calidad"), (PAGE_SECURITY_PLAN, "calidad"), (PAGE_MANUAL, "operacion"),
+                    (PAGE_TEST_PLAN, "calidad"), (PAGE_MANUAL, "operacion"),
                     (PAGE_DECISION_INDEX, "referencia"), (PAGE_GLOSSARY, "referencia")]
 FOLDER_ORDER = [page for page, _ in FOLDER_DOCUMENTS]
 FOLDER_VIEW_KEY = "folder_view"
@@ -6859,10 +6858,8 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_PRD: lambda mode: show_project_document(mode, PAGE_PRD),
     PAGE_SAD: lambda mode: show_project_document(mode, PAGE_SAD),
     PAGE_ADR: lambda mode: show_project_document(mode, PAGE_ADR),
-    PAGE_SCALABILITY: lambda mode: show_project_document(mode, PAGE_SCALABILITY),
     PAGE_STACK: lambda mode: show_stack_page(mode),
     PAGE_SECURITY: lambda mode: show_security_page(mode),
-    PAGE_SECURITY_PLAN: lambda mode: show_project_document(mode, PAGE_SECURITY_PLAN),
     PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(mode, header=lambda: show_page_bar(
         PAGE_SQL, "Consultas SQL", sql_explorer.DESCRIPTION, sql_explorer.build_bar_chips())),
     PAGE_HOME: show_home_page,
@@ -6887,7 +6884,6 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_MANUAL: lambda mode: show_project_document(mode, PAGE_MANUAL),
     PAGE_GLOSSARY: lambda mode: show_project_document(mode, PAGE_GLOSSARY),
     PAGE_DECISION_INDEX: lambda mode: show_project_document(mode, PAGE_DECISION_INDEX),
-    PAGE_DATA_DICTIONARY: lambda mode: show_project_document(mode, PAGE_DATA_DICTIONARY),
     PAGE_TEST_PLAN: lambda mode: show_project_document(mode, PAGE_TEST_PLAN),
     PAGE_FOLDER: lambda mode: show_documents_folder(mode),
     PAGE_APP_MAP: lambda mode: show_app_map_page(mode),

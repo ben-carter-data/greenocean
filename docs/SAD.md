@@ -4,33 +4,33 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 2.0 |
+| Versión | 3.0 |
 | Fecha | 25-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
-| Propósito | Describir cómo está construido el sistema, por vistas, y por qué tiene esa forma. |
-| Audiencia | Arquitectura, ingeniería de datos, operación y revisión técnica. |
-| Documentos relacionados | [Documento de requisitos del producto (PRD)](PRD.md) · [Registros de decisiones de arquitectura (ADR)](ADR.md) · [Diccionario de datos](DICCIONARIO_DATOS.md) · [Plan de pruebas de seguridad](SEGURIDAD.md) · [Glosario](GLOSARIO.md) |
+| Propósito | Explicar cómo está construido GreenOcean, cómo corre cada semana, dónde viven sus datos y por qué tiene esa forma. |
+| Audiencia | Arquitectura, ingeniería de datos, operación, gerencia y revisión técnica. |
+| Documentos relacionados | [Documento de requisitos del producto (PRD)](PRD.md) · [Registros de decisiones de arquitectura (ADR)](ADR.md) · [Plan de pruebas y seguridad](PLAN_PRUEBAS.md) · [Glosario](GLOSARIO.md) |
 
 ## Índice
 
-1. [Introducción y objetivos](#1-introducción-y-objetivos)
-2. [Restricciones](#2-restricciones)
-3. [Contexto y alcance](#3-contexto-y-alcance)
-4. [Estrategia de solución](#4-estrategia-de-solución)
-5. [Vista de bloques de construcción](#5-vista-de-bloques-de-construcción)
-6. [Vista de ejecución](#6-vista-de-ejecución)
-7. [Vista de despliegue](#7-vista-de-despliegue)
-8. [Conceptos transversales](#8-conceptos-transversales)
-9. [Decisiones de arquitectura](#9-decisiones-de-arquitectura)
-10. [Requisitos de calidad](#10-requisitos-de-calidad)
+1. [En resumen](#1-en-resumen)
+2. [Contexto](#2-contexto)
+3. [Contenedores](#3-contenedores)
+4. [La carga de cada semana](#4-la-carga-de-cada-semana)
+5. [El panel al abrirse](#5-el-panel-al-abrirse)
+6. [Los datos](#6-los-datos)
+7. [Despliegue](#7-despliegue)
+8. [Calidad, seguridad y observabilidad](#8-calidad-seguridad-y-observabilidad)
+9. [Capacidad y crecimiento](#9-capacidad-y-crecimiento)
+10. [Restricciones y decisiones](#10-restricciones-y-decisiones)
 11. [Riesgos y deuda técnica](#11-riesgos-y-deuda-técnica)
 12. [Glosario](#12-glosario)
 13. [Historial de versiones](#13-historial-de-versiones)
 
-## 1. Introducción y objetivos
+## 1. En resumen
 
-GreenOcean es un pipeline semanal y un panel de solo lectura sobre los precios de los alimentos en Chile. Los requisitos están en el [PRD](PRD.md). Este documento se centra en cómo se cumplen. Los objetivos de calidad que más pesan en la arquitectura son tres:
+GreenOcean es un pipeline semanal y un panel de solo lectura sobre los precios de los alimentos en Chile. Su arquitectura persigue tres objetivos, en este orden:
 
 | Prioridad | Objetivo de calidad | Qué significa aquí |
 |---|---|---|
@@ -38,33 +38,15 @@ GreenOcean es un pipeline semanal y un panel de solo lectura sobre los precios d
 | 2 | Confiabilidad de la publicación | Una carga con errores nunca reemplaza a la base servida |
 | 3 | Costo cero y mantenimiento mínimo | Solo servicios gratuitos permanentes y sin servidores propios |
 
-## 2. Restricciones
+Para lograrlos, la carga rehace toda la historia cada martes desde los archivos oficiales, la comprueba por dos caminos independientes y solo entonces reemplaza la base que lee el panel. Todo corre en servicios gratuitos, sin servidores propios.
 
-| Restricción | Origen |
-|---|---|
-| Solo servicios gratuitos sin vencimiento | [ADR-02 · Orquestar con GitHub Actions y publicar en Streamlit Community Cloud](ADR.md#adr-02--orquestar-con-github-actions-y-publicar-en-streamlit-community-cloud) y [ADR-31 · No usar un data warehouse en la nube](ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube) |
-| Solo fuentes oficiales y abiertas | [ADR-01 · Usar solo los archivos oficiales de ODEPA y del INE](ADR.md#adr-01--usar-solo-los-archivos-oficiales-de-odepa-y-del-ine) |
-| Ninguna cifra se inventa ni se interpola, y el histórico no se borra | Regla del proyecto |
-| Python 3.11 o 3.12 para el pipeline con dbt | Compatibilidad de dbt Core |
-| Repositorio público | Portafolio abierto; la seguridad depende de los secretos, no del código oculto |
-
-## 3. Contexto y alcance
+## 2. Contexto
 
 [[diagrama:contexto]]
 
 El sistema lee dos fuentes públicas, ODEPA y el INE, y se apoya en dos servicios gratuitos: GitHub guarda el código y la base servida y ejecuta la carga; Streamlit Community Cloud publica el panel. El visitante solo lee el panel. El administrador mantiene el código y los secretos.
 
-## 4. Estrategia de solución
-
-| Principio | Cómo se aplica | Decisión |
-|---|---|---|
-| Rehacer todo en cada carga | Cada martes se recalcula la historia completa desde los archivos oficiales; repetir una carga nunca duplica datos | [ADR-10](ADR.md#adr-10--reconstruir-todo-en-cada-carga) |
-| Publicar solo lo validado | La base servida cambia solo si pasan todas las pruebas | [ADR-11](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas) |
-| Comprobar por un segundo camino | Un ETL en Python, independiente de dbt, calcula los mismos precios | [ADR-34](ADR.md#adr-34--separar-la-base-de-trabajo-de-dbt-la-base-que-lee-el-panel-y-el-respaldo) |
-| Capas declarativas y probadas | Bronce en Parquet; staging, intermedio y marts en dbt Core sobre DuckDB | [ADR-30](ADR.md#adr-30--parquet-dbt-core-y-duckdb) |
-| Una sola copia publicada | La base servida vive en un release que cada carga reemplaza | [ADR-35](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) |
-
-## 5. Vista de bloques de construcción
+## 3. Contenedores
 
 [[diagrama:contenedores]]
 
@@ -78,11 +60,11 @@ El sistema tiene dos aplicaciones y tres almacenes de datos:
 | Respaldo | SQLite (`etl/datos.db`) | Los mismos precios calculados sin dbt, para la prueba de paridad; se rehace en la máquina de cada carga y no se publica |
 | Panel web | Streamlit, Python | Muestra los indicadores y los documentos, y ofrece el estudio SQL; lee la base servida en solo lectura y, con la clave de control, lanza la carga por la API de GitHub |
 
-Se omite la vista de componentes (nivel 3 del modelo C4): los módulos de `bi/` no se despliegan por separado, y la carga ya se describe paso a paso en la sección 6 y en el linaje de dbt.
+## 4. La carga de cada semana
 
-## 6. Vista de ejecución
+[[diagrama:secuencia_carga]]
 
-Cada paso de la carga semanal empieza solo si el anterior terminó bien:
+Cada paso empieza solo si el anterior terminó bien:
 
 | Paso | Qué ocurre |
 |---|---|
@@ -96,9 +78,176 @@ Cada paso de la carga semanal empieza solo si el anterior terminó bien:
 | 8 | La máquina reemplaza la base en el release y sube su puntero, `etl/datos.version`, a la rama `main`; el panel detecta el puntero nuevo, descarga la base y verifica su huella antes de usarla |
 | 9 | Se publica el informe semanal como un issue del repositorio |
 
-Si un paso falla, los siguientes no corren y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)). La ejecución y sus pasos se pueden seguir en la pestaña «Operación» de [[vista:Centro de operación]]; el administrador también puede lanzar la carga desde el panel, con la clave de control.
+Si un paso falla, los siguientes no corren y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)). La ejecución y sus pasos se siguen en la pestaña «Operación» de [[vista:Centro de operación]].
 
-## 7. Vista de despliegue
+## 5. El panel al abrirse
+
+[[diagrama:secuencia_panel]]
+
+Al abrirse, el panel compara su base con el puntero de la rama `main`. Si su copia es más antigua, descarga la base del release «base-actual» y la usa solo si su huella SHA-256 coincide. Después abre la base en solo lectura: ninguna página puede cambiar un dato. Si GitHub no responde, el panel sigue con la base que ya tiene.
+
+## 6. Los datos
+
+[[diagrama:capas]]
+
+El aterrizaje guarda las filas tal como llegan; el bronce es su copia literal en Parquet, por fuente y año; staging normaliza tipos y textos; intermedio aplica las reglas de negocio (unidades, semanas, rechazos); los marts forman el modelo estrella que lee el panel. El recorrido y el linaje están en [[vista:Pipeline y linaje]] y el modelo, en [[vista:Modelo de datos]]. Las fechas se guardan como texto ISO (`AAAA-MM-DD`).
+
+### 6.1 Tablas de la base servida
+
+| Tabla | Función | Contenido |
+|---|---|---|
+| `weekly_price` | Hechos | Un precio por semana, producto, región, canal y unidad |
+| `dim_product` | Dimensión | Producto, variedad, calidad y familia |
+| `dim_region` | Dimensión | Regiones con precios |
+| `dim_channel` | Dimensión | Canales de venta y su fuente |
+| `dim_date` | Dimensión | Una fila por semana, sin huecos |
+| `ipc_monthly` | IPC | IPC de alimentos mensual como una sola serie |
+| `ipc_weekly` | IPC | Deflactor de cada semana |
+| `ine_ipc_source` | IPC | Filas del IPC tal como se leyeron del INE |
+| `etl_run` | Auditoría | Una fila por carga publicada |
+| `rejection` | Auditoría | Filas rechazadas por la última carga, con su motivo |
+| `dbt_node` | Linaje | Modelos, fuentes y pruebas del último `dbt build` |
+| `dbt_result` | Linaje | Resultado de cada modelo y prueba del último `dbt build` |
+
+### 6.2 Hechos y dimensiones
+
+### weekly_price
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `week_start` | VARCHAR | FK → `dim_date` | Lunes de la semana |
+| `product_id` | BIGINT | FK → `dim_product` | Producto, variedad y calidad |
+| `region_id` | INTEGER | FK → `dim_region` | Región |
+| `channel_id` | BIGINT | FK → `dim_channel` | Canal de venta |
+| `normalized_unit` | VARCHAR | | Unidad normalizada: `kilo`, `litro` o `unidad`; vacía si no se puede convertir |
+| `price` | DOUBLE | | Precio semanal en pesos nominales, por unidad normalizada |
+| `volume` | DOUBLE | | Volumen informado por la fuente, cuando existe |
+| `observation_count` | BIGINT | | Número de cotizaciones que forman el precio de la semana |
+| `flag` | VARCHAR | | Vacía si el precio entra en los indicadores; `ATIPICO` o `UNIDAD_NO_CONVERTIBLE` si queda fuera de ellos |
+
+### dim_product
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `product_id` | BIGINT | PK | Identificador del producto |
+| `product_group` | VARCHAR | | Familia de alimentos |
+| `product` | VARCHAR | | Producto |
+| `variety` | VARCHAR | | Variedad |
+| `quality` | VARCHAR | | Calidad |
+
+### dim_region
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `region_id` | INTEGER | PK | Identificador de la región |
+| `region` | VARCHAR | | Nombre de la región |
+
+### dim_channel
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `channel_id` | BIGINT | PK | Identificador del canal |
+| `channel` | VARCHAR | | Canal de venta, por ejemplo «Supermercado» o «Feria libre» |
+| `source` | VARCHAR | | Fuente de ODEPA: `wholesale` (mayorista) o `consumer` (consumidor) |
+
+### dim_date
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `week_start` | VARCHAR | PK | Lunes de la semana |
+| `iso_year` | BIGINT | | Año ISO de la semana |
+| `iso_week` | BIGINT | | Número de semana ISO |
+| `month` | BIGINT | | Mes del lunes |
+| `month_name` | VARCHAR | | Nombre del mes |
+| `year` | BIGINT | | Año del lunes |
+| `season` | VARCHAR | | Estación en Chile: `verano`, `otoño`, `invierno` o `primavera` |
+
+### 6.3 IPC
+
+**Precios reales.** Cada semana toma el IPC de alimentos del mes de su lunes; los precios reales quedan en pesos del último mes publicado ([ADR-33 · Calcular precios reales con el IPC de alimentos del INE](ADR.md#adr-33--calcular-precios-reales-con-el-ipc-de-alimentos-del-ine)).
+
+### ipc_monthly
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `year` | INTEGER | PK (con `month`) | Año |
+| `month` | INTEGER | PK (con `year`) | Mes |
+| `food_index` | DOUBLE | | IPC de alimentos, base 2023 = 100 |
+| `origin` | VARCHAR | | Serie de origen: la base 2023 o la serie empalmada, enlazada en enero de 2024 |
+
+### ipc_weekly
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `week_start` | VARCHAR | PK, FK → `dim_date` | Lunes de la semana |
+| `ipc_year` | INTEGER | | Año del IPC usado para esa semana |
+| `ipc_month` | INTEGER | | Mes del IPC usado para esa semana |
+| `food_index` | DOUBLE | | IPC de alimentos de ese mes |
+| `reference_year` | INTEGER | | Año del último mes publicado, al que se llevan los precios |
+| `reference_month` | INTEGER | | Último mes publicado |
+| `real_factor` | DOUBLE | | Factor que convierte un precio nominal de la semana en pesos del mes de referencia |
+| `provisional` | BOOLEAN | | Verdadero si la semana es posterior al último mes publicado |
+
+### ine_ipc_source
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `file` | VARCHAR | | Archivo del INE de origen |
+| `year` | VARCHAR | | Año, como lo publica el INE |
+| `month` | VARCHAR | | Mes, como lo publica el INE |
+| `index_value` | VARCHAR | | Valor del índice, como lo publica el INE |
+| `monthly_change` | VARCHAR | | Variación mensual, como la publica el INE |
+
+### 6.4 Auditoría y linaje
+
+### etl_run
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `run_id` | INTEGER | PK | Número de la carga |
+| `started_at` | VARCHAR | | Inicio de la carga, en UTC |
+| `status` | VARCHAR | | Estado: `LOADED` para una carga publicada |
+| `rows_read` | INTEGER | | Filas leídas de ODEPA |
+| `rows_loaded` | INTEGER | | Filas cargadas |
+| `rows_rejected` | INTEGER | | Filas rechazadas; leídas = cargadas + rechazadas |
+| `message` | VARCHAR | | Mensaje de la carga, si lo hay |
+
+### rejection
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `run_id` | INTEGER | FK → `etl_run` | Carga que rechazó la fila |
+| `source` | VARCHAR | | Fuente: `wholesale` o `consumer` |
+| `reason` | VARCHAR | | Motivo del rechazo, por ejemplo `NON_POSITIVE_PRICE` (precio cero o negativo) |
+| `original_row` | JSON | | La fila tal como llegó |
+
+### dbt_node
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `unique_id` | VARCHAR | PK | Identificador del nodo en dbt |
+| `name` | VARCHAR | | Nombre del modelo, la fuente o la prueba |
+| `resource_type` | VARCHAR | | `model`, `source` o `test` |
+| `layer` | VARCHAR | | Capa: `bronze`, `staging`, `intermediate` o `marts`; vacía para las pruebas |
+| `materialized` | VARCHAR | | Cómo se materializa el modelo |
+| `depends_on` | VARCHAR | | Nodos de los que depende |
+| `test_type` | VARCHAR | | Tipo de prueba, para las pruebas |
+| `column_name` | VARCHAR | | Columna que prueba, si aplica |
+| `description` | VARCHAR | | Descripción del nodo en el proyecto dbt |
+
+### dbt_result
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `unique_id` | VARCHAR | FK → `dbt_node` | Nodo ejecutado |
+| `status` | VARCHAR | | Resultado: `success` para un modelo construido, `pass` para una prueba superada |
+| `execution_time` | DOUBLE | | Duración en segundos |
+| `failures` | INTEGER | | Filas que no cumplen la prueba |
+| `generated_at` | VARCHAR | | Fecha del `dbt build` |
+
+## 7. Despliegue
+
+[[diagrama:despliegue]]
 
 | Pieza | Dónde corre | Detalle |
 |---|---|---|
@@ -108,25 +257,17 @@ Si un paso falla, los siguientes no corren y la base servida no cambia ([ADR-11 
 | Panel | Streamlit Community Cloud, desde `main` | Guarda los secretos: el token de GitHub y la clave de control |
 | Aterrizaje (`etl/raw.db`) | Computador del autor y máquina de cada carga | No se versiona |
 
-El diagrama de despliegue, con el estado en vivo de cada pieza, está en la pestaña «Despliegue» de [[vista:Centro de operación]]; el camino de un cambio hasta producción, en su pestaña «CI/CD».
+El diagrama con el estado en vivo de cada pieza está en la pestaña «Despliegue» de [[vista:Centro de operación]]; el camino de un cambio hasta producción, en su pestaña «CI/CD».
 
-## 8. Conceptos transversales
-
-**Capas de datos.** El aterrizaje guarda las filas tal como llegan; el bronce es su copia literal en Parquet, por fuente y año; staging normaliza tipos y textos; intermedio aplica las reglas de negocio (unidades, semanas, rechazos); los marts forman el modelo estrella que lee el panel. El recorrido y el linaje están en [[vista:Pipeline y linaje]]; las tablas y sus claves, en [[vista:Modelo de datos]] y en el [Diccionario de datos](DICCIONARIO_DATOS.md).
-
-**Precios reales.** Cada semana toma el IPC de alimentos del mes de su lunes; los precios reales quedan en pesos del último mes publicado ([ADR-33 · Calcular precios reales con el IPC de alimentos del INE](ADR.md#adr-33--calcular-precios-reales-con-el-ipc-de-alimentos-del-ine)).
+## 8. Calidad, seguridad y observabilidad
 
 **Calidad.** Tres puertas: el archivo (¿llegó completo y al día?), cada fila (¿es válida?) y la base (¿es coherente y pasó sus pruebas?). Once indicadores, en cinco dimensiones, se miden en cada carga contra su umbral; la exactitud, la sexta dimensión, se mide con cuatro controles que comparan las cifras con la fuente. El detalle está en [[vista:Calidad y auditoría]].
 
 **Observabilidad.** Cada carga deja rastro en cuatro lugares: `etl_run` (filas leídas, cargadas y rechazadas de cada carga publicada), `dbt_result` (el resultado de cada modelo y prueba), el registro de GitHub Actions (cada paso, incluidos los que fallan) y el correo que GitHub envía al autor si la carga falla. La pestaña «Monitoreo» de [[vista:Centro de operación]] los reúne.
 
-**Seguridad.** Las amenazas, sus controles y las pruebas que los verifican están en [[vista:Arquitectura de seguridad]]; el procedimiento de verificación, en el [Plan de pruebas de seguridad](SEGURIDAD.md).
+**Seguridad.** Las amenazas, sus controles y las pruebas que los verifican están en [[vista:Arquitectura de seguridad]]; el procedimiento de verificación, en el [Plan de pruebas y seguridad](PLAN_PRUEBAS.md).
 
-## 9. Decisiones de arquitectura
-
-Las decisiones que dan forma a esta arquitectura, con su contexto, sus alternativas y sus consecuencias, están en los [Registros de decisiones de arquitectura (ADR)](ADR.md).
-
-## 10. Requisitos de calidad
+**Requisitos de calidad**
 
 | Atributo | Escenario | Respuesta esperada |
 |---|---|---|
@@ -135,6 +276,67 @@ Las decisiones que dan forma a esta arquitectura, con su contexto, sus alternati
 | Disponibilidad | GitHub no responde al abrir el panel | El panel conserva la base que ya tiene y lo informa si no tiene ninguna |
 | Seguridad | Un visitante intenta leer archivos del servidor con SQL | La consulta se rechaza y el motor no tiene acceso a archivos ni a la red |
 | Usabilidad | Una pantalla de 1440 × 900 | Cada página principal se ve entera en la ventana del navegador (1440 × 790) |
+
+## 9. Capacidad y crecimiento
+
+### 9.1 Capacidad actual
+
+| Medida | Valor | Origen |
+|---|---|---|
+| Base servida | Unos 14 MB en la base servida | Tamaño de `etl/datos.duckdb` |
+| Datos | Volumen y cobertura de la última carga | [PRD, sección 6](PRD.md#6-alcance) |
+| Frecuencia | Una carga por semana | [RF-01](PRD.md#5-requisitos) |
+| Usuarios | Un panel público de solo lectura | [PRD, sección 3](PRD.md#3-para-quién-es) |
+
+### 9.2 Qué cede primero
+
+| Límite | Situación actual | Respuesta prevista |
+|---|---|---|
+| Tamaño de la base servida | Una sola copia en un release, reemplazada por cada carga ([ADR-35](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza)); el historial de Git ya no crece con los datos | Un archivo de release admite hasta 2 GB; mucho antes convendría la opción de la sección 9.4 |
+| Duración de la carga | Cada carga rehace la historia completa desde 2022 ([ADR-10](ADR.md#adr-10--reconstruir-todo-en-cada-carga)) y tarda un poco más cada año | Cargas incrementales cuando la duración lo justifique |
+| Visitantes simultáneos | Una aplicación gratuita de Streamlit que lee un archivo pequeño en solo lectura | Si varios equipos lo usaran a diario, el plan gratuito sería insuficiente: es uno de los umbrales de la sección 9.4 |
+
+### 9.3 Opciones de crecimiento
+
+Una fuente nueva se incorpora como las actuales: una carpeta en el bronce y sus modelos de dbt, sin modificar los existentes.
+
+| Extensión | Estado | Cómo se incorporaría |
+|---|---|---|
+| Clima por región y semana | Prevista; fuente oficial por definir | Un staging y un mart por semana y región, junto a las alertas de precio, sin afirmar que el clima cause un precio |
+| Data warehouse en la nube | No adoptado ([ADR-31](ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube)) | Un destino nuevo en la configuración de dbt, con los mismos modelos y la misma auditoría |
+
+### 9.4 Cuándo se justificaría una nube
+
+Con datos públicos, semanales y pequeños, leídos por un solo panel, un data warehouse en la nube agregaría costo, secretos y riesgos de vencimiento sin beneficio ([ADR-31](ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube)). Se justificaría si una empresa sumara sus propios datos:
+
+| Criterio | Hoy | Umbral |
+|---|---|---|
+| Volumen | Unos 14 MB | Varios GB: ventas por tienda y día, costos, inventario |
+| Usuarios | Un panel de solo lectura | Varios equipos o herramientas de BI sobre los mismos datos |
+| Acceso | Público | Permisos por persona o datos sensibles |
+| Frescura | Semanal | Varias cargas al día o tiempo real |
+
+## 10. Restricciones y decisiones
+
+| Restricción | Origen |
+|---|---|
+| Solo servicios gratuitos sin vencimiento | [ADR-02 · Orquestar con GitHub Actions y publicar en Streamlit Community Cloud](ADR.md#adr-02--orquestar-con-github-actions-y-publicar-en-streamlit-community-cloud) y [ADR-31 · No usar un data warehouse en la nube](ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube) |
+| Solo fuentes oficiales y abiertas | [ADR-01 · Usar solo los archivos oficiales de ODEPA y del INE](ADR.md#adr-01--usar-solo-los-archivos-oficiales-de-odepa-y-del-ine) |
+| Ninguna cifra se inventa ni se interpola, y el histórico no se borra | Regla del proyecto |
+| Python 3.11 o 3.12 para el pipeline con dbt | Compatibilidad de dbt Core |
+| Repositorio público | Portafolio abierto; la seguridad depende de los secretos, no del código oculto |
+
+**Estrategia de solución**
+
+| Principio | Cómo se aplica | Decisión |
+|---|---|---|
+| Rehacer todo en cada carga | Cada martes se recalcula la historia completa desde los archivos oficiales; repetir una carga nunca duplica datos | [ADR-10](ADR.md#adr-10--reconstruir-todo-en-cada-carga) |
+| Publicar solo lo validado | La base servida cambia solo si pasan todas las pruebas | [ADR-11](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas) |
+| Comprobar por un segundo camino | Un ETL en Python, independiente de dbt, calcula los mismos precios | [ADR-34](ADR.md#adr-34--separar-la-base-de-trabajo-de-dbt-la-base-que-lee-el-panel-y-el-respaldo) |
+| Capas declarativas y probadas | Bronce en Parquet; staging, intermedio y marts en dbt Core sobre DuckDB | [ADR-30](ADR.md#adr-30--parquet-dbt-core-y-duckdb) |
+| Una sola copia publicada | La base servida vive en un release que cada carga reemplaza | [ADR-35](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) |
+
+Las decisiones que dan forma a esta arquitectura, con su contexto, sus alternativas y sus consecuencias, están en los [Registros de decisiones de arquitectura (ADR)](ADR.md).
 
 ## 11. Riesgos y deuda técnica
 
@@ -162,3 +364,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 1.4 | 23-10-2026 | Diagrama de contexto (D-242); vistas C4 sin copiar diagramas (D-247); descarga como página impresa (D-248); seguridad como proceso (D-249) |
 | 1.5 | 24-10-2026 | Principios, vista de ejecución, calidad y observabilidad, riesgos (D-269); base servida en un release (D-270) |
 | 2.0 | 25-10-2026 | Estructura arc42 completa: restricciones, estrategia de solución, conceptos transversales, requisitos de calidad, deuda técnica, glosario e historial (D-279, documentación profesional) |
+| 3.0 | 25-10-2026 | De lo más importante a lo menos: resumen, contexto, contenedores, la carga y el panel en secuencia, los datos con su diccionario, despliegue, calidad y seguridad, capacidad y crecimiento (antes en documentos propios); seis diagramas (D-290, documentos para todo lector) |

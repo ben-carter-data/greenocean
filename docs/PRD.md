@@ -4,57 +4,48 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 2.0 |
+| Versión | 3.0 |
 | Fecha | 25-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
-| Propósito | Definir qué problema resuelve el producto, para quién, con qué alcance y con qué requisitos verificables. |
-| Audiencia | Gerencia, responsables de producto, arquitectura y revisión técnica. |
-| Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Registros de decisiones de arquitectura (ADR)](ADR.md) · [Plan de pruebas](PLAN_PRUEBAS.md) · [Glosario](GLOSARIO.md) |
+| Propósito | Explicar qué problema resuelve GreenOcean, para quién, qué preguntas responde y qué debe cumplir para que sus cifras sean confiables. |
+| Audiencia | Gerencia, responsables de producto, analistas y revisión técnica. |
+| Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Registros de decisiones de arquitectura (ADR)](ADR.md) · [Plan de pruebas y seguridad](PLAN_PRUEBAS.md) · [Glosario](GLOSARIO.md) |
 
 ## Índice
 
-1. [Problema y contexto](#1-problema-y-contexto)
-2. [Objetivos y métricas de éxito](#2-objetivos-y-métricas-de-éxito)
-3. [Alcance](#3-alcance)
-4. [Usuarios y casos de uso](#4-usuarios-y-casos-de-uso)
-5. [Preguntas de negocio](#5-preguntas-de-negocio)
-6. [Requisitos](#6-requisitos)
-7. [Supuestos, restricciones y dependencias](#7-supuestos-restricciones-y-dependencias)
-8. [Riesgos](#8-riesgos)
-9. [Criterios de aceptación](#9-criterios-de-aceptación)
-10. [Pantallas](#10-pantallas)
+1. [En resumen](#1-en-resumen)
+2. [El problema](#2-el-problema)
+3. [Para quién es](#3-para-quién-es)
+4. [Preguntas de negocio](#4-preguntas-de-negocio)
+5. [Requisitos](#5-requisitos)
+6. [Alcance](#6-alcance)
+7. [Pantallas](#7-pantallas)
+8. [Supuestos, restricciones y dependencias](#8-supuestos-restricciones-y-dependencias)
+9. [Riesgos](#9-riesgos)
+10. [Criterios de aceptación](#10-criterios-de-aceptación)
 11. [Próximos pasos](#11-próximos-pasos)
 12. [Glosario](#12-glosario)
 13. [Historial de versiones](#13-historial-de-versiones)
 
-## 1. Problema y contexto
+## 1. En resumen
 
-La Oficina de Estudios y Políticas Agrarias (ODEPA) publica cada semana los precios mayoristas y al consumidor de frutas, verduras y otros alimentos en Chile. El Instituto Nacional de Estadísticas (INE) publica cada mes el índice de precios al consumidor (IPC) de alimentos. Son datos abiertos y confiables, pero no están preparados para compararse: cada serie trae su propia frecuencia, unidad de venta y nivel de detalle, y ninguna descuenta la inflación. Responder si un precio subió en términos reales, o si es alto para la época del año, exige descargar los archivos y cruzarlos manualmente cada semana.
+GreenOcean convierte los precios oficiales de los alimentos en Chile en respuestas claras, cada semana y sin intervención.
 
-GreenOcean automatiza ese trabajo. Cada martes descarga las fuentes, las ordena, controla su calidad y publica un panel de consulta en el que cada cifra se puede rastrear hasta el archivo original.
+- **Qué hace:** cada martes descarga los precios de ODEPA y el IPC del INE, los revisa y publica un panel de consulta.
+- **Para quién:** analistas de precios, compras, gerencia y quien necesite comprobar las cifras.
+- **Qué responde:** qué cambió en la semana, si un precio es normal para la época, cuánto paga el consumidor sobre el mayorista, qué subió más que la inflación y si las cifras son confiables.
+- **Por qué confiar:** cada cifra se puede seguir hasta el archivo original, y una carga con errores nunca llega al panel.
 
-## 2. Objetivos y métricas de éxito
+[[diagrama:valor]]
 
-| Objetivo | Métrica de éxito | Requisito que lo mide |
-|---|---|---|
-| Responder las preguntas de negocio en minutos | Cada pregunta de la sección 5 tiene una pantalla que la responde | P-1 a P-5 |
-| Cifras comprobables | Toda cifra del panel se recalcula desde la fuente en las pruebas automáticas, con diferencia 0 | RNF-02 |
-| Operación sin intervención | La carga corre cada martes y una carga con errores nunca llega al panel | RF-01, RF-03 |
-| Costo cero y sin vencimientos | Ningún servicio de pago ni plan con fecha de término | RNF-01 |
+## 2. El problema
 
-## 3. Alcance
+La Oficina de Estudios y Políticas Agrarias (ODEPA) publica cada semana los precios mayoristas y al consumidor de frutas, verduras y otros alimentos. El Instituto Nacional de Estadísticas (INE) publica cada mes el índice de precios al consumidor (IPC) de alimentos. Son datos abiertos y confiables, pero no están listos para compararse: cada serie trae su propia frecuencia, unidad y nivel de detalle, y ninguna descuenta la inflación. Responder si un precio subió en términos reales, o si es alto para la época, exige descargar y cruzar archivos a mano cada semana.
 
-| Incluye | Excluye |
-|---|---|
-| Integración de los precios de ODEPA desde 2022 y del IPC de alimentos del INE | Comparación entre cadenas de supermercados o tiendas |
-| Conversión de unidades, agregación semanal y cálculo de precios reales | Predicción de precios o explicación de sus causas |
-| Rechazo de filas inválidas con su motivo y auditoría de cada cifra | Recomendaciones de compra para el consumidor |
-| Panel de solo lectura con su documentación | Modificación de datos por parte de los usuarios |
+GreenOcean hace ese trabajo de forma automática y deja cada paso a la vista.
 
-Hoy la base tiene 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC. La última carga leyó 2.521.012 filas: 2.520.811 cargadas y 201 rechazadas con su motivo.
-
-## 4. Usuarios y casos de uso
+## 3. Para quién es
 
 | Perfil | Para qué lo usa |
 |---|---|
@@ -65,11 +56,11 @@ Hoy la base tiene 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2
 
 [[diagrama:casos]]
 
-El panel es de consulta y no requiere cuenta. El administrador mantiene el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.
+El panel es de consulta y no pide cuenta. El administrador mantiene el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.
 
-## 5. Preguntas de negocio
+## 4. Preguntas de negocio
 
-Cada pregunta indica la pantalla que la responde y la prueba que recalcula su respuesta por un camino independiente.
+Cada pregunta tiene la pantalla que la responde y la prueba que recalcula su respuesta por un camino independiente.
 
 | ID | Pregunta | Pantalla que la responde | Evidencia |
 |---|---|---|---|
@@ -79,9 +70,11 @@ Cada pregunta indica la pantalla que la responde y la prueba que recalcula su re
 | P-4 | ¿Qué alimentos subieron más que la inflación? | Precios e inflación | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
 | P-5 | ¿Las cifras son confiables? | Calidad y auditoría | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price` |
 
-## 6. Requisitos
+## 5. Requisitos
 
-Los requisitos funcionales (RF) definen qué hace el producto; los no funcionales (RNF), con qué cualidades. Cada uno tiene un criterio medible y la evidencia que lo comprueba.
+Los requisitos funcionales (RF) dicen qué hace el producto; los no funcionales (RNF), con qué cualidades. Cada uno tiene un criterio medible y la prueba que lo comprueba.
+
+[[diagrama:requisitos]]
 
 | ID | Requisito | Criterio medible | Evidencia |
 |---|---|---|---|
@@ -100,7 +93,24 @@ Los requisitos funcionales (RF) definen qué hace el producto; los no funcionale
 | RNF-05 | Legible en computador, tableta y teléfono | Ninguna página se desplaza a lo ancho entre 1024 × 768 y 1920 × 1080, en tableta vertical (768 × 1024) ni en teléfono horizontal (844 × 390); en vertical, el panel pide girar el teléfono | `tests/medicion/medir.cjs` |
 | RNF-06 | Cada página principal en una pantalla | En la ventana del navegador de una pantalla de 1440 × 900 (1440 × 790 útiles) y a 1920 × 1000, cada página principal se ve entera, sin desplazar | `tests/medicion/medir.cjs` |
 
-## 7. Supuestos, restricciones y dependencias
+## 6. Alcance
+
+| Incluye | Excluye |
+|---|---|
+| Integración de los precios de ODEPA desde 2022 y del IPC de alimentos del INE | Comparación entre cadenas de supermercados o tiendas |
+| Conversión de unidades, agregación semanal y cálculo de precios reales | Predicción de precios o explicación de sus causas |
+| Rechazo de filas inválidas con su motivo y auditoría de cada cifra | Recomendaciones de compra para el consumidor |
+| Panel de solo lectura con su documentación | Modificación de datos por parte de los usuarios |
+
+Hoy la base tiene 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC. La última carga leyó 2.521.012 filas: 2.520.811 cargadas y 201 rechazadas con su motivo.
+
+## 7. Pantallas
+
+Capturas reales del panel, una por tema de color.
+
+[[diagrama:mockups]]
+
+## 8. Supuestos, restricciones y dependencias
 
 **Supuestos**
 - El precio nacional es un promedio simple de las regiones, sin ponderar por población ni por ventas, porque ninguna fuente abierta publica esos pesos. Cada variación semanal compara solo las regiones con precio en ambas semanas.
@@ -120,16 +130,16 @@ Los requisitos funcionales (RF) definen qué hace el producto; los no funcionale
 | GitHub (repositorio, Actions, releases) | Código, ejecución de la carga y base servida | No hay carga nueva; el panel conserva la base que ya tiene |
 | Streamlit Community Cloud | Publicación del panel | El panel no está disponible; los datos no se pierden |
 
-## 8. Riesgos
+## 9. Riesgos
 
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |---|---|---|---|
-| ODEPA cambia el formato de sus archivos | Media | Alto | Las puertas de calidad rechazan una carga mal leída ([SAD, vista de ejecución](SAD.md#6-vista-de-ejecución)) |
+| ODEPA cambia el formato de sus archivos | Media | Alto | Las puertas de calidad rechazan una carga mal leída ([SAD, la carga de cada semana](SAD.md#4-la-carga-de-cada-semana)) |
 | Se interpreta una correlación como causa | Media | Medio | El panel y este documento lo advierten junto a cada comparación con el IPC |
 | Cambian las condiciones de un plan gratuito | Baja | Alto | El pipeline corre igual en cualquier máquina con Python 3.11 o 3.12 |
 | Un solo responsable de mantenimiento | Alta | Medio | Operación documentada en el [Manual de operación](MANUAL.md) y pruebas automáticas en cada cambio |
 
-## 9. Criterios de aceptación
+## 10. Criterios de aceptación
 
 | Criterio | Cómo se verifica |
 |---|---|
@@ -139,15 +149,9 @@ Los requisitos funcionales (RF) definen qué hace el producto; los no funcionale
 | Las cifras de este documento coinciden con la base servida | `tests/test_documents.py::test_d210_the_prd_figures_match_the_served_database` |
 | Cada página principal cabe en una pantalla | `tests/medicion/medir.cjs` a 1440 × 790 y 1920 × 1000 |
 
-## 10. Pantallas
-
-Capturas reales del panel, una por tema de color.
-
-[[diagrama:mockups]]
-
 ## 11. Próximos pasos
 
-La incorporación del clima por región y las condiciones bajo las que se justificaría un data warehouse en la nube se describen en el [Plan de capacidad y escalabilidad](ESCALABILIDAD.md).
+La incorporación del clima por región y las condiciones bajo las que se justificaría un data warehouse en la nube se describen en el [SAD, capacidad y crecimiento](SAD.md#9-capacidad-y-crecimiento).
 
 ## 12. Glosario
 
@@ -164,3 +168,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 1.4 | 23-10-2026 | Casos de uso y trazabilidad de requisitos (D-240); pregunta P-4 (D-244); RF-03 con su prueba (D-245); la descarga es la página impresa (D-248) |
 | 1.5 | 24-10-2026 | Revisión de coherencia (D-252); objetivos, pregunta P-5, catorce requisitos y supuestos (D-269, documentos revisados contra el producto) |
 | 2.0 | 25-10-2026 | Estructura estándar: cabecera, índice, restricciones y dependencias, riesgos, criterios de aceptación, glosario e historial; medida de pantalla corregida a 1440 × 790 útiles (D-279, documentación profesional) |
+| 3.0 | 25-10-2026 | Lectura de lo más importante a lo menos: resumen, problema, usuarios, preguntas y requisitos primero; diagramas del valor y de los requisitos (D-290, documentos para todo lector) |

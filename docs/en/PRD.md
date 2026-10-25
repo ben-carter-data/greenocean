@@ -4,57 +4,48 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 2.0 |
+| Version | 3.0 |
 | Date | 2026-10-25 |
 | Status | Current |
 | Owner | The author |
-| Purpose | Define which problem the product solves, for whom, with which scope and with which verifiable requirements. |
-| Audience | Management, product owners, architecture and technical review. |
-| Related documents | [Software Architecture Document (SAD)](SAD.md) · [Architecture Decision Records (ADR)](ADR.md) · [Test Plan](PLAN_PRUEBAS.md) · [Glossary](GLOSARIO.md) |
+| Purpose | Explain which problem GreenOcean solves, for whom, which questions it answers and what it must meet for its figures to be reliable. |
+| Audience | Management, product owners, analysts and technical review. |
+| Related documents | [Software Architecture Document (SAD)](SAD.md) · [Architecture Decision Records (ADR)](ADR.md) · [Test and Security Plan](PLAN_PRUEBAS.md) · [Glossary](GLOSARIO.md) |
 
 ## Contents
 
-1. [Problem and context](#1-problem-and-context)
-2. [Objectives and success metrics](#2-objectives-and-success-metrics)
-3. [Scope](#3-scope)
-4. [Users and use cases](#4-users-and-use-cases)
-5. [Business questions](#5-business-questions)
-6. [Requirements](#6-requirements)
-7. [Assumptions, constraints and dependencies](#7-assumptions-constraints-and-dependencies)
-8. [Risks](#8-risks)
-9. [Acceptance criteria](#9-acceptance-criteria)
-10. [Screens](#10-screens)
+1. [In summary](#1-in-summary)
+2. [The problem](#2-the-problem)
+3. [Who it is for](#3-who-it-is-for)
+4. [Business questions](#4-business-questions)
+5. [Requirements](#5-requirements)
+6. [Scope](#6-scope)
+7. [Screens](#7-screens)
+8. [Assumptions, constraints and dependencies](#8-assumptions-constraints-and-dependencies)
+9. [Risks](#9-risks)
+10. [Acceptance criteria](#10-acceptance-criteria)
 11. [Next steps](#11-next-steps)
 12. [Glossary](#12-glossary)
 13. [Version history](#13-version-history)
 
-## 1. Problem and context
+## 1. In summary
+
+GreenOcean turns the official food prices of Chile into clear answers, every week and without intervention.
+
+- **What it does:** every Tuesday it downloads the ODEPA prices and the INE CPI, checks them and publishes a panel to consult them.
+- **For whom:** price analysts, purchasing, management and anyone who needs to check the figures.
+- **What it answers:** what changed during the week, whether a price is normal for the season, how much the consumer pays over the wholesale price, what rose more than inflation and whether the figures are reliable.
+- **Why trust it:** every figure can be traced back to the original file, and a load with errors never reaches the panel.
+
+[[diagrama:valor]]
+
+## 2. The problem
 
 Chile's Office of Agricultural Studies and Policies (ODEPA) publishes the wholesale and consumer prices of fruit, vegetables and other foods every week. The National Statistics Institute (INE) publishes the food consumer price index (CPI, «IPC» in Spanish) every month. Both are open and reliable data, but they are not ready to be compared: each series has its own frequency, unit of sale and level of detail, and none of them discounts inflation. Answering whether a price rose in real terms, or whether it is high for the time of year, means downloading the files and crossing them by hand every week.
 
-GreenOcean automates that work. Every Tuesday it downloads the sources, organizes them, checks their quality and publishes a read-only panel in which every figure can be traced back to the original file.
+GreenOcean does that work automatically and leaves each step in view.
 
-## 2. Objectives and success metrics
-
-| Objective | Success metric | Requirement that measures it |
-|---|---|---|
-| Answer the business questions in minutes | Each question of section 5 has a screen that answers it | P-1 to P-5 |
-| Verifiable figures | Every figure of the panel is recomputed from the source in the automated tests, with a difference of 0 | RNF-02 |
-| Operation without intervention | The load runs every Tuesday and a load with errors never reaches the panel | RF-01, RF-03 |
-| Zero cost and no expiry | No paid service and no plan with an end date | RNF-01 |
-
-## 3. Scope
-
-| Includes | Excludes |
-|---|---|
-| Integration of ODEPA prices since 2022 and of the INE food CPI | Comparison between supermarket chains or stores |
-| Unit conversion, weekly aggregation and real-price calculation | Price forecasting or explanation of its causes |
-| Rejection of invalid rows with their reason, and an audit of every figure | Purchase recommendations for consumers |
-| Read-only panel with its documentation | Data changes by the users |
-
-Today the database holds 814,610 weekly prices over 250 weeks (2022-01-03 to 2026-10-12), 9 regions, 8 channels, 1,609 product keys and 202 months of the CPI. The last load read 2,521,012 rows: 2,520,811 loaded and 201 rejected with their reason.
-
-## 4. Users and use cases
+## 3. Who it is for
 
 | Profile | What they use it for |
 |---|---|
@@ -67,7 +58,7 @@ Today the database holds 814,610 weekly prices over 250 weeks (2022-01-03 to 202
 
 The panel is read-only and needs no account. The administrator maintains the code and the secrets, answers ad hoc SQL queries and can launch a manual load with the control code.
 
-## 5. Business questions
+## 4. Business questions
 
 Each question names the screen that answers it and the test that recomputes its answer along an independent path.
 
@@ -79,9 +70,11 @@ Each question names the screen that answers it and the test that recomputes its 
 | P-4 | Which foods rose more than inflation? | Prices and inflation | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
 | P-5 | Are the figures reliable? | Quality and audit | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price` |
 
-## 6. Requirements
+## 5. Requirements
 
-Functional requirements (RF) define what the product does; non-functional requirements (RNF), with which qualities. Each one has a measurable criterion and the evidence that checks it.
+Functional requirements (RF) define what the product does; non-functional requirements (RNF), with which qualities. Each one has a measurable criterion and the test that checks it.
+
+[[diagrama:requisitos]]
 
 | ID | Requirement | Measurable criterion | Evidence |
 |---|---|---|---|
@@ -100,7 +93,24 @@ Functional requirements (RF) define what the product does; non-functional requir
 | RNF-05 | Readable on computer, tablet and phone | No page scrolls sideways between 1024 × 768 and 1920 × 1080, on a portrait tablet (768 × 1024) or on a landscape phone (844 × 390); in portrait, the panel asks to turn the phone | `tests/medicion/medir.cjs` |
 | RNF-06 | Each main page on one screen | In the browser window of a 1440 × 900 screen (1440 × 790 usable) and at 1920 × 1000, each main page is seen whole, without scrolling | `tests/medicion/medir.cjs` |
 
-## 7. Assumptions, constraints and dependencies
+## 6. Scope
+
+| Includes | Excludes |
+|---|---|
+| Integration of ODEPA prices since 2022 and of the INE food CPI | Comparison between supermarket chains or stores |
+| Unit conversion, weekly aggregation and real-price calculation | Price forecasting or explanation of its causes |
+| Rejection of invalid rows with their reason, and an audit of every figure | Purchase recommendations for consumers |
+| Read-only panel with its documentation | Data changes by the users |
+
+Today the database holds 814,610 weekly prices over 250 weeks (2022-01-03 to 2026-10-12), 9 regions, 8 channels, 1,609 product keys and 202 months of the CPI. The last load read 2,521,012 rows: 2,520,811 loaded and 201 rejected with their reason.
+
+## 7. Screens
+
+Real captures of the panel, one per color theme.
+
+[[diagrama:mockups]]
+
+## 8. Assumptions, constraints and dependencies
 
 **Assumptions**
 - The national price is a simple average of the regions, not weighted by population or sales, because no open source publishes those weights. Each weekly change compares only the regions with a price in both weeks.
@@ -120,16 +130,16 @@ Functional requirements (RF) define what the product does; non-functional requir
 | GitHub (repository, Actions, releases) | Code, execution of the load and served database | There is no new load; the panel keeps the database it already has |
 | Streamlit Community Cloud | Publication of the panel | The panel is not available; no data is lost |
 
-## 8. Risks
+## 9. Risks
 
 | Risk | Probability | Impact | Mitigation |
 |---|---|---|---|
-| ODEPA changes the format of its files | Medium | High | The quality gates reject a load that was read wrongly ([SAD, runtime view](SAD.md#6-runtime-view)) |
+| ODEPA changes the format of its files | Medium | High | The quality gates reject a load that was read wrongly ([SAD, the load of each week](SAD.md#4-the-load-of-each-week)) |
 | A correlation is read as a cause | Medium | Medium | The panel and this document warn about it next to each comparison with the CPI |
 | The terms of a free plan change | Low | High | The pipeline runs the same on any machine with Python 3.11 or 3.12 |
 | A single maintainer | High | Medium | Operation documented in the [Operations Runbook](MANUAL.md) and automated tests on every change |
 
-## 9. Acceptance criteria
+## 10. Acceptance criteria
 
 | Criterion | How it is verified |
 |---|---|
@@ -139,15 +149,9 @@ Functional requirements (RF) define what the product does; non-functional requir
 | The figures of this document match the served database | `tests/test_documents.py::test_d210_the_prd_figures_match_the_served_database` |
 | Each main page fits one screen | `tests/medicion/medir.cjs` at 1440 × 790 and 1920 × 1000 |
 
-## 10. Screens
-
-Real captures of the panel, one per color theme.
-
-[[diagrama:mockups]]
-
 ## 11. Next steps
 
-Adding the weather by region, and the conditions under which a cloud data warehouse would be justified, are described in the [Capacity and Scalability Plan](ESCALABILIDAD.md).
+Adding the weather by region, and the conditions under which a cloud data warehouse would be justified, are described in the [SAD, capacity and growth](SAD.md#9-capacity-and-growth).
 
 ## 12. Glossary
 
@@ -164,3 +168,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 1.4 | 2026-10-23 | Use cases and requirements traceability (D-240); question P-4 (D-244); RF-03 with its test (D-245); the download is the printed page (D-248) |
 | 1.5 | 2026-10-24 | Consistency review (D-252); objectives, question P-5, fourteen requirements and assumptions (D-269, documents reviewed against the product) |
 | 2.0 | 2026-10-25 | Standard structure: header, contents, constraints and dependencies, risks, acceptance criteria, glossary and history; screen measure corrected to 1440 × 790 usable (D-279, professional documentation) |
+| 3.0 | 2026-10-25 | Reading from the most important to the least: summary, problem, users, questions and requirements first; diagrams of the value and of the requirements (D-290, documents for every reader) |

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Decision Index |
-| Version | 1.0 |
+| Version | 2.0 |
 | Date | 2026-10-25 |
 | Status | Current |
 | Owner | The author |
@@ -12,131 +12,157 @@
 | Audience | Architecture, management and technical review. |
 | Related documents | [Architecture Decision Records (ADR)](ADR.md) · [Software Architecture Document (SAD)](SAD.md) · [Glossary](GLOSARIO.md) |
 
-The full log, with every decision in chronological order, is `docs/DECISIONES.md` (in Spanish). This index gathers only those that change the architecture, the data, the security or the operations; the architecture decisions that weigh most also have their record in the [ADR](ADR.md).
-
 ## Contents
 
-1. [Sources and ingestion](#1-sources-and-ingestion)
-2. [Data model and rules](#2-data-model-and-rules)
-3. [Pipeline and publication](#3-pipeline-and-publication)
-4. [Quality and audit](#4-quality-and-audit)
-5. [Security](#5-security)
-6. [Operations and observability](#6-operations-and-observability)
-7. [Panel](#7-panel)
-8. [Documentation](#8-documentation)
-9. [Version history](#9-version-history)
+1. [In summary](#1-in-summary)
+2. [Sources and ingestion](#2-sources-and-ingestion)
+3. [Data model and rules](#3-data-model-and-rules)
+4. [Pipeline and publication](#4-pipeline-and-publication)
+5. [Quality and audit](#5-quality-and-audit)
+6. [Security](#6-security)
+7. [Operations and observability](#7-operations-and-observability)
+8. [Panel](#8-panel)
+9. [Documentation](#9-documentation)
+10. [Version history](#10-version-history)
 
-## 1. Sources and ingestion
+## 1. In summary
 
-| Decision | Title | ADR |
+GreenOcean records each change of behavior as a decision with its date, its reason and its tests. This index gathers the 69 that weigh most, grouped in eight themes, so they can be read without going through the full log. Each row says first what was decided; when the decision gave rise to an architecture record, the second column links it, and the D-xxx code finds it in `docs/DECISIONES.md` (in Spanish), which keeps them all in chronological order.
+
+[[diagrama:temas]]
+
+[[diagrama:mapa_temas]]
+
+[[diagrama:adr_decisiones]]
+
+## 2. Sources and ingestion
+
+What is downloaded, from where, and how the download is protected.
+
+| What was decided | Architecture record | Code |
 |---|---|---|
-| D-001 | Download official files instead of scraping | [ADR-01](ADR.md#adr-01--use-only-the-official-files-of-odepa-and-the-ine) |
-| D-002 | Two sources in stage 1 | — |
-| D-007 | Exact key product + variety + quality | — |
-| D-020 | The raw data is not committed to the repository | [ADR-04](ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository) |
-| D-042 | The week of 2022-05-02 is missing at the source and is recorded as a known gap | — |
-| D-047 | The files of closed years are kept in the GitHub Actions cache | — |
-| D-164 | The ODEPA download trusts the emSign root that certifi removed | — |
+| The data comes from ODEPA's official files, not from copying web pages | [Use only the official files of ODEPA and the INE](ADR.md#adr-01--use-only-the-official-files-of-odepa-and-the-ine) | D-001 |
+| Start with two sources: wholesale and consumer prices | — | D-002 |
+| A product is identified by its name, variety and quality, never mixed | — | D-007 |
+| The raw files are not committed to the repository | [Do not commit the raw data to the repository](ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository) | D-020 |
+| The week of 2022-05-02, missing at ODEPA, is recorded as a known gap | — | D-042 |
+| Closed years are not downloaded again: they are kept in GitHub's cache | — | D-047 |
+| The download keeps working although certifi removed ODEPA's certificate | — | D-164 |
 
-## 2. Data model and rules
+## 3. Data model and rules
 
-| Decision | Title | ADR |
+How each price is computed and what counts as a valid figure.
+
+| What was decided | Architecture record | Code |
 |---|---|---|
-| D-006 | Crossing by week | — |
-| D-008 | Units that cannot be converted are kept, without a margin | — |
-| D-023 | Tables and columns in English; one schema per database | [ADR-19](ADR.md#adr-19--star-schema-with-a-gapless-date-dimension) |
-| D-024 | Weekly prices are rebuilt in full on each run | [ADR-10](ADR.md#adr-10--rebuild-everything-on-each-load) |
-| D-026 | Unit conversion by literal reading of the text | — |
-| D-028 | RN-12: median by product, unit, week and source, with a factor of 5 | — |
-| D-095 | Date dimension dim_date | [ADR-19](ADR.md#adr-19--star-schema-with-a-gapless-date-dimension) |
-| D-144 | Data audit and national change over the same regions | — |
-| D-145 | The K6 alerts measure the change over the same regions | — |
-| D-146 | Relevance review: only conclusions that hold | — |
-| D-153 | Audit across pages: a single price per product and week | — |
-| D-155 | Real prices with the INE food CPI | [ADR-33](ADR.md#adr-33--compute-real-prices-with-the-ine-food-cpi) |
-| D-158 | An alert needs at least two quotes in each week | — |
+| Wholesale and consumer prices are compared week by week | — | D-006 |
+| A price whose unit cannot be converted is kept, but without a margin | — | D-008 |
+| Tables and columns named in English, and one schema per database | [Star schema with a gapless date dimension](ADR.md#adr-19--star-schema-with-a-gapless-date-dimension) | D-023 |
+| Each load recomputes every weekly price from scratch | [Rebuild everything on each load](ADR.md#adr-10--rebuild-everything-on-each-load) | D-024 |
+| Units are converted by reading the text exactly as ODEPA writes it | — | D-026 |
+| A price more than five times above or below the median of its week is flagged as an outlier and stays out of the indicators | — | D-028 |
+| A gapless calendar of weeks to join every date | [Star schema with a gapless date dimension](ADR.md#adr-19--star-schema-with-a-gapless-date-dimension) | D-095 |
+| The national change is always measured over the same regions | — | D-144 |
+| Price alerts also compare the same regions | — | D-145 |
+| The panel shows only conclusions the data supports | — | D-146 |
+| Every page shows the same price for a product and a week | — | D-153 |
+| Real prices remove inflation with the INE food CPI | [Compute real prices with the INE food CPI](ADR.md#adr-33--compute-real-prices-with-the-ine-food-cpi) | D-155 |
+| An alert needs at least two quotes in each compared week | — | D-158 |
 
-## 3. Pipeline and publication
+## 4. Pipeline and publication
 
-| Decision | Title | ADR |
+Which tools build the database and when it is published.
+
+| What was decided | Architecture record | Code |
 |---|---|---|
-| D-012 | SQLite, GitHub Actions and Streamlit Community Cloud | [ADR-02](ADR.md#adr-02--orchestrate-with-github-actions-and-publish-on-streamlit-community-cloud) |
-| D-029 | Quality checks before loading | [ADR-11](ADR.md#adr-11--publish-only-if-the-tests-pass) |
-| D-034 | Weekly job: nothing is saved if a step fails | — |
-| D-152 | Planned evolution: dbt, DuckDB, Parquet, CPI and weather; the cloud only with company data | [ADR-31](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse) |
-| D-154 | The data warehouse moves to dbt Core, DuckDB and Parquet, with exact parity | [ADR-30](ADR.md#adr-30--parquet-dbt-core-and-duckdb) |
-| D-194 | Unambiguous parity, and the CPI that does not go through SQLite | — |
-| D-227 | DuckDB 2.0 stays out until the gap-between-channels query is reviewed | — |
-| D-270 | The served database lives in a release that each load replaces; git keeps only its pointer | [ADR-35](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) |
+| The project runs on free tools: SQLite, GitHub Actions and Streamlit | [Orchestrate with GitHub Actions and publish on Streamlit Community Cloud](ADR.md#adr-02--orchestrate-with-github-actions-and-publish-on-streamlit-community-cloud) | D-012 |
+| The data is checked before it is loaded | [Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass) | D-029 |
+| If a step of the weekly load fails, nothing is saved | — | D-034 |
+| The growth plan: dbt, DuckDB and Parquet first; a cloud only with company data | [Do not use a cloud data warehouse](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse) | D-152 |
+| The data warehouse moves to dbt, DuckDB and Parquet with exactly the same results | [Parquet, dbt Core and DuckDB](ADR.md#adr-30--parquet-dbt-core-and-duckdb) | D-154 |
+| The two builds of the database are compared without ambiguity, the CPI included | — | D-194 |
+| DuckDB 2.0 waits until a slow query is reviewed | — | D-227 |
+| The published database lives in a GitHub release; the repository keeps only its pointer | [Publish the served database in a release that each load replaces](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) | D-270 |
 
-## 4. Quality and audit
+## 5. Quality and audit
 
-| Decision | Title | ADR |
+What stops a load and how each figure is proven.
+
+| What was decided | Architecture record | Code |
 |---|---|---|
-| D-016 | Tests and quality checks visible from the first version | — |
-| D-018 | Findings are published only if they can be reproduced | — |
-| D-049 | SQL versions of K6 and K5 verified against Python; K4 without a double version | — |
-| D-176 | Quality and audit tells the story with a method: the six dimensions of the DAMA-DMBOK | — |
-| D-196 | Quality and audit rebuilt: real measurement and the origin of each figure | — |
-| D-245 | Stage 6: the quality gates on the journey, and RF-03 with its test | — |
-| D-256 | Quality and audit rebuilt: six dimensions, three gates, and text of normal size | — |
-| D-257 | Quality and audit: the diagram is the page, and each piece opens its detail | — |
-| D-273 | Quality: the diagram becomes a data-quality pipeline, with the same behavior | — |
+| The tests and quality checks are visible in the panel from the first version | — | D-016 |
+| A finding is published only if it can be reproduced | — | D-018 |
+| The indicators computed in SQL are checked against a computation in Python | — | D-049 |
+| Quality is explained with the six dimensions of the DAMA-DMBOK standard | — | D-176 |
+| Each quality figure is a real measurement and shows its origin | — | D-196 |
+| The quality gates are drawn over the journey of the load | — | D-245 |
+| Quality in one view: six dimensions and three gates | — | D-256 |
+| In Quality, each piece of the diagram opens its detail | — | D-257 |
+| Quality is drawn as a data-quality pipeline | — | D-273 |
 
-## 5. Security
+## 6. Security
 
-| Decision | Title | ADR |
+Who can do what, and how it is checked.
+
+| What was decided | Architecture record | Code |
 |---|---|---|
-| D-013 | Public repository | — |
-| D-199 | The control code resists being guessed | — |
-| D-200 | Security tab: each attack, its barrier and its test | — |
-| D-202 | A single author gate: the pipeline button appears only after the code | — |
-| D-207 | The control code is no longer a password field | — |
-| D-249 | Stage 8: security as a process, its procedure and monitoring | — |
-| D-254 | Security architecture as a diagram of trust zones | — |
+| The repository is public, with no secret in it | — | D-013 |
+| The control code resists guessing and accepts any character | — | D-199 |
+| Each attack is shown with its barrier and its test | — | D-200 |
+| The button that launches the load appears only after the author's code | — | D-202 |
+| The control code is no longer a browser password field | — | D-207 |
+| Security is handled as a process, with its procedure and monitoring | — | D-249 |
+| The security architecture is drawn by trust zones | — | D-254 |
 
-## 6. Operations and observability
+## 7. Operations and observability
 
-| Decision | Title | ADR |
+How we know what happened in each load, and what to do.
+
+| What was decided | Architecture record | Code |
 |---|---|---|
-| D-017 | Weekly report and warnings with GitHub's own tools | — |
-| D-038 | Pipeline control center inside the panel | — |
-| D-149 | The manual run is a visible button, with its result | — |
-| D-165 | Operations center: the Tuesday journey is its own guide | — |
-| D-243 | Stage 5: CI/CD diagram with its definition, from the real workflows | — |
-| D-246 | Stage 7: the orchestration of the weekly workflow, inside the CI/CD diagram | — |
-| D-255 | Deployment as a real deployment diagram, and first in the Operations center | — |
-| D-275 | Monitoring: the signals hang from the weekly load, not from eight identical chains | — |
+| The weekly report and the warnings use GitHub's own tools | — | D-017 |
+| The load is watched from a control center inside the panel | — | D-038 |
+| The manual run is a visible button that shows its result | — | D-149 |
+| The Operations center follows the journey of each Tuesday | — | D-165 |
+| The CI/CD diagram is drawn from the real workflows | — | D-243 |
+| The Tuesday orchestration lives inside the CI/CD diagram | — | D-246 |
+| Deployment is drawn as a standard deployment diagram | — | D-255 |
+| The monitoring signals hang from the weekly load | — | D-275 |
 
-## 7. Panel
+## 8. Panel
 
-| Decision | Title | ADR |
+How the panel reads on a single screen and in two languages.
+
+| What was decided | Architecture record | Code |
 |---|---|---|
-| D-096 | Single navigation through a side menu, without tabs | — |
-| D-166 | The panel is read in landscape on phones | — |
-| D-264 | Weekly summary: the header is a single bar | — |
-| D-267 | The main pages with a single header bar; Prices and inflation with its reading | — |
-| D-274 | The measure is the real browser window (1440 × 790); Quality and audit fits in it | — |
-| D-281 | A single component for buttons and links | — |
-| D-283 | Spanish and English: the language is chosen like the theme, and the documents exist in both languages | — |
-| D-284 | Spanish and English, second layer: each page is translated as it is drawn | — |
-| D-285 | The app map: the whole system in one view | — |
+| Navigation is a single side menu, without tabs | — | D-096 |
+| On a phone, the panel is read in landscape | — | D-166 |
+| The Weekly summary has a single header bar | — | D-264 |
+| Each main page has a single header bar | — | D-267 |
+| Each page fits a real window of 1440 × 790 | — | D-274 |
+| Buttons and links share a single component | — | D-281 |
+| The panel and the documents exist in Spanish and English | — | D-283 |
+| Each page is translated into English as it is drawn | — | D-284 |
+| An app map shows the whole system in one view | — | D-285 |
 
-## 8. Documentation
+## 9. Documentation
 
-| Decision | Title | ADR |
+How the project is explained.
+
+| What was decided | Architecture record | Code |
 |---|---|---|
-| D-151 | The documentation is the PRD, the SAD and the ADR | — |
-| D-210 | Documents of at most two pages | — |
-| D-248 | Stage 10: documents to standard, and the PDF is the printed page | — |
-| D-269 | The documents, reviewed against the product: PRD, SAD, ADR and Scalability | — |
-| D-278 | The documentation is separated from the history of the project | — |
-| D-279 | Professional documentation: header, contents, glossary and history in each document | — |
-| D-280 | Diagrams and logos of the documents without a background; the PDF always on a white sheet | — |
-| D-282 | A single «Documents» folder in the menu | — |
+| The documentation follows the PRD, SAD and ADR standard | — | D-151 |
+| Short, direct documents | — | D-210 |
+| A document's PDF is the same page, printed | — | D-248 |
+| The documents are reviewed against the real product | — | D-269 |
+| The documentation is separated from the history of the project | — | D-278 |
+| Each document has a cover, contents, glossary and history | — | D-279 |
+| Diagrams without a background, and the PDF always on a white sheet | — | D-280 |
+| Every document in a single folder of the menu | — | D-282 |
 
-## 9. Version history
+## 10. Version history
 
 | Version | Date | Changes |
 |---|---|---|
 | 1.0 | 2026-10-25 | First version (D-279, professional documentation) |
+| 2.0 | 2026-10-25 | A summary with three diagrams; each row says first what was decided and links its architecture record by its name (D-290, documents for every reader) |

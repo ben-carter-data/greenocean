@@ -13,8 +13,8 @@ REFERENCE = re.compile(r"`([^`]+)`")
 
 
 def read_table(section):
-    """The rows of the table under «## <section>» as lists of cells."""
-    body = PRD.split(f"## {section}", 1)[1].split("\n## ", 1)[0]
+    """The rows of the table under «## <n>. <section>» as lists of cells, whatever the number of the section."""
+    body = re.split(rf"^## \d+\. {re.escape(section)}$", PRD, flags=re.MULTILINE)[1].split("\n## ", 1)[0]
     rows = [[cell.strip() for cell in line.strip().strip("|").split("|")]
             for line in body.splitlines() if line.startswith("|")]
     return rows[2:]  # header and separator
@@ -36,7 +36,7 @@ def assert_reference_exists(reference):
 
 
 def test_every_business_question_names_a_screen_of_the_menu_and_evidence_that_exists():
-    rows = read_table("5. Preguntas de negocio")
+    rows = read_table("Preguntas de negocio")
     assert [row[0] for row in rows] == ["P-1", "P-2", "P-3", "P-4", "P-5"]
     examples = {title for title, *_ in sql_explorer.EXAMPLES}
     for identifier, question, screen, evidence in rows:
@@ -51,7 +51,7 @@ def test_every_business_question_names_a_screen_of_the_menu_and_evidence_that_ex
 
 
 def test_every_requirement_has_a_measurable_criterion_and_evidence_that_exists():
-    rows = read_table("6. Requisitos")
+    rows = read_table("Requisitos")
     assert [row[0] for row in rows] == [f"RF-0{n}" for n in range(1, 9)] + [f"RNF-0{n}" for n in range(1, 7)]
     for identifier, requirement, criterion, evidence in rows:
         assert criterion and re.search(r"\d|=|≤|Ningún|Ninguna|cada", criterion), identifier
@@ -62,10 +62,10 @@ def test_every_requirement_has_a_measurable_criterion_and_evidence_that_exists()
 
 
 def test_the_use_cases_follow_the_prd_and_each_points_to_a_real_screen():
-    users = {row[0] for row in read_table("4. Usuarios")}
+    users = {row[0] for row in read_table("Para quién es")}
     actors = {actor for actor, *_ in doc_views.USER_CASES}
     assert actors == users  # the four profiles of «3. Usuarios», nothing else
-    questions = {row[0]: row for row in read_table("5. Preguntas de negocio")}
+    questions = {row[0]: row for row in read_table("Preguntas de negocio")}
     for actor, row, case, identifier, screen in doc_views.USER_CASES + doc_views.SYSTEM_CASES:
         page = screen.partition(" · ")[0]
         assert page in menu_labels() or page == "GitHub, fuera del panel", (case, page)

@@ -4,31 +4,43 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Registros de decisiones de arquitectura (ADR), formato MADR |
-| Versión | 2.0 |
+| Versión | 3.0 |
 | Fecha | 25-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
-| Propósito | Registrar las decisiones que más pesan en la arquitectura: su contexto, la decisión, las opciones consideradas y sus consecuencias. |
-| Audiencia | Arquitectura, ingeniería y revisión técnica. |
+| Propósito | Explicar las once decisiones que más pesan en la arquitectura de GreenOcean: por qué se tomaron, qué alternativas había y qué consecuencias tienen. |
+| Audiencia | Arquitectura, ingeniería, gerencia y revisión técnica. |
 | Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Índice de decisiones](INDICE_DECISIONES.md) · [Glosario](GLOSARIO.md) |
 
 Cada registro conserva su número original, por eso la numeración no es correlativa. Las decisiones menores están en el [Índice de decisiones](INDICE_DECISIONES.md) y en el registro completo, `docs/DECISIONES.md`. Las opciones consideradas son solo las que constan en ese registro o en el historial del repositorio.
 
 ## Índice
 
-| ADR | Título | Estado | Fecha |
+| Decisión | Registro | Estado | Fecha |
 |---|---|---|---|
-| [ADR-01](#adr-01--usar-solo-los-archivos-oficiales-de-odepa-y-del-ine) | Usar solo los archivos oficiales de ODEPA y del INE | Aceptada | 11-10-2026 |
-| [ADR-02](#adr-02--orquestar-con-github-actions-y-publicar-en-streamlit-community-cloud) | Orquestar con GitHub Actions y publicar en Streamlit Community Cloud | Aceptada | 11-10-2026 |
-| [ADR-04](#adr-04--no-subir-los-datos-crudos-al-repositorio) | No subir los datos crudos al repositorio | Aceptada, modificada por ADR-35 | 11-10-2026 |
-| [ADR-10](#adr-10--reconstruir-todo-en-cada-carga) | Reconstruir todo en cada carga | Aceptada | 11-10-2026 |
-| [ADR-11](#adr-11--publicar-solo-si-pasan-las-pruebas) | Publicar solo si pasan las pruebas | Aceptada | 11-10-2026 |
-| [ADR-19](#adr-19--modelo-estrella-con-una-dimensión-de-fechas-sin-huecos) | Modelo estrella con una dimensión de fechas sin huecos | Aceptada | 11-10-2026 |
-| [ADR-30](#adr-30--parquet-dbt-core-y-duckdb) | Parquet, dbt Core y DuckDB | Aceptada | 19-10-2026 |
-| [ADR-31](#adr-31--no-usar-un-data-warehouse-en-la-nube) | No usar un data warehouse en la nube | Aceptada | 19-10-2026 |
-| [ADR-33](#adr-33--calcular-precios-reales-con-el-ipc-de-alimentos-del-ine) | Calcular precios reales con el IPC de alimentos del INE | Aceptada | 19-10-2026 |
-| [ADR-34](#adr-34--separar-la-base-de-trabajo-de-dbt-la-base-que-lee-el-panel-y-el-respaldo) | Separar la base de trabajo de dbt, la base que lee el panel y el respaldo | Aceptada | 19-10-2026 |
-| [ADR-35](#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) | Publicar la base servida en un release que cada carga reemplaza | Aceptada | 24-10-2026 |
+| [Usar solo los archivos oficiales de ODEPA y del INE](#adr-01--usar-solo-los-archivos-oficiales-de-odepa-y-del-ine) | ADR-01 | Aceptada | 11-10-2026 |
+| [Orquestar con GitHub Actions y publicar en Streamlit Community Cloud](#adr-02--orquestar-con-github-actions-y-publicar-en-streamlit-community-cloud) | ADR-02 | Aceptada | 11-10-2026 |
+| [No subir los datos crudos al repositorio](#adr-04--no-subir-los-datos-crudos-al-repositorio) | ADR-04 | Aceptada, modificada por ADR-35 | 11-10-2026 |
+| [Reconstruir todo en cada carga](#adr-10--reconstruir-todo-en-cada-carga) | ADR-10 | Aceptada | 11-10-2026 |
+| [Publicar solo si pasan las pruebas](#adr-11--publicar-solo-si-pasan-las-pruebas) | ADR-11 | Aceptada | 11-10-2026 |
+| [Modelo estrella con una dimensión de fechas sin huecos](#adr-19--modelo-estrella-con-una-dimensión-de-fechas-sin-huecos) | ADR-19 | Aceptada | 11-10-2026 |
+| [Parquet, dbt Core y DuckDB](#adr-30--parquet-dbt-core-y-duckdb) | ADR-30 | Aceptada | 19-10-2026 |
+| [No usar un data warehouse en la nube](#adr-31--no-usar-un-data-warehouse-en-la-nube) | ADR-31 | Aceptada | 19-10-2026 |
+| [Calcular precios reales con el IPC de alimentos del INE](#adr-33--calcular-precios-reales-con-el-ipc-de-alimentos-del-ine) | ADR-33 | Aceptada | 19-10-2026 |
+| [Separar la base de trabajo de dbt, la base que lee el panel y el respaldo](#adr-34--separar-la-base-de-trabajo-de-dbt-la-base-que-lee-el-panel-y-el-respaldo) | ADR-34 | Aceptada | 19-10-2026 |
+| [Publicar la base servida en un release que cada carga reemplaza](#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) | ADR-35 | Aceptada | 24-10-2026 |
+
+## En resumen
+
+Cada decisión de este documento responde a una pregunta concreta: de dónde salen los datos, cómo se cargan, cómo se guardan, cuándo se publican y cuánto cuesta. Tres ideas las unen:
+
+- **Solo datos oficiales, recalculados desde cero.** Nada se interpola y repetir una carga nunca duplica datos.
+- **Nada se publica sin pruebas.** Una carga con errores se detiene antes de llegar al panel.
+- **Costo cero y sin vencimientos.** Servicios gratuitos permanentes y una sola copia publicada de la base.
+
+[[diagrama:mapa_adr]]
+
+[[diagrama:tiempo_adr]]
 
 ## ADR-01 · Usar solo los archivos oficiales de ODEPA y del INE
 
@@ -100,7 +112,7 @@ Cada registro conserva su número original, por eso la numeración no es correla
 - **Contexto:** datos públicos, semanales y de pocos megabytes, leídos por un solo panel.
 - **Decisión:** la base servida es un archivo DuckDB; no hay un data warehouse en la nube.
 - **Opciones consideradas:** BigQuery como segundo destino de dbt, declarado como opción y nunca como dependencia del panel.
-- **Consecuencias:** no hay costo, secretos de nube ni vencimientos. Se reconsideraría solo si una empresa sumara sus propios datos; los umbrales están en el [Plan de capacidad y escalabilidad](ESCALABILIDAD.md).
+- **Consecuencias:** no hay costo, secretos de nube ni vencimientos. Se reconsideraría solo si una empresa sumara sus propios datos; los umbrales están en el [SAD, capacidad y crecimiento](SAD.md#9-capacidad-y-crecimiento).
 
 ## ADR-33 · Calcular precios reales con el IPC de alimentos del INE
 
@@ -125,6 +137,9 @@ Cada registro conserva su número original, por eso la numeración no es correla
 - **Estado:** aceptada (D-270, base servida en un release).
 - **Fecha:** 24-10-2026.
 - **Contexto:** cada carga subía con un commit la base servida y el respaldo, unos 48 MB. Git conserva cada versión de un archivo: el historial crecía cerca de 1 GB por año con copias que nadie consulta, porque cada base nueva ya contiene la historia completa ([ADR-10](#adr-10--reconstruir-todo-en-cada-carga)). Medidas del 24-10-2026.
+
+[[diagrama:antes_despues]]
+
 - **Decisión:** la base servida se publica como archivo del release «base-actual» de GitHub, reemplazado por cada carga. En Git queda solo su puntero, `etl/datos.version`, con la huella SHA-256, el tamaño y la fecha de la base publicada. El panel, las pruebas de cada push y una copia nueva del proyecto descargan el archivo cuando falta o es más antiguo, y lo usan solo si su huella coincide. El respaldo SQLite se rehace en la máquina de cada carga, donde corre la prueba de paridad, y no se publica.
 - **Opciones consideradas:** dejar de versionar solo el respaldo, lo que reducía el crecimiento a unos 300 MB por año sin detenerlo; almacenamiento de archivos grandes (Git LFS), que también conserva cada versión y tiene una cuota gratuita limitada; reescribir el historial periódicamente, lo que invalida las copias ya clonadas.
 - **Consecuencias:** el historial deja de crecer con los datos y existe una sola copia publicada. El panel depende de poder descargar la base al arrancar; si no puede, conserva la que tiene. Las versiones anteriores siguen en el historial. Una reconstrucción local más nueva que el puntero se conserva.
@@ -144,3 +159,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 1.4 | 23-10-2026 | Las diez decisiones con sus partes estándar (D-248) |
 | 1.5 | 24-10-2026 | ADR-11 corregido y alternativas de ADR-19 (D-269); ADR-35 (D-270) |
 | 2.0 | 25-10-2026 | Formato MADR con fecha y opciones consideradas, índice al inicio, opciones de ADR-30 completadas desde el historial, ADR-19 sin alternativas no registradas (D-279, documentación profesional) |
+| 3.0 | 25-10-2026 | Resumen en lenguaje simple, mapa de dónde actúa cada decisión, línea de tiempo y el antes y después del ADR-35; índice por el nombre de cada decisión (D-290, documentos para todo lector) |
