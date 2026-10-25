@@ -1538,7 +1538,7 @@ MENU_BLOCKS = {
     'Negocio · BI': ['Resumen semanal', 'Precios e inflación'],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
-    'Stack y evidencia': ['Stack y evidencia'],
+    'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],
     'Documentos': ['Carpeta de documentos'],
 }
 

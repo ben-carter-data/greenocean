@@ -41,6 +41,7 @@ EN = {
     "Centro de operación": "Operations center",
     "Arquitectura de seguridad": "Security architecture",
     "Carpeta de documentos": "Documents folder",
+    "Mapa de la app": "App map",
     "ODEPA: precios mayoristas": "ODEPA: wholesale prices",
     "ODEPA: precios al consumidor": "ODEPA: consumer prices",
     "INE: IPC de alimentos": "INE: food CPI",

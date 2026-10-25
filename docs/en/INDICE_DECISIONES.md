@@ -117,6 +117,10 @@ The full log, with every decision in chronological order, is `docs/DECISIONES.md
 | D-264 | Weekly summary: the header is a single bar | — |
 | D-267 | The main pages with a single header bar; Prices and inflation with its reading | — |
 | D-274 | The measure is the real browser window (1440 × 790); Quality and audit fits in it | — |
+| D-281 | A single component for buttons and links | — |
+| D-283 | Spanish and English: the language is chosen like the theme, and the documents exist in both languages | — |
+| D-284 | Spanish and English, second layer: each page is translated as it is drawn | — |
+| D-285 | The app map: the whole system in one view | — |
 
 ## 8. Documentation
 
@@ -127,6 +131,9 @@ The full log, with every decision in chronological order, is `docs/DECISIONES.md
 | D-248 | Stage 10: documents to standard, and the PDF is the printed page | — |
 | D-269 | The documents, reviewed against the product: PRD, SAD, ADR and Scalability | — |
 | D-278 | The documentation is separated from the history of the project | — |
+| D-279 | Professional documentation: header, contents, glossary and history in each document | — |
+| D-280 | Diagrams and logos of the documents without a background; the PDF always on a white sheet | — |
+| D-282 | A single «Documents» folder in the menu | — |
 
 ## 9. Version history
 

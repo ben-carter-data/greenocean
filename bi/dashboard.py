@@ -33,7 +33,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
-from bi import (alerts, architecture, buttons, charts, control, documents_folder, i18n, data_browser, home_mockup, lag,  # noqa: E402
+from bi import (alerts, app_map, architecture, buttons, charts, control, documents_folder, i18n, data_browser, home_mockup, lag,  # noqa: E402
                 database_crossings, deployment, devops, monitoring, page_bar, served_database, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # D-283: every text a reader sees goes through tr, which gives its English when the reader chose English.
@@ -87,6 +87,8 @@ PAGE_SECURITY_PLAN = "Plan de pruebas de seguridad"
 PAGE_STACK = "Stack y evidencia"
 # D-282: one folder holds every document; the documents added with it have their own page.
 PAGE_FOLDER = "Documentos"
+# D-285: the whole system in one view, next to the stack.
+PAGE_APP_MAP = "Mapa de la app"
 PAGE_DECISION_INDEX = "Índice de decisiones"
 PAGE_DATA_DICTIONARY = "Diccionario de datos"
 PAGE_TEST_PLAN = "Plan de pruebas"
@@ -109,7 +111,7 @@ SECTION_TECHNICAL = "Ingeniería de datos"
 SECTION_LINKS = "Documentación"
 SECTION_SECURITY = "Seguridad"
 WINDOWS = {
-    SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES, PAGE_STACK],
+    SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES, PAGE_STACK, PAGE_APP_MAP],
     SECTION_KPI: [PAGE_KPI],
     REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY, PAGE_SQL],
@@ -185,7 +187,7 @@ PAGE_ICONS = {
     PAGE_OPERATIONS: ":material/health_and_safety:", PAGE_RUNS: ":material/play_circle:",
     PAGE_MANUAL: ":material/menu_book:",
     PAGE_GLOSSARY: ":material/dictionary:", PAGE_LINKS: ":material/link:",
-    PAGE_FOLDER: ":material/folder_open:", PAGE_DECISION_INDEX: ":material/list_alt:",
+    PAGE_FOLDER: ":material/folder_open:", PAGE_DECISION_INDEX: ":material/list_alt:", PAGE_APP_MAP: ":material/hub:",
     PAGE_DATA_DICTIONARY: ":material/table_chart:", PAGE_TEST_PLAN: ":material/checklist:",
 }
 PAGE_PATHS = {
@@ -200,7 +202,7 @@ PAGE_PATHS = {
     PAGE_RULES: "reglas", PAGE_DEVOPS: "devops", PAGE_OPERATIONS: "operaciones",
     PAGE_RUNS: "ejecuciones", PAGE_MANUAL: "manual",
     PAGE_GLOSSARY: "glosario", PAGE_LINKS: "enlaces",
-    PAGE_FOLDER: "documentos", PAGE_DECISION_INDEX: "indice-de-decisiones", PAGE_DATA_DICTIONARY: "diccionario-de-datos",
+    PAGE_FOLDER: "documentos", PAGE_APP_MAP: "mapa-de-la-app", PAGE_DECISION_INDEX: "indice-de-decisiones", PAGE_DATA_DICTIONARY: "diccionario-de-datos",
     PAGE_TEST_PLAN: "plan-de-pruebas",
 }
 TAB_IDEA = "Idea de negocio"
@@ -1724,7 +1726,7 @@ def show_app_header(window):
 
 # The pages whose only header is one thin bar (D-264, D-267).
 BAR_VIEWS = {PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS,
-             PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER}
+             PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER, PAGE_APP_MAP}
 
 
 # The project documents: no path row and no Volver (D-269); the folder's path leads back (D-282).
@@ -6792,10 +6794,22 @@ def read_stack_figures(database_version):
 def show_stack_page(mode):
     """«Stack y evidencia» (D-211, D-266): the stack as an architecture diagram; each tool explains itself and
     opens the page where it works."""
-    show_page_bar(PAGE_STACK, PAGE_STACK, "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.")
+    show_page_bar(PAGE_STACK, PAGE_STACK, "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.",
+                  side=lambda: st.markdown(page_bar.build_link_html(
+                      PAGE_APP_MAP, build_page_address(PAGE_APP_MAP),
+                      "Todo el sistema en una vista: cada tecnología, su rol y sus conexiones."),
+                      unsafe_allow_html=True, width="content"))
     addresses = {page: build_page_address(page) for *_, page in stack_page.STACK}
     st.html(stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()),
                                         addresses))
+
+
+def show_app_map_page(mode):
+    """«Mapa de la app» (D-285): the whole system in one view; the stack is its summary."""
+    show_page_bar(PAGE_APP_MAP, PAGE_APP_MAP, "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y "
+                  "con qué se conecta.")
+    addresses = {node[7]: build_page_address(node[7]) for node in app_map.NODES.values()}
+    st.html(app_map.build_map_html(charts.get_palette(mode), addresses), unsafe_allow_javascript=True)
 
 
 def show_project_document(mode, title):
@@ -6864,6 +6878,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_DATA_DICTIONARY: lambda mode: show_project_document(mode, PAGE_DATA_DICTIONARY),
     PAGE_TEST_PLAN: lambda mode: show_project_document(mode, PAGE_TEST_PLAN),
     PAGE_FOLDER: lambda mode: show_documents_folder(mode),
+    PAGE_APP_MAP: lambda mode: show_app_map_page(mode),
     PAGE_LINKS: show_links_page,
 }
 
@@ -7159,7 +7174,7 @@ def show_route_footer(window, pages, view=None):
 
 
 # D-233: the pages that fit the window close with one short footer instead of the two long ones.
-COMPACT_FOOTER_VIEWS = {PAGE_SQL, PAGE_OPERATIONS, PAGE_RUNS, PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER}
+COMPACT_FOOTER_VIEWS = {PAGE_SQL, PAGE_OPERATIONS, PAGE_RUNS, PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER, PAGE_APP_MAP}
 
 
 def show_compact_footer(window, pages, view=None):
@@ -7350,7 +7365,7 @@ MENU_BLOCKS = [
     ("ingenieria", "Ingeniería de datos",
      [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY]),
-    ("stack", "Stack y evidencia", [PAGE_STACK]),
+    ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),
     ("documentos", "Documentos", [PAGE_FOLDER]),
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
 ]
@@ -7363,7 +7378,7 @@ SIDEBAR_ICONS = {
     PAGE_DIAGRAMS: ":material/share:", PAGE_ARCHITECTURE: ":material/database:",
     PAGE_OPERATIONS: ":material/verified_user:", PAGE_SQL: ":material/terminal:",
     PAGE_RUNS: ":material/radio_button_checked:", PAGE_SECURITY: ":material/lock:",
-    PAGE_STACK: ":material/layers:", PAGE_FOLDER: ":material/folder_open:",
+    PAGE_STACK: ":material/layers:", PAGE_APP_MAP: ":material/hub:", PAGE_FOLDER: ":material/folder_open:",
 }
 # (text, heading, icon, hover fill, current fill, accent bar, hairline) for dark and light sidebars.
 MENU_INK = {True: ("#cfd4dc", "#8b929c", "#aeb5bf", "rgba(255,255,255,.04)", "rgba(255,255,255,.07)",

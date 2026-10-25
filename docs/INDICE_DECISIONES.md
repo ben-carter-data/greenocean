@@ -117,6 +117,10 @@ El registro completo, con todas las decisiones en orden cronológico, es `docs/D
 | D-264 | Resumen semanal: el encabezado es una sola barra | — |
 | D-267 | Las páginas principales con una sola barra de encabezado; Precios e inflación con su lectura | — |
 | D-274 | La medida es la ventana real del navegador (1440 × 790); Calidad y auditoría cabe en ella | — |
+| D-281 | Un solo componente para botones y enlaces | — |
+| D-283 | Español e inglés: el idioma se elige como el tema, y los documentos existen en las dos lenguas | — |
+| D-284 | Español e inglés, segunda capa: cada página se traduce al dibujarse | — |
+| D-285 | El mapa de la app: todo el sistema en una vista | — |
 
 ## 8. Documentación
 
@@ -127,6 +131,9 @@ El registro completo, con todas las decisiones en orden cronológico, es `docs/D
 | D-248 | Etapa 10: documentos al estándar y el PDF es la página impresa | — |
 | D-269 | Los documentos, revisados contra el producto: PRD, SAD, ADR y Escalabilidad | — |
 | D-278 | La documentación se separa de la historia del proyecto | — |
+| D-279 | Documentación profesional: encabezado, índice, glosario e historial en cada documento | — |
+| D-280 | Diagramas y logos de los documentos sin fondo; el PDF siempre en hoja blanca | — |
+| D-282 | Una sola carpeta «Documentos» en el menú | — |
 
 ## 9. Historial de versiones
 

@@ -23,10 +23,10 @@ const only = process.env.PAGES ? process.env.PAGES.split(',').map(Number) : null
 const SHOT_SIZE = [1440, 900];
 
 // Sidebar order: the nth internal link, then the GitHub page (the last link, href enlaces).
-// D-282: the documents live in their folder; the menu has ten pages and GitHub.
+// D-282, D-285: the documents live in their folder; the menu has eleven pages and GitHub.
 const SLUGS = ['resumen-semanal', 'precios-e-inflacion', 'pipeline-y-linaje', 'modelo-de-datos',
   'calidad-y-auditoria', 'consultas-sql', 'centro-de-operacion', 'mapa-de-seguridad', 'stack-y-evidencia',
-  'documentos', 'github'];
+  'mapa-de-la-app', 'documentos', 'github'];
 
 // Runs inside every frame (page and iframes). Self-contained on purpose.
 function measureFrame(isChild) {
