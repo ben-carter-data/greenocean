@@ -624,11 +624,6 @@ def test_manual_is_a_procedural_document_without_presentation_cards():
     assert '.github/workflows/semanal.yml' in text
 
 
-def test_d057_every_theme_of_the_glossary_says_what_it_groups():
-    themes = {row["Tema"] for row in project.read_glossary()}
-    assert themes == set(dashboard.GLOSSARY_THEME_LEADS)
-
-
 def test_d057_every_rejection_reason_of_the_etl_is_explained():
     from etl import etl
     reasons = {value for name, value in vars(etl).items() if name.startswith("REASON_")}
@@ -1089,7 +1084,7 @@ def test_historical_root_link_keeps_the_requested_project_view_after_route_chang
 def test_d250_the_path_and_the_footer_follow_the_menu():
     order = dashboard.MENU_ORDER
     assert len(order) == len(set(order)) and order[0] == dashboard.PAGE_HOME
-    assert dashboard.MENU_BLOCK_OF_VIEW[dashboard.PAGE_SAD] == "Ingeniería de datos"
+    assert dashboard.PAGE_SAD not in dashboard.MENU_BLOCK_OF_VIEW and dashboard.PAGE_SAD in dashboard.FOLDER_ORDER
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params['vista'] = dashboard.PAGE_RUNS
     app.run()
@@ -1097,8 +1092,8 @@ def test_d250_the_path_and_the_footer_follow_the_menu():
     markup = ' '.join(block.value for block in app.markdown)
     assert 'DevOps y seguridad › Centro de operación' in markup
     footer = app.main.get('page_link')
-    assert [link.proto.label for link in footer] == ['← Anterior: SAD · Arquitectura', 'Siguiente: Arquitectura de seguridad →']
-    assert [link.proto.icon for link in footer] == [dashboard.SIDEBAR_ICONS[dashboard.PAGE_SAD],
+    assert [link.proto.label for link in footer] == ['← Anterior: Consultas SQL', 'Siguiente: Arquitectura de seguridad →']
+    assert [link.proto.icon for link in footer] == [dashboard.SIDEBAR_ICONS[dashboard.PAGE_SQL],
                                                     dashboard.SIDEBAR_ICONS[dashboard.PAGE_SECURITY]]
 
 
@@ -1220,9 +1215,11 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Step 4 of the refonte: Ingeniería de datos, four pages; DevOps joined Ejecuciones.
     assert 'DevOps y seguridad' not in labels
     for child in ['Resumen semanal', 'Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría',
-                  'Centro de operación', 'Arquitectura de seguridad', 'Plan de pruebas de seguridad',
-                  'PRD · Requisitos del producto', 'SAD · Arquitectura', 'ADR · Decisiones de arquitectura']:
+                  'Centro de operación', 'Arquitectura de seguridad', 'Carpeta de documentos']:
         assert child in labels
+    # D-282: the documents live in their folder, not in the menu.
+    for document in ['Plan de pruebas de seguridad', 'PRD · Requisitos del producto', 'SAD · Arquitectura']:
+        assert document not in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
     assert 'class="sidebar-github' in sidebar_markup and 'aria-label="GitHub del proyecto"' in sidebar_markup
     for retired in ['Archivos del proyecto', 'Descripción general', 'Manual', 'Glosario',
@@ -1471,7 +1468,8 @@ def test_d129_the_github_page_names_actions_so_it_is_not_confused_with_ejecucion
 
 @needs_database
 def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
-    assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:3] == [dashboard.PAGE_PRD, dashboard.PAGE_SAD, dashboard.PAGE_ADR]
+    assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:4] == [dashboard.PAGE_FOLDER, dashboard.PAGE_PRD, dashboard.PAGE_SAD,
+                                                               dashboard.PAGE_ADR]
     # D-205: the document views in their own frame, the live panel diagrams inline.
     for page, framed, inline in ((dashboard.PAGE_PRD, 2, 0), (dashboard.PAGE_SAD, 2, 0), (dashboard.PAGE_ADR, 0, 0),
                                  (dashboard.PAGE_SECURITY_PLAN, 2, 0)):
@@ -1538,11 +1536,10 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 MENU_BLOCKS = {
     'Negocio · BI': ['Resumen semanal', 'Precios e inflación'],
-    'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL',
-                            'SAD · Arquitectura'],
-    'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad', 'Plan de pruebas de seguridad'],
+    'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL'],
+    'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
     'Stack y evidencia': ['Stack y evidencia'],
-    'Análisis de negocio · BA': ['PRD · Requisitos del producto', 'ADR · Decisiones de arquitectura', 'Escalabilidad'],
+    'Documentos': ['Carpeta de documentos'],
 }
 
 
@@ -1617,3 +1614,71 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
     count = int((dashboard.read_price_alerts()["week_start"] == week).sum())
     assert app.button(key="home_alert_trigger").label == f"▲ {count}"
     assert 'class="home-bar-updated"' in markup
+
+
+# D-282: one folder holds every document.
+@needs_database
+def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_file():
+    from bi import documents_folder
+    app = draw_page(dashboard.PAGE_FOLDER)
+    assert not app.exception
+    markup = " ".join(block.value for block in app.markdown)
+    assert markup.count('class="df-file"') == len(dashboard.FOLDER_DOCUMENTS) == 10
+    assert "GreenOcean <i>/</i> <b>docs</b>" in markup and "10 documentos" in markup
+    for page in dashboard.FOLDER_ORDER:
+        filename = dashboard.PROJECT_DOCUMENTS[page][0]
+        text = (PROJECT_DIR / "docs" / filename).read_text(encoding="utf-8")
+        header = documents_folder.read_header(text)
+        assert f"<span>v{header['Versión']}</span><span>{header['Fecha']}</span>" in markup, filename
+        assert documents_folder.read_title(text) in markup, filename
+        assert project.build_github_url(f"docs/{filename}") in markup, filename
+    assert markup.count('class="go-icon go-icon-print"') == 10 and markup.count('class="df-preview"') == 10
+
+
+def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_menu():
+    reading = {path.name for path in (PROJECT_DIR / "docs").glob("*.md")} - {"DECISIONES.md", "PROYECTO.md", "DISENO.md"}
+    assert {dashboard.PROJECT_DOCUMENTS[page][0] for page in dashboard.FOLDER_ORDER} == reading
+    assert not set(dashboard.FOLDER_ORDER) & set(dashboard.MENU_ORDER)
+    assert [pages for key, _, pages in dashboard.MENU_BLOCKS if key == "documentos"] == [[dashboard.PAGE_FOLDER]]
+    assert all(pages for _, _, pages in dashboard.MENU_BLOCKS)  # no empty section is left
+
+
+@needs_database
+@pytest.mark.parametrize("page", ["PRD · Requisitos del producto", "Glosario", "Plan de pruebas"])
+def test_d282_a_document_opens_its_page_with_its_path_its_pdf_and_its_neighbours(page):
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params['vista'] = page
+    app.run()
+    assert not app.exception
+    markup = " ".join(block.value for block in app.markdown)
+    assert '<nav class="doc-path"' in markup and f'target="_self">{dashboard.PAGE_FOLDER}</a>' in markup
+    assert any("doc-print" in block.proto.body for block in app.get("html"))
+    position = dashboard.FOLDER_ORDER.index(page)
+    labels = [link.proto.label for link in app.main.get("page_link")]
+    expected = ([f"← Anterior: {dashboard.SIDEBAR_LABELS.get(p, p)}" for p in dashboard.FOLDER_ORDER[position - 1:position]
+                 if position > 0]
+                + [f"Siguiente: {dashboard.SIDEBAR_LABELS.get(p, p)} →"
+                   for p in dashboard.FOLDER_ORDER[position + 1:position + 2]])
+    assert labels == expected
+
+
+def test_d282_the_old_addresses_of_the_documents_still_open_them():
+    for page in dashboard.FOLDER_ORDER:
+        window = dashboard.WINDOW_OF_VIEW[page]
+        assert page in dashboard.read_window_views(window), page
+    assert dashboard.WINDOW_OF_VIEW[dashboard.PAGE_SECURITY_PLAN] == dashboard.SECTION_SECURITY  # «seguridad?vista=…»
+    assert dashboard.OLD_PATHS["documentacion-bi"] == (dashboard.PAGE_PRD, None)
+
+
+def test_d282_the_pdf_action_prints_the_document_on_a_white_sheet():
+    address = dashboard.build_print_address(dashboard.PAGE_SAD)
+    assert "imprimir=" in address and "vista=SAD" in address
+
+
+def test_d282_every_preview_shows_the_index_of_its_document():
+    from bi import documents_folder
+    for page in dashboard.FOLDER_ORDER:
+        text = (PROJECT_DIR / "docs" / dashboard.PROJECT_DOCUMENTS[page][0]).read_text(encoding="utf-8")
+        index = documents_folder.read_index(text)
+        assert len(index) >= 2, page
+        assert all(entry.split(" · ")[0] in text for entry in index), page

@@ -1,4 +1,4 @@
-// Layout measurement of the 15 pages of the menu (read-only: it never changes the DOM).
+// Layout measurement of the pages of the menu (read-only: it never changes the DOM).
 //
 // Needs Playwright from outside the project (no dependency is added to the repo):
 //   NODE_PATH=/path/to/node_modules node tests/medicion/medir.cjs <out_dir>
@@ -21,9 +21,10 @@ const only = process.env.PAGES ? process.env.PAGES.split(',').map(Number) : null
 const SHOT_SIZE = [1440, 900];
 
 // Sidebar order: the nth internal link, then the GitHub page (the last link, href enlaces).
+// D-282: the documents live in their folder; the menu has ten pages and GitHub.
 const SLUGS = ['resumen-semanal', 'precios-e-inflacion', 'pipeline-y-linaje', 'modelo-de-datos',
-  'calidad-y-auditoria', 'consultas-sql', 'sad', 'centro-de-operacion', 'mapa-de-seguridad',
-  'plan-de-pruebas', 'stack-y-evidencia', 'prd', 'adr', 'escalabilidad', 'github'];
+  'calidad-y-auditoria', 'consultas-sql', 'centro-de-operacion', 'mapa-de-seguridad', 'stack-y-evidencia',
+  'documentos', 'github'];
 
 // Runs inside every frame (page and iframes). Self-contained on purpose.
 function measureFrame(isChild) {
@@ -213,7 +214,7 @@ async function measureAll(page) {
       await settle(page);
       const hrefs = await page.$$eval('[data-testid="stSidebar"] a', as => as.map(a => a.getAttribute('href')));
       const internal = hrefs.filter(h => h && !h.startsWith('http'));
-      // 14 view links, then GitHub (href enlaces).
+      // The view links, then GitHub (href enlaces).
       const order = [...internal.filter(h => !h.startsWith('enlaces')), ...internal.filter(h => h.startsWith('enlaces'))];
       for (let i = 0; i < SLUGS.length; i++) {
         if (only && !only.includes(i)) continue;

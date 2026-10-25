@@ -33,7 +33,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
-from bi import (alerts, architecture, buttons, charts, control, data_browser, home_mockup, lag,  # noqa: E402
+from bi import (alerts, architecture, buttons, charts, control, documents_folder, data_browser, home_mockup, lag,  # noqa: E402
                 database_crossings, deployment, devops, monitoring, page_bar, served_database, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # endregion
@@ -83,6 +83,11 @@ PAGE_SECURITY = "Mapa de seguridad"
 PAGE_SECURITY_PLAN = "Plan de pruebas de seguridad"
 # D-211: the stack in 30 seconds, for a recruiter.
 PAGE_STACK = "Stack y evidencia"
+# D-282: one folder holds every document; the documents added with it have their own page.
+PAGE_FOLDER = "Documentos"
+PAGE_DECISION_INDEX = "Índice de decisiones"
+PAGE_DATA_DICTIONARY = "Diccionario de datos"
+PAGE_TEST_PLAN = "Plan de pruebas"
 SECTION_RESOURCES = "Enlaces"
 SOURCE_LINKS = [
     ("ODEPA: precios mayoristas", project.WHOLESALE_SOURCE_URL),
@@ -108,8 +113,8 @@ WINDOWS = {
                     PAGE_SEASONALITY, PAGE_SQL],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_SECURITY_PLAN],
-    SECTION_LINKS: [PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
-                    PAGE_MANUAL],
+    SECTION_LINKS: [PAGE_FOLDER, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
+                    PAGE_MANUAL, PAGE_DECISION_INDEX, PAGE_DATA_DICTIONARY, PAGE_TEST_PLAN],
     SECTION_RESOURCES: [PAGE_LINKS],
 }
 # The SQL and Python consoles left the app (D-143): the code lives in GitHub and the
@@ -178,6 +183,8 @@ PAGE_ICONS = {
     PAGE_OPERATIONS: ":material/health_and_safety:", PAGE_RUNS: ":material/play_circle:",
     PAGE_MANUAL: ":material/menu_book:",
     PAGE_GLOSSARY: ":material/dictionary:", PAGE_LINKS: ":material/link:",
+    PAGE_FOLDER: ":material/folder_open:", PAGE_DECISION_INDEX: ":material/list_alt:",
+    PAGE_DATA_DICTIONARY: ":material/table_chart:", PAGE_TEST_PLAN: ":material/checklist:",
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
@@ -191,6 +198,8 @@ PAGE_PATHS = {
     PAGE_RULES: "reglas", PAGE_DEVOPS: "devops", PAGE_OPERATIONS: "operaciones",
     PAGE_RUNS: "ejecuciones", PAGE_MANUAL: "manual",
     PAGE_GLOSSARY: "glosario", PAGE_LINKS: "enlaces",
+    PAGE_FOLDER: "documentos", PAGE_DECISION_INDEX: "indice-de-decisiones", PAGE_DATA_DICTIONARY: "diccionario-de-datos",
+    PAGE_TEST_PLAN: "plan-de-pruebas",
 }
 TAB_IDEA = "Idea de negocio"
 TAB_KPI = "Cifras y cálculos"
@@ -405,16 +414,6 @@ RULE_STAGES = [
     ("Al calcular el margen", "El margen solo compara precios en la misma unidad.",
      ["RN-06"], "consulta `k1_margin` en `bi/queries.sql`"),
 ]
-# What each theme of the glossary groups, in one sentence.
-GLOSSARY_THEME_LEADS = {
-    "Fuentes": "De dónde vienen los precios.",
-    "Pipeline": "Lo que corre cada martes y cómo se controla.",
-    "Base de datos": "Cómo se guardan y se leen los datos.",
-    "Indicadores": "Las cifras y las reglas que las producen.",
-    "Conexiones": "Cómo se comunican las piezas.",
-    "Seguridad": "Qué protege el acceso y los secretos.",
-    "Documentos": "Los tipos de documento y sus formatos.",
-}
 # The tables of «DevOps y seguridad» by priority: what protects the data first,
 # then what runs the project, how a run is observed and what gets published.
 # (heading in docs/PROYECTO.md, sentence, title column, text column, note column)
@@ -1269,6 +1268,10 @@ def build_style_css(mode):
     .doc-source {{font-size:.85rem; margin:-4px 0 14px;}}
     .st-key-doc_actions .doc-source {{margin:0;}}
     .st-key-doc_actions {{margin:0 0 10px;}}
+    .doc-path {{font-size:.8rem; color:{palette['reference']}; margin:0 0 -6px;}}
+    .doc-path a {{color:{palette['accent']} !important; text-decoration:none;}}
+    .doc-path a:hover {{text-decoration:underline;}}
+    .doc-path i {{font-style:normal; margin:0 6px;}}
     /* A sheet (step 6): centred, with margins on both sides, like a printed page. */
     .st-key-project_document {{max-width:900px; margin:6px auto 30px; padding:44px 60px 48px;
         background:{palette['card']}; border:1px solid {palette['card_border']}; border-radius:16px;
@@ -1719,11 +1722,12 @@ def show_app_header(window):
 
 # The pages whose only header is one thin bar (D-264, D-267).
 BAR_VIEWS = {PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS,
-             PAGE_SECURITY, PAGE_STACK}
+             PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER}
 
 
-# The project documents: no path row and no Volver (D-269).
-DOCUMENT_VIEWS = {PAGE_DOCUMENTATION, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY, PAGE_SECURITY_PLAN}
+# The project documents: no path row and no Volver (D-269); the folder's path leads back (D-282).
+DOCUMENT_VIEWS = {PAGE_DOCUMENTATION, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABILITY, PAGE_SECURITY_PLAN, PAGE_MANUAL,
+                  PAGE_GLOSSARY, PAGE_DECISION_INDEX, PAGE_DATA_DICTIONARY, PAGE_TEST_PLAN}
 
 
 def build_view_path(window, view):
@@ -1733,6 +1737,8 @@ def build_view_path(window, view):
     if view in MENU_BLOCK_OF_VIEW:
         label = SIDEBAR_LABELS.get(view, view)
         path = label if MENU_BLOCK_OF_VIEW[view] == label else f"{MENU_BLOCK_OF_VIEW[view]} › {label}"
+    if view in FOLDER_ORDER:
+        path = f"{PAGE_FOLDER} › {SIDEBAR_LABELS.get(view, view)}"
     return path
 
 
@@ -3820,16 +3826,6 @@ def show_idea_tab(mode):
                 + build_place_link(PAGE_RUNS, "Operación:"), unsafe_allow_html=True)
     for show_part in [show_questions, show_audience, show_sources, show_limits, show_why]:
         show_part(mode)
-
-
-def show_glossary_tab(mode):
-    """Terminology as a document, grouped by functional area."""
-    rows = project.read_glossary()
-    for theme in dict.fromkeys(row["Tema"] for row in rows):
-        st.subheader(theme)
-        for row in [row for row in rows if row["Tema"] == theme]:
-            st.markdown(f"**{row['Sigla o término']}.** {row['Significado']} "
-                        f"— Uso: {row['Dónde aparece']}.")
 
 
 @st.cache_data
@@ -6602,21 +6598,70 @@ PROJECT_DOCUMENTS = {
     PAGE_SECURITY_PLAN: ("SEGURIDAD.md", "Cómo se buscan, se corrigen y se prueban en cada push los puntos débiles."),
     PAGE_SCALABILITY: ("ESCALABILIDAD.md", "Capacidad actual, qué cede primero y cuándo se justificaría una nube."),
     PAGE_MANUAL: ("MANUAL.md", "Cómo operar el proyecto y resolver sus fallas."),
+    PAGE_DECISION_INDEX: ("INDICE_DECISIONES.md", "Las decisiones que cambian la arquitectura, los datos, la seguridad o la operación, por tema."),
+    PAGE_DATA_DICTIONARY: ("DICCIONARIO_DATOS.md", "Cada tabla y cada columna de la base servida."),
+    PAGE_TEST_PLAN: ("PLAN_PRUEBAS.md", "Qué se prueba, cómo y con qué criterios se acepta un cambio."),
+    PAGE_GLOSSARY: ("GLOSARIO.md", "Las siglas y los términos del panel y de los documentos."),
 }
+# D-282: the folder, in reading order, with the family that colors each file.
+FOLDER_DOCUMENTS = [(PAGE_PRD, "producto"), (PAGE_SAD, "arquitectura"), (PAGE_ADR, "arquitectura"),
+                    (PAGE_DATA_DICTIONARY, "arquitectura"), (PAGE_SCALABILITY, "arquitectura"),
+                    (PAGE_TEST_PLAN, "calidad"), (PAGE_SECURITY_PLAN, "calidad"), (PAGE_MANUAL, "operacion"),
+                    (PAGE_DECISION_INDEX, "referencia"), (PAGE_GLOSSARY, "referencia")]
+FOLDER_ORDER = [page for page, _ in FOLDER_DOCUMENTS]
+FOLDER_VIEW_KEY = "folder_view"
 DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 # D-247: a document points to the page of the panel where a view lives, instead of copying it: [[vista:Modelo de datos]].
 DOCUMENT_VIEW = re.compile(r"\[\[vista:([^\]]+)\]\]")
 
 
 def find_menu_page(label):
-    """The page whose label in the menu is `label`, or None."""
-    for _, _, pages in MENU_BLOCKS:
-        if pages is SOURCE_LINKS:
-            continue
-        for view in pages:
-            if SIDEBAR_LABELS.get(view, view) == label:
-                return view
+    """The page whose label in the menu, or in the documents folder, is `label`, or None."""
+    for view in MENU_ORDER + FOLDER_ORDER:
+        if SIDEBAR_LABELS.get(view, view) == label:
+            return view
     return None
+
+
+def build_print_address(page):
+    """The address that opens a document and prints it (D-248), on a white sheet from any theme (D-280)."""
+    path, _, query = build_page_address(page).partition("?")
+    parameters = {key: values[0] for key, values in parse_qs(query).items()}
+    reader = get_mode()
+    parameters.update({THEME_PARAMETER: PRINT_THEME if is_dark_theme(reader) else reader, PRINT_PARAMETER: reader})
+    return f"{path}?{urlencode(parameters)}"
+
+
+def read_folder_files():
+    """Every document of the folder as the folder shows it, read from its file."""
+    files = []
+    for page, family in FOLDER_DOCUMENTS:
+        filename = PROJECT_DOCUMENTS[page][0]
+        text = (project.DOCS_DIR / filename).read_text(encoding="utf-8")
+        files.append(documents_folder.describe(text) | {
+            "page": page, "family": family, "open": build_page_address(page), "pdf": build_print_address(page),
+            "github": project.build_github_url(f"docs/{filename}")})
+    return files
+
+
+def show_documents_folder(mode):
+    """«Documentos» (D-282): the folder of docs/, as files in a grid or a list."""
+    files = read_folder_files()
+    st.session_state.setdefault(FOLDER_VIEW_KEY, documents_folder.VIEW_GRID)
+    show_page_bar(PAGE_FOLDER, PAGE_FOLDER, "Los documentos del proyecto, leídos de docs/: cada uno se abre aquí, se "
+                  "imprime como PDF o se lee en GitHub.",
+                  side=lambda: st.segmented_control(
+                      "Vista de la carpeta", [documents_folder.VIEW_GRID, documents_folder.VIEW_LIST],
+                      key=FOLDER_VIEW_KEY, label_visibility="collapsed", width="content"))
+    st.markdown(documents_folder.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+    view = st.session_state.get(FOLDER_VIEW_KEY) or documents_folder.VIEW_GRID
+    st.markdown(documents_folder.build_folder_html(files, view), unsafe_allow_html=True)
+
+
+def build_folder_path_html(title):
+    """«Documentos / PRD»: the thin path of a document, back to its folder (D-282)."""
+    return (f'<nav class="doc-path" aria-label="Ruta"><a href="{html.escape(build_page_address(PAGE_FOLDER), quote=True)}" '
+            f'target="_self">{PAGE_FOLDER}</a><i>/</i><span>{html.escape(SIDEBAR_LABELS.get(title, title))}</span></nav>')
 
 
 DOCUMENT_LINK = re.compile(r"\]\(([A-Z_]+\.md)(#[^)]*)?\)")
@@ -6658,7 +6703,7 @@ PRINT_DOCUMENT_CSS = """<style>
   @page { size: A4; margin: 12mm; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
-  .st-key-app_header, .st-key-doc_actions, .st-key-compact_footer, .st-key-route_footer,
+  .st-key-app_header, .st-key-doc_actions, .st-key-compact_footer, .st-key-route_footer, .doc-path,
   [data-testid="stElementContainer"]:has(.page-lineage), [data-testid="stCaptionContainer"],
   hr { display: none !important; }
   html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stMainBlockContainer"] {
@@ -6745,6 +6790,7 @@ def show_project_document(mode, title):
     text = (project.PROJECT_DIR / "docs" / filename).read_text(encoding="utf-8")
     # The page header carries the title; the document's own H1 would repeat it.
     text = re.sub(r"\A# .*\n", "", text)
+    st.markdown(build_folder_path_html(title), unsafe_allow_html=True)
     show_compact_page_header(title, lead)
     show_document_actions(mode, f"docs/{filename} en GitHub", project.build_github_url(f"docs/{filename}"))
     with st.container(key="project_document"):
@@ -6795,8 +6841,11 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_RULES: lambda mode: show_document_page(mode, PAGE_RULES,
         "Qué se valida y qué ocurre cuando una fila no cumple las reglas.", show_rules_tab),
     PAGE_MANUAL: lambda mode: show_project_document(mode, PAGE_MANUAL),
-    PAGE_GLOSSARY: lambda mode: show_document_page(mode, PAGE_GLOSSARY,
-        "Siglas y conceptos explicados en contexto.", show_glossary_tab),
+    PAGE_GLOSSARY: lambda mode: show_project_document(mode, PAGE_GLOSSARY),
+    PAGE_DECISION_INDEX: lambda mode: show_project_document(mode, PAGE_DECISION_INDEX),
+    PAGE_DATA_DICTIONARY: lambda mode: show_project_document(mode, PAGE_DATA_DICTIONARY),
+    PAGE_TEST_PLAN: lambda mode: show_project_document(mode, PAGE_TEST_PLAN),
+    PAGE_FOLDER: lambda mode: show_documents_folder(mode),
     PAGE_LINKS: show_links_page,
 }
 
@@ -7049,8 +7098,24 @@ def show_menu_steps(view, pages):
                          query_params=keep_context() | {VIEW_PARAMETER: neighbour})
 
 
+def show_folder_steps(view, pages):
+    """«← Anterior» and «Siguiente →» inside the documents folder (D-282)."""
+    position = FOLDER_ORDER.index(view)
+    for step, text in ((-1, "← Anterior: {}"), (1, "Siguiente: {} →")):
+        if 0 <= position + step < len(FOLDER_ORDER):
+            neighbour = FOLDER_ORDER[position + step]
+            st.page_link(pages[WINDOW_OF_VIEW[neighbour]], label=text.format(SIDEBAR_LABELS.get(neighbour, neighbour)),
+                         icon=PAGE_ICONS.get(neighbour), query_params=keep_context() | {VIEW_PARAMETER: neighbour})
+
+
 def show_route_footer(window, pages, view=None):
     """«← Volver» and «Siguiente →» with what the next step proves; same window."""
+    if view in FOLDER_ORDER:
+        st.divider()
+        with st.container(key="route_footer", horizontal=True, horizontal_alignment="distribute",
+                          vertical_alignment="center"):
+            show_folder_steps(view, pages)
+        return
     if view in MENU_BLOCK_OF_VIEW:
         st.divider()
         with st.container(key="route_footer", horizontal=True, horizontal_alignment="distribute",
@@ -7075,7 +7140,7 @@ def show_route_footer(window, pages, view=None):
 
 
 # D-233: the pages that fit the window close with one short footer instead of the two long ones.
-COMPACT_FOOTER_VIEWS = {PAGE_SQL, PAGE_OPERATIONS, PAGE_RUNS, PAGE_SECURITY, PAGE_STACK}
+COMPACT_FOOTER_VIEWS = {PAGE_SQL, PAGE_OPERATIONS, PAGE_RUNS, PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER}
 
 
 def show_compact_footer(window, pages, view=None):
@@ -7264,10 +7329,10 @@ RELOAD_HOME_SCRIPT = """<script>
 MENU_BLOCKS = [
     ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_SEASONALITY]),
     ("ingenieria", "Ingeniería de datos",
-     [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_SAD]),
-    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY, PAGE_SECURITY_PLAN]),
+     [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
+    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK]),
-    ("analisis", "Análisis de negocio · BA", [PAGE_PRD, PAGE_ADR, PAGE_SCALABILITY]),
+    ("documentos", "Documentos", [PAGE_FOLDER]),
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
 ]
 # D-250: the breadcrumb and the footer follow the menu, in its order and with its names.
@@ -7278,10 +7343,8 @@ SIDEBAR_ICONS = {
     PAGE_HOME: ":material/grid_view:", PAGE_SEASONALITY: ":material/calendar_month:",
     PAGE_DIAGRAMS: ":material/share:", PAGE_ARCHITECTURE: ":material/database:",
     PAGE_OPERATIONS: ":material/verified_user:", PAGE_SQL: ":material/terminal:",
-    PAGE_SAD: ":material/lan:", PAGE_RUNS: ":material/radio_button_checked:",
-    PAGE_SECURITY: ":material/lock:", PAGE_SECURITY_PLAN: ":material/assignment:",
-    PAGE_STACK: ":material/layers:", PAGE_PRD: ":material/description:",
-    PAGE_ADR: ":material/gavel:", PAGE_SCALABILITY: ":material/trending_up:",
+    PAGE_RUNS: ":material/radio_button_checked:", PAGE_SECURITY: ":material/lock:",
+    PAGE_STACK: ":material/layers:", PAGE_FOLDER: ":material/folder_open:",
 }
 # (text, heading, icon, hover fill, current fill, accent bar, hairline) for dark and light sidebars.
 MENU_INK = {True: ("#cfd4dc", "#8b929c", "#aeb5bf", "rgba(255,255,255,.04)", "rgba(255,255,255,.07)",
@@ -7298,7 +7361,8 @@ SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingenierí
 SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Precios e inflación",
                   PAGE_DIAGRAMS: "Pipeline y linaje", PAGE_OPERATIONS: "Calidad y auditoría",
                   PAGE_RUNS: "Centro de operación", PAGE_SECURITY: "Arquitectura de seguridad",
-                  PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual",
+                  PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual de operación",
+                  PAGE_FOLDER: "Carpeta de documentos",
                   PAGE_COVER: "Descripción general", PAGE_BUSINESS: "Alcance del proyecto"}
 
 
@@ -7443,7 +7507,8 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
         return
     for index, view in enumerate(pages):
         window = WINDOW_OF_VIEW[view]
-        active = window == current_window and view == current_view
+        # A document of the folder lights its folder (D-282).
+        active = window == current_window and (view == current_view or (view == PAGE_FOLDER and current_view in FOLDER_ORDER))
         with st.container(key=f"nav_child_{key}_{index}" + ("_nav_current" if active else "")):
             st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
                          icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),

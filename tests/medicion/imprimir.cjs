@@ -9,8 +9,17 @@ const path = require('path');
 const out = process.argv[2] || 'impresion';
 const theme = process.argv[3] || 'Vantablack';
 const base = process.env.BASE || 'http://localhost:8599/';
-const DOCS = [['PRD', 'PRD.md'], ['SAD', 'SAD.md'], ['ADR', 'ADR.md'], ['Plan de pruebas de seguridad', 'SEGURIDAD.md'],
-              ['Escalabilidad', null]];
+// D-282: the documents of the folder, opened by their address (window and view), not from the menu.
+const DOCS = [['documentacion-y-enlaces', 'PRD · Requisitos del producto', 'PRD.md'],
+              ['documentacion-y-enlaces', 'SAD · Arquitectura', 'SAD.md'],
+              ['documentacion-y-enlaces', 'ADR · Decisiones de arquitectura', 'ADR.md'],
+              ['documentacion-y-enlaces', 'Diccionario de datos', 'DICCIONARIO_DATOS.md'],
+              ['documentacion-y-enlaces', 'Escalabilidad', 'ESCALABILIDAD.md'],
+              ['documentacion-y-enlaces', 'Plan de pruebas', 'PLAN_PRUEBAS.md'],
+              ['seguridad', 'Plan de pruebas de seguridad', 'SEGURIDAD.md'],
+              ['documentacion-y-enlaces', 'Manual', 'MANUAL.md'],
+              ['documentacion-y-enlaces', 'Índice de decisiones', 'INDICE_DECISIONES.md'],
+              ['documentacion-y-enlaces', 'Glosario', 'GLOSARIO.md']];
 
 function markdownOutline(file) {
   if (!file) return null;
@@ -38,16 +47,18 @@ function outline() {
   await page.waitForSelector('[data-testid="stSidebar"] a', { timeout: 90000 });
   await page.waitForTimeout(3000);
   let failures = 0;
-  for (const [label, file] of DOCS) {
+  for (const [windowPath, view, file] of DOCS) {
     await page.emulateMedia({ media: 'screen' });
-    await page.locator('[data-testid="stSidebar"] a', { hasText: label }).first().click();
-    await page.waitForTimeout(6000);
+    await page.goto(`${base}${windowPath}?tema=${encodeURIComponent(theme)}&vista=${encodeURIComponent(view)}`,
+                    { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('.st-key-project_document', { timeout: 90000 });
+    await page.waitForTimeout(5000);
     const screen = await page.evaluate(outline);
     await page.emulateMedia({ media: 'print' });
     await page.waitForTimeout(800);
     const print = await page.evaluate(outline);
     const md = markdownOutline(file);
-    const name = (file || 'Escalabilidad').replace('.md', '');
+    const name = file.replace('.md', '');
     await page.pdf({ path: path.join(out, `${name}.pdf`), format: 'A4', printBackground: true });
     const pdfPages = (fs.readFileSync(path.join(out, `${name}.pdf`), 'latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
     const same = JSON.stringify(screen.titles) === JSON.stringify(print.titles) && screen.diagrams === print.diagrams;

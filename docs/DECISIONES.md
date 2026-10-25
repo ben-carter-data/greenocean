@@ -2131,3 +2131,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **íconos como máscaras CSS:** `st.html` descarta el SVG en línea, así que cada ícono es una máscara pintada con el color del texto;
   - **se retiran** los estilos sueltos del botón de impresión y del enlace de la barra.
 - **Pruebas:** `tests/test_buttons.py`: el componente se define una sola vez y no quedan estilos de enlace sueltos; cada variante y tamaño escribe el componente; las barras, los documentos y la impresión lo usan; cada ícono tiene su máscara; el texto, el acento y el borde cumplen el contraste AA en los cuatro temas.
+
+## D-282 · Una sola carpeta «Documentos» en el menú
+
+- **Pedido del autor:** todos los documentos en un solo lugar del menú, y solo documentos, presentados como archivos.
+- **Decisión:**
+  - **menú:** un bloque «Documentos» con una entrada, «Carpeta de documentos». El SAD sale de «Ingeniería de datos», el plan de pruebas de seguridad de «DevOps y seguridad», y el PRD, el ADR y Escalabilidad dejan «Análisis de negocio · BA», que queda vacío y se retira. Un documento abierto ilumina la carpeta en el menú;
+  - **la carpeta** (`bi/documents_folder.py`) muestra los diez documentos de `docs/` (PRD, SAD, ADR, diccionario de datos, capacidad y escalabilidad, plan de pruebas, plan de pruebas de seguridad, manual de operación, índice de decisiones y glosario) en cuadrícula o en lista. Cada archivo muestra su nombre estándar, su propósito, su versión y fecha leídas de la tabla de encabezado del propio archivo y su tiempo de lectura, con tres acciones: Abrir, PDF (la impresión de D-248 en hoja blanca, D-280) y GitHub. Al pasar el cursor, una vista previa con el índice del documento. Encabezado con la ruta «GreenOcean / docs», el número de documentos y la fecha del último cambio. Cabe en una pantalla a 1440 × 790 y 1920 × 1000;
+  - **dentro de un documento:** la ruta fina «Documentos / nombre» vuelve a la carpeta, y el pie lleva al anterior y al siguiente de la carpeta;
+  - **el glosario, el índice de decisiones, el diccionario de datos y el plan de pruebas** se leen como los demás documentos, con su encabezado, su PDF y su ruta; la vista anterior del glosario por temas se retira;
+  - **las direcciones antiguas siguen funcionando:** cada documento conserva su ventana y su nombre de vista.
+- **Pruebas:** `tests/test_dashboard.py::test_d282_*`: la carpeta muestra los diez documentos con la versión y la fecha de su archivo; cada documento de `docs/` está en la carpeta y en ningún otro bloque del menú, y ningún bloque queda vacío; cada documento abre su página con su ruta, su PDF y sus vecinos; las direcciones antiguas siguen abriendo su documento; la acción PDF imprime en hoja blanca; cada vista previa muestra el índice de su documento. `tests/medicion/medir.cjs` e `imprimir.cjs` siguen el menú nuevo.
