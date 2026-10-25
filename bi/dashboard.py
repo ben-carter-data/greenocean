@@ -7366,8 +7366,8 @@ MENU_BLOCKS = [
      [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),
-    ("documentos", "Documentos", [PAGE_FOLDER]),
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
+    ("documentos", "Documentos", [PAGE_FOLDER]),
 ]
 # D-250: the breadcrumb and the footer follow the menu, in its order and with its names.
 MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages]
@@ -7413,7 +7413,7 @@ def build_section_colors_css(dark):
     text, heading, icon, hover, current, accent, line = MENU_INK[dark]
     return f"""[class*="st-key-nav_block_"] {{margin:0 !important; padding:12px 0 !important; gap:1px !important;
         background:transparent !important; border:0; border-bottom:1px solid {line}; border-radius:0; box-shadow:none;}}
-    .st-key-nav_block_fuentes {{border-bottom:0;}}
+    .st-key-nav_block_documentos {{border-bottom:0;}}
     [class*="st-key-nav_block_"], [class*="st-key-nav_group_"], [class*="st-key-nav_group_"] > div,
     [class*="st-key-nav_group_"] button {{width:100% !important; box-sizing:border-box;}}
     [class*="st-key-nav_group_"] button {{justify-content:flex-start !important; padding:4px 10px !important;
@@ -7499,12 +7499,34 @@ def build_sidebar_css(mode):
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
     [data-testid="stSidebar"] .st-key-language_switch button p {{color:{text} !important; -webkit-text-fill-color:{text} !important;}}
+    [class*="st-key-nav_folder_tile"] {{margin:0 0 6px !important;}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a {{display:flex !important; flex-direction:row;
+        align-items:center; gap:12px; padding:6px 10px !important; border-radius:12px; background:transparent !important;
+        border:1px solid {MENU_INK[dark][6]};}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:46px; height:36px;
+        background:url("data:image/svg+xml;base64,{base64.b64encode(FOLDER_TILE_SVG.encode()).decode()}") center / contain no-repeat;
+        transition:transform .18s ease;}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover {{background:{MENU_INK[dark][3]} !important;}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a:hover::before {{transform:translateY(-2px);}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
+        font-size:.98rem !important; font-weight:600 !important;}}
+    .st-key-nav_folder_tile_nav_current [data-testid="stPageLink"] a {{background:{MENU_INK[dark][4]} !important;
+        border-color:{MENU_INK[dark][5]};}}
+    [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
+    [class*="st-key-nav_folder_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
     .st-key-sidebar_footer [data-testid="stCaptionContainer"] p {{color:{text} !important; opacity:.75;
         font-size:.69rem; line-height:1.35; padding:0 3px;}}
     </style>"""
 
 
-SIDEBAR_NAV_VERSION = 9
+SIDEBAR_NAV_VERSION = 10
+# D-286: the sources start folded; the documents are a folder at the end of the menu, not a section.
+FOLDED_BY_DEFAULT = {"fuentes"}
+FOLDER_TILE_BLOCK = "documentos"
+# A Finder-like folder, two blues, drawn once as an image the menu shows above «Documentos».
+FOLDER_TILE_SVG = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><path d="M3 9a5 5 0 0 1 5-5h15.5'
+                   'a4 4 0 0 1 3 1.3L30 9h26a5 5 0 0 1 5 5v4H3z" fill="#5aa9ea"/><rect x="3" y="14" width="58" height="33" '
+                   'rx="5" fill="#8ac6f5"/><rect x="3" y="14" width="58" height="3" fill="#a9d6f8"/></svg>')
 
 
 def show_sidebar_navigation(windows_by_title, current_window, order):
@@ -7513,15 +7535,26 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
     st.sidebar.markdown(build_sidebar_css(get_mode()), unsafe_allow_html=True)
     if st.session_state.get("sidebar_nav_version") != SIDEBAR_NAV_VERSION:
         for key, *_ in MENU_BLOCKS:
-            st.session_state[f"nav_open_{key}"] = True
+            st.session_state[f"nav_open_{key}"] = key not in FOLDED_BY_DEFAULT
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
     for key, title, pages in MENU_BLOCKS:
+        if key == FOLDER_TILE_BLOCK:
+            continue  # D-286: the folder lives in the footer, always in sight
         open_key = f"nav_open_{key}"
         is_open = st.session_state.get(open_key, True)
         with st.sidebar.container(key=f"nav_block_{key}"):
             show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open)
-    show_sidebar_footer(current_window)
+    show_sidebar_footer(current_window, lambda: show_folder_tile(windows_by_title, current_window, current_view))
+
+
+def show_folder_tile(windows_by_title, current_window, current_view):
+    """«Documentos» as a folder (D-286): a larger tile at the end of the menu that opens the documents folder; it stays
+    lit while a document of the folder is open."""
+    window = WINDOW_OF_VIEW[PAGE_FOLDER]
+    active = window == current_window and (current_view == PAGE_FOLDER or current_view in FOLDER_ORDER)
+    with st.container(key="nav_folder_tile" + ("_nav_current" if active else "")):
+        st.page_link(windows_by_title[window], label=tr(PAGE_FOLDER), query_params=keep_context() | {VIEW_PARAMETER: PAGE_FOLDER})
 
 
 def show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open):
@@ -7572,15 +7605,17 @@ def show_alert_trigger(week):
         show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())
 
 
-def show_sidebar_footer(current_window=None):
-    """Appearance and the GitHub mark, always at the bottom, on every page."""
+def show_sidebar_footer(current_window=None, folder=None):
+    """The documents folder, then appearance, the GitHub mark and the language, always at the bottom, on every page."""
     with st.sidebar.container(key="sidebar_footer"):
+        if folder:
+            folder()
         with st.container(key="sidebar_tools", horizontal=True, vertical_alignment="center"):
             with st.container(key="sidebar_appearance"):
                 show_theme_field()
             st.markdown(build_sidebar_github_html(current_window == SECTION_RESOURCES),
                         unsafe_allow_html=True)
-        show_language_switch()
+            show_language_switch()
         st.caption(tr("Fuente: ODEPA · actualización automática cada martes."))
 
 

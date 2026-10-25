@@ -147,7 +147,7 @@ def test_d283_the_language_follows_the_address_and_spanish_keeps_addresses_as_th
     app.run()
     assert not app.exception
     labels = [link.proto.label for link in app.sidebar.get("page_link")]
-    assert "Weekly summary" in labels and "Documents folder" in labels and "Resumen semanal" not in labels
+    assert "Weekly summary" in labels and "Documents" in labels and "Resumen semanal" not in labels
     toggles = [button.label for button in app.sidebar.button if str(button.key).startswith("nav_toggle_")]
     assert toggles[:2] == ["Business · BI", "Data engineering"]
     assert [button.proto.type for button in app.sidebar.button if str(button.key).startswith("language_")] == \

@@ -1215,7 +1215,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Step 4 of the refonte: Ingeniería de datos, four pages; DevOps joined Ejecuciones.
     assert 'DevOps y seguridad' not in labels
     for child in ['Resumen semanal', 'Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría',
-                  'Centro de operación', 'Arquitectura de seguridad', 'Carpeta de documentos']:
+                  'Centro de operación', 'Arquitectura de seguridad', 'Documentos']:
         assert child in labels
     # D-282: the documents live in their folder, not in the menu.
     for document in ['Plan de pruebas de seguridad', 'PRD · Requisitos del producto', 'SAD · Arquitectura']:
@@ -1274,16 +1274,17 @@ def test_d118_sources_is_its_own_folder_with_two_external_children():
     two datasets as external children in the same green as every other child."""
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     toggle = next(button for button in app.sidebar.button if str(button.key) == 'nav_toggle_fuentes')
-    # D-209: Fuentes starts folded; a click opens it.
+    # D-209, D-286: Fuentes starts folded; a click opens it.
     assert toggle.label == 'Fuentes de datos'
+    folded = " ".join(block.value for block in app.sidebar.markdown)
+    assert 'class="nav-source-link"' not in folded
+    toggle.click().run()
     markup = " ".join(block.value for block in app.sidebar.markdown)
     for name, url in dashboard.SOURCE_LINKS:
         assert f'class="nav-source-link" href="{url}"' in markup
         assert name in markup
     assert markup.count('target="_blank"') >= 2
     assert 'nav-source-icon' in markup
-    next(button for button in app.sidebar.button
-         if str(button.key) == 'nav_toggle_fuentes').click().run()
 
 
 @needs_database
@@ -1539,7 +1540,6 @@ MENU_BLOCKS = {
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],
-    'Documentos': ['Carpeta de documentos'],
 }
 
 
@@ -1551,10 +1551,11 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
     toggles = [b.label for b in app.sidebar.button if str(b.key).startswith('nav_toggle_')]
     assert toggles == list(MENU_BLOCKS) + ['Fuentes de datos']
     labels = [link.proto.label for link in app.sidebar.get('page_link')]
-    assert labels == [page for pages in MENU_BLOCKS.values() for page in pages]
-    assert all(link.proto.icon for link in app.sidebar.get('page_link'))
+    # D-286: the documents folder closes the menu as a larger tile in the footer, always in sight.
+    assert labels == [page for pages in MENU_BLOCKS.values() for page in pages] + ['Documentos']
+    assert all(link.proto.icon for link in app.sidebar.get('page_link')[:-1])
     markup = " ".join(block.value for block in app.sidebar.markdown)
-    assert markup.count('class="nav-source-link"') == len(dashboard.SOURCE_LINKS)
+    assert 'class="nav-source-link"' not in markup  # the sources start folded
     # D-231: a flat menu: no card background, border, radius or shadow on the sections, only a hairline;
     # the current page has a faint fill and an accent bar; every page has its own sidebar glyph.
     for dark in (True, False):
