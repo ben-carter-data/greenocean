@@ -150,6 +150,7 @@ PAGES = {
     "Índice {n} en {m}; hoy está {n} % bajo ese punto.": "Index {} in {}; today it is {} % below that point.",
     "Descontado el IPC, vale {n} frente a {m}.": "Net of the CPI, it is worth {} against {}.",
     "Base del cálculo": "Basis of the calculation",
+    "Lectura de los datos": "Reading the data",
     "{n} series de consumidor con precio en {m} y en {m}; cada mes, la mediana de sus índices.":
         "{} consumer series with a price in {} and in {}; each month, the median of their indices.",
 

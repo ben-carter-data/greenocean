@@ -129,12 +129,14 @@ def spanish_left(view, data_values, theme=None, state=None):
 def screens():
     """Every screen to audit: each page of the menu, the views a page shows only after a switch or a click, and the
     documents."""
-    from bi import dashboard, quality_evidence
+    from bi import dashboard, inflation_view, quality_evidence
     return [(view, None) for view in dashboard.MENU_ORDER] + [
         (dashboard.PAGE_DIAGRAMS, {dashboard.PIPELINE_VIEW_KEY: dashboard.PIPELINE_LINEAGE})] + [
         (dashboard.PAGE_ARCHITECTURE, {dashboard.MODEL_VIEW_KEY: view}) for view in dashboard.MODEL_VIEWS[1:]] + [
         (page, None) for page in dashboard.FOLDER_ORDER] + [
-        (dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_OPEN_KEY: title}) for title in quality_evidence.TITLES.values()]
+        (dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_OPEN_KEY: title}) for title in quality_evidence.TITLES.values()] + [
+        (dashboard.PAGE_SEASONALITY, {dashboard.FAMILY_FOCUS_KEY: family})
+        for family in ("Frutas", inflation_view.IPC_NAME)]
 
 
 if __name__ == "__main__":
