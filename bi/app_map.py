@@ -10,8 +10,11 @@ connects with; that last list is read from the connections of the drawing, so th
 Small technologies live inside the node of their function, so nothing the project uses is left out. A click opens the
 page of the panel where the node is at work.
 
-The nodes are HTML, so the text never shrinks; one script draws the lines between them, highlights the path of the node
-under the cursor and dims the nodes outside the chosen theme. Pure functions: no Streamlit.
+The nodes are HTML, so the text never shrinks; one script draws the lines between them. Without a filter only the data
+flow is drawn; each line carries its own themes, so a filter draws every line of its theme with its label and lights
+every node those lines join (D-291): security, for instance, is the author, the panel and its secrets, GitHub Actions,
+the repository, the read-only database, the visitor's SQL and the tests that attack them. The cursor on a node draws its
+own lines. Pure functions: no Streamlit.
 """
 import base64
 import html
@@ -99,8 +102,18 @@ NODES = {
                "Quien mantiene el proyecto.",
                "Mantiene el código y los secretos; con la clave de control puede lanzar la carga desde el panel.",
                "Cuando cambia el código o lanza una carga manual.", "Ejecuciones",
-               [("clave de control", "secreto del panel que abre el botón «Ejecutar pipeline ahora»."),
-                ("hmac.compare_digest", "compara la clave en tiempo constante.")]),
+               [("clave de control", "la escribe en «Acceso del autor» para abrir el botón «Ejecutar pipeline ahora»."),
+                ("verificación en dos pasos", "en sus cuentas de GitHub y de Streamlit; declarada por el autor, no "
+                 "verificable desde el repositorio.")]),
+    "secrets": ("Secretos del panel", "icon:key", ["seguridad"], ("flow2", 7),
+                "Los dos secretos del panel, guardados en Streamlit Community Cloud y nunca en el repositorio.",
+                "CONTROL_CODE abre el acceso del autor; GITHUB_TOKEN, con permisos mínimos, deja al panel lanzar la "
+                "carga y leer el estado de las ejecuciones. Ninguno aparece en pantalla ni en los mensajes de error.",
+                "Cuando el autor escribe la clave y cuando el panel consulta GitHub.", "Mapa de seguridad",
+                [("CONTROL_CODE", "la clave de control del autor."),
+                 ("hmac.compare_digest", "compara la clave en tiempo constante."),
+                 ("GITHUB_TOKEN", "token para lanzar el workflow y leer sus ejecuciones; el panel avisa 14 días antes "
+                  "de su vencimiento.")]),
     "github": ("Repositorio GitHub", "brand:git", ["orquestacion"], ("top", 2),
                "Plataforma que guarda el código en un repositorio Git público.",
                "Guarda el código en main, recibe cada cambio y publica el informe semanal como issue.",
@@ -115,7 +128,7 @@ NODES = {
                 [("cron del martes", "0 12 * * 2: la carga corre sola cada martes."),
                  ("workflow_dispatch", "la ejecución manual, desde GitHub o desde el panel con la clave."),
                  ("caché de Actions", "guarda los CSV de los años cerrados para no descargarlos cada semana.")]),
-    "ci": ("pytest · CI", "brand:pytest", ["calidad", "orquestacion"], ("top", 6),
+    "ci": ("pytest · CI", "brand:pytest", ["calidad", "orquestacion"], ("watch", 3),
            "Las pruebas automáticas y la integración continua.",
            "pruebas.yml corre pytest y dbt parse en cada push; semanal.yml corre pytest sobre la base nueva antes de "
            "publicarla, incluida la paridad.",
@@ -159,7 +172,7 @@ NODES = {
                    [("bi/monitoring.py", "el diagrama de las señales y de quién las lee.")]),
     "docs": ("Documentos", "icon:files", ["apoyo"], ("watch", 7),
              "La documentación del proyecto, en Markdown.",
-             "Diez documentos en docs/ y docs/en/, cada uno con su página en el panel y su PDF.",
+             "Siete documentos en docs/ y docs/en/, cada uno con su página en el panel y su PDF.",
              "Cuando alguien abre la carpeta Documentos.", "Documentos",
              [("Markdown", "el formato de los documentos, el mismo en GitHub y en el panel.")]),
     "measurement": ("Medición de pantallas", "icon:ruler", ["calidad"], ("watch", 8),
@@ -175,39 +188,51 @@ NODES = {
            "parecido a la recuperación de contexto, pero sin RAG: no hay base vectorial ni embeddings.",
            "Durante el desarrollo; nunca en la carga ni en el panel.", "Documentos", []),
 }
-# (from, to, kind, what travels). Every line goes from the one that acts to the one that receives.
+# (from, to, kind, what travels, themes). Every line goes from the one that acts to the one that receives; a filter shows
+# the lines of its theme with their label, and the nodes they join (D-291).
 LINKS = [
-    ("odepa", "agent", "flow", "CSV"),
-    ("ine", "agent", "flow", "IPC"),
-    ("agent", "sqlite", "flow", "filas crudas"),
-    ("sqlite", "parquet", "flow", "copia por año"),
-    ("agent", "parquet", "flow", "IPC, directo"),
-    ("parquet", "dbt", "flow", "fuentes"),
-    ("dbt", "duckdb", "flow", "marts"),
-    ("duckdb", "release", "flow", "base servida"),
-    ("release", "streamlit", "flow", "descarga y huella"),
-    ("streamlit", "web", "flow", "HTML de cada vista"),
-    ("streamlit", "charts", "flow", "gráficos"),
-    ("web", "visitor", "flow", "el panel"),
-    ("web", "author", "flow", "el panel"),
-    ("github", "actions", "order", "workflows"),
-    ("github", "streamlit", "order", "despliegue de main"),
-    ("actions", "agent", "order", "lanza la carga"),
-    ("actions", "release", "order", "publica la base"),
-    ("actions", "ci", "order", "corre las pruebas"),
-    ("author", "github", "order", "push"),
-    ("author", "actions", "order", "carga manual con la clave"),
-    ("ci", "github", "check", "resultado junto al commit"),
-    ("gates", "agent", "check", "puerta 1"),
-    ("gates", "dbt", "check", "puertas 2 y 3"),
-    ("parity", "sqlite", "check", "respaldo"),
-    ("parity", "duckdb", "check", "base nueva"),
-    ("security", "streamlit", "check", "S-01 a S-10"),
-    ("monitoring", "actions", "check", "log y correo"),
-    ("monitoring", "duckdb", "check", "etl_run y dbt_result"),
-    ("measurement", "streamlit", "check", "una pantalla"),
-    ("docs", "streamlit", "support", "páginas y PDF"),
-    ("ai", "docs", "support", "revisión, sin RAG"),
+    ("odepa", "agent", "flow", "CSV", ["datos"]),
+    ("ine", "agent", "flow", "IPC", ["datos"]),
+    ("agent", "sqlite", "flow", "filas crudas", ["datos"]),
+    ("sqlite", "parquet", "flow", "copia por año", ["datos"]),
+    ("agent", "parquet", "flow", "IPC, directo", ["datos"]),
+    ("parquet", "dbt", "flow", "fuentes", ["datos"]),
+    ("dbt", "duckdb", "flow", "marts", ["datos", "calidad"]),
+    ("duckdb", "release", "flow", "base servida", ["datos"]),
+    ("release", "streamlit", "flow", "descarga y huella", ["datos", "seguridad"]),
+    ("streamlit", "web", "flow", "HTML de cada vista", ["navegador"]),
+    ("streamlit", "charts", "flow", "gráficos", ["navegador"]),
+    ("web", "visitor", "flow", "el panel", ["datos", "navegador"]),
+    ("web", "author", "flow", "el panel", ["navegador"]),
+    ("visitor", "streamlit", "order", "consultas del estudio SQL", ["datos", "seguridad"]),
+    ("github", "streamlit", "order", "despliegue de main", ["orquestacion"]),
+    ("actions", "agent", "order", "lanza la carga", ["orquestacion"]),
+    ("actions", "release", "order", "publica la base", ["orquestacion"]),
+    ("actions", "ci", "order", "corre las pruebas", ["orquestacion", "calidad"]),
+    ("actions", "github", "order", "puntero e informe semanal", ["orquestacion", "observabilidad"]),
+    ("author", "github", "order", "push con su cuenta", ["orquestacion", "seguridad"]),
+    ("author", "streamlit", "order", "clave de control", ["orquestacion", "seguridad"]),
+    ("streamlit", "secrets", "check", "compara la clave, lee el token", ["seguridad"]),
+    ("streamlit", "actions", "order", "carga manual con el token", ["orquestacion", "seguridad"]),
+    ("streamlit", "github", "check", "estado de las ejecuciones (API)", ["observabilidad"]),
+    ("ci", "github", "check", "resultado junto al commit", ["orquestacion", "calidad"]),
+    ("ci", "security", "order", "S-01 a S-10 en cada push", ["seguridad", "calidad"]),
+    ("ci", "parity", "order", "corre la paridad", ["calidad"]),
+    ("gates", "agent", "check", "puerta 1", ["calidad"]),
+    ("gates", "dbt", "check", "puertas 2 y 3", ["calidad"]),
+    ("gates", "release", "check", "publica solo si todo pasa", ["calidad"]),
+    ("parity", "sqlite", "check", "respaldo", ["calidad"]),
+    ("parity", "duckdb", "check", "base nueva", ["calidad"]),
+    ("security", "streamlit", "check", "SQL con límites, clave y token", ["seguridad"]),
+    ("security", "duckdb", "check", "solo lectura", ["seguridad"]),
+    ("security", "github", "check", "ningún secreto en Git", ["seguridad"]),
+    ("security", "actions", "check", "permisos mínimos", ["seguridad"]),
+    ("monitoring", "actions", "check", "log de cada paso", ["observabilidad"]),
+    ("monitoring", "duckdb", "check", "etl_run y dbt_result", ["observabilidad"]),
+    ("actions", "author", "check", "correo si la carga falla", ["observabilidad"]),
+    ("measurement", "streamlit", "check", "una pantalla", ["calidad"]),
+    ("docs", "streamlit", "support", "páginas y PDF", ["apoyo"]),
+    ("ai", "docs", "support", "revisión, sin RAG", ["apoyo"]),
 ]
 ROWS = {"top": 1, "flow": 3, "flow2": 4, "web": 5, "watch": 6}
 # Thin line icons for the nodes that are not a brand, drawn in the accent of the theme (24-unit grid).
@@ -219,6 +244,7 @@ LINE_ICONS = {
     "pulse": '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
     "files": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>',
     "ruler": '<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/>',
+    "key": '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9"/><path d="m16 7 3 3"/><path d="m14 9 2 2"/>',
     "spark": '<path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><path d="m6.5 6.5 2.5 2.5M15 15l2.5 2.5M17.5 6.5 15 9M9 15l-2.5 2.5"/>',
 }
 ROW_LABELS = {1: "Orquestación", 5: "Navegador", 6: "Lo que vigila"}
@@ -231,8 +257,17 @@ def esc(value):
 
 def connections(key):
     """«→ dbt: fuentes», «← ODEPA: CSV»: what the node connects with, read from LINKS."""
-    lines = [f"→ {NODES[target][0]}: {what}" for source, target, _, what in LINKS if source == key]
-    return lines + [f"← {NODES[source][0]}: {what}" for source, target, _, what in LINKS if target == key]
+    lines = [f"→ {NODES[target][0]}: {what}" for source, target, _, what, _ in LINKS if source == key]
+    return lines + [f"← {NODES[source][0]}: {what}" for source, target, _, what, _ in LINKS if target == key]
+
+
+def node_themes(key):
+    """The themes of a node: its own, and those of every line that touches it, so a filter lights every node it involves."""
+    themes = list(NODES[key][2])
+    for source, target, _, _, line_themes in LINKS:
+        if key in (source, target):
+            themes += [theme for theme in line_themes if theme not in themes]
+    return themes
 
 
 def logo_image(spec, palette):
@@ -270,7 +305,7 @@ def build_tip(key):
 def build_node(key, palette, addresses):
     name, logo, themes, (row, column), _, _, _, page, group = NODES[key]
     extra = f'<small class="am-more">+{len(group)}</small>' if group else ""
-    return (f'<a class="am-node" id="am-{key}" data-key="{key}" data-themes="{" ".join(themes)}" '
+    return (f'<a class="am-node" id="am-{key}" data-key="{key}" data-themes="{" ".join(node_themes(key))}" '
             f'href="{esc(addresses.get(page, "#"))}" target="_self" '
             f'style="grid-row:{ROWS[row]};grid-column:{column}">'
             f'{logo_image(logo, palette)}<b class="am-name">{esc(name)}{extra}</b>{build_tip(key)}</a>')
@@ -297,8 +332,10 @@ def build_css(palette):
 .am-stage {{ position:relative; display:grid; grid-template-columns:repeat(9, minmax(0, 1fr));
   grid-template-rows:auto auto auto auto auto auto; gap:14px 10px; padding:6px 0 4px; }}
 .am-lines {{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:0; }}
-.am-line {{ fill:none; stroke-width:1.6; opacity:.55; transition:opacity .15s ease; }}
-.am-line.k-check, .am-line.k-support {{ opacity:.28; }}
+.am-line {{ fill:none; stroke-width:1.6; opacity:0; transition:opacity .15s ease; }}
+.am-line.k-flow {{ opacity:.6; }}
+.am-label {{ font-size:10.5px; font-weight:500; fill:{text}; stroke:var(--am-surface, transparent); stroke-width:4px;
+  paint-order:stroke; stroke-linejoin:round; opacity:0; transition:opacity .15s ease; }}
 .am-line.k-order {{ stroke-dasharray:6 5; }} .am-line.k-check {{ stroke-dasharray:2 4; }} .am-line.k-support {{ stroke-width:1.2; }}
 {kinds}
 .am-layer {{ grid-row:2; font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:{muted};
@@ -328,9 +365,13 @@ def build_css(palette):
 .am-node[style*="grid-column:7"] .am-tip, .am-node[style*="grid-column:8"] .am-tip,
 .am-node[style*="grid-column:9"] .am-tip {{ left:auto; right:0; transform:none; }}
 .am-node[style*="grid-row:6"] .am-tip, .am-node[style*="grid-row:5"] .am-tip {{ top:auto; bottom:calc(100% + 4px); }}
-.am.has-focus .am-node:not(.on), .am[data-filter] .am-node.dim {{ opacity:.25; }}
-.am.has-focus .am-line:not(.on), .am[data-filter] .am-line.dim {{ opacity:.08; }}
+.am.has-focus .am-node:not(.on), .am[data-filter] .am-node.dim {{ opacity:.22; }}
+.am[data-filter] .am-line {{ opacity:0; }}
+.am[data-filter] .am-line.show {{ opacity:.95; stroke-width:2; }}
+.am[data-filter] .am-label.show {{ opacity:1; }}
+.am.has-focus .am-line, .am.has-focus .am-label {{ opacity:0; }}
 .am.has-focus .am-line.on {{ opacity:1; stroke-width:2.2; }}
+.am.has-focus .am-label.on {{ opacity:1; }}
 .am-note {{ font-size:11.5px; color:{muted}; margin:0; }}
 @media (max-width:760px) {{
   .am-stage {{ grid-template-columns:1fr 1fr; }}
@@ -355,6 +396,7 @@ SCRIPT = r"""<script>
     map.dataset.ready = "1";
     const stage = map.querySelector(".am-stage");
     const links = JSON.parse(map.dataset.links);
+    const whats = Array.from(map.querySelectorAll(".am-whats span"), (item) => item.textContent);
     const ns = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(ns, "svg");
     svg.setAttribute("class", "am-lines");
@@ -363,7 +405,8 @@ SCRIPT = r"""<script>
     const draw = () => {
       while (svg.firstChild) { svg.removeChild(svg.firstChild); }
       const box = stage.getBoundingClientRect();
-      links.forEach(([from, to, kind]) => {
+      const pairs = {};
+      links.forEach(([from, to, kind, themes], index) => {
         const a = node(from), b = node(to);
         if (!a || !b) { return; }
         const ra = a.querySelector(".am-logo").getBoundingClientRect();
@@ -371,19 +414,69 @@ SCRIPT = r"""<script>
         const x1 = ra.left + ra.width / 2 - box.left, y1 = ra.top + ra.height / 2 - box.top;
         const x2 = rb.left + rb.width / 2 - box.left, y2 = rb.top + rb.height / 2 - box.top;
         const horizontal = Math.abs(x2 - x1) >= Math.abs(y2 - y1);
+        // A second line between the same nodes bows further; a line along a row that skips a node arcs around it,
+        // towards the middle of the drawing, so no line leaves it.
+        const pair = [from, to].sort().join(" ");
+        const twin = pairs[pair] || 0;
+        pairs[pair] = twin + 1;
+        const flat = Math.abs(y2 - y1) > 8 ? 0 : (Math.abs(x2 - x1) > 150 ? 56 : 0);
+        const bow = (flat + twin * 22) * (y1 > box.height / 2 ? -1 : 1);
         const d = horizontal
-          ? "M" + x1 + " " + y1 + " C" + (x1 + x2) / 2 + " " + y1 + " " + (x1 + x2) / 2 + " " + y2 + " " + x2 + " " + y2
-          : "M" + x1 + " " + y1 + " C" + x1 + " " + (y1 + y2) / 2 + " " + x2 + " " + (y1 + y2) / 2 + " " + x2 + " " + y2;
+          ? "M" + x1 + " " + y1 + " C" + (x1 + x2) / 2 + " " + (y1 + bow) + " " + (x1 + x2) / 2 + " " + (y2 + bow) + " " + x2 + " " + y2
+          : "M" + x1 + " " + y1 + " C" + (x1 + bow) + " " + (y1 + y2) / 2 + " " + (x2 + bow) + " " + (y1 + y2) / 2 + " " + x2 + " " + y2;
         const path = document.createElementNS(ns, "path");
         path.setAttribute("d", d);
         path.setAttribute("class", "am-line k-" + kind);
         path.dataset.from = from;
         path.dataset.to = to;
+        path.dataset.themes = themes.join(" ");
         svg.appendChild(path);
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("class", "am-label");
+        label.setAttribute("x", (x1 + x2) / 2);
+        label.setAttribute("y", (y1 + y2) / 2 - 4);
+        label.setAttribute("text-anchor", "middle");
+        label.textContent = whats[index];
+        label.dataset.from = from;
+        label.dataset.to = to;
+        label.dataset.themes = themes.join(" ");
+        label.path = path;
+        svg.appendChild(label);
       });
       applyFilter();
     };
-    const lines = () => svg.querySelectorAll(".am-line");
+    const lines = () => svg.querySelectorAll(".am-line, .am-label");
+    // Each visible label takes the place along its line, above or below it, that covers the least of the other labels,
+    // the nodes and the headings.
+    const place = (labels) => {
+      const box = stage.getBoundingClientRect();
+      const rect = (item) => {
+        const r = item.getBoundingClientRect();
+        return {left: r.left - box.left, top: r.top - box.top, right: r.right - box.left, bottom: r.bottom - box.top};
+      };
+      const fixed = Array.from(stage.querySelectorAll(".am-logo, .am-name, .am-layer, .am-band span"), rect);
+      const placed = [];
+      const overlap = (a, list) => list.reduce((sum, b) => sum + Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+        * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)), 0);
+      labels.forEach((label) => {
+        const length = label.path.getTotalLength();
+        let best = null;
+        [0.5, 0.42, 0.58, 0.34, 0.66, 0.26, 0.74, 0.18, 0.82].forEach((share, rank) => {
+          const point = label.path.getPointAtLength(length * share);
+          [-4, 13].forEach((shift) => {
+            label.setAttribute("x", point.x);
+            label.setAttribute("y", point.y + shift);
+            const r = label.getBBox();
+            const area = {left: r.x - 3, top: r.y - 1, right: r.x + r.width + 3, bottom: r.y + r.height + 1};
+            const score = overlap(area, placed) * 10 + overlap(area, fixed) + rank;
+            if (!best || score > -1 && best.score > score) { best = {score, x: point.x, y: point.y + shift, area}; }
+          });
+        });
+        label.setAttribute("x", best.x);
+        label.setAttribute("y", best.y);
+        placed.push(best.area);
+      });
+    };
     stage.querySelectorAll(".am-node").forEach((item) => {
       const key = item.dataset.key;
       const enter = () => {
@@ -396,6 +489,7 @@ SCRIPT = r"""<script>
             if (other) { other.classList.add("on"); }
           }
         });
+        place(svg.querySelectorAll(".am-label.on"));
       };
       const leave = () => {
         map.classList.remove("has-focus");
@@ -412,9 +506,9 @@ SCRIPT = r"""<script>
         item.classList.toggle("dim", !!theme && !item.dataset.themes.split(" ").includes(theme));
       });
       lines().forEach((line) => {
-        const a = node(line.dataset.from), b = node(line.dataset.to);
-        line.classList.toggle("dim", !!theme && (a.classList.contains("dim") || b.classList.contains("dim")));
+        line.classList.toggle("show", !!theme && line.dataset.themes.split(" ").includes(theme));
       });
+      place(svg.querySelectorAll(".am-label.show"));
     };
     map.querySelectorAll(".am-filter").forEach((button) => {
       button.addEventListener("click", () => {
@@ -441,10 +535,13 @@ def build_map_html(palette, addresses):
     bands = "".join(f'<div class="am-band" style="grid-row:{row}"><span>{esc(label)}</span></div>'
                     for row, label in ROW_LABELS.items())
     nodes = "".join(build_node(key, palette, addresses) for key in NODES)
-    data = esc(json.dumps([[source, target, kind] for source, target, kind, _ in LINKS]))
+    data = esc(json.dumps([[source, target, kind, themes] for source, target, kind, _, themes in LINKS]))
+    # The label of each line is a text node, not part of the data, so the translation layer reaches it (D-284).
+    whats = "".join(f"<span>{esc(what)}</span>" for _, _, _, what, _ in LINKS)
     return (build_css(palette) + f'<div class="am" style="--am-surface:{palette["background"]}" data-links="{data}">'
             f'<div class="am-bar"><span class="am-filters" role="group" aria-label="{esc("Filtrar por tema")}">{filters}'
             f'</span><span class="am-legend">{legend}</span></div>'
             f'<div class="am-stage" aria-label="{esc("Mapa de la app")}">{layers}{bands}{nodes}</div>'
-            f'<p class="am-note">{esc("Pasa el cursor por una pieza para ver qué es, su rol, cuándo actúa y con qué se conecta; un clic abre la página donde trabaja.")}</p>'
+            f'<div class="am-whats" hidden>{whats}</div>'
+            f'<p class="am-note">{esc("Sin filtro, el flujo de datos; un tema muestra todas sus piezas y conexiones. El cursor explica cada pieza y un clic abre su página.")}</p>'
             "</div>" + SCRIPT)

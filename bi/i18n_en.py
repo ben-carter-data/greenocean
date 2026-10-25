@@ -1564,7 +1564,30 @@ PAGES = {
         "etl_run, dbt_result, the log of each GitHub Actions step and the email GitHub sends if the load fails.",
     "el diagrama de las señales y de quién las lee.": "the diagram of the signals and of who reads them.",
     "La documentación del proyecto, en Markdown.": "The documentation of the project, in Markdown.",
-    "Diez documentos en docs/ y docs/en/, cada uno con su página en el panel y su PDF.": "Ten documents in docs/ and docs/en/, each with its page in the panel and its PDF.",
+    "Siete documentos en docs/ y docs/en/, cada uno con su página en el panel y su PDF.": "Seven documents in docs/ and docs/en/, each with its page in the panel and its PDF.",
+    "Los dos secretos del panel, guardados en Streamlit Community Cloud y nunca en el repositorio.":
+        "The two secrets of the panel, kept in Streamlit Community Cloud and never in the repository.",
+    "CONTROL_CODE abre el acceso del autor; GITHUB_TOKEN, con permisos mínimos, deja al panel lanzar la carga y leer el estado de las ejecuciones. Ninguno aparece en pantalla ni en los mensajes de error.":
+        "CONTROL_CODE opens the author access; GITHUB_TOKEN, with least privilege, lets the panel launch the load and read the status of the runs. Neither appears on screen or in error messages.",
+    "Cuando el autor escribe la clave y cuando el panel consulta GitHub.": "When the author types the code and when the panel queries GitHub.",
+    "la clave de control del autor.": "the author's control code.",
+    "token para lanzar el workflow y leer sus ejecuciones; el panel avisa 14 días antes de su vencimiento.":
+        "token to launch the workflow and read its runs; the panel warns 14 days before it expires.",
+    "verificación en dos pasos": "two-step verification",
+    "en sus cuentas de GitHub y de Streamlit; declarada por el autor, no verificable desde el repositorio.":
+        "on the author's GitHub and Streamlit accounts; declared by the author, not verifiable from the repository.",
+    "la escribe en «Acceso del autor» para abrir el botón «Ejecutar pipeline ahora».":
+        "typed in «Author access» to open the «Run pipeline now» button.",
+    "Sin filtro, el flujo de datos; un tema muestra todas sus piezas y conexiones. El cursor explica cada pieza y un clic abre su página.":
+        "Without a filter, the data flow; a theme shows all its pieces and connections. The cursor explains each piece and a click opens its page.",
+    "consultas del estudio SQL": "queries of the SQL studio", "puntero e informe semanal": "pointer and weekly report",
+    "push con su cuenta": "push with the author's account",
+    "compara la clave, lee el token": "compares the code, reads the token", "carga manual con el token": "manual load with the token",
+    "estado de las ejecuciones (API)": "status of the runs (API)", "S-01 a S-10 en cada push": "S-01 to S-10 on every push",
+    "corre la paridad": "runs the parity", "publica solo si todo pasa": "publishes only if everything passes",
+    "SQL con límites, clave y token": "SQL with limits, code and token", "solo lectura": "read-only",
+    "ningún secreto en Git": "no secret in Git", "permisos mínimos": "least privilege", "log de cada paso": "log of each step",
+    "correo si la carga falla": "email if the load fails",
     "Cuando alguien abre la carpeta Documentos.": "When someone opens the Documents folder.",
     "el formato de los documentos, el mismo en GitHub y en el panel.": "the format of the documents, the same on GitHub and in the panel.",
     "Medición del diseño en un navegador real.": "Measurement of the design in a real browser.",

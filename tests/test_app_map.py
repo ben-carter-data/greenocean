@@ -14,7 +14,7 @@ def all_texts():
     texts = []
     for name, _, _, _, what, role, when, _, group in app_map.NODES.values():
         texts += [name, what, role, when] + [f"{tool} {text}" for tool, text in group]
-    return texts + [what for *_, what in app_map.LINKS]
+    return texts + [what for _, _, _, what, _ in app_map.LINKS]
 
 
 def test_d285_every_dependency_of_the_project_is_on_the_map():
@@ -40,8 +40,10 @@ def test_d285_every_file_and_module_the_map_names_exists():
 
 def test_d285_every_line_joins_two_nodes_and_no_node_is_alone():
     kinds = {kind for kind, _ in app_map.LINE_KINDS}
-    for source, target, kind, what in app_map.LINKS:
+    themes = {key for key, _ in app_map.THEMES}
+    for source, target, kind, what, line_themes in app_map.LINKS:
         assert source in app_map.NODES and target in app_map.NODES and kind in kinds and what, (source, target)
+        assert line_themes and set(line_themes) <= themes, (source, target)
     linked = {key for source, target, *_ in app_map.LINKS for key in (source, target)}
     assert linked == set(app_map.NODES)
 
@@ -77,7 +79,7 @@ def test_d285_the_ai_node_says_exactly_what_it_is_and_stays_out_of_the_data_flow
     name, _, themes, _, what, role, when, _, group = app_map.NODES["ai"]
     assert "sin RAG" in role and "no hay base vectorial ni embeddings" in role and "CLAUDE.md" in role
     assert themes == ["apoyo"] and "nunca en la carga ni en el panel" in when
-    assert all(kind == "support" for source, target, kind, _ in app_map.LINKS if "ai" in (source, target))
+    assert all(kind == "support" for source, target, kind, *_ in app_map.LINKS if "ai" in (source, target))
 
 
 @pytest.mark.parametrize("theme", charts.THEMES)
@@ -97,3 +99,32 @@ def test_d285_the_map_sits_next_to_the_stack_and_the_stack_links_to_it():
     source = (ROOT / "bi" / "dashboard.py").read_text(encoding="utf-8")
     stack = source[source.index("def show_stack_page"):source.index("def show_app_map_page")]
     assert "PAGE_APP_MAP, build_page_address(PAGE_APP_MAP)" in stack
+
+
+def test_d291_each_filter_lights_every_actor_and_link_of_its_theme():
+    """Security is not only the author: the control code goes through Streamlit and its secrets, the token reaches GitHub
+    Actions, the repository holds no secret, the database is read-only and the visitor's SQL has limits."""
+    def lit(theme):
+        nodes = {key for key in app_map.NODES if theme in app_map.node_themes(key)}
+        links = {(source, target) for source, target, _, _, themes in app_map.LINKS if theme in themes}
+        return nodes, links
+    nodes, links = lit("seguridad")
+    assert {"author", "streamlit", "secrets", "actions", "github", "duckdb", "visitor", "security", "ci"} <= nodes
+    assert {("author", "streamlit"), ("streamlit", "secrets"), ("streamlit", "actions"), ("security", "github"),
+            ("security", "actions"), ("security", "duckdb")} <= links
+    nodes, links = lit("orquestacion")
+    assert {"github", "actions", "ci", "agent", "release", "author", "streamlit"} <= nodes
+    nodes, _ = lit("calidad")
+    assert {"gates", "parity", "ci", "dbt", "sqlite", "duckdb", "release", "measurement"} <= nodes
+    nodes, _ = lit("observabilidad")
+    assert {"monitoring", "actions", "duckdb", "github", "author", "streamlit"} <= nodes
+    for theme, _ in app_map.THEMES:
+        nodes, links = lit(theme)
+        assert links and all(source in nodes and target in nodes for source, target in links), theme
+
+
+def test_d291_without_a_filter_only_the_data_flow_is_drawn_and_each_line_carries_its_label():
+    css = app_map.build_css(charts.get_palette(charts.THEMES[0]))
+    assert ".am-line {{ fill:none; stroke-width:1.6; opacity:0;".replace("{{", "{") in css
+    assert ".am-line.k-flow { opacity:.6; }" in css and ".am[data-filter] .am-line.show" in css
+    assert 'label.textContent = whats[index];' in app_map.SCRIPT and 'class="am-whats" hidden' in app_map.build_map_html(charts.get_palette(charts.THEMES[0]), {})
