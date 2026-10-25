@@ -2192,3 +2192,12 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** «Fuentes de datos» quedaba muy pequeño; mejor un ícono propio y grande como la carpeta de documentos.
 - **Decisión:** el pie del menú lleva dos fichas del mismo tamaño, lado a lado: la carpeta «Documentos» y «Fuentes», con un ícono de base de datos verde. Un clic en «Fuentes» abre un panel flotante con los tres archivos oficiales (ODEPA mayorista, ODEPA consumidor e IPC del INE), que se abren en una pestaña nueva; el panel no ocupa sitio en el menú, así que nada queda tapado en ninguna altura de ventana. La sección plegable «Fuentes de datos» y la línea «Fuente: ODEPA · actualización automática cada martes» salen del menú: la ficha las reemplaza.
 - **Pruebas:** `tests/test_dashboard.py::test_d118_*`: las fuentes son una ficha del pie con sus tres enlaces externos; el menú ya no tiene la sección plegable.
+
+## D-288 · Cada documento abre con su portada; tablas tipo tabla dinámica; la carpeta, en lista
+
+- **Pedido del autor:** una presentación elegante, corporativa y casi futurista, en el panel y en el PDF; tablas elegantes, como una tabla dinámica de Excel; la carpeta de documentos abierta en lista.
+- **Decisión:**
+  - **portada:** cada documento abre con una portada leída de su tabla de encabezado: el proyecto, el tipo de documento, el título, el propósito, la versión, la fecha, el estado, el responsable, la audiencia y los documentos relacionados. En el panel, la tabla de encabezado ya no se repite debajo; en el PDF, la portada ocupa la primera página. El archivo conserva su tabla para que GitHub la muestre;
+  - **tablas:** encabezado en una banda del color de acento, filas alternas y primera columna en negrita, que nombra la fila; igual en los cuatro temas y en el PDF;
+  - **carpeta:** se abre en vista de lista; la cuadrícula sigue a un clic.
+- **Pruebas:** `tests/test_documents.py::test_d288_*`: cada documento tiene su portada con su versión, fecha, estado, responsable y audiencia, y su cuerpo ya no repite la tabla; `tests/test_i18n.py`: la portada en inglés.

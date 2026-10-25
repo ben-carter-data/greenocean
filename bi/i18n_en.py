@@ -904,6 +904,7 @@ PAGES = {
     "Ver la ejecución ↗": "See the run ↗",
     "automática, cada martes · faltan {n} días": "automatic, every Tuesday · {} days left",
     "automática, cada martes · falta {n} día": "automatic, every Tuesday · {} day left",
+    "automática, cada martes · faltan {n} h": "automatic, every Tuesday · {} h left",
     "código del proyecto": "project code",
     "código, automatización e informes": "code, automation and reports",
     "de {n} leídas · {n} rechazadas": "of {} read · {} rejected",

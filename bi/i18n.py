@@ -18,9 +18,12 @@ DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 # The header table and the standard sections of a document, by language.
 DOCUMENT_FIELDS = {
     SPANISH: {"purpose": "Propósito", "version": "Versión", "date": "Fecha", "index": "Índice",
-              "history": "Historial de versiones", "glossary": "Glosario"},
+              "history": "Historial de versiones", "glossary": "Glosario", "type": "Tipo de documento",
+              "status": "Estado", "owner": "Responsable", "audience": "Audiencia", "related": "Documentos relacionados",
+              "project": "Proyecto"},
     ENGLISH: {"purpose": "Purpose", "version": "Version", "date": "Date", "index": "Contents",
-              "history": "Version history", "glossary": "Glossary"},
+              "history": "Version history", "glossary": "Glossary", "type": "Document type", "status": "Status",
+              "owner": "Owner", "audience": "Audience", "related": "Related documents", "project": "Project"},
 }
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
@@ -121,6 +124,7 @@ EN = {
     "Los documentos del proyecto, leídos de docs/: cada uno se abre aquí, se imprime como PDF o se lee en GitHub.":
         "The documents of the project, read from docs/: each one opens here, prints as a PDF or reads on GitHub.",
     "Vista de la carpeta": "Folder view",
+    "Documentación": "Documentation",
     "Cuadrícula": "Grid",
     "Lista": "List",
     "documentos · último cambio": "documents · last change",

@@ -1300,12 +1300,16 @@ def build_style_css(mode):
     .st-key-project_document blockquote {{border-left:3px solid {palette['accent']}; margin:12px 0;
         padding:8px 16px; background:color-mix(in srgb,{palette['accent']} 6%,transparent);
         border-radius:0 10px 10px 0;}}
-    .st-key-project_document table {{width:100%; border-collapse:collapse; margin:10px 0 18px;
-        font-size:.86rem; border:1px solid {palette['card_border']}; border-radius:10px; overflow:hidden;}}
-    .st-key-project_document th {{background:color-mix(in srgb,{palette['accent']} 7%,{palette['card']});
-        color:{palette['strong_text']}; font-weight:500; text-align:left; padding:8px 12px;}}
-    .st-key-project_document td {{padding:8px 12px; border-top:1px solid {palette['card_border']};
+    /* D-288: tables like a pivot table: a solid header band, banded rows and a first column that names the row. */
+    .st-key-project_document table {{width:100%; border-collapse:separate; border-spacing:0; margin:12px 0 20px;
+        font-size:.86rem; border:1px solid {palette['card_border']}; border-radius:12px; overflow:hidden;}}
+    .st-key-project_document th {{background:{palette['accent']}; color:#ffffff; font-weight:600; text-align:left;
+        padding:9px 12px; font-size:.78rem; letter-spacing:.04em; text-transform:uppercase;}}
+    .st-key-project_document td {{padding:8px 12px; border-top:1px solid color-mix(in srgb,{palette['card_border']} 70%,transparent);
         vertical-align:top; line-height:1.5;}}
+    .st-key-project_document tbody tr:nth-child(even) td {{background:color-mix(in srgb,{palette['accent']} 5%,transparent);}}
+    .st-key-project_document tbody tr:hover td {{background:color-mix(in srgb,{palette['accent']} 10%,transparent);}}
+    .st-key-project_document td:first-child {{font-weight:600; color:{palette['strong_text']};}}
     .st-key-project_document hr {{display:none;}}
     .doc-diagram {{margin:12px 0 22px; padding:14px; border:1px solid {palette['card_border']};
         border-radius:14px; background:{palette['card']};}}
@@ -6663,14 +6667,15 @@ def read_folder_files():
 def show_documents_folder(mode):
     """«Documentos» (D-282): the folder of docs/, as files in a grid or a list."""
     files = read_folder_files()
-    st.session_state.setdefault(FOLDER_VIEW_KEY, documents_folder.VIEW_GRID)
+    # D-288: the folder opens as a list, like a file explorer in detail view.
+    st.session_state.setdefault(FOLDER_VIEW_KEY, documents_folder.VIEW_LIST)
     show_page_bar(PAGE_FOLDER, PAGE_FOLDER, "Los documentos del proyecto, leídos de docs/: cada uno se abre aquí, se "
                   "imprime como PDF o se lee en GitHub.",
                   side=lambda: st.segmented_control(
                       tr("Vista de la carpeta"), [documents_folder.VIEW_GRID, documents_folder.VIEW_LIST],
                       format_func=tr, key=FOLDER_VIEW_KEY, label_visibility="collapsed", width="content"))
     st.markdown(documents_folder.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    view = st.session_state.get(FOLDER_VIEW_KEY) or documents_folder.VIEW_GRID
+    view = st.session_state.get(FOLDER_VIEW_KEY) or documents_folder.VIEW_LIST
     st.markdown(documents_folder.build_folder_html(files, view), unsafe_allow_html=True)
 
 
@@ -6820,12 +6825,19 @@ def show_project_document(mode, title):
     path = i18n.documents_dir() / filename
     text = path.read_text(encoding="utf-8")
     source = path.relative_to(project.PROJECT_DIR).as_posix()
-    # The page header carries the title; the document's own H1 would repeat it.
-    text = re.sub(r"\A# .*\n", "", text)
     st.markdown(build_folder_path_html(title), unsafe_allow_html=True)
     show_compact_page_header(title, lead)
     show_document_actions(mode, f"{source} {tr('en GitHub')}", project.build_github_url(source))
+    # D-288: the document opens with its cover, read from its header table; the title and the table do not repeat.
+    header = documents_folder.read_header(text)
+    related = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", lambda match: f'<a href="{html.escape(match.group(2), quote=True)}" '
+                     f'target="_self">{html.escape(match.group(1))}</a>',
+                     link_document_views(documents_folder.field(header, "related")).split("<a id=", 1)[0])
+    cover = documents_folder.build_cover_html(text, related)
+    text = documents_folder.strip_header_table(re.sub(r"\A# .*\n", "", text))
+    st.markdown(documents_folder.build_cover_css(charts.get_palette(mode)), unsafe_allow_html=True)
     with st.container(key="project_document"):
+        st.markdown(cover, unsafe_allow_html=True)
         position = 0
         for marker in DOCUMENT_DIAGRAM.finditer(text):
             st.markdown(link_document_views(text[position:marker.start()]), unsafe_allow_html=True)

@@ -167,7 +167,9 @@ def test_d283_a_document_and_the_folder_open_in_english(page):
         assert "Software Architecture Document (SAD)" in markup and "documents · last change" in markup
         assert "lang=en" in markup  # Open, PDF and the path keep the language
     else:
-        assert "| Field | Value |" in markup and "| Campo |" not in markup
+        # D-288: the header table becomes the cover, with its labels in English.
+        assert 'class="doc-cover"' in markup and "<dt>Version</dt>" in markup and "<dt>Owner</dt>" in markup
+        assert "| Campo |" not in markup and "| Field |" not in markup
         assert "docs/en/" in " ".join(block.value for block in app.markdown)
         assert ">Documents</a>" in markup
 

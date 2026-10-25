@@ -163,3 +163,79 @@ def build_css(palette):
 @media (max-width:900px) {{ .df-list .df-file {{ flex-wrap:wrap; }} .df-list .df-meta {{ width:auto; }} }}
 @media (prefers-reduced-motion:reduce) {{ .df-file, .df-preview {{ transition:none; }} }}
 </style>"""
+
+
+# region Cover (D-288)
+# The first thing a document shows, in the panel and on the first page of its PDF: the project, the kind of document,
+# its title and purpose, and its version, date, status, owner and audience, read from its header table.
+COVER_FIELDS = ("version", "date", "status", "owner")
+
+
+def strip_header_table(text):
+    """The document without its header table (the cover shows it); the table stays in the file for GitHub."""
+    head, separator, rest = text.partition("\n## ")
+    head = "\n".join(line for line in head.splitlines() if not line.startswith("|"))
+    return head + separator + rest
+
+
+def field(header, name):
+    return next((header[fields[name]] for fields in i18n.DOCUMENT_FIELDS.values() if fields[name] in header), "")
+
+
+def build_cover_html(text, related_html):
+    """The cover of a document: kind, title and purpose, then its version, date, status, owner and audience."""
+    header = read_header(text)
+    meta = "".join(f'<div><dt>{esc(i18n.document_field(name))}</dt><dd>{esc(field(header, name))}</dd></div>'
+                   for name in COVER_FIELDS if field(header, name))
+    related = (f'<p class="doc-cover-related"><span>{esc(i18n.document_field("related"))}</span>{related_html}</p>'
+               if related_html else "")
+    audience = (f'<p class="doc-cover-related"><span>{esc(i18n.document_field("audience"))}</span>'
+                f'{esc(field(header, "audience"))}</p>' if field(header, "audience") else "")
+    kind = field(header, "type")
+    # The kind of document, unless the title already says it.
+    pill = f'<p class="doc-cover-kind">{esc(kind)}</p>' if kind and kind != read_title(text) else ""
+    return (f'<header class="doc-cover"><p class="doc-cover-mark">GreenOcean <i>·</i> {esc(tr("Documentación"))}</p>{pill}'
+            f'<h1 class="doc-cover-title">{esc(read_title(text))}</h1>'
+            f'<p class="doc-cover-purpose">{esc(field(header, "purpose"))}</p>'
+            f'<dl class="doc-cover-meta">{meta}</dl>{audience}{related}</header>')
+
+
+def build_cover_css(palette):
+    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
+                                              palette["card"], palette["card_border"], palette["accent"])
+    return f"""<style>
+.doc-cover {{ position:relative; overflow:hidden; margin:-44px -60px 30px; padding:40px 60px 30px;
+  border-radius:16px 16px 0 0; border-bottom:1px solid {border};
+  background:linear-gradient(135deg, color-mix(in srgb, {accent} 13%, {card}) 0%, {card} 62%); }}
+.doc-cover::before {{ content:""; position:absolute; inset:0; pointer-events:none; opacity:.08;
+  background-image:linear-gradient({accent} 1px, transparent 1px), linear-gradient(90deg, {accent} 1px, transparent 1px);
+  background-size:26px 26px; -webkit-mask-image:radial-gradient(ellipse at 85% 0%, #000 0%, transparent 70%);
+  mask-image:radial-gradient(ellipse at 85% 0%, #000 0%, transparent 70%); }}
+.doc-cover::after {{ content:""; position:absolute; left:0; right:0; top:0; height:3px;
+  background:linear-gradient(90deg, {accent}, #22b35a 60%, transparent); }}
+.doc-cover > * {{ position:relative; }}
+.doc-cover-mark {{ margin:0 0 18px !important; font-size:.72rem !important; font-weight:600; letter-spacing:.2em;
+  text-transform:uppercase; color:{accent} !important; }}
+.doc-cover-mark i {{ font-style:normal; margin:0 6px; color:{muted}; }}
+.doc-cover-kind {{ display:inline-block; margin:0 0 10px !important; padding:3px 11px; border-radius:999px;
+  border:1px solid color-mix(in srgb, {accent} 45%, transparent); font-size:.78rem !important; color:{ink} !important; }}
+.doc-cover-title {{ margin:0 0 10px !important; padding:0 !important; border:0 !important; font-size:2.15rem !important;
+  font-weight:600 !important; letter-spacing:-.03em; line-height:1.15; color:{ink} !important; }}
+.doc-cover-purpose {{ max-width:660px; margin:0 0 24px !important; font-size:1.04rem !important; line-height:1.55 !important;
+  color:{text} !important; }}
+.doc-cover-meta {{ display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:10px 18px; margin:0; }}
+.doc-cover-meta div {{ padding-left:10px; border-left:2px solid color-mix(in srgb, {accent} 55%, transparent); }}
+.doc-cover-meta dt {{ font-size:.68rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:{muted}; }}
+.doc-cover-meta dd {{ margin:2px 0 0; font-size:.92rem; color:{ink}; font-weight:500; }}
+.doc-cover-related {{ margin:20px 0 0 !important; font-size:.84rem !important; color:{text} !important; }}
+.doc-cover-related span {{ display:block; font-size:.68rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+  color:{muted}; margin-bottom:4px; }}
+.doc-cover-related a {{ color:{accent} !important; }}
+@media (max-width:900px) {{ .doc-cover {{ margin:-22px -18px 24px; padding:26px 18px 20px; }} }}
+@media print {{
+  .doc-cover {{ margin:-40px -50px 0; min-height:255mm; display:flex; flex-direction:column; justify-content:center;
+    padding:0 50px; border-radius:0; border-bottom:0; break-after:page; page-break-after:always; }}
+  .doc-cover-title {{ font-size:2.6rem !important; }}
+}}
+</style>"""
+# endregion

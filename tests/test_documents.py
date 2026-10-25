@@ -223,3 +223,17 @@ def test_d279_the_data_dictionary_describes_every_table_and_column_of_the_served
     for table, column, data_type in columns:
         section = text.split(f"### {table}\n", 1)[1].split("\n### ", 1)[0]
         assert f"| `{column}` | {data_type} |" in section, (table, column)
+
+
+# D-288: each document opens with its cover, read from its header table.
+@pytest.mark.parametrize("name", READING)
+def test_d288_each_document_has_a_cover_with_its_version_date_status_owner_and_audience(name):
+    from bi import documents_folder
+    text = (DOCS_DIR / name).read_text(encoding="utf-8")
+    cover = documents_folder.build_cover_html(text, "")
+    header = documents_folder.read_header(text)
+    for field in ("Versión", "Fecha", "Estado", "Responsable"):
+        assert f"<dd>{header[field]}</dd>" in cover.replace("&#x27;", "'"), (name, field)
+    assert header["Audiencia"] in cover
+    assert documents_folder.read_title(text) in cover
+    assert "| Campo |" not in documents_folder.strip_header_table(text)
