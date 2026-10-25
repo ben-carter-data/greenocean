@@ -7473,6 +7473,8 @@ def build_sidebar_css(mode):
     [data-testid="stSidebarContent"]:hover::-webkit-scrollbar {{width:6px;}}
     [data-testid="stSidebarContent"]:hover::-webkit-scrollbar-thumb {{background:{hairline}; border-radius:3px;}}
     [data-testid="stSidebarUserContent"] {{padding:4px 10px 0 !important;}}
+    /* D-286: the menu scrolls above the pinned footer, so nothing it holds stays hidden behind it. */
+    [data-testid="stSidebarUserContent"] {{padding-bottom:180px !important;}}
     [data-testid="stSidebarUserContent"] > div > [data-testid="stVerticalBlock"] {{gap:0 !important;
         min-height:calc(100vh - 86px); padding-bottom:116px;}}
     [data-testid="stSidebarNav"] {{display:none;}}
@@ -7548,6 +7550,18 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
     show_sidebar_footer(current_window, lambda: show_folder_tile(windows_by_title, current_window, current_view))
 
 
+SHOW_SOURCES_SCRIPT = r"""<script>
+setTimeout(() => {
+  const links = document.querySelectorAll(".nav-source-link");
+  const menu = document.querySelector("[data-testid='stSidebarContent']");
+  const footer = document.querySelector(".st-key-sidebar_footer");
+  if (!links.length || !menu || !footer) { return; }
+  const hidden = links[links.length - 1].getBoundingClientRect().bottom - footer.getBoundingClientRect().top + 12;
+  if (hidden > 0) { menu.scrollBy({top: hidden, behavior: "smooth"}); }
+}, 200);
+</script>"""
+
+
 def show_folder_tile(windows_by_title, current_window, current_view):
     """«Documentos» as a folder (D-286): a larger tile at the end of the menu that opens the documents folder; it stays
     lit while a document of the folder is open."""
@@ -7572,6 +7586,8 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
                 st.markdown(f'<a class="nav-source-link" href="{html.escape(url, quote=True)}" '
                             f'target="_blank" rel="noopener noreferrer">{SOURCE_ICON_SVG}{html.escape(tr(name))}</a>',
                             unsafe_allow_html=True)
+        # D-286: opened at the end of the menu, the sources scroll into sight above the pinned footer.
+        st.html(SHOW_SOURCES_SCRIPT, unsafe_allow_javascript=True)
         return
     for index, view in enumerate(pages):
         window = WINDOW_OF_VIEW[view]
