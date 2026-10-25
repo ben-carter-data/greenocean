@@ -8,7 +8,8 @@ import html
 import math
 import re
 
-from bi import buttons
+from bi import buttons, i18n
+from bi.i18n import tr
 
 VIEW_GRID, VIEW_LIST = "Cuadrícula", "Lista"
 WORDS_PER_MINUTE = 200
@@ -18,6 +19,7 @@ PREVIEW_ENTRIES = 9
 FAMILY_COLORS = {"producto": "#3b82f6", "arquitectura": "#8b5cf6", "calidad": "#10b981", "operacion": "#f59e0b",
                  "referencia": "#64748b"}
 HEADER_ROW = re.compile(r"^\| ([^|]+?) \| (.+?) \|$", re.MULTILINE)
+INDEX_HEADINGS = tuple(f"## {fields['index']}" for fields in i18n.DOCUMENT_FIELDS.values())
 
 
 def esc(value):
@@ -26,7 +28,7 @@ def esc(value):
 
 def read_header(text):
     """{field: value} of the header table, the table above the first «## » heading."""
-    return {field: value for field, value in HEADER_ROW.findall(text.split("\n## ", 1)[0]) if field != "Campo"}
+    return {field: value for field, value in HEADER_ROW.findall(text.split("\n## ", 1)[0]) if field not in ("Campo", "Field")}
 
 
 def read_title(text):
@@ -34,10 +36,11 @@ def read_title(text):
 
 
 def read_index(text):
-    """The entries of the document's «Índice», without their numbers or links."""
-    if "## Índice" not in text:
+    """The entries of the document's «Índice» (or «Contents»), without their numbers or links."""
+    heading = next((heading for heading in INDEX_HEADINGS if heading in text), None)
+    if not heading:
         return []
-    body = text.split("## Índice", 1)[1].split("\n## ", 1)[0]
+    body = text.split(heading, 1)[1].split("\n## ", 1)[0]
     # A numbered list, or a table whose first column links to each record (the ADR).
     return (re.findall(r"^\d+\. \[([^\]]+)\]", body, re.MULTILINE)
             or [f"{code} · {title.strip()}" for code, title in
@@ -51,13 +54,21 @@ def reading_minutes(text):
 def describe(text):
     """What the folder shows of one document, all of it read from the file."""
     header = read_header(text)
-    return {"name": read_title(text), "purpose": header.get("Propósito", ""), "version": header.get("Versión", ""),
-            "date": header.get("Fecha", ""), "minutes": reading_minutes(text), "index": read_index(text)}
+    field = {name: next((header[fields[name]] for fields in i18n.DOCUMENT_FIELDS.values() if fields[name] in header), "")
+             for name in ("purpose", "version", "date")}
+    return {"name": read_title(text), "purpose": field["purpose"], "version": field["version"], "date": field["date"],
+            "minutes": reading_minutes(text), "index": read_index(text)}
+
+
+def sortable(day):
+    """dd-mm-yyyy (Spanish) or yyyy-mm-dd (English) as yyyy-mm-dd."""
+    parts = day.split("-")
+    return "-".join(parts[::-1]) if len(parts[0]) == 2 else day
 
 
 def latest_date(files):
-    """The most recent «Fecha» of the folder, dd-mm-yyyy."""
-    return max((file["date"] for file in files), key=lambda day: day.split("-")[::-1], default="")
+    """The most recent date of the folder, as the files write it."""
+    return max((file["date"] for file in files), key=sortable, default="")
 
 
 def build_file_glyph(color):
@@ -67,17 +78,17 @@ def build_file_glyph(color):
 def build_preview(file):
     entries = "".join(f"<li>{esc(entry)}</li>" for entry in file["index"][:PREVIEW_ENTRIES])
     more = len(file["index"]) - PREVIEW_ENTRIES
-    tail = f'<p class="df-more">y {more} más</p>' if more > 0 else ""
-    return f'<span class="df-preview" aria-hidden="true"><em>Índice</em><ol>{entries}</ol>{tail}</span>'
+    tail = f'<p class="df-more">{tr("y {} más").format(more)}</p>' if more > 0 else ""
+    return f'<span class="df-preview" aria-hidden="true"><em>{tr("Índice")}</em><ol>{entries}</ol>{tail}</span>'
 
 
 def build_actions(file):
     return ('<span class="df-actions">'
-            + buttons.build_link_html("Abrir", file["open"], variant="primary", size="compact")
+            + buttons.build_link_html(tr("Abrir"), file["open"], variant="primary", size="compact")
             + buttons.build_link_html("PDF", file["pdf"], icon="print", size="compact",
-                                      note="Abre el documento y lo imprime o guarda como PDF")
+                                      note=tr("Abre el documento y lo imprime o guarda como PDF"))
             + buttons.build_link_html("GitHub", file["github"], icon="github", variant="text", size="compact",
-                                      external=True, note="El archivo en GitHub")
+                                      external=True, note=tr("El archivo en GitHub"))
             + "</span>")
 
 
@@ -88,7 +99,7 @@ def build_meta(file):
 
 def build_file(file):
     return (f'<div class="df-file" data-family="{esc(file["family"])}">'
-            f'<a class="df-body" href="{esc(file["open"])}" target="_self" title="{file["minutes"]} min de lectura">'
+            f'<a class="df-body" href="{esc(file["open"])}" target="_self" title="{file["minutes"]} {tr("min de lectura")}">'
             f'<span class="df-top">{build_file_glyph(FAMILY_COLORS[file["family"]])}<b class="df-name">{esc(file["name"])}</b></span>'
             f'<span class="df-purpose">{esc(file["purpose"])}</span>{build_preview(file)}</a>'
             f'{build_meta(file)}{build_actions(file)}</div>')
@@ -98,7 +109,7 @@ def build_folder_html(files, view):
     """The folder: its path, how many documents and the last change, then the files in the chosen view."""
     kind = "df-grid" if view == VIEW_GRID else "df-list"
     head = (f'<div class="df-head"><span class="df-path">GreenOcean <i>/</i> <b>docs</b></span>'
-            f'<span class="df-count">{len(files)} documentos · último cambio {esc(latest_date(files))}</span></div>')
+            f'<span class="df-count">{len(files)} {tr("documentos · último cambio")} {esc(latest_date(files))}</span></div>')
     return f'<div class="df-folder">{head}<div class="{kind}">' + "".join(build_file(file) for file in files) + "</div></div>"
 
 

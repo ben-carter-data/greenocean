@@ -82,5 +82,11 @@
 .stApp .go-btn.go-btn--compact,.stApp .st-key-compact_footer [data-testid="stPageLink"] a {min-height:28px;padding:3px 11px!important;font-size:12.5px;border-radius:9px!important;}
 .stApp .st-key-compact_footer [data-testid="stPageLink"] a p {font-size:12.5px;}
 .stApp .st-key-doc_actions [data-testid="stMarkdownContainer"] {margin-bottom:0!important;}
+/* D-283: the language switch is the same component, compact, next to the appearance. */
+.stApp .st-key-language_switch {gap:4px!important;margin:2px 0 4px;}
+.stApp .st-key-language_switch button {min-height:26px!important;padding:2px 10px!important;border-radius:9px!important;border:1px solid color-mix(in srgb,__BORDER__ 90%,transparent)!important;background:transparent!important;box-shadow:none!important;}
+.stApp .st-key-language_switch button p {font-size:11.5px!important;letter-spacing:.06em;}
+.stApp .st-key-language_switch button[kind="primary"] {border-color:__ACCENT__!important;background:color-mix(in srgb,__ACCENT__ 16%,transparent)!important;}
+.stApp .st-key-language_switch button:hover {border-color:__ACCENT__!important;box-shadow:0 0 0 3px color-mix(in srgb,__ACCENT__ 16%,transparent)!important;}
 @media(prefers-reduced-motion:reduce) {.stApp .go-btn {transition:none;}}
 @media print {.stApp .go-btn {display:none!important;}}

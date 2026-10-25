@@ -18,6 +18,7 @@ import re
 import pandas as pd
 
 from bi import architecture, brand_icons, charts, control, tech_glossary
+from bi.i18n import tr
 
 LAYERS = [("bronze", "Bronce", "Parquet"), ("staging", "Staging", "vistas"),
           ("intermediate", "Intermedio", "tablas"), ("marts", "Marts", "servidas al panel")]
@@ -213,11 +214,11 @@ def summarize_build(nodes, results):
 def build_badge_html(summary):
     """«dbt · 16 modelos · 31/31 pruebas superadas», or the migration note before a build."""
     if summary is None:
-        return '<span class="lineage-badge pending">Linaje dbt: en migración</span>'
+        return f'<span class="lineage-badge pending">{tr("Linaje dbt: en migración")}</span>'
     state = "ok" if summary["ok"] else "failed"
-    return (f'<span class="lineage-badge {state}" title="Última construcción de dbt: '
-            f'{summary["built_at"]:%d-%m-%Y %H:%M} UTC">dbt · {summary["models"]} modelos · '
-            f'{summary["passing"]}/{summary["tests"]} pruebas superadas</span>')
+    return (f'<span class="lineage-badge {state}" title="{tr("Última construcción de dbt:")} '
+            f'{summary["built_at"]:%d-%m-%Y %H:%M} UTC">dbt · {summary["models"]} {tr("modelos")} · '
+            f'{summary["passing"]}/{summary["tests"]} {tr("pruebas superadas")}</span>')
 # endregion
 
 

@@ -33,9 +33,11 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
-from bi import (alerts, architecture, buttons, charts, control, documents_folder, data_browser, home_mockup, lag,  # noqa: E402
+from bi import (alerts, architecture, buttons, charts, control, documents_folder, i18n, data_browser, home_mockup, lag,  # noqa: E402
                 database_crossings, deployment, devops, monitoring, page_bar, served_database, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
+# D-283: every text a reader sees goes through tr, which gives its English when the reader chose English.
+tr = i18n.tr
 # endregion
 
 # region Constants
@@ -1732,20 +1734,21 @@ DOCUMENT_VIEWS = {PAGE_DOCUMENTATION, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_SCALABI
 
 def build_view_path(window, view):
     """«Section › Page», with the same names as the menu (D-250)."""
-    window_label = SIDEBAR_TOP_LABELS.get(window, window)
-    path = window_label if len(read_window_views(window)) == 1 else f"{window_label} › {SIDEBAR_LABELS.get(view, view)}"
+    window_label = tr(SIDEBAR_TOP_LABELS.get(window, window))
+    label = tr(SIDEBAR_LABELS.get(view, view))
+    path = window_label if len(read_window_views(window)) == 1 else f"{window_label} › {label}"
     if view in MENU_BLOCK_OF_VIEW:
-        label = SIDEBAR_LABELS.get(view, view)
-        path = label if MENU_BLOCK_OF_VIEW[view] == label else f"{MENU_BLOCK_OF_VIEW[view]} › {label}"
+        block = tr(MENU_BLOCK_OF_VIEW[view])
+        path = label if block == label else f"{block} › {label}"
     if view in FOLDER_ORDER:
-        path = f"{PAGE_FOLDER} › {SIDEBAR_LABELS.get(view, view)}"
+        path = f"{tr(PAGE_FOLDER)} › {label}"
     return path
 
 
 def show_return_button():
     """Volver: back to the previous point of the project, with its selection."""
-    if st.button("Volver", icon=":material/arrow_back:", key="return_to_previous",
-                 help="Volver al punto anterior del proyecto, con su selección."):
+    if st.button(tr("Volver"), icon=":material/arrow_back:", key="return_to_previous",
+                 help=tr("Volver al punto anterior del proyecto, con su selección.")):
         st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
 
 
@@ -1753,8 +1756,19 @@ def show_theme_field():
     """A compact appearance icon; four named choices remain accessible."""
     st.session_state["theme_field"] = get_mode()
     icon = ":material/dark_mode:" if charts.get_palette(get_mode())["base"] == "dark" else ":material/light_mode:"
-    with st.popover("Apariencia", icon=icon, help="Cambiar los colores: Corporativo, Vantablack, Blue Light o Dark Grey."):
-        st.radio("Apariencia del panel", charts.THEMES, key="theme_field", on_change=keep_theme_from_field)
+    with st.popover(tr("Apariencia"), icon=icon, help=tr("Cambiar los colores: Corporativo, Vantablack, Blue Light o Dark Grey.")):
+        st.radio(tr("Apariencia del panel"), charts.THEMES, key="theme_field", on_change=keep_theme_from_field)
+
+
+def show_language_switch():
+    """ES · EN (D-283): the language of the panel and of the documents, next to the appearance, kept in the address."""
+    with st.container(key="language_switch", horizontal=True, gap="small"):
+        for language in i18n.LANGUAGES:
+            if st.button(language.upper(), key=f"language_{language}",
+                         type="primary" if language == i18n.get_language() else "secondary",
+                         help=f"{i18n.LANGUAGE_NAMES[language]} · {tr('Cambiar el idioma del panel y de los documentos.')}"):
+                i18n.choose_language(language)
+                st.rerun()
 
 
 def open_card(key, title=None, caption=None, hint=None, kpi=None):
@@ -1810,6 +1824,7 @@ def build_page_address(page_title, tab=None, kpi=None):
     theme = st.session_state.get(THEME_STATE)
     if theme in charts.THEMES:
         parameters[THEME_PARAMETER] = theme
+    parameters.update(i18n.address_parameters())
     if tab:
         parameters[TAB_PARAMETER] = tab
     if kpi:
@@ -3779,10 +3794,10 @@ def show_compact_page_header(title, description):
     description shows on hover instead of taking a line of its own."""
     latest_run = read_latest_run()
     run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
-    run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
+    run_text = tr("Carga correcta") if run_kind == "ok" else tr("Última carga con falla")
     freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
-    st.markdown(f'<div class="compact-header"><h1 title="{html.escape(description, quote=True)}">'
-                f'{html.escape(title)}</h1><span class="page-freshness">Datos al '
+    st.markdown(f'<div class="compact-header"><h1 title="{html.escape(tr(description), quote=True)}">'
+                f'{html.escape(tr(title))}</h1><span class="page-freshness">{tr("Datos al")} '
                 f'{freshness} {build_chip(run_text, run_kind)}</span></div>',
                 unsafe_allow_html=True)
 
@@ -3802,7 +3817,7 @@ def show_page_bar(view, title, description, chips=(), side=None, terms=()):
     st.markdown(page_bar.build_css(charts.get_palette(get_mode())), unsafe_allow_html=True)
     with st.container(key="page_bar", horizontal=True, vertical_alignment="center"):
         show_return_button()
-        st.markdown(page_bar.build_bar_html(build_view_path(WINDOW_OF_VIEW.get(view, view), view), title, description,
+        st.markdown(page_bar.build_bar_html(build_view_path(WINDOW_OF_VIEW.get(view, view), view), tr(title), tr(description),
                                             chips), unsafe_allow_html=True, width="stretch")
         if side:
             side()
@@ -6618,7 +6633,7 @@ DOCUMENT_VIEW = re.compile(r"\[\[vista:([^\]]+)\]\]")
 def find_menu_page(label):
     """The page whose label in the menu, or in the documents folder, is `label`, or None."""
     for view in MENU_ORDER + FOLDER_ORDER:
-        if SIDEBAR_LABELS.get(view, view) == label:
+        if label in (SIDEBAR_LABELS.get(view, view), i18n.EN.get(SIDEBAR_LABELS.get(view, view))):
             return view
     return None
 
@@ -6636,11 +6651,10 @@ def read_folder_files():
     """Every document of the folder as the folder shows it, read from its file."""
     files = []
     for page, family in FOLDER_DOCUMENTS:
-        filename = PROJECT_DOCUMENTS[page][0]
-        text = (project.DOCS_DIR / filename).read_text(encoding="utf-8")
-        files.append(documents_folder.describe(text) | {
+        path = i18n.documents_dir() / PROJECT_DOCUMENTS[page][0]
+        files.append(documents_folder.describe(path.read_text(encoding="utf-8")) | {
             "page": page, "family": family, "open": build_page_address(page), "pdf": build_print_address(page),
-            "github": project.build_github_url(f"docs/{filename}")})
+            "github": project.build_github_url(path.relative_to(project.PROJECT_DIR).as_posix())})
     return files
 
 
@@ -6651,8 +6665,8 @@ def show_documents_folder(mode):
     show_page_bar(PAGE_FOLDER, PAGE_FOLDER, "Los documentos del proyecto, leídos de docs/: cada uno se abre aquí, se "
                   "imprime como PDF o se lee en GitHub.",
                   side=lambda: st.segmented_control(
-                      "Vista de la carpeta", [documents_folder.VIEW_GRID, documents_folder.VIEW_LIST],
-                      key=FOLDER_VIEW_KEY, label_visibility="collapsed", width="content"))
+                      tr("Vista de la carpeta"), [documents_folder.VIEW_GRID, documents_folder.VIEW_LIST],
+                      format_func=tr, key=FOLDER_VIEW_KEY, label_visibility="collapsed", width="content"))
     st.markdown(documents_folder.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
     view = st.session_state.get(FOLDER_VIEW_KEY) or documents_folder.VIEW_GRID
     st.markdown(documents_folder.build_folder_html(files, view), unsafe_allow_html=True)
@@ -6660,8 +6674,8 @@ def show_documents_folder(mode):
 
 def build_folder_path_html(title):
     """«Documentos / PRD»: the thin path of a document, back to its folder (D-282)."""
-    return (f'<nav class="doc-path" aria-label="Ruta"><a href="{html.escape(build_page_address(PAGE_FOLDER), quote=True)}" '
-            f'target="_self">{PAGE_FOLDER}</a><i>/</i><span>{html.escape(SIDEBAR_LABELS.get(title, title))}</span></nav>')
+    return (f'<nav class="doc-path" aria-label="{tr("Ruta")}"><a href="{html.escape(build_page_address(PAGE_FOLDER), quote=True)}" '
+            f'target="_self">{tr(PAGE_FOLDER)}</a><i>/</i><span>{html.escape(tr(SIDEBAR_LABELS.get(title, title)))}</span></nav>')
 
 
 DOCUMENT_LINK = re.compile(r"\]\(([A-Z_]+\.md)(#[^)]*)?\)")
@@ -6754,7 +6768,8 @@ def is_dark_theme(mode):
 
 def build_print_button_html(mode):
     """The print button; from a dark theme it prints the light version of the page (D-280)."""
-    return PRINT_BUTTON_HTML.replace("__LIGHT__", PRINT_THEME if is_dark_theme(mode) else "")
+    return (PRINT_BUTTON_HTML.replace("Imprimir o guardar como PDF", tr("Imprimir o guardar como PDF"))
+            .replace("__LIGHT__", PRINT_THEME if is_dark_theme(mode) else ""))
 
 
 def show_document_actions(mode, source_label, source_url):
@@ -6787,12 +6802,15 @@ def show_project_document(mode, title):
     """A document of docs/ as a page: the same text as in GitHub, its diagrams drawn
     from the live project, no code."""
     filename, lead = PROJECT_DOCUMENTS[title]
-    text = (project.PROJECT_DIR / "docs" / filename).read_text(encoding="utf-8")
+    # D-283: the document in the language of the visit, from docs/ or docs/en/.
+    path = i18n.documents_dir() / filename
+    text = path.read_text(encoding="utf-8")
+    source = path.relative_to(project.PROJECT_DIR).as_posix()
     # The page header carries the title; the document's own H1 would repeat it.
     text = re.sub(r"\A# .*\n", "", text)
     st.markdown(build_folder_path_html(title), unsafe_allow_html=True)
     show_compact_page_header(title, lead)
-    show_document_actions(mode, f"docs/{filename} en GitHub", project.build_github_url(f"docs/{filename}"))
+    show_document_actions(mode, f"{source} {tr('en GitHub')}", project.build_github_url(source))
     with st.container(key="project_document"):
         position = 0
         for marker in DOCUMENT_DIAGRAM.finditer(text):
@@ -6924,7 +6942,7 @@ def show_attribution():
     st.divider()
     summary = lineage.summarize_build(*read_lineage(get_database_version()))
     st.markdown(f'<div class="page-lineage">{lineage.build_badge_html(summary)}</div>', unsafe_allow_html=True)
-    st.caption(ATTRIBUTION_TEXT)
+    st.caption(tr(ATTRIBUTION_TEXT))
 
 
 def order_windows():
@@ -7084,6 +7102,7 @@ def keep_context():
     context = {}
     if st.session_state.get(THEME_STATE) in charts.THEMES:
         context[THEME_PARAMETER] = st.session_state[THEME_STATE]
+    context.update(i18n.address_parameters())
     return context
 
 
@@ -7093,7 +7112,7 @@ def show_menu_steps(view, pages):
     for step, text in ((-1, "← Anterior: {}"), (1, "Siguiente: {} →")):
         if 0 <= position + step < len(MENU_ORDER):
             neighbour = MENU_ORDER[position + step]
-            st.page_link(pages[WINDOW_OF_VIEW[neighbour]], label=text.format(SIDEBAR_LABELS.get(neighbour, neighbour)),
+            st.page_link(pages[WINDOW_OF_VIEW[neighbour]], label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
                          icon=SIDEBAR_ICONS.get(neighbour, PAGE_ICONS.get(neighbour)),
                          query_params=keep_context() | {VIEW_PARAMETER: neighbour})
 
@@ -7104,7 +7123,7 @@ def show_folder_steps(view, pages):
     for step, text in ((-1, "← Anterior: {}"), (1, "Siguiente: {} →")):
         if 0 <= position + step < len(FOLDER_ORDER):
             neighbour = FOLDER_ORDER[position + step]
-            st.page_link(pages[WINDOW_OF_VIEW[neighbour]], label=text.format(SIDEBAR_LABELS.get(neighbour, neighbour)),
+            st.page_link(pages[WINDOW_OF_VIEW[neighbour]], label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
                          icon=PAGE_ICONS.get(neighbour), query_params=keep_context() | {VIEW_PARAMETER: neighbour})
 
 
@@ -7160,7 +7179,7 @@ def show_compact_footer(window, pages, view=None):
                     st.page_link(pages[following], label=f"Siguiente: {following} →",
                                  help=f"Siguiente paso: {ROUTE_LEADS[following]}.", query_params=keep_context())
             st.markdown(f'<div class="page-lineage">{lineage.build_badge_html(summary)}</div>', unsafe_allow_html=True)
-        st.caption(ATTRIBUTION_TEXT)
+        st.caption(tr(ATTRIBUTION_TEXT))
 
 
 def render_page(title):
@@ -7464,6 +7483,7 @@ def build_sidebar_css(mode):
     .st-key-sidebar_appearance [data-testid="stPopover"] button {{background:transparent !important;
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
+    .st-key-language_switch button p {{color:{text} !important;}}
     .st-key-sidebar_footer [data-testid="stCaptionContainer"] p {{color:{text} !important; opacity:.75;
         font-size:.69rem; line-height:1.35; padding:0 3px;}}
     </style>"""
@@ -7492,7 +7512,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
 def show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open):
     """One section of the menu: its title, which folds it, and its pages."""
     with st.container(key=f"nav_group_{key}" + ("" if is_open else "_folded")):
-        if st.button(title, key=f"nav_toggle_{key}"):
+        if st.button(tr(title), key=f"nav_toggle_{key}"):
             st.session_state[open_key] = not is_open
             st.rerun()
     if not is_open:
@@ -7502,7 +7522,7 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
         for index, (name, url) in enumerate(pages):
             with st.container(key=f"nav_child_{key}_{index}"):
                 st.markdown(f'<a class="nav-source-link" href="{html.escape(url, quote=True)}" '
-                            f'target="_blank" rel="noopener noreferrer">{SOURCE_ICON_SVG}{html.escape(name)}</a>',
+                            f'target="_blank" rel="noopener noreferrer">{SOURCE_ICON_SVG}{html.escape(tr(name))}</a>',
                             unsafe_allow_html=True)
         return
     for index, view in enumerate(pages):
@@ -7510,7 +7530,7 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
         # A document of the folder lights its folder (D-282).
         active = window == current_window and (view == current_view or (view == PAGE_FOLDER and current_view in FOLDER_ORDER))
         with st.container(key=f"nav_child_{key}_{index}" + ("_nav_current" if active else "")):
-            st.page_link(windows_by_title[window], label=SIDEBAR_LABELS.get(view, view),
+            st.page_link(windows_by_title[window], label=tr(SIDEBAR_LABELS.get(view, view)),
                          icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
                          query_params=keep_context() | {VIEW_PARAMETER: view})
 
@@ -7520,7 +7540,7 @@ def build_sidebar_github_html(is_current):
     list, where it read as one more section and its blue mark sank into the navy."""
     current = " sidebar-github-current" if is_current else ""
     return (f'<a class="sidebar-github{current}" href="{html.escape(build_page_address(PAGE_LINKS), quote=True)}" '
-            f'target="_self" aria-label="GitHub del proyecto" title="GitHub del proyecto">'
+            f'target="_self" aria-label="{tr("GitHub del proyecto")}" title="{tr("GitHub del proyecto")}">'
             f'{build_github_icon_svg(20)}</a>')
 
 
@@ -7545,7 +7565,8 @@ def show_sidebar_footer(current_window=None):
                 show_theme_field()
             st.markdown(build_sidebar_github_html(current_window == SECTION_RESOURCES),
                         unsafe_allow_html=True)
-        st.caption("Fuente: ODEPA · actualización automática cada martes.")
+        show_language_switch()
+        st.caption(tr("Fuente: ODEPA · actualización automática cada martes."))
 
 
 # D-172: Streamlit reloads this file on each run but keeps the imported bi/* modules
@@ -7594,6 +7615,7 @@ def main():
                  + (f" ({problem})" if problem else "") + ". En local: python bi/served_database.py")
         return
     settle_theme()
+    i18n.settle_language()
     st.session_state.pop(PROFILE_PARAMETER, None)
     st.query_params.pop("perfil", None)
     restore_return_context()
