@@ -2239,3 +2239,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - el PRD y el SAD dicen que el administrador de los diagramas C4 y de la arquitectura de seguridad es el autor del proyecto, el mismo actor que nombran el plan, el manual y el mapa de la app;
   - el README enlaza los siete documentos actuales en lugar del plan de seguridad retirado.
 - **Pruebas:** la suite completa en verde; las pruebas de documentos comprueban las cifras, los casos, las tablas y los enlaces entre documentos.
+
+## D-293 · El mapa de la app es el funcionamiento real: cada línea nombra su código, y la descripción no tapa las líneas
+
+- **Pedido del autor:** confirmar que el mapa cubre la arquitectura del proyecto y que muestra cómo funciona de verdad, no solo algo bonito; que la descripción de un nodo no tape sus líneas de conexión.
+- **Revisión contra el código:** cada conexión se comparó con los workflows y los módulos. Se corrigió una línea inexacta (el agente solo descarga los CSV; `etl.load_raw_files` los carga en `raw.db`) y se sumaron dos que existían y faltaban: `semanal.yml` y `pruebas.yml` descargan la base del release antes de trabajar.
+- **Decisión:**
+  - **evidencia:** cada línea declara dónde ocurre (el archivo y el código que lo hace) o, si ningún archivo del proyecto puede mostrarlo, la plataforma que lo hace (GitHub o Streamlit Cloud: el despliegue de main, el correo de una falla, la cuenta del autor). La descripción de cada nodo muestra ese archivo junto a cada conexión;
+  - **la descripción no tapa el dibujo:** con el menú lateral abierto, la descripción se muestra sobre el menú, donde no corre ninguna línea; con el menú cerrado, va al lugar del dibujo que tapa menos líneas y vecinos del nodo. No intercepta el cursor, así nunca bloquea otro nodo;
+  - **sin filtro**, se dibujan el flujo de datos y lo que llega al lector; las descargas de la base por los workflows aparecen en Orquestación y Calidad.
+- **Pruebas:** `tests/test_app_map.py::test_d293_*`: cada línea tiene su evidencia y el archivo contiene el código que nombra; la descripción se aparta de las líneas del nodo. Medido en el navegador: con el cursor sobre GitHub Actions y sobre Streamlit, la descripción no tapa ningún punto de sus líneas a 1440 × 790 ni a 1920 × 1000.

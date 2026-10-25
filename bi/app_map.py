@@ -193,7 +193,7 @@ NODES = {
 LINKS = [
     ("odepa", "agent", "flow", "CSV", ["datos"]),
     ("ine", "agent", "flow", "IPC", ["datos"]),
-    ("agent", "sqlite", "flow", "filas crudas", ["datos"]),
+    ("agent", "sqlite", "flow", "CSV → raw.db", ["datos"]),
     ("sqlite", "parquet", "flow", "copia por año", ["datos"]),
     ("agent", "parquet", "flow", "IPC, directo", ["datos"]),
     ("parquet", "dbt", "flow", "fuentes", ["datos"]),
@@ -210,6 +210,8 @@ LINKS = [
     ("actions", "release", "order", "publica la base", ["orquestacion"]),
     ("actions", "ci", "order", "corre las pruebas", ["orquestacion", "calidad"]),
     ("actions", "github", "order", "puntero e informe semanal", ["orquestacion", "observabilidad"]),
+    ("release", "actions", "flow", "base anterior, para el historial", ["orquestacion"]),
+    ("release", "ci", "flow", "base para las pruebas", ["calidad"]),
     ("author", "github", "order", "push con su cuenta", ["orquestacion", "seguridad"]),
     ("author", "streamlit", "order", "clave de control", ["orquestacion", "seguridad"]),
     ("streamlit", "secrets", "check", "compara la clave, lee el token", ["seguridad"]),
@@ -234,6 +236,63 @@ LINKS = [
     ("docs", "streamlit", "support", "páginas y PDF", ["apoyo"]),
     ("ai", "docs", "support", "revisión, sin RAG", ["apoyo"]),
 ]
+# Where each line happens: (file, text that must be in it), or the platform that does it when no file of the project
+# can show it. A test reads every file, so a line of the map cannot claim what the code does not do (D-293).
+PLATFORM = "platform"
+LINK_EVIDENCE = {
+    ("odepa", "agent"): ("agent/input.csv", "datos.odepa.gob.cl"),
+    ("ine", "agent"): ("etl/ine.py", "www.ine.gob.cl"),
+    ("agent", "sqlite"): ("etl/etl.py", "def load_raw_files"),
+    ("sqlite", "parquet"): ("etl/bronze.py", "pq.write_table"),
+    ("agent", "parquet"): ("etl/ine.py", "pq.write_table"),
+    ("parquet", "dbt"): ("dbt/models/staging/sources.yml", "read_parquet"),
+    ("dbt", "duckdb"): ("dbt/profiles.yml", "type: duckdb"),
+    ("duckdb", "release"): (".github/workflows/semanal.yml", "gh release upload base-actual etl/datos.duckdb"),
+    ("release", "streamlit"): ("bi/served_database.py", "/releases/download/"),
+    ("release", "actions"): (".github/workflows/semanal.yml", "run: python bi/served_database.py"),
+    ("release", "ci"): (".github/workflows/pruebas.yml", "run: python bi/served_database.py"),
+    ("streamlit", "web"): ("bi/dashboard.py", "st.html("),
+    ("streamlit", "charts"): ("bi/dashboard.py", "st.altair_chart("),
+    ("web", "visitor"): (PLATFORM, "Streamlit Cloud"),
+    ("web", "author"): (PLATFORM, "Streamlit Cloud"),
+    ("visitor", "streamlit"): ("bi/sql_explorer.py", "ROW_LIMIT = 5000"),
+    ("github", "streamlit"): (PLATFORM, "Streamlit Cloud"),
+    ("actions", "agent"): (".github/workflows/semanal.yml", "run: python agent/agent.py"),
+    ("actions", "release"): (".github/workflows/semanal.yml", "gh release upload"),
+    ("actions", "ci"): (".github/workflows/semanal.yml", "run: pytest -q"),
+    ("actions", "github"): (".github/workflows/semanal.yml", "gh issue create"),
+    ("author", "github"): (PLATFORM, "GitHub"),
+    ("author", "streamlit"): ("bi/dashboard.py", 'SECRET_CONTROL_CODE = "CONTROL_CODE"'),
+    ("streamlit", "secrets"): ("bi/control.py", "hmac.compare_digest"),
+    ("streamlit", "actions"): ("bi/control.py", "/dispatches"),
+    ("streamlit", "github"): ("bi/control.py", "/actions/runs/"),
+    ("ci", "github"): (".github/workflows/pruebas.yml", "push:"),
+    ("ci", "security"): ("tests/test_security.py", "def test_no_secret_is_tracked_by_git"),
+    ("ci", "parity"): ("tests/test_migration_parity.py", "def test_every_weekly_price_has_the_same_key_flag_count_and_price"),
+    ("gates", "agent"): ("agent/agent.py", "REASON_UNEXPECTED_HEADER"),
+    ("gates", "dbt"): ("dbt/tests/rnf05_rows_reconcile.sql", "select"),
+    ("gates", "release"): ("etl/pipeline.py", "etl.MINIMUM_ROWS_RATIO"),
+    ("parity", "sqlite"): ("tests/test_migration_parity.py", "sqlite3"),
+    ("parity", "duckdb"): ("tests/test_migration_parity.py", "duckdb"),
+    ("security", "streamlit"): ("tests/test_control.py", "def test_github_error_never_shows_the_token"),
+    ("security", "duckdb"): ("bi/sql_explorer.py", "SET lock_configuration = true"),
+    ("security", "github"): ("tests/test_security.py", "def test_no_secret_is_tracked_by_git"),
+    ("security", "actions"): ("tests/test_security.py", "def test_the_weekly_job_has_least_privilege"),
+    ("monitoring", "actions"): ("bi/control.py", "/jobs"),
+    ("monitoring", "duckdb"): ("etl/pipeline.py", "etl_run"),
+    ("actions", "author"): (PLATFORM, "GitHub"),
+    ("measurement", "streamlit"): ("tests/medicion/medir.cjs", "1440"),
+    ("docs", "streamlit"): ("bi/dashboard.py", "PROJECT_DOCUMENTS = {"),
+    ("ai", "docs"): ("CLAUDE.md", "docs/"),
+}
+
+
+def evidence_label(source, target):
+    """The short name of where a line happens: the file name, or the platform."""
+    place, detail = LINK_EVIDENCE[(source, target)]
+    return detail if place == PLATFORM else place.rsplit("/", 1)[-1]
+
+
 ROWS = {"top": 1, "flow": 3, "flow2": 4, "web": 5, "watch": 6}
 # Thin line icons for the nodes that are not a brand, drawn in the accent of the theme (24-unit grid).
 LINE_ICONS = {
@@ -294,12 +353,19 @@ def build_tip(key):
     parts = [("Qué es", what), ("Rol en GreenOcean", role), ("Cuándo actúa", when)]
     left = f'<b class="am-tip-name">{esc(name)}</b>' + "".join(f"<i>{esc(head)}</i><span>{esc(text)}</span>"
                                                             for head, text in parts)
-    right = f"<i>{esc('Se conecta con')}</i>" + "".join(f"<span>{esc(line)}</span>" for line in connections(key))
+    # Each connection names where it happens, so the reader can check it in the code.
+    places = [evidence_label(source, target) for source, target, *_ in LINKS if source == key]
+    places += [evidence_label(source, target) for source, target, *_ in LINKS if target == key]
+    right = f"<i>{esc('Se conecta con')}</i>" + "".join(
+        f'<span>{esc(line)} <code class="am-src">{esc(place)}</code></span>' for line, place in zip(connections(key), places))
+    extra = ""
     if group:
-        right += f"<i>{esc('Incluye')}</i>" + "".join(f"<span><b>{esc(tool)}</b> — {esc(text)}</span>" for tool, text in group)
-    # Two columns: what it is on the left, what it touches on the right, so the tip stays inside one screen.
+        extra = f'<span class="am-tip-col"><i>{esc("Incluye")}</i>' + "".join(
+            f"<span><b>{esc(tool)}</b> — {esc(text)}</span>" for tool, text in group) + "</span>"
+    # Up to three short columns (what it is, what it touches, what it includes), so the box is wide and low and covers
+    # as little of the drawing as possible.
     return (f'<span class="am-tip" role="tooltip"><span class="am-tip-col">{left}</span>'
-            f'<span class="am-tip-col">{right}</span></span>')
+            f'<span class="am-tip-col">{right}</span>{extra}</span>')
 
 
 def build_node(key, palette, addresses):
@@ -333,7 +399,9 @@ def build_css(palette):
   grid-template-rows:auto auto auto auto auto auto; gap:14px 10px; padding:6px 0 4px; }}
 .am-lines {{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:0; }}
 .am-line {{ fill:none; stroke-width:1.6; opacity:0; transition:opacity .15s ease; }}
-.am-line.k-flow {{ opacity:.6; }}
+.am-line.base {{ opacity:.6; }}
+.am-tip code.am-src {{ font-size:10.5px; padding:0 4px; border-radius:4px; color:{muted};
+  background:color-mix(in srgb, {border} 45%, transparent); }}
 .am-label {{ font-size:10.5px; font-weight:500; fill:{text}; stroke:var(--am-surface, transparent); stroke-width:4px;
   paint-order:stroke; stroke-linejoin:round; opacity:0; transition:opacity .15s ease; }}
 .am-line.k-order {{ stroke-dasharray:6 5; }} .am-line.k-check {{ stroke-dasharray:2 4; }} .am-line.k-support {{ stroke-width:1.2; }}
@@ -351,8 +419,9 @@ def build_css(palette):
 .am-logo {{ width:30px; height:30px; display:block; }}
 .am-name {{ font-size:12px; font-weight:600; line-height:1.25; text-align:center; overflow-wrap:anywhere; }}
 .am-more {{ margin-left:4px; font-size:10.5px; font-weight:500; color:{accent}; }}
-.am-tip {{ position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%); width:min(540px, 70vw); z-index:20;
-  display:none; grid-template-columns:1fr 1fr; gap:0 16px; padding:10px 14px; border-radius:12px; text-align:left;
+.am-tip {{ position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%); width:min(800px, 66vw); z-index:20;
+  display:none; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:0 16px; padding:10px 14px; border-radius:12px;
+  text-align:left; pointer-events:none; overflow:hidden;
   background:{card}; border:1px solid {border}; box-shadow:0 18px 40px -18px rgba(0,0,0,.45); color:{text};
   font-size:12px; font-weight:400; line-height:1.4; }}
 .am-tip-col {{ display:flex; flex-direction:column; gap:2px; min-width:0; }}
@@ -426,7 +495,9 @@ SCRIPT = r"""<script>
           : "M" + x1 + " " + y1 + " C" + (x1 + bow) + " " + (y1 + y2) / 2 + " " + (x2 + bow) + " " + (y1 + y2) / 2 + " " + x2 + " " + y2;
         const path = document.createElementNS(ns, "path");
         path.setAttribute("d", d);
-        path.setAttribute("class", "am-line k-" + kind);
+        // Without a filter, only the data flow and what reaches the reader are drawn.
+        const base = kind === "flow" && (themes.includes("datos") || themes.includes("navegador"));
+        path.setAttribute("class", "am-line k-" + kind + (base ? " base" : ""));
         path.dataset.from = from;
         path.dataset.to = to;
         path.dataset.themes = themes.join(" ");
@@ -477,6 +548,66 @@ SCRIPT = r"""<script>
         placed.push(best.area);
       });
     };
+    // The description of a node never covers the drawing when the side menu is open: it shows over the menu, where no
+    // line runs. With the menu closed, it goes where it covers the fewest of the node's own lines and neighbours. Only
+    // its style changes; the element stays where Streamlit put it.
+    const dodge = (item) => {
+      const tip = item.querySelector(".am-tip");
+      if (!tip) { return; }
+      ["position", "left", "top", "right", "bottom", "transform", "width", "maxHeight", "gridAutoFlow", "zIndex", "fontSize"]
+        .forEach((name) => { tip.style[name] = ""; });
+      item.style.zIndex = "";
+      const menu = document.querySelector('[data-testid="stSidebar"]');
+      const side = menu ? menu.getBoundingClientRect() : null;
+      if (side && side.width >= 240 && side.right > 0 && window.innerWidth > side.right + 600) {
+        tip.style.position = "fixed";
+        tip.style.left = (side.left + 10) + "px";
+        tip.style.top = "12px";
+        tip.style.width = (Math.max(side.right, stage.getBoundingClientRect().left - 12) - side.left - 10) + "px";
+        tip.style.maxHeight = (window.innerHeight - 24) + "px";
+        tip.style.gridAutoFlow = "row";
+        tip.style.fontSize = "11.5px";
+        tip.style.transform = "none";
+        tip.style.right = "auto";
+        tip.style.bottom = "auto";
+        tip.style.zIndex = "1000001";
+        item.style.zIndex = "1000001";  // the menu is drawn above the page: the node rises with its description
+        return;
+      }
+      const box = stage.getBoundingClientRect();
+      const own = item.getBoundingClientRect();
+      const t = tip.getBoundingClientRect();
+      const w = t.width, h = t.height;
+      const nx = own.left - box.left, ny = own.top - box.top, nw = own.width, nh = own.height;
+      const points = [];
+      svg.querySelectorAll(".am-line.on").forEach((line) => {
+        const length = line.getTotalLength();
+        for (let step = 0; length > step; step += 10) { points.push(line.getPointAtLength(step)); }
+      });
+      const others = Array.from(stage.querySelectorAll(".am-node.on"), (other) => {
+        const r = other.getBoundingClientRect();
+        return {x: r.left - box.left + r.width / 2, y: r.top - box.top + r.height / 2};
+      });
+      const clampX = (x) => Math.max(0, Math.min(x, box.width - w));
+      // Next to the node first, then a grid of nine places over the drawing; never outside it.
+      const candidates = [[clampX(nx + nw / 2 - w / 2), ny + nh + 4], [clampX(nx + nw / 2 - w / 2), ny - h - 4]];
+      [0, (box.height - h) / 2, box.height - h].forEach((y) => {
+        [0, (box.width - w) / 2, box.width - w].forEach((x) => candidates.push([x, y]));
+      });
+      let best = null;
+      candidates.forEach(([x, y], rank) => {
+        if (0 > x || x + w > box.width + 1 || -8 > y || y + h > box.height + 8) { return; }
+        const inside = (p) => p.x >= x && x + w >= p.x && p.y >= y && y + h >= p.y;
+        const score = points.filter(inside).length + others.filter(inside).length * 25 + rank * 0.3;
+        if (!best || best.score > score) { best = {score, x, y}; }
+      });
+      if (!best) { return; }
+      tip.style.left = (best.x - nx) + "px";
+      tip.style.top = (best.y - ny) + "px";
+      tip.style.right = "auto";
+      tip.style.bottom = "auto";
+      tip.style.transform = "none";
+    };
     stage.querySelectorAll(".am-node").forEach((item) => {
       const key = item.dataset.key;
       const enter = () => {
@@ -490,8 +621,10 @@ SCRIPT = r"""<script>
           }
         });
         place(svg.querySelectorAll(".am-label.on"));
+        dodge(item);
       };
       const leave = () => {
+        item.style.zIndex = "";
         map.classList.remove("has-focus");
         stage.querySelectorAll(".on").forEach((element) => element.classList.remove("on"));
       };

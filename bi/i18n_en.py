@@ -1588,6 +1588,7 @@ PAGES = {
     "SQL con límites, clave y token": "SQL with limits, code and token", "solo lectura": "read-only",
     "ningún secreto en Git": "no secret in Git", "permisos mínimos": "least privilege", "log de cada paso": "log of each step",
     "correo si la carga falla": "email if the load fails",
+    "base anterior, para el historial": "previous database, for the history", "base para las pruebas": "database for the tests",
     "Cuando alguien abre la carpeta Documentos.": "When someone opens the Documents folder.",
     "el formato de los documentos, el mismo en GitHub y en el panel.": "the format of the documents, the same on GitHub and in the panel.",
     "Medición del diseño en un navegador real.": "Measurement of the design in a real browser.",

@@ -126,5 +126,24 @@ def test_d291_each_filter_lights_every_actor_and_link_of_its_theme():
 def test_d291_without_a_filter_only_the_data_flow_is_drawn_and_each_line_carries_its_label():
     css = app_map.build_css(charts.get_palette(charts.THEMES[0]))
     assert ".am-line {{ fill:none; stroke-width:1.6; opacity:0;".replace("{{", "{") in css
-    assert ".am-line.k-flow { opacity:.6; }" in css and ".am[data-filter] .am-line.show" in css
+    assert ".am-line.base { opacity:.6; }" in css and ".am[data-filter] .am-line.show" in css
+    assert "themes.includes(\"datos\") || themes.includes(\"navegador\")" in app_map.SCRIPT
     assert 'label.textContent = whats[index];' in app_map.SCRIPT and 'class="am-whats" hidden' in app_map.build_map_html(charts.get_palette(charts.THEMES[0]), {})
+
+
+def test_d293_every_line_names_where_it_happens_and_that_code_really_does_it():
+    """The map is the real system: each line points to the file that does it, and that file holds the code; a line no
+    file can show is done by a platform (GitHub or Streamlit Cloud) and says so."""
+    assert set(app_map.LINK_EVIDENCE) == {(source, target) for source, target, *_ in app_map.LINKS}
+    for (source, target), (place, detail) in app_map.LINK_EVIDENCE.items():
+        if place == app_map.PLATFORM:
+            assert detail in ("GitHub", "Streamlit Cloud"), (source, target)
+            continue
+        assert detail in (ROOT / place).read_text(encoding="utf-8"), (source, target, place, detail)
+    tip = app_map.build_tip("actions")
+    assert '<code class="am-src">semanal.yml</code>' in tip and '<code class="am-src">control.py</code>' in tip
+
+
+def test_d293_the_description_of_a_node_moves_off_its_own_lines():
+    assert "const dodge = (item) =>" in app_map.SCRIPT and "dodge(item);" in app_map.SCRIPT
+    assert 'svg.querySelectorAll(".am-line.on")' in app_map.SCRIPT  # it counts the node's own lines it would cover
