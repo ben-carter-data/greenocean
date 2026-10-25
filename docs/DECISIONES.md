@@ -2118,3 +2118,8 @@ GreenOcean está hecho a la medida de lo que hace hoy: datos públicos, semanale
   - **Pipeline y linaje:** el selector «Recorrido por capas / Linaje dbt» sube a la línea del título de la tarjeta, que tenía espacio, y los cuatro colores del recorrido comparten una línea con lo que significan. El recorrido sigue como en D-229.
 - **Resultado:** las nueve páginas principales, las cuatro pestañas del Centro de operación, las tres de Calidad y auditoría, las cuatro vistas de Modelo de datos, el linaje dbt y una familia ampliada de Precios e inflación se ven sin desplazar a 1440 × 790 y a 1920 × 1000.
 - **Pruebas:** la suite completa pasa (633).
+
+## D-278 · La documentación se separa de la historia del proyecto
+
+- **Decisión del autor:** los textos con forma de instrucción o de bitácora de sesiones no son documentación de lectura. Se eliminan los dos prompts de trabajo (`PROMPT_EVOLUCION.md` y el del 24-10) y las capturas de medición de `docs/diagnosticos/` (unos 40 MB; siguen en el historial de git). Los hitos y el backlog pasan a `docs/historia/`, fuera de la documentación. `DISENO.md` se resolverá junto con el retiro de las vistas antiguas que lo leen.
+- **Pruebas:** la suite completa pasa.
