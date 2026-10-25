@@ -8,6 +8,8 @@ Numbers in labels and tooltips are written as in Chile: 1.234 and 12,5 %.
 import altair as alt
 import pandas as pd
 
+from bi import i18n
+
 # region Constants
 # The four visible themes, Corporativo first: it is the default (D-071). Claro remains an
 # export compatibility palette. Each theme sits on one of Streamlit's two base modes,
@@ -122,6 +124,22 @@ CHILE_LOCALE = {
              "shortMonths": ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep",
                              "oct", "nov", "dic"]},
 }
+# D-284: the same charts in English: 1,234.5 and "Mar 2024".
+ENGLISH_LOCALE = {
+    "number": {"decimal": ".", "thousands": ",", "grouping": [3], "currency": ["$ ", ""], "minus": "-"},
+    "time": {"dateTime": "%A, %B %e, %Y, %X", "date": "%Y-%m-%d", "time": "%H:%M:%S", "periods": ["AM", "PM"],
+             "days": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+             "shortDays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+             "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September",
+                        "October", "November", "December"],
+             "shortMonths": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]},
+}
+
+
+def chart_locale():
+    return ENGLISH_LOCALE if i18n.is_english() else CHILE_LOCALE
+
+
 # Words removed from region names in charts, where space is short.
 REGION_PREFIXES = ["Región de ", "Región del ", "Región "]
 # endregion
@@ -231,7 +249,7 @@ def apply_chart_style(chart, mode):
     """Transparent background, quiet grid and the mode's text colors."""
     palette = get_palette(mode)
     return chart.configure(background="transparent", font=CHART_FONT,
-                           locale=CHILE_LOCALE).configure_view(
+                           locale=chart_locale()).configure_view(
         strokeWidth=0).configure_axis(
         gridColor=palette["grid"], domain=False, ticks=False,
         labelColor=palette["text"], titleColor=palette["text"],

@@ -10,7 +10,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 - **Pipeline:** ingesta en Python → aterrizaje `etl/raw.db` (SQLite) → bronce en Parquet → dbt Core sobre DuckDB (staging → intermedio → marts, 31 pruebas) → base servida `etl/datos.duckdb`, publicada en el release «base-actual» de GitHub, que cada carga reemplaza; git guarda solo su puntero `etl/datos.version` (D-270, ADR-35).
 - **Panel:** Streamlit (`bi/dashboard.py`), que lee `etl/datos.duckdb` en solo lectura.
 - **Orquestación:** GitHub Actions, cada martes (`.github/workflows/semanal.yml`).
-- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md`, `docs/SEGURIDAD.md` (plan de pruebas de seguridad), `docs/MANUAL.md` (runbook), `docs/ESCALABILIDAD.md`, `docs/PLAN_PRUEBAS.md`, `docs/DICCIONARIO_DATOS.md` y `docs/GLOSARIO.md`, todos con encabezado, índice, glosario e historial de versiones (D-279). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-283); `docs/INDICE_DECISIONES.md` reúne las principales por tema. La historia del proyecto (hitos y backlog) está en `docs/historia/`; no es documentación de lectura.
+- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md`, `docs/ADR.md`, `docs/SEGURIDAD.md` (plan de pruebas de seguridad), `docs/MANUAL.md` (runbook), `docs/ESCALABILIDAD.md`, `docs/PLAN_PRUEBAS.md`, `docs/DICCIONARIO_DATOS.md` y `docs/GLOSARIO.md`, todos con encabezado, índice, glosario e historial de versiones (D-279). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-284); `docs/INDICE_DECISIONES.md` reúne las principales por tema. La historia del proyecto (hitos y backlog) está en `docs/historia/`; no es documentación de lectura.
 
 ## Instalar y ejecutar
 
@@ -43,7 +43,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 
 ## Convenciones
 
-- **Idioma:** todo en español (panel, documentos, decisiones y mensajes de commit). El código y sus comentarios, en inglés. Desde D-283 el panel se lee también en inglés (`?lang=en`): todo texto visible pasa por `tr` de `bi/i18n.py`, con su inglés en el diccionario `EN`, y cada documento de `docs/` tiene su versión en `docs/en/` con la misma estructura, los mismos identificadores y las mismas cifras; `tests/test_i18n.py` lo verifica.
+- **Idioma:** todo en español (panel, documentos, decisiones y mensajes de commit). El código y sus comentarios, en inglés. Desde D-283 el panel se lee también en inglés (`?lang=en`): los textos del marco pasan por `tr` de `bi/i18n.py` (diccionario `EN`) y los de las páginas se traducen al dibujarse, con su inglés en `bi/i18n_en.py` (D-284): un texto nuevo en una página necesita su entrada, o `tests/i18n_audit.py` lo lista; y cada documento de `docs/` tiene su versión en `docs/en/` con la misma estructura, los mismos identificadores y las mismas cifras; `tests/test_i18n.py` lo verifica.
 - **Vocabulario:** pipeline, workflow, ingesta, ETL, staging, data warehouse. Nunca «robot».
 - **Autoría:** «el autor». Ningún nombre personal en el panel ni en los documentos, y nada inventado sobre él.
 - **Datos:** nunca inventar una cifra ni interpolar un precio; nunca borrar histórico. Cada cifra del panel debe poder recalcularse desde la fuente; las pruebas lo verifican.

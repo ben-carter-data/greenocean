@@ -2490,11 +2490,11 @@ def read_cached_rule_evidence(database_version):
 def describe_state_source(error_text, step_states, latest_load):
     """Where the states come from when GitHub did not answer, and why it did not."""
     if step_states:
-        source = "se muestra la última respuesta guardada"
+        source = tr("se muestra la última respuesta guardada")
     else:
         loaded_at = format_chile_time(parse_run_start(latest_load["started_at"]))
-        source = f"los estados salen de la última carga guardada en la base ({loaded_at})"
-    return f"GitHub no respondió ({error_text}); {source}."
+        source = tr("los estados salen de la última carga guardada en la base ({})").format(loaded_at)
+    return tr("GitHub no respondió ({}); {}.").format(error_text, source)
 
 
 def build_question_showcase_html():
@@ -2777,7 +2777,7 @@ def show_architecture_page(mode):
     columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
     definitions = {**IPC_TABLE_DEFINITIONS, **definitions}
     tooltips = {table: f"{table} · {TABLE_ROLES[table]} · {charts.format_thousands(row_counts[table])} filas\n"
-                       f"{definitions.get(table, '').capitalize()}"
+                       f"{definitions.get(table, '')[:1].upper()}{definitions.get(table, '')[1:]}"
                 for table in project.TABLE_NAMES + project.IPC_TABLE_NAMES}
     st.markdown(build_architecture_css(mode), unsafe_allow_html=True)
     show_page_bar(PAGE_ARCHITECTURE, PAGE_ARCHITECTURE, MODEL_DESCRIPTION, build_architecture_chips(row_counts))
@@ -5593,7 +5593,7 @@ def show_price_context_page(mode):
     month = lambda pair: f"{charts.CHILE_LOCALE['time']['months'][pair[1] - 1]} {pair[0]}"
     above = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "más que la inflación", "family"]]
     below = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "menos que la inflación", "family"]]
-    join = lambda names: ", ".join(names[:-1]) + " y " + names[-1] if len(names) > 1 else "".join(names)
+    join = i18n.join_names
     answer = (f'De enero 2022 a {month(last)}, la canasta de alimentos del INE subió '
               f'<b>{charts.format_signed_percent(ipc_total)}</b> ({charts.format_signed_percent(ipc_year)} en 12 meses).'
               + (f' Subieron más: <b>{html.escape(join(above))}</b>.' if above else '')
@@ -6045,7 +6045,7 @@ def show_operation_center(mode, live=False):
         st.iframe(operation_center.build_stage_html(palette, states, unlocked), height="content")
     with side_column:
         if error_text:
-            st.caption(f"GitHub no respondió ({error_text}); se muestra la última respuesta guardada.")
+            st.caption(tr("GitHub no respondió ({}); {}.").format(error_text, tr("se muestra la última respuesta guardada")))
         st.markdown(build_operation_side_css(palette)
                     + build_operation_facts(latest_load, read_published_figures(get_database_version()),
                                             datetime.now(timezone.utc))
@@ -7483,7 +7483,7 @@ def build_sidebar_css(mode):
     .st-key-sidebar_appearance [data-testid="stPopover"] button {{background:transparent !important;
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
-    .st-key-language_switch button p {{color:{text} !important;}}
+    [data-testid="stSidebar"] .st-key-language_switch button p {{color:{text} !important; -webkit-text-fill-color:{text} !important;}}
     .st-key-sidebar_footer [data-testid="stCaptionContainer"] p {{color:{text} !important; opacity:.75;
         font-size:.69rem; line-height:1.35; padding:0 3px;}}
     </style>"""
@@ -7616,6 +7616,7 @@ def main():
         return
     settle_theme()
     i18n.settle_language()
+    i18n.install()
     st.session_state.pop(PROFILE_PARAMETER, None)
     st.query_params.pop("perfil", None)
     restore_return_context()

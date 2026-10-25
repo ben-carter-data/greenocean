@@ -10,6 +10,8 @@ import hmac
 
 import requests
 
+from bi.i18n import tr
+
 # region Constants
 REPOSITORY = "cben6514-boop/monitor-precios-hito1"
 WORKFLOW_FILE = "semanal.yml"
@@ -226,30 +228,30 @@ def describe_github_error(error, now=None):
     never the token, the headers or the address with its parameters.
     """
     if isinstance(error, requests.Timeout):
-        return f"GitHub no respondió en {REQUEST_TIMEOUT_SECONDS} s"
+        return tr("GitHub no respondió en {} s").format(REQUEST_TIMEOUT_SECONDS)
     if isinstance(error, requests.ConnectionError):
-        return "no hubo conexión con GitHub"
+        return tr("no hubo conexión con GitHub")
     response = getattr(error, "response", None)
     if response is None:
         # Not a GitHub answer: a bug or an unexpected payload. Its class names it.
-        return f"error inesperado al consultar GitHub ({type(error).__name__})"
+        return tr("error inesperado al consultar GitHub ({})").format(type(error).__name__)
     code = response.status_code
     if code in (403, 429) and response.headers.get("X-RateLimit-Remaining") == "0":
         limit = response.headers.get("X-RateLimit-Limit")
-        reason = ("se agotó el límite de consultas sin clave (60 por hora)"
-                  if limit == "60" else "se agotó el límite de consultas")
+        reason = (tr("se agotó el límite de consultas sin clave (60 por hora)")
+                  if limit == "60" else tr("se agotó el límite de consultas"))
         try:
             reset = datetime.fromtimestamp(int(response.headers["X-RateLimit-Reset"]),
                                            timezone.utc)
             minutes = max(0, round((reset - (now or datetime.now(timezone.utc)))
                                    .total_seconds() / 60))
         except (KeyError, ValueError, OverflowError, OSError):
-            return f"GitHub respondió {code}: {reason}"
-        return f"GitHub respondió {code}: {reason}; se renueva en {minutes} min"
+            return tr("GitHub respondió {}: {}").format(code, reason)
+        return tr("GitHub respondió {}: {}; se renueva en {} min").format(code, reason, minutes)
     reasons = {401: "la clave no es válida o venció", 403: "acceso denegado",
                404: "no se encontró el workflow", 500: "error interno de GitHub",
                502: "GitHub no está disponible", 503: "GitHub no está disponible"}
-    return f"GitHub respondió {code}: {reasons.get(code, 'error al consultar GitHub')}"
+    return tr("GitHub respondió {}: {}").format(code, tr(reasons.get(code, "error al consultar GitHub")))
 
 
 def find_run_started_after(runs, requested_at):

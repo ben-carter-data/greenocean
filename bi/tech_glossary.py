@@ -5,6 +5,8 @@ a chip or a label. bi/architecture.py, bi/devops.py and bi/lineage.py put
 describe(key) in an SVG <title>, so the browser shows it on hover. Every role below
 was checked against the code (agent/, etl/, dbt/, bi/, .github/workflows/).
 """
+from bi import i18n
+
 
 # region Glossary
 TECH_GLOSSARY = {
@@ -272,9 +274,107 @@ WORD_KEYS = {
 # endregion
 
 
+# D-284: the same entries in English, chosen when the reader reads in English.
+TECH_GLOSSARY_EN = {
+    "python": ("Python", "", "general-purpose programming language.",
+               "writes the whole project: the ingestion (agent/agent.py, etl/ine.py), the ETL (etl/etl.py, etl/pipeline.py) and the panel. Runs on Python 3.11 in GitHub Actions."),
+    "requests": ("requests", "", "Python library for making web requests.",
+                 "downloads the ODEPA CSV files over HTTPS (agent/agent.py, with retries) and the INE CPI (etl/ine.py)."),
+    "pandas": ("pandas", "", "Python library for in-memory tables (DataFrames).",
+               "receives the results of the DuckDB queries that the panel turns into tables and charts."),
+    "pyarrow": ("pyarrow", "", "Apache Arrow's Python library, which reads and writes Parquet.",
+                "writes the bronze layer in Parquet: etl/bronze.py copies raw.db and etl/ine.py stores the CPI, all as text."),
+    "sql": ("SQL", "Structured Query Language", "structured query language, to read and transform tables.",
+            "the dbt models (dbt/models/*.sql) and the panel queries (bi/queries.sql) are written in SQL and DuckDB runs them."),
+    "sqlite": ("SQLite", "", "relational database embedded in a single file.",
+               "the raw.db landing zone (the ODEPA CSV files as they arrive) and the datos.db backup that etl/etl.py still writes."),
+    "duckdb": ("DuckDB", "", "columnar analytical database, embedded in a file.",
+               "the data warehouse that serves the panel (datos.duckdb), read-only; dbt builds first in a separate working database."),
+    "parquet": ("Parquet", "", "Apache's columnar file format, standard in data lakes.",
+                "format of the bronze layer: one file per ODEPA source and year and per INE file, which dbt reads as sources."),
+    "csv": ("CSV", "Comma-Separated Values", "text file with values separated by commas (or semicolons).",
+            "the format in which ODEPA and the INE publish their data; the ingestion downloads them as they are."),
+    "markdown": ("Markdown", "MD", "plain-text format with simple marks for headings, lists and tables.",
+                 "bi/report.py writes the weekly report in Markdown (report.md), published as a GitHub issue."),
+    "yaml": ("YAML", "YAML Ain't Markup Language", "text format for configuration files.",
+             "defines the workflows (semanal.yml, pruebas.yml) and the dbt configuration (dbt_project.yml, sources.yml, schema.yml)."),
+    "dbt": ("dbt", "data build tool", "tool that builds SQL models in dependency order and tests them.",
+            "dbt Core with dbt-duckdb turns bronze into staging, intermediate and marts; etl/pipeline.py runs dbt build and publishes only if everything passes."),
+    "dbt_build": ("dbt build", "", "dbt command that builds each model and runs its tests.",
+                  "«OK» means that every model and test passed in the working database; only then does etl/pipeline.py replace datos.duckdb."),
+    "etl": ("ETL", "Extract, Transform, Load", "extract, transform and load: the process that takes data from the source to a database ready for analysis.",
+            "bronze in Parquet plus the dbt models with their tests (etl/pipeline.py), and the SQLite backup of etl/etl.py."),
+    "bronze": ("Bronze", "", "first layer of the medallion architecture (bronze → silver → gold): the raw, uncleaned data.",
+               "exact copy in Parquet, every column as text (etl/bronze.py and etl/ine.py); dbt reads it as sources."),
+    "silver": ("Silver", "", "middle layer of the medallion architecture: clean, typed and validated data.",
+               "the dbt staging models (types and text) and intermediate ones: they validate and set aside invalid rows, bring prices to kilo, unit or liter, group them by week and flag outlier prices."),
+    "gold": ("Gold", "", "final layer of the medallion architecture: data ready for consumption.",
+             "the dbt marts (the star schema, rejection and the CPI tables), copied to datos.duckdb, which the panel, the report and the SQL queries read."),
+    "manifest": ("manifest.json", "", "JSON log of the downloaded files.",
+                 "agent/downloads/manifest.json keeps the SHA-256 hash of each ODEPA CSV file to know whether it changed; the weekly workflow commits it to the repository."),
+    "raw": ("raw_*", "", "raw tables of the landing zone.",
+            "raw_wholesale and raw_consumer of raw.db (SQLite): the ODEPA rows as they arrive, which etl/bronze.py copies to Parquet."),
+    "ine_ipc": ("ine_ipc", "", "bronze table of the INE CPI in Parquet.",
+                "etl/ine.py writes it straight to bronze/ine_ipc, without going through raw.db; the stg_ine__ipc_monthly model reads it."),
+    "sources": ("sources.yml", "", "declaration of the sources of a dbt project.",
+                "points dbt to the bronze Parquet files (odepa_wholesale, odepa_consumer, ine_ipc) with read_parquet."),
+    "stg": ("Staging (stg_*)", "", "dbt layer that cleans each source separately.",
+            "stg_odepa__wholesale, stg_odepa__consumer and stg_ine__ipc_monthly convert types and normalize text; they are materialized as views."),
+    "int": ("Intermediate (int_*)", "", "dbt layer where the business rules are applied.",
+            "int_prices__validated, __units_normalized, __weekly and __outlier_flagged validate, bring prices to kilo or unit, group them by week and flag outliers; they are tables."),
+    "marts": ("Marts", "", "final layer of a data warehouse, ready for consumption.",
+              "the star schema (dim_* and weekly_price), rejection and the monthly and weekly CPI: tables copied to datos.duckdb."),
+    "view": ("View", "", "named saved query: it stores no rows, it is computed when read.",
+             "materialization of the staging models (dbt_project.yml)."),
+    "table": ("Table", "", "materialized model: dbt stores its rows in the database.",
+              "materialization of the intermediate models and of the marts (dbt_project.yml)."),
+    "etl_run": ("etl_run", "", "control table with one row per load.",
+                "etl/pipeline.py records each published load in datos.duckdb; a load that fails stops before it is published and stays in the GitHub Actions history, which the Operations center shows."),
+    "dbt_result": ("dbt_node and dbt_result", "", "tables with the manifest and the results of the last dbt build.",
+                   "etl/pipeline.py copies them to datos.duckdb; the dbt lineage and the status of each test come from them."),
+    "streamlit": ("Streamlit", "", "Python framework for data web applications.",
+                  "this panel (bi/dashboard.py), published on Streamlit Community Cloud; it opens datos.duckdb read-only."),
+    "streamlit_cloud": ("Streamlit Community Cloud", "", "service that publishes Streamlit applications from a GitHub repository.",
+                        "publishes the panel and deploys it again every time the main branch changes."),
+    "git": ("Git", "", "version control system.",
+            "versions the code; the weekly workflow does checkout, commit and push of the database pointer (etl/datos.version) and of manifest.json. The database itself goes to a release, outside the history (D-270)."),
+    "github": ("GitHub", "", "platform that hosts Git repositories.",
+               "hosts the repository (main branch), runs the workflows and publishes the weekly report as an issue."),
+    "github_cli": ("GitHub CLI", "CLI: Command-Line Interface", "the gh command, GitHub's command-line interface.",
+                   "gh issue create publishes the weekly report as an issue at the end of the weekly workflow."),
+    "github_actions": ("GitHub Actions", "", "GitHub service that runs workflows on temporary Ubuntu machines.",
+                       "semanal.yml runs every Tuesday at 12:00 UTC (or by hand) and pruebas.yml on every push and pull request."),
+    "github_issues": ("GitHub Issues", "", "issue log of a GitHub repository.",
+                      "each weekly run publishes its report there: load status and alerts."),
+    "actions_cache": ("Actions cache", "", "GitHub Actions storage to reuse files between runs.",
+                      "actions/cache keeps the CSV files of closed years so they are not downloaded every week (D-047)."),
+    "secrets": ("Secrets", "", "confidential values kept outside the code.",
+                "the panel reads with st.secrets the GitHub token and the code of the «Run now» button; the workflow uses GitHub Actions' own token."),
+    "ci": ("CI", "Continuous Integration", "continuous integration: testing every change of the code automatically.",
+           "pruebas.yml runs dbt parse and pytest on every push and pull request."),
+    "cd": ("CD", "Continuous Delivery", "continuous delivery: taking to production, without manual steps, what has already passed every test.",
+           "semanal.yml builds the load every Tuesday and, only if pytest passes on the new database, publishes it in the «base-actual» release and pushes its pointer to main; the panel is published from main."),
+    "pytest": ("pytest", "", "automated testing framework for Python.",
+               "runs the tests of tests/ on every push and, in the weekly workflow, against the new database: if it fails, nothing is saved."),
+    "https": ("HTTPS", "Hypertext Transfer Protocol Secure", "encrypted web protocol.",
+              "the ingestion downloads the ODEPA and INE CSV files over HTTPS, and visitors open the panel over HTTPS."),
+    "api": ("API", "Application Programming Interface", "interface for one program to ask another for data.",
+            "ODEPA and the INE do not offer an API in the flow used: CSV files are downloaded. The panel does use the GitHub REST API for the «Run now» button (bi/control.py)."),
+    "odepa": ("ODEPA", "Office of Agricultural Studies and Policies", "service of Chile's Ministry of Agriculture.",
+              "publishes as open data the daily wholesale and weekly consumer prices, one CSV file per year and source."),
+    "ine": ("INE", "National Statistics Institute", "Chile's official statistics agency.",
+            "publishes the CPI; etl/ine.py downloads two of its CSV files to express prices in real pesos (D-155)."),
+    "ipc": ("CPI (IPC)", "Consumer Price Index", "official indicator of inflation.",
+            "the monthly «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division is used; the ipc_monthly and ipc_weekly marts give the deflator of each week."),
+}
+
+
 # region Text
 def describe(key):
-    """One plain-text line for an SVG <title>: what it is, its acronym, its role here."""
+    """One plain-text line for an SVG <title>: what it is, its acronym, its role here (in the reader's language)."""
+    if i18n.is_english() and key in TECH_GLOSSARY_EN:
+        name, acronym, what, role = TECH_GLOSSARY_EN[key]
+        return f"{name}{f' ({acronym})' if acronym else ''} — {what} Here: {role}"
     entry = TECH_GLOSSARY[key]
     name = entry["nombre"] + (f" ({entry['sigla']})" if entry["sigla"] else "")
     return f"{name} — {entry['que_es']} Aquí: {entry['rol']}"

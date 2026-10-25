@@ -27,7 +27,8 @@ from functools import partial
 import duckdb
 import pandas as pd
 
-from bi import charts, queries
+from bi import charts, i18n, queries
+from bi.i18n import tr
 
 # region Variables
 ROW_LIMIT = 5000
@@ -961,14 +962,16 @@ def build_status_html(outcome):
 def build_messages_html(outcome):
     """The «Mensajes» tab, as a SQL client writes it."""
     if outcome is None:
-        return '<pre class="sqlx-msg">Sin mensajes todavía. Ejecuta una consulta.</pre>'
+        return f'<pre class="sqlx-msg">{tr("Sin mensajes todavía. Ejecuta una consulta.")}</pre>'
     if isinstance(outcome, str):
-        return f'<pre class="sqlx-msg"><span class="err">{html.escape(outcome)}</span>\n\nLa consulta no se ejecutó.</pre>'
-    count_text = f"{len(outcome.rows):,}".replace(",", ".")
-    note = (f"\nSe muestran las primeras {ROW_LIMIT:,} filas; el resultado tenía más.".replace(",", ".")
+        return f'<pre class="sqlx-msg"><span class="err">{html.escape(outcome)}</span>\n\n{tr("La consulta no se ejecutó.")}</pre>'
+    # D-284: figures in the language of the visit; the messages are preformatted, so they are written in it here.
+    number = (lambda value: f"{value:,.0f}") if i18n.is_english() else (lambda value: f"{value:,.0f}".replace(",", "."))
+    note = ("\n" + tr("Se muestran las primeras {} filas; el resultado tenía más.").format(number(ROW_LIMIT))
             if outcome.truncated else "")
-    return (f'<pre class="sqlx-msg">({count_text} filas afectadas){note}\n\n<span class="ok">✓ Consulta ejecutada '
-            f'correctamente.</span>  Tiempo: {outcome.seconds * 1000:,.0f} ms'.replace(",", ".") + '</pre>')
+    return (f'<pre class="sqlx-msg">{tr("({} filas afectadas)").format(number(len(outcome.rows)))}{note}\n\n'
+            f'<span class="ok">✓ {tr("Consulta ejecutada correctamente.")}</span>  '
+            f'{tr("Tiempo: {} ms").format(number(outcome.seconds * 1000))}</pre>')
 
 
 def describe_tables(database_file=queries.DATABASE_FILE):
@@ -1118,7 +1121,7 @@ def show_parameters(st, index):
                 st.session_state[key] = default if default in choices else choices[0]
             st.selectbox(PARAMETER_LABELS[name], choices, key=key, on_change=apply_parameters,
                          label_visibility="collapsed", help=PARAMETER_LABELS[name],
-                         format_func=lambda value, name=name: (f"{PARAMETER_LABELS[name]}: todas"
+                         format_func=lambda value, name=name: (tr("{}: todas").format(tr(PARAMETER_LABELS[name]))
                                                                if value == ALL_VALUES else str(value)))
 
 

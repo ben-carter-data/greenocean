@@ -9,7 +9,7 @@ import base64
 import html
 from pathlib import Path
 
-from bi import brand_icons, charts, database_map, quality_view, storage_map
+from bi import brand_icons, charts, database_map, i18n, quality_view, storage_map
 
 # Disc colors (light top, dark bottom, glyph) of the brands the actors view needs, as in
 # database_map.BRANDS.
@@ -212,8 +212,9 @@ BOUNDARY = (176, 18, 648, 530)
 
 
 def wrap(text, width):
+    """The lines of a text no wider than width; translated whole first (D-284), so no line is a fragment to look up."""
     lines, line = [], ""
-    for word in text.split():
+    for word in i18n.translate_text(text).split():
         if line and len(line) + 1 + len(word) > width:
             lines.append(line)
             line = word
@@ -444,7 +445,9 @@ def build_mockups_html(mode):
     palette = charts.get_palette(mode)
     figures = []
     for file_name, title, detail in MOCKUPS:
-        data = base64.b64encode((MOCKUP_DIR / file_name).read_bytes()).decode()
+        # D-284: the English document shows the English captures, taken from the same pages.
+        folder = MOCKUP_DIR / "en" if i18n.is_english() and (MOCKUP_DIR / "en" / file_name).exists() else MOCKUP_DIR
+        data = base64.b64encode((folder / file_name).read_bytes()).decode()
         image = f'<img src="data:image/jpeg;base64,{data}" alt="{esc(title)}">'
         frame = f'<div class="screen">{image}</div><div class="base"></div>'
         figures.append(f'<figure>{frame}<figcaption><b>{esc(title)}</b> · {esc(detail)}</figcaption></figure>')

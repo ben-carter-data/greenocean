@@ -9,7 +9,7 @@ way back when a case fails. The pop-ups are CSS sheets opened with :target, with
 import html
 import math
 
-from bi import charts, doc_views, quality_view, security_map
+from bi import charts, doc_views, i18n, quality_view, security_map
 
 # (id, short name, attack, expected result, OWASP code or «—», the tests that verify it)
 CASES = [
@@ -117,7 +117,7 @@ def build_case_modal(case):
     case_id, short, attack, expected, owasp, tests = case
     category = f"{owasp} · {security_map.OWASP[owasp]}" if owasp in security_map.OWASP else "No corresponde a una categoría: vigila que cada control tenga su prueba"
     threat = threat_of(case_id)
-    belongs = (f"{threat[0]} · {threat[1]}. Lo detiene: {', '.join(threat[2])}." if threat
+    belongs = (f"{threat[0]} · {threat[1]}. Lo detiene: {', '.join(i18n.translate_text(name) for name in threat[2])}." if threat
                else "Ninguna en concreto: es la prueba de que las demás existen.")
     body = (f'<h4>Ataque</h4><p>{esc(attack)}</p><h4>Resultado esperado</h4><p>{esc(expected)}</p>'
             f'<h4>Tecnología</h4><p>{esc(TECH_NAMES[TECH[case_id]])}</p>'
