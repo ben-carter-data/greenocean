@@ -154,6 +154,14 @@ def read_guide_table(heading):
     return parse_markdown_table(read_section(read_document(PROJECT_GUIDE_FILE), heading))
 
 
+GLOSSARY_FILE = DOCS_DIR / "GLOSARIO.md"
+
+
+def read_glossary():
+    """The rows of the common glossary, docs/GLOSARIO.md (D-279)."""
+    return parse_markdown_table(read_section(read_document(GLOSSARY_FILE), "1. Términos"))
+
+
 def read_design_table(heading):
     """One table of docs/DISENO.md (questions, rules or indicators)."""
     return parse_markdown_table(read_section(read_document(DESIGN_FILE), heading))

@@ -1,106 +1,116 @@
-# Manual de operación
+# Manual de operación (runbook)
 
-Para quien opera el proyecto sin ser técnico: qué pasa solo, qué hay que revisar y qué hacer si algo falla. Se lee en GitHub, desde la página GitHub del panel.
-
-## Qué pasa cada martes
-
-El job semanal (`.github/workflows/semanal.yml`) corre solo cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. También se puede lanzar a mano: desde «DevOps y seguridad» → «Centro de operación» con el botón «Ejecutar pipeline ahora» (pide la clave de control), o desde GitHub. Hace, en orden:
-
-1. **Año vigente:** calcula el año en curso, que fija la clave de la caché.
-2. **Caché:** recupera de la caché de GitHub Actions los CSV de los años cerrados, que ya no cambian (D-047).
-3. **Base publicada:** descarga del release «base-actual» la base de la semana anterior y comprueba su huella; de ella salen el historial de cargas y la comparación del 90 % (D-270).
-4. **Descarga:** el agente de ingesta (`agent/agent.py`) baja de ODEPA el año en curso y los años cerrados que no estén en la caché, revisa que cada archivo traiga las columnas esperadas y anota su huella SHA-256 en `manifest.json`.
-5. **ETL de respaldo:** `etl/etl.py` guarda las filas sin cambios en el aterrizaje (`etl/raw.db`) y construye en la máquina de la carga el respaldo `etl/datos.db`, con las reglas de negocio, para la prueba de paridad. No se publica.
-6. **dbt build:** `etl/pipeline.py` copia el aterrizaje al bronce en Parquet, descarga el IPC del INE y dbt construye y prueba todos los modelos. Solo si todo pasa, y si la carga leyó al menos el 90 % de las filas de la anterior, reemplaza `etl/datos.duckdb`.
-7. **Falla simulada:** solo corre cuando una ejecución manual desde GitHub la pide, para comprobar que la base publicada no cambia.
-8. **Pruebas:** corre todas las pruebas contra la base nueva, incluida la paridad entre el respaldo y la base servida.
-9. **Publicar:** reemplaza `etl/datos.duckdb` en el release «base-actual» y después hace un commit «Weekly data update» con su puntero (`etl/datos.version`) y `agent/downloads/manifest.json`. El panel publicado ve el puntero nuevo, descarga la base, comprueba su huella y la muestra uno o dos minutos después.
-10. **Informe:** crea un issue «Informe semanal AAAA-MM-DD» con el estado de la carga y las alertas de la semana.
-
-Si un paso falla, los siguientes no se ejecutan: la base publicada queda como estaba y no se publica informe (D-034). El dibujo de estos pasos, con su línea en el workflow, está en «Centro de operación» → «CI/CD».
-
-## Cómo leer un aviso rojo
-
-| Dónde | Qué se ve |
+| Campo | Valor |
 |---|---|
-| «Centro de operación» del panel | El logo del paso que falló queda en rojo con su explicación; «Log del paso» abre en GitHub la línea exacta de ese paso. |
-| Correo de GitHub | Llega un correo «Run failed: semanal» a la cuenta del autor. |
-| Informe semanal | Esa semana no aparece un issue nuevo. |
-| «Calidad y auditoría» del panel | La última carga sigue siendo la de la semana anterior. |
-| Log del paso que falló, en GitHub | El mensaje exacto. |
+| Proyecto | GreenOcean |
+| Tipo de documento | Manual de operación (runbook) |
+| Versión | 2.0 |
+| Fecha | 25-10-2026 |
+| Estado | Vigente |
+| Responsable | El autor |
+| Propósito | Indicar qué ocurre de forma automática, qué se revisa y cuándo, y qué hacer ante cada falla. |
+| Audiencia | Operación del proyecto, también sin formación técnica. |
+| Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Plan de pruebas de seguridad](SEGURIDAD.md) · [Glosario](GLOSARIO.md) |
 
-La tabla `etl_run` registra cada carga, pero una carga fallida queda escrita solo en la máquina de GitHub, que no se guarda. Por eso el mensaje de una falla se lee en el log del paso, no en el panel.
+## Índice
 
-### Qué significa que falle cada paso y qué hacer
+1. [Qué ocurre automáticamente](#1-qué-ocurre-automáticamente)
+2. [Qué se revisa y cuándo](#2-qué-se-revisa-y-cuándo)
+3. [Fallas de la carga semanal](#3-fallas-de-la-carga-semanal)
+4. [Fallas del panel publicado](#4-fallas-del-panel-publicado)
+5. [Recuperación](#5-recuperación)
+6. [Tareas periódicas](#6-tareas-periódicas)
+7. [Acceso del autor y administración](#7-acceso-del-autor-y-administración)
+8. [Límites conocidos](#8-límites-conocidos)
+9. [Glosario](#9-glosario)
+10. [Historial de versiones](#10-historial-de-versiones)
 
-| Paso | Qué suele significar | Qué hacer |
+## 1. Qué ocurre automáticamente
+
+El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. Descarga las fuentes, construye y prueba la base, la publica en el release «base-actual» y crea el informe semanal. La secuencia completa, paso a paso, está en la [vista de ejecución del SAD](SAD.md#6-vista-de-ejecución).
+
+También se puede lanzar a mano: desde «Centro de operación», con el botón «Ejecutar pipeline ahora» (requiere la clave de control), o desde la página del workflow en GitHub.
+
+Si un paso falla, los siguientes no se ejecutan y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)).
+
+## 2. Qué se revisa y cuándo
+
+| Cuándo | Qué se revisa | Dónde |
 |---|---|---|
-| Restore the closed-year files | Un problema de GitHub con la caché. | Volver a lanzar el job; si la caché no está, la descarga baja todos los años. |
-| Download the ODEPA files | ODEPA no respondió (`DOWNLOAD_ERROR`) o cambió las columnas de un archivo (`UNEXPECTED_HEADER`). | Si es `DOWNLOAD_ERROR`, esperar unas horas y volver a lanzar. Si es `UNEXPECTED_HEADER`, ODEPA cambió el formato: hay que revisar el archivo y adaptar el código. |
-| Run the ETL (SQLite backup) | Un control de calidad detuvo la carga: `TOO_FEW_ROWS` (archivo truncado), `MISSING_WEEKS` (falta una semana que no está entre los huecos conocidos, D-042), `UNKNOWN_REGION` o `UNKNOWN_CHANNEL` (ODEPA agregó una región o un canal) o `DUPLICATE_KEYS` (precios repetidos). | Revisar en ODEPA si el archivo cambió. Un canal o una región nuevos se agregan a las listas del ETL; una semana que falta en la fuente se agrega a los huecos conocidos con su decisión. |
-| Build the data warehouse with dbt | Falló un modelo o una prueba de dbt, o la carga leyó menos del 90 % de la anterior (`TOO_FEW_ROWS`). | Leer en el log qué modelo o qué prueba falló; suele nombrar la tabla y la regla. |
-| Run the tests against the new database | Los datos nuevos no cumplen algo que el código da por hecho, o el respaldo y la base servida no dan las mismas cifras. | Leer qué prueba falló en el log; suele indicar el producto o la semana. |
-| Save the updated database | GitHub no aceptó el commit: permisos o un archivo demasiado grande. | Revisar Settings → Actions → Workflow permissions («Read and write») y el tamaño de las bases (ver límites). |
-| Publish the weekly report | No se pudo crear el issue. | Revisar los permisos; los datos ya quedaron guardados. |
+| Cada martes, después de las 12:00 UTC | Que la ejecución terminó en verde | Pestaña «Operación» de «Centro de operación», o el correo de GitHub si falló |
+| Cada martes | Que existe el issue «Informe semanal AAAA-MM-DD» | Issues del repositorio |
+| Ante una duda sobre las cifras | El veredicto de calidad y los controles de auditoría | «Calidad y auditoría» |
 
-### Fallas del panel publicado
+## 3. Fallas de la carga semanal
 
-| Qué se ve | Qué significa | Qué hacer |
+Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El aviso llega al autor por el correo «Run failed: semanal» de GitHub, y el paso fallido aparece en rojo en «Centro de operación». La tabla `etl_run` registra solo las cargas publicadas: el mensaje de una falla se lee en el log del paso.
+
+| Paso | Síntoma | Causa probable | Acción |
+|---|---|---|---|
+| Restore the closed-year files | El paso termina con error | Un problema de la caché de GitHub | Volver a lanzar el job; sin caché, la descarga baja todos los años |
+| Get the published database | El paso no puede descargar la base o su huella no coincide | El release «base-actual» no está disponible o su archivo cambió | Revisar el release en GitHub; si falta, volver a publicar la base desde una copia local verificada |
+| Download the ODEPA files | `DOWNLOAD_ERROR` o `UNEXPECTED_HEADER` en el log | ODEPA no respondió, o cambió las columnas de un archivo | Con `DOWNLOAD_ERROR`, esperar unas horas y volver a lanzar; con `UNEXPECTED_HEADER`, revisar el archivo y adaptar el agente |
+| Run the ETL (SQLite backup) | `MISSING_WEEKS`, `UNKNOWN_REGION`, `UNKNOWN_CHANNEL` o `DUPLICATE_KEYS` en el log | Falta una semana fuera de los huecos conocidos, ODEPA agregó una región o un canal, o hay precios repetidos | Revisar el archivo en ODEPA; una región o un canal nuevos se agregan a las listas del ETL; una semana faltante en la fuente se registra como hueco conocido con su decisión |
+| Build the data warehouse with dbt | Un modelo o una prueba de dbt falla, o `TOO_FEW_ROWS` | Una regla de negocio no se cumple, o la carga leyó menos del 90 % de la anterior | Leer en el log qué modelo o prueba falló; suele nombrar la tabla y la regla |
+| Run the tests against the new database | Una prueba de pytest falla | Los datos nuevos no cumplen algo que el código supone, o el respaldo y la base servida no coinciden | Leer qué prueba falló; suele indicar el producto o la semana |
+| Publish the database | GitHub rechaza la subida del archivo o del puntero | Permisos del workflow o un cambio en `main` durante la carga | Revisar Settings → Actions → Workflow permissions («Read and write») y volver a lanzar |
+| Publish the weekly report | No se crea el issue | Permisos del workflow | Revisar los permisos; la base ya quedó publicada |
+
+## 4. Fallas del panel publicado
+
+| Síntoma | Causa probable | Acción |
 |---|---|---|
-| Después de un push, una página muestra `AttributeError` en producción | Streamlit Cloud mezcló archivos nuevos con otros que tenía en memoria (ocurrió el 12-10-2026; el código en GitHub estaba bien). | Abrir el panel, «Manage app» (abajo a la derecha) → ⋮ → **Reboot**. Esperar uno o dos minutos. |
-| «Centro de operación» dice «GitHub no respondió (…)» | El mensaje trae la causa real. La más común: GitHub permite 60 consultas por hora sin clave, compartidas por todas las apps del mismo servidor. | Nada: el panel muestra la última respuesta guardada o, si no hay, el estado de la última carga guardada en la base, y vuelve a preguntar cada 5 minutos. Con el token configurado el límite sube. |
+| Después de un push, una página muestra `AttributeError` | Streamlit Cloud combinó archivos nuevos con otros que tenía en memoria (ocurrió el 12-10-2026) | En el panel, «Manage app» → ⋮ → **Reboot**, y esperar uno o dos minutos |
+| «Centro de operación» indica «GitHub no respondió (…)» | Sin token, GitHub permite 60 consultas por hora, compartidas por las apps del mismo servidor | Ninguna: el panel muestra la última respuesta guardada y vuelve a consultar cada 5 minutos; con el token configurado, el límite sube |
+| El panel informa que no tiene la base servida | No pudo descargarla del release al arrancar | Verificar que el release «base-actual» existe; el panel la descarga en la siguiente visita |
+| El botón «Ejecutar pipeline ahora» indica que falta el token | El token del panel venció o no está configurado | Crear un token con permiso para lanzar workflows de este repositorio y guardarlo como `GITHUB_TOKEN` en los secretos de la app en Streamlit |
 
-## Tareas del autor y tareas automáticas
+## 5. Recuperación
 
-**Automáticas, sin intervención:** descarga, aterrizaje, construcción con dbt, controles de calidad, pruebas, guardar la base, informe semanal, correo si algo falla, caché de los años cerrados y actualización del panel publicado.
-
-**Del autor:**
-
-- **Cada martes:** mirar el «Centro de operación» o el correo. Si está en verde, no hay nada que hacer.
-- **Cada enero:** agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL de descarga que publica ODEPA en la página de cada conjunto de datos.
-- **Respaldar `agent/downloads`:** los CSV descargados no se suben al repositorio (D-020) y la caché de GitHub no es un respaldo, porque se borra si no se usa en 7 días. Conviene copiar esa carpeta a otro disco de vez en cuando.
-- **Renovar el token de GitHub** del botón «Ejecutar pipeline ahora» antes de que venza: el panel avisa cuando faltan menos de 14 días (D-038).
-
-## Administración y enlaces
-
-Los enlaces del proyecto están en la página GitHub, que abre el logo de GitHub al pie del menú: el código, las ejecuciones, los informes, el historial de cambios y los documentos (este manual y las decisiones). Las fuentes (ODEPA e INE) están en el menú, en «Fuentes de datos».
-
-En el «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. No hay límite de intentos: la clave solo evita ejecuciones accidentales (D-249). Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso del vencimiento del token y los enlaces del autor (tokens de GitHub y administración de la app en Streamlit). El panel nunca muestra el token ni una parte de él.
-
-**La clave evita ejecuciones accidentales; no es la barrera principal.** Con el botón, lo máximo que se puede hacer es lanzar el workflow. Los enlaces de administración llevan a páginas de GitHub y de Streamlit que piden el inicio de sesión del autor: quien vea la tarjeta sin esa cuenta no puede cambiar nada. Lo que protege el proyecto es ese inicio de sesión (con verificación en dos pasos) y que el token tenga solo el permiso de lanzar el workflow de este repositorio. La arquitectura completa está en «Arquitectura de seguridad».
-
-## Límites conocidos
-
-- **Tamaño de la base:** un archivo de un release de GitHub puede pesar hasta 2 GB; la base servida pesa unos 14 MB. Su tamaño real se ve en «Modelo de datos» → «Dónde viven los datos».
-- **Historial de Git:** desde D-270 la base ya no se versiona en Git: cada carga reemplaza el archivo del release y solo sube su puntero, de unos pocos bytes. Las versiones anteriores a D-270 siguen en el historial; borrarlas exigiría reescribirlo, y se decidió no hacerlo.
-- **Una copia nueva del repositorio:** `python bi/served_database.py` descarga la base de la última carga (el panel lo hace solo al arrancar).
-- **Cuándo cambiar de arquitectura:** con datos públicos, semanales y de pocos megabytes, no se usa un data warehouse en la nube (ADR-31). La página «Escalabilidad» dice qué umbrales lo justificarían.
-- **Caché de GitHub:** se borra si no se usa en 7 días; algunas semanas el job descargará todos los años. Funciona igual, solo tarda más.
-
-## Glosario
-
-| Término | Qué es en este proyecto |
+| Situación | Procedimiento |
 |---|---|
-| Pipeline | El flujo completo de cada martes, de ODEPA al panel. |
-| Workflow / job semanal | El archivo `semanal.yml` de GitHub Actions que ejecuta el pipeline. |
-| Cron | La programación del job semanal: cada martes a las 12:00 UTC. |
-| Ejecución (run) | Una pasada completa del job semanal. |
-| Ingesta / agente de ingesta | `agent/agent.py`: descarga y valida los archivos de ODEPA. |
-| ETL | `etl/etl.py`: limpieza y reglas de negocio para el respaldo `etl/datos.db`. |
-| Bronce, plata, oro | Las capas: aterrizaje en `etl/raw.db` y bronce en Parquet; plata en los modelos staging e intermedio de dbt; oro en los marts, el modelo estrella. |
-| Data warehouse / modelo estrella | `etl/datos.duckdb`: la base servida, con los precios semanales listos para analizar. |
-| Data quality checks | Los controles que detienen la carga si algo no cuadra. |
-| Alertas / notificaciones | Las alertas K6 de precios y el correo de GitHub ante una falla. |
-| Tests / CI | Las pruebas automáticas; `pruebas.yml` las corre en cada cambio subido al repositorio. |
+| Una carga falló | Corregir la causa según la sección 3 y volver a lanzar el job; mientras tanto, el panel muestra la última carga válida |
+| El release perdió su archivo | Reconstruir la base en un equipo con los datos (`python etl/pipeline.py --local`), verificar que la suite pasa y subir el archivo al release «base-actual» junto con su puntero (`python bi/served_database.py --pointer`) |
+| Una copia nueva del repositorio no tiene la base | `python bi/served_database.py` descarga la base de la última carga y verifica su huella |
 
-## Recorrido del proyecto
+## 6. Tareas periódicas
 
-El menú lateral reúne las páginas en cinco grupos:
+| Frecuencia | Tarea |
+|---|---|
+| Cada martes | Revisar «Centro de operación» o el correo; si está en verde, no hay nada que hacer |
+| Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos |
+| Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días |
+| Antes de su vencimiento | Renovar el token de GitHub del panel; el panel avisa cuando faltan menos de 14 días |
 
-1. **Negocio · BI:** «Resumen semanal» (qué se movió esta semana y qué es inusual) y «Precios e inflación» (qué familias de alimentos subieron más o menos que el IPC de alimentos del INE).
-2. **Ingeniería de datos:** «Pipeline y linaje» (el recorrido por capas y el linaje de dbt), «Modelo de datos» (modelo estrella, entidad-relación, dónde viven los datos y cruces entre bases), «Calidad y auditoría» (los once indicadores, las puertas de calidad y los controles de auditoría), «Consultas SQL» (un estudio SQL de solo lectura con consultas de ejemplo) y «SAD · Arquitectura».
-3. **DevOps y seguridad:** «Centro de operación» (despliegue, operación, CI/CD y monitoreo), «Arquitectura de seguridad» y «Plan de pruebas de seguridad».
-4. **Stack y evidencia:** el diagrama de arquitectura del stack (qué es cada herramienta, cuándo actúa y con cuáles se conecta) y las cifras que lo respaldan.
-5. **Análisis de negocio · BA:** «PRD · Requisitos del producto», «ADR · Decisiones de arquitectura» y «Escalabilidad».
+## 7. Acceso del autor y administración
 
-Al pie del menú están «Apariencia» (Corporativo, Vantablack, Blue Light y Dark Grey) y el logo de GitHub. Cada documento tiene el botón «Imprimir o guardar como PDF», que imprime la página tal como se ve. Las ayudas ⓘ y las explicaciones de los diagramas se leen al pasar el cursor.
+En «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso del vencimiento del token y los enlaces de administración (tokens de GitHub, ejecuciones y administración de la app en Streamlit). Sin el secreto configurado, por ejemplo en una copia local, el acceso permanece cerrado.
+
+La clave evita ejecuciones accidentales; no es la barrera principal. Lo que protege el proyecto es el inicio de sesión del autor en GitHub y en Streamlit (con verificación en dos pasos) y un token con los permisos mínimos. No hay límite de intentos de la clave: es un riesgo aceptado, descrito en el [Plan de pruebas de seguridad](SEGURIDAD.md). El panel nunca muestra el token ni una parte de él.
+
+## 8. Límites conocidos
+
+| Límite | Valor | Fuente |
+|---|---|---|
+| Tamaño máximo de un archivo de release | 2 GB; la base servida pesa unos 14 MB | Documentación de GitHub sobre releases, consultada el 24-10-2026 |
+| Caché de GitHub Actions | Se borra si no se usa en 7 días; esa semana el job descarga todos los años | Documentación de GitHub Actions, consultada el 24-10-2026 |
+| Consultas a la API de GitHub sin token | 60 por hora | Documentación de la API de GitHub |
+| Arquitectura en la nube | No se adopta mientras los datos sean públicos, semanales y pequeños | [ADR-31 · No usar un data warehouse en la nube](ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube) y [Plan de capacidad y escalabilidad](ESCALABILIDAD.md) |
+
+## 9. Glosario
+
+Las siglas y los términos de este documento se definen en el [Glosario](GLOSARIO.md).
+
+## 10. Historial de versiones
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 1.0 | 12-10-2026 | Primera versión, como página del proyecto (D-043) |
+| 1.1 | 16-10-2026 | Navegación por menú lateral y páginas nuevas (D-090 a D-099) |
+| 1.2 | 17-10-2026 | Documentación y fuentes reorganizadas (D-105, D-106, D-110, D-118) |
+| 1.3 | 19-10-2026 | Centro de operación y operación de la carga |
+| 1.4 | 20-10-2026 | Consultas SQL (D-184, D-185) |
+| 1.5 | 21-10-2026 | Calidad y auditoría en una vista (D-220) |
+| 1.6 | 23-10-2026 | Seguridad como proceso y monitoreo (D-249); descarga como página impresa (D-248) |
+| 1.7 | 24-10-2026 | Despliegue y pipeline (D-251, D-255); Stack y evidencia (D-266); base servida en un release (D-270) |
+| 2.0 | 25-10-2026 | Formato de runbook: síntoma, causa, acción, recuperación, tareas periódicas y límites con su fuente (D-279, documentación profesional) |

@@ -62,7 +62,7 @@ Python · SQL · dbt Core · DuckDB · Parquet · SQLite · GitHub Actions · py
 |---|---|
 | [PRD](docs/PRD.md) | Contexto, visión, alcance, usuarios y requisitos |
 | [SAD](docs/SAD.md) | Arquitectura: pipeline, plataforma y modelo de datos |
-| [ADR](docs/ADR.md) | Las diez decisiones de arquitectura más importantes |
+| [ADR](docs/ADR.md) | Las decisiones de arquitectura más importantes |
 | [Plan de seguridad](docs/SEGURIDAD.md) | Cómo se prueba que el panel resiste ataques |
 | [Decisiones](docs/DECISIONES.md) | Registro completo de decisiones |
 | [Manual](docs/MANUAL.md) | Qué pasa cada martes y qué hacer si falla |

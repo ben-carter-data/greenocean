@@ -1,4 +1,5 @@
 """Tests for the content of the project page (T-43): documents, SQL, files, examples."""
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -124,13 +125,18 @@ def test_d057_labeled_items_and_closing_paragraph_come_from_the_document():
     assert project.read_closing_paragraph(section).startswith("Solo hay margen")
 
 
-def test_d057_every_term_of_the_manual_is_in_the_glossary_of_the_panel():
-    """The panel shows the terms once, in Inicio › Glosario."""
-    glossary = " ".join(f"{row['Sigla o término']} {row['Significado']}"
-                        for row in project.read_guide_table("Glosario")).lower()
-    manual_terms = project.parse_markdown_table(project.read_section(
-        project.read_document(project.MANUAL_FILE), "Glosario"))
-    for row in manual_terms:
-        first_word = row["Término"].split(" / ")[0].split(" (")[0]
-        assert first_word.lower() in glossary, first_word
-    assert all(row["Tema"] for row in project.read_guide_table("Glosario"))
+# Units, SQL types and the date pattern read as words, not acronyms to define.
+NOT_ACRONYMS = {"MB", "GB", "AAAA", "MM", "DD", "VARCHAR", "BIGINT", "INTEGER", "DOUBLE", "BOOLEAN"}
+
+
+def test_d279_every_acronym_of_the_documents_is_in_the_glossary():
+    """The terms are defined once, in docs/GLOSARIO.md, which the panel shows."""
+    glossary = project.read_glossary()
+    defined = set(re.findall(r"[A-Za-z0-9]+", " ".join(row["Sigla o término"] for row in glossary)))
+    for path in sorted(project.DOCS_DIR.glob("*.md")):
+        if path.name in ("DECISIONES.md", "PROYECTO.md", "DISENO.md", "GLOSARIO.md"):
+            continue
+        text = re.sub(r"\]\([^)]*\)", "]", re.sub(r"`[^`]*`", "", path.read_text(encoding="utf-8")))
+        missing = set(re.findall(r"\b[A-Z]{2,}[0-9]*\b", text)) - defined - NOT_ACRONYMS
+        assert not missing, (path.name, sorted(missing))
+    assert all(row["Tema"] for row in glossary)

@@ -1574,31 +1574,7 @@ Una entrada por decisión: qué se decidió, por qué, qué se descartó y qué 
 
 ### Escalabilidad
 
-GreenOcean está hecho a la medida de lo que hace hoy: datos públicos, semanales y de pocos megabytes, leídos por un solo panel. Esta página dice qué se le podría agregar, qué se resentiría primero si creciera y cuándo valdría la pena una nube. Es una proyección, no una entrega.
-
-**Qué se le podría agregar.** Una fuente nueva entra como entraron las actuales: una carpeta en el bronce y sus modelos de dbt, sin tocar los que ya existen.
-
-| Extensión | Estado | Cómo entraría |
-|---|---|---|
-| Clima por región y semana | Prevista; fuente oficial por definir | Un staging y un mart por semana y región, al lado de las alertas de precio, sin afirmar que el clima cause un precio |
-| Warehouse en la nube | No adoptado (ADR-31) | Un destino nuevo en la configuración de dbt, con los mismos modelos y la misma auditoría |
-
-**Qué cedería primero.**
-
-| Límite | Hoy | Qué se haría |
-|---|---|---|
-| Tamaño de la base | Unos pocos MB, una sola copia en un release que cada carga reemplaza (ADR-35); el historial de Git ya no crece con los datos | Un archivo de release admite hasta 2 GB; mucho antes de eso convendría la nube (tabla siguiente) |
-| Duración de la carga | Cada carga rehace la historia completa desde 2022 (ADR-10), así que tarda un poco más cada año | Pasar a cargas incrementales cuando el tiempo lo justifique |
-| Visitantes a la vez | Una aplicación gratuita de Streamlit que lee un archivo pequeño en solo lectura | Si varios equipos lo usaran a diario, el plan gratuito se quedaría corto: es uno de los umbrales de la tabla siguiente |
-
-**¿Por qué no hay nube?** Con datos públicos, semanales y de pocos megabytes, leídos por un solo panel, un warehouse en la nube agregaría costo, secretos y riesgos de vencimiento sin beneficio (ADR-31). Se justificaría solo si una empresa sumara sus propios datos:
-
-| Criterio | Hoy | Umbral que justificaría la nube |
-|---|---|---|
-| Volumen | Unos 14 MB en la base de servicio | Varios GB: ventas por tienda y día, costos, inventario |
-| Usuarios | Un panel de solo lectura | Varios equipos o herramientas de BI sobre los mismos datos |
-| Acceso | Público | Permisos por persona o datos sensibles |
-| Frescura | Semanal | Varias cargas al día o tiempo real |
+Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/ESCALABILIDAD.md`.
 
 ## D-211 · Página «Stack y evidencia» para el reclutador
 - **Problema:** un reclutador tenía que recorrer varias páginas para saber con qué está hecho el proyecto y si funciona de verdad.
@@ -2045,6 +2021,7 @@ GreenOcean está hecho a la medida de lo que hace hoy: datos públicos, semanale
 - **Workflow semanal:** un paso nuevo, «Get the published database», trae al principio la base de la semana anterior, de la que salen el historial de cargas y la comparación del 90 %. El paso «Save the updated database» pasa a ser «Publish the database»: primero reemplaza el archivo del release y después sube el puntero y `manifest.json`, así el panel nunca ve un puntero cuyo archivo aún no está. `pruebas.yml` descarga la base antes de pytest.
 - **Panel:** al arrancar descarga la base si falta o es más antigua, una vez por puntero. Si no puede, sigue con la que tiene y, si no tiene ninguna, lo dice.
 - **Calidad:** el servidor ya no tiene el respaldo. Sin cambio, el centro del esquema de Calidad habría dicho «10 indicadores» y su lista «Los 11». Ahora la paridad se informa como comprobada en la carga publicada, que pasó la prueba de paridad en su máquina antes de publicarse; los once indicadores siguen medidos. Los cruces entre bases dicen que el respaldo no se publica.
+- **Opciones consideradas con el autor el 24-10-2026:** dejar de versionar solo el respaldo SQLite (el crecimiento bajaba a unos 300 MB por año sin detenerse); almacenamiento de archivos grandes (Git LFS), que también conserva cada versión y tiene una cuota gratuita limitada; reescribir el historial cada cierto tiempo, que invalida las copias ya clonadas. Se eligió el release.
 - **Lo que no se hizo:** las versiones anteriores siguen en el historial. Borrarlas exigiría reescribirlo y forzar el push, lo que rompe las copias ya clonadas; el historial simplemente deja de crecer.
 - **Puesta en marcha (una vez, al hacer el push):** crear el release con la base que nombra el puntero: `gh release create base-actual etl/datos.duckdb`. Si la base local cambió desde el último puntero, escribirlo antes con `python bi/served_database.py --pointer` y hacer commit. Sin el release, el panel publicado y el workflow no encuentran la base.
 - **Textos y diagramas actualizados:** CI/CD (diez pasos, el release y Streamlit), Despliegue, Dónde viven los datos, Arquitectura de seguridad, contenedores del SAD, Stack y evidencia, Operación, glosario, SAD, ADR-04, Escalabilidad, MANUAL, README y CLAUDE.md.
@@ -2123,3 +2100,15 @@ GreenOcean está hecho a la medida de lo que hace hoy: datos públicos, semanale
 
 - **Decisión del autor:** los textos con forma de instrucción o de bitácora de sesiones no son documentación de lectura. Se eliminan los dos prompts de trabajo (`PROMPT_EVOLUCION.md` y el del 24-10) y las capturas de medición de `docs/diagnosticos/` (unos 40 MB; siguen en el historial de git). Los hitos y el backlog pasan a `docs/historia/`, fuera de la documentación. `DISENO.md` se resolverá junto con el retiro de las vistas antiguas que lo leen.
 - **Pruebas:** la suite completa pasa.
+
+## D-279 · Documentación profesional: encabezado, índice, glosario e historial en cada documento
+
+- **Pedido del autor:** que cada documento se lea como documentación de ingeniería de una empresa: sin formas de conversación, con nombres estándar, sin referencias que el lector no pueda seguir y con un formato verificable.
+- **Decisión:**
+  - **Formato común:** cada documento abre con una tabla de encabezado (proyecto, tipo, versión, fecha, estado, responsable, propósito, audiencia y documentos relacionados), sigue con un índice enlazado y termina con el glosario y el historial de versiones, cuyas fechas son las de los commits que cambiaron el archivo;
+  - **PRD 2.0, SAD 2.0 (arc42 con C4), ADR 2.0 (MADR: estado, fecha, contexto, decisión, opciones consideradas y consecuencias), Plan de pruebas de seguridad 2.0 (amenazas, controles, entorno, procedimiento, casos con su prueba y criterios de aceptación) y Manual de operación 2.0 (runbook: una fila por paso del workflow, con síntoma, causa y acción);**
+  - **documentos nuevos:** Plan de capacidad y escalabilidad (antes, una sección del registro de decisiones), Glosario (antes, una sección de la guía del proyecto), Diccionario de datos, Plan de pruebas e Índice de decisiones (las 62 decisiones que explican el sistema, por tema);
+  - **el plan de seguridad vuelve a llevar la tabla de sus diez casos**, que D-258 había dejado solo en el esquema: un plan de pruebas sin la tabla de casos no se puede imprimir ni revisar. La tabla y el esquema leen los mismos casos, y una prueba exige que coincidan con `bi/security_plan.py`;
+  - **el Manual se dibuja como los demás documentos**, desde `docs/MANUAL.md`, con sus enlaces internos;
+  - **los enlaces entre documentos** abren la página del documento en el panel, o el archivo en GitHub si aún no tiene página, y llegan a la sección exacta.
+- **Pruebas:** `tests/test_documents.py::test_d279_*`: la redacción, el encabezado, el índice, el historial contra el historial de git, los enlaces y sus secciones, el diccionario de datos contra la base servida y el plan de seguridad contra el código; `tests/test_project.py::test_d279_every_acronym_of_the_documents_is_in_the_glossary`. `tests/medicion/medir.cjs` mide por omisión a 1440 × 790 y 1920 × 1000. La suite completa pasa (666).

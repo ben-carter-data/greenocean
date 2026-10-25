@@ -614,18 +614,18 @@ def test_d057_rules_tab_keeps_the_long_rejected_row_out_of_the_cards():
 
 @needs_database
 def test_manual_is_a_procedural_document_without_presentation_cards():
+    # D-279: the manual is a runbook drawn as the other documents, from docs/MANUAL.md.
     app = draw_page(dashboard.PAGE_MANUAL)
     assert not app.exception
     text = " ".join(block.value for block in app.markdown)
-    titles = [heading.value for heading in app.subheader]
-    assert "Qué pasa cada martes" in titles and "Límites conocidos" in titles
-    assert "Recorrido del proyecto" in titles
+    for heading in ("## 1. Qué ocurre automáticamente", "## 3. Fallas de la carga semanal", "## 8. Límites conocidos"):
+        assert heading in text
     assert 'class="info-card"' not in text
     assert '.github/workflows/semanal.yml' in text
 
 
 def test_d057_every_theme_of_the_glossary_says_what_it_groups():
-    themes = {row["Tema"] for row in project.read_guide_table("Glosario")}
+    themes = {row["Tema"] for row in project.read_glossary()}
     assert themes == set(dashboard.GLOSSARY_THEME_LEADS)
 
 

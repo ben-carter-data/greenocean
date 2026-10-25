@@ -135,7 +135,7 @@ def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architectu
     for threat in security_map.THREATS:
         assert set(threat[4]) <= cases, threat[0]
     assert "límite de intentos" in text and "riesgo aceptado" in text  # the accepted risk is written, not hidden
-    assert "| S-01 |" not in text  # the long table is gone: the cases live in one place, the diagram
+    # D-279: the plan carries its cases as a table again; test_documents checks it against security_plan.CASES.
 
 
 def test_d258_the_ten_cases_open_their_attack_result_owasp_threat_and_test():

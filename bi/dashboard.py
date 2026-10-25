@@ -412,6 +412,8 @@ GLOSSARY_THEME_LEADS = {
     "Base de datos": "Cómo se guardan y se leen los datos.",
     "Indicadores": "Las cifras y las reglas que las producen.",
     "Conexiones": "Cómo se comunican las piezas.",
+    "Seguridad": "Qué protege el acceso y los secretos.",
+    "Documentos": "Los tipos de documento y sus formatos.",
 }
 # The tables of «DevOps y seguridad» by priority: what protects the data first,
 # then what runs the project, how a run is observed and what gets published.
@@ -3400,15 +3402,6 @@ def show_rules_tab(mode):
         show_rule_details(rules, design_rules, guide_rows, where)
 
 
-def show_manual_tab(mode):
-    """Read the operating manual as a document, without decorative cards."""
-    manual = project.read_document(project.MANUAL_FILE)
-    for heading in ["Qué pasa cada martes", "Tareas del autor y tareas automáticas",
-                    "Cómo leer un aviso rojo", "Límites conocidos", "Recorrido del proyecto"]:
-        st.subheader(heading)
-        st.markdown(project.read_section(manual, heading))
-
-
 # region Código y resultados (C03)
 CATALOG_TREND_WEEKS = 26
 CATALOG_BAR_COUNT = 12
@@ -3834,7 +3827,7 @@ def show_idea_tab(mode):
 
 def show_glossary_tab(mode):
     """Terminology as a document, grouped by functional area."""
-    rows = project.read_guide_table("Glosario")
+    rows = project.read_glossary()
     for theme in dict.fromkeys(row["Tema"] for row in rows):
         st.subheader(theme)
         for row in [row for row in rows if row["Tema"] == theme]:
@@ -6608,8 +6601,10 @@ def show_links_page(mode):
 PROJECT_DOCUMENTS = {
     PAGE_PRD: ("PRD.md", "Qué resuelve el producto, para quién y con qué requisitos."),
     PAGE_SAD: ("SAD.md", "Cómo está construido, por vistas: contexto, contenedores, datos, despliegue y seguridad."),
-    PAGE_ADR: ("ADR.md", "Las diez decisiones de arquitectura que más pesan: contexto, decisión, alternativas y consecuencias."),
+    PAGE_ADR: ("ADR.md", "Las decisiones de arquitectura que más pesan: contexto, decisión, opciones y consecuencias."),
     PAGE_SECURITY_PLAN: ("SEGURIDAD.md", "Cómo se buscan, se corrigen y se prueban en cada push los puntos débiles."),
+    PAGE_SCALABILITY: ("ESCALABILIDAD.md", "Capacidad actual, qué cede primero y cuándo se justificaría una nube."),
+    PAGE_MANUAL: ("MANUAL.md", "Cómo operar el proyecto y resolver sus fallas."),
 }
 DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 # D-247: a document points to the page of the panel where a view lives, instead of copying it: [[vista:Modelo de datos]].
@@ -6627,10 +6622,30 @@ def find_menu_page(label):
     return None
 
 
+DOCUMENT_LINK = re.compile(r"\]\(([A-Z_]+\.md)(#[^)]*)?\)")
+HEADING = re.compile(r"^(#{2,4}) (.+)$", re.MULTILINE)
+
+
+def heading_anchor(text):
+    """The anchor GitHub gives a heading, so an index link works the same in GitHub and in the panel (D-279)."""
+    return re.sub(r"[^\w\- ]", "", text.strip().lower()).replace(" ", "-")
+
+
 def link_document_views(text):
-    """Each [[vista:…]] of a document as a link to its page in the panel."""
-    return DOCUMENT_VIEW.sub(lambda match: f"[{match.group(1)}]({build_page_address(find_menu_page(match.group(1)))})"
+    """Each [[vista:…]] of a document as a link to its page in the panel; each link to another document of docs/
+    to that document's page, or to GitHub when it has none; each heading with the anchor its index points to."""
+    text = DOCUMENT_VIEW.sub(lambda match: f"[{match.group(1)}]({build_page_address(find_menu_page(match.group(1)))})"
                              if find_menu_page(match.group(1)) else match.group(1), text)
+    pages = {filename: title for title, (filename, _) in PROJECT_DOCUMENTS.items()}
+
+    def document_address(match):
+        filename, anchor = match.group(1), match.group(2) or ""
+        address = (build_page_address(pages[filename]) if filename in pages
+                   else project.build_github_url(f"docs/{filename}"))
+        return f"]({address}{anchor})"
+
+    text = DOCUMENT_LINK.sub(document_address, text)
+    return HEADING.sub(lambda match: f'<a id="{heading_anchor(match.group(2))}"></a>\n\n{match.group(1)} {match.group(2)}', text)
 
 
 def show_document_diagram(name, mode):
@@ -6674,18 +6689,6 @@ def show_document_actions(source_label, source_url):
     st.markdown(PRINT_DOCUMENT_CSS, unsafe_allow_html=True)
 
 
-def show_scalability_page(mode):
-    """Escalabilidad: the SAD's own section, so the page and GitHub say the same."""
-    # D-210: the section left the two-page SAD for the decision log, unchanged.
-    text = (project.PROJECT_DIR / "docs" / "DECISIONES.md").read_text(encoding="utf-8")
-    match = re.search(r"^### Escalabilidad\n(.*?)(?=^##|\Z)", text, re.MULTILINE | re.DOTALL)
-    show_compact_page_header(PAGE_SCALABILITY, "Qué se le podría agregar, qué cedería primero si creciera y cuándo "
-                             "valdría la pena una nube (ADR-31).")
-    show_document_actions("Sección completa en docs/DECISIONES.md", project.build_github_url("docs/DECISIONES.md"))
-    with st.container(key="project_document"):
-        st.markdown(match.group(1) if match else "La sección de escalabilidad no está en docs/DECISIONES.md.")
-
-
 @st.cache_data(show_spinner=False)
 def read_stack_figures(database_version):
     """The three figures of «Stack y evidencia», once per database."""
@@ -6713,10 +6716,10 @@ def show_project_document(mode, title):
     with st.container(key="project_document"):
         position = 0
         for marker in DOCUMENT_DIAGRAM.finditer(text):
-            st.markdown(link_document_views(text[position:marker.start()]))
+            st.markdown(link_document_views(text[position:marker.start()]), unsafe_allow_html=True)
             show_document_diagram(marker.group(1), mode)
             position = marker.end()
-        st.markdown(link_document_views(text[position:]))
+        st.markdown(link_document_views(text[position:]), unsafe_allow_html=True)
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
     st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
 # endregion
@@ -6732,7 +6735,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_PRD: lambda mode: show_project_document(mode, PAGE_PRD),
     PAGE_SAD: lambda mode: show_project_document(mode, PAGE_SAD),
     PAGE_ADR: lambda mode: show_project_document(mode, PAGE_ADR),
-    PAGE_SCALABILITY: show_scalability_page,
+    PAGE_SCALABILITY: lambda mode: show_project_document(mode, PAGE_SCALABILITY),
     PAGE_STACK: lambda mode: show_stack_page(mode),
     PAGE_SECURITY: lambda mode: show_security_page(mode),
     PAGE_SECURITY_PLAN: lambda mode: show_project_document(mode, PAGE_SECURITY_PLAN),
@@ -6757,8 +6760,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_RUNS: show_runs_page,
     PAGE_RULES: lambda mode: show_document_page(mode, PAGE_RULES,
         "Qué se valida y qué ocurre cuando una fila no cumple las reglas.", show_rules_tab),
-    PAGE_MANUAL: lambda mode: show_document_page(mode, PAGE_MANUAL,
-        "Cómo operar el proyecto y resolver sus fallas.", show_manual_tab),
+    PAGE_MANUAL: lambda mode: show_project_document(mode, PAGE_MANUAL),
     PAGE_GLOSSARY: lambda mode: show_document_page(mode, PAGE_GLOSSARY,
         "Siglas y conceptos explicados en contexto.", show_glossary_tab),
     PAGE_LINKS: show_links_page,
