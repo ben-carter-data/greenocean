@@ -1590,6 +1590,7 @@ PAGES = {
     "correo si la carga falla": "email if the load fails",
     "base anterior, para el historial": "previous database, for the history", "base para las pruebas": "database for the tests",
     "Ver todas": "See all", "Diferencia en puntos": "Difference in points",
+    "Automática": "Automatic",
     "Inflación": "Inflation",
     "Datos y operación": "Data and operations",
     "Todo el proyecto en una vista: el mercado de la semana, la inflación de los alimentos y los datos con su operación.": "The whole project in one view: the market of the week, food inflation, and the data with its operation.",
