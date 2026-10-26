@@ -2370,3 +2370,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** los selectores de la tabla de productos ocupaban espacio de más; el botón de semanas, con un ícono de dinero; y la ventana de semanas tenía un control gigante en vez de una lectura de conjunto.
 - **Decisión:** los selectores de Canal y Orden, y la búsqueda, miden 28 px de alto. El botón «Semanas» lleva el ícono $. En la ventana de semanas, la explicación y un control pequeño comparten una línea, y sobre la tabla aparece una «Lectura del período»: la familia que más se encareció en esas semanas (sus cambios semanales encadenados) y en cuántas subió, la que más bajó y en cuántas bajó, y en cuántas semanas subieron más familias de las que bajaron. Cada cifra sale de las celdas de la tabla.
 - **Pruebas:** `tests/test_overview.py::test_d311_the_reading_of_the_period_chains_the_cells_of_the_weeks_table`.
+
+## D-312 · La región que se lee, siempre visible sobre las familias
+
+- **Pedido del autor:** al abrir el Panorama no se sabía en qué región estaba por defecto; la región elegida debe verse sobre el movimiento por familia.
+- **Decisión:** en la cabecera de «Movimiento por familia» hay una etiqueta «Región: Todo Chile» (o el nombre de la región elegida en el mapa), siempre visible; se suma a la línea «Viendo» sobre el mapa. El Panorama sigue cabiendo en una pantalla.
+- **Pruebas:** la suite completa, con la auditoría del inglés.

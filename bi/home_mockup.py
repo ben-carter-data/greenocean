@@ -496,8 +496,10 @@ def family_movement(rows, family_link, selected_family, scope):
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(average * 100, True)}</b>'
             f'<span class="mock-movement-state">{word}</span><span class="mock-movement-chevron">›</span></a>')
+    place = scope[0].upper() + scope[1:]
     return ('<section class="mock-movement"><div class="mock-movement-heading"><div><h2>Movimiento por familia</h2>'
             f'<p>Mediana de las variaciones de precios comparables: lo que hizo el producto típico · {esc(scope)}. Selecciona una familia para ver sus productos.</p></div>'
+            f'<span class="mock-place">Región: <b>{esc(place)}</b></span>'
             '</div><div class="mock-movement-row mock-movement-axis" aria-hidden="true"><i></i><span></span>'
             f'<span class="mock-movement-scale"><span>−{limit} %</span><span>0</span><span>+{limit} %</span></span>'
             '<span></span><span></span><span></span></div>'

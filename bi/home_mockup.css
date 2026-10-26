@@ -494,3 +494,8 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox input {height:26px!important;padding:0 8px!important;font-size:12.5px!important;}
 .st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox button {height:26px!important;}
 .st-key-home_products [data-testid="stTextInput"] input {height:26px!important;}
+
+/* D-312: the region the families are read for, above them, also when it is all of Chile. */
+.mock-movement-heading {display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.mock-place {flex:0 0 auto;padding:5px 12px;border-radius:999px;font-size:13px;white-space:nowrap;background:color-mix(in srgb,var(--mock-fall) 14%,transparent);color:var(--mock-ink);}
+.mock-place b {color:var(--mock-fall);}

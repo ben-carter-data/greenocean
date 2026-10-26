@@ -1591,6 +1591,8 @@ PAGES = {
     "base anterior, para el historial": "previous database, for the history", "base para las pruebas": "database for the tests",
     "Ver todas": "See all", "Diferencia en puntos": "Difference in points",
     "Automática": "Automatic",
+    "Región:": "Region:",
+    "Todo Chile": "All of Chile",
     "Viendo:": "Showing:",
     "· clic en una región para ver solo esa": "· click a region to see only that one",
     "· clic en la región para volver a todo Chile": "· click the region to go back to all of Chile",
