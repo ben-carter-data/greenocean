@@ -399,7 +399,10 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
             + badge + '</a>')
     legend = ('<span><i class="rise"></i>Subieron</span><span><i class="fall"></i>Bajaron</span>'
               '<span><i class="neutral"></i>Sin dato o sin dirección clara</span>')
+    scope = (f'Viendo: <b>{esc(short_region(selected_region))}</b> · clic en la región para volver a todo Chile'
+             if selected_region else 'Viendo: <b>todo Chile</b> · clic en una región para ver solo esa')
     return ('<section class="mock-regional" id="pulso-regional"><span class="mock-kicker">Lectura territorial</span>'
+            f'<p class="mock-scope">{scope}</p>'
             '<h2>¿En qué dirección se movieron los precios?</h2>'
             '<p>% de precios comparables que siguió la dirección dominante. Mapa en proporción real; '
             'cada región se lee en su fila.</p>'

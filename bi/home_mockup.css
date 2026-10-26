@@ -389,7 +389,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-products-scope {font-size:11px;color:var(--mock-muted);}
 .mock-history-button {display:flex;justify-content:center;align-items:center;height:32px;border:1px solid var(--mock-fall);border-radius:7px;color:var(--mock-fall)!important;font-size:12.5px;font-weight:600;text-decoration:none!important;white-space:nowrap;}
 .mock-history-button:hover {background:color-mix(in srgb,var(--mock-fall) 10%,transparent);}
-.mock-products-table {max-height:calc(100vh - 560px);min-height:200px;overflow:auto;border:1px solid var(--mock-border);border-radius:8px;}
+.mock-products-table {max-height:calc(100vh - 610px);min-height:120px;overflow:auto;border:1px solid var(--mock-border);border-radius:8px;}
 .mock-products-table table {width:100%;border-collapse:collapse;font-size:12px;}
 .mock-products-table th {position:sticky;top:0;z-index:1;background:var(--mock-soft);color:var(--mock-ink);font-weight:500;text-align:left;padding:7px 10px;white-space:nowrap;border-bottom:1px solid var(--mock-border);}
 .mock-products-table td {padding:5px 10px;border-bottom:1px solid var(--mock-border);vertical-align:middle;}
@@ -474,10 +474,17 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-home_products [data-testid="stTextInput"] input {font-size:12px!important;min-height:28px!important;}
 .st-key-home_products [data-testid="stTextInput"] > div {min-height:28px!important;}
 .st-key-home_products {padding:6px 12px 8px!important;gap:4px!important;}
-.mock-products-table {max-height:calc(100vh - 500px)!important;min-height:230px!important;}
+.mock-products-table {max-height:max(130px, calc(100vh - 625px))!important;min-height:0!important;}
+/* D-309: the Panorama fits one screen: the map and the panels take the height the window leaves under the bar. */
+.st-key-home_overview {height:calc(100vh - 100px);min-height:520px;}
+.st-key-home_overview > [data-testid="stHorizontalBlock"] {height:100%;}
+.st-key-home_overview .mock-chile-map {min-height:0!important;max-height:none!important;height:auto;}
 .mock-products-table table {border-collapse:separate;border-spacing:0;}
 .mock-products-table td + td,.mock-products-table th + th {border-left:1px solid var(--mock-border);}
 /* The count of regions reads as a link: it opens its list with a click or with the cursor. */
 .mock-regions {color:var(--mock-fall);border-bottom:1px dotted var(--mock-fall);}
 .mock-regions b.rise,.mock-regions b.fall {text-decoration:none;}
 .mock-regions:hover {background:color-mix(in srgb,var(--mock-fall) 10%,transparent);border-radius:4px;}
+
+.mock-regional .mock-scope {margin:2px 0 4px!important;padding:4px 10px;border-radius:7px;font-size:12px!important;background:color-mix(in srgb,var(--mock-fall) 12%,transparent);color:var(--mock-ink)!important;}
+.mock-regional .mock-scope b {color:var(--mock-fall);}
