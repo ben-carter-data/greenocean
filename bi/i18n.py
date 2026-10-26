@@ -28,6 +28,10 @@ DOCUMENT_FIELDS = {
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
+    "Variación semanal, %. Rojo: subió · Azul: bajó.": "Weekly change, %. Red: rose · Blue: fell.",
+    "Últimas {} semanas": "Last {} weeks",
+    "Total {} sem": "Total {} wk",
+    "¿Qué familias vienen subiendo, semana a semana?": "Which families keep rising, week by week?",
     "Lectura del período": "Reading of the period",
     "En estas {} semanas, {} es la que más se encareció: {} acumulado, con alzas en {} de ellas.": "In these {} weeks, {} got the dearest: {} in all, rising in {} of them.",
     "{} es la que más bajó: {} acumulado, con bajas en {} semanas.": "{} fell the most: {} in all, falling in {} weeks.",

@@ -505,3 +505,30 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-products-top .mock-kicker {margin:0;}
 .mock-products-family {padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;color:var(--mock-ink);background:var(--mock-soft);}
 .mock-products-heading {row-gap:2px;}
+
+.mock-regional .mock-scope a {color:var(--mock-fall)!important;font-weight:600;text-decoration:underline!important;}
+
+/* D-315: the regions without data weigh less; the legend tells «sin cambio claro» from «sin dato»; a row lights its region. */
+.mock-region-shape.missing {fill:url(#mock-nodata);stroke:var(--mock-border);}
+.mock-region-row.missing .mock-region-name {fill:var(--mock-muted);opacity:.7;font-weight:400;}
+.mock-region-row.missing .mock-region-leader {stroke-width:.4;opacity:.4;}
+.mock-region-row.missing .mock-region-empty {font-size:8.5px;opacity:.7;}
+.mock-regional-legend i.neutral {background:#8d949e;}
+.mock-regional-legend i.nodata {background:repeating-linear-gradient(45deg,#b9c2ce 0 1px,#e3e8ee 1px 3px);border:1px solid #c7ced8;}
+.mock-chile-map:has(.mock-region-row[data-r="0"]:hover) .mock-region-shape[data-r="0"],.mock-chile-map:has(.mock-region-shape[data-r="0"]:hover) .mock-region-shape[data-r="0"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="1"]:hover) .mock-region-shape[data-r="1"],.mock-chile-map:has(.mock-region-shape[data-r="1"]:hover) .mock-region-shape[data-r="1"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="2"]:hover) .mock-region-shape[data-r="2"],.mock-chile-map:has(.mock-region-shape[data-r="2"]:hover) .mock-region-shape[data-r="2"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="3"]:hover) .mock-region-shape[data-r="3"],.mock-chile-map:has(.mock-region-shape[data-r="3"]:hover) .mock-region-shape[data-r="3"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="4"]:hover) .mock-region-shape[data-r="4"],.mock-chile-map:has(.mock-region-shape[data-r="4"]:hover) .mock-region-shape[data-r="4"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="5"]:hover) .mock-region-shape[data-r="5"],.mock-chile-map:has(.mock-region-shape[data-r="5"]:hover) .mock-region-shape[data-r="5"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="6"]:hover) .mock-region-shape[data-r="6"],.mock-chile-map:has(.mock-region-shape[data-r="6"]:hover) .mock-region-shape[data-r="6"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="7"]:hover) .mock-region-shape[data-r="7"],.mock-chile-map:has(.mock-region-shape[data-r="7"]:hover) .mock-region-shape[data-r="7"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="8"]:hover) .mock-region-shape[data-r="8"],.mock-chile-map:has(.mock-region-shape[data-r="8"]:hover) .mock-region-shape[data-r="8"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="9"]:hover) .mock-region-shape[data-r="9"],.mock-chile-map:has(.mock-region-shape[data-r="9"]:hover) .mock-region-shape[data-r="9"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="10"]:hover) .mock-region-shape[data-r="10"],.mock-chile-map:has(.mock-region-shape[data-r="10"]:hover) .mock-region-shape[data-r="10"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="11"]:hover) .mock-region-shape[data-r="11"],.mock-chile-map:has(.mock-region-shape[data-r="11"]:hover) .mock-region-shape[data-r="11"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="12"]:hover) .mock-region-shape[data-r="12"],.mock-chile-map:has(.mock-region-shape[data-r="12"]:hover) .mock-region-shape[data-r="12"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="13"]:hover) .mock-region-shape[data-r="13"],.mock-chile-map:has(.mock-region-shape[data-r="13"]:hover) .mock-region-shape[data-r="13"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="14"]:hover) .mock-region-shape[data-r="14"],.mock-chile-map:has(.mock-region-shape[data-r="14"]:hover) .mock-region-shape[data-r="14"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="15"]:hover) .mock-region-shape[data-r="15"],.mock-chile-map:has(.mock-region-shape[data-r="15"]:hover) .mock-region-shape[data-r="15"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+.mock-chile-map:has(.mock-region-row[data-r="16"]:hover) .mock-region-shape[data-r="16"],.mock-chile-map:has(.mock-region-shape[data-r="16"]:hover) .mock-region-shape[data-r="16"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}

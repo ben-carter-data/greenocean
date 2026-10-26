@@ -22,6 +22,7 @@ from bi import charts, home_mockup, i18n, inflation_view
 
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
 STILL = 0.0005
+QUIET = 0.3  # in %: the weekly change under which the weeks table shows only a dot (D-314)
 # A state that passes (every test, every indicator in its threshold): green, never the blue of a fall.
 GOOD = "#199e70"
 MARKET_WEEKS = 26
@@ -350,7 +351,7 @@ def heat_table(frame, row, column, value, mode, height=None, column_order=None, 
     return style(alt.layer(cells, text), mode, height)
 
 
-def build_heat_table_html(frame, row, column, value, columns, rows, palette, logos=None):
+def build_heat_table_html(frame, row, column, value, columns, rows, palette, logos=None, totals=None, total_title=""):
     """D-301: the heat table as an HTML table that fills its card: one row per family with its picture, one column per
     period, each cell tinted by its change (red rises, blue falls, the stronger the darker) and its value written in it.
     On a narrow window the first column stays and the periods scroll."""
@@ -368,14 +369,23 @@ def build_heat_table_html(frame, row, column, value, columns, rows, palette, log
             if v is None:
                 tds.append('<td class="ov-ht-empty">·</td>')
                 continue
+            if totals is not None and abs(v) < QUIET:  # a change this small is a dot, never «-0,0» (D-314)
+                tds.append('<td class="ov-ht-quiet">·</td>')
+                continue
             tone = palette["rise"] if v >= STILL * 100 else palette["fall"] if v <= -STILL * 100 else None
             strength = min(1.0, abs(v) / limit)
             style = f' style="background:color-mix(in srgb, {tone} {12 + strength * 70:.0f}%, transparent)"' if tone else ""
             strong = " ov-ht-strong" if tone and strength > .6 else ""
             number = f"{v:+.1f}".replace(".", ",")
             tds.append(f'<td class="ov-ht-cell{strong}"{style}>{number}</td>')
+        if totals is not None:
+            total = totals.get(name)
+            text = "" if total is None else ("0,0 %" if round(total, 1) == 0 else f"{total:+.1f} %".replace(".", ","))
+            tds.append(f'<td class="ov-ht-total">{text}</td>')
         body.append(f'<tr><th scope="row" title="{html.escape(full, quote=True)}">{label}</th>{"".join(tds)}</tr>')
-    return (f'<div class="ov-ht" style="--cols:{len(columns)}"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>')
+    if totals is not None:
+        head += f'<th class="ov-ht-total-head">{html.escape(total_title)}</th>'
+    return (f'<div class="ov-ht" style="--cols:{len(columns) + (totals is not None)}"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>')
 
 
 def heat_table_css(palette):
@@ -396,6 +406,9 @@ def heat_table_css(palette):
   background:color-mix(in srgb, {border} 30%, transparent); padding:0 2px; min-width:54px; }}
 .ov-ht td.ov-ht-strong {{ color:#ffffff; font-weight:600; }}
 .ov-ht td.ov-ht-empty {{ color:{muted}; }}
+.ov-ht td.ov-ht-quiet {{ color:{muted}; opacity:.55; background:transparent !important; }}
+.ov-ht td.ov-ht-total {{ font-weight:700; color:{ink}; border-left:2px solid {border} !important; }}
+.ov-ht thead th.ov-ht-total-head {{ color:{ink}; border-left:2px solid {border} !important; }}
 </style>"""
 
 
@@ -463,17 +476,20 @@ def join(names):
     return i18n.join_names(list(names))
 
 
+def period_totals(heat):
+    """Each family's change over the whole period of the weeks table, its weekly medians chained, in %."""
+    return heat.sort_values("week_start").groupby("family")["change"].apply(lambda changes: ((1 + changes / 100).prod() - 1) * 100)
+
+
 def weeks_insight(heat):
-    """The reading of the whole period of the heat table (D-311): the family that got dearest and the one that got
-    cheapest, chaining its weekly medians, how many weeks each rose or fell, and how many weeks more families rose than
-    fell. Every figure comes from the cells of the table."""
+    """The reading of the whole period of the weeks table (D-311, D-314): the family that got dearest and the one that
+    got cheapest (the first and last of the table's Total column), how many weeks each rose or fell by at least what
+    the table paints, and how many weeks more families rose than fell. Every figure comes from the table's cells."""
     weeks = heat["week_start"].nunique()
-    chained = heat.sort_values("week_start").groupby("family")["change"].apply(
-        lambda changes: ((1 + changes / 100).prod() - 1) * 100)
-    states = heat.assign(state=heat["change"].map(state))
-    rose = states[states["state"] == "Subió"].groupby("family").size().reindex(chained.index, fill_value=0)
-    fell = states[states["state"] == "Bajó"].groupby("family").size().reindex(chained.index, fill_value=0)
-    by_week = states.groupby("week_start")["state"].agg(lambda s: (s == "Subió").sum() - (s == "Bajó").sum())
+    chained = period_totals(heat)
+    rose = (heat["change"] >= QUIET).groupby(heat["family"]).sum().reindex(chained.index, fill_value=0)
+    fell = (heat["change"] <= -QUIET).groupby(heat["family"]).sum().reindex(chained.index, fill_value=0)
+    by_week = (heat["change"] >= QUIET).groupby(heat["week_start"]).sum() - (heat["change"] <= -QUIET).groupby(heat["week_start"]).sum()
     top, low = chained.idxmax(), chained.idxmin()
     return [
         i18n.tr("En estas {} semanas, {} es la que más se encareció: {} acumulado, con alzas en {} de ellas.").format(

@@ -362,7 +362,7 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
     indexed = {str(row['region']): row for row in rows}
     shapes, rows_markup = [], []
     width, height = MAP_VIEW
-    for item in region_layout(chile_regions_geometry()):
+    for number_of, item in enumerate(region_layout(chile_regions_geometry())):
         region = item['region']
         row = indexed.get(region, {'state': 'missing', 'share': None, 'up': 0,
                                    'down': 0, 'stable': 0, 'total': 0, 'missing': 0})
@@ -389,17 +389,17 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
                  f'<text class="mock-region-pill-text" x="{LIST_RIGHT - 23}" y="{y + 4:.1f}" text-anchor="middle">'
                  f'{number(share)} % {STATE_SYMBOLS[state]}</text>')
         shapes.append(f'<a href="{href}" target="_self" aria-label="{esc(hint)}"><path class="mock-region-shape {css}" '
-                      f'd="{item["path"]}"><title>{esc(hint)}</title></path></a>')
+                      f'd="{item["path"]}" data-r="{number_of}"><title>{esc(hint)}</title></path></a>')
         rows_markup.append(
-            f'<a class="mock-region-row {css}" href="{href}" target="_self" aria-label="{esc(hint)}"><title>{esc(hint)}</title>'
+            f'<a class="mock-region-row {css}" href="{href}" data-r="{number_of}" target="_self" aria-label="{esc(hint)}"><title>{esc(hint)}</title>'
             f'<rect class="mock-region-hit" x="{LIST_LEFT - 4}" y="{y - 12:.1f}" width="{LIST_RIGHT - LIST_LEFT + 8}" height="24" rx="6"/>'
             f'<path class="mock-region-leader" d="M{ax:.1f},{ay:.1f}L{LIST_LEFT - 8},{y:.1f}"/>'
             f'<circle class="mock-region-dot" cx="{ax:.1f}" cy="{ay:.1f}" r="2.2"/>'
             f'<text class="mock-region-name" x="{LIST_LEFT + 2}" y="{y + 4:.1f}">{esc(short_region(region))}</text>'
             + badge + '</a>')
     legend = ('<span><i class="rise"></i>Subieron</span><span><i class="fall"></i>Bajaron</span>'
-              '<span><i class="neutral"></i>Sin dato o sin dirección clara</span>')
-    scope = (f'Viendo: <b>{esc(short_region(selected_region))}</b> · clic en la región para volver a todo Chile'
+              '<span><i class="neutral"></i>Sin cambio claro</span><span><i class="nodata"></i>Sin dato</span>')
+    scope = (f'Viendo: <b>{esc(short_region(selected_region))}</b> · <a href="{esc(region_link(None))}" target="_self">Ver todo Chile</a>'
              if selected_region else 'Viendo: <b>todo Chile</b> · clic en una región para ver solo esa')
     return ('<section class="mock-regional" id="pulso-regional"><span class="mock-kicker">Precios por región</span>'
             f'<p class="mock-scope">{scope}</p>'
@@ -409,6 +409,8 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
             f'<div class="mock-regional-legend">{legend}</div>'
             f'<svg class="mock-chile-map" preserveAspectRatio="xMidYMin meet" viewBox="0 0 {width} {height}" role="img" '
             'aria-label="Mapa de Chile con la dirección dominante de los precios por región">'
+            '<defs><pattern id="mock-nodata" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
+            '<rect width="5" height="5" fill="#e3e8ee"/><rect width="1.1" height="5" fill="#b9c2ce"/></pattern></defs>'
             '<g class="mock-region-land">' + ''.join(shapes) + '</g>'
             '<g class="mock-region-rows">' + ''.join(rows_markup) + '</g></svg></section>')
 

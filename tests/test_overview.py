@@ -70,7 +70,7 @@ def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
     assert dashboard.MENU_BLOCKS[0][2] == [dashboard.HOME_PAGE, dashboard.PAGE_WHERE, dashboard.PAGE_INSIGHTS]
     assert dashboard.DOOR_PAGES == {dashboard.PAGE_SEASONALITY: dashboard.HOME_PAGE}  # opens from a button of the Panorama
     assert dashboard.RETIRED_VIEWS["Dashboard general"] == dashboard.PAGE_WHERE
-    assert 'st.slider(tr("Semanas"), 4, 12, 8' in source  # the table of weeks opens as a dialog from the Panorama
+    assert 'key=OVERVIEW_WEEKS_KEY, width=190' in source  # the table of weeks opens as a dialog from the Panorama
     assert charts.get_palette(charts.THEMES[0]) and home_mockup
 
 
@@ -92,6 +92,15 @@ def test_d311_the_reading_of_the_period_chains_the_cells_of_the_weeks_table(mark
     chained = {family: ((1 + rows.sort_values("week_start")["change"] / 100).prod() - 1) * 100
                for family, rows in heat.groupby("family")}
     top = max(chained, key=chained.get)
-    rises = int((heat[heat["family"] == top]["change"] >= overview.STILL * 100).sum())
+    rises = int((heat[heat["family"] == top]["change"] >= overview.QUIET).sum())
     assert lines[0].startswith(f"En estas 8 semanas, {top} es la que más se encareció: {overview.signed(chained[top])}")
     assert f"con alzas en {rises} de ellas" in lines[0] and len(lines) == 3
+    # D-314: the table's Total column is the same chain, its rows go from the most to the least, and no cell reads «-0,0».
+    totals = overview.period_totals(heat)
+    assert totals.to_dict() == pytest.approx(chained)
+    order = list(totals.sort_values(ascending=False).index)
+    table = overview.build_heat_table_html(heat, "family", "week", "change", list(dict.fromkeys(heat.sort_values("week_start")["week"])),
+                                           order, charts.get_palette(charts.THEMES[0]), totals=totals.to_dict(), total_title="Total 8 sem")
+    assert "Total 8 sem" in table and "-0,0" not in table and "−0,0" not in table
+    assert overview.signed(chained[top]).replace(" %", "") in table.replace(".", ",") or f"{chained[top]:+.1f}".replace(".", ",") in table
+    assert table.index(f">{order[0]}<") < table.index(f">{order[-1]}<")

@@ -2382,3 +2382,15 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** títulos consistentes, claros y pensados para quien lee, sin cambiar el diseño ni los datos.
 - **Decisión:** cada panel lleva una etiqueta corta en mayúsculas y una pregunta como título. Mapa: «Precios por región» y «¿Hacia dónde se movieron los precios?». Familias: «Variación por familia» y «¿Qué familias subieron y cuáles bajaron?», con el subtítulo de una línea «Mediana de variaciones de precios comparables, todo Chile.». Tabla: «Detalle de productos», con la familia elegida en una etiqueta aparte, y «¿Qué productos explican el cambio?». La tipografía y los colores no cambian; la tabla cede la altura de las nuevas líneas y el Panorama sigue cabiendo en una pantalla.
 - **Pruebas:** `tests/test_dashboard.py`, `tests/test_home_mockup.py` y la auditoría del inglés.
+
+## D-314 · La tabla de semanas con total, orden y puntos; vuelta a todo Chile
+
+- **Pedido del autor:** la vista «Semanas» con una columna de total, filas ordenadas, celdas pequeñas como punto, etiquetas claras y un título; y una forma de volver a «todo Chile» tras elegir una región. El gráfico del índice mensual se devuelve a su versión anterior, sin los cambios que se habían probado.
+- **Decisión:** la tabla lleva una columna final «Total 8 sem» (la variación de la familia en las semanas mostradas, sus medianas semanales encadenadas, en negrita y con signo), con las filas de mayor a menor total. Una celda con cambio menor a 0,3 en valor absoluto muestra un punto tenue y sin fondo; nunca «-0,0». La «Lectura del período» cuenta las alzas y bajas con ese mismo umbral, así que coincide con lo que se ve. El control se llama «Últimas N semanas», el subtítulo es «Variación semanal, %. Rojo: subió · Azul: bajó.» y la ventana lleva el título «¿Qué familias vienen subiendo, semana a semana?». En el mapa, tras elegir una región, la línea «Viendo» ofrece «Ver todo Chile».
+- **Pruebas:** `tests/test_overview.py::test_d311_…` (total, orden, sin «-0,0»).
+
+## D-315 · El mapa de precios por región, con menos peso para las regiones sin dato
+
+- **Pedido del autor:** ajuste mínimo, sin cambiar el diseño: las regiones sin dato pesan menos, la leyenda distingue «sin cambio claro» de «sin dato», y una fila resalta su región.
+- **Decisión:** las regiones sin dato se dibujan con una trama gris muy clara, su fila con nombre apagado, línea más fina y tenue y «sin dato» pequeño, sin recuadro. La leyenda separa «Sin cambio claro» (gris medio sólido) de «Sin dato» (trama). Al pasar el cursor por una fila, su región se resalta en el mapa con un contorno blanco (y al revés).
+- **Pruebas:** la suite completa; revisión en pantalla.
