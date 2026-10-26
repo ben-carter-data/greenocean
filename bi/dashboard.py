@@ -614,20 +614,21 @@ def show_profile_dialog():
     st.markdown(f'<div class="profile-brand"><span class="profile-logo">waves</span>GreenOcean</div>'
                 f'<p class="profile-ask">{html.escape(tr("Elige tu vista"))}</p>', unsafe_allow_html=True)
     with st.container(horizontal=True, gap="small", key="profile_choices"):
-        with st.container(key="profile_side_consulta"):
-            name, icon = PROFILES[PROFILE_PUBLIC]
-            if st.button(tr("Usuario"), key=f"profile_choose_{PROFILE_PUBLIC}", icon=icon, width="stretch"):
-                choose_profile(PROFILE_PUBLIC)
-                st.rerun()
         with st.container(key="profile_side_profesional"):
             name, icon = PROFILES[PROFILE_PROFESSIONAL]
             if st.button(tr("Profesional"), key=f"profile_choose_{PROFILE_PROFESSIONAL}", icon=icon, width="stretch"):
                 choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
                 st.rerun()
-    with st.container(horizontal=True, gap=None, key="profile_roles"):
-        for role, label in ROLES.items():
-            if st.button(tr(label), key=f"profile_role_{role}", type="tertiary"):
-                choose_profile(PROFILE_PROFESSIONAL, role)
+            # The profiles it can put forward, right under its pill.
+            with st.container(horizontal=True, gap=None, key="profile_roles"):
+                for role, label in ROLES.items():
+                    if st.button(tr(label), key=f"profile_role_{role}", type="tertiary"):
+                        choose_profile(PROFILE_PROFESSIONAL, role)
+                        st.rerun()
+        with st.container(key="profile_side_consulta"):
+            name, icon = PROFILES[PROFILE_PUBLIC]
+            if st.button(tr("Usuario"), key=f"profile_choose_{PROFILE_PUBLIC}", icon=icon, width="stretch"):
+                choose_profile(PROFILE_PUBLIC)
                 st.rerun()
 
 
@@ -1700,16 +1701,17 @@ def build_style_css(mode):
     [class*="st-key-profile_choose_"] button {{ min-height:52px; border-radius:999px; border:1px solid {palette["card_border"]};
         background:{palette["card"]}; }}
     [class*="st-key-profile_choose_"] button p {{ font-size:1rem; font-weight:600; color:{palette["strong_text"]}; }}
-    .st-key-profile_choose_consulta button {{ background:color-mix(in srgb, {palette["accent"]} 12%, transparent);
+    .st-key-profile_choose_profesional button {{ background:color-mix(in srgb, {palette["accent"]} 12%, transparent);
         border-color:color-mix(in srgb, {palette["accent"]} 45%, transparent); }}
-    .st-key-profile_choose_consulta button p, .st-key-profile_choose_consulta button [data-testid="stIconMaterial"] {{
+    .st-key-profile_choose_profesional button p, .st-key-profile_choose_profesional button [data-testid="stIconMaterial"] {{
         color:{palette["accent"]}; }}
     [class*="st-key-profile_choose_"] button:hover {{ border-color:{palette["accent"]}; }}
-    .st-key-profile_roles {{ justify-content:flex-end; flex-wrap:nowrap !important; margin:-2px 2px 2px; }}
+    .st-key-profile_roles {{ justify-content:center; flex-wrap:nowrap !important; width:max-content !important; max-width:none !important;
+        margin:4px 0 0 50% !important; transform:translateX(-50%); }}
     .st-key-profile_roles > div {{ flex:none !important; width:auto !important; }}
-    .st-key-profile_roles button {{ padding:0 4px !important; min-height:0 !important; }}
-    .st-key-profile_roles button p {{ font-size:.8rem; color:{palette["reference"]}; white-space:nowrap; }}
-    .st-key-profile_roles > div + div button p::before {{ content:"·"; margin-right:8px; color:{palette["reference"]}; }}
+    .st-key-profile_roles button {{ padding:0 2px !important; min-height:0 !important; }}
+    .st-key-profile_roles button p {{ font-size:.72rem; color:{palette["reference"]}; white-space:nowrap; }}
+    .st-key-profile_roles > div + div button p::before {{ content:"·"; margin-right:4px; color:{palette["reference"]}; }}
     .st-key-profile_roles button:hover p {{ color:{palette["accent"]}; }}
     .st-key-profile_switch {{ padding:6px 12px 0; }}
     .st-key-profile_switch button p {{ font-size:.82rem; }}
@@ -5986,7 +5988,8 @@ def show_overview_page(mode):
     variations = read_cached_all_variations(version)
     weeks = sorted(variations["week_start"].unique(), reverse=True)[:12]
     def slicers():
-        st.selectbox(tr("Semana"), weeks, key=OVERVIEW_WEEK_KEY, format_func=lambda w: week_range_label(pd.Timestamp(w)),
+        st.selectbox(tr("Semana"), weeks, key=OVERVIEW_WEEK_KEY,
+                     format_func=lambda w: i18n.translate_text(week_range_label(pd.Timestamp(w))),
                      label_visibility="collapsed", width=150)
         st.selectbox(tr("Familia"), [None] + OVERVIEW_FAMILIES, key=OVERVIEW_FAMILY_KEY, label_visibility="collapsed",
                      format_func=lambda f: tr("Todas las familias") if f is None else home_mockup.short_family(f), width=190)

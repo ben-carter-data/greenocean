@@ -99,7 +99,8 @@ def family_heat(variations, weeks=HEAT_WEEKS):
     frame = valid.groupby(["product_group", "week_start"])["variation"].median().mul(100).rename("change").reset_index()
     frame["family"] = frame["product_group"].map(home_mockup.short_family)
     months = charts.CHILE_LOCALE["time"]["shortMonths"]
-    frame["week"] = [f"{w.day:02d} {months[w.month - 1].lower()}" for w in frame["week_start"]]
+    many = len(last) > 8
+    frame["week"] = [f"{w.day}/{w.month}" if many else f"{w.day:02d} {months[w.month - 1].lower()}" for w in frame["week_start"]]
     return frame
 
 
@@ -184,6 +185,8 @@ def build_css(palette):
 .st-key-ov_tabs [data-testid="stTabs"] [role="tabpanel"] {{ padding-top:10px; }}
 [class*="st-key-ov_head_"] {{ align-items:center; justify-content:space-between; }}
 [class*="st-key-ov_head_"] [data-testid="stSlider"] {{ padding:0 4px; }}
+[class*="st-key-ov_head_"] [data-testid="stSliderTickBar"], [class*="st-key-ov_head_"] [data-testid="stTooltipIcon"] {{
+  display:none !important; }}
 .ov-card-title {{ margin:0 !important; font-size:14px !important; font-weight:600; color:{ink} !important; line-height:1.3 !important; }}
 [class*="st-key-ov_card_"] [data-testid="stElementContainer"]:has(.ov-card-title) {{ margin-bottom:14px !important; }}
 [class*="st-key-ov_card_"] [data-testid="stMarkdown"] {{ margin-bottom:0 !important; }}
@@ -229,7 +232,8 @@ def donut(frame, category, value, mode, colors=None, selected=None, height=None,
                else alt.condition(pick, alt.value(1), alt.value(.4)))
     total = frame[value].sum()
     frame = frame.assign(share=frame[value] / total * 100 if total else 0)
-    chart = alt.Chart(frame).mark_arc(innerRadius=50, outerRadius=78, padAngle=.012, cornerRadius=3).encode(
+    chart = alt.Chart(frame).mark_arc(outerRadius={"expr": "min(width, height) / 2 - 6"}, innerRadius={"expr": "(min(width, height) / 2 - 6) * .64"},
+                                       padAngle=.012, cornerRadius=3).encode(
         theta=alt.Theta(f"{value}:Q", stack=True),
         color=alt.Color(f"{category}:N", scale=scale, sort=names,
                         legend=alt.Legend(title=None, orient="right", labelFontSize=11.5, symbolType="circle",
@@ -303,10 +307,14 @@ def heat_table(frame, row, column, value, mode, height=None, column_order=None, 
     """A table whose cells are colored by their value: red rises, blue falls, the value written inside."""
     palette = charts.get_palette(mode)
     limit = max(1.0, float(frame[value].abs().quantile(.9))) if not frame.empty else 1.0
+    columns = frame[column].nunique()
     frame = frame.assign(_text=[f"{v:+.1f}".replace(".", ",") for v in frame[value]])
+    size = 11 if columns <= 8 else 10
     x = alt.X(f"{column}:O", title=None, sort=column_order, axis=alt.Axis(labelAngle=0, orient="top", ticks=False,
-                                                                           domain=False, labelFontSize=11))
-    y = alt.Y(f"{row}:N", title=None, sort=row_sort, axis=alt.Axis(labelLimit=150, labelFontSize=11.5, ticks=False, domain=False))
+                                                                           domain=False, labelFontSize=11 if columns <= 8 else 10,
+                                                                           labelOverlap=False))
+    y = alt.Y(f"{row}:N", title=None, sort=row_sort, axis=alt.Axis(labelLimit=150 if columns <= 8 else 118, labelFontSize=11.5,
+                                                                    ticks=False, domain=False))
     frame = frame.assign(_tone=["rise" if v >= STILL * 100 else "fall" if v <= -STILL * 100 else "still" for v in frame[value]],
                          _size=frame[value].abs())
     cells = alt.Chart(frame).mark_rect(cornerRadius=3, stroke=palette["card"], strokeWidth=2).encode(
@@ -314,7 +322,7 @@ def heat_table(frame, row, column, value, mode, height=None, column_order=None, 
             domain=["rise", "fall", "still"], range=[palette["rise"], palette["fall"], palette["card_border"]])),
         opacity=alt.Opacity("_size:Q", legend=None, scale=alt.Scale(domain=[0, limit], range=[.18, .95], clamp=True)),
         tooltip=[alt.Tooltip(f"{row}:N", title="Grupo"), alt.Tooltip(f"{value}:Q", title="Cambio (%)", format="+.2f")])
-    text = alt.Chart(frame).mark_text(fontSize=11, color=palette["strong_text"]).encode(x=x, y=y, text="_text:N")
+    text = alt.Chart(frame).mark_text(fontSize=size, color=palette["strong_text"]).encode(x=x, y=y, text="_text:N")
     return style(alt.layer(cells, text), mode, height)
 
 
