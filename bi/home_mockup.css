@@ -488,3 +488,9 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 
 .mock-regional .mock-scope {margin:2px 0 4px!important;padding:4px 10px;border-radius:7px;font-size:12px!important;background:color-mix(in srgb,var(--mock-fall) 12%,transparent);color:var(--mock-ink)!important;}
 .mock-regional .mock-scope b {color:var(--mock-fall);}
+
+/* D-311: thinner filters over the product table (Streamlit draws the selectbox as a react-aria combo box). */
+.st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox > div {height:28px!important;min-height:28px!important;}
+.st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox input {height:26px!important;padding:0 8px!important;font-size:12.5px!important;}
+.st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox button {height:26px!important;}
+.st-key-home_products [data-testid="stTextInput"] input {height:26px!important;}

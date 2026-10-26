@@ -82,3 +82,16 @@ def test_d303_changing_the_language_keeps_the_dashboard_working():
     app.session_state[dashboard.OVERVIEW_WEEK_KEY] = "Oct 12–18"  # what a widget may leave after a language change
     app.run()
     assert not app.exception
+
+
+@needs_database
+def test_d311_the_reading_of_the_period_chains_the_cells_of_the_weeks_table(market):
+    _, variations, _ = market
+    heat = overview.family_heat(variations, weeks=8)
+    lines = overview.weeks_insight(heat)
+    chained = {family: ((1 + rows.sort_values("week_start")["change"] / 100).prod() - 1) * 100
+               for family, rows in heat.groupby("family")}
+    top = max(chained, key=chained.get)
+    rises = int((heat[heat["family"] == top]["change"] >= overview.STILL * 100).sum())
+    assert lines[0].startswith(f"En estas 8 semanas, {top} es la que más se encareció: {overview.signed(chained[top])}")
+    assert f"con alzas en {rises} de ellas" in lines[0] and len(lines) == 3

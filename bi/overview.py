@@ -463,6 +463,27 @@ def join(names):
     return i18n.join_names(list(names))
 
 
+def weeks_insight(heat):
+    """The reading of the whole period of the heat table (D-311): the family that got dearest and the one that got
+    cheapest, chaining its weekly medians, how many weeks each rose or fell, and how many weeks more families rose than
+    fell. Every figure comes from the cells of the table."""
+    weeks = heat["week_start"].nunique()
+    chained = heat.sort_values("week_start").groupby("family")["change"].apply(
+        lambda changes: ((1 + changes / 100).prod() - 1) * 100)
+    states = heat.assign(state=heat["change"].map(state))
+    rose = states[states["state"] == "Subió"].groupby("family").size().reindex(chained.index, fill_value=0)
+    fell = states[states["state"] == "Bajó"].groupby("family").size().reindex(chained.index, fill_value=0)
+    by_week = states.groupby("week_start")["state"].agg(lambda s: (s == "Subió").sum() - (s == "Bajó").sum())
+    top, low = chained.idxmax(), chained.idxmin()
+    return [
+        i18n.tr("En estas {} semanas, {} es la que más se encareció: {} acumulado, con alzas en {} de ellas.").format(
+            weeks, i18n.tr(top), signed(chained[top]), int(rose[top])),
+        i18n.tr("{} es la que más bajó: {} acumulado, con bajas en {} semanas.").format(
+            i18n.tr(low), signed(chained[low]), int(fell[low])),
+        i18n.tr("En {} de las {} semanas subieron más familias de las que bajaron.").format(int((by_week > 0).sum()), weeks),
+    ]
+
+
 def best_drops(variations, week, count=3):
     """The largest weekly drops of the week, resting on two quotes in each week (as the Resumen ranks them)."""
     rows = comparable(variations[variations["week_start"] == week])

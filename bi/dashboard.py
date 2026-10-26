@@ -6012,9 +6012,15 @@ def show_weeks_table(mode, version):
     week = pd.Timestamp(weeks[-1])
     upto, upto_prices = variations[variations["week_start"] <= week], prices[prices["week_start"] <= week]
     moves = overview.family_moves(upto_prices, upto, week)
-    count = st.slider(tr("Semanas"), 4, 12, 8, key=OVERVIEW_WEEKS_KEY, help=tr("Cuántas semanas mostrar"))
+    with st.container(horizontal=True, vertical_alignment="center", key="weeks_head"):
+        st.caption(tr("Cada fila es una familia y cada columna una semana: rojo, subió; azul, bajó."))
+        count = st.slider(tr("Semanas"), 4, 12, 8, key=OVERVIEW_WEEKS_KEY, width=180, label_visibility="collapsed",
+                          help=tr("Cuántas semanas mostrar"))
     palette = charts.get_palette(mode)
     heat = overview.family_heat(upto, weeks=count)
+    lines = "".join(f"<li>{html.escape(line)}</li>" for line in overview.weeks_insight(heat))
+    st.markdown(f'<div class="weeks-insight"><b>{html.escape(tr("Lectura del período"))}</b><ul>{lines}</ul></div>',
+                unsafe_allow_html=True)
     columns = list(dict.fromkeys(heat.sort_values("week_start")["week"]))
     logos = {home_mockup.short_family(f): home_mockup.family_art_data_uri(f) for f in OVERVIEW_FAMILIES}
     st.markdown(overview.heat_table_css(palette), unsafe_allow_html=True)
@@ -6024,7 +6030,15 @@ def show_weeks_table(mode, version):
 
 @st.dialog("¿Qué familias vienen subiendo, semana a semana?", width="large")
 def show_weeks_dialog(mode, version):
-    st.caption(tr("Cada fila es una familia y cada columna una semana: rojo, subió; azul, bajó."))
+    palette = charts.get_palette(mode)
+    st.markdown(f"""<style>
+    .st-key-weeks_head {{ justify-content:space-between; padding-right:36px; }}
+    .st-key-weeks_head [data-testid="stSlider"] {{ padding:0 6px; }}
+    .weeks-insight {{ margin:0 0 1rem; padding:10px 14px; border-radius:10px; border-left:3px solid {palette['accent']};
+        background:color-mix(in srgb, {palette['accent']} 9%, transparent); font-size:13.5px; color:{palette['text']}; }}
+    .weeks-insight b {{ color:{palette['strong_text']}; }}
+    .weeks-insight ul {{ margin:4px 0 0 !important; padding-left:18px; }} .weeks-insight li {{ margin:0 !important; }}
+    </style>""", unsafe_allow_html=True)
     show_weeks_table(mode, version)
 
 
@@ -8140,7 +8154,7 @@ WINDOW_PAGES = {}
 
 def show_home_tools(week):
     """The Panorama's two doors, small, in its bar (D-308): the table of weeks (a dialog) and Precios e inflación."""
-    if st.button(tr("Semanas"), icon=":material/table_chart:", key="home_weeks_trigger",
+    if st.button(tr("Semanas"), icon=":material/attach_money:", key="home_weeks_trigger",
                  help=tr("Tabla de las últimas semanas: qué familias vienen subiendo.")):
         show_weeks_dialog(get_mode(), get_database_version())
     if WINDOW_PAGES:

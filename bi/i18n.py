@@ -28,6 +28,10 @@ DOCUMENT_FIELDS = {
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
+    "Lectura del período": "Reading of the period",
+    "En estas {} semanas, {} es la que más se encareció: {} acumulado, con alzas en {} de ellas.": "In these {} weeks, {} got the dearest: {} in all, rising in {} of them.",
+    "{} es la que más bajó: {} acumulado, con bajas en {} semanas.": "{} fell the most: {} in all, falling in {} weeks.",
+    "En {} de las {} semanas subieron más familias de las que bajaron.": "In {} of the {} weeks more families rose than fell.",
     "Sectores": "Sectors",
     "Los mercados mayoristas y los puntos de venta de cada región, de norte a sur. Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.": "The wholesale markets and points of sale of each region, north to south. Information only: there are no prices per market, because what rises in a region rises in all its markets.",
     "Preguntas reales de quien compra, de quien vende por mayor y de quien diseña los datos, con la respuesta de hoy.": "Real questions from whoever buys, whoever sells wholesale and whoever designs the data, with today's answer.",
