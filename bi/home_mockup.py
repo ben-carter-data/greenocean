@@ -510,7 +510,7 @@ def products_heading(family, average, scope, shown=None, total=None):
             f'<span class="mock-products-scope">en {esc(scope)}</span>{count}</div>')
 
 
-def products_table(rows, week_label, previous_label, query=''):
+def products_table(rows, week_label, previous_label, query='', selected=None):
     """The comparable prices of one family; the last column counts regions up and down."""
     body = []
     for row in rows:
@@ -519,9 +519,12 @@ def products_table(rows, week_label, previous_label, query=''):
         regions = row.get('_regions')
         regions_text = '—' if not regions else f'<b class="rise">{regions[0]} ↑</b> / <b class="fall">{regions[1]} ↓</b>'
         if regions and len(regions) > 2 and regions[2]:
-            # D-304: which regions, on hover: the same figures the two counts come from.
-            detail = ' · '.join(f'{region} {percent(change, True)}' for region, change in regions[2])  # best to worst
-            regions_text = f'<span class="mock-regions" title="{esc(detail)}">{regions_text}</span>'
+            # D-304: which regions, in a box that opens at once on hover; the region chosen on the map comes marked.
+            items = ''.join(
+                f'<li class="{"rise" if change >= .05 else "fall" if change <= -.05 else ""}'
+                f'{" chosen" if selected and region == short_region(selected) else ""}">'
+                f'<span>{esc(region)}</span><b>{percent(change, True)}</b></li>' for region, change in regions[2])
+            regions_text = f'<span class="mock-regions" tabindex="0">{regions_text}<ul class="mock-regions-tip">{items}</ul></span>'
         body.append('<tr>'
                     f'<td><strong>{esc(product_label(row))}</strong>'
                     + (f'<small>{esc(row["quality"])} · $/{esc(row["normalized_unit"])}'
@@ -540,7 +543,7 @@ def products_table(rows, week_label, previous_label, query=''):
     return ('<div class="mock-products-table" role="region" tabindex="0" aria-label="Productos de la familia"><table><thead><tr>'
             f'<th>Producto</th><th>Canal</th><th class="num">Precio {esc(previous_label[:5])}</th>'
             f'<th class="num">Precio {esc(week_label[:5])}</th><th class="num">Variación</th>'
-            '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; pasa el cursor por una fila para ver cuáles">Regiones ↑ / ↓</th></tr></thead>'
+            '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; pasa el cursor por el conteo para ver cuáles">Regiones ↑ / ↓</th></tr></thead>'
             '<tbody>' + ''.join(body) + '</tbody></table></div>')
 
 

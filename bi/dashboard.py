@@ -5096,7 +5096,8 @@ def show_market_overview(mode, prefix):
             for row in rows:
                 row['_regions']=directions.get(tuple(row[field] for field in queries.KEY_COLUMNS+['channel']))
             st.markdown('<div class="greenocean-mockup">' + home_mockup.products_table(
-                rows, model['week_label'], model['previous_label'], query.strip()) + '</div>', unsafe_allow_html=True)
+                rows, model['week_label'], model['previous_label'], query.strip(),
+                None if region == ALL_VALUES else region) + '</div>', unsafe_allow_html=True)
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown('<div class="greenocean-mockup">' + home_mockup.coverage_note(
         model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION), family)

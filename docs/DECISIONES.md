@@ -2327,5 +2327,5 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 ## D-304 · La tabla de productos dice qué regiones subieron y bajaron
 
 - **Pedido del autor:** la columna «Regiones ↑ / ↓» cuenta regiones, pero no dice cuáles.
-- **Decisión:** cada fila lleva, al pasar el cursor por su conteo, la lista de las regiones de ese producto y canal con su cambio, de la mayor alza a la mayor baja. Son las mismas cifras de las que sale el conteo. Cada fila es un producto: puede subir en la mayoría de las regiones mientras su familia, en conjunto, baja.
+- **Decisión:** cada fila lleva, al pasar el cursor por su conteo (subrayado punteado), un cuadro propio que se abre al instante, hacia arriba, con las regiones de ese producto y canal y su cambio, de la mayor alza a la mayor baja, en rojo y azul; la región elegida en el mapa sale resaltada. No es una columna más: un producto puede subir en varias regiones y la lista llegaría a nueve nombres. Son las mismas cifras de las que sale el conteo. Cada fila es un producto: puede subir en la mayoría de las regiones mientras su familia, en conjunto, baja.
 - **Pruebas:** `tests/test_home_mockup.py::test_d304_*`.

@@ -1591,7 +1591,7 @@ PAGES = {
     "base anterior, para el historial": "previous database, for the history", "base para las pruebas": "database for the tests",
     "Ver todas": "See all", "Diferencia en puntos": "Difference in points",
     "Automática": "Automatic",
-    "Regiones donde el mismo producto y canal subió / bajó; pasa el cursor por una fila para ver cuáles": "Regions where the same product and channel rose / fell; hover a row to see which",
+    "Regiones donde el mismo producto y canal subió / bajó; pasa el cursor por el conteo para ver cuáles": "Regions where the same product and channel rose / fell; hover the count to see which",
     "Para quién": "For whom", "Quien compra": "Buyer", "Compra por mayor": "Wholesale buyer", "Diseña los datos": "Data architect",
     "Del precio mayorista al consumidor, el mismo producto sube típicamente {}: es el margen que separa la compra por mayor de la góndola.": "From the wholesale to the consumer price, the same product typically rises {}: the margin between buying wholesale and the shelf.",
     "En el mercado mayorista, el cambio típico de la semana fue {}.": "In the wholesale market, the typical change of the week was {}.",

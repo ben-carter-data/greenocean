@@ -234,6 +234,7 @@ def test_d092_region_and_family_clicks_fill_the_products_table():
     app.selectbox(key='home_products_order').set_value('Bajadas').run()
     markup = ' '.join(block.value for block in app.markdown)
     table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
+    table = re.sub(r'<ul class="mock-regions-tip">.*?</ul>', '', table)  # D-304: the hover box repeats regional changes
     values = [float(v.replace('−', '-').replace(',', '.')) for v in re.findall(r'<b>([+−]?[\d,]+) %</b>', table)]
     assert values == sorted(values)
 
@@ -289,6 +290,7 @@ def test_d304_the_regions_column_says_which_regions_on_hover():
     row = {'variation': .08, 'quality': 'Primera', 'normalized_unit': 'kilo', 'channel': 'Supermercado', 'national_price': 100.0,
            'product': 'Osobuco', 'variety': 'Sin especificar', 'product_group': 'Carne bovina',
            '_regions': (2, 1, [('Maule', 12.0), ('Ñuble', 4.0), ('Biobío', -3.0)])}
-    html_table = home_mockup.products_table([row], '12-10-2026', '05-10-2026')
-    assert 'title="Maule +12,0 % · Ñuble +4,0 % · Biobío −3,0 %"' in html_table.replace('-3,0', '−3,0') or 'Maule' in html_table
-    assert '<b class="rise">2 ↑</b> / <b class="fall">1 ↓</b>' in html_table
+    page = home_mockup.products_table([row], '12-10-2026', '05-10-2026', selected='Región del Maule')
+    assert '<b class="rise">2 ↑</b> / <b class="fall">1 ↓</b>' in page
+    assert page.count('<li class="') == 3 and '<li class="rise chosen"><span>Maule</span>' in page  # the chosen region is marked
+    assert '<li class="fall"><span>Biobío</span>' in page
