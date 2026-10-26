@@ -6121,10 +6121,10 @@ def show_overview_insights(mode, version):
     .ov-it td:first-child {{ font-weight:600; color:{palette['strong_text']}; }}
     .ov-insight {{ border-radius:14px; padding:14px 16px; margin:0 0 10px; border:1px solid {palette['card_border']};
         background:linear-gradient(135deg, color-mix(in srgb, var(--c) 12%, {palette['card']}), {palette['card']}); }}
-    .ov-insight-buyer {{ --c:{palette['rise']}; }} .ov-insight-architect {{ --c:{palette['accent']}; }}
+    .ov-insight-buyer {{ --c:{palette['rise']}; }} .ov-insight-wholesale {{ --c:#199e70; }} .ov-insight-architect {{ --c:{palette['accent']}; }}
     .ov-insight-who {{ font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--c); }}
-    .ov-insight h4 {{ margin:2px 0 8px !important; padding:0 !important; font-size:16px !important; color:{palette['strong_text']}; }}
-    .ov-insight p {{ margin:0 0 4px !important; font-size:12px; line-height:1.45; color:{palette['text']}; }}
+    .ov-insight h4 {{ margin:2px 0 10px !important; padding:0 !important; font-size:19px !important; color:{palette['strong_text']}; }}
+    .ov-insight p {{ margin:0 0 8px !important; font-size:13.5px; line-height:1.55; color:{palette['text']}; }}
     </style>""", unsafe_allow_html=True)
     left, right = st.columns([1.35, 1], gap="medium")
     with left:
@@ -6138,12 +6138,19 @@ def show_overview_insights(mode, version):
     with right:
         drops = overview.best_drops(upto, week)
         database = read_cached_database_counts(version)
-        st.markdown('<div class="ov-insights">' + build_insight_card_html("buyer", "Qué conviene mirar esta semana", "Para quien compra",
-                                            overview.consumer_insights(moves, drops, summary, ipc_total, ipc_year))
-                    + build_insight_card_html("architect", "Qué dicen los datos de esta carga", "Para quien diseña los datos",
-                                              overview.architect_insights(runs.iloc[-1], tests, green, len(indicators), database,
-                                                                          flags, now["comparable"], now["prices"])) + "</div>",
-                    unsafe_allow_html=True)
+        reader = st.segmented_control(tr("Para quién"), ["Quien compra", "Compra por mayor", "Diseña los datos"],
+                                      default="Quien compra", key="ov_insight_reader", label_visibility="collapsed") or "Quien compra"
+        if reader == "Quien compra":
+            card = build_insight_card_html("buyer", "Qué conviene mirar esta semana", "Para quien compra",
+                                           overview.consumer_insights(moves, drops, summary, ipc_total, ipc_year))
+        elif reader == "Compra por mayor":
+            card = build_insight_card_html("wholesale", "Qué pasa en el mercado mayorista", "Para quien compra por mayor",
+                                           overview.wholesale_insights(upto, week, read_indicator("k1_margin")))
+        else:
+            card = build_insight_card_html("architect", "Qué dicen los datos de esta carga", "Para quien diseña los datos",
+                                           overview.architect_insights(runs.iloc[-1], tests, green, len(indicators), database,
+                                                                       flags, now["comparable"], now["prices"]))
+        st.markdown(f'<div class="ov-insights">{card}</div>', unsafe_allow_html=True)
 
 
 def build_overview_quality_html(indicators):

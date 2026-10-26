@@ -516,3 +516,27 @@ def architect_insights(latest, tests, green, indicators, database, flags, compar
                  "el resto no tiene precio la semana previa en las mismas regiones.")
     return lines
 # endregion
+
+
+def wholesale_insights(variations, week, margins):
+    """For whoever buys wholesale (a shop, a restaurant): how the wholesale price moved this week, its biggest drops and
+    the gap up to the consumer price. ODEPA's wholesale prices cover fruit and vegetables only."""
+    short = home_mockup.short_family
+    rows = comparable(variations[(variations["week_start"] == week) & (variations["channel"] == "Mayorista")])
+    lines = []
+    if not rows.empty:
+        moves = rows.groupby("product_group")["variation"].median().mul(100)
+        lines.append("En el mercado mayorista, el cambio típico de la semana fue "
+                     + join(f"{short(f)} {signed(v)}" for f, v in moves.items()) + ".")
+        drops = list({product: (product, channel, value) for product, channel, value
+                      in reversed(best_drops(rows.assign(week_start=week), week, count=8))}.values())[::-1][:3]
+        if drops:
+            lines.append("Las mayores bajas mayoristas: " + join(f"{product} ({signed(value)})" for product, _, value in drops) + ".")
+    week_margins = margins[margins["week_start"] == f"{week:%Y-%m-%d}"]
+    if not week_margins.empty:
+        gaps = week_margins.groupby("product_group")["margin"].median().mul(100)
+        lines.append("Del precio mayorista al consumidor, el mismo producto sube típicamente "
+                     + join(f"{short(f)} {signed(v)}" for f, v in gaps.items())
+                     + ": es el margen que separa la compra por mayor de la góndola.")
+    lines.append("ODEPA publica precios mayoristas solo de frutas y hortalizas.")
+    return lines
