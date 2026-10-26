@@ -15,7 +15,7 @@ import html
 import altair as alt
 import pandas as pd
 
-from bi import charts, home_mockup, inflation_view
+from bi import charts, home_mockup, i18n, inflation_view
 
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
 STILL = 0.0005
@@ -147,12 +147,14 @@ def sparkline(values, color, width=70, height=24):
 
 
 def build_scorecards_html(cards, palette):
-    """A row of scorecards: [(label, value, note, trend values or None, tone)] with tone rise, fall or neutral."""
+    """A row of scorecards: [(label, value, note, trend values or None, tone[, hint])] with tone rise, fall, neutral or
+    good; the hint (D-301) opens on hover: what the number is, against what, and what it says."""
     tone_color = {"rise": palette["rise"], "fall": palette["fall"], "neutral": palette["accent"], "good": GOOD}
     items = []
-    for label, value, note, trend, tone in cards:
+    for label, value, note, trend, tone, *hint in cards:
         spark = sparkline(trend, tone_color.get(tone, palette["accent"])) if trend is not None else ""
-        items.append(f'<div class="ov-score"><span class="ov-score-label">{html.escape(label)}</span>'
+        tip = f'<span class="ov-tip">{html.escape(hint[0])}</span>' if hint and hint[0] else ""
+        items.append(f'<div class="ov-score" tabindex="0">{tip}<span class="ov-score-label">{html.escape(label)}</span>'
                      f'<span class="ov-score-value">{html.escape(value)}</span>'
                      f'<span class="ov-score-foot"><span class="ov-score-note ov-{tone}">{html.escape(note)}</span>{spark}</span>'
                      '</div>')
@@ -164,15 +166,28 @@ def build_css(palette):
                                               palette["card"], palette["card_border"], palette["accent"])
     return f"""<style>
 .ov-scores {{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; margin:0 0 2px; }}
-.ov-score {{ display:flex; flex-direction:column; gap:2px; padding:9px 14px 8px; border-radius:10px; background:{card};
+.ov-score {{ display:flex; flex-direction:column; gap:1px; padding:6px 12px 5px; border-radius:10px; background:{card};
   border:1px solid {border}; min-width:0; }}
 .ov-score-label {{ font-size:11.5px; font-weight:500; color:{muted}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.ov-score-value {{ font-size:23px; font-weight:600; color:{ink}; letter-spacing:-.01em; line-height:1.15; white-space:nowrap; }}
-.ov-score-foot {{ display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:26px; }}
+.ov-score-value {{ font-size:20px; font-weight:600; color:{ink}; letter-spacing:-.01em; line-height:1.15; white-space:nowrap; }}
+.ov-score-foot {{ display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:22px; }}
 .ov-score-note {{ font-size:11.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
 .ov-rise {{ color:{palette['rise']}; }} .ov-fall {{ color:{palette['fall']}; }} .ov-neutral {{ color:{text}; }}
 .ov-good {{ color:{GOOD}; }}
 .ov-spark {{ display:block; flex:none; }}
+.ov-score {{ position:relative; cursor:help; }}
+.ov-tip {{ display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:60; width:max(100%, 270px); max-width:330px;
+  padding:9px 12px; border-radius:10px; background:{card}; border:1px solid {border}; color:{text};
+  box-shadow:0 14px 34px -14px rgba(0,0,0,.45); font-size:12px; font-weight:400; line-height:1.45; text-align:left;
+  white-space:normal; letter-spacing:0; text-transform:none; }}
+.ov-score:nth-child(n+4) .ov-tip {{ left:auto; right:0; }}
+.ov-score:hover .ov-tip, .ov-score:focus .ov-tip {{ display:block; }}
+.ov-card-title {{ position:relative; cursor:help; }}
+.ov-card-title .ov-info {{ display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; margin-left:6px;
+  border-radius:50%; border:1px solid {muted}; color:{muted}; font-size:10px; font-weight:600; vertical-align:2px; }}
+.ov-card-title .ov-tip {{ top:calc(100% + 4px); width:min(360px, 92%); max-width:none; }}
+.ov-card-title:hover .ov-tip {{ display:block; }}
+.ov-card-title:hover .ov-info {{ border-color:{accent}; color:{accent}; }}
 [class*="st-key-ov_card_"] {{ background:{card}; border:1px solid {border} !important; border-radius:12px !important;
   padding:12px 16px 8px !important; gap:2px !important; height:max(calc((100vh - 318px) / 2), 196px) !important;
   min-height:max(calc((100vh - 318px) / 2), 196px) !important; }}
@@ -182,6 +197,14 @@ def build_css(palette):
 [class*="st-key-ov_card_"] [data-testid="stVegaLiteChart"] {{ flex:1 1 auto; height:100%; min-height:0; }}
 [class*="st-key-ov_card_"] [data-testid="stElementToolbar"] {{ display:none !important; }}
 .st-key-ov_tabs {{ margin-top:-14px; }}
+[class*="st-key-ov_card_"][class*="_small"] {{ height:max(calc((100vh - 290px) * .44), 180px) !important;
+  min-height:max(calc((100vh - 290px) * .44), 180px) !important; }}
+[class*="st-key-ov_card_"][class*="_wide"] {{ height:max(calc((100vh - 290px) * .56), 240px) !important;
+  min-height:max(calc((100vh - 290px) * .56), 240px) !important; }}
+[class*="st-key-ov_card_"][class*="_wide"] [data-testid="stElementContainer"]:has(.ov-ht),
+[class*="st-key-ov_card_"][class*="_wide"] [data-testid="stElementContainer"]:has(.ov-qt) {{ flex:1 1 0; min-height:0; overflow:auto; }}
+[class*="st-key-ov_card_"][class*="_wide"] [data-testid="stMarkdown"]:has(.ov-ht),
+[class*="st-key-ov_card_"][class*="_wide"] [data-testid="stMarkdownContainer"]:has(.ov-ht) {{ height:100%; }}
 .st-key-ov_tabs [data-testid="stTabs"] [role="tabpanel"] {{ padding-top:10px; }}
 [class*="st-key-ov_head_"] {{ align-items:center; justify-content:space-between; }}
 [class*="st-key-ov_head_"] [data-testid="stSlider"] {{ padding:0 4px; }}
@@ -222,7 +245,7 @@ def combo_chart(weeks, mode, height=None):
     return style(alt.layer(bars, line).resolve_scale(y="independent"), mode, height)
 
 
-def donut(frame, category, value, mode, colors=None, selected=None, height=None, name="pick"):
+def donut(frame, category, value, mode, colors=None, selected=None, height=None, name="pick", legend="right"):
     """A donut of `value` by `category`; a click picks a category (the selection is named `name`)."""
     palette = charts.get_palette(mode)
     names = list(frame[category])
@@ -236,13 +259,13 @@ def donut(frame, category, value, mode, colors=None, selected=None, height=None,
                                        padAngle=.012, cornerRadius=3).encode(
         theta=alt.Theta(f"{value}:Q", stack=True),
         color=alt.Color(f"{category}:N", scale=scale, sort=names,
-                        legend=alt.Legend(title=None, orient="right", labelFontSize=11.5, symbolType="circle",
-                                          symbolSize=90, labelLimit=150)),
+                        legend=alt.Legend(title=None, orient=legend, labelFontSize=11.5, symbolType="circle",
+                                          symbolSize=90, labelLimit=170, direction="vertical")),
         opacity=opacity, order=alt.Order(f"{value}:Q", sort="descending"),
         tooltip=[alt.Tooltip(f"{category}:N", title="Grupo"), alt.Tooltip(f"{value}:Q", title="Cantidad", format=",d"),
                  alt.Tooltip("share:Q", title="Participación (%)", format=".1f")]).add_params(pick)
     center = alt.Chart(pd.DataFrame({"t": [f"{total:,}".replace(",", ".")]})).mark_text(
-        fontSize=20, fontWeight=600, color=palette["strong_text"]).encode(text="t:N")
+        fontSize={"expr": "max(11, min(20, min(width, height) / 9))"}, fontWeight=600, color=palette["strong_text"]).encode(text="t:N")
     return style(alt.layer(chart, center), mode, height)
 
 
@@ -326,6 +349,54 @@ def heat_table(frame, row, column, value, mode, height=None, column_order=None, 
     return style(alt.layer(cells, text), mode, height)
 
 
+def build_heat_table_html(frame, row, column, value, columns, rows, palette, logos=None):
+    """D-301: the heat table as an HTML table that fills its card: one row per family with its picture, one column per
+    period, each cell tinted by its change (red rises, blue falls, the stronger the darker) and its value written in it.
+    On a narrow window the first column stays and the periods scroll."""
+    cells = {(r, c): v for r, c, v in zip(frame[row], frame[column], frame[value])}
+    limit = max(1.0, float(frame[value].abs().quantile(.9))) if not frame.empty else 1.0
+    head = "".join(f"<th>{html.escape(str(c))}</th>" for c in columns)
+    body = []
+    for name in rows:
+        picture = (logos or {}).get(name)
+        full = next((family for family, short in home_mockup.FAMILY_SHORT_NAMES.items() if short == name), name)
+        label = (f'<img src="{picture}" alt="">' if picture else '<span class="ov-ht-dot"></span>') + f"<span>{html.escape(name)}</span>"
+        tds = []
+        for c in columns:
+            v = cells.get((name, c))
+            if v is None:
+                tds.append('<td class="ov-ht-empty">·</td>')
+                continue
+            tone = palette["rise"] if v >= STILL * 100 else palette["fall"] if v <= -STILL * 100 else None
+            strength = min(1.0, abs(v) / limit)
+            style = f' style="background:color-mix(in srgb, {tone} {12 + strength * 70:.0f}%, transparent)"' if tone else ""
+            strong = " ov-ht-strong" if tone and strength > .6 else ""
+            number = f"{v:+.1f}".replace(".", ",")
+            tds.append(f'<td class="ov-ht-cell{strong}"{style}>{number}</td>')
+        body.append(f'<tr><th scope="row" title="{html.escape(full, quote=True)}">{label}</th>{"".join(tds)}</tr>')
+    return (f'<div class="ov-ht"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>')
+
+
+def heat_table_css(palette):
+    ink, text, muted, border = palette["strong_text"], palette["text"], palette["reference"], palette["card_border"]
+    return f"""<style>
+.ov-ht {{ height:100%; overflow-x:auto; }}
+.ov-ht table {{ width:100%; height:100%; border-collapse:separate; border-spacing:3px 2px; table-layout:fixed; margin:0; }}
+.ov-ht th, .ov-ht td {{ border:0 !important; }}
+.ov-ht thead th {{ font-size:12px; font-weight:600; color:{muted}; text-align:center; padding:0 0 2px; background:transparent !important; }}
+.ov-ht thead th:first-child, .ov-ht tbody th {{ width:24%; min-width:150px; }}
+.ov-ht tbody th {{ text-align:left; font-weight:600; font-size:13px; color:{ink}; padding:0 8px 0 0; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; position:sticky; left:0; background:{palette['card']} !important; }}
+.ov-ht tbody th img {{ width:20px; height:20px; vertical-align:middle; margin-right:8px; object-fit:contain; }}
+.ov-ht tbody th span {{ vertical-align:middle; }}
+.ov-ht-dot {{ display:inline-block; width:20px; height:20px; margin-right:8px; vertical-align:middle; }}
+.ov-ht td {{ text-align:center; font-size:13px; line-height:1.2; font-variant-numeric:tabular-nums; color:{ink}; border-radius:6px;
+  background:color-mix(in srgb, {border} 30%, transparent); padding:0 2px; min-width:46px; }}
+.ov-ht td.ov-ht-strong {{ color:#ffffff; font-weight:600; }}
+.ov-ht td.ov-ht-empty {{ color:{muted}; }}
+</style>"""
+
+
 def line_chart(frame, x, y, mode, height=None, title_y="", fmt="+.1f", color=None):
     palette = charts.get_palette(mode)
     color = color or palette["accent"]
@@ -342,7 +413,7 @@ def line_chart(frame, x, y, mode, height=None, title_y="", fmt="+.1f", color=Non
 def stacked_runs(runs, mode, height=None):
     """The loads: rows loaded per load, with the rejected ones on their own axis."""
     palette = charts.get_palette(mode)
-    runs = runs.assign(label=[f"#{r} · {d[8:10]}-{d[5:7]}" for r, d in zip(runs["run_id"], runs["started_at"])])
+    runs = runs.assign(label=[f"{d[8:10]}-{d[5:7]}" for d in runs["started_at"]])
     base = alt.Chart(runs).encode(x=alt.X("label:N", title=None, sort=list(runs["label"]), axis=alt.Axis(labelAngle=0)))
     tooltip = [alt.Tooltip("label:N", title="Carga"), alt.Tooltip("rows_read:Q", title="Filas leídas", format=",d"),
                alt.Tooltip("rows_loaded:Q", title="Filas cargadas", format=",d"),
@@ -353,4 +424,95 @@ def stacked_runs(runs, mode, height=None):
         y=alt.Y("rows_rejected:Q", title="Filas rechazadas", axis=alt.Axis(orient="right", tickCount=4, titleFontSize=11)),
         tooltip=tooltip)
     return style(alt.layer(bars, line).resolve_scale(y="independent"), mode, height)
+# endregion
+
+
+# region Insights (D-302)
+# What the dashboard answers, the KPIs that answer it and why, and the insights of the current load.
+KPIS = [
+    ("Cambio típico", "Mediana de los cambios semanales de los precios comparables: los que tienen precio en las mismas "
+     "regiones ambas semanas.", "La mediana no se mueve por un precio extremo, y comparar las mismas regiones evita "
+     "confundir un cambio de cobertura con un cambio de precio."),
+    ("Subieron y bajaron", "Precios comparables con un cambio de al menos +0,05 % (o −0,05 %), sobre el total de "
+     "comparables.", "Dice si el movimiento es general o de unos pocos productos."),
+    ("Dirección de una región", "Una región sube o baja solo si sus alzas y bajas difieren más de lo que da el azar "
+     "(prueba de signo, p < 0,05).", "Un 52 % contra un 48 % no es una tendencia: es una moneda al aire."),
+    ("Alerta de precio", "Un cambio fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con "
+     "dos cotizaciones en cada semana.", "Separa lo inusual y material del ruido de cada semana."),
+    ("Alza frente al IPC", "Índice de la familia (enero 2022 = 100, mediana de sus series de consumidor) frente al IPC de "
+     "alimentos del INE; ± 2 puntos es «al ritmo».", "Dice si una familia se encareció o se abarató en términos reales."),
+    ("Precio real", "Precio de la semana × IPC del último mes publicado ÷ IPC del mes de esa semana.",
+     "Permite comparar precios de distintos años en pesos de hoy."),
+    ("Brecha consumidor–mayorista", "(Precio al consumidor − precio mayorista) ÷ precio mayorista, mismo producto, "
+     "región, unidad y semana.", "Muestra cuánto se agrega entre el mercado mayorista y la góndola."),
+    ("Calidad de los datos", "11 indicadores en cinco dimensiones (completitud, actualidad, validez, unicidad y "
+     "consistencia) más controles de exactitud.", "Una cifra solo vale si los datos de origen están completos y son "
+     "válidos."),
+]
+
+
+def signed(value):
+    """A change in %, with the decimal mark of the language: lists of names are not translated as a whole."""
+    text = f"{value:+.1f} %"
+    return text if i18n.is_english() else text.replace(".", ",")
+
+
+def join(names):
+    return i18n.join_names(list(names))
+
+
+def best_drops(variations, week, count=3):
+    """The largest weekly drops of the week, resting on two quotes in each week (as the Resumen ranks them)."""
+    rows = comparable(variations[variations["week_start"] == week])
+    if "same_region_quotes" in rows:
+        rows = rows[(rows["same_region_quotes"] >= 2) & (rows["same_region_previous_quotes"] >= 2)]
+    rows = rows[rows["variation"] < 0].nsmallest(count, "variation")
+    return [(product, channel, value * 100) for product, channel, value in zip(rows["product"], rows["channel"], rows["variation"])]
+
+
+def consumer_insights(moves, drops, summary, ipc_total, ipc_year):
+    """For whoever buys food: what got cheaper this week and which families weigh more than inflation."""
+    fell = moves[moves["state"] == "Bajó"]
+    rose = moves[moves["state"] == "Subió"]
+    above = summary[summary["verdict"] == "más que la inflación"]
+    below = summary[summary["verdict"] == "menos que la inflación"]
+    short = home_mockup.short_family
+    lines = []
+    if len(fell):
+        lines.append(f"Esta semana bajaron {join(f'{short(f)} ({signed(c)})' for f, c in zip(fell['product_group'], fell['change']))}; "
+                     f"subieron {join(f'{short(f)} ({signed(c)})' for f, c in zip(rose['product_group'], rose['change'])) or 'ninguna familia'}.")
+    if drops:
+        lines.append("Las mayores bajas, con al menos dos cotizaciones por semana: "
+                     + join(f"{product} · {channel.lower()} ({signed(value)})" for product, channel, value in drops) + ".")
+    if len(above):
+        lines.append(f"Desde enero 2022, {join(short(f) for f in above['family'])} subieron más que el IPC de alimentos "
+                     f"({signed(ipc_total)}): son las que más pesan hoy en la canasta. "
+                     + (f"{join(short(f) for f in below['family'])} subieron menos: en términos reales, se abarataron." if len(below) else ""))
+    lines.append(f"En los últimos 12 meses, los alimentos subieron {signed(ipc_year)}.")
+    return lines
+
+
+def architect_insights(latest, tests, green, indicators, database, flags, comparable_now, prices_now):
+    """For whoever designs the data: what the load brought, how much of it reaches the indicators and where it is lost."""
+    number = lambda value: f"{int(value):,}".replace(",", ".")
+    day = f"{latest['started_at'][8:10]}-{latest['started_at'][5:7]}-{latest['started_at'][:4]}"
+    total = int(flags["weekly_prices"].sum())
+    by_flag = flags.groupby("flag")["weekly_prices"].sum()
+    unconvertible, outliers = int(by_flag.get("UNIDAD_NO_CONVERTIBLE", 0)), int(by_flag.get("ATIPICO", 0))
+    share = lambda part: f"{part / total * 100:.1f} %".replace(".", ",")
+    lines = [
+        f"La carga del {day} leyó {number(latest['rows_read'])} filas de los archivos de ODEPA y rechazó "
+        f"{number(latest['rows_rejected'])} con su motivo; pasaron {tests[0]} de {tests[1]} pruebas de dbt y {green} de "
+        f"{indicators} indicadores de calidad están en su umbral.",
+        f"La base servida tiene {number(database['prices'])} precios semanales en {number(database['weeks'])} semanas sin "
+        f"huecos, de {database['regions']} regiones y {database['channels']} canales.",
+    ]
+    if unconvertible or outliers:
+        bigger = "las unidades que no se pueden convertir" if unconvertible >= outliers else "los precios atípicos"
+        lines.append(f"{number(unconvertible)} precios ({share(unconvertible)}) quedan fuera de los indicadores por unidad no "
+                     f"convertible y {number(outliers)} ({share(outliers)}) por atípicos: la mayor pérdida está en {bigger}, "
+                     "donde una regla nueva sumaría más datos.")
+    lines.append(f"Esta semana, {number(comparable_now)} de {number(prices_now)} precios tienen comparación con la anterior: "
+                 "el resto no tiene precio la semana previa en las mismas regiones.")
+    return lines
 # endregion

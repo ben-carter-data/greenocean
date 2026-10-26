@@ -41,7 +41,8 @@ def read_data_values():
                               ("dim_product", "quality"), ("dim_region", "region"), ("dim_channel", "channel")):
             values |= {row[0] for row in connection.execute(f"SELECT DISTINCT {column} FROM {table}").fetchall() if row[0]}
     # The panel writes «Lácteos - Huevos - Margarinas» as «Lácteos · Huevos · Margarinas».
-    return values | {value.replace(" - ", " · ") for value in values}
+    from bi import home_mockup
+    return values | {value.replace(" - ", " · ") for value in values} | set(home_mockup.FAMILY_SHORT_NAMES.values())
 
 
 def texts_of(markup):

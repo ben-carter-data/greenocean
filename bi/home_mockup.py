@@ -273,7 +273,7 @@ REGION_SHORT_NAMES = {
     'Región de Magallanes y Antártica Chilena': 'Magallanes',
 }
 FAMILY_SHORT_NAMES = {'Carne de Cerdo - Ave - Cordero': 'Cerdo · Ave · Cordero',
-                      'Lácteos - Huevos - Margarinas': 'Lácteos · Huevos · Margarinas'}
+                      'Lácteos - Huevos - Margarinas': 'Lácteos y huevos'}  # D-301: 33 of its 34 products are dairy or eggs
 # Map drawing, in SVG units: the country on the left, one row per region on the right.
 MAP_VIEW = (318, 620)
 MAP_BOX = (6, 8, 612)          # left edge, top and bottom of the country

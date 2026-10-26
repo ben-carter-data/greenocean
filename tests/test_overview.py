@@ -72,5 +72,5 @@ def test_d296_each_chart_answers_one_question_and_the_cards_grow_with_the_window
     assert len(titles) == 12 and all(title.startswith("¿") and title.endswith("?") for title in titles), titles
     css = overview.build_css(charts.get_palette(charts.THEMES[0]))
     assert "min-height:max(calc((100vh - 318px) / 2), 196px) !important" in css
-    assert 'st.slider(tr("Semanas"), 4, 12, 6' in page  # the reader chooses how many weeks the heat table shows
+    assert 'st.slider(tr("Semanas"), 4, 12, 8' in page  # the reader chooses how many weeks the heat table shows
     assert dashboard.MENU_BLOCKS[0][2][0] == dashboard.PAGE_OVERVIEW and home_mockup  # first page of the business

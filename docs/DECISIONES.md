@@ -2313,3 +2313,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **ADR 3.1:** cada registro suma «Confirmación», la parte de MADR que dice cómo se comprueba la decisión: la prueba que la verifica en cada push. Dos pruebas nuevas cubren las que no tenían una (ADR-04, los datos crudos fuera de Git; ADR-31, ningún data warehouse en la nube como dependencia);
   - el glosario suma BA.
 - **Pruebas:** `tests/test_documents.py::test_d300_*`, `test_adr04_*` y `test_adr31_*`; la lista de diagramas del SAD.
+
+## D-301 · El Dashboard: tablas con logos a todo el ancho y una explicación en cada cifra
+
+- **Pedido del autor:** más espacio para la tabla de las últimas semanas (números chicos), una tabla con el logo de cada familia, tarjetas y tortas más pequeñas, en todas las pestañas; al pasar el cursor por un indicador o un gráfico, una explicación breve de qué es, contra qué se compara y qué dice.
+- **Decisión:** cada pestaña tiene una fila de tres gráficos compactos y una tabla a todo el ancho (Mercado: las últimas semanas; Inflación: cada año; Datos y operación: los indicadores de calidad con su dimensión y significado). Las tablas son HTML: logo y nombre de cada familia, celdas rojas o azules según el cambio, números de 13 px. Cada indicador y cada título de gráfico abre al pasar el cursor una explicación con las cifras del momento. «Lácteos - Huevos - Margarinas» se muestra como «Lácteos y huevos» (33 de sus 34 productos); el nombre oficial aparece al pasar el cursor.
+
+## D-302 · La pestaña Insights: preguntas, KPIs e insights de cada carga
+
+- **Pedido del autor:** una pestaña con las preguntas, los KPIs con su cálculo y por qué, y un insight destacado y dinámico, uno para quien compra y otro para un data architect.
+- **Decisión:** a la izquierda, «Preguntas» (pregunta, quién la hace, el KPI que la responde y la respuesta de hoy) y «KPIs» (cómo se calcula y por qué); a la derecha, dos tarjetas calculadas de la base en cada carga: «Para quien compra» (qué bajó esta semana, las mayores bajas con dos cotizaciones, qué familias superan al IPC) y «Para quien diseña los datos» (qué trajo la carga, qué parte llega a los indicadores y dónde se pierde). Ninguna cifra se escribe a mano.
