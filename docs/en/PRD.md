@@ -106,7 +106,7 @@ With the load of 2026-10-20, the database holds 814,610 weekly prices over 250 w
 
 ## 7. Screens
 
-Real captures of the panel, one per color theme.
+Real captures of the main pages, in the four color themes.
 
 [[diagrama:mockups]]
 

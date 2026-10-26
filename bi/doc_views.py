@@ -433,15 +433,17 @@ svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
 
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 MOCKUPS = [
-    ("m1-resumen-vantablack.jpg", "M-1 · Resumen semanal", "tema Vantablack"),
-    ("m2-precios-darkgrey.jpg", "M-2 · Precios e inflación", "tema Dark Grey"),
-    ("m3-sql-corporativo.jpg", "M-3 · Consultas SQL", "tema Corporativo"),
-    ("m4-calidad-bluelight.jpg", "M-4 · Calidad y auditoría", "tema Blue Light"),
+    ("m1-dashboard-corporativo.jpg", "M-1 · Dashboard", "tema Corporativo"),
+    ("m2-resumen-vantablack.jpg", "M-2 · Resumen semanal", "tema Vantablack"),
+    ("m3-precios-darkgrey.jpg", "M-3 · Precios e inflación", "tema Dark Grey"),
+    ("m4-pipeline-bluelight.jpg", "M-4 · Pipeline y linaje", "tema Blue Light"),
+    ("m5-sql-corporativo.jpg", "M-5 · Consultas SQL", "tema Corporativo"),
+    ("m6-calidad-vantablack.jpg", "M-6 · Calidad y auditoría", "tema Vantablack"),
 ]
 
 
 def build_mockups_html(mode):
-    """The four captures of the panel, one per theme, in a computer frame, two per row."""
+    """Six captures of the panel (D-299), every theme at least once, in a computer frame, two per row."""
     palette = charts.get_palette(mode)
     figures = []
     for file_name, title, detail in MOCKUPS:
@@ -470,4 +472,4 @@ figcaption {{ margin-top:10px; color:{palette['reference']}; }} figcaption b {{ 
 # The document views by marker, with the height of their frame in the page.
 VIEWS = {"contexto": (build_context_html, 470), "contenedores": (build_containers_html, 650),
          "casos": (build_use_cases_html, 580),
-         "mockups": (build_mockups_html, 720)}
+         "mockups": (build_mockups_html, 1080)}

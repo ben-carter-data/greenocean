@@ -77,7 +77,7 @@ def test_d210_the_weak_views_are_gone():
 
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
     page = doc_diagrams.DOC_DIAGRAMS["mockups"](charts.MODE_DARK)
-    assert page.count("data:image/jpeg;base64,") == 4
+    assert page.count("data:image/jpeg;base64,") == len(doc_views.MOCKUPS) == 6  # D-299: the dashboard and the pipeline too
     # D-248: one capture per theme the panel offers today, retaken from the current pages.
     assert set(charts.THEMES) == {word for row in doc_views.MOCKUPS for word in charts.THEMES if word in row[2]}
     for file_name, *_ in doc_views.MOCKUPS:

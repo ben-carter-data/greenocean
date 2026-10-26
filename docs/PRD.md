@@ -106,7 +106,7 @@ Con la carga del 20-10-2026, la base tiene 814.610 precios semanales en 250 sema
 
 ## 7. Pantallas
 
-Capturas reales del panel, una por tema de color.
+Capturas reales de las páginas principales, en los cuatro temas de color.
 
 [[diagrama:mockups]]
 

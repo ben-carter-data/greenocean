@@ -1450,6 +1450,9 @@ def build_style_css(mode):
     .st-key-project_document code {{color:{palette['strong_text']} !important; background:color-mix(in srgb, {palette['card_border']} 45%, transparent) !important;
         border:0 !important; border-radius:4px; padding:1px 5px !important; font-size:.8em; font-weight:500;
         font-family:ui-monospace, SFMono-Regular, Menlo, monospace;}}
+    /* In a table, a file or a test is a reference, not a highlight: plain muted text, no chip. */
+    .st-key-project_document td code {{background:transparent !important; padding:0 !important; color:{palette['reference']} !important;
+        font-size:.74rem !important; font-weight:400; line-height:1.45;}}
     /* D-290: a first cell may be a whole sentence; an identifier such as RF-01 never breaks at its hyphen anyway. */
     .st-key-project_document td:first-child, .st-key-project_document th:first-child {{white-space:normal; min-width:6.5em;}}
     @media (max-width:900px) {{ .st-key-project_document {{padding:22px 18px 26px;}} }}
