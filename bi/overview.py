@@ -645,8 +645,10 @@ def points_css(palette):
     ink, muted, card = palette["strong_text"], palette["reference"], palette["card"]
     return f"""<style>
 .ov-regions {{ display:flex; flex-direction:column; margin:4px 0 1rem; }}
-.ov-row {{ display:flex; gap:28px; height:calc((100vh - 140px) / 3); }}
-.ov-region {{ flex:1 1 0; display:flex; flex-direction:column; align-items:center; min-width:0; min-height:0; }}
+.ov-row {{ display:flex; gap:22px; height:calc((100vh - 140px) / 3); padding:5px 0; }}
+.ov-region {{ flex:1 1 0; display:flex; flex-direction:column; align-items:center; min-width:0; min-height:0; padding:6px 8px 4px;
+  border-radius:22px; background:radial-gradient(ellipse at 50% 100%, hsla(var(--h),70%,55%,.20), hsla(var(--h),70%,55%,.05) 62%, transparent 85%);
+  box-shadow:inset 0 -3px 0 hsla(var(--h),70%,60%,.55); }}
 .ov-region h5 {{ margin:0 0 4px !important; padding:0 10px 3px !important; font-size:15px !important; text-align:center; color:{ink};
   border-bottom:3px solid hsl(var(--h),62%,56%); white-space:nowrap; }}
 .ov-street {{ flex:1; min-height:0; display:flex; justify-content:center; align-items:flex-end; gap:14px; width:100%; }}
