@@ -2358,3 +2358,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** al abrir el Panorama no se sabía qué región se estaba viendo sin hacer clic, y la página pedía desplazarse.
 - **Decisión:** sobre el mapa, una línea «Viendo: todo Chile · clic en una región para ver solo esa» (o el nombre de la región elegida). Los paneles toman el alto de la ventana bajo la barra, el mapa se ajusta a él y la tabla de productos se desplaza por dentro, con la nota de cobertura a la vista. Medido sin desplazamiento a 1440 × 790, 1470 × 800 y 1920 × 1000.
 - **Pruebas:** la suite completa; medición con Playwright.
+
+## D-310 · Dónde comprar: todas las regiones a la vez, con casas 3D flotantes del color de cada región
+
+- **Pedido del autor:** la página tiene espacio para todo; no hace falta navegar con flechas ni encerrar las regiones en cuadros. Casas 3D flotantes, como las ilustraciones de una tienda de audiolibros, de un color distinto por región, y la casa de los detallistas con la puerta abierta, mostrando adentro los puntos de venta en común.
+- **Decisión:** las nueve regiones se ven juntas, de norte a sur, en tres filas sin tarjetas. Cada región lleva su nombre subrayado con su color y sus casas: una por mercado mayorista con su nombre, y la casa «Comercio al detalle», con el frente abierto y adentro los íconos de los tipos de punto de venta (nombrados al pasar el cursor). Las casas se dibujan en perspectiva (frente, costado y techo), flotan con un movimiento lento, y el ancho de cada región depende de cuántas casas tiene, para que todas midan lo mismo. Sin precios. Se quitan las flechas y la vista de a tres regiones. Cabe en una pantalla a 1440 × 790 y 1920 × 1000.
+- **Pruebas:** `tests/test_points_of_sale.py` (una columna de casas por región, un ícono por tipo de punto, sin precios).

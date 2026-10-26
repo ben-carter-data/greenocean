@@ -28,6 +28,7 @@ DOCUMENT_FIELDS = {
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
+    "Sectores": "Sectors",
     "Los mercados mayoristas y los puntos de venta de cada región, de norte a sur. Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.": "The wholesale markets and points of sale of each region, north to south. Information only: there are no prices per market, because what rises in a region rises in all its markets.",
     "Preguntas reales de quien compra, de quien vende por mayor y de quien diseña los datos, con la respuesta de hoy.": "Real questions from whoever buys, whoever sells wholesale and whoever designs the data, with today's answer.",
     "Dónde comprar": "Where to buy",

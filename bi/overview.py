@@ -555,7 +555,6 @@ def read_points():
 
 POINT_ICONS = {"person": "persona", "mercado": "mercado", "datos": "datos", "Supermercado": "supermercado", "Supermercado en Línea": "linea", "Feria libre": "feria", "Carnicería": "carniceria",
                "Panadería": "panaderia", "Mercado Minorista": "minorista", "Mercado Mayorista": "mercado"}
-REGIONS_PER_VIEW = 3
 
 
 @lru_cache(maxsize=None)
@@ -572,42 +571,83 @@ def ordered_regions(points, region_ids):
 DETAIL_SHOP = "Comercio al detalle"
 
 
-def build_region_card(region, data):
-    """One region as a card: each wholesale market as a big house with its name and, in one more house, every kind of
-    consumer point ODEPA records there, shown inside it by its own icon and named on hover."""
-    markets = "".join(f'<li>{point_icon("Mercado Mayorista")}<span>{html.escape(name)}</span></li>' for name in data["wholesale"])
+# One hue per region, north to south, so each region's houses have their own colour (D-310).
+REGION_HUES = [8, 32, 48, 140, 172, 200, 222, 262, 300, 330, 90, 20]
+
+
+@lru_cache(maxsize=None)
+def house_image(hue, shop=False):
+    """A floating house in perspective (front, side and roof), coloured by its region; the shop house has its front open."""
+    roof, roof_light = f"hsl({hue},62%,46%)", f"hsl({hue},70%,62%)"
+    front, side, trim = f"hsl({hue},48%,74%)", f"hsl({hue},40%,56%)", f"hsl({hue},45%,34%)"
+    door = ('<path d="M20 60h52v36H20z" fill="#1b2230"/><path d="M20 60h52v5H20z" fill="#000" opacity=".35"/>'
+            '<path d="M20 60l-8 5v34l8-3z" fill="#e7b45a"/><path d="M72 60l8 5v34l-8-3z" fill="#c98a2c"/>' if shop else
+            '<path d="M34 66h22v30H34z" fill="#e7a43c"/><path d="M45 66v30" stroke="#a8661a" stroke-width="1.6"/>'
+            '<path d="M20 60h9v7h-9zM61 60h9v7h-9z" fill="#e8f1ff" opacity=".9"/>')
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 112">'
+           f'<ellipse cx="62" cy="104" rx="50" ry="6" fill="#000" opacity=".28"/>'
+           f'<path d="M90 50l26-12v46l-26 14z" fill="{side}"/>'
+           f'<path d="M98 56l10-5v9l-10 5z" fill="#e8f1ff" opacity=".8"/>'
+           f'<path d="M8 50h82v48H8z" fill="{front}"/>{door}'
+           f'<path d="M4 52L49 18l45 34z" fill="{roof_light}"/>'
+           f'<path d="M49 18l46-14 25 36-26 12z" fill="{roof}"/>'
+           f'<path d="M4 52h90v4H4z" fill="{trim}"/></svg>')
+    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
+
+
+def build_region_column(region, data, hue):
+    """A region as a column of floating houses: one per wholesale market, with its name, and one open shop house that
+    holds every kind of consumer point ODEPA records there, each named on hover."""
+    houses = "".join(f'<figure class="ov-house" title="{html.escape(name)}"><img src="{house_image(hue)}" alt=""><figcaption>{html.escape(name)}</figcaption></figure>'
+                     for name in data["wholesale"])
     kinds = [name for name in data["consumer"] if name != "Mercado Mayorista"]
     inside = "".join(f'<b class="ov-hint">{point_icon(name)}<em class="ov-hint-tip">{html.escape(i18n.tr(name))}</em></b>' for name in kinds)
-    detail = (f'<li class="ov-common">{point_icon("Minorista")}<span>{html.escape(i18n.tr(DETAIL_SHOP))}</span>'
-              f'<div class="ov-inside">{inside}</div></li>' if kinds else "")
-    sectors = (f'<p class="ov-sectors">{html.escape(i18n.tr("Sectores de la ciudad"))}: {html.escape(", ".join(data["sectors"]))}</p>'
+    shop = (f'<figure class="ov-house ov-shop"><span class="ov-shop-frame"><img src="{house_image(hue, True)}" alt="">'
+            f'<span class="ov-shop-inside">{inside}</span></span><figcaption>{html.escape(i18n.tr(DETAIL_SHOP))}</figcaption></figure>'
+            if kinds else "")
+    sectors = (f'<p class="ov-sectors">{html.escape(i18n.tr("Sectores"))}: {html.escape(", ".join(data["sectors"]))}</p>'
                if data["sectors"] else "")
-    none = f'<p class="ov-none">{html.escape(i18n.tr("Sin mercado mayorista en los datos"))}</p>' if not markets else ""
-    return (f'<div class="ov-rcard"><h5>{html.escape(home_mockup.short_region(region))}</h5>'
-            f'<h6>{html.escape(i18n.tr("Dónde se compra"))}</h6><ul class="ov-markets">{markets}{detail}</ul>{none}{sectors}</div>')
+    count = len(data["wholesale"]) + (1 if kinds else 0)
+    return (f'<section class="ov-region" style="--h:{hue};flex-grow:{count}"><h5>{html.escape(home_mockup.short_region(region))}</h5>'
+            f'<div class="ov-street">{houses}{shop}</div>{sectors}</section>')
+
+
+def build_regions_html(regions, points):
+    """Every region at once, north to south, without cards or arrows (D-310)."""
+    columns = [build_region_column(region, points[region], REGION_HUES[index % len(REGION_HUES)])
+               for index, region in enumerate(regions)]
+    rows = "".join(f'<div class="ov-row">{"".join(columns[start:start + 3])}</div>' for start in range(0, len(columns), 3))
+    return f'<div class="ov-regions">{rows}</div>'
 
 
 def points_css(palette):
-    ink, text, muted, border, accent, card = (palette["strong_text"], palette["text"], palette["reference"], palette["card_border"],
-                                              palette["accent"], palette["card"])
+    ink, muted, card = palette["strong_text"], palette["reference"], palette["card"]
     return f"""<style>
-.ov-rcard {{ margin-bottom:1rem; min-height:calc(100vh - 190px); border-radius:18px; padding:18px 18px 14px; border:1px solid {border};
-  background:linear-gradient(160deg, color-mix(in srgb, {accent} 9%, {card}), {card}); box-shadow:0 14px 30px -20px rgba(0,0,0,.55); }}
-.ov-rcard h5 {{ margin:0 0 4px !important; padding:0 !important; font-size:22px !important; color:{ink}; }}
-.ov-rcard h6 {{ margin:6px 0 14px !important; padding:0 !important; font-size:11px !important; font-weight:600; letter-spacing:.07em;
-  text-transform:uppercase; color:{muted}; }}
-.ov-rcard ul {{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:22px 10px; justify-content:center; }}
-.ov-rcard li {{ position:relative; display:flex; flex-direction:column; align-items:center; gap:4px; width:46%; text-align:center;
-  font-size:13.5px; font-weight:600; line-height:1.25; color:{ink}; }}
-.ov-icon {{ width:112px; height:112px; display:block; filter:drop-shadow(0 12px 8px rgba(0,0,0,.3)); transition:transform .25s ease; }}
-.ov-rcard li:hover > .ov-icon {{ transform:translateY(-5px) scale(1.05); }}
-.ov-common {{ width:100% !important; }}
-.ov-inside {{ display:flex; gap:10px; justify-content:center; margin-top:4px; }}
-.ov-inside b {{ position:relative; cursor:help; }}
-.ov-inside .ov-icon {{ width:34px; height:34px; filter:drop-shadow(0 4px 3px rgba(0,0,0,.25)); }}
-.ov-hint-tip {{ display:none; position:absolute; z-index:20; bottom:100%; left:50%; transform:translateX(-50%); white-space:nowrap; padding:4px 8px;
+.ov-regions {{ display:flex; flex-direction:column; margin:4px 0 1rem; }}
+.ov-row {{ display:flex; gap:28px; height:calc((100vh - 140px) / 3); }}
+.ov-region {{ flex:1 1 0; display:flex; flex-direction:column; align-items:center; min-width:0; min-height:0; }}
+.ov-region h5 {{ margin:0 0 4px !important; padding:0 10px 3px !important; font-size:15px !important; text-align:center; color:{ink};
+  border-bottom:3px solid hsl(var(--h),62%,56%); white-space:nowrap; }}
+.ov-street {{ flex:1; min-height:0; display:flex; justify-content:center; align-items:flex-end; gap:14px; width:100%; }}
+.ov-house {{ --w:calc(((100vh - 140px) / 3 - 74px) * 1.107); margin:0; display:flex; flex-direction:column; align-items:center;
+  flex:1 1 0; max-width:var(--w); min-width:0; height:100%; justify-content:flex-end; }}
+.ov-house img {{ width:100%; height:auto; display:block;
+  filter:drop-shadow(0 10px 10px rgba(0,0,0,.35)); transition:transform .3s ease; animation:ov-float 5s ease-in-out infinite; }}
+.ov-region:nth-child(even) .ov-house img {{ animation-delay:-2.5s; }}
+.ov-house:hover img {{ transform:translateY(-6px) scale(1.04); }}
+@keyframes ov-float {{ 0%, 100% {{ translate:0 0; }} 50% {{ translate:0 -4px; }} }}
+.ov-house figcaption {{ margin-top:2px; width:100%; min-height:28px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+  overflow:hidden; font-size:11.5px; font-weight:600; line-height:1.2; text-align:center; color:{ink}; }}
+.ov-shop-frame {{ position:relative; display:block; width:100%; line-height:0; }}
+.ov-shop-inside {{ position:absolute; left:16%; top:54%; width:42%; height:32%; display:flex; flex-wrap:wrap; align-content:center;
+  justify-content:center; gap:1px; animation:ov-float 5s ease-in-out infinite; }}
+.ov-region:nth-child(even) .ov-shop-inside {{ animation-delay:-2.5s; }}
+.ov-shop-inside b {{ position:relative; cursor:help; }}
+.ov-shop-inside b {{ width:30%; }}
+.ov-shop-inside .ov-icon {{ width:100%; height:auto; display:block; }}
+.ov-hint-tip {{ display:none; position:absolute; z-index:20; bottom:120%; left:50%; transform:translateX(-50%); white-space:nowrap; padding:4px 8px;
   border-radius:8px; background:{ink}; color:{card}; font-size:11px; font-style:normal; font-weight:500; }}
 .ov-hint:hover .ov-hint-tip {{ display:block; }}
-.ov-sectors, .ov-none {{ margin:14px 0 0 !important; font-size:12.5px !important; color:{muted} !important; text-align:center; }}
+.ov-sectors {{ margin:0 !important; font-size:10.5px !important; color:{muted} !important; text-align:center; }}
 </style>"""
 # endregion

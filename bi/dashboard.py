@@ -5847,7 +5847,6 @@ def week_range_label(week):
 
 
 OVERVIEW_WEEKS_KEY = "ov_weeks"
-OVERVIEW_REGION_KEY = "ov_region_start"
 OVERVIEW_INSIGHT_VIEW = "ov_insight_view"
 
 
@@ -5994,30 +5993,15 @@ def build_overview_css(mode):
 
 
 def show_where_page(mode):
-    """Dónde comprar: the wholesale markets and the kinds of consumer point of each region, north to south, as information
-    only (D-308). Each market is a house with its name; every consumer kind shares one house, named on hover."""
+    """Dónde comprar: every region at once, north to south, as floating houses coloured by region (D-306, D-310):
+    one per wholesale market with its name and one open shop house with the kinds of consumer point. Information only."""
     version = get_database_version()
-    regions = overview.ordered_regions(overview.read_points(), read_region_ids(version))
-    start = min(st.session_state.get(OVERVIEW_REGION_KEY, 0), max(0, len(regions) - overview.REGIONS_PER_VIEW))
-
-    def arrows():
-        with st.container(horizontal=True, gap="xsmall", key="ov_region_arrows"):
-            if st.button("", icon=":material/chevron_left:", key="ov_region_prev", disabled=start == 0):
-                st.session_state[OVERVIEW_REGION_KEY] = max(0, start - 1)
-                st.rerun()
-            if st.button("", icon=":material/chevron_right:", key="ov_region_next",
-                         disabled=start + overview.REGIONS_PER_VIEW >= len(regions)):
-                st.session_state[OVERVIEW_REGION_KEY] = start + 1
-                st.rerun()
-
-    show_page_bar(PAGE_WHERE, "Dónde comprar", "Los mercados mayoristas y los puntos de venta de cada región, de norte a sur. "
-                  "Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.",
-                  side=arrows)
     points = overview.read_points()
+    regions = overview.ordered_regions(points, read_region_ids(version))
+    show_page_bar(PAGE_WHERE, "Dónde comprar", "Los mercados mayoristas y los puntos de venta de cada región, de norte a sur. "
+                  "Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.")
     st.markdown(overview.points_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    shown = regions[start:start + overview.REGIONS_PER_VIEW]
-    for column, region in zip(st.columns(len(shown), gap="medium"), shown):
-        column.markdown(overview.build_region_card(region, points[region]), unsafe_allow_html=True)
+    st.markdown(overview.build_regions_html(regions, points), unsafe_allow_html=True)
 
 
 def show_weeks_table(mode, version):

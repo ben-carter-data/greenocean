@@ -22,11 +22,12 @@ def test_d306_the_file_is_what_the_downloaded_files_say():
     assert json.loads(json.dumps(points_of_sale.build(), ensure_ascii=False)) == overview.read_points()
 
 
-def test_d306_each_region_is_a_card_with_an_icon_for_each_point_and_no_price():
+def test_d310_each_region_is_a_column_of_houses_with_its_points_and_no_price():
     points = overview.read_points()
-    card = overview.build_region_card("Región Metropolitana de Santiago", points["Región Metropolitana de Santiago"])
-    assert "Vega Central Mapocho de Santiago" in card and "Sectores de la ciudad" in card
-    assert card.count('<img class="ov-icon"') >= 3 + 1 + 4 and "$" not in card and "%" not in card
+    column = overview.build_region_column("Región Metropolitana de Santiago", points["Región Metropolitana de Santiago"], 200)
+    assert "Vega Central Mapocho de Santiago" in column and column.count('class="ov-house') == 3 + 1
+    assert column.count('<img class="ov-icon"') == 5 and "$" not in column and "%" not in column
     for kind in {kind for data in points.values() for kind in data["consumer"]}:
         assert (overview.POINTS_FILE.parent / "points" / f"{overview.POINT_ICONS[kind]}.svg").exists(), kind
-    assert len(overview.ordered_regions(points, {name: 13 for name in points})) == len(points)
+    regions = overview.ordered_regions(points, {name: 13 for name in points})
+    assert overview.build_regions_html(regions, points).count('class="ov-region"') == len(points)
