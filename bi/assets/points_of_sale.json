@@ -1,0 +1,124 @@
+{
+ "Región Metropolitana de Santiago": {
+  "wholesale": [
+   "Mapocho venta directa de Santiago",
+   "Mercado Mayorista Lo Valledor de Santiago",
+   "Vega Central Mapocho de Santiago"
+  ],
+  "consumer": [
+   "Supermercado",
+   "Feria libre",
+   "Carnicería",
+   "Supermercado en Línea",
+   "Mercado Mayorista",
+   "Panadería"
+  ],
+  "sectors": [
+   "Centro",
+   "Norte",
+   "Oriente",
+   "Poniente",
+   "Sur"
+  ]
+ },
+ "Región de Arica y Parinacota": {
+  "wholesale": [
+   "Agrícola del Norte S.A. de Arica"
+  ],
+  "consumer": [
+   "Supermercado",
+   "Mercado Minorista",
+   "Feria libre",
+   "Carnicería",
+   "Panadería"
+  ],
+  "sectors": []
+ },
+ "Región de Coquimbo": {
+  "wholesale": [
+   "Comercializadora del Agro de Limarí",
+   "Terminal La Palmera de La Serena"
+  ],
+  "consumer": [
+   "Supermercado",
+   "Feria libre",
+   "Carnicería",
+   "Panadería"
+  ],
+  "sectors": []
+ },
+ "Región de La Araucanía": {
+  "wholesale": [
+   "Vega Modelo de Temuco"
+  ],
+  "consumer": [
+   "Supermercado",
+   "Feria libre",
+   "Carnicería",
+   "Mercado Minorista",
+   "Panadería",
+   "Mercado Mayorista"
+  ],
+  "sectors": []
+ },
+ "Región de Los Lagos": {
+  "wholesale": [
+   "Feria Lagunitas de Puerto Montt"
+  ],
+  "consumer": [
+   "Supermercado",
+   "Carnicería",
+   "Feria libre",
+   "Panadería"
+  ],
+  "sectors": []
+ },
+ "Región de Valparaíso": {
+  "wholesale": [
+   "Femacal de La Calera"
+  ],
+  "consumer": [
+   "Supermercado",
+   "Feria libre",
+   "Carnicería",
+   "Panadería"
+  ],
+  "sectors": []
+ },
+ "Región de Ñuble": {
+  "wholesale": [
+   "Terminal Hortofrutícola Agro Chillán"
+  ],
+  "consumer": [
+   "Supermercado",
+   "Feria libre",
+   "Carnicería",
+   "Panadería"
+  ],
+  "sectors": []
+ },
+ "Región del Biobío": {
+  "wholesale": [
+   "Vega Monumental Concepción"
+  ],
+  "consumer": [
+   "Supermercado",
+   "Feria libre",
+   "Carnicería",
+   "Panadería"
+  ],
+  "sectors": []
+ },
+ "Región del Maule": {
+  "wholesale": [
+   "Macroferia Regional de Talca"
+  ],
+  "consumer": [
+   "Supermercado",
+   "Feria libre",
+   "Carnicería",
+   "Panadería"
+  ],
+  "sectors": []
+ }
+}

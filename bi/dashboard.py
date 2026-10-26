@@ -5898,26 +5898,12 @@ def show_overview_market(mode, version):
          "previas y al menos 10 %, con dos cotizaciones por semana. El detalle está en el Resumen semanal."),
     ], charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
     palette = charts.get_palette(mode)
-    first, second, third = st.columns([1.05, 1.5, 1.45], gap="small")
-    with first, overview_head("moved_small", "¿Cómo se movieron los precios esta semana?", scope_name.capitalize(),
-                                    hint=f"Cada parte es una proporción de los {count_text(compared)} precios comparables: rojo, los que "
-                                         "subieron; azul, los que bajaron; gris, los que cambiaron menos de 0,05 %. El centro es el total."):
-        colors = {"Subieron": palette["rise"], "Bajaron": palette["fall"], "Sin cambio": palette["reference"]}
-        st.altair_chart(overview.donut(moved, "direction", "prices", mode, colors=colors, name="dir"),
-                        width="stretch", height="stretch", theme=None, key="ov_moved")
-    with second, overview_head("moves_small", "¿Qué familias subieron?", "Cambio típico de cada familia · un clic la filtra",
-                                     hint="Cada barra es la mediana de los cambios de una familia: lo que hizo su producto típico. "
-                                          "A la derecha subió, a la izquierda bajó. Un clic en una barra filtra todo el tablero."):
-        st.altair_chart(overview.ranked_bars(moves, "family", "change", mode, name="rank",
-                                             selected=home_mockup.short_family(family) if family else None),
-                        width="stretch", height="stretch", theme=None, key="ov_moves",
-                        on_select=lambda: pick_overview_family("ov_moves", "family"), selection_mode=["rank"])
-    with third, overview_head("regions_small", "¿En qué regiones?", "De norte a sur: % de precios que subió y que bajó",
-                                    hint="Cada región, de norte a sur: a la derecha, el % de sus precios comparables que subió; a la "
-                                         "izquierda, el % que bajó. Solo aparecen las regiones con precios en ambas semanas."):
-        regions = read_regional_movement_model(f"{week:%Y-%m-%d}", family or ALL_VALUES)
-        st.altair_chart(overview.region_bars(overview.region_moves(regions, read_region_ids(version)), mode),
-                        width="stretch", height="stretch", theme=None, key="ov_regions")
+    with overview_head("where_small", "¿Dónde se compra, región por región?", "Los puntos que existen; si sube, sube en todos",
+                       hint="Solo información: los mercados mayoristas y los tipos de punto de venta que ODEPA registra en cada "
+                            "región. Los precios de los puntos de una misma ciudad se mueven juntos, así que no se separan: lo "
+                            "que sube en una región sube en todos sus mercados."):
+        st.markdown(overview.points_css(palette) + overview.build_points_html(overview.read_points(), read_region_ids(version)),
+                    unsafe_allow_html=True)
     count = st.session_state.get(OVERVIEW_WEEKS_KEY, 8)
     with overview_head("heat_wide", "¿Qué familias vienen subiendo, semana a semana?", "Cada fila es una familia y cada columna una semana: rojo, subió; azul, bajó",
                        hint="Cada celda es el cambio típico de una familia en una semana: rojo si subió, azul si bajó, y más "

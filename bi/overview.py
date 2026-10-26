@@ -11,6 +11,8 @@ ritmo de la inflación» within ±2 points of the CPI. Pure functions: no Stream
 """
 import base64
 import html
+import json
+from pathlib import Path
 
 import altair as alt
 import pandas as pd
@@ -197,10 +199,10 @@ def build_css(palette):
 [class*="st-key-ov_card_"] [data-testid="stVegaLiteChart"] {{ flex:1 1 auto; height:100%; min-height:0; }}
 [class*="st-key-ov_card_"] [data-testid="stElementToolbar"] {{ display:none !important; }}
 .st-key-ov_tabs {{ margin-top:-14px; }}
-[class*="st-key-ov_card_"][class*="_small"] {{ height:max(calc((100vh - 290px) * .44), 180px) !important;
-  min-height:max(calc((100vh - 290px) * .44), 180px) !important; }}
-[class*="st-key-ov_card_"][class*="_wide"] {{ height:max(calc((100vh - 290px) * .56), 240px) !important;
-  min-height:max(calc((100vh - 290px) * .56), 240px) !important; }}
+[class*="st-key-ov_card_"][class*="_small"] {{ height:max(calc((100vh - 290px) * .44), 190px) !important;
+  min-height:max(calc((100vh - 290px) * .44), 190px) !important; }}
+[class*="st-key-ov_card_"][class*="_wide"] {{ height:max(calc((100vh - 290px) * .56), 275px) !important;
+  min-height:max(calc((100vh - 290px) * .56), 275px) !important; }}
 [class*="st-key-ov_card_"][class*="_wide"] [data-testid="stElementContainer"]:has(.ov-ht),
 [class*="st-key-ov_card_"][class*="_wide"] [data-testid="stElementContainer"]:has(.ov-qt) {{ flex:1 1 0; min-height:0; overflow:auto; }}
 [class*="st-key-ov_card_"][class*="_wide"] [data-testid="stMarkdown"]:has(.ov-ht),
@@ -541,3 +543,44 @@ def wholesale_insights(variations, week, margins):
                      + ": es el margen que separa la compra por mayor de la góndola.")
     lines.append("ODEPA publica precios mayoristas solo de frutas y hortalizas.")
     return lines
+
+
+# region Where to buy (D-306)
+POINTS_FILE = Path(__file__).with_name("assets") / "points_of_sale.json"
+
+
+def read_points():
+    """{region: {wholesale, consumer, sectors}}: what exists in each region, from ODEPA's own files (no price)."""
+    return json.loads(POINTS_FILE.read_text(encoding="utf-8"))
+
+
+def build_points_html(points, region_ids):
+    """Information only: each region, north to south, as a block with its wholesale markets and the kinds of consumer
+    point that ODEPA monitors there; in Santiago, also the sectors of the city."""
+    order = sorted(points, key=lambda name: REGION_ORDER.index(region_ids[name]) if region_ids.get(name) in REGION_ORDER else 99)
+    blocks = []
+    for region in order:
+        data = points[region]
+        markets = "".join(f'<span class="ov-pt ov-pt-market">{html.escape(name)}</span>' for name in data["wholesale"])
+        kinds = html.escape(" · ".join(data["consumer"]))
+        sectors = (f'<small>{html.escape(i18n.tr("Sectores de la ciudad"))}: {html.escape(", ".join(data["sectors"]))}</small>'
+                   if data["sectors"] else "")
+        blocks.append(f'<div class="ov-region"><h5>{html.escape(home_mockup.short_region(region))}</h5>{markets}'
+                      f'<p>{kinds}</p>{sectors}</div>')
+    return f'<div class="ov-ptwrap"><div class="ov-pts">{"".join(blocks)}</div></div>'
+
+
+def points_css(palette):
+    ink, text, muted, border, accent = (palette["strong_text"], palette["text"], palette["reference"], palette["card_border"], palette["accent"])
+    return f"""<style>
+.ov-ptwrap {{ max-height:calc(max((100vh - 290px) * .44, 190px) - 56px); overflow:auto; }}
+.ov-pts {{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px 14px; }}
+.ov-region {{ padding:4px 0 6px; border-bottom:1px solid {border}; min-width:0; }}
+.ov-region h5 {{ margin:0 0 3px !important; padding:0 !important; font-size:13px !important; color:{ink}; }}
+.ov-region p {{ margin:2px 0 0 !important; font-size:11.5px !important; line-height:1.35 !important; color:{muted} !important; }}
+.ov-region small {{ display:block; margin-top:1px; color:{muted}; font-size:11px; }}
+.ov-pt {{ display:inline-block; margin:1px 4px 1px 0; padding:0 8px; border-radius:999px; border:1px solid {border}; font-size:11.5px; line-height:1.4; }}
+.ov-pt-market {{ border-color:{accent}; color:{ink}; font-weight:600; background:color-mix(in srgb, {accent} 9%, transparent); }}
+@media (max-width:1100px) {{ .ov-pts {{ grid-template-columns:repeat(2, minmax(0, 1fr)); }} }}
+</style>"""
+# endregion

@@ -94,6 +94,7 @@ EN = {
     'Qué significa': 'What it means',
     'Insights': 'Insights',
     "Para quién": "For whom",
+    "Sectores de la ciudad": "City sectors",
     "Elige tu vista": "Choose your view", "Usuario": "User", "Todas las familias": "All families", "Vista de usuario": "User view", "Vista profesional": "Professional view",
     "Ver todo el proyecto": "See the whole project",
     "La ingeniería de datos, la operación, la seguridad, el stack y la documentación.":

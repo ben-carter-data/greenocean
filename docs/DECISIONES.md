@@ -2334,3 +2334,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 
 - **Pedido del autor:** la tabla de las últimas semanas no se entendía y no parecía una tabla; en el Resumen, las familias y los menús ocupaban demasiado y la lista de regiones no se veía como algo en lo que se puede hacer clic.
 - **Decisión:** la tabla del Dashboard se titula «¿Qué familias vienen subiendo, semana a semana?», explica que cada fila es una familia y cada columna una semana, tiene celdas con bordes y se desplaza hacia los lados cuando hay muchas semanas. En el Resumen, las filas de familias y los menús de canal y orden son más bajos, la tabla de productos gana alto y el conteo de regiones se ve como un enlace («clic»).
+
+## D-306 · Dónde se compra: los puntos que existen en cada región, solo como información
+
+- **Pedido del autor:** para quien lee el panel, sin repeticiones: mostrar los puntos de compra que existen en cada región (en Santiago, Lo Valledor, la Vega Central…), sin precios por mercado. Los precios de los puntos de una misma ciudad se mueven juntos: si sube en una región, sube en todos sus mercados; la diferencia entre ellos es mínima.
+- **Decisión:** el Dashboard, pestaña Mercado, deja de repetir el Resumen (se quitan la dona, las familias y las regiones, que ya dicen los indicadores y el Resumen) y muestra «¿Dónde se compra, región por región?»: por región, de norte a sur, sus mercados mayoristas con nombre y los tipos de punto de venta al consumidor que ODEPA registra, y en Santiago sus sectores. Ninguna cifra ni precio. Los nombres salen de los archivos de ODEPA y se guardan en `bi/assets/points_of_sale.json`, que se regenera con `python etl/points_of_sale.py`; el modelo de datos y el pipeline no cambian.
+- **Pruebas:** `tests/test_points_of_sale.py`: las regiones del archivo existen en la base, el archivo es lo que dicen los archivos descargados (cuando están) y el panel no muestra precios.
