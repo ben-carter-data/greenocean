@@ -453,19 +453,13 @@ def dashboard_bar(path, week_label, family_rows, regional_rows, region, compared
     chips = [
         (f'Semana {week_label} · {place}',
          esc(week_label.rsplit(' ', 1)[0]) + (f' · {esc(place)}' if region else '')),
-        (f'Precios comparados: {number(compared)} de {number(available)}, con precio en ambas semanas',
-         f'<b>{number(compared)}</b><small>/{number(available)}</small>' if compared is not None else '—'),
-        (f'Familias: {family_rise} subieron, {family_fall} bajaron y {family_same} sin cambio · variación típica (mediana)',
-         f'<em>Fam</em><b class="rise">{family_rise}↑</b><b class="fall">{family_fall}↓</b><b>{family_same}=</b>'),
-        (f'Regiones: {rise} subieron y {fall} bajaron · {mixed} sin dirección clara · {missing} sin dato',
-         f'<em>Reg</em><b class="rise">{rise}↑</b><b class="fall">{fall}↓</b>'),
-    ]
+    ]  # D-316: the header keeps the essentials; the family and region counts live in their own panels
     question = (f'{QUESTION} Variación típica (mediana) por familia frente a la semana anterior · '
                 f'semana {week_label} · {place}')
     return ('<div class="greenocean-mockup home-bar-main">'
             + (f'<span class="home-bar-path">{esc(section)} › <b>{esc(page)}</b></span>' if section
                else f'<span class="home-bar-path"><b>{esc(page)}</b></span>')
-            # A heading by role: Streamlit wraps a markdown <h1> in a block of its own, which would not shrink.
+            # The page's heading stays for readers of screens and for the tests, but it takes no room in the bar (D-316).
             + f'<span class="home-bar-title" role="heading" aria-level="1" title="{esc(question)}">{esc(QUESTION)}</span>'
             + ''.join(f'<span class="home-chip" title="{esc(note)}">{value}</span>' for note, value in chips)
             + '</div>')

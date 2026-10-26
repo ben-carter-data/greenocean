@@ -271,7 +271,7 @@ def test_dashboard_territory_is_immediately_readable_without_a_3d_duplicate():
     assert "scatter3d" not in types
     texts = " ".join(block.value for block in app.markdown)
     # D-264: the week and three figures are chips of the bar; the place is in the week's hover.
-    assert texts.count('class="home-chip"') == 4 and "Todo Chile" in texts
+    assert texts.count('class="home-chip"') == 1 and "Todo Chile" in texts
     assert "Mapa en proporción real" in texts
 
 @needs_database
@@ -1608,7 +1608,8 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
     assert app.button(key="return_to_previous").label == "Volver"
     assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
     # each chip says in full what it counts, and the alerts are the week's national ones
-    for note in ("con precio en ambas semanas", "variación típica (mediana)", "sin dirección clara", "sin dato"):
+    assert markup.count('class="home-chip"') == 1  # D-316: the header keeps the week and the place; the counts live in the panels
+    for note in ("Sin cambio claro", "Sin dato"):  # the map's legend says what its greys mean
         assert note in markup, note
     week = dashboard.read_latest_week()
     count = int((dashboard.read_price_alerts()["week_start"] == week).sum())

@@ -150,7 +150,9 @@ def draw_family_focus(rows, family, mode, real=False, domain=None, height=420):
     series."""
     palette = charts.get_palette(mode)
     value = "real" if real else "index"
-    lines = family_lines(rows, family, mode, real, domain)
+    lines = family_lines(rows, family, mode, real, domain).encode(
+        x=alt.X("month_start:T", title=None, axis=alt.Axis(  # D-316: the years under the chart, small and soft, in the gridline's place
+            format="%Y", tickCount=5, labelPadding=8, labelFontSize=11, labelColor=palette["reference"], labelFlush=False)))
     panel = rows[rows["product_group"].isin([family, IPC_NAME])].sort_values("month_start")
     names = [family, IPC_NAME] if family != IPC_NAME else [IPC_NAME]
     colors = [FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names):]
@@ -187,7 +189,7 @@ def draw_family_focus(rows, family, mode, real=False, domain=None, height=420):
     dots = alt.Chart(panel).mark_point(filled=True, size=40).encode(
         x=x, y=y, color=color, opacity=alt.condition(hover, alt.value(1), alt.value(0)))
     layers += [rule, dots]
-    chart = alt.layer(*layers).properties(width="container", height=height, padding={"right": 44})
+    chart = alt.layer(*layers).properties(width="container", height=height, padding={"right": 44, "bottom": 18})
     return charts.apply_chart_style(chart, mode)
 
 def month_name(year, month):

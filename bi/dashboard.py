@@ -1716,6 +1716,8 @@ def build_style_css(mode):
     :is(.st-key-cover_offer_link, .st-key-cover_limits_link) {{ padding-left:42px; }}
     /* D-295: the profile dialog: the brand, the question and two pills; the professional profiles under their pill. */
     div[data-testid="stDialog"] [role="dialog"] {{ border-radius:22px; padding-top:6px; }}
+    /* D-316: with the title hidden, the content starts under the × of every dialog; the × stays on top and clickable. */
+    div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] {{ position:relative; z-index:20; }}
     div[data-testid="stDialog"] [role="dialog"] > div:first-child:has(> div > h2), div[data-testid="stDialog"] [role="dialog"] h2 {{
         display:none !important; }}
     .profile-brand {{ display:flex; align-items:center; justify-content:center; gap:10px; margin:6px 0 10px;
@@ -5598,6 +5600,9 @@ def build_context_css(mode):
     [class*="st-key-inf_card_"] [class*="st-key-inf_zoom_"] button p, .st-key-inf_unfocus button p {{font-size:12px!important;font-weight:300!important;}}
     .st-key-inf_card_focus {{border:1px solid {palette['card_border']};border-radius:18px;padding:18px 22px 10px;gap:14px!important;
         background:{palette['card']};box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 28px 50px -32px rgba(0,0,0,.6);}}
+    /* D-316: Streamlit caps a chart's box at the window's height; the enlarged one keeps its years and axis, whatever the window. */
+    .st-key-inf_card_focus [data-testid="stVegaLiteChart"], .st-key-inf_card_focus [data-testid="stFullScreenFrame"] {{
+        max-height:none !important; overflow:visible !important; }}
     .st-key-inf_card_focus .inf-panel-head b {{font-size:20px;}} .st-key-inf_card_focus .inf-panel-head span {{font-size:14px;}}
     .st-key-ctx_main .ctx-head h3 {{margin:8px 0 6px!important;}}
     .st-key-ctx_main p.ctx-reading {{margin:0 0 20px!important;}}
@@ -6034,7 +6039,8 @@ def show_weeks_table(mode, version):
 @st.dialog("¿Qué familias vienen subiendo, semana a semana?", width="large")
 def show_weeks_dialog(mode, version):
     palette = charts.get_palette(mode)
-    st.markdown(f"#### {tr('¿Qué familias vienen subiendo, semana a semana?')}")
+    st.markdown(f'<h4 style="margin:0 48px 6px 0;padding:0">{html.escape(tr("¿Qué familias vienen subiendo, semana a semana?"))}</h4>',
+                unsafe_allow_html=True)  # the dialog's own title is hidden by the profile dialog's style; the × stays free
     st.markdown(f"""<style>
     .st-key-weeks_head {{ justify-content:space-between; padding-right:36px; }}
     .st-key-weeks_head [data-testid="stSlider"] {{ padding:0 6px; }}

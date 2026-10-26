@@ -2394,3 +2394,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** ajuste mínimo, sin cambiar el diseño: las regiones sin dato pesan menos, la leyenda distingue «sin cambio claro» de «sin dato», y una fila resalta su región.
 - **Decisión:** las regiones sin dato se dibujan con una trama gris muy clara, su fila con nombre apagado, línea más fina y tenue y «sin dato» pequeño, sin recuadro. La leyenda separa «Sin cambio claro» (gris medio sólido) de «Sin dato» (trama). Al pasar el cursor por una fila, su región se resalta en el mapa con un contorno blanco (y al revés).
 - **Pruebas:** la suite completa; revisión en pantalla.
+
+## D-316 · Encabezado esencial del Panorama, la × que cierra y los años del índice ampliado
+
+- **Pedido del autor:** el encabezado del Panorama se veía mal, con cosas inútiles y mezcladas (la pregunta cortada, los contadores de familias y regiones y el aviso de alertas se pisaban); la × de la ventana de semanas no cerraba; y el gráfico del índice mensual ampliado debía mostrar los años bajo el eje sin cambiar nada más.
+- **Decisión:** el encabezado guarda solo lo esencial: el camino de la página, la semana y la región leídas, las alertas, los dos botones («Semanas» e «Inflación») y la hora de la carga. Se quitan la pregunta cortada y los contadores, que ya dicen los paneles. La × de todas las ventanas queda por encima del contenido (con el título oculto, el contenido la tapaba). En el índice mensual ampliado, las etiquetas de año (2022 a 2026) van pequeñas y grises bajo el eje, alineadas con la cuadrícula; Streamlit limitaba la caja del gráfico al alto de la ventana y las cortaba en ventanas bajas, así que se levanta ese tope para el gráfico ampliado. La curva, el ancho, las líneas y los colores no cambian.
+- **Pruebas:** `tests/test_dashboard.py` (un solo chip en el encabezado) y la suite completa; revisión en pantalla a 1440 × 700 y 1440 × 790.

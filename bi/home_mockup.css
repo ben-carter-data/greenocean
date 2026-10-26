@@ -532,3 +532,5 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-chile-map:has(.mock-region-row[data-r="14"]:hover) .mock-region-shape[data-r="14"],.mock-chile-map:has(.mock-region-shape[data-r="14"]:hover) .mock-region-shape[data-r="14"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
 .mock-chile-map:has(.mock-region-row[data-r="15"]:hover) .mock-region-shape[data-r="15"],.mock-chile-map:has(.mock-region-shape[data-r="15"]:hover) .mock-region-shape[data-r="15"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
 .mock-chile-map:has(.mock-region-row[data-r="16"]:hover) .mock-region-shape[data-r="16"],.mock-chile-map:has(.mock-region-shape[data-r="16"]:hover) .mock-region-shape[data-r="16"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
+
+.home-bar-title {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
