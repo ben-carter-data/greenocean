@@ -117,6 +117,12 @@ def draw_family_card(rows, family, mode, real=False, domain=None, height=186):
     """One family against the food IPC (dashed), for a card of the grid (D-174): the
     chart fills its card and shares the y domain with the other cards. Real: the IPC
     is the flat 100 line and a family above it rose more than the basket."""
+    return charts.apply_chart_style(family_lines(rows, family, mode, real, domain).properties(
+        width="container", height=height), mode)
+
+
+def family_lines(rows, family, mode, real=False, domain=None):
+    """The two lines of a family card, without style or size, so the enlarged chart can add its layers."""
     palette = charts.get_palette(mode)
     value = "real" if real else "index"
     panel = rows[rows["product_group"].isin([family, IPC_NAME])]
@@ -133,8 +139,56 @@ def draw_family_card(rows, family, mode, real=False, domain=None, height=186):
         tooltip=[alt.Tooltip("product_group:N", title="Serie"),
                  alt.Tooltip("month_start:T", title="Mes", format="%m-%Y"),
                  alt.Tooltip(f"{value}:Q", title="Índice", format=",.1f")])
-    return charts.apply_chart_style(chart.properties(width="container", height=height), mode)
+    return chart
 
+
+
+def draw_family_focus(rows, family, mode, real=False, domain=None, height=420):
+    """The enlarged family (D-294): the card's lines plus what a large chart owes its reader. The last value of each
+    line at its end, the family's peak marked with its value (the «Máximo» of the reading beside it) and, under the
+    cursor, a rule with the month, both values and their difference in points. Every number is a value of the drawn
+    series."""
+    palette = charts.get_palette(mode)
+    value = "real" if real else "index"
+    lines = family_lines(rows, family, mode, real, domain)
+    panel = rows[rows["product_group"].isin([family, IPC_NAME])].sort_values("month_start")
+    names = [family, IPC_NAME] if family != IPC_NAME else [IPC_NAME]
+    colors = [FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names):]
+    color = alt.Color("product_group:N", scale=alt.Scale(domain=names, range=colors), legend=None)
+    x = alt.X("month_start:T", title=None)
+    y = alt.Y(f"{value}:Q", title=None)
+    ends = panel.groupby("product_group", as_index=False).tail(1)
+    end_labels = alt.Chart(ends).mark_text(align="left", dx=7, fontSize=12, fontWeight=600).encode(
+        x=x, y=y, color=color, text=alt.Text(f"{value}:Q", format=",.1f"))
+    layers = [lines, end_labels]
+    series = panel[panel["product_group"] == family]
+    if family != IPC_NAME and not series.empty:
+        peak = series.loc[[series[value].idxmax()]]
+        if peak.index[0] != series.index[-1]:  # a peak in the last month already carries the end label
+            layers += [alt.Chart(peak).mark_point(filled=True, size=46, color=colors[0]).encode(x=x, y=y),
+                       alt.Chart(peak).mark_text(dy=-11, fontSize=11.5, fontWeight=600, color=colors[0]).encode(
+                           x=x, y=y, text=alt.Text(f"{value}:Q", format=",.1f"))]
+    # One row per month with both values, for the rule under the cursor.
+    wide = panel.pivot_table(index="month_start", columns="product_group", values=value).reset_index()
+    tooltip = [alt.Tooltip("month_start:T", title="Mes", format="%B %Y")]
+    if family != IPC_NAME:
+        wide = wide.rename(columns={family: "family", IPC_NAME: "ipc"})
+        wide["gap"] = wide["family"] - wide["ipc"]
+        tooltip += [alt.Tooltip("family:Q", title=family, format=",.1f"),
+                    alt.Tooltip("ipc:Q", title=IPC_NAME, format=",.1f"),
+                    alt.Tooltip("gap:Q", title="Diferencia en puntos", format="+,.1f")]
+    else:
+        wide = wide.rename(columns={IPC_NAME: "ipc"})
+        tooltip += [alt.Tooltip("ipc:Q", title=IPC_NAME, format=",.1f")]
+    hover = alt.selection_point(name="month", fields=["month_start"], nearest=True, on="pointerover",
+                                clear="pointerout", empty=False)
+    rule = alt.Chart(wide).mark_rule(color=palette["reference"], strokeWidth=1).encode(
+        x=x, opacity=alt.condition(hover, alt.value(.75), alt.value(0)), tooltip=tooltip).add_params(hover)
+    dots = alt.Chart(panel).mark_point(filled=True, size=40).encode(
+        x=x, y=y, color=color, opacity=alt.condition(hover, alt.value(1), alt.value(0)))
+    layers += [rule, dots]
+    chart = alt.layer(*layers).properties(width="container", height=height, padding={"right": 44})
+    return charts.apply_chart_style(chart, mode)
 
 def month_name(year, month):
     return f"{charts.CHILE_LOCALE['time']['months'][month - 1]} {year}"

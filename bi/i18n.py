@@ -386,9 +386,37 @@ def join_names(names):
 QUOTED = _re.compile(r"""(["'])((?:(?!\1).){2,}?)\1""")
 
 
+def translate_dataset(data):
+    """A chart's data as Streamlit carries it, Arrow bytes (D-294): its text cells that are a whole entry, translated
+    like the same names in the scales and conditions. Without it, a series renamed in its scale («Food CPI (INE)»)
+    no longer finds its rows («IPC alimentos (INE)») and its line disappears."""
+    import pyarrow as pa
+    from streamlit import dataframe_util
+    try:
+        table = pa.ipc.open_stream(data).read_all()
+    except (pa.ArrowInvalid, TypeError):
+        return data
+    changed = False
+    columns = []
+    for column in table.columns:
+        if pa.types.is_string(column.type) or pa.types.is_large_string(column.type):
+            values = column.to_pylist()
+            english = [(lookup(value.strip()) or value) if isinstance(value, str) and value.strip() else value
+                       for value in values]
+            if english != values:
+                changed = True
+                column = pa.array(english, type=column.type)
+        columns.append(column)
+    if not changed:
+        return data
+    return dataframe_util.convert_arrow_table_to_arrow_bytes(pa.Table.from_arrays(columns, schema=table.schema))
+
+
 def translate_spec(spec):
     """A chart: its titles, labels, tooltips and the labels of its series, wherever they appear, so the data, the
     scales and the conditions keep naming the same thing."""
+    if isinstance(spec, (bytes, bytearray)):
+        return translate_dataset(bytes(spec))
     if isinstance(spec, dict):
         return {key: translate_spec(value) for key, value in spec.items()}
     if isinstance(spec, list):

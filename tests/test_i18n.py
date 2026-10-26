@@ -240,3 +240,21 @@ def test_d284_no_screen_shows_spanish_when_the_reader_chose_english(screen, data
     from tests import i18n_audit
     view, state = screen
     assert i18n_audit.spanish_left(view, data_values, state=state) == []
+
+
+def test_d294_a_chart_keeps_its_series_when_streamlit_carries_the_data_as_arrow(monkeypatch):
+    """Streamlit hands the chart's data to the translation as Arrow bytes, not as rows: the CPI must be renamed there
+    too, or its line has no color in English and disappears."""
+    import altair as alt
+    import pandas as pd
+    import pyarrow as pa
+    from streamlit.elements import vega_charts
+    english(monkeypatch)
+    frame = pd.DataFrame({"serie": ["IPC alimentos (INE)", "Frutas"], "value": [1.0, 2.0]})
+    chart = alt.Chart(frame).mark_line().encode(
+        color=alt.Color("serie:N", scale=alt.Scale(domain=["IPC alimentos (INE)", "Frutas"])), y="value:Q")
+    spec = i18n.translate_spec(vega_charts._convert_altair_to_vega_lite_spec(chart))
+    domain = spec["encoding"]["color"]["scale"]["domain"]
+    rows = [pa.ipc.open_stream(data).read_all().to_pydict() for data in spec["datasets"].values()][0]
+    assert domain[0] == "Food CPI (INE)" and rows["serie"][0] == "Food CPI (INE)"
+    assert rows["serie"][1] == "Frutas" and rows["value"] == [1.0, 2.0]

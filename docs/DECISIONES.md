@@ -2249,3 +2249,17 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **la descripción no tapa el dibujo:** con el menú lateral abierto, la descripción se muestra sobre el menú, donde no corre ninguna línea; con el menú cerrado, va al lugar del dibujo que tapa menos líneas y vecinos del nodo. No intercepta el cursor, así nunca bloquea otro nodo;
   - **sin filtro**, se dibujan el flujo de datos y lo que llega al lector; las descargas de la base por los workflows aparecen en Orquestación y Calidad.
 - **Pruebas:** `tests/test_app_map.py::test_d293_*`: cada línea tiene su evidencia y el archivo contiene el código que nombra; la descripción se aparta de las líneas del nodo. Medido en el navegador: con el cursor sobre GitHub Actions y sobre Streamlit, la descripción no tapa ningún punto de sus líneas a 1440 × 790 ni a 1920 × 1000.
+
+## D-294 · La familia ampliada muestra sus cifras sobre las líneas; el IPC vuelve a verse en inglés
+
+- **Pedido del autor:** el gráfico ampliado de una familia describía bien, pero le faltaban cifras precisas sobre las líneas.
+- **Decisión:** solo en la vista ampliada (las tarjetas pequeñas siguen sin cifras):
+  - el último valor de cada línea, al final de la línea (la familia y el IPC de alimentos);
+  - el máximo de la familia marcado con su valor, el mismo «Máximo» que nombra la lectura de al lado; si el máximo es el último mes, lo dice la etiqueta final;
+  - al pasar el cursor, una regla vertical con el mes, los dos valores y la diferencia en puntos.
+  Todas las cifras son valores de la serie dibujada.
+- **Corregido en el camino:**
+  - en inglés, la línea del IPC desaparecía de los gráficos de Precios e inflación: Streamlit entrega los datos del gráfico como Arrow, y la traducción renombraba la serie en la escala pero no en los datos. Ahora traduce también los datos, con la misma regla;
+  - «Ver todas» y «Diferencia en puntos» tienen su inglés;
+  - la lectura ampliada ocupa algo menos de alto, así la página en inglés cabe en 1440 × 790.
+- **Pruebas:** `tests/test_inflation_view.py::test_d294_*` (las etiquetas finales y el máximo son valores de la serie; la regla usa el mes más cercano y la diferencia es la resta de los dos valores) y `tests/test_i18n.py::test_d294_*` (la serie del IPC se llama igual en los datos Arrow y en la escala).

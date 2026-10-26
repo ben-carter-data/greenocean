@@ -5408,7 +5408,7 @@ def build_context_css(mode):
     .inf-insights {{border-left:3px solid var(--c);padding:2px 0 2px 14px;}}
     .inf-insights h4 {{margin:0 0 8px!important;padding:0!important;font-size:12px!important;font-weight:600!important;
         letter-spacing:.08em;text-transform:uppercase;color:{palette['reference']};}}
-    .inf-insights p {{margin:0 0 9px!important;font-size:13px;line-height:1.45;color:{palette['text']};}}
+    .inf-insights p {{margin:0 0 7px!important;font-size:13px;line-height:1.4;color:{palette['text']};}}
     .inf-insights em {{display:block;font-style:normal;font-size:11px;font-weight:600;color:{palette['strong_text']};}}
     .ctx-split {{margin-top:5px;}}
     .ctx-split small {{display:block;font-size:11px!important;}}
@@ -5570,8 +5570,8 @@ def show_family_cards(rows, titles, mode, real, summary=None, last=None):
                 st.markdown(build_family_card_title_html(focus, titles[focus]), unsafe_allow_html=True)
                 st.button("Ver todas", key="inf_unfocus", icon=":material/close:", on_click=focus_family, args=(None,))
             chart_column, reading_column = st.columns([2.5, 1], gap="medium")
-            chart_column.altair_chart(inflation_view.draw_family_card(rows, focus, mode, real=real, domain=domain,
-                                                                      height=420), width="stretch", theme=None)
+            chart_column.altair_chart(inflation_view.draw_family_focus(rows, focus, mode, real=real, domain=domain,
+                                                                       height=420), width="stretch", theme=None)
             if summary is not None and last is not None:
                 reading_column.markdown(build_family_insights_html(
                     inflation_view.family_insights(rows, summary, focus, last, real), focus), unsafe_allow_html=True)
