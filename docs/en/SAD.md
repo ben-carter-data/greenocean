@@ -120,7 +120,7 @@ Landing keeps the rows as they arrive; bronze is their literal copy in Parquet, 
 | `region_id` | INTEGER | FK → `dim_region` | Region |
 | `channel_id` | BIGINT | FK → `dim_channel` | Sales channel |
 | `normalized_unit` | VARCHAR | | Normalized unit: `kilo`, `litro` or `unidad`; empty if it cannot be converted |
-| `price` | DOUBLE | | Weekly price in nominal pesos, per normalized unit |
+| `price` | DOUBLE | | Weekly price in nominal pesos, per normalized unit; empty when the unit cannot be converted (flag `UNIDAD_NO_CONVERTIBLE`) |
 | `volume` | DOUBLE | | Volume reported by the source, when it exists |
 | `observation_count` | BIGINT | | Number of quotes that make up the price of the week |
 | `flag` | VARCHAR | | Empty if the price enters the indicators; `ATIPICO` (outlier) or `UNIDAD_NO_CONVERTIBLE` (unit that cannot be converted) if it stays out of them |
