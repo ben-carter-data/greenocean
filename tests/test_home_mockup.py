@@ -226,7 +226,7 @@ def test_d092_region_and_family_clicks_fill_the_products_table():
     assert not app.exception
     assert app.session_state['dashboard_region'] == 'Región de Coquimbo'
     markup = ' '.join(block.value for block in app.markdown)
-    assert 'Productos · Frutas' in markup and 'en Coquimbo' in markup
+    assert 'mock-products-family">Frutas' in markup and 'en Coquimbo' in markup
     assert '<a class="mock-region-row ' in markup and 'selected" href="' in markup
     table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
     assert table.count('<tr>') > 1 and 'Regiones ↑ / ↓' in table

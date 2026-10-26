@@ -210,16 +210,16 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     app = draw_page(dashboard.HOME_PAGE, query=PINNED_HOME)
     assert not app.exception and not app.tabs
     texts = " ".join(block.value for block in app.markdown)
-    assert 'Productos · Hortalizas' in texts and 'Producto seleccionado' not in texts
+    assert 'Detalle de productos</span><span class="mock-products-family">Hortalizas' in texts and 'Producto seleccionado' not in texts
     assert 'Precio 28-09' in texts and 'Precio 05-10' in texts and 'Variación' in texts
     assert 'class="zoom-frame' not in texts and 'animateMotion' not in texts
-    assert texts.index('¿Qué familias de alimentos subieron y bajaron?') < texts.index('Productos · Hortalizas')
+    assert texts.index('¿Qué familias subieron y cuáles bajaron?') < texts.index('¿Qué productos explican el cambio?')
     # The search, the order and the table replace the old «Explorar…» drop-down (D-093).
     assert not app.expander and not app.slider
     # Map, movement by family and products of the selected family, on one screen (D-092).
     assert texts.count('<a class="mock-movement-row ') == 7
     assert texts.count('<a class="mock-movement-row rise selected"') == 1
-    assert 'class="mock-products-table"' in texts and 'Productos · Hortalizas' in texts
+    assert 'class="mock-products-table"' in texts and '¿Qué productos explican el cambio?' in texts
     assert '¿Qué estamos comparando?' not in texts and 'class="mock-family-tile ' not in texts
     assert 'id="pulso-regional"' in texts
     assert 'Registros históricos' not in texts
@@ -1060,7 +1060,7 @@ def test_dashboard_explains_its_graphs_and_collapses_family_tables():
     assert not app.exception
     text = ' '.join(block.value for block in app.markdown)
     assert 'En palabras simples:' not in text
-    assert 'Movimiento por familia' in ' '.join(block.value for block in app.markdown)
+    assert 'Variación por familia' in ' '.join(block.value for block in app.markdown)
     assert 'Variación' in text and 'Regiones ↑ / ↓' in text
     # The coverage note moved under the products table, with its two references.
     assert 'sin comparación válida' in text and '>Calidad</a>' in text and '>Metodología</a>' in text

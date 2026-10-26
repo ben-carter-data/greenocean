@@ -474,7 +474,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-home_products [data-testid="stTextInput"] input {font-size:12px!important;min-height:28px!important;}
 .st-key-home_products [data-testid="stTextInput"] > div {min-height:28px!important;}
 .st-key-home_products {padding:6px 12px 8px!important;gap:4px!important;}
-.mock-products-table {max-height:max(130px, calc(100vh - 625px))!important;min-height:0!important;}
+.mock-products-table {max-height:max(100px, calc(100vh - 652px))!important;min-height:0!important;}
 /* D-309: the Panorama fits one screen: the map and the panels take the height the window leaves under the bar. */
 .st-key-home_overview {height:calc(100vh - 100px);min-height:520px;}
 .st-key-home_overview > [data-testid="stHorizontalBlock"] {height:100%;}
@@ -499,3 +499,9 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-movement-heading {display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
 .mock-place {flex:0 0 auto;padding:5px 12px;border-radius:999px;font-size:13px;white-space:nowrap;background:color-mix(in srgb,var(--mock-fall) 14%,transparent);color:var(--mock-ink);}
 .mock-place b {color:var(--mock-fall);}
+
+/* D-313: the three panels share one heading: a small label in capitals and a question. */
+.mock-products-top {flex:0 0 100%;display:flex;align-items:center;gap:8px;}
+.mock-products-top .mock-kicker {margin:0;}
+.mock-products-family {padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;color:var(--mock-ink);background:var(--mock-soft);}
+.mock-products-heading {row-gap:2px;}

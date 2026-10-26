@@ -401,9 +401,9 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
               '<span><i class="neutral"></i>Sin dato o sin dirección clara</span>')
     scope = (f'Viendo: <b>{esc(short_region(selected_region))}</b> · clic en la región para volver a todo Chile'
              if selected_region else 'Viendo: <b>todo Chile</b> · clic en una región para ver solo esa')
-    return ('<section class="mock-regional" id="pulso-regional"><span class="mock-kicker">Lectura territorial</span>'
+    return ('<section class="mock-regional" id="pulso-regional"><span class="mock-kicker">Precios por región</span>'
             f'<p class="mock-scope">{scope}</p>'
-            '<h2>¿En qué dirección se movieron los precios?</h2>'
+            '<h2>¿Hacia dónde se movieron los precios?</h2>'
             '<p>% de precios comparables que siguió la dirección dominante. Mapa en proporción real; '
             'cada región se lee en su fila.</p>'
             f'<div class="mock-regional-legend">{legend}</div>'
@@ -480,7 +480,7 @@ def family_movement(rows, family_link, selected_family, scope):
     """One clickable row per family: a diverging bar from zero, its change and its state."""
     summary = family_averages(rows)
     if not summary:
-        return '<section class="mock-movement"><h2>Movimiento por familia</h2><p class="mock-empty">Sin precios comparables para esta selección.</p></section>'
+        return '<section class="mock-movement"><span class="mock-kicker">Variación por familia</span><h2>¿Qué familias subieron y cuáles bajaron?</h2><p class="mock-empty">Sin precios comparables para esta selección.</p></section>'
     limit = max(1, math.ceil(max(abs(average) for _, average, _ in summary) * 100))
     markup = []
     for group, average, members in summary:
@@ -497,8 +497,8 @@ def family_movement(rows, family_link, selected_family, scope):
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(average * 100, True)}</b>'
             f'<span class="mock-movement-state">{word}</span><span class="mock-movement-chevron">›</span></a>')
     place = scope[0].upper() + scope[1:]
-    return ('<section class="mock-movement"><div class="mock-movement-heading"><div><h2>Movimiento por familia</h2>'
-            f'<p>Mediana de las variaciones de precios comparables: lo que hizo el producto típico · {esc(scope)}. Selecciona una familia para ver sus productos.</p></div>'
+    return ('<section class="mock-movement"><div class="mock-movement-heading"><div><span class="mock-kicker">Variación por familia</span><h2>¿Qué familias subieron y cuáles bajaron?</h2>'
+            f'<p>Mediana de variaciones de precios comparables, {esc(scope)}.</p></div>'
             f'<span class="mock-place">Región: <b>{esc(place)}</b></span>'
             '</div><div class="mock-movement-row mock-movement-axis" aria-hidden="true"><i></i><span></span>'
             f'<span class="mock-movement-scale"><span>−{limit} %</span><span>0</span><span>+{limit} %</span></span>'
@@ -511,7 +511,9 @@ def products_heading(family, average, scope, shown=None, total=None):
     chip = '' if average is None else f'<span class="mock-products-chip {state}">{percent(average * 100, True)} mediana</span>'
     count = ('' if total is None else f'<span class="mock-products-count">{number(shown)} de {number(total)} precios</span>'
              if shown != total else f'<span class="mock-products-count">{number(total)} precios</span>')
-    return (f'<div class="mock-products-heading"><h2>Productos · {esc(short_family(family))}</h2>{chip}'
+    return (f'<div class="mock-products-heading"><div class="mock-products-top"><span class="mock-kicker">Detalle de productos</span>'
+            f'<span class="mock-products-family">{esc(short_family(family))}</span></div>'
+            f'<h2>¿Qué productos explican el cambio?</h2>{chip}'
             f'<span class="mock-products-scope">en {esc(scope)}</span>{count}</div>')
 
 

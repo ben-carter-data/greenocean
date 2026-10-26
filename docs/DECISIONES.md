@@ -2376,3 +2376,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** al abrir el Panorama no se sabía en qué región estaba por defecto; la región elegida debe verse sobre el movimiento por familia.
 - **Decisión:** en la cabecera de «Movimiento por familia» hay una etiqueta «Región: Todo Chile» (o el nombre de la región elegida en el mapa), siempre visible; se suma a la línea «Viendo» sobre el mapa. El Panorama sigue cabiendo en una pantalla.
 - **Pruebas:** la suite completa, con la auditoría del inglés.
+
+## D-313 · Un mismo encabezado en los tres paneles del Panorama
+
+- **Pedido del autor:** títulos consistentes, claros y pensados para quien lee, sin cambiar el diseño ni los datos.
+- **Decisión:** cada panel lleva una etiqueta corta en mayúsculas y una pregunta como título. Mapa: «Precios por región» y «¿Hacia dónde se movieron los precios?». Familias: «Variación por familia» y «¿Qué familias subieron y cuáles bajaron?», con el subtítulo de una línea «Mediana de variaciones de precios comparables, todo Chile.». Tabla: «Detalle de productos», con la familia elegida en una etiqueta aparte, y «¿Qué productos explican el cambio?». La tipografía y los colores no cambian; la tabla cede la altura de las nuevas líneas y el Panorama sigue cabiendo en una pantalla.
+- **Pruebas:** `tests/test_dashboard.py`, `tests/test_home_mockup.py` y la auditoría del inglés.
