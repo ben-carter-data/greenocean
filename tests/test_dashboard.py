@@ -1471,7 +1471,7 @@ def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
     assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:4] == [dashboard.PAGE_FOLDER, dashboard.PAGE_PRD, dashboard.PAGE_SAD,
                                                                dashboard.PAGE_ADR]
     # D-205: the document views in their own frame, the live panel diagrams inline.
-    for page, framed, inline in ((dashboard.PAGE_PRD, 4, 0), (dashboard.PAGE_SAD, 6, 0), (dashboard.PAGE_ADR, 3, 0),
+    for page, framed, inline in ((dashboard.PAGE_PRD, 4, 0), (dashboard.PAGE_SAD, 9, 0), (dashboard.PAGE_ADR, 3, 0),
                                  (dashboard.PAGE_TEST_PLAN, 6, 0)):
         app = draw_page(page)
         assert not app.exception and not app.code

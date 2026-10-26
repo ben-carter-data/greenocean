@@ -2304,3 +2304,12 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Problema confirmado:** las tres cargas manuales del 25-10-2026 fallaron en el paso «Run the tests against the new database». ODEPA ya había publicado la semana del 19-10, y `test_d210_the_prd_figures_match_the_served_database` exigía que el PRD dijera las cifras exactas de la base nueva (precios, semanas, filas). Con una semana más, el texto dejó de coincidir, pytest falló y la base no se publicó: la puerta de publicación funcionó, pero por un motivo que no es un error de los datos. Sin corrección, todas las cargas siguientes fallarían igual.
 - **Decisión:** el PRD dice de qué carga son sus cifras («Con la carga del 20-10-2026…») y que la base crece cada martes. La prueba las compara cuando la base es esa carga y se omite, con su motivo, cuando la base es más nueva. El tamaño redondo del SAD («Unos 14 MB») se acepta con 2 MB de margen. Las cifras del día siguen en el panel, que las calcula de la base.
 - **Pruebas:** `tests/test_documents.py::test_d210_*` y `test_d248_*` con la regla nueva.
+
+## D-300 · El SAD completo y un ADR verificable
+
+- **Pedido del autor:** el SAD debe cubrir lo que la app tiene y lo que un SAD debe tener (faltaban los componentes y los casos de uso, y los logos se veían chicos); el ADR se veía simple y poco sólido.
+- **Decisión:**
+  - **SAD 3.1:** «2.1 Escenarios clave» (vista de escenarios de 4+1: actor, escenario, requisito y contenedores que lo resuelven), «3.1 Componentes de la carga semanal» y «3.2 Componentes del panel» (C4, nivel 3, con los archivos reales); la sección del panel describe las vistas, el Dashboard, el aviso de carga fallida y los dos idiomas. Los íconos de las vistas C4 son más grandes. El SAD queda con nueve diagramas;
+  - **ADR 3.1:** cada registro suma «Confirmación», la parte de MADR que dice cómo se comprueba la decisión: la prueba que la verifica en cada push. Dos pruebas nuevas cubren las que no tenían una (ADR-04, los datos crudos fuera de Git; ADR-31, ningún data warehouse en la nube como dependencia);
+  - el glosario suma BA.
+- **Pruebas:** `tests/test_documents.py::test_d300_*`, `test_adr04_*` y `test_adr31_*`; la lista de diagramas del SAD.

@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 2.0 |
-| Fecha | 25-10-2026 |
+| Versión | 2.1 |
+| Fecha | 26-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Definir una sola vez las siglas y los términos que usan el panel y los documentos. |
@@ -36,6 +36,7 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 |---|---|---|---|
 | KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. | Resumen semanal, Precios e inflación | Indicadores |
 | BI | Inteligencia de negocios (*business intelligence*): el análisis de datos para tomar decisiones; aquí, el panel. | — | Indicadores |
+| BA | Análisis de negocio (*business analysis*): el rol que traduce los datos en decisiones; una de las vistas profesionales del panel. | — | Indicadores |
 | RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Calidad y auditoría | Indicadores |
 | Alerta de precio | Cambio semanal inusual para un producto y de al menos 10 %. | Resumen semanal | Indicadores |
 | Precio real | Precio expresado en pesos del último mes publicado del IPC. | Precios e inflación | Indicadores |
@@ -100,3 +101,4 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 |---|---|---|
 | 1.0 | 25-10-2026 | Primera versión como documento propio, a partir del glosario de la guía del proyecto (D-279, documentación profesional) |
 | 2.0 | 25-10-2026 | Un resumen con tres esquemas y los términos ordenados por tema, desde los indicadores (D-290, documentos para todo lector) |
+| 2.1 | 26-10-2026 | BA, una de las vistas profesionales del panel (D-300) |

@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.0 |
-| Fecha | 25-10-2026 |
+| Versión | 3.1 |
+| Fecha | 26-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo está construido GreenOcean, cómo corre cada semana, dónde viven sus datos y por qué tiene esa forma. |
@@ -46,6 +46,12 @@ Para lograrlos, la carga rehace toda la historia cada martes desde los archivos 
 
 El sistema lee dos fuentes públicas, ODEPA y el INE, y se apoya en dos servicios gratuitos: GitHub guarda el código y la base servida y ejecuta la carga; Streamlit Community Cloud publica el panel. El visitante solo lee el panel. El administrador, el autor del proyecto, mantiene el código y los secretos.
 
+### 2.1 Escenarios clave
+
+[[diagrama:escenarios]]
+
+Cada escenario recorre la arquitectura de punta a punta; las secciones 4 y 5 los muestran paso a paso.
+
 ## 3. Contenedores
 
 [[diagrama:contenedores]]
@@ -59,6 +65,18 @@ El sistema tiene dos aplicaciones y tres almacenes de datos:
 | Base servida | DuckDB (`etl/datos.duckdb`) | Las tablas que lee el panel; se publica en el release «base-actual» |
 | Respaldo | SQLite (`etl/datos.db`) | Los mismos precios calculados sin dbt, para la prueba de paridad; se rehace en la máquina de cada carga y no se publica |
 | Panel web | Streamlit, Python | Muestra los indicadores y los documentos, y ofrece el estudio SQL; lee la base servida en solo lectura y, con la clave de control, lanza la carga por la API de GitHub |
+
+### 3.1 Componentes de la carga semanal
+
+[[diagrama:componentes_carga]]
+
+Cada componente es un archivo del repositorio y corre como un paso de `semanal.yml`; si uno falla, los siguientes no corren.
+
+### 3.2 Componentes del panel
+
+[[diagrama:componentes_panel]]
+
+`bi/dashboard.py` arma la navegación y cada página con sus vistas; las consultas pasan por `bi/queries.py` y la base se abre en solo lectura. `bi/control.py` es la única pieza que habla con la API de GitHub.
 
 ## 4. La carga de cada semana
 
@@ -85,6 +103,8 @@ Si un paso falla, los siguientes no corren y la base servida no cambia ([ADR-11 
 [[diagrama:secuencia_panel]]
 
 Al abrirse, el panel compara su base con el puntero de la rama `main`. Si su copia es más antigua, descarga la base del release «base-actual» y la usa solo si su huella SHA-256 coincide. Después abre la base en solo lectura: ninguna página puede cambiar un dato. Si GitHub no responde, el panel sigue con la base que ya tiene.
+
+La primera vez, el lector elige una vista: la de usuario muestra el negocio (el Dashboard, el Resumen semanal y Precios e inflación) y la profesional, todo el proyecto, ordenado según el perfil que elige (Data Eng, BA, BI, DevOps o Seguridad); la vista de usuario abre el resto solo con la clave de la app. Si la última carga falló, un aviso rojo arriba del menú lo dice en todas las páginas, con un enlace al paso que falló. El panel se lee en español y en inglés.
 
 ## 6. Los datos
 
@@ -365,3 +385,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 1.5 | 24-10-2026 | Principios, vista de ejecución, calidad y observabilidad, riesgos (D-269); base servida en un release (D-270) |
 | 2.0 | 25-10-2026 | Estructura arc42 completa: restricciones, estrategia de solución, conceptos transversales, requisitos de calidad, deuda técnica, glosario e historial (D-279, documentación profesional) |
 | 3.0 | 25-10-2026 | De lo más importante a lo menos: resumen, contexto, contenedores, la carga y el panel en secuencia, los datos con su diccionario, despliegue, calidad y seguridad, capacidad y crecimiento (antes en documentos propios); seis diagramas (D-290, documentos para todo lector) |
+| 3.1 | 26-10-2026 | Escenarios clave y componentes de la carga y del panel (C4, nivel 3); las vistas, el Dashboard y el aviso de carga fallida en el panel (D-300) |

@@ -31,7 +31,8 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
                               re.MULTILINE) for name in READING}
     assert names == {
         "PRD.md": ["valor", "casos", "requisitos", "mockups"],
-        "SAD.md": ["contexto", "contenedores", "secuencia_carga", "secuencia_panel", "capas", "despliegue"],
+        "SAD.md": ["contexto", "escenarios", "contenedores", "componentes_carga", "componentes_panel", "secuencia_carga",
+                   "secuencia_panel", "capas", "despliegue"],
         "ADR.md": ["mapa_adr", "tiempo_adr", "antes_despues"],
         "PLAN_PRUEBAS.md": ["niveles", "actores", "pruebas", "sop", "secuencia_manual", "secuencia_ci"],
         "MANUAL.md": ["calendario", "arbol_fallas", "secuencia_recuperacion"],
@@ -269,3 +270,32 @@ def test_d288_each_document_has_a_cover_with_its_version_date_status_owner_and_a
     assert header["Audiencia"] in cover
     assert documents_folder.read_title(text) in cover
     assert "| Campo |" not in documents_folder.strip_header_table(text)
+
+
+def test_adr04_the_raw_data_is_not_in_git():
+    import subprocess
+    tracked = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True).stdout.split()
+    assert not [path for path in tracked if path.endswith(".csv") and path.startswith("agent/downloads/")]
+    assert "etl/raw.db" not in tracked and "etl/datos.duckdb" not in tracked
+
+
+def test_adr31_no_cloud_warehouse_is_a_dependency():
+    """ADR-31: the served database is a DuckDB file; a cloud warehouse is only a commented option of dbt."""
+    for path in ("requirements.txt", "requirements-pipeline.txt"):
+        text = (ROOT / path).read_text(encoding="utf-8").lower()
+        for cloud in ("bigquery", "snowflake", "redshift", "databricks"):
+            assert cloud not in text, (path, cloud)
+    active = [line for line in (ROOT / "dbt" / "profiles.yml").read_text(encoding="utf-8").splitlines()
+              if "type:" in line and not line.strip().startswith("#")]
+    assert active and all("duckdb" in line for line in active)
+
+
+def test_d300_each_adr_names_the_test_that_confirms_it_and_the_test_exists():
+    for name, word in (("ADR.md", "**Confirmación:**"), ("en/ADR.md", "**Confirmation:**")):
+        text = (DOCS_DIR / name).read_text(encoding="utf-8")
+        entries = [entry for entry in re.split(r"^## ", text, flags=re.MULTILINE)[1:] if entry.startswith("ADR-")]
+        assert len(entries) == 11
+        for entry in entries:
+            line = next(line for line in entry.splitlines() if word in line)
+            path, test = re.search(r"`([^`]+)::([^`]+)`", line).groups()
+            assert re.search(rf"^def {re.escape(test)}\(", (ROOT / path).read_text(encoding="utf-8"), re.MULTILINE), (entry[:6], test)

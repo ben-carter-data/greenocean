@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.0 |
-| Date | 2026-10-25 |
+| Version | 2.1 |
+| Date | 2026-10-26 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Define once the acronyms and terms used by the panel and the documents. |
@@ -36,6 +36,7 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 |---|---|---|---|
 | KPI | Key performance indicator: each figure that measures something of the business. | Weekly summary, Prices and inflation | Indicators |
 | BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
+| BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | — | Indicators |
 | RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
 | Price alert | A weekly change that is unusual for a product and of at least 10 %. | Weekly summary | Indicators |
 | Real price | A price expressed in pesos of the last published month of the CPI. | Prices and inflation | Indicators |
@@ -100,3 +101,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 |---|---|---|
 | 1.0 | 2026-10-25 | First version as a document of its own, from the glossary of the project guide (D-279, professional documentation) |
 | 2.0 | 2026-10-25 | A summary with three diagrams and the terms ordered by theme, from the indicators (D-290, documents for every reader) |
+| 2.1 | 2026-10-26 | BA, one of the professional views of the panel (D-300) |

@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.0 |
-| Date | 2026-10-25 |
+| Version | 3.1 |
+| Date | 2026-10-26 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain how GreenOcean is built, how it runs each week, where its data lives and why it has that shape. |
@@ -46,6 +46,12 @@ To reach them, the load rebuilds the whole history every Tuesday from the offici
 
 The system reads two public sources, ODEPA and the INE, and relies on two free services: GitHub keeps the code and the served database and runs the load; Streamlit Community Cloud publishes the panel. The visitor only reads the panel. The administrator, the author of the project, maintains the code and the secrets.
 
+### 2.1 Key scenarios
+
+[[diagrama:escenarios]]
+
+Each scenario goes through the architecture end to end; sections 4 and 5 show them step by step.
+
 ## 3. Containers
 
 [[diagrama:contenedores]]
@@ -59,6 +65,18 @@ The system has two applications and three data stores:
 | Served database | DuckDB (`etl/datos.duckdb`) | The tables the panel reads; published in the «base-actual» release |
 | Backup | SQLite (`etl/datos.db`) | The same prices computed without dbt, for the parity test; rebuilt on the machine of each load and not published |
 | Web panel | Streamlit, Python | Shows the indicators and the documents, and offers the SQL studio; reads the served database read-only and, with the control code, launches the load through the GitHub API |
+
+### 3.1 Components of the weekly load
+
+[[diagrama:componentes_carga]]
+
+Each component is a file of the repository and runs as a step of `semanal.yml`; if one fails, the following ones do not run.
+
+### 3.2 Components of the panel
+
+[[diagrama:componentes_panel]]
+
+`bi/dashboard.py` builds the navigation and each page with its views; the queries go through `bi/queries.py` and the database is opened read-only. `bi/control.py` is the only piece that talks to the GitHub API.
 
 ## 4. The load of each week
 
@@ -85,6 +103,8 @@ If a step fails, the following ones do not run and the served database does not 
 [[diagrama:secuencia_panel]]
 
 When it opens, the panel compares its database with the pointer of the `main` branch. If its copy is older, it downloads the database from the «base-actual» release and uses it only if its SHA-256 fingerprint matches. Then it opens the database read-only: no page can change a value. If GitHub does not respond, the panel carries on with the database it already has.
+
+The first time, the reader chooses a view: the user view shows the business (the Dashboard, the Weekly summary and Prices and inflation) and the professional view, the whole project, ordered by the profile chosen (Data Eng, BA, BI, DevOps or Security); the user view opens the rest only with the app's code. If the last load failed, a red notice above the menu says so on every page, with a link to the step that failed. The panel reads in Spanish and in English.
 
 ## 6. The data
 
@@ -365,3 +385,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 1.5 | 2026-10-24 | Principles, runtime view, quality and observability, risks (D-269); served database in a release (D-270) |
 | 2.0 | 2026-10-25 | Complete arc42 structure: constraints, solution strategy, crosscutting concepts, quality requirements, technical debt, glossary and history (D-279, professional documentation) |
 | 3.0 | 2026-10-25 | From the most important to the least: summary, context, containers, the load and the panel as sequences, the data with its dictionary, deployment, quality and security, capacity and growth (formerly documents of their own); six diagrams (D-290, documents for every reader) |
+| 3.1 | 2026-10-26 | Key scenarios and components of the load and of the panel (C4, level 3); the views, the Dashboard and the failed-load notice in the panel (D-300) |

@@ -188,7 +188,7 @@ def wrap(text, limit=24):
     return lines + ([line] if line else [])
 
 
-def graph(mode, title, nodes, edges, note="", width=920, size=34, limit=22):
+def graph(mode, title, nodes, edges, note="", width=920, size=38, limit=22):
     """A diagram of icons and straight arrows (D-297): no boxes and no cards, lines that turn only at right angles.
 
     nodes: {key: (x, y, mark, label, caption)}; the mark is centred on (x, y) and the label and caption sit below it.
@@ -311,7 +311,7 @@ def sad_context(mode):
         ("system", "odepa", "CSV", "flow", "h"), ("system", "ine", say("IPC", "CPI"), "flow", "h"),
         ("system", "github", say("aloja", "hosts"), "order", "h"), ("system", "cloud", say("publica", "publishes"), "flow", "h")],
         say("La flecha va de quien usa a quien es usado; lo que hay dentro de GreenOcean está en la vista siguiente.",
-            "The arrow goes from who uses to what is used; what is inside GreenOcean is in the next view."), limit=26)
+            "The arrow goes from who uses to what is used; what is inside GreenOcean is in the next view."), size=48, limit=26)
 
 
 def sad_containers(mode):
@@ -329,7 +329,58 @@ def sad_containers(mode):
         ("load", "work", say("lee y escribe", "reads and writes"), "flow", "h"), ("load", "served", say("publica", "publishes"), "flow", "h"),
         ("load", "backup", say("escribe", "writes"), "flow", "h"), ("panel", "served", say("solo lectura", "read-only"), "flow", "h"),
         ("people", "panel", say("consulta · lanza la carga", "reads · launches the load"), "order", "v"),
-        ("github", "load", say("ejecuta cada martes", "runs every Tuesday"), "order", "v")], limit=24)
+        ("github", "load", say("ejecuta cada martes", "runs every Tuesday"), "order", "v")], size=46, limit=24)
+
+
+def sad_components_load(mode):
+    return graph(mode, say("Componentes de la carga semanal (C4, nivel 3)", "Components of the weekly load (C4, level 3)"), {
+        "workflow": (70, 130, "icon:calendar", "semanal.yml", say("ordena los pasos; si uno falla, se detiene", "orders the steps; if one fails, it stops")),
+        "agent": (260, 30, "brand:python", "agent/agent.py", say("descarga los CSV, revisa su encabezado y anota su huella", "downloads the CSV files, checks their header and records their fingerprint")),
+        "etl": (260, 250, "brand:sqlite", "etl/etl.py", say("el respaldo etl/datos.db, sin dbt", "the backup etl/datos.db, without dbt")),
+        "pipeline": (470, 30, "brand:apacheparquet", "etl/pipeline.py", say("raw.db → bronce (bronze.py, ine.py) → dbt build → puerta", "raw.db → bronze (bronze.py, ine.py) → dbt build → gate")),
+        "dbt": (670, 30, "brand:dbt", "dbt/models", say("staging (3) · intermedio (4) · marts (9) y 31 pruebas", "staging (3) · intermediate (4) · marts (9) and 31 tests")),
+        "served": (838, 30, "brand:duckdb", "etl/datos.duckdb", say("la base servida, en un archivo nuevo", "the served database, in a new file")),
+        "tests": (470, 250, "brand:pytest", "pytest", say("sobre la base nueva, con la paridad", "on the new database, with the parity")),
+        "publish": (838, 250, "brand:github", say("Publicación", "Publication"), say("release «base-actual», puntero en main e informe", "«base-actual» release, pointer on main and report")),
+    }, [("workflow", "agent", "", "order", "h"), ("workflow", "etl", "", "order", "h"),
+        ("agent", "pipeline", "CSV", "flow", "h"), ("pipeline", "dbt", say("bronce", "bronze"), "flow", "h"),
+        ("dbt", "served", say("si todo pasa", "if all passes"), "flow", "h"), ("etl", "tests", say("respaldo", "backup"), "check", "h"),
+        ("served", "tests", say("base nueva", "new database"), "check", "v"),
+        ("tests", "publish", say("en verde: publica", "green: publishes"), "flow", "h")], size=42, limit=24)
+
+
+def sad_components_panel(mode):
+    return graph(mode, say("Componentes del panel (C4, nivel 3)", "Components of the panel (C4, level 3)"), {
+        "people": (70, 180, "person:visitor", say("Lector", "Reader"), say("elige la vista de usuario o la profesional", "chooses the user or the professional view")),
+        "dashboard": (260, 180, "brand:streamlit", "bi/dashboard.py", say("navegación, perfiles, aviso de carga fallida e idioma (i18n.py)", "navigation, profiles, failed-load notice and language (i18n.py)")),
+        "pages": (460, 30, "icon:chart", say("Vistas", "Views"), say("overview.py, sql_explorer.py y las demás", "overview.py, sql_explorer.py and the rest")),
+        "queries": (660, 30, "icon:code", "bi/queries.py", say("las consultas de queries.sql, con caché", "the queries of queries.sql, cached")),
+        "duckdb": (838, 30, "brand:duckdb", "etl/datos.duckdb", say("abierta en solo lectura", "opened read-only")),
+        "served": (660, 180, "icon:box", "bi/served_database.py", say("descarga la base y comprueba su huella", "downloads the database and checks its fingerprint")),
+        "control": (460, 330, "icon:key", "bi/control.py", say("clave en tiempo constante; ejecuciones y carga manual", "code in constant time; runs and manual load")),
+        "github": (838, 330, "brand:github", "GitHub", say("release «base-actual» y API de Actions", "«base-actual» release and Actions API")),
+    }, [("people", "dashboard", "", "order", "h"), ("dashboard", "pages", "", "flow", "h"), ("dashboard", "served", say("al abrir", "on opening"), "flow", "h"),
+        ("dashboard", "control", "", "order", "h"), ("pages", "queries", "SQL", "flow", "h"),
+        ("queries", "duckdb", say("solo lectura", "read-only"), "flow", "h"), ("control", "github", "API", "order", "h"),
+        ("github", "served", say("descarga", "download"), "flow", "v")], size=42, limit=24)
+
+
+def sad_scenarios(mode):
+    rows = [("person:visitor", say("Visitante", "Visitor"), "icon:chart", say("Ver qué cambió esta semana", "See what changed this week"), "P-1 · " + say("Resumen y Dashboard", "Summary and Dashboard"), say("Panel web y base servida", "Web panel and served database")),
+            ("person:visitor", say("Visitante", "Visitor"), "icon:code", say("Consultar con SQL", "Query with SQL"), "P-2 · P-3 · RF-06", say("Panel web y DuckDB en solo lectura", "Web panel and read-only DuckDB")),
+            ("icon:calendar", "GitHub Actions", "icon:box", say("Cargar y publicar cada martes", "Load and publish every Tuesday"), "RF-01 · RF-02 · RF-03", say("Carga semanal y release", "Weekly load and release")),
+            ("person:author", say("Autor", "Author"), "icon:key", say("Lanzar una carga manual con la clave", "Launch a manual load with the code"), "RF-07", say("Panel web y API de GitHub", "Web panel and GitHub API")),
+            ("person:author", say("Autor", "Author"), "icon:bell@#e5484d", say("Saber que una carga falló", "Know that a load failed"), say("aviso en el panel y correo", "notice in the panel and email"), say("Panel web y GitHub Actions", "Web panel and GitHub Actions"))]
+    nodes, edges = {}, []
+    for index, (actor_mark, actor, mark, scenario, ref, where) in enumerate(rows):
+        y = 20 + 95 * index
+        nodes[f"a{index}"] = (90, y, actor_mark, actor, "")
+        nodes[f"s{index}"] = (430, y, mark, scenario, ref)
+        nodes[f"c{index}"] = (770, y, "icon:layers", say("Lo resuelve", "Realized by"), where)
+        edges += [(f"a{index}", f"s{index}", "", "order", "h"), (f"s{index}", f"c{index}", "", "flow", "h")]
+    return graph(mode, say("Escenarios clave y los contenedores que los resuelven", "Key scenarios and the containers that realize them"),
+                 nodes, edges, say("Los casos de uso completos, con sus actores, están en el PRD.", "The full use cases, with their actors, are in the PRD."),
+                 size=34, limit=30)
 
 
 def tests_procedure(mode):
@@ -690,6 +741,7 @@ def glossary_figure(mode):
 # Marker → builder. The heights are automatic: each frame takes the height of its figure.
 FIGURES = {
     "contexto": sad_context, "contenedores": sad_containers, "sop": tests_procedure,
+    "componentes_carga": sad_components_load, "componentes_panel": sad_components_panel, "escenarios": sad_scenarios,
     "valor": prd_value, "requisitos": prd_requirements,
     "secuencia_carga": sad_weekly_sequence, "secuencia_panel": sad_panel_sequence, "capas": sad_layers,
     "despliegue": sad_deployment,
