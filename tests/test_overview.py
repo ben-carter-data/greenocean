@@ -74,3 +74,13 @@ def test_d296_each_chart_answers_one_question_and_the_cards_grow_with_the_window
     assert "min-height:max(calc((100vh - 318px) / 2), 196px) !important" in css
     assert 'st.slider(tr("Semanas"), 4, 12, 8' in page  # the reader chooses how many weeks the heat table shows
     assert dashboard.MENU_BLOCKS[0][2][0] == dashboard.PAGE_OVERVIEW and home_mockup  # first page of the business
+
+
+@needs_database
+def test_d303_changing_the_language_keeps_the_dashboard_working():
+    from streamlit.testing.v1 import AppTest
+    app = AppTest.from_file(str(dashboard.Path(dashboard.__file__)), default_timeout=60)
+    app.query_params.update({"vista": dashboard.PAGE_OVERVIEW, "perfil": "profesional", "lang": "en"})
+    app.session_state[dashboard.OVERVIEW_WEEK_KEY] = "Oct 12–18"  # what a widget may leave after a language change
+    app.run()
+    assert not app.exception

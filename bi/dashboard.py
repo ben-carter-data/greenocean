@@ -5787,6 +5787,13 @@ def show_family_cards(rows, titles, mode, real, summary=None, last=None):
 OVERVIEW_WEEK_KEY, OVERVIEW_FAMILY_KEY = "ov_week", "ov_family"
 
 
+def overview_week(weeks):
+    """The chosen week, kept as an ISO date (D-303): a value the widget left in another language is dropped."""
+    chosen = st.session_state.get(OVERVIEW_WEEK_KEY)
+    known = {f"{pd.Timestamp(w):%Y-%m-%d}" for w in weeks}
+    return pd.Timestamp(chosen) if chosen in known else pd.Timestamp(weeks[-1])
+
+
 def pick_overview_family(chart_key, field):
     """A click on a family of a chart filters the market tab (D-296); a second click on the same family clears it."""
     selection = (st.session_state.get(chart_key) or {}).get("selection", {})
@@ -5847,7 +5854,7 @@ def show_overview_market(mode, version):
     variations, alerts_rows = read_cached_all_variations(version), read_price_alerts()
     prices = read_cached_national_prices(version)
     weeks = sorted(variations["week_start"].unique())
-    week = pd.Timestamp(st.session_state.get(OVERVIEW_WEEK_KEY) or weeks[-1])
+    week = overview_week(weeks)
     family = st.session_state.get(OVERVIEW_FAMILY_KEY)
     upto, upto_prices = variations[variations["week_start"] <= week], prices[prices["week_start"] <= week]
     upto_alerts = alerts_rows[alerts_rows["week_start"] <= week]
@@ -6074,7 +6081,7 @@ def show_overview_insights(mode, version):
     palette = charts.get_palette(mode)
     variations, alerts_rows = read_cached_all_variations(version), read_price_alerts()
     prices = read_cached_national_prices(version)
-    week = pd.Timestamp(st.session_state.get(OVERVIEW_WEEK_KEY) or sorted(variations["week_start"].unique())[-1])
+    week = overview_week(sorted(variations["week_start"].unique()))
     upto, upto_prices = variations[variations["week_start"] <= week], prices[prices["week_start"] <= week]
     moves = overview.family_moves(upto_prices, upto, week)
     moved = dict(zip(*overview.directions(upto, week).values.T))
@@ -6169,7 +6176,10 @@ def show_overview_page(mode):
     """The macro dashboard (D-296): three tabs, each one screen of scorecards and four linked charts."""
     version = get_database_version()
     variations = read_cached_all_variations(version)
-    weeks = sorted(variations["week_start"].unique(), reverse=True)[:12]
+    weeks = [f"{pd.Timestamp(w):%Y-%m-%d}" for w in sorted(variations["week_start"].unique(), reverse=True)[:12]]
+    for key, options in ((OVERVIEW_WEEK_KEY, weeks), (OVERVIEW_FAMILY_KEY, [None] + OVERVIEW_FAMILIES)):
+        if key in st.session_state and st.session_state[key] not in options:
+            del st.session_state[key]
     def slicers():
         st.selectbox(tr("Semana"), weeks, key=OVERVIEW_WEEK_KEY,
                      format_func=lambda w: i18n.translate_text(week_range_label(pd.Timestamp(w))),
