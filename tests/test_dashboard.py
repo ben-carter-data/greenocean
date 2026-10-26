@@ -1741,6 +1741,9 @@ def test_d298_a_failed_load_shows_its_alert_in_the_menu_of_every_page(monkeypatc
         for view in (dashboard.PAGE_HOME, dashboard.PAGE_SQL):
             app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
             app.query_params.update({"vista": view, "perfil": dashboard.PROFILE_PROFESSIONAL})
+            app.run()  # D-308: without the author's key, no failure is shown
+            assert "La carga del 27-10 falló" not in " ".join(block.value for block in app.sidebar.markdown)
+            app.session_state[dashboard.ADMIN_UNLOCKED] = True
             app.run()
             markup = " ".join(block.value for block in app.sidebar.markdown)
             assert not app.exception and "La carga del 27-10 falló" in markup, view

@@ -26,7 +26,7 @@ def test_d306_each_region_is_a_card_with_an_icon_for_each_point_and_no_price():
     points = overview.read_points()
     card = overview.build_region_card("Región Metropolitana de Santiago", points["Región Metropolitana de Santiago"])
     assert "Vega Central Mapocho de Santiago" in card and "Sectores de la ciudad" in card
-    assert card.count('<img class="ov-icon"') >= 3 + 1 and "$" not in card and "%" not in card
+    assert card.count('<img class="ov-icon"') >= 3 + 1 + 4 and "$" not in card and "%" not in card
     for kind in {kind for data in points.values() for kind in data["consumer"]}:
         assert (overview.POINTS_FILE.parent / "points" / f"{overview.POINT_ICONS[kind]}.svg").exists(), kind
     assert len(overview.ordered_regions(points, {name: 13 for name in points})) == len(points)

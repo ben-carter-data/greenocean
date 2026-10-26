@@ -639,8 +639,8 @@ LOAD_ALERT_SEEN = "load_alert_seen"
 def show_load_alert(windows_by_title):
     """D-298: when the last weekly load failed, every page says so at once, in the menu, with a way to the Operations
     center; the first page of the visit also raises a notice. The panel keeps showing the last valid load."""
-    if is_public_profile():
-        return  # a failure is for the operator, behind the key
+    if not st.session_state.get(ADMIN_UNLOCKED):
+        return  # a failure is for the operator: only whoever typed the author's key sees it
     runs, _ = read_pipeline_runs()
     failed = control.latest_load_failure(runs)
     if not failed:
@@ -668,6 +668,7 @@ def show_profile_switch():
             if st.button(tr("Desbloquear"), key="profile_unlock", type="primary", width="stretch"):
                 ok, message = control.check_control_code(typed, get_secret(SECRET_CONTROL_CODE))
                 if ok:
+                    st.session_state[ADMIN_UNLOCKED] = True
                     choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
                     st.rerun()
                 st.error(tr(message))
@@ -6013,7 +6014,7 @@ def show_where_page(mode):
                   "Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.",
                   side=arrows)
     points = overview.read_points()
-    st.markdown(overview.points_css(charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
+    st.markdown(overview.points_css(charts.get_palette(mode)), unsafe_allow_html=True)
     shown = regions[start:start + overview.REGIONS_PER_VIEW]
     for column, region in zip(st.columns(len(shown), gap="medium"), shown):
         column.markdown(overview.build_region_card(region, points[region]), unsafe_allow_html=True)
@@ -6032,7 +6033,8 @@ def show_weeks_table(mode, version):
     heat = overview.family_heat(upto, weeks=count)
     columns = list(dict.fromkeys(heat.sort_values("week_start")["week"]))
     logos = {home_mockup.short_family(f): home_mockup.family_art_data_uri(f) for f in OVERVIEW_FAMILIES}
-    st.markdown(build_overview_css(mode) + overview.heat_table_css(palette) + overview.build_heat_table_html(
+    st.markdown(overview.heat_table_css(palette), unsafe_allow_html=True)
+    st.markdown(overview.build_heat_table_html(
         heat, "family", "week", "change", columns, list(moves["family"]), palette, logos), unsafe_allow_html=True)
 
 

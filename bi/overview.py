@@ -573,13 +573,13 @@ DETAIL_SHOP = "Comercio al detalle"
 
 
 def build_region_card(region, data):
-    """One region as a card: each wholesale market as a house with its name and, in one more house, every kind of
-    consumer point ODEPA records there (supermarket, fair, butcher, bakery...), named on hover."""
+    """One region as a card: each wholesale market as a big house with its name and, in one more house, every kind of
+    consumer point ODEPA records there, shown inside it by its own icon and named on hover."""
     markets = "".join(f'<li>{point_icon("Mercado Mayorista")}<span>{html.escape(name)}</span></li>' for name in data["wholesale"])
     kinds = [name for name in data["consumer"] if name != "Mercado Mayorista"]
-    listed = ", ".join(i18n.tr(name) for name in kinds)
-    detail = (f'<li class="ov-hint">{point_icon("Minorista")}<span>{html.escape(i18n.tr(DETAIL_SHOP))}</span>'
-              f'<em class="ov-hint-tip">{html.escape(listed)}</em></li>' if kinds else "")
+    inside = "".join(f'<b class="ov-hint">{point_icon(name)}<em class="ov-hint-tip">{html.escape(i18n.tr(name))}</em></b>' for name in kinds)
+    detail = (f'<li class="ov-common">{point_icon("Minorista")}<span>{html.escape(i18n.tr(DETAIL_SHOP))}</span>'
+              f'<div class="ov-inside">{inside}</div></li>' if kinds else "")
     sectors = (f'<p class="ov-sectors">{html.escape(i18n.tr("Sectores de la ciudad"))}: {html.escape(", ".join(data["sectors"]))}</p>'
                if data["sectors"] else "")
     none = f'<p class="ov-none">{html.escape(i18n.tr("Sin mercado mayorista en los datos"))}</p>' if not markets else ""
@@ -591,20 +591,23 @@ def points_css(palette):
     ink, text, muted, border, accent, card = (palette["strong_text"], palette["text"], palette["reference"], palette["card_border"],
                                               palette["accent"], palette["card"])
     return f"""<style>
-.ov-rcard {{ margin-bottom:1rem; min-height:300px; border-radius:16px; padding:14px 16px 12px; border:1px solid {border};
+.ov-rcard {{ margin-bottom:1rem; min-height:calc(100vh - 190px); border-radius:18px; padding:18px 18px 14px; border:1px solid {border};
   background:linear-gradient(160deg, color-mix(in srgb, {accent} 9%, {card}), {card}); box-shadow:0 14px 30px -20px rgba(0,0,0,.55); }}
-.ov-rcard h5 {{ margin:0 0 4px !important; padding:0 !important; font-size:19px !important; color:{ink}; }}
-.ov-rcard h6 {{ margin:6px 0 8px !important; padding:0 !important; font-size:11px !important; font-weight:600; letter-spacing:.07em;
+.ov-rcard h5 {{ margin:0 0 4px !important; padding:0 !important; font-size:22px !important; color:{ink}; }}
+.ov-rcard h6 {{ margin:6px 0 14px !important; padding:0 !important; font-size:11px !important; font-weight:600; letter-spacing:.07em;
   text-transform:uppercase; color:{muted}; }}
-.ov-rcard ul {{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:10px 6px; }}
-.ov-rcard li {{ position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; width:104px; text-align:center;
-  font-size:12px; font-weight:600; line-height:1.2; color:{ink}; }}
-.ov-icon {{ width:64px; height:64px; display:block; filter:drop-shadow(0 8px 6px rgba(0,0,0,.3)); transition:transform .25s ease; }}
-.ov-rcard li:hover .ov-icon {{ transform:translateY(-4px) scale(1.06); }}
-.ov-hint {{ cursor:help; }}
-.ov-hint-tip {{ display:none; position:absolute; z-index:20; bottom:100%; left:50%; transform:translateX(-50%); width:150px; padding:6px 8px;
+.ov-rcard ul {{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:22px 10px; justify-content:center; }}
+.ov-rcard li {{ position:relative; display:flex; flex-direction:column; align-items:center; gap:4px; width:46%; text-align:center;
+  font-size:13.5px; font-weight:600; line-height:1.25; color:{ink}; }}
+.ov-icon {{ width:112px; height:112px; display:block; filter:drop-shadow(0 12px 8px rgba(0,0,0,.3)); transition:transform .25s ease; }}
+.ov-rcard li:hover > .ov-icon {{ transform:translateY(-5px) scale(1.05); }}
+.ov-common {{ width:100% !important; }}
+.ov-inside {{ display:flex; gap:10px; justify-content:center; margin-top:4px; }}
+.ov-inside b {{ position:relative; cursor:help; }}
+.ov-inside .ov-icon {{ width:34px; height:34px; filter:drop-shadow(0 4px 3px rgba(0,0,0,.25)); }}
+.ov-hint-tip {{ display:none; position:absolute; z-index:20; bottom:100%; left:50%; transform:translateX(-50%); white-space:nowrap; padding:4px 8px;
   border-radius:8px; background:{ink}; color:{card}; font-size:11px; font-style:normal; font-weight:500; }}
 .ov-hint:hover .ov-hint-tip {{ display:block; }}
-.ov-sectors, .ov-none {{ margin:8px 0 0 !important; font-size:12px !important; color:{muted} !important; }}
+.ov-sectors, .ov-none {{ margin:14px 0 0 !important; font-size:12.5px !important; color:{muted} !important; text-align:center; }}
 </style>"""
 # endregion
