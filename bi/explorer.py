@@ -11,7 +11,6 @@ parameters (?), never inside the SQL text. The weekly change comes from SQL
 """
 
 
-from bi import alerts
 
 # region Constants
 FIELD_GROUP = "group"
@@ -21,16 +20,6 @@ FIELD_QUALITY = "quality"
 FIELD_REGION = "region"
 FIELD_CHANNEL = "channel"
 FIELD_SOURCE = "source"
-FIELD_FIRST_WEEK = "first_week"
-FIELD_LAST_WEEK = "last_week"
-FIELD_ALERT = "alert_state"
-# Allowlist: list field -> column of the search query (its options come from there too).
-LIST_FIELD_COLUMNS = {
-    FIELD_GROUP: ("dim_product", "product_group"), FIELD_PRODUCT: ("dim_product", "product"),
-    FIELD_VARIETY: ("dim_product", "variety"), FIELD_QUALITY: ("dim_product", "quality"),
-    FIELD_REGION: ("dim_region", "region"), FIELD_CHANNEL: ("dim_channel", "channel"),
-    FIELD_SOURCE: ("dim_channel", "source"),
-}
 ALL = "Todos"
 SOURCE_NAMES = {"wholesale": "Mayorista", "consumer": "Consumidor"}
 

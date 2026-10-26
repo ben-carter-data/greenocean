@@ -124,14 +124,6 @@ def test_d050_rows_of_one_product_key_are_filtered_by_sqlite(database_file):
     assert queries.run_query_for_key("k1_margin", other_key, database_file).empty
 
 
-def test_d050_key_options_count_the_rows_of_each_key(database_file):
-    options = queries.list_query_keys("k1_margin", database_file)
-    assert options[queries.KEY_COLUMNS].to_dict("records") == [
-        {"product_group": "Hortalizas", "product": "Tomate", "variety": "Larga vida",
-         "quality": "Primera", "normalized_unit": "kilo"}]
-    assert options["row_count"].iloc[0] == len(queries.run_query("k1_margin", database_file))
-
-
 def test_week_range_gives_the_years_really_loaded(database_file):
     week_range = queries.run_query("quality_week_range", database_file).iloc[0]
     assert (week_range["first_week"], week_range["last_week"]) == ("2026-01-05", "2026-01-12")
@@ -157,3 +149,4 @@ def test_every_github_link_of_the_panel_points_to_a_file_in_the_repository():
         assert (root / path).exists(), path
     for name in ("PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md", "DECISIONES.md"):
         assert (root / "docs" / name).exists(), name
+

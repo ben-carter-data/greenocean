@@ -14,6 +14,7 @@ import html
 from bi import charts, database_map, queries, storage_map
 
 BACKUP_TABLES = ["dim_product", "dim_region", "dim_channel", "dim_date", "weekly_price", "rejection", "etl_run"]
+
 RAW_NOTE = "no se puede comprobar aquí: raw.db no está en este servidor"
 
 # (key, from (kind, mark), to (kind, mark), from label, to label, mechanism, short: what travels, short: shared key,

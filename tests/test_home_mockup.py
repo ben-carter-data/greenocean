@@ -9,14 +9,6 @@ from bi import dashboard, home_mockup, queries
 ROOT=Path(__file__).resolve().parents[1]
 
 
-def test_counts_are_explicit_comparisons_and_not_money_or_unique_products():
-    markup=home_mockup.metrics([360,317,57],43,-27)
-    assert markup.count('aria-label="cantidad"')==4
-    assert 'comparaciones de precios' in markup and '27 menos' in markup
-    assert 'no productos únicos ni dinero' in markup
-    assert 'aunque hayas elegido una región' in home_mockup.metrics([1,2,3],8,None,True)
-
-
 def test_table_uses_real_predecessor_and_escapes_labels():
     row=dict(product='<script>',variety='Gala',quality='Primera',channel='Feria',normalized_unit='kilo',
              national_price=1500.,variation=.5,_previous_price=1000.,change_amount=500.)

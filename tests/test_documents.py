@@ -121,20 +121,6 @@ def test_d210_the_prd_figures_match_the_served_database():
         assert f"{value:,}".replace(",", ".") in text
 
 
-def test_d252_the_glossary_names_only_pages_and_tabs_that_exist():
-    menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
-    tabs = {"Operación", "Despliegue", "CI/CD", "Monitoreo"}
-    text = (DOCS_DIR / "GLOSARIO.md").read_text(encoding="utf-8")
-    table = text[text.index("| Sigla o término"):].split("\n\n", 1)[0]
-    rows = [line.split(" | ") for line in table.splitlines()[2:] if line.startswith("| ")]
-    assert len(rows) > 20
-    for row in rows:
-        for place in [] if row[2] == "—" else row[2].split(", "):
-            page, _, tab = place.partition(" (")
-            assert page in menu, f"{row[0]}: «{page}» is not a page of the menu"
-            assert not tab or tab.rstrip(")") in tabs, f"{row[0]}: «{tab}» is not a tab"
-
-
 def test_d252_the_security_plan_counts_the_attacks_its_tests_run():
     from bi import security_plan
     from tests import test_security
@@ -299,3 +285,17 @@ def test_d300_each_adr_names_the_test_that_confirms_it_and_the_test_exists():
             line = next(line for line in entry.splitlines() if word in line)
             path, test = re.search(r"`([^`]+)::([^`]+)`", line).groups()
             assert re.search(rf"^def {re.escape(test)}\(", (ROOT / path).read_text(encoding="utf-8"), re.MULTILINE), (entry[:6], test)
+
+
+def test_d252_the_glossary_names_only_pages_and_tabs_that_exist():
+    menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
+    tabs = {"Operación", "Despliegue", "CI/CD", "Monitoreo"}
+    text = (DOCS_DIR / "GLOSARIO.md").read_text(encoding="utf-8")
+    table = text[text.index("| Sigla o término"):].split("\n\n", 1)[0]
+    rows = [line.split(" | ") for line in table.splitlines()[2:] if line.startswith("| ")]
+    assert len(rows) > 20
+    for row in rows:
+        for place in [] if row[2] == "—" else row[2].split(", "):
+            page, _, tab = place.partition(" (")
+            assert page in menu, f"{row[0]}: «{page}» is not a page of the menu"
+            assert not tab or tab.rstrip(")") in tabs, f"{row[0]}: «{tab}» is not a tab"

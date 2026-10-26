@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import explorer  # noqa: E402
 from etl import etl  # noqa: E402
 
 
@@ -26,15 +25,6 @@ def build_sample_database(database_file):
              ("2026-03-02", 2, 1000.0, None), ("2026-03-09", 2, 1200.0, None),
              ("2026-03-16", 2, 9.0, etl.FLAG_OUTLIER), ("2026-03-23", 2, 1300.0, None)])
     connection.close()
-
-
-def make_filters(**values):
-    """A search over everything, from the first to the last sample week."""
-    filters = {field: explorer.ALL for field in explorer.LIST_FIELD_COLUMNS}
-    filters.update({explorer.FIELD_FIRST_WEEK: "2026-03-02",
-                    explorer.FIELD_LAST_WEEK: "2026-03-23", explorer.FIELD_ALERT: explorer.ALL})
-    filters.update(values)
-    return filters
 
 
 @pytest.fixture

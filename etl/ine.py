@@ -15,7 +15,7 @@ import pyarrow.parquet as pq
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from etl import bronze, etl  # noqa: E402
+from etl import bronze  # noqa: E402
 
 INE_FILES = {
     "base_2023": "https://www.ine.gob.cl/docs/default-source/%C3%ADndice-de-precios-al-consumidor/"

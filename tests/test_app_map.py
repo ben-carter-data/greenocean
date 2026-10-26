@@ -48,16 +48,6 @@ def test_d285_every_line_joins_two_nodes_and_no_node_is_alone():
     assert linked == set(app_map.NODES)
 
 
-def test_d285_every_click_opens_a_page_of_the_menu_and_every_theme_has_its_filter():
-    themes = {key for key, _ in app_map.THEMES}
-    for key, (name, logo, node_themes, place, *_rest) in app_map.NODES.items():
-        page = app_map.NODES[key][7]
-        assert page in dashboard.MENU_ORDER or page in dashboard.DOOR_PAGES, (key, page)
-        assert set(node_themes) <= themes and node_themes, key
-        assert logo.split(":")[0] in ("brand", "source", "person", "icon"), key
-    assert {theme for node in app_map.NODES.values() for theme in node[2]} == themes
-
-
 def test_d285_every_hover_text_has_its_four_parts_read_from_the_lines():
     for key in app_map.NODES:
         tip = app_map.build_tip(key)
@@ -147,3 +137,13 @@ def test_d293_every_line_names_where_it_happens_and_that_code_really_does_it():
 def test_d293_the_description_of_a_node_moves_off_its_own_lines():
     assert "const dodge = (item) =>" in app_map.SCRIPT and "dodge(item);" in app_map.SCRIPT
     assert 'svg.querySelectorAll(".am-line.on")' in app_map.SCRIPT  # it counts the node's own lines it would cover
+
+
+def test_d285_every_click_opens_a_page_of_the_menu_and_every_theme_has_its_filter():
+    themes = {key for key, _ in app_map.THEMES}
+    for key, (name, logo, node_themes, place, *_rest) in app_map.NODES.items():
+        page = app_map.NODES[key][7]
+        assert page in dashboard.MENU_ORDER or page in dashboard.DOOR_PAGES, (key, page)
+        assert set(node_themes) <= themes and node_themes, key
+        assert logo.split(":")[0] in ("brand", "source", "person", "icon"), key
+    assert {theme for node in app_map.NODES.values() for theme in node[2]} == themes

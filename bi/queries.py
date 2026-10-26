@@ -69,12 +69,6 @@ def run_query_for_key(query_name, key, database_file=DATABASE_FILE):
     return run_sql(sql, database_file, [key[column] for column in KEY_COLUMNS])
 
 
-def list_query_keys(query_name, database_file=DATABASE_FILE):
-    """Product keys present in one named query, with how many rows each one has."""
-    columns = ", ".join(KEY_COLUMNS)
-    sql = (f"SELECT {columns}, COUNT(*) AS row_count FROM (\n{read_query_body(query_name)}\n) "
-           f"GROUP BY {columns}")
-    return run_sql(sql, database_file)
 # endregion
 
 

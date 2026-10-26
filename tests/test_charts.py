@@ -43,17 +43,6 @@ def test_unknown_mode_falls_back_to_the_default_corporativo():
     assert charts.get_palette(None) == charts.PALETTES[charts.MODE_CORPORATE]
 
 
-def test_variation_bars_use_red_for_rises_and_blue_for_falls():
-    rows = pd.DataFrame({"label": ["Lechuga", "Ajo"], "value": [49.9, -14.5]})
-    chart = charts.draw_variation_bars(rows, charts.MODE_LIGHT).to_dict()
-    # The chart keeps its rows in "datasets"; the reference line has its own.
-    colors = {row["label"]: row["color"]
-              for dataset in chart["datasets"].values() for row in dataset
-              if "label" in row}
-    palette = charts.PALETTES[charts.MODE_LIGHT]
-    assert colors == {"Lechuga": palette["rise"], "Ajo": palette["fall"]}
-
-
 def test_negative_bar_labels_are_written_right_of_zero_not_over_the_names():
     rows = pd.DataFrame({"label": ["Supermercado", "Feria libre"], "value": [131.0, -3.5],
                          "value_label": ["+131,0 %", "-3,5 %"]})
@@ -117,32 +106,9 @@ def test_visible_themes_keep_legacy_light_palette_compatible():
                 charts.BASE_LIGHT}
 
 
-def test_d059_dumbbell_joins_wholesale_and_each_channel_with_its_gap():
-    rows = pd.DataFrame({"channel": ["Feria libre", "Supermercado"],
-                         "wholesale_price": [1387.0, 1387.0], "consumer_price": [1569.0, 1990.0],
-                         "gap_label": ["+13,2 %", "+43,5 %"]})
-    spec = charts.draw_dumbbell(rows, "kilo", charts.MODE_DARK).to_dict()
-    marks = [layer["mark"]["type"] for layer in spec["layer"]]
-    assert marks == ["rule", "point", "point", "text"]
-    assert "$ 1.990" in str(spec)
-
-
-def test_d059_variation_bars_say_the_direction_with_an_arrow_too():
-    rows = pd.DataFrame({"label": ["Tomate", "Papa"], "value": [12.3, -4.5]})
-    text = str(charts.draw_variation_bars(rows, charts.MODE_LIGHT).to_dict())
-    assert "▲ +12,3 %" in text and "▼ -4,5 %" in text
-
-
 def test_d059_a_reference_line_can_say_its_name():
     rows = pd.DataFrame({"label": ["A", "B"], "value": [1.2, 0.9], "value_label": ["1,2", "0,9"]})
     spec = charts.draw_horizontal_bars(rows, "Índice", charts.MODE_DARK, reference_value=1,
                                        reference_label="Promedio nacional").to_dict()
     assert "Promedio nacional" in str(spec)
-
-
-def test_a_change_that_rounds_to_zero_says_it_did_not_move():
-    assert charts.describe_weekly_change(0.04) == "Sin cambio frente a la semana anterior"
-    assert charts.describe_weekly_change(-0.04) == "Sin cambio frente a la semana anterior"
-    assert charts.describe_weekly_change(-1.8).startswith("Bajó 1,8")
-
 

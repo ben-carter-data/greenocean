@@ -58,22 +58,6 @@ def test_the_layers_are_the_databases_and_they_hold_the_tables_that_cross():
     assert "week_start" in text and "run_id" in text  # the keys the databases are joined on
 
 
-def test_every_table_drawn_exists_in_the_repository():
-    sources = {"raw": (ROOT / "etl" / "etl.py").read_text(encoding="utf-8"),
-               "bronze": (ROOT / "etl" / "bronze.py").read_text(encoding="utf-8")}
-    served = set(project.TABLE_NAMES + project.IPC_TABLE_NAMES)
-    for layer, _, _, name in database_crossings.CHIPS:
-        if layer == "raw":
-            assert name in sources["raw"], name
-        elif layer == "bronze":
-            assert name.replace("odepa_", "odepa_") in sources["bronze"] or name == "ine_ipc", name
-        elif layer == "work" and name.startswith("stg_"):
-            assert list((ROOT / "dbt" / "models" / "staging").glob(f"{name}.sql")), name
-        else:
-            assert name in served or list((ROOT / "dbt" / "models").rglob(f"{name}.sql")), name
-    assert set(database_crossings.BACKUP_CHIPS) | {"weekly_price"} == set(database_crossings.BACKUP_TABLES)
-
-
 def test_each_crossing_has_a_numbered_mark_coloured_by_its_check_and_a_card_with_the_detail():
     checks = {**CHECKS, "raw": ("pending", "no se puede comprobar aquí"), "ine": ("info", "dato")}
     markup = build(checks)
@@ -107,3 +91,19 @@ def test_the_live_checks_hold_on_the_real_database_and_say_what_cannot_be_measur
     if not Path(etl.RAW_DATABASE_FILE).exists():
         assert checks["raw"][0] == "pending" and "no se puede comprobar" in checks["raw"][1]
     assert build(checks).count('class="badge s-') == 8
+
+
+def test_every_table_drawn_exists_in_the_repository():
+    sources = {"raw": (ROOT / "etl" / "etl.py").read_text(encoding="utf-8"),
+               "bronze": (ROOT / "etl" / "bronze.py").read_text(encoding="utf-8")}
+    served = set(project.TABLE_NAMES + project.IPC_TABLE_NAMES)
+    for layer, _, _, name in database_crossings.CHIPS:
+        if layer == "raw":
+            assert name in sources["raw"], name
+        elif layer == "bronze":
+            assert name.replace("odepa_", "odepa_") in sources["bronze"] or name == "ine_ipc", name
+        elif layer == "work" and name.startswith("stg_"):
+            assert list((ROOT / "dbt" / "models" / "staging").glob(f"{name}.sql")), name
+        else:
+            assert name in served or list((ROOT / "dbt" / "models").rglob(f"{name}.sql")), name
+    assert set(database_crossings.BACKUP_CHIPS) | {"weekly_price"} == set(database_crossings.BACKUP_TABLES)

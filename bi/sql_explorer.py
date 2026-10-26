@@ -30,6 +30,7 @@ import pandas as pd
 from bi import charts, i18n, queries
 from bi.i18n import tr
 
+
 # region Variables
 ROW_LIMIT = 5000
 TIMEOUT_SECONDS = 10
@@ -118,7 +119,6 @@ FROM dbt_node AS n
 LEFT JOIN dbt_result AS r ON r.unique_id = n.unique_id"""),
 ]
 VIEW_NAMES = [name for name, _, _ in VIEWS]
-
 # Each example: (title, the question it answers, SQL). All run on the views above.
 # Each example: (title, question, SQL template, parameters). Parameters are filled
 # from the selectors above the editor (D-180); render_example writes the final SQL.

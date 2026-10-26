@@ -2406,3 +2406,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** la tabla de productos del Panorama se ve chica.
 - **Decisión:** junto a los filtros hay un botón con el ícono de ampliar. Abre una ventana con la misma tabla (los mismos productos, filtros y orden) al alto de la ventana y con letra algo mayor; se cierra con la ×. El Panorama sigue cabiendo en una pantalla.
 - **Pruebas:** la suite completa; revisión en pantalla (abrir, leer, cerrar).
+
+## D-318 · Limpieza del código: fuera las vistas heredadas y el código sin uso
+
+- **Pedido del autor:** preparar el repositorio para publicarlo como proyecto de portafolio: eliminar el código muerto y las vistas heredadas, en una rama aparte, verificando cada función y con las pruebas en verde.
+- **Decisión:** salen nueve vistas que solo se abrían por direcciones antiguas (Datos, Portada, Definición del proyecto, Esta semana, Brecha de precio, Canales y regiones, Alertas, Reglas de calidad y el viejo DevOps y seguridad). Sus direcciones y sus secciones antiguas siguen abriendo algo: el Panorama, Consultas SQL, el PRD, el Plan de pruebas o el Centro de operación (`RETIRED_VIEWS`). Se eliminan también las funciones y constantes que solo esas vistas usaban, y las que ya no usaba nadie (verificadas una por una con vulture y buscando cada nombre en todo el repositorio). Se quitan las pruebas de lo eliminado; las que cuidan los documentos y el menú se conservan. Quedan como puntos de entrada deliberados, aunque nadie los llame: `render_page` (lo usan las pruebas), `read_glossary` y `orthogonal`.
+- **Pruebas:** la suite completa, sin las pruebas de las vistas retiradas.

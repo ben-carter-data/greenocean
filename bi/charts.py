@@ -102,7 +102,6 @@ MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "o
                "dic"]
 CHART_FONT = "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
 CHART_HEIGHT = 300
-SPARKLINE_HEIGHT = 70
 BAR_HEIGHT = 28
 # Share of the value axis left free beyond the bars, so their labels fit.
 BAR_LABEL_ROOM = 0.18
@@ -171,34 +170,11 @@ def format_index(value):
     return f"{remove_negative_zero(value, 2):.2f}".replace(".", ",")
 
 
-def describe_weekly_change(change):
-    """A change in percent in plain words: 12.3 -> 'Subió 12,3 % frente a la semana anterior'."""
-    if round(change, 1) == 0:
-        # Same rule as the arrow «=»: a change that rounds to 0,0 % did not move.
-        return "Sin cambio frente a la semana anterior"
-    verb = "Subió" if change > 0 else "Bajó"
-    return f"{verb} {format_percent(abs(change))} frente a la semana anterior"
-
-
-def describe_regional_index(index):
-    """1.46 -> '46 % más caro que el promedio nacional'."""
-    if round(index, 2) == 1:
-        return "Igual al promedio nacional"
-    word = "más caro" if index > 1 else "más barato"
-    return f"{format_percent(abs(index - 1) * 100, decimals=0)} {word} que el promedio nacional"
-
-
 def describe_weeks(weeks):
     """0 -> 'la misma semana', 1 -> '1 semana', 3 -> '3 semanas'."""
     if weeks == 0:
         return "la misma semana"
     return "1 semana" if weeks == 1 else f"{weeks} semanas"
-
-
-def describe_channel_gap(gap, reference_channel):
-    """62.7 -> '62,7 % más caro que Feria libre'."""
-    word = "más caro" if gap > 0 else "más barato"
-    return f"{format_percent(abs(gap))} {word} que {reference_channel}"
 
 
 def shorten_region_name(region):
@@ -220,12 +196,6 @@ def get_status_text_color(status, mode):
     """Color of a status written as text: bright on Vantablack, darker on light themes."""
     base = get_palette(mode)["base"]
     return (STATUS_TEXT_ON_LIGHT if base == BASE_LIGHT else STATUS_COLORS)[status]
-
-
-def get_channel_color(channel, mode):
-    """Fixed color of one channel in the active mode."""
-    palette = get_palette(mode)
-    return palette["channels"].get(channel, palette["accent"])
 
 
 def build_channel_color_scale(channels, mode):
@@ -266,16 +236,6 @@ def add_week_labels(rows, value_labels):
 
 
 # region Charts
-def draw_sparkline(rows, color, mode):
-    """Small area chart without axes, for a key figure card (rows: week_start, value)."""
-    line = alt.Chart(rows).mark_area(
-        line={"color": color, "strokeWidth": 2}, color=color, opacity=0.18,
-        interpolate="monotone").encode(
-        x=alt.X("week_start:T", axis=None),
-        y=alt.Y("value:Q", axis=None, scale=alt.Scale(zero=False)))
-    return apply_chart_style(line.properties(height=SPARKLINE_HEIGHT), mode)
-
-
 def draw_weekly_lines(rows, value_title, value_labels, mode, is_money):
     """Lines by week, one per channel, with a tooltip on every point.
 
@@ -395,61 +355,6 @@ def draw_row_targets(base, rows, select_field):
     return base.mark_bar(height={"band": 1}, opacity=0.001, cursor="pointer").encode(
         x=alt.datum(low), x2=alt.datum(high)).add_params(
         alt.selection_point(name="pick", fields=[select_field], on="click", clear="dblclick"))
-
-
-def draw_variation_bars(rows, mode, keep_rank_order=False, select_field=None, label_limit=150):
-    """Weekly price changes in percent: rises in red, falls in blue.
-
-    rows needs the columns label and value (percent).
-    """
-    palette = get_palette(mode)
-    # The arrow says the direction without color: ▲ rose, ▼ fell.
-    def arrow(value):
-        return "▲" if round(value, 1) > 0 else "▼" if round(value, 1) < 0 else "="
-    rows = rows.assign(value_label=[f"{arrow(value)} {format_signed_percent(value)}"
-                                    for value in rows["value"]],
-                       meaning=rows["value"].map(describe_weekly_change))
-    colors = [palette["rise"] if value > 0 else palette["fall"] for value in rows["value"]]
-    return draw_horizontal_bars(rows, "Variación semanal (%)", mode, colors, reference_value=0,
-                                is_sorted_by_value=not keep_rank_order,
-                                select_field=select_field, label_limit=label_limit)
-
-
-def draw_dumbbell(rows, unit, mode):
-    """Wholesale price and consumer price of each channel, joined by a line.
-
-    rows needs the columns channel, wholesale_price, consumer_price and gap_label;
-    the gap is written at the right of each channel.
-    """
-    palette = get_palette(mode)
-    rows = rows.sort_values("consumer_price", ascending=False).assign(
-        wholesale_label=rows["wholesale_price"].map(lambda value: f"$ {format_thousands(value)}"),
-        consumer_label=rows["consumer_price"].map(lambda value: f"$ {format_thousands(value)}"))
-    order = rows["channel"].to_list()
-    money_axis = alt.Axis(format=MONEY_AXIS_FORMAT, tickCount=5)
-    tooltip = [alt.Tooltip("channel:N", title="Canal"),
-               alt.Tooltip("wholesale_label:N", title=f"Mayorista $/{unit}"),
-               alt.Tooltip("consumer_label:N", title=f"Consumidor $/{unit}"),
-               alt.Tooltip("gap_label:N", title="Brecha")]
-    base = alt.Chart(rows).encode(
-        y=alt.Y("channel:N", title=None, sort=order,
-                axis=alt.Axis(labelLimit=200, labelPadding=10)), tooltip=tooltip)
-    joins = base.mark_rule(strokeWidth=2, color=palette["reference"]).encode(
-        x=alt.X("wholesale_price:Q", title=f"$/{unit}", axis=money_axis,
-                scale=alt.Scale(zero=False)), x2="consumer_price:Q")
-    wholesale = base.mark_point(filled=True, size=110, opacity=1,
-                                color=get_channel_color("Mayorista", mode),
-                                stroke=palette["card"], strokeWidth=2).encode(
-        x="wholesale_price:Q")
-    consumers = base.mark_point(filled=True, size=130, opacity=1, stroke=palette["card"],
-                                strokeWidth=2).encode(
-        x="consumer_price:Q",
-        color=alt.Color("channel:N", legend=None,
-                        scale=build_channel_color_scale(rows["channel"], mode)))
-    gaps = base.mark_text(align="left", dx=10, color=palette["text"]).encode(
-        x="consumer_price:Q", text="gap_label:N")
-    chart = alt.layer(joins, wholesale, consumers, gaps).properties(height=alt.Step(40))
-    return apply_chart_style(chart, mode)
 
 
 def draw_donut(rows, colors, mode, center=None, center_note=None, size=210):

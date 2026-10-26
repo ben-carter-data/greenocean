@@ -20,12 +20,6 @@ def read_table(section):
     return rows[2:]  # header and separator
 
 
-def menu_labels():
-    return {dashboard.SIDEBAR_LABELS.get(view, view) for _, _, pages in dashboard.MENU_BLOCKS
-            if pages is not dashboard.SOURCE_LINKS for view in pages} | {
-        dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.DOOR_PAGES}
-
-
 def assert_reference_exists(reference):
     """A file, or a test as tests/file.py::test_name, or a command with a file in it."""
     path, _, test = reference.partition("::")
@@ -80,3 +74,9 @@ def test_the_use_cases_follow_the_prd_and_each_points_to_a_real_screen():
 def test_rf01_the_weekly_workflow_runs_on_tuesdays():
     workflow = (ROOT / ".github" / "workflows" / "semanal.yml").read_text(encoding="utf-8")
     assert re.search(r'cron:\s*"0 12 \* \* 2"', workflow)  # Tuesday, 12:00 UTC
+
+
+def menu_labels():
+    return {dashboard.SIDEBAR_LABELS.get(view, view) for _, _, pages in dashboard.MENU_BLOCKS
+            if pages is not dashboard.SOURCE_LINKS for view in pages} | {
+        dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.DOOR_PAGES}

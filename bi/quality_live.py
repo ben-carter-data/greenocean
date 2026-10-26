@@ -180,11 +180,6 @@ def dimension_status(statuses):
     return "fail" if "fail" in statuses else "warn" if "warn" in statuses else "ok" if "ok" in statuses else "info"
 
 
-def group_indicators(indicators):
-    """{dimension: [indicator, …]} in the order of ICONS."""
-    return {key: [row for row in indicators if row[0] == key] for key in ICONS}
-
-
 def build_verdict(indicators):
     """One sentence for the whole page, and its status."""
     statuses = [row[4] for row in indicators]

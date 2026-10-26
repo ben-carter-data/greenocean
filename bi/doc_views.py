@@ -9,7 +9,7 @@ import base64
 import html
 from pathlib import Path
 
-from bi import brand_icons, charts, database_map, i18n, quality_view, storage_map
+from bi import brand_icons, charts, database_map, i18n, storage_map
 
 # Disc colors (light top, dark bottom, glyph) of the brands the actors view needs, as in
 # database_map.BRANDS.

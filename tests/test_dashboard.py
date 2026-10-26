@@ -8,7 +8,6 @@ from pathlib import Path
 import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
-import html
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
@@ -68,8 +67,7 @@ def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     views = [view for window in dashboard.WINDOWS.values() for view in window]
     assert len(views) == len(set(views)) and set(views) == set(dashboard.SHOW_PAGE_BY_TITLE)
     assert dashboard.WINDOWS["Dashboard"] == [
-        dashboard.HOME_PAGE, dashboard.PAGE_WHERE, dashboard.PAGE_INSIGHTS, dashboard.PAGE_DATA, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP, dashboard.PAGE_CHANNELS,
-        dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY, dashboard.PAGE_SQL]
+        dashboard.HOME_PAGE, dashboard.PAGE_WHERE, dashboard.PAGE_INSIGHTS, dashboard.PAGE_SEASONALITY, dashboard.PAGE_SQL]
     assert dashboard.WINDOWS["Ingeniería de datos"][0] == dashboard.PAGE_DIAGRAMS
     # Old addresses of the retired windows and of the 3D view still open something.
     for path in ["operacion", "documentacion", "vista-3d"]:
@@ -88,19 +86,6 @@ def test_product_description_leaves_out_unspecified_parts():
     assert dashboard.describe_product({"product": "Marraqueta",
                                        "variety": dashboard.UNSPECIFIED,
                                        "quality": dashboard.UNSPECIFIED}) == "Marraqueta"
-
-
-def test_weekly_change_compares_the_last_two_weeks():
-    weeks = pd.to_datetime(["2026-09-28", "2026-10-05"])
-    latest, change = dashboard.calculate_weekly_change(pd.Series([1000.0, 1100.0], weeks))
-    assert latest == 1100
-    assert change == pytest.approx(10)
-
-
-def test_change_chip_is_red_for_rises_and_blue_for_falls():
-    assert "chip-rise" in dashboard.build_change_chip(5.8)
-    assert "▲ +5,8 %" in dashboard.build_change_chip(5.8)
-    assert "chip-fall" in dashboard.build_change_chip(-2.0)
 
 
 @needs_database
@@ -122,87 +107,6 @@ def test_hover_hint_is_plain_text_and_escaped():
     icon = dashboard.build_hint_icon('**1,46** = "más caro"')
     assert "**" not in icon
     assert 'data-hint="1,46 = &quot;más caro&quot;"' in icon
-
-
-def test_change_chip_explains_itself_when_the_mouse_passes_over_it():
-    chip = dashboard.build_change_chip(-14.1, unit="pts")
-    assert 'title="Bajó 14,1 puntos porcentuales frente a la semana anterior' in chip
-
-
-def test_every_business_question_points_to_a_page_or_is_pending():
-    for question, page, state, scope in dashboard.BUSINESS_QUESTIONS:
-        assert state in dashboard.QUESTION_STATES
-        assert page in dashboard.PAGE_OF_TAB or state == "pending"
-
-
-def test_business_questions_float_without_repetitive_card_backgrounds():
-    showcase = dashboard.build_question_showcase_html()
-
-    assert showcase.count('class="question-item"') == len(dashboard.BUSINESS_QUESTIONS)
-    assert 'class="info-card' not in showcase
-    for number in range(1, len(dashboard.BUSINESS_QUESTIONS) + 1):
-        assert f"Pregunta {number} · Disponible" in showcase
-    for symbol in ["gap", "channels", "region", "calendar", "lag", "alert"]:
-        assert f'data-kind="{symbol}"' in showcase
-
-
-def test_c03_the_catalog_covers_every_stored_query_once():
-    """Every named query of bi/queries.sql, plus K7 (etl/etl.py), is one question."""
-    names = [entry["name"] for entry in dashboard.CATALOG]
-    assert len(names) == len(set(names))
-    assert set(names) == set(queries.load_queries()) | {project.MATCH_COVERAGE_QUERY_NAME}
-    for entry in dashboard.CATALOG:
-        assert entry["question"].startswith("¿") and entry["compares"] and entry["reading"]
-
-
-@needs_database
-def test_c03_every_result_is_read_only_and_runs_only_stored_queries(monkeypatch):
-    """Each result opens the database in read-only mode and runs a stored query, wrapped
-    only by fixed filter columns whose values travel as parameters."""
-    import duckdb
-    opened = []
-    original = queries.open_database
-
-    def spy(database_file=queries.DATABASE_FILE):
-        connection = original(database_file)
-        # D-154: DuckDB opened read-only refuses any write.
-        with pytest.raises(duckdb.Error, match="read-only"):
-            connection.execute("CREATE TABLE written_by_catalog (x INTEGER)")
-        opened.append(connection)
-        return connection
-    monkeypatch.setattr(queries, "open_database", spy)
-    dashboard.read_cached_catalog_rows.clear()
-    for entry in dashboard.CATALOG:
-        result = entry["build"](dashboard.charts.MODE_CORPORATE)
-        assert not result["rows"].empty, entry["name"]
-        sql, parameters = dashboard.build_catalog_sql(entry["name"], result["filters"])
-        stored = project.strip_sql_comments(dashboard.read_catalog_sql(entry["name"]))
-        assert stored.strip().rstrip(";") in sql
-        assert len(parameters) == sql.count("?")
-    assert opened
-    dashboard.read_cached_catalog_rows.clear()
-
-
-def test_d143_the_consoles_left_and_their_old_addresses_open_the_summary():
-    assert dashboard.SECTION_QUERIES not in dashboard.WINDOWS
-    assert dashboard.SECTION_PYTHON not in dashboard.WINDOWS
-    # D-148: «Código Python y SQL» left as well; its address opens the GitHub page.
-    assert dashboard.SECTION_CODE not in dashboard.WINDOWS
-    assert dashboard.OLD_PATHS["codigo"] == (dashboard.PAGE_LINKS, None)
-    for path in ["datos-y-codigo", "consultas", "preguntas-y-resultados", "analisis-python"]:
-        assert dashboard.OLD_PATHS[path] == (dashboard.PAGE_HOME, None)
-    assert dashboard.PAGE_OF_TAB[dashboard.TAB_EXPLORER] == dashboard.PAGE_HOME
-    assert not hasattr(dashboard.queries, "run_console_sql")
-    assert dashboard.build_query_address("k1_margin").startswith("https://github.com/")
-
-
-@needs_database
-def test_gap_tab_shows_k5_with_its_descriptive_note():
-    app = draw_page(dashboard.PAGE_GAP)
-    assert not app.exception
-    assert dashboard.LAG_NOTE in [caption.value for caption in app.caption]
-    assert any("semanas" in block.value or "Sin relación clara" in block.value
-               for block in app.markdown)
 
 
 @needs_database
@@ -255,11 +159,6 @@ def test_d136_devops_shows_the_whole_platform_architecture_and_pipeline_only_the
     assert 'aria-label="Arquitectura del proyecto por plataforma"' not in texts
     assert 'aria-label="Estado real del pipeline, de ODEPA al panel"' not in texts
     assert "Ampliar" not in texts and "diagrama=" not in texts
-    devops = draw_page(dashboard.PAGE_DEVOPS)
-    texts = " ".join(block.value for block in devops.markdown)
-    assert not devops.exception
-    assert devops.get("iframe") and 'aria-label="Arquitectura del proyecto por plataforma"' not in texts  # D-255
-    assert "Ciclo DevOps" not in texts and "Ver el pipeline" not in texts
 
 
 @needs_database
@@ -303,50 +202,12 @@ def test_d097_model_page_is_one_panoramic_diagram():
     assert "una fila por semana" in joined.lower()
     assert "etl/schema.sql en GitHub" in joined
 
-    app = draw_page(dashboard.PAGE_DEVOPS)
-    assert not app.exception
-    # D-249, D-255: only the deployment diagram, drawn in its own frame; security, CI/CD, monitoring and capacity have their own views.
-    assert not app.tabs and not app.expander and not app.toggle
-    assert not [button for button in app.button if str(button.key).startswith("devops_layer_")]
-    assert len(app.get("iframe")) == 1
-
 
 def test_kpi_link_opens_the_kpi_view_with_that_indicator():
     link = dashboard.build_kpi_link("K5")
     # El proyecto starts the route, so it lives at the root of the app.
     assert 'href="kpis?kpi=K5"' in link
     assert ">K5<" not in link
-
-
-def test_d065_a_place_named_in_a_document_opens_its_window_and_view():
-    assert dashboard.build_place_address(dashboard.TAB_QUALITY) == (
-        "arquitectura-y-operacion?vista=Monitoreo")
-    assert dashboard.build_place_address(dashboard.TAB_KPI) == (
-        "kpis")
-    assert dashboard.build_place_address(dashboard.PAGE_ANALYSIS) == (
-        "./")
-
-
-def test_t52_each_channel_gap_says_how_many_regions_stand_behind_it():
-    rows = pd.DataFrame({"channel": ["Supermercado"] * 3 + ["Mercado Minorista"] * 2,
-                         "region": ["Región de Arica y Parinacota", "Región del Maule",
-                                    "Región del Maule", "Región de Arica y Parinacota",
-                                    "Región de Arica y Parinacota"]})
-    assert dashboard.describe_gap_basis(rows) == [
-        "Mercado Minorista: 1 región (Arica y Parinacota), 2 semanas",
-        "Supermercado: 2 regiones, 3 comparaciones"]
-    assert dashboard.list_channels_without_pairs(
-        rows, ["Supermercado", "Mercado Minorista", "Supermercado en Línea", "Feria libre"],
-        "Feria libre") == ["Supermercado en Línea"]
-
-
-def test_t52_a_bar_resting_on_one_or_two_regions_names_them_next_to_it():
-    assert dashboard.label_channel_with_its_regions(
-        "Supermercado", ["Región de Arica y Parinacota"]) == (
-        "Supermercado · solo Arica y Parinacota")
-    assert dashboard.label_channel_with_its_regions(
-        "Supermercado", ["Región del Maule", "Región de Ñuble", "Región del Biobío"]) == (
-        "Supermercado")
 
 
 def test_without_github_the_states_come_from_the_latest_saved_load():
@@ -539,15 +400,6 @@ def test_d057_cards_escape_their_text_and_keep_bold_and_code():
     assert 'class="info-label">P1<' in card
 
 
-def test_d057_links_say_where_they_go():
-    link = dashboard.build_place_link(dashboard.TAB_GAP)
-    assert ">Ver en Brecha de precio<" in link
-    assert ">Ir a Monitoreo<" in dashboard.build_place_link(
-        dashboard.TAB_QUALITY, "Ir a")
-    steps = dashboard.build_steps_html([("Nombres", "se separan"), ("Unidades", "a kilo")])
-    assert steps.count("<li>") == 2 and steps.startswith('<ol class="steps">')
-
-
 @needs_database
 def test_d090_kpi_module_reads_left_to_right_and_keeps_sql_behind_a_click():
     script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
@@ -595,25 +447,6 @@ def test_d090_kpi_figure_splits_numbers_from_their_unit():
     assert "<b>1</b>" not in html_text
 
 
-def test_d057_every_rule_has_one_stage_in_the_order_of_the_etl():
-    rules = [rule for _, _, stage_rules, _ in dashboard.RULE_STAGES for rule in stage_rules]
-    assert sorted(rules) == [f"RN-{number:02d}" for number in range(1, 15)]
-    assert [stage for stage, _, _, _ in dashboard.RULE_STAGES][:6] == [
-        "Limpieza", "Validación", "Unidades", "Semanas", "Atípicos", "Carga"]
-
-
-@needs_database
-def test_d057_rules_tab_keeps_the_long_rejected_row_out_of_the_cards():
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "from bi import dashboard\ndashboard.show_rules_tab(dashboard.charts.MODE_DARK)\n")
-    app = AppTest.from_string(script, default_timeout=60).run()
-    assert not app.exception
-    cards = " ".join(block.value for block in app.markdown if 'class="info-grid"' in block.value)
-    assert cards.count('class="info-card"') == 14
-    assert "file_hash" not in cards
-    assert len(app.expander) == len(dashboard.RULE_STAGES)
-
-
 @needs_database
 def test_manual_is_a_procedural_document_without_presentation_cards():
     # D-279: the manual is a runbook drawn as the other documents, from docs/MANUAL.md.
@@ -657,16 +490,6 @@ def test_d057_quality_tab_explains_what_was_left_out_and_shows_it():
                 if column in ("source", "reason", "rejected_rows", "rejected_share")]
 
 
-def test_d058_the_old_links_tab_opens_the_links_view():
-    assert dashboard.OLD_TAB_PAGES[(dashboard.PAGE_OPERATIONS, "Enlaces")] == dashboard.PAGE_LINKS
-    assert dashboard.build_place_address(dashboard.PAGE_LINKS) == "enlaces"
-    groups = {link["group"] for link in project.PROJECT_LINKS}
-    # ODEPA moved out to its own sidebar folder, «Fuentes»: not a GitHub-page group
-    # any more (D-118).
-    assert groups == {"Código y operación", "Documentos"}
-    assert set(dashboard.LINK_GROUP_LEADS) == groups
-
-
 def test_d057_the_menu_folds_once_on_narrow_screens_only():
     script = dashboard.FOLD_SIDEBAR_SCRIPT
     assert f"window.innerWidth >= {dashboard.NARROW_SCREEN_WIDTH}" in script
@@ -675,26 +498,10 @@ def test_d057_the_menu_folds_once_on_narrow_screens_only():
     assert 'sessionStorage.getItem("sidebarFolded")' in script
 
 
-def test_d059_alert_levels_go_from_moderate_to_very_high_with_icon_and_label():
-    assert dashboard.find_alert_level(2.5) == ("Moderada", "●", "warning")
-    assert dashboard.find_alert_level(3.2) == ("Alta", "▲", "serious")
-    assert dashboard.find_alert_level(11) == ("Muy alta", "◆", "critical")
-    rows = pd.DataFrame({"product": ["Tomate"], "variety": ["Larga vida"], "quality": ["Primera"],
-                         "channel": ["Feria libre"], "variation": [0.25],
-                         "usual_variation": [0.01], "variation_deviation": [0.06]})
-    item = dashboard.build_alert_list_html(rows, charts.MODE_LIGHT)
-    assert "▲ Alta" not in item and "◆ Muy alta" in item and "▲ +25,0 %" in item
-    assert 'class="alert-limit"' in item
-
-
 @needs_database
 def test_analysis_sections_are_direct_destinations_without_tabs():
     expected = {
-        dashboard.PAGE_ANALYSIS: "¿Qué precios subieron más?",
-        dashboard.PAGE_GAP: "Mayorista y consumidor, la última semana",
-        dashboard.PAGE_CHANNELS: "Precio por región",
         dashboard.PAGE_SEASONALITY: "Índice mensual por familia, enero 2022 = 100",
-        dashboard.PAGE_ALERTS: "Alertas de la semana",
     }
     for page, title in expected.items():
         app = draw_page(page)
@@ -702,13 +509,6 @@ def test_analysis_sections_are_direct_destinations_without_tabs():
         if page != dashboard.PAGE_KPI:
             assert not app.tabs, page
         assert title in " ".join(block.value for block in app.markdown)
-
-def test_c03_the_catalog_opens_a_query_on_github_at_its_line():
-    for entry in dashboard.CATALOG:
-        path, line = dashboard.find_catalog_line(entry["name"])
-        lines = (PROJECT_DIR / path).read_text(encoding="utf-8").splitlines()
-        assert entry["name"] in lines[line - 1] or "MATCH_COVERAGE_QUERY" in lines[line - 1]
-
 
 def test_status_text_is_readable_on_light_themes():
     def contrast(first, second):
@@ -731,21 +531,6 @@ def test_streamlit_file_watcher_never_overlays_the_report():
     assert "display: none !important" in css
 
 
-def test_market_ranking_handles_both_directions_missing_values_and_top_n():
-    rows = pd.DataFrame({"variation": [0.1, -0.8, 0.4, float("nan"), float("inf")]})
-    assert dashboard.rank_weekly_movements(rows, 2).variation.tolist() == [-0.8, 0.4]
-    assert dashboard.rank_weekly_movements(rows, 2, "Alzas").variation.tolist() == [0.4, 0.1]
-    assert dashboard.rank_weekly_movements(rows, 2, "Bajas").variation.tolist() == [-0.8]
-
-
-def test_mobile_rankings_keep_full_labels_and_signed_values_without_injecting_html():
-    rows = pd.DataFrame({"label": ["<script>Tomate</script>", "Lechuga"], "value": [-25.0, 50.0]})
-    html_text = dashboard.build_mobile_ranking_html(rows, charts.MODE_DARK, True)
-    assert "<script>" not in html_text and "&lt;script&gt;Tomate&lt;/script&gt;" in html_text
-    assert "-25,0 %" in html_text and "+50,0 %" in html_text
-    assert 'left:25.000%;width:25.000%' in html_text
-
-
 @needs_database
 def test_displayed_source_blocks_are_unique_across_the_portfolio():
     seen = {}
@@ -762,7 +547,7 @@ def test_displayed_source_blocks_are_unique_across_the_portfolio():
 def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
     # Tabs are allowed only where they replace a long scroll (D-120, D-121, D-122) and
     # in the SQL studio, whose Resultados / Mensajes tabs are the client's own (D-173).
-    tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_DEVOPS, dashboard.PAGE_OPERATIONS, dashboard.PAGE_RUNS,
+    tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_OPERATIONS, dashboard.PAGE_RUNS,
               dashboard.PAGE_SQL, dashboard.PAGE_WHERE}  # D-296: the dashboard's three tabs, one screen each
     for page in dashboard.PAGES:
         app = draw_page(page)
@@ -775,39 +560,6 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         assert ('aria-label="Recorrido de los datos de ODEPA al panel"' in texts) == (page == dashboard.PAGE_DIAGRAMS)
         # The lineage is the switch's second view, never drawn by default (step 4).
         assert 'aria-label="Linaje dbt: de bronce a marts"' not in texts
-
-
-@needs_database
-def test_business_definition_has_a_mission_vision_scope_and_acceptance_criteria():
-    app = draw_page(dashboard.PAGE_BUSINESS)
-    assert not app.exception
-    text = " ".join(block.value for block in app.markdown)
-    for heading in ["Misión", "Visión", "Alcance", "Fuera de alcance", "Criterios de aceptación",
-                    "Requisitos de negocio", "Stakeholders y usuarios"]:
-        assert heading in text
-    assert 'data-component-kind="mission"' in text
-    assert 'data-component-kind="scope"' in text
-
-
-@needs_database
-def test_c01_the_cover_names_the_project_reads_real_figures_and_links_every_step():
-    assert dashboard.WINDOWS["El proyecto"][:2] == [dashboard.PAGE_COVER, dashboard.PAGE_BUSINESS]
-    assert dashboard.OLD_PATHS["el-proyecto"][0] == dashboard.PAGE_COVER
-    app = draw_page(dashboard.PAGE_COVER)
-    assert not app.exception
-    assert read_page_title(app) == "GreenOcean"
-    text = " ".join(block.value for block in app.markdown)
-    weekly_prices = dashboard.read_indicator("quality_flag_counts")["weekly_prices"].sum()
-    assert dashboard.charts.format_thousands(weekly_prices) in text
-    for words in ["Precios de alimentos en Chile", "El problema", "Trabajo desarrollado", "Para quién",
-                  "Trazabilidad y operación", "Límites claros", "no mide ganancias"]:
-        assert words in text
-    # Every way out of the cover stays in the same window and names its destination.
-    for view in [dashboard.PAGE_HOME, dashboard.PAGE_DIAGRAMS, dashboard.PAGE_RULES,
-                 dashboard.PAGE_KPI, dashboard.PAGE_RUNS, dashboard.PAGE_BUSINESS]:
-        assert f'href="{html.escape(dashboard.build_page_address(view))}" target="_self"' in text
-    # The full definition keeps its own view, untouched.
-    assert "Misión" not in text
 
 
 def test_security_and_database_have_distinct_functional_symbols():
@@ -825,7 +577,7 @@ def test_d065_an_old_section_link_opens_its_view_inside_the_dashboard():
     app.query_params["seccion"] = dashboard.TAB_GAP
     app.run()
     assert not app.exception
-    assert read_page_title(app) == "Explorar datos de precios"
+    assert read_page_title(app) == "Consultas SQL"
     assert "seccion" not in app.query_params
 
 
@@ -837,7 +589,7 @@ def test_old_section_links_can_redirect_with_a_bound_theme():
     app.query_params["seccion"] = dashboard.TAB_GAP
     app.run()
     assert not app.exception
-    assert read_page_title(app) == "Explorar datos de precios"
+    assert read_page_title(app) == "Consultas SQL"
 
 
 def test_d056_old_addresses_open_their_new_tab():
@@ -873,7 +625,7 @@ def test_retired_profiles_do_not_change_the_public_route():
     for profile in (None, "Reclutamiento", "Ingeniería de datos", "Analista BI"):
         assert dashboard.start_window(profile) == dashboard.REPORT_WINDOW
         for window, views in dashboard.WINDOWS.items():
-            assert dashboard.read_window_views(window, profile) == [v for v in views if v not in (dashboard.PAGE_ANALYSIS,dashboard.PAGE_GAP,dashboard.PAGE_CHANNELS)]
+            assert dashboard.read_window_views(window, profile) == list(views)
     assert dashboard.WINDOW_OF_VIEW[dashboard.PAGE_LINKS] == dashboard.SECTION_RESOURCES
     assert dashboard.WINDOW_OF_VIEW[dashboard.PAGE_MANUAL] == dashboard.SECTION_LINKS
 
@@ -891,56 +643,6 @@ def test_d070_a_profile_starts_its_visit_and_the_sidebar_does_not_show_it():
     assert not [button for button in app.sidebar.button if "perfil" in button.label]
 
 
-def test_d067_report_pages_use_a_compact_header_and_short_kpi_links():
-    dashboard.st.session_state[dashboard.COMPACT_VIEW] = True
-    try:
-        compact_link = dashboard.build_kpi_link("K6")
-        assert compact_link.count(">Cómo se calcula →<") == 1
-        assert ">K6" not in compact_link
-    finally:
-        dashboard.st.session_state[dashboard.COMPACT_VIEW] = False
-    assert "¿Cómo se calcula?" in dashboard.build_kpi_link("K6")
-    ranked = pd.DataFrame({"product_group": ["Frutas"], "product": ["Manzana"],
-                           "variety": ["Cripps Pink"], "quality": ["Calibre 80"],
-                           "channel": ["Mayorista"], "normalized_unit": ["kilo"],
-                           "week_start": [pd.Timestamp("2026-10-05")],
-                           "national_price": [1555.5556], "variation": [0.555556]})
-    table = dashboard.format_ranking_table(ranked)
-    assert table.iloc[0]["Semana"] == "05-10-2026"
-    assert table.iloc[0]["Precio nacional"] == "$ 1.556"
-    assert table.iloc[0]["Variación"] == "+55,6 %"
-
-
-def test_d068_gaps_above_300_percent_are_a_packed_format_and_leave_the_ranking():
-    gaps = pd.DataFrame({"product": ["Frutilla", "Tomate"], "margin": [8.36, 0.52]})
-    comparable, excluded = dashboard.split_comparable_gaps(gaps)
-    assert comparable["product"].tolist() == ["Tomate"]
-    assert excluded["product"].tolist() == ["Frutilla"]
-    assert dashboard.MAXIMUM_COMPARABLE_GAP == 3.0
-
-
-def test_d068_short_labels_stay_unique_and_the_detail_goes_to_the_tooltip():
-    rows = pd.DataFrame({"product": ["Naranja", "Naranja"], "channel": ["Supermercado"] * 2,
-                         "variety": ["Lane Late", "Navel Late"], "quality": ["Primera"] * 2})
-    labels = dashboard.build_short_labels(rows, lambda row: f"{row['product']} · {row['channel']}")
-    assert labels[0] == "Naranja · Supermercado" and len(set(labels)) == 2
-    assert labels[1].strip("\u200b") == labels[0]
-    spec = str(charts.draw_horizontal_bars(pd.DataFrame(
-        {"label": labels, "value": [1, 2], "value_label": ["1", "2"], "detail": ["a", "b"]}),
-        "x", charts.MODE_DARK).to_dict())
-    assert "'title': 'Detalle'" in spec
-
-
-def test_d069_a_product_filter_keeps_its_key_channel_and_a_short_name():
-    row = {"product_group": "Frutas", "product": "Manzana", "variety": "Cripps Pink",
-           "quality": "Calibre 80", "normalized_unit": "kilo", "channel": "Mayorista"}
-    product = dashboard.build_product_filter(row)
-    assert product["name"] == "Manzana Cripps Pink" and product["channel"] == "Mayorista"
-    rows = pd.DataFrame([row, dict(row, product="Pera")])
-    assert dashboard.keep_product(rows, product)["product"].tolist() == ["Manzana"]
-    assert len(dashboard.keep_product(rows, None)) == 2
-
-
 @needs_database
 def test_d069_map_scope_replaces_permanent_selectors_and_context_holds_across_views():
     dashboard_bar = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
@@ -953,20 +655,10 @@ def test_d069_map_scope_replaces_permanent_selectors_and_context_holds_across_vi
     dashboard_bar.session_state['dashboard_group'] = 'Frutas'
     dashboard_bar.run()
     assert dashboard_bar.session_state["dashboard_group"] == "Frutas"
-    dashboard_bar.query_params["vista"] = dashboard.PAGE_ANALYSIS
+    dashboard_bar.query_params["vista"] = dashboard.PAGE_HOME
     dashboard_bar.run()
     assert not dashboard_bar.exception
     assert dashboard_bar.session_state["dashboard_group"] == "Frutas"
-
-
-def test_d069_a_whole_row_takes_the_click_not_only_its_bar():
-    rows = pd.DataFrame({"label": ["A", "B"], "value": [1.2, -0.1], "pick": ["A", "B"]})
-    layers = charts.draw_variation_bars(rows, charts.MODE_DARK, select_field="pick").to_dict()
-    # Altair lifts the selection to the top and names the layer that carries it.
-    [selection] = [param for param in layers["params"] if param["name"] == "pick"]
-    [target] = [layer for layer in layers["layer"] if layer.get("name") in selection["views"]]
-    # That layer is an almost invisible band as wide as the chart.
-    assert target["mark"]["opacity"] < 0.01 and "x2" in target["encoding"]
 
 
 @needs_database
@@ -1021,7 +713,7 @@ def test_d071_a_theme_chosen_in_the_header_holds_for_the_whole_visit():
     assert not app.exception
     assert app.session_state[dashboard.THEME_STATE] == "Dark Grey"
     assert app.query_params["tema"] == "Dark Grey"
-    app.query_params["vista"] = dashboard.PAGE_ANALYSIS
+    app.query_params["vista"] = dashboard.PAGE_HOME
     app.run()
     assert app.session_state[dashboard.THEME_STATE] == "Dark Grey"
 
@@ -1044,14 +736,6 @@ def test_appearance_change_preserves_report_filters_without_a_profile_selector()
 def test_old_combined_code_and_technical_addresses_keep_their_destinations():
     assert dashboard.OLD_PATHS['codigo-y-resultados'][0] == dashboard.PAGE_HOME
     assert dashboard.OLD_PATHS['detalle-tecnico'][0] == dashboard.PAGE_DIAGRAMS
-
-
-def test_plain_ranking_answer_keeps_the_direction_and_real_percentage():
-    base = {'product': 'Tomate', 'channel': 'Feria libre', 'variation': .125}
-    assert 'subió 12,5 %' in dashboard.describe_ranking_change(base)
-    assert 'frente a la semana anterior' in dashboard.describe_ranking_change(base)
-    assert 'bajó 12,5 %' in dashboard.describe_ranking_change(base | {'variation': -.125})
-    assert 'no cambió' in dashboard.describe_ranking_change(base | {'variation': 0})
 
 
 @needs_database
@@ -1227,14 +911,12 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     for retired in ['Archivos del proyecto', 'Descripción general', 'Manual', 'Glosario',
                     'Fuentes y enlaces']:
         assert retired not in labels
-    assert dashboard.PAGE_ALERTS not in labels
     folder_buttons = [button for button in app.sidebar.button if str(button.key).startswith('nav_toggle_')]
     toggles = {button.label for button in folder_buttons}
     # «Fuentes» (D-118): the two ODEPA datasets, a folder like every other section.
     # D-201: security has its own folder.
     assert toggles == set(MENU_BLOCKS)
     assert all(not button.help for button in folder_buttons)
-    css = ' '.join(block.value for block in app.sidebar.markdown)
     assert 'border-left' not in dashboard.build_section_colors_css(True)  # no tree indent: a flat list
     # D-231: the wordmark keeps the brand green that suits its surface; the rows are neutral text.
     for mode in charts.THEMES:
@@ -1346,48 +1028,6 @@ def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
     assert 'home-alert-overview-marker' in markup
 
 
-@needs_database
-def test_gap_screen_starts_with_all_product_ranking_and_exposes_only_exact_top_sample():
-    app = draw_page(dashboard.PAGE_GAP)
-    assert not app.exception
-    assert dashboard.TOP_N_RANGE == (1, 100)
-    assert any(slider.key == 'dashboard_top_n' for slider in app.slider)
-    text = ' '.join(block.value for block in app.markdown)
-    assert text.index('¿Dónde es mayor la brecha esta semana?') < text.index('Muestra del gráfico')
-    assert 'chart-sample' in text and 'Mayorista' in text and 'Consumidor' in text
-    assert '&lt;span class=' not in text
-    assert any(item.value == 'Detalle de un producto' for item in app.subheader)
-    comparable, _ = dashboard.read_report_gaps(dashboard.read_report_week(), dashboard.read_filter('group'), dashboard.read_filter('region'), None)
-    assert dashboard.charts.format_signed_percent(comparable.iloc[0]['margin'] * 100) in text
-
-
-@needs_database
-def test_ranking_click_updates_detail_without_narrowing_the_overview():
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "import streamlit as st\nfrom bi import dashboard\n"
-              "st.session_state['dashboard_group'] = dashboard.ALL_VALUES\n"
-              "rows, _ = dashboard.read_report_gaps(dashboard.read_report_week(), dashboard.ALL_VALUES, dashboard.ALL_VALUES, None)\n"
-              "dashboard.select_ranked_product(rows.iloc[0], detail=True)\n")
-    app = AppTest.from_string(script, default_timeout=60).run()
-    assert not app.exception
-    product = app.session_state['dashboard_product']
-    assert app.session_state['analysis_product'] == product['key']['product']
-    assert app.session_state['analysis_group'] == product['key']['product_group']
-    assert app.session_state['analysis_channels'] == [product['channel']]
-    assert app.session_state['dashboard_group'] == dashboard.ALL_VALUES
-
-
-@needs_database
-def test_alert_sample_preserves_displayed_severity_order():
-    rows = dashboard.read_price_alerts()
-    rows = rows[rows['week_start'] == rows['week_start'].max()]
-    distance = (rows['variation'] - rows['usual_variation']).abs() / rows['variation_deviation']
-    ranked = rows.loc[distance.sort_values(ascending=False).index].head(8)
-    sample = dashboard.format_alerts(ranked, keep_order=True)
-    assert sample['Producto'].tolist() == [dashboard.describe_product(row) for row in ranked.to_dict('records')]
-    assert sample['Variación'].iloc[0] == dashboard.charts.format_signed_percent(ranked.iloc[0]['variation'] * 100)
-
-
 def test_movement_ring_parts_cover_comparable_series_not_the_top_n():
     rows = pd.DataFrame({'variation': [0.2] * 12 + [-.1] * 4 + [0.] * 4 + [float('nan')]})
     parts = dashboard.build_movement_proportions(rows)
@@ -1404,35 +1044,9 @@ def test_d094_old_history_links_open_the_new_page():
 
 def test_business_header_order_and_retired_views_are_not_in_the_menu():
     views=dashboard.read_window_views(dashboard.REPORT_WINDOW)
-    assert not set([dashboard.PAGE_ANALYSIS,dashboard.PAGE_GAP,dashboard.PAGE_CHANNELS]) & set(views)
-    assert 'datos_modo=brecha' in dashboard.build_page_address(dashboard.PAGE_GAP)
-
-
-@needs_database
-def test_data_browser_pages_then_resets_on_filter_change():
-    app=draw_page(dashboard.PAGE_DATA)
-    assert not app.exception
-    assert len(app.dataframe[0].value)==100
-    first=app.dataframe[0].value.copy()
-    app.button(key='data_next').click().run()
-    assert not app.exception and app.session_state['data_page']==1
-    assert not first.equals(app.dataframe[0].value)
-    app.selectbox(key='data_filter_region').set_value('Región de Coquimbo').run()
-    assert not app.exception and app.session_state['data_page']==0
-    assert set(app.dataframe[0].value['Región'])=={'Región de Coquimbo'}
-    app.radio(key='data_mode').set_value(dashboard.data_browser.MODES[2]).run()
-    assert not app.exception and 'Mayorista ($)' in app.dataframe[0].value
-
-
-@needs_database
-def test_alert_top_n_has_its_own_8_to_100_control_and_previous_prices():
-    app=draw_page(dashboard.PAGE_ALERTS)
-    assert not app.exception
-    slider=app.slider(key='alerts_top_n')
-    assert slider.value==20 and slider.min==8 and slider.max==100
-    slider.set_value(100).run()
-    assert not app.exception
-    assert 'Precio anterior' in ' '.join(block.value for block in app.markdown)
+    for retired in ("Datos", "Esta semana", "Brecha de precio", "Canales y regiones", "Alertas", "Portada", "Definición del proyecto",
+                    "Reglas de calidad", "DevOps y seguridad"):  # D-318: they left, and their addresses open the page that holds them
+        assert retired not in views and dashboard.RETIRED_VIEWS[retired] in dashboard.SHOW_PAGE_BY_TITLE
 
 
 @needs_database
@@ -1751,3 +1365,4 @@ def test_d298_a_failed_load_shows_its_alert_in_the_menu_of_every_page(monkeypatc
             assert any(link.proto.label == "Ver qué paso falló" for link in app.sidebar.get("page_link"))
     finally:
         st.cache_data.clear()
+

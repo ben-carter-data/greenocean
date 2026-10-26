@@ -84,21 +84,6 @@ def test_result_is_limited_and_flagged():
 
 
 @needs_database
-def test_views_have_readable_columns_and_real_counts():
-    catalog = {name: (count, [column for column, _ in columns])
-               for name, _, count, columns in sql_explorer.describe_views()}
-    assert set(catalog) == set(sql_explorer.VIEW_NAMES)
-    count, columns = catalog["precios"]
-    assert count == queries.run_sql("SELECT count(*) AS n FROM weekly_price")["n"][0]
-    assert not [column for column in columns if column.endswith("_id")]
-    for expected in ["semana", "familia", "producto", "variedad", "calidad", "canal", "region",
-                     "unidad", "precio", "observaciones", "marca"]:
-        assert expected in columns
-    for _, (_, view_columns) in catalog.items():
-        assert not [column for column in view_columns if column.endswith("_id")]
-
-
-@needs_database
 def test_downloads_produce_files():
     rows = sql_explorer.run_user_query(sql_explorer.EXAMPLES[0][2]).rows
     assert sql_explorer.to_parquet_bytes(rows)[:4] == b"PAR1"
@@ -252,3 +237,18 @@ def test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas():
         assert row.series_comparadas == len(series)
         assert abs(row.diferencia_real_pct - pd.Series(series).median() * 100) <= 0.051
 # endregion
+
+
+@needs_database
+def test_views_have_readable_columns_and_real_counts():
+    catalog = {name: (count, [column for column, _ in columns])
+               for name, _, count, columns in sql_explorer.describe_views()}
+    assert set(catalog) == set(sql_explorer.VIEW_NAMES)
+    count, columns = catalog["precios"]
+    assert count == queries.run_sql("SELECT count(*) AS n FROM weekly_price")["n"][0]
+    assert not [column for column in columns if column.endswith("_id")]
+    for expected in ["semana", "familia", "producto", "variedad", "calidad", "canal", "region",
+                     "unidad", "precio", "observaciones", "marca"]:
+        assert expected in columns
+    for _, (_, view_columns) in catalog.items():
+        assert not [column for column in view_columns if column.endswith("_id")]

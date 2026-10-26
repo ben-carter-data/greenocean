@@ -10,7 +10,6 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import project, queries  # noqa: E402
-from etl import etl  # noqa: E402
 
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(),
                                     reason="etl/datos.db has not been built")
@@ -20,14 +19,6 @@ needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(),
 def test_markdown_table_keeps_escaped_pipes_inside_a_cell():
     rows = project.parse_markdown_table("| ID | Regla |\n|---|---|\n| RN-02 | usa `\\|` |\n")
     assert rows == [{"ID": "RN-02", "Regla": "usa `|`"}]
-
-
-def test_design_document_gives_14_rules_8_indicators_and_6_questions():
-    assert [row["ID"] for row in project.read_design_table(project.RULES_HEADING)] == [
-        f"RN-{number:02d}" for number in range(1, 15)]
-    assert [row["ID"] for row in project.read_design_table(project.INDICATORS_HEADING)] == [
-        f"K{number}" for number in range(1, 9)]
-    assert len(project.read_design_table(project.QUESTIONS_HEADING)) == 6
 
 
 def test_project_guide_explains_every_rule_indicator_and_table():
@@ -58,11 +49,6 @@ def list_tracked_files():
 # endregion
 
 
-@needs_database
-def test_rule_evidence_has_a_sentence_for_each_rule_it_measures():
-    evidence = project.read_rule_evidence()
-    assert set(evidence) == set(project.RULE_EVIDENCE)
-    assert evidence["RN-14"].endswith("0 claves repetidas en weekly_price.")
 # endregion
 
 
@@ -113,16 +99,6 @@ def test_d054_week_prices_match_the_rows_of_that_week():
     latest_week = rows["week_start"].max()
     assert project.count_week_prices(latest_week) == (rows["week_start"] == latest_week).sum()
     assert project.count_week_prices("1999-01-04") == 0
-
-
-def test_d057_labeled_items_and_closing_paragraph_come_from_the_document():
-    section = project.read_section(project.read_document(project.PROJECT_GUIDE_FILE),
-                                   "Fuentes y cruces")
-    assert [label for label, _ in project.parse_labeled_items(section)] == [
-        "Precios mayoristas", "Precios al consumidor"]
-    assert [label for label, _ in project.parse_labeled_items(section, numbered=True)] == [
-        "Nombres", "Unidades", "Tiempo"]
-    assert project.read_closing_paragraph(section).startswith("Solo hay margen")
 
 
 # Units, SQL types and the date pattern read as words, not acronyms to define.

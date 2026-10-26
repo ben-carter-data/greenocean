@@ -7,7 +7,6 @@ way back when a case fails. The pop-ups are CSS sheets opened with :target, with
 (<base href="about:srcdoc">) because in an srcdoc frame a #link would otherwise resolve against the page around it.
 """
 import html
-import math
 
 from bi import charts, doc_views, i18n, quality_view, security_map
 
@@ -43,23 +42,6 @@ TECH_NAMES = {"duckdb": "DuckDB", "python": "Python", "git": "Git", "github": "G
 # entity-relationship diagram.
 CASE_PLACES = {"S-01": (500, 115), "S-02": (715, 135), "S-03": (885, 215), "S-04": (885, 365), "S-05": (715, 445),
                "S-06": (500, 465), "S-07": (285, 445), "S-08": (115, 365), "S-09": (115, 215), "S-10": (285, 135)}
-# The procedure: (mark, title, line, how it is done).
-SOP_STEPS = [
-    ("git", "Preparar", "copia limpia y secreto falso",
-     "Clonar el repositorio e instalar requirements.txt. Las pruebas crean su propio secreto falso: el real nunca se usa."),
-    ("pytest", "Ejecutar", "los diez casos con pytest",
-     "python -m pytest -q tests/test_security.py tests/test_control.py tests/test_sql_explorer.py tests/test_dashboard.py"),
-    ("reconcile", "Comprobar", "contra el resultado esperado",
-     "Cada caso S-01 a S-10 tiene su resultado esperado en el esquema de casos; cada prueba lo compara y falla si no se cumple."),
-    ("github", "Registrar", "la evidencia",
-     "La salida de pytest en local y, en GitHub, el resultado de pruebas.yml junto al commit. Toda corrección queda en "
-     "docs/DECISIONES.md."),
-    ("shield", "Decidir", "pasa o falla",
-     "Pasa: el cambio queda verificado. Falla: se corrige y se vuelve al paso 2."),
-]
-CI_NOTE = "En GitHub, pruebas.yml hace los pasos 2 a 4 en cada push; su resultado avisa, pero no detiene la publicación de main."
-
-
 def esc(value):
     return html.escape(str(value))
 
@@ -208,45 +190,3 @@ def orthogonal(start, end, half_width, half_height, gap=6):
         return f"M{x1 + right * half_width:.1f} {y:.1f} H{x2 - right * (half_width + gap):.1f}"
     return f"M{x1 + right * half_width:.1f} {y1:.1f} H{x2:.1f} V{y2 - down * (half_height + gap):.1f}"
 
-
-def build_cycle_html(mode):
-    """The procedure as a cycle of five steps, with the way back to step 2 when a case fails."""
-    palette = charts.get_palette(mode)
-    ink, muted, card, accent = palette["strong_text"], palette["reference"], palette["card"], palette["accent"]
-    width, height, cx, cy, rx, ry = 1000, 420, 500, 204, 352, 132
-    box_w, box_h = 240, 88
-    centres = []
-    for index in range(len(SOP_STEPS)):
-        angle = math.radians(-90 + index * 72)
-        centres.append((cx + rx * math.cos(angle), cy + ry * math.sin(angle)))
-    arrows, steps, modals = [], [], []
-    for index, (mark, title, line, how) in enumerate(SOP_STEPS):
-        x, y = centres[index]
-        if index < len(SOP_STEPS) - 1:
-            path = orthogonal(centres[index], centres[index + 1], box_w / 2, box_h / 2)
-            arrows.append(f'<path d="{path}" fill="none" stroke="{accent}" stroke-width="3" stroke-linejoin="miter" marker-end="url(#cy-head)"/>')
-        icon = place_logo(doc_views.flat_logo("brand", mark) if mark in doc_views.DISCS else quality_view.build_icon_svg(mark),
-                          x - box_w / 2 + 12, y - 24, 48)
-        steps.append(f'<a href="#p-{index}" aria-label="Paso {index + 1}: {esc(title)}"><title>{index + 1} · {esc(title)}: {esc(line)}</title>'
-                     f'<rect class="node" x="{x - box_w / 2:.1f}" y="{y - box_h / 2:.1f}" width="{box_w}" height="{box_h}" rx="{box_h / 2}" '
-                     f'fill="{card}" stroke="{accent}" stroke-width="2"/>{icon}'
-                     f'<text x="{x - box_w / 2 + 68:.1f}" y="{y - 6:.1f}" font-size="19" font-weight="700" fill="{ink}">{index + 1} · {esc(title)}</text>'
-                     + "".join(f'<text x="{x - box_w / 2 + 68:.1f}" y="{y + 16 + 16 * k:.1f}" font-size="14.5" fill="{muted}">{esc(part)}</text>'
-                               for k, part in enumerate(doc_views.wrap(line, 22)[:2])) + '</a>')
-        modals.append(build_modal(f"p-{index}", f"{index + 1} · {title}", line, f'<h4>Cómo se hace</h4><p>{esc(how)}</p>'
-                                  + ("<h4>Qué pasa después</h4><p>Pasa: el cambio queda verificado. Falla: se corrige y se vuelve al paso 2.</p>"
-                                     if index == len(SOP_STEPS) - 1 else "")))
-    # The way back: when a case fails, the change is fixed and the run repeats from step 2.
-    (bx, by), (ex, ey) = centres[-1], centres[1]
-    back = (f'<path d="M{bx + box_w / 2 + 8:.1f} {by:.1f} H{ex - box_w / 2 - 8:.1f}" fill="none" stroke="#d9a400" stroke-width="2.4" '
-            f'stroke-dasharray="7 6" stroke-linejoin="miter" marker-end="url(#cy-head-fail)"/>')
-    middle = (f'<text x="{cx}" y="{cy - 4}" text-anchor="middle" font-size="16" font-weight="600" fill="#d9a400">falla: se corrige y se repite desde el 2</text>'
-              f'<text x="{cx}" y="{cy + 26}" text-anchor="middle" font-size="26" font-weight="700" fill="{ink}">Procedimiento</text>'
-              f'<text x="{cx}" y="{cy + 50}" text-anchor="middle" font-size="16" fill="{muted}">pasa: el cambio queda verificado ✓</text>')
-    defs = (f'<defs><marker id="cy-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
-            f'<path d="M0 0 10 5 0 10z" fill="{accent}"/></marker><marker id="cy-head-fail" viewBox="0 0 10 10" refX="8" refY="5" '
-            f'markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10z" fill="#d9a400"/></marker></defs>')
-    body = (f'<svg class="plan" viewBox="0 0 {width} {height}" role="img" aria-label="Procedimiento de pruebas de seguridad" '
-            f'font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">{defs}{"".join(arrows)}{back}{middle}{"".join(steps)}</svg>'
-            f'<p class="note">{esc(CI_NOTE)} Pulsa un paso para ver cómo se hace.</p>' + "".join(modals))
-    return wrap_document(palette, body)

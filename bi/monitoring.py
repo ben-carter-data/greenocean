@@ -9,7 +9,7 @@ build_monitoring_html() returns one HTML document for st.iframe (CSS only, no sc
 """
 import html
 
-from bi import charts, doc_views, quality_view
+from bi import charts, doc_views
 
 # Signals: (key, origin mark, origin, signal, what it records, where it is read, who reads it, file that produces it).
 SIGNALS = [

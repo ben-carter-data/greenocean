@@ -129,18 +129,6 @@ def test_d283_every_acronym_of_the_english_documents_is_in_the_english_glossary(
         assert not missing, (filename, sorted(missing))
 
 
-def test_d283_the_english_glossary_names_only_english_pages_and_tabs():
-    menu = {i18n.EN[dashboard.SIDEBAR_LABELS.get(view, view)] for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
-    tabs = {"Operations", "Deployment", "CI/CD", "Monitoring"}
-    glossary = read(EN_DIR / "GLOSARIO.md")
-    table = glossary[glossary.index("| Acronym or term"):].split("\n\n", 1)[0]
-    for row in [line.split(" | ") for line in table.splitlines()[2:]]:
-        for place in [] if row[2] == "—" else row[2].split(", "):
-            page, _, tab = place.partition(" (")
-            assert page in menu, (row[0], page)
-            assert not tab or tab.rstrip(")") in tabs, (row[0], tab)
-
-
 def test_d283_the_language_follows_the_address_and_spanish_keeps_addresses_as_they_were():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params["lang"] = "en"
@@ -258,3 +246,15 @@ def test_d294_a_chart_keeps_its_series_when_streamlit_carries_the_data_as_arrow(
     rows = [pa.ipc.open_stream(data).read_all().to_pydict() for data in spec["datasets"].values()][0]
     assert domain[0] == "Food CPI (INE)" and rows["serie"][0] == "Food CPI (INE)"
     assert rows["serie"][1] == "Frutas" and rows["value"] == [1.0, 2.0]
+
+
+def test_d283_the_english_glossary_names_only_english_pages_and_tabs():
+    menu = {i18n.EN[dashboard.SIDEBAR_LABELS.get(view, view)] for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
+    tabs = {"Operations", "Deployment", "CI/CD", "Monitoring"}
+    glossary = read(EN_DIR / "GLOSARIO.md")
+    table = glossary[glossary.index("| Acronym or term"):].split("\n\n", 1)[0]
+    for row in [line.split(" | ") for line in table.splitlines()[2:]]:
+        for place in [] if row[2] == "—" else row[2].split(", "):
+            page, _, tab = place.partition(" (")
+            assert page in menu, (row[0], page)
+            assert not tab or tab.rstrip(")") in tabs, (row[0], tab)

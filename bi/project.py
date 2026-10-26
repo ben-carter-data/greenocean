@@ -4,7 +4,6 @@ The page shows text from docs/ and README.md, read here (one source: the
 dashboard copies no long text). Every figure comes from datos.db when the page
 is drawn. The dashboard only draws what these functions return.
 """
-import fnmatch
 import re
 from pathlib import Path
 
@@ -17,9 +16,7 @@ from etl import etl
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 DOCS_DIR = PROJECT_DIR / "docs"
 PROJECT_GUIDE_FILE = DOCS_DIR / "PROYECTO.md"
-MANUAL_FILE = DOCS_DIR / "MANUAL.md"
 DESIGN_FILE = DOCS_DIR / "DISENO.md"
-GITIGNORE_FILE = PROJECT_DIR / ".gitignore"
 SCHEMA_FILE = PROJECT_DIR / "etl" / "schema.sql"
 TESTS_DIR = PROJECT_DIR / "tests"
 
@@ -79,9 +76,6 @@ ADMIN_LINKS = [
      "url": TOKENS_URL, "icon": "vpn_key"},
 ]
 
-# Headings of docs/DISENO.md that hold the business questions, rules and indicators.
-QUESTIONS_HEADING = "3. Preguntas de negocio"
-RULES_HEADING = "6. Reglas de negocio"
 INDICATORS_HEADING = "7. Indicadores"
 # A table cell may contain an escaped pipe (\|), which is not a column border.
 CELL_BORDER_PATTERN = re.compile(r"(?<!\\)\|")
@@ -119,20 +113,6 @@ def read_section(text, heading):
     end = next((position for position in range(start, len(lines))
                 if lines[position].startswith("## ")), len(lines))
     return "\n".join(lines[start:end]).strip()
-
-
-def parse_labeled_items(text, numbered=False):
-    """[(label, text)] of the list items that start in bold: «- **Label:** text», also
-    «- **Label** text» (or «1. ...»)."""
-    marker = r"\d+\." if numbered else "-"
-    return re.findall(rf"^{marker} \*\*(.+?):?\*\*:? ?(.+)$", text, flags=re.MULTILINE)
-
-
-def read_closing_paragraph(text):
-    """The last paragraph of a section that is not part of a list."""
-    paragraphs = [block.strip() for block in text.split("\n\n") if block.strip()]
-    return next(block for block in reversed(paragraphs)
-                if not re.match(r"^(-|\d+\.) ", block))
 
 
 def parse_markdown_table(text):
@@ -233,19 +213,6 @@ def read_week_span(database_file=queries.DATABASE_FILE):
 # endregion
 
 
-def read_ignored_patterns():
-    """Patterns of .gitignore: files kept out of the repository (D-020)."""
-    return [line.strip() for line in read_document(GITIGNORE_FILE).splitlines()
-            if line.strip() and not line.startswith("#")]
-
-
-def is_in_repository(path):
-    """True when the path exists here and .gitignore does not keep it out of GitHub."""
-    is_ignored = any(fnmatch.fnmatch(path, pattern) or fnmatch.fnmatch(Path(path).name, pattern)
-                     for pattern in read_ignored_patterns())
-    return (PROJECT_DIR / path).exists() and not is_ignored
-
-
 def build_github_url(path):
     """Address of a file (blob) or a folder (tree) of the repository on GitHub."""
     kind = "tree" if path.endswith("/") else "blob"
@@ -278,91 +245,6 @@ def format_week(week_start):
 # endregion
 
 
-# region Rule evidence
-# One query per rule, run on datos.db, and the sentence that shows its answer.
-RULE_EVIDENCE = {
-    "RN-02": ("SELECT COUNT(*) AS keys, SUM(variety = 'Sin especificar' "
-              "AND quality = 'Sin especificar') AS unspecified FROM dim_product",
-              "{keys} claves de producto; {unspecified} sin variedad ni calidad "
-              "(«Sin especificar»)."),
-    "RN-03": ("SELECT COUNT(*) AS prices FROM weekly_price JOIN dim_channel USING (channel_id) "
-              "WHERE dim_channel.source = 'wholesale' AND normalized_unit = 'kilo'",
-              "{prices} precios semanales mayoristas quedaron por kilo."),
-    "RN-04": ("SELECT COUNT(*) AS prices FROM weekly_price JOIN dim_channel USING (channel_id) "
-              "WHERE dim_channel.source = 'wholesale' AND normalized_unit = 'unidad'",
-              "{prices} precios semanales mayoristas quedaron por unidad."),
-    "RN-05": ("SELECT COUNT(*) AS prices FROM weekly_price WHERE flag = 'UNIDAD_NO_CONVERTIBLE'",
-              "{prices} precios semanales conservados con la marca UNIDAD_NO_CONVERTIBLE."),
-    "RN-07": ("SELECT ROUND(AVG(observation_count), 1) AS average, MAX(observation_count) "
-              "AS maximum FROM weekly_price JOIN dim_channel USING (channel_id) "
-              "WHERE dim_channel.source = 'wholesale' AND price IS NOT NULL",
-              "Cada precio semanal mayorista junta en promedio {average} precios diarios "
-              "(máximo {maximum})."),
-    "RN-08": ("SELECT COUNT(DISTINCT week_start) AS weeks, "
-              "COUNT(DISTINCT CASE WHEN dayofweek(CAST(week_start AS DATE)) <> 1 THEN week_start END) "
-              "AS other_days FROM weekly_price",
-              "{weeks} semanas en la base; {other_days} empiezan en un día que no es lunes."),
-    "RN-09": ("SELECT ROUND(AVG(observation_count), 1) AS average FROM weekly_price "
-              "JOIN dim_channel USING (channel_id) WHERE dim_channel.source = 'consumer'",
-              "Cada precio semanal al consumidor promedia {average} puntos de venta."),
-    "RN-10": ("SELECT COUNT(*) AS prices FROM weekly_price JOIN dim_channel USING (channel_id) "
-              "WHERE dim_channel.source = 'consumer' AND dim_channel.channel = 'Mercado Mayorista'",
-              "{prices} precios semanales del canal «Mercado Mayorista» del consumidor."),
-    "RN-12": ("SELECT COUNT(*) AS prices FROM weekly_price WHERE flag = 'ATIPICO'",
-              "{prices} precios semanales marcados como atípicos y fuera de los indicadores."),
-    "RN-13": ("SELECT COUNT(*) AS names FROM dim_product WHERE product LIKE '%  %' "
-              "OR product LIKE '%' || chr(160) || '%' OR variety LIKE '%  %' "
-              "OR quality LIKE '%  %'",
-              "{names} nombres de producto con espacios repetidos o no separables en la base."),
-    "RN-14": ("SELECT (SELECT COUNT(*) FROM etl_run WHERE status = 'LOADED') AS runs, "
-              "(SELECT COUNT(*) FROM (SELECT 1 FROM weekly_price GROUP BY week_start, product_id, "
-              "region_id, channel_id, normalized_unit HAVING COUNT(*) > 1)) AS duplicates",
-              "{runs} cargas correctas registradas; {duplicates} claves repetidas en "
-              "weekly_price."),
-}
-
-
-def format_evidence_value(value):
-    """Whole numbers with a dot every three digits; decimals with a comma."""
-    if isinstance(value, float) and not value.is_integer():
-        return f"{value}".replace(".", ",")
-    return charts.format_thousands(value or 0)
-
-
-def read_rule_evidence(database_file=queries.DATABASE_FILE):
-    """{rule: sentence with its real figure} for the rules that datos.db can show."""
-    connection = queries.open_database(database_file)
-    evidence = {}
-    for rule, (sql, sentence) in RULE_EVIDENCE.items():
-        row = queries.read_dataframe(connection, sql).iloc[0]
-        evidence[rule] = sentence.format(**{column: format_evidence_value(row[column])
-                                            for column in row.index})
-    connection.close()
-    return evidence
-
-
-def describe_margin_evidence(margin_count):
-    """RN-06: margins exist only between prices of the same unit."""
-    return (f"{charts.format_thousands(margin_count)} márgenes semanales calculados, "
-            f"todos entre precios de la misma unidad.")
-
-
-def describe_rejection_evidence(rejection_rows, example_row=None):
-    """RN-11: rejected rows of the latest run, by reason, with one example."""
-    if rejection_rows.empty:
-        return "La última ejecución no rechazó filas."
-    reasons = ", ".join(f"{row['reason']}: {charts.format_thousands(row['rejected_rows'])}"
-                        for row in rejection_rows.to_dict("records"))
-    example = f" Ejemplo guardado: {example_row}" if example_row else ""
-    return f"Filas rechazadas en la última ejecución: {reasons}.{example}"
-
-
-def read_rejection_example(database_file=queries.DATABASE_FILE):
-    """One rejected row exactly as it was read, or None."""
-    connection = queries.open_database(database_file)
-    row = connection.execute("SELECT original_row FROM rejection LIMIT 1").fetchone()
-    connection.close()
-    return row[0] if row else None
 # endregion
 
 

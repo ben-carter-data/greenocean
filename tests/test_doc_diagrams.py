@@ -75,24 +75,6 @@ def test_d210_the_weak_views_are_gone():
     assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups", "sop", "pruebas"} | set(doc_figures.FIGURES)
 
 
-def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
-    page = doc_diagrams.DOC_DIAGRAMS["mockups"](charts.MODE_DARK)
-    assert page.count("data:image/jpeg;base64,") == len(doc_views.MOCKUPS) == 6  # D-299: the dashboard and the pipeline too
-    # D-248: one capture per theme the panel offers today, retaken from the current pages.
-    assert set(charts.THEMES) == {word for row in doc_views.MOCKUPS for word in charts.THEMES if word in row[2]}
-    for file_name, *_ in doc_views.MOCKUPS:
-        assert (doc_views.MOCKUP_DIR / file_name).exists(), file_name
-    # D-269: each capture is a main page of the menu at the desktop size, one per profile of the PRD.
-    from PIL import Image
-    from bi import dashboard
-    menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
-    for file_name, title, _ in doc_views.MOCKUPS:
-        assert title.split(" · ", 1)[1] in menu, title
-        assert Image.open(doc_views.MOCKUP_DIR / file_name).size == (1440, 900), file_name
-    for file_name, *_ in doc_views.MOCKUPS:
-        assert (doc_views.MOCKUP_DIR / file_name).stat().st_size < 400_000
-
-
 def test_doc_diagrams_does_not_depend_on_streamlit():
     for module in (doc_diagrams, doc_views):
         source = Path(module.__file__).read_text(encoding="utf-8")
@@ -138,7 +120,7 @@ def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architectu
 
 
 def test_d258_the_ten_cases_open_their_attack_result_owasp_threat_and_test():
-    from bi import security_map, security_plan
+    from bi import security_plan
     page = doc_diagrams.DOC_DIAGRAMS["pruebas"](charts.MODE_DARK)
     for case_id, short, attack, expected, owasp, tests in security_plan.CASES:
         assert f'href="#c-{case_id}"' in page and f'id="c-{case_id}"' in page, case_id
@@ -239,3 +221,21 @@ def test_d280_the_pdf_is_a_white_sheet_in_every_theme():
 def test_d280_on_paper_the_diagrams_have_no_shadows():
     for name, builder in doc_diagrams.DOC_DIAGRAMS.items():
         assert doc_diagrams.PRINT_STYLE in builder(charts.MODE_CORPORATE), name
+
+
+def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
+    page = doc_diagrams.DOC_DIAGRAMS["mockups"](charts.MODE_DARK)
+    assert page.count("data:image/jpeg;base64,") == len(doc_views.MOCKUPS) == 6  # D-299: the dashboard and the pipeline too
+    # D-248: one capture per theme the panel offers today, retaken from the current pages.
+    assert set(charts.THEMES) == {word for row in doc_views.MOCKUPS for word in charts.THEMES if word in row[2]}
+    for file_name, *_ in doc_views.MOCKUPS:
+        assert (doc_views.MOCKUP_DIR / file_name).exists(), file_name
+    # D-269: each capture is a main page of the menu at the desktop size, one per profile of the PRD.
+    from PIL import Image
+    from bi import dashboard
+    menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
+    for file_name, title, _ in doc_views.MOCKUPS:
+        assert title.split(" · ", 1)[1] in menu, title
+        assert Image.open(doc_views.MOCKUP_DIR / file_name).size == (1440, 900), file_name
+    for file_name, *_ in doc_views.MOCKUPS:
+        assert (doc_views.MOCKUP_DIR / file_name).stat().st_size < 400_000

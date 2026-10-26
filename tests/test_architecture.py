@@ -87,7 +87,6 @@ def test_pipeline_names_the_real_technology_used_at_each_stage():
 
 def test_d103_stack_pills_name_the_real_tools_without_inventing_any():
     """Every id in PIPELINE_STACK is a real, declared dependency (D-103)."""
-    import re
     root = Path(__file__).resolve().parent.parent
     requirements = ((root / "requirements.txt").read_text()
                     + (root / "requirements-pipeline.txt").read_text())

@@ -12,7 +12,6 @@ from pathlib import Path
 
 RED = '#e62035'
 BLUE = '#0783ff'
-GRAY = '#555c65'
 AMBER = '#af6700'
 
 FAMILY_ART_FILES = {
@@ -105,34 +104,6 @@ def style(mode, palette):
         .greenocean-mockup .mock-last-price{fill:#83baff;}
         """
     return '<style>'+css+'</style>' 
-
-
-def metrics(counts, alert_count, alert_delta, regional=False, examples=None):
-    notes = [
-        'combinaciones de producto y canal cuyo precio subió',
-        'combinaciones de producto y canal cuyo precio bajó',
-        'combinaciones de producto y canal con el mismo precio',
-    ]
-    examples = examples or {}
-    change = ('Sin comparación anterior' if alert_delta is None else
-              f'{abs(alert_delta)} '+('menos' if alert_delta < 0 else 'más' if alert_delta > 0 else 'de diferencia')+' que la semana anterior')
-    entries = [('up','Precios que subieron',counts[0],notes[0],RED),
-               ('down','Precios que bajaron',counts[1],notes[1],BLUE),
-               ('equal','Precios sin cambio',counts[2],notes[2],GRAY),
-               ('alert','Alertas nacionales' if regional else 'Cambios inusuales para revisar',alert_count,
-                'combinaciones fuera de su rango habitual · '+change,AMBER)]
-    result=[]
-    for kind,label,value,note,color in entries:
-        hint = 'Cambios nacionales fuera de su comportamiento habitual; no son errores confirmados.' if kind=='alert' else 'Cada comparación conserva producto, variedad, calidad, unidad y canal. No cuenta productos únicos ni dinero.'
-        example_text = examples.get(kind, [])
-        example_markup = (f'<p class="mock-metric-examples"><span>Ejemplos: </span>{esc(" · ".join(example_text))}</p>'
-                          if example_text else '')
-        result.append(f'<div class="mock-metric" style="--metric:{color}" title="{esc(hint)}">'
-                      f'<span class="mock-badge {kind}">{icon(kind)}</span><div><div class="mock-metric-label">{label}</div>'
-                      f'<strong aria-label="cantidad">{number(value)}</strong><p>{esc(note)}</p>{example_markup}</div></div>')
-    return ('<section class="mock-metrics" aria-label="Cantidades de comparaciones y alertas">'+''.join(result)+
-            '</section><p class="mock-count-note">Para comparar de forma justa, seguimos el mismo producto, variedad, calidad, unidad y canal en las dos semanas. Así no mezclamos, por ejemplo, una manzana por kilo con otra variedad o con otro canal. Cada número cuenta comparaciones de precios; no productos únicos ni dinero.'+
-            (' Las alertas son nacionales, aunque hayas elegido una región.' if regional else '')+'</p>')
 
 
 def product_label(row, full=False):
@@ -443,12 +414,7 @@ def dashboard_bar(path, week_label, family_rows, regional_rows, region, compared
     """The Resumen's only header (D-264): one thin bar with the path, the question and the week's figures as chips.
     Every figure comes from the same weekly model the charts below use; each chip says in full what it counts on hover.
     The «Volver» and price-alert buttons and the time of the load are Streamlit elements beside it."""
-    states = [change_state(average) for _, average, _ in family_averages(family_rows)]
-    regions = [row.get('state') for row in regional_rows]
-    rise, fall, mixed = regions.count('rise'), regions.count('fall'), regions.count('mixed')
-    missing = len(REGION_SHORT_NAMES) - rise - fall - mixed
     place = short_region(region) if region else 'Todo Chile'
-    family_rise, family_fall, family_same = states.count('rise'), states.count('fall'), states.count('neutral')
     section, _, page = path.rpartition(' › ')
     chips = [
         (f'Semana {week_label} · {place}',

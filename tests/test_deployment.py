@@ -1,9 +1,7 @@
 """«Despliegue» (D-255): the deployment diagram says what the workflows, the files and the services really are."""
-import re
 from pathlib import Path
 from urllib.parse import urlparse
 
-import pytest
 
 from bi import architecture, charts, control, deployment, project, queries
 

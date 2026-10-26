@@ -12,7 +12,6 @@ On any failure the published database stays as it was; the failed run is recorde
 """
 import json
 import os
-import shutil
 import sqlite3
 import subprocess
 import sys
@@ -36,7 +35,6 @@ DBT_TARGET_DIR = DBT_DIR / "target"
 # dbt/target is not committed, and the panel draws its DAG and quality matrix from them.
 DBT_NODE_COLUMNS = ["unique_id", "name", "resource_type", "layer", "materialized", "depends_on",
                     "test_type", "column_name", "description"]
-DBT_RESULT_COLUMNS = ["unique_id", "status", "execution_time", "failures", "generated_at"]
 ETL_RUN_SCHEMA = """CREATE TABLE IF NOT EXISTS etl_run (
     run_id INTEGER PRIMARY KEY, started_at VARCHAR NOT NULL, status VARCHAR NOT NULL,
     rows_read INTEGER NOT NULL, rows_loaded INTEGER NOT NULL, rows_rejected INTEGER NOT NULL,
