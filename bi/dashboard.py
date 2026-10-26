@@ -4019,8 +4019,8 @@ def show_overview_insights(mode, version):
     with right:
         drops = overview.best_drops(upto, week)
         database = read_cached_database_counts(version)
-        readers = {":material/person: Persona común": "buyer", ":material/storefront: Comerciante mayorista": "wholesale",
-                   ":material/database: Quien diseña los datos": "architect"}
+        readers = {":material/person: Persona común": "buyer", ":material/storefront: Mayorista": "wholesale",
+                   ":material/database: Datos": "architect"}
         reader = st.segmented_control(tr("Para quién"), list(readers), default=list(readers)[0], key="ov_insight_reader",
                                       label_visibility="collapsed", format_func=tr) or list(readers)[0]
         kind = readers[reader]

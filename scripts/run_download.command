@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs the download agent and the raw load with this computer's own network.
 # Double-click this file in Finder; the output stays visible in Terminal.
-cd "$(dirname "$0")" || exit 1
+cd "$(dirname "$0")/.." || exit 1
 
 # A local virtual environment keeps the project libraries apart from the system.
 if [ ! -d ".venv" ]; then

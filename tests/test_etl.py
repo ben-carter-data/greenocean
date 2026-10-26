@@ -153,7 +153,7 @@ def test_rn11_rows_read_equal_valid_plus_rejected_and_keep_the_original_row():
 # region Units
 def load_expected_unit_conversions():
     """The 147 wholesale units of the 2026 file with their reviewed conversion."""
-    table_file = Path(__file__).resolve().parent / "wholesale_units_2026.csv"
+    table_file = Path(__file__).resolve().parent / "fixtures" / "wholesale_units_2026.csv"
     return pd.read_csv(table_file, dtype=str, keep_default_na=False)
 
 

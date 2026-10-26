@@ -28,6 +28,8 @@ DOCUMENT_FIELDS = {
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
+    ":material/storefront: Mayorista": ":material/storefront: Wholesale",
+    ":material/database: Datos": ":material/database: Data",
     "Ampliar la tabla de productos": "Enlarge the products table",
     "Variación semanal, %. Rojo: subió · Azul: bajó.": "Weekly change, %. Red: rose · Blue: fell.",
     "Últimas {} semanas": "Last {} weeks",

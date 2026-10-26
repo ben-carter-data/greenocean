@@ -6,8 +6,19 @@ Cada martes el pipeline descarga las fuentes oficiales, las deja en una misma un
 
 [**Abrir el panel público**](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/)
 
-[![pruebas](https://github.com/cben6514-boop/monitor-precios-hito1/actions/workflows/pruebas.yml/badge.svg)](https://github.com/cben6514-boop/monitor-precios-hito1/actions/workflows/pruebas.yml)
-[![semanal](https://github.com/cben6514-boop/monitor-precios-hito1/actions/workflows/semanal.yml/badge.svg)](https://github.com/cben6514-boop/monitor-precios-hito1/actions/workflows/semanal.yml)
+[![pruebas](https://github.com/cben6514-boop/greenocean/actions/workflows/pruebas.yml/badge.svg)](https://github.com/cben6514-boop/greenocean/actions/workflows/pruebas.yml)
+[![semanal](https://github.com/cben6514-boop/greenocean/actions/workflows/semanal.yml/badge.svg)](https://github.com/cben6514-boop/greenocean/actions/workflows/semanal.yml)
+
+## El panel
+
+| | |
+|---|---|
+| ![Panorama de precios](docs/img/readme/panorama.png) | ![Dónde comprar](docs/img/readme/donde-comprar.png) |
+| **Panorama de precios**: qué subió y qué bajó esta semana, por región y por familia | **Dónde comprar**: los mercados mayoristas y los puntos de venta de cada región |
+| ![Insights](docs/img/readme/insights.png) | ![Pipeline y linaje](docs/img/readme/pipeline.png) |
+| **Insights**: las preguntas de quien compra, de quien vende por mayor y de quien diseña los datos | **Pipeline y linaje**: el recorrido de los datos y el estado de sus pruebas |
+
+Páginas del panel: Panorama de precios, Dónde comprar, Insights y Precios e inflación (desde un botón del Panorama), Pipeline y linaje, Modelo de datos, Calidad y auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, Mapa de la app y la carpeta de documentos. Está en español y en inglés.
 
 ## Qué responde
 
@@ -24,6 +35,20 @@ Además muestra la calidad de cada carga (filas leídas, cargadas y rechazadas c
 3. **Bronce** en Parquet: copia literal de cada fuente, por año; el IPC llega aquí directo.
 4. **Transformación** con dbt Core sobre DuckDB: staging, intermedio y marts, con 31 pruebas.
 5. **Publicación** de `etl/datos.duckdb` en el release «base-actual» de GitHub, que cada carga reemplaza; el panel de Streamlit la descarga y la lee en solo lectura.
+
+```mermaid
+flowchart LR
+    ODEPA[ODEPA · CSV] --> A[Agente de ingesta<br/>Python]
+    INE[INE · IPC de alimentos] --> B
+    A --> R[(raw.db<br/>SQLite)]
+    R --> B[Bronce<br/>Parquet]
+    B --> D[dbt Core + DuckDB<br/>staging · intermedio · marts<br/>31 pruebas]
+    D --> G{{Puerta de pruebas}}
+    G -->|pasan| P[Release «base-actual»<br/>datos.duckdb]
+    G -->|fallan| X[No se publica]
+    P --> S[Panel Streamlit<br/>lectura solamente]
+    W[GitHub Actions<br/>cada martes] -.orquesta.-> A
+```
 
 GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los diagramas completos (pipeline y linaje, modelo estrella, despliegue, CI/CD, monitoreo y arquitectura de seguridad) están en el panel; el [SAD](docs/SAD.md) describe la arquitectura por vistas y enlaza a ellos.
 
@@ -47,8 +72,13 @@ GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los 
 │   ├── dashboard.py     panel Streamlit
 │   ├── queries.sql      consultas del panel
 │   └── architecture.py  diagramas en vivo del pipeline y la plataforma
-├── docs/                PRD, SAD, ADR, plan de seguridad, decisiones y manual
-├── tests/               pruebas automáticas (pytest)
+│   (y el resto del panel: páginas, diagramas, textos en español e inglés)
+├── docs/                PRD, SAD, ADR, plan de pruebas y seguridad, decisiones y manual
+│   ├── en/              los mismos documentos en inglés
+│   ├── img/             capturas del panel
+│   └── archivo/         historia del proyecto (hitos y backlog); no es lectura
+├── scripts/             utilidades locales (descarga con doble clic en macOS)
+├── tests/               pruebas automáticas (pytest) y sus datos en fixtures/
 └── .github/workflows/   semanal.yml y pruebas.yml
 ```
 
