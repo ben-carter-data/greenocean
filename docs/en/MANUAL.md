@@ -27,7 +27,7 @@
 
 ## 1. In summary
 
-GreenOcean almost runs itself. Every Tuesday the load runs without intervention and, if something fails, the panel keeps showing the last valid load: a half-finished figure is never published. The operations work comes down to looking at one result a week, four tasks on the calendar and, if a failure warning arrives, following the table of section 4.
+GreenOcean almost runs itself. Every Tuesday the load runs without intervention and, if something fails, the panel keeps showing the last valid load: a half-finished figure is never published. The operations work comes down to looking at one result a week, four tasks on the calendar and, if a failure warning arrives, following the table of section 4. The warning arrives in three ways: GitHub's email, the red run on GitHub and, inside the panel, a red notice above the menu on every page, with a link to the step that failed.
 
 [[diagrama:calendario]]
 
@@ -54,7 +54,7 @@ If a step fails, the following ones do not run and the served database does not 
 
 [[diagrama:arbol_fallas]]
 
-Each row is a step of the workflow, with its name in `semanal.yml`. The warning reaches the author through GitHub's «Run failed: semanal» email, and the failed step shows in red in «Operations center». The `etl_run` table records only the published loads: the message of a failure is read in the log of the step.
+Each row is a step of the workflow, with its name in `semanal.yml`. The warning reaches the author through GitHub's «Run failed: semanal» email and, in the panel, as a red notice above the menu of every page; the failed step shows in red in «Operations center». The `etl_run` table records only the published loads: the message of a failure is read in the log of the step.
 
 | Step | Symptom | Probable cause | Action |
 |---|---|---|---|

@@ -632,6 +632,28 @@ def show_profile_dialog():
                 st.rerun()
 
 
+LOAD_ALERT_SEEN = "load_alert_seen"
+
+
+def show_load_alert(windows_by_title):
+    """D-298: when the last weekly load failed, every page says so at once, in the menu, with a way to the Operations
+    center; the first page of the visit also raises a notice. The panel keeps showing the last valid load."""
+    runs, _ = read_pipeline_runs()
+    failed = control.latest_load_failure(runs)
+    if not failed:
+        return
+    day = failed["started_at"].astimezone(ZoneInfo(CHILE_TIME_ZONE)).strftime("%d-%m")
+    with st.sidebar.container(key="load_alert"):
+        st.markdown(f'<p class="load-alert-title">{html.escape(tr("La carga del {} falló").format(day))}</p>'
+                    f'<p class="load-alert-note">{html.escape(tr("El panel muestra la última carga válida."))}</p>',
+                    unsafe_allow_html=True)
+        st.page_link(windows_by_title[WINDOW_OF_VIEW[PAGE_RUNS]], label=tr("Ver qué paso falló"), icon=":material/arrow_forward:",
+                     query_params=keep_context() | {VIEW_PARAMETER: PAGE_RUNS})
+    if st.session_state.get(LOAD_ALERT_SEEN) != failed["id"]:
+        st.session_state[LOAD_ALERT_SEEN] = failed["id"]
+        st.toast(tr("La carga del {} falló: el panel muestra la última carga válida.").format(day), icon=":material/error:")
+
+
 def show_profile_switch():
     """Under the menu, only in the user view: the whole project opens with the app's key (D-295)."""
     if not is_public_profile():
@@ -7883,7 +7905,18 @@ def build_section_colors_css(dark):
         font-size:.9375rem; color:{text} !important; -webkit-text-fill-color:{text} !important; text-decoration:none !important;
         border-radius:10px; line-height:1.3;}}
     [data-testid="stSidebar"] a.nav-source-link:hover {{background:{hover};}}
-    [data-testid="stSidebar"] .nav-source-icon {{margin-right:12px; color:{icon}; flex:0 0 auto;}}    /* D-295: «Ver todo el proyecto», without a background, in the ink of the menu, in every theme. */
+    [data-testid="stSidebar"] .nav-source-icon {{margin-right:12px; color:{icon}; flex:0 0 auto;}}    /* D-298: the alert of a failed load, under the menu, on every page. */
+    .st-key-load_alert {{margin:0 0 6px; padding:8px 12px 6px; border-radius:10px; gap:2px !important;
+        border:1px solid #e5484d; background:color-mix(in srgb, #e5484d 14%, transparent);}}
+    .st-key-load_alert [data-testid="stMarkdownContainer"] {{margin-bottom:0 !important;}}
+    .st-key-load_alert [data-testid="stElementContainer"] {{margin:0 !important;}}
+    .st-key-load_alert p.load-alert-title {{margin:0 !important; font-size:.86rem !important; font-weight:600; line-height:1.3 !important;
+        color:#ff8b8f !important;}}
+    .st-key-load_alert p.load-alert-note {{margin:0 0 2px !important; font-size:.74rem !important; line-height:1.3 !important;
+        color:{text} !important;}}
+    .st-key-load_alert [data-testid="stPageLink"] a {{padding:0 !important; min-height:0 !important;}}
+    .st-key-load_alert [data-testid="stPageLink"] p {{font-size:.76rem !important; color:{text} !important; text-decoration:underline;}}
+    /* D-295: «Ver todo el proyecto», without a background, in the ink of the menu, in every theme. */
     .st-key-profile_switch button {{background:transparent !important; border:1px solid {line} !important; box-shadow:none !important;}}
     .st-key-profile_switch button:hover {{border-color:{accent} !important; background:{hover} !important;}}
     .st-key-profile_switch button p, .st-key-profile_switch button span,
@@ -8008,6 +8041,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             st.session_state[f"nav_open_{key}"] = key not in FOLDED_BY_DEFAULT
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
+    show_load_alert(windows_by_title)  # D-298: first in the menu, where nothing covers it
     for key, title, pages in visible_menu_blocks():
         if key in TILE_BLOCKS:
             continue  # D-286, D-287: the folder and the sources live in the footer, always in sight

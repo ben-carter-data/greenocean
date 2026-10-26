@@ -84,6 +84,9 @@ EN = {
     'antes {}': 'before {}',
     'de {}': 'of {}',
     '{} vs anterior': '{} vs previous',
+    "La carga del {} falló": "The load of {} failed", "El panel muestra la última carga válida.": "The panel shows the last valid load.",
+    "Ver qué paso falló": "See which step failed",
+    "La carga del {} falló: el panel muestra la última carga válida.": "The load of {} failed: the panel shows the last valid load.",
     "Elige tu vista": "Choose your view", "Usuario": "User", "Todas las familias": "All families", "Vista de usuario": "User view", "Vista profesional": "Professional view",
     "Ver todo el proyecto": "See the whole project",
     "La ingeniería de datos, la operación, la seguridad, el stack y la documentación.":

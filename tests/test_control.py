@@ -198,3 +198,13 @@ def test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time(
     assert control.check_control_code("clave", "clave")[0]
     source = (Path(__file__).resolve().parent.parent / "bi" / "control.py").read_text(encoding="utf-8")
     assert "hmac.compare_digest" in source and not hasattr(control, "LoginGuard")
+
+
+def test_d298_only_a_real_failure_of_the_last_finished_load_raises_the_alert():
+    from datetime import datetime, timezone
+    run = lambda state, number: {"id": number, "state": state, "started_at": datetime(2026, 10, 20, tzinfo=timezone.utc)}
+    assert control.latest_load_failure([run(control.RUN_FAILED, 2), run(control.RUN_OK, 1)])["id"] == 2
+    assert control.latest_load_failure([run(control.RUN_IN_PROGRESS, 3), run(control.RUN_FAILED, 2)])["id"] == 2
+    assert control.latest_load_failure([run(control.RUN_OK, 2), run(control.RUN_FAILED, 1)]) is None
+    assert control.latest_load_failure([run(control.RUN_SIMULATED_FAILURE, 2)]) is None  # a requested test worries nobody
+    assert control.latest_load_failure([]) is None

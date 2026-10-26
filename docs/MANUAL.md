@@ -27,7 +27,7 @@
 
 ## 1. En resumen
 
-GreenOcean se opera casi solo. Cada martes la carga corre sin intervención y, si algo falla, el panel sigue mostrando la última carga válida: nunca se publica una cifra a medias. El trabajo de operación se reduce a mirar un resultado por semana, a cuatro tareas del calendario y, si llega el aviso de una falla, a seguir la tabla de la sección 4.
+GreenOcean se opera casi solo. Cada martes la carga corre sin intervención y, si algo falla, el panel sigue mostrando la última carga válida: nunca se publica una cifra a medias. El trabajo de operación se reduce a mirar un resultado por semana, a cuatro tareas del calendario y, si llega el aviso de una falla, a seguir la tabla de la sección 4. El aviso llega por tres vías: el correo de GitHub, la ejecución en rojo en GitHub y, dentro del panel, un aviso rojo arriba del menú en todas las páginas, con un enlace al paso que falló.
 
 [[diagrama:calendario]]
 
@@ -54,7 +54,7 @@ Si un paso falla, los siguientes no se ejecutan y la base servida no cambia ([AD
 
 [[diagrama:arbol_fallas]]
 
-Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El aviso llega al autor por el correo «Run failed: semanal» de GitHub, y el paso fallido aparece en rojo en «Centro de operación». La tabla `etl_run` registra solo las cargas publicadas: el mensaje de una falla se lee en el log del paso.
+Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El aviso llega al autor por el correo «Run failed: semanal» de GitHub y, en el panel, como un aviso rojo arriba del menú de todas las páginas; el paso fallido aparece en rojo en «Centro de operación». La tabla `etl_run` registra solo las cargas publicadas: el mensaje de una falla se lee en el log del paso.
 
 | Paso | Síntoma | Causa probable | Acción |
 |---|---|---|---|

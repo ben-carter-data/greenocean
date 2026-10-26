@@ -1725,3 +1725,25 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_RUNS
     source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
     assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep the view
+
+
+@needs_database
+def test_d298_a_failed_load_shows_its_alert_in_the_menu_of_every_page(monkeypatch):
+    from datetime import datetime, timezone
+    import streamlit as st
+    from bi import control
+    failed = {"id": 99, "state": control.RUN_FAILED, "started_at": datetime(2026, 10, 27, 12, tzinfo=timezone.utc),
+              "duration": None, "url": "https://github.com", "trigger": "Automática"}
+    monkeypatch.setattr(control, "list_workflow_runs", lambda token=None, count=10: [dict(failed)])
+    monkeypatch.setattr(control, "mark_simulated_failures", lambda runs, token=None: runs)
+    st.cache_data.clear()
+    try:
+        for view in (dashboard.PAGE_HOME, dashboard.PAGE_SQL):
+            app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+            app.query_params.update({"vista": view, "perfil": dashboard.PROFILE_PROFESSIONAL})
+            app.run()
+            markup = " ".join(block.value for block in app.sidebar.markdown)
+            assert not app.exception and "La carga del 27-10 falló" in markup, view
+            assert any(link.proto.label == "Ver qué paso falló" for link in app.sidebar.get("page_link"))
+    finally:
+        st.cache_data.clear()

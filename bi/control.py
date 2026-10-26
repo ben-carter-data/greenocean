@@ -185,6 +185,13 @@ def mark_simulated_failures(runs, token=None):
     return runs
 
 
+def latest_load_failure(runs):
+    """The newest finished run when it failed for real (not a requested test), else None (D-298): a run in progress
+    does not hide the result of the one before it."""
+    finished = [run for run in runs if run["state"] != RUN_IN_PROGRESS]
+    return finished[0] if finished and finished[0]["state"] == RUN_FAILED else None
+
+
 def parse_token_expiration(text):
     """'2026-12-31 12:00:00 UTC' (or with a -0300 offset) -> aware datetime, or None."""
     if not text:
