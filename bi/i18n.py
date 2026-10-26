@@ -28,6 +28,14 @@ DOCUMENT_FIELDS = {
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
+    "Alimentos desde 2022": "Food since 2022",
+    "lo que subió la canasta": "how much the basket rose",
+    "Alza en el último año": "Rise over the last year",
+    "{} frente a un año antes": "{} against a year before",
+    "Subieron más que la canasta": "Rose more than the basket",
+    "Subieron menos que la canasta": "Rose less than the basket",
+    "Iguales a la canasta": "Equal to the basket",
+    "familias": "families",
     # Menu: sections, pages and sources
     "Negocio · BI": "Business · BI",
     "Ingeniería de datos": "Data engineering",
@@ -97,6 +105,8 @@ EN = {
     "Sectores de la ciudad": "City sectors",
     "Mercados mayoristas": "Wholesale markets", "Sin mercado mayorista en los datos": "No wholesale market in the data",
     "Puntos de venta al consumidor": "Consumer sales points",
+    ":material/person: Persona común": ":material/person: Everyday person", ":material/storefront: Comerciante mayorista": ":material/storefront: Wholesale trader", ":material/database: Quien diseña los datos": ":material/database: Data designer",
+    "Para": "For", "Una persona común": "An everyday person", "Un comerciante que compra por mayor": "A trader who buys wholesale", "Quien diseña o revisa los datos": "Whoever designs or reviews the data",
     "Elige tu vista": "Choose your view", "Usuario": "User", "Todas las familias": "All families", "Vista de usuario": "User view", "Vista profesional": "Professional view",
     "Ver todo el proyecto": "See the whole project",
     "La ingeniería de datos, la operación, la seguridad, el stack y la documentación.":

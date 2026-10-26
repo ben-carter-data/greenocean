@@ -66,10 +66,10 @@ def test_d296_the_inflation_years_chain_to_the_whole_change():
 
 def test_d296_each_chart_answers_one_question_and_the_cards_grow_with_the_window():
     source = (dashboard.Path(dashboard.__file__)).read_text(encoding="utf-8")
-    page = source[source.index("def show_overview_market"):source.index("def build_overview_quality_html")]
+    page = source[source.index("def show_overview_market"):source.index("def build_overview_css")]
     titles = [part.split('", "')[1].split('"')[0] for part in page.split('overview_head("')[1:] + page.split('overview_card("')[1:]
               if '", "' in part.split("\n")[0]]
-    assert len(titles) == 10 and all(title.startswith("¿") and title.endswith("?") for title in titles), titles
+    assert len(titles) == 5 and all(title.startswith("¿") and title.endswith("?") for title in titles), titles
     css = overview.build_css(charts.get_palette(charts.THEMES[0]))
     assert "min-height:max(calc((100vh - 318px) / 2), 196px) !important" in css
     assert 'st.slider(tr("Semanas"), 4, 12, 8' in page  # the reader chooses how many weeks the heat table shows

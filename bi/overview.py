@@ -121,7 +121,7 @@ def family_years(rows, last):
                             "change": (index[end] / index[start] - 1) * 100})
     frame = pd.DataFrame(out)
     frame["family"] = frame["product_group"].map(lambda name: home_mockup.short_family(name) if name != inflation_view.IPC_NAME
-                                                 else "IPC alimentos")
+                                                 else "Alimentos en general")
     return frame
 
 
@@ -553,7 +553,7 @@ def read_points():
     return json.loads(POINTS_FILE.read_text(encoding="utf-8"))
 
 
-POINT_ICONS = {"Supermercado": "supermercado", "Supermercado en Línea": "linea", "Feria libre": "feria", "Carnicería": "carniceria",
+POINT_ICONS = {"person": "persona", "mercado": "mercado", "datos": "datos", "Supermercado": "supermercado", "Supermercado en Línea": "linea", "Feria libre": "feria", "Carnicería": "carniceria",
                "Panadería": "panaderia", "Mercado Minorista": "minorista", "Mercado Mayorista": "mercado"}
 REGIONS_PER_VIEW = 3
 

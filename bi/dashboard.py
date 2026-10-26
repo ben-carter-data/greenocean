@@ -5947,121 +5947,61 @@ def read_region_ids(version):
 
 
 def show_overview_inflation(mode, version):
+    """D-307: the inflation tab in plain words. The IPC is the price of a basket of food; each family is compared with it."""
     rows, last, summary, ipc_total, ipc_year = read_family_inflation(version)
     month = lambda pair: f"{charts.CHILE_LOCALE['time']['months'][pair[1] - 1]} {pair[0]}"
     counts = summary["verdict"].value_counts()
     ipc = rows[rows["product_group"] == inflation_view.IPC_NAME].sort_values("month_start")
     twelve = overview.ipc_twelve_months(rows)
     total_families = len(summary)
+    more, less, same = (counts.get(name, 0) for name in ("más que la inflación", "menos que la inflación", "al ritmo de la inflación"))
     basket = f"{1000 * (1 + ipc_total / 100):,.0f}".replace(",", ".")
-    year_ago = (last[0] - 1, last[1])
+    signed = charts.format_signed_percent
+    first_year = twelve.iloc[0]
     st.markdown(overview.build_scorecards_html([
-        (tr("IPC de alimentos"), charts.format_signed_percent(ipc_total), tr("desde 2022"), list(ipc["index"][-24:]), "rise",
-         f"El IPC de alimentos del INE subió {charts.format_signed_percent(ipc_total)} de enero 2022 a {month(last)}: "
-         f"una canasta de alimentos que costaba $1.000 hoy cuesta ${basket}. Es la vara con que se compara cada familia."),
-        (tr("IPC en 12 meses"), charts.format_signed_percent(ipc_year), short_month(last), list(twelve["change"][-24:]), "rise",
-         f"La inflación anual de los alimentos: el IPC de {month(last)} frente al de {month(year_ago)}. "
-         "La línea muestra ese mismo cambio, mes a mes, en los últimos dos años."),
-        (tr("Sobre la inflación"), str(counts.get("más que la inflación", 0)), tr("familias subieron más"), None, "rise",
-         f"{counts.get('más que la inflación', 0)} de {total_families} familias subieron más que el IPC de alimentos "
-         f"({charts.format_signed_percent(ipc_total)}) desde enero 2022, por más de 2 puntos: hoy pesan más en el bolsillo."),
-        (tr("Bajo la inflación"), str(counts.get("menos que la inflación", 0)), tr("familias subieron menos"), None, "fall",
-         f"{counts.get('menos que la inflación', 0)} de {total_families} familias subieron menos que el IPC de alimentos "
-         "desde enero 2022: aunque su precio subió, en términos reales se abarataron."),
-        (tr("Al ritmo"), str(counts.get("al ritmo de la inflación", 0)), tr("familias a ± 2 puntos"), None, "neutral",
-         f"{counts.get('al ritmo de la inflación', 0)} de {total_families} familias subieron lo mismo que el IPC de "
-         "alimentos, con menos de 2 puntos de diferencia."),
+        (tr("Alimentos desde 2022"), signed(ipc_total), tr("lo que subió la canasta"), list(ipc["index"][-24:]), "rise",
+         f"Los alimentos en general (el IPC de alimentos del INE: el precio de una canasta típica) subieron {signed(ipc_total)} "
+         f"desde enero 2022. Lo que costaba $1.000 hoy cuesta ${basket}. Con este número se compara cada familia."),
+        (tr("Alza en el último año"), signed(ipc_year), tr("{} frente a un año antes").format(short_month(last)), list(twelve["change"][-24:]), "rise",
+         f"Entre {month(year_ago_of(last))} y {month(last)} los alimentos subieron {signed(ipc_year)}. Siguen subiendo, pero "
+         f"más lento: en {month((first_year['month_start'].year, first_year['month_start'].month))} el alza de un año era {signed(first_year['change'])}."),
+        (tr("Subieron más que la canasta"), f"{more} de {total_families}", tr("familias"), None, "rise",
+         f"{more} de {total_families} familias subieron desde 2022 más que los alimentos en general ({signed(ipc_total)}): "
+         "se encarecieron más que el resto."),
+        (tr("Subieron menos que la canasta"), f"{less} de {total_families}", tr("familias"), None, "fall",
+         f"{less} de {total_families} familias subieron, pero menos que los alimentos en general: aunque cuestan más que en 2022, "
+         "se encarecieron menos que el resto."),
+        (tr("Iguales a la canasta"), f"{same} de {total_families}", tr("familias"), None, "neutral",
+         f"{same} de {total_families} familias subieron casi igual que los alimentos en general (con menos de 2 puntos de diferencia)."),
     ], charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
     palette = charts.get_palette(mode)
-    first, second, third = st.columns([1.05, 1.6, 1.35], gap="small")
-    with first, overview_card("verdicts_small", "¿Cuántas subieron más que la inflación?", "Frente al IPC, ± 2 puntos",
-                                     hint=f"Las {total_families} familias según cuánto subieron desde enero 2022 frente al IPC de "
-                                          "alimentos: rojo, más; azul, menos; gris, a su ritmo (± 2 puntos)."):
-        verdicts = summary["verdict"].value_counts().rename_axis("verdict").reset_index(name="families")
-        verdicts["verdict"] = verdicts["verdict"].str.capitalize()
-        colors = {"Más que la inflación": palette["rise"], "Menos que la inflación": palette["fall"],
-                  "Al ritmo de la inflación": palette["reference"]}
-        st.altair_chart(overview.donut(verdicts, "verdict", "families", mode, colors=colors, name="ver", legend="bottom"),
-                        width="stretch", height="stretch", theme=None, key="ov_verdicts")
-    with second, overview_card("fam_total_small", "¿Cuánto subió cada familia desde enero 2022?",
-                               "Línea punteada: el IPC de alimentos, " + charts.format_signed_percent(ipc_total),
-                               hint="Cada barra es cuánto subió una familia desde enero 2022: la mediana de sus series de "
-                                    "precios al consumidor. La línea punteada es el IPC de alimentos; las barras rojas la superan."):
+    first, second = st.columns([1.5, 1.2], gap="small")
+    with first, overview_card("fam_total_small", "¿Cuánto subió cada familia desde 2022?",
+                              "Rojo: subió más que la canasta (línea punteada, " + signed(ipc_total) + ") · azul: subió, pero menos",
+                              hint="Cada barra es cuánto subió el precio de una familia desde enero 2022. La línea punteada es lo que "
+                                   "subieron los alimentos en general. Todas subieron: las rojas se encarecieron más que el resto y las "
+                                   "azules, menos."):
         totals = summary.assign(family=summary["family"].map(home_mockup.short_family))
         st.altair_chart(overview.ranked_bars(totals, "family", "total", mode, reference=ipc_total, name="tot"),
                         width="stretch", height="stretch", theme=None, key="ov_totals")
-    with third, overview_card("ipc12_small", "¿Cómo va la inflación de alimentos?", "IPC frente al mismo mes, un año antes (%)",
-                                   hint=f"Cada punto es la inflación anual de los alimentos de un mes. Pasó de "
-                                        f"{charts.format_signed_percent(twelve['change'].iloc[0])} en {month((twelve['month_start'].iloc[0].year, twelve['month_start'].iloc[0].month))} "
-                                        f"a {charts.format_signed_percent(twelve['change'].iloc[-1])} en {month(last)}."):
+    with second, overview_card("ipc12_small", "¿La inflación está bajando?", "Cuánto subieron los alimentos en cada año (%)",
+                               hint=f"Cada punto es lo que subieron los alimentos en los 12 meses anteriores. Baja de "
+                                    f"{signed(first_year['change'])} a {signed(ipc_year)}: los precios siguen subiendo, pero cada vez "
+                                    "más lento. Si la línea bajara de cero, los precios estarían bajando."):
         st.altair_chart(overview.line_chart(twelve, "month_start", "change", mode), width="stretch", height="stretch",
                         theme=None, key="ov_ipc12")
-    with overview_card("years_wide", "¿Y cada año?", "Cambio de diciembre a diciembre (%); * hasta " + month(last),
-                       hint="Cuánto subió cada familia y el IPC en cada año, de diciembre a diciembre; 2022 parte en enero y "
-                            "el último año llega al mes publicado más reciente. Encadenados, dan el alza total desde 2022."):
+    with overview_card("years_wide", "¿Cuánto subió cada familia, año por año?", "Cambio de diciembre a diciembre (%); * hasta " + month(last),
+                       hint="Cuánto subió cada familia y los alimentos en general en cada año. Los años encadenados dan el alza "
+                            "total desde 2022."):
         years = overview.family_years(rows, last)
-        order = ["IPC alimentos"] + list(summary.assign(f=summary["family"].map(home_mockup.short_family))["f"])
+        order = ["Alimentos en general"] + list(summary.assign(f=summary["family"].map(home_mockup.short_family))["f"])
         logos = {home_mockup.short_family(f): home_mockup.family_art_data_uri(f) for f in OVERVIEW_FAMILIES}
         st.markdown(overview.heat_table_css(palette) + overview.build_heat_table_html(
             years, "family", "year", "change", sorted(years["year"].unique()), order, palette, logos), unsafe_allow_html=True)
 
 
-def show_overview_operations(mode, version):
-    runs = read_indicator("quality_runs").sort_values("run_id")
-    flags = read_indicator("quality_flag_counts")
-    results = queries.run_sql("SELECT status, count(*) AS n FROM dbt_result GROUP BY status").set_index("status")["n"]
-    indicators = quality_live.build_indicators(quality_live.read_measures())
-    green = sum(1 for row in indicators if row[4] == "ok")
-    latest = runs.iloc[-1]
-    tests = int(results.get("pass", 0)), int(results.sum() - results.get("success", 0))
-    number = lambda value: f"{int(value):,}".replace(",", ".")
-    rejected_share = f"{latest['rows_rejected'] / latest['rows_read'] * 100:.3f} %".replace(".", ",")
-    day = f"{latest['started_at'][8:10]}-{latest['started_at'][5:7]}-{latest['started_at'][:4]}"
-    st.markdown(overview.build_scorecards_html([
-        (tr("Última carga"), day, tr("publicada") if latest["status"] == "LOADED" else latest["status"], None,
-         "good" if latest["status"] == "LOADED" else "rise",
-         f"La última carga que pasó todas las pruebas y se publicó, el {day}. Cada martes la carga corre sola; si falla, "
-         "el panel sigue con esta y avisa arriba del menú."),
-        (tr("Filas leídas"), number(latest["rows_read"]), tr("de ODEPA"), list(runs["rows_read"]), "neutral",
-         f"Filas de los archivos de ODEPA que leyó esa carga, desde 2022. Si una carga lee menos del 90 % de la anterior, "
-         "se detiene: así un archivo incompleto nunca llega al panel. La línea muestra cada carga."),
-        (tr("Filas rechazadas"), number(latest["rows_rejected"]), rejected_share, list(runs["rows_rejected"]), "neutral",
-         f"Filas que no pasaron las reglas de negocio, como un precio cero o negativo: son el {rejected_share} de lo leído. "
-         "No se borran: quedan en la tabla rejection con su motivo."),
-        (tr("Pruebas de dbt"), f"{tests[0]}/{tests[1]}", tr("superadas"), None, "good" if tests[0] == tests[1] else "rise",
-         f"Pruebas de datos de dbt que pasaron en la última construcción: claves únicas, valores aceptados, relaciones "
-         "entre tablas y conciliación de filas. Si una falla, la base no se publica."),
-        (tr("Indicadores de calidad"), f"{green}/{len(indicators)}", tr("dentro de su umbral"), None,
-         "good" if green == len(indicators) else "rise",
-         f"{green} de los {len(indicators)} indicadores de calidad están dentro de su umbral: completitud, actualidad, validez, "
-         "unicidad y consistencia. El detalle está abajo y en Calidad y auditoría."),
-    ], charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
-    palette = charts.get_palette(mode)
-    first, second, third = st.columns([1.5, 1.15, 1.35], gap="small")
-    with first, overview_card("runs_small", "¿Qué trajo cada carga?", "Barras: filas cargadas · línea: filas rechazadas",
-                              hint="Cada barra es una carga publicada con sus filas cargadas; la línea, sus filas rechazadas. "
-                                   "Una barra más baja que la anterior es una carga que leyó menos archivos."):
-        st.altair_chart(overview.stacked_runs(runs, mode), width="stretch", height="stretch", theme=None, key="ov_runs")
-    with second, overview_card("flags_small", "¿Cuántos precios entran a los indicadores?", "Los marcados se conservan aparte",
-                               hint="De los precios semanales de la base, los sin marca entran a los indicadores. Los atípicos (más "
-                                    "de 5 veces o menos de un quinto de la mediana de su semana) y los de unidad no convertible "
-                                    "se conservan aparte, sin borrarse."):
-        names = {"SIN_MARCA": "Sin marca", "ATIPICO": "Atípico (RN-12)", "UNIDAD_NO_CONVERTIBLE": "Unidad no convertible"}
-        frame = flags.assign(flag=flags["flag"].map(names)).groupby("flag", as_index=False)["weekly_prices"].sum()
-        colors = {"Sin marca": palette["accent"], "Atípico (RN-12)": palette["rise"], "Unidad no convertible": palette["reference"]}
-        st.altair_chart(overview.donut(frame, "flag", "weekly_prices", mode, colors=colors, name="flag"),
-                        width="stretch", height="stretch", theme=None, key="ov_flags")
-    with third, overview_card("sources_small", "¿De qué fuente vienen?", "Precios semanales en la base que lee el panel",
-                              hint="Precios semanales de cada fuente de ODEPA en la base: al consumidor (supermercados, ferias, "
-                                   "carnicerías…) y mayoristas (mercados de abasto)."):
-        sources = flags.groupby("source", as_index=False)["weekly_prices"].sum()
-        sources["source"] = sources["source"].map({"consumer": "Consumidor", "wholesale": "Mayorista"})
-        st.altair_chart(overview.ranked_bars(sources, "source", "weekly_prices", mode, percent=False, name="src"),
-                        width="stretch", height="stretch", theme=None, key="ov_sources")
-    with overview_card("quality_wide", "¿La calidad está en su umbral?", "Cada indicador en la última carga",
-                       hint="Cada indicador con su valor en la última carga, agrupado por dimensión de calidad; el punto verde "
-                            "dice que está dentro de su umbral. Pasa el cursor por una fila para ver cómo se mide."):
-        st.markdown(build_overview_quality_html(indicators), unsafe_allow_html=True)
+def year_ago_of(pair):
+    return (pair[0] - 1, pair[1])
 
 
 OVERVIEW_INSIGHT_VIEW = "ov_insight_view"
@@ -6080,9 +6020,10 @@ def build_insight_table_html(head, rows):
     return f'<div class="ov-it"><table><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table></div>'
 
 
-def build_insight_card_html(kind, title, who, lines):
+def build_insight_card_html(kind, title, who, icon, lines):
     paragraphs = "".join(f"<p>{html.escape(line)}</p>" for line in lines)
-    return (f'<div class="ov-insight ov-insight-{kind}"><span class="ov-insight-who">{html.escape(tr(who))}</span>'
+    return (f'<div class="ov-insight ov-insight-{kind}"><span class="ov-insight-who">{overview.point_icon(icon)}'
+            f'<span>{html.escape(tr("Para"))}: {html.escape(tr(who))}</span></span>'
             f'<h4>{html.escape(tr(title))}</h4>{paragraphs}</div>')
 
 
@@ -6106,18 +6047,29 @@ def show_overview_insights(mode, version):
     indicators = quality_live.build_indicators(quality_live.read_measures())
     green = sum(1 for row in indicators if row[4] == "ok")
     now = market.iloc[-1]
+    margin_now = read_indicator("k1_margin")
+    margin_now = margin_now[margin_now["week_start"] == f"{week:%Y-%m-%d}"]
+    gaps = margin_now.groupby("product_group")["margin"].median().mul(100) if not margin_now.empty else None
+    market_count = sum(len(data["wholesale"]) for data in overview.read_points().values())
+    first_year = overview.ipc_twelve_months(rows).iloc[0]
+    short = home_mockup.short_family
+    fell = moves[moves["state"] == "Bajó"]["product_group"].map(short)
+    rose = moves[moves["state"] == "Subió"]["product_group"].map(short)
     questions = [
-        ("¿Qué precios cambiaron esta semana y cuáles son inusuales?", "Gerencia", "Cambio típico · Alerta de precio",
-         f"{moved['Subieron']} subieron, {moved['Bajaron']} bajaron y {int(now['alerts'])} son alertas."),
-        ("¿El precio de hoy es normal para la temporada?", "Pricing", "Precio real · índice de la época",
-         "Por producto, en Consultas SQL · Precio vs. época."),
-        ("¿Cuánto paga el consumidor sobre el mayorista?", "Compras", "Brecha consumidor–mayorista",
-         "Por producto y región, en Consultas SQL · Brecha mayorista."),
-        ("¿Qué alimentos subieron más que la inflación?", "Pricing", "Alza frente al IPC",
-         f"{overview.join(above)} superan al IPC de alimentos ({overview.signed(ipc_total)})." if len(above)
-         else "Ninguna familia supera al IPC de alimentos."),
-        ("¿Las cifras son confiables?", "Revisión técnica", "Calidad de los datos",
-         f"{green} de {len(indicators)} indicadores en su umbral y {tests[0]} de {tests[1]} pruebas de dbt."),
+        ("¿Qué está subiendo y qué está bajando esta semana?", "Persona común", "Resumen semanal",
+         f"Subieron: {overview.join(rose) or 'ninguna familia'}. Bajaron: {overview.join(fell) or 'ninguna familia'}."),
+        ("¿Qué alimentos se encarecieron más desde 2022?", "Persona común", "Dashboard · Inflación",
+         (f"{overview.join(above)} subieron más que los alimentos en general ({overview.signed(ipc_total)})." if len(above)
+          else "Ninguna familia subió más que los alimentos en general.")),
+        ("¿La inflación de los alimentos está bajando?", "Persona común", "Dashboard · Inflación",
+         f"Sí, sigue subiendo pero más lento: de {overview.signed(first_year['change'])} al año a {overview.signed(ipc_year)}."),
+        ("¿Dónde se compra por mayor?", "Comerciante mayorista", "Dashboard · Mercado",
+         f"{market_count} mercados mayoristas en {len(overview.read_points())} regiones, 3 de ellos en Santiago."),
+        ("¿Cuánto se agrega entre el mercado mayorista y el consumidor?", "Comerciante mayorista", "Consultas SQL · Brecha mayorista",
+         (f"En promedio, {overview.join(f'{short(f)} {overview.signed(v)}' for f, v in gaps.items())}." if gaps is not None
+          else "Sin datos esta semana.")),
+        ("¿Puedo confiar en estas cifras?", "Quien diseña los datos", "Calidad y auditoría",
+         f"{green} de {len(indicators)} indicadores de calidad en su umbral y {tests[0]} de {tests[1]} pruebas de datos."),
     ]
     st.markdown(f"""<style>
     .ov-it {{ overflow:auto; max-height:calc(100vh - 290px); }}
@@ -6133,7 +6085,8 @@ def show_overview_insights(mode, version):
     .ov-insight {{ border-radius:14px; padding:14px 16px; margin:0 0 10px; border:1px solid {palette['card_border']};
         background:linear-gradient(135deg, color-mix(in srgb, var(--c) 12%, {palette['card']}), {palette['card']}); }}
     .ov-insight-buyer {{ --c:{palette['rise']}; }} .ov-insight-wholesale {{ --c:#199e70; }} .ov-insight-architect {{ --c:{palette['accent']}; }}
-    .ov-insight-who {{ font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--c); }}
+    .ov-insight-who {{ display:flex; align-items:center; gap:10px; font-size:12px; font-weight:700; letter-spacing:.04em; color:var(--c); }}
+    .ov-insight-who .ov-icon {{ width:38px; height:38px; }}
     .ov-insight h4 {{ margin:2px 0 10px !important; padding:0 !important; font-size:19px !important; color:{palette['strong_text']}; }}
     .ov-insight p {{ margin:0 0 8px !important; font-size:13.5px; line-height:1.55; color:{palette['text']}; }}
     </style>""", unsafe_allow_html=True)
@@ -6142,51 +6095,37 @@ def show_overview_insights(mode, version):
         view = st.segmented_control(tr("Ver"), ["Preguntas", "KPIs"], default="Preguntas", key=OVERVIEW_INSIGHT_VIEW,
                                     label_visibility="collapsed") or "Preguntas"
         if view == "Preguntas":
-            st.markdown(build_insight_table_html(["Pregunta", "Quién la hace", "KPI que la responde", "La respuesta de hoy"],
+            st.markdown(build_insight_table_html(["Pregunta", "Para quién", "Dónde verlo", "La respuesta de hoy"],
                                                  questions), unsafe_allow_html=True)
         else:
             st.markdown(build_insight_table_html(["KPI", "Cómo se calcula", "Por qué"], overview.KPIS), unsafe_allow_html=True)
     with right:
         drops = overview.best_drops(upto, week)
         database = read_cached_database_counts(version)
-        reader = st.segmented_control(tr("Para quién"), ["Quien compra", "Compra por mayor", "Diseña los datos"],
-                                      default="Quien compra", key="ov_insight_reader", label_visibility="collapsed") or "Quien compra"
-        if reader == "Quien compra":
-            card = build_insight_card_html("buyer", "Qué conviene mirar esta semana", "Para quien compra",
+        readers = {":material/person: Persona común": "buyer", ":material/storefront: Comerciante mayorista": "wholesale",
+                   ":material/database: Quien diseña los datos": "architect"}
+        reader = st.segmented_control(tr("Para quién"), list(readers), default=list(readers)[0], key="ov_insight_reader",
+                                      label_visibility="collapsed", format_func=tr) or list(readers)[0]
+        kind = readers[reader]
+        if kind == "buyer":
+            card = build_insight_card_html("buyer", "Qué conviene mirar esta semana", "Una persona común", "person",
                                            overview.consumer_insights(moves, drops, summary, ipc_total, ipc_year))
-        elif reader == "Compra por mayor":
-            card = build_insight_card_html("wholesale", "Qué pasa en el mercado mayorista", "Para quien compra por mayor",
-                                           overview.wholesale_insights(upto, week, read_indicator("k1_margin")))
+        elif kind == "wholesale":
+            card = build_insight_card_html("wholesale", "Qué pasa en el mercado mayorista", "Un comerciante que compra por mayor",
+                                           "mercado", overview.wholesale_insights(upto, week, read_indicator("k1_margin")))
         else:
-            card = build_insight_card_html("architect", "Qué dicen los datos de esta carga", "Para quien diseña los datos",
+            card = build_insight_card_html("architect", "Qué dicen los datos de esta carga", "Quien diseña o revisa los datos", "datos",
                                            overview.architect_insights(runs.iloc[-1], tests, green, len(indicators), database,
                                                                        flags, now["comparable"], now["prices"]))
         st.markdown(f'<div class="ov-insights">{card}</div>', unsafe_allow_html=True)
 
 
-def build_overview_quality_html(indicators):
-    """The quality indicators as a table (D-301): dimension, indicator, value and what it means; how it is measured on
-    hover."""
-    rows = "".join(f'<tr class="ov-q-{html.escape(state)}" title="{html.escape(tr(how), quote=True)}"><td><i></i>{html.escape(tr(dimension.capitalize()))}</td>'
-                   f'<td><b>{html.escape(tr(name))}</b></td><td class="ov-qv">{html.escape(tr(value))}</td><td>{html.escape(tr(meaning))}</td></tr>'
-                   for dimension, name, value, meaning, state, how in indicators)
-    return (f'<div class="ov-qt"><table><thead><tr><th>{html.escape(tr("Dimensión"))}</th><th>{html.escape(tr("Indicador"))}</th>'
-            f'<th>{html.escape(tr("Valor"))}</th><th>{html.escape(tr("Qué significa"))}</th></tr></thead><tbody>{rows}</tbody></table></div>')
+
+
 def build_overview_css(mode):
     """The dashboard's styles, written with the scorecards of each tab: no element of its own, no extra gap (D-173)."""
     palette = charts.get_palette(mode)
     return overview.build_css(palette) + f"""<style>
-    .ov-qt {{ overflow:auto; }}
-    .ov-qt table {{ width:100%; border-collapse:collapse; margin:0; font-size:12px; }}
-    .ov-qt th, .ov-qt td {{ border:0 !important; border-bottom:1px solid {palette['card_border']} !important; padding:2px 8px !important;
-        text-align:left; color:{palette['text']}; background:transparent !important; vertical-align:middle; }}
-    .ov-qt th {{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:{palette['reference']}; }}
-    .ov-qt td b {{ color:{palette['strong_text']}; font-weight:600; }}
-    .ov-qt td.ov-qv {{ font-weight:600; color:{palette['strong_text']}; white-space:nowrap; }}
-    .ov-qt tbody tr {{ cursor:help; }}
-    .ov-qt tbody tr:hover td {{ background:color-mix(in srgb, {palette['accent']} 7%, transparent) !important; }}
-    .ov-qt td i {{ display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:7px; background:{palette['reference']}; }}
-    .ov-q-ok td i {{ background:#199e70; }} .ov-q-alerta td i, .ov-q-falla td i {{ background:{palette['rise']}; }}
     </style>"""
 
 
@@ -6207,14 +6146,11 @@ def show_overview_page(mode):
     show_page_bar(PAGE_OVERVIEW, "Dashboard", "Todo el proyecto en una vista: el mercado de la semana, la inflación de "
                   "los alimentos y los datos con su operación.", side=slicers)
     with st.container(key="ov_tabs"):
-        market, inflation, operations, insights = st.tabs([tr("Mercado"), tr("Inflación"), tr("Datos y operación"),
-                                                           tr("Insights")])
+        market, inflation, insights = st.tabs([tr("Mercado"), tr("Inflación"), tr("Insights")])
         with market:
             show_overview_market(mode, version)
         with inflation:
             show_overview_inflation(mode, version)
-        with operations:
-            show_overview_operations(mode, version)
         with insights:
             show_overview_insights(mode, version)
 
