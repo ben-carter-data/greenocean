@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from bi import charts, queries
+from bi import queries
 from etl import etl
 
 # region Constants
@@ -151,11 +151,6 @@ def read_design_table(heading):
 
 
 # region SQL catalog
-def strip_sql_comments(sql):
-    """The query without its '-- ...' comments."""
-    return re.sub(r"--[^\n]*", "", sql)
-
-
 # endregion
 
 
@@ -230,11 +225,6 @@ def select_example_rows(rows, region=EXAMPLE_REGION, channel=EXAMPLE_CHANNEL):
         if column in rows.columns and value is not None:
             rows = rows[rows[column] == value]
     return rows
-
-
-def format_money(value):
-    """'$ 1.234'."""
-    return f"$ {charts.format_thousands(value)}"
 
 
 def format_week(week_start):

@@ -177,12 +177,6 @@ def describe_weeks(weeks):
     return "1 semana" if weeks == 1 else f"{weeks} semanas"
 
 
-def shorten_region_name(region):
-    """'Región Metropolitana de Santiago' -> 'Metropolitana de Santiago'."""
-    for prefix in REGION_PREFIXES:
-        if region.startswith(prefix):
-            return region[len(prefix):]
-    return region
 # endregion
 
 
@@ -198,23 +192,6 @@ def get_status_text_color(status, mode):
     return (STATUS_TEXT_ON_LIGHT if base == BASE_LIGHT else STATUS_COLORS)[status]
 
 
-def build_channel_color_scale(channels, mode):
-    """Color scale with only the channels present, each with its fixed color.
-
-    Series that are not channels (products or regions in the Consultas page)
-    take the same validated colors, in order.
-    """
-    channel_colors = get_palette(mode)["channels"]
-    present_channels = [channel for channel in channel_colors if channel in set(channels)]
-    if not present_channels:
-        series_names = sorted(set(channels))
-        colors = list(channel_colors.values())
-        return alt.Scale(domain=series_names, range=[
-            colors[position % len(colors)] for position in range(len(series_names))])
-    return alt.Scale(domain=present_channels,
-                     range=[channel_colors[channel] for channel in present_channels])
-
-
 def apply_chart_style(chart, mode):
     """Transparent background, quiet grid and the mode's text colors."""
     palette = get_palette(mode)
@@ -228,135 +205,10 @@ def apply_chart_style(chart, mode):
         symbolType="circle")
 
 
-def add_week_labels(rows, value_labels):
-    """Columns shown in tooltips: the week as dd-mm-yyyy and the formatted value."""
-    return rows.assign(week_label=rows["week_start"].dt.strftime("%d-%m-%Y"),
-                       value_label=value_labels)
 # endregion
 
 
 # region Charts
-def draw_weekly_lines(rows, value_title, value_labels, mode, is_money):
-    """Lines by week, one per channel, with a tooltip on every point.
-
-    rows needs the columns week_start, channel and value.
-    """
-    rows = add_week_labels(rows, value_labels)
-    value_axis = (alt.Axis(format=MONEY_AXIS_FORMAT) if is_money
-                  else alt.Axis(format=".2f", tickCount=5, labelOverlap=True))
-    base = alt.Chart(rows).encode(
-        x=alt.X("week_start:T", title=None, axis=alt.Axis(format=WEEK_AXIS_FORMAT)),
-        y=alt.Y("value:Q", title=value_title, axis=value_axis, scale=alt.Scale(zero=False)),
-        color=alt.Color("channel:N", title=None,
-                        scale=build_channel_color_scale(rows["channel"], mode)))
-    lines = base.mark_line(strokeWidth=2.5, interpolate="monotone")
-    # Invisible wide points: easy to hover, and they carry the tooltip.
-    hover_points = base.mark_point(size=160, opacity=0).encode(
-        tooltip=[alt.Tooltip("week_label:N", title="Semana"),
-                 alt.Tooltip("channel:N", title="Canal"),
-                 alt.Tooltip("value_label:N", title=value_title)])
-    chart = alt.layer(lines, hover_points).properties(height=CHART_HEIGHT)
-    return apply_chart_style(chart, mode)
-
-
-def draw_single_weekly_area(rows, value_title, value_labels, mode, reference_value=None,
-                            is_money=False, week_format=WEEK_AXIS_FORMAT):
-    """One series by week as a soft area (rows: week_start, value)."""
-    rows = add_week_labels(rows, value_labels)
-    color = get_palette(mode)["accent"]
-    value_axis = alt.Axis(format=MONEY_AXIS_FORMAT) if is_money else alt.Axis()
-    base = alt.Chart(rows).encode(
-        x=alt.X("week_start:T", title=None, axis=alt.Axis(format=week_format)),
-        y=alt.Y("value:Q", title=value_title, axis=value_axis, scale=alt.Scale(zero=False)))
-    area = base.mark_area(line={"color": color, "strokeWidth": 2.5}, color=color,
-                          opacity=0.16, interpolate="monotone")
-    hover_points = base.mark_point(size=160, opacity=0).encode(
-        tooltip=[alt.Tooltip("week_label:N", title="Semana"),
-                 alt.Tooltip("value_label:N", title=value_title)])
-    layers = [area, hover_points]
-    if reference_value is not None:
-        layers.insert(0, alt.Chart(rows).mark_rule(
-            color=get_palette(mode)["reference"], strokeDash=[4, 4]).encode(
-            y=alt.datum(reference_value)))
-    return apply_chart_style(alt.layer(*layers).properties(height=CHART_HEIGHT), mode)
-
-
-def calculate_bar_domain(values):
-    """Value axis from zero (or the lowest value) to the highest, plus room for labels."""
-    lowest = min(0, values.min())
-    highest = max(0, values.max())
-    room = (highest - lowest) * BAR_LABEL_ROOM
-    return [lowest - room if lowest < 0 else 0, highest + room]
-
-
-def draw_horizontal_bars(rows, value_title, mode, colors=None, reference_value=None,
-                         is_sorted_by_value=True, reference_label=None, select_field=None,
-                         label_limit=150):
-    """Horizontal bars with their value written next to them.
-
-    rows needs the columns label, value and value_label; colors, when given,
-    is a list with one color per row. An optional column "meaning" explains the
-    value in plain words in the tooltip. Bars go from the largest value down,
-    or keep the order of rows when is_sorted_by_value is False.
-    """
-    palette = get_palette(mode)
-    rows = rows.assign(color=colors if colors is not None else palette["accent"])
-    if is_sorted_by_value:
-        rows = rows.sort_values("value", ascending=False)
-    order = rows["label"].to_list()
-    tooltip = [alt.Tooltip("label:N", title=" "),
-               alt.Tooltip("value_label:N", title=value_title)]
-    if "meaning" in rows.columns:
-        tooltip.append(alt.Tooltip("meaning:N", title="Qué significa"))
-    if "detail" in rows.columns:
-        # The whole description lives here, so the axis can keep a short name.
-        tooltip.insert(1, alt.Tooltip("detail:N", title="Detalle"))
-    base = alt.Chart(rows).encode(
-        y=alt.Y("label:N", title=None, sort=order,
-                axis=alt.Axis(labelLimit=label_limit, labelPadding=8)),
-        tooltip=tooltip)
-    bars = base.mark_bar(cornerRadiusEnd=6, height={"band": 0.65}, cursor="pointer"
-                         if select_field else "default").encode(
-        x=alt.X("value:Q", title=value_title, axis=alt.Axis(tickCount=5, labelOverlap=True),
-                scale=alt.Scale(domain=calculate_bar_domain(rows["value"]), nice=False)),
-        color=alt.Color("color:N", scale=None))
-    # Positive values are written after the end of their bar. Negative values
-    # are written just right of zero: written at the end of a negative bar,
-    # they ran over the names column.
-    positive_labels = base.transform_filter("datum.value >= 0").mark_text(
-        align="left", dx=6, color=palette["text"]).encode(x="value:Q", text="value_label:N")
-    negative_labels = base.transform_filter("datum.value < 0").mark_text(
-        align="left", dx=6, color=palette["text"]).encode(x=alt.datum(0),
-                                                          text="value_label:N")
-    layers = [bars, positive_labels, negative_labels]
-    if select_field:
-        # A click anywhere on the row selects it (a short bar is hard to hit); the page
-        # filters the other charts (D-069). The row is almost transparent, on top.
-        layers.append(draw_row_targets(base, rows, select_field))
-    if reference_value is not None:
-        # Same rows as the bars (so the bands stay intact) but no y: one full line.
-        layers.insert(0, alt.Chart(rows).mark_rule(
-            color=palette["reference"], strokeDash=[4, 4]).encode(x=alt.datum(reference_value)))
-        if reference_label:
-            # The name of the dashed line, at its top, so it reads without a legend.
-            # Above the plot, never over a bar.
-            layers.append(alt.Chart(rows.head(1)).mark_text(
-                align="center", baseline="bottom", dy=-4, fontSize=11,
-                color=palette["text"]).encode(x=alt.datum(reference_value), y=alt.value(0),
-                                              text=alt.datum(reference_label)))
-    # One fixed band height per bar, so long lists stay readable.
-    chart = alt.layer(*layers).properties(height=alt.Step(BAR_HEIGHT))
-    return apply_chart_style(chart, mode)
-
-
-def draw_row_targets(base, rows, select_field):
-    """An invisible band over each whole row that carries the click selection «pick»."""
-    low, high = calculate_bar_domain(rows["value"])
-    return base.mark_bar(height={"band": 1}, opacity=0.001, cursor="pointer").encode(
-        x=alt.datum(low), x2=alt.datum(high)).add_params(
-        alt.selection_point(name="pick", fields=[select_field], on="click", clear="dblclick"))
-
-
 def draw_donut(rows, colors, mode, center=None, center_note=None, size=210):
     """Shares of a whole as a ring (rows: label, value, value_label); center writes the
     whole in the middle, with center_note under it, so the reader knows what it adds up."""
