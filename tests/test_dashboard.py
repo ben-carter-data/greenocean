@@ -68,7 +68,7 @@ def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     views = [view for window in dashboard.WINDOWS.values() for view in window]
     assert len(views) == len(set(views)) and set(views) == set(dashboard.SHOW_PAGE_BY_TITLE)
     assert dashboard.WINDOWS["Dashboard"] == [
-        dashboard.HOME_PAGE, dashboard.PAGE_DATA, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP, dashboard.PAGE_CHANNELS,
+        dashboard.HOME_PAGE, dashboard.PAGE_OVERVIEW, dashboard.PAGE_DATA, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP, dashboard.PAGE_CHANNELS,
         dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY, dashboard.PAGE_SQL]
     assert dashboard.WINDOWS["Ingeniería de datos"][0] == dashboard.PAGE_DIAGRAMS
     # Old addresses of the retired windows and of the 3D view still open something.
@@ -763,7 +763,7 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
     # Tabs are allowed only where they replace a long scroll (D-120, D-121, D-122) and
     # in the SQL studio, whose Resultados / Mensajes tabs are the client's own (D-173).
     tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_DEVOPS, dashboard.PAGE_OPERATIONS, dashboard.PAGE_RUNS,
-              dashboard.PAGE_SQL}
+              dashboard.PAGE_SQL, dashboard.PAGE_OVERVIEW}  # D-296: the dashboard's three tabs, one screen each
     for page in dashboard.PAGES:
         app = draw_page(page)
         assert not app.exception, page
@@ -1085,7 +1085,7 @@ def test_historical_root_link_keeps_the_requested_project_view_after_route_chang
 @needs_database
 def test_d250_the_path_and_the_footer_follow_the_menu():
     order = dashboard.MENU_ORDER
-    assert len(order) == len(set(order)) and order[0] == dashboard.PAGE_HOME
+    assert len(order) == len(set(order)) and order[0] == dashboard.PAGE_OVERVIEW
     assert dashboard.PAGE_SAD not in dashboard.MENU_BLOCK_OF_VIEW and dashboard.PAGE_SAD in dashboard.FOLDER_ORDER
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params['vista'] = dashboard.PAGE_RUNS
@@ -1535,7 +1535,7 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 
 MENU_BLOCKS = {
-    'Negocio · BI': ['Resumen semanal', 'Precios e inflación'],
+    'Negocio · BI': ['Dashboard', 'Resumen semanal', 'Precios e inflación'],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],
@@ -1721,7 +1721,7 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
         blocks = [key for key, *_ in dashboard.visible_menu_blocks()]
         assert blocks[:4] == dashboard.ROLE_ORDER[role] and blocks[4:] == ["fuentes", "documentos"], role
         firsts[role] = dashboard.visible_menu_order()[0]
-    assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.PAGE_HOME
+    assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.PAGE_OVERVIEW
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_RUNS
     source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
     assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep the view

@@ -33,7 +33,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
-from bi import (alerts, app_map, architecture, buttons, charts, control, documents_folder, i18n, data_browser, home_mockup, lag,  # noqa: E402
+from bi import (alerts, app_map, overview, architecture, buttons, charts, control, documents_folder, i18n, data_browser, home_mockup, lag,  # noqa: E402
                 database_crossings, deployment, devops, monitoring, page_bar, served_database, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # D-283: every text a reader sees goes through tr, which gives its English when the reader chose English.
@@ -43,6 +43,8 @@ tr = i18n.tr
 # region Constants
 # The menu is the project journey; every destination is directly accessible.
 PAGE_HOME = "Dashboard"
+# D-296: the macro dashboard of the whole project, in tabs, like a BI tool; the first page of the menu.
+PAGE_OVERVIEW = "Dashboard general"
 PAGE_DATA = "Datos"
 # The cover of the portfolio (C01): what the project is, in one screen, with real figures
 # and a way into the dashboard and the code. The full definition is the view after it.
@@ -112,7 +114,7 @@ SECTION_SECURITY = "Seguridad"
 WINDOWS = {
     SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES, PAGE_STACK, PAGE_APP_MAP],
     SECTION_KPI: [PAGE_KPI],
-    REPORT_WINDOW: [PAGE_HOME, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
+    REPORT_WINDOW: [PAGE_HOME, PAGE_OVERVIEW, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY, PAGE_SQL],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
@@ -176,7 +178,7 @@ PAGE_ICONS = {
     PAGE_PRD: ":material/assignment:", PAGE_SAD: ":material/account_tree:", PAGE_ADR: ":material/gavel:",
     PAGE_SQL: ":material/terminal:",
     PAGE_SECURITY: ":material/lock:", PAGE_STACK: ":material/stacks:",
-    PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
+    PAGE_OVERVIEW: ":material/space_dashboard:", PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
     PAGE_BUSINESS: ":material/assignment:",
     PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
     PAGE_ANALYSIS: ":material/monitoring:", PAGE_GAP: ":material/compare_arrows:",
@@ -193,7 +195,7 @@ PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
     PAGE_SECURITY: "mapa-de-seguridad", PAGE_STACK: "stack-y-evidencia",
     PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SQL: "consultas-sql",
-    PAGE_HOME: "dashboard", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
+    PAGE_HOME: "dashboard", PAGE_OVERVIEW: "dashboard-general", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura", PAGE_ANALYSIS: "analisis", PAGE_GAP: "brecha",
     PAGE_CHANNELS: "canales", PAGE_SEASONALITY: "estacionalidad", PAGE_ALERTS: "alertas",
@@ -607,24 +609,26 @@ def visible_menu_order():
 
 @st.dialog("GreenOcean", width="small", dismissible=False)
 def show_profile_dialog():
-    """The first screen of a visit (D-295): the user view, or the professional view with the profile it puts forward;
-    almost no text. The page waits behind."""
-    st.markdown(f'<p class="profile-ask">{html.escape(tr("Elige tu vista"))}</p>', unsafe_allow_html=True)
-    with st.container(horizontal=True, gap="medium", key="profile_choices"):
-        name, icon = PROFILES[PROFILE_PUBLIC]
-        with st.container(key=f"profile_card_{PROFILE_PUBLIC}"):
-            if st.button(tr(name), key=f"profile_choose_{PROFILE_PUBLIC}", icon=icon, width="stretch"):
+    """The first screen of a visit (D-295): the brand, «Elige tu vista» and two pills; under «Profesional», the profiles
+    it can put forward. Nothing else. The page waits behind."""
+    st.markdown(f'<div class="profile-brand"><span class="profile-logo">waves</span>GreenOcean</div>'
+                f'<p class="profile-ask">{html.escape(tr("Elige tu vista"))}</p>', unsafe_allow_html=True)
+    with st.container(horizontal=True, gap="small", key="profile_choices"):
+        with st.container(key="profile_side_consulta"):
+            name, icon = PROFILES[PROFILE_PUBLIC]
+            if st.button(tr("Usuario"), key=f"profile_choose_{PROFILE_PUBLIC}", icon=icon, width="stretch"):
                 choose_profile(PROFILE_PUBLIC)
                 st.rerun()
-        name, icon = PROFILES[PROFILE_PROFESSIONAL]
-        with st.container(key=f"profile_card_{PROFILE_PROFESSIONAL}"):
-            st.markdown(f'<p class="profile-name"><span class="material-symbols-rounded">work</span>{html.escape(tr(name))}</p>',
-                        unsafe_allow_html=True)
-            with st.container(horizontal=True, gap="small", key="profile_roles"):
-                for role, label in ROLES.items():
-                    if st.button(tr(label), key=f"profile_role_{role}", type="tertiary"):
-                        choose_profile(PROFILE_PROFESSIONAL, role)
-                        st.rerun()
+        with st.container(key="profile_side_profesional"):
+            name, icon = PROFILES[PROFILE_PROFESSIONAL]
+            if st.button(tr("Profesional"), key=f"profile_choose_{PROFILE_PROFESSIONAL}", icon=icon, width="stretch"):
+                choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
+                st.rerun()
+    with st.container(horizontal=True, gap=None, key="profile_roles"):
+        for role, label in ROLES.items():
+            if st.button(tr(label), key=f"profile_role_{role}", type="tertiary"):
+                choose_profile(PROFILE_PROFESSIONAL, role)
+                st.rerun()
 
 
 def show_profile_switch():
@@ -1676,29 +1680,32 @@ def build_style_css(mode):
     .st-key-cover_offer {{ padding-right:22px; }}
     .st-key-cover_limits {{ padding-left:22px; }}
     :is(.st-key-cover_offer_link, .st-key-cover_limits_link) {{ padding-left:42px; }}
-    /* D-295: the profile dialog, the first screen of a visit: two tiles, almost no text. */
-    div[data-testid="stDialog"] [role="dialog"] {{ border-radius:20px; }}
-    .profile-ask {{ color:{palette["text"]}; font-size:.95rem; margin:-6px 0 14px; }}
-    .st-key-profile_choices {{ align-items:stretch !important; }}
-    .st-key-profile_choices > div {{ flex:1 1 0 !important; min-width:0; display:flex; }}
-    [class*="st-key-profile_card_"] {{ flex:1 1 auto; min-height:124px; border:1px solid {palette["card_border"]};
-        border-radius:16px; justify-content:center; }}
-    .st-key-profile_card_consulta {{ padding:0 !important; }}
-    .st-key-profile_choose_consulta, .st-key-profile_choose_consulta button {{ height:100%; }}
-    .st-key-profile_choose_consulta button {{ min-height:122px; border:0; border-radius:16px; background:transparent; }}
-    [class*="st-key-profile_card_"]:hover {{ border-color:{palette["accent"]}; }}
-    .st-key-profile_choose_consulta button:hover {{ background:color-mix(in srgb, {palette["accent"]} 8%, transparent); }}
-    .st-key-profile_choose_consulta button p, .profile-name {{ font-size:1rem; font-weight:600; color:{palette["strong_text"]}; }}
-    .st-key-profile_choose_consulta button [data-testid="stIconMaterial"] {{ font-size:26px; color:{palette["accent"]}; }}
-    .st-key-profile_card_profesional {{ padding:12px 10px 8px !important; gap:6px !important; align-items:center; }}
-    .profile-name {{ display:flex; align-items:center; justify-content:center; gap:8px; margin:0 0 1.35rem; }}
-    .profile-name .material-symbols-rounded {{ font-family:"Material Symbols Rounded"; font-weight:400; font-size:24px;
-        line-height:1; color:{palette["accent"]}; font-feature-settings:"liga"; -webkit-font-feature-settings:"liga"; }}
-    .st-key-profile_roles {{ justify-content:center; flex-wrap:wrap !important; gap:2px 4px !important; }}
-    .st-key-profile_roles button {{ padding:2px 9px !important; min-height:0 !important; border-radius:999px;
-        border:1px solid {palette["card_border"]} !important; }}
-    .st-key-profile_roles button p {{ font-size:.74rem; color:{palette["text"]}; }}
-    .st-key-profile_roles button:hover {{ border-color:{palette["accent"]} !important; }}
+    /* D-295: the profile dialog: the brand, the question and two pills; the professional profiles under their pill. */
+    div[data-testid="stDialog"] [role="dialog"] {{ border-radius:22px; padding-top:6px; }}
+    div[data-testid="stDialog"] [role="dialog"] > div:first-child:has(> div > h2), div[data-testid="stDialog"] [role="dialog"] h2 {{
+        display:none !important; }}
+    .profile-brand {{ display:flex; align-items:center; justify-content:center; gap:10px; margin:6px 0 10px;
+        color:{palette["strong_text"]}; font-size:1rem; font-weight:600; }}
+    .profile-logo {{ display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:9px;
+        background:linear-gradient(135deg, #2dd4bf, #2563eb); color:#ffffff; font-family:"Material Symbols Rounded";
+        font-size:20px; font-weight:400; line-height:1; font-feature-settings:"liga"; }}
+    .profile-ask {{ text-align:center; color:{palette["strong_text"]} !important; font-size:1.65rem !important;
+        font-weight:700 !important; letter-spacing:-.02em; margin:0 0 1.5rem !important; line-height:1.2 !important; }}
+    .st-key-profile_choices {{ align-items:flex-start !important; }}
+    .st-key-profile_choices > div {{ flex:1 1 0 !important; min-width:0; }}
+    [class*="st-key-profile_choose_"] button {{ min-height:52px; border-radius:999px; border:1px solid {palette["card_border"]};
+        background:{palette["card"]}; }}
+    [class*="st-key-profile_choose_"] button p {{ font-size:1rem; font-weight:600; color:{palette["strong_text"]}; }}
+    .st-key-profile_choose_consulta button {{ background:color-mix(in srgb, {palette["accent"]} 12%, transparent);
+        border-color:color-mix(in srgb, {palette["accent"]} 45%, transparent); }}
+    .st-key-profile_choose_consulta button p, .st-key-profile_choose_consulta button [data-testid="stIconMaterial"] {{
+        color:{palette["accent"]}; }}
+    [class*="st-key-profile_choose_"] button:hover {{ border-color:{palette["accent"]}; }}
+    .st-key-profile_roles {{ justify-content:flex-end; flex-wrap:nowrap !important; margin:-2px 2px 2px; }}
+    .st-key-profile_roles > div {{ flex:none !important; width:auto !important; }}
+    .st-key-profile_roles button {{ padding:0 4px !important; min-height:0 !important; }}
+    .st-key-profile_roles button p {{ font-size:.8rem; color:{palette["reference"]}; white-space:nowrap; }}
+    .st-key-profile_roles > div + div button p::before {{ content:"·"; margin-right:8px; color:{palette["reference"]}; }}
     .st-key-profile_roles button:hover p {{ color:{palette["accent"]}; }}
     .st-key-profile_switch {{ padding:6px 12px 0; }}
     .st-key-profile_switch button p {{ font-size:.82rem; }}
@@ -1736,6 +1743,7 @@ def apply_style(mode):
 
 
 OVERVIEW_CLASS_BY_VIEW = {
+    PAGE_OVERVIEW: "overview-dashboard",
     PAGE_HOME: "overview-dashboard",
     PAGE_SEASONALITY: "overview-history",
     PAGE_KPI: "overview-kpis",
@@ -1887,7 +1895,7 @@ def show_app_header(window):
 
 
 # The pages whose only header is one thin bar (D-264, D-267).
-BAR_VIEWS = {PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS,
+BAR_VIEWS = {PAGE_OVERVIEW, PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS,
              PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER, PAGE_APP_MAP}
 
 
@@ -5745,6 +5753,251 @@ def show_family_cards(rows, titles, mode, real, summary=None, last=None):
                           on_click=focus_family, args=(family,))
 
 
+OVERVIEW_WEEK_KEY, OVERVIEW_FAMILY_KEY = "ov_week", "ov_family"
+
+
+def pick_overview_family(chart_key, field):
+    """A click on a family of a chart filters the market tab (D-296); a second click on the same family clears it."""
+    selection = (st.session_state.get(chart_key) or {}).get("selection", {})
+    for points in selection.values():
+        if points:
+            name = points[0].get(field)
+            family = next((f for f in OVERVIEW_FAMILIES if home_mockup.short_family(f) == name), None)
+            st.session_state[OVERVIEW_FAMILY_KEY] = None if family == st.session_state.get(OVERVIEW_FAMILY_KEY) else family
+            return
+
+
+OVERVIEW_FAMILIES = list(inflation_view.FAMILY_COLORS)
+
+
+def overview_card(key, title, note=""):
+    """A card of the dashboard: a quiet title and its note, then its chart."""
+    card = st.container(key=f"ov_card_{key}")
+    card.markdown(f'<p class="ov-card-title">{html.escape(tr(title))}</p>'
+                  + (f'<p class="ov-card-note">{html.escape(tr(note))}</p>' if note else ""), unsafe_allow_html=True)
+    return card
+
+
+def short_month(pair):
+    """«sep 2026» for (2026, 9)."""
+    return f"{charts.CHILE_LOCALE['time']['shortMonths'][pair[1] - 1].lower()} {pair[0]}"
+
+
+def week_range_label(week):
+    end = week + pd.Timedelta(days=6)
+    months = charts.CHILE_LOCALE["time"]["shortMonths"]
+    return (f"{week.day}–{end.day} {months[end.month - 1].lower()}" if week.month == end.month
+            else f"{week.day} {months[week.month - 1].lower()} – {end.day} {months[end.month - 1].lower()}")
+
+
+OVERVIEW_WEEKS_KEY = "ov_weeks"
+
+
+def overview_head(key, title, note="", control=None):
+    """A card with its title and note on the left and, when given, a control on the right (a slider)."""
+    card = st.container(key=f"ov_card_{key}")
+    with card:
+        with st.container(key=f"ov_head_{key}", horizontal=True, vertical_alignment="center"):
+            st.markdown(f'<p class="ov-card-title">{html.escape(tr(title))}</p>'
+                        + (f'<p class="ov-card-note">{html.escape(tr(note))}</p>' if note else ""),
+                        unsafe_allow_html=True, width="stretch")
+            if control:
+                control()
+    return card
+
+
+def show_overview_market(mode, version):
+    """The market tab (D-296): this week in five scorecards, then four questions, one per chart: how prices moved, which
+    families rose, in which regions, and how the last weeks went."""
+    variations, alerts_rows = read_cached_all_variations(version), read_price_alerts()
+    prices = read_cached_national_prices(version)
+    weeks = sorted(variations["week_start"].unique())
+    week = pd.Timestamp(st.session_state.get(OVERVIEW_WEEK_KEY) or weeks[-1])
+    family = st.session_state.get(OVERVIEW_FAMILY_KEY)
+    upto, upto_prices = variations[variations["week_start"] <= week], prices[prices["week_start"] <= week]
+    upto_alerts = alerts_rows[alerts_rows["week_start"] <= week]
+    scope = (lambda frame: frame[frame["product_group"] == family]) if family else (lambda frame: frame)
+    market = overview.market_weeks(upto_prices, upto, upto_alerts, family=family)
+    moves = overview.family_moves(upto_prices, upto, week)
+    moved = overview.directions(upto, week, family)
+    now = market.iloc[-1]
+    counts = dict(zip(moved["direction"], moved["prices"]))
+    compared = sum(counts.values()) or 1
+    history = [overview.directions(upto, w, family) for w in weeks[-12:] if w <= week]
+    rose = [int(frame.loc[0, "prices"]) / max(1, int(frame["prices"].sum())) * 100 for frame in history]
+    fell = [int(frame.loc[1, "prices"]) / max(1, int(frame["prices"].sum())) * 100 for frame in history]
+    percent = lambda value: f"{value:.0f} %"
+    scope_name = home_mockup.short_family(family) if family else tr("todas las familias")
+    st.markdown(overview.build_scorecards_html([
+        (tr("Semana actual"), week_range_label(week), scope_name, None, "neutral"),
+        (tr("Precios comparables"), f"{int(now['comparable']):,}".replace(",", "."),
+         tr("de {}").format(f"{int(now['prices']):,}".replace(",", ".")), list(market["comparable"][-12:]), "neutral"),
+        (tr("Subieron"), f"{counts['Subieron']:,}".replace(",", "."), percent(counts["Subieron"] / compared * 100), rose, "rise"),
+        (tr("Bajaron"), f"{counts['Bajaron']:,}".replace(",", "."), percent(counts["Bajaron"] / compared * 100), fell, "fall"),
+        (tr("Alertas de precio"), str(int(now["alerts"])), tr("inusuales"), list(market["alerts"][-12:]),
+         "rise" if now["alerts"] else "neutral"),
+    ], charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
+    palette = charts.get_palette(mode)
+    left, right = st.columns([2, 3], gap="small")
+    with left, overview_head("moved", "¿Cómo se movieron los precios esta semana?", scope_name.capitalize()):
+        colors = {"Subieron": palette["rise"], "Bajaron": palette["fall"], "Sin cambio": palette["reference"]}
+        st.altair_chart(overview.donut(moved, "direction", "prices", mode, colors=colors, name="dir"),
+                        width="stretch", height="stretch", theme=None, key="ov_moved")
+    with right, overview_head("moves", "¿Qué familias subieron?", "Cambio típico de cada familia · un clic la filtra"):
+        st.altair_chart(overview.ranked_bars(moves, "family", "change", mode, name="rank",
+                                             selected=home_mockup.short_family(family) if family else None),
+                        width="stretch", height="stretch", theme=None, key="ov_moves",
+                        on_select=lambda: pick_overview_family("ov_moves", "family"), selection_mode=["rank"])
+    count = st.session_state.get(OVERVIEW_WEEKS_KEY, 6)
+    left, right = st.columns([2, 3], gap="small")
+    with left, overview_head("regions", "¿En qué regiones?", "De norte a sur: % de precios que subió y que bajó"):
+        regions = read_regional_movement_model(f"{week:%Y-%m-%d}", family or ALL_VALUES)
+        st.altair_chart(overview.region_bars(overview.region_moves(regions, read_region_ids(version)), mode),
+                        width="stretch", height="stretch", theme=None, key="ov_regions")
+    with right, overview_head("heat", "¿Cómo vienen las últimas semanas?", "Cambio típico de cada familia (%)",
+                              control=lambda: st.slider(tr("Semanas"), 4, 12, 6, key=OVERVIEW_WEEKS_KEY, width=180,
+                                                        label_visibility="collapsed",
+                                                        help=tr("Cuántas semanas mostrar"))):
+        heat = overview.family_heat(upto, weeks=count)
+        st.altair_chart(overview.heat_table(heat, "family", "week", "change", mode,
+                                            column_order=list(dict.fromkeys(heat.sort_values("week_start")["week"])),
+                                            row_sort=list(moves["family"])), width="stretch", height="stretch", theme=None,
+                        key="ov_heat")
+
+
+@st.cache_data
+def read_cached_region_ids(database_version):
+    return dict(queries.run_sql("SELECT region, region_id FROM dim_region").itertuples(index=False))
+
+
+def read_region_ids(version):
+    return read_cached_region_ids(version)
+
+
+def show_overview_inflation(mode, version):
+    rows, last, summary, ipc_total, ipc_year = read_family_inflation(version)
+    month = lambda pair: f"{charts.CHILE_LOCALE['time']['months'][pair[1] - 1]} {pair[0]}"
+    counts = summary["verdict"].value_counts()
+    ipc = rows[rows["product_group"] == inflation_view.IPC_NAME].sort_values("month_start")
+    twelve = overview.ipc_twelve_months(rows)
+    st.markdown(overview.build_scorecards_html([
+        (tr("IPC de alimentos"), charts.format_signed_percent(ipc_total), tr("desde 2022"), list(ipc["index"][-24:]), "rise"),
+        (tr("IPC en 12 meses"), charts.format_signed_percent(ipc_year), short_month(last), list(twelve["change"][-24:]), "rise"),
+        (tr("Sobre la inflación"), str(counts.get("más que la inflación", 0)), tr("familias subieron más"), None, "rise"),
+        (tr("Bajo la inflación"), str(counts.get("menos que la inflación", 0)), tr("familias subieron menos"), None, "fall"),
+        (tr("Al ritmo"), str(counts.get("al ritmo de la inflación", 0)), tr("familias a ± 2 puntos"), None, "neutral"),
+    ], charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
+    left, right = st.columns([3, 2], gap="small")
+    with left, overview_card("fam_total", "¿Cuánto subió cada familia desde enero 2022?",
+                             "Línea punteada: el IPC de alimentos, " + charts.format_signed_percent(ipc_total)):
+        totals = summary.assign(family=summary["family"].map(home_mockup.short_family))
+        st.altair_chart(overview.ranked_bars(totals, "family", "total", mode, reference=ipc_total, name="tot"),
+                        width="stretch", height="stretch", theme=None, key="ov_totals")
+    with right, overview_card("verdicts", "¿Cuántas subieron más que la inflación?", "Más, menos o al ritmo del IPC (± 2 puntos)"):
+        verdicts = summary["verdict"].value_counts().rename_axis("verdict").reset_index(name="families")
+        verdicts["verdict"] = verdicts["verdict"].str.capitalize()
+        palette = charts.get_palette(mode)
+        colors = {"Más que la inflación": palette["rise"], "Menos que la inflación": palette["fall"],
+                  "Al ritmo de la inflación": palette["reference"]}
+        st.altair_chart(overview.donut(verdicts, "verdict", "families", mode, colors=colors, name="ver"),
+                        width="stretch", height="stretch", theme=None, key="ov_verdicts")
+    left, right = st.columns([2, 3], gap="small")
+    with left, overview_card("ipc12", "¿Cómo va la inflación de alimentos?", "IPC: cambio frente al mismo mes del año anterior (%)"):
+        st.altair_chart(overview.line_chart(twelve, "month_start", "change", mode), width="stretch", theme=None,
+                        key="ov_ipc12")
+    with right, overview_card("years", "¿Y cada año?", "Cambio de diciembre a diciembre (%); * hasta " + month(last)):
+        years = overview.family_years(rows, last)
+        order = ["IPC alimentos"] + list(summary.assign(f=summary["family"].map(home_mockup.short_family))["f"])
+        st.altair_chart(overview.heat_table(years, "family", "year", "change", mode,
+                                            column_order=sorted(years["year"].unique()), row_sort=order),
+                        width="stretch", height="stretch", theme=None, key="ov_years")
+
+
+def show_overview_operations(mode, version):
+    runs = read_indicator("quality_runs").sort_values("run_id")
+    flags = read_indicator("quality_flag_counts")
+    results = queries.run_sql("SELECT status, count(*) AS n FROM dbt_result GROUP BY status").set_index("status")["n"]
+    indicators = quality_live.build_indicators(quality_live.read_measures())
+    green = sum(1 for row in indicators if row[4] == "ok")
+    latest = runs.iloc[-1]
+    tests = int(results.get("pass", 0)), int(results.sum() - results.get("success", 0))
+    number = lambda value: f"{int(value):,}".replace(",", ".")
+    st.markdown(overview.build_scorecards_html([
+        (tr("Última carga"), f"{latest['started_at'][8:10]}-{latest['started_at'][5:7]}-{latest['started_at'][:4]}",
+         tr("publicada") if latest["status"] == "LOADED" else latest["status"], None,
+         "good" if latest["status"] == "LOADED" else "rise"),
+        (tr("Filas leídas"), number(latest["rows_read"]), tr("de ODEPA"), list(runs["rows_read"]), "neutral"),
+        (tr("Filas rechazadas"), number(latest["rows_rejected"]),
+         f"{latest['rows_rejected'] / latest['rows_read'] * 100:.3f} %".replace(".", ","), list(runs["rows_rejected"]), "neutral"),
+        (tr("Pruebas de dbt"), f"{tests[0]}/{tests[1]}", tr("superadas"), None, "good" if tests[0] == tests[1] else "rise"),
+        (tr("Indicadores de calidad"), f"{green}/{len(indicators)}", tr("dentro de su umbral"), None,
+         "good" if green == len(indicators) else "rise"),
+    ], charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
+    left, right = st.columns([3, 2], gap="small")
+    with left, overview_card("runs", "¿Qué trajo cada carga?", "Barras: filas cargadas · línea: filas rechazadas"):
+        st.altair_chart(overview.stacked_runs(runs, mode), width="stretch", height="stretch", theme=None, key="ov_runs")
+    with right, overview_card("flags", "¿Cuántos precios entran a los indicadores?", "Los sin marca entran; los marcados se conservan aparte"):
+        names = {"SIN_MARCA": "Sin marca", "ATIPICO": "Atípico (RN-12)", "UNIDAD_NO_CONVERTIBLE": "Unidad no convertible"}
+        frame = flags.assign(flag=flags["flag"].map(names)).groupby("flag", as_index=False)["weekly_prices"].sum()
+        palette = charts.get_palette(mode)
+        colors = {"Sin marca": palette["accent"], "Atípico (RN-12)": palette["rise"], "Unidad no convertible": palette["reference"]}
+        st.altair_chart(overview.donut(frame, "flag", "weekly_prices", mode, colors=colors, name="flag"),
+                        width="stretch", height="stretch", theme=None, key="ov_flags")
+    left, right = st.columns([2, 3], gap="small")
+    with left, overview_card("sources", "¿De qué fuente vienen?", "Precios semanales en la base que lee el panel"):
+        sources = flags.groupby("source", as_index=False)["weekly_prices"].sum()
+        sources["source"] = sources["source"].map({"consumer": "Consumidor", "wholesale": "Mayorista"})
+        st.altair_chart(overview.ranked_bars(sources, "source", "weekly_prices", mode, percent=False, name="src"),
+                        width="stretch", height="stretch", theme=None, key="ov_sources")
+    with right, overview_card("quality", "¿La calidad está en su umbral?", "Cada indicador en la última carga"):
+        st.markdown(build_overview_quality_html(indicators), unsafe_allow_html=True)
+
+
+def build_overview_quality_html(indicators):
+    """The eleven quality indicators as a compact two-column list: the measure, its value and its state."""
+    items = "".join(f'<li class="ov-q ov-q-{html.escape(state)}"><span>{html.escape(tr(name))}</span><b>{html.escape(value)}</b></li>'
+                    for _, name, value, _, state, _ in indicators)
+    return f'<ul class="ov-quality">{items}</ul>'
+
+
+def build_overview_css(mode):
+    """The dashboard's styles, written with the scorecards of each tab: no element of its own, no extra gap (D-173)."""
+    palette = charts.get_palette(mode)
+    return overview.build_css(palette) + f"""<style>
+    .ov-quality {{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:0 18px; }}
+    .ov-quality li.ov-q {{ display:flex; justify-content:space-between; gap:8px; font-size:11.5px !important; line-height:1.35;
+        color:{palette['text']}; border-bottom:1px solid {palette['card_border']}; padding:4px 0 4px 12px; margin:0;
+        position:relative; }}
+    .ov-q span {{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }}
+    .ov-q::before {{ content:""; position:absolute; left:0; top:10px; width:6px; height:6px; border-radius:50%;
+        background:{palette['reference']}; }}
+    .ov-q-ok::before {{ background:#199e70; }} .ov-q-alerta::before, .ov-q-falla::before {{ background:{palette['rise']}; }}
+    .ov-q b {{ color:{palette['strong_text']}; font-weight:600; white-space:nowrap; }}
+    </style>"""
+
+
+def show_overview_page(mode):
+    """The macro dashboard (D-296): three tabs, each one screen of scorecards and four linked charts."""
+    version = get_database_version()
+    variations = read_cached_all_variations(version)
+    weeks = sorted(variations["week_start"].unique(), reverse=True)[:12]
+    def slicers():
+        st.selectbox(tr("Semana"), weeks, key=OVERVIEW_WEEK_KEY, format_func=lambda w: week_range_label(pd.Timestamp(w)),
+                     label_visibility="collapsed", width=150)
+        st.selectbox(tr("Familia"), [None] + OVERVIEW_FAMILIES, key=OVERVIEW_FAMILY_KEY, label_visibility="collapsed",
+                     format_func=lambda f: tr("Todas las familias") if f is None else home_mockup.short_family(f), width=190)
+    show_page_bar(PAGE_OVERVIEW, "Dashboard", "Todo el proyecto en una vista: el mercado de la semana, la inflación de "
+                  "los alimentos y los datos con su operación.", side=slicers)
+    with st.container(key="ov_tabs"):
+        market, inflation, operations = st.tabs([tr("Mercado"), tr("Inflación"), tr("Datos y operación")])
+        with market:
+            show_overview_market(mode, version)
+        with inflation:
+            show_overview_inflation(mode, version)
+        with operations:
+            show_overview_operations(mode, version)
+
+
 def show_price_context_page(mode):
     """Precios e inflación (D-163, D-167): one question — which food families rose more
     than the food IPC of the INE — answered by one small chart per family, the same
@@ -7019,6 +7272,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(mode, header=lambda: show_page_bar(
         PAGE_SQL, "Consultas SQL", sql_explorer.DESCRIPTION, sql_explorer.build_bar_chips())),
     PAGE_HOME: show_home_page,
+    PAGE_OVERVIEW: lambda mode: show_overview_page(mode),
     PAGE_DATA: show_data_page,
     PAGE_COVER: show_cover_page,
     PAGE_BUSINESS: lambda mode: show_document_page(mode, PAGE_BUSINESS,
@@ -7529,7 +7783,7 @@ RELOAD_HOME_SCRIPT = """<script>
 # with a faint fill and a blue bar on its left. The documents close the list, before the sources.
 # (key, title, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_SEASONALITY]),
+    ("negocio", "Negocio · BI", [PAGE_OVERVIEW, PAGE_HOME, PAGE_SEASONALITY]),
     ("ingenieria", "Ingeniería de datos",
      [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY]),
@@ -7542,7 +7796,7 @@ MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS f
 MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages}
 # The menu's own glyphs, one per page, thin lines (Material Symbols).
 SIDEBAR_ICONS = {
-    PAGE_HOME: ":material/grid_view:", PAGE_SEASONALITY: ":material/calendar_month:",
+    PAGE_OVERVIEW: ":material/space_dashboard:", PAGE_HOME: ":material/grid_view:", PAGE_SEASONALITY: ":material/calendar_month:",
     PAGE_DIAGRAMS: ":material/share:", PAGE_ARCHITECTURE: ":material/database:",
     PAGE_OPERATIONS: ":material/verified_user:", PAGE_SQL: ":material/terminal:",
     PAGE_RUNS: ":material/radio_button_checked:", PAGE_SECURITY: ":material/lock:",
@@ -7560,7 +7814,7 @@ SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="18" 
 SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingeniería de datos",
                       SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación", SECTION_SECURITY: "Seguridad",
                       SECTION_RESOURCES: "GitHub"}
-SIDEBAR_LABELS = {PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Precios e inflación",
+SIDEBAR_LABELS = {PAGE_OVERVIEW: "Dashboard", PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Precios e inflación",
                   PAGE_DIAGRAMS: "Pipeline y linaje", PAGE_OPERATIONS: "Calidad y auditoría",
                   PAGE_RUNS: "Centro de operación", PAGE_SECURITY: "Arquitectura de seguridad",
                   PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual de operación",
@@ -7613,7 +7867,12 @@ def build_section_colors_css(dark):
         font-size:.9375rem; color:{text} !important; -webkit-text-fill-color:{text} !important; text-decoration:none !important;
         border-radius:10px; line-height:1.3;}}
     [data-testid="stSidebar"] a.nav-source-link:hover {{background:{hover};}}
-    [data-testid="stSidebar"] .nav-source-icon {{margin-right:12px; color:{icon}; flex:0 0 auto;}}"""
+    [data-testid="stSidebar"] .nav-source-icon {{margin-right:12px; color:{icon}; flex:0 0 auto;}}    /* D-295: «Ver todo el proyecto», without a background, in the ink of the menu, in every theme. */
+    .st-key-profile_switch button {{background:transparent !important; border:1px solid {line} !important; box-shadow:none !important;}}
+    .st-key-profile_switch button:hover {{border-color:{accent} !important; background:{hover} !important;}}
+    .st-key-profile_switch button p, .st-key-profile_switch button span,
+    .st-key-profile_switch button [data-testid="stIconMaterial"] {{color:{text} !important;}}
+"""
 
 
 def build_sidebar_css(mode):

@@ -19,6 +19,8 @@ from bi import charts, home_mockup, inflation_view
 
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
 STILL = 0.0005
+# A state that passes (every test, every indicator in its threshold): green, never the blue of a fall.
+GOOD = "#199e70"
 MARKET_WEEKS = 26
 HEAT_WEEKS = 8
 
@@ -29,15 +31,16 @@ def comparable(variations):
     return variations[variations["variation"].notna() & variations["variation"].abs().lt(float("inf"))]
 
 
-def market_weeks(variations, alerts, weeks=MARKET_WEEKS, family=None):
-    """One row per week: prices with a value, those with a valid comparison, the typical change (median, in %) and the
-    alerts. With a family, only its series."""
+def market_weeks(prices, variations, alerts, weeks=MARKET_WEEKS, family=None):
+    """One row per week: the prices with a value (every national series of the week), those with a valid comparison,
+    the typical change (median, in %) and the alerts. With a family, only its series."""
     if family:
+        prices = prices[prices["product_group"] == family]
         variations = variations[variations["product_group"] == family]
         alerts = alerts[alerts["product_group"] == family]
     last = sorted(variations["week_start"].unique())[-weeks:]
-    rows = variations[variations["week_start"].isin(last)]
-    valid = comparable(rows)
+    rows = prices[prices["week_start"].isin(last)]
+    valid = comparable(variations[variations["week_start"].isin(last)])
     frame = pd.DataFrame({"week_start": last})
     frame["prices"] = frame["week_start"].map(rows.groupby("week_start").size()).fillna(0).astype(int)
     frame["comparable"] = frame["week_start"].map(valid.groupby("week_start").size()).fillna(0).astype(int)
@@ -46,16 +49,42 @@ def market_weeks(variations, alerts, weeks=MARKET_WEEKS, family=None):
     return frame
 
 
-def family_moves(variations, week):
+def family_moves(prices, variations, week):
     """The families of one week: median change in %, prices, comparisons and their state, as in the Resumen."""
-    rows = variations[variations["week_start"] == week]
-    valid = comparable(rows)
+    rows = prices[prices["week_start"] == week]
+    valid = comparable(variations[variations["week_start"] == week])
     frame = valid.groupby("product_group")["variation"].median().mul(100).rename("change").reset_index()
     frame["prices"] = frame["product_group"].map(rows.groupby("product_group").size()).astype(int)
     frame["comparable"] = frame["product_group"].map(valid.groupby("product_group").size()).astype(int)
     frame["state"] = frame["change"].map(state)
     frame["family"] = frame["product_group"].map(home_mockup.short_family)
     return frame.sort_values("change", ascending=False).reset_index(drop=True)
+
+
+def directions(variations, week, family=None):
+    """How the comparable prices of one week moved: how many rose, fell or stayed (below 0.05 %), as in the Resumen."""
+    rows = comparable(variations[variations["week_start"] == week])
+    if family:
+        rows = rows[rows["product_group"] == family]
+    values = rows["variation"]
+    return pd.DataFrame({"direction": ["Subieron", "Bajaron", "Sin cambio"],
+                         "prices": [int((values >= STILL).sum()), int((values <= -STILL).sum()),
+                                    int((values.abs() < STILL).sum())]})
+
+
+# North to south, by the official number of each region.
+REGION_ORDER = [15, 1, 2, 3, 4, 5, 13, 6, 7, 16, 8, 9, 14, 10, 11, 12]
+
+
+def region_moves(regions, region_ids):
+    """The regions of the week, north to south: the share of their comparable prices that rose and that fell."""
+    frame = pd.DataFrame(regions)
+    frame = frame[frame["total"] > 0].copy()
+    frame["up_share"] = frame["up"] / frame["total"] * 100
+    frame["down_share"] = -frame["down"] / frame["total"] * 100
+    frame["order"] = frame["region"].map(lambda name: REGION_ORDER.index(region_ids[name]) if region_ids.get(name) in REGION_ORDER else 99)
+    frame["label"] = frame["region"].map(home_mockup.short_region)
+    return frame.sort_values("order").reset_index(drop=True)
 
 
 def state(change):
@@ -69,6 +98,8 @@ def family_heat(variations, weeks=HEAT_WEEKS):
     valid = comparable(variations[variations["week_start"].isin(last)])
     frame = valid.groupby(["product_group", "week_start"])["variation"].median().mul(100).rename("change").reset_index()
     frame["family"] = frame["product_group"].map(home_mockup.short_family)
+    months = charts.CHILE_LOCALE["time"]["shortMonths"]
+    frame["week"] = [f"{w.day:02d} {months[w.month - 1].lower()}" for w in frame["week_start"]]
     return frame
 
 
@@ -99,7 +130,7 @@ def ipc_twelve_months(rows):
 
 
 # region Scorecards
-def sparkline(values, color, width=96, height=26):
+def sparkline(values, color, width=70, height=24):
     """A small trend line as an image (st.html drops inline SVG)."""
     values = [float(v) for v in values if pd.notna(v)]
     if len(values) < 2:
@@ -116,7 +147,7 @@ def sparkline(values, color, width=96, height=26):
 
 def build_scorecards_html(cards, palette):
     """A row of scorecards: [(label, value, note, trend values or None, tone)] with tone rise, fall or neutral."""
-    tone_color = {"rise": palette["rise"], "fall": palette["fall"], "neutral": palette["accent"]}
+    tone_color = {"rise": palette["rise"], "fall": palette["fall"], "neutral": palette["accent"], "good": GOOD}
     items = []
     for label, value, note, trend, tone in cards:
         spark = sparkline(trend, tone_color.get(tone, palette["accent"])) if trend is not None else ""
@@ -139,11 +170,25 @@ def build_css(palette):
 .ov-score-foot {{ display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:26px; }}
 .ov-score-note {{ font-size:11.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
 .ov-rise {{ color:{palette['rise']}; }} .ov-fall {{ color:{palette['fall']}; }} .ov-neutral {{ color:{text}; }}
+.ov-good {{ color:{GOOD}; }}
 .ov-spark {{ display:block; flex:none; }}
-[class*="st-key-ov_card_"] {{ background:{card}; border:1px solid {border} !important; border-radius:10px !important;
-  padding:10px 14px 6px !important; gap:2px !important; }}
-.ov-card-title {{ margin:0; font-size:13px; font-weight:600; color:{ink}; }}
-.ov-card-note {{ margin:0 0 2px; font-size:11.5px; color:{muted}; }}
+[class*="st-key-ov_card_"] {{ background:{card}; border:1px solid {border} !important; border-radius:12px !important;
+  padding:12px 16px 8px !important; gap:2px !important; height:max(calc((100vh - 318px) / 2), 196px) !important;
+  min-height:max(calc((100vh - 318px) / 2), 196px) !important; }}
+[class*="st-key-ov_card_"] [data-testid="stElementContainer"]:has([data-testid="stVegaLiteChart"]) {{
+  flex:1 1 0; min-height:0; display:flex; flex-direction:column; }}
+[class*="st-key-ov_card_"] [data-testid="stFullScreenFrame"], [class*="st-key-ov_card_"] [data-testid="stFullScreenFrame"] > div,
+[class*="st-key-ov_card_"] [data-testid="stVegaLiteChart"] {{ flex:1 1 auto; height:100%; min-height:0; }}
+[class*="st-key-ov_card_"] [data-testid="stElementToolbar"] {{ display:none !important; }}
+.st-key-ov_tabs {{ margin-top:-14px; }}
+.st-key-ov_tabs [data-testid="stTabs"] [role="tabpanel"] {{ padding-top:10px; }}
+[class*="st-key-ov_head_"] {{ align-items:center; justify-content:space-between; }}
+[class*="st-key-ov_head_"] [data-testid="stSlider"] {{ padding:0 4px; }}
+.ov-card-title {{ margin:0 !important; font-size:14px !important; font-weight:600; color:{ink} !important; line-height:1.3 !important; }}
+[class*="st-key-ov_card_"] [data-testid="stElementContainer"]:has(.ov-card-title) {{ margin-bottom:14px !important; }}
+[class*="st-key-ov_card_"] [data-testid="stMarkdown"] {{ margin-bottom:0 !important; }}
+.ov-card-note {{ margin:0 !important; font-size:11.5px !important; color:{muted} !important; line-height:1.35 !important;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
 .st-key-ov_tabs [data-baseweb="tab-list"] {{ gap:4px; }}
 .st-key-ov_tabs [data-baseweb="tab"] p {{ font-size:13.5px; font-weight:600; }}
 @media (max-width:1100px) {{ .ov-scores {{ grid-template-columns:repeat(3, minmax(0, 1fr)); }} }}
@@ -152,30 +197,29 @@ def build_css(palette):
 
 
 # region Charts
-def style(chart, mode, height):
-    return charts.apply_chart_style(chart.properties(width="container", height=height), mode)
+def style(chart, mode, height=None):
+    """Width and height from the card: the charts grow with the window (D-296)."""
+    return charts.apply_chart_style(chart.properties(width="container", height=height or "container"), mode)
 
 
-def combo_chart(weeks, mode, height=210):
-    """Bars: the prices with a valid comparison each week; line: the typical change, on its own axis."""
+def combo_chart(weeks, mode, height=None):
+    """Bars: the price alerts of each week; line: the typical change, on its own axis."""
     palette = charts.get_palette(mode)
     base = alt.Chart(weeks).encode(x=alt.X("week_start:T", title=None, axis=alt.Axis(format="%d %b", labelAngle=0,
                                                                                       tickCount=8)))
     tooltip = [alt.Tooltip("week_start:T", title="Semana", format="%d-%m-%Y"),
-               alt.Tooltip("comparable:Q", title="Precios comparables", format=",d"),
+               alt.Tooltip("alerts:Q", title="Alertas", format=",d"),
                alt.Tooltip("typical:Q", title="Cambio típico (%)", format="+.2f"),
-               alt.Tooltip("alerts:Q", title="Alertas", format=",d")]
+               alt.Tooltip("comparable:Q", title="Precios comparables", format=",d")]
     bars = base.mark_bar(color=palette["accent"], opacity=.55, cornerRadiusTopLeft=2, cornerRadiusTopRight=2).encode(
-        y=alt.Y("comparable:Q", title="Precios comparables", axis=alt.Axis(titleFontSize=11, tickCount=4)), tooltip=tooltip)
+        y=alt.Y("alerts:Q", title="Alertas", axis=alt.Axis(titleFontSize=11, tickCount=4, format="d")), tooltip=tooltip)
     line = base.mark_line(color=palette["rise"], strokeWidth=2, point=alt.OverlayMarkDef(size=26, filled=True)).encode(
         y=alt.Y("typical:Q", title="Cambio típico (%)", axis=alt.Axis(titleFontSize=11, tickCount=4, orient="right")),
         tooltip=tooltip)
-    zero = alt.Chart(pd.DataFrame({"y": [0]})).mark_rule(color=palette["reference"], strokeDash=[3, 3], opacity=.6).encode(
-        y=alt.Y("y:Q", axis=None))
-    return style(alt.layer(bars, alt.layer(line, zero)).resolve_scale(y="independent"), mode, height)
+    return style(alt.layer(bars, line).resolve_scale(y="independent"), mode, height)
 
 
-def donut(frame, category, value, mode, colors=None, selected=None, height=210, name="pick"):
+def donut(frame, category, value, mode, colors=None, selected=None, height=None, name="pick"):
     """A donut of `value` by `category`; a click picks a category (the selection is named `name`)."""
     palette = charts.get_palette(mode)
     names = list(frame[category])
@@ -185,7 +229,7 @@ def donut(frame, category, value, mode, colors=None, selected=None, height=210, 
                else alt.condition(pick, alt.value(1), alt.value(.4)))
     total = frame[value].sum()
     frame = frame.assign(share=frame[value] / total * 100 if total else 0)
-    chart = alt.Chart(frame).mark_arc(innerRadius=58, outerRadius=92, padAngle=.012, cornerRadius=3).encode(
+    chart = alt.Chart(frame).mark_arc(innerRadius=50, outerRadius=78, padAngle=.012, cornerRadius=3).encode(
         theta=alt.Theta(f"{value}:Q", stack=True),
         color=alt.Color(f"{category}:N", scale=scale, sort=names,
                         legend=alt.Legend(title=None, orient="right", labelFontSize=11.5, symbolType="circle",
@@ -198,11 +242,11 @@ def donut(frame, category, value, mode, colors=None, selected=None, height=210, 
     return style(alt.layer(chart, center), mode, height)
 
 
-def ranked_bars(frame, label, value, mode, height=190, percent=True, reference=None, name="rank", selected=None):
+def ranked_bars(frame, label, value, mode, height=None, percent=True, reference=None, name="rank", selected=None):
     """Horizontal bars ranked by value: red above zero (or the reference), blue below, with the value at the end."""
     palette = charts.get_palette(mode)
     cut = reference if reference is not None else 0
-    frame = frame.assign(_tone=["rise" if v > cut else "fall" for v in frame[value]],
+    frame = frame.assign(_tone=(["rise" if v > cut else "fall" for v in frame[value]] if percent else ["count"] * len(frame)),
                          _text=[f"{v:+.1f} %".replace(".", ",") if percent else f"{v:,.0f}".replace(",", ".") for v in frame[value]])
     order = list(frame.sort_values(value, ascending=False)[label])
     pick = alt.selection_point(name=name, fields=[label], on="click", clear="dblclick")
@@ -211,37 +255,70 @@ def ranked_bars(frame, label, value, mode, height=190, percent=True, reference=N
     y = alt.Y(f"{label}:N", sort=order, title=None, axis=alt.Axis(labelLimit=160, labelFontSize=11.5, ticks=False, domain=False))
     bars = alt.Chart(frame).mark_bar(cornerRadius=2, height={"band": .62}).encode(
         y=y, x=alt.X(f"{value}:Q", title=None, axis=alt.Axis(labels=False, ticks=False, grid=False, domain=False)),
-        color=alt.Color("_tone:N", scale=alt.Scale(domain=["rise", "fall"], range=[palette["rise"], palette["fall"]]), legend=None),
+        color=alt.Color("_tone:N", scale=alt.Scale(domain=["rise", "fall", "count"],
+                                                   range=[palette["rise"], palette["fall"], palette["accent"]]), legend=None),
         opacity=opacity, tooltip=[alt.Tooltip(f"{label}:N", title="Grupo"), alt.Tooltip("_text:N", title="Valor")]).add_params(pick)
-    text = alt.Chart(frame).mark_text(align="left", dx=5, fontSize=11.5, fontWeight=600, color=palette["text"]).encode(
-        y=y, x=alt.X(f"{value}:Q"), text="_text:N")
-    layers = [bars, text]
+    # The value sits past the end of its bar: to the right of a rise, to the left of a fall.
+    ahead = alt.Chart(frame[frame[value] >= 0]).mark_text(align="left", dx=5, fontSize=11.5, fontWeight=600,
+                                                          color=palette["text"]).encode(y=y, x=alt.X(f"{value}:Q"), text="_text:N")
+    behind = alt.Chart(frame[frame[value] < 0]).mark_text(align="right", dx=-5, fontSize=11.5, fontWeight=600,
+                                                          color=palette["text"]).encode(y=y, x=alt.X(f"{value}:Q"), text="_text:N")
+    layers = [bars, ahead, behind]
     if reference is not None:
         layers.append(alt.Chart(pd.DataFrame({"r": [reference]})).mark_rule(color=palette["strong_text"], strokeDash=[4, 3]).encode(x="r:Q"))
     else:
         layers.append(alt.Chart(pd.DataFrame({"r": [0]})).mark_rule(color=palette["reference"], opacity=.7).encode(x="r:Q"))
-    return style(alt.layer(*layers).properties(padding={"right": 36}), mode, height)
+    low, high = float(min(0, frame[value].min())), float(max(0, frame[value].max()))
+    span = (high - low) or 1
+    for layer in layers[:3]:
+        layer.encoding.x.scale = alt.Scale(domain=[low - span * (.28 if low < 0 else 0), high + span * .28])
+    return style(alt.layer(*layers), mode, height)
 
 
-def heat_table(frame, row, column, value, mode, height=190, column_format=None, row_sort=None):
+def region_bars(frame, mode, height=None):
+    """Each region, north to south: to the right the share of its prices that rose, to the left the share that fell."""
+    palette = charts.get_palette(mode)
+    order = list(frame["label"])
+    long = pd.concat([frame.assign(share=frame["up_share"], kind="Subieron"),
+                      frame.assign(share=frame["down_share"], kind="Bajaron")])
+    long["text"] = [f"{abs(v):.0f} %" for v in long["share"]]
+    y = alt.Y("label:N", sort=order, title=None, axis=alt.Axis(labelFontSize=11.5, ticks=False, domain=False, labelLimit=120))
+    limit = max(60.0, float(long["share"].abs().max()) + 24)
+    x = alt.X("share:Q", title=None, scale=alt.Scale(domain=[-limit, limit]),
+              axis=alt.Axis(labels=False, ticks=False, grid=False, domain=False))
+    bars = alt.Chart(long).mark_bar(cornerRadius=2, height={"band": .6}).encode(
+        y=y, x=x, color=alt.Color("kind:N", scale=alt.Scale(domain=["Subieron", "Bajaron"], range=[palette["rise"], palette["fall"]]),
+                                  legend=None),
+        tooltip=[alt.Tooltip("region:N", title="Región"), alt.Tooltip("kind:N", title="Dirección"),
+                 alt.Tooltip("text:N", title="De sus precios comparables"), alt.Tooltip("total:Q", title="Comparables")])
+    right = alt.Chart(long[long["share"] >= 0]).mark_text(fontSize=11, color=palette["text"], align="left", dx=4).encode(
+        y=y, x=x, text="text:N")
+    left = alt.Chart(long[long["share"] < 0]).mark_text(fontSize=11, color=palette["text"], align="right", dx=-4).encode(
+        y=y, x=x, text="text:N")
+    axis = alt.Chart(pd.DataFrame({"z": [0]})).mark_rule(color=palette["reference"], opacity=.7).encode(x="z:Q")
+    return style(alt.layer(bars, right, left, axis), mode, height)
+
+
+def heat_table(frame, row, column, value, mode, height=None, column_order=None, row_sort=None):
     """A table whose cells are colored by their value: red rises, blue falls, the value written inside."""
     palette = charts.get_palette(mode)
     limit = max(1.0, float(frame[value].abs().quantile(.9))) if not frame.empty else 1.0
     frame = frame.assign(_text=[f"{v:+.1f}".replace(".", ",") for v in frame[value]])
-    x = (alt.X(f"{column}:T", title=None, axis=alt.Axis(format=column_format or "%d %b", labelAngle=0, orient="top",
-                                                          ticks=False, domain=False))
-         if column_format is not False and str(frame[column].dtype).startswith("datetime")
-         else alt.X(f"{column}:O", title=None, axis=alt.Axis(labelAngle=0, orient="top", ticks=False, domain=False)))
+    x = alt.X(f"{column}:O", title=None, sort=column_order, axis=alt.Axis(labelAngle=0, orient="top", ticks=False,
+                                                                           domain=False, labelFontSize=11))
     y = alt.Y(f"{row}:N", title=None, sort=row_sort, axis=alt.Axis(labelLimit=150, labelFontSize=11.5, ticks=False, domain=False))
+    frame = frame.assign(_tone=["rise" if v >= STILL * 100 else "fall" if v <= -STILL * 100 else "still" for v in frame[value]],
+                         _size=frame[value].abs())
     cells = alt.Chart(frame).mark_rect(cornerRadius=3, stroke=palette["card"], strokeWidth=2).encode(
-        x=x, y=y, color=alt.Color(f"{value}:Q", legend=None, scale=alt.Scale(
-            domain=[-limit, 0, limit], range=[palette["fall"], palette["card"], palette["rise"]], clamp=True)),
+        x=x, y=y, color=alt.Color("_tone:N", legend=None, scale=alt.Scale(
+            domain=["rise", "fall", "still"], range=[palette["rise"], palette["fall"], palette["card_border"]])),
+        opacity=alt.Opacity("_size:Q", legend=None, scale=alt.Scale(domain=[0, limit], range=[.18, .95], clamp=True)),
         tooltip=[alt.Tooltip(f"{row}:N", title="Grupo"), alt.Tooltip(f"{value}:Q", title="Cambio (%)", format="+.2f")])
     text = alt.Chart(frame).mark_text(fontSize=11, color=palette["strong_text"]).encode(x=x, y=y, text="_text:N")
     return style(alt.layer(cells, text), mode, height)
 
 
-def line_chart(frame, x, y, mode, height=190, title_y="", fmt="+.1f", color=None):
+def line_chart(frame, x, y, mode, height=None, title_y="", fmt="+.1f", color=None):
     palette = charts.get_palette(mode)
     color = color or palette["accent"]
     chart = alt.Chart(frame).mark_area(line={"color": color, "strokeWidth": 2}, color=alt.Gradient(
@@ -254,7 +331,7 @@ def line_chart(frame, x, y, mode, height=190, title_y="", fmt="+.1f", color=None
     return style(alt.layer(chart, zero), mode, height)
 
 
-def stacked_runs(runs, mode, height=190):
+def stacked_runs(runs, mode, height=None):
     """The loads: rows loaded per load, with the rejected ones on their own axis."""
     palette = charts.get_palette(mode)
     runs = runs.assign(label=[f"#{r} · {d[8:10]}-{d[5:7]}" for r, d in zip(runs["run_id"], runs["started_at"])])
