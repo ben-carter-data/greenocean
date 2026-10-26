@@ -5078,8 +5078,8 @@ def show_market_overview(mode, prefix):
             rows=[row for row in model['family_rows'] if row['product_group'] == family]
             average=next((value for name, value, _ in averages if name == family), None)
             heading = st.empty()
-            search_column, channel_column, order_column = st.columns(
-                [1.35, 1.25, 1.5], vertical_alignment='center')
+            search_column, channel_column, order_column, enlarge_column = st.columns(
+                [1.35, 1.25, 1.5, 0.3], vertical_alignment='center')
             query = search_column.text_input('Buscar', key='home_products_search', icon=':material/search:',
                                              placeholder='Producto, ej.: lechuga', label_visibility='collapsed',
                                              type='search', live=True)
@@ -5103,13 +5103,24 @@ def show_market_overview(mode, prefix):
             directions=read_cached_region_directions(get_database_version(), week)
             for row in rows:
                 row['_regions']=directions.get(tuple(row[field] for field in queries.KEY_COLUMNS+['channel']))
-            st.markdown('<div class="greenocean-mockup">' + home_mockup.products_table(
+            table_html = ('<div class="greenocean-mockup">' + home_mockup.products_table(
                 rows, model['week_label'], model['previous_label'], query.strip(),
-                None if region == ALL_VALUES else region) + '</div>', unsafe_allow_html=True)
+                None if region == ALL_VALUES else region) + '</div>')
+            st.markdown(table_html, unsafe_allow_html=True)
+            if enlarge_column.button('', icon=':material/open_in_full:', key='home_products_enlarge',
+                                     help=tr('Ampliar la tabla de productos')):
+                show_products_dialog(home_mockup.products_heading(family or 'Sin familia', average, scope, len(rows), total),
+                                     table_html)
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown('<div class="greenocean-mockup">' + home_mockup.coverage_note(
         model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION), family)
         + '</div>', unsafe_allow_html=True)
+
+
+@st.dialog("Productos", width="large")
+def show_products_dialog(heading_html, table_html):
+    """The products table at the size of the window (D-317): the same rows, filters and order of the panel."""
+    st.markdown('<div class="greenocean-mockup products-large">' + heading_html + '</div>' + table_html, unsafe_allow_html=True)
 
 
 def show_home_page(mode):

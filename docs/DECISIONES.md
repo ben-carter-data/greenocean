@@ -2400,3 +2400,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** el encabezado del Panorama se veía mal, con cosas inútiles y mezcladas (la pregunta cortada, los contadores de familias y regiones y el aviso de alertas se pisaban); la × de la ventana de semanas no cerraba; y el gráfico del índice mensual ampliado debía mostrar los años bajo el eje sin cambiar nada más.
 - **Decisión:** el encabezado guarda solo lo esencial: el camino de la página, la semana y la región leídas, las alertas, los dos botones («Semanas» e «Inflación») y la hora de la carga. Se quitan la pregunta cortada y los contadores, que ya dicen los paneles. La × de todas las ventanas queda por encima del contenido (con el título oculto, el contenido la tapaba). En el índice mensual ampliado, las etiquetas de año (2022 a 2026) van pequeñas y grises bajo el eje, alineadas con la cuadrícula; Streamlit limitaba la caja del gráfico al alto de la ventana y las cortaba en ventanas bajas, así que se levanta ese tope para el gráfico ampliado. La curva, el ancho, las líneas y los colores no cambian.
 - **Pruebas:** `tests/test_dashboard.py` (un solo chip en el encabezado) y la suite completa; revisión en pantalla a 1440 × 700 y 1440 × 790.
+
+## D-317 · Un botón para ampliar la tabla de productos del Panorama
+
+- **Pedido del autor:** la tabla de productos del Panorama se ve chica.
+- **Decisión:** junto a los filtros hay un botón con el ícono de ampliar. Abre una ventana con la misma tabla (los mismos productos, filtros y orden) al alto de la ventana y con letra algo mayor; se cierra con la ×. El Panorama sigue cabiendo en una pantalla.
+- **Pruebas:** la suite completa; revisión en pantalla (abrir, leer, cerrar).

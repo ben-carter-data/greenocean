@@ -534,3 +534,9 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-chile-map:has(.mock-region-row[data-r="16"]:hover) .mock-region-shape[data-r="16"],.mock-chile-map:has(.mock-region-shape[data-r="16"]:hover) .mock-region-shape[data-r="16"] {stroke:#ffffff;stroke-width:2.2;filter:drop-shadow(0 0 2px #ffffff);}
 
 .home-bar-title {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+
+/* D-317: the enlarged products table takes the window. */
+[role="dialog"] .mock-products-table {max-height:calc(100vh - 230px)!important;}
+[role="dialog"] .mock-products-table table {font-size:13.5px;}
+.st-key-home_products .st-key-home_products_enlarge button {min-height:28px;padding:0 6px;}
+[role="dialog"] .greenocean-mockup h2 {display:block!important;}
