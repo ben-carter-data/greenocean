@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from bi import charts, doc_diagrams, doc_views
+from bi import charts, doc_diagrams, doc_figures, doc_views
 
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md", "MANUAL.md", "GLOSARIO.md", "INDICE_DECISIONES.md"]
@@ -39,30 +39,34 @@ def test_d205_each_view_is_one_html_document_without_script(name, mode):
     assert "robot" not in page.lower() and name in doc_diagrams.HEIGHTS
 
 
-def test_d242_the_context_view_is_the_system_as_one_box_with_its_people_and_external_systems():
+def graph_lines(page):
+    """The lines of an icon diagram (D-297), as lists of points."""
+    return [[tuple(map(float, point.split())) for point in d[1:].split(" L")]
+            for d in re.findall(r'<path d="(M[\d. L]+)" fill="none"', page)]
+
+
+def plain(page):
+    """The words of a diagram in reading order, its wrapped lines joined."""
+    return " ".join(part.strip() for part in re.findall(r">([^<>]+)<", page) if part.strip())
+
+
+def assert_right_angles(page):
+    """Every line moves only across or up and down: consecutive points share their x or their y."""
+    lines = graph_lines(page)
+    assert lines
+    for points in lines:
+        for (ax, ay), (bx, by) in zip(points, points[1:]):
+            assert ax == bx or ay == by, points
+
+
+def test_d297_the_context_view_is_the_system_with_its_people_and_external_systems_as_icons():
     page = doc_diagrams.DOC_DIAGRAMS["contexto"](charts.MODE_DARK)
-    # Flat logos without discs (D-280); the system is one box that names the tools it is built with (D-249), in the
-    # order of its pipeline, but draws none of its parts: those are the next views.
-    assert page.count('class="logo"') == 6 + len(doc_views.SYSTEM_TOOLS) and "radialGradient" not in page
-    assert 'class="zone"' not in page
-    assert [name for _, name in doc_views.SYSTEM_TOOLS] == ["Python", "SQLite", "Parquet", "dbt", "DuckDB", "Streamlit"]
-    assert page.count('class="system"') == 1 and "<b>GreenOcean</b>" in page
-    assert page.count('class="chip"') == len(doc_views.CONTEXT_EDGES) == 6
-    assert page.count('role="tooltip"') == 6 + len(doc_views.CONTEXT_EDGES) + 1
-    # Orthogonal arrows only, and every one touches the system box: the others are not drawn against each other.
-    left, top, width, height = doc_views.SYSTEM_BOX
-    for path, *_ in doc_views.CONTEXT_EDGES:
-        assert re.fullmatch(r"M\d+ \d+( [HV]\d+)+", path), path
-        x, y = map(int, path[1:].split(" ")[:2])
-        ends_on_top = path.endswith(f"V{top}") and left <= x <= left + width  # a person reaches the top of the box
-        leaves_a_side = x in (left, left + width) and top <= y <= top + height  # or the box reaches a source or a platform
-        assert ends_on_top or leaves_a_side, path
-    assert {name for name in ("ODEPA", "INE", "GitHub", "Streamlit Community Cloud", "Visitante", "Administrador")
-            if f"<b>{name}</b>" in page} == {"ODEPA", "INE", "GitHub", "Streamlit Community Cloud", "Visitante",
-                                              "Administrador"}
-    # The delivery flow (Actions, repository, main) is the CI/CD diagram's, not the context's.
-    for inside in ("GitHub Actions", "Repositorio", "git push"):
-        assert f"<b>{inside}</b>" not in page and f">{inside}<" not in page
+    for name in ("GreenOcean", "ODEPA", "INE", "GitHub", "Streamlit Community Cloud", "Visitante", "Administrador"):
+        assert f">{name}<" in page, name
+    assert "Python, SQLite, Parquet, dbt, DuckDB y Streamlit" in plain(page)  # the tools it is built with, in the order of the pipeline
+    assert 'class="box"' not in page and 'class="system"' not in page  # no boxes, no cards
+    assert len(graph_lines(page)) == 6
+    assert_right_angles(page)
 
 
 def test_d210_the_weak_views_are_gone():
@@ -95,24 +99,16 @@ def test_doc_diagrams_does_not_depend_on_streamlit():
         assert "streamlit as st" not in source and "import streamlit" not in source
 
 
-def test_d247_the_containers_view_is_c4_level_2_with_real_files_and_straight_links():
+def test_d297_the_containers_view_is_c4_level_2_with_real_files_and_right_angle_links():
     from pathlib import Path
     root = Path(__file__).resolve().parent.parent
     page = doc_diagrams.DOC_DIAGRAMS["contenedores"](charts.MODE_DARK)
-    kinds = {row[1] for row in doc_views.CONTAINERS}
-    assert kinds == {"app", "store", "external", "person"}
-    assert [row[6] for row in doc_views.CONTAINERS if row[1] == "app"] == ["Carga semanal", "Panel web"]
-    for key, kind, *_, files, what in doc_views.CONTAINERS:
-        assert what, key
-        for path in [part.strip() for part in files.split("·") if part.strip()]:
-            # Rebuilt on each load and not in Git; the backup too since D-270.
-            if path not in ("etl/raw.db", "etl/bronze/", "etl/warehouse_build.duckdb", "etl/datos.db"):
-                assert (root / path).exists(), path
-        assert f'id="c-{key}"' in page and f'id="ct-{key}"' in page
-    for path, label, *_ in doc_views.C4_LINKS:  # (path, label, x, y, anchor)
-        assert re.fullmatch(r"M\d+ \d+ [HV]\d+", path), path  # one straight segment
-        assert label
-    assert "<script" not in page and page.count('class="c4-line"') == len(doc_views.C4_LINKS)
+    for name in ("Carga semanal", "Panel web", "Base servida", "Respaldo", "Archivos de trabajo"):
+        assert f">{name}<" in page, name
+    for path in ("agent/agent.py", "etl/etl.py", "etl/pipeline.py", "bi/dashboard.py"):
+        assert path in page and (root / path).exists(), path
+    assert len(graph_lines(page)) == 8
+    assert_right_angles(page)
 
 
 def test_d247_every_view_a_document_links_to_is_a_page_of_the_menu():
@@ -155,14 +151,13 @@ def test_d258_the_ten_cases_open_their_attack_result_owasp_threat_and_test():
     assert "T3 · " in page and "Ninguna en concreto" in page
 
 
-def test_d258_the_procedure_is_a_cycle_of_five_steps_and_says_that_ci_warns_but_does_not_stop_main():
-    from bi import security_plan
+def test_d297_the_procedure_is_a_cycle_of_five_steps_and_says_that_ci_warns_but_does_not_stop_main():
     page = doc_diagrams.DOC_DIAGRAMS["sop"](charts.MODE_DARK)
-    assert [step[1] for step in security_plan.SOP_STEPS] == ["Preparar", "Ejecutar", "Comprobar", "Registrar", "Decidir"]
-    for index in range(5):
-        assert f'href="#p-{index}"' in page and f'id="p-{index}"' in page
-    assert "falla: se corrige y se repite desde el 2" in page and "pasa: el cambio queda verificado" in page
+    for step in ("1 · Preparar", "2 · Ejecutar", "3 · Comprobar", "4 · Registrar", "5 · Decidir"):
+        assert f">{step}<" in page, step
+    assert "falla: se corrige y se repite desde el 2" in plain(page) and "pasa: el cambio queda verificado" in plain(page)
     assert "no detiene la publicación de main" in page and "<script" not in page
+    assert_right_angles(page)
 
 
 def test_d260_each_case_shows_the_logo_of_its_technology_and_every_line_turns_at_right_angles():
@@ -174,15 +169,20 @@ def test_d260_each_case_shows_the_logo_of_its_technology_and_every_line_turns_at
         assert f"Tecnología</h4><p>{security_plan.TECH_NAMES[tech]}</p>" in page, case_id
         assert f"{case_id} · {security_plan.TECH_NAMES[tech]} · " in page, case_id
     assert page.count('<circle class="node"') == 10
-    # no diagonal: every line and arrow of both diagrams moves only horizontally or vertically
-    cycle = doc_diagrams.DOC_DIAGRAMS["sop"](charts.MODE_DARK)
-    for html in (page, cycle):
-        assert "<line " not in html
-        lines = re.findall(r'<path d="(M[^"]*)" fill="none" stroke="[^"]*" stroke-width="[\d.]+"[^>]*stroke-linejoin="miter"', html)
-        assert lines
-        for d in lines:
-            assert re.fullmatch(r"M[\d.]+ [\d.]+( [HV][\d.]+)+", d), d
-    assert len(re.findall(r'<path d="M[^"]*" fill="none"[^>]*marker-end="url\(#cy-head\)"', cycle)) == 4
+    # no diagonal: every line of the diagram moves only horizontally or vertically
+    assert "<line " not in page
+    lines = re.findall(r'<path d="(M[^"]*)" fill="none" stroke="[^"]*" stroke-width="[\d.]+"[^>]*stroke-linejoin="miter"', page)
+    assert lines
+    for d in lines:
+        assert re.fullmatch(r"M[\d.]+ [\d.]+( [HV][\d.]+)+", d), d
+
+
+@pytest.mark.parametrize("name", sorted(doc_figures.FIGURES))
+def test_d297_every_icon_diagram_turns_only_at_right_angles_and_has_no_cards(name):
+    page = doc_diagrams.DOC_DIAGRAMS[name](charts.MODE_CORPORATE)
+    assert 'class="col"' not in page and 'class="item"' not in page and 'class="root"' not in page
+    if 'class="fig-title"' in page and "<path d=\"M" in page and " L" in page:
+        assert_right_angles(page)
 
 
 # D-280: the document diagrams have no background; they sit on the white sheet of the PDF and on every theme.

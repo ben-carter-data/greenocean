@@ -15,10 +15,10 @@ def for_print(builder):
 
 # Marker → function(mode) returning one HTML document for st.iframe.
 DOC_DIAGRAMS = {name: for_print(builder) for name, (builder, _) in doc_views.VIEWS.items()}
-DOC_DIAGRAMS.update(sop=for_print(security_plan.build_cycle_html), pruebas=for_print(security_plan.build_cases_html))
+DOC_DIAGRAMS.update(pruebas=for_print(security_plan.build_cases_html))
 # Marker → height of its frame in the page, in pixels.
 HEIGHTS = {name: height for name, (_, height) in doc_views.VIEWS.items()}
-HEIGHTS.update(sop=440, pruebas=620)
+HEIGHTS.update(pruebas=620)
 # D-289: the figures of every document; each frame takes the height of its figure.
 DOC_DIAGRAMS.update({name: for_print(builder) for name, builder in doc_figures.FIGURES.items()})
 HEIGHTS.update({name: "content" for name in doc_figures.FIGURES})

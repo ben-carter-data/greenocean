@@ -91,7 +91,6 @@ def sequence(mode, title, actors, steps, note=""):
     parts = []
     for key, label, mark in actors:
         cx = x[key]
-        parts.append(f'<rect class="box" x="{cx - gap / 2 + 6:.1f}" y="2" width="{gap - 12:.1f}" height="64" rx="12"/>')
         parts.append(logo(mark, cx, 22, 26))
         parts.append(f'<text class="ink" x="{cx:.1f}" y="54" text-anchor="middle" font-size="12.5" font-weight="600">{esc(label)}</text>')
         parts.append(f'<line class="life" x1="{cx:.1f}" y1="68" x2="{cx:.1f}" y2="{height:.1f}"/>')
@@ -138,18 +137,128 @@ def sequence(mode, title, actors, steps, note=""):
     return page(mode, body, title)
 
 
-def columns(mode, title, cols, note="", arrows=True):
-    """Columns left to right, each with its color and its items: [(heading, color, [(name, detail)])]."""
-    template = " auto ".join(["minmax(0, 1fr)"] * len(cols)) if arrows else f"repeat({len(cols)}, minmax(0, 1fr))"
-    cells = []
-    for index, (heading, color, items) in enumerate(cols):
-        if index and arrows:
-            cells.append('<div class="arrow" aria-hidden="true">→</div>')
-        content = "".join(f'<div class="item"><b>{esc(name)}</b>{f"<span>{esc(detail)}</span>" if detail else ""}</div>'
-                          for name, detail in items)
-        cells.append(f'<div class="col" style="--c:{color}"><h4>{esc(heading)}</h4>{content}</div>')
-    body = (f'<p class="fig-title">{esc(title)}</p><div class="cols" style="grid-template-columns:{template}">'
-            + "".join(cells) + "</div>" + (f'<p class="fig-note">{esc(note)}</p>' if note else ""))
+# Line icons on a 24-unit grid, drawn in one color with no background (the author's diagram style, D-297).
+LINE_ICONS = {
+    "shield": '<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+    "key": '<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9"/><path d="m16 7 3 3"/><path d="m14 9 2 2"/>',
+    "lock": '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    "file": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+    "check": '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
+    "warning": '<path d="M12 3 2 20h20z"/><path d="M12 10v4"/><path d="M12 17h.01"/>',
+    "calendar": '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+    "chart": '<path d="M4 20V4"/><path d="M4 20h16"/><path d="m7 15 4-5 3 3 5-7"/>',
+    "layers": '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+    "database": '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>',
+    "mail": '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    "tool": '<path d="M14.5 6.5a4 4 0 0 0-5 5L4 17l3 3 5.5-5.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5z"/>',
+    "ruler": '<rect x="3" y="8" width="18" height="8" rx="1.5"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/>',
+    "printer": '<path d="M7 9V3h10v6"/><rect x="4" y="9" width="16" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
+    "pulse": '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
+    "files": '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>',
+    "star": '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+    "cloud": '<path d="M7 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A4 4 0 1 1 17 18z"/><path d="m4 4 16 16"/>',
+    "box": '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="m4 7.5 8 4.5 8-4.5"/><path d="M12 12v9"/>',
+    "eye": '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    "arrows": '<path d="M4 8h13"/><path d="m14 5 3 3-3 3"/><path d="M20 16H7"/><path d="m10 13-3 3 3 3"/>',
+    "commit": '<circle cx="12" cy="12" r="3.5"/><path d="M3 12h5.5M15.5 12H21"/>',
+    "bell": '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
+    "code": '<path d="m8 8-4 4 4 4"/><path d="m16 8 4 4-4 4"/><path d="m13.5 5-3 14"/>',
+}
+
+
+def mark(spec, x, y, size, accent):
+    """A node's mark: a flat logo (brand, person, source) or a line icon («icon:name» or «icon:name@#color»)."""
+    kind, _, name = spec.partition(":")
+    if kind != "icon":
+        return logo(spec, x, y, size)
+    name, _, color = name.partition("@")
+    return (f'<g transform="translate({x - size / 2:.1f} {y - size / 2:.1f}) scale({size / 24:.4f})" fill="none" '
+            f'stroke="{color or accent}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">{LINE_ICONS[name]}</g>')
+
+
+def wrap(text, limit=24):
+    """A caption in lines of at most `limit` characters, cut between words."""
+    lines, line = [], ""
+    for word in str(text).split():
+        if line and len(line) + 1 + len(word) > limit:
+            lines.append(line)
+            line = word
+        else:
+            line = f"{line} {word}".strip()
+    return lines + ([line] if line else [])
+
+
+def graph(mode, title, nodes, edges, note="", width=920, size=34, limit=22):
+    """A diagram of icons and straight arrows (D-297): no boxes and no cards, lines that turn only at right angles.
+
+    nodes: {key: (x, y, mark, label, caption)}; the mark is centred on (x, y) and the label and caption sit below it.
+    edges: [(from, to, label, kind, route[, «start»])]: route «h» leaves by the side and turns once at mid-height, «v» leaves from
+    below (or above) and turns once at mid-width, «hv» goes across and then down or up, «vh» goes down or up and then
+    across. The label rides the longest straight stretch of its line."""
+    palette = charts.get_palette(mode)
+    halo = palette["card"]
+    r = size / 2 + 6
+    texts, bottoms = [], {}
+    for key, (x, y, spec, label, caption) in nodes.items():
+        texts.append(mark(spec, x, y, size, palette["accent"]))
+        names = wrap(label, limit + 2)
+        for index, line in enumerate(names):
+            texts.append(f'<text class="ink" x="{x}" y="{y + size / 2 + 17 + 16 * index}" text-anchor="middle" font-size="13" '
+                         f'font-weight="600">{esc(line)}</text>')
+        top = y + size / 2 + 33 + 16 * (len(names) - 1)
+        lines = wrap(caption, limit) if caption else []
+        for index, line in enumerate(lines):
+            texts.append(f'<text class="txt" x="{x}" y="{top + 15 * index}" text-anchor="middle" font-size="11.5">{esc(line)}</text>')
+        bottoms[key] = top - 11 + 15 * len(lines) + 4
+    lines_svg = []
+    for source, target, label, kind, route, *where in edges:
+        x1, y1 = nodes[source][:2]
+        x2, y2 = nodes[target][:2]
+        right = x2 >= x1
+        down = y2 >= y1
+        if route == "h":
+            sx, ex = (x1 + r, x2 - r) if right else (x1 - r, x2 + r)
+            mid = (sx + ex) / 2
+            points = [(sx, y1), (mid, y1), (mid, y2), (ex, y2)] if y1 != y2 else [(sx, y1), (ex, y2)]
+        elif route == "v":
+            sy, ey = (bottoms[source], y2 - r) if down else (y1 - r, bottoms[target])
+            mid = (sy + ey) / 2
+            points = [(x1, sy), (x1, mid), (x2, mid), (x2, ey)] if x1 != x2 else [(x1, sy), (x2, ey)]
+        elif route == "hv":
+            sx = x1 + r if right else x1 - r
+            ey = y2 - r if down else bottoms[target]
+            points = [(sx, y1), (x2, y1), (x2, ey)]
+        else:  # «vh»
+            sy = bottoms[source] if down else y1 - r
+            ex = x2 - r if right else x2 + r
+            points = [(x1, sy), (x1, y2), (ex, y2)]
+        color = KIND_COLORS[kind]
+        dash = ' stroke-dasharray="6 5"' if kind == "back" else (' stroke-dasharray="2 4"' if kind == "check" else "")
+        path = "M" + " L".join(f"{px:.1f} {py:.1f}" for px, py in points)
+        lines_svg.append(f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.7"{dash} marker-end="url(#g-{kind})"/>')
+        if label:
+            stretches = list(zip(points, points[1:]))
+            length = lambda pair: abs(pair[0][0] - pair[1][0]) + abs(pair[0][1] - pair[1][1])
+            # The last stretch belongs to this line alone (the first may be shared by a fork): it carries the label
+            # when it has room for it.
+            last = stretches[-1]
+            if where and where[0] == "start":  # two lines that end on the same stretch: each label on its own start
+                (ax, ay), (bx, by) = stretches[0]
+            else:
+                (ax, ay), (bx, by) = last if length(last) >= max(70, len(label) * 6.2) else max(stretches, key=length)
+            if ay == by:
+                lines_svg.append(f'<text class="mut" x="{(ax + bx) / 2:.1f}" y="{ay - 6:.1f}" text-anchor="middle" font-size="11" '
+                                 f'stroke="{halo}" stroke-width="4" paint-order="stroke">{esc(label)}</text>')
+            else:  # beside a vertical stretch: on its right, or on its left near the right edge of the figure
+                side = (f'x="{ax - 7:.1f}" text-anchor="end"' if ax + 7 + len(label) * 6.2 > width
+                        else f'x="{ax + 7:.1f}"')
+                lines_svg.append(f'<text class="mut" {side} y="{(ay + by) / 2 + 4:.1f}" font-size="11" '
+                                 f'stroke="{halo}" stroke-width="4" paint-order="stroke">{esc(label)}</text>')
+    height = max(bottoms.values()) + 6
+    markers = "".join(f'<marker id="g-{kind}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
+                      f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{color}"/></marker>' for kind, color in KIND_COLORS.items())
+    body = (f'<p class="fig-title">{esc(title)}</p><svg viewBox="0 0 {width} {height:.0f}" aria-hidden="true">'
+            f'<defs>{markers}</defs>{"".join(lines_svg)}{"".join(texts)}</svg>' + (f'<p class="fig-note">{esc(note)}</p>' if note else ""))
     return page(mode, body, title)
 
 
@@ -171,15 +280,6 @@ def timeline(mode, title, events, note=""):
     return page(mode, body, title)
 
 
-def tree(mode, title, root, branches, note=""):
-    """A fault tree: the root on the left; each branch «if … → then …»."""
-    rows = "".join(f'<div class="branch"><div class="when">{esc(condition)}</div><div class="then"><b>{esc(action)}</b>'
-                   f'{f"<br>{esc(detail)}" if detail else ""}</div></div>' for condition, action, detail in branches)
-    body = (f'<p class="fig-title">{esc(title)}</p><div class="tree"><div class="root">{esc(root)}</div>'
-            f'<div class="branches">{rows}</div></div>' + (f'<p class="fig-note">{esc(note)}</p>' if note else ""))
-    return page(mode, body, title)
-
-
 def bars(mode, title, rows, note=""):
     """Horizontal bars: [(label, value, color)]."""
     top = max(value for _, value, _ in rows) or 1
@@ -190,57 +290,88 @@ def bars(mode, title, rows, note=""):
     return page(mode, body, title)
 
 
-def compare(mode, title, before, after, note=""):
-    """Before and after: two columns and an arrow between them: (heading, color, [(name, detail)])."""
-    def panel(heading, color, items):
-        content = "".join(f'<div class="item"><b>{esc(name)}</b><span>{esc(detail)}</span></div>' for name, detail in items)
-        return f'<div class="col" style="--c:{color}"><h4>{esc(heading)}</h4>{content}</div>'
-    body = (f'<p class="fig-title">{esc(title)}</p><div class="compare">{panel(*before)}'
-            f'<div class="arrow" aria-hidden="true">→</div>{panel(*after)}</div>'
-            + (f'<p class="fig-note">{esc(note)}</p>' if note else ""))
-    return page(mode, body, title)
 # endregion
 
 
 BLUE, GREEN, AMBER, VIOLET, RED, GREY = "#3987e5", "#199e70", "#c98500", "#8b5cf6", "#e5484d", "#8b8fa3"
 
 
+# region C4 views and the procedure (D-297): the system context, its containers and the security procedure, drawn as
+# icons and right-angle arrows instead of boxes.
+def sad_context(mode):
+    return graph(mode, say("Contexto del sistema (C4, nivel 1)", "System context (C4, level 1)"), {
+        "visitor": (330, 20, "person:visitor", say("Visitante", "Visitor"), say("lee el panel, sin cuenta", "reads the panel, no account")),
+        "admin": (590, 20, "person:author", say("Administrador", "Administrator"), say("el autor: mantiene el código y los secretos", "the author: maintains the code and the secrets")),
+        "system": (460, 190, "icon:box", "GreenOcean", say("pipeline semanal y panel de BI: Python, SQLite, Parquet, dbt, DuckDB y Streamlit", "weekly pipeline and BI panel: Python, SQLite, Parquet, dbt, DuckDB and Streamlit")),
+        "odepa": (90, 120, "source:odepa", "ODEPA", say("precios mayoristas y al consumidor", "wholesale and consumer prices")),
+        "ine": (90, 290, "source:ine", "INE", say("IPC de alimentos", "food CPI")),
+        "github": (830, 120, "brand:github", "GitHub", say("aloja el código, ejecuta la carga y guarda la base", "hosts the code, runs the load and keeps the database")),
+        "cloud": (830, 290, "brand:streamlit", "Streamlit Community Cloud", say("publica el panel", "publishes the panel")),
+    }, [("visitor", "system", say("lee", "reads"), "flow", "v"), ("admin", "system", say("mantiene", "maintains"), "order", "v"),
+        ("system", "odepa", "CSV", "flow", "h"), ("system", "ine", say("IPC", "CPI"), "flow", "h"),
+        ("system", "github", say("aloja", "hosts"), "order", "h"), ("system", "cloud", say("publica", "publishes"), "flow", "h")],
+        say("La flecha va de quien usa a quien es usado; lo que hay dentro de GreenOcean está en la vista siguiente.",
+            "The arrow goes from who uses to what is used; what is inside GreenOcean is in the next view."), limit=26)
+
+
+def sad_containers(mode):
+    return graph(mode, say("Contenedores (C4, nivel 2)", "Containers (C4, level 2)"), {
+        "odepa": (70, 40, "source:odepa", "ODEPA", say("precios", "prices")),
+        "ine": (70, 220, "source:ine", "INE", say("IPC de alimentos", "food CPI")),
+        "load": (300, 130, "brand:python", say("Carga semanal", "Weekly load"), say("Python, dbt Core y DuckDB: agent/agent.py, etl/etl.py, etl/pipeline.py, dbt/", "Python, dbt Core and DuckDB: agent/agent.py, etl/etl.py, etl/pipeline.py, dbt/")),
+        "work": (560, 20, "brand:apacheparquet", say("Archivos de trabajo", "Working files"), say("etl/raw.db, etl/bronze/ y la base de trabajo de dbt", "etl/raw.db, etl/bronze/ and the dbt working database")),
+        "served": (560, 175, "brand:duckdb", say("Base servida", "Served database"), "etl/datos.duckdb"),
+        "backup": (560, 300, "brand:sqlite", say("Respaldo", "Backup"), say("etl/datos.db, sin dbt, para la paridad", "etl/datos.db, without dbt, for the parity")),
+        "panel": (830, 175, "brand:streamlit", say("Panel web", "Web panel"), say("Streamlit: bi/dashboard.py, en solo lectura", "Streamlit: bi/dashboard.py, read-only")),
+        "github": (300, 330, "brand:github", "GitHub", say("repositorio, Actions y el release de la base", "repository, Actions and the release of the database")),
+        "people": (830, 20, "person:visitor", say("Visitante y administrador", "Visitor and administrator"), ""),
+    }, [("load", "odepa", "HTTPS", "flow", "h"), ("load", "ine", "HTTPS", "flow", "h"),
+        ("load", "work", say("lee y escribe", "reads and writes"), "flow", "h"), ("load", "served", say("publica", "publishes"), "flow", "h"),
+        ("load", "backup", say("escribe", "writes"), "flow", "h"), ("panel", "served", say("solo lectura", "read-only"), "flow", "h"),
+        ("people", "panel", say("consulta · lanza la carga", "reads · launches the load"), "order", "v"),
+        ("github", "load", say("ejecuta cada martes", "runs every Tuesday"), "order", "v")], limit=24)
+
+
+def tests_procedure(mode):
+    return graph(mode, say("Procedimiento de las pruebas de seguridad", "Procedure of the security tests"), {
+        "prepare": (80, 30, "brand:git", say("1 · Preparar", "1 · Prepare"), say("copia limpia y secreto falso", "clean copy and fake secret")),
+        "run": (300, 30, "brand:pytest", say("2 · Ejecutar", "2 · Run"), say("los diez casos con pytest", "the ten cases with pytest")),
+        "check": (520, 30, "icon:arrows", say("3 · Comprobar", "3 · Check"), say("contra el resultado esperado", "against the expected result")),
+        "record": (740, 30, "brand:github", say("4 · Registrar", "4 · Record"), say("la evidencia, junto al commit", "the evidence, next to the commit")),
+        "decide": (740, 220, "icon:shield@#199e70", say("5 · Decidir", "5 · Decide"), say("pasa: el cambio queda verificado", "passes: the change is verified")),
+    }, [("prepare", "run", "", "flow", "h"), ("run", "check", "", "flow", "h"), ("check", "record", "", "flow", "h"),
+        ("record", "decide", "", "flow", "v"),
+        ("decide", "run", say("falla: se corrige y se repite desde el 2", "fails: it is fixed and repeated from 2"), "back", "hv")],
+        say("En GitHub, pruebas.yml hace los pasos 2 a 4 en cada push; su resultado avisa, pero no detiene la publicación de main.",
+            "On GitHub, pruebas.yml does steps 2 to 4 on every push; its result warns, but does not stop the publication of main."))
+# endregion
+
+
 # region PRD
 def prd_value(mode):
-    return columns(mode, say("Del dato a la decisión", "From data to decision"), [
-        (say("Fuentes oficiales", "Official sources"), GREEN,
-         [("ODEPA", say("precios mayoristas y al consumidor, cada semana", "wholesale and consumer prices, every week")),
-          ("INE", say("IPC de alimentos, cada mes", "food CPI, every month"))]),
-        (say("GreenOcean", "GreenOcean"), BLUE,
-         [(say("Carga semanal", "Weekly load"), say("descarga, limpia y calcula cada martes", "downloads, cleans and computes every Tuesday")),
-          (say("Puertas de calidad", "Quality gates"), say("nada se publica si algo falla", "nothing is published if something fails"))]),
-        (say("Panel", "Panel"), VIOLET,
-         [("P-1", say("¿qué cambió esta semana?", "what changed this week?")),
-          ("P-2 · P-3", say("¿es normal el precio? ¿cuánto se paga sobre el mayorista?", "is the price normal? how much over wholesale?")),
-          ("P-4 · P-5", say("¿qué subió más que la inflación? ¿son confiables las cifras?", "what rose more than inflation? are the figures reliable?"))]),
-        (say("Decisiones", "Decisions"), AMBER,
-         [(say("Pricing", "Pricing"), say("precio de hoy frente a la época y la inflación", "today's price against the season and inflation")),
-          (say("Compras", "Purchasing"), say("margen entre mayorista y consumidor", "margin between wholesale and consumer")),
-          (say("Gerencia", "Management"), say("qué se movió y qué es inusual", "what moved and what is unusual"))]),
-    ], say("Cada cifra del panel se puede seguir hasta el archivo original de la fuente.",
-           "Every figure of the panel can be traced back to the original file of the source."))
-
+    return graph(mode, say("Del dato a la decisión", "From data to decision"), {
+        "odepa": (70, 30, "source:odepa", "ODEPA", say("precios mayoristas y al consumidor, cada semana", "wholesale and consumer prices, every week")),
+        "ine": (70, 190, "source:ine", "INE", say("IPC de alimentos, cada mes", "food CPI, every month")),
+        "load": (270, 110, "icon:calendar", say("Carga semanal", "Weekly load"), say("descarga, limpia y calcula cada martes", "downloads, cleans and computes every Tuesday")),
+        "gates": (455, 110, "icon:shield@#199e70", say("Puertas de calidad", "Quality gates"), say("nada se publica si algo falla", "nothing is published if something fails")),
+        "panel": (635, 110, "brand:streamlit", say("Panel", "Panel"), say("P-1 a P-5: qué cambió, si es normal, la brecha, la inflación y la confianza", "P-1 to P-5: what changed, whether it is normal, the gap, inflation and trust")),
+        "pricing": (835, 20, "person:visitor", "Pricing", say("precio de hoy frente a la época y la inflación", "today's price against the season and inflation")),
+        "buying": (835, 140, "person:visitor", say("Compras", "Purchasing"), say("margen entre mayorista y consumidor", "margin between wholesale and consumer")),
+        "board": (835, 260, "person:visitor", say("Gerencia", "Management"), say("qué se movió y qué es inusual", "what moved and what is unusual")),
+    }, [("odepa", "load", "CSV", "flow", "h"), ("ine", "load", say("IPC", "CPI"), "flow", "h"),
+        ("load", "gates", "", "flow", "h"), ("gates", "panel", say("si todo pasa", "if all passes"), "flow", "h"),
+        ("panel", "pricing", "", "flow", "h"), ("panel", "buying", "", "flow", "h"), ("panel", "board", "", "flow", "h")],
+        say("Cada cifra del panel se puede seguir hasta el archivo original de la fuente.",
+            "Every figure of the panel can be traced back to the original file of the source."))
 
 def prd_requirements(mode):
-    return columns(mode, say("Los requisitos, por área", "The requirements, by area"), [
-        (say("Carga", "Load"), BLUE, [("RF-01", say("cada martes, sola", "every Tuesday, by itself")),
-                                      ("RF-02", say("ninguna fila se pierde", "no row is lost")),
-                                      ("RF-03", say("solo se publica una carga válida", "only a valid load is published"))]),
-        (say("Datos", "Data"), GREEN, [("RF-04", say("precios reales junto a los nominales", "real prices next to nominal ones")),
-                                       ("RF-05", say("alertas de cambios inusuales", "alerts on unusual changes")),
-                                       ("RNF-02", say("cada cifra se puede comprobar", "every figure can be checked"))]),
-        (say("Panel", "Panel"), VIOLET, [("RF-06", say("SQL abierto y de solo lectura", "open, read-only SQL")),
-                                         ("RF-08", say("informe semanal", "weekly report")),
-                                         ("RNF-05 · RNF-06", say("legible en todo tamaño, en una pantalla", "readable at any size, on one screen"))]),
-        (say("Seguridad y costo", "Security and cost"), AMBER, [("RF-07", say("carga manual protegida con clave", "manual load protected by a code")),
-                                                               ("RNF-03", say("ningún secreto en el repositorio", "no secret in the repository")),
-                                                               ("RNF-01 · RNF-04", say("costo cero; calidad vigilada en cada cambio", "zero cost; quality watched on every change"))]),
-    ], arrows=False)
+    return graph(mode, say("Los requisitos, por área", "The requirements, by area"), {
+        "product": (460, 24, "icon:box", "GreenOcean", say("14 requisitos, cada uno con su prueba", "14 requirements, each with its test")),
+        "load": (115, 190, "icon:calendar", say("Carga", "Load"), say("RF-01 cada martes · RF-02 ninguna fila se pierde · RF-03 solo se publica una carga válida", "RF-01 every Tuesday · RF-02 no row is lost · RF-03 only a valid load is published")),
+        "data": (345, 190, "icon:database", say("Datos", "Data"), say("RF-04 precios reales · RF-05 alertas de cambios inusuales · RNF-02 cada cifra se puede comprobar", "RF-04 real prices · RF-05 alerts on unusual changes · RNF-02 every figure can be checked")),
+        "panel": (575, 190, "brand:streamlit", say("Panel", "Panel"), say("RF-06 SQL de solo lectura · RF-08 informe semanal · RNF-05 y RNF-06 legible, en una pantalla", "RF-06 read-only SQL · RF-08 weekly report · RNF-05 and RNF-06 readable, on one screen")),
+        "safe": (805, 190, "icon:lock", say("Seguridad y costo", "Security and cost"), say("RF-07 carga manual con clave · RNF-03 ningún secreto · RNF-01 costo cero · RNF-04 calidad vigilada", "RF-07 manual load with a code · RNF-03 no secret · RNF-01 zero cost · RNF-04 quality watched")),
+    }, [("product", area, "", "flow", "v") for area in ("load", "data", "panel", "safe")], limit=26)
 # endregion
 
 
@@ -288,51 +419,42 @@ def sad_panel_sequence(mode):
 
 
 def sad_layers(mode):
-    return columns(mode, say("Capas de los datos", "Data layers"), [
-        (say("Aterrizaje", "Landing"), GREY, [("etl/raw.db", say("las filas de ODEPA tal como llegan (SQLite)", "the ODEPA rows as they arrive (SQLite)"))]),
-        (say("Bronce", "Bronze"), AMBER, [("etl/bronze/", say("copia literal en Parquet, por fuente y año", "literal copy in Parquet, by source and year"))]),
-        (say("Plata", "Silver"), BLUE, [("staging", say("tipos y textos de cada fuente", "types and text of each source")),
-                                        (say("intermedio", "intermediate"), say("reglas de negocio, semanas, rechazos y marcas", "business rules, weeks, rejections and flags"))]),
-        (say("Oro", "Gold"), GREEN, [("marts", say("el modelo estrella, el IPC y la auditoría", "the star schema, the CPI and the audit")),
-                                     ("etl/datos.duckdb", say("la base servida que lee el panel", "the served database the panel reads"))]),
-    ], say("El respaldo etl/datos.db calcula los mismos precios sin dbt, para la prueba de paridad.",
-           "The backup etl/datos.db computes the same prices without dbt, for the parity test."))
-
+    return graph(mode, say("Capas de los datos", "Data layers"), {
+        "source": (65, 30, "source:odepa", "ODEPA", say("los CSV tal como se publican", "the CSV files as published")),
+        "landing": (215, 30, "brand:sqlite", say("Aterrizaje", "Landing"), say("etl/raw.db: las filas tal como llegan", "etl/raw.db: the rows as they arrive")),
+        "bronze": (370, 30, "brand:apacheparquet", say("Bronce", "Bronze"), say("copia literal en Parquet, por fuente y año", "literal copy in Parquet, by source and year")),
+        "silver": (530, 30, "brand:dbt", say("Plata", "Silver"), say("staging e intermedio: tipos, reglas, semanas y rechazos", "staging and intermediate: types, rules, weeks and rejections")),
+        "gold": (695, 30, "brand:duckdb", say("Oro", "Gold"), say("marts: el modelo estrella, el IPC y la auditoría, en etl/datos.duckdb", "marts: the star schema, the CPI and the audit, in etl/datos.duckdb")),
+        "panel": (855, 30, "brand:streamlit", say("Panel", "Panel"), say("lee la base servida en solo lectura", "reads the served database read-only")),
+    }, [("source", "landing", "", "flow", "h"), ("landing", "bronze", "", "flow", "h"), ("bronze", "silver", "", "flow", "h"),
+        ("silver", "gold", "", "flow", "h"), ("gold", "panel", "", "flow", "h")],
+        say("El respaldo etl/datos.db calcula los mismos precios sin dbt, para la prueba de paridad.",
+            "The backup etl/datos.db computes the same prices without dbt, for the parity test."), limit=20)
 
 def sad_deployment(mode):
-    return columns(mode, say("Dónde corre cada pieza", "Where each piece runs"), [
-        (say("Computador del autor", "The author's computer"), GREY,
-         [(say("Desarrollo", "Development"), say("el código y las pruebas antes de cada push", "the code and the tests before each push")),
-          ("etl/raw.db", say("el aterrizaje, fuera de git", "the landing database, outside git"))]),
-        ("GitHub", BLUE,
-         [(say("Repositorio, rama main", "Repository, main branch"), say("el código y el puntero de la base", "the code and the database pointer")),
-          (say("Release «base-actual»", "«base-actual» release"), say("una sola copia de la base servida", "a single copy of the served database"))]),
-        ("GitHub Actions", AMBER,
-         [(say("Máquina efímera (Ubuntu)", "Ephemeral machine (Ubuntu)"), say("la carga de cada martes y las pruebas de cada push", "each Tuesday's load and each push's tests")),
-          (say("Caché", "Cache"), say("los CSV de los años cerrados", "the CSV files of the closed years"))]),
-        ("Streamlit Community Cloud", RED,
-         [(say("Panel", "Panel"), say("publicado desde main, en solo lectura", "published from main, read-only")),
-          (say("Secretos", "Secrets"), say("el token de GitHub y la clave de control", "the GitHub token and the control code"))]),
-    ], arrows=False)
+    return graph(mode, say("Dónde corre cada pieza", "Where each piece runs"), {
+        "author": (80, 40, "person:author", say("Computador del autor", "The author's computer"), say("el código y las pruebas antes de cada push; etl/raw.db fuera de git", "the code and the tests before each push; etl/raw.db outside git")),
+        "repo": (330, 40, "brand:github", say("GitHub, rama main", "GitHub, main branch"), say("el código y el puntero de la base", "the code and the database pointer")),
+        "actions": (330, 230, "icon:calendar", "GitHub Actions", say("máquina efímera (Ubuntu): la carga de cada martes y las pruebas de cada push; caché de años cerrados", "ephemeral machine (Ubuntu): each Tuesday's load and each push's tests; cache of closed years")),
+        "release": (600, 230, "icon:box", say("Release «base-actual»", "«base-actual» release"), say("una sola copia de la base servida", "a single copy of the served database")),
+        "cloud": (600, 40, "brand:streamlit", "Streamlit Community Cloud", say("el panel, publicado desde main, en solo lectura", "the panel, published from main, read-only")),
+        "secrets": (840, 40, "icon:key", say("Secretos", "Secrets"), say("el token de GitHub y la clave de control", "the GitHub token and the control code")),
+    }, [("author", "repo", "push", "order", "h"), ("repo", "actions", "", "order", "v"), ("actions", "release", say("publica la base", "publishes the database"), "flow", "h"),
+        ("repo", "cloud", say("despliega main", "deploys main"), "order", "h"), ("release", "cloud", say("descarga y huella", "download and fingerprint"), "flow", "v"),
+        ("cloud", "secrets", "", "check", "h")], limit=26)
 # endregion
 
 
 # region ADR
 def adr_map(mode):
-    return columns(mode, say("Dónde actúa cada decisión", "Where each decision acts"), [
-        (say("Fuentes", "Sources"), GREEN, [("ADR-01", say("solo archivos oficiales", "only official files"))]),
-        (say("Carga", "Load"), BLUE, [("ADR-04", say("datos crudos fuera del repositorio", "raw data outside the repository")),
-                                      ("ADR-10", say("rehacer todo en cada carga", "rebuild everything on each load")),
-                                      ("ADR-11", say("publicar solo si pasan las pruebas", "publish only if the tests pass"))]),
-        (say("Datos", "Data"), VIOLET, [("ADR-19", say("modelo estrella", "star schema")),
-                                        ("ADR-30", say("Parquet, dbt y DuckDB", "Parquet, dbt and DuckDB")),
-                                        ("ADR-33", say("precios reales con el IPC", "real prices with the CPI")),
-                                        ("ADR-34", say("tres bases separadas", "three separate databases"))]),
-        (say("Publicación y costo", "Publication and cost"), AMBER, [("ADR-02", say("GitHub Actions y Streamlit Cloud", "GitHub Actions and Streamlit Cloud")),
-                                                                    ("ADR-31", say("sin nube de pago", "no paid cloud")),
-                                                                    ("ADR-35", say("la base en un release", "the database in a release"))]),
-    ])
-
+    return graph(mode, say("Dónde actúa cada decisión", "Where each decision acts"), {
+        "source": (70, 30, "source:odepa", say("Fuentes", "Sources"), say("ADR-01 solo archivos oficiales", "ADR-01 only official files")),
+        "load": (250, 30, "icon:calendar", say("Carga", "Load"), say("ADR-04 crudos fuera del repositorio · ADR-10 rehacer todo en cada carga", "ADR-04 raw data outside the repository · ADR-10 rebuild everything on each load")),
+        "data": (450, 30, "brand:dbt", say("Datos", "Data"), say("ADR-30 Parquet, dbt y DuckDB · ADR-19 modelo estrella · ADR-33 precios reales con el IPC", "ADR-30 Parquet, dbt and DuckDB · ADR-19 star schema · ADR-33 real prices with the CPI")),
+        "gate": (650, 30, "icon:shield@#199e70", say("Puerta", "Gate"), say("ADR-11 publicar solo si pasan las pruebas · ADR-34 tres bases separadas", "ADR-11 publish only if the tests pass · ADR-34 three separate databases")),
+        "publish": (850, 30, "brand:streamlit", say("Publicación y costo", "Publication and cost"), say("ADR-35 la base en un release · ADR-02 Actions y Streamlit · ADR-31 sin nube de pago", "ADR-35 the database in a release · ADR-02 Actions and Streamlit · ADR-31 no paid cloud")),
+    }, [("source", "load", "", "flow", "h"), ("load", "data", "", "flow", "h"), ("data", "gate", "", "flow", "h"),
+        ("gate", "publish", "", "flow", "h")], limit=22)
 
 def adr_timeline(mode):
     return timeline(mode, say("Cuándo se tomó cada decisión", "When each decision was taken"), [
@@ -346,34 +468,38 @@ def adr_timeline(mode):
 
 
 def adr_before_after(mode):
-    return compare(mode, say("ADR-35: la base servida, antes y después", "ADR-35: the served database, before and after"),
-                   (say("Antes", "Before"), RED,
-                    [(say("Cada carga hacía un commit de la base", "Each load committed the database"), say("unos 48 MB por carga", "about 48 MB per load")),
-                     (say("Git guardaba cada versión", "Git kept every version"), say("cerca de 1 GB más por año", "about 1 GB more per year"))]),
-                   (say("Después", "After"), GREEN,
-                    [(say("Un release reemplazado por cada carga", "A release replaced by each load"), say("una sola copia publicada", "a single published copy")),
-                     (say("Git guarda solo el puntero", "Git keeps only the pointer"), say("huella, tamaño y fecha", "fingerprint, size and date"))]),
-                   say("Medidas del 24-10-2026.", "Measurements of 2026-10-24."))
+    return graph(mode, say("ADR-35: la base servida, antes y después", "ADR-35: the served database, before and after"), {
+        "load1": (90, 30, "icon:calendar", say("Antes: cada carga", "Before: each load"), say("hacía un commit de la base, unos 48 MB", "committed the database, about 48 MB")),
+        "git1": (460, 30, "icon:commit@#e5484d", say("Historial de Git", "Git history"), say("guardaba cada versión: cerca de 1 GB más por año", "kept every version: about 1 GB more per year")),
+        "panel1": (820, 30, "brand:streamlit", say("Panel", "Panel"), say("leía la base del repositorio", "read the database from the repository")),
+        "load2": (90, 190, "icon:calendar", say("Después: cada carga", "After: each load"), say("reemplaza el archivo del release", "replaces the file of the release")),
+        "release": (460, 190, "icon:box@#199e70", say("Release «base-actual»", "«base-actual» release"), say("una sola copia publicada; en Git, solo el puntero", "a single published copy; in Git, only the pointer")),
+        "panel2": (820, 190, "brand:streamlit", say("Panel", "Panel"), say("descarga la base y comprueba su huella", "downloads the database and checks its fingerprint")),
+    }, [("load1", "git1", "commit", "back", "h"), ("git1", "panel1", "", "back", "h"),
+        ("load2", "release", say("reemplaza", "replaces"), "flow", "h"), ("release", "panel2", say("huella SHA-256", "SHA-256 fingerprint"), "flow", "h")],
+        say("Medidas del 24-10-2026.", "Measurements of 2026-10-24."), limit=26)
 # endregion
 
 
 # region Test plan (with security)
 def tests_levels(mode):
-    return columns(mode, say("Qué se prueba y cuándo", "What is tested and when"), [
-        (say("En cada carga", "On each load"), BLUE,
-         [(say("Pruebas de dbt", "dbt tests"), say("claves, valores, relaciones y conciliación", "keys, values, relationships and reconciliation")),
-          (say("Puerta de publicación", "Publication gate"), say("no publica una carga incompleta", "does not publish an incomplete load")),
-          (say("Paridad", "Parity"), say("dbt y el ETL en Python dan lo mismo", "dbt and the Python ETL give the same")),
-          (say("Reconstrucción", "Rebuild"), say("cada precio, desde las filas crudas", "each price, from the raw rows"))]),
-        (say("En cada push", "On every push"), GREEN,
-         [(say("Auditoría de cifras", "Figure audit"), say("las cifras del panel, contra la base", "the panel's figures, against the database")),
-          (say("Panel", "Panel"), say("cada página se dibuja sin errores", "each page draws without errors")),
-          (say("Seguridad", "Security"), say("los diez ataques S-01 a S-10", "the ten attacks S-01 to S-10"))]),
-        (say("Antes de un cambio visual", "Before a visual change"), AMBER,
-         [(say("Medición de pantallas", "Screen measurement"), say("cada página en una pantalla", "each page on one screen")),
-          (say("Impresión", "Printing"), say("cada documento impreso igual a su página", "each printed document equal to its page"))]),
-    ], arrows=False)
-
+    load, push, visual = say("En cada carga", "On each load"), say("En cada push", "On every push"), say("Antes de un cambio visual", "Before a visual change")
+    return graph(mode, say("Qué se prueba y cuándo", "What is tested and when"), {
+        "load": (70, 30, "icon:calendar", load, say("semanal.yml, cada martes", "semanal.yml, every Tuesday")),
+        "dbt": (270, 30, "brand:dbt", say("Pruebas de dbt", "dbt tests"), say("claves, valores, relaciones y conciliación", "keys, values, relationships and reconciliation")),
+        "gate": (470, 30, "icon:shield@#199e70", say("Puerta de publicación", "Publication gate"), say("no publica una carga incompleta", "does not publish an incomplete load")),
+        "parity": (670, 30, "icon:arrows", say("Paridad", "Parity"), say("dbt y el ETL en Python dan lo mismo", "dbt and the Python ETL give the same")),
+        "rebuild": (850, 30, "brand:sqlite", say("Reconstrucción", "Rebuild"), say("cada precio, desde las filas crudas", "each price, from the raw rows")),
+        "push": (70, 190, "icon:commit", push, say("pruebas.yml, en cada cambio", "pruebas.yml, on every change")),
+        "audit": (270, 190, "brand:pytest", say("Auditoría de cifras", "Figure audit"), say("las cifras del panel, contra la base", "the panel's figures, against the database")),
+        "panel": (470, 190, "brand:streamlit", say("Panel", "Panel"), say("cada página se dibuja sin errores", "each page draws without errors")),
+        "security": (670, 190, "icon:lock", say("Seguridad", "Security"), say("los diez ataques S-01 a S-10", "the ten attacks S-01 to S-10")),
+        "visual": (70, 340, "icon:eye", visual, say("Playwright, fuera del proyecto", "Playwright, outside the project")),
+        "measure": (270, 340, "icon:ruler", say("Medición de pantallas", "Screen measurement"), say("cada página en una pantalla", "each page on one screen")),
+        "print": (470, 340, "icon:printer", say("Impresión", "Printing"), say("cada documento impreso igual a su página", "each printed document equal to its page")),
+    }, [("load", "dbt", "", "check", "h"), ("dbt", "gate", "", "check", "h"), ("gate", "parity", "", "check", "h"), ("parity", "rebuild", "", "check", "h"),
+        ("push", "audit", "", "check", "h"), ("audit", "panel", "", "check", "h"), ("panel", "security", "", "check", "h"),
+        ("visual", "measure", "", "check", "h"), ("measure", "print", "", "check", "h")], limit=22)
 
 def tests_manual_sequence(mode):
     return sequence(mode, say("Secuencia de una carga manual con la clave", "Sequence of a manual load with the code"), [
@@ -412,34 +538,35 @@ def tests_ci_sequence(mode):
 
 
 def tests_actors(mode):
-    return columns(mode, say("Quién participa en la seguridad", "Who takes part in security"), [
-        (say("Visitante", "Visitor"), GREEN, [(say("Sin cuenta", "No account"), say("lee el panel y usa el SQL de solo lectura", "reads the panel and uses read-only SQL"))]),
-        (say("Autor", "Author"), AMBER, [(say("Clave de control", "Control code"), say("abre el botón de la carga manual", "opens the manual load button")),
-                                         (say("Inicio de sesión", "Sign-in"), say("GitHub y Streamlit, con dos pasos", "GitHub and Streamlit, two-step"))]),
-        ("Streamlit", RED, [(say("Secretos del panel", "Panel secrets"), say("token y clave, fuera del código", "token and code, outside the code")),
-                            (say("Base en solo lectura", "Read-only database"), say("ninguna página cambia un dato", "no page changes a value"))]),
-        ("GitHub", BLUE, [(say("Repositorio público", "Public repository"), say("sin ningún secreto", "with no secret")),
-                          (say("Workflow con permisos mínimos", "Workflow with least privilege"), say("solo contenido e issues", "only content and issues"))]),
-    ], arrows=False)
-# endregion
-
-
-# region Runbook
+    return graph(mode, say("Quién participa en la seguridad", "Who takes part in security"), {
+        "visitor": (90, 20, "person:visitor", say("Visitante", "Visitor"), say("sin cuenta: lee el panel y usa el SQL de solo lectura", "no account: reads the panel and uses the read-only SQL")),
+        "author": (90, 230, "person:author", say("Autor", "Author"), say("su cuenta en GitHub y Streamlit, con dos pasos", "their account on GitHub and Streamlit, with two steps")),
+        "panel": (370, 125, "brand:streamlit", "Streamlit", say("compara la clave en tiempo constante; nunca muestra el token", "compares the code in constant time; never shows the token")),
+        "duckdb": (640, 20, "brand:duckdb", "DuckDB", say("base en solo lectura, sin archivos ni red", "read-only database, no files or network")),
+        "secrets": (640, 230, "icon:key", say("Secretos del panel", "Panel secrets"), say("CONTROL_CODE y GITHUB_TOKEN, fuera del repositorio", "CONTROL_CODE and GITHUB_TOKEN, outside the repository")),
+        "repo": (835, 20, "brand:github", say("Repositorio", "Repository"), say("público, sin ningún secreto", "public, with no secret")),
+        "actions": (835, 230, "icon:calendar", "GitHub Actions", say("workflow con permisos mínimos: contenido e issues", "workflow with least privilege: content and issues")),
+    }, [("visitor", "panel", say("SQL con límites", "SQL with limits"), "order", "h", "start"),
+        ("author", "panel", say("clave de control", "control code"), "order", "h", "start"),
+        ("panel", "duckdb", say("solo lectura", "read-only"), "flow", "h"),
+        ("panel", "secrets", say("lee", "reads"), "check", "h"),
+        ("secrets", "actions", say("token: carga manual", "token: manual load"), "order", "h"),
+        ("repo", "actions", say("workflow", "workflow"), "order", "v")], limit=24)
 def manual_fault_tree(mode):
-    return tree(mode, say("Qué hacer cuando algo falla", "What to do when something fails"),
-                say("Llegó el correo «Run failed» o un paso está en rojo", "The «Run failed» email arrived or a step is red"), [
-        (say("Falló la descarga de ODEPA", "The ODEPA download failed"), say("Esperar unas horas y volver a lanzar", "Wait a few hours and launch again"),
-         say("Con UNEXPECTED_HEADER, revisar el archivo y adaptar el agente.", "With UNEXPECTED_HEADER, check the file and adapt the agent.")),
-        (say("Falló el ETL de respaldo", "The backup ETL failed"), say("Revisar el archivo en ODEPA", "Check the file at ODEPA"),
-         say("Una región o un canal nuevos se agregan a las listas del ETL.", "A new region or channel is added to the lists of the ETL.")),
-        (say("Falló dbt o TOO_FEW_ROWS", "dbt or TOO_FEW_ROWS failed"), say("Leer en el log qué modelo o prueba falló", "Read in the log which model or test failed"),
-         say("Suele nombrar la tabla y la regla.", "It usually names the table and the rule.")),
-        (say("Falló pytest", "pytest failed"), say("Leer qué prueba falló", "Read which test failed"),
-         say("Suele indicar el producto o la semana.", "It usually names the product or the week.")),
-        (say("Falló la publicación", "Publication failed"), say("Revisar los permisos del workflow", "Check the workflow permissions"),
-         say("Settings → Actions → Workflow permissions: «Read and write».", "Settings → Actions → Workflow permissions: «Read and write».")),
-    ], say("Mientras tanto, el panel muestra la última carga válida.", "Meanwhile, the panel shows the last valid load."))
-
+    rows = [(say("Falló la descarga de ODEPA", "The ODEPA download failed"), say("Esperar unas horas y volver a lanzar; con UNEXPECTED_HEADER, adaptar el agente", "Wait a few hours and launch again; with UNEXPECTED_HEADER, adapt the agent")),
+            (say("Falló el ETL de respaldo", "The backup ETL failed"), say("Revisar el archivo en ODEPA; una región o un canal nuevos van a las listas del ETL", "Check the file at ODEPA; a new region or channel goes into the lists of the ETL")),
+            (say("Falló dbt o TOO_FEW_ROWS", "dbt or TOO_FEW_ROWS failed"), say("Leer en el log qué modelo o prueba falló; nombra la tabla y la regla", "Read in the log which model or test failed; it names the table and the rule")),
+            (say("Falló pytest", "pytest failed"), say("Leer qué prueba falló; indica el producto o la semana", "Read which test failed; it names the product or the week")),
+            (say("Falló la publicación", "Publication failed"), say("Revisar Settings → Actions → Workflow permissions: «Read and write»", "Check Settings → Actions → Workflow permissions: «Read and write»"))]
+    nodes = {"root": (90, 200, "icon:mail@#e5484d", say("Llegó «Run failed»", "«Run failed» arrived"), say("o un paso está en rojo", "or a step is red"))}
+    edges = []
+    for index, (when, then) in enumerate(rows):
+        y = 20 + 95 * index
+        nodes[f"w{index}"] = (380, y, "icon:warning@#c98500", when, "")
+        nodes[f"t{index}"] = (720, y, "icon:tool", say("Qué hacer", "What to do"), then)
+        edges += [("root", f"w{index}", "", "back", "h"), (f"w{index}", f"t{index}", "", "flow", "h")]
+    return graph(mode, say("Qué hacer cuando algo falla", "What to do when something fails"), nodes, edges,
+                 say("Mientras tanto, el panel muestra la última carga válida.", "Meanwhile, the panel shows the last valid load."), limit=40)
 
 def manual_calendar(mode):
     return timeline(mode, say("Tareas periódicas", "Periodic tasks"), [
@@ -497,66 +624,72 @@ def index_themes(mode):
 
 
 def index_map(mode):
-    return columns(mode, say("Dónde actúa cada tema en el sistema", "Where each theme acts in the system"), [
-        (say("Datos", "Data"), GREEN, [(say("Fuentes e ingesta", "Sources and ingestion"), say("qué se descarga y cómo", "what is downloaded and how")),
-                                       (say("Modelo y reglas", "Model and rules"), say("cómo se calcula cada precio", "how each price is computed"))]),
-        (say("Carga", "Load"), BLUE, [(say("Pipeline y publicación", "Pipeline and publication"), say("cuándo se publica", "when it is published")),
-                                      (say("Calidad y auditoría", "Quality and audit"), say("qué la detiene", "what stops it"))]),
-        (say("Operación", "Operations"), AMBER, [(say("Seguridad", "Security"), say("quién puede hacer qué", "who can do what")),
-                                                (say("Operación", "Operations"), say("cómo se sabe qué pasó", "how we know what happened"))]),
-        (say("Lectura", "Reading"), VIOLET, [(say("Panel", "Panel"), say("cómo se ve en una pantalla", "how it looks on one screen")),
-                                            (say("Documentación", "Documentation"), say("cómo se explica", "how it is explained"))]),
-    ])
-
+    return graph(mode, say("Dónde actúa cada tema en el sistema", "Where each theme acts in the system"), {
+        "sources": (70, 30, "source:odepa", say("Fuentes e ingesta", "Sources and ingestion"), say("qué se descarga y cómo", "what is downloaded and how")),
+        "model": (250, 30, "brand:dbt", say("Modelo y reglas", "Model and rules"), say("cómo se calcula cada precio", "how each price is computed")),
+        "pipeline": (430, 30, "icon:calendar", say("Pipeline y publicación", "Pipeline and publication"), say("cuándo se publica", "when it is published")),
+        "quality": (610, 30, "icon:shield@#199e70", say("Calidad y auditoría", "Quality and audit"), say("qué detiene una carga", "what stops a load")),
+        "panel": (790, 30, "brand:streamlit", say("Panel", "Panel"), say("cómo se lee en una pantalla", "how it reads on one screen")),
+        "security": (430, 190, "icon:lock", say("Seguridad", "Security"), say("quién puede hacer qué", "who can do what")),
+        "ops": (610, 190, "icon:pulse", say("Operación", "Operations"), say("cómo se sabe qué pasó", "how we know what happened")),
+        "docs": (790, 190, "icon:files", say("Documentación", "Documentation"), say("cómo se explica", "how it is explained")),
+    }, [("sources", "model", "", "flow", "h"), ("model", "pipeline", "", "flow", "h"), ("pipeline", "quality", "", "flow", "h"),
+        ("quality", "panel", "", "flow", "h"), ("security", "pipeline", "", "check", "v"), ("ops", "quality", "", "check", "v"),
+        ("docs", "panel", "", "back", "v")], limit=20)
 
 def index_adr(mode):
-    return tree(mode, say("Cómo llega una decisión a este índice", "How a decision reaches this index"),
-                say("Cada cambio de comportamiento queda en el registro de decisiones", "Each change of behavior is kept in the decision log"), [
-        (say("Cambia la arquitectura", "It changes the architecture"), say("Este índice y un registro ADR", "This index and an ADR record"),
-         say("El ADR explica el contexto, las alternativas y las consecuencias.", "The ADR explains the context, the alternatives and the consequences.")),
-        (say("Cambia uno de los ocho temas", "It changes one of the eight themes"), say("Este índice", "This index"),
-         say("Una fila con lo que se decidió, en su tema.", "One row with what was decided, in its theme.")),
-        (say("Es un ajuste menor", "It is a minor adjustment"), say("Solo el registro completo", "Only the full log"),
-         say("En docs/DECISIONES.md, en orden cronológico.", "In docs/DECISIONES.md, in chronological order.")),
-    ], say("Cada decisión lleva sus pruebas, que corren en cada cambio.", "Each decision carries its tests, which run on every change."))
+    nodes = {"root": (100, 120, "icon:files", say("Registro de decisiones", "Decision log"), say("cada cambio de comportamiento, con sus pruebas", "each change of behavior, with its tests"))}
+    rows = [(say("Cambia la arquitectura", "It changes the architecture"), "icon:star", say("Este índice y un registro ADR", "This index and an ADR record"), say("contexto, alternativas y consecuencias", "context, alternatives and consequences")),
+            (say("Cambia uno de los ocho temas", "It changes one of the eight themes"), "icon:layers", say("Este índice", "This index"), say("una fila con lo que se decidió", "one row with what was decided")),
+            (say("Es un ajuste menor", "It is a minor adjustment"), "icon:commit", say("Solo el registro completo", "Only the full log"), say("docs/DECISIONES.md, en orden cronológico", "docs/DECISIONES.md, in chronological order"))]
+    edges = []
+    for index, (when, icon, where, detail) in enumerate(rows):
+        y = 20 + 110 * index
+        nodes[f"w{index}"] = (420, y, "icon:warning@#c98500", when, "")
+        nodes[f"t{index}"] = (740, y, icon, where, detail)
+        edges += [("root", f"w{index}", "", "flow", "h"), (f"w{index}", f"t{index}", "", "flow", "h")]
+    return graph(mode, say("Cómo llega una decisión a este índice", "How a decision reaches this index"), nodes, edges, limit=30)
 # endregion
 
 
 # region Glossary
 def glossary_layers(mode):
-    return columns(mode, say("Los términos de los datos, en orden", "The data terms, in order"), [
-        (say("Fuente", "Source"), GREEN, [("CSV", say("el archivo que publica ODEPA", "the file ODEPA publishes")), ("SHA-256", say("su huella", "its fingerprint"))]),
-        (say("Aterrizaje y bronce", "Landing and bronze"), AMBER, [(say("Aterrizaje", "Landing"), "etl/raw.db"), ("Parquet", say("copia exacta", "exact copy"))]),
-        (say("Plata", "Silver"), BLUE, [("dbt", "staging · " + say("intermedio", "intermediate")), ("RN", say("reglas de negocio", "business rules"))]),
-        (say("Oro", "Gold"), VIOLET, [(say("Modelo estrella", "Star schema"), say("hechos y dimensiones", "facts and dimensions")),
-                                       (say("Base servida", "Served database"), "etl/datos.duckdb")]),
-    ])
-
+    return graph(mode, say("Los términos de los datos, en orden", "The data terms, in order"), {
+        "csv": (70, 30, "icon:file", "CSV", say("el archivo que publica ODEPA; su huella es el SHA-256", "the file ODEPA publishes; its fingerprint is the SHA-256")),
+        "landing": (250, 30, "brand:sqlite", say("Aterrizaje", "Landing"), "etl/raw.db"),
+        "bronze": (430, 30, "brand:apacheparquet", say("Bronce", "Bronze"), say("copia exacta en Parquet", "exact copy in Parquet")),
+        "silver": (610, 30, "brand:dbt", say("Plata", "Silver"), say("staging e intermedio de dbt; las RN, reglas de negocio", "dbt staging and intermediate; the RN, business rules")),
+        "gold": (790, 30, "brand:duckdb", say("Oro", "Gold"), say("el modelo estrella en la base servida, etl/datos.duckdb", "the star schema in the served database, etl/datos.duckdb")),
+    }, [("csv", "landing", "", "flow", "h"), ("landing", "bronze", "", "flow", "h"), ("bronze", "silver", "", "flow", "h"),
+        ("silver", "gold", "", "flow", "h")], limit=22)
 
 def glossary_actors(mode):
-    return columns(mode, say("Actores y sistemas", "Actors and systems"), [
-        (say("Fuentes", "Sources"), GREEN, [("ODEPA", say("precios", "prices")), ("INE", say("IPC", "CPI"))]),
-        (say("Plataformas", "Platforms"), BLUE, [("GitHub", say("código, release e issues", "code, release and issues")),
-                                                 ("GitHub Actions", say("la carga y las pruebas", "the load and the tests")),
-                                                 ("Streamlit Cloud", say("el panel", "the panel"))]),
-        (say("Personas", "People"), AMBER, [(say("Visitante", "Visitor"), say("lee el panel", "reads the panel")),
-                                            (say("Autor", "Author"), say("mantiene el proyecto", "maintains the project"))]),
-    ], arrows=False)
-
+    return graph(mode, say("Actores y sistemas", "Actors and systems"), {
+        "odepa": (70, 30, "source:odepa", "ODEPA", say("precios", "prices")),
+        "ine": (70, 180, "source:ine", "INE", say("IPC", "CPI")),
+        "actions": (290, 105, "icon:calendar", "GitHub Actions", say("la carga y las pruebas", "the load and the tests")),
+        "github": (500, 105, "brand:github", "GitHub", say("código, release e issues", "code, release and issues")),
+        "streamlit": (690, 105, "brand:streamlit", "Streamlit Cloud", say("el panel", "the panel")),
+        "visitor": (860, 30, "person:visitor", say("Visitante", "Visitor"), say("lee el panel", "reads the panel")),
+        "author": (860, 180, "person:author", say("Autor", "Author"), say("mantiene el proyecto", "maintains the project")),
+    }, [("odepa", "actions", "", "flow", "h"), ("ine", "actions", "", "flow", "h"), ("actions", "github", "", "flow", "h"),
+        ("github", "streamlit", "", "flow", "h"), ("streamlit", "visitor", "", "flow", "h"), ("streamlit", "author", "", "flow", "h")], limit=20)
 
 def glossary_figure(mode):
-    return columns(mode, say("De la fuente a la cifra", "From the source to the figure"), [
-        (say("Fila", "Row"), GREY, [(say("Una cotización", "A quote"), say("tal como llega", "as it arrives"))]),
-        (say("Validación", "Validation"), RED, [("RN-11", say("se carga o se rechaza", "loaded or rejected"))]),
-        (say("Precio semanal", "Weekly price"), BLUE, [(say("Por producto, región y canal", "By product, region and channel"), say("un lunes por semana", "one Monday per week"))]),
-        (say("Indicador", "Indicator"), VIOLET, [("KPI", say("el cambio, el margen, el precio real", "the change, the margin, the real price"))]),
-        (say("Alerta", "Alert"), AMBER, [(say("Alerta de precio", "Price alert"), say("cambio inusual de al menos 10 %", "unusual change of at least 10 %"))]),
-    ])
+    return graph(mode, say("De la fuente a la cifra", "From the source to the figure"), {
+        "row": (70, 30, "icon:file", say("Fila", "Row"), say("una cotización, tal como llega", "a quote, as it arrives")),
+        "check": (250, 30, "icon:check@#199e70", say("Validación", "Validation"), say("RN-11: se carga o se rechaza", "RN-11: loaded or rejected")),
+        "week": (430, 30, "icon:calendar", say("Precio semanal", "Weekly price"), say("por producto, región y canal; un lunes por semana", "by product, region and channel; one Monday per week")),
+        "kpi": (610, 30, "icon:chart", say("Indicador", "Indicator"), say("KPI: el cambio, el margen, el precio real", "KPI: the change, the margin, the real price")),
+        "alert": (790, 30, "icon:bell@#e5484d", say("Alerta de precio", "Price alert"), say("cambio inusual de al menos 10 %", "unusual change of at least 10 %")),
+    }, [("row", "check", "", "flow", "h"), ("check", "week", "", "flow", "h"), ("week", "kpi", "", "flow", "h"),
+        ("kpi", "alert", "", "flow", "h")], limit=22)
 # endregion
 
 
 # Marker → builder. The heights are automatic: each frame takes the height of its figure.
 FIGURES = {
+    "contexto": sad_context, "contenedores": sad_containers, "sop": tests_procedure,
     "valor": prd_value, "requisitos": prd_requirements,
     "secuencia_carga": sad_weekly_sequence, "secuencia_panel": sad_panel_sequence, "capas": sad_layers,
     "despliegue": sad_deployment,

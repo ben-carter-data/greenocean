@@ -623,7 +623,7 @@ def test_manual_is_a_procedural_document_without_presentation_cards():
     for heading in ("## 2. Qué ocurre automáticamente", "## 4. Fallas de la carga semanal", "## 8. Límites conocidos"):
         assert heading in text
     assert 'class="info-card"' not in text
-    assert '.github/workflows/semanal.yml' in text
+    assert '.github/workflows/semanal.yml' in text.replace("\u200b", "")  # D-297: code breaks only at its separators
 
 
 def test_d057_every_rejection_reason_of_the_etl_is_explained():

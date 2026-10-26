@@ -1422,7 +1422,11 @@ def build_style_css(mode):
     .st-key-project_document [data-testid="stIFrame"] {{width:calc(100% + 80px) !important; margin:0 -40px;}}
     /* Evidence cells hold long file and test names: they wrap instead of widening the table. */
     .st-key-project_document table {{table-layout:auto; width:100%;}}
-    .st-key-project_document td code {{white-space:normal; overflow-wrap:anywhere; font-size:.78rem;}}
+    .st-key-project_document td code {{white-space:normal; overflow-wrap:normal; word-break:normal; font-size:.78rem;}}
+    /* D-297: sober inline code: the text color on a faint tint, never Streamlit's bright green. */
+    .st-key-project_document code {{color:{palette['strong_text']} !important; background:color-mix(in srgb, {palette['card_border']} 45%, transparent) !important;
+        border:0 !important; border-radius:4px; padding:1px 5px !important; font-size:.8em; font-weight:500;
+        font-family:ui-monospace, SFMono-Regular, Menlo, monospace;}}
     /* D-290: a first cell may be a whole sentence; an identifier such as RF-01 never breaks at its hyphen anyway. */
     .st-key-project_document td:first-child, .st-key-project_document th:first-child {{white-space:normal; min-width:6.5em;}}
     @media (max-width:900px) {{ .st-key-project_document {{padding:22px 18px 26px;}} }}
@@ -7225,6 +7229,15 @@ def show_app_map_page(mode):
     st.html(app_map.build_map_html(charts.get_palette(mode), addresses), unsafe_allow_javascript=True)
 
 
+CODE_SPAN = re.compile(r"`([^`\n]+)`")
+
+
+def soften_code_breaks(text):
+    """D-297: a name in code may break only after «_», «/», «.» or «::», never in the middle of a word: a zero-width
+    space after each of them (in the page only; the file keeps its text)."""
+    return CODE_SPAN.sub(lambda match: "`" + re.sub(r"(::|[_/.](?=\w))", "\\1\u200b", match.group(1)) + "`", text)
+
+
 def show_project_document(mode, title):
     """A document of docs/ as a page: the same text as in GitHub, its diagrams drawn
     from the live project, no code."""
@@ -7242,7 +7255,7 @@ def show_project_document(mode, title):
                      f'target="_self">{html.escape(match.group(1))}</a>',
                      link_document_views(documents_folder.field(header, "related")).split("<a id=", 1)[0])
     cover = documents_folder.build_cover_html(text, related)
-    text = documents_folder.strip_header_table(re.sub(r"\A# .*\n", "", text))
+    text = soften_code_breaks(documents_folder.strip_header_table(re.sub(r"\A# .*\n", "", text)))
     st.markdown(documents_folder.build_cover_css(charts.get_palette(mode)), unsafe_allow_html=True)
     with st.container(key="project_document"):
         st.markdown(cover, unsafe_allow_html=True)
