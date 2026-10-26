@@ -104,11 +104,13 @@ def test_change_chip_is_red_for_rises_and_blue_for_falls():
 
 
 @needs_database
-def test_direct_entry_opens_corporate_dashboard_without_profile_dialog():
+def test_d295_a_first_visit_chooses_its_profile_before_anything_else():
+    """D-295 replaces the open entry: an address with a retired profile is cleaned and the profile dialog asks, on top
+    of the Resumen and with no way to close it but choosing."""
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params["perfil"] = "Reclutamiento"
     app.run()
-    assert not app.exception and not app.get("dialog")
+    assert not app.exception and app.get("dialog")
     assert "perfil" not in app.query_params
     assert not [box for box in app.selectbox if box.label in ("Perfil", "Tema")]
     assert app.radio(key="theme_field").value == dashboard.DEFAULT_THEME
@@ -1327,13 +1329,15 @@ def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
 def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
     """The trigger moved into the shared sidebar footer (D-096); its CSS must follow (D-100)."""
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    app.query_params['vista'] = dashboard.PAGE_ARCHITECTURE
+    app.query_params.update({'vista': dashboard.PAGE_ARCHITECTURE, 'perfil': dashboard.PROFILE_PROFESSIONAL})
     app.run()
     assert not app.exception
     # D-169: the trigger lives on top of the Resumen only; other pages carry neither it
     # nor the dialog's stylesheet.
     assert not [button for button in app.button if str(button.key) == 'home_alert_trigger']
-    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params['perfil'] = dashboard.PROFILE_PROFESSIONAL
+    app.run()
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
     assert '.home-alert-gallery-legend' in markup and '[class*="st-key-home_alert_card_"]' in markup
     app.button(key='home_alert_trigger').click().run()
@@ -1678,3 +1682,28 @@ def test_d282_every_preview_shows_the_index_of_its_document():
         index = documents_folder.read_index(text)
         assert len(index) >= 2, page
         assert all(entry.split(" · ")[0] in text for entry in index), page
+
+
+
+@needs_database
+def test_d295_the_public_profile_sees_the_business_pages_and_unlocks_the_rest_with_one_click():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params["perfil"] = dashboard.PROFILE_PUBLIC
+    app.run()
+    assert not app.exception and not app.get("dialog")
+    labels = {link.proto.label for link in app.sidebar.get("page_link")}
+    business = next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
+    assert {dashboard.SIDEBAR_LABELS.get(view, view) for view in business} <= labels
+    assert dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_DIAGRAMS, dashboard.PAGE_DIAGRAMS) not in labels
+    assert "Documentos" not in labels  # the folder tile is for the professional profile
+    app.button(key="profile_unlock").click().run()
+    assert app.query_params["perfil"] == dashboard.PROFILE_PROFESSIONAL
+    labels = {link.proto.label for link in app.sidebar.get("page_link")}
+    assert dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_DIAGRAMS, dashboard.PAGE_DIAGRAMS) in labels
+
+
+def test_d295_the_professional_menu_reads_like_a_cv_and_every_link_keeps_the_profile():
+    assert [key for key, *_ in dashboard.MENU_BLOCKS] == ["negocio", "ingenieria", "devops", "stack", "fuentes", "documentos"]
+    assert dashboard.PUBLIC_BLOCKS == {"negocio", "fuentes"}
+    source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
+    assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep ?perfil=

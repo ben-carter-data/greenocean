@@ -56,7 +56,7 @@ GreenOcean does that work automatically and leaves each step in view.
 
 [[diagrama:casos]]
 
-The panel is read-only and needs no account. The administrator, the author of the project, maintains the code and the secrets, answers ad hoc SQL queries and can launch a manual load with the control code.
+The panel is read-only and needs no account. On entry the reader chooses a view: the user view shows the business (the dashboard, the weekly summary and prices against inflation) and the professional view, the whole project in order of importance; one click goes from one to the other. The administrator, the author of the project, maintains the code and the secrets, answers ad hoc SQL queries and can launch a manual load with the control code.
 
 ## 4. Business questions
 

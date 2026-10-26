@@ -2263,3 +2263,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - «Ver todas» y «Diferencia en puntos» tienen su inglés;
   - la lectura ampliada ocupa algo menos de alto, así la página en inglés cabe en 1440 × 790.
 - **Pruebas:** `tests/test_inflation_view.py::test_d294_*` (las etiquetas finales y el máximo son valores de la serie; la regla usa el mes más cercano y la diferencia es la resta de los dos valores) y `tests/test_i18n.py::test_d294_*` (la serie del IPC se llama igual en los datos Arrow y en la escala).
+
+## D-295 · Dos vistas al entrar: usuario y profesional
+
+- **Pedido del autor:** una persona común ve solo lo que necesita; un perfil profesional (data engineering, business analysis, BI, DevOps, reclutamiento) ve todo, en orden de CV. Se pide una vez al entrar, en una pantalla simple y sin texto de más.
+- **Decisión:**
+  - al entrar, una ventana que no se puede cerrar sin elegir pregunta «Elige tu vista»: «Vista de usuario» o «Vista profesional» (debajo, pequeño: Data Eng · BA · BI · DevOps). La elección queda en la sesión y en la dirección (`?perfil=consulta` o `?perfil=profesional`), así un enlace compartido abre la misma vista;
+  - la vista de usuario muestra en el menú solo Negocio · BI y las fuentes; la carpeta de documentos y las secciones técnicas no aparecen. Un botón «Ver todo el proyecto» las desbloquea con un clic, sin clave;
+  - la vista profesional muestra todo en el orden de un CV: el negocio, la ingeniería de datos, la operación y la seguridad, el stack y la documentación. «Cambiar vista» vuelve a preguntar;
+  - una dirección antigua con un perfil retirado («Reclutamiento», «Analista BI») se limpia y la ventana pregunta. Reemplaza la entrada sin perfil de D-213.
+- **Pruebas:** `tests/test_dashboard.py::test_d295_*`: la primera visita pregunta; la vista de usuario ve el negocio y desbloquea el resto con un clic; el menú profesional sigue el orden de un CV y los enlaces conservan la vista. `tests/test_i18n.py`: la ventana en inglés.

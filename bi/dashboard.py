@@ -268,7 +268,17 @@ RETIRED_THEMES = {charts.MODE_LIGHT: charts.MODE_CORPORATE, "ChatGPT": charts.MO
                   "Grafito": charts.MODE_GRAPHITE}
 DEFAULT_THEME = charts.MODE_CORPORATE
 KPI_PARAMETER = "kpi"
-PROFILE_PARAMETER = "visitor_profile"
+# D-295: two profiles, asked once on entry. «Consulta» (anyone who comes to read prices) sees the business pages;
+# «Profesional» (data engineering, business analysis, recruiting) sees the whole project, in the order of a CV.
+PROFILE_PARAMETER = "perfil"
+PROFILE_STATE = "visitor_profile"
+PROFILE_PUBLIC, PROFILE_PROFESSIONAL = "consulta", "profesional"
+PROFILES = {
+    PROFILE_PUBLIC: ("Vista de usuario", "", ":material/person:"),
+    PROFILE_PROFESSIONAL: ("Vista profesional", "Data Eng · BA · BI · DevOps", ":material/work:"),
+}
+# What the public profile sees in the menu; the rest is one click away («Ver todo el proyecto»).
+PUBLIC_BLOCKS = {"negocio", "fuentes"}
 
 # Choices shown first when they exist, so every page opens with a known case.
 DEFAULT_GROUP = "Hortalizas"
@@ -521,6 +531,73 @@ def settle_theme():
         st.session_state[THEME_STATE] = requested
     st.session_state[THEME_STATE] = get_mode()
     st.query_params[THEME_PARAMETER] = st.session_state[THEME_STATE]
+
+
+def get_profile():
+    """The profile of the visit, or None while the reader has not chosen it."""
+    profile = st.session_state.get(PROFILE_STATE)
+    return profile if profile in PROFILES else None
+
+
+def settle_profile():
+    """A shared link names the profile (?perfil=…); otherwise the session keeps it. Either way the address shows it."""
+    requested = st.query_params.get(PROFILE_PARAMETER)
+    if requested in PROFILES:
+        st.session_state[PROFILE_STATE] = requested
+    elif requested:
+        st.query_params.pop(PROFILE_PARAMETER)  # an old address names a retired profile («Reclutamiento»…)
+    if get_profile():
+        st.query_params[PROFILE_PARAMETER] = get_profile()
+
+
+def choose_profile(profile):
+    st.session_state[PROFILE_STATE] = profile
+    st.query_params[PROFILE_PARAMETER] = profile
+
+
+def profile_parameters():
+    return {PROFILE_PARAMETER: get_profile()} if get_profile() else {}
+
+
+def is_public_profile():
+    return get_profile() == PROFILE_PUBLIC
+
+
+def visible_menu_blocks():
+    """The sections of the menu this profile sees: the public profile, only the business pages and the sources."""
+    return [block for block in MENU_BLOCKS if not is_public_profile() or block[0] in PUBLIC_BLOCKS]
+
+
+def visible_menu_order():
+    return [view for _, _, pages in visible_menu_blocks() if pages is not SOURCE_LINKS for view in pages]
+
+
+@st.dialog("GreenOcean", width="small", dismissible=False)
+def show_profile_dialog():
+    """The first screen of a visit (D-295): two choices and nothing else; the page waits behind."""
+    st.markdown(f'<p class="profile-ask">{html.escape(tr("Elige tu vista"))}</p>', unsafe_allow_html=True)
+    with st.container(horizontal=True, gap="medium", key="profile_choices"):
+        for key, (name, roles, icon) in PROFILES.items():
+            with st.container(key=f"profile_card_{key}"):
+                if st.button(tr(name), key=f"profile_choose_{key}", icon=icon, width="stretch"):
+                    choose_profile(key)
+                    st.rerun()
+                st.markdown(f'<p class="profile-roles">{html.escape(roles) or "&nbsp;"}</p>', unsafe_allow_html=True)
+
+
+def show_profile_switch():
+    """Under the menu: the public profile unlocks the whole project with one click; the professional one can go back."""
+    with st.sidebar.container(key="profile_switch"):
+        if is_public_profile():
+            if st.button(tr("Ver todo el proyecto"), key="profile_unlock", icon=":material/lock_open:", width="stretch",
+                         help=tr("La ingeniería de datos, la operación, la seguridad, el stack y la documentación.")):
+                choose_profile(PROFILE_PROFESSIONAL)
+                st.rerun()
+        elif get_profile():
+            if st.button(tr("Cambiar vista"), key="profile_change", icon=":material/swap_horiz:", type="tertiary"):
+                st.session_state.pop(PROFILE_STATE, None)
+                st.query_params.pop(PROFILE_PARAMETER, None)
+                st.rerun()
 
 
 def keep_theme_from_field():
@@ -1546,7 +1623,19 @@ def build_style_css(mode):
     .st-key-cover_offer {{ padding-right:22px; }}
     .st-key-cover_limits {{ padding-left:22px; }}
     :is(.st-key-cover_offer_link, .st-key-cover_limits_link) {{ padding-left:42px; }}
-    .st-key-profile_choice {{ margin-top:18px; }}
+    /* D-295: the profile dialog, the first screen of a visit: two tiles, almost no text. */
+    div[data-testid="stDialog"] [role="dialog"] {{ border-radius:20px; }}
+    .profile-ask {{ color:{palette["text"]}; font-size:.95rem; margin:-6px 0 14px; }}
+    .st-key-profile_choices > div {{ flex:1 1 0 !important; min-width:0; }}
+    [class*="st-key-profile_choose_"] button {{ height:120px; flex-direction:column; gap:10px; border-radius:16px;
+        border:1px solid {palette["card_border"]}; background:transparent; }}
+    [class*="st-key-profile_choose_"] button:hover {{ border-color:{palette["accent"]};
+        background:color-mix(in srgb, {palette["accent"]} 8%, transparent); }}
+    [class*="st-key-profile_choose_"] button p {{ font-size:1rem; font-weight:600; color:{palette["strong_text"]}; }}
+    [class*="st-key-profile_choose_"] button [data-testid="stIconMaterial"] {{ font-size:30px; color:{palette["accent"]}; }}
+    .profile-roles {{ color:{palette["reference"]}; font-size:.72rem; text-align:center; margin:6px 0 0; letter-spacing:.02em; }}
+    .st-key-profile_switch {{ padding:6px 12px 0; }}
+    .st-key-profile_switch button p {{ font-size:.82rem; }}
     @media(max-width:900px) {{
         .cover-statements {{ grid-template-columns:1fr; padding:6px 0; }}
         .cover-statements .cover-statement {{ padding:14px 0; }}
@@ -1834,6 +1923,7 @@ def build_page_address(page_title, tab=None, kpi=None):
     if theme in charts.THEMES:
         parameters[THEME_PARAMETER] = theme
     parameters.update(i18n.address_parameters())
+    parameters.update(profile_parameters())
     if tab:
         parameters[TAB_PARAMETER] = tab
     if kpi:
@@ -7126,15 +7216,19 @@ def keep_context():
     if st.session_state.get(THEME_STATE) in charts.THEMES:
         context[THEME_PARAMETER] = st.session_state[THEME_STATE]
     context.update(i18n.address_parameters())
+    context.update(profile_parameters())
     return context
 
 
 def show_menu_steps(view, pages):
     """«← Anterior» and «Siguiente →»: the pages before and after this one in the menu (D-250)."""
-    position = MENU_ORDER.index(view)
+    order = visible_menu_order()
+    if view not in order:
+        return
+    position = order.index(view)
     for step, text in ((-1, "← Anterior: {}"), (1, "Siguiente: {} →")):
-        if 0 <= position + step < len(MENU_ORDER):
-            neighbour = MENU_ORDER[position + step]
+        if 0 <= position + step < len(order):
+            neighbour = order[position + step]
             st.page_link(pages[WINDOW_OF_VIEW[neighbour]], label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
                          icon=SIDEBAR_ICONS.get(neighbour, PAGE_ICONS.get(neighbour)),
                          query_params=keep_context() | {VIEW_PARAMETER: neighbour})
@@ -7573,13 +7667,14 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             st.session_state[f"nav_open_{key}"] = key not in FOLDED_BY_DEFAULT
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
-    for key, title, pages in MENU_BLOCKS:
+    for key, title, pages in visible_menu_blocks():
         if key in TILE_BLOCKS:
             continue  # D-286, D-287: the folder and the sources live in the footer, always in sight
         open_key = f"nav_open_{key}"
         is_open = st.session_state.get(open_key, True)
         with st.sidebar.container(key=f"nav_block_{key}"):
             show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open)
+    show_profile_switch()
     show_sidebar_footer(current_window, lambda: show_footer_tiles(windows_by_title, current_window, current_view))
 
 
@@ -7598,7 +7693,8 @@ setTimeout(() => {
 def show_footer_tiles(windows_by_title, current_window, current_view):
     """The two large tiles of the footer (D-287): the documents folder and the data sources, side by side."""
     with st.container(key="sidebar_tiles", horizontal=True, gap="small"):
-        show_folder_tile(windows_by_title, current_window, current_view)
+        if not is_public_profile():
+            show_folder_tile(windows_by_title, current_window, current_view)
         with st.container(key="sources_tile"):
             with st.popover(tr("Fuentes")):
                 st.markdown(f"**{tr('Fuentes de datos')}**")
@@ -7727,8 +7823,7 @@ def main():
     settle_theme()
     i18n.settle_language()
     i18n.install()
-    st.session_state.pop(PROFILE_PARAMETER, None)
-    st.query_params.pop("perfil", None)
+    settle_profile()
     restore_return_context()
     # «Ver como» left the menu (D-213); an old ?ver= address still opens, without it.
     st.query_params.pop("ver", None)
@@ -7764,7 +7859,8 @@ def main():
         current_page.run()
         return
     show_sidebar_navigation(windows_by_title, current_window, order)
-    # The dashboard is the public home page; choosing a profile is optional.
+    if not get_profile():
+        show_profile_dialog()
     current_page.run()
 
 

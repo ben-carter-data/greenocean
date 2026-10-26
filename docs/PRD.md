@@ -56,7 +56,7 @@ GreenOcean hace ese trabajo de forma automática y deja cada paso a la vista.
 
 [[diagrama:casos]]
 
-El panel es de consulta y no pide cuenta. El administrador, el autor del proyecto, mantiene el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.
+El panel es de consulta y no pide cuenta. Al entrar se elige una vista: la de usuario muestra el negocio (el dashboard, el resumen semanal y los precios frente a la inflación) y la profesional, todo el proyecto en orden de importancia; un clic pasa de una a otra. El administrador, el autor del proyecto, mantiene el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.
 
 ## 4. Preguntas de negocio
 

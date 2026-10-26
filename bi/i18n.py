@@ -45,6 +45,12 @@ EN = {
     "Arquitectura de seguridad": "Security architecture",
     "Carpeta de documentos": "Documents folder",
     "Mapa de la app": "App map",
+    # D-295: the profile dialog and the switch under the menu
+    "Elige tu vista": "Choose your view", "Vista de usuario": "User view", "Vista profesional": "Professional view",
+    "Ver todo el proyecto": "See the whole project",
+    "La ingeniería de datos, la operación, la seguridad, el stack y la documentación.":
+        "The data engineering, operations, security, the stack and the documentation.",
+    "Cambiar vista": "Change view",
     "ODEPA: precios mayoristas": "ODEPA: wholesale prices",
     "ODEPA: precios al consumidor": "ODEPA: consumer prices",
     "INE: IPC de alimentos": "INE: food CPI",
