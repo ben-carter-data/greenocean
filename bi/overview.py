@@ -12,6 +12,7 @@ ritmo de la inflación» within ±2 points of the CPI. Pure functions: no Stream
 import base64
 import html
 import json
+from functools import lru_cache
 from pathlib import Path
 
 import altair as alt
@@ -199,12 +200,10 @@ def build_css(palette):
 [class*="st-key-ov_card_"] [data-testid="stVegaLiteChart"] {{ flex:1 1 auto; height:100%; min-height:0; }}
 [class*="st-key-ov_card_"] [data-testid="stElementToolbar"] {{ display:none !important; }}
 .st-key-ov_tabs {{ margin-top:-14px; }}
-[class*="st-key-ov_card_"][class*="_small"] {{ height:max(calc((100vh - 290px) * .44), 190px) !important;
-  min-height:max(calc((100vh - 290px) * .44), 190px) !important; }}
-[class*="st-key-ov_card_"][class*="_wide"] {{ height:max(calc((100vh - 290px) * .56), 275px) !important;
-  min-height:max(calc((100vh - 290px) * .56), 275px) !important; }}
+[class*="st-key-ov_card_"][class*="_small"] {{ height:auto !important; min-height:0 !important; }}
+[class*="st-key-ov_card_"][class*="_wide"] {{ height:auto !important; min-height:0 !important; max-height:max(calc(100vh - 500px), 236px); overflow:auto; }}
 [class*="st-key-ov_card_"][class*="_wide"] [data-testid="stElementContainer"]:has(.ov-ht),
-[class*="st-key-ov_card_"][class*="_wide"] [data-testid="stElementContainer"]:has(.ov-qt) {{ flex:1 1 0; min-height:0; overflow:auto; }}
+[class*="st-key-ov_card_"][class*="_wide"] [data-testid="stElementContainer"]:has(.ov-qt) {{ flex:0 0 auto; min-height:0; overflow:visible; }}
 [class*="st-key-ov_card_"][class*="_wide"] [data-testid="stMarkdown"]:has(.ov-ht),
 [class*="st-key-ov_card_"][class*="_wide"] [data-testid="stMarkdownContainer"]:has(.ov-ht) {{ height:100%; }}
 .st-key-ov_tabs [data-testid="stTabs"] [role="tabpanel"] {{ padding-top:10px; }}
@@ -382,8 +381,8 @@ def build_heat_table_html(frame, row, column, value, columns, rows, palette, log
 def heat_table_css(palette):
     ink, text, muted, border = palette["strong_text"], palette["text"], palette["reference"], palette["card_border"]
     return f"""<style>
-.ov-ht {{ height:100%; overflow-x:auto; }}
-.ov-ht table {{ width:100%; min-width:calc(170px + var(--cols) * 64px); height:100%; border-collapse:collapse; table-layout:fixed; margin:0; }}
+.ov-ht {{ overflow-x:auto; }}
+.ov-ht table {{ width:100%; min-width:calc(170px + var(--cols) * 64px); border-collapse:collapse; table-layout:fixed; margin:0; }}
 .ov-ht th, .ov-ht td {{ border:1px solid {border} !important; }}
 .ov-ht thead th {{ border-top:0 !important; }}
 .ov-ht thead th {{ font-size:12px; font-weight:600; color:{muted}; text-align:center; padding:0 0 2px; background:transparent !important; }}
@@ -554,33 +553,52 @@ def read_points():
     return json.loads(POINTS_FILE.read_text(encoding="utf-8"))
 
 
-def build_points_html(points, region_ids):
-    """Information only: each region, north to south, as a block with its wholesale markets and the kinds of consumer
-    point that ODEPA monitors there; in Santiago, also the sectors of the city."""
-    order = sorted(points, key=lambda name: REGION_ORDER.index(region_ids[name]) if region_ids.get(name) in REGION_ORDER else 99)
-    blocks = []
-    for region in order:
-        data = points[region]
-        markets = "".join(f'<span class="ov-pt ov-pt-market">{html.escape(name)}</span>' for name in data["wholesale"])
-        kinds = html.escape(" · ".join(data["consumer"]))
-        sectors = (f'<small>{html.escape(i18n.tr("Sectores de la ciudad"))}: {html.escape(", ".join(data["sectors"]))}</small>'
-                   if data["sectors"] else "")
-        blocks.append(f'<div class="ov-region"><h5>{html.escape(home_mockup.short_region(region))}</h5>{markets}'
-                      f'<p>{kinds}</p>{sectors}</div>')
-    return f'<div class="ov-ptwrap"><div class="ov-pts">{"".join(blocks)}</div></div>'
+POINT_ICONS = {"Supermercado": "supermercado", "Supermercado en Línea": "linea", "Feria libre": "feria", "Carnicería": "carniceria",
+               "Panadería": "panaderia", "Mercado Minorista": "minorista", "Mercado Mayorista": "mercado"}
+REGIONS_PER_VIEW = 3
+
+
+@lru_cache(maxsize=None)
+def point_icon(name):
+    """An icon of the folder bi/assets/points as an image (st.html drops inline SVG)."""
+    path = POINTS_FILE.parent / "points" / f"{POINT_ICONS.get(name, 'mercado')}.svg"
+    return f'<img class="ov-icon" alt="" src="data:image/svg+xml;base64,{base64.b64encode(path.read_bytes()).decode()}">'
+
+
+def ordered_regions(points, region_ids):
+    return sorted(points, key=lambda name: REGION_ORDER.index(region_ids[name]) if region_ids.get(name) in REGION_ORDER else 99)
+
+
+def build_region_card(region, data):
+    """One region as a card: its wholesale markets, each with its icon and name, and the kinds of consumer point."""
+    markets = "".join(f'<li>{point_icon("Mercado Mayorista")}<span>{html.escape(name)}</span></li>' for name in data["wholesale"])
+    kinds = "".join(f'<li>{point_icon(name)}<span>{html.escape(i18n.tr(name))}</span></li>' for name in data["consumer"]
+                    if name != "Mercado Mayorista")
+    sectors = (f'<p class="ov-sectors">{html.escape(i18n.tr("Sectores de la ciudad"))}: {html.escape(", ".join(data["sectors"]))}</p>'
+               if data["sectors"] else "")
+    wholesale = (f'<h6>{html.escape(i18n.tr("Mercados mayoristas"))}</h6><ul class="ov-markets">{markets}</ul>' if markets else
+                 f'<h6>{html.escape(i18n.tr("Mercados mayoristas"))}</h6><p class="ov-none">{html.escape(i18n.tr("Sin mercado mayorista en los datos"))}</p>')
+    return (f'<div class="ov-rcard"><h5>{html.escape(home_mockup.short_region(region))}</h5>{wholesale}'
+            f'<h6>{html.escape(i18n.tr("Puntos de venta al consumidor"))}</h6><ul class="ov-kindlist">{kinds}</ul>{sectors}</div>')
 
 
 def points_css(palette):
-    ink, text, muted, border, accent = (palette["strong_text"], palette["text"], palette["reference"], palette["card_border"], palette["accent"])
+    ink, text, muted, border, accent, card = (palette["strong_text"], palette["text"], palette["reference"], palette["card_border"],
+                                              palette["accent"], palette["card"])
     return f"""<style>
-.ov-ptwrap {{ max-height:calc(max((100vh - 290px) * .44, 190px) - 56px); overflow:auto; }}
-.ov-pts {{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:8px 14px; }}
-.ov-region {{ padding:4px 0 6px; border-bottom:1px solid {border}; min-width:0; }}
-.ov-region h5 {{ margin:0 0 3px !important; padding:0 !important; font-size:13px !important; color:{ink}; }}
-.ov-region p {{ margin:2px 0 0 !important; font-size:11.5px !important; line-height:1.35 !important; color:{muted} !important; }}
-.ov-region small {{ display:block; margin-top:1px; color:{muted}; font-size:11px; }}
-.ov-pt {{ display:inline-block; margin:1px 4px 1px 0; padding:0 8px; border-radius:999px; border:1px solid {border}; font-size:11.5px; line-height:1.4; }}
-.ov-pt-market {{ border-color:{accent}; color:{ink}; font-weight:600; background:color-mix(in srgb, {accent} 9%, transparent); }}
-@media (max-width:1100px) {{ .ov-pts {{ grid-template-columns:repeat(2, minmax(0, 1fr)); }} }}
+.ov-rcard {{ margin-bottom:1rem; height:100%; border-radius:14px; padding:8px 12px 6px; border:1px solid {border};
+  background:linear-gradient(160deg, color-mix(in srgb, {accent} 9%, {card}), {card}); box-shadow:0 10px 24px -18px rgba(0,0,0,.5); }}
+.ov-rcard h5 {{ margin:0 0 2px !important; padding:0 !important; font-size:15px !important; color:{ink}; }}
+.ov-rcard h6 {{ margin:3px 0 2px !important; padding:0 !important; font-size:10.5px !important; font-weight:600; letter-spacing:.07em;
+  text-transform:uppercase; color:{muted}; }}
+.ov-rcard ul {{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:0 4px; }}
+.ov-rcard li {{ display:flex; flex-direction:column; align-items:center; gap:0; width:46px; text-align:center; font-size:9.5px; line-height:1.1; color:{ink}; }}
+.ov-markets li {{ font-weight:600; }}
+.ov-icon {{ width:26px; height:26px; display:block; filter:drop-shadow(0 4px 4px rgba(0,0,0,.25)); }}
+.ov-kindlist {{ display:grid !important; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:2px 2px !important; }}
+.ov-kindlist li {{ width:auto !important; font-size:9px; }}
+.ov-markets li {{ width:88px; font-size:10px; }}
+.ov-markets .ov-icon {{ width:30px; height:30px; }}
+.ov-sectors, .ov-none {{ margin:2px 0 0 !important; font-size:10.5px !important; color:{muted} !important; }}
 </style>"""
 # endregion

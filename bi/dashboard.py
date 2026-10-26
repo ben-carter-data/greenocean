@@ -5841,6 +5841,7 @@ def week_range_label(week):
 
 
 OVERVIEW_WEEKS_KEY = "ov_weeks"
+OVERVIEW_REGION_KEY = "ov_region_start"
 
 
 def overview_head(key, title, note="", control=None, hint=""):
@@ -5898,12 +5899,30 @@ def show_overview_market(mode, version):
          "previas y al menos 10 %, con dos cotizaciones por semana. El detalle está en el Resumen semanal."),
     ], charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
     palette = charts.get_palette(mode)
-    with overview_head("where_small", "¿Dónde se compra, región por región?", "Los puntos que existen; si sube, sube en todos",
+    regions_of_points = overview.ordered_regions(overview.read_points(), read_region_ids(version))
+    start = min(st.session_state.get(OVERVIEW_REGION_KEY, 0), max(0, len(regions_of_points) - overview.REGIONS_PER_VIEW))
+
+    def region_arrows():
+        with st.container(horizontal=True, gap="xsmall", key="ov_region_arrows"):
+            if st.button("", icon=":material/chevron_left:", key="ov_region_prev", disabled=start == 0):
+                st.session_state[OVERVIEW_REGION_KEY] = max(0, start - 1)
+                st.rerun()
+            if st.button("", icon=":material/chevron_right:", key="ov_region_next",
+                         disabled=start + overview.REGIONS_PER_VIEW >= len(regions_of_points)):
+                st.session_state[OVERVIEW_REGION_KEY] = start + 1
+                st.rerun()
+
+    with overview_head("where_small", "¿Dónde se compra, región por región?", "Los puntos que existen, de norte a sur; si sube, sube en todos",
+                       control=region_arrows,
                        hint="Solo información: los mercados mayoristas y los tipos de punto de venta que ODEPA registra en cada "
                             "región. Los precios de los puntos de una misma ciudad se mueven juntos, así que no se separan: lo "
-                            "que sube en una región sube en todos sus mercados."):
-        st.markdown(overview.points_css(palette) + overview.build_points_html(overview.read_points(), read_region_ids(version)),
-                    unsafe_allow_html=True)
+                            "que sube en una región sube en todos sus mercados. Las flechas pasan de una región a la siguiente."):
+        shown = regions_of_points[start:start + overview.REGIONS_PER_VIEW]
+        columns = st.columns(len(shown), gap="small")
+        points = overview.read_points()
+        st.markdown(overview.points_css(palette), unsafe_allow_html=True)
+        for column, region in zip(columns, shown):
+            column.markdown(overview.build_region_card(region, points[region]), unsafe_allow_html=True)
     count = st.session_state.get(OVERVIEW_WEEKS_KEY, 8)
     with overview_head("heat_wide", "¿Qué familias vienen subiendo, semana a semana?", "Cada fila es una familia y cada columna una semana: rojo, subió; azul, bajó",
                        hint="Cada celda es el cambio típico de una familia en una semana: rojo si subió, azul si bajó, y más "
@@ -6157,7 +6176,7 @@ def build_overview_css(mode):
     """The dashboard's styles, written with the scorecards of each tab: no element of its own, no extra gap (D-173)."""
     palette = charts.get_palette(mode)
     return overview.build_css(palette) + f"""<style>
-    .ov-qt {{ height:100%; overflow:auto; }}
+    .ov-qt {{ overflow:auto; }}
     .ov-qt table {{ width:100%; border-collapse:collapse; margin:0; font-size:12px; }}
     .ov-qt th, .ov-qt td {{ border:0 !important; border-bottom:1px solid {palette['card_border']} !important; padding:2px 8px !important;
         text-align:left; color:{palette['text']}; background:transparent !important; vertical-align:middle; }}
