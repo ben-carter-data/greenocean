@@ -2264,12 +2264,12 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - la lectura ampliada ocupa algo menos de alto, así la página en inglés cabe en 1440 × 790.
 - **Pruebas:** `tests/test_inflation_view.py::test_d294_*` (las etiquetas finales y el máximo son valores de la serie; la regla usa el mes más cercano y la diferencia es la resta de los dos valores) y `tests/test_i18n.py::test_d294_*` (la serie del IPC se llama igual en los datos Arrow y en la escala).
 
-## D-295 · Dos vistas al entrar: usuario y profesional
+## D-295 · Dos vistas al entrar: usuario y profesional, y el perfil profesional que va adelante
 
-- **Pedido del autor:** una persona común ve solo lo que necesita; un perfil profesional (data engineering, business analysis, BI, DevOps, reclutamiento) ve todo, en orden de CV. Se pide una vez al entrar, en una pantalla simple y sin texto de más.
+- **Pedido del autor:** una persona común ve solo lo que necesita; un perfil profesional ve todo, en el orden de lectura de un portafolio según el perfil que quiere poner adelante (Data Eng, BA, BI, DevOps, Seguridad). Se elige una vez al entrar, en una pantalla simple; adentro no se cambia: la vista de usuario abre el resto solo con la clave de la app.
 - **Decisión:**
-  - al entrar, una ventana que no se puede cerrar sin elegir pregunta «Elige tu vista»: «Vista de usuario» o «Vista profesional» (debajo, pequeño: Data Eng · BA · BI · DevOps). La elección queda en la sesión y en la dirección (`?perfil=consulta` o `?perfil=profesional`), así un enlace compartido abre la misma vista;
-  - la vista de usuario muestra en el menú solo Negocio · BI y las fuentes; la carpeta de documentos y las secciones técnicas no aparecen. Un botón «Ver todo el proyecto» las desbloquea con un clic, sin clave;
-  - la vista profesional muestra todo en el orden de un CV: el negocio, la ingeniería de datos, la operación y la seguridad, el stack y la documentación. «Cambiar vista» vuelve a preguntar;
+  - al entrar, una ventana que no se puede cerrar sin elegir pregunta «Elige tu vista»: «Vista de usuario», o «Vista profesional» con cinco opciones pequeñas (Data Eng · BA · BI · DevOps · Seguridad). La elección queda en la sesión y en la dirección (`?perfil=…&rol=…`): un enlace compartido abre la misma vista en una visita nueva, pero dentro de una visita la dirección ya no cambia la vista;
+  - la vista de usuario muestra en el menú solo Negocio · BI y las fuentes; «Ver todo el proyecto» pide la clave de control de la app (comparada en tiempo constante) y, si es correcta, abre la vista profesional con el orden de BI;
+  - la vista profesional muestra todo, con el perfil elegido adelante: Data Eng abre en Ingeniería de datos; BA y BI, en Negocio; DevOps, en DevOps y seguridad; Seguridad, en la Arquitectura de seguridad. Al elegir, el panel abre la primera página de ese orden;
   - una dirección antigua con un perfil retirado («Reclutamiento», «Analista BI») se limpia y la ventana pregunta. Reemplaza la entrada sin perfil de D-213.
-- **Pruebas:** `tests/test_dashboard.py::test_d295_*`: la primera visita pregunta; la vista de usuario ve el negocio y desbloquea el resto con un clic; el menú profesional sigue el orden de un CV y los enlaces conservan la vista. `tests/test_i18n.py`: la ventana en inglés.
+- **Pruebas:** `tests/test_dashboard.py::test_d295_*`: la primera visita pregunta; la vista de usuario ve el negocio, la dirección no la cambia y solo la clave correcta abre el resto; cada perfil profesional ordena el menú como su portafolio. `tests/test_i18n.py`: la ventana en inglés.

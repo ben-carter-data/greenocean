@@ -274,9 +274,19 @@ PROFILE_PARAMETER = "perfil"
 PROFILE_STATE = "visitor_profile"
 PROFILE_PUBLIC, PROFILE_PROFESSIONAL = "consulta", "profesional"
 PROFILES = {
-    PROFILE_PUBLIC: ("Vista de usuario", "", ":material/person:"),
-    PROFILE_PROFESSIONAL: ("Vista profesional", "Data Eng · BA · BI · DevOps", ":material/work:"),
+    PROFILE_PUBLIC: ("Vista de usuario", ":material/person:"),
+    PROFILE_PROFESSIONAL: ("Vista profesional", ":material/work:"),
 }
+# D-295: the professional view puts one profile forward; the menu then reads like that portfolio, its sections in
+# this order (the sources and the documents stay at the foot of the menu).
+ROLE_PARAMETER = "rol"
+ROLE_STATE = "visitor_role"
+ROLES = {"data": "Data Eng", "ba": "BA", "bi": "BI", "devops": "DevOps", "seguridad": "Seguridad"}
+ROLE_ORDER = {"data": ["ingenieria", "negocio", "devops", "stack"], "ba": ["negocio", "stack", "ingenieria", "devops"],
+              "bi": ["negocio", "ingenieria", "stack", "devops"], "devops": ["devops", "ingenieria", "negocio", "stack"],
+              "seguridad": ["devops", "ingenieria", "negocio", "stack"]}
+DEFAULT_ROLE = "bi"  # a user view unlocked with the key reads the business first
+LANDING_STATE = "profile_landing"
 # What the public profile sees in the menu; the rest is one click away («Ver todo el proyecto»).
 PUBLIC_BLOCKS = {"negocio", "fuentes"}
 
@@ -539,24 +549,38 @@ def get_profile():
     return profile if profile in PROFILES else None
 
 
+def get_role():
+    role = st.session_state.get(ROLE_STATE)
+    return role if role in ROLES else DEFAULT_ROLE
+
+
 def settle_profile():
-    """A shared link names the profile (?perfil=…); otherwise the session keeps it. Either way the address shows it."""
-    requested = st.query_params.get(PROFILE_PARAMETER)
-    if requested in PROFILES:
+    """Once chosen, the profile belongs to the visit: the address cannot change it (the user view unlocks the rest
+    only with the key). A first entry from a shared link takes the profile the link names (?perfil=…&rol=…)."""
+    requested, role = st.query_params.get(PROFILE_PARAMETER), st.query_params.get(ROLE_PARAMETER)
+    if not get_profile() and requested in PROFILES:
         st.session_state[PROFILE_STATE] = requested
-    elif requested:
-        st.query_params.pop(PROFILE_PARAMETER)  # an old address names a retired profile («Reclutamiento»…)
-    if get_profile():
-        st.query_params[PROFILE_PARAMETER] = get_profile()
+        if role in ROLES:
+            st.session_state[ROLE_STATE] = role
+    for name, value in ((PROFILE_PARAMETER, get_profile()), (ROLE_PARAMETER, get_role() if get_profile() == PROFILE_PROFESSIONAL else None)):
+        if value:
+            st.query_params[name] = value
+        elif name in st.query_params:
+            st.query_params.pop(name)  # a retired profile («Reclutamiento») or a role the view does not use
 
 
-def choose_profile(profile):
+def choose_profile(profile, role=None):
     st.session_state[PROFILE_STATE] = profile
-    st.query_params[PROFILE_PARAMETER] = profile
+    if role:
+        st.session_state[ROLE_STATE] = role
+    st.session_state[LANDING_STATE] = True  # the next run opens the first page of this profile's menu
+    settle_profile()
 
 
 def profile_parameters():
-    return {PROFILE_PARAMETER: get_profile()} if get_profile() else {}
+    if not get_profile():
+        return {}
+    return {PROFILE_PARAMETER: get_profile()} | ({ROLE_PARAMETER: get_role()} if get_profile() == PROFILE_PROFESSIONAL else {})
 
 
 def is_public_profile():
@@ -564,8 +588,17 @@ def is_public_profile():
 
 
 def visible_menu_blocks():
-    """The sections of the menu this profile sees: the public profile, only the business pages and the sources."""
-    return [block for block in MENU_BLOCKS if not is_public_profile() or block[0] in PUBLIC_BLOCKS]
+    """The sections of the menu this profile sees, in its order: the user view, only the business pages and the
+    sources; the professional view, everything, led by the profile it puts forward."""
+    if is_public_profile():
+        return [block for block in MENU_BLOCKS if block[0] in PUBLIC_BLOCKS]
+    by_key = {block[0]: block for block in MENU_BLOCKS}
+    order = ROLE_ORDER[get_role()] if get_profile() else [block[0] for block in MENU_BLOCKS]
+    blocks = [by_key[key] for key in order] + [block for block in MENU_BLOCKS if block[0] not in order]
+    if get_profile() and get_role() == "seguridad":  # security first inside its own section
+        blocks = [(key, title, sorted(pages, key=lambda view: view != PAGE_SECURITY) if key == "devops" else pages)
+                  for key, title, pages in blocks]
+    return blocks
 
 
 def visible_menu_order():
@@ -574,30 +607,50 @@ def visible_menu_order():
 
 @st.dialog("GreenOcean", width="small", dismissible=False)
 def show_profile_dialog():
-    """The first screen of a visit (D-295): two choices and nothing else; the page waits behind."""
+    """The first screen of a visit (D-295): the user view, or the professional view with the profile it puts forward;
+    almost no text. The page waits behind."""
     st.markdown(f'<p class="profile-ask">{html.escape(tr("Elige tu vista"))}</p>', unsafe_allow_html=True)
     with st.container(horizontal=True, gap="medium", key="profile_choices"):
-        for key, (name, roles, icon) in PROFILES.items():
-            with st.container(key=f"profile_card_{key}"):
-                if st.button(tr(name), key=f"profile_choose_{key}", icon=icon, width="stretch"):
-                    choose_profile(key)
-                    st.rerun()
-                st.markdown(f'<p class="profile-roles">{html.escape(roles) or "&nbsp;"}</p>', unsafe_allow_html=True)
+        name, icon = PROFILES[PROFILE_PUBLIC]
+        with st.container(key=f"profile_card_{PROFILE_PUBLIC}"):
+            if st.button(tr(name), key=f"profile_choose_{PROFILE_PUBLIC}", icon=icon, width="stretch"):
+                choose_profile(PROFILE_PUBLIC)
+                st.rerun()
+        name, icon = PROFILES[PROFILE_PROFESSIONAL]
+        with st.container(key=f"profile_card_{PROFILE_PROFESSIONAL}"):
+            st.markdown(f'<p class="profile-name"><span class="material-symbols-rounded">work</span>{html.escape(tr(name))}</p>',
+                        unsafe_allow_html=True)
+            with st.container(horizontal=True, gap="small", key="profile_roles"):
+                for role, label in ROLES.items():
+                    if st.button(tr(label), key=f"profile_role_{role}", type="tertiary"):
+                        choose_profile(PROFILE_PROFESSIONAL, role)
+                        st.rerun()
 
 
 def show_profile_switch():
-    """Under the menu: the public profile unlocks the whole project with one click; the professional one can go back."""
+    """Under the menu, only in the user view: the whole project opens with the app's key (D-295)."""
+    if not is_public_profile():
+        return
     with st.sidebar.container(key="profile_switch"):
-        if is_public_profile():
-            if st.button(tr("Ver todo el proyecto"), key="profile_unlock", icon=":material/lock_open:", width="stretch",
-                         help=tr("La ingeniería de datos, la operación, la seguridad, el stack y la documentación.")):
-                choose_profile(PROFILE_PROFESSIONAL)
-                st.rerun()
-        elif get_profile():
-            if st.button(tr("Cambiar vista"), key="profile_change", icon=":material/swap_horiz:", type="tertiary"):
-                st.session_state.pop(PROFILE_STATE, None)
-                st.query_params.pop(PROFILE_PARAMETER, None)
-                st.rerun()
+        with st.popover(tr("Ver todo el proyecto"), icon=":material/lock:", width="stretch"):
+            typed = st.text_input(tr("Clave"), key="profile_unlock_code", label_visibility="collapsed",
+                                  placeholder=tr("Clave"))
+            if st.button(tr("Desbloquear"), key="profile_unlock", type="primary", width="stretch"):
+                ok, message = control.check_control_code(typed, get_secret(SECRET_CONTROL_CODE))
+                if ok:
+                    choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
+                    st.rerun()
+                st.error(tr(message))
+
+
+def open_profile_landing(windows_by_title):
+    """Right after a choice, the first page of that profile's menu."""
+    if not st.session_state.pop(LANDING_STATE, False):
+        return
+    order = visible_menu_order()
+    if order:
+        view = order[0]
+        st.switch_page(windows_by_title[WINDOW_OF_VIEW[view]], query_params=keep_context() | {VIEW_PARAMETER: view})
 
 
 def keep_theme_from_field():
@@ -1626,14 +1679,27 @@ def build_style_css(mode):
     /* D-295: the profile dialog, the first screen of a visit: two tiles, almost no text. */
     div[data-testid="stDialog"] [role="dialog"] {{ border-radius:20px; }}
     .profile-ask {{ color:{palette["text"]}; font-size:.95rem; margin:-6px 0 14px; }}
-    .st-key-profile_choices > div {{ flex:1 1 0 !important; min-width:0; }}
-    [class*="st-key-profile_choose_"] button {{ height:120px; flex-direction:column; gap:10px; border-radius:16px;
-        border:1px solid {palette["card_border"]}; background:transparent; }}
-    [class*="st-key-profile_choose_"] button:hover {{ border-color:{palette["accent"]};
-        background:color-mix(in srgb, {palette["accent"]} 8%, transparent); }}
-    [class*="st-key-profile_choose_"] button p {{ font-size:1rem; font-weight:600; color:{palette["strong_text"]}; }}
-    [class*="st-key-profile_choose_"] button [data-testid="stIconMaterial"] {{ font-size:30px; color:{palette["accent"]}; }}
-    .profile-roles {{ color:{palette["reference"]}; font-size:.72rem; text-align:center; margin:6px 0 0; letter-spacing:.02em; }}
+    .st-key-profile_choices {{ align-items:stretch !important; }}
+    .st-key-profile_choices > div {{ flex:1 1 0 !important; min-width:0; display:flex; }}
+    [class*="st-key-profile_card_"] {{ flex:1 1 auto; min-height:124px; border:1px solid {palette["card_border"]};
+        border-radius:16px; justify-content:center; }}
+    .st-key-profile_card_consulta {{ padding:0 !important; }}
+    .st-key-profile_choose_consulta, .st-key-profile_choose_consulta button {{ height:100%; }}
+    .st-key-profile_choose_consulta button {{ min-height:122px; border:0; border-radius:16px; background:transparent; }}
+    [class*="st-key-profile_card_"]:hover {{ border-color:{palette["accent"]}; }}
+    .st-key-profile_choose_consulta button:hover {{ background:color-mix(in srgb, {palette["accent"]} 8%, transparent); }}
+    .st-key-profile_choose_consulta button p, .profile-name {{ font-size:1rem; font-weight:600; color:{palette["strong_text"]}; }}
+    .st-key-profile_choose_consulta button [data-testid="stIconMaterial"] {{ font-size:26px; color:{palette["accent"]}; }}
+    .st-key-profile_card_profesional {{ padding:12px 10px 8px !important; gap:6px !important; align-items:center; }}
+    .profile-name {{ display:flex; align-items:center; justify-content:center; gap:8px; margin:0 0 1.35rem; }}
+    .profile-name .material-symbols-rounded {{ font-family:"Material Symbols Rounded"; font-weight:400; font-size:24px;
+        line-height:1; color:{palette["accent"]}; font-feature-settings:"liga"; -webkit-font-feature-settings:"liga"; }}
+    .st-key-profile_roles {{ justify-content:center; flex-wrap:wrap !important; gap:2px 4px !important; }}
+    .st-key-profile_roles button {{ padding:2px 9px !important; min-height:0 !important; border-radius:999px;
+        border:1px solid {palette["card_border"]} !important; }}
+    .st-key-profile_roles button p {{ font-size:.74rem; color:{palette["text"]}; }}
+    .st-key-profile_roles button:hover {{ border-color:{palette["accent"]} !important; }}
+    .st-key-profile_roles button:hover p {{ color:{palette["accent"]}; }}
     .st-key-profile_switch {{ padding:6px 12px 0; }}
     .st-key-profile_switch button p {{ font-size:.82rem; }}
     @media(max-width:900px) {{
@@ -7858,6 +7924,7 @@ def main():
         # An old address: it only switches to its window, before any menu is drawn.
         current_page.run()
         return
+    open_profile_landing(windows_by_title)
     show_sidebar_navigation(windows_by_title, current_window, order)
     if not get_profile():
         show_profile_dialog()

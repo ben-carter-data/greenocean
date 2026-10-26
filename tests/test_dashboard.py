@@ -1686,8 +1686,9 @@ def test_d282_every_preview_shows_the_index_of_its_document():
 
 
 @needs_database
-def test_d295_the_public_profile_sees_the_business_pages_and_unlocks_the_rest_with_one_click():
+def test_d295_the_user_view_sees_the_business_pages_and_unlocks_the_rest_only_with_the_key():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.secrets["CONTROL_CODE"] = "clave-larga"
     app.query_params["perfil"] = dashboard.PROFILE_PUBLIC
     app.run()
     assert not app.exception and not app.get("dialog")
@@ -1695,15 +1696,32 @@ def test_d295_the_public_profile_sees_the_business_pages_and_unlocks_the_rest_wi
     business = next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
     assert {dashboard.SIDEBAR_LABELS.get(view, view) for view in business} <= labels
     assert dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_DIAGRAMS, dashboard.PAGE_DIAGRAMS) not in labels
-    assert "Documentos" not in labels  # the folder tile is for the professional profile
+    assert "Documentos" not in labels  # the folder tile is for the professional view
+    app.query_params["perfil"] = dashboard.PROFILE_PROFESSIONAL  # the address cannot change a chosen view
+    app.run()
+    assert app.query_params["perfil"] == dashboard.PROFILE_PUBLIC
+    app.text_input(key="profile_unlock_code").set_value("otra")
+    app.button(key="profile_unlock").click().run()
+    assert app.query_params["perfil"] == dashboard.PROFILE_PUBLIC and app.error
+    app.text_input(key="profile_unlock_code").set_value("clave-larga")
     app.button(key="profile_unlock").click().run()
     assert app.query_params["perfil"] == dashboard.PROFILE_PROFESSIONAL
     labels = {link.proto.label for link in app.sidebar.get("page_link")}
     assert dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_DIAGRAMS, dashboard.PAGE_DIAGRAMS) in labels
+    assert not [button for button in app.button if str(button.key) == "profile_change"]  # no going back
 
 
-def test_d295_the_professional_menu_reads_like_a_cv_and_every_link_keeps_the_profile():
-    assert [key for key, *_ in dashboard.MENU_BLOCKS] == ["negocio", "ingenieria", "devops", "stack", "fuentes", "documentos"]
-    assert dashboard.PUBLIC_BLOCKS == {"negocio", "fuentes"}
+def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkeypatch):
+    state = {}
+    monkeypatch.setattr(dashboard.st, "session_state", state)
+    state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PROFESSIONAL
+    firsts = {}
+    for role in dashboard.ROLES:
+        state[dashboard.ROLE_STATE] = role
+        blocks = [key for key, *_ in dashboard.visible_menu_blocks()]
+        assert blocks[:4] == dashboard.ROLE_ORDER[role] and blocks[4:] == ["fuentes", "documentos"], role
+        firsts[role] = dashboard.visible_menu_order()[0]
+    assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.PAGE_HOME
+    assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_RUNS
     source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
-    assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep ?perfil=
+    assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep the view

@@ -50,7 +50,7 @@ EN = {
     "Ver todo el proyecto": "See the whole project",
     "La ingeniería de datos, la operación, la seguridad, el stack y la documentación.":
         "The data engineering, operations, security, the stack and the documentation.",
-    "Cambiar vista": "Change view",
+    "Clave": "Code", "Desbloquear": "Unlock", "Seguridad": "Security",
     "ODEPA: precios mayoristas": "ODEPA: wholesale prices",
     "ODEPA: precios al consumidor": "ODEPA: consumer prices",
     "INE: IPC de alimentos": "INE: food CPI",
