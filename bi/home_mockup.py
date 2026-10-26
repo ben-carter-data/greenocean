@@ -543,7 +543,7 @@ def products_table(rows, week_label, previous_label, query='', selected=None):
     return ('<div class="mock-products-table" role="region" tabindex="0" aria-label="Productos de la familia"><table><thead><tr>'
             f'<th>Producto</th><th>Canal</th><th class="num">Precio {esc(previous_label[:5])}</th>'
             f'<th class="num">Precio {esc(week_label[:5])}</th><th class="num">Variación</th>'
-            '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; pasa el cursor por el conteo para ver cuáles">Regiones ↑ / ↓</th></tr></thead>'
+            '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; haz clic en el conteo para ver cuáles">Regiones ↑ / ↓ · clic</th></tr></thead>'
             '<tbody>' + ''.join(body) + '</tbody></table></div>')
 
 

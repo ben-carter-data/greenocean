@@ -374,15 +374,16 @@ def build_heat_table_html(frame, row, column, value, columns, rows, palette, log
             number = f"{v:+.1f}".replace(".", ",")
             tds.append(f'<td class="ov-ht-cell{strong}"{style}>{number}</td>')
         body.append(f'<tr><th scope="row" title="{html.escape(full, quote=True)}">{label}</th>{"".join(tds)}</tr>')
-    return (f'<div class="ov-ht"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>')
+    return (f'<div class="ov-ht" style="--cols:{len(columns)}"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>')
 
 
 def heat_table_css(palette):
     ink, text, muted, border = palette["strong_text"], palette["text"], palette["reference"], palette["card_border"]
     return f"""<style>
 .ov-ht {{ height:100%; overflow-x:auto; }}
-.ov-ht table {{ width:100%; height:100%; border-collapse:separate; border-spacing:3px 2px; table-layout:fixed; margin:0; }}
-.ov-ht th, .ov-ht td {{ border:0 !important; }}
+.ov-ht table {{ width:100%; min-width:calc(170px + var(--cols) * 64px); height:100%; border-collapse:collapse; table-layout:fixed; margin:0; }}
+.ov-ht th, .ov-ht td {{ border:1px solid {border} !important; }}
+.ov-ht thead th {{ border-top:0 !important; }}
 .ov-ht thead th {{ font-size:12px; font-weight:600; color:{muted}; text-align:center; padding:0 0 2px; background:transparent !important; }}
 .ov-ht thead th:first-child, .ov-ht tbody th {{ width:24%; min-width:150px; }}
 .ov-ht tbody th {{ text-align:left; font-weight:600; font-size:13px; color:{ink}; padding:0 8px 0 0; white-space:nowrap;
@@ -390,8 +391,8 @@ def heat_table_css(palette):
 .ov-ht tbody th img {{ width:20px; height:20px; vertical-align:middle; margin-right:8px; object-fit:contain; }}
 .ov-ht tbody th span {{ vertical-align:middle; }}
 .ov-ht-dot {{ display:inline-block; width:20px; height:20px; margin-right:8px; vertical-align:middle; }}
-.ov-ht td {{ text-align:center; font-size:13px; line-height:1.2; font-variant-numeric:tabular-nums; color:{ink}; border-radius:6px;
-  background:color-mix(in srgb, {border} 30%, transparent); padding:0 2px; min-width:46px; }}
+.ov-ht td {{ text-align:center; font-size:13px; line-height:1.2; font-variant-numeric:tabular-nums; color:{ink}; 
+  background:color-mix(in srgb, {border} 30%, transparent); padding:0 2px; min-width:54px; }}
 .ov-ht td.ov-ht-strong {{ color:#ffffff; font-weight:600; }}
 .ov-ht td.ov-ht-empty {{ color:{muted}; }}
 </style>"""

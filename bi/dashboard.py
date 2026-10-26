@@ -5919,7 +5919,7 @@ def show_overview_market(mode, version):
         st.altair_chart(overview.region_bars(overview.region_moves(regions, read_region_ids(version)), mode),
                         width="stretch", height="stretch", theme=None, key="ov_regions")
     count = st.session_state.get(OVERVIEW_WEEKS_KEY, 8)
-    with overview_head("heat_wide", "¿Cómo vienen las últimas semanas?", "Cambio típico de cada familia, semana a semana (%)",
+    with overview_head("heat_wide", "¿Qué familias vienen subiendo, semana a semana?", "Cada fila es una familia y cada columna una semana: rojo, subió; azul, bajó",
                        hint="Cada celda es el cambio típico de una familia en una semana: rojo si subió, azul si bajó, y más "
                             "intenso cuanto mayor el cambio. Una fila con varias celdas rojas seguidas es una familia que viene "
                             "subiendo. El control elige cuántas semanas ver.",

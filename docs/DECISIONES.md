@@ -2329,3 +2329,8 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** la columna «Regiones ↑ / ↓» cuenta regiones, pero no dice cuáles.
 - **Decisión:** cada fila lleva, al pasar el cursor por su conteo (subrayado punteado), un cuadro propio que se abre al instante, hacia arriba, con las regiones de ese producto y canal y su cambio, de la mayor alza a la mayor baja, en rojo y azul; la región elegida en el mapa sale resaltada. No es una columna más: un producto puede subir en varias regiones y la lista llegaría a nueve nombres. Son las mismas cifras de las que sale el conteo. Cada fila es un producto: puede subir en la mayoría de las regiones mientras su familia, en conjunto, baja.
 - **Pruebas:** `tests/test_home_mockup.py::test_d304_*`.
+
+## D-305 · Resumen más compacto y la tabla de semanas del Dashboard, como una tabla de verdad
+
+- **Pedido del autor:** la tabla de las últimas semanas no se entendía y no parecía una tabla; en el Resumen, las familias y los menús ocupaban demasiado y la lista de regiones no se veía como algo en lo que se puede hacer clic.
+- **Decisión:** la tabla del Dashboard se titula «¿Qué familias vienen subiendo, semana a semana?», explica que cada fila es una familia y cada columna una semana, tiene celdas con bordes y se desplaza hacia los lados cuando hay muchas semanas. En el Resumen, las filas de familias y los menús de canal y orden son más bajos, la tabla de productos gana alto y el conteo de regiones se ve como un enlace («clic»).
