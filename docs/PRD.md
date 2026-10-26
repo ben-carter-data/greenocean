@@ -102,7 +102,7 @@ Los requisitos funcionales (RF) dicen qué hace el producto; los no funcionales 
 | Rechazo de filas inválidas con su motivo y auditoría de cada cifra | Recomendaciones de compra para el consumidor |
 | Panel de solo lectura con su documentación | Modificación de datos por parte de los usuarios |
 
-Hoy la base tiene 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC. La última carga leyó 2.521.012 filas: 2.520.811 cargadas y 201 rechazadas con su motivo.
+Con la carga del 20-10-2026, la base tiene 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC. Esa carga leyó 2.521.012 filas: 2.520.811 cargadas y 201 rechazadas con su motivo. Cada martes la base crece; las cifras del día están en el panel.
 
 ## 7. Pantallas
 

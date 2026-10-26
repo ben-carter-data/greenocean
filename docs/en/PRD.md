@@ -102,7 +102,7 @@ Functional requirements (RF) define what the product does; non-functional requir
 | Rejection of invalid rows with their reason, and an audit of every figure | Purchase recommendations for consumers |
 | Read-only panel with its documentation | Data changes by the users |
 
-Today the database holds 814,610 weekly prices over 250 weeks (2022-01-03 to 2026-10-12), 9 regions, 8 channels, 1,609 product keys and 202 months of the CPI. The last load read 2,521,012 rows: 2,520,811 loaded and 201 rejected with their reason.
+With the load of 2026-10-20, the database holds 814,610 weekly prices over 250 weeks (2022-01-03 to 2026-10-12), 9 regions, 8 channels, 1,609 product keys and 202 months of the CPI. That load read 2,521,012 rows: 2,520,811 loaded and 201 rejected with their reason. Every Tuesday the database grows; the figures of the day are in the panel.
 
 ## 7. Screens
 
