@@ -20,7 +20,7 @@ DESIGN_FILE = DOCS_DIR / "DISENO.md"
 SCHEMA_FILE = PROJECT_DIR / "etl" / "schema.sql"
 TESTS_DIR = PROJECT_DIR / "tests"
 
-GITHUB_URL = "https://github.com/cben6514-boop/monitor-precios-hito1"
+GITHUB_URL = "https://github.com/cben6514-boop/greenocean"
 GITHUB_BRANCH = "main"
 COMMITS_URL = f"{GITHUB_URL}/commits/{GITHUB_BRANCH}"
 # The release that holds the served database, replaced by every load (D-270).
