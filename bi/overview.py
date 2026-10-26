@@ -569,36 +569,42 @@ def ordered_regions(points, region_ids):
     return sorted(points, key=lambda name: REGION_ORDER.index(region_ids[name]) if region_ids.get(name) in REGION_ORDER else 99)
 
 
+DETAIL_SHOP = "Comercio al detalle"
+
+
 def build_region_card(region, data):
-    """One region as a card: its wholesale markets, each with its icon and name, and the kinds of consumer point."""
+    """One region as a card: each wholesale market as a house with its name and, in one more house, every kind of
+    consumer point ODEPA records there (supermarket, fair, butcher, bakery...), named on hover."""
     markets = "".join(f'<li>{point_icon("Mercado Mayorista")}<span>{html.escape(name)}</span></li>' for name in data["wholesale"])
-    kinds = "".join(f'<li>{point_icon(name)}<span>{html.escape(i18n.tr(name))}</span></li>' for name in data["consumer"]
-                    if name != "Mercado Mayorista")
+    kinds = [name for name in data["consumer"] if name != "Mercado Mayorista"]
+    listed = ", ".join(i18n.tr(name) for name in kinds)
+    detail = (f'<li class="ov-hint">{point_icon("Minorista")}<span>{html.escape(i18n.tr(DETAIL_SHOP))}</span>'
+              f'<em class="ov-hint-tip">{html.escape(listed)}</em></li>' if kinds else "")
     sectors = (f'<p class="ov-sectors">{html.escape(i18n.tr("Sectores de la ciudad"))}: {html.escape(", ".join(data["sectors"]))}</p>'
                if data["sectors"] else "")
-    wholesale = (f'<h6>{html.escape(i18n.tr("Mercados mayoristas"))}</h6><ul class="ov-markets">{markets}</ul>' if markets else
-                 f'<h6>{html.escape(i18n.tr("Mercados mayoristas"))}</h6><p class="ov-none">{html.escape(i18n.tr("Sin mercado mayorista en los datos"))}</p>')
-    return (f'<div class="ov-rcard"><h5>{html.escape(home_mockup.short_region(region))}</h5>{wholesale}'
-            f'<h6>{html.escape(i18n.tr("Puntos de venta al consumidor"))}</h6><ul class="ov-kindlist">{kinds}</ul>{sectors}</div>')
+    none = f'<p class="ov-none">{html.escape(i18n.tr("Sin mercado mayorista en los datos"))}</p>' if not markets else ""
+    return (f'<div class="ov-rcard"><h5>{html.escape(home_mockup.short_region(region))}</h5>'
+            f'<h6>{html.escape(i18n.tr("Dónde se compra"))}</h6><ul class="ov-markets">{markets}{detail}</ul>{none}{sectors}</div>')
 
 
 def points_css(palette):
     ink, text, muted, border, accent, card = (palette["strong_text"], palette["text"], palette["reference"], palette["card_border"],
                                               palette["accent"], palette["card"])
     return f"""<style>
-.ov-rcard {{ margin-bottom:1rem; height:100%; border-radius:14px; padding:8px 12px 6px; border:1px solid {border};
-  background:linear-gradient(160deg, color-mix(in srgb, {accent} 9%, {card}), {card}); box-shadow:0 10px 24px -18px rgba(0,0,0,.5); }}
-.ov-rcard h5 {{ margin:0 0 2px !important; padding:0 !important; font-size:15px !important; color:{ink}; }}
-.ov-rcard h6 {{ margin:3px 0 2px !important; padding:0 !important; font-size:10.5px !important; font-weight:600; letter-spacing:.07em;
+.ov-rcard {{ margin-bottom:1rem; min-height:300px; border-radius:16px; padding:14px 16px 12px; border:1px solid {border};
+  background:linear-gradient(160deg, color-mix(in srgb, {accent} 9%, {card}), {card}); box-shadow:0 14px 30px -20px rgba(0,0,0,.55); }}
+.ov-rcard h5 {{ margin:0 0 4px !important; padding:0 !important; font-size:19px !important; color:{ink}; }}
+.ov-rcard h6 {{ margin:6px 0 8px !important; padding:0 !important; font-size:11px !important; font-weight:600; letter-spacing:.07em;
   text-transform:uppercase; color:{muted}; }}
-.ov-rcard ul {{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:0 4px; }}
-.ov-rcard li {{ display:flex; flex-direction:column; align-items:center; gap:0; width:46px; text-align:center; font-size:9.5px; line-height:1.1; color:{ink}; }}
-.ov-markets li {{ font-weight:600; }}
-.ov-icon {{ width:26px; height:26px; display:block; filter:drop-shadow(0 4px 4px rgba(0,0,0,.25)); }}
-.ov-kindlist {{ display:grid !important; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:2px 2px !important; }}
-.ov-kindlist li {{ width:auto !important; font-size:9px; }}
-.ov-markets li {{ width:88px; font-size:10px; }}
-.ov-markets .ov-icon {{ width:30px; height:30px; }}
-.ov-sectors, .ov-none {{ margin:2px 0 0 !important; font-size:10.5px !important; color:{muted} !important; }}
+.ov-rcard ul {{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:10px 6px; }}
+.ov-rcard li {{ position:relative; display:flex; flex-direction:column; align-items:center; gap:2px; width:104px; text-align:center;
+  font-size:12px; font-weight:600; line-height:1.2; color:{ink}; }}
+.ov-icon {{ width:64px; height:64px; display:block; filter:drop-shadow(0 8px 6px rgba(0,0,0,.3)); transition:transform .25s ease; }}
+.ov-rcard li:hover .ov-icon {{ transform:translateY(-4px) scale(1.06); }}
+.ov-hint {{ cursor:help; }}
+.ov-hint-tip {{ display:none; position:absolute; z-index:20; bottom:100%; left:50%; transform:translateX(-50%); width:150px; padding:6px 8px;
+  border-radius:8px; background:{ink}; color:{card}; font-size:11px; font-style:normal; font-weight:500; }}
+.ov-hint:hover .ov-hint-tip {{ display:block; }}
+.ov-sectors, .ov-none {{ margin:8px 0 0 !important; font-size:12px !important; color:{muted} !important; }}
 </style>"""
 # endregion

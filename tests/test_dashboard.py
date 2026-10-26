@@ -68,7 +68,7 @@ def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     views = [view for window in dashboard.WINDOWS.values() for view in window]
     assert len(views) == len(set(views)) and set(views) == set(dashboard.SHOW_PAGE_BY_TITLE)
     assert dashboard.WINDOWS["Dashboard"] == [
-        dashboard.HOME_PAGE, dashboard.PAGE_OVERVIEW, dashboard.PAGE_DATA, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP, dashboard.PAGE_CHANNELS,
+        dashboard.HOME_PAGE, dashboard.PAGE_WHERE, dashboard.PAGE_INSIGHTS, dashboard.PAGE_DATA, dashboard.PAGE_ANALYSIS, dashboard.PAGE_GAP, dashboard.PAGE_CHANNELS,
         dashboard.PAGE_ALERTS, dashboard.PAGE_SEASONALITY, dashboard.PAGE_SQL]
     assert dashboard.WINDOWS["Ingeniería de datos"][0] == dashboard.PAGE_DIAGRAMS
     # Old addresses of the retired windows and of the 3D view still open something.
@@ -763,7 +763,7 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
     # Tabs are allowed only where they replace a long scroll (D-120, D-121, D-122) and
     # in the SQL studio, whose Resultados / Mensajes tabs are the client's own (D-173).
     tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_DEVOPS, dashboard.PAGE_OPERATIONS, dashboard.PAGE_RUNS,
-              dashboard.PAGE_SQL, dashboard.PAGE_OVERVIEW}  # D-296: the dashboard's three tabs, one screen each
+              dashboard.PAGE_SQL, dashboard.PAGE_WHERE}  # D-296: the dashboard's three tabs, one screen each
     for page in dashboard.PAGES:
         app = draw_page(page)
         assert not app.exception, page
@@ -1085,7 +1085,7 @@ def test_historical_root_link_keeps_the_requested_project_view_after_route_chang
 @needs_database
 def test_d250_the_path_and_the_footer_follow_the_menu():
     order = dashboard.MENU_ORDER
-    assert len(order) == len(set(order)) and order[0] == dashboard.PAGE_OVERVIEW
+    assert len(order) == len(set(order)) and order[0] == dashboard.HOME_PAGE
     assert dashboard.PAGE_SAD not in dashboard.MENU_BLOCK_OF_VIEW and dashboard.PAGE_SAD in dashboard.FOLDER_ORDER
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params['vista'] = dashboard.PAGE_RUNS
@@ -1216,7 +1216,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Every folder starts open (D-139): the whole map of the app at a glance.
     # Step 4 of the refonte: Ingeniería de datos, four pages; DevOps joined Ejecuciones.
     assert 'DevOps y seguridad' not in labels
-    for child in ['Resumen semanal', 'Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría',
+    for child in ['Panorama de precios', 'Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría',
                   'Centro de operación', 'Arquitectura de seguridad', 'Documentos']:
         assert child in labels
     # D-282: the documents live in their folder, not in the menu.
@@ -1318,11 +1318,11 @@ def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio')
     assert not toggle.disabled
     assert toggle.label == 'Negocio · BI'
-    assert 'Resumen semanal' in [link.proto.label for link in app.sidebar.get('page_link')]
+    assert 'Panorama de precios' in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
     assert not app.exception
     assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio').label == 'Negocio · BI'
-    assert 'Resumen semanal' not in [link.proto.label for link in app.sidebar.get('page_link')]
+    assert 'Panorama de precios' not in [link.proto.label for link in app.sidebar.get('page_link')]
 
 
 @needs_database
@@ -1535,7 +1535,7 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 
 MENU_BLOCKS = {
-    'Negocio · BI': ['Dashboard', 'Resumen semanal', 'Precios e inflación'],
+    'Negocio · BI': ['Panorama de precios', 'Dónde comprar', 'Insights'],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],
@@ -1604,7 +1604,7 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
     markup = " ".join(block.value for block in app.markdown)
     # the bar replaces the shared header on this page: one path, one Volver
     assert 'class="app-brand"' not in markup
-    assert "Negocio · BI › <b>Resumen semanal</b>" in markup
+    assert "Negocio · BI › <b>Panorama de precios</b>" in markup
     assert app.button(key="return_to_previous").label == "Volver"
     assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
     # each chip says in full what it counts, and the alerts are the week's national ones
@@ -1721,7 +1721,7 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
         blocks = [key for key, *_ in dashboard.visible_menu_blocks()]
         assert blocks[:4] == dashboard.ROLE_ORDER[role] and blocks[4:] == ["fuentes", "documentos"], role
         firsts[role] = dashboard.visible_menu_order()[0]
-    assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.PAGE_OVERVIEW
+    assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.HOME_PAGE
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_RUNS
     source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
     assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep the view

@@ -28,6 +28,14 @@ DOCUMENT_FIELDS = {
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
+    "Los mercados mayoristas y los puntos de venta de cada región, de norte a sur. Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.": "The wholesale markets and points of sale of each region, north to south. Information only: there are no prices per market, because what rises in a region rises in all its markets.",
+    "Preguntas reales de quien compra, de quien vende por mayor y de quien diseña los datos, con la respuesta de hoy.": "Real questions from whoever buys, whoever sells wholesale and whoever designs the data, with today's answer.",
+    "Dónde comprar": "Where to buy",
+    "Dónde se compra": "Where it is bought",
+    "Comercio al detalle": "Retail shops",
+    "Cada fila es una familia y cada columna una semana: rojo, subió; azul, bajó.": "Each row is a family and each column a week: red, rose; blue, fell.",
+    "Tabla de las últimas semanas: qué familias vienen subiendo.": "Table of the last weeks: which families keep rising.",
+    "Precios e inflación: qué alimentos subieron más que la inflación.": "Prices and inflation: which foods rose more than inflation.",
     "Alimentos desde 2022": "Food since 2022",
     "lo que subió la canasta": "how much the basket rose",
     "Alza en el último año": "Rise over the last year",
@@ -43,7 +51,7 @@ EN = {
     "Stack y evidencia": "Stack and evidence",
     "Documentos": "Documents",
     "Fuentes de datos": "Data sources",
-    "Resumen semanal": "Weekly summary",
+    "Panorama de precios": "Price overview",
     "Precios e inflación": "Prices and inflation",
     "Pipeline y linaje": "Pipeline and lineage",
     "Modelo de datos": "Data model",

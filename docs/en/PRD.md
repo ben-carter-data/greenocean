@@ -64,7 +64,7 @@ Each question names the screen that answers it and the test that recomputes its 
 
 | ID | Question | Screen that answers it | Evidence |
 |---|---|---|---|
-| P-1 | Which prices changed this week, and which are unusual? | Weekly summary | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
+| P-1 | Which prices changed this week, and which are unusual? | Price overview | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
 | P-2 | Is today's price normal for the season? | SQL queries · Price vs. season | `tests/test_sql_explorer.py::test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas` |
 | P-3 | How much does the consumer pay over the wholesale price? | SQL queries · Wholesale gap | `tests/test_sql_explorer.py::test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas` |
 | P-4 | Which foods rose more than inflation? | Prices and inflation | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |

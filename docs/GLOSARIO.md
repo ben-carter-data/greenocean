@@ -34,16 +34,16 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 
 | Sigla o término | Significado | Dónde aparece | Tema |
 |---|---|---|---|
-| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. | Resumen semanal, Precios e inflación | Indicadores |
+| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. | Panorama de precios, Precios e inflación | Indicadores |
 | BI | Inteligencia de negocios (*business intelligence*): el análisis de datos para tomar decisiones; aquí, el panel. | — | Indicadores |
 | BA | Análisis de negocio (*business analysis*): el rol que traduce los datos en decisiones; una de las vistas profesionales del panel. | — | Indicadores |
 | RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Calidad y auditoría | Indicadores |
-| Alerta de precio | Cambio semanal inusual para un producto y de al menos 10 %. | Resumen semanal | Indicadores |
+| Alerta de precio | Cambio semanal inusual para un producto y de al menos 10 %. | Panorama de precios | Indicadores |
 | Precio real | Precio expresado en pesos del último mes publicado del IPC. | Precios e inflación | Indicadores |
 | Semana provisional | Semana de un mes cuyo IPC aún no se publica; usa el último mes disponible. | Precios e inflación | Indicadores |
 | Dimensión de calidad | Aspecto de la calidad que se mide: completitud, actualidad, validez, unicidad, consistencia y exactitud. | Calidad y auditoría | Indicadores |
 | DAMA-DMBOK | Guía de gestión de datos de DAMA International (*Data Management Body of Knowledge*); de ella vienen las dimensiones de calidad. | — | Indicadores |
-| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Resumen semanal, Pipeline y linaje | Fuentes |
+| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Panorama de precios, Pipeline y linaje | Fuentes |
 | INE | Instituto Nacional de Estadísticas de Chile. Publica el IPC de alimentos. | Precios e inflación, Pipeline y linaje | Fuentes |
 | IPC | Índice de precios al consumidor; aquí, la división «Alimentos y bebidas no alcohólicas» que publica el INE. | Precios e inflación | Fuentes |
 | CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Pipeline y linaje | Fuentes |

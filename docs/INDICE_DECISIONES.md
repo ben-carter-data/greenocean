@@ -137,7 +137,7 @@ Cómo se lee el panel en una sola pantalla y en dos idiomas.
 |---|---|---|
 | Se navega con un solo menú lateral, sin pestañas | — | D-096 |
 | En el teléfono, el panel se lee en horizontal | — | D-166 |
-| El Resumen semanal tiene una sola barra de encabezado | — | D-264 |
+| El Panorama de precios tiene una sola barra de encabezado | — | D-264 |
 | Cada página principal tiene una sola barra de encabezado | — | D-267 |
 | Cada página cabe en una ventana real de 1440 × 790 | — | D-274 |
 | Botones y enlaces comparten un solo componente | — | D-281 |

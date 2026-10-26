@@ -52,7 +52,7 @@ def test_d285_every_click_opens_a_page_of_the_menu_and_every_theme_has_its_filte
     themes = {key for key, _ in app_map.THEMES}
     for key, (name, logo, node_themes, place, *_rest) in app_map.NODES.items():
         page = app_map.NODES[key][7]
-        assert page in dashboard.MENU_ORDER, (key, page)
+        assert page in dashboard.MENU_ORDER or page in dashboard.DOOR_PAGES, (key, page)
         assert set(node_themes) <= themes and node_themes, key
         assert logo.split(":")[0] in ("brand", "source", "person", "icon"), key
     assert {theme for node in app_map.NODES.values() for theme in node[2]} == themes

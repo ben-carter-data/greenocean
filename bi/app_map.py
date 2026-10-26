@@ -90,7 +90,7 @@ NODES = {
                   "Dibuja este panel con la base servida en solo lectura y lo publica en Streamlit Community Cloud "
                   "desde la rama main.",
                   "Cada vez que alguien abre una página.", "Dashboard",
-                  [("Páginas", "Dashboard, Resumen semanal, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y "
+                  [("Páginas", "Panorama de precios, Dónde comprar, Insights, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y "
                     "auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, "
                     "Mapa de la app y la carpeta de documentos."),
                    ("Streamlit Community Cloud", "el servicio gratuito que publica el panel y guarda sus secretos.")]),

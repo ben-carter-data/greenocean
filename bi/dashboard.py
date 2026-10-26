@@ -44,7 +44,8 @@ tr = i18n.tr
 # The menu is the project journey; every destination is directly accessible.
 PAGE_HOME = "Dashboard"
 # D-296: the macro dashboard of the whole project, in tabs, like a BI tool; the first page of the menu.
-PAGE_OVERVIEW = "Dashboard general"
+PAGE_WHERE = "Dónde comprar"
+PAGE_INSIGHTS = "Insights"
 PAGE_DATA = "Datos"
 # The cover of the portfolio (C01): what the project is, in one screen, with real figures
 # and a way into the dashboard and the code. The full definition is the view after it.
@@ -61,7 +62,7 @@ PAGE_CHANNELS = "Canales y regiones"
 PAGE_SEASONALITY = "Contexto del precio"
 # D-162: read-only SQL on the gold layer, the destination of «Consultas SQL» in the pipeline.
 PAGE_SQL = "Consultas SQL"
-RETIRED_VIEWS = {"Histórico y estacionalidad": "Contexto del precio"}
+RETIRED_VIEWS = {"Histórico y estacionalidad": "Contexto del precio", "Dashboard general": "Dónde comprar"}
 PAGE_ALERTS = "Alertas"
 PAGE_KPI = "Indicadores explicados"
 PAGE_DEVOPS = "DevOps y seguridad"
@@ -114,7 +115,7 @@ SECTION_SECURITY = "Seguridad"
 WINDOWS = {
     SECTION_PROJECT: [PAGE_COVER, PAGE_BUSINESS, PAGE_RULES, PAGE_STACK, PAGE_APP_MAP],
     SECTION_KPI: [PAGE_KPI],
-    REPORT_WINDOW: [PAGE_HOME, PAGE_OVERVIEW, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
+    REPORT_WINDOW: [PAGE_HOME, PAGE_WHERE, PAGE_INSIGHTS, PAGE_DATA, PAGE_ANALYSIS, PAGE_GAP, PAGE_CHANNELS, PAGE_ALERTS,
                     PAGE_SEASONALITY, PAGE_SQL],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_DEVOPS, PAGE_OPERATIONS, PAGE_RUNS],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
@@ -178,7 +179,7 @@ PAGE_ICONS = {
     PAGE_PRD: ":material/assignment:", PAGE_SAD: ":material/account_tree:", PAGE_ADR: ":material/gavel:",
     PAGE_SQL: ":material/terminal:",
     PAGE_SECURITY: ":material/lock:", PAGE_STACK: ":material/stacks:",
-    PAGE_OVERVIEW: ":material/space_dashboard:", PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
+    PAGE_WHERE: ":material/storefront:", PAGE_INSIGHTS: ":material/lightbulb:", PAGE_HOME: ":material/dashboard:", PAGE_DATA: ":material/table_view:", PAGE_COVER: ":material/home:",
     PAGE_BUSINESS: ":material/assignment:",
     PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
     PAGE_ANALYSIS: ":material/monitoring:", PAGE_GAP: ":material/compare_arrows:",
@@ -195,7 +196,7 @@ PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
     PAGE_SECURITY: "mapa-de-seguridad", PAGE_STACK: "stack-y-evidencia",
     PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SQL: "consultas-sql",
-    PAGE_HOME: "dashboard", PAGE_OVERVIEW: "dashboard-general", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
+    PAGE_HOME: "dashboard", PAGE_WHERE: "donde-comprar", PAGE_INSIGHTS: "insights", PAGE_DATA: "datos", PAGE_COVER: "portada", PAGE_BUSINESS: "negocio",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura", PAGE_ANALYSIS: "analisis", PAGE_GAP: "brecha",
     PAGE_CHANNELS: "canales", PAGE_SEASONALITY: "estacionalidad", PAGE_ALERTS: "alertas",
@@ -638,6 +639,8 @@ LOAD_ALERT_SEEN = "load_alert_seen"
 def show_load_alert(windows_by_title):
     """D-298: when the last weekly load failed, every page says so at once, in the menu, with a way to the Operations
     center; the first page of the visit also raises a notice. The panel keeps showing the last valid load."""
+    if is_public_profile():
+        return  # a failure is for the operator, behind the key
     runs, _ = read_pipeline_runs()
     failed = control.latest_load_failure(runs)
     if not failed:
@@ -1774,7 +1777,8 @@ def apply_style(mode):
 
 
 OVERVIEW_CLASS_BY_VIEW = {
-    PAGE_OVERVIEW: "overview-dashboard",
+    PAGE_WHERE: "overview-dashboard",
+    PAGE_INSIGHTS: "overview-dashboard",
     PAGE_HOME: "overview-dashboard",
     PAGE_SEASONALITY: "overview-history",
     PAGE_KPI: "overview-kpis",
@@ -1926,7 +1930,7 @@ def show_app_header(window):
 
 
 # The pages whose only header is one thin bar (D-264, D-267).
-BAR_VIEWS = {PAGE_OVERVIEW, PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS,
+BAR_VIEWS = {PAGE_WHERE, PAGE_INSIGHTS, PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS,
              PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER, PAGE_APP_MAP}
 
 
@@ -5054,6 +5058,7 @@ def show_market_overview(mode, prefix):
             regional_rows, None if region == ALL_VALUES else region, compared=sum(model['counts']),
             available=model['available']), unsafe_allow_html=True, width="stretch")
         show_alert_trigger(week)
+        show_home_tools(week)
         st.markdown(home_mockup.dashboard_updated(updated, latest['status']==etl.STATUS_LOADED),
                     unsafe_allow_html=True, width="content")
     map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
@@ -5842,6 +5847,7 @@ def week_range_label(week):
 
 OVERVIEW_WEEKS_KEY = "ov_weeks"
 OVERVIEW_REGION_KEY = "ov_region_start"
+OVERVIEW_INSIGHT_VIEW = "ov_insight_view"
 
 
 def overview_head(key, title, note="", control=None, hint=""):
@@ -5855,88 +5861,6 @@ def overview_head(key, title, note="", control=None, hint=""):
     return card
 
 
-def show_overview_market(mode, version):
-    """The market tab (D-296): this week in five scorecards, then four questions, one per chart: how prices moved, which
-    families rose, in which regions, and how the last weeks went."""
-    variations, alerts_rows = read_cached_all_variations(version), read_price_alerts()
-    prices = read_cached_national_prices(version)
-    weeks = sorted(variations["week_start"].unique())
-    week = overview_week(weeks)
-    family = st.session_state.get(OVERVIEW_FAMILY_KEY)
-    upto, upto_prices = variations[variations["week_start"] <= week], prices[prices["week_start"] <= week]
-    upto_alerts = alerts_rows[alerts_rows["week_start"] <= week]
-    scope = (lambda frame: frame[frame["product_group"] == family]) if family else (lambda frame: frame)
-    market = overview.market_weeks(upto_prices, upto, upto_alerts, family=family)
-    moves = overview.family_moves(upto_prices, upto, week)
-    moved = overview.directions(upto, week, family)
-    now = market.iloc[-1]
-    counts = dict(zip(moved["direction"], moved["prices"]))
-    compared = sum(counts.values()) or 1
-    history = [overview.directions(upto, w, family) for w in weeks[-12:] if w <= week]
-    rose = [int(frame.loc[0, "prices"]) / max(1, int(frame["prices"].sum())) * 100 for frame in history]
-    fell = [int(frame.loc[1, "prices"]) / max(1, int(frame["prices"].sum())) * 100 for frame in history]
-    percent = lambda value: f"{value:.0f} %"
-    scope_name = home_mockup.short_family(family) if family else tr("todas las familias")
-    count_text = lambda value: f"{int(value):,}".replace(",", ".")
-    share = lambda part: f"{part / compared * 100:.0f} %"
-    st.markdown(overview.build_scorecards_html([
-        (tr("Semana actual"), week_range_label(week), scope_name, None, "neutral",
-         "La semana que se lee, de lunes a domingo. ODEPA publica sus precios por semana y cada martes llega una nueva; "
-         "arriba se puede elegir otra semana o una sola familia."),
-        (tr("Precios comparables"), f"{int(now['comparable']):,}".replace(",", "."),
-         tr("de {}").format(f"{int(now['prices']):,}".replace(",", ".")), list(market["comparable"][-12:]), "neutral",
-         f"De los {count_text(now['prices'])} precios de esta semana, {count_text(now['comparable'])} también tienen precio la "
-         "semana anterior en las mismas regiones: solo esos se comparan. La línea muestra las últimas 12 semanas."),
-        (tr("Subieron"), f"{counts['Subieron']:,}".replace(",", "."), percent(counts["Subieron"] / compared * 100), rose, "rise",
-         f"{count_text(counts['Subieron'])} de los {count_text(compared)} precios comparables subieron frente a la semana "
-         f"anterior ({share(counts['Subieron'])}). La línea muestra esa proporción en las últimas 12 semanas."),
-        (tr("Bajaron"), f"{counts['Bajaron']:,}".replace(",", "."), percent(counts["Bajaron"] / compared * 100), fell, "fall",
-         f"{count_text(counts['Bajaron'])} de los {count_text(compared)} precios comparables bajaron frente a la semana "
-         f"anterior ({share(counts['Bajaron'])}). Los que cambiaron menos de 0,05 % cuentan como sin cambio."),
-        (tr("Alertas de precio"), str(int(now["alerts"])), tr("inusuales"), list(market["alerts"][-12:]),
-         "rise" if now["alerts"] else "neutral",
-         f"{int(now['alerts'])} precios cambiaron fuera de lo habitual: más de 2 desviaciones del promedio de sus 12 semanas "
-         "previas y al menos 10 %, con dos cotizaciones por semana. El detalle está en el Resumen semanal."),
-    ], charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
-    palette = charts.get_palette(mode)
-    regions_of_points = overview.ordered_regions(overview.read_points(), read_region_ids(version))
-    start = min(st.session_state.get(OVERVIEW_REGION_KEY, 0), max(0, len(regions_of_points) - overview.REGIONS_PER_VIEW))
-
-    def region_arrows():
-        with st.container(horizontal=True, gap="xsmall", key="ov_region_arrows"):
-            if st.button("", icon=":material/chevron_left:", key="ov_region_prev", disabled=start == 0):
-                st.session_state[OVERVIEW_REGION_KEY] = max(0, start - 1)
-                st.rerun()
-            if st.button("", icon=":material/chevron_right:", key="ov_region_next",
-                         disabled=start + overview.REGIONS_PER_VIEW >= len(regions_of_points)):
-                st.session_state[OVERVIEW_REGION_KEY] = start + 1
-                st.rerun()
-
-    with overview_head("where_small", "¿Dónde se compra, región por región?", "Los puntos que existen, de norte a sur; si sube, sube en todos",
-                       control=region_arrows,
-                       hint="Solo información: los mercados mayoristas y los tipos de punto de venta que ODEPA registra en cada "
-                            "región. Los precios de los puntos de una misma ciudad se mueven juntos, así que no se separan: lo "
-                            "que sube en una región sube en todos sus mercados. Las flechas pasan de una región a la siguiente."):
-        shown = regions_of_points[start:start + overview.REGIONS_PER_VIEW]
-        columns = st.columns(len(shown), gap="small")
-        points = overview.read_points()
-        st.markdown(overview.points_css(palette), unsafe_allow_html=True)
-        for column, region in zip(columns, shown):
-            column.markdown(overview.build_region_card(region, points[region]), unsafe_allow_html=True)
-    count = st.session_state.get(OVERVIEW_WEEKS_KEY, 8)
-    with overview_head("heat_wide", "¿Qué familias vienen subiendo, semana a semana?", "Cada fila es una familia y cada columna una semana: rojo, subió; azul, bajó",
-                       hint="Cada celda es el cambio típico de una familia en una semana: rojo si subió, azul si bajó, y más "
-                            "intenso cuanto mayor el cambio. Una fila con varias celdas rojas seguidas es una familia que viene "
-                            "subiendo. El control elige cuántas semanas ver.",
-                       control=lambda: st.slider(tr("Semanas"), 4, 12, 8, key=OVERVIEW_WEEKS_KEY, width=200,
-                                                 label_visibility="collapsed", help=tr("Cuántas semanas mostrar"))):
-        heat = overview.family_heat(upto, weeks=count)
-        columns = list(dict.fromkeys(heat.sort_values("week_start")["week"]))
-        logos = {home_mockup.short_family(f): home_mockup.family_art_data_uri(f) for f in OVERVIEW_FAMILIES}
-        st.markdown(overview.heat_table_css(palette) + overview.build_heat_table_html(
-            heat, "family", "week", "change", columns, list(moves["family"]), palette, logos), unsafe_allow_html=True)
-
-
 @st.cache_data
 def read_cached_region_ids(database_version):
     return dict(queries.run_sql("SELECT region, region_id FROM dim_region").itertuples(index=False))
@@ -5944,67 +5868,6 @@ def read_cached_region_ids(database_version):
 
 def read_region_ids(version):
     return read_cached_region_ids(version)
-
-
-def show_overview_inflation(mode, version):
-    """D-307: the inflation tab in plain words. The IPC is the price of a basket of food; each family is compared with it."""
-    rows, last, summary, ipc_total, ipc_year = read_family_inflation(version)
-    month = lambda pair: f"{charts.CHILE_LOCALE['time']['months'][pair[1] - 1]} {pair[0]}"
-    counts = summary["verdict"].value_counts()
-    ipc = rows[rows["product_group"] == inflation_view.IPC_NAME].sort_values("month_start")
-    twelve = overview.ipc_twelve_months(rows)
-    total_families = len(summary)
-    more, less, same = (counts.get(name, 0) for name in ("más que la inflación", "menos que la inflación", "al ritmo de la inflación"))
-    basket = f"{1000 * (1 + ipc_total / 100):,.0f}".replace(",", ".")
-    signed = charts.format_signed_percent
-    first_year = twelve.iloc[0]
-    st.markdown(overview.build_scorecards_html([
-        (tr("Alimentos desde 2022"), signed(ipc_total), tr("lo que subió la canasta"), list(ipc["index"][-24:]), "rise",
-         f"Los alimentos en general (el IPC de alimentos del INE: el precio de una canasta típica) subieron {signed(ipc_total)} "
-         f"desde enero 2022. Lo que costaba $1.000 hoy cuesta ${basket}. Con este número se compara cada familia."),
-        (tr("Alza en el último año"), signed(ipc_year), tr("{} frente a un año antes").format(short_month(last)), list(twelve["change"][-24:]), "rise",
-         f"Entre {month(year_ago_of(last))} y {month(last)} los alimentos subieron {signed(ipc_year)}. Siguen subiendo, pero "
-         f"más lento: en {month((first_year['month_start'].year, first_year['month_start'].month))} el alza de un año era {signed(first_year['change'])}."),
-        (tr("Subieron más que la canasta"), f"{more} de {total_families}", tr("familias"), None, "rise",
-         f"{more} de {total_families} familias subieron desde 2022 más que los alimentos en general ({signed(ipc_total)}): "
-         "se encarecieron más que el resto."),
-        (tr("Subieron menos que la canasta"), f"{less} de {total_families}", tr("familias"), None, "fall",
-         f"{less} de {total_families} familias subieron, pero menos que los alimentos en general: aunque cuestan más que en 2022, "
-         "se encarecieron menos que el resto."),
-        (tr("Iguales a la canasta"), f"{same} de {total_families}", tr("familias"), None, "neutral",
-         f"{same} de {total_families} familias subieron casi igual que los alimentos en general (con menos de 2 puntos de diferencia)."),
-    ], charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
-    palette = charts.get_palette(mode)
-    first, second = st.columns([1.5, 1.2], gap="small")
-    with first, overview_card("fam_total_small", "¿Cuánto subió cada familia desde 2022?",
-                              "Rojo: subió más que la canasta (línea punteada, " + signed(ipc_total) + ") · azul: subió, pero menos",
-                              hint="Cada barra es cuánto subió el precio de una familia desde enero 2022. La línea punteada es lo que "
-                                   "subieron los alimentos en general. Todas subieron: las rojas se encarecieron más que el resto y las "
-                                   "azules, menos."):
-        totals = summary.assign(family=summary["family"].map(home_mockup.short_family))
-        st.altair_chart(overview.ranked_bars(totals, "family", "total", mode, reference=ipc_total, name="tot"),
-                        width="stretch", height="stretch", theme=None, key="ov_totals")
-    with second, overview_card("ipc12_small", "¿La inflación está bajando?", "Cuánto subieron los alimentos en cada año (%)",
-                               hint=f"Cada punto es lo que subieron los alimentos en los 12 meses anteriores. Baja de "
-                                    f"{signed(first_year['change'])} a {signed(ipc_year)}: los precios siguen subiendo, pero cada vez "
-                                    "más lento. Si la línea bajara de cero, los precios estarían bajando."):
-        st.altair_chart(overview.line_chart(twelve, "month_start", "change", mode), width="stretch", height="stretch",
-                        theme=None, key="ov_ipc12")
-    with overview_card("years_wide", "¿Cuánto subió cada familia, año por año?", "Cambio de diciembre a diciembre (%); * hasta " + month(last),
-                       hint="Cuánto subió cada familia y los alimentos en general en cada año. Los años encadenados dan el alza "
-                            "total desde 2022."):
-        years = overview.family_years(rows, last)
-        order = ["Alimentos en general"] + list(summary.assign(f=summary["family"].map(home_mockup.short_family))["f"])
-        logos = {home_mockup.short_family(f): home_mockup.family_art_data_uri(f) for f in OVERVIEW_FAMILIES}
-        st.markdown(overview.heat_table_css(palette) + overview.build_heat_table_html(
-            years, "family", "year", "change", sorted(years["year"].unique()), order, palette, logos), unsafe_allow_html=True)
-
-
-def year_ago_of(pair):
-    return (pair[0] - 1, pair[1])
-
-
-OVERVIEW_INSIGHT_VIEW = "ov_insight_view"
 
 
 @st.cache_data(show_spinner=False)
@@ -6056,14 +5919,14 @@ def show_overview_insights(mode, version):
     fell = moves[moves["state"] == "Bajó"]["product_group"].map(short)
     rose = moves[moves["state"] == "Subió"]["product_group"].map(short)
     questions = [
-        ("¿Qué está subiendo y qué está bajando esta semana?", "Persona común", "Resumen semanal",
+        ("¿Qué está subiendo y qué está bajando esta semana?", "Persona común", "Panorama de precios",
          f"Subieron: {overview.join(rose) or 'ninguna familia'}. Bajaron: {overview.join(fell) or 'ninguna familia'}."),
-        ("¿Qué alimentos se encarecieron más desde 2022?", "Persona común", "Dashboard · Inflación",
+        ("¿Qué alimentos se encarecieron más desde 2022?", "Persona común", "Precios e inflación",
          (f"{overview.join(above)} subieron más que los alimentos en general ({overview.signed(ipc_total)})." if len(above)
           else "Ninguna familia subió más que los alimentos en general.")),
-        ("¿La inflación de los alimentos está bajando?", "Persona común", "Dashboard · Inflación",
+        ("¿La inflación de los alimentos está bajando?", "Persona común", "Precios e inflación",
          f"Sí, sigue subiendo pero más lento: de {overview.signed(first_year['change'])} al año a {overview.signed(ipc_year)}."),
-        ("¿Dónde se compra por mayor?", "Comerciante mayorista", "Dashboard · Mercado",
+        ("¿Dónde se compra por mayor?", "Comerciante mayorista", "Dónde comprar",
          f"{market_count} mercados mayoristas en {len(overview.read_points())} regiones, 3 de ellos en Santiago."),
         ("¿Cuánto se agrega entre el mercado mayorista y el consumidor?", "Comerciante mayorista", "Consultas SQL · Brecha mayorista",
          (f"En promedio, {overview.join(f'{short(f)} {overview.signed(v)}' for f, v in gaps.items())}." if gaps is not None
@@ -6129,30 +5992,61 @@ def build_overview_css(mode):
     </style>"""
 
 
-def show_overview_page(mode):
-    """The macro dashboard (D-296): three tabs, each one screen of scorecards and four linked charts."""
+def show_where_page(mode):
+    """Dónde comprar: the wholesale markets and the kinds of consumer point of each region, north to south, as information
+    only (D-308). Each market is a house with its name; every consumer kind shares one house, named on hover."""
     version = get_database_version()
+    regions = overview.ordered_regions(overview.read_points(), read_region_ids(version))
+    start = min(st.session_state.get(OVERVIEW_REGION_KEY, 0), max(0, len(regions) - overview.REGIONS_PER_VIEW))
+
+    def arrows():
+        with st.container(horizontal=True, gap="xsmall", key="ov_region_arrows"):
+            if st.button("", icon=":material/chevron_left:", key="ov_region_prev", disabled=start == 0):
+                st.session_state[OVERVIEW_REGION_KEY] = max(0, start - 1)
+                st.rerun()
+            if st.button("", icon=":material/chevron_right:", key="ov_region_next",
+                         disabled=start + overview.REGIONS_PER_VIEW >= len(regions)):
+                st.session_state[OVERVIEW_REGION_KEY] = start + 1
+                st.rerun()
+
+    show_page_bar(PAGE_WHERE, "Dónde comprar", "Los mercados mayoristas y los puntos de venta de cada región, de norte a sur. "
+                  "Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.",
+                  side=arrows)
+    points = overview.read_points()
+    st.markdown(overview.points_css(charts.get_palette(mode)) + build_overview_css(mode), unsafe_allow_html=True)
+    shown = regions[start:start + overview.REGIONS_PER_VIEW]
+    for column, region in zip(st.columns(len(shown), gap="medium"), shown):
+        column.markdown(overview.build_region_card(region, points[region]), unsafe_allow_html=True)
+
+
+def show_weeks_table(mode, version):
+    """The table of the last weeks, one row per family and one column per week (D-308): it opens from the Panorama."""
     variations = read_cached_all_variations(version)
-    weeks = [f"{pd.Timestamp(w):%Y-%m-%d}" for w in sorted(variations["week_start"].unique(), reverse=True)[:12]]
-    for key, options in ((OVERVIEW_WEEK_KEY, weeks), (OVERVIEW_FAMILY_KEY, [None] + OVERVIEW_FAMILIES)):
-        if key in st.session_state and st.session_state[key] not in options:
-            del st.session_state[key]
-    def slicers():
-        st.selectbox(tr("Semana"), weeks, key=OVERVIEW_WEEK_KEY,
-                     format_func=lambda w: i18n.translate_text(week_range_label(pd.Timestamp(w))),
-                     label_visibility="collapsed", width=150)
-        st.selectbox(tr("Familia"), [None] + OVERVIEW_FAMILIES, key=OVERVIEW_FAMILY_KEY, label_visibility="collapsed",
-                     format_func=lambda f: tr("Todas las familias") if f is None else home_mockup.short_family(f), width=190)
-    show_page_bar(PAGE_OVERVIEW, "Dashboard", "Todo el proyecto en una vista: el mercado de la semana, la inflación de "
-                  "los alimentos y los datos con su operación.", side=slicers)
-    with st.container(key="ov_tabs"):
-        market, inflation, insights = st.tabs([tr("Mercado"), tr("Inflación"), tr("Insights")])
-        with market:
-            show_overview_market(mode, version)
-        with inflation:
-            show_overview_inflation(mode, version)
-        with insights:
-            show_overview_insights(mode, version)
+    prices = read_cached_national_prices(version)
+    weeks = sorted(variations["week_start"].unique())
+    week = pd.Timestamp(weeks[-1])
+    upto, upto_prices = variations[variations["week_start"] <= week], prices[prices["week_start"] <= week]
+    moves = overview.family_moves(upto_prices, upto, week)
+    count = st.slider(tr("Semanas"), 4, 12, 8, key=OVERVIEW_WEEKS_KEY, help=tr("Cuántas semanas mostrar"))
+    palette = charts.get_palette(mode)
+    heat = overview.family_heat(upto, weeks=count)
+    columns = list(dict.fromkeys(heat.sort_values("week_start")["week"]))
+    logos = {home_mockup.short_family(f): home_mockup.family_art_data_uri(f) for f in OVERVIEW_FAMILIES}
+    st.markdown(build_overview_css(mode) + overview.heat_table_css(palette) + overview.build_heat_table_html(
+        heat, "family", "week", "change", columns, list(moves["family"]), palette, logos), unsafe_allow_html=True)
+
+
+@st.dialog("¿Qué familias vienen subiendo, semana a semana?", width="large")
+def show_weeks_dialog(mode, version):
+    st.caption(tr("Cada fila es una familia y cada columna una semana: rojo, subió; azul, bajó."))
+    show_weeks_table(mode, version)
+
+
+def show_insights_page(mode):
+    """Insights: the questions people ask, each with today's answer, and one reading per kind of reader (D-308)."""
+    show_page_bar(PAGE_INSIGHTS, "Insights", "Preguntas reales de quien compra, de quien vende por mayor y de quien diseña "
+                  "los datos, con la respuesta de hoy.")
+    show_overview_insights(mode, get_database_version())
 
 
 def show_price_context_page(mode):
@@ -7438,7 +7332,8 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(mode, header=lambda: show_page_bar(
         PAGE_SQL, "Consultas SQL", sql_explorer.DESCRIPTION, sql_explorer.build_bar_chips())),
     PAGE_HOME: show_home_page,
-    PAGE_OVERVIEW: lambda mode: show_overview_page(mode),
+    PAGE_WHERE: lambda mode: show_where_page(mode),
+    PAGE_INSIGHTS: lambda mode: show_insights_page(mode),
     PAGE_DATA: show_data_page,
     PAGE_COVER: show_cover_page,
     PAGE_BUSINESS: lambda mode: show_document_page(mode, PAGE_BUSINESS,
@@ -7949,7 +7844,7 @@ RELOAD_HOME_SCRIPT = """<script>
 # with a faint fill and a blue bar on its left. The documents close the list, before the sources.
 # (key, title, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BI", [PAGE_OVERVIEW, PAGE_HOME, PAGE_SEASONALITY]),
+    ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_WHERE, PAGE_INSIGHTS]),
     ("ingenieria", "Ingeniería de datos",
      [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY]),
@@ -7957,12 +7852,14 @@ MENU_BLOCKS = [
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
     ("documentos", "Documentos", [PAGE_FOLDER]),
 ]
+# D-308: a page that opens from a button of another page and has no line of its own in the menu.
+DOOR_PAGES = {PAGE_SEASONALITY: PAGE_HOME}
 # D-250: the breadcrumb and the footer follow the menu, in its order and with its names.
 MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages]
 MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages}
 # The menu's own glyphs, one per page, thin lines (Material Symbols).
 SIDEBAR_ICONS = {
-    PAGE_OVERVIEW: ":material/space_dashboard:", PAGE_HOME: ":material/grid_view:", PAGE_SEASONALITY: ":material/calendar_month:",
+    PAGE_WHERE: ":material/storefront:", PAGE_INSIGHTS: ":material/lightbulb:", PAGE_HOME: ":material/grid_view:",
     PAGE_DIAGRAMS: ":material/share:", PAGE_ARCHITECTURE: ":material/database:",
     PAGE_OPERATIONS: ":material/verified_user:", PAGE_SQL: ":material/terminal:",
     PAGE_RUNS: ":material/radio_button_checked:", PAGE_SECURITY: ":material/lock:",
@@ -7980,7 +7877,7 @@ SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="18" 
 SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingeniería de datos",
                       SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación", SECTION_SECURITY: "Seguridad",
                       SECTION_RESOURCES: "GitHub"}
-SIDEBAR_LABELS = {PAGE_OVERVIEW: "Dashboard", PAGE_HOME: "Resumen semanal", PAGE_SEASONALITY: "Precios e inflación",
+SIDEBAR_LABELS = {PAGE_WHERE: "Dónde comprar", PAGE_INSIGHTS: "Insights", PAGE_HOME: "Panorama de precios", PAGE_SEASONALITY: "Precios e inflación",
                   PAGE_DIAGRAMS: "Pipeline y linaje", PAGE_OPERATIONS: "Calidad y auditoría",
                   PAGE_RUNS: "Centro de operación", PAGE_SECURITY: "Arquitectura de seguridad",
                   PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual de operación",
@@ -8252,6 +8149,20 @@ def build_sidebar_github_html(is_current):
             f'{build_github_icon_svg(20)}</a>')
 
 
+WINDOW_PAGES = {}
+
+
+def show_home_tools(week):
+    """The Panorama's two doors, small, in its bar (D-308): the table of weeks (a dialog) and Precios e inflación."""
+    if st.button(tr("Semanas"), icon=":material/table_chart:", key="home_weeks_trigger",
+                 help=tr("Tabla de las últimas semanas: qué familias vienen subiendo.")):
+        show_weeks_dialog(get_mode(), get_database_version())
+    if WINDOW_PAGES:
+        st.page_link(WINDOW_PAGES[WINDOW_OF_VIEW[PAGE_SEASONALITY]], label=tr("Inflación"), icon=":material/trending_up:",
+                     query_params=keep_context() | {VIEW_PARAMETER: PAGE_SEASONALITY},
+                     help=tr("Precios e inflación: qué alimentos subieron más que la inflación."))
+
+
 def show_alert_trigger(week):
     """The price alerts of the week shown, a red chip in the Resumen's bar (D-169, D-264): the same
     dialog the sidebar held since D-096. The count is national, like the dialog."""
@@ -8361,6 +8272,7 @@ def main():
         # An old address: it only switches to its window, before any menu is drawn.
         current_page.run()
         return
+    WINDOW_PAGES.update(windows_by_title)
     open_profile_landing(windows_by_title)
     show_sidebar_navigation(windows_by_title, current_window, order)
     if not get_profile():

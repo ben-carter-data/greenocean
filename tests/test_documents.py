@@ -122,7 +122,7 @@ def test_d210_the_prd_figures_match_the_served_database():
 
 
 def test_d252_the_glossary_names_only_pages_and_tabs_that_exist():
-    menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.MENU_ORDER}
+    menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
     tabs = {"Operación", "Despliegue", "CI/CD", "Monitoreo"}
     text = (DOCS_DIR / "GLOSARIO.md").read_text(encoding="utf-8")
     table = text[text.index("| Sigla o término"):].split("\n\n", 1)[0]

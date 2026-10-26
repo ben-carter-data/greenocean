@@ -34,16 +34,16 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 
 | Acronym or term | Meaning | Where it appears | Theme |
 |---|---|---|---|
-| KPI | Key performance indicator: each figure that measures something of the business. | Weekly summary, Prices and inflation | Indicators |
+| KPI | Key performance indicator: each figure that measures something of the business. | Price overview, Prices and inflation | Indicators |
 | BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
 | BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | — | Indicators |
 | RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
-| Price alert | A weekly change that is unusual for a product and of at least 10 %. | Weekly summary | Indicators |
+| Price alert | A weekly change that is unusual for a product and of at least 10 %. | Price overview | Indicators |
 | Real price | A price expressed in pesos of the last published month of the CPI. | Prices and inflation | Indicators |
 | Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | Prices and inflation | Indicators |
 | Quality dimension | An aspect of quality that is measured: completeness, timeliness, validity, uniqueness, consistency and accuracy. | Quality and audit | Indicators |
 | DAMA-DMBOK | Data management guide of DAMA International (*Data Management Body of Knowledge*); the quality dimensions come from it. | — | Indicators |
-| ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Weekly summary, Pipeline and lineage | Sources |
+| ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Price overview, Pipeline and lineage | Sources |
 | INE | Chile's National Statistics Institute (*Instituto Nacional de Estadísticas*). It publishes the food CPI. | Prices and inflation, Pipeline and lineage | Sources |
 | CPI (IPC) | Consumer price index (*índice de precios al consumidor*); here, the «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division published by the INE. | Prices and inflation | Sources |
 | CSV | Text file with comma-separated values: the format in which ODEPA publishes the prices. | Pipeline and lineage | Sources |

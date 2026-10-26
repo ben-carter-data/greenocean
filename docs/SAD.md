@@ -104,7 +104,7 @@ Si un paso falla, los siguientes no corren y la base servida no cambia ([ADR-11 
 
 Al abrirse, el panel compara su base con el puntero de la rama `main`. Si su copia es más antigua, descarga la base del release «base-actual» y la usa solo si su huella SHA-256 coincide. Después abre la base en solo lectura: ninguna página puede cambiar un dato. Si GitHub no responde, el panel sigue con la base que ya tiene.
 
-La primera vez, el lector elige una vista: la de usuario muestra el negocio (el Dashboard, el Resumen semanal y Precios e inflación) y la profesional, todo el proyecto, ordenado según el perfil que elige (Data Eng, BA, BI, DevOps o Seguridad); la vista de usuario abre el resto solo con la clave de la app. Si la última carga falló, un aviso rojo arriba del menú lo dice en todas las páginas, con un enlace al paso que falló. El panel se lee en español y en inglés.
+La primera vez, el lector elige una vista: la de usuario muestra el negocio (el Panorama de precios, Dónde comprar, Insights y Precios e inflación) y la profesional, todo el proyecto, ordenado según el perfil que elige (Data Eng, BA, BI, DevOps o Seguridad); la vista de usuario abre el resto solo con la clave de la app. Si la última carga falló, un aviso rojo arriba del menú lo dice en todas las páginas, con un enlace al paso que falló. El panel se lee en español y en inglés.
 
 ## 6. Los datos
 

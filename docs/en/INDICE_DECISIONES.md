@@ -137,7 +137,7 @@ How the panel reads on a single screen and in two languages.
 |---|---|---|
 | Navigation is a single side menu, without tabs | — | D-096 |
 | On a phone, the panel is read in landscape | — | D-166 |
-| The Weekly summary has a single header bar | — | D-264 |
+| The Price overview has a single header bar | — | D-264 |
 | Each main page has a single header bar | — | D-267 |
 | Each page fits a real window of 1440 × 790 | — | D-274 |
 | Buttons and links share a single component | — | D-281 |

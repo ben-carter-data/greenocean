@@ -85,7 +85,7 @@ def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
     # D-269: each capture is a main page of the menu at the desktop size, one per profile of the PRD.
     from PIL import Image
     from bi import dashboard
-    menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.MENU_ORDER}
+    menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
     for file_name, title, _ in doc_views.MOCKUPS:
         assert title.split(" · ", 1)[1] in menu, title
         assert Image.open(doc_views.MOCKUP_DIR / file_name).size == (1440, 900), file_name

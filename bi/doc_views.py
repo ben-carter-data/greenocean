@@ -193,7 +193,7 @@ def build_context_html(mode):
 USE_CASE_ROWS = (104, 200, 296, 392, 488)
 # (actor, row, case, PRD id, screen)
 USER_CASES = [
-    ("Gerencia", 0, "Revisar qué se movió en la semana y qué es inusual", "P-1", "Resumen semanal"),
+    ("Gerencia", 0, "Revisar qué se movió en la semana y qué es inusual", "P-1", "Panorama de precios"),
     ("Analista de pricing", 1, "Saber si el precio de hoy es normal para la época", "P-2", "Consultas SQL · Precio vs. época"),
     ("Analista de pricing", 2, "Ver qué alimentos subieron más que la inflación", "P-4", "Precios e inflación"),
     ("Compras y abastecimiento", 3, "Ver cuánto paga el consumidor sobre el mayorista", "P-3", "Consultas SQL · Brecha mayorista"),
@@ -433,8 +433,8 @@ svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
 
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
 MOCKUPS = [
-    ("m1-dashboard-corporativo.jpg", "M-1 · Dashboard", "tema Corporativo"),
-    ("m2-resumen-vantablack.jpg", "M-2 · Resumen semanal", "tema Vantablack"),
+    ("m1-dashboard-corporativo.jpg", "M-1 · Panorama de precios", "tema Corporativo"),
+    ("m2-resumen-vantablack.jpg", "M-2 · Panorama de precios", "tema Vantablack"),
     ("m3-precios-darkgrey.jpg", "M-3 · Precios e inflación", "tema Dark Grey"),
     ("m4-pipeline-bluelight.jpg", "M-4 · Pipeline y linaje", "tema Blue Light"),
     ("m5-sql-corporativo.jpg", "M-5 · Consultas SQL", "tema Corporativo"),

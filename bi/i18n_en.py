@@ -15,7 +15,7 @@ PAGES = {
     "Datos al {} · {}": "Data as of {} · {}",
     "Datos al {} · {} · {}": "Data as of {} · {} · {}",
 
-    # Weekly summary (bi/home_mockup.py)
+    # Price overview (bi/home_mockup.py)
     "¿Qué familias de alimentos subieron y bajaron?": "Which food families rose and fell?",
     "¿Qué familias de alimentos subieron y bajaron? Variación típica (mediana) por familia frente a la semana anterior · semana {} · Todo Chile":
         "Which food families rose and fell? Typical change (median) by family against the previous week · week {} · All of Chile",
@@ -1500,8 +1500,8 @@ PAGES = {
         "Draws this panel with the served database read-only and publishes it on Streamlit Community Cloud from the main branch.",
     "Cada vez que alguien abre una página.": "Every time someone opens a page.",
     "Páginas": "Pages",
-    "Dashboard, Resumen semanal, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, Mapa de la app y la carpeta de documentos.":
-        "Dashboard, Weekly summary, Prices and inflation, Pipeline and lineage, Data model, Quality and audit, SQL queries, Operations center, Security architecture, Stack and evidence, App map and the documents folder.",
+    "Panorama de precios, Dónde comprar, Insights, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, Mapa de la app y la carpeta de documentos.":
+        "Price overview, Where to buy, Insights, Prices and inflation, Pipeline and lineage, Data model, Quality and audit, SQL queries, Operations center, Security architecture, Stack and evidence, App map and the documents folder.",
     "el servicio gratuito que publica el panel y guarda sus secretos.": "the free service that publishes the panel and keeps its secrets.",
     "Cualquier persona con el enlace público.": "Anyone with the public link.",
     "Lee el panel y usa el estudio SQL sin cuenta: los datos son públicos.": "They read the panel and use the SQL studio without an account: the data is public.",
@@ -1650,7 +1650,7 @@ PAGES = {
     '{n} de los {n} indicadores de calidad están dentro de su umbral: completitud, actualidad, validez, unicidad y consistencia. El detalle está abajo y en Calidad y auditoría.': '{} of the {} quality indicators are within their threshold: completeness, timeliness, validity, uniqueness and consistency. The detail is below and in Quality and audit.',
     '{n} precios ({n}) quedan fuera de los indicadores por unidad no convertible y {n} ({n}) por atípicos: la mayor pérdida está en las unidades que no se pueden convertir, donde una regla nueva sumaría más datos.': '{} prices ({}) stay out of the indicators for an unconvertible unit and {} ({}) as outliers: the largest loss is in the units that cannot be converted, where a new rule would add more data.',
     '{n} precios ({n}) quedan fuera de los indicadores por unidad no convertible y {n} ({n}) por atípicos: la mayor pérdida está en los precios atípicos, donde una regla nueva sumaría más datos.': '{} prices ({}) stay out of the indicators for an unconvertible unit and {} ({}) as outliers: the largest loss is in the outliers, where a new rule would add more data.',
-    '{n} precios cambiaron fuera de lo habitual: más de 2 desviaciones del promedio de sus 12 semanas previas y al menos 10 %, con dos cotizaciones por semana. El detalle está en el Resumen semanal.': '{} prices changed beyond the usual: more than 2 deviations from the average of their previous 12 weeks and at least 10 %, with two quotes per week. The detail is in the Weekly summary.',
+    '{n} precios cambiaron fuera de lo habitual: más de 2 desviaciones del promedio de sus 12 semanas previas y al menos 10 %, con dos cotizaciones por semana. El detalle está en el Panorama de precios.': '{} prices changed beyond the usual: more than 2 deviations from the average of their previous 12 weeks and at least 10 %, with two quotes per week. The detail is in the Price overview.',
     '{n} de {n} familias subieron más que el IPC de alimentos ({n}) desde enero 2022, por más de 2 puntos: hoy pesan más en el bolsillo.': '{} of {} families rose more than the food CPI ({}) since January 2022, by more than 2 points: today they weigh more on the wallet.',
     '{n} de los {n} precios comparables subieron frente a la semana anterior ({n}). La línea muestra esa proporción en las últimas 12 semanas.': '{} of the {} comparable prices rose against the previous week ({}). The line shows that share over the last 12 weeks.',
     '{n} subieron, {n} bajaron y {n} son alertas.': '{} rose, {} fell and {} are alerts.',

@@ -64,23 +64,21 @@ def test_d296_the_inflation_years_chain_to_the_whole_change():
         assert (chained - 1) * 100 == pytest.approx(total, abs=1e-6), family
 
 
-def test_d296_each_chart_answers_one_question_and_the_cards_grow_with_the_window():
+def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
     source = (dashboard.Path(dashboard.__file__)).read_text(encoding="utf-8")
-    page = source[source.index("def show_overview_market"):source.index("def build_overview_css")]
-    titles = [part.split('", "')[1].split('"')[0] for part in page.split('overview_head("')[1:] + page.split('overview_card("')[1:]
-              if '", "' in part.split("\n")[0]]
-    assert len(titles) == 5 and all(title.startswith("¿") and title.endswith("?") for title in titles), titles
-    css = overview.build_css(charts.get_palette(charts.THEMES[0]))
-    assert "min-height:max(calc((100vh - 318px) / 2), 196px) !important" in css
-    assert 'st.slider(tr("Semanas"), 4, 12, 8' in page  # the reader chooses how many weeks the heat table shows
-    assert dashboard.MENU_BLOCKS[0][2][0] == dashboard.PAGE_OVERVIEW and home_mockup  # first page of the business
+    assert "def show_overview_page" not in source and "def show_overview_inflation" not in source
+    assert dashboard.MENU_BLOCKS[0][2] == [dashboard.HOME_PAGE, dashboard.PAGE_WHERE, dashboard.PAGE_INSIGHTS]
+    assert dashboard.DOOR_PAGES == {dashboard.PAGE_SEASONALITY: dashboard.HOME_PAGE}  # opens from a button of the Panorama
+    assert dashboard.RETIRED_VIEWS["Dashboard general"] == dashboard.PAGE_WHERE
+    assert 'st.slider(tr("Semanas"), 4, 12, 8' in source  # the table of weeks opens as a dialog from the Panorama
+    assert charts.get_palette(charts.THEMES[0]) and home_mockup
 
 
 @needs_database
 def test_d303_changing_the_language_keeps_the_dashboard_working():
     from streamlit.testing.v1 import AppTest
     app = AppTest.from_file(str(dashboard.Path(dashboard.__file__)), default_timeout=60)
-    app.query_params.update({"vista": dashboard.PAGE_OVERVIEW, "perfil": "profesional", "lang": "en"})
+    app.query_params.update({"vista": dashboard.PAGE_INSIGHTS, "perfil": "profesional", "lang": "en"})
     app.session_state[dashboard.OVERVIEW_WEEK_KEY] = "Oct 12–18"  # what a widget may leave after a language change
     app.run()
     assert not app.exception

@@ -22,7 +22,8 @@ def read_table(section):
 
 def menu_labels():
     return {dashboard.SIDEBAR_LABELS.get(view, view) for _, _, pages in dashboard.MENU_BLOCKS
-            if pages is not dashboard.SOURCE_LINKS for view in pages}
+            if pages is not dashboard.SOURCE_LINKS for view in pages} | {
+        dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.DOOR_PAGES}
 
 
 def assert_reference_exists(reference):
