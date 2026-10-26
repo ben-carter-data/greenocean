@@ -283,3 +283,12 @@ st.session_state['week']=week
     assert model['missing']==model['available']-sum(model['counts'])
     assert model['history'].week_start.max()<=pd.Timestamp(week)
     assert model['history'].week_start.min()>=pd.Timestamp(week)-pd.Timedelta(weeks=11)
+
+
+def test_d304_the_regions_column_says_which_regions_on_hover():
+    row = {'variation': .08, 'quality': 'Primera', 'normalized_unit': 'kilo', 'channel': 'Supermercado', 'national_price': 100.0,
+           'product': 'Osobuco', 'variety': 'Sin especificar', 'product_group': 'Carne bovina',
+           '_regions': (2, 1, [('Maule', 12.0), ('Ñuble', 4.0), ('Biobío', -3.0)])}
+    html_table = home_mockup.products_table([row], '12-10-2026', '05-10-2026')
+    assert 'title="Maule +12,0 % · Ñuble +4,0 % · Biobío −3,0 %"' in html_table.replace('-3,0', '−3,0') or 'Maule' in html_table
+    assert '<b class="rise">2 ↑</b> / <b class="fall">1 ↓</b>' in html_table

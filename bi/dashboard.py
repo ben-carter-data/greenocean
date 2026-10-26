@@ -4967,7 +4967,7 @@ def matches_product_search(row, query):
 
 @st.cache_data
 def read_cached_region_directions(database_version, week):
-    """{(product key, channel): (regions up, regions down)} between two consecutive weeks."""
+    """{(product key, channel): (regions up, regions down, regions with their change)} between two consecutive weeks."""
     week_date = pd.Timestamp(week)
     join = queries.KEY_COLUMNS + ['channel']
     current = read_cached_week_snapshot(database_version, week)
@@ -4979,8 +4979,13 @@ def read_cached_region_directions(database_version, week):
     compared = compared[compared['variation'].notna() & compared['variation'].abs().lt(float('inf'))]
     up = compared[compared['variation'] >= .0005].groupby(join).size()
     down = compared[compared['variation'] <= -.0005].groupby(join).size()
+    names = {}
+    for key, group in compared.groupby(join):
+        ordered = group.sort_values('variation', ascending=False)
+        names[key] = [(home_mockup.short_region(region), float(change) * 100) for region, change in zip(ordered['region'], ordered['variation'])]
     keys = set(up.index) | set(down.index)
-    return {key: (int(up.get(key, 0)), int(down.get(key, 0))) for key in keys}
+    # D-304: (regions up, regions down, [(region, change in %)]), so the table can say which regions, not only how many.
+    return {key: (int(up.get(key, 0)), int(down.get(key, 0)), names.get(key, [])) for key in keys}
 
 
 def sort_family_products(rows, order):

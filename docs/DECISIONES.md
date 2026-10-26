@@ -2323,3 +2323,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 
 - **Pedido del autor:** una pestaña con las preguntas, los KPIs con su cálculo y por qué, y un insight destacado y dinámico, uno para quien compra y otro para un data architect.
 - **Decisión:** a la izquierda, «Preguntas» (pregunta, quién la hace, el KPI que la responde y la respuesta de hoy) y «KPIs» (cómo se calcula y por qué); a la derecha, dos tarjetas calculadas de la base en cada carga: «Para quien compra» (qué bajó esta semana, las mayores bajas con dos cotizaciones, qué familias superan al IPC) y «Para quien diseña los datos» (qué trajo la carga, qué parte llega a los indicadores y dónde se pierde). Ninguna cifra se escribe a mano.
+
+## D-304 · La tabla de productos dice qué regiones subieron y bajaron
+
+- **Pedido del autor:** la columna «Regiones ↑ / ↓» cuenta regiones, pero no dice cuáles.
+- **Decisión:** cada fila lleva, al pasar el cursor por su conteo, la lista de las regiones de ese producto y canal con su cambio, de la mayor alza a la mayor baja. Son las mismas cifras de las que sale el conteo. Cada fila es un producto: puede subir en la mayoría de las regiones mientras su familia, en conjunto, baja.
+- **Pruebas:** `tests/test_home_mockup.py::test_d304_*`.
