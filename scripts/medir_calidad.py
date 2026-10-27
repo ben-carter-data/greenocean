@@ -321,6 +321,100 @@ def measure_process():
             "pre_commit_configurado": (ROOT / ".pre-commit-config.yaml").exists(), "ci": steps}
 
 
+def measure_data(python):
+    """The quality of the real data, read from the served database by the project's own code (D-323): the share of the
+    latest week's prices that have a valid comparison with the week before, the share of the series seen in the last 12
+    weeks that have a price in the latest one, and how old the latest data and the latest load are."""
+    code = r"""
+import json, datetime
+from bi import queries, alerts, overview
+prices = queries.run_query("k6_national_weekly_price")
+variations = alerts.add_weekly_variation(prices.copy())
+week = variations["week_start"].max()
+now = variations[variations["week_start"] == week]
+valid = now["variation"].notna().sum()
+weeks = sorted(prices["week_start"].unique())
+recent = prices[prices["week_start"].isin(weeks[-12:])]
+key = ["product", "variety", "quality", "channel", "normalized_unit"]
+seen = recent[key].drop_duplicates()
+latest = prices[prices["week_start"] == weeks[-1]][key].drop_duplicates()
+runs = queries.run_sql("SELECT max(started_at) AS last FROM etl_run")
+today = datetime.date.today()
+last_week = datetime.date.fromisoformat(str(weeks[-1])[:10])
+last_load = datetime.date.fromisoformat(str(runs["last"][0])[:10])
+print(json.dumps({"semana": str(weeks[-1])[:10], "precios_semana": int(len(now)), "con_comparacion": int(valid),
+                  "pct_comparacion": round(valid / len(now) * 100, 1), "series_activas": int(len(seen)),
+                  "series_con_dato": int(len(latest.merge(seen))), "pct_series_con_dato": round(len(latest.merge(seen)) / len(seen) * 100, 1),
+                  "dias_desde_ultima_semana": (today - last_week).days - 6, "dias_desde_ultima_carga": (today - last_load).days,
+                  "medido": str(today)}))
+"""
+    status, out = run([python, "-c", code])
+    try:
+        return {"orden": "python scripts/medir_calidad.py (función measure_data)", **json.loads(out.strip().splitlines()[-1])}
+    except (ValueError, IndexError):
+        return {"estado": NOT_VERIFIED, "salida": out[-300:]}
+
+
+def measure_queries(python, repeats=3):
+    """How long each named query of bi/queries.sql takes on the served database, the median of three runs, in seconds."""
+    code = r"""
+import json, time, statistics
+from bi import queries
+times = {}
+for name in queries.load_queries():
+    runs = []
+    for _ in range(%d):
+        start = time.perf_counter(); queries.run_query(name); runs.append(time.perf_counter() - start)
+    times[name] = round(statistics.median(runs), 3)
+print(json.dumps(times))
+""" % repeats
+    _, out = run([python, "-c", code])
+    try:
+        times = json.loads(out.strip().splitlines()[-1])
+    except (ValueError, IndexError):
+        return {"estado": NOT_VERIFIED, "salida": out[-300:]}
+    return {"orden": "mediana de 3 ejecuciones de cada consulta de bi/queries.sql", "consultas": times,
+            "mas_lenta": max(times.items(), key=lambda pair: pair[1])}
+
+
+def summarize_browsers(data):
+    pages = data["pages"]
+    return {"orden": "node tests/medicion/calidad.cjs http://localhost:8599", "paginas": pages,
+            "pagina_mas_lenta": max(((name, page["seconds"]) for name, page in pages.items()), key=lambda pair: pair[1]),
+            "violaciones_wcag": sum(page["violations"] for page in pages.values()),
+            "nodos_wcag": sum(page["nodes"] for page in pages.values()), "navegadores": data["browsers"]}
+
+
+def measure_browsers(python, node_path, port=8599, saved=""):
+    """Page load time, WCAG 2.1 AA violations (axe-core) and layout checks in Chromium, Firefox and WebKit, from
+    tests/medicion/calidad.cjs against a dashboard started here."""
+    import os
+    import time
+    import urllib.request
+    if saved:
+        return summarize_browsers(json.loads(Path(saved).read_text(encoding="utf-8")))
+    if not node_path:
+        return {"estado": NOT_VERIFIED, "motivo": "sin --node-path con playwright y axe-core"}
+    server = subprocess.Popen([str(Path(python).parent / "streamlit"), "run", "bi/dashboard.py", "--server.port", str(port),
+                               "--server.headless", "true"], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        for _ in range(60):
+            try:
+                urllib.request.urlopen(f"http://localhost:{port}/healthz", timeout=2)
+                break
+            except Exception:
+                time.sleep(1)
+        done = subprocess.run(["node", "tests/medicion/calidad.cjs", f"http://localhost:{port}"], cwd=ROOT, capture_output=True,
+                              text=True, env={**os.environ, "NODE_PATH": node_path})
+    finally:
+        server.terminate()
+    try:
+        data = json.loads(done.stdout)
+    except ValueError:
+        return {"estado": NOT_VERIFIED, "salida": done.stderr[-300:]}
+    return summarize_browsers(data)
+
+
 def count_adr():
     text = (ROOT / "docs" / "ADR.md").read_text(encoding="utf-8")
     decisions = (ROOT / "docs" / "DECISIONES.md").read_text(encoding="utf-8")
@@ -340,6 +434,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--tools", required=True, help="bin folder of the virtual environment with ruff, mypy, bandit, ...")
     parser.add_argument("--python", default=str(ROOT / ".venv" / "bin" / "python"), help="the project's own Python")
+    parser.add_argument("--node-path", default="", help="NODE_PATH with playwright and axe-core, for the browser checks")
+    parser.add_argument("--output", default=str(OUTPUT), help="where to write the JSON")
+    parser.add_argument("--browsers-from", default="", help="reuse the output of tests/medicion/calidad.cjs instead of running it")
     arguments = parser.parse_args()
     _, commit = run(["git", "rev-parse", "--short", "HEAD"])
     report = {"generado": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"), "commit": commit.strip(),
@@ -350,10 +447,13 @@ def main():
               "cobertura": measure_coverage(arguments.python), "bandit": measure_bandit(arguments.tools),
               "pip_audit": measure_audit(arguments.tools), "secretos": measure_secrets(arguments.tools),
               "sql": measure_sql(arguments.tools), "dbt": measure_dbt(), "proceso": measure_process(),
-              "pruebas": measure_tests(arguments.python), "dora": measure_dora(), "adr": count_adr()}
-    OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"escrito {OUTPUT.relative_to(ROOT)}")
+              "pruebas": measure_tests(arguments.python), "dora": measure_dora(), "adr": count_adr(),
+              "datos": measure_data(arguments.python), "consultas": measure_queries(arguments.python),
+              "navegadores": measure_browsers(arguments.python, arguments.node_path, saved=arguments.browsers_from)}
+    output = Path(arguments.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"escrito {output}")
 
 
 if __name__ == "__main__":
