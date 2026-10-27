@@ -6144,7 +6144,7 @@ def show_method_page(mode):
     """«Método y calidad» (D-320, D-323): how the project is assessed against software and data quality standards. Every
     measured number comes from docs/calidad (the last measurement, the baseline and the goals); the ISO grades from the
     author's dated review."""
-    baseline, report, goals, rubric = quality_method.read_all()
+    baseline, report, goals, rubric, history = quality_method.read_all()
     show_page_bar(
         PAGE_METHOD,
         PAGE_METHOD,
@@ -6153,8 +6153,16 @@ def show_method_page(mode):
     )
     st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
     st.markdown(quality_method.build_header(report, rubric), unsafe_allow_html=True)
-    labels = [tr("Resumen"), "ISO 25010", tr("Datos"), tr("Navegadores"), tr("Estándares"), tr("Límites")]
-    summary, iso, data, browsers, standards, limits = st.tabs(labels)
+    labels = [
+        tr("Resumen"),
+        "ISO 25010",
+        tr("Datos"),
+        tr("Navegadores"),
+        tr("Estándares"),
+        tr("Historial"),
+        tr("Límites"),
+    ]
+    summary, iso, data, browsers, standards, measurements, limits = st.tabs(labels)
     with summary:
         st.markdown(
             f'<div class="qm-pane">{quality_method.build_summary(baseline, report, goals)}</div>',
@@ -6177,6 +6185,10 @@ def show_method_page(mode):
         )
     with standards:
         st.markdown(f'<div class="qm-pane">{quality_method.build_standards(report)}</div>', unsafe_allow_html=True)
+    with measurements:
+        st.markdown(
+            f'<div class="qm-pane">{quality_method.build_history(history, goals)}</div>', unsafe_allow_html=True
+        )
     with limits:
         st.markdown(f'<div class="qm-pane">{quality_method.build_limits(report, goals)}</div>', unsafe_allow_html=True)
 

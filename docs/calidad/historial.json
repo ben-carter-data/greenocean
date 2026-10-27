@@ -1,0 +1,47 @@
+{
+  "nota": "Historial de mediciones de calidad (D-323): cada medición que el autor fusionó, con su fecha, su commit y los valores de los 15 indicadores. scripts/informe_calidad.py agrega la nueva; nunca se borra una.",
+  "mediciones": [
+    {
+      "generado": "2026-10-26 23:28 UTC",
+      "commit": "cf561e7",
+      "valores": {
+        "ruff_avisos": 43,
+        "archivos_sin_formatear": 109,
+        "cobertura_total": 91.5,
+        "cobertura_por_modulo": null,
+        "mypy_errores": 0,
+        "funciones_con_tipos_pct": 0.0,
+        "complejidad_sobre_10": 9,
+        "bandit_altos": 0,
+        "pip_audit_vulnerabilidades": 0,
+        "secretos_sin_clasificar": 0,
+        "pruebas_fallidas": 18,
+        "segundos_por_pagina": null,
+        "segundos_por_consulta": null,
+        "violaciones_wcag": null,
+        "comprobaciones_navegador_fallidas": null
+      }
+    },
+    {
+      "generado": "2026-10-27 01:41 UTC",
+      "commit": "6c6286c",
+      "valores": {
+        "ruff_avisos": 50,
+        "archivos_sin_formatear": 111,
+        "cobertura_total": 91.5,
+        "cobertura_por_modulo": 0.0,
+        "mypy_errores": 0,
+        "funciones_con_tipos_pct": 0.0,
+        "complejidad_sobre_10": 9,
+        "bandit_altos": 0,
+        "pip_audit_vulnerabilidades": 0,
+        "secretos_sin_clasificar": 0,
+        "pruebas_fallidas": 5,
+        "segundos_por_pagina": 1.312,
+        "segundos_por_consulta": 0.445,
+        "violaciones_wcag": 18,
+        "comprobaciones_navegador_fallidas": 0
+      }
+    }
+  ]
+}

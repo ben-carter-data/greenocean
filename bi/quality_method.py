@@ -37,13 +37,14 @@ GRADE_SCALE = [
 ]
 
 
-def read_all() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """(baseline, measurement, goals, rubric) as the files say them."""
+def read_all() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """(baseline, measurement, goals, rubric, history) as the files say them."""
     return (
         quality_metrics.read(quality_metrics.BASELINE_FILE),
         quality_metrics.read(quality_metrics.REPORT_FILE),
         quality_metrics.read(quality_metrics.GOALS_FILE),
         quality_metrics.read(quality_metrics.RUBRIC_FILE),
+        quality_metrics.read(quality_metrics.HISTORY_FILE),
     )
 
 
@@ -53,17 +54,11 @@ def t(spanish: str, english: str) -> str:
 
 def number(value: Any, decimals: int = 0) -> str:
     """A figure with the marks of the reader's language; «—» when it was not measured."""
-    if value is None:
-        return "—"
-    text = f"{value:,}" if isinstance(value, int) and decimals == 0 else f"{float(value):,.{decimals}f}"
-    return text if i18n.is_english() else text.replace(",", "§").replace(".", ",").replace("§", ".")
+    return quality_metrics.number(value, decimals, i18n.is_english())
 
 
 def show(value: Any, unit: str) -> str:
-    if value is None:
-        return "—"
-    decimals = 2 if unit == "s" else 1 if unit == "%" else 0
-    return number(value, decimals) + (f" {unit}" if unit else "")
+    return quality_metrics.show(value, unit, i18n.is_english())
 
 
 def state_chip(key: str) -> str:
@@ -103,7 +98,8 @@ def build_header(report: dict[str, Any], rubric: dict[str, Any]) -> str:
     """Where the numbers come from: the automatic measurement with its date and commit, and the manual ISO review."""
     date, commit = report.get("generado", "—"), report.get("commit", "—")
     measured = t(
-        f"Medición automática del {date} · commit {commit}", f"Automatic measurement of {date} · commit {commit}"
+        f"Autoevaluación automática, revisada y aprobada por el autor · última medición: {date} · {commit}",
+        f"Automatic self-assessment, reviewed and approved by the author · last measurement: {date} · {commit}",
     )
     day = rubric.get("fecha", "—")
     review = t(
@@ -138,7 +134,9 @@ def build_summary(baseline: dict[str, Any], report: dict[str, Any], goals: dict[
             f"<b>{html.escape(t(*row['label']))}</b>",
             show(row["before"], row["unit"]),
             f"<b>{show(row['now'], row['unit'])}</b>",
-            html.escape(quality_metrics.goal_text(row["goal"]) + (f" {row['unit']}" if row["unit"] else "")),
+            html.escape(
+                quality_metrics.goal_text(row["goal"], i18n.is_english()) + (f" {row['unit']}" if row["unit"] else "")
+            ),
             goal_chip(row["ok"]),
             code_cell(row["command"]),
         )
@@ -161,19 +159,25 @@ def build_iso(report: dict[str, Any], goals: dict[str, Any], rubric: dict[str, A
         rows.append(
             (
                 f"<b>{html.escape(t(*item['nombre']))}</b>",
+                grade_chip(item.get("nota_antes")),
                 grade_chip(item.get("nota")),
                 html.escape(t(*item["evidencia"])),
                 "<br>".join(html.escape(text) for text in missing),
             )
         )
     average = number(rubric_average(rubric), 1)
+    previous = [item["nota_antes"] for item in rubric.get("caracteristicas", []) if item.get("nota_antes") is not None]
+    before = number(sum(previous) / len(previous), 1) if previous else "—"
     scale = " · ".join(f"{grade}: {t(es, en)}" for grade, es, en in GRADE_SCALE)
     lead = t(
-        f"Promedio de las {len(rows)} características: {average} de 4. Escala: {scale}.",
-        f"Average of the {len(rows)} characteristics: {average} out of 4. Scale: {scale}.",
+        f"Promedio de las {len(rows)} características: {average} de 4 (antes, {before} de 4 en las {len(previous)} "
+        f"verificadas en D-320). Escala: {scale}.",
+        f"Average of the {len(rows)} characteristics: {average} out of 4 (before, {before} out of 4 on the "
+        f"{len(previous)} verified in D-320). Scale: {scale}.",
     )
     head = [
         t("Característica", "Characteristic"),
+        t("Antes", "Before"),
         t("Nota", "Grade"),
         t("Evidencia", "Evidence"),
         t("Qué falta", "What is missing"),
@@ -388,6 +392,47 @@ def build_standards(report: dict[str, Any]) -> str:
     ]
     return build_table(
         head, [(f"<b>{html.escape(a)}</b>", html.escape(b), html.escape(c), state_chip(d)) for a, b, c, d in rows]
+    )
+
+
+def build_history(history: dict[str, Any], goals: dict[str, Any]) -> str:
+    """Every measurement the author merged, newest first, and what is measured by itself and what by hand, how often."""
+    entries = list(reversed(history.get("mediciones", [])))
+    rows = []
+    for entry in entries:
+        now = entry["valores"]
+        passed, measured = quality_metrics.met(now, goals)
+        rows.append(
+            (
+                f"<b>{html.escape(entry['generado'] or '—')}</b>",
+                code_cell(entry["commit"] or "—"),
+                f"{passed} / {measured}",
+                show(now.get("cobertura_total"), "%"),
+                number(now.get("ruff_avisos")),
+                number(now.get("mypy_errores")),
+                number(now.get("violaciones_wcag")),
+                show(now.get("segundos_por_pagina"), "s"),
+            )
+        )
+    head = [
+        t("Medición", "Measurement"),
+        "Commit",
+        t("Cumplen la meta", "Meet the goal"),
+        t("Cobertura", "Coverage"),
+        "Ruff",
+        "mypy",
+        "WCAG",
+        t("Página más lenta", "Slowest page"),
+    ]
+    schedule = [
+        (f"<b>{html.escape(t(*what))}</b>", html.escape(t(*how)), html.escape(t(*when)))
+        for what, how, when in quality_metrics.SCHEDULE
+    ]
+    return (
+        f'<h4>{html.escape(t("Historial de mediciones", "Measurement history"))}</h4>'
+        + build_table(head, rows)
+        + f'<h4>{html.escape(t("Qué se mide solo y qué se revisa a mano", "What is measured by itself and what by hand"))}</h4>'
+        + build_table([t("Qué", "What"), t("Cómo", "How"), t("Frecuencia", "Frequency")], schedule)
     )
 
 

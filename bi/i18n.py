@@ -76,6 +76,7 @@ EN = {
     "Código": "Code",
     "Verificar": "Verify",
     "Límites": "Limits",
+    "Historial": "History",
     ":material/storefront: Mayorista": ":material/storefront: Wholesale",
     ":material/database: Datos": ":material/database: Data",
     "Ampliar la tabla de productos": "Enlarge the products table",

@@ -8,6 +8,8 @@ Cada martes el pipeline descarga las fuentes oficiales, las deja en una misma un
 
 [![pruebas](https://github.com/cben6514-boop/greenocean/actions/workflows/pruebas.yml/badge.svg)](https://github.com/cben6514-boop/greenocean/actions/workflows/pruebas.yml)
 [![semanal](https://github.com/cben6514-boop/greenocean/actions/workflows/semanal.yml/badge.svg)](https://github.com/cben6514-boop/greenocean/actions/workflows/semanal.yml)
+[![calidad](https://github.com/cben6514-boop/greenocean/actions/workflows/calidad.yml/badge.svg)](https://github.com/cben6514-boop/greenocean/actions/workflows/calidad.yml)
+[![cobertura](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcben6514-boop%2Fgreenocean%2Fmain%2Fdocs%2Fcalidad%2Fmedicion.json&query=%24.cobertura.total&suffix=%25&label=cobertura&color=brightgreen)](docs/calidad/INFORME.md)
 
 ## El panel
 
@@ -18,7 +20,7 @@ Cada martes el pipeline descarga las fuentes oficiales, las deja en una misma un
 | ![Insights](docs/img/readme/insights.png) | ![Pipeline y linaje](docs/img/readme/pipeline.png) |
 | **Insights**: las preguntas de quien compra, de quien vende por mayor y de quien diseña los datos | **Pipeline y linaje**: el recorrido de los datos y el estado de sus pruebas |
 
-Páginas del panel: Panorama de precios, Dónde comprar, Insights y Precios e inflación (desde un botón del Panorama), Pipeline y linaje, Modelo de datos, Calidad y auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, Mapa de la app y la carpeta de documentos. Está en español y en inglés.
+Páginas del panel: Panorama de precios, Dónde comprar, Insights y Precios e inflación (desde un botón del Panorama), Pipeline y linaje, Modelo de datos, Calidad y auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, Método y calidad, Mapa de la app y la carpeta de documentos. Está en español y en inglés.
 
 ## Qué responde
 
@@ -76,11 +78,16 @@ GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los 
 ├── docs/                PRD, SAD, ADR, plan de pruebas y seguridad, decisiones y manual
 │   ├── en/              los mismos documentos en inglés
 │   ├── img/             capturas del panel
+│   ├── calidad/         medición de calidad, metas, rúbrica ISO, historial e informe
 │   └── archivo/         historia del proyecto (hitos y backlog); no es lectura
-├── scripts/             utilidades locales (descarga con doble clic en macOS)
+├── scripts/             medición e informe de calidad, y la descarga con doble clic en macOS
 ├── tests/               pruebas automáticas (pytest) y sus datos en fixtures/
-└── .github/workflows/   semanal.yml y pruebas.yml
+└── .github/workflows/   semanal.yml, pruebas.yml y calidad.yml
 ```
+
+## Calidad
+
+La página «Método y calidad» y el [informe de autoevaluación](docs/calidad/INFORME.md) miden el proyecto con herramientas reales (Ruff, mypy, pytest con cobertura, Bandit, pip-audit, detect-secrets, Playwright y axe-core) contra metas fijas, y lo evalúan con la ISO/IEC 25010 y 25012 como método: es una autoevaluación, no una certificación. El workflow «calidad» repite la medición en cada push y la propone en un pull request; la página la muestra solo cuando el autor lo fusiona. La insignia de cobertura lee esa medición aprobada. Los commits siguen Conventional Commits ([CONTRIBUTING](CONTRIBUTING.md)).
 
 ## Stack
 
@@ -107,6 +114,7 @@ Python · SQL · dbt Core · DuckDB · Parquet · SQLite · GitHub Actions · py
 | Instalar el pipeline con dbt (Python 3.11 o 3.12) | `pip install -r requirements-pipeline.txt` |
 | Abrir el panel | `streamlit run bi/dashboard.py` |
 | Correr las pruebas | `python -m pytest -q` |
+| Medir la calidad | `python scripts/medir_calidad.py --tools <entorno>/bin` |
 | Descargar ODEPA | `python agent/agent.py` |
 | Construir el data warehouse | `python etl/pipeline.py` |
 

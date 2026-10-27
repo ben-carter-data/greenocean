@@ -56,7 +56,12 @@ def test_d323_the_indicators_are_read_from_the_measurement_and_checked_against_t
     rows = {row["key"]: row for row in quality_metrics.rows({}, REPORT, goals)}
     assert rows["ruff_avisos"]["ok"] is False and rows["cobertura_total"]["ok"] is True
     assert quality_metrics.gaps(REPORT, goals) == {
-        "mantenibilidad": [("Avisos de Ruff: 3 (meta ≤ 0)", "Ruff findings: 3 (goal ≤ 0)")]
+        "mantenibilidad": [
+            (
+                "Avisos de Ruff (E, F y W; el largo de línea, aparte): 3 (meta ≤ 0)",
+                "Ruff findings (E, F and W; line length apart): 3 (goal ≤ 0)",
+            )
+        ]
     }
 
 
@@ -89,8 +94,59 @@ def test_d323_the_rubric_has_the_eight_characteristics_graded_0_to_4_with_a_date
     assert ("pendiente de su confirmación" in header) == (rubric["estado"] != "confirmada")
 
 
+def test_d323_ruff_counts_the_same_rules_before_and_after_and_a_zero_count_of_formatting_is_read():
+    # The baseline counted E501 inside; the indicator compares E, F and W without it on both sides.
+    assert quality_metrics.values({"ruff": {"errores": 1984, "errores_sin_largo_de_linea": 208}})["ruff_avisos"] == 208
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import medir_calidad
+
+    assert medir_calidad.count_formatting("145 files already formatted") == (0, 145)
+    assert medir_calidad.count_formatting("2 files would be reformatted, 143 files already formatted") == (2, 143)
+    assert medir_calidad.count_formatting("error: no files") == (None, None)
+
+
+def test_d323_a_candidate_the_author_marked_as_not_secret_counts_as_reviewed():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import medir_calidad
+
+    baseline = json.loads((ROOT / ".secrets.baseline").read_text())
+    reviewed = medir_calidad.reviewed_secret_hashes()
+    assert reviewed == {item["hashed_secret"] for items in baseline["results"].values() for item in items}
+    found = {name: items for name, items in baseline["results"].items() if name == ".github/workflows/calidad.yml"}
+    assert medir_calidad.classify_secret_candidates(found) == {"falsos_positivos": 1, "sin_clasificar": 0}
+
+
+def test_d323_the_history_keeps_every_measurement_once_and_the_page_shows_it_newest_first(monkeypatch):
+    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
+    history = quality_metrics.add_to_history({}, {**REPORT, "commit": "old0001", "generado": "2026-10-20 10:00 UTC"})
+    history = quality_metrics.add_to_history(history, REPORT)
+    history = quality_metrics.add_to_history(history, REPORT)  # the same commit again replaces it
+    assert [entry["commit"] for entry in history["mediciones"]] == ["old0001", "abc1234"]
+    assert quality_metrics.met(history["mediciones"][-1]["valores"], goals) == (14, 15)
+    monkeypatch.setattr(i18n, "is_english", lambda: False)
+    page = quality_method.build_history(history, goals)
+    assert page.index("abc1234") < page.index("old0001") and "14 / 15" in page
+    assert all(what[0] in page for what, _, _ in quality_metrics.SCHEDULE)
+    saved = quality_metrics.read(quality_metrics.HISTORY_FILE)["mediciones"]
+    assert saved[-1]["commit"] == quality_metrics.read(quality_metrics.REPORT_FILE)["commit"]
+
+
+def test_d323_the_report_and_the_pull_request_come_from_the_measurement_files():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import informe_calidad
+
+    baseline, report, goals, rubric, history = quality_method.read_all()
+    text = informe_calidad.build_report(baseline, report, goals, rubric, history)
+    assert text == (ROOT / "docs" / "calidad" / "INFORME.md").read_text(encoding="utf-8")  # the file is up to date
+    assert report["commit"] in text and "```" not in text
+    assert not any(word in text.lower() for word in FORBIDDEN)
+    body = informe_calidad.build_pull_request(baseline, report, goals)
+    passed, measured = quality_metrics.met(quality_metrics.values(report), goals)
+    assert f"{passed} de {measured} indicadores" in body and "pendiente de confirmación del autor" in body
+
+
 def test_d323_the_page_quotes_the_files_and_never_claims_certification(monkeypatch):
-    baseline, report, goals, rubric = quality_method.read_all()
+    baseline, report, goals, rubric, history = quality_method.read_all()
     for english in (False, True):
         monkeypatch.setattr(i18n, "is_english", lambda english=english: english)
         text = " ".join(
@@ -100,6 +156,7 @@ def test_d323_the_page_quotes_the_files_and_never_claims_certification(monkeypat
                 quality_method.build_iso(report, goals, rubric),
                 quality_method.build_browsers(report, goals),
                 quality_method.build_standards(report),
+                quality_method.build_history(history, goals),
                 quality_method.build_limits(report, goals),
             ]
         ).lower()
@@ -120,6 +177,6 @@ def test_d320_the_line_under_the_logo_opens_the_page_in_both_languages(language)
     page = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     page.query_params.update({"perfil": "profesional", "lang": language, "vista": "Método y calidad"})
     page.run()
-    assert not page.exception and len(page.tabs) == 6
+    assert not page.exception and len(page.tabs) == 7
     content = " ".join(block.value for block in page.markdown if "qm-pane" in block.value)
     assert content and not re.search(r"month_start|>None<|\bnan\b", content)

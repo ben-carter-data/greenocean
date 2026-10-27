@@ -63,40 +63,40 @@ def tool(tools, name):
     return str(path) if path.exists() else None
 
 
+def count_formatting(output):
+    """(files to reformat, files already formatted) from `ruff format --check`, which leaves out a count that is zero."""
+    pending = re.search(r"(\d+) files? would be reformatted", output)
+    done = re.search(r"(\d+) files? already formatted", output)
+    if not pending and not done:
+        return None, None
+    return int(pending.group(1)) if pending else 0, int(done.group(1)) if done else 0
+
+
 def measure_ruff(tools):
+    """The rules E, F and W of pyproject.toml, which leaves out E501; the lines over 120 columns are counted apart, so the
+    baseline (measured with E501 inside) and every later measurement compare the same rules."""
     binary = tool(tools, "ruff")
     if not binary:
         return {"estado": NOT_VERIFIED}
-    command = [
-        binary,
-        "check",
-        *CODE,
-        "tests",
-        "--select",
-        "E,F,W",
-        "--line-length",
-        str(LINE_LENGTH),
-        "--output-format",
-        "json",
-    ]
+    command = [binary, "check", *CODE, "tests", "--select", "E,F,W", "--output-format", "json"]
     _, out = run(command)
-    findings = json.loads(out)
     by_code = {}
-    for finding in findings:
+    for finding in json.loads(out):
         by_code[finding["code"]] = by_code.get(finding["code"], 0) + 1
-    other = {code: count for code, count in by_code.items() if code != "E501"}
-    _, formatted = run([binary, "format", "--check", *CODE, "tests", "--line-length", str(LINE_LENGTH)])
-    match = re.search(r"(\d+) files? would be reformatted, (\d+) files? already formatted", formatted)
+    _, long_lines = run([binary, "check", *CODE, "tests", "--select", "E501", "--output-format", "json"])
+    by_code["E501"] = len(json.loads(long_lines))
+    _, formatted = run([binary, "format", "--check", *CODE, "tests"])
+    pending, done = count_formatting(formatted)
     return {
         "orden": " ".join(command[:-2]),
         "version": run([binary, "--version"])[1].strip(),
-        "errores": len(findings),
+        "errores": sum(by_code.values()),
         "por_codigo": by_code,
-        "errores_sin_largo_de_linea": sum(other.values()),
+        "errores_sin_largo_de_linea": sum(count for code, count in by_code.items() if code != "E501"),
         "formato": {
-            "orden": f"ruff format --check {' '.join(CODE)} tests --line-length {LINE_LENGTH}",
-            "por_reformatear": int(match.group(1)) if match else None,
-            "ya_formateados": int(match.group(2)) if match else None,
+            "orden": f"ruff format --check {' '.join(CODE)} tests",
+            "por_reformatear": pending,
+            "ya_formateados": done,
         },
     }
 
@@ -323,15 +323,30 @@ SECRET_NAME = re.compile(
 )
 
 
+SECRETS_BASELINE = ROOT / ".secrets.baseline"
+
+
+def reviewed_secret_hashes():
+    """The candidates the author reviewed and marked as not secret (`"is_secret": false`) in .secrets.baseline."""
+    if not SECRETS_BASELINE.exists():
+        return set()
+    results = json.loads(SECRETS_BASELINE.read_text(encoding="utf-8"))["results"]
+    return {item["hashed_secret"] for items in results.values() for item in items if item.get("is_secret") is False}
+
+
 def classify_secret_candidates(results):
     """What detect-secrets proposes, sorted by what each candidate is: a SHA-256 of a file (the manifest and the pointer of
-    the served database) or the name of a secret or a word in a text, never its value. What fits neither stays unclassified."""
+    the served database), the name of a secret or a word in a text, never its value, or a candidate already reviewed in
+    .secrets.baseline. What fits none stays unclassified."""
+    reviewed = reviewed_secret_hashes()
     false, open_ = 0, 0
     for name, items in results.items():
         lines = (ROOT / name).read_text(encoding="utf-8").splitlines()
         for item in items:
             text = lines[item["line_number"] - 1]
-            if item["type"].startswith("Hex") and re.search(r'"[0-9a-f]{64}"', text):
+            if item["hashed_secret"] in reviewed:
+                false += 1
+            elif item["type"].startswith("Hex") and re.search(r'"[0-9a-f]{64}"', text):
                 false += 1
             elif item["type"].startswith("Secret") and SECRET_NAME.search(text):
                 false += 1
@@ -345,10 +360,13 @@ def measure_secrets(tools):
     if not binary:
         return {"estado": NOT_VERIFIED}
     _, tracked = run(["git", "ls-files"])
+    # .secrets.baseline is detect-secrets' own list of reviewed candidates: hashes, never a value.
     files = [
         name
         for name in tracked.split()
-        if not name.endswith((".png", ".jpg", ".pem", ".svg")) and (ROOT / name).is_file()
+        if not name.endswith((".png", ".jpg", ".pem", ".svg"))
+        and name != SECRETS_BASELINE.name
+        and (ROOT / name).is_file()
     ]
     _, out = run([binary, "scan", *files])
     results = json.loads(out[out.index("{") :])["results"]
