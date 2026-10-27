@@ -1,6 +1,6 @@
 {
-  "generado": "2026-10-26 23:28 UTC",
-  "commit": "cf561e7",
+  "generado": "2026-10-27 11:04 UTC",
+  "commit": "d66804c",
   "python": "3.14.7",
   "limites": {
     "largo_de_linea": 120,
@@ -9,55 +9,51 @@
     "parametros": 5
   },
   "ruff": {
-    "orden": "/Users/carter/.venv-tools/bin/ruff check bi etl agent tests --select E,F,W --line-length 120",
+    "orden": "/Users/carter/.venv-tools/bin/ruff check bi etl agent tests --select E,F,W",
     "version": "ruff 0.17.2",
-    "errores": 1819,
+    "errores": 1187,
     "por_codigo": {
-      "E501": 1776,
-      "E731": 15,
-      "W292": 1,
-      "W291": 2,
-      "F601": 15,
-      "F541": 1,
-      "E702": 3,
-      "E402": 5,
-      "E741": 1
+      "E501": 1187
     },
-    "errores_sin_largo_de_linea": 43,
+    "errores_sin_largo_de_linea": 0,
     "formato": {
-      "orden": "ruff format --check bi etl agent tests --line-length 120",
-      "por_reformatear": 109,
-      "ya_formateados": 6
+      "orden": "ruff format --check bi etl agent tests",
+      "por_reformatear": 0,
+      "ya_formateados": 117
     }
   },
   "funciones": {
-    "funciones": 969,
-    "lineas_de_codigo": 23572,
-    "mas_de_50_lineas": 40,
+    "funciones": 1037,
+    "lineas_de_codigo": 31748,
+    "mas_de_50_lineas": 81,
     "mas_largas": [
       [
-        917,
+        920,
         "bi/dashboard.py:build_style_css"
       ],
       [
-        175,
+        192,
         "bi/sql_explorer.py:build_css"
       ],
       [
-        133,
-        "bi/github_page.py:_style"
+        174,
+        "bi/dashboard.py:show_market_overview"
       ],
       [
-        133,
-        "bi/dashboard.py:build_context_css"
+        173,
+        "bi/quality_live.py:build_indicators"
       ],
       [
-        122,
-        "bi/dashboard.py:read_home_model"
+        163,
+        "bi/dashboard.py:show_overview_insights"
       ]
     ],
-    "mas_de_5_parametros": 50,
+    "mas_de_5_parametros": 56,
     "mas_parametros": [
+      [
+        13,
+        "bi/doc_views.py:container_box"
+      ],
       [
         12,
         "bi/lineage.py:build_lineage_node"
@@ -72,21 +68,17 @@
       ],
       [
         9,
-        "bi/doc_views.py:build_use_case"
-      ],
-      [
-        9,
-        "bi/dashboard.py:build_info_card_html"
+        "bi/doc_views.py:container_lines"
       ]
     ],
     "mas_larga": [
-      917,
+      920,
       "bi/dashboard.py:build_style_css"
     ]
   },
   "complejidad": {
     "orden": "ruff check bi etl agent --select C901 --config lint.mccabe.max-complexity=10",
-    "funciones_sobre_10": 9,
+    "funciones_sobre_10": 6,
     "mas_complejas": [
       [
         21,
@@ -94,17 +86,12 @@
         "read_home_model"
       ],
       [
-        14,
-        "bi/lineage.py",
-        "route_edges"
-      ],
-      [
         13,
         "bi/dashboard.py",
         "show_quality_evidence_dialog"
       ],
       [
-        12,
+        13,
         "bi/dashboard.py",
         "show_market_overview"
       ],
@@ -112,11 +99,16 @@
         12,
         "bi/dashboard.py",
         "restore_return_context"
+      ],
+      [
+        11,
+        "bi/sql_explorer.py",
+        "show_sql_explorer_page"
       ]
     ],
     "promedio_radon": {
       "nota": "A",
-      "valor": 3.481598317560463
+      "valor": 3.452830188679245
     }
   },
   "codigo_muerto": {
@@ -125,57 +117,109 @@
     "funciones_sin_uso": [
       "render_page",
       "read_glossary",
+      "add_to_history",
       "orthogonal"
     ],
-    "variables_o_atributos_sin_uso": 42
+    "variables_o_atributos_sin_uso": 34
   },
   "mypy": {
     "orden": "mypy etl/etl.py etl/bronze.py etl/ine.py etl/pipeline.py bi/queries.py bi/alerts.py bi/overview.py bi/inflation_view.py bi/control.py bi/served_database.py --ignore-missing-imports --follow-imports=silent",
     "version": "mypy 2.4.0 (compiled: yes)",
     "modulos": 10,
     "errores": 0,
-    "errores_revisando_cuerpos_sin_tipos": 3,
-    "por_modulo": {
-      "bi/inflation_view.py": 1,
-      "bi/overview.py": 1,
-      "etl/pipeline.py": 1
-    },
-    "funciones": 123,
-    "con_tipo_de_retorno": 0
+    "errores_revisando_cuerpos_sin_tipos": 0,
+    "por_modulo": {},
+    "funciones": 134,
+    "con_tipo_de_retorno": 134
   },
   "cobertura": {
     "orden": "pytest -q --cov=bi --cov=etl --cov=agent",
-    "pruebas_ok": 928,
+    "pruebas_ok": 988,
     "pruebas_omitidas": 1,
     "salida": 1,
-    "total": 91.5,
-    "logica_critica": 83.8,
+    "total": 94.2,
+    "logica_critica": 93.6,
     "modulos_criticos": {
       "etl/etl.py": 95.5,
-      "etl/bronze.py": 36.4,
-      "etl/ine.py": 30.8,
-      "etl/pipeline.py": 43.2,
+      "etl/bronze.py": 97.1,
+      "etl/ine.py": 98.1,
+      "etl/pipeline.py": 92.9,
       "bi/queries.py": 100.0,
       "bi/alerts.py": 100.0,
-      "bi/overview.py": 80.9,
+      "bi/overview.py": 83.1,
       "bi/inflation_view.py": 97.9,
-      "bi/control.py": 95.1,
-      "bi/served_database.py": 95.2,
+      "bi/control.py": 95.2,
+      "bi/served_database.py": 95.3,
       "bi/quality.py": 97.9
+    },
+    "modulos": {
+      "agent/agent.py": 87.3,
+      "bi/alerts.py": 100.0,
+      "bi/app_map.py": 100.0,
+      "bi/architecture.py": 99.4,
+      "bi/brand_icons.py": 100.0,
+      "bi/buttons.py": 100.0,
+      "bi/charts.py": 94.1,
+      "bi/control.py": 95.2,
+      "bi/dashboard.py": 89.7,
+      "bi/database_crossings.py": 99.3,
+      "bi/database_map.py": 100.0,
+      "bi/deployment.py": 100.0,
+      "bi/devops.py": 98.4,
+      "bi/doc_diagrams.py": 100.0,
+      "bi/doc_figures.py": 98.8,
+      "bi/doc_views.py": 100.0,
+      "bi/documents_folder.py": 98.6,
+      "bi/er_diagram.py": 100.0,
+      "bi/github_page.py": 98.5,
+      "bi/home_mockup.py": 86.8,
+      "bi/i18n.py": 97.4,
+      "bi/i18n_en.py": 100.0,
+      "bi/inflation_view.py": 97.9,
+      "bi/lag.py": 100.0,
+      "bi/lineage.py": 98.2,
+      "bi/monitoring.py": 100.0,
+      "bi/operation_center.py": 98.9,
+      "bi/overview.py": 83.1,
+      "bi/page_bar.py": 100.0,
+      "bi/project.py": 96.0,
+      "bi/quality.py": 97.9,
+      "bi/quality_evidence.py": 95.8,
+      "bi/quality_live.py": 97.4,
+      "bi/quality_method.py": 95.5,
+      "bi/quality_metrics.py": 98.5,
+      "bi/quality_view.py": 98.3,
+      "bi/queries.py": 100.0,
+      "bi/report.py": 91.3,
+      "bi/security_map.py": 100.0,
+      "bi/security_plan.py": 86.5,
+      "bi/served_database.py": 95.3,
+      "bi/sql_explorer.py": 93.1,
+      "bi/stack_page.py": 100.0,
+      "bi/star_model.py": 100.0,
+      "bi/storage_map.py": 98.7,
+      "bi/tech_glossary.py": 100.0,
+      "bi/zoom.py": 100.0,
+      "etl/bronze.py": 97.1,
+      "etl/etl.py": 95.5,
+      "etl/ine.py": 98.1,
+      "etl/pipeline.py": 92.9,
+      "etl/points_of_sale.py": 88.9,
+      "etl/profile_years.py": 98.1
     }
   },
   "bandit": {
     "orden": "bandit -r bi etl agent",
     "version": "bandit 1.9.4",
     "alta": 0,
-    "media": 25,
+    "media": 26,
     "baja": 12,
     "por_regla": {
       "B405": 1,
       "B314": 1,
       "B101": 4,
       "B105": 5,
-      "B608": 24,
+      "B608": 25,
       "B404": 1,
       "B603": 1
     }
@@ -196,9 +240,12 @@
   "secretos": {
     "orden": "detect-secrets scan $(git ls-files)",
     "version": "1.5.0",
-    "archivos_revisados": 199,
-    "candidatos": 21,
+    "archivos_revisados": 215,
+    "candidatos": 22,
     "por_archivo": {
+      ".github/workflows/calidad.yml": [
+        "Secret Keyword"
+      ],
       "agent/downloads/manifest.json": [
         "Hex High Entropy String",
         "Hex High Entropy String",
@@ -237,7 +284,7 @@
         "Secret Keyword"
       ]
     },
-    "falsos_positivos": 21,
+    "falsos_positivos": 22,
     "sin_clasificar": 0,
     "historial_con_patrones_de_claves": 0,
     "nota": "gitleaks no está instalado en este equipo; se usó detect-secrets y una búsqueda de patrones en el historial"
@@ -282,23 +329,33 @@
     }
   },
   "proceso": {
-    "commits": 307,
-    "conventional_commits": 0,
-    "pre_commit_configurado": false,
+    "commits": 321,
+    "conventional_commits": 11,
+    "pre_commit_configurado": true,
     "ci": {
       "semanal.yml": [
         "pytest",
         "dbt build"
       ],
+      "calidad.yml": [
+        "pytest",
+        "ruff",
+        "mypy",
+        "bandit",
+        "pip-audit",
+        "sqlfluff"
+      ],
       "pruebas.yml": [
         "pytest",
+        "ruff",
+        "mypy",
         "dbt parse"
       ]
     }
   },
   "pruebas": {
-    "pruebas": 947,
-    "archivos_de_prueba": 53
+    "pruebas": 996,
+    "archivos_de_prueba": 55
   },
   "dora": {
     "cargas_registradas": 6,
@@ -315,6 +372,177 @@
   },
   "adr": {
     "adr": 11,
-    "decisiones": 311
+    "decisiones": 315
+  },
+  "datos": {
+    "orden": "python scripts/medir_calidad.py (función measure_data)",
+    "semana": "2026-10-12",
+    "precios_semana": 772,
+    "con_comparacion": 719,
+    "pct_comparacion": 93.1,
+    "series_activas": 1113,
+    "series_con_dato": 772,
+    "pct_series_con_dato": 69.4,
+    "dias_desde_ultima_semana": 9,
+    "dias_desde_ultima_carga": 7,
+    "medido": "2026-10-27"
+  },
+  "consultas": {
+    "orden": "mediana de 3 ejecuciones de cada consulta de bi/queries.sql",
+    "consultas": {
+      "k1_margin": 0.089,
+      "k2_channel_gap": 0.273,
+      "k3_regional_index": 0.419,
+      "k4_seasonal_index": 0.091,
+      "k8_rejected_rows": 0.004,
+      "quality_runs": 0.004,
+      "quality_flag_counts": 0.007,
+      "quality_outliers": 0.008,
+      "quality_rejected_rows": 0.004,
+      "quality_unconvertible_units": 0.006,
+      "k6_national_weekly_price": 0.141,
+      "k6_usual_range_sql": 0.112,
+      "k5_weekly_variations_sql": 0.083,
+      "quality_week_range": 0.005
+    },
+    "mas_lenta": [
+      "k3_regional_index",
+      0.419
+    ]
+  },
+  "navegadores": {
+    "orden": "node tests/medicion/calidad.cjs http://localhost:8599",
+    "paginas": {
+      "Panorama de precios": {
+        "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=Dashboard",
+        "seconds": 0.828,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Dónde comprar": {
+        "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=D%C3%B3nde+comprar",
+        "seconds": 0.316,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Insights": {
+        "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=Insights",
+        "seconds": 0.822,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Pipeline y linaje": {
+        "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Pipeline+y+arquitectura",
+        "seconds": 1.33,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Modelo de datos": {
+        "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Modelo+de+datos",
+        "seconds": 0.824,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Calidad y auditoría": {
+        "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Monitoreo",
+        "seconds": 0.824,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Consultas SQL": {
+        "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=Consultas+SQL",
+        "seconds": 0.345,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Stack y evidencia": {
+        "href": "proyecto?tema=Vantablack&perfil=profesional&rol=bi&vista=Stack+y+evidencia",
+        "seconds": 0.82,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Mapa de la app": {
+        "href": "proyecto?tema=Vantablack&perfil=profesional&rol=bi&vista=Mapa+de+la+app",
+        "seconds": 0.823,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Método y calidad": {
+        "href": "proyecto?tema=Vantablack&perfil=profesional&rol=bi&vista=M%C3%A9todo+y+calidad",
+        "seconds": 0.83,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Centro de operación": {
+        "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Ejecuciones",
+        "seconds": 2.337,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Arquitectura de seguridad": {
+        "href": "seguridad?tema=Vantablack&perfil=profesional&rol=bi&vista=Mapa+de+seguridad",
+        "seconds": 0.837,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      },
+      "Documentos": {
+        "href": "documentacion-y-enlaces?tema=Vantablack&perfil=profesional&rol=bi&vista=Documentos",
+        "seconds": 0.829,
+        "violations": 0,
+        "nodes": 0,
+        "rules": []
+      }
+    },
+    "pagina_mas_lenta": [
+      "Centro de operación",
+      2.337
+    ],
+    "violaciones_wcag": 0,
+    "nodos_wcag": 0,
+    "navegadores": {
+      "chromium": {
+        "checks": 39,
+        "passed": 39,
+        "failed": []
+      },
+      "firefox": {
+        "checks": 39,
+        "passed": 38,
+        "failed": [
+          {
+            "size": "844x390",
+            "page": "Documentos",
+            "ok": false,
+            "error": true,
+            "why": "tiempo agotado"
+          }
+        ]
+      },
+      "webkit": {
+        "checks": 39,
+        "passed": 38,
+        "failed": [
+          {
+            "size": "1920x1000",
+            "page": "Pipeline y linaje",
+            "ok": false,
+            "error": true,
+            "why": "tiempo agotado"
+          }
+        ]
+      }
+    }
   }
 }

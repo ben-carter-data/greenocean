@@ -285,7 +285,7 @@ def build_browsers(report: dict[str, Any], goals: dict[str, Any]) -> str:
         (
             f"<b>{html.escape(name.capitalize())}</b>",
             f"{number(item['passed'])} / {number(item['checks'])}",
-            html.escape(", ".join(f"{fail['page']} {fail['size']}" for fail in item["failed"]) or "—"),
+            html.escape(", ".join(f"{i18n.tr(fail['page'])} {fail['size']}" for fail in item["failed"]) or "—"),
         )
         for name, item in browsers.get("navegadores", {}).items()
     ]
