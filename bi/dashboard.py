@@ -6141,9 +6141,10 @@ def show_stack_page(mode):
 
 
 def show_method_page(mode):
-    """«Método y calidad» (D-320): how the project was assessed against software and data quality standards, a
-    self-assessment whose every number comes from a real run (docs/calidad/medicion.json)."""
-    report = quality_method.read_report()
+    """«Método y calidad» (D-320, D-323): how the project is assessed against software and data quality standards. Every
+    measured number comes from docs/calidad (the last measurement, the baseline and the goals); the ISO grades from the
+    author's dated review."""
+    baseline, report, goals, rubric = quality_method.read_all()
     show_page_bar(
         PAGE_METHOD,
         PAGE_METHOD,
@@ -6151,22 +6152,18 @@ def show_method_page(mode):
         "lo que falta. Una autoevaluación, no una certificación.",
     )
     st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    labels = [
-        tr("Introducción"),
-        tr("Estándares"),
-        "ISO 25010",
-        tr("Datos"),
-        tr("Código"),
-        tr("Verificar"),
-        tr("Límites"),
-    ]
-    intro, standards, iso, data, code, verify, limits = st.tabs(labels)
-    with intro:
-        st.markdown(f'<div class="qm-pane">{quality_method.build_intro(report)}</div>', unsafe_allow_html=True)
-    with standards:
-        st.markdown(f'<div class="qm-pane">{quality_method.build_standards(report)}</div>', unsafe_allow_html=True)
+    st.markdown(quality_method.build_header(report, rubric), unsafe_allow_html=True)
+    labels = [tr("Resumen"), "ISO 25010", tr("Datos"), tr("Navegadores"), tr("Estándares"), tr("Límites")]
+    summary, iso, data, browsers, standards, limits = st.tabs(labels)
+    with summary:
+        st.markdown(
+            f'<div class="qm-pane">{quality_method.build_summary(baseline, report, goals)}</div>',
+            unsafe_allow_html=True,
+        )
     with iso:
-        st.markdown(f'<div class="qm-pane">{quality_method.build_iso(report)}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="qm-pane">{quality_method.build_iso(report, goals, rubric)}</div>', unsafe_allow_html=True
+        )
     with data:
         indicators = quality_live.build_indicators(quality_live.read_measures())
         counts = read_cached_database_counts(get_database_version())
@@ -6174,12 +6171,14 @@ def show_method_page(mode):
             f'<div class="qm-pane">{quality_method.build_data_quality(report, indicators, counts)}</div>',
             unsafe_allow_html=True,
         )
-    with code:
-        st.markdown(f'<div class="qm-pane">{quality_method.build_code(report)}</div>', unsafe_allow_html=True)
-    with verify:
-        st.markdown(f'<div class="qm-pane">{quality_method.build_verify(report)}</div>', unsafe_allow_html=True)
+    with browsers:
+        st.markdown(
+            f'<div class="qm-pane">{quality_method.build_browsers(report, goals)}</div>', unsafe_allow_html=True
+        )
+    with standards:
+        st.markdown(f'<div class="qm-pane">{quality_method.build_standards(report)}</div>', unsafe_allow_html=True)
     with limits:
-        st.markdown(f'<div class="qm-pane">{quality_method.build_limits(report)}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="qm-pane">{quality_method.build_limits(report, goals)}</div>', unsafe_allow_html=True)
 
 
 def show_app_map_page(mode):

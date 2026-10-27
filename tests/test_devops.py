@@ -27,7 +27,8 @@ def test_the_two_workflows_and_their_triggers_are_the_ones_drawn():
     pruebas, semanal = read_workflow("pruebas.yml"), read_workflow("semanal.yml")
     assert "push:" in pruebas and "pull_request:" in pruebas
     assert re.search(r'cron:\s*"0 12 \* \* 2"', semanal) and "workflow_dispatch:" in semanal
-    assert {path.name for path in WORKFLOWS.glob("*.yml")} == {"pruebas.yml", "semanal.yml"}  # no other workflow
+    # D-323: the quality measurement is the third workflow, drawn in the CI row.
+    assert {path.name for path in WORKFLOWS.glob("*.yml")} == {"pruebas.yml", "semanal.yml", "calidad.yml"}
 
 
 def test_the_steps_of_the_weekly_load_come_in_the_order_of_the_workflow_and_none_is_missing():
@@ -42,7 +43,7 @@ def test_the_steps_of_the_weekly_load_come_in_the_order_of_the_workflow_and_none
     assert numbers == list(range(1, len(named) + 1))
     # The gates: dbt and the tests against the new database run before it is saved.
     gates = [step[0] for step in devops.STEPS if step[8] == "gate"]
-    assert gates == ["ci_pytest", "cd_dbt", "cd_pytest"]
+    assert gates == ["ci_lint", "ci_pytest", "cd_dbt", "cd_pytest"]  # D-323: the lint stops the job too
     assert semanal.index("Run the tests against") < semanal.index("Publish the database")
 
 

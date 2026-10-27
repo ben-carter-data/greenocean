@@ -1,7 +1,8 @@
 """CI/CD and orchestration of the project (D-243, D-246, D-276): how a change reaches production, from the workflows.
 
 Every box is a step of a real workflow in .github/workflows/:
-  CI, continuous integration (pruebas.yml): every push and pull request is tested alone, on one row.
+  CI, continuous integration (pruebas.yml, calidad.yml): every push and pull request is linted, tested and measured,
+  on one row.
   CD, continuous delivery (semanal.yml): every Tuesday the load is built, tested against the new database and, only if
       everything passed, published: the database replaces the one in the release «base-actual» and its pointer is
       committed (D-270). D-276: its ten named steps are grouped in four phases on one row (prepare, ingest, build and
@@ -54,15 +55,15 @@ STEPS = [
         "",
     ),
     (
-        "ci_actions",
+        "ci_lint",
         "ci",
-        "github",
-        "GitHub Actions",
-        "lanza el job pytest",
-        "GitHub arranca una máquina limpia con Python 3.11 e instala las dependencias.",
-        "job pytest",
-        "pruebas.yml::pip install",
-        "",
+        "check",
+        "Lint y tipos",
+        "Ruff y mypy",
+        "En una máquina limpia con Python 3.11 revisa el estilo y el formato con Ruff y los tipos de los módulos principales con mypy; un aviso detiene el job (D-323).",
+        "job lint",
+        "pruebas.yml::ruff check .",
+        "gate",
     ),
     (
         "ci_parse",
@@ -81,9 +82,9 @@ STEPS = [
         "pytest",
         "pytest",
         "toda la batería",
-        "Corre todas las pruebas de tests/; si una falla, el job se detiene.",
-        "pytest -vv -x",
-        "pruebas.yml::pytest -vv -x",
+        "Corre todas las pruebas de tests/ con su cobertura; si una falla o la cobertura baja del 90 %, el job falla.",
+        "pytest --cov",
+        "pruebas.yml::pytest -q",
         "gate",
     ),
     (
@@ -92,7 +93,7 @@ STEPS = [
         "check",
         "Resultado",
         "pasa o falla",
-        "GitHub deja el resultado junto al commit: verde si todo pasó, rojo si no. Avisa, pero no detiene la publicación: Streamlit publica main sin esperarlo.",
+        "GitHub deja el resultado junto al commit: verde si todo pasó, rojo si no. Avisa, pero no detiene la publicación: Streamlit publica main sin esperarlo. Aparte, el workflow calidad.yml mide los indicadores de calidad en cada push y los compara con sus metas (D-323).",
         "estado del commit en GitHub",
         "pruebas.yml::name: pruebas",
         "",
@@ -254,7 +255,7 @@ PHASES = [
     ("probar", "Construir y probar", "dbt", ["cd_dbt", "cd_fail", "cd_pytest"]),
     ("publicar", "Publicar", "github", ["cd_publish", "cd_report"]),
 ]
-CI_FLOW = ["ci_change", "ci_actions", "ci_parse", "ci_pytest", "ci_result"]
+CI_FLOW = ["ci_change", "ci_lint", "ci_parse", "ci_pytest", "ci_result"]
 TAGS = {"gate": "puerta", "optional": "opcional", "platform": "plataforma"}
 ROW_NOTE = "Si un paso falla, los siguientes no corren y la base publicada no cambia."
 
