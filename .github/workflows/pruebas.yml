@@ -3,17 +3,36 @@ on:
   push:
   pull_request:
 jobs:
-  pytest:
+  lint:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install -r requirements-pipeline.txt
+      - run: pip install ruff==0.17.2 mypy==2.4.0 -r requirements.txt
+      # D-323: 0 findings, everything formatted and the main modules typed.
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # The supported versions (docs/MANUAL.md): dbt Core runs on 3.11 and 3.12.
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -r requirements-pipeline.txt pytest-cov
       # The dbt project must compile on every change (models, tests, sources).
       - run: dbt parse --project-dir dbt --profiles-dir dbt
       # The served database is not in git (D-270): the tests read the one the last load published.
       - run: python bi/served_database.py
-      - run: pytest -vv -x -o faulthandler_timeout=90
+      # Coverage under 90 % fails the job (pyproject.toml).
+      - run: pytest -q -o faulthandler_timeout=90 --cov --cov-report=term

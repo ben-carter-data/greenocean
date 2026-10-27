@@ -1,0 +1,13 @@
+# Checks before each commit (D-323): `pip install pre-commit && pre-commit install`.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.2
+    hooks:
+      - id: ruff
+      - id: ruff-format
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        # The 21 known candidates are file hashes and the names of secrets, reviewed in docs/calidad/INFORME.md.
+        args: ["--baseline", ".secrets.baseline"]

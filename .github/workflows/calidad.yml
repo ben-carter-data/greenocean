@@ -1,0 +1,39 @@
+# D-323: measures the quality indicators on every push and checks them against docs/calidad/metas.json.
+# It writes docs/calidad/medicion.json as an artifact (with its date and commit); it never changes the code and never
+# publishes anything: the page «Método y calidad» shows the measurement the author commits.
+name: calidad
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  medir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Entorno del proyecto
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r requirements.txt pytest-cov
+          .venv/bin/python bi/served_database.py
+      - name: Herramientas de calidad (fuera del proyecto)
+        run: |
+          python -m venv /tmp/tools
+          /tmp/tools/bin/pip install ruff==0.17.2 mypy==2.4.0 bandit==1.9.4 pip-audit==2.10.1 vulture==2.16 radon==6.0.1 sqlfluff==4.4.0 detect-secrets==1.5.0
+          mkdir -p /tmp/node && cd /tmp/node && npm install playwright@1.63.0 axe-core@4.10.2 && npx playwright install --with-deps chromium firefox webkit
+      - name: Medir
+        run: .venv/bin/python scripts/medir_calidad.py --tools /tmp/tools/bin --node-path /tmp/node/node_modules --output medicion.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: medicion-${{ github.sha }}
+          path: medicion.json
+      - name: Comparar con las metas
+        run: .venv/bin/python scripts/verificar_calidad.py medicion.json
