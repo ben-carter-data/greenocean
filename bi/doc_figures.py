@@ -216,6 +216,58 @@ def wrap(text, limit=24):
     return lines + ([line] if line else [])
 
 
+def edge_points(route, start, end, r, source_bottom, target_bottom):
+    """The corners of a line from one icon to another (D-297): «h» leaves by the side and turns once at mid-height, «v»
+    leaves from below (or above) and turns once at mid-width, «hv» goes across and then down or up, «vh» down or up and
+    then across. Every turn is a right angle."""
+    (x1, y1), (x2, y2) = start, end
+    right = x2 >= x1
+    down = y2 >= y1
+    if route == "h":
+        sx, ex = (x1 + r, x2 - r) if right else (x1 - r, x2 + r)
+        mid = (sx + ex) / 2
+        return [(sx, y1), (mid, y1), (mid, y2), (ex, y2)] if y1 != y2 else [(sx, y1), (ex, y2)]
+    if route == "v":
+        sy, ey = (source_bottom, y2 - r) if down else (y1 - r, target_bottom)
+        mid = (sy + ey) / 2
+        return [(x1, sy), (x1, mid), (x2, mid), (x2, ey)] if x1 != x2 else [(x1, sy), (x2, ey)]
+    if route == "hv":
+        sx = x1 + r if right else x1 - r
+        ey = y2 - r if down else target_bottom
+        return [(sx, y1), (x2, y1), (x2, ey)]
+    sy = source_bottom if down else y1 - r  # «vh»
+    ex = x2 - r if right else x2 + r
+    return [(x1, sy), (x1, y2), (ex, y2)]
+
+
+def stretch_length(pair):
+    return abs(pair[0][0] - pair[1][0]) + abs(pair[0][1] - pair[1][1])
+
+
+def edge_label(points, label, at_start, halo, width):
+    """The label of a line, on its last stretch when it has room (the first may be shared by a fork), else on its
+    longest; above a horizontal stretch, beside a vertical one."""
+    stretches = list(zip(points, points[1:]))
+    last = stretches[-1]
+    if at_start:  # two lines that end on the same stretch: each label on its own start
+        (ax, ay), (bx, by) = stretches[0]
+    else:
+        (ax, ay), (bx, by) = (
+            last if stretch_length(last) >= max(70, len(label) * 6.2) else max(stretches, key=stretch_length)
+        )
+    if ay == by:
+        return (
+            f'<text class="mut" x="{(ax + bx) / 2:.1f}" y="{ay - 6:.1f}" text-anchor="middle" font-size="11" '
+            f'stroke="{halo}" stroke-width="4" paint-order="stroke">{esc(label)}</text>'
+        )
+    # beside a vertical stretch: on its right, or on its left near the right edge of the figure
+    side = f'x="{ax - 7:.1f}" text-anchor="end"' if ax + 7 + len(label) * 6.2 > width else f'x="{ax + 7:.1f}"'
+    return (
+        f'<text class="mut" {side} y="{(ay + by) / 2 + 4:.1f}" font-size="11" '
+        f'stroke="{halo}" stroke-width="4" paint-order="stroke">{esc(label)}</text>'
+    )
+
+
 def graph(mode, title, nodes, edges, note="", width=920, size=38, limit=22):
     """A diagram of icons and straight arrows (D-297): no boxes and no cards, lines that turn only at right angles.
 
@@ -244,26 +296,7 @@ def graph(mode, title, nodes, edges, note="", width=920, size=38, limit=22):
         bottoms[key] = top - 11 + 15 * len(lines) + 4
     lines_svg = []
     for source, target, label, kind, route, *where in edges:
-        x1, y1 = nodes[source][:2]
-        x2, y2 = nodes[target][:2]
-        right = x2 >= x1
-        down = y2 >= y1
-        if route == "h":
-            sx, ex = (x1 + r, x2 - r) if right else (x1 - r, x2 + r)
-            mid = (sx + ex) / 2
-            points = [(sx, y1), (mid, y1), (mid, y2), (ex, y2)] if y1 != y2 else [(sx, y1), (ex, y2)]
-        elif route == "v":
-            sy, ey = (bottoms[source], y2 - r) if down else (y1 - r, bottoms[target])
-            mid = (sy + ey) / 2
-            points = [(x1, sy), (x1, mid), (x2, mid), (x2, ey)] if x1 != x2 else [(x1, sy), (x2, ey)]
-        elif route == "hv":
-            sx = x1 + r if right else x1 - r
-            ey = y2 - r if down else bottoms[target]
-            points = [(sx, y1), (x2, y1), (x2, ey)]
-        else:  # «vh»
-            sy = bottoms[source] if down else y1 - r
-            ex = x2 - r if right else x2 + r
-            points = [(x1, sy), (x1, y2), (ex, y2)]
+        points = edge_points(route, nodes[source][:2], nodes[target][:2], r, bottoms[source], bottoms[target])
         color = KIND_COLORS[kind]
         dash = ' stroke-dasharray="6 5"' if kind == "back" else (' stroke-dasharray="2 4"' if kind == "check" else "")
         path = "M" + " L".join(f"{px:.1f} {py:.1f}" for px, py in points)
@@ -271,31 +304,7 @@ def graph(mode, title, nodes, edges, note="", width=920, size=38, limit=22):
             f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.7"{dash} marker-end="url(#g-{kind})"/>'
         )
         if label:
-            stretches = list(zip(points, points[1:]))
-
-            def length(pair):
-                return abs(pair[0][0] - pair[1][0]) + abs(pair[0][1] - pair[1][1])
-
-            # The last stretch belongs to this line alone (the first may be shared by a fork): it carries the label
-            # when it has room for it.
-            last = stretches[-1]
-            if where and where[0] == "start":  # two lines that end on the same stretch: each label on its own start
-                (ax, ay), (bx, by) = stretches[0]
-            else:
-                (ax, ay), (bx, by) = last if length(last) >= max(70, len(label) * 6.2) else max(stretches, key=length)
-            if ay == by:
-                lines_svg.append(
-                    f'<text class="mut" x="{(ax + bx) / 2:.1f}" y="{ay - 6:.1f}" text-anchor="middle" font-size="11" '
-                    f'stroke="{halo}" stroke-width="4" paint-order="stroke">{esc(label)}</text>'
-                )
-            else:  # beside a vertical stretch: on its right, or on its left near the right edge of the figure
-                side = (
-                    f'x="{ax - 7:.1f}" text-anchor="end"' if ax + 7 + len(label) * 6.2 > width else f'x="{ax + 7:.1f}"'
-                )
-                lines_svg.append(
-                    f'<text class="mut" {side} y="{(ay + by) / 2 + 4:.1f}" font-size="11" '
-                    f'stroke="{halo}" stroke-width="4" paint-order="stroke">{esc(label)}</text>'
-                )
+            lines_svg.append(edge_label(points, label, bool(where and where[0] == "start"), halo, width))
     height = max(bottoms.values()) + 6
     markers = "".join(
         f'<marker id="g-{kind}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '

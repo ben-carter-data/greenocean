@@ -844,6 +844,35 @@ def allocate_lanes(spans, base):
     return lanes
 
 
+def edge_path(parent, child, position, layer_of, port, out_x, int_lanes, mart_lanes):
+    """(path, joints, extra) of one link: down the intermediate column, a bracket inside the marts (extra: drawn only when
+    a selection includes it), along a lane into the intermediate chain or into the marts, or straight with one elbow."""
+    half = TILE / 2
+    (px, _), (cx, cy) = position[parent], position[child]
+    start_y, end_y = port(parent), port(child)
+    start_x, end_x = out_x(parent), cx - half - 3
+    source, target = layer_of[parent], layer_of[child]
+    if source == target == "intermediate" and position[child][1] > position[parent][1]:
+        return f"M{px} {position[parent][1] + half + 8} V{cy - half - 3}", [], False
+    if source == target:
+        # Inside the marts (a fact reading its dimensions): a bracket left of the tiles.
+        bulge = 22 + abs(cy - position[parent][1]) / MART_PITCH * 5
+        left = px - half - 4
+        path = (
+            f"M{left} {position[parent][1] + 6} C{left - bulge} {position[parent][1] + 6} "
+            f"{left - bulge} {cy - 6} {left} {cy - 6}"
+        )
+        return path, [], True
+    if target in ("intermediate", "marts"):
+        lane = int_lanes[child] if target == "intermediate" else mart_lanes[parent]
+        joints = [(lane, start_y), (lane, end_y)] if abs(start_y - end_y) > 1 else []
+        return f"M{start_x} {start_y} H{lane} V{end_y} H{end_x}", joints, False
+    if abs(start_y - end_y) < 1:
+        return f"M{start_x} {start_y} H{end_x}", [], False
+    middle = (start_x + end_x) / 2
+    return f"M{start_x} {start_y} H{middle} V{end_y} H{end_x}", [], False
+
+
 def route_edges(position, by_id, layer_of, ends, gold):
     """Every link as orthogonal segments: bronze straight into staging, staging along a
     bus into the intermediate chain, the chain down its column, elbows into the marts and
@@ -878,36 +907,8 @@ def route_edges(position, by_id, layer_of, ends, gold):
     )
     edges = []
     for parent, child in links:
-        (px, _), (cx, cy) = position[parent], position[child]
-        start_y, end_y = port(parent), port(child)
-        start_x, end_x = out_x(parent), cx - half - 3
-        source, target = layer_of[parent], layer_of[child]
-        joints, extra = [], False
-        if source == target == "intermediate" and position[child][1] > position[parent][1]:
-            path = f"M{px} {position[parent][1] + half + 8} V{cy - half - 3}"
-        elif source == target:
-            # Inside the marts (a fact reading its dimensions): a bracket left of the tiles.
-            bulge = 22 + abs(cy - position[parent][1]) / MART_PITCH * 5
-            left = px - half - 4
-            path = (
-                f"M{left} {position[parent][1] + 6} C{left - bulge} {position[parent][1] + 6} "
-                f"{left - bulge} {cy - 6} {left} {cy - 6}"
-            )
-            extra = True
-        elif target == "intermediate":
-            lane = int_lanes[child]
-            path = f"M{start_x} {start_y} H{lane} V{end_y} H{end_x}"
-            joints = [(lane, start_y), (lane, end_y)] if abs(start_y - end_y) > 1 else []
-        elif target == "marts":
-            lane = mart_lanes[parent]
-            path = f"M{start_x} {start_y} H{lane} V{end_y} H{end_x}"
-            joints = [(lane, start_y), (lane, end_y)] if abs(start_y - end_y) > 1 else []
-        elif abs(start_y - end_y) < 1:
-            path = f"M{start_x} {start_y} H{end_x}"
-        else:
-            middle = (start_x + end_x) / 2
-            path = f"M{start_x} {start_y} H{middle} V{end_y} H{end_x}"
-        edges.append((parent, child, path, color_key[source], joints, extra))
+        path, joints, extra = edge_path(parent, child, position, layer_of, port, out_x, int_lanes, mart_lanes)
+        edges.append((parent, child, path, color_key[layer_of[parent]], joints, extra))
     gold_x, gold_y = gold
     for node_id, (x, y) in position.items():
         if layer_of[node_id] == "marts":

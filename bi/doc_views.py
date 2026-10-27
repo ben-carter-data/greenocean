@@ -553,6 +553,83 @@ C4_LINKS = [
 C4_SUBLABELS = [("solo lectura", 681, 384)]
 
 
+def container_person(key, x, y, name):
+    """A person of the container view: the figure and the name under it."""
+    mark = flat_logo("person", "visitor" if key == "visitor" else "author").replace(
+        '<svg class="logo" ', f'<svg x="{x - 26}" y="{y - 10}" width="52" height="52" ', 1
+    )
+    return (
+        f'<g class="c4-node" id="c-{key}" tabindex="0">{mark}<text class="c4-name" x="{x}" y="{y + 60}" '
+        f'text-anchor="middle">{esc(name)}</text></g>'
+    )
+
+
+def container_icon(key, kind, x, y):
+    """(icon, x of the name): a cylinder for a data store, the logo of an application, nothing for an external system."""
+    if kind == "store":
+        slug = {"work": "sqlite", "served": "duckdb", "backup": "sqlite"}[key]
+        return storage_map.cylinder(x + 12, y + 10, 24, 34, slug, f"c4{key}", glyph_size=13), x + 46
+    if kind == "app":
+        icon = flat_logo("brand", "streamlit" if key == "panel" else "python").replace(
+            '<svg class="logo" ', f'<svg x="{x + 10}" y="{y + 10}" width="32" height="32" ', 1
+        )
+        return icon, x + 48
+    return "", x + 12
+
+
+def container_lines(key, kind, x, y, name, name_x, technology, files, what):
+    """The texts of a box: its name, its technology in brackets, its files and, for the load, what it does."""
+    lines = [f'<text class="c4-name" x="{name_x}" y="{y + 31}">{esc(name)}</text>']
+    line_y = y + 31 if kind == "external" else y + 60
+    if kind == "external":
+        lines.append(f'<text class="c4-tech" x="{x + 12}" y="{y + 50}">[{esc(" ".join(technology))}]</text>')
+    else:
+        for index, part in enumerate(technology):
+            first, last = index == 0, index == len(technology) - 1
+            lines.append(
+                f'<text class="c4-tech" x="{x + 12}" y="{line_y}">{"[" if first else ""}{esc(part)}'
+                f'{"]" if last else ""}</text>'
+            )
+            line_y += 16
+        for part in [piece.strip() for piece in files.split("·") if piece.strip()]:
+            line_y += 2
+            lines.append(f'<text class="c4-file" x="{x + 12}" y="{line_y}">{esc(part)}</text>')
+            line_y += 15
+    if key == "load":
+        line_y += 18
+        for part in wrap(what, 26):
+            lines.append(f'<text class="c4-what" x="{x + 12}" y="{line_y}">{esc(part)}</text>')
+            line_y += 17
+    return lines
+
+
+def container_box(key, kind, x, y, w, h, name, technology, files, what, card, border, accent):
+    """An application, a data store or an external system of the container view, as a box with its texts."""
+    dashed = ' stroke-dasharray="5 5"' if kind == "external" else ""
+    fill = "transparent" if kind == "external" else card
+    icon, name_x = container_icon(key, kind, x, y)
+    lines = container_lines(key, kind, x, y, name, name_x, technology, files, what)
+    return (
+        f'<g class="c4-node c4-{kind}" id="c-{key}" tabindex="0"><rect x="{x}" y="{y}" width="{w}" '
+        f'height="{h}" rx="14" fill="{fill}" stroke="{accent if kind == "app" else border}"'
+        f'{dashed} stroke-width="{1.6 if kind == "app" else 1.2}"/>{icon}{"".join(lines)}</g>'
+    )
+
+
+def container_tip(key, name, what, files, box):
+    """The explanation a box opens on hover, above it in the lower half and under it in the upper one."""
+    bx, by, bw, bh = box
+    tx = min(max(bx + bw / 2 - 140, 8), C4_WIDTH - 288)
+    above = by > 300
+    return (
+        f'<g class="c4-tip" id="ct-{key}"><foreignObject x="{tx:.0f}" y="{(by - 8) if above else (by + bh + 8):.0f}" '
+        f'width="280" height="1" overflow="visible"><div xmlns="http://www.w3.org/1999/xhtml" '
+        f'style="{"bottom:0" if above else "top:0"}"><b>{esc(name)}</b>{esc(what)}'
+        + (f"<b>Fuente</b><code>{esc(files)}</code>" if files else "")
+        + "</div></foreignObject></g>"
+    )
+
+
 def build_containers_html(mode):
     """The containers of GreenOcean (C4 level 2): applications and data stores with their technology and links."""
     palette = charts.get_palette(mode)
@@ -579,64 +656,12 @@ def build_containers_html(mode):
     boxes, tips = [], []
     for key, kind, x, y, w, h, name, technology, files, what in CONTAINERS:
         if kind == "person":
-            mark = flat_logo("person", "visitor" if key == "visitor" else "author").replace(
-                '<svg class="logo" ', f'<svg x="{x - 26}" y="{y - 10}" width="52" height="52" ', 1
-            )
-            boxes.append(
-                f'<g class="c4-node" id="c-{key}" tabindex="0">{mark}<text class="c4-name" x="{x}" y="{y + 60}" '
-                f'text-anchor="middle">{esc(name)}</text></g>'
-            )
+            boxes.append(container_person(key, x, y, name))
             box = (x - 55, y - 10, 110, 80)
         else:
-            dashed = ' stroke-dasharray="5 5"' if kind == "external" else ""
-            fill = "transparent" if kind == "external" else card
-            icon, name_x = "", x + 12
-            if kind == "store":
-                slug = {"work": "sqlite", "served": "duckdb", "backup": "sqlite"}[key]
-                icon = storage_map.cylinder(x + 12, y + 10, 24, 34, slug, f"c4{key}", glyph_size=13)
-                name_x = x + 46
-            elif kind == "app":
-                icon = flat_logo("brand", "streamlit" if key == "panel" else "python").replace(
-                    '<svg class="logo" ', f'<svg x="{x + 10}" y="{y + 10}" width="32" height="32" ', 1
-                )
-                name_x = x + 48
-            lines = [f'<text class="c4-name" x="{name_x}" y="{y + 31}">{esc(name)}</text>']
-            line_y = y + 31 if kind == "external" else y + 60
-            if kind == "external":
-                lines.append(f'<text class="c4-tech" x="{x + 12}" y="{y + 50}">[{esc(" ".join(technology))}]</text>')
-            else:
-                for index, part in enumerate(technology):
-                    first, last = index == 0, index == len(technology) - 1
-                    lines.append(
-                        f'<text class="c4-tech" x="{x + 12}" y="{line_y}">{"[" if first else ""}{esc(part)}'
-                        f'{"]" if last else ""}</text>'
-                    )
-                    line_y += 16
-                for part in [piece.strip() for piece in files.split("·") if piece.strip()]:
-                    line_y += 2
-                    lines.append(f'<text class="c4-file" x="{x + 12}" y="{line_y}">{esc(part)}</text>')
-                    line_y += 15
-            if key == "load":
-                line_y += 18
-                for part in wrap(what, 26):
-                    lines.append(f'<text class="c4-what" x="{x + 12}" y="{line_y}">{esc(part)}</text>')
-                    line_y += 17
-            boxes.append(
-                f'<g class="c4-node c4-{kind}" id="c-{key}" tabindex="0"><rect x="{x}" y="{y}" width="{w}" '
-                f'height="{h}" rx="14" fill="{fill}" stroke="{accent if kind == "app" else border}"'
-                f'{dashed} stroke-width="{1.6 if kind == "app" else 1.2}"/>{icon}{"".join(lines)}</g>'
-            )
+            boxes.append(container_box(key, kind, x, y, w, h, name, technology, files, what, card, border, accent))
             box = (x, y, w, h)
-        bx, by, bw, bh = box
-        tx = min(max(bx + bw / 2 - 140, 8), C4_WIDTH - 288)
-        above = by > 300
-        tips.append(
-            f'<g class="c4-tip" id="ct-{key}"><foreignObject x="{tx:.0f}" y="{(by - 8) if above else (by + bh + 8):.0f}" '
-            f'width="280" height="1" overflow="visible"><div xmlns="http://www.w3.org/1999/xhtml" '
-            f'style="{"bottom:0" if above else "top:0"}"><b>{esc(name)}</b>{esc(what)}'
-            + (f'<b>Fuente</b><code>{esc(files)}</code>' if files else "")
-            + '</div></foreignObject></g>'
-        )
+        tips.append(container_tip(key, name, what, files, box))
     chips = "".join(
         f'<text class="c4-label" x="{x}" y="{y}" text-anchor="{anchor}">{esc(label)}</text>'
         for _, label, x, y, anchor in C4_LINKS
