@@ -8,6 +8,10 @@ The other steps turn them into weekly prices in datos.db, applying the
 business rules (RN) of docs/DISENO.md. Each rule is named where it is applied.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 import csv
 import json
 import re
@@ -192,7 +196,7 @@ SELECT (SELECT COUNT(*) FROM keys_with_margin), (SELECT COUNT(*) FROM consumer_k
 
 
 # region Database
-def open_database(database_file=RAW_DATABASE_FILE, schema_file=RAW_SCHEMA_FILE):
+def open_database(database_file: Path = RAW_DATABASE_FILE, schema_file: Path = RAW_SCHEMA_FILE) -> sqlite3.Connection:
     """Open a database and create the tables of its schema if they do not exist."""
     connection = sqlite3.connect(database_file)
     connection.executescript(schema_file.read_text(encoding="utf-8"))
@@ -203,7 +207,7 @@ def open_database(database_file=RAW_DATABASE_FILE, schema_file=RAW_SCHEMA_FILE):
 
 
 # region Raw load
-def load_raw_files(connection, download_dir=DOWNLOAD_DIR):
+def load_raw_files(connection: sqlite3.Connection, download_dir: Path = DOWNLOAD_DIR) -> list[tuple[str, str, int]]:
     """Load every downloaded file into its raw table.
 
     A year whose file did not change (same hash) is skipped. If the file
@@ -239,17 +243,17 @@ def load_raw_files(connection, download_dir=DOWNLOAD_DIR):
 
 
 # region Clean
-def normalize_text(value):
+def normalize_text(value: str) -> str:
     """RN-13: remove non-breaking and repeated spaces; letter case is not changed."""
     return " ".join(value.replace(NON_BREAKING_SPACE, " ").split())
 
 
-def convert_decimal_text(text_column):
+def convert_decimal_text(text_column: pd.Series) -> pd.Series:
     """RN-01: turn text with a decimal comma into numbers. Unreadable text becomes NaN."""
     return pd.to_numeric(text_column.str.replace(",", ".", regex=False), errors="coerce")
 
 
-def split_consumer_product(product):
+def split_consumer_product(product: str) -> tuple[str, str, str]:
     """RN-02: split 'Producto|Variedad|Calidad' into its three parts."""
     parts = product.split(PRODUCT_SEPARATOR)
     if len(parts) != 3:
@@ -257,7 +261,7 @@ def split_consumer_product(product):
     return parts[0].strip(), parts[1].strip(), parts[2].strip()
 
 
-def add_wholesale_columns(rows):
+def add_wholesale_columns(rows: pd.DataFrame) -> pd.DataFrame:
     """Fill the common columns from the wholesale columns."""
     rows["first_date"] = pd.to_datetime(rows["price_date"], errors="coerce")
     rows["last_date"] = rows["first_date"]
@@ -269,7 +273,7 @@ def add_wholesale_columns(rows):
     return rows
 
 
-def add_consumer_columns(rows):
+def add_consumer_columns(rows: pd.DataFrame) -> pd.DataFrame:
     """Fill the common columns from the consumer columns."""
     rows["first_date"] = pd.to_datetime(rows["week_start"], errors="coerce")
     rows["last_date"] = pd.to_datetime(rows["week_end"], errors="coerce")
@@ -281,7 +285,7 @@ def add_consumer_columns(rows):
     return rows
 
 
-def clean(raw_rows, source):
+def clean(raw_rows: pd.DataFrame, source: str) -> pd.DataFrame:
     """Turn the raw text rows of one source into typed rows with common columns.
 
     The result keeps the index of raw_rows, so a rejected row can be traced
@@ -305,7 +309,7 @@ def clean(raw_rows, source):
 
 
 # region Validation
-def validate_rows(clean_rows):
+def validate_rows(clean_rows: pd.DataFrame) -> pd.Series:
     """RN-11: return the rejection reason of each row, or "" when the row is valid.
 
     A row with several problems gets the first reason found, so every row
@@ -336,7 +340,7 @@ def validate_rows(clean_rows):
     return reasons
 
 
-def build_rejections(raw_rows, reasons, source):
+def build_rejections(raw_rows: pd.DataFrame, reasons: pd.Series, source: str) -> pd.DataFrame:
     """RN-11: keep each rejected row exactly as it was read, with its reason."""
     rejected_rows = raw_rows[reasons != ""]
     original_rows = [json.dumps(row, ensure_ascii=False) for row in rejected_rows.to_dict("records")]
@@ -347,7 +351,7 @@ def build_rejections(raw_rows, reasons, source):
 
 
 # region Units
-def convert_unit(unit_text):
+def convert_unit(unit_text: str) -> tuple[str | None, float | None]:
     """RN-03, RN-04, RN-05: read a sale unit such as '$/caja 18 kilos'.
 
     Returns (normalized unit, quantity the price must be divided by), or
@@ -371,7 +375,7 @@ def convert_unit(unit_text):
     return normalized_unit, quantity
 
 
-def normalize_units(rows):
+def normalize_units(rows: pd.DataFrame) -> pd.DataFrame:
     """RN-03, RN-04, RN-05: add normalized_unit and normalized_price to each row.
 
     Rows whose unit is not convertible are kept, with both columns empty.
@@ -387,14 +391,14 @@ def normalize_units(rows):
 
 
 # region Weekly aggregation
-def assign_week_start(rows):
+def assign_week_start(rows: pd.DataFrame) -> pd.DataFrame:
     """RN-08: a week is identified by its Monday, the consumer's 'Fecha inicio'."""
     days_since_monday = pd.to_timedelta(rows["first_date"].dt.dayofweek, unit="D")
     rows["week_start"] = rows["first_date"] - days_since_monday
     return rows
 
 
-def aggregate_wholesale_weekly(wholesale_rows):
+def aggregate_wholesale_weekly(wholesale_rows: pd.DataFrame) -> pd.DataFrame:
     """RN-07: weekly wholesale price = daily prices weighted by their volume."""
     rows = wholesale_rows.copy()
     rows["price_times_volume"] = rows["normalized_price"] * rows["volume"]
@@ -407,7 +411,7 @@ def aggregate_wholesale_weekly(wholesale_rows):
     return weekly_prices.drop(columns="price_times_volume")
 
 
-def aggregate_consumer_weekly(consumer_rows):
+def aggregate_consumer_weekly(consumer_rows: pd.DataFrame) -> pd.DataFrame:
     """RN-09: weekly consumer price = plain average by region, channel and product.
 
     RN-10: the 'Mercado Mayorista' point of sale is one more channel here.
@@ -419,7 +423,7 @@ def aggregate_consumer_weekly(consumer_rows):
     return weekly_prices
 
 
-def aggregate_weekly(rows):
+def aggregate_weekly(rows: pd.DataFrame) -> pd.DataFrame:
     """Build one row per week, product key, region, channel and normalized unit."""
     rows = assign_week_start(rows)
     is_wholesale = rows["source"] == SOURCE_WHOLESALE
@@ -438,7 +442,7 @@ def aggregate_weekly(rows):
 
 
 # region Outliers
-def flag_outliers(weekly_prices):
+def flag_outliers(weekly_prices: pd.DataFrame) -> pd.DataFrame:
     """RN-12: flag prices far from the median of their product in that week.
 
     The median covers every variety, quality, region and channel of the
@@ -455,7 +459,7 @@ def flag_outliers(weekly_prices):
 
 
 # region Business rules
-def apply_business_rules(valid_rows):
+def apply_business_rules(valid_rows: pd.DataFrame) -> pd.DataFrame:
     """Apply the unit, weekly and outlier rules to the valid rows of both sources."""
     rows = normalize_units(valid_rows)
     weekly_prices = aggregate_weekly(rows)
@@ -466,7 +470,7 @@ def apply_business_rules(valid_rows):
 
 
 # region Quality checks
-def read_previous_rows_read(connection):
+def read_previous_rows_read(connection: sqlite3.Connection) -> int | None:
     """Rows read by the latest successful run, or None on the first run."""
     row = connection.execute(
         "SELECT rows_read FROM etl_run WHERE status = ? ORDER BY run_id DESC LIMIT 1", (STATUS_LOADED,)
@@ -474,14 +478,14 @@ def read_previous_rows_read(connection):
     return row[0] if row else None
 
 
-def find_missing_weeks(week_starts):
+def find_missing_weeks(week_starts: pd.Series) -> list[str]:
     """List the Mondays between the first and the last week that have no data."""
     expected_weeks = pd.date_range(week_starts.min(), week_starts.max(), freq="7D")
     weeks_with_data = set(week_starts)
     return [str(week.date()) for week in expected_weeks if week not in weeks_with_data]
 
 
-def find_unexpected_missing_weeks(week_starts, source):
+def find_unexpected_missing_weeks(week_starts: pd.Series, source: str) -> list[str]:
     """Missing Mondays of one source, leaving out the known gaps of the source (D-042)."""
     if not len(week_starts):
         return []
@@ -489,7 +493,7 @@ def find_unexpected_missing_weeks(week_starts, source):
     return [week for week in find_missing_weeks(week_starts) if week not in known_gaps]
 
 
-def check_quality(weekly_prices, rows_read, previous_rows_read):
+def check_quality(weekly_prices: pd.DataFrame, rows_read: int, previous_rows_read: int | None) -> list[str]:
     """Return the problems that must stop the load; an empty list means go ahead."""
     problems = []
     # The files only grow during a year, so far fewer rows means a truncated file.
@@ -519,12 +523,12 @@ def check_quality(weekly_prices, rows_read, previous_rows_read):
 
 
 # region Load
-def read_raw_rows(raw_connection, source):
+def read_raw_rows(raw_connection: sqlite3.Connection, source: str) -> pd.DataFrame:
     """Read every raw row of one source, all columns as text."""
     return pd.read_sql(f"SELECT * FROM {RAW_TABLE_BY_SOURCE[source]}", raw_connection)
 
 
-def insert_rows(connection, table, rows):
+def insert_rows(connection: sqlite3.Connection, table: str, rows: pd.DataFrame) -> None:
     """Insert a DataFrame into the table that has the same column names."""
     # sqlite3 only accepts plain Python values, and NaN must become NULL.
     values = rows.astype(object).where(rows.notna(), None).values.tolist()
@@ -533,7 +537,9 @@ def insert_rows(connection, table, rows):
     connection.executemany(f"INSERT INTO {table} ({column_names}) VALUES ({placeholders})", values)
 
 
-def add_new_dimension_rows(connection, table, rows, key_columns):
+def add_new_dimension_rows(
+    connection: sqlite3.Connection, table: str, rows: pd.DataFrame, key_columns: list[str]
+) -> None:
     """Insert only the rows whose key is not in the dimension yet.
 
     Existing rows keep their identifier, so identifiers are stable between runs.
@@ -544,7 +550,7 @@ def add_new_dimension_rows(connection, table, rows, key_columns):
     insert_rows(connection, table, new_rows.drop(columns="_merge"))
 
 
-def attach_dimension_identifiers(connection, weekly_prices):
+def attach_dimension_identifiers(connection: sqlite3.Connection, weekly_prices: pd.DataFrame) -> pd.DataFrame:
     """Replace product and channel names by their identifiers in the dimensions."""
     products = pd.read_sql("SELECT * FROM dim_product", connection)
     channels = pd.read_sql("SELECT * FROM dim_channel", connection)
@@ -585,7 +591,7 @@ SEASON_BY_MONTH = {
 DIM_DATE_COLUMNS = ["week_start", "iso_year", "iso_week", "month", "month_name", "year", "season"]
 
 
-def build_dim_date(first_week, last_week):
+def build_dim_date(first_week: Any, last_week: Any) -> pd.DataFrame:
     """Every Monday from the first to the last week, without gaps (D-095)."""
     weeks = pd.date_range(pd.Timestamp(first_week), pd.Timestamp(last_week), freq="7D")
     calendar = weeks.isocalendar()
@@ -602,7 +608,7 @@ def build_dim_date(first_week, last_week):
     )[DIM_DATE_COLUMNS]
 
 
-def ensure_weekly_price_references_dim_date(connection):
+def ensure_weekly_price_references_dim_date(connection: sqlite3.Connection) -> bool:
     """Databases created before D-095: rebuild weekly_price with its date key.
 
     SQLite cannot add a foreign key to an existing table. The rows are copied
@@ -622,7 +628,7 @@ def ensure_weekly_price_references_dim_date(connection):
     return True
 
 
-def refresh_dim_date(connection, week_starts=None):
+def refresh_dim_date(connection: sqlite3.Connection, week_starts: Any = None) -> None:
     """Rebuild dim_date from the weeks of weekly_price (or the given ones)."""
     if week_starts is None:
         first, last = connection.execute("SELECT MIN(week_start), MAX(week_start) FROM weekly_price").fetchone()
@@ -633,7 +639,9 @@ def refresh_dim_date(connection, week_starts=None):
         insert_rows(connection, "dim_date", build_dim_date(first, last))
 
 
-def record_run(connection, started_at, status, row_counts, message=""):
+def record_run(
+    connection: sqlite3.Connection, started_at: str, status: str, row_counts: dict[str, Any], message: str = ""
+) -> int | None:
     """Write one line in etl_run and return its identifier."""
     cursor = connection.execute(
         "INSERT INTO etl_run (started_at, status, rows_read, rows_loaded,"
@@ -643,7 +651,14 @@ def record_run(connection, started_at, status, row_counts, message=""):
     return cursor.lastrowid
 
 
-def load(connection, weekly_prices, regions, rejections, started_at, row_counts):
+def load(
+    connection: sqlite3.Connection,
+    weekly_prices: pd.DataFrame,
+    regions: pd.DataFrame,
+    rejections: pd.DataFrame,
+    started_at: str,
+    row_counts: dict[str, Any],
+) -> None:
     """RN-14: write the result of one run; running it again leaves the same rows.
 
     Everything happens in one transaction: if any step fails, the database
@@ -673,7 +688,7 @@ def load(connection, weekly_prices, regions, rejections, started_at, row_counts)
 
 
 # region Indicators
-def measure_match_coverage(connection):
+def measure_match_coverage(connection: sqlite3.Connection) -> Any:
     """K7: consumer fruit and vegetable keys with a margin, over all such keys.
 
     Returns (keys with margin, consumer keys).
@@ -685,7 +700,9 @@ def measure_match_coverage(connection):
 
 
 # region Run
-def clean_and_validate_all_sources(raw_connection):
+def clean_and_validate_all_sources(
+    raw_connection: sqlite3.Connection,
+) -> tuple[pd.DataFrame, pd.DataFrame, int]:
     """Return (valid rows, rejections, rows read) for both sources together."""
     valid_parts = []
     rejection_parts = []
@@ -705,11 +722,15 @@ def clean_and_validate_all_sources(raw_connection):
     return valid_rows, pd.concat(rejection_parts, ignore_index=True), rows_read
 
 
-def run_etl(raw_connection, connection):
+def run_etl(raw_connection: sqlite3.Connection, connection: sqlite3.Connection) -> dict[str, Any]:
     """Run the whole ETL from the raw tables. Returns the counts of the run."""
     started_at = datetime.now().isoformat(timespec="seconds")
     valid_rows, rejections, rows_read = clean_and_validate_all_sources(raw_connection)
-    row_counts = {"rows_read": rows_read, "rows_loaded": len(valid_rows), "rows_rejected": len(rejections)}
+    row_counts: dict[str, Any] = {
+        "rows_read": rows_read,
+        "rows_loaded": len(valid_rows),
+        "rows_rejected": len(rejections),
+    }
     weekly_prices = apply_business_rules(valid_rows)
     row_counts["weekly_prices"] = len(weekly_prices)
 
@@ -736,7 +757,7 @@ def run_etl(raw_connection, connection):
 
 
 # region Entry point
-def main():
+def main() -> int:
     """Load the downloaded files, run the ETL and print a summary.
 
     Exit code 1 means the quality checks stopped the load.

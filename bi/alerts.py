@@ -1,5 +1,7 @@
 """K6: products whose weekly price change is outside their usual range."""
 
+from __future__ import annotations
+
 import pandas as pd
 
 # region Constants
@@ -19,7 +21,7 @@ DAYS_IN_A_WEEK = 7
 
 
 # region Alerts
-def add_weekly_variation(prices):
+def add_weekly_variation(prices: pd.DataFrame) -> pd.DataFrame:
     """Add the price change of each week against the week before, as a fraction.
 
     D-144: when the rows carry the price of the regions present in both weeks
@@ -43,7 +45,7 @@ def add_weekly_variation(prices):
     return prices
 
 
-def add_usual_range(prices):
+def add_usual_range(prices: pd.DataFrame) -> pd.DataFrame:
     """Add each week's variation and the average and deviation of the 12 before it.
 
     A series needs 12 previous variations without gaps; otherwise both stay empty.
@@ -61,14 +63,14 @@ def add_usual_range(prices):
     return prices
 
 
-def find_price_alerts(prices):
+def find_price_alerts(prices: pd.DataFrame) -> pd.DataFrame:
     """K6: rows whose weekly variation is outside average +/- 2 standard deviations
     and moves the price by at least 10 %."""
     prices = add_usual_range(prices)
     return prices[is_price_alert(prices)]
 
 
-def is_price_alert(prices):
+def is_price_alert(prices: pd.DataFrame) -> pd.Series:
     """The K6 rule on rows that already carry their usual range: unusual, material
     and resting on at least two quotes in each of the two weeks compared."""
     distance = (prices["variation"] - prices["usual_variation"]).abs()

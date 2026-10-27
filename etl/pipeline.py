@@ -11,6 +11,10 @@
 On any failure the published database stays as it was; the failed run is recorded.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 import json
 import os
 import sqlite3
@@ -60,7 +64,7 @@ ETL_RUN_SCHEMA = """CREATE TABLE IF NOT EXISTS etl_run (
     message VARCHAR)"""
 
 
-def prepare_ipc(serving_file=SERVING_DATABASE_FILE):
+def prepare_ipc(serving_file: Path = SERVING_DATABASE_FILE) -> None:
     """IPC of the INE into the bronze layer (D-155). If the INE does not answer, the
     rows kept in the published database rebuild it: the load never stops for the IPC."""
     if ine.main() == 0:
@@ -71,7 +75,7 @@ def prepare_ipc(serving_file=SERVING_DATABASE_FILE):
         rows = connection.execute(
             "SELECT file, year, month, index_value, monthly_change FROM ine_ipc_source"
         ).fetchall()
-    files = {}
+    files: dict[str, list[dict[str, str]]] = {}
     for file, year, month, index_value, monthly_change in rows:
         files.setdefault(file, []).append(
             {"year": year, "month": month, "index_value": index_value, "monthly_change": monthly_change}
@@ -80,7 +84,9 @@ def prepare_ipc(serving_file=SERVING_DATABASE_FILE):
     print("IPC | bronce reconstruido desde la base publicada")
 
 
-def read_run_history(serving_file=SERVING_DATABASE_FILE, legacy_file=etl.DATABASE_FILE):
+def read_run_history(
+    serving_file: Path = SERVING_DATABASE_FILE, legacy_file: Path = etl.DATABASE_FILE
+) -> list[tuple[Any, ...]]:
     """Every recorded run: from the serving DuckDB, or the SQLite history on the first run."""
     columns = "run_id, started_at, status, rows_read, rows_loaded, rows_rejected, message"
     if serving_file.exists():
@@ -92,7 +98,7 @@ def read_run_history(serving_file=SERVING_DATABASE_FILE, legacy_file=etl.DATABAS
     return []
 
 
-def run_dbt(run_id, dbt_command=None):
+def run_dbt(run_id: int, dbt_command: str | None = None) -> tuple[bool, str]:
     """dbt build (models and tests) in the work database. Returns (ok, last output lines)."""
     command = (dbt_command or os.environ.get("DBT_BIN", "dbt")).split() + [
         "build",
@@ -107,7 +113,7 @@ def run_dbt(run_id, dbt_command=None):
     return result.returncode == 0, "\n".join(output[-15:])
 
 
-def count_rows(work_file=WORK_DATABASE_FILE):
+def count_rows(work_file: Path = WORK_DATABASE_FILE) -> tuple[int, int, int]:
     """(read, loaded, rejected) of the build, as dbt validated them (RNF-05)."""
     with duckdb.connect(str(work_file), read_only=True) as connection:
         return connection.execute(
@@ -116,7 +122,7 @@ def count_rows(work_file=WORK_DATABASE_FILE):
         ).fetchone()
 
 
-def read_dbt_artifacts(target_dir=DBT_TARGET_DIR):
+def read_dbt_artifacts(target_dir: Path = DBT_TARGET_DIR) -> tuple[list[tuple[Any, ...]], list[tuple[Any, ...]]]:
     """(nodes, results) of the last dbt build: models, sources and tests with their
     dependencies, and the status of each one. Empty lists if dbt left no artifacts."""
     try:
@@ -157,7 +163,9 @@ def read_dbt_artifacts(target_dir=DBT_TARGET_DIR):
     return nodes, results
 
 
-def write_dbt_artifacts(connection, nodes, results):
+def write_dbt_artifacts(
+    connection: duckdb.DuckDBPyConnection, nodes: list[tuple[Any, ...]], results: list[tuple[Any, ...]]
+) -> None:
     connection.execute("CREATE TABLE dbt_node (" + ", ".join(f"{column} VARCHAR" for column in DBT_NODE_COLUMNS) + ")")
     connection.execute(
         "CREATE TABLE dbt_result (unique_id VARCHAR, status VARCHAR, execution_time DOUBLE, "
@@ -170,8 +178,12 @@ def write_dbt_artifacts(connection, nodes, results):
 
 
 def write_serving_database(
-    history, run, work_file=WORK_DATABASE_FILE, serving_file=SERVING_DATABASE_FILE, artifacts=None
-):
+    history: list[tuple[Any, ...]],
+    run: tuple[Any, ...],
+    work_file: Path = WORK_DATABASE_FILE,
+    serving_file: Path = SERVING_DATABASE_FILE,
+    artifacts: tuple[list[tuple[Any, ...]], list[tuple[Any, ...]]] | None = None,
+) -> None:
     """A fresh, compact copy of the panel's tables plus etl_run, swapped in at the end."""
     temporary = serving_file.with_suffix(".duckdb.tmp")
     temporary.unlink(missing_ok=True)
@@ -187,7 +199,9 @@ def write_serving_database(
     os.replace(temporary, serving_file)
 
 
-def record_failed_run(history, run, serving_file=SERVING_DATABASE_FILE):
+def record_failed_run(
+    history: list[tuple[Any, ...]], run: tuple[Any, ...], serving_file: Path = SERVING_DATABASE_FILE
+) -> None:
     """Keep the published tables; only add the failed run to etl_run."""
     if not serving_file.exists():
         return
@@ -196,7 +210,7 @@ def record_failed_run(history, run, serving_file=SERVING_DATABASE_FILE):
         connection.execute("INSERT INTO etl_run VALUES (?, ?, ?, ?, ?, ?, ?)", run)
 
 
-def main(dbt_command=None, load_raw=True, record=True):
+def main(dbt_command: str | None = None, load_raw: bool = True, record: bool = True) -> int:
     """record=False (--local): a development build keeps the published run history as it is."""
     started_at = datetime.now().isoformat(timespec="seconds")
     if load_raw:

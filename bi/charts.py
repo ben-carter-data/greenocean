@@ -6,6 +6,8 @@ Every channel keeps the same hue in every chart, so a reader learns it once.
 Numbers in labels and tooltips are written as in Chile: 1.234 and 12,5 %.
 """
 
+from typing import Any
+
 import altair as alt
 import pandas as pd
 
@@ -190,7 +192,7 @@ BAR_LABEL_ROOM = 0.18
 WEEK_AXIS_FORMAT = "%b %Y"
 MONEY_AXIS_FORMAT = ",.0f"
 # Numbers and dates of every chart as in Chile: 1.234,5 and "mar 2024".
-CHILE_LOCALE = {
+CHILE_LOCALE: dict[str, Any] = {
     "number": {"decimal": ",", "thousands": ".", "grouping": [3], "currency": ["$ ", ""], "minus": "-"},
     "time": {
         "dateTime": "%A, %e de %B de %Y, %X",

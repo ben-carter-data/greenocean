@@ -11,6 +11,10 @@ SHA-256 before using it. A local build newer than the pointer (python etl/pipeli
     python bi/served_database.py --pointer    write the pointer of the local file (the weekly job, after it)
 """
 
+from __future__ import annotations
+
+from typing import Any, Callable
+
 import hashlib
 import json
 import os
@@ -35,7 +39,7 @@ MISSING, PRESENT, LOCAL_BUILD, OLDER = "missing", "present", "local build", "old
 DOWNLOADED, NO_POINTER = "downloaded", "no pointer"
 
 
-def file_sha256(path):
+def file_sha256(path: Path | str) -> str:
     digest = hashlib.sha256()
     with open(path, "rb") as source:
         for block in iter(lambda: source.read(1 << 20), b""):
@@ -43,7 +47,9 @@ def file_sha256(path):
     return digest.hexdigest()
 
 
-def write_pointer(database_file=DATABASE_FILE, pointer_file=POINTER_FILE, now=None):
+def write_pointer(
+    database_file: Path = DATABASE_FILE, pointer_file: Path = POINTER_FILE, now: datetime | None = None
+) -> dict[str, Any]:
     """The pointer of the file about to be published: its SHA-256, its size and when."""
     pointer = {
         "sha256": file_sha256(database_file),
@@ -54,11 +60,11 @@ def write_pointer(database_file=DATABASE_FILE, pointer_file=POINTER_FILE, now=No
     return pointer
 
 
-def read_pointer(pointer_file=POINTER_FILE):
+def read_pointer(pointer_file: Path = POINTER_FILE) -> dict[str, Any] | None:
     return json.loads(pointer_file.read_text(encoding="utf-8")) if pointer_file.exists() else None
 
 
-def compare(pointer, database_file=DATABASE_FILE):
+def compare(pointer: dict[str, Any], database_file: Path = DATABASE_FILE) -> str:
     """MISSING, PRESENT (the published file), LOCAL_BUILD (different and newer: kept) or OLDER (to replace)."""
     if not database_file.exists():
         return MISSING
@@ -68,7 +74,12 @@ def compare(pointer, database_file=DATABASE_FILE):
     return LOCAL_BUILD if database_file.stat().st_mtime > published else OLDER
 
 
-def download(pointer, database_file=DATABASE_FILE, url=DOWNLOAD_URL, get=requests.get):
+def download(
+    pointer: dict[str, Any],
+    database_file: Path = DATABASE_FILE,
+    url: str = DOWNLOAD_URL,
+    get: Callable[..., Any] = requests.get,
+) -> None:
     """Download the published file next to its place and swap it in only if its SHA-256 is the pointer's."""
     handle, temporary = tempfile.mkstemp(dir=database_file.parent, suffix=".duckdb.tmp")
     try:
@@ -85,7 +96,9 @@ def download(pointer, database_file=DATABASE_FILE, url=DOWNLOAD_URL, get=request
             os.remove(temporary)
 
 
-def ensure_database(database_file=DATABASE_FILE, pointer_file=POINTER_FILE, get=requests.get):
+def ensure_database(
+    database_file: Path = DATABASE_FILE, pointer_file: Path = POINTER_FILE, get: Callable[..., Any] = requests.get
+) -> str:
     """Make the local served file the published one when needed; returns what it did."""
     pointer = read_pointer(pointer_file)
     if pointer is None:

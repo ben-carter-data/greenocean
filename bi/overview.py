@@ -10,6 +10,10 @@ in both weeks (D-144), a family moves by the median of its series, «sin cambio�
 ritmo de la inflación» within ±2 points of the CPI. Pure functions: no Streamlit.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 import base64
 import html
 import re
@@ -31,12 +35,18 @@ HEAT_WEEKS = 8
 
 
 # region Data
-def comparable(variations):
+def comparable(variations: pd.DataFrame) -> pd.DataFrame:
     """The weekly changes that can be read: a number, not infinite."""
     return variations[variations["variation"].notna() & variations["variation"].abs().lt(float("inf"))]
 
 
-def market_weeks(prices, variations, alerts, weeks=MARKET_WEEKS, family=None):
+def market_weeks(
+    prices: pd.DataFrame,
+    variations: pd.DataFrame,
+    alerts: pd.DataFrame,
+    weeks: int = MARKET_WEEKS,
+    family: str | None = None,
+) -> pd.DataFrame:
     """One row per week: the prices with a value (every national series of the week), those with a valid comparison,
     the typical change (median, in %) and the alerts. With a family, only its series."""
     if family:
@@ -54,7 +64,7 @@ def market_weeks(prices, variations, alerts, weeks=MARKET_WEEKS, family=None):
     return frame
 
 
-def family_moves(prices, variations, week):
+def family_moves(prices: pd.DataFrame, variations: pd.DataFrame, week: Any) -> pd.DataFrame:
     """The families of one week: median change in %, prices, comparisons and their state, as in the Resumen."""
     rows = prices[prices["week_start"] == week]
     valid = comparable(variations[variations["week_start"] == week])
@@ -66,7 +76,7 @@ def family_moves(prices, variations, week):
     return frame.sort_values("change", ascending=False).reset_index(drop=True)
 
 
-def directions(variations, week, family=None):
+def directions(variations: pd.DataFrame, week: Any, family: str | None = None) -> pd.DataFrame:
     """How the comparable prices of one week moved: how many rose, fell or stayed (below 0.05 %), as in the Resumen."""
     rows = comparable(variations[variations["week_start"] == week])
     if family:
@@ -84,12 +94,12 @@ def directions(variations, week, family=None):
 REGION_ORDER = [15, 1, 2, 3, 4, 5, 13, 6, 7, 16, 8, 9, 14, 10, 11, 12]
 
 
-def state(change):
+def state(change: float) -> str:
     """«Subió», «Bajó» or «Sin cambio» for a change in %."""
     return "Subió" if change >= STILL * 100 else "Bajó" if change <= -STILL * 100 else "Sin cambio"
 
 
-def family_heat(variations, weeks=HEAT_WEEKS):
+def family_heat(variations: pd.DataFrame, weeks: int = HEAT_WEEKS) -> pd.DataFrame:
     """Families by week: the median change in % of the last weeks, for the heat table."""
     last = sorted(variations["week_start"].unique())[-weeks:]
     valid = comparable(variations[variations["week_start"].isin(last)])
@@ -103,7 +113,7 @@ def family_heat(variations, weeks=HEAT_WEEKS):
     return frame
 
 
-def ipc_twelve_months(rows):
+def ipc_twelve_months(rows: pd.DataFrame) -> pd.DataFrame:
     """The food CPI's change against the same month a year before, in %, month by month."""
     ipc = (
         rows[rows["product_group"] == inflation_view.IPC_NAME]
@@ -118,7 +128,7 @@ def ipc_twelve_months(rows):
 
 
 # region Scorecards
-def build_css(palette):
+def build_css(palette: dict[str, str]) -> str:
     ink, text, muted, card, border, accent = (
         palette["strong_text"],
         palette["text"],
@@ -186,12 +196,23 @@ def build_css(palette):
 
 
 # region Charts
-def style(chart, mode, height=None):
+def style(chart: Any, mode: str, height: int | None = None) -> Any:
     """Width and height from the card: the charts grow with the window (D-296)."""
     return charts.apply_chart_style(chart.properties(width="container", height=height or "container"), mode)
 
 
-def build_heat_table_html(frame, row, column, value, columns, rows, palette, logos=None, totals=None, total_title=""):
+def build_heat_table_html(
+    frame: pd.DataFrame,
+    row: str,
+    column: str,
+    value: str,
+    columns: list[str],
+    rows: list[str],
+    palette: dict[str, str],
+    logos: dict[str, str] | None = None,
+    totals: dict[str, float] | None = None,
+    total_title: str = "",
+) -> str:
     """D-301: the heat table as an HTML table that fills its card: one row per family with its picture, one column per
     period, each cell tinted by its change (red rises, blue falls, the stronger the darker) and its value written in it.
     On a narrow window the first column stays and the periods scroll."""
@@ -232,7 +253,7 @@ def build_heat_table_html(frame, row, column, value, columns, rows, palette, log
     return f'<div class="ov-ht" style="--cols:{len(columns) + (totals is not None)}"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
 
 
-def heat_table_css(palette):
+def heat_table_css(palette: dict[str, str]) -> str:
     ink, muted, border = palette["strong_text"], palette["reference"], palette["card_border"]
     return f"""<style>
 .ov-ht {{ overflow-x:auto; }}
@@ -311,17 +332,17 @@ KPIS = [
 ]
 
 
-def signed(value):
+def signed(value: float) -> str:
     """A change in %, with the decimal mark of the language: lists of names are not translated as a whole."""
     text = f"{value:+.1f} %"
     return text if i18n.is_english() else text.replace(".", ",")
 
 
-def join(names):
+def join(names: Any) -> str:
     return i18n.join_names(list(names))
 
 
-def period_totals(heat):
+def period_totals(heat: pd.DataFrame) -> pd.Series:
     """Each family's change over the whole period of the weeks table, its weekly medians chained, in %."""
     return (
         heat.sort_values("week_start")
@@ -330,7 +351,7 @@ def period_totals(heat):
     )
 
 
-def weeks_insight(heat):
+def weeks_insight(heat: pd.DataFrame) -> list[str]:
     """The reading of the whole period of the weeks table (D-311, D-314): the family that got dearest and the one that
     got cheapest (the first and last of the table's Total column), how many weeks each rose or fell by at least what
     the table paints, and how many weeks more families rose than fell. Every figure comes from the table's cells."""
@@ -355,7 +376,7 @@ def weeks_insight(heat):
     ]
 
 
-def best_drops(variations, week, count=3):
+def best_drops(variations: pd.DataFrame, week: Any, count: int = 3) -> list[tuple[str, str, float]]:
     """The largest weekly drops of the week, resting on two quotes in each week (as the Resumen ranks them)."""
     rows = comparable(variations[variations["week_start"] == week])
     if "same_region_quotes" in rows:
@@ -367,7 +388,9 @@ def best_drops(variations, week, count=3):
     ]
 
 
-def consumer_insights(moves, drops, summary, ipc_total, ipc_year):
+def consumer_insights(
+    moves: pd.DataFrame, drops: list[tuple[str, str, float]], summary: pd.DataFrame, ipc_total: float, ipc_year: float
+) -> list[str]:
     """For whoever buys food: what got cheaper this week and which families weigh more than inflation."""
     fell = moves[moves["state"] == "Bajó"]
     rose = moves[moves["state"] == "Subió"]
@@ -400,10 +423,19 @@ def consumer_insights(moves, drops, summary, ipc_total, ipc_year):
     return lines
 
 
-def architect_insights(latest, tests, green, indicators, database, flags, comparable_now, prices_now):
+def architect_insights(
+    latest: Any,
+    tests: tuple[int, int],
+    green: int,
+    indicators: int,
+    database: Any,
+    flags: pd.DataFrame,
+    comparable_now: int,
+    prices_now: int,
+) -> list[str]:
     """For whoever designs the data: what the load brought, how much of it reaches the indicators and where it is lost."""
 
-    def number(value):
+    def number(value: float) -> str:
         return f"{int(value):,}".replace(",", ".")
 
     day = f"{latest['started_at'][8:10]}-{latest['started_at'][5:7]}-{latest['started_at'][:4]}"
@@ -411,7 +443,7 @@ def architect_insights(latest, tests, green, indicators, database, flags, compar
     by_flag = flags.groupby("flag")["weekly_prices"].sum()
     unconvertible, outliers = int(by_flag.get("UNIDAD_NO_CONVERTIBLE", 0)), int(by_flag.get("ATIPICO", 0))
 
-    def share(part):
+    def share(part: float) -> str:
         return f"{part / total * 100:.1f} %".replace(".", ",")
 
     lines = [
@@ -438,7 +470,7 @@ def architect_insights(latest, tests, green, indicators, database, flags, compar
 # endregion
 
 
-def wholesale_insights(variations, week, margins):
+def wholesale_insights(variations: pd.DataFrame, week: Any, margins: pd.DataFrame) -> list[str]:
     """For whoever buys wholesale (a shop, a restaurant): how the wholesale price moved this week, its biggest drops and
     the gap up to the consumer price. ODEPA's wholesale prices cover fruit and vegetables only."""
     short = home_mockup.short_family
@@ -479,7 +511,7 @@ def wholesale_insights(variations, week, margins):
 POINTS_FILE = Path(__file__).with_name("assets") / "points_of_sale.json"
 
 
-def read_points():
+def read_points() -> dict[str, Any]:
     """{region: {wholesale, consumer, sectors}}: what exists in each region, from ODEPA's own files (no price)."""
     return json.loads(POINTS_FILE.read_text(encoding="utf-8"))
 
@@ -499,7 +531,7 @@ POINT_ICONS = {
 
 
 @lru_cache(maxsize=None)
-def point_icon(name):
+def point_icon(name: str) -> str:
     """An icon of the folder bi/assets/points as an image (st.html drops inline SVG)."""
     path = POINTS_FILE.parent / "points" / f"{POINT_ICONS.get(name, 'mercado')}.svg"
     return (
@@ -507,7 +539,7 @@ def point_icon(name):
     )
 
 
-def ordered_regions(points, region_ids):
+def ordered_regions(points: dict[str, Any], region_ids: dict[str, Any]) -> list[str]:
     return sorted(
         points, key=lambda name: REGION_ORDER.index(region_ids[name]) if region_ids.get(name) in REGION_ORDER else 99
     )
@@ -528,12 +560,12 @@ KINDS = {
 FAIR_WORDS = ("vega", "feria", "venta directa")
 
 
-def place_kind(name):
+def place_kind(name: str) -> str:
     return "fair" if any(word in name.lower() for word in FAIR_WORDS) else "market"
 
 
 @lru_cache(maxsize=None)
-def house_image(hue, kind):
+def house_image(hue: int, kind: str) -> str:
     """A front-facing house in the region's colour with the sign of its kind beside it."""
     roof, wall, trim = f"hsl({hue},62%,58%)", f"hsl({hue},70%,88%)", f"hsl({hue},45%,40%)"
     fronts = {
@@ -570,9 +602,9 @@ def house_image(hue, kind):
 
 
 @lru_cache(maxsize=1)
-def chile_shapes():
+def chile_shapes() -> list[tuple[str, str]]:
     # One decimal is enough for a map 110 px tall; it keeps the nine small maps light.
-    def shorten(path):
+    def shorten(path: str) -> str:
         return re.sub(r"\d+\.\d+", lambda m: f"{float(m.group()):.0f}", path)
 
     return [
@@ -581,7 +613,7 @@ def chile_shapes():
     ]
 
 
-def mini_map(region, hue):
+def mini_map(region: str, hue: int) -> str:
     """Chile in its real shape with this region lit, so the reader sees where it lies."""
     paths = "".join(
         f'<path d="{path}" fill="{f"hsl({hue},70%,60%)" if name == region else "#4a5568"}" stroke="{f"hsl({hue},80%,70%)" if name == region else "none"}" stroke-width="3"/>'
@@ -593,7 +625,7 @@ def mini_map(region, hue):
     )
 
 
-def house(hue, kind, name):
+def house(hue: int, kind: str, name: str) -> str:
     return (
         f'<figure class="ov-house" title="{html.escape(name)}"><img src="{house_image(hue, kind)}" alt="">'
         f'<figcaption>{html.escape(name)}</figcaption></figure>'
@@ -603,7 +635,7 @@ def house(hue, kind, name):
 PRICE_KEY = ["product", "variety", "quality", "channel", "normalized_unit"]
 
 
-def regional_price_levels(frame):
+def regional_price_levels(frame: pd.DataFrame) -> dict[str, tuple[float, int, int]]:
     """D-322: how dear each region is, from the K3 index of one week: the median, over the same product, variety, quality,
     channel and unit, of the region's price over the national price, counting only what two regions or more price (a
     product priced in one region is its own national price and says nothing). Regions, not shops: ODEPA gives no price by
@@ -617,7 +649,7 @@ def regional_price_levels(frame):
     }
 
 
-def build_price_line(level, total):
+def build_price_line(level: tuple[float, int, int] | None, total: int) -> str:
     """«4,8 % más cara que el promedio · 1.ª de 9 · 322 precios», with a badge for the dearest and the cheapest."""
     if level is None:
         return f'<p class="ov-price ov-price-none">{html.escape(i18n.tr("Sin precios comparables esta semana"))}</p>'
@@ -647,11 +679,18 @@ def build_price_line(level, total):
     )
 
 
-def number(value):
+def number(value: float) -> str:
     return f"{value:,}".replace(",", ".") if not i18n.is_english() else f"{value:,}"
 
 
-def build_region_column(region, data, hue, number_=1, level=None, total=9):
+def build_region_column(
+    region: str,
+    data: dict[str, Any],
+    hue: int,
+    number_: int = 1,
+    level: tuple[float, int, int] | None = None,
+    total: int = 9,
+) -> str:
     """One region as a card: its number north to south, its name, a house per wholesale market or fair, one retail house
     (its kinds named on hover) and, at the right, where the region lies on the map of Chile. Information only, no price."""
     kinds = [name for name in data["consumer"] if name != "Mercado Mayorista"]
@@ -675,7 +714,7 @@ def build_region_column(region, data, hue, number_=1, level=None, total=9):
     )
 
 
-def build_legend(hue=215):
+def build_legend(hue: int = 215) -> str:
     items = "".join(
         f'<span><img src="{house_image(hue, kind)}" alt="">{html.escape(i18n.tr(spanish))}</span>'
         for kind, (spanish, _) in KINDS.items()
@@ -683,7 +722,9 @@ def build_legend(hue=215):
     return f'<div class="ov-legend">{items}<em>{html.escape(i18n.tr("Norte → Sur"))}</em></div>'
 
 
-def build_regions_html(regions, points, levels=None, week=""):
+def build_regions_html(
+    regions: list[str], points: dict[str, Any], levels: dict[str, tuple[float, int, int]] | None = None, week: str = ""
+) -> str:
     """Every region at once, north to south, as numbered cards in a grid of three (D-310, D-321)."""
     levels = levels or {}
     cards = "".join(
@@ -699,7 +740,7 @@ def build_regions_html(regions, points, levels=None, week=""):
     return head + f'<div class="ov-regions">{cards}</div>'
 
 
-def points_css(palette):
+def points_css(palette: dict[str, str]) -> str:
     ink, muted, card, border = palette["strong_text"], palette["reference"], palette["card"], palette["card_border"]
     return f"""<style>
 .ov-where-head {{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:6px 16px; margin:0 0 10px; }}

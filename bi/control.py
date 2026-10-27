@@ -5,6 +5,10 @@ no key because the repository is public; starting a run needs a token with
 permission to run workflows, kept in the dashboard secrets, never in the code.
 """
 
+from __future__ import annotations
+
+from typing import Any, cast
+
 from datetime import datetime, timedelta, timezone
 
 import hmac
@@ -54,7 +58,7 @@ STEP_NAMES = {
 
 
 # region Schedule and status
-def calculate_next_scheduled_run(now_utc):
+def calculate_next_scheduled_run(now_utc: datetime) -> datetime:
     """Next Tuesday 12:00 UTC strictly after now_utc (a timezone-aware datetime)."""
     days_ahead = (SCHEDULE_WEEKDAY - now_utc.weekday()) % 7
     candidate = (now_utc + timedelta(days=days_ahead)).replace(
@@ -65,26 +69,26 @@ def calculate_next_scheduled_run(now_utc):
     return candidate
 
 
-def classify_run(status, conclusion):
+def classify_run(status: str, conclusion: str | None) -> str:
     """Turn GitHub's status and conclusion into ok, failed or in progress."""
     if status != "completed":
         return RUN_IN_PROGRESS
     return RUN_OK if conclusion == "success" else RUN_FAILED
 
 
-def parse_github_time(text):
+def parse_github_time(text: str | None) -> datetime | None:
     """'2026-10-12T08:52:08Z' -> timezone-aware datetime, or None."""
     if not text:
         return None
     return datetime.strptime(text, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
 
 
-def simplify_run(run):
+def simplify_run(run: dict[str, Any]) -> dict[str, Any]:
     """Keep only what the dashboard shows from one GitHub run."""
     started_at = parse_github_time(run.get("run_started_at") or run.get("created_at"))
     finished_at = parse_github_time(run.get("updated_at"))
     state = classify_run(run["status"], run.get("conclusion"))
-    duration = finished_at - started_at if state != RUN_IN_PROGRESS else None
+    duration = cast(datetime, finished_at) - cast(datetime, started_at) if state != RUN_IN_PROGRESS else None
     return {
         "id": run["id"],
         "state": state,
@@ -95,7 +99,7 @@ def simplify_run(run):
     }
 
 
-def simplify_steps(job):
+def simplify_steps(job: dict[str, Any]) -> list[tuple[str, str]]:
     """Steps of one job as (Spanish name, state), only the ones the reader cares about."""
     steps = []
     for step in job.get("steps", []):
@@ -113,7 +117,7 @@ def simplify_steps(job):
 
 
 # region GitHub API
-def build_headers(token=None):
+def build_headers(token: str | None = None) -> dict[str, str]:
     """Headers of every request; the token is only sent when there is one."""
     headers = {"Accept": "application/vnd.github+json"}
     if token:
@@ -121,7 +125,7 @@ def build_headers(token=None):
     return headers
 
 
-def list_workflow_runs(token=None, count=10):
+def list_workflow_runs(token: str | None = None, count: int = 10) -> list[dict[str, Any]]:
     """Latest runs of the weekly workflow, newest first."""
     response = requests.get(
         f"{API_URL}/repos/{REPOSITORY}/actions/workflows/{WORKFLOW_FILE}/runs",
@@ -133,7 +137,7 @@ def list_workflow_runs(token=None, count=10):
     return [simplify_run(run) for run in response.json()["workflow_runs"]]
 
 
-def start_workflow_run(token):
+def start_workflow_run(token: str) -> None:
     """Ask GitHub to start the workflow now. Raises an exception if GitHub refuses."""
     response = requests.post(
         f"{API_URL}/repos/{REPOSITORY}/actions/workflows/{WORKFLOW_FILE}/dispatches",
@@ -144,7 +148,7 @@ def start_workflow_run(token):
     response.raise_for_status()
 
 
-def list_run_steps(run_id, token=None):
+def list_run_steps(run_id: int, token: str | None = None) -> list[tuple[str, str]]:
     """Steps of a run with their state, to follow its progress."""
     response = requests.get(
         f"{API_URL}/repos/{REPOSITORY}/actions/runs/{run_id}/jobs",
@@ -156,7 +160,7 @@ def list_run_steps(run_id, token=None):
     return simplify_steps(jobs[0]) if jobs else []
 
 
-def describe_job_steps(job):
+def describe_job_steps(job: dict[str, Any]) -> dict[str, dict[str, Any]]:
     """{workflow step name: state, seconds and the address of its own log} (D-165).
 
     GitHub opens a job's log on one step with #step:<number>:1, unfolded."""
@@ -178,7 +182,7 @@ def describe_job_steps(job):
     return details
 
 
-def list_run_step_details(run_id, token=None):
+def list_run_step_details(run_id: int, token: str | None = None) -> dict[str, dict[str, Any]]:
     """Every step of a run with its state, duration and log address; {} without a job."""
     response = requests.get(
         f"{API_URL}/repos/{REPOSITORY}/actions/runs/{run_id}/jobs",
@@ -190,12 +194,12 @@ def list_run_step_details(run_id, token=None):
     return describe_job_steps(jobs[0]) if jobs else {}
 
 
-def is_simulated_failure(steps):
+def is_simulated_failure(steps: list[tuple[str, str]]) -> bool:
     """True when the run failed only because the failure test step was asked for."""
     return (STEP_NAMES[SIMULATED_FAILURE_STEP], RUN_FAILED) in steps
 
 
-def mark_simulated_failures(runs, token=None):
+def mark_simulated_failures(runs: list[dict[str, Any]], token: str | None = None) -> list[dict[str, Any]]:
     """Mark the failed runs whose failure was a requested test, so nobody worries.
 
     Only failed runs are asked for their steps: they are few.
@@ -206,14 +210,14 @@ def mark_simulated_failures(runs, token=None):
     return runs
 
 
-def latest_load_failure(runs):
+def latest_load_failure(runs: list[dict[str, Any]]) -> dict[str, Any] | None:
     """The newest finished run when it failed for real (not a requested test), else None (D-298): a run in progress
     does not hide the result of the one before it."""
     finished = [run for run in runs if run["state"] != RUN_IN_PROGRESS]
     return finished[0] if finished and finished[0]["state"] == RUN_FAILED else None
 
 
-def parse_token_expiration(text):
+def parse_token_expiration(text: str | None) -> datetime | None:
     """'2026-12-31 12:00:00 UTC' (or with a -0300 offset) -> aware datetime, or None."""
     if not text:
         return None
@@ -226,7 +230,7 @@ def parse_token_expiration(text):
     return None
 
 
-def read_token_expiration(token):
+def read_token_expiration(token: str) -> datetime | None:
     """When the token expires, from GitHub's answer header; None if it never does.
 
     /rate_limit does not count against the hourly limit. Only the date leaves
@@ -237,7 +241,7 @@ def read_token_expiration(token):
     return parse_token_expiration(response.headers.get(TOKEN_EXPIRATION_HEADER))
 
 
-def describe_token_expiration(expiration, now):
+def describe_token_expiration(expiration: datetime | None, now: datetime) -> tuple[str, bool]:
     """(sentence, is_urgent) about the token: «Tu token vence en X días»."""
     if expiration is None:
         return "Tu token no tiene fecha de vencimiento.", False
@@ -247,7 +251,7 @@ def describe_token_expiration(expiration, now):
     return (f"Tu token vence en {days} días ({expiration:%d-%m-%Y}).", days < TOKEN_WARNING_DAYS)
 
 
-def describe_github_error(error, now=None):
+def describe_github_error(error: Exception, now: datetime | None = None) -> str:
     """Why GitHub did not answer, in plain Spanish, with its HTTP code when there is one.
 
     Only the code, the reason and the reset time of the request limit are used:
@@ -286,7 +290,7 @@ def describe_github_error(error, now=None):
     return tr("GitHub respondió {}: {}").format(code, tr(reasons.get(code, "error al consultar GitHub")))
 
 
-def find_run_started_after(runs, requested_at):
+def find_run_started_after(runs: list[dict[str, Any]], requested_at: datetime) -> dict[str, Any] | None:
     """The manual run created after the click, or None while GitHub has not listed it."""
     for run in runs:
         is_manual = run["trigger"] == TRIGGER_NAMES["workflow_dispatch"]
@@ -302,7 +306,7 @@ def find_run_started_after(runs, requested_at):
 # The control code (D-199, D-249): compared in constant time and as bytes, so any character works. There is no
 # limit of attempts: the code only keeps a visitor from launching the workflow by accident (the decision of the
 # author), and the most the button can do is start the weekly workflow.
-def check_control_code(typed, expected):
+def check_control_code(typed: str | None, expected: str | None) -> tuple[bool, str]:
     """(ok, message in Spanish)."""
     if expected and hmac.compare_digest((typed or "").encode("utf-8"), str(expected).encode("utf-8")):
         return True, ""

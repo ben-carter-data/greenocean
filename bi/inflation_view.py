@@ -14,6 +14,10 @@ The IPC is itself computed from food prices, so a family moving with it is not p
 that inflation moved it: the comparison says «more or less than the food basket».
 """
 
+from __future__ import annotations
+
+from typing import Any, cast
+
 import math
 
 import altair as alt
@@ -52,7 +56,7 @@ GROUP BY product_group, product_id, channel_id, normalized_unit, year, month
 """
 
 
-def build_family_index(series, ipc):
+def build_family_index(series: pd.DataFrame, ipc: pd.DataFrame) -> tuple[pd.DataFrame, tuple[int, ...]]:
     """(index, last) where index has product_group, month_start, index, real — one row per
     family and month from the base month to the last IPC month, plus the IPC itself
     (product_group = IPC_NAME) — and last is (year, month) of that last month."""
@@ -84,7 +88,7 @@ def build_family_index(series, ipc):
     return rows.sort_values(["product_group", "month_start"]).reset_index(drop=True), last
 
 
-def change(rows, family, start, end):
+def change(rows: pd.DataFrame, family: str, start: tuple[int, ...], end: tuple[int, ...]) -> float | None:
     """Change in % of one family's index between two (year, month), or None."""
     values = rows[rows["product_group"] == family].set_index(["year", "month"])["index"]
     if start not in values.index or end not in values.index:
@@ -92,7 +96,7 @@ def change(rows, family, start, end):
     return (values[end] / values[start] - 1) * 100
 
 
-def summarize_families(rows, last):
+def summarize_families(rows: pd.DataFrame, last: tuple[int, ...]) -> tuple[pd.DataFrame, float | None, float | None]:
     """One row per family: change since the base and in 12 months, beside the IPC's, and
     whether it rose more, as much as, or less than the food basket."""
     year_ago = (last[0] - 1, last[1])
@@ -101,7 +105,7 @@ def summarize_families(rows, last):
     result = []
     for family in sorted(set(rows["product_group"]) - {IPC_NAME}):
         total, yearly = change(rows, family, base, last), change(rows, family, year_ago, last)
-        gap = None if total is None else total - ipc_total
+        gap = None if total is None else total - cast(float, ipc_total)
         verdict = (
             "sin datos"
             if gap is None
@@ -126,7 +130,7 @@ def summarize_families(rows, last):
     return summary, ipc_total, ipc_year
 
 
-def family_domain(rows, real=False, step=10):
+def family_domain(rows: pd.DataFrame, real: bool = False, step: int = 10) -> list[float]:
     """The shared y range of the family cards: every family and the IPC fit in it, so
     the cards compare at a glance; rounded outward to the nearest step."""
     values = rows["real" if real else "index"].dropna()
@@ -137,7 +141,9 @@ def family_domain(rows, real=False, step=10):
     return [low, high if high > low else low + step]
 
 
-def draw_family_card(rows, family, mode, real=False, domain=None, height=186):
+def draw_family_card(
+    rows: pd.DataFrame, family: str, mode: str, real: bool = False, domain: list[float] | None = None, height: Any = 186
+) -> Any:
     """One family against the food IPC (dashed), for a card of the grid (D-174): the
     chart fills its card and shares the y domain with the other cards. Real: the IPC
     is the flat 100 line and a family above it rose more than the basket."""
@@ -146,7 +152,9 @@ def draw_family_card(rows, family, mode, real=False, domain=None, height=186):
     )
 
 
-def family_lines(rows, family, mode, real=False, domain=None):
+def family_lines(
+    rows: pd.DataFrame, family: str, mode: str, real: bool = False, domain: list[float] | None = None
+) -> Any:
     """The two lines of a family card, without style or size, so the enlarged chart can add its layers."""
     palette = charts.get_palette(mode)
     value = "real" if real else "index"
@@ -174,7 +182,9 @@ def family_lines(rows, family, mode, real=False, domain=None):
     return chart
 
 
-def draw_family_focus(rows, family, mode, real=False, domain=None, height=420):
+def draw_family_focus(
+    rows: pd.DataFrame, family: str, mode: str, real: bool = False, domain: list[float] | None = None, height: int = 420
+) -> Any:
     """The enlarged family (D-294): the card's lines plus what a large chart owes its reader. The last value of each
     line at its end, the family's peak marked with its value (the «Máximo» of the reading beside it) and, under the
     cursor, a rule with the month, both values and their difference in points. Every number is a value of the drawn
@@ -251,15 +261,17 @@ def draw_family_focus(rows, family, mode, real=False, domain=None, height=420):
     return charts.apply_chart_style(chart, mode)
 
 
-def month_name(year, month):
+def month_name(year: int, month: int) -> str:
     return f"{charts.CHILE_LOCALE['time']['months'][month - 1]} {year}"
 
 
-def points(value):
+def points(value: float) -> str:
     return f"{abs(value):.1f}".replace(".", ",") + (" punto" if round(abs(value), 1) == 1 else " puntos")
 
 
-def family_insights(rows, summary, family, last, real=False):
+def family_insights(
+    rows: pd.DataFrame, summary: pd.DataFrame, family: str, last: tuple[int, ...], real: bool = False
+) -> list[tuple[str, str]]:
     """The reading of one family when its card is enlarged (D-267): [(label, sentence)], every number recomputed
     from the same monthly index the chart draws, so the text always matches the line. With real, the peak and the
     biggest monthly move are read on the line without inflation, the one the chart then draws."""
@@ -299,10 +311,10 @@ def family_insights(rows, summary, family, last, real=False):
         ]
         return insights + ([jump_text] if jump_text else [])
     total, yearly = change(rows, family, base, last), change(rows, family, year_ago, last)
-    gap = total - ipc_total
+    gap = cast(float, total) - cast(float, ipc_total)
     verdict = "más que" if gap > SAME_PACE_POINTS else "menos que" if gap < -SAME_PACE_POINTS else "al ritmo de"
     # The difference of the two rounded rises, so it adds up with the figures the cards show.
-    shown_gap = round(total, 1) - round(ipc_total, 1)
+    shown_gap = round(cast(float, total), 1) - round(cast(float, ipc_total), 1)
     insights = [
         (
             since,

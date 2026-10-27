@@ -8,6 +8,10 @@ bronze layer in Parquet; dbt links the two series (models stg_ine__ipc_monthly a
 ipc_monthly). If the INE cannot be reached, the load keeps the IPC already published.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 import sys
 from pathlib import Path
 
@@ -32,7 +36,7 @@ BRONZE_TABLE = "ine_ipc"
 REQUEST_TIMEOUT_SECONDS = 60
 
 
-def parse_rows(text, file_name):
+def parse_rows(text: str, file_name: str) -> list[dict[str, str]]:
     """Rows of division 1 (the division itself, not its groups): year, month, index and
     monthly change, as text exactly as published."""
     lines = [line for line in text.splitlines() if line.strip()]
@@ -54,7 +58,7 @@ def parse_rows(text, file_name):
     return rows
 
 
-def download(session=None):
+def download(session: Any = None) -> dict[str, list[dict[str, str]]]:
     """{file name: rows} of both files, or None if any of them could not be read."""
     session = session or requests.Session()
     result = {}
@@ -68,7 +72,7 @@ def download(session=None):
     return result
 
 
-def write_bronze(files, bronze_dir=bronze.BRONZE_DIR):
+def write_bronze(files: dict[str, list[dict[str, str]]], bronze_dir: Path = bronze.BRONZE_DIR) -> None:
     """bronze/ine_ipc/file=<name>/data.parquet, every column as published (text)."""
     for name, rows in files.items():
         folder = bronze_dir / BRONZE_TABLE / f"file={name}"
@@ -81,7 +85,7 @@ def write_bronze(files, bronze_dir=bronze.BRONZE_DIR):
         pq.write_table(table, folder / "data.parquet")
 
 
-def main():
+def main() -> int:
     try:
         files = download()
     except Exception as error:  # the INE is unreachable or changed its files

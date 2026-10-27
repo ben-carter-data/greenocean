@@ -3,6 +3,12 @@
 Shared by the dashboard, the alerts and the weekly report.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
+import pandas as pd
+
 import re
 from pathlib import Path
 
@@ -22,7 +28,7 @@ KEY_COLUMNS = ["product_group", "product", "variety", "quality", "normalized_uni
 
 
 # region Data access
-def load_queries(queries_file=QUERIES_FILE):
+def load_queries(queries_file: Path = QUERIES_FILE) -> dict[str, str]:
     """Read queries.sql and return a dictionary {query name: SQL text}."""
     text = queries_file.read_text(encoding="utf-8")
     # split() returns [text before the first name, name, sql, name, sql, ...].
@@ -30,22 +36,22 @@ def load_queries(queries_file=QUERIES_FILE):
     return dict(zip(parts[1::2], parts[2::2]))
 
 
-def open_database(database_file=DATABASE_FILE):
+def open_database(database_file: Path = DATABASE_FILE) -> duckdb.DuckDBPyConnection:
     """Open the indicator database in read-only mode."""
     return duckdb.connect(str(database_file), read_only=True)
 
 
-def read_dataframe(connection, sql, parameters=()):
+def read_dataframe(connection: duckdb.DuckDBPyConnection, sql: str, parameters: Any = ()) -> pd.DataFrame:
     """Rows of a query on an open connection, as a DataFrame."""
     return connection.execute(sql, list(parameters)).df()
 
 
-def run_query(query_name, database_file=DATABASE_FILE, parameters=()):
+def run_query(query_name: str, database_file: Path = DATABASE_FILE, parameters: Any = ()) -> pd.DataFrame:
     """Run one named query and return its rows as a DataFrame."""
     return run_sql(load_queries()[query_name], database_file, parameters)
 
 
-def run_sql(sql, database_file=DATABASE_FILE, parameters=()):
+def run_sql(sql: str, database_file: Path = DATABASE_FILE, parameters: Any = ()) -> pd.DataFrame:
     """Run a query text on the read-only connection and return its rows."""
     connection = open_database(database_file)
     try:
@@ -54,12 +60,12 @@ def run_sql(sql, database_file=DATABASE_FILE, parameters=()):
         connection.close()
 
 
-def read_query_body(query_name):
+def read_query_body(query_name: str) -> str:
     """A named query without its final semicolon, so it can be used as a subquery."""
     return load_queries()[query_name].strip().rstrip(";")
 
 
-def run_query_for_key(query_name, key, database_file=DATABASE_FILE):
+def run_query_for_key(query_name: str, key: dict[str, Any], database_file: Path = DATABASE_FILE) -> pd.DataFrame:
     """Rows of one named query for a single product key (D-050).
 
     The database filters the rows, so the dashboard receives a few thousand rows

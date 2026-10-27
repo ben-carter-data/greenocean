@@ -6,6 +6,8 @@ dbt project reads a standard data-lake format that any warehouse can read too.
 Columns and types are those of raw.db: nothing is cleaned here.
 """
 
+from __future__ import annotations
+
 import sqlite3
 import sys
 from pathlib import Path
@@ -20,7 +22,7 @@ BRONZE_DIR = etl.BASE_DIR / "bronze"
 BRONZE_TABLES = {etl.SOURCE_WHOLESALE: "odepa_wholesale", etl.SOURCE_CONSUMER: "odepa_consumer"}
 
 
-def export_source(connection, source, bronze_dir=BRONZE_DIR):
+def export_source(connection: sqlite3.Connection, source: str, bronze_dir: Path = BRONZE_DIR) -> dict[int, int]:
     """Write bronze/<table>/file_year=<year>/data.parquet for every year of one source.
     Returns {year: rows}."""
     table = etl.RAW_TABLE_BY_SOURCE[source]
@@ -40,7 +42,7 @@ def export_source(connection, source, bronze_dir=BRONZE_DIR):
     return written
 
 
-def main():
+def main() -> None:
     connection = sqlite3.connect(f"file:{etl.RAW_DATABASE_FILE}?mode=ro", uri=True)
     try:
         for source in etl.SOURCES:
