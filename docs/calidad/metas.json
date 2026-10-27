@@ -1,0 +1,18 @@
+{
+  "nota": "Metas de calidad (D-323). scripts/verificar_calidad.py compara una medición con estas metas y falla, diciendo cuál, si alguna no se cumple. Cambiar una meta es una decisión del autor.",
+  "ruff_avisos": {"max": 0},
+  "archivos_sin_formatear": {"max": 0},
+  "cobertura_total": {"min": 90},
+  "cobertura_por_modulo": {"min": 70},
+  "mypy_errores": {"max": 0},
+  "funciones_con_tipos_pct": {"min": 100},
+  "complejidad_sobre_10": {"max": 6},
+  "bandit_altos": {"max": 0},
+  "pip_audit_vulnerabilidades": {"max": 0},
+  "secretos_sin_clasificar": {"max": 0},
+  "pruebas_fallidas": {"max": 0},
+  "segundos_por_pagina": {"max": 2.0},
+  "segundos_por_consulta": {"max": 1.0},
+  "violaciones_wcag": {"max": 0},
+  "comprobaciones_navegador_fallidas": {"max": 0}
+}

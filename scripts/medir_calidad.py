@@ -265,6 +265,11 @@ def measure_coverage(python):
         "modulos_criticos": {
             name: round(files[name]["summary"]["percent_covered"], 1) for name in CRITICAL_MODULES if name in files
         },
+        "modulos": {
+            name: round(item["summary"]["percent_covered"], 1)
+            for name, item in files.items()
+            if item["summary"]["num_statements"]
+        },
     }
 
 
