@@ -829,7 +829,7 @@ def build_css(palette):
   font-family:{mono}; white-space:nowrap; }}
 .sqlx-db i {{ width:9px; height:9px; border-radius:50%; background:{charts.STATUS_COLORS['good']};
   box-shadow:0 0 0 3px color-mix(in srgb, {charts.STATUS_COLORS['good']} 22%, transparent); }}
-.sqlx-db small {{ color:{muted}; font-family:{charts.CHART_FONT}; }}
+.sqlx-db small {{ color:{charts.legible(muted, field) if field.startswith('#') else muted}; font-family:{charts.CHART_FONT}; }}
 .st-key-sqlx_run button {{ min-height:30px !important; padding:3px 16px 3px 12px !important;
   background:linear-gradient(180deg, color-mix(in srgb, {accent} 78%, #fff) 0%, {accent} 55%, color-mix(in srgb, {accent} 82%, #000) 100%) !important;
   border:0 !important; box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 8px 18px -8px {accent} !important; }}

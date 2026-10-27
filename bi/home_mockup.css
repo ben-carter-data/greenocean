@@ -431,7 +431,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .stApp .st-key-home_bar .st-key-return_to_previous button {border:0!important;background:transparent!important;box-shadow:none!important;
   min-height:32px;width:32px;padding:0!important;color:__INK__;}
 .stApp .st-key-home_bar .st-key-return_to_previous button:hover {background:var(--home-bar-hover,__SOFT__)!important;}
-.stApp .st-key-home_bar .st-key-return_to_previous button [data-testid="stMarkdownContainer"] {display:none;}
+.stApp .st-key-home_bar .st-key-return_to_previous button [data-testid="stMarkdownContainer"] {position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
 .home-bar-main {display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;font-size:13px;}
 .home-bar-path {flex:none;color:var(--mock-muted);font-size:13.5px;padding-right:12px;border-right:1px solid var(--mock-border);}
 .home-bar-path b {color:var(--mock-ink);font-weight:600;}
@@ -560,3 +560,6 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-products-slim .mock-products-family {white-space:nowrap;}
 [data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] {position:absolute!important;right:18px;top:16px;}
 .st-key-dialog_products_filters {padding-right:44px;}
+
+/* D-323: the enlarge button keeps its name for screen readers, shown as an icon only. */
+.st-key-home_products_enlarge button [data-testid="stMarkdownContainer"] {position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}

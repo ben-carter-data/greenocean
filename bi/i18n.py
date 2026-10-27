@@ -50,6 +50,7 @@ DOCUMENT_FIELDS = {
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
+    "Ampliar": "Enlarge",
     "Sin precios comparables esta semana": "No comparable prices this week",
     "En el promedio nacional": "At the national average",
     "{} más cara": "{} dearer",

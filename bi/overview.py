@@ -756,7 +756,7 @@ def points_css(palette: dict[str, str]) -> str:
   border-top:3px solid hsl(var(--h),65%,60%); padding:8px 10px 6px 12px; min-width:0; }}
 .ov-region-main {{ flex:1; min-width:0; display:flex; flex-direction:column; }}
 .ov-region h5 {{ display:flex; align-items:center; gap:8px; margin:0 0 2px !important; padding:0 !important; font-size:16px !important; color:{ink}; }}
-.ov-region h5 b {{ margin-right:8px; font-size:11.5px; padding:1px 7px; border-radius:6px; color:#10141c; background:hsl(var(--h),65%,62%); }}
+.ov-region h5 b {{ margin-right:8px; font-size:11.5px; padding:1px 7px; border-radius:6px; color:#0b1220; background:hsl(var(--h),70%,72%); }}
 .ov-street {{ flex:1; display:flex; flex-wrap:wrap; align-content:center; gap:6px clamp(4px, .8vw, 14px); }}
 .ov-house {{ margin:0; width:clamp(58px, 4.3vw, 96px); display:flex; flex-direction:column; align-items:center; }}
 .ov-house img {{ width:clamp(44px, 3.3vw, 78px); height:auto; display:block; transition:transform .25s ease; }}
@@ -765,10 +765,10 @@ def points_css(palette: dict[str, str]) -> str:
   display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
   overflow-wrap:anywhere; hyphens:auto; }}
 .ov-price {{ margin:0 0 2px !important; font-size:12px !important; line-height:1.3; color:{muted}; display:flex; flex-wrap:nowrap; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; }}
-.ov-price b {{ font-weight:600; }} .ov-up b {{ color:{palette["rise"]}; }} .ov-down b {{ color:{palette["fall"]}; }}
+.ov-price b {{ font-weight:600; }} .ov-up b {{ color:{charts.legible(palette["rise"], card)}; }} .ov-down b {{ color:{charts.legible(palette["fall"], card)}; }}
 .ov-price em {{ font-style:normal; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:999px; }}
-.ov-price-dear {{ background:color-mix(in srgb, {palette["rise"]} 22%, transparent); color:{palette["rise"]}; }}
-.ov-price-cheap {{ background:color-mix(in srgb, {palette["fall"]} 22%, transparent); color:{palette["fall"]}; }}
+.ov-price-dear {{ background:{palette["rise"]}; color:{charts.readable_on(palette["rise"])}; }}
+.ov-price-cheap {{ background:{palette["fall"]}; color:{charts.readable_on(palette["fall"])}; }}
 .ov-price span {{ font-size:11px; }}
 .ov-sectors {{ margin:auto 0 0 !important; padding-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11.5px !important; color:{muted} !important; }}
 .ov-mini {{ flex:0 0 40px; display:flex; flex-direction:column; align-items:center; gap:4px; border-left:1px solid {border}; padding-left:8px; }}

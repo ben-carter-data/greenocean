@@ -11,7 +11,7 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
-from bi import i18n
+from bi import charts, i18n
 
 REPORT_FILE = Path(__file__).resolve().parent.parent / "docs" / "calidad" / "medicion.json"
 NOT_VERIFIED = "no verificado"
@@ -72,7 +72,7 @@ def build_table(head, rows, widths=None):
     """A table whose cells are already HTML; the first column in bold."""
     columns = "".join(f"<th>{html.escape(cell)}</th>" for cell in head)
     body = "".join("<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>" for row in rows)
-    return f'<div class="qm-table"><table><thead><tr>{columns}</tr></thead><tbody>{body}</tbody></table></div>'
+    return f'<div class="qm-table" tabindex="0"><table><thead><tr>{columns}</tr></thead><tbody>{body}</tbody></table></div>'
 
 
 def text_cell(spanish, english):
@@ -818,7 +818,7 @@ def build_css(palette):
 .qm-scale {{ margin:4px 0 0; padding-left:18px; font-size:13px; line-height:1.6; }}
 .qm-table {{ overflow:auto; max-height:calc(100vh - 330px); border:1px solid {border}; border-radius:10px; margin:6px 0 12px; }}
 .qm-table table {{ width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; margin:0; }}
-.qm-table thead th {{ position:sticky; top:0; z-index:1; background:{accent} !important; color:#ffffff !important; font-size:11px; font-weight:600;
+.qm-table thead th {{ position:sticky; top:0; z-index:1; background:{accent} !important; color:{charts.readable_on(accent)} !important; font-size:11px; font-weight:600;
   text-transform:uppercase; letter-spacing:.05em; padding:7px 10px !important; text-align:left; border:0 !important; }}
 .qm-table td {{ padding:7px 10px !important; vertical-align:top; line-height:1.45; border:0 !important; border-bottom:1px solid {border} !important;
   background:transparent !important; color:{text}; }}

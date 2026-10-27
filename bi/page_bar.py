@@ -35,7 +35,7 @@ def build_css(palette):
 .stApp .st-key-page_bar .st-key-return_to_previous button {{ border:0 !important; background:transparent !important;
   box-shadow:none !important; min-height:32px; width:32px; padding:0 !important; color:{ink}; }}
 .stApp .st-key-page_bar .st-key-return_to_previous button:hover {{ background:{soft} !important; }}
-.stApp .st-key-page_bar .st-key-return_to_previous button [data-testid="stMarkdownContainer"] {{ display:none; }}
+.stApp .st-key-page_bar .st-key-return_to_previous button [data-testid="stMarkdownContainer"] {{ position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap; }}
 .page-bar-main {{ display:flex; align-items:center; gap:8px; min-width:0; white-space:nowrap; font-size:13px; color:{ink}; }}
 .page-bar-path {{ flex:none; color:{muted}; font-size:13.5px; padding-right:10px; border-right:1px solid {border}; }}
 .page-bar-path:not(:has(b)) {{ padding-right:0; border-right:0; }}
@@ -46,8 +46,8 @@ def build_css(palette):
 .page-chip {{ flex:none; display:inline-flex; align-items:baseline; gap:6px; padding:3px 9px; border-radius:8px; background:{soft};
   color:{ink}; font-size:13.5px; line-height:1.35; font-variant-numeric:tabular-nums; cursor:default; }}
 .page-chip b {{ font-weight:600; }}
-.page-chip small {{ font-size:12px; color:{muted}; }}
-.page-chip em {{ font-style:normal; font-size:10.5px; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:{muted}; }}
+.page-chip small {{ font-size:12px; color:color-mix(in srgb, {muted} 45%, {ink}); }}
+.page-chip em {{ font-style:normal; font-size:10.5px; font-weight:500; letter-spacing:.06em; text-transform:uppercase; color:color-mix(in srgb, {muted} 45%, {ink}); }}
 .page-chip b.rise {{ color:{rise}; }} .page-chip b.fall {{ color:{fall}; }}
 .stApp .st-key-page_bar p {{ margin:0 !important; }}
 .stApp .st-key-page_bar button {{ min-height:30px !important; padding:2px 12px !important; }}

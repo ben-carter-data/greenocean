@@ -664,7 +664,7 @@ def show_assessment_line():
             f"""<style>
         .st-key-assessment_line {{ height:0 !important; min-height:0 !important; margin:0 0 -1rem !important; padding:0 !important; overflow:visible; }}
         .st-key-assessment_line a {{ position:fixed; top:56px; left:22px; z-index:5; font-size:10.5px; line-height:1.2; letter-spacing:.01em;
-            color:{palette['reference']} !important; text-decoration:none !important; background:none; }}
+            color:{charts.legible(palette['reference'], palette['sidebar'])} !important; text-decoration:none !important; background:none; }}
         .st-key-assessment_line a:hover {{ color:{palette['strong_text']} !important; text-decoration:underline !important; }}
         .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) .st-key-assessment_line a {{ display:none; }}
         </style><a href="{html.escape(build_page_address(PAGE_METHOD))}" target="_self">{html.escape(tr(quality_method.SIDEBAR_LINE))}</a>""",
@@ -3994,7 +3994,7 @@ def show_market_overview(mode, prefix):
             )
             st.markdown(table_html, unsafe_allow_html=True)
             if enlarge_column.button(
-                '',
+                tr('Ampliar'),
                 icon=':material/open_in_full:',
                 key='home_products_enlarge',
                 help=tr('Ampliar la tabla de productos'),
@@ -4388,7 +4388,7 @@ def build_insight_table_html(head, rows):
     """A table of the Insights tab: its header and its rows of text, the first column in bold."""
     header = "".join(f"<th>{html.escape(tr(cell))}</th>" for cell in head)
     body = "".join("<tr>" + "".join(f"<td>{html.escape(tr(cell))}</td>" for cell in row) + "</tr>" for row in rows)
-    return f'<div class="ov-it"><table><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table></div>'
+    return f'<div class="ov-it" tabindex="0"><table><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table></div>'
 
 
 def build_insight_card_html(kind, title, who, icon, lines):
@@ -4478,7 +4478,7 @@ def show_overview_insights(mode, version):
     .ov-it {{ overflow:auto; max-height:calc(100vh - 290px); }}
     .ov-insights {{ overflow:auto; max-height:calc(100vh - 230px); }}
     .ov-it table {{ width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:12.5px; }}
-    .ov-it thead th {{ position:sticky; top:0; background:{palette['accent']} !important; color:#ffffff !important; font-size:11px;
+    .ov-it thead th {{ position:sticky; top:0; background:{palette['accent']} !important; color:{charts.readable_on(palette['accent'])} !important; font-size:11px;
         font-weight:600; text-transform:uppercase; letter-spacing:.05em; padding:7px 10px !important; text-align:left; border:0 !important; }}
     .ov-it thead th:first-child {{ border-radius:10px 0 0 0; }} .ov-it thead th:last-child {{ border-radius:0 10px 0 0; }}
     .ov-it td {{ padding:7px 10px !important; color:{palette['text']}; border:0 !important;
@@ -6957,7 +6957,7 @@ MENU_INK = {
     ),
     False: (
         "#2b3340",
-        "#6b717a",
+        "#596069",  # D-323: 4.5:1 on the lightest sidebar (Blue Light)
         "#4b5563",
         "rgba(15,23,42,.04)",
         "rgba(15,23,42,.07)",

@@ -459,7 +459,7 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
         '<p>% de precios comparables que siguió la dirección dominante. Mapa en proporción real; '
         'cada región se lee en su fila.</p>'
         f'<div class="mock-regional-legend">{legend}</div>'
-        f'<svg class="mock-chile-map" preserveAspectRatio="xMidYMin meet" viewBox="0 0 {width} {height}" role="img" '
+        f'<svg class="mock-chile-map" preserveAspectRatio="xMidYMin meet" viewBox="0 0 {width} {height}" role="group" '
         'aria-label="Mapa de Chile con la dirección dominante de los precios por región">'
         '<defs><pattern id="mock-nodata" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">'
         '<rect width="5" height="5" fill="#e3e8ee"/><rect width="1.1" height="5" fill="#b9c2ce"/></pattern></defs>'

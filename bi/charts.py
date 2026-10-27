@@ -74,12 +74,12 @@ PALETTES = {
     MODE_CORPORATE: {
         "base": BASE_LIGHT,
         "channels": LIGHT_CHANNELS,
-        "rise": "#e34948",
-        "fall": "#2a78d6",
+        "rise": "#c8322f",
+        "fall": "#1f69c7",
         "accent": "#1d5fbf",
         "text": "#475467",
         "grid": "#e4e9f0",
-        "reference": "#7b8798",
+        "reference": "#5f6b7c",
         "card": "#ffffff",
         "card_border": "#d6dde8",
         "strong_text": "#0f1b2d",
@@ -94,12 +94,12 @@ PALETTES = {
     MODE_BLUE_LIGHT: {
         "base": BASE_LIGHT,
         "channels": LIGHT_CHANNELS,
-        "rise": "#e34948",
-        "fall": "#2a78d6",
+        "rise": "#c8322f",
+        "fall": "#1f69c7",
         "accent": "#1565d8",
         "text": "#3b4a63",
         "grid": "#dfe9f6",
-        "reference": "#7b8798",
+        "reference": "#5f6b7c",
         "card": "#ffffff",
         "card_border": "#c9dbf3",
         "strong_text": "#0b1f3a",
@@ -369,3 +369,39 @@ CONTEXT_CHANNELS = {"Feria libre": "#2563C9", "Supermercado": "#D9622B"}
 
 
 # endregion
+
+
+def relative_luminance(color: str) -> float:
+    """WCAG 2.1 relative luminance of a #rrggbb colour."""
+    channels = [int(color.lstrip("#")[index : index + 2], 16) / 255 for index in (0, 2, 4)]
+    linear = [value / 12.92 if value <= 0.03928 else ((value + 0.055) / 1.055) ** 2.4 for value in channels]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+
+def readable_on(background: str, dark: str = "#0b1220", light: str = "#ffffff") -> str:
+    """D-323: the text colour, dark or white, with the higher WCAG contrast on a background."""
+    lum = relative_luminance(background)
+    return (
+        dark
+        if (lum + 0.05) / (relative_luminance(dark) + 0.05) >= (relative_luminance(light) + 0.05) / (lum + 0.05)
+        else light
+    )
+
+
+def contrast_ratio(first: str, second: str) -> float:
+    lighter, darker = sorted((relative_luminance(first), relative_luminance(second)), reverse=True)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def legible(color: str, background: str, minimum: float = 4.5) -> str:
+    """D-323: the same hue, darkened or lightened in small steps only as far as it needs to read on its background
+    (WCAG 2.1 AA, 4.5:1 for text). A colour that already reads stays as it is."""
+    target = "#000000" if relative_luminance(background) > 0.18 else "#ffffff"
+    channels = [int(color.lstrip("#")[index : index + 2], 16) for index in (0, 2, 4)]
+    goal = [int(target[index : index + 2], 16) for index in (1, 3, 5)]
+    for step in range(21):
+        share = step / 20
+        mixed = "#" + "".join(f"{round(c + (g - c) * share):02x}" for c, g in zip(channels, goal))
+        if contrast_ratio(mixed, background) >= minimum:
+            return mixed
+    return target

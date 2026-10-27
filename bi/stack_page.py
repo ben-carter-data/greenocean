@@ -476,7 +476,8 @@ def build_stack_html(palette, figures, addresses):
     nodes = [build_node(key, name, definition, addresses[page]) for key, name, definition, page in STACK]
     nodes += [build_node(key, name, definition) for key, name, definition in SOURCES]
     chips = [
-        f'<span class="sk-chip" tabindex="0" style="{position(x, y)};color:{COLORS[kind]}">{html.escape(label)}'
+        f'<span class="sk-chip" tabindex="0" style="{position(x, y)};color:{charts.legible(COLORS[kind], palette["background"])}">'
+        f'{html.escape(label)}'
         f'{tip_html(x, y, [("Qué viaja" if kind == "flow" else "Qué significa", what)])}</span>'
         for _, _, kind, _, label, x, y, what in EDGES
     ]
