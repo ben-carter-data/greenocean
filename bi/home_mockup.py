@@ -473,9 +473,10 @@ def products_heading(family, average, scope, shown=None, total=None):
     chip = '' if average is None else f'<span class="mock-products-chip {state}">{percent(average * 100, True)} mediana</span>'
     count = ('' if total is None else f'<span class="mock-products-count">{number(shown)} de {number(total)} precios</span>'
              if shown != total else f'<span class="mock-products-count">{number(total)} precios</span>')
-    return (f'<div class="mock-products-heading"><div class="mock-products-top"><span class="mock-kicker">Detalle de productos</span>'
-            f'<span class="mock-products-family">{esc(short_family(family))}</span></div>'
-            f'<h2>¿Qué productos explican el cambio?</h2>{chip}'
+    # D-322: one line, so the table keeps the room: the label, the family, the question (on hover), the median and the count.
+    return (f'<div class="mock-products-heading mock-products-slim"><span class="mock-kicker">Detalle de productos</span>'
+            f'<span class="mock-products-family">{esc(short_family(family))}</span>'
+            f'<h2 title="¿Qué productos explican el cambio?">¿Qué productos explican el cambio?</h2>{chip}'
             f'<span class="mock-products-scope">en {esc(scope)}</span>{count}</div>')
 
 

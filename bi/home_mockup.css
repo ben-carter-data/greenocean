@@ -474,7 +474,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-home_products [data-testid="stTextInput"] input {font-size:12px!important;min-height:28px!important;}
 .st-key-home_products [data-testid="stTextInput"] > div {min-height:28px!important;}
 .st-key-home_products {padding:6px 12px 8px!important;gap:4px!important;}
-.mock-products-table {max-height:max(100px, calc(100vh - 652px))!important;min-height:0!important;}
+.mock-products-table {max-height:max(110px, calc(100vh - 636px))!important;min-height:0!important;}
 /* D-309: the Panorama fits one screen: the map and the panels take the height the window leaves under the bar. */
 .st-key-home_overview {height:calc(100vh - 100px);min-height:520px;}
 .st-key-home_overview > [data-testid="stHorizontalBlock"] {height:100%;}
@@ -540,3 +540,23 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 [role="dialog"] .mock-products-table table {font-size:13.5px;}
 .st-key-home_products .st-key-home_products_enlarge button {min-height:28px;padding:0 6px;}
 [role="dialog"] .greenocean-mockup h2 {display:block!important;}
+
+/* D-322: the products heading in one line; the table gets the room. */
+.mock-products-slim {flex-wrap:nowrap!important;gap:8px!important;align-items:center;}
+.mock-products-slim .mock-kicker {margin:0!important;white-space:nowrap;}
+.greenocean-mockup .mock-products-slim h2 {font-size:13px!important;font-weight:500;color:var(--mock-muted)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto;}
+.mock-products-slim .mock-products-count {margin-left:auto;white-space:nowrap;}
+.mock-products-slim .mock-products-scope, .mock-products-slim .mock-products-chip {white-space:nowrap;}
+
+.st-key-dialog_products_filters {gap:10px!important;}
+.st-key-dialog_products_filters [data-testid="stSelectbox"] {display:flex;align-items:center;gap:6px;max-width:260px;}
+.st-key-dialog_products_filters [data-testid="stSelectbox"] label {margin:0!important;min-height:0;}
+.st-key-dialog_products_filters [data-testid="stSelectbox"] .react-aria-ComboBox > div {height:30px!important;min-height:30px!important;}
+.st-key-dialog_products_filters [data-testid="stTextInput"] {max-width:280px;}
+/* D-322: the weeks table closes with air under it and rounded corners. */
+[role="dialog"] .ov-ht {margin-bottom:22px;border-radius:12px;overflow:hidden;border:1px solid var(--mock-border, rgba(255,255,255,.08));}
+[role="dialog"]:has(.ov-ht) {padding-bottom:18px!important;}
+
+.mock-products-slim .mock-products-family {white-space:nowrap;}
+[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] {position:absolute!important;right:18px;top:16px;}
+.st-key-dialog_products_filters {padding-right:44px;}

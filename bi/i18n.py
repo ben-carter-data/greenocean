@@ -28,6 +28,10 @@ DOCUMENT_FIELDS = {
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
+    "Sin precios comparables esta semana": "No comparable prices this week", "En el promedio nacional": "At the national average",
+    "{} más cara": "{} dearer", "{} más barata": "{} cheaper", "Mediana de {} precios comparados con el promedio nacional de los mismos productos": "Median of {} prices compared with the national average of the same products",
+    "La más cara": "The dearest", "La más barata": "The cheapest", 
+    "De norte a sur: dónde queda cada región y cuán cara es frente al promedio nacional, con los mismos productos (semana {}).": "North to south: where each region lies and how dear it is against the national average, on the same products (week {}).",
     "Lugares de compra por región": "Places to buy, by region",
     "Ordenados de norte a sur. Cada región muestra dónde queda en el mapa.": "North to south. Each region shows where it lies on the map.",
     "Mercado o terminal mayorista": "Wholesale market or terminal", "Feria o vega": "Fair or vega",

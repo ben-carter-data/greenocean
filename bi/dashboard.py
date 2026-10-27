@@ -3387,6 +3387,7 @@ def show_market_overview(mode, prefix):
             family, scope) + '</div>', unsafe_allow_html=True)
         with st.container(key='home_products'):
             rows=[row for row in model['family_rows'] if row['product_group'] == family]
+            family_rows=list(rows)
             average=next((value for name, value, _ in averages if name == family), None)
             heading = st.empty()
             search_column, channel_column, order_column, enlarge_column = st.columns(
@@ -3420,8 +3421,12 @@ def show_market_overview(mode, prefix):
             st.markdown(table_html, unsafe_allow_html=True)
             if enlarge_column.button('', icon=':material/open_in_full:', key='home_products_enlarge',
                                      help=tr('Ampliar la tabla de productos')):
-                show_products_dialog(home_mockup.products_heading(family or 'Sin familia', average, scope, len(rows), total),
-                                     table_html)
+                for row in family_rows:
+                    row['_regions']=directions.get(tuple(row[field] for field in queries.KEY_COLUMNS+['channel']))
+                st.session_state.update({'dialog_products_search': query, 'dialog_products_channel': channel,
+                                         'dialog_products_order': order})
+                show_products_dialog(family or 'Sin familia', average, scope, family_rows, channels, orders,
+                                     model['week_label'], model['previous_label'], None if region == ALL_VALUES else region)
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown('<div class="greenocean-mockup">' + home_mockup.coverage_note(
         model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION), family)
@@ -3429,9 +3434,22 @@ def show_market_overview(mode, prefix):
 
 
 @st.dialog("Productos", width="large")
-def show_products_dialog(heading_html, table_html):
-    """The products table at the size of the window (D-317): the same rows, filters and order of the panel."""
-    st.markdown('<div class="greenocean-mockup products-large">' + heading_html + '</div>' + table_html, unsafe_allow_html=True)
+def show_products_dialog(family, average, scope, family_rows, channels, orders, week_label, previous_label, region):
+    """The products table at the size of the window (D-317) with the same filters as the panel (D-322): it opens with the
+    panel's search, channel and order, and filters on its own without closing."""
+    with st.container(horizontal=True, vertical_alignment="center", key="dialog_products_filters"):
+        query = st.text_input('Buscar', key='dialog_products_search', icon=':material/search:', placeholder='Producto, ej.: lechuga',
+                              label_visibility='collapsed', type='search', live=True)
+        channel = st.selectbox('Canal', channels, key='dialog_products_channel')
+        order = st.selectbox('Orden', orders, key='dialog_products_order')
+    rows = [row for row in family_rows if channel == 'Todos' or row['channel'] == channel]
+    if query.strip():
+        rows = [row for row in rows if matches_product_search(row, query)]
+    rows = sort_family_products(rows, order)
+    st.markdown('<div class="greenocean-mockup products-large">'
+                + home_mockup.products_heading(family, average, scope, len(rows), len(family_rows)) + '</div>'
+                + '<div class="greenocean-mockup">' + home_mockup.products_table(rows, week_label, previous_label, query.strip(), region)
+                + '</div>', unsafe_allow_html=True)
 
 
 def show_home_page(mode):
@@ -3845,7 +3863,18 @@ def show_where_page(mode):
     show_page_bar(PAGE_WHERE, "Dónde comprar", "Los mercados mayoristas y los puntos de venta de cada región, de norte a sur. "
                   "Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.")
     st.markdown(overview.points_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    st.markdown(overview.build_regions_html(regions, points), unsafe_allow_html=True)
+    week, levels = read_cached_price_levels(version)
+    st.markdown(overview.build_regions_html(regions, points, levels, i18n.translate_text(describe_week_span(week))),
+                unsafe_allow_html=True)
+
+
+@st.cache_data(show_spinner=False)
+def read_cached_price_levels(database_version):
+    """(latest week, {region: level}) of the K3 regional index (D-322)."""
+    week = read_latest_week()
+    frame = queries.run_sql("SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?",
+                            parameters=(f"{week:%Y-%m-%d}",))
+    return week, overview.regional_price_levels(frame)
 
 
 def show_weeks_table(mode, version):

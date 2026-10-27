@@ -33,3 +33,18 @@ def test_d310_each_region_is_a_column_of_houses_with_its_points_and_no_price():
         assert (overview.POINTS_FILE.parent / "points" / f"{overview.POINT_ICONS[kind]}.svg").exists(), kind
     regions = overview.ordered_regions(points, {name: 13 for name in points})
     assert overview.build_regions_html(regions, points).count('class="ov-region"') == len(points)
+
+
+def test_d322_the_price_level_of_each_region_is_the_median_index_of_products_two_regions_price():
+    from bi import queries
+    week = queries.run_sql("SELECT max(week_start) AS w FROM weekly_price")["w"][0]
+    frame = queries.run_sql("SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?",
+                            parameters=(week,))
+    levels = overview.regional_price_levels(frame)
+    shared = frame[frame.groupby(overview.PRICE_KEY)["region"].transform("count") >= 2]
+    for region, (level, prices, rank) in levels.items():
+        rows = shared[shared["region"] == region]
+        assert prices == len(rows) and level == pytest.approx((rows["regional_index"].median() - 1) * 100)
+    ranks = sorted(levels.values(), key=lambda item: item[2])
+    assert [item[2] for item in ranks] == list(range(1, len(levels) + 1))
+    assert all(a[0] >= b[0] for a, b in zip(ranks, ranks[1:]))  # rank 1 is the dearest

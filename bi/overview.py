@@ -460,7 +460,44 @@ def house(hue, kind, name):
             f'<figcaption>{html.escape(name)}</figcaption></figure>')
 
 
-def build_region_column(region, data, hue, number=1):
+PRICE_KEY = ["product", "variety", "quality", "channel", "normalized_unit"]
+
+
+def regional_price_levels(frame):
+    """D-322: how dear each region is, from the K3 index of one week: the median, over the same product, variety, quality,
+    channel and unit, of the region's price over the national price, counting only what two regions or more price (a
+    product priced in one region is its own national price and says nothing). Regions, not shops: ODEPA gives no price by
+    market. Returns {region: (level in %, prices compared, rank from the dearest)}."""
+    frame = frame[frame.groupby(PRICE_KEY)["region"].transform("count") >= 2]
+    levels = frame.groupby("region")["regional_index"].agg(["median", "count"])
+    levels["level"] = (levels["median"] - 1) * 100
+    levels = levels.sort_values("level", ascending=False)
+    return {region: (row.level, int(row["count"]), rank) for rank, (region, row) in enumerate(levels.iterrows(), start=1)}
+
+
+def build_price_line(level, total):
+    """«4,8 % más cara que el promedio · 1.ª de 9 · 322 precios», with a badge for the dearest and the cheapest."""
+    if level is None:
+        return f'<p class="ov-price ov-price-none">{html.escape(i18n.tr("Sin precios comparables esta semana"))}</p>'
+    value, prices, rank = level
+    amount = signed(value).lstrip("+").lstrip("-").replace(" ", "\u00a0")
+    if abs(value) < 0.05:
+        text = i18n.tr("En el promedio nacional")
+    else:
+        text = (i18n.tr("{} más cara") if value > 0 else i18n.tr("{} más barata")).format(amount)
+    badge = ("dear", i18n.tr("La más cara")) if rank == 1 else ("cheap", i18n.tr("La más barata")) if rank == total else (None, "")
+    chip = f'<em class="ov-price-{badge[0]}">{html.escape(badge[1])}</em>' if badge[0] else ""
+    detail = f"{rank} of {total}" if i18n.is_english() else f"{rank} de {total}"  # a bare «{} de {}» entry would match any sentence
+    hint = i18n.tr("Mediana de {} precios comparados con el promedio nacional de los mismos productos").format(number(prices))
+    return (f'<p class="ov-price {"ov-up" if value > 0 else "ov-down"}" title="{html.escape(hint)}"><b>{html.escape(text)}</b>'
+            f'<span>{html.escape(detail)}</span>{chip}</p>')
+
+
+def number(value):
+    return f"{value:,}".replace(",", ".") if not i18n.is_english() else f"{value:,}"
+
+
+def build_region_column(region, data, hue, number_=1, level=None, total=9):
     """One region as a card: its number north to south, its name, a house per wholesale market or fair, one retail house
     (its kinds named on hover) and, at the right, where the region lies on the map of Chile. Information only, no price."""
     kinds = [name for name in data["consumer"] if name != "Mercado Mayorista"]
@@ -470,8 +507,9 @@ def build_region_column(region, data, hue, number=1):
             f'title="{html.escape(i18n.tr(DETAIL_SHOP))}"', f'title="{html.escape(", ".join(i18n.tr(kind) for kind in kinds))}"', 1)
     sectors = (f'<p class="ov-sectors">{html.escape(i18n.tr("Sectores"))}: {html.escape(", ".join(data["sectors"]))}</p>'
                if data["sectors"] else "")
-    return (f'<section class="ov-region" style="--h:{hue}"><div class="ov-region-main"><h5><b>{number:02d}</b>'
-            f'{html.escape(home_mockup.short_region(region))}</h5><div class="ov-street">{houses}</div>{sectors}</div>'
+    return (f'<section class="ov-region" style="--h:{hue}"><div class="ov-region-main"><h5><b>{number_:02d}</b>'
+            f'{html.escape(home_mockup.short_region(region))}</h5>{build_price_line(level, total)}'
+            f'<div class="ov-street">{houses}</div>{sectors}</div>'
             f'{mini_map(region, hue)}</section>')
 
 
@@ -481,12 +519,14 @@ def build_legend(hue=215):
     return f'<div class="ov-legend">{items}<em>{html.escape(i18n.tr("Norte → Sur"))}</em></div>'
 
 
-def build_regions_html(regions, points):
+def build_regions_html(regions, points, levels=None, week=""):
     """Every region at once, north to south, as numbered cards in a grid of three (D-310, D-321)."""
-    cards = "".join(build_region_column(region, points[region], REGION_HUES[index % len(REGION_HUES)], index + 1)
+    levels = levels or {}
+    cards = "".join(build_region_column(region, points[region], REGION_HUES[index % len(REGION_HUES)], index + 1,
+                                        levels.get(region), len(levels))
                     for index, region in enumerate(regions))
     head = (f'<div class="ov-where-head"><div><h3>{html.escape(i18n.tr("Lugares de compra por región"))}</h3>'
-            f'<p>{html.escape(i18n.tr("Ordenados de norte a sur. Cada región muestra dónde queda en el mapa."))}</p></div>{build_legend()}</div>')
+            f'<p>{html.escape(i18n.tr("De norte a sur: dónde queda cada región y cuán cara es frente al promedio nacional, con los mismos productos (semana {}).").format(week))}</p></div>{build_legend()}</div>')
     return head + f'<div class="ov-regions">{cards}</div>'
 
 
@@ -505,15 +545,21 @@ def points_css(palette):
 .ov-region {{ display:flex; gap:10px; border-radius:16px; background:{card}; border:1px solid {border};
   border-top:3px solid hsl(var(--h),65%,60%); padding:8px 10px 6px 12px; min-width:0; }}
 .ov-region-main {{ flex:1; min-width:0; display:flex; flex-direction:column; }}
-.ov-region h5 {{ display:flex; align-items:center; gap:8px; margin:0 0 6px !important; padding:0 !important; font-size:16px !important; color:{ink}; }}
+.ov-region h5 {{ display:flex; align-items:center; gap:8px; margin:0 0 2px !important; padding:0 !important; font-size:16px !important; color:{ink}; }}
 .ov-region h5 b {{ margin-right:8px; font-size:11.5px; padding:1px 7px; border-radius:6px; color:#10141c; background:hsl(var(--h),65%,62%); }}
-.ov-street {{ display:flex; flex-wrap:wrap; gap:4px 4px; }}
-.ov-house {{ margin:0; width:60px; display:flex; flex-direction:column; align-items:center; }}
-.ov-house img {{ width:48px; height:auto; display:block; transition:transform .25s ease; }}
+.ov-street {{ flex:1; display:flex; flex-wrap:wrap; align-content:center; gap:6px clamp(4px, .8vw, 14px); }}
+.ov-house {{ margin:0; width:clamp(58px, 4.3vw, 96px); display:flex; flex-direction:column; align-items:center; }}
+.ov-house img {{ width:clamp(44px, 3.3vw, 78px); height:auto; display:block; transition:transform .25s ease; }}
 .ov-house:hover img {{ transform:translateY(-3px); }}
 .ov-house figcaption {{ margin-top:2px; font-size:10.5px; line-height:1.15; text-align:center; color:{ink};
   display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
   overflow-wrap:anywhere; hyphens:auto; }}
+.ov-price {{ margin:0 0 2px !important; font-size:12px !important; line-height:1.3; color:{muted}; display:flex; flex-wrap:nowrap; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; }}
+.ov-price b {{ font-weight:600; }} .ov-up b {{ color:{palette["rise"]}; }} .ov-down b {{ color:{palette["fall"]}; }}
+.ov-price em {{ font-style:normal; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:999px; }}
+.ov-price-dear {{ background:color-mix(in srgb, {palette["rise"]} 22%, transparent); color:{palette["rise"]}; }}
+.ov-price-cheap {{ background:color-mix(in srgb, {palette["fall"]} 22%, transparent); color:{palette["fall"]}; }}
+.ov-price span {{ font-size:11px; }}
 .ov-sectors {{ margin:auto 0 0 !important; padding-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11.5px !important; color:{muted} !important; }}
 .ov-mini {{ flex:0 0 40px; display:flex; flex-direction:column; align-items:center; gap:4px; border-left:1px solid {border}; padding-left:8px; }}
 .ov-mini svg {{ width:34px; flex:1; min-height:60px; max-height:96px; }}
