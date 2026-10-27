@@ -4,6 +4,7 @@ D-226 replaced the star model and the entity-relation diagram with a generic sum
 nobody noticed, because no test asked a page for its own diagram. These tests draw each
 page and fail if the SVG of its builder is not there.
 """
+
 import sys
 from pathlib import Path
 
@@ -29,8 +30,7 @@ def read_markdown(app):
 def find_open_markdown(node, label, ancestors=()):
     """The markdown elements holding `label` that the reader sees without clicking."""
     found = []
-    if getattr(node, "type", None) == "markdown" and label in node.value \
-            and not HIDING_CONTAINERS & set(ancestors):
+    if getattr(node, "type", None) == "markdown" and label in node.value and not HIDING_CONTAINERS & set(ancestors):
         found.append(node)
     for child in getattr(node, "children", {}).values():
         found += find_open_markdown(child, label, ancestors + (getattr(node, "type", None),))
@@ -64,7 +64,6 @@ def test_d230_the_pipeline_page_draws_the_journey_svg():
     assert find_open_markdown(app.main, JOURNEY_LABEL), "the pipeline SVG is not open on its page"
 
 
-
 @needs_database
 def test_d251_the_star_and_the_pipeline_are_drawn_as_in_d229():
     # The author's decision: the star and the pipeline stay as they were in D-229. Only the
@@ -72,7 +71,9 @@ def test_d251_the_star_and_the_pipeline_are_drawn_as_in_d229():
     app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: dashboard.MODEL_VIEWS[1]})
     page = read_markdown(app)
     assert ER_LABEL in page and 'class="zoom-frame fit-modelo"' in page and "--ratio:" in page
-    page = read_markdown(draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: dashboard.MODEL_VIEWS[0]}))
+    page = read_markdown(
+        draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: dashboard.MODEL_VIEWS[0]})
+    )
     assert STAR_LABEL in page and '<div class="zoom-frame' not in page
     page = read_markdown(draw_page(dashboard.PAGE_DIAGRAMS))
     assert '<div class="zoom-frame diagram-wide">' in page and "fit-pipeline" not in page
@@ -95,8 +96,8 @@ def test_d233_the_fitted_pages_close_with_the_compact_footer():
 @needs_database
 def test_d267_the_pipeline_figures_are_chips_of_the_bar_read_from_the_latest_load():
     page = read_markdown(draw_page(dashboard.PAGE_DIAGRAMS))
-    bar = page[page.index('class="page-bar-main"'):]
-    bar = bar[:bar.index("</div>")]
+    bar = page[page.index('class="page-bar-main"') :]
+    bar = bar[: bar.index("</div>")]
     assert bar.count('class="page-chip"') == 4 and "pipe-figure" not in page and "runs-metric" not in page
     run = dashboard.read_latest_run()
     for value in (run["rows_read"], run["rows_loaded"], run["rows_rejected"]):

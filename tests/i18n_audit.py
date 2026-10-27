@@ -3,6 +3,7 @@
 Used by tests/test_i18n.py and runnable by hand to list what is left to translate:
     python tests/i18n_audit.py ["Página del menú" ...]
 """
+
 import html
 import json
 import re
@@ -15,9 +16,12 @@ sys.path.insert(0, str(ROOT))
 from streamlit.testing.v1 import AppTest  # noqa: E402
 
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
-SPANISH_MARKS = re.compile(r"[áéíóúñ¿¡]|\b(?:de|la|las|los|del|que|para|con|una|por|cada|sin|más|semana|semanas|precio|"
-                           r"precios|carga|cargas|datos|fila|filas|pruebas|prueba|qué|cómo|dónde|cuándo|según|"
-                           r"también|sólo|solo|está|están|es|se|al|el|en|y)\b", re.IGNORECASE)
+SPANISH_MARKS = re.compile(
+    r"[áéíóúñ¿¡]|\b(?:de|la|las|los|del|que|para|con|una|por|cada|sin|más|semana|semanas|precio|"
+    r"precios|carga|cargas|datos|fila|filas|pruebas|prueba|qué|cómo|dónde|cuándo|según|"
+    r"también|sólo|solo|está|están|es|se|al|el|en|y)\b",
+    re.IGNORECASE,
+)
 TEXT_NODE = re.compile(r">([^<>]+)<")
 ATTRIBUTE = re.compile(r'\b(?:title|aria-label|alt|placeholder|data-tip|data-title|data-label|data-what)="([^"]*)"')
 CODE = re.compile(r"<(script|style|pre|code)\b[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE)
@@ -26,23 +30,52 @@ OFFICIAL_REGION = re.compile(r"^Región (?:de |del )?[^\n·]+$", re.MULTILINE)
 
 
 # Proper names drawn by the map of Chile and two-letter codes that are not Spanish words.
-PROPER_NAMES = {"Arica y Parinacota", "Tarapacá", "Antofagasta", "Atacama", "Coquimbo", "Valparaíso", "Metropolitana",
-                "O'Higgins", "Maule", "Ñuble", "Biobío", "La Araucanía", "Los Ríos", "Los Lagos", "Aysén", "Magallanes",
-                "ES", "EN"}
+PROPER_NAMES = {
+    "Arica y Parinacota",
+    "Tarapacá",
+    "Antofagasta",
+    "Atacama",
+    "Coquimbo",
+    "Valparaíso",
+    "Metropolitana",
+    "O'Higgins",
+    "Maule",
+    "Ñuble",
+    "Biobío",
+    "La Araucanía",
+    "Los Ríos",
+    "Los Lagos",
+    "Aysén",
+    "Magallanes",
+    "ES",
+    "EN",
+}
 
 
 def read_data_values():
     """ODEPA's own names (products, varieties, families, regions, channels): data, never translated."""
     import duckdb
     from bi import queries
+
     values = set(PROPER_NAMES)
     with duckdb.connect(str(queries.DATABASE_FILE), read_only=True) as connection:
-        for table, column in (("dim_product", "product"), ("dim_product", "variety"), ("dim_product", "product_group"),
-                              ("dim_product", "quality"), ("dim_region", "region"), ("dim_channel", "channel")):
-            values |= {row[0] for row in connection.execute(f"SELECT DISTINCT {column} FROM {table}").fetchall() if row[0]}
+        for table, column in (
+            ("dim_product", "product"),
+            ("dim_product", "variety"),
+            ("dim_product", "product_group"),
+            ("dim_product", "quality"),
+            ("dim_region", "region"),
+            ("dim_channel", "channel"),
+        ):
+            values |= {
+                row[0] for row in connection.execute(f"SELECT DISTINCT {column} FROM {table}").fetchall() if row[0]
+            }
     # The panel writes «Lácteos - Huevos - Margarinas» as «Lácteos · Huevos · Margarinas».
     from bi import home_mockup, overview
-    values |= {market for data in overview.read_points().values() for market in data["wholesale"]}  # D-306: proper names
+
+    values |= {
+        market for data in overview.read_points().values() for market in data["wholesale"]
+    }  # D-306: proper names
     return values | {value.replace(" - ", " · ") for value in values} | set(home_mockup.FAMILY_SHORT_NAMES.values())
 
 
@@ -122,7 +155,9 @@ def spanish_left(view, data_values, theme=None, state=None):
                 rest = re.sub(rf"(?<!\w){re.escape(name)}(?!\w)", "", rest)
         rest = re.sub(r"\]\([^)]*\)|https?://\S+|`[^`]*`", "", rest)  # link addresses and code keep their own names
         rest = re.sub(r"\S*[./_]\w\S*", "", rest)  # file names and identifiers: datos.duckdb, stg_odepa__consumer
-        rest = re.sub(r"«[^»]*»|\*[^*\n]+\*|(?<!\w)ñ(?!\w)", "", rest)  # a name as the source writes it: «…», or in italics: *Oficina de …*
+        rest = re.sub(
+            r"«[^»]*»|\*[^*\n]+\*|(?<!\w)ñ(?!\w)", "", rest
+        )  # a name as the source writes it: «…», or in italics: *Oficina de …*
         if SPANISH_MARKS.search(rest):
             left.append(text)
     return sorted(set(left))
@@ -132,13 +167,21 @@ def screens():
     """Every screen to audit: each page of the menu, the views a page shows only after a switch or a click, and the
     documents."""
     from bi import dashboard, inflation_view, quality_evidence
-    return [(view, None) for view in dashboard.MENU_ORDER] + [
-        (dashboard.PAGE_DIAGRAMS, {dashboard.PIPELINE_VIEW_KEY: dashboard.PIPELINE_LINEAGE})] + [
-        (dashboard.PAGE_ARCHITECTURE, {dashboard.MODEL_VIEW_KEY: view}) for view in dashboard.MODEL_VIEWS[1:]] + [
-        (page, None) for page in dashboard.FOLDER_ORDER] + [
-        (dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_OPEN_KEY: title}) for title in quality_evidence.TITLES.values()] + [
-        (dashboard.PAGE_SEASONALITY, {dashboard.FAMILY_FOCUS_KEY: family})
-        for family in ("Frutas", inflation_view.IPC_NAME)]
+
+    return (
+        [(view, None) for view in dashboard.MENU_ORDER]
+        + [(dashboard.PAGE_DIAGRAMS, {dashboard.PIPELINE_VIEW_KEY: dashboard.PIPELINE_LINEAGE})]
+        + [(dashboard.PAGE_ARCHITECTURE, {dashboard.MODEL_VIEW_KEY: view}) for view in dashboard.MODEL_VIEWS[1:]]
+        + [(page, None) for page in dashboard.FOLDER_ORDER]
+        + [
+            (dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_OPEN_KEY: title})
+            for title in quality_evidence.TITLES.values()
+        ]
+        + [
+            (dashboard.PAGE_SEASONALITY, {dashboard.FAMILY_FOCUS_KEY: family})
+            for family in ("Frutas", inflation_view.IPC_NAME)
+        ]
+    )
 
 
 if __name__ == "__main__":

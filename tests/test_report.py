@@ -1,4 +1,5 @@
 """Tests for the weekly report."""
+
 import sys
 from pathlib import Path
 
@@ -20,10 +21,16 @@ def build_database(tmp_path, weekly_prices):
     raw_connection, connection = open_test_databases(tmp_path)
     mondays = pd.date_range("2026-01-05", periods=len(weekly_prices), freq="7D")
     raw_rows = [
-        make_raw_consumer_rows(week_start=str(monday.date()),
-                               week_end=str((monday + pd.Timedelta(days=4)).date()),
-                               max_price="2000", avg_price=f"{price},000000", sector=sector)
-        for monday, price in zip(mondays, weekly_prices) for sector in ("Santiago", "Ñuñoa")]
+        make_raw_consumer_rows(
+            week_start=str(monday.date()),
+            week_end=str((monday + pd.Timedelta(days=4)).date()),
+            max_price="2000",
+            avg_price=f"{price},000000",
+            sector=sector,
+        )
+        for monday, price in zip(mondays, weekly_prices)
+        for sector in ("Santiago", "Ñuñoa")
+    ]
     replace_raw_rows(raw_connection, etl.SOURCE_CONSUMER, raw_rows)
     etl.run_etl(raw_connection, connection)
     connection.close()

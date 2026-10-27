@@ -1,4 +1,5 @@
 """Tests for the content of the project page (T-43): documents, SQL, files, examples."""
+
 import re
 import subprocess
 import sys
@@ -11,8 +12,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import project, queries  # noqa: E402
 
-needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(),
-                                    reason="etl/datos.db has not been built")
+needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.db has not been built")
 
 
 # region Documents
@@ -24,10 +24,10 @@ def test_markdown_table_keeps_escaped_pipes_inside_a_cell():
 def test_project_guide_explains_every_rule_indicator_and_table():
     rules = {row["Regla"] for row in project.read_guide_table("Reglas de calidad")}
     assert rules == {f"RN-{number:02d}" for number in range(1, 15)}
-    assert {row["KPI"] for row in project.read_guide_table("KPI")} == {
-        f"K{number}" for number in range(1, 9)}
-    definitions = project.parse_definitions(project.read_section(
-        project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos"))
+    assert {row["KPI"] for row in project.read_guide_table("KPI")} == {f"K{number}" for number in range(1, 9)}
+    definitions = project.parse_definitions(
+        project.read_section(project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos")
+    )
     assert set(definitions) == set(project.TABLE_NAMES)
 
 
@@ -40,9 +40,13 @@ def test_project_guide_explains_every_rule_indicator_and_table():
 # region Files
 def list_tracked_files():
     """Files Git keeps, including new ones not committed yet but not ignored."""
-    output = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard"],
-                            cwd=project.PROJECT_DIR, capture_output=True, text=True,
-                            check=True).stdout
+    output = subprocess.run(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+        cwd=project.PROJECT_DIR,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
     return output.splitlines()
 
 
@@ -60,31 +64,40 @@ def test_t54_project_links_have_the_agreed_names_and_hide_what_does_not_exist():
     # «Abrir» no longer need repeating on every single link. «Código» is retired
     # (the repo-header strip already opens it) and ODEPA moved to its own sidebar
     # folder, «Fuentes» (D-118).
-    assert names == ["GitHub Actions", "Informes semanales", "Historial de cambios",
-                     "MANUAL", "DECISIONES", "Video", "Post de LinkedIn"]
+    assert names == [
+        "GitHub Actions",
+        "Informes semanales",
+        "Historial de cambios",
+        "MANUAL",
+        "DECISIONES",
+        "Video",
+        "Post de LinkedIn",
+    ]
     for link in project.PROJECT_LINKS:
         assert link["description"] and link["icon"]
     unpublished = {link["name"] for link in project.PROJECT_LINKS if not link["url"]}
     assert unpublished == {"Video", "Post de LinkedIn"}
 
 
-@pytest.mark.parametrize("link", [link for link in project.PROJECT_LINKS if link["url"]],
-                         ids=lambda link: link["name"])
+@pytest.mark.parametrize("link", [link for link in project.PROJECT_LINKS if link["url"]], ids=lambda link: link["name"])
 def test_t54_every_public_link_answers(link):
     try:
-        response = requests.get(link["url"], timeout=20, allow_redirects=True,
-                                headers={"User-Agent": "monitor-precios-tests"})
+        response = requests.get(
+            link["url"], timeout=20, allow_redirects=True, headers={"User-Agent": "monitor-precios-tests"}
+        )
     except requests.ConnectionError:
         pytest.skip("no network")
     assert response.status_code < 400, f"{link['name']}: {response.status_code}"
+
+
 # endregion
 
 
 def test_d054_real_figures_of_the_devops_diagram(tmp_path):
-    (tmp_path / "test_one.py").write_text("x = 1\n\ndef test_a():\n    pass\n\n\n"
-                                          "def test_b():\n    pass\n", encoding="utf-8")
-    (tmp_path / "helper.py").write_text("\ndef test_not_counted():\n    pass\n",
-                                        encoding="utf-8")
+    (tmp_path / "test_one.py").write_text(
+        "x = 1\n\ndef test_a():\n    pass\n\n\ndef test_b():\n    pass\n", encoding="utf-8"
+    )
+    (tmp_path / "helper.py").write_text("\ndef test_not_counted():\n    pass\n", encoding="utf-8")
     assert project.count_test_functions(tmp_path) == 2
     sized = tmp_path / "datos.db"
     sized.write_bytes(b"0" * 33_900_000)

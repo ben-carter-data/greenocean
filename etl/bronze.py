@@ -5,6 +5,7 @@ this module copies its two tables to Parquet, one file per source and year, so t
 dbt project reads a standard data-lake format that any warehouse can read too.
 Columns and types are those of raw.db: nothing is cleaned here.
 """
+
 import sqlite3
 import sys
 from pathlib import Path
@@ -30,8 +31,7 @@ def export_source(connection, source, bronze_dir=BRONZE_DIR):
         cursor = connection.execute(f"SELECT * FROM {table} WHERE file_year = ? ORDER BY rowid", (year,))
         rows = cursor.fetchall()
         # file_year is the partition key; every other column stays text, as in raw.db.
-        data = {column: [row[index] for row in rows] for index, column in enumerate(columns)
-                if column != "file_year"}
+        data = {column: [row[index] for row in rows] for index, column in enumerate(columns) if column != "file_year"}
         schema = pa.schema([(column, pa.string()) for column in data])
         folder = bronze_dir / BRONZE_TABLES[source] / f"file_year={year}"
         folder.mkdir(parents=True, exist_ok=True)

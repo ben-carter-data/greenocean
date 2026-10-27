@@ -1,4 +1,5 @@
 """Diagrams of the PRD and the SAD (bi/doc_diagrams.py) and the markers that place them."""
+
 import re
 from pathlib import Path
 
@@ -41,8 +42,10 @@ def test_d205_each_view_is_one_html_document_without_script(name, mode):
 
 def graph_lines(page):
     """The lines of an icon diagram (D-297), as lists of points."""
-    return [[tuple(map(float, point.split())) for point in d[1:].split(" L")]
-            for d in re.findall(r'<path d="(M[\d. L]+)" fill="none"', page)]
+    return [
+        [tuple(map(float, point.split())) for point in d[1:].split(" L")]
+        for d in re.findall(r'<path d="(M[\d. L]+)" fill="none"', page)
+    ]
 
 
 def plain(page):
@@ -63,7 +66,9 @@ def test_d297_the_context_view_is_the_system_with_its_people_and_external_system
     page = doc_diagrams.DOC_DIAGRAMS["contexto"](charts.MODE_DARK)
     for name in ("GreenOcean", "ODEPA", "INE", "GitHub", "Streamlit Community Cloud", "Visitante", "Administrador"):
         assert f">{name}<" in page, name
-    assert "Python, SQLite, Parquet, dbt, DuckDB y Streamlit" in plain(page)  # the tools it is built with, in the order of the pipeline
+    assert "Python, SQLite, Parquet, dbt, DuckDB y Streamlit" in plain(
+        page
+    )  # the tools it is built with, in the order of the pipeline
     assert 'class="box"' not in page and 'class="system"' not in page  # no boxes, no cards
     assert len(graph_lines(page)) == 6
     assert_right_angles(page)
@@ -72,7 +77,10 @@ def test_d297_the_context_view_is_the_system_with_its_people_and_external_system
 def test_d210_the_weak_views_are_gone():
     # D-289: the figures of bi/doc_figures.py joined the views; nothing else is a document diagram.
     from bi import doc_figures
-    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups", "sop", "pruebas"} | set(doc_figures.FIGURES)
+
+    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups", "sop", "pruebas"} | set(
+        doc_figures.FIGURES
+    )
 
 
 def test_doc_diagrams_does_not_depend_on_streamlit():
@@ -83,6 +91,7 @@ def test_doc_diagrams_does_not_depend_on_streamlit():
 
 def test_d297_the_containers_view_is_c4_level_2_with_real_files_and_right_angle_links():
     from pathlib import Path
+
     root = Path(__file__).resolve().parent.parent
     page = doc_diagrams.DOC_DIAGRAMS["contenedores"](charts.MODE_DARK)
     for name in ("Carga semanal", "Panel web", "Base servida", "Respaldo", "Archivos de trabajo"):
@@ -95,6 +104,7 @@ def test_d297_the_containers_view_is_c4_level_2_with_real_files_and_right_angle_
 
 def test_d247_every_view_a_document_links_to_is_a_page_of_the_menu():
     from bi import dashboard
+
     for name in DOCUMENTS:
         text = (DOCS_DIR / name).read_text(encoding="utf-8")
         for label in re.findall(r"\[\[vista:([^\]]+)\]\]", text):
@@ -103,6 +113,7 @@ def test_d247_every_view_a_document_links_to_is_a_page_of_the_menu():
 
 def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architecture_uses_them():
     from bi import security_map, security_plan
+
     root = Path(__file__).resolve().parent.parent
     text = (DOCS_DIR / "PLAN_PRUEBAS.md").read_text(encoding="utf-8")
     assert [case[0] for case in security_plan.CASES] == [f"S-{n:02d}" for n in range(1, 11)]
@@ -111,7 +122,9 @@ def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architectu
         assert tests, case_id
         for reference in tests:
             path, name = reference.split("::")
-            assert re.search(rf"^def {re.escape(name)}\(", (root / path).read_text(encoding="utf-8"), re.MULTILINE), reference
+            assert re.search(rf"^def {re.escape(name)}\(", (root / path).read_text(encoding="utf-8"), re.MULTILINE), (
+                reference
+            )
     cases = {case[0] for case in security_plan.CASES}
     for threat in security_map.THREATS:
         assert set(threat[4]) <= cases, threat[0]
@@ -121,6 +134,7 @@ def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architectu
 
 def test_d258_the_ten_cases_open_their_attack_result_owasp_threat_and_test():
     from bi import security_plan
+
     page = doc_diagrams.DOC_DIAGRAMS["pruebas"](charts.MODE_DARK)
     for case_id, short, attack, expected, owasp, tests in security_plan.CASES:
         assert f'href="#c-{case_id}"' in page and f'id="c-{case_id}"' in page, case_id
@@ -137,13 +151,16 @@ def test_d297_the_procedure_is_a_cycle_of_five_steps_and_says_that_ci_warns_but_
     page = doc_diagrams.DOC_DIAGRAMS["sop"](charts.MODE_DARK)
     for step in ("1 · Preparar", "2 · Ejecutar", "3 · Comprobar", "4 · Registrar", "5 · Decidir"):
         assert f">{step}<" in page, step
-    assert "falla: se corrige y se repite desde el 2" in plain(page) and "pasa: el cambio queda verificado" in plain(page)
+    assert "falla: se corrige y se repite desde el 2" in plain(page) and "pasa: el cambio queda verificado" in plain(
+        page
+    )
     assert "no detiene la publicación de main" in page and "<script" not in page
     assert_right_angles(page)
 
 
 def test_d260_each_case_shows_the_logo_of_its_technology_and_every_line_turns_at_right_angles():
     from bi import security_plan
+
     page = doc_diagrams.DOC_DIAGRAMS["pruebas"](charts.MODE_DARK)
     assert set(security_plan.TECH) == set(security_plan.CASE_PLACES) == {case[0] for case in security_plan.CASES}
     for case_id, tech in security_plan.TECH.items():
@@ -153,7 +170,9 @@ def test_d260_each_case_shows_the_logo_of_its_technology_and_every_line_turns_at
     assert page.count('<circle class="node"') == 10
     # no diagonal: every line of the diagram moves only horizontally or vertically
     assert "<line " not in page
-    lines = re.findall(r'<path d="(M[^"]*)" fill="none" stroke="[^"]*" stroke-width="[\d.]+"[^>]*stroke-linejoin="miter"', page)
+    lines = re.findall(
+        r'<path d="(M[^"]*)" fill="none" stroke="[^"]*" stroke-width="[\d.]+"[^>]*stroke-linejoin="miter"', page
+    )
     assert lines
     for d in lines:
         assert re.fullmatch(r"M[\d.]+ [\d.]+( [HV][\d.]+)+", d), d
@@ -180,7 +199,7 @@ def filled_canvas_rects(page):
                 size = float(attributes.get("width", 0)), float(attributes.get("height", 0))
             except ValueError:
                 continue
-            if fill not in ("none", "transparent") and size[0] >= .95 * width and size[1] >= .95 * height:
+            if fill not in ("none", "transparent") and size[0] >= 0.95 * width and size[1] >= 0.95 * height:
                 found.append(rect.group(0))
     return found
 
@@ -209,6 +228,7 @@ def test_d280_the_logo_files_have_no_background():
 
 def test_d280_the_pdf_is_a_white_sheet_in_every_theme():
     from bi import dashboard
+
     for theme in charts.THEMES:
         button = dashboard.build_print_button_html(theme)
         light = dashboard.PRINT_THEME if dashboard.is_dark_theme(theme) else ""
@@ -225,7 +245,9 @@ def test_d280_on_paper_the_diagrams_have_no_shadows():
 
 def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
     page = doc_diagrams.DOC_DIAGRAMS["mockups"](charts.MODE_DARK)
-    assert page.count("data:image/jpeg;base64,") == len(doc_views.MOCKUPS) == 6  # D-299: the dashboard and the pipeline too
+    assert (
+        page.count("data:image/jpeg;base64,") == len(doc_views.MOCKUPS) == 6
+    )  # D-299: the dashboard and the pipeline too
     # D-248: one capture per theme the panel offers today, retaken from the current pages.
     assert set(charts.THEMES) == {word for row in doc_views.MOCKUPS for word in charts.THEMES if word in row[2]}
     for file_name, *_ in doc_views.MOCKUPS:
@@ -233,6 +255,7 @@ def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
     # D-269: each capture is a main page of the menu at the desktop size, one per profile of the PRD.
     from PIL import Image
     from bi import dashboard
+
     menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
     for file_name, title, _ in doc_views.MOCKUPS:
         assert title.split(" · ", 1)[1] in menu, title

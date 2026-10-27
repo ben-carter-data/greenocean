@@ -1,50 +1,71 @@
-import re
 """Data fidelity and SVG geometry of the approved initial-screen mockup."""
+
+import re
 from pathlib import Path
 import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 from bi import dashboard, home_mockup, queries
 
-ROOT=Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_table_uses_real_predecessor_and_escapes_labels():
-    row=dict(product='<script>',variety='Gala',quality='Primera',channel='Feria',normalized_unit='kilo',
-             national_price=1500.,variation=.5,_previous_price=1000.,change_amount=500.)
-    markup=home_mockup.table([row],lambda r:'./',lambda r:'./?a=1&b=2')
+    row = dict(
+        product='<script>',
+        variety='Gala',
+        quality='Primera',
+        channel='Feria',
+        normalized_unit='kilo',
+        national_price=1500.0,
+        variation=0.5,
+        _previous_price=1000.0,
+        change_amount=500.0,
+    )
+    markup = home_mockup.table([row], lambda r: './', lambda r: './?a=1&b=2')
     assert '&lt;script&gt;' in markup and '<script>' not in markup
     assert '$1.000' in markup and '$1.500' in markup and '▲ +50,0 %' in markup
     assert '+$500' in markup and 'por kilo' in markup and 'Calidad: Primera' in markup
-    row['variation']=0
-    assert 'class="neutral"' in home_mockup.table([row],lambda r:'./',lambda r:'./')
+    row['variation'] = 0
+    assert 'class="neutral"' in home_mockup.table([row], lambda r: './', lambda r: './')
 
 
 def test_comparison_keeps_missing_and_zero_predecessors_out_of_ranking():
-    keys=['product','variety','quality','normalized_unit','channel']
-    common=dict(variety='Gala',quality='Primera',normalized_unit='kilo',channel='Feria libre')
-    current=pd.DataFrame([dict(common,product=p,national_price=120.) for p in ['A','B','C']])
-    previous=pd.DataFrame([dict(common,product='A',national_price=100.),dict(common,product='B',national_price=0.)])
-    rows=home_mockup.compare_week(current,previous,keys).assign(is_alert=False,_severity=0.)
+    keys = ['product', 'variety', 'quality', 'normalized_unit', 'channel']
+    common = dict(variety='Gala', quality='Primera', normalized_unit='kilo', channel='Feria libre')
+    current = pd.DataFrame([dict(common, product=p, national_price=120.0) for p in ['A', 'B', 'C']])
+    previous = pd.DataFrame(
+        [dict(common, product='A', national_price=100.0), dict(common, product='B', national_price=0.0)]
+    )
+    rows = home_mockup.compare_week(current, previous, keys).assign(is_alert=False, _severity=0.0)
     assert rows.iloc[0].change_amount == 20
-    assert rows.iloc[0].variation == pytest.approx(.2)
+    assert rows.iloc[0].variation == pytest.approx(0.2)
     assert rows.iloc[1:].variation.isna().all()
     assert rows.iloc[1:].change_amount.isna().all()
-    assert home_mockup.order_movements(rows,8,'Mayores cambios')['product'].tolist()==['A']
-    markup=home_mockup.table(rows.to_dict('records'),lambda r:'./',lambda r:'./')
-    assert markup.count('Sin comparación')==4
+    assert home_mockup.order_movements(rows, 8, 'Mayores cambios')['product'].tolist() == ['A']
+    markup = home_mockup.table(rows.to_dict('records'), lambda r: './', lambda r: './')
+    assert markup.count('Sin comparación') == 4
     assert 'nan' not in markup and 'inf' not in markup
-    assert home_mockup.previous_price({'national_price':120.,'variation':.2}) is None
+    assert home_mockup.previous_price({'national_price': 120.0, 'variation': 0.2}) is None
 
 
 def test_ranking_orders_severity_and_breaks_ties_without_duplicates():
-    common=dict(variety='Gala',quality='Primera',normalized_unit='kilo',channel='Feria libre')
-    rows=pd.DataFrame([dict(common,product=p,variation=v,is_alert=a,_severity=s)
-        for p,v,a,s in [('B',.2,True,3.),('A',.2,True,5.),('C',-.3,False,0.),('D',0.,False,0.)]])
-    assert home_mockup.order_movements(rows,8,'Mayores cambios')['product'].tolist()==['C','A','B','D']
-    assert home_mockup.order_movements(rows,8,'Subidas')['product'].tolist()==['A','B']
-    assert home_mockup.order_movements(rows,8,'Bajadas')['product'].tolist()==['C']
-    assert home_mockup.order_movements(rows,8,'Inusuales')['product'].tolist()==['A','B']
+    common = dict(variety='Gala', quality='Primera', normalized_unit='kilo', channel='Feria libre')
+    rows = pd.DataFrame(
+        [
+            dict(common, product=p, variation=v, is_alert=a, _severity=s)
+            for p, v, a, s in [
+                ('B', 0.2, True, 3.0),
+                ('A', 0.2, True, 5.0),
+                ('C', -0.3, False, 0.0),
+                ('D', 0.0, False, 0.0),
+            ]
+        ]
+    )
+    assert home_mockup.order_movements(rows, 8, 'Mayores cambios')['product'].tolist() == ['C', 'A', 'B', 'D']
+    assert home_mockup.order_movements(rows, 8, 'Subidas')['product'].tolist() == ['A', 'B']
+    assert home_mockup.order_movements(rows, 8, 'Bajadas')['product'].tolist() == ['C']
+    assert home_mockup.order_movements(rows, 8, 'Inusuales')['product'].tolist() == ['A', 'B']
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
@@ -59,16 +80,21 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
     assert table['N.º'].tolist() == list(range(1, len(rows) + 1))
     assert {'Nivel', 'Familia', 'Producto', 'Canal', 'Unidad', 'Anterior', 'Actual', 'Cambio'} <= set(table)
     assert set(table['Nivel']) <= {'Muy alta', 'Alta', 'Moderada'}
-    styled = dashboard.style_home_alert_table(pd.DataFrame({
-        'Nivel': ['Muy alta', 'Alta', 'Moderada'],
-        'Cambio': ['+1,0 %', '−1,0 %', '0,0 %'],
-    }), dashboard.charts.MODE_DARK).to_html()
+    styled = dashboard.style_home_alert_table(
+        pd.DataFrame(
+            {
+                'Nivel': ['Muy alta', 'Alta', 'Moderada'],
+                'Cambio': ['+1,0 %', '−1,0 %', '0,0 %'],
+            }
+        ),
+        dashboard.charts.MODE_DARK,
+    ).to_html()
     assert '#7f1d1d' in styled and '#9a3412' in styled and '#78450a' in styled
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
 def test_alert_button_opens_family_overview_without_leaving_dashboard():
-    app = AppTest.from_file(ROOT/'bi/dashboard.py', default_timeout=60)
+    app = AppTest.from_file(ROOT / 'bi/dashboard.py', default_timeout=60)
     app.query_params['perfil'] = 'profesional'
     app.run()
     assert not app.exception
@@ -78,10 +104,13 @@ def test_alert_button_opens_family_overview_without_leaving_dashboard():
     assert not app.exception
     week = dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]
     alert_rows = dashboard.home_alert_rows(week, dashboard.ALL_VALUES)
-    assert len([button for button in app.button if str(button.key).startswith('home_alert_family_')]) == alert_rows['product_group'].nunique()
+    assert (
+        len([button for button in app.button if str(button.key).startswith('home_alert_family_')])
+        == alert_rows['product_group'].nunique()
+    )
     assert not app.dataframe
     assert not app.expander
-    assert 'ALERTA DE PRECIO' in (ROOT/'bi/assets/alert-price.svg').read_text()
+    assert 'ALERTA DE PRECIO' in (ROOT / 'bi/assets/alert-price.svg').read_text()
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
@@ -97,13 +126,12 @@ dashboard.show_home_alerts_dialog(
     app = AppTest.from_string(script, default_timeout=60).run()
     assert not app.exception
     assert app.button(key='home_alert_back')
-    assert len([box for box in app.selectbox
-                if str(box.key).startswith('home_alert_unit_')]) == 1
+    assert len([box for box in app.selectbox if str(box.key).startswith('home_alert_unit_')]) == 1
     assert app.dataframe
 
 
 def test_d096_sidebar_footer_shows_the_real_alert_count():
-    app = AppTest.from_file(ROOT/'bi/dashboard.py', default_timeout=60)
+    app = AppTest.from_file(ROOT / 'bi/dashboard.py', default_timeout=60)
     app.run()
     assert not app.exception
     button = app.button(key='home_alert_trigger')
@@ -119,30 +147,55 @@ def test_d096_sidebar_footer_shows_the_real_alert_count():
 
 
 def test_regional_summary_counts_equivalent_prices_and_uses_a_display_threshold():
-    keys = dict(product_group='Frutas', variety='Gala', quality='Primera',
-                normalized_unit='kilo', channel='Feria libre')
-    current = pd.DataFrame([
-        dict(keys, product='A', region='Región de Coquimbo', price=110.0),
-        dict(keys, product='B', region='Región de Coquimbo', price=99.98),
-        dict(keys, product='C', region='Región de Coquimbo', price=80.0),
-        dict(keys, product='D', region='Región de Coquimbo', price=130.0),
-    ])
-    previous = pd.DataFrame([
-        dict(keys, product='A', region='Región de Coquimbo', price=100.0),
-        dict(keys, product='B', region='Región de Coquimbo', price=100.0),
-        dict(keys, product='C', region='Región de Coquimbo', price=100.0),
-    ])
+    keys = dict(
+        product_group='Frutas', variety='Gala', quality='Primera', normalized_unit='kilo', channel='Feria libre'
+    )
+    current = pd.DataFrame(
+        [
+            dict(keys, product='A', region='Región de Coquimbo', price=110.0),
+            dict(keys, product='B', region='Región de Coquimbo', price=99.98),
+            dict(keys, product='C', region='Región de Coquimbo', price=80.0),
+            dict(keys, product='D', region='Región de Coquimbo', price=130.0),
+        ]
+    )
+    previous = pd.DataFrame(
+        [
+            dict(keys, product='A', region='Región de Coquimbo', price=100.0),
+            dict(keys, product='B', region='Región de Coquimbo', price=100.0),
+            dict(keys, product='C', region='Región de Coquimbo', price=100.0),
+        ]
+    )
     rows = dashboard.build_regional_movement_model(current, previous)
-    assert rows == [{'region': 'Región de Coquimbo', 'state': 'mixed', 'share': pytest.approx(100 / 3),
-                     'up': 1, 'down': 1, 'stable': 1, 'total': 3, 'missing': 1}]
+    assert rows == [
+        {
+            'region': 'Región de Coquimbo',
+            'state': 'mixed',
+            'share': pytest.approx(100 / 3),
+            'up': 1,
+            'down': 1,
+            'stable': 1,
+            'total': 3,
+            'missing': 1,
+        }
+    ]
 
 
 def test_regional_map_keeps_the_surface_minimal_and_exact_counts_in_the_hint():
-    rows = [{'region': 'Región de Coquimbo', 'state': 'fall', 'share': 62.0,
-             'up': 42, 'down': 91, 'stable': 13, 'total': 146, 'missing': 4}]
+    rows = [
+        {
+            'region': 'Región de Coquimbo',
+            'state': 'fall',
+            'share': 62.0,
+            'up': 42,
+            'down': 91,
+            'stable': 13,
+            'total': 146,
+            'missing': 4,
+        }
+    ]
     markup = home_mockup.regional_map(
-        rows, lambda region: '/dashboard?_home_region=' + str(region),
-        '05-10-2026', '28-09-2026', 'Región de Coquimbo')
+        rows, lambda region: '/dashboard?_home_region=' + str(region), '05-10-2026', '28-09-2026', 'Región de Coquimbo'
+    )
     assert markup.count('mock-region-shape ') == 16
     assert markup.count('<a class="mock-region-row ') == 16
     assert '62 % ↓' in markup
@@ -168,15 +221,25 @@ def _inside(x, y, path):
 def _cross(a, b, c, d):
     def side(p, q, r):
         return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+
     return side(a, b, c) * side(a, b, d) < 0 and side(c, d, a) * side(c, d, b) < 0
 
 
 def test_d092_each_line_starts_inside_its_region_and_no_two_lines_cross():
     markup = home_mockup.regional_map([], lambda region: '#' + str(region), '05-10-2026', '28-09-2026')
-    shapes = dict(re.findall(r'<a href="#([^"]+)" target="_self" aria-label="[^"]*"><path class="mock-region-shape '
-                             r'[^"]*" d="([^"]+)"', markup))
-    rows = re.findall(r'<a class="mock-region-row [^"]*" href="#([^"]+)".*?class="mock-region-leader" '
-                      r'd="M([\d.]+),([\d.]+)L([\d.]+),([\d.]+)".*?class="mock-region-name"[^>]*>([^<]+)<', markup, re.S)
+    shapes = dict(
+        re.findall(
+            r'<a href="#([^"]+)" target="_self" aria-label="[^"]*"><path class="mock-region-shape '
+            r'[^"]*" d="([^"]+)"',
+            markup,
+        )
+    )
+    rows = re.findall(
+        r'<a class="mock-region-row [^"]*" href="#([^"]+)".*?class="mock-region-leader" '
+        r'd="M([\d.]+),([\d.]+)L([\d.]+),([\d.]+)".*?class="mock-region-name"[^>]*>([^<]+)<',
+        markup,
+        re.S,
+    )
     assert len(shapes) == len(rows) == 16
     lines = []
     for region, x1, y1, x2, y2, name in rows:
@@ -199,8 +262,11 @@ def test_d092_map_keeps_the_real_proportions_of_chile():
 
 
 def test_d092_family_movement_marks_the_selection_and_scales_from_zero():
-    rows = [{'product_group': 'Frutas', 'variation': .02}, {'product_group': 'Frutas', 'variation': .04},
-            {'product_group': 'Pan', 'variation': -.01}]
+    rows = [
+        {'product_group': 'Frutas', 'variation': 0.02},
+        {'product_group': 'Frutas', 'variation': 0.04},
+        {'product_group': 'Pan', 'variation': -0.01},
+    ]
     markup = home_mockup.family_movement(rows, lambda family: '#' + family, 'Frutas', 'todo Chile')
     assert markup.index('Frutas') < markup.index('Pan')
     assert '<a class="mock-movement-row rise selected" href="#Frutas"' in markup
@@ -210,7 +276,7 @@ def test_d092_family_movement_marks_the_selection_and_scales_from_zero():
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
 def test_d092_region_and_family_clicks_fill_the_products_table():
-    app = AppTest.from_file(ROOT/'bi/dashboard.py', default_timeout=60)
+    app = AppTest.from_file(ROOT / 'bi/dashboard.py', default_timeout=60)
     app.query_params['_home_region'] = 'Región de Coquimbo'
     app.query_params['_home_week'] = '2026-10-05'
     app.query_params['familia'] = 'Frutas'
@@ -231,9 +297,9 @@ def test_d092_region_and_family_clicks_fill_the_products_table():
     assert values == sorted(values)
 
 
-@pytest.mark.skipif(not queries.DATABASE_FILE.exists(),reason='Requires real database')
+@pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
 def test_home_model_matches_independent_weekly_prices_and_region_selection():
-    script=f'''import sys
+    script = f'''import sys
 sys.path.insert(0,{str(ROOT)!r})
 import streamlit as st
 from bi import dashboard
@@ -242,47 +308,60 @@ st.session_state['model']=dashboard.read_home_model(week,dashboard.ALL_VALUES,da
 st.session_state['regional']=dashboard.read_home_model(week,dashboard.ALL_VALUES,'Región de Coquimbo',8)
 st.session_state['week']=week
 '''
-    app=AppTest.from_string(script,default_timeout=60).run()
+    app = AppTest.from_string(script, default_timeout=60).run()
     assert not app.exception
-    model=app.session_state['model']; week=app.session_state['week']
+    model = app.session_state['model']
+    week = app.session_state['week']
     # D-144: the national change averages only the regions with a price in both weeks.
-    sql='''SELECT AVG(a.price) AS current_price, AVG(b.price) AS previous_price
+    sql = '''SELECT AVG(a.price) AS current_price, AVG(b.price) AS previous_price
     FROM weekly_price a JOIN weekly_price b
     ON b.product_id=a.product_id AND b.channel_id=a.channel_id AND b.normalized_unit=a.normalized_unit
     AND b.region_id=a.region_id AND b.week_start=strftime(CAST(a.week_start AS DATE) - 7, '%Y-%m-%d')
     WHERE a.week_start=? AND a.flag IS NULL AND b.flag IS NULL
     GROUP BY a.product_id, a.channel_id, a.normalized_unit'''
-    oracle=queries.run_sql(sql,parameters=[week])
-    variation=oracle.current_price/oracle.previous_price-1
-    assert model['counts']==[int((variation>0).sum()),int((variation<0).sum()),int((variation==0).sum())]
+    oracle = queries.run_sql(sql, parameters=[week])
+    variation = oracle.current_price / oracle.previous_price - 1
+    assert model['counts'] == [int((variation > 0).sum()), int((variation < 0).sum()), int((variation == 0).sum())]
     # D-153: prices shown are each week's national price; when the regions are the same in
     # both weeks they reproduce the change exactly, otherwise the row says so.
     for row in model['rows']:
         if not row['_coverage_changed']:
-            assert row['national_price']/row['_previous_price']-1==pytest.approx(row['variation'])
-            assert row['change_amount']==pytest.approx(row['national_price']-row['_previous_price'])
-    region=app.session_state['regional']
-    assert all(row['region']=='Región de Coquimbo' for row in region['rows'])
+            assert row['national_price'] / row['_previous_price'] - 1 == pytest.approx(row['variation'])
+            assert row['change_amount'] == pytest.approx(row['national_price'] - row['_previous_price'])
+    region = app.session_state['regional']
+    assert all(row['region'] == 'Región de Coquimbo' for row in region['rows'])
     for row in region['rows']:
-        assert row['national_price']/row['_previous_price']-1==pytest.approx(row['variation'])
-        independent=queries.run_sql('''SELECT w.price FROM weekly_price w JOIN dim_product p USING(product_id)
+        assert row['national_price'] / row['_previous_price'] - 1 == pytest.approx(row['variation'])
+        independent = queries.run_sql(
+            '''SELECT w.price FROM weekly_price w JOIN dim_product p USING(product_id)
             JOIN dim_region r USING(region_id) JOIN dim_channel c USING(channel_id)
             WHERE w.flag IS NULL AND week_start=? AND p.product_group=? AND p.product=?
             AND p.variety=? AND p.quality=? AND w.normalized_unit=? AND c.channel=? AND r.region=?''',
-            parameters=[week]+[row[k] for k in queries.KEY_COLUMNS+['channel','region']])
-        assert independent.price.iloc[0]==pytest.approx(row['national_price'])
+            parameters=[week] + [row[k] for k in queries.KEY_COLUMNS + ['channel', 'region']],
+        )
+        assert independent.price.iloc[0] == pytest.approx(row['national_price'])
         assert not row['is_alert']  # national alerts are never relabelled regional
-    assert model['selected']==model['rows'][0]
-    assert model['missing']==model['available']-sum(model['counts'])
-    assert model['history'].week_start.max()<=pd.Timestamp(week)
-    assert model['history'].week_start.min()>=pd.Timestamp(week)-pd.Timedelta(weeks=11)
+    assert model['selected'] == model['rows'][0]
+    assert model['missing'] == model['available'] - sum(model['counts'])
+    assert model['history'].week_start.max() <= pd.Timestamp(week)
+    assert model['history'].week_start.min() >= pd.Timestamp(week) - pd.Timedelta(weeks=11)
 
 
 def test_d304_the_regions_column_says_which_regions_on_hover():
-    row = {'variation': .08, 'quality': 'Primera', 'normalized_unit': 'kilo', 'channel': 'Supermercado', 'national_price': 100.0,
-           'product': 'Osobuco', 'variety': 'Sin especificar', 'product_group': 'Carne bovina',
-           '_regions': (2, 1, [('Maule', 12.0), ('Ñuble', 4.0), ('Biobío', -3.0)])}
+    row = {
+        'variation': 0.08,
+        'quality': 'Primera',
+        'normalized_unit': 'kilo',
+        'channel': 'Supermercado',
+        'national_price': 100.0,
+        'product': 'Osobuco',
+        'variety': 'Sin especificar',
+        'product_group': 'Carne bovina',
+        '_regions': (2, 1, [('Maule', 12.0), ('Ñuble', 4.0), ('Biobío', -3.0)]),
+    }
     page = home_mockup.products_table([row], '12-10-2026', '05-10-2026', selected='Región del Maule')
     assert '<b class="rise">2 ↑</b> / <b class="fall">1 ↓</b>' in page
-    assert page.count('<li class="') == 3 and '<li class="rise chosen"><span>Maule</span>' in page  # the chosen region is marked
+    assert (
+        page.count('<li class="') == 3 and '<li class="rise chosen"><span>Maule</span>' in page
+    )  # the chosen region is marked
     assert '<li class="fall"><span>Biobío</span>' in page

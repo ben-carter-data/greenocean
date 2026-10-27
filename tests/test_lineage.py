@@ -1,4 +1,5 @@
 """The dbt lineage is the zoom of the journey: every model explained by dbt, its graph\nencoded for LINEAGE_SCRIPT (hover follows inputs and outputs, a click pins them)."""
+
 import re
 import shutil
 import subprocess
@@ -29,8 +30,9 @@ def test_every_model_and_source_is_described_in_dbt(build):
     nodes, _ = build
     drawn = drawn_nodes(nodes)
     assert len(drawn) == 19
-    assert all(description.strip() for description in drawn["description"]), \
-        drawn[drawn["description"].str.strip() == ""]["name"].tolist()
+    assert all(description.strip() for description in drawn["description"]), drawn[
+        drawn["description"].str.strip() == ""
+    ]["name"].tolist()
     assert not any("robot" in description.lower() for description in drawn["description"])
 
 
@@ -58,8 +60,9 @@ def test_the_marts_flow_into_the_journey_gold_node(build):
     gold = next(element for element in root.iter() if tag(element) == "text" and element.text == "datos.duckdb")
     assert nearest_title(gold, parents)[0] == architecture.TOOLTIPS["datos.duckdb"]
     marts = set(nodes[nodes["layer"] == "marts"]["unique_id"])
-    into_gold = {edge.get("data-from") for edge in root.iter()
-                 if tag(edge) == "path" and edge.get("data-to") == lineage.GOLD_ID}
+    into_gold = {
+        edge.get("data-from") for edge in root.iter() if tag(edge) == "path" and edge.get("data-to") == lineage.GOLD_ID
+    }
     assert into_gold == marts  # one link from each mart into the gold tile
     summary = lineage.summarize_build(nodes, results)
     assert f"{summary['passing']}/{summary['tests']} pruebas" in svg and "capa oro · modelo estrella" in svg
@@ -110,8 +113,9 @@ def test_layout_subtitle_headers_and_legend(build):
         assert all(spans[key][0] < lineage.COLUMN_X[column] < spans[key][1] for column in columns)
     assert spans["bronze"][1] < spans["silver"][0] and spans["silver"][1] < spans["gold"][0]
     summary = lineage.summarize_build(nodes, results)
-    assert (f"staging → intermedio → marts · {summary['models']} modelos · "
-            f"{summary['passing']}/{summary['tests']} pruebas") in svg
+    assert (
+        f"staging → intermedio → marts · {summary['models']} modelos · {summary['passing']}/{summary['tests']} pruebas"
+    ) in svg
     for label in ["Pruebas superadas", "Dependencia (seleccionada)", "Fuera de la selección", lineage.HINT]:
         assert f">{label}</text>" in svg
     assert "lin-flow" in svg and "prefers-reduced-motion" in svg
@@ -127,14 +131,14 @@ def test_nodes_do_not_overlap(build):
             boxes.append((group.get("data-node"), *(float(hit.get(key)) for key in ("x", "y", "width", "height"))))
     for index, (name, x, y, w, h) in enumerate(boxes):
         assert 0 <= x and x + w <= lineage.WIDTH and y + h <= lineage.LEGEND_Y - 16, name
-        for other, x2, y2, w2, h2 in boxes[index + 1:]:
+        for other, x2, y2, w2, h2 in boxes[index + 1 :]:
             assert x + w <= x2 or x2 + w2 <= x or y + h <= y2 or y2 + h2 <= y, (name, other)
 
 
 def test_lineage_script_is_one_valid_script_without_markup():
     script = lineage.LINEAGE_SCRIPT
     assert script.startswith("<script>") and script.count("<script") == 1
-    body = script[len("<script>"):-len("</script>")]
+    body = script[len("<script>") : -len("</script>")]
     assert not re.search(r"<[a-zA-Z/!]", body)  # st.html drops scripts that look like markup
     assert "window.lineageReady" in body and "MutationObserver" in body
     assert 'svg[aria-label="Linaje dbt: de bronce a marts"]' in body

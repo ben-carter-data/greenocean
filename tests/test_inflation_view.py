@@ -1,4 +1,5 @@
 """Precios e inflación (D-163, D-244): each family's change, recomputed in SQL from the tables (P-4)."""
+
 import pytest
 
 from bi import inflation_view, queries
@@ -7,8 +8,9 @@ needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="
 
 
 def read_page_figures():
-    rows, last = inflation_view.build_family_index(queries.run_sql(inflation_view.SERIES_SQL),
-                                                   queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"))
+    rows, last = inflation_view.build_family_index(
+        queries.run_sql(inflation_view.SERIES_SQL), queries.run_sql("SELECT year, month, food_index FROM ipc_monthly")
+    )
     summary, ipc_total, ipc_year = inflation_view.summarize_families(rows, last)
     return last, summary.set_index("family"), ipc_total
 
@@ -40,9 +42,13 @@ def test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql():
     assert ipc_total == pytest.approx(ipc, abs=1e-9)
     # The verdict follows from the two numbers: more than the IPC when the family rose over 2 points more.
     for family, row in summary.iterrows():
-        expected = ("más que la inflación" if row["total"] - ipc_total > inflation_view.SAME_PACE_POINTS
-                    else "menos que la inflación" if row["total"] - ipc_total < -inflation_view.SAME_PACE_POINTS
-                    else "al ritmo de la inflación")
+        expected = (
+            "más que la inflación"
+            if row["total"] - ipc_total > inflation_view.SAME_PACE_POINTS
+            else "menos que la inflación"
+            if row["total"] - ipc_total < -inflation_view.SAME_PACE_POINTS
+            else "al ritmo de la inflación"
+        )
         assert row["verdict"] == expected, family
 
 
@@ -52,18 +58,26 @@ def test_d294_the_enlarged_family_labels_its_ends_marks_its_peak_and_reads_any_m
     """The numbers on the enlarged chart are values of the drawn series: the last value of each line, the peak that the
     reading beside it names, and, under the cursor, both values of the month and their difference."""
     from bi import charts
-    rows, last = inflation_view.build_family_index(queries.run_sql(inflation_view.SERIES_SQL),
-                                                   queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"))
+
+    rows, last = inflation_view.build_family_index(
+        queries.run_sql(inflation_view.SERIES_SQL), queries.run_sql("SELECT year, month, food_index FROM ipc_monthly")
+    )
     value = "real" if real else "index"
     family = rows.loc[rows["product_group"] != inflation_view.IPC_NAME, "product_group"].iloc[0]
     spec = inflation_view.draw_family_focus(rows, family, charts.THEMES[0], real=real).to_dict()
     layers = spec["layer"]
-    texts = [layer for layer in layers if (layer["mark"] if isinstance(layer["mark"], str) else layer["mark"]["type"]) == "text"]
+    texts = [
+        layer
+        for layer in layers
+        if (layer["mark"] if isinstance(layer["mark"], str) else layer["mark"]["type"]) == "text"
+    ]
     datasets = spec["datasets"]
     ends = datasets[texts[0]["data"]["name"]]
     series = rows[rows["product_group"] == family].sort_values("month_start")
     ipc = rows[rows["product_group"] == inflation_view.IPC_NAME].sort_values("month_start")
-    assert sorted(round(row[value], 6) for row in ends) == sorted(round(v, 6) for v in (series[value].iloc[-1], ipc[value].iloc[-1]))
+    assert sorted(round(row[value], 6) for row in ends) == sorted(
+        round(v, 6) for v in (series[value].iloc[-1], ipc[value].iloc[-1])
+    )
     peak = series[value].max()
     if series[value].idxmax() != series.index[-1]:
         assert round(datasets[texts[1]["data"]["name"]][0][value], 6) == round(peak, 6)

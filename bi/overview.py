@@ -9,6 +9,7 @@ Precios e inflación page and Calidad y auditoría never disagree: the weekly ch
 in both weeks (D-144), a family moves by the median of its series, «sin cambio» is below 0.05 % and a family is «al
 ritmo de la inflación» within ±2 points of the CPI. Pure functions: no Streamlit.
 """
+
 import base64
 import html
 import re
@@ -71,9 +72,12 @@ def directions(variations, week, family=None):
     if family:
         rows = rows[rows["product_group"] == family]
     values = rows["variation"]
-    return pd.DataFrame({"direction": ["Subieron", "Bajaron", "Sin cambio"],
-                         "prices": [int((values >= STILL).sum()), int((values <= -STILL).sum()),
-                                    int((values.abs() < STILL).sum())]})
+    return pd.DataFrame(
+        {
+            "direction": ["Subieron", "Bajaron", "Sin cambio"],
+            "prices": [int((values >= STILL).sum()), int((values <= -STILL).sum()), int((values.abs() < STILL).sum())],
+        }
+    )
 
 
 # North to south, by the official number of each region.
@@ -93,22 +97,36 @@ def family_heat(variations, weeks=HEAT_WEEKS):
     frame["family"] = frame["product_group"].map(home_mockup.short_family)
     months = charts.CHILE_LOCALE["time"]["shortMonths"]
     many = len(last) > 8
-    frame["week"] = [f"{w.day}/{w.month}" if many else f"{w.day:02d} {months[w.month - 1].lower()}" for w in frame["week_start"]]
+    frame["week"] = [
+        f"{w.day}/{w.month}" if many else f"{w.day:02d} {months[w.month - 1].lower()}" for w in frame["week_start"]
+    ]
     return frame
 
 
 def ipc_twelve_months(rows):
     """The food CPI's change against the same month a year before, in %, month by month."""
-    ipc = rows[rows["product_group"] == inflation_view.IPC_NAME].sort_values("month_start").set_index("month_start")["index"]
+    ipc = (
+        rows[rows["product_group"] == inflation_view.IPC_NAME]
+        .sort_values("month_start")
+        .set_index("month_start")["index"]
+    )
     frame = ((ipc / ipc.shift(12) - 1) * 100).dropna().rename("change").reset_index()
     return frame
+
+
 # endregion
 
 
 # region Scorecards
 def build_css(palette):
-    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
-                                              palette["card"], palette["card_border"], palette["accent"])
+    ink, text, muted, card, border, accent = (
+        palette["strong_text"],
+        palette["text"],
+        palette["reference"],
+        palette["card"],
+        palette["card_border"],
+        palette["accent"],
+    )
     return f"""<style>
 .ov-scores {{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; margin:0 0 2px; }}
 .ov-score {{ display:flex; flex-direction:column; gap:1px; padding:6px 12px 5px; border-radius:10px; background:{card};
@@ -162,6 +180,8 @@ def build_css(palette):
 .st-key-ov_tabs [data-baseweb="tab"] p {{ font-size:13.5px; font-weight:600; }}
 @media (max-width:1100px) {{ .ov-scores {{ grid-template-columns:repeat(3, minmax(0, 1fr)); }} }}
 </style>"""
+
+
 # endregion
 
 
@@ -176,13 +196,15 @@ def build_heat_table_html(frame, row, column, value, columns, rows, palette, log
     period, each cell tinted by its change (red rises, blue falls, the stronger the darker) and its value written in it.
     On a narrow window the first column stays and the periods scroll."""
     cells = {(r, c): v for r, c, v in zip(frame[row], frame[column], frame[value])}
-    limit = max(1.0, float(frame[value].abs().quantile(.9))) if not frame.empty else 1.0
+    limit = max(1.0, float(frame[value].abs().quantile(0.9))) if not frame.empty else 1.0
     head = "".join(f"<th>{html.escape(str(c))}</th>" for c in columns)
     body = []
     for name in rows:
         picture = (logos or {}).get(name)
         full = next((family for family, short in home_mockup.FAMILY_SHORT_NAMES.items() if short == name), name)
-        label = (f'<img src="{picture}" alt="">' if picture else '<span class="ov-ht-dot"></span>') + f"<span>{html.escape(name)}</span>"
+        label = (
+            f'<img src="{picture}" alt="">' if picture else '<span class="ov-ht-dot"></span>'
+        ) + f"<span>{html.escape(name)}</span>"
         tds = []
         for c in columns:
             v = cells.get((name, c))
@@ -194,8 +216,10 @@ def build_heat_table_html(frame, row, column, value, columns, rows, palette, log
                 continue
             tone = palette["rise"] if v >= STILL * 100 else palette["fall"] if v <= -STILL * 100 else None
             strength = min(1.0, abs(v) / limit)
-            style = f' style="background:color-mix(in srgb, {tone} {12 + strength * 70:.0f}%, transparent)"' if tone else ""
-            strong = " ov-ht-strong" if tone and strength > .6 else ""
+            style = (
+                f' style="background:color-mix(in srgb, {tone} {12 + strength * 70:.0f}%, transparent)"' if tone else ""
+            )
+            strong = " ov-ht-strong" if tone and strength > 0.6 else ""
             number = f"{v:+.1f}".replace(".", ",")
             tds.append(f'<td class="ov-ht-cell{strong}"{style}>{number}</td>')
         if totals is not None:
@@ -205,7 +229,7 @@ def build_heat_table_html(frame, row, column, value, columns, rows, palette, log
         body.append(f'<tr><th scope="row" title="{html.escape(full, quote=True)}">{label}</th>{"".join(tds)}</tr>')
     if totals is not None:
         head += f'<th class="ov-ht-total-head">{html.escape(total_title)}</th>'
-    return (f'<div class="ov-ht" style="--cols:{len(columns) + (totals is not None)}"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>')
+    return f'<div class="ov-ht" style="--cols:{len(columns) + (totals is not None)}"><table><thead><tr><th></th>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
 
 
 def heat_table_css(palette):
@@ -222,7 +246,7 @@ def heat_table_css(palette):
 .ov-ht tbody th img {{ width:20px; height:20px; vertical-align:middle; margin-right:8px; object-fit:contain; }}
 .ov-ht tbody th span {{ vertical-align:middle; }}
 .ov-ht-dot {{ display:inline-block; width:20px; height:20px; margin-right:8px; vertical-align:middle; }}
-.ov-ht td {{ text-align:center; font-size:13px; line-height:1.2; font-variant-numeric:tabular-nums; color:{ink}; 
+.ov-ht td {{ text-align:center; font-size:13px; line-height:1.2; font-variant-numeric:tabular-nums; color:{ink};
   background:color-mix(in srgb, {border} 30%, transparent); padding:0 2px; min-width:54px; }}
 .ov-ht td.ov-ht-strong {{ color:#ffffff; font-weight:600; }}
 .ov-ht td.ov-ht-empty {{ color:{muted}; }}
@@ -238,24 +262,52 @@ def heat_table_css(palette):
 # region Insights (D-302)
 # What the dashboard answers, the KPIs that answer it and why, and the insights of the current load.
 KPIS = [
-    ("Cambio típico", "Mediana de los cambios semanales de los precios comparables: los que tienen precio en las mismas "
-     "regiones ambas semanas.", "La mediana no se mueve por un precio extremo, y comparar las mismas regiones evita "
-     "confundir un cambio de cobertura con un cambio de precio."),
-    ("Subieron y bajaron", "Precios comparables con un cambio de al menos +0,05 % (o −0,05 %), sobre el total de "
-     "comparables.", "Dice si el movimiento es general o de unos pocos productos."),
-    ("Dirección de una región", "Una región sube o baja solo si sus alzas y bajas difieren más de lo que da el azar "
-     "(prueba de signo, p < 0,05).", "Un 52 % contra un 48 % no es una tendencia: es una moneda al aire."),
-    ("Alerta de precio", "Un cambio fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con "
-     "dos cotizaciones en cada semana.", "Separa lo inusual y material del ruido de cada semana."),
-    ("Alza frente al IPC", "Índice de la familia (enero 2022 = 100, mediana de sus series de consumidor) frente al IPC de "
-     "alimentos del INE; ± 2 puntos es «al ritmo».", "Dice si una familia se encareció o se abarató en términos reales."),
-    ("Precio real", "Precio de la semana × IPC del último mes publicado ÷ IPC del mes de esa semana.",
-     "Permite comparar precios de distintos años en pesos de hoy."),
-    ("Brecha consumidor–mayorista", "(Precio al consumidor − precio mayorista) ÷ precio mayorista, mismo producto, "
-     "región, unidad y semana.", "Muestra cuánto se agrega entre el mercado mayorista y la góndola."),
-    ("Calidad de los datos", "11 indicadores en cinco dimensiones (completitud, actualidad, validez, unicidad y "
-     "consistencia) más controles de exactitud.", "Una cifra solo vale si los datos de origen están completos y son "
-     "válidos."),
+    (
+        "Cambio típico",
+        "Mediana de los cambios semanales de los precios comparables: los que tienen precio en las mismas "
+        "regiones ambas semanas.",
+        "La mediana no se mueve por un precio extremo, y comparar las mismas regiones evita "
+        "confundir un cambio de cobertura con un cambio de precio.",
+    ),
+    (
+        "Subieron y bajaron",
+        "Precios comparables con un cambio de al menos +0,05 % (o −0,05 %), sobre el total de comparables.",
+        "Dice si el movimiento es general o de unos pocos productos.",
+    ),
+    (
+        "Dirección de una región",
+        "Una región sube o baja solo si sus alzas y bajas difieren más de lo que da el azar "
+        "(prueba de signo, p < 0,05).",
+        "Un 52 % contra un 48 % no es una tendencia: es una moneda al aire.",
+    ),
+    (
+        "Alerta de precio",
+        "Un cambio fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con "
+        "dos cotizaciones en cada semana.",
+        "Separa lo inusual y material del ruido de cada semana.",
+    ),
+    (
+        "Alza frente al IPC",
+        "Índice de la familia (enero 2022 = 100, mediana de sus series de consumidor) frente al IPC de "
+        "alimentos del INE; ± 2 puntos es «al ritmo».",
+        "Dice si una familia se encareció o se abarató en términos reales.",
+    ),
+    (
+        "Precio real",
+        "Precio de la semana × IPC del último mes publicado ÷ IPC del mes de esa semana.",
+        "Permite comparar precios de distintos años en pesos de hoy.",
+    ),
+    (
+        "Brecha consumidor–mayorista",
+        "(Precio al consumidor − precio mayorista) ÷ precio mayorista, mismo producto, región, unidad y semana.",
+        "Muestra cuánto se agrega entre el mercado mayorista y la góndola.",
+    ),
+    (
+        "Calidad de los datos",
+        "11 indicadores en cinco dimensiones (completitud, actualidad, validez, unicidad y "
+        "consistencia) más controles de exactitud.",
+        "Una cifra solo vale si los datos de origen están completos y son válidos.",
+    ),
 ]
 
 
@@ -271,7 +323,11 @@ def join(names):
 
 def period_totals(heat):
     """Each family's change over the whole period of the weeks table, its weekly medians chained, in %."""
-    return heat.sort_values("week_start").groupby("family")["change"].apply(lambda changes: ((1 + changes / 100).prod() - 1) * 100)
+    return (
+        heat.sort_values("week_start")
+        .groupby("family")["change"]
+        .apply(lambda changes: ((1 + changes / 100).prod() - 1) * 100)
+    )
 
 
 def weeks_insight(heat):
@@ -282,14 +338,20 @@ def weeks_insight(heat):
     chained = period_totals(heat)
     rose = (heat["change"] >= QUIET).groupby(heat["family"]).sum().reindex(chained.index, fill_value=0)
     fell = (heat["change"] <= -QUIET).groupby(heat["family"]).sum().reindex(chained.index, fill_value=0)
-    by_week = (heat["change"] >= QUIET).groupby(heat["week_start"]).sum() - (heat["change"] <= -QUIET).groupby(heat["week_start"]).sum()
+    by_week = (heat["change"] >= QUIET).groupby(heat["week_start"]).sum() - (heat["change"] <= -QUIET).groupby(
+        heat["week_start"]
+    ).sum()
     top, low = chained.idxmax(), chained.idxmin()
     return [
         i18n.tr("En estas {} semanas, {} es la que más se encareció: {} acumulado, con alzas en {} de ellas.").format(
-            weeks, i18n.tr(top), signed(chained[top]), int(rose[top])),
+            weeks, i18n.tr(top), signed(chained[top]), int(rose[top])
+        ),
         i18n.tr("{} es la que más bajó: {} acumulado, con bajas en {} semanas.").format(
-            i18n.tr(low), signed(chained[low]), int(fell[low])),
-        i18n.tr("En {} de las {} semanas subieron más familias de las que bajaron.").format(int((by_week > 0).sum()), weeks),
+            i18n.tr(low), signed(chained[low]), int(fell[low])
+        ),
+        i18n.tr("En {} de las {} semanas subieron más familias de las que bajaron.").format(
+            int((by_week > 0).sum()), weeks
+        ),
     ]
 
 
@@ -299,7 +361,10 @@ def best_drops(variations, week, count=3):
     if "same_region_quotes" in rows:
         rows = rows[(rows["same_region_quotes"] >= 2) & (rows["same_region_previous_quotes"] >= 2)]
     rows = rows[rows["variation"] < 0].nsmallest(count, "variation")
-    return [(product, channel, value * 100) for product, channel, value in zip(rows["product"], rows["channel"], rows["variation"])]
+    return [
+        (product, channel, value * 100)
+        for product, channel, value in zip(rows["product"], rows["channel"], rows["variation"])
+    ]
 
 
 def consumer_insights(moves, drops, summary, ipc_total, ipc_year):
@@ -311,27 +376,44 @@ def consumer_insights(moves, drops, summary, ipc_total, ipc_year):
     short = home_mockup.short_family
     lines = []
     if len(fell):
-        lines.append(f"Esta semana bajaron {join(f'{short(f)} ({signed(c)})' for f, c in zip(fell['product_group'], fell['change']))}; "
-                     f"subieron {join(f'{short(f)} ({signed(c)})' for f, c in zip(rose['product_group'], rose['change'])) or 'ninguna familia'}.")
+        lines.append(
+            f"Esta semana bajaron {join(f'{short(f)} ({signed(c)})' for f, c in zip(fell['product_group'], fell['change']))}; "
+            f"subieron {join(f'{short(f)} ({signed(c)})' for f, c in zip(rose['product_group'], rose['change'])) or 'ninguna familia'}."
+        )
     if drops:
-        lines.append("Las mayores bajas, con al menos dos cotizaciones por semana: "
-                     + join(f"{product} · {channel.lower()} ({signed(value)})" for product, channel, value in drops) + ".")
+        lines.append(
+            "Las mayores bajas, con al menos dos cotizaciones por semana: "
+            + join(f"{product} · {channel.lower()} ({signed(value)})" for product, channel, value in drops)
+            + "."
+        )
     if len(above):
-        lines.append(f"Desde enero 2022, {join(short(f) for f in above['family'])} subieron más que el IPC de alimentos "
-                     f"({signed(ipc_total)}): son las que más pesan hoy en la canasta. "
-                     + (f"{join(short(f) for f in below['family'])} subieron menos: en términos reales, se abarataron." if len(below) else ""))
+        lines.append(
+            f"Desde enero 2022, {join(short(f) for f in above['family'])} subieron más que el IPC de alimentos "
+            f"({signed(ipc_total)}): son las que más pesan hoy en la canasta. "
+            + (
+                f"{join(short(f) for f in below['family'])} subieron menos: en términos reales, se abarataron."
+                if len(below)
+                else ""
+            )
+        )
     lines.append(f"En los últimos 12 meses, los alimentos subieron {signed(ipc_year)}.")
     return lines
 
 
 def architect_insights(latest, tests, green, indicators, database, flags, comparable_now, prices_now):
     """For whoever designs the data: what the load brought, how much of it reaches the indicators and where it is lost."""
-    number = lambda value: f"{int(value):,}".replace(",", ".")
+
+    def number(value):
+        return f"{int(value):,}".replace(",", ".")
+
     day = f"{latest['started_at'][8:10]}-{latest['started_at'][5:7]}-{latest['started_at'][:4]}"
     total = int(flags["weekly_prices"].sum())
     by_flag = flags.groupby("flag")["weekly_prices"].sum()
     unconvertible, outliers = int(by_flag.get("UNIDAD_NO_CONVERTIBLE", 0)), int(by_flag.get("ATIPICO", 0))
-    share = lambda part: f"{part / total * 100:.1f} %".replace(".", ",")
+
+    def share(part):
+        return f"{part / total * 100:.1f} %".replace(".", ",")
+
     lines = [
         f"La carga del {day} leyó {number(latest['rows_read'])} filas de los archivos de ODEPA y rechazó "
         f"{number(latest['rows_rejected'])} con su motivo; pasaron {tests[0]} de {tests[1]} pruebas de dbt y {green} de "
@@ -341,12 +423,18 @@ def architect_insights(latest, tests, green, indicators, database, flags, compar
     ]
     if unconvertible or outliers:
         bigger = "las unidades que no se pueden convertir" if unconvertible >= outliers else "los precios atípicos"
-        lines.append(f"{number(unconvertible)} precios ({share(unconvertible)}) quedan fuera de los indicadores por unidad no "
-                     f"convertible y {number(outliers)} ({share(outliers)}) por atípicos: la mayor pérdida está en {bigger}, "
-                     "donde una regla nueva sumaría más datos.")
-    lines.append(f"Esta semana, {number(comparable_now)} de {number(prices_now)} precios tienen comparación con la anterior: "
-                 "el resto no tiene precio la semana previa en las mismas regiones.")
+        lines.append(
+            f"{number(unconvertible)} precios ({share(unconvertible)}) quedan fuera de los indicadores por unidad no "
+            f"convertible y {number(outliers)} ({share(outliers)}) por atípicos: la mayor pérdida está en {bigger}, "
+            "donde una regla nueva sumaría más datos."
+        )
+    lines.append(
+        f"Esta semana, {number(comparable_now)} de {number(prices_now)} precios tienen comparación con la anterior: "
+        "el resto no tiene precio la semana previa en las mismas regiones."
+    )
     return lines
+
+
 # endregion
 
 
@@ -358,18 +446,31 @@ def wholesale_insights(variations, week, margins):
     lines = []
     if not rows.empty:
         moves = rows.groupby("product_group")["variation"].median().mul(100)
-        lines.append("En el mercado mayorista, el cambio típico de la semana fue "
-                     + join(f"{short(f)} {signed(v)}" for f, v in moves.items()) + ".")
-        drops = list({product: (product, channel, value) for product, channel, value
-                      in reversed(best_drops(rows.assign(week_start=week), week, count=8))}.values())[::-1][:3]
+        lines.append(
+            "En el mercado mayorista, el cambio típico de la semana fue "
+            + join(f"{short(f)} {signed(v)}" for f, v in moves.items())
+            + "."
+        )
+        drops = list(
+            {
+                product: (product, channel, value)
+                for product, channel, value in reversed(best_drops(rows.assign(week_start=week), week, count=8))
+            }.values()
+        )[::-1][:3]
         if drops:
-            lines.append("Las mayores bajas mayoristas: " + join(f"{product} ({signed(value)})" for product, _, value in drops) + ".")
+            lines.append(
+                "Las mayores bajas mayoristas: "
+                + join(f"{product} ({signed(value)})" for product, _, value in drops)
+                + "."
+            )
     week_margins = margins[margins["week_start"] == f"{week:%Y-%m-%d}"]
     if not week_margins.empty:
         gaps = week_margins.groupby("product_group")["margin"].median().mul(100)
-        lines.append("Del precio mayorista al consumidor, el mismo producto sube típicamente "
-                     + join(f"{short(f)} {signed(v)}" for f, v in gaps.items())
-                     + ": es el margen que separa la compra por mayor de la góndola.")
+        lines.append(
+            "Del precio mayorista al consumidor, el mismo producto sube típicamente "
+            + join(f"{short(f)} {signed(v)}" for f, v in gaps.items())
+            + ": es el margen que separa la compra por mayor de la góndola."
+        )
     lines.append("ODEPA publica precios mayoristas solo de frutas y hortalizas.")
     return lines
 
@@ -383,19 +484,33 @@ def read_points():
     return json.loads(POINTS_FILE.read_text(encoding="utf-8"))
 
 
-POINT_ICONS = {"person": "persona", "mercado": "mercado", "datos": "datos", "Supermercado": "supermercado", "Supermercado en Línea": "linea", "Feria libre": "feria", "Carnicería": "carniceria",
-               "Panadería": "panaderia", "Mercado Minorista": "minorista", "Mercado Mayorista": "mercado"}
+POINT_ICONS = {
+    "person": "persona",
+    "mercado": "mercado",
+    "datos": "datos",
+    "Supermercado": "supermercado",
+    "Supermercado en Línea": "linea",
+    "Feria libre": "feria",
+    "Carnicería": "carniceria",
+    "Panadería": "panaderia",
+    "Mercado Minorista": "minorista",
+    "Mercado Mayorista": "mercado",
+}
 
 
 @lru_cache(maxsize=None)
 def point_icon(name):
     """An icon of the folder bi/assets/points as an image (st.html drops inline SVG)."""
     path = POINTS_FILE.parent / "points" / f"{POINT_ICONS.get(name, 'mercado')}.svg"
-    return f'<img class="ov-icon" alt="" src="data:image/svg+xml;base64,{base64.b64encode(path.read_bytes()).decode()}">'
+    return (
+        f'<img class="ov-icon" alt="" src="data:image/svg+xml;base64,{base64.b64encode(path.read_bytes()).decode()}">'
+    )
 
 
 def ordered_regions(points, region_ids):
-    return sorted(points, key=lambda name: REGION_ORDER.index(region_ids[name]) if region_ids.get(name) in REGION_ORDER else 99)
+    return sorted(
+        points, key=lambda name: REGION_ORDER.index(region_ids[name]) if region_ids.get(name) in REGION_ORDER else 99
+    )
 
 
 DETAIL_SHOP = "Comercio al detalle"
@@ -405,8 +520,11 @@ DETAIL_SHOP = "Comercio al detalle"
 REGION_HUES = [8, 32, 48, 140, 172, 200, 222, 262, 300, 330, 90, 20]
 # D-321: three kinds of place, each a house with its own sign: crates for a wholesale market or terminal, fruit under an
 # awning for a fair or «vega», a cart for the retail points ODEPA records.
-KINDS = {"market": ("Mercado o terminal mayorista", "Wholesale market or terminal"), "fair": ("Feria o vega", "Fair or vega"),
-         "retail": (DETAIL_SHOP, "Retail shops")}
+KINDS = {
+    "market": ("Mercado o terminal mayorista", "Wholesale market or terminal"),
+    "fair": ("Feria o vega", "Fair or vega"),
+    "retail": (DETAIL_SHOP, "Retail shops"),
+}
 FAIR_WORDS = ("vega", "feria", "venta directa")
 
 
@@ -420,44 +538,66 @@ def house_image(hue, kind):
     roof, wall, trim = f"hsl({hue},62%,58%)", f"hsl({hue},70%,88%)", f"hsl({hue},45%,40%)"
     fronts = {
         "market": '<rect x="25" y="40" width="10" height="16" fill="#e0a53a"/>',
-        "fair": ('<rect x="10" y="30" width="40" height="8" fill="#fff"/>'
-                 + "".join(f'<rect x="{10 + i * 10}" y="30" width="5" height="8" fill="#e5484d"/>' for i in range(4))
-                 + '<rect x="25" y="42" width="10" height="14" fill="#e0a53a"/>'),
-        "retail": ('<rect x="13" y="31" width="34" height="9" rx="1.5" fill="#1d2433"/>'
-                   '<circle cx="22" cy="35.5" r="1.4" fill="#e5484d"/><circle cx="30" cy="35.5" r="1.4" fill="#f5c542"/>'
-                   '<circle cx="38" cy="35.5" r="1.4" fill="#3fbf7f"/><rect x="25" y="43" width="10" height="13" fill="#e0a53a"/>'),
+        "fair": (
+            '<rect x="10" y="30" width="40" height="8" fill="#fff"/>'
+            + "".join(f'<rect x="{10 + i * 10}" y="30" width="5" height="8" fill="#e5484d"/>' for i in range(4))
+            + '<rect x="25" y="42" width="10" height="14" fill="#e0a53a"/>'
+        ),
+        "retail": (
+            '<rect x="13" y="31" width="34" height="9" rx="1.5" fill="#1d2433"/>'
+            '<circle cx="22" cy="35.5" r="1.4" fill="#e5484d"/><circle cx="30" cy="35.5" r="1.4" fill="#f5c542"/>'
+            '<circle cx="38" cy="35.5" r="1.4" fill="#3fbf7f"/><rect x="25" y="43" width="10" height="13" fill="#e0a53a"/>'
+        ),
     }
     signs = {
-        "market": ('<rect x="58" y="42" width="11" height="7" fill="#c9965a"/><rect x="60" y="34" width="11" height="8" fill="#d8a96a"/>'
-                   '<rect x="66" y="47" width="10" height="9" fill="#b9864a"/>'),
+        "market": (
+            '<rect x="58" y="42" width="11" height="7" fill="#c9965a"/><rect x="60" y="34" width="11" height="8" fill="#d8a96a"/>'
+            '<rect x="66" y="47" width="10" height="9" fill="#b9864a"/>'
+        ),
         "fair": '<circle cx="62" cy="50" r="4" fill="#e5484d"/><circle cx="70" cy="50" r="4" fill="#f5a623"/><circle cx="66" cy="44" r="4" fill="#4caf50"/>',
-        "retail": ('<path d="M56 38h4l4 12h10l2-8H62" fill="none" stroke="#e8edf5" stroke-width="2" stroke-linejoin="round"/>'
-                   '<circle cx="65" cy="54" r="2" fill="#e8edf5"/><circle cx="72" cy="54" r="2" fill="#e8edf5"/>'),
+        "retail": (
+            '<path d="M56 38h4l4 12h10l2-8H62" fill="none" stroke="#e8edf5" stroke-width="2" stroke-linejoin="round"/>'
+            '<circle cx="65" cy="54" r="2" fill="#e8edf5"/><circle cx="72" cy="54" r="2" fill="#e8edf5"/>'
+        ),
     }
-    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 62">'
-           f'<ellipse cx="30" cy="58" rx="24" ry="3" fill="#000" opacity=".3"/>'
-           f'<rect x="8" y="26" width="44" height="31" fill="{wall}"/>{fronts[kind]}'
-           f'<path d="M3 28 30 6l27 22z" fill="{roof}"/><rect x="3" y="27" width="54" height="3" fill="{trim}"/>{signs[kind]}</svg>')
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 62">'
+        f'<ellipse cx="30" cy="58" rx="24" ry="3" fill="#000" opacity=".3"/>'
+        f'<rect x="8" y="26" width="44" height="31" fill="{wall}"/>{fronts[kind]}'
+        f'<path d="M3 28 30 6l27 22z" fill="{roof}"/><rect x="3" y="27" width="54" height="3" fill="{trim}"/>{signs[kind]}</svg>'
+    )
     return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
 
 
 @lru_cache(maxsize=1)
 def chile_shapes():
     # One decimal is enough for a map 110 px tall; it keeps the nine small maps light.
-    shorten = lambda path: re.sub(r"\d+\.\d+", lambda m: f"{float(m.group()):.0f}", path)
-    return [(item["region"], shorten(item["path"])) for item in home_mockup.region_layout(home_mockup.chile_regions_geometry())]
+    def shorten(path):
+        return re.sub(r"\d+\.\d+", lambda m: f"{float(m.group()):.0f}", path)
+
+    return [
+        (item["region"], shorten(item["path"]))
+        for item in home_mockup.region_layout(home_mockup.chile_regions_geometry())
+    ]
 
 
 def mini_map(region, hue):
     """Chile in its real shape with this region lit, so the reader sees where it lies."""
-    paths = "".join(f'<path d="{path}" fill="{f"hsl({hue},70%,60%)" if name == region else "#4a5568"}" stroke="{f"hsl({hue},80%,70%)" if name == region else "none"}" stroke-width="3"/>' for name, path in chile_shapes())
-    return (f'<div class="ov-mini"><svg viewBox="0 0 {home_mockup.LIST_LEFT - 12} {home_mockup.MAP_VIEW[1]}" '
-            f'preserveAspectRatio="xMidYMid meet">{paths}</svg><span>{html.escape(i18n.tr("Mapa"))}</span></div>')
+    paths = "".join(
+        f'<path d="{path}" fill="{f"hsl({hue},70%,60%)" if name == region else "#4a5568"}" stroke="{f"hsl({hue},80%,70%)" if name == region else "none"}" stroke-width="3"/>'
+        for name, path in chile_shapes()
+    )
+    return (
+        f'<div class="ov-mini"><svg viewBox="0 0 {home_mockup.LIST_LEFT - 12} {home_mockup.MAP_VIEW[1]}" '
+        f'preserveAspectRatio="xMidYMid meet">{paths}</svg><span>{html.escape(i18n.tr("Mapa"))}</span></div>'
+    )
 
 
 def house(hue, kind, name):
-    return (f'<figure class="ov-house" title="{html.escape(name)}"><img src="{house_image(hue, kind)}" alt="">'
-            f'<figcaption>{html.escape(name)}</figcaption></figure>')
+    return (
+        f'<figure class="ov-house" title="{html.escape(name)}"><img src="{house_image(hue, kind)}" alt="">'
+        f'<figcaption>{html.escape(name)}</figcaption></figure>'
+    )
 
 
 PRICE_KEY = ["product", "variety", "quality", "channel", "normalized_unit"]
@@ -472,7 +612,9 @@ def regional_price_levels(frame):
     levels = frame.groupby("region")["regional_index"].agg(["median", "count"])
     levels["level"] = (levels["median"] - 1) * 100
     levels = levels.sort_values("level", ascending=False)
-    return {region: (row.level, int(row["count"]), rank) for rank, (region, row) in enumerate(levels.iterrows(), start=1)}
+    return {
+        region: (row.level, int(row["count"]), rank) for rank, (region, row) in enumerate(levels.iterrows(), start=1)
+    }
 
 
 def build_price_line(level, total):
@@ -485,12 +627,24 @@ def build_price_line(level, total):
         text = i18n.tr("En el promedio nacional")
     else:
         text = (i18n.tr("{} más cara") if value > 0 else i18n.tr("{} más barata")).format(amount)
-    badge = ("dear", i18n.tr("La más cara")) if rank == 1 else ("cheap", i18n.tr("La más barata")) if rank == total else (None, "")
+    badge = (
+        ("dear", i18n.tr("La más cara"))
+        if rank == 1
+        else ("cheap", i18n.tr("La más barata"))
+        if rank == total
+        else (None, "")
+    )
     chip = f'<em class="ov-price-{badge[0]}">{html.escape(badge[1])}</em>' if badge[0] else ""
-    detail = f"{rank} of {total}" if i18n.is_english() else f"{rank} de {total}"  # a bare «{} de {}» entry would match any sentence
-    hint = i18n.tr("Mediana de {} precios comparados con el promedio nacional de los mismos productos").format(number(prices))
-    return (f'<p class="ov-price {"ov-up" if value > 0 else "ov-down"}" title="{html.escape(hint)}"><b>{html.escape(text)}</b>'
-            f'<span>{html.escape(detail)}</span>{chip}</p>')
+    detail = (
+        f"{rank} of {total}" if i18n.is_english() else f"{rank} de {total}"
+    )  # a bare «{} de {}» entry would match any sentence
+    hint = i18n.tr("Mediana de {} precios comparados con el promedio nacional de los mismos productos").format(
+        number(prices)
+    )
+    return (
+        f'<p class="ov-price {"ov-up" if value > 0 else "ov-down"}" title="{html.escape(hint)}"><b>{html.escape(text)}</b>'
+        f'<span>{html.escape(detail)}</span>{chip}</p>'
+    )
 
 
 def number(value):
@@ -504,29 +658,44 @@ def build_region_column(region, data, hue, number_=1, level=None, total=9):
     houses = "".join(house(hue, place_kind(name), name) for name in data["wholesale"])
     if kinds:
         houses += house(hue, "retail", i18n.tr(DETAIL_SHOP)).replace(
-            f'title="{html.escape(i18n.tr(DETAIL_SHOP))}"', f'title="{html.escape(", ".join(i18n.tr(kind) for kind in kinds))}"', 1)
-    sectors = (f'<p class="ov-sectors">{html.escape(i18n.tr("Sectores"))}: {html.escape(", ".join(data["sectors"]))}</p>'
-               if data["sectors"] else "")
-    return (f'<section class="ov-region" style="--h:{hue}"><div class="ov-region-main"><h5><b>{number_:02d}</b>'
-            f'{html.escape(home_mockup.short_region(region))}</h5>{build_price_line(level, total)}'
-            f'<div class="ov-street">{houses}</div>{sectors}</div>'
-            f'{mini_map(region, hue)}</section>')
+            f'title="{html.escape(i18n.tr(DETAIL_SHOP))}"',
+            f'title="{html.escape(", ".join(i18n.tr(kind) for kind in kinds))}"',
+            1,
+        )
+    sectors = (
+        f'<p class="ov-sectors">{html.escape(i18n.tr("Sectores"))}: {html.escape(", ".join(data["sectors"]))}</p>'
+        if data["sectors"]
+        else ""
+    )
+    return (
+        f'<section class="ov-region" style="--h:{hue}"><div class="ov-region-main"><h5><b>{number_:02d}</b>'
+        f'{html.escape(home_mockup.short_region(region))}</h5>{build_price_line(level, total)}'
+        f'<div class="ov-street">{houses}</div>{sectors}</div>'
+        f'{mini_map(region, hue)}</section>'
+    )
 
 
 def build_legend(hue=215):
-    items = "".join(f'<span><img src="{house_image(hue, kind)}" alt="">{html.escape(i18n.tr(spanish))}</span>'
-                    for kind, (spanish, _) in KINDS.items())
+    items = "".join(
+        f'<span><img src="{house_image(hue, kind)}" alt="">{html.escape(i18n.tr(spanish))}</span>'
+        for kind, (spanish, _) in KINDS.items()
+    )
     return f'<div class="ov-legend">{items}<em>{html.escape(i18n.tr("Norte → Sur"))}</em></div>'
 
 
 def build_regions_html(regions, points, levels=None, week=""):
     """Every region at once, north to south, as numbered cards in a grid of three (D-310, D-321)."""
     levels = levels or {}
-    cards = "".join(build_region_column(region, points[region], REGION_HUES[index % len(REGION_HUES)], index + 1,
-                                        levels.get(region), len(levels))
-                    for index, region in enumerate(regions))
-    head = (f'<div class="ov-where-head"><div><h3>{html.escape(i18n.tr("Lugares de compra por región"))}</h3>'
-            f'<p>{html.escape(i18n.tr("De norte a sur: dónde queda cada región y cuán cara es frente al promedio nacional, con los mismos productos (semana {}).").format(week))}</p></div>{build_legend()}</div>')
+    cards = "".join(
+        build_region_column(
+            region, points[region], REGION_HUES[index % len(REGION_HUES)], index + 1, levels.get(region), len(levels)
+        )
+        for index, region in enumerate(regions)
+    )
+    head = (
+        f'<div class="ov-where-head"><div><h3>{html.escape(i18n.tr("Lugares de compra por región"))}</h3>'
+        f'<p>{html.escape(i18n.tr("De norte a sur: dónde queda cada región y cuán cara es frente al promedio nacional, con los mismos productos (semana {}).").format(week))}</p></div>{build_legend()}</div>'
+    )
     return head + f'<div class="ov-regions">{cards}</div>'
 
 
@@ -565,4 +734,6 @@ def points_css(palette):
 .ov-mini svg {{ width:34px; flex:1; min-height:60px; max-height:96px; }}
 .ov-mini span {{ font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
 </style>"""
+
+
 # endregion

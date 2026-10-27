@@ -1,4 +1,5 @@
 """Tests for the dashboard: navigation, appearance, key figures and evidence."""
+
 import html
 import re
 import json
@@ -15,8 +16,7 @@ from bi import github_page, charts, control, dashboard, project, queries, stack_
 
 DASHBOARD_FILE = str(PROJECT_DIR / "bi" / "dashboard.py")
 # These tests draw the real dashboard, so they need the committed database.
-needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(),
-                                    reason="etl/datos.db has not been built")
+needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.db has not been built")
 ALL_PAGES = [p for views in dashboard.WINDOWS.values() for p in views]
 
 
@@ -35,7 +35,7 @@ def read_page_title(app):
     for block in app.markdown:
         match = re.search(r'class="(?:compact-header|report-title)"><h1[^>]*>([^<]+)</h1>', block.value)
         if not match:
-            match=re.search(r'<span class="(?:home|page)-bar-title" role="heading"[^>]*>([^<]+)</span>',block.value)
+            match = re.search(r'<span class="(?:home|page)-bar-title" role="heading"[^>]*>([^<]+)</span>', block.value)
         if not match:
             match = re.search(r'<h1 class="qa-h1">([^<]+)</h1>', block.value)
         if match:
@@ -46,11 +46,13 @@ def read_page_title(app):
 def draw_page(title, state=None, query=None):
     """Draw one page alone, the way the navigation does; state: session values set first;
     query: address parameters, as a link would carry them."""
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
-              f"from bi import dashboard\n"
-              + "".join(f"st.session_state[{key!r}] = {value!r}\n" for key, value in (state or {}).items())
-              + "".join(f"st.query_params[{key!r}] = {value!r}\n" for key, value in (query or {}).items())
-              + f"dashboard.render_page({title!r})\n")
+    script = (
+        f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
+        f"from bi import dashboard\n"
+        + "".join(f"st.session_state[{key!r}] = {value!r}\n" for key, value in (state or {}).items())
+        + "".join(f"st.query_params[{key!r}] = {value!r}\n" for key, value in (query or {}).items())
+        + f"dashboard.render_page({title!r})\n"
+    )
     return AppTest.from_string(script, default_timeout=60).run()
 
 
@@ -62,12 +64,20 @@ PINNED_HOME = {"_home_region": "Todas", "_home_week": "2026-10-05", "familia": "
 def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     # D-151: the route ends in the project's documents.
     assert dashboard.ROUTE == ["Dashboard", "Ingeniería de datos", "Seguridad", "Documentación"]  # D-201
-    assert list(dashboard.WINDOWS) == dashboard.ROUTE + [dashboard.SECTION_PROJECT, dashboard.SECTION_RESOURCES,
-                                                         dashboard.SECTION_KPI]
+    assert list(dashboard.WINDOWS) == dashboard.ROUTE + [
+        dashboard.SECTION_PROJECT,
+        dashboard.SECTION_RESOURCES,
+        dashboard.SECTION_KPI,
+    ]
     views = [view for window in dashboard.WINDOWS.values() for view in window]
     assert len(views) == len(set(views)) and set(views) == set(dashboard.SHOW_PAGE_BY_TITLE)
     assert dashboard.WINDOWS["Dashboard"] == [
-        dashboard.HOME_PAGE, dashboard.PAGE_WHERE, dashboard.PAGE_INSIGHTS, dashboard.PAGE_SEASONALITY, dashboard.PAGE_SQL]
+        dashboard.HOME_PAGE,
+        dashboard.PAGE_WHERE,
+        dashboard.PAGE_INSIGHTS,
+        dashboard.PAGE_SEASONALITY,
+        dashboard.PAGE_SQL,
+    ]
     assert dashboard.WINDOWS["Ingeniería de datos"][0] == dashboard.PAGE_DIAGRAMS
     # Old addresses of the retired windows and of the 3D view still open something.
     for path in ["operacion", "documentacion", "vista-3d"]:
@@ -81,11 +91,16 @@ def test_every_page_has_a_function_an_icon_and_an_address():
 
 
 def test_product_description_leaves_out_unspecified_parts():
-    assert dashboard.describe_product({"product": "Tomate", "variety": "Larga vida",
-                                       "quality": "Primera"}) == "Tomate Larga vida · Primera"
-    assert dashboard.describe_product({"product": "Marraqueta",
-                                       "variety": dashboard.UNSPECIFIED,
-                                       "quality": dashboard.UNSPECIFIED}) == "Marraqueta"
+    assert (
+        dashboard.describe_product({"product": "Tomate", "variety": "Larga vida", "quality": "Primera"})
+        == "Tomate Larga vida · Primera"
+    )
+    assert (
+        dashboard.describe_product(
+            {"product": "Marraqueta", "variety": dashboard.UNSPECIFIED, "quality": dashboard.UNSPECIFIED}
+        )
+        == "Marraqueta"
+    )
 
 
 @needs_database
@@ -114,7 +129,10 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     app = draw_page(dashboard.HOME_PAGE, query=PINNED_HOME)
     assert not app.exception and not app.tabs
     texts = " ".join(block.value for block in app.markdown)
-    assert 'Detalle de productos</span><span class="mock-products-family">Hortalizas' in texts and 'Producto seleccionado' not in texts
+    assert (
+        'Detalle de productos</span><span class="mock-products-family">Hortalizas' in texts
+        and 'Producto seleccionado' not in texts
+    )
     assert 'Precio 28-09' in texts and 'Precio 05-10' in texts and 'Variación' in texts
     assert 'class="zoom-frame' not in texts and 'animateMotion' not in texts
     assert texts.index('¿Qué familias subieron y cuáles bajaron?') < texts.index('¿Qué productos explican el cambio?')
@@ -139,12 +157,14 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     pipeline_header = next(block.value for block in diagrams.markdown if 'class="page-bar-main"' in block.value)
     # D-267: the page bar, like the Resumen's: the title and the figures of the latest build, the time of the load.
     assert '>Pipeline y linaje</span>' in pipeline_header and 'page-bar-updated' in texts
-    assert 'pruebas dbt superadas en el último build' in pipeline_header and 'modelos dbt, de staging a marts' in pipeline_header
+    assert (
+        'pruebas dbt superadas en el último build' in pipeline_header
+        and 'modelos dbt, de staging a marts' in pipeline_header
+    )
     assert not diagrams.toggle
     assert 'Animar el recorrido de los datos' not in texts
     assert 'ODEPA → indicadores · recorrido y plataformas' not in texts
-    for label in ["ODEPA mayorista", "ODEPA consumidor", "Informe semanal",
-                  "Consultas SQL", "OBSERVABILIDAD"]:
+    for label in ["ODEPA mayorista", "ODEPA consumidor", "Informe semanal", "Consultas SQL", "OBSERVABILIDAD"]:
         assert label in texts
     assert 'aria-label="Actualización semanal"' not in texts
     assert "animateMotion" in texts
@@ -172,6 +192,7 @@ def test_dashboard_territory_is_immediately_readable_without_a_3d_duplicate():
     # D-264: the week and three figures are chips of the bar; the place is in the week's hover.
     assert texts.count('class="home-chip"') == 1 and "Todo Chile" in texts
     assert "Mapa en proporción real" in texts
+
 
 @needs_database
 def test_d189_model_page_opens_on_the_star_model_and_the_storage_map_comes_third():
@@ -213,14 +234,14 @@ def test_kpi_link_opens_the_kpi_view_with_that_indicator():
 def test_without_github_the_states_come_from_the_latest_saved_load():
     latest_load = {"status": "LOADED", "started_at": "2026-10-12T22:17:01"}
     states = dashboard.build_journey_states({}, None, latest_load, {"file": {"year": 2026}})
-    assert [states[step] for step in ["download", "etl", "tests", "load", "etl_run"]] == [
-        control.RUN_OK] * 5
+    assert [states[step] for step in ["download", "etl", "tests", "load", "etl_run"]] == [control.RUN_OK] * 5
     # What a saved load cannot prove stays unknown, and is drawn without a dot.
     assert states["report"] == dashboard.architecture.STATE_UNKNOWN
     assert states["workflow"] == dashboard.architecture.STATE_UNKNOWN
     assert dashboard.describe_state_source("GitHub respondió 403", {}, latest_load) == (
         "GitHub no respondió (GitHub respondió 403); los estados salen de la última carga "
-        "guardada en la base (12-10-2026 19:17).")
+        "guardada en la base (12-10-2026 19:17)."
+    )
 
 
 def test_d071_four_themes_and_corporativo_is_the_default():
@@ -230,8 +251,7 @@ def test_d071_four_themes_and_corporativo_is_the_default():
     assert dashboard.RETIRED_THEMES["Grafito"] == "Dark Grey"
     for theme in charts.THEMES:
         palette = charts.get_palette(theme)
-        assert theme in charts.HEAT_RAMPS and palette["base"] in (charts.BASE_DARK,
-                                                                  charts.BASE_LIGHT)
+        assert theme in charts.HEAT_RAMPS and palette["base"] in (charts.BASE_DARK, charts.BASE_LIGHT)
 
 
 def test_t44_base_mode_switch_writes_streamlit_choice_and_tries_only_once():
@@ -258,18 +278,23 @@ def draw_control_page(secrets, run_state="ok", dialog=False):
     run is accepted and ends in run_state. With dialog, the script opens the manual-run
     dialog itself: in a browser the dialog reruns alone (a fragment), which AppTest
     does not reproduce."""
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "from datetime import datetime, timedelta, timezone\n"
-              "from bi import control, dashboard\n"
-              "control.list_workflow_runs = lambda *args, **kwargs: []\n"
-              # Relative to today: a fixed date made this test fail the day it arrived.
-              "control.read_token_expiration = lambda token: datetime.now(timezone.utc) + timedelta(days=60)\n"
-              "control.start_workflow_run = lambda token: None\n"
-              "dashboard.wait_for_manual_run = lambda requested_at, token: {'id': 1}\n"
-              f"dashboard.follow_run_progress = lambda run_id, token, area: {run_state!r}\n"
-              + ("dashboard.show_run_now_dialog(dashboard.get_secret('GITHUB_TOKEN'), "
-                 "dashboard.get_secret('CONTROL_CODE'))\n" if dialog else
-                 "dashboard.render_page(dashboard.PAGE_RUNS)\n"))
+    script = (
+        f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+        "from datetime import datetime, timedelta, timezone\n"
+        "from bi import control, dashboard\n"
+        "control.list_workflow_runs = lambda *args, **kwargs: []\n"
+        # Relative to today: a fixed date made this test fail the day it arrived.
+        "control.read_token_expiration = lambda token: datetime.now(timezone.utc) + timedelta(days=60)\n"
+        "control.start_workflow_run = lambda token: None\n"
+        "dashboard.wait_for_manual_run = lambda requested_at, token: {'id': 1}\n"
+        f"dashboard.follow_run_progress = lambda run_id, token, area: {run_state!r}\n"
+        + (
+            "dashboard.show_run_now_dialog(dashboard.get_secret('GITHUB_TOKEN'), "
+            "dashboard.get_secret('CONTROL_CODE'))\n"
+            if dialog
+            else "dashboard.render_page(dashboard.PAGE_RUNS)\n"
+        )
+    )
     app = AppTest.from_string(script, default_timeout=60)
     for name, value in secrets.items():
         app.secrets[name] = value
@@ -278,9 +303,11 @@ def draw_control_page(secrets, run_state="ok", dialog=False):
 
 def read_page_text(app):
     """Every text the page sends to the browser: Markdown, HTML, notes and fields."""
-    parts = [str(element.proto) for kind in ["markdown", "html", "caption", "info",
-                                              "warning", "error", "text_input"]
-             for element in app.get(kind)]
+    parts = [
+        str(element.proto)
+        for kind in ["markdown", "html", "caption", "info", "warning", "error", "text_input"]
+        for element in app.get(kind)
+    ]
     return "\n".join(parts)
 
 
@@ -308,14 +335,19 @@ def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
     assert "runs_run_now" not in button_keys(app) and app.text_input(key="author_access_code")
     assert "author_access_open" not in button_keys(app)
     # D-207: a plain field shown as dots; a password field makes the browser offer to create one.
-    assert app.text_input(key="author_access_code").proto.type != app.text_input(key="author_access_code").proto.PASSWORD
+    assert (
+        app.text_input(key="author_access_code").proto.type != app.text_input(key="author_access_code").proto.PASSWORD
+    )
     assert "-webkit-text-security:disc" in dashboard.build_runs_css(charts.MODE_DARK)
     assert not [address for address in ADMIN_ADDRESSES if address in read_page_text(app)]
     text = open_author_access(app, "equivocada")
     assert not app.exception and "Clave incorrecta" in text and "runs_run_now" not in button_keys(app)
     text = open_author_access(app, "clave")
     assert not app.exception
-    assert app.button(key="runs_run_now").label == "Ejecutar pipeline ahora" and not app.button(key="runs_run_now").disabled
+    assert (
+        app.button(key="runs_run_now").label == "Ejecutar pipeline ahora"
+        and not app.button(key="runs_run_now").disabled
+    )
     assert all(address in read_page_text(app) for address in ADMIN_ADDRESSES)
     app.button(key="author_access_close").click().run()
     assert "runs_run_now" not in button_keys(app)
@@ -366,7 +398,9 @@ def test_d149_a_failed_run_says_it_did_not_complete():
 @needs_database
 def test_d149_without_secrets_the_run_is_disabled_and_reload_confirms():
     app = draw_control_page({})
-    assert "runs_run_now" not in button_keys(app) and not [box for box in app.text_input if box.key == "author_access_code"]
+    assert "runs_run_now" not in button_keys(app) and not [
+        box for box in app.text_input if box.key == "author_access_code"
+    ]
     assert "Se activa cuando el autor guarda la clave" in read_page_text(app)
     app.button(key="runs_reload").click().run()
     assert not app.exception
@@ -389,12 +423,14 @@ def test_project_links_are_grouped_as_a_tree_with_descriptions():
             assert f'href="{link["url"]}"' in links
             assert f'>{link["url"]}<' not in links
 
+
 # endregion
 
 
 def test_d057_cards_escape_their_text_and_keep_bold_and_code():
-    card = dashboard.build_info_card_html("<b>Título</b>", "Texto con **negrita** y `datos.db`",
-                                          label="P1", note="nota")
+    card = dashboard.build_info_card_html(
+        "<b>Título</b>", "Texto con **negrita** y `datos.db`", label="P1", note="nota"
+    )
     assert "<b>Título</b>" not in card and "&lt;b&gt;Título&lt;/b&gt;" in card
     assert "<strong>negrita</strong>" in card and "<code>datos.db</code>" in card
     assert 'class="info-label">P1<' in card
@@ -402,27 +438,29 @@ def test_d057_cards_escape_their_text_and_keep_bold_and_code():
 
 @needs_database
 def test_d090_kpi_module_reads_left_to_right_and_keeps_sql_behind_a_click():
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "import streamlit as st\n"
-              "from bi import dashboard\ndashboard.show_kpi_tab(dashboard.charts.MODE_DARK)\n")
+    script = (
+        f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+        "import streamlit as st\n"
+        "from bi import dashboard\ndashboard.show_kpi_tab(dashboard.charts.MODE_DARK)\n"
+    )
     app = AppTest.from_string(script, default_timeout=60)
     app.query_params["kpi"] = "K5"
     app.run()
     assert not app.exception
     # Question on top, then the whole path at once: three nodes on one line, three cards,
     # the dense context behind tabs, and no «continue» step.
-    assert app.selectbox(key='kpi_register_selection').value=='K5'
+    assert app.selectbox(key='kpi_register_selection').value == 'K5'
     assert [tab.label for tab in app.tabs] == ["Alcance", "Lógica", "Límites"]
     assert not app.expander and not app.code
     assert [button.label for button in app.button] == ["Desplegar SQL"]
-    markup=' '.join(block.value for block in app.markdown)
+    markup = ' '.join(block.value for block in app.markdown)
     assert markup.count('class="kpi-node"') == 3 and 'class="kpi-figure' in markup
     for title in ("Resultado", "Contexto", "Consulta"):
         assert f'</span>{title}</div>' in markup
     assert 'k5_weekly_variations_sql' in markup
     app.selectbox(key='kpi_register_selection').set_value('K1').run()
-    assert not app.exception and app.query_params['kpi']=='K1'
-    markup=' '.join(block.value for block in app.markdown)
+    assert not app.exception and app.query_params['kpi'] == 'K1'
+    markup = ' '.join(block.value for block in app.markdown)
     assert 'k1_margin' in markup and dashboard.KPI_QUESTIONS['K1'] not in markup
     # The SQL opens on demand, in a layer, read from the same stored query.
     app.button(key='kpi_query_open').click().run()
@@ -461,14 +499,21 @@ def test_manual_is_a_procedural_document_without_presentation_cards():
 
 def test_d057_every_rejection_reason_of_the_etl_is_explained():
     from etl import etl
+
     reasons = {value for name, value in vars(etl).items() if name.startswith("REASON_")}
     assert reasons == set(dashboard.REASON_TEXTS)
 
 
 def test_d057_rejected_rows_show_readable_spanish_columns():
-    rows = pd.DataFrame({"source": ["wholesale"], "reason": ["NON_POSITIVE_PRICE"],
-                         "original_row": ['{"file_hash": "abc", "price_date": "2025-01-01", '
-                                          '"product": "Ají", "avg_price": "0,0000"}']})
+    rows = pd.DataFrame(
+        {
+            "source": ["wholesale"],
+            "reason": ["NON_POSITIVE_PRICE"],
+            "original_row": [
+                '{"file_hash": "abc", "price_date": "2025-01-01", "product": "Ají", "avg_price": "0,0000"}'
+            ],
+        }
+    )
     table = dashboard.build_rejected_rows_table(rows)
     assert list(table.columns) == ["Fuente", "Motivo", "Fecha", "Producto", "Precio promedio"]
     assert table.iloc[0]["Fuente"] == "Mayorista"
@@ -477,17 +522,22 @@ def test_d057_rejected_rows_show_readable_spanish_columns():
 
 @needs_database
 def test_d057_quality_tab_explains_what_was_left_out_and_shows_it():
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "from bi import dashboard\ndashboard.show_quality_tab(dashboard.charts.MODE_DARK)\n")
+    script = (
+        f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+        "from bi import dashboard\ndashboard.show_quality_tab(dashboard.charts.MODE_DARK)\n"
+    )
     app = AppTest.from_string(script, default_timeout=60).run()
     assert not app.exception
     cards = " ".join(block.value for block in app.markdown if 'class="info-grid"' in block.value)
-    for label in ["RN-11 · no se cargan", "RN-12 · fuera de los indicadores",
-                  "RN-05 · sin precio comparable"]:
+    for label in ["RN-11 · no se cargan", "RN-12 · fuera de los indicadores", "RN-05 · sin precio comparable"]:
         assert label in cards
     assert "0,008 %" in cards
-    assert not [column for frame in app.dataframe for column in frame.value.columns
-                if column in ("source", "reason", "rejected_rows", "rejected_share")]
+    assert not [
+        column
+        for frame in app.dataframe
+        for column in frame.value.columns
+        if column in ("source", "reason", "rejected_rows", "rejected_share")
+    ]
 
 
 def test_d057_the_menu_folds_once_on_narrow_screens_only():
@@ -510,15 +560,17 @@ def test_analysis_sections_are_direct_destinations_without_tabs():
             assert not app.tabs, page
         assert title in " ".join(block.value for block in app.markdown)
 
+
 def test_status_text_is_readable_on_light_themes():
     def contrast(first, second):
         def luminance(color):
-            channels = [int(color[i:i + 2], 16) / 255 for i in (1, 3, 5)]
-            channels = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
-                        for c in channels]
+            channels = [int(color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
+            channels = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in channels]
             return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+
         lighter, darker = sorted([luminance(first), luminance(second)], reverse=True)
         return (lighter + 0.05) / (darker + 0.05)
+
     for status in charts.STATUS_TEXT_ON_LIGHT:
         assert contrast(charts.get_status_text_color(status, charts.MODE_LIGHT), "#ffffff") >= 4.5
         assert charts.get_status_text_color(status, charts.MODE_DARK) == charts.STATUS_COLORS[status]
@@ -547,8 +599,14 @@ def test_displayed_source_blocks_are_unique_across_the_portfolio():
 def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
     # Tabs are allowed only where they replace a long scroll (D-120, D-121, D-122) and
     # in the SQL studio, whose Resultados / Mensajes tabs are the client's own (D-173).
-    tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_OPERATIONS, dashboard.PAGE_RUNS,
-              dashboard.PAGE_SQL, dashboard.PAGE_WHERE, dashboard.PAGE_METHOD}  # D-296: the dashboard's three tabs, one screen each
+    tabbed = {
+        dashboard.PAGE_KPI,
+        dashboard.PAGE_OPERATIONS,
+        dashboard.PAGE_RUNS,
+        dashboard.PAGE_SQL,
+        dashboard.PAGE_WHERE,
+        dashboard.PAGE_METHOD,
+    }  # D-296: the dashboard's three tabs, one screen each
     for page in dashboard.PAGES:
         app = draw_page(page)
         assert not app.exception, page
@@ -594,14 +652,20 @@ def test_old_section_links_can_redirect_with_a_bound_theme():
 
 def test_d056_old_addresses_open_their_new_tab():
     assert set(dashboard.OLD_PATHS).isdisjoint(dashboard.PAGE_PATHS.values())
-    for path in ["panel", "margenes", "canales-y-regiones",
-                 "consultas", "centro-de-control", "calidad-de-datos", "pipeline",
-                 "el-proyecto"]:
+    for path in [
+        "panel",
+        "margenes",
+        "canales-y-regiones",
+        "consultas",
+        "centro-de-control",
+        "calidad-de-datos",
+        "pipeline",
+        "el-proyecto",
+    ]:
         page, tab = dashboard.OLD_PATHS[path]
         assert tab is None or dashboard.PAGE_OF_TAB[tab] == page
     assert set(dashboard.OLD_HOME_TABS.values()) <= set(dashboard.PAGE_OF_TAB)
-    assert set(dashboard.OLD_HOME_TABS).isdisjoint(
-        dashboard.TABS_BY_PAGE[dashboard.HOME_PAGE])
+    assert set(dashboard.OLD_HOME_TABS).isdisjoint(dashboard.TABS_BY_PAGE[dashboard.HOME_PAGE])
 
 
 @needs_database
@@ -708,8 +772,7 @@ def test_d071_a_theme_chosen_in_the_header_holds_for_the_whole_visit():
     app.run()
     assert not app.exception
     assert app.query_params["tema"] == "Corporativo"
-    app.radio(key="theme_field").set_value(
-        "Dark Grey").run()
+    app.radio(key="theme_field").set_value("Dark Grey").run()
     assert not app.exception
     assert app.session_state[dashboard.THEME_STATE] == "Dark Grey"
     assert app.query_params["tema"] == "Dark Grey"
@@ -778,9 +841,14 @@ def test_d250_the_path_and_the_footer_follow_the_menu():
     markup = ' '.join(block.value for block in app.markdown)
     assert 'DevOps y seguridad › Centro de operación' in markup
     footer = app.main.get('page_link')
-    assert [link.proto.label for link in footer] == ['← Anterior: Consultas SQL', 'Siguiente: Arquitectura de seguridad →']
-    assert [link.proto.icon for link in footer] == [dashboard.SIDEBAR_ICONS[dashboard.PAGE_SQL],
-                                                    dashboard.SIDEBAR_ICONS[dashboard.PAGE_SECURITY]]
+    assert [link.proto.label for link in footer] == [
+        '← Anterior: Consultas SQL',
+        'Siguiente: Arquitectura de seguridad →',
+    ]
+    assert [link.proto.icon for link in footer] == [
+        dashboard.SIDEBAR_ICONS[dashboard.PAGE_SQL],
+        dashboard.SIDEBAR_ICONS[dashboard.PAGE_SECURITY],
+    ]
 
 
 @needs_database
@@ -797,11 +865,22 @@ def test_d096_header_shows_the_current_path_without_a_tab_bar():
 
 def test_return_context_restores_only_supported_selection_fields():
     import base64
-    payload = base64.b64encode(json.dumps({"dashboard_group": "Frutas", "dashboard_top_n": 8,
-        "admin_token": "not-a-selection", "dashboard_product": {"bad": "shape"}}).encode()).decode()
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "import streamlit as st\nfrom bi import dashboard\n"
-              f"st.query_params['_ctx'] = {payload!r}\ndashboard.restore_return_context()\n")
+
+    payload = base64.b64encode(
+        json.dumps(
+            {
+                "dashboard_group": "Frutas",
+                "dashboard_top_n": 8,
+                "admin_token": "not-a-selection",
+                "dashboard_product": {"bad": "shape"},
+            }
+        ).encode()
+    ).decode()
+    script = (
+        f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+        "import streamlit as st\nfrom bi import dashboard\n"
+        f"st.query_params['_ctx'] = {payload!r}\ndashboard.restore_return_context()\n"
+    )
     app = AppTest.from_string(script).run()
     assert not app.exception
     assert app.session_state['dashboard_group'] == 'Frutas'
@@ -818,14 +897,19 @@ def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not app.exception
     assert app.selectbox(key='home_products_order').options == list(dashboard.PRODUCT_ORDERS)
+
     def rows():
         markup = ' '.join(block.value for block in app.markdown)
         table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
-        return [('1 cotización' in row, float(value.replace('−', '-').replace(',', '.')))
-                for row in table.split('<tr')[2:]
-                for value in re.findall(r'<td class="num (?:rise|fall|neutral)"><b>([+−]?[\d,]+) %</b>', row)]
+        return [
+            ('1 cotización' in row, float(value.replace('−', '-').replace(',', '.')))
+            for row in table.split('<tr')[2:]
+            for value in re.findall(r'<td class="num (?:rise|fall|neutral)"><b>([+−]?[\d,]+) %</b>', row)
+        ]
+
     def changes():
         return [value for _, value in rows()]
+
     # D-146: changes resting on one quote go after the others; each group is sorted.
     shown = rows()
     flags = [thin for thin, _ in shown]
@@ -863,15 +947,19 @@ def test_d220_quality_and_audit_are_one_view_without_pickers():
     assert read_page_title(app) == 'Calidad y auditoría'
     assert not app.selectbox and not app.get('segmented_control')
     # D-257: the diagram, the audit controls and what was set aside each have their own tab.
-    assert [tab.label for tab in app.tabs] == ["Calidad", "Auditoría", "Rechazos y cargas"] and len(app.get('iframe')) == 3
+    assert [tab.label for tab in app.tabs] == ["Calidad", "Auditoría", "Rechazos y cargas"] and len(
+        app.get('iframe')
+    ) == 3
 
 
 @needs_database
 def test_d171_a_card_opens_its_evidence_with_the_rows_the_method_and_a_recheck():
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
-              "from bi import dashboard\n"
-              "st.session_state[dashboard.QUALITY_OPEN_KEY] = 'Pruebas dbt de la última construcción'\n"
-              "dashboard.render_page(dashboard.PAGE_OPERATIONS)\n")
+    script = (
+        f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
+        "from bi import dashboard\n"
+        "st.session_state[dashboard.QUALITY_OPEN_KEY] = 'Pruebas dbt de la última construcción'\n"
+        "dashboard.render_page(dashboard.PAGE_OPERATIONS)\n"
+    )
     app = AppTest.from_string(script, default_timeout=90).run()
     assert not app.exception
     assert 'RN-14' in list(app.dataframe[0].value['Regla'])
@@ -900,16 +988,22 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Every folder starts open (D-139): the whole map of the app at a glance.
     # Step 4 of the refonte: Ingeniería de datos, four pages; DevOps joined Ejecuciones.
     assert 'DevOps y seguridad' not in labels
-    for child in ['Panorama de precios', 'Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría',
-                  'Centro de operación', 'Arquitectura de seguridad', 'Documentos']:
+    for child in [
+        'Panorama de precios',
+        'Pipeline y linaje',
+        'Modelo de datos',
+        'Calidad y auditoría',
+        'Centro de operación',
+        'Arquitectura de seguridad',
+        'Documentos',
+    ]:
         assert child in labels
     # D-282: the documents live in their folder, not in the menu.
     for document in ['Plan de pruebas y seguridad', 'PRD · Requisitos del producto', 'SAD · Arquitectura']:
         assert document not in labels
     sidebar_markup = " ".join(block.value for block in app.sidebar.markdown)
     assert 'class="sidebar-github' in sidebar_markup and 'aria-label="GitHub del proyecto"' in sidebar_markup
-    for retired in ['Archivos del proyecto', 'Descripción general', 'Manual', 'Glosario',
-                    'Fuentes y enlaces']:
+    for retired in ['Archivos del proyecto', 'Descripción general', 'Manual', 'Glosario', 'Fuentes y enlaces']:
         assert retired not in labels
     folder_buttons = [button for button in app.sidebar.button if str(button.key).startswith('nav_toggle_')]
     toggles = {button.label for button in folder_buttons}
@@ -958,8 +1052,9 @@ def test_d118_sources_is_its_own_folder_with_two_external_children():
     folder, whose floating panel holds the official files as external links."""
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not any(str(button.key) == 'nav_toggle_fuentes' for button in app.sidebar.button)
-    assert [element.label for element in app.sidebar.get('popover') if getattr(element, 'label', '') == 'Fuentes'] \
-        or 'Fuentes' in str([element.proto for element in app.sidebar.get('popover')])
+    assert [
+        element.label for element in app.sidebar.get('popover') if getattr(element, 'label', '') == 'Fuentes'
+    ] or 'Fuentes' in str([element.proto for element in app.sidebar.get('popover')])
     markup = " ".join(block.value for block in app.sidebar.markdown)
     for name, url in dashboard.SOURCE_LINKS:
         assert f'href="{html.escape(url, quote=True)}"' in markup and name in markup
@@ -985,8 +1080,9 @@ def test_d116_every_github_link_shows_the_real_mark_and_opens_a_new_tab():
     app = draw_page(dashboard.PAGE_LINKS)
     assert not app.exception and app.get('iframe')
     markup = github_page.build_github_page_html(dashboard.get_mode())
-    github_links = [link for link in project.PROJECT_LINKS
-                    if link["url"] and link["url"].startswith(project.GITHUB_URL)]
+    github_links = [
+        link for link in project.PROJECT_LINKS if link["url"] and link["url"].startswith(project.GITHUB_URL)
+    ]
     assert github_links == [link for link in project.PROJECT_LINKS if link["url"]]
     assert len(github_links) >= 5
     assert dashboard.architecture.brand_icons.logo_body("github") in markup
@@ -1029,10 +1125,10 @@ def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
 
 
 def test_movement_ring_parts_cover_comparable_series_not_the_top_n():
-    rows = pd.DataFrame({'variation': [0.2] * 12 + [-.1] * 4 + [0.] * 4 + [float('nan')]})
+    rows = pd.DataFrame({'variation': [0.2] * 12 + [-0.1] * 4 + [0.0] * 4 + [float('nan')]})
     parts = dashboard.build_movement_proportions(rows)
     assert parts['value'].tolist() == [12, 4, 4]
-    assert parts['share'].tolist() == [60., 20., 20.]
+    assert parts['share'].tolist() == [60.0, 20.0, 20.0]
     assert parts['value'].sum() == 20
     empty = dashboard.build_movement_proportions(rows.iloc[:0])
     assert empty['value'].sum() == 0 and empty['share'].sum() == 0
@@ -1043,9 +1139,18 @@ def test_d094_old_history_links_open_the_new_page():
 
 
 def test_business_header_order_and_retired_views_are_not_in_the_menu():
-    views=dashboard.read_window_views(dashboard.REPORT_WINDOW)
-    for retired in ("Datos", "Esta semana", "Brecha de precio", "Canales y regiones", "Alertas", "Portada", "Definición del proyecto",
-                    "Reglas de calidad", "DevOps y seguridad"):  # D-318: they left, and their addresses open the page that holds them
+    views = dashboard.read_window_views(dashboard.REPORT_WINDOW)
+    for retired in (
+        "Datos",
+        "Esta semana",
+        "Brecha de precio",
+        "Canales y regiones",
+        "Alertas",
+        "Portada",
+        "Definición del proyecto",
+        "Reglas de calidad",
+        "DevOps y seguridad",
+    ):  # D-318: they left, and their addresses open the page that holds them
         assert retired not in views and dashboard.RETIRED_VIEWS[retired] in dashboard.SHOW_PAGE_BY_TITLE
 
 
@@ -1082,11 +1187,19 @@ def test_d129_the_github_page_names_actions_so_it_is_not_confused_with_ejecucion
 
 @needs_database
 def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
-    assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:4] == [dashboard.PAGE_FOLDER, dashboard.PAGE_PRD, dashboard.PAGE_SAD,
-                                                               dashboard.PAGE_ADR]
+    assert dashboard.WINDOWS[dashboard.SECTION_LINKS][:4] == [
+        dashboard.PAGE_FOLDER,
+        dashboard.PAGE_PRD,
+        dashboard.PAGE_SAD,
+        dashboard.PAGE_ADR,
+    ]
     # D-205: the document views in their own frame, the live panel diagrams inline.
-    for page, framed, inline in ((dashboard.PAGE_PRD, 4, 0), (dashboard.PAGE_SAD, 9, 0), (dashboard.PAGE_ADR, 3, 0),
-                                 (dashboard.PAGE_TEST_PLAN, 6, 0)):
+    for page, framed, inline in (
+        (dashboard.PAGE_PRD, 4, 0),
+        (dashboard.PAGE_SAD, 9, 0),
+        (dashboard.PAGE_ADR, 3, 0),
+        (dashboard.PAGE_TEST_PLAN, 6, 0),
+    ):
         app = draw_page(page)
         assert not app.exception and not app.code
         text = " ".join(block.value for block in app.markdown)
@@ -1114,16 +1227,23 @@ def test_d163_the_page_answers_one_question_with_families_against_the_ipc():
     assert 'la canasta de referencia' in heads[-1]
     # Retired as noise: the usual-range band, the next-months strip, the outlier table,
     # the ranking card and the product history (D-167).
-    for gone in ['Rango habitual', 'Qué suele pasar', 'con precio fuera de lo habitual para la época',
-                 'Desde enero 2022, frente a la inflación', 'toda su historia']:
+    for gone in [
+        'Rango habitual',
+        'Qué suele pasar',
+        'con precio fuera de lo habitual para la época',
+        'Desde enero 2022, frente a la inflación',
+        'toda su historia',
+    ]:
         assert gone not in text
 
 
 @needs_database
 def test_d163_without_inflation_the_ipc_is_the_flat_reference_and_the_pesos_are_named():
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
-              "from bi import dashboard\nst.session_state[dashboard.CONTEXT_BASIS_KEY] = dashboard.BASIS_REAL\n"
-              "dashboard.render_page(dashboard.PAGE_SEASONALITY)\n")
+    script = (
+        f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\nimport streamlit as st\n"
+        "from bi import dashboard\nst.session_state[dashboard.CONTEXT_BASIS_KEY] = dashboard.BASIS_REAL\n"
+        "dashboard.render_page(dashboard.PAGE_SEASONALITY)\n"
+    )
     app = AppTest.from_string(script, default_timeout=60).run()
     assert not app.exception
     assert 'Sin inflación: la línea punteada es la canasta del INE (100)' in ' '.join(b.value for b in app.markdown)
@@ -1139,7 +1259,12 @@ def test_d191_file_sizes_for_the_storage_diagram():
 
 @needs_database
 def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relationship_diagram():
-    assert dashboard.MODEL_VIEWS == ["Modelo estrella", "Entidad-relación", "Dónde viven los datos", "Cruces entre bases"]
+    assert dashboard.MODEL_VIEWS == [
+        "Modelo estrella",
+        "Entidad-relación",
+        "Dónde viven los datos",
+        "Cruces entre bases",
+    ]
     app = draw_page(dashboard.PAGE_ARCHITECTURE, state={dashboard.MODEL_VIEW_KEY: "Entidad-relación"})
     assert not app.exception and not app.tabs
     joined = " ".join(block.value for block in app.markdown)
@@ -1179,8 +1304,9 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
         assert dashboard.MENU_INK[dark][6] in css and 'a::before' in css
         assert 'font-size:.9375rem' in css  # 15 px rows
     assert 'linear-gradient' not in dashboard.build_sidebar_css(charts.MODE_DARK)
-    assert set(dashboard.SIDEBAR_ICONS) == {page for _, _, pages in dashboard.MENU_BLOCKS
-                                            if pages is not dashboard.SOURCE_LINKS for page in pages}
+    assert set(dashboard.SIDEBAR_ICONS) == {
+        page for _, _, pages in dashboard.MENU_BLOCKS if pages is not dashboard.SOURCE_LINKS for page in pages
+    }
     icons = [link.proto.icon for link in app.sidebar.get('page_link')]
     assert len(set(icons)) == len(icons)
 
@@ -1222,7 +1348,9 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
     assert app.button(key="return_to_previous").label == "Volver"
     assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
     # each chip says in full what it counts, and the alerts are the week's national ones
-    assert markup.count('class="home-chip"') == 1  # D-316: the header keeps the week and the place; the counts live in the panels
+    assert (
+        markup.count('class="home-chip"') == 1
+    )  # D-316: the header keeps the week and the place; the counts live in the panels
     for note in ("Sin cambio claro", "Sin dato"):  # the map's legend says what its greys mean
         assert note in markup, note
     week = dashboard.read_latest_week()
@@ -1235,6 +1363,7 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
 @needs_database
 def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_file():
     from bi import documents_folder
+
     app = draw_page(dashboard.PAGE_FOLDER)
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
@@ -1251,7 +1380,11 @@ def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_f
 
 
 def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_menu():
-    reading = {path.name for path in (PROJECT_DIR / "docs").glob("*.md")} - {"DECISIONES.md", "PROYECTO.md", "DISENO.md"}
+    reading = {path.name for path in (PROJECT_DIR / "docs").glob("*.md")} - {
+        "DECISIONES.md",
+        "PROYECTO.md",
+        "DISENO.md",
+    }
     assert {dashboard.PROJECT_DOCUMENTS[page][0] for page in dashboard.FOLDER_ORDER} == reading
     assert not set(dashboard.FOLDER_ORDER) & set(dashboard.MENU_ORDER)
     assert [pages for key, _, pages in dashboard.MENU_BLOCKS if key == "documentos"] == [[dashboard.PAGE_FOLDER]]
@@ -1270,10 +1403,14 @@ def test_d282_a_document_opens_its_page_with_its_path_its_pdf_and_its_neighbours
     assert any("doc-print" in block.proto.body for block in app.get("html"))
     position = dashboard.FOLDER_ORDER.index(page)
     labels = [link.proto.label for link in app.main.get("page_link")]
-    expected = ([f"← Anterior: {dashboard.SIDEBAR_LABELS.get(p, p)}" for p in dashboard.FOLDER_ORDER[position - 1:position]
-                 if position > 0]
-                + [f"Siguiente: {dashboard.SIDEBAR_LABELS.get(p, p)} →"
-                   for p in dashboard.FOLDER_ORDER[position + 1:position + 2]])
+    expected = [
+        f"← Anterior: {dashboard.SIDEBAR_LABELS.get(p, p)}"
+        for p in dashboard.FOLDER_ORDER[position - 1 : position]
+        if position > 0
+    ] + [
+        f"Siguiente: {dashboard.SIDEBAR_LABELS.get(p, p)} →"
+        for p in dashboard.FOLDER_ORDER[position + 1 : position + 2]
+    ]
     assert labels == expected
 
 
@@ -1292,12 +1429,12 @@ def test_d282_the_pdf_action_prints_the_document_on_a_white_sheet():
 
 def test_d282_every_preview_shows_the_index_of_its_document():
     from bi import documents_folder
+
     for page in dashboard.FOLDER_ORDER:
         text = (PROJECT_DIR / "docs" / dashboard.PROJECT_DOCUMENTS[page][0]).read_text(encoding="utf-8")
         index = documents_folder.read_index(text)
         assert len(index) >= 2, page
         assert all(entry.split(" · ")[0] in text for entry in index), page
-
 
 
 @needs_database
@@ -1347,8 +1484,15 @@ def test_d298_a_failed_load_shows_its_alert_in_the_menu_of_every_page(monkeypatc
     from datetime import datetime, timezone
     import streamlit as st
     from bi import control
-    failed = {"id": 99, "state": control.RUN_FAILED, "started_at": datetime(2026, 10, 27, 12, tzinfo=timezone.utc),
-              "duration": None, "url": "https://github.com", "trigger": "Automática"}
+
+    failed = {
+        "id": 99,
+        "state": control.RUN_FAILED,
+        "started_at": datetime(2026, 10, 27, 12, tzinfo=timezone.utc),
+        "duration": None,
+        "url": "https://github.com",
+        "trigger": "Automática",
+    }
     monkeypatch.setattr(control, "list_workflow_runs", lambda token=None, count=10: [dict(failed)])
     monkeypatch.setattr(control, "mark_simulated_failures", lambda runs, token=None: runs)
     st.cache_data.clear()
@@ -1365,4 +1509,3 @@ def test_d298_a_failed_load_shows_its_alert_in_the_menu_of_every_page(monkeypatc
             assert any(link.proto.label == "Ver qué paso falló" for link in app.sidebar.get("page_link"))
     finally:
         st.cache_data.clear()
-

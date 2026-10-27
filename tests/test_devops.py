@@ -1,4 +1,5 @@
 """The CI/CD diagram (D-243): every box is a step of a real workflow, and nothing else is drawn."""
+
 import re
 from pathlib import Path
 

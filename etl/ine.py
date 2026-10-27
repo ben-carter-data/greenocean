@@ -7,6 +7,7 @@ Only division 1, «Alimentos y bebidas no alcohólicas», is used. The files go 
 bronze layer in Parquet; dbt links the two series (models stg_ine__ipc_monthly and
 ipc_monthly). If the INE cannot be reached, the load keeps the IPC already published.
 """
+
 import sys
 from pathlib import Path
 
@@ -19,12 +20,12 @@ from etl import bronze  # noqa: E402
 
 INE_FILES = {
     "base_2023": "https://www.ine.gob.cl/docs/default-source/%C3%ADndice-de-precios-al-consumidor/"
-                 "cuadros-estadisticos/base-anual-2023_100/series-de-tiempo/"
-                 "ipc_base_20237baa955a44fe4eada201c196338fb3be.csv?download=true",
+    "cuadros-estadisticos/base-anual-2023_100/series-de-tiempo/"
+    "ipc_base_20237baa955a44fe4eada201c196338fb3be.csv?download=true",
     "divisiones_empalmadas": "https://www.ine.gob.cl/docs/default-source/%C3%ADndice-de-precios-al-consumidor/"
-                             "cuadros-estadisticos/series-empalmadas-y-antecedentes-historicos/"
-                             "series-empalmadas-diciembre-2009-a-la-fecha/"
-                             "serie-hist%C3%B3rica-empalmada-divisiones-ipc-diciembre-2009-a-la-fecha-csv.csv?download=true",
+    "cuadros-estadisticos/series-empalmadas-y-antecedentes-historicos/"
+    "series-empalmadas-diciembre-2009-a-la-fecha/"
+    "serie-hist%C3%B3rica-empalmada-divisiones-ipc-diciembre-2009-a-la-fecha-csv.csv?download=true",
 }
 FOOD_DIVISION = "1"
 BRONZE_TABLE = "ine_ipc"
@@ -41,9 +42,15 @@ def parse_rows(text, file_name):
         cells = dict(zip(header, [cell.strip('"') for cell in line.split(";")]))
         is_division = cells.get("División") == FOOD_DIVISION and not cells.get("Grupo")
         if is_division:
-            rows.append({"file": file_name, "year": cells["Año"], "month": cells["Mes"],
-                         "index_value": cells["Índice"],
-                         "monthly_change": cells.get("Variación Mensual (%)", "")})
+            rows.append(
+                {
+                    "file": file_name,
+                    "year": cells["Año"],
+                    "month": cells["Mes"],
+                    "index_value": cells["Índice"],
+                    "monthly_change": cells.get("Variación Mensual (%)", ""),
+                }
+            )
     return rows
 
 
@@ -67,8 +74,10 @@ def write_bronze(files, bronze_dir=bronze.BRONZE_DIR):
         folder = bronze_dir / BRONZE_TABLE / f"file={name}"
         folder.mkdir(parents=True, exist_ok=True)
         columns = ["year", "month", "index_value", "monthly_change"]
-        table = pa.table({column: [row[column] for row in rows] for column in columns},
-                         schema=pa.schema([(column, pa.string()) for column in columns]))
+        table = pa.table(
+            {column: [row[column] for row in rows] for column in columns},
+            schema=pa.schema([(column, pa.string()) for column in columns]),
+        )
         pq.write_table(table, folder / "data.parquet")
 
 
@@ -77,8 +86,10 @@ def main():
         files = download()
     except Exception as error:  # the INE is unreachable or changed its files
         has_previous = (bronze.BRONZE_DIR / BRONZE_TABLE).exists()
-        print(f"IPC | no se pudo descargar ({error}); "
-              + ("se usa el último bronce disponible" if has_previous else "sin IPC previo"))
+        print(
+            f"IPC | no se pudo descargar ({error}); "
+            + ("se usa el último bronce disponible" if has_previous else "sin IPC previo")
+        )
         return 0 if has_previous else 1
     write_bronze(files)
     for name, rows in files.items():

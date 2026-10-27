@@ -1,4 +1,5 @@
 """Tests for the K6 price alerts."""
+
 import sys
 from pathlib import Path
 
@@ -13,11 +14,18 @@ STEADY_PRICES = [1000, 1010] * 6 + [1000]
 
 def make_price_series(prices, first_week="2026-01-05"):
     """National weekly prices of one product, one row per consecutive week."""
-    return pd.DataFrame({
-        "week_start": pd.date_range(first_week, periods=len(prices), freq="7D"),
-        "product_group": "Hortalizas", "product": "Tomate", "variety": "Larga vida",
-        "quality": "Primera", "channel": "Feria libre", "normalized_unit": "kilo",
-        "national_price": prices})
+    return pd.DataFrame(
+        {
+            "week_start": pd.date_range(first_week, periods=len(prices), freq="7D"),
+            "product_group": "Hortalizas",
+            "product": "Tomate",
+            "variety": "Larga vida",
+            "quality": "Primera",
+            "channel": "Feria libre",
+            "normalized_unit": "kilo",
+            "national_price": prices,
+        }
+    )
 
 
 def test_k6_weekly_variation_is_the_change_against_the_week_before():

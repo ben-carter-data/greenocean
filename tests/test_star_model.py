@@ -1,4 +1,5 @@
 """Tests for the star model diagram: layout, cards and the audit trail (D-097)."""
+
 import sys
 from pathlib import Path
 
@@ -6,8 +7,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import charts, project, star_model  # noqa: E402
 
 COLUMNS = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
-ROW_COUNTS = {"weekly_price": 811578, "dim_product": 1609, "dim_region": 9,
-              "dim_channel": 8, "dim_date": 249, "etl_run": 4, "rejection": 201}
+ROW_COUNTS = {
+    "weekly_price": 811578,
+    "dim_product": 1609,
+    "dim_region": 9,
+    "dim_channel": 8,
+    "dim_date": 249,
+    "etl_run": 4,
+    "rejection": 201,
+}
 IPC_COUNTS = {"ine_ipc_source": 202, "ipc_monthly": 202, "ipc_weekly": 250}
 
 
@@ -30,7 +38,7 @@ def test_d097_layout_never_overlaps_whatever_the_column_counts():
     assert set(layout) == {"dim_date", "weekly_price", "dim_product", "dim_region", "dim_channel"}
     rects = list(layout.values())
     for i, a in enumerate(rects):
-        for b in rects[i + 1:]:
+        for b in rects[i + 1 :]:
             assert not rect_overlap(a, b)
         x, y, w, h = a
         assert x >= 0 and y >= 0 and x + w <= star_model.WIDTH and y + h <= height
@@ -42,15 +50,14 @@ def test_d097_layout_never_overlaps_whatever_the_column_counts():
 
 def test_d097_layout_grows_with_more_columns_without_overlapping():
     wide_columns = dict(COLUMNS)
-    wide_columns["dim_date"] = COLUMNS["dim_date"] + [("extra_one", ""), ("extra_two", ""),
-                                                      ("extra_three", "")]
+    wide_columns["dim_date"] = COLUMNS["dim_date"] + [("extra_one", ""), ("extra_two", ""), ("extra_three", "")]
     layout, height = star_model.compute_layout(wide_columns)
     base_layout, base_height = star_model.compute_layout(COLUMNS)
     assert layout["dim_date"][3] > base_layout["dim_date"][3]
     assert height > base_height
     rects = list(layout.values())
     for i, a in enumerate(rects):
-        for b in rects[i + 1:]:
+        for b in rects[i + 1 :]:
             assert not rect_overlap(a, b)
 
 
@@ -92,8 +99,12 @@ def test_d097_audit_trail_shows_etl_run_feeding_rejection_apart_from_the_star():
     # The audit group sits below dim_region, inside the same right-hand margin,
     # but never overlaps any of the five star cards.
     audit_top = layout["dim_region"][1] + layout["dim_region"][3] + star_model.GAP
-    audit_rect = (star_model.WIDTH - star_model.MARGIN - star_model.AUDIT_WIDTH, audit_top,
-                 star_model.AUDIT_WIDTH, 2 * star_model.AUDIT_HEIGHT + star_model.AUDIT_GAP)
+    audit_rect = (
+        star_model.WIDTH - star_model.MARGIN - star_model.AUDIT_WIDTH,
+        audit_top,
+        star_model.AUDIT_WIDTH,
+        2 * star_model.AUDIT_HEIGHT + star_model.AUDIT_GAP,
+    )
     for rect in layout.values():
         assert not rect_overlap(rect, audit_rect)
     assert audit_rect[1] + audit_rect[3] <= height - star_model.MARGIN
@@ -113,8 +124,12 @@ def test_d190_the_ipc_group_hangs_from_dim_date_and_never_overlaps_the_star():
     assert "202 filas" in svg and "250 filas" in svg and "dim_date" in svg
     assert 'aria-label="Modelo estrella de datos.duckdb"' in svg
     layout, _ = star_model.compute_layout(COLUMNS)
-    ipc_rect = (star_model.MARGIN, star_model.MARGIN + 34, star_model.AUDIT_WIDTH,
-                3 * star_model.AUDIT_HEIGHT + 2 * star_model.IPC_GAP)
+    ipc_rect = (
+        star_model.MARGIN,
+        star_model.MARGIN + 34,
+        star_model.AUDIT_WIDTH,
+        3 * star_model.AUDIT_HEIGHT + 2 * star_model.IPC_GAP,
+    )
     for rect in layout.values():
         assert not rect_overlap(rect, ipc_rect)
     # Without the counts of its tables (the schema file has none) the group is not drawn.

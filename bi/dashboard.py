@@ -7,6 +7,7 @@ state of the weekly pipeline through the GitHub API (bi/control.py).
 Texts shown to the user are in Spanish; code and comments are in English.
 The color modes and chart palettes live in bi/charts.py.
 """
+
 import base64
 import html
 import importlib
@@ -32,9 +33,46 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
-from bi import (alerts, app_map, overview, quality_method, architecture, buttons, charts, control, documents_folder, i18n, home_mockup, lag,  # noqa: E402
-                database_crossings, deployment, devops, monitoring, page_bar, served_database, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
+from bi import (
+    alerts,
+    app_map,
+    overview,
+    quality_method,
+    architecture,
+    buttons,
+    charts,
+    control,
+    documents_folder,
+    i18n,
+    home_mockup,
+    lag,  # noqa: E402
+    database_crossings,
+    deployment,
+    devops,
+    monitoring,
+    page_bar,
+    served_database,
+    storage_map,
+    doc_diagrams,
+    er_diagram,
+    github_page,
+    inflation_view,
+    lineage,
+    operation_center,
+    quality_evidence,
+    quality_live,
+    quality_view,
+    security_map,
+    sql_explorer,
+    stack_page,
+    project,
+    quality,
+    queries,
+    star_model,
+    zoom,
+)
 from etl import etl  # noqa: E402
+
 # D-283: every text a reader sees goes through tr, which gives its English when the reader chose English.
 tr = i18n.tr
 # endregion
@@ -81,11 +119,27 @@ PAGE_DECISION_INDEX = "Índice de decisiones"
 # D-290: the test plan and the security plan are one document; the scalability plan and the data dictionary live in the SAD.
 PAGE_TEST_PLAN = "Plan de pruebas y seguridad"
 # D-318: the views that only old addresses reached left; each address opens the page that now holds its content.
-RETIRED_VIEWS.update({"Datos": PAGE_HOME, "Portada": PAGE_HOME, "Definición del proyecto": PAGE_PRD, "Esta semana": PAGE_HOME,
-                      "Brecha de precio": PAGE_SQL, "Canales y regiones": PAGE_HOME, "Alertas": PAGE_HOME,
-                      "Reglas de calidad": PAGE_TEST_PLAN, "DevOps y seguridad": PAGE_RUNS})
-RETIRED_VIEWS.update({"Plan de pruebas de seguridad": PAGE_TEST_PLAN, "Plan de pruebas": PAGE_TEST_PLAN,
-                      "Escalabilidad": PAGE_SAD, "Diccionario de datos": PAGE_SAD})
+RETIRED_VIEWS.update(
+    {
+        "Datos": PAGE_HOME,
+        "Portada": PAGE_HOME,
+        "Definición del proyecto": PAGE_PRD,
+        "Esta semana": PAGE_HOME,
+        "Brecha de precio": PAGE_SQL,
+        "Canales y regiones": PAGE_HOME,
+        "Alertas": PAGE_HOME,
+        "Reglas de calidad": PAGE_TEST_PLAN,
+        "DevOps y seguridad": PAGE_RUNS,
+    }
+)
+RETIRED_VIEWS.update(
+    {
+        "Plan de pruebas de seguridad": PAGE_TEST_PLAN,
+        "Plan de pruebas": PAGE_TEST_PLAN,
+        "Escalabilidad": PAGE_SAD,
+        "Diccionario de datos": PAGE_SAD,
+    }
+)
 SECTION_RESOURCES = "Enlaces"
 SOURCE_LINKS = [
     ("ODEPA: precios mayoristas", project.WHOLESALE_SOURCE_URL),
@@ -107,8 +161,16 @@ WINDOWS = {
     REPORT_WINDOW: [PAGE_HOME, PAGE_WHERE, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
-    SECTION_LINKS: [PAGE_FOLDER, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_DOCUMENTATION, PAGE_GLOSSARY,
-                    PAGE_MANUAL, PAGE_DECISION_INDEX],
+    SECTION_LINKS: [
+        PAGE_FOLDER,
+        PAGE_PRD,
+        PAGE_SAD,
+        PAGE_ADR,
+        PAGE_DOCUMENTATION,
+        PAGE_GLOSSARY,
+        PAGE_MANUAL,
+        PAGE_DECISION_INDEX,
+    ],
     SECTION_RESOURCES: [PAGE_LINKS],
 }
 # The SQL and Python consoles left the app (D-143): the code lives in GitHub and the
@@ -118,18 +180,32 @@ ROUTE = [REPORT_WINDOW, SECTION_TECHNICAL, SECTION_SECURITY, SECTION_LINKS]
 # The former KPI page remains as a hidden compatibility destination for old links;
 # its business information now lives in the dashboard and documentation.
 WINDOWS = {window: WINDOWS[window] for window in ROUTE + [SECTION_PROJECT, SECTION_RESOURCES, SECTION_KPI]}
-WINDOW_PATHS = {SECTION_PROJECT: "proyecto", REPORT_WINDOW: "dashboard", SECTION_KPI: "kpis",
-                SECTION_TECHNICAL: "arquitectura-y-operacion", SECTION_SECURITY: "seguridad",
-                SECTION_LINKS: "documentacion-y-enlaces", SECTION_RESOURCES: "enlaces"}
-WINDOW_ICONS = {SECTION_PROJECT: ":material/assignment:", REPORT_WINDOW: ":material/dashboard:",
-                SECTION_KPI: ":material/insights:",
-                SECTION_TECHNICAL: ":material/account_tree:", SECTION_SECURITY: ":material/lock:", SECTION_LINKS: ":material/menu_book:", SECTION_RESOURCES: ":material/link:"}
-ROUTE_LEADS = {SECTION_PROJECT: "qué problema resuelve y qué se construyó",
-               SECTION_LINKS: "los requisitos, la arquitectura y las decisiones del proyecto",
-               SECTION_KPI: "qué mide cada KPI, cómo se calcula y qué límites tiene",
-               REPORT_WINDOW: "los precios y cambios de la semana",
-               SECTION_TECHNICAL: "pipeline, modelo estrella, DevOps y operación",
-               SECTION_SECURITY: "qué podría intentar un atacante y las pruebas que lo detienen"}
+WINDOW_PATHS = {
+    SECTION_PROJECT: "proyecto",
+    REPORT_WINDOW: "dashboard",
+    SECTION_KPI: "kpis",
+    SECTION_TECHNICAL: "arquitectura-y-operacion",
+    SECTION_SECURITY: "seguridad",
+    SECTION_LINKS: "documentacion-y-enlaces",
+    SECTION_RESOURCES: "enlaces",
+}
+WINDOW_ICONS = {
+    SECTION_PROJECT: ":material/assignment:",
+    REPORT_WINDOW: ":material/dashboard:",
+    SECTION_KPI: ":material/insights:",
+    SECTION_TECHNICAL: ":material/account_tree:",
+    SECTION_SECURITY: ":material/lock:",
+    SECTION_LINKS: ":material/menu_book:",
+    SECTION_RESOURCES: ":material/link:",
+}
+ROUTE_LEADS = {
+    SECTION_PROJECT: "qué problema resuelve y qué se construyó",
+    SECTION_LINKS: "los requisitos, la arquitectura y las decisiones del proyecto",
+    SECTION_KPI: "qué mide cada KPI, cómo se calcula y qué límites tiene",
+    REPORT_WINDOW: "los precios y cambios de la semana",
+    SECTION_TECHNICAL: "pipeline, modelo estrella, DevOps y operación",
+    SECTION_SECURITY: "qué podría intentar un atacante y las pruebas que lo detienen",
+}
 WINDOW_OF_VIEW = {view: window for window, views in WINDOWS.items() for view in views}
 VIEW_PARAMETER = "vista"
 # Session flag: the window being drawn is a report (Dashboard), so every view fits one
@@ -141,10 +217,10 @@ ALL_VALUES = "Todas"
 # Dashboard summary (D-072): a slider sets how many rows the ranking shows.
 TOP_N_RANGE = (1, 100)
 DEFAULT_TOP_N = 20
-GAP_MEANING = ("La brecha de precio compara el precio al consumidor con el mayorista: no "
-               "mide ganancia ni descuenta costos.")
-ALERT_MEANING = ("Una alerta señala un cambio poco habitual: invita a revisar, no prueba un "
-                 "error ni explica su causa.")
+GAP_MEANING = (
+    "La brecha de precio compara el precio al consumidor con el mayorista: no mide ganancia ni descuenta costos."
+)
+ALERT_MEANING = "Una alerta señala un cambio poco habitual: invita a revisar, no prueba un error ni explica su causa."
 DASHBOARD_WEEKS = 26
 # The groups of views before D-065, kept for the documents that name them.
 NAVIGATION_GROUPS = WINDOWS
@@ -152,30 +228,55 @@ PAGES = [page for pages in NAVIGATION_GROUPS.values() for page in pages]
 HOME_PAGE = PAGE_HOME
 PAGE_ICONS = {
     PAGE_DOCUMENTATION: ":material/menu_book:",
-    PAGE_PRD: ":material/assignment:", PAGE_SAD: ":material/account_tree:", PAGE_ADR: ":material/gavel:",
+    PAGE_PRD: ":material/assignment:",
+    PAGE_SAD: ":material/account_tree:",
+    PAGE_ADR: ":material/gavel:",
     PAGE_SQL: ":material/terminal:",
-    PAGE_SECURITY: ":material/lock:", PAGE_STACK: ":material/stacks:",
-    PAGE_WHERE: ":material/storefront:", PAGE_INSIGHTS: ":material/lightbulb:", PAGE_HOME: ":material/dashboard:",
-    PAGE_DIAGRAMS: ":material/account_tree:", PAGE_ARCHITECTURE: ":material/schema:",
-    PAGE_SEASONALITY: ":material/calendar_month:", PAGE_KPI: ":material/insights:",
-    PAGE_OPERATIONS: ":material/health_and_safety:", PAGE_RUNS: ":material/play_circle:",
+    PAGE_SECURITY: ":material/lock:",
+    PAGE_STACK: ":material/stacks:",
+    PAGE_WHERE: ":material/storefront:",
+    PAGE_INSIGHTS: ":material/lightbulb:",
+    PAGE_HOME: ":material/dashboard:",
+    PAGE_DIAGRAMS: ":material/account_tree:",
+    PAGE_ARCHITECTURE: ":material/schema:",
+    PAGE_SEASONALITY: ":material/calendar_month:",
+    PAGE_KPI: ":material/insights:",
+    PAGE_OPERATIONS: ":material/health_and_safety:",
+    PAGE_RUNS: ":material/play_circle:",
     PAGE_MANUAL: ":material/menu_book:",
-    PAGE_GLOSSARY: ":material/dictionary:", PAGE_LINKS: ":material/link:",
-    PAGE_FOLDER: ":material/folder_open:", PAGE_DECISION_INDEX: ":material/list_alt:", PAGE_APP_MAP: ":material/hub:", PAGE_METHOD: ":material/verified:",
+    PAGE_GLOSSARY: ":material/dictionary:",
+    PAGE_LINKS: ":material/link:",
+    PAGE_FOLDER: ":material/folder_open:",
+    PAGE_DECISION_INDEX: ":material/list_alt:",
+    PAGE_APP_MAP: ":material/hub:",
+    PAGE_METHOD: ":material/verified:",
     PAGE_TEST_PLAN: ":material/fact_check:",
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
-    PAGE_SECURITY: "mapa-de-seguridad", PAGE_STACK: "stack-y-evidencia",
-    PAGE_PRD: "prd", PAGE_SAD: "sad", PAGE_ADR: "adr", PAGE_SQL: "consultas-sql",
-    PAGE_HOME: "dashboard", PAGE_WHERE: "donde-comprar", PAGE_INSIGHTS: "insights",
+    PAGE_SECURITY: "mapa-de-seguridad",
+    PAGE_STACK: "stack-y-evidencia",
+    PAGE_PRD: "prd",
+    PAGE_SAD: "sad",
+    PAGE_ADR: "adr",
+    PAGE_SQL: "consultas-sql",
+    PAGE_HOME: "dashboard",
+    PAGE_WHERE: "donde-comprar",
+    PAGE_INSIGHTS: "insights",
     PAGE_DIAGRAMS: "diagramas",
-    PAGE_ARCHITECTURE: "arquitectura", PAGE_SEASONALITY: "estacionalidad",
-    PAGE_KPI: "indicadores", PAGE_OPERATIONS: "operaciones",
-    PAGE_RUNS: "ejecuciones", PAGE_MANUAL: "manual",
-    PAGE_GLOSSARY: "glosario", PAGE_LINKS: "enlaces",
-    PAGE_FOLDER: "documentos", PAGE_APP_MAP: "mapa-de-la-app", PAGE_DECISION_INDEX: "indice-de-decisiones",
-    PAGE_TEST_PLAN: "plan-de-pruebas", PAGE_METHOD: "metodo-y-calidad",
+    PAGE_ARCHITECTURE: "arquitectura",
+    PAGE_SEASONALITY: "estacionalidad",
+    PAGE_KPI: "indicadores",
+    PAGE_OPERATIONS: "operaciones",
+    PAGE_RUNS: "ejecuciones",
+    PAGE_MANUAL: "manual",
+    PAGE_GLOSSARY: "glosario",
+    PAGE_LINKS: "enlaces",
+    PAGE_FOLDER: "documentos",
+    PAGE_APP_MAP: "mapa-de-la-app",
+    PAGE_DECISION_INDEX: "indice-de-decisiones",
+    PAGE_TEST_PLAN: "plan-de-pruebas",
+    PAGE_METHOD: "metodo-y-calidad",
 }
 TAB_IDEA = "Idea de negocio"
 TAB_KPI = "Cifras y cálculos"
@@ -198,38 +299,66 @@ TAB_RUNS = "Ejecuciones"
 TAB_QUALITY = "Calidad de datos"
 TABS_BY_PAGE = {page: [] for page in PAGES}
 PAGE_OF_TAB = {
-    TAB_IDEA: PAGE_PRD, TAB_KPI: PAGE_KPI, TAB_RULES: PAGE_TEST_PLAN,
-    TAB_MANUAL: PAGE_MANUAL, TAB_DECISIONS: PAGE_DOCUMENTATION, TAB_GLOSSARY: PAGE_GLOSSARY,
-    TAB_PIPELINE: PAGE_DIAGRAMS, TAB_MODEL: PAGE_ARCHITECTURE, TAB_DEVOPS: PAGE_RUNS,
-    TAB_CODE: PAGE_LINKS, TAB_RUNS: PAGE_RUNS, TAB_QUALITY: PAGE_OPERATIONS,
-    TAB_WEEK: PAGE_HOME, TAB_GAP: PAGE_SQL, TAB_CHANNELS: PAGE_HOME,
-    TAB_SEASONALITY: PAGE_SEASONALITY, TAB_ALERTS: PAGE_HOME,
-    TAB_EXPLORER: PAGE_HOME, TAB_QUERIES: PAGE_HOME,
+    TAB_IDEA: PAGE_PRD,
+    TAB_KPI: PAGE_KPI,
+    TAB_RULES: PAGE_TEST_PLAN,
+    TAB_MANUAL: PAGE_MANUAL,
+    TAB_DECISIONS: PAGE_DOCUMENTATION,
+    TAB_GLOSSARY: PAGE_GLOSSARY,
+    TAB_PIPELINE: PAGE_DIAGRAMS,
+    TAB_MODEL: PAGE_ARCHITECTURE,
+    TAB_DEVOPS: PAGE_RUNS,
+    TAB_CODE: PAGE_LINKS,
+    TAB_RUNS: PAGE_RUNS,
+    TAB_QUALITY: PAGE_OPERATIONS,
+    TAB_WEEK: PAGE_HOME,
+    TAB_GAP: PAGE_SQL,
+    TAB_CHANNELS: PAGE_HOME,
+    TAB_SEASONALITY: PAGE_SEASONALITY,
+    TAB_ALERTS: PAGE_HOME,
+    TAB_EXPLORER: PAGE_HOME,
+    TAB_QUERIES: PAGE_HOME,
 }
 OLD_PATHS = {
-    "inicio": (PAGE_HOME, None), "el-proyecto": (PAGE_HOME, None), "panel": (PAGE_HOME, None),
-    "margenes": (PAGE_SQL, None), "canales-y-regiones": (PAGE_HOME, None),
-    "consultas": (PAGE_HOME, None), "codigo": (PAGE_LINKS, None),
+    "inicio": (PAGE_HOME, None),
+    "el-proyecto": (PAGE_HOME, None),
+    "panel": (PAGE_HOME, None),
+    "margenes": (PAGE_SQL, None),
+    "canales-y-regiones": (PAGE_HOME, None),
+    "consultas": (PAGE_HOME, None),
+    "codigo": (PAGE_LINKS, None),
     # The three profile pages became the real documents (D-151).
-    "documentacion-bi": (PAGE_PRD, None), "documentacion-ba": (PAGE_PRD, None),
-    "documentacion-it": (PAGE_SAD, None), "pipeline": (PAGE_DIAGRAMS, None),
+    "documentacion-bi": (PAGE_PRD, None),
+    "documentacion-ba": (PAGE_PRD, None),
+    "documentacion-it": (PAGE_SAD, None),
+    "pipeline": (PAGE_DIAGRAMS, None),
     # D-290: the documents merged into others.
-    "escalabilidad": (PAGE_SAD, None), "diccionario-de-datos": (PAGE_SAD, None),
+    "escalabilidad": (PAGE_SAD, None),
+    "diccionario-de-datos": (PAGE_SAD, None),
     "plan-de-pruebas-de-seguridad": (PAGE_TEST_PLAN, None),
-    "preguntas-y-resultados": (PAGE_HOME, None), "analisis-python": (PAGE_HOME, None),
-    "queries": (PAGE_HOME, None), "python": (PAGE_HOME, None),
+    "preguntas-y-resultados": (PAGE_HOME, None),
+    "analisis-python": (PAGE_HOME, None),
+    "queries": (PAGE_HOME, None),
+    "python": (PAGE_HOME, None),
     # The retired «Consulta de datos» screen (C03).
     "datos-y-codigo": (PAGE_HOME, None),
     "codigo-y-resultados": (PAGE_HOME, None),
     "detalle-tecnico": (PAGE_DIAGRAMS, None),
     "fuentes-y-enlaces": (PAGE_LINKS, None),
-    "centro-de-control": (PAGE_RUNS, None), "calidad-de-datos": (PAGE_OPERATIONS, None),
+    "centro-de-control": (PAGE_RUNS, None),
+    "calidad-de-datos": (PAGE_OPERATIONS, None),
     # Windows and views before the portfolio route (D-070).
-    "operacion": (PAGE_OPERATIONS, None), "documentacion": (PAGE_DOCUMENTATION, None), "decisiones": (PAGE_DOCUMENTATION, None),
+    "operacion": (PAGE_OPERATIONS, None),
+    "documentacion": (PAGE_DOCUMENTATION, None),
+    "decisiones": (PAGE_DOCUMENTATION, None),
     "vista-3d": (PAGE_SEASONALITY, None),
 }
-OLD_HOME_TABS = {"Fuentes y cruces": TAB_IDEA, "Arquitectura": TAB_PIPELINE,
-                 "Modelo de datos": TAB_MODEL, "Código": TAB_CODE}
+OLD_HOME_TABS = {
+    "Fuentes y cruces": TAB_IDEA,
+    "Arquitectura": TAB_PIPELINE,
+    "Modelo de datos": TAB_MODEL,
+    "Código": TAB_CODE,
+}
 OLD_TAB_PAGES = {(PAGE_OPERATIONS, "Enlaces"): PAGE_LINKS}
 TAB_PARAMETER = "seccion"
 THEME_PARAMETER = "tema"
@@ -237,8 +366,11 @@ THEME_PARAMETER = "tema"
 # run, so every section, link and reload keeps it (D-070).
 THEME_STATE = "chosen_theme"
 # Retired theme names still open their closest theme (D-071).
-RETIRED_THEMES = {charts.MODE_LIGHT: charts.MODE_CORPORATE, "ChatGPT": charts.MODE_GRAPHITE,
-                  "Grafito": charts.MODE_GRAPHITE}
+RETIRED_THEMES = {
+    charts.MODE_LIGHT: charts.MODE_CORPORATE,
+    "ChatGPT": charts.MODE_GRAPHITE,
+    "Grafito": charts.MODE_GRAPHITE,
+}
 DEFAULT_THEME = charts.MODE_CORPORATE
 KPI_PARAMETER = "kpi"
 # D-295: two profiles, asked once on entry. «Consulta» (anyone who comes to read prices) sees the business pages;
@@ -255,9 +387,13 @@ PROFILES = {
 ROLE_PARAMETER = "rol"
 ROLE_STATE = "visitor_role"
 ROLES = {"data": "Data Eng", "ba": "BA", "bi": "BI", "devops": "DevOps", "seguridad": "Seguridad"}
-ROLE_ORDER = {"data": ["ingenieria", "negocio", "devops", "stack"], "ba": ["negocio", "stack", "ingenieria", "devops"],
-              "bi": ["negocio", "ingenieria", "stack", "devops"], "devops": ["devops", "ingenieria", "negocio", "stack"],
-              "seguridad": ["devops", "ingenieria", "negocio", "stack"]}
+ROLE_ORDER = {
+    "data": ["ingenieria", "negocio", "devops", "stack"],
+    "ba": ["negocio", "stack", "ingenieria", "devops"],
+    "bi": ["negocio", "ingenieria", "stack", "devops"],
+    "devops": ["devops", "ingenieria", "negocio", "stack"],
+    "seguridad": ["devops", "ingenieria", "negocio", "stack"],
+}
 DEFAULT_ROLE = "bi"  # a user view unlocked with the key reads the business first
 LANDING_STATE = "profile_landing"
 # What the public profile sees in the menu; the rest is one click away («Ver todo el proyecto»).
@@ -268,9 +404,11 @@ SUPERMARKET = "Supermercado"
 WHOLESALE_LABEL = "Mayorista"
 UNSPECIFIED = "Sin especificar"
 SOURCE_NAMES = {etl.SOURCE_WHOLESALE: "Mayorista", etl.SOURCE_CONSUMER: "Consumidor"}
-FLAG_NAMES = {"SIN_MARCA": "Usados en los indicadores",
-              etl.FLAG_UNIT_NOT_CONVERTIBLE: "Unidad no convertible",
-              etl.FLAG_OUTLIER: "Atípicos"}
+FLAG_NAMES = {
+    "SIN_MARCA": "Usados en los indicadores",
+    etl.FLAG_UNIT_NOT_CONVERTIBLE: "Unidad no convertible",
+    etl.FLAG_OUTLIER: "Atípicos",
+}
 RUN_HISTORY_COUNT = 8
 MANIFEST_FILE = Path(__file__).resolve().parent.parent / "agent" / "downloads" / "manifest.json"
 CHILE_TIME_ZONE = "America/Santiago"
@@ -284,8 +422,7 @@ LIVE_SECONDS_WITHOUT_TOKEN = 60
 OPERATION_RECENT_RUNS = 5
 # The database is published only after these steps passed (D-034), so a published load
 # proves their state when GitHub does not answer.
-STEPS_PROVED_BY_A_SAVED_LOAD = {"Download the ODEPA files", "Run the ETL",
-                                "Run the tests against the new database"}
+STEPS_PROVED_BY_A_SAVED_LOAD = {"Download the ODEPA files", "Run the ETL", "Run the tests against the new database"}
 # Seconds between two questions to GitHub while the pipeline runs, and the
 # longest wait: a normal run takes about one minute.
 PROGRESS_POLL_SECONDS = 4
@@ -294,15 +431,17 @@ PROGRESS_MAXIMUM_SECONDS = 600
 SECRET_GITHUB_TOKEN = "GITHUB_TOKEN"
 SECRET_CONTROL_CODE = "CONTROL_CODE"
 
-ARCHITECTURE_HINT = ("Los datos viajan de izquierda a derecha. **Bronce**: el archivo tal "
-                     "como llega. **Limpieza y reglas**: se corrigen formatos y se aplican "
-                     "las reglas de negocio. **Calidad**: si algo no cuadra, no se guarda "
-                     "nada. **Oro**: la base lista para analizar. Arriba, quién da las "
-                     "órdenes; abajo, cómo sabemos qué pasó. El punto de color de cada paso "
-                     "es su estado real. Pasa el mouse sobre cada pieza para ver qué hace. "
-                     "**Siglas**: ODEPA, Oficina de Estudios y Políticas Agrarias; CSV, archivo "
-                     "de valores separados por comas; ETL, extraer, transformar y cargar; RN, "
-                     "regla de negocio; SQL, lenguaje de consultas; MD, Markdown.")
+ARCHITECTURE_HINT = (
+    "Los datos viajan de izquierda a derecha. **Bronce**: el archivo tal "
+    "como llega. **Limpieza y reglas**: se corrigen formatos y se aplican "
+    "las reglas de negocio. **Calidad**: si algo no cuadra, no se guarda "
+    "nada. **Oro**: la base lista para analizar. Arriba, quién da las "
+    "órdenes; abajo, cómo sabemos qué pasó. El punto de color de cada paso "
+    "es su estado real. Pasa el mouse sobre cada pieza para ver qué hace. "
+    "**Siglas**: ODEPA, Oficina de Estudios y Políticas Agrarias; CSV, archivo "
+    "de valores separados por comas; ETL, extraer, transformar y cargar; RN, "
+    "regla de negocio; SQL, lenguaje de consultas; MD, Markdown."
+)
 # The tables of «DevOps y seguridad» by priority: what protects the data first,
 # then what runs the project, how a run is observed and what gets published.
 # (heading in docs/PROYECTO.md, sentence, title column, text column, note column)
@@ -312,38 +451,51 @@ REASON_TEXTS = {
     etl.REASON_NON_POSITIVE_PRICE: "un precio (mínimo, máximo o promedio) es cero o negativo",
     etl.REASON_MINIMUM_ABOVE_MAXIMUM: "el precio mínimo es mayor que el máximo",
     etl.REASON_DATE_OUTSIDE_FILE_YEAR: "la fecha no cae en el año del archivo",
-    etl.REASON_NON_POSITIVE_VOLUME: "una fila mayorista sin volumen no puede entrar al "
-                                    "promedio ponderado (RN-07)",
+    etl.REASON_NON_POSITIVE_VOLUME: "una fila mayorista sin volumen no puede entrar al promedio ponderado (RN-07)",
 }
 # Short Spanish name of each rejection reason, for the tables (D-141).
 REASON_NAMES = {
-    etl.REASON_UNREADABLE_VALUE: "Valor ilegible", etl.REASON_NON_POSITIVE_PRICE: "Precio cero o negativo",
+    etl.REASON_UNREADABLE_VALUE: "Valor ilegible",
+    etl.REASON_NON_POSITIVE_PRICE: "Precio cero o negativo",
     etl.REASON_MINIMUM_ABOVE_MAXIMUM: "Mínimo mayor que máximo",
     etl.REASON_DATE_OUTSIDE_FILE_YEAR: "Fecha fuera del año del archivo",
     etl.REASON_NON_POSITIVE_VOLUME: "Sin volumen",
 }
 # The fields of a rejected row worth reading, as ODEPA sent them, in Spanish.
 REJECTED_ROW_LABELS = {
-    "price_date": "Fecha", "week_start": "Semana", "region": "Región", "market": "Mercado",
-    "channel": "Canal", "product": "Producto", "variety": "Variedad", "quality": "Calidad",
-    "sale_unit": "Unidad de venta", "unit": "Unidad", "volume": "Volumen",
-    "min_price": "Precio mínimo", "max_price": "Precio máximo", "avg_price": "Precio promedio",
+    "price_date": "Fecha",
+    "week_start": "Semana",
+    "region": "Región",
+    "market": "Mercado",
+    "channel": "Canal",
+    "product": "Producto",
+    "variety": "Variedad",
+    "quality": "Calidad",
+    "sale_unit": "Unidad de venta",
+    "unit": "Unidad",
+    "volume": "Volumen",
+    "min_price": "Precio mínimo",
+    "max_price": "Precio máximo",
+    "avg_price": "Precio promedio",
 }
 NO_DATA_TEXT = "No hay datos para esta selección."
 # Alertas: (lowest distance in standard deviations, label, icon, status color).
-ALERT_LEVELS = [(4, "Muy alta", "◆", "critical"), (3, "Alta", "▲", "serious"),
-                (0, "Moderada", "●", "warning")]
+ALERT_LEVELS = [(4, "Muy alta", "◆", "critical"), (3, "Alta", "▲", "serious"), (0, "Moderada", "●", "warning")]
 # Contexto: nominal prices or real prices deflated with the INE IPC (D-155).
 CONTEXT_BASIS_KEY = "context_price_basis"
 BASIS_NOMINAL, BASIS_REAL = "Precios del día", "Sin inflación"
-BASIS_HELP = ("Precios del día: lo que se pagó cada semana. Sin inflación (IPC): todos los precios en pesos del "
-              "último mes publicado por el INE, descontada la inflación de alimentos, para comparar con años "
-              "anteriores sin que la inflación los haga parecer caros.")
+BASIS_HELP = (
+    "Precios del día: lo que se pagó cada semana. Sin inflación (IPC): todos los precios en pesos del "
+    "último mes publicado por el INE, descontada la inflación de alimentos, para comparar con años "
+    "anteriores sin que la inflación los haga parecer caros."
+)
 # The switch of Pipeline y linaje: the whole journey first, its dbt stretch on demand.
 PIPELINE_VIEW_KEY = "pipeline_view"
 PIPELINE_JOURNEY, PIPELINE_LINEAGE = "Recorrido por capas", "Linaje dbt"
-LINEAGE_HINT = ("Se dibuja con el manifiesto de la última construcción de dbt, que el pipeline guarda en la "
-                "base: si se agrega un modelo o una prueba, aparece aquí en la carga siguiente.")
+LINEAGE_HINT = (
+    "Se dibuja con el manifiesto de la última construcción de dbt, que el pipeline guarda en la "
+    "base: si se agrega un modelo o una prueba, aparece aquí en la carga siguiente."
+)
 ATTRIBUTION_TEXT = (
     "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de "
     "Agricultura de Chile, licencia Creative Commons Atribución; IPC de alimentos: Instituto "
@@ -351,7 +503,8 @@ ATTRIBUTION_TEXT = (
     "Lectura de los datos: el precio nacional es un promedio simple de las regiones, sin ponderar "
     "por población o ventas; cada variación semanal compara las mismas regiones en ambas semanas. "
     "Los indicadores describen el histórico; no predicen precios. Los precios se reconstruyen "
-    "desde la fuente en las pruebas automáticas.")
+    "desde la fuente en las pruebas automáticas."
+)
 # endregion
 
 
@@ -392,7 +545,10 @@ def settle_profile():
         st.session_state[PROFILE_STATE] = requested
         if role in ROLES:
             st.session_state[ROLE_STATE] = role
-    for name, value in ((PROFILE_PARAMETER, get_profile()), (ROLE_PARAMETER, get_role() if get_profile() == PROFILE_PROFESSIONAL else None)):
+    for name, value in (
+        (PROFILE_PARAMETER, get_profile()),
+        (ROLE_PARAMETER, get_role() if get_profile() == PROFILE_PROFESSIONAL else None),
+    ):
         if value:
             st.query_params[name] = value
         elif name in st.query_params:
@@ -410,7 +566,9 @@ def choose_profile(profile, role=None):
 def profile_parameters():
     if not get_profile():
         return {}
-    return {PROFILE_PARAMETER: get_profile()} | ({ROLE_PARAMETER: get_role()} if get_profile() == PROFILE_PROFESSIONAL else {})
+    return {PROFILE_PARAMETER: get_profile()} | (
+        {ROLE_PARAMETER: get_role()} if get_profile() == PROFILE_PROFESSIONAL else {}
+    )
 
 
 def is_public_profile():
@@ -426,8 +584,10 @@ def visible_menu_blocks():
     order = ROLE_ORDER[get_role()] if get_profile() else [block[0] for block in MENU_BLOCKS]
     blocks = [by_key[key] for key in order] + [block for block in MENU_BLOCKS if block[0] not in order]
     if get_profile() and get_role() == "seguridad":  # security first inside its own section
-        blocks = [(key, title, sorted(pages, key=lambda view: view != PAGE_SECURITY) if key == "devops" else pages)
-                  for key, title, pages in blocks]
+        blocks = [
+            (key, title, sorted(pages, key=lambda view: view != PAGE_SECURITY) if key == "devops" else pages)
+            for key, title, pages in blocks
+        ]
     return blocks
 
 
@@ -439,8 +599,11 @@ def visible_menu_order():
 def show_profile_dialog():
     """The first screen of a visit (D-295): the brand, «Elige tu vista» and two pills; under «Profesional», the profiles
     it can put forward. Nothing else. The page waits behind."""
-    st.markdown(f'<div class="profile-brand"><span class="profile-logo">waves</span>GreenOcean</div>'
-                f'<p class="profile-ask">{html.escape(tr("Elige tu vista"))}</p>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="profile-brand"><span class="profile-logo">waves</span>GreenOcean</div>'
+        f'<p class="profile-ask">{html.escape(tr("Elige tu vista"))}</p>',
+        unsafe_allow_html=True,
+    )
     with st.container(horizontal=True, gap="small", key="profile_choices"):
         with st.container(key="profile_side_profesional"):
             name, icon = PROFILES[PROFILE_PROFESSIONAL]
@@ -474,14 +637,22 @@ def show_load_alert(windows_by_title):
         return
     day = failed["started_at"].astimezone(ZoneInfo(CHILE_TIME_ZONE)).strftime("%d-%m")
     with st.sidebar.container(key="load_alert"):
-        st.markdown(f'<p class="load-alert-title">{html.escape(tr("La carga del {} falló").format(day))}</p>'
-                    f'<p class="load-alert-note">{html.escape(tr("El panel muestra la última carga válida."))}</p>',
-                    unsafe_allow_html=True)
-        st.page_link(windows_by_title[WINDOW_OF_VIEW[PAGE_RUNS]], label=tr("Ver qué paso falló"), icon=":material/arrow_forward:",
-                     query_params=keep_context() | {VIEW_PARAMETER: PAGE_RUNS})
+        st.markdown(
+            f'<p class="load-alert-title">{html.escape(tr("La carga del {} falló").format(day))}</p>'
+            f'<p class="load-alert-note">{html.escape(tr("El panel muestra la última carga válida."))}</p>',
+            unsafe_allow_html=True,
+        )
+        st.page_link(
+            windows_by_title[WINDOW_OF_VIEW[PAGE_RUNS]],
+            label=tr("Ver qué paso falló"),
+            icon=":material/arrow_forward:",
+            query_params=keep_context() | {VIEW_PARAMETER: PAGE_RUNS},
+        )
     if st.session_state.get(LOAD_ALERT_SEEN) != failed["id"]:
         st.session_state[LOAD_ALERT_SEEN] = failed["id"]
-        st.toast(tr("La carga del {} falló: el panel muestra la última carga válida.").format(day), icon=":material/error:")
+        st.toast(
+            tr("La carga del {} falló: el panel muestra la última carga válida.").format(day), icon=":material/error:"
+        )
 
 
 def show_assessment_line():
@@ -489,14 +660,16 @@ def show_assessment_line():
     free space under the wordmark, out of the flow, so the menu does not move."""
     palette = charts.get_palette(get_mode())
     with st.sidebar.container(key="assessment_line"):
-        st.markdown(f"""<style>
+        st.markdown(
+            f"""<style>
         .st-key-assessment_line {{ height:0 !important; min-height:0 !important; margin:0 0 -1rem !important; padding:0 !important; overflow:visible; }}
         .st-key-assessment_line a {{ position:fixed; top:56px; left:22px; z-index:5; font-size:10.5px; line-height:1.2; letter-spacing:.01em;
             color:{palette['reference']} !important; text-decoration:none !important; background:none; }}
         .st-key-assessment_line a:hover {{ color:{palette['strong_text']} !important; text-decoration:underline !important; }}
         .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) .st-key-assessment_line a {{ display:none; }}
         </style><a href="{html.escape(build_page_address(PAGE_METHOD))}" target="_self">{html.escape(tr(quality_method.SIDEBAR_LINE))}</a>""",
-                    unsafe_allow_html=True)
+            unsafe_allow_html=True,
+        )
 
 
 def show_profile_switch():
@@ -505,8 +678,9 @@ def show_profile_switch():
         return
     with st.sidebar.container(key="profile_switch"):
         with st.popover(tr("Ver todo el proyecto"), icon=":material/lock:", width="stretch"):
-            typed = st.text_input(tr("Clave"), key="profile_unlock_code", label_visibility="collapsed",
-                                  placeholder=tr("Clave"))
+            typed = st.text_input(
+                tr("Clave"), key="profile_unlock_code", label_visibility="collapsed", placeholder=tr("Clave")
+            )
             if st.button(tr("Desbloquear"), key="profile_unlock", type="primary", width="stretch"):
                 ok, message = control.check_control_code(typed, get_secret(SECRET_CONTROL_CODE))
                 if ok:
@@ -542,8 +716,11 @@ def build_base_mode_script(theme_or_base):
     once: moving between sections never reloads the page, which would end the session
     and its filters (D-070).
     """
-    theme = theme_or_base if theme_or_base in charts.THEMES else (
-        charts.MODE_DARK if theme_or_base == charts.BASE_DARK else charts.MODE_CORPORATE)
+    theme = (
+        theme_or_base
+        if theme_or_base in charts.THEMES
+        else (charts.MODE_DARK if theme_or_base == charts.BASE_DARK else charts.MODE_CORPORATE)
+    )
     base = charts.get_palette(theme)["base"]
     value = json.dumps("Dark" if base == charts.BASE_DARK else "Light")
     selected_theme = json.dumps(theme)
@@ -677,23 +854,34 @@ def build_theme_css(palette):
 
 # Code colors for the light themes: Streamlit's own steps fall under 3:1 on white,
 # so each kind of token takes a darker step of its hue (4.5:1 or more).
-LIGHT_CODE_COLORS = {"string": "#15803d", "boolean": "#15803d", "number": "#0f766e",
-                     "operator": "#c2410c", "keyword": "#1d4ed8", "function": "#1d4ed8",
-                     "comment": "#57606a", "punctuation": "#57606a"}
+LIGHT_CODE_COLORS = {
+    "string": "#15803d",
+    "boolean": "#15803d",
+    "number": "#0f766e",
+    "operator": "#c2410c",
+    "keyword": "#1d4ed8",
+    "function": "#1d4ed8",
+    "comment": "#57606a",
+    "punctuation": "#57606a",
+}
 
 
 def build_code_colors_css(palette):
     """Darker code tokens on the light themes; Vantablack keeps Streamlit's colors."""
     if palette["base"] != charts.BASE_LIGHT:
         return ""
-    return "".join(f'[data-testid="stCode"] .token.{token} {{ color: {color} !important; }}'
-                   for token, color in LIGHT_CODE_COLORS.items())
+    return "".join(
+        f'[data-testid="stCode"] .token.{token} {{ color: {color} !important; }}'
+        for token, color in LIGHT_CODE_COLORS.items()
+    )
 
 
 def build_style_css(mode):
     """Cards, key figures, chips and tables, in the colors of the active theme."""
     palette = charts.get_palette(mode)
-    return build_theme_css(palette) + f"""
+    return (
+        build_theme_css(palette)
+        + f"""
     [class*="st-key-card_"] {{
         background: {palette["card"]}; border: 1px solid {palette["card_border"]};
         border-radius: 18px; padding: 18px 20px 14px 20px;
@@ -1607,6 +1795,7 @@ def build_style_css(mode):
         .st-key-report_filters > div:has(> [class*="st-key-bar_"]) {{ flex:1 1 100%; }}
     }}
     """
+    )
 
 
 def apply_style(mode):
@@ -1615,8 +1804,13 @@ def apply_style(mode):
     # The shared finish is optional: without the file the base style still applies.
     finish_file = Path(__file__).with_name("premium.css")
     finish = finish_file.read_text() if finish_file.exists() else ""
-    for token, key in {"CARD": "card", "BORDER": "card_border", "INK": "strong_text",
-                       "ACCENT": "accent", "BG": "background"}.items():
+    for token, key in {
+        "CARD": "card",
+        "BORDER": "card_border",
+        "INK": "strong_text",
+        "ACCENT": "accent",
+        "BG": "background",
+    }.items():
         finish = finish.replace("__" + token + "__", palette[key])
     st.markdown(f"<style>{build_style_css(mode)}{finish}{buttons.build_icon_css()}</style>", unsafe_allow_html=True)
 
@@ -1634,8 +1828,8 @@ OVERVIEW_CLASS_BY_VIEW = {
 
 def is_dark_surface(color):
     """Whether a hex surface needs the luminous brand colors."""
-    rgb = tuple(int(color.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4))
-    return sum(rgb) / 3 < .5
+    rgb = tuple(int(color.lstrip("#")[i : i + 2], 16) / 255 for i in (0, 2, 4))
+    return sum(rgb) / 3 < 0.5
 
 
 def build_greenocean_logo(mode, sidebar=False):
@@ -1643,11 +1837,13 @@ def build_greenocean_logo(mode, sidebar=False):
     background = charts.get_palette(mode)["sidebar" if sidebar else "background"]
     dark = is_dark_surface(background)
     green, ocean = (BRAND_GREEN_DARK, "#80baff") if dark else (BRAND_GREEN_LIGHT, "#185ca8")
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="190" height="36" viewBox="0 0 190 36">'
-            '<title>GreenOcean</title>'
-            '<text x="0" y="27" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" '
-            'font-size="28" font-weight="500" letter-spacing="-.8">'
-            f'<tspan fill="{green}">Green</tspan><tspan fill="{ocean}">Ocean</tspan></text></svg>')
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="190" height="36" viewBox="0 0 190 36">'
+        '<title>GreenOcean</title>'
+        '<text x="0" y="27" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" '
+        'font-size="28" font-weight="500" letter-spacing="-.8">'
+        f'<tspan fill="{green}">Green</tspan><tspan fill="{ocean}">Ocean</tspan></text></svg>'
+    )
 
 
 def build_greenocean_icon(mode):
@@ -1655,19 +1851,21 @@ def build_greenocean_icon(mode):
     sits over the page route (D-231)."""
     dark = is_dark_surface(charts.get_palette(mode)["background"])
     green, ocean = (BRAND_GREEN_DARK, "#80baff") if dark else (BRAND_GREEN_LIGHT, "#185ca8")
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="40" height="36" viewBox="0 0 40 36">'
-            '<title>GreenOcean</title>'
-            '<text x="1" y="27" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" '
-            'font-size="28" font-weight="600" letter-spacing="-1">'
-            f'<tspan fill="{green}">G</tspan><tspan fill="{ocean}">O</tspan></text></svg>')
+    return (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="40" height="36" viewBox="0 0 40 36">'
+        '<title>GreenOcean</title>'
+        '<text x="1" y="27" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" '
+        'font-size="28" font-weight="600" letter-spacing="-1">'
+        f'<tspan fill="{green}">G</tspan><tspan fill="{ocean}">O</tspan></text></svg>'
+    )
 
 
 def show_app_header(window):
     """Shared, sober graphic navigation, followed by preferences and location."""
     palette = charts.get_palette(get_mode())
-    st.logo(build_greenocean_logo(get_mode(), sidebar=True),
-            icon_image=build_greenocean_icon(get_mode()), size="large")
-    st.markdown(f"""<style>
+    st.logo(build_greenocean_logo(get_mode(), sidebar=True), icon_image=build_greenocean_icon(get_mode()), size="large")
+    st.markdown(
+        f"""<style>
     [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {{display:none;}}
     .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMainBlockContainer"] {{padding-top:54px !important;}}
     .reading-guide {{font-size:.8rem; margin:5px 0 14px; color:{palette['text']};}}
@@ -1709,14 +1907,18 @@ def show_app_header(window):
         .st-key-app_header .app-brand {{white-space:normal; flex:1 1 100%; order:1;}}
         .st-key-header_preferences {{order:0; margin-left:0;}}
     }}
-    </style>""", unsafe_allow_html=True)
+    </style>""",
+        unsafe_allow_html=True,
+    )
     view = read_current_view(window)
     # The Resumen (D-264) and the main pages (D-267) draw the path and Volver in their own bar. The documents have
     # neither (D-269): the menu, always in sight, already says where the reader is and takes them anywhere.
     if view not in BAR_VIEWS | DOCUMENT_VIEWS:
         with st.container(key="app_header", horizontal=True, vertical_alignment="center"):
-            st.markdown(f'<div class="app-brand" aria-label="Página actual">{html.escape(build_view_path(window, view))}</div>',
-                        unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="app-brand" aria-label="Página actual">{html.escape(build_view_path(window, view))}</div>',
+                unsafe_allow_html=True,
+            )
             with st.container(key="header_preferences", horizontal=True):
                 show_return_button()
     theme = get_mode()
@@ -1725,13 +1927,35 @@ def show_app_header(window):
 
 
 # The pages whose only header is one thin bar (D-264, D-267).
-BAR_VIEWS = {PAGE_WHERE, PAGE_INSIGHTS, PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS,
-             PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER, PAGE_APP_MAP, PAGE_METHOD}
+BAR_VIEWS = {
+    PAGE_WHERE,
+    PAGE_INSIGHTS,
+    PAGE_HOME,
+    PAGE_SEASONALITY,
+    PAGE_DIAGRAMS,
+    PAGE_ARCHITECTURE,
+    PAGE_OPERATIONS,
+    PAGE_SQL,
+    PAGE_RUNS,
+    PAGE_SECURITY,
+    PAGE_STACK,
+    PAGE_FOLDER,
+    PAGE_APP_MAP,
+    PAGE_METHOD,
+}
 
 
 # The project documents: no path row and no Volver (D-269); the folder's path leads back (D-282).
-DOCUMENT_VIEWS = {PAGE_DOCUMENTATION, PAGE_PRD, PAGE_SAD, PAGE_ADR, PAGE_MANUAL, PAGE_GLOSSARY, PAGE_DECISION_INDEX,
-                  PAGE_TEST_PLAN}
+DOCUMENT_VIEWS = {
+    PAGE_DOCUMENTATION,
+    PAGE_PRD,
+    PAGE_SAD,
+    PAGE_ADR,
+    PAGE_MANUAL,
+    PAGE_GLOSSARY,
+    PAGE_DECISION_INDEX,
+    PAGE_TEST_PLAN,
+}
 
 
 def build_view_path(window, view):
@@ -1749,8 +1973,12 @@ def build_view_path(window, view):
 
 def show_return_button():
     """Volver: back to the previous point of the project, with its selection."""
-    if st.button(tr("Volver"), icon=":material/arrow_back:", key="return_to_previous",
-                 help=tr("Volver al punto anterior del proyecto, con su selección.")):
+    if st.button(
+        tr("Volver"),
+        icon=":material/arrow_back:",
+        key="return_to_previous",
+        help=tr("Volver al punto anterior del proyecto, con su selección."),
+    ):
         st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
 
 
@@ -1758,7 +1986,9 @@ def show_theme_field():
     """A compact appearance icon; four named choices remain accessible."""
     st.session_state["theme_field"] = get_mode()
     icon = ":material/dark_mode:" if charts.get_palette(get_mode())["base"] == "dark" else ":material/light_mode:"
-    with st.popover(tr("Apariencia"), icon=icon, help=tr("Cambiar los colores: Corporativo, Vantablack, Blue Light o Dark Grey.")):
+    with st.popover(
+        tr("Apariencia"), icon=icon, help=tr("Cambiar los colores: Corporativo, Vantablack, Blue Light o Dark Grey.")
+    ):
         st.radio(tr("Apariencia del panel"), charts.THEMES, key="theme_field", on_change=keep_theme_from_field)
 
 
@@ -1766,9 +1996,12 @@ def show_language_switch():
     """ES · EN (D-283): the language of the panel and of the documents, next to the appearance, kept in the address."""
     with st.container(key="language_switch", horizontal=True, gap="small"):
         for language in i18n.LANGUAGES:
-            if st.button(language.upper(), key=f"language_{language}",
-                         type="primary" if language == i18n.get_language() else "secondary",
-                         help=f"{i18n.LANGUAGE_NAMES[language]} · {tr('Cambiar el idioma del panel y de los documentos.')}"):
+            if st.button(
+                language.upper(),
+                key=f"language_{language}",
+                type="primary" if language == i18n.get_language() else "secondary",
+                help=f"{i18n.LANGUAGE_NAMES[language]} · {tr('Cambiar el idioma del panel y de los documentos.')}",
+            ):
                 i18n.choose_language(language)
                 st.rerun()
 
@@ -1783,20 +2016,29 @@ def open_card(key, title=None, caption=None, hint=None, kpi=None):
     card = st.container(key=f"card_{key}")
     hint_icon = build_hint_icon(hint) if hint else ""
     if kpi:
-        definition = {"K1": "brecha entre consumidor y mayorista", "K2": "brecha entre canales",
-                      "K3": "índice de precio regional", "K4": "estacionalidad de precios",
-                      "K5": "rezago descriptivo", "K6": "variaciones y alertas",
-                      "K7": "cobertura de productos comparables", "K8": "filas rechazadas"}
+        definition = {
+            "K1": "brecha entre consumidor y mayorista",
+            "K2": "brecha entre canales",
+            "K3": "índice de precio regional",
+            "K4": "estacionalidad de precios",
+            "K5": "rezago descriptivo",
+            "K6": "variaciones y alertas",
+            "K7": "cobertura de productos comparables",
+            "K8": "filas rechazadas",
+        }
         hint = (hint + " " if hint else "") + (
-            "Este cálculo corresponde a " + definition.get(kpi, "un indicador del proyecto") + ".")
+            "Este cálculo corresponde a " + definition.get(kpi, "un indicador del proyecto") + "."
+        )
         hint_icon = build_hint_icon(hint)
     kpi_link = build_kpi_link(kpi) if kpi else ""
     if title or hint:
         # One line: the title shortens with «…» (whole on hover); ⓘ and the link stay whole.
-        card.markdown(f'<div class="card-title">{build_component_symbol(component_kind(key, title))}'
-                      f'<span class="card-title-text" title="{html.escape(title or "")}">'
-                      f'{html.escape(title or "")}</span>{hint_icon}{kpi_link}</div>',
-                      unsafe_allow_html=True)
+        card.markdown(
+            f'<div class="card-title">{build_component_symbol(component_kind(key, title))}'
+            f'<span class="card-title-text" title="{html.escape(title or "")}">'
+            f'{html.escape(title or "")}</span>{hint_icon}{kpi_link}</div>',
+            unsafe_allow_html=True,
+        )
     if caption:
         card.caption(caption)
     return card
@@ -1806,16 +2048,18 @@ def build_hint_icon(hint):
     """An ⓘ that shows a short explanation when the mouse passes over it, or when
     it is tapped on a phone (tabindex makes it focusable)."""
     # Explain identifiers inline, so a visitor never needs to guess an acronym.
-    terms = {"KPI": "indicador clave de desempeño", "SQL": "lenguaje de consultas",
-             "BI": "inteligencia de negocios", "BA": "análisis de negocio"}
+    terms = {
+        "KPI": "indicador clave de desempeño",
+        "SQL": "lenguaje de consultas",
+        "BI": "inteligencia de negocios",
+        "BA": "análisis de negocio",
+    }
     plain = hint.replace("**", "")
-    used = [f"{term}: {meaning}" for term, meaning in terms.items()
-            if re.search(rf"\b{term}\b", plain)]
+    used = [f"{term}: {meaning}" for term, meaning in terms.items() if re.search(rf"\b{term}\b", plain)]
     if used:
         plain += " · " + "; ".join(used) + "."
     plain_hint = html.escape(plain, quote=True)
-    return (f'<span class="hint" tabindex="0" role="button" aria-label="{plain_hint}" '
-            f'data-hint="{plain_hint}">ⓘ</span>')
+    return f'<span class="hint" tabindex="0" role="button" aria-label="{plain_hint}" data-hint="{plain_hint}">ⓘ</span>'
 
 
 def build_page_address(page_title, tab=None, kpi=None):
@@ -1849,10 +2093,11 @@ def build_kpi_link(kpi):
     """Open an indicator's explanation without exposing its internal K-code."""
     address = build_page_address(PAGE_KPI, kpi=kpi)
     if st.session_state.get(COMPACT_VIEW):
-        return (f'<span class="kpi-link" title="Abrir la explicación del cálculo">'
-                f'{build_link_html("Cómo se calcula →", address)}</span>')
-    return (f'<span class="kpi-link">{build_link_html("¿Cómo se calcula?", address)}'
-            '</span>')
+        return (
+            f'<span class="kpi-link" title="Abrir la explicación del cálculo">'
+            f'{build_link_html("Cómo se calcula →", address)}</span>'
+        )
+    return f'<span class="kpi-link">{build_link_html("¿Cómo se calcula?", address)}</span>'
 
 
 def build_chip(text, kind, hover_text=None):
@@ -1863,14 +2108,18 @@ def build_chip(text, kind, hover_text=None):
     if not hover_text:
         return f'<span class="chip chip-{kind}">{html.escape(text)}</span>'
     escaped_hover_text = html.escape(hover_text, quote=True)
-    return (f'<span class="chip chip-{kind} hint-chip" tabindex="0" '
-            f'title="{escaped_hover_text}" data-hint="{escaped_hover_text}">'
-            f'{html.escape(text)}</span>')
+    return (
+        f'<span class="chip chip-{kind} hint-chip" tabindex="0" '
+        f'title="{escaped_hover_text}" data-hint="{escaped_hover_text}">'
+        f'{html.escape(text)}</span>'
+    )
 
 
 def show_chart(chart):
     """Draw an Altair chart with its own colors (not Streamlit's chart theme)."""
     st.altair_chart(chart, use_container_width=True, theme=None)
+
+
 # endregion
 
 
@@ -1903,8 +2152,7 @@ def add_display_columns(rows):
         rows["week_start"] = pd.to_datetime(rows["week_start"])
     if {"variety", "normalized_unit"} <= set(rows.columns):
         # The unit is part of the label: one product can be sold by kilo and by unit.
-        rows["key_label"] = (rows["variety"] + " · " + rows["quality"]
-                             + " · $/" + rows["normalized_unit"])
+        rows["key_label"] = rows["variety"] + " · " + rows["quality"] + " · $/" + rows["normalized_unit"]
     return rows
 
 
@@ -1927,8 +2175,7 @@ def read_cached_rows_for_key(query_name, key_items, database_version):
 
 def read_indicator_for_key(query_name, key):
     """Rows of one indicator for the chosen product key."""
-    return read_cached_rows_for_key(query_name, tuple(sorted(key.items())),
-                                    get_database_version())
+    return read_cached_rows_for_key(query_name, tuple(sorted(key.items())), get_database_version())
 
 
 def read_week_range():
@@ -1988,6 +2235,8 @@ def describe_product(row):
     if row["quality"] != UNSPECIFIED:
         description += f" · {row['quality']}"
     return description
+
+
 # endregion
 
 
@@ -2028,9 +2277,11 @@ def format_inline(text):
 def show_section_intro(title, lead, is_subsection=False):
     """A section title and one sentence that says what the section is for."""
     title_class = "subsection-title" if is_subsection else "section-title"
-    st.markdown(f'<div class="section-head"><div class="{title_class}">{html.escape(title)}'
-                f'</div><div class="section-lead">{format_inline(lead)}</div></div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="section-head"><div class="{title_class}">{html.escape(title)}'
+        f'</div><div class="section-lead">{format_inline(lead)}</div></div>',
+        unsafe_allow_html=True,
+    )
 
 
 def capitalize_first(text):
@@ -2052,14 +2303,13 @@ COMPONENT_SYMBOLS = {
     "rule": '<path d="m9 3 14 0 8 14-8 14H9L1 17Z"/><path d="m9 17 5 5 10-11"/>',
     "alert": '<path d="M16 3 31 30H1Z M16 12v9m0 4v1"/>',
     "gap": '<path d="M3 10h26M3 26h26"/><circle cx="10" cy="10" r="4"/>'
-           '<circle cx="23" cy="26" r="4"/><path d="M10 14v8m13-8v8"/>',
+    '<circle cx="23" cy="26" r="4"/><path d="M10 14v8m13-8v8"/>',
     "channels": '<circle cx="16" cy="6" r="4"/><circle cx="5" cy="29" r="4"/>'
-                '<circle cx="16" cy="29" r="4"/><circle cx="27" cy="29" r="4"/>'
-                '<path d="M16 10v8M5 18h22M5 18v7m11-7v7m11-7v7"/>',
-    "region": '<path d="M16 34S5 23 5 14a11 11 0 0 1 22 0c0 9-11 20-11 20Z"/>'
-              '<circle cx="16" cy="14" r="4"/>',
+    '<circle cx="16" cy="29" r="4"/><circle cx="27" cy="29" r="4"/>'
+    '<path d="M16 10v8M5 18h22M5 18v7m11-7v7m11-7v7"/>',
+    "region": '<path d="M16 34S5 23 5 14a11 11 0 0 1 22 0c0 9-11 20-11 20Z"/><circle cx="16" cy="14" r="4"/>',
     "calendar": '<rect x="3" y="6" width="26" height="26" rx="4"/>'
-                '<path d="M3 14h26M9 2v8m14-8v8M9 20h4m6 0h4M9 26h4m6 0h4"/>',
+    '<path d="M3 14h26M9 2v8m14-8v8M9 20h4m6 0h4M9 26h4m6 0h4"/>',
     "lag": '<circle cx="16" cy="19" r="13"/><path d="M16 11v9l6 4M8 3 4 8h8"/>',
     "decision": '<path d="M16 2v10M5 31V19h22v12M16 12v7"/><circle cx="16" cy="4" r="3"/><circle cx="5" cy="30" r="3"/><circle cx="27" cy="30" r="3"/>',
 }
@@ -2070,8 +2320,10 @@ def component_kind(*texts):
     text = " ".join(str(value or "") for value in texts).lower()
     for kind, pattern in [
         ("security", r"seguridad|secret|clave|token|permiso|administraci|acceso"),
-        ("mission", r"misi[oó]n|objetivo"), ("vision", r"visi[oó]n"),
-        ("scope", r"alcance|cobertura"), ("decision", r"decisi|d-\d"),
+        ("mission", r"misi[oó]n|objetivo"),
+        ("vision", r"visi[oó]n"),
+        ("scope", r"alcance|cobertura"),
+        ("decision", r"decisi|d-\d"),
         ("alert", r"alerta|rechaz|falla|riesgo|l[ií]mite"),
         ("rule", r"regla|rn-\d|validaci|control de|calidad"),
         ("workflow", r"descarga|agente|pipeline|workflow|journey|recorrido|devops|ejecuci|prueba|cron|cach[eé]"),
@@ -2088,27 +2340,34 @@ def component_kind(*texts):
 
 def build_component_symbol(kind):
     shape = COMPONENT_SYMBOLS.get(kind, COMPONENT_SYMBOLS["document"])
-    return (f'<span class="component-symbol" data-kind="{kind}" aria-hidden="true">'
-            '<svg viewBox="-3 -3 40 44" fill="none" stroke="currentColor" stroke-width="2.2" '
-            'stroke-linecap="round" stroke-linejoin="round">'
-            '<g transform="translate(1.2 2)" opacity=".24" stroke-width="3.3">' + shape + '</g>'
-            '<g fill="currentColor" fill-opacity=".13">' + shape + '</g>'
-            '<g transform="translate(-.45 -.55)" stroke="white" opacity=".65" stroke-width=".65">'
-            + shape + '</g></svg></span>')
+    return (
+        f'<span class="component-symbol" data-kind="{kind}" aria-hidden="true">'
+        '<svg viewBox="-3 -3 40 44" fill="none" stroke="currentColor" stroke-width="2.2" '
+        'stroke-linecap="round" stroke-linejoin="round">'
+        '<g transform="translate(1.2 2)" opacity=".24" stroke-width="3.3">' + shape + '</g>'
+        '<g fill="currentColor" fill-opacity=".13">' + shape + '</g>'
+        '<g transform="translate(-.45 -.55)" stroke="white" opacity=".65" stroke-width=".65">'
+        + shape
+        + '</g></svg></span>'
+    )
 
 
-def build_info_card_html(title, text, label=None, note=None, link=None, is_warning=False,
-                         body_html="", is_highlight=False, component=None):
+def build_info_card_html(
+    title, text, label=None, note=None, link=None, is_warning=False, body_html="", is_highlight=False, component=None
+):
     """One card: an optional label, a title, a short text, more content right under it
     (body_html), a note and a named link at the bottom."""
     text = capitalize_first(text)
     semantic = component or component_kind(title, label)
-    parts = [build_component_symbol(semantic),
-             f'<div class="info-label">{html.escape(label)}</div>' if label else "",
-             f'<div class="info-title">{format_inline(title)}</div>',
-             f'<div class="info-text">{format_inline(text)}</div>', body_html,
-             f'<div class="info-note">{format_inline(note)}</div>' if note else "",
-             f'<div class="info-link">{link}</div>' if link else ""]
+    parts = [
+        build_component_symbol(semantic),
+        f'<div class="info-label">{html.escape(label)}</div>' if label else "",
+        f'<div class="info-title">{format_inline(title)}</div>',
+        f'<div class="info-text">{format_inline(text)}</div>',
+        body_html,
+        f'<div class="info-note">{format_inline(note)}</div>' if note else "",
+        f'<div class="info-link">{link}</div>' if link else "",
+    ]
     kind = " is-warning" if is_warning else " is-highlight" if is_highlight else ""
     return f'<div class="info-card{kind}" data-component-kind="{semantic}">{"".join(parts)}</div>'
 
@@ -2117,8 +2376,7 @@ def show_info_cards(cards_html, is_compact=False):
     """Cards in a grid: side by side when they fit, stacked on narrow screens. Compact
     cards keep their own height instead of the tallest one of their row."""
     kind = " is-compact" if is_compact else ""
-    st.markdown(f'<div class="info-grid{kind}">{"".join(cards_html)}</div>',
-                unsafe_allow_html=True)
+    st.markdown(f'<div class="info-grid{kind}">{"".join(cards_html)}</div>', unsafe_allow_html=True)
 
 
 # endregion
@@ -2159,13 +2417,22 @@ def describe_state_source(error_text, step_states, latest_load):
 
 IPC_TABLE_DEFINITIONS = {
     "ipc_weekly": "el deflactor de cada semana: el IPC del mes de su lunes frente al último mes publicado, "
-                  "para expresar los precios en pesos reales",
+    "para expresar los precios en pesos reales",
     "ipc_monthly": "el IPC de alimentos del INE como una sola serie mensual, base 2023 = 100",
     "ine_ipc_source": "las filas del IPC tal como se leyeron del INE, para rehacer la capa bronce si el INE no responde",
 }
-TABLE_ROLES = {"weekly_price": "hechos", "dim_product": "dimensión", "dim_region": "dimensión",
-              "dim_channel": "dimensión", "dim_date": "dimensión", "etl_run": "auditoría",
-              "rejection": "auditoría", "ipc_weekly": "IPC", "ipc_monthly": "IPC", "ine_ipc_source": "IPC"}
+TABLE_ROLES = {
+    "weekly_price": "hechos",
+    "dim_product": "dimensión",
+    "dim_region": "dimensión",
+    "dim_channel": "dimensión",
+    "dim_date": "dimensión",
+    "etl_run": "auditoría",
+    "rejection": "auditoría",
+    "ipc_weekly": "IPC",
+    "ipc_monthly": "IPC",
+    "ine_ipc_source": "IPC",
+}
 
 
 MODEL_DESCRIPTION = "Cómo se organizan los datos: las tablas y sus claves, dónde viven y cómo se cruzan las bases."
@@ -2174,12 +2441,18 @@ MODEL_DESCRIPTION = "Cómo se organizan los datos: las tablas y sus claves, dón
 def build_architecture_chips(row_counts):
     """The real figures of the model (D-097), as chips of the page bar (D-267); the last load is the bar's own time."""
     number = charts.format_thousands
-    return [(f"<em>weekly_price</em><b>{number(row_counts['weekly_price'])}</b><small>filas</small>",
-             f"weekly_price, la tabla de hechos: {number(row_counts['weekly_price'])} filas"),
-            (f"<em>Auditoría</em><b>{number(row_counts['etl_run'])}</b><small>cargas ·</small>"
-             f"<b>{number(row_counts['rejection'])}</b><small>rechazos</small>",
-             f"Auditoría: {number(row_counts['etl_run'])} cargas registradas en etl_run y "
-             f"{number(row_counts['rejection'])} filas rechazadas en rejection")]
+    return [
+        (
+            f"<em>weekly_price</em><b>{number(row_counts['weekly_price'])}</b><small>filas</small>",
+            f"weekly_price, la tabla de hechos: {number(row_counts['weekly_price'])} filas",
+        ),
+        (
+            f"<em>Auditoría</em><b>{number(row_counts['etl_run'])}</b><small>cargas ·</small>"
+            f"<b>{number(row_counts['rejection'])}</b><small>rechazos</small>",
+            f"Auditoría: {number(row_counts['etl_run'])} cargas registradas en etl_run y "
+            f"{number(row_counts['rejection'])} filas rechazadas en rejection",
+        ),
+    ]
 
 
 def build_fit_frame_html(svg, css_class):
@@ -2228,64 +2501,94 @@ def show_architecture_page(mode):
     count is in the drawing; each table explains itself on hover. No table picker,
     no SQL."""
     row_counts = read_table_row_counts()
-    definitions = project.parse_definitions(project.read_section(
-        project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos"))
+    definitions = project.parse_definitions(
+        project.read_section(project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos")
+    )
     columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
     definitions = {**IPC_TABLE_DEFINITIONS, **definitions}
-    tooltips = {table: f"{table} · {TABLE_ROLES[table]} · {charts.format_thousands(row_counts[table])} filas\n"
-                       f"{definitions.get(table, '')[:1].upper()}{definitions.get(table, '')[1:]}"
-                for table in project.TABLE_NAMES + project.IPC_TABLE_NAMES}
+    tooltips = {
+        table: f"{table} · {TABLE_ROLES[table]} · {charts.format_thousands(row_counts[table])} filas\n"
+        f"{definitions.get(table, '')[:1].upper()}{definitions.get(table, '')[1:]}"
+        for table in project.TABLE_NAMES + project.IPC_TABLE_NAMES
+    }
     st.markdown(build_architecture_css(mode), unsafe_allow_html=True)
     show_page_bar(PAGE_ARCHITECTURE, PAGE_ARCHITECTURE, MODEL_DESCRIPTION, build_architecture_chips(row_counts))
     # The views of the same database, from the model to where it lives (D-189, D-236): the star, the
     # entity-relation, the storage architecture and, last, where two databases touch.
-    view = st.segmented_control("Vista del modelo", MODEL_VIEWS, default=MODEL_VIEWS[0], key=MODEL_VIEW_KEY,
-                                label_visibility="collapsed") or MODEL_VIEWS[0]
+    view = (
+        st.segmented_control(
+            "Vista del modelo", MODEL_VIEWS, default=MODEL_VIEWS[0], key=MODEL_VIEW_KEY, label_visibility="collapsed"
+        )
+        or MODEL_VIEWS[0]
+    )
     if view == MODEL_VIEWS[2]:
         counts, layers, tests = read_database_map(get_database_version())
         # D-236: the drawing scales to the height the window leaves: the iframe right after this marker takes it.
-        st.markdown('<span class="fit-donde" aria-hidden="true"></span><style>'
-                    '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"],'
-                    '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"] iframe '
-                    '{height:max(calc(100vh - 316px), 380px) !important; flex:none !important; min-height:0 !important;}'
-                    '</style>', unsafe_allow_html=True)
-        st.iframe(storage_map.build_map_html(charts.get_palette(mode), counts, layers, tests, read_store_sizes()),
-                  height=600)
+        st.markdown(
+            '<span class="fit-donde" aria-hidden="true"></span><style>'
+            '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"],'
+            '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"] iframe '
+            '{height:max(calc(100vh - 316px), 380px) !important; flex:none !important; min-height:0 !important;}'
+            '</style>',
+            unsafe_allow_html=True,
+        )
+        st.iframe(
+            storage_map.build_map_html(charts.get_palette(mode), counts, layers, tests, read_store_sizes()), height=600
+        )
         return
     if view == MODEL_VIEWS[3]:
-        st.markdown('<p class="arch-phrase">Cada línea es un cruce: el punto donde dos bases se tocan, con lo que las une. '
-                    'El número muestra si se comprobó ahora; pasa el cursor por un número para ver el detalle.</p>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            '<p class="arch-phrase">Cada línea es un cruce: el punto donde dos bases se tocan, con lo que las une. '
+            'El número muestra si se comprobó ahora; pasa el cursor por un número para ver el detalle.</p>',
+            unsafe_allow_html=True,
+        )
         # D-237: the page fits the height the window leaves: the iframe right after this marker takes it.
-        st.markdown('<span class="fit-cruces" aria-hidden="true"></span><style>'
-                    '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"],'
-                    '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"] iframe '
-                    '{height:max(calc(100vh - 340px), 380px) !important; flex:none !important; min-height:0 !important;}'
-                    '</style>', unsafe_allow_html=True)
-        st.iframe(database_crossings.build_crossings_html(charts.get_palette(mode), read_crossing_checks(get_database_version())),
-                  height=600)
+        st.markdown(
+            '<span class="fit-cruces" aria-hidden="true"></span><style>'
+            '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"],'
+            '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"] iframe '
+            '{height:max(calc(100vh - 340px), 380px) !important; flex:none !important; min-height:0 !important;}'
+            '</style>',
+            unsafe_allow_html=True,
+        )
+        st.iframe(
+            database_crossings.build_crossings_html(
+                charts.get_palette(mode), read_crossing_checks(get_database_version())
+            ),
+            height=600,
+        )
         return
     if view == MODEL_VIEWS[1]:
         schema = read_er_schema(get_database_version())
-        st.markdown('<p class="arch-phrase">El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las '
-                    'relaciones entre ellas. Los tipos se leen de la base.</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="arch-phrase">El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las '
+            'relaciones entre ellas. Los tipos se leen de la base.</p>',
+            unsafe_allow_html=True,
+        )
         with st.container(key="architecture_diagram"):
-            st.markdown(build_model_frame_html(er_diagram.build_er_svg(schema, row_counts, mode, tooltips)),
-                        unsafe_allow_html=True)
+            st.markdown(
+                build_model_frame_html(er_diagram.build_er_svg(schema, row_counts, mode, tooltips)),
+                unsafe_allow_html=True,
+            )
             st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
         return
-    st.markdown('<p class="arch-phrase">1 fila de weekly_price = un producto '
-                '(variedad y calidad) × región × canal × unidad × semana. '
-                'Pasa el mouse por una tabla para ver para qué sirve.</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="arch-phrase">1 fila de weekly_price = un producto '
+        '(variedad y calidad) × región × canal × unidad × semana. '
+        'Pasa el mouse por una tabla para ver para qué sirve.</p>',
+        unsafe_allow_html=True,
+    )
     with st.container(key="architecture_diagram"):
         # D-251: the star stays as it was in D-229, by the author's decision: no frame, its own size.
-        st.markdown(star_model.build_star_svg(columns, row_counts, mode, tooltips=tooltips),
-                    unsafe_allow_html=True)
-        st.markdown('<div class="arch-legend"><span><b>PK</b> clave primaria</span>'
-                    '<span><b>FK</b> clave foránea</span><span><b>cian</b> medida</span>'
-                    '<span>' + build_external_link_html("etl/schema.sql en GitHub",
-                                                        project.build_github_url("etl/schema.sql"))
-                    + '</span></div>', unsafe_allow_html=True)
+        st.markdown(star_model.build_star_svg(columns, row_counts, mode, tooltips=tooltips), unsafe_allow_html=True)
+        st.markdown(
+            '<div class="arch-legend"><span><b>PK</b> clave primaria</span>'
+            '<span><b>FK</b> clave foránea</span><span><b>cian</b> medida</span>'
+            '<span>'
+            + build_external_link_html("etl/schema.sql en GitHub", project.build_github_url("etl/schema.sql"))
+            + '</span></div>',
+            unsafe_allow_html=True,
+        )
 
 
 @st.cache_data(show_spinner=False)
@@ -2371,14 +2674,46 @@ KPI_PRESENTATION = {
 
 
 KPI_SMART_SCOPE = {
-    "K1": ("Porcentaje de diferencia sobre el precio mayorista.", "Comparar precios de compra y venta sin confundir la brecha con ganancia.", "Misma semana, región, producto y unidad."),
-    "K2": ("Porcentaje de diferencia entre dos canales.", "Identificar qué canal ofrece un precio más alto o más bajo.", "Misma semana y región para ambos canales."),
-    "K3": ("Índice base 1: 1 representa el promedio de las regiones con datos.", "Identificar diferencias territoriales de precio.", "Semana seleccionada, dentro del mismo canal."),
-    "K4": ("Razón entre el precio semanal y el promedio anual del producto.", "Reconocer patrones estacionales antes de comparar precios.", "Semana frente al año correspondiente del histórico disponible."),
-    "K5": ("Semanas de desfase entre 0 y 8; correlación descriptiva de las variaciones.", "Explorar el desfase entre precios mayoristas y del consumidor, sin afirmar causalidad.", "Historia mínima de 26 semanas; desfases de 0 a 8 semanas."),
-    "K6": ("Cambios fuera del rango de ±2 desviaciones estándar de las 12 semanas anteriores.", "Priorizar cambios de precio que merecen revisión.", "Revisión semanal con una referencia móvil de 12 semanas."),
-    "K7": ("Porcentaje de claves del consumidor que tienen comparación mayorista.", "Conocer el alcance de las comparaciones entre las dos fuentes.", "Cobertura del histórico disponible, recalculada con cada carga."),
-    "K8": ("Porcentaje de filas rechazadas sobre las filas leídas, por motivo.", "Localizar problemas de validación de la carga.", "Cada ejecución de carga; el ejemplo identifica la ejecución utilizada."),
+    "K1": (
+        "Porcentaje de diferencia sobre el precio mayorista.",
+        "Comparar precios de compra y venta sin confundir la brecha con ganancia.",
+        "Misma semana, región, producto y unidad.",
+    ),
+    "K2": (
+        "Porcentaje de diferencia entre dos canales.",
+        "Identificar qué canal ofrece un precio más alto o más bajo.",
+        "Misma semana y región para ambos canales.",
+    ),
+    "K3": (
+        "Índice base 1: 1 representa el promedio de las regiones con datos.",
+        "Identificar diferencias territoriales de precio.",
+        "Semana seleccionada, dentro del mismo canal.",
+    ),
+    "K4": (
+        "Razón entre el precio semanal y el promedio anual del producto.",
+        "Reconocer patrones estacionales antes de comparar precios.",
+        "Semana frente al año correspondiente del histórico disponible.",
+    ),
+    "K5": (
+        "Semanas de desfase entre 0 y 8; correlación descriptiva de las variaciones.",
+        "Explorar el desfase entre precios mayoristas y del consumidor, sin afirmar causalidad.",
+        "Historia mínima de 26 semanas; desfases de 0 a 8 semanas.",
+    ),
+    "K6": (
+        "Cambios fuera del rango de ±2 desviaciones estándar de las 12 semanas anteriores.",
+        "Priorizar cambios de precio que merecen revisión.",
+        "Revisión semanal con una referencia móvil de 12 semanas.",
+    ),
+    "K7": (
+        "Porcentaje de claves del consumidor que tienen comparación mayorista.",
+        "Conocer el alcance de las comparaciones entre las dos fuentes.",
+        "Cobertura del histórico disponible, recalculada con cada carga.",
+    ),
+    "K8": (
+        "Porcentaje de filas rechazadas sobre las filas leídas, por motivo.",
+        "Localizar problemas de validación de la carga.",
+        "Cada ejecución de carga; el ejemplo identifica la ejecución utilizada.",
+    ),
 }
 
 
@@ -2391,11 +2726,18 @@ def select_kpi(identifier):
 def read_kpi_observation(database_version, identifier):
     """One explicitly scoped observation, never a fabricated global average or target."""
     if identifier in ("K1", "K2", "K3", "K4", "K5"):
-        query = {"K1": "k1_margin", "K2": "k2_channel_gap", "K3": "k3_regional_index",
-                 "K4": "k4_seasonal_index", "K5": "k1_margin"}[identifier]
-        rows = project.select_example_rows(read_indicator_for_key(query, project.EXAMPLE_KEY),
-                   region=None if identifier == "K4" else project.EXAMPLE_REGION,
-                   channel=project.EXAMPLE_OTHER_CHANNEL if identifier == "K2" else project.EXAMPLE_CHANNEL)
+        query = {
+            "K1": "k1_margin",
+            "K2": "k2_channel_gap",
+            "K3": "k3_regional_index",
+            "K4": "k4_seasonal_index",
+            "K5": "k1_margin",
+        }[identifier]
+        rows = project.select_example_rows(
+            read_indicator_for_key(query, project.EXAMPLE_KEY),
+            region=None if identifier == "K4" else project.EXAMPLE_REGION,
+            channel=project.EXAMPLE_OTHER_CHANNEL if identifier == "K2" else project.EXAMPLE_CHANNEL,
+        )
         if identifier == "K2":
             rows = rows[rows["reference_channel"] == project.EXAMPLE_CHANNEL]
         if rows.empty:
@@ -2405,49 +2747,99 @@ def read_kpi_observation(database_version, identifier):
         scope += " · " + str(row["channel"])
         if "region" in row:
             scope += " · " + str(row["region"])
-        result = [("Serie de referencia", scope), ("Periodo del resultado", "Semana del " + project.format_week(row["week_start"]))]
+        result = [
+            ("Serie de referencia", scope),
+            ("Periodo del resultado", "Semana del " + project.format_week(row["week_start"])),
+        ]
         if identifier == "K5":
             best = lag.find_lag(lag.correlate_by_lag(rows)) if lag.has_enough_weeks(rows) else None
-            result[1] = ("Periodo del resultado", f"{project.format_week(rows['week_start'].min())} a {project.format_week(rows['week_start'].max())}")
-            value = "Sin historia suficiente" if best is None else (charts.describe_weeks(best[0]) if lag.is_clear_relation(best[1], best[2]) else "Sin relación clara")
-            return result + [("Resultado observado", value), ("Comparación", "Cambios mayoristas frente a cambios del consumidor; desfases de 0 a 8 semanas.")]
+            result[1] = (
+                "Periodo del resultado",
+                f"{project.format_week(rows['week_start'].min())} a {project.format_week(rows['week_start'].max())}",
+            )
+            value = (
+                "Sin historia suficiente"
+                if best is None
+                else (
+                    charts.describe_weeks(best[0]) if lag.is_clear_relation(best[1], best[2]) else "Sin relación clara"
+                )
+            )
+            return result + [
+                ("Resultado observado", value),
+                ("Comparación", "Cambios mayoristas frente a cambios del consumidor; desfases de 0 a 8 semanas."),
+            ]
         field = {"K1": "margin", "K2": "gap", "K3": "regional_index", "K4": "seasonal_index"}[identifier]
-        value = charts.format_signed_percent(float(row[field]) * 100) if identifier in ("K1", "K2") else charts.format_index(row[field])
-        reference = {"K1": "Precio mayorista de la misma semana, región y unidad.",
-                     "K2": "Precio en " + str(row.get("reference_channel", "")) + ", misma semana, región y unidad.",
-                     "K3": "1 = promedio simple de las regiones con precio en ese canal y semana.",
-                     "K4": "1 = promedio de las semanas disponibles del mismo año; el año en curso es provisional."}[identifier]
+        value = (
+            charts.format_signed_percent(float(row[field]) * 100)
+            if identifier in ("K1", "K2")
+            else charts.format_index(row[field])
+        )
+        reference = {
+            "K1": "Precio mayorista de la misma semana, región y unidad.",
+            "K2": "Precio en " + str(row.get("reference_channel", "")) + ", misma semana, región y unidad.",
+            "K3": "1 = promedio simple de las regiones con precio en ese canal y semana.",
+            "K4": "1 = promedio de las semanas disponibles del mismo año; el año en curso es provisional.",
+        }[identifier]
         prior = rows[rows["week_start"] == row["week_start"] - pd.Timedelta(days=7)]
-        previous = "No hay dato comparable en la semana anterior." if prior.empty else (
-            charts.format_signed_percent(float(prior.iloc[0][field]) * 100) if identifier in ("K1", "K2") else charts.format_index(prior.iloc[0][field]))
-        return result + [("Resultado observado", value), ("Referencia de cálculo", reference), ("Semana anterior · mismo indicador", previous)]
+        previous = (
+            "No hay dato comparable en la semana anterior."
+            if prior.empty
+            else (
+                charts.format_signed_percent(float(prior.iloc[0][field]) * 100)
+                if identifier in ("K1", "K2")
+                else charts.format_index(prior.iloc[0][field])
+            )
+        )
+        return result + [
+            ("Resultado observado", value),
+            ("Referencia de cálculo", reference),
+            ("Semana anterior · mismo indicador", previous),
+        ]
     if identifier == "K6":
         rows = read_price_alerts()
         week = pd.Timestamp(read_latest_week())
         counts = [len(rows[rows["week_start"] == date]) for date in (week, week - pd.Timedelta(days=7))]
-        return [("Resultado observado", f"{counts[0]} alertas"), ("Periodo del resultado", "Semana del " + project.format_week(week)),
-                ("Comparación", f"{counts[1]} alertas en la semana anterior; diferencia: {counts[0] - counts[1]:+d}."),
-                ("Alcance", "Todos los productos y canales; cambios fuera del rango habitual de las 12 semanas anteriores.")]
+        return [
+            ("Resultado observado", f"{counts[0]} alertas"),
+            ("Periodo del resultado", "Semana del " + project.format_week(week)),
+            ("Comparación", f"{counts[1]} alertas en la semana anterior; diferencia: {counts[0] - counts[1]:+d}."),
+            (
+                "Alcance",
+                "Todos los productos y canales; cambios fuera del rango habitual de las 12 semanas anteriores.",
+            ),
+        ]
     if identifier == "K7":
         matched, total = read_match_coverage()
         _, first, last = project.read_week_span()
-        return [("Resultado observado", charts.format_percent(matched / total * 100) if total else "Sin datos"),
-                ("Comparación", f"{matched:,} claves con cruce de {total:,} claves del consumidor."),
-                ("Periodo del resultado", f"Histórico: {first} a {last}"),
-                ("Alcance", "Cobertura del cruce definida en el ETL; no representa ventas ni población.")]
+        return [
+            ("Resultado observado", charts.format_percent(matched / total * 100) if total else "Sin datos"),
+            ("Comparación", f"{matched:,} claves con cruce de {total:,} claves del consumidor."),
+            ("Periodo del resultado", f"Histórico: {first} a {last}"),
+            ("Alcance", "Cobertura del cruce definida en el ETL; no representa ventas ni población."),
+        ]
     run = read_latest_run()
     share = run["rows_rejected"] / run["rows_read"] * 100 if run["rows_read"] else None
-    return [("Resultado observado", charts.format_percent(share) if share is not None else "Sin filas leídas"),
-            ("Periodo del resultado", str(run["started_at"])),
-            ("Comparación", f"{run['rows_rejected']:,} filas rechazadas de {run['rows_read']:,} filas leídas en esta carga."),
-            ("Alcance", "Última carga registrada; comparación de proporción, no contra una meta.")]
+    return [
+        ("Resultado observado", charts.format_percent(share) if share is not None else "Sin filas leídas"),
+        ("Periodo del resultado", str(run["started_at"])),
+        (
+            "Comparación",
+            f"{run['rows_rejected']:,} filas rechazadas de {run['rows_read']:,} filas leídas en esta carga.",
+        ),
+        ("Alcance", "Última carga registrada; comparación de proporción, no contra una meta."),
+    ]
 
 
-KPI_QUESTIONS = {"K1":"¿Cuánto más cuesta al consumidor que al mayorista?",
-    "K2":"¿Cuánto difiere el precio entre canales de venta?", "K3":"¿Cómo se compara el precio regional con el promedio del canal?",
-    "K4":"¿En qué periodos el precio supera su promedio anual?", "K5":"¿Con qué desfase se relacionan cambios mayoristas y del consumidor?",
-    "K6":"¿Qué productos cambiaron fuera de su rango habitual?", "K7":"¿Qué proporción de productos permite cruzar mayorista y consumidor?",
-    "K8":"¿Qué proporción de filas rechazó la última carga?"}
+KPI_QUESTIONS = {
+    "K1": "¿Cuánto más cuesta al consumidor que al mayorista?",
+    "K2": "¿Cuánto difiere el precio entre canales de venta?",
+    "K3": "¿Cómo se compara el precio regional con el promedio del canal?",
+    "K4": "¿En qué periodos el precio supera su promedio anual?",
+    "K5": "¿Con qué desfase se relacionan cambios mayoristas y del consumidor?",
+    "K6": "¿Qué productos cambiaron fuera de su rango habitual?",
+    "K7": "¿Qué proporción de productos permite cruzar mayorista y consumidor?",
+    "K8": "¿Qué proporción de filas rechazó la última carga?",
+}
 # The path of a KPI, seen at once from left to right: its result, its context, its query.
 # Each node sits on the top edge of its card; the line joins them at three heights (D-090).
 KPI_FIGURE = re.compile(r"^([+\-−]?[\d.,]+(?:\s?%)?)\s*(.*)$")
@@ -2471,8 +2863,10 @@ def split_kpi_figure(result):
 
 
 def build_kpi_icon(name):
-    return (f'<svg class="kpi-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" '
-            f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{KPI_ICONS_SVG[name]}</svg>')
+    return (
+        f'<svg class="kpi-icon" viewBox="0 0 24 24" fill="none" stroke-width="1.8" '
+        f'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{KPI_ICONS_SVG[name]}</svg>'
+    )
 
 
 def kpi_node_positions():
@@ -2490,13 +2884,19 @@ def build_kpi_path_html():
     lead = f"M4 {y1} L{x1} {y1}"
     first = f"M{x1} {y1} C{x1 + 150} {y1},{x2 - 160} {y2},{x2} {y2}"
     second = f"M{x2} {y2} C{x2 + 170} {y2},{x3 - 150} {y3},{x3} {y3} L992 12"
-    paths = "".join(f'<path class="{kind}" d="{d}" vector-effect="non-scaling-stroke"/>'
-                    for kind, d in (("kpi-line", lead), ("kpi-line", first), ("kpi-line kpi-line-next", second)))
-    nodes = "".join(f'<span class="kpi-node" style="left:{x}%;top:{y}px">{number}</span>' for number, (x, y)
-                    in enumerate(zip(kpi_node_positions(), KPI_NODE_HEIGHTS), 1))
-    return (f'<div class="kpi-band" aria-hidden="true"><svg viewBox="0 0 1000 {KPI_BAND_HEIGHT}" '
-            f'preserveAspectRatio="none">{paths}</svg>{nodes}<span class="kpi-start"><i></i>Inicio</span>'
-            '<span class="kpi-end">Detalle técnico<i></i></span></div>')
+    paths = "".join(
+        f'<path class="{kind}" d="{d}" vector-effect="non-scaling-stroke"/>'
+        for kind, d in (("kpi-line", lead), ("kpi-line", first), ("kpi-line kpi-line-next", second))
+    )
+    nodes = "".join(
+        f'<span class="kpi-node" style="left:{x}%;top:{y}px">{number}</span>'
+        for number, (x, y) in enumerate(zip(kpi_node_positions(), KPI_NODE_HEIGHTS), 1)
+    )
+    return (
+        f'<div class="kpi-band" aria-hidden="true"><svg viewBox="0 0 1000 {KPI_BAND_HEIGHT}" '
+        f'preserveAspectRatio="none">{paths}</svg>{nodes}<span class="kpi-start"><i></i>Inicio</span>'
+        '<span class="kpi-end">Detalle técnico<i></i></span></div>'
+    )
 
 
 def build_kpi_card_head(number, title):
@@ -2516,15 +2916,24 @@ def build_kpi_impact_html(identifier, evidence, run_kind, freshness):
         comparison = "Semana anterior: " + evidence["Semana anterior · mismo indicador"]
     period = freshness if identifier == "K8" else evidence.get("Periodo del resultado", "")
     has_data = bool(figure) or result not in ("Sin datos", "Sin dato comparable")
-    state, text = ((run_kind, "Carga correcta" if run_kind == "ok" else "Última carga con falla")
-                   if has_data else ("neutral", "Sin dato comparable"))
-    number = (f'<div class="kpi-figure">{html.escape(figure)}</div>' if figure
-              else f'<div class="kpi-figure kpi-figure-text">{html.escape(result)}</div>')
-    return (build_kpi_card_head(1, "Resultado") + number
-            + (f'<div class="kpi-lead">{html.escape(unit)}</div>' if figure and unit else "")
-            + f'<div class="kpi-rule"></div><div class="kpi-line-text kpi-status"><span class="kpi-state kpi-state-{state}">'
-            f'<i></i>{html.escape(text)}</span><span>{html.escape(period)}</span></div>'
-            + (f'<div class="kpi-line-text">{build_kpi_icon("trend")}{html.escape(comparison)}</div>' if comparison else ""))
+    state, text = (
+        (run_kind, "Carga correcta" if run_kind == "ok" else "Última carga con falla")
+        if has_data
+        else ("neutral", "Sin dato comparable")
+    )
+    number = (
+        f'<div class="kpi-figure">{html.escape(figure)}</div>'
+        if figure
+        else f'<div class="kpi-figure kpi-figure-text">{html.escape(result)}</div>'
+    )
+    return (
+        build_kpi_card_head(1, "Resultado")
+        + number
+        + (f'<div class="kpi-lead">{html.escape(unit)}</div>' if figure and unit else "")
+        + f'<div class="kpi-rule"></div><div class="kpi-line-text kpi-status"><span class="kpi-state kpi-state-{state}">'
+        f'<i></i>{html.escape(text)}</span><span>{html.escape(period)}</span></div>'
+        + (f'<div class="kpi-line-text">{build_kpi_icon("trend")}{html.escape(comparison)}</div>' if comparison else "")
+    )
 
 
 def build_kpi_scope_html(evidence, period):
@@ -2536,9 +2945,11 @@ def build_kpi_scope_html(evidence, period):
         body = f'<div class="kpi-chips">{chips}</div>'
     else:
         body, note = "", evidence.get("Alcance", "Sin alcance registrado.")
-    return (body + '<div class="kpi-rule"></div>'
-            f'<div class="kpi-line-text">{build_kpi_icon("info")}{html.escape(note)}</div>'
-            f'<div class="kpi-line-text">{build_kpi_icon("bars")}{html.escape(period)}</div>')
+    return (
+        body + '<div class="kpi-rule"></div>'
+        f'<div class="kpi-line-text">{build_kpi_icon("info")}{html.escape(note)}</div>'
+        f'<div class="kpi-line-text">{build_kpi_icon("bars")}{html.escape(period)}</div>'
+    )
 
 
 @st.dialog("Consulta SQL", width="large")
@@ -2546,8 +2957,9 @@ def show_kpi_query_dialog(name):
     """The stored query, on demand, in a layer above the module: nothing moves under it."""
     st.caption(f"{name} · solo lectura, tal como está en el repositorio.")
     st.code(read_catalog_sql(name), language="sql", wrap_lines=True)
-    st.markdown(build_external_link_html("Ver la consulta en GitHub", build_query_address(name)),
-                unsafe_allow_html=True)
+    st.markdown(
+        build_external_link_html("Ver la consulta en GitHub", build_query_address(name)), unsafe_allow_html=True
+    )
 
 
 def build_kpi_module_css(mode):
@@ -2639,9 +3051,9 @@ def show_kpi_tab(mode):
     """The whole path of one KPI, in sight at once: result → context → query (D-090)."""
     st.markdown(build_kpi_module_css(mode), unsafe_allow_html=True)
     indicators = project.read_design_table(project.INDICATORS_HEADING)
-    guide = {r['KPI']:r for r in project.read_guide_table('KPI')}
-    by_id = {r['ID']:r for r in indicators}
-    requested = st.query_params.get(KPI_PARAMETER,'K1')
+    guide = {r['KPI']: r for r in project.read_guide_table('KPI')}
+    by_id = {r['ID']: r for r in indicators}
+    requested = st.query_params.get(KPI_PARAMETER, 'K1')
     latest_run = read_latest_run()
     run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
     freshness = format_chile_time(parse_run_start(latest_run['started_at']))
@@ -2649,11 +3061,15 @@ def show_kpi_tab(mode):
         with st.container(key="kpi_question"):
             label, choice = st.columns([2, 8])
             label.markdown('<div class="kpi-question-label">Pregunta de negocio</div>', unsafe_allow_html=True)
-            selected = choice.selectbox("Pregunta de negocio", list(by_id),
-                                        index=list(by_id).index(requested) if requested in by_id else 0,
-                                        format_func=lambda k: f"{KPI_PRESENTATION[k][0]} — {KPI_QUESTIONS[k]}",
-                                        key="kpi_register_selection", label_visibility="collapsed",
-                                        on_change=lambda: select_kpi(st.session_state["kpi_register_selection"]))
+            selected = choice.selectbox(
+                "Pregunta de negocio",
+                list(by_id),
+                index=list(by_id).index(requested) if requested in by_id else 0,
+                format_func=lambda k: f"{KPI_PRESENTATION[k][0]} — {KPI_QUESTIONS[k]}",
+                key="kpi_register_selection",
+                label_visibility="collapsed",
+                on_change=lambda: select_kpi(st.session_state["kpi_register_selection"]),
+            )
         evidence = dict(read_kpi_observation(get_database_version(), selected))
         query_name = guide[selected]['Consulta']
         measure, _, period = KPI_SMART_SCOPE[selected]
@@ -2667,22 +3083,33 @@ def show_kpi_tab(mode):
                 st.markdown(build_kpi_card_head(2, "Contexto"), unsafe_allow_html=True)
                 scope_tab, logic_tab, limits_tab = st.tabs(["Alcance", "Lógica", "Límites"])
                 scope_tab.markdown(build_kpi_scope_html(evidence, period), unsafe_allow_html=True)
-                logic_tab.markdown(f'<div class="kpi-formula">{html.escape(by_id[selected]["Fórmula"])}</div>'
-                                   f'<div class="kpi-line-text">{build_kpi_icon("info")}{html.escape(measure)}</div>'
-                                   + (f'<div class="kpi-line-text">{build_kpi_icon("bars")}{html.escape(reference)}</div>'
-                                      if reference else ""), unsafe_allow_html=True)
-                limits_tab.markdown(f'<div class="kpi-line-text">{build_kpi_icon("info")}{html.escape(KPI_LIMITS[selected])}</div>'
-                                    f'<div class="kpi-line-text">{build_kpi_icon("bars")}Sin meta de negocio acordada: '
-                                    'el indicador describe o controla los datos.</div>', unsafe_allow_html=True)
+                logic_tab.markdown(
+                    f'<div class="kpi-formula">{html.escape(by_id[selected]["Fórmula"])}</div>'
+                    f'<div class="kpi-line-text">{build_kpi_icon("info")}{html.escape(measure)}</div>'
+                    + (
+                        f'<div class="kpi-line-text">{build_kpi_icon("bars")}{html.escape(reference)}</div>'
+                        if reference
+                        else ""
+                    ),
+                    unsafe_allow_html=True,
+                )
+                limits_tab.markdown(
+                    f'<div class="kpi-line-text">{build_kpi_icon("info")}{html.escape(KPI_LIMITS[selected])}</div>'
+                    f'<div class="kpi-line-text">{build_kpi_icon("bars")}Sin meta de negocio acordada: '
+                    'el indicador describe o controla los datos.</div>',
+                    unsafe_allow_html=True,
+                )
             with query, st.container(key="kpi_card_3"):
-                st.markdown(build_kpi_card_head(3, "Consulta")
-                            + f'<div class="kpi-query-name">{html.escape(query_name)}</div>'
-                            '<div class="kpi-line-text">Consulta guardada que produce este resultado, en solo lectura.</div>',
-                            unsafe_allow_html=True)
+                st.markdown(
+                    build_kpi_card_head(3, "Consulta") + f'<div class="kpi-query-name">{html.escape(query_name)}</div>'
+                    '<div class="kpi-line-text">Consulta guardada que produce este resultado, en solo lectura.</div>',
+                    unsafe_allow_html=True,
+                )
                 if st.button("Desplegar SQL", key="kpi_query_open", icon=":material/code:", use_container_width=True):
                     show_kpi_query_dialog(query_name)
-                st.markdown(build_external_link_html("Ver en GitHub", build_query_address(query_name)),
-                            unsafe_allow_html=True)
+                st.markdown(
+                    build_external_link_html("Ver en GitHub", build_query_address(query_name)), unsafe_allow_html=True
+                )
 
 
 def show_kpi_page(mode):
@@ -2691,10 +3118,12 @@ def show_kpi_page(mode):
     run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
     run_text = "Carga correcta" if run_kind == "ok" else "Última carga con falla"
     freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
-    st.markdown(f'<div class="kpi-head"><div class="compact-header"><h1>{html.escape(SECTION_KPI)}</h1>'
-                '<span class="kpi-sub">Elige una pregunta y recorre su camino: resultado, contexto y consulta.</span>'
-                f'<span class="page-freshness">Datos actualizados el {freshness} {build_chip(run_text, run_kind)}</span></div></div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="kpi-head"><div class="compact-header"><h1>{html.escape(SECTION_KPI)}</h1>'
+        '<span class="kpi-sub">Elige una pregunta y recorre su camino: resultado, contexto y consulta.</span>'
+        f'<span class="page-freshness">Datos actualizados el {freshness} {build_chip(run_text, run_kind)}</span></div></div>',
+        unsafe_allow_html=True,
+    )
     show_kpi_tab(mode)
 
 
@@ -2721,18 +3150,21 @@ def read_catalog_sql(name):
 def find_catalog_line(name):
     """(file, first line) of a query, so «Abrir archivo» lands on it on GitHub."""
     path = CATALOG_FILES.get(name, QUERIES_PATH)
-    marker = ("MATCH_COVERAGE_QUERY = " if name in CATALOG_FILES else f"-- name: {name}\n")
+    marker = "MATCH_COVERAGE_QUERY = " if name in CATALOG_FILES else f"-- name: {name}\n"
     text = (project.PROJECT_DIR / path).read_text(encoding="utf-8")
-    return path, text[:text.index(marker)].count("\n") + 1
+    return path, text[: text.index(marker)].count("\n") + 1
 
 
 PRICE_THEME = "Precios"
 QUALITY_THEME = "Calidad de datos"
 LIMIT_NO_DATA = "Sin dato no significa precio cero: esa región, canal o semana no se informó."
+
+
 def build_external_link_html(text, address, variant="text"):
     """A link that leaves the app, drawn as the shared component (D-281): it says where it goes and opens a new tab (↗)."""
-    return buttons.build_link_html(text, address, icon="github" if "GitHub" in text else "external", variant=variant,
-                                   external=True)
+    return buttons.build_link_html(
+        text, address, icon="github" if "GitHub" in text else "external", variant=variant, external=True
+    )
 
 
 def show_compact_page_header(title, description):
@@ -2742,10 +3174,12 @@ def show_compact_page_header(title, description):
     run_kind = "ok" if latest_run["status"] == etl.STATUS_LOADED else "failed"
     run_text = tr("Carga correcta") if run_kind == "ok" else tr("Última carga con falla")
     freshness = format_chile_time(parse_run_start(latest_run["started_at"]))
-    st.markdown(f'<div class="compact-header"><h1 title="{html.escape(tr(description), quote=True)}">'
-                f'{html.escape(tr(title))}</h1><span class="page-freshness">{tr("Datos al")} '
-                f'{freshness} {build_chip(run_text, run_kind)}</span></div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="compact-header"><h1 title="{html.escape(tr(description), quote=True)}">'
+        f'{html.escape(tr(title))}</h1><span class="page-freshness">{tr("Datos al")} '
+        f'{freshness} {build_chip(run_text, run_kind)}</span></div>',
+        unsafe_allow_html=True,
+    )
 
 
 def format_load_time(latest):
@@ -2763,14 +3197,22 @@ def show_page_bar(view, title, description, chips=(), side=None, terms=()):
     st.markdown(page_bar.build_css(charts.get_palette(get_mode())), unsafe_allow_html=True)
     with st.container(key="page_bar", horizontal=True, vertical_alignment="center"):
         show_return_button()
-        st.markdown(page_bar.build_bar_html(build_view_path(WINDOW_OF_VIEW.get(view, view), view), tr(title), tr(description),
-                                            chips), unsafe_allow_html=True, width="stretch")
+        st.markdown(
+            page_bar.build_bar_html(
+                build_view_path(WINDOW_OF_VIEW.get(view, view), view), tr(title), tr(description), chips
+            ),
+            unsafe_allow_html=True,
+            width="stretch",
+        )
         if side:
             side()
         if terms:
             st.markdown(page_bar.build_terms_html(terms), unsafe_allow_html=True, width="content")
-        st.markdown(page_bar.build_updated_html(format_load_time(latest), latest["status"] == etl.STATUS_LOADED),
-                    unsafe_allow_html=True, width="content")
+        st.markdown(
+            page_bar.build_updated_html(format_load_time(latest), latest["status"] == etl.STATUS_LOADED),
+            unsafe_allow_html=True,
+            width="content",
+        )
 
 
 # endregion
@@ -2779,8 +3221,7 @@ def show_page_bar(view, title, description, chips=(), side=None, terms=()):
 @st.cache_data
 def read_cached_week_snapshot(database_version, week):
     """The regional index (K3) of one week of valid observations."""
-    sql = ("SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") "
-           "WHERE week_start = ?")
+    sql = "SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?"
     return add_display_columns(queries.run_sql(sql, parameters=(week,)))
 
 
@@ -2801,9 +3242,11 @@ def read_cached_filter_options(database_version):
     variations = read_cached_all_variations(database_version)
     weeks = sorted(variations["week_start"].unique(), reverse=True)[:DASHBOARD_WEEKS]
     snapshot = read_cached_market_snapshot(database_version)
-    return {"group": [ALL_VALUES] + sorted(variations["product_group"].unique()),
-            "region": [ALL_VALUES] + sorted(snapshot["region"].unique()),
-            "week": [f"{pd.Timestamp(week):%Y-%m-%d}" for week in weeks]}
+    return {
+        "group": [ALL_VALUES] + sorted(variations["product_group"].unique()),
+        "region": [ALL_VALUES] + sorted(snapshot["region"].unique()),
+        "week": [f"{pd.Timestamp(week):%Y-%m-%d}" for week in weeks],
+    }
 
 
 # endregion
@@ -2833,8 +3276,13 @@ def build_movement_proportions(rows):
     values = rows["variation"].dropna()
     counts = [int(values.gt(0).sum()), int(values.lt(0).sum()), int(values.eq(0).sum())]
     total = sum(counts)
-    return pd.DataFrame({"label": ["Subieron", "Bajaron", "Sin cambio"], "value": counts,
-                         "share": [count / total * 100 if total else 0 for count in counts]})
+    return pd.DataFrame(
+        {
+            "label": ["Subieron", "Bajaron", "Sin cambio"],
+            "value": counts,
+            "share": [count / total * 100 if total else 0 for count in counts],
+        }
+    )
 
 
 # The map and the family list are hand-drawn SVG/HTML with plain links, so a click
@@ -2885,15 +3333,15 @@ def apply_home_link_click():
 def apply_home_focus(options):
     """Apply only validated deep-link selections, once; never override live widgets."""
     token = st.query_params.get("_home_key")
-    marker = repr({k:v for k,v in st.query_params.to_dict().items() if k.startswith('_home_')})
+    marker = repr({k: v for k, v in st.query_params.to_dict().items() if k.startswith('_home_')})
     requested = any(st.query_params.get('_home_' + name) for name in ('group', 'region', 'week'))
     if (not token and not requested) or marker == st.session_state.get('mock_focus_seen'):
         return
     st.session_state['mock_focus_seen'] = marker
-    for name in ('group','region','week'):
-        value=st.query_params.get('_home_'+name)
+    for name in ('group', 'region', 'week'):
+        value = st.query_params.get('_home_' + name)
         if value in options[name] or value == ALL_VALUES:
-            st.session_state['dashboard_'+name]=value
+            st.session_state['dashboard_' + name] = value
     count = st.query_params.get('_home_count', '')
     if count.isdigit() and TOP_N_RANGE[0] <= int(count) <= 10_000:
         st.session_state['dashboard_top_n'] = int(count)
@@ -2902,10 +3350,12 @@ def apply_home_focus(options):
         st.session_state['home_order'] = order
     if token:
         try:
-            payload=json.loads(base64.urlsafe_b64decode(token.encode()).decode())
-            if set(payload) == set(queries.KEY_COLUMNS+['channel']) and all(isinstance(v,str) for v in payload.values()):
-                st.session_state['mock_focus_key']=payload
-        except (ValueError,TypeError,UnicodeError):
+            payload = json.loads(base64.urlsafe_b64decode(token.encode()).decode())
+            if set(payload) == set(queries.KEY_COLUMNS + ['channel']) and all(
+                isinstance(v, str) for v in payload.values()
+            ):
+                st.session_state['mock_focus_key'] = payload
+        except (ValueError, TypeError, UnicodeError):
             return
 
 
@@ -2921,23 +3371,29 @@ def compare_same_regions(variations, snapshot, prior, join):
     """
     regional = join + ['region', 'price', 'observation_count']
     matched = snapshot[regional].merge(prior[regional], on=join + ['region'], suffixes=('', '_before'))
-    same = matched.groupby(join, as_index=False).agg(_same_now=('price', 'mean'),
-                                                     _same_before=('price_before', 'mean'),
-                                                     _same_regions=('region', 'nunique'),
-                                                     _quotes_now=('observation_count', 'sum'),
-                                                     _quotes_before=('observation_count_before', 'sum'))
+    same = matched.groupby(join, as_index=False).agg(
+        _same_now=('price', 'mean'),
+        _same_before=('price_before', 'mean'),
+        _same_regions=('region', 'nunique'),
+        _quotes_now=('observation_count', 'sum'),
+        _quotes_before=('observation_count_before', 'sum'),
+    )
     regions_now = snapshot.groupby(join).region.nunique().rename('_regions_now')
     regions_before = prior.groupby(join).region.nunique().rename('_regions_before')
     # The prices shown stay the national price of each week (every region with a price),
     # the same figure Contexto de precios shows; only the change is like for like (D-153).
-    rows = (variations.drop(columns=['variation', 'change_amount'])
-            .merge(same, on=join, how='left')
-            .merge(regions_now, on=join, how='left').merge(regions_before, on=join, how='left'))
+    rows = (
+        variations.drop(columns=['variation', 'change_amount'])
+        .merge(same, on=join, how='left')
+        .merge(regions_now, on=join, how='left')
+        .merge(regions_before, on=join, how='left')
+    )
     valid = rows['_same_before'].gt(0) & rows['_same_now'].notna()
     rows['variation'] = (rows['_same_now'] / rows['_same_before'] - 1).where(valid)
     rows['change_amount'] = (rows['_same_now'] - rows['_same_before']).where(valid)
-    rows['_coverage_changed'] = valid & ((rows['_regions_now'] != rows['_same_regions'])
-                                         | (rows['_regions_before'] != rows['_same_regions']))
+    rows['_coverage_changed'] = valid & (
+        (rows['_regions_now'] != rows['_same_regions']) | (rows['_regions_before'] != rows['_same_regions'])
+    )
     return rows
 
 
@@ -2946,71 +3402,91 @@ def summarize_family_coverage(variations):
     valid change (the rows of the family table), single-quote changes and changes that
     left a region out, so the note can speak of the family the table shows."""
     valid = variations.variation.notna() & variations.variation.abs().lt(float('inf'))
-    rows = variations.assign(_valid=valid,
-                             _thin=variations.get('_single_quote', False),
-                             _changed=variations.get('_coverage_changed', False))
-    return {family: {'available': len(group), 'comparable': int(group._valid.sum()),
-                     'single_quote': int((group._thin & group._valid).sum()),
-                     'coverage_changed': int((group._changed & group._valid).sum())}
-            for family, group in rows.groupby('product_group')}
+    rows = variations.assign(
+        _valid=valid, _thin=variations.get('_single_quote', False), _changed=variations.get('_coverage_changed', False)
+    )
+    return {
+        family: {
+            'available': len(group),
+            'comparable': int(group._valid.sum()),
+            'single_quote': int((group._thin & group._valid).sum()),
+            'coverage_changed': int((group._changed & group._valid).sum()),
+        }
+        for family, group in rows.groupby('product_group')
+    }
 
 
 def read_home_model(week, group, region, count, order='Mayores cambios', product_filter=None):
     """Real regional or national series; K6 stays explicitly national."""
-    version=get_database_version()
-    week_date=pd.Timestamp(week)
-    previous_week=f'{week_date-pd.Timedelta(days=7):%Y-%m-%d}'
-    prices=read_cached_national_prices(version)
-    current=prices[prices['week_start']==week_date].copy()
-    previous=prices[prices['week_start']==pd.Timestamp(previous_week)].copy()
+    version = get_database_version()
+    week_date = pd.Timestamp(week)
+    previous_week = f'{week_date - pd.Timedelta(days=7):%Y-%m-%d}'
+    prices = read_cached_national_prices(version)
+    current = prices[prices['week_start'] == week_date].copy()
+    previous = prices[prices['week_start'] == pd.Timestamp(previous_week)].copy()
     if group != ALL_VALUES:
-        current=current[current['product_group']==group]
-        previous=previous[previous['product_group']==group]
+        current = current[current['product_group'] == group]
+        previous = previous[previous['product_group'] == group]
     if product_filter:
         family, product, variety = product_filter
-        current=current[(current['product_group']==family) & (current['product']==product) & (current['variety']==variety)]
-        previous=previous[(previous['product_group']==family) & (previous['product']==product) & (previous['variety']==variety)]
-    snapshot=read_cached_week_snapshot(version,week)
-    prior=read_cached_week_snapshot(version,previous_week)
+        current = current[
+            (current['product_group'] == family) & (current['product'] == product) & (current['variety'] == variety)
+        ]
+        previous = previous[
+            (previous['product_group'] == family) & (previous['product'] == product) & (previous['variety'] == variety)
+        ]
+    snapshot = read_cached_week_snapshot(version, week)
+    prior = read_cached_week_snapshot(version, previous_week)
     if group != ALL_VALUES:
-        snapshot=snapshot[snapshot['product_group']==group]
-        prior=prior[prior['product_group']==group]
+        snapshot = snapshot[snapshot['product_group'] == group]
+        prior = prior[prior['product_group'] == group]
     if product_filter:
         family, product, variety = product_filter
-        snapshot=snapshot[(snapshot['product_group']==family) & (snapshot['product']==product) & (snapshot['variety']==variety)]
-        prior=prior[(prior['product_group']==family) & (prior['product']==product) & (prior['variety']==variety)]
-    coverage=snapshot.region.nunique()
-    join=queries.KEY_COLUMNS+['channel']
+        snapshot = snapshot[
+            (snapshot['product_group'] == family) & (snapshot['product'] == product) & (snapshot['variety'] == variety)
+        ]
+        prior = prior[
+            (prior['product_group'] == family) & (prior['product'] == product) & (prior['variety'] == variety)
+        ]
+    coverage = snapshot.region.nunique()
+    join = queries.KEY_COLUMNS + ['channel']
     if region != ALL_VALUES:
-        snapshot=snapshot[snapshot.region==region]
-        prior=prior[prior.region==region]
-        current=snapshot.assign(national_price=snapshot.price)
-        previous=prior.assign(national_price=prior.price)
-        coverage=snapshot.region.nunique()
-    variations=home_mockup.compare_week(current,previous,join)
-    variations['_coverage_changed']=False
+        snapshot = snapshot[snapshot.region == region]
+        prior = prior[prior.region == region]
+        current = snapshot.assign(national_price=snapshot.price)
+        previous = prior.assign(national_price=prior.price)
+        coverage = snapshot.region.nunique()
+    variations = home_mockup.compare_week(current, previous, join)
+    variations['_coverage_changed'] = False
     if region == ALL_VALUES:
-        variations=compare_same_regions(variations,snapshot,prior,join)
-    valid=variations[variations.variation.notna() & variations.variation.abs().lt(float('inf'))].copy()
-    parts=build_movement_proportions(valid)
-    counts=[int(v) for v in parts.value]
-    alert_rows=read_price_alerts()
+        variations = compare_same_regions(variations, snapshot, prior, join)
+    valid = variations[variations.variation.notna() & variations.variation.abs().lt(float('inf'))].copy()
+    parts = build_movement_proportions(valid)
+    counts = [int(v) for v in parts.value]
+    alert_rows = read_price_alerts()
     if group != ALL_VALUES:
-        alert_rows=alert_rows[alert_rows.product_group==group]
+        alert_rows = alert_rows[alert_rows.product_group == group]
     if product_filter:
         family, product, variety = product_filter
-        alert_rows=alert_rows[(alert_rows['product_group']==family) & (alert_rows['product']==product) & (alert_rows['variety']==variety)]
-    alert_count=len(alert_rows[alert_rows.week_start==week_date])
-    alert_previous=len(alert_rows[alert_rows.week_start==pd.Timestamp(previous_week)])
-    variations['is_alert']=False
-    variations['_severity']=0.0
+        alert_rows = alert_rows[
+            (alert_rows['product_group'] == family)
+            & (alert_rows['product'] == product)
+            & (alert_rows['variety'] == variety)
+        ]
+    alert_count = len(alert_rows[alert_rows.week_start == week_date])
+    alert_previous = len(alert_rows[alert_rows.week_start == pd.Timestamp(previous_week)])
+    variations['is_alert'] = False
+    variations['_severity'] = 0.0
     if region == ALL_VALUES:
-        week_alerts=alert_rows[alert_rows.week_start==week_date].copy()
-        week_alerts['_severity']=(week_alerts.variation-week_alerts.usual_variation).abs()/week_alerts.variation_deviation
-        variations=variations.drop(columns=['is_alert','_severity']).merge(
-            week_alerts[join+['_severity']].assign(is_alert=True),on=join,how='left',validate='one_to_one')
-        variations['is_alert']=variations.is_alert.eq(True)
-        variations['_severity']=variations['_severity'].fillna(0)
+        week_alerts = alert_rows[alert_rows.week_start == week_date].copy()
+        week_alerts['_severity'] = (
+            week_alerts.variation - week_alerts.usual_variation
+        ).abs() / week_alerts.variation_deviation
+        variations = variations.drop(columns=['is_alert', '_severity']).merge(
+            week_alerts[join + ['_severity']].assign(is_alert=True), on=join, how='left', validate='one_to_one'
+        )
+        variations['is_alert'] = variations.is_alert.eq(True)
+        variations['_severity'] = variations['_severity'].fillna(0)
     example_sets = {}
     for kind, subset in {
         'up': variations[variations.variation > 0],
@@ -3023,60 +3499,75 @@ def read_home_model(week, group, region, count, order='Mayores cambios', product
             subset['_sort'] = subset.variation.abs()
             subset = subset.sort_values(['_sort'] + join, ascending=[False] + [True] * len(join))
             example_sets[kind] = [
-                f"{home_mockup.product_label(row, True)} · {row['channel']}"
-                for _, row in subset.head(2).iterrows()
+                f"{home_mockup.product_label(row, True)} · {row['channel']}" for _, row in subset.head(2).iterrows()
             ]
     # D-146: a change resting on a single quote in either week is one isolated price,
     # not a market movement; it stays in the family median but not in the ranking.
-    thin=pd.Series(False,index=variations.index)
+    thin = pd.Series(False, index=variations.index)
     if region == ALL_VALUES and '_quotes_now' in variations:
-        thin=variations.variation.notna() & ((variations._quotes_now<2) | (variations._quotes_before<2))
-    variations['_single_quote']=thin
-    ranked=home_mockup.order_movements(variations[~thin],count,order)
+        thin = variations.variation.notna() & ((variations._quotes_now < 2) | (variations._quotes_before < 2))
+    variations['_single_quote'] = thin
+    ranked = home_mockup.order_movements(variations[~thin], count, order)
     if ranked.empty and valid.empty and order != 'Inusuales':
-        ranked=variations.sort_values(join).head(count)
+        ranked = variations.sort_values(join).head(count)
     # Default selection is the first displayed movement; clicks retain the exact key.
-    chosen=None
-    focus=st.session_state.get('mock_focus_key')
+    chosen = None
+    focus = st.session_state.get('mock_focus_key')
     if focus:
-        matched=variations
-        for field,value in focus.items():
-            matched=matched[matched[field]==value]
+        matched = variations
+        for field, value in focus.items():
+            matched = matched[matched[field] == value]
         if not matched.empty:
-            chosen=matched.iloc[0]
+            chosen = matched.iloc[0]
     if chosen is None:
-        reference=ranked if not ranked.empty else variations.sort_values(join)
+        reference = ranked if not ranked.empty else variations.sort_values(join)
         if not reference.empty:
-            chosen=reference.iloc[0]
-    history=pd.DataFrame(columns=['week_start','national_price'])
-    subtitle='Sin producto con precios disponibles'
+            chosen = reference.iloc[0]
+    history = pd.DataFrame(columns=['week_start', 'national_price'])
+    subtitle = 'Sin producto con precios disponibles'
     if chosen is not None:
-        key={field:chosen[field] for field in queries.KEY_COLUMNS}
-        channel=chosen['channel']
+        key = {field: chosen[field] for field in queries.KEY_COLUMNS}
+        channel = chosen['channel']
         if region == ALL_VALUES:
-            history=keep_product(prices,{'key':key})
-            history=history[history.channel==channel]
+            history = keep_product(prices, {'key': key})
+            history = history[history.channel == channel]
         else:
-            sql='''SELECT w.week_start,w.price AS national_price FROM weekly_price w
+            sql = '''SELECT w.week_start,w.price AS national_price FROM weekly_price w
                 JOIN dim_product p USING(product_id) JOIN dim_region r USING(region_id)
                 JOIN dim_channel c USING(channel_id) WHERE w.flag IS NULL
                 AND p.product_group=? AND p.product=? AND p.variety=? AND p.quality=?
                 AND w.normalized_unit=? AND r.region=? AND c.channel=? AND w.week_start BETWEEN ? AND ?'''
-            history=queries.run_sql(sql,parameters=list(key.values())+[region,channel,f'{week_date-pd.Timedelta(weeks=11):%Y-%m-%d}',week])
-            history['week_start']=pd.to_datetime(history.week_start)
-        history=history[history.week_start.between(week_date-pd.Timedelta(weeks=11),week_date)]
-        subtitle=home_mockup.product_label(chosen,True)+' · '+channel+' · $/'+key['normalized_unit']
-    return dict(counts=counts,alert_count=alert_count,alert_delta=alert_count-alert_previous,
-                examples=example_sets,
-                product_filter=product_filter,
-                family_rows=variations[variations.variation.notna() & variations.variation.abs().lt(float('inf'))].to_dict('records'),
-                rows=ranked.to_dict('records'),selected=chosen.to_dict() if chosen is not None else None,
-                history=history,subtitle=subtitle,coverage=coverage,missing=max(0,len(current)-sum(counts)),
-                available=len(current),national=region==ALL_VALUES,
-                coverage_changed=int(variations['_coverage_changed'].sum()),
-                single_quote=int(thin.sum()),
-                family_coverage=summarize_family_coverage(variations),
-                week_label=f'{week_date:%d-%m-%Y}',previous_label=f'{pd.Timestamp(previous_week):%d-%m-%Y}')
+            history = queries.run_sql(
+                sql,
+                parameters=list(key.values())
+                + [region, channel, f'{week_date - pd.Timedelta(weeks=11):%Y-%m-%d}', week],
+            )
+            history['week_start'] = pd.to_datetime(history.week_start)
+        history = history[history.week_start.between(week_date - pd.Timedelta(weeks=11), week_date)]
+        subtitle = home_mockup.product_label(chosen, True) + ' · ' + channel + ' · $/' + key['normalized_unit']
+    return dict(
+        counts=counts,
+        alert_count=alert_count,
+        alert_delta=alert_count - alert_previous,
+        examples=example_sets,
+        product_filter=product_filter,
+        family_rows=variations[variations.variation.notna() & variations.variation.abs().lt(float('inf'))].to_dict(
+            'records'
+        ),
+        rows=ranked.to_dict('records'),
+        selected=chosen.to_dict() if chosen is not None else None,
+        history=history,
+        subtitle=subtitle,
+        coverage=coverage,
+        missing=max(0, len(current) - sum(counts)),
+        available=len(current),
+        national=region == ALL_VALUES,
+        coverage_changed=int(variations['_coverage_changed'].sum()),
+        single_quote=int(thin.sum()),
+        family_coverage=summarize_family_coverage(variations),
+        week_label=f'{week_date:%d-%m-%Y}',
+        previous_label=f'{pd.Timestamp(previous_week):%d-%m-%Y}',
+    )
 
 
 # A region's direction must be told apart from a coin toss (D-146).
@@ -3091,7 +3582,7 @@ def sign_test_p_value(up, down):
     if not total:
         return 1.0
     tail = sum(math.comb(total, count) for count in range(max(up, down), total + 1))
-    return min(1.0, 2 * tail / 2 ** total)
+    return min(1.0, 2 * tail / 2**total)
 
 
 def build_regional_movement_model(current, previous):
@@ -3106,15 +3597,14 @@ def build_regional_movement_model(current, previous):
     current = current[join + ['price']].rename(columns={'price': 'national_price'})
     previous = previous[join + ['price']].rename(columns={'price': 'national_price'})
     compared = home_mockup.compare_week(current, previous, join)
-    compared = compared[compared['variation'].notna()
-                        & compared['variation'].abs().lt(float('inf'))].copy()
+    compared = compared[compared['variation'].notna() & compared['variation'].abs().lt(float('inf'))].copy()
     rows = []
     current_counts = current.groupby('region').size().to_dict()
     for region in sorted(set(current['region'])):
         values = compared.loc[compared['region'] == region, 'variation']
-        up = int(values.ge(.0005).sum())
-        down = int(values.le(-.0005).sum())
-        stable = int(values.abs().lt(.0005).sum())
+        up = int(values.ge(0.0005).sum())
+        down = int(values.le(-0.0005).sum())
+        stable = int(values.abs().lt(0.0005).sum())
         total = up + down + stable
         missing = max(0, int(current_counts.get(region, 0)) - total)
         counts = {'rise': up, 'fall': down, 'neutral': stable}
@@ -3127,8 +3617,18 @@ def build_regional_movement_model(current, previous):
             if state in ('rise', 'fall') and sign_test_p_value(up, down) >= REGION_DIRECTION_P_VALUE:
                 state = 'mixed'
             share = largest / total * 100
-        rows.append({'region': region, 'state': state, 'share': share, 'up': up,
-                     'down': down, 'stable': stable, 'total': total, 'missing': missing})
+        rows.append(
+            {
+                'region': region,
+                'state': state,
+                'share': share,
+                'up': up,
+                'down': down,
+                'stable': stable,
+                'total': total,
+                'missing': missing,
+            }
+        )
     return rows
 
 
@@ -3145,8 +3645,9 @@ def read_regional_movement_model(week, group=ALL_VALUES, product_filter=None):
     if product_filter:
         family, product, variety = product_filter
         for frame_name, frame in (('current', current), ('previous', previous)):
-            filtered = frame[(frame['product_group'] == family) & (frame['product'] == product)
-                             & (frame['variety'] == variety)]
+            filtered = frame[
+                (frame['product_group'] == family) & (frame['product'] == product) & (frame['variety'] == variety)
+            ]
             if frame_name == 'current':
                 current = filtered
             else:
@@ -3162,45 +3663,47 @@ def home_alert_rows(week, group, product_filter=None):
         rows = rows[rows['product_group'] == group]
     if product_filter:
         family, product, variety = product_filter
-        rows = rows[(rows['product_group'] == family) & (rows['product'] == product)
-                    & (rows['variety'] == variety)]
+        rows = rows[(rows['product_group'] == family) & (rows['product'] == product) & (rows['variety'] == variety)]
     rows = rows.copy()
-    rows['_distance'] = ((rows['variation'] - rows['usual_variation']).abs()
-                         / rows['variation_deviation'])
-    return rows.sort_values(['_distance', 'product_group', 'product'],
-                            ascending=[False, True, True])
+    rows['_distance'] = (rows['variation'] - rows['usual_variation']).abs() / rows['variation_deviation']
+    return rows.sort_values(['_distance', 'product_group', 'product'], ascending=[False, True, True])
 
 
 def home_alert_table(rows):
     """Readable, severity-ordered rows for the dashboard alert dialog."""
     records = rows.to_dict('records')
-    return pd.DataFrame({
-        'N.º': range(1, len(records) + 1),
-        'Nivel': [find_alert_level(row['_distance'])[0] for row in records],
-        'Familia': [row['product_group'] for row in records],
-        'Producto': [describe_product(row) for row in records],
-        'Canal': [row['channel'] for row in records],
-        'Unidad': [f"$/{row['normalized_unit']}" for row in records],
-        'Anterior': [home_mockup.money(row['national_price'] / (1 + row['variation']))
-                     for row in records],
-        'Actual': [home_mockup.money(row['national_price']) for row in records],
-        'Cambio': [home_mockup.percent(row['variation'] * 100, True) for row in records],
-    })
+    return pd.DataFrame(
+        {
+            'N.º': range(1, len(records) + 1),
+            'Nivel': [find_alert_level(row['_distance'])[0] for row in records],
+            'Familia': [row['product_group'] for row in records],
+            'Producto': [describe_product(row) for row in records],
+            'Canal': [row['channel'] for row in records],
+            'Unidad': [f"$/{row['normalized_unit']}" for row in records],
+            'Anterior': [home_mockup.money(row['national_price'] / (1 + row['variation'])) for row in records],
+            'Actual': [home_mockup.money(row['national_price']) for row in records],
+            'Cambio': [home_mockup.percent(row['variation'] * 100, True) for row in records],
+        }
+    )
 
 
 def style_home_alert_table(table, mode):
     """Color the alert level and price direction without changing their text labels."""
     dark = charts.get_palette(mode)['base'] == 'dark'
-    colors = ({'Muy alta': ('#7f1d1d', '#fff4f4'), 'Alta': ('#9a3412', '#fff4e8'),
-               'Moderada': ('#78450a', '#fff4d2')} if dark else
-              {'Muy alta': ('#fee2e2', '#991b1b'), 'Alta': ('#ffedd5', '#9a3412'),
-               'Moderada': ('#fef3c7', '#854d0e')})
+    colors = (
+        {'Muy alta': ('#7f1d1d', '#fff4f4'), 'Alta': ('#9a3412', '#fff4e8'), 'Moderada': ('#78450a', '#fff4d2')}
+        if dark
+        else {'Muy alta': ('#fee2e2', '#991b1b'), 'Alta': ('#ffedd5', '#9a3412'), 'Moderada': ('#fef3c7', '#854d0e')}
+    )
+
     def level_css(value):
         background, foreground = colors[value]
         return f'background-color:{background};color:{foreground};font-weight:600'
+
     def change_css(value):
         foreground = ('#ff8a96' if dark else '#b91c1c') if value.startswith('+') else ('#83baff' if dark else '#1d4ed8')
         return f'color:{foreground};font-weight:600'
+
     return table.style.map(level_css, subset=['Nivel']).map(change_css, subset=['Cambio'])
 
 
@@ -3219,20 +3722,21 @@ def show_home_alerts_dialog(week, group, product_filter, mode):
     if selected is None:
         st.html('<div class="home-alert-overview-marker"></div>')
         st.caption(f'{len(rows)} cambios poco habituales · {len(families)} familias · datos nacionales de ODEPA')
-        icons = {'Hortalizas': '🥬', 'Frutas': '🍎', 'Pan': '🍞',
-                 'Carne bovina': '🥩', 'Abarrotes y otros': '🥫'}
+        icons = {'Hortalizas': '🥬', 'Frutas': '🍎', 'Pan': '🍞', 'Carne bovina': '🥩', 'Abarrotes y otros': '🥫'}
         # Every family gets the same tile (D-150): the number of alerts is written on it,
         # so neither the shape nor the colour has to stand for a quantity.
         tile_css = []
         for index, family in enumerate(families):
             icon = icons.get(family, '🍗' if 'Cerdo' in family else '🥚')
-            tile_css.append(f'.st-key-home_alert_card_{index}'
-                            '{--alert-tone:#db3349;--alert-shape:inset(0 round 24%);}'
-                            f'.st-key-home_alert_card_{index} button::after{{content:"{icon}";}}')
+            tile_css.append(
+                f'.st-key-home_alert_card_{index}'
+                '{--alert-tone:#db3349;--alert-shape:inset(0 round 24%);}'
+                f'.st-key-home_alert_card_{index} button::after{{content:"{icon}";}}'
+            )
         st.html('<style>' + ''.join(tile_css) + '</style>')
         for start in range(0, len(families), 4):
             columns = st.columns(4, gap='small')
-            for offset, family in enumerate(families[start:start + 4]):
+            for offset, family in enumerate(families[start : start + 4]):
                 index = start + offset
                 total = int(counts[family])
                 label = f'{family}\n{total} {"alerta" if total == 1 else "alertas"}  →'
@@ -3240,14 +3744,15 @@ def show_home_alerts_dialog(week, group, product_filter, mode):
                     if st.button(label, key=f'home_alert_family_{index}', use_container_width=True):
                         st.session_state['home_alert_selected_family'] = family
                         st.rerun(scope='fragment')
-        st.caption('La alerta señala un cambio inusual respecto de la semana anterior; no significa que el alimento sea el más caro.')
+        st.caption(
+            'La alerta señala un cambio inusual respecto de la semana anterior; no significa que el alimento sea el más caro.'
+        )
         return
 
     st.html('<div class="home-alert-detail-marker"></div>')
     family_rows = rows[rows['product_group'] == selected]
     family_total = len(family_rows)
-    with st.container(key='home_alert_detail_heading', horizontal=True,
-                      vertical_alignment='center', gap='small'):
+    with st.container(key='home_alert_detail_heading', horizontal=True, vertical_alignment='center', gap='small'):
         if st.button('← Familias', key='home_alert_back'):
             st.session_state['home_alert_selected_family'] = None
             st.rerun(scope='fragment')
@@ -3256,22 +3761,30 @@ def show_home_alerts_dialog(week, group, product_filter, mode):
     unit_key = f'home_alert_unit_{selected}'
     if st.session_state.get(unit_key) not in units:
         st.session_state[unit_key] = units[0]
-    with st.container(key='home_alert_detail_tools', horizontal=True,
-                      vertical_alignment='bottom', gap='small'):
-        st.html('<div class="home-alert-level-guide">'
-                '<span><i class="critical"></i>Muy alta</span>'
-                '<span><i class="high"></i>Alta</span>'
-                '<span><i class="moderate"></i>Moderada</span>'
-                '<small>El color indica cuán inusual fue el cambio.</small></div>')
-        selected_unit = st.selectbox('Unidad', units, key=unit_key,
-                                     format_func=lambda value: value if value == 'Todas las unidades' else f'$/{value}')
+    with st.container(key='home_alert_detail_tools', horizontal=True, vertical_alignment='bottom', gap='small'):
+        st.html(
+            '<div class="home-alert-level-guide">'
+            '<span><i class="critical"></i>Muy alta</span>'
+            '<span><i class="high"></i>Alta</span>'
+            '<span><i class="moderate"></i>Moderada</span>'
+            '<small>El color indica cuán inusual fue el cambio.</small></div>'
+        )
+        selected_unit = st.selectbox(
+            'Unidad',
+            units,
+            key=unit_key,
+            format_func=lambda value: value if value == 'Todas las unidades' else f'$/{value}',
+        )
     if selected_unit != 'Todas las unidades':
         family_rows = family_rows[family_rows['normalized_unit'] == selected_unit]
         st.caption(f'Mostrando {len(family_rows)} de {family_total} alertas de esta familia.')
     table = home_alert_table(family_rows).drop(columns='Familia')
-    st.dataframe(style_home_alert_table(table, mode),
-                 hide_index=True, use_container_width=True,
-                 height=min(520, max(150, 35 * (len(family_rows) + 1))))
+    st.dataframe(
+        style_home_alert_table(table, mode),
+        hide_index=True,
+        use_container_width=True,
+        height=min(520, max(150, 35 * (len(family_rows) + 1))),
+    )
 
 
 PRODUCT_ORDERS = ('Mayor cambio', 'Subidas', 'Bajadas', 'Nombre', 'Inusuales')
@@ -3297,16 +3810,21 @@ def read_cached_region_directions(database_version, week):
     current = read_cached_week_snapshot(database_version, week)
     previous = read_cached_week_snapshot(database_version, f'{week_date - pd.Timedelta(days=7):%Y-%m-%d}')
     columns = join + ['region', 'price']
-    compared = home_mockup.compare_week(current[columns].rename(columns={'price': 'national_price'}),
-                                        previous[columns].rename(columns={'price': 'national_price'}),
-                                        join + ['region'])
+    compared = home_mockup.compare_week(
+        current[columns].rename(columns={'price': 'national_price'}),
+        previous[columns].rename(columns={'price': 'national_price'}),
+        join + ['region'],
+    )
     compared = compared[compared['variation'].notna() & compared['variation'].abs().lt(float('inf'))]
-    up = compared[compared['variation'] >= .0005].groupby(join).size()
-    down = compared[compared['variation'] <= -.0005].groupby(join).size()
+    up = compared[compared['variation'] >= 0.0005].groupby(join).size()
+    down = compared[compared['variation'] <= -0.0005].groupby(join).size()
     names = {}
     for key, group in compared.groupby(join):
         ordered = group.sort_values('variation', ascending=False)
-        names[key] = [(home_mockup.short_region(region), float(change) * 100) for region, change in zip(ordered['region'], ordered['variation'])]
+        names[key] = [
+            (home_mockup.short_region(region), float(change) * 100)
+            for region, change in zip(ordered['region'], ordered['variation'])
+        ]
     keys = set(up.index) | set(down.index)
     # D-304: (regions up, regions down, [(region, change in %)]), so the table can say which regions, not only how many.
     return {key: (int(up.get(key, 0)), int(down.get(key, 0)), names.get(key, [])) for key in keys}
@@ -3315,8 +3833,13 @@ def read_cached_region_directions(database_version, week):
 def sort_family_products(rows, order):
     """The family table under the chosen order; ties stay in a stable, readable order.
     A change resting on a single quote sorts after the others (D-146)."""
-    names = lambda row: (str(row['product']), str(row['variety']), str(row['channel']))
-    thin = lambda row: bool(row.get('_single_quote'))
+
+    def names(row):
+        return (str(row['product']), str(row['variety']), str(row['channel']))
+
+    def thin(row):
+        return bool(row.get('_single_quote'))
+
     if order == 'Nombre':
         return sorted(rows, key=names)
     if order == 'Subidas':
@@ -3325,8 +3848,9 @@ def sort_family_products(rows, order):
         return sorted(rows, key=lambda row: (thin(row), row['variation'], names(row)))
     if order == 'Inusuales':
         # National alerts only, the most unusual first (distance to the usual range).
-        return sorted((row for row in rows if row.get('is_alert')),
-                      key=lambda row: (-row.get('_severity', 0), names(row)))
+        return sorted(
+            (row for row in rows if row.get('is_alert')), key=lambda row: (-row.get('_severity', 0), names(row))
+        )
     return sorted(rows, key=lambda row: (thin(row), -abs(row['variation']), names(row)))
 
 
@@ -3335,102 +3859,175 @@ def show_market_overview(mode, prefix):
     # Streamlit reruns this file without reimporting helpers; keep the live page
     # in sync when the dashboard markup changes during development.
     importlib.reload(home_mockup)
-    st.markdown(home_mockup.style(mode,charts.get_palette(mode)),unsafe_allow_html=True)
-    options=read_cached_filter_options(get_database_version())
+    st.markdown(home_mockup.style(mode, charts.get_palette(mode)), unsafe_allow_html=True)
+    options = read_cached_filter_options(get_database_version())
     apply_home_link_click()
     apply_home_focus(options)
     if read_filter('week') not in options['week']:
-        st.session_state['dashboard_week']=options['week'][0]
+        st.session_state['dashboard_week'] = options['week'][0]
     if read_filter('region') not in options['region']:
-        st.session_state['dashboard_region']=ALL_VALUES
-    week,region=read_filter('week'),read_filter('region')
+        st.session_state['dashboard_region'] = ALL_VALUES
+    week, region = read_filter('week'), read_filter('region')
     st.session_state.pop('home_product_selection', None)
-    latest=read_latest_run()
-    stamp=to_chile_time(parse_run_start(latest['started_at']))
-    month=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][stamp.month-1]
-    updated=f'{stamp.day} {month} · {stamp:%H:%M}'
+    latest = read_latest_run()
+    stamp = to_chile_time(parse_run_start(latest['started_at']))
+    month = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'][stamp.month - 1]
+    updated = f'{stamp.day} {month} · {stamp:%H:%M}'
     # Every family stays in the movement chart; the selected one fills the product table.
-    model=read_home_model(week,ALL_VALUES,region,DEFAULT_TOP_N)
-    regional_rows=read_regional_movement_model(week)
-    averages=home_mockup.family_averages(model['family_rows'])
-    families=[family for family, _, _ in averages]
-    family=st.query_params.get('familia')
+    model = read_home_model(week, ALL_VALUES, region, DEFAULT_TOP_N)
+    regional_rows = read_regional_movement_model(week)
+    averages = home_mockup.family_averages(model['family_rows'])
+    families = [family for family, _, _ in averages]
+    family = st.query_params.get('familia')
     if family not in families:
-        family=families[0] if families else None
-    scope='todo Chile' if region == ALL_VALUES else home_mockup.short_region(region)
+        family = families[0] if families else None
+    scope = 'todo Chile' if region == ALL_VALUES else home_mockup.short_region(region)
+
     def overview_link(chosen_region, chosen_family):
         address = build_page_address(PAGE_HOME)
         parameters = {'_home_region': chosen_region or ALL_VALUES, '_home_week': week}
         if chosen_family:
             parameters['familia'] = chosen_family
         return address + ('&' if '?' in address else '?') + urlencode(parameters)
+
     # D-264: the only header of the Resumen, one thin bar.
     with st.container(key="home_bar", horizontal=True, vertical_alignment="center"):
         show_return_button()
-        st.markdown(home_mockup.dashboard_bar(
-            build_view_path(WINDOW_OF_VIEW[PAGE_HOME], PAGE_HOME), describe_week_span(week), model['family_rows'],
-            regional_rows, None if region == ALL_VALUES else region, compared=sum(model['counts']),
-            available=model['available']), unsafe_allow_html=True, width="stretch")
+        st.markdown(
+            home_mockup.dashboard_bar(
+                build_view_path(WINDOW_OF_VIEW[PAGE_HOME], PAGE_HOME),
+                describe_week_span(week),
+                model['family_rows'],
+                regional_rows,
+                None if region == ALL_VALUES else region,
+                compared=sum(model['counts']),
+                available=model['available'],
+            ),
+            unsafe_allow_html=True,
+            width="stretch",
+        )
         show_alert_trigger(week)
         show_home_tools(week)
-        st.markdown(home_mockup.dashboard_updated(updated, latest['status']==etl.STATUS_LOADED),
-                    unsafe_allow_html=True, width="content")
+        st.markdown(
+            home_mockup.dashboard_updated(updated, latest['status'] == etl.STATUS_LOADED),
+            unsafe_allow_html=True,
+            width="content",
+        )
     map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
     # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
     # sanitizer intentionally removes interactive SVG links.
-    map_column.markdown('<div class="greenocean-mockup">' + home_mockup.regional_map(
-        regional_rows, lambda chosen: overview_link(chosen, family), model['week_label'],
-        model['previous_label'], None if region == ALL_VALUES else region) + '</div>', unsafe_allow_html=True)
+    map_column.markdown(
+        '<div class="greenocean-mockup">'
+        + home_mockup.regional_map(
+            regional_rows,
+            lambda chosen: overview_link(chosen, family),
+            model['week_label'],
+            model['previous_label'],
+            None if region == ALL_VALUES else region,
+        )
+        + '</div>',
+        unsafe_allow_html=True,
+    )
     with detail_column:
-        st.markdown('<div class="greenocean-mockup">' + home_mockup.family_movement(
-            model['family_rows'], lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen),
-            family, scope) + '</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="greenocean-mockup">'
+            + home_mockup.family_movement(
+                model['family_rows'],
+                lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen),
+                family,
+                scope,
+            )
+            + '</div>',
+            unsafe_allow_html=True,
+        )
         with st.container(key='home_products'):
-            rows=[row for row in model['family_rows'] if row['product_group'] == family]
-            family_rows=list(rows)
-            average=next((value for name, value, _ in averages if name == family), None)
+            rows = [row for row in model['family_rows'] if row['product_group'] == family]
+            family_rows = list(rows)
+            average = next((value for name, value, _ in averages if name == family), None)
             heading = st.empty()
             search_column, channel_column, order_column, enlarge_column = st.columns(
-                [1.35, 1.25, 1.5, 0.3], vertical_alignment='center')
-            query = search_column.text_input('Buscar', key='home_products_search', icon=':material/search:',
-                                             placeholder='Producto, ej.: lechuga', label_visibility='collapsed',
-                                             type='search', live=True)
-            channels=['Todos'] + sorted({str(row['channel']) for row in rows})
+                [1.35, 1.25, 1.5, 0.3], vertical_alignment='center'
+            )
+            query = search_column.text_input(
+                'Buscar',
+                key='home_products_search',
+                icon=':material/search:',
+                placeholder='Producto, ej.: lechuga',
+                label_visibility='collapsed',
+                type='search',
+                live=True,
+            )
+            channels = ['Todos'] + sorted({str(row['channel']) for row in rows})
             if st.session_state.get('home_products_channel') not in channels:
-                st.session_state['home_products_channel']='Todos'
-            channel=channel_column.selectbox('Canal', channels, key='home_products_channel')
+                st.session_state['home_products_channel'] = 'Todos'
+            channel = channel_column.selectbox('Canal', channels, key='home_products_channel')
             # Alerts are national: «Inusuales» only applies to the whole country.
-            orders=PRODUCT_ORDERS if region == ALL_VALUES else PRODUCT_ORDERS[:-1]
+            orders = PRODUCT_ORDERS if region == ALL_VALUES else PRODUCT_ORDERS[:-1]
             if st.session_state.get('home_products_order') not in orders:
-                st.session_state['home_products_order']=orders[0]
-            order=order_column.selectbox('Orden', orders, key='home_products_order')
-            total=len(rows)
+                st.session_state['home_products_order'] = orders[0]
+            order = order_column.selectbox('Orden', orders, key='home_products_order')
+            total = len(rows)
             if channel != 'Todos':
-                rows=[row for row in rows if row['channel'] == channel]
+                rows = [row for row in rows if row['channel'] == channel]
             if query.strip():
-                rows=[row for row in rows if matches_product_search(row, query)]
-            rows=sort_family_products(rows, order)
-            heading.markdown('<div class="greenocean-mockup">' + home_mockup.products_heading(
-                family or 'Sin familia', average, scope, len(rows), total) + '</div>', unsafe_allow_html=True)
-            directions=read_cached_region_directions(get_database_version(), week)
+                rows = [row for row in rows if matches_product_search(row, query)]
+            rows = sort_family_products(rows, order)
+            heading.markdown(
+                '<div class="greenocean-mockup">'
+                + home_mockup.products_heading(family or 'Sin familia', average, scope, len(rows), total)
+                + '</div>',
+                unsafe_allow_html=True,
+            )
+            directions = read_cached_region_directions(get_database_version(), week)
             for row in rows:
-                row['_regions']=directions.get(tuple(row[field] for field in queries.KEY_COLUMNS+['channel']))
-            table_html = ('<div class="greenocean-mockup">' + home_mockup.products_table(
-                rows, model['week_label'], model['previous_label'], query.strip(),
-                None if region == ALL_VALUES else region) + '</div>')
+                row['_regions'] = directions.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
+            table_html = (
+                '<div class="greenocean-mockup">'
+                + home_mockup.products_table(
+                    rows,
+                    model['week_label'],
+                    model['previous_label'],
+                    query.strip(),
+                    None if region == ALL_VALUES else region,
+                )
+                + '</div>'
+            )
             st.markdown(table_html, unsafe_allow_html=True)
-            if enlarge_column.button('', icon=':material/open_in_full:', key='home_products_enlarge',
-                                     help=tr('Ampliar la tabla de productos')):
+            if enlarge_column.button(
+                '',
+                icon=':material/open_in_full:',
+                key='home_products_enlarge',
+                help=tr('Ampliar la tabla de productos'),
+            ):
                 for row in family_rows:
-                    row['_regions']=directions.get(tuple(row[field] for field in queries.KEY_COLUMNS+['channel']))
-                st.session_state.update({'dialog_products_search': query, 'dialog_products_channel': channel,
-                                         'dialog_products_order': order})
-                show_products_dialog(family or 'Sin familia', average, scope, family_rows, channels, orders,
-                                     model['week_label'], model['previous_label'], None if region == ALL_VALUES else region)
+                    row['_regions'] = directions.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
+                st.session_state.update(
+                    {
+                        'dialog_products_search': query,
+                        'dialog_products_channel': channel,
+                        'dialog_products_order': order,
+                    }
+                )
+                show_products_dialog(
+                    family or 'Sin familia',
+                    average,
+                    scope,
+                    family_rows,
+                    channels,
+                    orders,
+                    model['week_label'],
+                    model['previous_label'],
+                    None if region == ALL_VALUES else region,
+                )
     # Under both columns, full width (D-150): the note no longer lengthens one side.
-    st.markdown('<div class="greenocean-mockup">' + home_mockup.coverage_note(
-        model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION), family)
-        + '</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="greenocean-mockup">'
+        + home_mockup.coverage_note(
+            model, build_page_address(PAGE_OPERATIONS), build_page_address(PAGE_DOCUMENTATION), family
+        )
+        + '</div>',
+        unsafe_allow_html=True,
+    )
 
 
 @st.dialog("Productos", width="large")
@@ -3438,18 +4035,30 @@ def show_products_dialog(family, average, scope, family_rows, channels, orders, 
     """The products table at the size of the window (D-317) with the same filters as the panel (D-322): it opens with the
     panel's search, channel and order, and filters on its own without closing."""
     with st.container(horizontal=True, vertical_alignment="center", key="dialog_products_filters"):
-        query = st.text_input('Buscar', key='dialog_products_search', icon=':material/search:', placeholder='Producto, ej.: lechuga',
-                              label_visibility='collapsed', type='search', live=True)
+        query = st.text_input(
+            'Buscar',
+            key='dialog_products_search',
+            icon=':material/search:',
+            placeholder='Producto, ej.: lechuga',
+            label_visibility='collapsed',
+            type='search',
+            live=True,
+        )
         channel = st.selectbox('Canal', channels, key='dialog_products_channel')
         order = st.selectbox('Orden', orders, key='dialog_products_order')
     rows = [row for row in family_rows if channel == 'Todos' or row['channel'] == channel]
     if query.strip():
         rows = [row for row in rows if matches_product_search(row, query)]
     rows = sort_family_products(rows, order)
-    st.markdown('<div class="greenocean-mockup products-large">'
-                + home_mockup.products_heading(family, average, scope, len(rows), len(family_rows)) + '</div>'
-                + '<div class="greenocean-mockup">' + home_mockup.products_table(rows, week_label, previous_label, query.strip(), region)
-                + '</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="greenocean-mockup products-large">'
+        + home_mockup.products_heading(family, average, scope, len(rows), len(family_rows))
+        + '</div>'
+        + '<div class="greenocean-mockup">'
+        + home_mockup.products_table(rows, week_label, previous_label, query.strip(), region)
+        + '</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def show_home_page(mode):
@@ -3482,8 +4091,7 @@ def read_lineage(database_version):
 # region Alerts page
 def find_alert_level(distance):
     """(label, icon, status) of an alert by its distance in standard deviations."""
-    return next((label, icon, status) for floor, label, icon, status in ALERT_LEVELS
-                if distance >= floor)
+    return next((label, icon, status) for floor, label, icon, status in ALERT_LEVELS if distance >= floor)
 
 
 # region Contexto del precio (D-094)
@@ -3629,8 +4237,8 @@ def build_context_css(mode):
 def read_family_inflation(database_version):
     """(monthly index per family and IPC, last IPC month, summary, IPC total, IPC 12 m) (D-163)."""
     rows, last = inflation_view.build_family_index(
-        queries.run_sql(inflation_view.SERIES_SQL),
-        queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"))
+        queries.run_sql(inflation_view.SERIES_SQL), queries.run_sql("SELECT year, month, food_index FROM ipc_monthly")
+    )
     summary, ipc_total, ipc_year = inflation_view.summarize_families(rows, last)
     return rows, last, summary, ipc_total, ipc_year
 
@@ -3638,9 +4246,14 @@ def read_family_inflation(database_version):
 def build_family_panel_titles(summary, ipc_total=None):
     """{family: "Hortalizas|+60,2 % · más que la inflación"}, biggest gap first; with
     ipc_total, the food IPC closes the list as the basket every family is measured against."""
-    percent = lambda value: "—" if value is None or pd.isna(value) else charts.format_signed_percent(value)
-    titles = {row.family: f"{home_mockup.short_family(row.family)}|{percent(row.total)} · {row.verdict}"
-              for row in summary.itertuples()}
+
+    def percent(value):
+        return "—" if value is None or pd.isna(value) else charts.format_signed_percent(value)
+
+    titles = {
+        row.family: f"{home_mockup.short_family(row.family)}|{percent(row.total)} · {row.verdict}"
+        for row in summary.itertuples()
+    }
     if ipc_total is not None:
         titles[inflation_view.IPC_NAME] = f"IPC de alimentos (INE)|{percent(ipc_total)} · la canasta de referencia"
     return titles
@@ -3649,13 +4262,19 @@ def build_family_panel_titles(summary, ipc_total=None):
 FAMILY_CARD_COLUMNS = 4
 # What Precios e inflación measures (D-267), in the right corner of its bar, with its definition on hover.
 INFLATION_TERMS = [
-    ("KPI", "Variación vs IPC",
-     "Diferencia, en puntos, entre lo que subió la familia desde enero 2022 y lo que subió el IPC de alimentos del INE. "
-     f"Más de {inflation_view.SAME_PACE_POINTS:.0f} puntos arriba: subió más que la inflación; más de "
-     f"{inflation_view.SAME_PACE_POINTS:.0f} abajo: menos."),
-    ("Métrica", "Índice ene 2022 = 100",
-     "Cada mes, el precio promedio de cada serie de consumidor de ODEPA sobre su precio de enero 2022, por 100; "
-     "la familia toma la mediana de sus series."),
+    (
+        "KPI",
+        "Variación vs IPC",
+        "Diferencia, en puntos, entre lo que subió la familia desde enero 2022 y lo que subió el IPC de alimentos del INE. "
+        f"Más de {inflation_view.SAME_PACE_POINTS:.0f} puntos arriba: subió más que la inflación; más de "
+        f"{inflation_view.SAME_PACE_POINTS:.0f} abajo: menos.",
+    ),
+    (
+        "Métrica",
+        "Índice ene 2022 = 100",
+        "Cada mes, el precio promedio de cada serie de consumidor de ODEPA sobre su precio de enero 2022, por 100; "
+        "la familia toma la mediana de sus series.",
+    ),
 ]
 
 
@@ -3664,8 +4283,10 @@ def build_family_card_title_html(family, title):
     the family's color."""
     name, verdict = title.split("|", 1)
     color = inflation_view.FAMILY_COLORS.get(family, "var(--text-color)")
-    return (f'<div class="inf-panel-head"><b>{html.escape(name)}</b>'
-            f'<span style="color:{color}">{html.escape(verdict)}</span></div>')
+    return (
+        f'<div class="inf-panel-head"><b>{html.escape(name)}</b>'
+        f'<span style="color:{color}">{html.escape(verdict)}</span></div>'
+    )
 
 
 FAMILY_FOCUS_KEY = "inf_focus"
@@ -3678,9 +4299,11 @@ def focus_family(family):
 def build_family_insights_html(insights, family):
     """The reading of an enlarged family (D-267): what its own numbers say, one short line per fact."""
     color = inflation_view.FAMILY_COLORS.get(family, "#94a3b8")
-    return (f'<div class="inf-insights" style="--c:{color}"><h4>Lectura de los datos</h4>'
-            + "".join(f'<p><em>{html.escape(label)}</em>{html.escape(text)}</p>' for label, text in insights)
-            + "</div>")
+    return (
+        f'<div class="inf-insights" style="--c:{color}"><h4>Lectura de los datos</h4>'
+        + "".join(f'<p><em>{html.escape(label)}</em>{html.escape(text)}</p>' for label, text in insights)
+        + "</div>"
+    )
 
 
 def show_family_cards(rows, titles, mode, real, summary=None, last=None):
@@ -3695,23 +4318,36 @@ def show_family_cards(rows, titles, mode, real, summary=None, last=None):
                 st.markdown(build_family_card_title_html(focus, titles[focus]), unsafe_allow_html=True)
                 st.button("Ver todas", key="inf_unfocus", icon=":material/close:", on_click=focus_family, args=(None,))
             chart_column, reading_column = st.columns([2.5, 1], gap="medium")
-            chart_column.altair_chart(inflation_view.draw_family_focus(rows, focus, mode, real=real, domain=domain,
-                                                                       height=420), width="stretch", theme=None)
+            chart_column.altair_chart(
+                inflation_view.draw_family_focus(rows, focus, mode, real=real, domain=domain, height=420),
+                width="stretch",
+                theme=None,
+            )
             if summary is not None and last is not None:
-                reading_column.markdown(build_family_insights_html(
-                    inflation_view.family_insights(rows, summary, focus, last, real), focus), unsafe_allow_html=True)
+                reading_column.markdown(
+                    build_family_insights_html(inflation_view.family_insights(rows, summary, focus, last, real), focus),
+                    unsafe_allow_html=True,
+                )
         return
     families = list(titles)
     for start in range(0, len(families), FAMILY_CARD_COLUMNS):
         columns = st.columns(FAMILY_CARD_COLUMNS, gap="small")
-        for offset, family in enumerate(families[start:start + FAMILY_CARD_COLUMNS]):
+        for offset, family in enumerate(families[start : start + FAMILY_CARD_COLUMNS]):
             with columns[offset], st.container(key=f"inf_card_{start + offset}"):
                 st.markdown(build_family_card_title_html(family, titles[family]), unsafe_allow_html=True)
-                st.altair_chart(inflation_view.draw_family_card(rows, family, mode, real=real, domain=domain,
-                                                                height="container"),
-                                width="stretch", height="stretch", theme=None)
-                st.button("Ampliar", key=f"inf_zoom_{start + offset}", icon=":material/open_in_full:",
-                          on_click=focus_family, args=(family,))
+                st.altair_chart(
+                    inflation_view.draw_family_card(rows, family, mode, real=real, domain=domain, height="container"),
+                    width="stretch",
+                    height="stretch",
+                    theme=None,
+                )
+                st.button(
+                    "Ampliar",
+                    key=f"inf_zoom_{start + offset}",
+                    icon=":material/open_in_full:",
+                    on_click=focus_family,
+                    args=(family,),
+                )
 
 
 OVERVIEW_WEEK_KEY, OVERVIEW_FAMILY_KEY = "ov_week", "ov_family"
@@ -3742,8 +4378,10 @@ def read_region_ids(version):
 
 @st.cache_data(show_spinner=False)
 def read_cached_database_counts(database_version):
-    return queries.run_sql("SELECT (SELECT count(*) FROM weekly_price) AS prices, (SELECT count(*) FROM dim_date) AS weeks, "
-                           "(SELECT count(*) FROM dim_region) AS regions, (SELECT count(*) FROM dim_channel) AS channels").iloc[0]
+    return queries.run_sql(
+        "SELECT (SELECT count(*) FROM weekly_price) AS prices, (SELECT count(*) FROM dim_date) AS weeks, "
+        "(SELECT count(*) FROM dim_region) AS regions, (SELECT count(*) FROM dim_channel) AS channels"
+    ).iloc[0]
 
 
 def build_insight_table_html(head, rows):
@@ -3755,9 +4393,11 @@ def build_insight_table_html(head, rows):
 
 def build_insight_card_html(kind, title, who, icon, lines):
     paragraphs = "".join(f"<p>{html.escape(line)}</p>" for line in lines)
-    return (f'<div class="ov-insight ov-insight-{kind}"><span class="ov-insight-who">{overview.point_icon(icon)}'
-            f'<span>{html.escape(tr("Para"))}: {html.escape(tr(who))}</span></span>'
-            f'<h4>{html.escape(tr(title))}</h4>{paragraphs}</div>')
+    return (
+        f'<div class="ov-insight ov-insight-{kind}"><span class="ov-insight-who">{overview.point_icon(icon)}'
+        f'<span>{html.escape(tr("Para"))}: {html.escape(tr(who))}</span></span>'
+        f'<h4>{html.escape(tr(title))}</h4>{paragraphs}</div>'
+    )
 
 
 def show_overview_insights(mode, version):
@@ -3788,22 +4428,53 @@ def show_overview_insights(mode, version):
     fell = moves[moves["state"] == "Bajó"]["product_group"].map(short)
     rose = moves[moves["state"] == "Subió"]["product_group"].map(short)
     questions = [
-        ("¿Qué está subiendo y qué está bajando esta semana?", "Persona común", "Panorama de precios",
-         f"Subieron: {overview.join(rose) or 'ninguna familia'}. Bajaron: {overview.join(fell) or 'ninguna familia'}."),
-        ("¿Qué alimentos se encarecieron más desde 2022?", "Persona común", "Precios e inflación",
-         (f"{overview.join(above)} subieron más que los alimentos en general ({overview.signed(ipc_total)})." if len(above)
-          else "Ninguna familia subió más que los alimentos en general.")),
-        ("¿La inflación de los alimentos está bajando?", "Persona común", "Precios e inflación",
-         f"Sí, sigue subiendo pero más lento: de {overview.signed(first_year['change'])} al año a {overview.signed(ipc_year)}."),
-        ("¿Dónde se compra por mayor?", "Comerciante mayorista", "Dónde comprar",
-         f"{market_count} mercados mayoristas en {len(overview.read_points())} regiones, 3 de ellos en Santiago."),
-        ("¿Cuánto se agrega entre el mercado mayorista y el consumidor?", "Comerciante mayorista", "Consultas SQL · Brecha mayorista",
-         (f"En promedio, {overview.join(f'{short(f)} {overview.signed(v)}' for f, v in gaps.items())}." if gaps is not None
-          else "Sin datos esta semana.")),
-        ("¿Puedo confiar en estas cifras?", "Quien diseña los datos", "Calidad y auditoría",
-         f"{green} de {len(indicators)} indicadores de calidad en su umbral y {tests[0]} de {tests[1]} pruebas de datos."),
+        (
+            "¿Qué está subiendo y qué está bajando esta semana?",
+            "Persona común",
+            "Panorama de precios",
+            f"Subieron: {overview.join(rose) or 'ninguna familia'}. Bajaron: {overview.join(fell) or 'ninguna familia'}.",
+        ),
+        (
+            "¿Qué alimentos se encarecieron más desde 2022?",
+            "Persona común",
+            "Precios e inflación",
+            (
+                f"{overview.join(above)} subieron más que los alimentos en general ({overview.signed(ipc_total)})."
+                if len(above)
+                else "Ninguna familia subió más que los alimentos en general."
+            ),
+        ),
+        (
+            "¿La inflación de los alimentos está bajando?",
+            "Persona común",
+            "Precios e inflación",
+            f"Sí, sigue subiendo pero más lento: de {overview.signed(first_year['change'])} al año a {overview.signed(ipc_year)}.",
+        ),
+        (
+            "¿Dónde se compra por mayor?",
+            "Comerciante mayorista",
+            "Dónde comprar",
+            f"{market_count} mercados mayoristas en {len(overview.read_points())} regiones, 3 de ellos en Santiago.",
+        ),
+        (
+            "¿Cuánto se agrega entre el mercado mayorista y el consumidor?",
+            "Comerciante mayorista",
+            "Consultas SQL · Brecha mayorista",
+            (
+                f"En promedio, {overview.join(f'{short(f)} {overview.signed(v)}' for f, v in gaps.items())}."
+                if gaps is not None
+                else "Sin datos esta semana."
+            ),
+        ),
+        (
+            "¿Puedo confiar en estas cifras?",
+            "Quien diseña los datos",
+            "Calidad y auditoría",
+            f"{green} de {len(indicators)} indicadores de calidad en su umbral y {tests[0]} de {tests[1]} pruebas de datos.",
+        ),
     ]
-    st.markdown(f"""<style>
+    st.markdown(
+        f"""<style>
     .ov-it {{ overflow:auto; max-height:calc(100vh - 290px); }}
     .ov-insights {{ overflow:auto; max-height:calc(100vh - 230px); }}
     .ov-it table {{ width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:12.5px; }}
@@ -3821,37 +4492,77 @@ def show_overview_insights(mode, version):
     .ov-insight-who .ov-icon {{ width:38px; height:38px; }}
     .ov-insight h4 {{ margin:2px 0 10px !important; padding:0 !important; font-size:19px !important; color:{palette['strong_text']}; }}
     .ov-insight p {{ margin:0 0 8px !important; font-size:13.5px; line-height:1.55; color:{palette['text']}; }}
-    </style>""", unsafe_allow_html=True)
+    </style>""",
+        unsafe_allow_html=True,
+    )
     left, right = st.columns([1.35, 1], gap="medium")
     with left:
-        view = st.segmented_control(tr("Ver"), ["Preguntas", "KPIs"], default="Preguntas", key=OVERVIEW_INSIGHT_VIEW,
-                                    label_visibility="collapsed") or "Preguntas"
+        view = (
+            st.segmented_control(
+                tr("Ver"),
+                ["Preguntas", "KPIs"],
+                default="Preguntas",
+                key=OVERVIEW_INSIGHT_VIEW,
+                label_visibility="collapsed",
+            )
+            or "Preguntas"
+        )
         if view == "Preguntas":
-            st.markdown(build_insight_table_html(["Pregunta", "Para quién", "Dónde verlo", "La respuesta de hoy"],
-                                                 questions), unsafe_allow_html=True)
+            st.markdown(
+                build_insight_table_html(["Pregunta", "Para quién", "Dónde verlo", "La respuesta de hoy"], questions),
+                unsafe_allow_html=True,
+            )
         else:
-            st.markdown(build_insight_table_html(["KPI", "Cómo se calcula", "Por qué"], overview.KPIS), unsafe_allow_html=True)
+            st.markdown(
+                build_insight_table_html(["KPI", "Cómo se calcula", "Por qué"], overview.KPIS), unsafe_allow_html=True
+            )
     with right:
         drops = overview.best_drops(upto, week)
         database = read_cached_database_counts(version)
-        readers = {":material/person: Persona común": "buyer", ":material/storefront: Mayorista": "wholesale",
-                   ":material/database: Datos": "architect"}
-        reader = st.segmented_control(tr("Para quién"), list(readers), default=list(readers)[0], key="ov_insight_reader",
-                                      label_visibility="collapsed", format_func=tr) or list(readers)[0]
+        readers = {
+            ":material/person: Persona común": "buyer",
+            ":material/storefront: Mayorista": "wholesale",
+            ":material/database: Datos": "architect",
+        }
+        reader = (
+            st.segmented_control(
+                tr("Para quién"),
+                list(readers),
+                default=list(readers)[0],
+                key="ov_insight_reader",
+                label_visibility="collapsed",
+                format_func=tr,
+            )
+            or list(readers)[0]
+        )
         kind = readers[reader]
         if kind == "buyer":
-            card = build_insight_card_html("buyer", "Qué conviene mirar esta semana", "Una persona común", "person",
-                                           overview.consumer_insights(moves, drops, summary, ipc_total, ipc_year))
+            card = build_insight_card_html(
+                "buyer",
+                "Qué conviene mirar esta semana",
+                "Una persona común",
+                "person",
+                overview.consumer_insights(moves, drops, summary, ipc_total, ipc_year),
+            )
         elif kind == "wholesale":
-            card = build_insight_card_html("wholesale", "Qué pasa en el mercado mayorista", "Un comerciante que compra por mayor",
-                                           "mercado", overview.wholesale_insights(upto, week, read_indicator("k1_margin")))
+            card = build_insight_card_html(
+                "wholesale",
+                "Qué pasa en el mercado mayorista",
+                "Un comerciante que compra por mayor",
+                "mercado",
+                overview.wholesale_insights(upto, week, read_indicator("k1_margin")),
+            )
         else:
-            card = build_insight_card_html("architect", "Qué dicen los datos de esta carga", "Quien diseña o revisa los datos", "datos",
-                                           overview.architect_insights(runs.iloc[-1], tests, green, len(indicators), database,
-                                                                       flags, now["comparable"], now["prices"]))
+            card = build_insight_card_html(
+                "architect",
+                "Qué dicen los datos de esta carga",
+                "Quien diseña o revisa los datos",
+                "datos",
+                overview.architect_insights(
+                    runs.iloc[-1], tests, green, len(indicators), database, flags, now["comparable"], now["prices"]
+                ),
+            )
         st.markdown(f'<div class="ov-insights">{card}</div>', unsafe_allow_html=True)
-
-
 
 
 def show_where_page(mode):
@@ -3860,20 +4571,28 @@ def show_where_page(mode):
     version = get_database_version()
     points = overview.read_points()
     regions = overview.ordered_regions(points, read_region_ids(version))
-    show_page_bar(PAGE_WHERE, "Dónde comprar", "Los mercados mayoristas y los puntos de venta de cada región, de norte a sur. "
-                  "Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.")
+    show_page_bar(
+        PAGE_WHERE,
+        "Dónde comprar",
+        "Los mercados mayoristas y los puntos de venta de cada región, de norte a sur. "
+        "Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.",
+    )
     st.markdown(overview.points_css(charts.get_palette(mode)), unsafe_allow_html=True)
     week, levels = read_cached_price_levels(version)
-    st.markdown(overview.build_regions_html(regions, points, levels, i18n.translate_text(describe_week_span(week))),
-                unsafe_allow_html=True)
+    st.markdown(
+        overview.build_regions_html(regions, points, levels, i18n.translate_text(describe_week_span(week))),
+        unsafe_allow_html=True,
+    )
 
 
 @st.cache_data(show_spinner=False)
 def read_cached_price_levels(database_version):
     """(latest week, {region: level}) of the K3 regional index (D-322)."""
     week = read_latest_week()
-    frame = queries.run_sql("SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?",
-                            parameters=(f"{week:%Y-%m-%d}",))
+    frame = queries.run_sql(
+        "SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?",
+        parameters=(f"{week:%Y-%m-%d}",),
+    )
     return week, overview.regional_price_levels(frame)
 
 
@@ -3885,43 +4604,73 @@ def show_weeks_table(mode, version):
     upto = variations[variations["week_start"] <= week]
     with st.container(horizontal=True, vertical_alignment="center", key="weeks_head"):
         st.caption(tr("Variación semanal, %. Rojo: subió · Azul: bajó."))
-        count = st.slider(tr("Últimas {} semanas").format(st.session_state.get(OVERVIEW_WEEKS_KEY, 8)), 4, 12, 8,
-                          key=OVERVIEW_WEEKS_KEY, width=190, help=tr("Cuántas semanas mostrar"))
+        count = st.slider(
+            tr("Últimas {} semanas").format(st.session_state.get(OVERVIEW_WEEKS_KEY, 8)),
+            4,
+            12,
+            8,
+            key=OVERVIEW_WEEKS_KEY,
+            width=190,
+            help=tr("Cuántas semanas mostrar"),
+        )
     palette = charts.get_palette(mode)
     heat = overview.family_heat(upto, weeks=count)
     lines = "".join(f"<li>{html.escape(line)}</li>" for line in overview.weeks_insight(heat))
-    st.markdown(f'<div class="weeks-insight"><b>{html.escape(tr("Lectura del período"))}</b><ul>{lines}</ul></div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="weeks-insight"><b>{html.escape(tr("Lectura del período"))}</b><ul>{lines}</ul></div>',
+        unsafe_allow_html=True,
+    )
     columns = list(dict.fromkeys(heat.sort_values("week_start")["week"]))
     logos = {home_mockup.short_family(f): home_mockup.family_art_data_uri(f) for f in OVERVIEW_FAMILIES}
     totals = overview.period_totals(heat)
     order = list(totals.sort_values(ascending=False).index)  # the family that rose most first
     st.markdown(overview.heat_table_css(palette), unsafe_allow_html=True)
-    st.markdown(overview.build_heat_table_html(
-        heat, "family", "week", "change", columns, order, palette, logos, totals=totals.to_dict(),
-        total_title=tr("Total {} sem").format(count)), unsafe_allow_html=True)
+    st.markdown(
+        overview.build_heat_table_html(
+            heat,
+            "family",
+            "week",
+            "change",
+            columns,
+            order,
+            palette,
+            logos,
+            totals=totals.to_dict(),
+            total_title=tr("Total {} sem").format(count),
+        ),
+        unsafe_allow_html=True,
+    )
 
 
 @st.dialog("¿Qué familias vienen subiendo, semana a semana?", width="large")
 def show_weeks_dialog(mode, version):
     palette = charts.get_palette(mode)
-    st.markdown(f'<h4 style="margin:0 48px 6px 0;padding:0">{html.escape(tr("¿Qué familias vienen subiendo, semana a semana?"))}</h4>',
-                unsafe_allow_html=True)  # the dialog's own title is hidden by the profile dialog's style; the × stays free
-    st.markdown(f"""<style>
+    st.markdown(
+        f'<h4 style="margin:0 48px 6px 0;padding:0">{html.escape(tr("¿Qué familias vienen subiendo, semana a semana?"))}</h4>',
+        unsafe_allow_html=True,
+    )  # the dialog's own title is hidden by the profile dialog's style; the × stays free
+    st.markdown(
+        f"""<style>
     .st-key-weeks_head {{ justify-content:space-between; padding-right:36px; }}
     .st-key-weeks_head [data-testid="stSlider"] {{ padding:0 6px; }}
     .weeks-insight {{ margin:0 0 1rem; padding:10px 14px; border-radius:10px; border-left:3px solid {palette['accent']};
         background:color-mix(in srgb, {palette['accent']} 9%, transparent); font-size:13.5px; color:{palette['text']}; }}
     .weeks-insight b {{ color:{palette['strong_text']}; }}
     .weeks-insight ul {{ margin:4px 0 0 !important; padding-left:18px; }} .weeks-insight li {{ margin:0 !important; }}
-    </style>""", unsafe_allow_html=True)
+    </style>""",
+        unsafe_allow_html=True,
+    )
     show_weeks_table(mode, version)
 
 
 def show_insights_page(mode):
     """Insights: the questions people ask, each with today's answer, and one reading per kind of reader (D-308)."""
-    show_page_bar(PAGE_INSIGHTS, "Insights", "Preguntas reales de quien compra, de quien vende por mayor y de quien diseña "
-                  "los datos, con la respuesta de hoy.")
+    show_page_bar(
+        PAGE_INSIGHTS,
+        "Insights",
+        "Preguntas reales de quien compra, de quien vende por mayor y de quien diseña "
+        "los datos, con la respuesta de hoy.",
+    )
     show_overview_insights(mode, get_database_version())
 
 
@@ -3935,38 +4684,69 @@ def show_price_context_page(mode):
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
-    month = lambda pair: f"{charts.CHILE_LOCALE['time']['months'][pair[1] - 1]} {pair[0]}"
+
+    def month(pair):
+        return f"{charts.CHILE_LOCALE['time']['months'][pair[1] - 1]} {pair[0]}"
+
     above = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "más que la inflación", "family"]]
     below = [home_mockup.short_family(f) for f in summary.loc[summary["verdict"] == "menos que la inflación", "family"]]
     join = i18n.join_names
-    answer = (f'De enero 2022 a {month(last)}, la canasta de alimentos del INE subió '
-              f'<b>{charts.format_signed_percent(ipc_total)}</b> ({charts.format_signed_percent(ipc_year)} en 12 meses).'
-              + (f' Subieron más: <b>{html.escape(join(above))}</b>.' if above else '')
-              + (f' Subieron menos: <b>{html.escape(join(below))}</b>.' if below else ''))
+    answer = (
+        f'De enero 2022 a {month(last)}, la canasta de alimentos del INE subió '
+        f'<b>{charts.format_signed_percent(ipc_total)}</b> ({charts.format_signed_percent(ipc_year)} en 12 meses).'
+        + (f' Subieron más: <b>{html.escape(join(above))}</b>.' if above else '')
+        + (f' Subieron menos: <b>{html.escape(join(below))}</b>.' if below else '')
+    )
     # D-267: the answer leaves the page for the bar: the title says it on hover and three chips count it.
-    show_page_bar(PAGE_SEASONALITY, "¿Qué alimentos subieron más que la inflación?", re.sub(r"<[^>]+>", "", answer), [
-        (f'<em>IPC</em><b>{charts.format_signed_percent(ipc_total)}</b>',
-         f"De enero 2022 a {month(last)}, el último mes que publicó el INE, la canasta de alimentos del INE subió {charts.format_signed_percent(ipc_total)} desde enero 2022 y "
-         f"{charts.format_signed_percent(ipc_year)} en los últimos 12 meses."),
-        (f'<b class="rise">{len(above)} más</b><b class="fall">{len(below)} menos</b>',
-         (f"Subieron más que la inflación: {join(above)}. " if above else "")
-         + (f"Subieron menos: {join(below)}." if below else ""))],
-        terms=INFLATION_TERMS)
+    show_page_bar(
+        PAGE_SEASONALITY,
+        "¿Qué alimentos subieron más que la inflación?",
+        re.sub(r"<[^>]+>", "", answer),
+        [
+            (
+                f'<em>IPC</em><b>{charts.format_signed_percent(ipc_total)}</b>',
+                f"De enero 2022 a {month(last)}, el último mes que publicó el INE, la canasta de alimentos del INE subió {charts.format_signed_percent(ipc_total)} desde enero 2022 y "
+                f"{charts.format_signed_percent(ipc_year)} en los últimos 12 meses.",
+            ),
+            (
+                f'<b class="rise">{len(above)} más</b><b class="fall">{len(below)} menos</b>',
+                (f"Subieron más que la inflación: {join(above)}. " if above else "")
+                + (f"Subieron menos: {join(below)}." if below else ""),
+            ),
+        ],
+        terms=INFLATION_TERMS,
+    )
     real = st.session_state.get(CONTEXT_BASIS_KEY) == BASIS_REAL
     with st.container(key="ctx_main"):
-        lead = ("Sin inflación: la línea punteada es la canasta del INE (100). Arriba de ella, la familia subió más."
-                if real else "Precios de consumidor de ODEPA, mediana por familia; la línea punteada es el IPC de alimentos. "
-                "Misma escala en todos los gráficos.")
+        lead = (
+            "Sin inflación: la línea punteada es la canasta del INE (100). Arriba de ella, la familia subió más."
+            if real
+            else "Precios de consumidor de ODEPA, mediana por familia; la línea punteada es el IPC de alimentos. "
+            "Misma escala en todos los gráficos."
+        )
         # The switch takes the width it needs, so it is never cut on a narrow window.
         with st.container(horizontal=True, vertical_alignment="center"):
-            st.markdown(f'<div class="ctx-head"><h3>Índice mensual por familia, enero 2022 = 100</h3></div>'
-                        f'<p class="ctx-reading">{lead}</p>', unsafe_allow_html=True, width="stretch")
-            st.segmented_control("Precios", [BASIS_NOMINAL, BASIS_REAL], default=BASIS_NOMINAL, width="content",
-                                 key=CONTEXT_BASIS_KEY, label_visibility="collapsed", help=BASIS_HELP)
+            st.markdown(
+                f'<div class="ctx-head"><h3>Índice mensual por familia, enero 2022 = 100</h3></div>'
+                f'<p class="ctx-reading">{lead}</p>',
+                unsafe_allow_html=True,
+                width="stretch",
+            )
+            st.segmented_control(
+                "Precios",
+                [BASIS_NOMINAL, BASIS_REAL],
+                default=BASIS_NOMINAL,
+                width="content",
+                key=CONTEXT_BASIS_KEY,
+                label_visibility="collapsed",
+                help=BASIS_HELP,
+            )
         show_family_cards(rows, build_family_panel_titles(summary, ipc_total), mode, real, summary, last)
-    st.caption(f"Cada familia compara los mismos productos de enero 2022 a {month(last)} (series de consumidor con "
-               "precio en ambos meses). El IPC de alimentos se calcula con precios de alimentos: subir con él no "
-               "prueba que la inflación cause la subida; dice si la familia subió más o menos que la canasta.")
+    st.caption(
+        f"Cada familia compara los mismos productos de enero 2022 a {month(last)} (series de consumidor con "
+        "precio en ambos meses). El IPC de alimentos se calcula con precios de alimentos: subir con él no "
+        "prueba que la inflación cause la subida; dice si la familia subió más o menos que la canasta."
+    )
 
 
 # endregion
@@ -4008,8 +4788,7 @@ def read_pipeline_runs():
 
 def build_step_lines(steps):
     """Progress of a run as text lines with an icon per step."""
-    icons = {control.RUN_OK: "✅", control.RUN_FAILED: "❌",
-             control.RUN_IN_PROGRESS: "⏳", "skipped": "⏭️"}
+    icons = {control.RUN_OK: "✅", control.RUN_FAILED: "❌", control.RUN_IN_PROGRESS: "⏳", "skipped": "⏭️"}
     if not steps:
         return "⏳ Preparando la ejecución…"
     return "  \n".join(f"{icons.get(state, '•')} {name}" for name, state in steps)
@@ -4019,8 +4798,7 @@ def wait_for_manual_run(requested_at, token):
     """The run GitHub created for the click, or None if it does not appear in time."""
     for _ in range(10):
         time.sleep(PROGRESS_POLL_SECONDS)
-        run = control.find_run_started_after(
-            control.list_workflow_runs(token, RUN_HISTORY_COUNT), requested_at)
+        run = control.find_run_started_after(control.list_workflow_runs(token, RUN_HISTORY_COUNT), requested_at)
         if run is not None:
             return run
     return None
@@ -4032,8 +4810,7 @@ def follow_run_progress(run_id, token, progress_area):
     while waited_seconds < PROGRESS_MAXIMUM_SECONDS:
         progress_area.markdown(build_step_lines(control.list_run_steps(run_id, token)))
         runs = control.list_workflow_runs(token, RUN_HISTORY_COUNT)
-        state = next((run["state"] for run in runs if run["id"] == run_id),
-                     control.RUN_IN_PROGRESS)
+        state = next((run["state"] for run in runs if run["id"] == run_id), control.RUN_IN_PROGRESS)
         if state != control.RUN_IN_PROGRESS:
             progress_area.markdown(build_step_lines(control.list_run_steps(run_id, token)))
             return state
@@ -4049,23 +4826,23 @@ def run_pipeline_now(token):
     try:
         control.start_workflow_run(token)
     except Exception as error:  # GitHub refused the request or did not answer
-        st.error(f"No se pudo iniciar la ejecución: {control.describe_github_error(error)}.",
-                 icon=":material/error:")
+        st.error(f"No se pudo iniciar la ejecución: {control.describe_github_error(error)}.", icon=":material/error:")
         return False
     with st.status("Ejecutando el pipeline en GitHub Actions…", expanded=True) as status_box:
         run = wait_for_manual_run(requested_at, token)
         if run is None:
             status_box.update(label="GitHub no confirmó el inicio.", state="error", expanded=True)
-            st.error("La ejecución no se confirmó. Revisa el historial en un minuto.",
-                     icon=":material/error:")
+            st.error("La ejecución no se confirmó. Revisa el historial en un minuto.", icon=":material/error:")
             return False
         state = follow_run_progress(run["id"], token, st.empty())
         fetch_pipeline_runs.clear()
         if state == control.RUN_OK:
             status_box.update(label="Ejecución completada.", state="complete", expanded=True)
-            st.success("Se ejecutó correctamente: datos descargados, revisados y guardados. "
-                       "El panel los muestra en 1 o 2 minutos, al recibir la base nueva.",
-                       icon=":material/check_circle:")
+            st.success(
+                "Se ejecutó correctamente: datos descargados, revisados y guardados. "
+                "El panel los muestra en 1 o 2 minutos, al recibir la base nueva.",
+                icon=":material/check_circle:",
+            )
             st.toast("Pipeline ejecutado correctamente.", icon=":material/check_circle:")
             return True
         if state == control.RUN_IN_PROGRESS:
@@ -4073,8 +4850,11 @@ def run_pipeline_now(token):
             st.info("La ejecución sigue en curso en GitHub; su resultado aparecerá en el historial.")
             return False
         status_box.update(label="La ejecución no terminó.", state="error", expanded=True)
-        st.error("No se ejecutó completamente: un paso falló (marcado con ❌). Los datos "
-                 "anteriores siguen intactos; los logs están en el historial.", icon=":material/error:")
+        st.error(
+            "No se ejecutó completamente: un paso falló (marcado con ❌). Los datos "
+            "anteriores siguen intactos; los logs están en el historial.",
+            icon=":material/error:",
+        )
         st.toast("La ejecución falló.", icon=":material/error:")
         return False
 
@@ -4096,11 +4876,9 @@ def show_token_expiration(token):
     try:
         expiration = read_cached_token_expiration(token)
     except Exception as error:  # GitHub unreachable or the token was refused
-        st.warning(f"No se pudo leer el vencimiento del token: "
-                   f"{control.describe_github_error(error)}.")
+        st.warning(f"No se pudo leer el vencimiento del token: {control.describe_github_error(error)}.")
         return
-    sentence, is_urgent = control.describe_token_expiration(expiration,
-                                                            datetime.now(timezone.utc))
+    sentence, is_urgent = control.describe_token_expiration(expiration, datetime.now(timezone.utc))
     if is_urgent:
         st.warning(sentence, icon=":material/schedule:")
     else:
@@ -4119,8 +4897,10 @@ def reload_panel_data():
 @st.dialog("Ejecutar el pipeline ahora", width="medium")
 def show_run_now_dialog(token, access_code):
     """The manual run behind the control code, in a layer above the page (D-149)."""
-    st.caption("Descarga los archivos de ODEPA, los limpia, los prueba y guarda la base, igual "
-               "que la ejecución automática de cada martes. Tarda unos 5 minutos.")
+    st.caption(
+        "Descarga los archivos de ODEPA, los limpia, los prueba y guarda la base, igual "
+        "que la ejecución automática de cada martes. Tarda unos 5 minutos."
+    )
     if not st.session_state.get(ADMIN_UNLOCKED):
         typed_code = st.text_input("Clave de control", key="run_now_code", autocomplete="off")
         if not st.button("Ejecutar", type="primary", icon=":material/play_arrow:", key="run_now_confirm"):
@@ -4143,22 +4923,38 @@ def show_admin_card():
     unlocked = bool(access_code and st.session_state.get(ADMIN_UNLOCKED))
     if unlocked:
         with st.container(key="runs_admin", horizontal=True, vertical_alignment="center", gap="small"):
-            if st.button("Ejecutar pipeline ahora", type="primary", icon=":material/power_settings_new:",
-                         key="runs_run_now", disabled=not token,
-                         help="Lanza el pipeline en GitHub Actions." if token else
-                              "Falta el token de GitHub en los secretos del panel."):
+            if st.button(
+                "Ejecutar pipeline ahora",
+                type="primary",
+                icon=":material/power_settings_new:",
+                key="runs_run_now",
+                disabled=not token,
+                help="Lanza el pipeline en GitHub Actions."
+                if token
+                else "Falta el token de GitHub en los secretos del panel.",
+            ):
                 show_run_now_dialog(token, access_code)
-            st.markdown('<div class="run-now-label">Ejecutar pipeline ahora</div><div class="run-now-note">'
-                        'Acceso del autor abierto.</div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="run-now-label">Ejecutar pipeline ahora</div><div class="run-now-note">'
+                'Acceso del autor abierto.</div>',
+                unsafe_allow_html=True,
+            )
     with st.container(key="runs_tools", horizontal=True, gap="small"):
-        st.button("Recargar datos", icon=":material/refresh:", key="runs_reload",
-                  width="stretch", on_click=reload_panel_data,
-                  help="Vuelve a leer la base guardada; no ejecuta el pipeline.")
+        st.button(
+            "Recargar datos",
+            icon=":material/refresh:",
+            key="runs_reload",
+            width="stretch",
+            on_click=reload_panel_data,
+            help="Vuelve a leer la base guardada; no ejecuta el pipeline.",
+        )
         show_author_access(access_code, unlocked)
     if st.session_state.pop(RELOADED_NOTICE, False):
         latest = read_latest_run()
-        st.toast(f"Datos recargados · base del {format_chile_time(parse_run_start(latest['started_at']))}.",
-                 icon=":material/check_circle:")
+        st.toast(
+            f"Datos recargados · base del {format_chile_time(parse_run_start(latest['started_at']))}.",
+            icon=":material/check_circle:",
+        )
 
 
 AUTHOR_CODE_MESSAGE = "author_code_message"
@@ -4186,23 +4982,39 @@ def show_author_access(access_code, unlocked):
     """«Acceso del autor» (D-165, D-202): the control code opens the manual run and the
     administration links together; each link still asks for its own login."""
     if unlocked:
-        with st.popover("Enlaces del autor", icon=":material/lock_open:", width="stretch",
-                        help="Administrar la app publicada, los secretos y los tokens."):
+        with st.popover(
+            "Enlaces del autor",
+            icon=":material/lock_open:",
+            width="stretch",
+            help="Administrar la app publicada, los secretos y los tokens.",
+        ):
             for link in ADMIN_LINKS:
-                st.markdown(f'<a href="{html.escape(link["url"], quote=True)}" target="_blank" rel="noopener noreferrer">'
-                            f'<b>{html.escape(link["name"])}</b></a> · {html.escape(link["description"])}',
-                            unsafe_allow_html=True)
+                st.markdown(
+                    f'<a href="{html.escape(link["url"], quote=True)}" target="_blank" rel="noopener noreferrer">'
+                    f'<b>{html.escape(link["name"])}</b></a> · {html.escape(link["description"])}',
+                    unsafe_allow_html=True,
+                )
             st.caption("Cada enlace pide tu propia sesión de GitHub o de Streamlit.")
             st.button("Cerrar acceso", icon=":material/lock:", key="author_access_close", on_click=lock_author_access)
         return
-    with st.popover("Acceso del autor", icon=":material/lock:", width="stretch",
-                    help="Lanzar el pipeline y los enlaces de administración, con la clave de control."):
+    with st.popover(
+        "Acceso del autor",
+        icon=":material/lock:",
+        width="stretch",
+        help="Lanzar el pipeline y los enlaces de administración, con la clave de control.",
+    ):
         if not access_code:
             st.caption("Se activa cuando el autor guarda la clave de control en los secretos del panel.")
             return
         # Enter opens it (D-203): the code is checked when the field commits, no extra button.
-        st.text_input("Clave de control", key="author_access_code", autocomplete="off",
-                      on_change=check_author_code, args=(access_code,), placeholder="Escribe la clave y pulsa Enter")
+        st.text_input(
+            "Clave de control",
+            key="author_access_code",
+            autocomplete="off",
+            on_change=check_author_code,
+            args=(access_code,),
+            placeholder="Escribe la clave y pulsa Enter",
+        )
         message = st.session_state.pop(AUTHOR_CODE_MESSAGE, None)
         if message:
             st.error(message, icon=":material/lock:")
@@ -4255,8 +5067,13 @@ def show_runs_page(mode):
     with what it does and where to act, and beside it the facts and the manual run."""
     # D-255 (the author's decision): the page opens on where each piece runs; «Acceso del autor» sits above the tabs,
     # so the control code and the links are one click away in every one of them. D-267: in the page bar.
-    show_page_bar(PAGE_RUNS, "Centro de operación", "Dónde corre cada pieza, cómo llega un cambio a producción y el "
-                  "estado de cada paso de la carga semanal, con su log y dónde actuar.", side=show_admin_card)
+    show_page_bar(
+        PAGE_RUNS,
+        "Centro de operación",
+        "Dónde corre cada pieza, cómo llega un cambio a producción y el "
+        "estado de cada paso de la carga semanal, con su log y dónde actuar.",
+        side=show_admin_card,
+    )
     platform_tab, runs_tab, cicd_tab, monitoring_tab = st.tabs(["Despliegue", "Operación", "CI/CD", "Monitoreo"])
     with platform_tab:
         show_devops_tab(mode)
@@ -4271,17 +5088,28 @@ def show_runs_page(mode):
 def show_security_page(mode):
     """The security architecture as a threat model (D-200, D-249): threat, mitigation, verification, asset, and the
     loop of continuous improvement."""
-    show_page_bar(PAGE_SECURITY, SIDEBAR_LABELS[PAGE_SECURITY], "Qué amenaza al sistema, qué lo mitiga, qué prueba lo "
-                             "verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de "
-                             "esconderlo, sino de las claves, que nunca aparecen.",
-                  side=lambda: st.markdown(page_bar.build_link_html(
-                      PAGE_TEST_PLAN, build_page_address(PAGE_TEST_PLAN),
-                      "Quién participa, los casos de prueba, el procedimiento y los resultados de la última revisión."),
-                      unsafe_allow_html=True, width="content"))
+    show_page_bar(
+        PAGE_SECURITY,
+        SIDEBAR_LABELS[PAGE_SECURITY],
+        "Qué amenaza al sistema, qué lo mitiga, qué prueba lo "
+        "verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de "
+        "esconderlo, sino de las claves, que nunca aparecen.",
+        side=lambda: st.markdown(
+            page_bar.build_link_html(
+                PAGE_TEST_PLAN,
+                build_page_address(PAGE_TEST_PLAN),
+                "Quién participa, los casos de prueba, el procedimiento y los resultados de la última revisión.",
+            ),
+            unsafe_allow_html=True,
+            width="content",
+        ),
+    )
     # D-277: the drawing keeps its proportion and is never taller than what the window leaves.
-    st.markdown('<style>.st-key-sec_frame iframe {display:block; margin:0 auto; '
-                f'max-width:calc((100vh - 228px) * {security_map.WIDTH} / {security_map.HEIGHT});}}</style>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<style>.st-key-sec_frame iframe {display:block; margin:0 auto; '
+        f'max-width:calc((100vh - 228px) * {security_map.WIDTH} / {security_map.HEIGHT});}}</style>',
+        unsafe_allow_html=True,
+    )
     with st.container(key="sec_frame"):
         st.iframe(security_map.build_security_html(charts.get_palette(mode)), height="content")
 
@@ -4291,9 +5119,12 @@ def show_runs_tab(mode):
     st.markdown(build_runs_css(mode), unsafe_allow_html=True)
     runs, _ = read_pipeline_runs()
     live = bool(runs) and runs[0]["state"] == control.RUN_IN_PROGRESS
-    st.fragment(lambda: show_operation_center(mode, live),
-                run_every=(LIVE_SECONDS_WITH_TOKEN if get_secret(SECRET_GITHUB_TOKEN)
-                           else LIVE_SECONDS_WITHOUT_TOKEN) if live else None)()
+    st.fragment(
+        lambda: show_operation_center(mode, live),
+        run_every=(LIVE_SECONDS_WITH_TOKEN if get_secret(SECRET_GITHUB_TOKEN) else LIVE_SECONDS_WITHOUT_TOKEN)
+        if live
+        else None,
+    )()
 
 
 @st.cache_data(ttl=GITHUB_CACHE_SECONDS, show_spinner=False)
@@ -4316,8 +5147,9 @@ def read_operation_runs(live):
         details = fetch_run_step_details(runs[0]["id"])
     except Exception as error:  # GitHub unreachable or refused
         # The traceback goes to the server log (Streamlit Cloud: «Manage app»).
-        logging.getLogger(__name__).exception("Centro de operación: los pasos de la ejecución %s no se pudieron leer",
-                                              runs[0]["id"])
+        logging.getLogger(__name__).exception(
+            "Centro de operación: los pasos de la ejecución %s no se pudieron leer", runs[0]["id"]
+        )
         details = last_answers.get(("details", runs[0]["id"]), {})
         return runs, details, error_text or control.describe_github_error(error)
     last_answers[("details", runs[0]["id"])] = details
@@ -4327,14 +5159,17 @@ def read_operation_runs(live):
 @st.cache_data(show_spinner=False)
 def read_published_figures(database_version):
     """Last week, prices and weeks of the published database."""
-    return queries.run_sql("SELECT max(week_start) AS last_week, count(*) AS prices, "
-                           "count(DISTINCT week_start) AS weeks FROM weekly_price").iloc[0]
+    return queries.run_sql(
+        "SELECT max(week_start) AS last_week, count(*) AS prices, count(DISTINCT week_start) AS weeks FROM weekly_price"
+    ).iloc[0]
 
 
 def build_operation_fact(label, value, note=""):
-    return (f'<div class="oc-fact"><span class="oc-fact-label">{html.escape(label)}</span>'
-            f'<span class="oc-fact-value">{html.escape(value)}</span>'
-            f'<span class="oc-fact-note">{note}</span></div>')
+    return (
+        f'<div class="oc-fact"><span class="oc-fact-label">{html.escape(label)}</span>'
+        f'<span class="oc-fact-value">{html.escape(value)}</span>'
+        f'<span class="oc-fact-note">{note}</span></div>'
+    )
 
 
 def build_operation_facts(latest_load, published, now):
@@ -4343,31 +5178,52 @@ def build_operation_facts(latest_load, published, now):
     hours = int((next_run - now).total_seconds() // 3600)
     wait = f"faltan {hours} h" if hours < 48 else f"faltan {hours // 24} días"
     last_week = pd.Timestamp(published["last_week"])
-    return (build_operation_fact("Próxima ejecución", f"{to_chile_time(next_run):%d-%m · %H:%M}",
-                                 f"automática, cada martes · {wait}")
-            + build_operation_fact("Datos publicados", f"Semana del {last_week:%d-%m-%Y}",
-                                   f"{charts.format_thousands(published['prices'])} precios · "
-                                   f"{charts.format_thousands(published['weeks'])} semanas")
-            + build_operation_fact("Última carga", f"{charts.format_thousands(latest_load['rows_loaded'])} filas",
-                                   f"de {charts.format_thousands(latest_load['rows_read'])} leídas · "
-                                   f"{charts.format_thousands(latest_load['rows_rejected'])} rechazadas"))
+    return (
+        build_operation_fact(
+            "Próxima ejecución", f"{to_chile_time(next_run):%d-%m · %H:%M}", f"automática, cada martes · {wait}"
+        )
+        + build_operation_fact(
+            "Datos publicados",
+            f"Semana del {last_week:%d-%m-%Y}",
+            f"{charts.format_thousands(published['prices'])} precios · "
+            f"{charts.format_thousands(published['weeks'])} semanas",
+        )
+        + build_operation_fact(
+            "Última carga",
+            f"{charts.format_thousands(latest_load['rows_loaded'])} filas",
+            f"de {charts.format_thousands(latest_load['rows_read'])} leídas · "
+            f"{charts.format_thousands(latest_load['rows_rejected'])} rechazadas",
+        )
+    )
 
 
 def build_recent_runs_html(runs):
     """The latest runs, one line each with its colour and a link to its logs."""
-    colors = {control.RUN_OK: charts.STATUS_COLORS["good"], control.RUN_FAILED: charts.STATUS_COLORS["critical"],
-              control.RUN_IN_PROGRESS: charts.STATUS_COLORS["running"]}
-    words = {control.RUN_OK: "correcta", control.RUN_FAILED: "falló", control.RUN_IN_PROGRESS: "en curso",
-             control.RUN_SIMULATED_FAILURE: "falla simulada"}
-    describe = lambda run: (f'{to_chile_time(run["started_at"]):%d-%m %H:%M} · {run["trigger"].lower()} · '
-                            f'{words.get(run["state"], "")}')
+    colors = {
+        control.RUN_OK: charts.STATUS_COLORS["good"],
+        control.RUN_FAILED: charts.STATUS_COLORS["critical"],
+        control.RUN_IN_PROGRESS: charts.STATUS_COLORS["running"],
+    }
+    words = {
+        control.RUN_OK: "correcta",
+        control.RUN_FAILED: "falló",
+        control.RUN_IN_PROGRESS: "en curso",
+        control.RUN_SIMULATED_FAILURE: "falla simulada",
+    }
+
+    def describe(run):
+        return (
+            f'{to_chile_time(run["started_at"]):%d-%m %H:%M} · {run["trigger"].lower()} · {words.get(run["state"], "")}'
+        )
+
     # One line each; a narrow column cuts it with «…» and the pointer shows it whole (D-271).
     lines = "".join(
         f'<a class="oc-run" href="{html.escape(run["url"], quote=True)}" target="_blank" rel="noopener noreferrer" '
         f'title="{html.escape(describe(run), quote=True)}">'
         f'<span class="oc-dot" style="background:{colors.get(run["state"], charts.STATUS_COLORS["unknown"])}"></span>'
         f'{html.escape(describe(run))} ↗</a>'
-        for run in runs[:OPERATION_RECENT_RUNS])
+        for run in runs[:OPERATION_RECENT_RUNS]
+    )
     return f'<div class="oc-runs"><span class="oc-fact-label">Últimas ejecuciones</span>{lines}</div>'
 
 
@@ -4375,8 +5231,9 @@ def show_operation_center(mode, live=False):
     palette = charts.get_palette(mode)
     runs, details, error_text = read_operation_runs(live)
     latest_load = read_latest_run()
-    states = operation_center.build_step_states(runs[0] if runs else None, details,
-                                                latest_load["status"] == etl.STATUS_LOADED)
+    states = operation_center.build_step_states(
+        runs[0] if runs else None, details, latest_load["status"] == etl.STATUS_LOADED
+    )
     unlocked = bool(st.session_state.get(ADMIN_UNLOCKED))
     # D-271: the latest runs join the facts in the side column, and the path never grows taller than the window
     # leaves, so the whole tab fits one screen.
@@ -4385,11 +5242,17 @@ def show_operation_center(mode, live=False):
         st.iframe(operation_center.build_stage_html(palette, states, unlocked), height="content")
     with side_column:
         if error_text:
-            st.caption(tr("GitHub no respondió ({}); {}.").format(error_text, tr("se muestra la última respuesta guardada")))
-        st.markdown(build_operation_side_css(palette)
-                    + build_operation_facts(latest_load, read_published_figures(get_database_version()),
-                                            datetime.now(timezone.utc))
-                    + (build_recent_runs_html(runs) if runs else ""), unsafe_allow_html=True)
+            st.caption(
+                tr("GitHub no respondió ({}); {}.").format(error_text, tr("se muestra la última respuesta guardada"))
+            )
+        st.markdown(
+            build_operation_side_css(palette)
+            + build_operation_facts(
+                latest_load, read_published_figures(get_database_version()), datetime.now(timezone.utc)
+            )
+            + (build_recent_runs_html(runs) if runs else ""),
+            unsafe_allow_html=True,
+        )
 
 
 def build_operation_side_css(palette):
@@ -4484,14 +5347,12 @@ def build_journey_states(step_states, pipeline_run, latest_load, manifest):
     database cannot tell (the report, the workflow itself) stays unknown, and an
     unknown state is drawn without a dot.
     """
-    load_state = (control.RUN_OK if latest_load["status"] == etl.STATUS_LOADED
-                  else control.RUN_FAILED)
+    load_state = control.RUN_OK if latest_load["status"] == etl.STATUS_LOADED else control.RUN_FAILED
     return {
         "sources": control.RUN_OK if manifest else architecture.STATE_UNKNOWN,
         "download": read_step_state(step_states, "Download the ODEPA files", load_state),
         "etl": read_step_state(step_states, "Run the ETL", load_state),
-        "tests": read_step_state(step_states, "Run the tests against the new database",
-                                 load_state),
+        "tests": read_step_state(step_states, "Run the tests against the new database", load_state),
         "report": read_step_state(step_states, "Publish the weekly report", load_state),
         "workflow": pipeline_run["state"] if pipeline_run else architecture.STATE_UNKNOWN,
         "load": load_state,
@@ -4506,8 +5367,9 @@ def build_journey_figures(manifest, pipeline_run, latest_load):
     latest_week = read_latest_week()
     loaded_at = to_chile_time(parse_run_start(latest_load["started_at"]))
     next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc))
-    last_run = (f"última {to_chile_time(pipeline_run['started_at']):%d-%m %H:%M}"
-                if pipeline_run else "sin datos del workflow")
+    last_run = (
+        f"última {to_chile_time(pipeline_run['started_at']):%d-%m %H:%M}" if pipeline_run else "sin datos del workflow"
+    )
     return {
         "source_years": describe_loaded_years(),
         "last_run": last_run,
@@ -4531,8 +5393,7 @@ def read_journey():
     build = lineage.summarize_build(*read_lineage(get_database_version()))
     if build:
         figures["dbt"] = f"{build['models']} modelos · {build['passing']}/{build['tests']} pruebas"
-    error_note = (describe_state_source(error_text, step_states, latest_load)
-                  if error_text else None)
+    error_note = describe_state_source(error_text, step_states, latest_load) if error_text else None
     return states, figures, pipeline_run, latest_load, error_note
 
 
@@ -4541,12 +5402,12 @@ def build_devops_figures(figures):
     prices of the latest week (what the weekly job added), all read now."""
     latest_week = read_latest_week()
     week_prices = project.count_week_prices(f"{latest_week:%Y-%m-%d}")
-    return dict(figures, database_size=project.describe_file_size(queries.DATABASE_FILE),
-                test_functions=f"{project.count_test_functions()} funciones de prueba",
-                week_prices=(f"semana {latest_week:%d-%m}: "
-                             f"{charts.format_thousands(week_prices)} precios"))
-
-
+    return dict(
+        figures,
+        database_size=project.describe_file_size(queries.DATABASE_FILE),
+        test_functions=f"{project.count_test_functions()} funciones de prueba",
+        week_prices=(f"semana {latest_week:%d-%m}: {charts.format_thousands(week_prices)} precios"),
+    )
 
 
 def show_cicd_tab(mode):
@@ -4560,11 +5421,16 @@ def show_devops_tab(mode):
     Security, CI/CD, monitoring and capacity have their own views (D-249), so they are not repeated here."""
     states, figures, *_ = read_journey()
     # D-277: the drawing keeps its proportion and is never taller than what the window leaves under the tabs.
-    st.markdown('<style>.st-key-dep_frame iframe {display:block; margin:0 auto; '
-                f'max-width:calc((100vh - 292px) * {deployment.WIDTH} / {deployment.HEIGHT});}}</style>', unsafe_allow_html=True)
+    st.markdown(
+        '<style>.st-key-dep_frame iframe {display:block; margin:0 auto; '
+        f'max-width:calc((100vh - 292px) * {deployment.WIDTH} / {deployment.HEIGHT});}}</style>',
+        unsafe_allow_html=True,
+    )
     with st.container(key="dep_frame"):
-        st.iframe(deployment.build_deployment_html(charts.get_palette(mode), states, build_devops_figures(figures)),
-                  height="content")
+        st.iframe(
+            deployment.build_deployment_html(charts.get_palette(mode), states, build_devops_figures(figures)),
+            height="content",
+        )
 
 
 def show_monitoring_tab(mode):
@@ -4579,14 +5445,17 @@ def show_monitoring_tab(mode):
 # region Data quality page
 def show_load_figures(latest_run):
     """Three cards with the row counts of the latest load."""
-    figures = [("Filas leídas", latest_run["rows_read"]),
-               ("Filas cargadas", latest_run["rows_loaded"]),
-               ("Filas rechazadas", latest_run["rows_rejected"])]
+    figures = [
+        ("Filas leídas", latest_run["rows_read"]),
+        ("Filas cargadas", latest_run["rows_loaded"]),
+        ("Filas rechazadas", latest_run["rows_rejected"]),
+    ]
     for column, (label, count) in zip(st.columns(3), figures):
         with column, open_card(f"load_{label}"):
-            st.markdown(f'<div class="kpi-label">{label}</div>'
-                        f'<div class="kpi-value">{charts.format_thousands(count)}</div>',
-                        unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="kpi-label">{label}</div><div class="kpi-value">{charts.format_thousands(count)}</div>',
+                unsafe_allow_html=True,
+            )
 
 
 def show_flag_donut(mode):
@@ -4595,63 +5464,87 @@ def show_flag_donut(mode):
     totals = flag_counts.groupby("flag")["weekly_prices"].sum()
     with open_card("flag_donut", "Estado de los precios semanales"):
         palette = charts.get_palette(mode)
-        rows = pd.DataFrame({"label": [FLAG_NAMES.get(flag, flag) for flag in totals.index],
-                             "value": totals.to_numpy()})
+        rows = pd.DataFrame(
+            {"label": [FLAG_NAMES.get(flag, flag) for flag in totals.index], "value": totals.to_numpy()}
+        )
         rows["value_label"] = rows["value"].map(charts.format_thousands)
-        colors = [palette["accent"] if flag == "SIN_MARCA" else
-                  palette["rise"] if flag == etl.FLAG_OUTLIER else palette["reference"]
-                  for flag in totals.index]
+        colors = [
+            palette["accent"]
+            if flag == "SIN_MARCA"
+            else palette["rise"]
+            if flag == etl.FLAG_OUTLIER
+            else palette["reference"]
+            for flag in totals.index
+        ]
         donut_column, legend_column = st.columns([1, 1], vertical_alignment="center")
         with donut_column:
             show_chart(charts.draw_donut(rows, colors, mode))
         with legend_column:
             for label, value_label, color in zip(rows["label"], rows["value_label"], colors):
-                st.markdown(f'<span style="color:{color}">●</span> {html.escape(label)}: '
-                            f'**{value_label}**', unsafe_allow_html=True)
+                st.markdown(
+                    f'<span style="color:{color}">●</span> {html.escape(label)}: **{value_label}**',
+                    unsafe_allow_html=True,
+                )
 
 
 def show_quality_details():
     """Card: match coverage (K7)."""
     keys_with_margin, consumer_keys = read_match_coverage()
     with open_card("quality_details", "Cobertura del cruce", kpi="K7"):
-        st.markdown(f'<div class="kpi-value">{keys_with_margin} de {consumer_keys}</div>'
-                    f'<div class="kpi-note">claves de frutas y verduras del consumidor tienen '
-                    f'margen ({charts.format_percent(keys_with_margin / consumer_keys * 100)})'
-                    f'</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="kpi-value">{keys_with_margin} de {consumer_keys}</div>'
+            f'<div class="kpi-note">claves de frutas y verduras del consumidor tienen '
+            f'margen ({charts.format_percent(keys_with_margin / consumer_keys * 100)})'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
 
 def describe_reasons(rejections):
     """«NON_POSITIVE_PRICE (201): un precio … es cero o negativo», one per reason."""
-    return "; ".join(f"{row['reason']} ({charts.format_thousands(row['rejected_rows'])}): "
-                     f"{REASON_TEXTS.get(row['reason'], 'motivo sin descripción')}"
-                     for row in rejections.to_dict("records"))
+    return "; ".join(
+        f"{row['reason']} ({charts.format_thousands(row['rejected_rows'])}): "
+        f"{REASON_TEXTS.get(row['reason'], 'motivo sin descripción')}"
+        for row in rejections.to_dict("records")
+    )
 
 
 def build_excluded_cards(latest_run, rejections, flag_totals):
     """What was left out of the indicators, and why: rejected, outliers, no unit."""
     rejected = int(rejections["rejected_rows"].sum()) if not rejections.empty else 0
     share = charts.format_percent(rejected / latest_run["rows_read"] * 100, decimals=3)
-    rejected_text = (f"{charts.format_thousands(rejected)} de "
-                     f"{charts.format_thousands(latest_run['rows_read'])} filas leídas ({share}). "
-                     + (f"Motivo: {describe_reasons(rejections)}." if rejected
-                        else "La última ejecución no rechazó filas."))
+    rejected_text = (
+        f"{charts.format_thousands(rejected)} de "
+        f"{charts.format_thousands(latest_run['rows_read'])} filas leídas ({share}). "
+        + (f"Motivo: {describe_reasons(rejections)}." if rejected else "La última ejecución no rechazó filas.")
+    )
     outliers = int(flag_totals.get(etl.FLAG_OUTLIER, 0))
     unconvertible = int(flag_totals.get(etl.FLAG_UNIT_NOT_CONVERTIBLE, 0))
     return [
-        build_info_card_html("Filas rechazadas", rejected_text, label="RN-11 · no se cargan",
-                             note="Se guardan tal como venían en la tabla `rejection`; nunca "
-                                  "se borran en silencio.", is_warning=True),
-        build_info_card_html("Precios atípicos", f"{charts.format_thousands(outliers)} precios "
-                             "semanales a más de 5 veces, o menos de 1/5, de la mediana de su "
-                             "producto esa semana.", label="RN-12 · fuera de los indicadores",
-                             note="Siguen en `weekly_price` con la marca `ATIPICO`."),
-        build_info_card_html("Unidad no convertible", f"{charts.format_thousands(unconvertible)}"
-                             " precios semanales en unidades con un rango o sin cantidad "
-                             "declarada (un atado de 1,5 a 2 kilos, una docena de atados): no "
-                             "se pueden llevar a kilo ni a unidad.",
-                             label="RN-05 · sin precio comparable",
-                             note="Siguen en `weekly_price` con la marca "
-                                  "`UNIDAD_NO_CONVERTIBLE`, sin margen."),
+        build_info_card_html(
+            "Filas rechazadas",
+            rejected_text,
+            label="RN-11 · no se cargan",
+            note="Se guardan tal como venían en la tabla `rejection`; nunca se borran en silencio.",
+            is_warning=True,
+        ),
+        build_info_card_html(
+            "Precios atípicos",
+            f"{charts.format_thousands(outliers)} precios "
+            "semanales a más de 5 veces, o menos de 1/5, de la mediana de su "
+            "producto esa semana.",
+            label="RN-12 · fuera de los indicadores",
+            note="Siguen en `weekly_price` con la marca `ATIPICO`.",
+        ),
+        build_info_card_html(
+            "Unidad no convertible",
+            f"{charts.format_thousands(unconvertible)}"
+            " precios semanales en unidades con un rango o sin cantidad "
+            "declarada (un atado de 1,5 a 2 kilos, una docena de atados): no "
+            "se pueden llevar a kilo ni a unidad.",
+            label="RN-05 · sin precio comparable",
+            note="Siguen en `weekly_price` con la marca `UNIDAD_NO_CONVERTIBLE`, sin margen.",
+        ),
     ]
 
 
@@ -4660,10 +5553,11 @@ def build_rejected_rows_table(rejected_rows):
     records = []
     for row in rejected_rows.to_dict("records"):
         original = json.loads(row["original_row"])
-        record = {"Fuente": SOURCE_NAMES.get(row["source"], row["source"]),
-                  "Motivo": REASON_NAMES.get(row["reason"], row["reason"])}
-        record.update({label: original[key] for key, label in REJECTED_ROW_LABELS.items()
-                       if key in original})
+        record = {
+            "Fuente": SOURCE_NAMES.get(row["source"], row["source"]),
+            "Motivo": REASON_NAMES.get(row["reason"], row["reason"]),
+        }
+        record.update({label: original[key] for key, label in REJECTED_ROW_LABELS.items() if key in original})
         records.append(record)
     return pd.DataFrame(records)
 
@@ -4673,8 +5567,18 @@ def format_outliers(outliers):
     outliers = outliers.drop(columns="key_label").copy()
     outliers["week_start"] = outliers["week_start"].dt.strftime("%d-%m-%Y")
     outliers["source"] = outliers["source"].map(SOURCE_NAMES)
-    outliers.columns = ["Semana", "Fuente", "Canal", "Región", "Producto", "Variedad",
-                        "Calidad", "Unidad", "Precio", "Observaciones"]
+    outliers.columns = [
+        "Semana",
+        "Fuente",
+        "Canal",
+        "Región",
+        "Producto",
+        "Variedad",
+        "Calidad",
+        "Unidad",
+        "Precio",
+        "Observaciones",
+    ]
     return outliers
 
 
@@ -4682,12 +5586,14 @@ def show_excluded_rows(latest_run):
     """Which rows were left out, why, and the rows themselves folded."""
     rejections = read_indicator("k8_rejected_rows")
     flag_totals = read_indicator("quality_flag_counts").groupby("flag")["weekly_prices"].sum()
-    show_section_intro("Qué quedó fuera y por qué", "Tres grupos de datos que no entran a los "
-                       "indicadores; ninguno se borra.", True)
+    show_section_intro(
+        "Qué quedó fuera y por qué", "Tres grupos de datos que no entran a los indicadores; ninguno se borra.", True
+    )
     show_info_cards(build_excluded_cards(latest_run, rejections, flag_totals))
     rejected_rows = build_rejected_rows_table(read_indicator("quality_rejected_rows"))
-    with st.expander(f"Ver las {charts.format_thousands(len(rejected_rows))} filas rechazadas, "
-                     "tal como venían", expanded=False):
+    with st.expander(
+        f"Ver las {charts.format_thousands(len(rejected_rows))} filas rechazadas, tal como venían", expanded=False
+    ):
         if rejected_rows.empty:
             st.info("La última ejecución no rechazó filas.")
         else:
@@ -4704,14 +5610,14 @@ def show_excluded_rows(latest_run):
     units.columns = ["Fuente", "Canal", "Producto", "Variedad", "Calidad", "Precios semanales"]
     with st.expander("Ver los precios con unidad no convertible, por producto", expanded=False):
         st.dataframe(units, hide_index=True)
-    st.caption("Consultas: `quality_rejected_rows`, `quality_outliers` y "
-               "`quality_unconvertible_units` en `bi/queries.sql`.")
+    st.caption(
+        "Consultas: `quality_rejected_rows`, `quality_outliers` y `quality_unconvertible_units` en `bi/queries.sql`."
+    )
 
 
 def show_quality_tab(mode):
     """What the latest load read and kept, then what was left out and why (D-057)."""
-    show_section_intro("Calidad de datos", "Qué se cargó en la última ejecución, qué quedó "
-                       "fuera y por qué.")
+    show_section_intro("Calidad de datos", "Qué se cargó en la última ejecución, qué quedó fuera y por qué.")
     latest_run = read_latest_run()
     show_load_figures(latest_run)
     donut_column, details_column = st.columns([3, 2])
@@ -4753,10 +5659,15 @@ def open_quality_evidence():
 def show_recheck_button():
     """«Volver a medir», in the page bar (D-271): every tab can use it and none loses a row to it."""
     rechecked = st.session_state.get("qa_rechecked_at")
-    st.button("Volver a medir", icon=":material/refresh:", key="qa_recheck_page", on_click=recheck_quality,
-              help="Descarta lo guardado y mide de nuevo sobre la base publicada. Cada indicador se mide en la base de la "
-                   "última carga; cada control abre los datos que lo respaldan."
-                   + (f" Medido de nuevo a las {to_chile_time(rechecked):%H:%M:%S}." if rechecked else ""))
+    st.button(
+        "Volver a medir",
+        icon=":material/refresh:",
+        key="qa_recheck_page",
+        on_click=recheck_quality,
+        help="Descarta lo guardado y mide de nuevo sobre la base publicada. Cada indicador se mide en la base de la "
+        "última carga; cada control abre los datos que lo respaldan."
+        + (f" Medido de nuevo a las {to_chile_time(rechecked):%H:%M:%S}." if rechecked else ""),
+    )
 
 
 def recheck_quality():
@@ -4778,35 +5689,51 @@ def show_operations_page(mode):
     """Calidad y auditoría in one view (D-220): the quality measured on the real database, each
     dimension under the pipeline stop where it is watched, and the audit controls that back it,
     each opening its evidence. The single-price trace and its pickers left (D-196 → D-220)."""
-    show_page_bar(PAGE_OPERATIONS, "Calidad y auditoría", "La calidad medida en cada carga y los controles que demuestran que "
-                             "lo publicado se puede rastrear y repetir.", side=show_recheck_button)
+    show_page_bar(
+        PAGE_OPERATIONS,
+        "Calidad y auditoría",
+        "La calidad medida en cada carga y los controles que demuestran que lo publicado se puede rastrear y repetir.",
+        side=show_recheck_button,
+    )
     measures = read_quality_measures(get_database_version())
     indicators = quality_live.build_indicators(measures)
     manifest = read_download_manifest()
     run = read_latest_run()
     nodes, results = read_lineage(get_database_version())
     build = lineage.summarize_build(nodes, results)
-    versions = tuple((path.name, path.stat().st_size, path.stat().st_mtime_ns)
-                     for path in sorted(MANIFEST_FILE.parent.glob("*.csv")))
+    versions = tuple(
+        (path.name, path.stat().st_size, path.stat().st_mtime_ns) for path in sorted(MANIFEST_FILE.parent.glob("*.csv"))
+    )
     checks, files = read_quality_evidence(get_database_version(), json.dumps(manifest, sort_keys=True), versions)
     parity = read_parity(get_database_version())
-    evidence = quality_view.build_evidence(checks, files, manifest, run, build, parity,
-                                           lambda value: format_chile_time(parse_run_start(value)),
-                                           rejections=read_rejection_count(get_database_version()))
+    evidence = quality_view.build_evidence(
+        checks,
+        files,
+        manifest,
+        run,
+        build,
+        parity,
+        lambda value: format_chile_time(parse_run_start(value)),
+        rejections=read_rejection_count(get_database_version()),
+    )
     # D-257: the diagram is the page; every piece opens its detail in a pop-up. What was set aside and the audit controls
     # have their own tabs, and a failure shows up in all of them.
     columns = quality_view.build_columns(evidence)
     database_ok = checks["integrity_ok"] and not any(checks[key] for key in ("foreign_keys", "duplicates", "invalid"))
     changed_files = [item["file"] for item in files if item["status"].startswith("Falla")]
     if not database_ok:
-        st.error("La base publicada no pasa sus controles de integridad. Revisa la evidencia antes de utilizar los resultados.")
+        st.error(
+            "La base publicada no pasa sus controles de integridad. Revisa la evidencia antes de utilizar los resultados."
+        )
     palette = charts.get_palette(mode)
     quality_tab, audit_tab, apart_tab = st.tabs(["Calidad", "Auditoría", "Rechazos y cargas"])
     with quality_tab:
         # D-272: the frame takes the drawing's own height (a fixed one cut the gates on a wide window). D-273: the drawing
         # is HTML, so its words keep their size; past 1180 px it would only spread out, so it stops growing there.
-        st.markdown('<style>.st-key-qa_hub iframe {display:block; margin:0 auto; max-width:1180px;}</style>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            '<style>.st-key-qa_hub iframe {display:block; margin:0 auto; max-width:1180px;}</style>',
+            unsafe_allow_html=True,
+        )
         with st.container(key="qa_hub"):
             st.iframe(quality_live.build_quality_html(palette, indicators, columns, measures), height="content")
     with audit_tab:
@@ -4815,23 +5742,44 @@ def show_operations_page(mode):
             # D-272: the eleven buttons wait behind one, so they do not take two rows of the screen (and no picker
             # comes back, D-220).
             with st.popover("Abrir la evidencia de un control", icon=":material/folder_open:"):
-                st.pills("Abrir la evidencia de", [title for _, title, _ in quality_evidence.CARDS], key=QUALITY_PICK_KEY,
-                         on_change=open_quality_evidence, label_visibility="collapsed")
+                st.pills(
+                    "Abrir la evidencia de",
+                    [title for _, title, _ in quality_evidence.CARDS],
+                    key=QUALITY_PICK_KEY,
+                    on_change=open_quality_evidence,
+                    label_visibility="collapsed",
+                )
             if changed_files:
                 # The indicators are measured on the published database; only the local copies of the source files
                 # differ. D-273: one small line beside the button, not a banner over the controls.
                 names = " y ".join(changed_files)
-                st.markdown(f'<span class="qa-local-note" style="font-size:12.5px; color:{quality_view.PILL_COLORS["pending"]}">'
-                            f'⚠ En este equipo, {html.escape(names)} no coincide con su huella '
-                            'en manifest.json; los indicadores no cambian.</span>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<span class="qa-local-note" style="font-size:12.5px; color:{quality_view.PILL_COLORS["pending"]}">'
+                    f'⚠ En este equipo, {html.escape(names)} no coincide con su huella '
+                    'en manifest.json; los indicadores no cambian.</span>',
+                    unsafe_allow_html=True,
+                )
     with apart_tab:
-        st.iframe(quality_live.build_tables_html(palette, measures["runs"], measures["rejections"], measures["flags"]),
-                  height="content")
+        st.iframe(
+            quality_live.build_tables_html(palette, measures["runs"], measures["rejections"], measures["flags"]),
+            height="content",
+        )
     chosen_card = st.session_state.pop(QUALITY_OPEN_KEY, None)
     if chosen_card in quality_evidence.TITLES.values():
         key = next(key for key, title in quality_evidence.TITLES.items() if title == chosen_card)
-        show_quality_evidence_dialog(key, mode, dict(manifest=manifest, files=files, checks=checks, parity=parity,
-                                                     nodes=nodes, results=results, evidence=evidence))
+        show_quality_evidence_dialog(
+            key,
+            mode,
+            dict(
+                manifest=manifest,
+                files=files,
+                checks=checks,
+                parity=parity,
+                nodes=nodes,
+                results=results,
+                evidence=evidence,
+            ),
+        )
 
 
 @st.dialog("Evidencia", width="large")
@@ -4845,12 +5793,16 @@ def show_quality_evidence_dialog(key, mode, context):
     elif key == "shield":
         st.dataframe(quality_evidence.files_frame(context["files"]), hide_index=True, width="stretch")
         if any(item["actual"] is None for item in context["files"]):
-            st.caption("Los archivos CSV no viven en el servidor del panel (no se suben al repositorio): aquí la "
-                       "huella solo se comprueba cuando el panel corre junto a las descargas.")
+            st.caption(
+                "Los archivos CSV no viven en el servidor del panel (no se suben al repositorio): aquí la "
+                "huella solo se comprueba cuando el panel corre junto a las descargas."
+            )
     elif key == "calendar":
         checks = context["checks"]
-        st.markdown(f"**{checks['weeks']} semanas**, del {quality_view.format_week(checks['first'])} "
-                    f"al {quality_view.format_week(checks['last'])}.")
+        st.markdown(
+            f"**{checks['weeks']} semanas**, del {quality_view.format_week(checks['first'])} "
+            f"al {quality_view.format_week(checks['last'])}."
+        )
         missing = queries.run_sql(quality_evidence.MISSING_WEEKS_SQL)
         if missing.empty:
             st.success("Ninguna semana falta entre la primera y la última.", icon=":material/check_circle:")
@@ -4861,9 +5813,15 @@ def show_quality_evidence_dialog(key, mode, context):
         st.dataframe(queries.run_sql(quality_evidence.RUNS_SQL), hide_index=True, width="stretch")
         show_quality_tab(mode)
     elif key == "layers":
-        st.dataframe(lineage.build_rule_matrix(context["nodes"], context["results"]), hide_index=True, width="stretch",
-                     column_config={"Regla": st.column_config.TextColumn(width="small"),
-                                    "Pruebas dbt": st.column_config.NumberColumn(width="small")})
+        st.dataframe(
+            lineage.build_rule_matrix(context["nodes"], context["results"]),
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "Regla": st.column_config.TextColumn(width="small"),
+                "Pruebas dbt": st.column_config.NumberColumn(width="small"),
+            },
+        )
         st.caption("Cada regla del PRD con las pruebas de dbt que la comprueban en cada carga.")
         st.dataframe(queries.run_sql(quality_evidence.DBT_TESTS_SQL), hide_index=True, width="stretch")
         show_evidence_method(quality_evidence.DBT_TESTS_SQL)
@@ -4875,15 +5833,22 @@ def show_quality_evidence_dialog(key, mode, context):
         st.dataframe(quality_evidence.parity_frame(context["parity"]), hide_index=True, width="stretch")
         show_evidence_method(quality.PARITY_SQL + "  -- en SQLite y en DuckDB")
     elif key in quality_evidence.TEST_LINKS:
-        st.markdown("Esta auditoría corre con las pruebas automáticas en cada cambio del repositorio y en cada "
-                    "carga semanal. Su código y su último resultado:")
+        st.markdown(
+            "Esta auditoría corre con las pruebas automáticas en cada cambio del repositorio y en cada "
+            "carga semanal. Su código y su último resultado:"
+        )
         for label, address in quality_evidence.test_links(key):
             st.markdown(build_external_link_html(label, address), unsafe_allow_html=True)
     else:
         st.info("Sin evidencia que mostrar: es un límite declarado, no una comprobación.")
     with st.container(horizontal=True, vertical_alignment="center", gap="small"):
-        st.button("Volver a comprobar", icon=":material/refresh:", key="qa_recheck", on_click=recheck_quality,
-                  help="Corre de nuevo los controles sobre la base publicada y los archivos.")
+        st.button(
+            "Volver a comprobar",
+            icon=":material/refresh:",
+            key="qa_recheck",
+            on_click=recheck_quality,
+            help="Corre de nuevo los controles sobre la base publicada y los archivos.",
+        )
         rechecked = st.session_state.get("qa_rechecked_at")
         if rechecked:
             st.caption(f"Comprobado de nuevo a las {to_chile_time(rechecked):%H:%M:%S}.")
@@ -4899,8 +5864,10 @@ def show_evidence_method(sql):
 
 # region Links page
 def build_github_icon_svg(size=22):
-    return (f'<svg viewBox="0 0 24 24" width="{size}" height="{size}" fill="currentColor" '
-            f'aria-hidden="true">{architecture.brand_icons.logo_body("github")}</svg>')
+    return (
+        f'<svg viewBox="0 0 24 24" width="{size}" height="{size}" fill="currentColor" '
+        f'aria-hidden="true">{architecture.brand_icons.logo_body("github")}</svg>'
+    )
 
 
 def show_links_page(mode):
@@ -4910,11 +5877,16 @@ def show_links_page(mode):
     tab (D-116) with its own copy button. ODEPA and the INE live in «Fuentes» (D-118)."""
     # Our own trusted markup, in its own frame: st.html sanitises the SVG gradients,
     # filters and buttons the page is made of.
-    st.iframe('<!doctype html><html lang="es"><head><meta charset="utf-8">'
-              '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
-              '<body style="margin:0;background:transparent">'
-              + github_page.build_github_page_html(mode) + github_page.GITHUB_PAGE_SCRIPT + '</body></html>',
-              height="content")
+    st.iframe(
+        '<!doctype html><html lang="es"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+        '<body style="margin:0;background:transparent">'
+        + github_page.build_github_page_html(mode)
+        + github_page.GITHUB_PAGE_SCRIPT
+        + '</body></html>',
+        height="content",
+    )
+
 
 # endregion
 
@@ -4925,14 +5897,26 @@ PROJECT_DOCUMENTS = {
     PAGE_SAD: ("SAD.md", "Cómo está construido, cómo corre cada semana, dónde viven sus datos y cómo puede crecer."),
     PAGE_ADR: ("ADR.md", "Las decisiones de arquitectura que más pesan: contexto, decisión, opciones y consecuencias."),
     PAGE_MANUAL: ("MANUAL.md", "Cómo operar el proyecto y resolver sus fallas."),
-    PAGE_DECISION_INDEX: ("INDICE_DECISIONES.md", "Las decisiones que cambian la arquitectura, los datos, la seguridad o la operación, por tema."),
-    PAGE_TEST_PLAN: ("PLAN_PRUEBAS.md", "Qué se prueba, quién participa en la seguridad y con qué criterios se acepta un cambio."),
+    PAGE_DECISION_INDEX: (
+        "INDICE_DECISIONES.md",
+        "Las decisiones que cambian la arquitectura, los datos, la seguridad o la operación, por tema.",
+    ),
+    PAGE_TEST_PLAN: (
+        "PLAN_PRUEBAS.md",
+        "Qué se prueba, quién participa en la seguridad y con qué criterios se acepta un cambio.",
+    ),
     PAGE_GLOSSARY: ("GLOSARIO.md", "Las siglas y los términos del panel y de los documentos."),
 }
 # D-282: the folder, in reading order, with the family that colors each file.
-FOLDER_DOCUMENTS = [(PAGE_PRD, "producto"), (PAGE_SAD, "arquitectura"), (PAGE_ADR, "arquitectura"),
-                    (PAGE_TEST_PLAN, "calidad"), (PAGE_MANUAL, "operacion"),
-                    (PAGE_DECISION_INDEX, "referencia"), (PAGE_GLOSSARY, "referencia")]
+FOLDER_DOCUMENTS = [
+    (PAGE_PRD, "producto"),
+    (PAGE_SAD, "arquitectura"),
+    (PAGE_ADR, "arquitectura"),
+    (PAGE_TEST_PLAN, "calidad"),
+    (PAGE_MANUAL, "operacion"),
+    (PAGE_DECISION_INDEX, "referencia"),
+    (PAGE_GLOSSARY, "referencia"),
+]
 FOLDER_ORDER = [page for page, _ in FOLDER_DOCUMENTS]
 FOLDER_VIEW_KEY = "folder_view"
 DOCUMENT_DIAGRAM = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
@@ -4962,9 +5946,16 @@ def read_folder_files():
     files = []
     for page, family in FOLDER_DOCUMENTS:
         path = i18n.documents_dir() / PROJECT_DOCUMENTS[page][0]
-        files.append(documents_folder.describe(path.read_text(encoding="utf-8")) | {
-            "page": page, "family": family, "open": build_page_address(page), "pdf": build_print_address(page),
-            "github": project.build_github_url(path.relative_to(project.PROJECT_DIR).as_posix())})
+        files.append(
+            documents_folder.describe(path.read_text(encoding="utf-8"))
+            | {
+                "page": page,
+                "family": family,
+                "open": build_page_address(page),
+                "pdf": build_print_address(page),
+                "github": project.build_github_url(path.relative_to(project.PROJECT_DIR).as_posix()),
+            }
+        )
     return files
 
 
@@ -4973,11 +5964,19 @@ def show_documents_folder(mode):
     files = read_folder_files()
     # D-288: the folder opens as a list, like a file explorer in detail view.
     st.session_state.setdefault(FOLDER_VIEW_KEY, documents_folder.VIEW_LIST)
-    show_page_bar(PAGE_FOLDER, PAGE_FOLDER, "Los documentos del proyecto, leídos de docs/: cada uno se abre aquí, se "
-                  "imprime como PDF o se lee en GitHub.",
-                  side=lambda: st.segmented_control(
-                      tr("Vista de la carpeta"), [documents_folder.VIEW_GRID, documents_folder.VIEW_LIST],
-                      format_func=tr, key=FOLDER_VIEW_KEY, label_visibility="collapsed", width="content"))
+    show_page_bar(
+        PAGE_FOLDER,
+        PAGE_FOLDER,
+        "Los documentos del proyecto, leídos de docs/: cada uno se abre aquí, se imprime como PDF o se lee en GitHub.",
+        side=lambda: st.segmented_control(
+            tr("Vista de la carpeta"),
+            [documents_folder.VIEW_GRID, documents_folder.VIEW_LIST],
+            format_func=tr,
+            key=FOLDER_VIEW_KEY,
+            label_visibility="collapsed",
+            width="content",
+        ),
+    )
     st.markdown(documents_folder.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
     view = st.session_state.get(FOLDER_VIEW_KEY) or documents_folder.VIEW_LIST
     st.markdown(documents_folder.build_folder_html(files, view), unsafe_allow_html=True)
@@ -4985,8 +5984,10 @@ def show_documents_folder(mode):
 
 def build_folder_path_html(title):
     """«Documentos / PRD»: the thin path of a document, back to its folder (D-282)."""
-    return (f'<nav class="doc-path" aria-label="{tr("Ruta")}"><a href="{html.escape(build_page_address(PAGE_FOLDER), quote=True)}" '
-            f'target="_self">{tr(PAGE_FOLDER)}</a><i>/</i><span>{html.escape(tr(SIDEBAR_LABELS.get(title, title)))}</span></nav>')
+    return (
+        f'<nav class="doc-path" aria-label="{tr("Ruta")}"><a href="{html.escape(build_page_address(PAGE_FOLDER), quote=True)}" '
+        f'target="_self">{tr(PAGE_FOLDER)}</a><i>/</i><span>{html.escape(tr(SIDEBAR_LABELS.get(title, title)))}</span></nav>'
+    )
 
 
 DOCUMENT_LINK = re.compile(r"\]\(([A-Z_]+\.md)(#[^)]*)?\)")
@@ -5001,18 +6002,27 @@ def heading_anchor(text):
 def link_document_views(text):
     """Each [[vista:…]] of a document as a link to its page in the panel; each link to another document of docs/
     to that document's page, or to GitHub when it has none; each heading with the anchor its index points to."""
-    text = DOCUMENT_VIEW.sub(lambda match: f"[{match.group(1)}]({build_page_address(find_menu_page(match.group(1)))})"
-                             if find_menu_page(match.group(1)) else match.group(1), text)
+    text = DOCUMENT_VIEW.sub(
+        lambda match: (
+            f"[{match.group(1)}]({build_page_address(find_menu_page(match.group(1)))})"
+            if find_menu_page(match.group(1))
+            else match.group(1)
+        ),
+        text,
+    )
     pages = {filename: title for title, (filename, _) in PROJECT_DOCUMENTS.items()}
 
     def document_address(match):
         filename, anchor = match.group(1), match.group(2) or ""
-        address = (build_page_address(pages[filename]) if filename in pages
-                   else project.build_github_url(f"docs/{filename}"))
+        address = (
+            build_page_address(pages[filename]) if filename in pages else project.build_github_url(f"docs/{filename}")
+        )
         return f"]({address}{anchor})"
 
     text = DOCUMENT_LINK.sub(document_address, text)
-    return HEADING.sub(lambda match: f'<a id="{heading_anchor(match.group(2))}"></a>\n\n{match.group(1)} {match.group(2)}', text)
+    return HEADING.sub(
+        lambda match: f'<a id="{heading_anchor(match.group(2))}"></a>\n\n{match.group(1)} {match.group(2)}', text
+    )
 
 
 def show_document_diagram(name, mode):
@@ -5046,8 +6056,9 @@ PRINT_DOCUMENT_CSS = """<style>
 # «imprimir=<theme>», which prints it and comes back to the reader's theme.
 PRINT_PARAMETER = "imprimir"
 PRINT_THEME = charts.MODE_CORPORATE
-PRINT_BUTTON_HTML = buttons.build_button_html("Imprimir o guardar como PDF", icon="print", variant="primary",
-                                              extra="doc-print") + r"""
+PRINT_BUTTON_HTML = (
+    buttons.build_button_html("Imprimir o guardar como PDF", icon="print", variant="primary", extra="doc-print")
+    + r"""
 <script>
 document.querySelectorAll(".doc-print").forEach((button) => { button.onclick = () => {
   const light = "__LIGHT__";
@@ -5058,6 +6069,7 @@ document.querySelectorAll(".doc-print").forEach((button) => { button.onclick = (
   window.location.assign(url.toString());
 }; });
 </script>"""
+)
 AUTO_PRINT_SCRIPT = r"""<script>
 (() => {
   if (window.__documentPrinted) return;
@@ -5079,15 +6091,20 @@ def is_dark_theme(mode):
 
 def build_print_button_html(mode):
     """The print button; from a dark theme it prints the light version of the page (D-280)."""
-    return (PRINT_BUTTON_HTML.replace("Imprimir o guardar como PDF", tr("Imprimir o guardar como PDF"))
-            .replace("__LIGHT__", PRINT_THEME if is_dark_theme(mode) else ""))
+    return PRINT_BUTTON_HTML.replace("Imprimir o guardar como PDF", tr("Imprimir o guardar como PDF")).replace(
+        "__LIGHT__", PRINT_THEME if is_dark_theme(mode) else ""
+    )
 
 
 def show_document_actions(mode, source_label, source_url):
     """The document's source in GitHub and the button that prints the page itself (D-248)."""
-    with st.container(key="doc_actions", horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"):
-        st.markdown('<div class="doc-source">' + build_external_link_html(source_label, source_url, "secondary") + '</div>',
-                    unsafe_allow_html=True)
+    with st.container(
+        key="doc_actions", horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"
+    ):
+        st.markdown(
+            '<div class="doc-source">' + build_external_link_html(source_label, source_url, "secondary") + '</div>',
+            unsafe_allow_html=True,
+        )
         st.html(build_print_button_html(mode), unsafe_allow_javascript=True)
     st.markdown(PRINT_DOCUMENT_CSS, unsafe_allow_html=True)
     if st.query_params.get(PRINT_PARAMETER) in charts.THEMES:
@@ -5103,24 +6120,46 @@ def read_stack_figures(database_version):
 def show_stack_page(mode):
     """«Stack y evidencia» (D-211, D-266): the stack as an architecture diagram; each tool explains itself and
     opens the page where it works."""
-    show_page_bar(PAGE_STACK, PAGE_STACK, "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.",
-                  side=lambda: st.markdown(page_bar.build_link_html(
-                      PAGE_APP_MAP, build_page_address(PAGE_APP_MAP),
-                      "Todo el sistema en una vista: cada tecnología, su rol y sus conexiones."),
-                      unsafe_allow_html=True, width="content"))
+    show_page_bar(
+        PAGE_STACK,
+        PAGE_STACK,
+        "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.",
+        side=lambda: st.markdown(
+            page_bar.build_link_html(
+                PAGE_APP_MAP,
+                build_page_address(PAGE_APP_MAP),
+                "Todo el sistema en una vista: cada tecnología, su rol y sus conexiones.",
+            ),
+            unsafe_allow_html=True,
+            width="content",
+        ),
+    )
     addresses = {page: build_page_address(page) for *_, page in stack_page.STACK}
-    st.html(stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()),
-                                        addresses))
+    st.html(
+        stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()), addresses)
+    )
 
 
 def show_method_page(mode):
     """«Método y calidad» (D-320): how the project was assessed against software and data quality standards, a
     self-assessment whose every number comes from a real run (docs/calidad/medicion.json)."""
     report = quality_method.read_report()
-    show_page_bar(PAGE_METHOD, PAGE_METHOD, "Cómo se evaluó el proyecto: normas usadas como método, mediciones reales y "
-                  "lo que falta. Una autoevaluación, no una certificación.")
+    show_page_bar(
+        PAGE_METHOD,
+        PAGE_METHOD,
+        "Cómo se evaluó el proyecto: normas usadas como método, mediciones reales y "
+        "lo que falta. Una autoevaluación, no una certificación.",
+    )
     st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    labels = [tr("Introducción"), tr("Estándares"), "ISO 25010", tr("Datos"), tr("Código"), tr("Verificar"), tr("Límites")]
+    labels = [
+        tr("Introducción"),
+        tr("Estándares"),
+        "ISO 25010",
+        tr("Datos"),
+        tr("Código"),
+        tr("Verificar"),
+        tr("Límites"),
+    ]
     intro, standards, iso, data, code, verify, limits = st.tabs(labels)
     with intro:
         st.markdown(f'<div class="qm-pane">{quality_method.build_intro(report)}</div>', unsafe_allow_html=True)
@@ -5131,8 +6170,10 @@ def show_method_page(mode):
     with data:
         indicators = quality_live.build_indicators(quality_live.read_measures())
         counts = read_cached_database_counts(get_database_version())
-        st.markdown(f'<div class="qm-pane">{quality_method.build_data_quality(report, indicators, counts)}</div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="qm-pane">{quality_method.build_data_quality(report, indicators, counts)}</div>',
+            unsafe_allow_html=True,
+        )
     with code:
         st.markdown(f'<div class="qm-pane">{quality_method.build_code(report)}</div>', unsafe_allow_html=True)
     with verify:
@@ -5143,8 +6184,11 @@ def show_method_page(mode):
 
 def show_app_map_page(mode):
     """«Mapa de la app» (D-285): the whole system in one view; the stack is its summary."""
-    show_page_bar(PAGE_APP_MAP, PAGE_APP_MAP, "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y "
-                  "con qué se conecta.")
+    show_page_bar(
+        PAGE_APP_MAP,
+        PAGE_APP_MAP,
+        "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y con qué se conecta.",
+    )
     addresses = {node[7]: build_page_address(node[7]) for node in app_map.NODES.values()}
     st.html(app_map.build_map_html(charts.get_palette(mode), addresses), unsafe_allow_javascript=True)
 
@@ -5171,9 +6215,13 @@ def show_project_document(mode, title):
     show_document_actions(mode, f"{source} {tr('en GitHub')}", project.build_github_url(source))
     # D-288: the document opens with its cover, read from its header table; the title and the table do not repeat.
     header = documents_folder.read_header(text)
-    related = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", lambda match: f'<a href="{html.escape(match.group(2), quote=True)}" '
-                     f'target="_self">{html.escape(match.group(1))}</a>',
-                     link_document_views(documents_folder.field(header, "related")).split("<a id=", 1)[0])
+    related = re.sub(
+        r"\[([^\]]+)\]\(([^)]+)\)",
+        lambda match: (
+            f'<a href="{html.escape(match.group(2), quote=True)}" target="_self">{html.escape(match.group(1))}</a>'
+        ),
+        link_document_views(documents_folder.field(header, "related")).split("<a id=", 1)[0],
+    )
     cover = documents_folder.build_cover_html(text, related)
     text = soften_code_breaks(documents_folder.strip_header_table(re.sub(r"\A# .*\n", "", text)))
     st.markdown(documents_folder.build_cover_css(charts.get_palette(mode)), unsafe_allow_html=True)
@@ -5181,13 +6229,16 @@ def show_project_document(mode, title):
         st.markdown(cover, unsafe_allow_html=True)
         position = 0
         for marker in DOCUMENT_DIAGRAM.finditer(text):
-            st.markdown(link_document_views(text[position:marker.start()]), unsafe_allow_html=True)
+            st.markdown(link_document_views(text[position : marker.start()]), unsafe_allow_html=True)
             show_document_diagram(marker.group(1), mode)
             position = marker.end()
         st.markdown(link_document_views(text[position:]), unsafe_allow_html=True)
     st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
     st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
+
+
 # endregion
+
 
 # region Entry point
 def show_diagrams_page(mode):
@@ -5204,28 +6255,40 @@ def show_diagrams_page(mode):
     lineage_view = view == PIPELINE_LINEAGE
     title = "Dentro del tramo dbt: modelo por modelo" if lineage_view else "Recorrido completo por capas"
     # D-277: the switch sits on the card's title row, which had room for it, instead of a row of its own.
-    st.markdown('<style>.st-key-card_pipeline_main {position:relative;} .st-key-card_pipeline_main .st-key-pipeline_view '
-                '{position:absolute; top:18px; right:24px; z-index:3; width:auto !important;} '
-                '.journey-legend {margin:0 !important; line-height:1.9;} .journey-legend span {margin-left:6px;}</style>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<style>.st-key-card_pipeline_main {position:relative;} .st-key-card_pipeline_main .st-key-pipeline_view '
+        '{position:absolute; top:18px; right:24px; z-index:3; width:auto !important;} '
+        '.journey-legend {margin:0 !important; line-height:1.9;} .journey-legend span {margin-left:6px;}</style>',
+        unsafe_allow_html=True,
+    )
     with open_card("pipeline_main", title, hint=LINEAGE_HINT if lineage_view else ARCHITECTURE_HINT):
         if summary:
-            st.segmented_control("Vista", [PIPELINE_JOURNEY, PIPELINE_LINEAGE], default=PIPELINE_JOURNEY,
-                                 key=PIPELINE_VIEW_KEY, label_visibility="collapsed")
+            st.segmented_control(
+                "Vista",
+                [PIPELINE_JOURNEY, PIPELINE_LINEAGE],
+                default=PIPELINE_JOURNEY,
+                key=PIPELINE_VIEW_KEY,
+                label_visibility="collapsed",
+            )
         if lineage_view:
-            st.markdown(zoom.build_zoom_frame_html(lineage.build_lineage_svg(nodes, results, mode),
-                                                   "diagram-wide"), unsafe_allow_html=True)
+            st.markdown(
+                zoom.build_zoom_frame_html(lineage.build_lineage_svg(nodes, results, mode), "diagram-wide"),
+                unsafe_allow_html=True,
+            )
             if getattr(lineage, "LINEAGE_SCRIPT", ""):
                 # Hovering a model follows only its inputs and outputs; a click pins them.
                 st.html(lineage.LINEAGE_SCRIPT, unsafe_allow_javascript=True)
         else:
             # Inline SVG (not an image), so each piece shows its explanation on hover.
-            st.markdown(zoom.build_zoom_frame_html(
-                            architecture.build_journey_svg(states, figures, mode, animate_flow=True),
-                            "diagram-wide")
-                        + zoom.build_zoom_frame_html(
-                            architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=True),
-                            "diagram-narrow"), unsafe_allow_html=True)
+            st.markdown(
+                zoom.build_zoom_frame_html(
+                    architecture.build_journey_svg(states, figures, mode, animate_flow=True), "diagram-wide"
+                )
+                + zoom.build_zoom_frame_html(
+                    architecture.build_vertical_journey_svg(states, figures, mode, animate_flow=True), "diagram-narrow"
+                ),
+                unsafe_allow_html=True,
+            )
             st.markdown(build_journey_legend_html(), unsafe_allow_html=True)
         st.html(zoom.ZOOM_SCRIPT, unsafe_allow_javascript=True)
         st.html(zoom.TIP_SCRIPT, unsafe_allow_javascript=True)
@@ -5233,18 +6296,25 @@ def show_diagrams_page(mode):
 
 def show_pipeline_page_header(summary):
     """The page bar (D-267), with the four figures of the latest load and build."""
-    show_page_bar(PAGE_DIAGRAMS, "Pipeline y linaje", "El recorrido de los datos, de ODEPA y el INE al panel, "
-                  "y el linaje de dbt con el estado de sus pruebas.", build_pipeline_chips(summary))
+    show_page_bar(
+        PAGE_DIAGRAMS,
+        "Pipeline y linaje",
+        "El recorrido de los datos, de ODEPA y el INE al panel, y el linaje de dbt con el estado de sus pruebas.",
+        build_pipeline_chips(summary),
+    )
+
 
 def build_journey_legend_html():
     """What the colored dot of each step and the moving arrows mean."""
     # D-277: the four colours and what they mean share one line, so the page fits the window.
-    return (f'<div class="kpi-note journey-legend">{build_chip("OK", "ok")} {build_chip("En curso", "running")} '
-            f'{build_chip("Falla", "failed")} {build_chip("Sin datos", "neutral")} '
-            '<span>Punto de color en cada '
-            'paso: estado de la última ejecución del pipeline y de la base actual. '
-            'El movimiento ilustrativo, no actividad en vivo, muestra el recorrido; '
-            'el estado identifica la ejecución real.</span></div>')
+    return (
+        f'<div class="kpi-note journey-legend">{build_chip("OK", "ok")} {build_chip("En curso", "running")} '
+        f'{build_chip("Falla", "failed")} {build_chip("Sin datos", "neutral")} '
+        '<span>Punto de color en cada '
+        'paso: estado de la última ejecución del pipeline y de la base actual. '
+        'El movimiento ilustrativo, no actividad en vivo, muestra el recorrido; '
+        'el estado identifica la ejecución real.</span></div>'
+    )
 
 
 def build_pipeline_chips(summary):
@@ -5252,16 +6322,31 @@ def build_pipeline_chips(summary):
     the colour of its layer in the diagram."""
     run = read_latest_run()
     number = charts.format_thousands
-    color = lambda layer: f' style="color:{architecture.LAYER_COLORS[layer]}"'
-    chips = [(f'<b{color("ingestion")}>{number(run["rows_read"])}</b><small>leídas</small>',
-              f'{number(run["rows_read"])} filas leídas de ODEPA en la última carga'),
-             (f'<b{color("gold")}>{number(run["rows_loaded"])}</b><small>cargadas</small>',
-              f'{number(run["rows_loaded"])} filas cargadas y {number(run["rows_rejected"])} rechazadas en la última carga')]
+
+    def color(layer):
+        return f' style="color:{architecture.LAYER_COLORS[layer]}"'
+
+    chips = [
+        (
+            f'<b{color("ingestion")}>{number(run["rows_read"])}</b><small>leídas</small>',
+            f'{number(run["rows_read"])} filas leídas de ODEPA en la última carga',
+        ),
+        (
+            f'<b{color("gold")}>{number(run["rows_loaded"])}</b><small>cargadas</small>',
+            f'{number(run["rows_loaded"])} filas cargadas y {number(run["rows_rejected"])} rechazadas en la última carga',
+        ),
+    ]
     if summary:
-        chips += [(f'<b{color("processing")}>{summary["models"]}</b><small>modelos</small>',
-                   f'{summary["models"]} modelos dbt, de staging a marts'),
-                  (f'<b{color("quality")}>{summary["passing"]}/{summary["tests"]}</b><small>pruebas</small>',
-                   f'{summary["passing"]} de {summary["tests"]} pruebas dbt superadas en el último build')]
+        chips += [
+            (
+                f'<b{color("processing")}>{summary["models"]}</b><small>modelos</small>',
+                f'{summary["models"]} modelos dbt, de staging a marts',
+            ),
+            (
+                f'<b{color("quality")}>{summary["passing"]}/{summary["tests"]}</b><small>pruebas</small>',
+                f'{summary["passing"]} de {summary["tests"]} pruebas dbt superadas en el último build',
+            ),
+        ]
     else:
         chips.append(("<b>—</b><small>linaje dbt en migración</small>", "El linaje de dbt todavía no está en la base."))
     return chips
@@ -5274,8 +6359,12 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_ADR: lambda mode: show_project_document(mode, PAGE_ADR),
     PAGE_STACK: lambda mode: show_stack_page(mode),
     PAGE_SECURITY: lambda mode: show_security_page(mode),
-    PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(mode, header=lambda: show_page_bar(
-        PAGE_SQL, "Consultas SQL", sql_explorer.DESCRIPTION, sql_explorer.build_bar_chips())),
+    PAGE_SQL: lambda mode: sql_explorer.show_sql_explorer_page(
+        mode,
+        header=lambda: show_page_bar(
+            PAGE_SQL, "Consultas SQL", sql_explorer.DESCRIPTION, sql_explorer.build_bar_chips()
+        ),
+    ),
     PAGE_HOME: show_home_page,
     PAGE_DIAGRAMS: show_diagrams_page,
     PAGE_WHERE: lambda mode: show_where_page(mode),
@@ -5453,8 +6542,10 @@ def render_window(window, pages=None):
     with st.container(key="report_page" if window == REPORT_WINDOW else "window_page"):
         overview_class = OVERVIEW_CLASS_BY_VIEW.get(view)
         if overview_class:
-            st.markdown(f'<span class="overview-viewport-marker {overview_class}" '
-                        'aria-hidden="true"></span>', unsafe_allow_html=True)
+            st.markdown(
+                f'<span class="overview-viewport-marker {overview_class}" aria-hidden="true"></span>',
+                unsafe_allow_html=True,
+            )
         SHOW_PAGE_BY_TITLE[view](mode)
     if view in COMPACT_FOOTER_VIEWS:
         show_compact_footer(window, pages, view)
@@ -5462,8 +6553,14 @@ def render_window(window, pages=None):
         if pages:
             show_route_footer(window, pages, view)
         show_attribution()
-    st.html(PHONE_LAYOUT_HTML + FOLD_SIDEBAR_SCRIPT + RELOAD_HOME_SCRIPT + IDLE_ANIMATION_SCRIPT + build_visit_history_script(),
-            unsafe_allow_javascript=True)
+    st.html(
+        PHONE_LAYOUT_HTML
+        + FOLD_SIDEBAR_SCRIPT
+        + RELOAD_HOME_SCRIPT
+        + IDLE_ANIMATION_SCRIPT
+        + build_visit_history_script(),
+        unsafe_allow_javascript=True,
+    )
 
 
 # D-166: the panel is read in landscape. A phone held upright sees one screen asking to
@@ -5536,9 +6633,12 @@ def show_menu_steps(view, pages):
     for step, text in ((-1, "← Anterior: {}"), (1, "Siguiente: {} →")):
         if 0 <= position + step < len(order):
             neighbour = order[position + step]
-            st.page_link(pages[WINDOW_OF_VIEW[neighbour]], label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
-                         icon=SIDEBAR_ICONS.get(neighbour, PAGE_ICONS.get(neighbour)),
-                         query_params=keep_context() | {VIEW_PARAMETER: neighbour})
+            st.page_link(
+                pages[WINDOW_OF_VIEW[neighbour]],
+                label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
+                icon=SIDEBAR_ICONS.get(neighbour, PAGE_ICONS.get(neighbour)),
+                query_params=keep_context() | {VIEW_PARAMETER: neighbour},
+            )
 
 
 def show_folder_steps(view, pages):
@@ -5547,43 +6647,63 @@ def show_folder_steps(view, pages):
     for step, text in ((-1, "← Anterior: {}"), (1, "Siguiente: {} →")):
         if 0 <= position + step < len(FOLDER_ORDER):
             neighbour = FOLDER_ORDER[position + step]
-            st.page_link(pages[WINDOW_OF_VIEW[neighbour]], label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
-                         icon=PAGE_ICONS.get(neighbour), query_params=keep_context() | {VIEW_PARAMETER: neighbour})
+            st.page_link(
+                pages[WINDOW_OF_VIEW[neighbour]],
+                label=tr(text).format(tr(SIDEBAR_LABELS.get(neighbour, neighbour))),
+                icon=PAGE_ICONS.get(neighbour),
+                query_params=keep_context() | {VIEW_PARAMETER: neighbour},
+            )
 
 
 def show_route_footer(window, pages, view=None):
     """«← Volver» and «Siguiente →» with what the next step proves; same window."""
     if view in FOLDER_ORDER:
         st.divider()
-        with st.container(key="route_footer", horizontal=True, horizontal_alignment="distribute",
-                          vertical_alignment="center"):
+        with st.container(
+            key="route_footer", horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"
+        ):
             show_folder_steps(view, pages)
         return
     if view in MENU_BLOCK_OF_VIEW:
         st.divider()
-        with st.container(key="route_footer", horizontal=True, horizontal_alignment="distribute",
-                          vertical_alignment="center"):
+        with st.container(
+            key="route_footer", horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"
+        ):
             show_menu_steps(view, pages)
         return
     if window not in ROUTE:
         return
     position = ROUTE.index(window)
     st.divider()
-    with st.container(key="route_footer", horizontal=True, horizontal_alignment="distribute",
-                      vertical_alignment="center"):
+    with st.container(
+        key="route_footer", horizontal=True, horizontal_alignment="distribute", vertical_alignment="center"
+    ):
         if position > 0:
             back = ROUTE[position - 1]
             st.page_link(pages[back], label=f"← Volver: {back}", query_params=keep_context())
         if position < len(ROUTE) - 1:
             following = ROUTE[position + 1]
-            st.page_link(pages[following], label=f"Siguiente: {following} →",
-                         help=f"Muestra {ROUTE_LEADS[following]}.", query_params=keep_context())
+            st.page_link(
+                pages[following],
+                label=f"Siguiente: {following} →",
+                help=f"Muestra {ROUTE_LEADS[following]}.",
+                query_params=keep_context(),
+            )
     if position < len(ROUTE) - 1:
         st.caption(f"Siguiente paso: {ROUTE_LEADS[ROUTE[position + 1]]}.")
 
 
 # D-233: the pages that fit the window close with one short footer instead of the two long ones.
-COMPACT_FOOTER_VIEWS = {PAGE_SQL, PAGE_OPERATIONS, PAGE_RUNS, PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER, PAGE_APP_MAP, PAGE_METHOD}
+COMPACT_FOOTER_VIEWS = {
+    PAGE_SQL,
+    PAGE_OPERATIONS,
+    PAGE_RUNS,
+    PAGE_SECURITY,
+    PAGE_STACK,
+    PAGE_FOLDER,
+    PAGE_APP_MAP,
+    PAGE_METHOD,
+}
 
 
 def show_compact_footer(window, pages, view=None):
@@ -5600,8 +6720,12 @@ def show_compact_footer(window, pages, view=None):
                     st.page_link(pages[back], label=f"← Volver: {back}", query_params=keep_context())
                 if position < len(ROUTE) - 1:
                     following = ROUTE[position + 1]
-                    st.page_link(pages[following], label=f"Siguiente: {following} →",
-                                 help=f"Siguiente paso: {ROUTE_LEADS[following]}.", query_params=keep_context())
+                    st.page_link(
+                        pages[following],
+                        label=f"Siguiente: {following} →",
+                        help=f"Siguiente paso: {ROUTE_LEADS[following]}.",
+                        query_params=keep_context(),
+                    )
             st.markdown(f'<div class="page-lineage">{lineage.build_badge_html(summary)}</div>', unsafe_allow_html=True)
         st.caption(tr(ATTRIBUTION_TEXT))
 
@@ -5616,21 +6740,26 @@ def render_page(title):
 
 def build_window_page(window, order, start, pages):
     """A navigation entry that draws one section, numbered by its step in the route."""
-    return st.Page(lambda: render_window(window, pages), title=number_window(window, order),
-                   icon=WINDOW_ICONS[window], url_path=WINDOW_PATHS[window],
-                   visibility="hidden" if window == SECTION_KPI else "visible",
-                   default=window == start)
+    return st.Page(
+        lambda: render_window(window, pages),
+        title=number_window(window, order),
+        icon=WINDOW_ICONS[window],
+        url_path=WINDOW_PATHS[window],
+        visibility="hidden" if window == SECTION_KPI else "visible",
+        default=window == start,
+    )
 
 
 def build_redirect_page(url_path, view, windows_by_title):
     """A hidden page at an old address that opens its window on the same view (D-065)."""
+
     def redirect():
-        parameters = {key: value for key, value in st.query_params.to_dict().items()
-                      }
+        parameters = {key: value for key, value in st.query_params.to_dict().items()}
         window = WINDOW_OF_VIEW[view]
         if view != read_window_views(window)[0]:
             parameters[VIEW_PARAMETER] = view
         st.switch_page(windows_by_title[window], query_params=parameters)
+
     return st.Page(redirect, title=view, url_path=url_path, visibility="hidden")
 
 
@@ -5638,24 +6767,38 @@ def redirect_moved_tab(current_page, windows_by_title):
     """Keep deep links with ?seccion=… working: they open the view that holds that tab."""
     tab = st.query_params.get(TAB_PARAMETER)
     current_window = window_of_page(current_page)
-    special_view = next((target for (old_page, old_tab), target in OLD_TAB_PAGES.items()
-                         if old_tab == tab and WINDOW_OF_VIEW.get(old_page) == current_window), None)
+    special_view = next(
+        (
+            target
+            for (old_page, old_tab), target in OLD_TAB_PAGES.items()
+            if old_tab == tab and WINDOW_OF_VIEW.get(old_page) == current_window
+        ),
+        None,
+    )
     view = special_view or PAGE_OF_TAB.get(OLD_HOME_TABS.get(tab, tab))
     if not view:
         return
     st.query_params.pop(TAB_PARAMETER, None)
     window = WINDOW_OF_VIEW[view]
-    parameters = {key: value for key, value in st.query_params.to_dict().items()
-                  }
+    parameters = {key: value for key, value in st.query_params.to_dict().items()}
     if view != read_window_views(window)[0]:
         parameters[VIEW_PARAMETER] = view
-    if window != window_of_page(current_page) or st.query_params.get(VIEW_PARAMETER) != parameters.get(
-            VIEW_PARAMETER):
+    if window != window_of_page(current_page) or st.query_params.get(VIEW_PARAMETER) != parameters.get(VIEW_PARAMETER):
         st.switch_page(windows_by_title[window], query_params=parameters)
 
 
-RETURN_CONTEXT_KEYS = ["dashboard_group", "dashboard_region", "dashboard_week", "dashboard_product", "dashboard_top_n",
-                       "analysis_group", "analysis_product", "analysis_key_label", "analysis_region", "analysis_channels"]
+RETURN_CONTEXT_KEYS = [
+    "dashboard_group",
+    "dashboard_region",
+    "dashboard_week",
+    "dashboard_product",
+    "dashboard_top_n",
+    "analysis_group",
+    "analysis_product",
+    "analysis_key_label",
+    "analysis_region",
+    "analysis_channels",
+]
 
 
 def restore_return_context():
@@ -5671,9 +6814,12 @@ def restore_return_context():
                     if isinstance(value, int) and not isinstance(value, bool) and 8 <= value <= 20:
                         st.session_state[key] = value
                 elif key == "dashboard_product":
-                    if (isinstance(value, dict) and isinstance(value.get("key"), dict)
-                            and all(isinstance(value["key"].get(field), str) for field in queries.KEY_COLUMNS)
-                            and isinstance(value.get("name"), str)):
+                    if (
+                        isinstance(value, dict)
+                        and isinstance(value.get("key"), dict)
+                        and all(isinstance(value["key"].get(field), str) for field in queries.KEY_COLUMNS)
+                        and isinstance(value.get("name"), str)
+                    ):
                         st.session_state[key] = value
                 elif key == "analysis_channels":
                     if isinstance(value, list) and all(isinstance(item, str) for item in value):
@@ -5771,8 +6917,7 @@ RELOAD_HOME_SCRIPT = """<script>
 # (key, title, pages or source links)
 MENU_BLOCKS = [
     ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_WHERE, PAGE_INSIGHTS]),
-    ("ingenieria", "Ingeniería de datos",
-     [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
+    ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD]),
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
@@ -5785,29 +6930,68 @@ MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS f
 MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages}
 # The menu's own glyphs, one per page, thin lines (Material Symbols).
 SIDEBAR_ICONS = {
-    PAGE_WHERE: ":material/storefront:", PAGE_INSIGHTS: ":material/lightbulb:", PAGE_HOME: ":material/grid_view:",
-    PAGE_DIAGRAMS: ":material/share:", PAGE_ARCHITECTURE: ":material/database:",
-    PAGE_OPERATIONS: ":material/verified_user:", PAGE_SQL: ":material/terminal:",
-    PAGE_RUNS: ":material/radio_button_checked:", PAGE_SECURITY: ":material/lock:",
-    PAGE_STACK: ":material/layers:", PAGE_APP_MAP: ":material/hub:", PAGE_METHOD: ":material/verified:", PAGE_FOLDER: ":material/folder_open:",
+    PAGE_WHERE: ":material/storefront:",
+    PAGE_INSIGHTS: ":material/lightbulb:",
+    PAGE_HOME: ":material/grid_view:",
+    PAGE_DIAGRAMS: ":material/share:",
+    PAGE_ARCHITECTURE: ":material/database:",
+    PAGE_OPERATIONS: ":material/verified_user:",
+    PAGE_SQL: ":material/terminal:",
+    PAGE_RUNS: ":material/radio_button_checked:",
+    PAGE_SECURITY: ":material/lock:",
+    PAGE_STACK: ":material/layers:",
+    PAGE_APP_MAP: ":material/hub:",
+    PAGE_METHOD: ":material/verified:",
+    PAGE_FOLDER: ":material/folder_open:",
 }
 # (text, heading, icon, hover fill, current fill, accent bar, hairline) for dark and light sidebars.
-MENU_INK = {True: ("#cfd4dc", "#8b929c", "#aeb5bf", "rgba(255,255,255,.04)", "rgba(255,255,255,.07)",
-                   "#3b9eff", "rgba(255,255,255,.08)"),
-            False: ("#2b3340", "#6b717a", "#4b5563", "rgba(15,23,42,.04)", "rgba(15,23,42,.07)",
-                    "#1d5fbf", "rgba(15,23,42,.09)")}
+MENU_INK = {
+    True: (
+        "#cfd4dc",
+        "#8b929c",
+        "#aeb5bf",
+        "rgba(255,255,255,.04)",
+        "rgba(255,255,255,.07)",
+        "#3b9eff",
+        "rgba(255,255,255,.08)",
+    ),
+    False: (
+        "#2b3340",
+        "#6b717a",
+        "#4b5563",
+        "rgba(15,23,42,.04)",
+        "rgba(15,23,42,.07)",
+        "#1d5fbf",
+        "rgba(15,23,42,.09)",
+    ),
+}
 
 
-SOURCE_ICON_SVG = ('<svg class="nav-source-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">'
-                   '<path fill="currentColor" d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>')
-SIDEBAR_TOP_LABELS = {REPORT_WINDOW: "Dashboard", SECTION_TECHNICAL: "Ingeniería de datos",
-                      SECTION_PROJECT: "Proyecto", SECTION_LINKS: "Documentación", SECTION_SECURITY: "Seguridad",
-                      SECTION_RESOURCES: "GitHub"}
-SIDEBAR_LABELS = {PAGE_WHERE: "Dónde comprar", PAGE_INSIGHTS: "Insights", PAGE_HOME: "Panorama de precios", PAGE_SEASONALITY: "Precios e inflación",
-                  PAGE_DIAGRAMS: "Pipeline y linaje", PAGE_OPERATIONS: "Calidad y auditoría",
-                  PAGE_RUNS: "Centro de operación", PAGE_SECURITY: "Arquitectura de seguridad",
-                  PAGE_DOCUMENTATION: "Documentación", PAGE_MANUAL: "Manual de operación",
-                  PAGE_FOLDER: "Carpeta de documentos"}
+SOURCE_ICON_SVG = (
+    '<svg class="nav-source-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">'
+    '<path fill="currentColor" d="M14 3h7v7h-2V6.41l-9.29 9.3-1.42-1.42 9.3-9.29H14V3zM5 5h6v2H5v12h12v-6h2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>'
+)
+SIDEBAR_TOP_LABELS = {
+    REPORT_WINDOW: "Dashboard",
+    SECTION_TECHNICAL: "Ingeniería de datos",
+    SECTION_PROJECT: "Proyecto",
+    SECTION_LINKS: "Documentación",
+    SECTION_SECURITY: "Seguridad",
+    SECTION_RESOURCES: "GitHub",
+}
+SIDEBAR_LABELS = {
+    PAGE_WHERE: "Dónde comprar",
+    PAGE_INSIGHTS: "Insights",
+    PAGE_HOME: "Panorama de precios",
+    PAGE_SEASONALITY: "Precios e inflación",
+    PAGE_DIAGRAMS: "Pipeline y linaje",
+    PAGE_OPERATIONS: "Calidad y auditoría",
+    PAGE_RUNS: "Centro de operación",
+    PAGE_SECURITY: "Arquitectura de seguridad",
+    PAGE_DOCUMENTATION: "Documentación",
+    PAGE_MANUAL: "Manual de operación",
+    PAGE_FOLDER: "Carpeta de documentos",
+}
 
 
 def read_current_view(window):
@@ -5971,15 +7155,19 @@ FOLDER_TILE_BLOCK = "documentos"
 # D-287: the sources are a tile of their own beside the folder; their links open in a floating panel.
 SOURCES_TILE_BLOCK = "fuentes"
 TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK}
-SOURCES_TILE_SVG = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><ellipse cx="28" cy="10" rx="20" ry="6" '
-                    'fill="#5fd39b"/><path d="M8 10v28c0 3.3 9 6 20 6s20-2.7 20-6V10c0 3.3-9 6-20 6S8 13.3 8 10z" '
-                    'fill="#2fb57a"/><path d="M8 24c0 3.3 9 6 20 6s20-2.7 20-6" fill="none" stroke="#5fd39b" stroke-width="2"/>'
-                    '<circle cx="50" cy="38" r="10" fill="#1f8f5f"/><path d="M46 42l8-8M49 34h5v5" fill="none" stroke="#fff" '
-                    'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+SOURCES_TILE_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><ellipse cx="28" cy="10" rx="20" ry="6" '
+    'fill="#5fd39b"/><path d="M8 10v28c0 3.3 9 6 20 6s20-2.7 20-6V10c0 3.3-9 6-20 6S8 13.3 8 10z" '
+    'fill="#2fb57a"/><path d="M8 24c0 3.3 9 6 20 6s20-2.7 20-6" fill="none" stroke="#5fd39b" stroke-width="2"/>'
+    '<circle cx="50" cy="38" r="10" fill="#1f8f5f"/><path d="M46 42l8-8M49 34h5v5" fill="none" stroke="#fff" '
+    'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+)
 # A Finder-like folder, two blues, drawn once as an image the menu shows above «Documentos».
-FOLDER_TILE_SVG = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><path d="M3 9a5 5 0 0 1 5-5h15.5'
-                   'a4 4 0 0 1 3 1.3L30 9h26a5 5 0 0 1 5 5v4H3z" fill="#5aa9ea"/><rect x="3" y="14" width="58" height="33" '
-                   'rx="5" fill="#8ac6f5"/><rect x="3" y="14" width="58" height="3" fill="#a9d6f8"/></svg>')
+FOLDER_TILE_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><path d="M3 9a5 5 0 0 1 5-5h15.5'
+    'a4 4 0 0 1 3 1.3L30 9h26a5 5 0 0 1 5 5v4H3z" fill="#5aa9ea"/><rect x="3" y="14" width="58" height="33" '
+    'rx="5" fill="#8ac6f5"/><rect x="3" y="14" width="58" height="3" fill="#a9d6f8"/></svg>'
+)
 
 
 def show_sidebar_navigation(windows_by_title, current_window, order):
@@ -6025,8 +7213,10 @@ def show_footer_tiles(windows_by_title, current_window, current_view):
             with st.popover(tr("Fuentes")):
                 st.markdown(f"**{tr('Fuentes de datos')}**")
                 for name, url in SOURCE_LINKS:
-                    st.markdown(buttons.build_link_html(tr(name), url, icon="external", variant="text", external=True),
-                                unsafe_allow_html=True)
+                    st.markdown(
+                        buttons.build_link_html(tr(name), url, icon="external", variant="text", external=True),
+                        unsafe_allow_html=True,
+                    )
 
 
 def show_folder_tile(windows_by_title, current_window, current_view):
@@ -6035,7 +7225,9 @@ def show_folder_tile(windows_by_title, current_window, current_view):
     window = WINDOW_OF_VIEW[PAGE_FOLDER]
     active = window == current_window and (current_view == PAGE_FOLDER or current_view in FOLDER_ORDER)
     with st.container(key="nav_folder_tile" + ("_nav_current" if active else "")):
-        st.page_link(windows_by_title[window], label=tr(PAGE_FOLDER), query_params=keep_context() | {VIEW_PARAMETER: PAGE_FOLDER})
+        st.page_link(
+            windows_by_title[window], label=tr(PAGE_FOLDER), query_params=keep_context() | {VIEW_PARAMETER: PAGE_FOLDER}
+        )
 
 
 def show_menu_block(windows_by_title, current_window, current_view, key, title, pages, open_key, is_open):
@@ -6050,29 +7242,38 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
         # They leave the app (D-118): plain external links, not Streamlit pages.
         for index, (name, url) in enumerate(pages):
             with st.container(key=f"nav_child_{key}_{index}"):
-                st.markdown(f'<a class="nav-source-link" href="{html.escape(url, quote=True)}" '
-                            f'target="_blank" rel="noopener noreferrer">{SOURCE_ICON_SVG}{html.escape(tr(name))}</a>',
-                            unsafe_allow_html=True)
+                st.markdown(
+                    f'<a class="nav-source-link" href="{html.escape(url, quote=True)}" '
+                    f'target="_blank" rel="noopener noreferrer">{SOURCE_ICON_SVG}{html.escape(tr(name))}</a>',
+                    unsafe_allow_html=True,
+                )
         # D-286: opened at the end of the menu, the sources scroll into sight above the pinned footer.
         st.html(SHOW_SOURCES_SCRIPT, unsafe_allow_javascript=True)
         return
     for index, view in enumerate(pages):
         window = WINDOW_OF_VIEW[view]
         # A document of the folder lights its folder (D-282).
-        active = window == current_window and (view == current_view or (view == PAGE_FOLDER and current_view in FOLDER_ORDER))
+        active = window == current_window and (
+            view == current_view or (view == PAGE_FOLDER and current_view in FOLDER_ORDER)
+        )
         with st.container(key=f"nav_child_{key}_{index}" + ("_nav_current" if active else "")):
-            st.page_link(windows_by_title[window], label=tr(SIDEBAR_LABELS.get(view, view)),
-                         icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
-                         query_params=keep_context() | {VIEW_PARAMETER: view})
+            st.page_link(
+                windows_by_title[window],
+                label=tr(SIDEBAR_LABELS.get(view, view)),
+                icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
+                query_params=keep_context() | {VIEW_PARAMETER: view},
+            )
 
 
 def build_sidebar_github_html(is_current):
     """GitHub's mark on a light pill in the sidebar footer (D-124): not a row of the
     list, where it read as one more section and its blue mark sank into the navy."""
     current = " sidebar-github-current" if is_current else ""
-    return (f'<a class="sidebar-github{current}" href="{html.escape(build_page_address(PAGE_LINKS), quote=True)}" '
-            f'target="_self" aria-label="{tr("GitHub del proyecto")}" title="{tr("GitHub del proyecto")}">'
-            f'{build_github_icon_svg(20)}</a>')
+    return (
+        f'<a class="sidebar-github{current}" href="{html.escape(build_page_address(PAGE_LINKS), quote=True)}" '
+        f'target="_self" aria-label="{tr("GitHub del proyecto")}" title="{tr("GitHub del proyecto")}">'
+        f'{build_github_icon_svg(20)}</a>'
+    )
 
 
 WINDOW_PAGES = {}
@@ -6080,13 +7281,21 @@ WINDOW_PAGES = {}
 
 def show_home_tools(week):
     """The Panorama's two doors, small, in its bar (D-308): the table of weeks (a dialog) and Precios e inflación."""
-    if st.button(tr("Semanas"), icon=":material/attach_money:", key="home_weeks_trigger",
-                 help=tr("Tabla de las últimas semanas: qué familias vienen subiendo.")):
+    if st.button(
+        tr("Semanas"),
+        icon=":material/attach_money:",
+        key="home_weeks_trigger",
+        help=tr("Tabla de las últimas semanas: qué familias vienen subiendo."),
+    ):
         show_weeks_dialog(get_mode(), get_database_version())
     if WINDOW_PAGES:
-        st.page_link(WINDOW_PAGES[WINDOW_OF_VIEW[PAGE_SEASONALITY]], label=tr("Inflación"), icon=":material/trending_up:",
-                     query_params=keep_context() | {VIEW_PARAMETER: PAGE_SEASONALITY},
-                     help=tr("Precios e inflación: qué alimentos subieron más que la inflación."))
+        st.page_link(
+            WINDOW_PAGES[WINDOW_OF_VIEW[PAGE_SEASONALITY]],
+            label=tr("Inflación"),
+            icon=":material/trending_up:",
+            query_params=keep_context() | {VIEW_PARAMETER: PAGE_SEASONALITY},
+            help=tr("Precios e inflación: qué alimentos subieron más que la inflación."),
+        )
 
 
 def show_alert_trigger(week):
@@ -6095,9 +7304,12 @@ def show_alert_trigger(week):
     alerts_now = read_price_alerts()
     week = pd.Timestamp(week)
     count = int((alerts_now["week_start"] == week).sum()) if not alerts_now.empty else 0
-    if st.button(f"▲ {count}", key="home_alert_trigger",
-                 help=f"Alertas de precio: {count} cambios fuera de lo habitual y de al menos 10 % esta semana, "
-                      "en todo Chile. Abre el detalle por familia."):
+    if st.button(
+        f"▲ {count}",
+        key="home_alert_trigger",
+        help=f"Alertas de precio: {count} cambios fuera de lo habitual y de al menos 10 % esta semana, "
+        "en todo Chile. Abre el detalle por familia.",
+    ):
         st.session_state["home_alert_selected_family"] = None
         show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())
 
@@ -6110,8 +7322,7 @@ def show_sidebar_footer(current_window=None, folder=None):
         with st.container(key="sidebar_tools", horizontal=True, vertical_alignment="center"):
             with st.container(key="sidebar_appearance"):
                 show_theme_field()
-            st.markdown(build_sidebar_github_html(current_window == SECTION_RESOURCES),
-                        unsafe_allow_html=True)
+            st.markdown(build_sidebar_github_html(current_window == SECTION_RESOURCES), unsafe_allow_html=True)
             show_language_switch()
 
 
@@ -6142,8 +7353,12 @@ def reload_changed_modules():
             MODULE_TIMES[name] = modified
             changed.append(module)
     # brand_icons feeds devops: reload the ones without bi.* imports first.
-    for module in sorted(changed, key=lambda module: sum(1 for value in vars(module).values()
-                                                         if getattr(value, "__name__", "").startswith("bi."))):
+    for module in sorted(
+        changed,
+        key=lambda module: sum(
+            1 for value in vars(module).values() if getattr(value, "__name__", "").startswith("bi.")
+        ),
+    ):
         importlib.reload(module)
     return [module.__name__ for module in changed]
 
@@ -6151,14 +7366,20 @@ def reload_changed_modules():
 def main():
     """Theme, navigation with icons and the chosen page."""
     reload_changed_modules()
-    st.set_page_config(page_title="Monitor de precios de alimentos", layout="wide",
-                       # A green tile with white bars: the Material glyph was dark and
-                       # nearly invisible on a dark browser tab.
-                       page_icon=str(Path(__file__).resolve().parent / "assets" / "favicon.png"))
+    st.set_page_config(
+        page_title="Monitor de precios de alimentos",
+        layout="wide",
+        # A green tile with white bars: the Material glyph was dark and
+        # nearly invisible on a dark browser tab.
+        page_icon=str(Path(__file__).resolve().parent / "assets" / "favicon.png"),
+    )
     problem = follow_published_database()
     if not queries.DATABASE_FILE.exists():
-        st.error("Falta la base servida etl/datos.duckdb y no se pudo descargar de GitHub"
-                 + (f" ({problem})" if problem else "") + ". En local: python bi/served_database.py")
+        st.error(
+            "Falta la base servida etl/datos.duckdb y no se pudo descargar de GitHub"
+            + (f" ({problem})" if problem else "")
+            + ". En local: python bi/served_database.py"
+        )
         return
     settle_theme()
     i18n.settle_language()
@@ -6171,18 +7392,25 @@ def main():
     order = order_windows()
     start = start_window(profile)
     windows_by_title = {}
-    windows_by_title.update({window: build_window_page(window, order, start, windows_by_title)
-                             for window in order})
-    redirects = [build_redirect_page(path, view, windows_by_title)
-                 for view, path in PAGE_PATHS.items() if path not in WINDOW_PATHS.values()]
-    redirects += [build_redirect_page(path, page, windows_by_title)
-                  for path, (page, _) in OLD_PATHS.items()
-                  if path not in WINDOW_PATHS.values() and path not in PAGE_PATHS.values()]
-    current_page = st.navigation({
-        "Recorrido": [windows_by_title[window] for window in ROUTE],
-        "Referencias": [windows_by_title[SECTION_RESOURCES]],
-        "Compatibilidad": [windows_by_title[SECTION_PROJECT], windows_by_title[SECTION_KPI]] + redirects},
-        position="hidden")
+    windows_by_title.update({window: build_window_page(window, order, start, windows_by_title) for window in order})
+    redirects = [
+        build_redirect_page(path, view, windows_by_title)
+        for view, path in PAGE_PATHS.items()
+        if path not in WINDOW_PATHS.values()
+    ]
+    redirects += [
+        build_redirect_page(path, page, windows_by_title)
+        for path, (page, _) in OLD_PATHS.items()
+        if path not in WINDOW_PATHS.values() and path not in PAGE_PATHS.values()
+    ]
+    current_page = st.navigation(
+        {
+            "Recorrido": [windows_by_title[window] for window in ROUTE],
+            "Referencias": [windows_by_title[SECTION_RESOURCES]],
+            "Compatibilidad": [windows_by_title[SECTION_PROJECT], windows_by_title[SECTION_KPI]] + redirects,
+        },
+        position="hidden",
+    )
     # Historical root links may request a project view. Keep that exact destination
     # when Dashboard becomes the root, rather than silently showing another view.
     # Views renamed since: old links open the new title (D-094).

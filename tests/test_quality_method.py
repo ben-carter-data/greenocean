@@ -1,21 +1,35 @@
 """«Método y calidad» (D-320): every number of the page comes from docs/calidad/medicion.json, the report quotes the same
 numbers, the wording never claims certification, and the line under the logo opens the page in both languages."""
+
 import re
 from pathlib import Path
 
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from bi import charts, i18n, quality_method
+from bi import i18n, quality_method
 
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
-FORBIDDEN = ("certificado", "certificada", "cumple la norma", "cumple con la norma", "complies with the standard", "is certified")
+FORBIDDEN = (
+    "certificado",
+    "certificada",
+    "cumple la norma",
+    "cumple con la norma",
+    "complies with the standard",
+    "is certified",
+)
 
 
 def every_text(report):
-    pieces = [quality_method.build_intro(report), quality_method.build_standards(report), quality_method.build_iso(report),
-              quality_method.build_code(report), quality_method.build_verify(report), quality_method.build_limits(report)]
+    pieces = [
+        quality_method.build_intro(report),
+        quality_method.build_standards(report),
+        quality_method.build_iso(report),
+        quality_method.build_code(report),
+        quality_method.build_verify(report),
+        quality_method.build_limits(report),
+    ]
     return " ".join(pieces).lower()
 
 

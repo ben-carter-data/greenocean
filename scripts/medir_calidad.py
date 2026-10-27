@@ -6,6 +6,7 @@ that is not installed, or a check that cannot run here, is written as «no verif
 Usage (the quality tools live in a virtual environment of their own, outside the project):
     python scripts/medir_calidad.py --tools /path/to/venv/bin
 """
+
 import argparse
 import ast
 import json
@@ -23,10 +24,31 @@ LINE_LENGTH = 120
 MAX_COMPLEXITY = 10
 MAX_FUNCTION_LINES = 50
 MAX_PARAMETERS = 5
-CRITICAL_MODULES = ["etl/etl.py", "etl/bronze.py", "etl/ine.py", "etl/pipeline.py", "bi/queries.py", "bi/alerts.py",
-                    "bi/overview.py", "bi/inflation_view.py", "bi/control.py", "bi/served_database.py", "bi/quality.py"]
-TYPED_MODULES = ["etl/etl.py", "etl/bronze.py", "etl/ine.py", "etl/pipeline.py", "bi/queries.py", "bi/alerts.py",
-                 "bi/overview.py", "bi/inflation_view.py", "bi/control.py", "bi/served_database.py"]
+CRITICAL_MODULES = [
+    "etl/etl.py",
+    "etl/bronze.py",
+    "etl/ine.py",
+    "etl/pipeline.py",
+    "bi/queries.py",
+    "bi/alerts.py",
+    "bi/overview.py",
+    "bi/inflation_view.py",
+    "bi/control.py",
+    "bi/served_database.py",
+    "bi/quality.py",
+]
+TYPED_MODULES = [
+    "etl/etl.py",
+    "etl/bronze.py",
+    "etl/ine.py",
+    "etl/pipeline.py",
+    "bi/queries.py",
+    "bi/alerts.py",
+    "bi/overview.py",
+    "bi/inflation_view.py",
+    "bi/control.py",
+    "bi/served_database.py",
+]
 NOT_VERIFIED = "no verificado"
 
 
@@ -45,8 +67,18 @@ def measure_ruff(tools):
     binary = tool(tools, "ruff")
     if not binary:
         return {"estado": NOT_VERIFIED}
-    command = [binary, "check", *CODE, "tests", "--select", "E,F,W", "--line-length", str(LINE_LENGTH),
-               "--output-format", "json"]
+    command = [
+        binary,
+        "check",
+        *CODE,
+        "tests",
+        "--select",
+        "E,F,W",
+        "--line-length",
+        str(LINE_LENGTH),
+        "--output-format",
+        "json",
+    ]
     _, out = run(command)
     findings = json.loads(out)
     by_code = {}
@@ -55,15 +87,24 @@ def measure_ruff(tools):
     other = {code: count for code, count in by_code.items() if code != "E501"}
     _, formatted = run([binary, "format", "--check", *CODE, "tests", "--line-length", str(LINE_LENGTH)])
     match = re.search(r"(\d+) files? would be reformatted, (\d+) files? already formatted", formatted)
-    return {"orden": " ".join(command[:-2]), "version": run([binary, "--version"])[1].strip(),
-            "errores": len(findings), "por_codigo": by_code, "errores_sin_largo_de_linea": sum(other.values()),
-            "formato": {"orden": f"ruff format --check {' '.join(CODE)} tests --line-length {LINE_LENGTH}",
-                        "por_reformatear": int(match.group(1)) if match else None,
-                        "ya_formateados": int(match.group(2)) if match else None}}
+    return {
+        "orden": " ".join(command[:-2]),
+        "version": run([binary, "--version"])[1].strip(),
+        "errores": len(findings),
+        "por_codigo": by_code,
+        "errores_sin_largo_de_linea": sum(other.values()),
+        "formato": {
+            "orden": f"ruff format --check {' '.join(CODE)} tests --line-length {LINE_LENGTH}",
+            "por_reformatear": int(match.group(1)) if match else None,
+            "ya_formateados": int(match.group(2)) if match else None,
+        },
+    }
 
 
 def python_files():
-    return [path for folder in CODE for path in sorted((ROOT / folder).rglob("*.py")) if "__pycache__" not in path.parts]
+    return [
+        path for folder in CODE for path in sorted((ROOT / folder).rglob("*.py")) if "__pycache__" not in path.parts
+    ]
 
 
 def measure_functions():
@@ -80,26 +121,60 @@ def measure_functions():
                 if length > longest[0]:
                     longest = (length, name)
                 args = node.args
-                count = len(args.args) + len(args.kwonlyargs) - (1 if args.args and args.args[0].arg in ("self", "cls") else 0)
+                count = (
+                    len(args.args)
+                    + len(args.kwonlyargs)
+                    - (1 if args.args and args.args[0].arg in ("self", "cls") else 0)
+                )
                 if count > MAX_PARAMETERS:
                     many.append((count, name))
     lines = sum(len(path.read_text(encoding="utf-8").splitlines()) for path in python_files())
-    return {"funciones": total, "lineas_de_codigo": lines, "mas_de_50_lineas": len(long), "mas_largas": sorted(long, reverse=True)[:5],
-            "mas_de_5_parametros": len(many), "mas_parametros": sorted(many, reverse=True)[:5], "mas_larga": longest}
+    return {
+        "funciones": total,
+        "lineas_de_codigo": lines,
+        "mas_de_50_lineas": len(long),
+        "mas_largas": sorted(long, reverse=True)[:5],
+        "mas_de_5_parametros": len(many),
+        "mas_parametros": sorted(many, reverse=True)[:5],
+        "mas_larga": longest,
+    }
 
 
 def measure_complexity(tools):
     binary, radon = tool(tools, "ruff"), tool(tools, "radon")
     result = {}
     if binary:
-        command = [binary, "check", *CODE, "--select", "C901", "--config", f"lint.mccabe.max-complexity={MAX_COMPLEXITY}",
-                   "--output-format", "json"]
+        command = [
+            binary,
+            "check",
+            *CODE,
+            "--select",
+            "C901",
+            "--config",
+            f"lint.mccabe.max-complexity={MAX_COMPLEXITY}",
+            "--output-format",
+            "json",
+        ]
         _, out = run(command)
         over = json.loads(out)
-        worst = sorted(((int(re.search(r"\((\d+) >", item["message"]).group(1)), item["filename"].replace(str(ROOT) + "/", ""),
-                         re.search(r"`(\w+)`", item["message"]).group(1)) for item in over), reverse=True)
-        result.update({"orden": "ruff check bi etl agent --select C901 --config lint.mccabe.max-complexity=10",
-                       "funciones_sobre_10": len(over), "mas_complejas": worst[:5]})
+        worst = sorted(
+            (
+                (
+                    int(re.search(r"\((\d+) >", item["message"]).group(1)),
+                    item["filename"].replace(str(ROOT) + "/", ""),
+                    re.search(r"`(\w+)`", item["message"]).group(1),
+                )
+                for item in over
+            ),
+            reverse=True,
+        )
+        result.update(
+            {
+                "orden": "ruff check bi etl agent --select C901 --config lint.mccabe.max-complexity=10",
+                "funciones_sobre_10": len(over),
+                "mas_complejas": worst[:5],
+            }
+        )
     else:
         result["estado"] = NOT_VERIFIED
     if radon:
@@ -114,10 +189,18 @@ def measure_dead_code(tools):
     if not binary:
         return {"estado": NOT_VERIFIED}
     _, out = run([binary, *CODE, "--min-confidence", "60"])
-    functions = [line.split("unused function ")[1].split(" ")[0].strip("'") for line in out.splitlines() if "unused function" in line]
+    functions = [
+        line.split("unused function ")[1].split(" ")[0].strip("'")
+        for line in out.splitlines()
+        if "unused function" in line
+    ]
     variables = sum(1 for line in out.splitlines() if "unused variable" in line or "unused attribute" in line)
-    return {"orden": "vulture bi etl agent --min-confidence 60", "version": run([binary, "--version"])[1].strip(),
-            "funciones_sin_uso": functions, "variables_o_atributos_sin_uso": variables}
+    return {
+        "orden": "vulture bi etl agent --min-confidence 60",
+        "version": run([binary, "--version"])[1].strip(),
+        "funciones_sin_uso": functions,
+        "variables_o_atributos_sin_uso": variables,
+    }
 
 
 def measure_mypy(tools):
@@ -139,16 +222,31 @@ def measure_mypy(tools):
             if isinstance(node, ast.FunctionDef):
                 typed += 1
                 annotated += 1 if node.returns is not None else 0
-    return {"orden": "mypy " + " ".join(TYPED_MODULES) + " --ignore-missing-imports --follow-imports=silent",
-            "version": run([binary, "--version"])[1].strip(), "modulos": len(TYPED_MODULES), "errores": len(errors),
-            "errores_revisando_cuerpos_sin_tipos": len(deep_errors), "por_modulo": per_module, "funciones": typed, "con_tipo_de_retorno": annotated}
+    return {
+        "orden": "mypy " + " ".join(TYPED_MODULES) + " --ignore-missing-imports --follow-imports=silent",
+        "version": run([binary, "--version"])[1].strip(),
+        "modulos": len(TYPED_MODULES),
+        "errores": len(errors),
+        "errores_revisando_cuerpos_sin_tipos": len(deep_errors),
+        "por_modulo": per_module,
+        "funciones": typed,
+        "con_tipo_de_retorno": annotated,
+    }
 
 
 def measure_coverage(python):
     with tempfile.TemporaryDirectory() as folder:
         report = Path(folder) / "coverage.json"
-        command = [python, "-m", "pytest", "-q", "-p", "no:cacheprovider", *[f"--cov={name}" for name in CODE],
-                   f"--cov-report=json:{report}"]
+        command = [
+            python,
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            *[f"--cov={name}" for name in CODE],
+            f"--cov-report=json:{report}",
+        ]
         code, out = run(command)
         if not report.exists():
             return {"estado": NOT_VERIFIED, "motivo": "pytest-cov no está instalado en el entorno del proyecto"}
@@ -157,11 +255,17 @@ def measure_coverage(python):
     covered = sum(files[name]["summary"]["covered_lines"] for name in CRITICAL_MODULES if name in files)
     statements = sum(files[name]["summary"]["num_statements"] for name in CRITICAL_MODULES if name in files)
     match = re.search(r"(\d+) passed(?:, (\d+) skipped)?", out)
-    return {"orden": "pytest -q " + " ".join(f"--cov={name}" for name in CODE), "pruebas_ok": int(match.group(1)) if match else None,
-            "pruebas_omitidas": int(match.group(2) or 0) if match else None, "salida": code,
-            "total": round(data["totals"]["percent_covered"], 1),
-            "logica_critica": round(covered / statements * 100, 1) if statements else None,
-            "modulos_criticos": {name: round(files[name]["summary"]["percent_covered"], 1) for name in CRITICAL_MODULES if name in files}}
+    return {
+        "orden": "pytest -q " + " ".join(f"--cov={name}" for name in CODE),
+        "pruebas_ok": int(match.group(1)) if match else None,
+        "pruebas_omitidas": int(match.group(2) or 0) if match else None,
+        "salida": code,
+        "total": round(data["totals"]["percent_covered"], 1),
+        "logica_critica": round(covered / statements * 100, 1) if statements else None,
+        "modulos_criticos": {
+            name: round(files[name]["summary"]["percent_covered"], 1) for name in CRITICAL_MODULES if name in files
+        },
+    }
 
 
 def measure_bandit(tools):
@@ -169,14 +273,20 @@ def measure_bandit(tools):
     if not binary:
         return {"estado": NOT_VERIFIED}
     _, out = run([binary, "-r", *CODE, "-f", "json", "-q"])
-    data = json.loads(out[out.index("{"):])
+    data = json.loads(out[out.index("{") :])
     counts = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
     kinds = {}
     for item in data["results"]:
         counts[item["issue_severity"]] += 1
         kinds[item["test_id"]] = kinds.get(item["test_id"], 0) + 1
-    return {"orden": "bandit -r bi etl agent", "version": run([binary, "--version"])[1].splitlines()[0].strip(),
-            "alta": counts["HIGH"], "media": counts["MEDIUM"], "baja": counts["LOW"], "por_regla": kinds}
+    return {
+        "orden": "bandit -r bi etl agent",
+        "version": run([binary, "--version"])[1].splitlines()[0].strip(),
+        "alta": counts["HIGH"],
+        "media": counts["MEDIUM"],
+        "baja": counts["LOW"],
+        "por_regla": kinds,
+    }
 
 
 def measure_audit(tools):
@@ -192,11 +302,20 @@ def measure_audit(tools):
         elif advisories:
             result[name] = {"vulnerabilidades": advisories}
         else:
-            result[name] = {"estado": NOT_VERIFIED, "motivo": "las dependencias no se pueden resolver con este Python (dbt pide 3.11 o 3.12)"}
-    return {"orden": "pip-audit -r <requirements>", "version": run([binary, "--version"])[1].strip(), "archivos": result}
+            result[name] = {
+                "estado": NOT_VERIFIED,
+                "motivo": "las dependencias no se pueden resolver con este Python (dbt pide 3.11 o 3.12)",
+            }
+    return {
+        "orden": "pip-audit -r <requirements>",
+        "version": run([binary, "--version"])[1].strip(),
+        "archivos": result,
+    }
 
 
-SECRET_NAME = re.compile(r'(SECRET|TOKEN|CODE)[A-Z_]*\s*=\s*"[A-Z_]+"|secretos|st\.secrets|"Secrets"|FAKE', re.IGNORECASE)
+SECRET_NAME = re.compile(
+    r'(SECRET|TOKEN|CODE)[A-Z_]*\s*=\s*"[A-Z_]+"|secretos|st\.secrets|"Secrets"|FAKE', re.IGNORECASE
+)
 
 
 def classify_secret_candidates(results):
@@ -221,28 +340,56 @@ def measure_secrets(tools):
     if not binary:
         return {"estado": NOT_VERIFIED}
     _, tracked = run(["git", "ls-files"])
-    files = [name for name in tracked.split() if not name.endswith((".png", ".jpg", ".pem", ".svg")) and (ROOT / name).is_file()]
+    files = [
+        name
+        for name in tracked.split()
+        if not name.endswith((".png", ".jpg", ".pem", ".svg")) and (ROOT / name).is_file()
+    ]
     _, out = run([binary, "scan", *files])
-    results = json.loads(out[out.index("{"):])["results"]
+    results = json.loads(out[out.index("{") :])["results"]
     hits = {name: [item["type"] for item in items] for name, items in results.items()}
     reviewed = classify_secret_candidates(results)
-    _, history = run(["git", "log", "--all", "-p", "-G", r"(ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY)",
-                      "--oneline", "--", "bi", "etl", "agent", ".github"])
-    return {"orden": "detect-secrets scan $(git ls-files)", "version": run([binary, "--version"])[1].strip(),
-            "archivos_revisados": len(files), "candidatos": sum(len(items) for items in hits.values()), "por_archivo": hits,
-            "falsos_positivos": reviewed["falsos_positivos"], "sin_clasificar": reviewed["sin_clasificar"],
-            "historial_con_patrones_de_claves": len([line for line in history.splitlines() if re.match(r"^[0-9a-f]{7,} ", line)]),
-            "nota": "gitleaks no está instalado en este equipo; se usó detect-secrets y una búsqueda de patrones en el historial"}
+    _, history = run(
+        [
+            "git",
+            "log",
+            "--all",
+            "-p",
+            "-G",
+            r"(ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY)",
+            "--oneline",
+            "--",
+            "bi",
+            "etl",
+            "agent",
+            ".github",
+        ]
+    )
+    return {
+        "orden": "detect-secrets scan $(git ls-files)",
+        "version": run([binary, "--version"])[1].strip(),
+        "archivos_revisados": len(files),
+        "candidatos": sum(len(items) for items in hits.values()),
+        "por_archivo": hits,
+        "falsos_positivos": reviewed["falsos_positivos"],
+        "sin_clasificar": reviewed["sin_clasificar"],
+        "historial_con_patrones_de_claves": len(
+            [line for line in history.splitlines() if re.match(r"^[0-9a-f]{7,} ", line)]
+        ),
+        "nota": "gitleaks no está instalado en este equipo; se usó detect-secrets y una búsqueda de patrones en el historial",
+    }
 
 
 def measure_sql(tools):
     binary = tool(tools, "sqlfluff")
     if not binary:
         return {"estado": NOT_VERIFIED}
-    config = ("[sqlfluff]\ndialect = duckdb\ntemplater = jinja\nmax_line_length = 120\n"
-              "[sqlfluff:templater:jinja:macros]\nref = {% macro ref(name) %}{{ name }}{% endmacro %}\n"
-              "source = {% macro source(group, name) %}{{ group }}_{{ name }}{% endmacro %}\n"
-              "config = {% macro config() %}{% endmacro %}\n")
+    config = (
+        "[sqlfluff]\ndialect = duckdb\ntemplater = jinja\nmax_line_length = 120\n"
+        "[sqlfluff:templater:jinja:macros]\nref = {% macro ref(name) %}{{ name }}{% endmacro %}\n"
+        "source = {% macro source(group, name) %}{{ group }}_{{ name }}{% endmacro %}\n"
+        "config = {% macro config() %}{% endmacro %}\n"
+    )
     result = {"orden": "sqlfluff lint <ruta> --dialect duckdb", "version": run([binary, "--version"])[1].strip()}
     with tempfile.TemporaryDirectory() as folder:
         path = Path(folder) / ".sqlfluff"
@@ -250,7 +397,7 @@ def measure_sql(tools):
         for label, target in (("bi/queries.sql", "bi/queries.sql"), ("dbt/models", "dbt/models")):
             code, out = run([binary, "lint", target, "--config", str(path), "-f", "json"])
             try:
-                data = json.loads(out[out.index("["):])
+                data = json.loads(out[out.index("[") :])
             except ValueError:
                 result[label] = {"estado": NOT_VERIFIED, "salida": out.strip()[-200:]}
                 continue
@@ -259,24 +406,34 @@ def measure_sql(tools):
             for item in data:
                 for violation in item["violations"]:
                     by_code[violation["code"]] = by_code.get(violation["code"], 0) + 1
-            result[label] = {"archivos": len(data), "violaciones": violations,
-                             "principales": dict(sorted(by_code.items(), key=lambda pair: -pair[1])[:5])}
+            result[label] = {
+                "archivos": len(data),
+                "violaciones": violations,
+                "principales": dict(sorted(by_code.items(), key=lambda pair: -pair[1])[:5]),
+            }
     return result
 
 
 def measure_dbt():
-    models = {layer: len(list((ROOT / "dbt" / "models" / layer).rglob("*.sql"))) for layer in ("staging", "intermediate", "marts")}
+    models = {
+        layer: len(list((ROOT / "dbt" / "models" / layer).rglob("*.sql")))
+        for layer in ("staging", "intermediate", "marts")
+    }
     result = {"modelos_por_capa": models, "pruebas_sql_propias": len(list((ROOT / "dbt" / "tests").rglob("*.sql")))}
     database = ROOT / "etl" / "datos.duckdb"
     if not database.exists():
         return {**result, "ultima_construccion": NOT_VERIFIED}
     import duckdb
+
     connection = duckdb.connect(str(database), read_only=True)
     try:
         status = dict(connection.execute("SELECT status, count(*) FROM dbt_result GROUP BY status").fetchall())
         tests = {name: count for name, count in status.items() if name != "success"}
-        result["ultima_construccion"] = {"modelos_ok": int(status.get("success", 0)), "pruebas_ok": int(tests.get("pass", 0)),
-                                         "pruebas_total": int(sum(tests.values()))}
+        result["ultima_construccion"] = {
+            "modelos_ok": int(status.get("success", 0)),
+            "pruebas_ok": int(tests.get("pass", 0)),
+            "pruebas_total": int(sum(tests.values())),
+        }
     finally:
         connection.close()
     return result
@@ -286,13 +443,17 @@ def measure_dora():
     """Delivery metrics from the GitHub Actions history (public, without a key: 60 requests an hour), and from the loads the
     served database records. What GitHub does not answer stays «no verificado»."""
     import urllib.request
+
     result = {"cargas_registradas": None}
     database = ROOT / "etl" / "datos.duckdb"
     if database.exists():
         import duckdb
+
         connection = duckdb.connect(str(database), read_only=True)
         try:
-            first, last, count = connection.execute("SELECT min(started_at), max(started_at), count(*) FROM etl_run").fetchone()
+            first, last, count = connection.execute(
+                "SELECT min(started_at), max(started_at), count(*) FROM etl_run"
+            ).fetchone()
             result.update({"cargas_registradas": int(count), "primera": str(first)[:10], "ultima": str(last)[:10]})
         finally:
             connection.close()
@@ -300,13 +461,18 @@ def measure_dora():
     for workflow in ("semanal", "pruebas"):
         url = f"https://api.github.com/repos/{repository}/actions/workflows/{workflow}.yml/runs?per_page=100"
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "greenocean-quality"}), timeout=20) as answer:
+            with urllib.request.urlopen(
+                urllib.request.Request(url, headers={"User-Agent": "greenocean-quality"}), timeout=20
+            ) as answer:
                 runs = json.loads(answer.read())["workflow_runs"]
         except Exception as error:  # rate limit, renamed repository, no network
             result[workflow] = {"estado": NOT_VERIFIED, "motivo": str(error)[:80]}
             continue
         done = [run_ for run_ in runs if run_["conclusion"] in ("success", "failure")]
-        result[workflow] = {"ejecuciones": len(done), "fallidas": sum(1 for run_ in done if run_["conclusion"] == "failure")}
+        result[workflow] = {
+            "ejecuciones": len(done),
+            "fallidas": sum(1 for run_ in done if run_["conclusion"] == "failure"),
+        }
     return result
 
 
@@ -315,10 +481,30 @@ def measure_process():
     subjects = log.splitlines()
     conventional = re.compile(r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?!?: ")
     workflows = {path.name: path.read_text(encoding="utf-8") for path in (ROOT / ".github" / "workflows").glob("*.yml")}
-    steps = {name: [tool for tool in ("pytest", "ruff", "mypy", "bandit", "pip-audit", "sqlfluff", "dbt parse", "dbt build", "gitleaks") if tool in text]
-             for name, text in workflows.items()}
-    return {"commits": len(subjects), "conventional_commits": sum(1 for subject in subjects if conventional.match(subject)),
-            "pre_commit_configurado": (ROOT / ".pre-commit-config.yaml").exists(), "ci": steps}
+    steps = {
+        name: [
+            tool
+            for tool in (
+                "pytest",
+                "ruff",
+                "mypy",
+                "bandit",
+                "pip-audit",
+                "sqlfluff",
+                "dbt parse",
+                "dbt build",
+                "gitleaks",
+            )
+            if tool in text
+        ]
+        for name, text in workflows.items()
+    }
+    return {
+        "commits": len(subjects),
+        "conventional_commits": sum(1 for subject in subjects if conventional.match(subject)),
+        "pre_commit_configurado": (ROOT / ".pre-commit-config.yaml").exists(),
+        "ci": steps,
+    }
 
 
 def measure_data(python):
@@ -350,14 +536,18 @@ print(json.dumps({"semana": str(weeks[-1])[:10], "precios_semana": int(len(now))
 """
     status, out = run([python, "-c", code])
     try:
-        return {"orden": "python scripts/medir_calidad.py (función measure_data)", **json.loads(out.strip().splitlines()[-1])}
+        return {
+            "orden": "python scripts/medir_calidad.py (función measure_data)",
+            **json.loads(out.strip().splitlines()[-1]),
+        }
     except (ValueError, IndexError):
         return {"estado": NOT_VERIFIED, "salida": out[-300:]}
 
 
 def measure_queries(python, repeats=3):
     """How long each named query of bi/queries.sql takes on the served database, the median of three runs, in seconds."""
-    code = r"""
+    code = (
+        r"""
 import json, time, statistics
 from bi import queries
 times = {}
@@ -367,22 +557,31 @@ for name in queries.load_queries():
         start = time.perf_counter(); queries.run_query(name); runs.append(time.perf_counter() - start)
     times[name] = round(statistics.median(runs), 3)
 print(json.dumps(times))
-""" % repeats
+"""
+        % repeats
+    )
     _, out = run([python, "-c", code])
     try:
         times = json.loads(out.strip().splitlines()[-1])
     except (ValueError, IndexError):
         return {"estado": NOT_VERIFIED, "salida": out[-300:]}
-    return {"orden": "mediana de 3 ejecuciones de cada consulta de bi/queries.sql", "consultas": times,
-            "mas_lenta": max(times.items(), key=lambda pair: pair[1])}
+    return {
+        "orden": "mediana de 3 ejecuciones de cada consulta de bi/queries.sql",
+        "consultas": times,
+        "mas_lenta": max(times.items(), key=lambda pair: pair[1]),
+    }
 
 
 def summarize_browsers(data):
     pages = data["pages"]
-    return {"orden": "node tests/medicion/calidad.cjs http://localhost:8599", "paginas": pages,
-            "pagina_mas_lenta": max(((name, page["seconds"]) for name, page in pages.items()), key=lambda pair: pair[1]),
-            "violaciones_wcag": sum(page["violations"] for page in pages.values()),
-            "nodos_wcag": sum(page["nodes"] for page in pages.values()), "navegadores": data["browsers"]}
+    return {
+        "orden": "node tests/medicion/calidad.cjs http://localhost:8599",
+        "paginas": pages,
+        "pagina_mas_lenta": max(((name, page["seconds"]) for name, page in pages.items()), key=lambda pair: pair[1]),
+        "violaciones_wcag": sum(page["violations"] for page in pages.values()),
+        "nodos_wcag": sum(page["nodes"] for page in pages.values()),
+        "navegadores": data["browsers"],
+    }
 
 
 def measure_browsers(python, node_path, port=8599, saved=""):
@@ -391,12 +590,25 @@ def measure_browsers(python, node_path, port=8599, saved=""):
     import os
     import time
     import urllib.request
+
     if saved:
         return summarize_browsers(json.loads(Path(saved).read_text(encoding="utf-8")))
     if not node_path:
         return {"estado": NOT_VERIFIED, "motivo": "sin --node-path con playwright y axe-core"}
-    server = subprocess.Popen([str(Path(python).parent / "streamlit"), "run", "bi/dashboard.py", "--server.port", str(port),
-                               "--server.headless", "true"], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    server = subprocess.Popen(
+        [
+            str(Path(python).parent / "streamlit"),
+            "run",
+            "bi/dashboard.py",
+            "--server.port",
+            str(port),
+            "--server.headless",
+            "true",
+        ],
+        cwd=ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     try:
         for _ in range(60):
             try:
@@ -404,8 +616,13 @@ def measure_browsers(python, node_path, port=8599, saved=""):
                 break
             except Exception:
                 time.sleep(1)
-        done = subprocess.run(["node", "tests/medicion/calidad.cjs", f"http://localhost:{port}"], cwd=ROOT, capture_output=True,
-                              text=True, env={**os.environ, "NODE_PATH": node_path})
+        done = subprocess.run(
+            ["node", "tests/medicion/calidad.cjs", f"http://localhost:{port}"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "NODE_PATH": node_path},
+        )
     finally:
         server.terminate()
     try:
@@ -418,8 +635,10 @@ def measure_browsers(python, node_path, port=8599, saved=""):
 def count_adr():
     text = (ROOT / "docs" / "ADR.md").read_text(encoding="utf-8")
     decisions = (ROOT / "docs" / "DECISIONES.md").read_text(encoding="utf-8")
-    return {"adr": len(set(re.findall(r"^#{2,3} ADR-(\d+)", text, re.MULTILINE))),
-            "decisiones": len(re.findall(r"^## D-\d+", decisions, re.MULTILINE))}
+    return {
+        "adr": len(set(re.findall(r"^#{2,3} ADR-(\d+)", text, re.MULTILINE))),
+        "decisiones": len(re.findall(r"^## D-\d+", decisions, re.MULTILINE)),
+    }
 
 
 def measure_tests(python):
@@ -432,24 +651,48 @@ def measure_tests(python):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tools", required=True, help="bin folder of the virtual environment with ruff, mypy, bandit, ...")
+    parser.add_argument(
+        "--tools", required=True, help="bin folder of the virtual environment with ruff, mypy, bandit, ..."
+    )
     parser.add_argument("--python", default=str(ROOT / ".venv" / "bin" / "python"), help="the project's own Python")
-    parser.add_argument("--node-path", default="", help="NODE_PATH with playwright and axe-core, for the browser checks")
+    parser.add_argument(
+        "--node-path", default="", help="NODE_PATH with playwright and axe-core, for the browser checks"
+    )
     parser.add_argument("--output", default=str(OUTPUT), help="where to write the JSON")
-    parser.add_argument("--browsers-from", default="", help="reuse the output of tests/medicion/calidad.cjs instead of running it")
+    parser.add_argument(
+        "--browsers-from", default="", help="reuse the output of tests/medicion/calidad.cjs instead of running it"
+    )
     arguments = parser.parse_args()
     _, commit = run(["git", "rev-parse", "--short", "HEAD"])
-    report = {"generado": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"), "commit": commit.strip(),
-              "python": sys.version.split()[0], "limites": {"largo_de_linea": LINE_LENGTH, "complejidad": MAX_COMPLEXITY,
-                                                           "lineas_por_funcion": MAX_FUNCTION_LINES, "parametros": MAX_PARAMETERS},
-              "ruff": measure_ruff(arguments.tools), "funciones": measure_functions(), "complejidad": measure_complexity(arguments.tools),
-              "codigo_muerto": measure_dead_code(arguments.tools), "mypy": measure_mypy(arguments.tools),
-              "cobertura": measure_coverage(arguments.python), "bandit": measure_bandit(arguments.tools),
-              "pip_audit": measure_audit(arguments.tools), "secretos": measure_secrets(arguments.tools),
-              "sql": measure_sql(arguments.tools), "dbt": measure_dbt(), "proceso": measure_process(),
-              "pruebas": measure_tests(arguments.python), "dora": measure_dora(), "adr": count_adr(),
-              "datos": measure_data(arguments.python), "consultas": measure_queries(arguments.python),
-              "navegadores": measure_browsers(arguments.python, arguments.node_path, saved=arguments.browsers_from)}
+    report = {
+        "generado": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "commit": commit.strip(),
+        "python": sys.version.split()[0],
+        "limites": {
+            "largo_de_linea": LINE_LENGTH,
+            "complejidad": MAX_COMPLEXITY,
+            "lineas_por_funcion": MAX_FUNCTION_LINES,
+            "parametros": MAX_PARAMETERS,
+        },
+        "ruff": measure_ruff(arguments.tools),
+        "funciones": measure_functions(),
+        "complejidad": measure_complexity(arguments.tools),
+        "codigo_muerto": measure_dead_code(arguments.tools),
+        "mypy": measure_mypy(arguments.tools),
+        "cobertura": measure_coverage(arguments.python),
+        "bandit": measure_bandit(arguments.tools),
+        "pip_audit": measure_audit(arguments.tools),
+        "secretos": measure_secrets(arguments.tools),
+        "sql": measure_sql(arguments.tools),
+        "dbt": measure_dbt(),
+        "proceso": measure_process(),
+        "pruebas": measure_tests(arguments.python),
+        "dora": measure_dora(),
+        "adr": count_adr(),
+        "datos": measure_data(arguments.python),
+        "consultas": measure_queries(arguments.python),
+        "navegadores": measure_browsers(arguments.python, arguments.node_path, saved=arguments.browsers_from),
+    }
     output = Path(arguments.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

@@ -1,4 +1,5 @@
 """Tests for the pipeline control: schedule, run states and GitHub answers (faked)."""
+
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -8,10 +9,15 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import control  # noqa: E402
 
-GITHUB_RUN = {"id": 38226180308, "status": "completed", "conclusion": "success",
-              "event": "workflow_dispatch", "run_started_at": "2026-10-12T08:51:00Z",
-              "updated_at": "2026-10-12T08:51:57Z",
-              "html_url": "https://github.com/x/y/actions/runs/38226180308"}
+GITHUB_RUN = {
+    "id": 38226180308,
+    "status": "completed",
+    "conclusion": "success",
+    "event": "workflow_dispatch",
+    "run_started_at": "2026-10-12T08:51:00Z",
+    "updated_at": "2026-10-12T08:51:57Z",
+    "html_url": "https://github.com/x/y/actions/runs/38226180308",
+}
 
 
 class FakeResponse:
@@ -27,14 +33,12 @@ class FakeResponse:
 
 def test_next_run_is_the_coming_tuesday_at_noon_utc():
     monday = datetime(2026, 10, 12, 10, 0, tzinfo=timezone.utc)
-    assert control.calculate_next_scheduled_run(monday) == datetime(
-        2026, 10, 13, 12, 0, tzinfo=timezone.utc)
+    assert control.calculate_next_scheduled_run(monday) == datetime(2026, 10, 13, 12, 0, tzinfo=timezone.utc)
 
 
 def test_next_run_after_tuesday_noon_is_the_following_week():
     tuesday_afternoon = datetime(2026, 10, 13, 12, 30, tzinfo=timezone.utc)
-    assert control.calculate_next_scheduled_run(tuesday_afternoon) == datetime(
-        2026, 10, 20, 12, 0, tzinfo=timezone.utc)
+    assert control.calculate_next_scheduled_run(tuesday_afternoon) == datetime(2026, 10, 20, 12, 0, tzinfo=timezone.utc)
 
 
 def test_run_states_are_ok_failed_or_in_progress():
@@ -54,29 +58,32 @@ def test_runs_are_read_from_the_github_api(monkeypatch):
     def fake_get(url, **arguments):
         assert url.endswith("/actions/workflows/semanal.yml/runs")
         return FakeResponse({"workflow_runs": [GITHUB_RUN]})
+
     monkeypatch.setattr(control.requests, "get", fake_get)
     assert [run["id"] for run in control.list_workflow_runs()] == [38226180308]
 
 
 def test_only_known_steps_are_shown_in_spanish():
-    job = {"steps": [
-        {"name": "Set up job", "status": "completed", "conclusion": "success"},
-        {"name": "Download the ODEPA files", "status": "completed", "conclusion": "success"},
-        {"name": "Run the ETL", "status": "in_progress", "conclusion": None},
-        {"name": "Simulate a failure", "status": "completed", "conclusion": "skipped"},
-        {"name": "Save the updated database", "status": "completed",
-         "conclusion": "skipped"}]}
+    job = {
+        "steps": [
+            {"name": "Set up job", "status": "completed", "conclusion": "success"},
+            {"name": "Download the ODEPA files", "status": "completed", "conclusion": "success"},
+            {"name": "Run the ETL", "status": "in_progress", "conclusion": None},
+            {"name": "Simulate a failure", "status": "completed", "conclusion": "skipped"},
+            {"name": "Save the updated database", "status": "completed", "conclusion": "skipped"},
+        ]
+    }
     # Step names copied from a real run of semanal.yml (12-10-2026).
     assert control.simplify_steps(job) == [
         ("Descarga de ODEPA", control.RUN_OK),
         ("Limpieza y reglas de negocio", control.RUN_IN_PROGRESS),
-        ("Guardar la base actualizada", "skipped")]
+        ("Guardar la base actualizada", "skipped"),
+    ]
 
 
 def test_the_manual_run_started_after_the_click_is_found():
     clicked_at = datetime(2026, 10, 12, 8, 50, 50, tzinfo=timezone.utc)
-    older_run = control.simplify_run({**GITHUB_RUN, "id": 1,
-                                      "run_started_at": "2026-10-11T08:00:00Z"})
+    older_run = control.simplify_run({**GITHUB_RUN, "id": 1, "run_started_at": "2026-10-11T08:00:00Z"})
     new_run = control.simplify_run(GITHUB_RUN)
     assert control.find_run_started_after([new_run, older_run], clicked_at) == new_run
     assert control.find_run_started_after([older_run], clicked_at) is None
@@ -88,16 +95,17 @@ def test_the_token_is_only_sent_when_there_is_one():
 
 
 def test_failure_asked_for_on_purpose_is_marked_as_simulated(monkeypatch):
-    simulated_steps = [("Limpieza y reglas de negocio", control.RUN_OK),
-                       ("Falla simulada", control.RUN_FAILED)]
+    simulated_steps = [("Limpieza y reglas de negocio", control.RUN_OK), ("Falla simulada", control.RUN_FAILED)]
     real_failure_steps = [("Limpieza y reglas de negocio", control.RUN_FAILED)]
     assert control.is_simulated_failure(simulated_steps)
     assert not control.is_simulated_failure(real_failure_steps)
     steps_by_run = {1: simulated_steps, 2: real_failure_steps}
-    monkeypatch.setattr(control, "list_run_steps",
-                        lambda run_id, token=None: steps_by_run[run_id])
-    runs = [{"id": 1, "state": control.RUN_FAILED}, {"id": 2, "state": control.RUN_FAILED},
-            {"id": 3, "state": control.RUN_OK}]
+    monkeypatch.setattr(control, "list_run_steps", lambda run_id, token=None: steps_by_run[run_id])
+    runs = [
+        {"id": 1, "state": control.RUN_FAILED},
+        {"id": 2, "state": control.RUN_FAILED},
+        {"id": 3, "state": control.RUN_OK},
+    ]
     states = [run["state"] for run in control.mark_simulated_failures(runs)]
     assert states == [control.RUN_SIMULATED_FAILURE, control.RUN_FAILED, control.RUN_OK]
 
@@ -114,16 +122,17 @@ def make_http_error(status_code, headers=None):
 def test_github_error_says_the_real_cause_with_its_code():
     now = datetime(2026, 10, 12, 22, 0, tzinfo=timezone.utc)
     reset = int(datetime(2026, 10, 12, 22, 23, tzinfo=timezone.utc).timestamp())
-    rate_limit = make_http_error(403, {"X-RateLimit-Remaining": "0", "X-RateLimit-Limit": "60",
-                                       "X-RateLimit-Reset": str(reset)})
+    rate_limit = make_http_error(
+        403, {"X-RateLimit-Remaining": "0", "X-RateLimit-Limit": "60", "X-RateLimit-Reset": str(reset)}
+    )
     assert control.describe_github_error(rate_limit, now) == (
-        "GitHub respondió 403: se agotó el límite de consultas sin clave (60 por hora); "
-        "se renueva en 23 min")
+        "GitHub respondió 403: se agotó el límite de consultas sin clave (60 por hora); se renueva en 23 min"
+    )
     assert control.describe_github_error(make_http_error(401)) == (
-        "GitHub respondió 401: la clave no es válida o venció")
+        "GitHub respondió 401: la clave no es válida o venció"
+    )
     assert control.describe_github_error(requests.Timeout()) == "GitHub no respondió en 10 s"
-    assert control.describe_github_error(requests.ConnectionError()) == (
-        "no hubo conexión con GitHub")
+    assert control.describe_github_error(requests.ConnectionError()) == ("no hubo conexión con GitHub")
 
 
 def test_github_error_never_shows_the_token():
@@ -132,22 +141,19 @@ def test_github_error_never_shows_the_token():
 
 
 def test_github_error_handles_invalid_reset_and_untrusted_reason():
-    error = make_http_error(429, {"X-RateLimit-Remaining": "0",
-                                 "X-RateLimit-Reset": "invalid"})
-    assert control.describe_github_error(error) == (
-        "GitHub respondió 429: se agotó el límite de consultas")
+    error = make_http_error(429, {"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": "invalid"})
+    assert control.describe_github_error(error) == ("GitHub respondió 429: se agotó el límite de consultas")
     error = make_http_error(418)
     error.response.reason = "secret-token-123"
-    assert control.describe_github_error(error) == (
-        "GitHub respondió 418: error al consultar GitHub")
+    assert control.describe_github_error(error) == ("GitHub respondió 418: error al consultar GitHub")
 
 
 # region Token expiration (T-54)
 def test_t54_token_expiration_is_read_in_both_formats_github_uses():
-    assert control.parse_token_expiration("2026-12-31 12:00:00 UTC") == datetime(
-        2026, 12, 31, 12, tzinfo=timezone.utc)
+    assert control.parse_token_expiration("2026-12-31 12:00:00 UTC") == datetime(2026, 12, 31, 12, tzinfo=timezone.utc)
     assert control.parse_token_expiration("2026-12-31 09:00:00 -0300") == datetime(
-        2026, 12, 31, 12, tzinfo=timezone.utc)
+        2026, 12, 31, 12, tzinfo=timezone.utc
+    )
     assert control.parse_token_expiration(None) is None
     assert control.parse_token_expiration("not a date") is None
 
@@ -158,8 +164,7 @@ def test_t54_token_warning_is_highlighted_under_14_days():
     assert sentence == "Tu token vence en 40 días (22-11-2026)." and not is_urgent
     assert control.describe_token_expiration(now + timedelta(days=13), now)[1]
     assert control.describe_token_expiration(now - timedelta(days=1), now)[1]
-    assert control.describe_token_expiration(None, now) == (
-        "Tu token no tiene fecha de vencimiento.", False)
+    assert control.describe_token_expiration(None, now) == ("Tu token no tiene fecha de vencimiento.", False)
 
 
 def test_t54_only_the_expiration_date_leaves_the_github_answer(monkeypatch):
@@ -181,6 +186,8 @@ def test_t54_only_the_expiration_date_leaves_the_github_answer(monkeypatch):
     assert seen["authorization"] == f"Bearer {secret}"
     assert expiration == datetime(2026, 12, 31, 12, tzinfo=timezone.utc)
     assert secret not in control.describe_token_expiration(expiration, expiration)[0]
+
+
 # endregion
 
 
@@ -202,9 +209,14 @@ def test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time(
 
 def test_d298_only_a_real_failure_of_the_last_finished_load_raises_the_alert():
     from datetime import datetime, timezone
-    run = lambda state, number: {"id": number, "state": state, "started_at": datetime(2026, 10, 20, tzinfo=timezone.utc)}
+
+    def run(state, number):
+        return {"id": number, "state": state, "started_at": datetime(2026, 10, 20, tzinfo=timezone.utc)}
+
     assert control.latest_load_failure([run(control.RUN_FAILED, 2), run(control.RUN_OK, 1)])["id"] == 2
     assert control.latest_load_failure([run(control.RUN_IN_PROGRESS, 3), run(control.RUN_FAILED, 2)])["id"] == 2
     assert control.latest_load_failure([run(control.RUN_OK, 2), run(control.RUN_FAILED, 1)]) is None
-    assert control.latest_load_failure([run(control.RUN_SIMULATED_FAILURE, 2)]) is None  # a requested test worries nobody
+    assert (
+        control.latest_load_failure([run(control.RUN_SIMULATED_FAILURE, 2)]) is None
+    )  # a requested test worries nobody
     assert control.latest_load_failure([]) is None

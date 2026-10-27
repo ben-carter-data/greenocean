@@ -1,10 +1,10 @@
 """K6: products whose weekly price change is outside their usual range."""
+
 import pandas as pd
 
 # region Constants
 # One price series per product key, channel and unit (national weekly price).
-SERIES_COLUMNS = ["product_group", "product", "variety", "quality", "channel",
-                  "normalized_unit"]
+SERIES_COLUMNS = ["product_group", "product", "variety", "quality", "channel", "normalized_unit"]
 # K6: the usual range comes from the 12 weekly variations before the week judged.
 ALERT_WINDOW_WEEKS = 12
 ALERT_DEVIATIONS = 2
@@ -72,10 +72,14 @@ def is_price_alert(prices):
     """The K6 rule on rows that already carry their usual range: unusual, material
     and resting on at least two quotes in each of the two weeks compared."""
     distance = (prices["variation"] - prices["usual_variation"]).abs()
-    alert = ((distance > ALERT_DEVIATIONS * prices["variation_deviation"])
-             & (prices["variation"].abs() >= ALERT_MINIMUM_CHANGE))
+    alert = (distance > ALERT_DEVIATIONS * prices["variation_deviation"]) & (
+        prices["variation"].abs() >= ALERT_MINIMUM_CHANGE
+    )
     if "same_region_quotes" in prices.columns:
-        alert &= ((prices["same_region_quotes"] >= ALERT_MINIMUM_QUOTES)
-                  & (prices["same_region_previous_quotes"] >= ALERT_MINIMUM_QUOTES))
+        alert &= (prices["same_region_quotes"] >= ALERT_MINIMUM_QUOTES) & (
+            prices["same_region_previous_quotes"] >= ALERT_MINIMUM_QUOTES
+        )
     return alert
+
+
 # endregion

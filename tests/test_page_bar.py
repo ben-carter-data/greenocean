@@ -1,4 +1,5 @@
 """The thin header bar of the main pages (D-267) and the reading of an enlarged family."""
+
 import re
 import sys
 from pathlib import Path
@@ -11,17 +12,28 @@ sys.path.insert(0, str(PROJECT_DIR))
 from bi import charts, dashboard, inflation_view, page_bar, queries  # noqa: E402
 from tests.test_dashboard import DASHBOARD_FILE, draw_page, needs_database  # noqa: E402
 
-MAIN_PAGES = [dashboard.PAGE_SEASONALITY, dashboard.PAGE_DIAGRAMS, dashboard.PAGE_ARCHITECTURE,
-              dashboard.PAGE_OPERATIONS, dashboard.PAGE_SQL, dashboard.PAGE_RUNS, dashboard.PAGE_SECURITY,
-              dashboard.PAGE_STACK]
+MAIN_PAGES = [
+    dashboard.PAGE_SEASONALITY,
+    dashboard.PAGE_DIAGRAMS,
+    dashboard.PAGE_ARCHITECTURE,
+    dashboard.PAGE_OPERATIONS,
+    dashboard.PAGE_SQL,
+    dashboard.PAGE_RUNS,
+    dashboard.PAGE_SECURITY,
+    dashboard.PAGE_STACK,
+]
 
 
 def test_the_title_is_not_said_twice_and_the_whole_path_stays_readable():
     bar = page_bar.build_bar_html("Ingeniería de datos › Modelo de datos", "Modelo de datos", "Cómo se organizan.")
-    assert bar.count("Modelo de datos</") == 1 and 'aria-label="Página actual: Ingeniería de datos › Modelo de datos"' in bar
+    assert (
+        bar.count("Modelo de datos</") == 1
+        and 'aria-label="Página actual: Ingeniería de datos › Modelo de datos"' in bar
+    )
     assert '<span class="page-bar-path">Ingeniería de datos ›</span>' in bar
-    question = page_bar.build_bar_html("Negocio · BI › Precios e inflación", "¿Qué subió?", "La respuesta.",
-                                       [("<b>+1 %</b>", "Uno por ciento")])
+    question = page_bar.build_bar_html(
+        "Negocio · BI › Precios e inflación", "¿Qué subió?", "La respuesta.", [("<b>+1 %</b>", "Uno por ciento")]
+    )
     assert "<b>Precios e inflación</b>" in question and 'title="La respuesta."' in question
     assert '<span class="page-chip" title="Uno por ciento"><b>+1 %</b></span>' in question
 
@@ -61,8 +73,9 @@ def test_d267_inflation_bar_counts_the_answer_and_names_its_kpi_and_metric():
 
 @pytest.fixture(scope="module")
 def inflation():
-    rows, last = inflation_view.build_family_index(queries.run_sql(inflation_view.SERIES_SQL),
-                                                   queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"))
+    rows, last = inflation_view.build_family_index(
+        queries.run_sql(inflation_view.SERIES_SQL), queries.run_sql("SELECT year, month, food_index FROM ipc_monthly")
+    )
     summary, ipc_total, ipc_year = inflation_view.summarize_families(rows, last)
     return rows, last, summary, ipc_total, ipc_year
 
@@ -109,11 +122,14 @@ def test_d267_ampliar_shows_the_chart_beside_its_reading():
 def test_d268_on_a_narrow_window_the_bar_wraps_instead_of_covering_the_title():
     css = page_bar.build_css(charts.get_palette(charts.MODE_DARK))
     assert "flex-wrap:wrap !important" in css and "min-width:min(100%, 240px)" in css
-    assert "@media (max-width:1320px) {{ .page-bar-path {{ display:none; }}".replace("{{", "{").replace("}}", "}") in css
+    assert (
+        "@media (max-width:1320px) {{ .page-bar-path {{ display:none; }}".replace("{{", "{").replace("}}", "}") in css
+    )
 
 
 def test_d268_the_sql_filters_and_status_bar_fit_a_narrow_window():
     from bi import sql_explorer
+
     css = sql_explorer.build_css(charts.get_palette(charts.MODE_DARK))
     assert '.st-key-sqlx_params > [data-testid="stElementContainer"]:has([data-testid="stSelectbox"])' in css
     assert ".sqlx-status span:nth-child(4) { display:none; }" in css

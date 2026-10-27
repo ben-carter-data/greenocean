@@ -1,4 +1,5 @@
 """D-285: «Mapa de la app», the whole system in one view (bi/app_map.py)."""
+
 import re
 from pathlib import Path
 
@@ -55,13 +56,27 @@ def test_d285_every_hover_text_has_its_four_parts_read_from_the_lines():
             assert f"<i>{part}</i>" in tip, (key, part)
         for line in app_map.connections(key):
             assert app_map.esc(line) in tip, (key, line)
-    assert app_map.connections("dbt") == ["→ DuckDB: marts", "← Parquet: fuentes", "← Puertas de calidad: puertas 2 y 3"]
+    assert app_map.connections("dbt") == [
+        "→ DuckDB: marts",
+        "← Parquet: fuentes",
+        "← Puertas de calidad: puertas 2 y 3",
+    ]
 
 
 def test_d285_small_tools_live_in_the_node_of_their_function():
     tools = {tool for node in app_map.NODES.values() for tool, _ in node[8]}
-    for expected in ("requests", "certifi y la raíz emSign", "pyarrow", "dbt-duckdb", "pandas", "hmac.compare_digest",
-                     "Playwright", "pytest", "cron del martes", "caché de Actions"):
+    for expected in (
+        "requests",
+        "certifi y la raíz emSign",
+        "pyarrow",
+        "dbt-duckdb",
+        "pandas",
+        "hmac.compare_digest",
+        "Playwright",
+        "pytest",
+        "cron del martes",
+        "caché de Actions",
+    ):
         assert expected in tools, expected
 
 
@@ -77,7 +92,9 @@ def test_d285_the_map_is_html_with_image_logos_and_a_script_without_html(theme):
     page = app_map.build_map_html(charts.get_palette(theme), {})
     markup, script = page.split("<script>")
     assert "<svg" not in markup  # st.html drops inline SVG: the logos are images
-    assert markup.count('class="am-node"') == len(app_map.NODES) and markup.count("data:image/svg+xml;base64,") == len(app_map.NODES)
+    assert markup.count('class="am-node"') == len(app_map.NODES) and markup.count("data:image/svg+xml;base64,") == len(
+        app_map.NODES
+    )
     assert markup.count('class="am-filter"') == len(app_map.THEMES)
     assert "<" not in script.split("</script>")[0]  # st.html drops a script whose text holds a tag
 
@@ -87,21 +104,29 @@ def test_d285_the_map_sits_next_to_the_stack_and_the_stack_links_to_it():
     assert stack_block == [dashboard.PAGE_STACK, dashboard.PAGE_APP_MAP, dashboard.PAGE_METHOD]
     assert dashboard.PAGE_APP_MAP in dashboard.BAR_VIEWS and dashboard.PAGE_APP_MAP in dashboard.COMPACT_FOOTER_VIEWS
     source = (ROOT / "bi" / "dashboard.py").read_text(encoding="utf-8")
-    stack = source[source.index("def show_stack_page"):source.index("def show_app_map_page")]
-    assert "PAGE_APP_MAP, build_page_address(PAGE_APP_MAP)" in stack
+    stack = source[source.index("def show_stack_page") : source.index("def show_app_map_page")]
+    assert re.search(r"PAGE_APP_MAP,\s*build_page_address\(PAGE_APP_MAP\)", stack)
 
 
 def test_d291_each_filter_lights_every_actor_and_link_of_its_theme():
     """Security is not only the author: the control code goes through Streamlit and its secrets, the token reaches GitHub
     Actions, the repository holds no secret, the database is read-only and the visitor's SQL has limits."""
+
     def lit(theme):
         nodes = {key for key in app_map.NODES if theme in app_map.node_themes(key)}
         links = {(source, target) for source, target, _, _, themes in app_map.LINKS if theme in themes}
         return nodes, links
+
     nodes, links = lit("seguridad")
     assert {"author", "streamlit", "secrets", "actions", "github", "duckdb", "visitor", "security", "ci"} <= nodes
-    assert {("author", "streamlit"), ("streamlit", "secrets"), ("streamlit", "actions"), ("security", "github"),
-            ("security", "actions"), ("security", "duckdb")} <= links
+    assert {
+        ("author", "streamlit"),
+        ("streamlit", "secrets"),
+        ("streamlit", "actions"),
+        ("security", "github"),
+        ("security", "actions"),
+        ("security", "duckdb"),
+    } <= links
     nodes, links = lit("orquestacion")
     assert {"github", "actions", "ci", "agent", "release", "author", "streamlit"} <= nodes
     nodes, _ = lit("calidad")
@@ -118,7 +143,10 @@ def test_d291_without_a_filter_only_the_data_flow_is_drawn_and_each_line_carries
     assert ".am-line {{ fill:none; stroke-width:1.6; opacity:0;".replace("{{", "{") in css
     assert ".am-line.base { opacity:.6; }" in css and ".am[data-filter] .am-line.show" in css
     assert "themes.includes(\"datos\") || themes.includes(\"navegador\")" in app_map.SCRIPT
-    assert 'label.textContent = whats[index];' in app_map.SCRIPT and 'class="am-whats" hidden' in app_map.build_map_html(charts.get_palette(charts.THEMES[0]), {})
+    assert (
+        'label.textContent = whats[index];' in app_map.SCRIPT
+        and 'class="am-whats" hidden' in app_map.build_map_html(charts.get_palette(charts.THEMES[0]), {})
+    )
 
 
 def test_d293_every_line_names_where_it_happens_and_that_code_really_does_it():

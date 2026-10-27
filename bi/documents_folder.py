@@ -4,6 +4,7 @@ Each file shows its standard name, one line of content, its version and date (re
 itself), its reading time and three actions: Abrir, PDF (the printed page, D-248) and GitHub. On hover, a preview with
 the document's index. The page draws itself as HTML; its links are the component of bi/buttons.py.
 """
+
 import html
 import math
 import re
@@ -16,8 +17,13 @@ WORDS_PER_MINUTE = 200
 PREVIEW_ENTRIES = 9
 # The family of each document gives the color of its file: product, architecture, quality and security, operation and
 # reference.
-FAMILY_COLORS = {"producto": "#3b82f6", "arquitectura": "#8b5cf6", "calidad": "#10b981", "operacion": "#f59e0b",
-                 "referencia": "#64748b"}
+FAMILY_COLORS = {
+    "producto": "#3b82f6",
+    "arquitectura": "#8b5cf6",
+    "calidad": "#10b981",
+    "operacion": "#f59e0b",
+    "referencia": "#64748b",
+}
 HEADER_ROW = re.compile(r"^\| ([^|]+?) \| (.+?) \|$", re.MULTILINE)
 INDEX_HEADINGS = tuple(f"## {fields['index']}" for fields in i18n.DOCUMENT_FIELDS.values())
 
@@ -28,7 +34,11 @@ def esc(value):
 
 def read_header(text):
     """{field: value} of the header table, the table above the first «## » heading."""
-    return {field: value for field, value in HEADER_ROW.findall(text.split("\n## ", 1)[0]) if field not in ("Campo", "Field")}
+    return {
+        field: value
+        for field, value in HEADER_ROW.findall(text.split("\n## ", 1)[0])
+        if field not in ("Campo", "Field")
+    }
 
 
 def read_title(text):
@@ -42,9 +52,10 @@ def read_index(text):
         return []
     body = text.split(heading, 1)[1].split("\n## ", 1)[0]
     # A numbered list, or a table whose first column links to each record (the ADR).
-    return (re.findall(r"^\d+\. \[([^\]]+)\]", body, re.MULTILINE)
-            or [f"{code} · {title.strip()}" for code, title in
-                re.findall(r"^\| \[([^\]]+)\]\([^)]*\) \| ([^|]+) \|", body, re.MULTILINE)])
+    return re.findall(r"^\d+\. \[([^\]]+)\]", body, re.MULTILINE) or [
+        f"{code} · {title.strip()}"
+        for code, title in re.findall(r"^\| \[([^\]]+)\]\([^)]*\) \| ([^|]+) \|", body, re.MULTILINE)
+    ]
 
 
 def reading_minutes(text):
@@ -54,10 +65,18 @@ def reading_minutes(text):
 def describe(text):
     """What the folder shows of one document, all of it read from the file."""
     header = read_header(text)
-    field = {name: next((header[fields[name]] for fields in i18n.DOCUMENT_FIELDS.values() if fields[name] in header), "")
-             for name in ("purpose", "version", "date")}
-    return {"name": read_title(text), "purpose": field["purpose"], "version": field["version"], "date": field["date"],
-            "minutes": reading_minutes(text), "index": read_index(text)}
+    field = {
+        name: next((header[fields[name]] for fields in i18n.DOCUMENT_FIELDS.values() if fields[name] in header), "")
+        for name in ("purpose", "version", "date")
+    }
+    return {
+        "name": read_title(text),
+        "purpose": field["purpose"],
+        "version": field["version"],
+        "date": field["date"],
+        "minutes": reading_minutes(text),
+        "index": read_index(text),
+    }
 
 
 def sortable(day):
@@ -83,39 +102,69 @@ def build_preview(file):
 
 
 def build_actions(file):
-    return ('<span class="df-actions">'
-            + buttons.build_link_html(tr("Abrir"), file["open"], variant="primary", size="compact")
-            + buttons.build_link_html("PDF", file["pdf"], icon="print", size="compact",
-                                      note=tr("Abre el documento y lo imprime o guarda como PDF"))
-            + buttons.build_link_html("GitHub", file["github"], icon="github", variant="text", size="compact",
-                                      external=True, note=tr("El archivo en GitHub"))
-            + "</span>")
+    return (
+        '<span class="df-actions">'
+        + buttons.build_link_html(tr("Abrir"), file["open"], variant="primary", size="compact")
+        + buttons.build_link_html(
+            "PDF",
+            file["pdf"],
+            icon="print",
+            size="compact",
+            note=tr("Abre el documento y lo imprime o guarda como PDF"),
+        )
+        + buttons.build_link_html(
+            "GitHub",
+            file["github"],
+            icon="github",
+            variant="text",
+            size="compact",
+            external=True,
+            note=tr("El archivo en GitHub"),
+        )
+        + "</span>"
+    )
 
 
 def build_meta(file):
-    return (f'<span class="df-meta"><span>v{esc(file["version"])}</span><span>{esc(file["date"])}</span>'
-            f'<span>{file["minutes"]} min</span></span>')
+    return (
+        f'<span class="df-meta"><span>v{esc(file["version"])}</span><span>{esc(file["date"])}</span>'
+        f'<span>{file["minutes"]} min</span></span>'
+    )
 
 
 def build_file(file):
-    return (f'<div class="df-file" data-family="{esc(file["family"])}">'
-            f'<a class="df-body" href="{esc(file["open"])}" target="_self" title="{file["minutes"]} {tr("min de lectura")}">'
-            f'<span class="df-top">{build_file_glyph(FAMILY_COLORS[file["family"]])}<b class="df-name">{esc(file["name"])}</b></span>'
-            f'<span class="df-purpose">{esc(file["purpose"])}</span>{build_preview(file)}</a>'
-            f'{build_meta(file)}{build_actions(file)}</div>')
+    return (
+        f'<div class="df-file" data-family="{esc(file["family"])}">'
+        f'<a class="df-body" href="{esc(file["open"])}" target="_self" title="{file["minutes"]} {tr("min de lectura")}">'
+        f'<span class="df-top">{build_file_glyph(FAMILY_COLORS[file["family"]])}<b class="df-name">{esc(file["name"])}</b></span>'
+        f'<span class="df-purpose">{esc(file["purpose"])}</span>{build_preview(file)}</a>'
+        f'{build_meta(file)}{build_actions(file)}</div>'
+    )
 
 
 def build_folder_html(files, view):
     """The folder: its path, how many documents and the last change, then the files in the chosen view."""
     kind = "df-grid" if view == VIEW_GRID else "df-list"
-    head = (f'<div class="df-head"><span class="df-path">GreenOcean <i>/</i> <b>docs</b></span>'
-            f'<span class="df-count">{len(files)} {tr("documentos · último cambio")} {esc(latest_date(files))}</span></div>')
-    return f'<div class="df-folder">{head}<div class="{kind}">' + "".join(build_file(file) for file in files) + "</div></div>"
+    head = (
+        f'<div class="df-head"><span class="df-path">GreenOcean <i>/</i> <b>docs</b></span>'
+        f'<span class="df-count">{len(files)} {tr("documentos · último cambio")} {esc(latest_date(files))}</span></div>'
+    )
+    return (
+        f'<div class="df-folder">{head}<div class="{kind}">'
+        + "".join(build_file(file) for file in files)
+        + "</div></div>"
+    )
 
 
 def build_css(palette):
-    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
-                                              palette["card"], palette["card_border"], palette["accent"])
+    ink, text, muted, card, border, accent = (
+        palette["strong_text"],
+        palette["text"],
+        palette["reference"],
+        palette["card"],
+        palette["card_border"],
+        palette["accent"],
+    )
     return f"""<style>
 .df-folder {{ display:flex; flex-direction:column; gap:14px; }}
 .df-head {{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }}
@@ -185,24 +234,42 @@ def field(header, name):
 def build_cover_html(text, related_html):
     """The cover of a document: kind, title and purpose, then its version, date, status, owner and audience."""
     header = read_header(text)
-    meta = "".join(f'<div><dt>{esc(i18n.document_field(name))}</dt><dd>{esc(field(header, name))}</dd></div>'
-                   for name in COVER_FIELDS if field(header, name))
-    related = (f'<p class="doc-cover-related"><span>{esc(i18n.document_field("related"))}</span>{related_html}</p>'
-               if related_html else "")
-    audience = (f'<p class="doc-cover-related"><span>{esc(i18n.document_field("audience"))}</span>'
-                f'{esc(field(header, "audience"))}</p>' if field(header, "audience") else "")
+    meta = "".join(
+        f'<div><dt>{esc(i18n.document_field(name))}</dt><dd>{esc(field(header, name))}</dd></div>'
+        for name in COVER_FIELDS
+        if field(header, name)
+    )
+    related = (
+        f'<p class="doc-cover-related"><span>{esc(i18n.document_field("related"))}</span>{related_html}</p>'
+        if related_html
+        else ""
+    )
+    audience = (
+        f'<p class="doc-cover-related"><span>{esc(i18n.document_field("audience"))}</span>'
+        f'{esc(field(header, "audience"))}</p>'
+        if field(header, "audience")
+        else ""
+    )
     kind = field(header, "type")
     # The kind of document, unless the title already says it.
     pill = f'<p class="doc-cover-kind">{esc(kind)}</p>' if kind and kind != read_title(text) else ""
-    return (f'<header class="doc-cover"><p class="doc-cover-mark">GreenOcean <i>·</i> {esc(tr("Documentación"))}</p>{pill}'
-            f'<h1 class="doc-cover-title">{esc(read_title(text))}</h1>'
-            f'<p class="doc-cover-purpose">{esc(field(header, "purpose"))}</p>'
-            f'<dl class="doc-cover-meta">{meta}</dl>{audience}{related}</header>')
+    return (
+        f'<header class="doc-cover"><p class="doc-cover-mark">GreenOcean <i>·</i> {esc(tr("Documentación"))}</p>{pill}'
+        f'<h1 class="doc-cover-title">{esc(read_title(text))}</h1>'
+        f'<p class="doc-cover-purpose">{esc(field(header, "purpose"))}</p>'
+        f'<dl class="doc-cover-meta">{meta}</dl>{audience}{related}</header>'
+    )
 
 
 def build_cover_css(palette):
-    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
-                                              palette["card"], palette["card_border"], palette["accent"])
+    ink, text, muted, card, border, accent = (
+        palette["strong_text"],
+        palette["text"],
+        palette["reference"],
+        palette["card"],
+        palette["card_border"],
+        palette["accent"],
+    )
     return f"""<style>
 .doc-cover {{ position:relative; overflow:hidden; margin:-44px -60px 30px; padding:40px 60px 30px;
   border-radius:16px 16px 0 0; border-bottom:1px solid {border};
@@ -238,4 +305,6 @@ def build_cover_css(palette):
   .doc-cover-title {{ font-size:2.6rem !important; }}
 }}
 </style>"""
+
+
 # endregion

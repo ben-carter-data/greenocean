@@ -1,4 +1,5 @@
 """Calidad (live measures) and its audit controls, D-196 and D-220."""
+
 import copy
 import re
 from datetime import datetime, timezone
@@ -39,11 +40,24 @@ def test_a_degraded_measure_turns_its_indicator_and_the_verdict_red(measures):
     assert kind != "ok" and "A revisar" in sentence
 
 
-EVIDENCE = dict(rejections=201, run_id=5, run_started="19-10-2026", run_status="LOADED", run_ok=True,
-                manifest_present=True, manifest_files=10, files_matching=0, files_total=10, files_failed=0,
-                weeks=250, first_week="03-01-2022", last_week="12-10-2026",
-                build=dict(models=16, tests=31, passing=31, ok=True, built_at="19-10-2026"),
-                checks=dict(integrity_ok=True, foreign_keys=0, duplicates=0, invalid=0), parity=None)
+EVIDENCE = dict(
+    rejections=201,
+    run_id=5,
+    run_started="19-10-2026",
+    run_status="LOADED",
+    run_ok=True,
+    manifest_present=True,
+    manifest_files=10,
+    files_matching=0,
+    files_total=10,
+    files_failed=0,
+    weeks=250,
+    first_week="03-01-2022",
+    last_week="12-10-2026",
+    build=dict(models=16, tests=31, passing=31, ok=True, built_at="19-10-2026"),
+    checks=dict(integrity_ok=True, foreign_keys=0, duplicates=0, invalid=0),
+    parity=None,
+)
 
 
 def draw(measures, columns=()):
@@ -56,7 +70,13 @@ def test_d257_the_diagram_is_the_page_and_every_piece_opens_its_popup(measures):
     columns = quality_view.build_columns(EVIDENCE)
     indicators, page = draw(measures, columns)
     assert "Datos sanos" in page and [name for _, name, _, _ in quality_live.HUB] == [
-        "Exactitud", "Validez", "Unicidad", "Actualidad", "Completitud", "Consistencia"]
+        "Exactitud",
+        "Validez",
+        "Unicidad",
+        "Actualidad",
+        "Completitud",
+        "Consistencia",
+    ]
     # each dimension, each gate and the centre is a link to a pop-up that exists, and closing it needs no script
     targets = [f"d-{key}" for key, *_ in quality_live.HUB] + [f"g-{index}" for index in range(3)] + ["d-todos"]
     for target in targets:
@@ -77,7 +97,9 @@ def test_d257_the_diagram_is_the_page_and_every_piece_opens_its_popup(measures):
 @needs_database
 def test_d257_what_was_set_aside_and_the_loads_are_the_database_ones(measures):
     indicators = quality_live.build_indicators(measures, NOW)
-    page = quality_live.build_tables_html(charts.get_palette("Vantablack"), measures["runs"], measures["rejections"], measures["flags"])
+    page = quality_live.build_tables_html(
+        charts.get_palette("Vantablack"), measures["runs"], measures["rejections"], measures["flags"]
+    )
     by_label = {row[1]: row[2] for row in indicators}
     rejected = sum(count for _, _, count in measures["rejections"])
     flagged = sum(count for name, count in measures["flags"].items() if name != "SIN_MARCA")
@@ -96,7 +118,10 @@ def test_d256_accuracy_is_the_audit_controls_of_the_results_and_a_pending_one_is
     status, headline = quality_live.hub_measure("exactitud", indicators, columns)
     results = dict(columns)[quality_live.RESULTS_STEP]
     kinds = [quality_view.classify(card[2]) for card in results]
-    assert status == ("warn" if "pending" in kinds else "ok") and f"{kinds.count('ok')} de {len(kinds)} controles" in headline
+    assert (
+        status == ("warn" if "pending" in kinds else "ok")
+        and f"{kinds.count('ok')} de {len(kinds)} controles" in headline
+    )
     assert quality_live.hub_measure("exactitud", indicators, ())[0] == "info"  # without controls it claims nothing
     for key in ("validez", "unicidad", "actualidad", "completitud", "consistencia"):
         assert quality_live.hub_measure(key, indicators, columns)[0] in ("ok", "warn", "fail")
@@ -119,18 +144,31 @@ def test_d257_the_number_of_the_verdict_opens_the_list_of_all_the_indicators(mea
     indicators, page = draw(measures)
     kind, sentence = quality_live.build_verdict(indicators)
     modal = page.split('id="d-todos"')[1]
-    centre = page.split('href="#d-todos"')[1].split("</a>")[0]  # the count sits in the middle of the diagram and opens the list
-    assert f"Los {len(indicators)} indicadores" in modal and f"{len(indicators)} indicadores" in centre and "Datos sanos" in centre
-    assert page.count('href="#d-todos"') == 1 and "<u>" not in page  # one door only: the centre, not a hidden link on the side
+    centre = page.split('href="#d-todos"')[1].split("</a>")[
+        0
+    ]  # the count sits in the middle of the diagram and opens the list
+    assert (
+        f"Los {len(indicators)} indicadores" in modal
+        and f"{len(indicators)} indicadores" in centre
+        and "Datos sanos" in centre
+    )
+    assert (
+        page.count('href="#d-todos"') == 1 and "<u>" not in page
+    )  # one door only: the centre, not a hidden link on the side
     assert all(row[1] in modal and row[2] in modal for row in indicators)
-    assert str(len([row for row in indicators if row[4] != "info"])) in sentence  # the 11 of the sentence are the 11 of the list
+    assert (
+        str(len([row for row in indicators if row[4] != "info"])) in sentence
+    )  # the 11 of the sentence are the 11 of the list
 
 
 def test_d272_the_audit_steps_sit_in_two_panels_in_timeline_order_and_as_even_as_their_rows_allow():
     columns = quality_view.build_columns(EVIDENCE)
     left, right = quality_live.split_steps(columns)
     assert left + right == columns and left and right  # every step, once, in order
-    weight = lambda half: sum(len(cards) + 1 for _, cards in half)
+
+    def weight(half):
+        return sum(len(cards) + 1 for _, cards in half)
+
     best = min(abs(weight(columns[:i]) - weight(columns[i:])) for i in range(1, len(columns)))
     assert abs(weight(left) - weight(right)) == best
     page = quality_live.build_audit_page_html(charts.get_palette("Vantablack"), columns)
@@ -144,8 +182,12 @@ def test_d273_the_pipeline_carries_the_rows_of_the_latest_load_through_the_three
     run_id, _, status, read, loaded, rejected = [run for run in measures["runs"] if run[2] == "LOADED"][-1]
     assert read == loaded + rejected  # no row is lost between the stretches (RF-02)
     stretches = re.findall(r'<div class="h" style="grid-area:a(\d)"[^>]*><span>([^<]+)</span>', page)
-    assert stretches == [("1", quality_live.thousands(read)), ("2", quality_live.thousands(read)),
-                         ("3", quality_live.thousands(loaded)), ("4", quality_live.thousands(loaded))]
+    assert stretches == [
+        ("1", quality_live.thousands(read)),
+        ("2", quality_live.thousands(read)),
+        ("3", quality_live.thousands(loaded)),
+        ("4", quality_live.thousands(loaded)),
+    ]
     assert f"<b>{quality_live.thousands(rejected)} filas</b>" in page
     assert sum(count for _, _, count in measures["rejections"]) == rejected
     for reason, _, _ in measures["rejections"]:

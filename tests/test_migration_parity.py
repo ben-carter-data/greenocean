@@ -3,6 +3,7 @@
 The panel moved to DuckDB only after this comparison came out identical; it runs
 again every week while both databases are written.
 """
+
 import json
 import sqlite3
 import sys
@@ -17,13 +18,23 @@ from etl import etl  # noqa: E402
 
 SQLITE_FILE = etl.DATABASE_FILE
 DUCKDB_FILE = etl.BASE_DIR / "datos.duckdb"
-pytestmark = pytest.mark.skipif(not (SQLITE_FILE.exists() and DUCKDB_FILE.exists()),
-                                reason="faltan etl/datos.db o etl/datos.duckdb")
+pytestmark = pytest.mark.skipif(
+    not (SQLITE_FILE.exists() and DUCKDB_FILE.exists()), reason="faltan etl/datos.db o etl/datos.duckdb"
+)
 PRICES = """SELECT w.week_start, p.product_group, p.product, p.variety, p.quality, w.region_id,
                    c.channel, c.source, w.normalized_unit, w.price, w.volume, w.observation_count, w.flag
             FROM weekly_price w JOIN dim_product p USING(product_id) JOIN dim_channel c USING(channel_id)"""
-KEY = ["week_start", "product_group", "product", "variety", "quality", "region_id", "channel", "source",
-       "normalized_unit"]
+KEY = [
+    "week_start",
+    "product_group",
+    "product",
+    "variety",
+    "quality",
+    "region_id",
+    "channel",
+    "source",
+    "normalized_unit",
+]
 
 
 def read_both(sql):
@@ -64,6 +75,11 @@ def test_dimensions_are_identical(table):
 
 def test_rejected_rows_are_the_same_rows_with_the_same_reason():
     old, new = read_both("SELECT source, reason, original_row FROM rejection")
-    canonical = lambda rows: sorted((row.source, row.reason, json.dumps(json.loads(row.original_row),
-                                     sort_keys=True, ensure_ascii=False)) for row in rows.itertuples())
+
+    def canonical(rows):
+        return sorted(
+            (row.source, row.reason, json.dumps(json.loads(row.original_row), sort_keys=True, ensure_ascii=False))
+            for row in rows.itertuples()
+        )
+
     assert canonical(old) == canonical(new)

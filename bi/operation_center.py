@@ -11,6 +11,7 @@ One self-contained HTML document for st.iframe: st.markdown and st.html strip th
 SVG gradients and the hover bubbles (see the GitHub page). Every address points out
 of the panel and opens in a new tab.
 """
+
 import html
 
 from bi import control, project
@@ -33,12 +34,19 @@ STATE_RUNNING = "run"
 STATE_SKIPPED = "skip"
 STATE_WAITING = "wait"
 STATE_UNKNOWN = "none"
-STATE_TEXTS = {STATE_FAILED: "Falló", STATE_RUNNING: "En curso…", STATE_SKIPPED: "No corrió",
-               STATE_WAITING: "En espera", STATE_UNKNOWN: "Sin dato"}
+STATE_TEXTS = {
+    STATE_FAILED: "Falló",
+    STATE_RUNNING: "En curso…",
+    STATE_SKIPPED: "No corrió",
+    STATE_WAITING: "En espera",
+    STATE_UNKNOWN: "Sin dato",
+}
 
-LOCK_ICON = ('<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
-             'stroke-width="2.4" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/>'
-             '<path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>')
+LOCK_ICON = (
+    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+    'stroke-width="2.4" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/>'
+    '<path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
+)
 
 # The logos, drawn like the GitHub page's: gradients, a highlight and a soft shadow.
 LOGOS = {
@@ -58,53 +66,107 @@ LOGOS = {
 # that state. «links»: (text, address, private); a private one only shows once the
 # control code was typed. «log» adds the step's own log first.
 STEPS = [
-    {"key": "launch", "label": "Lanzar", "title": "Lanzar el pipeline", "place": (0, 0),
-     "workflow": [], "log": False,
-     "hint": "Corre solo cada martes a las 12:00 UTC (09:00 en Chile en verano, 08:00 en invierno). Para adelantarlo: «Ejecutar pipeline "
-             "ahora», a la derecha, con tu clave de control, o «Run workflow» en GitHub.",
-     "links": [("Run workflow", project.WORKFLOW_PAGE_URL, True),
-               ("Tokens de GitHub", project.TOKENS_URL, True)]},
-    {"key": "odepa", "label": "ODEPA", "title": "Descarga de ODEPA", "place": (1, 0),
-     "workflow": ["Download the ODEPA files"], "log": True,
-     "hint": "Baja los precios mayoristas y al consumidor del año en curso; los años "
-             "cerrados salen de la caché. Si falla, el log dice qué archivo y por qué.",
-     "links": [("Precios mayoristas", project.WHOLESALE_SOURCE_URL, False),
-               ("Precios al consumidor", project.CONSUMER_SOURCE_URL, False)]},
-    {"key": "ine", "label": "IPC · INE", "title": "IPC de alimentos · INE", "place": (2, 0),
-     "workflow": ["Build the data warehouse with dbt"], "log": True,
-     "hint": "Baja el IPC para mostrar precios sin inflación; corre al comienzo del paso de "
-             "dbt. Si el INE no responde, usa el último publicado y la carga sigue.",
-     "links": [("Sitio del INE", project.INE_IPC_SOURCE_URL, False)]},
-    {"key": "etl", "label": "Limpieza", "title": "Limpieza (ETL)", "place": (2, 1),
-     "workflow": ["Run the ETL (SQLite backup)", "Run the ETL"], "log": True,
-     "hint": "Lleva cada precio a kilo o unidad y a su semana, valida cada fila y aparta "
-             "las que no sirven, con su motivo.",
-     "links": []},
-    {"key": "dbt", "label": "dbt", "title": "Data warehouse con dbt", "place": (1, 1),
-     "workflow": ["Build the data warehouse with dbt"], "log": True,
-     "hint": "Construye staging, intermedio y marts en DuckDB y corre sus 31 pruebas de "
-             "datos. Si una falla, se detiene aquí y la base publicada no cambia.",
-     "links": []},
-    {"key": "tests", "label": "Pruebas", "title": "Pruebas automáticas", "place": (0, 1),
-     "workflow": ["Run the tests against the new database"], "log": True,
-     "hint": "pytest recalcula las cifras desde la fuente. Si una prueba falla, la base "
-             "publicada no se toca; el final del log nombra la prueba con FAILED.",
-     "links": []},
-    {"key": "save", "label": "Publicar", "title": "Publicar la base", "place": (0, 2),
-     "workflow": ["Publish the database", "Save the updated database"], "log": True,
-     "hint": "Reemplaza la base en el release «base-actual» y sube su puntero a main con el "
-             "commit «Weekly data update». Solo ocurre si todo lo anterior pasó.",
-     "links": [("Release", project.RELEASE_URL, False), ("Commits", project.COMMITS_URL, False)]},
-    {"key": "report", "label": "Informe", "title": "Informe semanal", "place": (1, 2),
-     "workflow": ["Publish the weekly report"], "log": True,
-     "hint": "Publica el informe de la semana como issue en GitHub, con sus alertas; GitHub "
-             "avisa por correo.",
-     "links": [("Informes", project.ISSUES_URL, False)]},
-    {"key": "panel", "label": "Panel", "title": "Panel en Streamlit", "place": (2, 2),
-     "workflow": [], "log": False,
-     "hint": "Lee la base nueva en uno o dos minutos; si no la ves, «Recargar datos», "
-             "a la derecha. Registros, secretos y reinicio están en Streamlit.",
-     "links": [("Administrar la app", project.STREAMLIT_ADMIN_URL, True)]},
+    {
+        "key": "launch",
+        "label": "Lanzar",
+        "title": "Lanzar el pipeline",
+        "place": (0, 0),
+        "workflow": [],
+        "log": False,
+        "hint": "Corre solo cada martes a las 12:00 UTC (09:00 en Chile en verano, 08:00 en invierno). Para adelantarlo: «Ejecutar pipeline "
+        "ahora», a la derecha, con tu clave de control, o «Run workflow» en GitHub.",
+        "links": [("Run workflow", project.WORKFLOW_PAGE_URL, True), ("Tokens de GitHub", project.TOKENS_URL, True)],
+    },
+    {
+        "key": "odepa",
+        "label": "ODEPA",
+        "title": "Descarga de ODEPA",
+        "place": (1, 0),
+        "workflow": ["Download the ODEPA files"],
+        "log": True,
+        "hint": "Baja los precios mayoristas y al consumidor del año en curso; los años "
+        "cerrados salen de la caché. Si falla, el log dice qué archivo y por qué.",
+        "links": [
+            ("Precios mayoristas", project.WHOLESALE_SOURCE_URL, False),
+            ("Precios al consumidor", project.CONSUMER_SOURCE_URL, False),
+        ],
+    },
+    {
+        "key": "ine",
+        "label": "IPC · INE",
+        "title": "IPC de alimentos · INE",
+        "place": (2, 0),
+        "workflow": ["Build the data warehouse with dbt"],
+        "log": True,
+        "hint": "Baja el IPC para mostrar precios sin inflación; corre al comienzo del paso de "
+        "dbt. Si el INE no responde, usa el último publicado y la carga sigue.",
+        "links": [("Sitio del INE", project.INE_IPC_SOURCE_URL, False)],
+    },
+    {
+        "key": "etl",
+        "label": "Limpieza",
+        "title": "Limpieza (ETL)",
+        "place": (2, 1),
+        "workflow": ["Run the ETL (SQLite backup)", "Run the ETL"],
+        "log": True,
+        "hint": "Lleva cada precio a kilo o unidad y a su semana, valida cada fila y aparta "
+        "las que no sirven, con su motivo.",
+        "links": [],
+    },
+    {
+        "key": "dbt",
+        "label": "dbt",
+        "title": "Data warehouse con dbt",
+        "place": (1, 1),
+        "workflow": ["Build the data warehouse with dbt"],
+        "log": True,
+        "hint": "Construye staging, intermedio y marts en DuckDB y corre sus 31 pruebas de "
+        "datos. Si una falla, se detiene aquí y la base publicada no cambia.",
+        "links": [],
+    },
+    {
+        "key": "tests",
+        "label": "Pruebas",
+        "title": "Pruebas automáticas",
+        "place": (0, 1),
+        "workflow": ["Run the tests against the new database"],
+        "log": True,
+        "hint": "pytest recalcula las cifras desde la fuente. Si una prueba falla, la base "
+        "publicada no se toca; el final del log nombra la prueba con FAILED.",
+        "links": [],
+    },
+    {
+        "key": "save",
+        "label": "Publicar",
+        "title": "Publicar la base",
+        "place": (0, 2),
+        "workflow": ["Publish the database", "Save the updated database"],
+        "log": True,
+        "hint": "Reemplaza la base en el release «base-actual» y sube su puntero a main con el "
+        "commit «Weekly data update». Solo ocurre si todo lo anterior pasó.",
+        "links": [("Release", project.RELEASE_URL, False), ("Commits", project.COMMITS_URL, False)],
+    },
+    {
+        "key": "report",
+        "label": "Informe",
+        "title": "Informe semanal",
+        "place": (1, 2),
+        "workflow": ["Publish the weekly report"],
+        "log": True,
+        "hint": "Publica el informe de la semana como issue en GitHub, con sus alertas; GitHub avisa por correo.",
+        "links": [("Informes", project.ISSUES_URL, False)],
+    },
+    {
+        "key": "panel",
+        "label": "Panel",
+        "title": "Panel en Streamlit",
+        "place": (2, 2),
+        "workflow": [],
+        "log": False,
+        "hint": "Lee la base nueva en uno o dos minutos; si no la ves, «Recargar datos», "
+        "a la derecha. Registros, secretos y reinicio están en Streamlit.",
+        "links": [("Administrar la app", project.STREAMLIT_ADMIN_URL, True)],
+    },
 ]
 # endregion
 
@@ -112,9 +174,12 @@ STEPS = [
 # region States
 def to_step_state(github_state):
     """A GitHub step state (control.RUN_*, «skipped», queued) as a logo state."""
-    return {control.RUN_OK: STATE_OK, control.RUN_FAILED: STATE_FAILED,
-            control.RUN_IN_PROGRESS: STATE_RUNNING, "skipped": STATE_SKIPPED}.get(
-                github_state, STATE_UNKNOWN)
+    return {
+        control.RUN_OK: STATE_OK,
+        control.RUN_FAILED: STATE_FAILED,
+        control.RUN_IN_PROGRESS: STATE_RUNNING,
+        "skipped": STATE_SKIPPED,
+    }.get(github_state, STATE_UNKNOWN)
 
 
 def format_seconds(seconds):
@@ -164,6 +229,8 @@ def pick_pinned_step(states):
             if states[step["key"]][0] == wanted:
                 return step["key"]
     return None
+
+
 # endregion
 
 
@@ -234,7 +301,8 @@ def build_links_html(step, log_url, unlocked):
         f'<a {lock_class if private else ""}href="{html.escape(url, quote=True)}" '
         f'target="_blank" rel="noopener noreferrer">{LOCK_ICON if private else ""}'
         f'{html.escape(text)} ↗</a>'
-        for text, url, private in links)
+        for text, url, private in links
+    )
 
 
 def build_node_html(step, state, text, log_url, pinned, unlocked):
@@ -253,18 +321,22 @@ def build_node_html(step, state, text, log_url, pinned, unlocked):
     # The logo opens its step's log or, without one, the step's first address.
     visible_links = [link for link in step["links"] if unlocked or not link[2]]
     target = log_url or (visible_links[0][1] if visible_links else None)
-    logo = (f'<svg class="oc-logo" viewBox="0 0 72 72" aria-hidden="true"><defs>'
-            f'{LOGOS[step["key"]]}</svg>')
-    logo_html = (f'<a href="{html.escape(target, quote=True)}" target="_blank" '
-                 f'rel="noopener noreferrer" aria-label="{html.escape(step["title"], quote=True)}">{logo}</a>'
-                 if target else f'<span>{logo}</span>')
-    return (f'<div class="oc-node {state}" data-step="{step["key"]}" style="left:{left:.3f}%;top:{top:.3f}%">'
-            f'<div class="{" ".join(tip_classes)}" role="tooltip"><h4>{html.escape(step["title"])}</h4>'
-            f'<p>{html.escape(step["hint"])}</p>'
-            f'<div class="oc-links">{build_links_html(step, log_url, unlocked)}</div></div>'
-            f'{logo_html}<div class="oc-halo"></div>'
-            f'<div class="oc-label">{html.escape(step["label"])}</div>'
-            f'<div class="oc-state">{html.escape(text)}</div></div>')
+    logo = f'<svg class="oc-logo" viewBox="0 0 72 72" aria-hidden="true"><defs>{LOGOS[step["key"]]}</svg>'
+    logo_html = (
+        f'<a href="{html.escape(target, quote=True)}" target="_blank" '
+        f'rel="noopener noreferrer" aria-label="{html.escape(step["title"], quote=True)}">{logo}</a>'
+        if target
+        else f'<span>{logo}</span>'
+    )
+    return (
+        f'<div class="oc-node {state}" data-step="{step["key"]}" style="left:{left:.3f}%;top:{top:.3f}%">'
+        f'<div class="{" ".join(tip_classes)}" role="tooltip"><h4>{html.escape(step["title"])}</h4>'
+        f'<p>{html.escape(step["hint"])}</p>'
+        f'<div class="oc-links">{build_links_html(step, log_url, unlocked)}</div></div>'
+        f'{logo_html}<div class="oc-halo"></div>'
+        f'<div class="oc-label">{html.escape(step["label"])}</div>'
+        f'<div class="oc-state">{html.escape(text)}</div></div>'
+    )
 
 
 def build_stage_html(palette, states, unlocked=False):
@@ -273,18 +345,23 @@ def build_stage_html(palette, states, unlocked=False):
     phases = "".join(
         f'<div class="oc-phase" style="top:{(ROWS[index] - 78) / STAGE_HEIGHT * 100:.3f}%">'
         f'<b>{index + 1}</b>{html.escape(name)}</div>'
-        for index, name in enumerate(PHASES))
-    track = (f'<svg viewBox="0 0 {STAGE_WIDTH} {STAGE_HEIGHT}" aria-hidden="true"><defs>'
-             '<linearGradient id="oc-track" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5eead4"/>'
-             '<stop offset=".5" stop-color="#93c5fd"/><stop offset="1" stop-color="#c4b5fd"/></linearGradient></defs>'
-             f'<path d="{TRACK}" fill="none" stroke="url(#oc-track)" stroke-width="10" stroke-linecap="round" opacity=".25"/>'
-             f'<path d="{TRACK}" fill="none" stroke="{palette["reference"]}" stroke-width="1.6" '
-             'stroke-dasharray="2 7" stroke-linecap="round" opacity=".7"/></svg>')
-    nodes = "".join(build_node_html(step, *states[step["key"]], step["key"] == pinned, unlocked)
-                    for step in STEPS)
-    return ('<!doctype html><html lang="es"><head><meta charset="utf-8">'
-            '<meta name="viewport" content="width=device-width,initial-scale=1">'
-            + build_css(palette) + '</head><body>'
-            f'<div class="oc-stage" aria-label="Recorrido del pipeline semanal">{track}{phases}{nodes}</div>'
-            '</body></html>')
+        for index, name in enumerate(PHASES)
+    )
+    track = (
+        f'<svg viewBox="0 0 {STAGE_WIDTH} {STAGE_HEIGHT}" aria-hidden="true"><defs>'
+        '<linearGradient id="oc-track" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5eead4"/>'
+        '<stop offset=".5" stop-color="#93c5fd"/><stop offset="1" stop-color="#c4b5fd"/></linearGradient></defs>'
+        f'<path d="{TRACK}" fill="none" stroke="url(#oc-track)" stroke-width="10" stroke-linecap="round" opacity=".25"/>'
+        f'<path d="{TRACK}" fill="none" stroke="{palette["reference"]}" stroke-width="1.6" '
+        'stroke-dasharray="2 7" stroke-linecap="round" opacity=".7"/></svg>'
+    )
+    nodes = "".join(build_node_html(step, *states[step["key"]], step["key"] == pinned, unlocked) for step in STEPS)
+    return (
+        '<!doctype html><html lang="es"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">' + build_css(palette) + '</head><body>'
+        f'<div class="oc-stage" aria-label="Recorrido del pipeline semanal">{track}{phases}{nodes}</div>'
+        '</body></html>'
+    )
+
+
 # endregion

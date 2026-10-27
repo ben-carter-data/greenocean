@@ -1,5 +1,6 @@
 """The attacks of the security review (D-199, D-200), kept as permanent tests: each one
 must stay stopped by the barrier the «Seguridad» view names."""
+
 import re
 import subprocess
 from pathlib import Path
@@ -105,9 +106,16 @@ def test_every_control_of_the_map_points_to_a_test_that_exists():
 
 def test_d254_the_security_architecture_is_a_network_of_trust_zones_with_every_control_and_threat_in_place():
     from bi import charts
+
     page = security_map.build_security_html(charts.get_palette("Vantablack"))
-    for zone in ("Internet", "Streamlit Community Cloud", "GitHub · repositorio público", "Pública · sin cuenta",
-                 "Del autor · con clave", "Mejora continua"):
+    for zone in (
+        "Internet",
+        "Streamlit Community Cloud",
+        "GitHub · repositorio público",
+        "Pública · sin cuenta",
+        "Del autor · con clave",
+        "Mejora continua",
+    ):
         assert zone in page, zone
     # every control is a numbered piece of the drawing, and each is the one badge of its number
     numbers = {control[0] for control in security_map.CONTROLS}
@@ -115,13 +123,16 @@ def test_d254_the_security_architecture_is_a_network_of_trust_zones_with_every_c
     # every threat is a marker with its hover explanation, and every control it names exists
     used = set()
     for tid, title, owasp, controls, cases, asset in security_map.THREATS:
-        assert f'id="t-{tid}"' in page and f'id="tip-{tid}"' in page and tid in security_map.THREAT_SPOTS and title in page
+        assert (
+            f'id="t-{tid}"' in page and f'id="tip-{tid}"' in page and tid in security_map.THREAT_SPOTS and title in page
+        )
         assert all(code in security_map.OWASP for code in owasp.split(" · ")), tid
         used |= set(controls)
         assert bool(cases) == all(security_map.CONTROLS[n - 1][7] for n in controls), tid
     assert used == numbers
     # the cases written under each piece are the ones of its controls and threats
     from bi import security_plan
+
     known = {case[0] for case in security_plan.CASES}
     for node in security_map.NODES.values():
         for case in re.findall(r"S-\d{2}", node[8]):
@@ -133,7 +144,12 @@ def test_d254_the_security_architecture_is_a_network_of_trust_zones_with_every_c
 
 
 def test_d254_the_pieces_of_the_diagram_exist_in_the_repository():
-    for path in ("bi/dashboard.py", "etl/datos.duckdb", ".github/workflows/pruebas.yml", ".github/workflows/semanal.yml"):
+    for path in (
+        "bi/dashboard.py",
+        "etl/datos.duckdb",
+        ".github/workflows/pruebas.yml",
+        ".github/workflows/semanal.yml",
+    ):
         assert (REPOSITORY / path).exists(), path
     assert "workflow_dispatch" in (REPOSITORY / ".github/workflows/semanal.yml").read_text(encoding="utf-8")
     assert "pytest" in (REPOSITORY / ".github/workflows/pruebas.yml").read_text(encoding="utf-8")

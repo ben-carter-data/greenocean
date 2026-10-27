@@ -8,6 +8,7 @@ state of the weekly workflow and of the panel, the size of the served database a
 
 build_deployment_html() returns one HTML document for st.iframe (CSS only, no script).
 """
+
 import html
 from pathlib import Path
 from urllib.parse import urlparse
@@ -53,21 +54,21 @@ TIPS = {
     "odepa": "Publica los CSV de precios mayoristas y al consumidor. El agente de ingesta los descarga por HTTPS cada martes.",
     "ine": "Publica el IPC de alimentos. La carga lo descarga y lo cruza con los precios para calcular el precio real.",
     "github": "La plataforma que guarda el código y la base publicada, ejecuta la carga semanal y las pruebas, y recibe los informes. "
-              "El repositorio es público.",
+    "El repositorio es público.",
     "streamlit": "El servicio gratuito que publica el panel con un enlace público, sin servidor que mantener, y guarda sus secretos.",
     "author": "Donde se desarrolla. Aquí vive el aterrizaje raw.db, que no se sube a GitHub (D-020), y desde aquí se hace git push; "
-              "las pruebas se corren antes de cada commit.",
+    "las pruebas se corren antes de cada commit.",
     "venv": "El entorno de Python del autor: el panel, la ingesta, el ETL y dbt, más pytest. dbt corre en un entorno aparte. "
-            "Aquí vive el aterrizaje raw.db, que no se sube a git.",
+    "Aquí vive el aterrizaje raw.db, que no se sube a git.",
     "runner": "Una máquina Ubuntu de GitHub Actions que nace y se borra en cada ejecución: el job semanal de cada martes "
-              "(semanal.yml) y las pruebas de cada push (pruebas.yml).",
+    "(semanal.yml) y las pruebas de cada push (pruebas.yml).",
     "python": "El entorno Python 3.11 del runner: descarga, aterrizaje en SQLite, bronce en Parquet y dbt build sobre DuckDB.",
     "repo": "El repositorio público: el código en la rama main y la base servida en el release «base-actual». Solo si pasan "
-            "todas las pruebas, la carga reemplaza la base del release y sube su puntero con un commit «Weekly data update» (D-270).",
+    "todas las pruebas, la carga reemplaza la base del release y sube su puntero con un commit «Weekly data update» (D-270).",
     "cache": "Guarda los CSV de los años cerrados, que ya no cambian, para no descargarlos cada semana. Se borra si no se usa en 7 días.",
     "issues": "El workflow crea un issue «Informe semanal AAAA-MM-DD» con el estado de la carga y las alertas de precio.",
     "app": "Streamlit ejecuta bi/dashboard.py desde la rama main. Descarga del release la base de la última carga, comprueba su "
-           "huella y la lee en solo lectura; guarda los secretos del panel y, con la clave de control, lanza la carga por la API de GitHub.",
+    "huella y la lee en solo lectura; guarda los secretos del panel y, con la clave de control, lanza la carga por la API de GitHub.",
     "browser": "Cualquier visitante, o el autor. El panel público no pide cuenta; la clave solo abre el botón «Ejecutar pipeline ahora».",
 }
 
@@ -78,10 +79,18 @@ def esc(value):
 
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
-    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
-                                              palette["card"], palette["card_border"], palette["accent"])
-    hovers = "".join(f"svg:has(#n-{key}:hover, #n-{key}:focus) #tip-{key} {{ opacity:1; }}"
-                     for key in list(NODES) + list(ENVIRONMENTS))
+    ink, text, muted, card, border, accent = (
+        palette["strong_text"],
+        palette["text"],
+        palette["reference"],
+        palette["card"],
+        palette["card_border"],
+        palette["accent"],
+    )
+    hovers = "".join(
+        f"svg:has(#n-{key}:hover, #n-{key}:focus) #tip-{key} {{ opacity:1; }}"
+        for key in list(NODES) + list(ENVIRONMENTS)
+    )
     return f"""<style>
 * {{ box-sizing:border-box; }}
 html, body {{ margin:0; background:transparent; color:{text}; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
@@ -115,20 +124,26 @@ svg.dep {{ display:block; width:100%; height:auto; overflow:visible; }}
 def box(x, y, width, height):
     """The 3D box of a node: front, top and side faces."""
     d = DEPTH
-    return (f'<polygon class="top" points="{x},{y} {x + d},{y - d} {x + width + d},{y - d} {x + width},{y}"/>'
-            f'<polygon class="side" points="{x + width},{y} {x + width + d},{y - d} {x + width + d},{y + height - d} {x + width},{y + height}"/>'
-            f'<rect class="front" x="{x}" y="{y}" width="{width}" height="{height}"/>')
+    return (
+        f'<polygon class="top" points="{x},{y} {x + d},{y - d} {x + width + d},{y - d} {x + width},{y}"/>'
+        f'<polygon class="side" points="{x + width},{y} {x + width + d},{y - d} {x + width + d},{y + height - d} {x + width},{y + height}"/>'
+        f'<rect class="front" x="{x}" y="{y}" width="{width}" height="{height}"/>'
+    )
 
 
 def artifact(x, y, label):
     """A deployed file: the UML artifact mark and its name."""
-    return (f'<path class="page" d="M{x} {y - 10} h8 l4 4 v10 h-12 z"/><path class="fold" d="M{x + 8} {y - 10} v4 h4"/>'
-            f'<text class="art" x="{x + 18}" y="{y}">{esc(label)}</text>')
+    return (
+        f'<path class="page" d="M{x} {y - 10} h8 l4 4 v10 h-12 z"/><path class="fold" d="M{x + 8} {y - 10} v4 h4"/>'
+        f'<text class="art" x="{x + 18}" y="{y}">{esc(label)}</text>'
+    )
 
 
 def heading(x, y, stereotype, name):
-    return (f'<text class="stereo" x="{x}" y="{y}">«{esc(stereotype)}»</text>'
-            f'<text class="name" x="{x}" y="{y + 16}">{esc(name)}</text>')
+    return (
+        f'<text class="stereo" x="{x}" y="{y}">«{esc(stereotype)}»</text>'
+        f'<text class="name" x="{x}" y="{y + 16}">{esc(name)}</text>'
+    )
 
 
 def state_dot(x, y, state):
@@ -148,43 +163,71 @@ def build_contents(states, figures):
     raw = REPOSITORY / "etl" / "raw.db"
     raw_text = f"etl/raw.db · {project.describe_file_size(raw)}" if raw.exists() else "etl/raw.db · solo aquí"
     parts = {
-        "odepa": (heading(34, 64, "dispositivo", "ODEPA") + f'<text class="note" x="34" y="98">{esc(odepa_host)}</text>'
-                  + artifact(34, 116, "CSV mayorista y consumidor") + state_dot(236, 62, states.get("sources"))),
-        "ine": (heading(34, 184, "dispositivo", "INE") + f'<text class="note" x="34" y="218">{esc(ine_host)}</text>'
-                + artifact(34, 236, "IPC de alimentos") + state_dot(236, 182, states.get("sources"))),
+        "odepa": (
+            heading(34, 64, "dispositivo", "ODEPA")
+            + f'<text class="note" x="34" y="98">{esc(odepa_host)}</text>'
+            + artifact(34, 116, "CSV mayorista y consumidor")
+            + state_dot(236, 62, states.get("sources"))
+        ),
+        "ine": (
+            heading(34, 184, "dispositivo", "INE")
+            + f'<text class="note" x="34" y="218">{esc(ine_host)}</text>'
+            + artifact(34, 236, "IPC de alimentos")
+            + state_dot(236, 182, states.get("sources"))
+        ),
         "author": heading(34, 324, "dispositivo", "Computador del autor"),
-        "github": heading(334, 64, "plataforma", "GitHub") + '<text class="note" x="400" y="80">código, automatización e informes</text>',
+        "github": heading(334, 64, "plataforma", "GitHub")
+        + '<text class="note" x="400" y="80">código, automatización e informes</text>',
         "streamlit": heading(824, 64, "plataforma", "Streamlit Cloud"),
-        "browser": (heading(824, 416, "dispositivo", "Navegador")
-                    + '<text class="note" x="824" y="452">visitante o autor, sin cuenta</text>'),
+        "browser": (
+            heading(824, 416, "dispositivo", "Navegador")
+            + '<text class="note" x="824" y="452">visitante o autor, sin cuenta</text>'
+        ),
     }
     envs = {
-        "runner": (heading(348, 104, "entorno de ejecución", "Runner ubuntu-latest")
-                   + '<text class="note" x="348" y="138">efímero: nace en cada ejecución</text>'
-                   + artifact(348, 158, "semanal.yml") + f'<text class="live" x="366" y="173">próxima {esc(figures.get("next_run", ""))}</text>'
-                   + artifact(348, 192, "pruebas.yml") + '<text class="note" x="366" y="207">en cada push</text>'
-                   + state_dot(526, 102, states.get("workflow"))),
-        "python": (heading(356, 234, "entorno de ejecución", "Python 3.11")
-                   + artifact(356, 270, "agent.py · etl.py") + artifact(356, 286, "bronze.py")
-                   + artifact(356, 302, "dbt build · DuckDB")),
-        "repo": (heading(348, 378, "entorno de ejecución", "Repositorio · main y release")
-                 + artifact(348, 414, "código del proyecto")
-                 + artifact(348, 430, f"datos.duckdb · {project.describe_file_size(queries.DATABASE_FILE)}")
-                 + artifact(348, 446, "datos.version · puntero")
-                 + artifact(348, 462, "manifest.json")
-                 + f'<text class="live" x="348" y="486">{esc(figures.get("week_prices", ""))}</text>'),
-        "cache": heading(602, 100, "entorno de ejecución", "Caché de Actions") + artifact(602, 134, "CSV de años cerrados"),
+        "runner": (
+            heading(348, 104, "entorno de ejecución", "Runner ubuntu-latest")
+            + '<text class="note" x="348" y="138">efímero: nace en cada ejecución</text>'
+            + artifact(348, 158, "semanal.yml")
+            + f'<text class="live" x="366" y="173">próxima {esc(figures.get("next_run", ""))}</text>'
+            + artifact(348, 192, "pruebas.yml")
+            + '<text class="note" x="366" y="207">en cada push</text>'
+            + state_dot(526, 102, states.get("workflow"))
+        ),
+        "python": (
+            heading(356, 234, "entorno de ejecución", "Python 3.11")
+            + artifact(356, 270, "agent.py · etl.py")
+            + artifact(356, 286, "bronze.py")
+            + artifact(356, 302, "dbt build · DuckDB")
+        ),
+        "repo": (
+            heading(348, 378, "entorno de ejecución", "Repositorio · main y release")
+            + artifact(348, 414, "código del proyecto")
+            + artifact(348, 430, f"datos.duckdb · {project.describe_file_size(queries.DATABASE_FILE)}")
+            + artifact(348, 446, "datos.version · puntero")
+            + artifact(348, 462, "manifest.json")
+            + f'<text class="live" x="348" y="486">{esc(figures.get("week_prices", ""))}</text>'
+        ),
+        "cache": heading(602, 100, "entorno de ejecución", "Caché de Actions")
+        + artifact(602, 134, "CSV de años cerrados"),
         "issues": heading(602, 194, "entorno de ejecución", "Issues") + artifact(602, 228, "Informe semanal"),
-        "app": (heading(834, 104, "entorno de ejecución", "Streamlit")
-                + artifact(834, 150, "dashboard.py")
-                + artifact(834, 172, "datos.duckdb") + '<text class="note" x="852" y="187">solo lectura</text>'
-                + artifact(834, 210, "st.secrets") + '<text class="note" x="852" y="225">token y clave</text>'
-                + f'<text class="live" x="834" y="256">{esc(figures.get("panel_time", ""))}</text>'
-                + state_dot(958, 118, states.get("panel"))),
-        "venv": (heading(44, 364, "entorno de ejecución", "Python 3.11 o 3.12")
-                 + artifact(44, 402, "código del proyecto") + artifact(44, 420, raw_text)
-                 + artifact(44, 438, "pytest · dbt aparte")
-                 + '<text class="note" x="44" y="460">el aterrizaje no se sube a git</text>'),
+        "app": (
+            heading(834, 104, "entorno de ejecución", "Streamlit")
+            + artifact(834, 150, "dashboard.py")
+            + artifact(834, 172, "datos.duckdb")
+            + '<text class="note" x="852" y="187">solo lectura</text>'
+            + artifact(834, 210, "st.secrets")
+            + '<text class="note" x="852" y="225">token y clave</text>'
+            + f'<text class="live" x="834" y="256">{esc(figures.get("panel_time", ""))}</text>'
+            + state_dot(958, 118, states.get("panel"))
+        ),
+        "venv": (
+            heading(44, 364, "entorno de ejecución", "Python 3.11 o 3.12")
+            + artifact(44, 402, "código del proyecto")
+            + artifact(44, 420, raw_text)
+            + artifact(44, 438, "pytest · dbt aparte")
+            + '<text class="note" x="44" y="460">el aterrizaje no se sube a git</text>'
+        ),
     }
     return parts, envs
 
@@ -192,27 +235,40 @@ def build_contents(states, figures):
 def build_deployment_html(palette, states, figures):
     """The nodes, the environments inside them and the communication paths, with the live state of each piece."""
     parts, envs = build_contents(states, figures)
-    head = (f'<defs><marker id="dep-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
-            f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{palette["accent"]}"/></marker></defs>')
+    head = (
+        f'<defs><marker id="dep-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
+        f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{palette["accent"]}"/></marker></defs>'
+    )
     drawn, tips = [], []
     for key, (x, y, width, height, stereotype, name) in NODES.items():
         drawn.append(f'<g class="node" id="n-{key}" tabindex="0">{box(x, y, width, height)}{parts[key]}</g>')
     for key, (x, y, width, height, node, name) in ENVIRONMENTS.items():
         inner = " inner" if key == "python" else ""
-        drawn.append(f'<g class="envg" id="n-{key}" tabindex="0"><rect class="env{inner}" x="{x}" y="{y}" width="{width}" '
-                     f'height="{height}" rx="6"/>{envs[key]}</g>')
+        drawn.append(
+            f'<g class="envg" id="n-{key}" tabindex="0"><rect class="env{inner}" x="{x}" y="{y}" width="{width}" '
+            f'height="{height}" rx="6"/>{envs[key]}</g>'
+        )
     for key in list(NODES) + list(ENVIRONMENTS):
-        x, y, width, height = (NODES[key][:4] if key in NODES else ENVIRONMENTS[key][:4])
+        x, y, width, height = NODES[key][:4] if key in NODES else ENVIRONMENTS[key][:4]
         tx = min(max(x, 8), WIDTH - 308)
         up = y + height > 440
-        tips.append(f'<g class="tip" id="tip-{key}"><foreignObject x="{tx}" y="{y - 6 if up else y + height + 8}" width="300" height="1" '
-                    f'overflow="visible"><div xmlns="http://www.w3.org/1999/xhtml" style="{"bottom:0" if up else "top:0"}">'
-                    f'<b>{esc((NODES.get(key) or ENVIRONMENTS[key])[5])}</b>{esc(TIPS[key])}</div></foreignObject></g>')
+        tips.append(
+            f'<g class="tip" id="tip-{key}"><foreignObject x="{tx}" y="{y - 6 if up else y + height + 8}" width="300" height="1" '
+            f'overflow="visible"><div xmlns="http://www.w3.org/1999/xhtml" style="{"bottom:0" if up else "top:0"}">'
+            f'<b>{esc((NODES.get(key) or ENVIRONMENTS[key])[5])}</b>{esc(TIPS[key])}</div></foreignObject></g>'
+        )
     paths = "".join(f'<path class="path" d="{d}" marker-end="url(#dep-head)"/>' for d, *_ in PATHS)
-    chips = "".join(f'<text class="chip" x="{pos[0]}" y="{pos[1]}">{esc(label)}</text>' for _, label, pos in PATHS if label)
-    legend = (f'<circle cx="26" cy="550" r="5" fill="{architecture.STATE_COLORS[control.RUN_OK]}"/>'
-              '<text class="legend" x="38" y="554">estado de la última ejecución y del panel · la línea muestra quién inicia la comunicación</text>')
-    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            + build_css(palette) + f'</head><body>{quality_view.DEFS}<svg class="dep" viewBox="0 0 {WIDTH} {HEIGHT}" '
-            f'preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de despliegue">{head}{"".join(drawn)}'
-            f'{paths}{chips}{legend}{"".join(tips)}</svg></body></html>')
+    chips = "".join(
+        f'<text class="chip" x="{pos[0]}" y="{pos[1]}">{esc(label)}</text>' for _, label, pos in PATHS if label
+    )
+    legend = (
+        f'<circle cx="26" cy="550" r="5" fill="{architecture.STATE_COLORS[control.RUN_OK]}"/>'
+        '<text class="legend" x="38" y="554">estado de la última ejecución y del panel · la línea muestra quién inicia la comunicación</text>'
+    )
+    return (
+        '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        + build_css(palette)
+        + f'</head><body>{quality_view.DEFS}<svg class="dep" viewBox="0 0 {WIDTH} {HEIGHT}" '
+        f'preserveAspectRatio="xMidYMid meet" role="img" aria-label="Diagrama de despliegue">{head}{"".join(drawn)}'
+        f'{paths}{chips}{legend}{"".join(tips)}</svg></body></html>'
+    )

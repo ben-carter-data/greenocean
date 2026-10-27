@@ -4,6 +4,7 @@ ODEPA names the wholesale market of each wholesale quote and the type of point (
 consumer quote. The star schema does not keep them (a price is per region and channel), so this small file keeps what
 exists in each region, regenerated from the downloaded CSV files:  python etl/points_of_sale.py
 """
+
 import json
 from pathlib import Path
 
@@ -16,8 +17,12 @@ OUTPUT = ROOT / "bi" / "assets" / "points_of_sale.json"
 
 def build(download_dir=DOWNLOADS):
     """{region: {"wholesale": [markets], "consumer": [types], "sectors": [sectors]}} read from every downloaded year."""
-    wholesale = pd.concat([pd.read_csv(path, dtype=str, encoding="utf-8-sig") for path in sorted(download_dir.glob("wholesale_*.csv"))])
-    consumer = pd.concat([pd.read_csv(path, dtype=str, encoding="utf-8-sig") for path in sorted(download_dir.glob("consumer_*.csv"))])
+    wholesale = pd.concat(
+        [pd.read_csv(path, dtype=str, encoding="utf-8-sig") for path in sorted(download_dir.glob("wholesale_*.csv"))]
+    )
+    consumer = pd.concat(
+        [pd.read_csv(path, dtype=str, encoding="utf-8-sig") for path in sorted(download_dir.glob("consumer_*.csv"))]
+    )
     points = {}
     for region in sorted(set(wholesale["Region"]) | set(consumer["Region"])):
         rows = consumer[consumer["Region"] == region]

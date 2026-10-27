@@ -3,6 +3,7 @@
 The reference of the week of 2026-10-05 lives in tests/fixtures/; the migration to
 DuckDB (paso 2 del plan) must reproduce it exactly.
 """
+
 import json
 from pathlib import Path
 
@@ -17,8 +18,7 @@ def compute_snapshot():
     regions = dashboard.read_regional_movement_model(week)
     counts = queries.run_sql("""SELECT ch.source, COUNT(*) AS n, ROUND(SUM(price), 4) AS total
                                 FROM weekly_price wp JOIN dim_channel ch USING(channel_id) GROUP BY 1""")
-    flags = queries.run_sql("SELECT COALESCE(flag, 'SIN_MARCA') AS f, COUNT(*) AS n "
-                            "FROM weekly_price GROUP BY 1")
+    flags = queries.run_sql("SELECT COALESCE(flag, 'SIN_MARCA') AS f, COUNT(*) AS n FROM weekly_price GROUP BY 1")
     return {
         "week": week,
         "weekly_price_rows": int(queries.run_sql("SELECT COUNT(*) AS n FROM weekly_price")["n"][0]),
@@ -27,9 +27,11 @@ def compute_snapshot():
         "flags": {str(r["f"]): int(r["n"]) for r in flags.to_dict("records")},
         "rejected_rows": int(queries.run_sql("SELECT COUNT(*) AS n FROM rejection")["n"][0]),
         "alerts_latest_week": int(model["alert_count"]),
-        "compared": int(sum(model["counts"])), "available": int(model["available"]),
-        "family_medians": {family: round(value, 8)
-                           for family, value, _ in home_mockup.family_averages(model["family_rows"])},
+        "compared": int(sum(model["counts"])),
+        "available": int(model["available"]),
+        "family_medians": {
+            family: round(value, 8) for family, value, _ in home_mockup.family_averages(model["family_rows"])
+        },
         "region_states": {row["region"]: row["state"] for row in regions},
     }
 

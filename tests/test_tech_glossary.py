@@ -1,4 +1,5 @@
 """Every technology shown in a diagram explains itself on hover (bi/tech_glossary.py)."""
+
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -14,8 +15,9 @@ SVG = "{http://www.w3.org/2000/svg}"
 
 def parse(svg):
     """The SVG tree and a {child: parent} map (ElementTree has no parent links)."""
-    root = ET.fromstring(svg if "xmlns=" in svg.split(">", 1)[0]
-                         else svg.replace("<svg ", f'<svg xmlns="{SVG[1:-1]}" ', 1))
+    root = ET.fromstring(
+        svg if "xmlns=" in svg.split(">", 1)[0] else svg.replace("<svg ", f'<svg xmlns="{SVG[1:-1]}" ', 1)
+    )
     return root, {child: parent for parent in root.iter() for child in parent}
 
 
@@ -36,8 +38,10 @@ def nearest_title(element, parents):
 
 def journey_svgs():
     states = make_states(control.RUN_OK)
-    return {"journey": architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK),
-            "vertical": architecture.build_vertical_journey_svg(states, FIGURES, charts.MODE_DARK)}
+    return {
+        "journey": architecture.build_journey_svg(states, FIGURES, charts.MODE_DARK),
+        "vertical": architecture.build_vertical_journey_svg(states, FIGURES, charts.MODE_DARK),
+    }
 
 
 def test_every_key_used_by_the_diagrams_has_a_complete_entry():
@@ -58,12 +62,16 @@ def test_every_key_used_by_the_diagrams_has_a_complete_entry():
 
 
 def test_acronyms_are_spelled_out():
-    for key, expansion in [("csv", "Comma-Separated Values"), ("sql", "Structured Query Language"),
-                           ("etl", "Extract, Transform, Load"), ("ci", "Continuous Integration"),
-                           ("cd", "Continuous Delivery"),
-                           ("odepa", "Oficina de Estudios y Políticas Agrarias"),
-                           ("ine", "Instituto Nacional de Estadísticas"),
-                           ("ipc", "Índice de Precios al Consumidor")]:
+    for key, expansion in [
+        ("csv", "Comma-Separated Values"),
+        ("sql", "Structured Query Language"),
+        ("etl", "Extract, Transform, Load"),
+        ("ci", "Continuous Integration"),
+        ("cd", "Continuous Delivery"),
+        ("odepa", "Oficina de Estudios y Políticas Agrarias"),
+        ("ine", "Instituto Nacional de Estadísticas"),
+        ("ipc", "Índice de Precios al Consumidor"),
+    ]:
         assert expansion in tech_glossary.describe(key)
 
 
@@ -121,5 +129,6 @@ def test_lineage_layer_headers_and_materializations_explain_themselves():
             assert "cursor:help" in group.get("style", "")
     assert {tech_glossary.describe("parquet"), tech_glossary.describe("dbt")} <= titles
     for key in lineage.LAYER_KEYS.values():
-        assert tech_glossary.describe(key) in {nearest_title(element, parents)[0] for element in root.iter()
-                                               if tag(element) == "text"}
+        assert tech_glossary.describe(key) in {
+            nearest_title(element, parents)[0] for element in root.iter() if tag(element) == "text"
+        }

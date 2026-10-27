@@ -15,6 +15,7 @@ Safety, in layers:
   SELECT * FROM (<query>) LIMIT n, after it parsed as exactly one SELECT;
 - a timer interrupts the connection after TIMEOUT_SECONDS.
 """
+
 import html
 import os
 import re
@@ -40,18 +41,19 @@ ALLOWED_FIRST_WORDS = ("SELECT", "WITH", "DESCRIBE", "SHOW", "SUMMARIZE")
 # Table functions that read files or URLs. External access is disabled anyway;
 # this check only gives the visitor a clear message instead of an engine error.
 FILE_FUNCTION_PATTERN = re.compile(
-    r"\b(read_\w+|\w+_scan|glob|sniff_csv|parquet_\w+|iceberg_\w+|delta_\w+|query|query_table)\s*\(",
-    re.IGNORECASE)
+    r"\b(read_\w+|\w+_scan|glob|sniff_csv|parquet_\w+|iceberg_\w+|delta_\w+|query|query_table)\s*\(", re.IGNORECASE
+)
 URL_PATTERN = re.compile(r"'\s*(https?|s3|s3a|gcs|gs|az|azure|abfss|r2|hf)://", re.IGNORECASE)
 FIRST_WORD_PATTERN = re.compile(r"[A-Za-z_]+")
 
 # Each view: (name, what it holds, SQL). Ordered as the visitor should read them.
 VIEWS = [
-    ("precios",
-     "Un precio semanal por producto, región y canal (consumidor y mayorista). "
-     "marca = 'SIN_MARCA' es un precio válido para los indicadores; 'ATIPICO' y "
-     "'UNIDAD_NO_CONVERTIBLE' quedan fuera de ellos.",
-     """SELECT CAST(w.week_start AS DATE) AS semana,
+    (
+        "precios",
+        "Un precio semanal por producto, región y canal (consumidor y mayorista). "
+        "marca = 'SIN_MARCA' es un precio válido para los indicadores; 'ATIPICO' y "
+        "'UNIDAD_NO_CONVERTIBLE' quedan fuera de ellos.",
+        """SELECT CAST(w.week_start AS DATE) AS semana,
        d.year AS anio,
        d.month AS mes,
        p.product_group AS familia,
@@ -70,36 +72,47 @@ FROM weekly_price AS w
 JOIN dim_product AS p ON p.product_id = w.product_id
 JOIN dim_region AS r ON r.region_id = w.region_id
 JOIN dim_channel AS c ON c.channel_id = w.channel_id
-LEFT JOIN dim_date AS d ON d.week_start = w.week_start"""),
-    ("semanas",
-     "Calendario: una fila por semana, desde la primera hasta la última con precios.",
-     """SELECT CAST(week_start AS DATE) AS semana, iso_year AS anio_iso, iso_week AS semana_iso,
+LEFT JOIN dim_date AS d ON d.week_start = w.week_start""",
+    ),
+    (
+        "semanas",
+        "Calendario: una fila por semana, desde la primera hasta la última con precios.",
+        """SELECT CAST(week_start AS DATE) AS semana, iso_year AS anio_iso, iso_week AS semana_iso,
        month AS mes, month_name AS nombre_mes, year AS anio, season AS estacion
-FROM dim_date"""),
-    ("productos",
-     "Catálogo de productos: familia, producto, variedad y calidad.",
-     """SELECT product_group AS familia, product AS producto, variety AS variedad, quality AS calidad
-FROM dim_product"""),
-    ("ipc_semanal",
-     "IPC de alimentos del INE llevado a cada semana. precio × factor_real = precio en "
-     "pesos del último mes publicado; provisional = el mes aún no está publicado.",
-     """SELECT CAST(week_start AS DATE) AS semana, ipc_year AS anio_ipc, ipc_month AS mes_ipc,
+FROM dim_date""",
+    ),
+    (
+        "productos",
+        "Catálogo de productos: familia, producto, variedad y calidad.",
+        """SELECT product_group AS familia, product AS producto, variety AS variedad, quality AS calidad
+FROM dim_product""",
+    ),
+    (
+        "ipc_semanal",
+        "IPC de alimentos del INE llevado a cada semana. precio × factor_real = precio en "
+        "pesos del último mes publicado; provisional = el mes aún no está publicado.",
+        """SELECT CAST(week_start AS DATE) AS semana, ipc_year AS anio_ipc, ipc_month AS mes_ipc,
        food_index AS indice_alimentos, reference_year AS anio_referencia,
        reference_month AS mes_referencia, real_factor AS factor_real, provisional
-FROM ipc_weekly"""),
-    ("ipc_mensual",
-     "IPC de alimentos del INE, un valor por mes publicado.",
-     """SELECT year AS anio, month AS mes, food_index AS indice_alimentos, origin AS origen
-FROM ipc_monthly"""),
-    ("cargas",
-     "Ejecuciones del pipeline: cuándo empezó cada carga, su estado y cuántas filas leyó, "
-     "cargó y rechazó.",
-     """SELECT CAST(started_at AS TIMESTAMP) AS inicio, status AS estado, rows_read AS filas_leidas,
+FROM ipc_weekly""",
+    ),
+    (
+        "ipc_mensual",
+        "IPC de alimentos del INE, un valor por mes publicado.",
+        """SELECT year AS anio, month AS mes, food_index AS indice_alimentos, origin AS origen
+FROM ipc_monthly""",
+    ),
+    (
+        "cargas",
+        "Ejecuciones del pipeline: cuándo empezó cada carga, su estado y cuántas filas leyó, cargó y rechazó.",
+        """SELECT CAST(started_at AS TIMESTAMP) AS inicio, status AS estado, rows_read AS filas_leidas,
        rows_loaded AS filas_cargadas, rows_rejected AS filas_rechazadas, message AS mensaje
-FROM etl_run"""),
-    ("rechazos",
-     "Filas de origen que la validación rechazó, con su motivo y los datos que traían.",
-     """SELECT CAST(e.started_at AS TIMESTAMP) AS inicio_carga,
+FROM etl_run""",
+    ),
+    (
+        "rechazos",
+        "Filas de origen que la validación rechazó, con su motivo y los datos que traían.",
+        """SELECT CAST(e.started_at AS TIMESTAMP) AS inicio_carga,
        CASE r.source WHEN 'wholesale' THEN 'mayorista' ELSE 'consumidor' END AS fuente,
        r.reason AS motivo,
        COALESCE(r.original_row ->> 'price_date', r.original_row ->> 'week_start') AS fecha_precio,
@@ -108,24 +121,28 @@ FROM etl_run"""),
        r.original_row ->> 'variety' AS variedad,
        r.original_row AS fila_original
 FROM rejection AS r
-LEFT JOIN etl_run AS e ON e.run_id = r.run_id"""),
-    ("modelos_dbt",
-     "Modelos y pruebas de dbt que construyen esta base, con el resultado de su última ejecución.",
-     """SELECT n.name AS nombre, n.resource_type AS tipo, NULLIF(n.layer, '') AS capa,
+LEFT JOIN etl_run AS e ON e.run_id = r.run_id""",
+    ),
+    (
+        "modelos_dbt",
+        "Modelos y pruebas de dbt que construyen esta base, con el resultado de su última ejecución.",
+        """SELECT n.name AS nombre, n.resource_type AS tipo, NULLIF(n.layer, '') AS capa,
        NULLIF(n.materialized, '') AS materializacion, NULLIF(n.column_name, '') AS columna,
        n.description AS descripcion, r.status AS estado,
        r.execution_time AS segundos, r.failures AS fallas
 FROM dbt_node AS n
-LEFT JOIN dbt_result AS r ON r.unique_id = n.unique_id"""),
+LEFT JOIN dbt_result AS r ON r.unique_id = n.unique_id""",
+    ),
 ]
 VIEW_NAMES = [name for name, _, _ in VIEWS]
 # Each example: (title, the question it answers, SQL). All run on the views above.
 # Each example: (title, question, SQL template, parameters). Parameters are filled
 # from the selectors above the editor (D-180); render_example writes the final SQL.
 TEMPLATES = [
-    ('Tabla completa',
-     'Todos los precios semanales con cada dimensión (familia, producto, variedad, calidad, canal, región) y el precio real según el IPC de alimentos; los filtros de arriba acotan la tabla.',
-     """-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y región,
+    (
+        'Tabla completa',
+        'Todos los precios semanales con cada dimensión (familia, producto, variedad, calidad, canal, región) y el precio real según el IPC de alimentos; los filtros de arriba acotan la tabla.',
+        """-- Tabla completa: un precio semanal por producto, variedad, calidad, canal y región,
 -- cruzado con el IPC de alimentos del INE. precio_real = precio × factor_real
 -- (pesos del último mes publicado). Filtros elegidos arriba del editor; «Todas» no filtra.
 SELECT p.semana, p.familia, p.producto, p.variedad, p.calidad, p.canal, p.fuente, p.region,
@@ -137,10 +154,12 @@ SELECT p.semana, p.familia, p.producto, p.variedad, p.calidad, p.canal, p.fuente
 FROM precios AS p
 LEFT JOIN ipc_semanal AS i ON i.semana = p.semana{where}
 ORDER BY p.semana DESC, p.familia, p.producto, p.region, p.canal""",
-     ('familia', 'producto_filtro', 'canal_filtro', 'region', 'anio_filtro')),
-    ('Precio vs. época',
-     '¿Qué productos están caros o baratos frente a la misma época de los años anteriores, en pesos reales? Conviene comprar lo barato y esperar lo caro.',
-     """-- Precio vs. época: ¿está caro o barato frente a la misma época de años anteriores?
+        ('familia', 'producto_filtro', 'canal_filtro', 'region', 'anio_filtro'),
+    ),
+    (
+        'Precio vs. época',
+        '¿Qué productos están caros o baratos frente a la misma época de los años anteriores, en pesos reales? Conviene comprar lo barato y esperar lo caro.',
+        """-- Precio vs. época: ¿está caro o barato frente a la misma época de años anteriores?
 -- Cada serie (producto, variedad, calidad, canal, unidad y región) se compara consigo misma:
 -- últimas 4 semanas frente a las mismas semanas ISO de los años anteriores, en pesos reales.
 WITH ultima AS (
@@ -181,10 +200,12 @@ FROM series
 GROUP BY familia, producto, variedad, calidad, unidad
 HAVING count(*) >= 3
 ORDER BY diferencia_real_pct DESC""",
-     ('familia',)),
-    ('Canal más barato',
-     '¿En qué canal conviene comprar cada producto y cuánto se ahorra frente al canal más caro, en la misma región y semanas?',
-     """-- Canal más barato: ¿dónde comprar cada producto y cuánto se ahorra?
+        ('familia',),
+    ),
+    (
+        'Canal más barato',
+        '¿En qué canal conviene comprar cada producto y cuánto se ahorra frente al canal más caro, en la misma región y semanas?',
+        """-- Canal más barato: ¿dónde comprar cada producto y cuánto se ahorra?
 -- Se comparan canales con el mismo producto, variedad, calidad, unidad, región y semanas
 -- (promedio de las últimas 4 semanas, para no depender de una sola semana).
 WITH ventana AS (
@@ -215,10 +236,12 @@ FROM por_region
 GROUP BY familia, producto, variedad, calidad, unidad
 HAVING count(*) >= {min_regiones}  -- 3 regiones en todo el país; 1 si se eligió una región
 ORDER BY ahorro_pct DESC""",
-     ('familia', 'region')),
-    ('Inflación vs IPC',
-     '¿Qué productos subieron más que el IPC de alimentos en el período elegido, medido serie a serie en las mismas fechas?',
-     """-- Inflación vs IPC: ¿qué productos subieron más que la inflación de alimentos?
+        ('familia', 'region'),
+    ),
+    (
+        'Inflación vs IPC',
+        '¿Qué productos subieron más que el IPC de alimentos en el período elegido, medido serie a serie en las mismas fechas?',
+        """-- Inflación vs IPC: ¿qué productos subieron más que la inflación de alimentos?
 -- Período elegido arriba ({periodo}). Cada serie se mide entre su primer y su último precio
 -- del período, y el IPC entre esas mismas dos semanas: la comparación es exacta, serie a serie.
 WITH periodo AS (
@@ -257,10 +280,12 @@ FROM comparacion
 GROUP BY familia, producto, variedad, calidad, unidad
 HAVING count(*) >= 3
 ORDER BY sobre_inflacion_pp DESC""",
-     ('periodo', 'familia')),
-    ('Brecha mayorista',
-     '¿Cuánto más paga el consumidor que el mayorista por el mismo producto, y cómo cambió en un año? Solo Frutas y Hortalizas.',
-     """-- Brecha mayorista-consumidor: ¿cuánto más paga el consumidor que el mayorista?
+        ('periodo', 'familia'),
+    ),
+    (
+        'Brecha mayorista',
+        '¿Cuánto más paga el consumidor que el mayorista por el mismo producto, y cómo cambió en un año? Solo Frutas y Hortalizas.',
+        """-- Brecha mayorista-consumidor: ¿cuánto más paga el consumidor que el mayorista?
 -- Solo Frutas y Hortalizas tienen precio mayorista. Se emparejan el mismo producto, variedad,
 -- calidad, unidad, región y semana en los dos canales. Es una brecha, no un margen:
 -- no incluye transporte, mermas ni costos del comercio.
@@ -290,10 +315,12 @@ FROM pares
 GROUP BY familia, producto, variedad, calidad, unidad
 HAVING brecha_actual_pct IS NOT NULL AND brecha_hace_un_anio_pct IS NOT NULL AND regiones >= 2
 ORDER BY cambio_pp DESC""",
-     ()),
-    ('Calendario de compra',
-     '¿En qué mes cada producto suele estar más barato y más caro, en pesos reales, y cuánto se ahorra comprando en el mes barato?',
-     """-- Calendario de compra: ¿en qué mes cada producto suele estar más barato y más caro?
+        (),
+    ),
+    (
+        'Calendario de compra',
+        '¿En qué mes cada producto suele estar más barato y más caro, en pesos reales, y cuánto se ahorra comprando en el mes barato?',
+        """-- Calendario de compra: ¿en qué mes cada producto suele estar más barato y más caro?
 -- Índice estacional en pesos reales: en cada serie y año, el precio de cada mes se divide por la
 -- mediana de ese año; luego se toma la mediana por mes. 100 = precio típico del año.
 WITH real AS (
@@ -325,12 +352,18 @@ FROM por_mes
 GROUP BY familia, producto, variedad, calidad, unidad
 HAVING count(*) = 12 AND min(observaciones) >= 6
 ORDER BY ahorro_comprando_en_el_mes_barato_pct DESC""",
-     ('familia',)),
+        ('familia',),
+    ),
 ]
 # The script name of each query in the editor's tab, as a SQL Server file (D-182).
-SCRIPT_NAMES = {"Tabla completa": "tabla_completa.sql", "Precio vs. época": "precio_vs_epoca.sql",
-                "Canal más barato": "canal_mas_barato.sql", "Inflación vs IPC": "inflacion_vs_ipc.sql",
-                "Brecha mayorista": "brecha_mayorista.sql", "Calendario de compra": "calendario_compra.sql"}
+SCRIPT_NAMES = {
+    "Tabla completa": "tabla_completa.sql",
+    "Precio vs. época": "precio_vs_epoca.sql",
+    "Canal más barato": "canal_mas_barato.sql",
+    "Inflación vs IPC": "inflacion_vs_ipc.sql",
+    "Brecha mayorista": "brecha_mayorista.sql",
+    "Calendario de compra": "calendario_compra.sql",
+}
 
 
 def sql_text(value):
@@ -340,12 +373,22 @@ def sql_text(value):
 
 ALL_VALUES = "Todas"
 SINCE_2022 = "Desde 2022"
-PARAMETER_DEFAULTS = {"periodo": SINCE_2022, "familia": ALL_VALUES,
-                      "producto_filtro": ALL_VALUES, "canal_filtro": ALL_VALUES, "region": ALL_VALUES,
-                      "anio_filtro": ALL_VALUES}
+PARAMETER_DEFAULTS = {
+    "periodo": SINCE_2022,
+    "familia": ALL_VALUES,
+    "producto_filtro": ALL_VALUES,
+    "canal_filtro": ALL_VALUES,
+    "region": ALL_VALUES,
+    "anio_filtro": ALL_VALUES,
+}
 # Filter parameter -> the column it filters in the full table (D-185).
-FILTER_COLUMNS = {"familia": "p.familia", "producto_filtro": "p.producto", "canal_filtro": "p.canal",
-                  "region": "p.region", "anio_filtro": "year(p.semana)"}
+FILTER_COLUMNS = {
+    "familia": "p.familia",
+    "producto_filtro": "p.producto",
+    "canal_filtro": "p.canal",
+    "region": "p.region",
+    "anio_filtro": "year(p.semana)",
+}
 
 
 def build_conditions(values, names):
@@ -375,10 +418,14 @@ def render_example(index, values=None):
     _, _, template, names = TEMPLATES[index]
     conditions = build_conditions(values, names)
     text, start, end = period_bounds(values["periodo"])
-    return (template.replace("{where}", ("\nWHERE " + "\n  AND ".join(conditions)) if conditions else "")
-            .replace("{filtros}", "".join(f"\n      AND {condition}" for condition in conditions))
-            .replace("{periodo}", text).replace("{desde}", start).replace("{hasta}", end)
-            .replace("{min_regiones}", "1" if values.get("region", ALL_VALUES) != ALL_VALUES and "region" in names else "3"))
+    return (
+        template.replace("{where}", ("\nWHERE " + "\n  AND ".join(conditions)) if conditions else "")
+        .replace("{filtros}", "".join(f"\n      AND {condition}" for condition in conditions))
+        .replace("{periodo}", text)
+        .replace("{desde}", start)
+        .replace("{hasta}", end)
+        .replace("{min_regiones}", "1" if values.get("region", ALL_VALUES) != ALL_VALUES and "region" in names else "3")
+    )
 
 
 # (title, question, SQL with the default parameters), as the tests and the chips read them.
@@ -387,14 +434,20 @@ EXAMPLES = [(title, question, render_example(index)) for index, (title, question
 
 # Gold tables offered as CSV in «Llevar los datos a otra herramienta».
 EXPORTS = [
-    ("precios_52_semanas.csv", f"Precios de las últimas {EXPORT_WEEKS} semanas",
-     f"SELECT * FROM precios WHERE semana > (SELECT max(semana) FROM precios) "
-     f"- INTERVAL {EXPORT_WEEKS * 7} DAY ORDER BY semana, familia, producto, region, canal"),
+    (
+        "precios_52_semanas.csv",
+        f"Precios de las últimas {EXPORT_WEEKS} semanas",
+        f"SELECT * FROM precios WHERE semana > (SELECT max(semana) FROM precios) "
+        f"- INTERVAL {EXPORT_WEEKS * 7} DAY ORDER BY semana, familia, producto, region, canal",
+    ),
     ("productos.csv", "Catálogo de productos", "SELECT * FROM productos ORDER BY ALL"),
     ("regiones.csv", "Regiones", "SELECT region FROM dim_region ORDER BY region"),
-    ("canales.csv", "Canales",
-     "SELECT channel AS canal, CASE source WHEN 'wholesale' THEN 'mayorista' ELSE 'consumidor' END "
-     "AS fuente FROM dim_channel ORDER BY fuente, canal"),
+    (
+        "canales.csv",
+        "Canales",
+        "SELECT channel AS canal, CASE source WHEN 'wholesale' THEN 'mayorista' ELSE 'consumidor' END "
+        "AS fuente FROM dim_channel ORDER BY fuente, canal",
+    ),
     ("semanas.csv", "Calendario de semanas", "SELECT * FROM semanas ORDER BY semana"),
     ("ipc_semanal.csv", "IPC de alimentos por semana", "SELECT * FROM ipc_semanal ORDER BY semana"),
 ]
@@ -424,7 +477,7 @@ def strip_comments(sql):
                         continue
                     break
                 end += 1
-            result.append(sql[position:end + 1])
+            result.append(sql[position : end + 1])
             position = end + 1
         elif sql.startswith("--", position):
             newline = sql.find("\n", position)
@@ -451,21 +504,25 @@ def validate_query(sql):
         raise QueryRejected(
             "Solo se permiten consultas de lectura: SELECT o WITH (también DESCRIBE, SHOW y "
             "SUMMARIZE). INSERT, UPDATE, DELETE, DROP, CREATE, ATTACH, COPY, PRAGMA, SET y "
-            "otras instrucciones no se ejecutan.")
+            "otras instrucciones no se ejecutan."
+        )
     try:
         statements = duckdb.extract_statements(text)
     except duckdb.Error as error:
         raise QueryRejected(f"La consulta no se pudo interpretar: {error}") from error
     if len(statements) != 1:
-        raise QueryRejected("Ejecuta una sola consulta a la vez (sin varias instrucciones "
-                            "separadas por punto y coma).")
+        raise QueryRejected("Ejecuta una sola consulta a la vez (sin varias instrucciones separadas por punto y coma).")
     if statements[0].type != duckdb.StatementType.SELECT:
         raise QueryRejected("Solo se permiten consultas de lectura (SELECT o WITH).")
     if FILE_FUNCTION_PATTERN.search(text) or URL_PATTERN.search(text):
-        raise QueryRejected("Las consultas trabajan solo sobre las tablas de esta base: leer "
-                            "archivos o direcciones web (read_csv, read_parquet, http…) está "
-                            "desactivado.")
+        raise QueryRejected(
+            "Las consultas trabajan solo sobre las tablas de esta base: leer "
+            "archivos o direcciones web (read_csv, read_parquet, http…) está "
+            "desactivado."
+        )
     return text
+
+
 # endregion
 
 
@@ -477,8 +534,7 @@ def open_explorer_connection(database_file=queries.DATABASE_FILE):
     the config; the configuration is locked once the views exist, so no query
     can change it back.
     """
-    connection = duckdb.connect(str(database_file), read_only=True,
-                                config={"enable_external_access": False})
+    connection = duckdb.connect(str(database_file), read_only=True, config={"enable_external_access": False})
     try:
         connection.execute("SET enable_external_access = false")
         connection.execute(f"SET memory_limit = '{MEMORY_LIMIT}'")
@@ -498,8 +554,7 @@ class QueryResult:
     seconds: float
 
 
-def run_user_query(sql, database_file=queries.DATABASE_FILE, timeout=TIMEOUT_SECONDS,
-                   row_limit=ROW_LIMIT):
+def run_user_query(sql, database_file=queries.DATABASE_FILE, timeout=TIMEOUT_SECONDS, row_limit=ROW_LIMIT):
     """Validate and run a visitor query; at most row_limit rows, at most timeout seconds."""
     body = validate_query(sql)
     wrapped = f"SELECT * FROM (\n{body}\n) AS consulta LIMIT {int(row_limit) + 1}"
@@ -510,8 +565,10 @@ def run_user_query(sql, database_file=queries.DATABASE_FILE, timeout=TIMEOUT_SEC
         timer.start()
         rows = connection.execute(wrapped).df()
     except duckdb.InterruptException as error:
-        raise QueryTimeout(f"La consulta superó el límite de {timeout:g} segundos y se detuvo. "
-                           "Prueba filtrando por semana, producto o región.") from error
+        raise QueryTimeout(
+            f"La consulta superó el límite de {timeout:g} segundos y se detuvo. "
+            "Prueba filtrando por semana, producto o región."
+        ) from error
     finally:
         timer.cancel()
         connection.close()
@@ -570,6 +627,8 @@ def to_parquet_bytes(rows):
 
 def export_csv(sql, database_file=queries.DATABASE_FILE):
     return to_csv_bytes(read_view(sql, database_file))
+
+
 # endregion
 
 
@@ -577,19 +636,23 @@ def export_csv(sql, database_file=queries.DATABASE_FILE):
 DATABASE_LABEL = "datos.duckdb"
 # Words the editor paints: keywords first, then the usual functions. Identifiers
 # (columns, views) keep the ink color, as in SQL Server Management Studio.
-KEYWORDS = ("SELECT FROM WHERE AND OR NOT IN IS NULL AS ON JOIN LEFT RIGHT INNER FULL OUTER CROSS "
-            "GROUP BY ORDER HAVING LIMIT OFFSET WITH UNION ALL DISTINCT CASE WHEN THEN ELSE END "
-            "BETWEEN LIKE ILIKE SIMILAR EXISTS OVER PARTITION ROWS RANGE PRECEDING FOLLOWING UNBOUNDED "
-            "CURRENT ROW ASC DESC NULLS FIRST LAST FILTER INTERVAL DAY DAYS WEEK MONTH YEAR DATE "
-            "TIMESTAMP INTEGER BIGINT DOUBLE DECIMAL VARCHAR BOOLEAN TRUE FALSE DESCRIBE SHOW SUMMARIZE "
-            "USING QUALIFY WINDOW CAST TRY_CAST EXCLUDE PIVOT UNPIVOT SAMPLE VALUES LATERAL ANY SOME "
-            "EXCEPT INTERSECT RECURSIVE TABLES COLUMNS")
-FUNCTIONS = ("COUNT SUM AVG MIN MAX MEDIAN MODE ROUND FLOOR CEIL CEILING ABS COALESCE NULLIF IFNULL IF "
-             "LAG LEAD ROW_NUMBER RANK DENSE_RANK NTILE ANY_VALUE ARG_MAX ARG_MIN LIST STRING_AGG "
-             "ARRAY_AGG DATE_TRUNC DATE_PART DATEDIFF DATE_DIFF DATEADD EXTRACT STRFTIME STRPTIME LOWER "
-             "UPPER TRIM LENGTH SUBSTRING SUBSTR CONCAT REPLACE REGEXP_MATCHES REGEXP_REPLACE QUANTILE "
-             "QUANTILE_CONT STDDEV STDDEV_SAMP VARIANCE GENERATE_SERIES UNNEST GREATEST LEAST TYPEOF "
-             "EPOCH YEAR MONTH DAY WEEK TO_DAYS NOW TODAY CURRENT_DATE MAKE_DATE LAST_DAY")
+KEYWORDS = (
+    "SELECT FROM WHERE AND OR NOT IN IS NULL AS ON JOIN LEFT RIGHT INNER FULL OUTER CROSS "
+    "GROUP BY ORDER HAVING LIMIT OFFSET WITH UNION ALL DISTINCT CASE WHEN THEN ELSE END "
+    "BETWEEN LIKE ILIKE SIMILAR EXISTS OVER PARTITION ROWS RANGE PRECEDING FOLLOWING UNBOUNDED "
+    "CURRENT ROW ASC DESC NULLS FIRST LAST FILTER INTERVAL DAY DAYS WEEK MONTH YEAR DATE "
+    "TIMESTAMP INTEGER BIGINT DOUBLE DECIMAL VARCHAR BOOLEAN TRUE FALSE DESCRIBE SHOW SUMMARIZE "
+    "USING QUALIFY WINDOW CAST TRY_CAST EXCLUDE PIVOT UNPIVOT SAMPLE VALUES LATERAL ANY SOME "
+    "EXCEPT INTERSECT RECURSIVE TABLES COLUMNS"
+)
+FUNCTIONS = (
+    "COUNT SUM AVG MIN MAX MEDIAN MODE ROUND FLOOR CEIL CEILING ABS COALESCE NULLIF IFNULL IF "
+    "LAG LEAD ROW_NUMBER RANK DENSE_RANK NTILE ANY_VALUE ARG_MAX ARG_MIN LIST STRING_AGG "
+    "ARRAY_AGG DATE_TRUNC DATE_PART DATEDIFF DATE_DIFF DATEADD EXTRACT STRFTIME STRPTIME LOWER "
+    "UPPER TRIM LENGTH SUBSTRING SUBSTR CONCAT REPLACE REGEXP_MATCHES REGEXP_REPLACE QUANTILE "
+    "QUANTILE_CONT STDDEV STDDEV_SAMP VARIANCE GENERATE_SERIES UNNEST GREATEST LEAST TYPEOF "
+    "EPOCH YEAR MONTH DAY WEEK TO_DAYS NOW TODAY CURRENT_DATE MAKE_DATE LAST_DAY"
+)
 # The editor's paint layer (D-173): a transparent textarea over a <pre> that a script
 # repaints on every keystroke with the SQL colors, plus a gutter of line numbers.
 # One script per block, no HTML tags inside it and no node moves (CLAUDE.md).
@@ -712,26 +775,43 @@ def build_css(palette):
     ink, text, muted = palette["strong_text"], palette["text"], palette["reference"]
     if dark:
         editor = f"color-mix(in srgb, {card} 72%, #000)"
-        panel_shadow = ("0 1px 0 rgba(255,255,255,.07) inset, 0 34px 70px -34px rgba(0,0,0,.9), "
-                        "0 0 0 1px rgba(255,255,255,.04)")
+        panel_shadow = (
+            "0 1px 0 rgba(255,255,255,.07) inset, 0 34px 70px -34px rgba(0,0,0,.9), 0 0 0 1px rgba(255,255,255,.04)"
+        )
         raised = "0 1px 0 rgba(255,255,255,.08) inset, 0 2px 4px rgba(0,0,0,.45)"
         inset = "inset 0 2px 8px rgba(0,0,0,.55), inset 0 0 0 1px rgba(255,255,255,.04)"
         toolbar = f"linear-gradient(180deg, color-mix(in srgb, {card} 84%, #fff) 0%, {card} 100%)"
         explorer = f"color-mix(in srgb, {card} 86%, #000)"
-        tokens = {"k": "#7ab8ff", "f": "#e0a8ff", "s": "#ffb07a", "n": "#86e2c9", "c": "#80c880",
-                  "o": "#9aa4b2", "q": "#c7b8ff"}
+        tokens = {
+            "k": "#7ab8ff",
+            "f": "#e0a8ff",
+            "s": "#ffb07a",
+            "n": "#86e2c9",
+            "c": "#80c880",
+            "o": "#9aa4b2",
+            "q": "#c7b8ff",
+        }
         gutter = "rgba(255,255,255,.28)"
         selection = f"color-mix(in srgb, {accent} 28%, transparent)"
     else:
         editor = "#ffffff"
-        panel_shadow = ("0 1px 0 #fff inset, 0 34px 70px -40px rgba(15,27,45,.5), "
-                        "0 10px 24px -14px rgba(15,27,45,.22), 0 0 0 1px rgba(15,27,45,.04)")
+        panel_shadow = (
+            "0 1px 0 #fff inset, 0 34px 70px -40px rgba(15,27,45,.5), "
+            "0 10px 24px -14px rgba(15,27,45,.22), 0 0 0 1px rgba(15,27,45,.04)"
+        )
         raised = "0 1px 0 rgba(255,255,255,.9) inset, 0 1px 3px rgba(15,27,45,.12)"
         inset = "inset 0 2px 7px rgba(15,27,45,.09), inset 0 0 0 1px rgba(15,27,45,.04)"
         toolbar = f"linear-gradient(180deg, #ffffff 0%, {field} 100%)"
         explorer = f"color-mix(in srgb, {field} 70%, #fff)"
-        tokens = {"k": "#1b4fd8", "f": "#a0269b", "s": "#c2410c", "n": "#0f766e", "c": "#2e7d32",
-                  "o": "#64748b", "q": "#6d28d9"}
+        tokens = {
+            "k": "#1b4fd8",
+            "f": "#a0269b",
+            "s": "#c2410c",
+            "n": "#0f766e",
+            "c": "#2e7d32",
+            "o": "#64748b",
+            "q": "#6d28d9",
+        }
         gutter = "rgba(15,27,45,.32)"
         selection = f"color-mix(in srgb, {accent} 22%, transparent)"
     mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Cascadia Code', monospace"
@@ -881,34 +961,47 @@ def build_css(palette):
 </style>"""
 
 
-DESCRIPTION = ("SQL de solo lectura sobre la capa gold del data warehouse, con vistas de "
-               "columnas legibles; nada de identificadores internos.")
+DESCRIPTION = (
+    "SQL de solo lectura sobre la capa gold del data warehouse, con vistas de "
+    "columnas legibles; nada de identificadores internos."
+)
 
 
 def build_bar_chips():
     """The studio's limits, as chips of the page bar (D-267)."""
     limit = f"{ROW_LIMIT:,}".replace(",", ".")
-    return [("<b>DuckDB</b><small>solo lectura</small>", "La consulta corre en DuckDB con la base abierta en solo lectura."),
-            (f"<small>máx.</small><b>{limit}</b><small>filas</small>", f"Muestra como máximo {limit} filas por consulta."),
-            (f"<b>{TIMEOUT_SECONDS} s</b>", f"Una consulta se detiene a los {TIMEOUT_SECONDS} segundos.")]
+    return [
+        (
+            "<b>DuckDB</b><small>solo lectura</small>",
+            "La consulta corre en DuckDB con la base abierta en solo lectura.",
+        ),
+        (f"<small>máx.</small><b>{limit}</b><small>filas</small>", f"Muestra como máximo {limit} filas por consulta."),
+        (f"<b>{TIMEOUT_SECONDS} s</b>", f"Una consulta se detiene a los {TIMEOUT_SECONDS} segundos."),
+    ]
 
 
 def build_database_html():
     """The connection pill of the toolbar: the database, its engine, read-only."""
-    return (f'<span class="sqlx-db"><i></i>{DATABASE_LABEL} <small>DuckDB {duckdb.__version__} · '
-            'solo lectura</small></span>')
+    return (
+        f'<span class="sqlx-db"><i></i>{DATABASE_LABEL} <small>DuckDB {duckdb.__version__} · '
+        'solo lectura</small></span>'
+    )
 
 
 def build_tree_html():
     """The top of the object explorer: its title and the database (D-182)."""
-    return ('<div class="sqlx-tree-title">Explorador de objetos</div>'
-            f'<div class="sqlx-node"><span class="tw">▾</span><span class="sqlx-ico db"></span>{DATABASE_LABEL}</div>')
+    return (
+        '<div class="sqlx-tree-title">Explorador de objetos</div>'
+        f'<div class="sqlx-node"><span class="tw">▾</span><span class="sqlx-ico db"></span>{DATABASE_LABEL}</div>'
+    )
 
 
 def build_folder_html(name, count):
     """A folder of the tree, as SQL Server's «Tables» and «Views»."""
-    return (f'<div class="sqlx-node branch"><span class="tw">▾</span><span class="sqlx-ico folder"></span>{html.escape(name)} '
-            f'<small>({count})</small></div>')
+    return (
+        f'<div class="sqlx-node branch"><span class="tw">▾</span><span class="sqlx-ico folder"></span>{html.escape(name)} '
+        f'<small>({count})</small></div>'
+    )
 
 
 def build_view_html(name, description, count, columns):
@@ -921,13 +1014,17 @@ def build_tab_html(example):
     """The editor's tab strip: the script's file name and an «i» that tells, on hover,
     which question it answers (D-182)."""
     if example is None:
-        return (f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>consulta.sql · '
-                f'{DATABASE_LABEL}</span></div>')
+        return (
+            f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>consulta.sql · '
+            f'{DATABASE_LABEL}</span></div>'
+        )
     title, question, _ = EXAMPLES[example]
     script = SCRIPT_NAMES.get(title, "consulta.sql")
-    return (f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>{html.escape(script)} · '
-            f'{DATABASE_LABEL}</span><span class="sqlx-info" tabindex="0" title="{html.escape(question, quote=True)}">'
-            f'i<span class="sqlx-info-tip" role="tooltip"><b>{html.escape(title)}</b>{html.escape(question)}</span></span></div>')
+    return (
+        f'<div class="sqlx-tabstrip"><span class="sqlx-tab"><span class="dot"></span>{html.escape(script)} · '
+        f'{DATABASE_LABEL}</span><span class="sqlx-info" tabindex="0" title="{html.escape(question, quote=True)}">'
+        f'i<span class="sqlx-info-tip" role="tooltip"><b>{html.escape(title)}</b>{html.escape(question)}</span></span></div>'
+    )
 
 
 def editor_height(sql):
@@ -954,9 +1051,11 @@ def build_status_html(outcome):
         elapsed = format_elapsed(outcome.seconds)
         rows = f"{len(outcome.rows):,} filas".replace(",", ".")
     mark = "✓" if kind == "ok" else ("!" if kind == "err" else "·")
-    return (f'<div class="sqlx-status {kind}"><span><i class="mark">{mark}</i>{verdict}</span>'
-            f'<span>DuckDB {duckdb.__version__}</span><span>solo lectura</span><span>{DATABASE_LABEL}</span>'
-            f'<span class="num">{elapsed}</span><span class="num">{rows}</span></div>')
+    return (
+        f'<div class="sqlx-status {kind}"><span><i class="mark">{mark}</i>{verdict}</span>'
+        f'<span>DuckDB {duckdb.__version__}</span><span>solo lectura</span><span>{DATABASE_LABEL}</span>'
+        f'<span class="num">{elapsed}</span><span class="num">{rows}</span></div>'
+    )
 
 
 def build_messages_html(outcome):
@@ -967,23 +1066,37 @@ def build_messages_html(outcome):
         return f'<pre class="sqlx-msg"><span class="err">{html.escape(outcome)}</span>\n\n{tr("La consulta no se ejecutó.")}</pre>'
     # D-284: figures in the language of the visit; the messages are preformatted, so they are written in it here.
     number = (lambda value: f"{value:,.0f}") if i18n.is_english() else (lambda value: f"{value:,.0f}".replace(",", "."))
-    note = ("\n" + tr("Se muestran las primeras {} filas; el resultado tenía más.").format(number(ROW_LIMIT))
-            if outcome.truncated else "")
-    return (f'<pre class="sqlx-msg">{tr("({} filas afectadas)").format(number(len(outcome.rows)))}{note}\n\n'
-            f'<span class="ok">✓ {tr("Consulta ejecutada correctamente.")}</span>  '
-            f'{tr("Tiempo: {} ms").format(number(outcome.seconds * 1000))}</pre>')
+    note = (
+        "\n" + tr("Se muestran las primeras {} filas; el resultado tenía más.").format(number(ROW_LIMIT))
+        if outcome.truncated
+        else ""
+    )
+    return (
+        f'<pre class="sqlx-msg">{tr("({} filas afectadas)").format(number(len(outcome.rows)))}{note}\n\n'
+        f'<span class="ok">✓ {tr("Consulta ejecutada correctamente.")}</span>  '
+        f'{tr("Tiempo: {} ms").format(number(outcome.seconds * 1000))}</pre>'
+    )
 
 
 def describe_tables(database_file=queries.DATABASE_FILE):
     """[(table, row count, [(column, type)])] of the real tables of the database (D-182)."""
     connection = open_explorer_connection(database_file)
     try:
-        names = [row[0] for row in connection.execute(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' "
-            "AND table_type = 'BASE TABLE' ORDER BY table_name").fetchall()]
-        return [(name, connection.execute(f'SELECT count(*) FROM main."{name}"').fetchone()[0],
-                 [(row[0], row[1]) for row in connection.execute(f'DESCRIBE main."{name}"').fetchall()])
-                for name in names]
+        names = [
+            row[0]
+            for row in connection.execute(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' "
+                "AND table_type = 'BASE TABLE' ORDER BY table_name"
+            ).fetchall()
+        ]
+        return [
+            (
+                name,
+                connection.execute(f'SELECT count(*) FROM main."{name}"').fetchone()[0],
+                [(row[0], row[1]) for row in connection.execute(f'DESCRIBE main."{name}"').fetchall()],
+            )
+            for name in names
+        ]
     finally:
         connection.close()
 
@@ -994,6 +1107,7 @@ def load_tables():
     @st.cache_data(ttl=600, show_spinner=False)
     def cached(database_file, modified):
         return describe_tables(database_file)
+
     database_file = str(queries.DATABASE_FILE)
     modified = os.path.getmtime(database_file) if os.path.exists(database_file) else 0
     return cached(database_file, modified)
@@ -1005,20 +1119,33 @@ def load_catalog():
     @st.cache_data(ttl=600, show_spinner=False)
     def cached(database_file, modified):
         return describe_views(database_file)
+
     database_file = str(queries.DATABASE_FILE)
     modified = os.path.getmtime(database_file) if os.path.exists(database_file) else 0
     return cached(database_file, modified)
 
 
-PARAMETER_KEYS = {"periodo": "sqlx_param_periodo", "familia": "sqlx_param_familia", "producto_filtro": "sqlx_param_producto_filtro",
-                  "canal_filtro": "sqlx_param_canal_filtro", "region": "sqlx_param_region",
-                  "anio_filtro": "sqlx_param_anio_filtro"}
-PARAMETER_LABELS = {"periodo": "Período", "familia": "Familia",
-                    "producto_filtro": "Producto", "canal_filtro": "Canal", "region": "Región", "anio_filtro": "Año"}
+PARAMETER_KEYS = {
+    "periodo": "sqlx_param_periodo",
+    "familia": "sqlx_param_familia",
+    "producto_filtro": "sqlx_param_producto_filtro",
+    "canal_filtro": "sqlx_param_canal_filtro",
+    "region": "sqlx_param_region",
+    "anio_filtro": "sqlx_param_anio_filtro",
+}
+PARAMETER_LABELS = {
+    "periodo": "Período",
+    "familia": "Familia",
+    "producto_filtro": "Producto",
+    "canal_filtro": "Canal",
+    "region": "Región",
+    "anio_filtro": "Año",
+}
 
 
 def parameter_values():
     import streamlit as st
+
     return {name: st.session_state.get(key, PARAMETER_DEFAULTS[name]) for name, key in PARAMETER_KEYS.items()}
 
 
@@ -1036,6 +1163,7 @@ def choose_example(index):
     """One click (D-180): the example's SQL, with the chosen parameters, is written in
     the editor and run, so the answer and the code that gives it appear together."""
     import streamlit as st
+
     sql = render_example(index, parameter_values())
     st.session_state["sqlx_editor"] = sql
     st.session_state["sqlx_example"] = index
@@ -1047,6 +1175,7 @@ def apply_parameters():
     """A selector changed: values that no longer fit are reset, then the current
     example is written and run again."""
     import streamlit as st
+
     index = st.session_state.get("sqlx_example")
     try:
         choices = parameter_choices(load_parameter_options(), st.session_state)
@@ -1067,8 +1196,11 @@ def load_parameter_options():
     @st.cache_data(ttl=600, show_spinner=False)
     def cached(database_file, modified):
         years = read_view("SELECT DISTINCT anio FROM semanas WHERE anio IS NOT NULL ORDER BY anio DESC", database_file)
-        combos = read_view("SELECT familia, producto, canal, count(*) AS n FROM precios WHERE marca = 'SIN_MARCA' "
-                           "GROUP BY ALL ORDER BY familia, producto, n DESC", database_file)
+        combos = read_view(
+            "SELECT familia, producto, canal, count(*) AS n FROM precios WHERE marca = 'SIN_MARCA' "
+            "GROUP BY ALL ORDER BY familia, producto, n DESC",
+            database_file,
+        )
         regions = read_view("SELECT DISTINCT region FROM precios ORDER BY region", database_file)
         channels, by_family = {}, {}
         for row in combos.itertuples():
@@ -1076,9 +1208,13 @@ def load_parameter_options():
             if row.canal not in channels[row.producto]:
                 channels[row.producto].append(row.canal)
             by_family.setdefault(row.familia, set()).add(row.producto)
-        return dict(years=[int(year) for year in years["anio"]], channels=channels,
-                    families={family: sorted(products) for family, products in by_family.items()},
-                    regions=list(regions["region"]))
+        return dict(
+            years=[int(year) for year in years["anio"]],
+            channels=channels,
+            families={family: sorted(products) for family, products in by_family.items()},
+            regions=list(regions["region"]),
+        )
+
     database_file = str(queries.DATABASE_FILE)
     modified = os.path.getmtime(database_file) if os.path.exists(database_file) else 0
     return cached(database_file, modified)
@@ -1087,17 +1223,26 @@ def load_parameter_options():
 def parameter_choices(options, state):
     """The choices of each selector, narrowed by the ones above it (family → product → channel)."""
     family = state.get(PARAMETER_KEYS["familia"], ALL_VALUES)
-    products = (options["families"].get(family, []) if family != ALL_VALUES
-                else sorted(product for names in options["families"].values() for product in names))
+    products = (
+        options["families"].get(family, [])
+        if family != ALL_VALUES
+        else sorted(product for names in options["families"].values() for product in names)
+    )
     product = state.get(PARAMETER_KEYS["producto_filtro"], ALL_VALUES)
     if product != ALL_VALUES and product in options["channels"]:
         channels = options["channels"][product]
     else:
-        channels = sorted({channel for product_channels in options["channels"].values() for channel in product_channels})
-    return {"periodo": [SINCE_2022] + options["years"],
-            "familia": [ALL_VALUES] + sorted(options["families"]), "producto_filtro": [ALL_VALUES] + products,
-            "canal_filtro": [ALL_VALUES] + channels, "region": [ALL_VALUES] + options["regions"],
-            "anio_filtro": [ALL_VALUES] + options["years"]}
+        channels = sorted(
+            {channel for product_channels in options["channels"].values() for channel in product_channels}
+        )
+    return {
+        "periodo": [SINCE_2022] + options["years"],
+        "familia": [ALL_VALUES] + sorted(options["families"]),
+        "producto_filtro": [ALL_VALUES] + products,
+        "canal_filtro": [ALL_VALUES] + channels,
+        "region": [ALL_VALUES] + options["regions"],
+        "anio_filtro": [ALL_VALUES] + options["years"],
+    }
 
 
 def show_parameters(st, index):
@@ -1119,15 +1264,23 @@ def show_parameters(st, index):
             if st.session_state.get(key) not in choices:
                 default = PARAMETER_DEFAULTS[name]
                 st.session_state[key] = default if default in choices else choices[0]
-            st.selectbox(PARAMETER_LABELS[name], choices, key=key, on_change=apply_parameters,
-                         label_visibility="collapsed", help=PARAMETER_LABELS[name],
-                         format_func=lambda value, name=name: (tr("{}: todas").format(tr(PARAMETER_LABELS[name]))
-                                                               if value == ALL_VALUES else str(value)))
+            st.selectbox(
+                PARAMETER_LABELS[name],
+                choices,
+                key=key,
+                on_change=apply_parameters,
+                label_visibility="collapsed",
+                help=PARAMETER_LABELS[name],
+                format_func=lambda value, name=name: (
+                    tr("{}: todas").format(tr(PARAMETER_LABELS[name])) if value == ALL_VALUES else str(value)
+                ),
+            )
 
 
 def choose_table(name):
     """A real table clicked in the explorer: its first rows, as SQL Server's «Select Top 100 Rows»."""
     import streamlit as st
+
     sql = f"SELECT *\nFROM main.{name}\nLIMIT 100"
     st.session_state["sqlx_editor"] = sql
     st.session_state["sqlx_example"] = None
@@ -1137,6 +1290,7 @@ def choose_table(name):
 def choose_view(name):
     """A view clicked in the explorer: its first rows, as a SQL client would."""
     import streamlit as st
+
     st.session_state["sqlx_editor"] = f"SELECT *\nFROM {name}\nLIMIT 100"
     st.session_state["sqlx_example"] = None
     st.session_state.pop("sqlx_result", None)
@@ -1174,29 +1328,62 @@ def show_result(st, outcome, sql=""):
     count_text = f"{len(rows):,}".replace(",", ".")
     note = f" · se muestran las primeras {ROW_LIMIT:,}".replace(",", ".") if truncated else ""
     with st.container(horizontal=True, vertical_alignment="center", gap="small"):
-        st.caption(f"{count_text} filas · {len(rows.columns)} columnas · {seconds * 1000:,.0f} ms{note}".replace(",", "."))
+        st.caption(
+            f"{count_text} filas · {len(rows.columns)} columnas · {seconds * 1000:,.0f} ms{note}".replace(",", ".")
+        )
         if not rows.empty:
-            st.download_button("CSV", to_csv_bytes(rows), "consulta.csv", "text/csv", key="sqlx_csv",
-                               on_click="ignore", icon=":material/download:")
-            st.download_button("Parquet", partial(to_parquet_bytes, rows), "consulta.parquet",
-                               "application/vnd.apache.parquet", key="sqlx_parquet", on_click="ignore",
-                               icon=":material/download:")
+            st.download_button(
+                "CSV",
+                to_csv_bytes(rows),
+                "consulta.csv",
+                "text/csv",
+                key="sqlx_csv",
+                on_click="ignore",
+                icon=":material/download:",
+            )
+            st.download_button(
+                "Parquet",
+                partial(to_parquet_bytes, rows),
+                "consulta.parquet",
+                "application/vnd.apache.parquet",
+                key="sqlx_parquet",
+                on_click="ignore",
+                icon=":material/download:",
+            )
     numbered = rows.set_axis(range(1, len(rows) + 1))  # rows count from 1, as a SQL client
     # Weeks are dates: show them without a midnight time.
-    dates = {column: st.column_config.DateColumn(column, format="YYYY-MM-DD") for column in rows.columns
-             if pd.api.types.is_datetime64_any_dtype(rows[column]) and (rows[column].dropna().dt.normalize() == rows[column].dropna()).all()}
-    st.dataframe(numbered, width="stretch", hide_index=False, height=results_height(sql, len(rows)), column_config=dates)
+    dates = {
+        column: st.column_config.DateColumn(column, format="YYYY-MM-DD")
+        for column in rows.columns
+        if pd.api.types.is_datetime64_any_dtype(rows[column])
+        and (rows[column].dropna().dt.normalize() == rows[column].dropna()).all()
+    }
+    st.dataframe(
+        numbered, width="stretch", hide_index=False, height=results_height(sql, len(rows)), column_config=dates
+    )
 
 
 def show_exports(st):
     """The main gold tables as CSV, behind one small button (D-168)."""
-    with st.popover("Descargar tablas", icon=":material/download:", help="Las tablas gold en CSV, para Excel o Power BI."):
-        st.markdown(f'<p class="sqlx-note">Los precios se limitan a las últimas {EXPORT_WEEKS} semanas; el historial '
-                    'completo está en la base. El archivo <code>etl/datos.duckdb</code> también se abre con DBeaver, '
-                    'Python, R, o con Power BI y Excel mediante el driver ODBC de DuckDB.</p>', unsafe_allow_html=True)
+    with st.popover(
+        "Descargar tablas", icon=":material/download:", help="Las tablas gold en CSV, para Excel o Power BI."
+    ):
+        st.markdown(
+            f'<p class="sqlx-note">Los precios se limitan a las últimas {EXPORT_WEEKS} semanas; el historial '
+            'completo está en la base. El archivo <code>etl/datos.duckdb</code> también se abre con DBeaver, '
+            'Python, R, o con Power BI y Excel mediante el driver ODBC de DuckDB.</p>',
+            unsafe_allow_html=True,
+        )
         for file_name, label, sql in EXPORTS:
-            st.download_button(label, partial(export_csv, sql), file_name, "text/csv",
-                               key=f"sqlx_export_{file_name}", on_click="ignore", icon=":material/download:")
+            st.download_button(
+                label,
+                partial(export_csv, sql),
+                file_name,
+                "text/csv",
+                key=f"sqlx_export_{file_name}",
+                on_click="ignore",
+                icon=":material/download:",
+            )
 
 
 def show_sql_explorer_page(mode, header=None):
@@ -1221,13 +1408,21 @@ def show_sql_explorer_page(mode, header=None):
         with st.container(key="sqlx_toolbar"):
             with st.container(key="sqlx_toolbar_main", horizontal=True, vertical_alignment="center"):
                 st.markdown(build_database_html(), unsafe_allow_html=True)
-                run = st.button("Ejecutar", type="primary", key="sqlx_run", icon=":material/play_arrow:",
-                                help="Ejecuta la consulta del editor (también Ctrl + Enter).")
+                run = st.button(
+                    "Ejecutar",
+                    type="primary",
+                    key="sqlx_run",
+                    icon=":material/play_arrow:",
+                    help="Ejecuta la consulta del editor (también Ctrl + Enter).",
+                )
             # The five queries on a row of their own, so none hides under the others (D-184).
             with st.container(key="sqlx_chips_row", horizontal=True, vertical_alignment="center"):
-                st.markdown('<span class="sqlx-bar-label" title="Cinco consultas para decidir. Para ir más lejos, '
-                            'escribe tu propia consulta en el editor: las tablas y vistas están a la izquierda.">'
-                            'Consultas</span>', unsafe_allow_html=True)
+                st.markdown(
+                    '<span class="sqlx-bar-label" title="Cinco consultas para decidir. Para ir más lejos, '
+                    'escribe tu propia consulta en el editor: las tablas y vistas están a la izquierda.">'
+                    'Consultas</span>',
+                    unsafe_allow_html=True,
+                )
                 for index, (title, question, _) in enumerate(EXAMPLES):
                     st.button(title, key=f"sqlx_chip_{index}", help=question, on_click=choose_example, args=(index,))
         with st.container(key="sqlx_body"):
@@ -1240,14 +1435,25 @@ def show_sql_explorer_page(mode, header=None):
                 st.markdown(build_tree_html(), unsafe_allow_html=True)
                 st.markdown(build_folder_html("Tablas", len(tables)), unsafe_allow_html=True)
                 for name, count, columns in tables:
-                    st.button(f"main.{name}", key=f"sqlx_table_{name}", icon=":material/table:", on_click=choose_table,
-                              args=(name,), help="Tabla del data warehouse. Columnas: "
-                              + ", ".join(column for column, _ in columns))
+                    st.button(
+                        f"main.{name}",
+                        key=f"sqlx_table_{name}",
+                        icon=":material/table:",
+                        on_click=choose_table,
+                        args=(name,),
+                        help="Tabla del data warehouse. Columnas: " + ", ".join(column for column, _ in columns),
+                    )
                     st.markdown(build_view_html(name, "", count, columns), unsafe_allow_html=True)
                 st.markdown(build_folder_html("Vistas", len(catalog)), unsafe_allow_html=True)
                 for name, description, count, columns in catalog:
-                    st.button(name, key=f"sqlx_view_{name}", icon=":material/view_list:", on_click=choose_view, args=(name,),
-                              help=f"{description} Columnas: " + ", ".join(column for column, _ in columns))
+                    st.button(
+                        name,
+                        key=f"sqlx_view_{name}",
+                        icon=":material/view_list:",
+                        on_click=choose_view,
+                        args=(name,),
+                        help=f"{description} Columnas: " + ", ".join(column for column, _ in columns),
+                    )
                     st.markdown(build_view_html(name, description, count, columns), unsafe_allow_html=True)
                 show_exports(st)
             with main, st.container(key="sqlx_main"):
@@ -1260,8 +1466,12 @@ def show_sql_explorer_page(mode, header=None):
                     show_parameters(st, example)
                 with st.container(key="sqlx_editor_box"):
                     st.html(EDITOR_HTML, unsafe_allow_javascript=True)
-                    sql = st.text_area("Consulta SQL", key="sqlx_editor", label_visibility="collapsed",
-                                       height=editor_height(st.session_state["sqlx_editor"]))
+                    sql = st.text_area(
+                        "Consulta SQL",
+                        key="sqlx_editor",
+                        label_visibility="collapsed",
+                        height=editor_height(st.session_state["sqlx_editor"]),
+                    )
                 if run:
                     execute_editor(st, sql)
                 outcome = st.session_state.get("sqlx_result")
@@ -1272,4 +1482,6 @@ def show_sql_explorer_page(mode, header=None):
                     with messages:
                         st.markdown(build_messages_html(outcome), unsafe_allow_html=True)
         st.markdown(build_status_html(st.session_state.get("sqlx_result")), unsafe_allow_html=True)
+
+
 # endregion

@@ -4,6 +4,7 @@ The pipeline runs as the workflow .github/workflows/semanal.yml. Reading its run
 no key because the repository is public; starting a run needs a token with
 permission to run workflows, kept in the dashboard secrets, never in the code.
 """
+
 from datetime import datetime, timedelta, timezone
 
 import hmac
@@ -57,7 +58,8 @@ def calculate_next_scheduled_run(now_utc):
     """Next Tuesday 12:00 UTC strictly after now_utc (a timezone-aware datetime)."""
     days_ahead = (SCHEDULE_WEEKDAY - now_utc.weekday()) % 7
     candidate = (now_utc + timedelta(days=days_ahead)).replace(
-        hour=SCHEDULE_HOUR_UTC, minute=0, second=0, microsecond=0)
+        hour=SCHEDULE_HOUR_UTC, minute=0, second=0, microsecond=0
+    )
     if candidate <= now_utc:
         candidate += timedelta(days=7)
     return candidate
@@ -83,9 +85,14 @@ def simplify_run(run):
     finished_at = parse_github_time(run.get("updated_at"))
     state = classify_run(run["status"], run.get("conclusion"))
     duration = finished_at - started_at if state != RUN_IN_PROGRESS else None
-    return {"id": run["id"], "state": state, "started_at": started_at,
-            "duration": duration, "url": run["html_url"],
-            "trigger": TRIGGER_NAMES.get(run["event"], run["event"])}
+    return {
+        "id": run["id"],
+        "state": state,
+        "started_at": started_at,
+        "duration": duration,
+        "url": run["html_url"],
+        "trigger": TRIGGER_NAMES.get(run["event"], run["event"]),
+    }
 
 
 def simplify_steps(job):
@@ -93,14 +100,15 @@ def simplify_steps(job):
     steps = []
     for step in job.get("steps", []):
         # The failure test step only matters when someone asked for it.
-        is_unused_failure_test = (step["name"] == SIMULATED_FAILURE_STEP
-                                  and step.get("conclusion") == "skipped")
+        is_unused_failure_test = step["name"] == SIMULATED_FAILURE_STEP and step.get("conclusion") == "skipped"
         if step["name"] in STEP_NAMES and not is_unused_failure_test:
             state = classify_run(step["status"], step.get("conclusion"))
             if step.get("conclusion") == "skipped":
                 state = "skipped"
             steps.append((STEP_NAMES[step["name"]], state))
     return steps
+
+
 # endregion
 
 
@@ -117,8 +125,10 @@ def list_workflow_runs(token=None, count=10):
     """Latest runs of the weekly workflow, newest first."""
     response = requests.get(
         f"{API_URL}/repos/{REPOSITORY}/actions/workflows/{WORKFLOW_FILE}/runs",
-        headers=build_headers(token), params={"per_page": count},
-        timeout=REQUEST_TIMEOUT_SECONDS)
+        headers=build_headers(token),
+        params={"per_page": count},
+        timeout=REQUEST_TIMEOUT_SECONDS,
+    )
     response.raise_for_status()
     return [simplify_run(run) for run in response.json()["workflow_runs"]]
 
@@ -129,14 +139,18 @@ def start_workflow_run(token):
         f"{API_URL}/repos/{REPOSITORY}/actions/workflows/{WORKFLOW_FILE}/dispatches",
         headers=build_headers(token),
         json={"ref": BRANCH, "inputs": {"simulate_failure": False}},
-        timeout=REQUEST_TIMEOUT_SECONDS)
+        timeout=REQUEST_TIMEOUT_SECONDS,
+    )
     response.raise_for_status()
 
 
 def list_run_steps(run_id, token=None):
     """Steps of a run with their state, to follow its progress."""
-    response = requests.get(f"{API_URL}/repos/{REPOSITORY}/actions/runs/{run_id}/jobs",
-                            headers=build_headers(token), timeout=REQUEST_TIMEOUT_SECONDS)
+    response = requests.get(
+        f"{API_URL}/repos/{REPOSITORY}/actions/runs/{run_id}/jobs",
+        headers=build_headers(token),
+        timeout=REQUEST_TIMEOUT_SECONDS,
+    )
     response.raise_for_status()
     jobs = response.json()["jobs"]
     return simplify_steps(jobs[0]) if jobs else []
@@ -153,17 +167,24 @@ def describe_job_steps(job):
             state = "skipped"
         started_at = parse_github_time(step.get("started_at"))
         finished_at = parse_github_time(step.get("completed_at"))
-        seconds = ((finished_at - started_at).total_seconds()
-                   if started_at and finished_at and state != "skipped" else None)
-        details[step["name"]] = {"state": state, "seconds": seconds,
-                                 "url": f"{job['html_url']}#step:{step['number']}:1"}
+        seconds = (
+            (finished_at - started_at).total_seconds() if started_at and finished_at and state != "skipped" else None
+        )
+        details[step["name"]] = {
+            "state": state,
+            "seconds": seconds,
+            "url": f"{job['html_url']}#step:{step['number']}:1",
+        }
     return details
 
 
 def list_run_step_details(run_id, token=None):
     """Every step of a run with its state, duration and log address; {} without a job."""
-    response = requests.get(f"{API_URL}/repos/{REPOSITORY}/actions/runs/{run_id}/jobs",
-                            headers=build_headers(token), timeout=REQUEST_TIMEOUT_SECONDS)
+    response = requests.get(
+        f"{API_URL}/repos/{REPOSITORY}/actions/runs/{run_id}/jobs",
+        headers=build_headers(token),
+        timeout=REQUEST_TIMEOUT_SECONDS,
+    )
     response.raise_for_status()
     jobs = response.json()["jobs"]
     return describe_job_steps(jobs[0]) if jobs else {}
@@ -211,8 +232,7 @@ def read_token_expiration(token):
     /rate_limit does not count against the hourly limit. Only the date leaves
     this function: never the token, the headers or the answer.
     """
-    response = requests.get(f"{API_URL}/rate_limit", headers=build_headers(token),
-                            timeout=REQUEST_TIMEOUT_SECONDS)
+    response = requests.get(f"{API_URL}/rate_limit", headers=build_headers(token), timeout=REQUEST_TIMEOUT_SECONDS)
     response.raise_for_status()
     return parse_token_expiration(response.headers.get(TOKEN_EXPIRATION_HEADER))
 
@@ -224,8 +244,7 @@ def describe_token_expiration(expiration, now):
     days = (expiration - now).days
     if days < 0:
         return "Tu token venció: crea uno nuevo y cámbialo en los secretos del panel.", True
-    return (f"Tu token vence en {days} días ({expiration:%d-%m-%Y}).",
-            days < TOKEN_WARNING_DAYS)
+    return (f"Tu token vence en {days} días ({expiration:%d-%m-%Y}).", days < TOKEN_WARNING_DAYS)
 
 
 def describe_github_error(error, now=None):
@@ -245,19 +264,25 @@ def describe_github_error(error, now=None):
     code = response.status_code
     if code in (403, 429) and response.headers.get("X-RateLimit-Remaining") == "0":
         limit = response.headers.get("X-RateLimit-Limit")
-        reason = (tr("se agotó el límite de consultas sin clave (60 por hora)")
-                  if limit == "60" else tr("se agotó el límite de consultas"))
+        reason = (
+            tr("se agotó el límite de consultas sin clave (60 por hora)")
+            if limit == "60"
+            else tr("se agotó el límite de consultas")
+        )
         try:
-            reset = datetime.fromtimestamp(int(response.headers["X-RateLimit-Reset"]),
-                                           timezone.utc)
-            minutes = max(0, round((reset - (now or datetime.now(timezone.utc)))
-                                   .total_seconds() / 60))
+            reset = datetime.fromtimestamp(int(response.headers["X-RateLimit-Reset"]), timezone.utc)
+            minutes = max(0, round((reset - (now or datetime.now(timezone.utc))).total_seconds() / 60))
         except (KeyError, ValueError, OverflowError, OSError):
             return tr("GitHub respondió {}: {}").format(code, reason)
         return tr("GitHub respondió {}: {}; se renueva en {} min").format(code, reason, minutes)
-    reasons = {401: "la clave no es válida o venció", 403: "acceso denegado",
-               404: "no se encontró el workflow", 500: "error interno de GitHub",
-               502: "GitHub no está disponible", 503: "GitHub no está disponible"}
+    reasons = {
+        401: "la clave no es válida o venció",
+        403: "acceso denegado",
+        404: "no se encontró el workflow",
+        500: "error interno de GitHub",
+        502: "GitHub no está disponible",
+        503: "GitHub no está disponible",
+    }
     return tr("GitHub respondió {}: {}").format(code, tr(reasons.get(code, "error al consultar GitHub")))
 
 
@@ -269,6 +294,8 @@ def find_run_started_after(runs, requested_at):
         if is_manual and run["started_at"] >= requested_at - timedelta(seconds=30):
             return run
     return None
+
+
 # endregion
 
 

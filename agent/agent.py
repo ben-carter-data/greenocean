@@ -6,6 +6,7 @@ Flow: load_input_resources -> download_all_resources -> download_file
 Downloads the CSV files listed in input.csv, validates each one and writes one
 log line per resource. It does not load data into the database: etl/etl.py does.
 """
+
 import csv
 import hashlib
 import json
@@ -55,14 +56,37 @@ SECONDS_BETWEEN_RETRIES = 5
 # If they change, the file is rejected instead of being loaded silently.
 EXPECTED_HEADERS = {
     "wholesale": [
-        "Fecha", "ID region", "Region", "Mercado", "Subsector", "Producto",
-        "Variedad / Tipo", "Calidad", "Unidad de comercializacion", "Origen",
-        "Volumen", "Precio minimo", "Precio maximo", "Precio promedio",
+        "Fecha",
+        "ID region",
+        "Region",
+        "Mercado",
+        "Subsector",
+        "Producto",
+        "Variedad / Tipo",
+        "Calidad",
+        "Unidad de comercializacion",
+        "Origen",
+        "Volumen",
+        "Precio minimo",
+        "Precio maximo",
+        "Precio promedio",
     ],
     "consumer": [
-        "Anio", "Mes", "Semana", "Fecha inicio", "Fecha termino", "ID region",
-        "Region", "Sector", "Tipo de punto monitoreo", "Grupo", "Producto",
-        "Unidad", "Precio minimo", "Precio maximo", "Precio promedio",
+        "Anio",
+        "Mes",
+        "Semana",
+        "Fecha inicio",
+        "Fecha termino",
+        "ID region",
+        "Region",
+        "Sector",
+        "Tipo de punto monitoreo",
+        "Grupo",
+        "Producto",
+        "Unidad",
+        "Precio minimo",
+        "Precio maximo",
+        "Precio promedio",
     ],
 }
 
@@ -78,8 +102,7 @@ def setup_logging():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(levelname)s | %(message)s",
-        handlers=[logging.FileHandler(log_file, encoding="utf-8"),
-                  logging.StreamHandler(sys.stdout)],
+        handlers=[logging.FileHandler(log_file, encoding="utf-8"), logging.StreamHandler(sys.stdout)],
         force=True,
     )
     return log_file
@@ -88,6 +111,8 @@ def setup_logging():
 def log_resource_result(resource, status, detail=""):
     """Write the final outcome of one resource as a single log line."""
     logger.info("%s | %s %s | %s", status, resource["source"], resource["year"], detail)
+
+
 # endregion
 
 
@@ -101,6 +126,8 @@ def load_input_resources(input_file=INPUT_FILE):
             raise ValueError(f"Unknown source in input file: {resource['source']}")
         resource["year"] = int(resource["year"])
     return resources
+
+
 # endregion
 
 
@@ -116,8 +143,7 @@ def build_certificate_bundle(extra_certificates=EXTRA_ROOT_CERTIFICATES):
 
 def download_file(url, destination_path):
     """Download the url into a file. Raises an exception if anything fails."""
-    response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS,
-                            verify=str(build_certificate_bundle()))
+    response = requests.get(url, timeout=REQUEST_TIMEOUT_SECONDS, verify=str(build_certificate_bundle()))
     response.raise_for_status()
     destination_path.write_bytes(response.content)
 
@@ -140,6 +166,8 @@ def validate_downloaded_file(file_path, source):
 def compute_file_hash(file_path):
     """Fingerprint of the file content, used to detect changes between runs."""
     return hashlib.sha256(file_path.read_bytes()).hexdigest()
+
+
 # endregion
 
 
@@ -154,12 +182,13 @@ def load_manifest():
 def save_manifest(manifest):
     """Persist the record of downloaded files."""
     MANIFEST_FILE.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+
 # endregion
 
 
 # region Navigation
-def download_all_resources(resources, downloader=download_file,
-                           seconds_between_retries=SECONDS_BETWEEN_RETRIES):
+def download_all_resources(resources, downloader=download_file, seconds_between_retries=SECONDS_BETWEEN_RETRIES):
     """Download and validate every resource, with retries and failure limits.
 
     Returns the number of resources that could not be downloaded.
@@ -184,8 +213,7 @@ def download_all_resources(resources, downloader=download_file,
         while fetch_warnings < FETCH_WARNINGS_THRESHOLD:
             try:
                 downloader(resource["url"], temporary_path)
-                is_valid, failure_reason = validate_downloaded_file(
-                    temporary_path, resource["source"])
+                is_valid, failure_reason = validate_downloaded_file(temporary_path, resource["source"])
             except Exception as error:  # network down, HTTP error, timeout
                 is_valid, failure_reason = False, f"{REASON_DOWNLOAD_ERROR}: {error}"
 
@@ -194,9 +222,14 @@ def download_all_resources(resources, downloader=download_file,
                 break
 
             fetch_warnings += 1
-            logger.warning("Attempt %s of %s failed | %s %s | %s", fetch_warnings,
-                           FETCH_WARNINGS_THRESHOLD, resource["source"],
-                           resource["year"], failure_reason)
+            logger.warning(
+                "Attempt %s of %s failed | %s %s | %s",
+                fetch_warnings,
+                FETCH_WARNINGS_THRESHOLD,
+                resource["source"],
+                resource["year"],
+                failure_reason,
+            )
             temporary_path.unlink(missing_ok=True)
             # Retrying cannot fix a changed header, so stop immediately.
             if failure_reason == REASON_UNEXPECTED_HEADER:
@@ -224,11 +257,15 @@ def download_all_resources(resources, downloader=download_file,
             "downloaded_at": datetime.now().isoformat(timespec="seconds"),
         }
         save_manifest(manifest)
-        log_resource_result(resource,
-                            STATUS_UNCHANGED if is_unchanged else STATUS_DOWNLOADED,
-                            f"{file_name} ({final_path.stat().st_size} bytes)")
+        log_resource_result(
+            resource,
+            STATUS_UNCHANGED if is_unchanged else STATUS_DOWNLOADED,
+            f"{file_name} ({final_path.stat().st_size} bytes)",
+        )
 
     return harvest_failures
+
+
 # endregion
 
 

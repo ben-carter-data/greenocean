@@ -8,6 +8,7 @@ The page below starts about 60 px higher, so it fits the window without scrollin
 
 Pure functions: no Streamlit. bi/dashboard.py lays the Streamlit buttons around this HTML.
 """
+
 import html
 
 from bi import buttons, charts
@@ -72,19 +73,30 @@ def build_bar_html(path, title, description, chips=()):
     if page == title:
         route = f'<span class="page-bar-path">{esc(section)} ›</span>' if section else ""
     else:
-        route = (f'<span class="page-bar-path">{esc(section)} › <b>{esc(page)}</b></span>' if section
-                 else f'<span class="page-bar-path"><b>{esc(page)}</b></span>')
-    return (f'<div class="page-bar-main" aria-label="Página actual: {esc(path)}">' + route
-            + f'<span class="page-bar-title" role="heading" aria-level="1" title="{esc(description)}">{esc(title)}</span>'
-            + "".join(f'<span class="page-chip" title="{esc(note)}">{value}</span>' for value, note in chips)
-            + "</div>")
+        route = (
+            f'<span class="page-bar-path">{esc(section)} › <b>{esc(page)}</b></span>'
+            if section
+            else f'<span class="page-bar-path"><b>{esc(page)}</b></span>'
+        )
+    return (
+        f'<div class="page-bar-main" aria-label="Página actual: {esc(path)}">'
+        + route
+        + f'<span class="page-bar-title" role="heading" aria-level="1" title="{esc(description)}">{esc(title)}</span>'
+        + "".join(f'<span class="page-chip" title="{esc(note)}">{value}</span>' for value, note in chips)
+        + "</div>"
+    )
 
 
 def build_terms_html(terms):
     """«KPI · …» and «Métrica · …» in the right corner: what the page measures, with its definition on hover."""
-    return ('<div class="page-bar-terms">'
-            + "".join(f'<em>{esc(label)}</em><span title="{esc(definition)}">{esc(name)}</span>'
-                      for label, name, definition in terms) + "</div>")
+    return (
+        '<div class="page-bar-terms">'
+        + "".join(
+            f'<em>{esc(label)}</em><span title="{esc(definition)}">{esc(name)}</span>'
+            for label, name, definition in terms
+        )
+        + "</div>"
+    )
 
 
 def build_link_html(text, address, note):
@@ -95,5 +107,7 @@ def build_link_html(text, address, note):
 def build_updated_html(updated, loaded):
     """The time of the latest load, at the end of the bar: a green dot, or red when it failed."""
     state = "Carga correcta" if loaded else "Última carga con falla"
-    return (f'<span class="page-bar-updated" title="Datos al {esc(updated)} · {state}">'
-            f'<i class="{"loaded" if loaded else "failed"}"></i>{esc(updated)}</span>')
+    return (
+        f'<span class="page-bar-updated" title="Datos al {esc(updated)} · {state}">'
+        f'<i class="{"loaded" if loaded else "failed"}"></i>{esc(updated)}</span>'
+    )

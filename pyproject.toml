@@ -1,0 +1,35 @@
+# Tool settings only (D-323): the project is not a package and installs from requirements*.txt.
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = [".venv", ".venv-dbt", "dbt/target", "dbt/dbt_packages"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+# E501: the formatter keeps code within 120 columns; the long lines left are Spanish and English texts of the dashboard,
+# which read better unbroken. Complexity (C901) is measured apart, as an indicator with its own goal.
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "preserve"
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+follow_imports = "silent"
+check_untyped_defs = true
+files = ["etl/etl.py", "etl/bronze.py", "etl/ine.py", "etl/pipeline.py", "bi/queries.py", "bi/alerts.py",
+         "bi/overview.py", "bi/inflation_view.py", "bi/control.py", "bi/served_database.py"]
+
+[[tool.mypy.overrides]]
+module = ["etl.etl", "etl.bronze", "etl.ine", "etl.pipeline", "bi.queries", "bi.alerts", "bi.overview",
+          "bi.inflation_view", "bi.control", "bi.served_database"]
+disallow_untyped_defs = true
+
+[tool.coverage.run]
+source = ["bi", "etl", "agent"]
+omit = ["*/__init__.py"]
+
+[tool.coverage.report]
+fail_under = 90

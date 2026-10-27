@@ -1,4 +1,5 @@
 """Read-only evidence checks. Passing checks are not a source-price certification."""
+
 import hashlib
 import math
 import sqlite3
@@ -26,8 +27,10 @@ INVALID_SQL = """SELECT COUNT(*) FROM weekly_price WHERE flag IS NULL
     OR observation_count <= 0 OR TRY_CAST(week_start AS DATE) IS NULL
     OR dayofweek(TRY_CAST(week_start AS DATE)) != 1)"""
 COVERAGE_SQL = """SELECT COUNT(DISTINCT week_start), MIN(week_start), MAX(week_start) FROM weekly_price"""
-PARITY_SQL = ("SELECT (SELECT COUNT(*) FROM weekly_price), (SELECT COUNT(*) FROM rejection), "
-              "(SELECT SUM(price) FROM weekly_price)")
+PARITY_SQL = (
+    "SELECT (SELECT COUNT(*) FROM weekly_price), (SELECT COUNT(*) FROM rejection), "
+    "(SELECT SUM(price) FROM weekly_price)"
+)
 
 
 def check_database(database_file=queries.DATABASE_FILE):
@@ -39,10 +42,17 @@ def check_database(database_file=queries.DATABASE_FILE):
         duplicates = connection.execute(DUPLICATES_SQL).fetchone()[0]
         invalid = connection.execute(INVALID_SQL).fetchone()[0]
         weeks, first, last = connection.execute(COVERAGE_SQL).fetchone()
-    return dict(checked_at=datetime.now(timezone.utc).isoformat(),
-                integrity_ok=integrity == ['ok'], integrity=integrity,
-                foreign_keys=foreign_keys, duplicates=duplicates, invalid=invalid,
-                weeks=weeks, first=first, last=last)
+    return dict(
+        checked_at=datetime.now(timezone.utc).isoformat(),
+        integrity_ok=integrity == ['ok'],
+        integrity=integrity,
+        foreign_keys=foreign_keys,
+        duplicates=duplicates,
+        invalid=invalid,
+        weeks=weeks,
+        first=first,
+        last=last,
+    )
 
 
 def check_source_files(manifest, directory):
@@ -60,10 +70,22 @@ def check_source_files(manifest, directory):
                 for block in iter(lambda: source.read(1024 * 1024), b''):
                     digest.update(block)
             actual = digest.hexdigest()
-            status = ('Verificado · SHA-256 coincide' if expected and actual == expected else
-                      'Falla · SHA-256 distinto' if expected else 'Pendiente · sin huella registrada')
-        evidence.append(dict(file=name, status=status, expected=expected, actual=actual,
-                             downloaded_at=metadata.get('downloaded_at', '') if isinstance(metadata, dict) else ''))
+            status = (
+                'Verificado · SHA-256 coincide'
+                if expected and actual == expected
+                else 'Falla · SHA-256 distinto'
+                if expected
+                else 'Pendiente · sin huella registrada'
+            )
+        evidence.append(
+            dict(
+                file=name,
+                status=status,
+                expected=expected,
+                actual=actual,
+                downloaded_at=metadata.get('downloaded_at', '') if isinstance(metadata, dict) else '',
+            )
+        )
     return evidence
 
 
@@ -77,5 +99,8 @@ def check_parity(backup_file=etl.DATABASE_FILE, database_file=queries.DATABASE_F
         backup = connection.execute(sql).fetchone()
     with queries.open_database(database_file) as connection:
         current = connection.execute(sql).fetchone()
-    return dict(rows=(backup[0], current[0]), rejections=(backup[1], current[1]),
-                ok=backup[:2] == current[:2] and math.isclose(backup[2], current[2], rel_tol=1e-9))
+    return dict(
+        rows=(backup[0], current[0]),
+        rejections=(backup[1], current[1]),
+        ok=backup[:2] == current[:2] and math.isclose(backup[2], current[2], rel_tol=1e-9),
+    )

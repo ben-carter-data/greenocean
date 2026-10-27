@@ -10,6 +10,7 @@
 
 On any failure the published database stays as it was; the failed run is recorded.
 """
+
 import json
 import os
 import sqlite3
@@ -28,13 +29,31 @@ DBT_DIR = PROJECT_DIR / "dbt"
 WORK_DATABASE_FILE = etl.BASE_DIR / "warehouse_build.duckdb"
 SERVING_DATABASE_FILE = etl.BASE_DIR / "datos.duckdb"
 # The tables of the panel, in the order they are copied.
-SERVING_TABLES = ["dim_product", "dim_region", "dim_channel", "dim_date", "weekly_price", "rejection",
-                  "ipc_monthly", "ipc_weekly", "ine_ipc_source"]
+SERVING_TABLES = [
+    "dim_product",
+    "dim_region",
+    "dim_channel",
+    "dim_date",
+    "weekly_price",
+    "rejection",
+    "ipc_monthly",
+    "ipc_weekly",
+    "ine_ipc_source",
+]
 DBT_TARGET_DIR = DBT_DIR / "target"
 # The lineage and the test results of the last dbt build travel with the serving file:
 # dbt/target is not committed, and the panel draws its DAG and quality matrix from them.
-DBT_NODE_COLUMNS = ["unique_id", "name", "resource_type", "layer", "materialized", "depends_on",
-                    "test_type", "column_name", "description"]
+DBT_NODE_COLUMNS = [
+    "unique_id",
+    "name",
+    "resource_type",
+    "layer",
+    "materialized",
+    "depends_on",
+    "test_type",
+    "column_name",
+    "description",
+]
 ETL_RUN_SCHEMA = """CREATE TABLE IF NOT EXISTS etl_run (
     run_id INTEGER PRIMARY KEY, started_at VARCHAR NOT NULL, status VARCHAR NOT NULL,
     rows_read INTEGER NOT NULL, rows_loaded INTEGER NOT NULL, rows_rejected INTEGER NOT NULL,
@@ -49,12 +68,14 @@ def prepare_ipc(serving_file=SERVING_DATABASE_FILE):
     if not serving_file.exists():
         raise RuntimeError("Sin IPC: el INE no respondió y no hay una base publicada con sus filas")
     with duckdb.connect(str(serving_file), read_only=True) as connection:
-        rows = connection.execute("SELECT file, year, month, index_value, monthly_change "
-                                  "FROM ine_ipc_source").fetchall()
+        rows = connection.execute(
+            "SELECT file, year, month, index_value, monthly_change FROM ine_ipc_source"
+        ).fetchall()
     files = {}
     for file, year, month, index_value, monthly_change in rows:
-        files.setdefault(file, []).append({"year": year, "month": month, "index_value": index_value,
-                                           "monthly_change": monthly_change})
+        files.setdefault(file, []).append(
+            {"year": year, "month": month, "index_value": index_value, "monthly_change": monthly_change}
+        )
     ine.write_bronze(files)
     print("IPC | bronce reconstruido desde la base publicada")
 
@@ -74,7 +95,12 @@ def read_run_history(serving_file=SERVING_DATABASE_FILE, legacy_file=etl.DATABAS
 def run_dbt(run_id, dbt_command=None):
     """dbt build (models and tests) in the work database. Returns (ok, last output lines)."""
     command = (dbt_command or os.environ.get("DBT_BIN", "dbt")).split() + [
-        "build", "--profiles-dir", ".", "--vars", f"{{run_id: {run_id}}}"]
+        "build",
+        "--profiles-dir",
+        ".",
+        "--vars",
+        f"{{run_id: {run_id}}}",
+    ]
     environment = dict(os.environ, GREENOCEAN_DUCKDB=str(WORK_DATABASE_FILE))
     result = subprocess.run(command, cwd=DBT_DIR, env=environment, capture_output=True, text=True)
     output = (result.stdout + result.stderr).strip().splitlines()
@@ -86,7 +112,8 @@ def count_rows(work_file=WORK_DATABASE_FILE):
     with duckdb.connect(str(work_file), read_only=True) as connection:
         return connection.execute(
             "SELECT count(*), count(*) FILTER (WHERE reason IS NULL), "
-            "count(*) FILTER (WHERE reason IS NOT NULL) FROM int_prices__validated").fetchone()
+            "count(*) FILTER (WHERE reason IS NOT NULL) FROM int_prices__validated"
+        ).fetchone()
 
 
 def read_dbt_artifacts(target_dir=DBT_TARGET_DIR):
@@ -103,28 +130,48 @@ def read_dbt_artifacts(target_dir=DBT_TARGET_DIR):
         if kind not in ("model", "test", "source"):
             continue
         layer = "bronze" if kind == "source" else node["fqn"][1] if kind == "model" and len(node["fqn"]) > 2 else ""
-        nodes.append((unique_id, node["name"], kind, layer, node.get("config", {}).get("materialized", ""),
-                      json.dumps(node.get("depends_on", {}).get("nodes", [])),
-                      (node.get("test_metadata") or {}).get("name", "singular" if kind == "test" else ""),
-                      node.get("column_name") or "", node.get("description") or ""))
+        nodes.append(
+            (
+                unique_id,
+                node["name"],
+                kind,
+                layer,
+                node.get("config", {}).get("materialized", ""),
+                json.dumps(node.get("depends_on", {}).get("nodes", [])),
+                (node.get("test_metadata") or {}).get("name", "singular" if kind == "test" else ""),
+                node.get("column_name") or "",
+                node.get("description") or "",
+            )
+        )
     generated_at = run_results["metadata"]["generated_at"][:19]
-    results = [(result["unique_id"], result["status"], float(result.get("execution_time") or 0),
-                int(result.get("failures") or 0), generated_at) for result in run_results["results"]]
+    results = [
+        (
+            result["unique_id"],
+            result["status"],
+            float(result.get("execution_time") or 0),
+            int(result.get("failures") or 0),
+            generated_at,
+        )
+        for result in run_results["results"]
+    ]
     return nodes, results
 
 
 def write_dbt_artifacts(connection, nodes, results):
     connection.execute("CREATE TABLE dbt_node (" + ", ".join(f"{column} VARCHAR" for column in DBT_NODE_COLUMNS) + ")")
-    connection.execute("CREATE TABLE dbt_result (unique_id VARCHAR, status VARCHAR, execution_time DOUBLE, "
-                       "failures INTEGER, generated_at VARCHAR)")
+    connection.execute(
+        "CREATE TABLE dbt_result (unique_id VARCHAR, status VARCHAR, execution_time DOUBLE, "
+        "failures INTEGER, generated_at VARCHAR)"
+    )
     if nodes:
         connection.executemany(f"INSERT INTO dbt_node VALUES ({', '.join('?' for _ in DBT_NODE_COLUMNS)})", nodes)
     if results:
         connection.executemany("INSERT INTO dbt_result VALUES (?, ?, ?, ?, ?)", results)
 
 
-def write_serving_database(history, run, work_file=WORK_DATABASE_FILE,
-                           serving_file=SERVING_DATABASE_FILE, artifacts=None):
+def write_serving_database(
+    history, run, work_file=WORK_DATABASE_FILE, serving_file=SERVING_DATABASE_FILE, artifacts=None
+):
     """A fresh, compact copy of the panel's tables plus etl_run, swapped in at the end."""
     temporary = serving_file.with_suffix(".duckdb.tmp")
     temporary.unlink(missing_ok=True)
@@ -173,21 +220,24 @@ def main(dbt_command=None, load_raw=True, record=True):
     rows_read, rows_loaded, rows_rejected = count_rows()
     previous = next((row[3] for row in reversed(history) if row[2] == etl.STATUS_LOADED), None)
     if previous and rows_read < previous * etl.MINIMUM_ROWS_RATIO:
-        message = (f"{etl.PROBLEM_TOO_FEW_ROWS}: read {rows_read} rows, the previous successful"
-                   f" run read {previous}")
-        record_failed_run(history, (run_id, started_at, etl.STATUS_FAILED, rows_read, rows_loaded,
-                                    rows_rejected, message))
+        message = f"{etl.PROBLEM_TOO_FEW_ROWS}: read {rows_read} rows, the previous successful run read {previous}"
+        record_failed_run(
+            history, (run_id, started_at, etl.STATUS_FAILED, rows_read, rows_loaded, rows_rejected, message)
+        )
         print(message)
         return 1
     if record:
-        write_serving_database(history, (run_id, started_at, etl.STATUS_LOADED, rows_read, rows_loaded,
-                                         rows_rejected, ""))
+        write_serving_database(
+            history, (run_id, started_at, etl.STATUS_LOADED, rows_read, rows_loaded, rows_rejected, "")
+        )
     else:
         write_serving_database(history[:-1], history[-1])
         with duckdb.connect(str(SERVING_DATABASE_FILE)) as connection:
             connection.execute("UPDATE rejection SET run_id = ?", [history[-1][0]])
-    print(f"LOADED | leídas {rows_read} | cargadas {rows_loaded} | rechazadas {rows_rejected}"
-          f" | {SERVING_DATABASE_FILE.name} {SERVING_DATABASE_FILE.stat().st_size / 1e6:.1f} MB")
+    print(
+        f"LOADED | leídas {rows_read} | cargadas {rows_loaded} | rechazadas {rows_rejected}"
+        f" | {SERVING_DATABASE_FILE.name} {SERVING_DATABASE_FILE.stat().st_size / 1e6:.1f} MB"
+    )
     return 0
 
 

@@ -1,4 +1,5 @@
 """dim_date (D-095): one row per week without gaps, ISO weeks, seasons and integrity."""
+
 import sqlite3
 import sys
 from pathlib import Path
@@ -27,11 +28,19 @@ def test_iso_week_at_the_turn_of_the_year():
     assert tuple(weeks.loc["2025-12-29", ["iso_year", "iso_week"]]) == (2026, 1)
 
 
-@pytest.mark.parametrize("week, season, name", [
-    ("2025-12-01", "verano", "diciembre"), ("2026-02-23", "verano", "febrero"),
-    ("2026-03-02", "otoño", "marzo"), ("2026-05-25", "otoño", "mayo"),
-    ("2026-06-01", "invierno", "junio"), ("2026-08-31", "invierno", "agosto"),
-    ("2026-09-07", "primavera", "septiembre"), ("2026-11-30", "primavera", "noviembre")])
+@pytest.mark.parametrize(
+    "week, season, name",
+    [
+        ("2025-12-01", "verano", "diciembre"),
+        ("2026-02-23", "verano", "febrero"),
+        ("2026-03-02", "otoño", "marzo"),
+        ("2026-05-25", "otoño", "mayo"),
+        ("2026-06-01", "invierno", "junio"),
+        ("2026-08-31", "invierno", "agosto"),
+        ("2026-09-07", "primavera", "septiembre"),
+        ("2026-11-30", "primavera", "noviembre"),
+    ],
+)
 def test_southern_season_follows_the_month_of_week_start(week, season, name):
     row = etl.build_dim_date(week, week).iloc[0]
     assert (row["season"], row["month_name"]) == (season, name)
@@ -54,10 +63,14 @@ def test_old_database_gets_the_foreign_key_and_keeps_its_rows(tmp_path):
     assert not etl.ensure_weekly_price_references_dim_date(connection)
     assert connection.execute("SELECT * FROM weekly_price ORDER BY week_start").fetchall() == [
         ('2026-01-05', 1, 13, 1, 'kilo', 100.5, None, 3, None),
-        ('2026-01-19', 1, 13, 1, 'kilo', 101.5, None, 2, 'ATIPICO')]
+        ('2026-01-19', 1, 13, 1, 'kilo', 101.5, None, 2, 'ATIPICO'),
+    ]
     # The week without prices in between is kept.
     assert [row[0] for row in connection.execute("SELECT week_start FROM dim_date ORDER BY 1")] == [
-        "2026-01-05", "2026-01-12", "2026-01-19"]
+        "2026-01-05",
+        "2026-01-12",
+        "2026-01-19",
+    ]
     # Only the date reference: the other dimensions are empty in this small database.
     assert [row for row in connection.execute("PRAGMA foreign_key_check") if row[2] == "dim_date"] == []
 
@@ -71,6 +84,7 @@ def test_every_week_of_weekly_price_exists_in_dim_date():
         LEFT JOIN dim_date d ON d.week_start = w.week_start WHERE d.week_start IS NULL""").fetchone()[0]
     assert orphans == 0
     first, last, weeks = connection.execute(
-        "SELECT MIN(week_start), MAX(week_start), COUNT(*) FROM dim_date").fetchone()
+        "SELECT MIN(week_start), MAX(week_start), COUNT(*) FROM dim_date"
+    ).fetchone()
     assert (first, last) == connection.execute("SELECT MIN(week_start), MAX(week_start) FROM weekly_price").fetchone()
     assert weeks == (pd.Timestamp(last) - pd.Timestamp(first)).days // 7 + 1

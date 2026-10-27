@@ -1,4 +1,5 @@
 """D-283: Spanish and English for the whole panel and its documents."""
+
 import re
 from collections import Counter
 from pathlib import Path
@@ -16,8 +17,17 @@ DASHBOARD_FILE = str(BI_DIR / "dashboard.py")
 FOLDER_FILES = [dashboard.PROJECT_DOCUMENTS[page][0] for page in dashboard.FOLDER_ORDER]
 TR_CALL = re.compile(r"""\btr\(\s*(?:f?"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')\s*\)""")
 IDENTIFIER = re.compile(r"\b(?:RF|RNF|P|ADR|S|D|RN|K)-\d+\b|\bT\d\b")
-ENGLISH_FIELDS = ("Project", "Document type", "Version", "Date", "Status", "Owner", "Purpose", "Audience",
-                  "Related documents")
+ENGLISH_FIELDS = (
+    "Project",
+    "Document type",
+    "Version",
+    "Date",
+    "Status",
+    "Owner",
+    "Purpose",
+    "Audience",
+    "Related documents",
+)
 
 
 def read(path):
@@ -66,8 +76,9 @@ def canonical_numbers(text, language):
 def test_d283_each_document_exists_in_english_with_the_same_structure_identifiers_and_figures(filename):
     spanish, english = read(DOCS_DIR / filename), read(EN_DIR / filename)
     assert len(headings(spanish)) == len(headings(english)), filename
-    assert re.findall(r"^\[\[diagrama:(\w+)\]\]$", spanish, re.MULTILINE) == \
-        re.findall(r"^\[\[diagrama:(\w+)\]\]$", english, re.MULTILINE)
+    assert re.findall(r"^\[\[diagrama:(\w+)\]\]$", spanish, re.MULTILINE) == re.findall(
+        r"^\[\[diagrama:(\w+)\]\]$", english, re.MULTILINE
+    )
     assert len(re.findall(r"\[\[vista:", spanish)) == len(re.findall(r"\[\[vista:", english))
     assert set(IDENTIFIER.findall(spanish)) == set(IDENTIFIER.findall(english)), filename
     assert canonical_numbers(spanish, i18n.SPANISH) == canonical_numbers(english, i18n.ENGLISH), filename
@@ -111,14 +122,18 @@ def test_d283_every_english_link_and_contents_entry_reaches_its_heading(filename
         assert (EN_DIR / other).exists(), (filename, other)
         if anchor:
             other_headings = re.findall(r"^#{2,4} (.+)$", read(EN_DIR / other), re.MULTILINE)
-            assert anchor in {dashboard.heading_anchor(heading) for heading in other_headings}, (filename, other, anchor)
+            assert anchor in {dashboard.heading_anchor(heading) for heading in other_headings}, (
+                filename,
+                other,
+                anchor,
+            )
     for label in re.findall(r"\[\[vista:([^\]]+)\]\]", text):
         assert dashboard.find_menu_page(label), (filename, label)
 
 
 def test_d283_every_acronym_of_the_english_documents_is_in_the_english_glossary():
     glossary = read(EN_DIR / "GLOSARIO.md")
-    table = glossary[glossary.index("| Acronym or term"):].split("\n\n", 1)[0]
+    table = glossary[glossary.index("| Acronym or term") :].split("\n\n", 1)[0]
     defined = set(re.findall(r"[A-Za-z0-9]+", " ".join(line.split(" | ")[0] for line in table.splitlines()[2:])))
     words = {"MB", "GB", "YYYY", "MM", "DD", "VARCHAR", "BIGINT", "INTEGER", "DOUBLE", "BOOLEAN"}
     for filename in FOLDER_FILES:
@@ -138,10 +153,14 @@ def test_d283_the_language_follows_the_address_and_spanish_keeps_addresses_as_th
     assert "Price overview" in labels and "Documents" in labels and "Panorama de precios" not in labels
     toggles = [button.label for button in app.sidebar.button if str(button.key).startswith("nav_toggle_")]
     assert toggles[:2] == ["Business · BI", "Data engineering"]
-    assert [button.proto.type for button in app.sidebar.button if str(button.key).startswith("language_")] == \
-        ["secondary", "primary"]
+    assert [button.proto.type for button in app.sidebar.button if str(button.key).startswith("language_")] == [
+        "secondary",
+        "primary",
+    ]
     spanish = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
-    assert "lang" not in spanish.query_params and "Panorama de precios" in [l.proto.label for l in spanish.sidebar.get("page_link")]
+    assert "lang" not in spanish.query_params and "Panorama de precios" in [
+        link.proto.label for link in spanish.sidebar.get("page_link")
+    ]
 
 
 @pytest.mark.parametrize("page", ["SAD · Arquitectura", "Glosario", "Documentos"])
@@ -171,8 +190,13 @@ def test_d284_figures_dates_and_versions_are_written_the_english_way(monkeypatch
     english(monkeypatch)
     assert i18n.translate_text("2.521.012") == "2,521,012" and i18n.translate_text("+0,2 %") == "+0.2 %"
     assert i18n.translate_text("DuckDB 1.5.6") == "DuckDB 1.5.6"  # a version is not a figure
-    assert i18n.localize_date("05-10-2026") == "2026-10-05" and i18n.localize_date("12–18 oct 2026") == "Oct 12–18, 2026"
-    assert i18n.localize_date("20 oct · 12:54") == "Oct 20 · 12:54" and i18n.localize_date("septiembre 2026") == "September 2026"
+    assert (
+        i18n.localize_date("05-10-2026") == "2026-10-05" and i18n.localize_date("12–18 oct 2026") == "Oct 12–18, 2026"
+    )
+    assert (
+        i18n.localize_date("20 oct · 12:54") == "Oct 20 · 12:54"
+        and i18n.localize_date("septiembre 2026") == "September 2026"
+    )
     assert i18n.translate_text("Precio 05-10") == "Price Oct 5"
     assert i18n.translate_text("Precio vs. época") == "Price vs. season"  # a typed placeholder never catches a name
 
@@ -180,19 +204,28 @@ def test_d284_figures_dates_and_versions_are_written_the_english_way(monkeypatch
 def test_d284_a_text_is_translated_only_as_a_whole_and_code_is_left_alone(monkeypatch):
     english(monkeypatch)
     assert i18n.translate_text("Una frase que nadie tradujo todavía") == "Una frase que nadie tradujo todavía"
-    markup = ('<p title="Sin datos">Sin datos<br>Pruebas: <code>Sin datos 0,1</code></p><pre>Sin datos</pre>'
-              '<script>var a = "Cerrar";</script><style>.x{content:"Sin datos"}</style>')
-    assert i18n.translate_html(markup) == ('<p title="No data">No data<br>Tests: <code>Sin datos 0,1</code></p>'
-                                           '<pre>Sin datos</pre><script>var a = "Close";</script>'
-                                           '<style>.x{content:"Sin datos"}</style>')
+    markup = (
+        '<p title="Sin datos">Sin datos<br>Pruebas: <code>Sin datos 0,1</code></p><pre>Sin datos</pre>'
+        '<script>var a = "Cerrar";</script><style>.x{content:"Sin datos"}</style>'
+    )
+    assert i18n.translate_html(markup) == (
+        '<p title="No data">No data<br>Tests: <code>Sin datos 0,1</code></p>'
+        '<pre>Sin datos</pre><script>var a = "Close";</script>'
+        '<style>.x{content:"Sin datos"}</style>'
+    )
     assert i18n.translate_any("### Semanas sin hueco\n- Sin datos") == "### Weeks without gaps\n- No data"
 
 
 def test_d284_a_chart_names_the_same_series_in_its_data_its_scale_and_its_conditions(monkeypatch):
     english(monkeypatch)
-    spec = {"title": "Índice ene 2022 = 100", "datasets": {"d": [{"serie": "IPC alimentos (INE)", "value": 1}]},
-            "encoding": {"color": {"scale": {"domain": ["IPC alimentos (INE)", "Frutas"]}},
-                         "opacity": {"condition": {"test": "datum.serie == 'IPC alimentos (INE)'"}}}}
+    spec = {
+        "title": "Índice ene 2022 = 100",
+        "datasets": {"d": [{"serie": "IPC alimentos (INE)", "value": 1}]},
+        "encoding": {
+            "color": {"scale": {"domain": ["IPC alimentos (INE)", "Frutas"]}},
+            "opacity": {"condition": {"test": "datum.serie == 'IPC alimentos (INE)'"}},
+        },
+    }
     translated = i18n.translate_spec(spec)
     assert translated["title"] == "Index Jan 2022 = 100"
     assert translated["datasets"]["d"][0]["serie"] == "Food CPI (INE)"
@@ -208,6 +241,7 @@ def test_d284_every_template_has_as_many_placeholders_in_both_languages():
 @pytest.fixture(scope="module")
 def data_values():
     from tests import i18n_audit
+
     if not dashboard.queries.DATABASE_FILE.exists():
         pytest.skip("datos.duckdb is not here")
     return i18n_audit.read_data_values()
@@ -220,12 +254,14 @@ def screen_id(screen):
 
 def all_screens():
     from tests import i18n_audit
+
     return i18n_audit.screens()
 
 
 @pytest.mark.parametrize("screen", all_screens(), ids=screen_id)
 def test_d284_no_screen_shows_spanish_when_the_reader_chose_english(screen, data_values):
     from tests import i18n_audit
+
     view, state = screen
     assert i18n_audit.spanish_left(view, data_values, state=state) == []
 
@@ -237,10 +273,14 @@ def test_d294_a_chart_keeps_its_series_when_streamlit_carries_the_data_as_arrow(
     import pandas as pd
     import pyarrow as pa
     from streamlit.elements import vega_charts
+
     english(monkeypatch)
     frame = pd.DataFrame({"serie": ["IPC alimentos (INE)", "Frutas"], "value": [1.0, 2.0]})
-    chart = alt.Chart(frame).mark_line().encode(
-        color=alt.Color("serie:N", scale=alt.Scale(domain=["IPC alimentos (INE)", "Frutas"])), y="value:Q")
+    chart = (
+        alt.Chart(frame)
+        .mark_line()
+        .encode(color=alt.Color("serie:N", scale=alt.Scale(domain=["IPC alimentos (INE)", "Frutas"])), y="value:Q")
+    )
     spec = i18n.translate_spec(vega_charts._convert_altair_to_vega_lite_spec(chart))
     domain = spec["encoding"]["color"]["scale"]["domain"]
     rows = [pa.ipc.open_stream(data).read_all().to_pydict() for data in spec["datasets"].values()][0]
@@ -249,10 +289,12 @@ def test_d294_a_chart_keeps_its_series_when_streamlit_carries_the_data_as_arrow(
 
 
 def test_d283_the_english_glossary_names_only_english_pages_and_tabs():
-    menu = {i18n.EN[dashboard.SIDEBAR_LABELS.get(view, view)] for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
+    menu = {
+        i18n.EN[dashboard.SIDEBAR_LABELS.get(view, view)] for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]
+    }
     tabs = {"Operations", "Deployment", "CI/CD", "Monitoring"}
     glossary = read(EN_DIR / "GLOSARIO.md")
-    table = glossary[glossary.index("| Acronym or term"):].split("\n\n", 1)[0]
+    table = glossary[glossary.index("| Acronym or term") :].split("\n\n", 1)[0]
     for row in [line.split(" | ") for line in table.splitlines()[2:]]:
         for place in [] if row[2] == "—" else row[2].split(", "):
             page, _, tab = place.partition(" (")

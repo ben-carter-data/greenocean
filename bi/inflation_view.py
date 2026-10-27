@@ -13,6 +13,7 @@ against the food IPC of the INE on the same base:
 The IPC is itself computed from food prices, so a family moving with it is not proof
 that inflation moved it: the comparison says «more or less than the food basket».
 """
+
 import math
 
 import altair as alt
@@ -25,9 +26,13 @@ IPC_NAME = "IPC alimentos (INE)"
 # A family within ±2 points of the IPC rose «al ritmo de la inflación».
 SAME_PACE_POINTS = 2.0
 FAMILY_COLORS = {
-    "Hortalizas": "#16a34a", "Frutas": "#e11d48", "Carne bovina": "#b45309",
-    "Carne de Cerdo - Ave - Cordero": "#f97316", "Lácteos - Huevos - Margarinas": "#0ea5e9",
-    "Pan": "#ca8a04", "Abarrotes y otros": "#8b5cf6",
+    "Hortalizas": "#16a34a",
+    "Frutas": "#e11d48",
+    "Carne bovina": "#b45309",
+    "Carne de Cerdo - Ave - Cordero": "#f97316",
+    "Lácteos - Huevos - Margarinas": "#0ea5e9",
+    "Pan": "#ca8a04",
+    "Abarrotes y otros": "#8b5cf6",
 }
 SERIES_SQL = """
 WITH national AS (
@@ -53,22 +58,26 @@ def build_family_index(series, ipc):
     (product_group = IPC_NAME) — and last is (year, month) of that last month."""
     ipc = ipc.sort_values(["year", "month"])
     last = tuple(int(value) for value in ipc.iloc[-1][["year", "month"]])
-    series = series.assign(key=series["product_id"].astype(str) + "|" + series["channel_id"].astype(str)
-                           + "|" + series["normalized_unit"].astype(str))
-    in_window = (series["year"] * 100 + series["month"]).between(BASE_YEAR * 100 + BASE_MONTH,
-                                                                   last[0] * 100 + last[1])
+    series = series.assign(
+        key=series["product_id"].astype(str)
+        + "|"
+        + series["channel_id"].astype(str)
+        + "|"
+        + series["normalized_unit"].astype(str)
+    )
+    in_window = (series["year"] * 100 + series["month"]).between(BASE_YEAR * 100 + BASE_MONTH, last[0] * 100 + last[1])
     series = series[in_window]
     base = series[(series["year"] == BASE_YEAR) & (series["month"] == BASE_MONTH)].set_index("key")["price"]
     ends = set(series.loc[(series["year"] == last[0]) & (series["month"] == last[1]), "key"])
     kept = series[series["key"].isin(set(base.index) & ends)].copy()
     kept["index"] = kept["price"] / kept["key"].map(base) * 100
     families = kept.groupby(["product_group", "year", "month"], as_index=False).agg(
-        index=("index", "median"), series=("key", "nunique"))
+        index=("index", "median"), series=("key", "nunique")
+    )
     ipc = ipc[(ipc["year"] * 100 + ipc["month"]) >= BASE_YEAR * 100 + BASE_MONTH]
     base_ipc = float(ipc.loc[(ipc["year"] == BASE_YEAR) & (ipc["month"] == BASE_MONTH), "food_index"].iloc[0])
     reference = ipc.assign(product_group=IPC_NAME, index=ipc["food_index"] / base_ipc * 100, series=None)
-    rows = pd.concat([families, reference[["product_group", "year", "month", "index", "series"]]],
-                     ignore_index=True)
+    rows = pd.concat([families, reference[["product_group", "year", "month", "index", "series"]]], ignore_index=True)
     rows["month_start"] = pd.to_datetime(dict(year=rows["year"], month=rows["month"], day=1))
     deflator = reference.set_index(["year", "month"])["index"]
     rows["real"] = rows["index"] / [deflator[(year, month)] for year, month in zip(rows["year"], rows["month"])] * 100
@@ -93,11 +102,26 @@ def summarize_families(rows, last):
     for family in sorted(set(rows["product_group"]) - {IPC_NAME}):
         total, yearly = change(rows, family, base, last), change(rows, family, year_ago, last)
         gap = None if total is None else total - ipc_total
-        verdict = ("sin datos" if gap is None else "más que la inflación" if gap > SAME_PACE_POINTS
-                   else "menos que la inflación" if gap < -SAME_PACE_POINTS else "al ritmo de la inflación")
+        verdict = (
+            "sin datos"
+            if gap is None
+            else "más que la inflación"
+            if gap > SAME_PACE_POINTS
+            else "menos que la inflación"
+            if gap < -SAME_PACE_POINTS
+            else "al ritmo de la inflación"
+        )
         series = rows.loc[rows["product_group"] == family, "series"].max()
-        result.append({"family": family, "total": total, "yearly": yearly, "gap": gap,
-                       "verdict": verdict, "series": int(series) if pd.notna(series) else 0})
+        result.append(
+            {
+                "family": family,
+                "total": total,
+                "yearly": yearly,
+                "gap": gap,
+                "verdict": verdict,
+                "series": int(series) if pd.notna(series) else 0,
+            }
+        )
     summary = pd.DataFrame(result).sort_values("gap", ascending=False).reset_index(drop=True)
     return summary, ipc_total, ipc_year
 
@@ -117,8 +141,9 @@ def draw_family_card(rows, family, mode, real=False, domain=None, height=186):
     """One family against the food IPC (dashed), for a card of the grid (D-174): the
     chart fills its card and shares the y domain with the other cards. Real: the IPC
     is the flat 100 line and a family above it rose more than the basket."""
-    return charts.apply_chart_style(family_lines(rows, family, mode, real, domain).properties(
-        width="container", height=height), mode)
+    return charts.apply_chart_style(
+        family_lines(rows, family, mode, real, domain).properties(width="container", height=height), mode
+    )
 
 
 def family_lines(rows, family, mode, real=False, domain=None):
@@ -127,20 +152,26 @@ def family_lines(rows, family, mode, real=False, domain=None):
     value = "real" if real else "index"
     panel = rows[rows["product_group"].isin([family, IPC_NAME])]
     names = [family, IPC_NAME] if family != IPC_NAME else [IPC_NAME]
-    colors = [FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names):]
-    dashes = [[1, 0], [5, 4]][-len(names):]
+    colors = [FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names) :]
+    dashes = [[1, 0], [5, 4]][-len(names) :]
     scale = alt.Scale(zero=False, domain=domain) if domain else alt.Scale(zero=False)
-    chart = alt.Chart(panel).mark_line(interpolate="monotone", strokeWidth=2.2).encode(
-        x=alt.X("month_start:T", title=None, axis=alt.Axis(format="%Y", tickCount=5, labelPadding=4)),
-        y=alt.Y(f"{value}:Q", title=None, scale=scale, axis=alt.Axis(labelFontSize=10, tickCount=4)),
-        color=alt.Color("product_group:N", scale=alt.Scale(domain=names, range=colors), legend=None),
-        strokeDash=alt.StrokeDash("product_group:N", scale=alt.Scale(domain=names, range=dashes), legend=None),
-        opacity=alt.condition(alt.datum.product_group == IPC_NAME, alt.value(.7), alt.value(1)),
-        tooltip=[alt.Tooltip("product_group:N", title="Serie"),
-                 alt.Tooltip("month_start:T", title="Mes", format="%m-%Y"),
-                 alt.Tooltip(f"{value}:Q", title="Índice", format=",.1f")])
+    chart = (
+        alt.Chart(panel)
+        .mark_line(interpolate="monotone", strokeWidth=2.2)
+        .encode(
+            x=alt.X("month_start:T", title=None, axis=alt.Axis(format="%Y", tickCount=5, labelPadding=4)),
+            y=alt.Y(f"{value}:Q", title=None, scale=scale, axis=alt.Axis(labelFontSize=10, tickCount=4)),
+            color=alt.Color("product_group:N", scale=alt.Scale(domain=names, range=colors), legend=None),
+            strokeDash=alt.StrokeDash("product_group:N", scale=alt.Scale(domain=names, range=dashes), legend=None),
+            opacity=alt.condition(alt.datum.product_group == IPC_NAME, alt.value(0.7), alt.value(1)),
+            tooltip=[
+                alt.Tooltip("product_group:N", title="Serie"),
+                alt.Tooltip("month_start:T", title="Mes", format="%m-%Y"),
+                alt.Tooltip(f"{value}:Q", title="Índice", format=",.1f"),
+            ],
+        )
+    )
     return chart
-
 
 
 def draw_family_focus(rows, family, mode, real=False, domain=None, height=420):
@@ -151,46 +182,74 @@ def draw_family_focus(rows, family, mode, real=False, domain=None, height=420):
     palette = charts.get_palette(mode)
     value = "real" if real else "index"
     lines = family_lines(rows, family, mode, real, domain).encode(
-        x=alt.X("month_start:T", title=None, axis=alt.Axis(  # D-316: the years under the chart, small and soft, in the gridline's place
-            format="%Y", tickCount=5, labelPadding=8, labelFontSize=11, labelColor=palette["reference"], labelFlush=False)))
+        x=alt.X(
+            "month_start:T",
+            title=None,
+            axis=alt.Axis(  # D-316: the years under the chart, small and soft, in the gridline's place
+                format="%Y",
+                tickCount=5,
+                labelPadding=8,
+                labelFontSize=11,
+                labelColor=palette["reference"],
+                labelFlush=False,
+            ),
+        )
+    )
     panel = rows[rows["product_group"].isin([family, IPC_NAME])].sort_values("month_start")
     names = [family, IPC_NAME] if family != IPC_NAME else [IPC_NAME]
-    colors = [FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names):]
+    colors = [FAMILY_COLORS.get(family, "#94a3b8"), palette["strong_text"]][-len(names) :]
     color = alt.Color("product_group:N", scale=alt.Scale(domain=names, range=colors), legend=None)
     x = alt.X("month_start:T", title=None)
     y = alt.Y(f"{value}:Q", title=None)
     ends = panel.groupby("product_group", as_index=False).tail(1)
-    end_labels = alt.Chart(ends).mark_text(align="left", dx=7, fontSize=12, fontWeight=600).encode(
-        x=x, y=y, color=color, text=alt.Text(f"{value}:Q", format=",.1f"))
+    end_labels = (
+        alt.Chart(ends)
+        .mark_text(align="left", dx=7, fontSize=12, fontWeight=600)
+        .encode(x=x, y=y, color=color, text=alt.Text(f"{value}:Q", format=",.1f"))
+    )
     layers = [lines, end_labels]
     series = panel[panel["product_group"] == family]
     if family != IPC_NAME and not series.empty:
         peak = series.loc[[series[value].idxmax()]]
         if peak.index[0] != series.index[-1]:  # a peak in the last month already carries the end label
-            layers += [alt.Chart(peak).mark_point(filled=True, size=46, color=colors[0]).encode(x=x, y=y),
-                       alt.Chart(peak).mark_text(dy=-11, fontSize=11.5, fontWeight=600, color=colors[0]).encode(
-                           x=x, y=y, text=alt.Text(f"{value}:Q", format=",.1f"))]
+            layers += [
+                alt.Chart(peak).mark_point(filled=True, size=46, color=colors[0]).encode(x=x, y=y),
+                alt.Chart(peak)
+                .mark_text(dy=-11, fontSize=11.5, fontWeight=600, color=colors[0])
+                .encode(x=x, y=y, text=alt.Text(f"{value}:Q", format=",.1f")),
+            ]
     # One row per month with both values, for the rule under the cursor.
     wide = panel.pivot_table(index="month_start", columns="product_group", values=value).reset_index()
     tooltip = [alt.Tooltip("month_start:T", title="Mes", format="%B %Y")]
     if family != IPC_NAME:
         wide = wide.rename(columns={family: "family", IPC_NAME: "ipc"})
         wide["gap"] = wide["family"] - wide["ipc"]
-        tooltip += [alt.Tooltip("family:Q", title=family, format=",.1f"),
-                    alt.Tooltip("ipc:Q", title=IPC_NAME, format=",.1f"),
-                    alt.Tooltip("gap:Q", title="Diferencia en puntos", format="+,.1f")]
+        tooltip += [
+            alt.Tooltip("family:Q", title=family, format=",.1f"),
+            alt.Tooltip("ipc:Q", title=IPC_NAME, format=",.1f"),
+            alt.Tooltip("gap:Q", title="Diferencia en puntos", format="+,.1f"),
+        ]
     else:
         wide = wide.rename(columns={IPC_NAME: "ipc"})
         tooltip += [alt.Tooltip("ipc:Q", title=IPC_NAME, format=",.1f")]
-    hover = alt.selection_point(name="month", fields=["month_start"], nearest=True, on="pointerover",
-                                clear="pointerout", empty=False)
-    rule = alt.Chart(wide).mark_rule(color=palette["reference"], strokeWidth=1).encode(
-        x=x, opacity=alt.condition(hover, alt.value(.75), alt.value(0)), tooltip=tooltip).add_params(hover)
-    dots = alt.Chart(panel).mark_point(filled=True, size=40).encode(
-        x=x, y=y, color=color, opacity=alt.condition(hover, alt.value(1), alt.value(0)))
+    hover = alt.selection_point(
+        name="month", fields=["month_start"], nearest=True, on="pointerover", clear="pointerout", empty=False
+    )
+    rule = (
+        alt.Chart(wide)
+        .mark_rule(color=palette["reference"], strokeWidth=1)
+        .encode(x=x, opacity=alt.condition(hover, alt.value(0.75), alt.value(0)), tooltip=tooltip)
+        .add_params(hover)
+    )
+    dots = (
+        alt.Chart(panel)
+        .mark_point(filled=True, size=40)
+        .encode(x=x, y=y, color=color, opacity=alt.condition(hover, alt.value(1), alt.value(0)))
+    )
     layers += [rule, dots]
     chart = alt.layer(*layers).properties(width="container", height=height, padding={"right": 44, "bottom": 18})
     return charts.apply_chart_style(chart, mode)
+
 
 def month_name(year, month):
     return f"{charts.CHILE_LOCALE['time']['months'][month - 1]} {year}"
@@ -215,46 +274,82 @@ def family_insights(rows, summary, family, last, real=False):
     note = " (sin inflación)" if real else ""
     monthly = series.assign(step=series[line].pct_change() * 100).dropna(subset=["step"])
     jump = monthly.loc[monthly["step"].abs().idxmax()] if not monthly.empty else None
-    jump_text = (None if jump is None else
-                 (f"Mayor movimiento mensual{note}", f"{percent(jump['step'])} en {month_name(int(jump['year']), int(jump['month']))}."))
+    jump_text = (
+        None
+        if jump is None
+        else (
+            f"Mayor movimiento mensual{note}",
+            f"{percent(jump['step'])} en {month_name(int(jump['year']), int(jump['month']))}.",
+        )
+    )
     if family == IPC_NAME and real:
         jump_text = None  # without inflation the IPC is the flat 100 line: it has no move of its own
     if family == IPC_NAME:
         counts = summary["verdict"].value_counts()
-        insights = [(since, f"La canasta de alimentos del INE subió {percent(ipc_total)}."),
-                    ("Últimos 12 meses", f"{percent(ipc_year)}."),
-                    ("Frente a las familias", f"{counts.get('más que la inflación', 0)} subieron más que ella, "
-                                              f"{counts.get('menos que la inflación', 0)} menos y "
-                                              f"{counts.get('al ritmo de la inflación', 0)} a su ritmo "
-                                              f"(± {points(SAME_PACE_POINTS)}).")]
+        insights = [
+            (since, f"La canasta de alimentos del INE subió {percent(ipc_total)}."),
+            ("Últimos 12 meses", f"{percent(ipc_year)}."),
+            (
+                "Frente a las familias",
+                f"{counts.get('más que la inflación', 0)} subieron más que ella, "
+                f"{counts.get('menos que la inflación', 0)} menos y "
+                f"{counts.get('al ritmo de la inflación', 0)} a su ritmo "
+                f"(± {points(SAME_PACE_POINTS)}).",
+            ),
+        ]
         return insights + ([jump_text] if jump_text else [])
     total, yearly = change(rows, family, base, last), change(rows, family, year_ago, last)
     gap = total - ipc_total
-    verdict = ("más que" if gap > SAME_PACE_POINTS else "menos que" if gap < -SAME_PACE_POINTS else "al ritmo de")
+    verdict = "más que" if gap > SAME_PACE_POINTS else "menos que" if gap < -SAME_PACE_POINTS else "al ritmo de"
     # The difference of the two rounded rises, so it adds up with the figures the cards show.
     shown_gap = round(total, 1) - round(ipc_total, 1)
-    insights = [(since, f"Subió {percent(total)}: {points(shown_gap)} {'más' if shown_gap >= 0 else 'menos'} que el IPC de "
-                        f"alimentos ({percent(ipc_total)}). Subió {verdict} la inflación.")]
+    insights = [
+        (
+            since,
+            f"Subió {percent(total)}: {points(shown_gap)} {'más' if shown_gap >= 0 else 'menos'} que el IPC de "
+            f"alimentos ({percent(ipc_total)}). Subió {verdict} la inflación.",
+        )
+    ]
     if yearly is not None and ipc_year is not None:
         pace = "más rápido" if yearly > ipc_year else "más lento" if yearly < ipc_year else "igual"
-        insights.append(("Últimos 12 meses", f"{percent(yearly)} frente a {percent(ipc_year)} del IPC: hoy sube {pace} "
-                                             "que la canasta." if pace != "igual" else
-                                             f"{percent(yearly)}, igual que el IPC."))
+        insights.append(
+            (
+                "Últimos 12 meses",
+                f"{percent(yearly)} frente a {percent(ipc_year)} del IPC: hoy sube {pace} que la canasta."
+                if pace != "igual"
+                else f"{percent(yearly)}, igual que el IPC.",
+            )
+        )
     peak = series.loc[series[line].idxmax()]
     latest = series.iloc[-1]
     peak_month = month_name(int(peak["year"]), int(peak["month"]))
     if (int(peak["year"]), int(peak["month"])) == last:
-        insights.append((f"Máximo{note}", f"El último mes, {peak_month}, es su punto más alto (índice "
-                                          f"{peak[line]:.1f}".replace(".", ",") + ")."))
+        insights.append(
+            (
+                f"Máximo{note}",
+                f"El último mes, {peak_month}, es su punto más alto (índice {peak[line]:.1f}".replace(".", ",") + ").",
+            )
+        )
     else:
         below = (latest[line] / peak[line] - 1) * 100
-        insights.append((f"Máximo{note}", f"Índice {peak[line]:.1f}".replace(".", ",") + f" en {peak_month}; hoy está "
-                                   + f"{abs(below):.1f} % bajo ese punto.".replace(".", ",", 1)))
+        insights.append(
+            (
+                f"Máximo{note}",
+                f"Índice {peak[line]:.1f}".replace(".", ",")
+                + f" en {peak_month}; hoy está "
+                + f"{abs(below):.1f} % bajo ese punto.".replace(".", ",", 1),
+            )
+        )
     if jump_text:
         insights.append(jump_text)
-    real = (latest["real"] - 100)
+    real = latest["real"] - 100
     insights.append(("Sin inflación", f"Descontado el IPC, vale {percent(real)} frente a {month_name(*base)}."))
     count = int(series["series"].max()) if series["series"].notna().any() else 0
-    insights.append(("Base del cálculo", f"{count} series de consumidor con precio en {month_name(*base)} y en "
-                                         f"{month_name(*last)}; cada mes, la mediana de sus índices."))
+    insights.append(
+        (
+            "Base del cálculo",
+            f"{count} series de consumidor con precio en {month_name(*base)} y en "
+            f"{month_name(*last)}; cada mes, la mediana de sus índices.",
+        )
+    )
     return insights

@@ -5,6 +5,7 @@ like the theme does with colors. The language lives in the session and in the ad
 opens in its language. The documents exist in both languages: docs/ in Spanish and docs/en/ in English, with the same
 file names, structure and identifiers. No dependency: the translations are dictionaries of the project.
 """
+
 from pathlib import Path
 
 import streamlit as st
@@ -17,29 +18,61 @@ LANGUAGE_NAMES = {SPANISH: "Español", ENGLISH: "English"}
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 # The header table and the standard sections of a document, by language.
 DOCUMENT_FIELDS = {
-    SPANISH: {"purpose": "Propósito", "version": "Versión", "date": "Fecha", "index": "Índice",
-              "history": "Historial de versiones", "glossary": "Glosario", "type": "Tipo de documento",
-              "status": "Estado", "owner": "Responsable", "audience": "Audiencia", "related": "Documentos relacionados",
-              "project": "Proyecto"},
-    ENGLISH: {"purpose": "Purpose", "version": "Version", "date": "Date", "index": "Contents",
-              "history": "Version history", "glossary": "Glossary", "type": "Document type", "status": "Status",
-              "owner": "Owner", "audience": "Audience", "related": "Related documents", "project": "Project"},
+    SPANISH: {
+        "purpose": "Propósito",
+        "version": "Versión",
+        "date": "Fecha",
+        "index": "Índice",
+        "history": "Historial de versiones",
+        "glossary": "Glosario",
+        "type": "Tipo de documento",
+        "status": "Estado",
+        "owner": "Responsable",
+        "audience": "Audiencia",
+        "related": "Documentos relacionados",
+        "project": "Proyecto",
+    },
+    ENGLISH: {
+        "purpose": "Purpose",
+        "version": "Version",
+        "date": "Date",
+        "index": "Contents",
+        "history": "Version history",
+        "glossary": "Glossary",
+        "type": "Document type",
+        "status": "Status",
+        "owner": "Owner",
+        "audience": "Audience",
+        "related": "Related documents",
+        "project": "Project",
+    },
 }
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
-    "Sin precios comparables esta semana": "No comparable prices this week", "En el promedio nacional": "At the national average",
-    "{} más cara": "{} dearer", "{} más barata": "{} cheaper", "Mediana de {} precios comparados con el promedio nacional de los mismos productos": "Median of {} prices compared with the national average of the same products",
-    "La más cara": "The dearest", "La más barata": "The cheapest", 
+    "Sin precios comparables esta semana": "No comparable prices this week",
+    "En el promedio nacional": "At the national average",
+    "{} más cara": "{} dearer",
+    "{} más barata": "{} cheaper",
+    "Mediana de {} precios comparados con el promedio nacional de los mismos productos": "Median of {} prices compared with the national average of the same products",
+    "La más cara": "The dearest",
+    "La más barata": "The cheapest",
     "De norte a sur: dónde queda cada región y cuán cara es frente al promedio nacional, con los mismos productos (semana {}).": "North to south: where each region lies and how dear it is against the national average, on the same products (week {}).",
     "Lugares de compra por región": "Places to buy, by region",
     "Ordenados de norte a sur. Cada región muestra dónde queda en el mapa.": "North to south. Each region shows where it lies on the map.",
-    "Mercado o terminal mayorista": "Wholesale market or terminal", "Feria o vega": "Fair or vega",
-    "Norte → Sur": "North → South", "Mapa": "Map",
+    "Mercado o terminal mayorista": "Wholesale market or terminal",
+    "Feria o vega": "Fair or vega",
+    "Norte → Sur": "North → South",
+    "Mapa": "Map",
     "Método y calidad": "Method and quality",
     "Evaluado según ISO/IEC 25010 · 25012": "Assessed against ISO/IEC 25010 · 25012",
     "Cómo se evaluó el proyecto: normas usadas como método, mediciones reales y lo que falta. Una autoevaluación, no una certificación.": "How the project was assessed: standards used as a method, real measurements and what is missing. A self-assessment, not a certification.",
-    "Introducción": "Introduction", "Estándares": "Standards", "Datos": "Data", "Código": "Code", "Verificar": "Verify", "Límites": "Limits",
+    "Introducción": "Introduction",
+    "Estándares": "Standards",
+    "Datos": "Data",
+    "Código": "Code",
+    "Verificar": "Verify",
+    "Límites": "Limits",
     ":material/storefront: Mayorista": ":material/storefront: Wholesale",
     ":material/database: Datos": ":material/database: Data",
     "Ampliar la tabla de productos": "Enlarge the products table",
@@ -124,7 +157,8 @@ EN = {
     'antes {}': 'before {}',
     'de {}': 'of {}',
     '{} vs anterior': '{} vs previous',
-    "La carga del {} falló": "The load of {} failed", "El panel muestra la última carga válida.": "The panel shows the last valid load.",
+    "La carga del {} falló": "The load of {} failed",
+    "El panel muestra la última carga válida.": "The panel shows the last valid load.",
     "Ver qué paso falló": "See which step failed",
     "La carga del {} falló: el panel muestra la última carga válida.": "The load of {} failed: the panel shows the last valid load.",
     'Ver': 'View',
@@ -135,15 +169,26 @@ EN = {
     'Insights': 'Insights',
     "Para quién": "For whom",
     "Sectores de la ciudad": "City sectors",
-    "Mercados mayoristas": "Wholesale markets", "Sin mercado mayorista en los datos": "No wholesale market in the data",
+    "Mercados mayoristas": "Wholesale markets",
+    "Sin mercado mayorista en los datos": "No wholesale market in the data",
     "Puntos de venta al consumidor": "Consumer sales points",
-    ":material/person: Persona común": ":material/person: Everyday person", ":material/storefront: Comerciante mayorista": ":material/storefront: Wholesale trader", ":material/database: Quien diseña los datos": ":material/database: Data designer",
-    "Para": "For", "Una persona común": "An everyday person", "Un comerciante que compra por mayor": "A trader who buys wholesale", "Quien diseña o revisa los datos": "Whoever designs or reviews the data",
-    "Elige tu vista": "Choose your view", "Usuario": "User", "Todas las familias": "All families", "Vista de usuario": "User view", "Vista profesional": "Professional view",
+    ":material/person: Persona común": ":material/person: Everyday person",
+    ":material/storefront: Comerciante mayorista": ":material/storefront: Wholesale trader",
+    ":material/database: Quien diseña los datos": ":material/database: Data designer",
+    "Para": "For",
+    "Una persona común": "An everyday person",
+    "Un comerciante que compra por mayor": "A trader who buys wholesale",
+    "Quien diseña o revisa los datos": "Whoever designs or reviews the data",
+    "Elige tu vista": "Choose your view",
+    "Usuario": "User",
+    "Todas las familias": "All families",
+    "Vista de usuario": "User view",
+    "Vista profesional": "Professional view",
     "Ver todo el proyecto": "See the whole project",
-    "La ingeniería de datos, la operación, la seguridad, el stack y la documentación.":
-        "The data engineering, operations, security, the stack and the documentation.",
-    "Clave": "Code", "Desbloquear": "Unlock", "Seguridad": "Security",
+    "La ingeniería de datos, la operación, la seguridad, el stack y la documentación.": "The data engineering, operations, security, the stack and the documentation.",
+    "Clave": "Code",
+    "Desbloquear": "Unlock",
+    "Seguridad": "Security",
     "ODEPA: precios mayoristas": "ODEPA: wholesale prices",
     "ODEPA: precios al consumidor": "ODEPA: consumer prices",
     "INE: IPC de alimentos": "INE: food CPI",
@@ -158,8 +203,7 @@ EN = {
     # Sidebar footer
     "Apariencia": "Appearance",
     "Apariencia del panel": "Panel appearance",
-    "Cambiar los colores: Corporativo, Vantablack, Blue Light o Dark Grey.":
-        "Change the colors: Corporativo, Vantablack, Blue Light or Dark Grey.",
+    "Cambiar los colores: Corporativo, Vantablack, Blue Light o Dark Grey.": "Change the colors: Corporativo, Vantablack, Blue Light or Dark Grey.",
     "Fuente: ODEPA · actualización automática cada martes.": "Source: ODEPA · automatic update every Tuesday.",
     "GitHub del proyecto": "The project on GitHub",
     "Idioma": "Language",
@@ -174,17 +218,20 @@ EN = {
     "← Anterior: {}": "← Previous: {}",
     "Siguiente: {} →": "Next: {} →",
     "Ruta": "Path",
-    ("Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de Agricultura de Chile, licencia Creative "
-     "Commons Atribución; IPC de alimentos: Instituto Nacional de Estadísticas (INE). Este proyecto no es un producto "
-     "oficial de ODEPA ni del INE. Lectura de los datos: el precio nacional es un promedio simple de las regiones, sin "
-     "ponderar por población o ventas; cada variación semanal compara las mismas regiones en ambas semanas. Los "
-     "indicadores describen el histórico; no predicen precios. Los precios se reconstruyen desde la fuente en las "
-     "pruebas automáticas."):
-        ("Data: Office of Agricultural Studies and Policies (ODEPA), Ministry of Agriculture of Chile, Creative Commons "
-         "Attribution license; food CPI: National Statistics Institute (INE). This project is not an official product "
-         "of ODEPA or the INE. Reading the data: the national price is a simple average of the regions, not weighted by "
-         "population or sales; each weekly change compares the same regions in both weeks. The indicators describe the "
-         "history; they do not forecast prices. Prices are rebuilt from the source in the automated tests."),
+    (
+        "Datos: Oficina de Estudios y Políticas Agrarias (ODEPA), Ministerio de Agricultura de Chile, licencia Creative "
+        "Commons Atribución; IPC de alimentos: Instituto Nacional de Estadísticas (INE). Este proyecto no es un producto "
+        "oficial de ODEPA ni del INE. Lectura de los datos: el precio nacional es un promedio simple de las regiones, sin "
+        "ponderar por población o ventas; cada variación semanal compara las mismas regiones en ambas semanas. Los "
+        "indicadores describen el histórico; no predicen precios. Los precios se reconstruyen desde la fuente en las "
+        "pruebas automáticas."
+    ): (
+        "Data: Office of Agricultural Studies and Policies (ODEPA), Ministry of Agriculture of Chile, Creative Commons "
+        "Attribution license; food CPI: National Statistics Institute (INE). This project is not an official product "
+        "of ODEPA or the INE. Reading the data: the national price is a simple average of the regions, not weighted by "
+        "population or sales; each weekly change compares the same regions in both weeks. The indicators describe the "
+        "history; they do not forecast prices. Prices are rebuilt from the source in the automated tests."
+    ),
     # GitHub's answers, as the operations center describes them (bi/control.py)
     "GitHub no respondió en {} s": "GitHub did not answer within {} s",
     "no hubo conexión con GitHub": "there was no connection with GitHub",
@@ -204,7 +251,12 @@ EN = {
     "GitHub no respondió ({}); {}.": "GitHub did not answer ({}); {}.",
     # The SQL studio, where some texts are preformatted (bi/sql_explorer.py)
     "{}: todas": "{}: all",
-    "Período": "Period", "Familia": "Family", "Producto": "Product", "Canal": "Channel", "Región": "Region", "Año": "Year",
+    "Período": "Period",
+    "Familia": "Family",
+    "Producto": "Product",
+    "Canal": "Channel",
+    "Región": "Region",
+    "Año": "Year",
     "Sin mensajes todavía. Ejecuta una consulta.": "No messages yet. Run a query.",
     "La consulta no se ejecutó.": "The query did not run.",
     "Se muestran las primeras {} filas; el resultado tenía más.": "The first {} rows are shown; the result had more.",
@@ -217,8 +269,7 @@ EN = {
     "modelos": "models",
     "pruebas superadas": "tests passed",
     # Documents: folder, actions and printing
-    "Los documentos del proyecto, leídos de docs/: cada uno se abre aquí, se imprime como PDF o se lee en GitHub.":
-        "The documents of the project, read from docs/: each one opens here, prints as a PDF or reads on GitHub.",
+    "Los documentos del proyecto, leídos de docs/: cada uno se abre aquí, se imprime como PDF o se lee en GitHub.": "The documents of the project, read from docs/: each one opens here, prints as a PDF or reads on GitHub.",
     "Vista de la carpeta": "Folder view",
     "Documentación": "Documentation",
     "Cuadrícula": "Grid",
@@ -233,15 +284,11 @@ EN = {
     "Imprimir o guardar como PDF": "Print or save as PDF",
     "en GitHub": "on GitHub",
     "Qué resuelve el producto, para quién y con qué requisitos.": "What the product solves, for whom and with which requirements.",
-    "Cómo está construido, cómo corre cada semana, dónde viven sus datos y cómo puede crecer.":
-        "How it is built, how it runs each week, where its data lives and how it can grow.",
-    "Las decisiones de arquitectura que más pesan: contexto, decisión, opciones y consecuencias.":
-        "The architecture decisions that weigh most: context, decision, options and consequences.",
+    "Cómo está construido, cómo corre cada semana, dónde viven sus datos y cómo puede crecer.": "How it is built, how it runs each week, where its data lives and how it can grow.",
+    "Las decisiones de arquitectura que más pesan: contexto, decisión, opciones y consecuencias.": "The architecture decisions that weigh most: context, decision, options and consequences.",
     "Cómo operar el proyecto y resolver sus fallas.": "How to operate the project and solve its failures.",
-    "Las decisiones que cambian la arquitectura, los datos, la seguridad o la operación, por tema.":
-        "The decisions that change the architecture, the data, the security or the operations, by theme.",
-    "Qué se prueba, quién participa en la seguridad y con qué criterios se acepta un cambio.":
-        "What is tested, who takes part in security and with which criteria a change is accepted.",
+    "Las decisiones que cambian la arquitectura, los datos, la seguridad o la operación, por tema.": "The decisions that change the architecture, the data, the security or the operations, by theme.",
+    "Qué se prueba, quién participa en la seguridad y con qué criterios se acepta un cambio.": "What is tested, who takes part in security and with which criteria a change is accepted.",
     "Las siglas y los términos del panel y de los documentos.": "The acronyms and terms of the panel and the documents.",
 }
 
@@ -306,10 +353,14 @@ PAGES = i18n_en.PAGES
 NUMBER = _re.compile(r"[−+-]?\d[\d.,]*\d|[−+-]?\d")
 ONLY_FIGURES = _re.compile(r"[\s$%−+\-–·/()×↑↓=~≈±]*(?:\d[\d.,\s]*[\s$%−+\-–·/()×↑↓=~≈±.:;]*)+")
 TEXT_NODE = _re.compile(r">([^<>]+)<")
-ATTRIBUTE = _re.compile(r'(\b(?:title|aria-label|alt|placeholder|data-tip|data-title|data-label|data-what)=")([^"]*)(")')
+ATTRIBUTE = _re.compile(
+    r'(\b(?:title|aria-label|alt|placeholder|data-tip|data-title|data-label|data-what)=")([^"]*)(")'
+)
 # Scripts keep their code (only their whole strings are looked up); styles, code and preformatted text are left alone.
-BLOCK = _re.compile(r"(<script\b[^>]*>)(.*?)(</script>)|(<style\b[^>]*>.*?</style>|<pre\b[^>]*>.*?</pre>|<code\b[^>]*>.*?</code>)",
-                    _re.DOTALL | _re.IGNORECASE)
+BLOCK = _re.compile(
+    r"(<script\b[^>]*>)(.*?)(</script>)|(<style\b[^>]*>.*?</style>|<pre\b[^>]*>.*?</pre>|<code\b[^>]*>.*?</code>)",
+    _re.DOTALL | _re.IGNORECASE,
+)
 JS_STRING = _re.compile(r"""(["'])((?:(?!\1)[^\\\n]|\\.){2,}?)\1""")
 _templates = None
 
@@ -327,13 +378,45 @@ def localize_figures(text):
     return NUMBER.sub(lambda match: localize_number(match.group(0)), text)
 
 
-MONTHS = dict(zip(["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
-                  ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]))
+MONTHS = dict(
+    zip(
+        ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
+        ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    )
+)
 MONTH = "(" + "|".join(MONTHS) + ")"
-FULL_MONTHS = dict(zip(["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre",
-                        "noviembre", "diciembre"],
-                       ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
-                        "November", "December"]))
+FULL_MONTHS = dict(
+    zip(
+        [
+            "enero",
+            "febrero",
+            "marzo",
+            "abril",
+            "mayo",
+            "junio",
+            "julio",
+            "agosto",
+            "septiembre",
+            "octubre",
+            "noviembre",
+            "diciembre",
+        ],
+        [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ],
+    )
+)
 
 
 def localize_date(text):
@@ -352,16 +435,23 @@ def localize_date(text):
     if match := _re.fullmatch(rf"{MONTH}\.? (\d{{4}})", text):
         return f"{MONTHS[match[1]]} {match[2]}"
     if match := _re.fullmatch(r"(\d{2})-(\d{2})( \d{2}:\d{2})", text):
-        return f"{list(MONTHS.values())[int(match[2]) - 1]} {int(match[1])}{match[3]}" if 1 <= int(match[2]) <= 12 else None
+        return (
+            f"{list(MONTHS.values())[int(match[2]) - 1]} {int(match[1])}{match[3]}"
+            if 1 <= int(match[2]) <= 12
+            else None
+        )
     if match := _re.fullmatch(r"(\d{2})-(\d{2})", text):
         return f"{list(MONTHS.values())[int(match[2]) - 1]} {int(match[1])}" if 1 <= int(match[2]) <= 12 else None
     return None
 
 
 # What each placeholder of a template may hold: «{}» anything, «{n}» a figure, «{m}» a month and year, «{d}» a date.
-PLACEHOLDERS = {"{}": r"(.+?)", "{n}": r"([−+-]?\d[\d.,]*(?: ?%)?)",
-                "{m}": r"((?:" + "|".join(FULL_MONTHS) + r") \d{4})",
-                "{d}": r"(\d{1,2}[-–]\d{1,2}(?:[-–]\d{2,4})?|\d{1,2}(?:[–-]\d{1,2})? (?:" + "|".join(MONTHS) + r")(?: \d{4})?)"}
+PLACEHOLDERS = {
+    "{}": r"(.+?)",
+    "{n}": r"([−+-]?\d[\d.,]*(?: ?%)?)",
+    "{m}": r"((?:" + "|".join(FULL_MONTHS) + r") \d{4})",
+    "{d}": r"(\d{1,2}[-–]\d{1,2}(?:[-–]\d{2,4})?|\d{1,2}(?:[–-]\d{1,2})? (?:" + "|".join(MONTHS) + r")(?: \d{4})?)",
+}
 PLACEHOLDER = _re.compile(r"\{[nmd]?\}")
 
 
@@ -427,9 +517,15 @@ def translate_markup_text(text):
 
 def translate_script(script):
     """Inside a script, only string literals that are a whole entry: the texts a script writes on the page."""
+
     def string(match):
         english = lookup(match.group(2))
-        return f"{match.group(1)}{english}{match.group(1)}" if english and match.group(1) not in english else match.group(0)
+        return (
+            f"{match.group(1)}{english}{match.group(1)}"
+            if english and match.group(1) not in english
+            else match.group(0)
+        )
+
     return JS_STRING.sub(string, script)
 
 
@@ -441,9 +537,11 @@ def translate_html(markup):
     kept = []
 
     def keep(block):
-        kept.append(block.group(1) + translate_script(block.group(2)) + block.group(3) if block.group(1)
-                    else block.group(4))
+        kept.append(
+            block.group(1) + translate_script(block.group(2)) + block.group(3) if block.group(1) else block.group(4)
+        )
         return f"<\u0001{len(kept) - 1}\u0001>"
+
     marked = _translate_plain_html(BLOCK.sub(keep, markup))
     return _re.sub("<\u0001(\\d+)\u0001>", lambda match: kept[int(match.group(1))], marked)
 
@@ -491,6 +589,7 @@ def translate_dataset(data):
     no longer finds its rows («IPC alimentos (INE)») and its line disappears."""
     import pyarrow as pa
     from streamlit import dataframe_util
+
     try:
         table = pa.ipc.open_stream(data).read_all()
     except (pa.ArrowInvalid, TypeError):
@@ -500,8 +599,10 @@ def translate_dataset(data):
     for column in table.columns:
         if pa.types.is_string(column.type) or pa.types.is_large_string(column.type):
             values = column.to_pylist()
-            english = [(lookup(value.strip()) or value) if isinstance(value, str) and value.strip() else value
-                       for value in values]
+            english = [
+                (lookup(value.strip()) or value) if isinstance(value, str) and value.strip() else value
+                for value in values
+            ]
             if english != values:
                 changed = True
                 column = pa.array(english, type=column.type)
@@ -549,15 +650,22 @@ def _wrap(method, first="body", keys=("label", "help", "placeholder", "caption")
         if is_english():
             args = list(args)
             if args:
-                args[0] = translate_frame(args[0]) if frame else (
-                    [translate_any(item) for item in args[0]] if isinstance(args[0], (list, tuple)) and options
-                    else translate_any(args[0]))
+                args[0] = (
+                    translate_frame(args[0])
+                    if frame
+                    else (
+                        [translate_any(item) for item in args[0]]
+                        if isinstance(args[0], (list, tuple)) and options
+                        else translate_any(args[0])
+                    )
+                )
             for key in (first, *keys):
                 if key in kwargs:
                     kwargs[key] = translate_frame(kwargs[key]) if frame and key == first else translate_any(kwargs[key])
             if options and "format_func" not in kwargs and len(args) > 1 and not frame:
                 kwargs["format_func"] = lambda option: translate_any(str(option))
         return method(self, *args, **kwargs)
+
     translated.__wrapped__ = method
     return translated
 
@@ -565,14 +673,39 @@ def _wrap(method, first="body", keys=("label", "help", "placeholder", "caption")
 def install():
     """Translate everything the panel draws through Streamlit (once per process)."""
     from streamlit.delta_generator import DeltaGenerator
+
     if getattr(DeltaGenerator, "_i18n_installed", False):
         return
-    plain = ["markdown", "html", "caption", "subheader", "title", "header", "text", "info", "warning", "error",
-             "success", "button", "link_button", "download_button", "page_link", "expander", "popover", "toggle",
-             "checkbox", "text_input", "text_area", "metric"]
+    plain = [
+        "markdown",
+        "html",
+        "caption",
+        "subheader",
+        "title",
+        "header",
+        "text",
+        "info",
+        "warning",
+        "error",
+        "success",
+        "button",
+        "link_button",
+        "download_button",
+        "page_link",
+        "expander",
+        "popover",
+        "toggle",
+        "checkbox",
+        "text_input",
+        "text_area",
+        "metric",
+    ]
     for name in plain:
-        setattr(DeltaGenerator, name, _wrap(getattr(DeltaGenerator, name),
-                                            first={"page_link": "label", "button": "label"}.get(name, "body")))
+        setattr(
+            DeltaGenerator,
+            name,
+            _wrap(getattr(DeltaGenerator, name), first={"page_link": "label", "button": "label"}.get(name, "body")),
+        )
     for name in ("radio", "selectbox", "segmented_control", "pills", "multiselect"):
         setattr(DeltaGenerator, name, _wrap(getattr(DeltaGenerator, name), first="label", options=True))
     setattr(DeltaGenerator, "tabs", _wrap(DeltaGenerator.tabs, first="tabs", options=True))
@@ -580,14 +713,27 @@ def install():
         setattr(DeltaGenerator, name, _wrap(getattr(DeltaGenerator, name), first="data", frame=True))
     setattr(DeltaGenerator, "iframe", _wrap(DeltaGenerator.iframe, first="src"))
     from streamlit.elements import vega_charts
+
     prepare = vega_charts._prepare_vega_lite_spec
 
     def prepare_translated(spec, *args, **kwargs):
         spec = prepare(spec, *args, **kwargs)
         return translate_spec(spec) if is_english() else spec
+
     vega_charts._prepare_vega_lite_spec = prepare_translated
     DeltaGenerator._i18n_installed = True
-    for name in plain + ["radio", "selectbox", "segmented_control", "pills", "multiselect", "tabs", "dataframe", "table",
-                         "iframe"]:
+    for name in plain + [
+        "radio",
+        "selectbox",
+        "segmented_control",
+        "pills",
+        "multiselect",
+        "tabs",
+        "dataframe",
+        "table",
+        "iframe",
+    ]:
         setattr(st, name, getattr(st._main, name))
+
+
 # endregion

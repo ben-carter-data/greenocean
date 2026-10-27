@@ -1,4 +1,5 @@
 """Tests for the download agent. They never use the network: downloads are faked."""
+
 import sys
 from pathlib import Path
 
@@ -12,7 +13,8 @@ VALID_WHOLESALE_CSV = (
     '"Calidad","Unidad de comercializacion","Origen","Volumen","Precio minimo",'
     '"Precio maximo","Precio promedio"\r\n'
     '"2026-01-02","13","RM","Lo Valledor","Hortalizas","Tomate","Larga vida",'
-    '"Primera","$/caja 18 kilos","RM","100","9000,0000","10000,0000","9500,0000"\r\n')
+    '"Primera","$/caja 18 kilos","RM","100","9000,0000","10000,0000","9500,0000"\r\n'
+)
 OPEN_YEAR_RESOURCE = {"source": "wholesale", "year": 2099, "url": "http://test/file.csv"}
 
 
@@ -26,12 +28,14 @@ def temporary_download_dir(tmp_path, monkeypatch):
 def fake_downloader(content):
     def downloader(url, destination_path):
         destination_path.write_text(content, encoding="utf-8-sig")
+
     return downloader
 
 
 def run_agent(content, resource=OPEN_YEAR_RESOURCE):
     return agent.download_all_resources(
-        [dict(resource)], downloader=fake_downloader(content), seconds_between_retries=0)
+        [dict(resource)], downloader=fake_downloader(content), seconds_between_retries=0
+    )
 
 
 def test_input_file_lists_both_sources():
@@ -55,13 +59,10 @@ def test_unexpected_header_is_rejected(tmp_path):
 def test_empty_file_and_header_only_file_are_invalid(tmp_path):
     empty_file = tmp_path / "empty.csv"
     empty_file.write_text("", encoding="utf-8")
-    assert agent.validate_downloaded_file(empty_file, "wholesale") == (
-        False, agent.REASON_EMPTY_FILE)
+    assert agent.validate_downloaded_file(empty_file, "wholesale") == (False, agent.REASON_EMPTY_FILE)
     header_only_file = tmp_path / "header_only.csv"
-    header_only_file.write_text(VALID_WHOLESALE_CSV.split("\r\n")[0] + "\r\n",
-                                encoding="utf-8-sig")
-    assert agent.validate_downloaded_file(header_only_file, "wholesale") == (
-        False, agent.REASON_NO_ROWS)
+    header_only_file.write_text(VALID_WHOLESALE_CSV.split("\r\n")[0] + "\r\n", encoding="utf-8-sig")
+    assert agent.validate_downloaded_file(header_only_file, "wholesale") == (False, agent.REASON_NO_ROWS)
 
 
 def test_download_error_is_retried_then_counted_as_failure():
@@ -72,8 +73,8 @@ def test_download_error_is_retried_then_counted_as_failure():
         raise ConnectionError("no network")
 
     failures = agent.download_all_resources(
-        [dict(OPEN_YEAR_RESOURCE)], downloader=failing_downloader,
-        seconds_between_retries=0)
+        [dict(OPEN_YEAR_RESOURCE)], downloader=failing_downloader, seconds_between_retries=0
+    )
     assert failures == 1
     assert len(attempts) == agent.FETCH_WARNINGS_THRESHOLD
 
@@ -93,8 +94,8 @@ def test_closed_year_is_not_downloaded_again(tmp_path):
         raise AssertionError("a closed year must not be downloaded again")
 
     failures = agent.download_all_resources(
-        [closed_year_resource], downloader=downloader_that_must_not_run,
-        seconds_between_retries=0)
+        [closed_year_resource], downloader=downloader_that_must_not_run, seconds_between_retries=0
+    )
     assert failures == 0
 
 

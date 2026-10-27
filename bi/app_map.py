@@ -16,6 +16,7 @@ every node those lines join (D-291): security, for instance, is the author, the 
 the repository, the read-only database, the visitor's SQL and the tests that attack them. The cursor on a node draws its
 own lines. Pure functions: no Streamlit.
 """
+
 import base64
 import html
 import json
@@ -23,170 +24,369 @@ import json
 from bi import brand_icons, database_map, doc_views
 
 # The themes of the filters, in the order of the buttons.
-THEMES = [("datos", "Datos"), ("orquestacion", "Orquestación"), ("calidad", "Calidad"), ("seguridad", "Seguridad"),
-          ("observabilidad", "Observabilidad"), ("navegador", "Navegador"), ("apoyo", "Apoyo")]
+THEMES = [
+    ("datos", "Datos"),
+    ("orquestacion", "Orquestación"),
+    ("calidad", "Calidad"),
+    ("seguridad", "Seguridad"),
+    ("observabilidad", "Observabilidad"),
+    ("navegador", "Navegador"),
+    ("apoyo", "Apoyo"),
+]
 # The columns of the flow, left to right.
-LAYERS = ["Fuentes", "Ingesta", "Aterrizaje", "Bronce", "Transformación", "Data warehouse", "Publicación", "Panel",
-          "Lectores"]
+LAYERS = [
+    "Fuentes",
+    "Ingesta",
+    "Aterrizaje",
+    "Bronce",
+    "Transformación",
+    "Data warehouse",
+    "Publicación",
+    "Panel",
+    "Lectores",
+]
 # The kinds of line: (key, label).
 LINE_KINDS = [("flow", "datos"), ("order", "órdenes"), ("check", "controles"), ("support", "apoyo")]
 # key: (name, logo, themes, (row, column), what it is, role in GreenOcean, when it acts, page, [(small tool, what)]).
 # A logo is «brand:<slug>», «source:<key>», «person:<key>» or «icon:<name>». Rows: «top» (orchestration), «flow»,
 # «flow2» (a second node in a column of the flow), «web» (the browser layer) and «watch» (what watches the system).
 NODES = {
-    "odepa": ("ODEPA", "source:odepa", ["datos"], ("flow", 1),
-              "Oficina de Estudios y Políticas Agrarias del Ministerio de Agricultura de Chile.",
-              "Publica cada semana los CSV de precios mayoristas y al consumidor: la fuente de todos los precios.",
-              "Publica cada semana; la carga descarga cada martes.", "Dashboard", []),
-    "ine": ("INE", "source:ine", ["datos"], ("flow2", 1),
-            "Instituto Nacional de Estadísticas de Chile.",
-            "Publica el IPC de alimentos, con el que los precios se expresan en pesos de hoy.",
-            "Publica cada mes; la carga descarga cada martes.", "Contexto del precio", []),
-    "agent": ("Agente de ingesta", "brand:python", ["datos"], ("flow", 2),
-              "Programa en Python que descarga los archivos de las fuentes.",
-              "agent/agent.py descarga los CSV de ODEPA, revisa su encabezado y anota su huella; etl/ine.py descarga "
-              "el IPC y lo escribe directo en bronce.",
-              "Cada martes, al comienzo de la carga.", "Pipeline y arquitectura",
-              [("requests", "biblioteca de Python que descarga por HTTPS, con reintentos."),
-               ("certifi y la raíz emSign", "certificados que verifican la conexión con ODEPA; la raíz emSign viaja "
-                "con el agente desde que certifi la retiró (D-164)."),
-               ("hashlib · SHA-256", "calcula la huella de cada archivo y la guarda en manifest.json."),
-               ("etl/ine.py", "descarga las dos series del IPC del INE.")]),
-    "sqlite": ("SQLite", "brand:sqlite", ["datos", "calidad"], ("flow", 3),
-               "Base de datos relacional en un solo archivo, sin servidor.",
-               "etl/raw.db guarda las filas de ODEPA tal como llegan; etl/datos.db es el respaldo que calcula el ETL "
-               "en Python (etl/etl.py), para comprobar la paridad con DuckDB.",
-               "Cada martes, justo después de la descarga.", "Modelo de datos",
-               [("etl/etl.py", "el ETL en Python que escribe el respaldo, por un camino independiente de dbt.")]),
-    "parquet": ("Parquet", "brand:apacheparquet", ["datos"], ("flow", 4),
-                "Formato abierto de archivos por columnas, comprimido.",
-                "etl/bronze/ guarda la copia literal de cada fuente, un archivo por fuente y año, con todas las "
-                "columnas como texto.",
-                "Cada martes, antes de dbt.", "Modelo de datos",
-                [("pyarrow", "biblioteca de Apache Arrow que escribe los archivos Parquet (etl/bronze.py).")]),
-    "dbt": ("dbt Core", "brand:dbt", ["datos", "calidad"], ("flow", 5),
-            "Herramienta que construye modelos SQL en orden de dependencias y los prueba.",
-            "Lee el bronce y construye staging, intermedio y marts; corre sus pruebas de datos y, si una falla, la "
-            "carga se detiene y la base publicada no cambia.",
-            "Cada martes con dbt build; en cada push solo se compila (dbt parse).", "Pipeline y arquitectura",
-            [("dbt-duckdb", "el adaptador que hace correr dbt sobre DuckDB."),
-             ("staging · intermedio · marts", "las tres capas de modelos: tipos, reglas de negocio y el modelo estrella."),
-             ("pruebas de datos", "claves únicas, valores aceptados, relaciones y conciliación de filas.")]),
-    "duckdb": ("DuckDB", "brand:duckdb", ["datos"], ("flow", 6),
-               "Base de datos analítica por columnas, en un solo archivo y sin servidor.",
-               "Motor donde dbt construye el data warehouse y base servida etl/datos.duckdb, que el panel lee en solo "
-               "lectura.",
-               "Cada martes; la base servida se reemplaza solo al final de una carga válida.", "Modelo de datos",
-               [("SQL", "el lenguaje de los modelos, de las consultas del panel (bi/queries.sql) y del estudio SQL."),
-                ("pandas", "recibe el resultado de cada consulta que el panel convierte en tabla o gráfico.")]),
-    "release": ("Release «base-actual»", "brand:github", ["datos", "orquestacion"], ("flow", 7),
-                "Archivo publicado en GitHub, fuera del historial de Git.",
-                "Guarda una sola copia de la base servida, reemplazada por cada carga; en main queda su puntero "
-                "etl/datos.version, con la huella, el tamaño y la fecha (D-270).",
-                "Al final de cada carga que pasó todas las pruebas.", "Ejecuciones",
-                [("bi/served_database.py", "descarga la base del release y la usa solo si su huella coincide.")]),
-    "streamlit": ("Streamlit", "brand:streamlit", ["datos"], ("flow", 8),
-                  "Framework de Python para aplicaciones web de datos.",
-                  "Dibuja este panel con la base servida en solo lectura y lo publica en Streamlit Community Cloud "
-                  "desde la rama main.",
-                  "Cada vez que alguien abre una página.", "Dashboard",
-                  [("Páginas", "Panorama de precios, Dónde comprar, Insights, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y "
-                    "auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, "
-                    "Mapa de la app y la carpeta de documentos."),
-                   ("Streamlit Community Cloud", "el servicio gratuito que publica el panel y guarda sus secretos.")]),
-    "visitor": ("Visitante", "person:visitor", ["datos"], ("flow", 9),
-                "Cualquier persona con el enlace público.",
-                "Lee el panel y usa el estudio SQL sin cuenta: los datos son públicos.",
-                "Cuando abre el panel.", "Dashboard", []),
-    "author": ("Autor", "person:author", ["seguridad", "orquestacion"], ("flow2", 9),
-               "Quien mantiene el proyecto.",
-               "Mantiene el código y los secretos; con la clave de control puede lanzar la carga desde el panel.",
-               "Cuando cambia el código o lanza una carga manual.", "Ejecuciones",
-               [("clave de control", "la escribe en «Acceso del autor» para abrir el botón «Ejecutar pipeline ahora»."),
-                ("verificación en dos pasos", "en sus cuentas de GitHub y de Streamlit; declarada por el autor, no "
-                 "verificable desde el repositorio.")]),
-    "secrets": ("Secretos del panel", "icon:key", ["seguridad"], ("flow2", 7),
-                "Los dos secretos del panel, guardados en Streamlit Community Cloud y nunca en el repositorio.",
-                "CONTROL_CODE abre el acceso del autor; GITHUB_TOKEN, con permisos mínimos, deja al panel lanzar la "
-                "carga y leer el estado de las ejecuciones. Ninguno aparece en pantalla ni en los mensajes de error.",
-                "Cuando el autor escribe la clave y cuando el panel consulta GitHub.", "Mapa de seguridad",
-                [("CONTROL_CODE", "la clave de control del autor."),
-                 ("hmac.compare_digest", "compara la clave en tiempo constante."),
-                 ("GITHUB_TOKEN", "token para lanzar el workflow y leer sus ejecuciones; el panel avisa 14 días antes "
-                  "de su vencimiento.")]),
-    "github": ("Repositorio GitHub", "brand:git", ["orquestacion"], ("top", 2),
-               "Plataforma que guarda el código en un repositorio Git público.",
-               "Guarda el código en main, recibe cada cambio y publica el informe semanal como issue.",
-               "En cada cambio del código y al final de cada carga.", "Ejecuciones",
-               [("Git", "versiona el código y el puntero de la base."),
-                ("GitHub Issues · gh", "el informe semanal se publica como issue con la interfaz de línea de comandos.")]),
-    "actions": ("GitHub Actions", "brand:github", ["orquestacion"], ("top", 4),
-                "Servicio de GitHub que ejecuta workflows en máquinas temporales.",
-                "semanal.yml corre la carga completa, la prueba y la publica; también se lanza a mano desde el panel "
-                "con la clave de control, por la API de GitHub.",
-                "Cada martes a las 12:00 UTC, o a mano.", "Ejecuciones",
-                [("cron del martes", "0 12 * * 2: la carga corre sola cada martes."),
-                 ("workflow_dispatch", "la ejecución manual, desde GitHub o desde el panel con la clave."),
-                 ("caché de Actions", "guarda los CSV de los años cerrados para no descargarlos cada semana.")]),
-    "ci": ("pytest · CI", "brand:pytest", ["calidad", "orquestacion"], ("watch", 3),
-           "Las pruebas automáticas y la integración continua.",
-           "pruebas.yml corre pytest y dbt parse en cada push; semanal.yml corre pytest sobre la base nueva antes de "
-           "publicarla, incluida la paridad.",
-           "En cada push y cada martes, antes de publicar.", "Monitoreo",
-           [("pytest", "el framework de pruebas de Python: recalcula cada cifra desde la fuente."),
-            ("dbt parse", "comprueba que los modelos y las pruebas de dbt compilan.")]),
-    "web": ("HTML · CSS · JavaScript", "icon:code", ["navegador"], ("web", 8),
-            "Los lenguajes del navegador.",
-            "El panel genera el HTML y el CSS de cada vista (las barras, el menú, los diagramas en SVG, los temas) y "
-            "pequeños scripts para las animaciones, el zoom y los textos al pasar el cursor.",
-            "En el navegador del lector, en cada página.", "Stack y evidencia",
-            [("SVG", "los diagramas: el pipeline, el modelo estrella, la seguridad y este mapa."),
-             ("CSS", "los cuatro temas, el componente de botones y el ajuste a una pantalla."),
-             ("JavaScript", "el zoom, las animaciones, el menú y los trazos de este mapa.")]),
-    "charts": ("Altair · Vega-Lite", "icon:chart", ["navegador"], ("web", 9),
-               "Biblioteca de gráficos declarativos de Python y su motor en el navegador.",
-               "Dibuja los gráficos de Precios e inflación y del Resumen, con el formato de números del idioma.",
-               "En el navegador, cuando una página muestra un gráfico.", "Contexto del precio", []),
-    "gates": ("Puertas de calidad", "icon:shield", ["calidad"], ("watch", 2),
-              "Tres controles que detienen la carga si algo no cumple.",
-              "Puerta 1, el archivo; puerta 2, cada fila; puerta 3, la base: si una falla, no se publica nada.",
-              "En cada carga.", "Monitoreo",
-              [("bi/quality_live.py", "mide los once indicadores de calidad sobre la base publicada.")]),
-    "parity": ("Paridad SQLite ↔ DuckDB", "icon:parity", ["calidad"], ("watch", 4),
-               "Comparación de dos caminos independientes.",
-               "El respaldo SQLite y la base servida deben dar los mismos precios, los mismos rechazos y la misma suma.",
-               "En cada carga, antes de publicar.", "Monitoreo",
-               [("tests/test_migration_parity.py", "la prueba que compara las dos bases.")]),
-    "security": ("Seguridad", "icon:shield", ["seguridad"], ("watch", 5),
-                 "Las amenazas, sus controles y las pruebas que los verifican.",
-                 "El SQL público con límites, la base en solo lectura, la clave de control y el token protegido; los "
-                 "casos S-01 a S-10 los atacan en cada push.",
-                 "En cada push.", "Mapa de seguridad",
-                 [("bi/security_map.py", "la arquitectura de seguridad, con el OWASP Top 10 como guía."),
-                  ("tests/test_security.py", "los ataques convertidos en pruebas.")]),
-    "monitoring": ("Observabilidad", "icon:pulse", ["observabilidad"], ("watch", 6),
-                   "Cómo se sabe qué pasó en cada carga.",
-                   "etl_run, dbt_result, el log de cada paso de GitHub Actions y el correo que GitHub envía si la "
-                   "carga falla.",
-                   "En cada carga.", "Ejecuciones",
-                   [("bi/monitoring.py", "el diagrama de las señales y de quién las lee.")]),
-    "docs": ("Documentos", "icon:files", ["apoyo"], ("watch", 7),
-             "La documentación del proyecto, en Markdown.",
-             "Siete documentos en docs/ y docs/en/, cada uno con su página en el panel y su PDF.",
-             "Cuando alguien abre la carpeta Documentos.", "Documentos",
-             [("Markdown", "el formato de los documentos, el mismo en GitHub y en el panel.")]),
-    "measurement": ("Medición de pantallas", "icon:ruler", ["calidad"], ("watch", 8),
-                    "Medición del diseño en un navegador real.",
-                    "tests/medicion/medir.cjs mide cada página a 1440 × 790 y 1920 × 1000; imprimir.cjs compara cada "
-                    "documento impreso con su página.",
-                    "Antes de cada cambio visual.", "Stack y evidencia",
-                    [("Playwright", "maneja Chrome para medir; se instala fuera del proyecto, sin ser una dependencia.")]),
-    "ai": ("Apoyo con IA", "icon:spark", ["apoyo"], ("watch", 9),
-           "Herramienta de apoyo, fuera del flujo de datos.",
-           "Se usó Claude como apoyo para la revisión técnica, la revisión de la documentación y la elección de "
-           "etiquetas. El contexto del proyecto vive en archivos Markdown (CLAUDE.md y docs/), con un enfoque "
-           "parecido a la recuperación de contexto, pero sin RAG: no hay base vectorial ni embeddings.",
-           "Durante el desarrollo; nunca en la carga ni en el panel.", "Documentos", []),
+    "odepa": (
+        "ODEPA",
+        "source:odepa",
+        ["datos"],
+        ("flow", 1),
+        "Oficina de Estudios y Políticas Agrarias del Ministerio de Agricultura de Chile.",
+        "Publica cada semana los CSV de precios mayoristas y al consumidor: la fuente de todos los precios.",
+        "Publica cada semana; la carga descarga cada martes.",
+        "Dashboard",
+        [],
+    ),
+    "ine": (
+        "INE",
+        "source:ine",
+        ["datos"],
+        ("flow2", 1),
+        "Instituto Nacional de Estadísticas de Chile.",
+        "Publica el IPC de alimentos, con el que los precios se expresan en pesos de hoy.",
+        "Publica cada mes; la carga descarga cada martes.",
+        "Contexto del precio",
+        [],
+    ),
+    "agent": (
+        "Agente de ingesta",
+        "brand:python",
+        ["datos"],
+        ("flow", 2),
+        "Programa en Python que descarga los archivos de las fuentes.",
+        "agent/agent.py descarga los CSV de ODEPA, revisa su encabezado y anota su huella; etl/ine.py descarga "
+        "el IPC y lo escribe directo en bronce.",
+        "Cada martes, al comienzo de la carga.",
+        "Pipeline y arquitectura",
+        [
+            ("requests", "biblioteca de Python que descarga por HTTPS, con reintentos."),
+            (
+                "certifi y la raíz emSign",
+                "certificados que verifican la conexión con ODEPA; la raíz emSign viaja "
+                "con el agente desde que certifi la retiró (D-164).",
+            ),
+            ("hashlib · SHA-256", "calcula la huella de cada archivo y la guarda en manifest.json."),
+            ("etl/ine.py", "descarga las dos series del IPC del INE."),
+        ],
+    ),
+    "sqlite": (
+        "SQLite",
+        "brand:sqlite",
+        ["datos", "calidad"],
+        ("flow", 3),
+        "Base de datos relacional en un solo archivo, sin servidor.",
+        "etl/raw.db guarda las filas de ODEPA tal como llegan; etl/datos.db es el respaldo que calcula el ETL "
+        "en Python (etl/etl.py), para comprobar la paridad con DuckDB.",
+        "Cada martes, justo después de la descarga.",
+        "Modelo de datos",
+        [("etl/etl.py", "el ETL en Python que escribe el respaldo, por un camino independiente de dbt.")],
+    ),
+    "parquet": (
+        "Parquet",
+        "brand:apacheparquet",
+        ["datos"],
+        ("flow", 4),
+        "Formato abierto de archivos por columnas, comprimido.",
+        "etl/bronze/ guarda la copia literal de cada fuente, un archivo por fuente y año, con todas las "
+        "columnas como texto.",
+        "Cada martes, antes de dbt.",
+        "Modelo de datos",
+        [("pyarrow", "biblioteca de Apache Arrow que escribe los archivos Parquet (etl/bronze.py).")],
+    ),
+    "dbt": (
+        "dbt Core",
+        "brand:dbt",
+        ["datos", "calidad"],
+        ("flow", 5),
+        "Herramienta que construye modelos SQL en orden de dependencias y los prueba.",
+        "Lee el bronce y construye staging, intermedio y marts; corre sus pruebas de datos y, si una falla, la "
+        "carga se detiene y la base publicada no cambia.",
+        "Cada martes con dbt build; en cada push solo se compila (dbt parse).",
+        "Pipeline y arquitectura",
+        [
+            ("dbt-duckdb", "el adaptador que hace correr dbt sobre DuckDB."),
+            (
+                "staging · intermedio · marts",
+                "las tres capas de modelos: tipos, reglas de negocio y el modelo estrella.",
+            ),
+            ("pruebas de datos", "claves únicas, valores aceptados, relaciones y conciliación de filas."),
+        ],
+    ),
+    "duckdb": (
+        "DuckDB",
+        "brand:duckdb",
+        ["datos"],
+        ("flow", 6),
+        "Base de datos analítica por columnas, en un solo archivo y sin servidor.",
+        "Motor donde dbt construye el data warehouse y base servida etl/datos.duckdb, que el panel lee en solo "
+        "lectura.",
+        "Cada martes; la base servida se reemplaza solo al final de una carga válida.",
+        "Modelo de datos",
+        [
+            ("SQL", "el lenguaje de los modelos, de las consultas del panel (bi/queries.sql) y del estudio SQL."),
+            ("pandas", "recibe el resultado de cada consulta que el panel convierte en tabla o gráfico."),
+        ],
+    ),
+    "release": (
+        "Release «base-actual»",
+        "brand:github",
+        ["datos", "orquestacion"],
+        ("flow", 7),
+        "Archivo publicado en GitHub, fuera del historial de Git.",
+        "Guarda una sola copia de la base servida, reemplazada por cada carga; en main queda su puntero "
+        "etl/datos.version, con la huella, el tamaño y la fecha (D-270).",
+        "Al final de cada carga que pasó todas las pruebas.",
+        "Ejecuciones",
+        [("bi/served_database.py", "descarga la base del release y la usa solo si su huella coincide.")],
+    ),
+    "streamlit": (
+        "Streamlit",
+        "brand:streamlit",
+        ["datos"],
+        ("flow", 8),
+        "Framework de Python para aplicaciones web de datos.",
+        "Dibuja este panel con la base servida en solo lectura y lo publica en Streamlit Community Cloud "
+        "desde la rama main.",
+        "Cada vez que alguien abre una página.",
+        "Dashboard",
+        [
+            (
+                "Páginas",
+                "Panorama de precios, Dónde comprar, Insights, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y "
+                "auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, "
+                "Mapa de la app y la carpeta de documentos.",
+            ),
+            ("Streamlit Community Cloud", "el servicio gratuito que publica el panel y guarda sus secretos."),
+        ],
+    ),
+    "visitor": (
+        "Visitante",
+        "person:visitor",
+        ["datos"],
+        ("flow", 9),
+        "Cualquier persona con el enlace público.",
+        "Lee el panel y usa el estudio SQL sin cuenta: los datos son públicos.",
+        "Cuando abre el panel.",
+        "Dashboard",
+        [],
+    ),
+    "author": (
+        "Autor",
+        "person:author",
+        ["seguridad", "orquestacion"],
+        ("flow2", 9),
+        "Quien mantiene el proyecto.",
+        "Mantiene el código y los secretos; con la clave de control puede lanzar la carga desde el panel.",
+        "Cuando cambia el código o lanza una carga manual.",
+        "Ejecuciones",
+        [
+            ("clave de control", "la escribe en «Acceso del autor» para abrir el botón «Ejecutar pipeline ahora»."),
+            (
+                "verificación en dos pasos",
+                "en sus cuentas de GitHub y de Streamlit; declarada por el autor, no verificable desde el repositorio.",
+            ),
+        ],
+    ),
+    "secrets": (
+        "Secretos del panel",
+        "icon:key",
+        ["seguridad"],
+        ("flow2", 7),
+        "Los dos secretos del panel, guardados en Streamlit Community Cloud y nunca en el repositorio.",
+        "CONTROL_CODE abre el acceso del autor; GITHUB_TOKEN, con permisos mínimos, deja al panel lanzar la "
+        "carga y leer el estado de las ejecuciones. Ninguno aparece en pantalla ni en los mensajes de error.",
+        "Cuando el autor escribe la clave y cuando el panel consulta GitHub.",
+        "Mapa de seguridad",
+        [
+            ("CONTROL_CODE", "la clave de control del autor."),
+            ("hmac.compare_digest", "compara la clave en tiempo constante."),
+            (
+                "GITHUB_TOKEN",
+                "token para lanzar el workflow y leer sus ejecuciones; el panel avisa 14 días antes de su vencimiento.",
+            ),
+        ],
+    ),
+    "github": (
+        "Repositorio GitHub",
+        "brand:git",
+        ["orquestacion"],
+        ("top", 2),
+        "Plataforma que guarda el código en un repositorio Git público.",
+        "Guarda el código en main, recibe cada cambio y publica el informe semanal como issue.",
+        "En cada cambio del código y al final de cada carga.",
+        "Ejecuciones",
+        [
+            ("Git", "versiona el código y el puntero de la base."),
+            ("GitHub Issues · gh", "el informe semanal se publica como issue con la interfaz de línea de comandos."),
+        ],
+    ),
+    "actions": (
+        "GitHub Actions",
+        "brand:github",
+        ["orquestacion"],
+        ("top", 4),
+        "Servicio de GitHub que ejecuta workflows en máquinas temporales.",
+        "semanal.yml corre la carga completa, la prueba y la publica; también se lanza a mano desde el panel "
+        "con la clave de control, por la API de GitHub.",
+        "Cada martes a las 12:00 UTC, o a mano.",
+        "Ejecuciones",
+        [
+            ("cron del martes", "0 12 * * 2: la carga corre sola cada martes."),
+            ("workflow_dispatch", "la ejecución manual, desde GitHub o desde el panel con la clave."),
+            ("caché de Actions", "guarda los CSV de los años cerrados para no descargarlos cada semana."),
+        ],
+    ),
+    "ci": (
+        "pytest · CI",
+        "brand:pytest",
+        ["calidad", "orquestacion"],
+        ("watch", 3),
+        "Las pruebas automáticas y la integración continua.",
+        "pruebas.yml corre pytest y dbt parse en cada push; semanal.yml corre pytest sobre la base nueva antes de "
+        "publicarla, incluida la paridad.",
+        "En cada push y cada martes, antes de publicar.",
+        "Monitoreo",
+        [
+            ("pytest", "el framework de pruebas de Python: recalcula cada cifra desde la fuente."),
+            ("dbt parse", "comprueba que los modelos y las pruebas de dbt compilan."),
+        ],
+    ),
+    "web": (
+        "HTML · CSS · JavaScript",
+        "icon:code",
+        ["navegador"],
+        ("web", 8),
+        "Los lenguajes del navegador.",
+        "El panel genera el HTML y el CSS de cada vista (las barras, el menú, los diagramas en SVG, los temas) y "
+        "pequeños scripts para las animaciones, el zoom y los textos al pasar el cursor.",
+        "En el navegador del lector, en cada página.",
+        "Stack y evidencia",
+        [
+            ("SVG", "los diagramas: el pipeline, el modelo estrella, la seguridad y este mapa."),
+            ("CSS", "los cuatro temas, el componente de botones y el ajuste a una pantalla."),
+            ("JavaScript", "el zoom, las animaciones, el menú y los trazos de este mapa."),
+        ],
+    ),
+    "charts": (
+        "Altair · Vega-Lite",
+        "icon:chart",
+        ["navegador"],
+        ("web", 9),
+        "Biblioteca de gráficos declarativos de Python y su motor en el navegador.",
+        "Dibuja los gráficos de Precios e inflación y del Resumen, con el formato de números del idioma.",
+        "En el navegador, cuando una página muestra un gráfico.",
+        "Contexto del precio",
+        [],
+    ),
+    "gates": (
+        "Puertas de calidad",
+        "icon:shield",
+        ["calidad"],
+        ("watch", 2),
+        "Tres controles que detienen la carga si algo no cumple.",
+        "Puerta 1, el archivo; puerta 2, cada fila; puerta 3, la base: si una falla, no se publica nada.",
+        "En cada carga.",
+        "Monitoreo",
+        [("bi/quality_live.py", "mide los once indicadores de calidad sobre la base publicada.")],
+    ),
+    "parity": (
+        "Paridad SQLite ↔ DuckDB",
+        "icon:parity",
+        ["calidad"],
+        ("watch", 4),
+        "Comparación de dos caminos independientes.",
+        "El respaldo SQLite y la base servida deben dar los mismos precios, los mismos rechazos y la misma suma.",
+        "En cada carga, antes de publicar.",
+        "Monitoreo",
+        [("tests/test_migration_parity.py", "la prueba que compara las dos bases.")],
+    ),
+    "security": (
+        "Seguridad",
+        "icon:shield",
+        ["seguridad"],
+        ("watch", 5),
+        "Las amenazas, sus controles y las pruebas que los verifican.",
+        "El SQL público con límites, la base en solo lectura, la clave de control y el token protegido; los "
+        "casos S-01 a S-10 los atacan en cada push.",
+        "En cada push.",
+        "Mapa de seguridad",
+        [
+            ("bi/security_map.py", "la arquitectura de seguridad, con el OWASP Top 10 como guía."),
+            ("tests/test_security.py", "los ataques convertidos en pruebas."),
+        ],
+    ),
+    "monitoring": (
+        "Observabilidad",
+        "icon:pulse",
+        ["observabilidad"],
+        ("watch", 6),
+        "Cómo se sabe qué pasó en cada carga.",
+        "etl_run, dbt_result, el log de cada paso de GitHub Actions y el correo que GitHub envía si la carga falla.",
+        "En cada carga.",
+        "Ejecuciones",
+        [("bi/monitoring.py", "el diagrama de las señales y de quién las lee.")],
+    ),
+    "docs": (
+        "Documentos",
+        "icon:files",
+        ["apoyo"],
+        ("watch", 7),
+        "La documentación del proyecto, en Markdown.",
+        "Siete documentos en docs/ y docs/en/, cada uno con su página en el panel y su PDF.",
+        "Cuando alguien abre la carpeta Documentos.",
+        "Documentos",
+        [("Markdown", "el formato de los documentos, el mismo en GitHub y en el panel.")],
+    ),
+    "measurement": (
+        "Medición de pantallas",
+        "icon:ruler",
+        ["calidad"],
+        ("watch", 8),
+        "Medición del diseño en un navegador real.",
+        "tests/medicion/medir.cjs mide cada página a 1440 × 790 y 1920 × 1000; imprimir.cjs compara cada "
+        "documento impreso con su página.",
+        "Antes de cada cambio visual.",
+        "Stack y evidencia",
+        [("Playwright", "maneja Chrome para medir; se instala fuera del proyecto, sin ser una dependencia.")],
+    ),
+    "ai": (
+        "Apoyo con IA",
+        "icon:spark",
+        ["apoyo"],
+        ("watch", 9),
+        "Herramienta de apoyo, fuera del flujo de datos.",
+        "Se usó Claude como apoyo para la revisión técnica, la revisión de la documentación y la elección de "
+        "etiquetas. El contexto del proyecto vive en archivos Markdown (CLAUDE.md y docs/), con un enfoque "
+        "parecido a la recuperación de contexto, pero sin RAG: no hay base vectorial ni embeddings.",
+        "Durante el desarrollo; nunca en la carga ni en el panel.",
+        "Documentos",
+        [],
+    ),
 }
 # (from, to, kind, what travels, themes). Every line goes from the one that acts to the one that receives; a filter shows
 # the lines of its theme with their label, and the nodes they join (D-291).
@@ -268,7 +468,10 @@ LINK_EVIDENCE = {
     ("streamlit", "github"): ("bi/control.py", "/actions/runs/"),
     ("ci", "github"): (".github/workflows/pruebas.yml", "push:"),
     ("ci", "security"): ("tests/test_security.py", "def test_no_secret_is_tracked_by_git"),
-    ("ci", "parity"): ("tests/test_migration_parity.py", "def test_every_weekly_price_has_the_same_key_flag_count_and_price"),
+    ("ci", "parity"): (
+        "tests/test_migration_parity.py",
+        "def test_every_weekly_price_has_the_same_key_flag_count_and_price",
+    ),
     ("gates", "agent"): ("agent/agent.py", "REASON_UNEXPECTED_HEADER"),
     ("gates", "dbt"): ("dbt/tests/rnf05_rows_reconcile.sql", "select"),
     ("gates", "release"): ("etl/pipeline.py", "etl.MINIMUM_ROWS_RATIO"),
@@ -333,55 +536,85 @@ def logo_image(spec, palette):
     """A logo as an image (st.html drops inline SVG), without a background, in its own color."""
     kind, name = spec.split(":")
     if kind == "brand":
-        color = palette["strong_text"] if name in ("github", "git") else doc_views.DISCS.get(name, ("", palette["accent"]))[1]
-        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="{color}">'
-               f'{brand_icons.logo_body(name)}</svg>')
+        color = (
+            palette["strong_text"]
+            if name in ("github", "git")
+            else doc_views.DISCS.get(name, ("", palette["accent"]))[1]
+        )
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="{color}">'
+            f'{brand_icons.logo_body(name)}</svg>'
+        )
     elif kind == "source":
-        svg = database_map.source_logo(name).replace('<svg class="logo" ', '<svg xmlns="http://www.w3.org/2000/svg" ', 1)
+        svg = database_map.source_logo(name).replace(
+            '<svg class="logo" ', '<svg xmlns="http://www.w3.org/2000/svg" ', 1
+        )
     elif kind == "person":
         color = doc_views.PERSON_DISCS[name][1]
-        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="{color}">'
-               '<circle cx="18" cy="12" r="6"/><path d="M6 31c1-8 6-12 12-12s11 4 12 12z"/></svg>')
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="{color}">'
+            '<circle cx="18" cy="12" r="6"/><path d="M6 31c1-8 6-12 12-12s11 4 12 12z"/></svg>'
+        )
     else:
-        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{palette["accent"]}" '
-               f'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{LINE_ICONS[name]}</svg>')
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{palette["accent"]}" '
+            f'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{LINE_ICONS[name]}</svg>'
+        )
     return f'<img class="am-logo" alt="" src="data:image/svg+xml;base64,{base64.b64encode(svg.encode()).decode()}">'
 
 
 def build_tip(key):
     name, _, _, _, what, role, when, _, group = NODES[key]
     parts = [("Qué es", what), ("Rol en GreenOcean", role), ("Cuándo actúa", when)]
-    left = f'<b class="am-tip-name">{esc(name)}</b>' + "".join(f"<i>{esc(head)}</i><span>{esc(text)}</span>"
-                                                            for head, text in parts)
+    left = f'<b class="am-tip-name">{esc(name)}</b>' + "".join(
+        f"<i>{esc(head)}</i><span>{esc(text)}</span>" for head, text in parts
+    )
     # Each connection names where it happens, so the reader can check it in the code.
     places = [evidence_label(source, target) for source, target, *_ in LINKS if source == key]
     places += [evidence_label(source, target) for source, target, *_ in LINKS if target == key]
     right = f"<i>{esc('Se conecta con')}</i>" + "".join(
-        f'<span>{esc(line)} <code class="am-src">{esc(place)}</code></span>' for line, place in zip(connections(key), places))
+        f'<span>{esc(line)} <code class="am-src">{esc(place)}</code></span>'
+        for line, place in zip(connections(key), places)
+    )
     extra = ""
     if group:
-        extra = f'<span class="am-tip-col"><i>{esc("Incluye")}</i>' + "".join(
-            f"<span><b>{esc(tool)}</b> — {esc(text)}</span>" for tool, text in group) + "</span>"
+        extra = (
+            f'<span class="am-tip-col"><i>{esc("Incluye")}</i>'
+            + "".join(f"<span><b>{esc(tool)}</b> — {esc(text)}</span>" for tool, text in group)
+            + "</span>"
+        )
     # Up to three short columns (what it is, what it touches, what it includes), so the box is wide and low and covers
     # as little of the drawing as possible.
-    return (f'<span class="am-tip" role="tooltip"><span class="am-tip-col">{left}</span>'
-            f'<span class="am-tip-col">{right}</span>{extra}</span>')
+    return (
+        f'<span class="am-tip" role="tooltip"><span class="am-tip-col">{left}</span>'
+        f'<span class="am-tip-col">{right}</span>{extra}</span>'
+    )
 
 
 def build_node(key, palette, addresses):
     name, logo, themes, (row, column), _, _, _, page, group = NODES[key]
     extra = f'<small class="am-more">+{len(group)}</small>' if group else ""
-    return (f'<a class="am-node" id="am-{key}" data-key="{key}" data-themes="{" ".join(node_themes(key))}" '
-            f'href="{esc(addresses.get(page, "#"))}" target="_self" '
-            f'style="grid-row:{ROWS[row]};grid-column:{column}">'
-            f'{logo_image(logo, palette)}<b class="am-name">{esc(name)}{extra}</b>{build_tip(key)}</a>')
+    return (
+        f'<a class="am-node" id="am-{key}" data-key="{key}" data-themes="{" ".join(node_themes(key))}" '
+        f'href="{esc(addresses.get(page, "#"))}" target="_self" '
+        f'style="grid-row:{ROWS[row]};grid-column:{column}">'
+        f'{logo_image(logo, palette)}<b class="am-name">{esc(name)}{extra}</b>{build_tip(key)}</a>'
+    )
 
 
 def build_css(palette):
-    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
-                                              palette["card"], palette["card_border"], palette["accent"])
-    kinds = "".join(f".am-line.k-{kind} {{ stroke:{color}; }} .am-key.k-{kind}::before {{ background:{color}; }}"
-                    for kind, color in KIND_COLORS.items())
+    ink, text, muted, card, border, accent = (
+        palette["strong_text"],
+        palette["text"],
+        palette["reference"],
+        palette["card"],
+        palette["card_border"],
+        palette["accent"],
+    )
+    kinds = "".join(
+        f".am-line.k-{kind} {{ stroke:{color}; }} .am-key.k-{kind}::before {{ background:{color}; }}"
+        for kind, color in KIND_COLORS.items()
+    )
     return f"""<style>
 .am {{ position:relative; display:flex; flex-direction:column; gap:8px; color:{text}; }}
 .am-bar {{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; font-size:12px; }}
@@ -660,21 +893,28 @@ SCRIPT = r"""<script>
 
 def build_map_html(palette, addresses):
     """The whole map: filters and legend, the layers, the bands and the nodes; the script adds the lines."""
-    filters = "".join(f'<button type="button" class="am-filter" data-theme="{key}">{esc(label)}</button>'
-                      for key, label in THEMES)
+    filters = "".join(
+        f'<button type="button" class="am-filter" data-theme="{key}">{esc(label)}</button>' for key, label in THEMES
+    )
     legend = "".join(f'<span class="am-key k-{kind}">{esc(label)}</span>' for kind, label in LINE_KINDS)
-    layers = "".join(f'<span class="am-layer" style="grid-column:{index}">{esc(name)}</span>'
-                     for index, name in enumerate(LAYERS, start=1))
-    bands = "".join(f'<div class="am-band" style="grid-row:{row}"><span>{esc(label)}</span></div>'
-                    for row, label in ROW_LABELS.items())
+    layers = "".join(
+        f'<span class="am-layer" style="grid-column:{index}">{esc(name)}</span>'
+        for index, name in enumerate(LAYERS, start=1)
+    )
+    bands = "".join(
+        f'<div class="am-band" style="grid-row:{row}"><span>{esc(label)}</span></div>'
+        for row, label in ROW_LABELS.items()
+    )
     nodes = "".join(build_node(key, palette, addresses) for key in NODES)
     data = esc(json.dumps([[source, target, kind, themes] for source, target, kind, _, themes in LINKS]))
     # The label of each line is a text node, not part of the data, so the translation layer reaches it (D-284).
     whats = "".join(f"<span>{esc(what)}</span>" for _, _, _, what, _ in LINKS)
-    return (build_css(palette) + f'<div class="am" style="--am-surface:{palette["background"]}" data-links="{data}">'
-            f'<div class="am-bar"><span class="am-filters" role="group" aria-label="{esc("Filtrar por tema")}">{filters}'
-            f'</span><span class="am-legend">{legend}</span></div>'
-            f'<div class="am-stage" aria-label="{esc("Mapa de la app")}">{layers}{bands}{nodes}</div>'
-            f'<div class="am-whats" hidden>{whats}</div>'
-            f'<p class="am-note">{esc("Sin filtro, el flujo de datos; un tema muestra todas sus piezas y conexiones. El cursor explica cada pieza y un clic abre su página.")}</p>'
-            "</div>" + SCRIPT)
+    return (
+        build_css(palette) + f'<div class="am" style="--am-surface:{palette["background"]}" data-links="{data}">'
+        f'<div class="am-bar"><span class="am-filters" role="group" aria-label="{esc("Filtrar por tema")}">{filters}'
+        f'</span><span class="am-legend">{legend}</span></div>'
+        f'<div class="am-stage" aria-label="{esc("Mapa de la app")}">{layers}{bands}{nodes}</div>'
+        f'<div class="am-whats" hidden>{whats}</div>'
+        f'<p class="am-note">{esc("Sin filtro, el flujo de datos; un tema muestra todas sus piezas y conexiones. El cursor explica cada pieza y un clic abre su página.")}</p>'
+        "</div>" + SCRIPT
+    )

@@ -1,4 +1,5 @@
 """Tests for K5, the lag between the wholesale and the consumer price (T-29)."""
+
 import math
 import sys
 from pathlib import Path
@@ -13,23 +14,24 @@ from bi import lag  # noqa: E402
 def make_series(wholesale_prices, consumer_prices, first_week="2026-01-05"):
     """One series of consecutive weeks with both prices."""
     weeks = pd.date_range(first_week, periods=len(wholesale_prices), freq="7D")
-    return pd.DataFrame({"week_start": weeks, "wholesale_price": wholesale_prices,
-                         "consumer_price": consumer_prices})
+    return pd.DataFrame({"week_start": weeks, "wholesale_price": wholesale_prices, "consumer_price": consumer_prices})
 
 
 def make_follower_series(lag_weeks, week_count=40):
     """The consumer price repeats the wholesale price lag_weeks later (times 2)."""
     wholesale_prices = [100 + (week * 37) % 23 for week in range(week_count)]
-    consumer_prices = [2 * wholesale_prices[max(week - lag_weeks, 0)]
-                       for week in range(week_count)]
+    consumer_prices = [2 * wholesale_prices[max(week - lag_weeks, 0)] for week in range(week_count)]
     return make_series(wholesale_prices, consumer_prices)
 
 
 def test_k5_weekly_variation_is_only_measured_between_consecutive_weeks():
-    rows = pd.DataFrame({"week_start": pd.to_datetime(["2026-01-05", "2026-01-12",
-                                                       "2026-01-26"]),
-                         "wholesale_price": [100.0, 110.0, 121.0],
-                         "consumer_price": [200.0, 200.0, 250.0]})
+    rows = pd.DataFrame(
+        {
+            "week_start": pd.to_datetime(["2026-01-05", "2026-01-12", "2026-01-26"]),
+            "wholesale_price": [100.0, 110.0, 121.0],
+            "consumer_price": [200.0, 200.0, 250.0],
+        }
+    )
     variations = lag.add_weekly_variations(rows)
     assert variations["wholesale_variation"].iloc[1] == pytest.approx(0.10)
     assert math.isnan(variations["wholesale_variation"].iloc[2])

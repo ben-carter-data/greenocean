@@ -5,6 +5,7 @@ explanation on hover of every logo and every chip.
 Each build_* function returns one HTML document for st.iframe (gradients and hover tips do
 not survive st.markdown). Positions are in a fixed stage that scales with the width.
 """
+
 import base64
 import html
 from pathlib import Path
@@ -13,8 +14,12 @@ from bi import brand_icons, charts, database_map, i18n, storage_map
 
 # Disc colors (light top, dark bottom, glyph) of the brands the actors view needs, as in
 # database_map.BRANDS.
-DISCS = dict(database_map.BRANDS, git=("#ff9b7d", "#d6402a", "#ffffff"),
-             streamlit=("#ff8f98", "#e0303f", "#ffffff"), pytest=("#7fc4ff", "#1f6fb5", "#ffffff"))
+DISCS = dict(
+    database_map.BRANDS,
+    git=("#ff9b7d", "#d6402a", "#ffffff"),
+    streamlit=("#ff8f98", "#e0303f", "#ffffff"),
+    pytest=("#7fc4ff", "#1f6fb5", "#ffffff"),
+)
 PERSON_DISCS = {"visitor": ("#7ee2b0", "#14855a"), "author": ("#ffcf70", "#c98500")}
 WIDTH, HEIGHT, LOGO = 1000, 480, 76
 
@@ -32,19 +37,21 @@ def disc_logo(kind, name):
     if kind == "source":
         return database_map.source_logo(name)
     top, bottom = PERSON_DISCS[name]
-    person = ('<circle cx="18" cy="12" r="6"/><path d="M6 31c1-8 6-12 12-12s11 4 12 12z"/>')
+    person = '<circle cx="18" cy="12" r="6"/><path d="M6 31c1-8 6-12 12-12s11 4 12 12z"/>'
     return _disc(name, top, bottom, "#ffffff", person, scale=1.0)
 
 
 def _disc(name, top, bottom, glyph, body, scale=1.58):
     gradient = f"disc-{name}-actors"
     offset = 17 if scale > 1.2 else 18
-    return (f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true"><defs>'
-            f'<radialGradient id="{gradient}" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="{top}"/>'
-            f'<stop offset="1" stop-color="{bottom}"/></radialGradient></defs>'
-            f'<circle cx="36" cy="36" r="31" fill="url(#{gradient})"/>'
-            f'<ellipse cx="29" cy="19" rx="16" ry="8" fill="#fff" opacity=".3"/>'
-            f'<g fill="{glyph}" transform="translate({offset} {offset}) scale({scale})">{body}</g></svg>')
+    return (
+        f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true"><defs>'
+        f'<radialGradient id="{gradient}" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="{top}"/>'
+        f'<stop offset="1" stop-color="{bottom}"/></radialGradient></defs>'
+        f'<circle cx="36" cy="36" r="31" fill="url(#{gradient})"/>'
+        f'<ellipse cx="29" cy="19" rx="16" ry="8" fill="#fff" opacity=".3"/>'
+        f'<g fill="{glyph}" transform="translate({offset} {offset}) scale({scale})">{body}</g></svg>'
+    )
 
 
 # D-280: brands whose own color is black or white take the text color of the theme, as GitHub asks for its mark.
@@ -57,17 +64,26 @@ def flat_logo(kind, name):
         return database_map.source_logo(name)
     if kind == "brand":
         color = "currentColor" if name in INK_BRANDS else DISCS[name][1]
-        return (f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true">'
-                f'<g fill="{color}" transform="translate(9 9) scale(2.25)">{brand_icons.logo_body(name)}</g></svg>')
+        return (
+            f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true">'
+            f'<g fill="{color}" transform="translate(9 9) scale(2.25)">{brand_icons.logo_body(name)}</g></svg>'
+        )
     person = '<circle cx="18" cy="12" r="6"/><path d="M6 31c1-8 6-12 12-12s11 4 12 12z"/>'
-    return (f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true">'
-            f'<g fill="{PERSON_DISCS[name][1]}" transform="translate(9 9) scale(1.5)">{person}</g></svg>')
+    return (
+        f'<svg class="logo" viewBox="0 0 72 72" aria-hidden="true">'
+        f'<g fill="{PERSON_DISCS[name][1]}" transform="translate(9 9) scale(1.5)">{person}</g></svg>'
+    )
 
 
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
-    ink, text, muted, card, border = (palette["strong_text"], palette["text"], palette["reference"],
-                                      palette["card"], palette["card_border"])
+    ink, text, muted, card, border = (
+        palette["strong_text"],
+        palette["text"],
+        palette["reference"],
+        palette["card"],
+        palette["card_border"],
+    )
     shadow = "rgba(0,0,0,.55)" if dark else "rgba(15,39,71,.22)"
     return f"""<style>
 * {{ box-sizing:border-box; }}
@@ -107,20 +123,27 @@ html, body {{ margin:0; background:transparent; color:{text}; font:300 13px/1.4 
 
 
 def tip_html(x, y, parts):
-    side = " start" if x < WIDTH * .2 else " end" if x > WIDTH * .8 else ""
-    up = " up" if y > HEIGHT * .6 else ""
-    return (f'<span class="tip{side}{up}" role="tooltip">'
-            + "".join(f"<i>{esc(head)}</i>{esc(text)}" for head, text in parts) + "</span>")
+    side = " start" if x < WIDTH * 0.2 else " end" if x > WIDTH * 0.8 else ""
+    up = " up" if y > HEIGHT * 0.6 else ""
+    return (
+        f'<span class="tip{side}{up}" role="tooltip">'
+        + "".join(f"<i>{esc(head)}</i>{esc(text)}" for head, text in parts)
+        + "</span>"
+    )
 
 
 def build_node(kind, name, x, y, title, parts):
-    return (f'<div class="node" tabindex="0" style="left:{x / WIDTH * 100:.3f}%;top:{y / HEIGHT * 100:.3f}%">'
-            f'{tip_html(x, y, parts)}{flat_logo(kind, name)}<b>{esc(title)}</b></div>')
+    return (
+        f'<div class="node" tabindex="0" style="left:{x / WIDTH * 100:.3f}%;top:{y / HEIGHT * 100:.3f}%">'
+        f'{tip_html(x, y, parts)}{flat_logo(kind, name)}<b>{esc(title)}</b></div>'
+    )
 
 
 def build_chip(x, y, label, color, parts):
-    return (f'<span class="chip" tabindex="0" style="left:{x / WIDTH * 100:.3f}%;top:{y / HEIGHT * 100:.3f}%;color:{color}">'
-            f'{esc(label)}{tip_html(x, y, parts)}</span>')
+    return (
+        f'<span class="chip" tabindex="0" style="left:{x / WIDTH * 100:.3f}%;top:{y / HEIGHT * 100:.3f}%;color:{color}">'
+        f'{esc(label)}{tip_html(x, y, parts)}</span>'
+    )
 
 
 # region Context (SAD, D-242)
@@ -130,59 +153,154 @@ def build_chip(x, y, label, color, parts):
 COLORS = {"source": "#22b35a", "flow": "#3987e5", "build": "#9085e9", "ops": "#c98500", "serve": "#199e70"}
 SYSTEM_BOX = (290, 190, 420, 230)
 # The tools GreenOcean is built with, in the order of its pipeline, drawn inside its box (D-249).
-SYSTEM_TOOLS = [("python", "Python"), ("sqlite", "SQLite"), ("apacheparquet", "Parquet"), ("dbt", "dbt"),
-                ("duckdb", "DuckDB"), ("streamlit", "Streamlit")]
+SYSTEM_TOOLS = [
+    ("python", "Python"),
+    ("sqlite", "SQLite"),
+    ("apacheparquet", "Parquet"),
+    ("dbt", "dbt"),
+    ("duckdb", "DuckDB"),
+    ("streamlit", "Streamlit"),
+]
 PEOPLE_Y, SIDE_Y = 55, (225, 365)
 # (kind, name, x, y, title, what it is, relation with GreenOcean)
 CONTEXT_NODES = [
-    ("source", "odepa", 90, SIDE_Y[0], "ODEPA", "Publica cada semana los CSV de precios mayoristas y al consumidor.",
-     "GreenOcean los descarga cada martes. Es la fuente oficial y abierta de estos precios."),
-    ("source", "ine", 90, SIDE_Y[1], "INE", "Publica el IPC de alimentos.",
-     "GreenOcean lo descarga para expresar los precios en pesos de hoy."),
-    ("brand", "github", 910, SIDE_Y[0], "GitHub", "Guarda el código, la base publicada y los informes semanales, y ejecuta la carga con Actions.",
-     "GreenOcean vive ahí: cada cambio se prueba y cada martes se carga sin servidor propio."),
-    ("brand", "streamlit", 910, SIDE_Y[1], "Streamlit Community Cloud", "Sirve el panel con un enlace público.",
-     "GreenOcean se publica ahí desde la rama main y guarda sus secretos en esa plataforma."),
-    ("person", "visitor", 430, PEOPLE_Y, "Visitante", "Analista de pricing, compras y abastecimiento, gerencia o revisor técnico.",
-     "Lee el panel de solo lectura; no necesita cuenta ni clave."),
-    ("person", "author", 570, PEOPLE_Y, "Administrador", "Quien mantiene el proyecto.",
-     "Cambia el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control."),
+    (
+        "source",
+        "odepa",
+        90,
+        SIDE_Y[0],
+        "ODEPA",
+        "Publica cada semana los CSV de precios mayoristas y al consumidor.",
+        "GreenOcean los descarga cada martes. Es la fuente oficial y abierta de estos precios.",
+    ),
+    (
+        "source",
+        "ine",
+        90,
+        SIDE_Y[1],
+        "INE",
+        "Publica el IPC de alimentos.",
+        "GreenOcean lo descarga para expresar los precios en pesos de hoy.",
+    ),
+    (
+        "brand",
+        "github",
+        910,
+        SIDE_Y[0],
+        "GitHub",
+        "Guarda el código, la base publicada y los informes semanales, y ejecuta la carga con Actions.",
+        "GreenOcean vive ahí: cada cambio se prueba y cada martes se carga sin servidor propio.",
+    ),
+    (
+        "brand",
+        "streamlit",
+        910,
+        SIDE_Y[1],
+        "Streamlit Community Cloud",
+        "Sirve el panel con un enlace público.",
+        "GreenOcean se publica ahí desde la rama main y guarda sus secretos en esa plataforma.",
+    ),
+    (
+        "person",
+        "visitor",
+        430,
+        PEOPLE_Y,
+        "Visitante",
+        "Analista de pricing, compras y abastecimiento, gerencia o revisor técnico.",
+        "Lee el panel de solo lectura; no necesita cuenta ni clave.",
+    ),
+    (
+        "person",
+        "author",
+        570,
+        PEOPLE_Y,
+        "Administrador",
+        "Quien mantiene el proyecto.",
+        "Cambia el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.",
+    ),
 ]
 # (path, color, chip x, chip y, label, what it says)
 CONTEXT_EDGES = [
     ("M290 225 H142", "source", 216, 225, "CSV", "GreenOcean descarga los archivos anuales de ODEPA, por HTTPS."),
-    ("M290 365 H142", "source", 216, 365, "IPC", "GreenOcean descarga las series del IPC de alimentos del INE, por HTTPS."),
+    (
+        "M290 365 H142",
+        "source",
+        216,
+        365,
+        "IPC",
+        "GreenOcean descarga las series del IPC de alimentos del INE, por HTTPS.",
+    ),
     ("M430 150 V190", "serve", 430, 168, "lee", "El visitante lee el panel por HTTPS."),
-    ("M570 150 V190", "ops", 570, 168, "mantiene", "El administrador cambia el código y los secretos, y con la clave lanza una carga."),
-    ("M710 225 H868", "build", 789, 225, "aloja", "GreenOcean guarda su código, la base publicada y los informes en GitHub, y GitHub Actions los ejecuta."),
-    ("M710 365 H868", "flow", 789, 365, "publica", "GreenOcean publica el panel en Streamlit Community Cloud desde la rama main."),
+    (
+        "M570 150 V190",
+        "ops",
+        570,
+        168,
+        "mantiene",
+        "El administrador cambia el código y los secretos, y con la clave lanza una carga.",
+    ),
+    (
+        "M710 225 H868",
+        "build",
+        789,
+        225,
+        "aloja",
+        "GreenOcean guarda su código, la base publicada y los informes en GitHub, y GitHub Actions los ejecuta.",
+    ),
+    (
+        "M710 365 H868",
+        "flow",
+        789,
+        365,
+        "publica",
+        "GreenOcean publica el panel en Streamlit Community Cloud desde la rama main.",
+    ),
 ]
 
 
 def build_context_html(mode):
     """The whole system in one box, with the people who use it and the systems it depends on."""
     palette = charts.get_palette(mode)
-    nodes = [build_node(kind, name, x, y, title, [("Qué es", what), ("Relación con GreenOcean", relation)])
-             for kind, name, x, y, title, what, relation in CONTEXT_NODES]
+    nodes = [
+        build_node(kind, name, x, y, title, [("Qué es", what), ("Relación con GreenOcean", relation)])
+        for kind, name, x, y, title, what, relation in CONTEXT_NODES
+    ]
     left, top, width, height = SYSTEM_BOX
-    system = (f'<div class="system" tabindex="0" style="left:{left / WIDTH * 100:.3f}%;top:{top / HEIGHT * 100:.3f}%;'
-              f'width:{width / WIDTH * 100:.3f}%;height:{height / HEIGHT * 100:.3f}%">'
-              f'{tip_html(left + width / 2, top + height / 2, [("Qué es", "Un pipeline semanal y un panel de BI sobre los precios de alimentos de Chile."), ("Qué hace", "Integra los precios de ODEPA con el IPC del INE, revisa su calidad y publica un panel de solo lectura donde cada cifra se puede seguir hasta el archivo original.")])}'
-              '<b>GreenOcean</b><span>Pipeline semanal y panel de BI sobre los precios de alimentos de Chile</span>'
-              '<div class="tools">' + "".join(f'<div class="tool">{flat_logo("brand", slug)}<small>{esc(name)}</small></div>'
-                                              for slug, name in SYSTEM_TOOLS) + '</div></div>')
+    system = (
+        f'<div class="system" tabindex="0" style="left:{left / WIDTH * 100:.3f}%;top:{top / HEIGHT * 100:.3f}%;'
+        f'width:{width / WIDTH * 100:.3f}%;height:{height / HEIGHT * 100:.3f}%">'
+        f'{tip_html(left + width / 2, top + height / 2, [("Qué es", "Un pipeline semanal y un panel de BI sobre los precios de alimentos de Chile."), ("Qué hace", "Integra los precios de ODEPA con el IPC del INE, revisa su calidad y publica un panel de solo lectura donde cada cifra se puede seguir hasta el archivo original.")])}'
+        '<b>GreenOcean</b><span>Pipeline semanal y panel de BI sobre los precios de alimentos de Chile</span>'
+        '<div class="tools">'
+        + "".join(
+            f'<div class="tool">{flat_logo("brand", slug)}<small>{esc(name)}</small></div>'
+            for slug, name in SYSTEM_TOOLS
+        )
+        + '</div></div>'
+    )
     edges, chips = [], []
     for path, layer, x, y, label, what in CONTEXT_EDGES:
         color = COLORS[layer]
         edges.append(f'<path class="edge" d="{path}" stroke="{color}" marker-end="url(#a-{layer})"/>')
         chips.append(build_chip(x, y, label, color, [("Qué dice", what)]))
-    markers = "".join(f'<marker id="a-{layer}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
-                      f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{color}"/></marker>' for layer, color in COLORS.items())
-    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            + build_css(palette) + f'</head><body><div class="stage" aria-label="Contexto del sistema">'
-            f'<svg viewBox="0 0 {WIDTH} {HEIGHT}" aria-hidden="true"><defs>{markers}</defs>{"".join(edges)}</svg>'
-            + system + "".join(nodes) + "".join(chips) + '</div><p class="legend">La flecha va de quien usa a quien es usado. '
-            'Lo que hay dentro de GreenOcean está en las vistas siguientes. Pasa el cursor por cada logo y cada flecha.</p></body></html>')
+    markers = "".join(
+        f'<marker id="a-{layer}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
+        f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{color}"/></marker>'
+        for layer, color in COLORS.items()
+    )
+    return (
+        '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        + build_css(palette)
+        + f'</head><body><div class="stage" aria-label="Contexto del sistema">'
+        f'<svg viewBox="0 0 {WIDTH} {HEIGHT}" aria-hidden="true"><defs>{markers}</defs>{"".join(edges)}</svg>'
+        + system
+        + "".join(nodes)
+        + "".join(chips)
+        + '</div><p class="legend">La flecha va de quien usa a quien es usado. '
+        'Lo que hay dentro de GreenOcean está en las vistas siguientes. Pasa el cursor por cada logo y cada flecha.</p></body></html>'
+    )
+
+
 # endregion
 
 
@@ -194,9 +312,21 @@ USE_CASE_ROWS = (104, 200, 296, 392, 488)
 # (actor, row, case, PRD id, screen)
 USER_CASES = [
     ("Gerencia", 0, "Revisar qué se movió en la semana y qué es inusual", "P-1", "Panorama de precios"),
-    ("Analista de pricing", 1, "Saber si el precio de hoy es normal para la época", "P-2", "Consultas SQL · Precio vs. época"),
+    (
+        "Analista de pricing",
+        1,
+        "Saber si el precio de hoy es normal para la época",
+        "P-2",
+        "Consultas SQL · Precio vs. época",
+    ),
     ("Analista de pricing", 2, "Ver qué alimentos subieron más que la inflación", "P-4", "Precios e inflación"),
-    ("Compras y abastecimiento", 3, "Ver cuánto paga el consumidor sobre el mayorista", "P-3", "Consultas SQL · Brecha mayorista"),
+    (
+        "Compras y abastecimiento",
+        3,
+        "Ver cuánto paga el consumidor sobre el mayorista",
+        "P-3",
+        "Consultas SQL · Brecha mayorista",
+    ),
     ("Revisor técnico", 4, "Comprobar que las cifras son confiables", "P-5", "Calidad y auditoría"),
 ]
 SYSTEM_CASES = [
@@ -227,28 +357,44 @@ def build_use_case(side, row, case, identifier, screen, ink, muted, accent, card
     cx, cy = OVAL[side], USE_CASE_ROWS[row]
     lines = wrap(case, 30)
     top = cy - 6 - 8 * (len(lines) - 1)
-    text = "".join(f'<text x="{cx}" y="{top + 15 * index}" text-anchor="middle" font-size="13" font-weight="600" '
-                   f'fill="{ink}">{esc(line)}</text>' for index, line in enumerate(lines))
+    text = "".join(
+        f'<text x="{cx}" y="{top + 15 * index}" text-anchor="middle" font-size="13" font-weight="600" '
+        f'fill="{ink}">{esc(line)}</text>'
+        for index, line in enumerate(lines)
+    )
     tag = f"{identifier} · " if identifier else ""
     detail = f'<text x="{cx}" y="{top + 15 * len(lines) + 4}" text-anchor="middle" font-size="13" fill="{muted}">{esc(tag + screen)}</text>'
-    return (f'<ellipse cx="{cx}" cy="{cy}" rx="{OVAL["rx"]}" ry="{OVAL["ry"]}" fill="{card}" stroke="{accent}" stroke-width="1.6"/>'
-            + text + detail)
+    return (
+        f'<ellipse cx="{cx}" cy="{cy}" rx="{OVAL["rx"]}" ry="{OVAL["ry"]}" fill="{card}" stroke="{accent}" stroke-width="1.6"/>'
+        + text
+        + detail
+    )
 
 
 def build_use_cases_html(mode):
     """Who does what with GreenOcean: the actors of the PRD, the cases inside the system and, under each, the
     screen of the menu that serves it. Straight lines only."""
     palette = charts.get_palette(mode)
-    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
-                                              palette["card"], palette["card_border"], palette["accent"])
-    parts = [f'<rect x="{BOUNDARY[0]}" y="{BOUNDARY[1]}" width="{BOUNDARY[2]}" height="{BOUNDARY[3]}" rx="22" fill="none" '
-             f'stroke="{border}" stroke-width="1.4" stroke-dasharray="6 6"/>'
-             f'<text x="{BOUNDARY[0] + 20}" y="{BOUNDARY[1] + 26}" font-size="13" font-weight="700" letter-spacing=".1em" '
-             f'fill="{ink}">GREENOCEAN</text>']
+    ink, text, muted, card, border, accent = (
+        palette["strong_text"],
+        palette["text"],
+        palette["reference"],
+        palette["card"],
+        palette["card_border"],
+        palette["accent"],
+    )
+    parts = [
+        f'<rect x="{BOUNDARY[0]}" y="{BOUNDARY[1]}" width="{BOUNDARY[2]}" height="{BOUNDARY[3]}" rx="22" fill="none" '
+        f'stroke="{border}" stroke-width="1.4" stroke-dasharray="6 6"/>'
+        f'<text x="{BOUNDARY[0] + 20}" y="{BOUNDARY[1] + 26}" font-size="13" font-weight="700" letter-spacing=".1em" '
+        f'fill="{ink}">GREENOCEAN</text>'
+    ]
     # Each actor sits level with its cases; one with several reaches them through a straight bus.
     actors = []
-    for side, cases, actor_x, edge_x, bus_x in (("left", USER_CASES, LEFT_ACTOR_X, OVAL["left"] - OVAL["rx"], LEFT_ACTOR_X + 78),
-                                                ("right", SYSTEM_CASES, RIGHT_ACTOR_X, OVAL["right"] + OVAL["rx"], RIGHT_ACTOR_X - 78)):
+    for side, cases, actor_x, edge_x, bus_x in (
+        ("left", USER_CASES, LEFT_ACTOR_X, OVAL["left"] - OVAL["rx"], LEFT_ACTOR_X + 78),
+        ("right", SYSTEM_CASES, RIGHT_ACTOR_X, OVAL["right"] + OVAL["rx"], RIGHT_ACTOR_X - 78),
+    ):
         names = list(dict.fromkeys(actor for actor, *_ in cases))
         for actor in names:
             rows = [row for name, row, *_ in cases if name == actor]
@@ -258,31 +404,50 @@ def build_use_cases_html(mode):
             if len(ys) == 1:
                 parts.append(f'<path d="M{near} {y} H{edge_x}" stroke="{accent}" stroke-width="1.8"/>')
             else:
-                parts.append(f'<path d="M{near} {y} H{bus_x}" stroke="{accent}" stroke-width="1.8"/>'
-                             f'<path d="M{bus_x} {ys[0]} V{ys[-1]}" stroke="{accent}" stroke-width="1.8"/>')
-                parts.extend(f'<path d="M{bus_x} {row_y} H{edge_x}" stroke="{accent}" stroke-width="1.8"/>' for row_y in ys)
+                parts.append(
+                    f'<path d="M{near} {y} H{bus_x}" stroke="{accent}" stroke-width="1.8"/>'
+                    f'<path d="M{bus_x} {ys[0]} V{ys[-1]}" stroke="{accent}" stroke-width="1.8"/>'
+                )
+                parts.extend(
+                    f'<path d="M{bus_x} {row_y} H{edge_x}" stroke="{accent}" stroke-width="1.8"/>' for row_y in ys
+                )
             brand = actor == "GitHub Actions"
             person = "author" if actor == "Administrador" else "visitor"
-            actors.append(f'<g>{actor_figure(actor_x, y, "github" if brand else person, actor, ink, muted, brand=brand)}</g>')
-    cases = [build_use_case("left", row, case, identifier, screen, ink, muted, accent, card)
-             for _, row, case, identifier, screen in USER_CASES]
-    cases += [build_use_case("right", row, case, identifier, screen, ink, muted, accent, card)
-              for _, row, case, identifier, screen in SYSTEM_CASES]
-    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            f'<style>*{{box-sizing:border-box}}html,body{{margin:0;height:100%;background:transparent;color:{text};'
-            f'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}}'
-            f'svg.uc{{display:block;width:100%;height:100vh}}</style></head><body>'
-            f'<svg class="uc" viewBox="0 0 {USE_WIDTH} {USE_HEIGHT}" preserveAspectRatio="xMidYMid meet" role="img" '
-            f'aria-label="Casos de uso">{"".join(parts)}{"".join(cases)}{"".join(actors)}</svg></body></html>')
+            actors.append(
+                f'<g>{actor_figure(actor_x, y, "github" if brand else person, actor, ink, muted, brand=brand)}</g>'
+            )
+    cases = [
+        build_use_case("left", row, case, identifier, screen, ink, muted, accent, card)
+        for _, row, case, identifier, screen in USER_CASES
+    ]
+    cases += [
+        build_use_case("right", row, case, identifier, screen, ink, muted, accent, card)
+        for _, row, case, identifier, screen in SYSTEM_CASES
+    ]
+    return (
+        '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        f'<style>*{{box-sizing:border-box}}html,body{{margin:0;height:100%;background:transparent;color:{text};'
+        f'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}}'
+        f'svg.uc{{display:block;width:100%;height:100vh}}</style></head><body>'
+        f'<svg class="uc" viewBox="0 0 {USE_WIDTH} {USE_HEIGHT}" preserveAspectRatio="xMidYMid meet" role="img" '
+        f'aria-label="Casos de uso">{"".join(parts)}{"".join(cases)}{"".join(actors)}</svg></body></html>'
+    )
 
 
 def actor_figure(x, y, name, label, ink, muted, brand=False):
     """An actor: its mark and its name under it."""
-    mark = flat_logo("brand" if brand else "person", name).replace('<svg class="logo" ', f'<svg x="{x - 30}" y="{y - 42}" width="60" height="60" ', 1)
+    mark = flat_logo("brand" if brand else "person", name).replace(
+        '<svg class="logo" ', f'<svg x="{x - 30}" y="{y - 42}" width="60" height="60" ', 1
+    )
     lines = wrap(label, 16)
-    names = "".join(f'<text x="{x}" y="{y + 32 + 14 * index}" text-anchor="middle" font-size="13" font-weight="600" '
-                    f'fill="{ink}">{esc(line)}</text>' for index, line in enumerate(lines))
+    names = "".join(
+        f'<text x="{x}" y="{y + 32 + 14 * index}" text-anchor="middle" font-size="13" font-weight="600" '
+        f'fill="{ink}">{esc(line)}</text>'
+        for index, line in enumerate(lines)
+    )
     return mark + names
+
+
 # endregion
 
 
@@ -294,22 +459,80 @@ C4_WIDTH, C4_HEIGHT = 900, 664
 C4_BOUNDARY = (136, 128, 754, 412)
 # (key, kind, x, y, w, h, name, technology lines, files, what it does). kind: app, store, external, person.
 CONTAINERS = [
-    ("load", "app", 156, 160, 190, 360, "Carga semanal", ["Python · requests ·", "dbt Core · DuckDB"],
-     "agent/agent.py · etl/etl.py · etl/pipeline.py · dbt/",
-     "Descarga los CSV, los guarda sin cambios, los transforma y prueba con dbt y publica la base solo si todo pasa."),
-    ("work", "store", 426, 156, 210, 124, "Archivos de trabajo", ["SQLite · Parquet · DuckDB"],
-     "etl/raw.db · etl/bronze/ · etl/warehouse_build.duckdb",
-     "Aterrizaje, bronce y base de trabajo de dbt. Se rehacen en cada carga y no se suben a GitHub."),
-    ("served", "store", 426, 316, 210, 100, "Base servida", ["DuckDB"], "etl/datos.duckdb",
-     "Las 12 tablas que lee el panel. Se reemplaza entera al final de una carga válida."),
-    ("backup", "store", 426, 438, 210, 82, "Respaldo", ["SQLite"], "etl/datos.db",
-     "Los mismos precios calculados por el ETL en Python, sin dbt, para comprobar la paridad."),
-    ("panel", "app", 726, 316, 150, 100, "Panel web", ["Streamlit · Python"], "bi/dashboard.py",
-     "Muestra los indicadores y los documentos, y abre el estudio SQL; lee la base en solo lectura."),
+    (
+        "load",
+        "app",
+        156,
+        160,
+        190,
+        360,
+        "Carga semanal",
+        ["Python · requests ·", "dbt Core · DuckDB"],
+        "agent/agent.py · etl/etl.py · etl/pipeline.py · dbt/",
+        "Descarga los CSV, los guarda sin cambios, los transforma y prueba con dbt y publica la base solo si todo pasa.",
+    ),
+    (
+        "work",
+        "store",
+        426,
+        156,
+        210,
+        124,
+        "Archivos de trabajo",
+        ["SQLite · Parquet · DuckDB"],
+        "etl/raw.db · etl/bronze/ · etl/warehouse_build.duckdb",
+        "Aterrizaje, bronce y base de trabajo de dbt. Se rehacen en cada carga y no se suben a GitHub.",
+    ),
+    (
+        "served",
+        "store",
+        426,
+        316,
+        210,
+        100,
+        "Base servida",
+        ["DuckDB"],
+        "etl/datos.duckdb",
+        "Las 12 tablas que lee el panel. Se reemplaza entera al final de una carga válida.",
+    ),
+    (
+        "backup",
+        "store",
+        426,
+        438,
+        210,
+        82,
+        "Respaldo",
+        ["SQLite"],
+        "etl/datos.db",
+        "Los mismos precios calculados por el ETL en Python, sin dbt, para comprobar la paridad.",
+    ),
+    (
+        "panel",
+        "app",
+        726,
+        316,
+        150,
+        100,
+        "Panel web",
+        ["Streamlit · Python"],
+        "bi/dashboard.py",
+        "Muestra los indicadores y los documentos, y abre el estudio SQL; lee la base en solo lectura.",
+    ),
     ("odepa", "external", 10, 196, 110, 64, "ODEPA", ["precios"], "", "Publica los CSV de precios cada semana."),
     ("ine", "external", 10, 356, 110, 64, "INE", ["IPC de alimentos"], "", "Publica el IPC de alimentos cada mes."),
-    ("github", "external", 156, 580, 720, 64, "GitHub", ["repositorio · Actions · API REST"], "",
-     "Guarda el código en main y la base publicada en un release, ejecuta la carga cada martes y responde a la API del panel."),
+    (
+        "github",
+        "external",
+        156,
+        580,
+        720,
+        64,
+        "GitHub",
+        ["repositorio · Actions · API REST"],
+        "",
+        "Guarda el código en main y la base publicada en un release, ejecuta la carga cada martes y responde a la API del panel.",
+    ),
     ("visitor", "person", 746, 26, 0, 0, "Visitante", [], "", "Analista, compras, gerencia o revisor técnico."),
     ("author", "person", 846, 26, 0, 0, "Administrador", [], "", "Mantiene el código y los secretos."),
 ]
@@ -334,24 +557,35 @@ def build_containers_html(mode):
     """The containers of GreenOcean (C4 level 2): applications and data stores with their technology and links."""
     palette = charts.get_palette(mode)
     dark = palette["base"] == charts.BASE_DARK
-    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
-                                              palette["card"], palette["card_border"], palette["accent"])
+    ink, text, muted, card, border, accent = (
+        palette["strong_text"],
+        palette["text"],
+        palette["reference"],
+        palette["card"],
+        palette["card_border"],
+        palette["accent"],
+    )
     shadow = "rgba(0,0,0,.45)" if dark else "rgba(15,39,71,.15)"
     left, top, width, height = C4_BOUNDARY
-    parts = [f'<defs><marker id="c4-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
-             f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{accent}"/></marker></defs>',
-             f'<rect x="{left}" y="{top}" width="{width}" height="{height}" rx="20" fill="none" stroke="{border}" '
-             f'stroke-width="1.4" stroke-dasharray="6 6"/>'
-             f'<text x="{left + 18}" y="{top + 22}" class="c4-sys">GREENOCEAN · SISTEMA</text>']
+    parts = [
+        f'<defs><marker id="c4-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
+        f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{accent}"/></marker></defs>',
+        f'<rect x="{left}" y="{top}" width="{width}" height="{height}" rx="20" fill="none" stroke="{border}" '
+        f'stroke-width="1.4" stroke-dasharray="6 6"/>'
+        f'<text x="{left + 18}" y="{top + 22}" class="c4-sys">GREENOCEAN · SISTEMA</text>',
+    ]
     for path, *_ in C4_LINKS:
         parts.append(f'<path class="c4-line" d="{path}" marker-end="url(#c4-head)"/>')
     boxes, tips = [], []
     for key, kind, x, y, w, h, name, technology, files, what in CONTAINERS:
         if kind == "person":
             mark = flat_logo("person", "visitor" if key == "visitor" else "author").replace(
-                '<svg class="logo" ', f'<svg x="{x - 26}" y="{y - 10}" width="52" height="52" ', 1)
-            boxes.append(f'<g class="c4-node" id="c-{key}" tabindex="0">{mark}<text class="c4-name" x="{x}" y="{y + 60}" '
-                         f'text-anchor="middle">{esc(name)}</text></g>')
+                '<svg class="logo" ', f'<svg x="{x - 26}" y="{y - 10}" width="52" height="52" ', 1
+            )
+            boxes.append(
+                f'<g class="c4-node" id="c-{key}" tabindex="0">{mark}<text class="c4-name" x="{x}" y="{y + 60}" '
+                f'text-anchor="middle">{esc(name)}</text></g>'
+            )
             box = (x - 55, y - 10, 110, 80)
         else:
             dashed = ' stroke-dasharray="5 5"' if kind == "external" else ""
@@ -363,7 +597,8 @@ def build_containers_html(mode):
                 name_x = x + 46
             elif kind == "app":
                 icon = flat_logo("brand", "streamlit" if key == "panel" else "python").replace(
-                    '<svg class="logo" ', f'<svg x="{x + 10}" y="{y + 10}" width="32" height="32" ', 1)
+                    '<svg class="logo" ', f'<svg x="{x + 10}" y="{y + 10}" width="32" height="32" ', 1
+                )
                 name_x = x + 48
             lines = [f'<text class="c4-name" x="{name_x}" y="{y + 31}">{esc(name)}</text>']
             line_y = y + 31 if kind == "external" else y + 60
@@ -372,8 +607,10 @@ def build_containers_html(mode):
             else:
                 for index, part in enumerate(technology):
                     first, last = index == 0, index == len(technology) - 1
-                    lines.append(f'<text class="c4-tech" x="{x + 12}" y="{line_y}">{"[" if first else ""}{esc(part)}'
-                                 f'{"]" if last else ""}</text>')
+                    lines.append(
+                        f'<text class="c4-tech" x="{x + 12}" y="{line_y}">{"[" if first else ""}{esc(part)}'
+                        f'{"]" if last else ""}</text>'
+                    )
                     line_y += 16
                 for part in [piece.strip() for piece in files.split("·") if piece.strip()]:
                     line_y += 2
@@ -384,22 +621,33 @@ def build_containers_html(mode):
                 for part in wrap(what, 26):
                     lines.append(f'<text class="c4-what" x="{x + 12}" y="{line_y}">{esc(part)}</text>')
                     line_y += 17
-            boxes.append(f'<g class="c4-node c4-{kind}" id="c-{key}" tabindex="0"><rect x="{x}" y="{y}" width="{w}" '
-                         f'height="{h}" rx="14" fill="{fill}" stroke="{accent if kind == "app" else border}"'
-                         f'{dashed} stroke-width="{1.6 if kind == "app" else 1.2}"/>{icon}{"".join(lines)}</g>')
+            boxes.append(
+                f'<g class="c4-node c4-{kind}" id="c-{key}" tabindex="0"><rect x="{x}" y="{y}" width="{w}" '
+                f'height="{h}" rx="14" fill="{fill}" stroke="{accent if kind == "app" else border}"'
+                f'{dashed} stroke-width="{1.6 if kind == "app" else 1.2}"/>{icon}{"".join(lines)}</g>'
+            )
             box = (x, y, w, h)
         bx, by, bw, bh = box
         tx = min(max(bx + bw / 2 - 140, 8), C4_WIDTH - 288)
         above = by > 300
-        tips.append(f'<g class="c4-tip" id="ct-{key}"><foreignObject x="{tx:.0f}" y="{(by - 8) if above else (by + bh + 8):.0f}" '
-                    f'width="280" height="1" overflow="visible"><div xmlns="http://www.w3.org/1999/xhtml" '
-                    f'style="{"bottom:0" if above else "top:0"}"><b>{esc(name)}</b>{esc(what)}'
-                    + (f'<b>Fuente</b><code>{esc(files)}</code>' if files else "") + '</div></foreignObject></g>')
-    chips = "".join(f'<text class="c4-label" x="{x}" y="{y}" text-anchor="{anchor}">{esc(label)}</text>'
-                    for _, label, x, y, anchor in C4_LINKS)
-    chips += "".join(f'<text class="c4-label" x="{x}" y="{y}" text-anchor="middle">{esc(label)}</text>'
-                     for label, x, y in C4_SUBLABELS)
-    hovers = "".join(f"svg:has(#c-{row[0]}:hover, #c-{row[0]}:focus) #ct-{row[0]} {{ opacity:1; }}" for row in CONTAINERS)
+        tips.append(
+            f'<g class="c4-tip" id="ct-{key}"><foreignObject x="{tx:.0f}" y="{(by - 8) if above else (by + bh + 8):.0f}" '
+            f'width="280" height="1" overflow="visible"><div xmlns="http://www.w3.org/1999/xhtml" '
+            f'style="{"bottom:0" if above else "top:0"}"><b>{esc(name)}</b>{esc(what)}'
+            + (f'<b>Fuente</b><code>{esc(files)}</code>' if files else "")
+            + '</div></foreignObject></g>'
+        )
+    chips = "".join(
+        f'<text class="c4-label" x="{x}" y="{y}" text-anchor="{anchor}">{esc(label)}</text>'
+        for _, label, x, y, anchor in C4_LINKS
+    )
+    chips += "".join(
+        f'<text class="c4-label" x="{x}" y="{y}" text-anchor="middle">{esc(label)}</text>'
+        for label, x, y in C4_SUBLABELS
+    )
+    hovers = "".join(
+        f"svg:has(#c-{row[0]}:hover, #c-{row[0]}:focus) #ct-{row[0]} {{ opacity:1; }}" for row in CONTAINERS
+    )
     css = f"""<style>
 * {{ box-sizing:border-box; }}
 html, body {{ margin:0; height:100%; background:transparent; color:{text}; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
@@ -424,10 +672,15 @@ svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
 .c4-tip code {{ font:400 12px ui-monospace, SFMono-Regular, Menlo, monospace; color:{ink}; }}
 {hovers}
 </style>"""
-    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            + css + f'</head><body><svg class="c4" viewBox="0 0 {C4_WIDTH} {C4_HEIGHT}" preserveAspectRatio="xMidYMid meet" '
-            f'role="img" aria-label="Contenedores de GreenOcean">{"".join(parts)}{"".join(boxes)}{chips}{"".join(tips)}'
-            '</svg></body></html>')
+    return (
+        '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        + css
+        + f'</head><body><svg class="c4" viewBox="0 0 {C4_WIDTH} {C4_HEIGHT}" preserveAspectRatio="xMidYMid meet" '
+        f'role="img" aria-label="Contenedores de GreenOcean">{"".join(parts)}{"".join(boxes)}{chips}{"".join(tips)}'
+        '</svg></body></html>'
+    )
+
+
 # endregion
 
 
@@ -465,11 +718,21 @@ figcaption {{ margin-top:10px; color:{palette['reference']}; }} figcaption b {{ 
 .base {{ width:100%; height:11px; background:linear-gradient(#c3c9d2,#7d8590); border-radius:0 0 14px 14px; }}
 @media (max-width:640px) {{ .grid {{ grid-template-columns:1fr; }} }}
 </style>"""
-    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            + css + '</head><body><div class="grid">' + "".join(figures) + "</div></body></html>")
+    return (
+        '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        + css
+        + '</head><body><div class="grid">'
+        + "".join(figures)
+        + "</div></body></html>"
+    )
+
+
 # endregion
 
 # The document views by marker, with the height of their frame in the page.
-VIEWS = {"contexto": (build_context_html, 470), "contenedores": (build_containers_html, 650),
-         "casos": (build_use_cases_html, 580),
-         "mockups": (build_mockups_html, 1080)}
+VIEWS = {
+    "contexto": (build_context_html, 470),
+    "contenedores": (build_containers_html, 650),
+    "casos": (build_use_cases_html, 580),
+    "mockups": (build_mockups_html, 1080),
+}

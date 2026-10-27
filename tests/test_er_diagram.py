@@ -1,4 +1,5 @@
 """Entity-relationship diagram (D-195): every table, key and relationship is real."""
+
 import re
 from pathlib import Path
 
@@ -26,8 +27,11 @@ def test_every_drawn_table_column_and_key_exists_in_the_database_with_its_real_t
 def test_the_foreign_keys_drawn_are_the_ones_dbt_tests():
     text = (REPOSITORY / "dbt" / "models" / "marts" / "schema.yml").read_text()
     tested = set(re.findall(r"to: ref\('(\w+)'\), field: (\w+)", text))
-    drawn = {(parent, parent_column) for child, _, parent, parent_column, *_ in er_diagram.RELATIONS
-             if child in ("weekly_price", "ipc_weekly")}
+    drawn = {
+        (parent, parent_column)
+        for child, _, parent, parent_column, *_ in er_diagram.RELATIONS
+        if child in ("weekly_price", "ipc_weekly")
+    }
     assert drawn == tested  # nothing drawn that dbt does not test, nothing tested that is not drawn
     # The only relationship dbt does not test is checked by the quality page (D-171).
     assert [r[0] for r in er_diagram.RELATIONS if r[0] == "rejection"] == ["rejection"]
@@ -36,6 +40,7 @@ def test_the_foreign_keys_drawn_are_the_ones_dbt_tests():
 @needs_database
 def test_no_relationship_is_broken_in_the_data():
     from bi import quality
+
     assert quality.check_database()["foreign_keys"] == 0
     assert quality.check_database()["duplicates"] == 0  # the composite primary key of weekly_price holds
 
@@ -69,5 +74,5 @@ def test_relations_route_without_leaving_the_drawing():
     places = er_diagram.layout(schema)
     boxes = list(places.values())
     for index, (x, y, w, h) in enumerate(boxes):
-        for x2, y2, w2, h2 in boxes[index + 1:]:
+        for x2, y2, w2, h2 in boxes[index + 1 :]:
             assert not (x < x2 + w2 and x2 < x + w and y < y2 + h2 and y2 < y + h)  # no two boxes overlap

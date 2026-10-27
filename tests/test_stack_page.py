@@ -1,4 +1,5 @@
 """«Stack y evidencia» (D-211, D-266): an architecture diagram whose logos, links and figures are read, never typed."""
+
 import re
 
 import duckdb
@@ -9,8 +10,9 @@ FIGURES = {"prices": 1, "tests": 2, "loads": 3}
 
 
 def build(mode=charts.MODE_DARK):
-    return stack_page.build_stack_html(charts.get_palette(mode), FIGURES,
-                                       {page: f"./{index}" for index, (*_, page) in enumerate(stack_page.STACK)})
+    return stack_page.build_stack_html(
+        charts.get_palette(mode), FIGURES, {page: f"./{index}" for index, (*_, page) in enumerate(stack_page.STACK)}
+    )
 
 
 def test_the_figures_come_from_the_database_and_the_repository():
@@ -24,8 +26,17 @@ def test_the_figures_come_from_the_database_and_the_repository():
 
 
 def test_the_stack_is_nine_3d_logos_plus_the_two_sources_in_every_theme():
-    assert [name for _, name, *_ in stack_page.STACK] == ["Python", "SQLite", "Parquet", "dbt", "SQL", "DuckDB",
-                                                          "pytest", "GitHub Actions", "Streamlit"]
+    assert [name for _, name, *_ in stack_page.STACK] == [
+        "Python",
+        "SQLite",
+        "Parquet",
+        "dbt",
+        "SQL",
+        "DuckDB",
+        "pytest",
+        "GitHub Actions",
+        "Streamlit",
+    ]
     for mode in charts.THEMES:
         page = build(mode)
         assert page.count('class="logo"') == 11
@@ -38,8 +49,13 @@ def test_d266_every_tool_says_what_it_is_its_role_when_it_acts_and_what_it_is_co
     for key, name, definition, _ in stack_page.STACK:
         assert f"<b>{name}</b><small>{definition}</small>" in page
         assert stack_page.NODES[key][3] and stack_page.NODES[key][4] and stack_page.WHAT_IT_IS[key]
-    assert page.count("<i>Qué es</i>") == page.count("<i>Rol en GreenOcean</i>") == page.count("<i>Cuándo actúa</i>") \
-        == page.count("<i>Se conecta con</i>") == 11
+    assert (
+        page.count("<i>Qué es</i>")
+        == page.count("<i>Rol en GreenOcean</i>")
+        == page.count("<i>Cuándo actúa</i>")
+        == page.count("<i>Se conecta con</i>")
+        == 11
+    )
 
 
 def test_d266_the_connections_are_read_from_the_arrows_and_every_node_has_one():
@@ -60,7 +76,9 @@ def test_d266_every_line_bends_at_right_angles_and_ends_at_its_target():
         for step in path.split()[2:]:
             x, y = (int(step[1:]), y) if step[0] == "H" else (x, int(step[1:]))
         target_x, target_y = stack_page.NODES[target][:2]
-        half = (stack_page.SOURCE_LOGO if target in {key for key, *_ in stack_page.SOURCES} else stack_page.LOGO) / 2 + 6
+        half = (
+            stack_page.SOURCE_LOGO if target in {key for key, *_ in stack_page.SOURCES} else stack_page.LOGO
+        ) / 2 + 6
         # A line that arrives from below stops under the caption (name, what it is and stage).
         assert abs(x - target_x) <= half and -half <= y - target_y <= half + 64, (source, target)
 

@@ -1,4 +1,5 @@
 """Crossings between databases (D-197, D-239): the databases as layers and the lines between their tables."""
+
 import re
 from pathlib import Path
 
@@ -19,8 +20,16 @@ def build(checks=None, mode=charts.MODE_DARK):
 def test_every_crossing_names_how_what_travels_and_what_both_sides_share():
     keys = [row[0] for row in database_crossings.CROSSINGS]
     assert len(keys) == len(set(keys)) == 8
-    assert keys == ["odepa_raw", "ine_bronze", "raw_bronze", "bronze_work", "work_served", "raw_backup",
-                    "served_backup", "history"]
+    assert keys == [
+        "odepa_raw",
+        "ine_bronze",
+        "raw_bronze",
+        "bronze_work",
+        "work_served",
+        "raw_backup",
+        "served_backup",
+        "history",
+    ]
     for row in database_crossings.CROSSINGS:
         assert all(str(part).strip() for part in row), row[0]
 
@@ -29,7 +38,10 @@ def test_ine_skips_sqlite_and_the_backup_is_only_compared():
     rows = {row[0]: row for row in database_crossings.CROSSINGS}
     assert rows["ine_bronze"][3:5] == ("INE · IPC", "Bronce") and "sin pasar por SQLite" in rows["ine_bronze"][5]
     assert "Nada se copia" in rows["served_backup"][8]
-    assert rows["raw_backup"][3:5] == ("raw.db", "datos.db") and rows["served_backup"][3:5] == ("datos.duckdb", "datos.db")
+    assert rows["raw_backup"][3:5] == ("raw.db", "datos.db") and rows["served_backup"][3:5] == (
+        "datos.duckdb",
+        "datos.db",
+    )
 
 
 def test_every_line_is_straight_and_each_crossing_but_the_history_has_its_lines():
@@ -94,8 +106,10 @@ def test_the_live_checks_hold_on_the_real_database_and_say_what_cannot_be_measur
 
 
 def test_every_table_drawn_exists_in_the_repository():
-    sources = {"raw": (ROOT / "etl" / "etl.py").read_text(encoding="utf-8"),
-               "bronze": (ROOT / "etl" / "bronze.py").read_text(encoding="utf-8")}
+    sources = {
+        "raw": (ROOT / "etl" / "etl.py").read_text(encoding="utf-8"),
+        "bronze": (ROOT / "etl" / "bronze.py").read_text(encoding="utf-8"),
+    }
     served = set(project.TABLE_NAMES + project.IPC_TABLE_NAMES)
     for layer, _, _, name in database_crossings.CHIPS:
         if layer == "raw":

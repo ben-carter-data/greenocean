@@ -1,4 +1,5 @@
 """The served database lives in a release that every load replaces; git keeps only its pointer (D-270, ADR-35)."""
+
 import os
 import subprocess
 from datetime import datetime, timedelta, timezone
@@ -13,6 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 class Answer:
     """What requests.get returns, enough for download()."""
+
     def __init__(self, body):
         self.body = body
 
@@ -77,17 +79,25 @@ def test_a_download_that_does_not_match_the_pointer_never_replaces_the_database(
 
 
 def test_without_a_pointer_nothing_is_downloaded(tmp_path):
-    assert served_database.ensure_database(tmp_path / "datos.duckdb", tmp_path / "datos.version",
-                                           get=lambda *a, **k: pytest.fail("no download")) == served_database.NO_POINTER
+    assert (
+        served_database.ensure_database(
+            tmp_path / "datos.duckdb", tmp_path / "datos.version", get=lambda *a, **k: pytest.fail("no download")
+        )
+        == served_database.NO_POINTER
+    )
 
 
 def test_the_weekly_job_reads_last_week_database_and_publishes_the_file_before_its_pointer():
     workflow = (ROOT / ".github" / "workflows" / "semanal.yml").read_text(encoding="utf-8")
     assert workflow.index("python bi/served_database.py\n") < workflow.index("python etl/pipeline.py")
     upload = workflow.index("gh release upload base-actual etl/datos.duckdb --clobber")
-    assert upload < workflow.index("python bi/served_database.py --pointer") < workflow.index("git add etl/datos.version")
+    assert (
+        upload < workflow.index("python bi/served_database.py --pointer") < workflow.index("git add etl/datos.version")
+    )
     assert "git add etl/datos.db" not in workflow and "etl/datos.duckdb agent" not in workflow
-    assert "python bi/served_database.py" in (ROOT / ".github" / "workflows" / "pruebas.yml").read_text(encoding="utf-8")
+    assert "python bi/served_database.py" in (ROOT / ".github" / "workflows" / "pruebas.yml").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_git_keeps_the_pointer_and_neither_database():

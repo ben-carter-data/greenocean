@@ -9,27 +9,20 @@ PAGES = {
     # Every page: the browser title and the phone layout
     "Monitor de precios de alimentos": "Food price monitor",
     "Gira tu teléfono": "Turn your phone",
-    "El panel se lee en horizontal: así ves el pipeline completo y el menú de un vistazo.":
-        "The panel reads in landscape: that way you see the whole pipeline and the menu at a glance.",
+    "El panel se lee en horizontal: así ves el pipeline completo y el menú de un vistazo.": "The panel reads in landscape: that way you see the whole pipeline and the menu at a glance.",
     "Página actual: {}": "Current page: {}",
     "Datos al {} · {}": "Data as of {} · {}",
     "Datos al {} · {} · {}": "Data as of {} · {} · {}",
-
     # Price overview (bi/home_mockup.py)
     "¿Qué familias de alimentos subieron y bajaron?": "Which food families rose and fell?",
-    "¿Qué familias de alimentos subieron y bajaron? Variación típica (mediana) por familia frente a la semana anterior · semana {} · Todo Chile":
-        "Which food families rose and fell? Typical change (median) by family against the previous week · week {} · All of Chile",
+    "¿Qué familias de alimentos subieron y bajaron? Variación típica (mediana) por familia frente a la semana anterior · semana {} · Todo Chile": "Which food families rose and fell? Typical change (median) by family against the previous week · week {} · All of Chile",
     "Semana {} · Todo Chile": "Week {} · All of Chile",
-    "Familias: {} subieron, {} bajaron y {} sin cambio · variación típica (mediana)":
-        "Families: {} rose, {} fell and {} unchanged · typical change (median)",
-    "Regiones: {} subieron y {} bajaron · {} sin dirección clara · {} sin dato":
-        "Regions: {} rose and {} fell · {} without a clear direction · {} without data",
+    "Familias: {} subieron, {} bajaron y {} sin cambio · variación típica (mediana)": "Families: {} rose, {} fell and {} unchanged · typical change (median)",
+    "Regiones: {} subieron y {} bajaron · {} sin dirección clara · {} sin dato": "Regions: {} rose and {} fell · {} without a clear direction · {} without data",
     "Precios comparados: {} de {}, con precio en ambas semanas": "Prices compared: {} of {}, with a price in both weeks",
     "¿En qué dirección se movieron los precios?": "Which way did prices move?",
-    "% de precios comparables que siguió la dirección dominante. Mapa en proporción real; cada región se lee en su fila.":
-        "% of comparable prices that followed the dominant direction. Map in true proportion; each region reads on its row.",
-    "Mapa de Chile con la dirección dominante de los precios por región":
-        "Map of Chile with the dominant direction of prices by region",
+    "% de precios comparables que siguió la dirección dominante. Mapa en proporción real; cada región se lee en su fila.": "% of comparable prices that followed the dominant direction. Map in true proportion; each region reads on its row.",
+    "Mapa de Chile con la dirección dominante de los precios por región": "Map of Chile with the dominant direction of prices by region",
     "Subieron": "Rose",
     "Bajaron": "Fell",
     "Sin dato o sin dirección clara": "No data or no clear direction",
@@ -37,16 +30,14 @@ PAGES = {
     "Lectura territorial": "Territorial reading",
     "LECTURA TERRITORIAL": "TERRITORIAL READING",
     "Sin precios comparables entre ambas semanas.": "No comparable prices between both weeks.",
-    "Sin dirección clara: subidas y bajadas no se distinguen del azar.":
-        "No clear direction: rises and falls cannot be told apart from chance.",
+    "Sin dirección clara: subidas y bajadas no se distinguen del azar.": "No clear direction: rises and falls cannot be told apart from chance.",
     "{} % de los precios comparables subieron.": "{} % of the comparable prices rose.",
     "{} % de los precios comparables bajaron.": "{} % of the comparable prices fell.",
     "{} bajaron · {} subieron · {} sin cambio · {} comparados": "{} fell · {} rose · {} unchanged · {} compared",
     "Semana {} → {}": "Week {} → {}",
     "Ver las familias de esta región": "See the families of this region",
     "Movimiento por familia": "Movement by family",
-    "Mediana de las variaciones de precios comparables: lo que hizo el producto típico · todo Chile. Selecciona una familia para ver sus productos.":
-        "Median of the changes of comparable prices: what the typical product did · all of Chile. Select a family to see its products.",
+    "Mediana de las variaciones de precios comparables: lo que hizo el producto típico · todo Chile. Selecciona una familia para ver sus productos.": "Median of the changes of comparable prices: what the typical product did · all of Chile. Select a family to see its products.",
     "{}: mediana de {} precios comparables · todo Chile": "{}: median of {} comparable prices · all of Chile",
     "Subió": "Rose",
     "Bajó": "Fell",
@@ -68,22 +59,16 @@ PAGES = {
     "Regiones donde el mismo producto y canal subió / bajó": "Regions where the same product and channel rose / fell",
     "{} · {} · variación sobre {} regiones comunes": "{} · {} · change over {} common regions",
     "{} · {} · 1 cotización": "{} · {} · 1 quote",
-    "{} precios esta semana; {} con comparación válida, los de la tabla. Cada variación compara las mismas regiones en ambas semanas; en {} se dejaron fuera regiones con precio en una sola. {} cambios apoyados en una sola cotización van al final del orden con la marca «1 cotización». Toda la semana, {} familias: {} precios, {} sin comparación válida. Precios nominales de ODEPA, redondeados; cambios calculados antes de redondear.":
-        "{} prices this week; {} with a valid comparison, the ones in the table. Each change compares the same regions in both weeks; in {} regions with a price in only one week were left out. {} changes backed by a single quote go to the end of the order with the «1 quote» mark. The whole week, {} families: {} prices, {} without a valid comparison. ODEPA nominal prices, rounded; changes computed before rounding.",
+    "{} precios esta semana; {} con comparación válida, los de la tabla. Cada variación compara las mismas regiones en ambas semanas; en {} se dejaron fuera regiones con precio en una sola. {} cambios apoyados en una sola cotización van al final del orden con la marca «1 cotización». Toda la semana, {} familias: {} precios, {} sin comparación válida. Precios nominales de ODEPA, redondeados; cambios calculados antes de redondear.": "{} prices this week; {} with a valid comparison, the ones in the table. Each change compares the same regions in both weeks; in {} regions with a price in only one week were left out. {} changes backed by a single quote go to the end of the order with the «1 quote» mark. The whole week, {} families: {} prices, {} without a valid comparison. ODEPA nominal prices, rounded; changes computed before rounding.",
     "Cobertura · {}:": "Coverage · {}:",
     "Calidad": "Quality",
     "Metodología": "Methodology",
-
     # Prices and inflation (bi/inflation_view.py and its page)
     "¿Qué alimentos subieron más que la inflación?": "Which foods rose more than inflation?",
-    "De enero 2022 a {m}, la canasta de alimentos del INE subió {n} ({n} en 12 meses). Subieron más: {}. Subieron menos: {}.":
-        "From January 2022 to {}, the INE food basket rose {} ({} in 12 months). Rose more: {}. Rose less: {}.",
-    "De enero 2022 a {m}, la canasta de alimentos del INE subió {n} ({n} en 12 meses). Subieron más: {}.":
-        "From January 2022 to {}, the INE food basket rose {} ({} in 12 months). Rose more: {}.",
-    "De enero 2022 a {m}, la canasta de alimentos del INE subió {n} ({n} en 12 meses). Subieron menos: {}.":
-        "From January 2022 to {}, the INE food basket rose {} ({} in 12 months). Rose less: {}.",
-    "De enero 2022 a {m}, el último mes que publicó el INE, la canasta de alimentos del INE subió {n} desde enero 2022 y {n} en los últimos 12 meses.":
-        "From January 2022 to {}, the last month the INE published, the INE food basket rose {} since January 2022 and {} in the last 12 months.",
+    "De enero 2022 a {m}, la canasta de alimentos del INE subió {n} ({n} en 12 meses). Subieron más: {}. Subieron menos: {}.": "From January 2022 to {}, the INE food basket rose {} ({} in 12 months). Rose more: {}. Rose less: {}.",
+    "De enero 2022 a {m}, la canasta de alimentos del INE subió {n} ({n} en 12 meses). Subieron más: {}.": "From January 2022 to {}, the INE food basket rose {} ({} in 12 months). Rose more: {}.",
+    "De enero 2022 a {m}, la canasta de alimentos del INE subió {n} ({n} en 12 meses). Subieron menos: {}.": "From January 2022 to {}, the INE food basket rose {} ({} in 12 months). Rose less: {}.",
+    "De enero 2022 a {m}, el último mes que publicó el INE, la canasta de alimentos del INE subió {n} desde enero 2022 y {n} en los últimos 12 meses.": "From January 2022 to {}, the last month the INE published, the INE food basket rose {} since January 2022 and {} in the last 12 months.",
     "Subieron más que la inflación: {}. Subieron menos: {}.": "Rose more than inflation: {}. Rose less: {}.",
     "Subieron más que la inflación: {}.": "Rose more than inflation: {}.",
     "Subieron menos: {}.": "Rose less: {}.",
@@ -92,22 +77,16 @@ PAGES = {
     "Variación vs IPC": "Change vs CPI",
     "Índice ene 2022 = 100": "Index Jan 2022 = 100",
     "Métrica": "Metric",
-    "Diferencia, en puntos, entre lo que subió la familia desde enero 2022 y lo que subió el IPC de alimentos del INE. Más de {n} puntos arriba: subió más que la inflación; más de {n} abajo: menos.":
-        "Difference, in points, between what the family rose since January 2022 and what the INE food CPI rose. More than {} points above: it rose more than inflation; more than {} below: less.",
-    "Cada mes, el precio promedio de cada serie de consumidor de ODEPA sobre su precio de enero 2022, por 100; la familia toma la mediana de sus series.":
-        "Each month, the average price of each ODEPA consumer series over its price of January 2022, times 100; the family takes the median of its series.",
+    "Diferencia, en puntos, entre lo que subió la familia desde enero 2022 y lo que subió el IPC de alimentos del INE. Más de {n} puntos arriba: subió más que la inflación; más de {n} abajo: menos.": "Difference, in points, between what the family rose since January 2022 and what the INE food CPI rose. More than {} points above: it rose more than inflation; more than {} below: less.",
+    "Cada mes, el precio promedio de cada serie de consumidor de ODEPA sobre su precio de enero 2022, por 100; la familia toma la mediana de sus series.": "Each month, the average price of each ODEPA consumer series over its price of January 2022, times 100; the family takes the median of its series.",
     "Índice mensual por familia, enero 2022 = 100": "Monthly index by family, January 2022 = 100",
-    "Precios de consumidor de ODEPA, mediana por familia; la línea punteada es el IPC de alimentos. Misma escala en todos los gráficos.":
-        "ODEPA consumer prices, median by family; the dotted line is the food CPI. Same scale in every chart.",
-    "Sin inflación: la línea punteada es la canasta del INE (100). Arriba de ella, la familia subió más.":
-        "Without inflation: the dotted line is the INE basket (100). Above it, the family rose more.",
+    "Precios de consumidor de ODEPA, mediana por familia; la línea punteada es el IPC de alimentos. Misma escala en todos los gráficos.": "ODEPA consumer prices, median by family; the dotted line is the food CPI. Same scale in every chart.",
+    "Sin inflación: la línea punteada es la canasta del INE (100). Arriba de ella, la familia subió más.": "Without inflation: the dotted line is the INE basket (100). Above it, the family rose more.",
     "Precios": "Prices",
     "Precios del día": "Prices of the day",
     "Sin inflación": "Without inflation",
-    "Precios del día: lo que se pagó cada semana. Sin inflación (IPC): todos los precios en pesos del último mes publicado por el INE, descontada la inflación de alimentos, para comparar con años anteriores sin que la inflación los haga parecer caros.":
-        "Prices of the day: what was paid each week. Without inflation (CPI): every price in pesos of the last month published by the INE, net of food inflation, to compare with earlier years without inflation making them look expensive.",
-    "Cada familia compara los mismos productos de enero 2022 a {m} (series de consumidor con precio en ambos meses). El IPC de alimentos se calcula con precios de alimentos: subir con él no prueba que la inflación cause la subida; dice si la familia subió más o menos que la canasta.":
-        "Each family compares the same products from January 2022 to {} (consumer series with a price in both months). The food CPI is computed from food prices: rising with it does not prove that inflation causes the rise; it says whether the family rose more or less than the basket.",
+    "Precios del día: lo que se pagó cada semana. Sin inflación (IPC): todos los precios en pesos del último mes publicado por el INE, descontada la inflación de alimentos, para comparar con años anteriores sin que la inflación los haga parecer caros.": "Prices of the day: what was paid each week. Without inflation (CPI): every price in pesos of the last month published by the INE, net of food inflation, to compare with earlier years without inflation making them look expensive.",
+    "Cada familia compara los mismos productos de enero 2022 a {m} (series de consumidor con precio en ambos meses). El IPC de alimentos se calcula con precios de alimentos: subir con él no prueba que la inflación cause la subida; dice si la familia subió más o menos que la canasta.": "Each family compares the same products from January 2022 to {} (consumer series with a price in both months). The food CPI is computed from food prices: rising with it does not prove that inflation causes the rise; it says whether the family rose more or less than the basket.",
     "{n} · más que la inflación": "{} · more than inflation",
     "{n} · menos que la inflación": "{} · less than inflation",
     "{n} · al ritmo de la inflación": "{} · at the pace of inflation",
@@ -129,18 +108,12 @@ PAGES = {
     "Mayor movimiento mensual": "Largest monthly move",
     "Mayor movimiento mensual (sin inflación)": "Largest monthly move (without inflation)",
     "{n} en {m}.": "{} in {}.",
-    "Subió {n}: {n} puntos más que el IPC de alimentos ({n}). Subió más que la inflación.":
-        "It rose {}: {} points more than the food CPI ({}). It rose more than inflation.",
-    "Subió {n}: {n} puntos menos que el IPC de alimentos ({n}). Subió menos que la inflación.":
-        "It rose {}: {} points less than the food CPI ({}). It rose less than inflation.",
-    "Subió {n}: {n} puntos más que el IPC de alimentos ({n}). Subió al ritmo de la inflación.":
-        "It rose {}: {} points more than the food CPI ({}). It rose at the pace of inflation.",
-    "Subió {n}: {n} puntos menos que el IPC de alimentos ({n}). Subió al ritmo de la inflación.":
-        "It rose {}: {} points less than the food CPI ({}). It rose at the pace of inflation.",
-    "Subió {n}: {n} punto más que el IPC de alimentos ({n}). Subió al ritmo de la inflación.":
-        "It rose {}: {} point more than the food CPI ({}). It rose at the pace of inflation.",
-    "Subió {n}: {n} punto menos que el IPC de alimentos ({n}). Subió al ritmo de la inflación.":
-        "It rose {}: {} point less than the food CPI ({}). It rose at the pace of inflation.",
+    "Subió {n}: {n} puntos más que el IPC de alimentos ({n}). Subió más que la inflación.": "It rose {}: {} points more than the food CPI ({}). It rose more than inflation.",
+    "Subió {n}: {n} puntos menos que el IPC de alimentos ({n}). Subió menos que la inflación.": "It rose {}: {} points less than the food CPI ({}). It rose less than inflation.",
+    "Subió {n}: {n} puntos más que el IPC de alimentos ({n}). Subió al ritmo de la inflación.": "It rose {}: {} points more than the food CPI ({}). It rose at the pace of inflation.",
+    "Subió {n}: {n} puntos menos que el IPC de alimentos ({n}). Subió al ritmo de la inflación.": "It rose {}: {} points less than the food CPI ({}). It rose at the pace of inflation.",
+    "Subió {n}: {n} punto más que el IPC de alimentos ({n}). Subió al ritmo de la inflación.": "It rose {}: {} point more than the food CPI ({}). It rose at the pace of inflation.",
+    "Subió {n}: {n} punto menos que el IPC de alimentos ({n}). Subió al ritmo de la inflación.": "It rose {}: {} point less than the food CPI ({}). It rose at the pace of inflation.",
     "{n} frente a {n} del IPC: hoy sube más rápido que la canasta.": "{} against {} for the CPI: today it rises faster than the basket.",
     "{n} frente a {n} del IPC: hoy sube más lento que la canasta.": "{} against {} for the CPI: today it rises more slowly than the basket.",
     "{n}, igual que el IPC.": "{}, the same as the CPI.",
@@ -151,12 +124,9 @@ PAGES = {
     "Descontado el IPC, vale {n} frente a {m}.": "Net of the CPI, it is worth {} against {}.",
     "Base del cálculo": "Basis of the calculation",
     "Lectura de los datos": "Reading the data",
-    "{n} series de consumidor con precio en {m} y en {m}; cada mes, la mediana de sus índices.":
-        "{} consumer series with a price in {} and in {}; each month, the median of their indices.",
-
+    "{n} series de consumidor con precio en {m} y en {m}; cada mes, la mediana de sus índices.": "{} consumer series with a price in {} and in {}; each month, the median of their indices.",
     # Pipeline and lineage (bi/architecture.py, bi/lineage.py and its page)
-    "El recorrido de los datos, de ODEPA y el INE al panel, y el linaje de dbt con el estado de sus pruebas.":
-        "The journey of the data, from ODEPA and the INE to the panel, and the dbt lineage with the status of its tests.",
+    "El recorrido de los datos, de ODEPA y el INE al panel, y el linaje de dbt con el estado de sus pruebas.": "The journey of the data, from ODEPA and the INE to the panel, and the dbt lineage with the status of its tests.",
     "Recorrido completo por capas": "Full journey by layers",
     "Linaje dbt": "dbt lineage",
     "Recorrido de los datos de ODEPA al panel": "Journey of the data from ODEPA to the panel",
@@ -167,16 +137,11 @@ PAGES = {
     "{n} filas": "{} rows",
     "{n} de {n} pruebas dbt superadas en el último build": "{} of {} dbt tests passed in the last build",
     "ALMACENAMIENTO Y TRANSFORMACIÓN": "STORAGE AND TRANSFORMATION",
-    "Base SQLite local de aterrizaje: conserva los CSV de ODEPA tal como llegan y su hash. No se sube al repositorio.":
-        "Local SQLite landing database: keeps the ODEPA CSV files as they arrive and their hash. It is not committed to the repository.",
-    "Capa bronce: copia exacta en Parquet, todas las columnas como texto, por fuente y año (ODEPA) y por archivo (INE). etl/bronze.py con pyarrow.":
-        "Bronze layer: exact copy in Parquet, every column as text, by source and year (ODEPA) and by file (INE). etl/bronze.py with pyarrow.",
-    "Capa oro: el data warehouse DuckDB que leen el panel, el informe y las consultas. Se reemplaza solo si todos los modelos y pruebas pasaron.":
-        "Gold layer: the DuckDB data warehouse that the panel, the report and the queries read. It is replaced only if every model and test passed.",
-    "Claves que no están en el código: el token de GitHub y la clave del botón «Ejecutar ahora».":
-        "Keys that are not in the code: the GitHub token and the code of the «Run now» button.",
-    "Copia bronce a Parquet, corre dbt build (modelos y pruebas) en una base de trabajo y solo si todo pasa reemplaza datos.duckdb.":
-        "Copies bronze to Parquet, runs dbt build (models and tests) in a working database and replaces datos.duckdb only if everything passes.",
+    "Base SQLite local de aterrizaje: conserva los CSV de ODEPA tal como llegan y su hash. No se sube al repositorio.": "Local SQLite landing database: keeps the ODEPA CSV files as they arrive and their hash. It is not committed to the repository.",
+    "Capa bronce: copia exacta en Parquet, todas las columnas como texto, por fuente y año (ODEPA) y por archivo (INE). etl/bronze.py con pyarrow.": "Bronze layer: exact copy in Parquet, every column as text, by source and year (ODEPA) and by file (INE). etl/bronze.py with pyarrow.",
+    "Capa oro: el data warehouse DuckDB que leen el panel, el informe y las consultas. Se reemplaza solo si todos los modelos y pruebas pasaron.": "Gold layer: the DuckDB data warehouse that the panel, the report and the queries read. It is replaced only if every model and test passed.",
+    "Claves que no están en el código: el token de GitHub y la clave del botón «Ejecutar ahora».": "Keys that are not in the code: the GitHub token and the code of the «Run now» button.",
+    "Copia bronce a Parquet, corre dbt build (modelos y pruebas) en una base de trabajo y solo si todo pasa reemplaza datos.duckdb.": "Copies bronze to Parquet, runs dbt build (models and tests) in a working database and replaces datos.duckdb only if everything passes.",
     "Correo de GitHub": "GitHub email",
     "DuckDB · linaje y pruebas": "DuckDB · lineage and tests",
     "DuckDB · una fila por carga": "DuckDB · one row per load",
@@ -188,50 +153,38 @@ PAGES = {
     "GitHub · si el job falla": "GitHub · if the job fails",
     "HTTPS · CSV · sin API": "HTTPS · CSV · no API",
     "HTTPS: conexión web cifrada; por ella llegan los archivos CSV.": "HTTPS: encrypted web connection; the CSV files arrive over it.",
-    "IPC (índice de precios al consumidor) del INE (Instituto Nacional de Estadísticas): división «Alimentos y bebidas no alcohólicas», mensual, en dos archivos CSV oficiales. Sirve para expresar los precios en pesos reales (D-155).":
-        "CPI (consumer price index) of the INE (National Statistics Institute): «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division, monthly, in two official CSV files. It is used to express prices in real pesos (D-155).",
+    "IPC (índice de precios al consumidor) del INE (Instituto Nacional de Estadísticas): división «Alimentos y bebidas no alcohólicas», mensual, en dos archivos CSV oficiales. Sirve para expresar los precios en pesos reales (D-155).": "CPI (consumer price index) of the INE (National Statistics Institute): «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division, monthly, in two official CSV files. It is used to express prices in real pesos (D-155).",
     "Issue de GitHub con el estado de la carga y las alertas de la semana.": "GitHub issue with the status of the load and the alerts of the week.",
-    "Las dos fuentes de ODEPA (Oficina de Estudios y Políticas Agrarias): precios mayoristas diarios y precios al consumidor semanales, en archivos CSV.":
-        "The two ODEPA sources (Office of Agricultural Studies and Policies): daily wholesale prices and weekly consumer prices, in CSV files.",
+    "Las dos fuentes de ODEPA (Oficina de Estudios y Políticas Agrarias): precios mayoristas diarios y precios al consumidor semanales, en archivos CSV.": "The two ODEPA sources (Office of Agricultural Studies and Policies): daily wholesale prices and weekly consumer prices, in CSV files.",
     "Logs del agente": "Agent logs",
-    "Los datos viajan de izquierda a derecha. Bronce: el archivo tal como llega. Limpieza y reglas: se corrigen formatos y se aplican las reglas de negocio. Calidad: si algo no cuadra, no se guarda nada. Oro: la base lista para analizar. Arriba, quién da las órdenes; abajo, cómo sabemos qué pasó. El punto de color de cada paso es su estado real. Pasa el mouse sobre cada pieza para ver qué hace. Siglas: ODEPA, Oficina de Estudios y Políticas Agrarias; CSV, archivo de valores separados por comas; ETL, extraer, transformar y cargar; RN, regla de negocio; SQL, lenguaje de consultas; MD, Markdown. · SQL: lenguaje de consultas.":
-        "The data travels from left to right. Bronze: the file as it arrives. Cleaning and rules: formats are fixed and the business rules are applied. Quality: if something does not add up, nothing is saved. Gold: the database ready for analysis. Above, who gives the orders; below, how we know what happened. The colored dot of each step is its real status. Hover over each piece to see what it does. Acronyms: ODEPA, Office of Agricultural Studies and Policies; CSV, comma-separated values file; ETL, extract, transform and load; RN, business rule; SQL, query language; MD, Markdown. · SQL: query language.",
+    "Los datos viajan de izquierda a derecha. Bronce: el archivo tal como llega. Limpieza y reglas: se corrigen formatos y se aplican las reglas de negocio. Calidad: si algo no cuadra, no se guarda nada. Oro: la base lista para analizar. Arriba, quién da las órdenes; abajo, cómo sabemos qué pasó. El punto de color de cada paso es su estado real. Pasa el mouse sobre cada pieza para ver qué hace. Siglas: ODEPA, Oficina de Estudios y Políticas Agrarias; CSV, archivo de valores separados por comas; ETL, extraer, transformar y cargar; RN, regla de negocio; SQL, lenguaje de consultas; MD, Markdown. · SQL: lenguaje de consultas.": "The data travels from left to right. Bronze: the file as it arrives. Cleaning and rules: formats are fixed and the business rules are applied. Quality: if something does not add up, nothing is saved. Gold: the database ready for analysis. Above, who gives the orders; below, how we know what happened. The colored dot of each step is its real status. Hover over each piece to see what it does. Acronyms: ODEPA, Office of Agricultural Studies and Policies; CSV, comma-separated values file; ETL, extract, transform and load; RN, business rule; SQL, query language; MD, Markdown. · SQL: query language.",
     "Mart rejection: cada fila descartada, tal como venía, con su motivo (RN-11).": "Rejection mart: each discarded row, as it came, with its reason (RN-11).",
-    "Marts de dbt: el modelo estrella (dim_product, dim_region, dim_channel, dim_date, weekly_price), rejection y el IPC mensual y semanal. Las pruebas de dbt revisan claves, relaciones y la conciliación: si una falla, no se publica nada.":
-        "dbt marts: the star schema (dim_product, dim_region, dim_channel, dim_date, weekly_price), rejection and the monthly and weekly CPI. The dbt tests check keys, relationships and reconciliation: if one fails, nothing is published.",
+    "Marts de dbt: el modelo estrella (dim_product, dim_region, dim_channel, dim_date, weekly_price), rejection y el IPC mensual y semanal. Las pruebas de dbt revisan claves, relaciones y la conciliación: si una falla, no se publica nada.": "dbt marts: the star schema (dim_product, dim_region, dim_channel, dim_date, weekly_price), rejection and the monthly and weekly CPI. The dbt tests check keys, relationships and reconciliation: if one fails, nothing is published.",
     "Marts y pruebas": "Marts and tests",
-    "Modelos dbt de staging (stg_odepa__wholesale, stg_odepa__consumer, stg_ine__ipc_monthly): convierten tipos y normalizan textos (RN-01, RN-02, RN-13; RN = regla de negocio).":
-        "dbt staging models (stg_odepa__wholesale, stg_odepa__consumer, stg_ine__ipc_monthly): they convert types and normalize text (RN-01, RN-02, RN-13; RN = business rule).",
-    "Modelos dbt intermedios: validan y apartan las filas inválidas (RN-11), llevan los precios a kilo o unidad, los agrupan por semana y marcan los atípicos (RN-03 a RN-12).":
-        "dbt intermediate models: they validate and set aside invalid rows (RN-11), bring prices to kilo or unit, group them by week and flag outliers (RN-03 to RN-12).",
+    "Modelos dbt de staging (stg_odepa__wholesale, stg_odepa__consumer, stg_ine__ipc_monthly): convierten tipos y normalizan textos (RN-01, RN-02, RN-13; RN = regla de negocio).": "dbt staging models (stg_odepa__wholesale, stg_odepa__consumer, stg_ine__ipc_monthly): they convert types and normalize text (RN-01, RN-02, RN-13; RN = business rule).",
+    "Modelos dbt intermedios: validan y apartan las filas inválidas (RN-11), llevan los precios a kilo o unidad, los agrupan por semana y marcan los atípicos (RN-03 a RN-12).": "dbt intermediate models: they validate and set aside invalid rows (RN-11), bring prices to kilo or unit, group them by week and flag outliers (RN-03 to RN-12).",
     "OBSERVABILIDAD — cómo sabemos qué pasó": "OBSERVABILITY — how we know what happened",
     "OBSERVABILIDAD — qué pasó": "OBSERVABILITY — what happened",
     "ODEPA mayorista y consumidor": "ODEPA wholesale and consumer",
     "ORQUESTACIÓN — da las órdenes": "ORCHESTRATION — gives the orders",
     "ORQUESTACIÓN — da las órdenes; no toca los datos": "ORCHESTRATION — gives the orders; does not touch the data",
     "Panel Streamlit": "Streamlit panel",
-    "Precios diarios de los mercados mayoristas, publicados por ODEPA (Oficina de Estudios y Políticas Agrarias) en archivos CSV.":
-        "Daily prices of the wholesale markets, published by ODEPA (Office of Agricultural Studies and Policies) in CSV files.",
+    "Precios diarios de los mercados mayoristas, publicados por ODEPA (Oficina de Estudios y Políticas Agrarias) en archivos CSV.": "Daily prices of the wholesale markets, published by ODEPA (Office of Agricultural Studies and Policies) in CSV files.",
     "Precios semanales al consumidor por región y canal, en archivos CSV de ODEPA.": "Weekly consumer prices by region and channel, in ODEPA CSV files.",
     "Pruebas automáticas": "Automated tests",
-    "Punto de color en cada paso: estado de la última ejecución del pipeline y de la base actual. El movimiento ilustrativo, no actividad en vivo, muestra el recorrido; el estado identifica la ejecución real.":
-        "Colored dot on each step: status of the last pipeline run and of the current database. The illustrative movement, not live activity, shows the journey; the status identifies the real run.",
+    "Punto de color en cada paso: estado de la última ejecución del pipeline y de la base actual. El movimiento ilustrativo, no actividad en vivo, muestra el recorrido; el estado identifica la ejecución real.": "Colored dot on each step: status of the last pipeline run and of the current database. The illustrative movement, not live activity, shows the journey; the status identifies the real run.",
     "Python · por ejecución": "Python · per run",
     "Página del panel con el historial de ejecuciones en vivo.": "Page of the panel with the live run history.",
     "Rechazos {n} filas": "Rejections {} rows",
     "Rechazos": "Rejections",
-    "SQL (lenguaje de consultas estructurado) sobre la capa oro: los indicadores de bi/queries.sql y la página «Consultas SQL», donde cualquiera cruza las tablas en solo lectura y descarga el resultado en CSV, por ejemplo para Excel o Power BI.":
-        "SQL (structured query language) on the gold layer: the indicators of bi/queries.sql and the «SQL queries» page, where anyone joins the tables read-only and downloads the result as CSV, for example for Excel or Power BI.",
+    "SQL (lenguaje de consultas estructurado) sobre la capa oro: los indicadores de bi/queries.sql y la página «Consultas SQL», donde cualquiera cruza las tablas en solo lectura y descarga el resultado en CSV, por ejemplo para Excel o Power BI.": "SQL (structured query language) on the gold layer: the indicators of bi/queries.sql and the «SQL queries» page, where anyone joins the tables read-only and downloads the result as CSV, for example for Excel or Power BI.",
     "Servicio de GitHub que ejecuta el workflow semanal cada martes, sin intervención.": "GitHub service that runs the weekly workflow every Tuesday, without intervention.",
     "Sin datos": "No data",
     "Tabla con una fila por carga. ETL = extraer, transformar y cargar.": "Table with one row per load. ETL = extract, transform and load.",
-    "Tablas dbt_node y dbt_result: el linaje de cada modelo y el resultado de cada prueba de dbt en la última carga.":
-        "dbt_node and dbt_result tables: the lineage of each model and the result of each dbt test in the last load.",
+    "Tablas dbt_node y dbt_result: el linaje de cada modelo y el resultado de cada prueba de dbt en la última carga.": "dbt_node and dbt_result tables: the lineage of each model and the result of each dbt test in the last load.",
     "Un archivo de texto por ejecución con lo que hizo la descarga.": "One text file per run with what the download did.",
-    "agent/agent.py descarga los CSV de ODEPA y etl/ine.py los del IPC del INE, ambos con Python y requests por HTTPS.":
-        "agent/agent.py downloads the ODEPA CSV files and etl/ine.py those of the INE CPI, both with Python and requests over HTTPS.",
-    "agent/agent.py: Python y requests descargan los CSV de ODEPA por HTTPS, reintentan si falla y revisan el encabezado antes de guardar nada.":
-        "agent/agent.py: Python and requests download the ODEPA CSV files over HTTPS, retry if it fails and check the header before saving anything.",
+    "agent/agent.py descarga los CSV de ODEPA y etl/ine.py los del IPC del INE, ambos con Python y requests por HTTPS.": "agent/agent.py downloads the ODEPA CSV files and etl/ine.py those of the INE CPI, both with Python and requests over HTTPS.",
+    "agent/agent.py: Python y requests descargan los CSV de ODEPA por HTTPS, reintentan si falla y revisan el encabezado antes de guardar nada.": "agent/agent.py: Python and requests download the ODEPA CSV files over HTTPS, retry if it fails and check the header before saving anything.",
     "alertas y estado": "alerts and status",
     "años {n} a {n}": "years {} to {}",
     "cada martes · próxima {}": "every Tuesday · next {}",
@@ -243,14 +196,12 @@ PAGES = {
     "dbt · tipos y textos": "dbt · types and text",
     "esta página": "this page",
     "estrella · IPC · pruebas": "star · CPI · tests",
-    "etl/ine.py: Python y requests descargan los dos CSV del IPC y los guardan en bronce como texto. Si el INE no responde, la carga sigue con el IPC ya publicado.":
-        "etl/ine.py: Python and requests download the two CPI CSV files and store them in bronze as text. If the INE does not respond, the load goes on with the CPI already published.",
+    "etl/ine.py: Python y requests descargan los dos CSV del IPC y los guardan en bronce como texto. Si el INE no responde, la carga sigue con el IPC ya publicado.": "etl/ine.py: Python and requests download the two CPI CSV files and store them in bronze as text. If the INE does not respond, the load goes on with the CPI already published.",
     "hash por archivo": "hash per file",
     "inválidas": "invalid",
     "leídas": "read",
     "pruebas": "tests",
-    "pytest corre contra la base nueva, con la paridad SQLite y DuckDB: si una prueba falla, no se guarda nada.":
-        "pytest runs against the new database, with the SQLite and DuckDB parity: if a test fails, nothing is saved.",
+    "pytest corre contra la base nueva, con la paridad SQLite y DuckDB: si una prueba falla, no se guarda nada.": "pytest runs against the new database, with the SQLite and DuckDB parity: if a test fails, nothing is saved.",
     "pytest · bloquea el guardado": "pytest · blocks the save",
     "pytest · si fallan, no se guarda": "pytest · if they fail, nothing is saved",
     "página Consultas SQL": "SQL queries page",
@@ -260,19 +211,16 @@ PAGES = {
     "zona de aterrizaje · solo ODEPA": "landing zone · ODEPA only",
     "· Marts → datos.duckdb": "· Marts → datos.duckdb",
     "· Transformación dbt": "· dbt transformation",
-
     # The dbt lineage: the views of the switch and the description of each model (dbt/models/*.yml)
     "Recorrido por capas": "Journey by layers",
     "Linaje dbt: de bronce a marts": "dbt lineage: from bronze to marts",
     "Dentro del tramo dbt: modelo por modelo": "Inside the dbt stretch: model by model",
     "DuckDB · servida al panel": "DuckDB · served to the panel",
     "Fuera de la selección": "Outside the selection",
-    "Pasa el mouse por un modelo para seguir únicamente sus entradas y salidas. Haz clic para fijar el recorrido.":
-        "Hover over a model to follow only its inputs and outputs. Click to pin the path.",
+    "Pasa el mouse por un modelo para seguir únicamente sus entradas y salidas. Haz clic para fijar el recorrido.": "Hover over a model to follow only its inputs and outputs. Click to pin the path.",
     "Pruebas de dbt que leen {}: {n} de {n} superadas en la última construcción.": "dbt tests that read {}: {} of {} passed in the last build.",
     "Pruebas superadas": "Tests passed",
-    "Se dibuja con el manifiesto de la última construcción de dbt, que el pipeline guarda en la base: si se agrega un modelo o una prueba, aparece aquí en la carga siguiente.":
-        "It is drawn from the manifest of the last dbt build, which the pipeline stores in the database: if a model or a test is added, it appears here in the next load.",
+    "Se dibuja con el manifiesto de la última construcción de dbt, que el pipeline guarda en la base: si se agrega un modelo o una prueba, aparece aquí en la carga siguiente.": "It is drawn from the manifest of the last dbt build, which the pipeline stores in the database: if a model or a test is added, it appears here in the next load.",
     "dbt · {n} modelos y pruebas": "dbt · {} models and tests",
     "{n}/{n} pruebas": "{}/{} tests",
     "· staging → intermedio → marts · {n} modelos · {n}/{n} pruebas": "· staging → intermediate → marts · {} models · {}/{} tests",
@@ -285,61 +233,39 @@ PAGES = {
     "Lee: {}": "Reads: {}",
     "los CSV del IPC que descarga etl/ine.py": "the CPI CSV files that etl/ine.py downloads",
     "raw.db, con los CSV de ODEPA que descarga agent/agent.py": "raw.db, with the ODEPA CSV files that agent/agent.py downloads",
-    "Dimensión de canales de venta; el mayorista es un canal más, así el margen compara dos canales.":
-        "Dimension of sales channels; wholesale is one more channel, so the margin compares two channels.",
-    "Dimensión de fechas: una fila por semana, sin huecos, con su año y semana ISO, mes y estación (D-095).":
-        "Date dimension: one row per week, with no gaps, with its ISO year and week, month and season (D-095).",
-    "Dimensión de productos: una clave por grupo, producto, variedad y calidad con precios.":
-        "Product dimension: one key per group, product, variety and quality with prices.",
-    "Dimensión de regiones con datos válidos, con su número oficial de 1 a 16.":
-        "Dimension of regions with valid data, with their official number from 1 to 16.",
-    "IPC del INE, división «Alimentos y bebidas no alcohólicas», tal como se publica: la serie base 2023 = 100 (desde enero 2024) y la serie empalmada de divisiones (diciembre 2009 a diciembre 2023), etl/ine.py.":
-        "INE CPI, «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division, as published: the base 2023 = 100 series (since January 2024) and the spliced series of divisions (December 2009 to December 2023), etl/ine.py.",
-    "Las filas del IPC tal como se leyeron del INE, guardadas en la base publicada para rehacer la capa bronce si el INE no responde una semana.":
-        "The CPI rows as they were read from the INE, kept in the published database to rebuild the bronze layer if the INE does not respond one week.",
-    "Marca ATIPICO el precio que está a más de 5 veces, o a menos de un quinto, de la mediana de su producto esa semana en la misma fuente (RN-12); no entra a los indicadores.":
-        "Flags as ATIPICO (outlier) the price that is more than 5 times, or less than a fifth of, the median of its product that week in the same source (RN-12); it does not enter the indicators.",
-    "Lee la unidad de venta de cada fila válida y lleva su precio a kilo, unidad o litro (RN-03 a RN-05); una unidad sin una sola cantidad declarada queda sin precio comparable.":
-        "Reads the unit of sale of each valid row and brings its price to kilo, unit or liter (RN-03 to RN-05); a unit without a single declared quantity is left without a comparable price.",
-    "Une los precios mayoristas y al consumidor y da a cada fila su motivo de rechazo, o ninguno si es válida (RN-11): cada fila leída queda cargada o rechazada una sola vez.":
-        "Joins the wholesale and consumer prices and gives each row its rejection reason, or none if it is valid (RN-11): each row read ends up loaded or rejected exactly once.",
-    "Un precio por semana (lunes, RN-08), producto, región, canal y unidad: promedio ponderado por volumen en mayorista (RN-07) y promedio simple al consumidor (RN-09).":
-        "One price per week (Monday, RN-08), product, region, channel and unit: volume-weighted average for wholesale (RN-07) and simple average for consumer prices (RN-09).",
-    "IPC de alimentos del INE, una sola serie mensual en base 2023 = 100: la serie empalmada anterior a 2024 se enlaza por la variación oficial de enero 2024 (D-155).":
-        "INE food CPI, a single monthly series in base 2023 = 100: the spliced series before 2024 is linked through the official change of January 2024 (D-155).",
-    "El deflactor de cada semana: el IPC del mes de su lunes frente al último mes publicado, para expresar los precios en pesos reales (D-155).":
-        "The deflator of each week: the CPI of the month of its Monday against the last published month, to express prices in real pesos (D-155).",
-    "Precios al consumidor semanales de ODEPA por canal y región, copiados de raw.db a Parquet como texto, un archivo por año.":
-        "ODEPA weekly consumer prices by channel and region, copied from raw.db to Parquet as text, one file per year.",
-    "Precios mayoristas diarios de ODEPA por mercado, copiados de raw.db a Parquet como texto, un archivo por año.":
-        "ODEPA daily wholesale prices by market, copied from raw.db to Parquet as text, one file per year.",
+    "Dimensión de canales de venta; el mayorista es un canal más, así el margen compara dos canales.": "Dimension of sales channels; wholesale is one more channel, so the margin compares two channels.",
+    "Dimensión de fechas: una fila por semana, sin huecos, con su año y semana ISO, mes y estación (D-095).": "Date dimension: one row per week, with no gaps, with its ISO year and week, month and season (D-095).",
+    "Dimensión de productos: una clave por grupo, producto, variedad y calidad con precios.": "Product dimension: one key per group, product, variety and quality with prices.",
+    "Dimensión de regiones con datos válidos, con su número oficial de 1 a 16.": "Dimension of regions with valid data, with their official number from 1 to 16.",
+    "IPC del INE, división «Alimentos y bebidas no alcohólicas», tal como se publica: la serie base 2023 = 100 (desde enero 2024) y la serie empalmada de divisiones (diciembre 2009 a diciembre 2023), etl/ine.py.": "INE CPI, «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division, as published: the base 2023 = 100 series (since January 2024) and the spliced series of divisions (December 2009 to December 2023), etl/ine.py.",
+    "Las filas del IPC tal como se leyeron del INE, guardadas en la base publicada para rehacer la capa bronce si el INE no responde una semana.": "The CPI rows as they were read from the INE, kept in the published database to rebuild the bronze layer if the INE does not respond one week.",
+    "Marca ATIPICO el precio que está a más de 5 veces, o a menos de un quinto, de la mediana de su producto esa semana en la misma fuente (RN-12); no entra a los indicadores.": "Flags as ATIPICO (outlier) the price that is more than 5 times, or less than a fifth of, the median of its product that week in the same source (RN-12); it does not enter the indicators.",
+    "Lee la unidad de venta de cada fila válida y lleva su precio a kilo, unidad o litro (RN-03 a RN-05); una unidad sin una sola cantidad declarada queda sin precio comparable.": "Reads the unit of sale of each valid row and brings its price to kilo, unit or liter (RN-03 to RN-05); a unit without a single declared quantity is left without a comparable price.",
+    "Une los precios mayoristas y al consumidor y da a cada fila su motivo de rechazo, o ninguno si es válida (RN-11): cada fila leída queda cargada o rechazada una sola vez.": "Joins the wholesale and consumer prices and gives each row its rejection reason, or none if it is valid (RN-11): each row read ends up loaded or rejected exactly once.",
+    "Un precio por semana (lunes, RN-08), producto, región, canal y unidad: promedio ponderado por volumen en mayorista (RN-07) y promedio simple al consumidor (RN-09).": "One price per week (Monday, RN-08), product, region, channel and unit: volume-weighted average for wholesale (RN-07) and simple average for consumer prices (RN-09).",
+    "IPC de alimentos del INE, una sola serie mensual en base 2023 = 100: la serie empalmada anterior a 2024 se enlaza por la variación oficial de enero 2024 (D-155).": "INE food CPI, a single monthly series in base 2023 = 100: the spliced series before 2024 is linked through the official change of January 2024 (D-155).",
+    "El deflactor de cada semana: el IPC del mes de su lunes frente al último mes publicado, para expresar los precios en pesos reales (D-155).": "The deflator of each week: the CPI of the month of its Monday against the last published month, to express prices in real pesos (D-155).",
+    "Precios al consumidor semanales de ODEPA por canal y región, copiados de raw.db a Parquet como texto, un archivo por año.": "ODEPA weekly consumer prices by channel and region, copied from raw.db to Parquet as text, one file per year.",
+    "Precios mayoristas diarios de ODEPA por mercado, copiados de raw.db a Parquet como texto, un archivo por año.": "ODEPA daily wholesale prices by market, copied from raw.db to Parquet as text, one file per year.",
     "Las filas rechazadas de la última carga, tal como venían, con su motivo (RN-11).": "The rejected rows of the last load, as they came, with their reason (RN-11).",
-    "IPC mensual de alimentos del INE con tipos: año, mes, índice y variación mensual de cada archivo publicado, junto a los valores tal como se leyeron.":
-        "INE monthly food CPI with types: year, month, index and monthly change of each published file, next to the values as they were read.",
-    "Precios al consumidor semanales de ODEPA con tipos y textos normalizados; separa «Producto|Variedad|Calidad» en tres columnas (RN-02) y guarda la fila original.":
-        "ODEPA weekly consumer prices with normalized types and text; splits «Producto|Variedad|Calidad» into three columns (RN-02) and keeps the original row.",
-    "Precios mayoristas diarios de ODEPA con tipos y textos normalizados (RN-01, RN-13), en las columnas comunes a las dos fuentes; guarda la fila original para un posible rechazo (RN-11).":
-        "ODEPA daily wholesale prices with normalized types and text (RN-01, RN-13), in the columns common to both sources; keeps the original row for a possible rejection (RN-11).",
-    "Hechos del modelo estrella: un precio por semana (lunes, RN-08), producto, región, canal y unidad, con su volumen, sus observaciones y su marca.":
-        "Facts of the star schema: one price per week (Monday, RN-08), product, region, channel and unit, with its volume, its observations and its flag.",
-
+    "IPC mensual de alimentos del INE con tipos: año, mes, índice y variación mensual de cada archivo publicado, junto a los valores tal como se leyeron.": "INE monthly food CPI with types: year, month, index and monthly change of each published file, next to the values as they were read.",
+    "Precios al consumidor semanales de ODEPA con tipos y textos normalizados; separa «Producto|Variedad|Calidad» en tres columnas (RN-02) y guarda la fila original.": "ODEPA weekly consumer prices with normalized types and text; splits «Producto|Variedad|Calidad» into three columns (RN-02) and keeps the original row.",
+    "Precios mayoristas diarios de ODEPA con tipos y textos normalizados (RN-01, RN-13), en las columnas comunes a las dos fuentes; guarda la fila original para un posible rechazo (RN-11).": "ODEPA daily wholesale prices with normalized types and text (RN-01, RN-13), in the columns common to both sources; keeps the original row for a possible rejection (RN-11).",
+    "Hechos del modelo estrella: un precio por semana (lunes, RN-08), producto, región, canal y unidad, con su volumen, sus observaciones y su marca.": "Facts of the star schema: one price per week (Monday, RN-08), product, region, channel and unit, with its volume, its observations and its flag.",
     # Data model: the star, the entity-relationship model, where the data lives and the crossings between databases
-    "Cómo se organizan los datos: las tablas y sus claves, dónde viven y cómo se cruzan las bases.":
-        "How the data is organized: the tables and their keys, where they live and how the databases cross.",
+    "Cómo se organizan los datos: las tablas y sus claves, dónde viven y cómo se cruzan las bases.": "How the data is organized: the tables and their keys, where they live and how the databases cross.",
     "Vista del modelo": "Model view",
     "Modelo estrella": "Star schema",
     "Entidad-relación": "Entity-relationship",
     "Dónde viven los datos": "Where the data lives",
     "Cruces entre bases": "Crossings between databases",
-    "1 fila de weekly_price = un producto (variedad y calidad) × región × canal × unidad × semana. Pasa el mouse por una tabla para ver para qué sirve.":
-        "1 row of weekly_price = a product (variety and quality) × region × channel × unit × week. Hover over a table to see what it is for.",
+    "1 fila de weekly_price = un producto (variedad y calidad) × región × canal × unidad × semana. Pasa el mouse por una tabla para ver para qué sirve.": "1 row of weekly_price = a product (variety and quality) × region × channel × unit × week. Hover over a table to see what it is for.",
     "{n} filas · base 2023 = 100": "{} rows · base 2023 = 100",
     "{n} filas · tal como las publica": "{} rows · as it publishes them",
     "{n} filas · week_start → dim_date": "{} rows · week_start → dim_date",
     "AUDITORÍA DE CARGAS": "LOAD AUDIT",
     "Auditoría": "Audit",
-    "Auditoría: {n} cargas registradas en etl_run y {n} filas rechazadas en rejection":
-        "Audit: {} loads recorded in etl_run and {} rows rejected in rejection",
+    "Auditoría: {n} cargas registradas en etl_run y {n} filas rechazadas en rejection": "Audit: {} loads recorded in etl_run and {} rows rejected in rejection",
     "IPC DE ALIMENTOS (INE)": "FOOD CPI (INE)",
     "Modelo estrella de datos.duckdb": "Star schema of datos.duckdb",
     "cargas ·": "loads ·",
@@ -351,21 +277,16 @@ PAGES = {
     "{} · hechos · {n} filas": "{} · facts · {} rows",
     "{} · auditoría · {n} filas": "{} · audit · {} rows",
     "{} · IPC · {n} filas": "{} · CPI · {} rows",
-    "Los canales; el mayorista es un canal más, así el margen compara dos canales de la misma tabla.":
-        "The channels; wholesale is one more channel, so the margin compares two channels of the same table.",
-    "Una fila por semana, sin huecos, con su año y semana ISO, mes y estación (D-095).":
-        "One row per week, with no gaps, with its ISO year and week, month and season (D-095).",
+    "Los canales; el mayorista es un canal más, así el margen compara dos canales de la misma tabla.": "The channels; wholesale is one more channel, so the margin compares two channels of the same table.",
+    "Una fila por semana, sin huecos, con su año y semana ISO, mes y estación (D-095).": "One row per week, with no gaps, with its ISO year and week, month and season (D-095).",
     "Cada clave de producto: grupo, producto, variedad y calidad.": "Each product key: group, product, variety and quality.",
     "Las regiones con datos, con su número oficial.": "The regions with data, with their official number.",
     "Una línea por ejecución del ETL, con filas leídas, cargadas y rechazadas.": "One line per run of the ETL, with rows read, loaded and rejected.",
-    "Las filas del IPC tal como se leyeron del INE, para rehacer la capa bronce si el INE no responde":
-        "The CPI rows as they were read from the INE, to rebuild the bronze layer if the INE does not respond",
+    "Las filas del IPC tal como se leyeron del INE, para rehacer la capa bronce si el INE no responde": "The CPI rows as they were read from the INE, to rebuild the bronze layer if the INE does not respond",
     "El IPC de alimentos del INE como una sola serie mensual, base 2023 = 100": "The INE food CPI as a single monthly series, base 2023 = 100",
-    "El deflactor de cada semana: el IPC del mes de su lunes frente al último mes publicado, para expresar los precios en pesos reales":
-        "The deflator of each week: the CPI of the month of its Monday against the last published month, to express prices in real pesos",
+    "El deflactor de cada semana: el IPC del mes de su lunes frente al último mes publicado, para expresar los precios en pesos reales": "The deflator of each week: the CPI of the month of its Monday against the last published month, to express prices in real pesos",
     "Las filas rechazadas de la última ejecución, tal como venían, con su motivo.": "The rejected rows of the last run, as they came, with their reason.",
-    "Un precio por semana, producto, región, canal y unidad. Es la tabla de hechos que leen todos los indicadores.":
-        "One price per week, product, region, channel and unit. It is the fact table that every indicator reads.",
+    "Un precio por semana, producto, región, canal y unidad. Es la tabla de hechos que leen todos los indicadores.": "One price per week, product, region, channel and unit. It is the fact table that every indicator reads.",
     "filas": "rows",
     "hechos · {n} filas": "facts · {} rows",
     "{}, la tabla de hechos: {n} filas": "{}, the fact table: {} rows",
@@ -373,15 +294,11 @@ PAGES = {
     "{} en GitHub ↗": "{} on GitHub ↗",
     "Ver en GitHub ↗": "See on GitHub ↗",
     "Ver la consulta en GitHub ↗": "See the query on GitHub ↗",
-    "El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las relaciones entre ellas. Los tipos se leen de la base.":
-        "The model in the classic notation: each table with its columns and types, its keys and the relationships between them. The types are read from the database.",
-    "Fuera del diagrama: ine_ipc_source (copia cruda del INE), dbt_node y dbt_result (la traza de dbt).":
-        "Outside the diagram: ine_ipc_source (raw copy of the INE), dbt_node and dbt_result (the dbt trace).",
+    "El modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las relaciones entre ellas. Los tipos se leen de la base.": "The model in the classic notation: each table with its columns and types, its keys and the relationships between them. The types are read from the database.",
+    "Fuera del diagrama: ine_ipc_source (copia cruda del INE), dbt_node y dbt_result (la traza de dbt).": "Outside the diagram: ine_ipc_source (raw copy of the INE), dbt_node and dbt_result (the dbt trace).",
     "Modelo entidad-relación de datos.duckdb": "Entity-relationship model of datos.duckdb",
-    "PK clave primaria · FK clave foránea · pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · línea punteada: relación lógica, sin clave foránea":
-        "PK primary key · FK foreign key · crow's foot: many rows · double bar: one · circle: there may be none · dotted line: logical relationship, without a foreign key",
-    "ipc_weekly toma el IPC del mes de su lunes (ipc_year, ipc_month) de ipc_monthly (year, month)":
-        "ipc_weekly takes the CPI of the month of its Monday (ipc_year, ipc_month) from ipc_monthly (year, month)",
+    "PK clave primaria · FK clave foránea · pata de gallo: muchas filas · doble barra: una · círculo: puede no haber · línea punteada: relación lógica, sin clave foránea": "PK primary key · FK foreign key · crow's foot: many rows · double bar: one · circle: there may be none · dotted line: logical relationship, without a foreign key",
+    "ipc_weekly toma el IPC del mes de su lunes (ipc_year, ipc_month) de ipc_monthly (year, month)": "ipc_weekly takes the CPI of the month of its Monday (ipc_year, ipc_month) from ipc_monthly (year, month)",
     "{} · cada semana tiene a lo más un deflactor": "{} · each week has at most one deflator",
     "{} · cada fila rechazada pertenece a una carga": "{} · each rejected row belongs to a load",
     "{} · cada precio es de un canal": "{} · each price belongs to a channel",
@@ -390,44 +307,29 @@ PAGES = {
     "{} · cada precio es de una semana": "{} · each price belongs to a week",
     "Base de datos": "Database",
     "CSV por año": "CSV per year",
-    "El panel público, en Streamlit Community Cloud. Lee etl/datos.duckdb en solo lectura; no escribe ninguna base.":
-        "The public panel, on Streamlit Community Cloud. It reads etl/datos.duckdb read-only; it writes no database.",
+    "El panel público, en Streamlit Community Cloud. Lee etl/datos.duckdb en solo lectura; no escribe ninguna base.": "The public panel, on Streamlit Community Cloud. It reads etl/datos.duckdb read-only; it writes no database.",
     "El índice de precios de alimentos, un valor por mes.": "The food price index, one value per month.",
-    "Es la fuente oficial. El agente los descarga y anota su huella SHA-256 en manifest.json.":
-        "It is the official source. The agent downloads them and notes their SHA-256 fingerprint in manifest.json.",
-    "Es un solo archivo, rápido para consultas analíticas y de solo lectura para el panel.":
-        "It is a single file, fast for analytical queries and read-only for the panel.",
-    "Es una segunda opinión independiente: si dbt y el ETL no coinciden, algo está mal. El panel no lo lee y no se publica: se rehace en la máquina de cada carga para la prueba de paridad (D-270).":
-        "It is an independent second opinion: if dbt and the ETL do not match, something is wrong. The panel does not read it and it is not published: it is rebuilt on the machine of each load for the parity test (D-270).",
-    "Git guardaría cada versión para siempre; así el historial no crece y el panel toma del release la base de la última carga, tras comprobar su huella (D-270).":
-        "Git would keep every version forever; this way the history does not grow and the panel takes the database of the last load from the release, after checking its fingerprint (D-270).",
+    "Es la fuente oficial. El agente los descarga y anota su huella SHA-256 en manifest.json.": "It is the official source. The agent downloads them and notes their SHA-256 fingerprint in manifest.json.",
+    "Es un solo archivo, rápido para consultas analíticas y de solo lectura para el panel.": "It is a single file, fast for analytical queries and read-only for the panel.",
+    "Es una segunda opinión independiente: si dbt y el ETL no coinciden, algo está mal. El panel no lo lee y no se publica: se rehace en la máquina de cada carga para la prueba de paridad (D-270).": "It is an independent second opinion: if dbt and the ETL do not match, something is wrong. The panel does not read it and it is not published: it is rebuilt on the machine of each load for the parity test (D-270).",
+    "Git guardaría cada versión para siempre; así el historial no crece y el panel toma del release la base de la última carga, tras comprobar su huella (D-270).": "Git would keep every version forever; this way the history does not grow and the panel takes the database of the last load from the release, after checking its fingerprint (D-270).",
     "La base que el panel lee: {n} tablas, agrupadas por quién las escribe.": "The database the panel reads: {} tables, grouped by who writes them.",
-    "Las filas de los CSV exactamente como se publican, sin limpiar. Es un archivo de unos {n} MB.":
-        "The rows of the CSV files exactly as published, uncleaned. It is a file of about {} MB.",
+    "Las filas de los CSV exactamente como se publican, sin limpiar. Es un archivo de unos {n} MB.": "The rows of the CSV files exactly as published, uncleaned. It is a file of about {} MB.",
     "Las mismas filas, más el IPC del INE, en archivos Parquet: uno por fuente y año.": "The same rows, plus the INE CPI, in Parquet files: one per source and year.",
-    "Lo que la carga publica: la base servida, en el release «base-actual», con una sola copia que cada carga reemplaza; en la rama main, su puntero y el registro de las descargas (D-270).":
-        "What the load publishes: the served database, in the «base-actual» release, with a single copy that each load replaces; on the main branch, its pointer and the download log (D-270).",
-    "Los mismos precios semanales, calculados otra vez por el ETL en Python (etl/etl.py), sin dbt.":
-        "The same weekly prices, computed again by the Python ETL (etl/etl.py), without dbt.",
-    "Los precios que ODEPA publica cada semana, por región y canal: consumidor y mayorista (solo frutas y hortalizas), en archivos CSV por año.":
-        "The prices ODEPA publishes every week, by region and channel: consumer and wholesale (fruit and vegetables only), in CSV files per year.",
-    "Parquet guarda los datos por columnas y comprimidos, y casi cualquier herramienta de datos lo lee. dbt parte de aquí.":
-        "Parquet stores the data by columns and compressed, and almost any data tool reads it. dbt starts from here.",
+    "Lo que la carga publica: la base servida, en el release «base-actual», con una sola copia que cada carga reemplaza; en la rama main, su puntero y el registro de las descargas (D-270).": "What the load publishes: the served database, in the «base-actual» release, with a single copy that each load replaces; on the main branch, its pointer and the download log (D-270).",
+    "Los mismos precios semanales, calculados otra vez por el ETL en Python (etl/etl.py), sin dbt.": "The same weekly prices, computed again by the Python ETL (etl/etl.py), without dbt.",
+    "Los precios que ODEPA publica cada semana, por región y canal: consumidor y mayorista (solo frutas y hortalizas), en archivos CSV por año.": "The prices ODEPA publishes every week, by region and channel: consumer and wholesale (fruit and vegetables only), in CSV files per year.",
+    "Parquet guarda los datos por columnas y comprimidos, y casi cualquier herramienta de datos lo lee. dbt parte de aquí.": "Parquet stores the data by columns and compressed, and almost any data tool reads it. dbt starts from here.",
     "Pasa el cursor por cada caja: qué guarda, por qué y qué archivo la produce.": "Hover over each box: what it keeps, why and which file produces it.",
-    "Pasa los precios a pesos reales. No pasa por SQLite: son CSV pequeños que se escriben directo en Parquet; si el INE no responde, se rehace desde ine_ipc_source.":
-        "It turns prices into real pesos. It does not go through SQLite: they are small CSV files written straight to Parquet; if the INE does not respond, it is rebuilt from ine_ipc_source.",
+    "Pasa los precios a pesos reales. No pasa por SQLite: son CSV pequeños que se escriben directo en Parquet; si el INE no responde, se rehace desde ine_ipc_source.": "It turns prices into real pesos. It does not go through SQLite: they are small CSV files written straight to Parquet; if the INE does not respond, it is rebuilt from ine_ipc_source.",
     "Por qué": "Why",
     "Qué guarda": "What it keeps",
     "Registro de cargas": "Load log",
-    "Se construye y se prueba aparte. Si una prueba falla, la base publicada no se toca. No se sube a GitHub.":
-        "It is built and tested separately. If a test fails, the published database is not touched. It is not committed to GitHub.",
-    "Se despliega solo desde la rama main: un cambio publicado en GitHub llega al panel sin servidores que mantener.":
-        "It deploys by itself from the main branch: a change published on GitHub reaches the panel with no servers to maintain.",
+    "Se construye y se prueba aparte. Si una prueba falla, la base publicada no se toca. No se sube a GitHub.": "It is built and tested separately. If a test fails, the published database is not touched. It is not committed to GitHub.",
+    "Se despliega solo desde la rama main: un cambio publicado en GitHub llega al panel sin servidores que mantener.": "It deploys by itself from the main branch: a change published on GitHub reaches the panel with no servers to maintain.",
     "Trazas de dbt": "dbt traces",
-    "Una base de trabajo con {n} modelos en tres capas (staging {n}, intermedio {n} y marts {n}) y {n} pruebas de datos de dbt.":
-        "A working database with {} models in three layers (staging {}, intermediate {} and marts {}) and {} dbt data tests.",
-    "Una copia fiel permite auditar y reconstruir todo desde el origen. No se sube a GitHub por su tamaño.":
-        "A faithful copy makes it possible to audit and rebuild everything from the origin. It is not committed to GitHub because of its size.",
+    "Una base de trabajo con {n} modelos en tres capas (staging {n}, intermedio {n} y marts {n}) y {n} pruebas de datos de dbt.": "A working database with {} models in three layers (staging {}, intermediate {} and marts {}) and {} dbt data tests.",
+    "Una copia fiel permite auditar y reconstruir todo desde el origen. No se sube a GitHub por su tamaño.": "A faithful copy makes it possible to audit and rebuild everything from the origin. It is not committed to GitHub because of its size.",
     "Zona de trabajo": "Working area",
     "comprobación": "check",
     "el resultado de cada carga": "the result of each load",
@@ -442,36 +344,27 @@ PAGES = {
     "Base de trabajo": "Working database",
     "Bronce": "Bronze",
     "Próxima carga": "Next load",
-    "Cada línea es un cruce entre dos bases y lleva lo que las une. El número se colorea con su comprobación de ahora: verde comprobado, ámbar no medible aquí, gris dato.":
-        "Each line is a crossing between two databases and carries what joins them. The number is colored by its check right now: green checked, amber not measurable here, grey a fact.",
-    "Cada línea es un cruce: el punto donde dos bases se tocan, con lo que las une. El número muestra si se comprobó ahora; pasa el cursor por un número para ver el detalle.":
-        "Each line is a crossing: the point where two databases touch, with what joins them. The number shows whether it was checked now; hover over a number to see the detail.",
+    "Cada línea es un cruce entre dos bases y lleva lo que las une. El número se colorea con su comprobación de ahora: verde comprobado, ámbar no medible aquí, gris dato.": "Each line is a crossing between two databases and carries what joins them. The number is colored by its check right now: green checked, amber not measurable here, grey a fact.",
+    "Cada línea es un cruce: el punto donde dos bases se tocan, con lo que las une. El número muestra si se comprobó ahora; pasa el cursor por un número para ver el detalle.": "Each line is a crossing: the point where two databases touch, with what joins them. The number shows whether it was checked now; hover over a number to see the detail.",
     "Comprobación": "Check",
     "Con qué se cruzan": "What they cross on",
     "Cómo pasa": "How it passes",
     "ETL en Python (etl/etl.py)": "Python ETL (etl/etl.py)",
-    "El historial de cargas: la carga nueva lo lee de la base servida y le agrega su fila. En la primera vez lo leyó de datos.db.":
-        "The load history: the new load reads it from the served database and adds its row. The first time it read it from datos.db.",
+    "El historial de cargas: la carga nueva lo lee de la base servida y le agrega su fila. En la primera vez lo leyó de datos.db.": "The load history: the new load reads it from the served database and adds its row. The first time it read it from datos.db.",
     "El mes del índice, que dbt cruza luego con las semanas.": "The month of the index, which dbt then crosses with the weeks.",
     "El nombre del archivo y su huella SHA-256, anotada en manifest.json.": "The name of the file and its SHA-256 fingerprint, noted in manifest.json.",
     "El número de carga (run_id), que también guarda cada fila de rejection.": "The load number (run_id), which each row of rejection also keeps.",
-    "El índice de precios de alimentos, mensual. Por diseño no toca raw.db: no es una fuente de precios de ODEPA.":
-        "The food price index, monthly. By design it does not touch raw.db: it is not an ODEPA price source.",
+    "El índice de precios de alimentos, mensual. Por diseño no toca raw.db: no es una fuente de precios de ODEPA.": "The food price index, monthly. By design it does not touch raw.db: it is not an ODEPA price source.",
     "La fuente y el año del archivo: cada Parquet es una carpeta file_year=AAAA.": "The source and the year of the file: each Parquet is a file_year=YYYY folder.",
     "La semana (week_start): ipc_weekly lleva el IPC de cada mes a cada semana de precios.": "The week (week_start): ipc_weekly brings the CPI of each month to each week of prices.",
-    "Las filas del bronce, ya con tipos, reglas de calidad y marcas. Aquí se cruzan ODEPA y el INE.":
-        "The bronze rows, now with types, quality rules and flags. ODEPA and the INE cross here.",
-    "Las mismas filas crudas, validadas y llevadas a precio semanal por un camino independiente de dbt.":
-        "The same raw rows, validated and brought to a weekly price along a path independent of dbt.",
-    "Las mismas reglas de negocio: por eso su resultado debe dar las mismas cifras que la base servida.":
-        "The same business rules: that is why its result must give the same figures as the served database.",
+    "Las filas del bronce, ya con tipos, reglas de calidad y marcas. Aquí se cruzan ODEPA y el INE.": "The bronze rows, now with types, quality rules and flags. ODEPA and the INE cross here.",
+    "Las mismas filas crudas, validadas y llevadas a precio semanal por un camino independiente de dbt.": "The same raw rows, validated and brought to a weekly price along a path independent of dbt.",
+    "Las mismas reglas de negocio: por eso su resultado debe dar las mismas cifras que la base servida.": "The same business rules: that is why its result must give the same figures as the served database.",
     "Las nueve tablas del modelo, más la traza de dbt y el registro de cargas.": "The nine tables of the model, plus the dbt trace and the load log.",
     "Las tablas del modelo estrella: el respaldo SQLite tiene siete de las doce.": "The tables of the star schema: the SQLite backup has seven of the twelve.",
     "Los CSV públicos, una fila de texto por observación, sin cambiar un valor.": "The public CSV files, one row of text per observation, without changing a value.",
-    "Los mismos nombres de tabla; la base servida se reemplaza entera al final, nunca a medias.":
-        "The same table names; the served database is replaced whole at the end, never halfway.",
-    "Nada se copia: solo se comparan las filas de weekly_price, las filas rechazadas y la suma de los precios.":
-        "Nothing is copied: only the rows of weekly_price, the rejected rows and the sum of the prices are compared.",
+    "Los mismos nombres de tabla; la base servida se reemplaza entera al final, nunca a medias.": "The same table names; the served database is replaced whole at the end, never halfway.",
+    "Nada se copia: solo se comparan las filas de weekly_price, las filas rechazadas y la suma de los precios.": "Nothing is copied: only the rows of weekly_price, the rejected rows and the sum of the prices are compared.",
     "No medible aquí": "Not measurable here",
     "Qué viaja": "What travels",
     "Todas las filas crudas, un Parquet por fuente y año, con las columnas como texto.": "All the raw rows, one Parquet per source and year, with the columns as text.",
@@ -490,12 +383,8 @@ PAGES = {
     "· El IPC se guarda también crudo, como ine_ipc_source.": "· The CPI is also kept raw, as ine_ipc_source.",
     "· no se puede comprobar aquí: raw.db no está en este servidor": "· cannot be checked here: raw.db is not on this server",
     "↻ la próxima carga lo lee": "↻ the next load reads it",
-
     # Quality and audit (bi/quality_live.py, bi/quality_view.py, bi/quality_evidence.py and its page)
-    "La calidad medida en cada carga y los controles que demuestran que lo publicado se puede rastrear y repetir.":
-        "The quality measured on each load and the controls that show that what is published can be traced and repeated.",
-    "Calidad": "Quality",
-    "Auditoría": "Audit",
+    "La calidad medida en cada carga y los controles que demuestran que lo publicado se puede rastrear y repetir.": "The quality measured on each load and the controls that show that what is published can be traced and repeated.",
     "Rechazos y cargas": "Rejections and loads",
     "Pipeline de calidad de datos": "Data quality pipeline",
     "· pulsa cada pieza para ver su detalle": "· click each piece to see its detail",
@@ -509,8 +398,7 @@ PAGES = {
     "{n} de {n}": "{} of {}",
     "{n} semanas · {} → {}.": "{} weeks · {} → {}.",
     "{n} de {n} pruebas · {n} modelos.": "{} of {} tests · {} models.",
-    "{n} precios semanales: las filas válidas, agrupadas por semana, producto, región, canal y unidad":
-        "{} weekly prices: the valid rows, grouped by week, product, region, channel and unit",
+    "{n} precios semanales: las filas válidas, agrupadas por semana, producto, región, canal y unidad": "{} weekly prices: the valid rows, grouped by week, product, region, channel and unit",
     "{n} precios y {n} rechazos en las dos": "{} prices and {} rejections in both",
     "{n} precios · {n} rechazos · misma suma.": "{} prices · {} rejections · same sum.",
     "{n} de {n} huellas coinciden · {n} discrepancia.": "{} of {} fingerprints match · {} discrepancy.",
@@ -523,13 +411,15 @@ PAGES = {
     "Unicidad: {n} de {n} indicadores bien": "Uniqueness: {} of {} indicators fine",
     "Consistencia: {n} de {n} indicadores bien": "Consistency: {} of {} indicators fine",
     "Exactitud: {n} de {n} controles verificados": "Accuracy: {} of {} controls verified",
-    "Completitud": "Completeness", "Actualidad": "Timeliness", "Validez": "Validity", "Unicidad": "Uniqueness",
-    "Consistencia": "Consistency", "Exactitud": "Accuracy",
+    "Completitud": "Completeness",
+    "Actualidad": "Timeliness",
+    "Validez": "Validity",
+    "Unicidad": "Uniqueness",
+    "Consistencia": "Consistency",
+    "Exactitud": "Accuracy",
     "CSV de ODEPA": "ODEPA CSV files",
-    "Cada descarga queda con su fecha y su huella SHA-256. Esto identifica las descargas; no certifica cada precio.":
-        "Each download is kept with its date and its SHA-256 fingerprint. This identifies the downloads; it does not certify each price.",
-    "Cada ejecución de las pruebas reconstruye {n} precios semanales desde las filas crudas de ODEPA, sin el ETL. En la auditoría del {} coincidieron {n} de {n}.":
-        "Each run of the tests rebuilds {} weekly prices from the raw ODEPA rows, without the ETL. In the audit of {}, {} of {} matched.",
+    "Cada descarga queda con su fecha y su huella SHA-256. Esto identifica las descargas; no certifica cada precio.": "Each download is kept with its date and its SHA-256 fingerprint. This identifies the downloads; it does not certify each price.",
+    "Cada ejecución de las pruebas reconstruye {n} precios semanales desde las filas crudas de ODEPA, sin el ETL. En la auditoría del {} coincidieron {n} de {n}.": "Each run of the tests rebuilds {} weekly prices from the raw ODEPA rows, without the ETL. In the audit of {}, {} of {} matched.",
     "Cada fila": "Each row",
     "Cada uno se mide en cada carga y se juzga contra el umbral que lleva debajo.": "Each one is measured on each load and judged against the threshold written below it.",
     "Carga": "Load",
@@ -543,29 +433,23 @@ PAGES = {
     "Datos sanos": "Healthy data",
     "Datos sanos: ver los {n} indicadores": "Healthy data: see the {} indicators",
     "Dentro del umbral": "Within the threshold",
-    "DuckDB leída completa: referencias entre tablas, claves duplicadas y precios utilizables con formato inválido.":
-        "DuckDB read in full: references between tables, duplicated keys and usable prices with an invalid format.",
+    "DuckDB leída completa: referencias entre tablas, claves duplicadas y precios utilizables con formato inválido.": "DuckDB read in full: references between tables, duplicated keys and usable prices with an invalid format.",
     "Días desde la última semana": "Days since the last week",
     "Días entre el lunes de la última semana con precios y hoy.": "Days between the Monday of the last week with prices and today.",
     "Dónde está": "Where it is",
     "Dónde se vigila": "Where it is watched",
-    "Ejecución {n} · {} (Chile). Es evidencia de la carga guardada, no del último intento remoto.":
-        "Run {} · {} (Chile). It is evidence of the saved load, not of the last remote attempt.",
+    "Ejecución {n} · {} (Chile). Es evidencia de la carga guardada, no del último intento remoto.": "Run {} · {} (Chile). It is evidence of the saved load, not of the last remote attempt.",
     "Ejecución {n} · estado LOADED.": "Run {} · status LOADED.",
     "Ejecución y dbt": "Run and dbt",
-    "El ETL en Python y dbt, por caminos independientes, deben dar los mismos precios, rechazos y suma.":
-        "The Python ETL and dbt, along independent paths, must give the same prices, rejections and sum.",
+    "El ETL en Python y dbt, por caminos independientes, deben dar los mismos precios, rechazos y suma.": "The Python ETL and dbt, along independent paths, must give the same prices, rejections and sum.",
     "El archivo": "The file",
     "El pipeline corre cada martes y deja una fila en etl_run por ejecución real.": "The pipeline runs every Tuesday and leaves a row in etl_run per real run.",
-    "El respaldo SQLite y el data warehouse DuckDB deben tener los mismos precios, los mismos rechazos y la misma suma de precios (D-154).":
-        "The SQLite backup and the DuckDB data warehouse must have the same prices, the same rejections and the same sum of prices (D-154).",
+    "El respaldo SQLite y el data warehouse DuckDB deben tener los mismos precios, los mismos rechazos y la misma suma de precios (D-154).": "The SQLite backup and the DuckDB data warehouse must have the same prices, the same rejections and the same sum of prices (D-154).",
     "Es cobertura registrada, no confirmación de que la fuente esté al día.": "It is recorded coverage, not confirmation that the source is up to date.",
     "Familias, ranking y margen coinciden.": "Families, ranking and margin match.",
     "Filas": "Rows",
-    "Filas de origen que la validación apartó, cada una con su motivo, en la tabla rejection.":
-        "Source rows that the validation set aside, each with its reason, in the rejection table.",
-    "Filas de weekly_price de la semana {} frente a la mediana de las {n} semanas anteriores. Una caída fuerte suele ser una descarga incompleta.":
-        "Rows of weekly_price of the week {} against the median of the {} previous weeks. A sharp drop is usually an incomplete download.",
+    "Filas de origen que la validación apartó, cada una con su motivo, en la tabla rejection.": "Source rows that the validation set aside, each with its reason, in the rejection table.",
+    "Filas de weekly_price de la semana {} frente a la mediana de las {n} semanas anteriores. Una caída fuerte suele ser una descarga incompleta.": "Rows of weekly_price of the week {} against the median of the {} previous weeks. A sharp drop is usually an incomplete download.",
     "Filas leídas": "Rows read",
     "Filas leídas de los archivos de ODEPA de la carga {n}": "Rows read from the ODEPA files of load {}",
     "Filas que pasaron la puerta 2: {n} leídas menos {n} rechazadas": "Rows that passed gate 2: {} read minus {} rejected",
@@ -574,39 +458,29 @@ PAGES = {
     "Formatos inválidos": "Invalid formats",
     "Integridad de archivos originales": "Integrity of the original files",
     "La base": "The database",
-    "La base publicada sigue igual: el workflow se detiene antes de publicarla, GitHub Actions lo marca en rojo y avisa al autor por correo (D-269).":
-        "The published database stays the same: the workflow stops before publishing it, GitHub Actions marks it red and emails the author (D-269).",
-    "La fila rechazada queda en la tabla rejection con su motivo; el precio marcado queda en la base, fuera de los indicadores.":
-        "The rejected row stays in the rejection table with its reason; the flagged price stays in the database, outside the indicators.",
-    "Las alertas K6 se calculan en Python y en SQL y deben coincidir (D-049); las variaciones del Resumen se comparan con un cálculo SQL independiente.":
-        "The K6 alerts are computed in Python and in SQL and must match (D-049); the changes of the Summary are compared with an independent SQL calculation.",
-    "Las cifras de familias, ranking y margen de la semana del {} se recalcularon a mano por región y coinciden con lo que muestra el panel (D-144, D-146).":
-        "The family, ranking and margin figures of the week of {} were recomputed by hand by region and match what the panel shows (D-144, D-146).",
+    "La base publicada sigue igual: el workflow se detiene antes de publicarla, GitHub Actions lo marca en rojo y avisa al autor por correo (D-269).": "The published database stays the same: the workflow stops before publishing it, GitHub Actions marks it red and emails the author (D-269).",
+    "La fila rechazada queda en la tabla rejection con su motivo; el precio marcado queda en la base, fuera de los indicadores.": "The rejected row stays in the rejection table with its reason; the flagged price stays in the database, outside the indicators.",
+    "Las alertas K6 se calculan en Python y en SQL y deben coincidir (D-049); las variaciones del Resumen se comparan con un cálculo SQL independiente.": "The K6 alerts are computed in Python and in SQL and must match (D-049); the changes of the Summary are compared with an independent SQL calculation.",
+    "Las cifras de familias, ranking y margen de la semana del {} se recalcularon a mano por región y coinciden con lo que muestra el panel (D-144, D-146).": "The family, ranking and margin figures of the week of {} were recomputed by hand by region and match what the panel shows (D-144, D-146).",
     "Las filas de la última carga publicada, en cada tramo": "The rows of the last published load, in each stretch",
     "Las mismas filas: la puerta 1 acepta o detiene un archivo entero, no filas sueltas": "The same rows: gate 1 accepts or stops a whole file, not single rows",
     "Las mismas filas: si la puerta 3 falla, no se publica ninguna": "The same rows: if gate 3 fails, none is published",
-    "Las pruebas de datos de dbt: claves únicas y no nulas, valores aceptados y relaciones entre tablas.":
-        "The dbt data tests: unique, non-null keys, accepted values and relationships between tables.",
+    "Las pruebas de datos de dbt: claves únicas y no nulas, valores aceptados y relaciones entre tablas.": "The dbt data tests: unique, non-null keys, accepted values and relationships between tables.",
     "Lo que se mide aquí": "What is measured here",
     "Los {n} indicadores": "The {} indicators",
-    "Los {n} indicadores medidos están dentro de su umbral. Verde: dentro del umbral. Ámbar: a revisar o con un control pendiente. Rojo: falla.":
-        "The {} measured indicators are within their threshold. Green: within the threshold. Amber: to review or with a control pending. Red: failure.",
+    "Los {n} indicadores medidos están dentro de su umbral. Verde: dentro del umbral. Ámbar: a revisar o con un control pendiente. Rojo: falla.": "The {} measured indicators are within their threshold. Green: within the threshold. Amber: to review or with a control pending. Red: failure.",
     "Los CSV anuales de ODEPA, descargados por HTTPS": "The yearly ODEPA CSV files, downloaded over HTTPS",
-    "Los archivos locales se comparan con la huella registrada; los ausentes no se consideran verificados.":
-        "The local files are compared with the recorded fingerprint; the missing ones are not considered verified.",
+    "Los archivos locales se comparan con la huella registrada; los ausentes no se consideran verificados.": "The local files are compared with the recorded fingerprint; the missing ones are not considered verified.",
     "No entra nada de ese archivo y la base publicada no cambia.": "Nothing of that file enters and the published database does not change.",
-    "No hay un indicador de exactitud: se mide con los controles que comparan las cifras con la fuente.":
-        "There is no accuracy indicator: it is measured with the controls that compare the figures with the source.",
+    "No hay un indicador de exactitud: se mide con los controles que comparan las cifras con la fuente.": "There is no accuracy indicator: it is measured with the controls that compare the figures with the source.",
     "No hay una comparación independiente de precios con otra fuente equivalente.": "There is no independent comparison of prices with another equivalent source.",
     "ODEPA es la única fuente oficial de estos datos.": "ODEPA is the only official source of this data.",
     "Origen y archivos": "Origin and files",
     "Precios apartados de los indicadores": "Prices set aside from the indicators",
     "Precios de la última semana": "Prices of the last week",
-    "Precios marcados como atípicos o con unidad no convertible: quedan en la base pero fuera de los indicadores.":
-        "Prices flagged as outliers or with a unit that cannot be converted: they stay in the database but outside the indicators.",
+    "Precios marcados como atípicos o con unidad no convertible: quedan en la base pero fuera de los indicadores.": "Prices flagged as outliers or with a unit that cannot be converted: they stay in the database but outside the indicators.",
     "Precios sin producto, región, canal o fecha, y rechazos sin carga.": "Prices without product, region, channel or date, and rejections without a load.",
-    "Precios utilizables con precio nulo o no positivo, unidad vacía o fecha que no es lunes.":
-        "Usable prices with a null or non-positive price, an empty unit or a date that is not a Monday.",
+    "Precios utilizables con precio nulo o no positivo, unidad vacía o fecha que no es lunes.": "Usable prices with a null or non-positive price, an empty unit or a date that is not a Monday.",
     "Pruebas dbt": "dbt tests",
     "Pruebas dbt de la última construcción": "dbt tests of the last build",
     "Pruebas de dbt": "dbt tests",
@@ -628,18 +502,13 @@ PAGES = {
     "Recálculo independiente de indicadores": "Independent recomputation of indicators",
     "Referencias sin destino": "References without a target",
     "SQL y Python coinciden.": "SQL and Python match.",
-    "Semanas con precios entre {} y {}, contadas contra las que debería haber (una por lunes). Faltan {n}.":
-        "Weeks with prices between {} and {}, counted against those there should be (one per Monday). {} are missing.",
+    "Semanas con precios entre {} y {}, contadas contra las que debería haber (una por lunes). Faltan {n}.": "Weeks with prices between {} and {}, counted against those there should be (one per Monday). {} are missing.",
     "Semanas sin hueco": "Weeks without gaps",
-    "Si falla una prueba de dbt, si la carga lee menos del 90 % de la anterior o si pytest falla sobre la base nueva (incluida la paridad con SQLite), la base no se publica.":
-        "If a dbt test fails, if the load reads less than 90 % of the previous one or if pytest fails on the new database (including the parity with SQLite), the database is not published.",
-    "Un CSV vacío o con columnas distintas no se guarda; un archivo con muchas menos filas que el anterior o una semana faltante detiene la carga.":
-        "An empty CSV file or one with different columns is not saved; a file with far fewer rows than the previous one or a missing week stops the load.",
-    "Un precio no positivo o con formato inválido se rechaza; una unidad no convertible o un precio atípico se marca.":
-        "A non-positive price or one with an invalid format is rejected; a unit that cannot be converted or an outlier price is flagged.",
+    "Si falla una prueba de dbt, si la carga lee menos del 90 % de la anterior o si pytest falla sobre la base nueva (incluida la paridad con SQLite), la base no se publica.": "If a dbt test fails, if the load reads less than 90 % of the previous one or if pytest fails on the new database (including the parity with SQLite), the database is not published.",
+    "Un CSV vacío o con columnas distintas no se guarda; un archivo con muchas menos filas que el anterior o una semana faltante detiene la carga.": "An empty CSV file or one with different columns is not saved; a file with far fewer rows than the previous one or a missing week stops the load.",
+    "Un precio no positivo o con formato inválido se rechaza; una unidad no convertible o un precio atípico se marca.": "A non-positive price or one with an invalid format is rejected; a unit that cannot be converted or an outlier price is flagged.",
     "Verificado · pruebas automáticas": "Verified · automated tests",
-    "Verificado: comprobado en este servidor · Pendiente: no se puede comprobar aquí o tiene una observación · nada se muestra como verificado sin comprobarse.":
-        "Verified: checked on this server · Pending: cannot be checked here or has an observation · nothing is shown as verified without being checked.",
+    "Verificado: comprobado en este servidor · Pendiente: no se puede comprobar aquí o tiene una observación · nada se muestra como verificado sin comprobarse.": "Verified: checked on this server · Pending: cannot be checked here or has an observation · nothing is shown as verified without being checked.",
     "Verificado": "Verified",
     "Pendiente": "Pending",
     "carga {n} · LOADED; máximo {n} días": "load {} · LOADED; maximum {} days",
@@ -673,9 +542,7 @@ PAGES = {
     "Última carga": "Last load",
     "Última carga registrada": "Last recorded load",
     "Últimas cargas": "Last loads",
-    "⚠ En este equipo, {} no coincide con su huella en manifest.json; los indicadores no cambian.":
-        "⚠ On this computer, {} does not match its fingerprint in manifest.json; the indicators do not change.",
-
+    "⚠ En este equipo, {} no coincide con su huella en manifest.json; los indicadores no cambian.": "⚠ On this computer, {} does not match its fingerprint in manifest.json; the indicators do not change.",
     # SQL queries (bi/sql_explorer.py)
     "Consultas": "Queries",
     "Tabla completa": "Full table",
@@ -691,31 +558,27 @@ PAGES = {
     "Inflación vs IPC": "Inflation vs CPI",
     "Precio vs. época": "Price vs. season",
     "Brecha mayorista": "Wholesale gap",
-    "Cinco consultas para decidir. Para ir más lejos, escribe tu propia consulta en el editor: las tablas y vistas están a la izquierda.":
-        "Five queries to decide. To go further, write your own query in the editor: the tables and views are on the left.",
+    "Cinco consultas para decidir. Para ir más lejos, escribe tu propia consulta en el editor: las tablas y vistas están a la izquierda.": "Five queries to decide. To go further, write your own query in the editor: the tables and views are on the left.",
     "DuckDB {} · solo lectura": "DuckDB {} · read-only",
     "El resultado aparecerá aquí.": "The result will appear here.",
     "Explorador de objetos": "Object explorer",
     "La consulta corre en DuckDB con la base abierta en solo lectura.": "The query runs in DuckDB with the database open read-only.",
     "Lista para ejecutar (Ctrl + Enter o «Ejecutar»).": "Ready to run (Ctrl + Enter or «Run»).",
     "Los precios se limitan a las últimas {n} semanas; el historial completo está en la base. El archivo": "Prices are limited to the last {} weeks; the full history is in the database. The file",
-    "también se abre con DBeaver, Python, R, o con Power BI y Excel mediante el driver ODBC de DuckDB.":
-        "also opens with DBeaver, Python, R, or with Power BI and Excel through the DuckDB ODBC driver.",
+    "también se abre con DBeaver, Python, R, o con Power BI y Excel mediante el driver ODBC de DuckDB.": "also opens with DBeaver, Python, R, or with Power BI and Excel through the DuckDB ODBC driver.",
     "Muestra como máximo {n} filas por consulta.": "It shows at most {} rows per query.",
-    "SQL de solo lectura sobre la capa gold del data warehouse, con vistas de columnas legibles; nada de identificadores internos.":
-        "Read-only SQL on the gold layer of the data warehouse, with views of readable columns; no internal identifiers.",
-    "Todos los precios semanales con cada dimensión (familia, producto, variedad, calidad, canal, región) y el precio real según el IPC de alimentos; los filtros de arriba acotan la tabla.":
-        "All the weekly prices with each dimension (family, product, variety, quality, channel, region) and the real price according to the food CPI; the filters above narrow the table.",
+    "SQL de solo lectura sobre la capa gold del data warehouse, con vistas de columnas legibles; nada de identificadores internos.": "Read-only SQL on the gold layer of the data warehouse, with views of readable columns; no internal identifiers.",
+    "Todos los precios semanales con cada dimensión (familia, producto, variedad, calidad, canal, región) y el precio real según el IPC de alimentos; los filtros de arriba acotan la tabla.": "All the weekly prices with each dimension (family, product, variety, quality, channel, region) and the real price according to the food CPI; the filters above narrow the table.",
     "Una consulta se detiene a los {n} segundos.": "A query stops after {} seconds.",
     "cargas": "loads",
     "máx.": "max.",
     "precios": "prices",
     "semanas": "weeks",
-
     # Operations center: the operations, deployment, CI/CD and monitoring tabs
-    "Dónde corre cada pieza, cómo llega un cambio a producción y el estado de cada paso de la carga semanal, con su log y dónde actuar.":
-        "Where each piece runs, how a change reaches production and the status of each step of the weekly load, with its log and where to act.",
-    "Operación": "Operations", "Despliegue": "Deployment", "Monitoreo": "Monitoring",
+    "Dónde corre cada pieza, cómo llega un cambio a producción y el estado de cada paso de la carga semanal, con su log y dónde actuar.": "Where each piece runs, how a change reaches production and the status of each step of the weekly load, with its log and where to act.",
+    "Operación": "Operations",
+    "Despliegue": "Deployment",
+    "Monitoreo": "Monitoring",
     "{} · manual · falló": "{} · manual · failed",
     "{} · manual · correcta": "{} · manual · succeeded",
     "{} · automática · correcta": "{} · automatic · succeeded",
@@ -743,40 +606,29 @@ PAGES = {
     "release y puntero": "release and pointer",
     "respaldo SQLite": "SQLite backup",
     "solo si se pide": "only if asked",
-    "Escribe el bronce en Parquet y dbt construye y prueba todos los modelos; solo si todo pasa se reemplaza datos.duckdb.":
-        "Writes bronze in Parquet and dbt builds and tests every model; only if everything passes is datos.duckdb replaced.",
-    "Descarga los CSV de ODEPA que faltan o cambiaron, y anota su huella en manifest.json.":
-        "Downloads the ODEPA CSV files that are missing or changed, and notes their fingerprint in manifest.json.",
+    "Escribe el bronce en Parquet y dbt construye y prueba todos los modelos; solo si todo pasa se reemplaza datos.duckdb.": "Writes bronze in Parquet and dbt builds and tests every model; only if everything passes is datos.duckdb replaced.",
+    "Descarga los CSV de ODEPA que faltan o cambiaron, y anota su huella en manifest.json.": "Downloads the ODEPA CSV files that are missing or changed, and notes their fingerprint in manifest.json.",
     "Alguien sube un cambio al repositorio o abre un pull request.": "Someone pushes a change to the repository or opens a pull request.",
     "Comprueba que los modelos, las pruebas y las fuentes de dbt compilan.": "Checks that the dbt models, tests and sources compile.",
     "Corre todas las pruebas de tests/; si una falla, el job se detiene.": "Runs every test of tests/; if one fails, the job stops.",
-    "El cron lo lanza cada martes a las 12:00 UTC (09:00 en Chile en horario de verano, 08:00 en invierno). También se lanza a mano: desde el Centro de operación, con la clave de control, por la API de GitHub; o desde GitHub, donde se puede pedir una falla simulada.":
-        "The cron launches it every Tuesday at 12:00 UTC (09:00 in Chile in summer time, 08:00 in winter). It can also be launched by hand: from the Operations center, with the control code, through the GitHub API; or from GitHub, where a simulated failure can be requested.",
+    "El cron lo lanza cada martes a las 12:00 UTC (09:00 en Chile en horario de verano, 08:00 en invierno). También se lanza a mano: desde el Centro de operación, con la clave de control, por la API de GitHub; o desde GitHub, donde se puede pedir una falla simulada.": "The cron launches it every Tuesday at 12:00 UTC (09:00 in Chile in summer time, 08:00 in winter). It can also be launched by hand: from the Operations center, with the control code, through the GitHub API; or from GitHub, where a simulated failure can be requested.",
     "GitHub arranca una máquina limpia con Python 3.11 e instala las dependencias.": "GitHub starts a clean machine with Python 3.11 and installs the dependencies.",
-    "GitHub deja el resultado junto al commit: verde si todo pasó, rojo si no. Avisa, pero no detiene la publicación: Streamlit publica main sin esperarlo.":
-        "GitHub leaves the result next to the commit: green if everything passed, red if not. It warns, but it does not stop publication: Streamlit publishes main without waiting for it.",
+    "GitHub deja el resultado junto al commit: verde si todo pasó, rojo si no. Avisa, pero no detiene la publicación: Streamlit publica main sin esperarlo.": "GitHub leaves the result next to the commit: green if everything passed, red if not. It warns, but it does not stop publication: Streamlit publishes main without waiting for it.",
     "Guarda una sola copia de la base servida: cada carga reemplaza la anterior.": "Keeps a single copy of the served database: each load replaces the previous one.",
-    "Streamlit Community Cloud publica el panel desde main, una configuración de esa plataforma. Cuando el puntero cambia, el panel descarga la base nueva del release y comprueba su huella (bi/served_database.py).":
-        "Streamlit Community Cloud publishes the panel from main, a setting of that platform. When the pointer changes, the panel downloads the new database from the release and checks its fingerprint (bi/served_database.py).",
+    "Streamlit Community Cloud publica el panel desde main, una configuración de esa plataforma. Cuando el puntero cambia, el panel descarga la base nueva del release y comprueba su huella (bi/served_database.py).": "Streamlit Community Cloud publishes the panel from main, a setting of that platform. When the pointer changes, the panel downloads the new database from the release and checks its fingerprint (bi/served_database.py).",
     "Restaura de la caché de Actions los CSV de los años cerrados, que ya no cambian.": "Restores from the Actions cache the CSV files of the closed years, which no longer change.",
     "Calcula el año en curso: la caché de los años cerrados se renueva cuando cambia el año.": "Computes the current year: the cache of the closed years is renewed when the year changes.",
-    "Corre las pruebas contra la base nueva, incluida la paridad SQLite ↔ DuckDB. Si falla, no se publica nada.":
-        "Runs the tests against the new database, including the SQLite ↔ DuckDB parity. If it fails, nothing is published.",
+    "Corre las pruebas contra la base nueva, incluida la paridad SQLite ↔ DuckDB. Si falla, no se publica nada.": "Runs the tests against the new database, including the SQLite ↔ DuckDB parity. If it fails, nothing is published.",
     "Publica el informe de la semana como un issue de GitHub.": "Publishes the report of the week as a GitHub issue.",
-    "Descarga del release «base-actual» la base que se publicó la semana anterior y comprueba su huella: de ella salen el historial de cargas y la comparación del 90 %.":
-        "Downloads from the «base-actual» release the database published the previous week and checks its fingerprint: the load history and the 90 % comparison come from it.",
-    "Reemplaza datos.duckdb en el release «base-actual» y después sube a main su puntero (etl/datos.version) y manifest.json. El historial de Git no guarda la base.":
-        "Replaces datos.duckdb in the «base-actual» release and then pushes its pointer (etl/datos.version) and manifest.json to main. The Git history does not keep the database.",
-    "Construye en esta máquina el respaldo en SQLite (datos.db), con un camino independiente de dbt, para la prueba de paridad. No se publica.":
-        "Builds the SQLite backup (datos.db) on this machine, along a path independent of dbt, for the parity test. It is not published.",
-    "Solo corre cuando una ejecución manual desde GitHub pide simulate_failure: corta el job para probar que la base publicada no cambia. El botón del panel nunca la pide.":
-        "It runs only when a manual run from GitHub asks for simulate_failure: it cuts the job to prove that the published database does not change. The panel's button never asks for it.",
+    "Descarga del release «base-actual» la base que se publicó la semana anterior y comprueba su huella: de ella salen el historial de cargas y la comparación del 90 %.": "Downloads from the «base-actual» release the database published the previous week and checks its fingerprint: the load history and the 90 % comparison come from it.",
+    "Reemplaza datos.duckdb en el release «base-actual» y después sube a main su puntero (etl/datos.version) y manifest.json. El historial de Git no guarda la base.": "Replaces datos.duckdb in the «base-actual» release and then pushes its pointer (etl/datos.version) and manifest.json to main. The Git history does not keep the database.",
+    "Construye en esta máquina el respaldo en SQLite (datos.db), con un camino independiente de dbt, para la prueba de paridad. No se publica.": "Builds the SQLite backup (datos.db) on this machine, along a path independent of dbt, for the parity test. It is not published.",
+    "Solo corre cuando una ejecución manual desde GitHub pide simulate_failure: corta el job para probar que la base publicada no cambia. El botón del panel nunca la pide.": "It runs only when a manual run from GitHub asks for simulate_failure: it cuts the job to prove that the published database does not change. The panel's button never asks for it.",
     "on: push, pull_request": "on: push, pull_request",
     "estado del commit en GitHub": "commit status on GitHub",
     "declarado por el autor; no verificable en el repositorio": "declared by the author; not verifiable in the repository",
     "gh release upload del paso 9": "gh release upload of step 9",
-    "{n} señales · dónde nace cada una y quién la lee · pasa el cursor por una para ver qué registra y qué archivo la produce":
-        "{} signals · where each one is born and who reads it · hover over one to see what it records and which file produces it",
+    "{n} señales · dónde nace cada una y quién la lee · pasa el cursor por una para ver qué registra y qué archivo la produce": "{} signals · where each one is born and who reads it · hover over one to see what it records and which file produces it",
     "{n} precios · {n} semanas": "{} prices · {} weeks",
     "Aviso de huellas": "Fingerprint warning",
     "un CSV local no coincide con su SHA-256 en manifest.json": "a local CSV file does not match its SHA-256 in manifest.json",
@@ -811,10 +663,8 @@ PAGES = {
     "→ correo del autor": "→ the author's email",
     "→ log del paso en GitHub Actions": "→ the step log in GitHub Actions",
     "Año vigente": "Current year",
-    "Baja el IPC para mostrar precios sin inflación; corre al comienzo del paso de dbt. Si el INE no responde, usa el último publicado y la carga sigue.":
-        "Downloads the CPI to show prices without inflation; runs at the start of the dbt step. If the INE does not respond, it uses the last published one and the load goes on.",
-    "Baja los precios mayoristas y al consumidor del año en curso; los años cerrados salen de la caché. Si falla, el log dice qué archivo y por qué.":
-        "Downloads the wholesale and consumer prices of the current year; the closed years come from the cache. If it fails, the log says which file and why.",
+    "Baja el IPC para mostrar precios sin inflación; corre al comienzo del paso de dbt. Si el INE no responde, usa el último publicado y la carga sigue.": "Downloads the CPI to show prices without inflation; runs at the start of the dbt step. If the INE does not respond, it uses the last published one and the load goes on.",
+    "Baja los precios mayoristas y al consumidor del año en curso; los años cerrados salen de la caché. Si falla, el log dice qué archivo y por qué.": "Downloads the wholesale and consumer prices of the current year; the closed years come from the cache. If it fails, the log says which file and why.",
     "Base al día": "Database up to date",
     "CI · integración continua": "CI · continuous integration",
     "CD · entrega continua": "CD · continuous delivery",
@@ -823,52 +673,37 @@ PAGES = {
     "CSV mayorista y consumidor": "Wholesale and consumer CSV files",
     "Caché": "Cache",
     "Caché de Actions": "Actions cache",
-    "Cada vez que alguien sube un cambio, un servidor lo prueba solo. Si algo se rompe, se ve en el momento y no a fin de mes.":
-        "Every time someone pushes a change, a server tests it by itself. If something breaks, it shows at once and not at the end of the month.",
+    "Cada vez que alguien sube un cambio, un servidor lo prueba solo. Si algo se rompe, se ve en el momento y no a fin de mes.": "Every time someone pushes a change, a server tests it by itself. If something breaks, it shows at once and not at the end of the month.",
     "Computador del autor": "The author's computer",
     "Construcción": "Build",
     "Construir y probar": "Build and test",
-    "Construye staging, intermedio y marts en DuckDB y corre sus {n} pruebas de datos. Si una falla, se detiene aquí y la base publicada no cambia.":
-        "Builds staging, intermediate and marts in DuckDB and runs its {} data tests. If one fails, it stops here and the published database does not change.",
-    "Corre solo cada martes a las 12:00 UTC (09:00 en Chile en verano, 08:00 en invierno). Para adelantarlo: «Ejecutar pipeline ahora», a la derecha, con tu clave de control, o «Run workflow» en GitHub.":
-        "It runs by itself every Tuesday at 12:00 UTC (09:00 in Chile in summer, 08:00 in winter). To run it earlier: «Run pipeline now», on the right, with the control code, or «Run workflow» on GitHub.",
-    "Cualquier visitante, o el autor. El panel público no pide cuenta; la clave solo abre el botón «Ejecutar pipeline ahora».":
-        "Any visitor, or the author. The public panel asks for no account; the code only opens the «Run pipeline now» button.",
+    "Construye staging, intermedio y marts en DuckDB y corre sus {n} pruebas de datos. Si una falla, se detiene aquí y la base publicada no cambia.": "Builds staging, intermediate and marts in DuckDB and runs its {} data tests. If one fails, it stops here and the published database does not change.",
+    "Corre solo cada martes a las 12:00 UTC (09:00 en Chile en verano, 08:00 en invierno). Para adelantarlo: «Ejecutar pipeline ahora», a la derecha, con tu clave de control, o «Run workflow» en GitHub.": "It runs by itself every Tuesday at 12:00 UTC (09:00 in Chile in summer, 08:00 in winter). To run it earlier: «Run pipeline now», on the right, with the control code, or «Run workflow» on GitHub.",
+    "Cualquier visitante, o el autor. El panel público no pide cuenta; la clave solo abre el botón «Ejecutar pipeline ahora».": "Any visitor, or the author. The public panel asks for no account; the code only opens the «Run pipeline now» button.",
     "Cómo sabemos qué pasó": "How we know what happened",
     "Data warehouse con dbt": "Data warehouse with dbt",
     "Datos publicados": "Published data",
     "Del cambio a producción": "From change to production",
     "Descarga de ODEPA": "ODEPA download",
     "Diagrama de despliegue": "Deployment diagram",
-    "Donde se desarrolla. Aquí vive el aterrizaje raw.db, que no se sube a GitHub (D-020), y desde aquí se hace git push; las pruebas se corren antes de cada commit.":
-        "Where it is developed. The raw.db landing database lives here, which is not committed to GitHub (D-020), and git push is done from here; the tests run before each commit.",
-    "El entorno Python 3.11 del runner: descarga, aterrizaje en SQLite, bronce en Parquet y dbt build sobre DuckDB.":
-        "The runner's Python 3.11 environment: download, landing in SQLite, bronze in Parquet and dbt build on DuckDB.",
-    "El entorno de Python del autor: el panel, la ingesta, el ETL y dbt, más pytest. dbt corre en un entorno aparte. Aquí vive el aterrizaje raw.db, que no se sube a git.":
-        "The author's Python environment: the panel, the ingestion, the ETL and dbt, plus pytest. dbt runs in a separate environment. The raw.db landing database lives here, which is not committed to git.",
-    "El repositorio público: el código en la rama main y la base servida en el release «base-actual». Solo si pasan todas las pruebas, la carga reemplaza la base del release y sube su puntero con un commit «Weekly data update» (D-270).":
-        "The public repository: the code on the main branch and the served database in the «base-actual» release. Only if every test passes does the load replace the database of the release and push its pointer with a «Weekly data update» commit (D-270).",
-    "El servicio gratuito que publica el panel con un enlace público, sin servidor que mantener, y guarda sus secretos.":
-        "The free service that publishes the panel with a public link, with no server to maintain, and keeps its secrets.",
-    "El workflow crea un issue «Informe semanal AAAA-MM-DD» con el estado de la carga y las alertas de precio.":
-        "The workflow creates an «Informe semanal YYYY-MM-DD» issue (weekly report) with the status of the load and the price alerts.",
+    "Donde se desarrolla. Aquí vive el aterrizaje raw.db, que no se sube a GitHub (D-020), y desde aquí se hace git push; las pruebas se corren antes de cada commit.": "Where it is developed. The raw.db landing database lives here, which is not committed to GitHub (D-020), and git push is done from here; the tests run before each commit.",
+    "El entorno Python 3.11 del runner: descarga, aterrizaje en SQLite, bronce en Parquet y dbt build sobre DuckDB.": "The runner's Python 3.11 environment: download, landing in SQLite, bronze in Parquet and dbt build on DuckDB.",
+    "El entorno de Python del autor: el panel, la ingesta, el ETL y dbt, más pytest. dbt corre en un entorno aparte. Aquí vive el aterrizaje raw.db, que no se sube a git.": "The author's Python environment: the panel, the ingestion, the ETL and dbt, plus pytest. dbt runs in a separate environment. The raw.db landing database lives here, which is not committed to git.",
+    "El repositorio público: el código en la rama main y la base servida en el release «base-actual». Solo si pasan todas las pruebas, la carga reemplaza la base del release y sube su puntero con un commit «Weekly data update» (D-270).": "The public repository: the code on the main branch and the served database in the «base-actual» release. Only if every test passes does the load replace the database of the release and push its pointer with a «Weekly data update» commit (D-270).",
+    "El servicio gratuito que publica el panel con un enlace público, sin servidor que mantener, y guarda sus secretos.": "The free service that publishes the panel with a public link, with no server to maintain, and keeps its secrets.",
+    "El workflow crea un issue «Informe semanal AAAA-MM-DD» con el estado de la carga y las alertas de precio.": "The workflow creates an «Informe semanal YYYY-MM-DD» issue (weekly report) with the status of the load and the price alerts.",
     "Falló": "Failed",
     "Correcta": "Succeeded",
-    "Guarda los CSV de los años cerrados, que ya no cambian, para no descargarlos cada semana. Se borra si no se usa en {n} días.":
-        "Keeps the CSV files of the closed years, which no longer change, so they are not downloaded every week. It is deleted if not used for {} days.",
+    "Guarda los CSV de los años cerrados, que ya no cambian, para no descargarlos cada semana. Se borra si no se usa en {n} días.": "Keeps the CSV files of the closed years, which no longer change, so they are not downloaded every week. It is deleted if not used for {} days.",
     "IPC de alimentos": "Food CPI",
     "IPC de alimentos · INE": "Food CPI · INE",
     "La carga semanal": "The weekly load",
-    "La plataforma que guarda el código y la base publicada, ejecuta la carga semanal y las pruebas, y recibe los informes. El repositorio es público.":
-        "The platform that keeps the code and the published database, runs the weekly load and the tests, and receives the reports. The repository is public.",
+    "La plataforma que guarda el código y la base publicada, ejecuta la carga semanal y las pruebas, y recibe los informes. El repositorio es público.": "The platform that keeps the code and the published database, runs the weekly load and the tests, and receives the reports. The repository is public.",
     "Lanzar el pipeline": "Launch the pipeline",
     "Lanzar y descargar": "Launch and download",
-    "Lee la base nueva en uno o dos minutos; si no la ves, «Recargar datos», a la derecha. Registros, secretos y reinicio están en Streamlit.":
-        "It reads the new database in one or two minutes; if you do not see it, «Reload data», on the right. Logs, secrets and restart are on Streamlit.",
-    "Lleva cada precio a kilo o unidad y a su semana, valida cada fila y aparta las que no sirven, con su motivo.":
-        "Brings each price to kilo or unit and to its week, validates each row and sets aside the ones that do not serve, with their reason.",
-    "Lo que pasa todas las pruebas llega a producción sin pasos manuales. Aquí, la base de cada martes y el panel que la muestra.":
-        "What passes every test reaches production without manual steps. Here, the database of each Tuesday and the panel that shows it.",
+    "Lee la base nueva en uno o dos minutos; si no la ves, «Recargar datos», a la derecha. Registros, secretos y reinicio están en Streamlit.": "It reads the new database in one or two minutes; if you do not see it, «Reload data», on the right. Logs, secrets and restart are on Streamlit.",
+    "Lleva cada precio a kilo o unidad y a su semana, valida cada fila y aparta las que no sirven, con su motivo.": "Brings each price to kilo or unit and to its week, validates each row and sets aside the ones that do not serve, with their reason.",
+    "Lo que pasa todas las pruebas llega a producción sin pasos manuales. Aquí, la base de cada martes y el panel que la muestra.": "What passes every test reaches production without manual steps. Here, the database of each Tuesday and the panel that shows it.",
     "Lo ve el panel": "The panel sees it",
     "Log del paso ↗": "Step log ↗",
     "Monitoreo y observabilidad": "Monitoring and observability",
@@ -879,28 +714,22 @@ PAGES = {
     "Precios mayoristas ↗": "Wholesale prices ↗",
     "Pruebas": "Tests",
     "Próxima ejecución": "Next run",
-    "Publica el IPC de alimentos. La carga lo descarga y lo cruza con los precios para calcular el precio real.":
-        "Publishes the food CPI. The load downloads it and crosses it with the prices to compute the real price.",
-    "Publica el informe de la semana como issue en GitHub, con sus alertas; GitHub avisa por correo.":
-        "Publishes the report of the week as an issue on GitHub, with its alerts; GitHub notifies by email.",
-    "Publica los CSV de precios mayoristas y al consumidor. El agente de ingesta los descarga por HTTPS cada martes.":
-        "Publishes the CSV files of wholesale and consumer prices. The ingestion agent downloads them over HTTPS every Tuesday.",
+    "Publica el IPC de alimentos. La carga lo descarga y lo cruza con los precios para calcular el precio real.": "Publishes the food CPI. The load downloads it and crosses it with the prices to compute the real price.",
+    "Publica el informe de la semana como issue en GitHub, con sus alertas; GitHub avisa por correo.": "Publishes the report of the week as an issue on GitHub, with its alerts; GitHub notifies by email.",
+    "Publica los CSV de precios mayoristas y al consumidor. El agente de ingesta los descarga por HTTPS cada martes.": "Publishes the CSV files of wholesale and consumer prices. The ingestion agent downloads them over HTTPS every Tuesday.",
     "Publicación": "Publication",
     "Publicar la base": "Publish the database",
     "Recargar datos": "Reload data",
     "Recorrido del pipeline semanal": "Journey of the weekly pipeline",
-    "Reemplaza la base en el release «base-actual» y sube su puntero a main con el commit «Weekly data update». Solo ocurre si todo lo anterior pasó.":
-        "Replaces the database in the «base-actual» release and pushes its pointer to main with the «Weekly data update» commit. It only happens if everything before passed.",
+    "Reemplaza la base en el release «base-actual» y sube su puntero a main con el commit «Weekly data update». Solo ocurre si todo lo anterior pasó.": "Replaces the database in the «base-actual» release and pushes its pointer to main with the «Weekly data update» commit. It only happens if everything before passed.",
     "Repositorio · main y release": "Repository · main and release",
     "Se activa cuando el autor guarda la clave de control en los secretos del panel.": "It turns on when the author stores the control code in the panel's secrets.",
     "Semana del {}": "Week of {}",
     "Sitio del INE ↗": "INE website ↗",
     "Solo el autor": "The author only",
-    "Streamlit ejecuta bi/dashboard.py desde la rama main. Descarga del release la base de la última carga, comprueba su huella y la lee en solo lectura; guarda los secretos del panel y, con la clave de control, lanza la carga por la API de GitHub.":
-        "Streamlit runs bi/dashboard.py from the main branch. It downloads the database of the last load from the release, checks its fingerprint and reads it read-only; it keeps the panel's secrets and, with the control code, launches the load through the GitHub API.",
+    "Streamlit ejecuta bi/dashboard.py desde la rama main. Descarga del release la base de la última carga, comprueba su huella y la lee en solo lectura; guarda los secretos del panel y, con la clave de control, lanza la carga por la API de GitHub.": "Streamlit runs bi/dashboard.py from the main branch. It downloads the database of the last load from the release, checks its fingerprint and reads it read-only; it keeps the panel's secrets and, with the control code, launches the load through the GitHub API.",
     "Transformar y probar": "Transform and test",
-    "Una máquina Ubuntu de GitHub Actions que nace y se borra en cada ejecución: el job semanal de cada martes (semanal.yml) y las pruebas de cada push (pruebas.yml).":
-        "A GitHub Actions Ubuntu machine that is born and deleted on each run: the weekly job of each Tuesday (semanal.yml) and the tests of each push (pruebas.yml).",
+    "Una máquina Ubuntu de GitHub Actions que nace y se borra en cada ejecución: el job semanal de cada martes (semanal.yml) y las pruebas de cada push (pruebas.yml).": "A GitHub Actions Ubuntu machine that is born and deleted on each run: the weekly job of each Tuesday (semanal.yml) and the tests of each push (pruebas.yml).",
     "Ver la ejecución ↗": "See the run ↗",
     "automática, cada martes · faltan {n} días": "automatic, every Tuesday · {} days left",
     "automática, cada martes · falta {n} día": "automatic, every Tuesday · {} day left",
@@ -913,26 +742,20 @@ PAGES = {
     "el aterrizaje no se sube a git": "the landing database is not committed to git",
     "el proyecto compila": "the project compiles",
     "en cada push": "on every push",
-    "estado de la última ejecución y del panel · la línea muestra quién inicia la comunicación":
-        "status of the last run and of the panel · the line shows who starts the communication",
+    "estado de la última ejecución y del panel · la línea muestra quién inicia la comunicación": "status of the last run and of the panel · the line shows who starts the communication",
     "lanza el job pytest": "launches the pytest job",
     "próxima {}": "next {}",
-    "pytest recalcula las cifras desde la fuente. Si una prueba falla, la base publicada no se toca; el final del log nombra la prueba con FAILED.":
-        "pytest recomputes the figures from the source. If a test fails, the published database is not touched; the end of the log names the test with FAILED.",
+    "pytest recalcula las cifras desde la fuente. Si una prueba falla, la base publicada no se toca; el final del log nombra la prueba con FAILED.": "pytest recomputes the figures from the source. If a test fails, the published database is not touched; the end of the log names the test with FAILED.",
     "semana {d}: {n} precios": "week {}: {} prices",
     "siempre en línea": "always online",
     "toda la batería": "the whole battery",
     "token y clave": "token and code",
-    "un control que detiene la carga. Si un paso falla, los siguientes no corren y la base publicada no cambia.":
-        "a control that stops the load. If a step fails, the following ones do not run and the published database does not change.",
+    "un control que detiene la carga. Si un paso falla, los siguientes no corren y la base publicada no cambia.": "a control that stops the load. If a step fails, the following ones do not run and the published database does not change.",
     "visitante o autor, sin cuenta": "visitor or author, without an account",
     "Últimas ejecuciones": "Latest runs",
-
     # Security architecture (bi/security_map.py) and the security test plan diagrams (bi/security_plan.py)
-    "Qué amenaza al sistema, qué lo mitiga, qué prueba lo verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de esconderlo, sino de las claves, que nunca aparecen.":
-        "What threatens the system, what mitigates it, which test verifies it on every push and how it improves. The code is public: security does not depend on hiding it, but on the keys, which never appear.",
-    "Quién participa, los casos de prueba, el procedimiento y los resultados de la última revisión.":
-        "Who takes part, the test cases, the procedure and the results of the last review.",
+    "Qué amenaza al sistema, qué lo mitiga, qué prueba lo verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de esconderlo, sino de las claves, que nunca aparecen.": "What threatens the system, what mitigates it, which test verifies it on every push and how it improves. The code is public: security does not depend on hiding it, but on the keys, which never appear.",
+    "Quién participa, los casos de prueba, el procedimiento y los resultados de la última revisión.": "Who takes part, the test cases, the procedure and the results of the last review.",
     "SQL público con límites": "Public SQL with limits",
     "Base en solo lectura": "Read-only database",
     "Clave de control": "Control code",
@@ -945,35 +768,26 @@ PAGES = {
     "A{n} · {}": "A{} · {}",
     "S-{n} · {}": "S-{} · {}",
     "una sentencia de lectura · sin archivos ni web · 10 s · 5.000 filas · 1 GB": "one read statement · no files or web · 10 s · 5,000 rows · 1 GB",
-    "Las tablas de precios y el servidor. El estudio SQL está abierto a cualquier visitante: los datos son públicos.":
-        "The price tables and the server. The SQL studio is open to any visitor: the data is public.",
-    "La consulta debe ser una sola sentencia SELECT o WITH, sin funciones que lean archivos ni direcciones web; se corta a los 10 segundos, devuelve como máximo 5.000 filas y usa como máximo 1 GB de memoria.":
-        "The query must be a single SELECT or WITH statement, without functions that read files or web addresses; it is cut at 10 seconds, returns at most 5,000 rows and uses at most 1 GB of memory.",
+    "Las tablas de precios y el servidor. El estudio SQL está abierto a cualquier visitante: los datos son públicos.": "The price tables and the server. The SQL studio is open to any visitor: the data is public.",
+    "La consulta debe ser una sola sentencia SELECT o WITH, sin funciones que lean archivos ni direcciones web; se corta a los 10 segundos, devuelve como máximo 5.000 filas y usa como máximo 1 GB de memoria.": "The query must be a single SELECT or WITH statement, without functions that read files or web addresses; it is cut at 10 seconds, returns at most 5,000 rows and uses at most 1 GB of memory.",
     "motor sin acceso externo · configuración bloqueada": "engine without external access · configuration locked",
     "La base servida: nadie puede cambiar un dato desde el panel.": "The served database: nobody can change a value from the panel.",
-    "DuckDB abre etl/datos.duckdb en solo lectura, sin acceso a archivos ni a internet y con la configuración bloqueada: aunque una consulta esquivara el filtro, el motor responde «Permission Error».":
-        "DuckDB opens etl/datos.duckdb read-only, without access to files or to the internet and with its configuration locked: even if a query got past the filter, the engine answers «Permission Error».",
+    "DuckDB abre etl/datos.duckdb en solo lectura, sin acceso a archivos ni a internet y con la configuración bloqueada: aunque una consulta esquivara el filtro, el motor responde «Permission Error».": "DuckDB opens etl/datos.duckdb read-only, without access to files or to the internet and with its configuration locked: even if a query got past the filter, the engine answers «Permission Error».",
     "evita ejecuciones accidentales · tiempo constante": "prevents accidental runs · constant time",
-    "El botón «Ejecutar pipeline ahora»: con él, lo máximo que se puede hacer es lanzar el workflow semanal.":
-        "The «Run pipeline now» button: with it, the most anyone can do is launch the weekly workflow.",
-    "La clave vive en los secretos del panel, fuera del repositorio, y se compara con hmac.compare_digest. Antes de la clave el botón no existe. No hay límite de intentos: riesgo aceptado por el autor.":
-        "The code lives in the panel's secrets, outside the repository, and is compared with hmac.compare_digest. Before the code the button does not exist. There is no limit of attempts: a risk accepted by the author.",
+    "El botón «Ejecutar pipeline ahora»: con él, lo máximo que se puede hacer es lanzar el workflow semanal.": "The «Run pipeline now» button: with it, the most anyone can do is launch the weekly workflow.",
+    "La clave vive en los secretos del panel, fuera del repositorio, y se compara con hmac.compare_digest. Antes de la clave el botón no existe. No hay límite de intentos: riesgo aceptado por el autor.": "The code lives in the panel's secrets, outside the repository, and is compared with hmac.compare_digest. Before the code the button does not exist. There is no limit of attempts: a risk accepted by the author.",
     "nunca en pantalla ni en los errores · aviso antes de vencer": "never on screen or in errors · warning before it expires",
     "El token de GitHub con el que el panel lanza el workflow.": "The GitHub token with which the panel launches the workflow.",
-    "Vive en los secretos del panel. Los errores de GitHub se describen con su código y su causa, nunca con el token, los encabezados ni la dirección completa; el panel avisa cuando faltan menos de 14 días para que venza.":
-        "It lives in the panel's secrets. GitHub errors are described with their code and their cause, never with the token, the headers or the full address; the panel warns when fewer than 14 days are left before it expires.",
+    "Vive en los secretos del panel. Los errores de GitHub se describen con su código y su causa, nunca con el token, los encabezados ni la dirección completa; el panel avisa cuando faltan menos de 14 días para que venza.": "It lives in the panel's secrets. GitHub errors are described with their code and their cause, never with the token, the headers or the full address; the panel warns when fewer than 14 days are left before it expires.",
     "el repositorio es público": "the repository is public",
     "Las claves: el código se puede leer sin cuenta.": "The keys: the code can be read without an account.",
     ".gitignore excluye los secretos y una prueba busca tokens en cada archivo versionado.": ".gitignore excludes the secrets and a test searches for tokens in every versioned file.",
     "solo contents e issues": "only contents and issues",
     "El repositorio y la cuenta: el job semanal no puede hacer más que lo que necesita.": "The repository and the account: the weekly job cannot do more than what it needs.",
-    "El workflow semanal solo puede escribir contenido (la base en el release y su puntero) y crear issues (el informe).":
-        "The weekly workflow can only write content (the database in the release and its pointer) and create issues (the report).",
+    "El workflow semanal solo puede escribir contenido (la base en el release y su puntero) y crear issues (el informe).": "The weekly workflow can only write content (the database in the release and its pointer) and create issues (the report).",
     "declarado por el autor · no verificable en el repositorio": "declared by the author · not verifiable in the repository",
-    "Administrar GitHub y Streamlit Community Cloud: ejecutar el workflow desde GitHub, cambiar secretos o reiniciar la app.":
-        "Administering GitHub and Streamlit Community Cloud: running the workflow from GitHub, changing secrets or restarting the app.",
-    "Ambas plataformas piden iniciar sesión con la cuenta del autor. Es una configuración de GitHub y de Streamlit Cloud: declarada por el autor y no verificable desde el repositorio.":
-        "Both platforms ask for a sign-in with the author's account. It is a setting of GitHub and Streamlit Cloud: declared by the author and not verifiable from the repository.",
+    "Administrar GitHub y Streamlit Community Cloud: ejecutar el workflow desde GitHub, cambiar secretos o reiniciar la app.": "Administering GitHub and Streamlit Community Cloud: running the workflow from GitHub, changing secrets or restarting the app.",
+    "Ambas plataformas piden iniciar sesión con la cuenta del autor. Es una configuración de GitHub y de Streamlit Cloud: declarada por el autor y no verificable desde el repositorio.": "Both platforms ask for a sign-in with the author's account. It is a setting of GitHub and Streamlit Cloud: declared by the author and not verifiable from the repository.",
     "Leer secretos o archivos del servidor con SQL": "Read secrets or server files with SQL",
     "Colgar el panel con consultas pesadas": "Hang the panel with heavy queries",
     "Lanzar el pipeline sin permiso": "Launch the pipeline without permission",
@@ -999,16 +813,18 @@ PAGES = {
     "A03 Inyección; A05 Configuración de seguridad incorrecta": "A03 Injection; A05 Security misconfiguration",
     "A04 Diseño inseguro": "A04 Insecure design",
     "A07 Fallas de identificación y autenticación": "A07 Identification and authentication failures",
-    "Revisar": "Review", "Atacar": "Attack", "Corregir": "Fix", "Probar": "Test", "Repetir": "Repeat",
+    "Revisar": "Review",
+    "Atacar": "Attack",
+    "Corregir": "Fix",
+    "Probar": "Test",
+    "Repetir": "Repeat",
     "puertas y activos": "gates and assets",
     "como un intruso": "like an intruder",
     "antes de publicar": "before publishing",
     "el ataque es una prueba": "the attack is a test",
-    "Inventario de lo que se alcanza desde internet y de lo que protege, con el OWASP Top 10 como guía.":
-        "Inventory of what is reachable from the internet and of what protects it, with the OWASP Top 10 as a guide.",
+    "Inventario de lo que se alcanza desde internet y de lo que protege, con el OWASP Top 10 como guía.": "Inventory of what is reachable from the internet and of what protects it, with the OWASP Top 10 as a guide.",
     "Cada puerta se ataca con el código del panel y un secreto falso, nunca el real.": "Each gate is attacked with the panel's code and a fake secret, never the real one.",
-    "Cada hallazgo se corrige antes de publicar y queda en docs/DECISIONES.md (por ejemplo D-199).":
-        "Each finding is fixed before publishing and is recorded in docs/DECISIONES.md (for example D-199).",
+    "Cada hallazgo se corrige antes de publicar y queda en docs/DECISIONES.md (por ejemplo D-199).": "Each finding is fixed before publishing and is recorded in docs/DECISIONES.md (for example D-199).",
     "Cada ataque se vuelve una prueba automática en tests/: S-01 a S-10.": "Each attack becomes an automated test in tests/: S-01 to S-10.",
     "pruebas.yml corre todas las pruebas en cada push y pull request.": "pruebas.yml runs every test on every push and pull request.",
     "Visitante": "Visitor",
@@ -1031,16 +847,11 @@ PAGES = {
     "Repositorio público": "Public repository",
     "sin ningún secreto · Streamlit despliega la rama main": "with no secret · Streamlit deploys the main branch",
     "la carga de cada martes · solo escribe contenido e issues": "each Tuesday's load · only writes content and issues",
-    "Cualquier persona con el enlace público. Lee el panel y usa el estudio SQL sin iniciar sesión: los datos son públicos.":
-        "Anyone with the public link. They read the panel and use the SQL studio without signing in: the data is public.",
-    "El autor. Mantiene el código y los secretos; para lanzar la carga a mano desde el panel usa la clave de control.":
-        "The author. They maintain the code and the secrets; to launch the load by hand from the panel they use the control code.",
-    "La aplicación de Streamlit (bi/dashboard.py). Lee etl/datos.duckdb en solo lectura: ninguna página puede cambiar un dato.":
-        "The Streamlit application (bi/dashboard.py). It reads etl/datos.duckdb read-only: no page can change a value.",
-    "etl/datos.duckdb: la base servida. Solo se publica si pasan las 31 pruebas de dbt y la carga lee al menos el 90 % de las filas de la anterior.":
-        "etl/datos.duckdb: the served database. It is published only if the 31 dbt tests pass and the load reads at least 90 % of the rows of the previous one.",
-    "El workflow pruebas.yml corre pytest en cada push y pull request: los casos S-01 a S-10 de docs/PLAN_PRUEBAS.md. Su resultado avisa; no detiene la publicación de main.":
-        "The pruebas.yml workflow runs pytest on every push and pull request: the cases S-01 to S-10 of docs/PLAN_PRUEBAS.md. Its result warns; it does not stop the publication of main.",
+    "Cualquier persona con el enlace público. Lee el panel y usa el estudio SQL sin iniciar sesión: los datos son públicos.": "Anyone with the public link. They read the panel and use the SQL studio without signing in: the data is public.",
+    "El autor. Mantiene el código y los secretos; para lanzar la carga a mano desde el panel usa la clave de control.": "The author. They maintain the code and the secrets; to launch the load by hand from the panel they use the control code.",
+    "La aplicación de Streamlit (bi/dashboard.py). Lee etl/datos.duckdb en solo lectura: ninguna página puede cambiar un dato.": "The Streamlit application (bi/dashboard.py). It reads etl/datos.duckdb read-only: no page can change a value.",
+    "etl/datos.duckdb: la base servida. Solo se publica si pasan las 31 pruebas de dbt y la carga lee al menos el 90 % de las filas de la anterior.": "etl/datos.duckdb: the served database. It is published only if the 31 dbt tests pass and the load reads at least 90 % of the rows of the previous one.",
+    "El workflow pruebas.yml corre pytest en cada push y pull request: los casos S-01 a S-10 de docs/PLAN_PRUEBAS.md. Su resultado avisa; no detiene la publicación de main.": "The pruebas.yml workflow runs pytest on every push and pull request: the cases S-01 to S-10 of docs/PLAN_PRUEBAS.md. Its result warns; it does not stop the publication of main.",
     "consulta SQL": "SQL query",
     "una sentencia": "one statement",
     "HTTPS · clave": "HTTPS · code",
@@ -1073,8 +884,7 @@ PAGES = {
     "Clave con ñ, tildes o emojis": "Code with ñ, accents or emojis",
     "«Clave incorrecta.», sin error": "«Clave incorrecta.» (wrong code), without an error",
     "Probar claves sin parar": "Trying codes without stopping",
-    "«Clave incorrecta.» cada vez, sin bloqueo: riesgo aceptado por el autor (ver el resumen)":
-        "«Clave incorrecta.» each time, without a lockout: a risk accepted by the author (see the summary)",
+    "«Clave incorrecta.» cada vez, sin bloqueo: riesgo aceptado por el autor (ver el resumen)": "«Clave incorrecta.» each time, without a lockout: a risk accepted by the author (see the summary)",
     "Tokens en el repositorio": "Tokens in the repository",
     "Buscar tokens en el repositorio": "Search for tokens in the repository",
     "Ninguno": "None",
@@ -1089,21 +899,21 @@ PAGES = {
     "Pipeline sin la clave": "Pipeline without the code",
     "Lanzar el pipeline sin la clave": "Launch the pipeline without the code",
     "El botón no existe antes de la clave": "The button does not exist before the code",
-    "Preparar": "Prepare", "Ejecutar": "Run", "Comprobar": "Check", "Registrar": "Record", "Decidir": "Decide",
+    "Preparar": "Prepare",
+    "Ejecutar": "Run",
+    "Comprobar": "Check",
+    "Registrar": "Record",
+    "Decidir": "Decide",
     "copia limpia y secreto falso": "clean copy and fake secret",
     "los diez casos con pytest": "the ten cases with pytest",
     "contra el resultado esperado": "against the expected result",
     "la evidencia": "the evidence",
     "pasa o falla": "passes or fails",
-    "Clonar el repositorio e instalar requirements.txt. Las pruebas crean su propio secreto falso: el real nunca se usa.":
-        "Clone the repository and install requirements.txt. The tests create their own fake secret: the real one is never used.",
-    "Cada caso S-01 a S-10 tiene su resultado esperado en el esquema de casos; cada prueba lo compara y falla si no se cumple.":
-        "Each case S-01 to S-10 has its expected result in the diagram of cases; each test compares it and fails if it is not met.",
-    "La salida de pytest en local y, en GitHub, el resultado de pruebas.yml junto al commit. Toda corrección queda en docs/DECISIONES.md.":
-        "The pytest output locally and, on GitHub, the result of pruebas.yml next to the commit. Every fix is recorded in docs/DECISIONES.md.",
+    "Clonar el repositorio e instalar requirements.txt. Las pruebas crean su propio secreto falso: el real nunca se usa.": "Clone the repository and install requirements.txt. The tests create their own fake secret: the real one is never used.",
+    "Cada caso S-01 a S-10 tiene su resultado esperado en el esquema de casos; cada prueba lo compara y falla si no se cumple.": "Each case S-01 to S-10 has its expected result in the diagram of cases; each test compares it and fails if it is not met.",
+    "La salida de pytest en local y, en GitHub, el resultado de pruebas.yml junto al commit. Toda corrección queda en docs/DECISIONES.md.": "The pytest output locally and, on GitHub, the result of pruebas.yml next to the commit. Every fix is recorded in docs/DECISIONES.md.",
     "Pasa: el cambio queda verificado. Falla: se corrige y se vuelve al paso 2.": "Passes: the change is verified. Fails: it is fixed and the procedure returns to step 2.",
-    "En GitHub, pruebas.yml hace los pasos 2 a 4 en cada push; su resultado avisa, pero no detiene la publicación de main.":
-        "On GitHub, pruebas.yml does steps 2 to 4 on every push; its result warns, but it does not stop the publication of main.",
+    "En GitHub, pruebas.yml hace los pasos 2 a 4 en cada push; su resultado avisa, pero no detiene la publicación de main.": "On GitHub, pruebas.yml does steps 2 to 4 on every push; its result warns, but it does not stop the publication of main.",
     "Procedimiento": "Procedure",
     "Procedimiento de pruebas de seguridad": "Security testing procedure",
     "pasa: el cambio queda verificado ✓": "passes: the change is verified ✓",
@@ -1123,7 +933,6 @@ PAGES = {
     "Amenaza": "Threat",
     "Controles": "Controls",
     "Prueba que lo verifica": "Test that verifies it",
-
     # Stack and evidence (bi/stack_page.py)
     "Python: {}. {}": "Python: {}. {}",
     "SQLite: {}. {}": "SQLite: {}. {}",
@@ -1144,8 +953,7 @@ PAGES = {
     "Base de datos analítica por columnas, en un solo archivo y sin servidor.": "Columnar analytical database, in a single file and without a server.",
     "Base de datos ligera": "Lightweight database",
     "CI/CD de GitHub": "GitHub CI/CD",
-    "Cada cifra del panel sale de una consulta de bi/queries.sql; la página Consultas SQL corre las propias.":
-        "Each figure of the panel comes from a query of bi/queries.sql; the SQL queries page runs your own.",
+    "Cada cifra del panel sale de una consulta de bi/queries.sql; la página Consultas SQL corre las propias.": "Each figure of the panel comes from a query of bi/queries.sql; the SQL queries page runs your own.",
     "Cada martes (semanal.yml) y en cada push (pruebas.yml).": "Every Tuesday (semanal.yml) and on every push (pruebas.yml).",
     "Cada martes con dbt build; en cada push solo se compila (dbt parse).": "Every Tuesday with dbt build; on every push it is only compiled (dbt parse).",
     "Cada martes, antes de dbt.": "Every Tuesday, before dbt.",
@@ -1158,11 +966,9 @@ PAGES = {
     "Cada vez que alguien abre una página; muestra la base nueva cuando la carga la sube.": "Every time someone opens a page; it shows the new database when the load uploads it.",
     "Clic: verlo en uso.": "Click: see it in use.",
     "Cuándo actúa": "When it acts",
-    "Dibuja este panel con etl/datos.duckdb en solo lectura y lo publica en Streamlit Community Cloud desde la rama main.":
-        "Draws this panel with etl/datos.duckdb read-only and publishes it on Streamlit Community Cloud from the main branch.",
+    "Dibuja este panel con etl/datos.duckdb en solo lectura y lo publica en Streamlit Community Cloud desde la rama main.": "Draws this panel with etl/datos.duckdb read-only and publishes it on Streamlit Community Cloud from the main branch.",
     "DuckDB es el motor que ejecuta el SQL de dbt y el del panel.": "DuckDB is the engine that runs the SQL of dbt and of the panel.",
-    "Motor donde dbt construye el data warehouse (etl/warehouse_build.duckdb) y base servida etl/datos.duckdb, que el panel lee en solo lectura.":
-        "Engine where dbt builds the data warehouse (etl/warehouse_build.duckdb) and the served database etl/datos.duckdb, which the panel reads read-only.",
+    "Motor donde dbt construye el data warehouse (etl/warehouse_build.duckdb) y base servida etl/datos.duckdb, que el panel lee en solo lectura.": "Engine where dbt builds the data warehouse (etl/warehouse_build.duckdb) and the served database etl/datos.duckdb, which the panel reads read-only.",
     "El panel abre etl/datos.duckdb en solo lectura: ninguna página puede cambiar los datos.": "The panel opens etl/datos.duckdb read-only: no page can change the data.",
     "El workflow semanal.yml lanza la descarga, el ETL y etl/pipeline.py en una máquina de GitHub.": "The semanal.yml workflow launches the download, the ETL and etl/pipeline.py on a GitHub machine.",
     "En cada push y cada martes, antes de subir la base nueva.": "On every push and every Tuesday, before uploading the new database.",
@@ -1170,45 +976,35 @@ PAGES = {
     "Formato abierto de archivos por columnas, comprimido, que leen todos los data warehouse.": "Open, compressed, columnar file format that every data warehouse reads.",
     "Framework de Python para construir aplicaciones web de datos.": "Python framework for building data web applications.",
     "Framework de pruebas automáticas para Python.": "Automated testing framework for Python.",
-    "Fuente de todos los precios: publica cada semana los CSV de precios mayoristas y al consumidor.":
-        "Source of every price: it publishes the CSV files of wholesale and consumer prices every week.",
-    "semanal.yml corre la carga completa, prueba la base nueva y la publica en un release; pruebas.yml corre pytest y dbt parse.":
-        "semanal.yml runs the full load, tests the new database and publishes it in a release; pruebas.yml runs pytest and dbt parse.",
-    "IPC de alimentos": "Food CPI",
+    "Fuente de todos los precios: publica cada semana los CSV de precios mayoristas y al consumidor.": "Source of every price: it publishes the CSV files of wholesale and consumer prices every week.",
+    "semanal.yml corre la carga completa, prueba la base nueva y la publica en un release; pruebas.yml corre pytest y dbt parse.": "semanal.yml runs the full load, tests the new database and publishes it in a release; pruebas.yml runs pytest and dbt parse.",
     "Publica el IPC de alimentos, con el que los precios se expresan en pesos de hoy.": "It publishes the food CPI, with which prices are expressed in today's pesos.",
     "Instituto Nacional de Estadísticas de Chile.": "Chile's National Statistics Institute.",
     "Las filas de los CSV entran sin cambios a etl/raw.db.": "The rows of the CSV files enter etl/raw.db unchanged.",
     "Las pruebas recalculan cada cifra del panel desde etl/datos.duckdb.": "The tests recompute each figure of the panel from etl/datos.duckdb.",
-    "Las pruebas recalculan los precios desde las filas crudas de raw.db y comparan el respaldo SQLite con DuckDB.":
-        "The tests recompute the prices from the raw rows of raw.db and compare the SQLite backup with DuckDB.",
-    "Lee el bronce y construye staging, intermedio y marts; corre sus pruebas de datos y, si una falla, la carga se detiene y la base publicada no cambia.":
-        "Reads bronze and builds staging, intermediate and marts; runs its data tests and, if one fails, the load stops and the published database does not change.",
+    "Las pruebas recalculan los precios desde las filas crudas de raw.db y comparan el respaldo SQLite con DuckDB.": "The tests recompute the prices from the raw rows of raw.db and compare the SQLite backup with DuckDB.",
+    "Lee el bronce y construye staging, intermedio y marts; corre sus pruebas de datos y, si una falla, la carga se detiene y la base publicada no cambia.": "Reads bronze and builds staging, intermediate and marts; runs its data tests and, if one fails, the load stops and the published database does not change.",
     "Lenguaje común": "Common language",
     "Lenguaje de consultas": "Query language",
     "Lenguaje de programación": "Programming language",
     "Lenguaje de programación de propósito general, con bibliotecas para datos y para la web.": "General-purpose programming language, with libraries for data and for the web.",
     "Lenguaje estándar para consultar y transformar tablas.": "Standard language for querying and transforming tables.",
-    "Los modelos de dbt, las reglas de calidad y los indicadores del panel (bi/queries.sql) son consultas SQL; la página Consultas SQL deja escribir las propias.":
-        "The dbt models, the quality rules and the indicators of the panel (bi/queries.sql) are SQL queries; the SQL queries page lets you write your own.",
+    "Los modelos de dbt, las reglas de calidad y los indicadores del panel (bi/queries.sql) son consultas SQL; la página Consultas SQL deja escribir las propias.": "The dbt models, the quality rules and the indicators of the panel (bi/queries.sql) are SQL queries; the SQL queries page lets you write your own.",
     "Motor de base de datos relacional que vive en un solo archivo, sin servidor.": "Relational database engine that lives in a single file, without a server.",
     "Precios de alimentos": "Food prices",
     "Oficina de Estudios y Políticas Agrarias del Ministerio de Agricultura de Chile.": "Office of Agricultural Studies and Policies of Chile's Ministry of Agriculture.",
     "Orquestación": "Orchestration",
     "Formato columnar": "Columnar format",
-    "etl/bronze/ guarda la copia literal de cada fuente, un archivo por año: ODEPA desde raw.db y el IPC del INE.":
-        "etl/bronze/ keeps the literal copy of each source, one file per year: ODEPA from raw.db and the INE CPI.",
+    "etl/bronze/ guarda la copia literal de cada fuente, un archivo por año: ODEPA desde raw.db y el IPC del INE.": "etl/bronze/ keeps the literal copy of each source, one file per year: ODEPA from raw.db and the INE CPI.",
     "Pruebas en Python": "Tests in Python",
     "Python descarga por HTTPS las series del IPC de alimentos del INE.": "Python downloads the INE food CPI series over HTTPS.",
     "Python descarga por HTTPS los archivos anuales de precios de ODEPA.": "Python downloads the yearly ODEPA price files over HTTPS.",
-    "agent/agent.py descarga los CSV de ODEPA y etl/ine.py el IPC; etl/pipeline.py guarda las filas, copia el bronce, lanza dbt build y publica la base solo si todo pasa.":
-        "agent/agent.py downloads the ODEPA CSV files and etl/ine.py the CPI; etl/pipeline.py stores the rows, copies bronze, launches dbt build and publishes the database only if everything passes.",
+    "agent/agent.py descarga los CSV de ODEPA y etl/ine.py el IPC; etl/pipeline.py guarda las filas, copia el bronce, lanza dbt build y publica la base solo si todo pasa.": "agent/agent.py downloads the ODEPA CSV files and etl/ine.py the CPI; etl/pipeline.py stores the rows, copies bronze, launches dbt build and publishes the database only if everything passes.",
     "Qué es": "What it is",
     "Qué significa": "What it means",
-    "Recalcula los precios desde las filas crudas, compara SQLite con DuckDB, audita cada cifra del panel y ataca la seguridad (casos S-01 a S-10).":
-        "Recomputes the prices from the raw rows, compares SQLite with DuckDB, audits each figure of the panel and attacks security (cases S-01 to S-10).",
+    "Recalcula los precios desde las filas crudas, compara SQLite con DuckDB, audita cada cifra del panel y ataca la seguridad (casos S-01 a S-10).": "Recomputes the prices from the raw rows, compares SQLite with DuckDB, audits each figure of the panel and attacks security (cases S-01 to S-10).",
     "Rol en GreenOcean": "Role in GreenOcean",
-    "etl/raw.db guarda las filas de ODEPA tal como llegan; etl/datos.db es el respaldo que calcula el ETL en Python, para comprobar la paridad con DuckDB.":
-        "etl/raw.db keeps the ODEPA rows as they arrive; etl/datos.db is the backup the Python ETL computes, to check parity with DuckDB.",
+    "etl/raw.db guarda las filas de ODEPA tal como llegan; etl/datos.db es el respaldo que calcula el ETL en Python, para comprobar la paridad con DuckDB.": "etl/raw.db keeps the ODEPA rows as they arrive; etl/datos.db is the backup the Python ETL computes, to check parity with DuckDB.",
     "Se conecta con": "Connects with",
     "Servicio de GitHub que ejecuta workflows (CI/CD) en máquinas temporales, por calendario o por evento.": "GitHub service that runs workflows (CI/CD) on temporary machines, on a schedule or on an event.",
     "Framework web": "Web framework",
@@ -1220,8 +1016,7 @@ PAGES = {
     "cargas semanales registradas": "weekly loads recorded",
     "dbt Core: herramienta que transforma datos con modelos SQL versionados, con pruebas y linaje.": "dbt Core: a tool that transforms data with versioned SQL models, with tests and lineage.",
     "dbt lee el bronce como sus fuentes (sources).": "dbt reads bronze as its sources.",
-    "dbt materializa staging, intermedio y marts en DuckDB; las tablas del panel pasan a etl/datos.duckdb.":
-        "dbt materializes staging, intermediate and marts in DuckDB; the panel tables move to etl/datos.duckdb.",
+    "dbt materializa staging, intermedio y marts en DuckDB; las tablas del panel pasan a etl/datos.duckdb.": "dbt materializes staging, intermediate and marts in DuckDB; the panel tables move to etl/datos.duckdb.",
     "dónde se usa SQL": "where SQL is used",
     "el dato que fluye": "the data that flows",
     "etl/bronze.py copia las tablas de raw.db a Parquet, un archivo por fuente y año.": "etl/bronze.py copies the tables of raw.db to Parquet, one file per source and year.",
@@ -1234,7 +1029,6 @@ PAGES = {
     "quién lanza a quién": "who launches whom",
     "qué verifican las pruebas": "what the tests verify",
     "recalcula cada precio": "recomputes each price",
-    "solo lectura": "read-only",
     "consultas": "queries",
     "bronce": "bronze",
     "marts": "marts",
@@ -1242,7 +1036,6 @@ PAGES = {
     "dbt build": "dbt build",
     "IPC": "CPI",
     "CSV": "CSV",
-
     # The diagrams of the documents (bi/doc_views.py): context, containers, use cases and screens
     "Contexto del sistema": "System context",
     "Contenedores de GreenOcean": "Containers of GreenOcean",
@@ -1254,50 +1047,43 @@ PAGES = {
     "GreenOcean los descarga cada martes. Es la fuente oficial y abierta de estos precios.": "GreenOcean downloads them every Tuesday. It is the official, open source of these prices.",
     "Publica el IPC de alimentos.": "It publishes the food CPI.",
     "GreenOcean lo descarga para expresar los precios en pesos de hoy.": "GreenOcean downloads it to express prices in today's pesos.",
-    "Guarda el código, la base publicada y los informes semanales, y ejecuta la carga con Actions.":
-        "It keeps the code, the published database and the weekly reports, and runs the load with Actions.",
+    "Guarda el código, la base publicada y los informes semanales, y ejecuta la carga con Actions.": "It keeps the code, the published database and the weekly reports, and runs the load with Actions.",
     "GreenOcean vive ahí: cada cambio se prueba y cada martes se carga sin servidor propio.": "GreenOcean lives there: each change is tested and each Tuesday it loads without a server of its own.",
     "Sirve el panel con un enlace público.": "It serves the panel with a public link.",
     "GreenOcean se publica ahí desde la rama main y guarda sus secretos en esa plataforma.": "GreenOcean is published there from the main branch and keeps its secrets on that platform.",
     "Analista de pricing, compras y abastecimiento, gerencia o revisor técnico.": "Pricing analyst, purchasing and supply, management or technical reviewer.",
     "Lee el panel de solo lectura; no necesita cuenta ni clave.": "They read the read-only panel; they need no account or code.",
     "Quien mantiene el proyecto.": "Whoever maintains the project.",
-    "Cambia el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.":
-        "They change the code and the secrets, answer ad hoc SQL queries and can launch a manual load with the control code.",
+    "Cambia el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.": "They change the code and the secrets, answer ad hoc SQL queries and can launch a manual load with the control code.",
     "GreenOcean descarga los archivos anuales de ODEPA, por HTTPS.": "GreenOcean downloads the yearly ODEPA files, over HTTPS.",
     "GreenOcean descarga las series del IPC de alimentos del INE, por HTTPS.": "GreenOcean downloads the INE food CPI series, over HTTPS.",
     "El visitante lee el panel por HTTPS.": "The visitor reads the panel over HTTPS.",
     "El administrador cambia el código y los secretos, y con la clave lanza una carga.": "The administrator changes the code and the secrets, and launches a load with the code.",
-    "GreenOcean guarda su código, la base publicada y los informes en GitHub, y GitHub Actions los ejecuta.":
-        "GreenOcean keeps its code, the published database and the reports on GitHub, and GitHub Actions runs them.",
+    "GreenOcean guarda su código, la base publicada y los informes en GitHub, y GitHub Actions los ejecuta.": "GreenOcean keeps its code, the published database and the reports on GitHub, and GitHub Actions runs them.",
     "GreenOcean publica el panel en Streamlit Community Cloud desde la rama main.": "GreenOcean publishes the panel on Streamlit Community Cloud from the main branch.",
-    "lee": "reads", "mantiene": "maintains", "aloja": "hosts", "publica": "publishes",
+    "lee": "reads",
+    "mantiene": "maintains",
+    "aloja": "hosts",
+    "publica": "publishes",
     "Un pipeline semanal y un panel de BI sobre los precios de alimentos de Chile.": "A weekly pipeline and a BI panel on the food prices of Chile.",
-    "Integra los precios de ODEPA con el IPC del INE, revisa su calidad y publica un panel de solo lectura donde cada cifra se puede seguir hasta el archivo original.":
-        "It integrates the ODEPA prices with the INE CPI, checks their quality and publishes a read-only panel where each figure can be traced back to the original file.",
+    "Integra los precios de ODEPA con el IPC del INE, revisa su calidad y publica un panel de solo lectura donde cada cifra se puede seguir hasta el archivo original.": "It integrates the ODEPA prices with the INE CPI, checks their quality and publishes a read-only panel where each figure can be traced back to the original file.",
     "Pipeline semanal y panel de BI sobre los precios de alimentos de Chile": "Weekly pipeline and BI panel on the food prices of Chile",
-    "La flecha va de quien usa a quien es usado. Lo que hay dentro de GreenOcean está en las vistas siguientes. Pasa el cursor por cada logo y cada flecha.":
-        "The arrow goes from the one that uses to the one that is used. What is inside GreenOcean is in the following views. Hover over each logo and each arrow.",
-    "Carga semanal": "Weekly load",
+    "La flecha va de quien usa a quien es usado. Lo que hay dentro de GreenOcean está en las vistas siguientes. Pasa el cursor por cada logo y cada flecha.": "The arrow goes from the one that uses to the one that is used. What is inside GreenOcean is in the following views. Hover over each logo and each arrow.",
     "Archivos de trabajo": "Working files",
     "Base servida": "Served database",
     "Respaldo": "Backup",
-    "Descarga los CSV, los guarda sin cambios, los transforma y prueba con dbt y publica la base solo si todo pasa.":
-        "Downloads the CSV files, keeps them unchanged, transforms and tests them with dbt and publishes the database only if everything passes.",
-    "Aterrizaje, bronce y base de trabajo de dbt. Se rehacen en cada carga y no se suben a GitHub.":
-        "Landing, bronze and the dbt working database. Rebuilt on each load and not committed to GitHub.",
+    "Descarga los CSV, los guarda sin cambios, los transforma y prueba con dbt y publica la base solo si todo pasa.": "Downloads the CSV files, keeps them unchanged, transforms and tests them with dbt and publishes the database only if everything passes.",
+    "Aterrizaje, bronce y base de trabajo de dbt. Se rehacen en cada carga y no se suben a GitHub.": "Landing, bronze and the dbt working database. Rebuilt on each load and not committed to GitHub.",
     "Las 12 tablas que lee el panel. Se reemplaza entera al final de una carga válida.": "The 12 tables the panel reads. Replaced whole at the end of a valid load.",
     "Los mismos precios calculados por el ETL en Python, sin dbt, para comprobar la paridad.": "The same prices computed by the Python ETL, without dbt, to check parity.",
     "Muestra los indicadores y los documentos, y abre el estudio SQL; lee la base en solo lectura.": "Shows the indicators and the documents, and opens the SQL studio; reads the database read-only.",
     "Publica los CSV de precios cada semana.": "It publishes the price CSV files every week.",
     "Publica el IPC de alimentos cada mes.": "It publishes the food CPI every month.",
-    "Guarda el código en main y la base publicada en un release, ejecuta la carga cada martes y responde a la API del panel.":
-        "Keeps the code on main and the published database in a release, runs the load every Tuesday and answers the panel's API.",
+    "Guarda el código en main y la base publicada en un release, ejecuta la carga cada martes y responde a la API del panel.": "Keeps the code on main and the published database in a release, runs the load every Tuesday and answers the panel's API.",
     "Analista, compras, gerencia o revisor técnico.": "Analyst, purchasing, management or technical reviewer.",
     "Mantiene el código y los secretos.": "Maintains the code and the secrets.",
     "[precios]": "[prices]",
     "[IPC de alimentos]": "[food CPI]",
-    "precios": "prices",
     "repositorio · Actions · API REST": "repository · Actions · REST API",
     "lee y escribe": "reads and writes",
     "escribe": "writes",
@@ -1334,9 +1120,7 @@ PAGES = {
     "{n} · {}: {}": "{} · {}: {}",
     "S-{n}: {} ({})": "S-{}: {} ({})",
     "S-{n} · {} · {}": "S-{} · {} · {}",
-    "En GitHub, pruebas.yml hace los pasos 2 a 4 en cada push; su resultado avisa, pero no detiene la publicación de main. Pulsa un paso para ver cómo se hace.":
-        "On GitHub, pruebas.yml does steps 2 to 4 on every push; its result warns, but it does not stop the publication of main. Click a step to see how it is done.",
-
+    "En GitHub, pruebas.yml hace los pasos 2 a 4 en cada push; su resultado avisa, pero no detiene la publicación de main. Pulsa un paso para ver cómo se hace.": "On GitHub, pruebas.yml does steps 2 to 4 on every push; its result warns, but it does not stop the publication of main. Click a step to see how it is done.",
     # States that depend on the moment: GitHub without an answer, the token, a run in progress
     "sin datos del workflow": "no workflow data",
     "Sin dato": "No data",
@@ -1344,41 +1128,29 @@ PAGES = {
     "Tu token venció: crea uno nuevo y cámbialo en los secretos del panel.": "Your token expired: create a new one and change it in the panel's secrets.",
     "Tu token vence en {n} días ({}).": "Your token expires in {} days ({}).",
     "⏳ Preparando la ejecución…": "⏳ Preparing the run…",
-
     # The evidence of each control of Quality and audit (bi/quality_evidence.py and its pop-up)
     "Abrir la evidencia de un control": "Open the evidence of a control",
     "Abrir la evidencia de": "Open the evidence of",
     "Cobertura temporal": "Time coverage",
     "Paridad SQLite ↔ DuckDB": "SQLite ↔ DuckDB parity",
-    "Cada archivo que el agente descargó de ODEPA queda registrado en manifest.json con su fecha, su tamaño y su huella SHA-256.":
-        "Each file the agent downloaded from ODEPA is recorded in manifest.json with its date, its size and its SHA-256 fingerprint.",
-    "Los archivos locales se vuelven a resumir con SHA-256 y se comparan con la huella registrada. Un archivo que no está en este servidor queda pendiente, no verificado.":
-        "The local files are hashed again with SHA-256 and compared with the recorded fingerprint. A file that is not on this server stays pending, not verified.",
+    "Cada archivo que el agente descargó de ODEPA queda registrado en manifest.json con su fecha, su tamaño y su huella SHA-256.": "Each file the agent downloaded from ODEPA is recorded in manifest.json with its date, its size and its SHA-256 fingerprint.",
+    "Los archivos locales se vuelven a resumir con SHA-256 y se comparan con la huella registrada. Un archivo que no está en este servidor queda pendiente, no verificado.": "The local files are hashed again with SHA-256 and compared with the recorded fingerprint. A file that is not on this server stays pending, not verified.",
     "Las semanas con precios, de la primera a la última, y las que faltan en medio.": "The weeks with prices, from the first to the last, and those missing in between.",
-    "Cada ejecución del pipeline deja una fila en etl_run: cuándo empezó, qué leyó, qué cargó y qué rechazó.":
-        "Each run of the pipeline leaves a row in etl_run: when it started, what it read, what it loaded and what it rejected.",
-    "dbt corre sus pruebas de datos en cada construcción; la base publicada trae el resultado de cada una. Si una falla, la base no se reemplaza.":
-        "dbt runs its data tests on each build; the published database carries the result of each one. If one fails, the database is not replaced.",
-    "La base publicada se lee completa: referencias entre tablas, claves duplicadas y precios utilizables con formato inválido.":
-        "The published database is read in full: references between tables, duplicated keys and usable prices with an invalid format.",
-    "Una prueba automática reconstruye 120 precios semanales desde las filas crudas de ODEPA, sin pasar por el ETL, y los compara con la base.":
-        "An automated test rebuilds 120 weekly prices from the raw ODEPA rows, without going through the ETL, and compares them with the database.",
-    "Las alertas se calculan en Python y en SQL y deben coincidir (D-049); las variaciones del Resumen se comparan con un cálculo SQL independiente.":
-        "The alerts are computed in Python and in SQL and must match (D-049); the changes of the Summary are compared with an independent SQL calculation.",
-    "Las cifras de familias, ranking y margen de una semana se recalcularon a mano por región y coinciden con lo que muestra el panel (D-144, D-146).":
-        "The family, ranking and margin figures of one week were recomputed by hand by region and match what the panel shows (D-144, D-146).",
-    "No existe una segunda fuente oficial con la que contrastar estos precios: ODEPA es la única. Por eso este control queda pendiente, y así se dice.":
-        "There is no second official source to contrast these prices with: ODEPA is the only one. That is why this control stays pending, and it says so.",
+    "Cada ejecución del pipeline deja una fila en etl_run: cuándo empezó, qué leyó, qué cargó y qué rechazó.": "Each run of the pipeline leaves a row in etl_run: when it started, what it read, what it loaded and what it rejected.",
+    "dbt corre sus pruebas de datos en cada construcción; la base publicada trae el resultado de cada una. Si una falla, la base no se reemplaza.": "dbt runs its data tests on each build; the published database carries the result of each one. If one fails, the database is not replaced.",
+    "La base publicada se lee completa: referencias entre tablas, claves duplicadas y precios utilizables con formato inválido.": "The published database is read in full: references between tables, duplicated keys and usable prices with an invalid format.",
+    "Una prueba automática reconstruye 120 precios semanales desde las filas crudas de ODEPA, sin pasar por el ETL, y los compara con la base.": "An automated test rebuilds 120 weekly prices from the raw ODEPA rows, without going through the ETL, and compares them with the database.",
+    "Las alertas se calculan en Python y en SQL y deben coincidir (D-049); las variaciones del Resumen se comparan con un cálculo SQL independiente.": "The alerts are computed in Python and in SQL and must match (D-049); the changes of the Summary are compared with an independent SQL calculation.",
+    "Las cifras de familias, ranking y margen de una semana se recalcularon a mano por región y coinciden con lo que muestra el panel (D-144, D-146).": "The family, ranking and margin figures of one week were recomputed by hand by region and match what the panel shows (D-144, D-146).",
+    "No existe una segunda fuente oficial con la que contrastar estos precios: ODEPA es la única. Por eso este control queda pendiente, y así se dice.": "There is no second official source to contrast these prices with: ODEPA is the only one. That is why this control stays pending, and it says so.",
     "Qué garantiza": "What it guarantees",
     "Método: la consulta que lo comprueba": "Method: the query that checks it",
     "Registro: agent/downloads/manifest.json · {n} archivos.": "Log: agent/downloads/manifest.json · {} files.",
-    "Los archivos CSV no viven en el servidor del panel (no se suben al repositorio): aquí la huella solo se comprueba cuando el panel corre junto a las descargas.":
-        "The CSV files do not live on the panel's server (they are not committed to the repository): here the fingerprint is checked only when the panel runs next to the downloads.",
+    "Los archivos CSV no viven en el servidor del panel (no se suben al repositorio): aquí la huella solo se comprueba cuando el panel corre junto a las descargas.": "The CSV files do not live on the panel's server (they are not committed to the repository): here the fingerprint is checked only when the panel runs next to the downloads.",
     "**{n} semanas**, del {} al {}.": "**{} weeks**, from {} to {}.",
     "Ninguna semana falta entre la primera y la última.": "No week is missing between the first and the last.",
     "Cada regla del PRD con las pruebas de dbt que la comprueban en cada carga.": "Each rule of the PRD with the dbt tests that check it on each load.",
-    "Esta auditoría corre con las pruebas automáticas en cada cambio del repositorio y en cada carga semanal. Su código y su último resultado:":
-        "This audit runs with the automated tests on each change of the repository and on each weekly load. Its code and its last result:",
+    "Esta auditoría corre con las pruebas automáticas en cada cambio del repositorio y en cada carga semanal. Su código y su último resultado:": "This audit runs with the automated tests on each change of the repository and on each weekly load. Its code and its last result:",
     "Resultado en GitHub Actions (pruebas)": "Result in GitHub Actions (tests)",
     "Resultado en GitHub Actions (pruebas) ↗": "Result in GitHub Actions (tests) ↗",
     "Sin evidencia que mostrar: es un límite declarado, no una comprobación.": "No evidence to show: it is a declared limit, not a check.",
@@ -1388,7 +1160,6 @@ PAGES = {
     "Estado de los precios semanales": "Status of the weekly prices",
     "Cobertura del cruce": "Coverage of the match",
     "Cobertura del cruce (K7)": "Coverage of the match (K7)",
-    "{n} de {n}": "{} of {}",
     "claves de frutas y verduras del consumidor tienen margen ({n} %)": "consumer fruit and vegetable keys have a margin ({} %)",
     "Este cálculo corresponde a cobertura de productos comparables.": "This calculation is the coverage of comparable products.",
     "Qué quedó fuera y por qué": "What was left out and why",
@@ -1404,10 +1175,8 @@ PAGES = {
     "{} ({n}): un precio, una fecha o la región no se pudo leer": "{} ({}): a price, a date or the region could not be read",
     "{} ({n}): el precio mínimo es mayor que el máximo": "{} ({}): the minimum price is higher than the maximum",
     "{} ({n}): la fecha no cae en el año del archivo": "{} ({}): the date does not fall in the year of the file",
-    "{n} precios semanales a más de 5 veces, o menos de 1/5, de la mediana de su producto esa semana.":
-        "{} weekly prices more than 5 times, or less than 1/5 of, the median of their product that week.",
-    "{n} precios semanales en unidades con un rango o sin cantidad declarada (un atado de 1,5 a 2 kilos, una docena de atados): no se pueden llevar a kilo ni a unidad.":
-        "{} weekly prices in units with a range or without a declared quantity (a bunch of 1.5 to 2 kilos, a dozen bunches): they cannot be brought to kilo or unit.",
+    "{n} precios semanales a más de 5 veces, o menos de 1/5, de la mediana de su producto esa semana.": "{} weekly prices more than 5 times, or less than 1/5 of, the median of their product that week.",
+    "{n} precios semanales en unidades con un rango o sin cantidad declarada (un atado de 1,5 a 2 kilos, una docena de atados): no se pueden llevar a kilo ni a unidad.": "{} weekly prices in units with a range or without a declared quantity (a bunch of 1.5 to 2 kilos, a dozen bunches): they cannot be brought to kilo or unit.",
     "Se guardan tal como venían en la tabla": "They are kept as they came in the",
     "; nunca se borran en silencio.": "table; they are never deleted silently.",
     "Siguen en": "They stay in",
@@ -1422,63 +1191,97 @@ PAGES = {
     "Ver los precios con unidad no convertible, por producto": "See the prices with a unit that cannot be converted, by product",
     "¿Cómo se calcula?": "How is it computed?",
     "Cómo se calcula →": "How it is computed →",
-    "Precio máximo": "Maximum price", "Precio mínimo": "Minimum price", "Precio promedio": "Average price",
-    "Precio": "Price", "Precios semanales": "Weekly prices", "Semana": "Week", "Unidad de venta": "Unit of sale",
-    "Fuente": "Source", "Motivo": "Reason", "Regla": "Rule", "Mercado": "Market", "Variedad": "Variety",
-    "año": "year", "prueba": "test", "archivo": "file", "bytes": "bytes", "descargado": "downloaded", "huella": "fingerprint",
-    "comprobación": "check", "huella registrada": "recorded fingerprint", "huella calculada": "computed fingerprint",
-    "casos": "cases", "cifra": "figure", "coincide": "matches", "semana": "week", "tipo": "type", "columna": "column",
-    "estado": "status", "segundos": "seconds", "construida": "built", "ejecucion": "run", "inicio_utc": "start_utc",
-    "leidas": "read", "cargadas": "loaded", "rechazadas": "rejected", "mensaje": "message",
+    "Precio máximo": "Maximum price",
+    "Precio mínimo": "Minimum price",
+    "Precio promedio": "Average price",
+    "Precio": "Price",
+    "Precios semanales": "Weekly prices",
+    "Semana": "Week",
+    "Unidad de venta": "Unit of sale",
+    "Fuente": "Source",
+    "Motivo": "Reason",
+    "Regla": "Rule",
+    "Mercado": "Market",
+    "Variedad": "Variety",
+    "año": "year",
+    "prueba": "test",
+    "archivo": "file",
+    "bytes": "bytes",
+    "descargado": "downloaded",
+    "huella": "fingerprint",
+    "huella registrada": "recorded fingerprint",
+    "huella calculada": "computed fingerprint",
+    "casos": "cases",
+    "cifra": "figure",
+    "coincide": "matches",
+    "semana": "week",
+    "tipo": "type",
+    "columna": "column",
+    "estado": "status",
+    "segundos": "seconds",
+    "construida": "built",
+    "ejecucion": "run",
+    "inicio_utc": "start_utc",
+    "leidas": "read",
+    "cargadas": "loaded",
+    "rechazadas": "rejected",
+    "mensaje": "message",
     "Referencias entre tablas sin destino": "References between tables without a target",
     "Claves de precio duplicadas": "Duplicated price keys",
     "Precios utilizables con formato inválido": "Usable prices with an invalid format",
-    "Filas rechazadas": "Rows rejected",
     "Suma de precios": "Sum of prices",
     "misma suma": "same sum",
     "distinta": "different",
-    "verificado": "verified", "pendiente": "pending", "discrepancia": "discrepancy",
-
+    "verificado": "verified",
+    "pendiente": "pending",
+    "discrepancia": "discrepancy",
     # App map (bi/app_map.py)
-    "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y con qué se conecta.":
-        "The whole system in one view: each technology, its role, when it acts and what it connects with.",
+    "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y con qué se conecta.": "The whole system in one view: each technology, its role, when it acts and what it connects with.",
     "Todo el sistema en una vista: cada tecnología, su rol y sus conexiones.": "The whole system in one view: each technology, its role and its connections.",
     "Filtrar por tema": "Filter by theme",
-    "Datos": "Data", "Orquestación": "Orchestration", "Navegador": "Browser", "Apoyo": "Support",
-    "Seguridad": "Security", "Observabilidad": "Observability",
-    "Fuentes": "Sources", "Ingesta": "Ingestion", "Aterrizaje": "Landing", "Transformación": "Transformation",
-    "Data warehouse": "Data warehouse", "Publicación": "Publication", "Lectores": "Readers",
-    "datos": "data", "órdenes": "orders", "controles": "controls", "apoyo": "support",
+    "Datos": "Data",
+    "Navegador": "Browser",
+    "Apoyo": "Support",
+    "Seguridad": "Security",
+    "Observabilidad": "Observability",
+    "Fuentes": "Sources",
+    "Ingesta": "Ingestion",
+    "Aterrizaje": "Landing",
+    "Data warehouse": "Data warehouse",
+    "Lectores": "Readers",
+    "datos": "data",
+    "órdenes": "orders",
+    "controles": "controls",
+    "apoyo": "support",
     "Lo que vigila": "What watches",
     "Incluye": "Includes",
     "— {}": "— {}",
-    "Pasa el cursor por una pieza para ver qué es, su rol, cuándo actúa y con qué se conecta; un clic abre la página donde trabaja.":
-        "Hover over a piece to see what it is, its role, when it acts and what it connects with; a click opens the page where it works.",
-    "Agente de ingesta": "Ingestion agent", "Release «base-actual»": "«base-actual» release", "Autor": "Author",
-    "Repositorio GitHub": "GitHub repository", "pytest · CI": "pytest · CI", "Puertas de calidad": "Quality gates",
-    "Documentos": "Documents", "Medición de pantallas": "Screen measurement", "Apoyo con IA": "AI support",
-    "Oficina de Estudios y Políticas Agrarias del Ministerio de Agricultura de Chile.": "Office of Agricultural Studies and Policies of Chile's Ministry of Agriculture.",
-    "Publica cada semana los CSV de precios mayoristas y al consumidor: la fuente de todos los precios.":
-        "It publishes the CSV files of wholesale and consumer prices every week: the source of every price.",
+    "Pasa el cursor por una pieza para ver qué es, su rol, cuándo actúa y con qué se conecta; un clic abre la página donde trabaja.": "Hover over a piece to see what it is, its role, when it acts and what it connects with; a click opens the page where it works.",
+    "Agente de ingesta": "Ingestion agent",
+    "Release «base-actual»": "«base-actual» release",
+    "Autor": "Author",
+    "Repositorio GitHub": "GitHub repository",
+    "pytest · CI": "pytest · CI",
+    "Puertas de calidad": "Quality gates",
+    "Documentos": "Documents",
+    "Medición de pantallas": "Screen measurement",
+    "Apoyo con IA": "AI support",
+    "Publica cada semana los CSV de precios mayoristas y al consumidor: la fuente de todos los precios.": "It publishes the CSV files of wholesale and consumer prices every week: the source of every price.",
     "Publica cada semana; la carga descarga cada martes.": "It publishes every week; the load downloads every Tuesday.",
     "Publica cada mes; la carga descarga cada martes.": "It publishes every month; the load downloads every Tuesday.",
     "Programa en Python que descarga los archivos de las fuentes.": "Python program that downloads the files of the sources.",
-    "agent/agent.py descarga los CSV de ODEPA, revisa su encabezado y anota su huella; etl/ine.py descarga el IPC y lo escribe directo en bronce.":
-        "agent/agent.py downloads the ODEPA CSV files, checks their header and notes their fingerprint; etl/ine.py downloads the CPI and writes it straight to bronze.",
+    "agent/agent.py descarga los CSV de ODEPA, revisa su encabezado y anota su huella; etl/ine.py descarga el IPC y lo escribe directo en bronce.": "agent/agent.py downloads the ODEPA CSV files, checks their header and notes their fingerprint; etl/ine.py downloads the CPI and writes it straight to bronze.",
     "Cada martes, al comienzo de la carga.": "Every Tuesday, at the start of the load.",
     "biblioteca de Python que descarga por HTTPS, con reintentos.": "Python library that downloads over HTTPS, with retries.",
     "certifi y la raíz emSign": "certifi and the emSign root",
-    "certificados que verifican la conexión con ODEPA; la raíz emSign viaja con el agente desde que certifi la retiró (D-164).":
-        "certificates that verify the connection with ODEPA; the emSign root travels with the agent since certifi removed it (D-164).",
+    "certificados que verifican la conexión con ODEPA; la raíz emSign viaja con el agente desde que certifi la retiró (D-164).": "certificates that verify the connection with ODEPA; the emSign root travels with the agent since certifi removed it (D-164).",
     "calcula la huella de cada archivo y la guarda en manifest.json.": "computes the fingerprint of each file and stores it in manifest.json.",
     "descarga las dos series del IPC del INE.": "downloads the two series of the INE CPI.",
     "Base de datos relacional en un solo archivo, sin servidor.": "Relational database in a single file, without a server.",
-    "etl/raw.db guarda las filas de ODEPA tal como llegan; etl/datos.db es el respaldo que calcula el ETL en Python (etl/etl.py), para comprobar la paridad con DuckDB.":
-        "etl/raw.db keeps the ODEPA rows as they arrive; etl/datos.db is the backup the Python ETL computes (etl/etl.py), to check parity with DuckDB.",
+    "etl/raw.db guarda las filas de ODEPA tal como llegan; etl/datos.db es el respaldo que calcula el ETL en Python (etl/etl.py), para comprobar la paridad con DuckDB.": "etl/raw.db keeps the ODEPA rows as they arrive; etl/datos.db is the backup the Python ETL computes (etl/etl.py), to check parity with DuckDB.",
     "el ETL en Python que escribe el respaldo, por un camino independiente de dbt.": "the Python ETL that writes the backup, along a path independent of dbt.",
     "Formato abierto de archivos por columnas, comprimido.": "Open, compressed, columnar file format.",
-    "etl/bronze/ guarda la copia literal de cada fuente, un archivo por fuente y año, con todas las columnas como texto.":
-        "etl/bronze/ keeps the literal copy of each source, one file per source and year, with every column as text.",
+    "etl/bronze/ guarda la copia literal de cada fuente, un archivo por fuente y año, con todas las columnas como texto.": "etl/bronze/ keeps the literal copy of each source, one file per source and year, with every column as text.",
     "biblioteca de Apache Arrow que escribe los archivos Parquet (etl/bronze.py).": "Apache Arrow library that writes the Parquet files (etl/bronze.py).",
     "Herramienta que construye modelos SQL en orden de dependencias y los prueba.": "Tool that builds SQL models in dependency order and tests them.",
     "el adaptador que hace correr dbt sobre DuckDB.": "the adapter that runs dbt on DuckDB.",
@@ -1486,28 +1289,23 @@ PAGES = {
     "las tres capas de modelos: tipos, reglas de negocio y el modelo estrella.": "the three layers of models: types, business rules and the star schema.",
     "pruebas de datos": "data tests",
     "claves únicas, valores aceptados, relaciones y conciliación de filas.": "unique keys, accepted values, relationships and row reconciliation.",
-    "Motor donde dbt construye el data warehouse y base servida etl/datos.duckdb, que el panel lee en solo lectura.":
-        "Engine where dbt builds the data warehouse and the served database etl/datos.duckdb, which the panel reads read-only.",
+    "Motor donde dbt construye el data warehouse y base servida etl/datos.duckdb, que el panel lee en solo lectura.": "Engine where dbt builds the data warehouse and the served database etl/datos.duckdb, which the panel reads read-only.",
     "el lenguaje de los modelos, de las consultas del panel (bi/queries.sql) y del estudio SQL.": "the language of the models, of the panel queries (bi/queries.sql) and of the SQL studio.",
     "recibe el resultado de cada consulta que el panel convierte en tabla o gráfico.": "receives the result of each query that the panel turns into a table or a chart.",
     "Archivo publicado en GitHub, fuera del historial de Git.": "File published on GitHub, outside the Git history.",
-    "Guarda una sola copia de la base servida, reemplazada por cada carga; en main queda su puntero etl/datos.version, con la huella, el tamaño y la fecha (D-270).":
-        "Keeps a single copy of the served database, replaced by each load; its pointer etl/datos.version stays on main, with the fingerprint, the size and the date (D-270).",
+    "Guarda una sola copia de la base servida, reemplazada por cada carga; en main queda su puntero etl/datos.version, con la huella, el tamaño y la fecha (D-270).": "Keeps a single copy of the served database, replaced by each load; its pointer etl/datos.version stays on main, with the fingerprint, the size and the date (D-270).",
     "Al final de cada carga que pasó todas las pruebas.": "At the end of each load that passed every test.",
     "descarga la base del release y la usa solo si su huella coincide.": "downloads the database from the release and uses it only if its fingerprint matches.",
     "Framework de Python para aplicaciones web de datos.": "Python framework for data web applications.",
-    "Dibuja este panel con la base servida en solo lectura y lo publica en Streamlit Community Cloud desde la rama main.":
-        "Draws this panel with the served database read-only and publishes it on Streamlit Community Cloud from the main branch.",
+    "Dibuja este panel con la base servida en solo lectura y lo publica en Streamlit Community Cloud desde la rama main.": "Draws this panel with the served database read-only and publishes it on Streamlit Community Cloud from the main branch.",
     "Cada vez que alguien abre una página.": "Every time someone opens a page.",
     "Páginas": "Pages",
-    "Panorama de precios, Dónde comprar, Insights, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, Mapa de la app y la carpeta de documentos.":
-        "Price overview, Where to buy, Insights, Prices and inflation, Pipeline and lineage, Data model, Quality and audit, SQL queries, Operations center, Security architecture, Stack and evidence, App map and the documents folder.",
+    "Panorama de precios, Dónde comprar, Insights, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, Mapa de la app y la carpeta de documentos.": "Price overview, Where to buy, Insights, Prices and inflation, Pipeline and lineage, Data model, Quality and audit, SQL queries, Operations center, Security architecture, Stack and evidence, App map and the documents folder.",
     "el servicio gratuito que publica el panel y guarda sus secretos.": "the free service that publishes the panel and keeps its secrets.",
     "Cualquier persona con el enlace público.": "Anyone with the public link.",
     "Lee el panel y usa el estudio SQL sin cuenta: los datos son públicos.": "They read the panel and use the SQL studio without an account: the data is public.",
     "Cuando abre el panel.": "When they open the panel.",
-    "Mantiene el código y los secretos; con la clave de control puede lanzar la carga desde el panel.":
-        "They maintain the code and the secrets; with the control code they can launch the load from the panel.",
+    "Mantiene el código y los secretos; con la clave de control puede lanzar la carga desde el panel.": "They maintain the code and the secrets; with the control code they can launch the load from the panel.",
     "Cuando cambia el código o lanza una carga manual.": "When they change the code or launch a manual load.",
     "secreto del panel que abre el botón «Ejecutar pipeline ahora».": "secret of the panel that opens the «Run pipeline now» button.",
     "compara la clave en tiempo constante.": "compares the code in constant time.",
@@ -1518,8 +1316,7 @@ PAGES = {
     "GitHub Issues · gh": "GitHub Issues · gh",
     "el informe semanal se publica como issue con la interfaz de línea de comandos.": "the weekly report is published as an issue with the command-line interface.",
     "Servicio de GitHub que ejecuta workflows en máquinas temporales.": "GitHub service that runs workflows on temporary machines.",
-    "semanal.yml corre la carga completa, la prueba y la publica; también se lanza a mano desde el panel con la clave de control, por la API de GitHub.":
-        "semanal.yml runs the full load, tests it and publishes it; it is also launched by hand from the panel with the control code, through the GitHub API.",
+    "semanal.yml corre la carga completa, la prueba y la publica; también se lanza a mano desde el panel con la clave de control, por la API de GitHub.": "semanal.yml runs the full load, tests it and publishes it; it is also launched by hand from the panel with the control code, through the GitHub API.",
     "Cada martes a las 12:00 UTC, o a mano.": "Every Tuesday at 12:00 UTC, or by hand.",
     "cron del martes": "Tuesday cron",
     "0 12 * * 2: la carga corre sola cada martes.": "0 12 * * 2: the load runs by itself every Tuesday.",
@@ -1527,69 +1324,64 @@ PAGES = {
     "caché de Actions": "Actions cache",
     "guarda los CSV de los años cerrados para no descargarlos cada semana.": "keeps the CSV files of the closed years so they are not downloaded every week.",
     "Las pruebas automáticas y la integración continua.": "The automated tests and continuous integration.",
-    "pruebas.yml corre pytest y dbt parse en cada push; semanal.yml corre pytest sobre la base nueva antes de publicarla, incluida la paridad.":
-        "pruebas.yml runs pytest and dbt parse on every push; semanal.yml runs pytest on the new database before publishing it, including parity.",
+    "pruebas.yml corre pytest y dbt parse en cada push; semanal.yml corre pytest sobre la base nueva antes de publicarla, incluida la paridad.": "pruebas.yml runs pytest and dbt parse on every push; semanal.yml runs pytest on the new database before publishing it, including parity.",
     "En cada push y cada martes, antes de publicar.": "On every push and every Tuesday, before publishing.",
     "el framework de pruebas de Python: recalcula cada cifra desde la fuente.": "the Python testing framework: it recomputes each figure from the source.",
     "comprueba que los modelos y las pruebas de dbt compilan.": "checks that the dbt models and tests compile.",
     "Los lenguajes del navegador.": "The languages of the browser.",
-    "El panel genera el HTML y el CSS de cada vista (las barras, el menú, los diagramas en SVG, los temas) y pequeños scripts para las animaciones, el zoom y los textos al pasar el cursor.":
-        "The panel generates the HTML and CSS of each view (the bars, the menu, the SVG diagrams, the themes) and small scripts for the animations, the zoom and the texts on hover.",
+    "El panel genera el HTML y el CSS de cada vista (las barras, el menú, los diagramas en SVG, los temas) y pequeños scripts para las animaciones, el zoom y los textos al pasar el cursor.": "The panel generates the HTML and CSS of each view (the bars, the menu, the SVG diagrams, the themes) and small scripts for the animations, the zoom and the texts on hover.",
     "En el navegador del lector, en cada página.": "In the reader's browser, on each page.",
     "los diagramas: el pipeline, el modelo estrella, la seguridad y este mapa.": "the diagrams: the pipeline, the star schema, security and this map.",
     "los cuatro temas, el componente de botones y el ajuste a una pantalla.": "the four themes, the button component and the fit to one screen.",
     "el zoom, las animaciones, el menú y los trazos de este mapa.": "the zoom, the animations, the menu and the lines of this map.",
     "Biblioteca de gráficos declarativos de Python y su motor en el navegador.": "Python library of declarative charts and its engine in the browser.",
-    "Dibuja los gráficos de Precios e inflación y del Resumen, con el formato de números del idioma.":
-        "Draws the charts of Prices and inflation and of the Summary, with the number format of the language.",
+    "Dibuja los gráficos de Precios e inflación y del Resumen, con el formato de números del idioma.": "Draws the charts of Prices and inflation and of the Summary, with the number format of the language.",
     "En el navegador, cuando una página muestra un gráfico.": "In the browser, when a page shows a chart.",
     "Tres controles que detienen la carga si algo no cumple.": "Three checks that stop the load if something does not comply.",
-    "Puerta 1, el archivo; puerta 2, cada fila; puerta 3, la base: si una falla, no se publica nada.":
-        "Gate 1, the file; gate 2, each row; gate 3, the database: if one fails, nothing is published.",
+    "Puerta 1, el archivo; puerta 2, cada fila; puerta 3, la base: si una falla, no se publica nada.": "Gate 1, the file; gate 2, each row; gate 3, the database: if one fails, nothing is published.",
     "En cada carga.": "On each load.",
     "mide los once indicadores de calidad sobre la base publicada.": "measures the eleven quality indicators on the published database.",
     "Comparación de dos caminos independientes.": "Comparison of two independent paths.",
-    "El respaldo SQLite y la base servida deben dar los mismos precios, los mismos rechazos y la misma suma.":
-        "The SQLite backup and the served database must give the same prices, the same rejections and the same sum.",
+    "El respaldo SQLite y la base servida deben dar los mismos precios, los mismos rechazos y la misma suma.": "The SQLite backup and the served database must give the same prices, the same rejections and the same sum.",
     "En cada carga, antes de publicar.": "On each load, before publishing.",
     "la prueba que compara las dos bases.": "the test that compares the two databases.",
     "Las amenazas, sus controles y las pruebas que los verifican.": "The threats, their controls and the tests that verify them.",
-    "El SQL público con límites, la base en solo lectura, la clave de control y el token protegido; los casos S-01 a S-10 los atacan en cada push.":
-        "The public SQL with limits, the read-only database, the control code and the protected token; cases S-01 to S-10 attack them on every push.",
+    "El SQL público con límites, la base en solo lectura, la clave de control y el token protegido; los casos S-01 a S-10 los atacan en cada push.": "The public SQL with limits, the read-only database, the control code and the protected token; cases S-01 to S-10 attack them on every push.",
     "En cada push.": "On every push.",
     "la arquitectura de seguridad, con el OWASP Top 10 como guía.": "the security architecture, with the OWASP Top 10 as a guide.",
     "los ataques convertidos en pruebas.": "the attacks turned into tests.",
     "Cómo se sabe qué pasó en cada carga.": "How we know what happened in each load.",
-    "etl_run, dbt_result, el log de cada paso de GitHub Actions y el correo que GitHub envía si la carga falla.":
-        "etl_run, dbt_result, the log of each GitHub Actions step and the email GitHub sends if the load fails.",
+    "etl_run, dbt_result, el log de cada paso de GitHub Actions y el correo que GitHub envía si la carga falla.": "etl_run, dbt_result, the log of each GitHub Actions step and the email GitHub sends if the load fails.",
     "el diagrama de las señales y de quién las lee.": "the diagram of the signals and of who reads them.",
     "La documentación del proyecto, en Markdown.": "The documentation of the project, in Markdown.",
     "Siete documentos en docs/ y docs/en/, cada uno con su página en el panel y su PDF.": "Seven documents in docs/ and docs/en/, each with its page in the panel and its PDF.",
-    "Los dos secretos del panel, guardados en Streamlit Community Cloud y nunca en el repositorio.":
-        "The two secrets of the panel, kept in Streamlit Community Cloud and never in the repository.",
-    "CONTROL_CODE abre el acceso del autor; GITHUB_TOKEN, con permisos mínimos, deja al panel lanzar la carga y leer el estado de las ejecuciones. Ninguno aparece en pantalla ni en los mensajes de error.":
-        "CONTROL_CODE opens the author access; GITHUB_TOKEN, with least privilege, lets the panel launch the load and read the status of the runs. Neither appears on screen or in error messages.",
+    "Los dos secretos del panel, guardados en Streamlit Community Cloud y nunca en el repositorio.": "The two secrets of the panel, kept in Streamlit Community Cloud and never in the repository.",
+    "CONTROL_CODE abre el acceso del autor; GITHUB_TOKEN, con permisos mínimos, deja al panel lanzar la carga y leer el estado de las ejecuciones. Ninguno aparece en pantalla ni en los mensajes de error.": "CONTROL_CODE opens the author access; GITHUB_TOKEN, with least privilege, lets the panel launch the load and read the status of the runs. Neither appears on screen or in error messages.",
     "Cuando el autor escribe la clave y cuando el panel consulta GitHub.": "When the author types the code and when the panel queries GitHub.",
     "la clave de control del autor.": "the author's control code.",
-    "token para lanzar el workflow y leer sus ejecuciones; el panel avisa 14 días antes de su vencimiento.":
-        "token to launch the workflow and read its runs; the panel warns 14 days before it expires.",
+    "token para lanzar el workflow y leer sus ejecuciones; el panel avisa 14 días antes de su vencimiento.": "token to launch the workflow and read its runs; the panel warns 14 days before it expires.",
     "verificación en dos pasos": "two-step verification",
-    "en sus cuentas de GitHub y de Streamlit; declarada por el autor, no verificable desde el repositorio.":
-        "on the author's GitHub and Streamlit accounts; declared by the author, not verifiable from the repository.",
-    "la escribe en «Acceso del autor» para abrir el botón «Ejecutar pipeline ahora».":
-        "typed in «Author access» to open the «Run pipeline now» button.",
-    "Sin filtro, el flujo de datos; un tema muestra todas sus piezas y conexiones. El cursor explica cada pieza y un clic abre su página.":
-        "Without a filter, the data flow; a theme shows all its pieces and connections. The cursor explains each piece and a click opens its page.",
-    "consultas del estudio SQL": "queries of the SQL studio", "puntero e informe semanal": "pointer and weekly report",
+    "en sus cuentas de GitHub y de Streamlit; declarada por el autor, no verificable desde el repositorio.": "on the author's GitHub and Streamlit accounts; declared by the author, not verifiable from the repository.",
+    "la escribe en «Acceso del autor» para abrir el botón «Ejecutar pipeline ahora».": "typed in «Author access» to open the «Run pipeline now» button.",
+    "Sin filtro, el flujo de datos; un tema muestra todas sus piezas y conexiones. El cursor explica cada pieza y un clic abre su página.": "Without a filter, the data flow; a theme shows all its pieces and connections. The cursor explains each piece and a click opens its page.",
+    "consultas del estudio SQL": "queries of the SQL studio",
+    "puntero e informe semanal": "pointer and weekly report",
     "push con su cuenta": "push with the author's account",
-    "compara la clave, lee el token": "compares the code, reads the token", "carga manual con el token": "manual load with the token",
-    "estado de las ejecuciones (API)": "status of the runs (API)", "S-01 a S-10 en cada push": "S-01 to S-10 on every push",
-    "corre la paridad": "runs the parity", "publica solo si todo pasa": "publishes only if everything passes",
-    "SQL con límites, clave y token": "SQL with limits, code and token", "solo lectura": "read-only",
-    "ningún secreto en Git": "no secret in Git", "permisos mínimos": "least privilege", "log de cada paso": "log of each step",
+    "compara la clave, lee el token": "compares the code, reads the token",
+    "carga manual con el token": "manual load with the token",
+    "estado de las ejecuciones (API)": "status of the runs (API)",
+    "S-01 a S-10 en cada push": "S-01 to S-10 on every push",
+    "corre la paridad": "runs the parity",
+    "publica solo si todo pasa": "publishes only if everything passes",
+    "SQL con límites, clave y token": "SQL with limits, code and token",
+    "ningún secreto en Git": "no secret in Git",
+    "permisos mínimos": "least privilege",
+    "log de cada paso": "log of each step",
     "correo si la carga falla": "email if the load fails",
-    "base anterior, para el historial": "previous database, for the history", "base para las pruebas": "database for the tests",
-    "Ver todas": "See all", "Diferencia en puntos": "Difference in points",
+    "base anterior, para el historial": "previous database, for the history",
+    "base para las pruebas": "database for the tests",
+    "Ver todas": "See all",
+    "Diferencia en puntos": "Difference in points",
     "Automática": "Automatic",
     "Datos a revisar": "Data to review",
     "Datos a revisar: ver los {n} indicadores": "Data to review: see the {} indicators",
@@ -1656,18 +1448,26 @@ PAGES = {
     "Los puntos que existen, de norte a sur; si sube, sube en todos": "The points that exist, north to south; if it rises, it rises in all of them",
     "Sin mercado mayorista en los datos": "No wholesale market in the data",
     "Solo información: los mercados mayoristas y los tipos de punto de venta que ODEPA registra en cada región. Los precios de los puntos de una misma ciudad se mueven juntos, así que no se separan: lo que sube en una región sube en todos sus mercados. Las flechas pasan de una región a la siguiente.": "Information only: the wholesale markets and the kinds of sales point that ODEPA records in each region. Prices at points of the same city move together, so they are not split: what rises in a region rises in all its markets. The arrows move from one region to the next.",
-    "¿Dónde se compra, región por región?": "Where to buy, region by region?", "Los puntos que existen; si sube, sube en todos": "The points that exist; if it rises, it rises in all of them",
+    "¿Dónde se compra, región por región?": "Where to buy, region by region?",
+    "Los puntos que existen; si sube, sube en todos": "The points that exist; if it rises, it rises in all of them",
     "Solo información: los mercados mayoristas y los tipos de punto de venta que ODEPA registra en cada región. Los precios de los puntos de una misma ciudad se mueven juntos, así que no se separan: lo que sube en una región sube en todos sus mercados.": "Information only: the wholesale markets and the kinds of sales point that ODEPA records in each region. Prices at points of the same city move together, so they are not split: what rises in a region rises in all its markets.",
-    "Región": "Region", "Mercados mayoristas": "Wholesale markets", "Puntos de venta al consumidor": "Consumer sales points",
-    "¿Qué familias vienen subiendo, semana a semana?": "Which families keep rising, week by week?", "Cada fila es una familia y cada columna una semana: rojo, subió; azul, bajó": "Each row is a family and each column a week: red, rose; blue, fell",
+    "Región": "Region",
+    "Mercados mayoristas": "Wholesale markets",
+    "Puntos de venta al consumidor": "Consumer sales points",
+    "¿Qué familias vienen subiendo, semana a semana?": "Which families keep rising, week by week?",
+    "Cada fila es una familia y cada columna una semana: rojo, subió; azul, bajó": "Each row is a family and each column a week: red, rose; blue, fell",
     "Regiones donde el mismo producto y canal subió / bajó; haz clic en el conteo para ver cuáles": "Regions where the same product and channel rose / fell; click the count to see which",
     "Regiones ↑ / ↓ · clic": "Regions ↑ / ↓ · click",
-    "Para quién": "For whom", "Quien compra": "Buyer", "Compra por mayor": "Wholesale buyer", "Diseña los datos": "Data architect",
+    "Para quién": "For whom",
+    "Quien compra": "Buyer",
+    "Compra por mayor": "Wholesale buyer",
+    "Diseña los datos": "Data architect",
     "Del precio mayorista al consumidor, el mismo producto sube típicamente {}: es el margen que separa la compra por mayor de la góndola.": "From the wholesale to the consumer price, the same product typically rises {}: the margin between buying wholesale and the shelf.",
     "En el mercado mayorista, el cambio típico de la semana fue {}.": "In the wholesale market, the typical change of the week was {}.",
     "Las mayores bajas mayoristas: {}.": "The largest wholesale drops: {}.",
     "ODEPA publica precios mayoristas solo de frutas y hortalizas.": "ODEPA publishes wholesale prices for fruit and vegetables only.",
-    "Para quien compra por mayor": "For the wholesale buyer", "Qué pasa en el mercado mayorista": "What is happening in the wholesale market",
+    "Para quien compra por mayor": "For the wholesale buyer",
+    "Qué pasa en el mercado mayorista": "What is happening in the wholesale market",
     '{n} de {n} familias subieron lo mismo que el IPC de alimentos, con menos de 2 puntos de diferencia.': '{} of {} families rose as much as the food CPI, with less than 2 points of difference.',
     '{n} de {n} indicadores en su umbral y {n} de {n} pruebas de dbt.': '{} of {} indicators within their threshold and {} of {} dbt tests.',
     '{n} de los {n} indicadores de calidad están dentro de su umbral: completitud, actualidad, validez, unicidad y consistencia. El detalle está abajo y en Calidad y auditoría.': '{} of the {} quality indicators are within their threshold: completeness, timeliness, validity, uniqueness and consistency. The detail is below and in Quality and audit.',
@@ -1760,7 +1560,8 @@ PAGES = {
     'Muestra cuánto se agrega entre el mercado mayorista y la góndola.': 'It shows how much is added between the wholesale market and the shelf.',
     '11 indicadores en cinco dimensiones (completitud, actualidad, validez, unicidad y consistencia) más controles de exactitud.': '11 indicators in five dimensions (completeness, timeliness, validity, uniqueness and consistency) plus accuracy controls.',
     'Una cifra solo vale si los datos de origen están completos y son válidos.': 'A figure is only worth something if the source data is complete and valid.',
-    "Frente al IPC, ± 2 puntos": "Against the CPI, ± 2 points", "IPC frente al mismo mes, un año antes (%)": "CPI against the same month a year before (%)",
+    "Frente al IPC, ± 2 puntos": "Against the CPI, ± 2 points",
+    "IPC frente al mismo mes, un año antes (%)": "CPI against the same month a year before (%)",
     "Cambio típico de cada familia, semana a semana (%)": "Typical change of each family, week by week (%)",
     "Inflación": "Inflation",
     "Datos y operación": "Data and operations",
@@ -1786,7 +1587,6 @@ PAGES = {
     "Cantidad": "Count",
     "Participación (%)": "Share (%)",
     "Valor": "Value",
-    "Región": "Region",
     "Dirección": "Direction",
     "De sus precios comparables": "Of its comparable prices",
     "Comparables": "Comparable",
@@ -1834,20 +1634,34 @@ PAGES = {
     "Cuando alguien abre la carpeta Documentos.": "When someone opens the Documents folder.",
     "el formato de los documentos, el mismo en GitHub y en el panel.": "the format of the documents, the same on GitHub and in the panel.",
     "Medición del diseño en un navegador real.": "Measurement of the design in a real browser.",
-    "tests/medicion/medir.cjs mide cada página a 1440 × 790 y 1920 × 1000; imprimir.cjs compara cada documento impreso con su página.":
-        "tests/medicion/medir.cjs measures each page at 1440 × 790 and 1920 × 1000; imprimir.cjs compares each printed document with its page.",
+    "tests/medicion/medir.cjs mide cada página a 1440 × 790 y 1920 × 1000; imprimir.cjs compara cada documento impreso con su página.": "tests/medicion/medir.cjs measures each page at 1440 × 790 and 1920 × 1000; imprimir.cjs compares each printed document with its page.",
     "Antes de cada cambio visual.": "Before each visual change.",
     "maneja Chrome para medir; se instala fuera del proyecto, sin ser una dependencia.": "drives Chrome to measure; it is installed outside the project, without being a dependency.",
     "Herramienta de apoyo, fuera del flujo de datos.": "Support tool, outside the data flow.",
-    "Se usó Claude como apoyo para la revisión técnica, la revisión de la documentación y la elección de etiquetas. El contexto del proyecto vive en archivos Markdown (CLAUDE.md y docs/), con un enfoque parecido a la recuperación de contexto, pero sin RAG: no hay base vectorial ni embeddings.":
-        "Claude was used as a support tool for the technical review, the review of the documentation and the choice of labels. The context of the project lives in Markdown files (CLAUDE.md and docs/), with an approach similar to context retrieval, but without RAG: there is no vector database and no embeddings.",
+    "Se usó Claude como apoyo para la revisión técnica, la revisión de la documentación y la elección de etiquetas. El contexto del proyecto vive en archivos Markdown (CLAUDE.md y docs/), con un enfoque parecido a la recuperación de contexto, pero sin RAG: no hay base vectorial ni embeddings.": "Claude was used as a support tool for the technical review, the review of the documentation and the choice of labels. The context of the project lives in Markdown files (CLAUDE.md and docs/), with an approach similar to context retrieval, but without RAG: there is no vector database and no embeddings.",
     "Durante el desarrollo; nunca en la carga ni en el panel.": "During development; never in the load or in the panel.",
-    "copia por año": "copy per year", "IPC, directo": "CPI, straight", "fuentes": "sources", "base servida": "served database",
-    "descarga y huella": "download and fingerprint", "HTML de cada vista": "HTML of each view", "gráficos": "charts",
-    "el panel": "the panel", "workflows": "workflows", "publica la base": "publishes the database",
-    "corre las pruebas": "runs the tests", "push": "push", "carga manual con la clave": "manual load with the code",
-    "resultado junto al commit": "result next to the commit", "puerta 1": "gate 1", "puertas 2 y 3": "gates 2 and 3",
-    "respaldo": "backup", "base nueva": "new database", "S-01 a S-10": "S-01 to S-10", "log y correo": "log and email",
-    "etl_run y dbt_result": "etl_run and dbt_result", "una pantalla": "one screen", "páginas y PDF": "pages and PDF",
+    "copia por año": "copy per year",
+    "IPC, directo": "CPI, straight",
+    "fuentes": "sources",
+    "base servida": "served database",
+    "descarga y huella": "download and fingerprint",
+    "HTML de cada vista": "HTML of each view",
+    "gráficos": "charts",
+    "el panel": "the panel",
+    "workflows": "workflows",
+    "publica la base": "publishes the database",
+    "corre las pruebas": "runs the tests",
+    "push": "push",
+    "carga manual con la clave": "manual load with the code",
+    "resultado junto al commit": "result next to the commit",
+    "puerta 1": "gate 1",
+    "puertas 2 y 3": "gates 2 and 3",
+    "respaldo": "backup",
+    "base nueva": "new database",
+    "S-01 a S-10": "S-01 to S-10",
+    "log y correo": "log and email",
+    "etl_run y dbt_result": "etl_run and dbt_result",
+    "una pantalla": "one screen",
+    "páginas y PDF": "pages and PDF",
     "revisión, sin RAG": "review, without RAG",
 }

@@ -2,6 +2,7 @@
 
 Shared by the dashboard, the alerts and the weekly report.
 """
+
 import re
 from pathlib import Path
 
@@ -70,5 +71,3 @@ def run_query_for_key(query_name, key, database_file=DATABASE_FILE):
 
 
 # endregion
-
-

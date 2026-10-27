@@ -1,7 +1,8 @@
 """Turn medicion.json (from medir.cjs) into the Markdown tables of the measurement report.
 
-    python tests/medicion/tabla.py <medicion.json>
+python tests/medicion/tabla.py <medicion.json>
 """
+
 import json
 import sys
 from collections import defaultdict
@@ -48,14 +49,20 @@ CHROME = ("app_header", "page_bar", "header_preferences", "report_page", "window
 
 def grower(row):
     """The tallest blocks with a name of their own (a key, an iframe, a table, an SVG)."""
-    items = [item for part in row["parts"] for item in part["tall"]
-             if not any(skip in item["el"] for skip in CHROME)
-             and not (item["el"].startswith("div[stVerticalBlock]") and "st-key-" not in item["el"])
-             and not item["el"].startswith("iframe[stIFrame]")]
+    items = [
+        item
+        for part in row["parts"]
+        for item in part["tall"]
+        if not any(skip in item["el"] for skip in CHROME)
+        and not (item["el"].startswith("div[stVerticalBlock]") and "st-key-" not in item["el"])
+        and not item["el"].startswith("iframe[stIFrame]")
+    ]
     items += [{"el": "iframe", "h": f["h"]} for part in row["parts"] for f in part["frames"] if f["h"] >= 300]
     items.sort(key=lambda item: -item["h"])
-    return "; ".join(f"{item['el'].replace('div[stVerticalBlock].st-key-', '')} {item['h']} px"
-                     for item in items[:2]) or "—"
+    return (
+        "; ".join(f"{item['el'].replace('div[stVerticalBlock].st-key-', '')} {item['h']} px" for item in items[:2])
+        or "—"
+    )
 
 
 def issues(rows):
@@ -97,7 +104,9 @@ def main(path):
         rows = [r for r in data if r["n"] == n and (r["w"], r["h"]) in DESKTOP]
         worst = issues(rows)
         cut = sorted({name for r in rows for p in r["parts"] for name in p["svgCut"]})
-        print(f"| {n} | {slug} | {worst['small']} | {worst['text']} | {worst['icon']} | {worst['clip']} | {', '.join(cut) or '—'} |")
+        print(
+            f"| {n} | {slug} | {worst['small']} | {worst['text']} | {worst['icon']} | {worst['clip']} | {', '.join(cut) or '—'} |"
+        )
 
     print("\n## Teléfono (Vantablack): alto natural / ventana\n")
     print("| # | Página | 390 × 844 | 844 × 390 |")

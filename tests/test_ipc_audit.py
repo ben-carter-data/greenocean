@@ -4,6 +4,7 @@ The raw rows of both INE files are kept in ine_ipc_source exactly as published (
 This test links the two series and builds the weekly factor again in plain Python,
 without dbt, and compares it with ipc_monthly and ipc_weekly.
 """
+
 import sys
 from datetime import date
 from pathlib import Path
@@ -13,8 +14,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import queries  # noqa: E402
 
-needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(),
-                                    reason="etl/datos.duckdb has not been built")
+needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.duckdb has not been built")
 
 
 def number(text):
@@ -42,8 +42,9 @@ def recompute_monthly():
 @needs_database
 def test_monthly_index_matches_the_ine_rows():
     expected = recompute_monthly()
-    published = {(row.year, row.month): row.food_index
-                 for row in queries.run_sql("SELECT * FROM ipc_monthly").itertuples()}
+    published = {
+        (row.year, row.month): row.food_index for row in queries.run_sql("SELECT * FROM ipc_monthly").itertuples()
+    }
     assert published.keys() == expected.keys()
     for key, value in expected.items():
         assert published[key] == pytest.approx(value, rel=1e-12)
@@ -83,5 +84,3 @@ def test_only_weeks_after_the_last_published_month_are_provisional():
     flags = list(weeks["provisional"])
     first = flags.index(True) if True in flags else len(flags)
     assert all(flags[first:]) and not any(flags[:first])
-
-

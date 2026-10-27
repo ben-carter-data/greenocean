@@ -1,4 +1,5 @@
 """Where the products are sold (D-306): information only, regenerated from ODEPA's own files."""
+
 import json
 
 import pytest
@@ -24,10 +25,17 @@ def test_d306_the_file_is_what_the_downloaded_files_say():
 
 def test_d310_each_region_is_a_column_of_houses_with_its_points_and_no_price():
     points = overview.read_points()
-    column = overview.build_region_column("Región Metropolitana de Santiago", points["Región Metropolitana de Santiago"], 200)
+    column = overview.build_region_column(
+        "Región Metropolitana de Santiago", points["Región Metropolitana de Santiago"], 200
+    )
     assert "Vega Central Mapocho de Santiago" in column and column.count('class="ov-house') == 3 + 1
-    assert "Supermercado, Feria libre" in column and "$" not in column and " %" not in column  # the retail kinds, on hover
-    assert overview.place_kind("Vega Central Mapocho de Santiago") == "fair" and overview.place_kind("Femacal de La Calera") == "market"
+    assert (
+        "Supermercado, Feria libre" in column and "$" not in column and " %" not in column
+    )  # the retail kinds, on hover
+    assert (
+        overview.place_kind("Vega Central Mapocho de Santiago") == "fair"
+        and overview.place_kind("Femacal de La Calera") == "market"
+    )
     assert 'class="ov-mini"' in column
     for kind in {kind for data in points.values() for kind in data["consumer"]}:
         assert (overview.POINTS_FILE.parent / "points" / f"{overview.POINT_ICONS[kind]}.svg").exists(), kind
@@ -37,9 +45,11 @@ def test_d310_each_region_is_a_column_of_houses_with_its_points_and_no_price():
 
 def test_d322_the_price_level_of_each_region_is_the_median_index_of_products_two_regions_price():
     from bi import queries
+
     week = queries.run_sql("SELECT max(week_start) AS w FROM weekly_price")["w"][0]
-    frame = queries.run_sql("SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?",
-                            parameters=(week,))
+    frame = queries.run_sql(
+        "SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?", parameters=(week,)
+    )
     levels = overview.regional_price_levels(frame)
     shared = frame[frame.groupby(overview.PRICE_KEY)["region"].transform("count") >= 2]
     for region, (level, prices, rank) in levels.items():

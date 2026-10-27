@@ -10,6 +10,7 @@ SHA-256 before using it. A local build newer than the pointer (python etl/pipeli
     python bi/served_database.py              download the published file when needed
     python bi/served_database.py --pointer    write the pointer of the local file (the weekly job, after it)
 """
+
 import hashlib
 import json
 import os
@@ -44,8 +45,11 @@ def file_sha256(path):
 
 def write_pointer(database_file=DATABASE_FILE, pointer_file=POINTER_FILE, now=None):
     """The pointer of the file about to be published: its SHA-256, its size and when."""
-    pointer = {"sha256": file_sha256(database_file), "bytes": database_file.stat().st_size,
-               "published_at": (now or datetime.now(timezone.utc)).isoformat(timespec="seconds")}
+    pointer = {
+        "sha256": file_sha256(database_file),
+        "bytes": database_file.stat().st_size,
+        "published_at": (now or datetime.now(timezone.utc)).isoformat(timespec="seconds"),
+    }
     pointer_file.write_text(json.dumps(pointer, indent=2) + "\n", encoding="utf-8")
     return pointer
 

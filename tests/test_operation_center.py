@@ -1,4 +1,5 @@
 """Tests for the Centro de operación (D-165) and the phone layout (D-166)."""
+
 import re
 import sys
 from pathlib import Path
@@ -9,16 +10,36 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import charts, control, dashboard, operation_center, project, queries  # noqa: E402
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-RUN = {"id": 7, "state": control.RUN_FAILED, "trigger": "Manual",
-       "url": "https://github.com/x/y/actions/runs/7"}
-JOB = {"html_url": "https://github.com/x/y/actions/runs/7/job/70", "steps": [
-    {"name": "Set up job", "number": 1, "status": "completed", "conclusion": "success",
-     "started_at": "2026-10-19T16:59:01Z", "completed_at": "2026-10-19T16:59:02Z"},
-    {"name": "Download the ODEPA files", "number": 7, "status": "completed", "conclusion": "failure",
-     "started_at": "2026-10-19T16:59:34Z", "completed_at": "2026-10-19T16:59:46Z"},
-    {"name": "Run the ETL (SQLite backup)", "number": 8, "status": "completed",
-     "conclusion": "skipped", "started_at": None, "completed_at": None},
-]}
+RUN = {"id": 7, "state": control.RUN_FAILED, "trigger": "Manual", "url": "https://github.com/x/y/actions/runs/7"}
+JOB = {
+    "html_url": "https://github.com/x/y/actions/runs/7/job/70",
+    "steps": [
+        {
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-19T16:59:01Z",
+            "completed_at": "2026-10-19T16:59:02Z",
+        },
+        {
+            "name": "Download the ODEPA files",
+            "number": 7,
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-10-19T16:59:34Z",
+            "completed_at": "2026-10-19T16:59:46Z",
+        },
+        {
+            "name": "Run the ETL (SQLite backup)",
+            "number": 8,
+            "status": "completed",
+            "conclusion": "skipped",
+            "started_at": None,
+            "completed_at": None,
+        },
+    ],
+}
 
 
 def test_d165_the_run_is_nine_steps_on_a_serpentine_of_three_rows():
@@ -33,8 +54,10 @@ def test_d165_the_run_is_nine_steps_on_a_serpentine_of_three_rows():
 def test_d165_each_step_links_to_its_own_log_line_in_github():
     details = control.describe_job_steps(JOB)
     assert details["Download the ODEPA files"] == {
-        "state": control.RUN_FAILED, "seconds": 12.0,
-        "url": "https://github.com/x/y/actions/runs/7/job/70#step:7:1"}
+        "state": control.RUN_FAILED,
+        "seconds": 12.0,
+        "url": "https://github.com/x/y/actions/runs/7/job/70#step:7:1",
+    }
     assert details["Run the ETL (SQLite backup)"]["state"] == "skipped"
     assert details["Run the ETL (SQLite backup)"]["seconds"] is None
 
@@ -57,9 +80,11 @@ def test_d165_a_failed_step_is_red_pinned_and_the_rest_did_not_run():
 
 def test_d165_while_a_run_is_in_progress_later_steps_wait():
     run = dict(RUN, state=control.RUN_IN_PROGRESS)
-    details = {"Download the ODEPA files": {"state": control.RUN_OK, "seconds": 10, "url": "a"},
-               "Build the data warehouse with dbt": {"state": control.RUN_IN_PROGRESS, "seconds": None, "url": "b"},
-               "Run the tests against the new database": {"state": "queued", "seconds": None, "url": "c"}}
+    details = {
+        "Download the ODEPA files": {"state": control.RUN_OK, "seconds": 10, "url": "a"},
+        "Build the data warehouse with dbt": {"state": control.RUN_IN_PROGRESS, "seconds": None, "url": "b"},
+        "Run the tests against the new database": {"state": "queued", "seconds": None, "url": "c"},
+    }
     states = operation_center.build_step_states(run, details, True)
     assert states["odepa"] == (operation_center.STATE_OK, "10 s", "a")
     assert states["dbt"][0] == states["ine"][0] == operation_center.STATE_RUNNING
@@ -113,10 +138,12 @@ def test_d166_phones_upright_are_asked_to_turn_and_sideways_get_the_computer_lay
 def test_d165_the_page_draws_the_stage_beside_the_facts_and_the_manual_run():
     if not queries.DATABASE_FILE.exists():
         return
-    script = (f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
-              "from bi import control, dashboard\n"
-              "control.list_workflow_runs = lambda *args, **kwargs: []\n"
-              "dashboard.render_page(dashboard.PAGE_RUNS)\n")
+    script = (
+        f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
+        "from bi import control, dashboard\n"
+        "control.list_workflow_runs = lambda *args, **kwargs: []\n"
+        "dashboard.render_page(dashboard.PAGE_RUNS)\n"
+    )
     app = AppTest.from_string(script, default_timeout=60).run()
     assert not app.exception and app.get("iframe")
     text = " ".join(block.value for block in app.markdown)
@@ -128,6 +155,7 @@ def test_d165_the_page_draws_the_stage_beside_the_facts_and_the_manual_run():
 
 def test_d271_the_path_shrinks_with_its_stage_and_never_grows_past_its_size():
     from bi import charts
+
     css = operation_center.build_css(charts.get_palette(charts.MODE_DARK))
     assert "container-type:inline-size" in css
     assert "width:min(76px, calc(76 * var(--u)))" in css and "width:min(132px, calc(132 * var(--u)))" in css

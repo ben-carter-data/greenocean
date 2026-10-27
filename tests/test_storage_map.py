@@ -1,26 +1,46 @@
 """«Dónde viven los datos» (D-236): the storage architecture, its stores, lines and sources."""
+
 import re
 from pathlib import Path
 
 from bi import charts, database_map, storage_map
 
 ROOT = Path(__file__).resolve().parent.parent
-COUNTS = {"weekly_price": 814610, "dim_product": 1609, "dim_region": 9, "dim_channel": 8, "dim_date": 250,
-          "rejection": 201, "ipc_weekly": 250, "ipc_monthly": 202, "ine_ipc_source": 202, "etl_run": 5,
-          "dbt_node": 50, "dbt_result": 47}
+COUNTS = {
+    "weekly_price": 814610,
+    "dim_product": 1609,
+    "dim_region": 9,
+    "dim_channel": 8,
+    "dim_date": 250,
+    "rejection": 201,
+    "ipc_weekly": 250,
+    "ipc_monthly": 202,
+    "ine_ipc_source": 202,
+    "etl_run": 5,
+    "dbt_node": 50,
+    "dbt_result": 47,
+}
 SIZES = {"raw": "≈ 665 MB", "served": "19 MB", "backup": "34 MB"}
 
 
 def build(mode=charts.MODE_DARK, layers=None, tests=31, sizes=SIZES):
-    return storage_map.build_map_html(charts.get_palette(mode), COUNTS,
-                                      layers or {"staging": 3, "intermediate": 4, "marts": 9}, tests, sizes)
+    return storage_map.build_map_html(
+        charts.get_palette(mode), COUNTS, layers or {"staging": 3, "intermediate": 4, "marts": 9}, tests, sizes
+    )
 
 
 def test_every_store_is_a_card_with_its_file_and_a_hover_that_says_what_why_and_where_from():
     markup = build()
     text = re.sub(r"<[^>]+>", " ", markup)
-    for store in ("etl/raw.db", "capa bronce", "warehouse_build.duckdb", "etl/datos.duckdb", "etl/datos.db",
-                  "CSV por año", "Streamlit"):
+    for store in (
+        "etl/raw.db",
+        "capa bronce",
+        "warehouse_build.duckdb",
+        "etl/datos.duckdb",
+        "etl/datos.db",
+        "CSV por año",
+        "Streamlit",
+    ):
         assert store in text, store
     for key in storage_map.TIP_KEYS:
         assert f'id="t-{key}"' in markup, key

@@ -7,6 +7,7 @@ load_raw_files() copies the downloaded files into raw.db exactly as published.
 The other steps turn them into weekly prices in datos.db, applying the
 business rules (RN) of docs/DISENO.md. Each rule is named where it is applied.
 """
+
 import csv
 import json
 import re
@@ -48,14 +49,28 @@ CONSUMER_GROUP_BY_WHOLESALE_SUBSECTOR = {"Hortalizas y tubérculos": "Hortalizas
 
 PRICE_COLUMNS = ["min_price", "max_price", "avg_price"]
 TEXT_COLUMNS_BY_SOURCE = {
-    SOURCE_WHOLESALE: ["region", "subsector", "product", "variety", "quality",
-                       "sale_unit"],
+    SOURCE_WHOLESALE: ["region", "subsector", "product", "variety", "quality", "sale_unit"],
     SOURCE_CONSUMER: ["region", "sales_channel", "product_group", "product", "unit"],
 }
 # Columns shared by both sources after clean().
-CLEAN_COLUMNS = ["source", "file_year", "first_date", "last_date", "region_id",
-                 "region", "channel", "product_group", "product", "variety",
-                 "quality", "unit", "volume", "min_price", "max_price", "avg_price"]
+CLEAN_COLUMNS = [
+    "source",
+    "file_year",
+    "first_date",
+    "last_date",
+    "region_id",
+    "region",
+    "channel",
+    "product_group",
+    "product",
+    "variety",
+    "quality",
+    "unit",
+    "volume",
+    "min_price",
+    "max_price",
+    "avg_price",
+]
 
 REASON_UNREADABLE_VALUE = "UNREADABLE_VALUE"
 REASON_NON_POSITIVE_PRICE = "NON_POSITIVE_PRICE"
@@ -67,23 +82,34 @@ UNIT_KILO = "kilo"
 UNIT_EACH = "unidad"
 UNIT_LITER = "litro"
 # Units whose price is already expressed per kilo, per unit or per liter.
-NORMALIZED_UNIT_BY_PREFIX = {"$/kilo": UNIT_KILO, "$/unidad": UNIT_EACH,
-                             "$/litro": UNIT_LITER}
+NORMALIZED_UNIT_BY_PREFIX = {"$/kilo": UNIT_KILO, "$/unidad": UNIT_EACH, "$/litro": UNIT_LITER}
 UNIT_NUMBER_PATTERN = re.compile(r"\d+(?:,\d+)?")
 # A quantity followed by its measure: "18 kilos", "15 unidades", "900 ml".
-UNIT_QUANTITY_PATTERN = re.compile(
-    r"(\d+(?:,\d+)?) ?(kilos?|unidades|gramos|grs|litros?|ml)\b")
+UNIT_QUANTITY_PATTERN = re.compile(r"(\d+(?:,\d+)?) ?(kilos?|unidades|gramos|grs|litros?|ml)\b")
 # Measure word -> (normalized unit, how many normalized units one of them is).
 NORMALIZED_UNIT_BY_MEASURE = {
-    "kilo": (UNIT_KILO, 1), "kilos": (UNIT_KILO, 1),
-    "gramos": (UNIT_KILO, 0.001), "grs": (UNIT_KILO, 0.001),
+    "kilo": (UNIT_KILO, 1),
+    "kilos": (UNIT_KILO, 1),
+    "gramos": (UNIT_KILO, 0.001),
+    "grs": (UNIT_KILO, 0.001),
     "unidades": (UNIT_EACH, 1),
-    "litro": (UNIT_LITER, 1), "litros": (UNIT_LITER, 1), "ml": (UNIT_LITER, 0.001),
+    "litro": (UNIT_LITER, 1),
+    "litros": (UNIT_LITER, 1),
+    "ml": (UNIT_LITER, 0.001),
 }
 
 # One weekly price per combination of these columns.
-WEEKLY_KEY_COLUMNS = ["week_start", "source", "channel", "region_id", "product_group",
-                      "product", "variety", "quality", "normalized_unit"]
+WEEKLY_KEY_COLUMNS = [
+    "week_start",
+    "source",
+    "channel",
+    "region_id",
+    "product_group",
+    "product",
+    "variety",
+    "quality",
+    "normalized_unit",
+]
 # Values written in weekly_price.flag, named as in the design document.
 FLAG_UNIT_NOT_CONVERTIBLE = "UNIDAD_NO_CONVERTIBLE"
 FLAG_OUTLIER = "ATIPICO"
@@ -91,23 +117,37 @@ FLAG_OUTLIER = "ATIPICO"
 OUTLIER_FACTOR = 5
 # The median is taken inside one source: retail prices are compared with retail
 # prices and wholesale prices with wholesale prices.
-OUTLIER_GROUP_COLUMNS = ["week_start", "source", "product_group", "product",
-                         "normalized_unit"]
+OUTLIER_GROUP_COLUMNS = ["week_start", "source", "product_group", "product", "normalized_unit"]
 
 PRODUCT_COLUMNS = ["product_group", "product", "variety", "quality"]
 CHANNEL_COLUMNS = ["channel", "source"]
 # Columns of the weekly_price table, in order.
-WEEKLY_PRICE_COLUMNS = ["week_start", "product_id", "region_id", "channel_id",
-                        "normalized_unit", "price", "volume", "observation_count",
-                        "flag"]
+WEEKLY_PRICE_COLUMNS = [
+    "week_start",
+    "product_id",
+    "region_id",
+    "channel_id",
+    "normalized_unit",
+    "price",
+    "volume",
+    "observation_count",
+    "flag",
+]
 
 # A load is refused when it reads less than this share of the previous one.
 MINIMUM_ROWS_RATIO = 0.9
 # Chile has 16 regions, numbered 1 to 16.
 KNOWN_REGION_IDS = set(range(1, 17))
-KNOWN_CHANNELS = {WHOLESALE_CHANNEL, "Supermercado", "Feria libre", "Carnicería",
-                  "Panadería", "Mercado Minorista", "Mercado Mayorista",
-                  "Supermercado en Línea"}
+KNOWN_CHANNELS = {
+    WHOLESALE_CHANNEL,
+    "Supermercado",
+    "Feria libre",
+    "Carnicería",
+    "Panadería",
+    "Mercado Minorista",
+    "Mercado Mayorista",
+    "Supermercado en Línea",
+}
 # D-042: weeks the source itself never published (checked in the original file).
 # They are accepted; any other missing week still stops the load.
 KNOWN_SOURCE_GAPS = {SOURCE_CONSUMER: {"2022-05-02"}}
@@ -157,6 +197,8 @@ def open_database(database_file=RAW_DATABASE_FILE, schema_file=RAW_SCHEMA_FILE):
     connection = sqlite3.connect(database_file)
     connection.executescript(schema_file.read_text(encoding="utf-8"))
     return connection
+
+
 # endregion
 
 
@@ -187,11 +229,12 @@ def load_raw_files(connection, download_dir=DOWNLOAD_DIR):
 
         placeholders = ",".join("?" * len(rows[0]))
         with connection:  # all or nothing
-            connection.execute(f"DELETE FROM {table} WHERE file_year = ?",
-                               (file_info["year"],))
+            connection.execute(f"DELETE FROM {table} WHERE file_year = ?", (file_info["year"],))
             connection.executemany(f"INSERT INTO {table} VALUES ({placeholders})", rows)
         load_summary.append((file_name, STATUS_LOADED, len(rows)))
     return load_summary
+
+
 # endregion
 
 
@@ -256,6 +299,8 @@ def clean(raw_rows, source):
     else:
         rows = add_consumer_columns(rows)
     return rows[CLEAN_COLUMNS]
+
+
 # endregion
 
 
@@ -272,19 +317,20 @@ def validate_rows(clean_rows):
     is_minimum_above_maximum = clean_rows["min_price"] > clean_rows["max_price"]
     # The first consumer week of a year starts in December of the previous one,
     # so a week belongs to the file when either of its ends falls in that year.
-    is_outside_file_year = (
-        (clean_rows["first_date"].dt.year != clean_rows["file_year"])
-        & (clean_rows["last_date"].dt.year != clean_rows["file_year"]))
+    is_outside_file_year = (clean_rows["first_date"].dt.year != clean_rows["file_year"]) & (
+        clean_rows["last_date"].dt.year != clean_rows["file_year"]
+    )
     # A wholesale row without volume cannot take part in a weighted average (RN-07).
-    is_missing_volume = ((clean_rows["source"] == SOURCE_WHOLESALE)
-                         & ~(clean_rows["volume"] > 0))
+    is_missing_volume = (clean_rows["source"] == SOURCE_WHOLESALE) & ~(clean_rows["volume"] > 0)
 
     reasons = pd.Series("", index=clean_rows.index)
-    checks = [(is_unreadable, REASON_UNREADABLE_VALUE),
-              (is_non_positive, REASON_NON_POSITIVE_PRICE),
-              (is_minimum_above_maximum, REASON_MINIMUM_ABOVE_MAXIMUM),
-              (is_outside_file_year, REASON_DATE_OUTSIDE_FILE_YEAR),
-              (is_missing_volume, REASON_NON_POSITIVE_VOLUME)]
+    checks = [
+        (is_unreadable, REASON_UNREADABLE_VALUE),
+        (is_non_positive, REASON_NON_POSITIVE_PRICE),
+        (is_minimum_above_maximum, REASON_MINIMUM_ABOVE_MAXIMUM),
+        (is_outside_file_year, REASON_DATE_OUTSIDE_FILE_YEAR),
+        (is_missing_volume, REASON_NON_POSITIVE_VOLUME),
+    ]
     for is_invalid, reason in checks:
         reasons[is_invalid & (reasons == "")] = reason
     return reasons
@@ -293,11 +339,10 @@ def validate_rows(clean_rows):
 def build_rejections(raw_rows, reasons, source):
     """RN-11: keep each rejected row exactly as it was read, with its reason."""
     rejected_rows = raw_rows[reasons != ""]
-    original_rows = [json.dumps(row, ensure_ascii=False)
-                     for row in rejected_rows.to_dict("records")]
-    return pd.DataFrame({"source": source,
-                         "reason": reasons[reasons != ""].to_list(),
-                         "original_row": original_rows})
+    original_rows = [json.dumps(row, ensure_ascii=False) for row in rejected_rows.to_dict("records")]
+    return pd.DataFrame({"source": source, "reason": reasons[reasons != ""].to_list(), "original_row": original_rows})
+
+
 # endregion
 
 
@@ -332,11 +377,12 @@ def normalize_units(rows):
     Rows whose unit is not convertible are kept, with both columns empty.
     """
     conversions = [(unit, *convert_unit(unit)) for unit in rows["unit"].unique()]
-    conversion_table = pd.DataFrame(
-        conversions, columns=["unit", "normalized_unit", "unit_quantity"])
+    conversion_table = pd.DataFrame(conversions, columns=["unit", "normalized_unit", "unit_quantity"])
     rows = rows.merge(conversion_table, on="unit", how="left")
     rows["normalized_price"] = rows["avg_price"] / rows["unit_quantity"]
     return rows
+
+
 # endregion
 
 
@@ -353,9 +399,8 @@ def aggregate_wholesale_weekly(wholesale_rows):
     rows = wholesale_rows.copy()
     rows["price_times_volume"] = rows["normalized_price"] * rows["volume"]
     weekly_prices = rows.groupby(WEEKLY_KEY_COLUMNS, dropna=False, as_index=False).agg(
-        price_times_volume=("price_times_volume", "sum"),
-        volume=("volume", "sum"),
-        observation_count=("volume", "size"))
+        price_times_volume=("price_times_volume", "sum"), volume=("volume", "sum"), observation_count=("volume", "size")
+    )
     weekly_prices["price"] = weekly_prices["price_times_volume"] / weekly_prices["volume"]
     # Without a normalized unit there is no price: the sum above would give 0.
     weekly_prices.loc[weekly_prices["normalized_unit"].isna(), "price"] = float("nan")
@@ -367,10 +412,9 @@ def aggregate_consumer_weekly(consumer_rows):
 
     RN-10: the 'Mercado Mayorista' point of sale is one more channel here.
     """
-    weekly_prices = consumer_rows.groupby(
-        WEEKLY_KEY_COLUMNS, dropna=False, as_index=False).agg(
-            price=("normalized_price", "mean"),
-            observation_count=("avg_price", "size"))
+    weekly_prices = consumer_rows.groupby(WEEKLY_KEY_COLUMNS, dropna=False, as_index=False).agg(
+        price=("normalized_price", "mean"), observation_count=("avg_price", "size")
+    )
     weekly_prices["volume"] = float("nan")
     return weekly_prices
 
@@ -379,14 +423,17 @@ def aggregate_weekly(rows):
     """Build one row per week, product key, region, channel and normalized unit."""
     rows = assign_week_start(rows)
     is_wholesale = rows["source"] == SOURCE_WHOLESALE
-    weekly_prices = pd.concat([aggregate_wholesale_weekly(rows[is_wholesale]),
-                               aggregate_consumer_weekly(rows[~is_wholesale])],
-                              ignore_index=True)
+    weekly_prices = pd.concat(
+        [aggregate_wholesale_weekly(rows[is_wholesale]), aggregate_consumer_weekly(rows[~is_wholesale])],
+        ignore_index=True,
+    )
     weekly_prices["flag"] = None
     # RN-05: the row is kept, without price and with its reason.
     is_not_convertible = weekly_prices["normalized_unit"].isna()
     weekly_prices.loc[is_not_convertible, "flag"] = FLAG_UNIT_NOT_CONVERTIBLE
     return weekly_prices
+
+
 # endregion
 
 
@@ -402,6 +449,8 @@ def flag_outliers(weekly_prices):
     is_too_low = weekly_prices["price"] < median_price / OUTLIER_FACTOR
     weekly_prices.loc[is_too_high | is_too_low, "flag"] = FLAG_OUTLIER
     return weekly_prices
+
+
 # endregion
 
 
@@ -411,6 +460,8 @@ def apply_business_rules(valid_rows):
     rows = normalize_units(valid_rows)
     weekly_prices = aggregate_weekly(rows)
     return flag_outliers(weekly_prices)
+
+
 # endregion
 
 
@@ -418,8 +469,8 @@ def apply_business_rules(valid_rows):
 def read_previous_rows_read(connection):
     """Rows read by the latest successful run, or None on the first run."""
     row = connection.execute(
-        "SELECT rows_read FROM etl_run WHERE status = ? ORDER BY run_id DESC LIMIT 1",
-        (STATUS_LOADED,)).fetchone()
+        "SELECT rows_read FROM etl_run WHERE status = ? ORDER BY run_id DESC LIMIT 1", (STATUS_LOADED,)
+    ).fetchone()
     return row[0] if row else None
 
 
@@ -443,14 +494,14 @@ def check_quality(weekly_prices, rows_read, previous_rows_read):
     problems = []
     # The files only grow during a year, so far fewer rows means a truncated file.
     if previous_rows_read and rows_read < previous_rows_read * MINIMUM_ROWS_RATIO:
-        problems.append(f"{PROBLEM_TOO_FEW_ROWS}: read {rows_read} rows, the previous"
-                        f" successful run read {previous_rows_read}")
+        problems.append(
+            f"{PROBLEM_TOO_FEW_ROWS}: read {rows_read} rows, the previous successful run read {previous_rows_read}"
+        )
     for source in SOURCES:
         source_weeks = weekly_prices.loc[weekly_prices["source"] == source, "week_start"]
         missing_weeks = find_unexpected_missing_weeks(source_weeks, source)
         if missing_weeks:
-            problems.append(f"{PROBLEM_MISSING_WEEKS}: {source} has no data for"
-                            f" {', '.join(missing_weeks)}")
+            problems.append(f"{PROBLEM_MISSING_WEEKS}: {source} has no data for {', '.join(missing_weeks)}")
     unknown_regions = sorted(set(weekly_prices["region_id"]) - KNOWN_REGION_IDS)
     if unknown_regions:
         problems.append(f"{PROBLEM_UNKNOWN_REGION}: {unknown_regions}")
@@ -460,9 +511,10 @@ def check_quality(weekly_prices, rows_read, previous_rows_read):
     # RN-14 and D-046: the database has no unique index, so the check lives here.
     duplicate_count = weekly_prices.duplicated(WEEKLY_KEY_COLUMNS).sum()
     if duplicate_count:
-        problems.append(f"{PROBLEM_DUPLICATE_KEYS}: {duplicate_count} weekly prices"
-                        " share their key with another one")
+        problems.append(f"{PROBLEM_DUPLICATE_KEYS}: {duplicate_count} weekly prices share their key with another one")
     return problems
+
+
 # endregion
 
 
@@ -478,8 +530,7 @@ def insert_rows(connection, table, rows):
     values = rows.astype(object).where(rows.notna(), None).values.tolist()
     column_names = ", ".join(rows.columns)
     placeholders = ", ".join("?" * len(rows.columns))
-    connection.executemany(
-        f"INSERT INTO {table} ({column_names}) VALUES ({placeholders})", values)
+    connection.executemany(f"INSERT INTO {table} ({column_names}) VALUES ({placeholders})", values)
 
 
 def add_new_dimension_rows(connection, table, rows, key_columns):
@@ -497,18 +548,40 @@ def attach_dimension_identifiers(connection, weekly_prices):
     """Replace product and channel names by their identifiers in the dimensions."""
     products = pd.read_sql("SELECT * FROM dim_product", connection)
     channels = pd.read_sql("SELECT * FROM dim_channel", connection)
-    rows = weekly_prices.merge(products, on=PRODUCT_COLUMNS).merge(
-        channels, on=CHANNEL_COLUMNS)
+    rows = weekly_prices.merge(products, on=PRODUCT_COLUMNS).merge(channels, on=CHANNEL_COLUMNS)
     rows["week_start"] = rows["week_start"].dt.strftime("%Y-%m-%d")
     return rows[WEEKLY_PRICE_COLUMNS]
 
 
-MONTH_NAMES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
-               "septiembre", "octubre", "noviembre", "diciembre"]
+MONTH_NAMES = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+]
 # Southern hemisphere: summer is December to February.
-SEASON_BY_MONTH = {12: "verano", 1: "verano", 2: "verano", 3: "otoño", 4: "otoño", 5: "otoño",
-                   6: "invierno", 7: "invierno", 8: "invierno",
-                   9: "primavera", 10: "primavera", 11: "primavera"}
+SEASON_BY_MONTH = {
+    12: "verano",
+    1: "verano",
+    2: "verano",
+    3: "otoño",
+    4: "otoño",
+    5: "otoño",
+    6: "invierno",
+    7: "invierno",
+    8: "invierno",
+    9: "primavera",
+    10: "primavera",
+    11: "primavera",
+}
 DIM_DATE_COLUMNS = ["week_start", "iso_year", "iso_week", "month", "month_name", "year", "season"]
 
 
@@ -516,15 +589,17 @@ def build_dim_date(first_week, last_week):
     """Every Monday from the first to the last week, without gaps (D-095)."""
     weeks = pd.date_range(pd.Timestamp(first_week), pd.Timestamp(last_week), freq="7D")
     calendar = weeks.isocalendar()
-    return pd.DataFrame({
-        "week_start": weeks.strftime("%Y-%m-%d"),
-        "iso_year": calendar["year"].to_numpy().astype(int),
-        "iso_week": calendar["week"].to_numpy().astype(int),
-        "month": weeks.month,
-        "month_name": [MONTH_NAMES[month - 1] for month in weeks.month],
-        "year": weeks.year,
-        "season": [SEASON_BY_MONTH[month] for month in weeks.month],
-    })[DIM_DATE_COLUMNS]
+    return pd.DataFrame(
+        {
+            "week_start": weeks.strftime("%Y-%m-%d"),
+            "iso_year": calendar["year"].to_numpy().astype(int),
+            "iso_week": calendar["week"].to_numpy().astype(int),
+            "month": weeks.month,
+            "month_name": [MONTH_NAMES[month - 1] for month in weeks.month],
+            "year": weeks.year,
+            "season": [SEASON_BY_MONTH[month] for month in weeks.month],
+        }
+    )[DIM_DATE_COLUMNS]
 
 
 def ensure_weekly_price_references_dim_date(connection):
@@ -538,7 +613,7 @@ def ensure_weekly_price_references_dim_date(connection):
         return False
     schema = SCHEMA_FILE.read_text(encoding="utf-8")
     start = schema.index("CREATE TABLE IF NOT EXISTS weekly_price")
-    definition = schema[start:schema.index(");", start) + 2]
+    definition = schema[start : schema.index(");", start) + 2]
     connection.execute("ALTER TABLE weekly_price RENAME TO weekly_price_before_d095")
     connection.execute(definition)
     columns = ", ".join(WEEKLY_PRICE_COLUMNS)
@@ -563,8 +638,8 @@ def record_run(connection, started_at, status, row_counts, message=""):
     cursor = connection.execute(
         "INSERT INTO etl_run (started_at, status, rows_read, rows_loaded,"
         " rows_rejected, message) VALUES (?, ?, ?, ?, ?, ?)",
-        (started_at, status, row_counts["rows_read"], row_counts["rows_loaded"],
-         row_counts["rows_rejected"], message))
+        (started_at, status, row_counts["rows_read"], row_counts["rows_loaded"], row_counts["rows_rejected"], message),
+    )
     return cursor.lastrowid
 
 
@@ -576,23 +651,24 @@ def load(connection, weekly_prices, regions, rejections, started_at, row_counts)
     """
     with connection:
         add_new_dimension_rows(connection, "dim_region", regions, ["region_id"])
-        add_new_dimension_rows(connection, "dim_product",
-                               weekly_prices[PRODUCT_COLUMNS].drop_duplicates(),
-                               PRODUCT_COLUMNS)
-        add_new_dimension_rows(connection, "dim_channel",
-                               weekly_prices[CHANNEL_COLUMNS].drop_duplicates(),
-                               CHANNEL_COLUMNS)
+        add_new_dimension_rows(
+            connection, "dim_product", weekly_prices[PRODUCT_COLUMNS].drop_duplicates(), PRODUCT_COLUMNS
+        )
+        add_new_dimension_rows(
+            connection, "dim_channel", weekly_prices[CHANNEL_COLUMNS].drop_duplicates(), CHANNEL_COLUMNS
+        )
         # The weekly prices are rebuilt from the raw data, so they are replaced.
         ensure_weekly_price_references_dim_date(connection)
         connection.execute("DELETE FROM weekly_price")
         # Every week referenced by a price exists in dim_date before the price (D-095).
         refresh_dim_date(connection, list(weekly_prices["week_start"]))
-        insert_rows(connection, "weekly_price",
-                    attach_dimension_identifiers(connection, weekly_prices))
+        insert_rows(connection, "weekly_price", attach_dimension_identifiers(connection, weekly_prices))
         run_id = record_run(connection, started_at, STATUS_LOADED, row_counts)
         # Only the rejections of the latest run are kept; etl_run keeps the counts.
         connection.execute("DELETE FROM rejection")
         insert_rows(connection, "rejection", rejections.assign(run_id=run_id))
+
+
 # endregion
 
 
@@ -603,6 +679,8 @@ def measure_match_coverage(connection):
     Returns (keys with margin, consumer keys).
     """
     return connection.execute(MATCH_COVERAGE_QUERY).fetchone()
+
+
 # endregion
 
 
@@ -631,8 +709,7 @@ def run_etl(raw_connection, connection):
     """Run the whole ETL from the raw tables. Returns the counts of the run."""
     started_at = datetime.now().isoformat(timespec="seconds")
     valid_rows, rejections, rows_read = clean_and_validate_all_sources(raw_connection)
-    row_counts = {"rows_read": rows_read, "rows_loaded": len(valid_rows),
-                  "rows_rejected": len(rejections)}
+    row_counts = {"rows_read": rows_read, "rows_loaded": len(valid_rows), "rows_rejected": len(rejections)}
     weekly_prices = apply_business_rules(valid_rows)
     row_counts["weekly_prices"] = len(weekly_prices)
 
@@ -642,8 +719,7 @@ def run_etl(raw_connection, connection):
         row_counts["status"] = STATUS_FAILED
         row_counts["message"] = " | ".join(problems)
         with connection:
-            record_run(connection, started_at, STATUS_FAILED, row_counts,
-                       row_counts["message"])
+            record_run(connection, started_at, STATUS_FAILED, row_counts, row_counts["message"])
         return row_counts
 
     regions = valid_rows[["region_id", "region"]].drop_duplicates("region_id")
@@ -654,6 +730,8 @@ def run_etl(raw_connection, connection):
     row_counts["status"] = STATUS_LOADED
     row_counts["message"] = ""
     return row_counts
+
+
 # endregion
 
 
@@ -668,10 +746,12 @@ def main():
         print(f"{status} | {file_name} | {row_count} rows")
     connection = open_database(DATABASE_FILE, SCHEMA_FILE)
     row_counts = run_etl(raw_connection, connection)
-    print(f"{row_counts['status']} | read {row_counts['rows_read']}"
-          f" | loaded {row_counts['rows_loaded']}"
-          f" | rejected {row_counts['rows_rejected']}"
-          f" | weekly prices {row_counts['weekly_prices']}")
+    print(
+        f"{row_counts['status']} | read {row_counts['rows_read']}"
+        f" | loaded {row_counts['rows_loaded']}"
+        f" | rejected {row_counts['rows_rejected']}"
+        f" | weekly prices {row_counts['weekly_prices']}"
+    )
     if row_counts["status"] == STATUS_FAILED:
         print(f"Quality checks failed, nothing was loaded: {row_counts['message']}")
     else:

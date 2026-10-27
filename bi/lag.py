@@ -5,6 +5,7 @@ weekly changes of both prices, not a proof that one price causes the other.
 One series is one product key, unit, region and consumer channel, taken from
 the pairs of the k1_margin query (same week, region and unit), see D-048.
 """
+
 import math
 
 import pandas as pd
@@ -19,8 +20,7 @@ MINIMUM_PAIRS = 3
 # A correlation is told apart from zero when it exceeds 2 / sqrt(pairs), the usual
 # approximation of 95 % confidence. Below it, the highest correlation is noise.
 SIGNIFICANCE_FACTOR = 2
-VARIATION_COLUMNS = {"wholesale_price": "wholesale_variation",
-                     "consumer_price": "consumer_variation"}
+VARIATION_COLUMNS = {"wholesale_price": "wholesale_variation", "consumer_price": "consumer_variation"}
 # endregion
 
 
@@ -64,10 +64,12 @@ def correlate_by_lag(series_rows):
     results = []
     for lag_weeks in range(MAXIMUM_LAG_WEEKS + 1):
         pairs = pair_variations(rows, lag_weeks)
-        correlation = (pairs["consumer_variation"].corr(pairs["wholesale_variation"])
-                       if len(pairs) >= MINIMUM_PAIRS else float("nan"))
-        results.append({"lag_weeks": lag_weeks, "correlation": correlation,
-                        "pair_count": len(pairs)})
+        correlation = (
+            pairs["consumer_variation"].corr(pairs["wholesale_variation"])
+            if len(pairs) >= MINIMUM_PAIRS
+            else float("nan")
+        )
+        results.append({"lag_weeks": lag_weeks, "correlation": correlation, "pair_count": len(pairs)})
     return pd.DataFrame(results)
 
 
@@ -83,4 +85,6 @@ def find_lag(correlations):
 def is_clear_relation(correlation, pair_count):
     """True when the correlation is told apart from zero (above 2 / sqrt(pairs))."""
     return correlation > SIGNIFICANCE_FACTOR / math.sqrt(pair_count)
+
+
 # endregion

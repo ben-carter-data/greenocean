@@ -1,4 +1,5 @@
 """Consultas SQL page: example queries, read-only guard, timeout and rendering."""
+
 from pathlib import Path
 
 import pandas as pd
@@ -7,8 +8,7 @@ import pytest
 from bi import queries, sql_explorer
 
 REPOSITORY = Path(__file__).resolve().parent.parent
-needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(),
-                                    reason="etl/datos.duckdb is not built")
+needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="etl/datos.duckdb is not built")
 
 
 @needs_database
@@ -21,39 +21,45 @@ def test_every_example_query_returns_rows(example):
     assert not [column for column in result.rows.columns if column.endswith("_id")]
 
 
-@pytest.mark.parametrize("sql", [
-    "INSERT INTO dim_region VALUES (99, 'x')",
-    "DROP TABLE weekly_price",
-    "ATTACH 'otra.db' AS otra",
-    "COPY weekly_price TO 'salida.csv'",
-    "PRAGMA version",
-    "SET enable_external_access = true",
-    "SELECT 1; SELECT 2",
-    "SELECT 1; DROP TABLE weekly_price",
-    "SELECT * FROM read_csv('http://example.com/datos.csv')",
-    "SELECT * FROM read_parquet('etl/bronze/*.parquet')",
-    "SELECT * FROM 'https://example.com/datos.csv'",
-    "WITH a AS (SELECT 1) DELETE FROM dim_region",
-    "CREATE TABLE t AS SELECT 1",
-    "INSTALL httpfs",
-    "EXPORT DATABASE 'copia'",
-    "-- solo un comentario",
-    "",
-])
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "INSERT INTO dim_region VALUES (99, 'x')",
+        "DROP TABLE weekly_price",
+        "ATTACH 'otra.db' AS otra",
+        "COPY weekly_price TO 'salida.csv'",
+        "PRAGMA version",
+        "SET enable_external_access = true",
+        "SELECT 1; SELECT 2",
+        "SELECT 1; DROP TABLE weekly_price",
+        "SELECT * FROM read_csv('http://example.com/datos.csv')",
+        "SELECT * FROM read_parquet('etl/bronze/*.parquet')",
+        "SELECT * FROM 'https://example.com/datos.csv'",
+        "WITH a AS (SELECT 1) DELETE FROM dim_region",
+        "CREATE TABLE t AS SELECT 1",
+        "INSTALL httpfs",
+        "EXPORT DATABASE 'copia'",
+        "-- solo un comentario",
+        "",
+    ],
+)
 def test_forbidden_statements_are_rejected(sql):
     with pytest.raises(sql_explorer.QueryRejected) as error:
         sql_explorer.validate_query(sql)
     assert str(error.value)
 
 
-@pytest.mark.parametrize("sql", [
-    "SELECT 1;",
-    "-- comentario\nWITH a AS (SELECT 1 AS x) SELECT x FROM a; -- fin",
-    "/* bloque */ select '--no es comentario' AS texto",
-    "DESCRIBE precios",
-    "SHOW TABLES",
-    "SUMMARIZE ipc_mensual",
-])
+@pytest.mark.parametrize(
+    "sql",
+    [
+        "SELECT 1;",
+        "-- comentario\nWITH a AS (SELECT 1 AS x) SELECT x FROM a; -- fin",
+        "/* bloque */ select '--no es comentario' AS texto",
+        "DESCRIBE precios",
+        "SHOW TABLES",
+        "SUMMARIZE ipc_mensual",
+    ],
+)
 def test_read_only_statements_are_accepted(sql):
     assert sql_explorer.validate_query(sql)
 
@@ -95,9 +101,12 @@ def test_downloads_produce_files():
 @needs_database
 def test_page_renders_and_runs_an_example():
     from streamlit.testing.v1 import AppTest
-    script = (f"import sys; sys.path.insert(0, {str(REPOSITORY)!r})\n"
-              "from bi import sql_explorer\n"
-              "sql_explorer.show_sql_explorer_page('Claro')\n")
+
+    script = (
+        f"import sys; sys.path.insert(0, {str(REPOSITORY)!r})\n"
+        "from bi import sql_explorer\n"
+        "sql_explorer.show_sql_explorer_page('Claro')\n"
+    )
     app = AppTest.from_string(script, default_timeout=60).run()
     assert not app.exception
     assert app.text_area[0].value == sql_explorer.EXAMPLES[0][2]
@@ -113,10 +122,15 @@ def test_page_renders_and_runs_an_example():
     assert "robot" not in page_text
 
 
-
 def test_d185_every_query_runs_with_and_without_filters():
-    chosen = {"familia": "Frutas", "region": "Región del Maule", "periodo": 2025, "anio_filtro": 2026,
-              "producto_filtro": "Naranja", "canal_filtro": "Feria libre"}
+    chosen = {
+        "familia": "Frutas",
+        "region": "Región del Maule",
+        "periodo": 2025,
+        "anio_filtro": 2026,
+        "producto_filtro": "Naranja",
+        "canal_filtro": "Feria libre",
+    }
     for index, (title, _, _, names) in enumerate(sql_explorer.TEMPLATES):
         for values in (None, chosen):
             sql = sql_explorer.render_example(index, values)
@@ -129,8 +143,13 @@ def test_d185_every_query_runs_with_and_without_filters():
 
 def test_d185_the_full_table_comes_first_and_the_council_picks_follow():
     assert [title for title, *_ in sql_explorer.TEMPLATES] == [
-        "Tabla completa", "Precio vs. época", "Canal más barato", "Inflación vs IPC",
-        "Brecha mayorista", "Calendario de compra"]
+        "Tabla completa",
+        "Precio vs. época",
+        "Canal más barato",
+        "Inflación vs IPC",
+        "Brecha mayorista",
+        "Calendario de compra",
+    ]
     rows = sql_explorer.run_user_query(sql_explorer.EXAMPLES[0][2]).rows
     for column in ("familia", "producto", "variedad", "calidad", "canal", "region", "precio", "precio_real"):
         assert column in rows.columns
@@ -146,9 +165,12 @@ def test_d185_the_full_table_comes_first_and_the_council_picks_follow():
 @needs_database
 def test_d185_one_click_writes_the_sql_and_a_filter_narrows_it():
     from streamlit.testing.v1 import AppTest
-    script = (f"import sys; sys.path.insert(0, {str(REPOSITORY)!r})\n"
-              "from bi import sql_explorer\n"
-              "sql_explorer.show_sql_explorer_page('Claro')\n")
+
+    script = (
+        f"import sys; sys.path.insert(0, {str(REPOSITORY)!r})\n"
+        "from bi import sql_explorer\n"
+        "sql_explorer.show_sql_explorer_page('Claro')\n"
+    )
     app = AppTest.from_string(script, default_timeout=60).run()
     app.button(key="sqlx_chip_0").click().run()
     assert not app.exception and len(app.dataframe) == 1
@@ -156,6 +178,7 @@ def test_d185_one_click_writes_the_sql_and_a_filter_narrows_it():
     assert not app.exception
     assert "p.familia = 'Carne bovina'" in app.text_area[0].value
     assert set(app.dataframe[0].value["familia"]) == {"Carne bovina"}
+
 
 def test_d182_the_explorer_lists_the_real_tables_and_one_opens():
     tables = {name: count for name, count, _ in sql_explorer.describe_tables()}
@@ -171,8 +194,10 @@ def test_d183_a_short_query_gives_its_room_to_the_results():
     long_sql = sql_explorer.EXAMPLES[0][2]
     short_sql = "SELECT *\nFROM main.weekly_price\nLIMIT 100"
     assert sql_explorer.results_height(short_sql, 100) > sql_explorer.results_height(long_sql, 100)
-    assert (sql_explorer.editor_height(short_sql) + sql_explorer.results_height(short_sql, 100)
-            == sql_explorer.STUDIO_HEIGHT)
+    assert (
+        sql_explorer.editor_height(short_sql) + sql_explorer.results_height(short_sql, 100)
+        == sql_explorer.STUDIO_HEIGHT
+    )
     assert sql_explorer.results_height(short_sql, 2) == 35 * 3 + 3
 
 
@@ -190,11 +215,17 @@ def test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas():
     """P-3: the consumer over the wholesale price, paired by product, unit, region and week."""
     result = sql_explorer.run_user_query(example_sql("Brecha mayorista")).rows
     assert not result.empty
-    latest = pd.Timestamp(sql_explorer.read_view("SELECT max(semana) AS s FROM precios WHERE fuente = 'mayorista'")["s"][0])
+    latest = pd.Timestamp(
+        sql_explorer.read_view("SELECT max(semana) AS s FROM precios WHERE fuente = 'mayorista'")["s"][0]
+    )
     for row in result.head(3).itertuples():
-        key = " AND ".join(f"{column} = {literal(getattr(row, column))}"
-                           for column in ("familia", "producto", "variedad", "calidad", "unidad"))
-        prices = sql_explorer.read_view(f"SELECT region, semana, fuente, precio FROM precios WHERE {key} AND marca = 'SIN_MARCA'")
+        key = " AND ".join(
+            f"{column} = {literal(getattr(row, column))}"
+            for column in ("familia", "producto", "variedad", "calidad", "unidad")
+        )
+        prices = sql_explorer.read_view(
+            f"SELECT region, semana, fuente, precio FROM precios WHERE {key} AND marca = 'SIN_MARCA'"
+        )
         prices["semana"] = pd.to_datetime(prices["semana"])
         consumer = prices[prices["fuente"] == "consumidor"]
         wholesale = prices[prices["fuente"] == "mayorista"]
@@ -214,16 +245,21 @@ def test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas():
     assert not result.empty
     weeks = sql_explorer.read_view("SELECT semana, anio_iso, semana_iso FROM semanas")
     weeks["semana"] = pd.to_datetime(weeks["semana"])
-    latest = pd.Timestamp(sql_explorer.read_view("SELECT max(semana) AS s FROM precios WHERE fuente = 'consumidor'")["s"][0])
+    latest = pd.Timestamp(
+        sql_explorer.read_view("SELECT max(semana) AS s FROM precios WHERE fuente = 'consumidor'")["s"][0]
+    )
     latest_year = int(weeks.loc[weeks["semana"] == latest, "anio_iso"].iloc[0])
     season = set(weeks.loc[weeks["semana"].between(latest - pd.Timedelta(days=21), latest), "semana_iso"])
     factors = sql_explorer.read_view("SELECT semana, factor_real FROM ipc_semanal")
     factors["semana"] = pd.to_datetime(factors["semana"])
     for row in result.head(3).itertuples():
-        key = " AND ".join(f"{column} = {literal(getattr(row, column))}"
-                           for column in ("familia", "producto", "variedad", "calidad", "unidad"))
+        key = " AND ".join(
+            f"{column} = {literal(getattr(row, column))}"
+            for column in ("familia", "producto", "variedad", "calidad", "unidad")
+        )
         prices = sql_explorer.read_view(
-            f"SELECT canal, region, semana, precio FROM precios WHERE {key} AND fuente = 'consumidor' AND marca = 'SIN_MARCA'")
+            f"SELECT canal, region, semana, precio FROM precios WHERE {key} AND fuente = 'consumidor' AND marca = 'SIN_MARCA'"
+        )
         prices["semana"] = pd.to_datetime(prices["semana"])
         prices = prices.merge(weeks, on="semana").merge(factors, on="semana")
         prices = prices[prices["semana_iso"].isin(season)]
@@ -236,19 +272,33 @@ def test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas():
                 series.append(now.mean() / before["real"].mean() - 1)
         assert row.series_comparadas == len(series)
         assert abs(row.diferencia_real_pct - pd.Series(series).median() * 100) <= 0.051
+
+
 # endregion
 
 
 @needs_database
 def test_views_have_readable_columns_and_real_counts():
-    catalog = {name: (count, [column for column, _ in columns])
-               for name, _, count, columns in sql_explorer.describe_views()}
+    catalog = {
+        name: (count, [column for column, _ in columns]) for name, _, count, columns in sql_explorer.describe_views()
+    }
     assert set(catalog) == set(sql_explorer.VIEW_NAMES)
     count, columns = catalog["precios"]
     assert count == queries.run_sql("SELECT count(*) AS n FROM weekly_price")["n"][0]
     assert not [column for column in columns if column.endswith("_id")]
-    for expected in ["semana", "familia", "producto", "variedad", "calidad", "canal", "region",
-                     "unidad", "precio", "observaciones", "marca"]:
+    for expected in [
+        "semana",
+        "familia",
+        "producto",
+        "variedad",
+        "calidad",
+        "canal",
+        "region",
+        "unidad",
+        "precio",
+        "observaciones",
+        "marca",
+    ]:
         assert expected in columns
     for _, (_, view_columns) in catalog.items():
         assert not [column for column in view_columns if column.endswith("_id")]

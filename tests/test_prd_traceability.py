@@ -2,6 +2,7 @@
 
 Every screen, test and file the PRD names must exist, so the tables cannot go stale without a test failing.
 """
+
 import re
 from pathlib import Path
 
@@ -15,8 +16,11 @@ REFERENCE = re.compile(r"`([^`]+)`")
 def read_table(section):
     """The rows of the table under «## <n>. <section>» as lists of cells, whatever the number of the section."""
     body = re.split(rf"^## \d+\. {re.escape(section)}$", PRD, flags=re.MULTILINE)[1].split("\n## ", 1)[0]
-    rows = [[cell.strip() for cell in line.strip().strip("|").split("|")]
-            for line in body.splitlines() if line.startswith("|")]
+    rows = [
+        [cell.strip() for cell in line.strip().strip("|").split("|")]
+        for line in body.splitlines()
+        if line.startswith("|")
+    ]
     return rows[2:]  # header and separator
 
 
@@ -27,7 +31,9 @@ def assert_reference_exists(reference):
         return  # a value such as a cron expression, not a file
     assert (ROOT / path).exists(), reference
     if test:
-        assert re.search(rf"^def {re.escape(test)}\(", (ROOT / path).read_text(encoding="utf-8"), re.MULTILINE), reference
+        assert re.search(rf"^def {re.escape(test)}\(", (ROOT / path).read_text(encoding="utf-8"), re.MULTILINE), (
+            reference
+        )
 
 
 def test_every_business_question_names_a_screen_of_the_menu_and_evidence_that_exists():
@@ -77,6 +83,9 @@ def test_rf01_the_weekly_workflow_runs_on_tuesdays():
 
 
 def menu_labels():
-    return {dashboard.SIDEBAR_LABELS.get(view, view) for _, _, pages in dashboard.MENU_BLOCKS
-            if pages is not dashboard.SOURCE_LINKS for view in pages} | {
-        dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.DOOR_PAGES}
+    return {
+        dashboard.SIDEBAR_LABELS.get(view, view)
+        for _, _, pages in dashboard.MENU_BLOCKS
+        if pages is not dashboard.SOURCE_LINKS
+        for view in pages
+    } | {dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.DOOR_PAGES}

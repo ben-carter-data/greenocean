@@ -11,6 +11,7 @@ Every box is a step of a real workflow in .github/workflows/:
 Nothing is drawn that the workflows do not do. Each step tells on hover what it does and on which line of its workflow
 it is. The page is one HTML document for st.iframe (CSS only, no script); DEFINITION says what CI and CD are.
 """
+
 import html
 from pathlib import Path
 
@@ -19,76 +20,240 @@ from bi import brand_icons, charts, database_map
 WORKFLOWS_DIR = Path(__file__).resolve().parent.parent / ".github" / "workflows"
 # What CI and CD mean, in two short sentences each (shown over the diagram and in the glossary).
 DEFINITION = (
-    ("CI · integración continua", "Cada vez que alguien sube un cambio, un servidor lo prueba solo. Si algo se rompe, "
-     "se ve en el momento y no a fin de mes."),
-    ("CD · entrega continua", "Lo que pasa todas las pruebas llega a producción sin pasos manuales. Aquí, la base de cada "
-     "martes y el panel que la muestra."),
+    (
+        "CI · integración continua",
+        "Cada vez que alguien sube un cambio, un servidor lo prueba solo. Si algo se rompe, "
+        "se ve en el momento y no a fin de mes.",
+    ),
+    (
+        "CD · entrega continua",
+        "Lo que pasa todas las pruebas llega a producción sin pasos manuales. Aquí, la base de cada "
+        "martes y el panel que la muestra.",
+    ),
 )
-DISCS = dict(database_map.BRANDS, git=("#ff9b7d", "#d6402a", "#ffffff"), streamlit=("#ff8f98", "#e0303f", "#ffffff"),
-             pytest=("#7fc4ff", "#1f6fb5", "#ffffff"), check=("#7ee2b0", "#14855a", "#ffffff"),
-             fail=("#ffb3a7", "#c2410c", "#ffffff"))
+DISCS = dict(
+    database_map.BRANDS,
+    git=("#ff9b7d", "#d6402a", "#ffffff"),
+    streamlit=("#ff8f98", "#e0303f", "#ffffff"),
+    pytest=("#7fc4ff", "#1f6fb5", "#ffffff"),
+    check=("#7ee2b0", "#14855a", "#ffffff"),
+    fail=("#ffb3a7", "#c2410c", "#ffffff"),
+)
 # Steps: (key, lane, mark, name, detail, what it does, where, marker in the workflow, kind).
 # kind: "gate" (nothing passes if it fails), "optional" (runs only when asked), "platform" (not in the repository).
 STEPS = [
-    ("ci_change", "ci", "git", "Cambio", "push o pull request",
-     "Alguien sube un cambio al repositorio o abre un pull request.", "on: push, pull_request", "pruebas.yml::pull_request:", ""),
-    ("ci_actions", "ci", "github", "GitHub Actions", "lanza el job pytest",
-     "GitHub arranca una máquina limpia con Python 3.11 e instala las dependencias.", "job pytest", "pruebas.yml::pip install", ""),
-    ("ci_parse", "ci", "dbt", "dbt parse", "el proyecto compila",
-     "Comprueba que los modelos, las pruebas y las fuentes de dbt compilan.", "dbt parse", "pruebas.yml::dbt parse", ""),
-    ("ci_pytest", "ci", "pytest", "pytest", "toda la batería",
-     "Corre todas las pruebas de tests/; si una falla, el job se detiene.", "pytest -vv -x", "pruebas.yml::pytest -vv -x", "gate"),
-    ("ci_result", "ci", "check", "Resultado", "pasa o falla",
-     "GitHub deja el resultado junto al commit: verde si todo pasó, rojo si no. Avisa, pero no detiene la publicación: Streamlit publica main sin esperarlo.", "estado del commit en GitHub",
-     "pruebas.yml::name: pruebas", ""),
-    ("cd_trigger", "cd", "github", "Disparo", "martes o a mano",
-     "El cron lo lanza cada martes a las 12:00 UTC (09:00 en Chile en horario de verano, 08:00 en invierno). También se lanza a mano: desde el "
-     "Centro de operación, con la clave de control, por la API de GitHub; o desde GitHub, donde se puede pedir una falla simulada.",
-     "on: schedule, workflow_dispatch", "semanal.yml::0 12 * * 2", ""),
-    ("cd_year", "cd", "github", "1 · Año vigente", "clave de la caché",
-     "Calcula el año en curso: la caché de los años cerrados se renueva cuando cambia el año.", "Find the current year",
-     "semanal.yml::Find the current year", ""),
-    ("cd_cache", "cd", "github", "2 · Caché", "años cerrados",
-     "Restaura de la caché de Actions los CSV de los años cerrados, que ya no cambian.", "Restore the closed-year files",
-     "semanal.yml::Restore the closed-year files", ""),
-    ("cd_base", "cd", "duckdb", "3 · Base publicada", "la de la semana pasada",
-     "Descarga del release «base-actual» la base que se publicó la semana anterior y comprueba su huella: de ella salen "
-     "el historial de cargas y la comparación del 90 %.", "Get the published database",
-     "semanal.yml::Get the published database", ""),
-    ("cd_download", "cd", "python", "4 · Descarga", "ODEPA (agent.py)",
-     "Descarga los CSV de ODEPA que faltan o cambiaron, y anota su huella en manifest.json.", "Download the ODEPA files",
-     "semanal.yml::Download the ODEPA files", ""),
-    ("cd_etl", "cd", "sqlite", "5 · ETL", "respaldo SQLite",
-     "Construye en esta máquina el respaldo en SQLite (datos.db), con un camino independiente de dbt, para la prueba de "
-     "paridad. No se publica.", "Run the ETL (SQLite backup)", "semanal.yml::Run the ETL (SQLite backup)", ""),
-    ("cd_dbt", "cd", "dbt", "6 · dbt build", "31 pruebas",
-     "Escribe el bronce en Parquet y dbt construye y prueba todos los modelos; solo si todo pasa se reemplaza datos.duckdb.",
-     "Build the data warehouse with dbt", "semanal.yml::Build the data warehouse with dbt", "gate"),
-    ("cd_fail", "cd", "fail", "7 · Falla simulada", "solo si se pide",
-     "Solo corre cuando una ejecución manual desde GitHub pide simulate_failure: corta el job para probar que la base "
-     "publicada no cambia. El botón del panel nunca la pide.", "Simulate a failure", "semanal.yml::Simulate a failure", "optional"),
-    ("cd_pytest", "cd", "pytest", "8 · pytest", "contra la base nueva",
-     "Corre las pruebas contra la base nueva, incluida la paridad SQLite ↔ DuckDB. Si falla, no se publica nada.",
-     "Run the tests against the new database", "semanal.yml::Run the tests against the new database", "gate"),
-    ("cd_publish", "cd", "github", "9 · Publicar", "release y puntero",
-     "Reemplaza datos.duckdb en el release «base-actual» y después sube a main su puntero (etl/datos.version) y "
-     "manifest.json. El historial de Git no guarda la base.", "Publish the database", "semanal.yml::Publish the database", ""),
-    ("cd_report", "cd", "github", "10 · Informe", "issue semanal",
-     "Publica el informe de la semana como un issue de GitHub.", "Publish the weekly report",
-     "semanal.yml::Publish the weekly report", ""),
-    ("pub_release", "pub", "github", "Release", "base-actual",
-     "Guarda una sola copia de la base servida: cada carga reemplaza la anterior.", "gh release upload del paso 9",
-     "semanal.yml::gh release upload", ""),
-    ("pub_streamlit", "pub", "streamlit", "Streamlit Cloud", "panel desde main",
-     "Streamlit Community Cloud publica el panel desde main, una configuración de esa plataforma. Cuando el puntero cambia, "
-     "el panel descarga la base nueva del release y comprueba su huella (bi/served_database.py).",
-     "declarado por el autor; no verificable en el repositorio", None, "platform"),
+    (
+        "ci_change",
+        "ci",
+        "git",
+        "Cambio",
+        "push o pull request",
+        "Alguien sube un cambio al repositorio o abre un pull request.",
+        "on: push, pull_request",
+        "pruebas.yml::pull_request:",
+        "",
+    ),
+    (
+        "ci_actions",
+        "ci",
+        "github",
+        "GitHub Actions",
+        "lanza el job pytest",
+        "GitHub arranca una máquina limpia con Python 3.11 e instala las dependencias.",
+        "job pytest",
+        "pruebas.yml::pip install",
+        "",
+    ),
+    (
+        "ci_parse",
+        "ci",
+        "dbt",
+        "dbt parse",
+        "el proyecto compila",
+        "Comprueba que los modelos, las pruebas y las fuentes de dbt compilan.",
+        "dbt parse",
+        "pruebas.yml::dbt parse",
+        "",
+    ),
+    (
+        "ci_pytest",
+        "ci",
+        "pytest",
+        "pytest",
+        "toda la batería",
+        "Corre todas las pruebas de tests/; si una falla, el job se detiene.",
+        "pytest -vv -x",
+        "pruebas.yml::pytest -vv -x",
+        "gate",
+    ),
+    (
+        "ci_result",
+        "ci",
+        "check",
+        "Resultado",
+        "pasa o falla",
+        "GitHub deja el resultado junto al commit: verde si todo pasó, rojo si no. Avisa, pero no detiene la publicación: Streamlit publica main sin esperarlo.",
+        "estado del commit en GitHub",
+        "pruebas.yml::name: pruebas",
+        "",
+    ),
+    (
+        "cd_trigger",
+        "cd",
+        "github",
+        "Disparo",
+        "martes o a mano",
+        "El cron lo lanza cada martes a las 12:00 UTC (09:00 en Chile en horario de verano, 08:00 en invierno). También se lanza a mano: desde el "
+        "Centro de operación, con la clave de control, por la API de GitHub; o desde GitHub, donde se puede pedir una falla simulada.",
+        "on: schedule, workflow_dispatch",
+        "semanal.yml::0 12 * * 2",
+        "",
+    ),
+    (
+        "cd_year",
+        "cd",
+        "github",
+        "1 · Año vigente",
+        "clave de la caché",
+        "Calcula el año en curso: la caché de los años cerrados se renueva cuando cambia el año.",
+        "Find the current year",
+        "semanal.yml::Find the current year",
+        "",
+    ),
+    (
+        "cd_cache",
+        "cd",
+        "github",
+        "2 · Caché",
+        "años cerrados",
+        "Restaura de la caché de Actions los CSV de los años cerrados, que ya no cambian.",
+        "Restore the closed-year files",
+        "semanal.yml::Restore the closed-year files",
+        "",
+    ),
+    (
+        "cd_base",
+        "cd",
+        "duckdb",
+        "3 · Base publicada",
+        "la de la semana pasada",
+        "Descarga del release «base-actual» la base que se publicó la semana anterior y comprueba su huella: de ella salen "
+        "el historial de cargas y la comparación del 90 %.",
+        "Get the published database",
+        "semanal.yml::Get the published database",
+        "",
+    ),
+    (
+        "cd_download",
+        "cd",
+        "python",
+        "4 · Descarga",
+        "ODEPA (agent.py)",
+        "Descarga los CSV de ODEPA que faltan o cambiaron, y anota su huella en manifest.json.",
+        "Download the ODEPA files",
+        "semanal.yml::Download the ODEPA files",
+        "",
+    ),
+    (
+        "cd_etl",
+        "cd",
+        "sqlite",
+        "5 · ETL",
+        "respaldo SQLite",
+        "Construye en esta máquina el respaldo en SQLite (datos.db), con un camino independiente de dbt, para la prueba de "
+        "paridad. No se publica.",
+        "Run the ETL (SQLite backup)",
+        "semanal.yml::Run the ETL (SQLite backup)",
+        "",
+    ),
+    (
+        "cd_dbt",
+        "cd",
+        "dbt",
+        "6 · dbt build",
+        "31 pruebas",
+        "Escribe el bronce en Parquet y dbt construye y prueba todos los modelos; solo si todo pasa se reemplaza datos.duckdb.",
+        "Build the data warehouse with dbt",
+        "semanal.yml::Build the data warehouse with dbt",
+        "gate",
+    ),
+    (
+        "cd_fail",
+        "cd",
+        "fail",
+        "7 · Falla simulada",
+        "solo si se pide",
+        "Solo corre cuando una ejecución manual desde GitHub pide simulate_failure: corta el job para probar que la base "
+        "publicada no cambia. El botón del panel nunca la pide.",
+        "Simulate a failure",
+        "semanal.yml::Simulate a failure",
+        "optional",
+    ),
+    (
+        "cd_pytest",
+        "cd",
+        "pytest",
+        "8 · pytest",
+        "contra la base nueva",
+        "Corre las pruebas contra la base nueva, incluida la paridad SQLite ↔ DuckDB. Si falla, no se publica nada.",
+        "Run the tests against the new database",
+        "semanal.yml::Run the tests against the new database",
+        "gate",
+    ),
+    (
+        "cd_publish",
+        "cd",
+        "github",
+        "9 · Publicar",
+        "release y puntero",
+        "Reemplaza datos.duckdb en el release «base-actual» y después sube a main su puntero (etl/datos.version) y "
+        "manifest.json. El historial de Git no guarda la base.",
+        "Publish the database",
+        "semanal.yml::Publish the database",
+        "",
+    ),
+    (
+        "cd_report",
+        "cd",
+        "github",
+        "10 · Informe",
+        "issue semanal",
+        "Publica el informe de la semana como un issue de GitHub.",
+        "Publish the weekly report",
+        "semanal.yml::Publish the weekly report",
+        "",
+    ),
+    (
+        "pub_release",
+        "pub",
+        "github",
+        "Release",
+        "base-actual",
+        "Guarda una sola copia de la base servida: cada carga reemplaza la anterior.",
+        "gh release upload del paso 9",
+        "semanal.yml::gh release upload",
+        "",
+    ),
+    (
+        "pub_streamlit",
+        "pub",
+        "streamlit",
+        "Streamlit Cloud",
+        "panel desde main",
+        "Streamlit Community Cloud publica el panel desde main, una configuración de esa plataforma. Cuando el puntero cambia, "
+        "el panel descarga la base nueva del release y comprueba su huella (bi/served_database.py).",
+        "declarado por el autor; no verificable en el repositorio",
+        None,
+        "platform",
+    ),
 ]
 # The four phases of the weekly load, each with its steps in the workflow's order: (key, name, logo, steps).
-PHASES = [("preparar", "Preparar", "github", ["cd_year", "cd_cache", "cd_base"]),
-          ("ingerir", "Ingerir", "python", ["cd_download", "cd_etl"]),
-          ("probar", "Construir y probar", "dbt", ["cd_dbt", "cd_fail", "cd_pytest"]),
-          ("publicar", "Publicar", "github", ["cd_publish", "cd_report"])]
+PHASES = [
+    ("preparar", "Preparar", "github", ["cd_year", "cd_cache", "cd_base"]),
+    ("ingerir", "Ingerir", "python", ["cd_download", "cd_etl"]),
+    ("probar", "Construir y probar", "dbt", ["cd_dbt", "cd_fail", "cd_pytest"]),
+    ("publicar", "Publicar", "github", ["cd_publish", "cd_report"]),
+]
 CI_FLOW = ["ci_change", "ci_actions", "ci_parse", "ci_pytest", "ci_result"]
 TAGS = {"gate": "puerta", "optional": "opcional", "platform": "plataforma"}
 ROW_NOTE = "Si un paso falla, los siguientes no corren y la base publicada no cambia."
@@ -113,25 +278,38 @@ def disc(slug, x, y, size, key):
     """A brand on a lit disc, placed at x, y; the check is a plain tick."""
     top, bottom, glyph = DISCS[slug]
     gradient = f"disc-{slug}-{key}"
-    glyphs = {"check": '<path d="M7 12.5l3.2 3.2L17 8.8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" '
-                       'stroke-linejoin="round"/>',
-              "fail": '<path d="M8 8l8 8M16 8l-8 8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>'}
+    glyphs = {
+        "check": '<path d="M7 12.5l3.2 3.2L17 8.8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" '
+        'stroke-linejoin="round"/>',
+        "fail": '<path d="M8 8l8 8M16 8l-8 8" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>',
+    }
     body = glyphs.get(slug) or brand_icons.logo_body(slug)
-    return (f'<svg x="{x}" y="{y}" width="{size}" height="{size}" viewBox="0 0 72 72" aria-hidden="true"><defs>'
-            f'<radialGradient id="{gradient}" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="{top}"/>'
-            f'<stop offset="1" stop-color="{bottom}"/></radialGradient></defs>'
-            f'<circle cx="36" cy="36" r="31" fill="url(#{gradient})"/><ellipse cx="29" cy="19" rx="16" ry="8" fill="#fff" opacity=".3"/>'
-            f'<g fill="{glyph}" transform="translate(17 17) scale(1.58)">{body}</g></svg>')
+    return (
+        f'<svg x="{x}" y="{y}" width="{size}" height="{size}" viewBox="0 0 72 72" aria-hidden="true"><defs>'
+        f'<radialGradient id="{gradient}" cx="35%" cy="28%" r="85%"><stop offset="0" stop-color="{top}"/>'
+        f'<stop offset="1" stop-color="{bottom}"/></radialGradient></defs>'
+        f'<circle cx="36" cy="36" r="31" fill="url(#{gradient})"/><ellipse cx="29" cy="19" rx="16" ry="8" fill="#fff" opacity=".3"/>'
+        f'<g fill="{glyph}" transform="translate(17 17) scale(1.58)">{body}</g></svg>'
+    )
 
 
 def build_css(palette):
     dark = palette["base"] == charts.BASE_DARK
-    ink, text, muted, card, border, accent = (palette["strong_text"], palette["text"], palette["reference"],
-                                              palette["card"], palette["card_border"], palette["accent"])
+    ink, text, muted, card, border, accent = (
+        palette["strong_text"],
+        palette["text"],
+        palette["reference"],
+        palette["card"],
+        palette["card_border"],
+        palette["accent"],
+    )
     grid = f"color-mix(in srgb, {border} {'38' if dark else '45'}%, transparent)"
     surface = f"color-mix(in srgb, {card} 72%, #000)" if dark else card
-    glow = (f"0 0 0 1px color-mix(in srgb, {accent} 35%, transparent), 0 0 22px -6px color-mix(in srgb, {accent} 70%, transparent)"
-            if dark else "0 8px 18px -14px rgba(15,40,90,.35)")
+    glow = (
+        f"0 0 0 1px color-mix(in srgb, {accent} 35%, transparent), 0 0 22px -6px color-mix(in srgb, {accent} 70%, transparent)"
+        if dark
+        else "0 8px 18px -14px rgba(15,40,90,.35)"
+    )
     return f"""<style>
 * {{ box-sizing:border-box; }}
 html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
@@ -200,8 +378,10 @@ def build_step(step, column=None):
     classes = "box step" + (" gate" if kind == "gate" else "") + (" dashed" if kind in ("optional", "platform") else "")
     place = f' style="grid-column:{column}"' if column else ""
     tag = f'<span class="tag">{TAGS[kind]}</span>' if kind else ""
-    return (f'<div class="{classes}" id="s-{key}" tabindex="0" title="{esc(describe(step))}"{place}>{tag}'
-            f'{disc(mark, 0, 0, 30, key)}<span><b>{esc(name)}</b><small>{esc(detail)}</small></span></div>')
+    return (
+        f'<div class="{classes}" id="s-{key}" tabindex="0" title="{esc(describe(step))}"{place}>{tag}'
+        f'{disc(mark, 0, 0, 30, key)}<span><b>{esc(name)}</b><small>{esc(detail)}</small></span></div>'
+    )
 
 
 def build_phase(phase, steps):
@@ -211,11 +391,16 @@ def build_phase(phase, steps):
     for step in (steps[k] for k in keys):
         number, _, title = step[3].partition(" · ")
         kind = step[8]
-        lines.append(f'<div class="srow k-{kind or "step"}" id="s-{step[0]}" tabindex="0" title="{esc(step[4])}. {esc(describe(step))}">'
-                     f'<i>{esc(number)}</i><b>{esc(title)}</b>{f"<em>{TAGS[kind]}</em>" if kind else ""}</div>')
+        lines.append(
+            f'<div class="srow k-{kind or "step"}" id="s-{step[0]}" tabindex="0" title="{esc(step[4])}. {esc(describe(step))}">'
+            f'<i>{esc(number)}</i><b>{esc(title)}</b>{f"<em>{TAGS[kind]}</em>" if kind else ""}</div>'
+        )
     gate = any(steps[k][8] == "gate" for k in keys)
-    return (f'<div class="box phase{" gate" if gate else ""}"><span class="kicker">{disc(mark, 0, 0, 20, key)}{esc(name)}</span>'
-            + "".join(lines) + "</div>")
+    return (
+        f'<div class="box phase{" gate" if gate else ""}"><span class="kicker">{disc(mark, 0, 0, 20, key)}{esc(name)}</span>'
+        + "".join(lines)
+        + "</div>"
+    )
 
 
 def build_cicd_html(palette):
@@ -224,15 +409,23 @@ def build_cicd_html(palette):
     arrow = '<i class="h"></i>'
     ci = arrow.join(build_step(steps[key]) for key in CI_FLOW)
     cd = build_step(steps["cd_trigger"]) + arrow + arrow.join(build_phase(phase, steps) for phase in PHASES)
-    publication = (f'<p class="note"><b>Puerta:</b> un control que detiene la carga. {esc(ROW_NOTE)}</p>'
-                   + build_step(steps["pub_streamlit"], column=7) + '<i class="h left" style="grid-column:8"></i>'
-                   + build_step(steps["pub_release"], column=9))
+    publication = (
+        f'<p class="note"><b>Puerta:</b> un control que detiene la carga. {esc(ROW_NOTE)}</p>'
+        + build_step(steps["pub_streamlit"], column=7)
+        + '<i class="h left" style="grid-column:8"></i>'
+        + build_step(steps["pub_release"], column=9)
+    )
     (ci_term, ci_text), (cd_term, cd_text) = DEFINITION
-    body = (f'<div class="cc-head"><h2>Del cambio a producción</h2></div>'
-            f'<div class="lane"><span class="kicker">{esc(ci_term)}</span><small>pruebas.yml</small><span>{esc(ci_text)}</span></div>'
-            f'<div class="row">{ci}</div>'
-            f'<div class="lane"><span class="kicker">{esc(cd_term)}</span><small>semanal.yml</small><span>{esc(cd_text)}</span></div>'
-            f'<div class="row cd">{cd}</div><div class="down"><span>gh release upload</span><i></i></div>'
-            f'<div class="row cd">{publication}</div>')
-    return ('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            + build_css(palette) + f'</head><body><div class="cc" role="group" aria-label="CI/CD del proyecto">{body}</div></body></html>')
+    body = (
+        f'<div class="cc-head"><h2>Del cambio a producción</h2></div>'
+        f'<div class="lane"><span class="kicker">{esc(ci_term)}</span><small>pruebas.yml</small><span>{esc(ci_text)}</span></div>'
+        f'<div class="row">{ci}</div>'
+        f'<div class="lane"><span class="kicker">{esc(cd_term)}</span><small>semanal.yml</small><span>{esc(cd_text)}</span></div>'
+        f'<div class="row cd">{cd}</div><div class="down"><span>gh release upload</span><i></i></div>'
+        f'<div class="row cd">{publication}</div>'
+    )
+    return (
+        '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+        + build_css(palette)
+        + f'</head><body><div class="cc" role="group" aria-label="CI/CD del proyecto">{body}</div></body></html>'
+    )

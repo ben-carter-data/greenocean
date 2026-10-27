@@ -1,4 +1,5 @@
 """Tests for bi/queries.sql (K1 to K4, K8). The SQL K5 and K6: test_reconciliation."""
+
 import re
 import sys
 from pathlib import Path
@@ -24,16 +25,26 @@ def database_file(tmp_path):
     Consumer tomato in the RM, week 2: street market 3000.
     """
     raw_connection, connection = open_test_databases(tmp_path)
-    replace_raw_rows(raw_connection, etl.SOURCE_WHOLESALE, [
-        make_raw_wholesale_rows(price_date="2026-01-06", avg_price="9000,0000"),
-        make_raw_wholesale_rows(price_date="2026-01-13", avg_price="9000,0000")])
-    replace_raw_rows(raw_connection, etl.SOURCE_CONSUMER, [
-        make_raw_consumer_rows(avg_price="1000,000000", max_price="4000"),
-        make_raw_consumer_rows(avg_price="1500,000000", max_price="4000",
-                               sales_channel="Supermercado"),
-        make_raw_consumer_rows(avg_price="1500,000000", max_price="4000", **VALPARAISO),
-        make_raw_consumer_rows(avg_price="3000,000000", max_price="4000",
-                               week_start="2026-01-12", week_end="2026-01-16")])
+    replace_raw_rows(
+        raw_connection,
+        etl.SOURCE_WHOLESALE,
+        [
+            make_raw_wholesale_rows(price_date="2026-01-06", avg_price="9000,0000"),
+            make_raw_wholesale_rows(price_date="2026-01-13", avg_price="9000,0000"),
+        ],
+    )
+    replace_raw_rows(
+        raw_connection,
+        etl.SOURCE_CONSUMER,
+        [
+            make_raw_consumer_rows(avg_price="1000,000000", max_price="4000"),
+            make_raw_consumer_rows(avg_price="1500,000000", max_price="4000", sales_channel="Supermercado"),
+            make_raw_consumer_rows(avg_price="1500,000000", max_price="4000", **VALPARAISO),
+            make_raw_consumer_rows(
+                avg_price="3000,000000", max_price="4000", week_start="2026-01-12", week_end="2026-01-16"
+            ),
+        ],
+    )
     etl.run_etl(raw_connection, connection)
     connection.close()
     return tmp_path / "datos.db"
@@ -47,17 +58,26 @@ def select_rows(rows, **conditions):
 
 def test_queries_file_has_one_named_query_per_indicator():
     assert set(queries.load_queries()) == {
-        "k1_margin", "k2_channel_gap", "k3_regional_index", "k4_seasonal_index",
-        "k6_national_weekly_price", "k8_rejected_rows", "quality_runs",
-        "quality_flag_counts", "quality_outliers", "k6_usual_range_sql",
-        "k5_weekly_variations_sql", "quality_week_range", "quality_rejected_rows",
-        "quality_unconvertible_units"}
+        "k1_margin",
+        "k2_channel_gap",
+        "k3_regional_index",
+        "k4_seasonal_index",
+        "k6_national_weekly_price",
+        "k8_rejected_rows",
+        "quality_runs",
+        "quality_flag_counts",
+        "quality_outliers",
+        "k6_usual_range_sql",
+        "k5_weekly_variations_sql",
+        "quality_week_range",
+        "quality_rejected_rows",
+        "quality_unconvertible_units",
+    }
 
 
 def test_k1_margin_is_consumer_minus_wholesale_over_wholesale(database_file):
     margins = queries.run_query("k1_margin", database_file)
-    first_week = select_rows(margins, week_start="2026-01-05",
-                             region="Región Metropolitana de Santiago")
+    first_week = select_rows(margins, week_start="2026-01-05", region="Región Metropolitana de Santiago")
     margin_by_channel = dict(zip(first_week["channel"], first_week["margin"]))
     # (1000 - 500) / 500 = 1 and (1500 - 500) / 500 = 2.
     assert margin_by_channel == {"Feria libre": 1.0, "Supermercado": 2.0}
@@ -79,8 +99,7 @@ def test_k3_regional_index_is_region_price_over_national_average(database_file):
     street_market = select_rows(indexes, channel="Feria libre", week_start="2026-01-05")
     index_by_region = dict(zip(street_market["region"], street_market["regional_index"]))
     # National average of 1000 and 1500 is 1250.
-    assert index_by_region == {"Región Metropolitana de Santiago": 0.8,
-                               "Región de Valparaíso": 1.2}
+    assert index_by_region == {"Región Metropolitana de Santiago": 0.8, "Región de Valparaíso": 1.2}
 
 
 def test_k4_seasonal_index_is_week_price_over_year_average(database_file):
@@ -88,14 +107,14 @@ def test_k4_seasonal_index_is_week_price_over_year_average(database_file):
     street_market = select_rows(indexes, channel="Feria libre")
     index_by_week = dict(zip(street_market["week_start"], street_market["seasonal_index"]))
     # Week 1 national price: (1000 + 1500) / 2 = 1250. Week 2: 3000. Year: 2125.
-    assert index_by_week == {"2026-01-05": pytest.approx(1250 / 2125),
-                             "2026-01-12": pytest.approx(3000 / 2125)}
+    assert index_by_week == {"2026-01-05": pytest.approx(1250 / 2125), "2026-01-12": pytest.approx(3000 / 2125)}
 
 
 def test_k4_week_starting_in_december_belongs_to_the_next_year(tmp_path):
     raw_connection, connection = open_test_databases(tmp_path)
-    replace_raw_rows(raw_connection, etl.SOURCE_CONSUMER, [
-        make_raw_consumer_rows(week_start="2025-12-29", week_end="2026-01-02")])
+    replace_raw_rows(
+        raw_connection, etl.SOURCE_CONSUMER, [make_raw_consumer_rows(week_start="2025-12-29", week_end="2026-01-02")]
+    )
     etl.run_etl(raw_connection, connection)
     connection.close()
     indexes = queries.run_query("k4_seasonal_index", tmp_path / "datos.db")
@@ -104,20 +123,37 @@ def test_k4_week_starting_in_december_belongs_to_the_next_year(tmp_path):
 
 def test_k8_rejected_rows_are_counted_by_reason_over_rows_read(tmp_path):
     raw_connection, connection = open_test_databases(tmp_path)
-    replace_raw_rows(raw_connection, etl.SOURCE_CONSUMER, [
-        make_raw_consumer_rows(), make_raw_consumer_rows(), make_raw_consumer_rows(),
-        make_raw_consumer_rows(avg_price="0")])
+    replace_raw_rows(
+        raw_connection,
+        etl.SOURCE_CONSUMER,
+        [
+            make_raw_consumer_rows(),
+            make_raw_consumer_rows(),
+            make_raw_consumer_rows(),
+            make_raw_consumer_rows(avg_price="0"),
+        ],
+    )
     etl.run_etl(raw_connection, connection)
     connection.close()
     rejections = queries.run_query("k8_rejected_rows", tmp_path / "datos.db")
-    assert rejections.to_dict("records") == [{
-        "source": etl.SOURCE_CONSUMER, "reason": etl.REASON_NON_POSITIVE_PRICE,
-        "rejected_rows": 1, "rejected_share": 0.25}]
+    assert rejections.to_dict("records") == [
+        {
+            "source": etl.SOURCE_CONSUMER,
+            "reason": etl.REASON_NON_POSITIVE_PRICE,
+            "rejected_rows": 1,
+            "rejected_share": 0.25,
+        }
+    ]
 
 
 def test_d050_rows_of_one_product_key_are_filtered_by_sqlite(database_file):
-    key = {"product_group": "Hortalizas", "product": "Tomate", "variety": "Larga vida",
-           "quality": "Primera", "normalized_unit": "kilo"}
+    key = {
+        "product_group": "Hortalizas",
+        "product": "Tomate",
+        "variety": "Larga vida",
+        "quality": "Primera",
+        "normalized_unit": "kilo",
+    }
     rows = queries.run_query_for_key("k1_margin", key, database_file)
     assert len(rows) == len(queries.run_query("k1_margin", database_file))
     other_key = dict(key, variety="Cherry")
@@ -149,4 +185,3 @@ def test_every_github_link_of_the_panel_points_to_a_file_in_the_repository():
         assert (root / path).exists(), path
     for name in ("PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md", "DECISIONES.md"):
         assert (root / "docs" / name).exists(), name
-

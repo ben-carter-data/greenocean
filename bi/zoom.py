@@ -16,8 +16,10 @@ MAXIMUM_ZOOM = 6
 def build_zoom_frame_html(inner_html, css_class="", style=""):
     """A frame the zoom script turns into a zoomable view of inner_html."""
     style_attribute = f' style="{style}"' if style else ""
-    return (f'<div class="zoom-frame {css_class}"{style_attribute}><div class="zoom-viewport">'
-            f'<div class="zoom-content">{inner_html}</div></div></div>')
+    return (
+        f'<div class="zoom-frame {css_class}"{style_attribute}><div class="zoom-viewport">'
+        f'<div class="zoom-content">{inner_html}</div></div></div>'
+    )
 
 
 def build_zoom_css(palette):
@@ -244,4 +246,3 @@ prepare();
 new MutationObserver(prepare).observe(document.body, {childList: true, subtree: true});
 })();
 </script>"""
-

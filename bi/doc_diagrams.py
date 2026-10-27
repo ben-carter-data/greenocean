@@ -3,10 +3,13 @@
 The document views are drawn in the pipeline's own visual language (bi/doc_views.py): the system context and its
 containers (SAD), the use cases and the real screens of the panel (PRD) and, in the Plan de pruebas y seguridad, the procedure as a cycle and the ten cases around the lock (bi/security_plan.py). A view that lives in a page of the panel is linked with [[vista:…]] instead of copied (D-247).
 """
+
 from bi import doc_figures, doc_views, security_plan
 
 # D-280: Chrome prints a blurred shadow as a grey rectangle; on paper the diagrams have no shadows or filters.
-PRINT_STYLE = "<style>@media print { *, *::before, *::after { box-shadow:none !important; filter:none !important; } }</style>"
+PRINT_STYLE = (
+    "<style>@media print { *, *::before, *::after { box-shadow:none !important; filter:none !important; } }</style>"
+)
 
 
 def for_print(builder):

@@ -10,8 +10,6 @@ parameters (?), never inside the SQL text. The weekly change comes from SQL
 (LAG); the alert state reuses K6 (bi/alerts.py), so its logic lives in one place.
 """
 
-
-
 # region Constants
 FIELD_GROUP = "group"
 FIELD_PRODUCT = "product"

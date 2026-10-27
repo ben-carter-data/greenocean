@@ -1,4 +1,5 @@
 """Tests for the chart helpers: number formats, region names and channel colors."""
+
 import sys
 from pathlib import Path
 
@@ -44,12 +45,9 @@ def test_visible_themes_keep_legacy_light_palette_compatible():
     for theme in charts.THEMES:
         palette = charts.PALETTES[theme]
         assert set(palette) == keys
-        expected = (charts.DARK_CHANNELS if palette["base"] == charts.BASE_DARK
-                    else charts.LIGHT_CHANNELS)
+        expected = charts.DARK_CHANNELS if palette["base"] == charts.BASE_DARK else charts.LIGHT_CHANNELS
         assert palette["channels"] == expected
-    assert {charts.PALETTES[theme]["base"] for theme in
-            [charts.MODE_DARK, charts.MODE_GRAPHITE]} == {charts.BASE_DARK}
-    assert {charts.PALETTES[theme]["base"] for theme in
-            [charts.MODE_CORPORATE, charts.MODE_BLUE_LIGHT, charts.MODE_LIGHT]} == {
-                charts.BASE_LIGHT}
-
+    assert {charts.PALETTES[theme]["base"] for theme in [charts.MODE_DARK, charts.MODE_GRAPHITE]} == {charts.BASE_DARK}
+    assert {
+        charts.PALETTES[theme]["base"] for theme in [charts.MODE_CORPORATE, charts.MODE_BLUE_LIGHT, charts.MODE_LIGHT]
+    } == {charts.BASE_LIGHT}

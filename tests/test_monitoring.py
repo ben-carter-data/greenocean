@@ -1,4 +1,5 @@
 """Monitoreo y observabilidad (D-249): every signal drawn exists in the file that produces it."""
+
 from pathlib import Path
 
 import duckdb
@@ -10,9 +11,16 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_every_signal_names_a_file_that_exists_and_produces_it():
-    evidence = {"etl_run": "INSERT INTO etl_run", "dbt_result": "INSERT INTO dbt_result", "agent_log": "LOG_DIR",
-                "actions_log": "name: semanal", "email": "name: semanal", "issue": "Informe semanal",
-                "token": "TOKEN_WARNING_DAYS", "hashes": "SHA-256 distinto"}
+    evidence = {
+        "etl_run": "INSERT INTO etl_run",
+        "dbt_result": "INSERT INTO dbt_result",
+        "agent_log": "LOG_DIR",
+        "actions_log": "name: semanal",
+        "email": "name: semanal",
+        "issue": "Informe semanal",
+        "token": "TOKEN_WARNING_DAYS",
+        "hashes": "SHA-256 distinto",
+    }
     assert [signal[0] for signal in monitoring.SIGNALS] == list(evidence)
     for key, *_, produced_by in monitoring.SIGNALS:
         source = (ROOT / produced_by).read_text(encoding="utf-8")
@@ -39,7 +47,9 @@ def test_d275_each_signal_hangs_from_the_stage_where_it_is_born_on_the_side_of_i
             continue  # born at every step: the band under the run
         assert monitoring.STAGE_OF_SIGNAL[key] in stages
         row = int(card.split("grid-row:")[1].split(";")[0])
-        assert row == (1 if who == "panel" else 5)  # above the run what the panel shows, below what only the author sees
+        assert row == (
+            1 if who == "panel" else 5
+        )  # above the run what the panel shows, below what only the author sees
     assert set(monitoring.STAGE_OF_SIGNAL) | {monitoring.EVERY_STEP} == {signal[0] for signal in monitoring.SIGNALS}
     assert {signal[6] for signal in monitoring.SIGNALS} == {"panel", "autor"}
     assert "<script" not in page and page.count('class="stage"') == len(monitoring.STAGES)
