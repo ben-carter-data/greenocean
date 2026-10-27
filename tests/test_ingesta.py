@@ -220,3 +220,49 @@ def test_d323_the_ipc_is_rebuilt_from_the_served_database_when_the_ine_does_not_
 
 
 # endregion
+
+
+# region profile of the downloaded years (T-27)
+def test_d323_the_year_report_prints_each_fact_against_the_reference_year(capsys):
+    from etl import profile_years
+
+    profile = {
+        "rows_read": 10,
+        "rejections": {"NON_POSITIVE_PRICE": 2},
+        "week_count": 3,
+        "first_week": "2025-01-06",
+        "last_week": "2025-01-20",
+        "missing_weeks": [],
+        "unknown_regions": [],
+        "unknown_channels": ["Kiosco"],
+        "unit_shares": {"kilo": 0.75, "unidad": 0.25},
+        "units": {"$/kilo", "$/caja 10 kilos"},
+        "product_keys": {("Frutas", "Manzana", "Gala", "Primera"), ("Frutas", "Pera", "", "")},
+    }
+    reference = dict(profile, units={"$/kilo"}, product_keys={("Frutas", "Manzana", "Gala", "Primera")})
+    assert profile_years.format_shares({"unidad": 0.25, "kilo": 0.7034}) == "kilo 70.34%, unidad 25.00%"
+    profile_years.print_year("wholesale", 2025, profile, reference)
+    out = capsys.readouterr().out
+    assert "rejected: 2" in out and "unknown channels: ['Kiosco']" in out and "missing: none" in out
+    assert "units absent from 2026: 1" in out and "of which 1 of the 1 2026 keys" in out
+
+
+def test_d323_the_profile_of_the_years_reads_every_year_of_raw_db(tmp_path, monkeypatch, capsys):
+    from etl import profile_years
+
+    raw_database(tmp_path / "raw.db").close()
+    monkeypatch.setattr(profile_years.etl, "open_database", lambda: sqlite3.connect(tmp_path / "raw.db"))
+    monkeypatch.setattr(profile_years.etl, "load_raw_files", lambda connection: [("consumer_2026.csv", "UNCHANGED", 3)])
+    seen = []
+    monkeypatch.setattr(profile_years, "profile_year", lambda rows, source: seen.append((source, len(rows))) or {})
+    monkeypatch.setattr(
+        profile_years, "print_year", lambda source, year, profile, reference: seen.append(("print", year))
+    )
+    assert profile_years.main() == 0
+    assert "UNCHANGED | consumer_2026.csv | 3 rows" in capsys.readouterr().out
+    assert ("print", 2025) in seen and ("print", 2026) in seen
+    raw = sqlite3.connect(tmp_path / "raw.db")
+    assert len(profile_years.read_raw_year(raw, etl.SOURCE_WHOLESALE, 2025)) == 2
+
+
+# endregion

@@ -91,5 +91,7 @@ def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
         dashboard.PAGE_SEASONALITY: dashboard.HOME_PAGE
     }  # opens from a button of the Panorama
     assert dashboard.RETIRED_VIEWS["Dashboard general"] == dashboard.PAGE_WHERE
-    assert re.search(r'key=OVERVIEW_WEEKS_KEY,\s*width=190', source)  # the table of weeks opens as a dialog from the Panorama
+    assert re.search(
+        r'key=OVERVIEW_WEEKS_KEY,\s*width=190', source
+    )  # the table of weeks opens as a dialog from the Panorama
     assert charts.get_palette(charts.THEMES[0]) and home_mockup
