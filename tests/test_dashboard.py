@@ -548,7 +548,7 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
     # Tabs are allowed only where they replace a long scroll (D-120, D-121, D-122) and
     # in the SQL studio, whose Resultados / Mensajes tabs are the client's own (D-173).
     tabbed = {dashboard.PAGE_KPI, dashboard.PAGE_OPERATIONS, dashboard.PAGE_RUNS,
-              dashboard.PAGE_SQL, dashboard.PAGE_WHERE}  # D-296: the dashboard's three tabs, one screen each
+              dashboard.PAGE_SQL, dashboard.PAGE_WHERE, dashboard.PAGE_METHOD}  # D-296: the dashboard's three tabs, one screen each
     for page in dashboard.PAGES:
         app = draw_page(page)
         assert not app.exception, page
@@ -1152,7 +1152,7 @@ MENU_BLOCKS = {
     'Negocio · BI': ['Panorama de precios', 'Dónde comprar', 'Insights'],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
-    'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],
+    'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app', 'Método y calidad'],
 }
 
 

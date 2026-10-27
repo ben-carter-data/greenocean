@@ -30,3 +30,6 @@ dbt/.user.yml
 etl/datos.duckdb
 # The SQLite backup is built by every load for the parity test and never published (D-270).
 etl/datos.db
+
+.coverage
+coverage.json

@@ -32,7 +32,7 @@ import streamlit.components.v1 as components
 # import path to reach the other modules.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
-from bi import (alerts, app_map, overview, architecture, buttons, charts, control, documents_folder, i18n, home_mockup, lag,  # noqa: E402
+from bi import (alerts, app_map, overview, quality_method, architecture, buttons, charts, control, documents_folder, i18n, home_mockup, lag,  # noqa: E402
                 database_crossings, deployment, devops, monitoring, page_bar, served_database, storage_map, doc_diagrams, er_diagram, github_page, inflation_view, lineage, operation_center, quality_evidence, quality_live, quality_view, security_map, sql_explorer, stack_page, project, quality, queries, star_model, zoom)
 from etl import etl  # noqa: E402
 # D-283: every text a reader sees goes through tr, which gives its English when the reader chose English.
@@ -75,6 +75,8 @@ PAGE_STACK = "Stack y evidencia"
 PAGE_FOLDER = "Documentos"
 # D-285: the whole system in one view, next to the stack.
 PAGE_APP_MAP = "Mapa de la app"
+# D-320: how the project was assessed against software and data quality standards.
+PAGE_METHOD = "Método y calidad"
 PAGE_DECISION_INDEX = "Índice de decisiones"
 # D-290: the test plan and the security plan are one document; the scalability plan and the data dictionary live in the SAD.
 PAGE_TEST_PLAN = "Plan de pruebas y seguridad"
@@ -100,7 +102,7 @@ SECTION_TECHNICAL = "Ingeniería de datos"
 SECTION_LINKS = "Documentación"
 SECTION_SECURITY = "Seguridad"
 WINDOWS = {
-    SECTION_PROJECT: [PAGE_STACK, PAGE_APP_MAP],
+    SECTION_PROJECT: [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD],
     SECTION_KPI: [PAGE_KPI],
     REPORT_WINDOW: [PAGE_HOME, PAGE_WHERE, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS],
@@ -159,7 +161,7 @@ PAGE_ICONS = {
     PAGE_OPERATIONS: ":material/health_and_safety:", PAGE_RUNS: ":material/play_circle:",
     PAGE_MANUAL: ":material/menu_book:",
     PAGE_GLOSSARY: ":material/dictionary:", PAGE_LINKS: ":material/link:",
-    PAGE_FOLDER: ":material/folder_open:", PAGE_DECISION_INDEX: ":material/list_alt:", PAGE_APP_MAP: ":material/hub:",
+    PAGE_FOLDER: ":material/folder_open:", PAGE_DECISION_INDEX: ":material/list_alt:", PAGE_APP_MAP: ":material/hub:", PAGE_METHOD: ":material/verified:",
     PAGE_TEST_PLAN: ":material/fact_check:",
 }
 PAGE_PATHS = {
@@ -173,7 +175,7 @@ PAGE_PATHS = {
     PAGE_RUNS: "ejecuciones", PAGE_MANUAL: "manual",
     PAGE_GLOSSARY: "glosario", PAGE_LINKS: "enlaces",
     PAGE_FOLDER: "documentos", PAGE_APP_MAP: "mapa-de-la-app", PAGE_DECISION_INDEX: "indice-de-decisiones",
-    PAGE_TEST_PLAN: "plan-de-pruebas",
+    PAGE_TEST_PLAN: "plan-de-pruebas", PAGE_METHOD: "metodo-y-calidad",
 }
 TAB_IDEA = "Idea de negocio"
 TAB_KPI = "Cifras y cálculos"
@@ -480,6 +482,21 @@ def show_load_alert(windows_by_title):
     if st.session_state.get(LOAD_ALERT_SEEN) != failed["id"]:
         st.session_state[LOAD_ALERT_SEEN] = failed["id"]
         st.toast(tr("La carga del {} falló: el panel muestra la última carga válida.").format(day), icon=":material/error:")
+
+
+def show_assessment_line():
+    """The line under the logo (D-320): what the project was assessed against, a link to «Método y calidad». It sits in the
+    free space under the wordmark, out of the flow, so the menu does not move."""
+    palette = charts.get_palette(get_mode())
+    with st.sidebar.container(key="assessment_line"):
+        st.markdown(f"""<style>
+        .st-key-assessment_line {{ height:0 !important; min-height:0 !important; margin:0 0 -1rem !important; padding:0 !important; overflow:visible; }}
+        .st-key-assessment_line a {{ position:fixed; top:56px; left:22px; z-index:5; font-size:10.5px; line-height:1.2; letter-spacing:.01em;
+            color:{palette['reference']} !important; text-decoration:none !important; background:none; }}
+        .st-key-assessment_line a:hover {{ color:{palette['strong_text']} !important; text-decoration:underline !important; }}
+        .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) .st-key-assessment_line a {{ display:none; }}
+        </style><a href="{html.escape(build_page_address(PAGE_METHOD))}" target="_self">{html.escape(tr(quality_method.SIDEBAR_LINE))}</a>""",
+                    unsafe_allow_html=True)
 
 
 def show_profile_switch():
@@ -1709,7 +1726,7 @@ def show_app_header(window):
 
 # The pages whose only header is one thin bar (D-264, D-267).
 BAR_VIEWS = {PAGE_WHERE, PAGE_INSIGHTS, PAGE_HOME, PAGE_SEASONALITY, PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL, PAGE_RUNS,
-             PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER, PAGE_APP_MAP}
+             PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER, PAGE_APP_MAP, PAGE_METHOD}
 
 
 # The project documents: no path row and no Volver (D-269); the folder's path leads back (D-282).
@@ -5067,6 +5084,34 @@ def show_stack_page(mode):
                                         addresses))
 
 
+def show_method_page(mode):
+    """«Método y calidad» (D-320): how the project was assessed against software and data quality standards, a
+    self-assessment whose every number comes from a real run (docs/calidad/medicion.json)."""
+    report = quality_method.read_report()
+    show_page_bar(PAGE_METHOD, PAGE_METHOD, "Cómo se evaluó el proyecto: normas usadas como método, mediciones reales y "
+                  "lo que falta. Una autoevaluación, no una certificación.")
+    st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+    labels = [tr("Introducción"), tr("Estándares"), "ISO 25010", tr("Datos"), tr("Código"), tr("Verificar"), tr("Límites")]
+    intro, standards, iso, data, code, verify, limits = st.tabs(labels)
+    with intro:
+        st.markdown(f'<div class="qm-pane">{quality_method.build_intro(report)}</div>', unsafe_allow_html=True)
+    with standards:
+        st.markdown(f'<div class="qm-pane">{quality_method.build_standards(report)}</div>', unsafe_allow_html=True)
+    with iso:
+        st.markdown(f'<div class="qm-pane">{quality_method.build_iso(report)}</div>', unsafe_allow_html=True)
+    with data:
+        indicators = quality_live.build_indicators(quality_live.read_measures())
+        counts = read_cached_database_counts(get_database_version())
+        st.markdown(f'<div class="qm-pane">{quality_method.build_data_quality(report, indicators, counts)}</div>',
+                    unsafe_allow_html=True)
+    with code:
+        st.markdown(f'<div class="qm-pane">{quality_method.build_code(report)}</div>', unsafe_allow_html=True)
+    with verify:
+        st.markdown(f'<div class="qm-pane">{quality_method.build_verify(report)}</div>', unsafe_allow_html=True)
+    with limits:
+        st.markdown(f'<div class="qm-pane">{quality_method.build_limits(report)}</div>', unsafe_allow_html=True)
+
+
 def show_app_map_page(mode):
     """«Mapa de la app» (D-285): the whole system in one view; the stack is its summary."""
     show_page_bar(PAGE_APP_MAP, PAGE_APP_MAP, "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y "
@@ -5217,6 +5262,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_TEST_PLAN: lambda mode: show_project_document(mode, PAGE_TEST_PLAN),
     PAGE_FOLDER: lambda mode: show_documents_folder(mode),
     PAGE_APP_MAP: lambda mode: show_app_map_page(mode),
+    PAGE_METHOD: lambda mode: show_method_page(mode),
     PAGE_LINKS: show_links_page,
 }
 
@@ -5508,7 +5554,7 @@ def show_route_footer(window, pages, view=None):
 
 
 # D-233: the pages that fit the window close with one short footer instead of the two long ones.
-COMPACT_FOOTER_VIEWS = {PAGE_SQL, PAGE_OPERATIONS, PAGE_RUNS, PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER, PAGE_APP_MAP}
+COMPACT_FOOTER_VIEWS = {PAGE_SQL, PAGE_OPERATIONS, PAGE_RUNS, PAGE_SECURITY, PAGE_STACK, PAGE_FOLDER, PAGE_APP_MAP, PAGE_METHOD}
 
 
 def show_compact_footer(window, pages, view=None):
@@ -5699,7 +5745,7 @@ MENU_BLOCKS = [
     ("ingenieria", "Ingeniería de datos",
      [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY]),
-    ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),
+    ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD]),
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
     ("documentos", "Documentos", [PAGE_FOLDER]),
 ]
@@ -5714,7 +5760,7 @@ SIDEBAR_ICONS = {
     PAGE_DIAGRAMS: ":material/share:", PAGE_ARCHITECTURE: ":material/database:",
     PAGE_OPERATIONS: ":material/verified_user:", PAGE_SQL: ":material/terminal:",
     PAGE_RUNS: ":material/radio_button_checked:", PAGE_SECURITY: ":material/lock:",
-    PAGE_STACK: ":material/layers:", PAGE_APP_MAP: ":material/hub:", PAGE_FOLDER: ":material/folder_open:",
+    PAGE_STACK: ":material/layers:", PAGE_APP_MAP: ":material/hub:", PAGE_METHOD: ":material/verified:", PAGE_FOLDER: ":material/folder_open:",
 }
 # (text, heading, icon, hover fill, current fill, accent bar, hairline) for dark and light sidebars.
 MENU_INK = {True: ("#cfd4dc", "#8b929c", "#aeb5bf", "rgba(255,255,255,.04)", "rgba(255,255,255,.07)",
@@ -5916,6 +5962,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             st.session_state[f"nav_open_{key}"] = key not in FOLDED_BY_DEFAULT
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
+    show_assessment_line()
     show_load_alert(windows_by_title)  # D-298: first in the menu, where nothing covers it
     for key, title, pages in visible_menu_blocks():
         if key in TILE_BLOCKS:
