@@ -1,6 +1,6 @@
 {
-  "generado": "2026-10-27 11:04 UTC",
-  "commit": "d66804c",
+  "generado": "2026-10-27 11:37 UTC",
+  "commit": "b015e3a",
   "python": "3.14.7",
   "limites": {
     "largo_de_linea": 120,
@@ -134,10 +134,10 @@
   },
   "cobertura": {
     "orden": "pytest -q --cov=bi --cov=etl --cov=agent",
-    "pruebas_ok": 988,
+    "pruebas_ok": 990,
     "pruebas_omitidas": 1,
     "salida": 1,
-    "total": 94.2,
+    "total": 94.3,
     "logica_critica": 93.6,
     "modulos_criticos": {
       "etl/etl.py": 95.5,
@@ -186,7 +186,7 @@
       "bi/quality.py": 97.9,
       "bi/quality_evidence.py": 95.8,
       "bi/quality_live.py": 97.4,
-      "bi/quality_method.py": 95.5,
+      "bi/quality_method.py": 99.1,
       "bi/quality_metrics.py": 98.5,
       "bi/quality_view.py": 98.3,
       "bi/queries.py": 100.0,
@@ -329,8 +329,8 @@
     }
   },
   "proceso": {
-    "commits": 321,
-    "conventional_commits": 11,
+    "commits": 322,
+    "conventional_commits": 12,
     "pre_commit_configurado": true,
     "ci": {
       "semanal.yml": [
@@ -390,24 +390,24 @@
   "consultas": {
     "orden": "mediana de 3 ejecuciones de cada consulta de bi/queries.sql",
     "consultas": {
-      "k1_margin": 0.089,
-      "k2_channel_gap": 0.273,
-      "k3_regional_index": 0.419,
-      "k4_seasonal_index": 0.091,
+      "k1_margin": 0.096,
+      "k2_channel_gap": 0.28,
+      "k3_regional_index": 0.435,
+      "k4_seasonal_index": 0.09,
       "k8_rejected_rows": 0.004,
       "quality_runs": 0.004,
       "quality_flag_counts": 0.007,
       "quality_outliers": 0.008,
       "quality_rejected_rows": 0.004,
       "quality_unconvertible_units": 0.006,
-      "k6_national_weekly_price": 0.141,
-      "k6_usual_range_sql": 0.112,
-      "k5_weekly_variations_sql": 0.083,
+      "k6_national_weekly_price": 0.143,
+      "k6_usual_range_sql": 0.114,
+      "k5_weekly_variations_sql": 0.084,
       "quality_week_range": 0.005
     },
     "mas_lenta": [
       "k3_regional_index",
-      0.419
+      0.435
     ]
   },
   "navegadores": {
@@ -422,84 +422,84 @@
       },
       "Dónde comprar": {
         "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=D%C3%B3nde+comprar",
-        "seconds": 0.316,
+        "seconds": 0.319,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Insights": {
         "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=Insights",
-        "seconds": 0.822,
+        "seconds": 0.828,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Pipeline y linaje": {
         "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Pipeline+y+arquitectura",
-        "seconds": 1.33,
+        "seconds": 1.327,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Modelo de datos": {
         "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Modelo+de+datos",
-        "seconds": 0.824,
+        "seconds": 0.815,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Calidad y auditoría": {
         "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Monitoreo",
-        "seconds": 0.824,
+        "seconds": 0.828,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Consultas SQL": {
         "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=Consultas+SQL",
-        "seconds": 0.345,
+        "seconds": 0.338,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Stack y evidencia": {
         "href": "proyecto?tema=Vantablack&perfil=profesional&rol=bi&vista=Stack+y+evidencia",
-        "seconds": 0.82,
+        "seconds": 0.821,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Mapa de la app": {
         "href": "proyecto?tema=Vantablack&perfil=profesional&rol=bi&vista=Mapa+de+la+app",
-        "seconds": 0.823,
+        "seconds": 0.826,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Método y calidad": {
         "href": "proyecto?tema=Vantablack&perfil=profesional&rol=bi&vista=M%C3%A9todo+y+calidad",
-        "seconds": 0.83,
+        "seconds": 0.843,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Centro de operación": {
         "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Ejecuciones",
-        "seconds": 2.337,
+        "seconds": 2.328,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Arquitectura de seguridad": {
         "href": "seguridad?tema=Vantablack&perfil=profesional&rol=bi&vista=Mapa+de+seguridad",
-        "seconds": 0.837,
+        "seconds": 0.825,
         "violations": 0,
         "nodes": 0,
         "rules": []
       },
       "Documentos": {
         "href": "documentacion-y-enlaces?tema=Vantablack&perfil=profesional&rol=bi&vista=Documentos",
-        "seconds": 0.829,
+        "seconds": 0.826,
         "violations": 0,
         "nodes": 0,
         "rules": []
@@ -507,7 +507,7 @@
     },
     "pagina_mas_lenta": [
       "Centro de operación",
-      2.337
+      2.328
     ],
     "violaciones_wcag": 0,
     "nodos_wcag": 0,
@@ -519,29 +519,13 @@
       },
       "firefox": {
         "checks": 39,
-        "passed": 38,
-        "failed": [
-          {
-            "size": "844x390",
-            "page": "Documentos",
-            "ok": false,
-            "error": true,
-            "why": "tiempo agotado"
-          }
-        ]
+        "passed": 39,
+        "failed": []
       },
       "webkit": {
         "checks": 39,
-        "passed": 38,
-        "failed": [
-          {
-            "size": "1920x1000",
-            "page": "Pipeline y linaje",
-            "ok": false,
-            "error": true,
-            "why": "tiempo agotado"
-          }
-        ]
+        "passed": 39,
+        "failed": []
       }
     }
   }
