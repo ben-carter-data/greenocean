@@ -11,6 +11,7 @@ ritmo de la inflación» within ±2 points of the CPI. Pure functions: no Stream
 """
 import base64
 import html
+import re
 import json
 from functools import lru_cache
 from pathlib import Path
@@ -400,85 +401,122 @@ def ordered_regions(points, region_ids):
 DETAIL_SHOP = "Comercio al detalle"
 
 
-# One hue per region, north to south, so each region's houses have their own colour (D-310).
+# One hue per region, north to south, so each region has its own colour (D-310).
 REGION_HUES = [8, 32, 48, 140, 172, 200, 222, 262, 300, 330, 90, 20]
+# D-321: three kinds of place, each a house with its own sign: crates for a wholesale market or terminal, fruit under an
+# awning for a fair or «vega», a cart for the retail points ODEPA records.
+KINDS = {"market": ("Mercado o terminal mayorista", "Wholesale market or terminal"), "fair": ("Feria o vega", "Fair or vega"),
+         "retail": (DETAIL_SHOP, "Retail shops")}
+FAIR_WORDS = ("vega", "feria", "venta directa")
+
+
+def place_kind(name):
+    return "fair" if any(word in name.lower() for word in FAIR_WORDS) else "market"
 
 
 @lru_cache(maxsize=None)
-def house_image(hue, shop=False):
-    """A floating house in perspective (front, side and roof), coloured by its region; the shop house has its front open."""
-    roof, roof_light = f"hsl({hue},62%,46%)", f"hsl({hue},70%,62%)"
-    front, side, trim = f"hsl({hue},48%,74%)", f"hsl({hue},40%,56%)", f"hsl({hue},45%,34%)"
-    door = ('<path d="M20 60h52v36H20z" fill="#1b2230"/><path d="M20 60h52v5H20z" fill="#000" opacity=".35"/>'
-            '<path d="M20 60l-8 5v34l8-3z" fill="#e7b45a"/><path d="M72 60l8 5v34l-8-3z" fill="#c98a2c"/>' if shop else
-            '<path d="M34 66h22v30H34z" fill="#e7a43c"/><path d="M45 66v30" stroke="#a8661a" stroke-width="1.6"/>'
-            '<path d="M20 60h9v7h-9zM61 60h9v7h-9z" fill="#e8f1ff" opacity=".9"/>')
-    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 112">'
-           f'<ellipse cx="62" cy="104" rx="50" ry="6" fill="#000" opacity=".28"/>'
-           f'<path d="M90 50l26-12v46l-26 14z" fill="{side}"/>'
-           f'<path d="M98 56l10-5v9l-10 5z" fill="#e8f1ff" opacity=".8"/>'
-           f'<path d="M8 50h82v48H8z" fill="{front}"/>{door}'
-           f'<path d="M4 52L49 18l45 34z" fill="{roof_light}"/>'
-           f'<path d="M49 18l46-14 25 36-26 12z" fill="{roof}"/>'
-           f'<path d="M4 52h90v4H4z" fill="{trim}"/></svg>')
+def house_image(hue, kind):
+    """A front-facing house in the region's colour with the sign of its kind beside it."""
+    roof, wall, trim = f"hsl({hue},62%,58%)", f"hsl({hue},70%,88%)", f"hsl({hue},45%,40%)"
+    fronts = {
+        "market": '<rect x="25" y="40" width="10" height="16" fill="#e0a53a"/>',
+        "fair": ('<rect x="10" y="30" width="40" height="8" fill="#fff"/>'
+                 + "".join(f'<rect x="{10 + i * 10}" y="30" width="5" height="8" fill="#e5484d"/>' for i in range(4))
+                 + '<rect x="25" y="42" width="10" height="14" fill="#e0a53a"/>'),
+        "retail": ('<rect x="13" y="31" width="34" height="9" rx="1.5" fill="#1d2433"/>'
+                   '<circle cx="22" cy="35.5" r="1.4" fill="#e5484d"/><circle cx="30" cy="35.5" r="1.4" fill="#f5c542"/>'
+                   '<circle cx="38" cy="35.5" r="1.4" fill="#3fbf7f"/><rect x="25" y="43" width="10" height="13" fill="#e0a53a"/>'),
+    }
+    signs = {
+        "market": ('<rect x="58" y="42" width="11" height="7" fill="#c9965a"/><rect x="60" y="34" width="11" height="8" fill="#d8a96a"/>'
+                   '<rect x="66" y="47" width="10" height="9" fill="#b9864a"/>'),
+        "fair": '<circle cx="62" cy="50" r="4" fill="#e5484d"/><circle cx="70" cy="50" r="4" fill="#f5a623"/><circle cx="66" cy="44" r="4" fill="#4caf50"/>',
+        "retail": ('<path d="M56 38h4l4 12h10l2-8H62" fill="none" stroke="#e8edf5" stroke-width="2" stroke-linejoin="round"/>'
+                   '<circle cx="65" cy="54" r="2" fill="#e8edf5"/><circle cx="72" cy="54" r="2" fill="#e8edf5"/>'),
+    }
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 62">'
+           f'<ellipse cx="30" cy="58" rx="24" ry="3" fill="#000" opacity=".3"/>'
+           f'<rect x="8" y="26" width="44" height="31" fill="{wall}"/>{fronts[kind]}'
+           f'<path d="M3 28 30 6l27 22z" fill="{roof}"/><rect x="3" y="27" width="54" height="3" fill="{trim}"/>{signs[kind]}</svg>')
     return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
 
 
-def build_region_column(region, data, hue):
-    """A region as a column of floating houses: one per wholesale market, with its name, and one open shop house that
-    holds every kind of consumer point ODEPA records there, each named on hover."""
-    houses = "".join(f'<figure class="ov-house" title="{html.escape(name)}"><img src="{house_image(hue)}" alt=""><figcaption>{html.escape(name)}</figcaption></figure>'
-                     for name in data["wholesale"])
+@lru_cache(maxsize=1)
+def chile_shapes():
+    # One decimal is enough for a map 110 px tall; it keeps the nine small maps light.
+    shorten = lambda path: re.sub(r"\d+\.\d+", lambda m: f"{float(m.group()):.0f}", path)
+    return [(item["region"], shorten(item["path"])) for item in home_mockup.region_layout(home_mockup.chile_regions_geometry())]
+
+
+def mini_map(region, hue):
+    """Chile in its real shape with this region lit, so the reader sees where it lies."""
+    paths = "".join(f'<path d="{path}" fill="{f"hsl({hue},70%,60%)" if name == region else "#4a5568"}" stroke="{f"hsl({hue},80%,70%)" if name == region else "none"}" stroke-width="3"/>' for name, path in chile_shapes())
+    return (f'<div class="ov-mini"><svg viewBox="0 0 {home_mockup.LIST_LEFT - 12} {home_mockup.MAP_VIEW[1]}" '
+            f'preserveAspectRatio="xMidYMid meet">{paths}</svg><span>{html.escape(i18n.tr("Mapa"))}</span></div>')
+
+
+def house(hue, kind, name):
+    return (f'<figure class="ov-house" title="{html.escape(name)}"><img src="{house_image(hue, kind)}" alt="">'
+            f'<figcaption>{html.escape(name)}</figcaption></figure>')
+
+
+def build_region_column(region, data, hue, number=1):
+    """One region as a card: its number north to south, its name, a house per wholesale market or fair, one retail house
+    (its kinds named on hover) and, at the right, where the region lies on the map of Chile. Information only, no price."""
     kinds = [name for name in data["consumer"] if name != "Mercado Mayorista"]
-    inside = "".join(f'<b class="ov-hint">{point_icon(name)}<em class="ov-hint-tip">{html.escape(i18n.tr(name))}</em></b>' for name in kinds)
-    shop = (f'<figure class="ov-house ov-shop"><span class="ov-shop-frame"><img src="{house_image(hue, True)}" alt="">'
-            f'<span class="ov-shop-inside">{inside}</span></span><figcaption>{html.escape(i18n.tr(DETAIL_SHOP))}</figcaption></figure>'
-            if kinds else "")
+    houses = "".join(house(hue, place_kind(name), name) for name in data["wholesale"])
+    if kinds:
+        houses += house(hue, "retail", i18n.tr(DETAIL_SHOP)).replace(
+            f'title="{html.escape(i18n.tr(DETAIL_SHOP))}"', f'title="{html.escape(", ".join(i18n.tr(kind) for kind in kinds))}"', 1)
     sectors = (f'<p class="ov-sectors">{html.escape(i18n.tr("Sectores"))}: {html.escape(", ".join(data["sectors"]))}</p>'
                if data["sectors"] else "")
-    count = len(data["wholesale"]) + (1 if kinds else 0)
-    return (f'<section class="ov-region" style="--h:{hue};flex-grow:{count}"><h5>{html.escape(home_mockup.short_region(region))}</h5>'
-            f'<div class="ov-street">{houses}{shop}</div>{sectors}</section>')
+    return (f'<section class="ov-region" style="--h:{hue}"><div class="ov-region-main"><h5><b>{number:02d}</b>'
+            f'{html.escape(home_mockup.short_region(region))}</h5><div class="ov-street">{houses}</div>{sectors}</div>'
+            f'{mini_map(region, hue)}</section>')
+
+
+def build_legend(hue=215):
+    items = "".join(f'<span><img src="{house_image(hue, kind)}" alt="">{html.escape(i18n.tr(spanish))}</span>'
+                    for kind, (spanish, _) in KINDS.items())
+    return f'<div class="ov-legend">{items}<em>{html.escape(i18n.tr("Norte → Sur"))}</em></div>'
 
 
 def build_regions_html(regions, points):
-    """Every region at once, north to south, without cards or arrows (D-310)."""
-    columns = [build_region_column(region, points[region], REGION_HUES[index % len(REGION_HUES)])
-               for index, region in enumerate(regions)]
-    rows = "".join(f'<div class="ov-row">{"".join(columns[start:start + 3])}</div>' for start in range(0, len(columns), 3))
-    return f'<div class="ov-regions">{rows}</div>'
+    """Every region at once, north to south, as numbered cards in a grid of three (D-310, D-321)."""
+    cards = "".join(build_region_column(region, points[region], REGION_HUES[index % len(REGION_HUES)], index + 1)
+                    for index, region in enumerate(regions))
+    head = (f'<div class="ov-where-head"><div><h3>{html.escape(i18n.tr("Lugares de compra por región"))}</h3>'
+            f'<p>{html.escape(i18n.tr("Ordenados de norte a sur. Cada región muestra dónde queda en el mapa."))}</p></div>{build_legend()}</div>')
+    return head + f'<div class="ov-regions">{cards}</div>'
 
 
 def points_css(palette):
-    ink, muted, card = palette["strong_text"], palette["reference"], palette["card"]
+    ink, muted, card, border = palette["strong_text"], palette["reference"], palette["card"], palette["card_border"]
     return f"""<style>
-.ov-regions {{ display:flex; flex-direction:column; margin:4px 0 1rem; }}
-.ov-row {{ display:flex; gap:22px; height:calc((100vh - 140px) / 3); padding:5px 0; }}
-.ov-region {{ flex:1 1 0; display:flex; flex-direction:column; align-items:center; min-width:0; min-height:0; padding:6px 8px 4px;
-  border-radius:22px; background:radial-gradient(ellipse at 50% 100%, hsla(var(--h),70%,55%,.20), hsla(var(--h),70%,55%,.05) 62%, transparent 85%);
-  box-shadow:inset 0 -3px 0 hsla(var(--h),70%,60%,.55); }}
-.ov-region h5 {{ margin:0 0 4px !important; padding:0 10px 3px !important; font-size:15px !important; text-align:center; color:{ink};
-  border-bottom:3px solid hsl(var(--h),62%,56%); white-space:nowrap; }}
-.ov-street {{ flex:1; min-height:0; display:flex; justify-content:center; align-items:flex-end; gap:14px; width:100%; }}
-.ov-house {{ --w:calc(((100vh - 140px) / 3 - 74px) * 1.107); margin:0; display:flex; flex-direction:column; align-items:center;
-  flex:1 1 0; max-width:var(--w); min-width:0; height:100%; justify-content:flex-end; }}
-.ov-house img {{ width:100%; height:auto; display:block;
-  filter:drop-shadow(0 10px 10px rgba(0,0,0,.35)); transition:transform .3s ease; animation:ov-float 5s ease-in-out infinite; }}
-.ov-region:nth-child(even) .ov-house img {{ animation-delay:-2.5s; }}
-.ov-house:hover img {{ transform:translateY(-6px) scale(1.04); }}
-@keyframes ov-float {{ 0%, 100% {{ translate:0 0; }} 50% {{ translate:0 -4px; }} }}
-.ov-house figcaption {{ margin-top:2px; width:100%; min-height:28px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
-  overflow:hidden; font-size:11.5px; font-weight:600; line-height:1.2; text-align:center; color:{ink}; }}
-.ov-shop-frame {{ position:relative; display:block; width:100%; line-height:0; }}
-.ov-shop-inside {{ position:absolute; left:16%; top:54%; width:42%; height:32%; display:flex; flex-wrap:wrap; align-content:center;
-  justify-content:center; gap:1px; animation:ov-float 5s ease-in-out infinite; }}
-.ov-region:nth-child(even) .ov-shop-inside {{ animation-delay:-2.5s; }}
-.ov-shop-inside b {{ position:relative; cursor:help; }}
-.ov-shop-inside b {{ width:30%; }}
-.ov-shop-inside .ov-icon {{ width:100%; height:auto; display:block; }}
-.ov-hint-tip {{ display:none; position:absolute; z-index:20; bottom:120%; left:50%; transform:translateX(-50%); white-space:nowrap; padding:4px 8px;
-  border-radius:8px; background:{ink}; color:{card}; font-size:11px; font-style:normal; font-weight:500; }}
-.ov-hint:hover .ov-hint-tip {{ display:block; }}
-.ov-sectors {{ margin:0 !important; font-size:10.5px !important; color:{muted} !important; text-align:center; }}
+.ov-where-head {{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:6px 16px; margin:0 0 10px; }}
+.ov-where-head h3 {{ margin:0 !important; padding:0 !important; font-size:22px !important; color:{ink}; }}
+.ov-where-head p {{ margin:2px 0 0 !important; font-size:13px; color:{muted}; }}
+.ov-legend {{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; font-size:12px; color:{ink}; white-space:nowrap; }}
+.ov-legend span {{ display:inline-flex; align-items:center; gap:6px; }}
+.ov-legend img {{ width:30px; height:auto; }}
+.ov-legend em {{ font-style:normal; color:{muted}; padding-left:14px; border-left:1px solid {border}; }}
+.ov-regions {{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); grid-auto-rows:minmax(calc((100vh - 300px) / 3), auto);
+  gap:12px; margin:0 0 1rem; }}
+.ov-region {{ display:flex; gap:10px; border-radius:16px; background:{card}; border:1px solid {border};
+  border-top:3px solid hsl(var(--h),65%,60%); padding:8px 10px 6px 12px; min-width:0; }}
+.ov-region-main {{ flex:1; min-width:0; display:flex; flex-direction:column; }}
+.ov-region h5 {{ display:flex; align-items:center; gap:8px; margin:0 0 6px !important; padding:0 !important; font-size:16px !important; color:{ink}; }}
+.ov-region h5 b {{ margin-right:8px; font-size:11.5px; padding:1px 7px; border-radius:6px; color:#10141c; background:hsl(var(--h),65%,62%); }}
+.ov-street {{ display:flex; flex-wrap:wrap; gap:4px 4px; }}
+.ov-house {{ margin:0; width:60px; display:flex; flex-direction:column; align-items:center; }}
+.ov-house img {{ width:48px; height:auto; display:block; transition:transform .25s ease; }}
+.ov-house:hover img {{ transform:translateY(-3px); }}
+.ov-house figcaption {{ margin-top:2px; font-size:10.5px; line-height:1.15; text-align:center; color:{ink};
+  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+  overflow-wrap:anywhere; hyphens:auto; }}
+.ov-sectors {{ margin:auto 0 0 !important; padding-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11.5px !important; color:{muted} !important; }}
+.ov-mini {{ flex:0 0 40px; display:flex; flex-direction:column; align-items:center; gap:4px; border-left:1px solid {border}; padding-left:8px; }}
+.ov-mini svg {{ width:34px; flex:1; min-height:60px; max-height:96px; }}
+.ov-mini span {{ font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
 </style>"""
 # endregion

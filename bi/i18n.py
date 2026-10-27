@@ -28,6 +28,10 @@ DOCUMENT_FIELDS = {
 
 # Spanish text → English text. Grouped by where it shows; data (products, regions, channels) is never translated.
 EN = {
+    "Lugares de compra por región": "Places to buy, by region",
+    "Ordenados de norte a sur. Cada región muestra dónde queda en el mapa.": "North to south. Each region shows where it lies on the map.",
+    "Mercado o terminal mayorista": "Wholesale market or terminal", "Feria o vega": "Fair or vega",
+    "Norte → Sur": "North → South", "Mapa": "Map",
     "Método y calidad": "Method and quality",
     "Evaluado según ISO/IEC 25010 · 25012": "Assessed against ISO/IEC 25010 · 25012",
     "Cómo se evaluó el proyecto: normas usadas como método, mediciones reales y lo que falta. Una autoevaluación, no una certificación.": "How the project was assessed: standards used as a method, real measurements and what is missing. A self-assessment, not a certification.",

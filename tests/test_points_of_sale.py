@@ -26,7 +26,9 @@ def test_d310_each_region_is_a_column_of_houses_with_its_points_and_no_price():
     points = overview.read_points()
     column = overview.build_region_column("Región Metropolitana de Santiago", points["Región Metropolitana de Santiago"], 200)
     assert "Vega Central Mapocho de Santiago" in column and column.count('class="ov-house') == 3 + 1
-    assert column.count('<img class="ov-icon"') == 5 and "$" not in column and "%" not in column
+    assert "Supermercado, Feria libre" in column and "$" not in column and " %" not in column  # the retail kinds, on hover
+    assert overview.place_kind("Vega Central Mapocho de Santiago") == "fair" and overview.place_kind("Femacal de La Calera") == "market"
+    assert 'class="ov-mini"' in column
     for kind in {kind for data in points.values() for kind in data["consumer"]}:
         assert (overview.POINTS_FILE.parent / "points" / f"{overview.POINT_ICONS[kind]}.svg").exists(), kind
     regions = overview.ordered_regions(points, {name: 13 for name in points})
