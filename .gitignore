@@ -33,3 +33,6 @@ etl/datos.db
 
 .coverage
 coverage.json
+
+# Códigos de recuperación de la cuenta de GitHub: nunca van al repositorio.
+github-recovery-codes.txt
