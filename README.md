@@ -15,12 +15,12 @@ Cada martes el pipeline descarga las fuentes oficiales, las deja en una misma un
 
 | | |
 |---|---|
-| ![Panorama de precios](docs/img/readme/panorama.png) | ![Dónde comprar](docs/img/readme/donde-comprar.png) |
-| **Panorama de precios**: qué subió y qué bajó esta semana, por región y por familia | **Dónde comprar**: los mercados mayoristas y los puntos de venta de cada región |
-| ![Insights](docs/img/readme/insights.png) | ![Pipeline y linaje](docs/img/readme/pipeline.png) |
-| **Insights**: las preguntas de quien compra, de quien vende por mayor y de quien diseña los datos | **Pipeline y linaje**: el recorrido de los datos y el estado de sus pruebas |
+| ![Panorama de precios](docs/img/readme/panorama.png) | ![Insights](docs/img/readme/insights.png) |
+| **Panorama de precios**: qué subió y qué bajó esta semana, por región y por familia | **Insights**: las preguntas de quien compra, de quien vende por mayor y de quien diseña los datos |
+| ![Pipeline y linaje](docs/img/readme/pipeline.png) | ![Calidad y auditoría](docs/img/readme/calidad.png) |
+| **Pipeline y linaje**: el recorrido de los datos y el estado de sus pruebas | **Calidad y auditoría**: las tres puertas de calidad de cada carga, con las filas que pasan y las que se rechazan |
 
-Páginas del panel: Panorama de precios, Dónde comprar, Insights y Precios e inflación (desde un botón del Panorama), Pipeline y linaje, Modelo de datos, Calidad y auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, Método y calidad, Mapa de la app y la carpeta de documentos. Está en español y en inglés.
+Páginas del panel: Panorama de precios, Insights y Precios e inflación (desde un botón del Panorama), Pipeline y linaje, Modelo de datos, Calidad y auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, Método y calidad, Mapa de la app y la carpeta de documentos. Está en español y en inglés.
 
 ## Qué responde
 

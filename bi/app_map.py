@@ -177,7 +177,7 @@ NODES = {
         [
             (
                 "Páginas",
-                "Panorama de precios, Dónde comprar, Insights, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y "
+                "Panorama de precios, Insights, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y "
                 "auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, "
                 "Mapa de la app y la carpeta de documentos.",
             ),

@@ -73,7 +73,6 @@ def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
     assert len(views) == len(set(views)) and set(views) == set(dashboard.SHOW_PAGE_BY_TITLE)
     assert dashboard.WINDOWS["Dashboard"] == [
         dashboard.HOME_PAGE,
-        dashboard.PAGE_WHERE,
         dashboard.PAGE_INSIGHTS,
         dashboard.PAGE_SEASONALITY,
         dashboard.PAGE_SQL,
@@ -604,7 +603,6 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         dashboard.PAGE_OPERATIONS,
         dashboard.PAGE_RUNS,
         dashboard.PAGE_SQL,
-        dashboard.PAGE_WHERE,
         dashboard.PAGE_METHOD,
     }  # D-296: the dashboard's three tabs, one screen each
     for page in dashboard.PAGES:
@@ -1274,7 +1272,7 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 
 MENU_BLOCKS = {
-    'Negocio · BI': ['Panorama de precios', 'Dónde comprar', 'Insights'],
+    'Negocio · BI': ['Panorama de precios', 'Insights'],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app', 'Método y calidad'],

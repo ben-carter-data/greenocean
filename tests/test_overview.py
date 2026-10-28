@@ -86,12 +86,44 @@ def test_d311_the_reading_of_the_period_chains_the_cells_of_the_weeks_table(mark
 def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
     source = (dashboard.Path(dashboard.__file__)).read_text(encoding="utf-8")
     assert "def show_overview_page" not in source and "def show_overview_inflation" not in source
-    assert dashboard.MENU_BLOCKS[0][2] == [dashboard.HOME_PAGE, dashboard.PAGE_WHERE, dashboard.PAGE_INSIGHTS]
+    assert dashboard.MENU_BLOCKS[0][2] == [
+        dashboard.HOME_PAGE,
+        dashboard.PAGE_INSIGHTS,
+    ]  # D-325: «Dónde comprar» is gone
     assert dashboard.DOOR_PAGES == {
         dashboard.PAGE_SEASONALITY: dashboard.HOME_PAGE
     }  # opens from a button of the Panorama
-    assert dashboard.RETIRED_VIEWS["Dashboard general"] == dashboard.PAGE_WHERE
+    assert dashboard.RETIRED_VIEWS["Dashboard general"] == dashboard.HOME_PAGE
     assert re.search(
         r'key=OVERVIEW_WEEKS_KEY,\s*width=190', source
     )  # the table of weeks opens as a dialog from the Panorama
     assert charts.get_palette(charts.THEMES[0]) and home_mockup
+
+
+@needs_database
+def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
+    source = dashboard.Path(dashboard.__file__).read_text(encoding="utf-8")
+    assert "show_where_page" not in source and "PAGE_WHERE" not in source
+    assert [name for _, _, pages in dashboard.MENU_BLOCKS[:1] for name in pages] == [
+        dashboard.HOME_PAGE,
+        dashboard.PAGE_INSIGHTS,
+    ]
+    assert "Dónde comprar" not in dashboard.SIDEBAR_LABELS.values()
+    assert dashboard.RETIRED_VIEWS["Dónde comprar"] == dashboard.HOME_PAGE
+    # The names of the page's helpers are gone from the module; what the Insights read of the points file stays.
+    for name in ("build_regions_html", "build_region_column", "regional_price_levels", "house_image", "mini_map"):
+        assert not hasattr(overview, name), name
+    assert overview.read_points() and overview.point_icon("mercado")
+    from streamlit.testing.v1 import AppTest
+
+    for language in ("es", "en"):
+        app = AppTest.from_file(str(dashboard.Path(dashboard.__file__)), default_timeout=60)
+        app.query_params.update({"vista": "Dónde comprar", "perfil": "profesional", "lang": language})
+        app.run()
+        assert not app.exception
+        markup = " ".join(block.value for block in app.sidebar.markdown)
+        assert "Where to buy" not in markup and "Dónde comprar" not in markup
+        assert [link.proto.label for link in app.sidebar.get("page_link")][:2] in (
+            ["Panorama de precios", "Insights"],
+            ["Price overview", "Insights"],
+        )

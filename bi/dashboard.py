@@ -81,7 +81,6 @@ tr = i18n.tr
 # The menu is the project journey; every destination is directly accessible.
 PAGE_HOME = "Dashboard"
 # D-296: the macro dashboard of the whole project, in tabs, like a BI tool; the first page of the menu.
-PAGE_WHERE = "Dónde comprar"
 PAGE_INSIGHTS = "Insights"
 BRAND_GREEN_DARK = "#72e7ad"
 BRAND_GREEN_LIGHT = "#167046"
@@ -90,7 +89,11 @@ PAGE_ARCHITECTURE = "Modelo de datos"
 PAGE_SEASONALITY = "Contexto del precio"
 # D-162: read-only SQL on the gold layer, the destination of «Consultas SQL» in the pipeline.
 PAGE_SQL = "Consultas SQL"
-RETIRED_VIEWS = {"Histórico y estacionalidad": "Contexto del precio", "Dashboard general": "Dónde comprar"}
+RETIRED_VIEWS = {
+    "Histórico y estacionalidad": "Contexto del precio",
+    "Dashboard general": PAGE_HOME,
+    "Dónde comprar": PAGE_HOME,  # D-325: the page is gone; its old address opens the Panorama
+}
 PAGE_KPI = "Indicadores explicados"
 PAGE_OPERATIONS = "Monitoreo"
 PAGE_RUNS = "Ejecuciones"
@@ -158,7 +161,7 @@ SECTION_SECURITY = "Seguridad"
 WINDOWS = {
     SECTION_PROJECT: [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD],
     SECTION_KPI: [PAGE_KPI],
-    REPORT_WINDOW: [PAGE_HOME, PAGE_WHERE, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL],
+    REPORT_WINDOW: [PAGE_HOME, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
     SECTION_LINKS: [
@@ -234,7 +237,6 @@ PAGE_ICONS = {
     PAGE_SQL: ":material/terminal:",
     PAGE_SECURITY: ":material/lock:",
     PAGE_STACK: ":material/stacks:",
-    PAGE_WHERE: ":material/storefront:",
     PAGE_INSIGHTS: ":material/lightbulb:",
     PAGE_HOME: ":material/dashboard:",
     PAGE_DIAGRAMS: ":material/account_tree:",
@@ -261,7 +263,6 @@ PAGE_PATHS = {
     PAGE_ADR: "adr",
     PAGE_SQL: "consultas-sql",
     PAGE_HOME: "dashboard",
-    PAGE_WHERE: "donde-comprar",
     PAGE_INSIGHTS: "insights",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura",
@@ -1816,7 +1817,6 @@ def apply_style(mode):
 
 
 OVERVIEW_CLASS_BY_VIEW = {
-    PAGE_WHERE: "overview-dashboard",
     PAGE_INSIGHTS: "overview-dashboard",
     PAGE_HOME: "overview-dashboard",
     PAGE_SEASONALITY: "overview-history",
@@ -1928,7 +1928,6 @@ def show_app_header(window):
 
 # The pages whose only header is one thin bar (D-264, D-267).
 BAR_VIEWS = {
-    PAGE_WHERE,
     PAGE_INSIGHTS,
     PAGE_HOME,
     PAGE_SEASONALITY,
@@ -4367,15 +4366,6 @@ OVERVIEW_WEEKS_KEY = "ov_weeks"
 OVERVIEW_INSIGHT_VIEW = "ov_insight_view"
 
 
-@st.cache_data
-def read_cached_region_ids(database_version):
-    return dict(queries.run_sql("SELECT region, region_id FROM dim_region").itertuples(index=False))
-
-
-def read_region_ids(version):
-    return read_cached_region_ids(version)
-
-
 @st.cache_data(show_spinner=False)
 def read_cached_database_counts(database_version):
     return queries.run_sql(
@@ -4453,7 +4443,7 @@ def show_overview_insights(mode, version):
         (
             "¿Dónde se compra por mayor?",
             "Comerciante mayorista",
-            "Dónde comprar",
+            PAGE_INSIGHTS,
             f"{market_count} mercados mayoristas en {len(overview.read_points())} regiones, 3 de ellos en Santiago.",
         ),
         (
@@ -4563,37 +4553,6 @@ def show_overview_insights(mode, version):
                 ),
             )
         st.markdown(f'<div class="ov-insights">{card}</div>', unsafe_allow_html=True)
-
-
-def show_where_page(mode):
-    """Dónde comprar: every region at once, north to south, as floating houses coloured by region (D-306, D-310):
-    one per wholesale market with its name and one open shop house with the kinds of consumer point. Information only."""
-    version = get_database_version()
-    points = overview.read_points()
-    regions = overview.ordered_regions(points, read_region_ids(version))
-    show_page_bar(
-        PAGE_WHERE,
-        "Dónde comprar",
-        "Los mercados mayoristas y los puntos de venta de cada región, de norte a sur. "
-        "Solo información: no hay precios por mercado, porque lo que sube en una región sube en todos sus mercados.",
-    )
-    st.markdown(overview.points_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    week, levels = read_cached_price_levels(version)
-    st.markdown(
-        overview.build_regions_html(regions, points, levels, i18n.translate_text(describe_week_span(week))),
-        unsafe_allow_html=True,
-    )
-
-
-@st.cache_data(show_spinner=False)
-def read_cached_price_levels(database_version):
-    """(latest week, {region: level}) of the K3 regional index (D-322)."""
-    week = read_latest_week()
-    frame = queries.run_sql(
-        "SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?",
-        parameters=(f"{week:%Y-%m-%d}",),
-    )
-    return week, overview.regional_price_levels(frame)
 
 
 def show_weeks_table(mode, version):
@@ -6378,7 +6337,6 @@ SHOW_PAGE_BY_TITLE = {
     ),
     PAGE_HOME: show_home_page,
     PAGE_DIAGRAMS: show_diagrams_page,
-    PAGE_WHERE: lambda mode: show_where_page(mode),
     PAGE_INSIGHTS: lambda mode: show_insights_page(mode),
     PAGE_SEASONALITY: show_price_context_page,
     PAGE_KPI: show_kpi_page,
@@ -6927,7 +6885,7 @@ RELOAD_HOME_SCRIPT = """<script>
 # with a faint fill and a blue bar on its left. The documents close the list, before the sources.
 # (key, title, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_WHERE, PAGE_INSIGHTS]),
+    ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_INSIGHTS]),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD]),
@@ -6941,7 +6899,6 @@ MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS f
 MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages}
 # The menu's own glyphs, one per page, thin lines (Material Symbols).
 SIDEBAR_ICONS = {
-    PAGE_WHERE: ":material/storefront:",
     PAGE_INSIGHTS: ":material/lightbulb:",
     PAGE_HOME: ":material/grid_view:",
     PAGE_DIAGRAMS: ":material/share:",
@@ -6991,7 +6948,6 @@ SIDEBAR_TOP_LABELS = {
     SECTION_RESOURCES: "GitHub",
 }
 SIDEBAR_LABELS = {
-    PAGE_WHERE: "Dónde comprar",
     PAGE_INSIGHTS: "Insights",
     PAGE_HOME: "Panorama de precios",
     PAGE_SEASONALITY: "Precios e inflación",

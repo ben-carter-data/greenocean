@@ -104,7 +104,7 @@ If a step fails, the following ones do not run and the served database does not 
 
 When it opens, the panel compares its database with the pointer of the `main` branch. If its copy is older, it downloads the database from the «base-actual» release and uses it only if its SHA-256 fingerprint matches. Then it opens the database read-only: no page can change a value. If GitHub does not respond, the panel carries on with the database it already has.
 
-The first time, the reader chooses a view: the user view shows the business (the Price overview, Where to buy, Insights and Prices and inflation) and the professional view, the whole project, ordered by the profile chosen (Data Eng, BA, BI, DevOps or Security); the user view opens the rest only with the app's code. If the last load failed, a red notice above the menu says so on every page, with a link to the step that failed. The panel reads in Spanish and in English.
+The first time, the reader chooses a view: the user view shows the business (the Price overview, Insights and Prices and inflation) and the professional view, the whole project, ordered by the profile chosen (Data Eng, BA, BI, DevOps or Security); the user view opens the rest only with the app's code. If the last load failed, a red notice above the menu says so on every page, with a link to the step that failed. The panel reads in Spanish and in English.
 
 ## 6. The data
 

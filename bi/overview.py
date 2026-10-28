@@ -16,7 +16,6 @@ from typing import Any
 
 import base64
 import html
-import re
 import json
 from functools import lru_cache
 from pathlib import Path
@@ -91,7 +90,6 @@ def directions(variations: pd.DataFrame, week: Any, family: str | None = None) -
 
 
 # North to south, by the official number of each region.
-REGION_ORDER = [15, 1, 2, 3, 4, 5, 13, 6, 7, 16, 8, 9, 14, 10, 11, 12]
 
 
 def state(change: float) -> str:
@@ -507,7 +505,7 @@ def wholesale_insights(variations: pd.DataFrame, week: Any, margins: pd.DataFram
     return lines
 
 
-# region Where to buy (D-306)
+# region Points of sale (D-306): what exists in each region; the Insights read it
 POINTS_FILE = Path(__file__).with_name("assets") / "points_of_sale.json"
 
 
@@ -537,245 +535,6 @@ def point_icon(name: str) -> str:
     return (
         f'<img class="ov-icon" alt="" src="data:image/svg+xml;base64,{base64.b64encode(path.read_bytes()).decode()}">'
     )
-
-
-def ordered_regions(points: dict[str, Any], region_ids: dict[str, Any]) -> list[str]:
-    return sorted(
-        points, key=lambda name: REGION_ORDER.index(region_ids[name]) if region_ids.get(name) in REGION_ORDER else 99
-    )
-
-
-DETAIL_SHOP = "Comercio al detalle"
-
-
-# One hue per region, north to south, so each region has its own colour (D-310).
-REGION_HUES = [8, 32, 48, 140, 172, 200, 222, 262, 300, 330, 90, 20]
-# D-321: three kinds of place, each a house with its own sign: crates for a wholesale market or terminal, fruit under an
-# awning for a fair or «vega», a cart for the retail points ODEPA records.
-KINDS = {
-    "market": ("Mercado o terminal mayorista", "Wholesale market or terminal"),
-    "fair": ("Feria o vega", "Fair or vega"),
-    "retail": (DETAIL_SHOP, "Retail shops"),
-}
-FAIR_WORDS = ("vega", "feria", "venta directa")
-
-
-def place_kind(name: str) -> str:
-    return "fair" if any(word in name.lower() for word in FAIR_WORDS) else "market"
-
-
-@lru_cache(maxsize=None)
-def house_image(hue: int, kind: str) -> str:
-    """A front-facing house in the region's colour with the sign of its kind beside it."""
-    roof, wall, trim = f"hsl({hue},62%,58%)", f"hsl({hue},70%,88%)", f"hsl({hue},45%,40%)"
-    fronts = {
-        "market": '<rect x="25" y="40" width="10" height="16" fill="#e0a53a"/>',
-        "fair": (
-            '<rect x="10" y="30" width="40" height="8" fill="#fff"/>'
-            + "".join(f'<rect x="{10 + i * 10}" y="30" width="5" height="8" fill="#e5484d"/>' for i in range(4))
-            + '<rect x="25" y="42" width="10" height="14" fill="#e0a53a"/>'
-        ),
-        "retail": (
-            '<rect x="13" y="31" width="34" height="9" rx="1.5" fill="#1d2433"/>'
-            '<circle cx="22" cy="35.5" r="1.4" fill="#e5484d"/><circle cx="30" cy="35.5" r="1.4" fill="#f5c542"/>'
-            '<circle cx="38" cy="35.5" r="1.4" fill="#3fbf7f"/><rect x="25" y="43" width="10" height="13" fill="#e0a53a"/>'
-        ),
-    }
-    signs = {
-        "market": (
-            '<rect x="58" y="42" width="11" height="7" fill="#c9965a"/><rect x="60" y="34" width="11" height="8" fill="#d8a96a"/>'
-            '<rect x="66" y="47" width="10" height="9" fill="#b9864a"/>'
-        ),
-        "fair": '<circle cx="62" cy="50" r="4" fill="#e5484d"/><circle cx="70" cy="50" r="4" fill="#f5a623"/><circle cx="66" cy="44" r="4" fill="#4caf50"/>',
-        "retail": (
-            '<path d="M56 38h4l4 12h10l2-8H62" fill="none" stroke="#e8edf5" stroke-width="2" stroke-linejoin="round"/>'
-            '<circle cx="65" cy="54" r="2" fill="#e8edf5"/><circle cx="72" cy="54" r="2" fill="#e8edf5"/>'
-        ),
-    }
-    svg = (
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 62">'
-        f'<ellipse cx="30" cy="58" rx="24" ry="3" fill="#000" opacity=".3"/>'
-        f'<rect x="8" y="26" width="44" height="31" fill="{wall}"/>{fronts[kind]}'
-        f'<path d="M3 28 30 6l27 22z" fill="{roof}"/><rect x="3" y="27" width="54" height="3" fill="{trim}"/>{signs[kind]}</svg>'
-    )
-    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode()).decode()
-
-
-@lru_cache(maxsize=1)
-def chile_shapes() -> list[tuple[str, str]]:
-    # One decimal is enough for a map 110 px tall; it keeps the nine small maps light.
-    def shorten(path: str) -> str:
-        return re.sub(r"\d+\.\d+", lambda m: f"{float(m.group()):.0f}", path)
-
-    return [
-        (item["region"], shorten(item["path"]))
-        for item in home_mockup.region_layout(home_mockup.chile_regions_geometry())
-    ]
-
-
-def mini_map(region: str, hue: int) -> str:
-    """Chile in its real shape with this region lit, so the reader sees where it lies."""
-    paths = "".join(
-        f'<path d="{path}" fill="{f"hsl({hue},70%,60%)" if name == region else "#4a5568"}" stroke="{f"hsl({hue},80%,70%)" if name == region else "none"}" stroke-width="3"/>'
-        for name, path in chile_shapes()
-    )
-    return (
-        f'<div class="ov-mini"><svg viewBox="0 0 {home_mockup.LIST_LEFT - 12} {home_mockup.MAP_VIEW[1]}" '
-        f'preserveAspectRatio="xMidYMid meet">{paths}</svg><span>{html.escape(i18n.tr("Mapa"))}</span></div>'
-    )
-
-
-def house(hue: int, kind: str, name: str) -> str:
-    return (
-        f'<figure class="ov-house" title="{html.escape(name)}"><img src="{house_image(hue, kind)}" alt="">'
-        f'<figcaption>{html.escape(name)}</figcaption></figure>'
-    )
-
-
-PRICE_KEY = ["product", "variety", "quality", "channel", "normalized_unit"]
-
-
-def regional_price_levels(frame: pd.DataFrame) -> dict[str, tuple[float, int, int]]:
-    """D-322: how dear each region is, from the K3 index of one week: the median, over the same product, variety, quality,
-    channel and unit, of the region's price over the national price, counting only what two regions or more price (a
-    product priced in one region is its own national price and says nothing). Regions, not shops: ODEPA gives no price by
-    market. Returns {region: (level in %, prices compared, rank from the dearest)}."""
-    frame = frame[frame.groupby(PRICE_KEY)["region"].transform("count") >= 2]
-    levels = frame.groupby("region")["regional_index"].agg(["median", "count"])
-    levels["level"] = (levels["median"] - 1) * 100
-    levels = levels.sort_values("level", ascending=False)
-    return {
-        region: (row.level, int(row["count"]), rank) for rank, (region, row) in enumerate(levels.iterrows(), start=1)
-    }
-
-
-def build_price_line(level: tuple[float, int, int] | None, total: int) -> str:
-    """«4,8 % más cara que el promedio · 1.ª de 9 · 322 precios», with a badge for the dearest and the cheapest."""
-    if level is None:
-        return f'<p class="ov-price ov-price-none">{html.escape(i18n.tr("Sin precios comparables esta semana"))}</p>'
-    value, prices, rank = level
-    amount = signed(value).lstrip("+").lstrip("-").replace(" ", "\u00a0")
-    if abs(value) < 0.05:
-        text = i18n.tr("En el promedio nacional")
-    else:
-        text = (i18n.tr("{} más cara") if value > 0 else i18n.tr("{} más barata")).format(amount)
-    badge = (
-        ("dear", i18n.tr("La más cara"))
-        if rank == 1
-        else ("cheap", i18n.tr("La más barata"))
-        if rank == total
-        else (None, "")
-    )
-    chip = f'<em class="ov-price-{badge[0]}">{html.escape(badge[1])}</em>' if badge[0] else ""
-    detail = (
-        f"{rank} of {total}" if i18n.is_english() else f"{rank} de {total}"
-    )  # a bare «{} de {}» entry would match any sentence
-    hint = i18n.tr("Mediana de {} precios comparados con el promedio nacional de los mismos productos").format(
-        number(prices)
-    )
-    return (
-        f'<p class="ov-price {"ov-up" if value > 0 else "ov-down"}" title="{html.escape(hint)}"><b>{html.escape(text)}</b>'
-        f'<span>{html.escape(detail)}</span>{chip}</p>'
-    )
-
-
-def number(value: float) -> str:
-    return f"{value:,}".replace(",", ".") if not i18n.is_english() else f"{value:,}"
-
-
-def build_region_column(
-    region: str,
-    data: dict[str, Any],
-    hue: int,
-    number_: int = 1,
-    level: tuple[float, int, int] | None = None,
-    total: int = 9,
-) -> str:
-    """One region as a card: its number north to south, its name, a house per wholesale market or fair, one retail house
-    (its kinds named on hover) and, at the right, where the region lies on the map of Chile. Information only, no price."""
-    kinds = [name for name in data["consumer"] if name != "Mercado Mayorista"]
-    houses = "".join(house(hue, place_kind(name), name) for name in data["wholesale"])
-    if kinds:
-        houses += house(hue, "retail", i18n.tr(DETAIL_SHOP)).replace(
-            f'title="{html.escape(i18n.tr(DETAIL_SHOP))}"',
-            f'title="{html.escape(", ".join(i18n.tr(kind) for kind in kinds))}"',
-            1,
-        )
-    sectors = (
-        f'<p class="ov-sectors">{html.escape(i18n.tr("Sectores"))}: {html.escape(", ".join(data["sectors"]))}</p>'
-        if data["sectors"]
-        else ""
-    )
-    return (
-        f'<section class="ov-region" style="--h:{hue}"><div class="ov-region-main"><h5><b>{number_:02d}</b>'
-        f'{html.escape(home_mockup.short_region(region))}</h5>{build_price_line(level, total)}'
-        f'<div class="ov-street">{houses}</div>{sectors}</div>'
-        f'{mini_map(region, hue)}</section>'
-    )
-
-
-def build_legend(hue: int = 215) -> str:
-    items = "".join(
-        f'<span><img src="{house_image(hue, kind)}" alt="">{html.escape(i18n.tr(spanish))}</span>'
-        for kind, (spanish, _) in KINDS.items()
-    )
-    return f'<div class="ov-legend">{items}<em>{html.escape(i18n.tr("Norte → Sur"))}</em></div>'
-
-
-def build_regions_html(
-    regions: list[str], points: dict[str, Any], levels: dict[str, tuple[float, int, int]] | None = None, week: str = ""
-) -> str:
-    """Every region at once, north to south, as numbered cards in a grid of three (D-310, D-321)."""
-    levels = levels or {}
-    cards = "".join(
-        build_region_column(
-            region, points[region], REGION_HUES[index % len(REGION_HUES)], index + 1, levels.get(region), len(levels)
-        )
-        for index, region in enumerate(regions)
-    )
-    head = (
-        f'<div class="ov-where-head"><div><h3>{html.escape(i18n.tr("Lugares de compra por región"))}</h3>'
-        f'<p>{html.escape(i18n.tr("De norte a sur: dónde queda cada región y cuán cara es frente al promedio nacional, con los mismos productos (semana {}).").format(week))}</p></div>{build_legend()}</div>'
-    )
-    return head + f'<div class="ov-regions">{cards}</div>'
-
-
-def points_css(palette: dict[str, str]) -> str:
-    ink, muted, card, border = palette["strong_text"], palette["reference"], palette["card"], palette["card_border"]
-    return f"""<style>
-.ov-where-head {{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:6px 16px; margin:0 0 10px; }}
-.ov-where-head h3 {{ margin:0 !important; padding:0 !important; font-size:22px !important; color:{ink}; }}
-.ov-where-head p {{ margin:2px 0 0 !important; font-size:13px; color:{muted}; }}
-.ov-legend {{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; font-size:12px; color:{ink}; white-space:nowrap; }}
-.ov-legend span {{ display:inline-flex; align-items:center; gap:6px; }}
-.ov-legend img {{ width:30px; height:auto; }}
-.ov-legend em {{ font-style:normal; color:{muted}; padding-left:14px; border-left:1px solid {border}; }}
-.ov-regions {{ display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); grid-auto-rows:minmax(calc((100vh - 300px) / 3), auto);
-  gap:12px; margin:0 0 1rem; }}
-.ov-region {{ display:flex; gap:10px; border-radius:16px; background:{card}; border:1px solid {border};
-  border-top:3px solid hsl(var(--h),65%,60%); padding:8px 10px 6px 12px; min-width:0; }}
-.ov-region-main {{ flex:1; min-width:0; display:flex; flex-direction:column; }}
-.ov-region h5 {{ display:flex; align-items:center; gap:8px; margin:0 0 2px !important; padding:0 !important; font-size:16px !important; color:{ink}; }}
-.ov-region h5 b {{ margin-right:8px; font-size:11.5px; padding:1px 7px; border-radius:6px; color:#0b1220; background:hsl(var(--h),70%,72%); }}
-.ov-street {{ flex:1; display:flex; flex-wrap:wrap; align-content:center; gap:6px clamp(4px, .8vw, 14px); }}
-.ov-house {{ margin:0; width:clamp(68px, 5vw, 96px); display:flex; flex-direction:column; align-items:center; }}
-.ov-house img {{ width:clamp(44px, 3.3vw, 78px); height:auto; display:block; transition:transform .25s ease; }}
-.ov-house:hover img {{ transform:translateY(-3px); }}
-.ov-house figcaption {{ margin-top:2px; font-size:10.5px; line-height:1.15; text-align:center; color:{ink};
-  display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
-  overflow-wrap:break-word; }}
-.ov-price {{ margin:0 0 2px !important; font-size:12px !important; line-height:1.3; color:{muted}; display:flex; flex-wrap:wrap; align-items:center; gap:2px 6px; }}
-.ov-price > * {{ white-space:nowrap; }}
-.ov-price b {{ font-weight:600; }} .ov-up b {{ color:{charts.legible(palette["rise"], card)}; }} .ov-down b {{ color:{charts.legible(palette["fall"], card)}; }}
-.ov-price em {{ font-style:normal; font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:999px; }}
-.ov-price-dear {{ background:{palette["rise"]}; color:{charts.readable_on(palette["rise"])}; }}
-.ov-price-cheap {{ background:{palette["fall"]}; color:{charts.readable_on(palette["fall"])}; }}
-.ov-price span {{ font-size:11px; }}
-.ov-sectors {{ margin:auto 0 0 !important; padding-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11.5px !important; color:{muted} !important; }}
-.ov-mini {{ flex:0 0 40px; display:flex; flex-direction:column; align-items:center; gap:4px; border-left:1px solid {border}; padding-left:8px; }}
-.ov-mini svg {{ width:34px; flex:1; min-height:60px; max-height:96px; }}
-.ov-mini span {{ font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:{muted}; }}
-</style>"""
 
 
 # endregion
