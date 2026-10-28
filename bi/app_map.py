@@ -682,8 +682,8 @@ def build_css(palette):
   .am-tip {{ left:0 !important; right:auto !important; transform:none !important; grid-template-columns:1fr; width:80vw; }}
 }}
 /* D-324: nine columns of about 90 px: the layer names and the node names shrink to fit instead of running into each other. */
-@container am (max-width:1000px) {{
-  .am-layer {{ font-size:9px; letter-spacing:.02em; }} .am-name {{ font-size:11px; }} .am-more {{ font-size:10px; }}
+@container am (max-width:1200px) {{
+  .am-layer {{ font-size:10px; letter-spacing:0; text-transform:none; }} .am-name {{ font-size:11px; }} .am-more {{ font-size:10px; }}
 }}
 @media (min-width:1700px) and (min-height:950px) {{
   .am-stage {{ row-gap:30px; }} .am-logo {{ width:40px; height:40px; }} .am-name {{ font-size:13.5px; }}
