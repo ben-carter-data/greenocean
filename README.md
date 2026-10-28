@@ -6,10 +6,10 @@ Cada martes el pipeline descarga las fuentes oficiales, las deja en una misma un
 
 [**Abrir el panel público**](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/)
 
-[![pruebas](https://github.com/cben6514-boop/greenocean/actions/workflows/pruebas.yml/badge.svg)](https://github.com/cben6514-boop/greenocean/actions/workflows/pruebas.yml)
-[![semanal](https://github.com/cben6514-boop/greenocean/actions/workflows/semanal.yml/badge.svg)](https://github.com/cben6514-boop/greenocean/actions/workflows/semanal.yml)
-[![calidad](https://github.com/cben6514-boop/greenocean/actions/workflows/calidad.yml/badge.svg)](https://github.com/cben6514-boop/greenocean/actions/workflows/calidad.yml)
-[![cobertura](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcben6514-boop%2Fgreenocean%2Fmain%2Fdocs%2Fcalidad%2Fmedicion.json&query=%24.cobertura.total&suffix=%25&label=cobertura&color=brightgreen)](docs/calidad/INFORME.md)
+[![pruebas](https://github.com/ben-carter-data/greenocean/actions/workflows/pruebas.yml/badge.svg)](https://github.com/ben-carter-data/greenocean/actions/workflows/pruebas.yml)
+[![semanal](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml/badge.svg)](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml)
+[![calidad](https://github.com/ben-carter-data/greenocean/actions/workflows/calidad.yml/badge.svg)](https://github.com/ben-carter-data/greenocean/actions/workflows/calidad.yml)
+[![cobertura](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fben-carter-data%2Fgreenocean%2Fmain%2Fdocs%2Fcalidad%2Fmedicion.json&query=%24.cobertura.total&suffix=%25&label=cobertura&color=brightgreen)](docs/calidad/INFORME.md)
 
 ## El panel
 

@@ -25,12 +25,12 @@ Pendientes: enlace en el CV a cargo del autor y observación de cuatro martes co
 
 ## Resultados reales en GitHub y Streamlit (12-10-2026)
 
-- Repositorio público: [cben6514-boop/greenocean](https://github.com/cben6514-boop/greenocean), rama `main`.
+- Repositorio público: [ben-carter-data/greenocean](https://github.com/ben-carter-data/greenocean), rama `main`.
 - El workflow `pruebas` terminó en verde sobre el commit inicial `7a69210`, según la verificación de la passation. Permisos de Actions configurados en lectura y escritura.
-- **T-23 / T-25d:** [ejecución 38224845969](https://github.com/cben6514-boop/greenocean/actions/runs/38224845969), con la casilla de falla forzada marcada (confirmado por el autor). El agente y el ETL terminaron; «Simulate a failure» falló y los pasos posteriores se omitieron, sin commit ni issue. El autor mostró el correo «Run failed: semanal» recibido en su cuenta.
-- **T-22:** [ejecución 38226180308](https://github.com/cben6514-boop/greenocean/actions/runs/38226180308), sin la casilla marcada: `Success`, duración total de 57 segundos.
-- Commit automático: [`ed08f4c`, «Weekly data update»](https://github.com/cben6514-boop/greenocean/commit/ed08f4c), de `github-actions[bot]`. Recuperado en local mediante Pull; el asistente comprobó que era el último commit local.
-- **T-25c:** [issue #1, «Informe semanal 2026-10-12»](https://github.com/cben6514-boop/greenocean/issues/1), creado por GitHub Actions. El autor mostró el informe: 397.814 filas cargadas, 0 rechazadas, K7 131 de 168 y 43 alertas para la semana del 2026-10-05.
+- **T-23 / T-25d:** [ejecución 38224845969](https://github.com/ben-carter-data/greenocean/actions/runs/38224845969), con la casilla de falla forzada marcada (confirmado por el autor). El agente y el ETL terminaron; «Simulate a failure» falló y los pasos posteriores se omitieron, sin commit ni issue. El autor mostró el correo «Run failed: semanal» recibido en su cuenta.
+- **T-22:** [ejecución 38226180308](https://github.com/ben-carter-data/greenocean/actions/runs/38226180308), sin la casilla marcada: `Success`, duración total de 57 segundos.
+- Commit automático: [`ed08f4c`, «Weekly data update»](https://github.com/ben-carter-data/greenocean/commit/ed08f4c), de `github-actions[bot]`. Recuperado en local mediante Pull; el asistente comprobó que era el último commit local.
+- **T-25c:** [issue #1, «Informe semanal 2026-10-12»](https://github.com/ben-carter-data/greenocean/issues/1), creado por GitHub Actions. El autor mostró el informe: 397.814 filas cargadas, 0 rechazadas, K7 131 de 168 y 43 alertas para la semana del 2026-10-05.
 - **T-24:** [panel público](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app/), publicado desde `main`, archivo `bi/dashboard.py`. Se comprobaron las vistas Márgenes del perfil analista y Calidad de datos del perfil Equipo de datos. El autor mostró también el panel abierto en Chrome Incognito sin pedir conexión.
 - La vista de calidad publicada mostró estado `LOADED`, fecha `2026-10-12T08:52:08`, 397.814 filas leídas y cargadas, 0 rechazadas y K7 131 de 168 (78,0 %).
 - **T-25 / T-06b:** enlace del panel y sellos de `pruebas` y `semanal` preparados en el README; pendientes de commit y push aprobados por el autor.

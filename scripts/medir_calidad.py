@@ -480,7 +480,7 @@ def measure_dora():
             result.update({"cargas_registradas": int(count), "primera": str(first)[:10], "ultima": str(last)[:10]})
         finally:
             connection.close()
-    repository = "cben6514-boop/greenocean"
+    repository = "ben-carter-data/greenocean"
     for workflow in ("semanal", "pruebas"):
         url = f"https://api.github.com/repos/{repository}/actions/workflows/{workflow}.yml/runs?per_page=100"
         try:

@@ -18,7 +18,7 @@ import requests
 from bi.i18n import tr
 
 # region Constants
-REPOSITORY = "cben6514-boop/greenocean"
+REPOSITORY = "ben-carter-data/greenocean"
 WORKFLOW_FILE = "semanal.yml"
 BRANCH = "main"
 API_URL = "https://api.github.com"
