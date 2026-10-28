@@ -616,7 +616,7 @@ def build_css(palette):
         for kind, color in KIND_COLORS.items()
     )
     return f"""<style>
-.am {{ position:relative; display:flex; flex-direction:column; gap:8px; color:{text}; }}
+.am {{ position:relative; display:flex; flex-direction:column; gap:8px; color:{text}; container:am / inline-size; }}
 .am-bar {{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; font-size:12px; }}
 .am-filters {{ display:flex; flex-wrap:wrap; gap:4px; }}
 .am-filter {{ font:inherit; font-size:12px; padding:3px 10px; border-radius:9px; cursor:pointer; color:{ink};
@@ -650,7 +650,7 @@ def build_css(palette):
   transition:opacity .15s ease, background .15s ease; }}
 .am-node:hover, .am-node:focus-visible {{ background:color-mix(in srgb, {accent} 10%, transparent); outline:none; z-index:5; }}
 .am-logo {{ width:30px; height:30px; display:block; }}
-.am-name {{ font-size:12px; font-weight:600; line-height:1.25; text-align:center; overflow-wrap:anywhere; }}
+.am-name {{ font-size:12px; font-weight:600; line-height:1.25; text-align:center; overflow-wrap:break-word; }}
 .am-more {{ margin-left:4px; font-size:10.5px; font-weight:500; color:{accent}; }}
 .am-tip {{ position:absolute; top:calc(100% + 4px); left:50%; transform:translateX(-50%); width:min(800px, 66vw); z-index:20;
   display:none; grid-auto-flow:column; grid-auto-columns:minmax(0, 1fr); gap:0 16px; padding:10px 14px; border-radius:12px;
@@ -675,11 +675,15 @@ def build_css(palette):
 .am.has-focus .am-line.on {{ opacity:1; stroke-width:2.2; }}
 .am.has-focus .am-label.on {{ opacity:1; }}
 .am-note {{ font-size:11.5px; color:{muted}; margin:0; }}
-@media (max-width:760px) {{
+@container am (max-width:760px) {{
   .am-stage {{ grid-template-columns:1fr 1fr; }}
   .am-stage > * {{ grid-row:auto !important; grid-column:auto !important; }}
   .am-layer, .am-band, .am-lines {{ display:none; }}
   .am-tip {{ left:0 !important; right:auto !important; transform:none !important; grid-template-columns:1fr; width:80vw; }}
+}}
+/* D-324: nine columns of about 90 px: the layer names and the node names shrink to fit instead of running into each other. */
+@container am (max-width:1000px) {{
+  .am-layer {{ font-size:9px; letter-spacing:.02em; }} .am-name {{ font-size:11px; }} .am-more {{ font-size:10px; }}
 }}
 @media (min-width:1700px) and (min-height:950px) {{
   .am-stage {{ row-gap:30px; }} .am-logo {{ width:40px; height:40px; }} .am-name {{ font-size:13.5px; }}

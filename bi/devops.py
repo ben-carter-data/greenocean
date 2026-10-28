@@ -326,7 +326,7 @@ html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.4 
 .row {{ display:grid; align-items:stretch;
   grid-template-columns:minmax(0, 1fr) 26px minmax(0, 1fr) 26px minmax(0, 1fr) 26px minmax(0, 1fr) 26px minmax(0, 1fr); }}
 /* The weekly load: the trigger is one short box, so its four phases get the width their steps need. */
-.row.cd, .down {{ grid-template-columns:minmax(0, .72fr) 26px minmax(0, 1.12fr) 26px minmax(0, 1.12fr) 26px minmax(0, 1.12fr) 26px minmax(0, 1.12fr); }}
+.row.cd, .down {{ grid-template-columns:minmax(116px, .72fr) 26px minmax(0, 1.12fr) 26px minmax(0, 1.12fr) 26px minmax(0, 1.12fr) 26px minmax(0, 1.12fr); }}
 .box {{ position:relative; padding:9px 10px; border:1px solid {border}; border-radius:14px; background:color-mix(in srgb, {card} 92%, transparent);
   color:{ink}; outline:none; cursor:default; }}
 .box:hover, .box:focus {{ border-color:{accent}; }}
@@ -339,13 +339,13 @@ html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.4 
 .step.gate, .step.dashed {{ padding-top:17px; }}
 .tag {{ position:absolute; top:5px; right:9px; font:700 9.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:.12em;
   text-transform:uppercase; color:{accent}; }}
-.phase .kicker {{ display:flex; align-items:center; gap:7px; margin-bottom:5px; font:700 10.5px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+.phase .kicker {{ display:flex; flex-wrap:wrap; align-items:center; gap:2px 7px; margin-bottom:5px; font:700 10.5px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing:.14em; text-transform:uppercase; color:{muted}; }}
 .phase .kicker svg {{ width:20px; height:20px; }}
-.srow {{ display:flex; align-items:baseline; gap:7px; padding:2px 6px; margin:0 -6px; border-radius:8px; outline:none; cursor:default; }}
+.srow {{ display:flex; flex-wrap:wrap; align-items:baseline; gap:0 7px; padding:2px 6px; margin:0 -6px; border-radius:8px; outline:none; cursor:default; }}
 .srow:hover, .srow:focus {{ background:color-mix(in srgb, {accent} 12%, transparent); }}
 .srow i {{ flex:none; min-width:20px; font:700 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; font-style:normal; color:{accent}; }}
-.srow b {{ font-size:13.5px; font-weight:600; line-height:1.4; }}
+.srow b {{ flex:1 1 40%; min-width:0; font-size:13.5px; font-weight:600; line-height:1.4; }}
 .srow em {{ margin-left:auto; padding:0 6px; border:1px solid currentColor; border-radius:6px; font:700 9px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
   font-style:normal; letter-spacing:.1em; text-transform:uppercase; color:{accent}; white-space:nowrap; }}
 .srow.k-optional em {{ color:{muted}; }} .srow.k-optional b {{ color:{muted}; font-weight:500; }}
@@ -359,7 +359,7 @@ html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.4 
 .down i::after {{ content:""; position:absolute; left:calc(50% - 4px); bottom:0; border:5px solid transparent; border-top:8px solid {accent}; }}
 .down span {{ grid-column:7 / 9; align-self:center; text-align:right; padding-right:8px; font:400 11.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
 @media (max-width:760px) {{
-  .row, .down {{ grid-template-columns:minmax(0, 1fr); row-gap:8px; }} .note {{ order:9; }}
+  .row, .row.cd, .down {{ grid-template-columns:minmax(0, 1fr); row-gap:8px; }} .note {{ order:9; }}
   .row > *, .down > * {{ grid-column:1 !important; }} .h, .down {{ display:none; }}
   .lane small {{ margin-left:0; }}
 }}

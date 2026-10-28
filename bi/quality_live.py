@@ -575,8 +575,8 @@ def build_pipeline_css(palette):
 .qp .pq-head p {{ margin:0; font:400 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
 .qp .pq-head p.hint {{ font-family:inherit; font-size:12.5px; }}
 .qp .pq-grid {{ display:grid; margin-top:4px; align-items:center; column-gap:0; row-gap:0;
-  grid-template-columns:minmax(0, .85fr) minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(0, 1.3fr)
-    minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(0, .85fr);
+  grid-template-columns:minmax(76px, .85fr) minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(0, 1.3fr)
+    minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(76px, .85fr);
   grid-template-rows:auto 22px auto 22px auto 22px auto;
   grid-template-areas:
     ".   .  .  rej rej rej .  .  .   "
@@ -615,8 +615,8 @@ def build_pipeline_css(palette):
 .qp .pq .ds b {{ font-size:21px; letter-spacing:-.01em; }}
 .qp .pq .ds small {{ font-size:13.5px; color:{ink}; opacity:.85; }}
 .qp .pq .ds:hover, .qp .pq .ds:focus-visible {{ background:color-mix(in srgb, var(--c) 10%, {card}); }}
-.qp .pq .end {{ padding:9px 8px; }}
-.qp .pq .end b {{ font-size:16px; }}
+.qp .pq .end {{ padding:9px 5px; }}
+.qp .pq .end b {{ font-size:15px; }}
 /* The dashed lines: a horizontal stretch carries its rows above it; a vertical one goes down (or up, to the rejected rows). */
 .qp .pq .h {{ position:relative; height:44px; }}
 .qp .pq .h::before {{ content:""; position:absolute; left:6px; right:9px; top:31px; border-top:2px dashed {accent}; opacity:.85; }}
@@ -632,12 +632,13 @@ def build_pipeline_css(palette):
 .qp .pq .legend-box i {{ display:inline-block; width:9px; height:9px; margin-right:6px; border-radius:50%; background:var(--c); }}
 @media (min-width:761px) and (max-width:960px) {{
   .qp .pq {{ padding:12px 14px 14px; }}
-  .qp .pq-grid {{ grid-template-columns:minmax(0, .8fr) minmax(74px, .6fr) minmax(0, 1.3fr) minmax(74px, .6fr) minmax(0, 1.3fr)
-    minmax(74px, .6fr) minmax(0, 1.3fr) minmax(74px, .6fr) minmax(0, .8fr); }}
+  .qp .pq-grid {{ grid-template-columns:minmax(78px, .8fr) minmax(74px, .6fr) minmax(0, 1.3fr) minmax(74px, .6fr) minmax(0, 1.3fr)
+    minmax(74px, .6fr) minmax(0, 1.3fr) minmax(74px, .6fr) minmax(78px, .8fr); }}
   .qp .pq .box {{ padding:9px 7px; }} .qp .pq .gate {{ padding:10px 7px; }}
   .qp .pq .box b {{ font-size:14.5px; }} .qp .pq .gate b {{ font-size:16px; }} .qp .pq .rej b {{ font-size:15.5px; }}
+  .qp .pq .end b {{ font-size:14px; }}
   .qp .pq .box small {{ font-size:11.5px; }} .qp .pq .kicker {{ font-size:9.5px; letter-spacing:.14em; }}
-  .qp .pq .mide a {{ font-size:14px; }} .qp .pq .ds b {{ font-size:20px; }} .qp .pq .ds small {{ font-size:12.5px; }}
+  .qp .pq .mide a {{ font-size:13px; }} .qp .pq .ds b {{ font-size:20px; }} .qp .pq .ds small {{ font-size:12.5px; }}
   .qp .pq .h span {{ font-size:11px; }} .qp .pq-head p.hint {{ display:none; }}
 }}
 @media (max-width:760px) {{

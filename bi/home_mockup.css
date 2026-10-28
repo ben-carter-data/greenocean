@@ -408,6 +408,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 @media(max-width:1100px) {
  .greenocean-mockup .mock-intro {flex-direction:column;}.mock-head-side {align-items:flex-start;}.mock-head-chips {justify-content:flex-start;}
  .st-key-home_overview [data-testid="stHorizontalBlock"] {flex-direction:column;}
+ .st-key-home_overview [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {width:100%!important;min-width:0!important;flex:0 0 auto!important;}
  .mock-chile-map {max-height:none;}.mock-products-table {max-height:420px;}
 }
 @media(max-width:700px) {
@@ -542,9 +543,9 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 [role="dialog"] .greenocean-mockup h2 {display:block!important;}
 
 /* D-322: the products heading in one line; the table gets the room. */
-.mock-products-slim {flex-wrap:nowrap!important;gap:8px!important;align-items:center;}
+.mock-products-slim {flex-wrap:wrap!important;gap:2px 8px!important;align-items:center;}
 .mock-products-slim .mock-kicker {margin:0!important;white-space:nowrap;}
-.greenocean-mockup .mock-products-slim h2 {font-size:13px!important;font-weight:500;color:var(--mock-muted)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 auto;}
+.greenocean-mockup .mock-products-slim h2 {font-size:13px!important;font-weight:500;color:var(--mock-muted)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 90px;}
 .mock-products-slim .mock-products-count {margin-left:auto;white-space:nowrap;}
 .mock-products-slim .mock-products-scope, .mock-products-slim .mock-products-chip {white-space:nowrap;}
 
@@ -571,3 +572,8 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox > div,
 .st-key-dialog_products_filters [data-testid="stTextInputRootElement"],
 .st-key-dialog_products_filters [data-testid="stSelectbox"] .react-aria-ComboBox > div {border:1px solid color-mix(in srgb, __INK__ 45%, __PANEL__)!important;border-radius:6px!important;background:__PANEL__!important;}
+
+/* D-324: with the columns stacked (1100 px and under) the map has no column height to stretch to: it keeps its own. */
+@media(max-width:1100px) {
+ .st-key-home_overview .mock-chile-map {flex:0 0 auto!important;height:560px!important;min-height:560px!important;}
+}

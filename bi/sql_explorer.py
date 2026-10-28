@@ -870,7 +870,7 @@ def build_css(palette):
 :is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button:hover {{ background:color-mix(in srgb, {accent} 10%, transparent) !important; transform:none; }}
 :is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button span[data-testid="stIconMaterial"] {{ color:{accent}; font-size:15px; }}
 :is([class*="st-key-sqlx_view_"],[class*="st-key-sqlx_table_"]) button p {{ font-family:{mono}; font-size:.78rem !important; color:{ink} !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-.sqlx-rows {{ font-size:.66rem; color:{muted}; margin:-6px 0 2px 52px; line-height:1.2; white-space:nowrap; }}
+.sqlx-rows {{ font-size:.66rem; color:{muted}; margin:-6px 0 2px 52px; line-height:1.2; }}
 .st-key-sqlx_explorer [data-testid="stPopover"] {{ margin-top:8px; }}
 .st-key-sqlx_explorer [data-testid="stPopover"]>button {{ width:100%; min-height:28px !important; box-shadow:{raised} !important; }}
 .st-key-sqlx_explorer [data-testid="stPopover"]>button p {{ font-size:.76rem !important; }}

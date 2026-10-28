@@ -197,7 +197,7 @@ def build_css(palette):
 .df-preview ol {{ margin:0; padding-left:18px; font-size:12px; line-height:1.45; color:{ink}; }}
 .df-more {{ margin:0; font-size:11.5px; color:{muted}; }}
 .df-body:hover .df-preview, .df-body:focus-visible .df-preview {{ opacity:1; visibility:visible; }}
-.df-list {{ display:flex; flex-direction:column; gap:5px; }}
+.df-list {{ display:flex; flex-direction:column; gap:5px; container-type:inline-size; }}
 .df-list .df-file {{ flex-direction:row; align-items:center; gap:18px; padding:4px 14px; }}
 .df-list .df-body {{ flex-direction:row; align-items:center; gap:14px; flex:1; min-width:0; }}
 .df-list .df-top {{ flex:none; width:330px; min-height:0; }}
@@ -210,6 +210,8 @@ def build_css(palette):
   .df-grid .df-file:nth-child(n) .df-preview {{ left:0; right:auto; top:calc(100% + 6px); }} }}
 @media (max-width:700px) {{ .df-grid {{ grid-template-columns:repeat(2, minmax(0, 1fr)); }} }}
 @media (max-width:900px) {{ .df-list .df-file {{ flex-wrap:wrap; }} .df-list .df-meta {{ width:auto; }} }}
+/* D-324: the purpose needs about 130 px to be read; narrower than that it would be one letter, so the list drops it. */
+@container (max-width:920px) {{ .df-list .df-purpose {{ display:none; }} }}
 @media (prefers-reduced-motion:reduce) {{ .df-file, .df-preview {{ transition:none; }} }}
 </style>"""
 
