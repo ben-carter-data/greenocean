@@ -31,7 +31,10 @@ def test_d285_every_dependency_of_the_project_is_on_the_map():
 
 
 def is_ignored(path):
-    return subprocess.run(["git", "check-ignore", "-q", path], cwd=ROOT).returncode == 0
+    # A directory pattern («etl/bronze/») only matches a path that ends in a slash when the folder is not there.
+    return any(
+        subprocess.run(["git", "check-ignore", "-q", name], cwd=ROOT).returncode == 0 for name in (path, path + "/")
+    )
 
 
 def test_d285_every_file_and_module_the_map_names_exists():
