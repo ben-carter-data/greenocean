@@ -13,7 +13,7 @@ On any failure the published database stays as it was; the failed run is recorde
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 import json
 import os
@@ -116,10 +116,14 @@ def run_dbt(run_id: int, dbt_command: str | None = None) -> tuple[bool, str]:
 def count_rows(work_file: Path = WORK_DATABASE_FILE) -> tuple[int, int, int]:
     """(read, loaded, rejected) of the build, as dbt validated them (RNF-05)."""
     with duckdb.connect(str(work_file), read_only=True) as connection:
-        return connection.execute(
-            "SELECT count(*), count(*) FILTER (WHERE reason IS NULL), "
-            "count(*) FILTER (WHERE reason IS NOT NULL) FROM int_prices__validated"
-        ).fetchone()
+        # An aggregate query always returns one row; the stubs of the CI's DuckDB type it as «tuple | None».
+        return cast(
+            tuple[int, int, int],
+            connection.execute(
+                "SELECT count(*), count(*) FILTER (WHERE reason IS NULL), "
+                "count(*) FILTER (WHERE reason IS NOT NULL) FROM int_prices__validated"
+            ).fetchone(),
+        )
 
 
 def read_dbt_artifacts(target_dir: Path = DBT_TARGET_DIR) -> tuple[list[tuple[Any, ...]], list[tuple[Any, ...]]]:
