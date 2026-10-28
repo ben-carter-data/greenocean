@@ -381,6 +381,7 @@ PAGES = {
     "· {n} cargas registradas; {n} rechazos sin su carga.": "· {} loads recorded; {} rejections without their load.",
     "· {n} filas y {n} rechazos en la base servida; {n} y {n} en el respaldo.": "· {} rows and {} rejections in the served database; {} and {} in the backup.",
     "· El IPC se guarda también crudo, como ine_ipc_source.": "· The CPI is also kept raw, as ine_ipc_source.",
+    "· el respaldo no se publica: cada carga lo compara antes de publicar": "· the backup is not published: every load compares it before publishing",
     "· no se puede comprobar aquí: raw.db no está en este servidor": "· cannot be checked here: raw.db is not on this server",
     "↻ la próxima carga lo lee": "↻ the next load reads it",
     # Quality and audit (bi/quality_live.py, bi/quality_view.py, bi/quality_evidence.py and its page)
