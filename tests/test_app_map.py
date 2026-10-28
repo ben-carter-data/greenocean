@@ -1,6 +1,7 @@
 """D-285: «Mapa de la app», the whole system in one view (bi/app_map.py)."""
 
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -29,12 +30,18 @@ def test_d285_every_dependency_of_the_project_is_on_the_map():
             assert package.replace("-core", " core") in named or package in named, package
 
 
+def is_ignored(path):
+    return subprocess.run(["git", "check-ignore", "-q", path], cwd=ROOT).returncode == 0
+
+
 def test_d285_every_file_and_module_the_map_names_exists():
     for text in all_texts():
         for path in FILE.findall(text):
             if "*" in path:
                 continue
-            assert (ROOT / path).exists(), path
+            # A file git ignores (the landing database, the SQLite backup) only exists where the load runs: the map may
+            # name it, but it must be one the repository ignores on purpose.
+            assert (ROOT / path).exists() or is_ignored(path), path
     for workflow in ("semanal.yml", "pruebas.yml"):
         assert (ROOT / ".github" / "workflows" / workflow).exists()
 
