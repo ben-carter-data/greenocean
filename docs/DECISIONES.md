@@ -2447,3 +2447,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Lo que no se pudo mejorar:** seis funciones de páginas siguen sobre la complejidad 10 (dividirlas exige pruebas de interfaz), 80 funciones pasan de 50 líneas, SQLFluff no se aplicó al SQL de dbt (es lógica del pipeline), las dependencias del pipeline no se auditan con Python 3.14 y falta el recorrido con teclado y lector de pantalla. Cinco pruebas de enlaces públicos fallan hasta que el repositorio se llame «greenocean» en GitHub (D-319).
 - **Cuidado:** el horario semanal del workflow de calidad está comentado hasta que el autor lo active; la carga semanal (`semanal.yml`) no cambia. Para que el workflow abra el pull request, el autor debe activar «Allow GitHub Actions to create and approve pull requests» en la configuración del repositorio.
 - **Pruebas:** `tests/test_quality_method.py` (indicadores, metas, verificador, rúbrica, historial, informe y página en ambos idiomas), `tests/test_rendimiento.py`, `tests/test_ingesta.py` y la suite completa.
+
+## D-324 · Los campos de filtro de la tabla de productos muestran su borde en reposo
+
+- **Pedido del autor:** en la tabla de productos, la búsqueda y las listas de canal y orden no mostraban su borde si el cursor no estaba encima, y no se notaba que eran campos.
+- **Decisión:** la tabla chica y la ventana ampliada dibujan un borde de 1 px, con un tono entre el texto y el fondo del tema, en la búsqueda y en las dos listas. La ventana ampliada se dibuja fuera de la tabla chica, por eso no recibía el estilo de esta.
+- **Pruebas:** la suite completa; el contraste de los bordes lo revisa la medición de accesibilidad del workflow «calidad».

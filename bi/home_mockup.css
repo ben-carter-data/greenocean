@@ -563,3 +563,11 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 
 /* D-323: the enlarge button keeps its name for screen readers, shown as an icon only. */
 .st-key-home_products_enlarge button [data-testid="stMarkdownContainer"] {position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}
+
+/* D-324: the filter fields of the products table, small and enlarged, show their border at rest, not only on hover
+   (WCAG 1.4.11: the edge of a field must be told apart from the background). Streamlit draws a field as a text-input root
+   or a combo box whose own border is white. */
+.st-key-home_products [data-testid="stTextInputRootElement"],
+.st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox > div,
+.st-key-dialog_products_filters [data-testid="stTextInputRootElement"],
+.st-key-dialog_products_filters [data-testid="stSelectbox"] .react-aria-ComboBox > div {border:1px solid color-mix(in srgb, __INK__ 45%, __PANEL__)!important;border-radius:6px!important;background:__PANEL__!important;}
