@@ -2,6 +2,8 @@
 
 Guía para trabajar en este repositorio, también desde una sesión en la nube que lo clona desde GitHub.
 
+**Cómo se trabaja:** lee `REGLAS_DE_TRABAJO.md` (solo lo necesario, aviso antes de lo pesado, lo liviano en paralelo, un párrafo al terminar).
+
 ## Qué es
 
 GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline semanal y un panel de BI sobre los precios de alimentos de Chile.
