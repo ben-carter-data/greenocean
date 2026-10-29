@@ -128,6 +128,7 @@ def practices(report, rows):
     worst = cx["mas_complejas"][0] if cx.get("mas_complejas") else (None, "—", "—")
 
     def both(*keys):
+        keys = [key for key in keys if key in ok]  # D-330: an indicator that left is no longer judged
         return state(all(ok[key] for key in keys)) if all(ok[key] is not None for key in keys) else "no medido"
 
     formatted = ruff["formato"]
@@ -164,7 +165,7 @@ def practices(report, rows):
             f"{es(cx['funciones_sobre_10'])} funciones sobre 10 (la peor, {worst[2]}, con {worst[0]}); "
             f"{es(fn['mas_de_50_lineas'])} funciones de más de 50 líneas (la mayor, {fn['mas_larga'][1]}, con "
             f"{es(fn['mas_larga'][0])}); promedio radon {cx['promedio_radon']['nota']} ({es(cx['promedio_radon']['valor'], 1)})",
-            state(ok["complejidad_sobre_10"]),
+            "sin meta",  # D-330: complexity is no longer an indicator
         ),
         (
             "5 · Código muerto",

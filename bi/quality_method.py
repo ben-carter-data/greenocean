@@ -135,7 +135,8 @@ def build_summary(baseline: dict[str, Any], report: dict[str, Any], goals: dict[
             show(row["before"], row["unit"]),
             f"<b>{show(row['now'], row['unit'])}</b>",
             html.escape(
-                quality_metrics.goal_text(row["goal"], i18n.is_english()) + (f" {row['unit']}" if row["unit"] else "")
+                quality_metrics.goal_text(row["goal"], i18n.is_english())
+                + (f" {quality_metrics.unit_text(row['unit'], i18n.is_english())}" if row["unit"] else "")
             ),
             goal_chip(row["ok"]),
             code_cell(row["command"]),

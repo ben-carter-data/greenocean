@@ -14,9 +14,11 @@ BASELINE_FILE = FOLDER / "linea_base.json"
 REPORT_FILE = FOLDER / "medicion.json"
 RUBRIC_FILE = FOLDER / "rubrica.json"
 HISTORY_FILE = FOLDER / "historial.json"
+POLICY_FILE = FOLDER / "politica.json"
 
 # (key, Spanish label, English label, unit, ISO/IEC 25010 characteristic, command that reproduces it)
 INDICATORS = [
+    # Code (D-330): what treats the data.
     ("pruebas_fallidas", "Pruebas que fallan", "Failing tests", "", "fiabilidad", "pytest -q"),
     ("cobertura_total", "Cobertura total", "Total coverage", "%", "fiabilidad", "pytest -q --cov"),
     (
@@ -35,31 +37,7 @@ INDICATORS = [
         "mantenibilidad",
         "ruff check .",
     ),
-    (
-        "archivos_sin_formatear",
-        "Archivos sin formatear",
-        "Unformatted files",
-        "",
-        "mantenibilidad",
-        "ruff format --check .",
-    ),
-    (
-        "funciones_con_tipos_pct",
-        "Funciones con tipos (módulos principales)",
-        "Typed functions (main modules)",
-        "%",
-        "mantenibilidad",
-        "mypy",
-    ),
     ("mypy_errores", "Errores de mypy", "mypy errors", "", "mantenibilidad", "mypy"),
-    (
-        "complejidad_sobre_10",
-        "Funciones con complejidad sobre 10",
-        "Functions over complexity 10",
-        "",
-        "mantenibilidad",
-        "ruff check bi etl agent --select C901",
-    ),
     ("bandit_altos", "Hallazgos altos de Bandit", "High Bandit findings", "", "seguridad", "bandit -r bi etl agent"),
     (
         "pip_audit_vulnerabilidades",
@@ -77,38 +55,18 @@ INDICATORS = [
         "seguridad",
         "detect-secrets scan $(git ls-files)",
     ),
+    # Data (D-330): what we publish.
+    ("pruebas_dbt_pct", "Pruebas de datos dbt superadas", "dbt data tests passed", "%", "fiabilidad", "dbt build"),
     (
-        "segundos_por_pagina",
-        "Carga de la página más lenta",
-        "Load of the slowest page",
-        "s",
-        "eficiencia",
-        "node tests/medicion/calidad.cjs",
+        "comparables_pct",
+        "Precios con comparación válida",
+        "Prices with a valid comparison",
+        "%",
+        "adecuacion",
+        "python scripts/medir_calidad.py",
     ),
-    (
-        "segundos_por_consulta",
-        "Consulta más lenta",
-        "Slowest query",
-        "s",
-        "eficiencia",
-        "pytest -q tests/test_rendimiento.py",
-    ),
-    (
-        "violaciones_wcag",
-        "Violaciones WCAG 2.1 AA",
-        "WCAG 2.1 AA violations",
-        "",
-        "usabilidad",
-        "node tests/medicion/calidad.cjs",
-    ),
-    (
-        "comprobaciones_navegador_fallidas",
-        "Comprobaciones fallidas en Chromium, Firefox y WebKit",
-        "Failed checks in Chromium, Firefox and WebKit",
-        "",
-        "compatibilidad",
-        "node tests/medicion/calidad.cjs",
-    ),
+    ("rechazadas_pct", "Filas rechazadas", "Rejected rows", "%", "adecuacion", "SELECT … FROM etl_run"),
+    ("vigencia_dias", "Días desde la última carga", "Days since the last load", "días", "fiabilidad", "etl_run"),
 ]
 
 
@@ -116,8 +74,8 @@ INDICATORS = [
 SCHEDULE = [
     (
         (
-            "Los 15 indicadores de la tabla «Antes → ahora → meta»",
-            "The 15 indicators of the «Before → now → goal» table",
+            "Los 12 indicadores: 8 de código y 4 de datos",
+            "The 12 indicators: 8 of code and 4 of data",
         ),
         ("Automático: workflow «calidad» (scripts/medir_calidad.py)", "Automatic: «calidad» workflow"),
         (
@@ -134,15 +92,10 @@ SCHEDULE = [
         ("En cada push", "On every push"),
     ),
     (
-        ("Tiempos, WCAG 2.1 AA y diseño en tres navegadores", "Times, WCAG 2.1 AA and layout in three browsers"),
-        ("Automático: Playwright y axe-core (tests/medicion/calidad.cjs)", "Automatic: Playwright and axe-core"),
-        ("En cada push", "On every push"),
-    ),
-    (
         ("Comparación con las metas", "Comparison with the goals"),
         (
-            "Automático: scripts/verificar_calidad.py; el CI falla y dice cuál indicador bajó",
-            "Automatic: scripts/verificar_calidad.py; CI fails naming the indicator",
+            "Automático: scripts/verificar_calidad.py; el CI falla si un indicador de código pasa lo aceptable",
+            "Automatic: scripts/verificar_calidad.py; CI fails if a code indicator goes past its acceptable",
         ),
         ("En cada push", "On every push"),
     ),
@@ -200,46 +153,50 @@ def number(value: Any, decimals: int = 0, english: bool = False) -> str:
     return text if english else text.replace(",", "§").replace(".", ",").replace("§", ".")
 
 
+UNITS_EN = {"días": "days"}
+
+
+def unit_text(unit: str, english: bool = False) -> str:
+    """The unit in the reader's language («días» → «days»); «%» and «s» are the same in both."""
+    return UNITS_EN.get(unit, unit) if english else unit
+
+
 def show(value: Any, unit: str, english: bool = False) -> str:
     if value is None:
         return "—"
     decimals = 2 if unit == "s" else 1 if unit == "%" else 0
-    return number(value, decimals, english) + (f" {unit}" if unit else "")
+    return number(value, decimals, english) + (f" {unit_text(unit, english)}" if unit else "")
 
 
 def values(report: dict[str, Any]) -> dict[str, Any]:
-    """{indicator: value} read from a measurement; None when that part could not run."""
+    """{indicator: value} read from a measurement; None when that part could not run or was not measured then."""
     coverage = report.get("cobertura", {})
     mypy = report.get("mypy", {})
-    browsers = report.get("navegadores", {})
-    pages = browsers.get("paginas", {})
-    queries = report.get("consultas", {}).get("consultas", {})
     audit = report.get("pip_audit", {}).get("archivos", {})
     audited = [item["vulnerabilidades"] for item in audit.values() if item.get("vulnerabilidades") is not None]
     tests = report.get("pruebas", {}).get("pruebas")
     passed = coverage.get("pruebas_ok")
     skipped = coverage.get("pruebas_omitidas") or 0
-    matrix = browsers.get("navegadores")
     ruff = report.get("ruff", {})
+    data = report.get("datos", {})
+    dbt = report.get("dbt", {}).get("ultima_construccion")
+    dbt = dbt if isinstance(dbt, dict) else {}
     return {
         # The same rules before and after: the baseline counted E501 inside, which pyproject.toml leaves out (D-323).
         "ruff_avisos": ruff.get("errores_sin_largo_de_linea", ruff.get("errores")),
-        "archivos_sin_formatear": ruff.get("formato", {}).get("por_reformatear"),
         "cobertura_total": coverage.get("total"),
         "cobertura_por_modulo": min(coverage["modulos"].values()) if coverage.get("modulos") else None,
         "mypy_errores": mypy.get("errores"),
-        "funciones_con_tipos_pct": (
-            round(mypy["con_tipo_de_retorno"] / mypy["funciones"] * 100, 1) if mypy.get("funciones") else None
-        ),
-        "complejidad_sobre_10": report.get("complejidad", {}).get("funciones_sobre_10"),
         "bandit_altos": report.get("bandit", {}).get("alta"),
         "pip_audit_vulnerabilidades": sum(audited) if audited else None,
         "secretos_sin_clasificar": report.get("secretos", {}).get("sin_clasificar"),
         "pruebas_fallidas": tests - passed - skipped if tests is not None and passed is not None else None,
-        "segundos_por_pagina": max(page["seconds"] for page in pages.values()) if pages else None,
-        "segundos_por_consulta": max(queries.values()) if queries else None,
-        "violaciones_wcag": browsers.get("violaciones_wcag"),
-        "comprobaciones_navegador_fallidas": sum(len(item["failed"]) for item in matrix.values()) if matrix else None,
+        "pruebas_dbt_pct": (
+            round(dbt["pruebas_ok"] / dbt["pruebas_total"] * 100, 1) if dbt.get("pruebas_total") else None
+        ),
+        "comparables_pct": data.get("pct_comparacion"),
+        "rechazadas_pct": data.get("pct_rechazadas"),
+        "vigencia_dias": data.get("dias_desde_ultima_carga"),
     }
 
 
@@ -286,10 +243,11 @@ def gaps(report: dict[str, Any], goals: dict[str, Any]) -> dict[str, list[tuple[
         if row["ok"] is False:
             spanish, english = row["label"]
             unit = f" {row['unit']}" if row["unit"] else ""
+            english_unit = f" {unit_text(row['unit'], True)}" if row["unit"] else ""
             found.setdefault(row["iso"], []).append(
                 (
                     f"{spanish}: {show(row['now'], row['unit'])} (meta {goal_text(row['goal'])}{unit})",
-                    f"{english}: {show(row['now'], row['unit'], True)} (goal {goal_text(row['goal'], True)}{unit})",
+                    f"{english}: {show(row['now'], row['unit'], True)} (goal {goal_text(row['goal'], True)}{english_unit})",
                 )
             )
     return found
@@ -309,3 +267,96 @@ def add_to_history(history: dict[str, Any], report: dict[str, Any]) -> dict[str,
     """The history with this measurement last; a measurement of a commit already there replaces it."""
     entries = [entry for entry in history.get("mediciones", []) if entry["commit"] != report.get("commit")]
     return {**history, "mediciones": entries + [history_entry(report)]}
+
+
+STATES = ("cumple", "aviso", "urgente", "critico")
+
+
+def state(value: Any, goal: dict[str, Any]) -> str:
+    """cumple (the goal), aviso (worse than the goal, within the acceptable), urgente (over the acceptable by up to
+    its critical margin) or critico (further); sin_medicion when there is no value."""
+    if value is None or not goal:
+        return "sin_medicion"
+    margin = goal.get("margen_critico", 0)
+    if "max" in goal:
+        limit, aim = goal["max"], goal.get("meta", goal["max"])
+        return (
+            "cumple"
+            if value <= aim
+            else "aviso"
+            if value <= limit
+            else "urgente"
+            if value <= limit + margin and margin
+            else "critico"
+        )
+    limit, aim = goal["min"], goal.get("meta", goal["min"])
+    return (
+        "cumple"
+        if value >= aim
+        else "aviso"
+        if value >= limit
+        else "urgente"
+        if value >= limit - margin and margin
+        else "critico"
+    )
+
+
+def failure(key: str, value: Any, goal: dict[str, Any], report: dict[str, Any]) -> tuple[Any, Any, str]:
+    """(failure, acceptable failure, unit): a compliance reads as 100 − value, a share that is already a failure as
+    itself, a count over its total when it has one, days as days."""
+    if value is None or not goal:
+        return None, None, ""
+    kind = goal.get("medida")
+    if kind == "cumplimiento":
+        return round(100 - value, 1), round(100 - goal["min"], 1), "%"
+    if kind == "falla":
+        return value, goal["max"], "%"
+    if kind == "dias":
+        return value, goal["max"], "días"
+    tests = report.get("pruebas", {}).get("pruebas")
+    if key == "pruebas_fallidas" and tests:
+        return round(value / tests * 100, 2), goal["max"], "%"
+    return value, goal["max"], ""
+
+
+def evaluate(
+    report: dict[str, Any], goals: dict[str, Any], policy: dict[str, Any], previous: dict[str, Any] | None = None
+) -> list[dict[str, Any]]:
+    """Every indicator of a measurement: value, failure against the acceptable, state, insight in both languages and
+    the change against the previous report. Pure: it reads the files, it never writes a figure of its own."""
+    now, before = values(report), values(previous or {})
+    rows = []
+    for key, spanish, english, unit, iso, command in INDICATORS:
+        goal = goals.get(key, {})
+        value = now.get(key)
+        fail, acceptable, fail_unit = failure(key, value, goal, report)
+        current = state(value, goal)
+        warning_only = goal.get("tipo") == "datos" and policy.get("modo_datos") == "aviso"
+        insight = []
+        for language in (0, 1):
+            template = policy.get("insight", {}).get(current, ["", ""])[language]
+            action = goal.get("accion", ["", ""])[language]
+            text = template.replace("{accion}", action)
+            if current in ("urgente", "critico") and warning_only:
+                text += " " + policy.get("modo_aviso", ["", ""])[language]
+            insight.append(text.strip())
+        previous_value = before.get(key)
+        rows.append(
+            {
+                "clave": key,
+                "nombre": [spanish, english],
+                "tipo": goal.get("tipo"),
+                "valor": value,
+                "unidad": unit,
+                "falla": fail,
+                "falla_aceptable": acceptable,
+                "unidad_falla": fail_unit,
+                "estado": current,
+                "bloquea": current in ("urgente", "critico") and not warning_only,
+                "insight": insight,
+                "variacion": (
+                    round(value - previous_value, 3) if value is not None and previous_value is not None else None
+                ),
+            }
+        )
+    return rows

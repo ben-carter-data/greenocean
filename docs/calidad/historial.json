@@ -69,20 +69,17 @@
       "commit": "b015e3a",
       "valores": {
         "ruff_avisos": 0,
-        "archivos_sin_formatear": 0,
         "cobertura_total": 94.3,
         "cobertura_por_modulo": 83.1,
         "mypy_errores": 0,
-        "funciones_con_tipos_pct": 100.0,
-        "complejidad_sobre_10": 6,
         "bandit_altos": 0,
         "pip_audit_vulnerabilidades": 0,
         "secretos_sin_clasificar": 0,
         "pruebas_fallidas": 5,
-        "segundos_por_pagina": 2.328,
-        "segundos_por_consulta": 0.435,
-        "violaciones_wcag": 0,
-        "comprobaciones_navegador_fallidas": 0
+        "pruebas_dbt_pct": 100.0,
+        "comparables_pct": 93.1,
+        "rechazadas_pct": null,
+        "vigencia_dias": 7
       }
     }
   ]

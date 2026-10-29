@@ -203,11 +203,14 @@ def measure_dead_code(tools):
     }
 
 
-def measure_mypy(tools):
+def measure_mypy(tools, python=None):
     binary = tool(tools, "mypy")
     if not binary:
         return {"estado": NOT_VERIFIED}
     command = [binary, *TYPED_MODULES, "--ignore-missing-imports", "--follow-imports=silent", "--no-error-summary"]
+    if python:
+        # D-330: with the project's dependencies in sight, as in CI; without them mypy missed a real error.
+        command += ["--python-executable", python]
     _, out = run(command)
     errors = [line for line in out.splitlines() if ": error:" in line]
     _, deep = run(command + ["--check-untyped-defs"])
@@ -548,6 +551,7 @@ key = ["product", "variety", "quality", "channel", "normalized_unit"]
 seen = recent[key].drop_duplicates()
 latest = prices[prices["week_start"] == weeks[-1]][key].drop_duplicates()
 runs = queries.run_sql("SELECT max(started_at) AS last FROM etl_run")
+load = queries.run_sql("SELECT rows_read, rows_rejected FROM etl_run ORDER BY run_id DESC LIMIT 1").iloc[0]
 today = datetime.date.today()
 last_week = datetime.date.fromisoformat(str(weeks[-1])[:10])
 last_load = datetime.date.fromisoformat(str(runs["last"][0])[:10])
@@ -555,6 +559,8 @@ print(json.dumps({"semana": str(weeks[-1])[:10], "precios_semana": int(len(now))
                   "pct_comparacion": round(valid / len(now) * 100, 1), "series_activas": int(len(seen)),
                   "series_con_dato": int(len(latest.merge(seen))), "pct_series_con_dato": round(len(latest.merge(seen)) / len(seen) * 100, 1),
                   "dias_desde_ultima_semana": (today - last_week).days - 6, "dias_desde_ultima_carga": (today - last_load).days,
+                  "filas_leidas": int(load["rows_read"]), "filas_rechazadas": int(load["rows_rejected"]),
+                  "pct_rechazadas": round(int(load["rows_rejected"]) / int(load["rows_read"]) * 100, 3),
                   "medido": str(today)}))
 """
     status, out = run([python, "-c", code])
@@ -678,43 +684,23 @@ def main():
         "--tools", required=True, help="bin folder of the virtual environment with ruff, mypy, bandit, ..."
     )
     parser.add_argument("--python", default=str(ROOT / ".venv" / "bin" / "python"), help="the project's own Python")
-    parser.add_argument(
-        "--node-path", default="", help="NODE_PATH with playwright and axe-core, for the browser checks"
-    )
     parser.add_argument("--output", default=str(OUTPUT), help="where to write the JSON")
-    parser.add_argument(
-        "--browsers-from", default="", help="reuse the output of tests/medicion/calidad.cjs instead of running it"
-    )
     arguments = parser.parse_args()
     _, commit = run(["git", "rev-parse", "--short", "HEAD"])
     report = {
         "generado": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "commit": commit.strip(),
         "python": sys.version.split()[0],
-        "limites": {
-            "largo_de_linea": LINE_LENGTH,
-            "complejidad": MAX_COMPLEXITY,
-            "lineas_por_funcion": MAX_FUNCTION_LINES,
-            "parametros": MAX_PARAMETERS,
-        },
+        # D-330: only the quality of the published data and of the code that treats it.
         "ruff": measure_ruff(arguments.tools),
-        "funciones": measure_functions(),
-        "complejidad": measure_complexity(arguments.tools),
-        "codigo_muerto": measure_dead_code(arguments.tools),
-        "mypy": measure_mypy(arguments.tools),
+        "mypy": measure_mypy(arguments.tools, arguments.python),
         "cobertura": measure_coverage(arguments.python),
         "bandit": measure_bandit(arguments.tools),
         "pip_audit": measure_audit(arguments.tools),
         "secretos": measure_secrets(arguments.tools),
-        "sql": measure_sql(arguments.tools),
         "dbt": measure_dbt(),
-        "proceso": measure_process(),
         "pruebas": measure_tests(arguments.python),
-        "dora": measure_dora(),
-        "adr": count_adr(),
         "datos": measure_data(arguments.python),
-        "consultas": measure_queries(arguments.python),
-        "navegadores": measure_browsers(arguments.python, arguments.node_path, saved=arguments.browsers_from),
     }
     output = Path(arguments.output)
     output.parent.mkdir(parents=True, exist_ok=True)

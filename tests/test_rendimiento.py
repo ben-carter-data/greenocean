@@ -1,19 +1,15 @@
-"""Performance budget of the named queries (D-323): every query of bi/queries.sql answers in less than the budget of
-docs/calidad/metas.json on the served database, the median of three runs. The page budget is checked in a browser by
-tests/medicion/calidad.cjs and scripts/verificar_calidad.py."""
+"""Performance budget of the named queries (D-323): every query of bi/queries.sql answers in less than a second on the
+served database, the median of three runs. Since D-330 time is no longer a quality indicator of docs/calidad: the test
+stays, with the budget the author approved in D-323."""
 
-import json
 import statistics
 import time
-from pathlib import Path
 
 import pytest
 
 from bi import queries
 
-BUDGET = json.loads(
-    (Path(__file__).resolve().parent.parent / "docs" / "calidad" / "metas.json").read_text(encoding="utf-8")
-)["segundos_por_consulta"]["max"]
+BUDGET = 1.0  # seconds a query, approved in D-323
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")

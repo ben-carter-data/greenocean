@@ -52,7 +52,7 @@ def test_d323_the_indicators_are_read_from_the_measurement_and_checked_against_t
     goals = quality_metrics.read(quality_metrics.GOALS_FILE)
     values = quality_metrics.values(REPORT)
     assert values["ruff_avisos"] == 3 and values["cobertura_por_modulo"] == 71.5 and values["pruebas_fallidas"] == 0
-    assert values["funciones_con_tipos_pct"] == 100.0 and values["segundos_por_consulta"] == 0.4
+    assert "segundos_por_consulta" not in values and "complejidad_sobre_10" not in values  # D-330: out of scope
     rows = {row["key"]: row for row in quality_metrics.rows({}, REPORT, goals)}
     assert rows["ruff_avisos"]["ok"] is False and rows["cobertura_total"]["ok"] is True
     assert quality_metrics.gaps(REPORT, goals) == {
@@ -71,7 +71,7 @@ def test_d323_the_verifier_fails_naming_the_indicator_below_its_goal(tmp_path):
     done = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "verificar_calidad.py"), str(report)], capture_output=True, text=True
     )
-    assert done.returncode == 1 and "Bajo su meta: ruff_avisos" in done.stdout
+    assert done.returncode == 1 and "Peor que lo aceptable: ruff_avisos" in done.stdout
     report.write_text(json.dumps({**REPORT, "ruff": {"errores": 0, "formato": {"por_reformatear": 0}}}))
     assert (
         subprocess.run(
@@ -122,10 +122,10 @@ def test_d323_the_history_keeps_every_measurement_once_and_the_page_shows_it_new
     history = quality_metrics.add_to_history(history, REPORT)
     history = quality_metrics.add_to_history(history, REPORT)  # the same commit again replaces it
     assert [entry["commit"] for entry in history["mediciones"]] == ["old0001", "abc1234"]
-    assert quality_metrics.met(history["mediciones"][-1]["valores"], goals) == (14, 15)
+    assert quality_metrics.met(history["mediciones"][-1]["valores"], goals) == (7, 8)  # 8 of code measured, Ruff fails
     monkeypatch.setattr(i18n, "is_english", lambda: False)
     page = quality_method.build_history(history, goals)
-    assert page.index("abc1234") < page.index("old0001") and "14 / 15" in page
+    assert page.index("abc1234") < page.index("old0001") and "7 / 8" in page
     assert all(what[0] in page for what, _, _ in quality_metrics.SCHEDULE)
     saved = quality_metrics.read(quality_metrics.HISTORY_FILE)["mediciones"]
     assert saved[-1]["commit"] == quality_metrics.read(quality_metrics.REPORT_FILE)["commit"]
@@ -180,3 +180,56 @@ def test_d320_the_line_under_the_logo_opens_the_page_in_both_languages(language)
     assert not page.exception and len(page.tabs) == 7
     content = " ".join(block.value for block in page.markdown if "qm-pane" in block.value)
     assert content and not re.search(r"month_start|>None<|\bnan\b", content)
+
+
+# region Acceptables, goals and insights (D-330)
+def test_d330_metas_keeps_the_approved_twelve_indicators_with_their_explanation():
+    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
+    keys = [key for key, *_ in quality_metrics.INDICATORS]
+    assert set(keys) == {key for key in goals if key != "nota"} and len(keys) == 12
+    assert sum(goals[key]["tipo"] == "datos" for key in keys) == 4
+    for key in keys:
+        goal = goals[key]
+        assert ("max" in goal) != ("min" in goal) and "meta" in goal and "margen_critico" in goal, key
+        assert all(len(goal[field]) == 2 and all(goal[field]) for field in ("que_mide", "por_que", "como", "accion"))
+    # The approved numbers (2026-10-29).
+    assert goals["cobertura_total"]["min"] == 90 and goals["cobertura_por_modulo"]["min"] == 70
+    assert goals["comparables_pct"]["min"] == 90 and goals["vigencia_dias"]["max"] == 8
+    assert (
+        goals["pip_audit_vulnerabilidades"]["max"] == 0 and goals["pip_audit_vulnerabilidades"]["margen_critico"] == 0
+    )
+
+
+def test_d330_the_state_says_meets_warning_urgent_or_critical():
+    coverage = {"min": 90, "meta": 95, "margen_critico": 5}
+    assert [quality_metrics.state(value, coverage) for value in (96, 92, 86, 84, None)] == [
+        "cumple",
+        "aviso",
+        "urgente",
+        "critico",
+        "sin_medicion",
+    ]
+    ruff = {"max": 0, "meta": 0, "margen_critico": 5}
+    assert [quality_metrics.state(value, ruff) for value in (0, 3, 6)] == ["cumple", "urgente", "critico"]
+    secrets = {"max": 0, "meta": 0, "margen_critico": 0}
+    assert quality_metrics.state(1, secrets) == "critico"  # any case is critical
+
+
+def test_d330_the_failure_reads_against_the_acceptable_and_the_insight_comes_from_the_policy():
+    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
+    policy = quality_metrics.read(quality_metrics.POLICY_FILE)
+    report = dict(REPORT, datos={"pct_comparacion": 85.0, "pct_rechazadas": 0.01, "dias_desde_ultima_carga": 7})
+    rows = {row["clave"]: row for row in quality_metrics.evaluate(report, goals, policy)}
+    comparables = rows["comparables_pct"]
+    assert (comparables["falla"], comparables["falla_aceptable"], comparables["estado"]) == (15.0, 10.0, "urgente")
+    assert not comparables["bloquea"] and "modo aviso" in comparables["insight"][0]  # data warns until approved
+    ruff = rows["ruff_avisos"]
+    assert ruff["estado"] == "urgente" and ruff["bloquea"] and goals["ruff_avisos"]["accion"][0] in ruff["insight"][0]
+    assert rows["cobertura_total"]["insight"][0] == policy["insight"]["cumple"][0]
+    assert rows["pruebas_dbt_pct"]["estado"] == "sin_medicion" and rows["pruebas_dbt_pct"]["valor"] is None
+    # The change against the previous report, never a made-up one.
+    later = quality_metrics.evaluate(dict(report, ruff={"errores": 0}), goals, policy, previous=report)
+    assert {row["clave"]: row["variacion"] for row in later}["ruff_avisos"] == -3
+
+
+# endregion

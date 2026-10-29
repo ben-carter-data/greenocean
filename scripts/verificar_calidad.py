@@ -1,9 +1,11 @@
-"""Compares a measurement with the goals of docs/calidad/metas.json (D-323).
+"""Compares a measurement with the acceptables and goals of docs/calidad/metas.json (D-323, D-330).
 
     python scripts/verificar_calidad.py [docs/calidad/medicion.json]
 
-Prints every indicator with its value and its goal, and exits with 1 naming the ones below their goal. It never
-changes the code: a goal that is not met is for the author to fix.
+Prints every indicator with its value, its failure against the acceptable and its state. It exits with 1 naming the
+indicators worse than the acceptable (urgent or critical); one worse than the goal but within the acceptable is only a
+warning. Data indicators stay in warning mode (docs/calidad/politica.json) until the author lets them block. It never
+changes the code: an indicator out of its acceptable is for the author to fix.
 """
 
 import sys
@@ -17,14 +19,22 @@ def main() -> int:
     path = Path(sys.argv[1]) if len(sys.argv) > 1 else quality_metrics.REPORT_FILE
     report = quality_metrics.read(path)
     goals = quality_metrics.read(quality_metrics.GOALS_FILE)
-    failed = []
-    for row in quality_metrics.rows({}, report, goals):
-        state = "no medido" if row["ok"] is None else "cumple" if row["ok"] else "NO CUMPLE"
-        print(f"{row['key']:36s} {str(row['now']):>10s}  meta {quality_metrics.goal_text(row['goal']):8s}  {state}")
-        if row["ok"] is False:
-            failed.append(row["key"])
-    if failed:
-        print("\nBajo su meta: " + ", ".join(failed))
+    policy = quality_metrics.read(quality_metrics.POLICY_FILE)
+    blocking, warnings = [], []
+    for row in quality_metrics.evaluate(report, goals, policy):
+        failure = "—" if row["falla"] is None else f"{row['falla']}{row['unidad_falla']}"
+        acceptable = "—" if row["falla_aceptable"] is None else f"{row['falla_aceptable']}{row['unidad_falla']}"
+        print(
+            f"{row['clave']:28s} {row['tipo'] or '':7s} falla {failure:>10s}  aceptable {acceptable:>8s}  {row['estado']}"
+        )
+        if row["bloquea"]:
+            blocking.append(row["clave"])
+        elif row["estado"] in ("aviso", "urgente", "critico"):
+            warnings.append(row["clave"])
+    if warnings:
+        print("\nAviso: " + ", ".join(warnings))
+    if blocking:
+        print("\nPeor que lo aceptable: " + ", ".join(blocking))
         return 1
     return 0
 

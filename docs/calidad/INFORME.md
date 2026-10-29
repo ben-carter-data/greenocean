@@ -13,7 +13,7 @@
 
 Se evaluó el repositorio completo aplicando, como método de revisión, la ISO/IEC 25010 (calidad del producto), 25012 e ISO 8000 (calidad de los datos), ISO/IEC 5055 (calidad del código), ISO/IEC 29119 (pruebas), WCAG 2.1 AA (accesibilidad), ISO/IEC/IEEE 42010 y el modelo C4 (arquitectura), los ADR, OWASP Top 10, Twelve-Factor App y las métricas DORA. **Es una autoevaluación, no una certificación**: nadie externo la revisó y no se declara conformidad con ninguna norma.
 
-Resultado: 13 de 15 indicadores medidos cumplen su meta (en la línea base, 8 de 15). Promedio de la rúbrica ISO/IEC 25010: 3,0 de 4 en las 8 características (borrador, pendiente de confirmación del autor); en D-320, 2,6 de 4 en las 7 verificadas.
+Resultado: 10 de 11 indicadores medidos cumplen su meta (en la línea base, 8 de 11). Promedio de la rúbrica ISO/IEC 25010: 3,0 de 4 en las 8 características (borrador, pendiente de confirmación del autor); en D-320, 2,6 de 4 en las 7 verificadas.
 
 Cada número sale de ejecutar una herramienta: scripts/medir_calidad.py los deja con su comando en docs/calidad/medicion.json, y este informe se genera desde ese archivo con scripts/informe_calidad.py. Lo que no se pudo medir dice «no verificado».
 
@@ -25,17 +25,14 @@ Cada número sale de ejecutar una herramienta: scripts/medir_calidad.py los deja
 | Cobertura total | 91,5 % | **94,3 %** | ≥ 90 % | cumple | `pytest -q --cov` |
 | Cobertura del módulo más bajo | 0,0 % | **83,1 %** | ≥ 70 % | cumple | `pytest -q --cov --cov-report=term` |
 | Avisos de Ruff (E, F y W; el largo de línea, aparte) | 50 | **0** | ≤ 0 | cumple | `ruff check .` |
-| Archivos sin formatear | 111 | **0** | ≤ 0 | cumple | `ruff format --check .` |
-| Funciones con tipos (módulos principales) | 0,0 % | **100,0 %** | ≥ 100 % | cumple | `mypy` |
 | Errores de mypy | 0 | **0** | ≤ 0 | cumple | `mypy` |
-| Funciones con complejidad sobre 10 | 9 | **6** | ≤ 6 | cumple | `ruff check bi etl agent --select C901` |
 | Hallazgos altos de Bandit | 0 | **0** | ≤ 0 | cumple | `bandit -r bi etl agent` |
 | Vulnerabilidades en dependencias | 0 | **0** | ≤ 0 | cumple | `pip-audit -r requirements.txt` |
 | Posibles secretos sin revisar | 0 | **0** | ≤ 0 | cumple | `detect-secrets scan $(git ls-files)` |
-| Carga de la página más lenta | 1,31 s | **2,33 s** | ≤ 2,0 s | **no cumple** | `node tests/medicion/calidad.cjs` |
-| Consulta más lenta | 0,45 s | **0,43 s** | ≤ 1,0 s | cumple | `pytest -q tests/test_rendimiento.py` |
-| Violaciones WCAG 2.1 AA | 18 | **0** | ≤ 0 | cumple | `node tests/medicion/calidad.cjs` |
-| Comprobaciones fallidas en Chromium, Firefox y WebKit | 0 | **0** | ≤ 0 | cumple | `node tests/medicion/calidad.cjs` |
+| Pruebas de datos dbt superadas | 100,0 % | **100,0 %** | ≥ 100 % | cumple | `dbt build` |
+| Precios con comparación válida | 93,1 % | **93,1 %** | ≥ 90 % | cumple | `python scripts/medir_calidad.py` |
+| Filas rechazadas | — | **—** | ≤ 1 % | no medido | `SELECT … FROM etl_run` |
+| Días desde la última carga | 6 días | **7 días** | ≤ 8 días | cumple | `etl_run` |
 
 «Antes» es la línea base, medida antes de cambiar nada. El módulo más bajo de la línea base tenía 0 % porque dos módulos vacíos (bi/data_browser.py y bi/explorer.py) se contaban; D-323 los retiró. Los avisos de Ruff cuentan las reglas E, F y W sin el largo de línea en las dos columnas.
 
@@ -52,7 +49,7 @@ Cada número sale de ejecutar una herramienta: scripts/medir_calidad.py los deja
 | Característica | Antes (D-320) | Ahora | Evidencia | Qué falta |
 |---|---|---|---|---|
 | Adecuación funcional | 3 / 4 | 3 / 4 | Cada cifra del panel se recalcula desde la fuente en las pruebas (tests/test_data_audit.py) y cada requisito del PRD apunta a una prueba que existe (tests/test_prd_traceability.py). | ODEPA publica 9 de las 16 regiones y los márgenes solo existen para frutas y verduras: el panel no puede decir más que eso. |
-| Eficiencia de desempeño | no verificado | 3 / 4 | Cada página y cada consulta se miden contra un presupuesto (2 s por página, 1 s por consulta) y una prueba falla si una consulta lo supera. | Carga de la página más lenta: 2,33 s (meta ≤ 2,0 s); No hay pruebas con varias personas a la vez ni medición en Streamlit Cloud: los tiempos son de un equipo local. |
+| Eficiencia de desempeño | no verificado | 3 / 4 | Cada página y cada consulta se miden contra un presupuesto (2 s por página, 1 s por consulta) y una prueba falla si una consulta lo supera. | No hay pruebas con varias personas a la vez ni medición en Streamlit Cloud: los tiempos son de un equipo local. |
 | Compatibilidad | 2 / 4 | 3 / 4 | Todas las páginas cargan sin errores ni desplazamiento horizontal en Chromium, Firefox y WebKit, a 1440 × 790, 1920 × 1000 y un teléfono en horizontal; el CI prueba Python 3.11 y 3.12. | La comprobación es de errores y desborde, no una comparación visual píxel a píxel entre navegadores. |
 | Usabilidad | 2 / 4 | 3 / 4 | axe-core no encuentra violaciones de WCAG 2.1 AA en las 13 páginas y los cuatro temas; español e inglés auditados. | Una auditoría automática no cubre todo WCAG: falta recorrer cada página solo con teclado y con un lector de pantalla, y probar con personas. |
 | Fiabilidad | 3 / 4 | 3 / 4 | Una puerta de pruebas impide publicar si algo falla (tests/test_pipeline_gate.py); la ingesta tiene pruebas propias sin red ni dbt. | Pruebas que fallan: 5 (meta ≤ 0); La carga del 25-10 falló por una prueba demasiado estricta (D-299): el arreglo está en el repositorio pero no se ha visto pasar una carga real. |
@@ -106,7 +103,7 @@ Cada página se abre a 1440 × 790, 1920 × 1000 y en un teléfono en horizontal
 | 1 · Estilo y formato | Ruff (lint + format) | 0 avisos E, F y W; 0 archivos sin formatear | 0 avisos E, F y W; 0 de 117 archivos sin formatear; 1.187 líneas de más de 120 columnas (E501, fuera de la meta: ver límites) | cumple |
 | 2 · SQL | SQLFluff (DuckDB) | sin meta | 279 avisos en bi/queries.sql; 240 en los modelos de dbt | sin meta |
 | 3 · Tipado | mypy | 0 errores; 100 % de funciones con tipos en los módulos principales | 0 errores en 10 módulos; 134 de 134 funciones con tipo de retorno | cumple |
-| 4 · Complejidad | Ruff C901 · radon | ≤ 6 funciones sobre 10 | 6 funciones sobre 10 (la peor, read_home_model, con 21); 81 funciones de más de 50 líneas (la mayor, bi/dashboard.py:build_style_css, con 920); promedio radon A (3,5) | cumple |
+| 4 · Complejidad | Ruff C901 · radon | ≤ 6 funciones sobre 10 | 6 funciones sobre 10 (la peor, read_home_model, con 21); 81 funciones de más de 50 líneas (la mayor, bi/dashboard.py:build_style_css, con 920); promedio radon A (3,5) | sin meta |
 | 5 · Código muerto | vulture | sin meta | 4 funciones sin uso (render_page, read_glossary, add_to_history, orthogonal) y 34 variables o atributos de baja confianza | sin meta |
 | 6 · Pruebas y cobertura | pytest + coverage | 0 pruebas fallidas; ≥ 90 % total; ≥ 70 % en cada módulo | 996 pruebas, 990 pasan; cobertura total 94,3 %; lógica crítica 93,6 %; módulo más bajo bi/overview.py (83,1 %) | **no cumple** |
 | 7 · Seguridad | Bandit · pip-audit · detect-secrets | 0 altos; 0 vulnerabilidades; 0 secretos sin revisar | Bandit: 0 altos, 26 medios y 12 bajos; pip-audit: 0 en requirements.txt; no verificado en requirements-pipeline.txt (las dependencias no se pueden resolver con este Python (dbt pide 3.11 o 3.12)); secretos: 22 candidatos, 22 falsos positivos revisados y 0 sin clasificar | cumple |
@@ -157,19 +154,18 @@ No hubo prueba de penetración.
 
 | Medición | Commit | Cumplen la meta | Cobertura | Ruff | mypy | WCAG | Página más lenta |
 |---|---|---|---|---|---|---|---|
-| 2026-10-27 11:37 UTC | b015e3a | 13 de 15 | 94,3 % | 0 | 0 | 0 | 2,33 s |
-| 2026-10-27 11:04 UTC | d66804c | 12 de 15 | 94,2 % | 0 | 0 | 0 | 2,34 s |
-| 2026-10-27 01:41 UTC | 6c6286c | 8 de 15 | 91,5 % | 50 | 0 | 18 | 1,31 s |
-| 2026-10-26 23:28 UTC | cf561e7 | 5 de 10 | 91,5 % | 43 | 0 | — | — |
+| 2026-10-27 11:37 UTC | b015e3a | 10 de 11 | 94,3 % | 0 | 0 | — | — |
+| 2026-10-27 11:04 UTC | d66804c | 7 de 8 | 94,2 % | 0 | 0 | 0 | 2,34 s |
+| 2026-10-27 01:41 UTC | 6c6286c | 5 de 8 | 91,5 % | 50 | 0 | 18 | 1,31 s |
+| 2026-10-26 23:28 UTC | cf561e7 | 5 de 7 | 91,5 % | 43 | 0 | — | — |
 
 ## Qué se mide solo y qué se revisa a mano
 
 | Qué | Cómo | Frecuencia |
 |---|---|---|
-| Los 15 indicadores de la tabla «Antes → ahora → meta» | Automático: workflow «calidad» (scripts/medir_calidad.py) | En cada push; una vez por semana cuando el autor lo active |
+| Los 12 indicadores: 8 de código y 4 de datos | Automático: workflow «calidad» (scripts/medir_calidad.py) | En cada push; una vez por semana cuando el autor lo active |
 | Calidad de los datos servidos | Automático: el código del proyecto lee la base servida | En cada push |
-| Tiempos, WCAG 2.1 AA y diseño en tres navegadores | Automático: Playwright y axe-core (tests/medicion/calidad.cjs) | En cada push |
-| Comparación con las metas | Automático: scripts/verificar_calidad.py; el CI falla y dice cuál indicador bajó | En cada push |
+| Comparación con las metas | Automático: scripts/verificar_calidad.py; el CI falla si un indicador de código pasa lo aceptable | En cada push |
 | Publicar una medición en esta página | Manual: el autor fusiona el pull request «Actualizar medición de calidad» | Cada vez que el workflow lo abre |
 | Rúbrica ISO/IEC 25010 | Manual: el autor revisa y confirma docs/calidad/rubrica.json | Una vez por versión |
 | OWASP Top 10 y Twelve-Factor App | Manual: revisión por categoría en el informe | Una vez por versión |

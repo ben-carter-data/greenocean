@@ -1,0 +1,52 @@
+{
+  "nota": "Política de calidad (D-330): los textos fijos de los informes y las plantillas de los insights. Un insight se arma solo con estas plantillas y con las cifras de la medición; nunca con cifras escritas a mano.",
+  "modo_datos": "aviso",
+  "estados": {
+    "cumple": [
+      "Cumple",
+      "Meets"
+    ],
+    "aviso": [
+      "Aviso",
+      "Warning"
+    ],
+    "urgente": [
+      "Urgente",
+      "Urgent"
+    ],
+    "critico": [
+      "Crítico",
+      "Critical"
+    ],
+    "sin_medicion": [
+      "Sin medición",
+      "Not measured"
+    ]
+  },
+  "insight": {
+    "cumple": [
+      "Dentro de lo aceptable: no afecta.",
+      "Within the acceptable: no impact."
+    ],
+    "aviso": [
+      "Peor que la meta pero dentro de lo aceptable: no afecta todavía; vigilar.",
+      "Worse than the goal but within the acceptable: no impact yet; keep an eye on it."
+    ],
+    "urgente": [
+      "Supera lo aceptable por poco: necesita atención. {accion}",
+      "Over the acceptable by a little: needs attention. {accion}"
+    ],
+    "critico": [
+      "Supera lo aceptable por mucho: es crítico. {accion}",
+      "Far over the acceptable: critical. {accion}"
+    ],
+    "sin_medicion": [
+      "Sin medición en este informe: no se evalúa; no se inventa un valor.",
+      "Not measured in this report: not assessed; no value is made up."
+    ]
+  },
+  "modo_aviso": [
+    "Indicador de datos en modo aviso: todavía no bloquea la publicación.",
+    "Data indicator in warning mode: it does not block publication yet."
+  ]
+}

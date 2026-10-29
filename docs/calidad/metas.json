@@ -1,18 +1,327 @@
 {
-  "nota": "Metas de calidad (D-323). scripts/verificar_calidad.py compara una medición con estas metas y falla, diciendo cuál, si alguna no se cumple. Cambiar una meta es una decisión del autor.",
-  "ruff_avisos": {"max": 0},
-  "archivos_sin_formatear": {"max": 0},
-  "cobertura_total": {"min": 90},
-  "cobertura_por_modulo": {"min": 70},
-  "mypy_errores": {"max": 0},
-  "funciones_con_tipos_pct": {"min": 100},
-  "complejidad_sobre_10": {"max": 6},
-  "bandit_altos": {"max": 0},
-  "pip_audit_vulnerabilidades": {"max": 0},
-  "secretos_sin_clasificar": {"max": 0},
-  "pruebas_fallidas": {"max": 0},
-  "segundos_por_pagina": {"max": 2.0},
-  "segundos_por_consulta": {"max": 1.0},
-  "violaciones_wcag": {"max": 0},
-  "comprobaciones_navegador_fallidas": {"max": 0}
+  "nota": "Aceptables, metas y márgenes de calidad (D-323, D-330), aprobados por el autor el 2026-10-29. «max» o «min» es el aceptable (piso): lo peor que se tolera. «meta» es lo que se aspira; donde el autor no fijó una, es igual al aceptable. «margen_critico»: cuánto más allá del aceptable se pasa de urgente a crítico; 0 = cualquier falla es crítica. «medida» dice cómo se lee la falla: cumplimiento (falla = 100 − valor), falla (el valor ya es la falla), conteo (casos sobre su total cuando lo hay) o días. Los indicadores de datos van en «modo aviso» (politica.json) hasta que el autor apruebe que bloqueen la publicación. Cambiar un número de este archivo es una decisión del autor.",
+  "pruebas_fallidas": {
+    "max": 0,
+    "meta": 0,
+    "margen_critico": 0,
+    "tipo": "codigo",
+    "medida": "conteo",
+    "frecuencia": [
+      "En cada push",
+      "On every push"
+    ],
+    "que_mide": [
+      "Pruebas automáticas que fallan en la suite completa.",
+      "Automated tests that fail in the full suite."
+    ],
+    "por_que": [
+      "Una prueba que falla es una cifra o un comportamiento del panel que ya no es el comprobado.",
+      "A failing test is a figure or a behaviour of the dashboard that is no longer the checked one."
+    ],
+    "como": [
+      "pytest -q, con todas las pruebas del repositorio.",
+      "pytest -q, with every test of the repository."
+    ],
+    "accion": [
+      "Corregir la causa antes de publicar; nunca saltar la prueba.",
+      "Fix the cause before publishing; never skip the test."
+    ]
+  },
+  "cobertura_total": {
+    "min": 90,
+    "meta": 90,
+    "margen_critico": 5,
+    "tipo": "codigo",
+    "medida": "cumplimiento",
+    "frecuencia": [
+      "En cada push",
+      "On every push"
+    ],
+    "que_mide": [
+      "Porcentaje de líneas del código que ejecutan las pruebas.",
+      "Share of the code lines the tests run."
+    ],
+    "por_que": [
+      "El código que ninguna prueba ejecuta puede romperse sin que nadie lo note.",
+      "Code no test runs can break unnoticed."
+    ],
+    "como": [
+      "pytest con coverage sobre bi, etl y agent.",
+      "pytest with coverage over bi, etl and agent."
+    ],
+    "accion": [
+      "Agregar pruebas al código nuevo o al menos cubierto.",
+      "Add tests to new or least covered code."
+    ]
+  },
+  "cobertura_por_modulo": {
+    "min": 70,
+    "meta": 70,
+    "margen_critico": 10,
+    "tipo": "codigo",
+    "medida": "cumplimiento",
+    "frecuencia": [
+      "En cada push",
+      "On every push"
+    ],
+    "que_mide": [
+      "Cobertura del módulo con menos pruebas.",
+      "Coverage of the least tested module."
+    ],
+    "por_que": [
+      "Un total alto puede esconder un módulo casi sin pruebas.",
+      "A high total can hide a module with almost no tests."
+    ],
+    "como": [
+      "El mínimo de la cobertura de cada archivo de bi, etl y agent.",
+      "The minimum of each file's coverage in bi, etl and agent."
+    ],
+    "accion": [
+      "Probar primero ese módulo.",
+      "Test that module first."
+    ]
+  },
+  "ruff_avisos": {
+    "max": 0,
+    "meta": 0,
+    "margen_critico": 5,
+    "tipo": "codigo",
+    "medida": "conteo",
+    "frecuencia": [
+      "En cada push",
+      "On every push"
+    ],
+    "que_mide": [
+      "Errores de estilo y de código que detecta Ruff (reglas E, F y W).",
+      "Style and code errors Ruff finds (rules E, F and W)."
+    ],
+    "por_que": [
+      "Variables sin uso, nombres duplicados o imports rotos suelen ser errores reales.",
+      "Unused variables, duplicated names or broken imports are often real bugs."
+    ],
+    "como": [
+      "ruff check, con la configuración de pyproject.toml.",
+      "ruff check, with the configuration of pyproject.toml."
+    ],
+    "accion": [
+      "Corregir los avisos; ruff check --fix resuelve la mayoría.",
+      "Fix the findings; ruff check --fix solves most of them."
+    ]
+  },
+  "mypy_errores": {
+    "max": 0,
+    "meta": 0,
+    "margen_critico": 5,
+    "tipo": "codigo",
+    "medida": "conteo",
+    "frecuencia": [
+      "En cada push",
+      "On every push"
+    ],
+    "que_mide": [
+      "Errores de tipos en los diez módulos principales.",
+      "Type errors in the ten main modules."
+    ],
+    "por_que": [
+      "Un tipo equivocado puede pasar una cifra vacía o mal formada al panel.",
+      "A wrong type can pass an empty or malformed figure to the dashboard."
+    ],
+    "como": [
+      "mypy con las dependencias del proyecto instaladas, como en el CI.",
+      "mypy with the project's dependencies installed, as in CI."
+    ],
+    "accion": [
+      "Corregir el tipo o declarar el valor que de verdad llega.",
+      "Fix the type or declare the value that really arrives."
+    ]
+  },
+  "bandit_altos": {
+    "max": 0,
+    "meta": 0,
+    "margen_critico": 0,
+    "tipo": "codigo",
+    "medida": "conteo",
+    "frecuencia": [
+      "En cada push",
+      "On every push"
+    ],
+    "que_mide": [
+      "Hallazgos de seguridad de severidad alta en el código.",
+      "High-severity security findings in the code."
+    ],
+    "por_que": [
+      "Un hallazgo alto puede exponer la base o el servidor.",
+      "A high finding can expose the database or the server."
+    ],
+    "como": [
+      "bandit -r bi etl agent.",
+      "bandit -r bi etl agent."
+    ],
+    "accion": [
+      "Corregir antes de publicar.",
+      "Fix before publishing."
+    ]
+  },
+  "pip_audit_vulnerabilidades": {
+    "max": 0,
+    "meta": 0,
+    "margen_critico": 0,
+    "tipo": "codigo",
+    "medida": "conteo",
+    "frecuencia": [
+      "En cada push",
+      "On every push"
+    ],
+    "que_mide": [
+      "Vulnerabilidades conocidas en las dependencias.",
+      "Known vulnerabilities in the dependencies."
+    ],
+    "por_que": [
+      "Una dependencia vulnerable abre una puerta que el propio código no abrió. pip-audit no informa la severidad: toda vulnerabilidad se trata como crítica.",
+      "A vulnerable dependency opens a door the code itself never opened. pip-audit gives no severity: every vulnerability is treated as critical."
+    ],
+    "como": [
+      "pip-audit -r requirements.txt.",
+      "pip-audit -r requirements.txt."
+    ],
+    "accion": [
+      "Subir la dependencia a una versión corregida.",
+      "Upgrade the dependency to a fixed version."
+    ]
+  },
+  "secretos_sin_clasificar": {
+    "max": 0,
+    "meta": 0,
+    "margen_critico": 0,
+    "tipo": "codigo",
+    "medida": "conteo",
+    "frecuencia": [
+      "En cada push",
+      "On every push"
+    ],
+    "que_mide": [
+      "Posibles claves o tokens en el repositorio que nadie revisó.",
+      "Possible keys or tokens in the repository nobody reviewed."
+    ],
+    "por_que": [
+      "Una clave publicada en git sigue expuesta aunque se borre después.",
+      "A key published in git stays exposed even if deleted later."
+    ],
+    "como": [
+      "detect-secrets sobre los archivos versionados; los revisados se anotan en .secrets.baseline.",
+      "detect-secrets over the tracked files; the reviewed ones are noted in .secrets.baseline."
+    ],
+    "accion": [
+      "Revisar el candidato; si es una clave real, revocarla y sacarla del historial.",
+      "Review the candidate; if it is a real key, revoke it and remove it from history."
+    ]
+  },
+  "pruebas_dbt_pct": {
+    "min": 100,
+    "meta": 100,
+    "margen_critico": 0,
+    "tipo": "datos",
+    "medida": "cumplimiento",
+    "frecuencia": [
+      "En cada carga semanal",
+      "On every weekly load"
+    ],
+    "que_mide": [
+      "Pruebas de datos de dbt superadas en la última carga.",
+      "dbt data tests passed in the last load."
+    ],
+    "por_que": [
+      "Cada prueba de dbt es una regla de los datos publicados: claves únicas, relaciones, rangos.",
+      "Each dbt test is a rule of the published data: unique keys, relations, ranges."
+    ],
+    "como": [
+      "El resultado que la carga guarda en dbt_result.",
+      "The result the load stores in dbt_result."
+    ],
+    "accion": [
+      "Ver qué prueba falló en el registro de la carga; la base no se publica hasta que pase.",
+      "See which test failed in the load log; the database is not published until it passes."
+    ]
+  },
+  "comparables_pct": {
+    "min": 90,
+    "meta": 90,
+    "margen_critico": 10,
+    "tipo": "datos",
+    "medida": "cumplimiento",
+    "frecuencia": [
+      "En cada carga semanal",
+      "On every weekly load"
+    ],
+    "que_mide": [
+      "Precios de la semana con una comparación válida contra la semana anterior.",
+      "Prices of the week with a valid comparison against the week before."
+    ],
+    "por_que": [
+      "Sin comparación no hay variación que mostrar; si bajan mucho, el panel dice menos de lo que parece.",
+      "Without a comparison there is no change to show; if they drop a lot, the dashboard says less than it seems."
+    ],
+    "como": [
+      "Lo calcula el mismo código del panel sobre la base servida.",
+      "The dashboard's own code computes it on the served database."
+    ],
+    "accion": [
+      "Ver si falta una región o un canal entero; si la causa es la fuente, registrarla como incidente externo.",
+      "Check whether a whole region or channel is missing; if the source is the cause, record it as an external incident."
+    ]
+  },
+  "rechazadas_pct": {
+    "max": 1,
+    "meta": 1,
+    "margen_critico": 4,
+    "tipo": "datos",
+    "medida": "falla",
+    "frecuencia": [
+      "En cada carga semanal",
+      "On every weekly load"
+    ],
+    "que_mide": [
+      "Filas de la última carga que las validaciones rechazaron.",
+      "Rows of the last load the validations rejected."
+    ],
+    "por_que": [
+      "Las filas rechazadas no se publican; si suben, algo cambió en la fuente o en las reglas.",
+      "Rejected rows are not published; if they rise, something changed in the source or in the rules."
+    ],
+    "como": [
+      "Filas rechazadas sobre filas leídas, del registro etl_run.",
+      "Rejected rows over rows read, from the etl_run log."
+    ],
+    "accion": [
+      "Ver el motivo de los rechazos en Calidad y auditoría.",
+      "See the reason for the rejections in Quality and audit."
+    ]
+  },
+  "vigencia_dias": {
+    "max": 8,
+    "meta": 8,
+    "margen_critico": 7,
+    "tipo": "datos",
+    "medida": "dias",
+    "frecuencia": [
+      "Cada día",
+      "Every day"
+    ],
+    "que_mide": [
+      "Días desde la última carga registrada.",
+      "Days since the last recorded load."
+    ],
+    "por_que": [
+      "La carga es semanal: más de 8 días significa que un martes no se publicó.",
+      "The load is weekly: more than 8 days means a Tuesday was not published."
+    ],
+    "como": [
+      "La fecha de la última carga de etl_run frente al día de la medición.",
+      "The date of the last etl_run load against the day of the measurement."
+    ],
+    "accion": [
+      "Revisar la ejecución del workflow semanal; si la fuente se retrasó, registrarlo como incidente externo.",
+      "Review the weekly workflow run; if the source was late, record it as an external incident."
+    ]
+  }
 }
