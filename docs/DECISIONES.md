@@ -2477,3 +2477,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Comprobado en los datos:** entre el 05-10 y el 12-10 las 9 regiones publicaron precios; ninguna faltó para todos los productos. El hueco es por producto: cada región tiene entre un 9 % (Coquimbo) y un 25 % (Arica) de series con precio en una sola de las dos semanas. Por eso el aviso va en la fila y no en un cartel general.
 - **Pruebas:** `tests/test_home_mockup.py::test_d327_…` (la fila cuadra, el enlace lista las regiones usadas y las excluidas con su motivo, la nota fija, el orden) y `tests/test_data_audit.py::test_d327_…` (el cálculo de cada fila se recompone desde la base: las regiones usadas son las que tienen precio en ambas semanas, su promedio es el precio mostrado y usadas más excluidas son las regiones publicadas).
 
+## D-328 · Las acciones de Streamlit Cloud no se dibujan sobre la barra de la página
+
+- **Pedido del autor:** en la app pública, «Share», la estrella y el lápiz de Streamlit Cloud se superponían a la fecha de la barra de encabezado, en la esquina superior derecha.
+- **Decisión:** esas acciones (`stToolbarActions`) se ocultan con CSS, como ya se ocultaba el menú de Streamlit (la app es dueña de su interfaz). Solo las ve el dueño de la app con sesión iniciada; el visitante no las tenía. El dueño comparte la dirección de la app y administra desde el panel de Streamlit Cloud.
+- **Cuidado:** no se puede comprobar en local, porque Streamlit Cloud es quien dibuja esas acciones. Se verifica en la app publicada.
+- **Pruebas:** la suite completa.

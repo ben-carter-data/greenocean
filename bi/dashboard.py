@@ -810,6 +810,8 @@ def build_theme_css(palette):
     /* The app owns its four themes; hide Streamlit's duplicate theme/utility menu.
        Keep the header itself so the sidebar toggle and GreenOcean logo still work. */
     [data-testid="stMainMenu"] {{ display:none !important; }}
+    /* D-328: Streamlit Cloud draws its owner actions (Share, star, edit) over the page bar's right end. */
+    [data-testid="stToolbarActions"], [data-testid="stToolbarActionButton"] {{ display:none !important; }}
     [data-testid="stHeader"], [data-testid="stHeader"] * {{pointer-events:none !important;}}
     [data-testid="stHeader"] button, [data-testid="stHeader"] button *,
     [data-testid="stHeader"] a, [data-testid="stHeader"] a * {{pointer-events:auto !important;}}
