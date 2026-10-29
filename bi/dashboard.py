@@ -103,7 +103,7 @@ PAGE_MANUAL = "Manual"
 PAGE_GLOSSARY = "Glosario"
 PAGE_LINKS = "Enlaces"
 PAGE_DOCUMENTATION = "Documentación"
-# The three profile views of Documentación (D-110): one per reader, each its own
+# The three profile views of «Documentación» (D-110): one per reader, each its own
 # sidebar child, folded by default like every other section.
 # The documentation is the project's real documents (D-151): requirements,
 # architecture and decisions, read from docs/ so the panel shows what GitHub holds.
@@ -418,7 +418,7 @@ CHILE_TIME_ZONE = "America/Santiago"
 # GitHub allows 60 questions per hour without a key, shared by every app on the
 # same server: an answer is kept 5 minutes before asking again.
 GITHUB_CACHE_SECONDS = 300
-# Centro de operación (D-165): while a run is in progress the stage asks GitHub again
+# «Centro de operación» (D-165): while a run is in progress the stage asks GitHub again
 # this often; without a token GitHub allows 60 requests an hour, so it waits longer.
 LIVE_SECONDS_WITH_TOKEN = 15
 LIVE_SECONDS_WITHOUT_TOKEN = 60
@@ -3189,7 +3189,7 @@ def show_kpi_page(mode):
     show_kpi_tab(mode)
 
 
-# region Código y resultados (C03)
+# region «Código y resultados» (C03)
 CATALOG_TREND_WEEKS = 26
 CATALOG_BAR_COUNT = 12
 CATALOG_FILES = {project.MATCH_COVERAGE_QUERY_NAME: "etl/etl.py"}
@@ -4376,7 +4376,7 @@ def build_family_panel_titles(summary, ipc_total=None):
 
 
 FAMILY_CARD_COLUMNS = 4
-# What Precios e inflación measures (D-267), in the right corner of its bar, with its definition on hover.
+# What «Precios e inflación» measures (D-267), in the right corner of its bar, with its definition on hover.
 INFLATION_TERMS = [
     (
         "KPI",

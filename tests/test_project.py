@@ -149,3 +149,23 @@ def test_d338_each_readme_links_to_the_other_and_the_english_one_stays_in_englis
         "medicion.json",
     ):
         assert needle in "\n".join(spanish) and needle in body, needle
+
+
+def test_d338_the_comments_of_the_code_stay_in_english():
+    """Code and its comments are in English (CLAUDE.md, D-338). A comment may quote a text of the panel between « » (the
+    panel is bilingual and its Spanish texts are data); anything else with a letter only Spanish uses is a comment in
+    Spanish."""
+    import io
+    import tokenize
+
+    root = Path(__file__).resolve().parent.parent
+    offenders = []
+    for folder in ("bi", "etl", "agent", "scripts", "tests"):
+        for path in sorted((root / folder).glob("*.py")):
+            tokens = tokenize.generate_tokens(io.StringIO(path.read_text(encoding="utf-8")).readline)
+            for token in tokens:
+                if token.type == tokenize.COMMENT:
+                    outside = re.sub(r"«[^»]*»", "", token.string)
+                    if any(letter in outside for letter in "áéíóúñ¿¡"):
+                        offenders.append(f"{path.relative_to(root)}:{token.start[0]}")
+    assert offenders == [], offenders

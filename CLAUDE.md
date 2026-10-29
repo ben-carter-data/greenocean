@@ -45,7 +45,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 
 ## Convenciones
 
-- **Idioma:** todo en español (panel, documentos, decisiones y mensajes de commit). El código y sus comentarios, en inglés. Desde D-283 el panel se lee también en inglés (`?lang=en`): los textos del marco pasan por `tr` de `bi/i18n.py` (diccionario `EN`) y los de las páginas se traducen al dibujarse, con su inglés en `bi/i18n_en.py` (D-284): un texto nuevo en una página necesita su entrada, o `tests/i18n_audit.py` lo lista; y cada documento de `docs/` tiene su versión en `docs/en/` con la misma estructura, los mismos identificadores y las mismas cifras; `tests/test_i18n.py` lo verifica.
+- **Idioma:** todo en español (panel, documentos, decisiones y mensajes de commit). El código y sus comentarios, en inglés. En inglés solo el «About» de GitHub y `README.en.md`; no se mezclan dos idiomas en un archivo (D-338). Desde D-283 el panel se lee también en inglés (`?lang=en`): los textos del marco pasan por `tr` de `bi/i18n.py` (diccionario `EN`) y los de las páginas se traducen al dibujarse, con su inglés en `bi/i18n_en.py` (D-284): un texto nuevo en una página necesita su entrada, o `tests/i18n_audit.py` lo lista; y cada documento de `docs/` tiene su versión en `docs/en/` con la misma estructura, los mismos identificadores y las mismas cifras; `tests/test_i18n.py` lo verifica.
 - **Vocabulario:** pipeline, workflow, ingesta, ETL, staging, data warehouse. Nunca «robot».
 - **Autoría:** «el autor». Ningún nombre personal en el panel ni en los documentos, y nada inventado sobre él.
 - **Datos:** nunca inventar una cifra ni interpolar un precio; nunca borrar histórico. Cada cifra del panel debe poder recalcularse desde la fuente; las pruebas lo verifican.

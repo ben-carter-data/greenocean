@@ -698,7 +698,7 @@ def test_d070_a_profile_starts_its_visit_and_the_sidebar_does_not_show_it():
     app.query_params["perfil"] = "Ingeniería de datos"
     app.run()
     assert not app.exception
-    # The visit starts at the section of the profile: Detalle técnico, its pipeline.
+    # The visit starts at the section of the profile: «Detalle técnico», its pipeline.
     assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
     sidebar = " ".join(block.value for block in app.sidebar.markdown)
     assert "Ingeniería de datos" not in sidebar
@@ -987,7 +987,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # repository is one link away (D-106). GitHub itself shows its own mark, not
     # the word, as a markdown link rather than a page_link (D-117).
     # Every folder starts open (D-139): the whole map of the app at a glance.
-    # Step 4 of the refonte: Ingeniería de datos, four pages; DevOps joined Ejecuciones.
+    # Step 4 of the refonte: «Ingeniería de datos», four pages; DevOps joined «Ejecuciones».
     assert 'DevOps y seguridad' not in labels
     for child in [
         'Panorama de precios',
