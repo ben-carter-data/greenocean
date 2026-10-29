@@ -6291,7 +6291,7 @@ def show_quality_report_dialog(number):
     incidents = quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json").get("registros", [])
     st.iframe(
         quality_viewer.build_viewer_html(reports, number, goals, policy, nonconformities, incidents, i18n.is_english()),
-        height=640,
+        height=700,
     )
 
 

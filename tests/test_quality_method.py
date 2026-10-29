@@ -528,3 +528,32 @@ def test_d346_the_summary_shows_the_three_latest_failures_without_the_diagnosis_
 
 
 # endregion
+
+
+# region The viewer as a presentation (D-347)
+def test_d347_the_viewer_is_a_presentation_with_thumbnails_counter_fullscreen_and_a_fade():
+    from bi import quality_viewer
+
+    reports, goals, policy = quality_method.read_page()
+    for english in (False, True):
+        page = quality_viewer.build_viewer_html(reports, reports[-1]["numero"], goals, policy, [], [], english)
+        assert page.count('<section class="slide') == 8
+        assert (
+            "id='thumbs'" in page and "id='stage'" in page and "id='canvas'" in page
+        )  # thumbnails left, slide centred
+        assert "width:960px;height:540px" in page  # one 16:9 canvas that is scaled to the stage
+        assert "grid-template-columns:168px" in page and "grid-template-rows:minmax(0,1fr) auto" in page  # strip below
+        assert "pos.textContent=(at+1)+' / '+slides.length" in page  # the counter «3 / 8»
+        assert "transition:opacity" in page and "translate" not in page.split("<style>")[1].split("</style>")[
+            0
+        ].replace("translate(-", "")  # a fade, not a slide of the page
+        assert "ArrowRight" in page and "ArrowLeft" in page and "requestFullscreen" in page and "window.print()" in page
+        assert 'id="cmp-a"' in page and 'id="cmp-b"' in page  # «Comparar con…» stays
+        assert ("Download PDF" if english else "Descargar PDF") in page and (
+            "Slides" if english else "Diapositivas"
+        ) in page
+        assert "classList.toggle('current'" in page  # the current thumbnail is highlighted
+        assert "@media print" in page and "page-break-after:always" in page  # the PDF still prints every slide
+
+
+# endregion

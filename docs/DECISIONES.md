@@ -2603,3 +2603,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** un bloque compacto con las tres fallas más recientes y un enlace «Ver registro completo» al registro de incidentes, sin pestañas nuevas.
 - **Decisión:** el Resumen cierra con «Últimas fallas»: fecha, identificador, qué ocurrió y su solución, de la más reciente a la más antigua. El diagnóstico no va aquí (D-345). El enlace es un enlace de la propia app (no recarga la página, así que no vuelve a pedir el perfil) a «Git workflow», que se abre en la pestaña «Registro de incidentes» con `?pestana=registro`. La página sigue con sus dos pestañas.
 - **Pruebas:** `tests/test_quality_method.py::test_d346_…` (tres filas, la más reciente primero, solución y no diagnóstico, dos pestañas, el enlace en ambos idiomas).
+
+## D-347 · El visor de informes es una presentación
+
+- **Pedido del autor:** que el visor de informes se vea como una presentación: diapositiva grande 16:9 al centro, miniaturas a la izquierda con la actual resaltada, flechas del teclado, contador «3 / 8», pantalla completa y fundido; en el teléfono, las miniaturas abajo en una tira; se mantienen «Descargar PDF» y «Comparar con…».
+- **Decisión:** las ocho diapositivas viven en un lienzo fijo de 960 × 540 que se escala para caber en el escenario, centrado; las miniaturas son copias reducidas de cada diapositiva (sin identificadores ni interacción). El cambio de diapositiva es un fundido de opacidad de 0,35 s (sin movimiento si el lector pidió menos movimiento). Hasta 760 px de ancho las miniaturas pasan a una tira bajo la diapositiva. «Descargar PDF» sigue imprimiendo las ocho diapositivas, una por página; la ventana del visor mide 700 px de alto.
+- **Límite:** una diapositiva con más contenido que el lienzo (el anexo) se desplaza dentro de él. No se ha podido abrir en un navegador real desde esta sesión (Playwright no está instalado aquí): la estructura y la sintaxis del script están probadas, y la apariencia queda por revisar en local.
+- **Pruebas:** `tests/test_quality_method.py::test_d347_…`.

@@ -303,8 +303,11 @@ def build_viewer_html(
         f"<header class='bar'><b>{esc(title)}</b><span id='pos'></span><span class='grow'></span>"
         f"<button id='prev' aria-label='{buttons[0]}'>←</button><button id='next' aria-label='{buttons[1]}'>→</button>"
         f"<button id='full'>{buttons[2]}</button><button id='print' class='primary'>{buttons[3]}</button></header>"
+        + "<div class='main'><nav class='thumbs' id='thumbs' aria-label='"
+        + ("Slides" if english else "Diapositivas")
+        + "'></nav><div class='stage' id='stage'><div class='canvas' id='canvas'>"
         + "".join(slides)
-        + "</div><script>const DATA="
+        + "</div></div></div></div><script>const DATA="
         + json.dumps(data_for_script, ensure_ascii=False).replace("</", "<\\/")
         + ";"
         + SCRIPT
@@ -315,13 +318,25 @@ def build_viewer_html(
 CSS = f"""
 *{{box-sizing:border-box}} html,body{{margin:0;background:{DEEP};color:#d7dee9;
 font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-.deck{{min-height:100vh;display:flex;flex-direction:column}}
+.deck{{height:100vh;display:flex;flex-direction:column}}
+.main{{flex:1;min-height:0;display:grid;grid-template-columns:168px minmax(0,1fr)}}
+.thumbs{{overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;border-right:1px solid #141b27;background:#070a10}}
+.thumb{{position:relative;flex:none;width:100%;aspect-ratio:16/9;padding:0;overflow:hidden;border:2px solid #1d2738;border-radius:6px;background:{DEEP}}}
+.thumb.current{{border-color:{SKY};box-shadow:0 0 0 1px {SKY}}}
+.thumb .mini{{position:absolute;left:0;top:0;width:960px;height:540px;transform-origin:0 0;pointer-events:none}}
+.thumb .mini .slide{{opacity:1;visibility:visible;overflow:hidden}}
+.thumb i{{position:absolute;left:4px;bottom:3px;font:600 10px/1 ui-monospace,Menlo,monospace;font-style:normal;color:#f3f7fc;background:rgba(5,7,11,.8);padding:2px 4px;border-radius:3px}}
+.stage{{position:relative;overflow:hidden;background:#04060a}}
+.canvas{{position:absolute;left:50%;top:50%;width:960px;height:540px;margin:-270px 0 0 -480px;transform-origin:center;background:{DEEP};
+box-shadow:0 0 0 1px #1d2738,0 12px 40px rgba(0,0,0,.5)}}
 .bar{{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:10px 56px 10px 18px;background:{DEEP};
 border-bottom:1px solid color-mix(in srgb,{SKY} 35%,#1b2433)}}
 .bar b{{color:#f3f7fc}} #pos{{color:{SKY};font-variant-numeric:tabular-nums}} .grow{{flex:1}}
 button{{font:inherit;color:#e6edf6;background:#0d1320;border:1px solid #243046;border-radius:8px;padding:5px 12px;cursor:pointer}}
 button:hover,button:focus-visible{{border-color:{SKY};outline:none}} button.primary{{background:{SKY};color:#04121c;border-color:{SKY};font-weight:600}}
-.slide{{display:none;padding:22px 28px 30px;flex:1;overflow:auto}} .slide.active{{display:block}}
+.slide{{position:absolute;inset:0;padding:20px 28px 24px;overflow:auto;opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}}
+.slide.active{{opacity:1;visibility:visible}}
+@media (prefers-reduced-motion:reduce){{.slide{{transition:none}}}}
 h1{{font-size:34px;margin:6px 0 18px;color:#f3f7fc}} h2{{font-size:22px;margin:0 0 14px;color:{SKY};letter-spacing:.01em}}
 h3{{font-size:14px;margin:0 0 8px;color:#f3f7fc}} .kicker{{color:{SKY};font-size:12px;letter-spacing:.14em;text-transform:uppercase}}
 .cover{{padding-top:60px}} .cover dl{{display:grid;grid-template-columns:max-content 1fr;gap:6px 22px;margin:0 0 22px}}
@@ -341,16 +356,26 @@ span.bar b{{position:absolute;top:-4px;width:2px;height:14px;background:#f3f7fc}
 .pickers{{display:flex;gap:18px;margin-bottom:14px}} select{{font:inherit;color:#e6edf6;background:#0d1320;border:1px solid #243046;border-radius:8px;padding:4px 8px}}
 .pair{{display:grid;gap:3px}} .pair i{{display:block;height:6px;border-radius:3px}}
 .up{{color:#f87171}} .down{{color:#34d399}}
-@media (max-width:760px){{.two,.three{{grid-template-columns:1fr}}}}
-@media print{{.bar{{display:none}} .slide{{display:block!important;page-break-after:always;min-height:auto}}
+@media (max-width:760px){{.main{{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}}
+.stage{{order:1}} .thumbs{{order:2;flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-top:1px solid #141b27;padding:8px}}
+.thumb{{width:112px}} .bar button#full{{display:none}} .bar{{padding-right:56px;flex-wrap:wrap}}}}
+@media print{{.bar,.thumbs{{display:none}} .deck{{height:auto}} .main{{display:block}} .stage{{overflow:visible;background:none}}
+.canvas{{position:static;width:auto;height:auto;margin:0;transform:none!important;box-shadow:none}}
+.slide{{position:static;opacity:1!important;visibility:visible!important;display:block;page-break-after:always;overflow:visible;transition:none}}
 html,body{{background:{DEEP}!important}} @page{{margin:12mm}}}}
 """
 
 SCRIPT = f"""
 const slides=[...document.querySelectorAll('.slide')];let at=0;
 const pos=document.getElementById('pos');
+const thumbs=document.getElementById('thumbs'),stage=document.getElementById('stage'),canvas=document.getElementById('canvas');
+let tiles=[];
 function show(i){{at=Math.max(0,Math.min(slides.length-1,i));slides.forEach((s,k)=>s.classList.toggle('active',k===at));
+tiles.forEach((t,k)=>t.classList.toggle('current',k===at));
+if(tiles[at])tiles[at].scrollIntoView({{block:'nearest',inline:'nearest'}});
 pos.textContent=(at+1)+' / '+slides.length;}}
+function fit(){{const s=Math.min(stage.clientWidth/960,stage.clientHeight/540);canvas.style.transform='scale('+s+')';
+tiles.forEach(t=>{{t.firstChild.style.transform='scale('+(t.clientWidth/960)+')';}});}}
 document.getElementById('prev').onclick=()=>show(at-1);document.getElementById('next').onclick=()=>show(at+1);
 document.addEventListener('keydown',e=>{{if(e.key==='ArrowRight'||e.key==='PageDown')show(at+1);
 if(e.key==='ArrowLeft'||e.key==='PageUp')show(at-1);if(e.key==='Home')show(0);if(e.key==='End')show(slides.length-1);}});
@@ -378,5 +403,11 @@ const d=document.createElement('td');d.className='num';
 if(before===null||before===undefined||row[1]===null){{d.textContent='—';}}else{{const diff=row[1]-before;
 d.textContent=(diff>0?'+':'')+fmt(diff)+unit(row[2]);d.className='num '+(diff>0?'up':diff<0?'down':'');}}
 [name,ca,cb,d].forEach(c=>tr.appendChild(c));body.appendChild(tr);}});t.appendChild(body);out.replaceChildren(t);}}
-a.onchange=compare;b.onchange=compare;compare();show(0);
+a.onchange=compare;b.onchange=compare;compare();
+slides.forEach((s,k)=>{{const tile=document.createElement('button');tile.className='thumb';tile.setAttribute('aria-label',(k+1)+' / '+slides.length);
+const mini=document.createElement('div');mini.className='mini';const copy=s.cloneNode(true);
+copy.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));copy.setAttribute('aria-hidden','true');copy.classList.add('active');
+mini.appendChild(copy);const number=document.createElement('i');number.textContent=k+1;tile.append(mini,number);
+tile.onclick=()=>show(k);thumbs.appendChild(tile);tiles.push(tile);}});
+new ResizeObserver(fit).observe(stage);new ResizeObserver(fit).observe(thumbs);fit();show(0);
 """
