@@ -131,5 +131,87 @@
     "python scripts/informe_calidad.py",
     "pytest -q --cov",
     "ruff check . · mypy · bandit -r bi etl agent · pip-audit -r requirements.txt · detect-secrets scan"
-  ]
+  ],
+  "diagnostico": {
+    "desde": [
+      "Fuera de lo aceptable desde el informe N° {n} ({fecha}).",
+      "Out of the acceptable since report No. {n} ({fecha})."
+    ],
+    "primera_vez": [
+      "Primera vez fuera de lo aceptable: informe N° {n} ({fecha}).",
+      "First time out of the acceptable: report No. {n} ({fecha})."
+    ],
+    "origen_codigo": [
+      "Causa interna: está en nuestro código.",
+      "Internal cause: it is in our code."
+    ],
+    "origen_datos": [
+      "Causa por determinar: puede ser interna o de la fuente (ODEPA, INE). Si es de la fuente, se registra como incidente externo.",
+      "Cause to be determined: internal or from the source (ODEPA, INE). If it is the source's, it is recorded as an external incident."
+    ],
+    "donde": {
+      "pruebas_fallidas": [
+        "{valor} pruebas fallan de {total}.",
+        "{valor} tests fail out of {total}."
+      ],
+      "ruff_avisos": [
+        "Reglas con avisos: {detalle}.",
+        "Rules with findings: {detalle}."
+      ],
+      "cobertura_por_modulo": [
+        "Módulo menos probado: {detalle}.",
+        "Least tested module: {detalle}."
+      ],
+      "cobertura_total": [
+        "Cobertura total {valor} %; los módulos menos probados: {detalle}.",
+        "Total coverage {valor} %; least tested modules: {detalle}."
+      ],
+      "pruebas_dbt_pct": [
+        "{detalle} pruebas de dbt superadas.",
+        "{detalle} dbt tests passed."
+      ],
+      "comparables_pct": [
+        "{detalle} precios con comparación válida.",
+        "{detalle} prices with a valid comparison."
+      ],
+      "rechazadas_pct": [
+        "{detalle} filas rechazadas de las leídas.",
+        "{detalle} rejected rows out of those read."
+      ],
+      "vigencia_dias": [
+        "Última carga registrada el {detalle}.",
+        "Last load recorded on {detalle}."
+      ],
+      "otro": [
+        "Valor {valor} frente a su aceptable.",
+        "Value {valor} against its acceptable."
+      ]
+    }
+  },
+  "alerta": {
+    "titulo": [
+      "Acción requerida",
+      "Action required"
+    ],
+    "entendido": [
+      "Entendido",
+      "Understood"
+    ],
+    "sin_acciones": [
+      "Todo dentro de lo aceptable.",
+      "Everything within the acceptable."
+    ],
+    "falla_carga": [
+      "La carga del {dia} falló; el panel muestra la última carga válida. Ver la ejecución en «Ejecuciones».",
+      "The load of {dia} failed; the dashboard shows the last valid load. See the run in «Runs»."
+    ],
+    "anotar": [
+      "Anotar la acción tomada y su estado en docs/calidad/no_conformidades.json.",
+      "Record the action taken and its state in docs/calidad/no_conformidades.json."
+    ],
+    "ver_informe": [
+      "Abrir el informe",
+      "Open the report"
+    ]
+  }
 }

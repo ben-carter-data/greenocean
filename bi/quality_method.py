@@ -247,6 +247,67 @@ def build_report_view(report: dict[str, Any], policy: dict[str, Any]) -> str:
     )
 
 
+def build_alert(
+    reports: list[dict[str, Any]],
+    goals: dict[str, Any],
+    policy: dict[str, Any],
+    nonconformities: list[dict[str, Any]],
+    link: Any = None,
+    failed_load: str | None = None,
+) -> str:
+    """«Acción requerida» (D-335), for the author only: every indicator of the latest report out of its acceptable,
+    the critical ones first, each with its level, failure against the acceptable, why it matters, the automatic
+    diagnosis, the suggested action and the report. It reads the report; it computes nothing of its own. Nothing here
+    holds a key or an internal path: only what the public reports already show, plus the cause and the action."""
+    texts = policy.get("alerta", {})
+    if not reports:
+        return ""
+    latest = reports[-1]
+    out = sorted(
+        (row for row in latest["indicadores"] if row["estado"] in ("urgente", "critico")),
+        key=lambda row: row["estado"] != "critico",
+    )
+    day = str(latest["fecha"])[:10]
+    parts = []
+    if failed_load:
+        parts.append(f'<p class="qm-alert-load">{html.escape(t(*texts["falla_carga"]).format(dia=failed_load))}</p>')
+    for row in out:
+        goal = goals.get(row["clave"], {})
+        diagnosis = row.get("diagnostico") or quality_metrics.diagnose(row, latest, reports, policy)
+        diagnosis = diagnosis[1 if i18n.is_english() else 0]
+        record = next(
+            (
+                item
+                for item in nonconformities
+                if item.get("informe") == latest["numero"] and item.get("indicador") == row["clave"]
+            ),
+            {},
+        )
+        cause = record.get("causa")
+        cause_line = t(*cause) if cause else diagnosis["origen"]
+        action = t(*goal["accion"]) if goal.get("accion") else ""
+        parts.append(
+            f'<div class="qm-alert qm-{row["estado"]}"><h4>{html.escape(state_word(row["estado"], policy))} · '
+            f'{html.escape(t(*row["nombre"]))}</h4>'
+            f'<p class="qm-alert-figure">{html.escape(t("Falla", "Failure"))} {html.escape(failure_text(row))} · '
+            f'{html.escape(t("aceptable", "acceptable"))} {html.escape(failure_text(row, "falla_aceptable"))}</p>'
+            f'<p><b>{html.escape(t("Por qué importa", "Why it matters"))}:</b> {html.escape(t(*goal["por_que"]))}</p>'
+            f'<p><b>{html.escape(t("Qué falló", "What failed"))}:</b> {html.escape(diagnosis["donde"])} '
+            f'{html.escape(diagnosis["desde"])}</p>'
+            f'<p><b>{html.escape(t("Causa", "Cause"))}:</b> {html.escape(cause_line)}</p>'
+            f'<p><b>{html.escape(t("Acción sugerida", "Suggested action"))}:</b> {html.escape(action)}</p></div>'
+        )
+    if not parts:
+        return ""
+    href = html.escape(link(latest["numero"])) if link else "#"
+    parts.append(
+        f'<p class="qm-alert-foot">{html.escape(t(*texts["anotar"]))} · {html.escape(t("Última medición", "Last measurement"))}: '
+        f'{html.escape(day)} · <a href="{href}" target="_self">{html.escape(t(*texts["ver_informe"]))} '
+        f'{html.escape(t("N°", "No."))} {latest["numero"]}</a></p>'
+    )
+    return '<div class="qm-alerts">' + "".join(parts) + "</div>"
+
+
 def build_css(palette: dict[str, str]) -> str:
     ink, text, muted, border, card = (
         palette["strong_text"],
@@ -302,5 +363,12 @@ def build_css(palette: dict[str, str]) -> str:
 .qm-reports tbody tr:hover td {{ background:color-mix(in srgb, {SKY} 7%, transparent) !important; }}
 {deep_states}.qm-report h3 {{ margin:0 0 4px !important; font-size:20px !important; }}
 .qm-report p {{ margin:0 0 12px !important; font-size:12.5px; color:{soft}; }}
+.qm-alerts {{ max-height:60vh; overflow:auto; }}
+.qm-alert {{ border:1px solid currentColor; border-radius:12px; padding:10px 14px 4px; margin-bottom:10px;
+  background:color-mix(in srgb, currentColor 6%, transparent); }}
+.qm-alert h4 {{ margin:0 0 4px !important; padding:0 !important; font-size:14px !important; color:inherit; }}
+.qm-alert p {{ margin:0 0 6px !important; font-size:13px; color:{text}; }} .qm-alert p b {{ color:{ink}; }}
+.qm-alert p.qm-alert-figure {{ font-variant-numeric:tabular-nums; color:{ink}; }}
+.qm-alert-load {{ font-size:13px; color:{text}; }} .qm-alert-foot {{ font-size:12px; color:{soft}; }}
 @media (max-width:1100px) {{ .qm-groups {{ grid-template-columns:minmax(0, 1fr); }} }}
 </style>"""

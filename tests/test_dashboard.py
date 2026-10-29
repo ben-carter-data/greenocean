@@ -713,7 +713,10 @@ def test_d069_map_scope_replaces_permanent_selectors_and_context_holds_across_vi
     assert not dashboard_bar.exception
     # Only the two filters of the products table: no permanent selectors (D-092).
     assert {box.key for box in dashboard_bar.main.selectbox} == {'home_products_channel', 'home_products_order'}
-    assert [box.key for box in dashboard_bar.text_input] == ['home_products_search']
+    # The page has one text field; the profile door's key field (D-335) is not a selector of the page.
+    assert [box.key for box in dashboard_bar.text_input if not box.key.startswith('profile_')] == [
+        'home_products_search'
+    ]
     dashboard_bar.session_state['dashboard_group'] = 'Frutas'
     dashboard_bar.run()
     assert dashboard_bar.session_state["dashboard_group"] == "Frutas"

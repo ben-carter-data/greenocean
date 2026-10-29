@@ -374,3 +374,56 @@ def report_counts(report: dict[str, Any]) -> tuple[int, int, int]:
     within = sum(state in ("cumple", "aviso") for state in states)
     nonconforming = sum(state in ("urgente", "critico") for state in states)
     return within, nonconforming, within + nonconforming
+
+
+def where_text(key: str, measurement: dict[str, Any], row: dict[str, Any]) -> dict[str, str]:
+    """The figures of «what failed and where» for one indicator, read from the measurement (D-335)."""
+    tests = measurement.get("pruebas", {}).get("pruebas")
+    coverage = measurement.get("cobertura", {}).get("modulos", {})
+    lowest = sorted(coverage.items(), key=lambda item: item[1])[:3]
+    dbt = measurement.get("dbt", {}).get("ultima_construccion")
+    dbt = dbt if isinstance(dbt, dict) else {}
+    data = measurement.get("datos", {})
+    ruff = measurement.get("ruff", {}).get("por_codigo", {})
+    detail = {
+        "ruff_avisos": ", ".join(f"{code} ({count})" for code, count in sorted(ruff.items()) if code != "E501"),
+        "cobertura_por_modulo": ", ".join(f"{name} ({value} %)" for name, value in lowest[:1]),
+        "cobertura_total": ", ".join(f"{name} ({value} %)" for name, value in lowest),
+        "pruebas_dbt_pct": f"{dbt.get('pruebas_ok')} de {dbt.get('pruebas_total')}",
+        "comparables_pct": f"{data.get('con_comparacion')} de {data.get('precios_semana')}",
+        "rechazadas_pct": f"{data.get('filas_rechazadas')} de {data.get('filas_leidas')}",
+        "vigencia_dias": str(data.get("dias_desde_ultima_carga")),
+    }.get(key, "")
+    return {"valor": str(row.get("valor")), "total": str(tests), "detalle": detail}
+
+
+def diagnose(
+    row: dict[str, Any], report: dict[str, Any], reports: list[dict[str, Any]], policy: dict[str, Any]
+) -> list[dict[str, str]]:
+    """The automatic diagnosis of an indicator out of its acceptable (D-335): what failed and where, since when, and
+    whether the cause is internal or may be the source's. Two languages, from the policy's templates and the
+    measurement; the author writes only the action taken and its state. [{es, en}] lines, no secret, no internal path."""
+    templates = policy.get("diagnostico", {})
+    key = row["clave"]
+    where = templates.get("donde", {}).get(key) or templates.get("donde", {}).get("otro", ["", ""])
+    figures = where_text(key, report.get("medicion", {}), row)
+    streak = report["numero"]
+    by_number = {item["numero"]: item for item in reports}
+    while streak - 1 in by_number:
+        earlier = {r["clave"]: r["estado"] for r in by_number[streak - 1]["indicadores"]}
+        if earlier.get(key) not in ("urgente", "critico"):
+            break
+        streak -= 1
+    first = by_number.get(streak, report)
+    since = templates.get("desde" if streak != report["numero"] else "primera_vez", ["", ""])
+    origin = templates.get("origen_codigo" if row.get("tipo") == "codigo" else "origen_datos", ["", ""])
+    lines = []
+    for language in (0, 1):
+        lines.append(
+            {
+                "donde": where[language].format(**figures),
+                "desde": since[language].format(n=first["numero"], fecha=str(first["fecha"])[:10]),
+                "origen": origin[language],
+            }
+        )
+    return lines

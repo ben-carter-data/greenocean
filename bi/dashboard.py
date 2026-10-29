@@ -620,6 +620,23 @@ def show_profile_dialog():
                     if st.button(tr(label), key=f"profile_role_{role}", type="tertiary"):
                         choose_profile(PROFILE_PROFESSIONAL, role)
                         st.rerun()
+        with st.container(key="profile_side_autor"):
+            # D-335: the author's door, the same key as «Acceso del autor»; nobody else sees the alerts.
+            with st.popover(tr("Autor"), icon=":material/lock:", width="stretch"):
+                typed = st.text_input(
+                    tr("Clave"),
+                    key="profile_author_code",
+                    type="password",
+                    label_visibility="collapsed",
+                    placeholder=tr("Clave"),
+                )
+                if st.button(tr("Entrar"), key="profile_author_enter", type="primary", width="stretch"):
+                    ok, message = control.check_control_code(typed, get_secret(SECRET_CONTROL_CODE))
+                    if ok:
+                        st.session_state[ADMIN_UNLOCKED] = True
+                        choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
+                        st.rerun()
+                    st.error(tr(message))
         with st.container(key="profile_side_consulta"):
             name, icon = PROFILES[PROFILE_PUBLIC]
             if st.button(tr("Usuario"), key=f"profile_choose_{PROFILE_PUBLIC}", icon=icon, width="stretch"):
@@ -628,6 +645,36 @@ def show_profile_dialog():
 
 
 LOAD_ALERT_SEEN = "load_alert_seen"
+QUALITY_ALERT_SEEN = "quality_alert_seen"
+
+
+@st.dialog("Acción requerida", width="large")
+def show_quality_alert_dialog():
+    """D-335, only for the author: what is out of its acceptable in the latest report, the critical first. «Entendido»
+    closes it; it comes back with the next visit while the condition lasts. It reads the report and computes nothing."""
+    reports, goals, policy = quality_method.read_page()
+    nonconformities = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json").get("registros", [])
+    runs, _ = read_pipeline_runs()
+    failed = control.latest_load_failure(runs)
+    day = failed["started_at"].astimezone(ZoneInfo(CHILE_TIME_ZONE)).strftime("%d-%m") if failed else None
+    address = build_page_address(PAGE_METHOD)
+    body = quality_method.build_alert(
+        reports, goals, policy, nonconformities, lambda number: f"{address}&{REPORT_PARAMETER}={number}", day
+    )
+    st.markdown(quality_method.build_css(charts.get_palette(get_mode())) + body, unsafe_allow_html=True)
+    if st.button(tr("Entendido"), key="quality_alert_close", type="primary"):
+        st.rerun()
+
+
+def show_quality_alert():
+    """The author's alert, once per visit and only when something is out of its acceptable (D-335)."""
+    if not st.session_state.get(ADMIN_UNLOCKED) or st.session_state.get(QUALITY_ALERT_SEEN):
+        return
+    reports, goals, policy = quality_method.read_page()
+    if not reports or not any(row["estado"] in ("urgente", "critico") for row in reports[-1]["indicadores"]):
+        return
+    st.session_state[QUALITY_ALERT_SEEN] = True
+    show_quality_alert_dialog()
 
 
 def show_load_alert(windows_by_title):
@@ -7492,6 +7539,8 @@ def main():
     show_sidebar_navigation(windows_by_title, current_window, order)
     if not get_profile():
         show_profile_dialog()
+    else:
+        show_quality_alert()
     current_page.run()
 
 

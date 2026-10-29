@@ -349,3 +349,78 @@ def test_d334_every_nonconformity_of_the_reports_is_registered_and_the_author_wr
 
 
 # endregion
+
+
+# region The author's alert and the automatic diagnosis (D-335)
+def test_d335_the_diagnosis_says_what_failed_where_since_when_and_whose_cause_without_a_secret():
+    reports, goals, policy = quality_method.read_page()
+    latest = reports[-1]
+    failed = next(row for row in latest["indicadores"] if row["clave"] == "pruebas_fallidas")
+    es, en = quality_metrics.diagnose(failed, latest, reports, policy)
+    assert "pruebas fallan" in es["donde"] and "tests fail" in en["donde"]
+    assert "informe N° 1" in es["desde"]  # out of its acceptable in all four reports, without a break
+    cut = quality_metrics.diagnose({"clave": "ruff_avisos", "tipo": "codigo", "valor": 3}, reports[1], reports, policy)
+    assert "informe N° 1" in cut[0]["desde"]  # Ruff: critical in N° 1 and N° 2, then fixed
+    first = quality_metrics.diagnose(
+        {"clave": "mypy_errores", "tipo": "codigo", "valor": 2}, reports[2], reports, policy
+    )
+    assert "Primera vez" in first[0]["desde"]
+    assert es["origen"] == policy["diagnostico"]["origen_codigo"][0]
+    data = quality_metrics.diagnose({"clave": "vigencia_dias", "tipo": "datos", "valor": 9}, latest, reports, policy)
+    assert "puede ser interna o de la fuente" in data[0]["origen"]
+    text = " ".join(" ".join(item.values()) for item in (es, en)).lower()
+    assert not any(word in text for word in ("token", "password", "/users/", "secret"))
+
+
+def test_d335_the_alert_lists_the_critical_first_with_everything_the_author_needs_and_nothing_else(monkeypatch):
+    monkeypatch.setattr(i18n, "is_english", lambda: False)
+    reports, goals, policy = quality_method.read_page()
+    two = next(report for report in reports if report["numero"] == 2)
+    html_text = quality_method.build_alert([two], goals, policy, [], lambda n: f"?informe={n}", "27-10")
+    assert html_text.index("Crítico · Pruebas que fallan") < html_text.index("Crítico · Avisos de Ruff")
+    for needle in (
+        "Por qué importa",
+        "Qué falló",
+        "Causa",
+        "Acción sugerida",
+        "Última medición",
+        "2026-10-26"[:0],
+        "informe=2",
+    ):
+        assert needle in html_text
+    assert "La carga del 27-10 falló" in html_text and "no_conformidades.json" in html_text
+    recorded = [
+        {"informe": 2, "indicador": "pruebas_fallidas", "causa": ["Enlaces sin renombrar.", "Links not renamed."]}
+    ]
+    assert "Enlaces sin renombrar." in quality_method.build_alert([two], goals, policy, recorded)
+    clean = dict(two, indicadores=[dict(row, estado="cumple") for row in two["indicadores"]])
+    assert quality_method.build_alert([clean], goals, policy, []) == ""  # all well: nothing
+    monkeypatch.setattr(i18n, "is_english", lambda: True)
+    assert "Action required" not in html_text and "Why it matters" in quality_method.build_alert(
+        [two], goals, policy, []
+    )
+
+
+def test_d335_the_new_reports_store_their_diagnosis_and_the_old_ones_are_not_touched():
+    informe_calidad = load_reports_module()
+    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
+    policy = quality_metrics.read(quality_metrics.POLICY_FILE)
+    stored = [row for report in informe_calidad.read_reports() for row in report["indicadores"] if "diagnostico" in row]
+    assert stored == []  # N° 1 to 4 were frozen before the diagnosis existed: never rewritten
+    report = informe_calidad.build_report(5, REPORT, goals, policy, None, [])
+    broken = [row for row in report["indicadores"] if row["estado"] in ("urgente", "critico")]
+    assert broken and all(len(row["diagnostico"]) == 2 for row in broken)
+
+
+@pytest.mark.parametrize("unlocked", [False, True])
+def test_d335_only_the_author_session_can_be_alerted_and_the_visit_never_breaks(unlocked):
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.query_params.update({"perfil": "profesional", "lang": "es"})
+    if unlocked:
+        app.session_state["admin_unlocked"] = True
+    app.run()
+    assert not app.exception
+    assert ("quality_alert_seen" in app.session_state and app.session_state["quality_alert_seen"]) == unlocked
+
+
+# endregion

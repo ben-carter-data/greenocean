@@ -28,9 +28,14 @@ def read_reports(folder=FOLDER):
     return q.read_reports(folder)
 
 
-def build_report(number, measurement, goals, policy, previous=None):
+def build_report(number, measurement, goals, policy, previous=None, history=None):
     """The report of one measurement: what was measured, against which acceptables, and how it came out."""
     rows = q.evaluate(measurement, goals, policy, previous["medicion"] if previous else None)
+    draft = {"numero": number, "fecha": measurement.get("generado"), "medicion": measurement}
+    for row in rows:
+        if row["estado"] in ("urgente", "critico"):
+            # D-335: the diagnosis of what is out of its acceptable is stored with the report, once, never rewritten.
+            row["diagnostico"] = q.diagnose(row, {**draft, "indicadores": rows}, history or [], policy)
     return {
         "numero": number,
         "titulo": f"Informe de calidad N° {number}",
@@ -56,7 +61,7 @@ def add_report(measurement, goals, policy, folder=FOLDER):
         if report["codigo_evaluado"] == measurement.get("commit") and report["fecha"] == measurement.get("generado"):
             return report, False
     previous = reports[-1] if reports else None
-    report = build_report((previous["numero"] + 1) if previous else 1, measurement, goals, policy, previous)
+    report = build_report((previous["numero"] + 1) if previous else 1, measurement, goals, policy, previous, reports)
     folder.mkdir(parents=True, exist_ok=True)
     with open(folder / f"informe-{report['numero']:03d}.json", "x", encoding="utf-8") as handle:
         handle.write(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
