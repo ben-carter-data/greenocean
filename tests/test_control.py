@@ -220,3 +220,23 @@ def test_d298_only_a_real_failure_of_the_last_finished_load_raises_the_alert():
         control.latest_load_failure([run(control.RUN_SIMULATED_FAILURE, 2)]) is None
     )  # a requested test worries nobody
     assert control.latest_load_failure([]) is None
+
+
+def test_d335_without_the_secret_no_key_opens_the_author_door():
+    """The «Autor» door (D-335) uses the same CONTROL_CODE as «Acceso del autor». When that secret is not configured, it is
+    None, and nothing opens: not an empty key, not the word None, not any text."""
+    for typed in ("", None, "None", "null", "admin", "clave-de-prueba-local", " "):
+        assert control.check_control_code(typed, None) == (False, "Clave incorrecta.")
+        assert control.check_control_code(typed, "") == (False, "Clave incorrecta.")
+    assert control.check_control_code("la-clave", "la-clave")[0]  # only the configured key opens it
+
+
+def test_d335_a_visit_without_the_secret_never_unlocks_the_author_nor_raises_the_alert():
+    from streamlit.testing.v1 import AppTest
+
+    app = AppTest.from_file(str(Path(__file__).resolve().parent.parent / "bi" / "dashboard.py"), default_timeout=60)
+    app.query_params.update({"perfil": "profesional", "lang": "es"})
+    app.run()
+    assert not app.exception
+    assert not app.session_state["admin_unlocked"] if "admin_unlocked" in app.session_state else True
+    assert not app.session_state["quality_alert_seen"] if "quality_alert_seen" in app.session_state else True
