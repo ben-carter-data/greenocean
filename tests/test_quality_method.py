@@ -416,7 +416,8 @@ def test_d335_the_new_reports_store_their_diagnosis_and_the_old_ones_are_not_tou
 @pytest.mark.parametrize("unlocked", [False, True])
 def test_d335_only_the_author_session_can_be_alerted_and_the_visit_never_breaks(unlocked):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    app.query_params.update({"perfil": "profesional", "lang": "es"})
+    app.query_params.update({"lang": "es"})
+    app.session_state["visitor_profile"] = "profesional"
     if unlocked:
         app.session_state["admin_unlocked"] = True
     app.run()

@@ -95,7 +95,7 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
 def test_alert_button_opens_family_overview_without_leaving_dashboard():
     app = AppTest.from_file(ROOT / 'bi/dashboard.py', default_timeout=60)
-    app.query_params['perfil'] = 'profesional'
+    app.session_state['visitor_profile'] = 'profesional'
     app.run()
     assert not app.exception
     assert not app.dataframe

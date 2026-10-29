@@ -549,13 +549,9 @@ def get_role():
 
 
 def settle_profile():
-    """Once chosen, the profile belongs to the visit: the address cannot change it (the user view unlocks the rest
-    only with the key). A first entry from a shared link takes the profile the link names (?perfil=…&rol=…)."""
-    requested, role = st.query_params.get(PROFILE_PARAMETER), st.query_params.get(ROLE_PARAMETER)
-    if not get_profile() and requested in PROFILES:
-        st.session_state[PROFILE_STATE] = requested
-        if role in ROLES:
-            st.session_state[ROLE_STATE] = role
+    """The profile belongs to the visit and is only ever chosen in the entry window (D-340): the address never picks
+    it, so a new visit or a reload always asks. What the address says (?perfil=…&rol=…) is dropped until a profile
+    is chosen, and written back afterwards only to show it."""
     for name, value in (
         (PROFILE_PARAMETER, get_profile()),
         (ROLE_PARAMETER, get_role() if get_profile() == PROFILE_PROFESSIONAL else None),

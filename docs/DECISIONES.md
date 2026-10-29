@@ -2557,3 +2557,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Caché:** dos minutos, con el token fuera de la clave, para no gastar el límite de consultas.
 - **Límite:** los logs de GitHub se borran a los 90 días; entonces la página lo dice y sigue mostrando el resto.
 - **Pruebas:** `tests/test_github_actions.py` (solo GET, orden de los tokens, redacción, errores 401, 403 y 404) y `tests/test_actions_page.py` (solo el Autor la ve, página cerrada sin consultas, tablas y detalle del fallo, token nunca en pantalla, caché, inglés).
+
+## D-340 · La ventana «Elige tu vista» se abre siempre: la dirección ya no elige el perfil
+
+- **Pedido del autor:** la ventana de entrada es obligatoria en toda situación, también si la visita ya usaba la aplicación o recarga la página; ninguna dirección puede saltársela.
+- **Decisión:** `settle_profile` ya no toma el perfil de `?perfil=…&rol=…` en la primera entrada (D-295). El perfil solo se elige en la ventana, y el estado de autor solo con la clave. Una visita nueva o una recarga empieza sin perfil, muestra la ventana y borra de la dirección lo que traía. Ya elegido, la dirección muestra el perfil pero no lo cambia.
+- **Consecuencia que el autor debe saber:** un enlace compartido con `?perfil=` ya no abre directo en un perfil. Un enlace dentro del contenido que recarga la página (no el menú de la izquierda, que no recarga) vuelve a pedir el perfil.
+- **Pruebas:** `tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_…` (ocho direcciones abren la ventana y no guardan nada del perfil); las pruebas que entraban por la dirección ahora fijan el perfil en la sesión.

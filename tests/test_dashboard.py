@@ -1108,14 +1108,15 @@ def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
 def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
     """The trigger moved into the shared sidebar footer (D-096); its CSS must follow (D-100)."""
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    app.query_params.update({'vista': dashboard.PAGE_ARCHITECTURE, 'perfil': dashboard.PROFILE_PROFESSIONAL})
+    app.query_params['vista'] = dashboard.PAGE_ARCHITECTURE
+    app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PROFESSIONAL
     app.run()
     assert not app.exception
     # D-169: the trigger lives on top of the Resumen only; other pages carry neither it
     # nor the dialog's stylesheet.
     assert not [button for button in app.button if str(button.key) == 'home_alert_trigger']
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    app.query_params['perfil'] = dashboard.PROFILE_PROFESSIONAL
+    app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PROFESSIONAL
     app.run()
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
     assert '.home-alert-gallery-legend' in markup and '[class*="st-key-home_alert_card_"]' in markup
@@ -1442,7 +1443,7 @@ def test_d282_every_preview_shows_the_index_of_its_document():
 def test_d295_the_user_view_sees_the_business_pages_and_unlocks_the_rest_only_with_the_key():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.secrets["CONTROL_CODE"] = "clave-larga"
-    app.query_params["perfil"] = dashboard.PROFILE_PUBLIC
+    app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
     app.run()
     assert not app.exception and not app.get("dialog")
     labels = {link.proto.label for link in app.sidebar.get("page_link")}

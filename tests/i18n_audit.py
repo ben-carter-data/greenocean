@@ -136,7 +136,8 @@ def chart_texts(spec):
 
 def spanish_left(view, data_values, theme=None, state=None):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
-    app.query_params.update({"lang": "en", "vista": view, "perfil": "profesional"} | ({"tema": theme} if theme else {}))
+    app.query_params.update({"lang": "en", "vista": view} | ({"tema": theme} if theme else {}))
+    app.session_state["visitor_profile"] = "profesional"
     for key, value in (state or {}).items():
         app.session_state[key] = value
     app.run()
