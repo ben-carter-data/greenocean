@@ -36,6 +36,7 @@ import bi  # noqa: E402
 from bi import (
     actions_view,
     alerts,
+    git_workflow,
     github_actions,
     app_map,
     overview,
@@ -124,6 +125,7 @@ PAGE_FOLDER = "Documentos"
 PAGE_APP_MAP = "Mapa de la app"
 # D-320: how the project was assessed against software and data quality standards.
 PAGE_METHOD = "Método y calidad"
+PAGE_GIT = "Git workflow"  # D-344: how a change travels from an idea to a live deployment
 PAGE_DECISION_INDEX = "Índice de decisiones"
 # D-290: the test plan and the security plan are one document; the scalability plan and the data dictionary live in the SAD.
 PAGE_TEST_PLAN = "Plan de pruebas y seguridad"
@@ -165,7 +167,7 @@ SECTION_TECHNICAL = "Ingeniería de datos"
 SECTION_LINKS = "Documentación"
 SECTION_SECURITY = "Seguridad"
 WINDOWS = {
-    SECTION_PROJECT: [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD],
+    SECTION_PROJECT: [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD, PAGE_GIT],
     SECTION_KPI: [PAGE_KPI],
     REPORT_WINDOW: [PAGE_HOME, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS, PAGE_ACTIONS],
@@ -259,6 +261,7 @@ PAGE_ICONS = {
     PAGE_DECISION_INDEX: ":material/list_alt:",
     PAGE_APP_MAP: ":material/hub:",
     PAGE_METHOD: ":material/verified:",
+    PAGE_GIT: ":material/alt_route:",
     PAGE_TEST_PLAN: ":material/fact_check:",
 }
 PAGE_PATHS = {
@@ -286,6 +289,7 @@ PAGE_PATHS = {
     PAGE_DECISION_INDEX: "indice-de-decisiones",
     PAGE_TEST_PLAN: "plan-de-pruebas",
     PAGE_METHOD: "metodo-y-calidad",
+    PAGE_GIT: "git-workflow",
 }
 TAB_IDEA = "Idea de negocio"
 TAB_KPI = "Cifras y cálculos"
@@ -2006,6 +2010,7 @@ BAR_VIEWS = {
     PAGE_FOLDER,
     PAGE_APP_MAP,
     PAGE_METHOD,
+    PAGE_GIT,
 }
 
 
@@ -6315,6 +6320,26 @@ def filter_reports(reports, year, month, week, query):
     return kept
 
 
+def show_git_page(mode):
+    """«Git workflow» (D-344): the map of the 15 stations from an idea to a live deployment, and the incident log.
+    The professional and the author read it; the diagnoses of the log are the author's (D-345)."""
+    author = bool(st.session_state.get(ADMIN_UNLOCKED))
+    show_page_bar(
+        PAGE_GIT,
+        PAGE_GIT,
+        "Cómo viaja un cambio desde la idea hasta el despliegue, y las fallas que han ocurrido en el camino.",
+    )
+    flow, log = st.tabs([tr("Mapa"), tr("Registro de incidentes")])
+    with flow:
+        st.iframe(git_workflow.build_map_html(charts.get_palette(mode), i18n.get_language(), author), height=760)
+    with log:
+        st.markdown(
+            git_workflow.build_log_css(charts.get_palette(mode))
+            + git_workflow.build_log_table(i18n.get_language(), author),
+            unsafe_allow_html=True,
+        )
+
+
 def show_method_page(mode):
     """«Método y calidad» (D-320, D-323, D-330, D-332, D-333): how the quality of the published data and of the code is
     managed. Two tabs: «Resumen» (each indicator against its acceptable) and «Informes» (the numbered reports)."""
@@ -6561,6 +6586,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_FOLDER: lambda mode: show_documents_folder(mode),
     PAGE_APP_MAP: lambda mode: show_app_map_page(mode),
     PAGE_METHOD: lambda mode: show_method_page(mode),
+    PAGE_GIT: lambda mode: show_git_page(mode),
     PAGE_LINKS: show_links_page,
 }
 
@@ -6884,6 +6910,7 @@ COMPACT_FOOTER_VIEWS = {
     PAGE_FOLDER,
     PAGE_APP_MAP,
     PAGE_METHOD,
+    PAGE_GIT,
 }
 
 
@@ -7101,7 +7128,11 @@ MENU_BLOCKS = [
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),
-    ("calidad", "Calidad", [PAGE_OPERATIONS, PAGE_METHOD]),  # D-343: quality and audit, and the method behind it
+    (
+        "calidad",
+        "Calidad",
+        [PAGE_OPERATIONS, PAGE_METHOD, PAGE_GIT],
+    ),  # D-343: quality and audit, and the method behind it
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
     ("documentos", "Documentos", [PAGE_FOLDER]),
 ]
@@ -7124,6 +7155,7 @@ SIDEBAR_ICONS = {
     PAGE_STACK: ":material/layers:",
     PAGE_APP_MAP: ":material/hub:",
     PAGE_METHOD: ":material/verified:",
+    PAGE_GIT: ":material/alt_route:",
     PAGE_FOLDER: ":material/folder_open:",
 }
 # (text, heading, icon, hover fill, current fill, accent bar, hairline) for dark and light sidebars.

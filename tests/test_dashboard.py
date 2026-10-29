@@ -604,6 +604,7 @@ def test_dashboard_diagrams_and_queries_have_unique_direct_destinations():
         dashboard.PAGE_RUNS,
         dashboard.PAGE_SQL,
         dashboard.PAGE_METHOD,
+        dashboard.PAGE_GIT,
     }  # D-296: the dashboard's three tabs, one screen each
     for page in dashboard.PAGES:
         app = draw_page(page)
@@ -1280,7 +1281,7 @@ MENU_BLOCKS = {
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],
-    'Calidad': ['Calidad y auditoría', 'Método y calidad'],
+    'Calidad': ['Calidad y auditoría', 'Método y calidad', 'Git workflow'],
 }
 
 
