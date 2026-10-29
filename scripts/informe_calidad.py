@@ -19,13 +19,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import quality_metrics as q  # noqa: E402
 
 REPORT_PATH = q.FOLDER / "INFORME.md"
-FOLDER = q.FOLDER / "informes"
+FOLDER = q.REPORTS_FOLDER
 GOAL_FIELDS = ("max", "min", "meta", "margen_critico", "tipo", "medida")
 
 
 def read_reports(folder=FOLDER):
     """Every report, oldest first."""
-    return [json.loads(path.read_text(encoding="utf-8")) for path in sorted(folder.glob("informe-*.json"))]
+    return q.read_reports(folder)
 
 
 def build_report(number, measurement, goals, policy, previous=None):
@@ -64,11 +64,8 @@ def add_report(measurement, goals, policy, folder=FOLDER):
 
 
 def counts(report):
-    """(within the acceptable, non-conformities, measured): «aviso» is within the acceptable."""
-    states = [row["estado"] for row in report["indicadores"]]
-    within = sum(state in ("cumple", "aviso") for state in states)
-    nonconforming = sum(state in ("urgente", "critico") for state in states)
-    return within, nonconforming, within + nonconforming
+    """(within the acceptable, non-conformities, measured)."""
+    return q.report_counts(report)
 
 
 def failure_text(row, key="falla"):

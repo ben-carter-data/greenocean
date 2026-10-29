@@ -15,6 +15,7 @@ REPORT_FILE = FOLDER / "medicion.json"
 RUBRIC_FILE = FOLDER / "rubrica.json"
 HISTORY_FILE = FOLDER / "historial.json"
 POLICY_FILE = FOLDER / "politica.json"
+REPORTS_FOLDER = FOLDER / "informes"
 
 # (key, Spanish label, English label, unit, ISO/IEC 25010 characteristic, command that reproduces it)
 INDICATORS = [
@@ -360,3 +361,16 @@ def evaluate(
             }
         )
     return rows
+
+
+def read_reports(folder: Path = REPORTS_FOLDER) -> list[dict[str, Any]]:
+    """Every numbered report (D-331), oldest first."""
+    return [json.loads(path.read_text(encoding="utf-8")) for path in sorted(folder.glob("informe-*.json"))]
+
+
+def report_counts(report: dict[str, Any]) -> tuple[int, int, int]:
+    """(within the acceptable, non-conformities, measured) of a report: «aviso» is within the acceptable."""
+    states = [row["estado"] for row in report["indicadores"]]
+    within = sum(state in ("cumple", "aviso") for state in states)
+    nonconforming = sum(state in ("urgente", "critico") for state in states)
+    return within, nonconforming, within + nonconforming

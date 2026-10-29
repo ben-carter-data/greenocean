@@ -81,17 +81,14 @@ def test_d323_the_verifier_fails_naming_the_indicator_below_its_goal(tmp_path):
     )
 
 
-def test_d323_the_rubric_has_the_eight_characteristics_graded_0_to_4_with_a_date_and_a_state():
-    rubric = quality_metrics.read(quality_metrics.RUBRIC_FILE)
-    items = rubric["caracteristicas"]
-    assert len(items) == 8 and all(item["nota"] in range(5) for item in items)
-    assert {item["clave"] for item in items} >= {
-        row[4] for row in quality_metrics.INDICATORS
-    }  # every indicator has a home
-    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", rubric["fecha"]) and rubric["estado"] in ("borrador", "confirmada")
-    header = quality_method.build_header(REPORT, rubric)
-    assert rubric["fecha"] in header and "abc1234" in header
-    assert ("pendiente de su confirmación" in header) == (rubric["estado"] != "confirmada")
+def test_d332_the_header_names_the_latest_report_and_the_logo_line_promises_only_that():
+    reports, _, _ = quality_method.read_page()
+    latest = reports[-1]
+    header = quality_method.build_header(latest)
+    assert f"Informe de calidad N° {latest['numero']}" in header and latest["codigo_evaluado"] in header
+    assert "revisada y aprobada por el autor" in header and "ISO" not in quality_method.sidebar_line(reports)
+    assert quality_method.sidebar_line(reports) == f"Autoevaluación de calidad · Informe N° {latest['numero']}"
+    assert "Todavía no hay informes" in quality_method.build_header(None)
 
 
 def test_d323_ruff_counts_the_same_rules_before_and_after_and_a_zero_count_of_formatting_is_read():
@@ -116,19 +113,17 @@ def test_d323_a_candidate_the_author_marked_as_not_secret_counts_as_reviewed():
     assert medir_calidad.classify_secret_candidates(found) == {"falsos_positivos": 1, "sin_clasificar": 0}
 
 
-def test_d323_the_history_keeps_every_measurement_once_and_the_page_shows_it_newest_first(monkeypatch):
-    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
-    history = quality_metrics.add_to_history({}, {**REPORT, "commit": "old0001", "generado": "2026-10-20 10:00 UTC"})
-    history = quality_metrics.add_to_history(history, REPORT)
-    history = quality_metrics.add_to_history(history, REPORT)  # the same commit again replaces it
-    assert [entry["commit"] for entry in history["mediciones"]] == ["old0001", "abc1234"]
-    assert quality_metrics.met(history["mediciones"][-1]["valores"], goals) == (7, 8)  # 8 of code measured, Ruff fails
+def test_d332_the_reports_tab_lists_every_report_newest_first(monkeypatch):
     monkeypatch.setattr(i18n, "is_english", lambda: False)
-    page = quality_method.build_history(history, goals)
-    assert page.index("abc1234") < page.index("old0001") and "7 / 8" in page
-    assert all(what[0] in page for what, _, _ in quality_metrics.SCHEDULE)
-    saved = quality_metrics.read(quality_metrics.HISTORY_FILE)["mediciones"]
-    assert saved[-1]["commit"] == quality_metrics.read(quality_metrics.REPORT_FILE)["commit"]
+    reports, _, policy = quality_method.read_page()
+    table = quality_method.build_reports_table(reports)
+    numbers = [f"N° {report['numero']}</b>" for report in reports]
+    assert [table.index(item) for item in numbers] == sorted((table.index(item) for item in numbers), reverse=True)
+    for report in reports:
+        within, nonconforming, measured = quality_metrics.report_counts(report)
+        assert f"<td>{within} / {measured}</td><td>{nonconforming}</td>" in table
+    view = quality_method.build_report_view(reports[-1], policy)
+    assert view.count("<tr><td><b>") == 12 and reports[-1]["indicadores"][0]["insight"][0] in view
 
 
 def load_reports_module():
@@ -193,41 +188,45 @@ def test_d331_a_report_is_never_rewritten_and_the_pull_request_compares_with_the
             pass
 
 
-def test_d323_the_page_quotes_the_files_and_never_claims_certification(monkeypatch):
-    baseline, report, goals, rubric, history = quality_method.read_all()
+def test_d332_the_summary_reads_the_latest_report_and_never_claims_an_external_attestation(monkeypatch):
+    reports, goals, policy = quality_method.read_page()
+    latest = reports[-1]
     for english in (False, True):
         monkeypatch.setattr(i18n, "is_english", lambda english=english: english)
-        text = " ".join(
-            [
-                quality_method.build_header(report, rubric),
-                quality_method.build_summary(baseline, report, goals),
-                quality_method.build_iso(report, goals, rubric),
-                quality_method.build_browsers(report, goals),
-                quality_method.build_standards(report),
-                quality_method.build_history(history, goals),
-                quality_method.build_limits(report, goals),
-            ]
-        ).lower()
-        assert not any(word in text for word in FORBIDDEN), english
-        average = quality_method.number(quality_method.rubric_average(rubric), 1)
-        assert average.lower() in text
+        overview = quality_method.build_overview(latest, goals, policy)
+        text = " ".join([quality_method.build_header(latest), overview, quality_method.build_reports_table(reports)])
+        assert not any(word in text.lower() for word in FORBIDDEN), english
+    monkeypatch.setattr(i18n, "is_english", lambda: False)
+    overview = quality_method.build_overview(latest, goals, policy)
+    within, nonconforming, measured = quality_metrics.report_counts(latest)
+    assert f"Hoy: {within} de {measured} medidos dentro de lo aceptable" in overview
+    assert "Medimos 12 indicadores: 4 de los datos que publicamos y 8 del código" in overview
+    # Only the indicators out of their acceptable carry their insight in sight; the rest on hover.
+    attention = [row for row in latest["indicadores"] if row["estado"] in ("urgente", "critico")]
+    assert overview.count("<li class=") == len(attention)
+    # The five counts share one line when all of them meet their acceptable.
+    counts = [row for row in latest["indicadores"] if row["clave"] in quality_method.COUNTS]
+    if all(row["estado"] == "cumple" for row in counts):
+        assert "Ruff · mypy · Bandit · pip-audit · secretos" in overview
 
 
 @pytest.mark.parametrize("language", ["es", "en"])
-def test_d320_the_line_under_the_logo_opens_the_page_in_both_languages(language):
+def test_d332_the_page_has_two_tabs_and_the_logo_line_opens_it_in_both_languages(language):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params.update({"perfil": "profesional", "lang": language})
     app.run()
     assert not app.exception
     markup = " ".join(block.value for block in app.sidebar.markdown)
-    expected = "Assessed against ISO/IEC 25010 · 25012" if language == "en" else "Evaluado según ISO/IEC 25010 · 25012"
+    number = quality_metrics.read_reports()[-1]["numero"]
+    expected = f"Quality self-assessment · Report No. {number}" if language == "en" else f"Informe N° {number}"
     assert expected in markup
     page = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     page.query_params.update({"perfil": "profesional", "lang": language, "vista": "Método y calidad"})
     page.run()
-    assert not page.exception and len(page.tabs) == 7
-    content = " ".join(block.value for block in page.markdown if "qm-pane" in block.value)
-    assert content and not re.search(r"month_start|>None<|\bnan\b", content)
+    assert not page.exception and len(page.tabs) == 2
+    content = " ".join(block.value for block in page.markdown if "qm-" in block.value)
+    assert "qm-overview" in content and "qm-reports" in content
+    assert not re.search(r"month_start|>None<|\bnan\b", content)
 
 
 # region Acceptables, goals and insights (D-330)

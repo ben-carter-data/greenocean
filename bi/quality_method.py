@@ -1,11 +1,10 @@
-"""«Método y calidad» (D-320, D-323): how the project is assessed against software and data quality standards.
+"""«Método y calidad» (D-320, D-323, D-330, D-332): how the quality of the published data and of the code is managed.
 
-A self-assessment, never a certification. Every measured number comes from a file: the last measurement
-(docs/calidad/medicion.json, written by scripts/medir_calidad.py with its date and commit), the baseline before the
-improvements (docs/calidad/linea_base.json) and the goals (docs/calidad/metas.json); the ISO/IEC 25010 grades come from
-the author's manual review (docs/calidad/rubrica.json), dated. Nothing measured is typed here. Pure functions: no
-Streamlit; bi/dashboard.py draws the HTML. Texts come in both languages, so the page never depends on the render-time
-translation.
+Two tabs. «Resumen» says in two sentences what is measured and how it is going, and shows each indicator's failure
+against its acceptable, data and code apart, with the insight of those out of their acceptable. «Informes» lists the
+numbered reports (docs/calidad/informes, D-331), newest first. Every figure comes from a report; every text of an
+indicator from docs/calidad/metas.json and docs/calidad/politica.json. A self-assessment, reviewed by the author.
+Pure functions: no Streamlit; bi/dashboard.py draws the HTML. Texts come in both languages.
 """
 
 from __future__ import annotations
@@ -15,37 +14,17 @@ from typing import Any
 
 from bi import charts, i18n, quality_metrics
 
-SIDEBAR_LINE = "Evaluado según ISO/IEC 25010 · 25012"
-# For a standard the words say how far it was applied (never «cumple la norma»); for a goal, where the measure falls.
-STATES = {
-    "ok": ("Aplicado", "Applied"),
-    "partial": ("Parcial", "Partial"),
-    "fail": ("No aplicado", "Not applied"),
-    "unknown": ("No verificado", "Not verified"),
+# The five counts that are almost always zero share one line when they all meet their acceptable (D-332).
+COUNTS = {
+    "ruff_avisos": ("Ruff", "Ruff"),
+    "mypy_errores": ("mypy", "mypy"),
+    "bandit_altos": ("Bandit", "Bandit"),
+    "pip_audit_vulnerabilidades": ("pip-audit", "pip-audit"),
+    "secretos_sin_clasificar": ("secretos", "secrets"),
 }
-GOAL_STATES = {
-    True: ("Cumple la meta", "Meets the goal"),
-    False: ("Bajo la meta", "Below the goal"),
-    None: ("No medido", "Not measured"),
-}
-GRADE_SCALE = [
-    ("0", "no existe o no funciona", "absent or not working"),
-    ("1", "existe pero es débil o está medido en contra", "exists but weak, or measured against"),
-    ("2", "existe con huecos importantes", "exists with important gaps"),
-    ("3", "sólido, con huecos menores medidos", "solid, with small measured gaps"),
-    ("4", "sólido y verificado de punta a punta", "solid and verified end to end"),
-]
-
-
-def read_all() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """(baseline, measurement, goals, rubric, history) as the files say them."""
-    return (
-        quality_metrics.read(quality_metrics.BASELINE_FILE),
-        quality_metrics.read(quality_metrics.REPORT_FILE),
-        quality_metrics.read(quality_metrics.GOALS_FILE),
-        quality_metrics.read(quality_metrics.RUBRIC_FILE),
-        quality_metrics.read(quality_metrics.HISTORY_FILE),
-    )
+STATE_COLORS = {"cumple": "#199e70", "aviso": "#b8860b", "urgente": "#e07b22", "critico": None, "sin_medicion": None}
+SKY = "#38bdf8"  # the sky-blue accent of the reports, on deep black (D-332)
+DEEP = "#05070b"
 
 
 def t(spanish: str, english: str) -> str:
@@ -57,441 +36,258 @@ def number(value: Any, decimals: int = 0) -> str:
     return quality_metrics.number(value, decimals, i18n.is_english())
 
 
-def show(value: Any, unit: str) -> str:
-    return quality_metrics.show(value, unit, i18n.is_english())
+def read_page() -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
+    """(reports oldest first, goals, policy) as the files say them."""
+    return (
+        quality_metrics.read_reports(),
+        quality_metrics.read(quality_metrics.GOALS_FILE),
+        quality_metrics.read(quality_metrics.POLICY_FILE),
+    )
 
 
-def state_chip(key: str) -> str:
-    spanish, english = STATES[key]
-    return f'<span class="qm-state qm-{key}">{html.escape(t(spanish, english))}</span>'
+def report_title(report: dict[str, Any]) -> str:
+    return t(f"Informe de calidad N° {report['numero']}", f"Quality report No. {report['numero']}")
 
 
-def goal_chip(ok: bool | None) -> str:
-    spanish, english = GOAL_STATES[ok]
-    css = "ok" if ok else "unknown" if ok is None else "fail"
-    return f'<span class="qm-state qm-{css}">{html.escape(t(spanish, english))}</span>'
+def sidebar_line(reports: list[dict[str, Any]]) -> str:
+    """The line under the logo (D-332): it promises only what the page shows, the latest report."""
+    if not reports:
+        return t("Autoevaluación de calidad", "Quality self-assessment")
+    return t(
+        f"Autoevaluación de calidad · Informe N° {reports[-1]['numero']}",
+        f"Quality self-assessment · Report No. {reports[-1]['numero']}",
+    )
 
 
-def grade_chip(grade: int | None) -> str:
-    if grade is None:
-        return '<span class="qm-grade qm-unknown">n/v</span>'
-    return f'<span class="qm-grade qm-g{grade}">{grade} / 4</span>'
+def failure_text(row: dict[str, Any], key: str = "falla") -> str:
+    value = row[key]
+    if value is None:
+        return "—"
+    decimals = 1 if isinstance(value, float) and value % 1 else 0
+    unit = quality_metrics.unit_text(row["unidad_falla"], i18n.is_english())
+    return number(value, decimals) + (f" {unit}" if unit else "")
 
 
-def build_table(head: list[str], rows: list[tuple[str, ...]]) -> str:
-    """A table whose cells are already HTML; keyboard users can scroll it (tabindex)."""
+def state_word(state: str, policy: dict[str, Any]) -> str:
+    return t(*policy.get("estados", {}).get(state, [state, state]))
+
+
+def build_header(report: dict[str, Any] | None) -> str:
+    """Where the figures come from: the latest report, its date and the code it evaluated."""
+    if not report:
+        return f'<div class="qm-head">{html.escape(t("Todavía no hay informes.", "There are no reports yet."))}</div>'
+    line = t(
+        f"Autoevaluación automática, revisada y aprobada por el autor · {report_title(report)} · {report['fecha']} · "
+        f"código {report['codigo_evaluado']}",
+        f"Automatic self-assessment, reviewed and approved by the author · {report_title(report)} · {report['fecha']} · "
+        f"code {report['codigo_evaluado']}",
+    )
+    return f'<div class="qm-head">{html.escape(line)}</div>'
+
+
+def indicator_row(row: dict[str, Any], goals: dict[str, Any], policy: dict[str, Any]) -> str:
+    """One indicator: its failure as a bar, the mark of its acceptable, the figure and the state; the rest on hover."""
+    goal = goals.get(row["clave"], {})
+    hint = " ".join(t(*goal[field]) for field in ("que_mide", "por_que") if field in goal) + " " + t(*row["insight"])
+    failure, acceptable = row["falla"], row["falla_aceptable"]
+    if failure is None:
+        bar = f'<span class="qm-bar qm-empty">{html.escape(t("sin medición", "not measured"))}</span>'
+    else:
+        span = max(failure, acceptable or 0) * 1.3 or 1
+        bar = (
+            f'<span class="qm-bar"><i style="width:{min(100, failure / span * 100):.1f}%"></i>'
+            f'<b style="left:{min(100, (acceptable or 0) / span * 100):.1f}%"></b></span>'
+        )
+    acceptable_text = t("aceptable", "acceptable") + " " + failure_text(row, "falla_aceptable")
+    return (
+        f'<div class="qm-row" title="{html.escape(hint.strip())}">'
+        f'<span class="qm-name">{html.escape(t(*row["nombre"]))}</span>'
+        f'{bar}<span class="qm-value">{html.escape(failure_text(row))}</span>'
+        f'<span class="qm-limit">{html.escape(acceptable_text)}</span>'
+        f'<span class="qm-state qm-{row["estado"]}">{html.escape(state_word(row["estado"], policy))}</span></div>'
+    )
+
+
+def counts_row(rows: list[dict[str, Any]], policy: dict[str, Any]) -> str:
+    """The five counts in one line, when all of them meet their acceptable."""
+    names = " · ".join(t(*COUNTS[row["clave"]]) for row in rows)
+    figures = " · ".join(failure_text(row) for row in rows)
+    hint = t(
+        "Hallazgos de Ruff, errores de mypy, hallazgos altos de Bandit, vulnerabilidades y posibles secretos: "
+        "todos en su aceptable.",
+        "Ruff findings, mypy errors, high Bandit findings, vulnerabilities and possible secrets: "
+        "all within their acceptable.",
+    )
+    return (
+        f'<div class="qm-row" title="{html.escape(hint)}"><span class="qm-name">{html.escape(names)}</span>'
+        f'<span class="qm-bar"><b style="left:0%"></b></span><span class="qm-value">{html.escape(figures)}</span>'
+        f'<span class="qm-limit">{html.escape(t("aceptable 0", "acceptable 0"))}</span>'
+        f'<span class="qm-state qm-cumple">{html.escape(state_word("cumple", policy))}</span></div>'
+    )
+
+
+def build_overview(report: dict[str, Any] | None, goals: dict[str, Any], policy: dict[str, Any]) -> str:
+    """«Resumen»: two sentences, the data and the code side by side, and the insights that need attention."""
+    if not report:
+        return ""
+    rows = report["indicadores"]
+    data = [row for row in rows if row["tipo"] == "datos"]
+    code = [row for row in rows if row["tipo"] == "codigo"]
+    within, nonconforming, measured = quality_metrics.report_counts(report)
+    plural = ("no conformidad", "non-conformity") if nonconforming == 1 else ("no conformidades", "non-conformities")
+    lead = [
+        t(
+            f"Medimos {len(rows)} indicadores: {len(data)} de los datos que publicamos y {len(code)} del código que "
+            "los trata, cada uno contra un aceptable fijado por el autor.",
+            f"We measure {len(rows)} indicators: {len(data)} of the data we publish and {len(code)} of the code that "
+            "treats it, each against an acceptable set by the author.",
+        ),
+        t(
+            f"Hoy: {within} de {measured} medidos dentro de lo aceptable · {nonconforming} {plural[0]}.",
+            f"Today: {within} of {measured} measured within the acceptable · {nonconforming} {plural[1]}.",
+        ),
+    ]
+    counted = [row for row in code if row["clave"] in COUNTS]
+    grouped = len(counted) == len(COUNTS) and all(row["estado"] == "cumple" for row in counted)
+    code_rows = "".join(
+        indicator_row(row, goals, policy) for row in code if not (grouped and row["clave"] in COUNTS)
+    ) + (counts_row(counted, policy) if grouped else "")
+    attention = sorted(
+        (row for row in rows if row["estado"] in ("urgente", "critico")), key=lambda row: row["estado"] != "critico"
+    )
+    insights = "".join(
+        f'<li class="qm-{row["estado"]}"><b>{html.escape(t(*row["nombre"]))} · '
+        f'{html.escape(state_word(row["estado"], policy))}</b><span>{html.escape(t(*row["insight"]))}</span></li>'
+        for row in attention
+    )
+    return (
+        '<div class="qm-overview"><p class="qm-lead">'
+        + " ".join(f"<span>{html.escape(text)}</span>" for text in lead)
+        + '</p><div class="qm-groups">'
+        + f'<section class="qm-group"><h4>{html.escape(t("Datos que publicamos", "Data we publish"))}</h4>'
+        + "".join(indicator_row(row, goals, policy) for row in data)
+        + f'</section><section class="qm-group"><h4>{html.escape(t("Código que los trata", "Code that treats them"))}</h4>'
+        + code_rows
+        + "</section></div>"
+        + (f'<ul class="qm-insights">{insights}</ul>' if insights else "")
+        + "</div>"
+    )
+
+
+def build_reports_table(reports: list[dict[str, Any]]) -> str:
+    """«Informes»: one row per report, newest first, with what it found and the change against the one before."""
+    if not reports:
+        return f'<p class="qm-note">{html.escape(t("Todavía no hay informes.", "There are no reports yet."))}</p>'
+    within_of = {report["numero"]: quality_metrics.report_counts(report)[0] for report in reports}
+    body = []
+    for report in reversed(reports):
+        within, nonconforming, measured = quality_metrics.report_counts(report)
+        before = within_of.get(report["anterior"]) if report["anterior"] else None
+        change = "—" if before is None else (f"+{within - before}" if within > before else str(within - before))
+        body.append(
+            f'<tr><td><b>{html.escape(t("N°", "No."))} {report["numero"]}</b></td>'
+            f'<td>{html.escape(str(report["fecha"]))}</td><td>{html.escape(str(report["semana"] or "—"))}</td>'
+            f'<td><code>{html.escape(str(report["codigo_evaluado"]))}</code></td>'
+            f"<td>{within} / {measured}</td><td>{nonconforming}</td><td>{html.escape(change)}</td></tr>"
+        )
+    head = [
+        t("Informe", "Report"),
+        t("Fecha", "Date"),
+        t("Semana de datos", "Data week"),
+        t("Código evaluado", "Evaluated code"),
+        t("Dentro de lo aceptable", "Within the acceptable"),
+        t("No conformidades", "Non-conformities"),
+        t("Variación", "Change"),
+    ]
     columns = "".join(f"<th>{html.escape(cell)}</th>" for cell in head)
-    body = "".join("<tr>" + "".join(f"<td>{cell}</td>" for cell in row) + "</tr>" for row in rows)
-    return f'<div class="qm-table" tabindex="0"><table><thead><tr>{columns}</tr></thead><tbody>{body}</tbody></table></div>'
-
-
-def code_cell(command: str) -> str:
-    return f'<code class="qm-code">{html.escape(command)}</code>'
-
-
-def rubric_average(rubric: dict[str, Any]) -> float | None:
-    grades = [item["nota"] for item in rubric.get("caracteristicas", []) if item.get("nota") is not None]
-    return sum(grades) / len(grades) if grades else None
-
-
-def build_header(report: dict[str, Any], rubric: dict[str, Any]) -> str:
-    """Where the numbers come from: the automatic measurement with its date and commit, and the manual ISO review."""
-    date, commit = report.get("generado", "—"), report.get("commit", "—")
-    measured = t(
-        f"Autoevaluación automática, revisada y aprobada por el autor · última medición: {date} · {commit}",
-        f"Automatic self-assessment, reviewed and approved by the author · last measurement: {date} · {commit}",
-    )
-    day = rubric.get("fecha", "—")
-    review = t(
-        f"Rúbrica ISO/IEC 25010: revisión manual del autor del {day}",
-        f"ISO/IEC 25010 rubric: the author's manual review of {day}",
-    )
-    if rubric.get("estado") != "confirmada":
-        review += t(" · borrador, pendiente de su confirmación", " · draft, awaiting confirmation")
-    note = t(
-        "Autoevaluación, no una certificación: las normas se usan como método y cada número sale de una herramienta.",
-        "A self-assessment, not a certification: the standards are used as a method and every number comes from a tool.",
-    )
     return (
-        f'<div class="qm-head"><span>{html.escape(measured)}</span><span>{html.escape(review)}</span>'
-        f"<em>{html.escape(note)}</em></div>"
+        f'<div class="qm-reports" tabindex="0"><table><thead><tr>{columns}</tr></thead>'
+        f'<tbody>{"".join(body)}</tbody></table></div>'
     )
 
 
-def build_summary(baseline: dict[str, Any], report: dict[str, Any], goals: dict[str, Any]) -> str:
-    """Before → now → goal for each indicator, with the command that reproduces it."""
+def build_report_view(report: dict[str, Any], policy: dict[str, Any]) -> str:
+    """One report, as the dialog shows it: its identity and every indicator with its reading."""
+    within, nonconforming, measured = quality_metrics.report_counts(report)
+    week = report["semana"] or "—"
+    identity = t(
+        f"{report['fecha']} · semana de datos {week} · código {report['codigo_evaluado']} · "
+        f"{within} de {measured} dentro de lo aceptable · {nonconforming} no conformidades",
+        f"{report['fecha']} · data week {week} · code {report['codigo_evaluado']} · "
+        f"{within} of {measured} within the acceptable · {nonconforming} non-conformities",
+    )
+    rows = "".join(
+        f'<tr><td><b>{html.escape(t(*row["nombre"]))}</b></td>'
+        f"<td>{html.escape(t('Datos', 'Data') if row['tipo'] == 'datos' else t('Código', 'Code'))}</td>"
+        f"<td>{html.escape(failure_text(row))}</td><td>{html.escape(failure_text(row, 'falla_aceptable'))}</td>"
+        f'<td><span class="qm-state qm-{row["estado"]}">{html.escape(state_word(row["estado"], policy))}</span></td>'
+        f"<td>{html.escape(t(*row['insight']))}</td></tr>"
+        for row in report["indicadores"]
+    )
     head = [
         t("Indicador", "Indicator"),
-        t("Antes", "Before"),
-        t("Ahora", "Now"),
-        t("Meta", "Goal"),
+        t("Tipo", "Type"),
+        t("Falla", "Failure"),
+        t("Aceptable", "Acceptable"),
         t("Estado", "State"),
-        t("Cómo reproducirlo", "How to reproduce it"),
+        t("Lectura", "Reading"),
     ]
-    table_rows = quality_metrics.rows(baseline, report, goals)
-    rows = [
-        (
-            f"<b>{html.escape(t(*row['label']))}</b>",
-            show(row["before"], row["unit"]),
-            f"<b>{show(row['now'], row['unit'])}</b>",
-            html.escape(
-                quality_metrics.goal_text(row["goal"], i18n.is_english())
-                + (f" {quality_metrics.unit_text(row['unit'], i18n.is_english())}" if row["unit"] else "")
-            ),
-            goal_chip(row["ok"]),
-            code_cell(row["command"]),
-        )
-        for row in table_rows
-    ]
-    met, total = sum(1 for row in table_rows if row["ok"]), len(table_rows)
-    lead = t(
-        f"{met} de {total} indicadores cumplen su meta. «Antes» es la medición previa a las mejoras de D-323.",
-        f"{met} of {total} indicators meet their goal. «Before» is the measurement before the improvements of D-323.",
-    )
-    return f'<p class="qm-note">{html.escape(lead)}</p>' + build_table(head, rows)
-
-
-def build_iso(report: dict[str, Any], goals: dict[str, Any], rubric: dict[str, Any]) -> str:
-    """The eight characteristics with the author's grade and evidence; the measurable gaps come from the indicators."""
-    measurable = quality_metrics.gaps(report, goals)
-    rows = []
-    for item in rubric.get("caracteristicas", []):
-        missing = [t(*gap) for gap in measurable.get(item["clave"], [])] + [t(*item["falta"])]
-        rows.append(
-            (
-                f"<b>{html.escape(t(*item['nombre']))}</b>",
-                grade_chip(item.get("nota_antes")),
-                grade_chip(item.get("nota")),
-                html.escape(t(*item["evidencia"])),
-                "<br>".join(html.escape(text) for text in missing),
-            )
-        )
-    average = number(rubric_average(rubric), 1)
-    previous = [item["nota_antes"] for item in rubric.get("caracteristicas", []) if item.get("nota_antes") is not None]
-    before = number(sum(previous) / len(previous), 1) if previous else "—"
-    scale = " · ".join(f"{grade}: {t(es, en)}" for grade, es, en in GRADE_SCALE)
-    lead = t(
-        f"Promedio de las {len(rows)} características: {average} de 4 (antes, {before} de 4 en las {len(previous)} "
-        f"verificadas en D-320). Escala: {scale}.",
-        f"Average of the {len(rows)} characteristics: {average} out of 4 (before, {before} out of 4 on the "
-        f"{len(previous)} verified in D-320). Scale: {scale}.",
-    )
-    head = [
-        t("Característica", "Characteristic"),
-        t("Antes", "Before"),
-        t("Nota", "Grade"),
-        t("Evidencia", "Evidence"),
-        t("Qué falta", "What is missing"),
-    ]
-    return f'<p class="qm-note">{html.escape(lead)}</p>' + build_table(head, rows)
-
-
-def measured_data_rows(data: dict[str, Any]) -> list[tuple[str, str, str]]:
-    of = t("de", "of")
-    return [
-        (
-            t("Precios de la última semana con comparación válida", "Prices of the last week with a valid comparison"),
-            show(data.get("pct_comparacion"), "%"),
-            f"{number(data.get('con_comparacion'))} {of} {number(data.get('precios_semana'))}",
-        ),
-        (
-            t(
-                "Series de las últimas 12 semanas con dato esta semana",
-                "Series of the last 12 weeks with data this week",
-            ),
-            show(data.get("pct_series_con_dato"), "%"),
-            f"{number(data.get('series_con_dato'))} {of} {number(data.get('series_activas'))}",
-        ),
-        (
-            t("Días desde el fin de la última semana con datos", "Days since the end of the last week with data"),
-            number(data.get("dias_desde_ultima_semana")),
-            t(f"semana del {data.get('semana', '—')}", f"week of {data.get('semana', '—')}"),
-        ),
-        (
-            t("Días desde la última carga", "Days since the last load"),
-            number(data.get("dias_desde_ultima_carga")),
-            t(f"medido el {data.get('medido', '—')}", f"measured on {data.get('medido', '—')}"),
-        ),
-    ]
-
-
-def build_data_quality(report: dict[str, Any], indicators: list[tuple[Any, ...]], counts: Any) -> str:
-    """ISO/IEC 25012: the measured data indicators, the live indicators of the loaded database and the declared limits."""
-    measured = [
-        (f"<b>{html.escape(a)}</b>", html.escape(b), html.escape(c))
-        for a, b, c in measured_data_rows(report.get("datos", {}))
-    ]
-    status_key = {"ok": True, "warn": False, "fail": False}
-    tr = i18n.tr
-    live = [
-        (
-            f"<b>{html.escape(tr(dimension.capitalize()))}</b>",
-            html.escape(tr(name)),
-            html.escape(tr(value)),
-            html.escape(tr(reference)),
-            goal_chip(status_key.get(status)),
-        )
-        for dimension, name, value, reference, status, _ in indicators
-    ]
-    prices, weeks, regions, channels = (int(counts[key]) for key in ("prices", "weeks", "regions", "channels"))
-    limits = [
-        t(
-            f"Cobertura: {number(prices)} precios semanales, {weeks} semanas, {regions} regiones y {channels} canales; ODEPA publica 9 de las 16 regiones.",
-            f"Coverage: {number(prices)} weekly prices, {weeks} weeks, {regions} regions and {channels} channels; ODEPA publishes 9 of the 16 regions.",
-        ),
-        t(
-            "Los precios son nominales; el precio real descuenta la inflación general de alimentos del INE.",
-            "Prices are nominal; the real price discounts the INE's general food inflation.",
-        ),
-        t(
-            "El margen entre mayorista y consumidor existe solo para frutas y verduras.",
-            "The wholesale-to-consumer margin exists only for fruit and vegetables.",
-        ),
-    ]
-    live_head = [
-        t("Dimensión", "Dimension"),
-        t("Indicador", "Indicator"),
-        t("Valor", "Value"),
-        t("Referencia", "Reference"),
-        t("Estado", "State"),
-    ]
+    columns = "".join(f"<th>{html.escape(cell)}</th>" for cell in head)
     return (
-        f'<h4>{html.escape(t("Medidos con el código del proyecto", "Measured with the project code"))}</h4>'
-        + build_table([t("Indicador", "Indicator"), t("Valor", "Value"), t("Detalle", "Detail")], measured)
-        + f'<h4>{html.escape(t("Indicadores en vivo de la carga actual", "Live indicators of the current load"))}</h4>'
-        + build_table(live_head, live)
-        + f'<h4>{html.escape(t("Límites declarados", "Declared limits"))}</h4><ul class="qm-list">'
-        + "".join(f"<li>{html.escape(item)}</li>" for item in limits)
-        + "</ul>"
+        f'<div class="qm-report"><h3>{html.escape(report_title(report))}</h3><p>{html.escape(identity)}</p>'
+        f'<div class="qm-reports"><table><thead><tr>{columns}</tr></thead><tbody>{rows}</tbody></table></div></div>'
     )
-
-
-def build_browsers(report: dict[str, Any], goals: dict[str, Any]) -> str:
-    """Load time and WCAG violations of every page, and the layout checks per browser."""
-    browsers = report.get("navegadores", {})
-    pages = browsers.get("paginas", {})
-    if not pages:
-        return f'<p class="qm-note">{html.escape(t("Sin medición en navegadores.", "No browser measurement."))}</p>'
-    budget = goals.get("segundos_por_pagina", {}).get("max")
-    page_rows = [
-        (
-            f"<b>{html.escape(i18n.tr(name))}</b>",
-            show(page["seconds"], "s"),
-            number(page["violations"]),
-            goal_chip(page["seconds"] <= budget and page["violations"] == 0 if budget else None),
-        )
-        for name, page in pages.items()
-    ]
-    matrix = [
-        (
-            f"<b>{html.escape(name.capitalize())}</b>",
-            f"{number(item['passed'])} / {number(item['checks'])}",
-            html.escape(", ".join(f"{i18n.tr(fail['page'])} {fail['size']}" for fail in item["failed"]) or "—"),
-        )
-        for name, item in browsers.get("navegadores", {}).items()
-    ]
-    sizes = t(
-        "Navegadores (1440 × 790, 1920 × 1000 y teléfono en horizontal)",
-        "Browsers (1440 × 790, 1920 × 1000 and phone in landscape)",
-    )
-    return (
-        build_table(
-            [t("Página", "Page"), t("Carga", "Load"), t("Violaciones WCAG", "WCAG violations"), t("Estado", "State")],
-            page_rows,
-        )
-        + f"<h4>{html.escape(sizes)}</h4>"
-        + build_table(
-            [t("Navegador", "Browser"), t("Comprobaciones superadas", "Checks passed"), t("Fallos", "Failures")], matrix
-        )
-    )
-
-
-def build_standards(report: dict[str, Any]) -> str:
-    """How each standard is used, with the measured indicator that backs it where there is one."""
-    now = quality_metrics.values(report)
-    coverage = show(now["cobertura_total"], "%")
-    findings = number(now["ruff_avisos"])
-    rows = [
-        (
-            "ISO/IEC 25010",
-            t("Calidad del producto", "Product quality"),
-            t("Rúbrica de ocho características, revisada a mano", "Eight-characteristic rubric, reviewed by hand"),
-            "ok",
-        ),
-        (
-            "ISO/IEC 25012 · ISO 8000",
-            t("Calidad de los datos", "Data quality"),
-            t(
-                "Indicadores medidos desde la base y pruebas que recalculan las cifras",
-                "Indicators measured from the database and tests that recompute figures",
-            ),
-            "ok",
-        ),
-        (
-            "ISO/IEC 5055",
-            t("Calidad del código", "Code quality"),
-            t(f"Ruff ({findings} avisos), mypy, radon y Bandit", f"Ruff ({findings} findings), mypy, radon and Bandit"),
-            "ok",
-        ),
-        (
-            "ISO/IEC 29119",
-            t("Pruebas", "Testing"),
-            t(
-                f"pytest con cobertura ({coverage}) y plan en docs/PLAN_PRUEBAS.md",
-                f"pytest with coverage ({coverage}) and plan in docs/PLAN_PRUEBAS.md",
-            ),
-            "ok",
-        ),
-        (
-            "WCAG 2.1 AA",
-            t("Accesibilidad", "Accessibility"),
-            t(
-                "axe-core con Playwright en cada página y tema; sin revisión manual",
-                "axe-core with Playwright on every page and theme; no manual review",
-            ),
-            "partial",
-        ),
-        (
-            "ISO/IEC/IEEE 42010 · C4",
-            t("Arquitectura", "Architecture"),
-            t("docs/SAD.md por vistas", "docs/SAD.md by views"),
-            "ok",
-        ),
-        (
-            "ADR",
-            t("Decisiones", "Decisions"),
-            t("docs/ADR.md y docs/DECISIONES.md", "docs/ADR.md and docs/DECISIONES.md"),
-            "ok",
-        ),
-        (
-            "OWASP Top 10",
-            t("Seguridad de aplicaciones", "Application security"),
-            t("Revisión por categoría; sin prueba de penetración", "Review by category; no penetration test"),
-            "partial",
-        ),
-        (
-            "Twelve-Factor App",
-            t("Aplicación desplegable", "Deployable application"),
-            t("Revisión de los 12 factores en el informe", "Review of the 12 factors in the report"),
-            "partial",
-        ),
-        (
-            "CI/CD",
-            t("Integración continua", "Continuous integration"),
-            t(
-                "Lint, mypy, pruebas con cobertura mínima y medición de calidad en cada push",
-                "Lint, mypy, tests with minimum coverage and quality measurement on every push",
-            ),
-            "ok",
-        ),
-    ]
-    head = [
-        t("Estándar", "Standard"),
-        t("Qué cubre", "What it covers"),
-        t("Cómo se aplica", "How it is applied"),
-        t("Resultado", "Result"),
-    ]
-    return build_table(
-        head, [(f"<b>{html.escape(a)}</b>", html.escape(b), html.escape(c), state_chip(d)) for a, b, c, d in rows]
-    )
-
-
-def build_history(history: dict[str, Any], goals: dict[str, Any]) -> str:
-    """Every measurement the author merged, newest first, and what is measured by itself and what by hand, how often."""
-    entries = list(reversed(history.get("mediciones", [])))
-    rows = []
-    for entry in entries:
-        now = entry["valores"]
-        passed, measured = quality_metrics.met(now, goals)
-        rows.append(
-            (
-                f"<b>{html.escape(entry['generado'] or '—')}</b>",
-                code_cell(entry["commit"] or "—"),
-                f"{passed} / {measured}",
-                show(now.get("cobertura_total"), "%"),
-                number(now.get("ruff_avisos")),
-                number(now.get("mypy_errores")),
-                number(now.get("violaciones_wcag")),
-                show(now.get("segundos_por_pagina"), "s"),
-            )
-        )
-    head = [
-        t("Medición", "Measurement"),
-        "Commit",
-        t("Cumplen la meta", "Meet the goal"),
-        t("Cobertura", "Coverage"),
-        "Ruff",
-        "mypy",
-        "WCAG",
-        t("Página más lenta", "Slowest page"),
-    ]
-    schedule = [
-        (f"<b>{html.escape(t(*what))}</b>", html.escape(t(*how)), html.escape(t(*when)))
-        for what, how, when in quality_metrics.SCHEDULE
-    ]
-    return (
-        f'<h4>{html.escape(t("Historial de mediciones", "Measurement history"))}</h4>'
-        + build_table(head, rows)
-        + f'<h4>{html.escape(t("Qué se mide solo y qué se revisa a mano", "What is measured by itself and what by hand"))}</h4>'
-        + build_table([t("Qué", "What"), t("Cómo", "How"), t("Frecuencia", "Frequency")], schedule)
-    )
-
-
-def build_limits(report: dict[str, Any], goals: dict[str, Any]) -> str:
-    measurable = [t(*gap) for items in quality_metrics.gaps(report, goals).values() for gap in items]
-    judged = [
-        t(
-            "Es una autoevaluación del autor, no una auditoría externa: las notas ISO son un juicio apoyado en evidencia.",
-            "It is a self-assessment by the author, not an external audit: the ISO grades are a judgement backed by evidence.",
-        ),
-        t(
-            "La auditoría automática de accesibilidad no reemplaza recorrer cada página con teclado y lector de pantalla.",
-            "The automatic accessibility audit does not replace walking each page with the keyboard and a screen reader.",
-        ),
-        t(
-            "Los tiempos son de un equipo local, sin varias personas a la vez.",
-            "The times are from a local machine, without several people at once.",
-        ),
-        t(
-            "Seis funciones de páginas siguen sobre la complejidad 10: dividirlas exige más pruebas de la interfaz.",
-            "Six page functions remain over complexity 10: splitting them needs more interface tests.",
-        ),
-    ]
-    return '<ul class="qm-list">' + "".join(f"<li>{html.escape(text)}</li>" for text in measurable + judged) + "</ul>"
 
 
 def build_css(palette: dict[str, str]) -> str:
-    ink, text, muted, border, accent = (
+    ink, text, muted, border, card = (
         palette["strong_text"],
         palette["text"],
         palette["reference"],
         palette["card_border"],
-        palette["accent"],
+        palette["card"],
     )
     soft = charts.legible(muted, palette["background"])
+    colors = {state: charts.legible(color or palette["rise"], card) for state, color in STATE_COLORS.items()}
+    colors["sin_medicion"] = charts.legible(muted, card)
+    on_deep = {state: charts.legible(color or "#ef4444", DEEP) for state, color in STATE_COLORS.items()}
+    on_deep["sin_medicion"] = charts.legible("#9aa4b2", DEEP)
+    states = "".join(f".qm-{state} {{ color:{color}; }}\n" for state, color in colors.items())
+    deep_states = "".join(f".qm-reports .qm-{state} {{ color:{color}; }}\n" for state, color in on_deep.items())
     return f"""<style>
-.qm-head {{ display:flex; flex-wrap:wrap; gap:4px 18px; align-items:baseline; margin:0 0 8px; font-size:12.5px; color:{text}; }}
-.qm-head em {{ flex-basis:100%; font-style:normal; color:{soft}; font-size:12px; }}
-.qm-table, .qm-list, .qm-note {{ color:{text}; }}
-.qm-pane h4 {{ margin:12px 0 6px !important; padding:0 !important; font-size:12px !important; text-transform:uppercase;
-  letter-spacing:.06em; color:{soft}; }}
-.qm-table {{ overflow:auto; max-height:calc(100vh - 330px); border:1px solid {border}; border-radius:10px; margin:6px 0 12px; }}
-.qm-table table {{ width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; margin:0; }}
-.qm-table thead th {{ position:sticky; top:0; z-index:1; background:{accent} !important; color:{charts.readable_on(accent)} !important;
-  font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; padding:7px 10px !important; text-align:left;
-  border:0 !important; }}
-.qm-table td {{ padding:6px 10px !important; vertical-align:top; line-height:1.45; border:0 !important;
-  border-bottom:1px solid {border} !important; background:transparent !important; color:{text}; }}
-.qm-table td:first-child {{ color:{ink}; }}
-.qm-table tbody tr:nth-child(even) td {{ background:color-mix(in srgb, {accent} 5%, transparent) !important; }}
-.qm-code {{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; color:{ink}; background:transparent; padding:0; }}
-.qm-state, .qm-grade {{ display:inline-block; padding:1px 9px; border-radius:999px; font-size:11.5px; font-weight:600;
-  white-space:nowrap; border:1px solid currentColor; }}
-.qm-ok, .qm-g3, .qm-g4 {{ color:{charts.legible("#199e70", palette["card"])}; }}
-.qm-partial, .qm-g2 {{ color:{charts.legible("#b8860b", palette["card"])}; }}
-.qm-fail, .qm-g0, .qm-g1 {{ color:{charts.legible(palette["rise"], palette["card"])}; }}
-.qm-unknown {{ color:{charts.legible(muted, palette["card"])}; }}
-.qm-list {{ margin:4px 0 10px; padding-left:18px; font-size:13px; line-height:1.55; }}
-.qm-note {{ font-size:12.5px; margin:2px 0 6px; }}
-.qm-pane {{ max-height:calc(100vh - 250px); overflow:auto; padding-right:6px; }}
+.qm-head {{ margin:0 0 10px; font-size:12.5px; color:{soft}; }}
+.qm-lead {{ margin:0 0 14px !important; font-size:15px !important; line-height:1.5 !important; color:{ink}; max-width:920px; }}
+.qm-groups {{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; }}
+.qm-group {{ border:1px solid {border}; border-radius:14px; background:{card}; padding:12px 16px 10px; min-width:0; }}
+.qm-group h4 {{ margin:0 0 8px !important; padding:0 !important; font-size:11px !important; letter-spacing:.08em;
+  text-transform:uppercase; color:{soft}; }}
+.qm-row {{ display:grid; grid-template-columns:minmax(0, 1.5fr) minmax(60px, 1fr) auto auto auto; gap:10px; align-items:center;
+  padding:7px 0; border-top:1px solid color-mix(in srgb, {border} 60%, transparent); font-size:13px; color:{text}; cursor:help; }}
+.qm-group h4 + .qm-row {{ border-top:0; }}
+.qm-name {{ color:{ink}; font-weight:600; min-width:0; }}
+.qm-bar {{ position:relative; height:6px; border-radius:3px; background:color-mix(in srgb, {border} 70%, transparent); }}
+.qm-bar i {{ position:absolute; left:0; top:0; bottom:0; border-radius:3px; background:{SKY}; }}
+.qm-bar b {{ position:absolute; top:-4px; width:2px; height:14px; background:{ink}; border-radius:1px; }}
+.qm-bar.qm-empty {{ height:auto; background:none; font-size:11.5px; color:{soft}; }}
+.qm-value {{ font-variant-numeric:tabular-nums; color:{ink}; text-align:right; white-space:nowrap; }}
+.qm-limit {{ font-size:11.5px; color:{soft}; white-space:nowrap; }}
+.qm-state {{ font-size:11.5px; font-weight:700; white-space:nowrap; }}
+{states}.qm-insights {{ list-style:none; margin:14px 0 0; padding:0; }}
+.qm-insights li {{ display:flex; flex-wrap:wrap; gap:4px 10px; padding:9px 12px; margin-bottom:6px; border-radius:10px;
+  border:1px solid currentColor; background:color-mix(in srgb, currentColor 7%, transparent); font-size:13px; }}
+.qm-insights li span {{ color:{text}; }}
+.qm-note {{ font-size:13px; color:{text}; }}
+.qm-reports {{ overflow:auto; max-height:calc(100vh - 300px); border-radius:14px; background:{DEEP};
+  border:1px solid color-mix(in srgb, {SKY} 35%, #1b2433); box-shadow:0 0 28px -14px {SKY}; }}
+.qm-reports table {{ width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:13px; }}
+.qm-reports thead th {{ position:sticky; top:0; z-index:1; background:{DEEP} !important; color:{SKY} !important; font-size:11px;
+  font-weight:700; text-transform:uppercase; letter-spacing:.07em; text-align:left; padding:10px 14px !important; border:0 !important;
+  border-bottom:1px solid color-mix(in srgb, {SKY} 40%, transparent) !important; }}
+.qm-reports td {{ padding:9px 14px !important; color:#d7dee9; border:0 !important; vertical-align:top;
+  border-bottom:1px solid #141b27 !important; background:transparent !important; }}
+.qm-reports td b {{ color:#f3f7fc; }} .qm-reports code {{ color:{SKY}; background:transparent; }}
+.qm-reports tbody tr:hover td {{ background:color-mix(in srgb, {SKY} 7%, transparent) !important; }}
+{deep_states}.qm-report h3 {{ margin:0 0 4px !important; font-size:20px !important; }}
+.qm-report p {{ margin:0 0 12px !important; font-size:12.5px; color:{soft}; }}
+@media (max-width:1100px) {{ .qm-groups {{ grid-template-columns:minmax(0, 1fr); }} }}
 </style>"""

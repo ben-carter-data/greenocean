@@ -668,7 +668,7 @@ def show_assessment_line():
             color:{charts.legible(palette['reference'], palette['sidebar'])} !important; text-decoration:none !important; background:none; }}
         .st-key-assessment_line a:hover {{ color:{palette['strong_text']} !important; text-decoration:underline !important; }}
         .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) .st-key-assessment_line a {{ display:none; }}
-        </style><a href="{html.escape(build_page_address(PAGE_METHOD))}" target="_self">{html.escape(tr(quality_method.SIDEBAR_LINE))}</a>""",
+        </style><a href="{html.escape(build_page_address(PAGE_METHOD))}" target="_self">{html.escape(quality_method.sidebar_line(quality_method.read_page()[0]))}</a>""",
             unsafe_allow_html=True,
         )
 
@@ -6155,57 +6155,36 @@ def show_stack_page(mode):
     )
 
 
+@st.dialog("Informe de calidad", width="large")
+def show_quality_report_dialog(number):
+    """One numbered report (D-332), read from docs/calidad/informes; the slide viewer comes in 3C."""
+    reports, _, policy = quality_method.read_page()
+    report = next((item for item in reports if item["numero"] == number), None)
+    if report:
+        st.markdown(quality_method.build_report_view(report, policy), unsafe_allow_html=True)
+
+
 def show_method_page(mode):
-    """«Método y calidad» (D-320, D-323): how the project is assessed against software and data quality standards. Every
-    measured number comes from docs/calidad (the last measurement, the baseline and the goals); the ISO grades from the
-    author's dated review."""
-    baseline, report, goals, rubric, history = quality_method.read_all()
+    """«Método y calidad» (D-320, D-323, D-330, D-332): how the quality of the published data and of the code is
+    managed. Two tabs: «Resumen» (each indicator against its acceptable) and «Informes» (the numbered reports)."""
+    reports, goals, policy = quality_method.read_page()
+    latest = reports[-1] if reports else None
     show_page_bar(
         PAGE_METHOD,
         PAGE_METHOD,
-        "Cómo se evaluó el proyecto: normas usadas como método, mediciones reales y "
-        "lo que falta. Una autoevaluación, no una certificación.",
+        "Qué medimos de los datos que publicamos y del código que los trata, contra qué aceptable, y cómo vamos.",
     )
     st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
-    st.markdown(quality_method.build_header(report, rubric), unsafe_allow_html=True)
-    labels = [
-        tr("Resumen"),
-        "ISO 25010",
-        tr("Datos"),
-        tr("Navegadores"),
-        tr("Estándares"),
-        tr("Historial"),
-        tr("Límites"),
-    ]
-    summary, iso, data, browsers, standards, measurements, limits = st.tabs(labels)
+    st.markdown(quality_method.build_header(latest), unsafe_allow_html=True)
+    summary, history = st.tabs([tr("Resumen"), tr("Informes")])
     with summary:
-        st.markdown(
-            f'<div class="qm-pane">{quality_method.build_summary(baseline, report, goals)}</div>',
-            unsafe_allow_html=True,
-        )
-    with iso:
-        st.markdown(
-            f'<div class="qm-pane">{quality_method.build_iso(report, goals, rubric)}</div>', unsafe_allow_html=True
-        )
-    with data:
-        indicators = quality_live.build_indicators(quality_live.read_measures())
-        counts = read_cached_database_counts(get_database_version())
-        st.markdown(
-            f'<div class="qm-pane">{quality_method.build_data_quality(report, indicators, counts)}</div>',
-            unsafe_allow_html=True,
-        )
-    with browsers:
-        st.markdown(
-            f'<div class="qm-pane">{quality_method.build_browsers(report, goals)}</div>', unsafe_allow_html=True
-        )
-    with standards:
-        st.markdown(f'<div class="qm-pane">{quality_method.build_standards(report)}</div>', unsafe_allow_html=True)
-    with measurements:
-        st.markdown(
-            f'<div class="qm-pane">{quality_method.build_history(history, goals)}</div>', unsafe_allow_html=True
-        )
-    with limits:
-        st.markdown(f'<div class="qm-pane">{quality_method.build_limits(report, goals)}</div>', unsafe_allow_html=True)
+        st.markdown(quality_method.build_overview(latest, goals, policy), unsafe_allow_html=True)
+        if latest and st.button(
+            tr("Abrir el último informe"), icon=":material/description:", key="quality_latest_report"
+        ):
+            show_quality_report_dialog(latest["numero"])
+    with history:
+        st.markdown(quality_method.build_reports_table(reports), unsafe_allow_html=True)
 
 
 def show_app_map_page(mode):

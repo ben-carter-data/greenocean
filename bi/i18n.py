@@ -56,7 +56,10 @@ EN = {
     # D-325: the page is gone, but the stored measurement of docs/calidad still lists it until the next measurement.
     "Dónde comprar": "Where to buy",
     "Método y calidad": "Method and quality",
-    "Evaluado según ISO/IEC 25010 · 25012": "Assessed against ISO/IEC 25010 · 25012",
+    "Informes": "Reports",
+    "Abrir el último informe": "Open the latest report",
+    "Informe de calidad": "Quality report",
+    "Qué medimos de los datos que publicamos y del código que los trata, contra qué aceptable, y cómo vamos.": "What we measure of the data we publish and of the code that treats it, against which acceptable, and how it is going.",
     "Cómo se evaluó el proyecto: normas usadas como método, mediciones reales y lo que falta. Una autoevaluación, no una certificación.": "How the project was assessed: standards used as a method, real measurements and what is missing. A self-assessment, not a certification.",
     "Introducción": "Introduction",
     "Estándares": "Standards",
