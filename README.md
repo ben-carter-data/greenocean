@@ -78,7 +78,7 @@ GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los 
 ├── docs/                PRD, SAD, ADR, plan de pruebas y seguridad, decisiones y manual
 │   ├── en/              los mismos documentos en inglés
 │   ├── img/             capturas del panel
-│   ├── calidad/         medición de calidad, metas, rúbrica ISO, historial e informe
+│   ├── calidad/         aceptables y metas, informes numerados, plan de mitigación y política
 │   └── archivo/         historia del proyecto (hitos y backlog); no es lectura
 ├── scripts/             medición e informe de calidad, y la descarga con doble clic en macOS
 ├── tests/               pruebas automáticas (pytest) y sus datos en fixtures/
@@ -87,7 +87,9 @@ GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los 
 
 ## Calidad
 
-La página «Método y calidad» y el [informe de autoevaluación](docs/calidad/INFORME.md) miden el proyecto con herramientas reales (Ruff, mypy, pytest con cobertura, Bandit, pip-audit, detect-secrets, Playwright y axe-core) contra metas fijas, y lo evalúan con la ISO/IEC 25010 y 25012 como método: es una autoevaluación, no una certificación. El workflow «calidad» repite la medición en cada push y la propone en un pull request; la página la muestra solo cuando el autor lo fusiona. La insignia de cobertura lee esa medición aprobada. Los commits siguen Conventional Commits ([CONTRIBUTING](CONTRIBUTING.md)).
+La calidad se gestiona en dos partes: la de **los datos que publicamos** (pruebas de dbt, precios con comparación válida, filas rechazadas, vigencia) y la del **código que los trata** (pruebas y cobertura, Ruff, mypy, hallazgos altos de Bandit, vulnerabilidades de pip-audit, posibles secretos). Cada indicador se lee como su falla frente a un aceptable fijado por el autor.
+
+La página «Método y calidad» tiene dos pestañas: *Resumen*, con cómo vamos, y *Informes*, la lista de los [informes de calidad](docs/calidad/README.md) numerados, que no se editan y se abren como diapositivas, con comparación entre informes y descarga en PDF. La línea bajo el logo del panel lleva al último. Es una autoevaluación automática, revisada por el autor, no una auditoría externa. El workflow «calidad» mide en cada push y propone el informe en un pull request; el panel lo muestra solo cuando el autor lo fusiona. Las insignias de arriba son las de ese workflow y la cobertura de la última medición aprobada. Los commits siguen Conventional Commits ([CONTRIBUTING](CONTRIBUTING.md)).
 
 ## Stack
 
