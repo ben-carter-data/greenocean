@@ -560,7 +560,21 @@ def family_movement(rows, family_link, selected_family, scope):
     )
 
 
-def products_heading(family, average, scope, shown=None, total=None):
+def products_note(published, hidden=0):
+    """The fixed line above the table (D-327): what the prices are, what is left out and why, and how many products
+    are not shown. «published» is the number of regions the source publishes. One span per sentence."""
+    sentences = [
+        f'Los precios son el promedio de las regiones con precio publicado en las dos semanas (la fuente publica {published} regiones).',
+        'Si una región no publicó un producto en alguna de las dos semanas, se deja fuera de ese producto y no se rellena.',
+    ]
+    if hidden:
+        sentences.append(
+            f'{number(hidden)} precios de la semana no aparecen porque ninguna región tiene precio en las dos semanas.'
+        )
+    return '<p class="mock-products-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</p>'
+
+
+def products_heading(family, average, scope, shown=None, total=None, note=''):
     state = change_state(average) if average is not None else 'neutral'
     chip = (
         ''
@@ -579,15 +593,67 @@ def products_heading(family, average, scope, shown=None, total=None):
         f'<div class="mock-products-heading mock-products-slim"><span class="mock-kicker">Detalle de productos</span>'
         f'<span class="mock-products-family">{esc(short_family(family))}</span>'
         f'<h2 title="¿Qué productos explican el cambio?">¿Qué productos explican el cambio?</h2>{chip}'
-        f'<span class="mock-products-scope">en {esc(scope)}</span>{count}</div>'
+        f'<span class="mock-products-scope">en {esc(scope)}</span>{count}</div>' + note
     )
 
 
-def products_table(rows, week_label, previous_label, query='', selected=None):
-    """The comparable prices of one family; the last column counts regions up and down."""
+def calculation_detail(row, week_label, previous_label, published):
+    """«Ver cálculo · 7 de 9 regiones» (D-327): what the row was calculated from. It opens in place (a native details)
+    and lists each region used with its price of both weeks and the average, then each region left out with the reason.
+    The reasons say only what the data shows: the source gives no price; they never say why."""
+    calc = row.get('_calc')
+    if not calc or not calc['used']:
+        return ''
+    used, out = calc['used'], calc['out']
+    this_week, before = week_label[:5], previous_label[:5]
+
+    def line(name, then, now, change, css=''):
+        return (
+            f'<li{css}><span>{esc(name)}</span><span class="mock-calc-prices"><span>{money(then)}</span> → '
+            f'<span>{money(now)}</span></span><b>{percent(change, True)}</b></li>'
+        )
+
+    body = ''.join(line(region, then, now, (now / then - 1) * 100) for region, then, now in used)
+    plural = 'región' if len(used) == 1 else 'regiones'
+    body += line(
+        f'Promedio de {len(used)} {plural}',
+        row.get('_same_before'),
+        row.get('_same_now'),
+        row['variation'] * 100,
+        ' class="mock-calc-average"',
+    )
+    reasons = {
+        'now': f'sin precio publicado el {this_week}',
+        'before': f'sin precio publicado el {before}',
+        'both': 'sin precio publicado en las dos semanas',
+    }
+    left = (
+        '<p class="mock-calc-out"><b>Fuera del promedio</b></p><ul class="mock-calc-out">'
+        + ''.join(f'<li><span>{esc(region)}</span><em>{reasons[reason]}</em></li>' for region, reason in out)
+        + '</ul>'
+        if out
+        else '<p class="mock-calc-out">Todas las regiones publicaron este producto las dos semanas.</p>'
+    )
+    label = f'Ver cálculo · {len(used)} de {published} regiones' if published else f'Ver cálculo · {len(used)} {plural}'
+    return (
+        f'<details class="mock-calc"><summary>{label}</summary><div class="mock-calc-body">'
+        f'<p class="mock-calc-head">Precio del {esc(before)} → precio del {esc(this_week)}, por región</p>'
+        f'<ul>{body}</ul>{left}</div></details>'
+    )
+
+
+def products_table(rows, week_label, previous_label, query='', selected=None, published=None):
+    """The comparable prices of one family; the last column counts regions up and down. The prices are the average of
+    the regions with a price in both weeks, the same ones the variation uses (D-327)."""
     body = []
     for row in rows:
         change = row['variation'] * 100
+        same_before, same_now = row.get('_same_before'), row.get('_same_now')
+        like_for_like = all(
+            value is not None and math.isfinite(float(value)) and float(value) > 0 for value in (same_before, same_now)
+        )
+        price_before = float(same_before) if like_for_like else previous_price(row)
+        price_now = float(same_now) if like_for_like else row['national_price']
         state = change_state(row['variation'])
         regions = row.get('_regions')
         regions_text = (
@@ -608,17 +674,13 @@ def products_table(rows, week_label, previous_label, query='', selected=None):
             + (
                 f'<small>{esc(row["quality"])} · $/{esc(row["normalized_unit"])}'
                 + (' · 1 cotización' if row.get('_single_quote') else '')
-                + (
-                    f' · variación sobre {int(row["_same_regions"])} regiones comunes'
-                    if row.get('_coverage_changed') and row.get('_same_regions') == row.get('_same_regions')
-                    else ''
-                )
                 + '</small>'
+                + calculation_detail(row, week_label, previous_label, published)
                 if row.get('quality')
                 else ''
             )
             + f'</td><td>{esc(row["channel"])}</td>'
-            f'<td class="num">{money(previous_price(row))}</td><td class="num">{money(row["national_price"])}</td>'
+            f'<td class="num">{money(price_before)}</td><td class="num">{money(price_now)}</td>'
             f'<td class="num {state}"><b>{"0,0 %" if state == "neutral" else percent(change, True)}</b></td>'
             f'<td class="num">{regions_text}</td></tr>'
         )
@@ -631,8 +693,9 @@ def products_table(rows, week_label, previous_label, query='', selected=None):
         body = [f'<tr><td colspan="7" class="mock-empty">{empty}</td></tr>']
     return (
         '<div class="mock-products-table" role="region" tabindex="0" aria-label="Productos de la familia"><table><thead><tr>'
-        f'<th>Producto</th><th>Canal</th><th class="num">Precio {esc(previous_label[:5])}</th>'
-        f'<th class="num">Precio {esc(week_label[:5])}</th><th class="num">Variación</th>'
+        f'<th>Producto</th><th>Canal</th>'
+        f'<th class="num" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio {esc(previous_label[:5])}</th>'
+        f'<th class="num" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio {esc(week_label[:5])}</th><th class="num">Variación</th>'
         '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; haz clic en el conteo para ver cuáles">Regiones ↑ / ↓ · clic</th></tr></thead>'
         '<tbody>' + ''.join(body) + '</tbody></table></div>'
     )

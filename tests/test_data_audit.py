@@ -257,3 +257,36 @@ def test_the_panel_reproduces_the_reference_figures_of_its_week():
 
 
 # endregion
+
+
+# region The calculation behind each row of the products table (D-327)
+@needs_database
+def test_d327_each_row_calculation_is_rebuilt_from_the_regions_priced_in_both_weeks():
+    version = dashboard.get_database_version()
+    week = f"{dashboard.read_latest_week():%Y-%m-%d}"
+    calculation, published = dashboard.read_cached_region_calculation(version, week)
+    assert published == len(queries.run_sql("SELECT region FROM dim_region"))
+    model = dashboard.read_home_model(week, dashboard.ALL_VALUES, dashboard.ALL_VALUES, 10)
+    key_columns = queries.KEY_COLUMNS + ["channel"]
+    checked = 0
+    for row in model["family_rows"]:
+        calc = calculation[tuple(row[column] for column in key_columns)]
+        used, out = calc["used"], calc["out"]
+        # The regions used are those with a price in both weeks; their averages are the prices the row shows.
+        assert len(used) == row["_same_regions"]
+        before, now = (sum(item[index] for item in used) / len(used) for index in (1, 2))
+        assert before == pytest.approx(row["_same_before"]) and now == pytest.approx(row["_same_now"])
+        assert now / before - 1 == pytest.approx(row["variation"])
+        # Used plus left out are every region the source publishes, each one once, each exclusion with its reason.
+        names = [name for name, *_ in used] + [name for name, _ in out]
+        assert len(names) == published == len(set(names))
+        assert {reason for _, reason in out} <= {"now", "before", "both"}
+        checked += 1
+    assert checked > 100
+    # Arica is priced the week before and not the week of 12-10 for the Zapallo Camote of the wholesale channel.
+    zapallo = calculation.get(("Hortalizas", "Zapallo", "Camote", "1a nueva(o)", "kilo", "Mayorista"))
+    if zapallo and week == "2026-10-12":
+        assert ("Arica y Parinacota", "now") in zapallo["out"] and len(zapallo["used"]) == 7
+
+
+# endregion

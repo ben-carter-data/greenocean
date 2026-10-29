@@ -365,3 +365,71 @@ def test_d304_the_regions_column_says_which_regions_on_hover():
         page.count('<li class="') == 3 and '<li class="rise chosen"><span>Maule</span>' in page
     )  # the chosen region is marked
     assert '<li class="fall"><span>Biobío</span>' in page
+
+
+# region The products table explains itself (D-327)
+ZAPALLO = {
+    'product': 'Zapallo',
+    'variety': 'Camote',
+    'quality': '1a nueva(o)',
+    'normalized_unit': 'kilo',
+    'channel': 'Mayorista',
+    'product_group': 'Hortalizas',
+    'national_price': 1812.07,  # the week's national price, 7 regions
+    '_previous_price': 1199.36,  # the week before, 8 regions: Arica, the cheapest, was still priced
+    '_same_before': 1247.07,
+    '_same_now': 1812.07,
+    '_same_regions': 2,  # the fixture keeps two of the seven regions, enough to read the calculation
+    'variation': 1812.07 / 1247.07 - 1,
+    '_coverage_changed': True,
+    '_regions': (2, 0, [('Biobío', 66.7), ('Coquimbo', 28.1)]),
+    '_calc': {
+        'used': [('Biobío', 1200.0, 2000.0), ('Coquimbo', 1336.03, 1711.22)],
+        'out': [('Arica y Parinacota', 'now'), ('Los Lagos', 'both')],
+    },
+}
+
+
+def test_d327_the_row_shows_the_prices_of_the_regions_it_compares_and_opens_its_calculation():
+    page = home_mockup.products_table([dict(ZAPALLO)], '12-10-2026', '05-10-2026', published=9)
+    # The two prices and the change rest on the same regions, so dividing them gives the change shown.
+    assert '$1.247' in page and '$1.812' in page and '$1.199' not in page and '+45,3 %' in page
+    assert 'Precio medio 05-10' in page and 'Precio medio 12-10' in page
+    assert 'title="Promedio de las regiones con precio publicado en las dos semanas"' in page
+    assert '<summary>Ver cálculo · 2 de 9 regiones</summary>' in page and 'regiones comunes' not in page
+    assert (
+        '<span>Biobío</span><span class="mock-calc-prices"><span>$1.200</span> → <span>$2.000</span></span><b>+66,7 %</b>'
+        in page
+    )
+    assert 'Promedio de 2 regiones' in page
+    assert '<li><span>Arica y Parinacota</span><em>sin precio publicado el 12-10</em></li>' in page
+    assert '<li><span>Los Lagos</span><em>sin precio publicado en las dos semanas</em></li>' in page
+    # One region reads in the singular; a row without the calculation (a region chosen on the map) has no link.
+    alone = dict(ZAPALLO, _same_regions=1, _calc={'used': [('Maule', 1200.0, 1888.89)], 'out': []})
+    page = home_mockup.products_table([alone], '12-10-2026', '05-10-2026')
+    assert '<summary>Ver cálculo · 1 región</summary>' in page and 'Promedio de 1 región' in page
+    assert 'Todas las regiones publicaron este producto las dos semanas.' in page
+    plain = {key: value for key, value in ZAPALLO.items() if key not in ('_calc', '_same_before', '_same_now')}
+    page = home_mockup.products_table([plain], '12-10-2026', '05-10-2026')
+    assert '<details' not in page and '$1.199' in page  # without the like-for-like prices, the national ones
+
+
+def test_d327_the_fixed_note_says_what_the_prices_are_and_what_is_not_shown():
+    note = home_mockup.products_note(9, 19)
+    assert 'la fuente publica 9 regiones' in note and 'no se rellena' in note
+    assert '19 precios de la semana no aparecen' in note and note.count('<span>') == 3
+    assert '19 precios' not in home_mockup.products_note(9, 0)
+
+
+def test_d327_a_change_resting_on_one_region_sorts_last_in_every_order():
+    from bi import dashboard
+
+    wide = dict(ZAPALLO, product='Acelga', variation=0.30, _same_regions=7, _single_quote=False)
+    narrow = dict(ZAPALLO, product='Ají', variation=0.50, _same_regions=1)
+    quote = dict(ZAPALLO, product='Apio', variation=0.40, _single_quote=True)
+    for order in ('Mayor cambio', 'Subidas'):
+        names = [row['product'] for row in dashboard.sort_family_products([narrow, quote, wide], order)]
+        assert names == ['Acelga', 'Ají', 'Apio'] or names[0] == 'Acelga', (order, names)
+
+
+# endregion

@@ -3829,15 +3829,50 @@ def read_cached_region_directions(database_version, week):
     return {key: (int(up.get(key, 0)), int(down.get(key, 0)), names.get(key, [])) for key in keys}
 
 
+@st.cache_data
+def read_cached_region_calculation(database_version, week):
+    """What each row of the products table was calculated from (D-327): {(product key, channel): {used, out}} and the
+    number of regions the source publishes. `used` lists, per region with a price in both weeks, (region, price of the
+    week before, price of the week); `out` lists the regions left out, each with the reason: no price this week
+    («now»), none the week before («before») or in neither («both»). Nothing is filled in."""
+    week_date = pd.Timestamp(week)
+    join = queries.KEY_COLUMNS + ['channel']
+    current = read_cached_week_snapshot(database_version, week)
+    previous = read_cached_week_snapshot(database_version, f'{week_date - pd.Timedelta(days=7):%Y-%m-%d}')
+    published = sorted(queries.run_sql('SELECT region FROM dim_region')['region'])
+    columns = join + ['region', 'price']
+    both = current[columns].merge(previous[columns], on=join + ['region'], suffixes=('_now', '_before'))
+    now_regions = current.groupby(join).region.agg(set)
+    before_regions = previous.groupby(join).region.agg(set)
+    calculation = {}
+    for key, group in both.groupby(join):
+        used = sorted(
+            (home_mockup.short_region(region), float(before), float(now))
+            for region, before, now in zip(group['region'], group['price_before'], group['price_now'])
+        )
+        in_now, in_before = now_regions.get(key, set()), before_regions.get(key, set())
+        out = [
+            (
+                home_mockup.short_region(region),
+                'before' if region in in_now else 'now' if region in in_before else 'both',
+            )
+            for region in published
+            if not (region in in_now and region in in_before)
+        ]
+        calculation[key] = {'used': used, 'out': sorted(out)}
+    return calculation, len(published)
+
+
 def sort_family_products(rows, order):
     """The family table under the chosen order; ties stay in a stable, readable order.
-    A change resting on a single quote sorts after the others (D-146)."""
+    A change resting on a single quote or a single region sorts after the others (D-146, D-327)."""
 
     def names(row):
         return (str(row['product']), str(row['variety']), str(row['channel']))
 
     def thin(row):
-        return bool(row.get('_single_quote'))
+        # D-327: a change that rests on one quote, or on one region, is the least solid and goes last.
+        return bool(row.get('_single_quote')) or row.get('_same_regions') == 1
 
     if order == 'Nombre':
         return sorted(rows, key=names)
@@ -3971,9 +4006,18 @@ def show_market_overview(mode, prefix):
             if query.strip():
                 rows = [row for row in rows if matches_product_search(row, query)]
             rows = sort_family_products(rows, order)
+            published = None
+            note = ''
+            if region == ALL_VALUES:
+                # D-327: what every row was calculated from, and the one line that says how to read the prices.
+                calculation, published = read_cached_region_calculation(get_database_version(), week)
+                stats = model.get('family_coverage', {}).get(family) or {}
+                note = home_mockup.products_note(published, stats.get('available', 0) - stats.get('comparable', 0))
+                for row in family_rows:
+                    row['_calc'] = calculation.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
             heading.markdown(
                 '<div class="greenocean-mockup">'
-                + home_mockup.products_heading(family or 'Sin familia', average, scope, len(rows), total)
+                + home_mockup.products_heading(family or 'Sin familia', average, scope, len(rows), total, note)
                 + '</div>',
                 unsafe_allow_html=True,
             )
@@ -3988,6 +4032,7 @@ def show_market_overview(mode, prefix):
                     model['previous_label'],
                     query.strip(),
                     None if region == ALL_VALUES else region,
+                    published,
                 )
                 + '</div>'
             )
@@ -4017,6 +4062,8 @@ def show_market_overview(mode, prefix):
                     model['week_label'],
                     model['previous_label'],
                     None if region == ALL_VALUES else region,
+                    published,
+                    note,
                 )
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown(
@@ -4030,7 +4077,9 @@ def show_market_overview(mode, prefix):
 
 
 @st.dialog("Productos", width="large")
-def show_products_dialog(family, average, scope, family_rows, channels, orders, week_label, previous_label, region):
+def show_products_dialog(
+    family, average, scope, family_rows, channels, orders, week_label, previous_label, region, published=None, note=""
+):
     """The products table at the size of the window (D-317) with the same filters as the panel (D-322): it opens with the
     panel's search, channel and order, and filters on its own without closing."""
     with st.container(horizontal=True, vertical_alignment="center", key="dialog_products_filters"):
@@ -4051,10 +4100,10 @@ def show_products_dialog(family, average, scope, family_rows, channels, orders, 
     rows = sort_family_products(rows, order)
     st.markdown(
         '<div class="greenocean-mockup products-large">'
-        + home_mockup.products_heading(family, average, scope, len(rows), len(family_rows))
+        + home_mockup.products_heading(family, average, scope, len(rows), len(family_rows), note)
         + '</div>'
         + '<div class="greenocean-mockup">'
-        + home_mockup.products_table(rows, week_label, previous_label, query.strip(), region)
+        + home_mockup.products_table(rows, week_label, previous_label, query.strip(), region, published)
         + '</div>',
         unsafe_allow_html=True,
     )

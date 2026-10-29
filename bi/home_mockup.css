@@ -577,3 +577,23 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 @media(max-width:1100px) {
  .st-key-home_overview .mock-chile-map {flex:0 0 auto!important;height:560px!important;min-height:560px!important;}
 }
+
+/* D-327: the products table explains itself: a fixed line above it and, in each row, a link that opens the calculation. */
+.mock-products-note {margin:3px 0 6px!important;font-size:11px!important;line-height:1.4!important;color:var(--mock-muted);}
+.mock-calc {margin-top:3px;font-size:11px;}
+.mock-calc summary {display:inline-block;cursor:pointer;color:var(--mock-fall);text-decoration:underline;text-underline-offset:2px;list-style:none;}
+.mock-calc summary::-webkit-details-marker {display:none;}
+.mock-calc[open] summary {font-weight:600;}
+.mock-products-table {position:relative;}
+.mock-calc-body {position:absolute;left:8px;right:8px;z-index:6;margin:5px 0 3px;padding:7px 10px;border:1px solid var(--mock-border);border-radius:8px;background:var(--mock-soft);color:var(--mock-ink);white-space:normal;box-shadow:0 8px 24px -10px rgba(0,0,0,.45);}
+.mock-calc-head {margin:0 0 4px!important;font-size:10.5px!important;color:var(--mock-muted);}
+.mock-calc-body ul {margin:0;padding:0;list-style:none;}
+.mock-calc-body li {display:flex;flex-wrap:wrap;gap:0 8px;justify-content:space-between;padding:1px 0;font-size:11px;line-height:1.35;}
+.mock-calc-prices {font-variant-numeric:tabular-nums;color:var(--mock-muted);}
+.mock-calc-body li b {font-variant-numeric:tabular-nums;font-weight:600;}
+.mock-calc-average {margin-top:3px;padding-top:3px!important;border-top:1px solid var(--mock-border);font-weight:600;}
+.mock-calc-out {margin:5px 0 0!important;padding:0!important;font-size:10.5px!important;line-height:1.4!important;color:var(--mock-muted);}
+ul.mock-calc-out li {display:flex;gap:8px;justify-content:flex-start;padding:0;}
+ul.mock-calc-out li span {color:var(--mock-ink);}
+ul.mock-calc-out li em {font-style:normal;}
+.mock-calc-out b {color:var(--mock-ink);font-weight:600;}
