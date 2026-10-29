@@ -174,21 +174,28 @@ def build_overview(report: dict[str, Any] | None, goals: dict[str, Any], policy:
     )
 
 
-def build_reports_table(reports: list[dict[str, Any]]) -> str:
-    """«Informes»: one row per report, newest first, with what it found and the change against the one before."""
+def build_reports_table(
+    reports: list[dict[str, Any]], every: list[dict[str, Any]] | None = None, link: Any = None
+) -> str:
+    """«Informes»: one row per report, newest first, with what it found and the change against the one before. The
+    number opens the report; so does the PDF icon, whose viewer prints it (D-333). «every» holds all the reports, so
+    a filtered list still compares each one with its true predecessor."""
     if not reports:
-        return f'<p class="qm-note">{html.escape(t("Todavía no hay informes.", "There are no reports yet."))}</p>'
-    within_of = {report["numero"]: quality_metrics.report_counts(report)[0] for report in reports}
+        return f'<p class="qm-note">{html.escape(t("Ningún informe coincide.", "No report matches."))}</p>'
+    within_of = {report["numero"]: quality_metrics.report_counts(report)[0] for report in every or reports}
     body = []
-    for report in reversed(reports):
+    for report in sorted(reports, key=lambda item: -item["numero"]):
         within, nonconforming, measured = quality_metrics.report_counts(report)
         before = within_of.get(report["anterior"]) if report["anterior"] else None
         change = "—" if before is None else (f"+{within - before}" if within > before else str(within - before))
+        href = html.escape(link(report["numero"])) if link else "#"
+        pdf = t(f"Descargar el informe N° {report['numero']} en PDF", f"Download report No. {report['numero']} as PDF")
         body.append(
-            f'<tr><td><b>{html.escape(t("N°", "No."))} {report["numero"]}</b></td>'
+            f'<tr><td><a class="qm-open" href="{href}" target="_self"><b>{html.escape(t("N°", "No."))} {report["numero"]}</b></a></td>'
             f'<td>{html.escape(str(report["fecha"]))}</td><td>{html.escape(str(report["semana"] or "—"))}</td>'
             f'<td><code>{html.escape(str(report["codigo_evaluado"]))}</code></td>'
-            f"<td>{within} / {measured}</td><td>{nonconforming}</td><td>{html.escape(change)}</td></tr>"
+            f"<td>{within} / {measured}</td><td>{nonconforming}</td><td>{html.escape(change)}</td>"
+            f'<td><a class="qm-pdf" href="{href}" target="_self" title="{html.escape(pdf)}" aria-label="{html.escape(pdf)}">PDF ↓</a></td></tr>'
         )
     head = [
         t("Informe", "Report"),
@@ -198,6 +205,7 @@ def build_reports_table(reports: list[dict[str, Any]]) -> str:
         t("Dentro de lo aceptable", "Within the acceptable"),
         t("No conformidades", "Non-conformities"),
         t("Variación", "Change"),
+        "PDF",
     ]
     columns = "".join(f"<th>{html.escape(cell)}</th>" for cell in head)
     return (
@@ -277,6 +285,8 @@ def build_css(palette: dict[str, str]) -> str:
   border:1px solid currentColor; background:color-mix(in srgb, currentColor 7%, transparent); font-size:13px; }}
 .qm-insights li span {{ color:{text}; }}
 .qm-note {{ font-size:13px; color:{text}; }}
+.st-key-quality_filters {{ gap:10px !important; flex-wrap:wrap !important; margin-bottom:8px; }}
+.st-key-quality_filters > div {{ flex:0 1 180px !important; min-width:130px; }}
 .qm-reports {{ overflow:auto; max-height:calc(100vh - 300px); border-radius:14px; background:{DEEP};
   border:1px solid color-mix(in srgb, {SKY} 35%, #1b2433); box-shadow:0 0 28px -14px {SKY}; }}
 .qm-reports table {{ width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:13px; }}
@@ -286,6 +296,9 @@ def build_css(palette: dict[str, str]) -> str:
 .qm-reports td {{ padding:9px 14px !important; color:#d7dee9; border:0 !important; vertical-align:top;
   border-bottom:1px solid #141b27 !important; background:transparent !important; }}
 .qm-reports td b {{ color:#f3f7fc; }} .qm-reports code {{ color:{SKY}; background:transparent; }}
+.qm-reports a.qm-open {{ text-decoration:none !important; }} .qm-reports a.qm-open b {{ color:{SKY}; text-decoration:underline; }}
+.qm-reports a.qm-pdf {{ color:{SKY} !important; text-decoration:none !important; border:1px solid color-mix(in srgb, {SKY} 50%, transparent);
+  border-radius:6px; padding:1px 8px; font-size:11.5px; white-space:nowrap; }}
 .qm-reports tbody tr:hover td {{ background:color-mix(in srgb, {SKY} 7%, transparent) !important; }}
 {deep_states}.qm-report h3 {{ margin:0 0 4px !important; font-size:20px !important; }}
 .qm-report p {{ margin:0 0 12px !important; font-size:12.5px; color:{soft}; }}

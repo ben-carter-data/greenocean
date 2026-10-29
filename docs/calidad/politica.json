@@ -48,5 +48,88 @@
   "modo_aviso": [
     "Indicador de datos en modo aviso: todavía no bloquea la publicación.",
     "Data indicator in warning mode: it does not block publication yet."
+  ],
+  "calidades": {
+    "datos": {
+      "titulo": [
+        "Calidad de los datos que publicamos",
+        "Quality of the data we publish"
+      ],
+      "objetivo": [
+        "Que nadie vea un precio corrupto, atrasado o sin comparación válida sin saberlo: cada carga se valida antes de publicarse y lo que falta se declara, nunca se rellena.",
+        "That nobody sees a corrupt, late or not validly compared price without knowing it: every load is validated before it is published, and what is missing is declared, never filled in."
+      ]
+    },
+    "codigo": {
+      "titulo": [
+        "Calidad del código que los trata",
+        "Quality of the code that treats them"
+      ],
+      "objetivo": [
+        "Que el código que calcula cada cifra sea verificable y seguro: probado, sin errores de tipos ni de estilo, sin vulnerabilidades ni claves expuestas.",
+        "That the code computing every figure is verifiable and safe: tested, free of type and style errors, of vulnerabilities and of exposed keys."
+      ]
+    }
+  },
+  "diapositivas": {
+    "portada": [
+      "Autoevaluación automática, revisada por el autor. No reemplaza una auditoría externa.",
+      "Automatic self-assessment, reviewed by the author. It does not replace an external audit."
+    ],
+    "que_medimos": [
+      "Qué medimos y por qué",
+      "What we measure and why"
+    ],
+    "como_se_mide": [
+      "Cómo se mide",
+      "How it is measured"
+    ],
+    "resultados": [
+      "Resultados",
+      "Results"
+    ],
+    "comparacion": [
+      "Comparación",
+      "Comparison"
+    ],
+    "que_fallo": [
+      "Qué falló y qué hacemos",
+      "What failed and what we do"
+    ],
+    "incidentes": [
+      "Incidentes externos",
+      "External incidents"
+    ],
+    "anexo": [
+      "Anexo técnico",
+      "Technical annex"
+    ],
+    "sin_no_conformidades": [
+      "Sin no conformidades en el período.",
+      "No non-conformities in the period."
+    ],
+    "sin_incidentes": [
+      "Sin incidentes externos en el período.",
+      "No external incidents in the period."
+    ],
+    "detalle_incidentes": [
+      "El detalle de cada incidente lo ve solo el autor.",
+      "Only the author sees the detail of each incident."
+    ],
+    "causa_pendiente": [
+      "Causa pendiente de registrar por el autor.",
+      "Cause pending, to be recorded by the author."
+    ],
+    "reproducir": [
+      "Cómo reproducir las mediciones",
+      "How to reproduce the measurements"
+    ]
+  },
+  "reproducir": [
+    "python scripts/medir_calidad.py --tools <entorno>/bin",
+    "python scripts/verificar_calidad.py docs/calidad/medicion.json",
+    "python scripts/informe_calidad.py",
+    "pytest -q --cov",
+    "ruff check . · mypy · bandit -r bi etl agent · pip-audit -r requirements.txt · detect-secrets scan"
   ]
 }

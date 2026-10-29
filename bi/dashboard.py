@@ -38,6 +38,8 @@ from bi import (
     app_map,
     overview,
     quality_method,
+    quality_metrics,
+    quality_viewer,
     architecture,
     buttons,
     charts,
@@ -431,6 +433,7 @@ PROGRESS_MAXIMUM_SECONDS = 600
 # Names of the dashboard secrets that enable the "run now" button.
 SECRET_GITHUB_TOKEN = "GITHUB_TOKEN"
 SECRET_CONTROL_CODE = "CONTROL_CODE"
+REPORT_PARAMETER = "informe"  # D-333: the quality report a link opens
 
 ARCHITECTURE_HINT = (
     "Los datos viajan de izquierda a derecha. **Bronce**: el archivo tal "
@@ -6157,15 +6160,47 @@ def show_stack_page(mode):
 
 @st.dialog("Informe de calidad", width="large")
 def show_quality_report_dialog(number):
-    """One numbered report (D-332), read from docs/calidad/informes; the slide viewer comes in 3C."""
-    reports, _, policy = quality_method.read_page()
-    report = next((item for item in reports if item["numero"] == number), None)
-    if report:
-        st.markdown(quality_method.build_report_view(report, policy), unsafe_allow_html=True)
+    """One numbered report as slides (D-333): its own document, so the keyboard, full screen and the PDF work."""
+    reports, goals, policy = quality_method.read_page()
+    if not any(item["numero"] == number for item in reports):
+        st.warning(tr("Ese informe no existe."))
+        return
+    nonconformities = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json").get("registros", [])
+    incidents = quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json").get("registros", [])
+    st.iframe(
+        quality_viewer.build_viewer_html(reports, number, goals, policy, nonconformities, incidents, i18n.is_english()),
+        height=640,
+    )
+
+
+def filter_reports(reports, year, month, week, query):
+    """The reports the filters of «Informes» leave (D-333): by year, month and data week, and a search over the number,
+    the date and the evaluated code."""
+    query = query.strip().lower()
+    number = None
+    for prefix in ("n°", "nº", "no.", "#"):
+        if query.startswith(prefix) and query[len(prefix) :].strip().isdigit():
+            number = int(query[len(prefix) :].strip())  # «N° 2» is report 2, not any «2»
+    kept = []
+    for report in reports:
+        date = str(report["fecha"])
+        if year != ALL_VALUES and date[:4] != year:
+            continue
+        if month != ALL_VALUES and date[5:7] != month:
+            continue
+        if week != ALL_VALUES and str(report["semana"]) != week:
+            continue
+        haystack = f"{report['numero']} {date} {report['codigo_evaluado']} {report['semana']}".lower()
+        if number is not None and report["numero"] != number:
+            continue
+        if number is None and query and query not in haystack:
+            continue
+        kept.append(report)
+    return kept
 
 
 def show_method_page(mode):
-    """«Método y calidad» (D-320, D-323, D-330, D-332): how the quality of the published data and of the code is
+    """«Método y calidad» (D-320, D-323, D-330, D-332, D-333): how the quality of the published data and of the code is
     managed. Two tabs: «Resumen» (each indicator against its acceptable) and «Informes» (the numbered reports)."""
     reports, goals, policy = quality_method.read_page()
     latest = reports[-1] if reports else None
@@ -6176,6 +6211,12 @@ def show_method_page(mode):
     )
     st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
     st.markdown(quality_method.build_header(latest), unsafe_allow_html=True)
+    asked = st.query_params.get(REPORT_PARAMETER)
+    if asked:
+        # A report named in the address (its number or its PDF icon in «Informes») opens once.
+        del st.query_params[REPORT_PARAMETER]
+        if str(asked).isdigit():
+            show_quality_report_dialog(int(asked))
     summary, history = st.tabs([tr("Resumen"), tr("Informes")])
     with summary:
         st.markdown(quality_method.build_overview(latest, goals, policy), unsafe_allow_html=True)
@@ -6184,7 +6225,25 @@ def show_method_page(mode):
         ):
             show_quality_report_dialog(latest["numero"])
     with history:
-        st.markdown(quality_method.build_reports_table(reports), unsafe_allow_html=True)
+        years = [ALL_VALUES] + sorted({str(item["fecha"])[:4] for item in reports}, reverse=True)
+        months = [ALL_VALUES] + sorted({str(item["fecha"])[5:7] for item in reports}, reverse=True)
+        weeks = [ALL_VALUES] + sorted({str(item["semana"]) for item in reports if item["semana"]}, reverse=True)
+        with st.container(horizontal=True, vertical_alignment="bottom", key="quality_filters"):
+            year = st.selectbox(tr("Año"), years, key="quality_year", format_func=lambda value: tr(value))
+            month = st.selectbox(tr("Mes"), months, key="quality_month", format_func=lambda value: tr(value))
+            week = st.selectbox(tr("Semana de datos"), weeks, key="quality_week", format_func=lambda value: tr(value))
+            query = st.text_input(
+                tr("Buscar"),
+                key="quality_search",
+                placeholder=tr("N°, fecha o código"),
+                icon=":material/search:",
+            )
+        shown = filter_reports(reports, year, month, week, query)
+        address = build_page_address(PAGE_METHOD)
+        st.markdown(
+            quality_method.build_reports_table(shown, reports, lambda number: f"{address}&{REPORT_PARAMETER}={number}"),
+            unsafe_allow_html=True,
+        )
 
 
 def show_app_map_page(mode):

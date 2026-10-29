@@ -280,3 +280,49 @@ def test_d330_the_failure_reads_against_the_acceptable_and_the_insight_comes_fro
 
 
 # endregion
+
+
+# region Reports: filters, links and the slide viewer (D-333)
+def test_d333_the_viewer_has_eight_slides_read_from_the_report_and_compares_with_the_previous():
+    from bi import quality_viewer
+
+    reports, goals, policy = quality_method.read_page()
+    latest = reports[-1]
+    record = {
+        "informe": latest["numero"],
+        "indicador": "pruebas_fallidas",
+        "causa": "Enlaces del repositorio sin renombrar.",
+        "accion": "",
+        "estado": "cerrada",
+    }
+    page = quality_viewer.build_viewer_html(reports, latest["numero"], goals, policy, [record], [])
+    assert page.startswith("<!doctype html>") and page.count('<section class="slide') == 8
+    assert f"Informe de calidad N° {latest['numero']}" in page and latest["codigo_evaluado"] in page
+    assert "Enlaces del repositorio sin renombrar." in page and "cerrada" in page  # the author's cause and state
+    assert '"a": ' + str(latest["anterior"]) in page and "Sin incidentes externos en el período." in page
+    assert "window.print()" in page and "requestFullscreen" in page and "ArrowRight" in page
+    assert not any(word in page.lower() for word in FORBIDDEN)
+    # Report N° 2 covers from N° 1's date to its own: an incident on its day is counted, only counted.
+    second = reports[1]
+    incident = [{"fecha": second["fecha"][:10], "detalle": "solo para el autor"}]
+    english = quality_viewer.build_viewer_html(reports, second["numero"], goals, policy, [], incident, True)
+    assert "Quality report No." in english and "Download PDF" in english and "1 external incident" in english
+    assert "Qué falló" not in english and "Comparación" not in english and "solo para el autor" not in english
+
+
+def test_d333_the_reports_tab_filters_by_year_month_week_and_search_and_links_each_report():
+    from bi import dashboard
+
+    reports, _, _ = quality_method.read_page()
+    every = dashboard.ALL_VALUES
+    assert dashboard.filter_reports(reports, every, every, every, "") == reports
+    assert [r["numero"] for r in dashboard.filter_reports(reports, every, every, every, "b015e3a")] == [4]
+    assert [r["numero"] for r in dashboard.filter_reports(reports, every, every, every, "N° 2")] == [2]
+    assert dashboard.filter_reports(reports, "2025", every, every, "") == []
+    assert len(dashboard.filter_reports(reports, "2026", "10", "2026-10-12", "")) == 3  # N° 1 has no data week
+    table = quality_method.build_reports_table(reports[2:3], reports, lambda number: f"?vista=x&informe={number}")
+    assert 'href="?vista=x&amp;informe=3"' in table and table.count("qm-pdf") == 1
+    assert "<td>+2</td>" in table  # N° 3 against N° 2, though N° 2 is filtered out
+
+
+# endregion
