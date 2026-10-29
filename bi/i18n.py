@@ -60,6 +60,7 @@ EN = {
     "Acción requerida": "Action required",
     "GitHub Actions": "GitHub Actions",
     "Git workflow": "Git workflow",
+    "Ver registro completo": "View full log",
     "Mapa": "Map",
     "Registro de incidentes": "Incident log",
     "Cómo viaja un cambio desde la idea hasta el despliegue, y las fallas que han ocurrido en el camino.": "How a change travels from an idea to a live deployment, and the failures that have happened along the way.",

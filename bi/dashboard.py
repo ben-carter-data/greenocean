@@ -125,6 +125,7 @@ PAGE_FOLDER = "Documentos"
 PAGE_APP_MAP = "Mapa de la app"
 # D-320: how the project was assessed against software and data quality standards.
 PAGE_METHOD = "Método y calidad"
+GIT_TAB_PARAMETER, GIT_TAB_LOG = "pestana", "registro"  # D-346: «Ver registro completo» opens the Incident log
 PAGE_GIT = "Git workflow"  # D-344: how a change travels from an idea to a live deployment
 PAGE_DECISION_INDEX = "Índice de decisiones"
 # D-290: the test plan and the security plan are one document; the scalability plan and the data dictionary live in the SAD.
@@ -6329,7 +6330,10 @@ def show_git_page(mode):
         PAGE_GIT,
         "Cómo viaja un cambio desde la idea hasta el despliegue, y las fallas que han ocurrido en el camino.",
     )
-    flow, log = st.tabs([tr("Mapa"), tr("Registro de incidentes")])
+    flow, log = st.tabs(
+        [tr("Mapa"), tr("Registro de incidentes")],
+        default=tr("Registro de incidentes") if st.query_params.get(GIT_TAB_PARAMETER) == GIT_TAB_LOG else None,
+    )
     with flow:
         st.iframe(git_workflow.build_map_html(charts.get_palette(mode), i18n.get_language(), author), height=760)
     with log:
@@ -6360,7 +6364,17 @@ def show_method_page(mode):
             show_quality_report_dialog(int(asked))
     summary, history = st.tabs([tr("Resumen"), tr("Informes")])
     with summary:
-        st.markdown(quality_method.build_overview(latest, goals, policy), unsafe_allow_html=True)
+        st.markdown(
+            quality_method.build_overview(latest, goals, policy, git_workflow.read_failures()), unsafe_allow_html=True
+        )
+        git_page = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_GIT])  # absent when a test draws this page alone
+        if git_page:
+            st.page_link(
+                git_page,
+                label=tr("Ver registro completo"),
+                icon=":material/arrow_forward:",
+                query_params=keep_context() | {VIEW_PARAMETER: PAGE_GIT, GIT_TAB_PARAMETER: GIT_TAB_LOG},
+            )
         if latest and st.button(
             tr("Abrir el último informe"), icon=":material/description:", key="quality_latest_report"
         ):

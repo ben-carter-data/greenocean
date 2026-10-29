@@ -2597,3 +2597,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 
 - **Decisión (opción A del autor):** el profesional ve fecha, ocurrencia, solución y comentario; el diagnóstico y los logs solo el autor. Es ocultamiento de pantalla, no secreto: `docs/calidad/plan_mitigacion.json` está en un repositorio público, por eso los diagnósticos no llevan datos sensibles.
 - **Pruebas:** `tests/test_git_workflow.py::test_d345_…` (el diagnóstico no aparece en el HTML ni en la tabla del profesional y sí en los del autor, en español e inglés).
+
+## D-346 · «Últimas fallas» en el Resumen de «Método y calidad»
+
+- **Pedido del autor:** un bloque compacto con las tres fallas más recientes y un enlace «Ver registro completo» al registro de incidentes, sin pestañas nuevas.
+- **Decisión:** el Resumen cierra con «Últimas fallas»: fecha, identificador, qué ocurrió y su solución, de la más reciente a la más antigua. El diagnóstico no va aquí (D-345). El enlace es un enlace de la propia app (no recarga la página, así que no vuelve a pedir el perfil) a «Git workflow», que se abre en la pestaña «Registro de incidentes» con `?pestana=registro`. La página sigue con sus dos pestañas.
+- **Pruebas:** `tests/test_quality_method.py::test_d346_…` (tres filas, la más reciente primero, solución y no diagnóstico, dos pestañas, el enlace en ambos idiomas).

@@ -499,3 +499,32 @@ def test_d337_what_the_line_says_is_what_the_bars_and_ticks_show(monkeypatch):
 
 
 # endregion
+
+
+# region The latest failures in the summary (D-346)
+def test_d346_the_summary_shows_the_three_latest_failures_without_the_diagnosis_and_no_tab_is_added():
+    from bi import git_workflow
+
+    failures = git_workflow.read_failures()
+    reports, goals, policy = quality_method.read_page()
+    for language in ("es", "en"):
+        app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+        app.query_params.update({"lang": language, "vista": "Método y calidad"})
+        app.session_state["visitor_profile"] = "profesional"
+        app.run()
+        assert not app.exception and len(app.tabs) == 2  # still «Resumen» and «Informes»
+        block = next(item.value for item in app.markdown if 'class="qm-failures"' in item.value)
+        assert block.count("<li>") == 3
+        shown = [row for row in failures[:3]]
+        assert [block.index(row["fecha"] + " · " + row["id"]) for row in shown] == sorted(
+            block.index(row["fecha"] + " · " + row["id"]) for row in shown
+        )  # newest first
+        for row in failures[:3]:
+            assert row["solucion"][language == "en"].replace("&", "&amp;")[:20] in block
+        assert not any(row["diagnostico"][language == "en"][:25] in block for row in failures)
+        labels = [link.proto.label for link in app.main.get("page_link")]
+        assert ("View full log" if language == "en" else "Ver registro completo") in labels
+    assert quality_method.build_latest_failures([]) == ""
+
+
+# endregion

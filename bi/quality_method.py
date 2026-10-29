@@ -116,7 +116,28 @@ def counts_row(rows: list[dict[str, Any]], policy: dict[str, Any]) -> str:
     )
 
 
-def build_overview(report: dict[str, Any] | None, goals: dict[str, Any], policy: dict[str, Any]) -> str:
+def build_latest_failures(failures: list[dict[str, Any]], count: int = 3) -> str:
+    """D-346: the latest failures of the register (newest first), compact: date, what happened and its solution. The
+    diagnosis is the author's and stays in the Incident log."""
+    if not failures:
+        return ""
+    items = "".join(
+        f'<li><b>{html.escape(row["fecha"])} · {html.escape(row["id"])}</b>'
+        f'<span>{html.escape(t(*row["ocurrencia"]))}</span>'
+        f'<small>{html.escape(t("Solución", "Solution"))}: {html.escape(t(*row["solucion"]))}</small></li>'
+        for row in failures[:count]
+    )
+    return (
+        f'<div class="qm-failures"><h4>{html.escape(t("Últimas fallas", "Latest failures"))}</h4><ul>{items}</ul></div>'
+    )
+
+
+def build_overview(
+    report: dict[str, Any] | None,
+    goals: dict[str, Any],
+    policy: dict[str, Any],
+    failures: list[dict[str, Any]] | None = None,
+) -> str:
     """«Resumen»: two sentences, the data and the code side by side, and the insights that need attention."""
     if not report:
         return ""
@@ -161,6 +182,7 @@ def build_overview(report: dict[str, Any] | None, goals: dict[str, Any], policy:
         + code_rows
         + "</section></div>"
         + (f'<ul class="qm-insights">{insights}</ul>' if insights else "")
+        + build_latest_failures(failures or [])
         + "</div>"
     )
 
@@ -333,6 +355,12 @@ def build_css(palette: dict[str, str]) -> str:
 .qm-value {{ font-variant-numeric:tabular-nums; color:{ink}; text-align:right; white-space:nowrap; }}
 .qm-limit {{ font-size:11.5px; color:{soft}; white-space:nowrap; }}
 .qm-state {{ font-size:11.5px; font-weight:700; white-space:nowrap; }}
+.qm-failures {{ margin-top:12px; }}
+.qm-failures h4 {{ margin:0 0 4px; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:{soft}; }}
+.qm-failures ul {{ list-style:none; margin:0; padding:0; }}
+.qm-failures li {{ display:flex; flex-wrap:wrap; gap:2px 10px; padding:5px 0; border-bottom:1px solid {border}; font-size:12.5px; color:{text}; }}
+.qm-failures li b {{ color:{ink}; white-space:nowrap; }}
+.qm-failures li small {{ flex-basis:100%; color:{soft}; font-size:11.5px; }}
 {states}.qm-insights {{ list-style:none; margin:14px 0 0; padding:0; }}
 .qm-insights li {{ display:flex; flex-wrap:wrap; gap:4px 10px; padding:9px 12px; margin-bottom:6px; border-radius:10px;
   border:1px solid currentColor; background:color-mix(in srgb, currentColor 7%, transparent); font-size:13px; }}
