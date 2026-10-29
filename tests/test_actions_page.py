@@ -125,7 +125,11 @@ def test_d339_without_any_token_only_the_states_show_with_a_notice(network):
     notice = [item.value for item in app.warning]
     assert len(notice) == 1 and "GITHUB_READ_TOKEN" in notice[0] and "Sin token solo se ven los estados" in notice[0]
     page = everything_drawn(app)
-    assert page.count('class="ga-table"') == 3 and "Pruebas que fallan" not in page and not [block for block in app.code if "line 69" in block.value]
+    assert (
+        page.count('class="ga-table"') == 3
+        and "Pruebas que fallan" not in page
+        and not [block for block in app.code if "line 69" in block.value]
+    )
     paths = [url.removeprefix(control.API_URL) for url, _ in network.calls]
     assert not any(path.endswith(("/logs", "/annotations", "/rate_limit")) for path in paths)
 
