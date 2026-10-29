@@ -1,0 +1,198 @@
+{
+  "nota": "Plan de mitigación (D-334): las fallas previstas y las reales, cómo se detectan, si su causa es interna o externa, su severidad, la contención inmediata y la acción correctiva.",
+  "fallas": [
+    {
+      "id": "F-01",
+      "falla": [
+        "Una prueba de datos demasiado estricta detiene la carga semanal",
+        "An over-strict data test stops the weekly load"
+      ],
+      "deteccion": [
+        "El workflow «semanal» falla en «Run the tests against the new database»",
+        "The «semanal» workflow fails at «Run the tests against the new database»"
+      ],
+      "causa": "interna",
+      "severidad": "alta",
+      "contencion": [
+        "La base publicada sigue siendo la anterior, con su fecha",
+        "The published database stays the previous one, with its date"
+      ],
+      "correctiva": [
+        "Corregir la regla de la prueba, no saltarla",
+        "Fix the test's rule, never skip it"
+      ],
+      "caso_real": "D-299"
+    },
+    {
+      "id": "F-02",
+      "falla": [
+        "Una prueba del código falla",
+        "A code test fails"
+      ],
+      "deteccion": [
+        "Indicador «Pruebas que fallan» y CI en rojo",
+        "«Failing tests» indicator and red CI"
+      ],
+      "causa": "interna",
+      "severidad": "alta",
+      "contencion": [
+        "No se publica el cambio",
+        "The change is not published"
+      ],
+      "correctiva": [
+        "Corregir la causa en el código o en la prueba",
+        "Fix the cause in the code or the test"
+      ]
+    },
+    {
+      "id": "F-03",
+      "falla": [
+        "Una clave o un token queda en el repositorio",
+        "A key or a token is left in the repository"
+      ],
+      "deteccion": [
+        "detect-secrets y pre-commit",
+        "detect-secrets and pre-commit"
+      ],
+      "causa": "interna",
+      "severidad": "crítica",
+      "contencion": [
+        "Revocar la clave de inmediato",
+        "Revoke the key at once"
+      ],
+      "correctiva": [
+        "Sacarla del historial y guardarla en los secretos",
+        "Remove it from history and keep it in the secrets"
+      ]
+    },
+    {
+      "id": "F-04",
+      "falla": [
+        "Una dependencia retira algo que la ingesta necesitaba",
+        "A dependency removes something the ingestion needed"
+      ],
+      "deteccion": [
+        "La descarga de ODEPA falla con un error de certificado",
+        "The ODEPA download fails with a certificate error"
+      ],
+      "causa": "externa",
+      "severidad": "alta",
+      "contencion": [
+        "Fijar la versión anterior de la dependencia",
+        "Pin the previous version of the dependency"
+      ],
+      "correctiva": [
+        "Versión máxima en requirements y prueba que lo detecte",
+        "Maximum version in requirements and a test that detects it"
+      ],
+      "caso_real": "D-164"
+    },
+    {
+      "id": "F-05",
+      "falla": [
+        "Una versión mayor de una dependencia degrada el rendimiento",
+        "A major version of a dependency degrades performance"
+      ],
+      "deteccion": [
+        "Una consulta pasa su presupuesto de 1 s",
+        "A query goes over its 1 s budget"
+      ],
+      "causa": "externa",
+      "severidad": "media",
+      "contencion": [
+        "Fijar la versión menor",
+        "Pin the lower version"
+      ],
+      "correctiva": [
+        "Versión máxima declarada (duckdb<2)",
+        "Declared maximum version (duckdb<2)"
+      ],
+      "caso_real": "D-227"
+    },
+    {
+      "id": "F-06",
+      "falla": [
+        "La fuente se retrasa y no publica la semana",
+        "The source is late and does not publish the week"
+      ],
+      "deteccion": [
+        "Indicador «Días desde la última carga» sobre 8",
+        "«Days since the last load» over 8"
+      ],
+      "causa": "externa",
+      "severidad": "media",
+      "contencion": [
+        "Mostrar el último dato válido con su fecha",
+        "Show the last valid data with its date"
+      ],
+      "correctiva": [
+        "Registrar el incidente externo y esperar la publicación",
+        "Record the external incident and wait for publication"
+      ]
+    },
+    {
+      "id": "F-07",
+      "falla": [
+        "La fuente cambia su formato",
+        "The source changes its format"
+      ],
+      "deteccion": [
+        "La ingesta o las validaciones rechazan las filas",
+        "The ingestion or the validations reject the rows"
+      ],
+      "causa": "externa",
+      "severidad": "alta",
+      "contencion": [
+        "No publicar nada nuevo y avisar",
+        "Publish nothing new and warn"
+      ],
+      "correctiva": [
+        "Adaptar la ingesta con pruebas del formato nuevo",
+        "Adapt the ingestion with tests of the new format"
+      ]
+    },
+    {
+      "id": "F-08",
+      "falla": [
+        "Valores atípicos en la fuente",
+        "Outliers in the source"
+      ],
+      "deteccion": [
+        "Alertas de precio fuera de su rango habitual",
+        "Price alerts outside their usual range"
+      ],
+      "causa": "externa",
+      "severidad": "baja",
+      "contencion": [
+        "Publicarlos marcados, sin corregirlos en silencio",
+        "Publish them marked, never silently corrected"
+      ],
+      "correctiva": [
+        "Revisar si son reales en la fuente",
+        "Check whether they are real in the source"
+      ]
+    },
+    {
+      "id": "F-09",
+      "falla": [
+        "Una región o un producto sin datos",
+        "A region or a product without data"
+      ],
+      "deteccion": [
+        "Regiones fuera del promedio en la tabla de productos",
+        "Regions left out of the average in the products table"
+      ],
+      "causa": "externa",
+      "severidad": "baja",
+      "contencion": [
+        "Mostrar «sin datos», sin rellenar",
+        "Show «no data», never filled in"
+      ],
+      "correctiva": [
+        "Ninguna: es la cobertura real de la fuente",
+        "None: it is the source's real coverage"
+      ],
+      "caso_real": "D-327"
+    }
+  ]
+}

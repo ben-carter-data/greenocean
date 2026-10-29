@@ -1,0 +1,23 @@
+{
+  "nota": "Incidentes externos (D-334): una fuente (ODEPA, INE) o un tercero que cambia o se retrasa. Los informes públicos muestran solo su conteo en el período; el detalle lo ve el autor.",
+  "respuestas_por_defecto": {
+    "estado": "pendiente de aprobación del autor",
+    "fuente_retrasada": [
+      "Se muestra el último dato válido con su fecha y un aviso discreto.",
+      "The last valid data is shown with its date and a discreet notice."
+    ],
+    "formato_ilegible": [
+      "No se publica nada nuevo y se avisa.",
+      "Nothing new is published and a warning is given."
+    ],
+    "valores_atipicos": [
+      "Se publican marcados, sin corregirlos en silencio.",
+      "They are published marked, never silently corrected."
+    ],
+    "region_o_producto_sin_datos": [
+      "Se muestra «sin datos», sin rellenar.",
+      "«No data» is shown, never filled in."
+    ]
+  },
+  "registros": []
+}

@@ -1,0 +1,79 @@
+{
+  "nota": "No conformidades de los informes de calidad (D-334): un indicador fuera de su aceptable. La causa la escribe quien la demuestra; la acción tomada y el estado los escribe el autor. Una causa vacía dice «pendiente de registrar por el autor».",
+  "registros": [
+    {
+      "informe": 1,
+      "indicador": "pruebas_fallidas",
+      "fecha": "2026-10-26",
+      "causa": "",
+      "accion": "",
+      "estado": ""
+    },
+    {
+      "informe": 1,
+      "indicador": "ruff_avisos",
+      "fecha": "2026-10-26",
+      "causa": [
+        "Ruff todavía no estaba configurado en el proyecto (antes de D-323).",
+        "Ruff was not configured in the project yet (before D-323)."
+      ],
+      "accion": "",
+      "estado": ""
+    },
+    {
+      "informe": 2,
+      "indicador": "pruebas_fallidas",
+      "fecha": "2026-10-27",
+      "causa": [
+        "Cinco pruebas de enlaces públicos fallaban porque el repositorio aún no tenía el nombre «greenocean» en GitHub (D-319); pasan desde el cambio de nombre.",
+        "Five public link tests failed because the repository did not yet have the name «greenocean» on GitHub (D-319); they pass since the rename."
+      ],
+      "accion": "",
+      "estado": ""
+    },
+    {
+      "informe": 2,
+      "indicador": "cobertura_por_modulo",
+      "fecha": "2026-10-27",
+      "causa": [
+        "Dos módulos vacíos (bi/data_browser.py y bi/explorer.py) se contaban con 0 % de cobertura; D-323 los retiró.",
+        "Two empty modules (bi/data_browser.py and bi/explorer.py) counted with 0 % coverage; D-323 removed them."
+      ],
+      "accion": "",
+      "estado": ""
+    },
+    {
+      "informe": 2,
+      "indicador": "ruff_avisos",
+      "fecha": "2026-10-27",
+      "causa": [
+        "Línea base medida antes de configurar Ruff (D-323).",
+        "Baseline measured before Ruff was configured (D-323)."
+      ],
+      "accion": "",
+      "estado": ""
+    },
+    {
+      "informe": 3,
+      "indicador": "pruebas_fallidas",
+      "fecha": "2026-10-27",
+      "causa": [
+        "Las cinco pruebas de enlaces públicos (D-319) y dos pruebas que exigían el informe regenerado, medido antes de guardarlo (D-323).",
+        "The five public link tests (D-319) and two tests that required the regenerated report, measured before it was saved (D-323)."
+      ],
+      "accion": "",
+      "estado": ""
+    },
+    {
+      "informe": 4,
+      "indicador": "pruebas_fallidas",
+      "fecha": "2026-10-27",
+      "causa": [
+        "Cinco pruebas de enlaces públicos fallaban porque el repositorio aún no tenía el nombre «greenocean» en GitHub (D-319); pasan desde el cambio de nombre.",
+        "Five public link tests failed because the repository did not yet have the name «greenocean» on GitHub (D-319); they pass since the rename."
+      ],
+      "accion": "",
+      "estado": ""
+    }
+  ]
+}

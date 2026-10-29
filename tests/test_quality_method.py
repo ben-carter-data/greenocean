@@ -326,3 +326,26 @@ def test_d333_the_reports_tab_filters_by_year_month_week_and_search_and_links_ea
 
 
 # endregion
+
+
+# region Non-conformities, mitigation and external incidents (D-334)
+def test_d334_every_nonconformity_of_the_reports_is_registered_and_the_author_writes_action_and_state():
+    folder = quality_metrics.FOLDER
+    records = quality_metrics.read(folder / "no_conformidades.json")["registros"]
+    found = {
+        (report["numero"], row["clave"])
+        for report in quality_metrics.read_reports()
+        for row in report["indicadores"]
+        if row["estado"] in ("urgente", "critico")
+    }
+    assert {(item["informe"], item["indicador"]) for item in records} == found
+    assert all(item["accion"] == "" and item["estado"] == "" for item in records)  # the author's to write
+    plan = quality_metrics.read(folder / "plan_mitigacion.json")["fallas"]
+    assert [item["id"] for item in plan] == [f"F-{n:02d}" for n in range(1, len(plan) + 1)]
+    assert {item["causa"] for item in plan} == {"interna", "externa"}
+    incidents = quality_metrics.read(folder / "incidentes_externos.json")
+    assert incidents["respuestas_por_defecto"]["estado"] == "pendiente de aprobación del autor"
+    assert isinstance(incidents["registros"], list)
+
+
+# endregion

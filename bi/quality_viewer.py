@@ -184,7 +184,7 @@ def build_viewer_html(
         )
         cause = record.get("causa") or word("causa_pendiente")
         action = record.get("accion") or pick(goals.get(row["clave"], {}).get("accion", ""), english)
-        status = record.get("estado") or ("open" if english else "abierta")
+        status = record.get("estado") or ("pending, the author's" if english else "pendiente del autor")
         labels6 = ("Cause", "Action", "State") if english else ("Causa", "Acción", "Estado")
         entries.append(
             f'<div class="card"><h3 style="color:{STATE_COLORS[row["estado"]]}">{esc(pick(row["nombre"], english))} · '
