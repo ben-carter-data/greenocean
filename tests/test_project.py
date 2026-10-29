@@ -129,3 +129,23 @@ def test_d279_every_acronym_of_the_documents_is_in_the_glossary():
         missing = set(re.findall(r"\b[A-Z]{2,}[0-9]*\b", text)) - defined - NOT_ACRONYMS
         assert not missing, (path.name, sorted(missing))
     assert all(row["Tema"] for row in glossary)
+
+
+def test_d338_each_readme_links_to_the_other_and_the_english_one_stays_in_english():
+    """The language rule (D-338): README.md is Spanish and README.en.md English; only their first line crosses over."""
+    root = Path(__file__).resolve().parent.parent
+    spanish = (root / "README.md").read_text(encoding="utf-8").splitlines()
+    english = (root / "README.en.md").read_text(encoding="utf-8").splitlines()
+    assert spanish[0] == "English version: README.en.md"
+    assert english[0] == "Versión en español: README.md"
+    body = "\n".join(english[1:])
+    assert not any(letter in body for letter in "áéíóúñ¿¡"), "README.en.md must not mix in Spanish"
+    # The same public address and the same four badges, so neither version points somewhere else.
+    for needle in (
+        "streamlit.app/",
+        "workflows/pruebas.yml/badge.svg",
+        "workflows/semanal.yml/badge.svg",
+        "workflows/calidad.yml/badge.svg",
+        "medicion.json",
+    ):
+        assert needle in "\n".join(spanish) and needle in body, needle

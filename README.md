@@ -1,3 +1,5 @@
+English version: README.en.md
+
 # GreenOcean · Monitor de precios de alimentos en Chile
 
 Pipeline semanal y panel de BI sobre los precios mayoristas y al consumidor de ODEPA, con precios reales calculados con el IPC de alimentos del INE.
