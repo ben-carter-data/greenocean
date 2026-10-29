@@ -2,6 +2,7 @@
 grades come from the author's dated review, the measurable gaps from the indicators, the wording never claims
 certification, and the line under the logo opens the page in both languages."""
 
+import html
 import json
 import re
 import subprocess
@@ -421,6 +422,64 @@ def test_d335_only_the_author_session_can_be_alerted_and_the_visit_never_breaks(
     app.run()
     assert not app.exception
     assert ("quality_alert_seen" in app.session_state and app.session_state["quality_alert_seen"]) == unlocked
+
+
+# endregion
+
+
+# region The line «Cómo leerlo» under the summary (D-337)
+def bar_and_tick(row_html):
+    """(bar width %, tick position %) of an indicator row, as drawn."""
+    width = re.search(r'<i style="width:([\d.]+)%', row_html)
+    tick = re.search(r'<b style="left:([\d.]+)%', row_html)
+    return (float(width.group(1)), float(tick.group(1))) if width and tick else None
+
+
+def test_d337_the_how_to_read_line_sits_under_the_summary_sentence_in_both_languages(monkeypatch):
+    reports, goals, policy = quality_method.read_page()
+    spanish, english = policy["resumen"]["como_leerlo"]
+    assert spanish.startswith("Cómo leerlo:") and "«Aceptable 0» significa cero tolerancia." in spanish
+    assert english.startswith("How to read this:") and "“Acceptable 0” means zero tolerance." in english
+    for language, text in ((False, spanish), (True, english)):
+        monkeypatch.setattr(i18n, "is_english", lambda language=language: language)
+        overview = quality_method.build_overview(reports[-1], goals, policy)
+        assert f'<p class="qm-help">{html.escape(text)}</p>' in overview
+        assert (
+            overview.index('class="qm-lead"') < overview.index('class="qm-help"') < overview.index('class="qm-groups"')
+        )
+        assert overview.count("qm-help") == 1  # one line, no more
+
+
+def test_d337_what_the_line_says_is_what_the_bars_and_ticks_show(monkeypatch):
+    """«Cada barra es la falla actual (en %, en casos o en días), la raya marca el máximo aceptable y mientras la barra no
+    pase la raya, cumple»: checked against the drawing, state by state."""
+    monkeypatch.setattr(i18n, "is_english", lambda: False)
+    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
+    policy = quality_metrics.read(quality_metrics.POLICY_FILE)
+    # The line says «cumple» for a bar short of the tick: that holds while the goal equals the acceptable.
+    assert all(goal["meta"] == goal.get("max", goal.get("min")) for key, goal in goals.items() if key != "nota")
+    seen = set()
+    for coverage, ruff, comparables, days in [(96, 0, 95, 3), (90, 0, 90, 8), (89, 1, 89, 9), (60, 7, 40, 30)]:
+        report = {
+            **REPORT,
+            "cobertura": {**REPORT["cobertura"], "total": coverage},
+            "ruff": {"errores": ruff},
+            "datos": {"pct_comparacion": comparables, "dias_desde_ultima_carga": days},
+        }
+        for row in quality_metrics.evaluate(report, goals, policy):
+            drawn = bar_and_tick(quality_method.indicator_row(row, goals, policy))
+            if row["falla"] is None:
+                assert drawn is None  # not measured: no bar, no tick
+                continue
+            width, tick = drawn
+            assert (row["estado"] == "cumple") == (width <= tick), (row["clave"], width, tick, row["estado"])
+            # The tick is the acceptable, on the scale of its own bar: zero tolerance puts it at the left edge.
+            if row["falla_aceptable"] == 0:
+                assert tick == 0.0
+            seen.add(row["estado"])
+        # The failure is in %, in cases or in days, as the line says; nothing else.
+        assert {row["unidad_falla"] for row in quality_metrics.evaluate(report, goals, policy)} <= {"%", "", "días"}
+    assert {"cumple", "urgente", "critico"} <= seen
 
 
 # endregion

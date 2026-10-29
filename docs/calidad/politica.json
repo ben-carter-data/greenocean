@@ -213,5 +213,11 @@
       "Abrir el informe",
       "Open the report"
     ]
+  },
+  "resumen": {
+    "como_leerlo": [
+      "Cómo leerlo: cada barra es la falla actual (en %, en casos o en días) y la raya marca el máximo aceptable. Mientras la barra no pase la raya, cumple. «Aceptable 0» significa cero tolerancia.",
+      "How to read this: each bar is the current failure (in %, in cases or in days) and the tick marks the maximum we accept. While the bar stays short of the tick, it passes. “Acceptable 0” means zero tolerance."
+    ]
   }
 }

@@ -163,7 +163,8 @@ def build_overview(report: dict[str, Any] | None, goals: dict[str, Any], policy:
     return (
         '<div class="qm-overview"><p class="qm-lead">'
         + " ".join(f"<span>{html.escape(text)}</span>" for text in lead)
-        + '</p><div class="qm-groups">'
+        + f'</p><p class="qm-help">{html.escape(t(*policy.get("resumen", {}).get("como_leerlo", ["", ""])))}</p>'
+        + '<div class="qm-groups">'
         + f'<section class="qm-group"><h4>{html.escape(t("Datos que publicamos", "Data we publish"))}</h4>'
         + "".join(indicator_row(row, goals, policy) for row in data)
         + f'</section><section class="qm-group"><h4>{html.escape(t("Código que los trata", "Code that treats them"))}</h4>'
@@ -326,6 +327,7 @@ def build_css(palette: dict[str, str]) -> str:
     return f"""<style>
 .qm-head {{ margin:0 0 10px; font-size:12.5px; color:{soft}; }}
 .qm-lead {{ margin:0 0 14px !important; font-size:15px !important; line-height:1.5 !important; color:{ink}; max-width:920px; }}
+.qm-help {{ margin:-8px 0 14px !important; max-width:920px; font-size:11.5px !important; line-height:1.4 !important; color:{soft}; }}
 .qm-groups {{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; }}
 .qm-group {{ border:1px solid {border}; border-radius:14px; background:{card}; padding:12px 16px 10px; min-width:0; }}
 .qm-group h4 {{ margin:0 0 8px !important; padding:0 !important; font-size:11px !important; letter-spacing:.08em;
