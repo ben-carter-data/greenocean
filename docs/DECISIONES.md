@@ -2564,3 +2564,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** `settle_profile` ya no toma el perfil de `?perfil=…&rol=…` en la primera entrada (D-295). El perfil solo se elige en la ventana, y el estado de autor solo con la clave. Una visita nueva o una recarga empieza sin perfil, muestra la ventana y borra de la dirección lo que traía. Ya elegido, la dirección muestra el perfil pero no lo cambia.
 - **Consecuencia que el autor debe saber:** un enlace compartido con `?perfil=` ya no abre directo en un perfil. Un enlace dentro del contenido que recarga la página (no el menú de la izquierda, que no recarga) vuelve a pedir el perfil.
 - **Pruebas:** `tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_…` (ocho direcciones abren la ventana y no guardan nada del perfil); las pruebas que entraban por la dirección ahora fijan el perfil en la sesión.
+
+## D-341 · Las pruebas de rendimiento salen del CI y siguen en local
+
+- **Causa:** `test_d323_each_named_query_answers_within_its_budget[k3_regional_index]` falló en el CI: 1,42 s contra el presupuesto de 1,0 s. En el equipo del autor la misma consulta tarda 0,44 s: DuckDB resuelve en 0,03 s y el resto es entregar a pandas las 801.263 filas que devuelve (el 98 % de la tabla). No hay un índice ni una reescritura simple y segura: acortarla significaría devolver menos filas o columnas, y eso cambia lo que reciben el panel y sus consumidores.
+- **Decisión:** las pruebas de `tests/test_rendimiento.py` llevan el marcador `rendimiento`, registrado en `pyproject.toml`. `pruebas.yml` corre `pytest -m "not rendimiento"`. Los presupuestos (1,0 s, D-323) y las pruebas no cambian, y en local corren con `python -m pytest -m rendimiento`. Un `pytest` sin filtro en local sigue corriéndolas.
+- **Por qué:** desde D-330 el tiempo por consulta salió de los indicadores de calidad (etapa 1), y los runners compartidos de GitHub no son un entorno estable para medir velocidad.
+- **Pruebas:** el CI deja de medir velocidad; la cobertura mínima (90 %) se sigue revisando.

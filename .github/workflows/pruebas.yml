@@ -35,4 +35,4 @@ jobs:
       # The served database is not in git (D-270): the tests read the one the last load published.
       - run: python bi/served_database.py
       # Coverage under 90 % fails the job (pyproject.toml).
-      - run: pytest -q -o faulthandler_timeout=90 --cov --cov-report=term
+      - run: pytest -q -m "not rendimiento" -o faulthandler_timeout=90 --cov --cov-report=term

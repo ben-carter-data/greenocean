@@ -27,6 +27,10 @@ module = ["etl.etl", "etl.bronze", "etl.ine", "etl.pipeline", "bi.queries", "bi.
           "bi.inflation_view", "bi.control", "bi.served_database"]
 disallow_untyped_defs = true
 
+[tool.pytest.ini_options]
+# D-341: the speed budgets run locally (pytest -m rendimiento) and not in the CI, whose shared runners are too unstable.
+markers = ["rendimiento: speed budget of a query; excluded from the CI, run locally with -m rendimiento"]
+
 [tool.coverage.run]
 source = ["bi", "etl", "agent"]
 omit = ["*/__init__.py"]
