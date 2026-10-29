@@ -111,7 +111,7 @@ def test_d285_the_map_is_html_with_image_logos_and_a_script_without_html(theme):
 
 def test_d285_the_map_sits_next_to_the_stack_and_the_stack_links_to_it():
     stack_block = next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "stack")
-    assert stack_block == [dashboard.PAGE_STACK, dashboard.PAGE_APP_MAP, dashboard.PAGE_METHOD]
+    assert stack_block == [dashboard.PAGE_STACK, dashboard.PAGE_APP_MAP]  # D-343: the method moved to «Calidad»
     assert dashboard.PAGE_APP_MAP in dashboard.BAR_VIEWS and dashboard.PAGE_APP_MAP in dashboard.COMPACT_FOOTER_VIEWS
     source = (ROOT / "bi" / "dashboard.py").read_text(encoding="utf-8")
     stack = source[source.index("def show_stack_page") : source.index("def show_app_map_page")]

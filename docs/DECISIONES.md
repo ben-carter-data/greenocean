@@ -2579,3 +2579,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Regla:** cada falla diagnosticada y resuelta se anota en el registro antes del push (CLAUDE.md).
 - **Límite que el autor debe saber:** el repositorio es público. El diagnóstico se muestra solo al Autor en el panel (D-345), pero el archivo lo puede leer cualquiera; por eso los diagnósticos no llevan datos sensibles.
 - **Pruebas:** `tests/test_quality_method.py::test_d334_…` (categorías, estaciones de 1 a 15, esquema de cada ocurrencia en español e inglés y las ocho de operación).
+
+## D-343 · Sección «Calidad» en el menú; se quita la línea de autoevaluación bajo el logo
+
+- **Pedido del autor:** sacar del encabezado del menú el texto «Autoevaluación de calidad · Informe N° X» (su contenido ya está en la sección) y reunir lo de calidad en una sección propia.
+- **Decisión:** el menú suma la sección «Calidad» («Quality») con «Calidad y auditoría» (antes en Ingeniería de datos) y «Método y calidad» (antes en Stack y evidencia); la página «Git workflow» se suma en D-344. «GitHub Actions» se queda en DevOps y seguridad, solo para el Autor. Los nombres de las páginas y sus direcciones no cambian, así que los enlaces internos siguen sirviendo. La sección sigue la regla de los demás bloques: el perfil de usuario no la ve, el profesional y el autor sí, al final de cada orden. Se retiran `show_assessment_line` y `quality_method.sidebar_line`.
+- **Pruebas:** `tests/test_dashboard.py` (el menú y el orden de cada perfil con la sección nueva), `tests/test_app_map.py` (el bloque Stack) y `tests/test_quality_method.py::test_d332_…` (la línea ya no existe y las dos páginas quedan juntas).

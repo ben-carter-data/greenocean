@@ -397,11 +397,11 @@ ROLE_PARAMETER = "rol"
 ROLE_STATE = "visitor_role"
 ROLES = {"data": "Data Eng", "ba": "BA", "bi": "BI", "devops": "DevOps", "seguridad": "Seguridad"}
 ROLE_ORDER = {
-    "data": ["ingenieria", "negocio", "devops", "stack"],
-    "ba": ["negocio", "stack", "ingenieria", "devops"],
-    "bi": ["negocio", "ingenieria", "stack", "devops"],
-    "devops": ["devops", "ingenieria", "negocio", "stack"],
-    "seguridad": ["devops", "ingenieria", "negocio", "stack"],
+    "data": ["ingenieria", "negocio", "devops", "stack", "calidad"],
+    "ba": ["negocio", "stack", "ingenieria", "devops", "calidad"],
+    "bi": ["negocio", "ingenieria", "stack", "devops", "calidad"],
+    "devops": ["devops", "ingenieria", "negocio", "stack", "calidad"],
+    "seguridad": ["devops", "ingenieria", "negocio", "stack", "calidad"],
 }
 DEFAULT_ROLE = "bi"  # a user view unlocked with the key reads the business first
 LANDING_STATE = "profile_landing"
@@ -721,23 +721,6 @@ def show_load_alert(windows_by_title):
         st.session_state[LOAD_ALERT_SEEN] = failed["id"]
         st.toast(
             tr("La carga del {} falló: el panel muestra la última carga válida.").format(day), icon=":material/error:"
-        )
-
-
-def show_assessment_line():
-    """The line under the logo (D-320): what the project was assessed against, a link to «Método y calidad». It sits in the
-    free space under the wordmark, out of the flow, so the menu does not move."""
-    palette = charts.get_palette(get_mode())
-    with st.sidebar.container(key="assessment_line"):
-        st.markdown(
-            f"""<style>
-        .st-key-assessment_line {{ height:0 !important; min-height:0 !important; margin:0 0 -1rem !important; padding:0 !important; overflow:visible; }}
-        .st-key-assessment_line a {{ position:fixed; top:56px; left:22px; z-index:5; font-size:10.5px; line-height:1.2; letter-spacing:.01em;
-            color:{charts.legible(palette['reference'], palette['sidebar'])} !important; text-decoration:none !important; background:none; }}
-        .st-key-assessment_line a:hover {{ color:{palette['strong_text']} !important; text-decoration:underline !important; }}
-        .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) .st-key-assessment_line a {{ display:none; }}
-        </style><a href="{html.escape(build_page_address(PAGE_METHOD))}" target="_self">{html.escape(quality_method.sidebar_line(quality_method.read_page()[0]))}</a>""",
-            unsafe_allow_html=True,
         )
 
 
@@ -7115,9 +7098,10 @@ RELOAD_HOME_SCRIPT = """<script>
 # (key, title, pages or source links)
 MENU_BLOCKS = [
     ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_INSIGHTS]),
-    ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
+    ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_SECURITY]),
-    ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD]),
+    ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),
+    ("calidad", "Calidad", [PAGE_OPERATIONS, PAGE_METHOD]),  # D-343: quality and audit, and the method behind it
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
     ("documentos", "Documentos", [PAGE_FOLDER]),
 ]
@@ -7377,7 +7361,6 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             st.session_state[f"nav_open_{key}"] = key not in FOLDED_BY_DEFAULT
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
-    show_assessment_line()
     show_load_alert(windows_by_title)  # D-298: first in the menu, where nothing covers it
     for key, title, pages in visible_menu_blocks():
         if key in TILE_BLOCKS:

@@ -82,13 +82,12 @@ def test_d323_the_verifier_fails_naming_the_indicator_below_its_goal(tmp_path):
     )
 
 
-def test_d332_the_header_names_the_latest_report_and_the_logo_line_promises_only_that():
+def test_d332_the_header_names_the_latest_report():
     reports, _, _ = quality_method.read_page()
     latest = reports[-1]
     header = quality_method.build_header(latest)
     assert f"Informe de calidad N° {latest['numero']}" in header and latest["codigo_evaluado"] in header
-    assert "revisada y aprobada por el autor" in header and "ISO" not in quality_method.sidebar_line(reports)
-    assert quality_method.sidebar_line(reports) == f"Autoevaluación de calidad · Informe N° {latest['numero']}"
+    assert "revisada y aprobada por el autor" in header and "ISO" not in header
     assert "Todavía no hay informes" in quality_method.build_header(None)
 
 
@@ -212,15 +211,18 @@ def test_d332_the_summary_reads_the_latest_report_and_never_claims_an_external_a
 
 
 @pytest.mark.parametrize("language", ["es", "en"])
-def test_d332_the_page_has_two_tabs_and_the_logo_line_opens_it_in_both_languages(language):
+def test_d332_the_page_has_two_tabs_and_the_quality_section_holds_it_in_both_languages(language):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params.update({"perfil": "profesional", "lang": language})
     app.run()
     assert not app.exception
     markup = " ".join(block.value for block in app.sidebar.markdown)
-    number = quality_metrics.read_reports()[-1]["numero"]
-    expected = f"Quality self-assessment · Report No. {number}" if language == "en" else f"Informe N° {number}"
-    assert expected in markup
+    assert "Quality self-assessment" not in markup and "Autoevaluación de calidad ·" not in markup  # D-343: gone
+    labels = [link.proto.label for link in app.sidebar.get("page_link")]
+    audit, method = (
+        ("Quality and audit", "Method and quality") if language == "en" else ("Calidad y auditoría", "Método y calidad")
+    )
+    assert labels.index(method) == labels.index(audit) + 1  # D-343: the two sit together in the section «Calidad»
     page = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     page.query_params.update({"perfil": "profesional", "lang": language, "vista": "Método y calidad"})
     page.run()

@@ -1277,9 +1277,10 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 MENU_BLOCKS = {
     'Negocio · BI': ['Panorama de precios', 'Insights'],
-    'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Calidad y auditoría', 'Consultas SQL'],
+    'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
-    'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app', 'Método y calidad'],
+    'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],
+    'Calidad': ['Calidad y auditoría', 'Método y calidad'],
 }
 
 
@@ -1473,7 +1474,7 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
     for role in dashboard.ROLES:
         state[dashboard.ROLE_STATE] = role
         blocks = [key for key, *_ in dashboard.visible_menu_blocks()]
-        assert blocks[:4] == dashboard.ROLE_ORDER[role] and blocks[4:] == ["fuentes", "documentos"], role
+        assert blocks[:5] == dashboard.ROLE_ORDER[role] and blocks[5:] == ["fuentes", "documentos"], role
         firsts[role] = dashboard.visible_menu_order()[0]
     assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.HOME_PAGE
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_RUNS

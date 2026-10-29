@@ -49,16 +49,6 @@ def report_title(report: dict[str, Any]) -> str:
     return t(f"Informe de calidad N° {report['numero']}", f"Quality report No. {report['numero']}")
 
 
-def sidebar_line(reports: list[dict[str, Any]]) -> str:
-    """The line under the logo (D-332): it promises only what the page shows, the latest report."""
-    if not reports:
-        return t("Autoevaluación de calidad", "Quality self-assessment")
-    return t(
-        f"Autoevaluación de calidad · Informe N° {reports[-1]['numero']}",
-        f"Quality self-assessment · Report No. {reports[-1]['numero']}",
-    )
-
-
 def failure_text(row: dict[str, Any], key: str = "falla") -> str:
     value = row[key]
     if value is None:
