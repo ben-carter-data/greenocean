@@ -170,3 +170,29 @@ def test_d339_the_page_reads_in_english_too(network):
         assert spanish not in page, spanish
     closed = draw(unlocked=False, language="en")
     assert [item.value for item in closed.info] == ["This page is for the author only."]
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {},
+        {"perfil": "consulta"},
+        {"perfil": "profesional", "rol": "devops"},
+        {"perfil": "autor"},
+        {"perfil": "profesional", "admin_unlocked": "true", "autor": "1", "clave": "x"},
+        {"perfil": "consulta", "vista": "GitHub Actions"},
+        {"perfil": "profesional", "vista": "GitHub Actions", "admin_unlocked": "True"},
+        {"perfil": "profesional", "vista": "GitHub Actions", "lang": "en"},
+    ],
+)
+def test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_the_address_says(network, params):
+    """Every reload is a new session: the author key is never in the address, so no address opens the author's part."""
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
+    app.query_params.update(params)
+    app.run()
+    assert not app.exception
+    assert not app.session_state["admin_unlocked"] if "admin_unlocked" in app.session_state else True
+    assert "GitHub Actions" not in menu_labels(app)
+    page = everything_drawn(app)
+    assert "Abrir en GitHub" not in page and 'class="ga-table"' not in page
+    assert not [url for url, _ in network.calls if url.endswith(("/logs", "/annotations", "/rate_limit"))]
