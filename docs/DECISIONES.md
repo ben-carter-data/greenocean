@@ -2483,3 +2483,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** esas acciones (`stToolbarActions`) se ocultan con CSS, como ya se ocultaba el menú de Streamlit (la app es dueña de su interfaz). Solo las ve el dueño de la app con sesión iniciada; el visitante no las tenía. El dueño comparte la dirección de la app y administra desde el panel de Streamlit Cloud.
 - **Cuidado:** no se puede comprobar en local, porque Streamlit Cloud es quien dibuja esas acciones. Se verifica en la app publicada.
 - **Pruebas:** la suite completa.
+
+## D-329 · El resumen también declara sus huecos: familias y mapa
+
+- **Pedido del autor:** el gráfico de familias y el mapa calculan con los mismos precios comparables que la tabla de productos (D-327), pero no lo decían. Los huecos de la fuente deben declararse también en el resumen.
+- **Decisión:** bajo el gráfico de familias, una línea leída del mismo modelo que la tabla: «Con 719 de 772 precios de la semana. En 247 quedó fuera una región sin precio». En el mapa, el cuadro de cada región suma «N productos sin precio publicado en una de las dos semanas: fuera del cálculo», que cuenta los productos que la región publicó solo la semana anterior y los que publicó solo esta. Sin enlace por familia: una familia agrupa cientos de productos y el detalle de cada uno ya está en la tabla. Las líneas fijas de la tabla y de las familias se acortaron para que la tabla conserve su alto, y los encabezados «Precio medio» van en dos líneas.
+- **Pruebas:** `tests/test_home_mockup.py::test_d329_…`; la auditoría de desbordes del Panorama da 0 en cinco tamaños, dos temas y dos idiomas. El detector ignora lo que guarda un «Ver cálculo» cerrado, que el lector no ve.

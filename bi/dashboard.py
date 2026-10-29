@@ -3601,6 +3601,7 @@ def build_regional_movement_model(current, previous):
     compared = compared[compared['variation'].notna() & compared['variation'].abs().lt(float('inf'))].copy()
     rows = []
     current_counts = current.groupby('region').size().to_dict()
+    previous_counts = previous.groupby('region').size().to_dict()
     for region in sorted(set(current['region'])):
         values = compared.loc[compared['region'] == region, 'variation']
         up = int(values.ge(0.0005).sum())
@@ -3608,6 +3609,8 @@ def build_regional_movement_model(current, previous):
         stable = int(values.abs().lt(0.0005).sum())
         total = up + down + stable
         missing = max(0, int(current_counts.get(region, 0)) - total)
+        # D-329: the products this region priced the week before and not this week, also out of the comparison.
+        dropped = max(0, int(previous_counts.get(region, 0)) - total)
         counts = {'rise': up, 'fall': down, 'neutral': stable}
         if not total:
             state, share = 'missing', None
@@ -3628,6 +3631,7 @@ def build_regional_movement_model(current, previous):
                 'stable': stable,
                 'total': total,
                 'missing': missing,
+                'dropped': dropped,
             }
         )
     return rows
@@ -3972,6 +3976,7 @@ def show_market_overview(mode, prefix):
                 lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen),
                 family,
                 scope,
+                home_mockup.movement_note(model),
             )
             + '</div>',
             unsafe_allow_html=True,

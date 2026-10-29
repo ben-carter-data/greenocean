@@ -597,3 +597,7 @@ ul.mock-calc-out li {display:flex;gap:8px;justify-content:flex-start;padding:0;}
 ul.mock-calc-out li span {color:var(--mock-ink);}
 ul.mock-calc-out li em {font-style:normal;}
 .mock-calc-out b {color:var(--mock-ink);font-weight:600;}
+
+/* D-329: the families and the map say what they are calculated from. */
+.greenocean-mockup .mock-movement-heading p.mock-movement-note {margin:2px 0 0!important;font-size:10.5px!important;line-height:1.35!important;color:var(--mock-muted);}
+.mock-products-table th.mock-two-lines {white-space:normal;line-height:1.25;}

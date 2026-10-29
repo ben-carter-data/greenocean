@@ -413,6 +413,10 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
             f'{row.get("down", 0)} bajaron · {row.get("up", 0)} subieron · '
             f'{row.get("stable", 0)} sin cambio · {row.get("total", 0)} comparados'
         )
+        gaps = int(row.get('missing', 0) or 0) + int(row.get('dropped', 0) or 0)
+        if gaps:
+            # D-329: what this region did not publish in one of the two weeks, left out of its figure.
+            detail += f'\n{gaps} productos sin precio publicado en una de las dos semanas: fuera del cálculo'
         selected = region == selected_region
         hint = f'{region}\n{summary}\n{detail}\nSemana {previous_label} → {week_label}\n' + (
             'Volver a todo Chile' if selected else 'Ver las familias de esta región'
@@ -528,7 +532,18 @@ def dashboard_updated(updated, loaded):
     )
 
 
-def family_movement(rows, family_link, selected_family, scope):
+def movement_note(model):
+    """D-329: what the families and the map are calculated from, read from the same model as the table."""
+    available, missing = int(model.get('available') or 0), int(model.get('missing') or 0)
+    if not available:
+        return ''
+    sentences = [f'Con {number(available - missing)} de {number(available)} precios de la semana.']
+    if model.get('national') and model.get('coverage_changed'):
+        sentences.append(f'En {number(model["coverage_changed"])} quedó fuera una región sin precio.')
+    return '<p class="mock-movement-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</p>'
+
+
+def family_movement(rows, family_link, selected_family, scope, note=''):
     """One clickable row per family: a diverging bar from zero, its change and its state."""
     summary = family_averages(rows)
     if not summary:
@@ -552,7 +567,7 @@ def family_movement(rows, family_link, selected_family, scope):
     place = scope[0].upper() + scope[1:]
     return (
         '<section class="mock-movement"><div class="mock-movement-heading"><div><span class="mock-kicker">Variación por familia</span><h2>¿Qué familias subieron y cuáles bajaron?</h2>'
-        f'<p>Mediana de variaciones de precios comparables, {esc(scope)}.</p></div>'
+        f'<p>Mediana de variaciones de precios comparables, {esc(scope)}.</p>{note}</div>'
         f'<span class="mock-place">Región: <b>{esc(place)}</b></span>'
         '</div><div class="mock-movement-row mock-movement-axis" aria-hidden="true"><i></i><span></span>'
         f'<span class="mock-movement-scale"><span>−{limit} %</span><span>0</span><span>+{limit} %</span></span>'
@@ -564,13 +579,11 @@ def products_note(published, hidden=0):
     """The fixed line above the table (D-327): what the prices are, what is left out and why, and how many products
     are not shown. «published» is the number of regions the source publishes. One span per sentence."""
     sentences = [
-        f'Los precios son el promedio de las regiones con precio publicado en las dos semanas (la fuente publica {published} regiones).',
-        'Si una región no publicó un producto en alguna de las dos semanas, se deja fuera de ese producto y no se rellena.',
+        f'Precio medio de las regiones con precio publicado las dos semanas (la fuente publica {published}).',
+        'Las regiones sin precio quedan fuera, sin rellenar.',
     ]
     if hidden:
-        sentences.append(
-            f'{number(hidden)} precios de la semana no aparecen porque ninguna región tiene precio en las dos semanas.'
-        )
+        sentences.append(f'{number(hidden)} precios sin región comparable no aparecen.')
     return '<p class="mock-products-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</p>'
 
 
@@ -694,8 +707,8 @@ def products_table(rows, week_label, previous_label, query='', selected=None, pu
     return (
         '<div class="mock-products-table" role="region" tabindex="0" aria-label="Productos de la familia"><table><thead><tr>'
         f'<th>Producto</th><th>Canal</th>'
-        f'<th class="num" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio {esc(previous_label[:5])}</th>'
-        f'<th class="num" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio {esc(week_label[:5])}</th><th class="num">Variación</th>'
+        f'<th class="num mock-two-lines" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio<br>{esc(previous_label[:5])}</th>'
+        f'<th class="num mock-two-lines" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio<br>{esc(week_label[:5])}</th><th class="num">Variación</th>'
         '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; haz clic en el conteo para ver cuáles">Regiones ↑ / ↓ · clic</th></tr></thead>'
         '<tbody>' + ''.join(body) + '</tbody></table></div>'
     )

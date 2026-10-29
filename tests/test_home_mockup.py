@@ -176,6 +176,7 @@ def test_regional_summary_counts_equivalent_prices_and_uses_a_display_threshold(
             'stable': 1,
             'total': 3,
             'missing': 1,
+            'dropped': 0,  # D-329: none priced the week before and missing this week
         }
     ]
 
@@ -394,7 +395,7 @@ def test_d327_the_row_shows_the_prices_of_the_regions_it_compares_and_opens_its_
     page = home_mockup.products_table([dict(ZAPALLO)], '12-10-2026', '05-10-2026', published=9)
     # The two prices and the change rest on the same regions, so dividing them gives the change shown.
     assert '$1.247' in page and '$1.812' in page and '$1.199' not in page and '+45,3 %' in page
-    assert 'Precio medio 05-10' in page and 'Precio medio 12-10' in page
+    assert 'Precio medio<br>05-10' in page and 'Precio medio<br>12-10' in page
     assert 'title="Promedio de las regiones con precio publicado en las dos semanas"' in page
     assert '<summary>Ver cálculo · 2 de 9 regiones</summary>' in page and 'regiones comunes' not in page
     assert (
@@ -416,8 +417,8 @@ def test_d327_the_row_shows_the_prices_of_the_regions_it_compares_and_opens_its_
 
 def test_d327_the_fixed_note_says_what_the_prices_are_and_what_is_not_shown():
     note = home_mockup.products_note(9, 19)
-    assert 'la fuente publica 9 regiones' in note and 'no se rellena' in note
-    assert '19 precios de la semana no aparecen' in note and note.count('<span>') == 3
+    assert 'la fuente publica 9' in note and 'sin rellenar' in note
+    assert '19 precios sin región comparable no aparecen' in note and note.count('<span>') == 3
     assert '19 precios' not in home_mockup.products_note(9, 0)
 
 
@@ -433,3 +434,18 @@ def test_d327_a_change_resting_on_one_region_sorts_last_in_every_order():
 
 
 # endregion
+
+
+def test_d329_the_families_and_the_map_say_what_they_are_calculated_from():
+    note = home_mockup.movement_note({'available': 305, 'missing': 19, 'coverage_changed': 121, 'national': True})
+    assert 'Con 286 de 305 precios de la semana' in note and 'En 121 quedó fuera una región sin precio' in note
+    regional = home_mockup.movement_note({'available': 40, 'missing': 4, 'coverage_changed': 0, 'national': False})
+    assert '36 de 40' in regional and 'quedó fuera' not in regional
+    assert home_mockup.movement_note({'available': 0, 'missing': 0}) == ''
+    row = {'region': 'Región de Arica y Parinacota', 'state': 'fall', 'share': 59.0, 'up': 10, 'down': 20, 'stable': 4}
+    page = home_mockup.regional_map(
+        [dict(row, total=34, missing=5, dropped=92)], lambda region: '#', '12-10-2026', '05-10-2026'
+    )
+    assert '97 productos sin precio publicado en una de las dos semanas: fuera del cálculo' in page
+    page = home_mockup.regional_map([dict(row, total=34, missing=0, dropped=0)], lambda region: '#', '12-10', '05-10')
+    assert 'fuera del cálculo' not in page

@@ -39,6 +39,9 @@ function findOverflows() {
     const s = getComputedStyle(e), r = e.getBoundingClientRect();
     if (s.position === 'fixed') continue;
     if (e.closest('[role="tooltip"], [data-baseweb="popover"], .stTooltipContent, [aria-hidden="true"], .sr-only')) continue;
+    // What a closed details holds is not drawn for the reader: only its summary is (D-327).
+    const folded = e.closest('details:not([open])');
+    if (folded && !e.closest('summary')) continue;
     // 1) the element's own text is wider (or taller) than its box; the width is the text's own, not a hidden child's
     if (s.display !== 'inline' && e.clientWidth > 0 && !(e instanceof SVGElement)) {
       let textRight = -Infinity;

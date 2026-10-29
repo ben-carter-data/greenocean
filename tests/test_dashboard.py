@@ -132,7 +132,7 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
         'Detalle de productos</span><span class="mock-products-family">Hortalizas' in texts
         and 'Producto seleccionado' not in texts
     )
-    assert 'Precio medio 28-09' in texts and 'Precio medio 05-10' in texts and 'Variación' in texts  # D-327
+    assert 'Precio medio<br>28-09' in texts and 'Precio medio<br>05-10' in texts and 'Variación' in texts  # D-327
     assert 'class="zoom-frame' not in texts and 'animateMotion' not in texts
     assert texts.index('¿Qué familias subieron y cuáles bajaron?') < texts.index('¿Qué productos explican el cambio?')
     # The search, the order and the table replace the old «Explorar…» drop-down (D-093).
