@@ -1,15 +1,18 @@
-# D-323: measures the quality indicators on every push and checks them against docs/calidad/metas.json.
-# It writes the measurement (with its date and commit) as an artifact and, on main, proposes it to the author in a pull
-# request «Actualizar medición de calidad» with the comparison against the previous one. It never changes the code and
-# never publishes anything: the page «Método y calidad» shows a measurement only after the author merges that request.
+# D-323, D-330, D-331: measures the 12 quality indicators (data and code) on every push and checks them against
+# docs/calidad/metas.json. On main it turns the measurement into the next numbered report (docs/calidad/informes/) and
+# proposes it to the author in a pull request «Actualizar medición de calidad», with the comparison against the previous
+# report. It never changes the code and never publishes anything: the page «Método y calidad» shows a report only after
+# the author merges that request.
 # Opening the request needs Settings → Actions → General → «Allow GitHub Actions to create and approve pull requests».
 name: calidad
 on:
   push:
   workflow_dispatch:
-  # Once a week, when the author turns it on (D-323): remove the # of the next two lines.
-  # schedule:
-  #   - cron: "0 14 * * 1"
+  # D-331, PROPOSED, NOT ACTIVE: after every weekly load, even a failed one, so each Tuesday leaves its report.
+  # It replaces the old Monday cron, which ran before the load. To turn it on, remove the # of the next three lines.
+  # workflow_run:
+  #   workflows: [semanal]
+  #   types: [completed]
 permissions:
   contents: write
   pull-requests: write
@@ -40,21 +43,29 @@ jobs:
         with:
           name: medicion-${{ github.sha }}
           path: medicion.json
-      - name: Proponer la medición al autor
+      - name: Comparar con los aceptables
+        id: verificar
+        continue-on-error: true
+        run: .venv/bin/python scripts/verificar_calidad.py medicion.json
+      - name: Proponer el informe al autor
         if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          branch="calidad/medicion-${GITHUB_SHA::7}"
-          cp docs/calidad/medicion.json anterior.json
+          branch="calidad/informe-${GITHUB_SHA::7}"
           cp medicion.json docs/calidad/medicion.json
-          .venv/bin/python scripts/informe_calidad.py --anterior anterior.json --cuerpo cuerpo.md
+          .venv/bin/python scripts/informe_calidad.py --cuerpo cuerpo.md
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"
-          git add docs/calidad/medicion.json docs/calidad/historial.json docs/calidad/INFORME.md
-          git commit -m "chore(calidad): actualizar medición de calidad (D-323)"
+          git add docs/calidad/medicion.json docs/calidad/historial.json docs/calidad/INFORME.md docs/calidad/informes
+          git commit -m "chore(calidad): informe de calidad de ${GITHUB_SHA::7} (D-331)"
           git push origin "$branch"
           gh pr create --base main --head "$branch" --title "Actualizar medición de calidad" --body-file cuerpo.md
-      - name: Comparar con las metas
-        run: .venv/bin/python scripts/verificar_calidad.py medicion.json
+          # D-331, PROPOSED, NOT ACTIVE: merge by itself when every code indicator is within its acceptable. It needs
+          # Settings → General → «Allow auto-merge». To turn it on, remove the # of the next two lines.
+          # if [ "${{ steps.verificar.outcome }}" = "success" ]; then
+          #   gh pr merge "$branch" --auto --squash; fi
+      - name: Fallar si un indicador de código pasa lo aceptable
+        if: steps.verificar.outcome == 'failure'
+        run: exit 1

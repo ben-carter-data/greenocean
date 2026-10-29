@@ -1,0 +1,657 @@
+{
+  "numero": 1,
+  "titulo": "Informe de calidad N° 1",
+  "fecha": "2026-10-26 23:28 UTC",
+  "semana": null,
+  "codigo_evaluado": "cf561e7",
+  "anterior": null,
+  "aceptables": {
+    "pruebas_fallidas": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 0,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "cobertura_total": {
+      "min": 90,
+      "meta": 90,
+      "margen_critico": 5,
+      "tipo": "codigo",
+      "medida": "cumplimiento"
+    },
+    "cobertura_por_modulo": {
+      "min": 70,
+      "meta": 70,
+      "margen_critico": 10,
+      "tipo": "codigo",
+      "medida": "cumplimiento"
+    },
+    "ruff_avisos": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 5,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "mypy_errores": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 5,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "bandit_altos": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 0,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "pip_audit_vulnerabilidades": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 0,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "secretos_sin_clasificar": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 0,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "pruebas_dbt_pct": {
+      "min": 100,
+      "meta": 100,
+      "margen_critico": 0,
+      "tipo": "datos",
+      "medida": "cumplimiento"
+    },
+    "comparables_pct": {
+      "min": 90,
+      "meta": 90,
+      "margen_critico": 10,
+      "tipo": "datos",
+      "medida": "cumplimiento"
+    },
+    "rechazadas_pct": {
+      "max": 1,
+      "meta": 1,
+      "margen_critico": 4,
+      "tipo": "datos",
+      "medida": "falla"
+    },
+    "vigencia_dias": {
+      "max": 8,
+      "meta": 8,
+      "margen_critico": 7,
+      "tipo": "datos",
+      "medida": "dias"
+    }
+  },
+  "modo_datos": "aviso",
+  "indicadores": [
+    {
+      "clave": "pruebas_fallidas",
+      "nombre": [
+        "Pruebas que fallan",
+        "Failing tests"
+      ],
+      "tipo": "codigo",
+      "valor": 18,
+      "unidad": "",
+      "falla": 1.9,
+      "falla_aceptable": 0,
+      "unidad_falla": "%",
+      "estado": "critico",
+      "bloquea": true,
+      "insight": [
+        "Supera lo aceptable por mucho: es crítico. Corregir la causa antes de publicar; nunca saltar la prueba.",
+        "Far over the acceptable: critical. Fix the cause before publishing; never skip the test."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "cobertura_total",
+      "nombre": [
+        "Cobertura total",
+        "Total coverage"
+      ],
+      "tipo": "codigo",
+      "valor": 91.5,
+      "unidad": "%",
+      "falla": 8.5,
+      "falla_aceptable": 10,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "cobertura_por_modulo",
+      "nombre": [
+        "Cobertura del módulo más bajo",
+        "Coverage of the lowest module"
+      ],
+      "tipo": "codigo",
+      "valor": null,
+      "unidad": "%",
+      "falla": null,
+      "falla_aceptable": null,
+      "unidad_falla": "",
+      "estado": "sin_medicion",
+      "bloquea": false,
+      "insight": [
+        "Sin medición en este informe: no se evalúa; no se inventa un valor.",
+        "Not measured in this report: not assessed; no value is made up."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "ruff_avisos",
+      "nombre": [
+        "Avisos de Ruff (E, F y W; el largo de línea, aparte)",
+        "Ruff findings (E, F and W; line length apart)"
+      ],
+      "tipo": "codigo",
+      "valor": 43,
+      "unidad": "",
+      "falla": 43,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "critico",
+      "bloquea": true,
+      "insight": [
+        "Supera lo aceptable por mucho: es crítico. Corregir los avisos; ruff check --fix resuelve la mayoría.",
+        "Far over the acceptable: critical. Fix the findings; ruff check --fix solves most of them."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "mypy_errores",
+      "nombre": [
+        "Errores de mypy",
+        "mypy errors"
+      ],
+      "tipo": "codigo",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "bandit_altos",
+      "nombre": [
+        "Hallazgos altos de Bandit",
+        "High Bandit findings"
+      ],
+      "tipo": "codigo",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "pip_audit_vulnerabilidades",
+      "nombre": [
+        "Vulnerabilidades en dependencias",
+        "Vulnerable dependencies"
+      ],
+      "tipo": "codigo",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "secretos_sin_clasificar",
+      "nombre": [
+        "Posibles secretos sin revisar",
+        "Unreviewed possible secrets"
+      ],
+      "tipo": "codigo",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "pruebas_dbt_pct",
+      "nombre": [
+        "Pruebas de datos dbt superadas",
+        "dbt data tests passed"
+      ],
+      "tipo": "datos",
+      "valor": 100.0,
+      "unidad": "%",
+      "falla": 0.0,
+      "falla_aceptable": 0,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "comparables_pct",
+      "nombre": [
+        "Precios con comparación válida",
+        "Prices with a valid comparison"
+      ],
+      "tipo": "datos",
+      "valor": null,
+      "unidad": "%",
+      "falla": null,
+      "falla_aceptable": null,
+      "unidad_falla": "",
+      "estado": "sin_medicion",
+      "bloquea": false,
+      "insight": [
+        "Sin medición en este informe: no se evalúa; no se inventa un valor.",
+        "Not measured in this report: not assessed; no value is made up."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "rechazadas_pct",
+      "nombre": [
+        "Filas rechazadas",
+        "Rejected rows"
+      ],
+      "tipo": "datos",
+      "valor": null,
+      "unidad": "%",
+      "falla": null,
+      "falla_aceptable": null,
+      "unidad_falla": "",
+      "estado": "sin_medicion",
+      "bloquea": false,
+      "insight": [
+        "Sin medición en este informe: no se evalúa; no se inventa un valor.",
+        "Not measured in this report: not assessed; no value is made up."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "vigencia_dias",
+      "nombre": [
+        "Días desde la última carga",
+        "Days since the last load"
+      ],
+      "tipo": "datos",
+      "valor": null,
+      "unidad": "días",
+      "falla": null,
+      "falla_aceptable": null,
+      "unidad_falla": "",
+      "estado": "sin_medicion",
+      "bloquea": false,
+      "insight": [
+        "Sin medición en este informe: no se evalúa; no se inventa un valor.",
+        "Not measured in this report: not assessed; no value is made up."
+      ],
+      "variacion": null
+    }
+  ],
+  "medicion": {
+    "generado": "2026-10-26 23:28 UTC",
+    "commit": "cf561e7",
+    "python": "3.14.7",
+    "limites": {
+      "largo_de_linea": 120,
+      "complejidad": 10,
+      "lineas_por_funcion": 50,
+      "parametros": 5
+    },
+    "ruff": {
+      "orden": "/Users/carter/.venv-tools/bin/ruff check bi etl agent tests --select E,F,W --line-length 120",
+      "version": "ruff 0.17.2",
+      "errores": 1819,
+      "por_codigo": {
+        "E501": 1776,
+        "E731": 15,
+        "W292": 1,
+        "W291": 2,
+        "F601": 15,
+        "F541": 1,
+        "E702": 3,
+        "E402": 5,
+        "E741": 1
+      },
+      "errores_sin_largo_de_linea": 43,
+      "formato": {
+        "orden": "ruff format --check bi etl agent tests --line-length 120",
+        "por_reformatear": 109,
+        "ya_formateados": 6
+      }
+    },
+    "funciones": {
+      "funciones": 969,
+      "lineas_de_codigo": 23572,
+      "mas_de_50_lineas": 40,
+      "mas_largas": [
+        [
+          917,
+          "bi/dashboard.py:build_style_css"
+        ],
+        [
+          175,
+          "bi/sql_explorer.py:build_css"
+        ],
+        [
+          133,
+          "bi/github_page.py:_style"
+        ],
+        [
+          133,
+          "bi/dashboard.py:build_context_css"
+        ],
+        [
+          122,
+          "bi/dashboard.py:read_home_model"
+        ]
+      ],
+      "mas_de_5_parametros": 50,
+      "mas_parametros": [
+        [
+          12,
+          "bi/lineage.py:build_lineage_node"
+        ],
+        [
+          10,
+          "bi/overview.py:build_heat_table_html"
+        ],
+        [
+          9,
+          "bi/home_mockup.py:panels"
+        ],
+        [
+          9,
+          "bi/doc_views.py:build_use_case"
+        ],
+        [
+          9,
+          "bi/dashboard.py:build_info_card_html"
+        ]
+      ],
+      "mas_larga": [
+        917,
+        "bi/dashboard.py:build_style_css"
+      ]
+    },
+    "complejidad": {
+      "orden": "ruff check bi etl agent --select C901 --config lint.mccabe.max-complexity=10",
+      "funciones_sobre_10": 9,
+      "mas_complejas": [
+        [
+          21,
+          "bi/dashboard.py",
+          "read_home_model"
+        ],
+        [
+          14,
+          "bi/lineage.py",
+          "route_edges"
+        ],
+        [
+          13,
+          "bi/dashboard.py",
+          "show_quality_evidence_dialog"
+        ],
+        [
+          12,
+          "bi/dashboard.py",
+          "show_market_overview"
+        ],
+        [
+          12,
+          "bi/dashboard.py",
+          "restore_return_context"
+        ]
+      ],
+      "promedio_radon": {
+        "nota": "A",
+        "valor": 3.481598317560463
+      }
+    },
+    "codigo_muerto": {
+      "orden": "vulture bi etl agent --min-confidence 60",
+      "version": "vulture 2.16",
+      "funciones_sin_uso": [
+        "render_page",
+        "read_glossary",
+        "orthogonal"
+      ],
+      "variables_o_atributos_sin_uso": 42
+    },
+    "mypy": {
+      "orden": "mypy etl/etl.py etl/bronze.py etl/ine.py etl/pipeline.py bi/queries.py bi/alerts.py bi/overview.py bi/inflation_view.py bi/control.py bi/served_database.py --ignore-missing-imports --follow-imports=silent",
+      "version": "mypy 2.4.0 (compiled: yes)",
+      "modulos": 10,
+      "errores": 0,
+      "errores_revisando_cuerpos_sin_tipos": 3,
+      "por_modulo": {
+        "bi/inflation_view.py": 1,
+        "bi/overview.py": 1,
+        "etl/pipeline.py": 1
+      },
+      "funciones": 123,
+      "con_tipo_de_retorno": 0
+    },
+    "cobertura": {
+      "orden": "pytest -q --cov=bi --cov=etl --cov=agent",
+      "pruebas_ok": 928,
+      "pruebas_omitidas": 1,
+      "salida": 1,
+      "total": 91.5,
+      "logica_critica": 83.8,
+      "modulos_criticos": {
+        "etl/etl.py": 95.5,
+        "etl/bronze.py": 36.4,
+        "etl/ine.py": 30.8,
+        "etl/pipeline.py": 43.2,
+        "bi/queries.py": 100.0,
+        "bi/alerts.py": 100.0,
+        "bi/overview.py": 80.9,
+        "bi/inflation_view.py": 97.9,
+        "bi/control.py": 95.1,
+        "bi/served_database.py": 95.2,
+        "bi/quality.py": 97.9
+      }
+    },
+    "bandit": {
+      "orden": "bandit -r bi etl agent",
+      "version": "bandit 1.9.4",
+      "alta": 0,
+      "media": 25,
+      "baja": 12,
+      "por_regla": {
+        "B405": 1,
+        "B314": 1,
+        "B101": 4,
+        "B105": 5,
+        "B608": 24,
+        "B404": 1,
+        "B603": 1
+      }
+    },
+    "pip_audit": {
+      "orden": "pip-audit -r <requirements>",
+      "version": "pip-audit 2.10.1",
+      "archivos": {
+        "requirements.txt": {
+          "vulnerabilidades": 0
+        },
+        "requirements-pipeline.txt": {
+          "estado": "no verificado",
+          "motivo": "las dependencias no se pueden resolver con este Python (dbt pide 3.11 o 3.12)"
+        }
+      }
+    },
+    "secretos": {
+      "orden": "detect-secrets scan $(git ls-files)",
+      "version": "1.5.0",
+      "archivos_revisados": 199,
+      "candidatos": 21,
+      "por_archivo": {
+        "agent/downloads/manifest.json": [
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String"
+        ],
+        "bi/app_map.py": [
+          "Secret Keyword"
+        ],
+        "bi/architecture.py": [
+          "Secret Keyword",
+          "Secret Keyword"
+        ],
+        "bi/dashboard.py": [
+          "Secret Keyword",
+          "Secret Keyword"
+        ],
+        "bi/i18n_en.py": [
+          "Secret Keyword",
+          "Secret Keyword",
+          "Secret Keyword"
+        ],
+        "bi/tech_glossary.py": [
+          "Secret Keyword"
+        ],
+        "etl/datos.version": [
+          "Hex High Entropy String"
+        ],
+        "tests/test_control.py": [
+          "Secret Keyword"
+        ]
+      },
+      "falsos_positivos": 21,
+      "sin_clasificar": 0,
+      "historial_con_patrones_de_claves": 0,
+      "nota": "gitleaks no está instalado en este equipo; se usó detect-secrets y una búsqueda de patrones en el historial"
+    },
+    "sql": {
+      "orden": "sqlfluff lint <ruta> --dialect duckdb",
+      "version": "sqlfluff, version 4.4.0",
+      "bi/queries.sql": {
+        "archivos": 1,
+        "violaciones": 279,
+        "principales": {
+          "LT02": 172,
+          "AM05": 37,
+          "LT09": 25,
+          "ST09": 14,
+          "LT08": 11
+        }
+      },
+      "dbt/models": {
+        "archivos": 16,
+        "violaciones": 240,
+        "principales": {
+          "LT02": 95,
+          "LT01": 41,
+          "LT09": 26,
+          "TMP": 21,
+          "LT08": 17
+        }
+      }
+    },
+    "dbt": {
+      "modelos_por_capa": {
+        "staging": 3,
+        "intermediate": 4,
+        "marts": 9
+      },
+      "pruebas_sql_propias": 5,
+      "ultima_construccion": {
+        "modelos_ok": 16,
+        "pruebas_ok": 31,
+        "pruebas_total": 31
+      }
+    },
+    "proceso": {
+      "commits": 307,
+      "conventional_commits": 0,
+      "pre_commit_configurado": false,
+      "ci": {
+        "semanal.yml": [
+          "pytest",
+          "dbt build"
+        ],
+        "pruebas.yml": [
+          "pytest",
+          "dbt parse"
+        ]
+      }
+    },
+    "pruebas": {
+      "pruebas": 947,
+      "archivos_de_prueba": 53
+    },
+    "dora": {
+      "cargas_registradas": 6,
+      "primera": "2026-10-11",
+      "ultima": "2026-10-20",
+      "semanal": {
+        "estado": "no verificado",
+        "motivo": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unabl"
+      },
+      "pruebas": {
+        "estado": "no verificado",
+        "motivo": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unabl"
+      }
+    },
+    "adr": {
+      "adr": 11,
+      "decisiones": 311
+    }
+  }
+}

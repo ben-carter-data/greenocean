@@ -131,18 +131,66 @@ def test_d323_the_history_keeps_every_measurement_once_and_the_page_shows_it_new
     assert saved[-1]["commit"] == quality_metrics.read(quality_metrics.REPORT_FILE)["commit"]
 
 
-def test_d323_the_report_and_the_pull_request_come_from_the_measurement_files():
+def load_reports_module():
     sys.path.insert(0, str(ROOT / "scripts"))
     import informe_calidad
 
-    baseline, report, goals, rubric, history = quality_method.read_all()
-    text = informe_calidad.build_report(baseline, report, goals, rubric, history)
-    assert text == (ROOT / "docs" / "calidad" / "INFORME.md").read_text(encoding="utf-8")  # the file is up to date
-    assert report["commit"] in text and "```" not in text
+    return informe_calidad
+
+
+def test_d331_the_reports_are_numbered_frozen_and_the_latest_is_the_markdown():
+    informe_calidad = load_reports_module()
+    reports = informe_calidad.read_reports()
+    assert [report["numero"] for report in reports] == list(range(1, len(reports) + 1)) and len(reports) >= 4
+    policy = quality_metrics.read(quality_metrics.POLICY_FILE)
+    for report in reports:
+        assert report["titulo"] == f"Informe de calidad N° {report['numero']}"
+        assert (
+            report["codigo_evaluado"] == report["medicion"]["commit"]
+            and report["fecha"] == report["medicion"]["generado"]
+        )
+        assert report["anterior"] == (report["numero"] - 1 or None)
+        # The report keeps the acceptables it was judged against and, per indicator, what the reader needs.
+        assert set(report["aceptables"]) == {key for key, *_ in quality_metrics.INDICATORS}
+        for row in report["indicadores"]:
+            assert {"valor", "falla", "falla_aceptable", "estado", "insight", "variacion"} <= set(row)
+        # Rebuilt today from its own frozen measurement and acceptables, it says the same: nothing was edited.
+        previous = reports[report["numero"] - 2] if report["numero"] > 1 else None
+        rebuilt = informe_calidad.build_report(
+            report["numero"],
+            report["medicion"],
+            report["aceptables"],
+            {**policy, "modo_datos": report["modo_datos"]},
+            previous,
+        )
+        assert [row["estado"] for row in rebuilt["indicadores"]] == [row["estado"] for row in report["indicadores"]]
+    # The first reports are the measurements of the history, without anything made up.
+    assert [report["codigo_evaluado"] for report in reports[:4]] == ["cf561e7", "6c6286c", "d66804c", "b015e3a"]
+    assert {row["clave"]: row["estado"] for row in reports[0]["indicadores"]}["comparables_pct"] == "sin_medicion"
+    text = (ROOT / "docs" / "calidad" / "INFORME.md").read_text(encoding="utf-8")
+    assert text == informe_calidad.render_markdown(reports[-1], policy) and "```" not in text
     assert not any(word in text.lower() for word in FORBIDDEN)
-    body = informe_calidad.build_pull_request(baseline, report, goals)
-    passed, measured = quality_metrics.met(quality_metrics.values(report), goals)
-    assert f"{passed} de {measured} indicadores" in body and "pendiente de confirmación del autor" in body
+
+
+def test_d331_a_report_is_never_rewritten_and_the_pull_request_compares_with_the_previous(tmp_path):
+    informe_calidad = load_reports_module()
+    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
+    policy = quality_metrics.read(quality_metrics.POLICY_FILE)
+    first, new = informe_calidad.add_report(REPORT, goals, policy, folder=tmp_path)
+    assert new and first["numero"] == 1 and (tmp_path / "informe-001.json").exists()
+    again, new = informe_calidad.add_report(REPORT, goals, policy, folder=tmp_path)
+    assert not new and len(list(tmp_path.glob("informe-*.json"))) == 1  # the same measurement adds nothing
+    fixed = dict(REPORT, commit="def5678", generado="2026-11-03 12:00 UTC", ruff={"errores": 0})
+    second, new = informe_calidad.add_report(fixed, goals, policy, folder=tmp_path)
+    assert new and second["numero"] == 2 and second["anterior"] == 1
+    assert {row["clave"]: row["variacion"] for row in second["indicadores"]}["ruff_avisos"] == -3
+    body = informe_calidad.build_pull_request(second, first, policy)
+    within, nonconforming, measured = informe_calidad.counts(second)
+    assert "Informe de calidad N° 2" in body and "comparada con el informe N° 1" in body
+    assert f"{within} de {measured} indicadores dentro de lo aceptable" in body
+    with pytest.raises(FileExistsError):  # the file mode refuses to overwrite a report
+        with open(tmp_path / "informe-001.json", "x", encoding="utf-8"):
+            pass
 
 
 def test_d323_the_page_quotes_the_files_and_never_claims_certification(monkeypatch):
