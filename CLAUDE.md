@@ -54,6 +54,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 - **Documentos:** sin bloques de código. Diagramas con marcadores `[[diagrama:nombre]]` en su propia línea: las vistas de `bi/doc_views.py` (`contexto`, `contenedores`, `casos`, `sop` y `mockups`) y las figuras de `bi/doc_figures.py` (secuencias, columnas, líneas de tiempo, árboles; D-289). Para no copiar una vista, un documento enlaza a su página con `[[vista:Página del menú]]`. Los mockups son capturas reales de seis páginas actuales en `docs/img/` y `docs/img/en/`, en los cuatro temas. El PDF de un documento es la página misma impresa por el navegador (botón «Imprimir o guardar como PDF», D-248).
 - **Dependencias:** no agregar ninguna sin acuerdo del autor. Solo herramientas gratuitas y sin vencimiento; no hay nube de pago (ADR-31).
 - **Commits libres; push solo después de que el autor revise la app en local.**
+- **Registro de fallas (D-342):** cada falla diagnosticada y resuelta se anota en `docs/calidad/plan_mitigacion.json` (fecha, ocurrencia, diagnóstico, solución, comentario, estación y estado) antes del push. No se anotan secretos ni datos sensibles: el repositorio es público.
 
 ## Trampas conocidas del panel
 

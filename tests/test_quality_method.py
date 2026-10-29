@@ -344,6 +344,19 @@ def test_d334_every_nonconformity_of_the_reports_is_registered_and_the_author_wr
     plan = quality_metrics.read(folder / "plan_mitigacion.json")["fallas"]
     assert [item["id"] for item in plan] == [f"F-{n:02d}" for n in range(1, len(plan) + 1)]
     assert {item["causa"] for item in plan} == {"interna", "externa"}
+    # D-342: every failure has its category, its station of the git flow (1 to 15) and its occurrences
+    assert {item["categoria"] for item in plan} <= {"datos", "código", "operación"} and "operación" in {
+        item["categoria"] for item in plan
+    }
+    assert all(isinstance(item["estacion"], int) and 1 <= item["estacion"] <= 15 for item in plan)
+    keys = {"fecha", "ocurrencia", "diagnostico", "solucion", "comentario", "estacion", "estado", "referencia"}
+    for item in plan:
+        for occurrence in item["ocurrencias"]:
+            assert set(occurrence) == keys and occurrence["estado"] in ("abierta", "resuelta")
+            assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", occurrence["fecha"]) and 1 <= occurrence["estacion"] <= 15
+            for text in ("ocurrencia", "diagnostico", "solucion", "comentario"):  # Spanish and English, both written
+                assert len(occurrence[text]) == 2 and all(occurrence[text])
+    assert sum(len(item["ocurrencias"]) for item in plan if item["categoria"] == "operación") == 8
     incidents = quality_metrics.read(folder / "incidentes_externos.json")
     assert incidents["respuestas_por_defecto"]["estado"] == "pendiente de aprobación del autor"
     assert isinstance(incidents["registros"], list)

@@ -1,5 +1,5 @@
 {
-  "nota": "Plan de mitigación (D-334): las fallas previstas y las reales, cómo se detectan, si su causa es interna o externa, su severidad, la contención inmediata y la acción correctiva.",
+  "nota": "Plan de mitigación (D-334): las fallas previstas y las reales, cómo se detectan, si su causa es interna o externa, su severidad, la contención inmediata y la acción correctiva. Desde D-342 cada falla lleva su categoría (datos, código u operación), su estación del flujo git (1 a 15) y la lista de sus ocurrencias; la solución estándar es «correctiva».",
   "fallas": [
     {
       "id": "F-01",
@@ -21,7 +21,10 @@
         "Corregir la regla de la prueba, no saltarla",
         "Fix the test's rule, never skip it"
       ],
-      "caso_real": "D-299"
+      "caso_real": "D-299",
+      "categoria": "datos",
+      "estacion": 14,
+      "ocurrencias": []
     },
     {
       "id": "F-02",
@@ -42,7 +45,10 @@
       "correctiva": [
         "Corregir la causa en el código o en la prueba",
         "Fix the cause in the code or the test"
-      ]
+      ],
+      "categoria": "código",
+      "estacion": 8,
+      "ocurrencias": []
     },
     {
       "id": "F-03",
@@ -63,7 +69,10 @@
       "correctiva": [
         "Sacarla del historial y guardarla en los secretos",
         "Remove it from history and keep it in the secrets"
-      ]
+      ],
+      "categoria": "código",
+      "estacion": 11,
+      "ocurrencias": []
     },
     {
       "id": "F-04",
@@ -85,7 +94,10 @@
         "Versión máxima en requirements y prueba que lo detecte",
         "Maximum version in requirements and a test that detects it"
       ],
-      "caso_real": "D-164"
+      "caso_real": "D-164",
+      "categoria": "código",
+      "estacion": 14,
+      "ocurrencias": []
     },
     {
       "id": "F-05",
@@ -107,7 +119,10 @@
         "Versión máxima declarada (duckdb<2)",
         "Declared maximum version (duckdb<2)"
       ],
-      "caso_real": "D-227"
+      "caso_real": "D-227",
+      "categoria": "código",
+      "estacion": 14,
+      "ocurrencias": []
     },
     {
       "id": "F-06",
@@ -128,7 +143,10 @@
       "correctiva": [
         "Registrar el incidente externo y esperar la publicación",
         "Record the external incident and wait for publication"
-      ]
+      ],
+      "categoria": "datos",
+      "estacion": 14,
+      "ocurrencias": []
     },
     {
       "id": "F-07",
@@ -149,7 +167,10 @@
       "correctiva": [
         "Adaptar la ingesta con pruebas del formato nuevo",
         "Adapt the ingestion with tests of the new format"
-      ]
+      ],
+      "categoria": "datos",
+      "estacion": 14,
+      "ocurrencias": []
     },
     {
       "id": "F-08",
@@ -170,7 +191,10 @@
       "correctiva": [
         "Revisar si son reales en la fuente",
         "Check whether they are real in the source"
-      ]
+      ],
+      "categoria": "datos",
+      "estacion": 14,
+      "ocurrencias": []
     },
     {
       "id": "F-09",
@@ -192,7 +216,426 @@
         "Ninguna: es la cobertura real de la fuente",
         "None: it is the source's real coverage"
       ],
-      "caso_real": "D-327"
+      "caso_real": "D-327",
+      "categoria": "datos",
+      "estacion": 14,
+      "ocurrencias": []
+    },
+    {
+      "id": "F-10",
+      "categoria": "operación",
+      "falla": [
+        "Una prueba de velocidad falla en el runner compartido del CI",
+        "A speed test fails on the CI's shared runner"
+      ],
+      "deteccion": [
+        "El job «pytest» falla en una sola prueba de tests/test_rendimiento.py",
+        "The «pytest» job fails on one test of tests/test_rendimiento.py"
+      ],
+      "causa": "externa",
+      "causa_raiz": [
+        "Los runners compartidos de GitHub son varias veces más lentos y variables que el equipo del autor",
+        "GitHub's shared runners are several times slower and less steady than the author's machine"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "Los presupuestos de velocidad corren en local, no en el CI",
+        "Speed budgets run locally, not in the CI"
+      ],
+      "correctiva": [
+        "Medir velocidad en un entorno estable; en el CI, solo corrección",
+        "Measure speed in a steady environment; in the CI, correctness only"
+      ],
+      "estacion": 14,
+      "caso_real": "D-341 · 958d137",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-29",
+          "ocurrencia": [
+            "k3_regional_index tardó 1,42 s contra su presupuesto de 1,0 s",
+            "k3_regional_index took 1.42 s against its 1.0 s budget"
+          ],
+          "diagnostico": [
+            "DuckDB resuelve la consulta en 0,03 s; el resto es entregar a pandas 801.263 filas (98 % de la tabla). En local tarda 0,44 s",
+            "DuckDB answers in 0.03 s; the rest is handing 801,263 rows (98 % of the table) to pandas. Locally it takes 0.44 s"
+          ],
+          "solucion": [
+            "Marcador «rendimiento»: las pruebas siguen en local con -m rendimiento y el CI las excluye",
+            "Marker «rendimiento»: the tests stay local with -m rendimiento and the CI leaves them out"
+          ],
+          "comentario": [
+            "Presupuestos y pruebas intactos; la verificación en el CI llega con el próximo push",
+            "Budgets and tests unchanged; the CI check comes with the next push"
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-341 · 958d137"
+        }
+      ]
+    },
+    {
+      "id": "F-11",
+      "categoria": "operación",
+      "falla": [
+        "El workflow «calidad» no puede proponer el informe como pull request",
+        "The «calidad» workflow cannot propose the report as a pull request"
+      ],
+      "deteccion": [
+        "El paso «Proponer el informe al autor» termina con exit code 1",
+        "The step «Proponer el informe al autor» ends with exit code 1"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Sin diagnosticar: falta el log del paso",
+        "Not diagnosed yet: the step's log is missing"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "El informe se genera y se guarda como artefacto; no se publica nada",
+        "The report is generated and kept as an artifact; nothing is published"
+      ],
+      "correctiva": [
+        "Leer el log del paso y corregir su causa exacta",
+        "Read the step's log and fix its exact cause"
+      ],
+      "estacion": 14,
+      "caso_real": "D-331",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-29",
+          "ocurrencia": [
+            "El paso que abre el pull request del informe falla en cada ejecución",
+            "The step that opens the report's pull request fails on every run"
+          ],
+          "diagnostico": [
+            "Los permisos del workflow (contents y pull-requests en write) y la casilla del repositorio están bien; la causa sigue sin conocerse",
+            "The workflow permissions (contents and pull-requests on write) and the repository setting are right; the cause is still unknown"
+          ],
+          "solucion": [
+            "Sin solución todavía",
+            "No solution yet"
+          ],
+          "comentario": [
+            "Falta el log del paso para diagnosticarla",
+            "The step's log is needed to diagnose it"
+          ],
+          "estacion": 14,
+          "estado": "abierta",
+          "referencia": "D-331"
+        }
+      ]
+    },
+    {
+      "id": "F-12",
+      "categoria": "operación",
+      "falla": [
+        "Un arreglo que solo existe en el equipo del autor no llega a la carga semanal",
+        "A fix that only exists on the author's machine does not reach the weekly load"
+      ],
+      "deteccion": [
+        "El workflow «semanal» falla y el mismo código pasa en local",
+        "The «semanal» workflow fails while the same code passes locally"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "El CI ejecuta lo que hay en el repositorio, no lo que hay en el equipo",
+        "The CI runs what is in the repository, not what is on the machine"
+      ],
+      "severidad": "alta",
+      "contencion": [
+        "La base publicada sigue siendo la anterior, con su fecha",
+        "The published database stays the previous one, with its date"
+      ],
+      "correctiva": [
+        "Subir el arreglo al repositorio y volver a correr el workflow; comprobar el CI tras cada push",
+        "Push the fix to the repository and re-run the workflow; check the CI after every push"
+      ],
+      "estacion": 13,
+      "caso_real": "desconocido",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-27",
+          "ocurrencia": [
+            "La carga semanal del martes falló porque el arreglo solo estaba en local",
+            "The Tuesday weekly load failed because the fix was only local"
+          ],
+          "diagnostico": [
+            "La ejecución programada corrió sobre 94d7491, sin el arreglo que ya existía en el equipo del autor",
+            "The scheduled run used 94d7491, without the fix that already existed on the author's machine"
+          ],
+          "solucion": [
+            "El arreglo se subió al repositorio y la carga se volvió a ejecutar",
+            "The fix was pushed and the load was run again"
+          ],
+          "comentario": [
+            "El commit exacto del arreglo no está registrado",
+            "The exact commit of the fix is not recorded"
+          ],
+          "estacion": 13,
+          "estado": "resuelta",
+          "referencia": "desconocido"
+        }
+      ]
+    },
+    {
+      "id": "F-13",
+      "categoria": "operación",
+      "falla": [
+        "Un cambio hecho en la web de GitHub deja main por delante de lo local",
+        "A change made in GitHub's web editor leaves main ahead of the local copy"
+      ],
+      "deteccion": [
+        "git push --dry-run pide forzar, o el avance deja de ser simple",
+        "git push --dry-run asks to force, or the push stops being a fast-forward"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Dos lugares escribieron en main a la vez",
+        "Two places wrote to main at once"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "No se empuja hasta comprobar el avance simple",
+        "Nothing is pushed before the fast-forward is checked"
+      ],
+      "correctiva": [
+        "Integrar con git pull --rebase; nunca forzar",
+        "Integrate with git pull --rebase; never force"
+      ],
+      "estacion": 12,
+      "caso_real": "desconocido",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-29",
+          "ocurrencia": [
+            "Una edición en la web de GitHub con commits locales pendientes",
+            "An edit in GitHub's web editor with local commits pending"
+          ],
+          "diagnostico": [
+            "Habría desalineado main de la copia local y roto el avance simple",
+            "It would have put main out of line with the local copy and broken the fast-forward"
+          ],
+          "solucion": [
+            "La edición se canceló y todo se hizo desde local",
+            "The edit was cancelled and everything was done locally"
+          ],
+          "comentario": [
+            "Se canceló antes de guardar; habría desalineado main",
+            "Cancelled before saving; it would have put main out of line"
+          ],
+          "estacion": 12,
+          "estado": "resuelta",
+          "referencia": "desconocido"
+        }
+      ]
+    },
+    {
+      "id": "F-14",
+      "categoria": "operación",
+      "falla": [
+        "Los logs del CI no se pueden leer sin token",
+        "The CI logs cannot be read without a token"
+      ],
+      "deteccion": [
+        "La API responde 403 («Must have admin rights») al pedir un log",
+        "The API answers 403 («Must have admin rights») when asked for a log"
+      ],
+      "causa": "externa",
+      "causa_raiz": [
+        "GitHub entrega los logs solo a quien tiene un token con permiso",
+        "GitHub gives logs only to someone with a token that has permission"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Los estados de las ejecuciones sí son públicos",
+        "The runs' states are public"
+      ],
+      "correctiva": [
+        "Un token de solo lectura (Actions: Read) en los secretos, nunca en el repositorio",
+        "A read-only token (Actions: Read) in the secrets, never in the repository"
+      ],
+      "estacion": 14,
+      "caso_real": "D-339 · a826b66",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-29",
+          "ocurrencia": [
+            "No se podía ver por qué fallaba el CI",
+            "Why the CI failed could not be seen"
+          ],
+          "diagnostico": [
+            "Las anotaciones públicas solo dicen «exit code 1»; el log pide token",
+            "The public annotations only say «exit code 1»; the log needs a token"
+          ],
+          "solucion": [
+            "Página «GitHub Actions», solo lectura y solo para el Autor, con el token en los secretos",
+            "Page «GitHub Actions», read-only and only for the Author, with the token in the secrets"
+          ],
+          "comentario": [
+            "Mientras tanto, el log se pega a mano",
+            "Meanwhile the log is pasted by hand"
+          ],
+          "estacion": 14,
+          "estado": "resuelta",
+          "referencia": "D-339 · a826b66"
+        }
+      ]
+    },
+    {
+      "id": "F-15",
+      "categoria": "operación",
+      "falla": [
+        "Un archivo sin formato llega al CI",
+        "An unformatted file reaches the CI"
+      ],
+      "deteccion": [
+        "El job «lint» falla en «ruff format --check»",
+        "The «lint» job fails at «ruff format --check»"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Se corrió ruff solo sobre parte del código antes del push",
+        "ruff was run on only part of the code before the push"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: se detecta antes del push",
+        "None: it is caught before the push"
+      ],
+      "correctiva": [
+        "Correr ruff check y ruff format --check sobre todo el código antes de empujar",
+        "Run ruff check and ruff format --check on all the code before pushing"
+      ],
+      "estacion": 8,
+      "caso_real": "0020096",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-29",
+          "ocurrencia": [
+            "Una prueba nueva quedó sin formato justo antes del push",
+            "A new test was left unformatted right before the push"
+          ],
+          "diagnostico": [
+            "ruff format --check . marcó un archivo de los seis commits",
+            "ruff format --check . flagged one file of the six commits"
+          ],
+          "solucion": [
+            "Se formateó y se guardó en su propio commit antes del push",
+            "It was formatted and saved in its own commit before the push"
+          ],
+          "comentario": [
+            "Ruff y mypy no estaban instalados en el entorno hasta ese día",
+            "ruff and mypy were not installed in the environment until that day"
+          ],
+          "estacion": 8,
+          "estado": "resuelta",
+          "referencia": "0020096"
+        }
+      ]
+    },
+    {
+      "id": "F-16",
+      "categoria": "operación",
+      "falla": [
+        "Una acción del workflow usa una versión de Node.js obsoleta",
+        "A workflow action uses an obsolete Node.js version"
+      ],
+      "deteccion": [
+        "Anotación de aviso en cada ejecución: Node.js 20 está obsoleto",
+        "A warning annotation on every run: Node.js 20 is deprecated"
+      ],
+      "causa": "externa",
+      "causa_raiz": [
+        "actions/checkout@v4, setup-python@v5 y upload-artifact@v4 apuntan a Node.js 20",
+        "actions/checkout@v4, setup-python@v5 and upload-artifact@v4 target Node.js 20"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "GitHub las ejecuta ya en Node.js 24; nada falla",
+        "GitHub already runs them on Node.js 24; nothing fails"
+      ],
+      "correctiva": [
+        "Subir las acciones a la versión que declare Node.js 24",
+        "Move the actions to the version that declares Node.js 24"
+      ],
+      "estacion": 14,
+      "caso_real": "",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-29",
+          "ocurrencia": [
+            "Aviso de Node.js 20 obsoleto en los workflows",
+            "Warning about Node.js 20 being deprecated in the workflows"
+          ],
+          "diagnostico": [
+            "Es un aviso, no un fallo; las tres acciones se fuerzan a Node.js 24",
+            "It is a warning, not a failure; the three actions are forced onto Node.js 24"
+          ],
+          "solucion": [
+            "Sin solución todavía",
+            "No solution yet"
+          ],
+          "comentario": [
+            "Pendiente de revisar las versiones nuevas de cada acción",
+            "The new version of each action is still to be reviewed"
+          ],
+          "estacion": 14,
+          "estado": "abierta",
+          "referencia": ""
+        }
+      ]
+    },
+    {
+      "id": "F-17",
+      "categoria": "operación",
+      "falla": [
+        "Un cambio de usuario o de repositorio rompe enlaces y el despliegue",
+        "A change of user or repository breaks links and the deployment"
+      ],
+      "deteccion": [
+        "Los enlaces al repositorio dan 404, o la app publicada no se actualiza",
+        "Links to the repository give 404, or the published app does not update"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "El nombre del usuario y del repositorio está escrito en constantes, insignias y enlaces",
+        "The user and repository names are written in constants, badges and links"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "GitHub redirige el nombre antiguo",
+        "GitHub redirects the old name"
+      ],
+      "correctiva": [
+        "Cambiar el nombre en un solo commit y comprobar la app publicada",
+        "Change the name in a single commit and check the published app"
+      ],
+      "estacion": 15,
+      "caso_real": "D-326 · eb6bce6",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-28",
+          "ocurrencia": [
+            "El usuario de GitHub pasó a ben-carter-data y el repositorio a greenocean",
+            "The GitHub user became ben-carter-data and the repository became greenocean"
+          ],
+          "diagnostico": [
+            "Remoto, constantes, insignias y enlaces apuntaban al nombre antiguo",
+            "The remote, constants, badges and links pointed to the old name"
+          ],
+          "solucion": [
+            "Un commit con el nombre nuevo en todo el repositorio",
+            "One commit with the new name across the repository"
+          ],
+          "comentario": [
+            "Streamlit Cloud sí se actualiza desde main: el 29-10 se vieron en la app publicada el menú nuevo e «Informe N° 4»",
+            "Streamlit Cloud does update from main: on 29-10 the new menu and «Report No. 4» showed on the published app"
+          ],
+          "estacion": 15,
+          "estado": "resuelta",
+          "referencia": "D-326 · eb6bce6"
+        }
+      ]
     }
   ]
 }
