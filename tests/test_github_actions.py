@@ -10,8 +10,10 @@ import requests
 
 from bi import control, github_actions
 
-TOKEN = "github_pat_FAKE0123456789ABCDEFGHIJKLMNOP"
-READ_TOKEN = "github_pat_READ0123456789ABCDEFGHIJKLMNO"
+# Fake tokens, built in parts so that no file of the repository holds a text shaped like a real one.
+TOKEN = "github_pat_" + "FAKE0123456789ABCDEFGHIJKLMNOP"
+READ_TOKEN = "github_pat_" + "READ0123456789ABCDEFGHIJKLMNO"
+SHAPED = "ghp_" + "abcdefghijklmnopqrstuv"
 BASE = f"{control.API_URL}/repos/{control.REPOSITORY}"
 
 
@@ -49,7 +51,7 @@ LOG = (
     f"2026-10-29T13:13:50.0000001Z FAILED tests/test_b.py::test_two[es] - KeyError\n"
     f"2026-10-29T13:13:50.0000002Z FAILED tests/test_a.py::test_one - AssertionError\n"
     f"2026-10-29T13:13:51.0000000Z Authorization: Bearer {TOKEN}\n"
-    f"2026-10-29T13:13:52.0000000Z token was {READ_TOKEN} and ghp_abcdefghijklmnopqrstuv\n"
+    f"2026-10-29T13:13:52.0000000Z token was {READ_TOKEN} and {SHAPED}\n"
     + "".join(f"2026-10-29T13:14:{n:02d}.0000000Z line {n}\n" for n in range(10, 70))
 )
 
@@ -57,8 +59,8 @@ LOG = (
 class Network:
     """A pretend GitHub: records every request, and fails the ones a test asks to fail."""
 
-    def __init__(self, fail=None, logs=True):
-        self.calls, self.fail, self.logs = [], fail or {}, logs
+    def __init__(self, fail=None, logs=True, log=LOG):
+        self.calls, self.fail, self.logs, self.log = [], fail or {}, logs, log
 
     def __call__(self, url, headers=None, params=None, timeout=None):
         self.calls.append((url, dict(headers or {})))
@@ -88,7 +90,7 @@ class Network:
                 ]
             )
         if path.endswith("/logs"):
-            return Answer(text=LOG) if self.logs else Answer(status=404)
+            return Answer(text=self.log) if self.logs else Answer(status=404)
         raise AssertionError(f"unexpected request: {path}")
 
 
@@ -155,10 +157,10 @@ def test_d339_with_a_token_the_latest_failure_shows_job_step_tests_and_the_last_
 def test_d339_the_token_never_leaves_the_reader_not_even_when_a_log_prints_it(network):
     model = github_actions.build_model(READ_TOKEN, TOKEN)
     text = json.dumps(model, default=str) + " ".join(github_actions.clean_log(LOG, (READ_TOKEN, TOKEN)))
-    for secret in (TOKEN, READ_TOKEN, "ghp_abcdefghijklmnopqrstuv", "FAKE0123456789", "READ0123456789"):
+    for secret in (TOKEN, READ_TOKEN, SHAPED, "FAKE0123456789", "READ0123456789"):
         assert secret not in text, secret
     assert "***" in text and "Bearer ***" in " ".join(github_actions.clean_log(LOG, (READ_TOKEN, TOKEN)))
-    assert github_actions.redact("x ghs_0123456789abcdefghij y") == "x *** y"
+    assert github_actions.redact("x " + "ghs_" + "0123456789abcdefghij y") == "x *** y"
 
 
 @pytest.mark.parametrize(

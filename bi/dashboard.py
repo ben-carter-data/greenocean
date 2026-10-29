@@ -34,7 +34,9 @@ import streamlit.components.v1 as components
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (
+    actions_view,
     alerts,
+    github_actions,
     app_map,
     overview,
     quality_method,
@@ -99,6 +101,8 @@ RETIRED_VIEWS = {
 PAGE_KPI = "Indicadores explicados"
 PAGE_OPERATIONS = "Monitoreo"
 PAGE_RUNS = "Ejecuciones"
+PAGE_ACTIONS = "GitHub Actions"  # D-339: the author's read-only view of the workflow runs
+AUTHOR_ONLY_PAGES = {PAGE_ACTIONS}
 PAGE_MANUAL = "Manual"
 PAGE_GLOSSARY = "Glosario"
 PAGE_LINKS = "Enlaces"
@@ -164,7 +168,7 @@ WINDOWS = {
     SECTION_PROJECT: [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD],
     SECTION_KPI: [PAGE_KPI],
     REPORT_WINDOW: [PAGE_HOME, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL],
-    SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS],
+    SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS, PAGE_ACTIONS],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
     SECTION_LINKS: [
         PAGE_FOLDER,
@@ -247,6 +251,7 @@ PAGE_ICONS = {
     PAGE_KPI: ":material/insights:",
     PAGE_OPERATIONS: ":material/health_and_safety:",
     PAGE_RUNS: ":material/play_circle:",
+    PAGE_ACTIONS: ":material/fact_check:",
     PAGE_MANUAL: ":material/menu_book:",
     PAGE_GLOSSARY: ":material/dictionary:",
     PAGE_LINKS: ":material/link:",
@@ -272,6 +277,7 @@ PAGE_PATHS = {
     PAGE_KPI: "indicadores",
     PAGE_OPERATIONS: "operaciones",
     PAGE_RUNS: "ejecuciones",
+    PAGE_ACTIONS: "github-actions",
     PAGE_MANUAL: "manual",
     PAGE_GLOSSARY: "glosario",
     PAGE_LINKS: "enlaces",
@@ -432,6 +438,7 @@ PROGRESS_POLL_SECONDS = 4
 PROGRESS_MAXIMUM_SECONDS = 600
 # Names of the dashboard secrets that enable the "run now" button.
 SECRET_GITHUB_TOKEN = "GITHUB_TOKEN"
+SECRET_READ_TOKEN = "GITHUB_READ_TOKEN"  # D-339: read-only; GITHUB_TOKEN is the fallback
 SECRET_CONTROL_CODE = "CONTROL_CODE"
 REPORT_PARAMETER = "informe"  # D-333: the quality report a link opens
 
@@ -579,9 +586,24 @@ def is_public_profile():
     return get_profile() == PROFILE_PUBLIC
 
 
+def hide_author_pages(blocks):
+    """D-339: a page only the author sees leaves the menu of everyone else."""
+    if st.session_state.get(ADMIN_UNLOCKED):
+        return blocks
+    return [
+        (key, title, pages if pages is SOURCE_LINKS else [view for view in pages if view not in AUTHOR_ONLY_PAGES])
+        for key, title, pages in blocks
+    ]
+
+
 def visible_menu_blocks():
     """The sections of the menu this profile sees, in its order: the user view, only the business pages and the
-    sources; the professional view, everything, led by the profile it puts forward."""
+    sources; the professional view, everything, led by the profile it puts forward. The author's pages only for the
+    author."""
+    return hide_author_pages(menu_blocks_of_profile())
+
+
+def menu_blocks_of_profile():
     if is_public_profile():
         return [block for block in MENU_BLOCKS if block[0] in PUBLIC_BLOCKS]
     by_key = {block[0]: block for block in MENU_BLOCKS}
@@ -1999,6 +2021,7 @@ BAR_VIEWS = {
     PAGE_OPERATIONS,
     PAGE_SQL,
     PAGE_RUNS,
+    PAGE_ACTIONS,
     PAGE_SECURITY,
     PAGE_STACK,
     PAGE_FOLDER,
@@ -5161,6 +5184,62 @@ def show_runs_page(mode):
         show_monitoring_tab(mode)
 
 
+@st.cache_data(ttl=github_actions.CACHE_SECONDS, show_spinner=False)
+def read_actions_model(_read_token, _token):
+    """What GitHub says of the workflow runs, kept two minutes so the page spares the request limit (D-339). The tokens
+    are not part of the cache key (the leading underscore) and never of what is kept."""
+    return github_actions.build_model(_read_token, _token)
+
+
+def show_actions_page(mode):
+    """«GitHub Actions» (D-339), only for the author: the latest runs of the three workflows and what failed in the
+    latest one that failed. Read only: it starts, cancels and re-runs nothing. Without the author's key nothing is
+    asked of GitHub: the page says it is the author's and stops."""
+    if not st.session_state.get(ADMIN_UNLOCKED):
+        st.info(tr("Esta página es solo para el autor."))
+        return
+    show_page_bar(
+        PAGE_ACTIONS,
+        PAGE_ACTIONS,
+        "Las últimas ejecuciones de pruebas, carga semanal y calidad, y qué falló en la última que falló. Solo lectura.",
+    )
+    model = read_actions_model(get_secret(SECRET_READ_TOKEN), get_secret(SECRET_GITHUB_TOKEN))
+    st.markdown(actions_view.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+    if not model["token"]:
+        st.warning(tr(actions_view.NO_TOKEN_NOTICE))
+    elif model["token_error"]:
+        st.error(model["token_error"])
+    else:
+        note, urgent = actions_view.token_note(model["expiration"])
+        (st.warning if urgent else st.caption)(note)
+    for entry in model["workflows"]:
+        st.markdown(
+            f"#### {tr(actions_view.WORKFLOW_NAMES[entry['name']])} · `{entry['file']}`\n\n"
+            f"{tr(actions_view.WORKFLOW_NOTES[entry['name']])}"
+        )
+        if entry["error"]:
+            st.warning(entry["error"])
+        st.markdown(actions_view.build_runs_table(entry["runs"]), unsafe_allow_html=True)
+        failure = entry["failure"]
+        if not failure:
+            continue
+        st.markdown(f"**{tr('Último fallo')}**")
+        if failure["error"]:
+            st.warning(failure["error"])
+        for job in failure["jobs"]:
+            st.markdown(
+                f'<div class="ga-failure">{actions_view.build_failure_summary(job)}</div>', unsafe_allow_html=True
+            )
+            if job["log_error"]:
+                st.warning(job["log_error"])
+            elif job["tail"]:
+                st.caption(tr("Últimas {} líneas del log").format(len(job["tail"])))
+                st.code("\n".join(job["tail"]), language=None)
+    st.caption(
+        tr("Leído a las {}; se vuelve a leer cada 2 minutos.").format(actions_view.format_time(model["read_at"])[-5:])
+    )
+
+
 def show_security_page(mode):
     """The security architecture as a threat model (D-200, D-249): threat, mitigation, verification, asset, and the
     loop of continuous improvement."""
@@ -6495,6 +6574,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_ARCHITECTURE: show_architecture_page,
     PAGE_OPERATIONS: show_operations_page,
     PAGE_RUNS: show_runs_page,
+    PAGE_ACTIONS: lambda mode: show_actions_page(mode),
     PAGE_MANUAL: lambda mode: show_project_document(mode, PAGE_MANUAL),
     PAGE_GLOSSARY: lambda mode: show_project_document(mode, PAGE_GLOSSARY),
     PAGE_DECISION_INDEX: lambda mode: show_project_document(mode, PAGE_DECISION_INDEX),
@@ -6819,6 +6899,7 @@ COMPACT_FOOTER_VIEWS = {
     PAGE_SQL,
     PAGE_OPERATIONS,
     PAGE_RUNS,
+    PAGE_ACTIONS,
     PAGE_SECURITY,
     PAGE_STACK,
     PAGE_FOLDER,
@@ -7039,7 +7120,7 @@ RELOAD_HOME_SCRIPT = """<script>
 MENU_BLOCKS = [
     ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_INSIGHTS]),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_SQL]),
-    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_SECURITY]),
+    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD]),
     ("fuentes", "Fuentes de datos", SOURCE_LINKS),
     ("documentos", "Documentos", [PAGE_FOLDER]),
@@ -7058,6 +7139,7 @@ SIDEBAR_ICONS = {
     PAGE_OPERATIONS: ":material/verified_user:",
     PAGE_SQL: ":material/terminal:",
     PAGE_RUNS: ":material/radio_button_checked:",
+    PAGE_ACTIONS: ":material/fact_check:",
     PAGE_SECURITY: ":material/lock:",
     PAGE_STACK: ":material/layers:",
     PAGE_APP_MAP: ":material/hub:",
@@ -7106,6 +7188,7 @@ SIDEBAR_LABELS = {
     PAGE_DIAGRAMS: "Pipeline y linaje",
     PAGE_OPERATIONS: "Calidad y auditoría",
     PAGE_RUNS: "Centro de operación",
+    PAGE_ACTIONS: "GitHub Actions",
     PAGE_SECURITY: "Arquitectura de seguridad",
     PAGE_DOCUMENTATION: "Documentación",
     PAGE_MANUAL: "Manual de operación",
