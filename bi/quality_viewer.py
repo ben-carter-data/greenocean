@@ -316,7 +316,7 @@ CSS = f"""
 *{{box-sizing:border-box}} html,body{{margin:0;background:{DEEP};color:#d7dee9;
 font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 .deck{{min-height:100vh;display:flex;flex-direction:column}}
-.bar{{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:10px 18px;background:{DEEP};
+.bar{{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:10px 56px 10px 18px;background:{DEEP};
 border-bottom:1px solid color-mix(in srgb,{SKY} 35%,#1b2433)}}
 .bar b{{color:#f3f7fc}} #pos{{color:{SKY};font-variant-numeric:tabular-nums}} .grow{{flex:1}}
 button{{font:inherit;color:#e6edf6;background:#0d1320;border:1px solid #243046;border-radius:8px;padding:5px 12px;cursor:pointer}}

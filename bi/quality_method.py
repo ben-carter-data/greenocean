@@ -363,6 +363,13 @@ def build_css(palette: dict[str, str]) -> str:
 .qm-reports tbody tr:hover td {{ background:color-mix(in srgb, {SKY} 7%, transparent) !important; }}
 {deep_states}.qm-report h3 {{ margin:0 0 4px !important; font-size:20px !important; }}
 .qm-report p {{ margin:0 0 12px !important; font-size:12.5px; color:{soft}; }}
+/* D-336: the × of the report and alert dialogs sits in the top right corner with a face of its own, readable over the
+   viewer's black and over any theme; it used to float at the top center and stick out of its card. */
+div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] {{ position:absolute !important; right:14px; top:14px;
+  z-index:30; width:30px; height:30px; min-height:0; padding:0; border-radius:50%; background:#0d1320 !important;
+  border:1px solid #243046 !important; }}
+div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] svg, div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] [data-testid="stIconMaterial"] {{
+  color:#e6edf6 !important; fill:#e6edf6 !important; }}
 .qm-alerts {{ max-height:60vh; overflow:auto; }}
 .qm-alert {{ border:1px solid currentColor; border-radius:12px; padding:10px 14px 4px; margin-bottom:10px;
   background:color-mix(in srgb, currentColor 6%, transparent); }}

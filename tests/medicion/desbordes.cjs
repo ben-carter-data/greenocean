@@ -110,6 +110,7 @@ async function settle(page, timeout = 60000) {
     }
   };
   for (const lang of LANGS) for (const theme of THEMES) for (const [width, height] of SIZES) {
+    if (process.env.DIALOGS === 'only') break;
     const context = await browser.newContext({ viewport: { width, height } });
     const page = await context.newPage();
     const start = `${BASE}/?perfil=profesional&tema=${theme}${lang === 'en' ? '&lang=en' : ''}`;
@@ -147,6 +148,35 @@ async function settle(page, timeout = 60000) {
       }
     }
     await context.close();
+  }
+  // The dialogs (D-336): the window that asks for the profile, the report viewer, the weeks table and the alerts.
+  if (process.env.DIALOGS) {
+    for (const lang of LANGS) for (const theme of THEMES) for (const [width, height] of SIZES) {
+      const context = await browser.newContext({ viewport: { width, height } });
+      const page = await context.newPage();
+      const suffix = `${lang === 'en' ? '&lang=en' : ''}`;
+      const where = { theme, lang, size: `${width}x${height}` };
+      const open = async (label, url, action) => {
+        try {
+          await page.goto(url); await settle(page, 90000);
+          if (action) { await action(); await page.waitForTimeout(1500); }
+          if (await page.locator('[role="dialog"]').count()) record({ ...where, page: label }, await audit(page));
+          else record({ ...where, page: label }, [{ kind: 'la ventana no abrió', by: 0, el: '', text: '', frame: 'página' }]);
+        } catch (error) { record({ ...where, page: label }, [{ kind: 'no pudo abrirse', by: 0, el: '', text: String(error).slice(0, 40), frame: 'página' }]); }
+      };
+      await open('Ventana · elegir vista', `${BASE}/?tema=${theme}${suffix}`);
+      const start = `${BASE}/?perfil=profesional&tema=${theme}&rol=bi${suffix}`;
+      await open('Ventana · semanas', start, () => page.getByRole('button', { name: /Semanas|Weeks/ }).first().click());
+      await open('Ventana · alertas', start, () => page.locator('button', { hasText: '▲' }).first().click());
+      await page.goto(start); await settle(page, 90000);
+      const href = await page.evaluate(() => { const a = [...document.querySelectorAll('[data-testid="stSidebar"] a[href]')].find((x) => /Método|Method/.test(x.innerText)); return a && a.getAttribute('href'); });
+      if (href) {
+        const address = new URL(href, BASE + '/'); address.searchParams.set('perfil', 'profesional'); address.searchParams.set('tema', theme); address.searchParams.set('informe', '4');
+        if (lang === 'en') address.searchParams.set('lang', 'en');
+        await open('Ventana · informe', address.toString());
+      }
+      await context.close();
+    }
   }
   await browser.close();
   process.stdout.write(JSON.stringify(result));

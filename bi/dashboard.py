@@ -1812,16 +1812,27 @@ def build_style_css(mode):
         font-weight:700 !important; letter-spacing:-.02em; margin:0 0 1.5rem !important; line-height:1.2 !important; }}
     .st-key-profile_choices {{ align-items:flex-start !important; }}
     .st-key-profile_choices > div {{ flex:1 1 0 !important; min-width:0; }}
-    [class*="st-key-profile_choose_"] button {{ min-height:52px; border-radius:999px; border:1px solid {palette["card_border"]};
-        background:{palette["card"]}; }}
-    [class*="st-key-profile_choose_"] button p {{ font-size:1rem; font-weight:600; color:{palette["strong_text"]}; }}
+    /* D-336: the three pills share one look (the author's door is a popover and used to come out lower and paler), and
+       their names never break in two lines, in either language. */
+    [class*="st-key-profile_choose_"] button, .st-key-profile_side_autor button {{ min-height:52px; width:100%;
+        border-radius:999px; border:1px solid {palette["card_border"]}; background:{palette["card"]}; padding:0 10px; }}
+    [class*="st-key-profile_choose_"] button p, .st-key-profile_side_autor button p {{ font-size:1rem; font-weight:600;
+        color:{palette["strong_text"]}; white-space:nowrap; }}
+    .st-key-profile_side_autor button:hover {{ border-color:{palette["accent"]}; }}
+    @media(max-width:480px) {{
+        [class*="st-key-profile_choose_"] button p, .st-key-profile_side_autor button p {{ font-size:.82rem; }}
+        [class*="st-key-profile_choose_"] button [data-testid="stIconMaterial"],
+        .st-key-profile_side_autor button [data-testid="stIconMaterial"] {{ display:none; }}
+    }}
     .st-key-profile_choose_profesional button {{ background:color-mix(in srgb, {palette["accent"]} 12%, transparent);
         border-color:color-mix(in srgb, {palette["accent"]} 45%, transparent); }}
     .st-key-profile_choose_profesional button p, .st-key-profile_choose_profesional button [data-testid="stIconMaterial"] {{
         color:{palette["accent"]}; }}
     [class*="st-key-profile_choose_"] button:hover {{ border-color:{palette["accent"]}; }}
-    .st-key-profile_roles {{ justify-content:center; flex-wrap:nowrap !important; width:max-content !important; max-width:none !important;
-        margin:4px 0 0 50% !important; transform:translateX(-50%); }}
+    /* D-336: the profiles line starts under its pill instead of being centered on it: with three pills a centered line
+       ran out of the dialog on the left. */
+    .st-key-profile_roles {{ justify-content:flex-start; flex-wrap:nowrap !important; width:max-content !important;
+        max-width:none !important; margin:4px 0 0 4px !important; }}
     .st-key-profile_roles > div {{ flex:none !important; width:auto !important; }}
     .st-key-profile_roles button {{ padding:0 2px !important; min-height:0 !important; }}
     .st-key-profile_roles button p {{ font-size:.72rem; color:{palette["reference"]}; white-space:nowrap; }}
