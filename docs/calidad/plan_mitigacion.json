@@ -309,8 +309,8 @@
       ],
       "causa": "interna",
       "causa_raiz": [
-        "Sin diagnosticar: falta el log del paso",
-        "Not diagnosed yet: the step's log is missing"
+        "Una rama remota llamada «calidad» impide crear ramas «calidad/...» en git",
+        "A remote branch named «calidad» keeps git from creating «calidad/...» branches"
       ],
       "severidad": "media",
       "contencion": [
@@ -318,8 +318,8 @@
         "The report is generated and kept as an artifact; nothing is published"
       ],
       "correctiva": [
-        "Leer el log del paso y corregir su causa exacta",
-        "Read the step's log and fix its exact cause"
+        "La rama del informe usa el prefijo «informe-calidad/» (D-362)",
+        "The report branch uses the «informe-calidad/» prefix (D-362)"
       ],
       "estacion": 14,
       "caso_real": "D-331",
@@ -331,20 +331,20 @@
             "The «calidad» workflow cannot open the pull request with the report."
           ],
           "diagnostico": [
-            "Sin diagnosticar: falta el log del paso.",
-            "Not diagnosed: the step's log is missing."
+            "GitHub rechaza la rama calidad/informe-… porque ya existe una rama «calidad» (directory file conflict).",
+            "GitHub rejects the branch calidad/informe-… because a branch «calidad» already exists (directory file conflict)."
           ],
           "solucion": [
-            "Ninguna todavía.",
-            "None yet."
+            "La rama del informe pasa a «informe-calidad/…» en calidad.yml (D-362).",
+            "The report branch becomes «informe-calidad/…» in calidad.yml (D-362)."
           ],
           "comentario": [
-            "Se diagnostica cuando llegue el log.",
-            "It will be diagnosed when the log arrives."
+            "Queda abierta hasta que el workflow abra su primer pull request.",
+            "It stays open until the workflow opens its first pull request."
           ],
           "estacion": 14,
           "estado": "abierta",
-          "referencia": "D-331"
+          "referencia": "D-362"
         },
         {
           "fecha": "2026-10-30",

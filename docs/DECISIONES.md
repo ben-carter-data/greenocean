@@ -2709,3 +2709,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Causa:** la alerta «Acción requerida» leyó el informe N° 4 (27-10), con 5 pruebas fallando, como si fuera el estado de hoy; no había informe nuevo porque el workflow de calidad falla (F-11).
 - **Decisión:** si el último informe tiene más de 8 días, la alerta empieza con «Última medición del 27-10: puede no reflejar el estado actual.» y sus indicadores no llevan el color de crítico o urgente, sino uno gris de medición antigua. El texto vive en `docs/calidad/politica.json` (`alerta.antigua`), en español e inglés.
 - **Pruebas:** `tests/test_quality_method.py::test_d361_…` (a los 3 días es el estado de hoy; a los 9, una medición antigua sin color de crítico).
+
+## D-362 · La rama del informe de calidad tiene su propio prefijo
+
+- **Causa de F-11:** el paso «Proponer el informe al autor» fallaba con «[remote rejected] calidad/informe-acf6839 (directory file conflict)». En el repositorio existe la rama remota «calidad» (último commit `6c6286c`, del 26-10, ya fusionada en main), y git no permite una rama «calidad/...» mientras exista una llamada «calidad».
+- **Decisión:** `calidad.yml` crea la rama del informe como «informe-calidad/<commit>». No se borra nada; borrar la rama «calidad», ya fusionada y sin uso, queda propuesto y espera la aprobación del autor.
+- **Verificación pendiente:** F-11 queda abierta hasta que el workflow abra su primer pull request después del push.

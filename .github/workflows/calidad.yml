@@ -52,7 +52,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          branch="calidad/informe-${GITHUB_SHA::7}"
+          # F-11 (D-362): a remote branch named «calidad» blocked every «calidad/...» branch; the prefix is its own.
+          branch="informe-calidad/${GITHUB_SHA::7}"
           cp medicion.json docs/calidad/medicion.json
           .venv/bin/python scripts/informe_calidad.py --cuerpo cuerpo.md
           git config user.name "github-actions[bot]"
