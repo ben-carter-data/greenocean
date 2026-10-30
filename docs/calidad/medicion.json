@@ -1,13 +1,13 @@
 {
-  "generado": "2026-10-30 22:05 UTC",
-  "commit": "150890e",
-  "python": "3.14.7",
+  "generado": "2026-10-30 22:51 UTC",
+  "commit": "284a355",
+  "python": "3.11.17",
   "ruff": {
-    "orden": "/private/tmp/claude-501/-Users-carter-Desktop-GreenOcean/366db66a-e077-48cc-ba96-646e48935a2b/scratchpad/tools/bin/ruff check bi etl agent tests --select E,F,W",
+    "orden": "/tmp/tools/bin/ruff check bi etl agent tests --select E,F,W",
     "version": "ruff 0.17.2",
-    "errores": 1314,
+    "errores": 1315,
     "por_codigo": {
-      "E501": 1314
+      "E501": 1315
     },
     "errores_sin_largo_de_linea": 0,
     "formato": {
@@ -28,11 +28,11 @@
   },
   "cobertura": {
     "orden": "pytest -q --cov=bi --cov=etl --cov=agent",
-    "pruebas_ok": 1130,
-    "pruebas_omitidas": 1,
-    "salida": 0,
-    "total": 94.6,
-    "logica_critica": 93.2,
+    "pruebas_ok": 1120,
+    "pruebas_omitidas": 9,
+    "salida": 1,
+    "total": 94.4,
+    "logica_critica": 93.0,
     "modulos_criticos": {
       "etl/etl.py": 95.8,
       "etl/bronze.py": 97.1,
@@ -42,9 +42,9 @@
       "bi/alerts.py": 100.0,
       "bi/overview.py": 77.3,
       "bi/inflation_view.py": 97.9,
-      "bi/control.py": 94.9,
+      "bi/control.py": 96.2,
       "bi/served_database.py": 95.3,
-      "bi/quality.py": 97.9
+      "bi/quality.py": 87.2
     },
     "modulos": {
       "agent/agent.py": 87.3,
@@ -56,9 +56,9 @@
       "bi/buttons.py": 100.0,
       "bi/charts.py": 94.1,
       "bi/compact_table.py": 93.2,
-      "bi/control.py": 94.9,
-      "bi/dashboard.py": 91.1,
-      "bi/database_crossings.py": 99.3,
+      "bi/control.py": 96.2,
+      "bi/dashboard.py": 90.9,
+      "bi/database_crossings.py": 98.6,
       "bi/database_map.py": 100.0,
       "bi/deployment.py": 100.0,
       "bi/devops.py": 98.4,
@@ -81,12 +81,12 @@
       "bi/overview.py": 77.3,
       "bi/page_bar.py": 100.0,
       "bi/project.py": 96.0,
-      "bi/quality.py": 97.9,
+      "bi/quality.py": 87.2,
       "bi/quality_evidence.py": 95.8,
-      "bi/quality_live.py": 97.4,
+      "bi/quality_live.py": 98.1,
       "bi/quality_method.py": 98.4,
       "bi/quality_metrics.py": 94.7,
-      "bi/quality_view.py": 98.3,
+      "bi/quality_view.py": 95.7,
       "bi/quality_viewer.py": 100.0,
       "bi/queries.py": 100.0,
       "bi/report.py": 91.3,
@@ -94,7 +94,7 @@
       "bi/security_map.py": 100.0,
       "bi/security_plan.py": 86.5,
       "bi/served_database.py": 95.3,
-      "bi/sql_explorer.py": 93.1,
+      "bi/sql_explorer.py": 93.2,
       "bi/stack_page.py": 100.0,
       "bi/star_model.py": 100.0,
       "bi/storage_map.py": 98.7,
@@ -104,7 +104,7 @@
       "etl/etl.py": 95.8,
       "etl/ine.py": 98.1,
       "etl/pipeline.py": 91.3,
-      "etl/points_of_sale.py": 88.9,
+      "etl/points_of_sale.py": 44.4,
       "etl/profile_years.py": 98.1
     }
   },
@@ -132,15 +132,14 @@
         "vulnerabilidades": 0
       },
       "requirements-pipeline.txt": {
-        "estado": "no verificado",
-        "motivo": "las dependencias no se pueden resolver con este Python (dbt pide 3.11 o 3.12)"
+        "vulnerabilidades": 0
       }
     }
   },
   "secretos": {
     "orden": "detect-secrets scan $(git ls-files)",
     "version": "1.5.0",
-    "archivos_revisados": 245,
+    "archivos_revisados": 246,
     "candidatos": 27,
     "por_archivo": {
       "agent/downloads/manifest.json": [
