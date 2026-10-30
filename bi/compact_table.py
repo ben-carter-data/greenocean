@@ -80,6 +80,9 @@ def build_css(palette: dict[str, str]) -> str:
     return f"""<style>
 [class*="st-key-cr_"][class*="_row_"] {{ border-bottom:1px solid {line}; padding:0 !important; gap:0 !important; }}
 [class*="st-key-cr_"][class*="_row_"] button {{ justify-content:flex-start !important; text-align:left !important; width:100% !important; }}
+[class*="st-key-cr_"][class*="_row_"] button > div {{ justify-content:flex-start !important; text-align:left !important; }}
+[class*="st-key-cr_"][class*="_row_"] [data-testid="stMarkdownContainer"] {{ margin-bottom:0 !important; }}
+[class*="st-key-cr_"][class*="_row_"] .cr-detail {{ padding-bottom:8px; }}
 [class*="st-key-cr_"][class*="_row_"] button p {{ font-size:13px !important; color:{text} !important; text-align:left !important; overflow-wrap:anywhere; }}
 [class*="st-key-cr_"][class*="_row_"] [data-testid="stMarkdownContainer"] .cr-detail {{ margin:0 0 10px 34px; font-size:12.5px; color:{text}; }}
 </style>"""
