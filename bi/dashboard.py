@@ -5019,10 +5019,6 @@ def render_run_window(token):
         st.warning(watch["error"])
     if watch["cancel_error"]:
         st.error(watch["cancel_error"], icon=":material/lock:")
-    text = run_monitor.build_log(watch) or tr("Preparando la ejecución…")
-    with st.container(height=260):
-        st.code(text, language=None)
-    st.iframe(run_monitor.build_copy_html(text, tr("Copiar"), tr("Copiado"), tr("Seleccionado")), height=44)
     if watch["confirming"] and not final:
         st.warning(tr("¿Seguro que quieres cancelar? Esto detiene la ejecución en GitHub."))
         with st.container(horizontal=True):
@@ -5032,18 +5028,35 @@ def render_run_window(token):
             if st.button(tr("No, seguir"), key="run_cancel_no"):
                 watch["confirming"] = False
                 st.rerun(scope="fragment")
-        return
-    with st.container(horizontal=True):
-        if st.button(tr("Minimizar"), key="run_minimize", icon=":material/minimize:"):
-            watch["minimized"] = True
-            st.rerun()  # the whole app: the window closes, the run goes on in GitHub
-        if final:
-            if st.button(tr("Cerrar"), key="run_close", type="primary", icon=":material/close:"):
-                del st.session_state[run_monitor.WATCH]
-                st.rerun()
-        elif watch["run_id"] is not None and st.button(tr("Cancelar"), key="run_cancel", icon=":material/stop_circle:"):
-            watch["confirming"] = True
-            st.rerun(scope="fragment")
+    else:
+        with st.container(horizontal=True):
+            if st.button(tr("Minimizar"), key="run_minimize", icon=":material/minimize:"):
+                watch["minimized"] = True
+                st.rerun()  # the whole app: the window closes, the run goes on in GitHub
+            if final:
+                if st.button(tr("Cerrar"), key="run_close", type="primary", icon=":material/close:"):
+                    del st.session_state[run_monitor.WATCH]
+                    st.rerun()
+            elif watch["run_id"] is not None and st.button(
+                tr("Cancelar"), key="run_cancel", icon=":material/stop_circle:"
+            ):
+                watch["confirming"] = True
+                st.rerun(scope="fragment")
+    text = run_monitor.build_log(watch) or tr("Preparando la ejecución…")
+    with st.container(height=260):
+        st.code(text, language=None)
+    palette = charts.get_palette(get_mode())
+    st.iframe(
+        run_monitor.build_copy_html(
+            text,
+            tr("Copiar"),
+            tr("Copiado"),
+            tr("Seleccionado"),
+            ink=palette["strong_text"],
+            border=palette["card_border"],
+        ),
+        height=44,
+    )
 
 
 def show_run_indicator():

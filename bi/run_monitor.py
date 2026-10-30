@@ -197,12 +197,14 @@ def build_log(watch: dict[str, Any]) -> str:
     return github_actions.redact("\n".join(lines))
 
 
-def build_copy_html(text: str, label: str, done: str, selected: str) -> str:
+def build_copy_html(
+    text: str, label: str, done: str, selected: str, ink: str = "#e8eef6", border: str = "#344256"
+) -> str:
     """A small button that copies the log: the browser's clipboard, or the text selected when the page forbids it."""
     payload = json.dumps({"text": text, "done": done, "selected": selected}, ensure_ascii=False).replace("</", "<\\/")
     return (
         "<!doctype html><html><head><meta charset='utf-8'><style>body{margin:0;font:13px system-ui,sans-serif}"
-        "button{font:inherit;padding:5px 12px;border-radius:8px;border:1px solid #8884;background:transparent;color:inherit;"
+        f"button{{font:inherit;padding:5px 12px;border-radius:8px;border:1px solid {border};background:transparent;color:{ink};"
         "cursor:pointer}pre{position:absolute;left:-9999px}</style></head><body>"
         f"<button id='copy'>{html.escape(label)}</button><pre id='text'></pre>"
         f"<script type='application/json' id='data'>{payload}</script>"
