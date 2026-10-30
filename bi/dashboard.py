@@ -567,7 +567,26 @@ def settle_profile():
             st.query_params.pop(name)  # a retired profile («Reclutamiento») or a role the view does not use
 
 
+CHANGE_VIEW = "profile_change_open"
+
+
+def leave_author():
+    """D-353: choosing the user or the professional view while the author's key is open closes that session; getting
+    back in asks for the key again. The run being followed stays in GitHub and is forgotten here."""
+    for key in (ADMIN_UNLOCKED, QUALITY_ALERT_SEEN, AUTHOR_CODE_ERROR, RUN_WINDOW_OPEN):
+        st.session_state.pop(key, None)
+    st.session_state.pop(run_monitor.WATCH, None)
+
+
+def current_view_name():
+    """«Usuario», «Profesional» or «Autor»: the view the visit is in, for the indicator."""
+    if is_public_profile():
+        return tr("Usuario")
+    return tr("Autor") if st.session_state.get(ADMIN_UNLOCKED) else tr("Profesional")
+
+
 def choose_profile(profile, role=None):
+    st.session_state.pop(CHANGE_VIEW, None)
     st.session_state[PROFILE_STATE] = profile
     if role:
         st.session_state[ROLE_STATE] = role
@@ -653,12 +672,14 @@ def show_profile_dialog():
         with st.container(key="profile_side_profesional"):
             name, icon = PROFILES[PROFILE_PROFESSIONAL]
             if st.button(tr("Profesional"), key=f"profile_choose_{PROFILE_PROFESSIONAL}", icon=icon, width="stretch"):
+                leave_author()
                 choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
                 st.rerun()
             # The profiles it can put forward, right under its pill.
             with st.container(horizontal=True, gap=None, key="profile_roles"):
                 for role, label in ROLES.items():
                     if st.button(tr(label), key=f"profile_role_{role}", type="tertiary"):
+                        leave_author()
                         choose_profile(PROFILE_PROFESSIONAL, role)
                         st.rerun()
         with st.container(key="profile_side_autor"):
@@ -678,8 +699,13 @@ def show_profile_dialog():
         with st.container(key="profile_side_consulta"):
             name, icon = PROFILES[PROFILE_PUBLIC]
             if st.button(tr("Usuario"), key=f"profile_choose_{PROFILE_PUBLIC}", icon=icon, width="stretch"):
+                leave_author()
                 choose_profile(PROFILE_PUBLIC)
                 st.rerun()
+    if get_profile():  # D-353: the window was reopened from the menu; the current view can be kept
+        if st.button(tr("Mantener esta vista"), key="profile_keep", type="tertiary"):
+            st.session_state.pop(CHANGE_VIEW, None)
+            st.rerun()
 
 
 LOAD_ALERT_SEEN = "load_alert_seen"
@@ -7700,6 +7726,16 @@ def show_sidebar_footer(current_window=None, folder=None):
     with st.sidebar.container(key="sidebar_footer"):
         if folder:
             folder()
+        if get_profile():
+            if st.button(
+                f"{tr('Vista')}: {current_view_name()} ▾",
+                key="profile_indicator",
+                type="tertiary",
+                icon=":material/swap_horiz:",
+                help=tr("Cambiar de vista: usuario, profesional o autor."),
+            ):
+                st.session_state[CHANGE_VIEW] = True
+                st.rerun()
         with st.container(key="sidebar_tools", horizontal=True, vertical_alignment="center"):
             with st.container(key="sidebar_appearance"):
                 show_theme_field()
@@ -7810,7 +7846,7 @@ def main():
     WINDOW_PAGES.update(windows_by_title)
     open_profile_landing(windows_by_title)
     show_sidebar_navigation(windows_by_title, current_window, order)
-    if not get_profile():
+    if not get_profile() or st.session_state.get(CHANGE_VIEW):
         show_profile_dialog()
     else:
         reopen_run_window()
