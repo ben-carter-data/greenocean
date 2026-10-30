@@ -1039,11 +1039,16 @@ def test_d220_quality_and_audit_are_one_view_without_pickers():
     app = draw_page(dashboard.PAGE_OPERATIONS)
     assert not app.exception
     assert read_page_title(app) == 'Calidad y auditoría'
-    assert not app.selectbox and not app.get('segmented_control')
-    # D-257: the diagram, the audit controls and what was set aside each have their own tab.
-    assert [tab.label for tab in app.tabs] == ["Calidad", "Auditoría", "Rechazos y cargas"] and len(
-        app.get('iframe')
-    ) == 3
+    # D-257: the diagram, the audit controls and what was set aside each have their own tab. D-360: only the tab in
+    # sight is drawn, so there is one frame at a time.
+    bars = app.get('segmented_control')
+    assert (
+        not app.selectbox and len(bars) == 1 and list(bars[0].options) == ["Calidad", "Auditoría", "Rechazos y cargas"]
+    )
+    assert len(app.get('iframe')) == 1
+    for tab in ("Auditoría", "Rechazos y cargas"):
+        app.segmented_control(key="quality_audit_view").set_value(tab).run()
+        assert not app.exception and len(app.get('iframe')) == 1
 
 
 @needs_database

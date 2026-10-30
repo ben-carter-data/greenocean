@@ -2696,3 +2696,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** en «GitHub Actions», el log de una ejecución fallida con un botón «Copiar» y un enlace directo a esa ejecución en GitHub; sin diagnóstico automático.
 - **Decisión:** el último fallo de cada workflow muestra «Abrir la ejecución en GitHub»; bajo las últimas 60 líneas del log de cada job hay un botón «Copiar» (el mismo de la ventana de ejecución, D-351, con el texto ya sin tokens) y «Abrir el job en GitHub», que abre el job fallido con sus pasos.
 - **Pruebas:** `tests/test_actions_page.py::test_d359_…`.
+
+## D-360 · Las páginas con pestañas dibujan solo la pestaña a la vista
+
+- **Pedido del autor:** el panel se siente lento al cambiar de página; aprobado dibujar solo la pestaña visible en las páginas lentas, con el mismo aspecto de pestañas.
+- **Medición (30-10, en local):** cambiar de pestaña tarda 0,2 s y cambiar de página entre 0,2 y 1,5 s; las más lentas son Centro de operación (1,5 s), Insights, Calidad y auditoría y Pipeline y linaje (alrededor de 1 s). `st.tabs` dibuja todas las pestañas en cada vuelta: en Centro de operación, cuatro diagramas a la vez.
+- **Decisión:** Centro de operación y Calidad y auditoría cambian `st.tabs` por un selector con aspecto de pestañas (`show_view_tabs`) que dibuja solo la elegida. Insights y Pipeline y linaje no tienen pestañas: su tiempo viene de otra parte y queda por medir. Las lecturas a GitHub de Centro de operación ya se guardan 5 minutos (las ejecuciones y sus pasos) y una hora (el vencimiento del token): no cambian. Ninguna prueba bloquea por tiempo.
+- **Pruebas:** las de cada página eligen la pestaña que leen; la auditoría del inglés revisa cada pestaña como una pantalla.

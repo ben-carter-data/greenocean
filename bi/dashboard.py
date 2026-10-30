@@ -5425,15 +5425,18 @@ def show_runs_page(mode):
         "estado de cada paso de la carga semanal, con su log y dónde actuar.",
         side=show_admin_card,
     )
-    platform_tab, runs_tab, cicd_tab, monitoring_tab = st.tabs(["Despliegue", "Operación", "CI/CD", "Monitoreo"])
-    with platform_tab:
-        show_devops_tab(mode)
-    with runs_tab:
-        show_runs_tab(mode)
-    with cicd_tab:
-        show_cicd_tab(mode)
-    with monitoring_tab:
-        show_monitoring_tab(mode)
+    tab = show_view_tabs(RUNS_VIEW_KEY, list(RUNS_VIEWS), charts.get_palette(mode))
+    RUNS_VIEWS[tab](mode)  # D-360: only the tab in sight is drawn
+
+
+RUNS_VIEW_KEY = "runs_view"
+QUALITY_VIEW_KEY = "quality_audit_view"
+RUNS_VIEWS = {
+    "Despliegue": lambda mode: show_devops_tab(mode),
+    "Operación": lambda mode: show_runs_tab(mode),
+    "CI/CD": lambda mode: show_cicd_tab(mode),
+    "Monitoreo": lambda mode: show_monitoring_tab(mode),
+}
 
 
 @st.cache_data(ttl=github_actions.CACHE_SECONDS, show_spinner=False)
@@ -6159,8 +6162,9 @@ def show_operations_page(mode):
             "La base publicada no pasa sus controles de integridad. Revisa la evidencia antes de utilizar los resultados."
         )
     palette = charts.get_palette(mode)
-    quality_tab, audit_tab, apart_tab = st.tabs(["Calidad", "Auditoría", "Rechazos y cargas"])
-    with quality_tab:
+    # D-360: only the tab in sight is drawn.
+    tab = show_view_tabs(QUALITY_VIEW_KEY, ["Calidad", "Auditoría", "Rechazos y cargas"], palette)
+    if tab == "Calidad":
         # D-272: the frame takes the drawing's own height (a fixed one cut the gates on a wide window). D-273: the drawing
         # is HTML, so its words keep their size; past 1180 px it would only spread out, so it stops growing there.
         st.markdown(
@@ -6169,7 +6173,7 @@ def show_operations_page(mode):
         )
         with st.container(key="qa_hub"):
             st.iframe(quality_live.build_quality_html(palette, indicators, columns, measures), height="content")
-    with audit_tab:
+    elif tab == "Auditoría":
         st.iframe(quality_live.build_audit_page_html(palette, columns), height="content")
         with st.container(key=quality_view.EXPANDER_KEY, horizontal=True, vertical_alignment="center", gap="small"):
             # D-272: the eleven buttons wait behind one, so they do not take two rows of the screen (and no picker
@@ -6192,7 +6196,7 @@ def show_operations_page(mode):
                     'en manifest.json; los indicadores no cambian.</span>',
                     unsafe_allow_html=True,
                 )
-    with apart_tab:
+    else:
         st.iframe(
             quality_live.build_tables_html(palette, measures["runs"], measures["rejections"], measures["flags"]),
             height="content",

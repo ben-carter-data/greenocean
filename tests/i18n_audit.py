@@ -174,6 +174,9 @@ def screens():
         + [(dashboard.PAGE_DIAGRAMS, {dashboard.PIPELINE_VIEW_KEY: dashboard.PIPELINE_LINEAGE})]
         + [(dashboard.PAGE_ARCHITECTURE, {dashboard.MODEL_VIEW_KEY: view}) for view in dashboard.MODEL_VIEWS[1:]]
         + [(page, None) for page in dashboard.FOLDER_ORDER]
+        # D-360: these pages draw only the tab in sight, so each tab is a screen of its own.
+        + [(dashboard.PAGE_RUNS, {dashboard.RUNS_VIEW_KEY: tab}) for tab in list(dashboard.RUNS_VIEWS)[1:]]
+        + [(dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_VIEW_KEY: tab}) for tab in ("Auditoría", "Rechazos y cargas")]
         + [
             (dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_OPEN_KEY: title})
             for title in quality_evidence.TITLES.values()
