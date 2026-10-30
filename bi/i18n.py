@@ -61,6 +61,7 @@ EN = {
     "GitHub Actions": "GitHub Actions",
     "Git workflow": "Git workflow",
     "Ver registro completo": "View full log",
+    "Clave incorrecta.": "Incorrect key.",
     "Anterior": "Previous",
     "Siguiente": "Next",
     "Todavía no hay fallas registradas.": "No failure registered yet.",

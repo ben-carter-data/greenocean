@@ -623,6 +623,24 @@ def visible_menu_order():
     return [view for _, _, pages in visible_menu_blocks() if pages is not SOURCE_LINKS for view in pages]
 
 
+AUTHOR_CODE_ERROR = "profile_author_error"
+
+
+def submit_author_code():
+    """D-350: the author's door opens on Enter. A right key enters as the default professional view; a wrong one says
+    so in place and empties the field, with no reload of the page."""
+    ok, message = control.check_control_code(
+        st.session_state.get("profile_author_code", ""), get_secret(SECRET_CONTROL_CODE)
+    )
+    st.session_state["profile_author_code"] = ""
+    if ok:
+        st.session_state[AUTHOR_CODE_ERROR] = None
+        st.session_state[ADMIN_UNLOCKED] = True
+        choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
+    else:
+        st.session_state[AUTHOR_CODE_ERROR] = message
+
+
 @st.dialog("GreenOcean", width="small", dismissible=False)
 def show_profile_dialog():
     """The first screen of a visit (D-295): the brand, «Elige tu vista» and two pills; under «Profesional», the profiles
@@ -647,20 +665,17 @@ def show_profile_dialog():
         with st.container(key="profile_side_autor"):
             # D-335: the author's door, the same key as «Acceso del autor»; nobody else sees the alerts.
             with st.popover(tr("Autor"), icon=":material/lock:", width="stretch"):
-                typed = st.text_input(
+                # D-350: Enter sends the key (on a phone, the keyboard's «Ir» is the same event); no button.
+                st.text_input(
                     tr("Clave"),
                     key="profile_author_code",
                     type="password",
                     label_visibility="collapsed",
                     placeholder=tr("Clave"),
+                    on_change=submit_author_code,
                 )
-                if st.button(tr("Entrar"), key="profile_author_enter", type="primary", width="stretch"):
-                    ok, message = control.check_control_code(typed, get_secret(SECRET_CONTROL_CODE))
-                    if ok:
-                        st.session_state[ADMIN_UNLOCKED] = True
-                        choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
-                        st.rerun()
-                    st.error(tr(message))
+                if st.session_state.get(AUTHOR_CODE_ERROR):
+                    st.error(tr(st.session_state[AUTHOR_CODE_ERROR]))
         with st.container(key="profile_side_consulta"):
             name, icon = PROFILES[PROFILE_PUBLIC]
             if st.button(tr("Usuario"), key=f"profile_choose_{PROFILE_PUBLIC}", icon=icon, width="stretch"):

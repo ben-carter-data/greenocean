@@ -240,3 +240,32 @@ def test_d335_a_visit_without_the_secret_never_unlocks_the_author_nor_raises_the
     assert not app.exception
     assert not app.session_state["admin_unlocked"] if "admin_unlocked" in app.session_state else True
     assert not app.session_state["quality_alert_seen"] if "quality_alert_seen" in app.session_state else True
+
+
+def test_d350_enter_sends_the_author_key_a_wrong_one_says_so_in_place_and_there_is_no_button():
+    from streamlit.testing.v1 import AppTest
+
+    app = AppTest.from_file(str(Path(__file__).resolve().parent.parent / "bi" / "dashboard.py"), default_timeout=60)
+    app.secrets["CONTROL_CODE"] = "clave-larga"
+    app.run()
+    assert not app.exception and app.get("dialog")
+    assert not [
+        button for button in app.button if button.label == "Entrar" or str(button.key) == "profile_author_enter"
+    ]
+    app.text_input(key="profile_author_code").set_value("clave-mala").run()  # Enter on a wrong key
+    assert not app.exception and app.get("dialog") and not app.session_state.get("admin_unlocked")
+    assert [item.value for item in app.error] == ["Clave incorrecta."]  # in place, the window is still there
+    assert app.text_input(key="profile_author_code").value == ""  # emptied, ready for another try
+    app.text_input(key="profile_author_code").set_value("clave-larga").run()  # Enter on the right one
+    assert not app.exception and app.session_state["admin_unlocked"] is True
+    assert app.session_state["visitor_profile"] == "profesional" and not [
+        box for box in app.text_input if box.key == "profile_author_code"
+    ]
+    assert not app.error and "clave-larga" not in str(dict(app.query_params))
+
+
+def test_d350_the_english_reader_gets_the_error_in_english():
+    from bi import i18n
+
+    assert i18n.EN["Clave incorrecta."] == "Incorrect key."  # the message the door draws goes through tr()
+    assert i18n.EN["Clave"] and i18n.EN["Autor"]

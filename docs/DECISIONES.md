@@ -2625,3 +2625,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** `DEFAULT_THEME` pasa de «Corporativo» a «Vantablack» y `.streamlit/config.toml` arranca en la base oscura de Streamlit, para que la primera pintura no sea clara. Una elección en «Apariencia» o un `?tema=` en la dirección sigue ganando.
 - **Límite:** no se vio en un navegador real (Playwright no está en esta sesión); la prueba cubre el tema de la sesión, la dirección y la base de la configuración.
 - **Pruebas:** `tests/test_dashboard.py::test_d349_…` y los dos `test_d071_…` ajustados.
+
+## D-350 · La clave del Autor se envía con Enter
+
+- **Pedido del autor:** al escribir la clave en «Autor», Enter no la enviaba; debía enviarla, sin botón «Entrar», y en el teléfono la tecla «Ir» del teclado también.
+- **Decisión:** el campo comprueba la clave en su `on_change`, que se dispara con Enter (y con «Ir»). Clave correcta: entra como profesional con el rol por defecto. Clave incorrecta: el campo se vacía y el error «Clave incorrecta.» aparece en el mismo menú, sin recargar la página y con la ventana de entrada abierta. Se retira el botón «Entrar». No se usó `st.form`, que obliga a un botón de envío visible. El mensaje de error no tenía su inglés: ahora dice «Incorrect key.».
+- **Pruebas:** `tests/test_control.py::test_d350_…` (Enter con clave correcta entra; con clave incorrecta muestra el error y no entra; no hay botón «Entrar»; el inglés del mensaje).
