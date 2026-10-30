@@ -2571,6 +2571,7 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** las pruebas de `tests/test_rendimiento.py` llevan el marcador `rendimiento`, registrado en `pyproject.toml`. `pruebas.yml` corre `pytest -m "not rendimiento"`. Los presupuestos (1,0 s, D-323) y las pruebas no cambian, y en local corren con `python -m pytest -m rendimiento`. Un `pytest` sin filtro en local sigue corriéndolas.
 - **Por qué:** desde D-330 el tiempo por consulta salió de los indicadores de calidad (etapa 1), y los runners compartidos de GitHub no son un entorno estable para medir velocidad.
 - **Pruebas:** el CI deja de medir velocidad; la cobertura mínima (90 %) se sigue revisando.
+- **Ampliación (30-10):** la carga semanal también corría esas pruebas (`pytest -q` en `semanal.yml`) y fallaba en el paso «Run the tests against the new database»; ahora usa `-m "not rendimiento"`, igual que `pruebas.yml`. Es una causa probable de las cargas fallidas desde el 29-10; las del 25 y 27-10 corrieron antes de que existieran esas pruebas y fallaron por otra causa.
 
 ## D-342 · Registro de fallas con categoría «operación», estación del flujo git y ocurrencias
 

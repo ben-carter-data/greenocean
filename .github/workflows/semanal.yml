@@ -69,7 +69,7 @@ jobs:
 
       # Includes the parity test: SQLite and DuckDB must hold the same figures.
       - name: Run the tests against the new database
-        run: pytest -q
+        run: pytest -q -m "not rendimiento"  # D-341: speed budgets run locally, not on a shared runner
 
       # First the file replaces the one in the release, then the pointer is committed: the panel
       # never reads a pointer whose file is not there yet.
