@@ -2690,3 +2690,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** la hoja de impresión agrega «Página X de Y» al pie de cada hoja (en el idioma del lector) y un salto de página después de la portada, que queda sola en la primera hoja con título, versión, fecha, estado, responsable, audiencia y documentos relacionados.
 - **Verificación:** el SQAP impreso desde «Documentos → PDF» sale en 5 hojas, sin la ventana de entrada (D-357), con la portada sola y «Página 1 de 5» al pie.
 - **Pruebas:** `tests/test_documents.py::test_d358_…`.
+
+## D-359 · El log de un fallo se copia y lleva a GitHub
+
+- **Pedido del autor:** en «GitHub Actions», el log de una ejecución fallida con un botón «Copiar» y un enlace directo a esa ejecución en GitHub; sin diagnóstico automático.
+- **Decisión:** el último fallo de cada workflow muestra «Abrir la ejecución en GitHub»; bajo las últimas 60 líneas del log de cada job hay un botón «Copiar» (el mismo de la ventana de ejecución, D-351, con el texto ya sin tokens) y «Abrir el job en GitHub», que abre el job fallido con sus pasos.
+- **Pruebas:** `tests/test_actions_page.py::test_d359_…`.

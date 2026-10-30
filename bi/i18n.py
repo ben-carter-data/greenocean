@@ -108,6 +108,7 @@ EN = {
     "Abrir el informe o su PDF": "Open the report or its PDF",
     "Página {} de {} · {} filas": "Page {} of {} · {} rows",
     "Página": "Page",
+    "Abrir el job en GitHub": "Open the job in GitHub",
     "de": "of",
     "Mapa": "Map",
     "Registro de incidentes": "Incident log",

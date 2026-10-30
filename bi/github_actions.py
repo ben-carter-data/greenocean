@@ -93,7 +93,7 @@ def list_failed_jobs(run_id: int, token: str | None) -> list[dict[str, Any]]:
     for job in answer.json().get("jobs", []):
         if job.get("conclusion") in ("failure", "timed_out", "cancelled"):
             steps = [step["name"] for step in job.get("steps", []) if step.get("conclusion") == "failure"]
-            jobs.append({"id": job["id"], "name": job["name"], "steps": steps})
+            jobs.append({"id": job["id"], "name": job["name"], "steps": steps, "url": job.get("html_url") or ""})
     return jobs
 
 
@@ -161,7 +161,7 @@ def explain(error: Exception, what: str = "") -> str:
 def failure_detail(run: dict[str, Any], token: str, secrets: tuple[str | None, ...]) -> dict[str, Any]:
     """What failed in a run: each failed job with its steps, its annotations, the failing tests and the log's tail.
     A job whose log cannot be read says why, in its own «log_error»; the rest of the page still shows."""
-    detail: dict[str, Any] = {"run": run["id"], "jobs": [], "error": None}
+    detail: dict[str, Any] = {"run": run["id"], "url": run["url"], "jobs": [], "error": None}
     try:
         jobs = list_failed_jobs(run["id"], token)
     except requests.RequestException as error:
@@ -171,6 +171,7 @@ def failure_detail(run: dict[str, Any], token: str, secrets: tuple[str | None, .
         entry: dict[str, Any] = {
             "name": job["name"],
             "steps": job["steps"],
+            "url": job["url"],
             "annotations": [],
             "tests": [],
             "tail": [],

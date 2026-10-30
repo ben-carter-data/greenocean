@@ -222,3 +222,14 @@ def test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_t
     page = everything_drawn(app)
     assert "Abrir en GitHub" not in page and 'class="ga-table"' not in page
     assert not [url for url, _ in network.calls if url.endswith(("/logs", "/annotations", "/rate_limit"))]
+
+
+def test_d359_a_failed_log_has_a_copy_button_and_links_to_the_run_and_the_job_in_github(network):
+    app = draw()
+    app.button(key="cr_actions_toggle_0").click().run()
+    links = [button.proto.url for button in app.get("link_button")]
+    assert any("/actions/runs/" in url for url in links)  # the run of the failure
+    frames = " ".join(str(frame.proto) for frame in app.get("iframe"))
+    assert "Copiar" in frames and "clipboard.writeText" in frames
+    for secret in (TOKEN, READ_TOKEN):
+        assert secret not in frames

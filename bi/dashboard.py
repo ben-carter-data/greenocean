@@ -5429,6 +5429,7 @@ def show_workflow_detail(entry):
     if not failure:
         return
     st.markdown(f"**{tr('Último fallo')}**")
+    st.link_button(tr("Abrir la ejecución en GitHub"), failure["url"], icon=":material/open_in_new:")
     if failure["error"]:
         st.warning(failure["error"])
     for job in failure["jobs"]:
@@ -5439,6 +5440,23 @@ def show_workflow_detail(entry):
             with st.expander(tr("Últimas {} líneas del log").format(len(job["tail"])), expanded=False):
                 with st.container(height=300):
                     st.code("\n".join(job["tail"]), language=None)
+                # D-359: the log, ready to paste, and the failed job itself in GitHub; no diagnosis is attempted.
+                with st.container(horizontal=True, vertical_alignment="center"):
+                    palette = charts.get_palette(get_mode())
+                    st.iframe(
+                        run_monitor.build_copy_html(
+                            "\n".join(job["tail"]),
+                            tr("Copiar"),
+                            tr("Copiado"),
+                            tr("Seleccionado"),
+                            ink=palette["strong_text"],
+                            border=palette["card_border"],
+                        ),
+                        height=44,
+                        width=120,
+                    )
+                    if job["url"]:
+                        st.link_button(tr("Abrir el job en GitHub"), job["url"], icon=":material/open_in_new:")
 
 
 def show_actions_page(mode):
