@@ -642,6 +642,7 @@ def visible_menu_order():
 
 
 AUTHOR_CODE_ERROR = "profile_author_error"
+AUTHOR_ENTERED = "profile_author_entered"  # D-350: a right key must close the window; a widget callback cannot rerun
 
 
 def submit_author_code():
@@ -654,6 +655,7 @@ def submit_author_code():
     if ok:
         st.session_state[AUTHOR_CODE_ERROR] = None
         st.session_state[ADMIN_UNLOCKED] = True
+        st.session_state[AUTHOR_ENTERED] = True
         choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
     else:
         st.session_state[AUTHOR_CODE_ERROR] = message
@@ -694,6 +696,8 @@ def show_profile_dialog():
                     placeholder=tr("Clave"),
                     on_change=submit_author_code,
                 )
+                if st.session_state.pop(AUTHOR_ENTERED, False):
+                    st.rerun()  # the window is a fragment: only a full rerun closes it once the key was right
                 if st.session_state.get(AUTHOR_CODE_ERROR):
                     st.error(tr(st.session_state[AUTHOR_CODE_ERROR]))
         with st.container(key="profile_side_consulta"):

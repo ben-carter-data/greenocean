@@ -269,3 +269,13 @@ def test_d350_the_english_reader_gets_the_error_in_english():
 
     assert i18n.EN["Clave incorrecta."] == "Incorrect key."  # the message the door draws goes through tr()
     assert i18n.EN["Clave"] and i18n.EN["Autor"]
+
+
+def test_d350_a_right_key_closes_the_window_with_a_full_rerun_because_the_window_is_a_fragment():
+    import inspect
+
+    from bi import dashboard
+
+    body = inspect.getsource(dashboard.show_profile_dialog)
+    assert "AUTHOR_ENTERED" in body and "st.rerun()" in body.split("AUTHOR_ENTERED")[1]
+    assert "AUTHOR_ENTERED] = True" in inspect.getsource(dashboard.submit_author_code)
