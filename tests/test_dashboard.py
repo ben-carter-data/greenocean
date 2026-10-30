@@ -393,7 +393,12 @@ def test_d201_security_has_its_own_section_with_the_view_and_the_test_plan():
     assert dashboard.SIDEBAR_TOP_LABELS[dashboard.SECTION_SECURITY] == "Seguridad"
     assert dashboard.WINDOWS[dashboard.SECTION_SECURITY] == [dashboard.PAGE_SECURITY, dashboard.PAGE_TEST_PLAN]
     app = draw_control_page({})
-    assert not app.exception and [tab.label for tab in app.tabs] == ["Despliegue", "Operación", "CI/CD", "Monitoreo"]
+    assert not app.exception and list(app.get("segmented_control")[0].options) == [
+        "Despliegue",
+        "Operación",
+        "CI/CD",
+        "Monitoreo",
+    ]
     for page in (dashboard.PAGE_SECURITY, dashboard.PAGE_TEST_PLAN):
         app = draw_page(page)
         assert not app.exception and read_page_title(app) == dashboard.SIDEBAR_LABELS.get(page, page)
@@ -1262,7 +1267,7 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
 def test_d165_the_operation_centre_reads_like_the_dashboard():
     # D-165 replaced the strip of four figures and the history table (D-129) by the
     # path of the run beside three facts and the latest runs.
-    app = draw_page(dashboard.PAGE_RUNS)
+    app = draw_page(dashboard.PAGE_RUNS, state={"runs_view": "Operación"})  # D-360: the tab drawn is the one chosen
     assert not app.exception and app.get("iframe")
     text = " ".join(block.value for block in app.markdown)
     assert 'class="page-bar-title"' in text and text.count('class="oc-fact"') == 3

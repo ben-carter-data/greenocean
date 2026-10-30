@@ -142,6 +142,7 @@ def test_d165_the_page_draws_the_stage_beside_the_facts_and_the_manual_run():
         f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
         "from bi import control, dashboard\n"
         "control.list_workflow_runs = lambda *args, **kwargs: []\n"
+        "import streamlit as st\nst.session_state['runs_view'] = 'Operación'\n"  # D-360: only the chosen tab is drawn
         "dashboard.render_page(dashboard.PAGE_RUNS)\n"
     )
     app = AppTest.from_string(script, default_timeout=60).run()

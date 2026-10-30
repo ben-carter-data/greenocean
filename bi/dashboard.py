@@ -5389,6 +5389,30 @@ def build_runs_css(mode):
     </style>"""
 
 
+def show_view_tabs(key, labels, palette):
+    """D-360: tabs that draw only the one chosen. st.tabs draws every tab on each run (four diagrams at once in the
+    Operations center); this selector looks like tabs and draws only what is in sight. Returns the chosen label."""
+    if st.session_state.get(key) not in labels:
+        st.session_state[key] = labels[0]
+    ink, muted, line, accent = palette["strong_text"], palette["reference"], palette["card_border"], palette["accent"]
+    st.markdown(
+        f"""<style>
+    .st-key-{key} {{ border-bottom:1px solid {line}; margin-bottom:6px; }}
+    .st-key-{key} [data-testid="stButtonGroup"] > div {{ gap:18px !important; }}
+    .st-key-{key} button {{ background:transparent !important; border:0 !important; border-radius:0 !important;
+      box-shadow:none !important; padding:6px 0 8px !important; min-height:0 !important; border-bottom:2px solid transparent !important; }}
+    .st-key-{key} button p {{ color:{charts.legible(muted, palette["background"])} !important; font-size:15px !important; }}
+    .st-key-{key} button[kind$="Active"], .st-key-{key} button[aria-checked="true"] {{ border-bottom-color:{accent} !important; }}
+    .st-key-{key} button[kind$="Active"] p, .st-key-{key} button[aria-checked="true"] p {{ color:{ink} !important; }}
+    </style>""",
+        unsafe_allow_html=True,
+    )
+    choice = st.segmented_control(
+        tr("Vista"), labels, key=key, format_func=tr, required=True, label_visibility="collapsed", width="content"
+    )
+    return choice or labels[0]
+
+
 def show_runs_page(mode):
     """Centro de operación (D-165): the weekly run as a path of floating logos, each
     with what it does and where to act, and beside it the facts and the manual run."""
