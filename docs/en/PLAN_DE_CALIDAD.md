@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.0 |
+| Version | 1.1 |
 | Date | 2026-10-30 |
 | Status | Current |
 | Owner | The author |
@@ -88,6 +88,8 @@ Each occurrence is written in one line per field and in plain language: what hap
 
 An external incident is a failure of the data sources: ODEPA or the INE. For example, a week that is not published or a file that changes its format. Faced with an incident, the load does not pass its checks and the dashboard keeps the last valid load, with its date in sight. Incidents are recorded in `docs/calidad/incidentes_externos.json`, and their response awaits the author's approval (D-334).
 
+**Late sources (D-356).** We publish up to the last week complete in both sources, filling in nothing. A recent week a source has not published yet does not block the load: it stays as an external incident and the app shows a quiet notice. The load stops only if a week is missing in the middle of the data, or if the source has gone more than 2 weeks without publishing; in that case the Author also gets an urgent alert.
+
 ## 11. Who decides what
 
 - **The author:** sets the goals, the acceptables and the margins; approves each report; decides each change and each publication.
@@ -106,3 +108,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | Version | Date | Changes |
 |---|---|---|
 | 1.0 | 2026-10-30 | First version of the software quality assurance plan (D-355) |
+| 1.1 | 2026-10-30 | Rule for late sources (D-356) |

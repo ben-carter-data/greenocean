@@ -225,5 +225,23 @@
       "Cada ocurrencia del registro se escribe en una línea por campo y en lenguaje simple; el análisis detallado vive en su decisión D-xxx.",
       "Each occurrence of the register is written in one line per field and in plain language; the detailed analysis lives in its decision D-xxx."
     ]
+  },
+  "fuentes_retrasadas": {
+    "regla": [
+      "Se publica hasta la última semana completa en ambas fuentes, sin rellenar nada.",
+      "We publish up to the last week complete in both sources, filling in nothing."
+    ],
+    "retraso_reciente": [
+      "Una semana reciente que la fuente aún no publica no bloquea la carga: se registra como incidente externo y la app muestra un aviso discreto.",
+      "A recent week the source has not published yet does not block the load: it is recorded as an external incident and the app shows a quiet notice."
+    ],
+    "bloquea": [
+      "Bloquea solo si falta una semana en medio de los datos, o si la fuente lleva más de 2 semanas sin publicar; entonces también hay aviso urgente al Autor.",
+      "It blocks only if a week is missing in the middle of the data, or if the source has gone more than 2 weeks without publishing; then the Author also gets an urgent alert."
+    ],
+    "aviso": [
+      "ODEPA aún no publica la semana {}",
+      "ODEPA has not published the week {} yet"
+    ]
   }
 }
