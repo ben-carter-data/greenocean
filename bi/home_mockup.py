@@ -387,7 +387,61 @@ def region_layout(geometry):
     return regions
 
 
-def regional_map(rows, region_link, week_label, previous_label, selected_region=None):
+STEP_TEXTS = {
+    1: 'Elige una región',
+    2: 'Elige una familia',
+    3: 'Mira los productos',
+}
+LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una familia'}
+TREND_LABEL = 'Tendencia de las últimas 8 semanas'
+
+
+def step_chip(step, texts=None):
+    """D-352: «1 · Elige una región»: the number of the panel in the reading order, before its kicker."""
+    return f'<span class="mock-step"><b>{step}</b> · {esc((texts or STEP_TEXTS)[step])}</span>' if step else ''
+
+
+def lock_overlay(step, texts=None):
+    """D-352: the padlock and the sentence over a panel the reader cannot use yet."""
+    lock = (
+        '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" '
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/>'
+        '<path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
+    )
+    return f'<div class="mock-lock" role="note">{lock}<span>{esc((texts or LOCK_TEXTS)[step])}</span></div>'
+
+
+def sparkline(values, label=None):
+    """The last weeks of a median change as a small line; nothing when there are fewer than two points."""
+    points = [float(v) for v in (values or []) if v is not None and math.isfinite(float(v))]
+    if len(points) < 2:
+        return '<span class="mock-spark"></span>'
+    low, high = min(points), max(points)
+    span = (high - low) or 1.0
+    width, height = 56, 16
+    coords = ' '.join(
+        f'{index * width / (len(points) - 1):.1f},{height - 2 - (value - low) / span * (height - 4):.1f}'
+        for index, value in enumerate(points)
+    )
+    state = change_state(points[-1] / 100)
+    return (
+        f'<span class="mock-spark {state}"><svg viewBox="0 0 {width} {height}" width="{width}" height="{height}" role="img" '
+        f'aria-label="{esc(label or TREND_LABEL)}"><polyline points="{coords}" fill="none" stroke="currentColor" '
+        'stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></span>'
+    )
+
+
+def basket_median(rows):
+    """The median change of every comparable price, with no family told apart (D-352); None when there is none."""
+    values = [
+        float(r['variation']) for r in rows if r.get('variation') is not None and math.isfinite(float(r['variation']))
+    ]
+    return statistics.median(values) if values else None
+
+
+def regional_map(
+    rows, region_link, week_label, previous_label, selected_region=None, step=None, all_link=None, prompt=False
+):
     """Chile in real proportions; a line from a dot inside each region to its row.
 
     The badge is the share of comparable price series in the dominant direction,
@@ -456,9 +510,14 @@ def regional_map(rows, region_link, week_label, previous_label, selected_region=
         if selected_region
         else 'Viendo: <b>todo Chile</b> · clic en una región para ver solo esa'
     )
+    button = ''
+    if all_link:
+        scope = 'Clic en una región o en <b>Todo Chile</b>' if prompt else scope
+        chosen = ' selected' if not selected_region and not prompt else ''
+        button = f'<a class="mock-all-chile{chosen}" href="{esc(all_link)}" target="_self">Todo Chile</a>'
     return (
-        '<section class="mock-regional" id="pulso-regional"><span class="mock-kicker">Precios por región</span>'
-        f'<p class="mock-scope">{scope}</p>'
+        f'<section class="mock-regional" id="pulso-regional">{step_chip(step)}<span class="mock-kicker">Precios por región</span>'
+        f'<div class="mock-scope-row"><p class="mock-scope">{scope}</p>{button}</div>'
         '<h2>¿Hacia dónde se movieron los precios?</h2>'
         '<p>% de precios comparables que siguió la dirección dominante. Mapa en proporción real; '
         'cada región se lee en su fila.</p>'
@@ -543,13 +602,27 @@ def movement_note(model):
     return '<p class="mock-movement-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</p>'
 
 
-def family_movement(rows, family_link, selected_family, scope, note=''):
+def family_movement(rows, family_link, selected_family, scope, note='', step=None, trends=None, basket=None):
     """One clickable row per family: a diverging bar from zero, its change and its state."""
     summary = family_averages(rows)
     if not summary:
         return '<section class="mock-movement"><span class="mock-kicker">Variación por familia</span><h2>¿Qué familias subieron y cuáles bajaron?</h2><p class="mock-empty">Sin precios comparables para esta selección.</p></section>'
     limit = max(1, math.ceil(max(abs(average) for _, average, _ in summary) * 100))
     markup = []
+    trends = trends or {}
+    if basket:  # D-352: the whole basket, one highlighted row; it is not a link and does not open the products
+        value, series = basket
+        state = change_state(value)
+        word = {'rise': 'Subió', 'fall': 'Bajó', 'neutral': 'Sin cambio'}[state]
+        size = min(50, abs(value) * 100 / limit * 50)
+        side = 'left:50%' if value >= 0 else f'left:{50 - size:.2f}%'
+        markup.append(
+            f'<div class="mock-movement-row mock-basket {state}" title="Mediana de todos los precios comparables, sin distinguir familia · {esc(scope)}">'
+            '<span class="mock-basket-art" aria-hidden="true"></span><strong>Toda la canasta</strong>'
+            f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
+            f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(value * 100, True)}</b>'
+            f'<span class="mock-movement-state">{word}</span>{sparkline(series)}<span></span></div>'
+        )
     for group, average, members in summary:
         state = change_state(average)
         word = {'rise': 'Subió', 'fall': 'Bajó', 'neutral': 'Sin cambio'}[state]
@@ -562,16 +635,17 @@ def family_movement(rows, family_link, selected_family, scope, note=''):
             f'{family_art(group, "mock-movement-art")}<strong>{esc(short_family(group))}</strong>'
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(average * 100, True)}</b>'
-            f'<span class="mock-movement-state">{word}</span><span class="mock-movement-chevron">›</span></a>'
+            f'<span class="mock-movement-state">{word}</span>{sparkline(trends.get(group))}'
+            '<span class="mock-movement-chevron">›</span></a>'
         )
     place = scope[0].upper() + scope[1:]
     return (
-        '<section class="mock-movement"><div class="mock-movement-heading"><div><span class="mock-kicker">Variación por familia</span><h2>¿Qué familias subieron y cuáles bajaron?</h2>'
+        f'<section class="mock-movement"><div class="mock-movement-heading"><div>{step_chip(step)}<span class="mock-kicker">Variación por familia</span><h2>¿Qué familias subieron y cuáles bajaron?</h2>'
         f'<p>Mediana de variaciones de precios comparables, {esc(scope)}.</p>{note}</div>'
         f'<span class="mock-place">Región: <b>{esc(place)}</b></span>'
         '</div><div class="mock-movement-row mock-movement-axis" aria-hidden="true"><i></i><span></span>'
         f'<span class="mock-movement-scale"><span>−{limit} %</span><span>0</span><span>+{limit} %</span></span>'
-        '<span></span><span></span><span></span></div>' + ''.join(markup) + '</section>'
+        '<span></span><span></span><span></span><span></span></div>' + ''.join(markup) + '</section>'
     )
 
 
@@ -587,7 +661,7 @@ def products_note(published, hidden=0):
     return '<p class="mock-products-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</p>'
 
 
-def products_heading(family, average, scope, shown=None, total=None, note=''):
+def products_heading(family, average, scope, shown=None, total=None, note='', step=None):
     state = change_state(average) if average is not None else 'neutral'
     chip = (
         ''
@@ -603,7 +677,7 @@ def products_heading(family, average, scope, shown=None, total=None, note=''):
     )
     # D-322: one line, so the table keeps the room: the label, the family, the question (on hover), the median and the count.
     return (
-        f'<div class="mock-products-heading mock-products-slim"><span class="mock-kicker">Detalle de productos</span>'
+        f'<div class="mock-products-heading mock-products-slim">{step_chip(step)}<span class="mock-kicker">Detalle de productos</span>'
         f'<span class="mock-products-family">{esc(short_family(family))}</span>'
         f'<h2 title="¿Qué productos explican el cambio?">¿Qué productos explican el cambio?</h2>{chip}'
         f'<span class="mock-products-scope">en {esc(scope)}</span>{count}</div>' + note

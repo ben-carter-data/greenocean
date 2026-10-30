@@ -3396,6 +3396,10 @@ export default function(component) {
 }
 """
 HOME_LINK_PARAMETERS = ("_home_region", "_home_week", "familia")
+# D-352: the reading order of the Panorama. A map or «Todo Chile» click completes step 1, a family click step 2; for the
+# user view the panels 2 and 3 stay locked until the step before them is done, and a step done is never locked again.
+HOME_STEP_PARAMETER = "_home_step"
+HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_FLASH = "home_region_done", "home_family_done", "home_flash"
 
 
 def apply_home_link_click():
@@ -3408,6 +3412,14 @@ def apply_home_link_click():
     if not clicked:
         return
     parameters = parse_qs(clicked.lstrip("?"))
+    step = (parameters.get(HOME_STEP_PARAMETER) or [None])[0]
+    if step == "region" and not st.session_state.get(HOME_REGION_DONE):
+        st.session_state[HOME_REGION_DONE] = True
+        st.session_state[HOME_FLASH] = "families"  # the panel that just opened lights up for a moment
+    elif step == "family" and not st.session_state.get(HOME_FAMILY_DONE):
+        st.session_state[HOME_REGION_DONE] = True
+        st.session_state[HOME_FAMILY_DONE] = True
+        st.session_state[HOME_FLASH] = "products"
     for name in HOME_LINK_PARAMETERS:
         if parameters.get(name):
             st.query_params[name] = parameters[name][0]
@@ -3978,6 +3990,37 @@ def sort_family_products(rows, order):
     return sorted(rows, key=lambda row: (thin(row), -abs(row['variation']), names(row)))
 
 
+def build_steps_css(palette, region_open, family_open, flash):
+    """D-352: a panel that waits for the step before it is dimmed and cannot be used; the one that has just opened lights
+    up for a moment. Panels 2 and 3 are the containers «home_families» and «home_products»."""
+    rules = []
+    for container, opened in (("home_families", region_open), ("home_products", family_open)):
+        if not opened:
+            rules.append(
+                f".st-key-{container} > div > [data-testid='stElementContainer']:not(:has(.mock-lock)) "
+                "{opacity:.38;pointer-events:none;filter:saturate(.4);user-select:none;}"
+            )
+    if flash in ("families", "products"):
+        target = "home_families" if flash == "families" else "home_products"
+        rules.append(f".st-key-{target} {{animation:mock-unlock 1.6s ease-out 1; border-radius:12px;}}")
+    return "<style>" + "".join(rules) + "</style>" if rules else ""
+
+
+@st.cache_data(show_spinner=False)
+def read_home_trends(database_version, week):
+    """The last 8 weeks of the median weekly change (national, in %) by family and for the whole basket, for the little
+    lines of the Panorama (D-352). Comparable series only, like the median beside them; calculated from the same
+    weekly variations as the weeks table."""
+    variations = read_cached_all_variations(database_version)
+    upto = variations[variations["week_start"] <= pd.Timestamp(week)]
+    heat = overview.family_heat(upto, weeks=8).sort_values("week_start")
+    by_family = {group: list(frame["change"]) for group, frame in heat.groupby("product_group")}
+    last = sorted(upto["week_start"].unique())[-8:]
+    valid = overview.comparable(upto[upto["week_start"].isin(last)])
+    basket = list(valid.groupby("week_start")["variation"].median().sort_index().mul(100))
+    return by_family, basket
+
+
 def show_market_overview(mode, prefix):
     """Map, movement by family and products of one family on one screen (D-092)."""
     # Streamlit reruns this file without reimporting helpers; keep the live page
@@ -4006,13 +4049,31 @@ def show_market_overview(mode, prefix):
     if family not in families:
         family = families[0] if families else None
     scope = 'todo Chile' if region == ALL_VALUES else home_mockup.short_region(region)
+    # D-352: in the user view the panels 2 and 3 wait for the step before them; a link that names a region or a family
+    # counts as having chosen it. Professional and author see the steps numbered and everything open.
+    user_view = is_public_profile()
+    if st.query_params.get('_home_region'):
+        st.session_state[HOME_REGION_DONE] = True
+    if st.session_state.get(HOME_REGION_DONE) and st.query_params.get('familia') in families:
+        st.session_state[HOME_FAMILY_DONE] = True
+    region_open = not user_view or bool(st.session_state.get(HOME_REGION_DONE))
+    family_open = not user_view or bool(st.session_state.get(HOME_FAMILY_DONE))
+    if user_view and not family_open:
+        family = None  # no family is chosen for the reader
+    products_family = family or (families[0] if families else None)  # what the locked table shows, dimmed
 
-    def overview_link(chosen_region, chosen_family):
+    def overview_link(chosen_region, chosen_family, step=None):
         address = build_page_address(PAGE_HOME)
         parameters = {'_home_region': chosen_region or ALL_VALUES, '_home_week': week}
         if chosen_family:
             parameters['familia'] = chosen_family
+        if step:
+            parameters[HOME_STEP_PARAMETER] = step
         return address + ('&' if '?' in address else '?') + urlencode(parameters)
+
+    flash = st.session_state.pop(HOME_FLASH, None)
+    palette = charts.get_palette(mode)
+    st.markdown(build_steps_css(palette, region_open, family_open, flash), unsafe_allow_html=True)
 
     # D-264: the only header of the Resumen, one thin bar.
     with st.container(key="home_bar", horizontal=True, vertical_alignment="center"):
@@ -4044,31 +4105,48 @@ def show_market_overview(mode, prefix):
         '<div class="greenocean-mockup">'
         + home_mockup.regional_map(
             regional_rows,
-            lambda chosen: overview_link(chosen, family),
+            lambda chosen: overview_link(chosen, family, 'region'),
             model['week_label'],
             model['previous_label'],
             None if region == ALL_VALUES else region,
+            step=1,
+            all_link=overview_link(None, family, 'region'),
+            prompt=user_view and not region_open,
         )
         + '</div>',
         unsafe_allow_html=True,
     )
+    trends, basket_trend = read_home_trends(get_database_version(), week)
+    basket_value = home_mockup.basket_median(model['family_rows'])
     with detail_column:
-        st.markdown(
-            '<div class="greenocean-mockup">'
-            + home_mockup.family_movement(
-                model['family_rows'],
-                lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen),
-                family,
-                scope,
-                home_mockup.movement_note(model),
+        with st.container(key='home_families'):
+            if not region_open:
+                st.markdown(
+                    f'<div class="greenocean-mockup">{home_mockup.lock_overlay(2)}</div>', unsafe_allow_html=True
+                )
+            st.markdown(
+                '<div class="greenocean-mockup">'
+                + home_mockup.family_movement(
+                    model['family_rows'],
+                    lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen, 'family'),
+                    family,
+                    scope,
+                    home_mockup.movement_note(model),
+                    step=2,
+                    trends=trends,
+                    basket=None if basket_value is None else (basket_value, basket_trend),
+                )
+                + '</div>',
+                unsafe_allow_html=True,
             )
-            + '</div>',
-            unsafe_allow_html=True,
-        )
         with st.container(key='home_products'):
-            rows = [row for row in model['family_rows'] if row['product_group'] == family]
+            if not family_open:
+                st.markdown(
+                    f'<div class="greenocean-mockup">{home_mockup.lock_overlay(3)}</div>', unsafe_allow_html=True
+                )
+            rows = [row for row in model['family_rows'] if row['product_group'] == products_family]
             family_rows = list(rows)
-            average = next((value for name, value, _ in averages if name == family), None)
+            average = next((value for name, value, _ in averages if name == products_family), None)
             heading = st.empty()
             search_column, channel_column, order_column, enlarge_column = st.columns(
                 [1.35, 1.25, 1.5, 0.3], vertical_alignment='center'
@@ -4081,16 +4159,17 @@ def show_market_overview(mode, prefix):
                 label_visibility='collapsed',
                 type='search',
                 live=True,
+                disabled=not family_open,
             )
             channels = ['Todos'] + sorted({str(row['channel']) for row in rows})
             if st.session_state.get('home_products_channel') not in channels:
                 st.session_state['home_products_channel'] = 'Todos'
-            channel = channel_column.selectbox('Canal', channels, key='home_products_channel')
+            channel = channel_column.selectbox('Canal', channels, key='home_products_channel', disabled=not family_open)
             # Alerts are national: «Inusuales» only applies to the whole country.
             orders = PRODUCT_ORDERS if region == ALL_VALUES else PRODUCT_ORDERS[:-1]
             if st.session_state.get('home_products_order') not in orders:
                 st.session_state['home_products_order'] = orders[0]
-            order = order_column.selectbox('Orden', orders, key='home_products_order')
+            order = order_column.selectbox('Orden', orders, key='home_products_order', disabled=not family_open)
             total = len(rows)
             if channel != 'Todos':
                 rows = [row for row in rows if row['channel'] == channel]
@@ -4102,13 +4181,15 @@ def show_market_overview(mode, prefix):
             if region == ALL_VALUES:
                 # D-327: what every row was calculated from, and the one line that says how to read the prices.
                 calculation, published = read_cached_region_calculation(get_database_version(), week)
-                stats = model.get('family_coverage', {}).get(family) or {}
+                stats = model.get('family_coverage', {}).get(products_family) or {}
                 note = home_mockup.products_note(published, stats.get('available', 0) - stats.get('comparable', 0))
                 for row in family_rows:
                     row['_calc'] = calculation.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
             heading.markdown(
                 '<div class="greenocean-mockup">'
-                + home_mockup.products_heading(family or 'Sin familia', average, scope, len(rows), total, note)
+                + home_mockup.products_heading(
+                    products_family or 'Sin familia', average, scope, len(rows), total, note, step=3
+                )
                 + '</div>',
                 unsafe_allow_html=True,
             )
