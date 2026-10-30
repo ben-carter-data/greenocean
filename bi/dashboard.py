@@ -386,7 +386,7 @@ RETIRED_THEMES = {
     "ChatGPT": charts.MODE_GRAPHITE,
     "Grafito": charts.MODE_GRAPHITE,
 }
-DEFAULT_THEME = charts.MODE_CORPORATE
+DEFAULT_THEME = charts.MODE_DARK  # D-349: a visit with no ?tema= opens dark, also the entry window
 KPI_PARAMETER = "kpi"
 # D-295: two profiles, asked once on entry. «Consulta» (anyone who comes to read prices) sees the business pages;
 # «Profesional» (data engineering, business analysis, recruiting) sees the whole project, in the order of a CV.

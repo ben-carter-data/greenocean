@@ -243,9 +243,12 @@ def test_without_github_the_states_come_from_the_latest_saved_load():
     )
 
 
-def test_d071_four_themes_and_corporativo_is_the_default():
+def test_d071_four_themes_and_vantablack_is_the_default():
     assert charts.THEMES == ["Corporativo", "Vantablack", "Blue Light", "Dark Grey"]
-    assert dashboard.get_mode() == charts.MODE_CORPORATE
+    assert (
+        dashboard.get_mode() == charts.MODE_DARK
+        and charts.get_palette(dashboard.get_mode())["base"] == charts.BASE_DARK
+    )
     # Shared links with retired names still open the closest theme.
     assert dashboard.RETIRED_THEMES["Grafito"] == "Dark Grey"
     for theme in charts.THEMES:
@@ -773,7 +776,7 @@ def test_d071_a_theme_chosen_in_the_header_holds_for_the_whole_visit():
     app.query_params["perfil"] = "Reclutamiento"
     app.run()
     assert not app.exception
-    assert app.query_params["tema"] == "Corporativo"
+    assert app.query_params["tema"] == "Vantablack"  # D-349: dark unless the address says otherwise
     app.radio(key="theme_field").set_value("Dark Grey").run()
     assert not app.exception
     assert app.session_state[dashboard.THEME_STATE] == "Dark Grey"
@@ -1513,3 +1516,14 @@ def test_d298_a_failed_load_shows_its_alert_in_the_menu_of_every_page(monkeypatc
             assert any(link.proto.label == "Ver qué paso falló" for link in app.sidebar.get("page_link"))
     finally:
         st.cache_data.clear()
+
+
+def test_d349_a_visit_with_no_parameters_opens_dark_also_the_entry_window_and_the_address_still_rules():
+    plain = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    assert not plain.exception and plain.get("dialog")  # the entry window is open
+    assert plain.session_state[dashboard.THEME_STATE] == "Vantablack" and plain.query_params["tema"] == "Vantablack"
+    assert 'base = "dark"' in (PROJECT_DIR / ".streamlit" / "config.toml").read_text(encoding="utf-8")
+    light = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    light.query_params["tema"] = "Corporativo"
+    light.run()
+    assert light.session_state[dashboard.THEME_STATE] == "Corporativo"

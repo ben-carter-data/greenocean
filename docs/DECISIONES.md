@@ -2618,3 +2618,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Tablas con `st.dataframe`:** quedan como estaban; no se tocaron en esta decisión.
 - **Pruebas:** `tests/test_compact_tables.py` (nunca más de 20 filas, páginas, una abierta a la vez, diagnóstico solo del autor, log cerrado y de altura fija) y las de `test_actions_page.py` y `test_quality_method.py`, adaptadas.
 - **Hallazgo aparte:** el panel mostraba en español, con la vista en inglés, la frase de Monitoreo cuando dos indicadores están por revisar («Días desde la última semana» y «Última carga», como pasa con la carga del martes 27-10 fallida). Se agregó su inglés a `bi/i18n_en.py`.
+
+## D-349 · El tema oscuro es el predeterminado
+
+- **Pedido del autor:** que el tema oscuro sea el de entrada en toda la app, también en la ventana «Elige tu vista», hasta que la persona elija otro en «Apariencia»; los enlaces con `?tema=` siguen mandando.
+- **Decisión:** `DEFAULT_THEME` pasa de «Corporativo» a «Vantablack» y `.streamlit/config.toml` arranca en la base oscura de Streamlit, para que la primera pintura no sea clara. Una elección en «Apariencia» o un `?tema=` en la dirección sigue ganando.
+- **Límite:** no se vio en un navegador real (Playwright no está en esta sesión); la prueba cubre el tema de la sesión, la dirección y la base de la configuración.
+- **Pruebas:** `tests/test_dashboard.py::test_d349_…` y los dos `test_d071_…` ajustados.

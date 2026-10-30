@@ -1,8 +1,8 @@
 # Streamlit's native bases support the app palettes: Corporativo and Blue Light on the
-# light base, Vantablack and Dark Grey on the dark one. The default theme is Corporativo,
-# so the app starts on the light base. Fields and cards keep their own contrast.
+# light base, Vantablack and Dark Grey on the dark one. The default theme is Vantablack (D-349),
+# so the app starts on the dark base. Fields and cards keep their own contrast.
 [theme]
-base = "light"
+base = "dark"
 # The system font (San Francisco on Apple, Segoe UI on Windows), fine and quiet,
 # instead of Streamlit's Source Sans (D-175). Code keeps a monospace stack.
 font = "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Helvetica, Arial, sans-serif"
