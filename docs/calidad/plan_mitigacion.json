@@ -146,7 +146,30 @@
       ],
       "categoria": "datos",
       "estacion": 14,
-      "ocurrencias": []
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-30",
+          "ocurrencia": [
+            "La carga #17 falló en dbt: d042 encontró una semana sin precios.",
+            "Load #17 failed in dbt: d042 found a week with no prices."
+          ],
+          "diagnostico": [
+            "El consumidor ya publicó la semana del 19-10 y el mayorista todavía no.",
+            "The consumer source already published the week of 19-10 and the wholesale one has not yet."
+          ],
+          "solucion": [
+            "Pendiente: regla de fuentes retrasadas y ajuste de d042 (plan por aprobar).",
+            "Pending: rule for late sources and d042 adjusted (plan to approve)."
+          ],
+          "comentario": [
+            "Una semana reciente que la fuente aún no publica no debe bloquear la carga.",
+            "A recent week the source has not published yet must not block the load."
+          ],
+          "estacion": 14,
+          "estado": "abierta",
+          "referencia": "D-042"
+        }
+      ]
     },
     {
       "id": "F-07",
