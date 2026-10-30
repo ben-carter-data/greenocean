@@ -20,7 +20,7 @@ import os
 import sqlite3
 import subprocess
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 import duckdb
@@ -111,6 +111,15 @@ def run_dbt(run_id: int, dbt_command: str | None = None) -> tuple[bool, str]:
     result = subprocess.run(command, cwd=DBT_DIR, env=environment, capture_output=True, text=True)
     output = (result.stdout + result.stderr).strip().splitlines()
     return result.returncode == 0, "\n".join(output[-15:])
+
+
+def read_last_weeks(work_file: Path = WORK_DATABASE_FILE) -> dict[str, str]:
+    """D-356: the last week each source published, before the cut to the week complete in both."""
+    with duckdb.connect(str(work_file), read_only=True) as connection:
+        rows = connection.execute(
+            "SELECT source, strftime(max(week_start), '%Y-%m-%d') FROM int_prices__weekly GROUP BY source"
+        ).fetchall()
+    return {str(source): str(week) for source, week in rows}
 
 
 def count_rows(work_file: Path = WORK_DATABASE_FILE) -> tuple[int, int, int]:
@@ -236,6 +245,17 @@ def main(dbt_command: str | None = None, load_raw: bool = True, record: bool = T
         print(output)
         return 1
     rows_read, rows_loaded, rows_rejected = count_rows()
+    # D-356: a source more than two weeks behind stops the load (an urgent alert in the panel); a recent week only
+    # one source has published is held back by dbt and named in the run's message.
+    last_weeks = read_last_weeks()
+    late = etl.late_source_problems(last_weeks, date.today())
+    if late:
+        message = " | ".join(late)
+        record_failed_run(
+            history, (run_id, started_at, etl.STATUS_FAILED, rows_read, rows_loaded, rows_rejected, message)
+        )
+        print(message)
+        return 1
     previous = next((row[3] for row in reversed(history) if row[2] == etl.STATUS_LOADED), None)
     if previous and rows_read < previous * etl.MINIMUM_ROWS_RATIO:
         message = f"{etl.PROBLEM_TOO_FEW_ROWS}: read {rows_read} rows, the previous successful run read {previous}"
@@ -246,7 +266,16 @@ def main(dbt_command: str | None = None, load_raw: bool = True, record: bool = T
         return 1
     if record:
         write_serving_database(
-            history, (run_id, started_at, etl.STATUS_LOADED, rows_read, rows_loaded, rows_rejected, "")
+            history,
+            (
+                run_id,
+                started_at,
+                etl.STATUS_LOADED,
+                rows_read,
+                rows_loaded,
+                rows_rejected,
+                etl.held_back_notice(last_weeks),
+            ),
         )
     else:
         write_serving_database(history[:-1], history[-1])

@@ -1,5 +1,7 @@
 -- D-029 y D-042: cada fuente tiene precio todas las semanas, salvo el hueco conocido de la
--- fuente (consumidor, semana del 2022-05-02).
+-- fuente (consumidor, semana del 2022-05-02). Desde D-356 el calendario llega solo hasta la última
+-- semana completa en ambas fuentes: una semana reciente que una fuente aún no publica no es un hueco;
+-- uno en medio de los datos sí lo es y detiene la carga.
 with sources as (select distinct source from {{ ref('dim_channel') }}),
      priced as (
          select distinct weekly_price.week_start, dim_channel.source

@@ -4056,6 +4056,24 @@ def read_home_trends(database_version, week):
     return by_family, basket
 
 
+LATE_SOURCE_NAMES = {etl.SOURCE_WHOLESALE: "mayorista", etl.SOURCE_CONSUMER: "consumidor"}
+
+
+def describe_late_sources(message):
+    """D-356: «ODEPA aún no publica la semana del 19-10 (mayorista)», from the notice the load left in its run."""
+    if not message or not str(message).startswith(etl.NOTICE_SOURCE_LATE):
+        return ""
+    parts = []
+    for item in str(message).split(":", 1)[1].split(","):
+        source, _, week = item.strip().partition(" ")
+        if week:
+            day = f"{week[8:10]}-{week[5:7]}"
+            parts.append(
+                tr("ODEPA aún no publica la semana del {} ({})").format(day, tr(LATE_SOURCE_NAMES.get(source, source)))
+            )
+    return " · ".join(parts)
+
+
 def show_market_overview(mode, prefix):
     """Map, movement by family and products of one family on one screen (D-092)."""
     # Streamlit reruns this file without reimporting helpers; keep the live page
@@ -4133,6 +4151,9 @@ def show_market_overview(mode, prefix):
             unsafe_allow_html=True,
             width="content",
         )
+    notice = describe_late_sources(latest['message'] if latest['status'] == etl.STATUS_LOADED else '')
+    if notice:
+        st.caption(notice)  # D-356: a quiet line; the week is not filled in, it waits for the source
     map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
     # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
     # sanitizer intentionally removes interactive SVG links.

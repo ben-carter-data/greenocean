@@ -158,16 +158,16 @@
             "The consumer source already published the week of 19-10 and the wholesale one has not yet."
           ],
           "solucion": [
-            "Pendiente: regla de fuentes retrasadas y ajuste de d042 (plan por aprobar).",
-            "Pending: rule for late sources and d042 adjusted (plan to approve)."
+            "Se publica hasta la semana completa en ambas fuentes; la que falta espera, sin rellenar (D-356).",
+            "Publication goes up to the week complete in both sources; the missing one waits, unfilled (D-356)."
           ],
           "comentario": [
-            "Una semana reciente que la fuente aún no publica no debe bloquear la carga.",
-            "A recent week the source has not published yet must not block the load."
+            "Queda abierta hasta que una carga real lo confirme.",
+            "It stays open until a real load confirms it."
           ],
           "estacion": 14,
           "estado": "abierta",
-          "referencia": "D-042"
+          "referencia": "D-356"
         }
       ]
     },

@@ -17,7 +17,7 @@ import json
 import re
 import sqlite3
 import sys
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -157,6 +157,11 @@ KNOWN_CHANNELS = {
 KNOWN_SOURCE_GAPS = {SOURCE_CONSUMER: {"2022-05-02"}}
 PROBLEM_TOO_FEW_ROWS = "TOO_FEW_ROWS"
 PROBLEM_MISSING_WEEKS = "MISSING_WEEKS"
+# D-356: a source more than MAX_LATE_WEEKS weeks behind stops the load; a recent week one source has not published yet
+# does not: the load publishes up to the last week complete in both sources and says which week is held back.
+PROBLEM_LATE_SOURCE = "LATE_SOURCE"
+NOTICE_SOURCE_LATE = "SOURCE_LATE"
+MAX_LATE_WEEKS = 2
 PROBLEM_UNKNOWN_REGION = "UNKNOWN_REGION"
 PROBLEM_UNKNOWN_CHANNEL = "UNKNOWN_CHANNEL"
 PROBLEM_DUPLICATE_KEYS = "DUPLICATE_KEYS"
@@ -493,9 +498,55 @@ def find_unexpected_missing_weeks(week_starts: pd.Series, source: str) -> list[s
     return [week for week in find_missing_weeks(week_starts) if week not in known_gaps]
 
 
-def check_quality(weekly_prices: pd.DataFrame, rows_read: int, previous_rows_read: int | None) -> list[str]:
+def last_week_by_source(weekly_prices: pd.DataFrame) -> dict[str, str]:
+    """The last week with prices of each source, as YYYY-MM-DD."""
+    weeks = pd.to_datetime(weekly_prices["week_start"])
+    return {str(source): str(week.date()) for source, week in weeks.groupby(weekly_prices["source"]).max().items()}
+
+
+def published_until(last_weeks: dict[str, str]) -> str | None:
+    """D-356: the last week complete in every source; nothing after it is published, nothing is filled in."""
+    return min(last_weeks.values()) if last_weeks else None
+
+
+def weeks_behind(last_week: str, run_date: date) -> int:
+    """How many weeks a source is behind the last complete week of the run date (the Monday of the week before)."""
+    expected = run_date - timedelta(days=run_date.weekday() + 7)
+    return max(0, (expected - date.fromisoformat(last_week)).days // 7)
+
+
+def late_source_problems(last_weeks: dict[str, str], run_date: date) -> list[str]:
+    """D-356: a source more than MAX_LATE_WEEKS behind stops the load, with an urgent alert for the author."""
+    return [
+        f"{PROBLEM_LATE_SOURCE}: {source} last published the week of {week}, "
+        f"{weeks_behind(week, run_date)} weeks behind"
+        for source, week in sorted(last_weeks.items())
+        if weeks_behind(week, run_date) > MAX_LATE_WEEKS
+    ]
+
+
+def held_back_notice(last_weeks: dict[str, str]) -> str:
+    """D-356: the weeks a source has not published yet while the other has; the load says so and goes ahead."""
+    newest = max(last_weeks.values(), default=None)
+    late = [
+        f"{source} {date.fromisoformat(week) + timedelta(days=7)}"
+        for source, week in sorted(last_weeks.items())
+        if week != newest
+    ]
+    return f"{NOTICE_SOURCE_LATE}: {', '.join(late)}" if late else ""
+
+
+def check_quality(
+    weekly_prices: pd.DataFrame,
+    rows_read: int,
+    previous_rows_read: int | None,
+    run_date: date | None = None,
+    last_weeks: dict[str, str] | None = None,
+) -> list[str]:
     """Return the problems that must stop the load; an empty list means go ahead."""
     problems = []
+    if run_date is not None and last_weeks:
+        problems += late_source_problems(last_weeks, run_date)
     # The files only grow during a year, so far fewer rows means a truncated file.
     if previous_rows_read and rows_read < previous_rows_read * MINIMUM_ROWS_RATIO:
         problems.append(
@@ -678,7 +729,7 @@ def load(
         # Every week referenced by a price exists in dim_date before the price (D-095).
         refresh_dim_date(connection, list(weekly_prices["week_start"]))
         insert_rows(connection, "weekly_price", attach_dimension_identifiers(connection, weekly_prices))
-        run_id = record_run(connection, started_at, STATUS_LOADED, row_counts)
+        run_id = record_run(connection, started_at, STATUS_LOADED, row_counts, row_counts.get("notice", ""))
         # Only the rejections of the latest run are kept; etl_run keeps the counts.
         connection.execute("DELETE FROM rejection")
         insert_rows(connection, "rejection", rejections.assign(run_id=run_id))
@@ -722,8 +773,11 @@ def clean_and_validate_all_sources(
     return valid_rows, pd.concat(rejection_parts, ignore_index=True), rows_read
 
 
-def run_etl(raw_connection: sqlite3.Connection, connection: sqlite3.Connection) -> dict[str, Any]:
-    """Run the whole ETL from the raw tables. Returns the counts of the run."""
+def run_etl(
+    raw_connection: sqlite3.Connection, connection: sqlite3.Connection, run_date: date | None = None
+) -> dict[str, Any]:
+    """Run the whole ETL from the raw tables. Returns the counts of the run. With run_date, a source more than
+    MAX_LATE_WEEKS behind that date stops the load (D-356)."""
     started_at = datetime.now().isoformat(timespec="seconds")
     valid_rows, rejections, rows_read = clean_and_validate_all_sources(raw_connection)
     row_counts: dict[str, Any] = {
@@ -732,9 +786,14 @@ def run_etl(raw_connection: sqlite3.Connection, connection: sqlite3.Connection) 
         "rows_rejected": len(rejections),
     }
     weekly_prices = apply_business_rules(valid_rows)
+    # D-356: up to the last week complete in both sources; a week only one source has published waits.
+    last_weeks = last_week_by_source(weekly_prices)
+    cutoff = published_until(last_weeks)
+    if cutoff:
+        weekly_prices = weekly_prices[pd.to_datetime(weekly_prices["week_start"]) <= pd.Timestamp(cutoff)]
     row_counts["weekly_prices"] = len(weekly_prices)
 
-    problems = check_quality(weekly_prices, rows_read, read_previous_rows_read(connection))
+    problems = check_quality(weekly_prices, rows_read, read_previous_rows_read(connection), run_date, last_weeks)
     if problems:
         # Nothing is loaded: the previous weekly prices stay untouched.
         row_counts["status"] = STATUS_FAILED
@@ -744,12 +803,13 @@ def run_etl(raw_connection: sqlite3.Connection, connection: sqlite3.Connection) 
         return row_counts
 
     regions = valid_rows[["region_id", "region"]].drop_duplicates("region_id")
+    row_counts["notice"] = held_back_notice(last_weeks)
     load(connection, weekly_prices, regions, rejections, started_at, row_counts)
     # The table is rebuilt on every run; compacting keeps the committed file at
     # its smallest size (D-046).
     connection.execute("VACUUM")
     row_counts["status"] = STATUS_LOADED
-    row_counts["message"] = ""
+    row_counts["message"] = row_counts["notice"]
     return row_counts
 
 
@@ -766,7 +826,7 @@ def main() -> int:
     for file_name, status, row_count in load_raw_files(raw_connection):
         print(f"{status} | {file_name} | {row_count} rows")
     connection = open_database(DATABASE_FILE, SCHEMA_FILE)
-    row_counts = run_etl(raw_connection, connection)
+    row_counts = run_etl(raw_connection, connection, date.today())
     print(
         f"{row_counts['status']} | read {row_counts['rows_read']}"
         f" | loaded {row_counts['rows_loaded']}"

@@ -13,3 +13,9 @@ select week_start, source, channel, region_id, product_group, product, variety, 
              and (price > median_price * 5 or price < median_price / 5) then 'ATIPICO'
             else unit_flag end as flag
 from weekly
+-- D-356: se publica hasta la última semana completa en ambas fuentes; la semana que solo una
+-- fuente publicó espera a la otra, sin rellenar nada.
+where week_start <= (
+    select min(last_week)
+    from (select source, max(week_start) as last_week from {{ ref('int_prices__weekly') }} group by source)
+)

@@ -24,6 +24,7 @@ def steps(tmp_path, monkeypatch):
     monkeypatch.setattr(pipeline.bronze, "export_source", lambda connection, source: None)
     monkeypatch.setattr(pipeline, "prepare_ipc", lambda: None)
     monkeypatch.setattr(pipeline, "read_run_history", lambda: list(HISTORY))
+    monkeypatch.setattr(pipeline, "read_last_weeks", lambda: {})  # D-356: no work database here
     calls = {"written": [], "failed": []}
     monkeypatch.setattr(pipeline, "write_serving_database", lambda *args, **kwargs: calls["written"].append(args))
     monkeypatch.setattr(pipeline, "record_failed_run", lambda history, run, *args: calls["failed"].append(run))
