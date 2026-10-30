@@ -1,18 +1,18 @@
-# Informe de calidad N° 5
+# Informe de calidad N° 6
 
 | | |
 |---|---|
-| **Fecha** | 2026-10-30 22:05 UTC |
+| **Fecha** | 2026-10-30 23:25 UTC |
 | **Semana de datos** | 2026-10-12 |
-| **Código evaluado** | 150890e |
-| **Informe anterior** | N° 4 |
+| **Código evaluado** | 3104fe3 |
+| **Informe anterior** | N° 5 |
 
-Autoevaluación automática: 11 de 12 indicadores medidos están dentro de lo aceptable; 1 no conformidades. Los aceptables son los de `metas.json` al crearse el informe; los indicadores de datos van en modo aviso hasta que el autor apruebe que bloqueen la publicación.
+Autoevaluación automática: 10 de 12 indicadores medidos están dentro de lo aceptable; 2 no conformidades. Los aceptables son los de `metas.json` al crearse el informe; los indicadores de datos van en modo aviso hasta que el autor apruebe que bloqueen la publicación.
 
 | Indicador | Tipo | Falla | Aceptable | Estado | Lectura |
 |---|---|---|---|---|---|
-| Pruebas que fallan | codigo | 0 % | 0 % | Cumple | Dentro de lo aceptable: no afecta. |
-| Cobertura total | codigo | 5,40 % | 10 % | Cumple | Dentro de lo aceptable: no afecta. |
+| Pruebas que fallan | codigo | 1,24 % | 0 % | Crítico | Supera lo aceptable por mucho: es crítico. Corregir la causa antes de publicar; nunca saltar la prueba. |
+| Cobertura total | codigo | 5,50 % | 10 % | Cumple | Dentro de lo aceptable: no afecta. |
 | Cobertura del módulo más bajo | codigo | 22,70 % | 30 % | Cumple | Dentro de lo aceptable: no afecta. |
 | Avisos de Ruff (E, F y W; el largo de línea, aparte) | codigo | 0 | 0 | Cumple | Dentro de lo aceptable: no afecta. |
 | Errores de mypy | codigo | 0 | 0 | Cumple | Dentro de lo aceptable: no afecta. |
