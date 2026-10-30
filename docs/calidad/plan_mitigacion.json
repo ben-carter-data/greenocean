@@ -659,6 +659,58 @@
           "referencia": "D-326 · eb6bce6"
         }
       ]
+    },
+    {
+      "id": "F-18",
+      "categoria": "código",
+      "falla": [
+        "Una recarga que hace la app vuelve a pedir el perfil",
+        "A reload the app makes asks for the view again"
+      ],
+      "deteccion": [
+        "La ventana «Elige tu vista» aparece al abrir o imprimir un documento, o al cambiar de tema",
+        "The «Elige tu vista» window shows when a document is opened or printed, or the theme changes"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Toda recarga empieza una sesión nueva y, desde D-340, toda sesión nueva pide el perfil",
+        "Every reload starts a new session and, since D-340, every new session asks for the view"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "Elegir el perfil otra vez",
+        "Choose the view again"
+      ],
+      "correctiva": [
+        "La app recuerda la vista solo en sus propias recargas (D-357)",
+        "The app keeps the view only on its own reloads (D-357)"
+      ],
+      "estacion": 8,
+      "caso_real": "D-357",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-30",
+          "ocurrencia": [
+            "«Abrir», «PDF» y el cambio de tema volvían a pedir el perfil; el PDF salía con la ventana encima.",
+            "«Abrir», «PDF» and the theme change asked for the view again; the PDF came out with the window on top."
+          ],
+          "diagnostico": [
+            "D-340 pide el perfil en cada sesión nueva, y esas acciones recargan la página.",
+            "D-340 asks for the view on every new session, and those actions reload the page."
+          ],
+          "solucion": [
+            "La app guarda la vista antes de sus propias recargas y la usa una sola vez (D-357).",
+            "The app keeps the view before its own reloads and uses it once (D-357)."
+          ],
+          "comentario": [
+            "Una recarga del lector sigue pidiendo el perfil; el Autor siempre pide la clave.",
+            "A reload by the reader still asks for the view; the Author always asks for the key."
+          ],
+          "estacion": 8,
+          "estado": "resuelta",
+          "referencia": "D-357"
+        }
+      ]
     }
   ]
 }

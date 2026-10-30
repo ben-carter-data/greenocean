@@ -665,6 +665,59 @@ def submit_author_code():
         st.session_state[AUTHOR_CODE_ERROR] = message
 
 
+# D-357: the page reloads by itself to change the native theme (D-070), to print (D-280) and when a document opens
+# from the folder. Right before those reloads the browser tab keeps the view (never the author) for one load; a reload
+# the reader makes keeps nothing, so the entry window asks again (D-340).
+PROFILE_KEEPER_JS = r"""
+export default function(component) {
+    const { setTriggerValue, data } = component;
+    const KEY = "go-keep-profile";
+    const store = window.sessionStorage;
+    const remember = () => {
+        if (!data || !data.perfil) return;
+        try { store.setItem(KEY, JSON.stringify({ p: data.perfil, r: data.rol || "", t: Date.now() })); } catch (e) {}
+    };
+    window.__goRemember = remember;
+    if (!data || !data.perfil) {
+        try {
+            const raw = store.getItem(KEY);
+            store.removeItem(KEY);
+            if (raw) {
+                const kept = JSON.parse(raw);
+                if (Date.now() - kept.t < 120000) setTriggerValue("keep", raw);
+            }
+        } catch (e) {}
+    }
+    const handler = (event) => {
+        const link = event.target.closest && event.target.closest(".df-actions a, .doc-path a, .doc-print");
+        if (link) remember();
+    };
+    document.addEventListener("click", handler, true);
+    return () => document.removeEventListener("click", handler, true);
+}
+"""
+
+
+def keep_profile_across_app_reloads():
+    """D-357: the view the visit had before a reload the app itself made, once; the author is never kept."""
+    keeper = st.components.v2.component("profile_keeper", js=PROFILE_KEEPER_JS)
+    profile = get_profile()
+    data = {"perfil": profile or "", "rol": get_role() if profile == PROFILE_PROFESSIONAL else ""}
+    kept = keeper(key="profile_keeper", data=data, on_keep_change=lambda: None, height=0).keep
+    if not kept or profile:
+        return
+    try:
+        values = json.loads(kept)
+    except (TypeError, ValueError):
+        return
+    if values.get("p") in PROFILES:
+        st.session_state[PROFILE_STATE] = values["p"]
+        if values.get("r") in ROLES:
+            st.session_state[ROLE_STATE] = values["r"]
+        settle_profile()
+        st.rerun()
+
+
 @st.dialog("GreenOcean", width="small", dismissible=False)
 def show_profile_dialog():
     """The first screen of a visit (D-295): the brand, «Elige tu vista» and two pills; under «Profesional», the profiles
@@ -859,6 +912,7 @@ def build_base_mode_script(theme_or_base):
             // This reload only syncs Streamlit's native-widget base mode; it is not
             // a real page refresh, so it must not send the reader back home (D-099).
             page.sessionStorage.setItem("greenoceanThemeReload", "1");
+            if (page.__goRemember) {{ page.__goRemember(); }}  // D-357: this reload is the app's own
             page.location.reload();
         }}
     }} catch (error) {{ /* CSS remains usable when browser storage is unavailable. */ }}
@@ -6408,6 +6462,7 @@ document.querySelectorAll(".doc-print").forEach((button) => { button.onclick = (
   const url = new URL(window.location.href);
   url.searchParams.set("imprimir", url.searchParams.get("tema") || "");
   url.searchParams.set("tema", light);
+  if (window.__goRemember) window.__goRemember();  // D-357: the app reloads, the visit keeps its view
   window.location.assign(url.toString());
 }; });
 </script>"""
@@ -6420,6 +6475,7 @@ AUTO_PRINT_SCRIPT = r"""<script>
     const url = new URL(window.location.href);
     url.searchParams.set("tema", url.searchParams.get("imprimir"));
     url.searchParams.delete("imprimir");
+    if (window.__goRemember) window.__goRemember();
     window.location.replace(url.toString());
   }, { once: true });
   setTimeout(() => window.print(), 3000);
@@ -7895,6 +7951,7 @@ def main():
     WINDOW_PAGES.update(windows_by_title)
     open_profile_landing(windows_by_title)
     show_sidebar_navigation(windows_by_title, current_window, order)
+    keep_profile_across_app_reloads()
     if not get_profile() or st.session_state.get(CHANGE_VIEW):
         show_profile_dialog()
     else:
