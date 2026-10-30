@@ -264,12 +264,34 @@
             "Marker «rendimiento»: the tests stay local with -m rendimiento and the CI leaves them out"
           ],
           "comentario": [
-            "Presupuestos y pruebas intactos; la verificación en el CI llega con el próximo push",
-            "Budgets and tests unchanged; the CI check comes with the next push"
+            "Confirmada el 30-10: pytest 3.11 y 3.12 en verde en el CI de 2fc362e",
+            "Confirmed on 30-10: pytest 3.11 and 3.12 green in the CI of 2fc362e"
           ],
           "estacion": 14,
           "estado": "resuelta",
-          "referencia": "D-341 · 958d137"
+          "referencia": "D-341 · 958d137 · 2fc362e"
+        },
+        {
+          "fecha": "2026-10-29",
+          "ocurrencia": [
+            "Los datos siguen en la semana del 12–18 oct: la carga semanal no publica desde el 20-10",
+            "The data are still on the week of 12–18 Oct: the weekly load has not published since 20-10"
+          ],
+          "diagnostico": [
+            "El paso «Run the tests against the new database» de semanal.yml corría pytest sin filtro, con las pruebas de rendimiento; las cuatro cargas desde el panel del 29 y 30-10 fallaron ahí y no publicaron. Causa probable, sin el log a la vista. Las del 25 y 27-10 fallaron por otra causa (F-12)",
+            "The step «Run the tests against the new database» of semanal.yml ran pytest unfiltered, with the speed tests; the four loads launched from the panel on 29 and 30-10 failed there and did not publish. Probable cause, without the log in sight. Those of 25 and 27-10 failed for another reason (F-12)"
+          ],
+          "solucion": [
+            "-m \"not rendimiento\" también en semanal.yml (ampliación de D-341)",
+            "-m \"not rendimiento\" in semanal.yml too (extension of D-341)"
+          ],
+          "comentario": [
+            "Resuelta en código; queda abierta hasta que una carga real publique",
+            "Solved in code; it stays open until a real load publishes"
+          ],
+          "estacion": 14,
+          "estado": "abierta",
+          "referencia": "D-341 · 2fc362e"
         }
       ]
     },
@@ -316,8 +338,8 @@
             "No solution yet"
           ],
           "comentario": [
-            "Falta el log del paso para diagnosticarla",
-            "The step's log is needed to diagnose it"
+            "Sigue abierta al 30-10, sin diagnóstico hasta tener el log del paso «Proponer el informe al autor»",
+            "Still open on 30-10, with no diagnosis until the log of the step «Proponer el informe al autor» is at hand"
           ],
           "estacion": 14,
           "estado": "abierta",

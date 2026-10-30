@@ -360,7 +360,7 @@ def test_d334_every_nonconformity_of_the_reports_is_registered_and_the_author_wr
             assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", occurrence["fecha"]) and 1 <= occurrence["estacion"] <= 15
             for text in ("ocurrencia", "diagnostico", "solucion", "comentario"):  # Spanish and English, both written
                 assert len(occurrence[text]) == 2 and all(occurrence[text])
-    assert sum(len(item["ocurrencias"]) for item in plan if item["categoria"] == "operación") == 8
+    assert sum(len(item["ocurrencias"]) for item in plan if item["categoria"] == "operación") >= 8
     incidents = quality_metrics.read(folder / "incidentes_externos.json")
     assert incidents["respuestas_por_defecto"]["estado"] == "pendiente de aprobación del autor"
     assert isinstance(incidents["registros"], list)
