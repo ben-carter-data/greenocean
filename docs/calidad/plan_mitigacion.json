@@ -293,6 +293,28 @@
           "estacion": 14,
           "estado": "abierta",
           "referencia": "D-341 · 958d137 · 2fc362e"
+        },
+        {
+          "fecha": "2026-10-30",
+          "ocurrencia": [
+            "El workflow de calidad marcó pruebas fallando en el informe N° 6.",
+            "The quality workflow marked failing tests in report No. 6."
+          ],
+          "diagnostico": [
+            "La medición de calidad corría las pruebas de velocidad en el servidor de GitHub.",
+            "The quality measure ran the speed tests on GitHub's server."
+          ],
+          "solucion": [
+            "medir_calidad.py también deja fuera las pruebas de velocidad; una prueba vigila los tres lugares (D-341).",
+            "medir_calidad.py also leaves the speed tests out; one test watches the three places (D-341)."
+          ],
+          "comentario": [
+            "Tercer lugar donde corría la prueba de velocidad, después del CI y la carga semanal.",
+            "Third place where the speed test ran, after the CI and the weekly load."
+          ],
+          "estacion": 14,
+          "estado": "abierta",
+          "referencia": "D-341 · 30113bb"
         }
       ]
     },
