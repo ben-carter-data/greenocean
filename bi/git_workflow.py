@@ -471,7 +471,7 @@ header{{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-b
 .cmd{{font-family:var(--mono);font-size:.66rem;background:var(--chip);border:1px solid var(--line);border-radius:7px;padding:4px 7px;max-width:100%;overflow-wrap:anywhere;text-align:left;line-height:1.4;color:var(--fg)}}
 .info{{font-size:.66rem;color:var(--lc);font-family:var(--mono)}}
 .badge{{font-family:var(--mono);font-size:.6rem;background:var(--stop);color:#fff;border-radius:10px;padding:0 6px}}
-@media (min-width:1050px){{
+@media (min-width:880px){{
   .lane{{grid-template-columns:repeat(5,1fr);gap:0}}
   .lane.b{{direction:rtl}} .lane.b .st{{direction:ltr}}
   .st::after{{content:"";position:absolute;top:40px;right:-14%;width:28%;border-top:2px dashed var(--lc);opacity:.85}}
@@ -483,7 +483,7 @@ header{{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-b
   .turn.r::before{{right:0;border-left:0;border-radius:0 40px 40px 0}}
   .turn.l::before{{left:0;border-right:0;border-radius:40px 0 0 40px}}
 }}
-@media (min-width:640px) and (max-width:1049px){{.lane{{grid-template-columns:repeat(3,1fr)}}}}
+@media (min-width:560px) and (max-width:879px){{.lane{{grid-template-columns:repeat(3,1fr)}}}}
 .scrim{{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20}}
 .drawer{{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--panel);border-left:1px solid var(--line);z-index:21;overflow-y:auto;padding:18px 20px 24px 22px;display:flex;flex-direction:column;gap:12px}}
 .drawer[hidden],.scrim[hidden]{{display:none}}
