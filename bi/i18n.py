@@ -107,6 +107,8 @@ EN = {
     "Ningún informe coincide.": "No report matches.",
     "Abrir el informe o su PDF": "Open the report or its PDF",
     "Página {} de {} · {} filas": "Page {} of {} · {} rows",
+    "Página": "Page",
+    "de": "of",
     "Mapa": "Map",
     "Registro de incidentes": "Incident log",
     "Cómo viaja un cambio desde la idea hasta el despliegue, y las fallas que han ocurrido en el camino.": "How a change travels from an idea to a live deployment, and the failures that have happened along the way.",

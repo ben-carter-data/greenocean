@@ -373,3 +373,10 @@ def test_d252_the_glossary_names_only_pages_and_tabs_that_exist():
             page, _, tab = place.partition(" (")
             assert page in menu, f"{row[0]}: «{page}» is not a page of the menu"
             assert not tab or tab.rstrip(")") in tabs, f"{row[0]}: «{tab}» is not a tab"
+
+
+def test_d358_a_printed_document_numbers_its_sheets_and_gives_the_cover_its_own_sheet():
+    css = dashboard.PRINT_DOCUMENT_CSS
+    assert "@bottom-center" in css and "counter(page)" in css and "counter(pages)" in css
+    assert ".doc-cover { break-after: page; }" in css
+    assert '"__PAGE__ " counter(page) " __OF__ " counter(pages)' in css  # «Página 3 de 5», in the reader's language

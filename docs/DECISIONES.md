@@ -2683,3 +2683,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión (opción 1, aprobada el 30-10):** justo antes de cada una de esas recargas, la pestaña del navegador guarda la vista (Usuario o Profesional y su rol), nunca el Autor. Al volver, la app la usa una sola vez, la borra y deja al lector en la página que pedía. Una recarga que hace el lector no encuentra nada guardado, así que la ventana vuelve a salir (D-340 sigue igual para él). El Autor que imprime vuelve como Profesional y, para volver a Autor, escribe su clave.
 - **Verificación:** en un navegador, «PDF» y el cambio de tema ya no muestran la ventana y una recarga manual sí la muestra.
 - **Pruebas:** `tests/test_app_reloads.py` (la vista guardada se usa y no se pierde el documento; sin vista guardada, o con una que no es pública, vuelve la ventana; cada recarga de la app guarda la vista antes).
+
+## D-358 · El PDF de un documento numera sus hojas y su portada va sola
+
+- **Pedido del autor:** el PDF de los documentos debe verse formal, con el ajuste mínimo y sin un script nuevo; sigue siendo la página impresa por el navegador (D-248).
+- **Decisión:** la hoja de impresión agrega «Página X de Y» al pie de cada hoja (en el idioma del lector) y un salto de página después de la portada, que queda sola en la primera hoja con título, versión, fecha, estado, responsable, audiencia y documentos relacionados.
+- **Verificación:** el SQAP impreso desde «Documentos → PDF» sale en 5 hojas, sin la ventana de entrada (D-357), con la portada sola y «Página 1 de 5» al pie.
+- **Pruebas:** `tests/test_documents.py::test_d358_…`.

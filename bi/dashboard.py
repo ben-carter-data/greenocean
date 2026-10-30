@@ -6431,7 +6431,10 @@ def show_document_diagram(name, mode):
 # Only the document pages carry this stylesheet; it hides the menu and the navigation and lets the page run on.
 PRINT_DOCUMENT_CSS = """<style>
 @media print {
-  @page { size: A4; margin: 12mm; }
+  /* D-358: every sheet says its number, and the cover has a sheet of its own. */
+  @page { size: A4; margin: 12mm 12mm 16mm;
+    @bottom-center { content: "__PAGE__ " counter(page) " __OF__ " counter(pages); font: 9pt -apple-system, "Segoe UI", sans-serif; color: #5f6b7c; } }
+  .doc-cover { break-after: page; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
   .st-key-app_header, .st-key-doc_actions, .st-key-compact_footer, .st-key-route_footer, .doc-path,
@@ -6504,7 +6507,9 @@ def show_document_actions(mode, source_label, source_url):
             unsafe_allow_html=True,
         )
         st.html(build_print_button_html(mode), unsafe_allow_javascript=True)
-    st.markdown(PRINT_DOCUMENT_CSS, unsafe_allow_html=True)
+    st.markdown(
+        PRINT_DOCUMENT_CSS.replace("__PAGE__", tr("Página")).replace("__OF__", tr("de")), unsafe_allow_html=True
+    )
     if st.query_params.get(PRINT_PARAMETER) in charts.THEMES:
         st.html(AUTO_PRINT_SCRIPT, unsafe_allow_javascript=True)
 
