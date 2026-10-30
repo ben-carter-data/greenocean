@@ -673,7 +673,8 @@ def count_adr():
 
 
 def measure_tests(python):
-    _, out = run([python, "-m", "pytest", "--collect-only", "-q"])
+    # D-341: the same tests the coverage run executes; the speed budgets left out are not failures.
+    _, out = run([python, "-m", "pytest", "--collect-only", "-q", "-m", "not rendimiento"])
     match = re.search(r"(\d+) tests? collected", out) or re.search(r"^(\d+)/", out, re.MULTILINE)
     count = len([line for line in out.splitlines() if "::" in line])
     files = len(list((ROOT / "tests").glob("test_*.py")))

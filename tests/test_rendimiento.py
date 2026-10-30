@@ -38,3 +38,5 @@ def test_d341_no_shared_runner_measures_speed_the_ci_the_weekly_load_and_the_qua
         assert runs and all('-m "not rendimiento"' in line for line in runs), workflow
     script = (root / "scripts" / "medir_calidad.py").read_text(encoding="utf-8")
     assert '"-m",\n            "not rendimiento",' in script
+    # The count of tests the indicator divides by is taken with the same filter, or the ones left out count as failures.
+    assert '"--collect-only", "-q", "-m", "not rendimiento"' in script

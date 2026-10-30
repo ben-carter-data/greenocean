@@ -305,8 +305,8 @@
             "The quality measure ran the speed tests on GitHub's server."
           ],
           "solucion": [
-            "medir_calidad.py también deja fuera las pruebas de velocidad; una prueba vigila los tres lugares (D-341).",
-            "medir_calidad.py also leaves the speed tests out; one test watches the three places (D-341)."
+            "medir_calidad.py deja fuera las pruebas de velocidad al correrlas y al contarlas; una prueba vigila los tres lugares (D-341).",
+            "medir_calidad.py leaves the speed tests out when it runs them and when it counts them; one test watches the three places (D-341)."
           ],
           "comentario": [
             "Tercer lugar donde corría la prueba de velocidad, después del CI y la carga semanal.",
