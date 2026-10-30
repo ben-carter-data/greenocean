@@ -212,6 +212,10 @@
     "ver_informe": [
       "Abrir el informe",
       "Open the report"
+    ],
+    "antigua": [
+      "Última medición del {dia}: puede no reflejar el estado actual.",
+      "Last measurement on {dia}: it may not reflect the current state."
     ]
   },
   "resumen": {

@@ -571,3 +571,21 @@ def test_d354_each_occurrence_is_one_short_line_per_field_and_the_policy_says_so
     rule = quality_metrics.read(quality_metrics.POLICY_FILE)["registro_de_fallas"]["regla"]
     assert rule[0].startswith("Cada ocurrencia del registro") and rule[1].startswith("Each occurrence of the register")
     assert "una línea por campo" in (quality_metrics.FOLDER / "README.md").read_text(encoding="utf-8")
+
+
+def test_d361_an_alert_from_an_old_report_says_it_is_old_and_is_not_shown_as_todays_critical():
+    from datetime import date
+
+    reports, goals, policy = quality_method.read_page()
+    latest = dict(reports[-1], fecha="2026-10-27 11:37 UTC")
+    latest["indicadores"] = [
+        dict(row, estado="critico") if row["clave"] == "pruebas_fallidas" else row for row in latest["indicadores"]
+    ]
+    fresh = quality_method.build_alert([latest], goals, policy, [], today=date(2026, 10, 30))
+    old = quality_method.build_alert([latest], goals, policy, [], today=date(2026, 11, 5))
+    assert "qm-alert-stale" not in fresh and "qm-critico" in fresh  # 3 days: today's state
+    assert "Última medición del 27-10: puede no reflejar el estado actual." in old  # 9 days: an old picture
+    assert "qm-critico" not in old and "qm-antigua" in old
+    assert quality_method.is_stale(latest, date(2026, 11, 4)) is False and quality_method.is_stale(
+        latest, date(2026, 11, 5)
+    )

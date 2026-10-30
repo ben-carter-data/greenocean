@@ -254,6 +254,7 @@ def build_alert(
     nonconformities: list[dict[str, Any]],
     link: Any = None,
     failed_load: str | None = None,
+    today: Any = None,
 ) -> str:
     """«Acción requerida» (D-335), for the author only: every indicator of the latest report out of its acceptable,
     the critical ones first, each with its level, failure against the acceptable, why it matters, the automatic
@@ -269,6 +270,12 @@ def build_alert(
     )
     day = str(latest["fecha"])[:10]
     parts = []
+    # D-361: a report older than STALE_DAYS is an old picture, not today's state: it says so and loses its alarm colours.
+    stale = is_stale(latest, today)
+    if stale:
+        parts.append(
+            f'<p class="qm-alert-stale">{html.escape(t(*texts["antigua"]).format(dia=f"{day[8:10]}-{day[5:7]}"))}</p>'
+        )
     if failed_load:
         parts.append(f'<p class="qm-alert-load">{html.escape(t(*texts["falla_carga"]).format(dia=failed_load))}</p>')
     for row in out:
@@ -287,7 +294,7 @@ def build_alert(
         cause_line = t(*cause) if cause else diagnosis["origen"]
         action = t(*goal["accion"]) if goal.get("accion") else ""
         parts.append(
-            f'<div class="qm-alert qm-{row["estado"]}"><h4>{html.escape(state_word(row["estado"], policy))} · '
+            f'<div class="qm-alert qm-{"antigua" if stale else row["estado"]}"><h4>{html.escape(state_word(row["estado"], policy))} · '
             f'{html.escape(t(*row["nombre"]))}</h4>'
             f'<p class="qm-alert-figure">{html.escape(t("Falla", "Failure"))} {html.escape(failure_text(row))} · '
             f'{html.escape(t("aceptable", "acceptable"))} {html.escape(failure_text(row, "falla_aceptable"))}</p>'
@@ -306,6 +313,17 @@ def build_alert(
         f'{html.escape(t("N°", "No."))} {latest["numero"]}</a></p>'
     )
     return '<div class="qm-alerts">' + "".join(parts) + "</div>"
+
+
+STALE_DAYS = 8
+
+
+def is_stale(report: dict[str, Any], today: Any = None) -> bool:
+    """D-361: True when the report is more than STALE_DAYS old; the alert then reads it as an old measurement."""
+    from datetime import date
+
+    measured = date.fromisoformat(str(report["fecha"])[:10])
+    return ((today or date.today()) - measured).days > STALE_DAYS
 
 
 def build_css(palette: dict[str, str]) -> str:
@@ -383,6 +401,7 @@ div[data-testid="stDialog"] [role="dialog"] button[aria-label="Close"] svg, div[
 .qm-alert h4 {{ margin:0 0 4px !important; padding:0 !important; font-size:14px !important; color:inherit; }}
 .qm-alert p {{ margin:0 0 6px !important; font-size:13px; color:{text}; }} .qm-alert p b {{ color:{ink}; }}
 .qm-alert p.qm-alert-figure {{ font-variant-numeric:tabular-nums; color:{ink}; }}
-.qm-alert-load {{ font-size:13px; color:{text}; }} .qm-alert-foot {{ font-size:12px; color:{soft}; }}
+.qm-alert-load {{ font-size:13px; color:{text}; }} .qm-alert-stale {{ font-size:13px; font-weight:600; color:{ink}; padding:8px 12px; border-radius:8px; border:1px dashed {border}; }}
+.qm-alert.qm-antigua {{ border-left-color:{border} !important; opacity:.85; }} .qm-alert.qm-antigua h4 {{ color:{soft} !important; }} .qm-alert-foot {{ font-size:12px; color:{soft}; }}
 @media (max-width:1100px) {{ .qm-groups {{ grid-template-columns:minmax(0, 1fr); }} }}
 </style>"""

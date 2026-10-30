@@ -2703,3 +2703,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Medición (30-10, en local):** cambiar de pestaña tarda 0,2 s y cambiar de página entre 0,2 y 1,5 s; las más lentas son Centro de operación (1,5 s), Insights, Calidad y auditoría y Pipeline y linaje (alrededor de 1 s). `st.tabs` dibuja todas las pestañas en cada vuelta: en Centro de operación, cuatro diagramas a la vez.
 - **Decisión:** Centro de operación y Calidad y auditoría cambian `st.tabs` por un selector con aspecto de pestañas (`show_view_tabs`) que dibuja solo la elegida. Insights y Pipeline y linaje no tienen pestañas: su tiempo viene de otra parte y queda por medir. Las lecturas a GitHub de Centro de operación ya se guardan 5 minutos (las ejecuciones y sus pasos) y una hora (el vencimiento del token): no cambian. Ninguna prueba bloquea por tiempo.
 - **Pruebas:** las de cada página eligen la pestaña que leen; la auditoría del inglés revisa cada pestaña como una pantalla.
+
+## D-361 · Una alerta de un informe antiguo dice que es antigua
+
+- **Causa:** la alerta «Acción requerida» leyó el informe N° 4 (27-10), con 5 pruebas fallando, como si fuera el estado de hoy; no había informe nuevo porque el workflow de calidad falla (F-11).
+- **Decisión:** si el último informe tiene más de 8 días, la alerta empieza con «Última medición del 27-10: puede no reflejar el estado actual.» y sus indicadores no llevan el color de crítico o urgente, sino uno gris de medición antigua. El texto vive en `docs/calidad/politica.json` (`alerta.antigua`), en español e inglés.
+- **Pruebas:** `tests/test_quality_method.py::test_d361_…` (a los 3 días es el estado de hoy; a los 9, una medición antigua sin color de crítico).
