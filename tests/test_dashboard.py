@@ -275,21 +275,40 @@ ADMIN_ADDRESSES = [link["url"] for link in dashboard.ADMIN_LINKS]
 FAKE_TOKEN = "github_pat_FAKE_SECRET_123"
 
 
-def draw_control_page(secrets, run_state="ok", dialog=False):
+def draw_control_page(secrets, run_state="ok", dialog=False, cancel_error=None):
     """The Operaciones page with GitHub replaced by fixed answers, no network. A manual
-    run is accepted and ends in run_state. With dialog, the script opens the manual-run
+    run is accepted; GitHub answers that it is «run_state» (ok, failed or in_progress) with one
+    job whose log ends in a line that prints the token. With dialog, the script opens the manual-run
     dialog itself: in a browser the dialog reruns alone (a fragment), which AppTest
     does not reproduce."""
     script = (
         f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
         "from datetime import datetime, timedelta, timezone\n"
-        "from bi import control, dashboard\n"
+        "from bi import control, dashboard, run_monitor\n"
         "control.list_workflow_runs = lambda *args, **kwargs: []\n"
         # Relative to today: a fixed date made this test fail the day it arrived.
         "control.read_token_expiration = lambda token: datetime.now(timezone.utc) + timedelta(days=60)\n"
         "control.start_workflow_run = lambda token: None\n"
-        "dashboard.wait_for_manual_run = lambda requested_at, token: {'id': 1}\n"
-        f"dashboard.follow_run_progress = lambda run_id, token, area: {run_state!r}\n"
+        "run_monitor.find_run = lambda token, requested_at: {'id': 7, 'url': 'https://github.com/x/y/actions/runs/7'}\n"
+        f"STATE = {run_state!r}\n"
+        "def fetch(run_id, token):\n"
+        "    done = STATE != 'in_progress'\n"
+        "    step = {'name': 'Run the ETL', 'status': 'completed' if done else 'in_progress',\n"
+        "            'conclusion': ('success' if STATE == 'ok' else 'failure') if done else None,\n"
+        "            'started_at': '2026-10-30T12:00:00Z', 'completed_at': '2026-10-30T12:01:05Z' if done else None}\n"
+        "    job = {'id': 70, 'name': 'weekly-load', 'status': 'completed' if done else 'in_progress',\n"
+        "           'conclusion': step['conclusion'], 'steps': [step]}\n"
+        "    return {'status': 'completed' if done else 'in_progress', 'conclusion': step['conclusion'],\n"
+        "            'url': 'https://github.com/x/y/actions/runs/7', 'jobs': [job]}\n"
+        "run_monitor.fetch_run = fetch\n"
+        "run_monitor.read_tail = lambda job, token: ['line one', 'Authorization: Bearer ' + token, 'last line']\n"
+        + (
+            "def refuse(run_id, token):\n    import requests\n    r = requests.Response()\n"
+            f"    r.status_code = {cancel_error}\n    raise requests.HTTPError(response=r)\n"
+            "control.cancel_workflow_run = refuse\n"
+            if cancel_error
+            else "control.cancel_workflow_run = lambda run_id, token: None\n"
+        )
         + (
             "dashboard.show_run_now_dialog(dashboard.get_secret('GITHUB_TOKEN'), "
             "dashboard.get_secret('CONTROL_CODE'))\n"
@@ -381,20 +400,85 @@ def test_d201_security_has_its_own_section_with_the_view_and_the_test_plan():
     assert "S-01" in " ".join(block.value for block in app.markdown)
 
 
+def run_window_text(app):
+    return read_page_text(app) + " ".join(str(element.proto) for element in app.get("success") + app.get("info"))
+
+
 @needs_database
-def test_d149_a_successful_run_says_so_and_never_shows_the_token():
+def test_d149_a_successful_run_says_so_shows_the_real_log_and_never_shows_the_token():
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="ok", dialog=True)
-    text = open_run_dialog(app, "clave")
-    assert not app.exception
-    assert "Se ejecutó correctamente" in text and "Tu token vence en" in text
-    assert FAKE_TOKEN not in text and FAKE_TOKEN[-6:] not in text
+    open_run_dialog(app, "clave")
+    app.run()  # the window asks GitHub again by itself; here, one more turn
+    text = run_window_text(app)
+    code = " ".join(block.value for block in app.code)
+    assert not app.exception and "Ejecución completada" in text and "Tu token vence en" in text
+    assert "Run the ETL" in code or "Limpieza y reglas de negocio" in code  # a line per step
+    assert "line one" in code and "last line" in code  # the job's last real lines
+    assert FAKE_TOKEN not in text + code and FAKE_TOKEN[-6:] not in text + code and "Bearer github_pat" not in code
+    assert "run_close" in button_keys(app) and "run_cancel" not in button_keys(app)  # «Cancelar» became «Cerrar»
 
 
 @needs_database
-def test_d149_a_failed_run_says_it_did_not_complete():
+def test_d149_a_failed_run_says_it_did_not_complete_and_can_be_closed():
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="failed", dialog=True)
-    text = open_run_dialog(app, "clave")
-    assert not app.exception and "No se ejecutó completamente" in text
+    open_run_dialog(app, "clave")
+    app.run()
+    assert not app.exception and "La ejecución falló" in run_window_text(app) + " ".join(
+        str(element.proto) for element in app.get("error")
+    )
+    assert "run_close" in button_keys(app)
+
+
+@needs_database
+def test_d351_the_window_cannot_be_dismissed_minimizing_does_not_cancel_and_cancel_asks_first():
+    import inspect
+
+    assert (
+        "dismissible=False"
+        in inspect.getsource(dashboard).split("def show_run_now_dialog")[0].rsplit("@st.dialog", 1)[1]
+    )
+    cancelled = []
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="in_progress", dialog=True)
+    open_run_dialog(app, "clave")
+    app.run()
+    keys = button_keys(app)
+    assert "run_minimize" in keys and "run_cancel" in keys and "run_close" not in keys  # the two actions
+    assert "Ejecución en curso" in run_window_text(app)
+    app.button(
+        key="run_cancel"
+    ).click().run().run()  # asks first: nothing is cancelled yet (AppTest redraws the fragment on a second turn)
+    assert "¿Seguro que quieres cancelar? Esto detiene la ejecución en GitHub." in read_page_text(app) + " ".join(
+        str(element.proto) for element in app.get("warning")
+    )
+    assert "run_cancel_yes" in button_keys(app) and "run_cancel_no" in button_keys(app)
+    app.button(key="run_cancel_no").click().run().run()
+    assert "run_cancel" in button_keys(app) and not app.session_state["run_watch"]["confirming"]
+    app.button(key="run_minimize").click().run()  # minimizing never cancels
+    watch = app.session_state["run_watch"]
+    assert watch["minimized"] and watch["phase"] == "running" and not cancelled
+
+
+@needs_database
+def test_d351_confirming_cancels_and_says_cancelled_and_a_refusal_keeps_the_run_with_its_reason():
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="in_progress", dialog=True)
+    open_run_dialog(app, "clave")
+    app.run()
+    app.button(key="run_cancel").click().run().run()
+    app.button(key="run_cancel_yes").click().run().run()
+    watch = app.session_state["run_watch"]
+    assert watch["phase"] == "cancelled" and "run_close" in button_keys(app)
+    refused = draw_control_page(
+        {"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="in_progress", dialog=True, cancel_error=403
+    )
+    open_run_dialog(refused, "clave")
+    refused.run()
+    refused.button(key="run_cancel").click().run().run()
+    refused.button(key="run_cancel_yes").click().run().run()
+    watch = refused.session_state["run_watch"]
+    assert watch["phase"] == "running" and "no tiene permiso para cancelar" in " ".join(
+        str(element.proto) for element in refused.get("error")
+    )
+    assert FAKE_TOKEN not in str(refused.get("error"))
 
 
 @needs_database

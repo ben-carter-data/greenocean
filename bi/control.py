@@ -148,6 +148,29 @@ def start_workflow_run(token: str) -> None:
     response.raise_for_status()
 
 
+def cancel_workflow_run(run_id: int, token: str) -> None:
+    """Ask GitHub to cancel a run (D-351). A write: it uses the same token that starts the workflow. Raises if refused."""
+    response = requests.post(
+        f"{API_URL}/repos/{REPOSITORY}/actions/runs/{run_id}/cancel",
+        headers=build_headers(token),
+        timeout=REQUEST_TIMEOUT_SECONDS,
+    )
+    response.raise_for_status()
+
+
+def describe_cancel_error(error: Exception) -> str:
+    """Why GitHub did not cancel the run, in the reader's language. Only the HTTP code, never the token."""
+    code = getattr(getattr(error, "response", None), "status_code", None)
+    if code == 403:
+        return tr(
+            "El token no tiene permiso para cancelar. Necesita «Actions: Read and write» sobre este repositorio; "
+            "la ejecución sigue como estaba."
+        )
+    if code == 409:
+        return tr("La ejecución ya había terminado; no hay nada que cancelar.")
+    return tr("No se pudo cancelar: {}. La ejecución sigue como estaba.").format(describe_github_error(error))
+
+
 def list_run_steps(run_id: int, token: str | None = None) -> list[tuple[str, str]]:
     """Steps of a run with their state, to follow its progress."""
     response = requests.get(

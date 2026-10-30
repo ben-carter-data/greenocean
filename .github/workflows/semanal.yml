@@ -23,6 +23,7 @@ permissions:
 jobs:
   weekly-load:
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # D-351: GitHub cuts a stuck load; the panel's window stops asking at the same minute
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

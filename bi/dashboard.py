@@ -17,7 +17,6 @@ import math
 import os
 import re
 import sys
-import time
 import unicodedata
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -39,6 +38,7 @@ from bi import (
     compact_table,
     git_workflow,
     github_actions,
+    run_monitor,
     app_map,
     overview,
     quality_method,
@@ -441,7 +441,6 @@ STEPS_PROVED_BY_A_SAVED_LOAD = {"Download the ODEPA files", "Run the ETL", "Run 
 # Seconds between two questions to GitHub while the pipeline runs, and the
 # longest wait: a normal run takes about one minute.
 PROGRESS_POLL_SECONDS = 4
-PROGRESS_MAXIMUM_SECONDS = 600
 # Names of the dashboard secrets that enable the "run now" button.
 SECRET_GITHUB_TOKEN = "GITHUB_TOKEN"
 SECRET_READ_TOKEN = "GITHUB_READ_TOKEN"  # D-339: read-only; GITHUB_TOKEN is the fallback
@@ -4886,77 +4885,77 @@ def read_pipeline_runs():
     return runs, ""
 
 
-def build_step_lines(steps):
-    """Progress of a run as text lines with an icon per step."""
-    icons = {control.RUN_OK: "✅", control.RUN_FAILED: "❌", control.RUN_IN_PROGRESS: "⏳", "skipped": "⏭️"}
-    if not steps:
-        return "⏳ Preparando la ejecución…"
-    return "  \n".join(f"{icons.get(state, '•')} {name}" for name, state in steps)
+def render_run_window(token):
+    """The window of the manual run (D-351), redrawn by itself every few seconds while the run goes on: its state, the
+    log in a fixed box with a copy button, and the two actions. Minimize hides the window and leaves the run in
+    GitHub; Cancel asks first and then stops it; once it ends, «Cancelar» becomes «Cerrar»."""
+    watch = st.session_state[run_monitor.WATCH]
+    run_monitor.refresh(watch, token, datetime.now(timezone.utc))
+    phase = watch["phase"]
+    final = run_monitor.is_final(watch)
+    (
+        st.success
+        if phase == run_monitor.OK
+        else st.error
+        if phase in (run_monitor.FAILED, run_monitor.UNCONFIRMED)
+        else st.info
+    )(tr(run_monitor.PHASE_LABELS[phase]) if phase != run_monitor.RUNNING else run_monitor.indicator(watch))
+    if phase == run_monitor.TIMEOUT:
+        st.caption(tr("Pasaron {} minutos: la ventana deja de consultar.").format(run_monitor.MAX_MINUTES))
+    if watch["url"]:
+        st.link_button(tr("Abrir la ejecución en GitHub"), watch["url"], icon=":material/open_in_new:")
+    if watch["error"]:
+        st.warning(watch["error"])
+    if watch["cancel_error"]:
+        st.error(watch["cancel_error"], icon=":material/lock:")
+    text = run_monitor.build_log(watch) or tr("Preparando la ejecución…")
+    with st.container(height=260):
+        st.code(text, language=None)
+    st.iframe(run_monitor.build_copy_html(text, tr("Copiar"), tr("Copiado"), tr("Seleccionado")), height=44)
+    if watch["confirming"] and not final:
+        st.warning(tr("¿Seguro que quieres cancelar? Esto detiene la ejecución en GitHub."))
+        with st.container(horizontal=True):
+            if st.button(tr("Sí, cancelar"), key="run_cancel_yes", type="primary"):
+                run_monitor.cancel(watch, token)
+                st.rerun(scope="fragment")
+            if st.button(tr("No, seguir"), key="run_cancel_no"):
+                watch["confirming"] = False
+                st.rerun(scope="fragment")
+        return
+    with st.container(horizontal=True):
+        if st.button(tr("Minimizar"), key="run_minimize", icon=":material/minimize:"):
+            watch["minimized"] = True
+            st.rerun()  # the whole app: the window closes, the run goes on in GitHub
+        if final:
+            if st.button(tr("Cerrar"), key="run_close", type="primary", icon=":material/close:"):
+                del st.session_state[run_monitor.WATCH]
+                st.rerun()
+        elif watch["run_id"] is not None and st.button(tr("Cancelar"), key="run_cancel", icon=":material/stop_circle:"):
+            watch["confirming"] = True
+            st.rerun(scope="fragment")
 
 
-def wait_for_manual_run(requested_at, token):
-    """The run GitHub created for the click, or None if it does not appear in time."""
-    for _ in range(10):
-        time.sleep(PROGRESS_POLL_SECONDS)
-        run = control.find_run_started_after(control.list_workflow_runs(token, RUN_HISTORY_COUNT), requested_at)
-        if run is not None:
-            return run
-    return None
+def show_run_indicator():
+    """D-351: while the run goes on (or just ended) and its window is minimized, a small indicator above the menu says
+    where it is; a click opens the window again. Only the author has a run, so only the author sees it."""
+    watch = st.session_state.get(run_monitor.WATCH)
+    if not watch or not watch["minimized"] or not st.session_state.get(ADMIN_UNLOCKED):
+        return
+    if st.sidebar.button(
+        run_monitor.indicator(watch), key="run_indicator", icon=":material/sync:", type="tertiary", width="stretch"
+    ):
+        watch["minimized"] = False
+        st.session_state[RUN_WINDOW_OPEN] = True
+        st.rerun()
 
 
-def follow_run_progress(run_id, token, progress_area):
-    """Show the steps until the run ends; return its final state."""
-    waited_seconds = 0
-    while waited_seconds < PROGRESS_MAXIMUM_SECONDS:
-        progress_area.markdown(build_step_lines(control.list_run_steps(run_id, token)))
-        runs = control.list_workflow_runs(token, RUN_HISTORY_COUNT)
-        state = next((run["state"] for run in runs if run["id"] == run_id), control.RUN_IN_PROGRESS)
-        if state != control.RUN_IN_PROGRESS:
-            progress_area.markdown(build_step_lines(control.list_run_steps(run_id, token)))
-            return state
-        time.sleep(PROGRESS_POLL_SECONDS)
-        waited_seconds += PROGRESS_POLL_SECONDS
-    return control.RUN_IN_PROGRESS
+def reopen_run_window():
+    """The window comes back when the indicator asked for it (a dialog opens from the main script, not the sidebar)."""
+    if st.session_state.pop(RUN_WINDOW_OPEN, False):
+        show_run_now_dialog(get_secret(SECRET_GITHUB_TOKEN), get_secret(SECRET_CONTROL_CODE))
 
 
-def run_pipeline_now(token):
-    """Start the pipeline, show its steps live and end with one clear sentence:
-    completed, or where it stopped (D-149). Returns True when it completed."""
-    requested_at = datetime.now(timezone.utc)
-    try:
-        control.start_workflow_run(token)
-    except Exception as error:  # GitHub refused the request or did not answer
-        st.error(f"No se pudo iniciar la ejecución: {control.describe_github_error(error)}.", icon=":material/error:")
-        return False
-    with st.status("Ejecutando el pipeline en GitHub Actions…", expanded=True) as status_box:
-        run = wait_for_manual_run(requested_at, token)
-        if run is None:
-            status_box.update(label="GitHub no confirmó el inicio.", state="error", expanded=True)
-            st.error("La ejecución no se confirmó. Revisa el historial en un minuto.", icon=":material/error:")
-            return False
-        state = follow_run_progress(run["id"], token, st.empty())
-        fetch_pipeline_runs.clear()
-        if state == control.RUN_OK:
-            status_box.update(label="Ejecución completada.", state="complete", expanded=True)
-            st.success(
-                "Se ejecutó correctamente: datos descargados, revisados y guardados. "
-                "El panel los muestra en 1 o 2 minutos, al recibir la base nueva.",
-                icon=":material/check_circle:",
-            )
-            st.toast("Pipeline ejecutado correctamente.", icon=":material/check_circle:")
-            return True
-        if state == control.RUN_IN_PROGRESS:
-            status_box.update(label="Sigue en curso.", state="running", expanded=True)
-            st.info("La ejecución sigue en curso en GitHub; su resultado aparecerá en el historial.")
-            return False
-        status_box.update(label="La ejecución no terminó.", state="error", expanded=True)
-        st.error(
-            "No se ejecutó completamente: un paso falló (marcado con ❌). Los datos "
-            "anteriores siguen intactos; los logs están en el historial.",
-            icon=":material/error:",
-        )
-        st.toast("La ejecución falló.", icon=":material/error:")
-        return False
+RUN_WINDOW_OPEN = "run_window_open"
 
 
 ADMIN_UNLOCKED = "admin_unlocked"
@@ -4994,24 +4993,48 @@ def reload_panel_data():
     st.session_state[RELOADED_NOTICE] = True
 
 
-@st.dialog("Ejecutar el pipeline ahora", width="medium")
+@st.dialog("Ejecutar el pipeline ahora", width="medium", dismissible=False)
 def show_run_now_dialog(token, access_code):
-    """The manual run behind the control code, in a layer above the page (D-149)."""
-    st.caption(
-        "Descarga los archivos de ODEPA, los limpia, los prueba y guarda la base, igual "
-        "que la ejecución automática de cada martes. Tarda unos 5 minutos."
-    )
-    if not st.session_state.get(ADMIN_UNLOCKED):
-        typed_code = st.text_input("Clave de control", key="run_now_code", autocomplete="off")
-        if not st.button("Ejecutar", type="primary", icon=":material/play_arrow:", key="run_now_confirm"):
+    """The manual run behind the control code, in a layer above the page (D-149). D-351: no click outside and no X
+    closes it; it follows the run and offers «Minimizar» and «Cancelar». With a run already followed it shows that one
+    instead of starting another."""
+    if run_monitor.WATCH not in st.session_state:
+        st.caption(
+            tr(
+                "Descarga los archivos de ODEPA, los limpia, los prueba y guarda la base, igual "
+                "que la ejecución automática de cada martes. Tarda unos 5 minutos."
+            )
+        )
+        if not st.session_state.get(ADMIN_UNLOCKED):
+            typed_code = st.text_input(tr("Clave de control"), key="run_now_code", autocomplete="off")
+            with st.container(horizontal=True):
+                confirmed = st.button(
+                    tr("Ejecutar"), type="primary", icon=":material/play_arrow:", key="run_now_confirm"
+                )
+                if st.button(tr("Cerrar"), key="run_now_leave"):
+                    st.rerun()
+            if not confirmed:
+                return
+            ok, message = control.check_control_code(typed_code, access_code)
+            if not ok:
+                st.error(tr(message), icon=":material/lock:")
+                return
+            st.session_state[ADMIN_UNLOCKED] = True
+        try:
+            control.start_workflow_run(token)
+        except Exception as error:  # GitHub refused the request or did not answer
+            st.error(
+                tr("No se pudo iniciar la ejecución: {}.").format(control.describe_github_error(error)),
+                icon=":material/error:",
+            )
+            if st.button(tr("Cerrar"), key="run_start_failed_close"):
+                st.rerun()
             return
-        ok, message = control.check_control_code(typed_code, access_code)
-        if not ok:
-            st.error(message, icon=":material/lock:")
-            return
-        st.session_state[ADMIN_UNLOCKED] = True
+        st.session_state[run_monitor.WATCH] = run_monitor.new_watch(datetime.now(timezone.utc))
+        fetch_pipeline_runs.clear()
     show_token_expiration(token)
-    run_pipeline_now(token)
+    final = run_monitor.is_final(st.session_state[run_monitor.WATCH])
+    st.fragment(render_run_window, run_every=None if final else PROGRESS_POLL_SECONDS)(token)
 
 
 def show_admin_card():
@@ -7456,6 +7479,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             st.session_state[f"nav_open_{key}"] = key not in FOLDED_BY_DEFAULT
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
+    show_run_indicator()  # D-351
     show_load_alert(windows_by_title)  # D-298: first in the menu, where nothing covers it
     for key, title, pages in visible_menu_blocks():
         if key in TILE_BLOCKS:
@@ -7708,6 +7732,7 @@ def main():
     if not get_profile():
         show_profile_dialog()
     else:
+        reopen_run_window()
         show_quality_alert()
     current_page.run()
 
