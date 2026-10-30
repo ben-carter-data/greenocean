@@ -245,6 +245,8 @@ def measure_coverage(python):
             "-m",
             "pytest",
             "-q",
+            "-m",
+            "not rendimiento",  # D-341: speed budgets run locally, never on a shared runner
             "-p",
             "no:cacheprovider",
             *[f"--cov={name}" for name in CODE],
@@ -259,7 +261,7 @@ def measure_coverage(python):
     statements = sum(files[name]["summary"]["num_statements"] for name in CRITICAL_MODULES if name in files)
     match = re.search(r"(\d+) passed(?:, (\d+) skipped)?", out)
     return {
-        "orden": "pytest -q " + " ".join(f"--cov={name}" for name in CODE),
+        "orden": 'pytest -q -m "not rendimiento" ' + " ".join(f"--cov={name}" for name in CODE),
         "pruebas_ok": int(match.group(1)) if match else None,
         "pruebas_omitidas": int(match.group(2) or 0) if match else None,
         "salida": code,
