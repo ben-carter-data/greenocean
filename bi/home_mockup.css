@@ -614,9 +614,10 @@ ul.mock-calc-out li em {font-style:normal;}
 .mock-basket:hover {background:color-mix(in srgb,__ACCENT__ 9%,__PANEL__);}
 .mock-basket strong {font-weight:700;}
 .mock-basket-art {width:14px;height:14px;border-radius:4px;background:__ACCENT__;justify-self:center;}
-.mock-lock {position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:__INK__;background:__PANEL__;border:1px solid __BORDER__;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+.mock-lock {position:static;z-index:5;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:__INK__;background:__PANEL__;border:1px solid __BORDER__;box-shadow:0 4px 14px rgba(0,0,0,.25);}
 .st-key-home_families,.st-key-home_products {position:relative;}
 .st-key-home_products [data-testid="stTextInput"] [data-baseweb="input"] {border-color:__ACCENT__!important;}
 .st-key-home_products [data-testid="stTextInput"] svg,.st-key-home_products [data-testid="stTextInput"] [data-testid="stIconMaterial"] {color:__ACCENT__!important;fill:__ACCENT__!important;}
 @keyframes mock-unlock {0% {box-shadow:0 0 0 0 color-mix(in srgb,__ACCENT__ 70%,transparent);} 60% {box-shadow:0 0 0 6px color-mix(in srgb,__ACCENT__ 25%,transparent);} 100% {box-shadow:0 0 0 0 transparent;}}
 @media (prefers-reduced-motion:reduce) {.st-key-home_families,.st-key-home_products {animation:none!important;}}
+.st-key-home_families > [data-testid="stElementContainer"]:has(.mock-lock),.st-key-home_products > [data-testid="stElementContainer"]:has(.mock-lock) {position:absolute!important;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;margin:0!important;}

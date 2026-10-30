@@ -11,7 +11,11 @@ from bi import charts, dashboard, home_mockup, queries
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="Requires real database")
-LINK = "dashboard.st.components.v2.component = lambda name, js=None: (lambda key=None, on_link_change=None: __import__('types').SimpleNamespace(link={link!r}))\n"
+LINK = (
+    "ORIGINAL_COMPONENT = st.components.v2.component\n"
+    "st.components.v2.component = lambda name, js=None: (\n"
+    "    lambda key=None, on_link_change=None: __import__('types').SimpleNamespace(link={link!r}))\n"
+)  # the stub is undone at the end of the script: AppTest runs in this process and the module is shared
 
 
 def draw(profile, link=None, query=None, state=None):
@@ -21,7 +25,10 @@ def draw(profile, link=None, query=None, state=None):
         + "".join(f"st.session_state[{key!r}] = {value!r}\n" for key, value in (state or {}).items())
         + "".join(f"st.query_params[{key!r}] = {value!r}\n" for key, value in (query or {}).items())
         + (LINK.format(link=link) if link else "")
-        + f"dashboard.render_page({dashboard.PAGE_HOME!r})\n"
+        + "try:\n"
+        + f"    dashboard.render_page({dashboard.PAGE_HOME!r})\n"
+        + "finally:\n"
+        + ("    st.components.v2.component = ORIGINAL_COMPONENT\n" if link else "    pass\n")
     )
     return AppTest.from_string(script, default_timeout=90).run()
 
