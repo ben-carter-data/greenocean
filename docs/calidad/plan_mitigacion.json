@@ -1,5 +1,5 @@
 {
-  "nota": "Plan de mitigación (D-334): las fallas previstas y las reales, cómo se detectan, si su causa es interna o externa, su severidad, la contención inmediata y la acción correctiva. Desde D-342 cada falla lleva su categoría (datos, código u operación), su estación del flujo git (1 a 15) y la lista de sus ocurrencias; la solución estándar es «correctiva».",
+  "nota": "Plan de mitigación (D-334): las fallas previstas y las reales, cómo se detectan, si su causa es interna o externa, su severidad, la contención inmediata y la acción correctiva. Desde D-342 cada falla lleva su categoría (datos, código u operación), su estación del flujo git (1 a 15) y la lista de sus ocurrencias; la solución estándar es «correctiva». Desde D-354 cada ocurrencia se escribe en una línea por campo y en lenguaje simple; el análisis detallado vive en su decisión D-xxx.",
   "fallas": [
     {
       "id": "F-01",
@@ -252,46 +252,24 @@
         {
           "fecha": "2026-10-29",
           "ocurrencia": [
-            "k3_regional_index tardó 1,42 s contra su presupuesto de 1,0 s",
-            "k3_regional_index took 1.42 s against its 1.0 s budget"
+            "La carga semanal y el CI fallaban y los datos no se actualizaban desde el 20-10.",
+            "The weekly load and the CI failed and the data had not been updated since 20-10."
           ],
           "diagnostico": [
-            "DuckDB resuelve la consulta en 0,03 s; el resto es entregar a pandas 801.263 filas (98 % de la tabla). En local tarda 0,44 s",
-            "DuckDB answers in 0.03 s; the rest is handing 801,263 rows (98 % of the table) to pandas. Locally it takes 0.44 s"
+            "Una prueba exigía que una consulta tardara menos de 1 s y en el servidor de GitHub tardaba 1,4 s.",
+            "A test required a query to take under 1 s and on GitHub's server it took 1.4 s."
           ],
           "solucion": [
-            "Marcador «rendimiento»: las pruebas siguen en local con -m rendimiento y el CI las excluye",
-            "Marker «rendimiento»: the tests stay local with -m rendimiento and the CI leaves them out"
+            "La prueba de velocidad salió de la carga y del CI; sigue corriendo en local como informativa (D-341).",
+            "The speed test left the load and the CI; it still runs locally as informative (D-341)."
           ],
           "comentario": [
-            "Confirmada el 30-10: pytest 3.11 y 3.12 en verde en el CI de 2fc362e",
-            "Confirmed on 30-10: pytest 3.11 and 3.12 green in the CI of 2fc362e"
-          ],
-          "estacion": 14,
-          "estado": "resuelta",
-          "referencia": "D-341 · 958d137 · 2fc362e"
-        },
-        {
-          "fecha": "2026-10-29",
-          "ocurrencia": [
-            "Los datos siguen en la semana del 12–18 oct: la carga semanal no publica desde el 20-10",
-            "The data are still on the week of 12–18 Oct: the weekly load has not published since 20-10"
-          ],
-          "diagnostico": [
-            "El paso «Run the tests against the new database» de semanal.yml corría pytest sin filtro, con las pruebas de rendimiento; las cuatro cargas desde el panel del 29 y 30-10 fallaron ahí y no publicaron. Causa probable, sin el log a la vista. Las del 25 y 27-10 fallaron por otra causa (F-12)",
-            "The step «Run the tests against the new database» of semanal.yml ran pytest unfiltered, with the speed tests; the four loads launched from the panel on 29 and 30-10 failed there and did not publish. Probable cause, without the log in sight. Those of 25 and 27-10 failed for another reason (F-12)"
-          ],
-          "solucion": [
-            "-m \"not rendimiento\" también en semanal.yml (ampliación de D-341)",
-            "-m \"not rendimiento\" in semanal.yml too (extension of D-341)"
-          ],
-          "comentario": [
-            "Resuelta en código; queda abierta hasta que una carga real publique",
-            "Solved in code; it stays open until a real load publishes"
+            "La velocidad no es un indicador de calidad del proyecto; una prueba informativa nunca debe bloquear la publicación.",
+            "Speed is not a quality indicator of the project; an informative test must never block publication."
           ],
           "estacion": 14,
           "estado": "abierta",
-          "referencia": "D-341 · 2fc362e"
+          "referencia": "D-341 · 958d137 · 2fc362e"
         }
       ]
     },
@@ -326,20 +304,20 @@
         {
           "fecha": "2026-10-29",
           "ocurrencia": [
-            "El paso que abre el pull request del informe falla en cada ejecución",
-            "The step that opens the report's pull request fails on every run"
+            "El workflow «calidad» no logra abrir el pull request con el informe.",
+            "The «calidad» workflow cannot open the pull request with the report."
           ],
           "diagnostico": [
-            "Los permisos del workflow (contents y pull-requests en write) y la casilla del repositorio están bien; la causa sigue sin conocerse",
-            "The workflow permissions (contents and pull-requests on write) and the repository setting are right; the cause is still unknown"
+            "Sin diagnosticar: falta el log del paso.",
+            "Not diagnosed: the step's log is missing."
           ],
           "solucion": [
-            "Sin solución todavía",
-            "No solution yet"
+            "Ninguna todavía.",
+            "None yet."
           ],
           "comentario": [
-            "Sigue abierta al 30-10, sin diagnóstico hasta tener el log del paso «Proponer el informe al autor»",
-            "Still open on 30-10, with no diagnosis until the log of the step «Proponer el informe al autor» is at hand"
+            "Se diagnostica cuando llegue el log.",
+            "It will be diagnosed when the log arrives."
           ],
           "estacion": 14,
           "estado": "abierta",
@@ -378,20 +356,20 @@
         {
           "fecha": "2026-10-27",
           "ocurrencia": [
-            "La carga semanal del martes falló porque el arreglo solo estaba en local",
-            "The Tuesday weekly load failed because the fix was only local"
+            "La carga del martes 27-10 falló.",
+            "The Tuesday 27-10 load failed."
           ],
           "diagnostico": [
-            "La ejecución programada corrió sobre 94d7491, sin el arreglo que ya existía en el equipo del autor",
-            "The scheduled run used 94d7491, without the fix that already existed on the author's machine"
+            "El arreglo estaba solo en el computador del autor, no en GitHub.",
+            "The fix was only on the author's computer, not on GitHub."
           ],
           "solucion": [
-            "El arreglo se subió al repositorio y la carga se volvió a ejecutar",
-            "The fix was pushed and the load was run again"
+            "Se subió el arreglo y se volvió a lanzar la carga.",
+            "The fix was pushed and the load was launched again."
           ],
           "comentario": [
-            "El commit exacto del arreglo no está registrado",
-            "The exact commit of the fix is not recorded"
+            "El commit exacto del arreglo no está registrado.",
+            "The exact commit of the fix is not recorded."
           ],
           "estacion": 13,
           "estado": "resuelta",
@@ -430,20 +408,20 @@
         {
           "fecha": "2026-10-29",
           "ocurrencia": [
-            "Una edición en la web de GitHub con commits locales pendientes",
-            "An edit in GitHub's web editor with local commits pending"
+            "Se editó un archivo en la web de GitHub con commits locales sin subir.",
+            "A file was edited on GitHub's website with local commits not yet pushed."
           ],
           "diagnostico": [
-            "Habría desalineado main de la copia local y roto el avance simple",
-            "It would have put main out of line with the local copy and broken the fast-forward"
+            "Dos lugares escribían en main a la vez.",
+            "Two places were writing to main at once."
           ],
           "solucion": [
-            "La edición se canceló y todo se hizo desde local",
-            "The edit was cancelled and everything was done locally"
+            "Se canceló la edición web y todo se hizo desde local.",
+            "The web edit was cancelled and everything was done locally."
           ],
           "comentario": [
-            "Se canceló antes de guardar; habría desalineado main",
-            "Cancelled before saving; it would have put main out of line"
+            "Se canceló antes de guardar; habría desalineado main.",
+            "Cancelled before saving; it would have put main out of line."
           ],
           "estacion": 12,
           "estado": "resuelta",
@@ -482,20 +460,20 @@
         {
           "fecha": "2026-10-29",
           "ocurrencia": [
-            "No se podía ver por qué fallaba el CI",
-            "Why the CI failed could not be seen"
+            "No se podía ver por qué fallaba el CI.",
+            "It was not possible to see why the CI failed."
           ],
           "diagnostico": [
-            "Las anotaciones públicas solo dicen «exit code 1»; el log pide token",
-            "The public annotations only say «exit code 1»; the log needs a token"
+            "GitHub solo entrega los logs con un token.",
+            "GitHub only gives the logs with a token."
           ],
           "solucion": [
-            "Página «GitHub Actions», solo lectura y solo para el Autor, con el token en los secretos",
-            "Page «GitHub Actions», read-only and only for the Author, with the token in the secrets"
+            "Página «GitHub Actions», solo para el Autor, con el token en los secretos (D-339).",
+            "Page «GitHub Actions», author only, with the token in the secrets (D-339)."
           ],
           "comentario": [
-            "Mientras tanto, el log se pega a mano",
-            "Meanwhile the log is pasted by hand"
+            "Mientras tanto, el log se pega a mano.",
+            "Meanwhile the log is pasted by hand."
           ],
           "estacion": 14,
           "estado": "resuelta",
@@ -534,20 +512,20 @@
         {
           "fecha": "2026-10-29",
           "ocurrencia": [
-            "Una prueba nueva quedó sin formato justo antes del push",
-            "A new test was left unformatted right before the push"
+            "Un archivo de prueba llegó sin formato justo antes del push.",
+            "A test file arrived unformatted right before the push."
           ],
           "diagnostico": [
-            "ruff format --check . marcó un archivo de los seis commits",
-            "ruff format --check . flagged one file of the six commits"
+            "Se corrió ruff solo sobre parte del código.",
+            "ruff was run on only part of the code."
           ],
           "solucion": [
-            "Se formateó y se guardó en su propio commit antes del push",
-            "It was formatted and saved in its own commit before the push"
+            "Se formateó en su propio commit antes del push.",
+            "It was formatted in its own commit before the push."
           ],
           "comentario": [
-            "Ruff y mypy no estaban instalados en el entorno hasta ese día",
-            "ruff and mypy were not installed in the environment until that day"
+            "Ruff y mypy corren ahora sobre todo el código antes de cada push.",
+            "ruff and mypy now run on all the code before every push."
           ],
           "estacion": 8,
           "estado": "resuelta",
@@ -586,20 +564,20 @@
         {
           "fecha": "2026-10-29",
           "ocurrencia": [
-            "Aviso de Node.js 20 obsoleto en los workflows",
-            "Warning about Node.js 20 being deprecated in the workflows"
+            "Los workflows avisan que Node.js 20 está obsoleto.",
+            "The workflows warn that Node.js 20 is obsolete."
           ],
           "diagnostico": [
-            "Es un aviso, no un fallo; las tres acciones se fuerzan a Node.js 24",
-            "It is a warning, not a failure; the three actions are forced onto Node.js 24"
+            "Tres acciones de GitHub declaran Node.js 20.",
+            "Three GitHub actions declare Node.js 20."
           ],
           "solucion": [
-            "Sin solución todavía",
-            "No solution yet"
+            "Ninguna todavía; GitHub ya las corre en Node.js 24.",
+            "None yet; GitHub already runs them on Node.js 24."
           ],
           "comentario": [
-            "Pendiente de revisar las versiones nuevas de cada acción",
-            "The new version of each action is still to be reviewed"
+            "Es un aviso, no un fallo.",
+            "It is a warning, not a failure."
           ],
           "estacion": 14,
           "estado": "abierta",
@@ -638,20 +616,20 @@
         {
           "fecha": "2026-10-28",
           "ocurrencia": [
-            "El usuario de GitHub pasó a ben-carter-data y el repositorio a greenocean",
-            "The GitHub user became ben-carter-data and the repository became greenocean"
+            "El usuario de GitHub y el repositorio cambiaron de nombre.",
+            "The GitHub user and the repository were renamed."
           ],
           "diagnostico": [
-            "Remoto, constantes, insignias y enlaces apuntaban al nombre antiguo",
-            "The remote, constants, badges and links pointed to the old name"
+            "El nombre antiguo estaba escrito en enlaces, insignias y constantes.",
+            "The old name was written in links, badges and constants."
           ],
           "solucion": [
-            "Un commit con el nombre nuevo en todo el repositorio",
-            "One commit with the new name across the repository"
+            "Se cambió el nombre en todo el repositorio en un commit (D-326).",
+            "The name was changed across the repository in one commit (D-326)."
           ],
           "comentario": [
-            "Streamlit Cloud sí se actualiza desde main: el 29-10 se vieron en la app publicada el menú nuevo e «Informe N° 4»",
-            "Streamlit Cloud does update from main: on 29-10 the new menu and «Report No. 4» showed on the published app"
+            "La app publicada sigue actualizándose desde main.",
+            "The published app keeps updating from main."
           ],
           "estacion": 15,
           "estado": "resuelta",

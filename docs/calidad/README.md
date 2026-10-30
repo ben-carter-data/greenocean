@@ -21,6 +21,8 @@ Las fuentes externas (ODEPA, INE) no se miden: si una falla o se retrasa, se reg
 | `INFORME.md` | El último informe, en texto | el workflow «calidad» |
 | `linea_base.json`, `historial.json`, `rubrica.json` | Registros de las mediciones anteriores y de la rúbrica ISO en borrador; ya no se muestran | — |
 
+**Registro de fallas (D-354):** cada ocurrencia del registro se escribe en una línea por campo y en lenguaje simple; el análisis detallado vive en su decisión D-xxx.
+
 ## Cómo se lee un indicador
 
 - **Aceptable:** lo peor que se tolera. **Meta:** lo que se aspira. **Falla:** el valor leído contra el aceptable.

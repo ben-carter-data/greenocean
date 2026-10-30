@@ -2656,3 +2656,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** después de elegir un perfil no había forma de volver a «Elige tu vista» sin editar el enlace.
 - **Decisión:** abajo en el menú, encima de «Apariencia» y los idiomas, un indicador «Vista: Usuario ▾» (o «Profesional», o «Autor» si la clave está abierta). Un clic reabre «Elige tu vista», que esta vez ofrece «Mantener esta vista»; al elegir otro perfil el enlace se actualiza solo (`?perfil=` y `?rol=`). Elegir Usuario o Profesional con la clave del Autor abierta cierra esa sesión: desaparecen «GitHub Actions», la alerta de calidad y el indicador de la ejecución, y volver a Autor pide la clave otra vez (la comprobación sigue siendo la de D-350). La dirección sigue sin poder elegir el perfil (D-340).
 - **Pruebas:** `tests/test_view_switch.py` (el indicador muestra el perfil en español e inglés, reabre la ventana, actualiza el enlace y salir de Autor exige la clave de nuevo).
+
+## D-354 · El registro de fallas se escribe corto y en lenguaje simple
+
+- **Pedido del autor:** que cada ocurrencia del registro se lea de un vistazo; el análisis largo, en su decisión.
+- **Decisión:** cada campo de una ocurrencia es una línea en lenguaje simple: la ocurrencia dice qué pasó; el diagnóstico, la causa en una frase; la solución, qué se hizo en una frase; el comentario, lo que hay que recordar. La regla queda en CLAUDE.md (cómo escribirlo), en `docs/calidad/politica.json` (español e inglés) y en `docs/calidad/README.md` (cómo está hecho). F-10 pasa a una sola ocurrencia con el texto del autor (la carga semanal y el CI fallaban por la prueba de velocidad); F-11 a F-17 se acortaron con la misma regla. F-10 sigue abierta hasta que una carga real publique.
+- **Pruebas:** `tests/test_quality_method.py::test_d334_…` (esquema del registro) y `test_d354_…` (cada campo en una sola línea y la regla en la política, en los dos idiomas).

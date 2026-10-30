@@ -559,3 +559,15 @@ def test_d347_the_viewer_is_a_presentation_with_thumbnails_counter_fullscreen_an
 
 
 # endregion
+
+
+def test_d354_each_occurrence_is_one_short_line_per_field_and_the_policy_says_so():
+    plan = quality_metrics.read(quality_metrics.FOLDER / "plan_mitigacion.json")["fallas"]
+    for item in plan:
+        for occurrence in item["ocurrencias"]:
+            for field in ("ocurrencia", "diagnostico", "solucion", "comentario"):
+                for text in occurrence[field]:
+                    assert "\n" not in text and len(text) <= 160, (item["id"], field, text)
+    rule = quality_metrics.read(quality_metrics.POLICY_FILE)["registro_de_fallas"]["regla"]
+    assert rule[0].startswith("Cada ocurrencia del registro") and rule[1].startswith("Each occurrence of the register")
+    assert "una línea por campo" in (quality_metrics.FOLDER / "README.md").read_text(encoding="utf-8")
