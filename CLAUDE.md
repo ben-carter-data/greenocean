@@ -14,6 +14,21 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 - **Orquestación:** GitHub Actions, cada martes (`.github/workflows/semanal.yml`).
 - **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md` (con la capacidad y el diccionario de datos), `docs/ADR.md`, `docs/PLAN_PRUEBAS.md` (plan de pruebas y seguridad), `docs/MANUAL.md` (runbook), `docs/INDICE_DECISIONES.md` y `docs/GLOSARIO.md`, todos con portada, índice, resumen, al menos tres diagramas (cinco el SAD), glosario e historial de versiones (D-279, D-290). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-290); `docs/INDICE_DECISIONES.md` reúne las principales por tema. La historia del proyecto (hitos y backlog) está en `docs/archivo/`; no es documentación de lectura.
 
+## Cómo responderme
+
+1. Primero la respuesta: la idea principal en una o dos frases, sin introducción.
+2. Que lo entienda alguien de 12 años: palabras simples y frases cortas; si usas un término técnico, explícalo en la misma frase.
+3. Profesional, no infantil: usa los nombres correctos (commit, CI, SQAP), pero di qué son en palabras normales.
+4. Una idea, una frase. Un tema, un párrafo.
+5. Detalle solo si lo pido; no anticipes dudas.
+6. Sin vueltas: nada de hipótesis largas, repeticiones ni resúmenes de lo ya dicho.
+7. Si no sabes algo, dilo en una línea y di cómo averiguarlo.
+8. Prompts y comandos, listos para copiar, en un bloque aparte.
+
+Ejemplo: «Los documentos viven en un .md. La app lo usa para generar un PDF formal, con portada e índice, que es lo que ve el visitante.»
+
+Estas reglas valen también para los briefings.
+
 ## Instalar y ejecutar
 
 | Para qué | Comando |
