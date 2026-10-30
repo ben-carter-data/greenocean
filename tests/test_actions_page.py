@@ -43,6 +43,25 @@ def tokens_sent(network):
     return {headers.get("Authorization") for url, headers in network.calls if url.endswith(own)}
 
 
+def open_each(app):
+    """D-348: the page shows one line per workflow; opening one closes the other. The apps after opening each, in order."""
+    opened = []
+    for index in range(3):
+        app.button(key=f"cr_actions_toggle_{index}").click().run()
+        opened.append(app)
+    return opened
+
+
+def read_all(app):
+    """Everything drawn while each workflow in turn is open."""
+    texts, codes = [], []
+    for _ in open_each(app):
+        labels = [button.label for button in app.main.button] + [expander.label for expander in app.expander]
+        texts.append(everything_drawn(app) + "\n" + "\n".join(labels))
+        codes += [item.value for item in app.code]
+    return "\n".join(texts), codes
+
+
 def everything_drawn(app):
     """Every text the page put on the screen, whatever the element."""
     parts = []
@@ -78,24 +97,31 @@ def test_d339_without_the_author_key_the_address_shows_one_line_and_nothing_is_a
 def test_d339_the_author_sees_the_runs_the_failure_its_tests_and_the_last_sixty_lines(network):
     app = draw()
     assert not app.exception
-    page = everything_drawn(app)
+    closed = everything_drawn(app)
+    assert 'class="ga-table"' not in closed and not list(app.code)  # D-348: one line per workflow, nothing else yet
+    labels = [button.label for button in app.main.button if str(button.key).startswith("cr_actions_toggle_")]
+    assert len(labels) == 3 and all("843decd" in label for label in labels)
+    for name, label in zip(("Pruebas", "Carga semanal", "Calidad"), labels):
+        assert label.startswith(name)
+    page, codes = read_all(app)
     assert page.count('class="ga-table"') == 3 and page.count("Abrir en GitHub") == 9  # 3 workflows x 3 runs
-    for name in ("Pruebas", "Carga semanal", "Calidad"):
-        assert name in page
     assert "pytest (3.12)" in page and "Run pytest" in page and "Process completed with exit code 1." in page
     assert "tests/test_a.py::test_one" in page and "tests/test_b.py::test_two[es]" in page
-    assert page.count("tests/test_a.py::test_one") >= 1 and "Pruebas que fallan (2)" in page
-    tail = [item.value for item in app.code][0].splitlines()
+    assert "Pruebas que fallan (2)" in page and "Últimas 60 líneas del log" in page
+    tail = codes[0].splitlines()
     assert len(tail) == github_actions.LOG_LINES and tail[-1] == "line 69"
-    assert "Últimas 60 líneas del log" in page and "843decd" in page
 
 
 def test_d339_the_page_only_reads_it_has_no_button_to_start_cancel_or_re_run(network):
     app = draw()
-    # The only button of the frame is «Volver» (back to the previous page of the visit): nothing acts on GitHub.
-    assert {button.label for button in app.main.button} <= {"Volver"}
-    drawn = " ".join(item.value for item in app.markdown if "ga-" in item.value)
-    assert not re.search(r"(?i)re-?run|cancelar|relanzar|ejecutar", drawn)
+    # The buttons of the frame are «Volver» and the three lines that open a workflow: nothing acts on GitHub.
+    opened, _ = read_all(app)
+    labels = [button.label for button in app.main.button]
+    assert all(
+        label == "Volver" or str(button.key).startswith("cr_actions_toggle_")
+        for label, button in zip(labels, app.main.button)
+    )
+    assert not re.search(r"(?i)re-?run|cancelar|relanzar|ejecutar", " ".join(labels) + opened)
 
 
 def test_d339_the_token_is_never_drawn_not_even_when_the_log_prints_it(monkeypatch):
@@ -106,7 +132,7 @@ def test_d339_the_token_is_never_drawn_not_even_when_the_log_prints_it(monkeypat
     monkeypatch.setattr(github_actions.requests, "get", network)
     st.cache_data.clear()
     app = draw()
-    page = everything_drawn(app) + " ".join(f"{key}={app.session_state[key]!r}" for key in list(app.session_state))
+    page = read_all(app)[0] + " ".join(f"{key}={app.session_state[key]!r}" for key in list(app.session_state))
     for secret in (TOKEN, READ_TOKEN, "FAKE0123456789", "READ0123456789"):
         assert secret not in page, secret
     assert "Bearer ***" in page and SHAPED not in page  # the log's line is there, with the token covered
@@ -116,7 +142,7 @@ def test_d339_the_token_is_never_drawn_not_even_when_the_log_prints_it(monkeypat
     network.calls.clear()
     fallback = draw(secrets=("usual",))
     assert tokens_sent(network) == {f"Bearer {TOKEN}"}
-    assert TOKEN not in everything_drawn(fallback)
+    assert TOKEN not in read_all(fallback)[0]
 
 
 def test_d339_without_any_token_only_the_states_show_with_a_notice(network):
@@ -124,12 +150,8 @@ def test_d339_without_any_token_only_the_states_show_with_a_notice(network):
     assert not app.exception
     notice = [item.value for item in app.warning]
     assert len(notice) == 1 and "GITHUB_READ_TOKEN" in notice[0] and "Sin token solo se ven los estados" in notice[0]
-    page = everything_drawn(app)
-    assert (
-        page.count('class="ga-table"') == 3
-        and "Pruebas que fallan" not in page
-        and not [block for block in app.code if "line 69" in block.value]
-    )
+    page, codes = read_all(app)
+    assert page.count('class="ga-table"') == 3 and "Pruebas que fallan" not in page and not codes
     paths = [url.removeprefix(control.API_URL) for url, _ in network.calls]
     assert not any(path.endswith(("/logs", "/annotations", "/rate_limit")) for path in paths)
 
@@ -140,13 +162,15 @@ def test_d339_an_expired_or_unpermitted_token_says_what_to_do_and_the_states_sti
     st.cache_data.clear()
     expired = draw()
     assert "venció o no es válido" in " ".join(item.value for item in expired.error)
-    assert everything_drawn(expired).count('class="ga-table"') == 3 and not list(expired.code)
+    page, codes = read_all(expired)
+    assert page.count('class="ga-table"') == 3 and not codes
     st.cache_data.clear()
     denied = Network(fail={"/logs": Answer(status=403)})
     monkeypatch.setattr(github_actions.requests, "get", denied)
     forbidden = draw()
-    assert "no tiene permiso para leer los logs" in " ".join(item.value for item in forbidden.warning)
-    assert "pytest (3.12)" in everything_drawn(forbidden)  # the job and the step still show
+    page = read_all(forbidden)[0]
+    assert "no tiene permiso para leer los logs" in page
+    assert "pytest (3.12)" in page  # the job and the step still show
     st.cache_data.clear()
 
 
@@ -163,7 +187,7 @@ def test_d339_the_answers_are_kept_two_minutes_so_a_second_visit_asks_nothing(ne
 def test_d339_the_page_reads_in_english_too(network):
     app = draw(language="en")
     assert not app.exception
-    page = everything_drawn(app)
+    page = read_all(app)[0]
     for text in ("Open in GitHub", "Failing tests (2)", "Latest failure", "Weekly load", "Last 60 lines of the log"):
         assert text in page, text
     for spanish in ("Abrir en GitHub", "Pruebas que fallan", "Último fallo", "Carga semanal"):

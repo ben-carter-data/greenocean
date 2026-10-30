@@ -36,6 +36,7 @@ import bi  # noqa: E402
 from bi import (
     actions_view,
     alerts,
+    compact_table,
     git_workflow,
     github_actions,
     app_map,
@@ -5176,6 +5177,28 @@ def read_actions_model(_read_token, _token):
     return github_actions.build_model(_read_token, _token)
 
 
+def show_workflow_detail(entry):
+    """What a workflow line shows when it opens: its latest runs, and what failed in the last failure, with the log in
+    a fixed-height box that is closed until asked for (D-348)."""
+    if entry["error"]:
+        st.warning(entry["error"])
+    st.markdown(actions_view.build_runs_table(entry["runs"]), unsafe_allow_html=True)
+    failure = entry["failure"]
+    if not failure:
+        return
+    st.markdown(f"**{tr('Último fallo')}**")
+    if failure["error"]:
+        st.warning(failure["error"])
+    for job in failure["jobs"]:
+        st.markdown(f'<div class="ga-failure">{actions_view.build_failure_summary(job)}</div>', unsafe_allow_html=True)
+        if job["log_error"]:
+            st.warning(job["log_error"])
+        elif job["tail"]:
+            with st.expander(tr("Últimas {} líneas del log").format(len(job["tail"])), expanded=False):
+                with st.container(height=300):
+                    st.code("\n".join(job["tail"]), language=None)
+
+
 def show_actions_page(mode):
     """«GitHub Actions» (D-339), only for the author: the latest runs of the three workflows and what failed in the
     latest one that failed. Read only: it starts, cancels and re-runs nothing. Without the author's key nothing is
@@ -5197,29 +5220,15 @@ def show_actions_page(mode):
     else:
         note, urgent = actions_view.token_note(model["expiration"])
         (st.warning if urgent else st.caption)(note)
-    for entry in model["workflows"]:
-        st.markdown(
-            f"#### {tr(actions_view.WORKFLOW_NAMES[entry['name']])} · `{entry['file']}`\n\n"
-            f"{tr(actions_view.WORKFLOW_NOTES[entry['name']])}"
-        )
-        if entry["error"]:
-            st.warning(entry["error"])
-        st.markdown(actions_view.build_runs_table(entry["runs"]), unsafe_allow_html=True)
-        failure = entry["failure"]
-        if not failure:
-            continue
-        st.markdown(f"**{tr('Último fallo')}**")
-        if failure["error"]:
-            st.warning(failure["error"])
-        for job in failure["jobs"]:
-            st.markdown(
-                f'<div class="ga-failure">{actions_view.build_failure_summary(job)}</div>', unsafe_allow_html=True
-            )
-            if job["log_error"]:
-                st.warning(job["log_error"])
-            elif job["tail"]:
-                st.caption(tr("Últimas {} líneas del log").format(len(job["tail"])))
-                st.code("\n".join(job["tail"]), language=None)
+    st.markdown(compact_table.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+    compact_table.show_compact_rows(
+        "cr_actions",
+        model["workflows"],
+        actions_view.workflow_summary,
+        lambda entry: actions_view.build_workflow_note(entry),
+        signature="actions",
+        after_detail=show_workflow_detail,
+    )
     st.caption(
         tr("Leído a las {}; se vuelve a leer cada 2 minutos.").format(actions_view.format_time(model["read_at"])[-5:])
     )
@@ -6337,10 +6346,19 @@ def show_git_page(mode):
     with flow:
         st.iframe(git_workflow.build_map_html(charts.get_palette(mode), i18n.get_language(), author), height=760)
     with log:
-        st.markdown(
-            git_workflow.build_log_css(charts.get_palette(mode))
-            + git_workflow.build_log_table(i18n.get_language(), author),
-            unsafe_allow_html=True,
+        language = i18n.get_language()
+        states = [ALL_VALUES, "abierta", "resuelta"]
+        state = st.selectbox(tr("Estado"), states, key="incident_state", format_func=lambda value: tr(value), width=220)
+        shown = [row for row in git_workflow.read_failures() if state == ALL_VALUES or row["estado"] == state]
+        st.markdown(compact_table.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+        if not shown:
+            st.caption(tr("Todavía no hay fallas registradas."))
+        compact_table.show_compact_rows(
+            "cr_incidents",
+            shown,
+            lambda row: git_workflow.log_summary(row, language),
+            lambda row: git_workflow.log_detail(row, language, author),
+            signature=state,
         )
 
 
@@ -6394,11 +6412,27 @@ def show_method_page(mode):
                 icon=":material/search:",
             )
         shown = filter_reports(reports, year, month, week, query)
-        address = build_page_address(PAGE_METHOD)
-        st.markdown(
-            quality_method.build_reports_table(shown, reports, lambda number: f"{address}&{REPORT_PARAMETER}={number}"),
-            unsafe_allow_html=True,
-        )
+        st.markdown(compact_table.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+        if not shown:
+            st.caption(tr("Ningún informe coincide."))
+        else:
+
+            def open_report_button(report):
+                if st.button(
+                    tr("Abrir el informe o su PDF"),
+                    key=f"cr_reports_open_{report['numero']}",
+                    icon=":material/description:",
+                ):
+                    show_quality_report_dialog(report["numero"])
+
+            compact_table.show_compact_rows(
+                "cr_reports",
+                sorted(shown, key=lambda item: -item["numero"]),
+                quality_method.report_summary,
+                lambda report: quality_method.build_report_detail(report, reports),
+                signature=f"{year}|{month}|{week}|{query}",
+                after_detail=open_report_button,
+            )
 
 
 def show_app_map_page(mode):

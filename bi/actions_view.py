@@ -56,6 +56,23 @@ def token_note(expiration: datetime | None, now: datetime | None = None) -> tupl
     return text, days < control.TOKEN_WARNING_DAYS
 
 
+def workflow_summary(entry: dict[str, Any]) -> str:
+    """The one line of a workflow: its name and its latest run (state, date, commit and duration)."""
+    name = tr(WORKFLOW_NAMES[entry["name"]])
+    if not entry["runs"]:
+        return f"{name} · {tr('Todavía no hay ejecuciones.')}"
+    run = entry["runs"][0]
+    return (
+        f"{name} · {tr(STATE_WORDS[run['state']])} · {format_time(run['started_at'])} · {run['sha'][:7]} · "
+        f"{format_duration(run['seconds'])}"
+    )
+
+
+def build_workflow_note(entry: dict[str, Any]) -> str:
+    """The file of a workflow and what it does, under its line when it opens."""
+    return f'<p class="cr-detail"><code>{esc(entry["file"])}</code> · {esc(tr(WORKFLOW_NOTES[entry["name"]]))}</p>'
+
+
 def build_runs_table(runs: list[dict[str, Any]]) -> str:
     """One row per run: state, date in Chile's time, commit (linked), how it started, duration and the link to GitHub."""
     if not runs:

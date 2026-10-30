@@ -429,18 +429,6 @@ def build_data(language: str, failures: list[dict[str, Any]], author: bool) -> d
     return {"stations": stations, "labels": {key: pick(value, language) for key, value in LABELS.items()}}
 
 
-def build_log_css(palette: dict[str, str]) -> str:
-    """The incident log's table, drawn in the page itself with the theme's own colours."""
-    muted = charts.legible(palette["reference"], palette["background"])
-    return (
-        f"<style>.gw-log {{ overflow:auto; border:1px solid {palette['card_border']}; border-radius:12px; background:{palette['card']}; margin:4px 0 10px; }}"
-        f".gw-log table {{ width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; margin:0; }}"
-        f".gw-log th {{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:{muted}; padding:8px 12px !important; border:0 !important; border-bottom:1px solid {palette['card_border']} !important; white-space:nowrap; }}"
-        f".gw-log td {{ padding:7px 12px !important; border:0 !important; border-bottom:1px solid {palette['card_border']} !important; color:{palette['text']}; vertical-align:top; background:transparent !important; }}"
-        f".gw-log tr:last-child td {{ border-bottom:0 !important; }}</style>"
-    )
-
-
 def build_css(palette: dict[str, str]) -> str:
     background = palette["background"].lstrip("#")
     dark = len(background) == 6 and sum(int(background[i : i + 2], 16) for i in (0, 2, 4)) < 3 * 128
@@ -600,35 +588,30 @@ def build_map_html(palette: dict[str, str], language: str, author: bool) -> str:
     )
 
 
-LOG_HEAD = {
-    "date": ("Fecha", "Date"),
-    "occurrence": ("Ocurrencia", "Occurrence"),
+LOG_LABEL = {
     "diagnosis": ("Diagnóstico", "Diagnosis"),
     "solution": ("Mitigación o solución", "Mitigation or solution"),
     "comment": ("Comentario", "Comment"),
-    "state": ("Estado", "State"),
-    "empty": ("Todavía no hay fallas registradas.", "No failure registered yet."),
 }
 
 
-def build_log_table(language: str, author: bool) -> str:
-    """The incident log, newest first: date, occurrence, mitigation or solution and comment for the professional; the
-    diagnosis too for the author (D-345). The rows come from the failure register, each with its id and station."""
-    rows = read_failures()
-    if not rows:
-        return f'<p class="ga-note">{html.escape(pick(LOG_HEAD["empty"], language))}</p>'
-    columns = ["date", "occurrence"] + (["diagnosis"] if author else []) + ["solution", "comment", "state"]
-    head = "".join(f"<th>{html.escape(pick(LOG_HEAD[column], language))}</th>" for column in columns)
-    body = []
-    for row in rows:
-        state = pick(LABELS["open"] if row["estado"] == "abierta" else LABELS["solved"], language)
-        cells = {
-            "date": html.escape(row["fecha"]),
-            "occurrence": f"<b>{html.escape(row['id'])}</b> · {html.escape(pick(tuple(row['ocurrencia']), language))}",  # type: ignore[arg-type]
-            "diagnosis": html.escape(pick(tuple(row["diagnostico"]), language)),  # type: ignore[arg-type]
-            "solution": html.escape(pick(tuple(row["solucion"]), language)),  # type: ignore[arg-type]
-            "comment": html.escape(pick(tuple(row["comentario"]), language)),  # type: ignore[arg-type]
-            "state": html.escape(f"{state} · {pick(LABELS['station'], language)} {row['estacion']}"),
-        }
-        body.append("<tr>" + "".join(f"<td>{cells[column]}</td>" for column in columns) + "</tr>")
-    return f'<div class="gw-log"><table><thead><tr>{head}</tr></thead><tbody>{"".join(body)}</tbody></table></div>'
+def log_summary(row: dict[str, Any], language: str) -> str:
+    """The one line of an incident: date, id, what happened and its state."""
+    state = pick(LABELS["open"] if row["estado"] == "abierta" else LABELS["solved"], language)
+    return f"{row['fecha']} · {row['id']} · {pick(tuple(row['ocurrencia']), language)} · {state}"  # type: ignore[arg-type]
+
+
+def log_detail(row: dict[str, Any], language: str, author: bool) -> str:
+    """What an incident shows when it opens: mitigation or solution and comment for the professional; the diagnosis
+    too for the author (D-345)."""
+    fields = [("solution", "solucion"), ("comment", "comentario")]
+    if author:
+        fields.insert(0, ("diagnosis", "diagnostico"))
+    items = "".join(
+        f"<li><b>{html.escape(pick(LOG_LABEL[name], language))}:</b> "
+        f"{html.escape(pick(tuple(row[key]), language))}</li>"  # type: ignore[arg-type]
+        for name, key in fields
+    )
+    station = f"{pick(LABELS['station'], language)} {row['estacion']}"
+    ref = f" · {html.escape(row['referencia'])}" if row["referencia"] and row["referencia"] != "desconocido" else ""
+    return f'<ul class="cr-detail">{items}<li><b>{html.escape(station)}</b>{ref}</li></ul>'

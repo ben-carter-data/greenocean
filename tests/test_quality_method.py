@@ -116,12 +116,13 @@ def test_d323_a_candidate_the_author_marked_as_not_secret_counts_as_reviewed():
 def test_d332_the_reports_tab_lists_every_report_newest_first(monkeypatch):
     monkeypatch.setattr(i18n, "is_english", lambda: False)
     reports, _, policy = quality_method.read_page()
-    table = quality_method.build_reports_table(reports)
-    numbers = [f"N° {report['numero']}</b>" for report in reports]
-    assert [table.index(item) for item in numbers] == sorted((table.index(item) for item in numbers), reverse=True)
-    for report in reports:
+    for report in reports:  # one line each: number, date and how many indicators are within the acceptable
         within, nonconforming, measured = quality_metrics.report_counts(report)
-        assert f"<td>{within} / {measured}</td><td>{nonconforming}</td>" in table
+        line = quality_method.report_summary(report)
+        assert line.startswith(f"N° {report['numero']} · {report['fecha']}") and f"{within} / {measured}" in line
+        assert f"<li><b>No conformidades:</b> {nonconforming}</li>" in quality_method.build_report_detail(
+            report, reports
+        )
     view = quality_method.build_report_view(reports[-1], policy)
     assert view.count("<tr><td><b>") == 12 and reports[-1]["indicadores"][0]["insight"][0] in view
 
@@ -194,7 +195,9 @@ def test_d332_the_summary_reads_the_latest_report_and_never_claims_an_external_a
     for english in (False, True):
         monkeypatch.setattr(i18n, "is_english", lambda english=english: english)
         overview = quality_method.build_overview(latest, goals, policy)
-        text = " ".join([quality_method.build_header(latest), overview, quality_method.build_reports_table(reports)])
+        text = " ".join(
+            [quality_method.build_header(latest), overview, quality_method.build_report_detail(reports[-1], reports)]
+        )
         assert not any(word in text.lower() for word in FORBIDDEN), english
     monkeypatch.setattr(i18n, "is_english", lambda: False)
     overview = quality_method.build_overview(latest, goals, policy)
@@ -323,9 +326,8 @@ def test_d333_the_reports_tab_filters_by_year_month_week_and_search_and_links_ea
     assert [r["numero"] for r in dashboard.filter_reports(reports, every, every, every, "N° 2")] == [2]
     assert dashboard.filter_reports(reports, "2025", every, every, "") == []
     assert len(dashboard.filter_reports(reports, "2026", "10", "2026-10-12", "")) == 3  # N° 1 has no data week
-    table = quality_method.build_reports_table(reports[2:3], reports, lambda number: f"?vista=x&informe={number}")
-    assert 'href="?vista=x&amp;informe=3"' in table and table.count("qm-pdf") == 1
-    assert "<td>+2</td>" in table  # N° 3 against N° 2, though N° 2 is filtered out
+    detail = quality_method.build_report_detail(reports[2], reports[2:3] + reports[:1] + reports[1:2])
+    assert "<b>Variación:</b> +2" in detail  # N° 3 against N° 2, though only N° 3 is listed
 
 
 # endregion

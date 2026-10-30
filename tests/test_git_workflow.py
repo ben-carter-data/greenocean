@@ -78,18 +78,14 @@ def test_d345_the_register_reaches_each_station_and_only_the_author_gets_the_dia
 
 def test_d345_the_incident_log_hides_the_diagnosis_from_the_professional():
     failures = git_workflow.read_failures()
+    first = failures[0]
     for language in ("es", "en"):
-        public = git_workflow.build_log_table(language, False)
-        private = git_workflow.build_log_table(language, True)
-        head = "Diagnosis" if language == "en" else "Diagnóstico"
-        assert head not in public and head in private
-        assert public.count("<tr>") == len(failures) + 1 == private.count("<tr>")
-        first = failures[0]
-        assert first["fecha"] in public and first["fecha"] in private
-        assert git_workflow.pick(tuple(first["diagnostico"]), language) not in public
-        assert git_workflow.pick(tuple(first["diagnostico"]), language).replace("&", "&amp;") in private.replace(
-            "&#x27;", "'"
-        )
+        public = git_workflow.log_detail(first, language, False)
+        private = git_workflow.log_detail(first, language, True)
+        diagnosis = git_workflow.pick(tuple(first["diagnostico"]), language)
+        assert diagnosis.replace("&", "&amp;")[:30] not in public and diagnosis.replace("&", "&amp;")[:30] in private
+        assert git_workflow.pick(tuple(first["solucion"]), language)[:30] in public
+        assert git_workflow.log_summary(first, language).startswith(first["fecha"])
 
 
 def test_d344_the_page_is_in_the_quality_section_for_the_professional_and_the_author_not_for_the_user():

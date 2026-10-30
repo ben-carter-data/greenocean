@@ -1422,6 +1422,8 @@ PAGES = {
     "Datos a revisar: ver los {n} indicadores": "Data to review: see the {} indicators",
     "{n} indicadores · {n} fuera de su umbral · {n} control pendiente: exactitud": "{} indicators · {} outside their threshold · {} control pending: accuracy",
     "{n} de {n} indicadores dentro de su umbral. A revisar: Días desde la última semana. Verde: dentro del umbral. Ámbar: a revisar o con un control pendiente. Rojo: falla.": "{} of {} indicators within their threshold. To review: Days since the last week. Green: within the threshold. Amber: to review or with a control pending. Red: fails.",
+    "{n} de {n} indicadores dentro de su umbral. A revisar: Días desde la última semana, Última carga. Verde: dentro del umbral. Ámbar: a revisar o con un control pendiente. Rojo: falla.": "{} of {} indicators within their threshold. To review: Days since the last week, Latest load. Green: within the threshold. Amber: to review or with a control pending. Red: fails.",
+    "{n} de {n} indicadores dentro de su umbral. A revisar: Días desde la última semana, Última carga.": "{} of {} indicators within their threshold. To review: Days since the last week, Latest load.",
     "{n} de {n} indicadores dentro de su umbral. A revisar: Días desde la última semana.": "{} of {} indicators within their threshold. To review: Days since the last week.",
     "Sin cambio claro": "No clear change",
     "Ver todo Chile": "See all of Chile",

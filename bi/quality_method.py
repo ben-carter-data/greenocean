@@ -187,44 +187,31 @@ def build_overview(
     )
 
 
-def build_reports_table(
-    reports: list[dict[str, Any]], every: list[dict[str, Any]] | None = None, link: Any = None
-) -> str:
-    """«Informes»: one row per report, newest first, with what it found and the change against the one before. The
-    number opens the report; so does the PDF icon, whose viewer prints it (D-333). «every» holds all the reports, so
-    a filtered list still compares each one with its true predecessor."""
-    if not reports:
-        return f'<p class="qm-note">{html.escape(t("Ningún informe coincide.", "No report matches."))}</p>'
-    within_of = {report["numero"]: quality_metrics.report_counts(report)[0] for report in every or reports}
-    body = []
-    for report in sorted(reports, key=lambda item: -item["numero"]):
-        within, nonconforming, measured = quality_metrics.report_counts(report)
-        before = within_of.get(report["anterior"]) if report["anterior"] else None
-        change = "—" if before is None else (f"+{within - before}" if within > before else str(within - before))
-        href = html.escape(link(report["numero"])) if link else "#"
-        pdf = t(f"Descargar el informe N° {report['numero']} en PDF", f"Download report No. {report['numero']} as PDF")
-        body.append(
-            f'<tr><td><a class="qm-open" href="{href}" target="_self"><b>{html.escape(t("N°", "No."))} {report["numero"]}</b></a></td>'
-            f'<td>{html.escape(str(report["fecha"]))}</td><td>{html.escape(str(report["semana"] or "—"))}</td>'
-            f'<td><code>{html.escape(str(report["codigo_evaluado"]))}</code></td>'
-            f"<td>{within} / {measured}</td><td>{nonconforming}</td><td>{html.escape(change)}</td>"
-            f'<td><a class="qm-pdf" href="{href}" target="_self" title="{html.escape(pdf)}" aria-label="{html.escape(pdf)}">PDF ↓</a></td></tr>'
-        )
-    head = [
-        t("Informe", "Report"),
-        t("Fecha", "Date"),
-        t("Semana de datos", "Data week"),
-        t("Código evaluado", "Evaluated code"),
-        t("Dentro de lo aceptable", "Within the acceptable"),
-        t("No conformidades", "Non-conformities"),
-        t("Variación", "Change"),
-        "PDF",
-    ]
-    columns = "".join(f"<th>{html.escape(cell)}</th>" for cell in head)
-    return (
-        f'<div class="qm-reports" tabindex="0"><table><thead><tr>{columns}</tr></thead>'
-        f'<tbody>{"".join(body)}</tbody></table></div>'
+def report_summary(report: dict[str, Any]) -> str:
+    """The one line of a report in «Informes»: its number, date and how many indicators are within the acceptable."""
+    within, _, measured = quality_metrics.report_counts(report)
+    return t(
+        f"N° {report['numero']} · {report['fecha']} · {within} / {measured} dentro de lo aceptable",
+        f"No. {report['numero']} · {report['fecha']} · {within} / {measured} within the acceptable",
     )
+
+
+def build_report_detail(report: dict[str, Any], every: list[dict[str, Any]] | None = None) -> str:
+    """What a report row shows when it opens: data week, evaluated code, non-conformities and the change against the
+    report before it. «every» holds all the reports, so a filtered list still compares each one with its true
+    predecessor."""
+    within, nonconforming, _ = quality_metrics.report_counts(report)
+    within_of = {item["numero"]: quality_metrics.report_counts(item)[0] for item in every or [report]}
+    before = within_of.get(report["anterior"]) if report["anterior"] else None
+    change = "—" if before is None else (f"+{within - before}" if within > before else str(within - before))
+    rows = (
+        (t("Semana de datos", "Data week"), html.escape(str(report["semana"] or "—"))),
+        (t("Código evaluado", "Evaluated code"), f"<code>{html.escape(str(report['codigo_evaluado']))}</code>"),
+        (t("No conformidades", "Non-conformities"), str(nonconforming)),
+        (t("Variación", "Change"), html.escape(change)),
+    )
+    body = "".join(f"<li><b>{html.escape(label)}:</b> {value}</li>" for label, value in rows)
+    return f'<ul class="cr-detail qm-detail">{body}</ul>'
 
 
 def build_report_view(report: dict[str, Any], policy: dict[str, Any]) -> str:
