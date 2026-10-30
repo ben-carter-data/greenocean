@@ -74,6 +74,17 @@
       ],
       "accion": "",
       "estado": ""
+    },
+    {
+      "informe": 5,
+      "indicador": "vigencia_dias",
+      "fecha": "2026-10-30",
+      "causa": [
+        "Ninguna carga publicó datos desde el 20-10: la carga corría las pruebas de velocidad (F-10) y después la detuvo una semana que el mayorista aún no publica (F-06).",
+        "No load published data since 20-10: the load ran the speed tests (F-10) and then a week the wholesale source had not published yet stopped it (F-06)."
+      ],
+      "accion": "",
+      "estado": ""
     }
   ]
 }

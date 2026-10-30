@@ -1,0 +1,583 @@
+{
+  "numero": 5,
+  "titulo": "Informe de calidad N° 5",
+  "fecha": "2026-10-30 22:05 UTC",
+  "semana": "2026-10-12",
+  "codigo_evaluado": "150890e",
+  "anterior": 4,
+  "aceptables": {
+    "pruebas_fallidas": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 0,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "cobertura_total": {
+      "min": 90,
+      "meta": 90,
+      "margen_critico": 5,
+      "tipo": "codigo",
+      "medida": "cumplimiento"
+    },
+    "cobertura_por_modulo": {
+      "min": 70,
+      "meta": 70,
+      "margen_critico": 10,
+      "tipo": "codigo",
+      "medida": "cumplimiento"
+    },
+    "ruff_avisos": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 5,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "mypy_errores": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 5,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "bandit_altos": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 0,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "pip_audit_vulnerabilidades": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 0,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "secretos_sin_clasificar": {
+      "max": 0,
+      "meta": 0,
+      "margen_critico": 0,
+      "tipo": "codigo",
+      "medida": "conteo"
+    },
+    "pruebas_dbt_pct": {
+      "min": 100,
+      "meta": 100,
+      "margen_critico": 0,
+      "tipo": "datos",
+      "medida": "cumplimiento"
+    },
+    "comparables_pct": {
+      "min": 90,
+      "meta": 90,
+      "margen_critico": 10,
+      "tipo": "datos",
+      "medida": "cumplimiento"
+    },
+    "rechazadas_pct": {
+      "max": 1,
+      "meta": 1,
+      "margen_critico": 4,
+      "tipo": "datos",
+      "medida": "falla"
+    },
+    "vigencia_dias": {
+      "max": 8,
+      "meta": 8,
+      "margen_critico": 7,
+      "tipo": "datos",
+      "medida": "dias"
+    }
+  },
+  "modo_datos": "aviso",
+  "indicadores": [
+    {
+      "clave": "pruebas_fallidas",
+      "nombre": [
+        "Pruebas que fallan",
+        "Failing tests"
+      ],
+      "tipo": "codigo",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0.0,
+      "falla_aceptable": 0,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": -5
+    },
+    {
+      "clave": "cobertura_total",
+      "nombre": [
+        "Cobertura total",
+        "Total coverage"
+      ],
+      "tipo": "codigo",
+      "valor": 94.6,
+      "unidad": "%",
+      "falla": 5.4,
+      "falla_aceptable": 10,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0.3
+    },
+    {
+      "clave": "cobertura_por_modulo",
+      "nombre": [
+        "Cobertura del módulo más bajo",
+        "Coverage of the lowest module"
+      ],
+      "tipo": "codigo",
+      "valor": 77.3,
+      "unidad": "%",
+      "falla": 22.7,
+      "falla_aceptable": 30,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": -5.8
+    },
+    {
+      "clave": "ruff_avisos",
+      "nombre": [
+        "Avisos de Ruff (E, F y W; el largo de línea, aparte)",
+        "Ruff findings (E, F and W; line length apart)"
+      ],
+      "tipo": "codigo",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0
+    },
+    {
+      "clave": "mypy_errores",
+      "nombre": [
+        "Errores de mypy",
+        "mypy errors"
+      ],
+      "tipo": "codigo",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0
+    },
+    {
+      "clave": "bandit_altos",
+      "nombre": [
+        "Hallazgos altos de Bandit",
+        "High Bandit findings"
+      ],
+      "tipo": "codigo",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0
+    },
+    {
+      "clave": "pip_audit_vulnerabilidades",
+      "nombre": [
+        "Vulnerabilidades en dependencias",
+        "Vulnerable dependencies"
+      ],
+      "tipo": "codigo",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0
+    },
+    {
+      "clave": "secretos_sin_clasificar",
+      "nombre": [
+        "Posibles secretos sin revisar",
+        "Unreviewed possible secrets"
+      ],
+      "tipo": "codigo",
+      "valor": 0,
+      "unidad": "",
+      "falla": 0,
+      "falla_aceptable": 0,
+      "unidad_falla": "",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0
+    },
+    {
+      "clave": "pruebas_dbt_pct",
+      "nombre": [
+        "Pruebas de datos dbt superadas",
+        "dbt data tests passed"
+      ],
+      "tipo": "datos",
+      "valor": 100.0,
+      "unidad": "%",
+      "falla": 0.0,
+      "falla_aceptable": 0,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0.0
+    },
+    {
+      "clave": "comparables_pct",
+      "nombre": [
+        "Precios con comparación válida",
+        "Prices with a valid comparison"
+      ],
+      "tipo": "datos",
+      "valor": 93.1,
+      "unidad": "%",
+      "falla": 6.9,
+      "falla_aceptable": 10,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": 0.0
+    },
+    {
+      "clave": "rechazadas_pct",
+      "nombre": [
+        "Filas rechazadas",
+        "Rejected rows"
+      ],
+      "tipo": "datos",
+      "valor": 0.008,
+      "unidad": "%",
+      "falla": 0.008,
+      "falla_aceptable": 1,
+      "unidad_falla": "%",
+      "estado": "cumple",
+      "bloquea": false,
+      "insight": [
+        "Dentro de lo aceptable: no afecta.",
+        "Within the acceptable: no impact."
+      ],
+      "variacion": null
+    },
+    {
+      "clave": "vigencia_dias",
+      "nombre": [
+        "Días desde la última carga",
+        "Days since the last load"
+      ],
+      "tipo": "datos",
+      "valor": 10,
+      "unidad": "días",
+      "falla": 10,
+      "falla_aceptable": 8,
+      "unidad_falla": "días",
+      "estado": "urgente",
+      "bloquea": false,
+      "insight": [
+        "Supera lo aceptable por poco: necesita atención. Revisar la ejecución del workflow semanal; si la fuente se retrasó, registrarlo como incidente externo. Indicador de datos en modo aviso: todavía no bloquea la publicación.",
+        "Over the acceptable by a little: needs attention. Review the weekly workflow run; if the source was late, record it as an external incident. Data indicator in warning mode: it does not block publication yet."
+      ],
+      "variacion": 3,
+      "diagnostico": [
+        {
+          "donde": "Última carga registrada el 10.",
+          "desde": "Primera vez fuera de lo aceptable: informe N° 5 (2026-10-30).",
+          "origen": "Causa por determinar: puede ser interna o de la fuente (ODEPA, INE). Si es de la fuente, se registra como incidente externo."
+        },
+        {
+          "donde": "Last load recorded on 10.",
+          "desde": "First time out of the acceptable: report No. 5 (2026-10-30).",
+          "origen": "Cause to be determined: internal or from the source (ODEPA, INE). If it is the source's, it is recorded as an external incident."
+        }
+      ]
+    }
+  ],
+  "medicion": {
+    "generado": "2026-10-30 22:05 UTC",
+    "commit": "150890e",
+    "python": "3.14.7",
+    "ruff": {
+      "orden": "/private/tmp/claude-501/-Users-carter-Desktop-GreenOcean/366db66a-e077-48cc-ba96-646e48935a2b/scratchpad/tools/bin/ruff check bi etl agent tests --select E,F,W",
+      "version": "ruff 0.17.2",
+      "errores": 1314,
+      "por_codigo": {
+        "E501": 1314
+      },
+      "errores_sin_largo_de_linea": 0,
+      "formato": {
+        "orden": "ruff format --check bi etl agent tests",
+        "por_reformatear": 0,
+        "ya_formateados": 132
+      }
+    },
+    "mypy": {
+      "orden": "mypy etl/etl.py etl/bronze.py etl/ine.py etl/pipeline.py bi/queries.py bi/alerts.py bi/overview.py bi/inflation_view.py bi/control.py bi/served_database.py --ignore-missing-imports --follow-imports=silent",
+      "version": "mypy 2.4.0 (compiled: yes)",
+      "modulos": 10,
+      "errores": 0,
+      "errores_revisando_cuerpos_sin_tipos": 0,
+      "por_modulo": {},
+      "funciones": 128,
+      "con_tipo_de_retorno": 128
+    },
+    "cobertura": {
+      "orden": "pytest -q --cov=bi --cov=etl --cov=agent",
+      "pruebas_ok": 1130,
+      "pruebas_omitidas": 1,
+      "salida": 0,
+      "total": 94.6,
+      "logica_critica": 93.2,
+      "modulos_criticos": {
+        "etl/etl.py": 95.8,
+        "etl/bronze.py": 97.1,
+        "etl/ine.py": 98.1,
+        "etl/pipeline.py": 91.3,
+        "bi/queries.py": 100.0,
+        "bi/alerts.py": 100.0,
+        "bi/overview.py": 77.3,
+        "bi/inflation_view.py": 97.9,
+        "bi/control.py": 94.9,
+        "bi/served_database.py": 95.3,
+        "bi/quality.py": 97.9
+      },
+      "modulos": {
+        "agent/agent.py": 87.3,
+        "bi/actions_view.py": 94.1,
+        "bi/alerts.py": 100.0,
+        "bi/app_map.py": 100.0,
+        "bi/architecture.py": 99.4,
+        "bi/brand_icons.py": 100.0,
+        "bi/buttons.py": 100.0,
+        "bi/charts.py": 94.1,
+        "bi/compact_table.py": 93.2,
+        "bi/control.py": 94.9,
+        "bi/dashboard.py": 91.1,
+        "bi/database_crossings.py": 99.3,
+        "bi/database_map.py": 100.0,
+        "bi/deployment.py": 100.0,
+        "bi/devops.py": 98.4,
+        "bi/doc_diagrams.py": 100.0,
+        "bi/doc_figures.py": 100.0,
+        "bi/doc_views.py": 100.0,
+        "bi/documents_folder.py": 98.6,
+        "bi/er_diagram.py": 100.0,
+        "bi/git_workflow.py": 100.0,
+        "bi/github_actions.py": 95.8,
+        "bi/github_page.py": 98.5,
+        "bi/home_mockup.py": 89.8,
+        "bi/i18n.py": 97.4,
+        "bi/i18n_en.py": 100.0,
+        "bi/inflation_view.py": 97.9,
+        "bi/lag.py": 100.0,
+        "bi/lineage.py": 98.2,
+        "bi/monitoring.py": 100.0,
+        "bi/operation_center.py": 98.9,
+        "bi/overview.py": 77.3,
+        "bi/page_bar.py": 100.0,
+        "bi/project.py": 96.0,
+        "bi/quality.py": 97.9,
+        "bi/quality_evidence.py": 95.8,
+        "bi/quality_live.py": 97.4,
+        "bi/quality_method.py": 98.4,
+        "bi/quality_metrics.py": 94.7,
+        "bi/quality_view.py": 98.3,
+        "bi/quality_viewer.py": 100.0,
+        "bi/queries.py": 100.0,
+        "bi/report.py": 91.3,
+        "bi/run_monitor.py": 89.4,
+        "bi/security_map.py": 100.0,
+        "bi/security_plan.py": 86.5,
+        "bi/served_database.py": 95.3,
+        "bi/sql_explorer.py": 93.1,
+        "bi/stack_page.py": 100.0,
+        "bi/star_model.py": 100.0,
+        "bi/storage_map.py": 98.7,
+        "bi/tech_glossary.py": 100.0,
+        "bi/zoom.py": 100.0,
+        "etl/bronze.py": 97.1,
+        "etl/etl.py": 95.8,
+        "etl/ine.py": 98.1,
+        "etl/pipeline.py": 91.3,
+        "etl/points_of_sale.py": 88.9,
+        "etl/profile_years.py": 98.1
+      }
+    },
+    "bandit": {
+      "orden": "bandit -r bi etl agent",
+      "version": "bandit 1.9.4",
+      "alta": 0,
+      "media": 25,
+      "baja": 15,
+      "por_regla": {
+        "B105": 8,
+        "B405": 1,
+        "B314": 1,
+        "B101": 4,
+        "B608": 24,
+        "B404": 1,
+        "B603": 1
+      }
+    },
+    "pip_audit": {
+      "orden": "pip-audit -r <requirements>",
+      "version": "pip-audit 2.10.1",
+      "archivos": {
+        "requirements.txt": {
+          "vulnerabilidades": 0
+        },
+        "requirements-pipeline.txt": {
+          "estado": "no verificado",
+          "motivo": "las dependencias no se pueden resolver con este Python (dbt pide 3.11 o 3.12)"
+        }
+      }
+    },
+    "secretos": {
+      "orden": "detect-secrets scan $(git ls-files)",
+      "version": "1.5.0",
+      "archivos_revisados": 245,
+      "candidatos": 27,
+      "por_archivo": {
+        "agent/downloads/manifest.json": [
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String",
+          "Hex High Entropy String"
+        ],
+        "bi/app_map.py": [
+          "Secret Keyword"
+        ],
+        "bi/architecture.py": [
+          "Secret Keyword",
+          "Secret Keyword"
+        ],
+        "bi/dashboard.py": [
+          "Secret Keyword",
+          "Secret Keyword",
+          "Secret Keyword"
+        ],
+        "bi/i18n_en.py": [
+          "Secret Keyword",
+          "Secret Keyword",
+          "Secret Keyword"
+        ],
+        "bi/tech_glossary.py": [
+          "Secret Keyword"
+        ],
+        "docs/DECISIONES.md": [
+          "Secret Keyword"
+        ],
+        "etl/datos.version": [
+          "Hex High Entropy String"
+        ],
+        "tests/test_control.py": [
+          "Secret Keyword"
+        ],
+        "tests/test_github_actions.py": [
+          "Base64 High Entropy String",
+          "Base64 High Entropy String",
+          "Hex High Entropy String"
+        ],
+        "tests/test_run_monitor.py": [
+          "Base64 High Entropy String"
+        ]
+      },
+      "falsos_positivos": 27,
+      "sin_clasificar": 0,
+      "historial_con_patrones_de_claves": 0,
+      "nota": "gitleaks no está instalado en este equipo; se usó detect-secrets y una búsqueda de patrones en el historial"
+    },
+    "dbt": {
+      "modelos_por_capa": {
+        "staging": 3,
+        "intermediate": 4,
+        "marts": 9
+      },
+      "pruebas_sql_propias": 5,
+      "ultima_construccion": {
+        "modelos_ok": 16,
+        "pruebas_ok": 31,
+        "pruebas_total": 31
+      }
+    },
+    "pruebas": {
+      "pruebas": 1131,
+      "archivos_de_prueba": 64
+    },
+    "datos": {
+      "orden": "python scripts/medir_calidad.py (función measure_data)",
+      "semana": "2026-10-12",
+      "precios_semana": 772,
+      "con_comparacion": 719,
+      "pct_comparacion": 93.1,
+      "series_activas": 1113,
+      "series_con_dato": 772,
+      "pct_series_con_dato": 69.4,
+      "dias_desde_ultima_semana": 12,
+      "dias_desde_ultima_carga": 10,
+      "filas_leidas": 2521012,
+      "filas_rechazadas": 201,
+      "pct_rechazadas": 0.008,
+      "medido": "2026-10-30"
+    }
+  }
+}

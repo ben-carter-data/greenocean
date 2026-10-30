@@ -1,126 +1,20 @@
 {
-  "generado": "2026-10-27 11:37 UTC",
-  "commit": "b015e3a",
+  "generado": "2026-10-30 22:05 UTC",
+  "commit": "150890e",
   "python": "3.14.7",
-  "limites": {
-    "largo_de_linea": 120,
-    "complejidad": 10,
-    "lineas_por_funcion": 50,
-    "parametros": 5
-  },
   "ruff": {
-    "orden": "/Users/carter/.venv-tools/bin/ruff check bi etl agent tests --select E,F,W",
+    "orden": "/private/tmp/claude-501/-Users-carter-Desktop-GreenOcean/366db66a-e077-48cc-ba96-646e48935a2b/scratchpad/tools/bin/ruff check bi etl agent tests --select E,F,W",
     "version": "ruff 0.17.2",
-    "errores": 1187,
+    "errores": 1314,
     "por_codigo": {
-      "E501": 1187
+      "E501": 1314
     },
     "errores_sin_largo_de_linea": 0,
     "formato": {
       "orden": "ruff format --check bi etl agent tests",
       "por_reformatear": 0,
-      "ya_formateados": 117
+      "ya_formateados": 132
     }
-  },
-  "funciones": {
-    "funciones": 1037,
-    "lineas_de_codigo": 31748,
-    "mas_de_50_lineas": 81,
-    "mas_largas": [
-      [
-        920,
-        "bi/dashboard.py:build_style_css"
-      ],
-      [
-        192,
-        "bi/sql_explorer.py:build_css"
-      ],
-      [
-        174,
-        "bi/dashboard.py:show_market_overview"
-      ],
-      [
-        173,
-        "bi/quality_live.py:build_indicators"
-      ],
-      [
-        163,
-        "bi/dashboard.py:show_overview_insights"
-      ]
-    ],
-    "mas_de_5_parametros": 56,
-    "mas_parametros": [
-      [
-        13,
-        "bi/doc_views.py:container_box"
-      ],
-      [
-        12,
-        "bi/lineage.py:build_lineage_node"
-      ],
-      [
-        10,
-        "bi/overview.py:build_heat_table_html"
-      ],
-      [
-        9,
-        "bi/home_mockup.py:panels"
-      ],
-      [
-        9,
-        "bi/doc_views.py:container_lines"
-      ]
-    ],
-    "mas_larga": [
-      920,
-      "bi/dashboard.py:build_style_css"
-    ]
-  },
-  "complejidad": {
-    "orden": "ruff check bi etl agent --select C901 --config lint.mccabe.max-complexity=10",
-    "funciones_sobre_10": 6,
-    "mas_complejas": [
-      [
-        21,
-        "bi/dashboard.py",
-        "read_home_model"
-      ],
-      [
-        13,
-        "bi/dashboard.py",
-        "show_quality_evidence_dialog"
-      ],
-      [
-        13,
-        "bi/dashboard.py",
-        "show_market_overview"
-      ],
-      [
-        12,
-        "bi/dashboard.py",
-        "restore_return_context"
-      ],
-      [
-        11,
-        "bi/sql_explorer.py",
-        "show_sql_explorer_page"
-      ]
-    ],
-    "promedio_radon": {
-      "nota": "A",
-      "valor": 3.452830188679245
-    }
-  },
-  "codigo_muerto": {
-    "orden": "vulture bi etl agent --min-confidence 60",
-    "version": "vulture 2.16",
-    "funciones_sin_uso": [
-      "render_page",
-      "read_glossary",
-      "add_to_history",
-      "orthogonal"
-    ],
-    "variables_o_atributos_sin_uso": 34
   },
   "mypy": {
     "orden": "mypy etl/etl.py etl/bronze.py etl/ine.py etl/pipeline.py bi/queries.py bi/alerts.py bi/overview.py bi/inflation_view.py bi/control.py bi/served_database.py --ignore-missing-imports --follow-imports=silent",
@@ -129,50 +23,54 @@
     "errores": 0,
     "errores_revisando_cuerpos_sin_tipos": 0,
     "por_modulo": {},
-    "funciones": 134,
-    "con_tipo_de_retorno": 134
+    "funciones": 128,
+    "con_tipo_de_retorno": 128
   },
   "cobertura": {
     "orden": "pytest -q --cov=bi --cov=etl --cov=agent",
-    "pruebas_ok": 990,
+    "pruebas_ok": 1130,
     "pruebas_omitidas": 1,
-    "salida": 1,
-    "total": 94.3,
-    "logica_critica": 93.6,
+    "salida": 0,
+    "total": 94.6,
+    "logica_critica": 93.2,
     "modulos_criticos": {
-      "etl/etl.py": 95.5,
+      "etl/etl.py": 95.8,
       "etl/bronze.py": 97.1,
       "etl/ine.py": 98.1,
-      "etl/pipeline.py": 92.9,
+      "etl/pipeline.py": 91.3,
       "bi/queries.py": 100.0,
       "bi/alerts.py": 100.0,
-      "bi/overview.py": 83.1,
+      "bi/overview.py": 77.3,
       "bi/inflation_view.py": 97.9,
-      "bi/control.py": 95.2,
+      "bi/control.py": 94.9,
       "bi/served_database.py": 95.3,
       "bi/quality.py": 97.9
     },
     "modulos": {
       "agent/agent.py": 87.3,
+      "bi/actions_view.py": 94.1,
       "bi/alerts.py": 100.0,
       "bi/app_map.py": 100.0,
       "bi/architecture.py": 99.4,
       "bi/brand_icons.py": 100.0,
       "bi/buttons.py": 100.0,
       "bi/charts.py": 94.1,
-      "bi/control.py": 95.2,
-      "bi/dashboard.py": 89.7,
+      "bi/compact_table.py": 93.2,
+      "bi/control.py": 94.9,
+      "bi/dashboard.py": 91.1,
       "bi/database_crossings.py": 99.3,
       "bi/database_map.py": 100.0,
       "bi/deployment.py": 100.0,
       "bi/devops.py": 98.4,
       "bi/doc_diagrams.py": 100.0,
-      "bi/doc_figures.py": 98.8,
+      "bi/doc_figures.py": 100.0,
       "bi/doc_views.py": 100.0,
       "bi/documents_folder.py": 98.6,
       "bi/er_diagram.py": 100.0,
+      "bi/git_workflow.py": 100.0,
+      "bi/github_actions.py": 95.8,
       "bi/github_page.py": 98.5,
-      "bi/home_mockup.py": 86.8,
+      "bi/home_mockup.py": 89.8,
       "bi/i18n.py": 97.4,
       "bi/i18n_en.py": 100.0,
       "bi/inflation_view.py": 97.9,
@@ -180,17 +78,19 @@
       "bi/lineage.py": 98.2,
       "bi/monitoring.py": 100.0,
       "bi/operation_center.py": 98.9,
-      "bi/overview.py": 83.1,
+      "bi/overview.py": 77.3,
       "bi/page_bar.py": 100.0,
       "bi/project.py": 96.0,
       "bi/quality.py": 97.9,
       "bi/quality_evidence.py": 95.8,
       "bi/quality_live.py": 97.4,
-      "bi/quality_method.py": 99.1,
-      "bi/quality_metrics.py": 98.5,
+      "bi/quality_method.py": 98.4,
+      "bi/quality_metrics.py": 94.7,
       "bi/quality_view.py": 98.3,
+      "bi/quality_viewer.py": 100.0,
       "bi/queries.py": 100.0,
       "bi/report.py": 91.3,
+      "bi/run_monitor.py": 89.4,
       "bi/security_map.py": 100.0,
       "bi/security_plan.py": 86.5,
       "bi/served_database.py": 95.3,
@@ -201,9 +101,9 @@
       "bi/tech_glossary.py": 100.0,
       "bi/zoom.py": 100.0,
       "etl/bronze.py": 97.1,
-      "etl/etl.py": 95.5,
+      "etl/etl.py": 95.8,
       "etl/ine.py": 98.1,
-      "etl/pipeline.py": 92.9,
+      "etl/pipeline.py": 91.3,
       "etl/points_of_sale.py": 88.9,
       "etl/profile_years.py": 98.1
     }
@@ -212,14 +112,14 @@
     "orden": "bandit -r bi etl agent",
     "version": "bandit 1.9.4",
     "alta": 0,
-    "media": 26,
-    "baja": 12,
+    "media": 25,
+    "baja": 15,
     "por_regla": {
+      "B105": 8,
       "B405": 1,
       "B314": 1,
       "B101": 4,
-      "B105": 5,
-      "B608": 25,
+      "B608": 24,
       "B404": 1,
       "B603": 1
     }
@@ -240,12 +140,9 @@
   "secretos": {
     "orden": "detect-secrets scan $(git ls-files)",
     "version": "1.5.0",
-    "archivos_revisados": 215,
-    "candidatos": 22,
+    "archivos_revisados": 245,
+    "candidatos": 27,
     "por_archivo": {
-      ".github/workflows/calidad.yml": [
-        "Secret Keyword"
-      ],
       "agent/downloads/manifest.json": [
         "Hex High Entropy String",
         "Hex High Entropy String",
@@ -267,6 +164,7 @@
       ],
       "bi/dashboard.py": [
         "Secret Keyword",
+        "Secret Keyword",
         "Secret Keyword"
       ],
       "bi/i18n_en.py": [
@@ -277,43 +175,28 @@
       "bi/tech_glossary.py": [
         "Secret Keyword"
       ],
+      "docs/DECISIONES.md": [
+        "Secret Keyword"
+      ],
       "etl/datos.version": [
         "Hex High Entropy String"
       ],
       "tests/test_control.py": [
         "Secret Keyword"
+      ],
+      "tests/test_github_actions.py": [
+        "Base64 High Entropy String",
+        "Base64 High Entropy String",
+        "Hex High Entropy String"
+      ],
+      "tests/test_run_monitor.py": [
+        "Base64 High Entropy String"
       ]
     },
-    "falsos_positivos": 22,
+    "falsos_positivos": 27,
     "sin_clasificar": 0,
     "historial_con_patrones_de_claves": 0,
     "nota": "gitleaks no está instalado en este equipo; se usó detect-secrets y una búsqueda de patrones en el historial"
-  },
-  "sql": {
-    "orden": "sqlfluff lint <ruta> --dialect duckdb",
-    "version": "sqlfluff, version 4.4.0",
-    "bi/queries.sql": {
-      "archivos": 1,
-      "violaciones": 279,
-      "principales": {
-        "LT02": 172,
-        "AM05": 37,
-        "LT09": 25,
-        "ST09": 14,
-        "LT08": 11
-      }
-    },
-    "dbt/models": {
-      "archivos": 16,
-      "violaciones": 240,
-      "principales": {
-        "LT02": 95,
-        "LT01": 41,
-        "LT09": 26,
-        "TMP": 21,
-        "LT08": 17
-      }
-    }
   },
   "dbt": {
     "modelos_por_capa": {
@@ -328,51 +211,9 @@
       "pruebas_total": 31
     }
   },
-  "proceso": {
-    "commits": 322,
-    "conventional_commits": 12,
-    "pre_commit_configurado": true,
-    "ci": {
-      "semanal.yml": [
-        "pytest",
-        "dbt build"
-      ],
-      "calidad.yml": [
-        "pytest",
-        "ruff",
-        "mypy",
-        "bandit",
-        "pip-audit",
-        "sqlfluff"
-      ],
-      "pruebas.yml": [
-        "pytest",
-        "ruff",
-        "mypy",
-        "dbt parse"
-      ]
-    }
-  },
   "pruebas": {
-    "pruebas": 996,
-    "archivos_de_prueba": 55
-  },
-  "dora": {
-    "cargas_registradas": 6,
-    "primera": "2026-10-11",
-    "ultima": "2026-10-20",
-    "semanal": {
-      "estado": "no verificado",
-      "motivo": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unabl"
-    },
-    "pruebas": {
-      "estado": "no verificado",
-      "motivo": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unabl"
-    }
-  },
-  "adr": {
-    "adr": 11,
-    "decisiones": 315
+    "pruebas": 1131,
+    "archivos_de_prueba": 64
   },
   "datos": {
     "orden": "python scripts/medir_calidad.py (función measure_data)",
@@ -383,150 +224,11 @@
     "series_activas": 1113,
     "series_con_dato": 772,
     "pct_series_con_dato": 69.4,
-    "dias_desde_ultima_semana": 9,
-    "dias_desde_ultima_carga": 7,
-    "medido": "2026-10-27"
-  },
-  "consultas": {
-    "orden": "mediana de 3 ejecuciones de cada consulta de bi/queries.sql",
-    "consultas": {
-      "k1_margin": 0.096,
-      "k2_channel_gap": 0.28,
-      "k3_regional_index": 0.435,
-      "k4_seasonal_index": 0.09,
-      "k8_rejected_rows": 0.004,
-      "quality_runs": 0.004,
-      "quality_flag_counts": 0.007,
-      "quality_outliers": 0.008,
-      "quality_rejected_rows": 0.004,
-      "quality_unconvertible_units": 0.006,
-      "k6_national_weekly_price": 0.143,
-      "k6_usual_range_sql": 0.114,
-      "k5_weekly_variations_sql": 0.084,
-      "quality_week_range": 0.005
-    },
-    "mas_lenta": [
-      "k3_regional_index",
-      0.435
-    ]
-  },
-  "navegadores": {
-    "orden": "node tests/medicion/calidad.cjs http://localhost:8599",
-    "paginas": {
-      "Panorama de precios": {
-        "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=Dashboard",
-        "seconds": 0.828,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Dónde comprar": {
-        "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=D%C3%B3nde+comprar",
-        "seconds": 0.319,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Insights": {
-        "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=Insights",
-        "seconds": 0.828,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Pipeline y linaje": {
-        "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Pipeline+y+arquitectura",
-        "seconds": 1.327,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Modelo de datos": {
-        "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Modelo+de+datos",
-        "seconds": 0.815,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Calidad y auditoría": {
-        "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Monitoreo",
-        "seconds": 0.828,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Consultas SQL": {
-        "href": "?tema=Vantablack&perfil=profesional&rol=bi&vista=Consultas+SQL",
-        "seconds": 0.338,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Stack y evidencia": {
-        "href": "proyecto?tema=Vantablack&perfil=profesional&rol=bi&vista=Stack+y+evidencia",
-        "seconds": 0.821,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Mapa de la app": {
-        "href": "proyecto?tema=Vantablack&perfil=profesional&rol=bi&vista=Mapa+de+la+app",
-        "seconds": 0.826,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Método y calidad": {
-        "href": "proyecto?tema=Vantablack&perfil=profesional&rol=bi&vista=M%C3%A9todo+y+calidad",
-        "seconds": 0.843,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Centro de operación": {
-        "href": "arquitectura-y-operacion?tema=Vantablack&perfil=profesional&rol=bi&vista=Ejecuciones",
-        "seconds": 2.328,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Arquitectura de seguridad": {
-        "href": "seguridad?tema=Vantablack&perfil=profesional&rol=bi&vista=Mapa+de+seguridad",
-        "seconds": 0.825,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      },
-      "Documentos": {
-        "href": "documentacion-y-enlaces?tema=Vantablack&perfil=profesional&rol=bi&vista=Documentos",
-        "seconds": 0.826,
-        "violations": 0,
-        "nodes": 0,
-        "rules": []
-      }
-    },
-    "pagina_mas_lenta": [
-      "Centro de operación",
-      2.328
-    ],
-    "violaciones_wcag": 0,
-    "nodos_wcag": 0,
-    "navegadores": {
-      "chromium": {
-        "checks": 39,
-        "passed": 39,
-        "failed": []
-      },
-      "firefox": {
-        "checks": 39,
-        "passed": 39,
-        "failed": []
-      },
-      "webkit": {
-        "checks": 39,
-        "passed": 39,
-        "failed": []
-      }
-    }
+    "dias_desde_ultima_semana": 12,
+    "dias_desde_ultima_carga": 10,
+    "filas_leidas": 2521012,
+    "filas_rechazadas": 201,
+    "pct_rechazadas": 0.008,
+    "medido": "2026-10-30"
   }
 }

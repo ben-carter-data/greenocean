@@ -293,7 +293,15 @@ def test_d333_the_viewer_has_eight_slides_read_from_the_report_and_compares_with
     from bi import quality_viewer
 
     reports, goals, policy = quality_method.read_page()
-    latest = reports[-1]
+    # The latest report whose failing tests are a non-conformity (N° 4): its cause is the author's and the viewer shows it.
+    latest = next(
+        report
+        for report in reversed(reports)
+        if any(
+            row["clave"] == "pruebas_fallidas" and row["estado"] in ("urgente", "critico")
+            for row in report["indicadores"]
+        )
+    )
     record = {
         "informe": latest["numero"],
         "indicador": "pruebas_fallidas",
@@ -325,7 +333,9 @@ def test_d333_the_reports_tab_filters_by_year_month_week_and_search_and_links_ea
     assert [r["numero"] for r in dashboard.filter_reports(reports, every, every, every, "b015e3a")] == [4]
     assert [r["numero"] for r in dashboard.filter_reports(reports, every, every, every, "N° 2")] == [2]
     assert dashboard.filter_reports(reports, "2025", every, every, "") == []
-    assert len(dashboard.filter_reports(reports, "2026", "10", "2026-10-12", "")) == 3  # N° 1 has no data week
+    assert (
+        len(dashboard.filter_reports(reports, "2026", "10", "2026-10-12", "")) == len(reports) - 1
+    )  # N° 1 has no data week
     detail = quality_method.build_report_detail(reports[2], reports[2:3] + reports[:1] + reports[1:2])
     assert "<b>Variación:</b> +2" in detail  # N° 3 against N° 2, though only N° 3 is listed
 
@@ -423,8 +433,15 @@ def test_d335_the_new_reports_store_their_diagnosis_and_the_old_ones_are_not_tou
     informe_calidad = load_reports_module()
     goals = quality_metrics.read(quality_metrics.GOALS_FILE)
     policy = quality_metrics.read(quality_metrics.POLICY_FILE)
-    stored = [row for report in informe_calidad.read_reports() for row in report["indicadores"] if "diagnostico" in row]
+    reports = informe_calidad.read_reports()
+    stored = [
+        row for report in reports if report["numero"] <= 4 for row in report["indicadores"] if "diagnostico" in row
+    ]
     assert stored == []  # N° 1 to 4 were frozen before the diagnosis existed: never rewritten
+    for report in reports[4:]:  # the later ones keep the diagnosis of what was out of its acceptable
+        assert all(
+            len(row["diagnostico"]) == 2 for row in report["indicadores"] if row["estado"] in ("urgente", "critico")
+        )
     report = informe_calidad.build_report(5, REPORT, goals, policy, None, [])
     broken = [row for row in report["indicadores"] if row["estado"] in ("urgente", "critico")]
     assert broken and all(len(row["diagnostico"]) == 2 for row in broken)

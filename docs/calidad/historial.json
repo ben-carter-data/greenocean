@@ -81,6 +81,24 @@
         "rechazadas_pct": null,
         "vigencia_dias": 7
       }
+    },
+    {
+      "generado": "2026-10-30 22:05 UTC",
+      "commit": "150890e",
+      "valores": {
+        "ruff_avisos": 0,
+        "cobertura_total": 94.6,
+        "cobertura_por_modulo": 77.3,
+        "mypy_errores": 0,
+        "bandit_altos": 0,
+        "pip_audit_vulnerabilidades": 0,
+        "secretos_sin_clasificar": 0,
+        "pruebas_fallidas": 0,
+        "pruebas_dbt_pct": 100.0,
+        "comparables_pct": 93.1,
+        "rechazadas_pct": 0.008,
+        "vigencia_dias": 10
+      }
     }
   ]
 }
