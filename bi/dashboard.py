@@ -131,6 +131,7 @@ PAGE_GIT = "Git workflow"  # D-344: how a change travels from an idea to a live 
 PAGE_DECISION_INDEX = "Índice de decisiones"
 # D-290: the test plan and the security plan are one document; the scalability plan and the data dictionary live in the SAD.
 PAGE_TEST_PLAN = "Plan de pruebas y seguridad"
+PAGE_QUALITY_PLAN = "SQAP · Plan de calidad del software"  # D-355
 # D-318: the views that only old addresses reached left; each address opens the page that now holds its content.
 RETIRED_VIEWS.update(
     {
@@ -183,6 +184,7 @@ WINDOWS = {
         PAGE_GLOSSARY,
         PAGE_MANUAL,
         PAGE_DECISION_INDEX,
+        PAGE_QUALITY_PLAN,
     ],
     SECTION_RESOURCES: [PAGE_LINKS],
 }
@@ -265,6 +267,7 @@ PAGE_ICONS = {
     PAGE_METHOD: ":material/verified:",
     PAGE_GIT: ":material/alt_route:",
     PAGE_TEST_PLAN: ":material/fact_check:",
+    PAGE_QUALITY_PLAN: ":material/workspace_premium:",
 }
 PAGE_PATHS = {
     PAGE_DOCUMENTATION: "documentacion-general",
@@ -290,6 +293,7 @@ PAGE_PATHS = {
     PAGE_APP_MAP: "mapa-de-la-app",
     PAGE_DECISION_INDEX: "indice-de-decisiones",
     PAGE_TEST_PLAN: "plan-de-pruebas",
+    PAGE_QUALITY_PLAN: "plan-de-calidad",
     PAGE_METHOD: "metodo-y-calidad",
     PAGE_GIT: "git-workflow",
 }
@@ -2070,6 +2074,7 @@ DOCUMENT_VIEWS = {
     PAGE_GLOSSARY,
     PAGE_DECISION_INDEX,
     PAGE_TEST_PLAN,
+    PAGE_QUALITY_PLAN,
 }
 
 
@@ -6217,6 +6222,10 @@ PROJECT_DOCUMENTS = {
         "Qué se prueba, quién participa en la seguridad y con qué criterios se acepta un cambio.",
     ),
     PAGE_GLOSSARY: ("GLOSARIO.md", "Las siglas y los términos del panel y de los documentos."),
+    PAGE_QUALITY_PLAN: (
+        "PLAN_DE_CALIDAD.md",
+        "Qué calidad cuida el proyecto, cómo la mide, quién decide y qué pasa cuando algo falla.",
+    ),
 }
 # D-282: the folder, in reading order, with the family that colors each file.
 FOLDER_DOCUMENTS = [
@@ -6224,6 +6233,7 @@ FOLDER_DOCUMENTS = [
     (PAGE_SAD, "arquitectura"),
     (PAGE_ADR, "arquitectura"),
     (PAGE_TEST_PLAN, "calidad"),
+    (PAGE_QUALITY_PLAN, "calidad"),
     (PAGE_MANUAL, "operacion"),
     (PAGE_DECISION_INDEX, "referencia"),
     (PAGE_GLOSSARY, "referencia"),
@@ -6793,6 +6803,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_GLOSSARY: lambda mode: show_project_document(mode, PAGE_GLOSSARY),
     PAGE_DECISION_INDEX: lambda mode: show_project_document(mode, PAGE_DECISION_INDEX),
     PAGE_TEST_PLAN: lambda mode: show_project_document(mode, PAGE_TEST_PLAN),
+    PAGE_QUALITY_PLAN: lambda mode: show_project_document(mode, PAGE_QUALITY_PLAN),
     PAGE_FOLDER: lambda mode: show_documents_folder(mode),
     PAGE_APP_MAP: lambda mode: show_app_map_page(mode),
     PAGE_METHOD: lambda mode: show_method_page(mode),

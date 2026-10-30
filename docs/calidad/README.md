@@ -1,5 +1,7 @@
 # Calidad de GreenOcean
 
+El plan de calidad completo, con qué medimos, cómo y quién decide, está en el [Plan de calidad del software (SQAP)](../PLAN_DE_CALIDAD.md). Esta carpeta guarda sus datos.
+
 Dos calidades, medidas con herramientas reales y juzgadas contra un aceptable fijado por el autor:
 
 - **Los datos que publicamos:** pruebas de dbt superadas, precios con comparación válida, filas rechazadas y días desde la última carga.

@@ -282,6 +282,8 @@ EN = {
     "Manual de operación": "Operations runbook",
     "Índice de decisiones": "Decision index",
     "Plan de pruebas y seguridad": "Test and security plan",
+    "SQAP · Plan de calidad del software": "SQAP · Software quality assurance plan",
+    "Qué calidad cuida el proyecto, cómo la mide, quién decide y qué pasa cuando algo falla.": "Which quality the project looks after, how it measures it, who decides and what happens when something fails.",
     "Glosario": "Glossary",
     # Sidebar footer
     "Apariencia": "Appearance",

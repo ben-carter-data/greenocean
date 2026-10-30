@@ -105,6 +105,7 @@ Python · SQL · dbt Core · DuckDB · Parquet · SQLite · GitHub Actions · py
 | [SAD](docs/SAD.md) | Cómo está construido: la carga de cada semana, los datos con su diccionario, el despliegue y la capacidad |
 | [ADR](docs/ADR.md) | Las decisiones de arquitectura más importantes |
 | [Plan de pruebas y seguridad](docs/PLAN_PRUEBAS.md) | Qué se prueba, quién participa en la seguridad y los ataques que se repiten en cada cambio |
+| [Plan de calidad del software (SQAP)](docs/PLAN_DE_CALIDAD.md) | Qué calidad cuida el proyecto, cómo la mide, quién decide y qué pasa cuando algo falla |
 | [Manual](docs/MANUAL.md) | Qué pasa cada martes y qué hacer si falla |
 | [Índice de decisiones](docs/INDICE_DECISIONES.md) | Las decisiones principales, por tema |
 | [Glosario](docs/GLOSARIO.md) | Las siglas y los términos del panel y de los documentos |

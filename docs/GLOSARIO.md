@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 2.1 |
-| Fecha | 26-10-2026 |
+| Versión | 2.2 |
+| Fecha | 30-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Definir una sola vez las siglas y los términos que usan el panel y los documentos. |
@@ -86,6 +86,9 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | UTC | Tiempo universal coordinado; el job corre a las 12:00 UTC: las 09:00 en Chile en horario de verano y las 08:00 en invierno. | Centro de operación | Conexiones |
 | PRD | Documento de requisitos del producto (*Product Requirements Document*). | — | Documentos |
 | SAD | Documento de arquitectura de software (*Software Architecture Document*). | — | Documentos |
+| SQAP | Plan de calidad del software (*Software Quality Assurance Plan*): qué calidad se cuida, cómo se mide y quién decide. | Método y calidad | Documentos |
+| IEEE | Instituto de Ingenieros Eléctricos y Electrónicos; publica el estándar IEEE 730, que da la estructura del SQAP. | — | Documentos |
+| IEC | Comisión Electrotécnica Internacional; firma con la ISO las normas ISO/IEC 25010 (calidad del software) e ISO/IEC 25012 (calidad de los datos). | Método y calidad | Documentos |
 | ADR | Registro de decisión de arquitectura (*Architecture Decision Record*). | — | Documentos |
 | MADR | Formato estándar para escribir un ADR (*Markdown Architectural Decision Records*). | — | Documentos |
 | arc42 | Plantilla estándar de documentación de arquitectura de software. | — | Documentos |
@@ -102,3 +105,4 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | 1.0 | 25-10-2026 | Primera versión como documento propio, a partir del glosario de la guía del proyecto (D-279, documentación profesional) |
 | 2.0 | 25-10-2026 | Un resumen con tres esquemas y los términos ordenados por tema, desde los indicadores (D-290, documentos para todo lector) |
 | 2.1 | 26-10-2026 | BA, una de las vistas profesionales del panel (D-300) |
+| 2.2 | 30-10-2026 | SQAP, IEEE e IEC, del plan de calidad del software (D-355) |

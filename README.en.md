@@ -36,7 +36,7 @@ GitHub Actions runs everything every Tuesday and runs the tests on every change.
 
 ## Documentation
 
-The documentation is written in Spanish and lives in [`docs/`](docs/): the product requirements ([PRD](docs/PRD.md)), the architecture ([SAD](docs/SAD.md)), the architecture decisions ([ADR](docs/ADR.md)), the test and security plan ([PLAN_PRUEBAS](docs/PLAN_PRUEBAS.md)), the runbook ([MANUAL](docs/MANUAL.md)) and the full decision log ([DECISIONES](docs/DECISIONES.md)). English translations of the main documents are in [`docs/en/`](docs/en/). The quality method, its numbered reports and its acceptable limits are described in [`docs/calidad/README.md`](docs/calidad/README.md), also in Spanish.
+The documentation is written in Spanish and lives in [`docs/`](docs/): the product requirements ([PRD](docs/PRD.md)), the architecture ([SAD](docs/SAD.md)), the architecture decisions ([ADR](docs/ADR.md)), the test and security plan ([PLAN_PRUEBAS](docs/PLAN_PRUEBAS.md)), the software quality assurance plan ([SQAP](docs/PLAN_DE_CALIDAD.md)), the runbook ([MANUAL](docs/MANUAL.md)) and the full decision log ([DECISIONES](docs/DECISIONES.md)). English translations of the main documents are in [`docs/en/`](docs/en/). The quality method, its numbered reports and its acceptable limits are described in [`docs/calidad/README.md`](docs/calidad/README.md), also in Spanish.
 
 ## Scope and limits
 

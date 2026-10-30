@@ -2007,6 +2007,148 @@ def glossary_figure(mode):
 
 
 # Marker → builder. The heights are automatic: each frame takes the height of its figure.
+
+
+# region The quality plan (D-355): the two qualities, how an indicator reads and the weekly cycle. Counts and words are
+# read from docs/calidad, never written by hand.
+def quality_qualities(mode):
+    from bi import quality_metrics
+
+    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
+    kinds = {
+        kind: [key for key, *_ in quality_metrics.INDICATORS if goals.get(key, {}).get("tipo") == kind]
+        for kind in ("datos", "codigo")
+    }
+    return graph(
+        mode,
+        say("Las dos calidades que medimos", "The two qualities we measure"),
+        {
+            "plan": (
+                460,
+                30,
+                "icon:shield",
+                say("Calidad", "Quality"),
+                say("lo que el plan cuida", "what the plan looks after"),
+            ),
+            "data": (
+                230,
+                170,
+                "icon:database",
+                say("Datos que publicamos", "Data we publish"),
+                say(
+                    f"ISO/IEC 25012 · {len(kinds['datos'])} indicadores",
+                    f"ISO/IEC 25012 · {len(kinds['datos'])} indicators",
+                ),
+            ),
+            "code": (
+                690,
+                170,
+                "icon:code",
+                say("Código que los trata", "Code that treats them"),
+                say(
+                    f"ISO/IEC 25010 · {len(kinds['codigo'])} indicadores",
+                    f"ISO/IEC 25010 · {len(kinds['codigo'])} indicators",
+                ),
+            ),
+        },
+        [("plan", "data", "", "flow", "vh"), ("plan", "code", "", "flow", "vh")],
+    )
+
+
+def quality_states(mode):
+    from bi import quality_metrics
+
+    policy = quality_metrics.read(quality_metrics.POLICY_FILE)["estados"]
+    word = {key: say(*value) for key, value in policy.items()}
+    return timeline(
+        mode,
+        say("Cómo se lee un indicador", "How an indicator reads"),
+        [
+            (say("en la meta", "at the goal"), word["cumple"], [say("o mejor", "or better")]),
+            (
+                say("entre meta y aceptable", "between goal and acceptable"),
+                word["aviso"],
+                [say("todavía se acepta", "still accepted")],
+            ),
+            (
+                say("pasa el aceptable", "past the acceptable"),
+                word["urgente"],
+                [say("dentro del margen crítico", "within the critical margin")],
+            ),
+            (
+                say("más allá del margen", "beyond the margin"),
+                word["critico"],
+                [say("se actúa de inmediato", "act at once")],
+            ),
+        ],
+        say(
+            "El autor fija la meta, el aceptable y el margen de cada indicador.",
+            "The author sets the goal, the acceptable and the margin of each indicator.",
+        ),
+    )
+
+
+def quality_cycle(mode):
+    return graph(
+        mode,
+        say("El ciclo de cada semana", "The cycle of every week"),
+        {
+            "measure": (
+                90,
+                30,
+                "icon:ruler",
+                say("Medir", "Measure"),
+                say("pruebas y herramientas en el CI", "tests and tools in the CI"),
+            ),
+            "check": (
+                300,
+                30,
+                "icon:check",
+                say("Comparar", "Compare"),
+                say("cada indicador con su aceptable", "each indicator with its acceptable"),
+            ),
+            "report": (
+                510,
+                30,
+                "icon:file",
+                say("Informe numerado", "Numbered report"),
+                say("no se edita después", "never edited afterwards"),
+            ),
+            "approve": (
+                720,
+                30,
+                "icon:eye",
+                say("Aprobación", "Approval"),
+                say("el autor lo revisa y lo acepta", "the author reviews and accepts it"),
+            ),
+            "register": (
+                510,
+                200,
+                "icon:warning",
+                say("Registro de fallas", "Failure register"),
+                say("una línea por campo", "one line per field"),
+            ),
+            "improve": (
+                90,
+                200,
+                "icon:tool",
+                say("Mejorar", "Improve"),
+                say("la causa se corrige, no se oculta", "the cause is fixed, never hidden"),
+            ),
+        },
+        [
+            ("measure", "check", "", "flow", "h"),
+            ("check", "report", "", "flow", "h"),
+            ("report", "approve", "", "flow", "h"),
+            ("approve", "register", say("si algo falló", "if something failed"), "check", "vh"),
+            ("register", "improve", "", "flow", "h"),
+            ("improve", "measure", say("la semana siguiente", "the next week"), "back", "v"),
+        ],
+    )
+
+
+# endregion
+
 FIGURES = {
     "contexto": sad_context,
     "contenedores": sad_containers,
@@ -2036,4 +2178,7 @@ FIGURES = {
     "terminos_capas": glossary_layers,
     "terminos_actores": glossary_actors,
     "terminos_cifra": glossary_figure,
+    "calidades": quality_qualities,
+    "estados_calidad": quality_states,
+    "ciclo_calidad": quality_cycle,
 }

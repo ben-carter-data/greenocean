@@ -1458,8 +1458,8 @@ def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_f
     app = draw_page(dashboard.PAGE_FOLDER)
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    assert markup.count('class="df-file"') == len(dashboard.FOLDER_DOCUMENTS) == 7
-    assert "GreenOcean <i>/</i> <b>docs</b>" in markup and "7 documentos" in markup
+    assert markup.count('class="df-file"') == len(dashboard.FOLDER_DOCUMENTS) == 8
+    assert "GreenOcean <i>/</i> <b>docs</b>" in markup and "8 documentos" in markup
     for page in dashboard.FOLDER_ORDER:
         filename = dashboard.PROJECT_DOCUMENTS[page][0]
         text = (PROJECT_DIR / "docs" / filename).read_text(encoding="utf-8")
@@ -1467,7 +1467,7 @@ def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_f
         assert f"<span>v{header['Versión']}</span><span>{header['Fecha']}</span>" in markup, filename
         assert documents_folder.read_title(text) in markup, filename
         assert project.build_github_url(f"docs/{filename}") in markup, filename
-    assert markup.count('class="go-icon go-icon-print"') == 7 and markup.count('class="df-preview"') == 7
+    assert markup.count('class="go-icon go-icon-print"') == 8 and markup.count('class="df-preview"') == 8
 
 
 def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_menu():

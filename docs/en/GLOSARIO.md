@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.1 |
-| Date | 2026-10-26 |
+| Version | 2.2 |
+| Date | 2026-10-30 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Define once the acronyms and terms used by the panel and the documents. |
@@ -86,6 +86,9 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | UTC | Coordinated universal time; the job runs at 12:00 UTC: 09:00 in Chile in summer time and 08:00 in winter. | Operations center | Connections |
 | PRD | Product Requirements Document. | — | Documents |
 | SAD | Software Architecture Document. | — | Documents |
+| SQAP | Software Quality Assurance Plan: which quality is looked after, how it is measured and who decides. | Method and quality | Documents |
+| IEEE | Institute of Electrical and Electronics Engineers; it publishes the IEEE 730 standard, which gives the structure of the SQAP. | — | Documents |
+| IEC | International Electrotechnical Commission; with the ISO it signs the standards ISO/IEC 25010 (software quality) and ISO/IEC 25012 (data quality). | Method and quality | Documents |
 | ADR | Architecture Decision Record. | — | Documents |
 | MADR | Standard format for writing an ADR (*Markdown Architectural Decision Records*). | — | Documents |
 | arc42 | Standard template for software architecture documentation. | — | Documents |
@@ -102,3 +105,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 1.0 | 2026-10-25 | First version as a document of its own, from the glossary of the project guide (D-279, professional documentation) |
 | 2.0 | 2026-10-25 | A summary with three diagrams and the terms ordered by theme, from the indicators (D-290, documents for every reader) |
 | 2.1 | 2026-10-26 | BA, one of the professional views of the panel (D-300) |
+| 2.2 | 2026-10-30 | SQAP, IEEE and IEC, from the software quality assurance plan (D-355) |

@@ -8,7 +8,16 @@ import pytest
 from bi import charts, doc_diagrams, doc_figures, doc_views
 
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
-DOCUMENTS = ["PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md", "MANUAL.md", "GLOSARIO.md", "INDICE_DECISIONES.md"]
+DOCUMENTS = [
+    "PRD.md",
+    "SAD.md",
+    "ADR.md",
+    "PLAN_PRUEBAS.md",
+    "MANUAL.md",
+    "GLOSARIO.md",
+    "INDICE_DECISIONES.md",
+    "PLAN_DE_CALIDAD.md",
+]
 MARKER = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 
 
