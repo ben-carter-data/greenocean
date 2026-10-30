@@ -345,6 +345,28 @@
           "estacion": 14,
           "estado": "abierta",
           "referencia": "D-331"
+        },
+        {
+          "fecha": "2026-10-30",
+          "ocurrencia": [
+            "La alerta «Acción requerida» mostró como crítico 5 pruebas fallando que ya estaban resueltas.",
+            "The «Acción requerida» alert showed as critical 5 failing tests that were already solved."
+          ],
+          "diagnostico": [
+            "No había informe nuevo desde el N° 4 (27-10) porque el workflow de calidad falla.",
+            "There was no report after No. 4 (27-10) because the quality workflow fails."
+          ],
+          "solucion": [
+            "La alerta avisa cuando el informe tiene más de 8 días (D-361); el informe N° 5 se mide en local.",
+            "The alert warns when the report is more than 8 days old (D-361); report No. 5 is measured locally."
+          ],
+          "comentario": [
+            "La causa de fondo sigue siendo F-11.",
+            "The root cause is still F-11."
+          ],
+          "estacion": 14,
+          "estado": "abierta",
+          "referencia": "D-361"
         }
       ]
     },
