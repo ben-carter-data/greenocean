@@ -603,7 +603,7 @@ ul.mock-calc-out li em {font-style:normal;}
 .mock-products-table th.mock-two-lines {white-space:normal;line-height:1.25;}
 
 /* D-352: reading order of the Panorama. Numbered panels, «Todo Chile», trends, the whole basket, locks and the search in the accent colour. */
-.mock-step {display:inline-flex;align-items:center;gap:4px;margin:0 8px 0 0;padding:1px 8px;border-radius:999px;font-size:10.5px;font-weight:600;color:__ACCENT__;background:color-mix(in srgb,__ACCENT__ 14%,transparent);}
+.mock-step {display:inline-flex;align-self:flex-start;width:fit-content;align-items:center;gap:4px;margin:0 8px 0 0;padding:1px 8px;border-radius:999px;font-size:10.5px;font-weight:600;color:__ACCENT__;background:color-mix(in srgb,__ACCENT__ 14%,transparent);}
 .mock-step b {font-weight:700;}
 .mock-scope-row {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .mock-all-chile {display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 20px;border-radius:999px;border:1.5px solid __ACCENT__;color:__ACCENT__!important;font-size:13px;font-weight:700;text-decoration:none!important;background:transparent;}
@@ -613,8 +613,8 @@ ul.mock-calc-out li em {font-style:normal;}
 .mock-basket {background:color-mix(in srgb,__ACCENT__ 9%,__PANEL__);border:1px solid color-mix(in srgb,__ACCENT__ 45%,transparent)!important;margin-bottom:4px;cursor:default;}
 .mock-basket:hover {background:color-mix(in srgb,__ACCENT__ 9%,__PANEL__);}
 .mock-basket strong {font-weight:700;}
-.mock-basket-art {width:12px;height:12px;border-radius:3px;background:__ACCENT__;}
-.mock-lock {position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:5;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:__INK__;background:__PANEL__;border:1px solid __BORDER__;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+.mock-basket-art {width:14px;height:14px;border-radius:4px;background:__ACCENT__;justify-self:center;}
+.mock-lock {position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:__INK__;background:__PANEL__;border:1px solid __BORDER__;box-shadow:0 4px 14px rgba(0,0,0,.25);}
 .st-key-home_families,.st-key-home_products {position:relative;}
 .st-key-home_products [data-testid="stTextInput"] [data-baseweb="input"] {border-color:__ACCENT__!important;}
 .st-key-home_products [data-testid="stTextInput"] svg,.st-key-home_products [data-testid="stTextInput"] [data-testid="stIconMaterial"] {color:__ACCENT__!important;fill:__ACCENT__!important;}

@@ -4027,7 +4027,7 @@ def build_steps_css(palette, region_open, family_open, flash):
     for container, opened in (("home_families", region_open), ("home_products", family_open)):
         if not opened:
             rules.append(
-                f".st-key-{container} > div > [data-testid='stElementContainer']:not(:has(.mock-lock)) "
+                f".st-key-{container} > *:not(:has(.mock-lock)) "
                 "{opacity:.38;pointer-events:none;filter:saturate(.4);user-select:none;}"
             )
     if flash in ("families", "products"):

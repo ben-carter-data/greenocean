@@ -33,12 +33,12 @@
 @media(max-width:800px) {.stApp .info-card {padding:16px!important;}.stApp .greenocean-mockup .mock-family-gallery {gap:8px;}.stApp .greenocean-mockup .mock-family-tile {min-height:152px;}.stApp .greenocean-mockup :is(.mock-panel,.mock-family-chart) {padding:14px;}}
 @media(prefers-reduced-motion:reduce) {.stApp .component-symbol,.stApp [data-testid="stButton"] button {transition:none!important;transform:none!important;}.stApp .info-card:hover .component-symbol,.stApp .question-item:hover .component-symbol {transform:none!important;}}
 /* Existing transparent product assets also identify the live family links. */
-.stApp .greenocean-mockup .mock-movement-row {grid-template-columns:54px minmax(138px,1.3fr) minmax(160px,2.2fr) 70px 64px 14px;min-height:68px;gap:0 12px;border-radius:14px;padding:6px 10px;}
+.stApp .greenocean-mockup .mock-movement-row {grid-template-columns:54px minmax(138px,1.3fr) minmax(160px,2.2fr) 70px 64px 60px 14px;min-height:68px;gap:0 12px;border-radius:14px;padding:6px 10px;}
 .stApp .greenocean-mockup .mock-movement-row.selected {background:color-mix(in srgb,__ACCENT__ 4%,transparent);border-color:color-mix(in srgb,__ACCENT__ 30%,transparent);}
 .stApp .greenocean-mockup .mock-movement-art {width:52px;height:50px;object-fit:contain;filter:drop-shadow(0 8px 5px #071a3c25);transition:transform .2s ease;}
 .stApp .greenocean-mockup a.mock-movement-row:hover .mock-movement-art {transform:translateY(-3px) scale(1.06);}
 .stApp .greenocean-mockup .mock-movement-axis {min-height:20px;}
-@media(max-width:800px) {.stApp .greenocean-mockup .mock-movement-row {grid-template-columns:46px minmax(0,1fr) 64px 14px;gap:0 8px;}.stApp .greenocean-mockup .mock-movement-art {width:44px;height:44px;}}
+@media(max-width:800px) {.stApp .greenocean-mockup .mock-movement-row {grid-template-columns:46px minmax(0,1fr) 64px 14px;gap:0 8px;}.stApp .greenocean-mockup .mock-spark {display:none;}.stApp .greenocean-mockup .mock-movement-art {width:44px;height:44px;}}
 @media(prefers-reduced-motion:reduce) {.stApp .greenocean-mockup .mock-movement-art {transition:none;}.stApp .greenocean-mockup a.mock-movement-row:hover .mock-movement-art {transform:none;}}
 /* Explanatory KPI objects float on the canvas, with no enclosing card. */
 .stApp .doc-kpi-grid {gap:28px 24px;}
@@ -64,7 +64,7 @@
 /* D-265: the Resumen fits one screen. Shorter family rows with smaller pictures and tighter cards; the products table
    takes the height that is left. */
 .stApp .greenocean-mockup :is(.mock-panel,.mock-family-chart) {padding:14px 18px;}
-.stApp .greenocean-mockup .mock-movement-row {grid-template-columns:42px minmax(138px,1.3fr) minmax(160px,2.2fr) 70px 64px 14px;min-height:38px;padding:1px 10px;}
+.stApp .greenocean-mockup .mock-movement-row {grid-template-columns:42px minmax(138px,1.3fr) minmax(160px,2.2fr) 70px 64px 60px 14px;min-height:38px;padding:1px 10px;}
 .stApp .greenocean-mockup .mock-movement-art {width:38px;height:33px;filter:drop-shadow(0 5px 4px #071a3c25);}
 .stApp .greenocean-mockup .mock-movement-axis {min-height:16px;}
 
