@@ -177,9 +177,10 @@ NODES = {
         [
             (
                 "Páginas",
-                "Panorama de precios, Insights, Precios e inflación, Pipeline y linaje, Modelo de datos, Calidad y "
-                "auditoría, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, "
-                "Mapa de la app y la carpeta de documentos.",
+                "Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal, Insights, "
+                "Precios e inflación, Pipeline y linaje, Modelo de datos, Consultas SQL, Centro de operación, "
+                "Arquitectura de seguridad, Stack y evidencia, Mapa de la app, Calidad y auditoría, Método y calidad, "
+                "Git workflow y la carpeta de documentos.",
             ),
             ("Streamlit Community Cloud", "el servicio gratuito que publica el panel y guarda sus secretos."),
         ],

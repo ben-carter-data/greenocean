@@ -87,11 +87,11 @@ def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
     source = (dashboard.Path(dashboard.__file__)).read_text(encoding="utf-8")
     assert "def show_overview_page" not in source and "def show_overview_inflation" not in source
     assert dashboard.MENU_BLOCKS[0][2] == [
+        dashboard.PAGE_STAKEHOLDERS,  # D-376, D-378: the section reads in a visitor's order
+        dashboard.PAGE_ANALYSIS,  # D-377
         dashboard.HOME_PAGE,
         dashboard.PAGE_CHANNELS,
         dashboard.PAGE_INSIGHTS,
-        dashboard.PAGE_STAKEHOLDERS,  # D-376
-        dashboard.PAGE_ANALYSIS,  # D-377
     ]  # D-325: «Dónde comprar» is gone; D-365: «Último dato por canal» sits next to the Panorama
     assert dashboard.DOOR_PAGES == {
         dashboard.PAGE_SEASONALITY: dashboard.HOME_PAGE
@@ -108,11 +108,11 @@ def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
     source = dashboard.Path(dashboard.__file__).read_text(encoding="utf-8")
     assert "show_where_page" not in source and "PAGE_WHERE" not in source
     assert [name for _, _, pages in dashboard.MENU_BLOCKS[:1] for name in pages] == [
+        dashboard.PAGE_STAKEHOLDERS,  # D-376, D-378
+        dashboard.PAGE_ANALYSIS,  # D-377
         dashboard.HOME_PAGE,
         dashboard.PAGE_CHANNELS,  # D-365
         dashboard.PAGE_INSIGHTS,
-        dashboard.PAGE_STAKEHOLDERS,  # D-376
-        dashboard.PAGE_ANALYSIS,  # D-377
     ]
     assert "Dónde comprar" not in dashboard.SIDEBAR_LABELS.values()
     assert dashboard.RETIRED_VIEWS["Dónde comprar"] == dashboard.HOME_PAGE
@@ -129,7 +129,13 @@ def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
         assert not app.exception
         markup = " ".join(block.value for block in app.sidebar.markdown)
         assert "Where to buy" not in markup and "Dónde comprar" not in markup
-        assert [link.proto.label for link in app.sidebar.get("page_link")][:3] in (
-            ["Panorama de precios", "Último dato por canal", "Insights"],
-            ["Price overview", "Latest data by channel", "Insights"],
+        assert [link.proto.label for link in app.sidebar.get("page_link")][:5] in (
+            [
+                "Interesados",
+                "Análisis de negocio y sistemas",
+                "Panorama de precios",
+                "Último dato por canal",
+                "Insights",
+            ],
+            ["Stakeholders", "Business and systems analysis", "Price overview", "Latest data by channel", "Insights"],
         )

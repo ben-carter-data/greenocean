@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.4 |
+| Versión | 3.5 |
 | Fecha | 31-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -135,7 +135,7 @@ Con la carga del 20-10-2026, la base tiene 814.610 precios semanales en 250 sema
 
 ## 7. Pantallas
 
-Capturas reales de las páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada. El menú agrupa las páginas por sección: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad (Calidad y auditoría, Método y calidad y Git workflow). El Panorama de precios se lee en tres pasos numerados: elegir una región o todo Chile, elegir una familia y mirar sus productos; en la vista Usuario, cada paso se abre al completar el anterior. «Último dato por canal», junto al Panorama, muestra la última semana de cada fuente (mayorista y consumidor) con su variación por familia y sus productos, aunque la otra fuente todavía no la publique.
+Capturas reales de las páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada. El menú agrupa las páginas por sección: Negocio · BA y BI (en el orden de lectura de un visitante: Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal e Insights), Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad (Calidad y auditoría, Método y calidad y Git workflow). El Panorama de precios se lee en tres pasos numerados: elegir una región o todo Chile, elegir una familia y mirar sus productos; en la vista Usuario, cada paso se abre al completar el anterior. «Último dato por canal», junto al Panorama, muestra la última semana de cada fuente (mayorista y consumidor) con su variación por familia y sus productos, aunque la otra fuente todavía no la publique.
 
 [[diagrama:mockups]]
 
@@ -202,3 +202,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.2 | 30-10-2026 | La página «Último dato por canal» (D-365) |
 | 3.3 | 31-10-2026 | Interesados (3.1) y perfiles de uso (3.2), con su página en el panel (D-376) |
 | 3.4 | 31-10-2026 | Qué escuchamos (3.3), el porqué del alcance (6), el ciclo semanal (2) y la página «Análisis de negocio y sistemas» (D-377) |
+| 3.5 | 31-10-2026 | El orden de lectura de la sección «Negocio · BA y BI» en el menú (7, D-378) |

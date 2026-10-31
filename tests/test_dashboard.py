@@ -936,7 +936,14 @@ def test_historical_root_link_keeps_the_requested_project_view_after_route_chang
 @needs_database
 def test_d250_the_path_and_the_footer_follow_the_menu():
     order = dashboard.MENU_ORDER
-    assert len(order) == len(set(order)) and order[0] == dashboard.HOME_PAGE
+    assert len(order) == len(set(order))
+    assert order[:5] == [  # D-378: a visitor's reading order: who it is for and the analysis, then the prices
+        dashboard.PAGE_STAKEHOLDERS,
+        dashboard.PAGE_ANALYSIS,
+        dashboard.HOME_PAGE,
+        dashboard.PAGE_CHANNELS,
+        dashboard.PAGE_INSIGHTS,
+    ]
     assert dashboard.PAGE_SAD not in dashboard.MENU_BLOCK_OF_VIEW and dashboard.PAGE_SAD in dashboard.FOLDER_ORDER
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params['vista'] = dashboard.PAGE_RUNS
@@ -1387,11 +1394,11 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 MENU_BLOCKS = {
     'Negocio · BA y BI': [
+        'Interesados',
+        'Análisis de negocio y sistemas',
         'Panorama de precios',
         'Último dato por canal',
         'Insights',
-        'Interesados',
-        'Análisis de negocio y sistemas',
     ],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
@@ -1592,7 +1599,7 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
         blocks = [key for key, *_ in dashboard.visible_menu_blocks()]
         assert blocks[:5] == dashboard.ROLE_ORDER[role] and blocks[5:] == ["fuentes", "documentos"], role
         firsts[role] = dashboard.visible_menu_order()[0]
-    assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.HOME_PAGE
+    assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.PAGE_STAKEHOLDERS  # D-378
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_RUNS
     source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
     assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep the view

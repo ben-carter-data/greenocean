@@ -2039,6 +2039,8 @@ def apply_style(mode):
 OVERVIEW_CLASS_BY_VIEW = {
     PAGE_INSIGHTS: "overview-dashboard",
     PAGE_CHANNELS: "overview-dashboard",
+    PAGE_STAKEHOLDERS: "overview-dashboard",  # D-378: the section's main pages share one look, with no route footer
+    PAGE_ANALYSIS: "overview-dashboard",
     PAGE_HOME: "overview-dashboard",
     PAGE_SEASONALITY: "overview-history",
     PAGE_KPI: "overview-kpis",
@@ -7854,8 +7856,9 @@ MENU_BLOCKS = [
     (
         "negocio",
         "Negocio · BA y BI",
-        [PAGE_HOME, PAGE_CHANNELS, PAGE_INSIGHTS, PAGE_STAKEHOLDERS, PAGE_ANALYSIS],
-    ),  # D-375, D-376, D-377
+        # D-378: the reading order of a visitor: first who it is for and the analysis (BA and BSA), then the prices (BI)
+        [PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_HOME, PAGE_CHANNELS, PAGE_INSIGHTS],
+    ),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.4 |
+| Version | 3.5 |
 | Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
@@ -135,7 +135,7 @@ With the load of 2026-10-20, the database holds 814,610 weekly prices over 250 w
 
 ## 7. Screens
 
-Real captures of the main pages, in the four color themes. The dark theme is the one on entry. The menu groups the pages by section: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality (Quality and audit, Method and quality and Git workflow). The price overview reads in three numbered steps: choose a region or all of Chile, choose a family and look at its products; in the User view, each step opens when the one before is done. «Último dato por canal», next to the overview, shows each source's latest week (wholesale and consumer) with its change by family and its products, even if the other source has not published it yet.
+Real captures of the main pages, in the four color themes. The dark theme is the one on entry. The menu groups the pages by section: Business · BA and BI (in a visitor's reading order: Stakeholders, Business and systems analysis, Price overview, Latest data by channel and Insights), Data engineering, DevOps and security, Stack and evidence, and Quality (Quality and audit, Method and quality and Git workflow). The price overview reads in three numbered steps: choose a region or all of Chile, choose a family and look at its products; in the User view, each step opens when the one before is done. «Último dato por canal», next to the overview, shows each source's latest week (wholesale and consumer) with its change by family and its products, even if the other source has not published it yet.
 
 [[diagrama:mockups]]
 
@@ -202,3 +202,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.2 | 2026-10-30 | The page «Último dato por canal» (D-365) |
 | 3.3 | 2026-10-31 | Stakeholders (3.1) and usage profiles (3.2), with their page in the panel (D-376) |
 | 3.4 | 2026-10-31 | What we heard (3.3), the why of the scope (6), the weekly cycle (2) and the page «Análisis de negocio y sistemas» (D-377) |
+| 3.5 | 2026-10-31 | The reading order of the section «Negocio · BA y BI» in the menu (7, D-378) |
