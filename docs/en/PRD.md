@@ -58,7 +58,7 @@ GreenOcean does that work automatically and leaves each step in view.
 
 [[diagrama:casos]]
 
-The panel is read-only and needs no account. On entry, and every time the page is reloaded, the window «Elige tu vista» offers three views: User shows the business (the price overview, guided in three steps, Insights and prices against inflation); Professional, the whole project in order of importance; and Author, the same plus what only the author sees (the page «GitHub Actions», the alert «Acción requerida» and the manual load). Author asks for the control code, which is never in the repository. The «Vista» indicator, at the foot of the menu, changes the view; leaving Author closes its session. The author, the administrator of the project, maintains the code and the secrets and answers ad hoc SQL queries.
+The panel is read-only and needs no account. On entry, and every time the page is reloaded, the window «Elige tu vista» offers three views: User shows the business (the price overview, guided in three steps, Insights and prices against inflation); Professional, the whole project in order of importance; and Author, the same plus what only the author sees (the page «GitHub Actions», the alert «Acción requerida» and the manual load). Author asks for the control code, which is never in the repository. The «Vista» button, under the logo and above the menu, changes the view, as does a click on the logo (D-373); leaving Author closes its session. The author, the administrator of the project, maintains the code and the secrets and answers ad hoc SQL queries.
 
 ## 4. Business questions
 

@@ -672,7 +672,7 @@ def submit_author_code():
 
 # D-357: the page reloads by itself to change the native theme (D-070), to print (D-280) and when a document opens
 # from the folder. Right before those reloads the browser tab keeps the view (never the author) for one load; a reload
-# the reader makes keeps nothing, so the entry window asks again (D-340).
+# the reader makes keeps nothing, so the entry window asks again (D-340). D-373: a click on the logo reopens the window.
 PROFILE_KEEPER_JS = r"""
 export default function(component) {
     const { setTriggerValue, data } = component;
@@ -696,6 +696,15 @@ export default function(component) {
     const handler = (event) => {
         const link = event.target.closest && event.target.closest(".df-actions a, .doc-path a, .doc-print");
         if (link) remember();
+        // D-373: the GreenOcean logo reopens «Elige tu vista» instead of going to the first page.
+        const logo = event.target.closest && event.target.closest(
+            '[data-testid="stSidebarLogo"], [data-testid="stHeaderLogo"], [data-testid="stLogoLink"]'
+        );
+        if (logo && data && data.perfil) {
+            event.preventDefault();
+            event.stopPropagation();
+            setTriggerValue("reopen", String(Date.now()));
+        }
     };
     document.addEventListener("click", handler, true);
     return () => document.removeEventListener("click", handler, true);
@@ -704,11 +713,17 @@ export default function(component) {
 
 
 def keep_profile_across_app_reloads():
-    """D-357: the view the visit had before a reload the app itself made, once; the author is never kept."""
+    """D-357: the view the visit had before a reload the app itself made, once; the author is never kept. D-373: a
+    click on the logo asks for the view again."""
     keeper = st.components.v2.component("profile_keeper", js=PROFILE_KEEPER_JS)
     profile = get_profile()
     data = {"perfil": profile or "", "rol": get_role() if profile == PROFILE_PROFESSIONAL else ""}
-    kept = keeper(key="profile_keeper", data=data, on_keep_change=lambda: None, height=0).keep
+    result = keeper(
+        key="profile_keeper", data=data, on_keep_change=lambda: None, on_reopen_change=lambda: None, height=0
+    )
+    if result.reopen and profile:
+        st.session_state[CHANGE_VIEW] = True  # D-373: the logo was clicked; the window opens in this same run
+    kept = result.keep
     if not kept or profile:
         return
     try:
@@ -7728,6 +7743,7 @@ def build_sidebar_css(mode):
     quiet = "rgba(214, 218, 227, .68)" if dark else "rgba(31, 41, 55, .68)"
     # The price alert sits on the page, not in the sidebar (D-264): its red follows the page's surface.
     alert_text = "#ff9ca4" if is_dark_surface(palette["background"]) else "#9d1f2c"
+    view_ink = "#7dd3fc" if dark else palette["accent"]  # D-373: the view button reads on the sidebar's surface
     return f"""<style>
     [data-testid="stSidebar"] {{background:{palette['sidebar']}; border-right:0; box-shadow:none;}}
     [data-testid="stSidebar"][data-collapsed="false"] {{min-width:300px !important; max-width:300px !important;}}
@@ -7759,6 +7775,16 @@ def build_sidebar_css(mode):
     .sidebar-github svg {{fill:#1f2328;}}
     .sidebar-github:hover {{transform:translateY(-1px);}}
     .sidebar-github-current {{outline:2px solid {palette['accent']}; outline-offset:2px;}}
+    /* D-373: the view button, under the logo, before the menu: visible, with its profile icon. */
+    .st-key-profile_indicator_top {{ padding:0 0 10px; }}
+    [data-testid="stSidebarLogo"], [data-testid="stHeaderLogo"] {{ cursor:pointer; }}
+    [data-testid="stSidebar"] .st-key-profile_indicator_top button {{ min-height:38px; justify-content:flex-start;
+        border-radius:10px !important; border:1px solid color-mix(in srgb, {view_ink} 55%, transparent) !important;
+        background:color-mix(in srgb, {view_ink} 12%, transparent) !important; }}
+    [data-testid="stSidebar"] .st-key-profile_indicator_top button p,
+    [data-testid="stSidebar"] .st-key-profile_indicator_top button [data-testid="stIconMaterial"] {{
+        color:{view_ink} !important; font-weight:600; font-size:.88rem; }}
+    [data-testid="stSidebar"] .st-key-profile_indicator_top button:hover {{ border-color:{view_ink} !important; }}
     .st-key-sidebar_footer {{position:fixed; left:0; bottom:0; width:300px; padding:12px 22px 12px;
         background:{palette['sidebar']}; gap:7px !important; z-index:5; border-top:1px solid {hairline};}}
     /* The price alerts, a red chip in the Resumen's bar (D-169, D-264). */
@@ -7839,6 +7865,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
             st.session_state[f"nav_open_{key}"] = key not in FOLDED_BY_DEFAULT
         st.session_state["sidebar_nav_version"] = SIDEBAR_NAV_VERSION
     current_view = read_current_view(current_window)
+    show_profile_indicator()  # D-373: first, right under the logo
     show_run_indicator()  # D-351
     show_load_alert(windows_by_title)  # D-298: first in the menu, where nothing covers it
     for key, title, pages in visible_menu_blocks():
@@ -7974,21 +8001,28 @@ def show_alert_trigger(week):
         show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())
 
 
+def show_profile_indicator():
+    """D-373: right under the GreenOcean logo, before the menu, a visible button «Vista: Usuario · Cambiar» reopens
+    «Elige tu vista» (D-353); choosing another view there closes the author's session."""
+    if not get_profile():
+        return
+    with st.sidebar.container(key="profile_indicator_top"):
+        if st.button(
+            f"{tr('Vista')}: {current_view_name()} · {tr('Cambiar')}",
+            key="profile_indicator",
+            icon=":material/account_circle:",
+            width="stretch",
+            help=tr("Cambiar de vista: usuario, profesional o autor."),
+        ):
+            st.session_state[CHANGE_VIEW] = True
+            st.rerun()
+
+
 def show_sidebar_footer(current_window=None, folder=None):
     """The documents folder, then appearance, the GitHub mark and the language, always at the bottom, on every page."""
     with st.sidebar.container(key="sidebar_footer"):
         if folder:
             folder()
-        if get_profile():
-            if st.button(
-                f"{tr('Vista')}: {current_view_name()} ▾",
-                key="profile_indicator",
-                type="tertiary",
-                icon=":material/swap_horiz:",
-                help=tr("Cambiar de vista: usuario, profesional o autor."),
-            ):
-                st.session_state[CHANGE_VIEW] = True
-                st.rerun()
         with st.container(key="sidebar_tools", horizontal=True, vertical_alignment="center"):
             with st.container(key="sidebar_appearance"):
                 show_theme_field()

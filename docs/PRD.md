@@ -58,7 +58,7 @@ GreenOcean hace ese trabajo de forma automática y deja cada paso a la vista.
 
 [[diagrama:casos]]
 
-El panel es de consulta y no pide cuenta. Al entrar, y cada vez que se recarga la página, la ventana «Elige tu vista» ofrece tres vistas: Usuario muestra el negocio (el Panorama de precios, guiado en tres pasos, Insights y los precios frente a la inflación); Profesional, todo el proyecto en orden de importancia; y Autor, lo mismo más lo que solo el autor ve (la página «GitHub Actions», la alerta «Acción requerida» y la carga manual). Autor pide la clave de control, que nunca está en el repositorio. El indicador «Vista», abajo en el menú, cambia de vista; salir de Autor cierra su sesión. El autor, administrador del proyecto, mantiene el código y los secretos y responde consultas SQL puntuales.
+El panel es de consulta y no pide cuenta. Al entrar, y cada vez que se recarga la página, la ventana «Elige tu vista» ofrece tres vistas: Usuario muestra el negocio (el Panorama de precios, guiado en tres pasos, Insights y los precios frente a la inflación); Profesional, todo el proyecto en orden de importancia; y Autor, lo mismo más lo que solo el autor ve (la página «GitHub Actions», la alerta «Acción requerida» y la carga manual). Autor pide la clave de control, que nunca está en el repositorio. El botón «Vista», debajo del logo y arriba del menú, cambia de vista, igual que un clic en el logo (D-373); salir de Autor cierra su sesión. El autor, administrador del proyecto, mantiene el código y los secretos y responde consultas SQL puntuales.
 
 ## 4. Preguntas de negocio
 

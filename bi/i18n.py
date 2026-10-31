@@ -66,6 +66,7 @@ EN = {
     "mayorista": "wholesale",
     "consumidor": "consumer",
     "Vista": "View",
+    "Cambiar": "Change",
     "Mantener esta vista": "Keep this view",
     "Cambiar de vista: usuario, profesional o autor.": "Change view: user, professional or author.",
     "El token no tiene permiso para cancelar. Necesita «Actions: Read and write» sobre este repositorio; la ejecución sigue como estaba.": "The token has no permission to cancel. It needs «Actions: Read and write» on this repository; the run stays as it was.",

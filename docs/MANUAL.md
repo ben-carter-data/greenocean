@@ -101,7 +101,7 @@ En «Centro de operación», «Acceso del autor» pide la clave de control (secr
 
 La clave evita ejecuciones accidentales; no es la barrera principal. Lo que protege el proyecto es el inicio de sesión del autor en GitHub y en Streamlit (con verificación en dos pasos) y un token con los permisos mínimos. No hay límite de intentos de la clave: es un riesgo aceptado, descrito en el [Plan de pruebas y seguridad](PLAN_PRUEBAS.md#11-riesgos-aceptados-y-límites). El panel nunca muestra el token ni una parte de él.
 
-También se entra como Autor desde la ventana «Elige tu vista»: «Autor», la clave y Enter. El indicador «Vista», al pie del menú, cambia de vista; salir de Autor cierra su sesión. El panel usa tres secretos, guardados en Streamlit (sección 8): `CONTROL_CODE`, `GITHUB_TOKEN` (lanza y cancela la carga) y `GITHUB_READ_TOKEN` (solo lectura, para la página «GitHub Actions»).
+También se entra como Autor desde la ventana «Elige tu vista»: el enlace «Acceso del autor», en su esquina, la clave y Enter (D-369). El botón «Vista», debajo del logo y arriba del menú, cambia de vista, igual que un clic en el logo (D-373); salir de Autor cierra su sesión. El panel usa tres secretos, guardados en Streamlit (sección 8): `CONTROL_CODE`, `GITHUB_TOKEN` (lanza y cancela la carga) y `GITHUB_READ_TOKEN` (solo lectura, para la página «GitHub Actions»).
 
 ## 8. Guía de GitHub
 

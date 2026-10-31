@@ -19,7 +19,7 @@ def reload_page(kept, view="SQAP · Plan de calidad del software"):
         "ORIGINAL = st.components.v2.component\n"
         "def fake(name, js=None):\n"
         "    if name != 'profile_keeper':\n        return ORIGINAL(name, js=js)\n"
-        f"    return lambda **kwargs: __import__('types').SimpleNamespace(keep={kept!r})\n"
+        f"    return lambda **kwargs: __import__('types').SimpleNamespace(keep={kept!r}, reopen=None)\n"
         "st.components.v2.component = fake\n"
         f"st.query_params['vista'] = {view!r}\n"
         "try:\n    dashboard.main()\nfinally:\n    st.components.v2.component = ORIGINAL\n"

@@ -101,7 +101,7 @@ In «Operations center», «Author access» asks for the control code (the panel
 
 The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. There is no limit of attempts for the code: it is an accepted risk, described in the [Test and Security Plan](PLAN_PRUEBAS.md#11-accepted-risks-and-limits). The panel never shows the token or any part of it.
 
-One also enters as Author from the window «Elige tu vista»: «Autor», the key and Enter. The «Vista» indicator, at the foot of the menu, changes the view; leaving Author closes its session. The panel uses three secrets, kept in Streamlit (section 8): `CONTROL_CODE`, `GITHUB_TOKEN` (starts and cancels the load) and `GITHUB_READ_TOKEN` (read only, for the page «GitHub Actions»).
+One also enters as Author from the window «Elige tu vista»: the link «Acceso del autor» (Author access), in its corner, the key and Enter (D-369). The «Vista» button, under the logo and above the menu, changes the view, as does a click on the logo (D-373); leaving Author closes its session. The panel uses three secrets, kept in Streamlit (section 8): `CONTROL_CODE`, `GITHUB_TOKEN` (starts and cancels the load) and `GITHUB_READ_TOKEN` (read only, for the page «GitHub Actions»).
 
 ## 8. GitHub guide
 
