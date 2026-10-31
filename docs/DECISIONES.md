@@ -2747,3 +2747,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Causa:** cuando falló la carga del 30-10, la ventana mostró las últimas 60 líneas del job: el final de una comparación y la limpieza de GitHub. La línea `FAILED` de la segunda prueba quedó fuera.
 - **Decisión:** si un job falla, la ventana muestra la parte del log del paso que falló, desde su comando hasta la marca `##[error]` de GitHub, con sus últimas 60 líneas y, primero, las líneas `FAILED` de pytest que queden antes. El título nombra el paso por su comando. Un job que terminó bien sigue mostrando sus últimas líneas.
 - **Pruebas:** `tests/test_run_monitor.py::test_d367_…`.
+
+## D-368 · La franja de observabilidad suma la API REST de GitHub
+
+- **Pedido del autor:** que el «Recorrido completo por capas» de «Pipeline y linaje» muestre cómo el panel sabe y actúa sobre las cargas a través de GitHub.
+- **Decisión:** la franja OBSERVABILIDAD suma un sexto elemento, «API REST de GitHub · token · cargas, logs, lanzar, cancelar», en el recorrido horizontal y en el vertical del teléfono. Su explicación al pasar el cursor nombra la página «GitHub Actions» y la ventana de ejecución. Con seis elementos, la franja ocupa todo el ancho del diagrama. Nada más cambia. El SAD no tiene un diagrama con franja de observabilidad, así que no cambia.
+- **Pruebas:** `tests/test_architecture.py::test_d368_…` (el elemento en las dos franjas, su explicación y su inglés).

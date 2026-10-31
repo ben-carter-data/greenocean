@@ -286,3 +286,18 @@ def test_flow_can_be_paused_without_changing_a_real_running_status():
     assert "animateMotion" not in paused
     assert 'class="journey-running"' in paused
     assert states["workflow"] == control.RUN_IN_PROGRESS
+
+
+def test_d368_the_observability_band_holds_github_rest_api_in_both_journeys():
+    """The panel reads load states and logs, and starts and cancels the manual load, through GitHub's REST API."""
+    tooltip = architecture.TOOLTIPS["API REST de GitHub"]
+    assert "«GitHub Actions»" in tooltip and "ventana de ejecución" in tooltip
+    horizontal = architecture.build_journey_svg(make_states(control.RUN_OK), FIGURES, charts.MODE_DARK)
+    vertical = architecture.build_vertical_journey_svg(make_states(control.RUN_OK), FIGURES, charts.MODE_DARK)
+    for svg in (horizontal, vertical):
+        observability = svg[svg.index("OBSERVABILIDAD") :]
+        assert "API REST de GitHub" in observability and "token · cargas, logs, lanzar, cancelar" in observability
+    from bi import i18n_en
+
+    for text in ("API REST de GitHub", "token · cargas, logs, lanzar, cancelar", tooltip):
+        assert text in i18n_en.PAGES, text

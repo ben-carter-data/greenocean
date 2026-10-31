@@ -143,6 +143,7 @@ TOOLTIPS = {
     "Logs del agente": "Un archivo de texto por ejecución con lo que hizo la descarga.",
     "Correo de GitHub": "GitHub avisa por correo al autor si el workflow semanal falla.",
     "Centro de operación": "Página del panel con el historial de ejecuciones en vivo.",
+    "API REST de GitHub": "Con el token del panel, la API REST de GitHub da el estado de cada carga y sus logs, que muestra la página «GitHub Actions» (solo el Autor), y lanza y cancela la carga manual desde la ventana de ejecución.",
     "ODEPA e INE · CSV": "Archivos CSV publicados por ODEPA y por el INE, descargados por "
     "HTTPS; ninguna de las dos fuentes ofrece una API en el flujo "
     "utilizado por el proyecto.",
@@ -1011,15 +1012,18 @@ def build_orchestration(states, figures, palette):
 
 
 def build_observability(states, figures, palette):
-    """Bottom band: how we know what happened in each run."""
-    left = COLUMN_X["landing"] - 70
-    width = COLUMN_X["gold"] + 70 - left
+    """Bottom band: how we know what happened in each run. D-368: it also holds GitHub's REST API, which the page
+    «GitHub Actions» and the run window read and act through; with six items the band spans the whole width of the
+    diagram, so no text runs into the next."""
+    left = 20
+    width = WIDTH - 2 * left
     items = [
         ("etl_run", "DuckDB · una fila por carga", states.get("etl_run")),
         ("dbt_result", "DuckDB · linaje y pruebas", None),
         ("Logs del agente", "Python · por ejecución", None),
         ("Correo de GitHub", "GitHub · si el job falla", None),
         ("Centro de operación", "Streamlit · historial", None),
+        ("API REST de GitHub", "token · cargas, logs, lanzar, cancelar", None),
     ]
     spacing = (width - 60) / len(items)
     return build_band(
@@ -1367,6 +1371,7 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
         ("etl_run", "DuckDB · una fila por carga", states.get("etl_run")),
         ("dbt_result", "DuckDB · linaje y pruebas", None),
         ("Centro de operación", "Streamlit · historial", None),
+        ("API REST de GitHub", "token · cargas, logs, lanzar, cancelar", None),  # D-368
     ]
     band_y = last_y + half + 44
     height = band_y + 26 + (len(observability) - 1) * 40 + 36
