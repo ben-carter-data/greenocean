@@ -214,3 +214,35 @@ def test_d273_the_verdict_box_counts_the_indicators_and_names_the_pending_accura
     broken = copy.deepcopy(measures)
     broken["duplicates"] = 5
     assert quality_live.build_verdict_box(quality_live.build_indicators(broken, NOW), columns)[1] != "Datos sanos"
+
+
+def test_d380_the_parity_table_draws_when_the_databases_differ_in_both_languages():
+    import pyarrow as pa
+
+    from bi import i18n, quality_evidence
+
+    for parity in (
+        {"rows": (811578, 811578), "rejections": (201, 201), "ok": True},
+        {"rows": (810000, 811578), "rejections": (201, 205), "ok": False},  # a backup older than the published database
+    ):
+        frame = quality_evidence.parity_frame(parity)
+        assert list(frame["SQLite"].map(type).unique()) == [str] and list(frame["DuckDB"].map(type).unique()) == [str]
+        assert frame["SQLite"].iloc[0] == ("811.578" if parity["ok"] else "810.000")
+        pa.Table.from_pandas(frame)  # every column has one type, so it converts for the screen
+        assert frame["coincide"].tolist()[:2] == [
+            parity["rows"][0] == parity["rows"][1],
+            parity["rejections"][0] == parity["rejections"][1],
+        ]
+        assert frame["SQLite"].iloc[2] == ("misma suma" if parity["ok"] else "distinta")
+    assert i18n.lookup("distinta") and i18n.lookup("misma suma")
+    assert quality_evidence.parity_frame(None).empty
+
+
+def test_d380_the_names_of_the_changed_files_join_in_the_language_of_the_visit():
+    import inspect
+
+    from bi import dashboard, i18n
+
+    source = inspect.getsource(dashboard)
+    assert '" y ".join(changed_files)' not in source and "i18n.join_names(changed_files)" in source
+    assert i18n.join_names(["consumer_2026.csv", "wholesale_2026.csv"]) == "consumer_2026.csv y wholesale_2026.csv"

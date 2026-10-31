@@ -5301,7 +5301,7 @@ def show_channels_page(mode):
                 st.caption(tr("ODEPA aún no publica la semana {}").format(i18n.tr_week(late)))
             st.markdown(
                 '<div class="greenocean-mockup">'
-                + home_mockup.family_movement(rows, lambda family: "#", None, tr("todo Chile"))
+                + home_mockup.family_movement(rows, lambda family: "#", None, "todo Chile")  # translated whole, D-380
                 + "</div>",
                 unsafe_allow_html=True,
             )
@@ -6596,7 +6596,7 @@ def show_operations_page(mode):
             if changed_files:
                 # The indicators are measured on the published database; only the local copies of the source files
                 # differ. D-273: one small line beside the button, not a banner over the controls.
-                names = " y ".join(changed_files)
+                names = i18n.join_names(changed_files)  # «a y b» or «a and b» (D-380)
                 st.markdown(
                     f'<span class="qa-local-note" style="font-size:12.5px; color:{quality_view.PILL_COLORS["pending"]}">'
                     f'⚠ En este equipo, {html.escape(names)} no coincide con su huella '

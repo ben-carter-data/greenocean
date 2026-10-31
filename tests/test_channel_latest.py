@@ -108,3 +108,14 @@ def test_d365_the_table_is_served_and_documented():
     )
     assert "### latest_by_source" in (ROOT / "docs" / "SAD.md").read_text(encoding="utf-8")
     assert dashboard.PAGE_CHANNELS in next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
+
+
+def test_d380_the_channel_page_hands_its_scope_in_spanish_so_the_sentences_translate_whole():
+    import inspect
+
+    from bi import dashboard
+
+    source = inspect.getsource(dashboard.show_channels_page)
+    # A scope translated before drawing («all of Chile») leaves «…mediana de 51 precios comparables · all of Chile»
+    # half in each language; the page translates whole sentences, as the Panorama's does.
+    assert 'tr("todo Chile")' not in source and '"todo Chile")' in source

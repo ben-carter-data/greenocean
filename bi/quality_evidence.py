@@ -163,22 +163,29 @@ def checks_frame(checks):
     )
 
 
+def format_count(value):
+    """«811578» → «811.578»."""
+    return f"{int(value):,}".replace(",", ".")
+
+
 def parity_frame(parity):
-    """SQLite against DuckDB, figure by figure; empty without a backup."""
+    """SQLite against DuckDB, figure by figure; empty without a backup. Every figure is a text («811.578»), because the
+    last row says «misma suma» or «distinta»: a column of numbers and words does not draw when the databases differ
+    (D-380)."""
     if not parity:
         return pd.DataFrame(columns=["cifra", "SQLite", "DuckDB", "coincide"])
     return pd.DataFrame(
         [
             {
                 "cifra": "Precios semanales",
-                "SQLite": parity["rows"][0],
-                "DuckDB": parity["rows"][1],
+                "SQLite": format_count(parity["rows"][0]),
+                "DuckDB": format_count(parity["rows"][1]),
                 "coincide": parity["rows"][0] == parity["rows"][1],
             },
             {
                 "cifra": "Filas rechazadas",
-                "SQLite": parity["rejections"][0],
-                "DuckDB": parity["rejections"][1],
+                "SQLite": format_count(parity["rejections"][0]),
+                "DuckDB": format_count(parity["rejections"][1]),
                 "coincide": parity["rejections"][0] == parity["rejections"][1],
             },
             {

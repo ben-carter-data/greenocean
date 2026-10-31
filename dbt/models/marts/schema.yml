@@ -72,3 +72,5 @@ models:
         data_tests: [not_null]
   - name: ine_ipc_source
     description: "Las filas del IPC tal como se leyeron del INE, guardadas en la base publicada para rehacer la capa bronce si el INE no responde una semana."
+  - name: latest_by_source
+    description: "Las dos últimas semanas de cada fuente, sin el corte de la semana común, para la página «Último dato por canal» (D-365); el Panorama y los indicadores siguen con la última semana completa en ambas fuentes."

@@ -26,13 +26,34 @@ def drawn_nodes(nodes):
     return nodes[nodes["resource_type"].isin(["model", "source"])]
 
 
+ROOT = Path(__file__).resolve().parent.parent
+DESCRIBED = re.compile(r"^  - name: (\w+)\n    description:", re.MULTILINE)
+
+
+def described_in_the_project():
+    """The models and sources whose description is written in the dbt project's own schema files."""
+    return {
+        name
+        for path in (ROOT / "dbt" / "models").rglob("*.yml")
+        for name in DESCRIBED.findall(path.read_text(encoding="utf-8"))
+    }
+
+
+def test_d380_every_model_of_the_project_is_described_in_its_schema_file():
+    models = {path.stem for path in (ROOT / "dbt" / "models").rglob("*.sql")}
+    assert models <= described_in_the_project(), sorted(models - described_in_the_project())
+
+
 def test_every_model_and_source_is_described_in_dbt(build):
     nodes, _ = build
     drawn = drawn_nodes(nodes)
-    assert len(drawn) == 19
-    assert all(description.strip() for description in drawn["description"]), drawn[
-        drawn["description"].str.strip() == ""
-    ]["name"].tolist()
+    # D-380: the page draws every model and source of the build: 17 models and 3 sources since the load of 31-10
+    # (the 17th is latest_by_source, D-365), and the number follows the build, not a pinned figure.
+    assert len(drawn) >= 19 and drawn["unique_id"].is_unique
+    # The served build may predate a description written since (the next weekly load carries it): then the project
+    # already holds it, which the test above guarantees for every model.
+    blank = drawn[drawn["description"].str.strip() == ""]["name"].tolist()
+    assert all(name in described_in_the_project() for name in blank), blank
     assert not any("robot" in description.lower() for description in drawn["description"])
 
 
@@ -159,3 +180,10 @@ def test_each_test_counts_once_so_the_badges_add_up_to_the_build_total():
     assert sum(total for total, _ in counts.values()) == summary["tests"]
     sources = set(nodes.loc[nodes["resource_type"] == "source", "unique_id"])
     assert not sources & set(counts)
+
+
+def test_d380_the_marts_column_fits_ten_tiles_without_touching():
+    marts = 10  # the nine of before and latest_by_source (D-365)
+    pitch = min(lineage.MART_PITCH, (lineage.LAST_ROW - lineage.FIRST_ROW) / (marts - 1))
+    assert pitch >= lineage.TILE + 8  # a mart's hit box is 62 tall; the tile itself is 54
+    assert lineage.LAST_ROW - 33 + (lineage.TILE + 8) <= lineage.LEGEND_Y - 16  # and the last one ends above the legend

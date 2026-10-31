@@ -91,8 +91,10 @@ HEIGHT = 800
 SIDE = 18
 SUBTITLE_Y = 21  # the line «dbt Core · staging → intermedio → marts · …»
 HEADER_Y = 80  # baseline of a column title; its subtitle goes 19 below
-FIRST_ROW = 156  # centre of the highest model
-LAST_ROW = 700  # lowest centre a model may take
+# D-380: ten marts since D-365 (latest_by_source): the rows reach a little higher and lower, and a mart's hit box is
+# 62 tall (the tile is 54), so ten of them fit one column without touching.
+FIRST_ROW = 144  # centre of the highest model
+LAST_ROW = 706  # lowest centre a model may take
 MART_PITCH = 70
 LEGEND_Y = 772
 TILE = 54
@@ -251,7 +253,7 @@ def summarize_build(nodes, results):
 
 
 def build_badge_html(summary):
-    """«dbt · 16 modelos · 31/31 pruebas superadas», or the migration note before a build."""
+    """«dbt · 17 modelos · 31/31 pruebas superadas», or the migration note before a build."""
     if summary is None:
         return f'<span class="lineage-badge pending">{tr("Linaje dbt: en migración")}</span>'
     state = "ok" if summary["ok"] else "failed"
@@ -581,7 +583,7 @@ def build_style(suffix, palette):
 
 
 def build_subtitle(summary, palette):
-    """«dbt Core · staging → intermedio → marts · 16 modelos · 31/31 pruebas»."""
+    """«dbt Core · staging → intermedio → marts · 17 modelos · 31/31 pruebas»."""
     rest = " · staging → intermedio → marts"
     rest += (
         f" · {summary['models']} modelos · {summary['passing']}/{summary['tests']} pruebas"
@@ -786,7 +788,7 @@ def build_lineage_node(x, y, node, layer, kind, total, passing, reads, up, down,
             f'fill="{palette["strong_text"]}">{html.escape(node["name"])}</text>'
         )
         pills = build_pill_row(left, pills_y, kind, total, passing, node, palette, False)
-        box = (x - half - 6, y - half - 6, half + 22 + width + 6, max(TILE + 14, pills_y + 12 - (y - half - 6)))
+        box = (x - half - 6, y - half - 6, half + 22 + width + 6, max(TILE + 8, pills_y + 12 - (y - half - 6)))
     hit = (
         f'<rect x="{box[0]:.1f}" y="{box[1]:.1f}" width="{box[2]:.1f}" height="{box[3]:.1f}" rx="10" '
         f'fill="#000" fill-opacity="0"/>'

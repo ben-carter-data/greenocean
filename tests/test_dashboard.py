@@ -156,7 +156,8 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     texts = " ".join(block.value for block in diagrams.markdown)
     assert not diagrams.exception and not diagrams.tabs
     # The page opens on the whole journey, with the dbt steps framed and named.
-    assert 'dbt CORE · staging → intermedio → marts · 16 modelos' in texts
+    models = int(queries.run_sql("SELECT count(*) AS n FROM dbt_node WHERE resource_type = 'model'").iloc[0, 0])
+    assert f'dbt CORE · staging → intermedio → marts · {models} modelos' in texts  # D-380: follows the build
     pipeline_header = next(block.value for block in diagrams.markdown if 'class="page-bar-main"' in block.value)
     # D-267: the page bar, like the Resumen's: the title and the figures of the latest build, the time of the load.
     assert '>Pipeline y linaje</span>' in pipeline_header and 'page-bar-updated' in texts
@@ -206,8 +207,10 @@ def test_d189_model_page_opens_on_the_star_model_and_the_storage_map_comes_third
     joined = " ".join(block.value for block in app.markdown)
     assert 'aria-label="Modelo estrella de datos.duckdb"' in joined
     counts, layers, tests = dashboard.read_database_map(dashboard.get_database_version())
-    assert len(counts) == 12 and counts["weekly_price"] > 100_000
-    assert layers == {"staging": 3, "intermediate": 4, "marts": 9} and tests > 0
+    # D-380: what the map shows is what the build holds, not a pinned figure (17 models since the load of 31-10).
+    built = queries.run_sql("SELECT layer, count(*) AS n FROM dbt_node WHERE resource_type = 'model' GROUP BY layer")
+    assert len(counts) == len(dashboard.sql_explorer.describe_tables()) >= 12 and counts["weekly_price"] > 100_000
+    assert layers == {row.layer: int(row.n) for row in built.itertuples()} and layers["staging"] == 3 and tests > 0
 
 
 @needs_database
@@ -1015,7 +1018,9 @@ def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
         markup = ' '.join(block.value for block in app.markdown)
         table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
         return [
-            ('1 cotización' in row, float(value.replace('−', '-').replace(',', '.')))
+            # D-327: a change on one quote or on one region goes last; only the first carries the mark in the row,
+            # the second says «Ver cálculo · 1 de N regiones».
+            ('1 cotización' in row or 'Ver cálculo · 1 de ' in row, float(value.replace('−', '-').replace(',', '.')))
             for row in table.split('<tr')[2:]
             for value in re.findall(r'<td class="num (?:rise|fall|neutral)"><b>([+−]?[\d,]+) %</b>', row)
         ]
