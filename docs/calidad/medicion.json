@@ -1,6 +1,6 @@
 {
-  "generado": "2026-10-30 23:36 UTC",
-  "commit": "10dda26",
+  "generado": "2026-10-31 01:58 UTC",
+  "commit": "6b0d0b5",
   "python": "3.11.17",
   "ruff": {
     "orden": "/tmp/tools/bin/ruff check bi etl agent tests --select E,F,W",
@@ -30,9 +30,9 @@
     "orden": "pytest -q -m \"not rendimiento\" --cov=bi --cov=etl --cov=agent",
     "pruebas_ok": 1110,
     "pruebas_omitidas": 9,
-    "salida": 0,
-    "total": 94.5,
-    "logica_critica": 93.0,
+    "salida": 1,
+    "total": 94.6,
+    "logica_critica": 92.8,
     "modulos_criticos": {
       "etl/etl.py": 95.8,
       "etl/bronze.py": 97.1,
@@ -42,7 +42,7 @@
       "bi/alerts.py": 100.0,
       "bi/overview.py": 77.3,
       "bi/inflation_view.py": 97.9,
-      "bi/control.py": 96.2,
+      "bi/control.py": 94.9,
       "bi/served_database.py": 95.3,
       "bi/quality.py": 87.2
     },
@@ -56,8 +56,8 @@
       "bi/buttons.py": 100.0,
       "bi/charts.py": 94.1,
       "bi/compact_table.py": 93.2,
-      "bi/control.py": 96.2,
-      "bi/dashboard.py": 90.9,
+      "bi/control.py": 94.9,
+      "bi/dashboard.py": 91.2,
       "bi/database_crossings.py": 98.6,
       "bi/database_map.py": 100.0,
       "bi/deployment.py": 100.0,
@@ -139,7 +139,7 @@
   "secretos": {
     "orden": "detect-secrets scan $(git ls-files)",
     "version": "1.5.0",
-    "archivos_revisados": 248,
+    "archivos_revisados": 249,
     "candidatos": 27,
     "por_archivo": {
       "agent/downloads/manifest.json": [
@@ -211,7 +211,7 @@
     }
   },
   "pruebas": {
-    "pruebas": 1119,
+    "pruebas": 1120,
     "archivos_de_prueba": 64
   },
   "datos": {
@@ -223,11 +223,11 @@
     "series_activas": 1113,
     "series_con_dato": 772,
     "pct_series_con_dato": 69.4,
-    "dias_desde_ultima_semana": 12,
-    "dias_desde_ultima_carga": 10,
+    "dias_desde_ultima_semana": 13,
+    "dias_desde_ultima_carga": 11,
     "filas_leidas": 2521012,
     "filas_rechazadas": 201,
     "pct_rechazadas": 0.008,
-    "medido": "2026-10-30"
+    "medido": "2026-10-31"
   }
 }
