@@ -1,19 +1,19 @@
 {
-  "generado": "2026-10-30 23:36 UTC",
-  "commit": "10dda26",
+  "generado": "2026-10-31 04:06 UTC",
+  "commit": "a6b22af",
   "python": "3.11.17",
   "ruff": {
     "orden": "/tmp/tools/bin/ruff check bi etl agent tests --select E,F,W",
     "version": "ruff 0.17.2",
-    "errores": 1315,
+    "errores": 1326,
     "por_codigo": {
-      "E501": 1315
+      "E501": 1326
     },
     "errores_sin_largo_de_linea": 0,
     "formato": {
       "orden": "ruff format --check bi etl agent tests",
       "por_reformatear": 0,
-      "ya_formateados": 132
+      "ya_formateados": 135
     }
   },
   "mypy": {
@@ -28,9 +28,9 @@
   },
   "cobertura": {
     "orden": "pytest -q -m \"not rendimiento\" --cov=bi --cov=etl --cov=agent",
-    "pruebas_ok": 1110,
-    "pruebas_omitidas": 9,
-    "salida": 0,
+    "pruebas_ok": 1121,
+    "pruebas_omitidas": 10,
+    "salida": 1,
     "total": 94.5,
     "logica_critica": 93.0,
     "modulos_criticos": {
@@ -54,10 +54,11 @@
       "bi/architecture.py": 99.4,
       "bi/brand_icons.py": 100.0,
       "bi/buttons.py": 100.0,
+      "bi/channel_latest.py": 87.0,
       "bi/charts.py": 94.1,
       "bi/compact_table.py": 93.2,
       "bi/control.py": 96.2,
-      "bi/dashboard.py": 90.9,
+      "bi/dashboard.py": 91.0,
       "bi/database_crossings.py": 98.6,
       "bi/database_map.py": 100.0,
       "bi/deployment.py": 100.0,
@@ -68,14 +69,14 @@
       "bi/documents_folder.py": 98.6,
       "bi/er_diagram.py": 100.0,
       "bi/git_workflow.py": 100.0,
-      "bi/github_actions.py": 95.8,
+      "bi/github_actions.py": 95.4,
       "bi/github_page.py": 98.5,
       "bi/home_mockup.py": 89.8,
       "bi/i18n.py": 97.4,
       "bi/i18n_en.py": 100.0,
       "bi/inflation_view.py": 97.9,
       "bi/lag.py": 100.0,
-      "bi/lineage.py": 98.2,
+      "bi/lineage.py": 98.4,
       "bi/monitoring.py": 100.0,
       "bi/operation_center.py": 98.9,
       "bi/overview.py": 77.3,
@@ -90,9 +91,9 @@
       "bi/quality_viewer.py": 100.0,
       "bi/queries.py": 100.0,
       "bi/report.py": 91.3,
-      "bi/run_monitor.py": 89.4,
+      "bi/run_monitor.py": 93.4,
       "bi/security_map.py": 100.0,
-      "bi/security_plan.py": 86.5,
+      "bi/security_plan.py": 86.7,
       "bi/served_database.py": 95.3,
       "bi/sql_explorer.py": 93.2,
       "bi/stack_page.py": 100.0,
@@ -139,7 +140,7 @@
   "secretos": {
     "orden": "detect-secrets scan $(git ls-files)",
     "version": "1.5.0",
-    "archivos_revisados": 248,
+    "archivos_revisados": 253,
     "candidatos": 27,
     "por_archivo": {
       "agent/downloads/manifest.json": [
@@ -201,33 +202,33 @@
     "modelos_por_capa": {
       "staging": 3,
       "intermediate": 4,
-      "marts": 9
+      "marts": 10
     },
     "pruebas_sql_propias": 5,
     "ultima_construccion": {
-      "modelos_ok": 16,
+      "modelos_ok": 17,
       "pruebas_ok": 31,
       "pruebas_total": 31
     }
   },
   "pruebas": {
-    "pruebas": 1119,
-    "archivos_de_prueba": 64
+    "pruebas": 1137,
+    "archivos_de_prueba": 65
   },
   "datos": {
     "orden": "python scripts/medir_calidad.py (función measure_data)",
-    "semana": "2026-10-12",
-    "precios_semana": 772,
-    "con_comparacion": 719,
-    "pct_comparacion": 93.1,
-    "series_activas": 1113,
-    "series_con_dato": 772,
-    "pct_series_con_dato": 69.4,
-    "dias_desde_ultima_semana": 12,
-    "dias_desde_ultima_carga": 10,
-    "filas_leidas": 2521012,
+    "semana": "2026-10-26",
+    "precios_semana": 868,
+    "con_comparacion": 723,
+    "pct_comparacion": 83.3,
+    "series_activas": 1182,
+    "series_con_dato": 868,
+    "pct_series_con_dato": 73.4,
+    "dias_desde_ultima_semana": -1,
+    "dias_desde_ultima_carga": 0,
+    "filas_leidas": 2541374,
     "filas_rechazadas": 201,
     "pct_rechazadas": 0.008,
-    "medido": "2026-10-30"
+    "medido": "2026-10-31"
   }
 }
