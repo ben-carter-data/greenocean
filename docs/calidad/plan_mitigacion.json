@@ -755,6 +755,58 @@
           "referencia": "D-357"
         }
       ]
+    },
+    {
+      "id": "F-19",
+      "categoria": "operación",
+      "falla": [
+        "Una prueba de pantalla detiene la carga semanal",
+        "A screen test stops the weekly load"
+      ],
+      "deteccion": [
+        "La carga falla en «Pruebas automáticas» por una prueba de páginas o traducciones",
+        "The load fails at «Pruebas automáticas» on a test of pages or translations"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La carga corría toda la suite, también las pruebas de pantalla",
+        "The load ran the whole suite, the screen tests included"
+      ],
+      "severidad": "alta",
+      "contencion": [
+        "La base publicada sigue siendo la anterior, con su fecha",
+        "The published database stays the previous one, with its date"
+      ],
+      "correctiva": [
+        "La carga corre solo las pruebas de datos y del pipeline (D-366)",
+        "The load runs only the data and pipeline tests (D-366)"
+      ],
+      "estacion": 14,
+      "caso_real": "D-366",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-30",
+          "ocurrencia": [
+            "La carga del 30-10 no publicó: fallaron 2 pruebas de pantalla.",
+            "The 30-10 load did not publish: 2 screen tests failed."
+          ],
+          "diagnostico": [
+            "La pantalla de la carga en curso mostraba «En curso…» y «Esperando la base» sin su inglés.",
+            "The screen of the running load showed «En curso…» and «Esperando la base» without their English."
+          ],
+          "solucion": [
+            "Se agregó el inglés y la carga corre solo las pruebas de datos y del pipeline (D-366).",
+            "The English was added and the load runs only the data and pipeline tests (D-366)."
+          ],
+          "comentario": [
+            "Una falla de pantalla nunca debe bloquear la publicación de datos.",
+            "A screen failure must never block the publication of data."
+          ],
+          "estacion": 14,
+          "estado": "abierta",
+          "referencia": "D-366 · 5b1c7d6"
+        }
+      ]
     }
   ]
 }
