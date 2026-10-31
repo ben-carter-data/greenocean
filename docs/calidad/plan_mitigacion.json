@@ -807,6 +807,58 @@
           "referencia": "D-366 · 5b1c7d6"
         }
       ]
+    },
+    {
+      "id": "F-20",
+      "categoria": "código",
+      "falla": [
+        "Los botones «Minimizar» y «Cerrar» de la ventana de la carga no responden",
+        "The «Minimizar» and «Cerrar» buttons of the load window do not respond"
+      ],
+      "deteccion": [
+        "El autor hace clic y la ventana sigue abierta, con los botones sin respuesta",
+        "The author clicks and the window stays open, with the buttons dead"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La ventana se refresca sola cada 4 s y un refresco que cae al recargar la página la deja abierta",
+        "The window refreshes by itself every 4 s and a refresh that lands as the page reloads leaves it open"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "Recargar la página cierra la ventana; la carga sigue en GitHub",
+        "Reloading the page closes the window; the load goes on in GitHub"
+      ],
+      "correctiva": [
+        "Los botones cancelan primero el refresco y después recargan la página (D-379)",
+        "The buttons cancel the refresh first and then reload the page (D-379)"
+      ],
+      "estacion": 15,
+      "caso_real": "D-379",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-31",
+          "ocurrencia": [
+            "Con la carga terminada, «Cerrar» y «Minimizar» no hicieron nada.",
+            "With the load finished, «Cerrar» and «Minimizar» did nothing."
+          ],
+          "diagnostico": [
+            "El refresco automático chocaba con la recarga y Streamlit dejaba la ventana abierta y sin respuesta.",
+            "The automatic refresh clashed with the reload and Streamlit left the window open and dead."
+          ],
+          "solucion": [
+            "Los dos botones cancelan el refresco antes de recargar la página (D-379).",
+            "Both buttons cancel the refresh before reloading the page (D-379)."
+          ],
+          "comentario": [
+            "Con una página lenta se perdían 3 de 12 clics; con el cambio, ninguno. Las pruebas locales no lo veían.",
+            "With a slow page 3 of 12 clicks were lost; with the change, none. The local tests could not see it."
+          ],
+          "estacion": 15,
+          "estado": "abierta",
+          "referencia": "D-379"
+        }
+      ]
     }
   ]
 }

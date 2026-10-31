@@ -2835,3 +2835,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Mapa de la app:** la lista de páginas del nodo del panel estaba desactualizada (le faltaban «Último dato por canal», «Método y calidad» y «Git workflow»); ahora nombra todas las páginas, en el orden del menú, con su inglés.
 - **Documentos:** el PRD (§7) lista las páginas de la sección en su orden y sube a 3.5.
 - **Pruebas:** `tests/test_menu_order.py` (el orden de la sección para cada vista y en inglés, sin pie en sus páginas principales, el Panorama como destino de la elección y el mapa de la app con el mismo orden del menú); las pruebas que fijaban el orden anterior pasan al nuevo.
+
+## D-379 · Los botones «Minimizar» y «Cerrar» de la ventana de la carga dejan de perderse
+
+- **Aviso del autor:** con la carga terminada, «Minimizar» y «Cerrar» no respondían.
+- **Causa:** la ventana de la carga se refresca sola cada 4 s (D-351), y los dos botones la cerraban recargando toda la página desde dentro de ese refresco. Si uno de los refrescos caía mientras la página se recargaba, la ventana quedaba abierta y sin quien la atendiera en el servidor, y sus botones no hacían nada. Streamlit lo reconoce en su propio código como un caso conocido con este patrón (una ventana con una parte que se refresca sola). Ocurre más cuanto más lenta es la página, y las pruebas con AppTest no lo ven, porque no reproducen el refresco.
+- **Medición:** la ventana real, con GitHub reemplazado por respuestas fijas y una recarga de página de 3 s, 12 clics en «Cerrar» repartidos por el ciclo de refresco, en ventanas posteriores a la primera de la sesión: la versión anterior dejó la ventana abierta 3 veces; la nueva, ninguna.
+- **Límite:** en esa prueba larga hubo cierres de unos 10 s, iguales en las dos versiones. Con un solo clic no se repitieron, y no los he explicado. La falla se comprueba en el uso real con la próxima carga manual.
+- **Decisión:** «Minimizar» y «Cerrar» pasan a ser acciones que corren antes que el refresco (devoluciones de llamada) y cierran en dos pasos. Primero recargan solo el marco de la ventana, un fragmento con nombre y sin refresco propio, que no dibuja la parte que se refresca: Streamlit cancela su temporizador en ese momento. Después el marco recarga la página, sin nada que pueda caer durante la recarga. Si una copia vieja de la ventana sigue en pantalla cuando su ejecución ya no existe, se cierra sola. «Cancelar» y su confirmación no cambian.
+- **Registro de fallas:** F-20 (código, estación 15), abierta hasta que se compruebe con una carga real.
+- **Pruebas:** `tests/test_run_window_close.py` (la estructura, lo que hace cada botón con la ejecución y que el cierre pasa siempre primero por el marco); las de D-351 siguen igual.

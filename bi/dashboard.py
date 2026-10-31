@@ -5450,7 +5450,9 @@ def render_run_window(token):
     """The window of the manual run (D-351), redrawn by itself every few seconds while the run goes on: its state, the
     log in a fixed box with a copy button, and the two actions. Minimize hides the window and leaves the run in
     GitHub; Cancel asks first and then stops it; once it ends, «Cancelar» becomes «Cerrar»."""
-    watch = st.session_state[run_monitor.WATCH]
+    watch = st.session_state.get(run_monitor.WATCH)
+    if watch is None:
+        st.rerun()  # D-379: this copy of the window outlived its run (closed elsewhere): close it for good
     run_monitor.refresh(watch, token, datetime.now(timezone.utc))
     phase = watch["phase"]
     final = run_monitor.is_final(watch)
@@ -5480,13 +5482,13 @@ def render_run_window(token):
                 st.rerun(scope="fragment")
     else:
         with st.container(horizontal=True):
-            if st.button(tr("Minimizar"), key="run_minimize", icon=":material/minimize:"):
-                watch["minimized"] = True
-                st.rerun()  # the whole app: the window closes, the run goes on in GitHub
+            # D-379: closing is a callback, so it runs before anything else of the refresh and starts by cancelling the
+            # window's timer (see close_run_window)
+            st.button(tr("Minimizar"), key="run_minimize", icon=":material/minimize:", on_click=minimize_run_window)
             if final:
-                if st.button(tr("Cerrar"), key="run_close", type="primary", icon=":material/close:"):
-                    del st.session_state[run_monitor.WATCH]
-                    st.rerun()
+                st.button(
+                    tr("Cerrar"), key="run_close", type="primary", icon=":material/close:", on_click=close_run_window
+                )
             elif watch["run_id"] is not None and st.button(
                 tr("Cancelar"), key="run_cancel", icon=":material/stop_circle:"
             ):
@@ -5507,6 +5509,41 @@ def render_run_window(token):
         ),
         height=44,
     )
+
+
+RUN_WINDOW_KEY = "run_window"  # D-379: the fragment that holds the window's refreshing part
+RUN_WINDOW_CLOSING = "run_window_closing"
+
+
+def request_run_window_close():
+    """D-379: close the window in two steps. The refreshing part of the window asks Streamlit for a rerun of itself every
+    few seconds; if one of those requests lands while the whole page is rerunning to close the window, Streamlit never
+    tells the browser the page run ended and the window stays open with dead buttons (measured: two clicks lost and two
+    that took 10 s in six, with a page rerun of 3 s). So the first step reruns only the shell (keyed, with no timer of
+    its own), which does not draw the refreshing part: Streamlit cancels its timer right then. The shell then reruns
+    the whole page, with nothing left to fire during it."""
+    st.session_state[RUN_WINDOW_CLOSING] = True
+    st.rerun(RUN_WINDOW_KEY)
+
+
+def minimize_run_window():
+    """The window closes, the run goes on in GitHub and a small indicator in the menu brings it back (D-351)."""
+    st.session_state[run_monitor.WATCH]["minimized"] = True
+    request_run_window_close()
+
+
+def close_run_window():
+    """The run ended: forget it and close the window."""
+    st.session_state.pop(run_monitor.WATCH, None)
+    request_run_window_close()
+
+
+def show_run_window_shell(token, final):
+    """The window's frame (D-379): it never refreshes by itself; it draws the refreshing part, unless the window is being
+    closed, in which case it reruns the whole page without drawing it."""
+    if st.session_state.pop(RUN_WINDOW_CLOSING, False):
+        st.rerun()
+    st.fragment(render_run_window, run_every=None if final else PROGRESS_POLL_SECONDS)(token)
 
 
 def show_run_indicator():
@@ -5608,7 +5645,7 @@ def show_run_now_dialog(token, access_code):
         fetch_pipeline_runs.clear()
     show_token_expiration(token)
     final = run_monitor.is_final(st.session_state[run_monitor.WATCH])
-    st.fragment(render_run_window, run_every=None if final else PROGRESS_POLL_SECONDS)(token)
+    st.fragment(lambda: show_run_window_shell(token, final), key=RUN_WINDOW_KEY)()
 
 
 def show_admin_card():
