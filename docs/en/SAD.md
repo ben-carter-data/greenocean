@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.1 |
-| Date | 2026-10-26 |
+| Version | 3.2 |
+| Date | 2026-10-30 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain how GreenOcean is built, how it runs each week, where its data lives and why it has that shape. |
@@ -91,10 +91,12 @@ Each step starts only if the previous one ended well:
 | 3 | The agent downloads from ODEPA the file of the current year and any missing ones, and records the SHA-256 fingerprint of each in `manifest.json` |
 | 4 | The Python ETL computes the prices on its own and writes the backup `etl/datos.db` |
 | 5 | `etl/pipeline.py` stores the rows in the landing database, copies them to bronze together with the INE CPI and runs `dbt build`, which builds and tests each model in the working database |
-| 6 | Publication gate: if a dbt test fails or the load reads less than 90 % of the rows of the last good load, the process stops; if everything passes, the panel tables are copied to a new file that replaces `etl/datos.duckdb` |
-| 7 | pytest runs on the new database, including the parity between the backup and DuckDB |
+| 6 | Publication gate: if a dbt test fails or the load reads less than 90 % of the rows of the last good load, the process stops; if everything passes, the panel tables are copied to a new file that replaces `etl/datos.duckdb`. Since D-356 it also stops if a source is missing a week in the middle of the data or has gone more than 2 weeks without publishing; publication goes only up to the last week complete in both sources, filling nothing in, and `etl_run` keeps the week that waits |
+| 7 | pytest runs on the new database, without the speed tests, which only inform (D-341), including the parity between the backup and DuckDB |
 | 8 | The machine replaces the database in the release and pushes its pointer, `etl/datos.version`, to the `main` branch; the panel detects the new pointer, downloads the database and verifies its fingerprint before using it |
 | 9 | The weekly report is published as an issue of the repository |
+
+The job has a limit of 20 minutes: if it hangs, GitHub cuts it. The manual load starts from «Run pipeline now» and is followed in a window that does not close by itself: it shows each step with its time and duration, the real log of each job when it ends, without tokens, and lets the author minimize it or cancel the run in GitHub with the same token that starts it; cancelling is the only write of the panel to GitHub (D-351).
 
 If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass)). The run and its steps can be followed in the «Operations» tab of [[vista:Operations center]].
 
@@ -104,7 +106,7 @@ If a step fails, the following ones do not run and the served database does not 
 
 When it opens, the panel compares its database with the pointer of the `main` branch. If its copy is older, it downloads the database from the «base-actual» release and uses it only if its SHA-256 fingerprint matches. Then it opens the database read-only: no page can change a value. If GitHub does not respond, the panel carries on with the database it already has.
 
-The first time, the reader chooses a view: the user view shows the business (the Price overview, Insights and Prices and inflation) and the professional view, the whole project, ordered by the profile chosen (Data Eng, BA, BI, DevOps or Security); the user view opens the rest only with the app's code. If the last load failed, a red notice above the menu says so on every page, with a link to the step that failed. The panel reads in Spanish and in English.
+The entry asks for the view on every visit and every reload the reader makes: User shows the business (the Price overview, guided in three steps, Insights and Prices and inflation); Professional, the whole project, ordered by the profile it picks (Data Eng, BA, BI, DevOps or Security); and Author, the same plus its own part, with the control code. The address never chooses the view; the reloads the app itself makes (printing, opening a document, switching between a light and a dark theme) keep it only once and never the Author's (D-340, D-357). The «Vista» indicator, at the foot of the menu, changes it. The dark theme is the one on entry. Pages with tabs draw only the one in sight (D-360). If the last load failed, a red notice above the menu says so on every page, with a link to the step that failed. The panel reads in Spanish and in English.
 
 ## 6. The data
 
@@ -265,6 +267,8 @@ Landing keeps the rows as they arrive; bronze is their literal copy in Parquet, 
 | `failures` | INTEGER | | Rows that do not meet the test |
 | `generated_at` | VARCHAR | | Date of the `dbt build` |
 
+**Weeks that wait.** When one source has already published a week and the other has not, that week does not enter the database: it waits for the other source, with nothing filled in. The line of `etl_run` of that load says so (`SOURCE_LATE: wholesale 2026-10-19`) and the Price overview shows «ODEPA has not published the week of 19-10 yet (wholesale)» (D-356).
+
 ## 7. Deployment
 
 [[diagrama:despliegue]]
@@ -284,6 +288,10 @@ The diagram with the live status of each piece is in the «Deployment» tab of [
 **Quality.** Three gates: the file (did it arrive complete and on time?), each row (is it valid?) and the database (is it consistent, and did it pass its tests?). Eleven indicators, in five dimensions, are measured on each load against their threshold; accuracy, the sixth dimension, is measured with four controls that compare the figures with the source. The detail is in [[vista:Quality and audit]].
 
 **Observability.** Each load leaves a trace in four places: `etl_run` (rows read, loaded and rejected by each published load), `dbt_result` (the result of each model and test), the GitHub Actions log (each step, including the ones that fail) and the email GitHub sends the author if the load fails. The «Monitoring» tab of [[vista:Operations center]] brings them together.
+
+**Project quality.** How the quality of the data and of the code is measured, who decides and what happens when something fails is in the [Software Quality Assurance Plan (SQAP)](PLAN_DE_CALIDAD.md). On every push the quality workflow measures and fails if a code indicator is past its acceptable; the numbered report is proposed only after the weekly load or by hand (D-363). If the last report is more than 8 days old, the author's alert says so and does not show it as today's state (D-361). Every failure lived is kept in the failure register, one line per field (D-342, D-354).
+
+**Secrets and access.** The panel uses three secrets, kept in Streamlit and never in the repository: `CONTROL_CODE` (the author's key, compared in constant time), `GITHUB_TOKEN` (starts and cancels the manual load) and `GITHUB_READ_TOKEN` (read only, for the page «GitHub Actions»; if it is missing, `GITHUB_TOKEN` is used). That page, for the author only, shows the latest runs and, of the last failure, the job, the step, the failing tests and the last 60 lines of the log, with a «Copiar» button and links to the run and the job; the token never shows on screen (D-339, D-359).
 
 **Security.** The threats, their controls and the tests that verify them are in [[vista:Security architecture]]; the verification procedure, in the [Test and Security Plan](PLAN_PRUEBAS.md).
 
@@ -354,6 +362,7 @@ With public, weekly and small data, read by a single panel, a cloud data warehou
 | Publish only what is validated | The served database changes only if all the tests pass | [ADR-11](ADR.md#adr-11--publish-only-if-the-tests-pass) |
 | Check along a second path | A Python ETL, independent of dbt, computes the same prices | [ADR-34](ADR.md#adr-34--separate-the-dbt-working-database-the-database-the-panel-reads-and-the-backup) |
 | Declarative, tested layers | Bronze in Parquet; staging, intermediate and marts in dbt Core on DuckDB | [ADR-30](ADR.md#adr-30--parquet-dbt-core-and-duckdb) |
+| Block only what matters | The tests that protect the data stop the load; the speed tests only inform and run locally | D-341 |
 | A single published copy | The served database lives in a release that each load replaces | [ADR-35](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) |
 
 The decisions that shape this architecture, with their context, their alternatives and their consequences, are in the [Architecture Decision Records (ADR)](ADR.md).
@@ -386,3 +395,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 2.0 | 2026-10-25 | Complete arc42 structure: constraints, solution strategy, crosscutting concepts, quality requirements, technical debt, glossary and history (D-279, professional documentation) |
 | 3.0 | 2026-10-25 | From the most important to the least: summary, context, containers, the load and the panel as sequences, the data with its dictionary, deployment, quality and security, capacity and growth (formerly documents of their own); six diagrams (D-290, documents for every reader) |
 | 3.1 | 2026-10-26 | Key scenarios and components of the load and of the panel (C4, level 3); the views, the Dashboard and the failed-load notice in the panel (D-300) |
+| 3.2 | 2026-10-30 | Late sources and the time limit of the load; the three views, the app's own reloads and tabs that draw only the one in sight; project quality, secrets and the page «GitHub Actions» (D-339 to D-363) |

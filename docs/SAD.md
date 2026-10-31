@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.1 |
-| Fecha | 26-10-2026 |
+| Versión | 3.2 |
+| Fecha | 30-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo está construido GreenOcean, cómo corre cada semana, dónde viven sus datos y por qué tiene esa forma. |
@@ -91,10 +91,12 @@ Cada paso empieza solo si el anterior terminó bien:
 | 3 | El agente descarga de ODEPA el archivo del año en curso y los faltantes, y registra la huella SHA-256 de cada uno en `manifest.json` |
 | 4 | El ETL en Python calcula los precios por su cuenta y escribe el respaldo `etl/datos.db` |
 | 5 | `etl/pipeline.py` guarda las filas en el aterrizaje, las copia al bronce junto con el IPC del INE y ejecuta `dbt build`, que construye y prueba cada modelo en la base de trabajo |
-| 6 | Puerta de publicación: si falla una prueba de dbt o la carga lee menos del 90 % de las filas de la última carga correcta, el proceso se detiene; si todo pasa, las tablas del panel se copian a un archivo nuevo que reemplaza a `etl/datos.duckdb` |
-| 7 | pytest corre sobre la base nueva, incluida la paridad entre el respaldo y DuckDB |
+| 6 | Puerta de publicación: si falla una prueba de dbt o la carga lee menos del 90 % de las filas de la última carga correcta, el proceso se detiene; si todo pasa, las tablas del panel se copian a un archivo nuevo que reemplaza a `etl/datos.duckdb`. Desde D-356 también se detiene si a una fuente le falta una semana en medio de los datos o lleva más de 2 semanas sin publicar; se publica solo hasta la última semana completa en ambas fuentes, sin rellenar, y `etl_run` guarda la semana que espera |
+| 7 | pytest corre sobre la base nueva, sin las pruebas de velocidad, que solo informan (D-341), incluida la paridad entre el respaldo y DuckDB |
 | 8 | La máquina reemplaza la base en el release y sube su puntero, `etl/datos.version`, a la rama `main`; el panel detecta el puntero nuevo, descarga la base y verifica su huella antes de usarla |
 | 9 | Se publica el informe semanal como un issue del repositorio |
+
+El trabajo tiene un límite de 20 minutos: si se cuelga, GitHub lo corta. La carga manual se lanza desde «Ejecutar pipeline ahora» y se sigue en una ventana que no se cierra sola: muestra cada paso con su hora y su duración, el log real de cada job al terminar, sin tokens, y deja minimizarla o cancelar la ejecución en GitHub con la misma clave que la lanza; cancelar es la única escritura del panel en GitHub (D-351).
 
 Si un paso falla, los siguientes no corren y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)). La ejecución y sus pasos se siguen en la pestaña «Operación» de [[vista:Centro de operación]].
 
@@ -104,7 +106,7 @@ Si un paso falla, los siguientes no corren y la base servida no cambia ([ADR-11 
 
 Al abrirse, el panel compara su base con el puntero de la rama `main`. Si su copia es más antigua, descarga la base del release «base-actual» y la usa solo si su huella SHA-256 coincide. Después abre la base en solo lectura: ninguna página puede cambiar un dato. Si GitHub no responde, el panel sigue con la base que ya tiene.
 
-La primera vez, el lector elige una vista: la de usuario muestra el negocio (el Panorama de precios, Insights y Precios e inflación) y la profesional, todo el proyecto, ordenado según el perfil que elige (Data Eng, BA, BI, DevOps o Seguridad); la vista de usuario abre el resto solo con la clave de la app. Si la última carga falló, un aviso rojo arriba del menú lo dice en todas las páginas, con un enlace al paso que falló. El panel se lee en español y en inglés.
+La entrada pide la vista en cada visita y en cada recarga que hace el lector: Usuario muestra el negocio (el Panorama de precios, guiado en tres pasos, Insights y Precios e inflación); Profesional, todo el proyecto, ordenado según el perfil que elige (Data Eng, BA, BI, DevOps o Seguridad); y Autor, lo mismo más su parte, con la clave de control. La dirección nunca elige la vista; las recargas que hace la propia app (imprimir, abrir un documento, cambiar entre tema claro y oscuro) la conservan una sola vez y nunca la de Autor (D-340, D-357). El indicador «Vista», al pie del menú, la cambia. El tema oscuro es el de entrada. Las páginas con pestañas dibujan solo la que está a la vista (D-360). Si la última carga falló, un aviso rojo arriba del menú lo dice en todas las páginas, con un enlace al paso que falló. El panel se lee en español y en inglés.
 
 ## 6. Los datos
 
@@ -265,6 +267,8 @@ El aterrizaje guarda las filas tal como llegan; el bronce es su copia literal en
 | `failures` | INTEGER | | Filas que no cumplen la prueba |
 | `generated_at` | VARCHAR | | Fecha del `dbt build` |
 
+**Semanas que esperan.** Cuando una fuente ya publicó una semana y la otra no, esa semana no entra a la base: espera a la otra fuente, sin rellenar nada. La línea de `etl_run` de esa carga lo dice (`SOURCE_LATE: wholesale 2026-10-19`) y el Panorama muestra «ODEPA aún no publica la semana del 19-10 (mayorista)» (D-356).
+
 ## 7. Despliegue
 
 [[diagrama:despliegue]]
@@ -284,6 +288,10 @@ El diagrama con el estado en vivo de cada pieza está en la pestaña «Despliegu
 **Calidad.** Tres puertas: el archivo (¿llegó completo y al día?), cada fila (¿es válida?) y la base (¿es coherente y pasó sus pruebas?). Once indicadores, en cinco dimensiones, se miden en cada carga contra su umbral; la exactitud, la sexta dimensión, se mide con cuatro controles que comparan las cifras con la fuente. El detalle está en [[vista:Calidad y auditoría]].
 
 **Observabilidad.** Cada carga deja rastro en cuatro lugares: `etl_run` (filas leídas, cargadas y rechazadas de cada carga publicada), `dbt_result` (el resultado de cada modelo y prueba), el registro de GitHub Actions (cada paso, incluidos los que fallan) y el correo que GitHub envía al autor si la carga falla. La pestaña «Monitoreo» de [[vista:Centro de operación]] los reúne.
+
+**Calidad del proyecto.** Cómo se mide la calidad de los datos y del código, quién decide y qué pasa cuando algo falla está en el [Plan de calidad del software (SQAP)](PLAN_DE_CALIDAD.md). En cada push el workflow de calidad mide y falla si un indicador de código pasa su aceptable; el informe numerado se propone solo después de la carga semanal o a mano (D-363). Si el último informe tiene más de 8 días, la alerta del autor lo dice y no lo muestra como el estado de hoy (D-361). Cada falla vivida queda en el registro de fallas, una línea por campo (D-342, D-354).
+
+**Secretos y acceso.** El panel usa tres secretos, guardados en Streamlit y nunca en el repositorio: `CONTROL_CODE` (la clave del autor, comparada en tiempo constante), `GITHUB_TOKEN` (lanza y cancela la carga manual) y `GITHUB_READ_TOKEN` (solo lectura, para la página «GitHub Actions»; si falta, se usa `GITHUB_TOKEN`). Esa página, que solo ve el autor, muestra las últimas ejecuciones y, del último fallo, el job, el paso, las pruebas que fallan y las últimas 60 líneas del log, con un botón «Copiar» y enlaces a la ejecución y al job; el token nunca aparece en pantalla (D-339, D-359).
 
 **Seguridad.** Las amenazas, sus controles y las pruebas que los verifican están en [[vista:Arquitectura de seguridad]]; el procedimiento de verificación, en el [Plan de pruebas y seguridad](PLAN_PRUEBAS.md).
 
@@ -354,6 +362,7 @@ Con datos públicos, semanales y pequeños, leídos por un solo panel, un data w
 | Publicar solo lo validado | La base servida cambia solo si pasan todas las pruebas | [ADR-11](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas) |
 | Comprobar por un segundo camino | Un ETL en Python, independiente de dbt, calcula los mismos precios | [ADR-34](ADR.md#adr-34--separar-la-base-de-trabajo-de-dbt-la-base-que-lee-el-panel-y-el-respaldo) |
 | Capas declarativas y probadas | Bronce en Parquet; staging, intermedio y marts en dbt Core sobre DuckDB | [ADR-30](ADR.md#adr-30--parquet-dbt-core-y-duckdb) |
+| Bloquear solo lo que importa | Las pruebas que protegen los datos detienen la carga; las de velocidad solo informan y corren en local | D-341 |
 | Una sola copia publicada | La base servida vive en un release que cada carga reemplaza | [ADR-35](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) |
 
 Las decisiones que dan forma a esta arquitectura, con su contexto, sus alternativas y sus consecuencias, están en los [Registros de decisiones de arquitectura (ADR)](ADR.md).
@@ -386,3 +395,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 2.0 | 25-10-2026 | Estructura arc42 completa: restricciones, estrategia de solución, conceptos transversales, requisitos de calidad, deuda técnica, glosario e historial (D-279, documentación profesional) |
 | 3.0 | 25-10-2026 | De lo más importante a lo menos: resumen, contexto, contenedores, la carga y el panel en secuencia, los datos con su diccionario, despliegue, calidad y seguridad, capacidad y crecimiento (antes en documentos propios); seis diagramas (D-290, documentos para todo lector) |
 | 3.1 | 26-10-2026 | Escenarios clave y componentes de la carga y del panel (C4, nivel 3); las vistas, el Dashboard y el aviso de carga fallida en el panel (D-300) |
+| 3.2 | 30-10-2026 | Fuentes retrasadas y límite de tiempo de la carga; las tres vistas, las recargas propias y las pestañas que dibujan solo la visible; calidad del proyecto, secretos y la página «GitHub Actions» (D-339 a D-363) |
