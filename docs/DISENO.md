@@ -1,6 +1,6 @@
 # Monitor de precios y márgenes de la cadena alimentaria en Chile
 
-**Documento de diseño (PRD + arquitectura)** · versión 0.2 · 11-10-2026 · Autor: Jocelyn Ben Yahmed
+**Documento de diseño (PRD + arquitectura)** · versión 0.2 · 11-10-2026 · Autor: el autor
 
 Este documento basta para construir el producto: quien lo lea (una persona, un equipo o un asistente de IA) no debería necesitar preguntar nada más. Lo acompañan `README.md`, `BACKLOG.md` y `DECISIONES.md`.
 

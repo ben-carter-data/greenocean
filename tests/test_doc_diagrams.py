@@ -282,3 +282,12 @@ def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
         assert Image.open(doc_views.MOCKUP_DIR / file_name).size == (1440, 900), file_name
     for file_name, *_ in doc_views.MOCKUPS:
         assert (doc_views.MOCKUP_DIR / file_name).stat().st_size < 400_000
+
+
+def test_d386_the_before_figures_are_labelled_history_and_the_size_of_today_is_measured():
+    from bi import doc_figures, project, queries
+
+    note = doc_figures.served_size_note()
+    assert "se midieron el 24-10-2026, al decidir ADR-35" in note and "Medidas del" not in note
+    if queries.DATABASE_FILE.exists():
+        assert f"Hoy la base servida pesa {project.describe_file_size(queries.DATABASE_FILE)}." in note

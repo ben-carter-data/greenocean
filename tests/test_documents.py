@@ -389,3 +389,14 @@ def test_d358_a_printed_document_numbers_its_sheets_and_gives_the_cover_its_own_
     assert "@bottom-center" in css and "counter(page)" in css and "counter(pages)" in css
     assert ".doc-cover { break-after: page; }" in css
     assert '"__PAGE__ " counter(page) " __OF__ " counter(pages)' in css  # «Página 3 de 5», in the reader's language
+
+
+def test_d386_no_document_of_docs_is_signed_with_a_personal_name():
+    """The author is «el autor» everywhere (CLAUDE.md): a header says «Autor: el autor» or «Responsable | El autor»."""
+    for path in sorted((ROOT / "docs").rglob("*.md")):
+        if "privado" in path.parts or "archivo" in path.parts:
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines()[:12]:
+            match = re.search(r"\bAutor(?:a)?: ([^·|]+)", line)
+            if match:
+                assert match.group(1).strip() == "el autor", (path.name, match.group(1))

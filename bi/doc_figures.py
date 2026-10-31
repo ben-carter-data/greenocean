@@ -8,7 +8,7 @@ states are the ones of the code and the workflows; tests/test_doc_figures.py che
 
 import html
 
-from bi import charts, doc_views, i18n
+from bi import charts, doc_views, i18n, queries
 
 
 def say(spanish, english):
@@ -1347,8 +1347,27 @@ def adr_before_after(mode):
             ("load2", "release", say("reemplaza", "replaces"), "flow", "h"),
             ("release", "panel2", say("huella SHA-256", "SHA-256 fingerprint"), "flow", "h"),
         ],
-        say("Medidas del 24-10-2026.", "Measurements of 2026-10-24."),
+        served_size_note(),
         limit=26,
+    )
+
+
+def served_size_note():
+    """D-386: the «before» figures are history, measured when ADR-35 was decided; the size of today is measured now."""
+    history = say(
+        "Las cifras de «antes» se midieron el 24-10-2026, al decidir ADR-35.",
+        "The «before» figures were measured on 2026-10-24, when ADR-35 was decided.",
+    )
+    if not queries.DATABASE_FILE.exists():
+        return history
+    megabytes = queries.DATABASE_FILE.stat().st_size / 1_000_000
+    return (
+        history
+        + " "
+        + say(
+            f"Hoy la base servida pesa {megabytes:.1f} MB.".replace(".", ",", 1),
+            f"Today the served database weighs {megabytes:.1f} MB.",
+        )
     )
 
 
