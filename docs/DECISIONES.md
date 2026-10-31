@@ -2914,3 +2914,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Qué no cuadraba:** D-365 sumó `latest_by_source` a la base servida, pero el mapa de la base, el mapa de almacenamiento, los cruces entre bases y la vista de contenedores seguían diciendo «12 tablas» y «nueve tablas del modelo». El SAD ya listaba las 13.
 - **Decisión:** el grupo «Modelos dbt» del mapa de la base suma `latest_by_source` y pasa a «diez tablas del modelo»; los cuatro textos dicen 13 tablas, en los dos idiomas.
 - **Pruebas:** `tests/test_storage_map.py::test_the_thirteen_served_tables_…` (las tablas del mapa son las que copia la carga, más el registro de cargas y las dos trazas de dbt).
+
+## D-390 · La auditoría desde `raw.db` toma una muestra fija y dentro de las semanas que guarda
+
+- **Qué pasó:** en local, `test_weekly_prices_rebuild_exactly_from_the_raw_rows` falló en las dos fuentes con una división por cero, sin que nada hubiera cambiado. La consulta de la muestra no tenía `ORDER BY`, así que DuckDB podía devolver las filas en otro orden y la misma semilla elegía otras filas. Algunas eran de semanas posteriores al `raw.db` local (del 23-10), que no se pueden reconstruir. En el CI no corre, porque no hay `raw.db`.
+- **Decisión:** la muestra se ordena (`ORDER BY ALL`) y solo toma semanas hasta la última que guarda `raw.db`. La misma semilla elige siempre las mismas filas. Queda anotada como F-21 en el registro de fallas.
+- **Pruebas:** la misma prueba, que pasa en corridas repetidas.

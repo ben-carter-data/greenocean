@@ -859,6 +859,58 @@
           "referencia": "D-379"
         }
       ]
+    },
+    {
+      "id": "F-21",
+      "categoria": "código",
+      "falla": [
+        "Una prueba de auditoría falla a veces en local sin que nada haya cambiado",
+        "An audit test sometimes fails locally with nothing changed"
+      ],
+      "deteccion": [
+        "La suite completa en local marca la reconstrucción desde raw.db como fallida",
+        "The whole local suite marks the rebuild from raw.db as failed"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La muestra de precios no tenía orden fijo y podía elegir una semana que el raw.db local no tiene",
+        "The price sample had no fixed order and could pick a week the local raw.db does not hold"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Volver a correr la prueba; en el CI no corre, porque no hay raw.db",
+        "Run the test again; it does not run in the CI, where there is no raw.db"
+      ],
+      "correctiva": [
+        "La muestra se ordena y se limita a las semanas que guarda raw.db (D-390)",
+        "The sample is ordered and limited to the weeks raw.db holds (D-390)"
+      ],
+      "estacion": 8,
+      "caso_real": "D-390",
+      "ocurrencias": [
+        {
+          "fecha": "2026-10-31",
+          "ocurrencia": [
+            "La reconstrucción de precios desde raw.db falló en las dos fuentes con una división por cero.",
+            "The price rebuild from raw.db failed in both sources with a division by zero."
+          ],
+          "diagnostico": [
+            "La consulta de la muestra no tenía ORDER BY y eligió semanas posteriores al raw.db local del 23-10.",
+            "The sample query had no ORDER BY and picked weeks after the local raw.db of 23-10."
+          ],
+          "solucion": [
+            "La muestra se ordena y solo toma semanas hasta la última de raw.db.",
+            "The sample is ordered and only takes weeks up to the last one in raw.db."
+          ],
+          "comentario": [
+            "Era solo local: el CI no tiene raw.db y salta esta prueba.",
+            "It was local only: the CI has no raw.db and skips this test."
+          ],
+          "estacion": 8,
+          "estado": "resuelta",
+          "referencia": "D-390"
+        }
+      ]
     }
   ]
 }

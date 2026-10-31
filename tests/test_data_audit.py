@@ -137,16 +137,20 @@ def recompute_weekly_price(raw, row):
 @needs_raw
 @pytest.mark.parametrize("source", [etl.SOURCE_WHOLESALE, etl.SOURCE_CONSUMER])
 def test_weekly_prices_rebuild_exactly_from_the_raw_rows(source):
+    raw = sqlite3.connect(f"file:{etl.RAW_DATABASE_FILE}?mode=ro", uri=True)
+    # A local raw.db can be older than the served database: only the weeks it holds can be rebuilt from it. The rows
+    # are ordered, so the same seed draws the same sample on every run.
+    last_raw_week = raw.execute("SELECT max(week_start) FROM raw_consumer").fetchone()[0]
     panel = read(
         """SELECT wp.week_start, p.product, p.variety, p.quality, wp.region_id, ch.channel,
                            ch.source, wp.normalized_unit, wp.price
                     FROM weekly_price wp JOIN dim_product p USING(product_id)
                     JOIN dim_channel ch USING(channel_id)
-                    WHERE wp.price IS NOT NULL AND ch.source = ?""",
-        (source,),
+                    WHERE wp.price IS NOT NULL AND ch.source = ? AND wp.week_start <= ?
+                    ORDER BY ALL""",
+        (source, last_raw_week),
     )
     sample = panel.iloc[random.Random(144).sample(range(len(panel)), SAMPLE_SIZE)]
-    raw = sqlite3.connect(f"file:{etl.RAW_DATABASE_FILE}?mode=ro", uri=True)
     try:
         for row in sample.to_dict("records"):
             assert recompute_weekly_price(raw, row) == pytest.approx(row["price"], rel=1e-9), row
