@@ -279,3 +279,27 @@ def test_d350_a_right_key_closes_the_window_with_a_full_rerun_because_the_window
     body = inspect.getsource(dashboard.show_profile_dialog)
     assert "AUTHOR_ENTERED" in body and "st.rerun()" in body.split("AUTHOR_ENTERED")[1]
     assert "AUTHOR_ENTERED] = True" in inspect.getsource(dashboard.submit_author_code)
+
+
+def test_d369_the_entry_window_offers_two_views_and_the_author_only_as_a_corner_link():
+    from streamlit.testing.v1 import AppTest
+
+    from bi import i18n
+
+    for language, main, door in (
+        ("es", ["Profesional", "Usuario"], "Acceso del autor"),
+        ("en", ["Professional", "User"], "Author access"),
+    ):
+        app = AppTest.from_file(str(Path(__file__).resolve().parent.parent / "bi" / "dashboard.py"), default_timeout=60)
+        app.query_params.update({"lang": language})
+        app.run()
+        assert not app.exception and app.get("dialog")
+        choices = [button.label for button in app.button if str(button.key).startswith("profile_choose_")]
+        assert choices == main  # the two big options; the author is not one of them
+        assert "Autor" not in choices and "Author" not in choices
+        assert door in [popover.proto.popover.label for popover in app.get("popover")]
+        assert app.text_input(key="profile_author_code")  # its key field, inside the link
+    assert i18n.EN["Acceso del autor"] == "Author access"
+    source = (Path(__file__).resolve().parent.parent / "bi" / "dashboard.py").read_text(encoding="utf-8")
+    assert "profile_side_autor" not in source
+    assert 'div[data-testid="stDialog"]:has(.st-key-profile_choices) {{ background:rgba(4, 8, 16, .97)' in source

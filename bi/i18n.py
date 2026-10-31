@@ -168,6 +168,7 @@ EN = {
     "Entendido": "Understood",
     "Entrar": "Enter",
     "Autor": "Author",
+    "Acceso del autor": "Author access",
     "Todas": "All",
     "Mes": "Month",
     "Semana de datos": "Data week",

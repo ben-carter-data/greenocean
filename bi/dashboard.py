@@ -746,22 +746,6 @@ def show_profile_dialog():
                         leave_author()
                         choose_profile(PROFILE_PROFESSIONAL, role)
                         st.rerun()
-        with st.container(key="profile_side_autor"):
-            # D-335: the author's door, the same key as «Acceso del autor»; nobody else sees the alerts.
-            with st.popover(tr("Autor"), icon=":material/lock:", width="stretch"):
-                # D-350: Enter sends the key (on a phone, the keyboard's «Ir» is the same event); no button.
-                st.text_input(
-                    tr("Clave"),
-                    key="profile_author_code",
-                    type="password",
-                    label_visibility="collapsed",
-                    placeholder=tr("Clave"),
-                    on_change=submit_author_code,
-                )
-                if st.session_state.pop(AUTHOR_ENTERED, False):
-                    st.rerun()  # the window is a fragment: only a full rerun closes it once the key was right
-                if st.session_state.get(AUTHOR_CODE_ERROR):
-                    st.error(tr(st.session_state[AUTHOR_CODE_ERROR]))
         with st.container(key="profile_side_consulta"):
             name, icon = PROFILES[PROFILE_PUBLIC]
             if st.button(tr("Usuario"), key=f"profile_choose_{PROFILE_PUBLIC}", icon=icon, width="stretch"):
@@ -772,6 +756,23 @@ def show_profile_dialog():
         if st.button(tr("Mantener esta vista"), key="profile_keep", type="tertiary"):
             st.session_state.pop(CHANGE_VIEW, None)
             st.rerun()
+    # D-369: the author's door is no longer a third choice: a small link in the window's corner, with its key field
+    # on click. D-335: the same key as «Acceso del autor» of the Operations center; nobody else sees the alerts.
+    with st.container(key="profile_author_corner"):
+        with st.popover(tr("Acceso del autor"), icon=":material/lock:", type="tertiary"):
+            # D-350: Enter sends the key (on a phone, the keyboard's «Ir» is the same event); no button.
+            st.text_input(
+                tr("Clave"),
+                key="profile_author_code",
+                type="password",
+                label_visibility="collapsed",
+                placeholder=tr("Clave"),
+                on_change=submit_author_code,
+            )
+            if st.session_state.pop(AUTHOR_ENTERED, False):
+                st.rerun()  # the window is a fragment: only a full rerun closes it once the key was right
+            if st.session_state.get(AUTHOR_CODE_ERROR):
+                st.error(tr(st.session_state[AUTHOR_CODE_ERROR]))
 
 
 LOAD_ALERT_SEEN = "load_alert_seen"
@@ -1926,18 +1927,27 @@ def build_style_css(mode):
         font-weight:700 !important; letter-spacing:-.02em; margin:0 0 1.5rem !important; line-height:1.2 !important; }}
     .st-key-profile_choices {{ align-items:flex-start !important; }}
     .st-key-profile_choices > div {{ flex:1 1 0 !important; min-width:0; }}
-    /* D-336: the three pills share one look (the author's door is a popover and used to come out lower and paler), and
-       their names never break in two lines, in either language. */
-    [class*="st-key-profile_choose_"] button, .st-key-profile_side_autor button {{ min-height:52px; width:100%;
+    /* D-336, D-369: the two pills share one look, and their names never break in two lines, in either language. */
+    [class*="st-key-profile_choose_"] button {{ min-height:52px; width:100%;
         border-radius:999px; border:1px solid {palette["card_border"]}; background:{palette["card"]}; padding:0 10px; }}
-    [class*="st-key-profile_choose_"] button p, .st-key-profile_side_autor button p {{ font-size:1rem; font-weight:600;
+    [class*="st-key-profile_choose_"] button p {{ font-size:1rem; font-weight:600;
         color:{palette["strong_text"]}; white-space:nowrap; }}
-    .st-key-profile_side_autor button:hover {{ border-color:{palette["accent"]}; }}
     @media(max-width:480px) {{
-        [class*="st-key-profile_choose_"] button p, .st-key-profile_side_autor button p {{ font-size:.82rem; }}
-        [class*="st-key-profile_choose_"] button [data-testid="stIconMaterial"],
-        .st-key-profile_side_autor button [data-testid="stIconMaterial"] {{ display:none; }}
+        [class*="st-key-profile_choose_"] button p {{ font-size:.82rem; }}
+        [class*="st-key-profile_choose_"] button [data-testid="stIconMaterial"] {{ display:none; }}
     }}
+    /* D-369: the author's door, a small quiet link in the window's top corner; its key field opens on click. */
+    div[data-testid="stDialog"] [role="dialog"]:has(.st-key-profile_author_corner) {{ position:relative; }}
+    .st-key-profile_author_corner {{ position:absolute !important; top:12px; right:14px; width:auto !important;
+        z-index:20; }}
+    .st-key-profile_author_corner button {{ min-height:0 !important; padding:2px 4px !important; }}
+    .st-key-profile_author_corner button p, .st-key-profile_author_corner button [data-testid="stIconMaterial"] {{
+        font-size:.72rem !important; color:{palette["reference"]}; font-weight:400; }}
+    .st-key-profile_author_corner button:hover p,
+    .st-key-profile_author_corner button:hover [data-testid="stIconMaterial"] {{ color:{palette["accent"]}; }}
+    /* D-369: while the window asks for the view, the app behind is covered: an opaque dark layer, nothing readable. */
+    div[data-testid="stDialog"]:has(.st-key-profile_choices) {{ background:rgba(4, 8, 16, .97) !important;
+        backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); }}
     .st-key-profile_choose_profesional button {{ background:color-mix(in srgb, {palette["accent"]} 12%, transparent);
         border-color:color-mix(in srgb, {palette["accent"]} 45%, transparent); }}
     .st-key-profile_choose_profesional button p, .st-key-profile_choose_profesional button [data-testid="stIconMaterial"] {{
