@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.2 |
+| Version | 1.3 |
 | Date | 2026-10-30 |
 | Status | Current |
 | Owner | The author |
@@ -68,6 +68,8 @@ The values of each indicator are in `docs/calidad/metas.json`, and the names of 
 
 A test that blocks stops publication if it fails. That is how dbt's data tests and the tests of the dashboard figures work. A test that informs only warns: it must never stop publication.
 
+The weekly load runs only the tests that block for the data: the data and pipeline tests. The screen tests (pages, translations, documents) run in the CI of every push; a screen failure never stops the publication of data (D-366).
+
 The example is F-10 of the failure register. A speed test, which was informative, blocked the weekly load, and the data stopped being updated. The test left the load and the CI, and it stays local as informative (D-341).
 
 ## 8. Quality reports
@@ -110,3 +112,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 1.0 | 2026-10-30 | First version of the software quality assurance plan (D-355) |
 | 1.1 | 2026-10-30 | Rule for late sources (D-356) |
 | 1.2 | 2026-10-30 | The page «Último dato por canal» shows each source's latest week (D-365) |
+| 1.3 | 2026-10-30 | The weekly load runs only the data and pipeline tests (D-366) |

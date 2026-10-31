@@ -29,7 +29,10 @@ disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
 # D-341: the speed budgets run locally (pytest -m rendimiento) and not in the CI, whose shared runners are too unstable.
-markers = ["rendimiento: speed budget of a query; excluded from the CI, run locally with -m rendimiento"]
+markers = [
+    "rendimiento: speed budget of a query; excluded from the CI, run locally with -m rendimiento",
+    "datos: guards the data and the pipeline; the weekly load runs only these (D-366, tests/conftest.py)",
+]
 
 [tool.coverage.run]
 source = ["bi", "etl", "agent"]

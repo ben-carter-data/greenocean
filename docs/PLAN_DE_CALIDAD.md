@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.2 |
+| Versión | 1.3 |
 | Fecha | 30-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -68,6 +68,8 @@ Los valores de cada indicador están en `docs/calidad/metas.json`, y los nombres
 
 Una prueba que bloquea detiene la publicación si falla. Así funcionan las pruebas de datos de dbt y las de las cifras del panel. Una prueba que informa solo avisa: nunca debe frenar la publicación.
 
+La carga semanal corre solo las pruebas que bloquean por los datos: las de datos y del pipeline. Las de pantalla (páginas, traducciones, documentos) corren en el CI de cada push; una falla de pantalla nunca detiene la publicación de datos (D-366).
+
 El ejemplo es F-10 del registro de fallas. Una prueba de velocidad, que era informativa, bloqueaba la carga semanal, y los datos dejaron de actualizarse. La prueba salió de la carga y del CI, y sigue en local como informativa (D-341).
 
 ## 8. Informes de calidad
@@ -110,3 +112,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 1.0 | 30-10-2026 | Primera versión del plan de calidad del software (D-355) |
 | 1.1 | 30-10-2026 | Regla de las fuentes retrasadas (D-356) |
 | 1.2 | 30-10-2026 | La página «Último dato por canal» muestra la última semana de cada fuente (D-365) |
+| 1.3 | 30-10-2026 | La carga semanal corre solo las pruebas de datos y del pipeline (D-366) |

@@ -69,7 +69,9 @@ jobs:
 
       # Includes the parity test: SQLite and DuckDB must hold the same figures.
       - name: Run the tests against the new database
-        run: pytest -q -m "not rendimiento"  # D-341: speed budgets run locally, not on a shared runner
+        # D-366: only the tests of the data and the pipeline; the screens are checked by the CI of every push and
+        # never stop the data from being published. D-341: speed budgets run locally, not on a shared runner.
+        run: pytest -q -m "datos and not rendimiento"
 
       # First the file replaces the one in the release, then the pointer is committed: the panel
       # never reads a pointer whose file is not there yet.

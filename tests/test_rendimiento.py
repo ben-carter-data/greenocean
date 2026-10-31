@@ -35,7 +35,17 @@ def test_d341_no_shared_runner_measures_speed_the_ci_the_weekly_load_and_the_qua
     for workflow in ("pruebas.yml", "semanal.yml"):
         text = (root / ".github" / "workflows" / workflow).read_text(encoding="utf-8")
         runs = [line for line in text.splitlines() if "run: pytest" in line]  # the runs of the suite, not its install
-        assert runs and all('-m "not rendimiento"' in line for line in runs), workflow
+        assert runs and all('not rendimiento"' in line for line in runs), workflow
+    # D-366: the weekly load runs only the data and pipeline tests; a screen test never stops the data.
+    load = (root / ".github" / "workflows" / "semanal.yml").read_text(encoding="utf-8")
+    assert [line.strip() for line in load.splitlines() if "run: pytest" in line] == [
+        'run: pytest -q -m "datos and not rendimiento"'
+    ]
+    from tests import conftest
+
+    for name in conftest.DATA_FILES:
+        source = (root / "tests" / f"{name}.py").read_text(encoding="utf-8")
+        assert "AppTest" not in source and "i18n_audit" not in source, name  # no screen test among the data ones
     script = (root / "scripts" / "medir_calidad.py").read_text(encoding="utf-8")
     assert '"-m",\n            "not rendimiento",' in script
     # The count of tests the indicator divides by is taken with the same filter, or the ones left out count as failures.

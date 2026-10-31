@@ -251,5 +251,11 @@
       "El Panorama y los indicadores publican hasta la semana común; «Último dato por canal» muestra la última semana de cada fuente, rotulada.",
       "The Price overview and the indicators publish up to the common week; «Último dato por canal» shows each source's latest week, labelled."
     ]
+  },
+  "pruebas_de_la_carga": {
+    "regla": [
+      "La carga semanal solo corre las pruebas de datos y del pipeline; las de pantalla corren en el CI de cada push. Una falla de pantalla nunca bloquea la publicación de datos.",
+      "The weekly load runs only the data and pipeline tests; the screen tests run in the CI of every push. A screen failure never blocks the publication of data."
+    ]
   }
 }
