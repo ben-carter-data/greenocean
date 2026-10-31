@@ -1,11 +1,11 @@
-# Informe de calidad N° 6
+# Informe de calidad N° 7
 
 | | |
 |---|---|
-| **Fecha** | 2026-10-30 23:36 UTC |
+| **Fecha** | 2026-10-31 00:06 UTC |
 | **Semana de datos** | 2026-10-12 |
-| **Código evaluado** | 10dda26 |
-| **Informe anterior** | N° 5 |
+| **Código evaluado** | 6cbe4ee |
+| **Informe anterior** | N° 6 |
 
 Autoevaluación automática: 11 de 12 indicadores medidos están dentro de lo aceptable; 1 no conformidades. Los aceptables son los de `metas.json` al crearse el informe; los indicadores de datos van en modo aviso hasta que el autor apruebe que bloqueen la publicación.
 
@@ -22,6 +22,6 @@ Autoevaluación automática: 11 de 12 indicadores medidos están dentro de lo ac
 | Pruebas de datos dbt superadas | datos | 0 % | 0 % | Cumple | Dentro de lo aceptable: no afecta. |
 | Precios con comparación válida | datos | 6,90 % | 10 % | Cumple | Dentro de lo aceptable: no afecta. |
 | Filas rechazadas | datos | 0,01 % | 1 % | Cumple | Dentro de lo aceptable: no afecta. |
-| Días desde la última carga | datos | 10 días | 8 días | Urgente | Supera lo aceptable por poco: necesita atención. Revisar la ejecución del workflow semanal; si la fuente se retrasó, registrarlo como incidente externo. Indicador de datos en modo aviso: todavía no bloquea la publicación. |
+| Días desde la última carga | datos | 11 días | 8 días | Urgente | Supera lo aceptable por poco: necesita atención. Revisar la ejecución del workflow semanal; si la fuente se retrasó, registrarlo como incidente externo. Indicador de datos en modo aviso: todavía no bloquea la publicación. |
 
 Cada informe se guarda en `docs/calidad/informes/` y no se edita: un error se corrige en el informe siguiente.

@@ -1,6 +1,6 @@
 {
-  "generado": "2026-10-30 23:36 UTC",
-  "commit": "10dda26",
+  "generado": "2026-10-31 00:06 UTC",
+  "commit": "6cbe4ee",
   "python": "3.11.17",
   "ruff": {
     "orden": "/tmp/tools/bin/ruff check bi etl agent tests --select E,F,W",
@@ -139,7 +139,7 @@
   "secretos": {
     "orden": "detect-secrets scan $(git ls-files)",
     "version": "1.5.0",
-    "archivos_revisados": 248,
+    "archivos_revisados": 249,
     "candidatos": 27,
     "por_archivo": {
       "agent/downloads/manifest.json": [
@@ -223,11 +223,11 @@
     "series_activas": 1113,
     "series_con_dato": 772,
     "pct_series_con_dato": 69.4,
-    "dias_desde_ultima_semana": 12,
-    "dias_desde_ultima_carga": 10,
+    "dias_desde_ultima_semana": 13,
+    "dias_desde_ultima_carga": 11,
     "filas_leidas": 2521012,
     "filas_rechazadas": 201,
     "pct_rechazadas": 0.008,
-    "medido": "2026-10-30"
+    "medido": "2026-10-31"
   }
 }
