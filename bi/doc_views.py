@@ -508,7 +508,7 @@ CONTAINERS = [
         "Base servida",
         ["DuckDB"],
         "etl/datos.duckdb",
-        "Las 12 tablas que lee el panel. Se reemplaza entera al final de una carga válida.",
+        "Las 13 tablas que lee el panel. Se reemplaza entera al final de una carga válida.",
     ),
     (
         "backup",

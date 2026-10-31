@@ -18,7 +18,7 @@ BRANDS = {
     "python": ("#6fa8dc", "#2a5d96", "#ffffff"),
     "github": ("#59616b", "#1b1f24", "#ffffff"),
 }
-# The three origins of the 12 served tables: (key, label, brand, tables, what, why).
+# The three origins of the 13 served tables: (key, label, brand, tables, what, why).
 ORIGINS = [
     (
         "marts",
@@ -34,8 +34,10 @@ ORIGINS = [
             "ipc_weekly",
             "ipc_monthly",
             "ine_ipc_source",
+            "latest_by_source",  # D-365
         ],
-        "Las nueve tablas del modelo: los precios semanales, sus dimensiones, las filas rechazadas y el IPC.",
+        "Las diez tablas del modelo: los precios semanales, sus dimensiones, el último dato de cada fuente, las filas "
+        "rechazadas y el IPC.",
         "dbt las construye y las prueba en cada carga; el pipeline las copia tal cual a la base servida.",
     ),
     (
@@ -120,7 +122,7 @@ NODES = [
         "DuckDB",
         "etl/datos.duckdb",
         (755, MAIN_Y),
-        "La base que el panel lee: 12 tablas, agrupadas por quién las escribe (abajo).",
+        "La base que el panel lee: 13 tablas, agrupadas por quién las escribe (abajo).",
         "Es un solo archivo, rápido para consultas analíticas y de solo lectura para el panel.",
     ),
     (
