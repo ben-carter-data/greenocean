@@ -150,9 +150,15 @@ def refresh(watch: dict[str, Any], token: str, now: datetime) -> dict[str, Any]:
 
 
 def read_tail(job: dict[str, Any], token: str) -> list[str]:
-    """The last lines of a finished job's real log, without tokens; the reason when it cannot be read."""
+    """The lines of a finished job's real log, without tokens; the reason when it cannot be read. D-367: when the job
+    failed, the log of the step that failed (with the failing tests first), not the last lines of the whole job."""
     try:
-        return github_actions.clean_log(github_actions.job_log(job["id"], token), (token,))[-github_actions.LOG_LINES :]
+        lines = github_actions.clean_log(github_actions.job_log(job["id"], token), (token,))
+        if job.get("conclusion") == "failure":
+            step = github_actions.failed_step(lines)
+            if step:
+                return step
+        return lines[-github_actions.LOG_LINES :]
     except requests.RequestException as error:
         return [github_actions.redact(github_actions.explain(error, "log"), (token,))]
 
@@ -192,8 +198,13 @@ def build_log(watch: dict[str, Any]) -> str:
         lines.append(f"{when}  {tr(STATE_WORDS[step['state']]):<10} {name} ({duration})")
     for job_id, tail in watch["tails"].items():
         lines.append("")
-        lines.append(f"── {watch['jobs'].get(job_id, '')} · {tr('últimas {} líneas').format(len(tail))} ──")
-        lines.extend(tail)
+        name = watch["jobs"].get(job_id, "")
+        if tail and tail[0].startswith("##[group]Run "):  # D-367: the step that failed, named by its command
+            lines.append(f"── {name} · {tr('paso que falló')}: {tail[0][len('##[group]') :]} ──")
+            tail = tail[1:]
+        else:
+            lines.append(f"── {name} · {tr('últimas {} líneas').format(len(tail))} ──")
+        lines.extend(line.replace("##[error]", "ERROR: ") for line in tail)
     return github_actions.redact("\n".join(lines))
 
 

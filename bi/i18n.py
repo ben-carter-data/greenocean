@@ -108,6 +108,7 @@ EN = {
     "Abrir el informe o su PDF": "Open the report or its PDF",
     "Página {} de {} · {} filas": "Page {} of {} · {} rows",
     "Página": "Page",
+    "paso que falló": "step that failed",
     "Último dato por canal": "Latest data by channel",
     "Ver último dato por canal": "See latest data by channel",
     "Esta página se llena con la próxima carga semanal.": "This page fills in with the next weekly load.",

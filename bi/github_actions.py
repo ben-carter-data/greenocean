@@ -121,6 +121,23 @@ def clean_log(text: str, secrets: tuple[str | None, ...] = ()) -> list[str]:
     return lines
 
 
+def failed_step(lines: list[str]) -> list[str]:
+    """D-367: the part of a job's log that belongs to the step that failed, up to GitHub's «##[error]» line: what the
+    step printed, not the cleanup that follows it. Its last LOG_LINES lines, with the pytest «FAILED» lines first when
+    they fall before that window. An empty list when the log has no error mark."""
+    error = next((index for index, line in enumerate(lines) if "##[error]" in line), None)
+    if error is None:
+        return []
+    start = max((index for index in range(error) if lines[index].startswith("##[group]Run ")), default=0)
+    section = lines[start : error + 1]
+    tail = section[-LOG_LINES:]
+    earlier = (
+        [line for line in section[: -LOG_LINES or None] if FAILED_TEST.match(line)] if len(section) > LOG_LINES else []
+    )
+    head = [section[0]] if section and section[0] not in tail else []
+    return head + [line for line in earlier if line not in tail] + tail
+
+
 def failed_tests(lines: list[str]) -> list[str]:
     """The names of the failing tests: the ids pytest prints on its «FAILED …» and «ERROR …» lines, once each."""
     found: list[str] = []

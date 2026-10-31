@@ -286,6 +286,10 @@ def draw_control_page(secrets, run_state="ok", dialog=False, cancel_error=None):
         f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
         "from datetime import datetime, timedelta, timezone\n"
         "from bi import control, dashboard, run_monitor\n"
+        # AppTest runs in this process: what the script replaces is put back at its end, or later tests see the stubs.
+        "SAVED = [(module, name, getattr(module, name)) for module, name in ((control, 'list_workflow_runs'),"
+        " (control, 'read_token_expiration'), (control, 'start_workflow_run'), (control, 'cancel_workflow_run'),"
+        " (run_monitor, 'find_run'), (run_monitor, 'fetch_run'), (run_monitor, 'read_tail'))]\n"
         "control.list_workflow_runs = lambda *args, **kwargs: []\n"
         # Relative to today: a fixed date made this test fail the day it arrived.
         "control.read_token_expiration = lambda token: datetime.now(timezone.utc) + timedelta(days=60)\n"
@@ -310,12 +314,14 @@ def draw_control_page(secrets, run_state="ok", dialog=False, cancel_error=None):
             if cancel_error
             else "control.cancel_workflow_run = lambda run_id, token: None\n"
         )
+        + "try:\n"
         + (
-            "dashboard.show_run_now_dialog(dashboard.get_secret('GITHUB_TOKEN'), "
+            "    dashboard.show_run_now_dialog(dashboard.get_secret('GITHUB_TOKEN'), "
             "dashboard.get_secret('CONTROL_CODE'))\n"
             if dialog
-            else "dashboard.render_page(dashboard.PAGE_RUNS)\n"
+            else "    dashboard.render_page(dashboard.PAGE_RUNS)\n"
         )
+        + "finally:\n    for module, name, value in SAVED:\n        setattr(module, name, value)\n"
     )
     app = AppTest.from_string(script, default_timeout=60)
     for name, value in secrets.items():

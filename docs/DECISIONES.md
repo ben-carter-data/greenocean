@@ -2741,3 +2741,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Causa:** la carga del 30-10 no publicó porque fallaron dos pruebas de pantalla en el paso «Pruebas automáticas»: una de ellas, la del inglés de «Ejecuciones · Operación», porque la carga se mostraba a sí misma «En curso…» y «Esperando la base», dos textos sin inglés.
 - **Regla:** la carga semanal corre solo las pruebas de datos y del pipeline (`pytest -m "datos and not rendimiento"`); la lista de esos archivos vive en `tests/conftest.py`, que les pone el marcador `datos`. Las de pantalla (traducciones, páginas, AppTest, documentos) corren en el CI de cada push. Una falla de pantalla nunca bloquea la publicación de datos. Queda en CLAUDE.md, en el SQAP (§7) y en `politica.json`.
 - **Pruebas:** la que protege D-341 (`tests/test_rendimiento.py`) verifica también el filtro de la carga y que ningún archivo de datos use AppTest ni la auditoría del inglés.
+
+## D-367 · La ventana de la carga muestra el log del paso que falló
+
+- **Causa:** cuando falló la carga del 30-10, la ventana mostró las últimas 60 líneas del job: el final de una comparación y la limpieza de GitHub. La línea `FAILED` de la segunda prueba quedó fuera.
+- **Decisión:** si un job falla, la ventana muestra la parte del log del paso que falló, desde su comando hasta la marca `##[error]` de GitHub, con sus últimas 60 líneas y, primero, las líneas `FAILED` de pytest que queden antes. El título nombra el paso por su comando. Un job que terminó bien sigue mostrando sus últimas líneas.
+- **Pruebas:** `tests/test_run_monitor.py::test_d367_…`.

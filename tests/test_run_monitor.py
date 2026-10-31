@@ -110,3 +110,27 @@ def test_d351_a_minimized_run_shows_an_indicator_that_reopens_the_window():
     visitor.session_state["run_watch"] = watch | {"minimized": True}
     visitor.run()
     assert not [button for button in visitor.sidebar.button if button.key == "run_indicator"]  # only the author's
+
+
+def failing_job_log():
+    lines = ["##[group]Run actions/checkout@v4", "checking out", "##[endgroup]"]
+    lines += ['##[group]Run pytest -q -m "datos and not rendimiento"', "##[endgroup]"]
+    lines += ["FAILED tests/test_a.py::test_one - AssertionError", "FAILED tests/test_b.py::test_two - AssertionError"]
+    lines += [f"        True,  # diff line {n}" for n in range(80)]
+    lines += ["2 failed, 1115 passed in 245.83s", "##[error]Process completed with exit code 1."]
+    lines += ["Post job cleanup.", "[command]/usr/bin/git version", "Cleaning up orphan processes"]
+    return "\n".join(f"2026-10-30T23:00:00.0000000Z {line}" for line in lines)
+
+
+def test_d367_a_failed_job_shows_the_log_of_its_failed_step_with_the_failing_tests_first(monkeypatch):
+    monkeypatch.setattr(run_monitor.github_actions, "job_log", lambda job_id, token: failing_job_log())
+    tail = run_monitor.read_tail({"id": 1, "conclusion": "failure"}, TOKEN)
+    assert tail[0] == '##[group]Run pytest -q -m "datos and not rendimiento"'  # the step, named by its command
+    assert tail[1].startswith("FAILED tests/test_a.py::test_one") and tail[2].startswith("FAILED tests/test_b.py")
+    assert tail[-1].endswith("Process completed with exit code 1.") and "Post job cleanup." not in tail
+    watch = run_monitor.new_watch(NOW)
+    watch.update(jobs={1: "weekly-load"}, tails={1: tail})
+    log = run_monitor.build_log(watch)
+    assert "weekly-load · paso que falló: Run pytest" in log and "ERROR: Process completed" in log
+    success = run_monitor.read_tail({"id": 1, "conclusion": "success"}, TOKEN)
+    assert success[-1] == "Cleaning up orphan processes"  # a job that passed keeps its last lines
