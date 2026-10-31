@@ -4,12 +4,12 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Registros de decisiones de arquitectura (ADR), formato MADR |
-| Versión | 3.1 |
-| Fecha | 26-10-2026 |
+| Versión | 3.2 |
+| Fecha | 31-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar las once decisiones que más pesan en la arquitectura de GreenOcean: por qué se tomaron, qué alternativas había y qué consecuencias tienen. |
-| Audiencia | Arquitectura, ingeniería, gerencia y revisión técnica. |
+| Audiencia | Arquitectos, ingenieros, gerencia y revisores técnicos. |
 | Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Índice de decisiones](INDICE_DECISIONES.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 Cada registro conserva su número original, por eso la numeración no es correlativa. Las decisiones menores están en el [Índice de decisiones](INDICE_DECISIONES.md) y en el registro completo, `docs/DECISIONES.md`. Las opciones consideradas son solo las que constan en ese registro o en el historial del repositorio.
@@ -84,12 +84,12 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 
 ## ADR-11 · Publicar solo si pasan las pruebas
 
-- **Estado:** aceptada (D-029, umbral de filas; D-154, construcción con dbt).
+- **Estado:** aceptada (D-029, umbral de filas; D-154, construcción con dbt); ampliada por D-356, fuentes retrasadas.
 - **Fecha:** 11-10-2026.
 - **Contexto:** un archivo truncado o una regla rota no deben llegar nunca al panel.
 - **Decisión:** la base servida se reemplaza solo si pasan todas las pruebas de dbt, si la carga lee al menos el 90 % de las filas de la última carga correcta y si pytest pasa sobre la base nueva. Si algo falla, el workflow se detiene antes de publicar, GitHub Actions marca la ejecución como fallida y avisa al autor por correo.
 - **Opciones consideradas:** límites fijos de filas por semana.
-- **Consecuencias:** el panel siempre muestra la última carga válida. `etl_run` guarda solo las cargas publicadas; las fallidas quedan en el historial de GitHub Actions, visible en «Centro de operación». La primera carga no tiene con qué compararse, y un archivo duplicado no se detecta por conteo: lo detectan las pruebas de unicidad.
+- **Consecuencias:** el panel siempre muestra la última carga válida. `etl_run` guarda solo las cargas publicadas; las fallidas quedan en el historial de GitHub Actions, visible en «Centro de operación». La primera carga no tiene con qué compararse, y un archivo duplicado no se detecta por conteo: lo detectan las pruebas de unicidad. Desde D-356, la carga también se detiene si a una fuente le falta una semana en medio de los datos o si lleva más de 2 semanas sin publicar.
 - **Confirmación:** la verifica `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, que corre en cada push.
 
 ## ADR-19 · Modelo estrella con una dimensión de fechas sin huecos
@@ -146,7 +146,7 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 
 - **Estado:** aceptada (D-270, base servida en un release).
 - **Fecha:** 24-10-2026.
-- **Contexto:** cada carga subía con un commit la base servida y el respaldo, unos 48 MB. Git conserva cada versión de un archivo: el historial crecía cerca de 1 GB por año con copias que nadie consulta, porque cada base nueva ya contiene la historia completa ([ADR-10](#adr-10--reconstruir-todo-en-cada-carga)). Medidas del 24-10-2026.
+- **Contexto:** cada carga subía con un commit la base servida y el respaldo, unos 48 MB. Git conserva cada versión de un archivo: el historial crecía cerca de 1 GB por año con copias que nadie consulta, porque cada base nueva ya contiene la historia completa ([ADR-10](#adr-10--reconstruir-todo-en-cada-carga)). Las cifras se midieron el 24-10-2026, al tomar la decisión.
 
 [[diagrama:antes_despues]]
 
@@ -172,3 +172,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 2.0 | 25-10-2026 | Formato MADR con fecha y opciones consideradas, índice al inicio, opciones de ADR-30 completadas desde el historial, ADR-19 sin alternativas no registradas (D-279, documentación profesional) |
 | 3.0 | 25-10-2026 | Resumen en lenguaje simple, mapa de dónde actúa cada decisión, línea de tiempo y el antes y después del ADR-35; índice por el nombre de cada decisión (D-290, documentos para todo lector) |
 | 3.1 | 26-10-2026 | Cada registro nombra la prueba que lo confirma, como pide MADR (D-300) |
+| 3.2 | 31-10-2026 | ADR-11 ampliado por las fuentes retrasadas (D-356); las cifras de ADR-35 rotuladas como medidas al decidir (D-386); el documento pasa a `docs/arquitectura/` (D-381, D-388) |

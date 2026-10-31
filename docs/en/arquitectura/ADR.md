@@ -4,12 +4,12 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Architecture Decision Records (ADR), MADR format |
-| Version | 3.1 |
-| Date | 2026-10-26 |
+| Version | 3.2 |
+| Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain the eleven decisions that weigh most on the architecture of GreenOcean: why they were taken, which alternatives there were and what consequences they have. |
-| Audience | Architecture, engineering, management and technical review. |
+| Audience | Architects, engineers, management and technical reviewers. |
 | Related documents | [Software Architecture Document (SAD)](SAD.md) · [Decision Index](INDICE_DECISIONES.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 Each record keeps its original number, which is why the numbering is not consecutive. The minor decisions are in the [Decision Index](INDICE_DECISIONES.md) and in the full log, `docs/DECISIONES.md`. The options considered are only those recorded in that log or in the history of the repository.
@@ -84,12 +84,12 @@ Each decision of this document answers a concrete question: where the data comes
 
 ## ADR-11 · Publish only if the tests pass
 
-- **Status:** accepted (D-029, row threshold; D-154, build with dbt).
+- **Status:** accepted (D-029, row threshold; D-154, build with dbt); extended by D-356, late sources.
 - **Date:** 2026-10-11.
 - **Context:** a truncated file or a broken rule must never reach the panel.
 - **Decision:** the served database is replaced only if all the dbt tests pass, if the load reads at least 90 % of the rows of the last good load and if pytest passes on the new database. If something fails, the workflow stops before publishing, GitHub Actions marks the run as failed and emails the author.
 - **Considered options:** fixed row limits per week.
-- **Consequences:** the panel always shows the last valid load. `etl_run` keeps only the published loads; the failed ones stay in the GitHub Actions history, visible in «Operations center». The first load has nothing to compare with, and a duplicated file is not detected by counting: the uniqueness tests detect it.
+- **Consequences:** the panel always shows the last valid load. `etl_run` keeps only the published loads; the failed ones stay in the GitHub Actions history, visible in «Operations center». The first load has nothing to compare with, and a duplicated file is not detected by counting: the uniqueness tests detect it. Since D-356, the load also stops if a source is missing a week in the middle of the data or has gone more than 2 weeks without publishing.
 - **Confirmation:** `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database` verifies it, on every push.
 
 ## ADR-19 · Star schema with a gapless date dimension
@@ -146,7 +146,7 @@ Each decision of this document answers a concrete question: where the data comes
 
 - **Status:** accepted (D-270, served database in a release).
 - **Date:** 2026-10-24.
-- **Context:** each load committed the served database and the backup, about 48 MB. Git keeps every version of a file: the history grew by about 1 GB per year with copies nobody reads, because each new database already contains the whole history ([ADR-10](#adr-10--rebuild-everything-on-each-load)). Measurements of 2026-10-24.
+- **Context:** each load committed the served database and the backup, about 48 MB. Git keeps every version of a file: the history grew by about 1 GB per year with copies nobody reads, because each new database already contains the whole history ([ADR-10](#adr-10--rebuild-everything-on-each-load)). The figures were measured on 2026-10-24, when the decision was taken.
 
 [[diagrama:antes_despues]]
 
@@ -172,3 +172,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 2.0 | 2026-10-25 | MADR format with date and options considered, contents first, ADR-30 options completed from the history, ADR-19 without unrecorded alternatives (D-279, professional documentation) |
 | 3.0 | 2026-10-25 | Summary in plain language, map of where each decision acts, timeline and the before and after of ADR-35; index by the name of each decision (D-290, documents for every reader) |
 | 3.1 | 2026-10-26 | Each record names the test that confirms it, as MADR asks (D-300) |
+| 3.2 | 2026-10-31 | ADR-11 extended by the late sources (D-356); the figures of ADR-35 labelled as measured when deciding (D-386); the document moves to `docs/arquitectura/` (D-381, D-388) |
