@@ -608,3 +608,16 @@ def test_d361_an_alert_from_an_old_report_says_it_is_old_and_is_not_shown_as_tod
     assert quality_method.is_stale(latest, date(2026, 11, 4)) is False and quality_method.is_stale(
         latest, date(2026, 11, 5)
     )
+
+
+def test_d363_a_push_only_measures_and_the_report_comes_after_the_weekly_load_or_by_hand():
+    workflow = (ROOT / ".github" / "workflows" / "calidad.yml").read_text(encoding="utf-8")
+    triggers = workflow.split("permissions:")[0]
+    assert "  push:" in triggers and "  workflow_dispatch:" in triggers
+    assert "  workflow_run:\n    workflows: [semanal]\n    types: [completed]" in triggers  # active, not commented out
+    step = workflow.split("- name: Proponer el informe al autor")[1].split("- name:")[0]
+    assert "github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'" in step
+    gate = workflow.split("- name: Fallar si un indicador de código pasa lo aceptable")[1]
+    assert (
+        "github.event_name" not in gate.split("run:")[0]
+    )  # every run, a push included, still fails past the acceptable

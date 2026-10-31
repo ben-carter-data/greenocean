@@ -2715,3 +2715,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Causa de F-11:** el paso «Proponer el informe al autor» fallaba con «[remote rejected] calidad/informe-acf6839 (directory file conflict)». En el repositorio existe la rama remota «calidad» (último commit `6c6286c`, del 26-10, ya fusionada en main), y git no permite una rama «calidad/...» mientras exista una llamada «calidad».
 - **Decisión:** `calidad.yml` crea la rama del informe como «informe-calidad/<commit>». No se borra nada; borrar la rama «calidad», ya fusionada y sin uso, queda propuesto y espera la aprobación del autor.
 - **Verificación pendiente:** F-11 queda abierta hasta que el workflow abra su primer pull request después del push.
+
+## D-363 · El informe de calidad es semanal: un push solo mide
+
+- **Causa:** `calidad.yml` proponía un informe en cada push a main; el 30-10 se abrieron propuestas de los informes N° 5, 6 y 7. D-331 dice que el informe es semanal.
+- **Decisión:** en un push, el workflow mide los 12 indicadores y falla si un indicador de código pasa su aceptable, sin proponer informe. Propone el informe numerado solo cuando termina la carga semanal (`workflow_run` de «semanal», también si la carga falló) o cuando se lanza a mano (`workflow_dispatch`). Se activa así el disparador que D-331 dejó propuesto.
+- **Limpieza:** las dos propuestas del informe N° 7 (ramas `informe-calidad/400bee8` y `informe-calidad/6cbe4ee`) se cerraron sin fusionar al borrar sus ramas.
+- **Pruebas:** `tests/test_quality_method.py::test_d363_…` (los disparadores y la condición del paso que propone el informe).

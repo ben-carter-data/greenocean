@@ -1,18 +1,18 @@
 # D-323, D-330, D-331: measures the 12 quality indicators (data and code) on every push and checks them against
-# docs/calidad/metas.json. On main it turns the measurement into the next numbered report (docs/calidad/informes/) and
-# proposes it to the author in a pull request «Actualizar medición de calidad», with the comparison against the previous
-# report. It never changes the code and never publishes anything: the page «Método y calidad» shows a report only after
+# docs/calidad/metas.json, failing when a code indicator is past its acceptable. D-363: the report is weekly, so only
+# after the weekly load (workflow_run of «semanal», even a failed one) or when launched by hand does it turn the
+# measurement into the next numbered report (docs/calidad/informes/) and propose it to the author in a pull request
+# «Actualizar medición de calidad», with the comparison against the previous report; a push only measures. It never changes the code and never publishes anything: the page «Método y calidad» shows a report only after
 # the author merges that request.
 # Opening the request needs Settings → Actions → General → «Allow GitHub Actions to create and approve pull requests».
 name: calidad
 on:
   push:
   workflow_dispatch:
-  # D-331, PROPOSED, NOT ACTIVE: after every weekly load, even a failed one, so each Tuesday leaves its report.
-  # It replaces the old Monday cron, which ran before the load. To turn it on, remove the # of the next three lines.
-  # workflow_run:
-  #   workflows: [semanal]
-  #   types: [completed]
+  # D-363: after every weekly load, even a failed one, so each Tuesday leaves its report.
+  workflow_run:
+    workflows: [semanal]
+    types: [completed]
 permissions:
   contents: write
   pull-requests: write
@@ -48,7 +48,8 @@ jobs:
         continue-on-error: true
         run: .venv/bin/python scripts/verificar_calidad.py medicion.json
       - name: Proponer el informe al autor
-        if: github.ref == 'refs/heads/main'
+        # D-363: a push only measures; the weekly load and a manual launch propose the report.
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
