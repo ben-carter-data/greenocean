@@ -74,7 +74,7 @@ def test_the_use_cases_follow_the_prd_and_each_points_to_a_real_screen():
         assert page in menu_labels() or page == "GitHub, fuera del panel", (case, page)
         if identifier.startswith("P-"):
             assert questions[identifier][2] == screen, identifier  # the same screen as in the table
-    assert "administrador" in PRD.lower()
+    assert "administrador" not in PRD.lower() and "- **Autor:**" in PRD  # D-382: the author is the Autor view
     ids = {identifier for *_, identifier, _ in doc_views.SYSTEM_CASES}
     assert "RF-01 a RF-04" in ids
 

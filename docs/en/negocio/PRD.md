@@ -4,12 +4,12 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.5 |
+| Version | 3.6 |
 | Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain which problem GreenOcean solves, for whom, which questions it answers and what it must meet for its figures to be reliable. |
-| Audience | Management, product owners, analysts and technical review. |
+| Audience | Management, product owners, analysts and technical reviewers. |
 | Related documents | [Software Architecture Document (SAD)](../arquitectura/SAD.md) · [Architecture Decision Records (ADR)](../arquitectura/ADR.md) · [Test and Security Plan](../calidad/PLAN_PRUEBAS.md) · [Glossary](GLOSARIO.md) |
 
 ## Contents
@@ -30,22 +30,21 @@
 
 ## 1. In summary
 
-GreenOcean turns the official food prices of Chile into clear answers, every week and without intervention.
+GreenOcean publishes every week how food prices move in Chile. It takes the official data of ODEPA and the INE, checks it and puts it in a panel anyone can open. Nobody has to download files or cross them by hand.
 
-- **Vision:** that anyone in Chile knows, with official and reliable data, how food prices move.
-- **Mission:** publish verified, clear and easy-to-read prices every week, and improve the process continuously.
-- **What it does:** every Tuesday it downloads the ODEPA prices and the INE CPI, checks them and publishes a panel to consult them.
-- **For whom:** price analysts, purchasing, management and anyone who needs to check the figures.
-- **What it answers:** what changed during the week, whether a price is normal for the season, how much the consumer pays over the wholesale price, what rose more than inflation and whether the figures are reliable.
-- **Why trust it:** every figure can be traced back to the original file, and a load with errors never reaches the panel.
+- **Vision:** that anyone in Chile knows, with official data, how food prices move.
+- **Mission:** publish checked, easy-to-read prices every week, and improve the process with every load.
+- **What it answers:** what changed this week, whether a price is normal for the season, how much the consumer pays over the wholesale price and which foods rose more than inflation.
+- **For whom:** whoever buys or sells food, whoever reports on prices and whoever reviews how the project is built.
+- **Why trust it:** every figure can be traced back to the original file, and a load with errors does not reach the panel.
 
 [[diagrama:valor]]
 
 ## 2. The problem
 
-Chile's Office of Agricultural Studies and Policies (ODEPA) publishes the wholesale and consumer prices of fruit, vegetables and other foods every week. The National Statistics Institute (INE) publishes the food consumer price index (CPI, «IPC» in Spanish) every month. Both are open and reliable data, but they are not ready to be compared: each series has its own frequency, unit of sale and level of detail, and none of them discounts inflation. Answering whether a price rose in real terms, or whether it is high for the time of year, means downloading the files and crossing them by hand every week.
+Chile's Office of Agricultural Studies and Policies (ODEPA) publishes the wholesale and consumer prices of fruit, vegetables and other foods every week. The National Statistics Institute (INE) publishes the food consumer price index (CPI, «IPC» in Spanish) every month. Both are open and reliable data, but they cannot be compared as they arrive. Each series has its own frequency, unit and level of detail, and none of them discounts inflation. To know whether a price rose in real terms, or whether it is high for the time of year, someone has to download the files and cross them by hand every week.
 
-GreenOcean does that work automatically and leaves each step in view.
+GreenOcean does that work by itself, every Tuesday, and leaves each step in view.
 
 [[diagrama:ciclo_semanal]]
 
@@ -53,7 +52,7 @@ GreenOcean does that work automatically and leaves each step in view.
 
 ### 3.1 Stakeholders
 
-Each stakeholder has a question, a decision the answer helps them make and the page where they find it. The page [[vista:Stakeholders]] shows this table.
+Each stakeholder has a question, a decision that depends on the answer and a page where they find it. The page [[vista:Stakeholders]] shows this same table.
 
 | Stakeholder | Who they are | What they ask | What decision it helps them make | Where the answer is |
 |---|---|---|---|---|
@@ -74,11 +73,17 @@ Each stakeholder has a question, a decision the answer helps them make and the p
 
 [[diagrama:casos]]
 
-The panel is read-only and needs no account. On entry, and every time the page is reloaded, the window «Elige tu vista» offers three views: User shows the business (the price overview, guided in three steps, Insights and prices against inflation); Professional, the whole project in order of importance; and Author, the same plus what only the author sees (the page «GitHub Actions», the alert «Acción requerida» and the manual load). Author asks for the control code, which is never in the repository. The «Vista» button, under the logo and above the menu, changes the view, as does a click on the logo (D-373); leaving Author closes its session. The author, the administrator of the project, maintains the code and the secrets and answers ad hoc SQL queries.
+The panel is read-only and needs no account. On entry, and on every reload, a window asks the reader to choose one of three views:
+
+- **User:** the business. The Price overview, guided in three steps, Insights and prices against inflation.
+- **Professional:** the whole project, ordered by profile (data, BA, BI, DevOps or security), with the read-only SQL studio.
+- **Author:** the same as Professional, plus the «GitHub Actions» page, the «Action required» alert and the manual load. It asks for the control code, which is never in the repository.
+
+The «View» button, under the logo, changes the view; a click on the logo does the same (D-373). Leaving Author closes its session. The author maintains the code and the secrets and answers ad hoc SQL queries.
 
 ### 3.3 What we heard
 
-Reviewed by real users: a usability review (they did not know where to start reading the Price overview) and an architecture review. Each change made from that feedback has its decision.
+Real users made two reviews: one of usability and one of architecture. Each change that came out of them has its decision.
 
 | Review | What we heard | What changed | Decision |
 |---|---|---|---|
@@ -87,7 +92,7 @@ Reviewed by real users: a usability review (they did not know where to start rea
 
 ## 4. Business questions
 
-Each question names the screen that answers it and the test that recomputes its answer along an independent path.
+Each question has the screen that answers it and a test that recomputes the answer along another path.
 
 | ID | Question | Screen that answers it | Evidence |
 |---|---|---|---|
@@ -99,7 +104,7 @@ Each question names the screen that answers it and the test that recomputes its 
 
 ## 5. Requirements
 
-Functional requirements (RF) define what the product does; non-functional requirements (RNF), with which qualities. Each one has a measurable criterion and the test that checks it.
+Functional requirements (RF) say what the product does. Non-functional requirements (RNF) say how it must do it. Each one has a measurable criterion and the test that checks it.
 
 [[diagrama:requisitos]]
 
@@ -117,7 +122,7 @@ Functional requirements (RF) define what the product does; non-functional requir
 | RNF-01 | Zero cost and no expiry | No paid service; only permanent free plans ([ADR-31 · Do not use a cloud data warehouse](../arquitectura/ADR.md#adr-31--do-not-use-a-cloud-data-warehouse)) | `docs/arquitectura/ADR.md` |
 | RNF-02 | Every figure can be checked | Weekly prices are rebuilt from the raw rows and along a second, independent path without dbt: difference 0 | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price`, `tests/test_data_audit.py::test_the_panel_reproduces_the_reference_figures_of_its_week` |
 | RNF-03 | Security | No secret in the repository; the weekly workflow has only the permissions it uses; the panel cannot write to the database | `tests/test_security.py::test_no_secret_is_tracked_by_git`, `tests/test_security.py::test_the_weekly_job_has_least_privilege`, `tests/test_sql_explorer.py::test_read_only_statements_are_accepted` |
-| RNF-04 | Quality watched on every change | pytest and the dbt compilation run on every push; the 11 quality indicators are measured on every load, and one outside its threshold changes the verdict | `.github/workflows/pruebas.yml`, `tests/test_quality_audit.py::test_a_degraded_measure_turns_its_indicator_and_the_verdict_red` |
+| RNF-04 | Quality watched on every change | pytest and the dbt compilation run on every push. The 11 data quality indicators are measured on every load, and one outside its threshold changes the verdict. The 12 indicators of the quality plan are measured every week ([Quality plan](../calidad/PLAN_DE_CALIDAD.md)) | `.github/workflows/pruebas.yml`, `tests/test_quality_audit.py::test_a_degraded_measure_turns_its_indicator_and_the_verdict_red` |
 | RNF-05 | Readable on computer, tablet and phone | No page scrolls sideways between 1024 × 768 and 1920 × 1080, on a portrait tablet (768 × 1024) or on a landscape phone (844 × 390); in portrait, the panel asks to turn the phone | `tests/medicion/medir.cjs` |
 | RNF-06 | Each main page on one screen | In the browser window of a 1440 × 900 screen (1440 × 790 usable) and at 1920 × 1000, each main page is seen whole, without scrolling | `tests/medicion/medir.cjs` |
 
@@ -131,19 +136,23 @@ Functional requirements (RF) define what the product does; non-functional requir
 | Read-only panel with its documentation | A public panel, with no account and no cost (ADR-02); the documents leave every decision and every figure in view (RNF-02) | Data changes by the users | The data comes only from the official sources and the database opens read-only: nobody can change a figure (RF-06, RNF-03) |
 | Publication up to the last week complete in both sources | The Price overview compares wholesale and consumer in the same week; a half week would give incomplete figures (D-356) | Filling in a week a source has not published yet | An invented figure cannot be recomputed from the source; the load waits for the source to publish (D-356) |
 
-With the load of 2026-10-20, the database holds 814,610 weekly prices over 250 weeks (from Jan 3–9, 2022 to Oct 12–18, 2026), 9 regions, 8 channels, 1,609 product keys and 202 months of the CPI. That load read 2,521,012 rows: 2,520,811 loaded and 201 rejected with their reason. Every Tuesday the database grows; the figures of the day are in the panel.
+With the load of 2026-10-31, the database holds 821,072 weekly prices over 252 weeks (from Jan 3–9, 2022 to Oct 26–Nov 1, 2026), 9 regions, 8 channels, 1,613 product keys and 202 months of the CPI. That load read 2,541,374 rows: 2,541,173 loaded and 201 rejected with their reason. The database grows every Tuesday; the figures of the day are in the panel.
 
 ## 7. Screens
 
-Real captures of the main pages, in the four color themes. The dark theme is the one on entry. The menu groups the pages by section: Business · BA and BI (in a visitor's reading order: Stakeholders, Business and systems analysis, Price overview, Latest data by channel and Insights), Data engineering, DevOps and security, Stack and evidence, and Quality (Quality and audit, Method and quality and Git workflow). The price overview reads in three numbered steps: choose a region or all of Chile, choose a family and look at its products; in the User view, each step opens when the one before is done. «Último dato por canal», next to the overview, shows each source's latest week (wholesale and consumer) with its change by family and its products, even if the other source has not published it yet.
+These are real captures of six main pages, in the four color themes. The dark theme is the one on entry.
+
+- **Menu:** it groups the pages in five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first follows a visitor's reading order: Stakeholders, Business and systems analysis, Price overview, Latest data by channel and Insights.
+- **Price overview:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done.
+- **Latest data by channel:** it shows each source's latest week (wholesale and consumer), with its change by family and its products, even if the other source has not published it yet.
 
 [[diagrama:mockups]]
 
 ## 8. Assumptions, constraints and dependencies
 
 **Assumptions**
-- The national price is a simple average of the regions, not weighted by population or sales, because no open source publishes those weights. Each weekly change compares only the regions with a price in both weeks.
-- The indicators describe what happened; they do not forecast or attribute causes. A family rising with the CPI does not prove that inflation moved it: the food CPI is computed from those same prices.
+- The national price is a simple average of the regions. It is not weighted by population or sales, because no open source publishes those weights. Each weekly change compares only the regions with a price in both weeks.
+- The indicators describe what happened. They do not forecast or attribute causes. A family rising in step with the CPI does not prove that inflation moved it, because the food CPI is computed from those same prices.
 
 **Constraints**
 - Zero cost: only the permanent free plans of GitHub and Streamlit Community Cloud.
@@ -199,7 +208,8 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 2.0 | 2026-10-25 | Standard structure: header, contents, constraints and dependencies, risks, acceptance criteria, glossary and history; screen measure corrected to 1440 × 790 usable (D-279, professional documentation) |
 | 3.0 | 2026-10-25 | Reading from the most important to the least: summary, problem, users, questions and requirements first; diagrams of the value and of the requirements (D-290, documents for every reader) |
 | 3.1 | 2026-10-30 | Vision and mission; the three views and the «Vista» indicator (RF-09); late sources and informative tests in RF-03; the manual load window in RF-07; the Quality section, dark theme and the overview in three steps (D-340 to D-357) |
-| 3.2 | 2026-10-30 | The page «Último dato por canal» (D-365) |
+| 3.2 | 2026-10-30 | The page «Latest data by channel» (D-365) |
 | 3.3 | 2026-10-31 | Stakeholders (3.1) and usage profiles (3.2), with their page in the panel (D-376) |
-| 3.4 | 2026-10-31 | What we heard (3.3), the why of the scope (6), the weekly cycle (2) and the page «Análisis de negocio y sistemas» (D-377) |
-| 3.5 | 2026-10-31 | The reading order of the section «Negocio · BA y BI» in the menu (7, D-378) |
+| 3.4 | 2026-10-31 | What we heard (3.3), the why of the scope (6), the weekly cycle (2) and the page «Business and systems analysis» (D-377) |
+| 3.5 | 2026-10-31 | The reading order of the section «Business · BA and BI» in the menu (7, D-378) |
+| 3.6 | 2026-10-31 | Wording reviewed; figures of the load of 2026-10-31 (6); the three views, each with what it sees (3.2); the full price alert (RF-05); the data quality indicators and those of the quality plan (RNF-04); the document moves to `docs/negocio/` (D-381, D-385, D-388) |

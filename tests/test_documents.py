@@ -180,7 +180,10 @@ def test_d269_the_documents_count_the_quality_indicators_and_dimensions_the_pane
     sad = i18n.document_path("SAD.md", "es").read_text(encoding="utf-8")
     assert f"{words[count]} indicadores, en {words[dimensions]} dimensiones" in sad
     assert f"la sexta dimensión, se mide con {words[controls]} controles" in sad
-    assert f"los {count} indicadores de calidad" in i18n.document_path("PRD.md", "es").read_text(encoding="utf-8")
+    # D-384: the PRD names the set it counts, apart from the 12 indicators of the quality plan.
+    assert f"Los {count} indicadores de calidad de los datos" in i18n.document_path("PRD.md", "es").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_d269_the_documents_say_where_a_failed_load_is_recorded():
@@ -272,9 +275,13 @@ def test_d279_the_history_dates_are_dates_the_file_really_changed():
         pytest.skip("the history is not here (a shallow clone)")
     for name in DOCUMENTS + ["MANUAL.md"]:
         log = []
-        for source in [name] + MERGED.get(name, []):  # a merged document keeps the history of the ones it absorbed
+        # A merged document keeps the history of the ones it absorbed; --follow crosses the move into folders (D-381).
+        sources = [i18n.document_path(name, "es").relative_to(ROOT).as_posix()] + [
+            f"docs/{old}" for old in MERGED.get(name, [])
+        ]
+        for path in sources:
             log += subprocess.run(
-                ["git", "log", "--follow", "--date=short", "--format=%ad", "--", f"docs/{source}"],
+                ["git", "log", "--follow", "--date=short", "--format=%ad", "--", path],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,

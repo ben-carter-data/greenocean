@@ -4,12 +4,12 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.5 |
+| Versión | 3.6 |
 | Fecha | 31-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar qué problema resuelve GreenOcean, para quién, qué preguntas responde y qué debe cumplir para que sus cifras sean confiables. |
-| Audiencia | Gerencia, responsables de producto, analistas y revisión técnica. |
+| Audiencia | Gerencia, responsables de producto, analistas y revisores técnicos. |
 | Documentos relacionados | [Documento de arquitectura de software (SAD)](../arquitectura/SAD.md) · [Registros de decisiones de arquitectura (ADR)](../arquitectura/ADR.md) · [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md) · [Glosario](GLOSARIO.md) |
 
 ## Índice
@@ -30,22 +30,21 @@
 
 ## 1. En resumen
 
-GreenOcean convierte los precios oficiales de los alimentos en Chile en respuestas claras, cada semana y sin intervención.
+GreenOcean publica cada semana cómo se mueven los precios de los alimentos en Chile. Toma los datos oficiales de ODEPA y del INE, los revisa y los deja en un panel que cualquiera puede abrir. Nadie tiene que descargar archivos ni cruzarlos a mano.
 
-- **Visión:** que cualquier persona en Chile sepa, con datos oficiales y confiables, cómo se mueven los precios de los alimentos.
-- **Misión:** publicar cada semana precios verificados, claros y fáciles de leer, y mejorar el proceso de forma continua.
-- **Qué hace:** cada martes descarga los precios de ODEPA y el IPC del INE, los revisa y publica un panel de consulta.
-- **Para quién:** analistas de precios, compras, gerencia y quien necesite comprobar las cifras.
-- **Qué responde:** qué cambió en la semana, si un precio es normal para la época, cuánto paga el consumidor sobre el mayorista, qué subió más que la inflación y si las cifras son confiables.
-- **Por qué confiar:** cada cifra se puede seguir hasta el archivo original, y una carga con errores nunca llega al panel.
+- **Visión:** que cualquier persona en Chile sepa, con datos oficiales, cómo se mueven los precios de los alimentos.
+- **Misión:** publicar cada semana precios revisados y fáciles de leer, y mejorar el proceso con cada carga.
+- **Qué responde:** qué cambió esta semana, si un precio es normal para la época, cuánto paga el consumidor sobre el mayorista y qué alimentos subieron más que la inflación.
+- **Para quién:** quien compra o vende alimentos, quien informa sobre precios y quien revisa cómo está hecho el proyecto.
+- **Por qué fiarse:** cada cifra se puede seguir hasta el archivo original, y una carga con errores no llega al panel.
 
 [[diagrama:valor]]
 
 ## 2. El problema
 
-La Oficina de Estudios y Políticas Agrarias (ODEPA) publica cada semana los precios mayoristas y al consumidor de frutas, verduras y otros alimentos. El Instituto Nacional de Estadísticas (INE) publica cada mes el índice de precios al consumidor (IPC) de alimentos. Son datos abiertos y confiables, pero no están listos para compararse: cada serie trae su propia frecuencia, unidad y nivel de detalle, y ninguna descuenta la inflación. Responder si un precio subió en términos reales, o si es alto para la época, exige descargar y cruzar archivos a mano cada semana.
+La Oficina de Estudios y Políticas Agrarias (ODEPA) publica cada semana los precios mayoristas y al consumidor de frutas, verduras y otros alimentos. El Instituto Nacional de Estadísticas (INE) publica cada mes el índice de precios al consumidor (IPC) de alimentos. Son datos abiertos y confiables, pero no se pueden comparar tal como llegan. Cada serie tiene su frecuencia, su unidad y su nivel de detalle, y ninguna descuenta la inflación. Para saber si un precio subió en términos reales, o si es alto para la época, hay que descargar y cruzar archivos a mano cada semana.
 
-GreenOcean hace ese trabajo de forma automática y deja cada paso a la vista.
+GreenOcean hace ese trabajo solo, cada martes, y deja cada paso a la vista.
 
 [[diagrama:ciclo_semanal]]
 
@@ -53,7 +52,7 @@ GreenOcean hace ese trabajo de forma automática y deja cada paso a la vista.
 
 ### 3.1 Interesados
 
-Cada interesado tiene una pregunta, una decisión que la respuesta le ayuda a tomar y la página donde la encuentra. La página [[vista:Interesados]] muestra esta tabla.
+Cada interesado tiene una pregunta, una decisión que depende de la respuesta y una página donde la encuentra. La página [[vista:Interesados]] muestra esta misma tabla.
 
 | Interesado | Quién es | Qué pregunta se hace | Qué decisión le ayuda a tomar | Dónde está la respuesta |
 |---|---|---|---|---|
@@ -74,11 +73,17 @@ Cada interesado tiene una pregunta, una decisión que la respuesta le ayuda a to
 
 [[diagrama:casos]]
 
-El panel es de consulta y no pide cuenta. Al entrar, y cada vez que se recarga la página, la ventana «Elige tu vista» ofrece tres vistas: Usuario muestra el negocio (el Panorama de precios, guiado en tres pasos, Insights y los precios frente a la inflación); Profesional, todo el proyecto en orden de importancia; y Autor, lo mismo más lo que solo el autor ve (la página «GitHub Actions», la alerta «Acción requerida» y la carga manual). Autor pide la clave de control, que nunca está en el repositorio. El botón «Vista», debajo del logo y arriba del menú, cambia de vista, igual que un clic en el logo (D-373); salir de Autor cierra su sesión. El autor, administrador del proyecto, mantiene el código y los secretos y responde consultas SQL puntuales.
+El panel es de consulta y no pide cuenta. Al entrar, y en cada recarga, la ventana «Elige tu vista» ofrece tres vistas:
+
+- **Usuario:** el negocio. El Panorama de precios, guiado en tres pasos, Insights y los precios frente a la inflación.
+- **Profesional:** todo el proyecto, ordenado según su perfil (datos, BA, BI, DevOps o seguridad), con el estudio SQL de solo lectura.
+- **Autor:** lo mismo que Profesional, más la página «GitHub Actions», la alerta «Acción requerida» y la carga manual. Pide la clave de control, que nunca está en el repositorio.
+
+El botón «Vista», debajo del logo, cambia de vista; un clic en el logo hace lo mismo (D-373). Salir de Autor cierra su sesión. El autor mantiene el código y los secretos y responde consultas SQL puntuales.
 
 ### 3.3 Qué escuchamos
 
-Revisado por usuarios reales: una revisión de uso (no sabían por dónde empezar a leer el Panorama) y una revisión de arquitectura. Cada cambio hecho por ese feedback tiene su decisión.
+Usuarios reales hicieron dos revisiones: una de uso y una de arquitectura. Cada cambio que salió de ellas tiene su decisión.
 
 | Revisión | Qué escuchamos | Qué cambió | Decisión |
 |---|---|---|---|
@@ -87,7 +92,7 @@ Revisado por usuarios reales: una revisión de uso (no sabían por dónde empeza
 
 ## 4. Preguntas de negocio
 
-Cada pregunta tiene la pantalla que la responde y la prueba que recalcula su respuesta por un camino independiente.
+Cada pregunta tiene la pantalla que la responde y una prueba que recalcula la respuesta por otro camino.
 
 | ID | Pregunta | Pantalla que la responde | Evidencia |
 |---|---|---|---|
@@ -99,7 +104,7 @@ Cada pregunta tiene la pantalla que la responde y la prueba que recalcula su res
 
 ## 5. Requisitos
 
-Los requisitos funcionales (RF) dicen qué hace el producto; los no funcionales (RNF), con qué cualidades. Cada uno tiene un criterio medible y la prueba que lo comprueba.
+Los requisitos funcionales (RF) dicen qué hace el producto. Los no funcionales (RNF) dicen cómo debe hacerlo. Cada uno tiene un criterio medible y la prueba que lo comprueba.
 
 [[diagrama:requisitos]]
 
@@ -117,7 +122,7 @@ Los requisitos funcionales (RF) dicen qué hace el producto; los no funcionales 
 | RNF-01 | Costo cero y sin vencimientos | Ningún servicio de pago; solo planes gratuitos permanentes ([ADR-31 · No usar un data warehouse en la nube](../arquitectura/ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube)) | `docs/arquitectura/ADR.md` |
 | RNF-02 | Cada cifra se puede comprobar | Los precios semanales se reconstruyen desde las filas crudas y por un segundo camino independiente, sin dbt: diferencia 0 | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price`, `tests/test_data_audit.py::test_the_panel_reproduces_the_reference_figures_of_its_week` |
 | RNF-03 | Seguridad | Ningún secreto en el repositorio; el workflow semanal tiene solo los permisos que usa; el panel no puede escribir la base | `tests/test_security.py::test_no_secret_is_tracked_by_git`, `tests/test_security.py::test_the_weekly_job_has_least_privilege`, `tests/test_sql_explorer.py::test_read_only_statements_are_accepted` |
-| RNF-04 | Calidad vigilada en cada cambio | pytest y la compilación de dbt corren en cada push; los 11 indicadores de calidad se miden en cada carga y uno fuera de su umbral cambia el veredicto | `.github/workflows/pruebas.yml`, `tests/test_quality_audit.py::test_a_degraded_measure_turns_its_indicator_and_the_verdict_red` |
+| RNF-04 | Calidad vigilada en cada cambio | pytest y la compilación de dbt corren en cada push. Los 11 indicadores de calidad de los datos se miden en cada carga, y uno fuera de su umbral cambia el veredicto. Los 12 indicadores del plan de calidad se miden cada semana ([Plan de calidad](../calidad/PLAN_DE_CALIDAD.md)) | `.github/workflows/pruebas.yml`, `tests/test_quality_audit.py::test_a_degraded_measure_turns_its_indicator_and_the_verdict_red` |
 | RNF-05 | Legible en computador, tableta y teléfono | Ninguna página se desplaza a lo ancho entre 1024 × 768 y 1920 × 1080, en tableta vertical (768 × 1024) ni en teléfono horizontal (844 × 390); en vertical, el panel pide girar el teléfono | `tests/medicion/medir.cjs` |
 | RNF-06 | Cada página principal en una pantalla | En la ventana del navegador de una pantalla de 1440 × 900 (1440 × 790 útiles) y a 1920 × 1000, cada página principal se ve entera, sin desplazar | `tests/medicion/medir.cjs` |
 
@@ -131,19 +136,23 @@ Los requisitos funcionales (RF) dicen qué hace el producto; los no funcionales 
 | Panel de solo lectura con su documentación | Un panel público, sin cuenta ni costo (ADR-02); los documentos dejan cada decisión y cada cifra a la vista (RNF-02) | Modificación de datos por parte de los usuarios | Los datos vienen solo de las fuentes oficiales y la base se abre en solo lectura: nadie puede cambiar una cifra (RF-06, RNF-03) |
 | Publicación hasta la última semana completa en ambas fuentes | El Panorama compara mayorista y consumidor en la misma semana; una semana a medias daría cifras incompletas (D-356) | Rellenar una semana que una fuente aún no publica | Una cifra inventada no se puede recalcular desde la fuente; se espera a que la fuente publique (D-356) |
 
-Con la carga del 20-10-2026, la base tiene 814.610 precios semanales en 250 semanas (de la 3–9 ene 2022 a la 12–18 oct 2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC. Esa carga leyó 2.521.012 filas: 2.520.811 cargadas y 201 rechazadas con su motivo. Cada martes la base crece; las cifras del día están en el panel.
+Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 semanas (de la 3–9 ene 2022 a la 26 oct–1 nov 2026), 9 regiones, 8 canales, 1.613 claves de producto y 202 meses del IPC. Esa carga leyó 2.541.374 filas: 2.541.173 cargadas y 201 rechazadas con su motivo. La base crece cada martes; las cifras del día están en el panel.
 
 ## 7. Pantallas
 
-Capturas reales de las páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada. El menú agrupa las páginas por sección: Negocio · BA y BI (en el orden de lectura de un visitante: Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal e Insights), Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad (Calidad y auditoría, Método y calidad y Git workflow). El Panorama de precios se lee en tres pasos numerados: elegir una región o todo Chile, elegir una familia y mirar sus productos; en la vista Usuario, cada paso se abre al completar el anterior. «Último dato por canal», junto al Panorama, muestra la última semana de cada fuente (mayorista y consumidor) con su variación por familia y sus productos, aunque la otra fuente todavía no la publique.
+Estas son capturas reales de seis páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada.
+
+- **Menú:** agrupa las páginas en cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera sigue el orden en que la lee un visitante: Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal e Insights.
+- **Panorama de precios:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior.
+- **Último dato por canal:** muestra la última semana de cada fuente (mayorista y consumidor), con su variación por familia y sus productos, aunque la otra fuente todavía no la publique.
 
 [[diagrama:mockups]]
 
 ## 8. Supuestos, restricciones y dependencias
 
 **Supuestos**
-- El precio nacional es un promedio simple de las regiones, sin ponderar por población ni por ventas, porque ninguna fuente abierta publica esos pesos. Cada variación semanal compara solo las regiones con precio en ambas semanas.
-- Los indicadores describen lo ocurrido; no predicen ni atribuyen causas. Que una familia suba con el IPC no prueba que la inflación la haya movido: el IPC de alimentos se calcula con esos mismos precios.
+- El precio nacional es un promedio simple de las regiones. No se pondera por población ni por ventas, porque ninguna fuente abierta publica esos pesos. Cada variación semanal compara solo las regiones con precio en ambas semanas.
+- Los indicadores describen lo que pasó. No predicen ni atribuyen causas. Que una familia suba al ritmo del IPC no prueba que la inflación la haya movido, porque el IPC de alimentos se calcula con esos mismos precios.
 
 **Restricciones**
 - Costo cero: solo planes gratuitos permanentes de GitHub y Streamlit Community Cloud.
@@ -203,3 +212,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.3 | 31-10-2026 | Interesados (3.1) y perfiles de uso (3.2), con su página en el panel (D-376) |
 | 3.4 | 31-10-2026 | Qué escuchamos (3.3), el porqué del alcance (6), el ciclo semanal (2) y la página «Análisis de negocio y sistemas» (D-377) |
 | 3.5 | 31-10-2026 | El orden de lectura de la sección «Negocio · BA y BI» en el menú (7, D-378) |
+| 3.6 | 31-10-2026 | Redacción revisada; cifras de la carga del 31-10-2026 (6); las tres vistas, cada una con lo que ve (3.2); la alerta de precio completa (RF-05); los indicadores de calidad de los datos y los del plan de calidad (RNF-04); el documento pasa a `docs/negocio/` (D-381, D-385, D-388) |

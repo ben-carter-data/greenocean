@@ -47,8 +47,8 @@ def test_d377_every_block_is_read_from_the_documents_in_both_languages():
 
 def test_d377_what_we_heard_claims_two_reviews_and_nothing_more():
     assert ba.read_heard("es") == (
-        "Revisado por usuarios reales: una revisión de uso (no sabían por dónde empezar a leer el Panorama) y una "
-        "revisión de arquitectura. Cada cambio hecho por ese feedback tiene su decisión."
+        "Usuarios reales hicieron dos revisiones: una de uso y una de arquitectura. "
+        "Cada cambio que salió de ellas tiene su decisión."
     )
     rows = ba.read_feedback("es")
     assert [row[0] for row in rows] == ["Revisión de uso", "Revisión de arquitectura"]
