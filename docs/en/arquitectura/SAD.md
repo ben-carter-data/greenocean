@@ -4,12 +4,12 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.2 |
-| Date | 2026-10-30 |
+| Version | 3.3 |
+| Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain how GreenOcean is built, how it runs each week, where its data lives and why it has that shape. |
-| Audience | Architecture, data engineering, operations, management and technical review. |
+| Audience | Architects, data engineers, operations, management and technical reviewers. |
 | Related documents | [Product Requirements Document (PRD)](../negocio/PRD.md) · [Architecture Decision Records (ADR)](ADR.md) · [Test and Security Plan](../calidad/PLAN_PRUEBAS.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 ## Contents
@@ -38,19 +38,25 @@ GreenOcean is a weekly pipeline and a read-only panel on food prices in Chile. I
 | 2 | Reliability of publication | A load with errors never replaces the served database |
 | 3 | Zero cost and minimal maintenance | Only permanent free services and no servers of its own |
 
-To reach them, the load rebuilds the whole history every Tuesday from the official files, checks it along two independent paths and only then replaces the database the panel reads. Everything runs on free services, with no servers of its own.
+To reach them, every Tuesday the load rebuilds the whole history from the official files. It checks it along two independent paths, and only then replaces the database the panel reads.
 
 ## 2. Context
 
 [[diagrama:contexto]]
 
-The system reads two public sources, ODEPA and the INE, and relies on two free services: GitHub keeps the code and the served database and runs the load; Streamlit Community Cloud publishes the panel. The visitor only reads the panel. The administrator, the author of the project, maintains the code and the secrets.
+The system reads two public sources, ODEPA and the INE, and relies on two free services. GitHub keeps the code and the served database, and runs the load. Streamlit Community Cloud publishes the panel.
+
+Three people use the panel, depending on the view they choose:
+
+- **User:** reads the business, with no account.
+- **Professional:** reads the whole project and queries it with the read-only SQL studio, with no account.
+- **Author:** sees the same as the Professional and, with the control code, starts and follows the load. Maintains the code and the secrets.
 
 ### 2.1 Key scenarios
 
 [[diagrama:escenarios]]
 
-Each scenario goes through the architecture end to end; sections 4 and 5 show them step by step.
+Each scenario goes through the architecture end to end. Sections 4 and 5 show them step by step.
 
 ## 3. Containers
 
@@ -64,19 +70,19 @@ The system has two applications and three data stores:
 | Working files | SQLite, Parquet, DuckDB | Landing, bronze and the dbt working database; rebuilt on each load and not versioned |
 | Served database | DuckDB (`etl/datos.duckdb`) | The tables the panel reads; published in the «base-actual» release |
 | Backup | SQLite (`etl/datos.db`) | The same prices computed without dbt, for the parity test; rebuilt on the machine of each load and not published |
-| Web panel | Streamlit, Python | Shows the indicators and the documents, and offers the SQL studio; reads the served database read-only and, with the control code, launches the load through the GitHub API |
+| Web panel | Streamlit, Python | Shows the indicators and the documents, and offers the SQL studio. Reads the served database read-only. With the control code, uses the GitHub API to start the load, read its state and logs, and cancel it |
 
 ### 3.1 Components of the weekly load
 
 [[diagrama:componentes_carga]]
 
-Each component is a file of the repository and runs as a step of `semanal.yml`; if one fails, the following ones do not run.
+Each component is a file of the repository and runs as a step of `semanal.yml`. If one fails, the following ones do not run.
 
 ### 3.2 Components of the panel
 
 [[diagrama:componentes_panel]]
 
-`bi/dashboard.py` builds the navigation and each page with its views; the queries go through `bi/queries.py` and the database is opened read-only. `bi/control.py` is the only piece that talks to the GitHub API.
+`bi/dashboard.py` builds the navigation and each page. The queries go through `bi/queries.py`, and the database is opened read-only. `bi/control.py` is the only piece that talks to the GitHub API.
 
 ## 4. The load of each week
 
@@ -87,18 +93,20 @@ Each step starts only if the previous one ended well:
 | Step | What happens |
 |---|---|
 | 1 | At 12:00 UTC, GitHub Actions creates a new machine and restores the CSV files of the closed years from its cache |
-| 2 | It downloads the served database of the previous week from the «base-actual» release and verifies its fingerprint; the load history and the comparison of step 6 come from it |
+| 2 | It downloads the served database of the previous week from the «base-actual» release and verifies its fingerprint. The load history and the comparison of step 6 come from it |
 | 3 | The agent downloads from ODEPA the file of the current year and any missing ones, and records the SHA-256 fingerprint of each in `manifest.json` |
 | 4 | The Python ETL computes the prices on its own and writes the backup `etl/datos.db` |
 | 5 | `etl/pipeline.py` stores the rows in the landing database, copies them to bronze together with the INE CPI and runs `dbt build`, which builds and tests each model in the working database |
-| 6 | Publication gate: if a dbt test fails or the load reads less than 90 % of the rows of the last good load, the process stops; if everything passes, the panel tables are copied to a new file that replaces `etl/datos.duckdb`. Since D-356 it also stops if a source is missing a week in the middle of the data or has gone more than 2 weeks without publishing; publication goes only up to the last week complete in both sources, filling nothing in, and `etl_run` keeps the week that waits |
-| 7 | pytest runs on the new database, without the speed tests, which only inform (D-341), including the parity between the backup and DuckDB |
-| 8 | The machine replaces the database in the release and pushes its pointer, `etl/datos.version`, to the `main` branch; the panel detects the new pointer, downloads the database and verifies its fingerprint before using it |
-| 9 | The weekly report is published as an issue of the repository |
+| 6 | Publication gate. The process stops if a dbt test fails, if the load reads less than 90 % of the rows of the last good load, if a source is missing a week in the middle of the data or if a source has gone more than 2 weeks without publishing (D-356). If everything passes, the panel tables are copied to a new file that replaces `etl/datos.duckdb`. Publication goes up to the last week complete in both sources, filling nothing in, and `etl_run` keeps the week that waits |
+| 7 | pytest runs on the new database, with the parity between the backup and DuckDB. The speed tests do not run here: they only inform (D-341) |
+| 8 | The machine replaces the database in the release and pushes its pointer, `etl/datos.version`, to the `main` branch. The panel detects the new pointer, downloads the database and verifies its fingerprint before using it |
+| 9 | The weekly report is published as an issue of the repository. Then the quality workflow measures the 12 indicators of the quality plan and proposes the quality report as a pull request (D-363) |
 
-The job has a limit of 20 minutes: if it hangs, GitHub cuts it. The manual load starts from «Run pipeline now» and is followed in a window that does not close by itself: it shows each step with its time and duration, the real log of each job when it ends, without tokens, and lets the author minimize it or cancel the run in GitHub with the same token that starts it; cancelling is the only write of the panel to GitHub (D-351).
+The job has a limit of 20 minutes: if it hangs, GitHub cuts it.
 
-If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass)). The run and its steps can be followed in the «Operations» tab of [[vista:Operations center]].
+The manual load starts from «Run pipeline now» and is followed in a window that does not close by itself. The window shows each step with its time and duration, and the real log of each job when it ends, without tokens. It can be minimized, or the run can be cancelled in GitHub with the same code that started it. Starting and cancelling are the only writes of the panel to GitHub (D-351).
+
+If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass)). Each run and its steps can be followed in the «Operations» tab of [[vista:Operations center]].
 
 ## 5. The panel when it opens
 
@@ -106,13 +114,29 @@ If a step fails, the following ones do not run and the served database does not 
 
 When it opens, the panel compares its database with the pointer of the `main` branch. If its copy is older, it downloads the database from the «base-actual» release and uses it only if its SHA-256 fingerprint matches. Then it opens the database read-only: no page can change a value. If GitHub does not respond, the panel carries on with the database it already has.
 
-The entry asks for the view on every visit and every reload the reader makes: User shows the business (the Price overview, guided in three steps, Insights and Prices and inflation); Professional, the whole project, ordered by the profile it picks (Data Eng, BA, BI, DevOps or Security); and Author, the same plus its own part, with the control code. The address never chooses the view; the reloads the app itself makes (printing, opening a document, switching between a light and a dark theme) keep it only once and never the Author's (D-340, D-357). The «Vista» button, under the logo and above the menu, changes it, as does a click on the logo (D-373). The dark theme is the one on entry. Pages with tabs draw only the one in sight (D-360). If the last load failed, a red notice above the menu says so on every page, with a link to the step that failed. The panel reads in Spanish and in English.
+The entry asks for the view on every visit and every reload the reader makes:
+
+- **User:** the business. The Price overview, guided in three steps, Insights and Prices and inflation.
+- **Professional:** the whole project, ordered by the profile it picks (Data Eng, BA, BI, DevOps or Security).
+- **Author:** the same as Professional, plus its own part, with the control code.
+
+The address never chooses the view. The reloads the app itself makes (printing, opening a document, switching between a light and a dark theme) keep it only once, and never the Author's (D-340, D-357). The «View» button, under the logo, changes it; a click on the logo does the same (D-373).
+
+The dark theme is the one on entry. Pages with tabs draw only the one in sight (D-360). If the last load failed, a red notice above the menu says so on every page, with a link to the step that failed. The panel reads in Spanish and in English.
 
 ## 6. The data
 
 [[diagrama:capas]]
 
-Landing keeps the rows as they arrive; bronze is their literal copy in Parquet, by source and year; staging normalizes types and text; intermediate applies the business rules (units, weeks, rejections); the marts form the star schema the panel reads. The journey and the lineage are in [[vista:Pipeline and lineage]], and the model, in [[vista:Data model]]. Dates are stored as ISO text (`YYYY-MM-DD`).
+The data goes through five layers:
+
+- **Landing:** the rows as they arrive.
+- **Bronze:** their literal copy in Parquet, by source and year.
+- **Staging:** normalizes types and text.
+- **Intermediate:** applies the business rules (units, weeks and rejections).
+- **Marts:** the star schema the panel reads.
+
+The journey and the lineage are in [[vista:Pipeline and lineage]], and the model, in [[vista:Data model]]. Dates are stored as ISO text (`YYYY-MM-DD`).
 
 ### 6.1 Tables of the served database
 
@@ -187,7 +211,7 @@ Landing keeps the rows as they arrive; bronze is their literal copy in Parquet, 
 
 ### latest_by_source
 
-The last two weeks of each source, without the cut of D-356: only the page «Último dato por canal» reads it. The Price overview and the indicators read `weekly_price`.
+The last two weeks of each source, without the cut of D-356. Only the page «Latest data by channel» reads it; the Price overview and the indicators read `weekly_price`.
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -207,7 +231,7 @@ The last two weeks of each source, without the cut of D-356: only the page «Úl
 
 ### 6.3 CPI
 
-**Real prices.** Each week takes the food CPI of the month of its Monday; real prices are expressed in pesos of the last published month ([ADR-33 · Compute real prices with the INE food CPI](ADR.md#adr-33--compute-real-prices-with-the-ine-food-cpi)).
+**Real prices.** Each week takes the food CPI of the month of its Monday. Real prices are expressed in pesos of the last published month ([ADR-33 · Compute real prices with the INE food CPI](ADR.md#adr-33--compute-real-prices-with-the-ine-food-cpi)).
 
 ### ipc_monthly
 
@@ -288,7 +312,7 @@ The last two weeks of each source, without the cut of D-356: only the page «Úl
 | `failures` | INTEGER | | Rows that do not meet the test |
 | `generated_at` | VARCHAR | | Date of the `dbt build` |
 
-**Weeks that wait.** When one source has already published a week and the other has not, that week does not enter the database: it waits for the other source, with nothing filled in. The line of `etl_run` of that load says so (`SOURCE_LATE: wholesale 2026-10-19`) and the Price overview shows «ODEPA has not published the week of Oct 19–25 yet (wholesale)» (D-356, D-374).
+**Weeks that wait.** When one source has already published a week and the other has not, that week does not enter the database. It waits for the other source, with nothing filled in. The line of `etl_run` of that load says so (`SOURCE_LATE: wholesale 2026-10-19`) and the Price overview shows «ODEPA has not published the week of Oct 19–25 yet (wholesale)» (D-356, D-374).
 
 ## 7. Deployment
 
@@ -301,20 +325,34 @@ The last two weeks of each source, without the cut of D-356: only the page «Úl
 | Served database | «base-actual» release of the repository | A single copy, replaced by each load |
 | Panel | Streamlit Community Cloud, from `main` | Keeps the secrets: the GitHub token and the control code |
 | Landing (`etl/raw.db`) | The author's computer and the machine of each load | Not versioned |
+| Reports | GitHub repository | The weekly report is an issue; the quality report, a pull request the author approves (D-383) |
 
-The diagram with the live status of each piece is in the «Deployment» tab of [[vista:Operations center]]; the path of a change to production, in its «CI/CD» tab.
+The diagram with the live status of each piece is in the «Deployment» tab of [[vista:Operations center]]. The path of a change to production is in its «CI/CD» tab.
 
 ## 8. Quality, security and observability
 
-**Quality.** Three gates: the file (did it arrive complete and on time?), each row (is it valid?) and the database (is it consistent, and did it pass its tests?). Eleven indicators, in five dimensions, are measured on each load against their threshold; accuracy, the sixth dimension, is measured with four controls that compare the figures with the source. The detail is in [[vista:Quality and audit]].
+**Data quality.** There are three gates: the file (did it arrive complete and on time?), each row (is it valid?) and the database (is it consistent, and did it pass its tests?). Eleven indicators, in five dimensions, are the data quality indicators: they are measured on each load against their threshold. Accuracy, the sixth dimension, is measured with four controls that compare the figures with the source. The detail is in [[vista:Quality and audit]].
 
-**Observability.** Each load leaves a trace in four places: `etl_run` (rows read, loaded and rejected by each published load), `dbt_result` (the result of each model and test), the GitHub Actions log (each step, including the ones that fail) and the email GitHub sends the author if the load fails. The «Monitoring» tab of [[vista:Operations center]] brings them together.
+**Observability.** Each load leaves a trace in four places:
 
-**Project quality.** How the quality of the data and of the code is measured, who decides and what happens when something fails is in the [Software Quality Assurance Plan (SQAP)](../calidad/PLAN_DE_CALIDAD.md). On every push the quality workflow measures and fails if a code indicator is past its acceptable; the numbered report is proposed only after the weekly load or by hand (D-363). If the last report is more than 8 days old, the author's alert says so and does not show it as today's state (D-361). Every failure lived is kept in the failure register, one line per field (D-342, D-354).
+- `etl_run`: rows read, loaded and rejected by each published load.
+- `dbt_result`: the result of each model and test.
+- The GitHub Actions log: each step, including the ones that fail.
+- The email GitHub sends the author if the load fails.
 
-**Secrets and access.** The panel uses three secrets, kept in Streamlit and never in the repository: `CONTROL_CODE` (the author's key, compared in constant time), `GITHUB_TOKEN` (starts and cancels the manual load) and `GITHUB_READ_TOKEN` (read only, for the page «GitHub Actions»; if it is missing, `GITHUB_TOKEN` is used). That page, for the author only, shows the latest runs and, of the last failure, the job, the step, the failing tests and the last 60 lines of the log, with a «Copiar» button and links to the run and the job; the token never shows on screen (D-339, D-359).
+The «Monitoring» tab of [[vista:Operations center]] brings them together.
 
-**Security.** The threats, their controls and the tests that verify them are in [[vista:Security architecture]]; the verification procedure, in the [Test and Security Plan](../calidad/PLAN_PRUEBAS.md).
+**Project quality.** The [Software Quality Assurance Plan (SQAP)](../calidad/PLAN_DE_CALIDAD.md) says how the quality of the data and of the code is measured, who decides and what happens when something fails. Its 12 indicators are measured by the quality workflow. On every push, it fails if a code indicator is past its acceptable. The numbered report is proposed as a pull request only after the weekly load, or by hand (D-363). If the last report is more than 8 days old, the author's alert says so and does not show it as today's state (D-361). Every failure lived is kept in the failure register, one line per field (D-342, D-354).
+
+**Secrets and access.** The panel uses three secrets, kept in Streamlit and never in the repository:
+
+- `CONTROL_CODE`: the author's key, compared in constant time.
+- `GITHUB_TOKEN`: starts and cancels the manual load.
+- `GITHUB_READ_TOKEN`: read only, for the page «GitHub Actions». If it is missing, `GITHUB_TOKEN` is used.
+
+Only the author sees the page «GitHub Actions». It shows the latest runs and, of the last failure, the job, the step, the failing tests and the last 60 lines of the log, with a «Copy» button and links to the run and the job. The token never shows on screen (D-339, D-359).
+
+**Security.** The threats, their controls and the tests that verify them are in [[vista:Security architecture]]. The verification procedure is in the [Test and Security Plan](../calidad/PLAN_PRUEBAS.md).
 
 **Quality requirements**
 
@@ -323,7 +361,7 @@ The diagram with the live status of each piece is in the «Deployment» tab of [
 | Accuracy | A business rule changes by mistake | The parity with the backup or the rebuild from raw rows fails in pytest and the load is not published |
 | Reliability | ODEPA publishes a truncated file | The load reads less than 90 % of the previous one and stops; the panel keeps the last valid database |
 | Availability | GitHub does not respond when the panel opens | The panel keeps the database it already has, and says so if it has none |
-| Security | A visitor tries to read server files with SQL | The query is rejected and the engine has no access to files or to the network |
+| Security | A reader tries to read server files with the SQL studio | The query is rejected and the engine has no access to files or to the network |
 | Usability | A 1440 × 900 screen | Each main page is seen whole in the browser window (1440 × 790) |
 
 ## 9. Capacity and growth
@@ -347,7 +385,7 @@ The diagram with the live status of each piece is in the «Deployment» tab of [
 
 ### 9.3 Growth options
 
-A new source is added like the current ones: a folder in bronze and its dbt models, without changing the existing ones.
+A new source comes in like the current ones: a folder in bronze and its dbt models, without touching the existing ones.
 
 | Extension | Status | How it would be added |
 |---|---|---|
@@ -356,7 +394,7 @@ A new source is added like the current ones: a folder in bronze and its dbt mode
 
 ### 9.4 When a cloud would be justified
 
-With public, weekly and small data, read by a single panel, a cloud data warehouse would add cost, secrets and expiry risks with no benefit ([ADR-31](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse)). It would be justified if a company added its own data:
+With public, weekly and small data, read by a single panel, a cloud data warehouse would add cost, secrets and expiry risk, with no benefit ([ADR-31](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse)). It would be justified if a company added its own data:
 
 | Criterion | Today | Threshold |
 |---|---|---|
@@ -417,3 +455,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.0 | 2026-10-25 | From the most important to the least: summary, context, containers, the load and the panel as sequences, the data with its dictionary, deployment, quality and security, capacity and growth (formerly documents of their own); six diagrams (D-290, documents for every reader) |
 | 3.1 | 2026-10-26 | Key scenarios and components of the load and of the panel (C4, level 3); the views, the Dashboard and the failed-load notice in the panel (D-300) |
 | 3.2 | 2026-10-30 | Late sources and the time limit of the load; the three views, the app's own reloads and tabs that draw only the one in sight; project quality, secrets and the page «GitHub Actions» (D-339 to D-363) |
+| 3.3 | 2026-10-31 | Wording reviewed; the three people of the context, each with what it sees (2); the GitHub API says start, read state and logs, cancel (3); the quality report as a pull request (4, 7, 8); the data quality indicators and those of the quality plan (8); the document moves to `docs/arquitectura/` (D-381 to D-384, D-388) |
