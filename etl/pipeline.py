@@ -43,6 +43,7 @@ SERVING_TABLES = [
     "ipc_monthly",
     "ipc_weekly",
     "ine_ipc_source",
+    "latest_by_source",  # D-365: each source's own last two weeks, for «Último dato por canal»
 ]
 DBT_TARGET_DIR = DBT_DIR / "target"
 # The lineage and the test results of the last dbt build travel with the serving file:

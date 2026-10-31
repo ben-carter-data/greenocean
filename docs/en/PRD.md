@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.1 |
+| Version | 3.2 |
 | Date | 2026-10-30 |
 | Status | Current |
 | Owner | The author |
@@ -110,7 +110,7 @@ With the load of 2026-10-20, the database holds 814,610 weekly prices over 250 w
 
 ## 7. Screens
 
-Real captures of the main pages, in the four color themes. The dark theme is the one on entry. The menu groups the pages by section: Business, Data engineering, DevOps and security, Stack and evidence, and Quality (Quality and audit, Method and quality and Git workflow). The price overview reads in three numbered steps: choose a region or all of Chile, choose a family and look at its products; in the User view, each step opens when the one before is done.
+Real captures of the main pages, in the four color themes. The dark theme is the one on entry. The menu groups the pages by section: Business, Data engineering, DevOps and security, Stack and evidence, and Quality (Quality and audit, Method and quality and Git workflow). The price overview reads in three numbered steps: choose a region or all of Chile, choose a family and look at its products; in the User view, each step opens when the one before is done. «Último dato por canal», next to the overview, shows each source's latest week (wholesale and consumer) with its change by family and its products, even if the other source has not published it yet.
 
 [[diagrama:mockups]]
 
@@ -174,3 +174,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 2.0 | 2026-10-25 | Standard structure: header, contents, constraints and dependencies, risks, acceptance criteria, glossary and history; screen measure corrected to 1440 × 790 usable (D-279, professional documentation) |
 | 3.0 | 2026-10-25 | Reading from the most important to the least: summary, problem, users, questions and requirements first; diagrams of the value and of the requirements (D-290, documents for every reader) |
 | 3.1 | 2026-10-30 | Vision and mission; the three views and the «Vista» indicator (RF-09); late sources and informative tests in RF-03; the manual load window in RF-07; the Quality section, dark theme and the overview in three steps (D-340 to D-357) |
+| 3.2 | 2026-10-30 | The page «Último dato por canal» (D-365) |

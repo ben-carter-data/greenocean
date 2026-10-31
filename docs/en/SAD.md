@@ -123,6 +123,7 @@ Landing keeps the rows as they arrive; bronze is their literal copy in Parquet, 
 | `dim_region` | Dimension | Regions with prices |
 | `dim_channel` | Dimension | Sales channels and their source |
 | `dim_date` | Dimension | One row per week, with no gaps |
+| `latest_by_source` | Latest data | The last two weeks of each source, without the cut at the common week (D-365) |
 | `ipc_monthly` | CPI | Monthly food CPI as a single series |
 | `ipc_weekly` | CPI | Deflator of each week |
 | `ine_ipc_source` | CPI | CPI rows as they were read from the INE |
@@ -183,6 +184,26 @@ Landing keeps the rows as they arrive; bronze is their literal copy in Parquet, 
 | `month_name` | VARCHAR | | Name of the month, in Spanish |
 | `year` | BIGINT | | Year of the Monday |
 | `season` | VARCHAR | | Season in Chile: `verano`, `otoño`, `invierno` or `primavera` (summer, autumn, winter or spring) |
+
+### latest_by_source
+
+The last two weeks of each source, without the cut of D-356: only the page «Último dato por canal» reads it. The Price overview and the indicators read `weekly_price`.
+
+| Column | Type | Key | Description |
+|---|---|---|---|
+| `week_start` | VARCHAR |  | Monday of the week; two weeks per source |
+| `source` | VARCHAR |  | Source: `wholesale` or `consumer` |
+| `channel` | VARCHAR |  | Sales channel |
+| `region_id` | INTEGER | FK → `dim_region` | Region |
+| `region` | VARCHAR |  | Name of the region |
+| `product_group` | VARCHAR |  | Family |
+| `product` | VARCHAR |  | Product |
+| `variety` | VARCHAR |  | Variety |
+| `quality` | VARCHAR |  | Quality |
+| `normalized_unit` | VARCHAR |  | Normalized unit; empty if it cannot be converted |
+| `price` | DOUBLE |  | Weekly price in nominal pesos, per normalized unit |
+| `observation_count` | BIGINT |  | Number of quotes of the week |
+| `flag` | VARCHAR |  | Empty if the price enters the calculation; `ATIPICO` or `UNIDAD_NO_CONVERTIBLE` if it stays out |
 
 ### 6.3 CPI
 

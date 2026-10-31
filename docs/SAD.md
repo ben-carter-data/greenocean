@@ -123,6 +123,7 @@ El aterrizaje guarda las filas tal como llegan; el bronce es su copia literal en
 | `dim_region` | Dimensión | Regiones con precios |
 | `dim_channel` | Dimensión | Canales de venta y su fuente |
 | `dim_date` | Dimensión | Una fila por semana, sin huecos |
+| `latest_by_source` | Último dato | Las dos últimas semanas de cada fuente, sin el corte de la semana común (D-365) |
 | `ipc_monthly` | IPC | IPC de alimentos mensual como una sola serie |
 | `ipc_weekly` | IPC | Deflactor de cada semana |
 | `ine_ipc_source` | IPC | Filas del IPC tal como se leyeron del INE |
@@ -183,6 +184,26 @@ El aterrizaje guarda las filas tal como llegan; el bronce es su copia literal en
 | `month_name` | VARCHAR | | Nombre del mes |
 | `year` | BIGINT | | Año del lunes |
 | `season` | VARCHAR | | Estación en Chile: `verano`, `otoño`, `invierno` o `primavera` |
+
+### latest_by_source
+
+Las dos últimas semanas de cada fuente, sin el corte de D-356: la lee solo la página «Último dato por canal». El Panorama y los indicadores leen `weekly_price`.
+
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| `week_start` | VARCHAR |  | Lunes de la semana; dos semanas por fuente |
+| `source` | VARCHAR |  | Fuente: `wholesale` (mayorista) o `consumer` (consumidor) |
+| `channel` | VARCHAR |  | Canal de venta |
+| `region_id` | INTEGER | FK → `dim_region` | Región |
+| `region` | VARCHAR |  | Nombre de la región |
+| `product_group` | VARCHAR |  | Familia |
+| `product` | VARCHAR |  | Producto |
+| `variety` | VARCHAR |  | Variedad |
+| `quality` | VARCHAR |  | Calidad |
+| `normalized_unit` | VARCHAR |  | Unidad normalizada; vacía si no se puede convertir |
+| `price` | DOUBLE |  | Precio semanal en pesos nominales, por unidad normalizada |
+| `observation_count` | BIGINT |  | Número de cotizaciones de la semana |
+| `flag` | VARCHAR |  | Vacía si el precio entra al cálculo; `ATIPICO` o `UNIDAD_NO_CONVERTIBLE` si queda fuera |
 
 ### 6.3 IPC
 

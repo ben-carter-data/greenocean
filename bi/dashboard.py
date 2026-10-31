@@ -23,6 +23,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlencode
 from zoneinfo import ZoneInfo
 
+import duckdb
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
@@ -36,6 +37,7 @@ from bi import (
     actions_view,
     alerts,
     compact_table,
+    channel_latest,
     git_workflow,
     github_actions,
     run_monitor,
@@ -88,6 +90,7 @@ tr = i18n.tr
 PAGE_HOME = "Dashboard"
 # D-296: the macro dashboard of the whole project, in tabs, like a BI tool; the first page of the menu.
 PAGE_INSIGHTS = "Insights"
+PAGE_CHANNELS = "Último dato por canal"  # D-365: each source with its own latest week
 BRAND_GREEN_DARK = "#72e7ad"
 BRAND_GREEN_LIGHT = "#167046"
 PAGE_DIAGRAMS = "Pipeline y arquitectura"
@@ -172,7 +175,7 @@ SECTION_SECURITY = "Seguridad"
 WINDOWS = {
     SECTION_PROJECT: [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD, PAGE_GIT],
     SECTION_KPI: [PAGE_KPI],
-    REPORT_WINDOW: [PAGE_HOME, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL],
+    REPORT_WINDOW: [PAGE_HOME, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL, PAGE_CHANNELS],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS, PAGE_ACTIONS],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
     SECTION_LINKS: [
@@ -250,6 +253,7 @@ PAGE_ICONS = {
     PAGE_SECURITY: ":material/lock:",
     PAGE_STACK: ":material/stacks:",
     PAGE_INSIGHTS: ":material/lightbulb:",
+    PAGE_CHANNELS: ":material/compare_arrows:",
     PAGE_HOME: ":material/dashboard:",
     PAGE_DIAGRAMS: ":material/account_tree:",
     PAGE_ARCHITECTURE: ":material/schema:",
@@ -279,6 +283,7 @@ PAGE_PATHS = {
     PAGE_SQL: "consultas-sql",
     PAGE_HOME: "dashboard",
     PAGE_INSIGHTS: "insights",
+    PAGE_CHANNELS: "ultimo-dato-por-canal",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura",
     PAGE_SEASONALITY: "estacionalidad",
@@ -1990,6 +1995,7 @@ def apply_style(mode):
 
 OVERVIEW_CLASS_BY_VIEW = {
     PAGE_INSIGHTS: "overview-dashboard",
+    PAGE_CHANNELS: "overview-dashboard",
     PAGE_HOME: "overview-dashboard",
     PAGE_SEASONALITY: "overview-history",
     PAGE_KPI: "overview-kpis",
@@ -2101,6 +2107,7 @@ def show_app_header(window):
 # The pages whose only header is one thin bar (D-264, D-267).
 BAR_VIEWS = {
     PAGE_INSIGHTS,
+    PAGE_CHANNELS,
     PAGE_HOME,
     PAGE_SEASONALITY,
     PAGE_DIAGRAMS,
@@ -4200,6 +4207,14 @@ def show_market_overview(mode, prefix):
         )
         show_alert_trigger(week)
         show_home_tools(week)
+        channels_page = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_CHANNELS])  # absent when a test draws the page alone
+        if channels_page:
+            st.page_link(
+                channels_page,
+                label=tr("Ver último dato por canal"),
+                icon=":material/compare_arrows:",
+                query_params=keep_context() | {VIEW_PARAMETER: PAGE_CHANNELS},
+            )  # D-365: the overview does not change; this link opens each source's own latest week
         st.markdown(
             home_mockup.dashboard_updated(updated, latest['status'] == etl.STATUS_LOADED),
             unsafe_allow_html=True,
@@ -4951,6 +4966,66 @@ def show_weeks_dialog(mode, version):
         unsafe_allow_html=True,
     )
     show_weeks_table(mode, version)
+
+
+@st.cache_data(show_spinner=False)
+def read_latest_by_source(database_version):
+    """D-365: the last two weeks of each source; None while the served base is older than the table."""
+    try:
+        return queries.run_sql("SELECT * FROM latest_by_source")
+    except duckdb.Error:
+        return None
+
+
+def show_channels_page(mode):
+    """«Último dato por canal» (D-365): the wholesale and the consumer source, each with its own latest week, the change
+    by family against its previous week and its products, drawn with the overview's own pieces."""
+    show_page_bar(
+        PAGE_CHANNELS,
+        PAGE_CHANNELS,
+        "La última semana que publicó cada fuente, aunque la otra todavía no la publique: su variación por familia y sus productos.",
+    )
+    palette = charts.get_palette(mode)
+    st.markdown(home_mockup.style(mode, palette), unsafe_allow_html=True)
+    frame = read_latest_by_source(get_database_version())
+    if frame is None or frame.empty:
+        st.info(tr("Esta página se llena con la próxima carga semanal."))
+        return
+    for column, (source, name) in zip(st.columns(2, gap="medium"), channel_latest.SOURCES):
+        with column, st.container(key=f"latest_{source}"):
+            week, before, rows = channel_latest.build_rows(frame, source)
+            if week is None:
+                st.caption(tr("Sin datos de esta fuente."))
+                continue
+            day = lambda value: f"{value[8:10]}-{value[5:7]}-{value[:4]}"  # noqa: E731
+            st.markdown(
+                f"#### {tr(name)} · {tr('semana del {}').format(day(week)[:5])}",
+            )
+            if before:
+                st.caption(tr("Comparada con la semana del {}.").format(day(before)[:5]))
+            late = channel_latest.late_week(frame, source)
+            if late:
+                st.caption(tr("ODEPA aún no publica la semana del {}").format(day(late)[:5]))
+            st.markdown(
+                '<div class="greenocean-mockup">'
+                + home_mockup.family_movement(rows, lambda family: "#", None, tr("todo Chile"))
+                + "</div>",
+                unsafe_allow_html=True,
+            )
+            query = st.text_input(
+                tr("Buscar"),
+                key=f"latest_search_{source}",
+                icon=":material/search:",
+                placeholder=tr("Producto, ej.: lechuga"),
+                label_visibility="collapsed",
+            )
+            shown = [row for row in rows if channel_latest.matches(row, query)] if query.strip() else rows
+            st.markdown(
+                '<div class="greenocean-mockup">'
+                + home_mockup.products_table(shown, day(week), day(before) if before else day(week), query.strip())
+                + "</div>",
+                unsafe_allow_html=True,
+            )
 
 
 def show_insights_page(mode):
@@ -6921,6 +6996,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_HOME: show_home_page,
     PAGE_DIAGRAMS: show_diagrams_page,
     PAGE_INSIGHTS: lambda mode: show_insights_page(mode),
+    PAGE_CHANNELS: lambda mode: show_channels_page(mode),
     PAGE_SEASONALITY: show_price_context_page,
     PAGE_KPI: show_kpi_page,
     PAGE_ARCHITECTURE: show_architecture_page,
@@ -7473,7 +7549,7 @@ RELOAD_HOME_SCRIPT = """<script>
 # with a faint fill and a blue bar on its left. The documents close the list, before the sources.
 # (key, title, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_INSIGHTS]),
+    ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_CHANNELS, PAGE_INSIGHTS]),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),
@@ -7493,6 +7569,7 @@ MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is
 # The menu's own glyphs, one per page, thin lines (Material Symbols).
 SIDEBAR_ICONS = {
     PAGE_INSIGHTS: ":material/lightbulb:",
+    PAGE_CHANNELS: ":material/compare_arrows:",
     PAGE_HOME: ":material/grid_view:",
     PAGE_DIAGRAMS: ":material/share:",
     PAGE_ARCHITECTURE: ":material/database:",

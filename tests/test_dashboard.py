@@ -76,6 +76,7 @@ def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
         dashboard.PAGE_INSIGHTS,
         dashboard.PAGE_SEASONALITY,
         dashboard.PAGE_SQL,
+        dashboard.PAGE_CHANNELS,
     ]
     assert dashboard.WINDOWS["Ingeniería de datos"][0] == dashboard.PAGE_DIAGRAMS
     # Old addresses of the retired windows and of the 3D view still open something.
@@ -1374,7 +1375,7 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 
 MENU_BLOCKS = {
-    'Negocio · BI': ['Panorama de precios', 'Insights'],
+    'Negocio · BI': ['Panorama de precios', 'Último dato por canal', 'Insights'],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],

@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.1 |
+| Versión | 1.2 |
 | Fecha | 30-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -88,7 +88,7 @@ Cada ocurrencia se escribe en una línea por campo y en lenguaje simple: qué pa
 
 Un incidente externo es una falla de las fuentes de datos: ODEPA o el INE. Por ejemplo, una semana que no se publica o un archivo que cambia de formato. Ante un incidente, la carga no pasa sus controles y el panel conserva la última carga válida, con su fecha a la vista. Los incidentes se anotan en `docs/calidad/incidentes_externos.json`, y su respuesta queda pendiente de aprobación del autor (D-334).
 
-**Fuentes retrasadas (D-356).** Se publica hasta la última semana completa en ambas fuentes, sin rellenar nada. Una semana reciente que una fuente aún no publica no bloquea la carga: queda como incidente externo y la app muestra un aviso discreto. La carga se detiene solo si falta una semana en medio de los datos, o si la fuente lleva más de 2 semanas sin publicar; en ese caso, además, el Autor recibe un aviso urgente.
+**Fuentes retrasadas (D-356).** Se publica hasta la última semana completa en ambas fuentes, sin rellenar nada: así lo leen el Panorama y los indicadores; la página «Último dato por canal» muestra la última semana de cada fuente, rotulada (D-365). Una semana reciente que una fuente aún no publica no bloquea la carga: queda como incidente externo y la app muestra un aviso discreto. La carga se detiene solo si falta una semana en medio de los datos, o si la fuente lleva más de 2 semanas sin publicar; en ese caso, además, el Autor recibe un aviso urgente.
 
 ## 11. Quién decide qué
 
@@ -109,3 +109,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 |---|---|---|
 | 1.0 | 30-10-2026 | Primera versión del plan de calidad del software (D-355) |
 | 1.1 | 30-10-2026 | Regla de las fuentes retrasadas (D-356) |
+| 1.2 | 30-10-2026 | La página «Último dato por canal» muestra la última semana de cada fuente (D-365) |

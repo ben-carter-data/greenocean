@@ -246,6 +246,10 @@
     "aviso": [
       "ODEPA aún no publica la semana {}",
       "ODEPA has not published the week {} yet"
+    ],
+    "ultimo_dato": [
+      "El Panorama y los indicadores publican hasta la semana común; «Último dato por canal» muestra la última semana de cada fuente, rotulada.",
+      "The Price overview and the indicators publish up to the common week; «Último dato por canal» shows each source's latest week, labelled."
     ]
   }
 }

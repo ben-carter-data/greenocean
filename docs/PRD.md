@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.1 |
+| Versión | 3.2 |
 | Fecha | 30-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -110,7 +110,7 @@ Con la carga del 20-10-2026, la base tiene 814.610 precios semanales en 250 sema
 
 ## 7. Pantallas
 
-Capturas reales de las páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada. El menú agrupa las páginas por sección: Negocio, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad (Calidad y auditoría, Método y calidad y Git workflow). El Panorama de precios se lee en tres pasos numerados: elegir una región o todo Chile, elegir una familia y mirar sus productos; en la vista Usuario, cada paso se abre al completar el anterior.
+Capturas reales de las páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada. El menú agrupa las páginas por sección: Negocio, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad (Calidad y auditoría, Método y calidad y Git workflow). El Panorama de precios se lee en tres pasos numerados: elegir una región o todo Chile, elegir una familia y mirar sus productos; en la vista Usuario, cada paso se abre al completar el anterior. «Último dato por canal», junto al Panorama, muestra la última semana de cada fuente (mayorista y consumidor) con su variación por familia y sus productos, aunque la otra fuente todavía no la publique.
 
 [[diagrama:mockups]]
 
@@ -174,3 +174,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 2.0 | 25-10-2026 | Estructura estándar: cabecera, índice, restricciones y dependencias, riesgos, criterios de aceptación, glosario e historial; medida de pantalla corregida a 1440 × 790 útiles (D-279, documentación profesional) |
 | 3.0 | 25-10-2026 | Lectura de lo más importante a lo menos: resumen, problema, usuarios, preguntas y requisitos primero; diagramas del valor y de los requisitos (D-290, documentos para todo lector) |
 | 3.1 | 30-10-2026 | Visión y misión; las tres vistas y el indicador «Vista» (RF-09); fuentes retrasadas y pruebas informativas en RF-03; ventana de la carga manual en RF-07; sección Calidad, tema oscuro y Panorama en tres pasos (D-340 a D-357) |
+| 3.2 | 30-10-2026 | La página «Último dato por canal» (D-365) |
