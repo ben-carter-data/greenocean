@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from bi import charts, home_mockup, i18n, inflation_view
+from bi import alerts, charts, home_mockup, i18n, inflation_view
 from bi.weeks import week_range
 
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
@@ -277,6 +277,8 @@ def heat_table_css(palette: dict[str, str]) -> str:
 
 # region Insights (D-302)
 # What the dashboard answers, the KPIs that answer it and why, and the insights of the current load.
+# D-385: the code of the technical indicator (K1 to K8, «Indicadores explicados») each business KPI is, if any.
+KPI_CODES = {"Alerta de precio": "K6", "Brecha consumidor–mayorista": "K1", "Calidad de los datos": "K8"}
 KPIS = [
     (
         "Cambio típico",
@@ -298,8 +300,7 @@ KPIS = [
     ),
     (
         "Alerta de precio",
-        "Un cambio fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con "
-        "dos cotizaciones en cada semana.",
+        alerts.describe_rule(),  # D-385: the rule of bi/alerts.py, never written by hand
         "Separa lo inusual y material del ruido de cada semana.",
     ),
     (

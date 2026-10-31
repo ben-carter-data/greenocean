@@ -17,7 +17,17 @@ ALERT_MINIMUM_CHANGE = 0.10
 # market movement: the Resumen leaves it out of its table (D-146), so it cannot alert.
 ALERT_MINIMUM_QUOTES = 2
 DAYS_IN_A_WEEK = 7
+QUOTE_WORDS = {2: "dos", 3: "tres"}
 # endregion
+
+
+def describe_rule() -> str:
+    """K6 in words, from the constants above: the one definition the panel and the documents repeat (D-385)."""
+    quotes = QUOTE_WORDS.get(ALERT_MINIMUM_QUOTES, str(ALERT_MINIMUM_QUOTES))
+    return (
+        f"Un cambio fuera del promedio ± {ALERT_DEVIATIONS} desviaciones de sus {ALERT_WINDOW_WEEKS} semanas previas, "
+        f"de al menos {round(ALERT_MINIMUM_CHANGE * 100)} % y con {quotes} cotizaciones en cada semana."
+    )
 
 
 # region Alerts

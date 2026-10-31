@@ -1,0 +1,41 @@
+"""One definition of the price alert (K6) everywhere, and the K code next to each business KPI (D-385)."""
+
+import re
+
+from bi import alerts, dashboard, i18n, overview, project
+
+
+def test_d385_the_alert_rule_is_written_once_from_the_constants_of_the_code():
+    rule = alerts.describe_rule()
+    for value in (
+        f"± {alerts.ALERT_DEVIATIONS} desviaciones",
+        f"{alerts.ALERT_WINDOW_WEEKS} semanas previas",
+        f"{round(alerts.ALERT_MINIMUM_CHANGE * 100)} %",
+        f"{alerts.QUOTE_WORDS[alerts.ALERT_MINIMUM_QUOTES]} cotizaciones",
+    ):
+        assert value in rule, value
+    assert dict((name, how) for name, how, _ in overview.KPIS)["Alerta de precio"] == rule
+    # The documents and the two working sources say the same, with the same numbers.
+    words = rule.removeprefix("Un cambio fuera del ").rstrip(".")
+    prd = i18n.document_path("PRD.md", "es").read_text(encoding="utf-8")
+    assert words in next(line for line in prd.splitlines() if line.startswith("| RF-05 |"))
+    guide = {row["KPI"]: row for row in project.read_guide_table("KPI")}
+    assert words in guide["K6"]["En palabras"]
+    design = {row["ID"]: row for row in project.read_design_table(project.INDICATORS_HEADING)}
+    assert words in design["K6"]["Fórmula"]
+    english = i18n.document_path("PRD.md", "en").read_text(encoding="utf-8")
+    assert "± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week" in english
+    assert i18n.lookup(rule)  # and the panel says it in English too
+
+
+def test_d385_each_business_kpi_names_its_technical_indicator_or_says_it_has_none():
+    names = [name for name, _, _ in overview.KPIS]
+    assert set(overview.KPI_CODES) <= set(names)
+    assert set(overview.KPI_CODES.values()) <= set(dashboard.KPI_PRESENTATION)
+    for name in names:
+        cell = dashboard.build_kpi_code_html(name)
+        code = overview.KPI_CODES.get(name)
+        if code:
+            assert f"{code} · {dashboard.KPI_PRESENTATION[code][0]}" in cell and re.search(rf"kpi={code}\b", cell), name
+        else:
+            assert cell == "—", name

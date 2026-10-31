@@ -55,7 +55,7 @@ El data warehouse (`etl/datos.duckdb`, la base servida) es un modelo estrella: u
 | K3 | Cuánto más caro o más barato es una región que el promedio de las regiones esa semana. | Canales y regiones | k3_regional_index |
 | K4 | Cuánto más caro o más barato es una semana que el promedio de su año. | Estacionalidad | k4_seasonal_index |
 | K5 | Cuántas semanas tarda el precio al consumidor en moverse después del mayorista. | Brecha de precio | k5_weekly_variations_sql |
-| K6 | Si el cambio de precio de esta semana es mucho mayor que los cambios habituales del producto. | Alertas | k6_usual_range_sql |
+| K6 | Si el cambio de precio de esta semana sale de su rango habitual: fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con dos cotizaciones en cada semana. | Alertas | k6_usual_range_sql |
 | K7 | Cuántas claves de frutas y verduras del consumidor tienen un precio mayorista con qué compararse. | Calidad de datos | k7_match_coverage |
 | K8 | Qué parte de las filas leídas se rechazó, y por qué motivo. | Calidad de datos | k8_rejected_rows |
 

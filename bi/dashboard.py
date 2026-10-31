@@ -2317,6 +2317,15 @@ def build_link_html(text, address):
     return f'<a href="{html.escape(address)}" target="_self">{html.escape(text)}</a>'
 
 
+def build_kpi_code_html(name):
+    """«K6 · Alertas de precio» as a link to its step-by-step calculation, or a dash for a KPI only the panel computes."""
+    code = overview.KPI_CODES.get(name)
+    if not code:
+        return "—"
+    label = f"{code} · {i18n.translate_text(KPI_PRESENTATION[code][0])}"
+    return build_link_html(label, build_page_address(PAGE_KPI, kpi=code))
+
+
 def build_kpi_link(kpi):
     """Open an indicator's explanation without exposing its internal K-code."""
     address = build_page_address(PAGE_KPI, kpi=kpi)
@@ -4773,10 +4782,18 @@ def read_cached_database_counts(database_version):
     ).iloc[0]
 
 
-def build_insight_table_html(head, rows, extra_class=""):
-    """A table of the Insights tab: its header and its rows of text, the first column in bold."""
+def build_insight_table_html(head, rows, extra_class="", markup_columns=()):
+    """A table of the Insights tab: its header and its rows of text, the first column in bold. The columns in
+    markup_columns already hold their HTML (a link, D-385)."""
     header = "".join(f"<th>{html.escape(tr(cell))}</th>" for cell in head)
-    body = "".join("<tr>" + "".join(f"<td>{html.escape(tr(cell))}</td>" for cell in row) + "</tr>" for row in rows)
+    body = "".join(
+        "<tr>"
+        + "".join(
+            f"<td>{cell if index in markup_columns else html.escape(tr(cell))}</td>" for index, cell in enumerate(row)
+        )
+        + "</tr>"
+        for row in rows
+    )
     classes = f"ov-it {extra_class}".strip()
     return f'<div class="{classes}" tabindex="0"><table><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table></div>'
 
@@ -5206,10 +5223,19 @@ def show_analysis_block(block, mode):
         st.iframe(doc_diagrams.DOC_DIAGRAMS["ciclo_semanal"](mode), height="content")
     elif block == "KPIs":
         show_analysis_lead(
-            tr("Los valores de cada KPI se ven en el Panorama de precios, en Insights y en Precios e inflación.")
+            tr(
+                "Los valores de cada KPI se ven en el Panorama de precios, en Insights y en Precios e inflación. "
+                "Un KPI con indicador técnico (K1 a K8) abre su cálculo paso a paso; los demás se calculan solo para "
+                "el panel."
+            )
         )
+        # D-385: the technical indicator (K code and its name) next to each KPI, so the two vocabularies meet.
+        rows = [(name, build_kpi_code_html(name), how, why) for name, how, why in overview.KPIS]
         st.markdown(
-            build_insight_table_html(["KPI", "Cómo se calcula", "Por qué"], overview.KPIS), unsafe_allow_html=True
+            build_insight_table_html(
+                ["KPI", "Indicador técnico", "Cómo se calcula", "Por qué"], rows, markup_columns=(1,)
+            ),
+            unsafe_allow_html=True,
         )
     elif block == "Decisiones de sistema":
         for item in read.system_decisions():

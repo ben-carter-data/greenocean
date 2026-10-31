@@ -132,7 +132,7 @@ Precisiones tomadas al construir el hito 2, registradas en `DECISIONES.md`: RN-0
 | K3 | Índice regional | P_región / P_promedio_nacional | P3 |
 | K4 | Índice estacional | P_semana / P_promedio_anual del producto | P4 |
 | K5 | Rezago (semanas) | desfase entre 0 y 8 semanas con mayor correlación entre las variaciones semanales de ambos precios | P5 |
-| K6 | Alerta de variación | variación semanal fuera de ±2 desviaciones estándar de las últimas 12 semanas | P6 |
+| K6 | Alerta de variación | variación semanal fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con dos cotizaciones en cada semana | P6 |
 | K7 | Cobertura del cruce (%) | claves con margen calculado / claves de frutas y verduras del consumidor | calidad |
 | K8 | Filas rechazadas (%) | filas rechazadas / filas leídas, por motivo | calidad |
 
