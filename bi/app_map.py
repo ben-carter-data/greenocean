@@ -325,7 +325,12 @@ NODES = {
         "Puerta 1, el archivo; puerta 2, cada fila; puerta 3, la base: si una falla, no se publica nada.",
         "En cada carga.",
         "Monitoreo",
-        [("bi/quality_live.py", "mide los once indicadores de calidad sobre la base publicada.")],
+        [
+            (
+                "bi/quality_live.py",
+                "mide los once indicadores de calidad de los datos sobre la base publicada, en cada carga.",
+            )
+        ],
     ),
     "parity": (
         "Paridad SQLite ↔ DuckDB",

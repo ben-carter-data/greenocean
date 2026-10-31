@@ -14,7 +14,7 @@ Las fuentes externas (ODEPA, INE) no se miden: si una falla o se retrasa, se reg
 | Archivo | Qué contiene | Quién lo cambia |
 |---|---|---|
 | `PLAN_DE_CALIDAD.md` y `PLAN_PRUEBAS.md` | Los dos documentos de calidad: el plan de calidad (SQAP) y el plan de pruebas y seguridad | el autor |
-| `metas.json` | Los 12 indicadores: aceptable, meta, margen crítico, qué mide, por qué importa, cómo se mide, acción y frecuencia | el autor |
+| `metas.json` | Los 12 indicadores del plan de calidad (8 de código y 4 de datos; no son los 11 indicadores de calidad de los datos que se miden en cada carga): aceptable, meta, margen crítico, qué mide, por qué importa, cómo se mide, acción y frecuencia | el autor |
 | `politica.json` | Los textos fijos de los informes, las plantillas de los insights y el modo de los indicadores de datos | el autor |
 | `informes/informe-NNN.json` | Un informe por medición, congelado: no se edita, un error se corrige en el siguiente | el workflow «calidad», una vez |
 | `medicion.json` | La última medición, de la que sale el siguiente informe | el workflow «calidad» |

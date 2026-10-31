@@ -2878,3 +2878,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** que el diagrama de despliegue tenga dos cajas, una por informe, porque GitHub guarda cada uno en un lugar distinto.
 - **Decisión:** dentro de GitHub hay dos entornos. «Issues · informe semanal»: al final de cada carga, `semanal.yml` abre un issue «Informe semanal» (`gh issue create`). «Pull requests · informe de calidad»: tras cada carga, `calidad.yml` mide los indicadores y propone el informe numerado como un pull request, que el autor aprueba (D-331, D-363). Esto corrige D-370, que había dejado una sola caja. Para dar espacio, la ruta «despliegue de main» baja unos píxeles; ninguna otra pieza se mueve.
 - **Pruebas:** `tests/test_deployment.py::test_d383_…` (las dos cajas, el comando de cada workflow y su inglés).
+
+## D-384 · Los 11 indicadores de la carga y los 12 del plan de calidad tienen nombres distintos
+
+- **Pedido del autor:** que «indicadores de calidad» no signifique 11 en un sitio y 12 en otro.
+- **Decisión:** dos nombres. «Indicadores de calidad de los datos» son los 11 que `bi/quality_live.py` mide en cada carga sobre la base publicada, en cinco dimensiones (completitud, actualidad, validez, unicidad y consistencia); se ven en «Calidad y auditoría». «Indicadores del plan de calidad» son los 12 de `docs/calidad/metas.json` (8 de código y 4 de datos) que el workflow de calidad mide cada semana; se ven en «Método y calidad». El panel (Insights, el resumen de la carga, el mapa de la app, «Método y calidad»), el README de `docs/calidad/` y los documentos usan cada nombre para su conjunto; el PRD y el SQAP lo adoptan en su propio commit.
+- **Pruebas:** `tests/test_quality_method.py` (la frase del plan con su nombre) y `tests/test_i18n.py` (el inglés de cada frase).

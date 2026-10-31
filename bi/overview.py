@@ -320,8 +320,8 @@ KPIS = [
     ),
     (
         "Calidad de los datos",
-        "11 indicadores en cinco dimensiones (completitud, actualidad, validez, unicidad y "
-        "consistencia) más controles de exactitud.",
+        "11 indicadores de calidad de los datos, medidos en cada carga, en cinco dimensiones (completitud, actualidad, "
+        "validez, unicidad y consistencia) más controles de exactitud.",
         "Una cifra solo vale si los datos de origen están completos y son válidos.",
     ),
 ]
@@ -444,7 +444,7 @@ def architect_insights(
     lines = [
         f"La carga del {day} leyó {number(latest['rows_read'])} filas de los archivos de ODEPA y rechazó "
         f"{number(latest['rows_rejected'])} con su motivo; pasaron {tests[0]} de {tests[1]} pruebas de dbt y {green} de "
-        f"{indicators} indicadores de calidad están en su umbral.",
+        f"{indicators} indicadores de calidad de los datos están en su umbral.",
         f"La base servida tiene {number(database['prices'])} precios semanales en {number(database['weeks'])} semanas sin "
         f"huecos, de {database['regions']} regiones y {database['channels']} canales.",
     ]

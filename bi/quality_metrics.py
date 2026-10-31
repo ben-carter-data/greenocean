@@ -75,8 +75,8 @@ INDICATORS = [
 SCHEDULE = [
     (
         (
-            "Los 12 indicadores: 8 de código y 4 de datos",
-            "The 12 indicators: 8 of code and 4 of data",
+            "Los 12 indicadores del plan de calidad: 8 de código y 4 de datos",
+            "The 12 indicators of the quality plan: 8 of code and 4 of data",
         ),
         ("Automático: workflow «calidad» (scripts/medir_calidad.py)", "Automatic: «calidad» workflow"),
         (

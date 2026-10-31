@@ -4878,7 +4878,7 @@ def show_overview_insights(mode, version):
             "¿Puedo confiar en estas cifras?",
             "Quien diseña los datos",
             "Calidad y auditoría",
-            f"{green} de {len(indicators)} indicadores de calidad en su umbral y {tests[0]} de {tests[1]} pruebas de datos.",
+            f"{green} de {len(indicators)} indicadores de calidad de los datos en su umbral y {tests[0]} de {tests[1]} pruebas de datos.",
         ),
     ]
     st.markdown(

@@ -148,10 +148,10 @@ def build_overview(
     plural = ("no conformidad", "non-conformity") if nonconforming == 1 else ("no conformidades", "non-conformities")
     lead = [
         t(
-            f"Medimos {len(rows)} indicadores: {len(data)} de los datos que publicamos y {len(code)} del código que "
-            "los trata, cada uno contra un aceptable fijado por el autor.",
-            f"We measure {len(rows)} indicators: {len(data)} of the data we publish and {len(code)} of the code that "
-            "treats it, each against an acceptable set by the author.",
+            f"Medimos los {len(rows)} indicadores del plan de calidad: {len(data)} de los datos que publicamos y "
+            f"{len(code)} del código que los trata, cada uno contra un aceptable fijado por el autor.",
+            f"We measure the {len(rows)} indicators of the quality plan: {len(data)} of the data we publish and "
+            f"{len(code)} of the code that treats it, each against an acceptable set by the author.",
         ),
         t(
             f"Hoy: {within} de {measured} medidos dentro de lo aceptable · {nonconforming} {plural[0]}.",

@@ -203,7 +203,7 @@ def test_d332_the_summary_reads_the_latest_report_and_never_claims_an_external_a
     overview = quality_method.build_overview(latest, goals, policy)
     within, nonconforming, measured = quality_metrics.report_counts(latest)
     assert f"Hoy: {within} de {measured} medidos dentro de lo aceptable" in overview
-    assert "Medimos 12 indicadores: 4 de los datos que publicamos y 8 del código" in overview
+    assert "Medimos los 12 indicadores del plan de calidad: 4 de los datos que publicamos y 8 del código" in overview
     # Only the indicators out of their acceptable carry their insight in sight; the rest on hover.
     attention = [row for row in latest["indicadores"] if row["estado"] in ("urgente", "critico")]
     assert overview.count("<li class=") == len(attention)
