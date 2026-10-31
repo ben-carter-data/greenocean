@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de pruebas y de seguridad |
-| Versión | 3.0 |
-| Fecha | 25-10-2026 |
+| Versión | 3.1 |
+| Fecha | 30-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo se comprueba que cada cifra es correcta, que una carga con errores nunca se publica y que nadie puede leer los secretos, cambiar los datos ni lanzar la carga sin permiso. |
@@ -35,7 +35,7 @@ Las pruebas de GreenOcean responden tres preguntas, siempre de forma automática
 
 - **¿Las cifras son correctas?** Cada precio se recalcula desde los archivos de ODEPA y por un segundo camino independiente; el resultado debe coincidir.
 - **¿Una carga con errores puede llegar al panel?** No: si una prueba falla, la carga se detiene y el panel conserva la última base válida.
-- **¿Alguien puede abusar del sistema?** Diez ataques (S-01 a S-10) se repiten en cada cambio del código: leer secretos, colgar el panel, lanzar la carga sin la clave o robar el token.
+- **¿Alguien puede abusar del sistema?** Catorce ataques (S-01 a S-14) se repiten en cada cambio del código: leer secretos, colgar el panel, lanzar la carga sin la clave, entrar como Autor sin ella o robar el token.
 
 [[diagrama:niveles]]
 
@@ -52,6 +52,8 @@ Las pruebas de GreenOcean responden tres preguntas, siempre de forma automática
 | Diagramas | Cada pieza dibujada existe en el código, el workflow o la base | pytest | `tests/test_devops.py`, `tests/test_monitoring.py`, `tests/test_stack_page.py` y afines |
 | Documentos | Trazabilidad de requisitos, cifras contra la base, estructura y redacción | pytest | `tests/test_documents.py`, `tests/test_prd_traceability.py` |
 | Medición de pantallas | Desborde horizontal y altura de cada página en varios tamaños de ventana | Playwright, externo al proyecto | `tests/medicion/medir.cjs` |
+
+**Pruebas que bloquean y pruebas que informan.** Las pruebas de datos, de cifras, de paridad, de la puerta y de seguridad bloquean: si fallan, la carga o el cambio no siguen. Las pruebas de velocidad (marcador `rendimiento`) solo informan: corren en el computador del autor y nunca en las máquinas compartidas de GitHub, que no son un entorno estable para medir tiempo (D-341).
 
 ## 3. Quién participa en la seguridad
 
@@ -105,6 +107,10 @@ Precondición común: el entorno de la sección 9, sin el secreto real.
 | S-08 | Permisos del workflow | Abusar de los permisos del workflow | Solo contenido e issues | A01 | `tests/test_security.py::test_the_weekly_job_has_least_privilege` |
 | S-09 | Control sin prueba | Afirmar un control sin prueba | Cada control de la arquitectura de seguridad apunta a una prueba que existe | — | `tests/test_security.py::test_every_control_of_the_map_points_to_a_test_that_exists` |
 | S-10 | Pipeline sin la clave | Lanzar el pipeline sin la clave | El botón no existe antes de la clave | A01 | `tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code` |
+| S-11 | Clave del Autor con Enter | Escribir la clave del Autor y pulsar Enter, la correcta y otra | Entra solo con la correcta; con otra, «Clave incorrecta.» sin recargar | A07 | `tests/test_control.py::test_d350_enter_sends_the_author_key_a_wrong_one_says_so_in_place_and_there_is_no_button` |
+| S-12 | Autor por la dirección | Abrir la parte del autor con una dirección o una recarga | Vuelve «Elige tu vista» y la parte del autor no aparece | A01 | `tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_the_address_says`, `tests/test_app_reloads.py::test_d357_a_reload_the_reader_makes_still_asks_for_the_view` |
+| S-13 | Token en un log | Hacer que un log de GitHub imprima el token en la página «GitHub Actions» | El token se cubre: nunca aparece en pantalla ni en la sesión | A09 | `tests/test_actions_page.py::test_d339_the_token_is_never_drawn_not_even_when_the_log_prints_it` |
+| S-14 | Escribir en GitHub | Buscar en el panel una escritura en GitHub fuera de lanzar y cancelar la carga | Solo control.py escribe; el lector de GitHub Actions solo lee | A01 | `tests/test_run_monitor.py::test_d351_cancelling_is_the_only_write_and_the_read_only_module_still_has_none` |
 
 **Resultado obtenido:** cada caso se ejecuta en cada push; un caso que no cumple su resultado esperado hace fallar `pruebas.yml`. La revisión del 20-10-2026 encontró un error de la clave de control con caracteres no ASCII, corregido en D-199 (clave con cualquier carácter), y una frase inexacta del SAD, corregida en D-200.
 
@@ -145,8 +151,8 @@ Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su result
 | Base | La base servida, descargada con `python bi/served_database.py` |
 | Datos crudos | `etl/raw.db`, solo en el computador del autor y en la máquina de cada carga; sin ella, las pruebas que reconstruyen desde las filas crudas se omiten |
 | Secretos | Las pruebas crean su propio secreto ficticio y nunca usan el real |
-| Ejecución local | `python -m pytest -q` |
-| Ejecución continua | `pruebas.yml` en cada push y pull request: compila dbt (`dbt parse`) y ejecuta pytest |
+| Ejecución local | `python -m pytest -q`; las pruebas de velocidad, con `python -m pytest -m rendimiento` |
+| Ejecución continua | `pruebas.yml` en cada push y pull request: compila dbt (`dbt parse`) y ejecuta pytest sin las pruebas de velocidad (`-m "not rendimiento"`), igual que la carga semanal y la medición de calidad |
 | Antes de publicar | `semanal.yml` ejecuta pytest sobre la base nueva, incluida la paridad |
 
 ## 10. Criterios de aceptación
@@ -154,7 +160,7 @@ Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su result
 | Momento | Criterio | Verificación |
 |---|---|---|
 | Entrada | El cambio compila y la base servida está disponible | `dbt parse` |
-| Salida de un cambio | La suite completa pasa, incluidos los diez casos de seguridad | `pruebas.yml` en verde |
+| Salida de un cambio | Ruff, mypy y la suite completa pasan sobre todo el código antes del push, incluidos los catorce casos de seguridad | `pruebas.yml` en verde |
 | Salida de una carga | Pasan las pruebas de dbt, la carga lee al menos el 90 % de las filas de la anterior y pytest pasa sobre la base nueva | `semanal.yml` |
 | Seguridad | Cada control apunta a una prueba que existe y ningún secreto está en el repositorio | Casos S-09 y S-06 |
 | Cambio de comportamiento | Tiene su entrada en `docs/DECISIONES.md` y sus pruebas | Revisión del autor |
@@ -192,3 +198,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 2.0 | 25-10-2026 | Documento autónomo: referencia, modelo de amenazas, controles, entorno, casos con su prueba y criterios de aceptación (D-279, documentación profesional) |
 | 2.1 | 25-10-2026 | El Plan de pruebas, versión 1.0, nace como documento aparte (D-279) |
 | 3.0 | 25-10-2026 | Un solo documento para las pruebas y la seguridad: qué se prueba, quién participa, amenazas, casos, procedimiento y las secuencias de una carga manual y de un cambio de código (D-290, documentos para todo lector) |
+| 3.1 | 30-10-2026 | Pruebas que bloquean y pruebas que informan; cuatro casos de seguridad nuevos, S-11 a S-14 (D-364); ejecución sin las pruebas de velocidad en GitHub |

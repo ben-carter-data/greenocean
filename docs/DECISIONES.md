@@ -2722,3 +2722,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** en un push, el workflow mide los 12 indicadores y falla si un indicador de código pasa su aceptable, sin proponer informe. Propone el informe numerado solo cuando termina la carga semanal (`workflow_run` de «semanal», también si la carga falló) o cuando se lanza a mano (`workflow_dispatch`). Se activa así el disparador que D-331 dejó propuesto.
 - **Limpieza:** las dos propuestas del informe N° 7 (ramas `informe-calidad/400bee8` y `informe-calidad/6cbe4ee`) se cerraron sin fusionar al borrar sus ramas.
 - **Pruebas:** `tests/test_quality_method.py::test_d363_…` (los disparadores y la condición del paso que propone el informe).
+
+## D-364 · Cuatro casos de seguridad nuevos: S-11 a S-14
+
+- **Pedido del autor:** que el plan de pruebas y seguridad cuente los ataques que trajeron las vistas del Autor, la página «GitHub Actions» y la ventana de la carga.
+- **Decisión:** `bi/security_plan.py` suma S-11 (la clave del Autor con Enter), S-12 (abrir la parte del autor con una dirección o una recarga), S-13 (un log que imprime el token) y S-14 (una escritura en GitHub fuera de lanzar y cancelar), cada uno con su prueba existente. El esquema pasa a dos arcos de siete casos, encima y debajo del candado, para que cada nombre tenga su lugar. El plan de pruebas (español e inglés) los lleva en su tabla y explica qué pruebas bloquean y cuáles solo informan.
+- **Pruebas:** las del plan (`tests/test_documents.py`, `tests/test_doc_diagrams.py`) leen los catorce casos del código.

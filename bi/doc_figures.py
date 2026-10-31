@@ -759,7 +759,7 @@ def tests_procedure(mode):
                 30,
                 "brand:pytest",
                 say("2 · Ejecutar", "2 · Run"),
-                say("los diez casos con pytest", "the ten cases with pytest"),
+                say("los catorce casos con pytest", "the fourteen cases with pytest"),
             ),
             "check": (
                 520,
@@ -1375,7 +1375,7 @@ def tests_levels(mode):
                 190,
                 "icon:lock",
                 say("Seguridad", "Security"),
-                say("los diez ataques S-01 a S-10", "the ten attacks S-01 to S-10"),
+                say("los catorce ataques S-01 a S-14", "the fourteen attacks S-01 to S-14"),
             ),
             "visual": (
                 70,

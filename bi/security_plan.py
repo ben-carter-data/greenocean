@@ -1,6 +1,6 @@
-"""«Plan de pruebas y seguridad» (D-258, D-260, D-290): the ten test cases and the procedure that runs them, as two clickable diagrams.
+"""«Plan de pruebas y seguridad» (D-258, D-260, D-290): the test cases and the procedure that runs them, as two clickable diagrams.
 
-The cases S-01 to S-10 live here and only here (the document used to hold them in a long table): each is a node around the
+The cases S-01 to S-14 live here and only here (the document used to hold them in a long table): each is a node around the
 lock of the plan, with the logo of the technology it attacks, and a click opens its attack, its expected result, its OWASP Top 10 (2021) category, the threat it
 belongs to and the test that verifies it. The procedure is a cycle of five steps, as in a software life cycle, with the
 way back when a case fails. The pop-ups are CSS sheets opened with :target, with no script; the document anchors itself
@@ -96,6 +96,44 @@ CASES = [
         "A01",
         ["tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code"],
     ),
+    # D-364: the four cases the author's views, the GitHub page and the run window brought (D-339 to D-357).
+    (
+        "S-11",
+        "Clave del Autor con Enter",
+        "Escribir la clave del Autor y pulsar Enter, la correcta y otra",
+        "Entra solo con la correcta; con otra, «Clave incorrecta.» sin recargar",
+        "A07",
+        [
+            "tests/test_control.py::test_d350_enter_sends_the_author_key_a_wrong_one_says_so_in_place_and_there_is_no_button"
+        ],
+    ),
+    (
+        "S-12",
+        "Autor por la dirección",
+        "Abrir la parte del autor con una dirección o una recarga",
+        "Vuelve «Elige tu vista» y la parte del autor no aparece",
+        "A01",
+        [
+            "tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_the_address_says",
+            "tests/test_app_reloads.py::test_d357_a_reload_the_reader_makes_still_asks_for_the_view",
+        ],
+    ),
+    (
+        "S-13",
+        "Token en un log",
+        "Hacer que un log de GitHub imprima el token en la página «GitHub Actions»",
+        "El token se cubre: nunca aparece en pantalla ni en la sesión",
+        "A09",
+        ["tests/test_actions_page.py::test_d339_the_token_is_never_drawn_not_even_when_the_log_prints_it"],
+    ),
+    (
+        "S-14",
+        "Escribir en GitHub",
+        "Buscar en el panel una escritura en GitHub fuera de lanzar y cancelar la carga",
+        "Solo control.py escribe; el lector de GitHub Actions solo lee",
+        "A01",
+        ["tests/test_run_monitor.py::test_d351_cancelling_is_the_only_write_and_the_read_only_module_still_has_none"],
+    ),
 ]
 # The technology each case attacks (D-260), drawn as its logo inside the node: the SQL engine, the comparison of the code in
 # Python, the repository, GitHub and its workflow, the tests themselves and the panel.
@@ -110,6 +148,10 @@ TECH = {
     "S-08": "github",
     "S-09": "pytest",
     "S-10": "streamlit",
+    "S-11": "python",
+    "S-12": "streamlit",
+    "S-13": "github",
+    "S-14": "github",
 }
 TECH_NAMES = {
     "duckdb": "DuckDB",
@@ -121,17 +163,14 @@ TECH_NAMES = {
 }
 # Where each case sits around the lock (x, y); the lines run on a horizontal trunk and turn at right angles, as in the
 # entity-relationship diagram.
+# D-364: fourteen cases in two arcs, seven above the lock and seven below, so every label has room above or below its
+# case; read clockwise from the top left. Each column has one case above and one below, on the same branch of the trunk.
+COLUMNS = [80 + 140 * index for index in range(7)]
 CASE_PLACES = {
-    "S-01": (500, 115),
-    "S-02": (715, 135),
-    "S-03": (885, 215),
-    "S-04": (885, 365),
-    "S-05": (715, 445),
-    "S-06": (500, 465),
-    "S-07": (285, 445),
-    "S-08": (115, 365),
-    "S-09": (115, 215),
-    "S-10": (285, 135),
+    **{f"S-{index + 1:02d}": (x, round(150 + 60 * ((x - 500) / 420) ** 2)) for index, x in enumerate(COLUMNS)},
+    **{
+        f"S-{index + 8:02d}": (x, round(510 - 60 * ((x - 500) / 420) ** 2)) for index, x in enumerate(reversed(COLUMNS))
+    },
 }
 
 
@@ -250,10 +289,10 @@ def case_lines(cx, cy, radius):
 
 
 def build_cases_html(mode):
-    """The lock of the plan with its ten cases around it; each case is a link to its pop-up."""
+    """The lock of the plan with its fourteen cases around it; each case is a link to its pop-up."""
     palette = charts.get_palette(mode)
     ink, muted, card, accent = palette["strong_text"], palette["reference"], palette["card"], palette["accent"]
-    width, height, cx, cy, radius = 1000, 580, 500, 290, 40
+    width, height, cx, cy, radius = 1000, 680, 500, 330, 40
     paths, dots = case_lines(cx, cy, radius)
     lines = [
         f'<path d="{d}" fill="none" stroke="{accent}" stroke-width="2" stroke-opacity=".6" stroke-linejoin="miter"/>'
@@ -297,7 +336,7 @@ def build_cases_html(mode):
         f'<text x="{cx}" y="{cy + 60}" text-anchor="middle" font-size="14" fill="{muted}">{len(CASES)} casos · pytest</text>'
     )
     body = (
-        f'<svg class="plan" viewBox="0 0 {width} {height}" role="img" aria-label="Los diez casos de prueba de seguridad" '
+        f'<svg class="plan" viewBox="0 0 {width} {height}" role="img" aria-label="Los catorce casos de prueba de seguridad" '
         f'font-family="-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif">{"".join(lines)}{centre}{"".join(nodes)}</svg>'
         '<p class="note">Pulsa un caso para ver su ataque, su resultado esperado y la prueba que lo verifica.</p>'
         + "".join(build_case_modal(case) for case in CASES)

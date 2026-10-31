@@ -125,7 +125,7 @@ def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architectu
 
     root = Path(__file__).resolve().parent.parent
     text = (DOCS_DIR / "PLAN_PRUEBAS.md").read_text(encoding="utf-8")
-    assert [case[0] for case in security_plan.CASES] == [f"S-{n:02d}" for n in range(1, 11)]
+    assert [case[0] for case in security_plan.CASES] == [f"S-{n:02d}" for n in range(1, 15)]  # S-11 to S-14 since D-364
     for case_id, short, attack, expected, owasp, tests in security_plan.CASES:
         assert owasp in security_map.OWASP or owasp == "—", case_id
         assert tests, case_id
@@ -149,7 +149,9 @@ def test_d258_the_ten_cases_open_their_attack_result_owasp_threat_and_test():
         assert f'href="#c-{case_id}"' in page and f'id="c-{case_id}"' in page, case_id
         for text in (attack, expected, *tests):
             assert text.replace("&", "&amp;") in page or text in page, (case_id, text)
-    assert page.count('class="modal"') == 10 and page.count("OWASP Top 10 (2021)") == 10 and "<script" not in page
+    assert (
+        page.count('class="modal"') == 14 and page.count("OWASP Top 10 (2021)") == 14
+    )  # D-364 and "<script" not in page
     assert '<base href="about:srcdoc">' in page
     # the threat of a case is the one of the architecture that lists it
     assert security_plan.threat_of("S-01")[0] == "T1" and security_plan.threat_of("S-09") is None
@@ -176,7 +178,7 @@ def test_d260_each_case_shows_the_logo_of_its_technology_and_every_line_turns_at
         assert tech in doc_views.DISCS, case_id
         assert f"Tecnología</h4><p>{security_plan.TECH_NAMES[tech]}</p>" in page, case_id
         assert f"{case_id} · {security_plan.TECH_NAMES[tech]} · " in page, case_id
-    assert page.count('<circle class="node"') == 10
+    assert page.count('<circle class="node"') == 14  # D-364
     # no diagonal: every line of the diagram moves only horizontally or vertically
     assert "<line " not in page
     lines = re.findall(

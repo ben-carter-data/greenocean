@@ -128,7 +128,7 @@ NODES = {
         478,
         "Calidad",
         "Recalcula los precios desde las filas crudas, compara SQLite con DuckDB, audita "
-        "cada cifra del panel y ataca la seguridad (casos S-01 a S-10).",
+        "cada cifra del panel y ataca la seguridad (casos S-01 a S-14).",
         "En cada push y cada martes, antes de subir la base nueva.",
     ),
 }

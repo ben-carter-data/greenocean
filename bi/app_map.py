@@ -332,7 +332,7 @@ NODES = {
         ("watch", 5),
         "Las amenazas, sus controles y las pruebas que los verifican.",
         "El SQL público con límites, la base en solo lectura, la clave de control y el token protegido; los "
-        "casos S-01 a S-10 los atacan en cada push.",
+        "casos S-01 a S-14 los atacan en cada push.",
         "En cada push.",
         "Mapa de seguridad",
         [
@@ -418,7 +418,7 @@ LINKS = [
     ("streamlit", "actions", "order", "carga manual con el token", ["orquestacion", "seguridad"]),
     ("streamlit", "github", "check", "estado de las ejecuciones (API)", ["observabilidad"]),
     ("ci", "github", "check", "resultado junto al commit", ["orquestacion", "calidad"]),
-    ("ci", "security", "order", "S-01 a S-10 en cada push", ["seguridad", "calidad"]),
+    ("ci", "security", "order", "S-01 a S-14 en cada push", ["seguridad", "calidad"]),
     ("ci", "parity", "order", "corre la paridad", ["calidad"]),
     ("gates", "agent", "check", "puerta 1", ["calidad"]),
     ("gates", "dbt", "check", "puertas 2 y 3", ["calidad"]),

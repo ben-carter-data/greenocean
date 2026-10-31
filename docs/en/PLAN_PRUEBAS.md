@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Test and security plan |
-| Version | 3.0 |
-| Date | 2026-10-25 |
+| Version | 3.1 |
+| Date | 2026-10-30 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain how we check that each figure is correct, that a load with errors is never published and that nobody can read the secrets, change the data or launch the load without permission. |
@@ -35,7 +35,7 @@ The tests of GreenOcean answer three questions, always automatically:
 
 - **Are the figures correct?** Each price is recomputed from the ODEPA files and along a second, independent path; the result must match.
 - **Can a load with errors reach the panel?** No: if a test fails, the load stops and the panel keeps the last valid database.
-- **Can anyone abuse the system?** Ten attacks (S-01 to S-10) are repeated on every code change: reading secrets, hanging the panel, launching the load without the code or stealing the token.
+- **Can anyone abuse the system?** Fourteen attacks (S-01 to S-14) are repeated on every code change: reading secrets, hanging the panel, launching the load without the code, entering as Author without it or stealing the token.
 
 [[diagrama:niveles]]
 
@@ -52,6 +52,8 @@ The tests of GreenOcean answer three questions, always automatically:
 | Diagrams | Each piece drawn exists in the code, the workflow or the database | pytest | `tests/test_devops.py`, `tests/test_monitoring.py`, `tests/test_stack_page.py` and similar |
 | Documents | Requirements traceability, figures against the database, structure and wording | pytest | `tests/test_documents.py`, `tests/test_prd_traceability.py` |
 | Screen measurement | Horizontal overflow and height of each page at several window sizes | Playwright, outside the project | `tests/medicion/medir.cjs` |
+
+**Tests that block and tests that inform.** The data, figure, parity, gate and security tests block: if they fail, the load or the change does not go on. The speed tests (marker `rendimiento`) only inform: they run on the author's computer and never on GitHub's shared machines, which are not a stable place to measure time (D-341).
 
 ## 3. Who takes part in security
 
@@ -105,6 +107,10 @@ Common precondition: the environment of section 9, without the real secret.
 | S-08 | Workflow permissions | Abuse the permissions of the workflow | Only content and issues | A01 | `tests/test_security.py::test_the_weekly_job_has_least_privilege` |
 | S-09 | Control without a test | Claim a control without a test | Each control of the security architecture points to a test that exists | — | `tests/test_security.py::test_every_control_of_the_map_points_to_a_test_that_exists` |
 | S-10 | Pipeline without the code | Launch the pipeline without the code | The button does not exist before the code | A01 | `tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code` |
+| S-11 | Author key with Enter | Type the Author key and press Enter, the right one and another | It enters only with the right one; with another, «Clave incorrecta.» without reloading | A07 | `tests/test_control.py::test_d350_enter_sends_the_author_key_a_wrong_one_says_so_in_place_and_there_is_no_button` |
+| S-12 | Author by the address | Open the author's part with an address or a reload | «Elige tu vista» comes back and the author's part does not show | A01 | `tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_the_address_says`, `tests/test_app_reloads.py::test_d357_a_reload_the_reader_makes_still_asks_for_the_view` |
+| S-13 | Token in a log | Make a GitHub log print the token in the page «GitHub Actions» | The token is covered: it never shows on screen or in the session | A09 | `tests/test_actions_page.py::test_d339_the_token_is_never_drawn_not_even_when_the_log_prints_it` |
+| S-14 | Write to GitHub | Look in the panel for a write to GitHub other than starting and cancelling the load | Only control.py writes; the GitHub Actions reader only reads | A01 | `tests/test_run_monitor.py::test_d351_cancelling_is_the_only_write_and_the_read_only_module_still_has_none` |
 
 **Result obtained:** each case runs on every push; a case that does not meet its expected result makes `pruebas.yml` fail. The review of 2026-10-20 found an error of the control code with non-ASCII characters, fixed in D-199 (code with any character), and an inaccurate sentence of the SAD, fixed in D-200.
 
@@ -145,8 +151,8 @@ Each change runs the same tests on a clean GitHub machine. Its result stays next
 | Database | The served database, downloaded with `python bi/served_database.py` |
 | Raw data | `etl/raw.db`, only on the author's computer and on the machine of each load; without it, the tests that rebuild from the raw rows are skipped |
 | Secrets | The tests create their own fake secret and never use the real one |
-| Local execution | `python -m pytest -q` |
-| Continuous execution | `pruebas.yml` on every push and pull request: it compiles dbt (`dbt parse`) and runs pytest |
+| Local execution | `python -m pytest -q`; the speed tests, with `python -m pytest -m rendimiento` |
+| Continuous execution | `pruebas.yml` on every push and pull request: it compiles dbt (`dbt parse`) and runs pytest without the speed tests (`-m "not rendimiento"`), like the weekly load and the quality measure |
 | Before publishing | `semanal.yml` runs pytest on the new database, parity included |
 
 ## 10. Acceptance criteria
@@ -154,7 +160,7 @@ Each change runs the same tests on a clean GitHub machine. Its result stays next
 | Moment | Criterion | Verification |
 |---|---|---|
 | Entry | The change compiles and the served database is available | `dbt parse` |
-| Exit of a change | The full suite passes, the ten security cases included | `pruebas.yml` green |
+| Exit of a change | Ruff, mypy and the full suite pass on all the code before the push, the fourteen security cases included | `pruebas.yml` green |
 | Exit of a load | The dbt tests pass, the load reads at least 90 % of the rows of the previous one and pytest passes on the new database | `semanal.yml` |
 | Security | Each control points to a test that exists and no secret is in the repository | Cases S-09 and S-06 |
 | Change of behavior | It has its entry in `docs/DECISIONES.md` and its tests | The author's review |
@@ -192,3 +198,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 2.0 | 2026-10-25 | Self-contained document: reference, threat model, controls, environment, cases with their test and acceptance criteria (D-279, professional documentation) |
 | 2.1 | 2026-10-25 | The Test Plan, version 1.0, starts as a separate document (D-279) |
 | 3.0 | 2026-10-25 | A single document for the tests and security: what is tested, who takes part, threats, cases, procedure and the sequences of a manual load and of a code change (D-290, documents for every reader) |
+| 3.1 | 2026-10-30 | Tests that block and tests that inform; four new security cases, S-11 to S-14 (D-364); runs without the speed tests on GitHub |
