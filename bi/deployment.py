@@ -33,7 +33,9 @@ ENVIRONMENTS = {
     "python": (346, 216, 186, 96, "github", "Python 3.11"),
     "repo": (336, 358, 206, 150, "github", "Repositorio · rama main"),
     "cache": (590, 84, 180, 56, "github", "Caché de Actions"),
-    "issues": (590, 178, 180, 56, "github", "Pull requests"),
+    # D-383: the two reports, each where GitHub keeps it: the weekly report as an issue, the quality report as a pull request.
+    "issues": (590, 184, 180, 56, "github", "Issues"),
+    "pulls": (590, 252, 180, 56, "github", "Pull requests"),
     "app": (822, 84, 151, 236, "streamlit", "Streamlit"),
     "venv": (32, 344, 206, 134, "author", "Python 3.11 o 3.12"),
 }
@@ -44,9 +46,10 @@ PATHS = [
     ("M250 420 H336", "git push", (262, 414)),
     ("M440 320 V358", "git push", (452, 344)),
     ("M542 112 H590", "", None),
-    ("M542 206 H590", "", None),
+    ("M542 212 H590", "", None),
+    ("M542 280 H590", "", None),
     ("M810 158 H542", ("API REST de GitHub", "lanzar, leer estado y logs, cancelar"), (548, 152)),  # D-370
-    ("M542 440 H640 V300 H810", "despliegue de main", (650, 294)),
+    ("M542 440 H640 V326 H810", "despliegue de main", (650, 320)),
     ("M897 392 V340", "HTTPS", (908, 372)),
 ]
 # What each node says on hover: what runs there and how it was deployed.
@@ -66,8 +69,10 @@ TIPS = {
     "repo": "El repositorio público: el código en la rama main y la base servida en el release «base-actual». Solo si pasan "
     "todas las pruebas, la carga reemplaza la base del release y sube su puntero con un commit «Weekly data update» (D-270).",
     "cache": "Guarda los CSV de los años cerrados, que ya no cambian, para no descargarlos cada semana. Se borra si no se usa en 7 días.",
-    "issues": "Después de cada carga semanal, el workflow de calidad propone el informe semanal numerado como un pull "
-    "request, que el autor revisa y aprueba antes de que el panel lo muestre (D-331, D-363).",
+    "issues": "Al final de cada carga, el workflow semanal (semanal.yml) abre un issue «Informe semanal» con lo que se cargó "
+    "y lo que se revisó.",
+    "pulls": "Después de cada carga semanal, el workflow de calidad (calidad.yml) mide los indicadores y propone el informe de "
+    "calidad numerado como un pull request, que el autor revisa y aprueba antes de que el panel lo muestre (D-331, D-363).",
     "app": "Streamlit ejecuta bi/dashboard.py desde la rama main. Descarga del release la base de la última carga, comprueba su "
     "huella y la lee en solo lectura; guarda los secretos del panel y, con la clave de control, lanza la carga por la API de GitHub.",
     "browser": "El Usuario, el Profesional o el Autor. El panel público no pide cuenta; la clave de control solo abre lo del Autor, "
@@ -212,7 +217,8 @@ def build_contents(states, figures):
         ),
         "cache": heading(602, 100, "entorno de ejecución", "Caché de Actions")
         + artifact(602, 134, "CSV de años cerrados"),
-        "issues": heading(602, 194, "entorno de ejecución", "Pull requests") + artifact(602, 228, "informe semanal"),
+        "issues": heading(602, 200, "entorno de ejecución", "Issues") + artifact(602, 234, "informe semanal"),
+        "pulls": heading(602, 268, "entorno de ejecución", "Pull requests") + artifact(602, 302, "informe de calidad"),
         "app": (
             heading(834, 104, "entorno de ejecución", "Streamlit")
             + artifact(834, 150, "dashboard.py")

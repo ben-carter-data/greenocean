@@ -88,18 +88,23 @@ def test_a_failed_workflow_is_drawn_in_its_color_and_an_unknown_one_has_no_dot()
     assert unknown.count("<circle cx=") == 1  # only the legend's dot
 
 
-def test_d370_the_panel_reaches_github_through_its_rest_api_and_the_report_is_a_pull_request():
+def test_d383_the_weekly_report_is_an_issue_and_the_quality_report_a_pull_request():
     from bi import i18n_en
 
     page = draw()
-    assert "workflow_dispatch" not in page and ">Issues<" not in page
-    assert ">Pull requests<" in page and ">informe semanal<" in page
+    assert "workflow_dispatch" not in page
+    assert ">Issues<" in page and ">informe semanal<" in page
+    assert ">Pull requests<" in page and ">informe de calidad<" in page
+    weekly = (REPOSITORY / ".github/workflows/semanal.yml").read_text(encoding="utf-8")
+    assert 'gh issue create --title "Informe semanal' in weekly  # the weekly report is an issue
     calidad = (REPOSITORY / ".github/workflows/calidad.yml").read_text(encoding="utf-8")
-    assert "workflow_run" in calidad and "informe-calidad/" in calidad  # the report is proposed as a pull request
+    assert "workflow_run" in calidad and "informe-calidad/" in calidad  # the quality report is a pull request
     for text in (
         "API REST de GitHub",
         "lanzar, leer estado y logs, cancelar",
         "informe semanal",
+        "informe de calidad",
         deployment.TIPS["issues"],
+        deployment.TIPS["pulls"],
     ):
         assert text in i18n_en.PAGES, text
