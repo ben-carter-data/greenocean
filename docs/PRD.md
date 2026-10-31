@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.0 |
-| Fecha | 25-10-2026 |
+| Versión | 3.1 |
+| Fecha | 30-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar qué problema resuelve GreenOcean, para quién, qué preguntas responde y qué debe cumplir para que sus cifras sean confiables. |
@@ -32,6 +32,8 @@
 
 GreenOcean convierte los precios oficiales de los alimentos en Chile en respuestas claras, cada semana y sin intervención.
 
+- **Visión:** que cualquier persona en Chile sepa, con datos oficiales y confiables, cómo se mueven los precios de los alimentos.
+- **Misión:** publicar cada semana precios verificados, claros y fáciles de leer, y mejorar el proceso de forma continua.
 - **Qué hace:** cada martes descarga los precios de ODEPA y el IPC del INE, los revisa y publica un panel de consulta.
 - **Para quién:** analistas de precios, compras, gerencia y quien necesite comprobar las cifras.
 - **Qué responde:** qué cambió en la semana, si un precio es normal para la época, cuánto paga el consumidor sobre el mayorista, qué subió más que la inflación y si las cifras son confiables.
@@ -56,7 +58,7 @@ GreenOcean hace ese trabajo de forma automática y deja cada paso a la vista.
 
 [[diagrama:casos]]
 
-El panel es de consulta y no pide cuenta. Al entrar se elige una vista: la de usuario muestra el negocio (el dashboard, el resumen semanal y los precios frente a la inflación) y la profesional, todo el proyecto en orden de importancia; un clic pasa de una a otra. El administrador, el autor del proyecto, mantiene el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.
+El panel es de consulta y no pide cuenta. Al entrar, y cada vez que se recarga la página, la ventana «Elige tu vista» ofrece tres vistas: Usuario muestra el negocio (el Panorama de precios, guiado en tres pasos, Insights y los precios frente a la inflación); Profesional, todo el proyecto en orden de importancia; y Autor, lo mismo más lo que solo el autor ve (la página «GitHub Actions», la alerta «Acción requerida» y la carga manual). Autor pide la clave de control, que nunca está en el repositorio. El indicador «Vista», abajo en el menú, cambia de vista; salir de Autor cierra su sesión. El autor, administrador del proyecto, mantiene el código y los secretos y responde consultas SQL puntuales.
 
 ## 4. Preguntas de negocio
 
@@ -80,12 +82,13 @@ Los requisitos funcionales (RF) dicen qué hace el producto; los no funcionales 
 |---|---|---|---|
 | RF-01 | Carga semanal automática | Un workflow corre cada martes a las 12:00 UTC (`0 12 * * 2`) | `.github/workflows/semanal.yml`, `tests/test_prd_traceability.py::test_rf01_the_weekly_workflow_runs_on_tuesdays` |
 | RF-02 | Ninguna fila se pierde | Filas leídas = cargadas + rechazadas: diferencia 0 en cada carga | `dbt/tests/rnf05_rows_reconcile.sql`, `tests/test_etl_run.py::test_rn11_rows_read_equal_rows_loaded_plus_rows_rejected` |
-| RF-03 | Solo se publica una carga válida | Si falla una de las 31 pruebas de dbt, la carga lee menos del 90 % de la anterior o falla pytest sobre la base nueva, la base servida no cambia; GitHub Actions marca la ejecución como fallida y avisa al autor por correo | `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, `tests/test_pipeline_gate.py::test_rf03_a_load_with_far_fewer_rows_than_the_last_good_one_is_refused`, `.github/workflows/semanal.yml` |
+| RF-03 | Solo se publica una carga válida | Si falla una de las 31 pruebas de dbt, la carga lee menos del 90 % de la anterior, falla pytest sobre la base nueva, falta una semana en medio de los datos o una fuente lleva más de 2 semanas sin publicar, la base servida no cambia; GitHub Actions marca la ejecución como fallida y avisa al autor por correo. Se publica hasta la última semana completa en ambas fuentes, sin rellenar; las pruebas de velocidad informan y nunca bloquean | `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, `tests/test_pipeline_gate.py::test_rf03_a_load_with_far_fewer_rows_than_the_last_good_one_is_refused`, `tests/test_late_sources.py::test_d356_a_hole_in_the_middle_of_the_data_stops_the_load`, `tests/test_late_sources.py::test_d356_a_recent_week_one_source_has_not_published_does_not_stop_the_load_and_waits`, `.github/workflows/semanal.yml` |
 | RF-04 | Precios reales junto a los nominales | El factor de cada semana sale del IPC del mes de su lunes; las semanas posteriores al último mes publicado se marcan como provisionales | `tests/test_ipc_audit.py::test_weekly_factor_uses_the_month_of_the_monday_and_the_last_published_month`, `tests/test_ipc_audit.py::test_only_weeks_after_the_last_published_month_are_provisional` |
 | RF-05 | Alertas de precio | Una alerta exige un cambio inusual para ese producto y de al menos 10 %; SQL y Python levantan las mismas | `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material`, `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts` |
 | RF-06 | Consultas SQL abiertas y de solo lectura | Toda orden que escribe se rechaza; cada consulta devuelve como máximo 5.000 filas y se detiene a los 10 s; el motor no lee archivos ni la red | `tests/test_sql_explorer.py::test_forbidden_statements_are_rejected`, `tests/test_sql_explorer.py::test_result_is_limited_and_flagged`, `tests/test_sql_explorer.py::test_slow_query_is_interrupted`, `tests/test_sql_explorer.py::test_external_access_is_disabled_at_the_engine` |
-| RF-07 | Carga manual protegida | Ninguna carga manual sin la clave de control: el botón «Ejecutar pipeline ahora» aparece solo después de ella, y la clave se compara en tiempo constante | `tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code`, `tests/test_control.py::test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time` |
+| RF-07 | Carga manual protegida | Ninguna carga manual sin la clave de control: el botón «Ejecutar pipeline ahora» aparece solo después de ella, y la clave se compara en tiempo constante. La carga se sigue en una ventana que no se cierra sola, se minimiza o se cancela, muestra el log y deja de consultar a los 20 minutos | `tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code`, `tests/test_control.py::test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time`, `tests/test_dashboard.py::test_d351_the_window_cannot_be_dismissed_minimizing_does_not_cancel_and_cancel_asks_first` |
 | RF-08 | Informe semanal | Cada carga publicada deja un informe con su estado y las alertas de la semana, como issue del repositorio | `.github/workflows/semanal.yml`, `tests/test_report.py::test_report_shows_the_load_status_and_the_alert_of_the_week` |
+| RF-09 | La vista se elige y la parte del autor se protege | Cada visita y cada recarga del lector piden la vista; ninguna dirección abre la parte del autor; las recargas que hace la propia app conservan la vista una vez, nunca la de autor | `tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_the_address_says`, `tests/test_view_switch.py::test_d353_leaving_the_author_view_closes_the_author_session_and_coming_back_asks_for_the_key`, `tests/test_app_reloads.py::test_d357_a_reload_the_reader_makes_still_asks_for_the_view` |
 | RNF-01 | Costo cero y sin vencimientos | Ningún servicio de pago; solo planes gratuitos permanentes ([ADR-31 · No usar un data warehouse en la nube](ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube)) | `docs/ADR.md` |
 | RNF-02 | Cada cifra se puede comprobar | Los precios semanales se reconstruyen desde las filas crudas y por un segundo camino independiente, sin dbt: diferencia 0 | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price`, `tests/test_data_audit.py::test_the_panel_reproduces_the_reference_figures_of_its_week` |
 | RNF-03 | Seguridad | Ningún secreto en el repositorio; el workflow semanal tiene solo los permisos que usa; el panel no puede escribir la base | `tests/test_security.py::test_no_secret_is_tracked_by_git`, `tests/test_security.py::test_the_weekly_job_has_least_privilege`, `tests/test_sql_explorer.py::test_read_only_statements_are_accepted` |
@@ -101,12 +104,13 @@ Los requisitos funcionales (RF) dicen qué hace el producto; los no funcionales 
 | Conversión de unidades, agregación semanal y cálculo de precios reales | Predicción de precios o explicación de sus causas |
 | Rechazo de filas inválidas con su motivo y auditoría de cada cifra | Recomendaciones de compra para el consumidor |
 | Panel de solo lectura con su documentación | Modificación de datos por parte de los usuarios |
+| Publicación hasta la última semana completa en ambas fuentes | Rellenar una semana que una fuente aún no publica |
 
 Con la carga del 20-10-2026, la base tiene 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC. Esa carga leyó 2.521.012 filas: 2.520.811 cargadas y 201 rechazadas con su motivo. Cada martes la base crece; las cifras del día están en el panel.
 
 ## 7. Pantallas
 
-Capturas reales de las páginas principales, en los cuatro temas de color.
+Capturas reales de las páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada. El menú agrupa las páginas por sección: Negocio, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad (Calidad y auditoría, Método y calidad y Git workflow). El Panorama de precios se lee en tres pasos numerados: elegir una región o todo Chile, elegir una familia y mirar sus productos; en la vista Usuario, cada paso se abre al completar el anterior.
 
 [[diagrama:mockups]]
 
@@ -169,3 +173,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 1.5 | 24-10-2026 | Revisión de coherencia (D-252); objetivos, pregunta P-5, catorce requisitos y supuestos (D-269, documentos revisados contra el producto) |
 | 2.0 | 25-10-2026 | Estructura estándar: cabecera, índice, restricciones y dependencias, riesgos, criterios de aceptación, glosario e historial; medida de pantalla corregida a 1440 × 790 útiles (D-279, documentación profesional) |
 | 3.0 | 25-10-2026 | Lectura de lo más importante a lo menos: resumen, problema, usuarios, preguntas y requisitos primero; diagramas del valor y de los requisitos (D-290, documentos para todo lector) |
+| 3.1 | 30-10-2026 | Visión y misión; las tres vistas y el indicador «Vista» (RF-09); fuentes retrasadas y pruebas informativas en RF-03; ventana de la carga manual en RF-07; sección Calidad, tema oscuro y Panorama en tres pasos (D-340 a D-357) |

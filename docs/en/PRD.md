@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.0 |
-| Date | 2026-10-25 |
+| Version | 3.1 |
+| Date | 2026-10-30 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain which problem GreenOcean solves, for whom, which questions it answers and what it must meet for its figures to be reliable. |
@@ -32,6 +32,8 @@
 
 GreenOcean turns the official food prices of Chile into clear answers, every week and without intervention.
 
+- **Vision:** that anyone in Chile knows, with official and reliable data, how food prices move.
+- **Mission:** publish verified, clear and easy-to-read prices every week, and improve the process continuously.
 - **What it does:** every Tuesday it downloads the ODEPA prices and the INE CPI, checks them and publishes a panel to consult them.
 - **For whom:** price analysts, purchasing, management and anyone who needs to check the figures.
 - **What it answers:** what changed during the week, whether a price is normal for the season, how much the consumer pays over the wholesale price, what rose more than inflation and whether the figures are reliable.
@@ -56,7 +58,7 @@ GreenOcean does that work automatically and leaves each step in view.
 
 [[diagrama:casos]]
 
-The panel is read-only and needs no account. On entry the reader chooses a view: the user view shows the business (the dashboard, the weekly summary and prices against inflation) and the professional view, the whole project in order of importance; one click goes from one to the other. The administrator, the author of the project, maintains the code and the secrets, answers ad hoc SQL queries and can launch a manual load with the control code.
+The panel is read-only and needs no account. On entry, and every time the page is reloaded, the window «Elige tu vista» offers three views: User shows the business (the price overview, guided in three steps, Insights and prices against inflation); Professional, the whole project in order of importance; and Author, the same plus what only the author sees (the page «GitHub Actions», the alert «Acción requerida» and the manual load). Author asks for the control code, which is never in the repository. The «Vista» indicator, at the foot of the menu, changes the view; leaving Author closes its session. The author, the administrator of the project, maintains the code and the secrets and answers ad hoc SQL queries.
 
 ## 4. Business questions
 
@@ -80,12 +82,13 @@ Functional requirements (RF) define what the product does; non-functional requir
 |---|---|---|---|
 | RF-01 | Automatic weekly load | A workflow runs every Tuesday at 12:00 UTC (`0 12 * * 2`) | `.github/workflows/semanal.yml`, `tests/test_prd_traceability.py::test_rf01_the_weekly_workflow_runs_on_tuesdays` |
 | RF-02 | No row is lost | Rows read = loaded + rejected: difference 0 in every load | `dbt/tests/rnf05_rows_reconcile.sql`, `tests/test_etl_run.py::test_rn11_rows_read_equal_rows_loaded_plus_rows_rejected` |
-| RF-03 | Only a valid load is published | If one of the 31 dbt tests fails, the load reads less than 90 % of the previous one or pytest fails on the new database, the served database does not change; GitHub Actions marks the run as failed and emails the author | `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, `tests/test_pipeline_gate.py::test_rf03_a_load_with_far_fewer_rows_than_the_last_good_one_is_refused`, `.github/workflows/semanal.yml` |
+| RF-03 | Only a valid load is published | If one of the 31 dbt tests fails, the load reads less than 90 % of the previous one, pytest fails on the new database, a week is missing in the middle of the data or a source has gone more than 2 weeks without publishing, the served database does not change; GitHub Actions marks the run as failed and emails the author. Publication goes up to the last week complete in both sources, filling nothing in; the speed tests inform and never block | `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, `tests/test_pipeline_gate.py::test_rf03_a_load_with_far_fewer_rows_than_the_last_good_one_is_refused`, `.github/workflows/semanal.yml`, `tests/test_late_sources.py::test_d356_a_hole_in_the_middle_of_the_data_stops_the_load`, `tests/test_late_sources.py::test_d356_a_recent_week_one_source_has_not_published_does_not_stop_the_load_and_waits` |
 | RF-04 | Real prices next to nominal ones | The factor of each week comes from the CPI of the month of its Monday; the weeks after the last published month are marked as provisional | `tests/test_ipc_audit.py::test_weekly_factor_uses_the_month_of_the_monday_and_the_last_published_month`, `tests/test_ipc_audit.py::test_only_weeks_after_the_last_published_month_are_provisional` |
 | RF-05 | Price alerts | An alert needs a change that is unusual for that product and of at least 10 %; SQL and Python raise the same ones | `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material`, `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts` |
 | RF-06 | Open, read-only SQL queries | Every statement that writes is rejected; each query returns at most 5,000 rows and stops after 10 s; the engine reads no files and no network | `tests/test_sql_explorer.py::test_forbidden_statements_are_rejected`, `tests/test_sql_explorer.py::test_result_is_limited_and_flagged`, `tests/test_sql_explorer.py::test_slow_query_is_interrupted`, `tests/test_sql_explorer.py::test_external_access_is_disabled_at_the_engine` |
-| RF-07 | Protected manual load | No manual load without the control code: the «Run pipeline now» button appears only after it, and the code is compared in constant time | `tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code`, `tests/test_control.py::test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time` |
+| RF-07 | Protected manual load | No manual load without the control code: the «Run pipeline now» button appears only after it, and the code is compared in constant time. The load is followed in a window that does not close by itself, can be minimized or cancelled, shows the log and stops asking after 20 minutes | `tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code`, `tests/test_control.py::test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time`, `tests/test_dashboard.py::test_d351_the_window_cannot_be_dismissed_minimizing_does_not_cancel_and_cancel_asks_first` |
 | RF-08 | Weekly report | Each published load leaves a report with its status and the alerts of the week, as an issue of the repository | `.github/workflows/semanal.yml`, `tests/test_report.py::test_report_shows_the_load_status_and_the_alert_of_the_week` |
+| RF-09 | The view is chosen and the author's part is protected | Every visit and every reload by the reader asks for the view; no address opens the author's part; the reloads the app itself makes keep the view once, never the author's | `tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_the_address_says`, `tests/test_view_switch.py::test_d353_leaving_the_author_view_closes_the_author_session_and_coming_back_asks_for_the_key`, `tests/test_app_reloads.py::test_d357_a_reload_the_reader_makes_still_asks_for_the_view` |
 | RNF-01 | Zero cost and no expiry | No paid service; only permanent free plans ([ADR-31 · Do not use a cloud data warehouse](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse)) | `docs/ADR.md` |
 | RNF-02 | Every figure can be checked | Weekly prices are rebuilt from the raw rows and along a second, independent path without dbt: difference 0 | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price`, `tests/test_data_audit.py::test_the_panel_reproduces_the_reference_figures_of_its_week` |
 | RNF-03 | Security | No secret in the repository; the weekly workflow has only the permissions it uses; the panel cannot write to the database | `tests/test_security.py::test_no_secret_is_tracked_by_git`, `tests/test_security.py::test_the_weekly_job_has_least_privilege`, `tests/test_sql_explorer.py::test_read_only_statements_are_accepted` |
@@ -101,12 +104,13 @@ Functional requirements (RF) define what the product does; non-functional requir
 | Unit conversion, weekly aggregation and real-price calculation | Price forecasting or explanation of its causes |
 | Rejection of invalid rows with their reason, and an audit of every figure | Purchase recommendations for consumers |
 | Read-only panel with its documentation | Data changes by the users |
+| Publication up to the last week complete in both sources | Filling in a week a source has not published yet |
 
 With the load of 2026-10-20, the database holds 814,610 weekly prices over 250 weeks (2022-01-03 to 2026-10-12), 9 regions, 8 channels, 1,609 product keys and 202 months of the CPI. That load read 2,521,012 rows: 2,520,811 loaded and 201 rejected with their reason. Every Tuesday the database grows; the figures of the day are in the panel.
 
 ## 7. Screens
 
-Real captures of the main pages, in the four color themes.
+Real captures of the main pages, in the four color themes. The dark theme is the one on entry. The menu groups the pages by section: Business, Data engineering, DevOps and security, Stack and evidence, and Quality (Quality and audit, Method and quality and Git workflow). The price overview reads in three numbered steps: choose a region or all of Chile, choose a family and look at its products; in the User view, each step opens when the one before is done.
 
 [[diagrama:mockups]]
 
@@ -169,3 +173,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 1.5 | 2026-10-24 | Consistency review (D-252); objectives, question P-5, fourteen requirements and assumptions (D-269, documents reviewed against the product) |
 | 2.0 | 2026-10-25 | Standard structure: header, contents, constraints and dependencies, risks, acceptance criteria, glossary and history; screen measure corrected to 1440 × 790 usable (D-279, professional documentation) |
 | 3.0 | 2026-10-25 | Reading from the most important to the least: summary, problem, users, questions and requirements first; diagrams of the value and of the requirements (D-290, documents for every reader) |
+| 3.1 | 2026-10-30 | Vision and mission; the three views and the «Vista» indicator (RF-09); late sources and informative tests in RF-03; the manual load window in RF-07; the Quality section, dark theme and the overview in three steps (D-340 to D-357) |

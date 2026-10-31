@@ -53,7 +53,8 @@ def test_every_business_question_names_a_screen_of_the_menu_and_evidence_that_ex
 
 def test_every_requirement_has_a_measurable_criterion_and_evidence_that_exists():
     rows = read_table("Requisitos")
-    assert [row[0] for row in rows] == [f"RF-0{n}" for n in range(1, 9)] + [f"RNF-0{n}" for n in range(1, 7)]
+    # RF-09 since D-357.
+    assert [row[0] for row in rows] == [f"RF-0{n}" for n in range(1, 10)] + [f"RNF-0{n}" for n in range(1, 7)]
     for identifier, requirement, criterion, evidence in rows:
         assert criterion and re.search(r"\d|=|≤|Ningún|Ninguna|cada", criterion), identifier
         references = REFERENCE.findall(evidence)
