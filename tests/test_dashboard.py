@@ -12,7 +12,7 @@ from streamlit.testing.v1 import AppTest
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_DIR))
-from bi import github_page, charts, control, dashboard, project, queries, stack_page  # noqa: E402
+from bi import github_page, charts, control, dashboard, i18n, project, queries, stack_page  # noqa: E402
 
 DASHBOARD_FILE = str(PROJECT_DIR / "bi" / "dashboard.py")
 # These tests draw the real dashboard, so they need the committed database.
@@ -1502,20 +1502,29 @@ def test_d282_the_folder_shows_every_document_with_the_version_and_date_of_its_f
     assert "GreenOcean <i>/</i> <b>docs</b>" in markup and "8 documentos" in markup
     for page in dashboard.FOLDER_ORDER:
         filename = dashboard.PROJECT_DOCUMENTS[page][0]
-        text = (PROJECT_DIR / "docs" / filename).read_text(encoding="utf-8")
+        text = i18n.document_path(filename, "es").read_text(encoding="utf-8")
         header = documents_folder.read_header(text)
         assert f"<span>v{header['Versión']}</span><span>{header['Fecha']}</span>" in markup, filename
         assert documents_folder.read_title(text) in markup, filename
-        assert project.build_github_url(f"docs/{filename}") in markup, filename
+        assert project.build_github_url(f"docs/{i18n.DOCUMENT_FOLDERS[filename]}/{filename}") in markup, filename
     assert markup.count('class="go-icon go-icon-print"') == 8 and markup.count('class="df-preview"') == 8
 
 
 def test_d282_every_document_of_docs_is_in_the_folder_and_nowhere_else_in_the_menu():
-    reading = {path.name for path in (PROJECT_DIR / "docs").glob("*.md")} - {
-        "DECISIONES.md",
-        "PROYECTO.md",
-        "DISENO.md",
+    # D-381: the documents sit in four folders; the quality folder also holds the plan's data, which is not a document.
+    docs = PROJECT_DIR / "docs"
+    in_folders = {
+        path.name
+        for folder in set(i18n.DOCUMENT_FOLDERS.values())
+        for path in (docs / folder).glob("*.md")
+        if path.name not in ("README.md", "INFORME.md")
     }
+    reading = in_folders
+    assert {path.name for path in docs.glob("*.md")} == {"DECISIONES.md", "PROYECTO.md", "DISENO.md"}
+    assert set(i18n.DOCUMENT_FOLDERS) == reading and all(
+        (docs / folder / name).exists() and (docs / "en" / folder / name).exists()
+        for name, folder in i18n.DOCUMENT_FOLDERS.items()
+    )
     assert {dashboard.PROJECT_DOCUMENTS[page][0] for page in dashboard.FOLDER_ORDER} == reading
     assert not set(dashboard.FOLDER_ORDER) & set(dashboard.MENU_ORDER)
     assert [pages for key, _, pages in dashboard.MENU_BLOCKS if key == "documentos"] == [[dashboard.PAGE_FOLDER]]
@@ -1562,7 +1571,7 @@ def test_d282_every_preview_shows_the_index_of_its_document():
     from bi import documents_folder
 
     for page in dashboard.FOLDER_ORDER:
-        text = (PROJECT_DIR / "docs" / dashboard.PROJECT_DOCUMENTS[page][0]).read_text(encoding="utf-8")
+        text = i18n.document_path(dashboard.PROJECT_DOCUMENTS[page][0], "es").read_text(encoding="utf-8")
         index = documents_folder.read_index(text)
         assert len(index) >= 2, page
         assert all(entry.split(" · ")[0] in text for entry in index), page

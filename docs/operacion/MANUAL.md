@@ -10,7 +10,7 @@
 | Responsable | El autor |
 | Propósito | Indicar qué ocurre de forma automática, qué se revisa y cuándo, y qué hacer ante cada falla. |
 | Audiencia | Operación del proyecto, también sin formación técnica. |
-| Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Plan de pruebas y seguridad](PLAN_PRUEBAS.md) · [Glosario](GLOSARIO.md) |
+| Documentos relacionados | [Documento de arquitectura de software (SAD)](../arquitectura/SAD.md) · [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 ## Índice
 
@@ -35,11 +35,11 @@ GreenOcean se opera casi solo. Cada martes la carga corre sin intervención y, s
 
 ## 2. Qué ocurre automáticamente
 
-El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. Descarga las fuentes, construye y prueba la base, la publica en el release «base-actual» y crea el informe semanal. La secuencia completa, paso a paso, está en la [secuencia de la carga del SAD](SAD.md#4-la-carga-de-cada-semana).
+El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. Descarga las fuentes, construye y prueba la base, la publica en el release «base-actual» y crea el informe semanal. La secuencia completa, paso a paso, está en la [secuencia de la carga del SAD](../arquitectura/SAD.md#4-la-carga-de-cada-semana).
 
 También se puede lanzar a mano: desde «Centro de operación», con el botón «Ejecutar pipeline ahora» (requiere la clave de control), o desde la página del workflow en GitHub.
 
-Si un paso falla, los siguientes no se ejecutan y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)).
+Si un paso falla, los siguientes no se ejecutan y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](../arquitectura/ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)).
 
 Después de cada carga, el workflow de calidad mide los indicadores y propone el informe numerado como pull request «Actualizar medición de calidad». En cada push solo mide y falla si un indicador de código pasa su aceptable.
 
@@ -51,7 +51,7 @@ Después de cada carga, el workflow de calidad mide los indicadores y propone el
 | Cada martes | Que existe el issue «Informe semanal AAAA-MM-DD» | Issues del repositorio |
 | Ante una duda sobre las cifras | El veredicto de calidad y los controles de auditoría | «Calidad y auditoría» |
 | Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos | `agent/input.csv` |
-| Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días | Otro disco del autor |
+| Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](../arquitectura/ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días | Otro disco del autor |
 | Antes de su vencimiento | Renovar el token de GitHub del panel; el panel avisa cuando faltan menos de 14 días | Secretos de la app en Streamlit |
 | Después de cada carga semanal | El pull request «Actualizar medición de calidad»: fusionarlo o cerrarlo, borrar su rama y hacer `git pull` | Pull requests del repositorio (sección 8) |
 | Al entrar como Autor | La alerta «Acción requerida»; si empieza con «Última medición del …», el informe tiene más de 8 días y no es el estado de hoy | La ventana que abre el panel |
@@ -99,7 +99,7 @@ Una semana que una fuente aún no publica no es una falla: la carga publica hast
 
 En «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso del vencimiento del token y los enlaces de administración (tokens de GitHub, ejecuciones y administración de la app en Streamlit). Sin el secreto configurado, por ejemplo en una copia local, el acceso permanece cerrado.
 
-La clave evita ejecuciones accidentales; no es la barrera principal. Lo que protege el proyecto es el inicio de sesión del autor en GitHub y en Streamlit (con verificación en dos pasos) y un token con los permisos mínimos. No hay límite de intentos de la clave: es un riesgo aceptado, descrito en el [Plan de pruebas y seguridad](PLAN_PRUEBAS.md#11-riesgos-aceptados-y-límites). El panel nunca muestra el token ni una parte de él.
+La clave evita ejecuciones accidentales; no es la barrera principal. Lo que protege el proyecto es el inicio de sesión del autor en GitHub y en Streamlit (con verificación en dos pasos) y un token con los permisos mínimos. No hay límite de intentos de la clave: es un riesgo aceptado, descrito en el [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md#11-riesgos-aceptados-y-límites). El panel nunca muestra el token ni una parte de él.
 
 También se entra como Autor desde la ventana «Elige tu vista»: el enlace «Acceso del autor», en su esquina, la clave y Enter (D-369). El botón «Vista», debajo del logo y arriba del menú, cambia de vista, igual que un clic en el logo (D-373); salir de Autor cierra su sesión. El panel usa tres secretos, guardados en Streamlit (sección 8): `CONTROL_CODE`, `GITHUB_TOKEN` (lanza y cancela la carga) y `GITHUB_READ_TOKEN` (solo lectura, para la página «GitHub Actions»).
 
@@ -134,11 +134,11 @@ Cada falla diagnosticada y resuelta se anota en `docs/calidad/plan_mitigacion.js
 | Tamaño máximo de un archivo de release | 2 GB; la base servida pesa unos 14 MB | Documentación de GitHub sobre releases, consultada el 24-10-2026 |
 | Caché de GitHub Actions | Se borra si no se usa en 7 días; esa semana el job descarga todos los años | Documentación de GitHub Actions, consultada el 24-10-2026 |
 | Consultas a la API de GitHub sin token | 60 por hora | Documentación de la API de GitHub |
-| Arquitectura en la nube | No se adopta mientras los datos sean públicos, semanales y pequeños | [ADR-31 · No usar un data warehouse en la nube](ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube) y [Capacidad y crecimiento del SAD](SAD.md#9-capacidad-y-crecimiento) |
+| Arquitectura en la nube | No se adopta mientras los datos sean públicos, semanales y pequeños | [ADR-31 · No usar un data warehouse en la nube](../arquitectura/ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube) y [Capacidad y crecimiento del SAD](../arquitectura/SAD.md#9-capacidad-y-crecimiento) |
 
 ## 11. Glosario
 
-Las siglas y los términos de este documento se definen en el [Glosario](GLOSARIO.md).
+Las siglas y los términos de este documento se definen en el [Glosario](../negocio/GLOSARIO.md).
 
 ## 12. Historial de versiones
 

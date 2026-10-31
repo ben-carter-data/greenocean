@@ -4,7 +4,7 @@ The drawing is a topology like a security network diagram: the Internet with its
 Community Cloud zone (a public part, open to anyone, and the author's part, behind the control code), the GitHub zone
 and, at the bottom, the loop of continuous improvement. Every piece is a real one of this project. The numbered green
 badges are the controls (CONTROLS), the red triangles the threats T1 to T6 (THREATS, OWASP Top 10 2021) placed on the
-path where each one acts, and under each piece the cases S-01 to S-14 of docs/PLAN_PRUEBAS.md that verify it on every
+path where each one acts, and under each piece the cases S-01 to S-14 of docs/calidad/PLAN_PRUEBAS.md that verify it on every
 push. The platform's own sign-in is dashed and labelled as declared by the author, because the repository cannot
 verify it. Secret values never appear.
 
@@ -102,7 +102,7 @@ CONTROLS = [
         False,
     ),
 ]
-# Threats: (id, threat, OWASP categories, numbers of its controls, its test cases in docs/PLAN_PRUEBAS.md, asset (mark, name)).
+# Threats: (id, threat, OWASP categories, numbers of its controls, its test cases in docs/calidad/PLAN_PRUEBAS.md, asset (mark, name)).
 THREATS = [
     (
         "T1",
@@ -134,7 +134,7 @@ OWASP = {
     "A07": "Fallas de identificación y autenticación",
     "A09": "Fallas en el registro y el monitoreo",
 }
-# The loop of continuous improvement, as the procedure of docs/PLAN_PRUEBAS.md describes it: (title, line, detail).
+# The loop of continuous improvement, as the procedure of docs/calidad/PLAN_PRUEBAS.md describes it: (title, line, detail).
 LOOP = [
     (
         "Revisar",
@@ -231,7 +231,7 @@ NODE_TIPS = {
     "author": "El autor. Mantiene el código y los secretos; para lanzar la carga a mano desde el panel usa la clave de control.",
     "panel": "La aplicación de Streamlit (bi/dashboard.py). Lee etl/datos.duckdb en solo lectura: ninguna página puede cambiar un dato.",
     "base": "etl/datos.duckdb: la base servida. Solo se publica si pasan las 31 pruebas de dbt y la carga lee al menos el 90 % de las filas de la anterior.",
-    "ci": "El workflow pruebas.yml corre pytest en cada push y pull request: los casos S-01 a S-14 de docs/PLAN_PRUEBAS.md. Su resultado avisa; no detiene la publicación de main.",
+    "ci": "El workflow pruebas.yml corre pytest en cada push y pull request: los casos S-01 a S-14 de docs/calidad/PLAN_PRUEBAS.md. Su resultado avisa; no detiene la publicación de main.",
 }
 # Threat markers: threat id -> (x, y, line label, label side).
 THREAT_SPOTS = {

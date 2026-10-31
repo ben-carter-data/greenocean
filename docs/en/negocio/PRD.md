@@ -10,7 +10,7 @@
 | Owner | The author |
 | Purpose | Explain which problem GreenOcean solves, for whom, which questions it answers and what it must meet for its figures to be reliable. |
 | Audience | Management, product owners, analysts and technical review. |
-| Related documents | [Software Architecture Document (SAD)](SAD.md) · [Architecture Decision Records (ADR)](ADR.md) · [Test and Security Plan](PLAN_PRUEBAS.md) · [Glossary](GLOSARIO.md) |
+| Related documents | [Software Architecture Document (SAD)](../arquitectura/SAD.md) · [Architecture Decision Records (ADR)](../arquitectura/ADR.md) · [Test and Security Plan](../calidad/PLAN_PRUEBAS.md) · [Glossary](GLOSARIO.md) |
 
 ## Contents
 
@@ -114,7 +114,7 @@ Functional requirements (RF) define what the product does; non-functional requir
 | RF-07 | Protected manual load | No manual load without the control code: the «Run pipeline now» button appears only after it, and the code is compared in constant time. The load is followed in a window that does not close by itself, can be minimized or cancelled, shows the log and stops asking after 20 minutes | `tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code`, `tests/test_control.py::test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time`, `tests/test_dashboard.py::test_d351_the_window_cannot_be_dismissed_minimizing_does_not_cancel_and_cancel_asks_first` |
 | RF-08 | Weekly report | Each published load leaves a report with its status and the alerts of the week, as an issue of the repository | `.github/workflows/semanal.yml`, `tests/test_report.py::test_report_shows_the_load_status_and_the_alert_of_the_week` |
 | RF-09 | The view is chosen and the author's part is protected | Every visit and every reload by the reader asks for the view; no address opens the author's part; the reloads the app itself makes keep the view once, never the author's | `tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_the_address_says`, `tests/test_view_switch.py::test_d353_leaving_the_author_view_closes_the_author_session_and_coming_back_asks_for_the_key`, `tests/test_app_reloads.py::test_d357_a_reload_the_reader_makes_still_asks_for_the_view` |
-| RNF-01 | Zero cost and no expiry | No paid service; only permanent free plans ([ADR-31 · Do not use a cloud data warehouse](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse)) | `docs/ADR.md` |
+| RNF-01 | Zero cost and no expiry | No paid service; only permanent free plans ([ADR-31 · Do not use a cloud data warehouse](../arquitectura/ADR.md#adr-31--do-not-use-a-cloud-data-warehouse)) | `docs/arquitectura/ADR.md` |
 | RNF-02 | Every figure can be checked | Weekly prices are rebuilt from the raw rows and along a second, independent path without dbt: difference 0 | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price`, `tests/test_data_audit.py::test_the_panel_reproduces_the_reference_figures_of_its_week` |
 | RNF-03 | Security | No secret in the repository; the weekly workflow has only the permissions it uses; the panel cannot write to the database | `tests/test_security.py::test_no_secret_is_tracked_by_git`, `tests/test_security.py::test_the_weekly_job_has_least_privilege`, `tests/test_sql_explorer.py::test_read_only_statements_are_accepted` |
 | RNF-04 | Quality watched on every change | pytest and the dbt compilation run on every push; the 11 quality indicators are measured on every load, and one outside its threshold changes the verdict | `.github/workflows/pruebas.yml`, `tests/test_quality_audit.py::test_a_degraded_measure_turns_its_indicator_and_the_verdict_red` |
@@ -163,10 +163,10 @@ Real captures of the main pages, in the four color themes. The dark theme is the
 
 | Risk | Probability | Impact | Mitigation |
 |---|---|---|---|
-| ODEPA changes the format of its files | Medium | High | The quality gates reject a load that was read wrongly ([SAD, the load of each week](SAD.md#4-the-load-of-each-week)) |
+| ODEPA changes the format of its files | Medium | High | The quality gates reject a load that was read wrongly ([SAD, the load of each week](../arquitectura/SAD.md#4-the-load-of-each-week)) |
 | A correlation is read as a cause | Medium | Medium | The panel and this document warn about it next to each comparison with the CPI |
 | The terms of a free plan change | Low | High | The pipeline runs the same on any machine with Python 3.11 or 3.12 |
-| A single maintainer | High | Medium | Operation documented in the [Operations Runbook](MANUAL.md) and automated tests on every change |
+| A single maintainer | High | Medium | Operation documented in the [Operations Runbook](../operacion/MANUAL.md) and automated tests on every change |
 
 ## 10. Acceptance criteria
 
@@ -180,7 +180,7 @@ Real captures of the main pages, in the four color themes. The dark theme is the
 
 ## 11. Next steps
 
-Adding the weather by region, and the conditions under which a cloud data warehouse would be justified, are described in the [SAD, capacity and growth](SAD.md#9-capacity-and-growth).
+Adding the weather by region, and the conditions under which a cloud data warehouse would be justified, are described in the [SAD, capacity and growth](../arquitectura/SAD.md#9-capacity-and-growth).
 
 ## 12. Glossary
 

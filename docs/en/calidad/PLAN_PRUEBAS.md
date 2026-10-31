@@ -10,7 +10,7 @@
 | Owner | The author |
 | Purpose | Explain how we check that each figure is correct, that a load with errors is never published and that nobody can read the secrets, change the data or launch the load without permission. |
 | Audience | Management, quality, security, operations and technical review. |
-| Related documents | [Product Requirements Document (PRD)](PRD.md) · [Software Architecture Document (SAD)](SAD.md) · [Operations Runbook](MANUAL.md) · [Glossary](GLOSARIO.md) |
+| Related documents | [Product Requirements Document (PRD)](../negocio/PRD.md) · [Software Architecture Document (SAD)](../arquitectura/SAD.md) · [Operations Runbook](../operacion/MANUAL.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 ## Contents
 
@@ -181,11 +181,11 @@ Secret values and problems not yet fixed are not published.
 
 ## 12. Traceability
 
-Each business question and each requirement of the [PRD](PRD.md#5-requirements) names the test that verifies it, and `tests/test_prd_traceability.py` requires each one to exist.
+Each business question and each requirement of the [PRD](../negocio/PRD.md#5-requirements) names the test that verifies it, and `tests/test_prd_traceability.py` requires each one to exist.
 
 ## 13. Glossary
 
-The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.md).
+The acronyms and terms of this document are defined in the [Glossary](../negocio/GLOSARIO.md).
 
 ## 14. Version history
 

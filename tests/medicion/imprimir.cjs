@@ -20,7 +20,9 @@ const DOCS = [['documentacion-y-enlaces', 'PRD · Requisitos del producto', 'PRD
 
 function markdownOutline(file) {
   if (!file) return null;
-  const text = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', file), 'utf8');
+  // D-381: each document sits in the folder of its subject.
+  const folders = { 'PRD.md': 'negocio', 'GLOSARIO.md': 'negocio', 'SAD.md': 'arquitectura', 'ADR.md': 'arquitectura', 'INDICE_DECISIONES.md': 'arquitectura', 'PLAN_DE_CALIDAD.md': 'calidad', 'PLAN_PRUEBAS.md': 'calidad', 'MANUAL.md': 'operacion' };
+  const text = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', folders[file], file), 'utf8');
   const titles = [...text.matchAll(/^## (.+)$/gm)].map(m => m[1].trim());
   const diagrams = [...text.matchAll(/^\[\[diagrama:(\w+)\]\]\s*$/gm)].length;
   return { titles, diagrams };

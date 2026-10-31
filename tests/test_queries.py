@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import queries  # noqa: E402
+from bi import i18n, queries  # noqa: E402
 from etl import etl  # noqa: E402
 from tests.test_etl import make_raw_consumer_rows, make_raw_wholesale_rows  # noqa: E402
 from tests.test_etl_run import open_test_databases, replace_raw_rows  # noqa: E402
@@ -184,4 +184,4 @@ def test_every_github_link_of_the_panel_points_to_a_file_in_the_repository():
     for path in paths:
         assert (root / path).exists(), path
     for name in ("PRD.md", "SAD.md", "ADR.md", "PLAN_PRUEBAS.md", "DECISIONES.md"):
-        assert (root / "docs" / name).exists(), name
+        assert i18n.document_path(name, "es").exists(), name

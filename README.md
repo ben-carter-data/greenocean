@@ -54,7 +54,7 @@ flowchart LR
     W[GitHub Actions<br/>cada martes] -.orquesta.-> A
 ```
 
-GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los diagramas completos (pipeline y linaje, modelo estrella, despliegue, CI/CD, monitoreo y arquitectura de seguridad) están en el panel; el [SAD](docs/SAD.md) describe la arquitectura por vistas y enlaza a ellos.
+GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los diagramas completos (pipeline y linaje, modelo estrella, despliegue, CI/CD, monitoreo y arquitectura de seguridad) están en el panel; el [SAD](docs/arquitectura/SAD.md) describe la arquitectura por vistas y enlaza a ellos.
 
 ## Estructura
 
@@ -77,8 +77,8 @@ GitHub Actions ejecuta todo cada martes y corre las pruebas en cada cambio. Los 
 │   ├── queries.sql      consultas del panel
 │   └── architecture.py  diagramas en vivo del pipeline y la plataforma
 │   (y el resto del panel: páginas, diagramas, textos en español e inglés)
-├── docs/                PRD, SAD, ADR, plan de pruebas y seguridad, decisiones y manual
-│   ├── en/              los mismos documentos en inglés
+├── docs/                los documentos, en cuatro carpetas (negocio, arquitectura, calidad y operación), y las decisiones
+│   ├── en/              los mismos documentos y carpetas, en inglés
 │   ├── img/             capturas del panel
 │   ├── calidad/         aceptables y metas, informes numerados, plan de mitigación y política
 │   └── archivo/         historia del proyecto (hitos y backlog); no es lectura
@@ -101,14 +101,14 @@ Python · SQL · dbt Core · DuckDB · Parquet · SQLite · GitHub Actions · py
 
 | Documento | Contenido |
 |---|---|
-| [PRD](docs/PRD.md) | Qué problema resuelve, para quién, qué preguntas responde y sus requisitos |
-| [SAD](docs/SAD.md) | Cómo está construido: la carga de cada semana, los datos con su diccionario, el despliegue y la capacidad |
-| [ADR](docs/ADR.md) | Las decisiones de arquitectura más importantes |
-| [Plan de pruebas y seguridad](docs/PLAN_PRUEBAS.md) | Qué se prueba, quién participa en la seguridad y los ataques que se repiten en cada cambio |
-| [Plan de calidad del software (SQAP)](docs/PLAN_DE_CALIDAD.md) | Qué calidad cuida el proyecto, cómo la mide, quién decide y qué pasa cuando algo falla |
-| [Manual](docs/MANUAL.md) | Qué pasa cada martes y qué hacer si falla |
-| [Índice de decisiones](docs/INDICE_DECISIONES.md) | Las decisiones principales, por tema |
-| [Glosario](docs/GLOSARIO.md) | Las siglas y los términos del panel y de los documentos |
+| [PRD](docs/negocio/PRD.md) | Qué problema resuelve, para quién, qué preguntas responde y sus requisitos |
+| [SAD](docs/arquitectura/SAD.md) | Cómo está construido: la carga de cada semana, los datos con su diccionario, el despliegue y la capacidad |
+| [ADR](docs/arquitectura/ADR.md) | Las decisiones de arquitectura más importantes |
+| [Plan de pruebas y seguridad](docs/calidad/PLAN_PRUEBAS.md) | Qué se prueba, quién participa en la seguridad y los ataques que se repiten en cada cambio |
+| [Plan de calidad del software (SQAP)](docs/calidad/PLAN_DE_CALIDAD.md) | Qué calidad cuida el proyecto, cómo la mide, quién decide y qué pasa cuando algo falla |
+| [Manual](docs/operacion/MANUAL.md) | Qué pasa cada martes y qué hacer si falla |
+| [Índice de decisiones](docs/arquitectura/INDICE_DECISIONES.md) | Las decisiones principales, por tema |
+| [Glosario](docs/negocio/GLOSARIO.md) | Las siglas y los términos del panel y de los documentos |
 | [Decisiones](docs/DECISIONES.md) | Registro completo de decisiones |
 
 ## Cómo ejecutarlo

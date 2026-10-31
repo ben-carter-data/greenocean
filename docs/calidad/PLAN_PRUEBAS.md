@@ -10,7 +10,7 @@
 | Responsable | El autor |
 | Propósito | Explicar cómo se comprueba que cada cifra es correcta, que una carga con errores nunca se publica y que nadie puede leer los secretos, cambiar los datos ni lanzar la carga sin permiso. |
 | Audiencia | Gerencia, calidad, seguridad, operación y revisión técnica. |
-| Documentos relacionados | [Documento de requisitos del producto (PRD)](PRD.md) · [Documento de arquitectura de software (SAD)](SAD.md) · [Manual de operación](MANUAL.md) · [Glosario](GLOSARIO.md) |
+| Documentos relacionados | [Documento de requisitos del producto (PRD)](../negocio/PRD.md) · [Documento de arquitectura de software (SAD)](../arquitectura/SAD.md) · [Manual de operación](../operacion/MANUAL.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 ## Índice
 
@@ -181,11 +181,11 @@ Los valores secretos y los problemas aún sin corregir no se publican.
 
 ## 12. Trazabilidad
 
-Cada pregunta de negocio y cada requisito del [PRD](PRD.md#5-requisitos) nombra la prueba que lo verifica, y `tests/test_prd_traceability.py` exige que cada una exista.
+Cada pregunta de negocio y cada requisito del [PRD](../negocio/PRD.md#5-requisitos) nombra la prueba que lo verifica, y `tests/test_prd_traceability.py` exige que cada una exista.
 
 ## 13. Glosario
 
-Las siglas y los términos de este documento se definen en el [Glosario](GLOSARIO.md).
+Las siglas y los términos de este documento se definen en el [Glosario](../negocio/GLOSARIO.md).
 
 ## 14. Historial de versiones
 

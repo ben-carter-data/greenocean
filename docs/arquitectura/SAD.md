@@ -10,7 +10,7 @@
 | Responsable | El autor |
 | Propósito | Explicar cómo está construido GreenOcean, cómo corre cada semana, dónde viven sus datos y por qué tiene esa forma. |
 | Audiencia | Arquitectura, ingeniería de datos, operación, gerencia y revisión técnica. |
-| Documentos relacionados | [Documento de requisitos del producto (PRD)](PRD.md) · [Registros de decisiones de arquitectura (ADR)](ADR.md) · [Plan de pruebas y seguridad](PLAN_PRUEBAS.md) · [Glosario](GLOSARIO.md) |
+| Documentos relacionados | [Documento de requisitos del producto (PRD)](../negocio/PRD.md) · [Registros de decisiones de arquitectura (ADR)](ADR.md) · [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 ## Índice
 
@@ -310,11 +310,11 @@ El diagrama con el estado en vivo de cada pieza está en la pestaña «Despliegu
 
 **Observabilidad.** Cada carga deja rastro en cuatro lugares: `etl_run` (filas leídas, cargadas y rechazadas de cada carga publicada), `dbt_result` (el resultado de cada modelo y prueba), el registro de GitHub Actions (cada paso, incluidos los que fallan) y el correo que GitHub envía al autor si la carga falla. La pestaña «Monitoreo» de [[vista:Centro de operación]] los reúne.
 
-**Calidad del proyecto.** Cómo se mide la calidad de los datos y del código, quién decide y qué pasa cuando algo falla está en el [Plan de calidad del software (SQAP)](PLAN_DE_CALIDAD.md). En cada push el workflow de calidad mide y falla si un indicador de código pasa su aceptable; el informe numerado se propone solo después de la carga semanal o a mano (D-363). Si el último informe tiene más de 8 días, la alerta del autor lo dice y no lo muestra como el estado de hoy (D-361). Cada falla vivida queda en el registro de fallas, una línea por campo (D-342, D-354).
+**Calidad del proyecto.** Cómo se mide la calidad de los datos y del código, quién decide y qué pasa cuando algo falla está en el [Plan de calidad del software (SQAP)](../calidad/PLAN_DE_CALIDAD.md). En cada push el workflow de calidad mide y falla si un indicador de código pasa su aceptable; el informe numerado se propone solo después de la carga semanal o a mano (D-363). Si el último informe tiene más de 8 días, la alerta del autor lo dice y no lo muestra como el estado de hoy (D-361). Cada falla vivida queda en el registro de fallas, una línea por campo (D-342, D-354).
 
 **Secretos y acceso.** El panel usa tres secretos, guardados en Streamlit y nunca en el repositorio: `CONTROL_CODE` (la clave del autor, comparada en tiempo constante), `GITHUB_TOKEN` (lanza y cancela la carga manual) y `GITHUB_READ_TOKEN` (solo lectura, para la página «GitHub Actions»; si falta, se usa `GITHUB_TOKEN`). Esa página, que solo ve el autor, muestra las últimas ejecuciones y, del último fallo, el job, el paso, las pruebas que fallan y las últimas 60 líneas del log, con un botón «Copiar» y enlaces a la ejecución y al job; el token nunca aparece en pantalla (D-339, D-359).
 
-**Seguridad.** Las amenazas, sus controles y las pruebas que los verifican están en [[vista:Arquitectura de seguridad]]; el procedimiento de verificación, en el [Plan de pruebas y seguridad](PLAN_PRUEBAS.md).
+**Seguridad.** Las amenazas, sus controles y las pruebas que los verifican están en [[vista:Arquitectura de seguridad]]; el procedimiento de verificación, en el [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md).
 
 **Requisitos de calidad**
 
@@ -333,9 +333,9 @@ El diagrama con el estado en vivo de cada pieza está en la pestaña «Despliegu
 | Medida | Valor | Origen |
 |---|---|---|
 | Base servida | Unos 14 MB en la base servida | Tamaño de `etl/datos.duckdb` |
-| Datos | Volumen y cobertura de la última carga | [PRD, sección 6](PRD.md#6-alcance) |
-| Frecuencia | Una carga por semana | [RF-01](PRD.md#5-requisitos) |
-| Usuarios | Un panel público de solo lectura | [PRD, sección 3](PRD.md#3-para-quién-es) |
+| Datos | Volumen y cobertura de la última carga | [PRD, sección 6](../negocio/PRD.md#6-alcance) |
+| Frecuencia | Una carga por semana | [RF-01](../negocio/PRD.md#5-requisitos) |
+| Usuarios | Un panel público de solo lectura | [PRD, sección 3](../negocio/PRD.md#3-para-quién-es) |
 
 ### 9.2 Qué cede primero
 
@@ -401,7 +401,7 @@ Las decisiones que dan forma a esta arquitectura, con su contexto, sus alternati
 
 ## 12. Glosario
 
-Las siglas y los términos de este documento se definen en el [Glosario](GLOSARIO.md).
+Las siglas y los términos de este documento se definen en el [Glosario](../negocio/GLOSARIO.md).
 
 ## 13. Historial de versiones
 

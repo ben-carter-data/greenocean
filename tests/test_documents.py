@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from bi import dashboard
+from bi import dashboard, i18n
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS_DIR = ROOT / "docs"
@@ -21,7 +21,7 @@ MERGED = {"PLAN_PRUEBAS.md": ["SEGURIDAD.md"], "SAD.md": ["ESCALABILIDAD.md", "D
 
 @pytest.mark.parametrize("name", DOCUMENTS)
 def test_documents_have_no_code_blocks_and_use_the_project_vocabulary(name):
-    text = (DOCS_DIR / name).read_text(encoding="utf-8")
+    text = i18n.document_path(name, "es").read_text(encoding="utf-8")
     assert "```" not in text and "~~~" not in text
     assert "robot" not in text.lower()
 
@@ -29,7 +29,9 @@ def test_documents_have_no_code_blocks_and_use_the_project_vocabulary(name):
 def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
     """D-290: every document, in its reading order, with at least three diagrams; the SAD with at least five."""
     names = {
-        name: re.findall(r"^\[\[diagrama:(\w+)\]\]\s*$", (DOCS_DIR / name).read_text(encoding="utf-8"), re.MULTILINE)
+        name: re.findall(
+            r"^\[\[diagrama:(\w+)\]\]\s*$", i18n.document_path(name, "es").read_text(encoding="utf-8"), re.MULTILINE
+        )
         for name in READING
     }
     assert names == {
@@ -60,7 +62,7 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
 def test_d290_the_merged_documents_are_gone_and_their_addresses_open_the_document_that_holds_them():
     for name, old in MERGED.items():
         for gone in old:
-            assert not (DOCS_DIR / gone).exists() and not (DOCS_DIR / "en" / gone).exists(), gone
+            assert not i18n.document_path(gone, "es").exists() and not i18n.document_path(gone, "en").exists(), gone
     assert len(dashboard.FOLDER_DOCUMENTS) == 8  # D-355: the SQAP joined
     for path, page in (
         ("escalabilidad", dashboard.PAGE_SAD),
@@ -78,11 +80,11 @@ def test_d290_the_merged_documents_are_gone_and_their_addresses_open_the_documen
 
 
 def test_d248_each_adr_has_the_standard_parts_and_points_to_its_decision():
-    text = (DOCS_DIR / "ADR.md").read_text(encoding="utf-8")
+    text = i18n.document_path("ADR.md", "es").read_text(encoding="utf-8")
     entries = [entry for entry in re.split(r"^## ", text, flags=re.MULTILINE)[1:] if entry.startswith("ADR-")]
     numbers = [entry.split(" ", 1)[0] for entry in entries]
     assert len(numbers) == 11 and len(set(numbers)) == 11 and all(re.fullmatch(r"ADR-\d{2}", n) for n in numbers)
-    decisions = (DOCS_DIR / "DECISIONES.md").read_text(encoding="utf-8")
+    decisions = i18n.document_path("DECISIONES.md", "es").read_text(encoding="utf-8")
     for entry in entries:
         for part in (
             "**Estado:**",
@@ -100,12 +102,12 @@ def test_d248_each_adr_has_the_standard_parts_and_points_to_its_decision():
 
 
 def test_d248_the_file_sizes_the_documents_state_are_the_real_ones():
-    adr = (DOCS_DIR / "ADR.md").read_text(encoding="utf-8")
+    adr = i18n.document_path("ADR.md", "es").read_text(encoding="utf-8")
     largest = max((path.stat().st_size for path in (ROOT / "agent" / "downloads").glob("*.csv")), default=None)
     if largest:
         assert f"hasta unos {round(largest / 5e6) * 5} MB" in adr  # rounded to 5 MB
     served = (ROOT / "etl" / "datos.duckdb").stat().st_size / 1e6
-    sad = (DOCS_DIR / "SAD.md").read_text(encoding="utf-8")
+    sad = i18n.document_path("SAD.md", "es").read_text(encoding="utf-8")
     # D-299: the base grows a little every Tuesday; the round size of the SAD holds within 2 MB, so no load stops on it.
     stated = int(re.search(r"Unos (\d+) MB en la base servida", sad)[1])
     assert abs(stated - served) <= 2, (stated, served)
@@ -129,7 +131,7 @@ def test_d248_the_print_stylesheet_keeps_the_document_and_drops_only_the_navigat
 def test_d210_the_prd_figures_match_the_served_database():
     import duckdb
 
-    text = (DOCS_DIR / "PRD.md").read_text(encoding="utf-8")
+    text = i18n.document_path("PRD.md", "es").read_text(encoding="utf-8")
     database = Path(__file__).resolve().parent.parent / "etl" / "datos.duckdb"
     with duckdb.connect(str(database), read_only=True) as connection:
         # D-299: the PRD states the figures of one dated load; a newer load (every Tuesday) must never fail on that text,
@@ -175,16 +177,16 @@ def test_d269_the_documents_count_the_quality_indicators_and_dimensions_the_pane
     dimensions = len({"consistencia" if row[0] == "pruebas" else row[0] for row in indicators})
     controls = len(dict(quality_view.build_columns(EVIDENCE))[quality_live.RESULTS_STEP])
     words = {4: "cuatro", 5: "cinco", 6: "seis", 11: "Once"}
-    sad = (DOCS_DIR / "SAD.md").read_text(encoding="utf-8")
+    sad = i18n.document_path("SAD.md", "es").read_text(encoding="utf-8")
     assert f"{words[count]} indicadores, en {words[dimensions]} dimensiones" in sad
     assert f"la sexta dimensión, se mide con {words[controls]} controles" in sad
-    assert f"los {count} indicadores de calidad" in (DOCS_DIR / "PRD.md").read_text(encoding="utf-8")
+    assert f"los {count} indicadores de calidad" in i18n.document_path("PRD.md", "es").read_text(encoding="utf-8")
 
 
 def test_d269_the_documents_say_where_a_failed_load_is_recorded():
     """A failed load stops before the commit: etl_run keeps only published loads, GitHub Actions keeps the failures."""
     for name in ("PRD.md", "ADR.md"):
-        text = (DOCS_DIR / name).read_text(encoding="utf-8")
+        text = i18n.document_path(name, "es").read_text(encoding="utf-8")
         assert "queda registrada como fallida" not in text, name
         assert "avisa al autor por correo" in text, name
 
@@ -207,7 +209,7 @@ FORBIDDEN = [
 
 @pytest.mark.parametrize("name", READING)
 def test_d279_every_reading_document_is_written_as_a_professional_document(name):
-    text = (DOCS_DIR / name).read_text(encoding="utf-8")
+    text = i18n.document_path(name, "es").read_text(encoding="utf-8")
     for pattern in FORBIDDEN:
         assert not re.search(pattern, text, re.IGNORECASE if pattern != r"\bTODO\b" else 0), (name, pattern)
     assert "```" not in text and "robot" not in text.lower()
@@ -215,7 +217,7 @@ def test_d279_every_reading_document_is_written_as_a_professional_document(name)
 
 @pytest.mark.parametrize("name", READING)
 def test_d279_every_reading_document_has_its_header_index_glossary_and_history(name):
-    text = (DOCS_DIR / name).read_text(encoding="utf-8")
+    text = i18n.document_path(name, "es").read_text(encoding="utf-8")
     header = text.split("## ", 1)[0]
     for field in (
         "Proyecto",
@@ -231,7 +233,7 @@ def test_d279_every_reading_document_has_its_header_index_glossary_and_history(n
         assert f"| {field} |" in header, (name, field)
     assert "| Responsable | El autor |" in header
     assert "## Índice" in text and "Historial de versiones" in text
-    assert name == "GLOSARIO.md" or "[Glosario](GLOSARIO.md)" in text
+    assert name == "GLOSARIO.md" or re.search(r"\[Glosario\]\((?:\.\./negocio/)?GLOSARIO\.md\)", text)
     # The version and date of the header are those of the last row of the history.
     version = re.search(r"\| Versión \| ([\d.]+) \|", header).group(1)
     date = re.search(r"\| Fecha \| (\d{2}-\d{2}-\d{4}) \|", header).group(1)
@@ -244,14 +246,18 @@ def test_d279_every_reading_document_has_its_header_index_glossary_and_history(n
 def test_d279_every_index_entry_points_to_a_heading_and_every_link_to_a_document_that_exists(name):
     from bi import dashboard
 
-    text = (DOCS_DIR / name).read_text(encoding="utf-8")
+    text = i18n.document_path(name, "es").read_text(encoding="utf-8")
     anchors = {dashboard.heading_anchor(heading) for heading in re.findall(r"^#{2,4} (.+)$", text, re.MULTILINE)}
     index = text.split("## Índice", 1)[1].split("\n## ", 1)[0]
     for target in re.findall(r"\]\(#([^)]+)\)", index):
         assert target in anchors, (name, target)
-    for filename, anchor in re.findall(r"\]\(([A-Z_]+\.md)(?:#([^)]+))?\)", text):
-        other = DOCS_DIR / filename
+    for filename, anchor in re.findall(r"\]\((?:\.\./[a-z]+/)?([A-Z_]+\.md)(?:#([^)]+))?\)", text):
+        other = i18n.document_path(filename, "es")
         assert other.exists(), (name, filename)
+        # D-381: the link says where the file is, relative to this document, so it works on GitHub too
+        assert (
+            i18n.document_path(name, "es").parent / re.search(rf"\]\(([^)]*{filename})", text).group(1)
+        ).resolve() == other.resolve()
         if anchor:
             headings = re.findall(r"^#{2,4} (.+)$", other.read_text(encoding="utf-8"), re.MULTILINE)
             assert anchor in {dashboard.heading_anchor(heading) for heading in headings}, (name, filename, anchor)
@@ -274,7 +280,7 @@ def test_d279_the_history_dates_are_dates_the_file_really_changed():
                 text=True,
             ).stdout.split()
         changed = {"-".join(reversed(day.split("-"))) for day in log} | {date.today().strftime("%d-%m-%Y")}
-        history = (DOCS_DIR / name).read_text(encoding="utf-8").split("Historial de versiones")[-1]
+        history = i18n.document_path(name, "es").read_text(encoding="utf-8").split("Historial de versiones")[-1]
         for day in re.findall(r"^\| [\d.]+ \| (\d{2}-\d{2}-\d{4}) \|", history, re.MULTILINE):
             assert day in changed, (name, day)
 
@@ -282,7 +288,7 @@ def test_d279_the_history_dates_are_dates_the_file_really_changed():
 def test_d279_the_security_plan_carries_the_threats_and_cases_of_the_code():
     from bi import security_map, security_plan
 
-    text = (DOCS_DIR / "PLAN_PRUEBAS.md").read_text(encoding="utf-8")
+    text = i18n.document_path("PLAN_PRUEBAS.md", "es").read_text(encoding="utf-8")
     for identifier, title, owasp, *_ in security_map.THREATS:
         assert f"| {identifier} | {title} | {owasp} |" in text, identifier
     for identifier, name, attack, expected, owasp, tests in security_plan.CASES:
@@ -297,7 +303,7 @@ def test_d279_the_data_dictionary_describes_every_table_and_column_of_the_served
 
     if not queries.DATABASE_FILE.exists():
         pytest.skip("datos.duckdb is not here")
-    text = (DOCS_DIR / "SAD.md").read_text(encoding="utf-8")
+    text = i18n.document_path("SAD.md", "es").read_text(encoding="utf-8")
     with duckdb.connect(str(queries.DATABASE_FILE), read_only=True) as connection:
         columns = connection.execute(
             "SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_schema = 'main'"
@@ -318,7 +324,7 @@ def test_d279_the_data_dictionary_describes_every_table_and_column_of_the_served
 def test_d288_each_document_has_a_cover_with_its_version_date_status_owner_and_audience(name):
     from bi import documents_folder
 
-    text = (DOCS_DIR / name).read_text(encoding="utf-8")
+    text = i18n.document_path(name, "es").read_text(encoding="utf-8")
     cover = documents_folder.build_cover_html(text, "")
     header = documents_folder.read_header(text)
     for field in ("Versión", "Fecha", "Estado", "Responsable"):
@@ -351,8 +357,8 @@ def test_adr31_no_cloud_warehouse_is_a_dependency():
 
 
 def test_d300_each_adr_names_the_test_that_confirms_it_and_the_test_exists():
-    for name, word in (("ADR.md", "**Confirmación:**"), ("en/ADR.md", "**Confirmation:**")):
-        text = (DOCS_DIR / name).read_text(encoding="utf-8")
+    for language, word in (("es", "**Confirmación:**"), ("en", "**Confirmation:**")):
+        text = i18n.document_path("ADR.md", language).read_text(encoding="utf-8")
         entries = [entry for entry in re.split(r"^## ", text, flags=re.MULTILINE)[1:] if entry.startswith("ADR-")]
         assert len(entries) == 11
         for entry in entries:
@@ -367,7 +373,7 @@ def test_d300_each_adr_names_the_test_that_confirms_it_and_the_test_exists():
 def test_d252_the_glossary_names_only_pages_and_tabs_that_exist():
     menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
     tabs = {"Operación", "Despliegue", "CI/CD", "Monitoreo"}
-    text = (DOCS_DIR / "GLOSARIO.md").read_text(encoding="utf-8")
+    text = i18n.document_path("GLOSARIO.md", "es").read_text(encoding="utf-8")
     table = text[text.index("| Sigla o término") :].split("\n\n", 1)[0]
     rows = [line.split(" | ") for line in table.splitlines()[2:] if line.startswith("| ")]
     assert len(rows) > 20

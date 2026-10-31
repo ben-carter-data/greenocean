@@ -74,7 +74,7 @@ def canonical_numbers(text, language):
 
 @pytest.mark.parametrize("filename", FOLDER_FILES)
 def test_d283_each_document_exists_in_english_with_the_same_structure_identifiers_and_figures(filename):
-    spanish, english = read(DOCS_DIR / filename), read(EN_DIR / filename)
+    spanish, english = read(i18n.document_path(filename, "es")), read(i18n.document_path(filename, "en"))
     assert len(headings(spanish)) == len(headings(english)), filename
     assert re.findall(r"^\[\[diagrama:(\w+)\]\]$", spanish, re.MULTILINE) == re.findall(
         r"^\[\[diagrama:(\w+)\]\]$", english, re.MULTILINE
@@ -87,17 +87,17 @@ def test_d283_each_document_exists_in_english_with_the_same_structure_identifier
 
 @pytest.mark.parametrize("filename", FOLDER_FILES)
 def test_d283_each_english_document_has_its_header_contents_glossary_and_history(filename):
-    text = read(EN_DIR / filename)
+    text = read(i18n.document_path(filename, "en"))
     header = text.split("## ", 1)[0]
     for field in ENGLISH_FIELDS:
         assert f"| {field} |" in header, (filename, field)
     assert "| Owner | The author |" in header and "## Contents" in text and "Version history" in text
-    assert filename == "GLOSARIO.md" or "[Glossary](GLOSARIO.md)" in text
+    assert filename == "GLOSARIO.md" or re.search(r"\[Glossary\]\((?:\.\./negocio/)?GLOSARIO\.md\)", text)
     version = re.search(r"\| Version \| ([\d.]+) \|", header).group(1)
     date = re.search(r"\| Date \| (\d{4}-\d{2}-\d{2}) \|", header).group(1)
     last = re.findall(r"^\| ([\d.]+) \| (\d{4}-\d{2}-\d{2}) \|", text.split("Version history")[-1], re.MULTILINE)[-1]
     assert last == (version, date)
-    spanish = documents_folder.describe(read(DOCS_DIR / filename))
+    spanish = documents_folder.describe(read(i18n.document_path(filename, "es")))
     assert (version, date) == (spanish["version"], documents_folder.sortable(spanish["date"]))
 
 
@@ -107,21 +107,21 @@ FORBIDDEN = [r"\bprompt\b", r"\bClaude\b", r"\bTODO\b", r"lorem", r"\bnote:", r"
 
 @pytest.mark.parametrize("filename", FOLDER_FILES)
 def test_d283_every_english_document_is_written_as_a_professional_document(filename):
-    text = read(EN_DIR / filename)
+    text = read(i18n.document_path(filename, "en"))
     for pattern in FORBIDDEN:
         assert not re.search(pattern, text, 0 if pattern == r"\bTODO\b" else re.IGNORECASE), (filename, pattern)
 
 
 @pytest.mark.parametrize("filename", FOLDER_FILES)
 def test_d283_every_english_link_and_contents_entry_reaches_its_heading(filename):
-    text = read(EN_DIR / filename)
+    text = read(i18n.document_path(filename, "en"))
     anchors = {dashboard.heading_anchor(heading) for heading in re.findall(r"^#{2,4} (.+)$", text, re.MULTILINE)}
     for target in re.findall(r"\]\(#([^)]+)\)", text.split("## Contents", 1)[1].split("\n## ", 1)[0]):
         assert target in anchors, (filename, target)
     for other, anchor in re.findall(r"\]\(([A-Z_]+\.md)(?:#([^)]+))?\)", text):
-        assert (EN_DIR / other).exists(), (filename, other)
+        assert i18n.document_path(other, "en").exists(), (filename, other)
         if anchor:
-            other_headings = re.findall(r"^#{2,4} (.+)$", read(EN_DIR / other), re.MULTILINE)
+            other_headings = re.findall(r"^#{2,4} (.+)$", read(i18n.document_path(other, "en")), re.MULTILINE)
             assert anchor in {dashboard.heading_anchor(heading) for heading in other_headings}, (
                 filename,
                 other,
@@ -132,14 +132,14 @@ def test_d283_every_english_link_and_contents_entry_reaches_its_heading(filename
 
 
 def test_d283_every_acronym_of_the_english_documents_is_in_the_english_glossary():
-    glossary = read(EN_DIR / "GLOSARIO.md")
+    glossary = read(i18n.document_path("GLOSARIO.md", "en"))
     table = glossary[glossary.index("| Acronym or term") :].split("\n\n", 1)[0]
     defined = set(re.findall(r"[A-Za-z0-9]+", " ".join(line.split(" | ")[0] for line in table.splitlines()[2:])))
     words = {"MB", "GB", "YYYY", "MM", "DD", "VARCHAR", "BIGINT", "INTEGER", "DOUBLE", "BOOLEAN"}
     for filename in FOLDER_FILES:
         if filename == "GLOSARIO.md":
             continue
-        text = re.sub(r"\]\([^)]*\)", "]", re.sub(r"`[^`]*`", "", read(EN_DIR / filename)))
+        text = re.sub(r"\]\([^)]*\)", "]", re.sub(r"`[^`]*`", "", read(i18n.document_path(filename, "en"))))
         missing = set(re.findall(r"\b[A-Z]{2,}[0-9]*\b", text)) - defined - words
         assert not missing, (filename, sorted(missing))
 
@@ -293,7 +293,7 @@ def test_d283_the_english_glossary_names_only_english_pages_and_tabs():
         i18n.EN[dashboard.SIDEBAR_LABELS.get(view, view)] for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]
     }
     tabs = {"Operations", "Deployment", "CI/CD", "Monitoring"}
-    glossary = read(EN_DIR / "GLOSARIO.md")
+    glossary = read(i18n.document_path("GLOSARIO.md", "en"))
     table = glossary[glossary.index("| Acronym or term") :].split("\n\n", 1)[0]
     for row in [line.split(" | ") for line in table.splitlines()[2:]]:
         for place in [] if row[2] == "—" else row[2].split(", "):

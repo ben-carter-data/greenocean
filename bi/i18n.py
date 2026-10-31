@@ -143,6 +143,8 @@ EN = {
     "En curso": "In progress",
     "Pruebas": "Tests",
     "Carga semanal": "Weekly load",
+    "Negocio": "Business",
+    "Arquitectura": "Architecture",
     "Calidad": "Quality",
     "Ruff, mypy y pytest en cada push.": "Ruff, mypy and pytest on every push.",
     "La carga de cada martes: descarga, dbt y publicación.": "Every Tuesday's load: download, dbt and publication.",
@@ -495,6 +497,26 @@ def tr_week(week_start, year=False):
 def documents_dir(language=None):
     """docs/ for Spanish, docs/en/ for English: the same files, in each language."""
     return DOCS_DIR / "en" if (language or get_language()) == ENGLISH else DOCS_DIR
+
+
+# D-381: the official documents live in one folder per subject, in docs/ and in docs/en/ alike.
+DOCUMENT_FOLDERS = {
+    "PRD.md": "negocio",
+    "GLOSARIO.md": "negocio",
+    "SAD.md": "arquitectura",
+    "ADR.md": "arquitectura",
+    "INDICE_DECISIONES.md": "arquitectura",
+    "PLAN_DE_CALIDAD.md": "calidad",
+    "PLAN_PRUEBAS.md": "calidad",
+    "MANUAL.md": "operacion",
+}
+
+
+def document_path(filename, language=None):
+    """The file of an official document in the language of the visit (or the one given), inside its folder."""
+    folder = DOCUMENT_FOLDERS.get(filename)
+    base = documents_dir(language)
+    return base / folder / filename if folder else base / filename
 
 
 def document_field(name, language=None):

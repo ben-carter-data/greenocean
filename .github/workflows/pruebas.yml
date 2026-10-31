@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The supported versions (docs/MANUAL.md): dbt Core runs on 3.11 and 3.12.
+        # The supported versions (docs/operacion/MANUAL.md): dbt Core runs on 3.11 and 3.12.
         python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4

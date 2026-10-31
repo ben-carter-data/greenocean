@@ -10,7 +10,7 @@
 | Owner | The author |
 | Purpose | Say which quality GreenOcean looks after, how it measures it, who decides and what happens when something fails. |
 | Audience | Management, analysts, technical review and anyone who wants to know why to trust the figures. |
-| Related documents | [Product Requirements Document (PRD)](PRD.md) · [Software Architecture Document (SAD)](SAD.md) · [Test and Security Plan](PLAN_PRUEBAS.md) · [Operations Manual](MANUAL.md) · [Glossary](GLOSARIO.md) |
+| Related documents | [Product Requirements Document (PRD)](../negocio/PRD.md) · [Software Architecture Document (SAD)](../arquitectura/SAD.md) · [Test and Security Plan](PLAN_PRUEBAS.md) · [Operations Manual](../operacion/MANUAL.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 ## Contents
 
@@ -103,7 +103,7 @@ This plan and its reports are a self-assessment by the author. No external body 
 
 ## 13. Glossary
 
-The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.md).
+The acronyms and terms of this document are defined in the [Glossary](../negocio/GLOSARIO.md).
 
 ## 14. Version history
 

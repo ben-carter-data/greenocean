@@ -6756,15 +6756,16 @@ PROJECT_DOCUMENTS = {
     ),
 }
 # D-282: the folder, in reading order, with the family that colors each file.
+# D-381: grouped by the four folders of docs/, each document in the folder of its subject.
 FOLDER_DOCUMENTS = [
-    (PAGE_PRD, "producto"),
+    (PAGE_PRD, "negocio"),
+    (PAGE_GLOSSARY, "negocio"),
     (PAGE_SAD, "arquitectura"),
     (PAGE_ADR, "arquitectura"),
-    (PAGE_TEST_PLAN, "calidad"),
+    (PAGE_DECISION_INDEX, "arquitectura"),
     (PAGE_QUALITY_PLAN, "calidad"),
+    (PAGE_TEST_PLAN, "calidad"),
     (PAGE_MANUAL, "operacion"),
-    (PAGE_DECISION_INDEX, "referencia"),
-    (PAGE_GLOSSARY, "referencia"),
 ]
 FOLDER_ORDER = [page for page, _ in FOLDER_DOCUMENTS]
 FOLDER_VIEW_KEY = "folder_view"
@@ -6795,7 +6796,7 @@ def read_folder_files():
     """Every document of the folder as the folder shows it, read from its file."""
     files = []
     for page, family in FOLDER_DOCUMENTS:
-        path = i18n.documents_dir() / PROJECT_DOCUMENTS[page][0]
+        path = i18n.document_path(PROJECT_DOCUMENTS[page][0])
         files.append(
             documents_folder.describe(path.read_text(encoding="utf-8"))
             | {
@@ -6840,7 +6841,7 @@ def build_folder_path_html(title):
     )
 
 
-DOCUMENT_LINK = re.compile(r"\]\(([A-Z_]+\.md)(#[^)]*)?\)")
+DOCUMENT_LINK = re.compile(r"\]\((?:\.\./[a-z]+/)?([A-Z_]+\.md)(#[^)]*)?\)")  # D-381: «../negocio/PRD.md» too
 HEADING = re.compile(r"^(#{2,4}) (.+)$", re.MULTILINE)
 
 
@@ -6865,7 +6866,11 @@ def link_document_views(text):
     def document_address(match):
         filename, anchor = match.group(1), match.group(2) or ""
         address = (
-            build_page_address(pages[filename]) if filename in pages else project.build_github_url(f"docs/{filename}")
+            build_page_address(pages[filename])
+            if filename in pages
+            else project.build_github_url(
+                f"docs/{i18n.DOCUMENT_FOLDERS.get(filename, '')}/{filename}".replace("docs//", "docs/")
+            )
         )
         return f"]({address}{anchor})"
 
@@ -7174,7 +7179,7 @@ def show_project_document(mode, title):
     from the live project, no code."""
     filename, lead = PROJECT_DOCUMENTS[title]
     # D-283: the document in the language of the visit, from docs/ or docs/en/.
-    path = i18n.documents_dir() / filename
+    path = i18n.document_path(filename)
     text = path.read_text(encoding="utf-8")
     source = path.relative_to(project.PROJECT_DIR).as_posix()
     st.markdown(build_folder_path_html(title), unsafe_allow_html=True)

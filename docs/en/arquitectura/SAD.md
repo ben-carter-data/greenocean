@@ -10,7 +10,7 @@
 | Owner | The author |
 | Purpose | Explain how GreenOcean is built, how it runs each week, where its data lives and why it has that shape. |
 | Audience | Architecture, data engineering, operations, management and technical review. |
-| Related documents | [Product Requirements Document (PRD)](PRD.md) · [Architecture Decision Records (ADR)](ADR.md) · [Test and Security Plan](PLAN_PRUEBAS.md) · [Glossary](GLOSARIO.md) |
+| Related documents | [Product Requirements Document (PRD)](../negocio/PRD.md) · [Architecture Decision Records (ADR)](ADR.md) · [Test and Security Plan](../calidad/PLAN_PRUEBAS.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 ## Contents
 
@@ -310,11 +310,11 @@ The diagram with the live status of each piece is in the «Deployment» tab of [
 
 **Observability.** Each load leaves a trace in four places: `etl_run` (rows read, loaded and rejected by each published load), `dbt_result` (the result of each model and test), the GitHub Actions log (each step, including the ones that fail) and the email GitHub sends the author if the load fails. The «Monitoring» tab of [[vista:Operations center]] brings them together.
 
-**Project quality.** How the quality of the data and of the code is measured, who decides and what happens when something fails is in the [Software Quality Assurance Plan (SQAP)](PLAN_DE_CALIDAD.md). On every push the quality workflow measures and fails if a code indicator is past its acceptable; the numbered report is proposed only after the weekly load or by hand (D-363). If the last report is more than 8 days old, the author's alert says so and does not show it as today's state (D-361). Every failure lived is kept in the failure register, one line per field (D-342, D-354).
+**Project quality.** How the quality of the data and of the code is measured, who decides and what happens when something fails is in the [Software Quality Assurance Plan (SQAP)](../calidad/PLAN_DE_CALIDAD.md). On every push the quality workflow measures and fails if a code indicator is past its acceptable; the numbered report is proposed only after the weekly load or by hand (D-363). If the last report is more than 8 days old, the author's alert says so and does not show it as today's state (D-361). Every failure lived is kept in the failure register, one line per field (D-342, D-354).
 
 **Secrets and access.** The panel uses three secrets, kept in Streamlit and never in the repository: `CONTROL_CODE` (the author's key, compared in constant time), `GITHUB_TOKEN` (starts and cancels the manual load) and `GITHUB_READ_TOKEN` (read only, for the page «GitHub Actions»; if it is missing, `GITHUB_TOKEN` is used). That page, for the author only, shows the latest runs and, of the last failure, the job, the step, the failing tests and the last 60 lines of the log, with a «Copiar» button and links to the run and the job; the token never shows on screen (D-339, D-359).
 
-**Security.** The threats, their controls and the tests that verify them are in [[vista:Security architecture]]; the verification procedure, in the [Test and Security Plan](PLAN_PRUEBAS.md).
+**Security.** The threats, their controls and the tests that verify them are in [[vista:Security architecture]]; the verification procedure, in the [Test and Security Plan](../calidad/PLAN_PRUEBAS.md).
 
 **Quality requirements**
 
@@ -333,9 +333,9 @@ The diagram with the live status of each piece is in the «Deployment» tab of [
 | Measure | Value | Origin |
 |---|---|---|
 | Served database | About 14 MB in the served database | Size of `etl/datos.duckdb` |
-| Data | Volume and coverage of the last load | [PRD, section 6](PRD.md#6-scope) |
-| Frequency | One load per week | [RF-01](PRD.md#5-requirements) |
-| Users | One public, read-only panel | [PRD, section 3](PRD.md#3-who-it-is-for) |
+| Data | Volume and coverage of the last load | [PRD, section 6](../negocio/PRD.md#6-scope) |
+| Frequency | One load per week | [RF-01](../negocio/PRD.md#5-requirements) |
+| Users | One public, read-only panel | [PRD, section 3](../negocio/PRD.md#3-who-it-is-for) |
 
 ### 9.2 What gives way first
 
@@ -401,7 +401,7 @@ The decisions that shape this architecture, with their context, their alternativ
 
 ## 12. Glossary
 
-The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.md).
+The acronyms and terms of this document are defined in the [Glossary](../negocio/GLOSARIO.md).
 
 ## 13. Version history
 

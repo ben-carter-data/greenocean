@@ -1719,7 +1719,7 @@ def count_decisions():
     """[(theme, count)] read from the index itself, so the figure never disagrees with its tables."""
     import re
 
-    text = (i18n.documents_dir() / "INDICE_DECISIONES.md").read_text(encoding="utf-8")
+    text = i18n.document_path("INDICE_DECISIONES.md").read_text(encoding="utf-8")
     counts = []
     for spanish, english, color in INDEX_THEMES:
         heading = english if i18n.is_english() else spanish

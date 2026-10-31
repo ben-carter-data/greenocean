@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from bi import channel_latest, dashboard
+from bi import channel_latest, dashboard, i18n
 
 ROOT = Path(__file__).resolve().parent.parent
 DASHBOARD_FILE = str(ROOT / "bi" / "dashboard.py")
@@ -106,7 +106,7 @@ def test_d365_the_table_is_served_and_documented():
         "row_number() over (partition by source order by week_start desc) <= 2" in model
         and "int_prices__weekly" in model
     )
-    assert "### latest_by_source" in (ROOT / "docs" / "SAD.md").read_text(encoding="utf-8")
+    assert "### latest_by_source" in i18n.document_path("SAD.md", "es").read_text(encoding="utf-8")
     assert dashboard.PAGE_CHANNELS in next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
 
 

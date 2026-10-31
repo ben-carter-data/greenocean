@@ -119,10 +119,18 @@ NOT_ACRONYMS = {"MB", "GB", "AAAA", "MM", "DD", "VARCHAR", "BIGINT", "INTEGER", 
 
 
 def test_d279_every_acronym_of_the_documents_is_in_the_glossary():
-    """The terms are defined once, in docs/GLOSARIO.md, which the panel shows."""
+    """The terms are defined once, in docs/negocio/GLOSARIO.md, which the panel shows."""
     glossary = project.read_glossary()
     defined = set(re.findall(r"[A-Za-z0-9]+", " ".join(row["Sigla o término"] for row in glossary)))
-    for path in sorted(project.DOCS_DIR.glob("*.md")):
+    for path in sorted(project.DOCS_DIR.rglob("*.md")):
+        if (
+            "archivo" in path.parts
+            or "privado" in path.parts
+            or "en" in path.parts
+            or "calidad" in path.parts
+            and path.name in ("README.md", "INFORME.md")
+        ):
+            continue
         if path.name in ("DECISIONES.md", "PROYECTO.md", "DISENO.md", "GLOSARIO.md"):
             continue
         text = re.sub(r"\]\([^)]*\)", "]", re.sub(r"`[^`]*`", "", path.read_text(encoding="utf-8")))

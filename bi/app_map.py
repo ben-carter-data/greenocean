@@ -358,7 +358,7 @@ NODES = {
         ["apoyo"],
         ("watch", 7),
         "La documentación del proyecto, en Markdown.",
-        "Siete documentos en docs/ y docs/en/, cada uno con su página en el panel y su PDF.",
+        "Ocho documentos en cuatro carpetas de docs/ y de docs/en/, cada uno con su página en el panel y su PDF.",
         "Cuando alguien abre la carpeta Documentos.",
         "Documentos",
         [("Markdown", "el formato de los documentos, el mismo en GitHub y en el panel.")],

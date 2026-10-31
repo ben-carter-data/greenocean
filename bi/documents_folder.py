@@ -15,14 +15,25 @@ from bi.i18n import tr
 VIEW_GRID, VIEW_LIST = "Cuadrícula", "Lista"
 WORDS_PER_MINUTE = 200
 PREVIEW_ENTRIES = 9
-# The family of each document gives the color of its file: product, architecture, quality and security, operation and
-# reference.
+# D-381: the folder of each document gives the color of its file and the icon of its section. The four folders are
+# docs/negocio, docs/arquitectura, docs/calidad and docs/operacion; each icon is a Material Symbols name.
 FAMILY_COLORS = {
-    "producto": "#3b82f6",
+    "negocio": "#3b82f6",
     "arquitectura": "#8b5cf6",
     "calidad": "#10b981",
     "operacion": "#f59e0b",
-    "referencia": "#64748b",
+}
+FAMILY_ICONS = {
+    "negocio": "business_center",
+    "arquitectura": "architecture",
+    "calidad": "verified_user",
+    "operacion": "build",
+}
+FAMILY_TITLES = {
+    "negocio": "Negocio",
+    "arquitectura": "Arquitectura",
+    "calidad": "Calidad",
+    "operacion": "Operación",
 }
 HEADER_ROW = re.compile(r"^\| ([^|]+?) \| (.+?) \|$", re.MULTILINE)
 INDEX_HEADINGS = tuple(f"## {fields['index']}" for fields in i18n.DOCUMENT_FIELDS.values())
@@ -142,18 +153,32 @@ def build_file(file):
     )
 
 
+def build_group(family, files, kind):
+    """One folder of docs/: its icon and name, how many documents, then its files (D-381)."""
+    color = FAMILY_COLORS[family]
+    return (
+        f'<section class="df-group" data-family="{family}"><div class="df-group-head" role="heading" aria-level="3" style="--df-color:{color}">'
+        f'<span class="df-group-icon" aria-hidden="true">{FAMILY_ICONS[family]}</span>'
+        f'<span class="df-group-name">{esc(tr(FAMILY_TITLES[family]))}</span>'
+        f'<span class="df-group-path">docs/{family}</span><span class="df-group-count">{len(files)}</span></div>'
+        f'<div class="{kind}">' + "".join(build_file(file) for file in files) + "</div></section>"
+    )
+
+
 def build_folder_html(files, view):
-    """The folder: its path, how many documents and the last change, then the files in the chosen view."""
+    """The folder: its path, how many documents and the last change, then its four folders, each with its files in the
+    chosen view."""
     kind = "df-grid" if view == VIEW_GRID else "df-list"
     head = (
         f'<div class="df-head"><span class="df-path">GreenOcean <i>/</i> <b>docs</b></span>'
         f'<span class="df-count">{len(files)} {tr("documentos · último cambio")} {esc(latest_date(files))}</span></div>'
     )
-    return (
-        f'<div class="df-folder">{head}<div class="{kind}">'
-        + "".join(build_file(file) for file in files)
-        + "</div></div>"
+    groups = "".join(
+        build_group(family, [file for file in files if file["family"] == family], kind)
+        for family in FAMILY_COLORS
+        if any(file["family"] == family for file in files)
     )
+    return f'<div class="df-folder">{head}{groups}</div>'
 
 
 def build_css(palette):
@@ -170,6 +195,14 @@ def build_css(palette):
 .df-head {{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }}
 .df-path {{ font-size:15px; color:{muted}; }} .df-path b {{ color:{ink}; font-weight:500; }} .df-path i {{ font-style:normal; margin:0 4px; }}
 .df-count {{ font-size:12.5px; color:{muted}; }}
+.df-group {{ display:flex; flex-direction:column; gap:7px; }}
+.df-group-head {{ display:flex; align-items:center; gap:10px; margin:6px 0 0; font-size:15px; font-weight:600; color:{ink}; }}
+.df-folder {{ padding-bottom:14px; }}
+.df-group-icon {{ display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%;
+  background:color-mix(in srgb, var(--df-color) 16%, transparent); color:var(--df-color); font-family:"Material Symbols Rounded";
+  font-size:19px; font-weight:400; line-height:1; font-feature-settings:"liga"; }}
+.df-group-path {{ font-size:12px; font-weight:400; color:{muted}; font-family:ui-monospace, Menlo, monospace; }}
+.df-group-count {{ margin-left:auto; font-size:12px; font-weight:400; color:{muted}; }}
 .df-grid {{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:12px; }}
 .df-file {{ position:relative; display:flex; flex-direction:column; gap:8px; padding:12px; border:1px solid {border};
   border-radius:14px; background:color-mix(in srgb, {card} 70%, transparent); transition:border-color .18s ease, box-shadow .18s ease; }}

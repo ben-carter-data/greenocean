@@ -10,7 +10,7 @@
 | Owner | The author |
 | Purpose | Define once the acronyms and terms used by the panel and the documents. |
 | Audience | Every reader of the panel and of the documentation. |
-| Related documents | [PRD](PRD.md) · [SAD](SAD.md) · [ADR](ADR.md) · [Test and Security Plan](PLAN_PRUEBAS.md) |
+| Related documents | [PRD](PRD.md) · [SAD](../arquitectura/SAD.md) · [ADR](../arquitectura/ADR.md) · [Test and Security Plan](../calidad/PLAN_PRUEBAS.md) |
 
 ## Contents
 

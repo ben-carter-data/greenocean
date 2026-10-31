@@ -6,10 +6,10 @@ Every screen, test and file the PRD names must exist, so the tables cannot go st
 import re
 from pathlib import Path
 
-from bi import business_analysis, dashboard, doc_views, sql_explorer
+from bi import business_analysis, dashboard, doc_views, sql_explorer, i18n
 
 ROOT = Path(__file__).resolve().parent.parent
-PRD = (ROOT / "docs" / "PRD.md").read_text(encoding="utf-8")
+PRD = i18n.document_path("PRD.md", "es").read_text(encoding="utf-8")
 REFERENCE = re.compile(r"`([^`]+)`")
 
 

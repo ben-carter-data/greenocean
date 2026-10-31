@@ -10,7 +10,7 @@
 | Owner | The author |
 | Purpose | Gather, by theme, the decisions that change the architecture, the data, the security or the operations. |
 | Audience | Architecture, management and technical review. |
-| Related documents | [Architecture Decision Records (ADR)](ADR.md) · [Software Architecture Document (SAD)](SAD.md) · [Glossary](GLOSARIO.md) |
+| Related documents | [Architecture Decision Records (ADR)](ADR.md) · [Software Architecture Document (SAD)](SAD.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 ## Contents
 

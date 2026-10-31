@@ -10,7 +10,7 @@
 | Owner | The author |
 | Purpose | State what happens automatically, what is checked and when, and what to do about each failure. |
 | Audience | Operation of the project, also without technical training. |
-| Related documents | [Software Architecture Document (SAD)](SAD.md) · [Test and Security Plan](PLAN_PRUEBAS.md) · [Glossary](GLOSARIO.md) |
+| Related documents | [Software Architecture Document (SAD)](../arquitectura/SAD.md) · [Test and Security Plan](../calidad/PLAN_PRUEBAS.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 ## Contents
 
@@ -35,11 +35,11 @@ GreenOcean almost runs itself. Every Tuesday the load runs without intervention 
 
 ## 2. What happens automatically
 
-The weekly job (`.github/workflows/semanal.yml`) runs every Tuesday at 12:00 UTC: 09:00 in Chilean summer time and 08:00 in winter time. It downloads the sources, builds and tests the database, publishes it in the «base-actual» release and creates the weekly report. The full sequence, step by step, is in the [load sequence of the SAD](SAD.md#4-the-load-of-each-week).
+The weekly job (`.github/workflows/semanal.yml`) runs every Tuesday at 12:00 UTC: 09:00 in Chilean summer time and 08:00 in winter time. It downloads the sources, builds and tests the database, publishes it in the «base-actual» release and creates the weekly report. The full sequence, step by step, is in the [load sequence of the SAD](../arquitectura/SAD.md#4-the-load-of-each-week).
 
 It can also be launched by hand: from «Operations center», with the «Run pipeline now» button (it requires the control code), or from the workflow page on GitHub.
 
-If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass)).
+If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](../arquitectura/ADR.md#adr-11--publish-only-if-the-tests-pass)).
 
 After every load, the quality workflow measures the indicators and proposes the numbered report as the pull request «Actualizar medición de calidad». On every push it only measures and fails if a code indicator is past its acceptable.
 
@@ -51,7 +51,7 @@ After every load, the quality workflow measures the indicators and proposes the 
 | Every Tuesday | That the issue «Informe semanal YYYY-MM-DD» (weekly report) exists | Issues of the repository |
 | When in doubt about the figures | The quality verdict and the audit controls | «Quality and audit» |
 | Every January | Add to `agent/input.csv` the two lines of the new year (wholesale and consumer), with the URL ODEPA publishes on the page of each dataset | `agent/input.csv` |
-| Periodically | Copy `agent/downloads` to another disk: the CSV files are not versioned ([ADR-04 · Do not commit the raw data to the repository](ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository)) and the GitHub cache is deleted if it is not used for 7 days | Another disk of the author |
+| Periodically | Copy `agent/downloads` to another disk: the CSV files are not versioned ([ADR-04 · Do not commit the raw data to the repository](../arquitectura/ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository)) and the GitHub cache is deleted if it is not used for 7 days | Another disk of the author |
 | Before it expires | Renew the panel's GitHub token; the panel warns when fewer than 14 days are left | App secrets on Streamlit |
 | After every weekly load | The pull request «Actualizar medición de calidad»: merge it or close it, delete its branch and run `git pull` | Pull requests of the repository (section 8) |
 | On entering as Author | The alert «Acción requerida»; if it starts with «Última medición del …», the report is more than 8 days old and is not today's state | The window the panel opens |
@@ -99,7 +99,7 @@ A week a source has not published yet is not a failure: the load publishes up to
 
 In «Operations center», «Author access» asks for the control code (the panel's `CONTROL_CODE` secret) and opens with Enter. With the right code, the «Run pipeline now» button, the token-expiry warning and the administration links appear (GitHub tokens, runs and the administration of the app on Streamlit). Without the secret configured, for example in a local copy, the access stays closed.
 
-The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. There is no limit of attempts for the code: it is an accepted risk, described in the [Test and Security Plan](PLAN_PRUEBAS.md#11-accepted-risks-and-limits). The panel never shows the token or any part of it.
+The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. There is no limit of attempts for the code: it is an accepted risk, described in the [Test and Security Plan](../calidad/PLAN_PRUEBAS.md#11-accepted-risks-and-limits). The panel never shows the token or any part of it.
 
 One also enters as Author from the window «Elige tu vista»: the link «Acceso del autor» (Author access), in its corner, the key and Enter (D-369). The «Vista» button, under the logo and above the menu, changes the view, as does a click on the logo (D-373); leaving Author closes its session. The panel uses three secrets, kept in Streamlit (section 8): `CONTROL_CODE`, `GITHUB_TOKEN` (starts and cancels the load) and `GITHUB_READ_TOKEN` (read only, for the page «GitHub Actions»).
 
@@ -134,11 +134,11 @@ Every diagnosed and solved failure is recorded in `docs/calidad/plan_mitigacion.
 | Maximum size of a release file | 2 GB; the served database weighs about 14 MB | GitHub documentation on releases, read on 2026-10-24 |
 | GitHub Actions cache | Deleted if it is not used for 7 days; that week the job downloads every year | GitHub Actions documentation, read on 2026-10-24 |
 | GitHub API requests without a token | 60 per hour | GitHub API documentation |
-| Cloud architecture | Not adopted while the data is public, weekly and small | [ADR-31 · Do not use a cloud data warehouse](ADR.md#adr-31--do-not-use-a-cloud-data-warehouse) and [Capacity and growth in the SAD](SAD.md#9-capacity-and-growth) |
+| Cloud architecture | Not adopted while the data is public, weekly and small | [ADR-31 · Do not use a cloud data warehouse](../arquitectura/ADR.md#adr-31--do-not-use-a-cloud-data-warehouse) and [Capacity and growth in the SAD](../arquitectura/SAD.md#9-capacity-and-growth) |
 
 ## 11. Glossary
 
-The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.md).
+The acronyms and terms of this document are defined in the [Glossary](../negocio/GLOSARIO.md).
 
 ## 12. Version history
 

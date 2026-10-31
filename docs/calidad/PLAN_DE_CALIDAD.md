@@ -10,7 +10,7 @@
 | Responsable | El autor |
 | Propósito | Decir qué calidad cuida GreenOcean, cómo la mide, quién decide y qué pasa cuando algo falla. |
 | Audiencia | Gerencia, analistas, revisión técnica y quien quiera saber por qué confiar en las cifras. |
-| Documentos relacionados | [Documento de requisitos del producto (PRD)](PRD.md) · [Documento de arquitectura de software (SAD)](SAD.md) · [Plan de pruebas y seguridad](PLAN_PRUEBAS.md) · [Manual de operación](MANUAL.md) · [Glosario](GLOSARIO.md) |
+| Documentos relacionados | [Documento de requisitos del producto (PRD)](../negocio/PRD.md) · [Documento de arquitectura de software (SAD)](../arquitectura/SAD.md) · [Plan de pruebas y seguridad](PLAN_PRUEBAS.md) · [Manual de operación](../operacion/MANUAL.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 ## Índice
 
@@ -103,7 +103,7 @@ Este plan y sus informes son una autoevaluación del autor. Ninguna entidad exte
 
 ## 13. Glosario
 
-Las siglas y los términos de este documento se definen en el [Glosario](GLOSARIO.md).
+Las siglas y los términos de este documento se definen en el [Glosario](../negocio/GLOSARIO.md).
 
 ## 14. Historial de versiones
 

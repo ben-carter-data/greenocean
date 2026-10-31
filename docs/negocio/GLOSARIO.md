@@ -10,7 +10,7 @@
 | Responsable | El autor |
 | Propósito | Definir una sola vez las siglas y los términos que usan el panel y los documentos. |
 | Audiencia | Todo lector del panel y de la documentación. |
-| Documentos relacionados | [PRD](PRD.md) · [SAD](SAD.md) · [ADR](ADR.md) · [Plan de pruebas y seguridad](PLAN_PRUEBAS.md) |
+| Documentos relacionados | [PRD](PRD.md) · [SAD](../arquitectura/SAD.md) · [ADR](../arquitectura/ADR.md) · [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md) |
 
 ## Índice
 

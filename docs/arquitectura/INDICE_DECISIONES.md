@@ -10,7 +10,7 @@
 | Responsable | El autor |
 | Propósito | Reunir, por tema, las decisiones que cambian la arquitectura, los datos, la seguridad o la operación. |
 | Audiencia | Arquitectura, gerencia y revisión técnica. |
-| Documentos relacionados | [Registros de decisiones de arquitectura (ADR)](ADR.md) · [Documento de arquitectura de software (SAD)](SAD.md) · [Glosario](GLOSARIO.md) |
+| Documentos relacionados | [Registros de decisiones de arquitectura (ADR)](ADR.md) · [Documento de arquitectura de software (SAD)](SAD.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 ## Índice
 

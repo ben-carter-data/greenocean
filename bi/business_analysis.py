@@ -16,7 +16,7 @@ STAKEHOLDER_ICONS = ["family_restroom", "restaurant", "agriculture", "newspaper"
 def read_section(document: str, number: str, language: str | None = None) -> str:
     """The text of the section numbered `number` («3.1», «6») of a document of docs/, without its heading, up to the
     next heading of the same level or above."""
-    text = (i18n.documents_dir(language) / document).read_text(encoding="utf-8")
+    text = i18n.document_path(document, language).read_text(encoding="utf-8")
     level = 3 if "." in number else 2
     start = re.search(rf"^{'#' * level} {re.escape(number)}\.? .*$", text, re.MULTILINE)
     if start is None:

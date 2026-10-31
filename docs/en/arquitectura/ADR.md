@@ -10,7 +10,7 @@
 | Owner | The author |
 | Purpose | Explain the eleven decisions that weigh most on the architecture of GreenOcean: why they were taken, which alternatives there were and what consequences they have. |
 | Audience | Architecture, engineering, management and technical review. |
-| Related documents | [Software Architecture Document (SAD)](SAD.md) · [Decision Index](INDICE_DECISIONES.md) · [Glossary](GLOSARIO.md) |
+| Related documents | [Software Architecture Document (SAD)](SAD.md) · [Decision Index](INDICE_DECISIONES.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 Each record keeps its original number, which is why the numbering is not consecutive. The minor decisions are in the [Decision Index](INDICE_DECISIONES.md) and in the full log, `docs/DECISIONES.md`. The options considered are only those recorded in that log or in the history of the repository.
 
@@ -157,7 +157,7 @@ Each decision of this document answers a concrete question: where the data comes
 
 ## Glossary
 
-The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.md).
+The acronyms and terms of this document are defined in the [Glossary](../negocio/GLOSARIO.md).
 
 ## Version history
 

@@ -10,7 +10,7 @@
 | Responsable | El autor |
 | Propósito | Explicar las once decisiones que más pesan en la arquitectura de GreenOcean: por qué se tomaron, qué alternativas había y qué consecuencias tienen. |
 | Audiencia | Arquitectura, ingeniería, gerencia y revisión técnica. |
-| Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Índice de decisiones](INDICE_DECISIONES.md) · [Glosario](GLOSARIO.md) |
+| Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Índice de decisiones](INDICE_DECISIONES.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 Cada registro conserva su número original, por eso la numeración no es correlativa. Las decisiones menores están en el [Índice de decisiones](INDICE_DECISIONES.md) y en el registro completo, `docs/DECISIONES.md`. Las opciones consideradas son solo las que constan en ese registro o en el historial del repositorio.
 
@@ -157,7 +157,7 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 
 ## Glosario
 
-Las siglas y los términos de este documento se definen en el [Glosario](GLOSARIO.md).
+Las siglas y los términos de este documento se definen en el [Glosario](../negocio/GLOSARIO.md).
 
 ## Historial de versiones
 

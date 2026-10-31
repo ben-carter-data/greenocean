@@ -69,7 +69,7 @@ PROJECT_LINKS = [
     {
         "name": "MANUAL",
         "description": "Qué pasa cada martes y qué hacer si algo falla.",
-        "url": f"{GITHUB_URL}/blob/{GITHUB_BRANCH}/docs/MANUAL.md",
+        "url": f"{GITHUB_URL}/blob/{GITHUB_BRANCH}/docs/operacion/MANUAL.md",
         "icon": "menu_book",
         "group": "Documentos",
     },
@@ -180,11 +180,11 @@ def read_guide_table(heading):
     return parse_markdown_table(read_section(read_document(PROJECT_GUIDE_FILE), heading))
 
 
-GLOSSARY_FILE = DOCS_DIR / "GLOSARIO.md"
+GLOSSARY_FILE = DOCS_DIR / "negocio" / "GLOSARIO.md"
 
 
 def read_glossary():
-    """The rows of the common glossary, docs/GLOSARIO.md (D-279)."""
+    """The rows of the common glossary, docs/negocio/GLOSARIO.md (D-279)."""
     return parse_markdown_table(read_section(read_document(GLOSSARY_FILE), "2. Términos"))
 
 

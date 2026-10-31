@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from bi import charts, doc_diagrams, doc_figures, doc_views
+from bi import charts, doc_diagrams, doc_figures, doc_views, i18n
 
 DOCS_DIR = Path(__file__).resolve().parent.parent / "docs"
 DOCUMENTS = [
@@ -22,7 +22,7 @@ MARKER = re.compile(r"^\[\[diagrama:(\w+)\]\]\s*$", re.MULTILINE)
 
 
 def read_markers():
-    return {name: MARKER.findall((DOCS_DIR / name).read_text(encoding="utf-8")) for name in DOCUMENTS}
+    return {name: MARKER.findall(i18n.document_path(name, "es").read_text(encoding="utf-8")) for name in DOCUMENTS}
 
 
 def test_every_marker_names_a_diagram_that_exists():
@@ -115,7 +115,7 @@ def test_d247_every_view_a_document_links_to_is_a_page_of_the_menu():
     from bi import dashboard
 
     for name in DOCUMENTS:
-        text = (DOCS_DIR / name).read_text(encoding="utf-8")
+        text = i18n.document_path(name, "es").read_text(encoding="utf-8")
         for label in re.findall(r"\[\[vista:([^\]]+)\]\]", text):
             assert dashboard.find_menu_page(label), (name, label)
 
@@ -124,7 +124,7 @@ def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architectu
     from bi import security_map, security_plan
 
     root = Path(__file__).resolve().parent.parent
-    text = (DOCS_DIR / "PLAN_PRUEBAS.md").read_text(encoding="utf-8")
+    text = i18n.document_path("PLAN_PRUEBAS.md", "es").read_text(encoding="utf-8")
     assert [case[0] for case in security_plan.CASES] == [f"S-{n:02d}" for n in range(1, 15)]  # S-11 to S-14 since D-364
     for case_id, short, attack, expected, owasp, tests in security_plan.CASES:
         assert owasp in security_map.OWASP or owasp == "—", case_id

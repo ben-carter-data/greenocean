@@ -55,14 +55,13 @@ def test_d377_what_we_heard_claims_two_reviews_and_nothing_more():
     assert rows[0][3] == "D-352, D-372" and rows[1][1] == "Por un usuario real, sin cambios solicitados"
     assert rows[1][2] == "—" and rows[1][3] == "—"  # no change and no decision are tied to it
     assert [row[3] for row in ba.read_feedback("en")] == [row[3] for row in rows]
-    decisions = (ROOT / "docs" / "DECISIONES.md").read_text(encoding="utf-8")
+    decisions = i18n.document_path("DECISIONES.md", "es").read_text(encoding="utf-8")
     assert "## D-352 ·" in decisions and "## D-372 ·" in decisions
 
 
 def test_d377_each_system_decision_is_one_line_of_the_sqap_with_a_page():
     for language in ("es", "en"):
-        folder = ROOT / "docs" / "en" if language == "en" else ROOT / "docs"
-        plan = ba.plain((folder / "PLAN_DE_CALIDAD.md").read_text(encoding="utf-8"))
+        plan = ba.plain(i18n.document_path("PLAN_DE_CALIDAD.md", language).read_text(encoding="utf-8"))
         lines = ba.system_decisions(language)
         assert [item["title"] for item in lines] == [title for title, *_ in ba.SYSTEM_DECISIONS]
         for item in lines:

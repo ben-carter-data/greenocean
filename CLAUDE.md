@@ -12,7 +12,7 @@ GreenOcean es un proyecto de portafolio de ingeniería de datos: un pipeline sem
 - **Pipeline:** ingesta en Python → aterrizaje `etl/raw.db` (SQLite) → bronce en Parquet → dbt Core sobre DuckDB (staging → intermedio → marts, 31 pruebas) → base servida `etl/datos.duckdb`, publicada en el release «base-actual» de GitHub, que cada carga reemplaza; git guarda solo su puntero `etl/datos.version` (D-270, ADR-35).
 - **Panel:** Streamlit (`bi/dashboard.py`), que lee `etl/datos.duckdb` en solo lectura.
 - **Orquestación:** GitHub Actions, cada martes (`.github/workflows/semanal.yml`).
-- **Documentos del proyecto:** `docs/PRD.md`, `docs/SAD.md` (con la capacidad y el diccionario de datos), `docs/ADR.md`, `docs/PLAN_PRUEBAS.md` (plan de pruebas y seguridad), `docs/MANUAL.md` (runbook), `docs/INDICE_DECISIONES.md` y `docs/GLOSARIO.md`, todos con portada, índice, resumen, al menos tres diagramas (cinco el SAD), glosario e historial de versiones (D-279, D-290). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-290); `docs/INDICE_DECISIONES.md` reúne las principales por tema. La historia del proyecto (hitos y backlog) está en `docs/archivo/`; no es documentación de lectura.
+- **Documentos del proyecto**, en cuatro carpetas de `docs/` y de `docs/en/` (D-381): `negocio/` (`PRD.md`, `GLOSARIO.md`), `arquitectura/` (`SAD.md` con la capacidad y el diccionario de datos, `ADR.md`, `INDICE_DECISIONES.md`), `calidad/` (`PLAN_DE_CALIDAD.md`, `PLAN_PRUEBAS.md` con el plan de pruebas y seguridad; la carpeta guarda también los datos del plan de calidad) y `operacion/` (`MANUAL.md`, el runbook), todos con portada, índice, resumen, al menos tres diagramas (cinco el SAD), glosario e historial de versiones (D-279, D-290). Todas las decisiones están en `docs/DECISIONES.md` (D-001 … D-381); `docs/arquitectura/INDICE_DECISIONES.md` reúne las principales por tema. La historia del proyecto (hitos y backlog) está en `docs/archivo/`; no es documentación de lectura.
 
 ## Cómo responderme
 
@@ -37,7 +37,7 @@ Estas reglas valen también para los briefings.
 | Pipeline con dbt | `pip install -r requirements-pipeline.txt` (dbt no se instala en Python 3.14: usar 3.11 o 3.12) |
 | Abrir el panel | `streamlit run bi/dashboard.py` |
 | Descargar la base de la última carga | `python bi/served_database.py` (el panel lo hace solo al arrancar) |
-| Pruebas | `python -m pytest -q` (unas 630, alrededor de un minuto) |
+| Pruebas | `python -m pytest -q` (unas 1.170, alrededor de dos minutos) |
 | Compilar el proyecto dbt | `dbt parse --project-dir dbt --profiles-dir dbt` |
 | Descargar ODEPA | `python agent/agent.py` |
 | ETL de respaldo (SQLite) | `python etl/etl.py` |
@@ -55,7 +55,7 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 | `dbt/` | Proyecto dbt: `models/staging`, `models/intermediate`, `models/marts`, `tests/`, `macros/`, `profiles.yml` |
 | `bi/` | Panel: `dashboard.py` (páginas y navegación), `queries.sql` y `queries.py` (SQL), diagramas (`architecture.py` pipeline y despliegue, `lineage.py`, `star_model.py`, `er_diagram.py`, `storage_map.py` dónde viven los datos, `database_crossings.py` cruces entre bases, `deployment.py` despliegue, `devops.py` CI/CD y orquestación, `monitoring.py` monitoreo, `security_map.py` arquitectura de seguridad, `doc_views.py` contexto, contenedores, casos de uso y procedimiento de los documentos), vistas (`home_mockup.py`, `quality_live.py`, `quality_view.py`, `github_page.py`, `git_workflow.py` el mapa del ciclo git y su registro de incidentes, D-344), `page_bar.py` (la barra de encabezado de las páginas principales, D-267), `tech_glossary.py`, `buttons.py` (el componente único de botones y enlaces, D-281), `documents_folder.py` (la carpeta «Documentos», D-282), `i18n.py` y `i18n_en.py` (español e inglés, D-283 y D-284), `app_map.py` (el mapa de la app, D-285), `zoom.py` (zoom y explicaciones al pasar el cursor), `weeks.py` (las semanas como rango de lunes a domingo, D-374), `business_analysis.py` (lee del PRD y del SQAP, en el idioma de la visita, las páginas «Interesados» y «Análisis de negocio y sistemas», D-376 y D-377) |
 | `tests/` | pytest: auditoría de cifras (`test_data_audit.py`), paridad SQLite ↔ DuckDB, IPC, linaje, diagramas, documentos y su trazabilidad (`test_prd_traceability.py`), puerta de publicación (`test_pipeline_gate.py`) y panel (AppTest). `tests/medicion/`: medición del diseño con Playwright (`medir.cjs`) y comparación de cada documento impreso con su página (`imprimir.cjs`), que corren con Playwright instalado fuera del proyecto |
-| `docs/` | PRD, SAD, ADR, DECISIONES, MANUAL, plan de evolución |
+| `docs/` | Cuatro carpetas de documentos (`negocio/`, `arquitectura/`, `calidad/`, `operacion/`, y la misma estructura en `en/`), `DECISIONES.md`, `DISENO.md` y `PROYECTO.md`; `calidad/` guarda también los datos del plan de calidad. Una ruta de documento se resuelve con `i18n.document_path`, nunca a mano |
 | `.github/workflows/` | `semanal.yml` (carga semanal), `pruebas.yml` (pytest + dbt parse en cada push) |
 
 ## Convenciones
