@@ -106,7 +106,7 @@ Los requisitos funcionales (RF) dicen qué hace el producto; los no funcionales 
 | Panel de solo lectura con su documentación | Modificación de datos por parte de los usuarios |
 | Publicación hasta la última semana completa en ambas fuentes | Rellenar una semana que una fuente aún no publica |
 
-Con la carga del 20-10-2026, la base tiene 814.610 precios semanales en 250 semanas (03-01-2022 a 12-10-2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC. Esa carga leyó 2.521.012 filas: 2.520.811 cargadas y 201 rechazadas con su motivo. Cada martes la base crece; las cifras del día están en el panel.
+Con la carga del 20-10-2026, la base tiene 814.610 precios semanales en 250 semanas (de la 3–9 ene 2022 a la 12–18 oct 2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC. Esa carga leyó 2.521.012 filas: 2.520.811 cargadas y 201 rechazadas con su motivo. Cada martes la base crece; las cifras del día están en el panel.
 
 ## 7. Pantallas
 

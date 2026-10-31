@@ -62,7 +62,7 @@ EN = {
     "Git workflow": "Git workflow",
     "Ver registro completo": "View full log",
     "Clave incorrecta.": "Incorrect key.",
-    "ODEPA aún no publica la semana del {} ({})": "ODEPA has not published the week of {} yet ({})",
+    "ODEPA aún no publica la semana {} ({})": "ODEPA has not published the week of {} yet ({})",
     "mayorista": "wholesale",
     "consumidor": "consumer",
     "Vista": "View",
@@ -115,9 +115,9 @@ EN = {
     "Esta página se llena con la próxima carga semanal.": "This page fills in with the next weekly load.",
     "Sin datos de esta fuente.": "No data from this source.",
     "todo Chile": "all of Chile",
-    "semana del {}": "week of {}",
-    "Comparada con la semana del {}.": "Compared with the week of {}.",
-    "ODEPA aún no publica la semana del {}": "ODEPA has not published the week of {} yet",
+    "{} · semana {}": "{} · week of {}",
+    "Comparada con la semana {}.": "Compared with the week of {}.",
+    "ODEPA aún no publica la semana {}": "ODEPA has not published the week of {} yet",
     "Mayorista": "Wholesale",
     "Consumidor": "Consumer",
     "Producto, ej.: lechuga": "Product, e.g. lettuce",
@@ -441,6 +441,11 @@ def tr(text):
     return EN.get(text, text) if is_english() else text
 
 
+def tr_week(week_start, year=False):
+    """D-374: a week as its range in the language of the visit: «19–25 oct» or «Oct 19–25»."""
+    return weeks.week_range(week_start, year, english=is_english())
+
+
 def documents_dir(language=None):
     """docs/ for Spanish, docs/en/ for English: the same files, in each language."""
     return DOCS_DIR / "en" if (language or get_language()) == ENGLISH else DOCS_DIR
@@ -458,7 +463,7 @@ def document_field(name, language=None):
 import html as _html  # noqa: E402
 import re as _re  # noqa: E402
 
-from bi import i18n_en  # noqa: E402
+from bi import i18n_en, weeks  # noqa: E402
 
 PAGES = i18n_en.PAGES
 NUMBER = _re.compile(r"[−+-]?\d[\d.,]*\d|[−+-]?\d")
@@ -489,12 +494,7 @@ def localize_figures(text):
     return NUMBER.sub(lambda match: localize_number(match.group(0)), text)
 
 
-MONTHS = dict(
-    zip(
-        ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
-        ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    )
-)
+MONTHS = dict(zip(weeks.MONTHS, weeks.MONTHS_EN))
 MONTH = "(" + "|".join(MONTHS) + ")"
 FULL_MONTHS = dict(
     zip(
@@ -532,7 +532,9 @@ FULL_MONTHS = dict(
 
 def localize_date(text):
     """A Spanish date written the English way, or None: 05-10-2026 → 2026-10-05, 12–18 oct 2026 → Oct 12–18, 2026,
-    20 oct → Oct 20, 05-10 → Oct 5."""
+    26 oct – 1 nov → Oct 26 – Nov 1 (D-374), 20 oct → Oct 20, 05-10 → Oct 5."""
+    if match := _re.fullmatch(rf"(\d{{1,2}}) {MONTH} – (\d{{1,2}}) {MONTH}( \d{{4}})?", text):
+        return f"{MONTHS[match[2]]} {match[1]} – {MONTHS[match[4]]} {match[3]}" + (f",{match[5]}" if match[5] else "")
     if match := _re.fullmatch(r"(\d{2})-(\d{2})-(\d{4})", text):
         return f"{match[3]}-{match[2]}-{match[1]}"
     if match := _re.fullmatch(rf"(\d{{1,2}})[–-](\d{{1,2}}) {MONTH} (\d{{4}})", text):
@@ -561,7 +563,8 @@ PLACEHOLDERS = {
     "{}": r"(.+?)",
     "{n}": r"([−+-]?\d[\d.,]*(?: ?%)?)",
     "{m}": r"((?:" + "|".join(FULL_MONTHS) + r") \d{4})",
-    "{d}": r"(\d{1,2}[-–]\d{1,2}(?:[-–]\d{2,4})?|\d{1,2}(?:[–-]\d{1,2})? (?:" + "|".join(MONTHS) + r")(?: \d{4})?)",
+    "{d}": r"(\d{1,2} (?:" + "|".join(MONTHS) + r") – \d{1,2} (?:" + "|".join(MONTHS) + r")(?: \d{4})?"
+    r"|\d{1,2}[-–]\d{1,2}(?:[-–]\d{2,4})?|\d{1,2}(?:[–-]\d{1,2})? (?:" + "|".join(MONTHS) + r")(?: \d{4})?)",
 }
 PLACEHOLDER = _re.compile(r"\{[nmd]?\}")
 

@@ -288,7 +288,7 @@ The last two weeks of each source, without the cut of D-356: only the page «Úl
 | `failures` | INTEGER | | Rows that do not meet the test |
 | `generated_at` | VARCHAR | | Date of the `dbt build` |
 
-**Weeks that wait.** When one source has already published a week and the other has not, that week does not enter the database: it waits for the other source, with nothing filled in. The line of `etl_run` of that load says so (`SOURCE_LATE: wholesale 2026-10-19`) and the Price overview shows «ODEPA has not published the week of 19-10 yet (wholesale)» (D-356).
+**Weeks that wait.** When one source has already published a week and the other has not, that week does not enter the database: it waits for the other source, with nothing filled in. The line of `etl_run` of that load says so (`SOURCE_LATE: wholesale 2026-10-19`) and the Price overview shows «ODEPA has not published the week of Oct 19–25 yet (wholesale)» (D-356, D-374).
 
 ## 7. Deployment
 

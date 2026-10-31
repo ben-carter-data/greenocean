@@ -195,13 +195,17 @@ def test_regional_map_keeps_the_surface_minimal_and_exact_counts_in_the_hint():
         }
     ]
     markup = home_mockup.regional_map(
-        rows, lambda region: '/dashboard?_home_region=' + str(region), '05-10-2026', '28-09-2026', 'Región de Coquimbo'
+        rows,
+        lambda region: '/dashboard?_home_region=' + str(region),
+        '5–11 oct',
+        '28 sep – 4 oct',
+        'Región de Coquimbo',
     )
     assert markup.count('mock-region-shape ') == 16
     assert markup.count('<a class="mock-region-row ') == 16
     assert '62 % ↓' in markup
     assert '91 bajaron · 42 subieron · 13 sin cambio · 146 comparados' in markup
-    assert 'Semana 28-09-2026 → 05-10-2026' in markup
+    assert 'Semana 28 sep – 4 oct → 5–11 oct' in markup
     assert '_home_region=Región de Arica y Parinacota' in markup
     # A second click on the selected region returns to the whole country.
     assert '<a class="mock-region-row fall selected" href="/dashboard?_home_region=None"' in markup
@@ -227,7 +231,7 @@ def _cross(a, b, c, d):
 
 
 def test_d092_each_line_starts_inside_its_region_and_no_two_lines_cross():
-    markup = home_mockup.regional_map([], lambda region: '#' + str(region), '05-10-2026', '28-09-2026')
+    markup = home_mockup.regional_map([], lambda region: '#' + str(region), '5–11 oct', '28 sep – 4 oct')
     shapes = dict(
         re.findall(
             r'<a href="#([^"]+)" target="_self" aria-label="[^"]*"><path class="mock-region-shape '
@@ -360,7 +364,7 @@ def test_d304_the_regions_column_says_which_regions_on_hover():
         'product_group': 'Carne bovina',
         '_regions': (2, 1, [('Maule', 12.0), ('Ñuble', 4.0), ('Biobío', -3.0)]),
     }
-    page = home_mockup.products_table([row], '12-10-2026', '05-10-2026', selected='Región del Maule')
+    page = home_mockup.products_table([row], '12–18 oct', '5–11 oct', selected='Región del Maule')
     assert '<b class="rise">2 ↑</b> / <b class="fall">1 ↓</b>' in page
     assert (
         page.count('<li class="') == 3 and '<li class="rise chosen"><span>Maule</span>' in page
@@ -392,10 +396,10 @@ ZAPALLO = {
 
 
 def test_d327_the_row_shows_the_prices_of_the_regions_it_compares_and_opens_its_calculation():
-    page = home_mockup.products_table([dict(ZAPALLO)], '12-10-2026', '05-10-2026', published=9)
+    page = home_mockup.products_table([dict(ZAPALLO)], '12–18 oct', '5–11 oct', published=9)
     # The two prices and the change rest on the same regions, so dividing them gives the change shown.
     assert '$1.247' in page and '$1.812' in page and '$1.199' not in page and '+45,3 %' in page
-    assert 'Precio medio<br>05-10' in page and 'Precio medio<br>12-10' in page
+    assert 'Precio medio<br>5–11 oct' in page and 'Precio medio<br>12–18 oct' in page  # D-374: ranges
     assert 'title="Promedio de las regiones con precio publicado en las dos semanas"' in page
     assert '<summary>Ver cálculo · 2 de 9 regiones</summary>' in page and 'regiones comunes' not in page
     assert (
@@ -403,15 +407,15 @@ def test_d327_the_row_shows_the_prices_of_the_regions_it_compares_and_opens_its_
         in page
     )
     assert 'Promedio de 2 regiones' in page
-    assert '<li><span>Arica y Parinacota</span><em>sin precio publicado el 12-10</em></li>' in page
+    assert '<li><span>Arica y Parinacota</span><em>sin precio publicado la semana 12–18 oct</em></li>' in page
     assert '<li><span>Los Lagos</span><em>sin precio publicado en las dos semanas</em></li>' in page
     # One region reads in the singular; a row without the calculation (a region chosen on the map) has no link.
     alone = dict(ZAPALLO, _same_regions=1, _calc={'used': [('Maule', 1200.0, 1888.89)], 'out': []})
-    page = home_mockup.products_table([alone], '12-10-2026', '05-10-2026')
+    page = home_mockup.products_table([alone], '12–18 oct', '5–11 oct')
     assert '<summary>Ver cálculo · 1 región</summary>' in page and 'Promedio de 1 región' in page
     assert 'Todas las regiones publicaron este producto las dos semanas.' in page
     plain = {key: value for key, value in ZAPALLO.items() if key not in ('_calc', '_same_before', '_same_now')}
-    page = home_mockup.products_table([plain], '12-10-2026', '05-10-2026')
+    page = home_mockup.products_table([plain], '12–18 oct', '5–11 oct')
     assert '<details' not in page and '$1.199' in page  # without the like-for-like prices, the national ones
 
 
@@ -444,7 +448,7 @@ def test_d329_the_families_and_the_map_say_what_they_are_calculated_from():
     assert home_mockup.movement_note({'available': 0, 'missing': 0}) == ''
     row = {'region': 'Región de Arica y Parinacota', 'state': 'fall', 'share': 59.0, 'up': 10, 'down': 20, 'stable': 4}
     page = home_mockup.regional_map(
-        [dict(row, total=34, missing=5, dropped=92)], lambda region: '#', '12-10-2026', '05-10-2026'
+        [dict(row, total=34, missing=5, dropped=92)], lambda region: '#', '12–18 oct', '5–11 oct'
     )
     assert '97 productos sin precio publicado en una de las dos semanas: fuera del cálculo' in page
     page = home_mockup.regional_map([dict(row, total=34, missing=0, dropped=0)], lambda region: '#', '12-10', '05-10')

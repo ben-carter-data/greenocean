@@ -8,8 +8,6 @@ is drawn. The dashboard only draws what these functions return.
 import re
 from pathlib import Path
 
-import pandas as pd
-
 from bi import queries
 from etl import etl
 
@@ -275,11 +273,6 @@ def select_example_rows(rows, region=EXAMPLE_REGION, channel=EXAMPLE_CHANNEL):
         if column in rows.columns and value is not None:
             rows = rows[rows[column] == value]
     return rows
-
-
-def format_week(week_start):
-    """'05-10-2026'."""
-    return f"{pd.Timestamp(week_start):%d-%m-%Y}"
 
 
 # endregion

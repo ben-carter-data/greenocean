@@ -11,7 +11,7 @@ from typing import Any
 import altair as alt
 import pandas as pd
 
-from bi import i18n
+from bi import i18n, weeks
 
 # region Constants
 # The four visible themes, Corporativo first: it is the default (D-071). Claro remains an
@@ -181,7 +181,7 @@ STATUS_TEXT_ON_LIGHT = {
     "running": "#1d4ed8",
     "unknown": "#57534e",
 }
-MONTH_NAMES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+MONTH_NAMES = weeks.MONTHS
 CHART_FONT = "-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
 CHART_HEIGHT = 300
 BAR_HEIGHT = 28

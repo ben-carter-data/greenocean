@@ -12,7 +12,7 @@ from __future__ import annotations
 import html
 from typing import Any
 
-from bi import charts, i18n, quality_metrics
+from bi import charts, i18n, quality_metrics, weeks
 
 # The five counts that are almost always zero share one line when they all meet their acceptable (D-332).
 COUNTS = {
@@ -205,7 +205,10 @@ def build_report_detail(report: dict[str, Any], every: list[dict[str, Any]] | No
     before = within_of.get(report["anterior"]) if report["anterior"] else None
     change = "—" if before is None else (f"+{within - before}" if within > before else str(within - before))
     rows = (
-        (t("Semana de datos", "Data week"), html.escape(str(report["semana"] or "—"))),
+        (
+            t("Semana de datos", "Data week"),
+            html.escape(i18n.tr_week(report["semana"], True) if report["semana"] else "—"),
+        ),
         (t("Código evaluado", "Evaluated code"), f"<code>{html.escape(str(report['codigo_evaluado']))}</code>"),
         (t("No conformidades", "Non-conformities"), str(nonconforming)),
         (t("Variación", "Change"), html.escape(change)),
@@ -217,11 +220,13 @@ def build_report_detail(report: dict[str, Any], every: list[dict[str, Any]] | No
 def build_report_view(report: dict[str, Any], policy: dict[str, Any]) -> str:
     """One report, as the dialog shows it: its identity and every indicator with its reading."""
     within, nonconforming, measured = quality_metrics.report_counts(report)
-    week = report["semana"] or "—"
+    week = report["semana"]  # D-374: the data week as its range
     identity = t(
-        f"{report['fecha']} · semana de datos {week} · código {report['codigo_evaluado']} · "
+        f"{report['fecha']} · semana de datos {weeks.week_range(week, True) if week else '—'} · "
+        f"código {report['codigo_evaluado']} · "
         f"{within} de {measured} dentro de lo aceptable · {nonconforming} no conformidades",
-        f"{report['fecha']} · data week {week} · code {report['codigo_evaluado']} · "
+        f"{report['fecha']} · data week {weeks.week_range(week, True, True) if week else '—'} · "
+        f"code {report['codigo_evaluado']} · "
         f"{within} of {measured} within the acceptable · {nonconforming} non-conformities",
     )
     rows = "".join(

@@ -16,7 +16,7 @@ rows leave at the second, and every gate flows into the verdict. All are pure en
 import html
 from datetime import date, datetime, timezone
 
-from bi import charts, queries, quality, quality_view
+from bi import charts, queries, quality, quality_view, weeks
 
 # The project's thresholds, shown next to each figure so a verdict can be disputed.
 LAST_WEEK_MIN_SHARE = 0.75  # rows of the latest week vs the median of the 8 before
@@ -150,7 +150,8 @@ def build_indicators(measures, now=None):
                 thousands(latest),
                 f"{percent(ratio, 0)} de lo típico ({thousands(round(typical))}); mínimo {percent(LAST_WEEK_MIN_SHARE, 0)}",
                 "ok" if ratio >= LAST_WEEK_MIN_SHARE else "warn",
-                f"Filas de weekly_price de la semana {per_week[0][0]} frente a la mediana de las {len(per_week) - 1} "
+                f"Filas de weekly_price de la semana {weeks.week_range(per_week[0][0], year=True)} frente a la mediana "
+                f"de las {len(per_week) - 1} "
                 "semanas anteriores. Una caída fuerte suele ser una descarga incompleta.",
             )
         )
@@ -260,7 +261,7 @@ def build_indicators(measures, now=None):
             "actualidad",
             "Días desde la última semana",
             f"{behind}",
-            f"semana {measures['last']}; máximo {DATA_MAX_DAYS}",
+            f"semana {weeks.week_range(measures['last'], year=True)}; máximo {DATA_MAX_DAYS}",
             "ok" if behind <= DATA_MAX_DAYS else "warn",
             "Días entre el lunes de la última semana con precios y hoy.",
         )

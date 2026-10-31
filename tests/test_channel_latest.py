@@ -91,8 +91,8 @@ def test_d365_the_page_draws_both_blocks_for_every_view_and_the_overview_links_t
     page = AppTest.from_string(script, default_timeout=90).run()
     assert not page.exception
     text = " ".join(block.value for block in page.markdown) + " ".join(caption.value for caption in page.caption)
-    assert "Mayorista · semana del 12-10" in text and "Consumidor · semana del 19-10" in text
-    assert text.count("ODEPA aún no publica la semana del 19-10") == 1  # only the wholesale block is behind
+    assert "Mayorista · semana 12–18 oct" in text and "Consumidor · semana 19–25 oct" in text  # D-374
+    assert text.count("ODEPA aún no publica la semana 19–25 oct") == 1  # only the wholesale block is behind
     assert text.count('class="mock-products-table"') == 2 and "Toda la canasta" not in text
     assert [box.key for box in page.text_input] == ["latest_search_wholesale", "latest_search_consumer"]
 

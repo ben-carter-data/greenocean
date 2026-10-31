@@ -288,7 +288,7 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356: la lee solo la p
 | `failures` | INTEGER | | Filas que no cumplen la prueba |
 | `generated_at` | VARCHAR | | Fecha del `dbt build` |
 
-**Semanas que esperan.** Cuando una fuente ya publicó una semana y la otra no, esa semana no entra a la base: espera a la otra fuente, sin rellenar nada. La línea de `etl_run` de esa carga lo dice (`SOURCE_LATE: wholesale 2026-10-19`) y el Panorama muestra «ODEPA aún no publica la semana del 19-10 (mayorista)» (D-356).
+**Semanas que esperan.** Cuando una fuente ya publicó una semana y la otra no, esa semana no entra a la base: espera a la otra fuente, sin rellenar nada. La línea de `etl_run` de esa carga lo dice (`SOURCE_LATE: wholesale 2026-10-19`) y el Panorama muestra «ODEPA aún no publica la semana 19–25 oct (mayorista)» (D-356, D-374).
 
 ## 7. Despliegue
 

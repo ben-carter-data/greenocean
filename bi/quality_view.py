@@ -18,8 +18,8 @@ build_evidence(); build_overview_html() only draws it. The evidence dict:
     files_total     int      files checked (same as manifest_files)
     files_failed    int      local files whose SHA-256 differs
     weeks           int      distinct weeks in weekly_price
-    first_week      str      first week, "dd-mm-yyyy"
-    last_week       str      last week, "dd-mm-yyyy"
+    first_week      str      first week as its range, "3–9 ene 2022" (D-374)
+    last_week       str      last week as its range, "12–18 oct 2026"
     build           dict|None  last dbt build: models, tests, passing (int), ok (bool),
                                built_at (str "dd-mm-yyyy"); None before a build
     checks          dict     integrity_ok (bool), foreign_keys, duplicates, invalid (int)
@@ -36,7 +36,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from bi import charts  # noqa: E402
+from bi import charts, weeks  # noqa: E402
 from etl import etl  # noqa: E402
 
 EXPANDER_KEY = "qa_evidence"
@@ -69,7 +69,7 @@ RESULT_CARDS = [
         "Concordancia cálculo → pantalla",
         "Verificado · muestra",
         "Familias, ranking y margen coinciden.",
-        "Las cifras de familias, ranking y margen de la semana del 05-10-2026 se recalcularon a mano "
+        "Las cifras de familias, ranking y margen de la semana 5–11 oct 2026 se recalcularon a mano "
         "por región y coinciden con lo que muestra el panel (D-144, D-146).",
     ),
     (
@@ -84,10 +84,12 @@ RESULT_CARDS = [
 
 # region Evidence
 def format_week(value):
-    """'2022-01-03' (or a date) -> '03-01-2022'."""
+    """'2022-01-03' (or a date) -> '3–9 ene 2022' (D-374); any other text as it is."""
     text = str(value)[:10]
-    parts = text.split("-")
-    return f"{parts[2]}-{parts[1]}-{parts[0]}" if len(parts) == 3 and len(parts[0]) == 4 else text
+    try:
+        return weeks.week_range(text, year=True)
+    except ValueError:
+        return text
 
 
 def build_evidence(checks, files, manifest, run, build, parity, format_time, rejections=None):

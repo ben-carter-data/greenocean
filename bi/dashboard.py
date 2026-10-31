@@ -53,6 +53,7 @@ from bi import (
     documents_folder,
     i18n,
     home_mockup,
+    weeks,
     lag,  # noqa: E402
     database_crossings,
     deployment,
@@ -2957,13 +2958,14 @@ def read_kpi_observation(database_version, identifier):
             scope += " · " + str(row["region"])
         result = [
             ("Serie de referencia", scope),
-            ("Periodo del resultado", "Semana del " + project.format_week(row["week_start"])),
+            ("Periodo del resultado", "Semana " + weeks.week_range(row["week_start"], year=True)),
         ]
         if identifier == "K5":
             best = lag.find_lag(lag.correlate_by_lag(rows)) if lag.has_enough_weeks(rows) else None
             result[1] = (
                 "Periodo del resultado",
-                f"{project.format_week(rows['week_start'].min())} a {project.format_week(rows['week_start'].max())}",
+                f"{weeks.week_range(rows['week_start'].min(), year=True)} → "
+                f"{weeks.week_range(rows['week_start'].max(), year=True)}",
             )
             value = (
                 "Sin historia suficiente"
@@ -3009,7 +3011,7 @@ def read_kpi_observation(database_version, identifier):
         counts = [len(rows[rows["week_start"] == date]) for date in (week, week - pd.Timedelta(days=7))]
         return [
             ("Resultado observado", f"{counts[0]} alertas"),
-            ("Periodo del resultado", "Semana del " + project.format_week(week)),
+            ("Periodo del resultado", "Semana " + weeks.week_range(week, year=True)),
             ("Comparación", f"{counts[1]} alertas en la semana anterior; diferencia: {counts[0] - counts[1]:+d}."),
             (
                 "Alcance",
@@ -3470,13 +3472,8 @@ def keep_product(rows, product):
 
 
 def describe_week_span(week):
-    """«05–11 oct 2026»: the Monday and the Sunday of the analyzed week."""
-    start = pd.Timestamp(week)
-    end = start + pd.Timedelta(days=6)
-    months = charts.MONTH_NAMES
-    if start.month == end.month:
-        return f"{start:%d}–{end:%d} {months[end.month - 1]} {end.year}"
-    return f"{start:%d} {months[start.month - 1]} – {end:%d} {months[end.month - 1]} {end.year}"
+    """«5–11 oct 2026»: the Monday and the Sunday of the analyzed week (D-374)."""
+    return weeks.week_range(week, year=True)
 
 
 def build_movement_proportions(rows):
@@ -3786,8 +3783,8 @@ def read_home_model(week, group, region, count, order='Mayores cambios', product
         coverage_changed=int(variations['_coverage_changed'].sum()),
         single_quote=int(thin.sum()),
         family_coverage=summarize_family_coverage(variations),
-        week_label=f'{week_date:%d-%m-%Y}',
-        previous_label=f'{pd.Timestamp(previous_week):%d-%m-%Y}',
+        week_label=weeks.week_range(week_date),  # D-374: «12–18 oct», never the Monday alone
+        previous_label=weeks.week_range(previous_week),
     )
 
 
@@ -4152,16 +4149,18 @@ LATE_SOURCE_NAMES = {etl.SOURCE_WHOLESALE: "mayorista", etl.SOURCE_CONSUMER: "co
 
 
 def describe_late_sources(message):
-    """D-356: «ODEPA aún no publica la semana del 19-10 (mayorista)», from the notice the load left in its run."""
+    """D-356: «ODEPA aún no publica la semana 19–25 oct (mayorista)», from the notice the load left in its run; the week
+    as its range (D-374)."""
     if not message or not str(message).startswith(etl.NOTICE_SOURCE_LATE):
         return ""
     parts = []
     for item in str(message).split(":", 1)[1].split(","):
         source, _, week = item.strip().partition(" ")
         if week:
-            day = f"{week[8:10]}-{week[5:7]}"
             parts.append(
-                tr("ODEPA aún no publica la semana del {} ({})").format(day, tr(LATE_SOURCE_NAMES.get(source, source)))
+                tr("ODEPA aún no publica la semana {} ({})").format(
+                    i18n.tr_week(week), tr(LATE_SOURCE_NAMES.get(source, source))
+                )
             )
     return " · ".join(parts)
 
@@ -4236,6 +4235,7 @@ def show_market_overview(mode, prefix):
                 None if region == ALL_VALUES else region,
                 compared=sum(model['counts']),
                 available=model['available'],
+                next_label=weeks.week_range(weeks.next_week(week)),  # D-374
             ),
             unsafe_allow_html=True,
             width="stretch",
@@ -5032,15 +5032,13 @@ def show_channels_page(mode):
             if week is None:
                 st.caption(tr("Sin datos de esta fuente."))
                 continue
-            day = lambda value: f"{value[8:10]}-{value[5:7]}-{value[:4]}"  # noqa: E731
-            st.markdown(
-                f"#### {tr(name)} · {tr('semana del {}').format(day(week)[:5])}",
-            )
+            # D-374: each week as its range, «12–18 oct», in the reader's language.
+            st.markdown(f"#### {tr('{} · semana {}').format(tr(name), i18n.tr_week(week))}")
             if before:
-                st.caption(tr("Comparada con la semana del {}.").format(day(before)[:5]))
+                st.caption(tr("Comparada con la semana {}.").format(i18n.tr_week(before)))
             late = channel_latest.late_week(frame, source)
             if late:
-                st.caption(tr("ODEPA aún no publica la semana del {}").format(day(late)[:5]))
+                st.caption(tr("ODEPA aún no publica la semana {}").format(i18n.tr_week(late)))
             st.markdown(
                 '<div class="greenocean-mockup">'
                 + home_mockup.family_movement(rows, lambda family: "#", None, tr("todo Chile"))
@@ -5057,7 +5055,9 @@ def show_channels_page(mode):
             shown = [row for row in rows if channel_latest.matches(row, query)] if query.strip() else rows
             st.markdown(
                 '<div class="greenocean-mockup">'
-                + home_mockup.products_table(shown, day(week), day(before) if before else day(week), query.strip())
+                + home_mockup.products_table(
+                    shown, weeks.week_range(week), weeks.week_range(before or week), query.strip()
+                )
                 + "</div>",
                 unsafe_allow_html=True,
             )
@@ -5730,7 +5730,7 @@ def build_operation_facts(latest_load, published, now):
         )
         + build_operation_fact(
             "Datos publicados",
-            f"Semana del {last_week:%d-%m-%Y}",
+            f"Semana {weeks.week_range(last_week, year=True)}",
             f"{charts.format_thousands(published['prices'])} precios · "
             f"{charts.format_thousands(published['weeks'])} semanas",
         )
@@ -5922,7 +5922,7 @@ def build_journey_figures(manifest, pipeline_run, latest_load):
         "rows_read": f"{charts.format_thousands(latest_load['rows_read'])} filas leídas",
         "rows_rejected": f"{charts.format_thousands(latest_load['rows_rejected'])} filas",
         "weekly_prices": f"{charts.format_thousands(weekly_prices)} precios",
-        "latest_week": f"hasta {latest_week:%d-%m-%Y}",
+        "latest_week": f"hasta {weeks.week_range(latest_week, year=True)}",
         "panel_time": f"datos al {loaded_at:%d-%m %H:%M}",
         "next_run": f"{to_chile_time(next_run):%d-%m %H:%M}",
     }
@@ -5952,7 +5952,7 @@ def build_devops_figures(figures):
         figures,
         database_size=project.describe_file_size(queries.DATABASE_FILE),
         test_functions=f"{project.count_test_functions()} funciones de prueba",
-        week_prices=(f"semana {latest_week:%d-%m}: {charts.format_thousands(week_prices)} precios"),
+        week_prices=(f"semana {weeks.week_range(latest_week)}: {charts.format_thousands(week_prices)} precios"),
     )
 
 
@@ -6111,7 +6111,7 @@ def build_rejected_rows_table(rejected_rows):
 def format_outliers(outliers):
     """The outliers with readable columns in Spanish."""
     outliers = outliers.drop(columns="key_label").copy()
-    outliers["week_start"] = outliers["week_start"].dt.strftime("%d-%m-%Y")
+    outliers["week_start"] = [weeks.week_range(value, year=True) for value in outliers["week_start"]]  # D-374
     outliers["source"] = outliers["source"].map(SOURCE_NAMES)
     outliers.columns = [
         "Semana",
@@ -6347,8 +6347,8 @@ def show_quality_evidence_dialog(key, mode, context):
     elif key == "calendar":
         checks = context["checks"]
         st.markdown(
-            f"**{checks['weeks']} semanas**, del {quality_view.format_week(checks['first'])} "
-            f"al {quality_view.format_week(checks['last'])}."
+            f"**{checks['weeks']} semanas**: {quality_view.format_week(checks['first'])} → "
+            f"{quality_view.format_week(checks['last'])}."
         )
         missing = queries.run_sql(quality_evidence.MISSING_WEEKS_SQL)
         if missing.empty:
@@ -6731,7 +6731,8 @@ def filter_reports(reports, year, month, week, query):
             continue
         if week != ALL_VALUES and str(report["semana"]) != week:
             continue
-        haystack = f"{report['numero']} {date} {report['codigo_evaluado']} {report['semana']}".lower()
+        week_text = weeks.week_range(report["semana"], year=True) if report["semana"] else ""
+        haystack = f"{report['numero']} {date} {report['codigo_evaluado']} {report['semana']} {week_text}".lower()
         if number is not None and report["numero"] != number:
             continue
         if number is None and query and query not in haystack:
@@ -6810,11 +6811,16 @@ def show_method_page(mode):
     with history:
         years = [ALL_VALUES] + sorted({str(item["fecha"])[:4] for item in reports}, reverse=True)
         months = [ALL_VALUES] + sorted({str(item["fecha"])[5:7] for item in reports}, reverse=True)
-        weeks = [ALL_VALUES] + sorted({str(item["semana"]) for item in reports if item["semana"]}, reverse=True)
+        data_weeks = [ALL_VALUES] + sorted({str(item["semana"]) for item in reports if item["semana"]}, reverse=True)
         with st.container(horizontal=True, vertical_alignment="bottom", key="quality_filters"):
             year = st.selectbox(tr("Año"), years, key="quality_year", format_func=lambda value: tr(value))
             month = st.selectbox(tr("Mes"), months, key="quality_month", format_func=lambda value: tr(value))
-            week = st.selectbox(tr("Semana de datos"), weeks, key="quality_week", format_func=lambda value: tr(value))
+            week = st.selectbox(
+                tr("Semana de datos"),
+                data_weeks,
+                key="quality_week",
+                format_func=lambda value: tr(value) if value == ALL_VALUES else i18n.tr_week(value, year=True),
+            )
             query = st.text_input(
                 tr("Buscar"),
                 key="quality_search",

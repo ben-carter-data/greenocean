@@ -23,6 +23,7 @@ from pathlib import Path
 import pandas as pd
 
 from bi import charts, home_mockup, i18n, inflation_view
+from bi.weeks import week_range
 
 # A change smaller than this, as a fraction, reads «sin cambio», as in the Resumen.
 STILL = 0.0005
@@ -103,11 +104,7 @@ def family_heat(variations: pd.DataFrame, weeks: int = HEAT_WEEKS) -> pd.DataFra
     valid = comparable(variations[variations["week_start"].isin(last)])
     frame = valid.groupby(["product_group", "week_start"])["variation"].median().mul(100).rename("change").reset_index()
     frame["family"] = frame["product_group"].map(home_mockup.short_family)
-    months = charts.CHILE_LOCALE["time"]["shortMonths"]
-    many = len(last) > 8
-    frame["week"] = [
-        f"{w.day}/{w.month}" if many else f"{w.day:02d} {months[w.month - 1].lower()}" for w in frame["week_start"]
-    ]
+    frame["week"] = [week_range(w) for w in frame["week_start"]]  # D-374: the range, never the Monday alone
     return frame
 
 

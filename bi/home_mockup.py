@@ -563,10 +563,11 @@ def change_state(value):
 QUESTION = '¿Qué familias de alimentos subieron y bajaron?'
 
 
-def dashboard_bar(path, week_label, family_rows, regional_rows, region, compared=None, available=None):
+def dashboard_bar(path, week_label, family_rows, regional_rows, region, compared=None, available=None, next_label=None):
     """The Resumen's only header (D-264): one thin bar with the path, the question and the week's figures as chips.
     Every figure comes from the same weekly model the charts below use; each chip says in full what it counts on hover.
-    The «Volver» and price-alert buttons and the time of the load are Streamlit elements beside it."""
+    The «Volver» and price-alert buttons and the time of the load are Streamlit elements beside it. D-374: under the
+    week's range, a quiet line with the next week, worked out from the week shown."""
     place = short_region(region) if region else 'Todo Chile'
     section, _, page = path.rpartition(' › ')
     chips = [
@@ -584,7 +585,17 @@ def dashboard_bar(path, week_label, family_rows, regional_rows, region, compared
         )
         # The page's heading stays for readers of screens and for the tests, but it takes no room in the bar (D-316).
         + f'<span class="home-bar-title" role="heading" aria-level="1" title="{esc(question)}">{esc(QUESTION)}</span>'
-        + ''.join(f'<span class="home-chip" title="{esc(note)}">{value}</span>' for note, value in chips)
+        + ''.join(
+            f'<span class="home-week"><span class="home-chip" title="{esc(note)}">{value}</span>'
+            + (
+                f'<span class="home-next-week" title="La semana que sigue a la mostrada.">'
+                f'Próxima semana: {esc(next_label)}</span>'
+                if next_label and index == 0
+                else ''
+            )
+            + '</span>'
+            for index, (note, value) in enumerate(chips)
+        )
         + '</div>'
     )
 
@@ -699,7 +710,7 @@ def calculation_detail(row, week_label, previous_label, published):
     if not calc or not calc['used']:
         return ''
     used, out = calc['used'], calc['out']
-    this_week, before = week_label[:5], previous_label[:5]
+    this_week, before = week_label, previous_label  # D-374: each week as its range
 
     def line(name, then, now, change, css=''):
         return (
@@ -717,8 +728,8 @@ def calculation_detail(row, week_label, previous_label, published):
         ' class="mock-calc-average"',
     )
     reasons = {
-        'now': f'sin precio publicado el {this_week}',
-        'before': f'sin precio publicado el {before}',
+        'now': f'sin precio publicado la semana {this_week}',
+        'before': f'sin precio publicado la semana {before}',
         'both': 'sin precio publicado en las dos semanas',
     }
     left = (
@@ -731,7 +742,7 @@ def calculation_detail(row, week_label, previous_label, published):
     label = f'Ver cálculo · {len(used)} de {published} regiones' if published else f'Ver cálculo · {len(used)} {plural}'
     return (
         f'<details class="mock-calc"><summary>{label}</summary><div class="mock-calc-body">'
-        f'<p class="mock-calc-head">Precio del {esc(before)} → precio del {esc(this_week)}, por región</p>'
+        f'<p class="mock-calc-head">Precio de la semana {esc(before)} → semana {esc(this_week)}, por región</p>'
         f'<ul>{body}</ul>{left}</div></details>'
     )
 
@@ -788,8 +799,8 @@ def products_table(rows, week_label, previous_label, query='', selected=None, pu
     return (
         '<div class="mock-products-table" role="region" tabindex="0" aria-label="Productos de la familia"><table><thead><tr>'
         f'<th>Producto</th><th>Canal</th>'
-        f'<th class="num mock-two-lines" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio<br>{esc(previous_label[:5])}</th>'
-        f'<th class="num mock-two-lines" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio<br>{esc(week_label[:5])}</th><th class="num">Variación</th>'
+        f'<th class="num mock-two-lines" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio<br>{esc(previous_label)}</th>'
+        f'<th class="num mock-two-lines" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio<br>{esc(week_label)}</th><th class="num">Variación</th>'
         '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; haz clic en el conteo para ver cuáles">Regiones ↑ / ↓ · clic</th></tr></thead>'
         '<tbody>' + ''.join(body) + '</tbody></table></div>'
     )

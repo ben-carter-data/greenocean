@@ -16,8 +16,8 @@ EVIDENCE = dict(
     files_total=10,
     files_failed=0,
     weeks=249,
-    first_week="03-01-2022",
-    last_week="05-10-2026",
+    first_week="3–9 ene 2022",
+    last_week="5–11 oct 2026",
     build=dict(models=16, tests=31, passing=31, ok=True, built_at="19-10-2026"),
     checks=dict(integrity_ok=True, foreign_keys=0, duplicates=0, invalid=0),
     parity=dict(rows=811578, rejections=201, backup_rows=811578, backup_rejections=201, ok=True),
@@ -40,7 +40,7 @@ def test_build_evidence_from_the_page_objects():
         checks, files, {"a": {}}, run, build, parity, lambda value: "13-10-2026 15:35"
     )
     assert evidence["files_matching"] == 9 and evidence["files_failed"] == 1 and evidence["manifest_files"] == 10
-    assert evidence["first_week"] == "03-01-2022" and evidence["last_week"] == "05-10-2026"
+    assert evidence["first_week"] == "3–9 ene 2022" and evidence["last_week"] == "5–11 oct 2026"  # D-374
     assert evidence["run_ok"] and evidence["run_started"] == "13-10-2026 15:35"
     assert evidence["build"]["built_at"] == "19-10-2026" and evidence["parity"]["rows"] == 811578
     assert set(evidence) >= {"run_id", "run_status", "weeks", "checks"}

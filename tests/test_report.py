@@ -48,7 +48,7 @@ def test_report_shows_the_load_status_and_the_alert_of_the_week(tmp_path):
     report_text = report.build_report(database_file)
     assert "Última ejecución: **LOADED**" in report_text
     assert "Filas leídas: 28" in report_text
-    assert "Alertas de la semana del 2026-04-06" in report_text
+    assert "Alertas de la semana 6–12 abr 2026" in report_text
     expected_line = "| Tomate | Larga vida | Primera | Feria libre | 1.300 | +30,0 % |"
     assert expected_line in report_text
 

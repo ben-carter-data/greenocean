@@ -13,7 +13,7 @@ import html
 import json
 from typing import Any
 
-from bi import quality_metrics
+from bi import quality_metrics, weeks
 
 SKY = "#38bdf8"
 DEEP = "#05070b"
@@ -111,7 +111,7 @@ def build_viewer_html(
     )
     cover = (
         f'<section class="slide cover" data-key="portada"><span class="kicker">GreenOcean</span><h1>{esc(title)}</h1>'
-        f'<dl><dt>{labels[0]}</dt><dd>{esc(report["fecha"])}</dd><dt>{labels[1]}</dt><dd>{esc(report["semana"] or "—")}</dd>'
+        f'<dl><dt>{labels[0]}</dt><dd>{esc(report["fecha"])}</dd><dt>{labels[1]}</dt><dd>{esc(weeks.week_range(report["semana"], True, english) if report["semana"] else "—")}</dd>'
         f'<dt>{labels[2]}</dt><dd><code>{esc(report["codigo_evaluado"])}</code></dd>'
         f"<dt>{labels[3]}</dt><dd>{within} / {measured}</dd></dl>"
         f'<p class="muted">{esc(word("portada"))}</p></section>'
