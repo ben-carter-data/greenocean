@@ -4,12 +4,12 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Decision Index |
-| Version | 2.0 |
-| Date | 2026-10-25 |
+| Version | 2.1 |
+| Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Gather, by theme, the decisions that change the architecture, the data, the security or the operations. |
-| Audience | Architecture, management and technical review. |
+| Audience | Architects, management and technical reviewers. |
 | Related documents | [Architecture Decision Records (ADR)](ADR.md) · [Software Architecture Document (SAD)](SAD.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 ## Contents
@@ -27,7 +27,7 @@
 
 ## 1. In summary
 
-GreenOcean records each change of behavior as a decision with its date, its reason and its tests. This index gathers the 69 that weigh most, grouped in eight themes, so they can be read without going through the full log. Each row says first what was decided; when the decision gave rise to an architecture record, the second column links it, and the D-xxx code finds it in `docs/DECISIONES.md` (in Spanish), which keeps them all in chronological order.
+GreenOcean records each change of behavior as a decision with its date, its reason and its tests. This index gathers the 88 that weigh most, grouped in eight themes, so they can be read without going through the full log. Each row says first what was decided. If the decision gave rise to an architecture record, the second column links it. The D-xxx code finds it in `docs/DECISIONES.md` (in Spanish), which keeps them all in chronological order.
 
 [[diagrama:temas]]
 
@@ -68,6 +68,7 @@ How each price is computed and what counts as a valid figure.
 | Every page shows the same price for a product and a week | — | D-153 |
 | Real prices remove inflation with the INE food CPI | [Compute real prices with the INE food CPI](ADR.md#adr-33--compute-real-prices-with-the-ine-food-cpi) | D-155 |
 | An alert needs at least two quotes in each compared week | — | D-158 |
+| Weeks read as a range from Monday to Sunday | — | D-374 |
 
 ## 4. Pipeline and publication
 
@@ -83,6 +84,9 @@ Which tools build the database and when it is published.
 | The two builds of the database are compared without ambiguity, the CPI included | — | D-194 |
 | DuckDB 2.0 waits until a slow query is reviewed | — | D-227 |
 | The published database lives in a GitHub release; the repository keeps only its pointer | [Publish the served database in a release that each load replaces](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) | D-270 |
+| The performance tests leave the CI and stay local | — | D-341 |
+| Publication goes up to the last week complete in both sources, filling nothing in; a late source does not block the load | [Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass) | D-356 |
+| The weekly load runs only the data and pipeline tests; the screen tests run on every push | — | D-366 |
 
 ## 5. Quality and audit
 
@@ -99,6 +103,11 @@ What stops a load and how each figure is proven.
 | Quality in one view: six dimensions and three gates | — | D-256 |
 | In Quality, each piece of the diagram opens its detail | — | D-257 |
 | Quality is drawn as a data-quality pipeline | — | D-273 |
+| Quality is measured in two parts: the data that is published and the code that treats it | — | D-330 |
+| The quality reports are numbered and never modified | — | D-331 |
+| Each diagnosed failure goes into a register, with its category and its station of the git flow | — | D-342 |
+| A software quality assurance plan (SQAP) says what is measured, how and who decides | — | D-355 |
+| The 11 indicators of the load and the 12 of the quality plan have different names | — | D-384 |
 
 ## 6. Security
 
@@ -113,6 +122,8 @@ Who can do what, and how it is checked.
 | The control code is no longer a browser password field | — | D-207 |
 | Security is handled as a process, with its procedure and monitoring | — | D-249 |
 | The security architecture is drawn by trust zones | — | D-254 |
+| The «GitHub Actions» page is read-only and only the Author sees it | — | D-339 |
+| The address does not choose the view: the window to choose it always opens | — | D-340 |
 
 ## 7. Operations and observability
 
@@ -128,6 +139,9 @@ How we know what happened in each load, and what to do.
 | The Tuesday orchestration lives inside the CI/CD diagram | — | D-246 |
 | Deployment is drawn as a standard deployment diagram | — | D-255 |
 | The monitoring signals hang from the weekly load | — | D-275 |
+| The manual load is followed in a window that does not close by itself, and it can be minimized or cancelled | — | D-351 |
+| The quality report is weekly and proposed as a pull request; a push only measures | — | D-363 |
+| The deployment shows the two reports: the weekly one as an issue and the quality one as a pull request | — | D-383 |
 
 ## 8. Panel
 
@@ -144,6 +158,9 @@ How the panel reads on a single screen and in two languages.
 | The panel and the documents exist in Spanish and English | — | D-283 |
 | Each page is translated into English as it is drawn | — | D-284 |
 | An app map shows the whole system in one view | — | D-285 |
+| The dark theme is the default | — | D-349 |
+| The page «Latest data by channel» shows the latest week of each source | — | D-365 |
+| The Price overview reads in three steps that open in order | — | D-372 |
 
 ## 9. Documentation
 
@@ -159,6 +176,8 @@ How the project is explained.
 | Each document has a cover, contents, glossary and history | — | D-279 |
 | Diagrams without a background, and the PDF always on a white sheet | — | D-280 |
 | Every document in a single folder of the menu | — | D-282 |
+| The documents go from the most important to the least, for every reader | — | D-290 |
+| The documents are sorted into four folders by subject | — | D-381 |
 
 ## 10. Version history
 
@@ -166,3 +185,4 @@ How the project is explained.
 |---|---|---|
 | 1.0 | 2026-10-25 | First version (D-279, professional documentation) |
 | 2.0 | 2026-10-25 | A summary with three diagrams; each row says first what was decided and links its architecture record by its name (D-290, documents for every reader) |
+| 2.1 | 2026-10-31 | The major decisions since D-290: late sources, quality in two parts, the three views, the manual load window, the two reports and the four folders of documents; wording reviewed (D-381, D-388) |

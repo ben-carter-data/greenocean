@@ -4,12 +4,12 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Índice de decisiones |
-| Versión | 2.0 |
-| Fecha | 25-10-2026 |
+| Versión | 2.1 |
+| Fecha | 31-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Reunir, por tema, las decisiones que cambian la arquitectura, los datos, la seguridad o la operación. |
-| Audiencia | Arquitectura, gerencia y revisión técnica. |
+| Audiencia | Arquitectos, gerencia y revisores técnicos. |
 | Documentos relacionados | [Registros de decisiones de arquitectura (ADR)](ADR.md) · [Documento de arquitectura de software (SAD)](SAD.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 ## Índice
@@ -27,7 +27,7 @@
 
 ## 1. En resumen
 
-GreenOcean registra cada cambio de comportamiento como una decisión con su fecha, su motivo y sus pruebas. Este índice reúne las 69 que más pesan, agrupadas en ocho temas, para leerlas sin recorrer el registro completo. Cada fila dice primero qué se decidió; cuando la decisión dio origen a un registro de arquitectura, la segunda columna lo enlaza, y el código D-xxx sirve para buscarla en `docs/DECISIONES.md`, que guarda todas en orden cronológico.
+GreenOcean registra cada cambio de comportamiento como una decisión con su fecha, su motivo y sus pruebas. Este índice reúne las 88 que más pesan, agrupadas en ocho temas, para leerlas sin recorrer el registro completo. Cada fila dice primero qué se decidió. Si la decisión dio origen a un registro de arquitectura, la segunda columna lo enlaza. El código D-xxx sirve para buscarla en `docs/DECISIONES.md`, que guarda todas en orden cronológico.
 
 [[diagrama:temas]]
 
@@ -68,6 +68,7 @@ Cómo se calcula cada precio y qué se considera una cifra válida.
 | Todas las páginas muestran el mismo precio para un producto y una semana | — | D-153 |
 | Los precios reales descuentan la inflación con el IPC de alimentos del INE | [Calcular precios reales con el IPC de alimentos del INE](ADR.md#adr-33--calcular-precios-reales-con-el-ipc-de-alimentos-del-ine) | D-155 |
 | Una alerta exige al menos dos cotizaciones en cada semana comparada | — | D-158 |
+| Las semanas se leen como rango de lunes a domingo | — | D-374 |
 
 ## 4. Pipeline y publicación
 
@@ -83,6 +84,9 @@ Con qué herramientas se construye la base y cuándo se publica.
 | Las dos construcciones de la base se comparan sin ambigüedad, también el IPC | — | D-194 |
 | DuckDB 2.0 espera hasta que una consulta lenta quede revisada | — | D-227 |
 | La base publicada vive en un release de GitHub; el repositorio guarda solo su puntero | [Publicar la base servida en un release que cada carga reemplaza](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) | D-270 |
+| Las pruebas de rendimiento salen del CI y siguen en local | — | D-341 |
+| Se publica hasta la última semana completa en ambas fuentes, sin rellenar; una fuente retrasada no bloquea la carga | [Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas) | D-356 |
+| La carga semanal corre solo las pruebas de datos y del pipeline; las de pantalla corren en cada push | — | D-366 |
 
 ## 5. Calidad y auditoría
 
@@ -99,6 +103,11 @@ Qué detiene una carga y cómo se demuestra cada cifra.
 | Calidad en una vista: seis dimensiones y tres puertas | — | D-256 |
 | En Calidad, cada pieza del diagrama abre su detalle | — | D-257 |
 | Calidad se dibuja como un pipeline de calidad de datos | — | D-273 |
+| La calidad se mide en dos partes: los datos que se publican y el código que los trata | — | D-330 |
+| Los informes de calidad son numerados y no se modifican | — | D-331 |
+| Cada falla diagnosticada queda en un registro, con su categoría y su estación del flujo git | — | D-342 |
+| Un plan de calidad del software (SQAP) dice qué se mide, cómo y quién decide | — | D-355 |
+| Los 11 indicadores de la carga y los 12 del plan de calidad tienen nombres distintos | — | D-384 |
 
 ## 6. Seguridad
 
@@ -113,6 +122,8 @@ Quién puede hacer qué y cómo se comprueba.
 | La clave de control deja de ser un campo de contraseña del navegador | — | D-207 |
 | La seguridad se trata como un proceso, con su procedimiento y su monitoreo | — | D-249 |
 | La arquitectura de seguridad se dibuja por zonas de confianza | — | D-254 |
+| La página «GitHub Actions» es de solo lectura y solo la ve el Autor | — | D-339 |
+| La dirección no elige la vista: la ventana «Elige tu vista» se abre siempre | — | D-340 |
 
 ## 7. Operación y observabilidad
 
@@ -128,6 +139,9 @@ Cómo se sabe qué pasó en cada carga y qué hacer.
 | La orquestación del martes vive dentro del diagrama de CI/CD | — | D-246 |
 | El despliegue se dibuja como un diagrama de despliegue estándar | — | D-255 |
 | Las señales de monitoreo cuelgan de la carga semanal | — | D-275 |
+| La carga manual se sigue en una ventana que no se cierra sola, y se puede minimizar o cancelar | — | D-351 |
+| El informe de calidad es semanal y se propone como pull request; un push solo mide | — | D-363 |
+| El despliegue muestra los dos informes: el semanal como issue y el de calidad como pull request | — | D-383 |
 
 ## 8. Panel
 
@@ -144,6 +158,9 @@ Cómo se lee el panel en una sola pantalla y en dos idiomas.
 | El panel y los documentos existen en español y en inglés | — | D-283 |
 | Cada página se traduce al inglés mientras se dibuja | — | D-284 |
 | Un mapa de la app muestra todo el sistema en una vista | — | D-285 |
+| El tema oscuro es el predeterminado | — | D-349 |
+| La página «Último dato por canal» muestra la última semana de cada fuente | — | D-365 |
+| El Panorama se lee en tres pasos que se abren en orden | — | D-372 |
 
 ## 9. Documentación
 
@@ -159,6 +176,8 @@ Cómo se explica el proyecto.
 | Cada documento lleva portada, índice, glosario e historial | — | D-279 |
 | Diagramas sin fondo, y el PDF siempre en hoja blanca | — | D-280 |
 | Todos los documentos en una sola carpeta del menú | — | D-282 |
+| Los documentos se ordenan del más importante al menos, para todo lector | — | D-290 |
+| Los documentos se ordenan en cuatro carpetas por tema | — | D-381 |
 
 ## 10. Historial de versiones
 
@@ -166,3 +185,4 @@ Cómo se explica el proyecto.
 |---|---|---|
 | 1.0 | 25-10-2026 | Primera versión (D-279, documentación profesional) |
 | 2.0 | 25-10-2026 | Un resumen con tres diagramas; cada fila dice primero qué se decidió y enlaza su registro de arquitectura por su nombre (D-290, documentos para todo lector) |
+| 2.1 | 31-10-2026 | Las decisiones grandes desde D-290: fuentes retrasadas, calidad en dos partes, las tres vistas, la ventana de la carga manual, los dos informes y las cuatro carpetas de documentos; redacción revisada (D-381, D-388) |
