@@ -142,7 +142,7 @@ Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 sema
 
 Estas son capturas reales de seis páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada.
 
-- **Menú:** agrupa las páginas en cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera sigue el orden en que la lee un visitante: Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal e Insights.
+- **Menú:** agrupa las páginas en cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera sigue el orden en que la lee un lector: Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal e Insights.
 - **Panorama de precios:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior.
 - **Último dato por canal:** muestra la última semana de cada fuente (mayorista y consumidor), con su variación por familia y sus productos, aunque la otra fuente todavía no la publique.
 

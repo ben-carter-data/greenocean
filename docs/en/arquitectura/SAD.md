@@ -381,7 +381,7 @@ Only the author sees the page «GitHub Actions». It shows the latest runs and, 
 |---|---|---|
 | Size of the served database | A single copy in a release, replaced by each load ([ADR-35](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces)); the Git history no longer grows with the data | A release file can hold up to 2 GB; long before that, the option of section 9.4 would be advisable |
 | Duration of the load | Each load rebuilds the whole history since 2022 ([ADR-10](ADR.md#adr-10--rebuild-everything-on-each-load)) and takes a little longer every year | Incremental loads when the duration justifies them |
-| Simultaneous visitors | A free Streamlit app that reads a small file read-only | If several teams used it daily, the free plan would not be enough: it is one of the thresholds of section 9.4 |
+| Simultaneous readers | A free Streamlit app that reads a small file read-only | If several teams used it daily, the free plan would not be enough: it is one of the thresholds of section 9.4 |
 
 ### 9.3 Growth options
 

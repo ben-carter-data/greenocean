@@ -142,7 +142,7 @@ With the load of 2026-10-31, the database holds 821,072 weekly prices over 252 w
 
 These are real captures of six main pages, in the four color themes. The dark theme is the one on entry.
 
-- **Menu:** it groups the pages in five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first follows a visitor's reading order: Stakeholders, Business and systems analysis, Price overview, Latest data by channel and Insights.
+- **Menu:** it groups the pages in five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first follows a reader's reading order: Stakeholders, Business and systems analysis, Price overview, Latest data by channel and Insights.
 - **Price overview:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done.
 - **Latest data by channel:** it shows each source's latest week (wholesale and consumer), with its change by family and its products, even if the other source has not published it yet.
 
