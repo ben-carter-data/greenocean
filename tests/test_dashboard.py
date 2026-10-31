@@ -582,7 +582,7 @@ def test_manual_is_a_procedural_document_without_presentation_cards():
     app = draw_page(dashboard.PAGE_MANUAL)
     assert not app.exception
     text = " ".join(block.value for block in app.markdown)
-    for heading in ("## 2. Qué ocurre automáticamente", "## 4. Fallas de la carga semanal", "## 8. Límites conocidos"):
+    for heading in ("## 2. Qué ocurre automáticamente", "## 4. Fallas de la carga semanal", "## 10. Límites conocidos"):
         assert heading in text
     assert 'class="info-card"' not in text
     assert '.github/workflows/semanal.yml' in text.replace("\u200b", "")  # D-297: code breaks only at its separators
