@@ -6,7 +6,7 @@ Every screen, test and file the PRD names must exist, so the tables cannot go st
 import re
 from pathlib import Path
 
-from bi import dashboard, doc_views, sql_explorer
+from bi import business_analysis, dashboard, doc_views, sql_explorer
 
 ROOT = Path(__file__).resolve().parent.parent
 PRD = (ROOT / "docs" / "PRD.md").read_text(encoding="utf-8")
@@ -64,9 +64,10 @@ def test_every_requirement_has_a_measurable_criterion_and_evidence_that_exists()
 
 
 def test_the_use_cases_follow_the_prd_and_each_points_to_a_real_screen():
-    users = {row[0] for row in read_table("Para quién es")}
+    profiles = business_analysis.read_table(business_analysis.read_section("PRD.md", "3.2", "es"))
+    users = {row["Perfil"] for row in profiles}
     actors = {actor for actor, *_ in doc_views.USER_CASES}
-    assert actors == users  # the four profiles of «3. Usuarios», nothing else
+    assert actors == users  # the four profiles of «3.2 Perfiles de uso» (D-376), nothing else
     questions = {row[0]: row for row in read_table("Preguntas de negocio")}
     for actor, row, case, identifier, screen in doc_views.USER_CASES + doc_views.SYSTEM_CASES:
         page = screen.partition(" · ")[0]

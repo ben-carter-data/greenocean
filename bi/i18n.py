@@ -213,6 +213,12 @@ EN = {
     "familias": "families",
     # Menu: sections, pages and sources
     "Negocio · BA y BI": "Business · BA and BI",
+    "Interesados": "Stakeholders",
+    "Quién es": "Who they are",
+    "Pregunta": "Question",
+    "Decisión": "Decision",
+    "Cambiar a Profesional": "Switch to Professional",
+    "Quién usa estos datos, qué pregunta se hace, qué decisión le ayuda a tomar y dónde está la respuesta.": "Who uses this data, what they ask, what decision it helps them make and where the answer is.",
     "Ingeniería de datos": "Data engineering",
     "DevOps y seguridad": "DevOps and security",
     "Stack y evidencia": "Stack and evidence",

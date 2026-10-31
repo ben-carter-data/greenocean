@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bi  # noqa: E402
 from bi import (
     actions_view,
+    business_analysis,
     alerts,
     compact_table,
     channel_latest,
@@ -92,6 +93,7 @@ PAGE_HOME = "Dashboard"
 # D-296: the macro dashboard of the whole project, in tabs, like a BI tool; the first page of the menu.
 PAGE_INSIGHTS = "Insights"
 PAGE_CHANNELS = "Último dato por canal"  # D-365: each source with its own latest week
+PAGE_STAKEHOLDERS = "Interesados"  # D-376: who uses the data, what they ask and where the answer is
 BRAND_GREEN_DARK = "#72e7ad"
 BRAND_GREEN_LIGHT = "#167046"
 PAGE_DIAGRAMS = "Pipeline y arquitectura"
@@ -176,7 +178,7 @@ SECTION_SECURITY = "Seguridad"
 WINDOWS = {
     SECTION_PROJECT: [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD, PAGE_GIT],
     SECTION_KPI: [PAGE_KPI],
-    REPORT_WINDOW: [PAGE_HOME, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL, PAGE_CHANNELS],
+    REPORT_WINDOW: [PAGE_HOME, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL, PAGE_CHANNELS, PAGE_STAKEHOLDERS],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS, PAGE_ACTIONS],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
     SECTION_LINKS: [
@@ -255,6 +257,7 @@ PAGE_ICONS = {
     PAGE_STACK: ":material/stacks:",
     PAGE_INSIGHTS: ":material/lightbulb:",
     PAGE_CHANNELS: ":material/compare_arrows:",
+    PAGE_STAKEHOLDERS: ":material/groups:",
     PAGE_HOME: ":material/dashboard:",
     PAGE_DIAGRAMS: ":material/account_tree:",
     PAGE_ARCHITECTURE: ":material/schema:",
@@ -285,6 +288,7 @@ PAGE_PATHS = {
     PAGE_HOME: "dashboard",
     PAGE_INSIGHTS: "insights",
     PAGE_CHANNELS: "ultimo-dato-por-canal",
+    PAGE_STAKEHOLDERS: "interesados",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura",
     PAGE_SEASONALITY: "estacionalidad",
@@ -2136,6 +2140,7 @@ def show_app_header(window):
 BAR_VIEWS = {
     PAGE_INSIGHTS,
     PAGE_CHANNELS,
+    PAGE_STAKEHOLDERS,
     PAGE_HOME,
     PAGE_SEASONALITY,
     PAGE_DIAGRAMS,
@@ -5012,6 +5017,80 @@ def read_latest_by_source(database_version):
         return None
 
 
+def can_open(view):
+    """D-376: whether this view's menu leads to a page: one of its own, or one that opens from a page of its own."""
+    order = visible_menu_order()
+    return view in order or DOOR_PAGES.get(view) in order
+
+
+def show_stakeholders_page(mode):
+    """«Interesados» (D-376): one card per stakeholder, read from the PRD (3.1) in the reader's language: who they are,
+    what they ask, the decision the answer helps them make and the pages where it is. A page the view's menu does not
+    lead to becomes «Cambiar a Profesional»: in the user view, the technical card."""
+    show_page_bar(
+        PAGE_STAKEHOLDERS,
+        PAGE_STAKEHOLDERS,
+        "Quién usa estos datos, qué pregunta se hace, qué decisión le ayuda a tomar y dónde está la respuesta.",
+    )
+    palette = charts.get_palette(mode)
+    st.markdown(build_stakeholders_css(palette), unsafe_allow_html=True)
+    labels = (tr("Quién es"), tr("Pregunta"), tr("Decisión"))
+    rows = business_analysis.read_stakeholders()
+    for index, (column, row) in enumerate(zip(st.columns(len(rows), gap="small"), rows)):
+        with column, st.container(key=f"stakeholder_{index}", height="stretch"):
+            st.markdown(
+                f'<div class="stk-card"><span class="stk-icon" aria-hidden="true">{row["icon"]}</span>'
+                f'<h3>{html.escape(row["name"])}</h3><dl>'
+                + "".join(
+                    f"<dt>{html.escape(label)}</dt><dd>{html.escape(text)}</dd>"
+                    for label, text in zip(labels, (row["who"], row["question"], row["decision"]))
+                )
+                + "</dl></div>",
+                unsafe_allow_html=True,
+            )
+            views = [find_menu_page(name) for name in row["pages"]]
+            if any(view and not can_open(view) for view in views):
+                if st.button(tr("Cambiar a Profesional"), key=f"stakeholders_switch_{index}", icon=":material/work:"):
+                    st.session_state[PROFILE_STATE] = PROFILE_PROFESSIONAL
+                    st.session_state[ROLE_STATE] = "data"  # the technical profile leads its menu
+                    settle_profile()
+                    st.rerun()
+                continue
+            for view in views:
+                window = WINDOW_PAGES.get(WINDOW_OF_VIEW.get(view))  # absent when a test draws the page alone
+                if view and window:
+                    st.page_link(
+                        window,
+                        label=tr(SIDEBAR_LABELS.get(view, view)),
+                        icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
+                        query_params=keep_context() | {VIEW_PARAMETER: view},
+                    )
+
+
+def build_stakeholders_css(palette):
+    """D-376: the five cards, side by side, the same height; the icon in a circle of the accent."""
+    accent, ink, text = palette["accent"], palette["strong_text"], palette["text"]
+    return f"""<style>
+    [class*="st-key-stakeholder_"] {{ border:1px solid {palette["card_border"]}; border-radius:14px; padding:16px 14px 12px;
+        background:{palette["card"]}; gap:6px !important; }}
+    .stk-icon {{ display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:50%;
+        background:color-mix(in srgb, {accent} 16%, transparent); color:{accent}; font-family:"Material Symbols Rounded";
+        font-size:23px; line-height:1; font-feature-settings:"liga"; }}
+    .stk-card h3 {{ margin:10px 0 6px !important; padding:0 !important; font-size:16px !important; line-height:1.3;
+        color:{ink} !important; }}
+    .stk-card dl {{ margin:0; }}
+    .stk-card dt {{ margin:8px 0 1px; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+        color:{charts.legible(palette["reference"], palette["card"])}; }}
+    .stk-card dd {{ margin:0; font-size:13.5px; line-height:1.45; color:{text}; }}
+    /* D-173: the card's text ends in a div, so its block gets no negative margin and nothing rides over it. */
+    [class*="st-key-stakeholder_"] [data-testid="stElementContainer"]:has(.stk-card) [data-testid="stMarkdownContainer"] {{
+        margin-bottom:0 !important; }}
+    [class*="st-key-stakeholder_"] [data-testid="stPageLink"] a {{ padding:3px 6px; height:auto; }}
+    [class*="st-key-stakeholder_"] [data-testid="stPageLink"] p {{ white-space:normal; font-size:13.5px; line-height:1.3; }}
+    [class*="st-key-stakeholder_"] button p {{ white-space:normal; }}
+    </style>"""
+
+
 def show_channels_page(mode):
     """«Último dato por canal» (D-365): the wholesale and the consumer source, each with its own latest week, the change
     by family against its previous week and its products, drawn with the overview's own pieces."""
@@ -6477,8 +6556,9 @@ DOCUMENT_VIEW = re.compile(r"\[\[vista:([^\]]+)\]\]")
 
 
 def find_menu_page(label):
-    """The page whose label in the menu, or in the documents folder, is `label`, or None."""
-    for view in MENU_ORDER + FOLDER_ORDER:
+    """The page whose label in the menu, in the documents folder or on a page's door (D-376: «Precios e inflación»)
+    is `label`, or None."""
+    for view in MENU_ORDER + FOLDER_ORDER + list(DOOR_PAGES):
         if label in (SIDEBAR_LABELS.get(view, view), i18n.EN.get(SIDEBAR_LABELS.get(view, view))):
             return view
     return None
@@ -7038,6 +7118,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_DIAGRAMS: show_diagrams_page,
     PAGE_INSIGHTS: lambda mode: show_insights_page(mode),
     PAGE_CHANNELS: lambda mode: show_channels_page(mode),
+    PAGE_STAKEHOLDERS: lambda mode: show_stakeholders_page(mode),
     PAGE_SEASONALITY: show_price_context_page,
     PAGE_KPI: show_kpi_page,
     PAGE_ARCHITECTURE: show_architecture_page,
@@ -7590,7 +7671,7 @@ RELOAD_HOME_SCRIPT = """<script>
 # with a faint fill and a blue bar on its left. The documents close the list, before the sources.
 # (key, title, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BA y BI", [PAGE_HOME, PAGE_CHANNELS, PAGE_INSIGHTS]),  # D-375
+    ("negocio", "Negocio · BA y BI", [PAGE_HOME, PAGE_CHANNELS, PAGE_INSIGHTS, PAGE_STAKEHOLDERS]),  # D-375, D-376
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),
@@ -7611,6 +7692,7 @@ MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is
 SIDEBAR_ICONS = {
     PAGE_INSIGHTS: ":material/lightbulb:",
     PAGE_CHANNELS: ":material/compare_arrows:",
+    PAGE_STAKEHOLDERS: ":material/groups:",
     PAGE_HOME: ":material/grid_view:",
     PAGE_DIAGRAMS: ":material/share:",
     PAGE_ARCHITECTURE: ":material/database:",

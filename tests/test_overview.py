@@ -90,6 +90,7 @@ def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
         dashboard.HOME_PAGE,
         dashboard.PAGE_CHANNELS,
         dashboard.PAGE_INSIGHTS,
+        dashboard.PAGE_STAKEHOLDERS,  # D-376
     ]  # D-325: «Dónde comprar» is gone; D-365: «Último dato por canal» sits next to the Panorama
     assert dashboard.DOOR_PAGES == {
         dashboard.PAGE_SEASONALITY: dashboard.HOME_PAGE
@@ -109,6 +110,7 @@ def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
         dashboard.HOME_PAGE,
         dashboard.PAGE_CHANNELS,  # D-365
         dashboard.PAGE_INSIGHTS,
+        dashboard.PAGE_STAKEHOLDERS,  # D-376
     ]
     assert "Dónde comprar" not in dashboard.SIDEBAR_LABELS.values()
     assert dashboard.RETIRED_VIEWS["Dónde comprar"] == dashboard.HOME_PAGE

@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.2 |
-| Date | 2026-10-30 |
+| Version | 3.3 |
+| Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain which problem GreenOcean solves, for whom, which questions it answers and what it must meet for its figures to be reliable. |
@@ -48,6 +48,20 @@ Chile's Office of Agricultural Studies and Policies (ODEPA) publishes the wholes
 GreenOcean does that work automatically and leaves each step in view.
 
 ## 3. Who it is for
+
+### 3.1 Stakeholders
+
+Each stakeholder has a question, a decision the answer helps them make and the page where they find it. The page [[vista:Stakeholders]] shows this table.
+
+| Stakeholder | Who they are | What they ask | What decision it helps them make | Where the answer is |
+|---|---|---|---|---|
+| People and families | Whoever buys the food for their home | Which foods are going up? | What to buy before going shopping | [[vista:Price overview]] |
+| Restaurants and grocery stores | Whoever buys food to cook or to sell | When and where is it best to buy? | When and in which channel to buy | [[vista:Price overview]] · [[vista:Latest data by channel]] |
+| Wholesalers, farmers and market vendors | Whoever sells wholesale or at the street market | How does the wholesale price compare with the consumer price? | At what price to sell | [[vista:Latest data by channel]] |
+| Journalists and economists | Whoever reports on the economy or analyzes it | Which foods rise more than inflation, according to official data? | What to report, with figures that can be checked | [[vista:Prices and inflation]] · [[vista:Insights]] |
+| Technical teams and recruiters | Whoever designs data systems or evaluates who builds them | How is a reliable data pipeline built and operated? | Which practices to follow or whom to hire | [[vista:Pipeline and lineage]] · [[vista:Method and quality]] · [[vista:Git workflow]] |
+
+### 3.2 Usage profiles
 
 | Profile | What they use it for |
 |---|---|
@@ -175,3 +189,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.0 | 2026-10-25 | Reading from the most important to the least: summary, problem, users, questions and requirements first; diagrams of the value and of the requirements (D-290, documents for every reader) |
 | 3.1 | 2026-10-30 | Vision and mission; the three views and the «Vista» indicator (RF-09); late sources and informative tests in RF-03; the manual load window in RF-07; the Quality section, dark theme and the overview in three steps (D-340 to D-357) |
 | 3.2 | 2026-10-30 | The page «Último dato por canal» (D-365) |
+| 3.3 | 2026-10-31 | Stakeholders (3.1) and usage profiles (3.2), with their page in the panel (D-376) |

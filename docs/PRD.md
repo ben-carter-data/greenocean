@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.2 |
-| Fecha | 30-10-2026 |
+| Versión | 3.3 |
+| Fecha | 31-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar qué problema resuelve GreenOcean, para quién, qué preguntas responde y qué debe cumplir para que sus cifras sean confiables. |
@@ -48,6 +48,20 @@ La Oficina de Estudios y Políticas Agrarias (ODEPA) publica cada semana los pre
 GreenOcean hace ese trabajo de forma automática y deja cada paso a la vista.
 
 ## 3. Para quién es
+
+### 3.1 Interesados
+
+Cada interesado tiene una pregunta, una decisión que la respuesta le ayuda a tomar y la página donde la encuentra. La página [[vista:Interesados]] muestra esta tabla.
+
+| Interesado | Quién es | Qué pregunta se hace | Qué decisión le ayuda a tomar | Dónde está la respuesta |
+|---|---|---|---|---|
+| Personas y familias | Quien compra los alimentos de su casa | ¿Qué alimentos están subiendo? | Qué comprar antes de ir a comprar | [[vista:Panorama de precios]] |
+| Restaurantes y almacenes | Quien compra alimentos para cocinar o para vender | ¿Cuándo y dónde conviene comprar? | Cuándo y en qué canal comprar | [[vista:Panorama de precios]] · [[vista:Último dato por canal]] |
+| Mayoristas, agricultores y feriantes | Quien vende al por mayor o en la feria | ¿Cómo está el precio mayorista frente al de consumidor? | A qué precio vender | [[vista:Último dato por canal]] |
+| Periodistas y economistas | Quien informa sobre la economía o la analiza | ¿Qué alimentos suben más que la inflación, según datos oficiales? | Qué informar, con cifras que se pueden comprobar | [[vista:Precios e inflación]] · [[vista:Insights]] |
+| Equipos técnicos y reclutadores | Quien diseña sistemas de datos o evalúa a quien los construye | ¿Cómo se construye y se opera un pipeline de datos confiable? | Qué prácticas seguir o a quién contratar | [[vista:Pipeline y linaje]] · [[vista:Método y calidad]] · [[vista:Git workflow]] |
+
+### 3.2 Perfiles de uso
 
 | Perfil | Para qué lo usa |
 |---|---|
@@ -175,3 +189,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.0 | 25-10-2026 | Lectura de lo más importante a lo menos: resumen, problema, usuarios, preguntas y requisitos primero; diagramas del valor y de los requisitos (D-290, documentos para todo lector) |
 | 3.1 | 30-10-2026 | Visión y misión; las tres vistas y el indicador «Vista» (RF-09); fuentes retrasadas y pruebas informativas en RF-03; ventana de la carga manual en RF-07; sección Calidad, tema oscuro y Panorama en tres pasos (D-340 a D-357) |
 | 3.2 | 30-10-2026 | La página «Último dato por canal» (D-365) |
+| 3.3 | 31-10-2026 | Interesados (3.1) y perfiles de uso (3.2), con su página en el panel (D-376) |
