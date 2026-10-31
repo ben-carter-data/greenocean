@@ -70,7 +70,8 @@ TIPS = {
     "request, que el autor revisa y aprueba antes de que el panel lo muestre (D-331, D-363).",
     "app": "Streamlit ejecuta bi/dashboard.py desde la rama main. Descarga del release la base de la última carga, comprueba su "
     "huella y la lee en solo lectura; guarda los secretos del panel y, con la clave de control, lanza la carga por la API de GitHub.",
-    "browser": "Cualquier visitante, o el autor. El panel público no pide cuenta; la clave solo abre el botón «Ejecutar pipeline ahora».",
+    "browser": "El Usuario, el Profesional o el Autor. El panel público no pide cuenta; la clave de control solo abre lo del Autor, "
+    "como el botón «Ejecutar pipeline ahora».",
 }
 
 
@@ -182,7 +183,7 @@ def build_contents(states, figures):
         "streamlit": heading(824, 64, "plataforma", "Streamlit Cloud"),
         "browser": (
             heading(824, 416, "dispositivo", "Navegador")
-            + '<text class="note" x="824" y="452">visitante o autor, sin cuenta</text>'
+            + '<text class="note" x="824" y="452">Usuario, Profesional o Autor</text>'
         ),
     }
     envs = {

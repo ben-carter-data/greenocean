@@ -120,7 +120,7 @@ def test_d285_the_map_sits_next_to_the_stack_and_the_stack_links_to_it():
 
 def test_d291_each_filter_lights_every_actor_and_link_of_its_theme():
     """Security is not only the author: the control code goes through Streamlit and its secrets, the token reaches GitHub
-    Actions, the repository holds no secret, the database is read-only and the visitor's SQL has limits."""
+    Actions, the repository holds no secret, the database is read-only and the professional's SQL has limits."""
 
     def lit(theme):
         nodes = {key for key in app_map.NODES if theme in app_map.node_themes(key)}
@@ -128,7 +128,7 @@ def test_d291_each_filter_lights_every_actor_and_link_of_its_theme():
         return nodes, links
 
     nodes, links = lit("seguridad")
-    assert {"author", "streamlit", "secrets", "actions", "github", "duckdb", "visitor", "security", "ci"} <= nodes
+    assert {"author", "streamlit", "secrets", "actions", "github", "duckdb", "professional", "security", "ci"} <= nodes
     assert {
         ("author", "streamlit"),
         ("streamlit", "secrets"),

@@ -73,13 +73,22 @@ def assert_right_angles(page):
 
 def test_d297_the_context_view_is_the_system_with_its_people_and_external_systems_as_icons():
     page = doc_diagrams.DOC_DIAGRAMS["contexto"](charts.MODE_DARK)
-    for name in ("GreenOcean", "ODEPA", "INE", "GitHub", "Streamlit Community Cloud", "Visitante", "Administrador"):
+    for name in (
+        "GreenOcean",
+        "ODEPA",
+        "INE",
+        "GitHub",
+        "Streamlit Community Cloud",
+        "Usuario",
+        "Profesional",
+        "Autor",
+    ):
         assert f">{name}<" in page, name
     assert "Python, SQLite, Parquet, dbt, DuckDB y Streamlit" in plain(
         page
     )  # the tools it is built with, in the order of the pipeline
     assert 'class="box"' not in page and 'class="system"' not in page  # no boxes, no cards
-    assert len(graph_lines(page)) == 6
+    assert len(graph_lines(page)) == 7  # D-382: three people (Usuario, Profesional, Autor) and four systems
     assert_right_angles(page)
 
 
@@ -107,7 +116,7 @@ def test_d297_the_containers_view_is_c4_level_2_with_real_files_and_right_angle_
         assert f">{name}<" in page, name
     for path in ("agent/agent.py", "etl/etl.py", "etl/pipeline.py", "bi/dashboard.py"):
         assert path in page and (root / path).exists(), path
-    assert len(graph_lines(page)) == 8
+    assert len(graph_lines(page)) == 10  # D-382: one line from each of the three people to the panel
     assert_right_angles(page)
 
 

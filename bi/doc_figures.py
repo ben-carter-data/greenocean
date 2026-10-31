@@ -374,18 +374,28 @@ def sad_context(mode):
         say("Contexto del sistema (C4, nivel 1)", "System context (C4, level 1)"),
         {
             "visitor": (
-                330,
+                250,
                 20,
                 "person:visitor",
-                say("Visitante", "Visitor"),
-                say("lee el panel, sin cuenta", "reads the panel, no account"),
+                say("Usuario", "User"),
+                say("ve el negocio, sin cuenta", "sees the business, no account"),
+            ),
+            "professional": (
+                460,
+                20,
+                "person:professional",
+                say("Profesional", "Professional"),
+                say("ve todo el proyecto, sin cuenta", "sees the whole project, no account"),
             ),
             "admin": (
-                590,
+                670,
                 20,
                 "person:author",
-                say("Administrador", "Administrator"),
-                say("el autor: mantiene el código y los secretos", "the author: maintains the code and the secrets"),
+                say("Autor", "Author"),
+                say(
+                    "lo mismo, y con la clave lanza la carga y mantiene el código",
+                    "the same, and with the code launches the load and maintains the code",
+                ),
             ),
             "system": (
                 460,
@@ -399,15 +409,15 @@ def sad_context(mode):
             ),
             "odepa": (
                 90,
-                120,
+                190,
                 "source:odepa",
                 "ODEPA",
                 say("precios mayoristas y al consumidor", "wholesale and consumer prices"),
             ),
-            "ine": (90, 290, "source:ine", "INE", say("IPC de alimentos", "food CPI")),
+            "ine": (90, 330, "source:ine", "INE", say("IPC de alimentos", "food CPI")),
             "github": (
                 830,
-                120,
+                190,
                 "brand:github",
                 "GitHub",
                 say(
@@ -417,7 +427,7 @@ def sad_context(mode):
             ),
             "cloud": (
                 830,
-                290,
+                330,
                 "brand:streamlit",
                 "Streamlit Community Cloud",
                 say("publica el panel", "publishes the panel"),
@@ -425,6 +435,7 @@ def sad_context(mode):
         },
         [
             ("visitor", "system", say("lee", "reads"), "flow", "v"),
+            ("professional", "system", say("lee", "reads"), "flow", "v"),
             ("admin", "system", say("mantiene", "maintains"), "order", "v"),
             ("system", "odepa", "CSV", "flow", "h"),
             ("system", "ine", say("IPC", "CPI"), "flow", "h"),
@@ -492,7 +503,21 @@ def sad_containers(mode):
                     "repository, Actions and the release of the database",
                 ),
             ),
-            "people": (830, 20, "person:visitor", say("Visitante y administrador", "Visitor and administrator"), ""),
+            "user": (690, 20, "person:visitor", say("Usuario", "User"), say("ve el negocio", "sees the business")),
+            "professional": (
+                790,
+                20,
+                "person:professional",
+                say("Profesional", "Professional"),
+                say("ve todo", "sees it all"),
+            ),
+            "author": (
+                890,
+                20,
+                "person:author",
+                say("Autor", "Author"),
+                say("con clave", "with a code"),
+            ),
         },
         [
             ("load", "odepa", "HTTPS", "flow", "h"),
@@ -501,7 +526,9 @@ def sad_containers(mode):
             ("load", "served", say("publica", "publishes"), "flow", "h"),
             ("load", "backup", say("escribe", "writes"), "flow", "h"),
             ("panel", "served", say("solo lectura", "read-only"), "flow", "h"),
-            ("people", "panel", say("consulta · lanza la carga", "reads · launches the load"), "order", "v"),
+            ("user", "panel", "", "flow", "v"),
+            ("professional", "panel", "", "flow", "v"),
+            ("author", "panel", "", "order", "v"),
             ("github", "load", say("ejecuta cada martes", "runs every Tuesday"), "order", "v"),
         ],
         size=46,
@@ -608,7 +635,10 @@ def sad_components_panel(mode):
                 180,
                 "person:visitor",
                 say("Lector", "Reader"),
-                say("elige la vista de usuario o la profesional", "chooses the user or the professional view"),
+                say(
+                    "elige su vista: Usuario, Profesional o Autor (con clave)",
+                    "chooses a view: User, Professional or Author (with a code)",
+                ),
             ),
             "dashboard": (
                 260,
@@ -667,7 +697,13 @@ def sad_components_panel(mode):
             ("dashboard", "control", "", "order", "h"),
             ("pages", "queries", "SQL", "flow", "h"),
             ("queries", "duckdb", say("solo lectura", "read-only"), "flow", "h"),
-            ("control", "github", "API", "order", "h"),
+            (
+                "control",
+                "github",
+                say("API: lanzar, leer estado y logs, cancelar", "API: start, read state and logs, cancel"),
+                "order",
+                "h",
+            ),
             ("github", "served", say("descarga", "download"), "flow", "v"),
         ],
         size=42,
@@ -679,15 +715,15 @@ def sad_scenarios(mode):
     rows = [
         (
             "person:visitor",
-            say("Visitante", "Visitor"),
+            say("Usuario", "User"),
             "icon:chart",
             say("Ver qué cambió esta semana", "See what changed this week"),
-            "P-1 · " + say("Resumen y Dashboard", "Summary and Dashboard"),
+            "P-1 · " + say("Panorama de precios", "Price overview"),
             say("Panel web y base servida", "Web panel and served database"),
         ),
         (
-            "person:visitor",
-            say("Visitante", "Visitor"),
+            "person:professional",
+            say("Profesional", "Professional"),
             "icon:code",
             say("Consultar con SQL", "Query with SQL"),
             "P-2 · P-3 · RF-06",
@@ -995,7 +1031,7 @@ def sad_panel_sequence(mode):
         mode,
         say("Secuencia al abrir el panel", "Sequence when the panel opens"),
         [
-            ("visitor", say("Visitante", "Visitor"), "person:visitor"),
+            ("visitor", say("Lector", "Reader"), "person:visitor"),
             ("panel", "Streamlit", "brand:streamlit"),
             ("main", say("Puntero en main", "Pointer on main"), "brand:git"),
             ("release", "Release", "brand:github"),
@@ -1013,12 +1049,16 @@ def sad_panel_sequence(mode):
             ),
             ("release", "panel", "datos.duckdb", "back"),
             ("panel", "panel", say("comprueba la huella SHA-256", "checks the SHA-256 fingerprint"), "check"),
+            ("panel", "visitor", say("«Elige tu vista»", "«Choose your view»"), "back"),
+            ("visitor", "panel", say("elige su vista", "chooses a view"), "flow"),
             ("panel", "duckdb", say("consulta en solo lectura", "queries read-only"), "flow"),
             ("duckdb", "panel", say("filas", "rows"), "back"),
             ("panel", "visitor", say("la página con sus cifras", "the page with its figures"), "back"),
         ],
         say(
+            "La vista elegida (Usuario, Profesional o Autor, este con clave) decide qué páginas ve el lector. "
             "Si GitHub no responde, el panel sigue con la base que ya tiene.",
+            "The chosen view (User, Professional or Author, the last with a code) decides which pages the reader sees. "
             "If GitHub does not respond, the panel goes on with the database it already has.",
         ),
     )
@@ -1446,14 +1486,19 @@ def tests_manual_sequence(mode):
                 say("lee el token, que nunca se muestra", "reads the token, which is never shown"),
                 "flow",
             ),
-            ("panel", "api", "workflow_dispatch", "order"),
+            ("panel", "api", say("API REST: lanza la carga", "REST API: starts the load"), "order"),
             ("api", "workflow", say("inicia la carga", "starts the load"), "order"),
-            ("workflow", "panel", say("estado de cada paso", "status of each step"), "back"),
+            (
+                "workflow",
+                "panel",
+                say("API REST: estado y logs de cada paso", "REST API: state and logs of each step"),
+                "back",
+            ),
             ("panel", "author", say("progreso en el Centro de operación", "progress in the Operations center"), "back"),
         ],
         say(
-            "El workflow solo puede escribir contenido y crear issues: permisos mínimos.",
-            "The workflow can only write content and create issues: least privilege.",
+            "Con la misma API, el Autor puede cancelar la carga. El workflow solo puede escribir contenido y crear issues: permisos mínimos.",
+            "With the same API, the Author can cancel the load. The workflow can only write content and create issues: least privilege.",
         ),
     )
 
@@ -1492,10 +1537,10 @@ def tests_actors(mode):
                 90,
                 20,
                 "person:visitor",
-                say("Visitante", "Visitor"),
+                say("Usuario y Profesional", "User and Professional"),
                 say(
-                    "sin cuenta: lee el panel y usa el SQL de solo lectura",
-                    "no account: reads the panel and uses the read-only SQL",
+                    "sin cuenta: leen el panel; el Profesional usa el SQL de solo lectura",
+                    "no account: they read the panel; the Professional uses the read-only SQL",
                 ),
             ),
             "author": (
@@ -1928,10 +1973,17 @@ def glossary_actors(mode):
             ),
             "github": (500, 105, "brand:github", "GitHub", say("código, release e issues", "code, release and issues")),
             "streamlit": (690, 105, "brand:streamlit", "Streamlit Cloud", say("el panel", "the panel")),
-            "visitor": (860, 30, "person:visitor", say("Visitante", "Visitor"), say("lee el panel", "reads the panel")),
+            "visitor": (860, 0, "person:visitor", say("Usuario", "User"), say("ve el negocio", "sees the business")),
+            "professional": (
+                860,
+                110,
+                "person:professional",
+                say("Profesional", "Professional"),
+                say("ve todo el proyecto", "sees the whole project"),
+            ),
             "author": (
                 860,
-                180,
+                220,
                 "person:author",
                 say("Autor", "Author"),
                 say("mantiene el proyecto", "maintains the project"),
@@ -1943,6 +1995,7 @@ def glossary_actors(mode):
             ("actions", "github", "", "flow", "h"),
             ("github", "streamlit", "", "flow", "h"),
             ("streamlit", "visitor", "", "flow", "h"),
+            ("streamlit", "professional", "", "flow", "h"),
             ("streamlit", "author", "", "flow", "h"),
         ],
         limit=20,

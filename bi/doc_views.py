@@ -20,7 +20,12 @@ DISCS = dict(
     streamlit=("#ff8f98", "#e0303f", "#ffffff"),
     pytest=("#7fc4ff", "#1f6fb5", "#ffffff"),
 )
-PERSON_DISCS = {"visitor": ("#7ee2b0", "#14855a"), "author": ("#ffcf70", "#c98500")}
+# D-382: the three views of the panel are three people: «visitor» is the Usuario, «professional» the Profesional.
+PERSON_DISCS = {
+    "visitor": ("#7ee2b0", "#14855a"),
+    "professional": ("#8ec5ff", "#2563eb"),
+    "author": ("#ffcf70", "#c98500"),
+}
 WIDTH, HEIGHT, LOGO = 1000, 480, 76
 
 
@@ -203,20 +208,29 @@ CONTEXT_NODES = [
     (
         "person",
         "visitor",
-        430,
+        360,
         PEOPLE_Y,
-        "Visitante",
-        "Analista de pricing, compras y abastecimiento, gerencia o revisor técnico.",
-        "Lee el panel de solo lectura; no necesita cuenta ni clave.",
+        "Usuario",
+        "Quien quiere saber cómo se mueven los precios: analista, compras, gerencia o público.",
+        "Ve el negocio: el Panorama, Insights y los precios frente a la inflación. No necesita cuenta ni clave.",
+    ),
+    (
+        "person",
+        "professional",
+        500,
+        PEOPLE_Y,
+        "Profesional",
+        "Quien revisa cómo está hecho: datos, arquitectura, calidad, DevOps o seguridad.",
+        "Ve todo el proyecto, ordenado según su perfil, y usa el estudio SQL de solo lectura. No necesita cuenta ni clave.",
     ),
     (
         "person",
         "author",
-        570,
+        640,
         PEOPLE_Y,
-        "Administrador",
+        "Autor",
         "Quien mantiene el proyecto.",
-        "Cambia el código y los secretos, responde consultas SQL puntuales y puede lanzar una carga manual con la clave de control.",
+        "Ve lo mismo que el Profesional y, con la clave de control, la página «GitHub Actions», la alerta «Acción requerida» y la carga manual. Cambia el código y los secretos.",
     ),
 ]
 # (path, color, chip x, chip y, label, what it says)
@@ -230,14 +244,15 @@ CONTEXT_EDGES = [
         "IPC",
         "GreenOcean descarga las series del IPC de alimentos del INE, por HTTPS.",
     ),
-    ("M430 150 V190", "serve", 430, 168, "lee", "El visitante lee el panel por HTTPS."),
+    ("M360 150 V190", "serve", 360, 168, "lee", "El Usuario lee el negocio del panel por HTTPS."),
+    ("M500 150 V190", "serve", 500, 168, "lee", "El Profesional lee todo el panel por HTTPS y consulta con SQL."),
     (
-        "M570 150 V190",
+        "M640 150 V190",
         "ops",
-        570,
+        640,
         168,
         "mantiene",
-        "El administrador cambia el código y los secretos, y con la clave lanza una carga.",
+        "El Autor cambia el código y los secretos y, con la clave, lanza y sigue una carga.",
     ),
     (
         "M710 225 H868",
@@ -331,9 +346,9 @@ USER_CASES = [
 ]
 SYSTEM_CASES = [
     ("GitHub Actions", 0, "Cargar y publicar cada martes", "RF-01 a RF-04", "Centro de operación"),
-    ("Administrador", 1, "Responder consultas SQL puntuales", "", "Consultas SQL"),
-    ("Administrador", 2, "Lanzar una carga manual con la clave de control", "", "Centro de operación"),
-    ("Administrador", 3, "Mantener el código y los secretos", "", "GitHub, fuera del panel"),
+    ("Autor", 1, "Responder consultas SQL puntuales", "", "Consultas SQL"),
+    ("Autor", 2, "Lanzar una carga manual con la clave de control", "", "Centro de operación"),
+    ("Autor", 3, "Mantener el código y los secretos", "", "GitHub, fuera del panel"),
 ]
 USE_WIDTH, USE_HEIGHT = 1000, 566
 LEFT_ACTOR_X, RIGHT_ACTOR_X = 66, 934
@@ -412,7 +427,7 @@ def build_use_cases_html(mode):
                     f'<path d="M{bus_x} {row_y} H{edge_x}" stroke="{accent}" stroke-width="1.8"/>' for row_y in ys
                 )
             brand = actor == "GitHub Actions"
-            person = "author" if actor == "Administrador" else "visitor"
+            person = "author" if actor == "Autor" else "visitor"
             actors.append(
                 f'<g>{actor_figure(actor_x, y, "github" if brand else person, actor, ink, muted, brand=brand)}</g>'
             )
@@ -531,10 +546,22 @@ CONTAINERS = [
         "GitHub",
         ["repositorio · Actions · API REST"],
         "",
-        "Guarda el código en main y la base publicada en un release, ejecuta la carga cada martes y responde a la API del panel.",
+        "Guarda el código en main y la base publicada en un release, ejecuta la carga cada martes y responde a la API REST del panel: lanzar la carga, leer su estado y sus logs, y cancelarla.",
     ),
-    ("visitor", "person", 746, 26, 0, 0, "Visitante", [], "", "Analista, compras, gerencia o revisor técnico."),
-    ("author", "person", 846, 26, 0, 0, "Administrador", [], "", "Mantiene el código y los secretos."),
+    ("visitor", "person", 680, 26, 0, 0, "Usuario", [], "", "Ve el negocio del panel; sin cuenta ni clave."),
+    ("professional", "person", 801, 26, 0, 0, "Profesional", [], "", "Ve todo el panel y usa el SQL de solo lectura."),
+    (
+        "author",
+        "person",
+        878,
+        26,
+        0,
+        0,
+        "Autor",
+        [],
+        "",
+        "Mantiene el código y los secretos; con la clave lanza la carga.",
+    ),
 ]
 # (path, label, label x, label y, anchor). One straight segment each, from the one that uses to the one that is used.
 C4_LINKS = [
@@ -544,18 +571,24 @@ C4_LINKS = [
     ("M346 366 H426", "publica", 386, 358, "middle"),
     ("M346 479 H426", "escribe", 386, 471, "middle"),
     ("M726 366 H636", "lee", 681, 358, "middle"),
-    ("M746 96 V316", "consulta · HTTPS", 746, 206, "middle"),
-    ("M846 96 V316", "lanza la carga", 846, 262, "middle"),
-    ("M801 416 V580", "lanza el workflow · API REST", 801, 500, "middle"),
+    ("M680 96 V276 H756 V316", "lee", 680, 206, "middle"),
+    ("M801 96 V316", "lee · SQL", 801, 150, "middle"),
+    ("M878 96 V276 H846 V316", "lanza", 870, 206, "end"),
+    ("M801 416 V580", "API REST de GitHub", 793, 534, "end"),
     ("M200 580 V520", "ejecuta cada martes", 192, 560, "end"),
     ("M300 520 V580", "release de la base", 308, 560, "start"),
 ]
-C4_SUBLABELS = [("solo lectura", 681, 384)]
+# (label, x, y, anchor): a second line under a link's label.
+C4_SUBLABELS = [
+    ("solo lectura", 681, 384, "middle"),
+    ("la carga", 870, 222, "end"),
+    ("lanzar, leer estado y logs, cancelar", 793, 552, "end"),
+]
 
 
 def container_person(key, x, y, name):
     """A person of the container view: the figure and the name under it."""
-    mark = flat_logo("person", "visitor" if key == "visitor" else "author").replace(
+    mark = flat_logo("person", key).replace(
         '<svg class="logo" ', f'<svg x="{x - 26}" y="{y - 10}" width="52" height="52" ', 1
     )
     return (
@@ -667,8 +700,8 @@ def build_containers_html(mode):
         for _, label, x, y, anchor in C4_LINKS
     )
     chips += "".join(
-        f'<text class="c4-label" x="{x}" y="{y}" text-anchor="middle">{esc(label)}</text>'
-        for label, x, y in C4_SUBLABELS
+        f'<text class="c4-label" x="{x}" y="{y}" text-anchor="{anchor}">{esc(label)}</text>'
+        for label, x, y, anchor in C4_SUBLABELS
     )
     hovers = "".join(
         f"svg:has(#c-{row[0]}:hover, #c-{row[0]}:focus) #ct-{row[0]} {{ opacity:1; }}" for row in CONTAINERS

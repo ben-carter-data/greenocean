@@ -21,7 +21,7 @@ CONTROLS = [
         1,
         "SQL público con límites",
         "una sentencia de lectura · sin archivos ni web · 10 s · 5.000 filas · 1 GB",
-        "Las tablas de precios y el servidor. El estudio SQL está abierto a cualquier visitante: los datos son públicos.",
+        "Las tablas de precios y el servidor. El estudio SQL no pide cuenta: los datos son públicos.",
         "La consulta debe ser una sola sentencia SELECT o WITH, sin funciones que lean archivos ni direcciones web; se corta a "
         "los 10 segundos, devuelve como máximo 5.000 filas y usa como máximo 1 GB de memoria.",
         "bi/sql_explorer.py",
@@ -153,8 +153,19 @@ LOOP = [
 WIDTH, HEIGHT = 1000, 676
 # Pieces of the topology: key -> (kind, centre x, centre y, title, line, control number or None, label x, wrap, cases).
 NODES = {
-    "visitor": ("person:visitor", 120, 56, "Visitante", "cualquier persona, sin cuenta", None, 152, 30, ""),
-    "author": ("person:author", 400, 56, "Administrador", "el autor del proyecto", None, 432, 30, ""),
+    # D-382: the Usuario and the Profesional share one trust level (no account); the Autor has the control code.
+    "visitor": (
+        "person:visitor",
+        120,
+        56,
+        "Usuario y Profesional",
+        "sin cuenta; el SQL es del Profesional",
+        None,
+        152,
+        30,
+        "",
+    ),
+    "author": ("person:author", 400, 56, "Autor", "con la clave de control", None, 432, 30, ""),
     "gate": (
         "gate",
         720,
@@ -250,7 +261,7 @@ LINKS = [
     ("M120 407 V443", False, None),
     ("M400 78 V191", False, (436, 116, "HTTPS · clave")),
     ("M400 237 V277", False, None),
-    ("M400 322 V395 H618", False, (424, 388, "API de GitHub")),
+    ("M400 322 V395 H618", False, (424, 388, "API: lanzar, estado y logs, cancelar")),
     ("M640 417 V322", False, (656, 352, "release de la base")),
     ("M640 278 V237", False, (656, 268, "en cada push")),
     ("M618 300 H594", False, None),
