@@ -2896,3 +2896,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** que la figura «ADR-35: la base servida, antes y después» no muestre una fecha fija como si fuera actual, y que ningún documento lleve un nombre personal.
 - **Decisión:** la nota de la figura dice que las cifras de «antes» se midieron el 24-10-2026, al decidir ADR-35, y suma el tamaño de hoy de la base servida, medido al dibujarla (sin la base, solo la parte histórica). El texto del ADR ya es un registro histórico y no cambia. La cabecera de `docs/DISENO.md` pasa de un nombre personal a «Autor: el autor». `LICENSE` conserva el nombre, porque la licencia exige un titular; la firma del README queda como está hasta que el autor decida.
 - **Pruebas:** `tests/test_doc_diagrams.py::test_d386_…` (la nota histórica y el tamaño medido) y `tests/test_documents.py::test_d386_…` (ningún documento de `docs/` firmado con un nombre).
+
+## D-387 · El README nombra todas las páginas del menú, en su orden
+
+- **Pedido del autor:** que el README y `CLAUDE.md` no queden atrasados respecto de la app.
+- **Decisión:** la lista «Páginas del panel» del README sigue el menú, sección por sección (de Interesados a Git workflow, con GitHub Actions marcada como página del autor), y dice qué muestra cada vista. `CLAUDE.md` deja de fijar el rango de decisiones («desde D-001, una por cambio»), que se atrasaba en cada entrega; el número de pruebas y las carpetas de `docs/` ya se pusieron al día en D-381.
+- **Pruebas:** `tests/test_menu_order.py::test_d387_…` (cada página del menú está en la lista del README, en el mismo orden).

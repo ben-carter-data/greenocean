@@ -113,3 +113,17 @@ def test_d378_the_app_map_names_the_menu_pages_in_the_menu_order():
     positions = [pages.index(label) for label in expected]
     assert positions == sorted(positions), expected  # every page is named, in the menu's order
     assert pages in i18n.PAGES  # and the map's sentence has its English
+
+
+def test_d387_the_readme_lists_every_page_of_the_menu_in_the_menu_order():
+    readme = (Path(dashboard.__file__).resolve().parent.parent / "README.md").read_text(encoding="utf-8")
+    line = next(line for line in readme.splitlines() if line.startswith("Páginas del panel"))
+    labels = [
+        dashboard.SIDEBAR_LABELS.get(view, view)
+        for key, _, pages in dashboard.MENU_BLOCKS
+        if key not in ("fuentes", "documentos")
+        for view in pages
+    ]
+    positions = [line.index(label) for label in labels]
+    assert positions == sorted(positions), labels
+    assert "carpeta de documentos" in line and "Precios e inflación" in line
