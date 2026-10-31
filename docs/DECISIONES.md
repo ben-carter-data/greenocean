@@ -2759,3 +2759,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** que Profesional y Usuario sean las dos opciones grandes, una al lado de la otra; que Autor salga de entre ellas; y que, mientras la ventana está abierta, el panel de atrás no se pueda leer.
 - **Decisión:** la ventana muestra solo dos píldoras, Profesional (con sus perfiles debajo) y Usuario. El acceso del Autor pasa a un enlace pequeño y discreto, «Acceso del autor» (inglés «Author access»), en la esquina superior derecha; al hacer clic abre su campo de clave, que se envía con Enter como antes (D-350) y usa la misma clave (D-335). Mientras la ventana está abierta, una capa oscura casi opaca y con desenfoque fuerte tapa la app. Nada más cambia: la ventana se sigue pidiendo en cada visita y recarga (D-340, D-357).
 - **Pruebas:** `tests/test_control.py::test_d369_…` (en español e inglés, las dos opciones principales sin Autor, el enlace de la esquina con su campo de clave, y la capa que tapa el fondo).
+
+## D-370 · El diagrama de despliegue nombra la API REST de GitHub y los pull requests del informe
+
+- **Pedido del autor:** que la flecha del panel a GitHub diga lo que el panel hace con la API, y que la caja del informe semanal sea la de los pull requests.
+- **Decisión:** la ruta de Streamlit Cloud a GitHub pasa de «API REST · workflow_dispatch» a «API REST de GitHub · lanzar, leer estado y logs, cancelar», en dos líneas para que quepa. La caja «Issues · Informe semanal» pasa a «Pull requests · informe semanal»: tras cada carga, el workflow de calidad propone el informe numerado como un pull request (D-331, D-363). Nada más cambia.
+- **Pruebas:** `tests/test_deployment.py::test_d370_…` (los textos nuevos, sin los viejos, su inglés y el disparador del informe en `calidad.yml`).

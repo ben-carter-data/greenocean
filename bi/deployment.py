@@ -33,11 +33,11 @@ ENVIRONMENTS = {
     "python": (346, 216, 186, 96, "github", "Python 3.11"),
     "repo": (336, 358, 206, 150, "github", "Repositorio · rama main"),
     "cache": (590, 84, 180, 56, "github", "Caché de Actions"),
-    "issues": (590, 178, 180, 56, "github", "Issues"),
+    "issues": (590, 178, 180, 56, "github", "Pull requests"),
     "app": (822, 84, 151, 236, "streamlit", "Streamlit"),
     "venv": (32, 344, 206, 134, "author", "Python 3.11 o 3.12"),
 }
-# Communication paths: (path, protocol, chip position). Straight segments only.
+# Communication paths: (path, protocol, chip position). Straight segments only. A protocol of two lines is a tuple.
 PATHS = [
     ("M250 86 H298 V124 H336", "HTTPS", (254, 80)),
     ("M250 199 H310 V158 H336", "HTTPS", (254, 193)),
@@ -45,7 +45,7 @@ PATHS = [
     ("M440 320 V358", "git push", (452, 344)),
     ("M542 112 H590", "", None),
     ("M542 206 H590", "", None),
-    ("M810 158 H542", "API REST · workflow_dispatch", (596, 154)),
+    ("M810 158 H542", ("API REST de GitHub", "lanzar, leer estado y logs, cancelar"), (548, 152)),  # D-370
     ("M542 440 H640 V300 H810", "despliegue de main", (650, 294)),
     ("M897 392 V340", "HTTPS", (908, 372)),
 ]
@@ -66,7 +66,8 @@ TIPS = {
     "repo": "El repositorio público: el código en la rama main y la base servida en el release «base-actual». Solo si pasan "
     "todas las pruebas, la carga reemplaza la base del release y sube su puntero con un commit «Weekly data update» (D-270).",
     "cache": "Guarda los CSV de los años cerrados, que ya no cambian, para no descargarlos cada semana. Se borra si no se usa en 7 días.",
-    "issues": "El workflow crea un issue «Informe semanal AAAA-MM-DD» con el estado de la carga y las alertas de precio.",
+    "issues": "Después de cada carga semanal, el workflow de calidad propone el informe semanal numerado como un pull "
+    "request, que el autor revisa y aprueba antes de que el panel lo muestre (D-331, D-363).",
     "app": "Streamlit ejecuta bi/dashboard.py desde la rama main. Descarga del release la base de la última carga, comprueba su "
     "huella y la lee en solo lectura; guarda los secretos del panel y, con la clave de control, lanza la carga por la API de GitHub.",
     "browser": "Cualquier visitante, o el autor. El panel público no pide cuenta; la clave solo abre el botón «Ejecutar pipeline ahora».",
@@ -210,7 +211,7 @@ def build_contents(states, figures):
         ),
         "cache": heading(602, 100, "entorno de ejecución", "Caché de Actions")
         + artifact(602, 134, "CSV de años cerrados"),
-        "issues": heading(602, 194, "entorno de ejecución", "Issues") + artifact(602, 228, "Informe semanal"),
+        "issues": heading(602, 194, "entorno de ejecución", "Pull requests") + artifact(602, 228, "informe semanal"),
         "app": (
             heading(834, 104, "entorno de ejecución", "Streamlit")
             + artifact(834, 150, "dashboard.py")
@@ -259,7 +260,10 @@ def build_deployment_html(palette, states, figures):
         )
     paths = "".join(f'<path class="path" d="{d}" marker-end="url(#dep-head)"/>' for d, *_ in PATHS)
     chips = "".join(
-        f'<text class="chip" x="{pos[0]}" y="{pos[1]}">{esc(label)}</text>' for _, label, pos in PATHS if label
+        f'<text class="chip" x="{pos[0]}" y="{pos[1] + 18 * row}">{esc(line)}</text>'
+        for _, label, pos in PATHS
+        if label
+        for row, line in enumerate(label if isinstance(label, tuple) else (label,))
     )
     legend = (
         f'<circle cx="26" cy="550" r="5" fill="{architecture.STATE_COLORS[control.RUN_OK]}"/>'

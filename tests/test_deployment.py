@@ -25,7 +25,13 @@ def test_the_diagram_has_the_nodes_and_the_environments_of_a_deployment_diagram(
         assert stereotype in page
     for key in list(deployment.NODES) + list(deployment.ENVIRONMENTS):
         assert f'id="n-{key}"' in page and f'id="tip-{key}"' in page, key
-    for protocol in ("HTTPS", "git push", "API REST · workflow_dispatch", "despliegue de main"):
+    for protocol in (
+        "HTTPS",
+        "git push",
+        "API REST de GitHub",
+        "lanzar, leer estado y logs, cancelar",
+        "despliegue de main",
+    ):
         assert protocol in page
     assert "<script" not in page
 
@@ -80,3 +86,20 @@ def test_a_failed_workflow_is_drawn_in_its_color_and_an_unknown_one_has_no_dot()
         )
     )
     assert unknown.count("<circle cx=") == 1  # only the legend's dot
+
+
+def test_d370_the_panel_reaches_github_through_its_rest_api_and_the_report_is_a_pull_request():
+    from bi import i18n_en
+
+    page = draw()
+    assert "workflow_dispatch" not in page and ">Issues<" not in page
+    assert ">Pull requests<" in page and ">informe semanal<" in page
+    calidad = (REPOSITORY / ".github/workflows/calidad.yml").read_text(encoding="utf-8")
+    assert "workflow_run" in calidad and "informe-calidad/" in calidad  # the report is proposed as a pull request
+    for text in (
+        "API REST de GitHub",
+        "lanzar, leer estado y logs, cancelar",
+        "informe semanal",
+        deployment.TIPS["issues"],
+    ):
+        assert text in i18n_en.PAGES, text
