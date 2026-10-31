@@ -4,12 +4,12 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.3 |
-| Fecha | 30-10-2026 |
+| Versión | 1.4 |
+| Fecha | 31-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Decir qué calidad cuida GreenOcean, cómo la mide, quién decide y qué pasa cuando algo falla. |
-| Audiencia | Gerencia, analistas, revisión técnica y quien quiera saber por qué confiar en las cifras. |
+| Audiencia | Gerencia, analistas, revisores técnicos y quien quiera saber por qué fiarse de las cifras. |
 | Documentos relacionados | [Documento de requisitos del producto (PRD)](../negocio/PRD.md) · [Documento de arquitectura de software (SAD)](../arquitectura/SAD.md) · [Plan de pruebas y seguridad](PLAN_PRUEBAS.md) · [Manual de operación](../operacion/MANUAL.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 ## Índice
@@ -35,14 +35,16 @@ Este plan dice qué calidad cuida el proyecto, cómo la mide y quién decide. As
 
 ## 2. Visión y misión
 
-- **Visión:** Que cualquier persona en Chile sepa, con datos oficiales y confiables, cómo se mueven los precios de los alimentos.
-- **Misión:** Publicar cada semana precios verificados, claros y fáciles de leer, y mejorar el proceso de forma continua.
+- **Visión:** que cualquier persona en Chile sepa, con datos oficiales, cómo se mueven los precios de los alimentos.
+- **Misión:** publicar cada semana precios revisados y fáciles de leer, y mejorar el proceso con cada carga.
 
 ## 3. Qué medimos y por qué
 
 Medimos dos calidades. La primera es la de los datos que publicamos, según la norma ISO/IEC 25012: que nadie vea un precio corrupto, atrasado o mal comparado sin saberlo. La segunda es la del código que trata esos datos, según la norma ISO/IEC 25010: que sea probado, ordenado y seguro.
 
-Cada indicador tiene escrito qué mide, por qué importa, cómo se mide y qué hacer si falla. Todo eso vive en `docs/calidad/metas.json`, y la página «Método y calidad» lo muestra.
+Son los 12 indicadores del plan de calidad: 8 del código y 4 de los datos. Cada uno tiene escrito qué mide, por qué importa, cómo se mide y qué hacer si falla. Todo eso vive en `docs/calidad/metas.json`, y la página «Método y calidad» lo muestra.
+
+No hay que confundirlos con los 11 indicadores de calidad de los datos, que se miden en cada carga sobre la base publicada y se ven en «Calidad y auditoría». Esos protegen cada publicación; los del plan miden el proyecto semana a semana.
 
 [[diagrama:calidades]]
 
@@ -74,7 +76,7 @@ El ejemplo es F-10 del registro de fallas. Una prueba de velocidad, que era info
 
 ## 8. Informes de calidad
 
-Cada semana se mide todo y se arma un informe numerado. Un informe no se edita después: si algo cambia, sale el informe siguiente. El autor revisa cada informe y lo aprueba antes de que el panel lo muestre (D-331). En el panel, cada informe se abre como presentación y se descarga en PDF (D-333, D-347).
+Después de cada carga semanal, el workflow de calidad mide los 12 indicadores y propone un informe numerado como pull request (D-363). Un informe no se edita después: si algo cambia, sale el informe siguiente. El autor revisa cada informe y aprueba el pull request antes de que el panel lo muestre (D-331). En el panel, cada informe se abre como presentación y se descarga en PDF (D-333, D-347).
 
 [[diagrama:ciclo_calidad]]
 
@@ -84,13 +86,13 @@ El registro, `docs/calidad/plan_mitigacion.json`, guarda cada falla que el proye
 
 Cada falla tiene una categoría (datos, código u operación), una estación del flujo git (el camino de un cambio, de la idea al despliegue) y sus ocurrencias. Lo que falla en GitHub, el CI o el despliegue es de categoría operación.
 
-Cada ocurrencia se escribe en una línea por campo y en lenguaje simple: qué pasó, la causa, qué se hizo y un comentario. El análisis detallado vive en su decisión D-xxx (D-354). El profesional ve qué pasó y cómo se resolvió; el diagnóstico es del autor (D-345). Cada falla diagnosticada se anota antes de publicar el cambio que la corrige (D-342).
+Cada ocurrencia se escribe en una línea por campo y en lenguaje simple: qué pasó, la causa, qué se hizo y un comentario. El análisis detallado vive en su decisión D-xxx (D-354). La vista Profesional muestra qué pasó y cómo se resolvió; el diagnóstico solo lo ve el Autor (D-345). Cada falla diagnosticada se anota antes de publicar el cambio que la corrige (D-342).
 
 ## 10. Incidentes de las fuentes de datos
 
 Un incidente externo es una falla de las fuentes de datos: ODEPA o el INE. Por ejemplo, una semana que no se publica o un archivo que cambia de formato. Ante un incidente, la carga no pasa sus controles y el panel conserva la última carga válida, con su fecha a la vista. Los incidentes se anotan en `docs/calidad/incidentes_externos.json`, y su respuesta queda pendiente de aprobación del autor (D-334).
 
-**Fuentes retrasadas (D-356).** Se publica hasta la última semana completa en ambas fuentes, sin rellenar nada: así lo leen el Panorama y los indicadores; la página «Último dato por canal» muestra la última semana de cada fuente, rotulada (D-365). Una semana reciente que una fuente aún no publica no bloquea la carga: queda como incidente externo y la app muestra un aviso discreto. La carga se detiene solo si falta una semana en medio de los datos, o si la fuente lleva más de 2 semanas sin publicar; en ese caso, además, el Autor recibe un aviso urgente.
+**Fuentes retrasadas (D-356).** Se publica hasta la última semana completa en ambas fuentes, sin rellenar nada. Así lo leen el Panorama y los indicadores. La página «Último dato por canal» muestra la última semana de cada fuente, rotulada (D-365). Una semana reciente que una fuente aún no publica no bloquea la carga: queda como incidente externo y la app muestra un aviso discreto. La carga se detiene solo si falta una semana en medio de los datos, o si la fuente lleva más de 2 semanas sin publicar. En ese caso, además, el Autor recibe un aviso urgente.
 
 ## 11. Quién decide qué
 
@@ -113,3 +115,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.1 | 30-10-2026 | Regla de las fuentes retrasadas (D-356) |
 | 1.2 | 30-10-2026 | La página «Último dato por canal» muestra la última semana de cada fuente (D-365) |
 | 1.3 | 30-10-2026 | La carga semanal corre solo las pruebas de datos y del pipeline (D-366) |
+| 1.4 | 31-10-2026 | Los 12 indicadores del plan de calidad, distintos de los 11 indicadores de calidad de los datos (3); el informe se propone como pull request después de cada carga (8); visión y misión como en el PRD; el documento pasa a `docs/calidad/` (D-381, D-384, D-388) |

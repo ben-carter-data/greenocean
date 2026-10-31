@@ -4,12 +4,12 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.3 |
-| Date | 2026-10-30 |
+| Version | 1.4 |
+| Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Say which quality GreenOcean looks after, how it measures it, who decides and what happens when something fails. |
-| Audience | Management, analysts, technical review and anyone who wants to know why to trust the figures. |
+| Audience | Management, analysts, technical reviewers and anyone who wants to know why to trust the figures. |
 | Related documents | [Product Requirements Document (PRD)](../negocio/PRD.md) · [Software Architecture Document (SAD)](../arquitectura/SAD.md) · [Test and Security Plan](PLAN_PRUEBAS.md) · [Operations Manual](../operacion/MANUAL.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 ## Contents
@@ -35,14 +35,16 @@ This plan says which quality the project looks after, how it measures it and who
 
 ## 2. Vision and mission
 
-- **Vision:** That anyone in Chile knows, with official and reliable data, how food prices move.
-- **Mission:** Publish verified, clear and easy-to-read prices every week, and improve the process continuously.
+- **Vision:** that anyone in Chile knows, with official data, how food prices move.
+- **Mission:** publish checked, easy-to-read prices every week, and improve the process with every load.
 
 ## 3. What we measure and why
 
 We measure two qualities. The first is that of the data we publish, following the ISO/IEC 25012 standard: nobody should see a corrupt, late or badly compared price without knowing it. The second is that of the code that treats the data, following the ISO/IEC 25010 standard: it must be tested, tidy and secure.
 
-Each indicator has written down what it measures, why it matters, how it is measured and what to do if it fails. All of that lives in `docs/calidad/metas.json`, and the page «Method and quality» shows it.
+They are the 12 indicators of the quality plan: 8 of the code and 4 of the data. Each one has written down what it measures, why it matters, how it is measured and what to do if it fails. All of that lives in `docs/calidad/metas.json`, and the page «Method and quality» shows it.
+
+They are not the 11 data quality indicators, which are measured on every load on the published database and shown in «Quality and audit». Those protect each publication; the plan's indicators measure the project week by week.
 
 [[diagrama:calidades]]
 
@@ -74,7 +76,7 @@ The example is F-10 of the failure register. A speed test, which was informative
 
 ## 8. Quality reports
 
-Every week everything is measured and a numbered report is built. A report is never edited afterwards: if something changes, the next report comes out. The author reviews each report and approves it before the dashboard shows it (D-331). In the dashboard, each report opens as a presentation and downloads as a PDF (D-333, D-347).
+After each weekly load, the quality workflow measures the 12 indicators and proposes a numbered report as a pull request (D-363). A report is never edited afterwards: if something changes, the next report comes out. The author reviews each report and approves the pull request before the dashboard shows it (D-331). In the dashboard, each report opens as a presentation and downloads as a PDF (D-333, D-347).
 
 [[diagrama:ciclo_calidad]]
 
@@ -84,13 +86,13 @@ The register, `docs/calidad/plan_mitigacion.json`, keeps every failure the proje
 
 Each failure has a category (data, code or operation), a station of the git flow (the path of a change, from the idea to the deployment) and its occurrences. What fails in GitHub, the CI or the deployment is in the operation category.
 
-Each occurrence is written in one line per field and in plain language: what happened, the cause, what was done and a comment. The detailed analysis lives in its decision D-xxx (D-354). The professional sees what happened and how it was solved; the diagnosis is the author's (D-345). Each diagnosed failure is recorded before the change that fixes it is published (D-342).
+Each occurrence is written in one line per field and in plain language: what happened, the cause, what was done and a comment. The detailed analysis lives in its decision D-xxx (D-354). The Professional view shows what happened and how it was solved; only the Author sees the diagnosis (D-345). Each diagnosed failure is recorded before the change that fixes it is published (D-342).
 
 ## 10. Incidents of the data sources
 
 An external incident is a failure of the data sources: ODEPA or the INE. For example, a week that is not published or a file that changes its format. Faced with an incident, the load does not pass its checks and the dashboard keeps the last valid load, with its date in sight. Incidents are recorded in `docs/calidad/incidentes_externos.json`, and their response awaits the author's approval (D-334).
 
-**Late sources (D-356).** We publish up to the last week complete in both sources, filling in nothing: that is how the Price overview and the indicators read it; the page «Último dato por canal» shows each source's latest week, labelled (D-365). A recent week a source has not published yet does not block the load: it stays as an external incident and the app shows a quiet notice. The load stops only if a week is missing in the middle of the data, or if the source has gone more than 2 weeks without publishing; in that case the Author also gets an urgent alert.
+**Late sources (D-356).** We publish up to the last week complete in both sources, filling in nothing. That is how the Price overview and the indicators read it. The page «Latest data by channel» shows each source's latest week, labelled (D-365). A recent week a source has not published yet does not block the load: it stays as an external incident and the app shows a quiet notice. The load stops only if a week is missing in the middle of the data, or if the source has gone more than 2 weeks without publishing. In that case the Author also gets an urgent alert.
 
 ## 11. Who decides what
 
@@ -111,5 +113,6 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 |---|---|---|
 | 1.0 | 2026-10-30 | First version of the software quality assurance plan (D-355) |
 | 1.1 | 2026-10-30 | Rule for late sources (D-356) |
-| 1.2 | 2026-10-30 | The page «Último dato por canal» shows each source's latest week (D-365) |
+| 1.2 | 2026-10-30 | The page «Latest data by channel» shows each source's latest week (D-365) |
 | 1.3 | 2026-10-30 | The weekly load runs only the data and pipeline tests (D-366) |
+| 1.4 | 2026-10-31 | The 12 indicators of the quality plan, apart from the 11 data quality indicators (3); the report is proposed as a pull request after each load (8); vision and mission as in the PRD; the document moves to `docs/calidad/` (D-381, D-384, D-388) |
