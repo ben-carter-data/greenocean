@@ -85,6 +85,17 @@
       ],
       "accion": "",
       "estado": ""
+    },
+    {
+      "informe": 6,
+      "indicador": "vigencia_dias",
+      "fecha": "2026-10-30",
+      "causa": [
+        "Siguen sin publicarse datos desde el 20-10: la misma causa del informe N° 5 (F-10 y F-06).",
+        "Still no data published since 20-10: the same cause as report No. 5 (F-10 and F-06)."
+      ],
+      "accion": "",
+      "estado": ""
     }
   ]
 }

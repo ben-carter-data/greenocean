@@ -361,12 +361,12 @@
             "The report branch becomes «informe-calidad/…» in calidad.yml (D-362)."
           ],
           "comentario": [
-            "Queda abierta hasta que el workflow abra su primer pull request.",
-            "It stays open until the workflow opens its first pull request."
+            "Resuelta el 30-10: el workflow abrió el pull request #9 con el informe N° 6.",
+            "Solved on 30-10: the workflow opened pull request #9 with report No. 6."
           ],
           "estacion": 14,
-          "estado": "abierta",
-          "referencia": "D-362"
+          "estado": "resuelta",
+          "referencia": "D-362 · #9"
         },
         {
           "fecha": "2026-10-30",
@@ -383,11 +383,11 @@
             "The alert warns when the report is more than 8 days old (D-361); report No. 5 is measured locally."
           ],
           "comentario": [
-            "La causa de fondo sigue siendo F-11.",
-            "The root cause is still F-11."
+            "Resuelta: el informe N° 6 ya refleja el estado real.",
+            "Solved: report No. 6 already reflects the real state."
           ],
           "estacion": 14,
-          "estado": "abierta",
+          "estado": "resuelta",
           "referencia": "D-361"
         }
       ]

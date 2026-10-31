@@ -381,7 +381,9 @@ def test_d334_every_nonconformity_of_the_reports_is_registered_and_the_author_wr
 
 # region The author's alert and the automatic diagnosis (D-335)
 def test_d335_the_diagnosis_says_what_failed_where_since_when_and_whose_cause_without_a_secret():
-    reports, goals, policy = quality_method.read_page()
+    every, goals, policy = quality_method.read_page()
+    # The history these checks read: N° 1 to 4, when the failing tests were out of their acceptable in a row.
+    reports = [report for report in every if report["numero"] <= 4]
     latest = reports[-1]
     failed = next(row for row in latest["indicadores"] if row["clave"] == "pruebas_fallidas")
     es, en = quality_metrics.diagnose(failed, latest, reports, policy)
