@@ -4,12 +4,12 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.1 |
-| Date | 2026-10-30 |
+| Version | 3.2 |
+| Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
 | Purpose | State what happens automatically, what is checked and when, and what to do about each failure. |
-| Audience | Operation of the project, also without technical training. |
+| Audience | Whoever operates the project, also without technical training. |
 | Related documents | [Software Architecture Document (SAD)](../arquitectura/SAD.md) · [Test and Security Plan](../calidad/PLAN_PRUEBAS.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 ## Contents
@@ -29,7 +29,13 @@
 
 ## 1. In summary
 
-GreenOcean almost runs itself. Every Tuesday the load runs without intervention and, if something fails, the panel keeps showing the last valid load: a half-finished figure is never published. The operations work comes down to looking at one result a week, four tasks on the calendar and, if a failure warning arrives, following the table of section 4. The warning arrives in three ways: GitHub's email, the red run on GitHub and, inside the panel, a red notice above the menu on every page, with a link to the step that failed.
+GreenOcean almost runs itself. Every Tuesday the load runs without intervention. If something fails, the panel keeps showing the last valid load: a half-finished figure is never published.
+
+The operations work comes down to looking at one result a week, four tasks on the calendar and, if a failure warning arrives, following the table of section 4. The warning arrives in three ways:
+
+- GitHub's email.
+- The red run on GitHub.
+- Inside the panel, a red notice above the menu on every page, with a link to the step that failed.
 
 [[diagrama:calendario]]
 
@@ -41,7 +47,7 @@ It can also be launched by hand: from «Operations center», with the «Run pipe
 
 If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](../arquitectura/ADR.md#adr-11--publish-only-if-the-tests-pass)).
 
-After every load, the quality workflow measures the indicators and proposes the numbered report as the pull request «Actualizar medición de calidad». On every push it only measures and fails if a code indicator is past its acceptable.
+After every load, the quality workflow measures the 12 indicators of the quality plan and proposes the numbered report as the pull request «Actualizar medición de calidad». On every push it only measures, and fails if a code indicator is past its acceptable.
 
 ## 3. What is checked and when
 
@@ -60,7 +66,7 @@ After every load, the quality workflow measures the indicators and proposes the 
 
 [[diagrama:arbol_fallas]]
 
-Each row is a step of the workflow, with its name in `semanal.yml`. The warning reaches the author through GitHub's «Run failed: semanal» email and, in the panel, as a red notice above the menu of every page; the failed step shows in red in «Operations center». The `etl_run` table records only the published loads: the message of a failure is read in the log of the step.
+Each row is a step of the workflow, with its name in `semanal.yml`. The warning reaches the author through GitHub's «Run failed: semanal» email and, in the panel, as a red notice above the menu of every page. The failed step shows in red in «Operations center». The `etl_run` table records only the published loads, so the message of a failure is read in the log of the step.
 
 | Step | Symptom | Probable cause | Action |
 |---|---|---|---|
@@ -73,7 +79,9 @@ Each row is a step of the workflow, with its name in `semanal.yml`. The warning 
 | Publish the database | GitHub rejects the upload of the file or of the pointer | Workflow permissions, or a change on `main` during the load | Check Settings → Actions → Workflow permissions («Read and write») and launch again |
 | Publish the weekly report | The issue is not created | Workflow permissions | Check the permissions; the database is already published |
 
-A week a source has not published yet is not a failure: the load publishes up to the last week complete in both sources and the Price overview says so. What does stop the load is `MISSING_WEEKS` (a week missing in the middle of the data) and `LATE_SOURCE` (a source has gone more than 2 weeks without publishing): check ODEPA and fill nothing in; the load comes back by itself when the source publishes. To read any failure without copying by hand, the panel's page «GitHub Actions», as Author, shows the job, the step, the failing tests and the end of the log, with «Copiar».
+A week a source has not published yet is not a failure. The load publishes up to the last week complete in both sources, and the Price overview says so. What does stop the load is `MISSING_WEEKS` (a week missing in the middle of the data) and `LATE_SOURCE` (a source has gone more than 2 weeks without publishing). In those cases, check ODEPA and fill nothing in: the load comes back by itself when the source publishes.
+
+To read any failure without copying by hand, the panel's page «GitHub Actions», in the Author view, shows the job, the step, the failing tests and the end of the log, with «Copy».
 
 ## 5. Failures of the published panel
 
@@ -97,11 +105,17 @@ A week a source has not published yet is not a failure: the load publishes up to
 
 ## 7. Author access and administration
 
-In «Operations center», «Author access» asks for the control code (the panel's `CONTROL_CODE` secret) and opens with Enter. With the right code, the «Run pipeline now» button, the token-expiry warning and the administration links appear (GitHub tokens, runs and the administration of the app on Streamlit). Without the secret configured, for example in a local copy, the access stays closed.
+In «Operations center», «Author access» asks for the control code (the panel's `CONTROL_CODE` secret) and opens with Enter. With the right code, the «Run pipeline now» button, the token-expiry warning and the administration links appear: GitHub tokens, runs and the administration of the app on Streamlit. Without the secret configured, for example in a local copy, the access stays closed.
 
 The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. There is no limit of attempts for the code: it is an accepted risk, described in the [Test and Security Plan](../calidad/PLAN_PRUEBAS.md#11-accepted-risks-and-limits). The panel never shows the token or any part of it.
 
-One also enters as Author from the window «Elige tu vista»: the link «Acceso del autor» (Author access), in its corner, the key and Enter (D-369). The «Vista» button, under the logo and above the menu, changes the view, as does a click on the logo (D-373); leaving Author closes its session. The panel uses three secrets, kept in Streamlit (section 8): `CONTROL_CODE`, `GITHUB_TOKEN` (starts and cancels the load) and `GITHUB_READ_TOKEN` (read only, for the page «GitHub Actions»).
+One also enters as Author from the window to choose the view: the link «Author access», in its corner, the key and Enter (D-369). The «View» button, under the logo, changes the view; a click on the logo does the same (D-373). Leaving Author closes its session.
+
+The panel uses three secrets, kept in Streamlit (section 8):
+
+- `CONTROL_CODE`: the author's key.
+- `GITHUB_TOKEN`: starts the load, reads its state and logs, and cancels it.
+- `GITHUB_READ_TOKEN`: read only, for the page «GitHub Actions».
 
 ## 8. GitHub guide
 
@@ -118,14 +132,14 @@ The links used to run the project, grouped by task.
 | Settings | [Actions · General](https://github.com/ben-carter-data/greenocean/settings/actions) | Workflow permissions to write and open pull requests | If a publication or a pull request is rejected | «Workflow permissions» → «Read and write» and «Allow GitHub Actions to create and approve pull requests» |
 | Settings | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) | The served database the panel reads | If the panel cannot find its database | Check that the file `datos.duckdb` is in «Assets» |
 | Settings | [Issues](https://github.com/ben-carter-data/greenocean/issues) | The weekly report of every published load | Every Tuesday | «Informe semanal» with its date |
-| The app | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | The app the visitor sees | After every push, to confirm the change | Choose the view; as Author, type the key and Enter |
+| The app | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | The app the User, the Professional and the Author see | After every push, to confirm the change | Choose the view; as Author, type the key and Enter |
 | The app | [Streamlit Community Cloud](https://share.streamlit.io) | The panel's secrets and its restart | When renewing a token or if the panel shows a module error | The app → ⋮ → «Settings» → «Secrets», or «Reboot» |
 
 **Two rules.** Do not edit files on GitHub's website: every change is made on the author's computer and sent with a push, so local and remote main do not drift apart. After merging a pull request on the website, bring the change with `git pull` before working.
 
 ## 9. Failure register
 
-Every diagnosed and solved failure is recorded in `docs/calidad/plan_mitigacion.json` before the push that fixes it. Each occurrence has the date, what happened, the cause, what was done and a comment, in one line per field and in plain language; the long analysis goes in its decision D-xxx. The register reads in «Git workflow» → «Incident log»; the professional sees what happened and how it was solved, the diagnosis is the author's.
+Every diagnosed and solved failure is recorded in `docs/calidad/plan_mitigacion.json` before the push that fixes it. Each occurrence has the date, what happened, the cause, what was done and a comment, in one line per field and in plain language; the long analysis goes in its decision D-xxx. The register reads in «Git workflow» → «Incident log». The Professional view shows what happened and how it was solved; only the Author sees the diagnosis.
 
 ## 10. Known limits
 
@@ -155,3 +169,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 2.0 | 2026-10-25 | Runbook format: symptom, cause, action, recovery, periodic tasks and limits with their source (D-279, professional documentation) |
 | 3.0 | 2026-10-25 | A summary at the start, the calendar, the fault tree and the recovery sequence as diagrams (D-290, documents for every reader) |
 | 3.1 | 2026-10-30 | GitHub guide and failure register; late sources, the weekly quality report, the manual load window, entering as Author and the three secrets (D-339 to D-363) |
+| 3.2 | 2026-10-31 | Wording reviewed; the 12 indicators of the quality plan (2); the token starts, follows and cancels the load (7); the three views (8, 9); the document moves to `docs/operacion/` (D-381, D-384, D-388) |

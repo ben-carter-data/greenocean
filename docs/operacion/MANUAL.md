@@ -4,12 +4,12 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.1 |
-| Fecha | 30-10-2026 |
+| Versión | 3.2 |
+| Fecha | 31-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Indicar qué ocurre de forma automática, qué se revisa y cuándo, y qué hacer ante cada falla. |
-| Audiencia | Operación del proyecto, también sin formación técnica. |
+| Audiencia | Quien opera el proyecto, también sin formación técnica. |
 | Documentos relacionados | [Documento de arquitectura de software (SAD)](../arquitectura/SAD.md) · [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 ## Índice
@@ -29,7 +29,13 @@
 
 ## 1. En resumen
 
-GreenOcean se opera casi solo. Cada martes la carga corre sin intervención y, si algo falla, el panel sigue mostrando la última carga válida: nunca se publica una cifra a medias. El trabajo de operación se reduce a mirar un resultado por semana, a cuatro tareas del calendario y, si llega el aviso de una falla, a seguir la tabla de la sección 4. El aviso llega por tres vías: el correo de GitHub, la ejecución en rojo en GitHub y, dentro del panel, un aviso rojo arriba del menú en todas las páginas, con un enlace al paso que falló.
+GreenOcean se opera casi solo. Cada martes la carga corre sin intervención. Si algo falla, el panel sigue mostrando la última carga válida: nunca se publica una cifra a medias.
+
+El trabajo de operación se reduce a mirar un resultado por semana, a cuatro tareas del calendario y, si llega el aviso de una falla, a seguir la tabla de la sección 4. El aviso llega por tres vías:
+
+- El correo de GitHub.
+- La ejecución en rojo en GitHub.
+- Dentro del panel, un aviso rojo arriba del menú en todas las páginas, con un enlace al paso que falló.
 
 [[diagrama:calendario]]
 
@@ -41,7 +47,7 @@ También se puede lanzar a mano: desde «Centro de operación», con el botón �
 
 Si un paso falla, los siguientes no se ejecutan y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](../arquitectura/ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)).
 
-Después de cada carga, el workflow de calidad mide los indicadores y propone el informe numerado como pull request «Actualizar medición de calidad». En cada push solo mide y falla si un indicador de código pasa su aceptable.
+Después de cada carga, el workflow de calidad mide los 12 indicadores del plan de calidad y propone el informe numerado como pull request «Actualizar medición de calidad». En cada push solo mide, y falla si un indicador de código pasa su aceptable.
 
 ## 3. Qué se revisa y cuándo
 
@@ -60,7 +66,7 @@ Después de cada carga, el workflow de calidad mide los indicadores y propone el
 
 [[diagrama:arbol_fallas]]
 
-Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El aviso llega al autor por el correo «Run failed: semanal» de GitHub y, en el panel, como un aviso rojo arriba del menú de todas las páginas; el paso fallido aparece en rojo en «Centro de operación». La tabla `etl_run` registra solo las cargas publicadas: el mensaje de una falla se lee en el log del paso.
+Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El aviso llega al autor por el correo «Run failed: semanal» de GitHub y, en el panel, como un aviso rojo arriba del menú de todas las páginas. El paso fallido aparece en rojo en «Centro de operación». La tabla `etl_run` registra solo las cargas publicadas, así que el mensaje de una falla se lee en el log del paso.
 
 | Paso | Síntoma | Causa probable | Acción |
 |---|---|---|---|
@@ -73,7 +79,9 @@ Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El
 | Publish the database | GitHub rechaza la subida del archivo o del puntero | Permisos del workflow o un cambio en `main` durante la carga | Revisar Settings → Actions → Workflow permissions («Read and write») y volver a lanzar |
 | Publish the weekly report | No se crea el issue | Permisos del workflow | Revisar los permisos; la base ya quedó publicada |
 
-Una semana que una fuente aún no publica no es una falla: la carga publica hasta la última semana completa en ambas fuentes y el Panorama lo avisa. Sí detienen la carga `MISSING_WEEKS` (falta una semana en medio de los datos) y `LATE_SOURCE` (una fuente lleva más de 2 semanas sin publicar): revisar ODEPA y no rellenar nada; la carga vuelve sola cuando la fuente publica. Para leer cualquier falla sin copiar a mano, la página «GitHub Actions» del panel, como Autor, muestra el job, el paso, las pruebas que fallan y el final del log, con «Copiar».
+Una semana que una fuente aún no publica no es una falla. La carga publica hasta la última semana completa en ambas fuentes, y el Panorama lo avisa. Sí detienen la carga `MISSING_WEEKS` (falta una semana en medio de los datos) y `LATE_SOURCE` (una fuente lleva más de 2 semanas sin publicar). En esos casos, revisar ODEPA y no rellenar nada: la carga vuelve sola cuando la fuente publica.
+
+Para leer cualquier falla sin copiar a mano, la página «GitHub Actions» del panel, en la vista Autor, muestra el job, el paso, las pruebas que fallan y el final del log, con «Copiar».
 
 ## 5. Fallas del panel publicado
 
@@ -97,11 +105,17 @@ Una semana que una fuente aún no publica no es una falla: la carga publica hast
 
 ## 7. Acceso del autor y administración
 
-En «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso del vencimiento del token y los enlaces de administración (tokens de GitHub, ejecuciones y administración de la app en Streamlit). Sin el secreto configurado, por ejemplo en una copia local, el acceso permanece cerrado.
+En «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso del vencimiento del token y los enlaces de administración: tokens de GitHub, ejecuciones y administración de la app en Streamlit. Sin el secreto configurado, por ejemplo en una copia local, el acceso queda cerrado.
 
 La clave evita ejecuciones accidentales; no es la barrera principal. Lo que protege el proyecto es el inicio de sesión del autor en GitHub y en Streamlit (con verificación en dos pasos) y un token con los permisos mínimos. No hay límite de intentos de la clave: es un riesgo aceptado, descrito en el [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md#11-riesgos-aceptados-y-límites). El panel nunca muestra el token ni una parte de él.
 
-También se entra como Autor desde la ventana «Elige tu vista»: el enlace «Acceso del autor», en su esquina, la clave y Enter (D-369). El botón «Vista», debajo del logo y arriba del menú, cambia de vista, igual que un clic en el logo (D-373); salir de Autor cierra su sesión. El panel usa tres secretos, guardados en Streamlit (sección 8): `CONTROL_CODE`, `GITHUB_TOKEN` (lanza y cancela la carga) y `GITHUB_READ_TOKEN` (solo lectura, para la página «GitHub Actions»).
+También se entra como Autor desde la ventana «Elige tu vista»: el enlace «Acceso del autor», en su esquina, la clave y Enter (D-369). El botón «Vista», debajo del logo, cambia de vista; un clic en el logo hace lo mismo (D-373). Salir de Autor cierra su sesión.
+
+El panel usa tres secretos, guardados en Streamlit (sección 8):
+
+- `CONTROL_CODE`: la clave del autor.
+- `GITHUB_TOKEN`: lanza la carga, lee su estado y sus logs, y la cancela.
+- `GITHUB_READ_TOKEN`: solo lectura, para la página «GitHub Actions».
 
 ## 8. Guía de GitHub
 
@@ -118,14 +132,14 @@ Los enlaces que se usan para operar el proyecto, agrupados por tarea.
 | Configuración | [Actions · General](https://github.com/ben-carter-data/greenocean/settings/actions) | Permisos del workflow para escribir y abrir pull requests | Si una publicación o un pull request son rechazados | «Workflow permissions» → «Read and write» y «Allow GitHub Actions to create and approve pull requests» |
 | Configuración | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) | La base servida que lee el panel | Si el panel no encuentra su base | Revisar que el archivo `datos.duckdb` esté en «Assets» |
 | Configuración | [Issues](https://github.com/ben-carter-data/greenocean/issues) | El informe semanal de cada carga publicada | Cada martes | «Informe semanal AAAA-MM-DD» |
-| La app | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | La app que ve el visitante | Después de cada push, para confirmar el cambio | Elegir la vista; como Autor, escribir la clave y Enter |
+| La app | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | La app que ven el Usuario, el Profesional y el Autor | Después de cada push, para confirmar el cambio | Elegir la vista; como Autor, escribir la clave y Enter |
 | La app | [Streamlit Community Cloud](https://share.streamlit.io) | Los secretos del panel y su reinicio | Al renovar un token o si el panel muestra un error de módulo | La app → ⋮ → «Settings» → «Secrets», o «Reboot» |
 
 **Dos reglas.** No editar archivos desde la web de GitHub: todo cambio se hace en el computador del autor y se sube con push, para que main local y remoto no se separen. Después de fusionar un pull request en la web, traer el cambio con `git pull` antes de trabajar.
 
 ## 9. Registro de fallas
 
-Cada falla diagnosticada y resuelta se anota en `docs/calidad/plan_mitigacion.json` antes del push que la corrige. Cada ocurrencia lleva fecha, qué pasó, la causa, qué se hizo y un comentario, en una línea por campo y en lenguaje simple; el análisis largo va en su decisión D-xxx. El registro se lee en «Git workflow» → «Registro de incidentes»; el profesional ve qué pasó y cómo se resolvió, el diagnóstico es del autor.
+Cada falla diagnosticada y resuelta se anota en `docs/calidad/plan_mitigacion.json` antes del push que la corrige. Cada ocurrencia lleva fecha, qué pasó, la causa, qué se hizo y un comentario, en una línea por campo y en lenguaje simple; el análisis largo va en su decisión D-xxx. El registro se lee en «Git workflow» → «Registro de incidentes». La vista Profesional muestra qué pasó y cómo se resolvió; el diagnóstico solo lo ve el Autor.
 
 ## 10. Límites conocidos
 
@@ -155,3 +169,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 2.0 | 25-10-2026 | Formato de runbook: síntoma, causa, acción, recuperación, tareas periódicas y límites con su fuente (D-279, documentación profesional) |
 | 3.0 | 25-10-2026 | Un resumen al inicio, el calendario, el árbol de fallas y la secuencia de recuperación como diagramas (D-290, documentos para todo lector) |
 | 3.1 | 30-10-2026 | Guía de GitHub y registro de fallas; fuentes retrasadas, informe de calidad semanal, ventana de la carga manual, acceso como Autor y los tres secretos (D-339 a D-363) |
+| 3.2 | 31-10-2026 | Redacción revisada; los 12 indicadores del plan de calidad (2); el token lanza, sigue y cancela la carga (7); las tres vistas (8, 9); el documento pasa a `docs/operacion/` (D-381, D-384, D-388) |
