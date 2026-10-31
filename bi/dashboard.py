@@ -599,7 +599,7 @@ def choose_profile(profile, role=None):
     st.session_state[PROFILE_STATE] = profile
     if role:
         st.session_state[ROLE_STATE] = role
-    st.session_state[LANDING_STATE] = True  # the next run opens the first page of this profile's menu
+    st.session_state[LANDING_STATE] = True  # D-371: the next run opens the Panorama
     settle_profile()
 
 
@@ -856,13 +856,15 @@ def show_profile_switch():
 
 
 def open_profile_landing(windows_by_title):
-    """Right after a choice, the first page of that profile's menu."""
+    """D-371: right after a choice, the Panorama, whatever page the window opened on; only a document the address
+    opens («Abrir» or «PDF» of the folder) stays where it is."""
     if not st.session_state.pop(LANDING_STATE, False):
         return
-    order = visible_menu_order()
-    if order:
-        view = order[0]
-        st.switch_page(windows_by_title[WINDOW_OF_VIEW[view]], query_params=keep_context() | {VIEW_PARAMETER: view})
+    if st.query_params.get(VIEW_PARAMETER) in DOCUMENT_VIEWS - {PAGE_DOCUMENTATION}:
+        return
+    st.switch_page(
+        windows_by_title[WINDOW_OF_VIEW[HOME_PAGE]], query_params=keep_context() | {VIEW_PARAMETER: HOME_PAGE}
+    )
 
 
 def keep_theme_from_field():

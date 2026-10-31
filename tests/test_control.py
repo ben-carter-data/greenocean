@@ -303,3 +303,60 @@ def test_d369_the_entry_window_offers_two_views_and_the_author_only_as_a_corner_
     source = (Path(__file__).resolve().parent.parent / "bi" / "dashboard.py").read_text(encoding="utf-8")
     assert "profile_side_autor" not in source
     assert 'div[data-testid="stDialog"]:has(.st-key-profile_choices) {{ background:rgba(4, 8, 16, .97)' in source
+
+
+def open_entry_window(view, language="es"):
+    from streamlit.testing.v1 import AppTest
+
+    app = AppTest.from_file(str(Path(__file__).resolve().parent.parent / "bi" / "dashboard.py"), default_timeout=60)
+    app.query_params.update({"vista": view, "lang": language})
+    app.run()
+    assert not app.exception and app.get("dialog")
+    return app
+
+
+def test_d371_any_profile_lands_on_the_panorama_from_any_page():
+    from bi import dashboard
+
+    for choice, view in (
+        ("profile_choose_consulta", dashboard.PAGE_INSIGHTS),
+        ("profile_choose_profesional", dashboard.PAGE_SECURITY),
+        ("profile_role_data", dashboard.PAGE_RUNS),
+    ):
+        app = open_entry_window(view)
+        app.button(key=choice).click().run()
+        assert not app.exception and not app.get("dialog"), choice
+        assert [box for box in app.selectbox if box.key == "home_products_channel"], choice  # the Panorama ran
+
+
+def test_d371_a_document_the_address_opens_stays_after_the_choice():
+    from bi import dashboard
+
+    for language in ("es", "en"):
+        app = open_entry_window(dashboard.PAGE_PRD, language)
+        app.button(key="profile_choose_profesional").click().run()
+        assert not app.exception and not app.get("dialog")
+        assert dashboard.PAGE_PRD in str(app.query_params["vista"])
+
+
+def test_d371_every_view_has_the_indicator_and_it_reopens_the_window():
+    from bi import dashboard, i18n
+
+    for choice, name in (
+        ("profile_choose_consulta", "Usuario"),
+        ("profile_choose_profesional", "Profesional"),
+        ("profile_author_code", "Autor"),
+    ):
+        app = open_entry_window(dashboard.PAGE_PRD)
+        if choice == "profile_author_code":
+            app.secrets["CONTROL_CODE"] = "clave-larga"
+            app.text_input(key=choice).set_value("clave-larga").run()
+            if [button for button in app.button if button.key == "quality_alert_close"]:
+                app.button(key="quality_alert_close").click().run()  # the author's alert comes first (D-335)
+        else:
+            app.button(key=choice).click().run()
+        indicator = app.button(key="profile_indicator")
+        assert name in indicator.label and not app.get("dialog"), name
+        indicator.click().run()
+        assert not app.exception and app.get("dialog") and app.button(key="profile_keep"), name
+    assert all(i18n.EN[word] for word in ("Vista", "Usuario", "Profesional", "Autor"))
