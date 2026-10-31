@@ -110,7 +110,7 @@ Con la carga del 20-10-2026, la base tiene 814.610 precios semanales en 250 sema
 
 ## 7. Pantallas
 
-Capturas reales de las páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada. El menú agrupa las páginas por sección: Negocio, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad (Calidad y auditoría, Método y calidad y Git workflow). El Panorama de precios se lee en tres pasos numerados: elegir una región o todo Chile, elegir una familia y mirar sus productos; en la vista Usuario, cada paso se abre al completar el anterior. «Último dato por canal», junto al Panorama, muestra la última semana de cada fuente (mayorista y consumidor) con su variación por familia y sus productos, aunque la otra fuente todavía no la publique.
+Capturas reales de las páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada. El menú agrupa las páginas por sección: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad (Calidad y auditoría, Método y calidad y Git workflow). El Panorama de precios se lee en tres pasos numerados: elegir una región o todo Chile, elegir una familia y mirar sus productos; en la vista Usuario, cada paso se abre al completar el anterior. «Último dato por canal», junto al Panorama, muestra la última semana de cada fuente (mayorista y consumidor) con su variación por familia y sus productos, aunque la otra fuente todavía no la publique.
 
 [[diagrama:mockups]]
 

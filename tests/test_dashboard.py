@@ -191,7 +191,7 @@ def test_dashboard_territory_is_immediately_readable_without_a_3d_duplicate():
     assert "scatter3d" not in types
     texts = " ".join(block.value for block in app.markdown)
     # D-264: the week and three figures are chips of the bar; the place is in the week's hover.
-    assert texts.count('class="home-chip"') == 1 and "Todo Chile" in texts
+    assert texts.count('class="home-chip home-week-chip"') == 1 and "Todo Chile" in texts
     assert "Mapa en proporción real" in texts
 
 
@@ -1204,11 +1204,11 @@ def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
     app.run()
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio')
     assert not toggle.disabled
-    assert toggle.label == 'Negocio · BI'
+    assert toggle.label == 'Negocio · BA y BI'
     assert 'Panorama de precios' in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
     assert not app.exception
-    assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio').label == 'Negocio · BI'
+    assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio').label == 'Negocio · BA y BI'
     assert 'Panorama de precios' not in [link.proto.label for link in app.sidebar.get('page_link')]
 
 
@@ -1384,7 +1384,7 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 
 MENU_BLOCKS = {
-    'Negocio · BI': ['Panorama de precios', 'Último dato por canal', 'Insights'],
+    'Negocio · BA y BI': ['Panorama de precios', 'Último dato por canal', 'Insights'],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],
@@ -1455,12 +1455,12 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
     markup = " ".join(block.value for block in app.markdown)
     # the bar replaces the shared header on this page: one path, one Volver
     assert 'class="app-brand"' not in markup
-    assert "Negocio · BI › <b>Panorama de precios</b>" in markup
+    assert '<span class="home-bar-section">Negocio · BA y BI › </span><b>Panorama de precios</b>' in markup  # D-375
     assert app.button(key="return_to_previous").label == "Volver"
     assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
     # each chip says in full what it counts, and the alerts are the week's national ones
     assert (
-        markup.count('class="home-chip"') == 1
+        markup.count('class="home-chip home-week-chip"') == 1
     )  # D-316: the header keeps the week and the place; the counts live in the panels
     for note in ("Sin cambio claro", "Sin dato"):  # the map's legend says what its greys mean
         assert note in markup, note

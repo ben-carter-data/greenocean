@@ -152,7 +152,7 @@ def test_d283_the_language_follows_the_address_and_spanish_keeps_addresses_as_th
     labels = [link.proto.label for link in app.sidebar.get("page_link")]
     assert "Price overview" in labels and "Documents" in labels and "Panorama de precios" not in labels
     toggles = [button.label for button in app.sidebar.button if str(button.key).startswith("nav_toggle_")]
-    assert toggles[:2] == ["Business · BI", "Data engineering"]
+    assert toggles[:2] == ["Business · BA and BI", "Data engineering"]
     assert [button.proto.type for button in app.sidebar.button if str(button.key).startswith("language_")] == [
         "secondary",
         "primary",

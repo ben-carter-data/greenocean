@@ -566,36 +566,33 @@ QUESTION = '¿Qué familias de alimentos subieron y bajaron?'
 def dashboard_bar(path, week_label, family_rows, regional_rows, region, compared=None, available=None, next_label=None):
     """The Resumen's only header (D-264): one thin bar with the path, the question and the week's figures as chips.
     Every figure comes from the same weekly model the charts below use; each chip says in full what it counts on hover.
-    The «Volver» and price-alert buttons and the time of the load are Streamlit elements beside it. D-374: under the
-    week's range, a quiet line with the next week, worked out from the week shown."""
+    The «Volver» and price-alert buttons and the time of the load are Streamlit elements beside it. D-374, D-375: under
+    the page's name, ending right beside the week's range, a quiet line with the next week, worked out from the week
+    shown; the section's name gives way first when the bar is short of room."""
     place = short_region(region) if region else 'Todo Chile'
     section, _, page = path.rpartition(' › ')
     chips = [
-        (f'Semana {week_label} · {place}', esc(week_label.rsplit(' ', 1)[0]) + (f' · {esc(place)}' if region else '')),
+        (
+            f'Semana {week_label} · {place}',
+            f'<span class="home-chip-week">{esc(week_label.rsplit(" ", 1)[0])}</span>'
+            + (f'<span class="home-chip-place"> · {esc(place)}</span>' if region else ''),
+        ),
     ]  # D-316: the header keeps the essentials; the family and region counts live in their own panels
     question = (
         f'{QUESTION} Variación típica (mediana) por familia frente a la semana anterior · semana {week_label} · {place}'
     )
+    where = (f'<span class="home-bar-section">{esc(section)} › </span>' if section else '') + f'<b>{esc(page)}</b>'
+    upcoming = (
+        f'<span class="home-next-week" title="La semana que sigue a la mostrada.">Próxima semana: {esc(next_label)}</span>'
+        if next_label
+        else ''
+    )
     return (
         '<div class="greenocean-mockup home-bar-main">'
-        + (
-            f'<span class="home-bar-path">{esc(section)} › <b>{esc(page)}</b></span>'
-            if section
-            else f'<span class="home-bar-path"><b>{esc(page)}</b></span>'
-        )
+        + f'<span class="home-bar-path"><span class="home-bar-where">{where}</span>{upcoming}</span>'
         # The page's heading stays for readers of screens and for the tests, but it takes no room in the bar (D-316).
         + f'<span class="home-bar-title" role="heading" aria-level="1" title="{esc(question)}">{esc(QUESTION)}</span>'
-        + ''.join(
-            f'<span class="home-week"><span class="home-chip" title="{esc(note)}">{value}</span>'
-            + (
-                f'<span class="home-next-week" title="La semana que sigue a la mostrada.">'
-                f'Próxima semana: {esc(next_label)}</span>'
-                if next_label and index == 0
-                else ''
-            )
-            + '</span>'
-            for index, (note, value) in enumerate(chips)
-        )
+        + ''.join(f'<span class="home-chip home-week-chip" title="{esc(note)}">{value}</span>' for note, value in chips)
         + '</div>'
     )
 

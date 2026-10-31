@@ -212,7 +212,7 @@ EN = {
     "Iguales a la canasta": "Equal to the basket",
     "familias": "families",
     # Menu: sections, pages and sources
-    "Negocio · BI": "Business · BI",
+    "Negocio · BA y BI": "Business · BA and BI",
     "Ingeniería de datos": "Data engineering",
     "DevOps y seguridad": "DevOps and security",
     "Stack y evidencia": "Stack and evidence",

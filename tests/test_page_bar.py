@@ -32,7 +32,7 @@ def test_the_title_is_not_said_twice_and_the_whole_path_stays_readable():
     )
     assert '<span class="page-bar-path">Ingeniería de datos ›</span>' in bar
     question = page_bar.build_bar_html(
-        "Negocio · BI › Precios e inflación", "¿Qué subió?", "La respuesta.", [("<b>+1 %</b>", "Uno por ciento")]
+        "Negocio · BA y BI › Precios e inflación", "¿Qué subió?", "La respuesta.", [("<b>+1 %</b>", "Uno por ciento")]
     )
     assert "<b>Precios e inflación</b>" in question and 'title="La respuesta."' in question
     assert '<span class="page-chip" title="Uno por ciento"><b>+1 %</b></span>' in question

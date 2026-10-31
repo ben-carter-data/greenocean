@@ -110,7 +110,7 @@ With the load of 2026-10-20, the database holds 814,610 weekly prices over 250 w
 
 ## 7. Screens
 
-Real captures of the main pages, in the four color themes. The dark theme is the one on entry. The menu groups the pages by section: Business, Data engineering, DevOps and security, Stack and evidence, and Quality (Quality and audit, Method and quality and Git workflow). The price overview reads in three numbered steps: choose a region or all of Chile, choose a family and look at its products; in the User view, each step opens when the one before is done. «Último dato por canal», next to the overview, shows each source's latest week (wholesale and consumer) with its change by family and its products, even if the other source has not published it yet.
+Real captures of the main pages, in the four color themes. The dark theme is the one on entry. The menu groups the pages by section: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality (Quality and audit, Method and quality and Git workflow). The price overview reads in three numbered steps: choose a region or all of Chile, choose a family and look at its products; in the User view, each step opens when the one before is done. «Último dato por canal», next to the overview, shows each source's latest week (wholesale and consumer) with its change by family and its products, even if the other source has not published it yet.
 
 [[diagrama:mockups]]
 

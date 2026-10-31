@@ -7590,7 +7590,7 @@ RELOAD_HOME_SCRIPT = """<script>
 # with a faint fill and a blue bar on its left. The documents close the list, before the sources.
 # (key, title, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BI", [PAGE_HOME, PAGE_CHANNELS, PAGE_INSIGHTS]),
+    ("negocio", "Negocio · BA y BI", [PAGE_HOME, PAGE_CHANNELS, PAGE_INSIGHTS]),  # D-375
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),

@@ -37,7 +37,7 @@ def test_d374_the_next_week_is_worked_out_from_the_week_shown():
     assert weeks.next_week("2026-10-19") == date(2026, 10, 26)
     upcoming = weeks.week_range(weeks.next_week("2026-10-19"))
     bar = home_mockup.dashboard_bar(
-        "Negocio · BI › Panorama de precios", "19–25 oct 2026", [], [], None, next_label=upcoming
+        "Negocio · BA y BI › Panorama de precios", "19–25 oct 2026", [], [], None, next_label=upcoming
     )
     assert '>19–25 oct<' in bar and '<span class="home-next-week"' in bar
     assert "Próxima semana: 26 oct – 1 nov" in bar
@@ -82,3 +82,31 @@ def test_d374_the_panorama_shows_its_week_and_the_next_one_as_ranges_in_both_lan
         assert f">{weeks.week_range(week, english=english)}<" in markup
         upcoming = ("Next week: " if english else "Próxima semana: ") + weeks.week_range(following, english=english)
         assert upcoming in markup, language
+
+
+def test_d375_the_next_week_never_widens_the_bar_and_the_section_name_gives_way_first():
+    from bi import charts
+
+    bar = home_mockup.dashboard_bar(
+        "Negocio · BA y BI › Panorama de precios",
+        "19–25 oct 2026",
+        [],
+        [],
+        "Región de Arica y Parinacota",
+        next_label="26 oct – 1 nov",
+    )
+    path = bar[bar.index('class="home-bar-path"') : bar.index('class="home-bar-title"')]
+    assert '<span class="home-bar-section">Negocio · BA y BI › </span><b>Panorama de precios</b>' in path
+    assert 'class="home-next-week"' in path  # under the page's name, beside the chip: it never widens the chip
+    assert (
+        '<span class="home-chip-week">19–25 oct</span><span class="home-chip-place"> · Arica y Parinacota</span>' in bar
+    )
+    css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
+    for rule in (
+        "container-type:inline-size",
+        "@container (max-width:400px) {.home-bar-section {display:none;}}",
+        ".home-bar-where {display:grid;grid-template-columns:minmax(0,auto) auto;",
+        "grid-template-columns:auto minmax(0,auto)",
+        "@media (max-width:1300px)",
+    ):
+        assert rule in css, rule
