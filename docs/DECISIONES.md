@@ -2809,3 +2809,20 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Precisión:** la pregunta de periodistas y economistas no dice «por región»: el IPC de alimentos del INE es nacional y «Precios e inflación» compara las familias con él en todo Chile.
 - **Por ahora:** la página va al final de la sección; D-378 ordena la sección.
 - **Pruebas:** `tests/test_stakeholders.py` (las cinco filas del PRD en los dos idiomas, cada página enlazada existe, los enlaces en la vista Profesional, «Cambiar a Profesional» solo en la tarjeta técnica de la vista Usuario, y el inglés); `tests/test_prd_traceability.py` lee los casos de uso de 3.2.
+
+## D-377 · Página «Análisis de negocio y sistemas»
+
+- **Pedido del autor:** una página para todos que muestre el trabajo de Business Analyst y de Business Systems Analyst, contado como un caso, leyendo del PRD, del SQAP y de las decisiones, sin duplicar texto.
+- **Decisión:** diez bloques, con la lista a la izquierda y un bloque a la vez a la derecha, para que la página quepa en una pantalla. Un enlace puede abrirla en un bloque (`?bloque=KPIs`). Cada texto se lee del documento al dibujarse, en el idioma de la visita (`bi/business_analysis.py`):
+  1. **El problema:** PRD §2.
+  2. **Interesados:** un resumen de PRD §3.1 y el enlace a «Interesados» (D-376).
+  3. **Qué escuchamos:** PRD §3.3. Dice solo lo que el autor escribió: una revisión de uso (no sabían por dónde empezar a leer el Panorama) y una revisión de arquitectura por un usuario real, sin cambios solicitados; esta no se liga a ninguna decisión. No hay otras revisiones ni cifras.
+  4. **Requisitos:** RF-01 a RF-09 de PRD §5, cada uno con su criterio medible.
+  5. **Alcance:** PRD §6, que gana la columna «Por qué» en lo que incluye y en lo que excluye. Cada razón sale de lo ya escrito (ADR-01, ADR-02, ADR-33, D-009, D-019, D-356, RN-03, RN-07, RN-11, RF-06, RNF-02 y RNF-03); la única que no estaba escrita, la de «Recomendaciones de compra para el consumidor», la dio el autor: el panel describe lo que pasó con los precios, y recomendar qué comprar exige un juicio sobre cada persona que los datos públicos no dan.
+  6. **Proceso:** una figura nueva, `ciclo_semanal` (carga, pruebas, publicación, informe semanal, informe de calidad y las correcciones de la semana siguiente), con íconos y flechas rectas. La usan la página y el PRD §2, así que se dibuja una sola vez.
+  7. **KPIs:** la definición de cada uno (qué mide, cómo se calcula y por qué), que sale de Insights; sus valores se quedan en las páginas de BI. Insights pierde el selector «Preguntas / KPIs», conserva su tabla de preguntas y enlaza a este bloque.
+  8. **Decisiones de sistema:** seis, cada una con una o dos frases del SQAP y un enlace: qué medimos y qué no (§3 y §5, con «No medimos» antes de la segunda), umbrales aceptables (§6), pruebas que bloquean y pruebas que informan (§7), fuentes retrasadas (§10), registro de fallas con su historial (§9, enlace a la pestaña «Registro» de Git workflow) y alertas al Autor (§10).
+  9. **Evaluación:** SQAP §4, los criterios de aceptación de PRD §10 y el último informe de calidad.
+  10. **Del feedback al cambio:** la tabla de PRD §3.3, con la decisión de cada cambio (D-352 y D-372 para la revisión de uso).
+- **Documentos:** el PRD sube a 3.4 (qué escuchamos, el porqué del alcance y el ciclo semanal en §2); el glosario suma BSA (2.3). La figura entra en la lista de figuras del PRD (`tests/test_documents.py`).
+- **Pruebas:** `tests/test_business_analysis.py` (los diez bloques y su inglés, cada texto leído del documento en los dos idiomas, lo que se escuchó sin nada más, las seis decisiones leídas del SQAP con su página, la figura del ciclo, las definiciones fuera de Insights, el bloque abierto por enlace y la página en inglés).

@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.2 |
-| Date | 2026-10-30 |
+| Version | 2.3 |
+| Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Define once the acronyms and terms used by the panel and the documents. |
@@ -36,7 +36,8 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 |---|---|---|---|
 | KPI | Key performance indicator: each figure that measures something of the business. | Price overview, Prices and inflation | Indicators |
 | BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
-| BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | — | Indicators |
+| BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | Stakeholders, Business and systems analysis | Indicators |
+| BSA | Business systems analysis: the role that decides how the system meets what the business asks: what is measured, what blocks publication and what warns. | Business and systems analysis | Indicators |
 | RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
 | Price alert | A weekly change that is unusual for a product and of at least 10 %. | Price overview | Indicators |
 | Real price | A price expressed in pesos of the last published month of the CPI. | Prices and inflation | Indicators |
@@ -106,3 +107,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.0 | 2026-10-25 | A summary with three diagrams and the terms ordered by theme, from the indicators (D-290, documents for every reader) |
 | 2.1 | 2026-10-26 | BA, one of the professional views of the panel (D-300) |
 | 2.2 | 2026-10-30 | SQAP, IEEE and IEC, from the software quality assurance plan (D-355) |
+| 2.3 | 2026-10-31 | BSA, from the pages «Interesados» and «Análisis de negocio y sistemas» (D-376, D-377) |

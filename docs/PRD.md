@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.3 |
+| Versión | 3.4 |
 | Fecha | 31-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -47,6 +47,8 @@ La Oficina de Estudios y Políticas Agrarias (ODEPA) publica cada semana los pre
 
 GreenOcean hace ese trabajo de forma automática y deja cada paso a la vista.
 
+[[diagrama:ciclo_semanal]]
+
 ## 3. Para quién es
 
 ### 3.1 Interesados
@@ -73,6 +75,15 @@ Cada interesado tiene una pregunta, una decisión que la respuesta le ayuda a to
 [[diagrama:casos]]
 
 El panel es de consulta y no pide cuenta. Al entrar, y cada vez que se recarga la página, la ventana «Elige tu vista» ofrece tres vistas: Usuario muestra el negocio (el Panorama de precios, guiado en tres pasos, Insights y los precios frente a la inflación); Profesional, todo el proyecto en orden de importancia; y Autor, lo mismo más lo que solo el autor ve (la página «GitHub Actions», la alerta «Acción requerida» y la carga manual). Autor pide la clave de control, que nunca está en el repositorio. El botón «Vista», debajo del logo y arriba del menú, cambia de vista, igual que un clic en el logo (D-373); salir de Autor cierra su sesión. El autor, administrador del proyecto, mantiene el código y los secretos y responde consultas SQL puntuales.
+
+### 3.3 Qué escuchamos
+
+Revisado por usuarios reales: una revisión de uso (no sabían por dónde empezar a leer el Panorama) y una revisión de arquitectura. Cada cambio hecho por ese feedback tiene su decisión.
+
+| Revisión | Qué escuchamos | Qué cambió | Decisión |
+|---|---|---|---|
+| Revisión de uso | No sabían por dónde empezar a leer el Panorama | El Panorama se lee en tres pasos numerados; los pasos 2 y 3 esperan al anterior, con candado, en todas las vistas; la búsqueda se nota | D-352, D-372 |
+| Revisión de arquitectura | Por un usuario real, sin cambios solicitados | — | — |
 
 ## 4. Preguntas de negocio
 
@@ -112,13 +123,13 @@ Los requisitos funcionales (RF) dicen qué hace el producto; los no funcionales 
 
 ## 6. Alcance
 
-| Incluye | Excluye |
-|---|---|
-| Integración de los precios de ODEPA desde 2022 y del IPC de alimentos del INE | Comparación entre cadenas de supermercados o tiendas |
-| Conversión de unidades, agregación semanal y cálculo de precios reales | Predicción de precios o explicación de sus causas |
-| Rechazo de filas inválidas con su motivo y auditoría de cada cifra | Recomendaciones de compra para el consumidor |
-| Panel de solo lectura con su documentación | Modificación de datos por parte de los usuarios |
-| Publicación hasta la última semana completa en ambas fuentes | Rellenar una semana que una fuente aún no publica |
+| Incluye | Por qué | Excluye | Por qué |
+|---|---|---|---|
+| Integración de los precios de ODEPA desde 2022 y del IPC de alimentos del INE | Son las fuentes oficiales y abiertas (ADR-01); desde 2022 hay varios años para ver la estacionalidad, y más atrás crece el riesgo de cambios de formato (D-009) | Comparación entre cadenas de supermercados o tiendas | No existe una fuente oficial de precios por cadena; la única sería leer los sitios de los supermercados, descartado en ADR-01 |
+| Conversión de unidades, agregación semanal y cálculo de precios reales | Sin llevar cada precio al kilo y a la semana no hay comparación (RN-03, RN-07); el IPC del INE descuenta la inflación (ADR-33) | Predicción de precios o explicación de sus causas | Con datos semanales públicos y sin una pregunta de predicción, un modelo no aporta (D-019); los indicadores describen lo ocurrido y no atribuyen causas (sección 8) |
+| Rechazo de filas inválidas con su motivo y auditoría de cada cifra | Un precio cero o una fecha imposible no se usan, pero nunca se borran en silencio (RN-11); cada cifra se reconstruye desde las filas crudas (RNF-02) | Recomendaciones de compra para el consumidor | El panel describe lo que pasó con los precios; recomendar qué comprar exige un juicio sobre cada persona que los datos públicos no dan |
+| Panel de solo lectura con su documentación | Un panel público, sin cuenta ni costo (ADR-02); los documentos dejan cada decisión y cada cifra a la vista (RNF-02) | Modificación de datos por parte de los usuarios | Los datos vienen solo de las fuentes oficiales y la base se abre en solo lectura: nadie puede cambiar una cifra (RF-06, RNF-03) |
+| Publicación hasta la última semana completa en ambas fuentes | El Panorama compara mayorista y consumidor en la misma semana; una semana a medias daría cifras incompletas (D-356) | Rellenar una semana que una fuente aún no publica | Una cifra inventada no se puede recalcular desde la fuente; se espera a que la fuente publique (D-356) |
 
 Con la carga del 20-10-2026, la base tiene 814.610 precios semanales en 250 semanas (de la 3–9 ene 2022 a la 12–18 oct 2026), 9 regiones, 8 canales, 1.609 claves de producto y 202 meses del IPC. Esa carga leyó 2.521.012 filas: 2.520.811 cargadas y 201 rechazadas con su motivo. Cada martes la base crece; las cifras del día están en el panel.
 
@@ -190,3 +201,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.1 | 30-10-2026 | Visión y misión; las tres vistas y el indicador «Vista» (RF-09); fuentes retrasadas y pruebas informativas en RF-03; ventana de la carga manual en RF-07; sección Calidad, tema oscuro y Panorama en tres pasos (D-340 a D-357) |
 | 3.2 | 30-10-2026 | La página «Último dato por canal» (D-365) |
 | 3.3 | 31-10-2026 | Interesados (3.1) y perfiles de uso (3.2), con su página en el panel (D-376) |
+| 3.4 | 31-10-2026 | Qué escuchamos (3.3), el porqué del alcance (6), el ciclo semanal (2) y la página «Análisis de negocio y sistemas» (D-377) |

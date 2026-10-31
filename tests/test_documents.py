@@ -33,7 +33,7 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
         for name in READING
     }
     assert names == {
-        "PRD.md": ["valor", "casos", "requisitos", "mockups"],
+        "PRD.md": ["valor", "ciclo_semanal", "casos", "requisitos", "mockups"],  # D-377
         "SAD.md": [
             "contexto",
             "escenarios",

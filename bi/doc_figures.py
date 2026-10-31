@@ -2147,6 +2147,67 @@ def quality_cycle(mode):
     )
 
 
+def weekly_cycle(mode):
+    """D-377: the weekly cycle as the business page tells it: load, tests, publication, the two reports and what gets
+    fixed before the next Tuesday."""
+    return graph(
+        mode,
+        say("Del dato al informe, cada semana", "From the data to the report, every week"),
+        {
+            "load": (
+                90,
+                30,
+                "icon:calendar",
+                say("Carga", "Load"),
+                say("cada martes · GitHub Actions", "every Tuesday · GitHub Actions"),
+            ),
+            "tests": (
+                300,
+                30,
+                "icon:check",
+                say("Pruebas", "Tests"),
+                say("dbt y las pruebas de datos", "dbt and the data tests"),
+            ),
+            "publish": (
+                510,
+                30,
+                "icon:database",
+                say("Publicación", "Publication"),
+                say("la base nueva, solo si todo pasó", "the new database, only if all passed"),
+            ),
+            "report": (
+                720,
+                30,
+                "icon:mail",
+                say("Informe semanal", "Weekly report"),
+                say("estado y alertas de la semana", "status and alerts of the week"),
+            ),
+            "quality": (
+                720,
+                200,
+                "icon:files",
+                say("Informe de calidad", "Quality report"),
+                say("numerado · el autor lo aprueba", "numbered · the author approves it"),
+            ),
+            "fix": (
+                90,
+                200,
+                "icon:tool",
+                say("Correcciones", "Fixes"),
+                say("registro de fallas y decisiones", "failure register and decisions"),
+            ),
+        },
+        [
+            ("load", "tests", "", "flow", "h"),
+            ("tests", "publish", say("si pasan", "if they pass"), "flow", "h"),
+            ("publish", "report", "", "flow", "h"),
+            ("report", "quality", "", "flow", "v"),
+            ("quality", "fix", say("lo que hay que corregir", "what must be fixed"), "flow", "h"),
+            ("fix", "load", say("la semana siguiente", "the next week"), "back", "v"),
+        ],
+    )
+
+
 # endregion
 
 FIGURES = {
@@ -2181,4 +2242,5 @@ FIGURES = {
     "calidades": quality_qualities,
     "estados_calidad": quality_states,
     "ciclo_calidad": quality_cycle,
+    "ciclo_semanal": weekly_cycle,
 }

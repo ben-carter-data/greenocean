@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.3 |
+| Version | 3.4 |
 | Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
@@ -47,6 +47,8 @@ Chile's Office of Agricultural Studies and Policies (ODEPA) publishes the wholes
 
 GreenOcean does that work automatically and leaves each step in view.
 
+[[diagrama:ciclo_semanal]]
+
 ## 3. Who it is for
 
 ### 3.1 Stakeholders
@@ -73,6 +75,15 @@ Each stakeholder has a question, a decision the answer helps them make and the p
 [[diagrama:casos]]
 
 The panel is read-only and needs no account. On entry, and every time the page is reloaded, the window «Elige tu vista» offers three views: User shows the business (the price overview, guided in three steps, Insights and prices against inflation); Professional, the whole project in order of importance; and Author, the same plus what only the author sees (the page «GitHub Actions», the alert «Acción requerida» and the manual load). Author asks for the control code, which is never in the repository. The «Vista» button, under the logo and above the menu, changes the view, as does a click on the logo (D-373); leaving Author closes its session. The author, the administrator of the project, maintains the code and the secrets and answers ad hoc SQL queries.
+
+### 3.3 What we heard
+
+Reviewed by real users: a usability review (they did not know where to start reading the Price overview) and an architecture review. Each change made from that feedback has its decision.
+
+| Review | What we heard | What changed | Decision |
+|---|---|---|---|
+| Usability review | They did not know where to start reading the Price overview | The Price overview reads in three numbered steps; steps 2 and 3 wait for the one before, with a padlock, in every view; the search stands out | D-352, D-372 |
+| Architecture review | By a real user, no changes requested | — | — |
 
 ## 4. Business questions
 
@@ -112,13 +123,13 @@ Functional requirements (RF) define what the product does; non-functional requir
 
 ## 6. Scope
 
-| Includes | Excludes |
-|---|---|
-| Integration of ODEPA prices since 2022 and of the INE food CPI | Comparison between supermarket chains or stores |
-| Unit conversion, weekly aggregation and real-price calculation | Price forecasting or explanation of its causes |
-| Rejection of invalid rows with their reason, and an audit of every figure | Purchase recommendations for consumers |
-| Read-only panel with its documentation | Data changes by the users |
-| Publication up to the last week complete in both sources | Filling in a week a source has not published yet |
+| Includes | Why | Excludes | Why |
+|---|---|---|---|
+| Integration of ODEPA prices since 2022 and of the INE food CPI | They are the official, open sources (ADR-01); since 2022 there are several years to see seasonality, and further back the risk of format changes grows (D-009) | Comparison between supermarket chains or stores | There is no official source of prices by chain; the only one would be reading the supermarkets' sites, discarded in ADR-01 |
+| Unit conversion, weekly aggregation and real-price calculation | Without bringing each price to the kilo and to the week there is no comparison (RN-03, RN-07); the INE CPI discounts inflation (ADR-33) | Price forecasting or explanation of its causes | With public weekly data and no forecasting question, a model adds nothing (D-019); the indicators describe what happened and attribute no causes (section 8) |
+| Rejection of invalid rows with their reason, and an audit of every figure | A zero price or an impossible date is not used, but never deleted in silence (RN-11); every figure is rebuilt from the raw rows (RNF-02) | Purchase recommendations for consumers | The panel describes what happened to prices; recommending what to buy demands a judgement about each person that public data does not give |
+| Read-only panel with its documentation | A public panel, with no account and no cost (ADR-02); the documents leave every decision and every figure in view (RNF-02) | Data changes by the users | The data comes only from the official sources and the database opens read-only: nobody can change a figure (RF-06, RNF-03) |
+| Publication up to the last week complete in both sources | The Price overview compares wholesale and consumer in the same week; a half week would give incomplete figures (D-356) | Filling in a week a source has not published yet | An invented figure cannot be recomputed from the source; the load waits for the source to publish (D-356) |
 
 With the load of 2026-10-20, the database holds 814,610 weekly prices over 250 weeks (from Jan 3–9, 2022 to Oct 12–18, 2026), 9 regions, 8 channels, 1,609 product keys and 202 months of the CPI. That load read 2,521,012 rows: 2,520,811 loaded and 201 rejected with their reason. Every Tuesday the database grows; the figures of the day are in the panel.
 
@@ -190,3 +201,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.1 | 2026-10-30 | Vision and mission; the three views and the «Vista» indicator (RF-09); late sources and informative tests in RF-03; the manual load window in RF-07; the Quality section, dark theme and the overview in three steps (D-340 to D-357) |
 | 3.2 | 2026-10-30 | The page «Último dato por canal» (D-365) |
 | 3.3 | 2026-10-31 | Stakeholders (3.1) and usage profiles (3.2), with their page in the panel (D-376) |
+| 3.4 | 2026-10-31 | What we heard (3.3), the why of the scope (6), the weekly cycle (2) and the page «Análisis de negocio y sistemas» (D-377) |

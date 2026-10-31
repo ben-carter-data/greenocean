@@ -58,3 +58,133 @@ def read_stakeholders(language: str | None = None) -> list[dict[str, Any]]:
             }
         )
     return stakeholders
+
+
+# D-377: the blocks of «Análisis de negocio y sistemas», in the reading order of a case.
+BLOCKS = [
+    "El problema",
+    "Interesados",
+    "Qué escuchamos",
+    "Requisitos",
+    "Alcance",
+    "Proceso",
+    "KPIs",
+    "Decisiones de sistema",
+    "Evaluación",
+    "Del feedback al cambio",
+]
+QUALITY_PLAN = "PLAN_DE_CALIDAD.md"
+# D-377: the system decisions (BSA): a title, the parts of its line and the page that holds the rest («sqap» or «git»).
+# Each part is read from one section of the SQAP: (section, words that pick the paragraph in both languages or None for
+# the first one, «start» for the paragraph's opening, «sentence» for the sentence holding those words, «bullet» for the
+# first sentence of the section's first bullet, and a short label the page puts in front of the part, or None).
+SYSTEM_DECISIONS = [
+    (
+        "Qué medimos y qué no, y por qué",
+        (("3", None, "start", None), ("5", None, "bullet", "No medimos")),
+        "sqap",
+    ),
+    ("Umbrales aceptables", (("6", None, "start", None),), "sqap"),
+    ("Pruebas que bloquean y pruebas que informan", (("7", None, "start", None),), "sqap"),
+    ("Fuentes retrasadas", (("10", ("D-356",), "start", None),), "sqap"),
+    ("Registro de fallas con su historial", (("9", None, "start", None),), "git"),
+    ("Alertas al Autor", (("10", ("aviso urgente", "urgent alert"), "sentence", None),), "sqap"),
+]
+
+
+def paragraphs(text: str) -> list[str]:
+    """The paragraphs of a section's text: no tables, no diagram markers, no headings."""
+    blocks = [block.strip() for block in re.split(r"\n\s*\n", text)]
+    return [" ".join(block.split()) for block in blocks if block and not block.startswith(("|", "[[diagrama:", "#"))]
+
+
+def plain(text: str) -> str:
+    """A text without its Markdown marks: bold, code, links and view markers."""
+    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+    text = re.sub(r"`([^`]*)`", r"\1", text)
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)
+    return VIEW_MARK.sub(r"\1", text)
+
+
+def sentences(text: str) -> list[str]:
+    return [piece for piece in re.split(r"(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ«(])", text) if piece]
+
+
+def opening(text: str, minimum: int = 90) -> str:
+    """The first sentence of a paragraph, with the next one while the first alone says too little."""
+    pieces = sentences(text)
+    line = pieces[0]
+    for piece in pieces[1:]:
+        if len(line) >= minimum:
+            break
+        line += " " + piece
+    return line
+
+
+def read_rows(document: str, number: str, language: str | None = None) -> list[list[str]]:
+    """The rows of the first table of a section, as lists of plain cells, without the header."""
+    text = read_section(document, number, language)
+    lines = [line.strip() for line in text.splitlines() if line.strip().startswith("|")]
+    rows = [[plain(cell.strip()) for cell in line.strip("|").split("|")] for line in lines]
+    return rows[2:]
+
+
+def read_problem(language: str | None = None) -> list[str]:
+    """PRD 2: the problem, paragraph by paragraph."""
+    return [plain(paragraph) for paragraph in paragraphs(read_section("PRD.md", "2", language))]
+
+
+def read_heard(language: str | None = None) -> str:
+    """PRD 3.3: what real users said, in one sentence; nothing else is claimed."""
+    return plain(paragraphs(read_section("PRD.md", "3.3", language))[0])
+
+
+def read_feedback(language: str | None = None) -> list[list[str]]:
+    """PRD 3.3: [review, what we heard, what changed, decision] per row."""
+    return read_rows("PRD.md", "3.3", language)
+
+
+def read_requirements(language: str | None = None) -> list[list[str]]:
+    """PRD 5: the functional requirements, each with its measurable criterion: [id, requirement, criterion]."""
+    return [row[:3] for row in read_rows("PRD.md", "5", language) if row[0].startswith("RF-")]
+
+
+def read_scope(language: str | None = None) -> list[list[str]]:
+    """PRD 6: [includes, why, excludes, why] per row."""
+    return read_rows("PRD.md", "6", language)
+
+
+def read_acceptance(language: str | None = None) -> list[list[str]]:
+    """PRD 10: [criterion, how it is verified] per row."""
+    return read_rows("PRD.md", "10", language)
+
+
+def read_evaluation(language: str | None = None) -> str:
+    """SQAP 4: how the quality is measured."""
+    return plain(paragraphs(read_section(QUALITY_PLAN, "4", language))[0])
+
+
+def read_decision_part(part: tuple[str, tuple[str, ...] | None, str, str | None], language: str | None = None) -> str:
+    """One part of a system decision, read from the SQAP without a bold label in front («Fuentes retrasadas (D-356).»)."""
+    number, words, scope, _ = part
+    found = paragraphs(read_section(QUALITY_PLAN, number, language))
+    if words:
+        found = [paragraph for paragraph in found if any(word in paragraph for word in words)] or found
+    first = found[0]
+    if scope == "bullet":
+        first = first.split(" - ")[0].removeprefix("- ")  # the paragraph is the section's bullet list on one line
+    paragraph = plain(re.sub(r"^\*\*[^*]+\*\*\s*", "", first)) if scope != "bullet" else plain(first)
+    if scope == "sentence" and words:
+        return next(piece for piece in sentences(paragraph) if any(word in piece for word in words))
+    return sentences(paragraph)[0] if scope == "bullet" else opening(paragraph)
+
+
+def system_decisions(language: str | None = None) -> list[dict[str, Any]]:
+    """D-377: the BSA decisions, each as its title, the parts of its line read from the SQAP and the page that holds the
+    rest."""
+    decisions = []
+    for title, parts, page in SYSTEM_DECISIONS:
+        lines = [read_decision_part(part, language) for part in parts]
+        labels = [part[3] for part in parts]
+        decisions.append({"title": title, "parts": lines, "labels": labels, "line": " ".join(lines), "page": page})
+    return decisions

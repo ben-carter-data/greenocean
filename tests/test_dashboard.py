@@ -78,6 +78,7 @@ def test_d070_the_route_holds_every_view_once_and_charts_only_in_dashboard():
         dashboard.PAGE_SQL,
         dashboard.PAGE_CHANNELS,
         dashboard.PAGE_STAKEHOLDERS,  # D-376
+        dashboard.PAGE_ANALYSIS,  # D-377
     ]
     assert dashboard.WINDOWS["Ingeniería de datos"][0] == dashboard.PAGE_DIAGRAMS
     # Old addresses of the retired windows and of the 3D view still open something.
@@ -1306,7 +1307,7 @@ def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
     ]
     # D-205: the document views in their own frame, the live panel diagrams inline.
     for page, framed, inline in (
-        (dashboard.PAGE_PRD, 4, 0),
+        (dashboard.PAGE_PRD, 5, 0),  # D-377: the weekly cycle joined valor, casos, requisitos and mockups
         (dashboard.PAGE_SAD, 9, 0),
         (dashboard.PAGE_ADR, 3, 0),
         (dashboard.PAGE_TEST_PLAN, 6, 0),
@@ -1385,7 +1386,13 @@ def test_d195_the_model_page_has_three_views_and_the_third_is_the_entity_relatio
 
 
 MENU_BLOCKS = {
-    'Negocio · BA y BI': ['Panorama de precios', 'Último dato por canal', 'Insights', 'Interesados'],
+    'Negocio · BA y BI': [
+        'Panorama de precios',
+        'Último dato por canal',
+        'Insights',
+        'Interesados',
+        'Análisis de negocio y sistemas',
+    ],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Consultas SQL'],
     'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
     'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],

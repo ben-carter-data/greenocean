@@ -94,6 +94,7 @@ PAGE_HOME = "Dashboard"
 PAGE_INSIGHTS = "Insights"
 PAGE_CHANNELS = "Último dato por canal"  # D-365: each source with its own latest week
 PAGE_STAKEHOLDERS = "Interesados"  # D-376: who uses the data, what they ask and where the answer is
+PAGE_ANALYSIS = "Análisis de negocio y sistemas"  # D-377: the BA and BSA work, told as a case
 BRAND_GREEN_DARK = "#72e7ad"
 BRAND_GREEN_LIGHT = "#167046"
 PAGE_DIAGRAMS = "Pipeline y arquitectura"
@@ -178,7 +179,15 @@ SECTION_SECURITY = "Seguridad"
 WINDOWS = {
     SECTION_PROJECT: [PAGE_STACK, PAGE_APP_MAP, PAGE_METHOD, PAGE_GIT],
     SECTION_KPI: [PAGE_KPI],
-    REPORT_WINDOW: [PAGE_HOME, PAGE_INSIGHTS, PAGE_SEASONALITY, PAGE_SQL, PAGE_CHANNELS, PAGE_STAKEHOLDERS],
+    REPORT_WINDOW: [
+        PAGE_HOME,
+        PAGE_INSIGHTS,
+        PAGE_SEASONALITY,
+        PAGE_SQL,
+        PAGE_CHANNELS,
+        PAGE_STAKEHOLDERS,
+        PAGE_ANALYSIS,
+    ],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS, PAGE_ACTIONS],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
     SECTION_LINKS: [
@@ -258,6 +267,7 @@ PAGE_ICONS = {
     PAGE_INSIGHTS: ":material/lightbulb:",
     PAGE_CHANNELS: ":material/compare_arrows:",
     PAGE_STAKEHOLDERS: ":material/groups:",
+    PAGE_ANALYSIS: ":material/analytics:",
     PAGE_HOME: ":material/dashboard:",
     PAGE_DIAGRAMS: ":material/account_tree:",
     PAGE_ARCHITECTURE: ":material/schema:",
@@ -289,6 +299,7 @@ PAGE_PATHS = {
     PAGE_INSIGHTS: "insights",
     PAGE_CHANNELS: "ultimo-dato-por-canal",
     PAGE_STAKEHOLDERS: "interesados",
+    PAGE_ANALYSIS: "analisis-de-negocio-y-sistemas",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura",
     PAGE_SEASONALITY: "estacionalidad",
@@ -2141,6 +2152,7 @@ BAR_VIEWS = {
     PAGE_INSIGHTS,
     PAGE_CHANNELS,
     PAGE_STAKEHOLDERS,
+    PAGE_ANALYSIS,
     PAGE_HOME,
     PAGE_SEASONALITY,
     PAGE_DIAGRAMS,
@@ -4749,7 +4761,6 @@ OVERVIEW_FAMILIES = list(inflation_view.FAMILY_COLORS)
 
 
 OVERVIEW_WEEKS_KEY = "ov_weeks"
-OVERVIEW_INSIGHT_VIEW = "ov_insight_view"
 
 
 @st.cache_data(show_spinner=False)
@@ -4760,11 +4771,29 @@ def read_cached_database_counts(database_version):
     ).iloc[0]
 
 
-def build_insight_table_html(head, rows):
+def build_insight_table_html(head, rows, extra_class=""):
     """A table of the Insights tab: its header and its rows of text, the first column in bold."""
     header = "".join(f"<th>{html.escape(tr(cell))}</th>" for cell in head)
     body = "".join("<tr>" + "".join(f"<td>{html.escape(tr(cell))}</td>" for cell in row) + "</tr>" for row in rows)
-    return f'<div class="ov-it" tabindex="0"><table><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table></div>'
+    classes = f"ov-it {extra_class}".strip()
+    return f'<div class="{classes}" tabindex="0"><table><thead><tr>{header}</tr></thead><tbody>{body}</tbody></table></div>'
+
+
+def build_insight_table_css(palette):
+    """The look of the text tables of Insights, shared with «Análisis de negocio y sistemas» (D-377)."""
+    return f"""
+    .ov-it {{ overflow:auto; max-height:calc(100vh - 290px); }}
+    .ov-it table {{ width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:12.5px; }}
+    .ov-it thead th {{ position:sticky; top:0; background:{palette['accent']} !important; color:{charts.readable_on(palette['accent'])} !important; font-size:11px;
+        font-weight:600; text-transform:uppercase; letter-spacing:.05em; padding:7px 10px !important; text-align:left; border:0 !important; }}
+    .ov-it thead th:first-child {{ border-radius:10px 0 0 0; }} .ov-it thead th:last-child {{ border-radius:0 10px 0 0; }}
+    .ov-it td {{ padding:7px 10px !important; color:{palette['text']}; border:0 !important;
+        border-bottom:1px solid {palette['card_border']} !important; vertical-align:top; line-height:1.4; background:transparent !important; }}
+    .ov-it tbody tr:nth-child(even) td {{ background:color-mix(in srgb, {palette['accent']} 5%, transparent) !important; }}
+    .ov-it td:first-child {{ font-weight:600; color:{palette['strong_text']}; }}
+    /* D-173: the table's block ends in a div, so it gets no bottom margin and what follows rode over it. */
+    [data-testid="stElementContainer"]:has(.ov-it) [data-testid="stMarkdownContainer"] {{ margin-bottom:0 !important; }}
+    .ov-it {{ margin-bottom:12px; }}"""
 
 
 def build_insight_card_html(kind, title, who, icon, lines):
@@ -4777,8 +4806,9 @@ def build_insight_card_html(kind, title, who, icon, lines):
 
 
 def show_overview_insights(mode, version):
-    """D-302: the questions the dashboard answers with today's answer, the KPIs with their calculation and why, and
-    two insights computed from the current load: one for whoever buys, one for whoever designs the data."""
+    """D-302: the questions the dashboard answers with today's answer and two insights computed from the current
+    load: one for whoever buys, one for whoever designs the data. D-377: the definition of each KPI moved to
+    «Análisis de negocio y sistemas»; a link leads there."""
     palette = charts.get_palette(mode)
     variations, alerts_rows = read_cached_all_variations(version), read_price_alerts()
     prices = read_cached_national_prices(version)
@@ -4850,17 +4880,8 @@ def show_overview_insights(mode, version):
         ),
     ]
     st.markdown(
-        f"""<style>
-    .ov-it {{ overflow:auto; max-height:calc(100vh - 290px); }}
+        f"""<style>{build_insight_table_css(palette)}
     .ov-insights {{ overflow:auto; max-height:calc(100vh - 230px); }}
-    .ov-it table {{ width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:12.5px; }}
-    .ov-it thead th {{ position:sticky; top:0; background:{palette['accent']} !important; color:{charts.readable_on(palette['accent'])} !important; font-size:11px;
-        font-weight:600; text-transform:uppercase; letter-spacing:.05em; padding:7px 10px !important; text-align:left; border:0 !important; }}
-    .ov-it thead th:first-child {{ border-radius:10px 0 0 0; }} .ov-it thead th:last-child {{ border-radius:0 10px 0 0; }}
-    .ov-it td {{ padding:7px 10px !important; color:{palette['text']}; border:0 !important;
-        border-bottom:1px solid {palette['card_border']} !important; vertical-align:top; line-height:1.4; background:transparent !important; }}
-    .ov-it tbody tr:nth-child(even) td {{ background:color-mix(in srgb, {palette['accent']} 5%, transparent) !important; }}
-    .ov-it td:first-child {{ font-weight:600; color:{palette['strong_text']}; }}
     .ov-insight {{ border-radius:14px; padding:14px 16px; margin:0 0 10px; border:1px solid {palette['card_border']};
         background:linear-gradient(135deg, color-mix(in srgb, var(--c) 12%, {palette['card']}), {palette['card']}); }}
     .ov-insight-buyer {{ --c:{palette['rise']}; }} .ov-insight-wholesale {{ --c:#199e70; }} .ov-insight-architect {{ --c:{palette['accent']}; }}
@@ -4873,24 +4894,17 @@ def show_overview_insights(mode, version):
     )
     left, right = st.columns([1.35, 1], gap="medium")
     with left:
-        view = (
-            st.segmented_control(
-                tr("Ver"),
-                ["Preguntas", "KPIs"],
-                default="Preguntas",
-                key=OVERVIEW_INSIGHT_VIEW,
-                label_visibility="collapsed",
-            )
-            or "Preguntas"
+        st.markdown(
+            build_insight_table_html(["Pregunta", "Para quién", "Dónde verlo", "La respuesta de hoy"], questions),
+            unsafe_allow_html=True,
         )
-        if view == "Preguntas":
-            st.markdown(
-                build_insight_table_html(["Pregunta", "Para quién", "Dónde verlo", "La respuesta de hoy"], questions),
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                build_insight_table_html(["KPI", "Cómo se calcula", "Por qué"], overview.KPIS), unsafe_allow_html=True
+        analysis = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_ANALYSIS])  # absent when a test draws the page alone
+        if analysis:  # D-377: the definition of each KPI lives in the analysis page; its values stay here
+            st.page_link(
+                analysis,
+                label=tr("Ver las definiciones de los KPI"),
+                icon=":material/functions:",
+                query_params=keep_context() | {VIEW_PARAMETER: PAGE_ANALYSIS, ANALYSIS_BLOCK_PARAMETER: "KPIs"},
             )
     with right:
         drops = overview.best_drops(upto, week)
@@ -5088,6 +5102,171 @@ def build_stakeholders_css(palette):
     [class*="st-key-stakeholder_"] [data-testid="stPageLink"] a {{ padding:3px 6px; height:auto; }}
     [class*="st-key-stakeholder_"] [data-testid="stPageLink"] p {{ white-space:normal; font-size:13.5px; line-height:1.3; }}
     [class*="st-key-stakeholder_"] button p {{ white-space:normal; }}
+    </style>"""
+
+
+ANALYSIS_BLOCK_KEY = "analysis_block"
+ANALYSIS_BLOCK_PARAMETER = "bloque"  # D-377: a link may open the page on one block, like the KPIs from Insights
+SYSTEM_DECISION_PAGES = {"sqap": PAGE_QUALITY_PLAN, "git": PAGE_GIT}
+
+
+def show_analysis_page(mode):
+    """«Análisis de negocio y sistemas» (D-377): the BA and BSA work told as a case, in ten blocks; the list on the left,
+    one block at a time on the right, so the page fits one screen. Every text is read from the PRD, the SQAP and the
+    decisions, in the reader's language: nothing is written twice."""
+    show_page_bar(
+        PAGE_ANALYSIS,
+        PAGE_ANALYSIS,
+        "El trabajo de análisis de negocio y de sistemas, contado como un caso: del problema a la evaluación, leído del "
+        "PRD, del SQAP y de las decisiones.",
+    )
+    palette = charts.get_palette(mode)
+    st.markdown(
+        build_analysis_css(palette) + f"<style>{build_insight_table_css(palette)}</style>", unsafe_allow_html=True
+    )
+    wanted = st.query_params.get(ANALYSIS_BLOCK_PARAMETER)
+    if wanted in business_analysis.BLOCKS:
+        st.session_state[ANALYSIS_BLOCK_KEY] = wanted  # read once: from here on, the list rules
+        st.query_params.pop(ANALYSIS_BLOCK_PARAMETER)
+    elif st.session_state.get(ANALYSIS_BLOCK_KEY) not in business_analysis.BLOCKS:
+        st.session_state[ANALYSIS_BLOCK_KEY] = business_analysis.BLOCKS[0]
+    numbers = {title: f"{index}. {tr(title)}" for index, title in enumerate(business_analysis.BLOCKS, 1)}
+    menu, body = st.columns([1, 3.4], gap="medium")
+    with menu, st.container(key="analysis_menu"):
+        block = st.radio(
+            tr("Bloque"),
+            business_analysis.BLOCKS,
+            key=ANALYSIS_BLOCK_KEY,
+            format_func=numbers.get,
+            label_visibility="collapsed",
+        )
+    with body, st.container(key="analysis_body"):
+        show_analysis_block(block, mode)
+
+
+def show_analysis_text(paragraphs):
+    st.markdown(
+        '<div class="an-text">' + "".join(f"<p>{html.escape(text)}</p>" for text in paragraphs) + "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def show_analysis_lead(text):
+    st.markdown(f'<p class="an-lead">{html.escape(text)}</p>', unsafe_allow_html=True)
+
+
+def show_analysis_link(view, label, parameters=None):
+    """A link to the page that holds the rest; absent when a test draws the page alone."""
+    window = WINDOW_PAGES.get(WINDOW_OF_VIEW.get(view))
+    if window:
+        st.page_link(
+            window,
+            label=label,
+            icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
+            query_params=keep_context() | {VIEW_PARAMETER: view} | (parameters or {}),
+        )
+
+
+def show_analysis_block(block, mode):
+    """One block of the case (D-377), read from the documents the moment it is drawn."""
+    read = business_analysis
+    if block == "El problema":
+        show_analysis_text(read.read_problem())
+    elif block == "Interesados":
+        stakeholders = read.read_stakeholders()
+        show_analysis_lead(tr("Interesados: {}.").format(i18n.join_names([row["name"] for row in stakeholders])))
+        st.markdown(
+            build_insight_table_html(
+                ["Interesado", "Pregunta", "Decisión"],
+                [(row["name"], row["question"], row["decision"]) for row in stakeholders],
+            ),
+            unsafe_allow_html=True,
+        )
+        show_analysis_link(PAGE_STAKEHOLDERS, tr("Ver Interesados"))
+    elif block == "Qué escuchamos":
+        show_analysis_text([read.read_heard()])
+    elif block == "Requisitos":
+        st.markdown(
+            build_insight_table_html(["ID", "Requisito", "Criterio medible"], read.read_requirements(), "an-ids"),
+            unsafe_allow_html=True,
+        )
+    elif block == "Alcance":
+        scope = read.read_scope()
+        included, excluded = st.columns(2, gap="small")
+        included.markdown(
+            build_insight_table_html(["Incluye", "Por qué"], [row[:2] for row in scope]), unsafe_allow_html=True
+        )
+        excluded.markdown(
+            build_insight_table_html(["Excluye", "Por qué"], [row[2:] for row in scope]), unsafe_allow_html=True
+        )
+    elif block == "Proceso":
+        show_analysis_lead(tr("El ciclo de cada semana: la carga, sus pruebas, la publicación y los dos informes."))
+        st.iframe(doc_diagrams.DOC_DIAGRAMS["ciclo_semanal"](mode), height="content")
+    elif block == "KPIs":
+        show_analysis_lead(
+            tr("Los valores de cada KPI se ven en el Panorama de precios, en Insights y en Precios e inflación.")
+        )
+        st.markdown(
+            build_insight_table_html(["KPI", "Cómo se calcula", "Por qué"], overview.KPIS), unsafe_allow_html=True
+        )
+    elif block == "Decisiones de sistema":
+        for item in read.system_decisions():
+            text, link = st.columns([4.5, 1], vertical_alignment="center")
+            line = " ".join(
+                (f"<b>{html.escape(tr(label))}</b> · " if label else "") + html.escape(part)
+                for label, part in zip(item["labels"], item["parts"])
+            )
+            text.markdown(
+                f'<p class="an-decision"><b>{html.escape(tr(item["title"]))}</b> · {line}</p>', unsafe_allow_html=True
+            )
+            with link:
+                view = SYSTEM_DECISION_PAGES[item["page"]]
+                # the failure register opens on its log tab (D-346), the rest of the decisions on their page
+                show_analysis_link(view, tr("Ver"), {GIT_TAB_PARAMETER: GIT_TAB_LOG} if view == PAGE_GIT else None)
+    elif block == "Evaluación":
+        show_analysis_text(
+            [tr("Cómo sabemos que funciona: los KPI, la calidad de los datos y el feedback."), read.read_evaluation()]
+        )
+        st.markdown(
+            build_insight_table_html(["Criterio", "Cómo se verifica"], read.read_acceptance()), unsafe_allow_html=True
+        )
+        reports = quality_metrics.read_reports()
+        if reports:
+            within, _, measured = quality_metrics.report_counts(reports[-1])
+            st.caption(
+                tr("Último informe de calidad N° {}: {} de {} indicadores dentro de lo aceptable.").format(
+                    reports[-1]["numero"], within, measured
+                )
+            )
+    else:  # «Del feedback al cambio»
+        st.markdown(
+            build_insight_table_html(["Revisión", "Qué escuchamos", "Qué cambió", "Decisión"], read.read_feedback()),
+            unsafe_allow_html=True,
+        )
+
+
+def build_analysis_css(palette):
+    """D-377: the list of blocks on the left, the block on the right; texts and tables sized to fit one screen."""
+    ink, text, accent, line = palette["strong_text"], palette["text"], palette["accent"], palette["card_border"]
+    return f"""<style>
+    /* the list of blocks: a menu, not radio dots (Streamlit paints the selected dot red, which the app never uses) */
+    .st-key-analysis_menu [data-testid="stRadioGroup"] {{ gap:2px !important; width:100%; }}
+    .st-key-analysis_menu [data-testid="stRadioGroup"] > div {{ width:100%; }}
+    .st-key-analysis_menu [data-testid="stRadioOption"] {{ width:100%; margin:0; padding:7px 10px; border-radius:9px; cursor:pointer; }}
+    .st-key-analysis_menu [data-testid="stRadioOption"] > div {{ width:100%; margin:0; }}
+    .st-key-analysis_menu [data-testid="stRadioOption"] > div > div:first-child {{ display:none; }}
+    .st-key-analysis_menu [data-testid="stRadioOption"] p {{ font-size:14px; font-weight:500; color:{text}; }}
+    .st-key-analysis_menu [data-testid="stRadioOption"]:hover {{ background:color-mix(in srgb, {accent} 7%, transparent); }}
+    .st-key-analysis_menu [data-testid="stRadioOption"]:has(input:checked) {{ background:color-mix(in srgb, {accent} 14%, transparent);
+        box-shadow:inset 3px 0 0 {accent}; }}
+    .st-key-analysis_menu [data-testid="stRadioOption"]:has(input:checked) p {{ color:{ink}; font-weight:600; }}
+    .an-text p, .an-lead {{ font-size:14.5px; line-height:1.6; color:{text}; margin:0 0 10px !important; }}
+    .an-lead {{ color:{ink}; font-weight:500; }}
+    .an-decision {{ font-size:13.5px; line-height:1.5; color:{text}; margin:0 !important; padding:8px 0; border-bottom:1px solid {line}; }}
+    .an-decision b {{ color:{ink}; }}
+    .st-key-analysis_body .ov-it {{ max-height:calc(100vh - 300px); }}
+    .an-ids td:first-child {{ white-space:nowrap; }}
+    .st-key-analysis_body [data-testid="stPageLink"] a {{ padding:3px 6px; }}
     </style>"""
 
 
@@ -7119,6 +7298,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_INSIGHTS: lambda mode: show_insights_page(mode),
     PAGE_CHANNELS: lambda mode: show_channels_page(mode),
     PAGE_STAKEHOLDERS: lambda mode: show_stakeholders_page(mode),
+    PAGE_ANALYSIS: lambda mode: show_analysis_page(mode),
     PAGE_SEASONALITY: show_price_context_page,
     PAGE_KPI: show_kpi_page,
     PAGE_ARCHITECTURE: show_architecture_page,
@@ -7671,7 +7851,11 @@ RELOAD_HOME_SCRIPT = """<script>
 # with a faint fill and a blue bar on its left. The documents close the list, before the sources.
 # (key, title, pages or source links)
 MENU_BLOCKS = [
-    ("negocio", "Negocio · BA y BI", [PAGE_HOME, PAGE_CHANNELS, PAGE_INSIGHTS, PAGE_STAKEHOLDERS]),  # D-375, D-376
+    (
+        "negocio",
+        "Negocio · BA y BI",
+        [PAGE_HOME, PAGE_CHANNELS, PAGE_INSIGHTS, PAGE_STAKEHOLDERS, PAGE_ANALYSIS],
+    ),  # D-375, D-376, D-377
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),
@@ -7693,6 +7877,7 @@ SIDEBAR_ICONS = {
     PAGE_INSIGHTS: ":material/lightbulb:",
     PAGE_CHANNELS: ":material/compare_arrows:",
     PAGE_STAKEHOLDERS: ":material/groups:",
+    PAGE_ANALYSIS: ":material/analytics:",
     PAGE_HOME: ":material/grid_view:",
     PAGE_DIAGRAMS: ":material/share:",
     PAGE_ARCHITECTURE: ":material/database:",
