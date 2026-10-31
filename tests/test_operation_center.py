@@ -160,3 +160,14 @@ def test_d271_the_path_shrinks_with_its_stage_and_never_grows_past_its_size():
     css = operation_center.build_css(charts.get_palette(charts.MODE_DARK))
     assert "container-type:inline-size" in css
     assert "width:min(76px, calc(76 * var(--u)))" in css and "width:min(132px, calc(132 * var(--u)))" in css
+
+
+def test_d366_the_states_a_run_in_progress_shows_have_their_english(monkeypatch):
+    """The weekly load ran while its own run was in progress: «En curso…» and «Esperando la base» reached the English
+    screen untranslated. Every state word of the operation path has its English."""
+    from bi import i18n, operation_center
+
+    monkeypatch.setattr(i18n, "is_english", lambda: True)
+    words = list(operation_center.STATE_TEXTS.values())
+    for text in words + ["Esperando la base", "Base al día", "Última carga falló", "En curso…"]:
+        assert i18n.translate_any(text) != text, text
