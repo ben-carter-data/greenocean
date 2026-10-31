@@ -3508,6 +3508,7 @@ HOME_LINK_PARAMETERS = ("_home_region", "_home_week", "familia")
 # user view the panels 2 and 3 stay locked until the step before them is done, and a step done is never locked again.
 HOME_STEP_PARAMETER = "_home_step"
 HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_FLASH = "home_region_done", "home_family_done", "home_flash"
+HOME_SEARCHED = "home_searched"  # D-372
 
 
 def apply_home_link_click():
@@ -4098,10 +4099,13 @@ def sort_family_products(rows, order):
     return sorted(rows, key=lambda row: (thin(row), -abs(row['variation']), names(row)))
 
 
-def build_steps_css(palette, region_open, family_open, flash):
+def build_steps_css(palette, region_open, family_open, flash, searched=False):
     """D-352: a panel that waits for the step before it is dimmed and cannot be used; the one that has just opened lights
-    up for a moment. Panels 2 and 3 are the containers «home_families» and «home_products»."""
+    up for a moment. Panels 2 and 3 are the containers «home_families» and «home_products». D-372: the search stops
+    glowing once someone typed in it."""
     rules = []
+    if searched:
+        rules.append('.st-key-home_products_search [data-testid="stTextInputRootElement"] {animation:none!important;}')
     for container, opened in (("home_families", region_open), ("home_products", family_open)):
         if not opened:
             rules.append(
@@ -4175,16 +4179,15 @@ def show_market_overview(mode, prefix):
     if family not in families:
         family = families[0] if families else None
     scope = 'todo Chile' if region == ALL_VALUES else home_mockup.short_region(region)
-    # D-352: in the user view the panels 2 and 3 wait for the step before them; a link that names a region or a family
-    # counts as having chosen it. Professional and author see the steps numbered and everything open.
-    user_view = is_public_profile()
+    # D-352, D-372: in every view (user, professional and author) the panels 2 and 3 wait for the step before them; a
+    # link that names a region or a family counts as having chosen it.
     if st.query_params.get('_home_region'):
         st.session_state[HOME_REGION_DONE] = True
     if st.session_state.get(HOME_REGION_DONE) and st.query_params.get('familia') in families:
         st.session_state[HOME_FAMILY_DONE] = True
-    region_open = not user_view or bool(st.session_state.get(HOME_REGION_DONE))
-    family_open = not user_view or bool(st.session_state.get(HOME_FAMILY_DONE))
-    if user_view and not family_open:
+    region_open = bool(st.session_state.get(HOME_REGION_DONE))
+    family_open = bool(st.session_state.get(HOME_FAMILY_DONE))
+    if not family_open:
         family = None  # no family is chosen for the reader
     products_family = family or (families[0] if families else None)  # what the locked table shows, dimmed
 
@@ -4199,7 +4202,12 @@ def show_market_overview(mode, prefix):
 
     flash = st.session_state.pop(HOME_FLASH, None)
     palette = charts.get_palette(mode)
-    st.markdown(build_steps_css(palette, region_open, family_open, flash), unsafe_allow_html=True)
+    if st.session_state.get('home_products_search'):
+        st.session_state[HOME_SEARCHED] = True  # D-372: once someone typed, the search stops glowing for the visit
+    st.markdown(
+        build_steps_css(palette, region_open, family_open, flash, st.session_state.get(HOME_SEARCHED)),
+        unsafe_allow_html=True,
+    )
 
     # D-264: the only header of the Resumen, one thin bar.
     with st.container(key="home_bar", horizontal=True, vertical_alignment="center"):
@@ -4248,7 +4256,7 @@ def show_market_overview(mode, prefix):
             None if region == ALL_VALUES else region,
             step=1,
             all_link=overview_link(None, family, 'region'),
-            prompt=user_view and not region_open,
+            prompt=not region_open,
         )
         + '</div>',
         unsafe_allow_html=True,

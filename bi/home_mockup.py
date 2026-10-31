@@ -92,6 +92,9 @@ def style(mode, palette):
         'ACCENT': palette['accent'],
         'BORDER': '#e0e6ee' if not dark else palette['card_border'],
         'SOFT': '#f5f8fc' if not dark else palette['grid'],
+        # D-372: the search glows in a luminous light blue: the app's accent on dark themes; on light ones, whose accent
+        # is a blue close to the one of «bajó», a cyan that still reads on white.
+        'SEARCH': palette['accent'] if dark else SEARCH_LIGHT,
     }
     for key, value in colors.items():
         css = css.replace('__' + key + '__', value)
@@ -393,12 +396,16 @@ STEP_TEXTS = {
     3: 'Mira los productos',
 }
 LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una familia'}
+SEARCH_LIGHT = '#0891b2'
 TREND_LABEL = 'Tendencia de las últimas 8 semanas'
 
 
 def step_chip(step, texts=None):
-    """D-352: «1 · Elige una región»: the number of the panel in the reading order, before its kicker."""
-    return f'<span class="mock-step"><b>{step}</b> · {esc((texts or STEP_TEXTS)[step])}</span>' if step else ''
+    """D-352: the number of the panel in the reading order, before its kicker. D-372: the number in a big circle of
+    colour, its text at a readable size."""
+    return (
+        f'<span class="mock-step"><b>{step}</b><span>{esc((texts or STEP_TEXTS)[step])}</span></span>' if step else ''
+    )
 
 
 def lock_overlay(step, texts=None):
@@ -824,7 +831,7 @@ def coverage_note(model, quality_link, methodology_link, family=None):
         )
         week = ''
     return (
-        f'<p class="mock-coverage-note">{detail}{esc(week)} '
+        f'<p class="mock-coverage-note">{detail}{esc(week)}{" " if week else ""}'
         f'Precios nominales de ODEPA, redondeados; cambios calculados antes de redondear. {links}</p>'
     )
 

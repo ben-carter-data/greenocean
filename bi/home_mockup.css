@@ -603,8 +603,9 @@ ul.mock-calc-out li em {font-style:normal;}
 .mock-products-table th.mock-two-lines {white-space:normal;line-height:1.25;}
 
 /* D-352: reading order of the Panorama. Numbered panels, «Todo Chile», trends, the whole basket, locks and the search in the accent colour. */
-.mock-step {display:inline-flex;align-self:flex-start;width:fit-content;align-items:center;gap:4px;margin:0 8px 0 0;padding:1px 8px;border-radius:999px;font-size:10.5px;font-weight:600;color:__ACCENT__;background:color-mix(in srgb,__ACCENT__ 14%,transparent);}
-.mock-step b {font-weight:700;}
+/* D-372: the step number big, in a circle of colour, at the start of each panel; its text clearly legible. */
+.mock-step {display:inline-flex;align-self:flex-start;width:fit-content;align-items:center;gap:9px;margin:0 10px 6px 0;font-size:14.5px;font-weight:700;color:__INK__;letter-spacing:-.01em;}
+.mock-step b {display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border-radius:50%;background:__ACCENT__;color:#ffffff;font-size:16px;font-weight:800;box-shadow:0 0 0 4px color-mix(in srgb,__ACCENT__ 22%,transparent);}
 .mock-scope-row {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .mock-all-chile {display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:0 20px;border-radius:999px;border:1.5px solid __ACCENT__;color:__ACCENT__!important;font-size:13px;font-weight:700;text-decoration:none!important;background:transparent;}
 .mock-all-chile:hover,.mock-all-chile.selected {background:__ACCENT__;color:#04121c!important;}
@@ -616,8 +617,14 @@ ul.mock-calc-out li em {font-style:normal;}
 .mock-basket-art {width:14px;height:14px;border-radius:4px;background:__ACCENT__;justify-self:center;}
 .mock-lock {position:static;z-index:5;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:__INK__;background:__PANEL__;border:1px solid __BORDER__;box-shadow:0 4px 14px rgba(0,0,0,.25);}
 .st-key-home_families,.st-key-home_products {position:relative;}
-.st-key-home_products [data-testid="stTextInput"] [data-baseweb="input"] {border-color:__ACCENT__!important;}
-.st-key-home_products [data-testid="stTextInput"] svg,.st-key-home_products [data-testid="stTextInput"] [data-testid="stIconMaterial"] {color:__ACCENT__!important;fill:__ACCENT__!important;}
+/* D-372: the search in a luminous light blue, a little bigger, with a soft glow that pulses while nobody has typed;
+   it stops on a click or a letter, and never moves when the system asks for reduced motion. */
+.st-key-home_products [data-testid="stTextInput"] [data-testid="stTextInputRootElement"] {border:2px solid __SEARCH__!important;min-height:44px;border-radius:10px;}
+.st-key-home_products [data-testid="stTextInput"] input {font-size:15px!important;}
+.st-key-home_products [data-testid="stTextInput"] svg,.st-key-home_products [data-testid="stTextInput"] [data-testid="stIconMaterial"] {color:__SEARCH__!important;fill:__SEARCH__!important;font-size:22px!important;}
+.st-key-home_products_search [data-testid="stTextInputRootElement"] {animation:mock-search-glow 2.4s ease-in-out infinite;}
+.st-key-home_products .st-key-home_products_search:focus-within [data-testid="stTextInputRootElement"],.st-key-home_products .st-key-home_products_search:has(input:not(:placeholder-shown)) [data-testid="stTextInputRootElement"],.st-key-home_products .st-key-home_products_search:has(input:disabled) [data-testid="stTextInputRootElement"] {animation:none!important;}
+@keyframes mock-search-glow {0%,100% {box-shadow:0 0 0 0 color-mix(in srgb,__SEARCH__ 0%,transparent);} 50% {box-shadow:0 0 14px 3px color-mix(in srgb,__SEARCH__ 55%,transparent);}}
 @keyframes mock-unlock {0% {box-shadow:0 0 0 0 color-mix(in srgb,__ACCENT__ 70%,transparent);} 60% {box-shadow:0 0 0 6px color-mix(in srgb,__ACCENT__ 25%,transparent);} 100% {box-shadow:0 0 0 0 transparent;}}
-@media (prefers-reduced-motion:reduce) {.st-key-home_families,.st-key-home_products {animation:none!important;}}
+@media (prefers-reduced-motion:reduce) {.st-key-home_families,.st-key-home_products,.st-key-home_products [data-testid="stTextInputRootElement"] {animation:none!important;}}
 .st-key-home_families > [data-testid="stElementContainer"]:has(.mock-lock),.st-key-home_products > [data-testid="stElementContainer"]:has(.mock-lock) {position:absolute!important;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;margin:0!important;}

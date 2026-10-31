@@ -995,7 +995,9 @@ def test_return_context_restores_only_supported_selection_fields():
 
 @needs_database
 def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
-    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.session_state["home_region_done"] = app.session_state["home_family_done"] = True  # D-372: steps 1 and 2 done
+    app.run()
     assert not app.exception
     assert app.selectbox(key='home_products_order').options == list(dashboard.PRODUCT_ORDERS)
 
