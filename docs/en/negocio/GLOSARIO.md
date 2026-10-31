@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.3 |
+| Version | 2.4 |
 | Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
@@ -20,7 +20,7 @@
 
 ## 1. In summary
 
-This glossary defines once each technical word of the panel and the documents. The three diagrams show how they relate: the path of a figure, from the row ODEPA publishes to the alert of the panel; the layers the data goes through, and the actors that take part.
+This glossary defines once each technical word of the panel and the documents. Three diagrams show how they relate: the path of a figure, from the row ODEPA publishes to the alert of the panel; the layers the data goes through; and the actors that take part.
 
 [[diagrama:terminos_cifra]]
 
@@ -30,18 +30,20 @@ This glossary defines once each technical word of the panel and the documents. T
 
 ## 2. Terms
 
-The terms are ordered by theme, from what is read in the panel to the documents. The column «Where it appears» names the pages of the panel that use each term; «—» means it appears only in the documents.
+The terms are ordered by theme, from what is read in the panel to the documents. The column «Where it appears» says on which pages of the panel each term is used. A «—» means it appears only in the documents.
 
 | Acronym or term | Meaning | Where it appears | Theme |
 |---|---|---|---|
-| KPI | Key performance indicator: each figure that measures something of the business. | Price overview, Prices and inflation | Indicators |
+| KPI | Key performance indicator: each figure that measures something of the business. The technical indicators are numbered K1 to K8. | Price overview, Prices and inflation, Business and systems analysis | Indicators |
 | BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
 | BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | Stakeholders, Business and systems analysis | Indicators |
 | BSA | Business systems analysis: the role that decides how the system meets what the business asks: what is measured, what blocks publication and what warns. | Business and systems analysis | Indicators |
 | RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
-| Price alert | A weekly change that is unusual for a product and of at least 10 %. | Price overview | Indicators |
+| Price alert | A weekly change outside the average ± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week (K6). | Price overview | Indicators |
 | Real price | A price expressed in pesos of the last published month of the CPI. | Prices and inflation | Indicators |
 | Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | Prices and inflation | Indicators |
+| Data quality indicator | Each of the 11 indicators measured on every load on the published database, in five dimensions. | Quality and audit | Indicators |
+| Quality plan indicator | Each of the 12 indicators of the SQAP (8 of code and 4 of data) that the quality workflow measures every week. | Method and quality | Indicators |
 | Quality dimension | An aspect of quality that is measured: completeness, timeliness, validity, uniqueness, consistency and accuracy. | Quality and audit | Indicators |
 | DAMA-DMBOK | Data management guide of DAMA International (*Data Management Body of Knowledge*); the quality dimensions come from it. | — | Indicators |
 | ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Price overview, Pipeline and lineage | Sources |
@@ -61,7 +63,8 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | Commit, push | Save a change in the history of the code, and upload it to GitHub. | Operations center (CI/CD) | Pipeline |
 | Release | A GitHub publication that keeps files outside the history; the «base-actual» release keeps the served database and each load replaces it. | Operations center (CI/CD) | Pipeline |
 | Database pointer | The `etl/datos.version` file: the fingerprint, the size and the date of the published served database. | Operations center (Deployment) | Pipeline |
-| Issue | A publication on GitHub; here, the weekly report. | Operations center (Monitoring) | Pipeline |
+| Issue | A publication on GitHub; here, the weekly report each load leaves. | Operations center (Monitoring) | Pipeline |
+| Pull request | A proposed change on GitHub that the author reviews before accepting it; here, the quality report of each week. | Method and quality | Pipeline |
 | Landing | The `etl/raw.db` database, with the ODEPA rows as they arrive; it is not versioned. | Pipeline and lineage | Database |
 | Bronze, silver, gold | The data layers: bronze (Parquet, exact copy), silver (dbt staging and intermediate: types, rules and flags) and gold (marts: the star schema the panel reads). | Pipeline and lineage | Database |
 | Served database | `etl/datos.duckdb`: the database the panel reads, with the star schema; published in the «base-actual» release. | Pipeline and lineage, Data model | Database |
@@ -77,11 +80,12 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | Parquet | Open, compressed, columnar file format. | Pipeline and lineage | Database |
 | Git LFS | Git extension for large files (*Large File Storage*), which keeps them outside the history. | — | Database |
 | ISO | International Organization for Standardization; here, the ISO week (Monday to Sunday, numbered according to ISO 8601) and the dates in YYYY-MM-DD format. | — | Database |
-| Token | Credential that lets the panel query GitHub and launch the workflow; it is never shown. | Operations center | Security |
-| Control code | Secret that opens the author's access in the panel. | Operations center | Security |
+| Token | Credential with which the panel starts the load, reads its state and logs, and cancels it; it is never shown. | Operations center | Security |
+| Control code | Secret that opens the Author view in the panel. | Operations center | Security |
+| View | What the panel shows depending on who reads it: User (the business), Professional (the whole project) or Author (the same, plus what only the author sees, with the control code). | App map, Security architecture | Security |
 | OWASP | Open Worldwide Application Security Project; its Top 10 list classifies the security risks of web applications. | Security architecture | Security |
 | ASCII | Basic English character set, without ñ or accents. | — | Security |
-| API | Interface through which one program talks to another; the panel uses it to query GitHub. | Operations center | Connections |
+| API | Interface through which one program talks to another. The panel uses GitHub's to start the load, read its state and logs, and cancel it. | Operations center | Connections |
 | HTTPS | Encrypted web connection. | Pipeline and lineage, Operations center (Deployment) | Connections |
 | URL | Address of a page or a file on the web. | — | Connections |
 | UTC | Coordinated universal time; the job runs at 12:00 UTC: 09:00 in Chile in summer time and 08:00 in winter. | Operations center | Connections |
@@ -107,4 +111,5 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.0 | 2026-10-25 | A summary with three diagrams and the terms ordered by theme, from the indicators (D-290, documents for every reader) |
 | 2.1 | 2026-10-26 | BA, one of the professional views of the panel (D-300) |
 | 2.2 | 2026-10-30 | SQAP, IEEE and IEC, from the software quality assurance plan (D-355) |
-| 2.3 | 2026-10-31 | BSA, from the pages «Interesados» and «Análisis de negocio y sistemas» (D-376, D-377) |
+| 2.3 | 2026-10-31 | BSA, from the pages «Stakeholders» and «Business and systems analysis» (D-376, D-377) |
+| 2.4 | 2026-10-31 | Wording reviewed; the three views; the data quality indicators and those of the quality plan; the pull request of the quality report; the full price alert; the document moves to `docs/negocio/` (D-381 to D-385, D-388) |

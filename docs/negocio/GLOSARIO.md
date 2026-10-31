@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 2.3 |
+| Versión | 2.4 |
 | Fecha | 31-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -20,7 +20,7 @@
 
 ## 1. En resumen
 
-Este glosario define una sola vez cada palabra técnica del panel y de los documentos. Los tres esquemas muestran cómo se relacionan: el camino de una cifra, desde la fila que publica ODEPA hasta la alerta del panel; las capas por las que pasan los datos, y los actores que intervienen.
+Este glosario define una sola vez cada palabra técnica del panel y de los documentos. Tres esquemas muestran cómo se relacionan: el camino de una cifra, desde la fila que publica ODEPA hasta la alerta del panel; las capas por las que pasan los datos; y los actores que intervienen.
 
 [[diagrama:terminos_cifra]]
 
@@ -30,18 +30,20 @@ Este glosario define una sola vez cada palabra técnica del panel y de los docum
 
 ## 2. Términos
 
-Los términos van ordenados por tema, desde lo que se lee en el panel hasta los documentos. La columna «Dónde aparece» indica las páginas del panel en las que se usa cada término; «—» indica que solo aparece en los documentos.
+Los términos van ordenados por tema, desde lo que se lee en el panel hasta los documentos. La columna «Dónde aparece» dice en qué páginas del panel se usa cada término. Un «—» quiere decir que solo aparece en los documentos.
 
 | Sigla o término | Significado | Dónde aparece | Tema |
 |---|---|---|---|
-| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. | Panorama de precios, Precios e inflación | Indicadores |
+| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. Los indicadores técnicos se numeran de K1 a K8. | Panorama de precios, Precios e inflación, Análisis de negocio y sistemas | Indicadores |
 | BI | Inteligencia de negocios (*business intelligence*): el análisis de datos para tomar decisiones; aquí, el panel. | — | Indicadores |
 | BA | Análisis de negocio (*business analysis*): el rol que traduce los datos en decisiones; una de las vistas profesionales del panel. | Interesados, Análisis de negocio y sistemas | Indicadores |
 | BSA | Análisis de sistemas de negocio (*business systems analysis*): el rol que decide cómo el sistema cumple lo que el negocio pide: qué se mide, qué bloquea la publicación y qué avisa. | Análisis de negocio y sistemas | Indicadores |
 | RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Calidad y auditoría | Indicadores |
-| Alerta de precio | Cambio semanal inusual para un producto y de al menos 10 %. | Panorama de precios | Indicadores |
+| Alerta de precio | Cambio semanal fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con dos cotizaciones en cada semana (K6). | Panorama de precios | Indicadores |
 | Precio real | Precio expresado en pesos del último mes publicado del IPC. | Precios e inflación | Indicadores |
 | Semana provisional | Semana de un mes cuyo IPC aún no se publica; usa el último mes disponible. | Precios e inflación | Indicadores |
+| Indicador de calidad de los datos | Cada uno de los 11 indicadores que se miden en cada carga sobre la base publicada, en cinco dimensiones. | Calidad y auditoría | Indicadores |
+| Indicador del plan de calidad | Cada uno de los 12 indicadores del SQAP (8 de código y 4 de datos) que el workflow de calidad mide cada semana. | Método y calidad | Indicadores |
 | Dimensión de calidad | Aspecto de la calidad que se mide: completitud, actualidad, validez, unicidad, consistencia y exactitud. | Calidad y auditoría | Indicadores |
 | DAMA-DMBOK | Guía de gestión de datos de DAMA International (*Data Management Body of Knowledge*); de ella vienen las dimensiones de calidad. | — | Indicadores |
 | ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Panorama de precios, Pipeline y linaje | Fuentes |
@@ -61,7 +63,8 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | Commit, push | Guardar un cambio en el historial del código, y subirlo a GitHub. | Centro de operación (CI/CD) | Pipeline |
 | Release | Publicación de GitHub que guarda archivos fuera del historial; el release «base-actual» guarda la base servida y cada carga la reemplaza. | Centro de operación (CI/CD) | Pipeline |
 | Puntero de la base | El archivo `etl/datos.version`: la huella, el tamaño y la fecha de la base servida publicada. | Centro de operación (Despliegue) | Pipeline |
-| Issue | Publicación en GitHub; aquí, el informe semanal. | Centro de operación (Monitoreo) | Pipeline |
+| Issue | Publicación en GitHub; aquí, el informe semanal que deja cada carga. | Centro de operación (Monitoreo) | Pipeline |
+| Pull request | Propuesta de cambio en GitHub que el autor revisa antes de aceptarla; aquí, el informe de calidad de cada semana. | Método y calidad | Pipeline |
 | Aterrizaje | La base `etl/raw.db`, con las filas de ODEPA tal como llegan; no se versiona. | Pipeline y linaje | Base de datos |
 | Bronce, plata, oro | Las capas de los datos: bronce (Parquet, copia exacta), plata (staging e intermedio de dbt: tipos, reglas y marcas) y oro (marts: el modelo estrella que lee el panel). | Pipeline y linaje | Base de datos |
 | Base servida | `etl/datos.duckdb`: la base que lee el panel, con el modelo estrella; se publica en el release «base-actual». | Pipeline y linaje, Modelo de datos | Base de datos |
@@ -77,11 +80,12 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | Parquet | Formato abierto de archivos por columnas, comprimido. | Pipeline y linaje | Base de datos |
 | Git LFS | Extensión de Git para archivos grandes (*Large File Storage*), que los guarda fuera del historial. | — | Base de datos |
 | ISO | Organización Internacional de Normalización; aquí, la semana ISO (de lunes a domingo, numerada según la norma ISO 8601) y las fechas en formato AAAA-MM-DD. | — | Base de datos |
-| Token | Credencial que permite al panel consultar GitHub y lanzar el workflow; nunca se muestra. | Centro de operación | Seguridad |
-| Clave de control | Secreto que abre el acceso del autor en el panel. | Centro de operación | Seguridad |
+| Token | Credencial con la que el panel lanza la carga, lee su estado y sus logs, y la cancela; nunca se muestra. | Centro de operación | Seguridad |
+| Clave de control | Secreto que abre la vista Autor en el panel. | Centro de operación | Seguridad |
+| Vista | Lo que el panel muestra según quien lo lee: Usuario (el negocio), Profesional (todo el proyecto) o Autor (lo mismo, más lo que solo ve el autor, con la clave de control). | Mapa de la app, Arquitectura de seguridad | Seguridad |
 | OWASP | Open Worldwide Application Security Project; su lista Top 10 clasifica los riesgos de seguridad de aplicaciones web. | Arquitectura de seguridad | Seguridad |
 | ASCII | Juego de caracteres básico del inglés, sin ñ ni tildes. | — | Seguridad |
-| API | Interfaz por la que un programa se comunica con otro; el panel la usa para consultar GitHub. | Centro de operación | Conexiones |
+| API | Interfaz por la que un programa se comunica con otro. El panel usa la de GitHub para lanzar la carga, leer su estado y sus logs, y cancelarla. | Centro de operación | Conexiones |
 | HTTPS | Conexión web cifrada. | Pipeline y linaje, Centro de operación (Despliegue) | Conexiones |
 | URL | Dirección de una página o de un archivo en la web. | — | Conexiones |
 | UTC | Tiempo universal coordinado; el job corre a las 12:00 UTC: las 09:00 en Chile en horario de verano y las 08:00 en invierno. | Centro de operación | Conexiones |
@@ -108,3 +112,4 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | 2.1 | 26-10-2026 | BA, una de las vistas profesionales del panel (D-300) |
 | 2.2 | 30-10-2026 | SQAP, IEEE e IEC, del plan de calidad del software (D-355) |
 | 2.3 | 31-10-2026 | BSA, de las páginas «Interesados» y «Análisis de negocio y sistemas» (D-376, D-377) |
+| 2.4 | 31-10-2026 | Redacción revisada; las tres vistas; los indicadores de calidad de los datos y los del plan de calidad; el pull request del informe de calidad; la alerta de precio completa; el documento pasa a `docs/negocio/` (D-381 a D-385, D-388) |
