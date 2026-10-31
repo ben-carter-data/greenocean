@@ -4,12 +4,12 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de pruebas y de seguridad |
-| Versión | 3.1 |
-| Fecha | 30-10-2026 |
+| Versión | 3.2 |
+| Fecha | 31-10-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo se comprueba que cada cifra es correcta, que una carga con errores nunca se publica y que nadie puede leer los secretos, cambiar los datos ni lanzar la carga sin permiso. |
-| Audiencia | Gerencia, calidad, seguridad, operación y revisión técnica. |
+| Audiencia | Gerencia, calidad, seguridad, operación y revisores técnicos. |
 | Documentos relacionados | [Documento de requisitos del producto (PRD)](../negocio/PRD.md) · [Documento de arquitectura de software (SAD)](../arquitectura/SAD.md) · [Manual de operación](../operacion/MANUAL.md) · [Glosario](../negocio/GLOSARIO.md) |
 
 ## Índice
@@ -53,7 +53,7 @@ Las pruebas de GreenOcean responden tres preguntas, siempre de forma automática
 | Documentos | Trazabilidad de requisitos, cifras contra la base, estructura y redacción | pytest | `tests/test_documents.py`, `tests/test_prd_traceability.py` |
 | Medición de pantallas | Desborde horizontal y altura de cada página en varios tamaños de ventana | Playwright, externo al proyecto | `tests/medicion/medir.cjs` |
 
-**Pruebas que bloquean y pruebas que informan.** Las pruebas de datos, de cifras, de paridad, de la puerta y de seguridad bloquean: si fallan, la carga o el cambio no siguen. Las pruebas de velocidad (marcador `rendimiento`) solo informan: corren en el computador del autor y nunca en las máquinas compartidas de GitHub, que no son un entorno estable para medir tiempo (D-341).
+**Pruebas que bloquean y pruebas que informan.** Las pruebas de datos, de cifras, de paridad, de la puerta y de seguridad bloquean: si fallan, la carga o el cambio no siguen. La carga semanal corre solo las de datos y del pipeline; las de pantalla corren en el CI de cada push, y su falla nunca detiene la publicación de datos (D-366). Las pruebas de velocidad (marcador `rendimiento`) solo informan. Corren en el computador del autor y nunca en las máquinas compartidas de GitHub, que no son un entorno estable para medir tiempo (D-341).
 
 ## 3. Quién participa en la seguridad
 
@@ -61,8 +61,8 @@ Las pruebas de GreenOcean responden tres preguntas, siempre de forma automática
 
 La seguridad no depende de esconder el código, que es público, sino de cuatro actores y de lo que cada uno puede hacer:
 
-- **El visitante** lee el panel y usa el estudio SQL sin cuenta: los datos son públicos, y la base está en solo lectura.
-- **El autor** mantiene el código y los secretos; con la clave de control abre el botón «Ejecutar pipeline ahora». Entra a GitHub y a Streamlit con su propia cuenta, con verificación en dos pasos.
+- **El Usuario y el Profesional** leen el panel sin cuenta; el Profesional también usa el estudio SQL. Los datos son públicos y la base está en solo lectura.
+- **El Autor** mantiene el código y los secretos. Con la clave de control abre su vista y el botón «Ejecutar pipeline ahora». Entra a GitHub y a Streamlit con su propia cuenta, con verificación en dos pasos.
 - **Streamlit Community Cloud** guarda los secretos del panel (el token de GitHub y la clave de control), fuera del repositorio, y publica el panel desde `main`.
 - **GitHub** guarda el código, sin ningún secreto, y ejecuta el workflow semanal con los permisos mínimos: escribir contenido y crear issues.
 
@@ -134,13 +134,13 @@ El esquema interactivo de los casos, con cada caso sobre la tecnología que atac
 
 [[diagrama:secuencia_manual]]
 
-El botón «Ejecutar pipeline ahora» no existe hasta que el autor escribe la clave de control. La clave se compara en tiempo constante y el token, que nunca aparece en pantalla ni en los mensajes de error, solo sirve para lanzar el workflow.
+El botón «Ejecutar pipeline ahora» no existe hasta que el autor escribe la clave de control. La clave se compara en tiempo constante. El token nunca aparece en pantalla ni en los mensajes de error, y solo sirve para lanzar la carga, leer su estado y sus logs, y cancelarla.
 
 ## 8. Un cambio de código, paso a paso
 
 [[diagrama:secuencia_ci]]
 
-Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su resultado queda junto al commit; Streamlit publica `main` sin esperarlo, un riesgo aceptado y descrito en la sección 11.
+Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su resultado queda junto al commit. Streamlit publica `main` sin esperarlo, un riesgo aceptado y descrito en la sección 11.
 
 ## 9. Entorno y ejecución
 
@@ -152,8 +152,8 @@ Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su result
 | Datos crudos | `etl/raw.db`, solo en el computador del autor y en la máquina de cada carga; sin ella, las pruebas que reconstruyen desde las filas crudas se omiten |
 | Secretos | Las pruebas crean su propio secreto ficticio y nunca usan el real |
 | Ejecución local | `python -m pytest -q`; las pruebas de velocidad, con `python -m pytest -m rendimiento` |
-| Ejecución continua | `pruebas.yml` en cada push y pull request: compila dbt (`dbt parse`) y ejecuta pytest sin las pruebas de velocidad (`-m "not rendimiento"`), igual que la carga semanal y la medición de calidad |
-| Antes de publicar | `semanal.yml` ejecuta pytest sobre la base nueva, incluida la paridad |
+| Ejecución continua | `pruebas.yml` en cada push y pull request: compila dbt (`dbt parse`) y ejecuta pytest sin las pruebas de velocidad (`-m "not rendimiento"`) |
+| Antes de publicar | `semanal.yml` ejecuta las pruebas de datos y del pipeline sobre la base nueva, incluida la paridad (`-m "datos and not rendimiento"`, D-366) |
 
 ## 10. Criterios de aceptación
 
@@ -161,7 +161,7 @@ Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su result
 |---|---|---|
 | Entrada | El cambio compila y la base servida está disponible | `dbt parse` |
 | Salida de un cambio | Ruff, mypy y la suite completa pasan sobre todo el código antes del push, incluidos los catorce casos de seguridad | `pruebas.yml` en verde |
-| Salida de una carga | Pasan las pruebas de dbt, la carga lee al menos el 90 % de las filas de la anterior y pytest pasa sobre la base nueva | `semanal.yml` |
+| Salida de una carga | Pasan las pruebas de dbt; la carga lee al menos el 90 % de las filas de la anterior; no falta una semana en medio de los datos ni una fuente lleva más de 2 semanas sin publicar (D-356); y las pruebas de datos pasan sobre la base nueva | `semanal.yml` |
 | Seguridad | Cada control apunta a una prueba que existe y ningún secreto está en el repositorio | Casos S-09 y S-06 |
 | Cambio de comportamiento | Tiene su entrada en `docs/DECISIONES.md` y sus pruebas | Revisión del autor |
 
@@ -172,7 +172,7 @@ Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su result
 | Sin `etl/raw.db`, la reconstrucción desde filas crudas no corre en `pruebas.yml` | Corre en el computador del autor y en cada carga semanal, donde los datos crudos existen |
 | Las pruebas que consultan enlaces públicos dependen de la red | Un resultado fallido se repite antes de tratarlo como un defecto del código |
 | La medición de pantallas no forma parte de la suite | Se ejecuta antes de cada cambio visual |
-| Sin límite de intentos de la clave de control | Riesgo aceptado por el autor (D-249): la clave solo evita pulsar «Ejecutar pipeline ahora» por accidente, lo máximo que permite es lanzar el workflow, y debe ser larga |
+| Sin límite de intentos de la clave de control | Riesgo aceptado por el autor (D-249): la clave solo evita pulsar «Ejecutar pipeline ahora» por accidente, lo máximo que permite es lanzar o cancelar la carga, y debe ser larga |
 | Token de GitHub del panel | Permisos mínimos y renovación antes del vencimiento; el panel avisa cuando faltan menos de 14 días |
 | Streamlit publica `main` sin esperar a `pruebas.yml` | El autor revisa en local antes de cada push |
 | Verificación en dos pasos de las cuentas | Declarada por el autor; no verificable desde el repositorio |
@@ -199,3 +199,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 2.1 | 25-10-2026 | El Plan de pruebas, versión 1.0, nace como documento aparte (D-279) |
 | 3.0 | 25-10-2026 | Un solo documento para las pruebas y la seguridad: qué se prueba, quién participa, amenazas, casos, procedimiento y las secuencias de una carga manual y de un cambio de código (D-290, documentos para todo lector) |
 | 3.1 | 30-10-2026 | Pruebas que bloquean y pruebas que informan; cuatro casos de seguridad nuevos, S-11 a S-14 (D-364); ejecución sin las pruebas de velocidad en GitHub |
+| 3.2 | 31-10-2026 | Redacción revisada; el Usuario, el Profesional y el Autor (3); la carga semanal corre solo las pruebas de datos (2, 9, D-366); la salida de una carga con las fuentes retrasadas (10, D-356); el token lanza, sigue y cancela la carga (7, 11); el documento pasa a `docs/calidad/` (D-381, D-388) |

@@ -4,12 +4,12 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Test and security plan |
-| Version | 3.1 |
-| Date | 2026-10-30 |
+| Version | 3.2 |
+| Date | 2026-10-31 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain how we check that each figure is correct, that a load with errors is never published and that nobody can read the secrets, change the data or launch the load without permission. |
-| Audience | Management, quality, security, operations and technical review. |
+| Audience | Management, quality, security, operations and technical reviewers. |
 | Related documents | [Product Requirements Document (PRD)](../negocio/PRD.md) · [Software Architecture Document (SAD)](../arquitectura/SAD.md) · [Operations Runbook](../operacion/MANUAL.md) · [Glossary](../negocio/GLOSARIO.md) |
 
 ## Contents
@@ -53,7 +53,7 @@ The tests of GreenOcean answer three questions, always automatically:
 | Documents | Requirements traceability, figures against the database, structure and wording | pytest | `tests/test_documents.py`, `tests/test_prd_traceability.py` |
 | Screen measurement | Horizontal overflow and height of each page at several window sizes | Playwright, outside the project | `tests/medicion/medir.cjs` |
 
-**Tests that block and tests that inform.** The data, figure, parity, gate and security tests block: if they fail, the load or the change does not go on. The speed tests (marker `rendimiento`) only inform: they run on the author's computer and never on GitHub's shared machines, which are not a stable place to measure time (D-341).
+**Tests that block and tests that inform.** The data, figure, parity, gate and security tests block: if they fail, the load or the change does not go on. The weekly load runs only the data and pipeline tests; the screen tests run in the CI of every push, and their failure never stops the publication of data (D-366). The speed tests (marker `rendimiento`) only inform. They run on the author's computer and never on GitHub's shared machines, which are not a stable place to measure time (D-341).
 
 ## 3. Who takes part in security
 
@@ -61,8 +61,8 @@ The tests of GreenOcean answer three questions, always automatically:
 
 Security does not depend on hiding the code, which is public, but on four actors and on what each one can do:
 
-- **The visitor** reads the panel and uses the SQL studio without an account: the data is public, and the database is read-only.
-- **The author** maintains the code and the secrets; with the control code, the author opens the «Run pipeline now» button. The author signs in to GitHub and Streamlit with their own account, with two-step verification.
+- **The User and the Professional** read the panel with no account; the Professional also uses the SQL studio. The data is public and the database is read-only.
+- **The Author** maintains the code and the secrets. With the control code, the Author opens that view and the «Run pipeline now» button. The Author signs in to GitHub and Streamlit with their own account, with two-step verification.
 - **Streamlit Community Cloud** keeps the panel's secrets (the GitHub token and the control code), outside the repository, and publishes the panel from `main`.
 - **GitHub** keeps the code, with no secret in it, and runs the weekly workflow with the least privileges: write content and create issues.
 
@@ -134,7 +134,7 @@ The interactive diagram of the cases, with each case on the technology it attack
 
 [[diagrama:secuencia_manual]]
 
-The «Run pipeline now» button does not exist until the author types the control code. The code is compared in constant time, and the token, which never appears on screen or in error messages, only serves to launch the workflow.
+The «Run pipeline now» button does not exist until the author types the control code. The code is compared in constant time. The token never appears on screen or in error messages, and only serves to start the load, read its state and logs, and cancel it.
 
 ## 8. A code change, step by step
 
@@ -152,8 +152,8 @@ Each change runs the same tests on a clean GitHub machine. Its result stays next
 | Raw data | `etl/raw.db`, only on the author's computer and on the machine of each load; without it, the tests that rebuild from the raw rows are skipped |
 | Secrets | The tests create their own fake secret and never use the real one |
 | Local execution | `python -m pytest -q`; the speed tests, with `python -m pytest -m rendimiento` |
-| Continuous execution | `pruebas.yml` on every push and pull request: it compiles dbt (`dbt parse`) and runs pytest without the speed tests (`-m "not rendimiento"`), like the weekly load and the quality measure |
-| Before publishing | `semanal.yml` runs pytest on the new database, parity included |
+| Continuous execution | `pruebas.yml` on every push and pull request: it compiles dbt (`dbt parse`) and runs pytest without the speed tests (`-m "not rendimiento"`) |
+| Before publishing | `semanal.yml` runs the data and pipeline tests on the new database, parity included (`-m "datos and not rendimiento"`, D-366) |
 
 ## 10. Acceptance criteria
 
@@ -161,7 +161,7 @@ Each change runs the same tests on a clean GitHub machine. Its result stays next
 |---|---|---|
 | Entry | The change compiles and the served database is available | `dbt parse` |
 | Exit of a change | Ruff, mypy and the full suite pass on all the code before the push, the fourteen security cases included | `pruebas.yml` green |
-| Exit of a load | The dbt tests pass, the load reads at least 90 % of the rows of the previous one and pytest passes on the new database | `semanal.yml` |
+| Exit of a load | The dbt tests pass; the load reads at least 90 % of the rows of the previous one; no week is missing in the middle of the data and no source has gone more than 2 weeks without publishing (D-356); and the data tests pass on the new database | `semanal.yml` |
 | Security | Each control points to a test that exists and no secret is in the repository | Cases S-09 and S-06 |
 | Change of behavior | It has its entry in `docs/DECISIONES.md` and its tests | The author's review |
 
@@ -172,7 +172,7 @@ Each change runs the same tests on a clean GitHub machine. Its result stays next
 | Without `etl/raw.db`, the rebuild from raw rows does not run in `pruebas.yml` | It runs on the author's computer and on each weekly load, where the raw data exists |
 | The tests that query public links depend on the network | A failed result is repeated before treating it as a defect of the code |
 | The screen measurement is not part of the suite | It runs before each visual change |
-| No limit of attempts for the control code | Risk accepted by the author (D-249): the code only prevents pressing «Run pipeline now» by accident, the most it allows is launching the workflow, and it must be long |
+| No limit of attempts for the control code | Risk accepted by the author (D-249): the code only prevents pressing «Run pipeline now» by accident, the most it allows is starting or cancelling the load, and it must be long |
 | The panel's GitHub token | Minimum permissions and renewal before expiry; the panel warns when fewer than 14 days are left |
 | Streamlit publishes `main` without waiting for `pruebas.yml` | The author reviews locally before each push |
 | Two-step verification of the accounts | Declared by the author; not verifiable from the repository |
@@ -199,3 +199,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 2.1 | 2026-10-25 | The Test Plan, version 1.0, starts as a separate document (D-279) |
 | 3.0 | 2026-10-25 | A single document for the tests and security: what is tested, who takes part, threats, cases, procedure and the sequences of a manual load and of a code change (D-290, documents for every reader) |
 | 3.1 | 2026-10-30 | Tests that block and tests that inform; four new security cases, S-11 to S-14 (D-364); runs without the speed tests on GitHub |
+| 3.2 | 2026-10-31 | Wording reviewed; the User, the Professional and the Author (3); the weekly load runs only the data tests (2, 9, D-366); the exit of a load with the late sources (10, D-356); the token starts, follows and cancels the load (7, 11); the document moves to `docs/calidad/` (D-381, D-388) |
