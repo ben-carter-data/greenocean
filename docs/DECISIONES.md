@@ -3109,3 +3109,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - Con una ejecución simulada en curso, la ventana muestra el diagrama en vivo, enfocado y con el paso real, sin el token.
   - El mismo marco sirve para el ancho y para la pantalla angosta.
   - Los botones de la ventana siguen ahí.
+
+## D-414 · El SAD lleva la imagen fija del flujo del sistema
+
+- **Pedido del autor (parte 4, fase 1):** una versión fija del flujo, en imagen, para el SAD.
+- **Decisión:** el SAD suma la sección 3.3, «Flujo del sistema», en español e inglés. Trae el marcador `[[diagrama:flujo]]`, que dibuja la misma vista de D-412 sin script ni estado. Debajo de la imagen va el momento de la última carga real publicada, leído de `etl/datos.version`, y un enlace a la vista en vivo de «Stack y evidencia». Como todo diagrama de documento, no tiene fondo ni sombras y se imprime en hoja blanca (D-280).
+- **Pruebas:** `tests/test_live_flow.py::test_d414_…` (el marcador en los dos idiomas, sin script y con la fecha de la última carga), más las pruebas de los diagramas de documentos (`tests/test_doc_diagrams.py` y `tests/test_documents.py`), que ahora cuentan la imagen nueva.

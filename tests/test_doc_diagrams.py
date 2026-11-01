@@ -96,9 +96,16 @@ def test_d210_the_weak_views_are_gone():
     # D-289: the figures of bi/doc_figures.py joined the views; nothing else is a document diagram.
     from bi import doc_figures
 
-    assert set(doc_diagrams.DOC_DIAGRAMS) == {"contexto", "contenedores", "casos", "mockups", "sop", "pruebas"} | set(
-        doc_figures.FIGURES
-    )
+    # D-414: and the fixed picture of the live system flow, drawn by bi/live_flow.py.
+    assert set(doc_diagrams.DOC_DIAGRAMS) == {
+        "contexto",
+        "contenedores",
+        "casos",
+        "mockups",
+        "sop",
+        "pruebas",
+        "flujo",
+    } | set(doc_figures.FIGURES)
 
 
 def test_doc_diagrams_does_not_depend_on_streamlit():

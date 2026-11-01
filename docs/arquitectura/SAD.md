@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.3 |
-| Fecha | 31-10-2026 |
+| Versión | 3.4 |
+| Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo está construido GreenOcean, cómo corre cada semana, dónde viven sus datos y por qué tiene esa forma. |
@@ -83,6 +83,14 @@ Cada componente es un archivo del repositorio y corre como un paso de `semanal.y
 [[diagrama:componentes_panel]]
 
 `bi/dashboard.py` arma la navegación y cada página. Las consultas pasan por `bi/queries.py`, y la base se abre en solo lectura. `bi/control.py` es la única pieza que habla con la API de GitHub.
+
+### 3.3 Flujo del sistema
+
+Las piezas del proyecto y lo que se dicen entre ellas, en una sola vista. Cada flecha va de quien pide a quien responde, con una etiqueta corta de lo que viaja. La única que no se puede leer en GitHub ni en la base es el redespliegue de Streamlit después de un push a main, y por eso dice «deducido». En el panel, la misma vista está en vivo: sigue la carga en curso, explica cada mensaje de ida y de vuelta, y muestra qué viajó en la última carga real (D-412).
+
+[[diagrama:flujo]]
+
+La vista en vivo: [[vista:Stack y evidencia]].
 
 ## 4. La carga de cada semana
 
@@ -456,3 +464,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.1 | 26-10-2026 | Escenarios clave y componentes de la carga y del panel (C4, nivel 3); las vistas, el Dashboard y el aviso de carga fallida en el panel (D-300) |
 | 3.2 | 30-10-2026 | Fuentes retrasadas y límite de tiempo de la carga; las tres vistas, las recargas propias y las pestañas que dibujan solo la visible; calidad del proyecto, secretos y la página «GitHub Actions» (D-339 a D-363) |
 | 3.3 | 31-10-2026 | Redacción revisada; las tres personas del contexto, cada una con lo que ve (2); la API de GitHub dice lanzar, leer estado y logs, cancelar (3); el informe de calidad como pull request (4, 7, 8); los indicadores de calidad de los datos y los del plan de calidad (8); el documento pasa a `docs/arquitectura/` (D-381 a D-384, D-388) |
+| 3.4 | 01-11-2026 | El flujo del sistema, con la imagen fija de la vista en vivo (3.3, D-412 a D-414) |

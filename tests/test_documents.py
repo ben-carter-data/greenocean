@@ -42,6 +42,7 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
             "contenedores",
             "componentes_carga",
             "componentes_panel",
+            "flujo",  # D-414: the fixed picture of the live system flow
             "secuencia_carga",
             "secuencia_panel",
             "capas",

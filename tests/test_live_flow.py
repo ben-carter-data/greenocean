@@ -247,3 +247,15 @@ def test_d413_the_run_window_shows_the_flow_focused_on_the_run_above_its_steps()
     focus = live_flow.build_svg(PALETTE, focus=True)  # what the run touches: no browser and no DevSecOps band
     assert 'id="piece-browser"' not in focus and 'id="arrow-browser"' not in focus and 'id="piece-gate"' not in focus
     assert all(f'id="arrow-{arrow}"' in focus for arrow in ("odepa", "ine", "release", "repo", "start"))
+
+
+def test_d414_the_sad_carries_the_fixed_picture_in_both_languages():
+    from bi import doc_diagrams
+
+    for language in ("es", "en"):
+        text = i18n.document_path("SAD.md", language).read_text(encoding="utf-8")
+        assert "\n[[diagrama:flujo]]\n" in text
+    page = doc_diagrams.DOC_DIAGRAMS["flujo"](charts.MODE_CORPORATE)
+    assert "<script" not in page and doc_diagrams.PRINT_STYLE in page and 'id="arrow-deploy"' in page
+    published = json.loads(live_flow.POINTER.read_text(encoding="utf-8"))["published_at"]
+    assert "Última carga real publicada:" in page and published[:4] in page

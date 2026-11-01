@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.3 |
-| Date | 2026-10-31 |
+| Version | 3.4 |
+| Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain how GreenOcean is built, how it runs each week, where its data lives and why it has that shape. |
@@ -83,6 +83,14 @@ Each component is a file of the repository and runs as a step of `semanal.yml`. 
 [[diagrama:componentes_panel]]
 
 `bi/dashboard.py` builds the navigation and each page. The queries go through `bi/queries.py`, and the database is opened read-only. `bi/control.py` is the only piece that talks to the GitHub API.
+
+### 3.3 System flow
+
+The pieces of the project and what they say to each other, in one view. Each arrow goes from whoever asks to whoever answers, with a short label of what travels. The only one that cannot be read on GitHub or in the database is Streamlit's redeploy after a push to main, and so it says «deduced». In the panel, the same view is live: it follows the running load, explains each message there and back, and shows what travelled in the latest real load (D-412).
+
+[[diagrama:flujo]]
+
+The live view: [[vista:Stack and evidence]].
 
 ## 4. The load of each week
 
@@ -456,3 +464,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.1 | 2026-10-26 | Key scenarios and components of the load and of the panel (C4, level 3); the views, the Dashboard and the failed-load notice in the panel (D-300) |
 | 3.2 | 2026-10-30 | Late sources and the time limit of the load; the three views, the app's own reloads and tabs that draw only the one in sight; project quality, secrets and the page «GitHub Actions» (D-339 to D-363) |
 | 3.3 | 2026-10-31 | Wording reviewed; the three people of the context, each with what it sees (2); the GitHub API says start, read state and logs, cancel (3); the quality report as a pull request (4, 7, 8); the data quality indicators and those of the quality plan (8); the document moves to `docs/arquitectura/` (D-381 to D-384, D-388) |
+| 3.4 | 2026-11-01 | The system flow, with the fixed picture of the live view (3.3, D-412 to D-414) |

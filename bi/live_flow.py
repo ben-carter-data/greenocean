@@ -16,6 +16,7 @@ from __future__ import annotations
 import html
 import json
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -985,6 +986,23 @@ def build_html(palette: dict[str, str], model: dict[str, Any], focus: bool = Fal
         f'<script type="application/json" id="lf-data">{payload}</script>'
         f"<script>{SCRIPT}</script></body></html>"
     )
+
+
+POINTER = Path(__file__).resolve().parent.parent / "etl" / "datos.version"
+
+
+def build_document_html(mode: str) -> str:
+    """[[diagrama:flujo]] of the SAD (D-414): the fixed picture, with the moment of the latest published load read from
+    the database's pointer."""
+    published = json.loads(POINTER.read_text(encoding="utf-8")).get("published_at", "")
+    moment = control.parse_github_time(str(published).replace("+00:00", "Z"))
+    caption = t(
+        (
+            "Imagen fija; la vista en vivo está en «Stack y evidencia». Última carga real publicada: {}.",
+            "Fixed picture; the live view is in «Stack and evidence». Latest real load published: {}.",
+        )
+    ).format(format_moment(moment))
+    return build_static_html(charts.get_palette(mode), caption)
 
 
 def build_static_html(palette: dict[str, str], caption: str) -> str:

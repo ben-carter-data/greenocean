@@ -1342,7 +1342,7 @@ def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
     # D-205: the document views in their own frame, the live panel diagrams inline.
     for page, framed, inline in (
         (dashboard.PAGE_PRD, 5, 0),  # D-377: the weekly cycle joined valor, casos, requisitos and mockups
-        (dashboard.PAGE_SAD, 9, 0),
+        (dashboard.PAGE_SAD, 10, 0),  # D-414: the fixed picture of the system flow
         (dashboard.PAGE_ADR, 3, 0),
         (dashboard.PAGE_TEST_PLAN, 6, 0),
     ):
