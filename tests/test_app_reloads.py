@@ -3,7 +3,6 @@ visit's view once; a reload the reader makes still asks for it (D-340). D-427: t
 the server issued."""
 
 import json
-import re
 from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
@@ -56,17 +55,22 @@ def test_d357_every_reload_the_app_makes_remembers_the_view_first():
     ):
         before = source[: source.index(reload)].rsplit("\n", 2)[-2:]
         assert any("__goRemember" in line for line in before), reload
-    assert re.search(r"Date\.now\(\) - kept\.t < \d+", dashboard.PROFILE_KEEPER_JS)  # used once and only fresh
+    assert "Date.now() - kept.t < KEEP_MS" in dashboard.PROFILE_KEEPER_JS  # only fresh (D-428)
 
 
 def test_d427_the_author_comes_back_after_a_reload_the_app_makes_only_with_a_ticket_the_server_issued():
+    """D-427, D-428."""
     tickets = dashboard.AUTHOR_TICKETS
     tickets["ticket-de-prueba"] = 4_000_000_000  # issued by the server, far from expiring
     app = reload_page(json.dumps({"p": "profesional", "r": "bi", "a": "ticket-de-prueba", "t": 0}))
     assert not app.exception and app.session_state["admin_unlocked"] is True
     assert not [box for box in app.text_input if box.key == "profile_author_code"]  # no «Elige tu vista», no key
-    assert "ticket-de-prueba" not in tickets  # used once
-    # the same ticket again, a ticket the server never issued, or an expired one: the view comes back without the Autor
+    assert app.session_state["author_ticket"] == "ticket-de-prueba"  # D-428: the new session takes the ticket over
+    # D-428: Streamlit Community Cloud loads the page twice; the second load comes back as the Autor too
+    app = reload_page(json.dumps({"p": "profesional", "r": "bi", "a": "ticket-de-prueba", "t": 0}))
+    assert not app.exception and app.session_state["admin_unlocked"] is True
+    # a revoked ticket, a ticket the server never issued, or an expired one: the view comes back without the Autor
+    tickets.pop("ticket-de-prueba")
     tickets["ticket-vencido"] = 1
     for ticket in ("ticket-de-prueba", "inventado", "ticket-vencido"):
         app = reload_page(json.dumps({"p": "profesional", "r": "bi", "a": ticket, "t": 0}))
@@ -91,3 +95,10 @@ def test_d427_the_document_is_printed_only_when_choose_your_view_is_gone():
     assert 'document.querySelector(".profile-ask")' in script
     assert script.count("window.print()") == 1 and "if (!document.querySelector" in script
     assert "a: data.autor" in dashboard.PROFILE_KEEPER_JS
+
+
+def test_d428_each_page_reads_the_kept_view_once_and_leaves_it_for_the_second_load_of_the_cloud():
+    script = dashboard.PROFILE_KEEPER_JS
+    assert "window.__goKeptRead ? null : store.getItem(KEY)" in script and "window.__goKeptRead = true" in script
+    assert script.count("removeItem") == 1 and "else store.removeItem(KEY)" in script  # only an expired view goes
+    assert "const KEEP_MS = 30000" in script

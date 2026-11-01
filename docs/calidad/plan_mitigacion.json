@@ -797,6 +797,28 @@
           "estacion": 15,
           "estado": "resuelta",
           "referencia": "D-427"
+        },
+        {
+          "fecha": "2026-11-01",
+          "ocurrencia": [
+            "En la app publicada, imprimir un documento seguía volviendo a «Elige tu vista», aunque en local funcionaba.",
+            "In the published app, printing a document still went back to «Choose your view», though it worked locally."
+          ],
+          "diagnostico": [
+            "Streamlit Community Cloud carga la página dos veces tras la recarga, y la primera carga borraba la vista guardada.",
+            "Streamlit Community Cloud loads the page twice after the reload, and the first load erased the kept view."
+          ],
+          "solucion": [
+            "Cada página lee la vista guardada una vez y la deja 30 segundos para la segunda carga; el ticket del Autor vale hasta que vence su sesión (D-428).",
+            "Each page reads the kept view once and leaves it 30 seconds for the second load; the Author's ticket is valid until the session expires (D-428)."
+          ],
+          "comentario": [
+            "Se comprobó en la app publicada, no solo en local, porque solo allí la página se carga dos veces.",
+            "It was checked on the published app, not only locally, because only there the page loads twice."
+          ],
+          "estacion": 15,
+          "estado": "resuelta",
+          "referencia": "D-428"
         }
       ]
     },

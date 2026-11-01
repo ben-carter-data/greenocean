@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.6 |
+| Versión | 3.7 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -109,7 +109,7 @@ El panel tiene una sola clave: la de entrar como Autor (secreto `CONTROL_CODE` d
 
 La clave evita ejecuciones accidentales; no es la barrera principal. Lo que protege el proyecto es el inicio de sesión del autor en GitHub y en Streamlit (con verificación en dos pasos) y un token con los permisos mínimos. Tras 3 fallos, cada intento espera 2 s, y el doble tras cada nuevo fallo, hasta 15 min; con la clave correcta vuelve a cero (D-393, [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md#11-riesgos-aceptados-y-límites)). Cada acción del Autor (lanzar, cancelar, recargar los datos) vuelve a comprobar en el servidor que la sesión es del Autor (D-421). Si la espera traba el acceso, la carga se puede lanzar desde GitHub. El panel nunca muestra el token ni una parte de él.
 
-Para entrar: en la ventana «Elige tu vista», el enlace «Acceso del autor», en su esquina, la clave y Enter (D-369). El botón «Vista», debajo del logo, cambia de vista; un clic en el logo hace lo mismo (D-373). Salir de Autor cierra su sesión. Abrir o imprimir un documento y cambiar el tema recargan la página: la vista se conserva, también la del Autor, con un ticket de un solo uso que el servidor emite y comprueba (D-427); una recarga que hace el lector vuelve a pedir la vista.
+Para entrar: en la ventana «Elige tu vista», el enlace «Acceso del autor», en su esquina, la clave y Enter (D-369). El botón «Vista», debajo del logo, cambia de vista; un clic en el logo hace lo mismo (D-373). Salir de Autor cierra su sesión. Abrir o imprimir un documento y cambiar el tema recargan la página: la vista se conserva, también la del Autor, con un ticket que el servidor emite y comprueba y que vale mientras dure su sesión (D-427, D-428); una recarga que hace el lector vuelve a pedir la vista.
 
 El panel usa tres secretos, guardados en Streamlit (sección 8):
 
@@ -206,3 +206,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.4 | 01-11-2026 | La alerta «Acción requerida» avisa cada token a 15 días o menos de vencer (3, 8.1, D-410) |
 | 3.5 | 01-11-2026 | El flujo en vivo en la ventana de la carga manual (2) y en «Stack y evidencia» (4, D-412, D-413) |
 | 3.6 | 01-11-2026 | Una sola clave, la del Autor, y cada acción comprobada en el servidor; las recargas de la app conservan la vista del Autor (7, D-421, D-427) |
+| 3.7 | 01-11-2026 | Abrir o imprimir un documento conserva la vista también en Streamlit Community Cloud, que carga la página dos veces (7, D-428) |

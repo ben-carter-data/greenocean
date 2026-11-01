@@ -730,14 +730,16 @@ def submit_author_code():
 
 
 # D-357: the page reloads by itself to change the native theme (D-070), to print (D-280) and when a document opens
-# from the folder. Right before those reloads the browser tab keeps the view for one load; a reload the reader makes
-# keeps nothing, so the entry window asks again (D-340). D-427: the Autor comes along too, with a one-time ticket the
-# server issued and checks, so the tab never holds anything that opens the Autor's view by itself. D-373: a click on
-# the logo reopens the window.
+# from the folder. Right before those reloads the browser tab keeps the view for a short while; a reload the reader
+# makes later keeps nothing, so the entry window asks again (D-340). D-427: the Autor comes along too, with a ticket the
+# server issued and checks, so the tab never holds anything that opens the Autor's view by itself. D-428: Streamlit
+# Community Cloud loads the page twice after such a reload (the app frame, then the whole page), so each page reads the
+# kept view once and leaves it for the second load. D-373: a click on the logo reopens the window.
 PROFILE_KEEPER_JS = r"""
 export default function(component) {
     const { setTriggerValue, data } = component;
     const KEY = "go-keep-profile";
+    const KEEP_MS = 30000;  // the two loads of a reload take a few seconds; a later reload of the reader asks again
     const store = window.sessionStorage;
     const remember = () => {
         if (!data || !data.perfil) return;
@@ -749,12 +751,14 @@ export default function(component) {
     };
     window.__goRemember = remember;
     // D-423: read even when the address already names the view, because the history of «Volver» comes along too.
+    // D-428: once per page, and the kept view stays for the second load Streamlit Community Cloud makes.
     try {
-        const raw = store.getItem(KEY);
+        const raw = window.__goKeptRead ? null : store.getItem(KEY);
+        window.__goKeptRead = true;
         if (raw) {
-            store.removeItem(KEY);
             const kept = JSON.parse(raw);
-            if (Date.now() - kept.t < 120000) setTriggerValue("keep", raw);
+            if (Date.now() - kept.t < KEEP_MS) setTriggerValue("keep", raw);
+            else store.removeItem(KEY);
         }
     } catch (e) {}
     const handler = (event) => {
@@ -800,15 +804,22 @@ def issue_author_ticket(now=None):
 
 
 def redeem_author_ticket(ticket, now=None):
-    """True once for a ticket the server issued and that has not expired; it is gone after that."""
+    """True for a ticket the server issued and that has not expired. D-428: the new session takes it over, because
+    Streamlit Community Cloud loads the page twice and the second load needs it too; leaving the Autor revokes it."""
     now = datetime.now(timezone.utc).timestamp() if now is None else now
-    expiry = AUTHOR_TICKETS.pop(ticket, None) if isinstance(ticket, str) else None
-    return bool(expiry and expiry > now)
+    if not isinstance(ticket, str):
+        return False
+    expiry = AUTHOR_TICKETS.get(ticket)
+    if not (expiry and expiry > now):
+        AUTHOR_TICKETS.pop(ticket, None)
+        return False
+    st.session_state[AUTHOR_TICKET] = ticket
+    return True
 
 
 def keep_profile_across_app_reloads():
-    """D-357: the view the visit had before a reload the app itself made, once; D-427: the Autor too, through a
-    one-time ticket the server checks. D-373: a click on the logo asks for the view again."""
+    """D-357: the view the visit had before a reload the app itself made; D-427: the Autor too, through a ticket the
+    server checks. D-373: a click on the logo asks for the view again."""
     keeper = st.components.v2.component("profile_keeper", js=PROFILE_KEEPER_JS)
     profile = get_profile()
     data = {
@@ -7438,7 +7449,9 @@ AUTO_PRINT_SCRIPT = r"""<script>
   let tries = 0;
   const ready = () => {
     if (!document.querySelector(".profile-ask")) { window.print(); return; }
-    if (tries++ < 40) setTimeout(ready, 500);  // after 20 s with the window still open, nothing is printed
+    tries += 1;
+    if (tries > 40) return;  // after 20 s with the window still open, nothing is printed (no less-than sign: D-280)
+    setTimeout(ready, 500);
   };
   setTimeout(ready, 3000);
 })();

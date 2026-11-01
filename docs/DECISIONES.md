@@ -3263,4 +3263,15 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Seguridad:** el navegador solo guarda un número que el servidor emitió; uno inventado, uno ya usado o uno vencido no abre nada. Salir de Autor o cambiar de perfil (D-353) anula el ticket. La recarga que hace el lector (F5) sigue pidiendo la vista (D-340).
   - **Impresión:** el documento se imprime solo cuando «Elige tu vista» ya no está en la página; si sigue abierta a los 20 segundos, no se imprime nada.
   - **Documentos:** RF-09 del PRD y el MANUAL (7), en los dos idiomas.
-- **Pruebas:** `tests/test_app_reloads.py::test_d427_…`: el Autor vuelve con un ticket emitido por el servidor y solo una vez, y no con uno usado, inventado o vencido; solo una sesión de Autor tiene ticket y salir lo anula; la impresión espera a que «Elige tu vista» desaparezca. En el navegador, como Autor: abrir el PRD desde la carpeta e imprimirlo no muestra «Elige tu vista» y la vista sigue siendo «Autor».
+- **Pruebas:** `tests/test_app_reloads.py::test_d427_…`: el Autor vuelve con un ticket emitido por el servidor, y no con uno usado, inventado o vencido (D-428 lo deja valer hasta que vence la sesión); solo una sesión de Autor tiene ticket y salir lo anula; la impresión espera a que «Elige tu vista» desaparezca. En el navegador, como Autor: abrir el PRD desde la carpeta e imprimirlo no muestra «Elige tu vista» y la vista sigue siendo «Autor».
+
+## D-428 · Imprimir un documento conserva la vista también en la app publicada
+
+- **Reporte del autor:** en la app publicada, imprimir un documento seguía volviendo a «Elige tu vista», aunque en local D-427 funcionaba.
+- **Causa:** Streamlit Community Cloud dibuja la app dentro de un marco (iframe) y, tras una recarga de la app, carga la página dos veces: primero el marco y después la página entera. La primera carga leía y borraba la vista guardada (D-357) y canjeaba el ticket del Autor (D-427); la segunda ya no encontraba nada y mostraba «Elige tu vista». Además, el guion de impresión de D-427 tenía un signo «menor que», que `st.html` puede descartar (D-280); la prueba `test_d280_the_pdf_is_a_white_sheet_in_every_theme` lo detectó en el CI.
+- **Decisión:**
+  - **Vista guardada:** cada página la lee una sola vez (una marca en la página) y la deja 30 segundos, para que la segunda carga también la encuentre; pasado ese tiempo se borra, y una recarga del lector vuelve a pedir la vista (D-340).
+  - **Ticket del Autor:** la sesión nueva lo toma como suyo y vale hasta que vence la sesión del Autor (30 min sin actividad, D-395); salir de Autor o cambiar de perfil lo anula. Sigue siendo un número aleatorio que solo el servidor emite.
+  - **Impresión:** el guion espera sin el signo «menor que».
+  - **Documentos:** RF-09 del PRD (3.11) y el MANUAL (7, 3.7), en los dos idiomas; ocurrencia en F-18.
+- **Pruebas:** `tests/test_app_reloads.py::test_d427_…` (la segunda carga vuelve como Autor; uno anulado, inventado o vencido no) y `test_d428_each_page_reads_the_kept_view_once_and_leaves_it_for_the_second_load_of_the_cloud`. En la app publicada, con Playwright: abrir el PRD e imprimirlo.
