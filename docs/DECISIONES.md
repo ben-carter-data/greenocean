@@ -2999,3 +2999,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Qué pasó:** para correr la suite como el CI, sin el respaldo local desactualizado, se renombraba `etl/datos.db` a `etl/datos.db.hold`. `.gitignore` solo ignoraba el nombre original, y el commit `8cc2da3` (D-391) subió el respaldo (34 MB) a GitHub. Lo borró de la versión actual el commit de D-393.
 - **Decisión:** queda en el historial, por decisión del autor. Son precios públicos sin secretos, y sacarlo exigiría un push forzado. `.gitignore` ignora `etl/datos.db*`. El respaldo ya no se renombra: la suite «como el CI» corre en una copia aparte del repositorio (`git worktree`), que no lo tiene. Queda registrado como F-22, de categoría operación.
 - **Pruebas:** `tests/test_quality_method.py` (el registro de fallas sigue numerado y completo).
+
+## D-403 · Las palabras de los datos se leen en el idioma de la visita
+
+- **Pedido del autor (4B):** que familias, canales, calidades y unidades, que vienen en español desde ODEPA, se lean en el idioma elegido, con una tabla de traducción.
+- **Decisión:** `bi/data_terms.py` guarda la tabla: 7 familias (y los nombres cortos del Panorama), 8 canales, 61 calidades (las «Calibre N» por regla) y 3 unidades. El panel la usa al dibujar el Panorama y las páginas de canal; la base no cambia, y el estudio SQL y las descargas siguen mostrando lo guardado. Los nombres de productos no se traducen.
+- **Pruebas:** `tests/test_data_terms.py` (cada familia, canal, calidad y unidad de la base tiene su inglés; solo cambia en una visita en inglés; un producto conserva su nombre).

@@ -11,6 +11,8 @@ import json
 from functools import lru_cache
 from pathlib import Path
 
+from bi import data_terms
+
 RED = '#e62035'
 BLUE = '#0783ff'
 AMBER = '#af6700'
@@ -225,7 +227,7 @@ def table(rows, focus_link, data_link, selected=None, scope='Promedio nacional',
             f'<tr{selected_attr}><td><a class="mock-product-link" href="{esc(focus_link(row))}" target="_self"'
             f' aria-label="Ver evolución de {esc(product_label(row, True))}, {esc(row["channel"])}">{esc(product_label(row))}</a>'
             f'<span class="mock-cell-note">Calidad: {esc(row.get("quality", "Sin especificar"))}</span></td>'
-            f'<td>{esc(row["channel"])}<span class="mock-cell-note">{esc(scope)} · por {esc(row["normalized_unit"])}</span>{changed}</td>'
+            f'<td>{esc(data_terms.term(row["channel"]))}<span class="mock-cell-note">{esc(scope)} · por {esc(data_terms.term(row["normalized_unit"]))}</span>{changed}</td>'
             f'<td>{money(previous)}</td><td><strong>{money(row["national_price"])}</strong></td>'
             f'<td class="{state}">{change}</td><td class="{state}">{bar}</td>'
             f'<td class="mock-signal">{esc(signal)}<a href="{esc(data_link(row))}" target="_self">Ver datos ↗</a></td></tr>'
@@ -322,7 +324,8 @@ def short_region(region):
 
 
 def short_family(family):
-    return FAMILY_SHORT_NAMES.get(family, family)
+    """The family's short name, in the reader's language (D-403)."""
+    return data_terms.term(FAMILY_SHORT_NAMES.get(family, family))
 
 
 def real_projection(geometry):
@@ -774,14 +777,14 @@ def products_table(rows, week_label, previous_label, query='', selected=None, pu
             '<tr>'
             f'<td><strong>{esc(product_label(row))}</strong>'
             + (
-                f'<small>{esc(row["quality"])} · $/{esc(row["normalized_unit"])}'
+                f'<small>{esc(data_terms.term(row["quality"]))} · $/{esc(data_terms.term(row["normalized_unit"]))}'
                 + (' · 1 cotización' if row.get('_single_quote') else '')
                 + '</small>'
                 + calculation_detail(row, week_label, previous_label, published)
                 if row.get('quality')
                 else ''
             )
-            + f'</td><td>{esc(row["channel"])}</td>'
+            + f'</td><td>{esc(data_terms.term(row["channel"]))}</td>'
             f'<td class="num">{money(price_before)}</td><td class="num">{money(price_now)}</td>'
             f'<td class="num {state}"><b>{"0,0 %" if state == "neutral" else percent(change, True)}</b></td>'
             f'<td class="num">{regions_text}</td></tr>'
@@ -878,7 +881,7 @@ def family_tables(model, count, order):
                 f'<td class="mock-row-number">{row_number}</td>'
                 f'<td><strong>{esc(row["product"])}</strong></td>'
                 f'<td>{esc(row["variety"])}</td><td>{esc(row["quality"])}</td>'
-                f'<td>$/{esc(row["normalized_unit"])}</td><td>{esc(row["channel"])}</td>'
+                f'<td>$/{esc(data_terms.term(row["normalized_unit"]))}</td><td>{esc(data_terms.term(row["channel"]))}</td>'
                 f'<td>{money(previous_price(row))}</td><td>{money(row["national_price"])}</td>'
                 f'<td class="{state}"><strong>{displayed_change}</strong></td>'
                 f'<td class="{state}">{word}</td></tr>'
