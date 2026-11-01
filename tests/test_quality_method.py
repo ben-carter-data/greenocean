@@ -625,3 +625,28 @@ def test_d363_a_push_only_measures_and_the_report_comes_after_the_weekly_load_or
     assert (
         "github.event_name" not in gate.split("run:")[0]
     )  # every run, a push included, still fails past the acceptable
+
+
+def test_d401_creating_a_report_registers_its_nonconformities_once(tmp_path):
+    informe_calidad = load_reports_module()
+    register = tmp_path / "no_conformidades.json"
+    register.write_text('{\n  "nota": "x",\n  "registros": []\n}\n', encoding="utf-8")
+    report = {
+        "numero": 9,
+        "fecha": "2026-11-03 13:00 UTC",
+        "indicadores": [
+            {"clave": "pruebas_fallidas", "estado": "critico"},
+            {"clave": "comparables_pct", "estado": "urgente"},
+            {"clave": "cobertura_total", "estado": "cumple"},
+        ],
+    }
+    assert informe_calidad.register_nonconformities(report, register) == 2
+    assert informe_calidad.register_nonconformities(report, register) == 0  # a second run adds nothing
+    rows = json.loads(register.read_text(encoding="utf-8"))["registros"]
+    assert [(row["informe"], row["indicador"], row["fecha"]) for row in rows] == [
+        (9, "pruebas_fallidas", "2026-11-03"),
+        (9, "comparables_pct", "2026-11-03"),
+    ]
+    assert all(row["causa"] == row["accion"] == row["estado"] == "" for row in rows)  # the author's to write
+    workflow = (ROOT / ".github" / "workflows" / "calidad.yml").read_text(encoding="utf-8")
+    assert "docs/calidad/no_conformidades.json" in workflow  # the pull request carries them

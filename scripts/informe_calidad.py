@@ -19,6 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from bi import quality_metrics as q  # noqa: E402
 
 REPORT_PATH = q.FOLDER / "INFORME.md"
+NONCONFORMITIES = q.FOLDER / "no_conformidades.json"
+OUT_OF_RANGE = ("urgente", "critico")
 FOLDER = q.REPORTS_FOLDER
 GOAL_FIELDS = ("max", "min", "meta", "margen_critico", "tipo", "medida")
 
@@ -66,6 +68,33 @@ def add_report(measurement, goals, policy, folder=FOLDER):
     with open(folder / f"informe-{report['numero']:03d}.json", "x", encoding="utf-8") as handle:
         handle.write(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     return report, True
+
+
+def register_nonconformities(report, path=NONCONFORMITIES):
+    """D-401: each indicator of the report out of its acceptable gets its line in the register of non-conformities
+    (D-334), with the cause, the action and the state blank for the author. Adds only what is missing, so a second run
+    adds nothing; returns how many it added."""
+    text = path.read_text(encoding="utf-8")
+    register = json.loads(text)
+    known = {(item["informe"], item["indicador"]) for item in register["registros"]}
+    added = [
+        {
+            "informe": report["numero"],
+            "indicador": row["clave"],
+            "fecha": report["fecha"][:10],
+            "causa": "",
+            "accion": "",
+            "estado": "",
+        }
+        for row in report["indicadores"]
+        if row["estado"] in OUT_OF_RANGE and (report["numero"], row["clave"]) not in known
+    ]
+    if added:
+        register["registros"] += added
+        path.write_text(
+            json.dumps(register, ensure_ascii=False, indent=2) + ("\n" if text.endswith("\n") else ""), encoding="utf-8"
+        )
+    return len(added)
 
 
 def counts(report):
@@ -152,6 +181,7 @@ def main():
     measurement = q.read(Path(arguments.medicion))
     goals, policy = q.read(q.GOALS_FILE), q.read(q.POLICY_FILE)
     report, new = add_report(measurement, goals, policy)
+    register_nonconformities(report)
     q.HISTORY_FILE.write_text(
         json.dumps(q.add_to_history(q.read(q.HISTORY_FILE), measurement), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",

@@ -2987,3 +2987,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Qué pasó:** el informe N° 7 (carga del 31-10) trae dos indicadores fuera de lo aceptable que nadie había anotado, y la regla de D-334 hizo fallar `pytest` en main.
 - **Decisión:** se anotan en `docs/calidad/no_conformidades.json`. «Pruebas que fallan» (crítico, 6 pruebas) lleva su causa demostrada: la base del 31-10 llegó a main antes que los arreglos de D-380. «Precios con comparación válida» (urgente, 83,3 %) queda con la causa pendiente, porque no está demostrada. La acción y el estado de las dos quedan en blanco: los escribe el autor.
 - **Pruebas:** `tests/test_quality_method.py::test_d334_…`.
+
+## D-401 · El workflow de calidad anota las no conformidades al crear cada informe
+
+- **Qué pasó:** las no conformidades del informe N° 7 no estaban anotadas, y fusionar el informe hizo fallar `pytest` en main (D-400).
+- **Decisión:** `scripts/informe_calidad.py`, al crear un informe, agrega a `docs/calidad/no_conformidades.json` una línea por cada indicador urgente o crítico que falte, con la causa, la acción y el estado en blanco para el autor. Una segunda corrida no agrega nada. `calidad.yml` sube ese archivo en el mismo pull request del informe, así que fusionarlo deja main en verde.
+- **Pruebas:** `tests/test_quality_method.py::test_d401_…` (agrega solo lo que falta, una vez, y el workflow sube el archivo).
