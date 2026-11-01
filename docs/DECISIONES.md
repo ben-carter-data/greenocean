@@ -3218,3 +3218,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Recargas de la app:** una tarjeta de canal y un documento de la carpeta recargan la página (D-406). El mismo mecanismo que conserva la vista en esas recargas (D-357) lleva también el historial, aunque la dirección ya nombre la vista; al volver, solo se aceptan pasos bien formados y claves de estado conocidas.
   - Se retira el script que cambiaba la dirección para volver.
 - **Pruebas:** `tests/test_page_bar.py::test_d423_…`: desde «Modelo de datos», «Volver» abre el Panorama con sus pasos como estaban y la vista intacta; sin página anterior abre «Elige tu vista»; el historial que llega por una recarga solo toma pasos bien formados y queda antes de la página que la recarga abrió.
+
+## D-424 · Los escenarios clave del SAD muestran todo lo que puede hacer cada actor
+
+- **Pedido del autor:** el diagrama de escenarios del SAD se veía pobre: cinco filas sueltas, con el Autor repetido y sin decir qué ve cada perfil. Debe mostrar todos los privilegios reales de cada actor, sin resumir, tomando como ejemplo un árbol con el sistema arriba y una columna por actor.
+- **Decisión:**
+  - **Forma:** un árbol. GreenOcean arriba, y de él cuatro columnas: Usuario, Profesional, Autor y GitHub Actions. Bajo cada actor, una línea por acción con su ícono, lo que hace (en negrita), la parte del sistema que la atiende (en color) y su referencia (en gris). Sin cajas ni discos: íconos de línea, texto y líneas rectas (D-297).
+  - **Contenido, leído de la app:** el Usuario, sus seis páginas de negocio, las fuentes y el paso a Profesional sin clave. El Profesional suma ingeniería, stack, calidad, git y la carpeta de documentos. El Autor suma la entrada con la única clave, lanzar, cancelar, recargar, los logs, el aviso de carga fallida, «Acción requerida», «Configuración», la aprobación del informe de calidad y el cambio de código y secretos. GitHub Actions: la carga de cada martes, la publicación solo de una carga válida, el informe semanal, la medición de calidad y las pruebas de cada push.
+  - **Límites:** bajo cada columna, en cursiva, lo que ese perfil no alcanza; bajo el Autor, que cada acción se comprueba en el servidor (D-421).
+  - **Documentos:** el SAD (2.1) lo explica en una frase, en los dos idiomas (versión 3.7).
+- **Pruebas:** `tests/test_doc_diagrams.py::test_d424_…`: cada página del menú aparece en la columna del perfil que la ve y en ninguna otra; las páginas del Autor y sus acciones están en su columna; los tres workflows nombrados existen.

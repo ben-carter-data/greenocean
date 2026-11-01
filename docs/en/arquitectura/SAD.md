@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.6 |
+| Version | 3.7 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -56,7 +56,7 @@ Three people use the panel, depending on the view they choose:
 
 [[diagrama:escenarios]]
 
-Each scenario goes through the architecture end to end. Sections 4 and 5 show them step by step.
+The diagram shows everything each actor can do, not a summary: each profile adds to the one before it, and under each column is what that profile does not reach. Each scenario goes through the architecture end to end. Sections 4 and 5 show them step by step.
 
 ## 3. Containers
 
@@ -470,3 +470,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.4 | 2026-11-01 | The system flow, with the fixed picture of the live view (3.3, D-412 to D-414) |
 | 3.5 | 2026-11-01 | Who writes and who reads on the GitHub API (3.2); the live flow in observability, the page «Settings» and the tokens' warning at 15 days (8); one screen also at 1280 × 800 (8, D-407 to D-417) |
 | 3.6 | 2026-11-01 | The deployment: the release in its own box, the three workflows and the separate machine for the tests of each push (7, D-422) |
+| 3.7 | 2026-11-01 | The key scenarios show everything each actor can do and what it does not reach (2.1, D-424) |

@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.6 |
+| Versión | 3.7 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -56,7 +56,7 @@ Tres personas usan el panel, según la vista que eligen:
 
 [[diagrama:escenarios]]
 
-Cada escenario recorre la arquitectura de punta a punta. Las secciones 4 y 5 los muestran paso a paso.
+El diagrama muestra todo lo que puede hacer cada actor, no un resumen: cada perfil suma lo del anterior, y bajo cada columna queda lo que ese perfil no alcanza. Cada escenario recorre la arquitectura de punta a punta. Las secciones 4 y 5 los muestran paso a paso.
 
 ## 3. Contenedores
 
@@ -470,3 +470,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.4 | 01-11-2026 | El flujo del sistema, con la imagen fija de la vista en vivo (3.3, D-412 a D-414) |
 | 3.5 | 01-11-2026 | Quién escribe y quién lee en la API de GitHub (3.2); el flujo en vivo en la observabilidad, la página «Configuración» y el aviso de los tokens a 15 días (8); una pantalla también a 1280 × 800 (8, D-407 a D-417) |
 | 3.6 | 01-11-2026 | El despliegue: el release en su propia caja, los tres workflows y la máquina aparte de las pruebas de cada push (7, D-422) |
+| 3.7 | 01-11-2026 | Los escenarios clave muestran todo lo que puede hacer cada actor y lo que no alcanza (2.1, D-424) |

@@ -309,3 +309,48 @@ def test_d392_the_english_captions_of_the_captures_are_in_english(monkeypatch):
     monkeypatch.setattr(i18n, "is_english", lambda: True)
     assert doc_views.mockup_detail("Corporativo", "Usuario") == "Corporativo theme · User view"
     assert doc_views.mockup_detail("Vantablack", "Profesional") == "Vantablack theme · Professional view"
+
+
+def test_d424_the_scenarios_show_every_page_and_action_each_actor_really_has():
+    from bi import dashboard
+
+    page = doc_figures.sad_scenarios(charts.MODE_DARK)
+    actor = 'font-size="14" font-weight="700">{}<'.format
+    user, rest = page.split(actor("Profesional"))
+    professional, rest = rest.split(actor("Autor"))
+    author, robot = rest.split(actor("GitHub Actions"))
+    # the words of each column, read as one text (a long name wraps over two lines)
+    user, professional, author, robot = (
+        " ".join(re.findall(r">([^<>]+)<", part)) for part in (user, professional, author, robot)
+    )
+
+    def label(view):
+        return dashboard.SIDEBAR_LABELS.get(view, view)
+
+    blocks = {key: pages for key, _, pages in dashboard.MENU_BLOCKS if pages is not dashboard.SOURCE_LINKS}
+    # the User reaches the business pages and the sources, and nothing else
+    for view in blocks["negocio"]:
+        assert label(view) in user, view
+    assert "Fuentes de datos" in user
+    for key in ("ingenieria", "stack", "calidad", "devops"):
+        for view in blocks[key]:
+            assert label(view) not in user, view
+    # the Professional reaches engineering, stack, quality and the documents, never DevOps
+    for key in ("ingenieria", "stack", "calidad", "documentos"):
+        for view in blocks[key]:
+            assert label(view) in professional, view
+    for view in dashboard.AUTHOR_ONLY_PAGES:
+        assert label(view) not in user + professional, view
+    # the Author's pages and actions, each one named
+    for view in dashboard.AUTHOR_ONLY_PAGES:
+        assert label(view) in author, view
+    for action in (
+        "Lanzar una carga manual",
+        "Cancelar una carga",
+        "Recargar los datos del panel",
+        "«Acción requerida»",
+    ):
+        assert action in author, action
+    # the automation: the three workflows that exist
+    for workflow in ("semanal.yml", "calidad.yml", "pruebas.yml"):
+        assert workflow in robot and (DOCS_DIR.parent / ".github" / "workflows" / workflow).exists(), workflow

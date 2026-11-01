@@ -189,6 +189,17 @@ LINE_ICONS = {
     "commit": '<circle cx="12" cy="12" r="3.5"/><path d="M3 12h5.5M15.5 12H21"/>',
     "bell": '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>',
     "code": '<path d="m8 8-4 4 4 4"/><path d="m16 8 4 4-4 4"/><path d="m13.5 5-3 14"/>',
+    # D-424: the actions of each actor in «Escenarios clave»
+    "play": '<circle cx="12" cy="12" r="9"/><path d="m10 8.5 5 3.5-5 3.5z"/>',
+    "stop": '<circle cx="12" cy="12" r="9"/><rect x="9" y="9" width="6" height="6" rx="1"/>',
+    "refresh": '<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/>',
+    "gear": '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+    "folder": '<path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/>',
+    "terminal": '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3"/><path d="M12 15h5"/>',
+    "pull": '<circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M6 8.5v7"/><path d="M18 15.5V9a3 3 0 0 0-3-3h-4"/><path d="m13 4-2 2 2 2"/>',
+    "users": '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c.5-4 3-6 6-6s5.5 2 6 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14c2 .8 3 2.8 3.3 6"/>',
+    "out": '<path d="M14 4h6v6"/><path d="m20 4-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    "flow": '<circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.5 12h4l5-5M11.5 12l5 5"/>',
 }
 
 
@@ -315,6 +326,89 @@ def graph(mode, title, nodes, edges, note="", width=920, size=38, limit=22):
         f'<p class="fig-title">{esc(title)}</p><svg viewBox="0 0 {width} {height:.0f}" aria-hidden="true">'
         f'<defs>{markers}</defs>{"".join(lines_svg)}{"".join(texts)}</svg>'
         + (f'<p class="fig-note">{esc(note)}</p>' if note else "")
+    )
+    return page(mode, body, title)
+
+
+def actor_tree(mode, title, root, actors, note=""):
+    """D-424: who uses the system and everything each one can do, as a tree: the system on top, one column per actor
+    and, under it, each action on a line (its icon, what it does, the part of the system that serves it and its
+    reference). No boxes and no discs: icons, text and straight lines.
+
+    root: (mark, name, caption); actors: [(mark, name, caption, color, actions, limit)] where actions is
+    [(icon, action, served_by, reference)] and limit, when given, says what that actor does not reach."""
+    palette = charts.get_palette(mode)
+    width, margin = 920, 6
+    column = (width - 2 * margin) / len(actors)
+    line = palette["card_border"]
+    parts = []
+    mark_spec, name, caption = root
+    parts.append(mark(mark_spec, width / 2, 20, 30, palette["accent"]))
+    parts.append(
+        f'<text class="ink" x="{width / 2}" y="58" text-anchor="middle" font-size="16" font-weight="700">{esc(name)}</text>'
+        f'<text class="txt" x="{width / 2}" y="76" text-anchor="middle" font-size="12">{esc(caption)}</text>'
+    )
+    centers = [margin + column * (index + 0.5) for index in range(len(actors))]
+    parts.append(
+        f'<path d="M{width / 2} 86 V100 M{centers[0]:.1f} 100 H{centers[-1]:.1f}" fill="none" stroke="{line}" stroke-width="1.5"/>'
+    )
+    bottom = 0
+    for cx, (actor_mark, actor, actor_caption, color, actions, limit) in zip(centers, actors):
+        left = cx - column / 2 + 8
+        parts.append(f'<path d="M{cx:.1f} 100 V112" fill="none" stroke="{line}" stroke-width="1.5"/>')
+        parts.append(
+            mark(actor_mark, cx, 132, 34, color) if actor_mark.startswith("icon:") else logo(actor_mark, cx, 132, 34)
+        )
+        parts.append(
+            f'<text class="ink" x="{cx:.1f}" y="168" text-anchor="middle" font-size="14" font-weight="700">{esc(actor)}</text>'
+        )
+        y = 168
+        for text_line in wrap(actor_caption, 34):
+            y += 16
+            parts.append(
+                f'<text class="txt" x="{cx:.1f}" y="{y}" text-anchor="middle" font-size="12">{esc(text_line)}</text>'
+            )
+        icon_x, text_x = left + 11, left + 28
+        y += 12
+        parts.append(
+            f'<path d="M{cx:.1f} {y} V{y + 8} H{icon_x:.1f} V{y + 18}" fill="none" stroke="{line}" stroke-width="1.5"/>'
+        )
+        y += 30
+        previous = None
+        for icon, action, served_by, reference in actions:
+            if previous is not None:
+                parts.append(
+                    f'<path d="M{icon_x:.1f} {previous + 13} V{y - 13}" fill="none" stroke="{line}" stroke-width="1.5"/>'
+                )
+            parts.append(mark(f"icon:{icon}", icon_x, y, 20, color))
+            row = y + 4
+            for text_line in wrap(action, 27):
+                parts.append(
+                    f'<text class="ink" x="{text_x:.1f}" y="{row}" font-size="12.5" font-weight="600">{esc(text_line)}</text>'
+                )
+                row += 15
+            for text_line in wrap(served_by, 30):
+                parts.append(
+                    f'<text x="{text_x:.1f}" y="{row}" font-size="12" fill="{palette["accent"]}">{esc(text_line)}</text>'
+                )
+                row += 15
+            for text_line in wrap(reference, 30) if reference else []:
+                parts.append(f'<text class="mut" x="{text_x:.1f}" y="{row}" font-size="12">{esc(text_line)}</text>')
+                row += 15
+            previous = y
+            y = row + 16
+        if limit:
+            row = y - 4
+            for text_line in wrap(limit, 32):
+                parts.append(
+                    f'<text class="mut" x="{left:.1f}" y="{row}" font-size="12" font-style="italic">{esc(text_line)}</text>'
+                )
+                row += 15
+            y = row
+        bottom = max(bottom, y)
+    body = (
+        f'<p class="fig-title">{esc(title)}</p><svg viewBox="0 0 {width} {bottom:.0f}" aria-hidden="true">'
+        f'{"".join(parts)}</svg>' + (f'<p class="fig-note">{esc(note)}</p>' if note else "")
     )
     return page(mode, body, title)
 
@@ -712,69 +806,249 @@ def sad_components_panel(mode):
 
 
 def sad_scenarios(mode):
-    rows = [
+    """D-424: every actor with everything it can really do, and what serves each action; nothing summarized."""
+    usuario = [
         (
-            "person:visitor",
-            say("Usuario", "User"),
-            "icon:chart",
+            "chart",
             say("Ver qué cambió esta semana", "See what changed this week"),
-            "P-1 · " + say("Panorama de precios", "Price overview"),
-            say("Panel web y base servida", "Web panel and served database"),
+            say("Panorama de precios", "Price overview"),
+            say("P-1 · alertas RF-05", "P-1 · alerts RF-05"),
         ),
         (
-            "person:professional",
-            say("Profesional", "Professional"),
-            "icon:code",
-            say("Consultar con SQL", "Query with SQL"),
-            "P-2 · P-3 · RF-06",
-            say("Panel web y DuckDB en solo lectura", "Web panel and read-only DuckDB"),
+            "arrows",
+            say("Ver el último dato de cada canal", "See the latest data of each channel"),
+            say("Último dato por canal", "Latest data by channel"),
+            say("cada fuente con su semana", "each source with its week"),
         ),
         (
-            "icon:calendar",
-            "GitHub Actions",
-            "icon:box",
-            say("Cargar y publicar cada martes", "Load and publish every Tuesday"),
-            "RF-01 · RF-02 · RF-03",
-            say("Carga semanal y release", "Weekly load and release"),
+            "pulse",
+            say("Comparar precios con la inflación", "Compare prices with inflation"),
+            say("Precios e inflación", "Prices and inflation"),
+            "P-4 · RF-04",
         ),
         (
-            "person:author",
-            say("Autor", "Author"),
-            "icon:key",
-            say("Lanzar una carga manual con la clave", "Launch a manual load with the code"),
-            "RF-07",
-            say("Panel web y API de GitHub", "Web panel and GitHub API"),
+            "star",
+            say("Leer las respuestas de la semana", "Read the answers of the week"),
+            "Insights",
+            say("una lectura por tipo de lector", "one reading per kind of reader"),
         ),
         (
-            "person:author",
-            say("Autor", "Author"),
-            "icon:bell@#e5484d",
-            say("Saber que una carga falló", "Know that a load failed"),
-            say("aviso en el panel y correo", "notice in the panel and email"),
-            say("Panel web y GitHub Actions", "Web panel and GitHub Actions"),
+            "users",
+            say("Ver interesados y análisis", "See stakeholders and analysis"),
+            say("Interesados · Análisis de negocio y sistemas", "Stakeholders · Business and systems analysis"),
+            say("leídos del PRD y del SQAP", "read from the PRD and the SQAP"),
+        ),
+        (
+            "out",
+            say("Ir a las fuentes oficiales", "Go to the official sources"),
+            say("Fuentes de datos", "Data sources"),
+            "ODEPA · INE",
+        ),
+        (
+            "eye",
+            say("Pasar a la vista Profesional", "Switch to the Professional view"),
+            say("«Ver todo el proyecto»", "«See the whole project»"),
+            say("sin clave", "no key"),
         ),
     ]
-    nodes, edges = {}, []
-    for index, (actor_mark, actor, mark, scenario, ref, where) in enumerate(rows):
-        y = 20 + 95 * index
-        nodes[f"a{index}"] = (90, y, actor_mark, actor, "")
-        nodes[f"s{index}"] = (430, y, mark, scenario, ref)
-        nodes[f"c{index}"] = (770, y, "icon:layers", say("Lo resuelve", "Realized by"), where)
-        edges += [(f"a{index}", f"s{index}", "", "order", "h"), (f"s{index}", f"c{index}", "", "flow", "h")]
-    return graph(
+    profesional = [
+        (
+            "terminal",
+            say("Consultar con SQL", "Query with SQL"),
+            say("Consultas SQL · DuckDB en solo lectura", "SQL queries · read-only DuckDB"),
+            "P-2 · P-3 · RF-06",
+        ),
+        (
+            "flow",
+            say("Seguir el pipeline y su linaje", "Follow the pipeline and its lineage"),
+            say("Pipeline y linaje", "Pipeline and lineage"),
+            say("fuentes → dbt → panel", "sources → dbt → panel"),
+        ),
+        (
+            "database",
+            say("Leer el modelo de datos", "Read the data model"),
+            say("Modelo de datos", "Data model"),
+            say("estrella y diccionario", "star and dictionary"),
+        ),
+        (
+            "check",
+            say("Revisar la calidad", "Review the quality"),
+            say("Calidad y auditoría · Método y calidad", "Quality and audit · Method and quality"),
+            say("P-5 · ISO 25012 e ISO 25010", "P-5 · ISO 25012 and ISO 25010"),
+        ),
+        (
+            "layers",
+            say("Ver el stack y el mapa de la app", "See the stack and the app map"),
+            say("Stack y evidencia · Mapa de la app", "Stack and evidence · App map"),
+            "",
+        ),
+        (
+            "shield",
+            say("Leer la arquitectura de seguridad", "Read the security architecture"),
+            say("Arquitectura de seguridad", "Security architecture"),
+            say("sin valores secretos", "no secret values"),
+        ),
+        (
+            "commit",
+            say("Ver el ciclo git", "See the git cycle"),
+            "Git workflow",
+            say("con su registro de incidentes", "with its incident log"),
+        ),
+        (
+            "folder",
+            say("Leer y descargar los documentos", "Read and download the documents"),
+            say("Carpeta de documentos", "Documents folder"),
+            say("PRD, SAD, SQAP y más, en PDF", "PRD, SAD, SQAP and more, as PDF"),
+        ),
+    ]
+    autor = [
+        (
+            "key",
+            say("Entrar como Autor", "Enter as Author"),
+            say("«Elige tu vista» · la única clave", "«Choose your view» · the only key"),
+            say("RF-09 · espera tras 3 fallos · sesión de 30 min", "RF-09 · wait after 3 failures · 30 min session"),
+        ),
+        (
+            "play",
+            say("Lanzar una carga manual", "Launch a manual load"),
+            say("Centro de operación · API de GitHub", "Operations center · GitHub API"),
+            "RF-07",
+        ),
+        (
+            "stop",
+            say("Cancelar una carga", "Cancel a load"),
+            say("ventana de la carga", "load window"),
+            say("pide «¿Seguro?»", "asks for a confirmation"),
+        ),
+        (
+            "refresh",
+            say("Recargar los datos del panel", "Reload the panel's data"),
+            say("«Recargar datos»", "«Reload data»"),
+            say("vuelve a leer la base", "reads the database again"),
+        ),
+        (
+            "eye",
+            say("Ver ejecuciones y logs", "See runs and logs"),
+            say("GitHub Actions · token de solo lectura", "GitHub Actions · read-only token"),
+            "D-397",
+        ),
+        (
+            "bell",
+            say("Saber que una carga falló", "Know that a load failed"),
+            say("aviso en el menú · correo de GitHub", "notice in the menu · GitHub email"),
+            "D-298",
+        ),
+        (
+            "warning",
+            say("Atender «Acción requerida»", "Handle «Action required»"),
+            say("alerta al entrar", "alert on entering"),
+            say("no conformidades e incidentes abiertos", "open nonconformities and incidents"),
+        ),
+        (
+            "gear",
+            say("Revisar tokens y mantenimiento", "Review tokens and maintenance"),
+            say("Configuración", "Settings"),
+            say("aviso 15 días antes de vencer", "notice 15 days before expiry"),
+        ),
+        (
+            "pull",
+            say("Aprobar el informe de calidad", "Approve the quality report"),
+            say("pull request en GitHub", "pull request on GitHub"),
+            say("fuera del panel", "outside the panel"),
+        ),
+        (
+            "code",
+            say("Cambiar el código y los secretos", "Change the code and the secrets"),
+            "GitHub · Streamlit",
+            say("fuera del panel", "outside the panel"),
+        ),
+    ]
+    actions = [
+        ("calendar", say("Cargar cada martes", "Load every Tuesday"), "semanal.yml · 12:00 UTC", "RF-01 · RF-02"),
+        (
+            "box",
+            say("Publicar solo una carga válida", "Publish only a valid load"),
+            say("release «base-actual» · datos.version", "«base-actual» release · datos.version"),
+            "RF-03",
+        ),
+        (
+            "mail",
+            say("Abrir el informe semanal", "Open the weekly report"),
+            say("issue del repositorio", "repository issue"),
+            "RF-08",
+        ),
+        (
+            "check",
+            say("Medir la calidad tras la carga", "Measure quality after the load"),
+            "calidad.yml",
+            say("propone el informe como pull request", "proposes the report as a pull request"),
+        ),
+        (
+            "code",
+            say("Probar cada push", "Test every push"),
+            "pruebas.yml · calidad.yml",
+            say("lint · pytest 3.11 y 3.12 · dbt parse", "lint · pytest 3.11 and 3.12 · dbt parse"),
+        ),
+    ]
+    return actor_tree(
         mode,
         say(
-            "Escenarios clave y los contenedores que los resuelven",
-            "Key scenarios and the containers that realize them",
+            "Escenarios clave: quién usa el sistema, qué puede hacer y qué lo atiende",
+            "Key scenarios: who uses the system, what each one can do and what serves it",
         ),
-        nodes,
-        edges,
+        (
+            "icon:chart",
+            "GreenOcean",
+            say("Precios de alimentos de Chile, cada semana", "Food prices in Chile, every week"),
+        ),
+        [
+            (
+                "person:visitor",
+                say("Usuario", "User"),
+                say("Lee el negocio, sin cuenta", "Reads the business, no account"),
+                doc_views.PERSON_DISCS["visitor"][1],
+                usuario,
+                say(
+                    "No ve ingeniería, stack, calidad, documentos ni DevOps.",
+                    "Does not see engineering, stack, quality, documents or DevOps.",
+                ),
+            ),
+            (
+                "person:professional",
+                say("Profesional", "Professional"),
+                say("Todo lo del Usuario, y además:", "Everything the User has, and also:"),
+                doc_views.PERSON_DISCS["professional"][1],
+                profesional,
+                say(
+                    "No ve DevOps y seguridad ni actúa sobre GitHub.",
+                    "Does not see DevOps and security or act on GitHub.",
+                ),
+            ),
+            (
+                "person:author",
+                say("Autor", "Author"),
+                say("Todo lo del Profesional, y además:", "Everything the Professional has, and also:"),
+                doc_views.PERSON_DISCS["author"][1],
+                autor,
+                say(
+                    "Cada acción se comprueba en el servidor (D-421).", "Each action is checked on the server (D-421)."
+                ),
+            ),
+            (
+                "brand:github",
+                "GitHub Actions",
+                say("Automatización, sin persona", "Automation, no person"),
+                "#8b5cf6",
+                actions,
+                "",
+            ),
+        ],
         say(
-            "Los casos de uso completos, con sus actores, están en el PRD.",
-            "The full use cases, with their actors, are in the PRD.",
+            "Negrita: lo que hace. En color: la parte del sistema que lo atiende. Gris: su referencia (P = pregunta, "
+            "RF = requisito funcional del PRD; D = decisión).",
+            "Bold: what it does. In color: the part of the system that serves it. Grey: its reference (P = question, "
+            "RF = functional requirement of the PRD; D = decision).",
         ),
-        size=34,
-        limit=30,
     )
 
 
