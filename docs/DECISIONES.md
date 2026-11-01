@@ -3075,3 +3075,28 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Causa:** una prueba de `tests/test_configuration.py` usaba un trozo de un identificador de commit como dato. La herramienta detect-secrets lo tomó por una posible clave. No había ningún secreto.
 - **Decisión:** el dato de prueba pasa a `1234567`, que no tiene forma de clave. Antes de cada push se corre también la medición de calidad (`scripts/medir_calidad.py` y `scripts/verificar_calidad.py`), no solo las pruebas. Queda anotado como F-23 en `docs/calidad/plan_mitigacion.json`.
 - **Pruebas:** la medición de calidad, corrida en una copia limpia del commit, deja `secretos_sin_clasificar` en 0; la suite completa sigue en verde.
+
+## D-412 · «Flujo del sistema en vivo»: la arquitectura real, con sus mensajes y la carga en curso
+
+- **Pedido del autor (parte 4, fase 1):** la arquitectura real del proyecto en una sola vista, con datos reales, visible para todos en «Stack y evidencia». Cada flecha dice quién pide, qué pide, qué responde y cuándo. Hay un modo en vivo, mensajes clicables y un botón para pausar, y se aplica la regla de animación del autor.
+- **Decisión:** «Stack y evidencia» tiene dos vistas, «Herramientas» (la de siempre) y «Flujo del sistema en vivo».
+  - **Piezas:** ODEPA, INE y PyPI; GitHub (Actions, la caché, el repositorio, issues y pull requests, el release «base-actual» y la API); el runner de la carga, con Python, SQLite, Parquet, dbt, DuckDB y pytest; Streamlit Community Cloud con la app, y el navegador. Una franja DevSecOps reúne el CI de cada push, la calidad, los secretos y tokens, el `github.token` del job y la puerta de Autor (D-393).
+  - **Flechas:** solo rectas y en ángulo recto. Cada una lleva una etiqueta corta, para entender el diagrama sin hacer clic.
+  - **Al hacer clic en una flecha:** qué pide, qué responde, cuándo, para qué y qué viajó en la última carga real, leído de `manifest.json`, `etl/datos.version` y la base.
+  - **Lo deducido:** el único dato que no se puede leer es el redespliegue de Streamlit después de un push a main, y va rotulado «deducido».
+- **Fidelidad:** el diagrama muestra lo que la carga hace de verdad. La base se sube al release y git recibe solo su puntero (D-270). Los secretos del panel viven en Streamlit; GitHub solo pone el token propio del job.
+- **Animación:** sigue la regla del autor. Una pieza que trabaja sola, como dbt o pytest, se ilumina y pulsa. Una comunicación es un punto que viaja por la flecha, de quien pide a quien responde, y vuelve por el mismo camino con otro color. Cada paso de `semanal.yml` está asignado a sus piezas y flechas.
+- **Modo en vivo:**
+  - **Con una carga en curso:** el diagrama muestra su paso real y pregunta de nuevo cada 30 s.
+  - **Sin carga en curso:** queda quieto, con la fecha y la hora de la última ejecución real, y con «Repetir la última ejecución». «Pausar» detiene la animación.
+  - **Lecturas a GitHub:** solo con el token de solo lectura (D-397), o sin token. La respuesta se guarda 2 minutos con token y 10 sin él, para no gastar el límite de 60 consultas por hora.
+- **Logs:** los ve solo el Autor, en «GitHub Actions». El diagrama no los lleva.
+- **Pantalla:** el selector de vistas va en la fila de contenido (D-398). El mapa de «Herramientas» descuenta esa fila, así que las dos vistas caben en una pantalla a 1440 × 790 y a 1280 × 800 (RNF-06).
+- **Pruebas:** `tests/test_live_flow.py`, que comprueba:
+  - Cada flecha tiene sus cuatro datos en los dos idiomas.
+  - Cada pieza existe en el repositorio.
+  - Cada paso de `semanal.yml` mueve una pieza o una flecha.
+  - El modo en vivo y el quieto, con respuestas simuladas.
+  - No viajan logs ni tokens.
+  - La animación cumple la regla del autor.
+  - En inglés no queda texto en español.

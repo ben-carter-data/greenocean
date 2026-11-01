@@ -71,6 +71,7 @@ from bi import (
     github_page,
     inflation_view,
     lineage,
+    live_flow,
     operation_center,
     quality_evidence,
     quality_live,
@@ -7422,14 +7423,116 @@ def read_stack_figures(database_version):
     return stack_page.read_figures()
 
 
+STACK_VIEWS = ["Herramientas", "Flujo del sistema en vivo"]
+STACK_VIEW_KEY = "stack_view"
+
+
+def flow_fetch(read_token):
+    """D-412: the weekly workflow's latest runs and the steps of the one to show (in progress, or the latest that
+    ended), with the read-only token only (D-397) or none. Three GETs; an error is a sentence, never a crash."""
+    try:
+        runs = github_actions.list_runs("semanal.yml", read_token or None, 5)
+        shown = next(
+            (run for run in runs if run["state"] == control.RUN_IN_PROGRESS),
+            next((run for run in runs if run["state"] != control.RUN_IN_PROGRESS), None),
+        )
+        steps = run_monitor.read_steps(run_monitor.fetch_run(shown["id"], read_token or None)["jobs"]) if shown else []
+        return runs, steps, None
+    except Exception as error:  # GitHub unreachable or the request limit spent: the diagram stays, without state
+        return [], [], control.describe_github_error(error)
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def read_flow_live(_read_token):
+    """While a run goes on: asked again every 30 s."""
+    return flow_fetch(_read_token)
+
+
+@st.cache_data(ttl=120, show_spinner=False)
+def read_flow_with_token(_read_token):
+    return flow_fetch(_read_token)
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def read_flow_without_token(_read_token):
+    """Without a token GitHub allows 60 requests an hour, shared: the answer is kept ten minutes."""
+    return flow_fetch(_read_token)
+
+
+@st.cache_data(show_spinner=False)
+def read_flow_facts(database_version, language):
+    """What travelled in the latest real load, from the files it leaves and the database (D-412)."""
+    root = Path(__file__).resolve().parent.parent
+    manifest = json.loads((root / "agent" / "downloads" / "manifest.json").read_text(encoding="utf-8"))
+    pointer = json.loads((root / "etl" / "datos.version").read_text(encoding="utf-8"))
+    months = int(queries.run_sql("SELECT COUNT(*) AS months FROM ipc_monthly")["months"].iloc[0])
+    packages = sum(
+        1
+        for name in ("requirements.txt", "requirements-pipeline.txt")
+        for line in (root / name).read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith(("#", "-"))
+    )
+    return live_flow.read_facts(manifest, pointer, months, packages)
+
+
+def read_flow_model():
+    """The model of the live flow: the slow answer first; while a run goes on, the 30-second one."""
+    read_token = get_secret(SECRET_READ_TOKEN)
+    runs, steps, error = (read_flow_with_token if read_token else read_flow_without_token)(read_token)
+    if runs and runs[0]["state"] == control.RUN_IN_PROGRESS:
+        runs, steps, error = read_flow_live(read_token)
+    facts = read_flow_facts(get_database_version(), i18n.get_language())
+    return live_flow.build_model(runs, steps, facts), error
+
+
+def show_live_flow(mode):
+    """«Flujo del sistema en vivo» (D-412), for every view: the real architecture with the latest real run; while a run
+    goes on it follows its step, asking again every 30 s. Only the author gets the way to the logs."""
+    model, error = read_flow_model()
+    st.markdown(
+        '<span class="fit-flujo" aria-hidden="true"></span><style>'
+        '[data-testid="stElementContainer"]:has(.fit-flujo) + [data-testid="stElementContainer"],'
+        '[data-testid="stElementContainer"]:has(.fit-flujo) + [data-testid="stElementContainer"] iframe '
+        "{height:max(calc(100vh - 330px), 380px) !important; flex:none !important; min-height:0 !important;}"
+        "</style>",
+        unsafe_allow_html=True,
+    )
+    st.iframe(live_flow.build_html(charts.get_palette(mode), model), height=600)
+    notes = [error] if error else []
+    if st.session_state.get(ADMIN_UNLOCKED):  # D-412: the logs are the author's, in «GitHub Actions»
+        notes.append(tr("Los logs de cada paso están en «GitHub Actions», solo para el autor."))
+    if notes:
+        st.caption(" · ".join(notes))
+
+
 def show_stack_page(mode):
     """«Stack y evidencia» (D-211, D-266): the stack as an architecture diagram; each tool explains itself and
-    opens the page where it works."""
+    opens the page where it works. D-412: its second view is the live flow of the whole system."""
+    view_holder = {}
+
+    def choose_view():
+        view_holder["view"] = (
+            st.segmented_control(
+                tr("Vista"),
+                STACK_VIEWS,
+                default=STACK_VIEWS[0],
+                format_func=tr,
+                key=STACK_VIEW_KEY,
+                label_visibility="collapsed",
+            )
+            or STACK_VIEWS[0]
+        )
+
     show_page_bar(
         PAGE_STACK,
         PAGE_STACK,
         "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.",
+        side=choose_view,
     )  # D-398: «Mapa de la app» is the next line of the menu, not a link of the header
+    if view_holder.get("view") == STACK_VIEWS[1]:
+        model_running = read_flow_model()[0]["mode"] == "live"
+        st.fragment(show_live_flow, run_every=30 if model_running else None)(mode)
+        return
     addresses = {page: build_page_address(page) for *_, page in stack_page.STACK}
     st.html(
         stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()), addresses)
