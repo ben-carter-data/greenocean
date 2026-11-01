@@ -3115,3 +3115,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor (parte 4, fase 1):** una versión fija del flujo, en imagen, para el SAD.
 - **Decisión:** el SAD suma la sección 3.3, «Flujo del sistema», en español e inglés. Trae el marcador `[[diagrama:flujo]]`, que dibuja la misma vista de D-412 sin script ni estado. Debajo de la imagen va el momento de la última carga real publicada, leído de `etl/datos.version`, y un enlace a la vista en vivo de «Stack y evidencia». Como todo diagrama de documento, no tiene fondo ni sombras y se imprime en hoja blanca (D-280).
 - **Pruebas:** `tests/test_live_flow.py::test_d414_…` (el marcador en los dos idiomas, sin script y con la fecha de la última carga), más las pruebas de los diagramas de documentos (`tests/test_doc_diagrams.py` y `tests/test_documents.py`), que ahora cuentan la imagen nueva.
+
+## D-415 · Las mini arquitecturas del flujo en vivo quedan como mejora futura
+
+- **Pedido del autor:** la fase 2 de «Flujo del sistema en vivo» queda fuera; se registra como decisión y como mejora futura.
+- **Decisión:** no se construye la fase 2: cada pieza abriría su nivel de zoom C4, con su definición, lo que hace aquí, por qué esa herramienta, lo que entra y lo que sale, y la mini arquitectura interna de GitHub, la carga semanal, dbt, la app y la seguridad. El flujo se queda como está en D-412 a D-414. El PRD lo anota en «Próximos pasos» (11), en español e inglés.
+- **Pruebas:** no cambia el comportamiento; las pruebas de los documentos verifican que la vista enlazada existe en el menú.

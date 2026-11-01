@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.7 |
+| Version | 3.8 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -191,6 +191,8 @@ These are six real captures, of 2026-10-31, of five main pages and in the four c
 
 Adding the weather by region, and the conditions under which a cloud data warehouse would be justified, are described in the [SAD, capacity and growth](../arquitectura/SAD.md#9-capacity-and-growth).
 
+A future improvement of the live flow (D-415): each piece of [[vista:Stack and evidence]] would open its mini architecture, at its C4 zoom level. It would show what it is, what it does here, why that tool, what goes in and what comes out; GitHub, the weekly load, dbt, the app and security would show their inner path, for example GitHub Actions: trigger → job → steps → result.
+
 ## 12. Glossary
 
 The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.md).
@@ -214,3 +216,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.5 | 2026-10-31 | The reading order of the section «Business · BA and BI» in the menu (7, D-378) |
 | 3.6 | 2026-10-31 | Wording reviewed; figures of the load of 2026-10-31 (6); the three views, each with what it sees (3.2); the full price alert (RF-05); the data quality indicators and those of the quality plan (RNF-04); new captures (7, D-392); the document moves to `docs/negocio/` (D-381, D-385, D-388) |
 | 3.7 | 2026-11-01 | One screen also at 1280 × 800 (RNF-06); at 1024 × 768 vertical scrolling is accepted, without cuts (RNF-05, D-407) |
+| 3.8 | 2026-11-01 | The mini architectures of the live flow, as a future improvement (11, D-415) |

@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.7 |
+| Versión | 3.8 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -191,6 +191,8 @@ Estas son seis capturas reales, del 31-10-2026, de cinco páginas principales y 
 
 La incorporación del clima por región y las condiciones bajo las que se justificaría un data warehouse en la nube se describen en el [SAD, capacidad y crecimiento](../arquitectura/SAD.md#9-capacidad-y-crecimiento).
 
+Mejora futura del flujo en vivo (D-415): que cada pieza de [[vista:Stack y evidencia]] abra su mini arquitectura, con su nivel de zoom C4. Se mostraría qué es, qué hace aquí, por qué esa herramienta, qué entra y qué sale; GitHub, la carga semanal, dbt, la app y la seguridad mostrarían su recorrido interno, por ejemplo GitHub Actions: disparador → job → pasos → resultado.
+
 ## 12. Glosario
 
 Las siglas y los términos de este documento se definen en el [Glosario](GLOSARIO.md).
@@ -214,3 +216,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.5 | 31-10-2026 | El orden de lectura de la sección «Negocio · BA y BI» en el menú (7, D-378) |
 | 3.6 | 31-10-2026 | Redacción revisada; cifras de la carga del 31-10-2026 (6); las tres vistas, cada una con lo que ve (3.2); la alerta de precio completa (RF-05); los indicadores de calidad de los datos y los del plan de calidad (RNF-04); capturas nuevas (7, D-392); el documento pasa a `docs/negocio/` (D-381, D-385, D-388) |
 | 3.7 | 01-11-2026 | Una pantalla también a 1280 × 800 (RNF-06); a 1024 × 768 se acepta el desplazamiento vertical, sin cortes (RNF-05, D-407) |
+| 3.8 | 01-11-2026 | Las mini arquitecturas del flujo en vivo, como mejora futura (11, D-415) |
