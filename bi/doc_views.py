@@ -743,21 +743,30 @@ svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
 
 
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
+# (file, title, theme, view). D-392: the Panorama twice, as the Usuario and as the Profesional see it.
 MOCKUPS = [
-    ("m1-dashboard-corporativo.jpg", "M-1 · Panorama de precios", "tema Corporativo"),
-    ("m2-resumen-vantablack.jpg", "M-2 · Panorama de precios", "tema Vantablack"),
-    ("m3-precios-darkgrey.jpg", "M-3 · Precios e inflación", "tema Dark Grey"),
-    ("m4-pipeline-bluelight.jpg", "M-4 · Pipeline y linaje", "tema Blue Light"),
-    ("m5-sql-corporativo.jpg", "M-5 · Consultas SQL", "tema Corporativo"),
-    ("m6-calidad-vantablack.jpg", "M-6 · Calidad y auditoría", "tema Vantablack"),
+    ("m1-dashboard-corporativo.jpg", "M-1 · Panorama de precios", "Corporativo", "Usuario"),
+    ("m2-resumen-vantablack.jpg", "M-2 · Panorama de precios", "Vantablack", "Profesional"),
+    ("m3-precios-darkgrey.jpg", "M-3 · Precios e inflación", "Dark Grey", "Profesional"),
+    ("m4-pipeline-bluelight.jpg", "M-4 · Pipeline y linaje", "Blue Light", "Profesional"),
+    ("m5-sql-corporativo.jpg", "M-5 · Consultas SQL", "Corporativo", "Profesional"),
+    ("m6-calidad-vantablack.jpg", "M-6 · Calidad y auditoría", "Vantablack", "Profesional"),
 ]
+
+
+def mockup_detail(theme, view):
+    """«tema Corporativo · vista Usuario», or its English: the theme keeps its name, the view takes the panel's word."""
+    if i18n.is_english():
+        return f"{theme} theme · {i18n.lookup(view) or view} view"
+    return f"tema {theme} · vista {view}"
 
 
 def build_mockups_html(mode):
     """Six captures of the panel (D-299), every theme at least once, in a computer frame, two per row."""
     palette = charts.get_palette(mode)
     figures = []
-    for file_name, title, detail in MOCKUPS:
+    for file_name, title, theme, view in MOCKUPS:
+        detail = mockup_detail(theme, view)
         # D-284: the English document shows the English captures, taken from the same pages.
         folder = MOCKUP_DIR / "en" if i18n.is_english() and (MOCKUP_DIR / "en" / file_name).exists() else MOCKUP_DIR
         data = base64.b64encode((folder / file_name).read_bytes()).decode()

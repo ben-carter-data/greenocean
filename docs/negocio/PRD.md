@@ -140,7 +140,7 @@ Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 sema
 
 ## 7. Pantallas
 
-Estas son capturas reales de seis páginas principales, en los cuatro temas de color. El tema oscuro es el de entrada.
+Estas son seis capturas reales, del 31-10-2026, de cinco páginas principales y en los cuatro temas de color. El Panorama aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
 
 - **Menú:** agrupa las páginas en cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera sigue el orden en que la lee un lector: Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal e Insights.
 - **Panorama de precios:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior.
@@ -212,4 +212,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.3 | 31-10-2026 | Interesados (3.1) y perfiles de uso (3.2), con su página en el panel (D-376) |
 | 3.4 | 31-10-2026 | Qué escuchamos (3.3), el porqué del alcance (6), el ciclo semanal (2) y la página «Análisis de negocio y sistemas» (D-377) |
 | 3.5 | 31-10-2026 | El orden de lectura de la sección «Negocio · BA y BI» en el menú (7, D-378) |
-| 3.6 | 31-10-2026 | Redacción revisada; cifras de la carga del 31-10-2026 (6); las tres vistas, cada una con lo que ve (3.2); la alerta de precio completa (RF-05); los indicadores de calidad de los datos y los del plan de calidad (RNF-04); el documento pasa a `docs/negocio/` (D-381, D-385, D-388) |
+| 3.6 | 31-10-2026 | Redacción revisada; cifras de la carga del 31-10-2026 (6); las tres vistas, cada una con lo que ve (3.2); la alerta de precio completa (RF-05); los indicadores de calidad de los datos y los del plan de calidad (RNF-04); capturas nuevas (7, D-392); el documento pasa a `docs/negocio/` (D-381, D-385, D-388) |

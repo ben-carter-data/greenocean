@@ -140,7 +140,7 @@ With the load of 2026-10-31, the database holds 821,072 weekly prices over 252 w
 
 ## 7. Screens
 
-These are real captures of six main pages, in the four color themes. The dark theme is the one on entry.
+These are six real captures, of 2026-10-31, of five main pages and in the four color themes. The Price overview appears twice: as the User sees it and as the Professional sees it. The dark theme is the one on entry.
 
 - **Menu:** it groups the pages in five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first follows a reader's reading order: Stakeholders, Business and systems analysis, Price overview, Latest data by channel and Insights.
 - **Price overview:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done.
@@ -212,4 +212,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.3 | 2026-10-31 | Stakeholders (3.1) and usage profiles (3.2), with their page in the panel (D-376) |
 | 3.4 | 2026-10-31 | What we heard (3.3), the why of the scope (6), the weekly cycle (2) and the page «Business and systems analysis» (D-377) |
 | 3.5 | 2026-10-31 | The reading order of the section «Business · BA and BI» in the menu (7, D-378) |
-| 3.6 | 2026-10-31 | Wording reviewed; figures of the load of 2026-10-31 (6); the three views, each with what it sees (3.2); the full price alert (RF-05); the data quality indicators and those of the quality plan (RNF-04); the document moves to `docs/negocio/` (D-381, D-385, D-388) |
+| 3.6 | 2026-10-31 | Wording reviewed; figures of the load of 2026-10-31 (6); the three views, each with what it sees (3.2); the full price alert (RF-05); the data quality indicators and those of the quality plan (RNF-04); new captures (7, D-392); the document moves to `docs/negocio/` (D-381, D-385, D-388) |

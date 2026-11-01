@@ -269,7 +269,10 @@ def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
         page.count("data:image/jpeg;base64,") == len(doc_views.MOCKUPS) == 6
     )  # D-299: the dashboard and the pipeline too
     # D-248: one capture per theme the panel offers today, retaken from the current pages.
-    assert set(charts.THEMES) == {word for row in doc_views.MOCKUPS for word in charts.THEMES if word in row[2]}
+    assert set(charts.THEMES) == {theme for _, _, theme, _ in doc_views.MOCKUPS}
+    # D-392: the views the captures show, and a caption in the language of the document.
+    assert {view for *_, view in doc_views.MOCKUPS} == {"Usuario", "Profesional"}
+    assert "tema Corporativo · vista Usuario" in page
     for file_name, *_ in doc_views.MOCKUPS:
         assert (doc_views.MOCKUP_DIR / file_name).exists(), file_name
     # D-269: each capture is a main page of the menu at the desktop size, one per profile of the PRD.
@@ -277,7 +280,7 @@ def test_d205_the_mockups_are_real_captures_in_four_themes_and_devices():
     from bi import dashboard
 
     menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
-    for file_name, title, _ in doc_views.MOCKUPS:
+    for file_name, title, *_ in doc_views.MOCKUPS:
         assert title.split(" · ", 1)[1] in menu, title
         assert Image.open(doc_views.MOCKUP_DIR / file_name).size == (1440, 900), file_name
     for file_name, *_ in doc_views.MOCKUPS:
@@ -291,3 +294,11 @@ def test_d386_the_before_figures_are_labelled_history_and_the_size_of_today_is_m
     assert "se midieron el 24-10-2026, al decidir ADR-35" in note and "Medidas del" not in note
     if queries.DATABASE_FILE.exists():
         assert f"Hoy la base servida pesa {project.describe_file_size(queries.DATABASE_FILE)}." in note
+
+
+def test_d392_the_english_captions_of_the_captures_are_in_english(monkeypatch):
+    from bi import i18n
+
+    monkeypatch.setattr(i18n, "is_english", lambda: True)
+    assert doc_views.mockup_detail("Corporativo", "Usuario") == "Corporativo theme · User view"
+    assert doc_views.mockup_detail("Vantablack", "Profesional") == "Vantablack theme · Professional view"
