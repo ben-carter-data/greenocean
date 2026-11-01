@@ -75,6 +75,7 @@ EN = {
     "Los logs de cada paso están en «GitHub Actions», solo para el autor.": "Each step's logs are in «GitHub Actions», for the author only.",
     "¿Qué pasó?": "What happened?",
     "Cerrar acceso": "Close access",
+    "Lanzar el pipeline y abrir las páginas del autor, con la clave de control.": "Run the pipeline and open the author's pages, with the control code.",
     "La consola del autor: el estado de lo que mantiene la app, qué hacer en cada caso y el mantenimiento. Nunca muestra el valor de un token.": "The author's console: the state of what keeps the app running, what to do in each case and the maintenance. It never shows the value of a token.",
     "Mantener esta vista": "Keep this view",
     "Cambiar de vista: usuario, profesional o autor.": "Change view: user, professional or author.",

@@ -82,7 +82,7 @@ Each component is a file of the repository and runs as a step of `semanal.yml`. 
 
 [[diagrama:componentes_panel]]
 
-`bi/dashboard.py` builds the navigation and each page. The queries go through `bi/queries.py`, and the database is opened read-only. `bi/control.py` is the only piece that talks to the GitHub API.
+`bi/dashboard.py` builds the navigation and each page. The queries go through `bi/queries.py`, and the database is opened read-only. `bi/control.py` is the only piece that writes to the GitHub API: it starts and cancels the load. `bi/github_actions.py` and `bi/run_monitor.py` only read.
 
 ### 3.3 System flow
 
@@ -355,7 +355,7 @@ The «Monitoring» tab of [[vista:Operations center]] brings them together.
 **Secrets and access.** The panel uses three secrets, kept in Streamlit and never in the repository:
 
 - `CONTROL_CODE`: the author's key, compared in constant time.
-- `GITHUB_TOKEN`: starts and cancels the manual load.
+- `GITHUB_TOKEN`: starts the manual load, reads its state and its logs, and cancels it.
 - `GITHUB_READ_TOKEN`: read only, for the page «GitHub Actions». It is the only one that page sends: if it is missing, the page shows the states without logs and says so (D-397).
 
 Only the author sees the page «GitHub Actions». It shows the latest runs and, of the last failure, the job, the step, the failing tests and the last 60 lines of the log, with a «Copy» button and links to the run and the job. The token never shows on screen (D-339, D-359).

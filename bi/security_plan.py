@@ -116,6 +116,7 @@ CASES = [
         [
             "tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_the_address_says",
             "tests/test_app_reloads.py::test_d357_a_reload_the_reader_makes_still_asks_for_the_view",
+            "tests/test_configuration.py::test_d409_only_the_author_has_the_page_in_devops_and_security",
         ],
     ),
     (

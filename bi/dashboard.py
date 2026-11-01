@@ -6036,8 +6036,8 @@ def show_run_now_dialog(token, access_code):
 
 def show_admin_card():
     """One door for the author (D-202): before the control code, only «Acceso del autor»; after
-    it, the manual run (D-149) and the administration links. The reload is harmless and stays
-    for everyone. The pipeline also runs by itself every Tuesday."""
+    it, the manual run (D-149) and the author's pages, «Configuración» among them (D-409). The reload
+    is the author's only (D-396). The pipeline also runs by itself every Tuesday."""
     access_code = get_secret(SECRET_CONTROL_CODE)
     token = get_secret(SECRET_GITHUB_TOKEN)
     unlocked = bool(access_code and st.session_state.get(ADMIN_UNLOCKED))
@@ -6111,7 +6111,7 @@ def show_author_access(access_code, unlocked):
         "Acceso del autor",
         icon=":material/lock:",
         width="stretch",
-        help="Lanzar el pipeline y los enlaces de administración, con la clave de control.",
+        help="Lanzar el pipeline y abrir las páginas del autor, con la clave de control.",
     ):
         if not access_code:
             st.caption("Se activa cuando el autor guarda la clave de control en los secretos del panel.")

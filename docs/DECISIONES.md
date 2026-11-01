@@ -3121,3 +3121,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** la fase 2 de «Flujo del sistema en vivo» queda fuera; se registra como decisión y como mejora futura.
 - **Decisión:** no se construye la fase 2: cada pieza abriría su nivel de zoom C4, con su definición, lo que hace aquí, por qué esa herramienta, lo que entra y lo que sale, y la mini arquitectura interna de GitHub, la carga semanal, dbt, la app y la seguridad. El flujo se queda como está en D-412 a D-414. El PRD lo anota en «Próximos pasos» (11), en español e inglés.
 - **Pruebas:** no cambia el comportamiento; las pruebas de los documentos verifican que la vista enlazada existe en el menú.
+
+## D-416 · Revisión de coherencia después de «Configuración» y del flujo en vivo
+
+- **Pedido del autor (parte 5):** revisar que las páginas nuevas usen las mismas cifras, nombres y definiciones que el resto de la app y los documentos.
+- **Decisión:** se corrigen cinco frases que ya no eran ciertas.
+  - **Ayuda de «Acceso del autor»:** decía que abría «los enlaces de administración». Ahora dice que abre las páginas del autor, que viven en «Configuración» (D-409); tiene su inglés.
+  - **SAD 3.2:** decía que `bi/control.py` era la única pieza que habla con la API de GitHub. Ahora dice que es la única que escribe (lanzar y cancelar), y que `bi/github_actions.py` y `bi/run_monitor.py` solo leen.
+  - **SAD 8:** `GITHUB_TOKEN` lanza la carga, lee su estado y sus logs, y la cancela, como dice el MANUAL.
+  - **PRD 7:** el orden del menú incluye «Precios e inflación» (D-398).
+  - **Caso S-12 del plan de pruebas y de `bi/security_plan.py`:** suma la prueba de que «Configuración» no se abre sin la clave.
+- **Pruebas:** las de los documentos y del plan de seguridad (`tests/test_documents.py`, `tests/test_doc_diagrams.py`) verifican que cada caso apunta a una prueba que existe y que el plan coincide con el código; `tests/test_i18n.py`, el inglés.

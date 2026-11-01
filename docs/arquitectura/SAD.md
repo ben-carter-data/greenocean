@@ -82,7 +82,7 @@ Cada componente es un archivo del repositorio y corre como un paso de `semanal.y
 
 [[diagrama:componentes_panel]]
 
-`bi/dashboard.py` arma la navegación y cada página. Las consultas pasan por `bi/queries.py`, y la base se abre en solo lectura. `bi/control.py` es la única pieza que habla con la API de GitHub.
+`bi/dashboard.py` arma la navegación y cada página. Las consultas pasan por `bi/queries.py`, y la base se abre en solo lectura. `bi/control.py` es la única pieza que escribe en la API de GitHub: lanza y cancela la carga. `bi/github_actions.py` y `bi/run_monitor.py` solo leen.
 
 ### 3.3 Flujo del sistema
 
@@ -355,7 +355,7 @@ La pestaña «Monitoreo» de [[vista:Centro de operación]] los reúne.
 **Secretos y acceso.** El panel usa tres secretos, guardados en Streamlit y nunca en el repositorio:
 
 - `CONTROL_CODE`: la clave del autor, comparada en tiempo constante.
-- `GITHUB_TOKEN`: lanza y cancela la carga manual.
+- `GITHUB_TOKEN`: lanza la carga manual, lee su estado y sus logs, y la cancela.
 - `GITHUB_READ_TOKEN`: solo lectura, para la página «GitHub Actions». Es el único que esa página envía: si falta, muestra los estados sin logs y avisa (D-397).
 
 La página «GitHub Actions» solo la ve el autor. Muestra las últimas ejecuciones y, del último fallo, el job, el paso, las pruebas que fallan y las últimas 60 líneas del log, con un botón «Copiar» y enlaces a la ejecución y al job. El token nunca aparece en pantalla (D-339, D-359).
