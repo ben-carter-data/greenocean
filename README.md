@@ -22,7 +22,7 @@ Cada martes el pipeline descarga las fuentes oficiales, las deja en una misma un
 | ![Pipeline y linaje](docs/img/readme/pipeline.png) | ![Calidad y auditoría](docs/img/readme/calidad.png) |
 | **Pipeline y linaje**: el recorrido de los datos y el estado de sus pruebas | **Calidad y auditoría**: las tres puertas de calidad de cada carga, con las filas que pasan y las que se rechazan |
 
-Páginas del panel, en el orden del menú: Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal e Insights (más Precios e inflación, desde un botón del Panorama); Pipeline y linaje, Modelo de datos y Consultas SQL; Centro de operación, GitHub Actions (solo el autor) y Arquitectura de seguridad; Stack y evidencia y Mapa de la app; Calidad y auditoría, Método y calidad y Git workflow; y la carpeta de documentos. La vista Usuario muestra la primera sección; la Profesional, todas. Está en español y en inglés.
+Páginas del panel, en el orden del menú: Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal, Precios e inflación e Insights; Pipeline y linaje, Modelo de datos y Consultas SQL; Centro de operación, GitHub Actions (solo el autor) y Arquitectura de seguridad; Stack y evidencia y Mapa de la app; Calidad y auditoría, Método y calidad y Git workflow; y la carpeta de documentos. La vista Usuario muestra la primera sección; la Profesional, todas. Está en español y en inglés.
 
 ## Qué responde
 

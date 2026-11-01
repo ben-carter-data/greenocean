@@ -35,7 +35,11 @@ def read_page_title(app):
     for block in app.markdown:
         match = re.search(r'class="(?:compact-header|report-title)"><h1[^>]*>([^<]+)</h1>', block.value)
         if not match:
-            match = re.search(r'<span class="(?:home|page)-bar-title" role="heading"[^>]*>([^<]+)</span>', block.value)
+            match = re.search(
+                r'<span class="(?:home-bar|page-info)-title" role="heading"[^>]*>([^<]+)</span>', block.value
+            )
+        if not match:  # D-398: a page whose question is its own name has it as the heading of the path
+            match = re.search(r'<b role="heading" aria-level="1">([^<]+)</b>', block.value)
         if not match:
             match = re.search(r'<h1 class="qa-h1">([^<]+)</h1>', block.value)
         if match:
@@ -159,11 +163,13 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     models = int(queries.run_sql("SELECT count(*) AS n FROM dbt_node WHERE resource_type = 'model'").iloc[0, 0])
     assert f'dbt CORE · staging → intermedio → marts · {models} modelos' in texts  # D-380: follows the build
     pipeline_header = next(block.value for block in diagrams.markdown if 'class="page-bar-main"' in block.value)
-    # D-267: the page bar, like the Resumen's: the title and the figures of the latest build, the time of the load.
-    assert '>Pipeline y linaje</span>' in pipeline_header and 'page-bar-updated' in texts
+    pipeline_info = next(block.value for block in diagrams.markdown if 'class="page-info"' in block.value)
+    # D-398: the bar says where the page is and the time of the load; the figures of the latest build are content.
+    assert '<b role="heading" aria-level="1">Pipeline y linaje</b>' in pipeline_header and 'page-bar-updated' in texts
+    assert 'page-chip' not in pipeline_header
     assert (
-        'pruebas dbt superadas en el último build' in pipeline_header
-        and 'modelos dbt, de staging a marts' in pipeline_header
+        'pruebas dbt superadas en el último build' in pipeline_info
+        and 'modelos dbt, de staging a marts' in pipeline_info
     )
     assert not diagrams.toggle
     assert 'Animar el recorrido de los datos' not in texts
@@ -951,11 +957,12 @@ def test_historical_root_link_keeps_the_requested_project_view_after_route_chang
 def test_d250_the_path_and_the_footer_follow_the_menu():
     order = dashboard.MENU_ORDER
     assert len(order) == len(set(order))
-    assert order[:5] == [  # D-378: a visitor's reading order: who it is for and the analysis, then the prices
+    assert order[:6] == [  # D-378: a visitor's reading order: who it is for and the analysis, then the prices
         dashboard.PAGE_STAKEHOLDERS,
         dashboard.PAGE_ANALYSIS,
         dashboard.HOME_PAGE,
         dashboard.PAGE_CHANNELS,
+        dashboard.PAGE_SEASONALITY,  # D-398
         dashboard.PAGE_INSIGHTS,
     ]
     assert dashboard.PAGE_SAD not in dashboard.MENU_BLOCK_OF_VIEW and dashboard.PAGE_SAD in dashboard.FOLDER_ORDER
@@ -1294,7 +1301,7 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not app.exception
     alert = app.button(key="home_alert_trigger")
-    assert re.fullmatch(r"▲ \d+", alert.label) and "Alertas de precio" in alert.help
+    assert re.fullmatch(r"▲ \d+ alertas? de precio esta semana", alert.label) and "al menos 10 %" in alert.help
     # D-169: the trigger sits on top of the Resumen, out of the sidebar.
     assert alert not in app.sidebar.button
     css = " ".join(block.value for block in app.sidebar.markdown)
@@ -1310,7 +1317,7 @@ def test_d165_the_operation_centre_reads_like_the_dashboard():
     app = draw_page(dashboard.PAGE_RUNS, state={"runs_view": "Operación"})  # D-360: the tab drawn is the one chosen
     assert not app.exception and app.get("iframe")
     text = " ".join(block.value for block in app.markdown)
-    assert 'class="page-bar-title"' in text and text.count('class="oc-fact"') == 3
+    assert '<b role="heading" aria-level="1">Centro de operación</b>' in text and text.count('class="oc-fact"') == 3
     assert "Ver historial de ejecuciones" not in [expander.label for expander in app.expander]
     assert "runs_reload" not in [str(button.key) for button in app.button]  # D-396: only the Autor reloads
 
@@ -1414,6 +1421,7 @@ MENU_BLOCKS = {
         'Análisis de negocio y sistemas',
         'Panorama de precios',
         'Último dato por canal',
+        'Precios e inflación',
         'Insights',
     ],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Consultas SQL'],
@@ -1497,7 +1505,8 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
         assert note in markup, note
     week = dashboard.read_latest_week()
     count = int((dashboard.read_price_alerts()["week_start"] == week).sum())
-    assert app.button(key="home_alert_trigger").label == f"▲ {count}"
+    # D-398: the alerts are a notice of the content, under the bar
+    assert app.button(key="home_alert_trigger").label.startswith(f"▲ {count} alerta")
     assert 'class="home-bar-updated"' in markup
 
 

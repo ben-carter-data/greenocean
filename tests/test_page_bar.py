@@ -24,24 +24,21 @@ MAIN_PAGES = [
 ]
 
 
-def test_the_title_is_not_said_twice_and_the_whole_path_stays_readable():
-    bar = page_bar.build_bar_html("Ingeniería de datos › Modelo de datos", "Modelo de datos", "Cómo se organizan.")
-    assert (
-        bar.count("Modelo de datos</") == 1
-        and 'aria-label="Página actual: Ingeniería de datos › Modelo de datos"' in bar
-    )
-    assert '<span class="page-bar-path">Ingeniería de datos ›</span>' in bar
-    question = page_bar.build_bar_html(
-        "Negocio · BA y BI › Precios e inflación", "¿Qué subió?", "La respuesta.", [("<b>+1 %</b>", "Uno por ciento")]
-    )
-    assert "<b>Precios e inflación</b>" in question and 'title="La respuesta."' in question
-    assert '<span class="page-chip" title="Uno por ciento"><b>+1 %</b></span>' in question
+def test_d398_the_bar_says_only_where_the_page_is_and_the_rest_is_content():
+    bar = page_bar.build_bar_html("Ingeniería de datos › Modelo de datos", "Cómo se organizan.")
+    assert 'aria-label="Página actual: Ingeniería de datos › Modelo de datos"' in bar
+    assert 'Ingeniería de datos › <b role="heading" aria-level="1">Modelo de datos</b>' in bar
+    assert 'title="Cómo se organizan."' in bar and "<a" not in bar and "page-chip" not in bar
+    info = page_bar.build_info_html("¿Qué subió?", "La respuesta.", [("<b>+1 %</b>", "Uno por ciento")])
+    assert 'role="heading" aria-level="2" title="La respuesta.">¿Qué subió?</span>' in info
+    assert '<span class="page-chip" title="Uno por ciento"><b>+1 %</b></span>' in info
+    assert "¿Qué subió?" not in page_bar.build_info_html("¿Qué subió?", "", show_title=False)
 
 
 def test_every_theme_styles_the_bar():
     for mode in charts.THEMES:
         css = page_bar.build_css(charts.get_palette(mode))
-        assert ".st-key-page_bar" in css and ".page-bar-title" in css and ".page-bar-terms" in css
+        assert ".st-key-page_bar" in css and ".st-key-page_info" in css and ".page-bar-terms" in css
 
 
 @needs_database
@@ -119,12 +116,13 @@ def test_d267_ampliar_shows_the_chart_beside_its_reading():
     assert len(app.get("vega_lite_chart")) == 1
 
 
-def test_d268_on_a_narrow_window_the_bar_wraps_instead_of_covering_the_title():
+def test_d398_nothing_overlaps_the_path_gives_way_and_the_content_row_wraps():
     css = page_bar.build_css(charts.get_palette(charts.MODE_DARK))
-    assert "flex-wrap:wrap !important" in css and "min-width:min(100%, 240px)" in css
-    assert (
-        "@media (max-width:1320px) {{ .page-bar-path {{ display:none; }}".replace("{{", "{").replace("}}", "}") in css
-    )
+    # the bar keeps one line: the path is cut with «…» before it could reach the time
+    assert "flex-wrap:nowrap !important" in css and "text-overflow:ellipsis" in css
+    assert "display:none" not in css  # the path never disappears
+    # the row of the content wraps instead of overlapping
+    assert ".stApp .st-key-page_info { gap:6px 10px !important; flex-wrap:wrap !important;" in css
 
 
 def test_d268_the_sql_filters_and_status_bar_fit_a_narrow_window():
@@ -135,8 +133,46 @@ def test_d268_the_sql_filters_and_status_bar_fit_a_narrow_window():
     assert ".sqlx-status span:nth-child(4) { display:none; }" in css
 
 
-def test_d391_a_page_opened_from_a_button_sits_in_the_menu_section_of_the_page_it_opens_from():
-    for view, parent in dashboard.DOOR_PAGES.items():
-        path = dashboard.build_view_path(dashboard.WINDOW_OF_VIEW[view], view)
-        assert path == f"{dashboard.MENU_BLOCK_OF_VIEW[parent]} › {dashboard.SIDEBAR_LABELS[view]}", path
-        assert "Dashboard" not in path  # the old name of the window, which the menu no longer uses
+def test_d391_the_inflation_page_sits_in_its_menu_section():
+    view = dashboard.PAGE_SEASONALITY  # D-398: in the menu since the header opens no page
+    path = dashboard.build_view_path(dashboard.WINDOW_OF_VIEW[view], view)
+    assert path == "Negocio · BA y BI › Precios e inflación" and "Dashboard" not in path
+
+
+BAR_KEYS = ("page_bar", "home_bar")
+
+
+def bar_elements(app):
+    """Every element drawn inside the header of the page: the container keyed page_bar or home_bar."""
+    found = []
+
+    def walk(node, inside):
+        here = inside or str(getattr(node, "key", "") or "") in BAR_KEYS
+        if here:
+            found.append(node)
+        for child in getattr(node, "children", {}).values():
+            walk(child, here)
+
+    walk(app._tree, False)
+    return found
+
+
+@needs_database
+@pytest.mark.parametrize("language", ["es", "en"])
+@pytest.mark.parametrize("view", [dashboard.HOME_PAGE, *MAIN_PAGES, dashboard.PAGE_CHANNELS, dashboard.PAGE_INSIGHTS])
+def test_d398_the_header_has_no_link_to_another_page(view, language):
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
+    app.query_params.update({"vista": view, "lang": language})
+    app.session_state["visitor_profile"] = "profesional"
+    app.run()
+    assert not app.exception
+    starts = ('<div class="page-bar-main"', '<div class="greenocean-mockup home-bar-main"')
+    bars = [block.value for block in app.markdown if block.value.lstrip().startswith(starts)]
+    assert len(bars) == 1, view
+    assert "<a " not in bars[0] and "href" not in bars[0]  # the bar's own HTML links nowhere
+    # and no Streamlit element of the header opens another page or does something: only «Volver»
+    buttons = [str(node.key) for node in bar_elements(app) if type(node).__name__ == "Button"]
+    assert buttons == ["return_to_previous"], (view, buttons)
+    assert not [
+        node for node in bar_elements(app) if type(node).__name__ in ("PageLink", "SegmentedControl", "Selectbox")
+    ]

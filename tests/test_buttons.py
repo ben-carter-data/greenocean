@@ -47,9 +47,7 @@ def test_d281_every_variant_and_size_writes_the_component(variant, size):
 def test_d281_the_bars_the_documents_and_the_print_use_the_component():
     from bi import dashboard
 
-    assert page_bar.build_link_html("Plan", "/plan", "nota").startswith(
-        '<a class="go-btn go-btn--secondary go-btn--compact"'
-    )
+    assert not hasattr(page_bar, "build_link_html")  # D-398: the bar has no links to other pages
     assert dashboard.PRINT_BUTTON_HTML.startswith('<button class="go-btn go-btn--primary go-btn--normal doc-print"')
     assert 'class="go-btn go-btn--text' in dashboard.build_external_link_html("Ver en GitHub", "https://github.com")
     assert 'class="go-btn go-btn--secondary' in dashboard.build_external_link_html(

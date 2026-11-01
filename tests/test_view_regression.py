@@ -94,9 +94,11 @@ def test_d233_the_fitted_pages_close_with_the_compact_footer():
 
 
 @needs_database
-def test_d267_the_pipeline_figures_are_chips_of_the_bar_read_from_the_latest_load():
+def test_d398_the_pipeline_figures_are_chips_of_the_content_read_from_the_latest_load():
     page = read_markdown(draw_page(dashboard.PAGE_DIAGRAMS))
-    bar = page[page.index('class="page-bar-main"') :]
+    header = page[page.index('class="page-bar-main"') :]
+    assert 'class="page-chip"' not in header[: header.index("</div>")]  # D-398: the header only places the reader
+    bar = page[page.index('class="page-info"') :]
     bar = bar[: bar.index("</div>")]
     assert bar.count('class="page-chip"') == 4 and "pipe-figure" not in page and "runs-metric" not in page
     run = dashboard.read_latest_run()

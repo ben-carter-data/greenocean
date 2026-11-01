@@ -15,6 +15,7 @@ ORDER = [
     dashboard.PAGE_ANALYSIS,
     dashboard.HOME_PAGE,
     dashboard.PAGE_CHANNELS,
+    dashboard.PAGE_SEASONALITY,  # D-398
     dashboard.PAGE_INSIGHTS,
 ]
 
@@ -29,13 +30,14 @@ def draw(profile, view, language="es"):
 def test_d378_the_section_lists_who_it_is_for_and_the_analysis_before_the_prices():
     assert dashboard.MENU_BLOCKS[0][0] == "negocio" and dashboard.MENU_BLOCKS[0][1] == "Negocio · BA y BI"
     assert dashboard.MENU_BLOCKS[0][2] == ORDER
-    assert dashboard.MENU_ORDER[:5] == ORDER  # the path and the previous/next footer follow it (D-250)
+    assert dashboard.MENU_ORDER[:6] == ORDER  # the path and the previous/next footer follow it (D-250)
     labels = [dashboard.SIDEBAR_LABELS.get(view, view) for view in ORDER]
     assert labels == [
         "Interesados",
         "Análisis de negocio y sistemas",
         "Panorama de precios",
         "Último dato por canal",
+        "Precios e inflación",
         "Insights",
     ]
     for label in labels:
@@ -52,12 +54,20 @@ def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_o
                 "Análisis de negocio y sistemas",
                 "Panorama de precios",
                 "Último dato por canal",
+                "Precios e inflación",
                 "Insights",
             ],
         ),
         (
             "en",
-            ["Stakeholders", "Business and systems analysis", "Price overview", "Latest data by channel", "Insights"],
+            [
+                "Stakeholders",
+                "Business and systems analysis",
+                "Price overview",
+                "Latest data by channel",
+                "Prices and inflation",
+                "Insights",
+            ],
         ),
     ):
         user = draw("consulta", dashboard.PAGE_STAKEHOLDERS, language)
@@ -67,7 +77,7 @@ def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_o
         ] == expected  # the user view: only this block
         professional = draw("profesional", dashboard.PAGE_STAKEHOLDERS, language)
         assert not professional.exception
-        assert [link.proto.label for link in professional.sidebar.get("page_link")][:5] == expected
+        assert [link.proto.label for link in professional.sidebar.get("page_link")][:6] == expected
 
 
 @needs_database
@@ -82,7 +92,7 @@ def test_d378_the_main_pages_of_the_section_have_no_route_footer_and_the_next_se
     for view in ORDER:  # a main page is one screen with one thin bar (D-264, D-267): the menu is its route
         assert view in dashboard.OVERVIEW_CLASS_BY_VIEW and footer(view) == [], view
     # The next section still follows the last page of this one, so the previous/next footers of the rest do not change.
-    assert dashboard.MENU_ORDER[4:6] == [dashboard.PAGE_INSIGHTS, dashboard.PAGE_DIAGRAMS]
+    assert dashboard.MENU_ORDER[5:7] == [dashboard.PAGE_INSIGHTS, dashboard.PAGE_DIAGRAMS]
 
 
 @needs_database
@@ -104,12 +114,9 @@ def test_d378_the_app_map_names_the_menu_pages_in_the_menu_order():
         for view in dashboard.MENU_ORDER
         if view not in dashboard.AUTHOR_ONLY_PAGES and view != dashboard.PAGE_FOLDER
     ]
-    # «Precios e inflación» opens from the Panorama (D-308): it sits right after the business pages, as the map reads it.
-    expected = [dashboard.SIDEBAR_LABELS.get(view, view) for view in menu]
-    expected.insert(
-        expected.index("Insights") + 1,
-        dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_SEASONALITY, dashboard.PAGE_SEASONALITY),
-    )
+    expected = [
+        dashboard.SIDEBAR_LABELS.get(view, view) for view in menu
+    ]  # D-398: «Precios e inflación» is in the menu
     positions = [pages.index(label) for label in expected]
     assert positions == sorted(positions), expected  # every page is named, in the menu's order
     assert pages in i18n.PAGES  # and the map's sentence has its English

@@ -177,8 +177,8 @@ NODES = {
         [
             (
                 "Páginas",
-                "Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal, Insights, "
-                "Precios e inflación, Pipeline y linaje, Modelo de datos, Consultas SQL, Centro de operación, "
+                "Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal, Precios e inflación, "
+                "Insights, Pipeline y linaje, Modelo de datos, Consultas SQL, Centro de operación, "
                 "Arquitectura de seguridad, Stack y evidencia, Mapa de la app, Calidad y auditoría, Método y calidad, "
                 "Git workflow y la carpeta de documentos.",
             ),

@@ -81,7 +81,8 @@ def test_d365_the_page_draws_both_blocks_for_every_view_and_the_overview_links_t
         app.session_state["visitor_profile"] = profile
         app.run()
         assert "Último dato por canal" in [link.proto.label for link in app.sidebar.get("page_link")], profile
-    assert "Ver último dato por canal" in [link.proto.label for link in app.main.get("page_link")]  # on the overview
+    # D-398: the overview's header no longer links to it; the menu does, in every view.
+    assert "Ver último dato por canal" not in [link.proto.label for link in app.main.get("page_link")]
     script = (
         f"import sys\nsys.path.insert(0, {str(ROOT)!r})\nimport pandas as pd\nfrom bi import dashboard\n"
         "from tests.test_channel_latest import sample\n"

@@ -3444,29 +3444,34 @@ def format_load_time(latest):
 
 
 def show_page_bar(view, title, description, chips=(), side=None, terms=()):
-    """The only header of a main page (D-267), like the Resumen's (D-264): one thin bar with Volver, the path, the
-    title (its description on hover), the page's figures as chips, what it measures and the time of the load. side
-    draws Streamlit elements of the page (a button, a switch) inside the bar, before the time."""
+    """The header of a page (D-267, D-398): only «Volver», the path (the description on hover) and the time of the
+    data. What the page says (its question when it is not just its name, its figures as chips, what it measures) and
+    what it does (side: a button, a switch) go in a row of the content right under the bar. Links to other pages live
+    in the menu, never here."""
     latest = read_latest_run()
+    path = build_view_path(WINDOW_OF_VIEW.get(view, view), view)
     st.markdown(page_bar.build_css(charts.get_palette(get_mode())), unsafe_allow_html=True)
     with st.container(key="page_bar", horizontal=True, vertical_alignment="center"):
         show_return_button()
-        st.markdown(
-            page_bar.build_bar_html(
-                build_view_path(WINDOW_OF_VIEW.get(view, view), view), tr(title), tr(description), chips
-            ),
-            unsafe_allow_html=True,
-            width="stretch",
-        )
-        if side:
-            side()
-        if terms:
-            st.markdown(page_bar.build_terms_html(terms), unsafe_allow_html=True, width="content")
+        st.markdown(page_bar.build_bar_html(path, tr(description)), unsafe_allow_html=True, width="stretch")
         st.markdown(
             page_bar.build_updated_html(format_load_time(latest), latest["status"] == etl.STATUS_LOADED),
             unsafe_allow_html=True,
             width="content",
         )
+    show_title = tr(title) != path.rpartition(" › ")[2]
+    if not (show_title or chips or side or terms):
+        return
+    with st.container(key="page_info", horizontal=True, vertical_alignment="center"):
+        st.markdown(
+            page_bar.build_info_html(tr(title), tr(description), chips, show_title),
+            unsafe_allow_html=True,
+            width="stretch",
+        )
+        if terms:
+            st.markdown(page_bar.build_terms_html(terms), unsafe_allow_html=True, width="content")
+        if side:
+            side()
 
 
 # endregion
@@ -4284,24 +4289,30 @@ def show_market_overview(mode, prefix):
             unsafe_allow_html=True,
             width="stretch",
         )
-        show_alert_trigger(week)
-        show_home_tools(week)
-        channels_page = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_CHANNELS])  # absent when a test draws the page alone
-        if channels_page:
-            st.page_link(
-                channels_page,
-                label=tr("Ver último dato por canal"),
-                icon=":material/compare_arrows:",
-                query_params=keep_context() | {VIEW_PARAMETER: PAGE_CHANNELS},
-            )  # D-365: the overview does not change; this link opens each source's own latest week
         st.markdown(
             home_mockup.dashboard_updated(updated, latest['status'] == etl.STATUS_LOADED),
             unsafe_allow_html=True,
             width="content",
         )
+    # D-398: the header only places the reader. The week's price alerts, the table of the last weeks and the note of a
+    # late source are content, in one row under the bar; «Precios e inflación» and «Último dato por canal» are in the menu.
     notice = describe_late_sources(latest['message'] if latest['status'] == etl.STATUS_LOADED else '')
-    if notice:
-        st.caption(notice)  # D-356: a quiet line; the week is not filled in, it waits for the source
+    with st.container(key='home_info', horizontal=True, vertical_alignment='center'):
+        home_view = st.segmented_control(
+            tr('Vista del Panorama'),
+            HOME_VIEWS,
+            default=HOME_VIEWS[0],
+            format_func=tr,
+            key=HOME_VIEW_KEY,
+            label_visibility='collapsed',
+            width='content',
+        )
+        show_alert_notice(week)
+        if notice:
+            st.caption(notice)  # D-356: a quiet line; the week is not filled in, it waits for the source
+    if home_view == HOME_VIEWS[1]:
+        show_weeks_panel(mode)
+        return
     map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
     # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
     # sanitizer intentionally removes interactive SVG links.
@@ -5034,27 +5045,6 @@ def show_weeks_table(mode, version):
         ),
         unsafe_allow_html=True,
     )
-
-
-@st.dialog("¿Qué familias vienen subiendo, semana a semana?", width="large")
-def show_weeks_dialog(mode, version):
-    palette = charts.get_palette(mode)
-    st.markdown(
-        f'<h4 style="margin:0 48px 6px 0;padding:0">{html.escape(tr("¿Qué familias vienen subiendo, semana a semana?"))}</h4>',
-        unsafe_allow_html=True,
-    )  # the dialog's own title is hidden by the profile dialog's style; the × stays free
-    st.markdown(
-        f"""<style>
-    .st-key-weeks_head {{ justify-content:space-between; padding-right:36px; }}
-    .st-key-weeks_head [data-testid="stSlider"] {{ padding:0 6px; }}
-    .weeks-insight {{ margin:0 0 1rem; padding:10px 14px; border-radius:10px; border-left:3px solid {palette['accent']};
-        background:color-mix(in srgb, {palette['accent']} 9%, transparent); font-size:13.5px; color:{palette['text']}; }}
-    .weeks-insight b {{ color:{palette['strong_text']}; }}
-    .weeks-insight ul {{ margin:4px 0 0 !important; padding-left:18px; }} .weeks-insight li {{ margin:0 !important; }}
-    </style>""",
-        unsafe_allow_html=True,
-    )
-    show_weeks_table(mode, version)
 
 
 @st.cache_data(show_spinner=False)
@@ -5981,16 +5971,7 @@ def show_security_page(mode):
         "Qué amenaza al sistema, qué lo mitiga, qué prueba lo "
         "verifica en cada push y cómo se mejora. El código es público: la seguridad no depende de "
         "esconderlo, sino de las claves, que nunca aparecen.",
-        side=lambda: st.markdown(
-            page_bar.build_link_html(
-                PAGE_TEST_PLAN,
-                build_page_address(PAGE_TEST_PLAN),
-                "Quién participa, los casos de prueba, el procedimiento y los resultados de la última revisión.",
-            ),
-            unsafe_allow_html=True,
-            width="content",
-        ),
-    )
+    )  # D-398: the test plan opens from «Documentos», not from the header
     # D-277: the drawing keeps its proportion and is never taller than what the window leaves.
     st.markdown(
         '<style>.st-key-sec_frame iframe {display:block; margin:0 auto; '
@@ -7030,16 +7011,7 @@ def show_stack_page(mode):
         PAGE_STACK,
         PAGE_STACK,
         "Qué hace cada herramienta, cuándo actúa y con cuáles se conecta.",
-        side=lambda: st.markdown(
-            page_bar.build_link_html(
-                PAGE_APP_MAP,
-                build_page_address(PAGE_APP_MAP),
-                "Todo el sistema en una vista: cada tecnología, su rol y sus conexiones.",
-            ),
-            unsafe_allow_html=True,
-            width="content",
-        ),
-    )
+    )  # D-398: «Mapa de la app» is the next line of the menu, not a link of the header
     addresses = {page: build_page_address(page) for *_, page in stack_page.STACK}
     st.html(
         stack_page.build_stack_html(charts.get_palette(mode), read_stack_figures(get_database_version()), addresses)
@@ -7943,7 +7915,8 @@ MENU_BLOCKS = [
         "negocio",
         "Negocio · BA y BI",
         # D-378: the reading order of a visitor: first who it is for and the analysis (BA and BSA), then the prices (BI)
-        [PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_HOME, PAGE_CHANNELS, PAGE_INSIGHTS],
+        # D-398: «Precios e inflación» joins the menu, after «Último dato por canal» (4C): the header no longer opens it.
+        [PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_HOME, PAGE_CHANNELS, PAGE_SEASONALITY, PAGE_INSIGHTS],
     ),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_SECURITY]),
@@ -7957,7 +7930,7 @@ MENU_BLOCKS = [
     ("documentos", "Documentos", [PAGE_FOLDER]),
 ]
 # D-308: a page that opens from a button of another page and has no line of its own in the menu.
-DOOR_PAGES = {PAGE_SEASONALITY: PAGE_HOME}
+DOOR_PAGES: dict[str, str] = {}  # D-398: «Precios e inflación», the only one, joined the menu
 # D-250: the breadcrumb and the footer follow the menu, in its order and with its names.
 MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages]
 MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages}
@@ -7968,6 +7941,7 @@ SIDEBAR_ICONS = {
     PAGE_STAKEHOLDERS: ":material/groups:",
     PAGE_ANALYSIS: ":material/analytics:",
     PAGE_HOME: ":material/grid_view:",
+    PAGE_SEASONALITY: ":material/trending_up:",  # D-398
     PAGE_DIAGRAMS: ":material/share:",
     PAGE_ARCHITECTURE: ":material/database:",
     PAGE_OPERATIONS: ":material/verified_user:",
@@ -8328,36 +8302,46 @@ def build_sidebar_github_html(is_current):
 WINDOW_PAGES = {}
 
 
-def show_home_tools(week):
-    """The Panorama's two doors, small, in its bar (D-308): the table of weeks (a dialog) and Precios e inflación."""
-    if st.button(
-        tr("Semanas"),
-        icon=":material/attach_money:",
-        key="home_weeks_trigger",
-        help=tr("Tabla de las últimas semanas: qué familias vienen subiendo."),
-    ):
-        show_weeks_dialog(get_mode(), get_database_version())
-    if WINDOW_PAGES:
-        st.page_link(
-            WINDOW_PAGES[WINDOW_OF_VIEW[PAGE_SEASONALITY]],
-            label=tr("Inflación"),
-            icon=":material/trending_up:",
-            query_params=keep_context() | {VIEW_PARAMETER: PAGE_SEASONALITY},
-            help=tr("Precios e inflación: qué alimentos subieron más que la inflación."),
-        )
+# D-398: «Semanas» left the header: the Panorama shows the week, or the table of the last weeks, from a selector of
+# its content.
+HOME_VIEW_KEY = "home_view"
+HOME_VIEWS = ["La semana", "Últimas semanas"]
 
 
-def show_alert_trigger(week):
-    """The price alerts of the week shown, a red chip in the Resumen's bar (D-169, D-264): the same
-    dialog the sidebar held since D-096. The count is national, like the dialog."""
+def show_weeks_panel(mode):
+    """The table of the last weeks (D-308), in the page itself instead of a window."""
+    palette = charts.get_palette(mode)
+    st.markdown(
+        f"""<style>
+    .st-key-weeks_head {{ justify-content:space-between; }}
+    .st-key-weeks_head [data-testid="stSlider"] {{ padding:0 6px; }}
+    .weeks-insight {{ margin:0 0 1rem; padding:10px 14px; border-radius:10px; border-left:3px solid {palette['accent']};
+        background:color-mix(in srgb, {palette['accent']} 9%, transparent); font-size:13.5px; color:{palette['text']}; }}
+    .weeks-insight b {{ color:{palette['strong_text']}; }}
+    .weeks-insight ul {{ margin:4px 0 0 !important; padding-left:18px; }} .weeks-insight li {{ margin:0 !important; }}
+    </style>""",
+        unsafe_allow_html=True,
+    )
+    st.markdown(f"#### {html.escape(tr('¿Qué familias vienen subiendo, semana a semana?'))}")
+    show_weeks_table(mode, get_database_version())
+
+
+def show_alert_notice(week):
+    """The price alerts of the week shown, a notice of the content (D-398; before, a chip of the header): it opens the
+    same detail by family. The count is national, like the detail."""
     alerts_now = read_price_alerts()
     week = pd.Timestamp(week)
     count = int((alerts_now["week_start"] == week).sum()) if not alerts_now.empty else 0
+    label = (
+        tr("▲ {} alertas de precio esta semana").format(count) if count != 1 else tr("▲ 1 alerta de precio esta semana")
+    )
     if st.button(
-        f"▲ {count}",
+        label,
         key="home_alert_trigger",
-        help=f"Alertas de precio: {count} cambios fuera de lo habitual y de al menos 10 % esta semana, "
-        "en todo Chile. Abre el detalle por familia.",
+        disabled=not count,
+        help=tr(
+            "Cambios fuera de lo habitual y de al menos 10 % esta semana, en todo Chile. Abre el detalle por familia."
+        ),
     ):
         st.session_state["home_alert_selected_family"] = None
         show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())

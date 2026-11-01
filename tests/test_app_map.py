@@ -109,13 +109,14 @@ def test_d285_the_map_is_html_with_image_logos_and_a_script_without_html(theme):
     assert "<" not in script.split("</script>")[0]  # st.html drops a script whose text holds a tag
 
 
-def test_d285_the_map_sits_next_to_the_stack_and_the_stack_links_to_it():
+def test_d285_the_map_sits_next_to_the_stack_and_the_menu_opens_it():
     stack_block = next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "stack")
     assert stack_block == [dashboard.PAGE_STACK, dashboard.PAGE_APP_MAP]  # D-343: the method moved to «Calidad»
     assert dashboard.PAGE_APP_MAP in dashboard.BAR_VIEWS and dashboard.PAGE_APP_MAP in dashboard.COMPACT_FOOTER_VIEWS
     source = (ROOT / "bi" / "dashboard.py").read_text(encoding="utf-8")
     stack = source[source.index("def show_stack_page") : source.index("def show_app_map_page")]
-    assert re.search(r"PAGE_APP_MAP,\s*build_page_address\(PAGE_APP_MAP\)", stack)
+    # D-398: the header of «Stack y evidencia» no longer links to the map; the menu's next line does.
+    assert not re.search(r"PAGE_APP_MAP,\s*build_page_address\(PAGE_APP_MAP\)", stack)
 
 
 def test_d291_each_filter_lights_every_actor_and_link_of_its_theme():
