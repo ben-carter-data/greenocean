@@ -2981,3 +2981,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Qué pasó:** al fusionar el informe N° 7 (semana del 26-10), `pytest` falló en main en `test_d333_…`: la prueba suponía que todos los informes, salvo el N° 1, eran de la semana del 12-10. El error era de la prueba, no de la app.
 - **Decisión:** la prueba recorre las semanas que traen los informes y comprueba que el filtro de cada una devuelve exactamente los informes de esa semana.
 - **Pruebas:** `tests/test_quality_method.py::test_d333_…`.
+
+## D-400 · Las dos no conformidades del informe N° 7 quedan registradas
+
+- **Qué pasó:** el informe N° 7 (carga del 31-10) trae dos indicadores fuera de lo aceptable que nadie había anotado, y la regla de D-334 hizo fallar `pytest` en main.
+- **Decisión:** se anotan en `docs/calidad/no_conformidades.json`. «Pruebas que fallan» (crítico, 6 pruebas) lleva su causa demostrada: la base del 31-10 llegó a main antes que los arreglos de D-380. «Precios con comparación válida» (urgente, 83,3 %) queda con la causa pendiente, porque no está demostrada. La acción y el estado de las dos quedan en blanco: los escribe el autor.
+- **Pruebas:** `tests/test_quality_method.py::test_d334_…`.

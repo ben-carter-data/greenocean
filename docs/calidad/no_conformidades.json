@@ -96,6 +96,25 @@
       ],
       "accion": "",
       "estado": ""
+    },
+    {
+      "informe": 7,
+      "indicador": "pruebas_fallidas",
+      "fecha": "2026-10-31",
+      "causa": [
+        "La base de la carga del 31-10 llegó a main antes que los arreglos de pruebas de D-380; en 30fe842 fallaban 6 pruebas que suponían la base anterior.",
+        "The database of the 31-10 load reached main before the test fixes of D-380; at 30fe842, 6 tests that assumed the previous database failed."
+      ],
+      "accion": "",
+      "estado": ""
+    },
+    {
+      "informe": 7,
+      "indicador": "comparables_pct",
+      "fecha": "2026-10-31",
+      "causa": "",
+      "accion": "",
+      "estado": ""
     }
   ]
 }
