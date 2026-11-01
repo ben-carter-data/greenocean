@@ -9,6 +9,7 @@ The color modes and chart palettes live in bi/charts.py.
 """
 
 import base64
+import contextvars
 import html
 import importlib
 import json
@@ -2438,8 +2439,88 @@ def read_week_range():
 
 
 def read_latest_week():
-    """Monday of the latest week with prices."""
+    """Monday of the latest week with prices: the Panorama's common week, or a channel's own (D-405)."""
+    channel = current_channel()
+    if channel is not None:
+        return pd.Timestamp(max(read_channel_frame(get_database_version(), channel)["week_start"]))
     return pd.Timestamp(read_week_range()["last_week"])
+
+
+# D-405: the Panorama's data, for every channel (the Panorama itself) or for one channel with its own two latest weeks
+# (a channel page of «Último dato por canal», read from latest_by_source). The scope is set while a channel page draws;
+# every reader below keys its cache on it, so the Panorama never shows a channel's numbers, and the same code draws both.
+PRICE_SCOPE: contextvars.ContextVar[str | None] = contextvars.ContextVar("price_scope", default=None)
+NATIONAL_KEY = ["week_start", "product_group", "product", "variety", "quality", "channel", "normalized_unit"]
+
+
+def current_channel():
+    return PRICE_SCOPE.get()
+
+
+def scoped(name):
+    """A key of the Panorama's state, its own for each channel page."""
+    channel = current_channel()
+    return name if channel is None else f"{name}@{channel}"
+
+
+@st.cache_data(show_spinner=False)
+def read_channel_frame(database_version, channel):
+    """The valid prices of one channel in its own two latest weeks (latest_by_source)."""
+    frame = read_latest_by_source(database_version)
+    if frame is None:
+        return pd.DataFrame(columns=["week_start", "channel", "region", "price"])
+    keep = (
+        (frame["channel"] == channel) & frame["flag"].isna() & frame["price"].notna() & frame["normalized_unit"].notna()
+    )
+    return frame[keep].copy()
+
+
+@st.cache_data(show_spinner=False)
+def read_channel_national_prices(database_version, channel):
+    """The k6_national_weekly_price rows of one channel: the national price is the plain average of its regions, and
+    the change against the week before uses only the regions with a price in both weeks (D-144), as the query does."""
+    part = read_channel_frame(database_version, channel)
+    national = part.groupby(NATIONAL_KEY, as_index=False)["price"].mean().rename(columns={"price": "national_price"})
+    keys = NATIONAL_KEY[1:] + ["region_id"]
+    same = []
+    weeks = sorted(part["week_start"].unique())
+    for before, now in zip(weeks, weeks[1:]):
+        if (pd.Timestamp(now) - pd.Timestamp(before)).days != 7:
+            continue
+        matched = part[part["week_start"] == now].merge(
+            part[part["week_start"] == before][keys + ["price", "observation_count"]], on=keys, suffixes=("", "_before")
+        )
+        grouped = matched.groupby(NATIONAL_KEY[1:], as_index=False).agg(
+            same_region_price=("price", "mean"),
+            same_region_previous_price=("price_before", "mean"),
+            same_region_quotes=("observation_count", "sum"),
+            same_region_previous_quotes=("observation_count_before", "sum"),
+        )
+        same.append(grouped.assign(week_start=now))
+    columns = ["same_region_price", "same_region_previous_price", "same_region_quotes", "same_region_previous_quotes"]
+    if same:
+        national = national.merge(pd.concat(same), on=NATIONAL_KEY, how="left")
+    else:
+        national = national.assign(**{column: float("nan") for column in columns})
+    return add_display_columns(national)
+
+
+@st.cache_data(show_spinner=False)
+def read_channel_week_snapshot(database_version, channel, week):
+    """The k3_regional_index rows of one channel and week."""
+    part = read_channel_frame(database_version, channel)
+    part = part[part["week_start"] == week]
+    national = part.groupby(NATIONAL_KEY)["price"].transform("mean")
+    snapshot = part.assign(national_price=national, regional_index=part["price"] / national)
+    columns = NATIONAL_KEY[:6] + [
+        "region",
+        "normalized_unit",
+        "price",
+        "national_price",
+        "regional_index",
+        "observation_count",
+    ]
+    return add_display_columns(snapshot[columns].copy())
 
 
 def describe_loaded_years():
@@ -2450,8 +2531,15 @@ def describe_loaded_years():
     return f"años {week_range['first_year']} a {week_range['last_year']}"
 
 
-@st.cache_data
 def read_cached_price_alerts(database_version):
+    """K6 alerts of every week; on a channel page, only that channel's (D-405)."""
+    found = read_cached_price_alerts_all(database_version)
+    channel = current_channel()
+    return found if channel is None else found[found["channel"] == channel]
+
+
+@st.cache_data
+def read_cached_price_alerts_all(database_version):
     """K6 alerts of every week, computed once per database."""
     prices = queries.run_query("k6_national_weekly_price")
     return add_display_columns(alerts.find_price_alerts(prices))
@@ -2641,17 +2729,33 @@ def show_info_cards(cards_html, is_compact=False):
 
 
 # region Overview page
-@st.cache_data
 def read_cached_national_prices(database_version):
+    """Every national price series, every week (K6); on a channel page, that channel's own weeks (D-405)."""
+    channel = current_channel()
+    if channel is not None:
+        return read_channel_national_prices(database_version, channel)
+    return read_cached_national_prices_all(database_version)
+
+
+@st.cache_data
+def read_cached_national_prices_all(database_version):
     """Every national price series, every week (K6): read once, filtered in memory, so a
     click on a new product answers without a query (D-069)."""
     return add_display_columns(queries.run_query("k6_national_weekly_price"))
 
 
-@st.cache_data
 def read_cached_all_variations(database_version):
+    """Weekly change of every national price series (K6 base); on a channel page, that channel's (D-405)."""
+    return read_cached_all_variations_in(database_version, current_channel())
+
+
+@st.cache_data
+def read_cached_all_variations_in(database_version, channel):
     """Weekly change of every national price series, every week (K6 base)."""
-    prices = alerts.add_weekly_variation(queries.run_query("k6_national_weekly_price"))
+    if channel is None:
+        prices = alerts.add_weekly_variation(queries.run_query("k6_national_weekly_price"))
+    else:
+        prices = alerts.add_weekly_variation(read_channel_national_prices(database_version, channel))
     return add_display_columns(prices[prices["variation"].notna()].copy())
 
 
@@ -3478,8 +3582,16 @@ def show_page_bar(view, title, description, chips=(), side=None, terms=()):
 # endregion
 
 
-@st.cache_data
 def read_cached_week_snapshot(database_version, week):
+    """The regional index (K3) of one week; on a channel page, that channel's (D-405)."""
+    channel = current_channel()
+    if channel is not None:
+        return read_channel_week_snapshot(database_version, channel, week)
+    return read_cached_week_snapshot_all(database_version, week)
+
+
+@st.cache_data
+def read_cached_week_snapshot_all(database_version, week):
     """The regional index (K3) of one week of valid observations."""
     sql = "SELECT * FROM (" + queries.read_query_body("k3_regional_index") + ") WHERE week_start = ?"
     return add_display_columns(queries.run_sql(sql, parameters=(week,)))
@@ -3493,11 +3605,16 @@ def read_cached_market_snapshot(database_version):
 # region Report filters and cross filtering (D-069)
 def read_filter(name):
     """The value of a report filter, kept across views and windows."""
-    return st.session_state.get(f"dashboard_{name}", ALL_VALUES)
+    return st.session_state.get(scoped(f"dashboard_{name}"), ALL_VALUES)
+
+
+def read_cached_filter_options(database_version):
+    """D-405: keyed on the scope, so a channel page never reads the Panorama's cache."""
+    return read_cached_filter_options_in(database_version, current_channel())
 
 
 @st.cache_data
-def read_cached_filter_options(database_version):
+def read_cached_filter_options_in(database_version, channel):
     """Categories, regions and the last weeks with prices, for the report's bar."""
     variations = read_cached_all_variations(database_version)
     weeks = sorted(variations["week_start"].unique(), reverse=True)[:DASHBOARD_WEEKS]
@@ -3584,13 +3701,13 @@ def apply_home_link_click():
         return
     parameters = parse_qs(clicked.lstrip("?"))
     step = (parameters.get(HOME_STEP_PARAMETER) or [None])[0]
-    if step == "region" and not st.session_state.get(HOME_REGION_DONE):
-        st.session_state[HOME_REGION_DONE] = True
-        st.session_state[HOME_FLASH] = "families"  # the panel that just opened lights up for a moment
-    elif step == "family" and not st.session_state.get(HOME_FAMILY_DONE):
-        st.session_state[HOME_REGION_DONE] = True
-        st.session_state[HOME_FAMILY_DONE] = True
-        st.session_state[HOME_FLASH] = "products"
+    if step == "region" and not st.session_state.get(scoped(HOME_REGION_DONE)):
+        st.session_state[scoped(HOME_REGION_DONE)] = True
+        st.session_state[scoped(HOME_FLASH)] = "families"  # the panel that just opened lights up for a moment
+    elif step == "family" and not st.session_state.get(scoped(HOME_FAMILY_DONE)):
+        st.session_state[scoped(HOME_REGION_DONE)] = True
+        st.session_state[scoped(HOME_FAMILY_DONE)] = True
+        st.session_state[scoped(HOME_FLASH)] = "products"
     for name in HOME_LINK_PARAMETERS:
         if parameters.get(name):
             st.query_params[name] = parameters[name][0]
@@ -3603,13 +3720,13 @@ def apply_home_focus(options):
     token = st.query_params.get("_home_key")
     marker = repr({k: v for k, v in st.query_params.to_dict().items() if k.startswith('_home_')})
     requested = any(st.query_params.get('_home_' + name) for name in ('group', 'region', 'week'))
-    if (not token and not requested) or marker == st.session_state.get('mock_focus_seen'):
+    if (not token and not requested) or marker == st.session_state.get(scoped('mock_focus_seen')):
         return
-    st.session_state['mock_focus_seen'] = marker
+    st.session_state[scoped('mock_focus_seen')] = marker
     for name in ('group', 'region', 'week'):
         value = st.query_params.get('_home_' + name)
         if value in options[name] or value == ALL_VALUES:
-            st.session_state['dashboard_' + name] = value
+            st.session_state[scoped('dashboard_' + name)] = value
     count = st.query_params.get('_home_count', '')
     if count.isdigit() and TOP_N_RANGE[0] <= int(count) <= 10_000:
         st.session_state['dashboard_top_n'] = int(count)
@@ -4074,8 +4191,13 @@ def matches_product_search(row, query):
     return all(any(word.startswith(term) for word in words) for term in normalize_search(query).split())
 
 
-@st.cache_data
 def read_cached_region_directions(database_version, week):
+    """D-405: keyed on the scope, so a channel page never reads the Panorama's cache."""
+    return read_cached_region_directions_in(database_version, week, current_channel())
+
+
+@st.cache_data
+def read_cached_region_directions_in(database_version, week, channel):
     """{(product key, channel): (regions up, regions down, regions with their change)} between two consecutive weeks."""
     week_date = pd.Timestamp(week)
     join = queries.KEY_COLUMNS + ['channel']
@@ -4102,8 +4224,13 @@ def read_cached_region_directions(database_version, week):
     return {key: (int(up.get(key, 0)), int(down.get(key, 0)), names.get(key, [])) for key in keys}
 
 
-@st.cache_data
 def read_cached_region_calculation(database_version, week):
+    """D-405: keyed on the scope, so a channel page never reads the Panorama's cache."""
+    return read_cached_region_calculation_in(database_version, week, current_channel())
+
+
+@st.cache_data
+def read_cached_region_calculation_in(database_version, week, channel):
     """What each row of the products table was calculated from (D-327): {(product key, channel): {used, out}} and the
     number of regions the source publishes. `used` lists, per region with a price in both weeks, (region, price of the
     week before, price of the week); `out` lists the regions left out, each with the reason: no price this week
@@ -4180,8 +4307,13 @@ def build_steps_css(palette, region_open, family_open, flash, searched=False):
     return "<style>" + "".join(rules) + "</style>" if rules else ""
 
 
-@st.cache_data(show_spinner=False)
 def read_home_trends(database_version, week):
+    """D-405: keyed on the scope, so a channel page never reads the Panorama's cache."""
+    return read_home_trends_in(database_version, week, current_channel())
+
+
+@st.cache_data(show_spinner=False)
+def read_home_trends_in(database_version, week, channel):
     """The last 8 weeks of the median weekly change (national, in %) by family and for the whole basket, for the little
     lines of the Panorama (D-352). Comparable series only, like the median beside them; calculated from the same
     weekly variations as the weeks table."""
@@ -4225,9 +4357,9 @@ def show_market_overview(mode, prefix):
     apply_home_link_click()
     apply_home_focus(options)
     if read_filter('week') not in options['week']:
-        st.session_state['dashboard_week'] = options['week'][0]
+        st.session_state[scoped('dashboard_week')] = options['week'][0]
     if read_filter('region') not in options['region']:
-        st.session_state['dashboard_region'] = ALL_VALUES
+        st.session_state[scoped('dashboard_region')] = ALL_VALUES
     week, region = read_filter('week'), read_filter('region')
     st.session_state.pop('home_product_selection', None)
     latest = read_latest_run()
@@ -4246,17 +4378,17 @@ def show_market_overview(mode, prefix):
     # D-352, D-372: in every view (user, professional and author) the panels 2 and 3 wait for the step before them; a
     # link that names a region or a family counts as having chosen it.
     if st.query_params.get('_home_region'):
-        st.session_state[HOME_REGION_DONE] = True
-    if st.session_state.get(HOME_REGION_DONE) and st.query_params.get('familia') in families:
-        st.session_state[HOME_FAMILY_DONE] = True
-    region_open = bool(st.session_state.get(HOME_REGION_DONE))
-    family_open = bool(st.session_state.get(HOME_FAMILY_DONE))
+        st.session_state[scoped(HOME_REGION_DONE)] = True
+    if st.session_state.get(scoped(HOME_REGION_DONE)) and st.query_params.get('familia') in families:
+        st.session_state[scoped(HOME_FAMILY_DONE)] = True
+    region_open = bool(st.session_state.get(scoped(HOME_REGION_DONE)))
+    family_open = bool(st.session_state.get(scoped(HOME_FAMILY_DONE)))
     if not family_open:
         family = None  # no family is chosen for the reader
     products_family = family or (families[0] if families else None)  # what the locked table shows, dimmed
 
     def overview_link(chosen_region, chosen_family, step=None):
-        address = build_page_address(PAGE_HOME)
+        address = scope_address()  # D-405: a channel page links to itself
         parameters = {'_home_region': chosen_region or ALL_VALUES, '_home_week': week}
         if chosen_family:
             parameters['familia'] = chosen_family
@@ -4264,12 +4396,14 @@ def show_market_overview(mode, prefix):
             parameters[HOME_STEP_PARAMETER] = step
         return address + ('&' if '?' in address else '?') + urlencode(parameters)
 
-    flash = st.session_state.pop(HOME_FLASH, None)
+    flash = st.session_state.pop(scoped(HOME_FLASH), None)
     palette = charts.get_palette(mode)
     if st.session_state.get('home_products_search'):
-        st.session_state[HOME_SEARCHED] = True  # D-372: once someone typed, the search stops glowing for the visit
+        st.session_state[scoped(HOME_SEARCHED)] = (
+            True  # D-372: once someone typed, the search stops glowing for the visit
+        )
     st.markdown(
-        build_steps_css(palette, region_open, family_open, flash, st.session_state.get(HOME_SEARCHED)),
+        build_steps_css(palette, region_open, family_open, flash, st.session_state.get(scoped(HOME_SEARCHED))),
         unsafe_allow_html=True,
     )
 
@@ -4278,7 +4412,7 @@ def show_market_overview(mode, prefix):
         show_return_button()
         st.markdown(
             home_mockup.dashboard_bar(
-                build_view_path(WINDOW_OF_VIEW[PAGE_HOME], PAGE_HOME),
+                scope_path(),
                 describe_week_span(week),
                 model['family_rows'],
                 regional_rows,
@@ -4298,15 +4432,32 @@ def show_market_overview(mode, prefix):
     # D-398: the header only places the reader. The week's price alerts, the table of the last weeks and the note of a
     # late source are content, in one row under the bar; «Precios e inflación» and «Último dato por canal» are in the menu.
     notice = describe_late_sources(latest['message'] if latest['status'] == etl.STATUS_LOADED else '')
+    channel = current_channel()
+    if channel is not None:  # D-405: a channel says only its own delay
+        card = next(
+            (
+                item
+                for item in channel_latest.channel_cards(read_latest_by_source(get_database_version()))
+                if item['channel'] == channel
+            ),
+            None,
+        )
+        notice = (
+            tr('ODEPA aún no publica la semana {}').format(i18n.tr_week(card['late'])) if card and card['late'] else ''
+        )
     with st.container(key='home_info', horizontal=True, vertical_alignment='center'):
-        home_view = st.segmented_control(
-            tr('Vista del Panorama'),
-            HOME_VIEWS,
-            default=HOME_VIEWS[0],
-            format_func=tr,
-            key=HOME_VIEW_KEY,
-            label_visibility='collapsed',
-            width='content',
+        home_view = (
+            st.segmented_control(
+                tr('Vista del Panorama'),
+                HOME_VIEWS,
+                default=HOME_VIEWS[0],
+                format_func=tr,
+                key=HOME_VIEW_KEY,
+                label_visibility='collapsed',
+                width='content',
+            )
+            if channel is None
+            else HOME_VIEWS[0]
         )
         show_alert_notice(week)
         if notice:
@@ -4495,6 +4646,20 @@ def show_products_dialog(
         + '</div>',
         unsafe_allow_html=True,
     )
+
+
+def scope_address():
+    """The address of the page that draws the Panorama: the Panorama itself, or a channel page (D-405)."""
+    channel = current_channel()
+    return build_page_address(PAGE_HOME) if channel is None else channel_address(channel)
+
+
+def scope_path():
+    """The path of the bar: the Panorama's, or «… › Último dato por canal › Feria libre» (D-405)."""
+    channel = current_channel()
+    if channel is None:
+        return build_view_path(WINDOW_OF_VIEW[PAGE_HOME], PAGE_HOME)
+    return f"{build_view_path(WINDOW_OF_VIEW[PAGE_CHANNELS], PAGE_CHANNELS)} › {data_terms.term(channel)}"
 
 
 def show_home_page(mode):
@@ -5373,64 +5538,35 @@ def channel_address(channel):
 def show_channels_page(mode):
     """«Último dato por canal» (D-365, D-404): one card per channel of the data, each with its own latest week; a card
     opens that channel's page."""
+    palette = charts.get_palette(mode)
+    frame = read_latest_by_source(get_database_version())
+    cards = channel_latest.channel_cards(frame) if frame is not None else []
+    chosen = st.query_params.get(CHANNEL_PARAMETER)
+    if chosen in {card["channel"] for card in cards}:
+        show_channel_detail(mode, frame, next(card for card in cards if card["channel"] == chosen))
+        return
     show_page_bar(
         PAGE_CHANNELS,
         PAGE_CHANNELS,
         "La última semana que publicó cada canal, aunque otra fuente todavía no la publique: un clic abre el canal.",
     )
-    palette = charts.get_palette(mode)
     st.markdown(home_mockup.style(mode, palette), unsafe_allow_html=True)
-    frame = read_latest_by_source(get_database_version())
-    if frame is None or frame.empty:
+    if not cards:
         st.info(tr("Esta página se llena con la próxima carga semanal."))
-        return
-    cards = channel_latest.channel_cards(frame)
-    chosen = st.query_params.get(CHANNEL_PARAMETER)
-    if chosen in {card["channel"] for card in cards}:
-        show_channel_detail(mode, frame, next(card for card in cards if card["channel"] == chosen))
         return
     st.markdown(build_channel_cards_css(palette), unsafe_allow_html=True)
     st.markdown(build_channel_cards_html(cards, channel_address), unsafe_allow_html=True)
 
 
 def show_channel_detail(mode, frame, card):
-    """One channel with its own latest week: its change by family and its products."""
-    frame = frame[frame["channel"] == card["channel"]]
-    for column, (source, name) in zip(st.columns(1), [(card["source"], card["channel"])]):
-        with column, st.container(key=f"latest_{source}"):
-            week, before, rows = channel_latest.build_rows(frame, source)
-            if week is None:
-                st.caption(tr("Sin datos de esta fuente."))
-                continue
-            # D-374: each week as its range, «12–18 oct», in the reader's language.
-            st.markdown(f"#### {tr('{} · semana {}').format(data_terms.term(name), i18n.tr_week(week))}")
-            if before:
-                st.caption(tr("Comparada con la semana {}.").format(i18n.tr_week(before)))
-            late = channel_latest.late_week(frame, source)
-            if late:
-                st.caption(tr("ODEPA aún no publica la semana {}").format(i18n.tr_week(late)))
-            st.markdown(
-                '<div class="greenocean-mockup">'
-                + home_mockup.family_movement(rows, lambda family: "#", None, "todo Chile")  # translated whole, D-380
-                + "</div>",
-                unsafe_allow_html=True,
-            )
-            query = st.text_input(
-                tr("Buscar"),
-                key=f"latest_search_{source}",
-                icon=":material/search:",
-                placeholder=tr("Producto, ej.: lechuga"),
-                label_visibility="collapsed",
-            )
-            shown = [row for row in rows if channel_latest.matches(row, query)] if query.strip() else rows
-            st.markdown(
-                '<div class="greenocean-mockup">'
-                + home_mockup.products_table(
-                    shown, weeks.week_range(week), weeks.week_range(before or week), query.strip()
-                )
-                + "</div>",
-                unsafe_allow_html=True,
-            )
+    """D-405: one channel, drawn by the Panorama itself (map, families and products, in its three steps), with that
+    channel's prices and its own latest week."""
+    token = PRICE_SCOPE.set(card["channel"])
+    try:
+        with st.container(key="market_dashboard"):
+            show_market_overview(mode, "channel")
+    finally:
+        PRICE_SCOPE.reset(token)
 
 
 def show_insights_page(mode):

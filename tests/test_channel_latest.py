@@ -4,6 +4,8 @@ from pathlib import Path
 
 import duckdb
 import pandas as pd
+import re
+
 import pytest
 from streamlit.testing.v1 import AppTest
 
@@ -86,8 +88,17 @@ def test_d404_the_page_draws_one_whole_card_per_channel_and_a_card_opens_its_cha
     script = (
         f"import sys\nsys.path.insert(0, {str(ROOT)!r})\nimport pandas as pd\nfrom bi import dashboard\n"
         "from tests.test_channel_latest import sample\n"
+        # AppTest runs in this process: the sample is put back at the end and the channel caches are emptied,
+        # or the next tests read the sample instead of the database.
+        "SAVED = dashboard.read_latest_by_source\n"
         "dashboard.read_latest_by_source = lambda version: sample()\n"
-        "dashboard.render_page(dashboard.PAGE_CHANNELS)\n"
+        "try:\n"
+        "    dashboard.render_page(dashboard.PAGE_CHANNELS)\n"
+        "finally:\n"
+        "    dashboard.read_latest_by_source = SAVED\n"
+        "    for cached in (dashboard.read_channel_frame, dashboard.read_channel_national_prices,\n"
+        "                   dashboard.read_channel_week_snapshot, dashboard.read_cached_all_variations_in):\n"
+        "        cached.clear()\n"
     )
     page = AppTest.from_string(script, default_timeout=90).run()
     assert not page.exception
@@ -135,5 +146,48 @@ def test_d380_the_channel_page_hands_its_scope_in_spanish_so_the_sentences_trans
     source = inspect.getsource(dashboard.show_channels_page)
     # A scope translated before drawing («all of Chile») leaves «…mediana de 51 precios comparables · all of Chile»
     # half in each language; the page translates whole sentences, as the Panorama's does.
-    source += inspect.getsource(dashboard.show_channel_detail)
-    assert 'tr("todo Chile")' not in source and '"todo Chile")' in source
+    assert 'tr("todo Chile")' not in source
+    # D-405: a channel page is drawn by the Panorama itself, which hands its scope in Spanish and translates whole.
+    assert "show_market_overview(mode" in inspect.getsource(dashboard.show_channel_detail)
+
+
+needs_database = pytest.mark.skipif(not dashboard.queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
+
+
+@needs_database
+def test_d405_a_channel_page_is_the_panorama_with_that_channel_and_the_panorama_keeps_its_own():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
+    app.session_state["visitor_profile"] = "profesional"
+    app.query_params.update({"vista": dashboard.PAGE_CHANNELS, "canal": "Feria libre"})
+    app.run()
+    assert not app.exception
+    page = " ".join(block.value for block in app.markdown)
+    assert "Último dato por canal › </span><b>Feria libre</b>" in page  # the path names the channel
+    assert 'class="mock-products-table"' in page and "mock-movement" in page  # the Panorama's own panels
+    channels = set(re.findall(r'</td><td>([^<]+)</td><td class="num">', page))
+    assert channels == {"Feria libre"}, channels  # only that channel's products
+    # the Panorama, opened right after in the same visit, keeps all its channels and its own state
+    app.query_params.clear()
+    app.query_params.update({"vista": dashboard.HOME_PAGE})
+    app.run()
+    assert not app.exception
+    panorama = " ".join(block.value for block in app.markdown)
+    assert "Último dato por canal ›" not in panorama
+
+
+@needs_database
+def test_d405_in_the_common_week_a_channel_has_the_same_national_prices_as_the_panorama():
+    from bi import queries
+
+    version = dashboard.get_database_version()
+    channel = "Supermercado"
+    own = dashboard.read_channel_national_prices(version, channel)
+    week = own["week_start"].max()
+    mine = own[own["week_start"] == week].set_index(dashboard.NATIONAL_KEY[1:])["national_price"]
+    panorama = queries.run_query("k6_national_weekly_price")
+    panorama = panorama[(panorama["week_start"] == f"{week:%Y-%m-%d}") & (panorama["channel"] == channel)]
+    if panorama.empty:
+        pytest.skip("the channel's own week is not the common week yet")
+    theirs = panorama.set_index(dashboard.NATIONAL_KEY[1:])["national_price"]
+    assert len(mine) == len(theirs)
+    assert mine.sort_index().values == pytest.approx(theirs.sort_index().values)
