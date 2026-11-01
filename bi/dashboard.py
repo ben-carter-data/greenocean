@@ -39,6 +39,7 @@ from bi import (
     alerts,
     compact_table,
     channel_latest,
+    data_terms,
     git_workflow,
     github_actions,
     run_monitor,
@@ -5304,13 +5305,78 @@ def build_analysis_css(palette):
     </style>"""
 
 
+CHANNEL_PARAMETER = "canal"  # D-404: the channel a card opens
+
+
+def build_channel_cards_css(palette):
+    ink, text, muted, card, border, accent = (
+        palette["strong_text"],
+        palette["text"],
+        palette["reference"],
+        palette["card"],
+        palette["card_border"],
+        palette["accent"],
+    )
+    return f"""<style>
+.ch-grid {{ display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:14px; }}
+@media (max-width:1180px) {{ .ch-grid {{ grid-template-columns:repeat(2, minmax(0, 1fr)); }} }}
+a.ch-card {{ display:flex; flex-direction:column; gap:6px; padding:14px 16px; border-radius:14px; border:1px solid {border};
+  background:{card}; color:{text} !important; text-decoration:none !important; transition:border-color .15s ease, box-shadow .15s ease; }}
+a.ch-card:hover, a.ch-card:focus-visible {{ border-color:{accent}; box-shadow:0 10px 24px -16px {accent}; outline:none; }}
+.ch-head {{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }}
+.ch-name {{ font-size:15.5px; font-weight:600; color:{ink}; }}
+.ch-source {{ font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:{muted}; }}
+.ch-week {{ font-size:13px; color:{muted}; }}
+.ch-change {{ font-size:24px; font-weight:600; color:{ink}; font-variant-numeric:tabular-nums; line-height:1.2; }}
+.ch-change.rise {{ color:{palette["rise"]}; }} .ch-change.fall {{ color:{palette["fall"]}; }}
+.ch-change small {{ display:block; font-size:11.5px; font-weight:400; color:{muted}; }}
+.ch-prices {{ font-size:13px; }}
+.ch-state {{ align-self:flex-start; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600; }}
+.ch-state.ok {{ background:color-mix(in srgb, #2fa36b 18%, transparent); color:#2fa36b; }}
+.ch-state.late {{ background:color-mix(in srgb, #d99a1e 20%, transparent); color:#d99a1e; }}
+.ch-late {{ font-size:12px; color:{muted}; }}
+</style>"""
+
+
+def build_channel_cards_html(cards, address_of):
+    """D-404: the grid of channels; the whole card is the link to its page."""
+    items = []
+    for card in cards:
+        change = card["median"]
+        tone = "" if change is None else "rise" if change > 0.0005 else "fall" if change < -0.0005 else ""
+        figure = "—" if change is None else ("0,0 %" if not tone else home_mockup.percent(change * 100, True))
+        state = (
+            f'<span class="ch-state late">{html.escape(tr("Atrasado"))}</span>'
+            f'<span class="ch-late">{html.escape(tr("ODEPA aún no publica la semana {}").format(i18n.tr_week(card["late"])))}</span>'
+            if card["late"]
+            else f'<span class="ch-state ok">{html.escape(tr("Al día"))}</span>'
+        )
+        source = dict(channel_latest.SOURCES).get(card["source"], card["source"])
+        items.append(
+            f'<a class="ch-card" href="{html.escape(address_of(card["channel"]), quote=True)}" target="_self">'
+            f'<span class="ch-head"><span class="ch-name">{html.escape(data_terms.term(card["channel"]))}</span>'
+            f'<span class="ch-source">{html.escape(tr(source))}</span></span>'
+            f'<span class="ch-week">{html.escape(tr("Semana {}").format(i18n.tr_week(card["week"])))}</span>'
+            f'<span class="ch-change {tone}">{html.escape(figure)}'
+            f'<small>{html.escape(tr("variación mediana frente a la semana anterior"))}</small></span>'
+            f'<span class="ch-prices">{html.escape(tr("{} precios").format(charts.format_thousands(card["prices"])))}</span>'
+            f"{state}</a>"
+        )
+    return f'<div class="ch-grid">{"".join(items)}</div>'
+
+
+def channel_address(channel):
+    address = build_page_address(PAGE_CHANNELS)
+    return address + ("&" if "?" in address else "?") + urlencode({CHANNEL_PARAMETER: channel})
+
+
 def show_channels_page(mode):
-    """«Último dato por canal» (D-365): the wholesale and the consumer source, each with its own latest week, the change
-    by family against its previous week and its products, drawn with the overview's own pieces."""
+    """«Último dato por canal» (D-365, D-404): one card per channel of the data, each with its own latest week; a card
+    opens that channel's page."""
     show_page_bar(
         PAGE_CHANNELS,
         PAGE_CHANNELS,
-        "La última semana que publicó cada fuente, aunque la otra todavía no la publique: su variación por familia y sus productos.",
+        "La última semana que publicó cada canal, aunque otra fuente todavía no la publique: un clic abre el canal.",
     )
     palette = charts.get_palette(mode)
     st.markdown(home_mockup.style(mode, palette), unsafe_allow_html=True)
@@ -5318,14 +5384,26 @@ def show_channels_page(mode):
     if frame is None or frame.empty:
         st.info(tr("Esta página se llena con la próxima carga semanal."))
         return
-    for column, (source, name) in zip(st.columns(2, gap="medium"), channel_latest.SOURCES):
+    cards = channel_latest.channel_cards(frame)
+    chosen = st.query_params.get(CHANNEL_PARAMETER)
+    if chosen in {card["channel"] for card in cards}:
+        show_channel_detail(mode, frame, next(card for card in cards if card["channel"] == chosen))
+        return
+    st.markdown(build_channel_cards_css(palette), unsafe_allow_html=True)
+    st.markdown(build_channel_cards_html(cards, channel_address), unsafe_allow_html=True)
+
+
+def show_channel_detail(mode, frame, card):
+    """One channel with its own latest week: its change by family and its products."""
+    frame = frame[frame["channel"] == card["channel"]]
+    for column, (source, name) in zip(st.columns(1), [(card["source"], card["channel"])]):
         with column, st.container(key=f"latest_{source}"):
             week, before, rows = channel_latest.build_rows(frame, source)
             if week is None:
                 st.caption(tr("Sin datos de esta fuente."))
                 continue
             # D-374: each week as its range, «12–18 oct», in the reader's language.
-            st.markdown(f"#### {tr('{} · semana {}').format(tr(name), i18n.tr_week(week))}")
+            st.markdown(f"#### {tr('{} · semana {}').format(data_terms.term(name), i18n.tr_week(week))}")
             if before:
                 st.caption(tr("Comparada con la semana {}.").format(i18n.tr_week(before)))
             late = channel_latest.late_week(frame, source)

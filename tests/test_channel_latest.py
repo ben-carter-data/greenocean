@@ -75,7 +75,7 @@ def test_d365_the_change_of_each_product_is_recomputed_by_sql_from_the_table():
         assert all(row["_regions"][:2] == (2, 0) for row in rows)  # both regions rose 10 %
 
 
-def test_d365_the_page_draws_both_blocks_for_every_view_and_the_overview_links_to_it(monkeypatch):
+def test_d404_the_page_draws_one_whole_card_per_channel_and_a_card_opens_its_channel(monkeypatch):
     for profile in ("consulta", "profesional"):
         app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
         app.session_state["visitor_profile"] = profile
@@ -91,11 +91,27 @@ def test_d365_the_page_draws_both_blocks_for_every_view_and_the_overview_links_t
     )
     page = AppTest.from_string(script, default_timeout=90).run()
     assert not page.exception
-    text = " ".join(block.value for block in page.markdown) + " ".join(caption.value for caption in page.caption)
-    assert "Mayorista · semana 12–18 oct" in text and "Consumidor · semana 19–25 oct" in text  # D-374
-    assert text.count("ODEPA aún no publica la semana 19–25 oct") == 1  # only the wholesale block is behind
-    assert text.count('class="mock-products-table"') == 2 and "Toda la canasta" not in text
-    assert [box.key for box in page.text_input] == ["latest_search_wholesale", "latest_search_consumer"]
+    text = " ".join(block.value for block in page.markdown)
+    assert text.count('<a class="ch-card"') == 2  # the whole card is the link, one per channel
+    assert "canal=Mercado" in text and "canal=Feria+libre" in text
+    assert "Semana 12–18 oct" in text and "Semana 19–25 oct" in text  # D-374: each channel's own week
+    assert text.count('class="ch-state late"') == 1 and "ODEPA aún no publica la semana 19–25 oct" in text
+    assert text.count('class="ch-state ok"') == 1
+    # a card opens its channel: its own latest week and its products
+    page.query_params["canal"] = "Feria libre"
+    page.run()
+    assert not page.exception
+    detail = " ".join(block.value for block in page.markdown)
+    assert 'class="mock-products-table"' in detail and '<a class="ch-card"' not in detail
+
+
+def test_d404_each_channel_card_says_its_week_prices_change_and_state():
+    cards = {card["channel"]: card for card in channel_latest.channel_cards(sample())}
+    assert [card["source"] for card in channel_latest.channel_cards(sample())] == ["wholesale", "consumer"]
+    feria, mercado = cards["Feria libre"], cards["Mercado"]
+    assert (feria["week"], feria["before"], feria["prices"], feria["late"]) == ("2026-10-19", "2026-10-12", 2, None)
+    assert mercado["week"] == "2026-10-12" and mercado["late"] == "2026-10-19"  # behind the newest week published
+    assert feria["median"] == pytest.approx(0.1) and feria["families"] == ["Frutas"]
 
 
 def test_d365_the_table_is_served_and_documented():
@@ -119,4 +135,5 @@ def test_d380_the_channel_page_hands_its_scope_in_spanish_so_the_sentences_trans
     source = inspect.getsource(dashboard.show_channels_page)
     # A scope translated before drawing («all of Chile») leaves «…mediana de 51 precios comparables · all of Chile»
     # half in each language; the page translates whole sentences, as the Panorama's does.
+    source += inspect.getsource(dashboard.show_channel_detail)
     assert 'tr("todo Chile")' not in source and '"todo Chile")' in source

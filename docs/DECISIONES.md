@@ -3005,3 +3005,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor (4B):** que familias, canales, calidades y unidades, que vienen en español desde ODEPA, se lean en el idioma elegido, con una tabla de traducción.
 - **Decisión:** `bi/data_terms.py` guarda la tabla: 7 familias (y los nombres cortos del Panorama), 8 canales, 61 calidades (las «Calibre N» por regla) y 3 unidades. El panel la usa al dibujar el Panorama y las páginas de canal; la base no cambia, y el estudio SQL y las descargas siguen mostrando lo guardado. Los nombres de productos no se traducen.
 - **Pruebas:** `tests/test_data_terms.py` (cada familia, canal, calidad y unidad de la base tiene su inglés; solo cambia en una visita en inglés; un producto conserva su nombre).
+
+## D-404 · «Último dato por canal» muestra una tarjeta por canal
+
+- **Pedido del autor (4B):** que la página principal muestre todos los canales de los datos, cada uno en una tarjeta clicable entera.
+- **Decisión:** una cuadrícula con una tarjeta por canal: primero el mayorista y después los canales al consumidor, de más a menos precios. Cada tarjeta muestra el nombre del canal y su fuente, su última semana como rango, la cantidad de precios de esa semana, la variación mediana de sus precios comparables frente a la semana anterior (el mismo cálculo del «Cambio típico» del Panorama) y su estado: «Al día», o «Atrasado» con el aviso «ODEPA aún no publica la semana X». Toda la tarjeta es el enlace a la página de su canal.
+- **Pruebas:** `tests/test_channel_latest.py::test_d404_…` (una tarjeta entera por canal, cada una con su semana, sus precios, su variación y su estado; un clic abre el canal).

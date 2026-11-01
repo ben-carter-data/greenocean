@@ -77,6 +77,48 @@ def build_rows(frame: pd.DataFrame, source: str) -> tuple[str | None, str | None
     return now, before, rows
 
 
+def channel_cards(frame: pd.DataFrame) -> list[dict[str, Any]]:
+    """D-404: one card per channel of the data, the wholesale first and then the consumer channels by number of prices.
+    Each says its source, its own latest week, how many prices it has that week, the median change of its comparable
+    prices against its previous week (the overview's «Cambio típico»), whether it is behind the newest week any source
+    published, and which families it covers that week."""
+    if frame is None or frame.empty:
+        return []
+    newest = max(frame["week_start"].unique())
+    cards = []
+    for (channel, source), part in frame.groupby(["channel", "source"]):
+        week, before, rows = build_rows(part, source)
+        if week is None:
+            continue
+        valid = part[(part["week_start"] == week) & part["flag"].isna() & part["price"].notna()]
+        changes = sorted(row["variation"] for row in rows)
+        median = (
+            (
+                changes[len(changes) // 2]
+                if len(changes) % 2
+                else (changes[len(changes) // 2 - 1] + changes[len(changes) // 2]) / 2
+            )
+            if changes
+            else None
+        )
+        late = str(date.fromisoformat(week) + timedelta(days=7)) if week < newest else None
+        cards.append(
+            {
+                "channel": channel,
+                "source": source,
+                "week": week,
+                "before": before,
+                "prices": int(len(valid)),
+                "median": median,
+                "late": late,
+                "families": sorted(valid["product_group"].unique()),
+            }
+        )
+    order = {name: index for index, (name, _) in enumerate(SOURCES)}
+    cards.sort(key=lambda card: (order.get(card["source"], 9), -card["prices"], card["channel"]))
+    return cards
+
+
 def matches(row: dict[str, Any], query: str) -> bool:
     """The search of the table: the product, its variety or its channel contain the words, case and accents aside."""
     text = " ".join(str(row.get(field) or "") for field in ("product", "variety", "channel"))
