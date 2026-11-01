@@ -7,6 +7,7 @@ permission to run workflows, kept in the dashboard secrets, never in the code.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any, cast
 
 from datetime import datetime, timedelta, timezone
@@ -341,7 +342,7 @@ MAX_WAIT_SECONDS = 15 * 60
 class AttemptGate:
     """The failed tries of the control code, shared by every visit of the server process."""
 
-    def __init__(self, clock=time.monotonic):
+    def __init__(self, clock: Callable[[], float] = time.monotonic) -> None:
         self.clock = clock
         self.lock = threading.Lock()
         self.reset()
