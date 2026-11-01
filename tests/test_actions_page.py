@@ -137,19 +137,19 @@ def test_d339_the_token_is_never_drawn_not_even_when_the_log_prints_it(monkeypat
         assert secret not in page, secret
     assert "Bearer ***" in page and SHAPED not in page  # the log's line is there, with the token covered
     assert tokens_sent(network) == {f"Bearer {READ_TOKEN}"}
-    # The usual token is the fallback when the read-only one is missing; the same rule applies to it.
+    # D-397: without the read-only token, the usual one (which can start and cancel) is never sent.
     st.cache_data.clear()
     network.calls.clear()
-    fallback = draw(secrets=("usual",))
-    assert tokens_sent(network) == {f"Bearer {TOKEN}"}
-    assert TOKEN not in read_all(fallback)[0]
+    without = draw(secrets=("usual",))
+    assert tokens_sent(network) <= {None} and TOKEN not in read_all(without)[0]
+    assert "Falta el token de solo lectura" in " ".join(item.value for item in without.warning)
 
 
 def test_d339_without_any_token_only_the_states_show_with_a_notice(network):
     app = draw(secrets=())
     assert not app.exception
     notice = [item.value for item in app.warning]
-    assert len(notice) == 1 and "GITHUB_READ_TOKEN" in notice[0] and "Sin token solo se ven los estados" in notice[0]
+    assert len(notice) == 1 and "GITHUB_READ_TOKEN" in notice[0] and "Falta el token de solo lectura" in notice[0]
     page, codes = read_all(app)
     assert page.count('class="ga-table"') == 3 and "Pruebas que fallan" not in page and not codes
     paths = [url.removeprefix(control.API_URL) for url, _ in network.calls]

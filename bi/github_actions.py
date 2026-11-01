@@ -1,8 +1,9 @@
 """GitHub Actions, read-only (D-339): the latest runs of the three workflows and, for the latest one that failed, what
 failed: the job, the step, the names of the failing tests and the last lines of the log.
 
-It only sends GET requests: nothing here starts, cancels or re-runs anything. The token (GITHUB_READ_TOKEN, or
-GITHUB_TOKEN when that one is missing) is sent in the Authorization header and nowhere else; every text that leaves
+It only sends GET requests: nothing here starts, cancels or re-runs anything. Only the read-only token
+(GITHUB_READ_TOKEN) is sent, in the Authorization header and nowhere else (D-397: never GITHUB_TOKEN, which can start
+and cancel runs); every text that leaves
 this module has gone through `redact`, so neither the token nor anything shaped like one reaches the screen, not even
 if a log printed it. Without a token only the states are read (they are public); the logs need the token.
 Pure functions apart from `get`, which tests replace.
@@ -35,8 +36,9 @@ SECRET_SHAPES = re.compile(
 
 
 def pick_token(read_token: str | None, token: str | None) -> str | None:
-    """The read-only token when there is one; otherwise the app's usual one. Either is only ever used to read."""
-    return read_token or token or None
+    """D-397: only the read-only token. The usual one can start and cancel runs, so it is never sent from here; it is
+    still covered in every text, in case a log prints it."""
+    return read_token or None
 
 
 def get(path: str, token: str | None, params: dict[str, Any] | None = None) -> requests.Response:

@@ -110,9 +110,9 @@ def test_d339_the_reader_only_reads_and_no_write_verb_exists_in_it():
     assert github_actions.CACHE_SECONDS == 120 and github_actions.LOG_LINES == 60
 
 
-def test_d339_the_read_token_wins_over_the_usual_one_and_none_means_none():
+def test_d397_only_the_read_only_token_is_ever_sent():
     assert github_actions.pick_token(READ_TOKEN, TOKEN) == READ_TOKEN
-    assert github_actions.pick_token(None, TOKEN) == TOKEN and github_actions.pick_token("", TOKEN) == TOKEN
+    assert github_actions.pick_token(None, TOKEN) is None and github_actions.pick_token("", TOKEN) is None
     assert github_actions.pick_token(None, None) is None and github_actions.pick_token("", "") is None
 
 

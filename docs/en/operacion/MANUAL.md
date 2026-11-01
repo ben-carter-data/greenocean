@@ -115,7 +115,7 @@ The panel uses three secrets, kept in Streamlit (section 8):
 
 - `CONTROL_CODE`: the author's key.
 - `GITHUB_TOKEN`: starts the load, reads its state and logs, and cancels it.
-- `GITHUB_READ_TOKEN`: read only, for the page «GitHub Actions».
+- `GITHUB_READ_TOKEN`: read only, for the page «GitHub Actions». If it is missing, the page shows the states without logs and the notice «The read-only token is missing».
 
 ## 8. GitHub guide
 

@@ -2960,3 +2960,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Qué no cuadraba:** el botón de Centro de operación vaciaba la caché compartida por todos los lectores. Cualquiera podía pulsarlo una y otra vez y obligar al panel a recalcularlo todo, más lento para todos.
 - **Decisión:** el botón aparece solo en la vista Autor. La base nueva igual llega sola: el panel la descarga cuando cambia su puntero.
 - **Pruebas:** `tests/test_dashboard.py::test_d396_…` y `test_d149_…` (sin la clave no hay botón; con ella, recarga y confirma).
+
+## D-397 · «GitHub Actions» usa solo el token de solo lectura
+
+- **Pedido del autor:** mínimo privilegio en la página que lee GitHub.
+- **Qué no cuadraba:** si faltaba `GITHUB_READ_TOKEN`, la página leía con `GITHUB_TOKEN`, que también puede lanzar y cancelar cargas.
+- **Decisión:** la página envía solo `GITHUB_READ_TOKEN`. Si falta, muestra los estados de las ejecuciones (que son públicos) sin logs, con el aviso «Falta el token de solo lectura», y nunca usa el otro. El otro token se sigue tachando en cualquier texto, por si un log lo imprimiera.
+- **Pruebas:** `tests/test_github_actions.py::test_d397_…` y `tests/test_actions_page.py` (sin el token de solo lectura no se envía ninguna credencial y aparece el aviso).

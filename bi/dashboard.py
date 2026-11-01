@@ -468,7 +468,7 @@ STEPS_PROVED_BY_A_SAVED_LOAD = {"Download the ODEPA files", "Run the ETL", "Run 
 PROGRESS_POLL_SECONDS = 4
 # Names of the dashboard secrets that enable the "run now" button.
 SECRET_GITHUB_TOKEN = "GITHUB_TOKEN"
-SECRET_READ_TOKEN = "GITHUB_READ_TOKEN"  # D-339: read-only; GITHUB_TOKEN is the fallback
+SECRET_READ_TOKEN = "GITHUB_READ_TOKEN"  # D-339: read-only; D-397: the only one «GitHub Actions» sends
 SECRET_CONTROL_CODE = "CONTROL_CODE"
 REPORT_PARAMETER = "informe"  # D-333: the quality report a link opens
 

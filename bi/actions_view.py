@@ -25,8 +25,8 @@ WORKFLOW_NOTES = {
 }
 EVENT_WORDS = {"schedule": "Automática", "workflow_dispatch": "Manual"}
 NO_TOKEN_NOTICE = (
-    "Sin token solo se ven los estados. Los logs necesitan un token de solo lectura: guárdalo como "
-    "GITHUB_READ_TOKEN en los secretos de Streamlit."
+    "Falta el token de solo lectura. Sin él solo se ven los estados, sin logs: guárdalo como GITHUB_READ_TOKEN en "
+    "los secretos de Streamlit."
 )
 
 

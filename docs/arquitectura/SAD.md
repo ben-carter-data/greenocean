@@ -348,7 +348,7 @@ La pestaña «Monitoreo» de [[vista:Centro de operación]] los reúne.
 
 - `CONTROL_CODE`: la clave del autor, comparada en tiempo constante.
 - `GITHUB_TOKEN`: lanza y cancela la carga manual.
-- `GITHUB_READ_TOKEN`: solo lectura, para la página «GitHub Actions». Si falta, se usa `GITHUB_TOKEN`.
+- `GITHUB_READ_TOKEN`: solo lectura, para la página «GitHub Actions». Es el único que esa página envía: si falta, muestra los estados sin logs y avisa (D-397).
 
 La página «GitHub Actions» solo la ve el autor. Muestra las últimas ejecuciones y, del último fallo, el job, el paso, las pruebas que fallan y las últimas 60 líneas del log, con un botón «Copiar» y enlaces a la ejecución y al job. El token nunca aparece en pantalla (D-339, D-359).
 

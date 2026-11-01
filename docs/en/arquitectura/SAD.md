@@ -348,7 +348,7 @@ The «Monitoring» tab of [[vista:Operations center]] brings them together.
 
 - `CONTROL_CODE`: the author's key, compared in constant time.
 - `GITHUB_TOKEN`: starts and cancels the manual load.
-- `GITHUB_READ_TOKEN`: read only, for the page «GitHub Actions». If it is missing, `GITHUB_TOKEN` is used.
+- `GITHUB_READ_TOKEN`: read only, for the page «GitHub Actions». It is the only one that page sends: if it is missing, the page shows the states without logs and says so (D-397).
 
 Only the author sees the page «GitHub Actions». It shows the latest runs and, of the last failure, the job, the step, the failing tests and the last 60 lines of the log, with a «Copy» button and links to the run and the job. The token never shows on screen (D-339, D-359).
 

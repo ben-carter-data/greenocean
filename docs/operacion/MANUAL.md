@@ -115,7 +115,7 @@ El panel usa tres secretos, guardados en Streamlit (sección 8):
 
 - `CONTROL_CODE`: la clave del autor.
 - `GITHUB_TOKEN`: lanza la carga, lee su estado y sus logs, y la cancela.
-- `GITHUB_READ_TOKEN`: solo lectura, para la página «GitHub Actions».
+- `GITHUB_READ_TOKEN`: solo lectura, para la página «GitHub Actions». Si falta, la página muestra los estados sin logs y el aviso «Falta el token de solo lectura».
 
 ## 8. Guía de GitHub
 
