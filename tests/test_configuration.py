@@ -78,7 +78,8 @@ def test_d409_the_load_the_report_the_tests_and_the_sources_take_their_colour_fr
     assert configuration.report_card(report, date(2026, 11, 20))["detail"].startswith("31-10-2026")
     critical = report | {"indicadores": [{"estado": "critico"}]}
     assert configuration.report_card(critical, date(2026, 11, 1))["state"] == configuration.FAIL
-    run = {"branch": "main", "state": control.RUN_OK, "started_at": NOW, "sha": "d244d5b3e0a1"}
+    # D-411: a test value never shaped like a key, so the secrets scan has nothing to flag
+    run = {"branch": "main", "state": control.RUN_OK, "started_at": NOW, "sha": "1234567"}
     other = run | {"branch": "otra", "state": control.RUN_FAILED}
     assert configuration.ci_card([other, run], None)["value"] == "En verde"  # only main counts
     assert configuration.ci_card([], "sin red")["state"] == configuration.UNKNOWN

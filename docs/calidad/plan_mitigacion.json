@@ -963,6 +963,58 @@
           "referencia": "D-402"
         }
       ]
+    },
+    {
+      "id": "F-23",
+      "categoria": "código",
+      "falla": [
+        "Un dato de prueba con forma de clave hace fallar la medición de secretos",
+        "A test value shaped like a key makes the secrets measurement fail"
+      ],
+      "deteccion": [
+        "El job «medir» de calidad marca «secretos_sin_clasificar» en 1",
+        "The quality job «medir» marks «secretos_sin_clasificar» as 1"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Se escribió un trozo de un identificador de commit como dato de prueba, y detect-secrets lo toma por una clave",
+        "A piece of a commit identifier was written as test data, and detect-secrets takes it for a key"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: no es un secreto, solo un falso positivo",
+        "None: it is not a secret, only a false positive"
+      ],
+      "correctiva": [
+        "Los datos de prueba usan valores que no parecen claves, y la medición de calidad corre antes del push",
+        "Test data uses values that do not look like keys, and the quality measurement runs before the push"
+      ],
+      "estacion": 8,
+      "caso_real": "D-411",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-01",
+          "ocurrencia": [
+            "El push de D-409 y D-410 dejó en rojo el job «medir» de calidad en main.",
+            "The push of D-409 and D-410 left the quality job «medir» red on main."
+          ],
+          "diagnostico": [
+            "Una prueba usaba un trozo de un identificador de commit como dato y detect-secrets lo marcó como posible clave.",
+            "A test used a piece of a commit identifier as data and detect-secrets flagged it as a possible key."
+          ],
+          "solucion": [
+            "El dato de prueba pasó a «1234567».",
+            "The test value became «1234567»."
+          ],
+          "comentario": [
+            "No había ningún secreto; las pruebas de pytest seguían en verde.",
+            "There was no secret; the pytest tests stayed green."
+          ],
+          "estacion": 8,
+          "estado": "resuelta",
+          "referencia": "D-411"
+        }
+      ]
     }
   ]
 }

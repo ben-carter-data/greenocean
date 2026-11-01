@@ -3068,3 +3068,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - El texto y el color de cada token.
   - Con un token a 10 días, la alerta lo muestra antes del informe; a 40 días, no.
   - Nunca aparece el valor de un token.
+
+## D-411 · Un dato de prueba con forma de clave dejaba en rojo la medición de calidad
+
+- **Qué pasó:** después del push de D-409 y D-410, el job «medir» del workflow de calidad falló en main. El indicador `secretos_sin_clasificar` dio 1, y su aceptable es 0. Las pruebas de pytest, Ruff y mypy seguían en verde.
+- **Causa:** una prueba de `tests/test_configuration.py` usaba un trozo de un identificador de commit como dato. La herramienta detect-secrets lo tomó por una posible clave. No había ningún secreto.
+- **Decisión:** el dato de prueba pasa a `1234567`, que no tiene forma de clave. Antes de cada push se corre también la medición de calidad (`scripts/medir_calidad.py` y `scripts/verificar_calidad.py`), no solo las pruebas. Queda anotado como F-23 en `docs/calidad/plan_mitigacion.json`.
+- **Pruebas:** la medición de calidad, corrida en una copia limpia del commit, deja `secretos_sin_clasificar` en 0; la suite completa sigue en verde.
