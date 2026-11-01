@@ -46,6 +46,9 @@ def test_every_theme_styles_the_bar():
 def test_d267_each_main_page_has_one_bar_and_no_other_header(view):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.query_params["vista"] = view
+    if view in dashboard.AUTHOR_ONLY_PAGES:  # D-420: the Autor's pages, as the Autor sees them
+        app.session_state["admin_unlocked"] = True
+        app.session_state["quality_alert_seen"] = True
     app.run()
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
@@ -164,6 +167,9 @@ def test_d398_the_header_has_no_link_to_another_page(view, language):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
     app.query_params.update({"vista": view, "lang": language})
     app.session_state["visitor_profile"] = "profesional"
+    if view in dashboard.AUTHOR_ONLY_PAGES:  # D-420: the Autor's pages, as the Autor sees them
+        app.session_state["admin_unlocked"] = True
+        app.session_state["quality_alert_seen"] = True
     app.run()
     assert not app.exception
     starts = ('<div class="page-bar-main"', '<div class="greenocean-mockup home-bar-main"')

@@ -3166,3 +3166,17 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - Muestra la causa del incidente.
   - No usa la palabra del otro idioma entre dos cifras (`\d de \d` en inglés, `\d of \d` en español).
   - La prueba del registro de no conformidades acepta la acción y el estado escritos en los dos idiomas.
+
+## D-420 · «DevOps y seguridad» es solo del Autor; «Arquitectura de seguridad» pasa a «Stack y evidencia»
+
+- **Decisión del autor:** la sección «DevOps y seguridad» solo existe para el perfil Autor. Usuario y Profesional no la ven en el menú, y si entran por la dirección, la página dice que no hay acceso. «Arquitectura de seguridad» pasa a «Stack y evidencia», visible para Profesional, sin mostrar valores secretos.
+- **Decisión:**
+  - **Páginas del Autor:** «Centro de operación», «GitHub Actions» y «Configuración».
+  - **Menú:** para Usuario y Profesional, la sección desaparece entera; una sección sin páginas no se dibuja.
+  - **Control en el servidor:** una sola función, `show_page`, dibuja cada página en la ventana y en las pruebas. Antes de dibujar una página del Autor comprueba en el servidor (la sesión) que la visita es del Autor, sin importar la dirección. Si no lo es, solo muestra «No tienes acceso a esta página: es solo para el perfil Autor.», con su inglés.
+  - **«Arquitectura de seguridad»:** pasa al final de «Stack y evidencia», y su ruta dice «Stack y evidencia › Arquitectura de seguridad». El perfil de seguridad empieza el menú por esa sección.
+  - **Lista de páginas:** el mapa de la app y el README nombran las páginas en el nuevo orden y dicen cuáles ve solo el Autor.
+  - **Auditoría de inglés:** lee las páginas del Autor como las ve el Autor. Así aparecieron dos enlaces del Autor sin traducir en la pestaña «Operación» («Tokens de GitHub» y «Administrar la app»), que ya tienen su inglés.
+- **Pruebas:**
+  - `tests/test_menu_order.py::test_d420_…`: para Usuario y Profesional, cada página de DevOps por la dirección dice que no hay acceso y no dibuja nada propio, y el menú no tiene la sección. Profesional lee la seguridad en «Stack y evidencia». El Autor ve la sección entera.
+  - Las pruebas del menú, la ruta, los vecinos, los perfiles y el encabezado siguen el orden nuevo.

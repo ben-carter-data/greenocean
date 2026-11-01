@@ -7,7 +7,7 @@ import pytest
 import streamlit as st
 from streamlit.testing.v1 import AppTest
 
-from bi import control, github_actions
+from bi import control, dashboard, github_actions, i18n
 from tests.test_github_actions import LOG, READ_TOKEN, SHAPED, TOKEN, Answer, Network
 
 DASHBOARD_FILE = str(Path(__file__).resolve().parent.parent / "bi" / "dashboard.py")
@@ -89,7 +89,7 @@ def test_d339_only_the_author_has_the_page_in_the_menu_and_it_sits_in_devops_and
 def test_d339_without_the_author_key_the_address_shows_one_line_and_nothing_is_asked_of_github(network):
     app = draw(unlocked=False)
     assert not app.exception
-    assert [item.value for item in app.info] == ["Esta página es solo para el autor."]
+    assert [item.value for item in app.info] == [dashboard.NO_ACCESS]
     page = everything_drawn(app)
     assert "ga-table" not in page and "Abrir en GitHub" not in page and "pytest" not in page
     assert network.calls == []  # no request at all
@@ -194,7 +194,7 @@ def test_d339_the_page_reads_in_english_too(network):
     for spanish in ("Abrir en GitHub", "Pruebas que fallan", "Último fallo", "Carga semanal"):
         assert spanish not in page, spanish
     closed = draw(unlocked=False, language="en")
-    assert [item.value for item in closed.info] == ["This page is for the author only."]
+    assert [item.value for item in closed.info] == [i18n.EN[dashboard.NO_ACCESS]]
 
 
 @pytest.mark.parametrize(

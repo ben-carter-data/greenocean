@@ -134,3 +134,55 @@ def test_d387_the_readme_lists_every_page_of_the_menu_in_the_menu_order():
     positions = [line.index(label) for label in labels]
     assert positions == sorted(positions), labels
     assert "carpeta de documentos" in line and "Precios e inflación" in line
+
+
+DEVOPS = [view for key, _, pages in dashboard.MENU_BLOCKS if key == "devops" for view in pages]
+DEVOPS_LABELS = [dashboard.SIDEBAR_LABELS.get(view, view) for view in DEVOPS]
+
+
+@pytest.mark.parametrize("profile", ["consulta", "profesional"])
+def test_d420_no_page_of_devops_is_reached_by_the_user_or_the_professional(profile):
+    assert (
+        set(DEVOPS)
+        == {dashboard.PAGE_RUNS, dashboard.PAGE_ACTIONS, dashboard.PAGE_CONFIG}
+        == (dashboard.AUTHOR_ONLY_PAGES)
+    )
+    for view in DEVOPS:  # by the address: the page says there is no access and draws nothing of its own
+        app = AppTest.from_file(str(DASHBOARD_FILE), default_timeout=90)
+        app.session_state["visitor_profile"] = profile
+        app.query_params.update({"vista": view})
+        app.run()
+        assert not app.exception
+        assert [item.value for item in app.info] == [dashboard.NO_ACCESS], view
+        markup = " ".join(block.value for block in app.main.markdown)
+        assert 'class="page-bar-main"' not in markup and 'class="cf-card' not in markup, view  # no page of its own
+        assert not {"runs_run_now", "runs_reload", "author_access_close"} & {str(b.key) for b in app.button}, view
+        labels = [link.proto.label for link in app.sidebar.get("page_link")]  # and the menu has no DevOps
+        assert not set(DEVOPS_LABELS) & set(labels) and "DevOps y seguridad" not in [
+            button.label for button in app.sidebar.button
+        ]
+    if profile == "profesional":  # security reads in «Stack y evidencia», with no secret value
+        app = AppTest.from_file(str(DASHBOARD_FILE), default_timeout=90)
+        app.session_state["visitor_profile"] = profile
+        app.query_params.update({"vista": dashboard.PAGE_SECURITY})
+        app.run()
+        markup = " ".join(block.value for block in app.markdown)
+        assert not app.exception and "Stack y evidencia › Arquitectura de seguridad" in markup
+        assert dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_SECURITY, dashboard.PAGE_SECURITY) in [
+            link.proto.label for link in app.sidebar.get("page_link")
+        ]
+
+
+def test_d420_the_author_sees_the_whole_devops_section():
+    app = AppTest.from_file(str(DASHBOARD_FILE), default_timeout=90)
+    app.session_state["visitor_profile"] = "profesional"
+    app.session_state["admin_unlocked"] = True
+    app.session_state["quality_alert_seen"] = True
+    app.query_params.update({"vista": dashboard.PAGE_HOME})
+    app.run()
+    labels = [link.proto.label for link in app.sidebar.get("page_link")]
+    assert [label for label in labels if label in DEVOPS_LABELS] == [
+        "Centro de operación",
+        "GitHub Actions",
+        "Configuración",
+    ]

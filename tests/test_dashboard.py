@@ -290,12 +290,14 @@ ADMIN_ADDRESSES = ["https://github.com/settings/personal-access-tokens", "https:
 FAKE_TOKEN = "github_pat_FAKE_SECRET_123"
 
 
-def draw_control_page(secrets, run_state="ok", dialog=False, cancel_error=None):
+def draw_control_page(secrets, run_state="ok", dialog=False, cancel_error=None, unlocked=None):
     """The Operaciones page with GitHub replaced by fixed answers, no network. A manual
     run is accepted; GitHub answers that it is «run_state» (ok, failed or in_progress) with one
     job whose log ends in a line that prints the token. With dialog, the script opens the manual-run
     dialog itself: in a browser the dialog reruns alone (a fragment), which AppTest
-    does not reproduce."""
+    does not reproduce. D-420: the page is the Autor's, so it opens as the Autor unless told otherwise; the dialog
+    opens without the session unless told otherwise."""
+    unlocked = not dialog if unlocked is None else unlocked
     script = (
         f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
         "from datetime import datetime, timedelta, timezone\n"
@@ -340,6 +342,9 @@ def draw_control_page(secrets, run_state="ok", dialog=False, cancel_error=None):
     app = AppTest.from_string(script, default_timeout=60)
     for name, value in secrets.items():
         app.secrets[name] = value
+    if unlocked:
+        app.session_state["admin_unlocked"] = True
+        app.session_state["quality_alert_seen"] = True
     return app.run()
 
 
@@ -371,20 +376,14 @@ def open_author_access(app, code):
 
 @needs_database
 def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
-    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN})
-    assert not app.exception
-    # Before the code: no run button and no administration address, only the door.
-    assert "runs_run_now" not in button_keys(app) and app.text_input(key="author_access_code")
-    assert "author_access_open" not in button_keys(app)
-    # D-207: a plain field shown as dots; a password field makes the browser offer to create one.
-    assert (
-        app.text_input(key="author_access_code").proto.type != app.text_input(key="author_access_code").proto.PASSWORD
-    )
-    assert "-webkit-text-security:disc" in dashboard.build_runs_css(charts.MODE_DARK)
+    # D-420: the Operations center is the Autor's: without the Autor's session the page says so and draws nothing else
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, unlocked=False)
+    assert not app.exception and [item.value for item in app.info] == [dashboard.NO_ACCESS]
+    assert "runs_run_now" not in button_keys(app) and not list(app.text_input)
     assert not [address for address in ADMIN_ADDRESSES if address in read_page_text(app)]
-    text = open_author_access(app, "equivocada")
-    assert not app.exception and "Clave incorrecta" in text and "runs_run_now" not in button_keys(app)
-    text = open_author_access(app, "clave")
+    # D-207: the key field, wherever it is, is a plain field shown as dots, never a browser password
+    assert "-webkit-text-security:disc" in dashboard.build_runs_css(charts.MODE_DARK)
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN})
     assert not app.exception
     assert (
         app.button(key="runs_run_now").label == "Ejecutar pipeline ahora"
@@ -394,7 +393,7 @@ def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
     assert not [address for address in ADMIN_ADDRESSES if address in read_page_text(app)]
     assert app.button(key="author_access_close").label == "Cerrar acceso"
     app.button(key="author_access_close").click().run()
-    assert "runs_run_now" not in button_keys(app)
+    assert "runs_run_now" not in button_keys(app) and [item.value for item in app.info] == [dashboard.NO_ACCESS]
     # The dialog itself still asks for the code when the session is not open (defense in depth).
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
     text = open_run_dialog(app, "equivocada")
@@ -513,17 +512,16 @@ def test_d351_confirming_cancels_and_says_cancelled_and_a_refusal_keeps_the_run_
 
 @needs_database
 def test_d149_without_secrets_the_run_is_disabled_and_reload_confirms():
-    app = draw_control_page({})
-    assert "runs_run_now" not in button_keys(app) and not [
-        box for box in app.text_input if box.key == "author_access_code"
-    ]
-    assert "Se activa cuando el autor guarda la clave" in read_page_text(app)
+    # D-420: without the secrets nobody can be the Autor, so the page is closed: no run, no key box, no reload
+    app = draw_control_page({}, unlocked=False)
+    assert "runs_run_now" not in button_keys(app) and not list(app.text_input)
+    assert [item.value for item in app.info] == [dashboard.NO_ACCESS]
     assert "runs_reload" not in button_keys(app)  # D-396: without the key there is no reload
 
 
 @needs_database
 def test_d396_only_the_author_reloads_the_data_of_every_reader():
-    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN})
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, unlocked=False)
     assert "runs_reload" not in button_keys(app)
     app.session_state["admin_unlocked"] = True
     app.run()
@@ -971,19 +969,29 @@ def test_d250_the_path_and_the_footer_follow_the_menu():
     ]
     assert dashboard.PAGE_SAD not in dashboard.MENU_BLOCK_OF_VIEW and dashboard.PAGE_SAD in dashboard.FOLDER_ORDER
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
-    app.query_params['vista'] = dashboard.PAGE_RUNS
+    app.query_params['vista'] = dashboard.PAGE_SECURITY
     app.run()
     assert not app.exception
     markup = ' '.join(block.value for block in app.markdown)
-    assert 'DevOps y seguridad › Centro de operación' in markup
+    assert 'Stack y evidencia › Arquitectura de seguridad' in markup  # D-420: security sits in «Stack y evidencia»
     footer = app.main.get('page_link')
     assert [link.proto.label for link in footer] == [
-        '← Anterior: Consultas SQL',
-        'Siguiente: Arquitectura de seguridad →',
+        '← Anterior: Mapa de la app',
+        'Siguiente: Calidad y auditoría →',
     ]
     assert [link.proto.icon for link in footer] == [
-        dashboard.SIDEBAR_ICONS[dashboard.PAGE_SQL],
-        dashboard.SIDEBAR_ICONS[dashboard.PAGE_SECURITY],
+        dashboard.SIDEBAR_ICONS[dashboard.PAGE_APP_MAP],
+        dashboard.SIDEBAR_ICONS[dashboard.PAGE_OPERATIONS],
+    ]
+    author = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)  # the Autor's own path and neighbours
+    author.session_state['admin_unlocked'] = True
+    author.session_state['quality_alert_seen'] = True
+    author.query_params['vista'] = dashboard.PAGE_RUNS
+    author.run()
+    assert 'DevOps y seguridad › Centro de operación' in ' '.join(block.value for block in author.markdown)
+    assert [link.proto.label for link in author.main.get('page_link')] == [
+        '← Anterior: Consultas SQL',
+        'Siguiente: GitHub Actions →',
     ]
 
 
@@ -1138,11 +1146,11 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
         'Pipeline y linaje',
         'Modelo de datos',
         'Calidad y auditoría',
-        'Centro de operación',
         'Arquitectura de seguridad',
         'Documentos',
     ]:
         assert child in labels
+    assert 'Centro de operación' not in labels  # D-420: the Autor's only
     # D-282: the documents live in their folder, not in the menu.
     for document in ['Plan de pruebas y seguridad', 'PRD · Requisitos del producto', 'SAD · Arquitectura']:
         assert document not in labels
@@ -1318,12 +1326,13 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
 def test_d165_the_operation_centre_reads_like_the_dashboard():
     # D-165 replaced the strip of four figures and the history table (D-129) by the
     # path of the run beside three facts and the latest runs.
-    app = draw_page(dashboard.PAGE_RUNS, state={"runs_view": "Operación"})  # D-360: the tab drawn is the one chosen
+    app = draw_page(  # D-360: the tab drawn is the one chosen; D-420: the page is the Autor's
+        dashboard.PAGE_RUNS, state={"runs_view": "Operación", "admin_unlocked": True, "quality_alert_seen": True}
+    )
     assert not app.exception and app.get("iframe")
     text = " ".join(block.value for block in app.markdown)
     assert '<b role="heading" aria-level="1">Centro de operación</b>' in text and text.count('class="oc-fact"') == 3
     assert "Ver historial de ejecuciones" not in [expander.label for expander in app.expander]
-    assert "runs_reload" not in [str(button.key) for button in app.button]  # D-396: only the Autor reloads
 
 
 def test_d129_the_github_page_names_actions_so_it_is_not_confused_with_ejecuciones():
@@ -1429,8 +1438,8 @@ MENU_BLOCKS = {
         'Insights',
     ],
     'Ingeniería de datos': ['Pipeline y linaje', 'Modelo de datos', 'Consultas SQL'],
-    'DevOps y seguridad': ['Centro de operación', 'Arquitectura de seguridad'],
-    'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app'],
+    # D-420: «DevOps y seguridad» is the Autor's; security reads in «Stack y evidencia»
+    'Stack y evidencia': ['Stack y evidencia', 'Mapa de la app', 'Arquitectura de seguridad'],
     'Calidad': ['Calidad y auditoría', 'Método y calidad', 'Git workflow'],
 }
 
@@ -1634,10 +1643,11 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
     for role in dashboard.ROLES:
         state[dashboard.ROLE_STATE] = role
         blocks = [key for key, *_ in dashboard.visible_menu_blocks()]
-        assert blocks[:5] == dashboard.ROLE_ORDER[role] and blocks[5:] == ["fuentes", "documentos"], role
+        expected = [key for key in dashboard.ROLE_ORDER[role] if key != "devops"]  # D-420: the Autor's section
+        assert blocks[:4] == expected and blocks[4:] == ["fuentes", "documentos"], role
         firsts[role] = dashboard.visible_menu_order()[0]
     assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.PAGE_STAKEHOLDERS  # D-378
-    assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_RUNS
+    assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_DIAGRAMS
     source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
     assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep the view
 

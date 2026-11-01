@@ -784,6 +784,8 @@ PAGES = {
     "Lo que pasa todas las pruebas llega a producción sin pasos manuales. Aquí, la base de cada martes y el panel que la muestra.": "What passes every test reaches production without manual steps. Here, the database of each Tuesday and the panel that shows it.",
     "Lo ve el panel": "The panel sees it",
     "Log del paso ↗": "Step log ↗",
+    "Tokens de GitHub ↗": "GitHub tokens ↗",  # D-420: the Autor's links, now audited as the Autor sees them
+    "Administrar la app ↗": "Manage the app ↗",
     "Monitoreo y observabilidad": "Monitoring and observability",
     "No corrió": "Did not run",
     "Panel": "Panel",
@@ -1389,7 +1391,7 @@ PAGES = {
     "Dibuja este panel con la base servida en solo lectura y lo publica en Streamlit Community Cloud desde la rama main.": "Draws this panel with the served database read-only and publishes it on Streamlit Community Cloud from the main branch.",
     "Cada vez que alguien abre una página.": "Every time someone opens a page.",
     "Páginas": "Pages",
-    "Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal, Precios e inflación, Insights, Pipeline y linaje, Modelo de datos, Consultas SQL, Centro de operación, Arquitectura de seguridad, Stack y evidencia, Mapa de la app, Calidad y auditoría, Método y calidad, Git workflow y la carpeta de documentos.": "Stakeholders, Business and systems analysis, Price overview, Latest data by channel, Prices and inflation, Insights, Pipeline and lineage, Data model, SQL queries, Operations center, Security architecture, Stack and evidence, App map, Quality and audit, Method and quality, Git workflow and the documents folder.",
+    "Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal, Precios e inflación, Insights, Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, Arquitectura de seguridad, Calidad y auditoría, Método y calidad, Git workflow y la carpeta de documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.": "Stakeholders, Business and systems analysis, Price overview, Latest data by channel, Prices and inflation, Insights, Pipeline and lineage, Data model, SQL queries, Stack and evidence, App map, Security architecture, Quality and audit, Method and quality, Git workflow and the documents folder; the Author also sees Operations center, GitHub Actions and Settings.",
     "el servicio gratuito que publica el panel y guarda sus secretos.": "the free service that publishes the panel and keeps its secrets.",
     "Cuando abre el panel.": "When they open the panel.",
     "Cuando cambia el código o lanza una carga manual.": "When they change the code or launch a manual load.",

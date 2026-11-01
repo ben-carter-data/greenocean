@@ -142,7 +142,7 @@ EN = {
     "Mapa": "Map",
     "Registro de incidentes": "Incident log",
     "Cómo viaja un cambio desde la idea hasta el despliegue, y las fallas que han ocurrido en el camino.": "How a change travels from an idea to a live deployment, and the failures that have happened along the way.",
-    "Esta página es solo para el autor.": "This page is for the author only.",
+    "No tienes acceso a esta página: es solo para el perfil Autor.": "You have no access to this page: it is for the Author profile only.",
     "Falta el token de solo lectura. Sin él solo se ven los estados, sin logs: guárdalo como GITHUB_READ_TOKEN en los secretos de Streamlit.": "The read-only token is missing. Without it only the states show, with no logs: store it as GITHUB_READ_TOKEN in the Streamlit secrets.",
     "El token no tiene fecha de vencimiento.": "The token has no expiration date.",
     "El token venció: crea otro y cámbialo en los secretos de Streamlit.": "The token expired: create another and change it in the Streamlit secrets.",

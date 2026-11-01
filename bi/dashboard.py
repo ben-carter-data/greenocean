@@ -113,10 +113,13 @@ RETIRED_VIEWS = {
 }
 PAGE_KPI = "Indicadores explicados"
 PAGE_OPERATIONS = "Monitoreo"
-PAGE_RUNS = "Ejecuciones"
 PAGE_ACTIONS = "GitHub Actions"  # D-339: the author's read-only view of the workflow runs
 PAGE_CONFIG = "Configuración"  # D-409: the author's console, in place of «Enlaces del autor»
-AUTHOR_ONLY_PAGES = {PAGE_ACTIONS, PAGE_CONFIG}
+PAGE_RUNS = "Ejecuciones"
+# D-420 (the author's decision): the whole «DevOps y seguridad» section is the Autor's: operation and internal security
+# are shown only to the administrator profile, and the server checks it before drawing any of them.
+AUTHOR_ONLY_PAGES = {PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG}
+NO_ACCESS = "No tienes acceso a esta página: es solo para el perfil Autor."
 PAGE_MANUAL = "Manual"
 PAGE_GLOSSARY = "Glosario"
 PAGE_LINKS = "Enlaces"
@@ -439,7 +442,7 @@ ROLE_ORDER = {
     "ba": ["negocio", "stack", "ingenieria", "devops", "calidad"],
     "bi": ["negocio", "ingenieria", "stack", "devops", "calidad"],
     "devops": ["devops", "ingenieria", "negocio", "stack", "calidad"],
-    "seguridad": ["devops", "ingenieria", "negocio", "stack", "calidad"],
+    "seguridad": ["stack", "devops", "ingenieria", "negocio", "calidad"],  # D-420: security sits in «Stack y evidencia»
 }
 DEFAULT_ROLE = "bi"  # a user view unlocked with the key reads the business first
 LANDING_STATE = "profile_landing"
@@ -660,13 +663,21 @@ def is_public_profile():
 
 
 def hide_author_pages(blocks):
-    """D-339: a page only the author sees leaves the menu of everyone else."""
-    if st.session_state.get(ADMIN_UNLOCKED):
+    """D-339: a page only the author sees leaves the menu of everyone else. D-420: a section left with no page leaves
+    too, so «DevOps y seguridad» does not exist for the user and the professional views."""
+    if is_author():
         return blocks
-    return [
+    kept = [
         (key, title, pages if pages is SOURCE_LINKS else [view for view in pages if view not in AUTHOR_ONLY_PAGES])
         for key, title, pages in blocks
     ]
+    return [block for block in kept if block[2] is SOURCE_LINKS or block[2]]
+
+
+def is_author():
+    """D-420: the session is the Autor's. Kept on the server (the session), never read from the address: every page
+    and every action of the Autor asks this before it draws or acts."""
+    return bool(st.session_state.get(ADMIN_UNLOCKED))
 
 
 def visible_menu_blocks():
@@ -682,9 +693,11 @@ def menu_blocks_of_profile():
     by_key = {block[0]: block for block in MENU_BLOCKS}
     order = ROLE_ORDER[get_role()] if get_profile() else [block[0] for block in MENU_BLOCKS]
     blocks = [by_key[key] for key in order] + [block for block in MENU_BLOCKS if block[0] not in order]
-    if get_profile() and get_role() == "seguridad":  # security first inside its own section
+    if (
+        get_profile() and get_role() == "seguridad"
+    ):  # security first inside its own section (D-420: «Stack y evidencia»)
         blocks = [
-            (key, title, sorted(pages, key=lambda view: view != PAGE_SECURITY) if key == "devops" else pages)
+            (key, title, sorted(pages, key=lambda view: view != PAGE_SECURITY) if key == "stack" else pages)
             for key, title, pages in blocks
         ]
     return blocks
@@ -6283,8 +6296,8 @@ def show_actions_page(mode):
     """«GitHub Actions» (D-339), only for the author: the latest runs of the three workflows and what failed in the
     latest one that failed. Read only: it starts, cancels and re-runs nothing. Without the author's key nothing is
     asked of GitHub: the page says it is the author's and stops."""
-    if not st.session_state.get(ADMIN_UNLOCKED):
-        st.info(tr("Esta página es solo para el autor."))
+    if not is_author():  # D-420: the dispatch checks too; a page drawn alone (tests) checks again
+        st.info(tr(NO_ACCESS), icon=":material/lock:")
         return
     show_page_bar(
         PAGE_ACTIONS,
@@ -6365,8 +6378,8 @@ def show_configuration_page(mode):
     """«Configuración» (D-409), only for the author: on one screen, the state of what keeps the app running, one icon
     per case of the runbook with its steps, and the maintenance tasks with their date. It replaces «Enlaces del
     autor». It reads the runbook, the served database and GitHub; it never shows the value of a token."""
-    if not st.session_state.get(ADMIN_UNLOCKED):
-        st.info(tr("Esta página es solo para el autor."))
+    if not is_author():  # D-420: the dispatch checks too; a page drawn alone (tests) checks again
+        st.info(tr(NO_ACCESS), icon=":material/lock:")
         return
     show_page_bar(
         PAGE_CONFIG,
@@ -8105,7 +8118,7 @@ def render_window(window, pages=None):
                 f'<span class="overview-viewport-marker {overview_class}" aria-hidden="true"></span>',
                 unsafe_allow_html=True,
             )
-        SHOW_PAGE_BY_TITLE[view](mode)
+        show_page(view, mode)
     if view in COMPACT_FOOTER_VIEWS:
         show_compact_footer(window, pages, view)
     elif view not in OVERVIEW_CLASS_BY_VIEW:
@@ -8292,11 +8305,20 @@ def show_compact_footer(window, pages, view=None):
         st.caption(tr(ATTRIBUTION_TEXT))
 
 
+def show_page(view, mode):
+    """Draw one page; an Autor's page only for the Autor's session (D-420), checked here on the server whatever the
+    address or the menu say. Anyone else reads that there is no access."""
+    if view in AUTHOR_ONLY_PAGES and not is_author():
+        st.info(tr(NO_ACCESS), icon=":material/lock:")
+        return
+    SHOW_PAGE_BY_TITLE[view](mode)
+
+
 def render_page(title):
     """Draw one view alone, as tests and old callers do."""
     mode = get_mode()
     apply_style(mode)
-    SHOW_PAGE_BY_TITLE[title](mode)
+    show_page(title, mode)
     show_attribution()
 
 
@@ -8486,8 +8508,8 @@ MENU_BLOCKS = [
         [PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_HOME, PAGE_CHANNELS, PAGE_SEASONALITY, PAGE_INSIGHTS],
     ),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
-    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG, PAGE_SECURITY]),
-    ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),
+    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG]),  # D-420: the Autor's only
+    ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP, PAGE_SECURITY]),  # D-420: security, for the Profesional
     (
         "calidad",
         "Calidad",

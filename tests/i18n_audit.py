@@ -169,13 +169,15 @@ def screens():
     documents."""
     from bi import dashboard, inflation_view, quality_evidence
 
+    # D-420: the Autor's pages are read as the Autor reads them; anyone else only gets the no-access sentence.
+    author = {"admin_unlocked": True, "quality_alert_seen": True}
     return (
-        [(view, None) for view in dashboard.MENU_ORDER]
+        [(view, author if view in dashboard.AUTHOR_ONLY_PAGES else None) for view in dashboard.MENU_ORDER]
         + [(dashboard.PAGE_DIAGRAMS, {dashboard.PIPELINE_VIEW_KEY: dashboard.PIPELINE_LINEAGE})]
         + [(dashboard.PAGE_ARCHITECTURE, {dashboard.MODEL_VIEW_KEY: view}) for view in dashboard.MODEL_VIEWS[1:]]
         + [(page, None) for page in dashboard.FOLDER_ORDER]
         # D-360: these pages draw only the tab in sight, so each tab is a screen of its own.
-        + [(dashboard.PAGE_RUNS, {dashboard.RUNS_VIEW_KEY: tab}) for tab in list(dashboard.RUNS_VIEWS)[1:]]
+        + [(dashboard.PAGE_RUNS, {dashboard.RUNS_VIEW_KEY: tab} | author) for tab in list(dashboard.RUNS_VIEWS)[1:]]
         + [(dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_VIEW_KEY: tab}) for tab in ("Auditoría", "Rechazos y cargas")]
         + [
             (dashboard.PAGE_OPERATIONS, {dashboard.QUALITY_OPEN_KEY: title})

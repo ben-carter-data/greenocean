@@ -29,7 +29,7 @@ def test_d409_only_the_author_has_the_page_in_devops_and_security(network):  # n
     assert labels.index("GitHub Actions") < labels.index("Configuración") < labels.index("Arquitectura de seguridad")
     network.calls.clear()
     closed = draw(unlocked=False, view="Configuración")
-    assert [item.value for item in closed.info] == ["Esta página es solo para el autor."]
+    assert [item.value for item in closed.info] == [dashboard.NO_ACCESS]
     assert network.calls == []  # without the key nothing is asked of GitHub
 
 
