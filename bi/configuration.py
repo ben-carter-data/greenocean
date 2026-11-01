@@ -15,7 +15,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from bi import business_analysis, charts, control, i18n, quality_method
+from bi import business_analysis, charts, control, i18n, quality_method, quality_metrics
 
 OK, WARN, FAIL, UNKNOWN = "ok", "warn", "fail", "unknown"
 STATE_COLORS = {
@@ -128,7 +128,7 @@ def report_card(report: dict[str, Any] | None, today: date) -> dict[str, str]:
         if out
         else day_text(measured)
     )
-    return card("report", "assignment", label, state, t("N° {}", "No. {}").format(report["numero"]), detail)
+    return card("report", "assignment", label, state, quality_metrics.report_code(report, i18n.is_english()), detail)
 
 
 def ci_card(runs: list[dict[str, Any]], error: str | None) -> dict[str, str]:

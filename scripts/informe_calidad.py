@@ -1,10 +1,12 @@
-"""Numbered quality reports (D-323, D-331): «Informe de calidad N° X», one per measurement, never edited.
+"""Weekly quality reports (D-323, D-331, D-431): «Informe semanal de calidad N° X», one per data week, never edited.
 
     python scripts/informe_calidad.py [--medicion docs/calidad/medicion.json] [--cuerpo cuerpo.md]
 
-Each report is a frozen copy of one measurement, kept in docs/calidad/informes/informe-NNN.json with its number, date,
-data week and evaluated code (the commit), the acceptables it was judged against, and per indicator its value, failure
-against the acceptable, state, insight and change against the previous report. A report is never rewritten: a second run
+Each report is a frozen copy of one measurement, kept in docs/calidad/informes/semanales/informe-NNN.json with its
+number, date, data week, evaluated code (the commit), the SQAP version it was measured by, the acceptables it was judged
+against, and per indicator its value, failure against the acceptable, state, insight and change against the previous
+report. D-431: only the three indicators measured once per load (q.WEEKLY_INDICATORS); the code is checked by the CI of
+every push. The seven reports of docs/calidad/informes/ are the closed construction series, C-1 to C-7. A report is never rewritten: a second run
 on the same measurement adds nothing, and an error is corrected in the next report. docs/calidad/INFORME.md shows the
 latest one. With --cuerpo it also writes the body of the pull request «Actualizar medición de calidad». It never changes
 code.
@@ -21,33 +23,42 @@ from bi import quality_metrics as q  # noqa: E402
 REPORT_PATH = q.FOLDER / "INFORME.md"
 NONCONFORMITIES = q.FOLDER / "no_conformidades.json"
 OUT_OF_RANGE = ("urgente", "critico")
-FOLDER = q.REPORTS_FOLDER
+FOLDER = q.WEEKLY_FOLDER
 GOAL_FIELDS = ("max", "min", "meta", "margen_critico", "tipo", "medida")
 
 
 def read_reports(folder=FOLDER):
-    """Every report, oldest first."""
-    return q.read_reports(folder)
+    """Every weekly report, oldest first."""
+    return [
+        {**json.loads(path.read_text(encoding="utf-8")), "serie": q.SERIES_WEEKLY}
+        for path in sorted(folder.glob("informe-*.json"))
+    ]
 
 
 def build_report(number, measurement, goals, policy, previous=None, history=None):
     """The report of one measurement: what was measured, against which acceptables, and how it came out."""
-    rows = q.evaluate(measurement, goals, policy, previous["medicion"] if previous else None)
-    draft = {"numero": number, "fecha": measurement.get("generado"), "medicion": measurement}
+    rows = [
+        row
+        for row in q.evaluate(measurement, goals, policy, previous["medicion"] if previous else None)
+        if row["clave"] in q.WEEKLY_INDICATORS
+    ]
+    draft = {"numero": number, "fecha": measurement.get("generado"), "medicion": measurement, "serie": q.SERIES_WEEKLY}
     for row in rows:
         if row["estado"] in ("urgente", "critico"):
             # D-335: the diagnosis of what is out of its acceptable is stored with the report, once, never rewritten.
             row["diagnostico"] = q.diagnose(row, {**draft, "indicadores": rows}, history or [], policy)
     return {
         "numero": number,
-        "titulo": f"Informe de calidad N° {number}",
+        "titulo": f"Informe semanal de calidad N° {number}",
+        "serie": q.SERIES_WEEKLY,
+        "sqap": q.sqap_version(),
         "fecha": measurement.get("generado"),
         "semana": measurement.get("datos", {}).get("semana"),
         "codigo_evaluado": measurement.get("commit"),
         "anterior": previous["numero"] if previous else None,
         "aceptables": {
             key: {field: goals[key][field] for field in GOAL_FIELDS if field in goals.get(key, {})}
-            for key, *_ in q.INDICATORS
+            for key in q.WEEKLY_INDICATORS
         },
         "modo_datos": policy.get("modo_datos"),
         "indicadores": rows,
@@ -76,10 +87,11 @@ def register_nonconformities(report, path=NONCONFORMITIES):
     adds nothing; returns how many it added."""
     text = path.read_text(encoding="utf-8")
     register = json.loads(text)
-    known = {(item["informe"], item["indicador"]) for item in register["registros"]}
+    known = {(item["informe"], item.get("serie", q.SERIES_BUILD), item["indicador"]) for item in register["registros"]}
     added = [
         {
             "informe": report["numero"],
+            "serie": q.SERIES_WEEKLY,
             "indicador": row["clave"],
             "fecha": report["fecha"][:10],
             "causa": "",
@@ -87,7 +99,7 @@ def register_nonconformities(report, path=NONCONFORMITIES):
             "estado": "",
         }
         for row in report["indicadores"]
-        if row["estado"] in OUT_OF_RANGE and (report["numero"], row["clave"]) not in known
+        if row["estado"] in OUT_OF_RANGE and (report["numero"], q.SERIES_WEEKLY, row["clave"]) not in known
     ]
     if added:
         register["registros"] += added
@@ -125,10 +137,11 @@ def render_markdown(report, policy):
         f"| **Semana de datos** | {report['semana'] or '—'} |",
         f"| **Código evaluado** | {report['codigo_evaluado']} |",
         f"| **Informe anterior** | {previous} |",
+        f"| **Medido según** | SQAP v{report.get('sqap') or '—'} |",
         "",
-        f"Autoevaluación automática: {within} de {measured} indicadores medidos están dentro de lo aceptable; "
-        f"{nonconforming} no conformidades. Los aceptables son los de `metas.json` al crearse el informe; los "
-        "indicadores de datos van en modo aviso hasta que el autor apruebe que bloqueen la publicación.",
+        f"Autoevaluación automática de la carga semanal: {within} de {measured} indicadores de datos dentro de lo "
+        f"aceptable; {nonconforming} no conformidades. Los aceptables son los de `metas.json` al crearse el informe; el "
+        "método está en el SQAP (`docs/calidad/PLAN_DE_CALIDAD.md`).",
         "",
         "| Indicador | Tipo | Falla | Aceptable | Estado | Lectura |",
         "|---|---|---|---|---|---|",
@@ -140,7 +153,8 @@ def render_markdown(report, policy):
         )
     lines += [
         "",
-        "Cada informe se guarda en `docs/calidad/informes/` y no se edita: un error se corrige en el informe siguiente.",
+        "Cada informe se guarda en `docs/calidad/informes/semanales/` y no se edita: un error se corrige en el informe "
+        "siguiente. Los informes C-1 a C-7 de `docs/calidad/informes/` son la serie de construcción, cerrada.",
         "",
     ]
     return "\n".join(lines)

@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.4 |
-| Date | 2026-10-31 |
+| Version | 1.5 |
+| Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Say which quality GreenOcean looks after, how it measures it, who decides and what happens when something fails. |
@@ -76,7 +76,11 @@ The example is F-10 of the failure register. A speed test, which was informative
 
 ## 8. Quality reports
 
-After each weekly load, the quality workflow measures the 12 indicators and proposes a numbered report as a pull request (D-363). A report is never edited afterwards: if something changes, the next report comes out. The author reviews each report and approves the pull request before the dashboard shows it (D-331). In the dashboard, each report opens as a presentation and downloads as a PDF (D-333, D-347).
+There is only one numbered report: the weekly quality report, one per data week (D-431). The quality workflow makes it only when the weekly load ended in green, with its tests passed and the database published, and proposes it as a pull request (D-363). It measures the 3 data indicators of each load: dbt data tests passed, prices with a valid comparison and rejected rows. The 8 code indicators are checked by the CI of every push: they pass or fail in GitHub Actions, with no report. The days since the last load are shown in the dashboard, not in the report.
+
+The report has four pages: the cover, with the version of this plan it was measured by; the results; the comparison with another report, which warns when the two do not measure the same indicators; and one table of non-conformities and incidents, with the open ones and the ones of that week. The method lives only in this plan. A report is never edited afterwards: if something changes, the next report comes out. The author reviews each report and approves the pull request before the dashboard shows it (D-331). In the dashboard, each report opens as a presentation and downloads as a PDF (D-333, D-347).
+
+Reports C-1 to C-7, from 26 to 31 October 2026, are the construction series: they mix code and data, were measured on every push and are never edited. The dashboard shows them apart and does not compare them with the weekly series.
 
 [[diagrama:ciclo_calidad]]
 
@@ -116,3 +120,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.2 | 2026-10-30 | The page «Latest data by channel» shows each source's latest week (D-365) |
 | 1.3 | 2026-10-30 | The weekly load runs only the data and pipeline tests (D-366) |
 | 1.4 | 2026-10-31 | The 12 indicators of the quality plan, apart from the 11 data quality indicators (3); the report is proposed as a pull request after each load (8); vision and mission as in the PRD; the document moves to `docs/calidad/` (D-381, D-384, D-388) |
+| 1.5 | 2026-11-01 | One numbered report only, the weekly one of the data, in four pages and only after a load in green; the code is checked by the CI; the construction series C-1 to C-7 (8, D-431) |

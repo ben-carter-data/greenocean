@@ -76,14 +76,6 @@
       "Autoevaluación automática, revisada por el autor. No reemplaza una auditoría externa.",
       "Automatic self-assessment, reviewed by the author. It does not replace an external audit."
     ],
-    "que_medimos": [
-      "Qué medimos y por qué",
-      "What we measure and why"
-    ],
-    "como_se_mide": [
-      "Cómo se mide",
-      "How it is measured"
-    ],
     "resultados": [
       "Resultados",
       "Results"
@@ -92,37 +84,21 @@
       "Comparación",
       "Comparison"
     ],
-    "que_fallo": [
-      "Qué falló y qué hacemos",
-      "What failed and what we do"
-    ],
-    "incidentes": [
-      "Incidentes externos",
-      "External incidents"
-    ],
-    "anexo": [
-      "Anexo técnico",
-      "Technical annex"
-    ],
     "sin_no_conformidades": [
-      "Sin no conformidades en el período.",
-      "No non-conformities in the period."
-    ],
-    "sin_incidentes": [
-      "Sin incidentes externos en el período.",
-      "No external incidents in the period."
-    ],
-    "detalle_incidentes": [
-      "El detalle de cada incidente lo ve solo el autor.",
-      "Only the author sees the detail of each incident."
+      "Sin no conformidades ni incidencias abiertas en la semana.",
+      "No open non-conformities or incidents in the week."
     ],
     "causa_pendiente": [
       "Causa pendiente de registrar por el autor.",
       "Cause pending, to be recorded by the author."
     ],
-    "reproducir": [
-      "Cómo reproducir las mediciones",
-      "How to reproduce the measurements"
+    "incidencias": [
+      "No conformidades e incidencias",
+      "Non-conformities and incidents"
+    ],
+    "serie_construccion": [
+      "Serie de construcción (C-1 a C-7, 26 al 31 de octubre de 2026): mezcla indicadores de código y de datos y se midió en cada push; no se compara con la serie semanal.",
+      "Construction series (C-1 to C-7, 26 to 31 October 2026): it mixes code and data indicators and was measured on every push; it is not compared with the weekly series."
     ]
   },
   "reproducir": [

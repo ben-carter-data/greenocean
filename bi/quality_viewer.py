@@ -1,10 +1,11 @@
-"""The quality report viewer (D-333): one numbered report as eight slides, in its own HTML document.
+"""The quality report viewer (D-333, D-431): one numbered report as four slides, in its own HTML document.
 
 It is drawn in an iframe, so the arrows, the keyboard, full screen and «Descargar PDF» (the browser prints this
 document only, faithful to the screen) work without touching the dashboard's DOM. Every figure comes from the reports
 (docs/calidad/informes); every fixed text from docs/calidad/politica.json and docs/calidad/metas.json; the causes and
-the actions from docs/calidad/no_conformidades.json; external incidents are only counted here, their detail is for the
-author. The comparison slide compares any two reports, the previous one by default. Pure functions.
+the actions from docs/calidad/no_conformidades.json and docs/calidad/incidentes_externos.json. The method is the SQAP's:
+the cover names its version. The comparison slide compares any two reports of the same series, the previous one by
+default, and warns when they do not measure the same indicators. Pure functions.
 """
 
 from __future__ import annotations
@@ -89,6 +90,60 @@ def results_rows(report: dict[str, Any], policy: dict[str, Any], english: bool) 
     )
 
 
+def table_rows(
+    report: dict[str, Any],
+    reports: list[dict[str, Any]],
+    goals: dict[str, Any],
+    policy: dict[str, Any],
+    nonconformities: list[dict[str, Any]],
+    incidents: list[dict[str, Any]],
+    english: bool,
+) -> list[tuple[str, str, str, str, str]]:
+    """D-431: the one table of non-conformities and incidents: (indicator, state, cause, disposition, date). The
+    non-conformities of this report and the ones of earlier reports of its series still open, then the external
+    incidents of its period."""
+    names = {row["clave"]: pick(row["nombre"], english) for item in reports for row in item["indicadores"]}
+    earlier = {item["numero"] for item in reports if item["numero"] <= report["numero"]}
+    rows = []
+    for record in nonconformities:
+        if record.get("serie", quality_metrics.SERIES_BUILD) != report.get("serie", quality_metrics.SERIES_BUILD):
+            continue
+        mine = quality_metrics.same_report(record, report)
+        if not mine and (record.get("informe") not in earlier or quality_metrics.is_resolved(record)):
+            continue
+        key = record.get("indicador", "")
+        state = record.get("estado") or ("pending, the author's" if english else "pendiente del autor")
+        cause = record.get("causa") or texts_of(policy, "causa_pendiente", english)
+        disposition = record.get("accion") or pick(goals.get(key, {}).get("accion", ""), english)
+        rows.append(
+            (
+                names.get(key, key),
+                pick(state, english),
+                pick(cause, english),
+                pick(disposition, english),
+                str(record.get("fecha", "")),
+            )
+        )
+    start, end = period(reports, report)
+    for item in incidents:
+        if start < str(item.get("fecha", ""))[:10] <= end:
+            source = item.get("fuente", "")
+            rows.append(
+                (
+                    names.get(item.get("indicador", ""), item.get("indicador", "")),
+                    f"{'External incident' if english else 'Incidente externo'} · {source}",
+                    pick(item.get("causa", ""), english),
+                    pick(item.get("respuesta", ""), english),
+                    str(item.get("fecha", "")),
+                )
+            )
+    return rows
+
+
+def texts_of(policy: dict[str, Any], key: str, english: bool) -> str:
+    return pick(policy.get("diapositivas", {}).get(key, ["", ""]), english)
+
+
 def build_viewer_html(
     reports: list[dict[str, Any]],
     number: int,
@@ -97,151 +152,42 @@ def build_viewer_html(
     nonconformities: list[dict[str, Any]],
     incidents: list[dict[str, Any]],
     english: bool = False,
+    sqap_url: str = "",
 ) -> str:
-    """The whole viewer of report «number», a self-contained document."""
+    """The whole viewer of report «number» of one series, a self-contained document. D-431: four slides, one page
+    each: the cover with the SQAP it was measured by, the results, the comparison and the non-conformities and
+    incidents; the method lives in the SQAP only."""
     report = next(item for item in reports if item["numero"] == number)
-    texts = policy.get("diapositivas", {})
-    word = lambda key: pick(texts.get(key, ["", ""]), english)  # noqa: E731
-    title = f"Quality report No. {number}" if english else f"Informe de calidad N° {number}"
+    word = lambda key: texts_of(policy, key, english)  # noqa: E731
+    title = quality_metrics.report_name(report, english)
     within, nonconforming, measured = quality_metrics.report_counts(report)
     labels = (
-        ("Date", "Data week", "Evaluated code", "Within the acceptable")
+        ("Date", "Data week", "Evaluated code", "Within the acceptable", "Measured by")
         if english
-        else ("Fecha", "Semana de datos", "Código evaluado", "Dentro de lo aceptable")
+        else ("Fecha", "Semana de datos", "Código evaluado", "Dentro de lo aceptable", "Medido según")
+    )
+    version = report.get("sqap")
+    sqap = (
+        f"SQAP v{esc(version)}"
+        if version
+        else ("SQAP (version not recorded)" if english else "SQAP (versión no registrada)")
+    )
+    sqap_html = f'<a href="{esc(sqap_url)}" target="_blank" rel="noopener">{sqap}</a>' if sqap_url else sqap
+    series_note = (
+        ""
+        if report.get("serie") == quality_metrics.SERIES_WEEKLY
+        else f'<p class="muted">{esc(word("serie_construccion"))}</p>'
     )
     cover = (
         f'<section class="slide cover" data-key="portada"><span class="kicker">GreenOcean</span><h1>{esc(title)}</h1>'
         f'<dl><dt>{labels[0]}</dt><dd>{esc(report["fecha"])}</dd><dt>{labels[1]}</dt><dd>{esc(weeks.week_range(report["semana"], True, english) if report["semana"] else "—")}</dd>'
         f'<dt>{labels[2]}</dt><dd><code>{esc(report["codigo_evaluado"])}</code></dd>'
-        f"<dt>{labels[3]}</dt><dd>{within} / {measured}</dd></dl>"
-        f'<p class="muted">{esc(word("portada"))}</p></section>'
+        f"<dt>{labels[3]}</dt><dd>{within} / {measured}</dd><dt>{labels[4]}</dt><dd>{sqap_html}</dd></dl>"
+        f'<p class="muted">{esc(word("portada"))}</p>{series_note}</section>'
     )
-    # 2. What we measure and why: the two qualities, their objective and their acceptables.
-    qualities = []
-    for kind in ("datos", "codigo"):
-        quality = policy.get("calidades", {}).get(kind, {})
-        items = "".join(
-            f"<li>{esc(pick(row['nombre'], english))}: "
-            f"<b>{esc(figure(row['falla_aceptable'], row['unidad_falla'], english))}</b></li>"
-            for row in report["indicadores"]
-            if row["tipo"] == kind
-        )
-        acceptable = "Acceptable failure" if english else "Falla aceptable"
-        qualities.append(
-            f'<div class="card"><h3>{esc(pick(quality.get("titulo", ["", ""]), english))}</h3>'
-            f'<p>{esc(pick(quality.get("objetivo", ["", ""]), english))}</p>'
-            f'<p class="muted">{acceptable}</p><ul>{items}</ul></div>'
-        )
-    measure = slide("que_medimos", word("que_medimos"), f'<div class="two">{"".join(qualities)}</div>')
-    # 3. How it is measured.
-    head = (
-        ("Indicator", "What it measures", "How", "Acceptable", "Goal", "Frequency")
-        if english
-        else ("Indicador", "Qué mide", "Cómo", "Aceptable", "Meta", "Frecuencia")
-    )
-    method_rows = []
-    for row in report["indicadores"]:
-        goal, frozen = goals.get(row["clave"], {}), report["aceptables"].get(row["clave"], {})
-        limit = frozen.get("max", frozen.get("min"))
-        sign = "≤" if "max" in frozen else "≥"
-        unit = quality_metrics.unit_text(row["unidad"], english)
-        method_rows.append(
-            f'<tr><td><b>{esc(pick(row["nombre"], english))}</b></td><td>{esc(pick(goal.get("que_mide", ""), english))}</td>'
-            f'<td class="muted">{esc(pick(goal.get("como", ""), english))}</td>'
-            f"<td>{sign} {esc(limit)} {esc(unit)}</td><td>{sign} {esc(frozen.get('meta', limit))} {esc(unit)}</td>"
-            f'<td class="muted">{esc(pick(goal.get("frecuencia", ""), english))}</td></tr>'
-        )
-    method = slide(
-        "como_se_mide",
-        word("como_se_mide"),
-        "<table><thead><tr>"
-        + "".join(f"<th>{cell}</th>" for cell in head)
-        + f'</tr></thead><tbody>{"".join(method_rows)}</tbody></table>',
-    )
-    results = slide("resultados", word("resultados"), results_rows(report, policy, english))
-    # 5. Comparison: drawn by the script from the reports' own figures; the previous report by default.
-    options = "".join(
-        f'<option value="{item["numero"]}">N° {item["numero"]} · {esc(item["fecha"][:10])}</option>' for item in reports
-    )
-    compare_labels = ("Compare", "with") if english else ("Comparar", "con")
-    comparison = slide(
-        "comparacion",
-        word("comparacion"),
-        f'<div class="pickers"><label>{compare_labels[0]} <select id="cmp-a">{options}</select></label>'
-        f'<label>{compare_labels[1]} <select id="cmp-b">{options}</select></label></div><div id="cmp"></div>',
-    )
-    # 6. What failed and what we do.
-    failed = [row for row in report["indicadores"] if row["estado"] in ("urgente", "critico")]
-    entries = []
-    for row in sorted(failed, key=lambda item: item["estado"] != "critico"):
-        record = next(
-            (
-                item
-                for item in nonconformities
-                if item.get("informe") == number and item.get("indicador") == row["clave"]
-            ),
-            {},
-        )
-        cause = record.get("causa") or word("causa_pendiente")
-        action = record.get("accion") or pick(goals.get(row["clave"], {}).get("accion", ""), english)
-        status = record.get("estado") or ("pending, the author's" if english else "pendiente del autor")
-        labels6 = ("Cause", "Action", "State") if english else ("Causa", "Acción", "Estado")
-        entries.append(
-            f'<div class="card"><h3 style="color:{STATE_COLORS[row["estado"]]}">{esc(pick(row["nombre"], english))} · '
-            f"{esc(pick(policy['estados'][row['estado']], english))}</h3>"
-            f"<p><b>{labels6[0]}:</b> {esc(pick(cause, english))}</p><p><b>{labels6[1]}:</b> {esc(pick(action, english))}</p>"
-            f'<p class="muted"><b>{labels6[2]}:</b> {esc(pick(status, english))}</p></div>'
-        )
-    what_failed = slide(
-        "que_fallo", word("que_fallo"), "".join(entries) or f'<p class="big">{esc(word("sin_no_conformidades"))}</p>'
-    )
-    # 7. External incidents: only their count; the detail is the author's.
-    start, end = period(reports, report)
-    count = incidents_in(incidents, start, end)
-    counted = (
-        esc(word("sin_incidentes"))
-        if not count
-        else (
-            f"{count} external incident{'s' if count > 1 else ''}"
-            if english
-            else f"{count} incidente{'s' if count > 1 else ''} externo{'s' if count > 1 else ''}"
-        )
-    )
-    external = slide(
-        "incidentes",
-        word("incidentes"),
-        f'<p class="big">{counted}</p><p class="muted">{esc(word("detalle_incidentes"))}</p>',
-    )
-    # 8. Technical annex.
-    measurement = report["medicion"]
-    ruff = measurement.get("ruff", {}).get("por_codigo", {})
-    coverage = measurement.get("cobertura", {}).get("modulos", {})
-    lowest = sorted(coverage.items(), key=lambda item: item[1])[:8]
-    dbt = measurement.get("dbt", {}).get("ultima_construccion") or {}
-    data = measurement.get("datos", {})
-    annex_labels = (
-        (
-            "Ruff by rule",
-            "Lowest covered modules",
-            "Data validations",
-            "dbt tests passed",
-            "Rows read",
-            "Rows rejected",
-            "Prices with a valid comparison",
-            "mypy errors",
-        )
-        if english
-        else (
-            "Ruff por regla",
-            "Módulos menos cubiertos",
-            "Validaciones de datos",
-            "Pruebas dbt superadas",
-            "Filas leídas",
-            "Filas rechazadas",
-            "Precios con comparación válida",
-            "Errores de mypy",
-        )
-    )
+    # The figures behind the data indicators, under the results.
+    data = report["medicion"].get("datos", {})
+    dbt = report["medicion"].get("dbt", {}).get("ultima_construccion") or {}
 
     def num(value: Any) -> str:
         return (
@@ -250,31 +196,63 @@ def build_viewer_html(
             else quality_metrics.number(value, 1 if isinstance(value, float) and value % 1 else 0, english)
         )
 
-    validations = [
-        (annex_labels[3], f"{num(dbt.get('pruebas_ok'))} / {num(dbt.get('pruebas_total'))}"),
-        (annex_labels[4], num(data.get("filas_leidas"))),
-        (annex_labels[5], num(data.get("filas_rechazadas"))),
-        (annex_labels[6], f"{num(data.get('con_comparacion'))} / {num(data.get('precios_semana'))}"),
-        (annex_labels[7], num(measurement.get("mypy", {}).get("errores"))),
-    ]
-    annex = slide(
-        "anexo",
-        word("anexo"),
-        '<div class="three">'
-        f'<div class="card"><h3>{annex_labels[0]}</h3><ul>'
-        + (
-            "".join(f"<li><code>{esc(code)}</code> {num(count)}</li>" for code, count in sorted(ruff.items()))
-            or "<li>—</li>"
-        )
-        + f'</ul></div><div class="card"><h3>{annex_labels[1]}</h3><ul>'
-        + ("".join(f"<li><code>{esc(name)}</code> {num(value)} %</li>" for name, value in lowest) or "<li>—</li>")
-        + f'</ul></div><div class="card"><h3>{annex_labels[2]}</h3><ul>'
-        + "".join(f"<li>{esc(label)}: <b>{esc(value)}</b></li>" for label, value in validations)
-        + f'</ul></div></div><h3>{esc(word("reproducir"))}</h3><ul class="code">'
-        + "".join(f"<li><code>{esc(line)}</code></li>" for line in policy.get("reproducir", []))
-        + "</ul>",
+    of = "of" if english else "de"
+    figures = (
+        ("dbt tests passed", "Rows rejected", "Prices with a valid comparison")
+        if english
+        else ("Pruebas dbt superadas", "Filas rechazadas", "Precios con comparación válida")
     )
-    slides = [cover, measure, method, results, comparison, what_failed, external, annex]
+    behind = " · ".join(
+        f"{label}: {value}"
+        for label, value in (
+            (figures[0], f"{num(dbt.get('pruebas_ok'))} {of} {num(dbt.get('pruebas_total'))}"),
+            (figures[1], f"{num(data.get('filas_rechazadas'))} {of} {num(data.get('filas_leidas'))}"),
+            (figures[2], f"{num(data.get('con_comparacion'))} {of} {num(data.get('precios_semana'))}"),
+        )
+    )
+    results = slide(
+        "resultados",
+        word("resultados"),
+        results_rows(report, policy, english) + f'<p class="muted small">{esc(behind)}</p>',
+    )
+    # The comparison: any two reports of the same series, the previous one by default.
+    options = "".join(
+        f'<option value="{item["numero"]}">{esc(quality_metrics.report_code(item, english))} · {esc(item["fecha"][:10])}</option>'
+        for item in reports
+    )
+    compare_labels = ("Compare", "with") if english else ("Comparar", "con")
+    comparison = slide(
+        "comparacion",
+        word("comparacion"),
+        f'<div class="pickers"><label>{compare_labels[0]} <select id="cmp-a">{options}</select></label>'
+        f'<label>{compare_labels[1]} <select id="cmp-b">{options}</select></label></div>'
+        f'<p class="warn" id="cmp-warn" hidden></p><div id="cmp"></div>',
+    )
+    # The non-conformities and incidents: one compact table.
+    head = (
+        ("Indicator", "State", "Cause", "Disposition", "Date")
+        if english
+        else ("Indicador", "Estado", "Causa", "Disposición", "Fecha")
+    )
+    entries = table_rows(report, reports, goals, policy, nonconformities, incidents, english)
+    issues = slide(
+        "incidencias",
+        word("incidencias"),
+        (
+            "<table class='issues'><thead><tr>"
+            + "".join(f"<th>{cell}</th>" for cell in head)
+            + "</tr></thead><tbody>"
+            + "".join(
+                f"<tr><td><b>{esc(name)}</b></td><td>{esc(state)}</td><td>{esc(cause)}</td>"
+                f'<td>{esc(disposition)}</td><td class="num muted">{esc(day)}</td></tr>'
+                for name, state, cause, disposition, day in entries
+            )
+            + "</tbody></table>"
+        )
+        if entries
+        else f'<p class="big">{esc(word("sin_no_conformidades"))}</p>',
+    )
+    slides = [cover, results, comparison, issues]
     data_for_script = {
         "reports": [
             {
@@ -290,7 +268,13 @@ def build_viewer_html(
         "b": number,
         "lang": "en-US" if english else "es-CL",
         "units": {"días": "days"} if english else {},
-        "head": ["Indicator", "No.", "No.", "Change"] if english else ["Indicador", "N°", "N°", "Variación"],
+        "head": ["Indicator", "", "", "Change"] if english else ["Indicador", "", "", "Variación"],
+        "codes": {item["numero"]: quality_metrics.report_code(item, english) for item in reports},
+        "warn": (
+            "The two reports do not measure the same indicators; only the ones in both are compared."
+            if english
+            else "Los dos informes no miden los mismos indicadores; solo se comparan los que están en ambos."
+        ),
     }
     buttons = (
         ("Previous", "Next", "Full screen", "Download PDF")
@@ -352,7 +336,8 @@ td{{padding:8px 10px;border-bottom:1px solid #141b27;vertical-align:top}} td b{{
 .bar{{}} .bar{{position:relative}} span.bar{{display:block;position:relative;height:6px;min-width:110px;margin-top:7px;border-radius:3px;background:#1d2738}}
 span.bar i{{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:{SKY}}}
 span.bar b{{position:absolute;top:-4px;width:2px;height:14px;background:#f3f7fc}} span.bar.empty{{background:none}}
-.state{{font-weight:700;white-space:nowrap}} .big{{font-size:22px;color:#f3f7fc;margin:30px 0 8px}}
+.state{{font-weight:700;white-space:nowrap}} .small{{font-size:12px;margin-top:10px}}
+.warn{{color:#fbbf24;margin:0 0 10px}} table.issues td{{font-size:12px}} a{{color:{SKY}}} .big{{font-size:22px;color:#f3f7fc;margin:30px 0 8px}}
 .pickers{{display:flex;gap:18px;margin-bottom:14px}} select{{font:inherit;color:#e6edf6;background:#0d1320;border:1px solid #243046;border-radius:8px;padding:4px 8px}}
 .pair{{display:grid;gap:3px}} .pair i{{display:block;height:6px;border-radius:3px}}
 .up{{color:#f87171}} .down{{color:#34d399}}
@@ -362,7 +347,8 @@ span.bar b{{position:absolute;top:-4px;width:2px;height:14px;background:#f3f7fc}
 @media print{{.bar,.thumbs{{display:none}} .deck{{height:auto}} .main{{display:block}} .stage{{overflow:visible;background:none}}
 .canvas{{position:static;width:auto;height:auto;margin:0;transform:none!important;box-shadow:none}}
 .slide{{position:static;opacity:1!important;visibility:visible!important;display:block;page-break-after:always;overflow:visible;transition:none}}
-html,body{{background:{DEEP}!important}} @page{{margin:12mm}}}}
+html,body{{background:{DEEP}!important}} @page{{margin:12mm}}
+table{{font-size:11.5px}} th{{padding:5px 8px}} td{{padding:4px 8px}} .slide{{padding:14px 20px 16px}} h2{{margin-bottom:8px}}}}
 """
 
 SCRIPT = f"""
@@ -390,9 +376,11 @@ a.value=DATA.a;b.value=DATA.b;
 function compare(){{const ra=DATA.reports.find(r=>r.n==a.value),rb=DATA.reports.find(r=>r.n==b.value);
 const top=Math.max(1,...ra.rows.concat(rb.rows).map(r=>r[1]||0));
 const t=document.createElement('table');const head=document.createElement('tr');
-[DATA.head[0],DATA.head[1]+' '+ra.n,DATA.head[2]+' '+rb.n,DATA.head[3]].forEach(h=>{{const th=document.createElement('th');th.textContent=h;head.appendChild(th);}});
+[DATA.head[0],DATA.codes[ra.n],DATA.codes[rb.n],DATA.head[3]].forEach(h=>{{const th=document.createElement('th');th.textContent=h;head.appendChild(th);}});
 const thead=document.createElement('thead');thead.appendChild(head);t.appendChild(thead);const body=document.createElement('tbody');
-rb.rows.forEach(row=>{{const before=(ra.rows.find(x=>x[3]===row[3])||[])[1];const tr=document.createElement('tr');
+const keys=r=>r.rows.filter(x=>x[1]!==null).map(x=>x[3]).sort().join();const warn=document.getElementById('cmp-warn');
+warn.hidden=keys(ra)===keys(rb);warn.textContent=DATA.warn;
+rb.rows.filter(row=>ra.rows.some(x=>x[3]===row[3])).forEach(row=>{{const before=(ra.rows.find(x=>x[3]===row[3])||[])[1];const tr=document.createElement('tr');
 const name=document.createElement('td');const strong=document.createElement('b');strong.textContent=row[0];name.appendChild(strong);
 const bars=document.createElement('div');bars.className='pair';
 [[before,'{BEFORE}'],[row[1],'{SKY}']].forEach(([v,c])=>{{const i=document.createElement('i');i.style.background=c;

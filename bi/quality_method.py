@@ -46,7 +46,7 @@ def read_page() -> tuple[list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
 
 
 def report_title(report: dict[str, Any]) -> str:
-    return t(f"Informe de calidad N° {report['numero']}", f"Quality report No. {report['numero']}")
+    return quality_metrics.report_name(report, i18n.is_english())  # D-431: the weekly series or C-1 to C-7
 
 
 def failure_text(row: dict[str, Any], key: str = "falla") -> str:
@@ -190,9 +190,10 @@ def build_overview(
 def report_summary(report: dict[str, Any]) -> str:
     """The one line of a report in «Informes»: its number, date and how many indicators are within the acceptable."""
     within, _, measured = quality_metrics.report_counts(report)
+    code = quality_metrics.report_code(report, i18n.is_english())
     return t(
-        f"N° {report['numero']} · {report['fecha']} · {within} / {measured} dentro de lo aceptable",
-        f"No. {report['numero']} · {report['fecha']} · {within} / {measured} within the acceptable",
+        f"{code} · {report['fecha']} · {within} / {measured} dentro de lo aceptable",
+        f"{code} · {report['fecha']} · {within} / {measured} within the acceptable",
     )
 
 
@@ -258,7 +259,7 @@ def record_of(report: dict[str, Any], row: dict[str, Any], nonconformities: list
         (
             item
             for item in nonconformities
-            if item.get("informe") == report["numero"] and item.get("indicador") == row["clave"]
+            if quality_metrics.same_report(item, report) and item.get("indicador") == row["clave"]
         ),
         {},
     )
@@ -337,11 +338,11 @@ def build_alert(
         )
     if not parts:
         return ""
-    href = html.escape(link(latest["numero"])) if link else "#"
+    href = html.escape(link(latest)) if link else "#"
     parts.append(
         f'<p class="qm-alert-foot">{html.escape(t(*texts["anotar"]))} · {html.escape(t("Última medición", "Last measurement"))}: '
         f'{html.escape(day)} · <a href="{href}" target="_self">{html.escape(t(*texts["ver_informe"]))} '
-        f'{html.escape(t("N°", "No."))} {latest["numero"]}</a></p>'
+        f'{html.escape(quality_metrics.report_code(latest, i18n.is_english()))}</a></p>'
     )
     return '<div class="qm-alerts">' + "".join(parts) + "</div>"
 

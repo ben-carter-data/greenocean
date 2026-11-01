@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.4 |
-| Fecha | 31-10-2026 |
+| Versión | 1.5 |
+| Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Decir qué calidad cuida GreenOcean, cómo la mide, quién decide y qué pasa cuando algo falla. |
@@ -76,7 +76,11 @@ El ejemplo es F-10 del registro de fallas. Una prueba de velocidad, que era info
 
 ## 8. Informes de calidad
 
-Después de cada carga semanal, el workflow de calidad mide los 12 indicadores y propone un informe numerado como pull request (D-363). Un informe no se edita después: si algo cambia, sale el informe siguiente. El autor revisa cada informe y aprueba el pull request antes de que el panel lo muestre (D-331). En el panel, cada informe se abre como presentación y se descarga en PDF (D-333, D-347).
+Hay un solo informe numerado: el informe semanal de calidad, uno por semana de datos (D-431). El workflow de calidad lo genera solo cuando la carga semanal terminó en verde, con sus pruebas pasadas y la base publicada, y lo propone como pull request (D-363). Mide los 3 indicadores de datos de cada carga: pruebas de datos dbt superadas, precios con comparación válida y filas rechazadas. Los 8 indicadores de código se verifican en el CI de cada push: pasan o fallan en GitHub Actions, sin informe. Los días desde la última carga se ven en el panel, no en el informe.
+
+El informe tiene cuatro páginas: la portada, con la versión de este plan con que se midió; los resultados; la comparación con otro informe, que avisa si los dos no miden los mismos indicadores; y una sola tabla de no conformidades e incidencias, con las abiertas y las de esa semana. La metodología vive solo en este plan. Un informe no se edita después: si algo cambia, sale el informe siguiente. El autor revisa cada informe y aprueba el pull request antes de que el panel lo muestre (D-331). En el panel, cada informe se abre como presentación y se descarga en PDF (D-333, D-347).
+
+Los informes C-1 a C-7, del 26 al 31 de octubre de 2026, son la serie de construcción: mezclan código y datos, se midieron en cada push y no se editan. El panel los muestra aparte y no los compara con la serie semanal.
 
 [[diagrama:ciclo_calidad]]
 
@@ -116,3 +120,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.2 | 30-10-2026 | La página «Último dato por canal» muestra la última semana de cada fuente (D-365) |
 | 1.3 | 30-10-2026 | La carga semanal corre solo las pruebas de datos y del pipeline (D-366) |
 | 1.4 | 31-10-2026 | Los 12 indicadores del plan de calidad, distintos de los 11 indicadores de calidad de los datos (3); el informe se propone como pull request después de cada carga (8); visión y misión como en el PRD; el documento pasa a `docs/calidad/` (D-381, D-384, D-388) |
+| 1.5 | 01-11-2026 | Un solo informe numerado, el semanal de los datos, en cuatro páginas y solo tras una carga en verde; el código se verifica en el CI; la serie de construcción C-1 a C-7 (8, D-431) |

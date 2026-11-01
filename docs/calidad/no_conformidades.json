@@ -6,8 +6,14 @@
       "indicador": "pruebas_fallidas",
       "fecha": "2026-10-26",
       "causa": "",
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1.",
+        "Closed at the end of the construction series; the indicators are measured again in the weekly series from No. 1."
+      ],
+      "estado": [
+        "cerrada",
+        "closed"
+      ]
     },
     {
       "informe": 1,
@@ -17,8 +23,14 @@
         "Ruff todavía no estaba configurado en el proyecto (antes de D-323).",
         "Ruff was not configured in the project yet (before D-323)."
       ],
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1.",
+        "Closed at the end of the construction series; the indicators are measured again in the weekly series from No. 1."
+      ],
+      "estado": [
+        "cerrada",
+        "closed"
+      ]
     },
     {
       "informe": 2,
@@ -28,8 +40,14 @@
         "Cinco pruebas de enlaces públicos fallaban porque el repositorio aún no tenía el nombre «greenocean» en GitHub (D-319); pasan desde el cambio de nombre.",
         "Five public link tests failed because the repository did not yet have the name «greenocean» on GitHub (D-319); they pass since the rename."
       ],
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1.",
+        "Closed at the end of the construction series; the indicators are measured again in the weekly series from No. 1."
+      ],
+      "estado": [
+        "cerrada",
+        "closed"
+      ]
     },
     {
       "informe": 2,
@@ -39,8 +57,14 @@
         "Dos módulos vacíos (bi/data_browser.py y bi/explorer.py) se contaban con 0 % de cobertura; D-323 los retiró.",
         "Two empty modules (bi/data_browser.py and bi/explorer.py) counted with 0 % coverage; D-323 removed them."
       ],
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1.",
+        "Closed at the end of the construction series; the indicators are measured again in the weekly series from No. 1."
+      ],
+      "estado": [
+        "cerrada",
+        "closed"
+      ]
     },
     {
       "informe": 2,
@@ -50,8 +74,14 @@
         "Línea base medida antes de configurar Ruff (D-323).",
         "Baseline measured before Ruff was configured (D-323)."
       ],
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1.",
+        "Closed at the end of the construction series; the indicators are measured again in the weekly series from No. 1."
+      ],
+      "estado": [
+        "cerrada",
+        "closed"
+      ]
     },
     {
       "informe": 3,
@@ -61,8 +91,14 @@
         "Las cinco pruebas de enlaces públicos (D-319) y dos pruebas que exigían el informe regenerado, medido antes de guardarlo (D-323).",
         "The five public link tests (D-319) and two tests that required the regenerated report, measured before it was saved (D-323)."
       ],
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1.",
+        "Closed at the end of the construction series; the indicators are measured again in the weekly series from No. 1."
+      ],
+      "estado": [
+        "cerrada",
+        "closed"
+      ]
     },
     {
       "informe": 4,
@@ -72,8 +108,14 @@
         "Cinco pruebas de enlaces públicos fallaban porque el repositorio aún no tenía el nombre «greenocean» en GitHub (D-319); pasan desde el cambio de nombre.",
         "Five public link tests failed because the repository did not yet have the name «greenocean» on GitHub (D-319); they pass since the rename."
       ],
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1.",
+        "Closed at the end of the construction series; the indicators are measured again in the weekly series from No. 1."
+      ],
+      "estado": [
+        "cerrada",
+        "closed"
+      ]
     },
     {
       "informe": 5,
@@ -83,8 +125,14 @@
         "Ninguna carga publicó datos desde el 20-10: la carga corría las pruebas de velocidad (F-10) y después la detuvo una semana que el mayorista aún no publica (F-06).",
         "No load published data since 20-10: the load ran the speed tests (F-10) and then a week the wholesale source had not published yet stopped it (F-06)."
       ],
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1.",
+        "Closed at the end of the construction series; the indicators are measured again in the weekly series from No. 1."
+      ],
+      "estado": [
+        "cerrada",
+        "closed"
+      ]
     },
     {
       "informe": 6,
@@ -94,8 +142,14 @@
         "Siguen sin publicarse datos desde el 20-10: la misma causa del informe N° 5 (F-10 y F-06).",
         "Still no data published since 20-10: the same cause as report No. 5 (F-10 and F-06)."
       ],
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1.",
+        "Closed at the end of the construction series; the indicators are measured again in the weekly series from No. 1."
+      ],
+      "estado": [
+        "cerrada",
+        "closed"
+      ]
     },
     {
       "informe": 7,
@@ -119,8 +173,14 @@
       "indicador": "comparables_pct",
       "fecha": "2026-10-31",
       "causa": "",
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1.",
+        "Closed at the end of the construction series; the indicators are measured again in the weekly series from No. 1."
+      ],
+      "estado": [
+        "cerrada",
+        "closed"
+      ]
     }
   ]
 }

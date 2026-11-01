@@ -86,7 +86,7 @@ def test_d332_the_header_names_the_latest_report():
     reports, _, _ = quality_method.read_page()
     latest = reports[-1]
     header = quality_method.build_header(latest)
-    assert f"Informe de calidad N° {latest['numero']}" in header and latest["codigo_evaluado"] in header
+    assert quality_metrics.report_name(latest) in header and latest["codigo_evaluado"] in header
     assert "revisada y aprobada por el autor" in header and "ISO" not in header
     assert "Todavía no hay informes" in quality_method.build_header(None)
 
@@ -119,7 +119,8 @@ def test_d332_the_reports_tab_lists_every_report_newest_first(monkeypatch):
     for report in reports:  # one line each: number, date and how many indicators are within the acceptable
         within, nonconforming, measured = quality_metrics.report_counts(report)
         line = quality_method.report_summary(report)
-        assert line.startswith(f"N° {report['numero']} · {report['fecha']}") and f"{within} / {measured}" in line
+        code = quality_metrics.report_code(report)  # D-431: «C-7» in the construction series, «N° 1» in the weekly
+        assert line.startswith(f"{code} · {report['fecha']}") and f"{within} / {measured}" in line
         assert f"<li><b>No conformidades:</b> {nonconforming}</li>" in quality_method.build_report_detail(
             report, reports
         )
@@ -136,11 +137,12 @@ def load_reports_module():
 
 def test_d331_the_reports_are_numbered_frozen_and_the_latest_is_the_markdown():
     informe_calidad = load_reports_module()
-    reports = informe_calidad.read_reports()
-    assert [report["numero"] for report in reports] == list(range(1, len(reports) + 1)) and len(reports) >= 4
+    # D-431: the construction series stays as written, C-1 to C-7, and is never rebuilt with today's rules
+    reports = quality_metrics.read_series(quality_metrics.SERIES_BUILD)
+    assert [report["numero"] for report in reports] == list(range(1, 8))
     policy = quality_metrics.read(quality_metrics.POLICY_FILE)
     for report in reports:
-        assert report["titulo"] == f"Informe de calidad N° {report['numero']}"
+        assert report["titulo"] == f"Informe de calidad N° {report['numero']}" and "sqap" not in report
         assert (
             report["codigo_evaluado"] == report["medicion"]["commit"]
             and report["fecha"] == report["medicion"]["generado"]
@@ -152,20 +154,23 @@ def test_d331_the_reports_are_numbered_frozen_and_the_latest_is_the_markdown():
             assert {"valor", "falla", "falla_aceptable", "estado", "insight", "variacion"} <= set(row)
         # Rebuilt today from its own frozen measurement and acceptables, it says the same: nothing was edited.
         previous = reports[report["numero"] - 2] if report["numero"] > 1 else None
-        rebuilt = informe_calidad.build_report(
-            report["numero"],
+        rebuilt = quality_metrics.evaluate(
             report["medicion"],
             report["aceptables"],
             {**policy, "modo_datos": report["modo_datos"]},
-            previous,
+            previous["medicion"] if previous else None,
         )
-        assert [row["estado"] for row in rebuilt["indicadores"]] == [row["estado"] for row in report["indicadores"]]
+        assert [row["estado"] for row in rebuilt] == [row["estado"] for row in report["indicadores"]]
     # The first reports are the measurements of the history, without anything made up.
     assert [report["codigo_evaluado"] for report in reports[:4]] == ["cf561e7", "6c6286c", "d66804c", "b015e3a"]
     assert {row["clave"]: row["estado"] for row in reports[0]["indicadores"]}["comparables_pct"] == "sin_medicion"
     text = (ROOT / "docs" / "calidad" / "INFORME.md").read_text(encoding="utf-8")
-    assert text == informe_calidad.render_markdown(reports[-1], policy) and "```" not in text
-    assert not any(word in text.lower() for word in FORBIDDEN)
+    weekly = informe_calidad.read_reports()
+    if weekly:  # the latest weekly report; until the first one, INFORME.md keeps C-7 as it was written
+        assert text == informe_calidad.render_markdown(weekly[-1], policy)
+    else:
+        assert text.startswith("# Informe de calidad N° 7")
+    assert "```" not in text and not any(word in text.lower() for word in FORBIDDEN)
 
 
 def test_d331_a_report_is_never_rewritten_and_the_pull_request_compares_with_the_previous(tmp_path):
@@ -176,13 +181,16 @@ def test_d331_a_report_is_never_rewritten_and_the_pull_request_compares_with_the
     assert new and first["numero"] == 1 and (tmp_path / "informe-001.json").exists()
     again, new = informe_calidad.add_report(REPORT, goals, policy, folder=tmp_path)
     assert not new and len(list(tmp_path.glob("informe-*.json"))) == 1  # the same measurement adds nothing
-    fixed = dict(REPORT, commit="def5678", generado="2026-11-03 12:00 UTC", ruff={"errores": 0})
+    # D-431: a weekly report holds only the three data indicators of the load, and the SQAP version it was measured by
+    assert [row["clave"] for row in first["indicadores"]] == list(quality_metrics.WEEKLY_INDICATORS)
+    assert set(first["aceptables"]) == set(quality_metrics.WEEKLY_INDICATORS) and first["serie"] == "semanal"
+    assert first["sqap"] == quality_metrics.sqap_version() and first["sqap"]
+    fixed = dict(REPORT, commit="def5678", generado="2026-11-03 12:00 UTC")
     second, new = informe_calidad.add_report(fixed, goals, policy, folder=tmp_path)
     assert new and second["numero"] == 2 and second["anterior"] == 1
-    assert {row["clave"]: row["variacion"] for row in second["indicadores"]}["ruff_avisos"] == -3
     body = informe_calidad.build_pull_request(second, first, policy)
     within, nonconforming, measured = informe_calidad.counts(second)
-    assert "Informe de calidad N° 2" in body and "comparada con el informe N° 1" in body
+    assert "Informe semanal de calidad N° 2" in body and "comparada con el informe N° 1" in body
     assert f"{within} de {measured} indicadores dentro de lo aceptable" in body
     with pytest.raises(FileExistsError):  # the file mode refuses to overwrite a report
         with open(tmp_path / "informe-001.json", "x", encoding="utf-8"):
@@ -289,10 +297,11 @@ def test_d330_the_failure_reads_against_the_acceptable_and_the_insight_comes_fro
 
 
 # region Reports: filters, links and the slide viewer (D-333)
-def test_d333_the_viewer_has_eight_slides_read_from_the_report_and_compares_with_the_previous():
+def test_d333_the_viewer_has_four_slides_read_from_the_report_and_compares_with_the_previous():
     from bi import quality_viewer
 
-    reports, goals, policy = quality_method.read_page()
+    reports = quality_metrics.read_series(quality_metrics.SERIES_BUILD)
+    _, goals, policy = quality_method.read_page()
     # The latest report whose failing tests are a non-conformity (N° 4): its cause is the author's and the viewer shows it.
     latest = next(
         report
@@ -310,18 +319,27 @@ def test_d333_the_viewer_has_eight_slides_read_from_the_report_and_compares_with
         "estado": "cerrada",
     }
     page = quality_viewer.build_viewer_html(reports, latest["numero"], goals, policy, [record], [])
-    assert page.startswith("<!doctype html>") and page.count('<section class="slide') == 8
-    assert f"Informe de calidad N° {latest['numero']}" in page and latest["codigo_evaluado"] in page
+    assert page.startswith("<!doctype html>") and page.count('<section class="slide') == 4  # D-431
+    assert f"Informe de calidad C-{latest['numero']}" in page and latest["codigo_evaluado"] in page
     assert "Enlaces del repositorio sin renombrar." in page and "cerrada" in page  # the author's cause and state
-    assert '"a": ' + str(latest["anterior"]) in page and "Sin incidentes externos en el período." in page
+    assert '"a": ' + str(latest["anterior"]) in page and "Serie de construcción" in page
     assert "window.print()" in page and "requestFullscreen" in page and "ArrowRight" in page
     assert not any(word in page.lower() for word in FORBIDDEN)
-    # Report N° 2 covers from N° 1's date to its own: an incident on its day is counted, only counted.
+    # Report C-2 covers from C-1's date to its own: an incident on its day is a row of the one table (D-431).
     second = reports[1]
-    incident = [{"fecha": second["fecha"][:10], "detalle": "solo para el autor"}]
+    incident = [
+        {
+            "fecha": second["fecha"][:10],
+            "fuente": "ODEPA",
+            "indicador": "comparables_pct",
+            "causa": ["La fuente se atrasó.", "The source was late."],
+            "respuesta": ["Se muestra el último dato.", "The last data is shown."],
+        }
+    ]
     english = quality_viewer.build_viewer_html(reports, second["numero"], goals, policy, [], incident, True)
-    assert "Quality report No." in english and "Download PDF" in english and "1 external incident" in english
-    assert "Qué falló" not in english and "Comparación" not in english and "solo para el autor" not in english
+    assert "Quality report C-2" in english and "Download PDF" in english and "External incident · ODEPA" in english
+    assert "The source was late." in english and "The last data is shown." in english
+    assert "Qué falló" not in english and "Comparación" not in english and "La fuente se atrasó." not in english
 
 
 def test_d333_the_reports_tab_filters_by_year_month_week_and_search_and_links_each_report():
@@ -416,7 +434,9 @@ def test_d335_the_alert_lists_the_critical_first_with_everything_the_author_need
     monkeypatch.setattr(i18n, "is_english", lambda: False)
     reports, goals, policy = quality_method.read_page()
     two = next(report for report in reports if report["numero"] == 2)
-    html_text = quality_method.build_alert([two], goals, policy, [], lambda n: f"?informe={n}", "27-10")
+    html_text = quality_method.build_alert(
+        [two], goals, policy, [], lambda report: f"?informe={quality_metrics.report_ref(report)}", "27-10"
+    )
     assert html_text.index("Crítico · Pruebas que fallan") < html_text.index("Crítico · Avisos de Ruff")
     for needle in (
         "Por qué importa",
@@ -425,7 +445,7 @@ def test_d335_the_alert_lists_the_critical_first_with_everything_the_author_need
         "Acción sugerida",
         "Última medición",
         "2026-10-26"[:0],
-        "informe=2",
+        "informe=C2",
     ):
         assert needle in html_text
     assert "La carga del 27-10 falló" in html_text and "no_conformidades.json" in html_text
@@ -445,7 +465,7 @@ def test_d335_the_new_reports_store_their_diagnosis_and_the_old_ones_are_not_tou
     informe_calidad = load_reports_module()
     goals = quality_metrics.read(quality_metrics.GOALS_FILE)
     policy = quality_metrics.read(quality_metrics.POLICY_FILE)
-    reports = informe_calidad.read_reports()
+    reports = quality_metrics.read_series(quality_metrics.SERIES_BUILD)
     stored = [
         row for report in reports if report["numero"] <= 4 for row in report["indicadores"] if "diagnostico" in row
     ]
@@ -454,7 +474,7 @@ def test_d335_the_new_reports_store_their_diagnosis_and_the_old_ones_are_not_tou
         assert all(
             len(row["diagnostico"]) == 2 for row in report["indicadores"] if row["estado"] in ("urgente", "critico")
         )
-    report = informe_calidad.build_report(5, REPORT, goals, policy, None, [])
+    report = informe_calidad.build_report(5, dict(REPORT, datos={"pct_comparacion": 70.0}), goals, policy, None, [])
     broken = [row for row in report["indicadores"] if row["estado"] in ("urgente", "critico")]
     assert broken and all(len(row["diagnostico"]) == 2 for row in broken)
 
@@ -468,7 +488,13 @@ def test_d335_only_the_author_session_can_be_alerted_and_the_visit_never_breaks(
         app.session_state["admin_unlocked"] = True
     app.run()
     assert not app.exception
-    assert ("quality_alert_seen" in app.session_state and app.session_state["quality_alert_seen"]) == unlocked
+    # D-431: only when the latest report still has something open (the construction series ended all closed)
+    reports, _, _ = quality_method.read_page()
+    register = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json")["registros"]
+    pending = bool(reports) and bool(quality_method.open_rows(reports[-1], register))
+    assert ("quality_alert_seen" in app.session_state and app.session_state["quality_alert_seen"]) == (
+        unlocked and pending
+    )
 
 
 # endregion
@@ -568,13 +594,13 @@ def test_d347_the_viewer_is_a_presentation_with_thumbnails_counter_fullscreen_an
     reports, goals, policy = quality_method.read_page()
     for english in (False, True):
         page = quality_viewer.build_viewer_html(reports, reports[-1]["numero"], goals, policy, [], [], english)
-        assert page.count('<section class="slide') == 8
+        assert page.count('<section class="slide') == 4  # D-431
         assert (
             "id='thumbs'" in page and "id='stage'" in page and "id='canvas'" in page
         )  # thumbnails left, slide centred
         assert "width:960px;height:540px" in page  # one 16:9 canvas that is scaled to the stage
         assert "grid-template-columns:168px" in page and "grid-template-rows:minmax(0,1fr) auto" in page  # strip below
-        assert "pos.textContent=(at+1)+' / '+slides.length" in page  # the counter «3 / 8»
+        assert "pos.textContent=(at+1)+' / '+slides.length" in page  # the counter «3 / 4»
         assert "transition:opacity" in page and "translate" not in page.split("<style>")[1].split("</style>")[
             0
         ].replace("translate(-", "")  # a fade, not a slide of the page
@@ -620,13 +646,15 @@ def test_d361_an_alert_from_an_old_report_says_it_is_old_and_is_not_shown_as_tod
     )
 
 
-def test_d363_a_push_only_measures_and_the_report_comes_after_the_weekly_load_or_by_hand():
+def test_d363_a_push_only_measures_and_the_report_comes_only_after_a_weekly_load_in_green():
     workflow = (ROOT / ".github" / "workflows" / "calidad.yml").read_text(encoding="utf-8")
     triggers = workflow.split("permissions:")[0]
     assert "  push:" in triggers and "  workflow_dispatch:" in triggers
     assert "  workflow_run:\n    workflows: [semanal]\n    types: [completed]" in triggers  # active, not commented out
     step = workflow.split("- name: Proponer el informe al autor")[1].split("- name:")[0]
-    assert "github.event_name == 'workflow_run' || github.event_name == 'workflow_dispatch'" in step
+    # D-431: never by hand nor after a failed load, so never in the middle of a deployment
+    assert "github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'" in step
+    assert "workflow_dispatch" not in step.split("run:")[0]
     gate = workflow.split("- name: Fallar si un indicador de código pasa lo aceptable")[1]
     assert (
         "github.event_name" not in gate.split("run:")[0]
@@ -660,9 +688,19 @@ def test_d401_creating_a_report_registers_its_nonconformities_once(tmp_path):
 
 def test_d419_the_alert_hides_what_is_resolved_reads_the_external_incident_and_writes_each_language(monkeypatch):
     reports, goals, policy = quality_method.read_page()
-    nonconformities = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json")["registros"]
+    register = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json")["registros"]
     incidents = quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json")["registros"]
     latest = reports[-1]
+    # D-431: the construction series ended with its open non-conformities closed, so its alert is empty; the rules are
+    # checked on the register as it was before that closing
+    assert (
+        quality_method.build_alert(reports, goals, policy, register, incidents=incidents) == ""
+        or reports[-1].get("serie") == quality_metrics.SERIES_WEEKLY
+    )
+    nonconformities = [
+        dict(item, estado="", accion="") if str((item.get("estado") or [""])[0]).startswith("cerrad") else item
+        for item in register
+    ]
     for language in (False, True):
         monkeypatch.setattr(i18n, "is_english", lambda english=language: english)
         alert = quality_method.build_alert(reports, goals, policy, nonconformities, incidents=incidents)
@@ -680,8 +718,58 @@ def test_d419_the_alert_hides_what_is_resolved_reads_the_external_incident_and_w
         {"estado": "Resuelta"}
     )
     assert not quality_metrics.is_resolved({"estado": ""}) and not quality_metrics.is_resolved({})
+    assert quality_metrics.is_resolved({"estado": ["cerrada", "closed"]})  # D-431
     figures = quality_metrics.where_text("comparables_pct", {"datos": {"con_comparacion": 7, "precios_semana": 9}}, {})
     english = quality_metrics.where_text(
         "comparables_pct", {"datos": {"con_comparacion": 7, "precios_semana": 9}}, {}, english=True
     )
     assert figures["detalle"] == "7 de 9" and english["detalle"] == "7 of 9"
+
+
+# region The weekly report (D-431)
+def test_d431_the_weekly_report_is_four_pages_measured_by_the_sqap_with_one_table_of_issues(tmp_path):
+    from bi import quality_viewer
+
+    informe_calidad = load_reports_module()
+    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
+    policy = quality_metrics.read(quality_metrics.POLICY_FILE)
+    low = dict(REPORT, datos={"pct_comparacion": 80.0, "con_comparacion": 8, "precios_semana": 10})
+    first, _ = informe_calidad.add_report(low, goals, policy, folder=tmp_path)
+    reports = informe_calidad.read_reports(tmp_path)
+    record = {
+        "informe": 1,
+        "serie": "semanal",
+        "indicador": "comparables_pct",
+        "fecha": "2026-11-03",
+        "causa": "Una causa.",
+    }
+    old = {"informe": 1, "indicador": "comparables_pct", "causa": "De la serie de construcción."}
+    page = quality_viewer.build_viewer_html(reports, 1, goals, policy, [record, old], [], sqap_url="https://x/sqap")
+    slides = page.count('<section class="slide')
+    assert slides == 4 and "Informe semanal de calidad N° 1" in page
+    assert f'<a href="https://x/sqap" target="_blank" rel="noopener">SQAP v{first["sqap"]}</a>' in page
+    assert "Qué medimos y por qué" not in page and "Cómo se mide" not in page and "Anexo técnico" not in page
+    # one table: indicator, state, cause, disposition, date; only the records of this series
+    assert "<th>Indicador</th><th>Estado</th><th>Causa</th><th>Disposición</th><th>Fecha</th>" in page
+    assert "Una causa." in page and "De la serie de construcción." not in page
+    # the code and the days since the last load are not in it
+    assert {row["clave"] for row in first["indicadores"]} == {"pruebas_dbt_pct", "comparables_pct", "rechazadas_pct"}
+    # the comparison warns when the two reports do not measure the same indicators
+    assert "cmp-warn" in page and "no miden los mismos indicadores" in page
+
+
+def test_d431_the_construction_series_is_named_c_and_opens_by_its_own_address():
+    built = quality_metrics.read_series(quality_metrics.SERIES_BUILD)
+    assert [quality_metrics.report_code(item) for item in built] == [f"C-{n}" for n in range(1, 8)]
+    assert quality_metrics.report_ref(built[-1]) == "C7" and quality_metrics.find_report("C7")[1] == 7
+    assert quality_metrics.find_report("C9") is None and quality_metrics.find_report("x") is None
+    weekly = {"numero": 1, "serie": "semanal"}
+    assert quality_metrics.report_name(weekly) == "Informe semanal de calidad N° 1"
+    assert quality_metrics.report_name(weekly, True) == "Weekly quality report No. 1"
+    assert quality_metrics.report_ref(weekly) == "1"
+    # a non-conformity of the weekly N° 1 is not the one of C-1
+    assert not quality_metrics.same_report({"informe": 1, "indicador": "x"}, weekly)
+    assert quality_metrics.same_report({"informe": 1, "serie": "semanal"}, weekly)
+
+
+# endregion

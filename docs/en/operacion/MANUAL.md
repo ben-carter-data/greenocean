@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.8 |
+| Version | 3.9 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -47,7 +47,7 @@ It can also be launched by hand: from «Operations center», with the «Run pipe
 
 If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](../arquitectura/ADR.md#adr-11--publish-only-if-the-tests-pass)).
 
-After every load, the quality workflow measures the 12 indicators of the quality plan and proposes the numbered report as the pull request «Actualizar medición de calidad». On every push it only measures, and fails if a code indicator is past its acceptable.
+After every load that ends in green, the quality workflow proposes the weekly quality report, with the 3 data indicators, as the pull request «Actualizar medición de calidad» (D-431). On every push it only measures, and fails if a code indicator is past its acceptable.
 
 ## 3. What is checked and when
 
@@ -208,3 +208,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.6 | 2026-11-01 | One key only, the Author's, and each action checked on the server; the app's reloads keep the Author's view (7, D-421, D-427) |
 | 3.7 | 2026-11-01 | Opening or printing a document keeps the view on Streamlit Community Cloud too, which loads the page twice (7, D-428) |
 | 3.8 | 2026-11-01 | Every reload of the tab keeps the view, F5 and the link of the «Action required» alert too; only a new tab asks for it (7, D-430) |
+| 3.9 | 2026-11-01 | The weekly quality report comes only after a load in green and measures the 3 data indicators (2, D-431) |

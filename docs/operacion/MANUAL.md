@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.8 |
+| Versión | 3.9 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -47,7 +47,7 @@ También se puede lanzar a mano: desde «Centro de operación», con el botón �
 
 Si un paso falla, los siguientes no se ejecutan y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](../arquitectura/ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)).
 
-Después de cada carga, el workflow de calidad mide los 12 indicadores del plan de calidad y propone el informe numerado como pull request «Actualizar medición de calidad». En cada push solo mide, y falla si un indicador de código pasa su aceptable.
+Después de cada carga que termina en verde, el workflow de calidad propone el informe semanal de calidad, con los 3 indicadores de datos, como pull request «Actualizar medición de calidad» (D-431). En cada push solo mide, y falla si un indicador de código pasa su aceptable: esa es la verificación del código, sin informe.
 
 ## 3. Qué se revisa y cuándo
 
@@ -208,3 +208,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.6 | 01-11-2026 | Una sola clave, la del Autor, y cada acción comprobada en el servidor; las recargas de la app conservan la vista del Autor (7, D-421, D-427) |
 | 3.7 | 01-11-2026 | Abrir o imprimir un documento conserva la vista también en Streamlit Community Cloud, que carga la página dos veces (7, D-428) |
 | 3.8 | 01-11-2026 | Toda recarga de la pestaña conserva la vista, también F5 y el enlace del aviso «Acción requerida»; solo una pestaña nueva la pide (7, D-430) |
+| 3.9 | 01-11-2026 | El informe semanal de calidad sale solo tras una carga en verde y mide los 3 indicadores de datos (2, D-431) |

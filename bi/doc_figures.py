@@ -2512,7 +2512,7 @@ def quality_cycle(mode):
                 510,
                 30,
                 "icon:file",
-                say("Informe numerado", "Numbered report"),
+                say("Informe semanal", "Weekly report"),
                 say("no se edita después", "never edited afterwards"),
             ),
             "approve": (

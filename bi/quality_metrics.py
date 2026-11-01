@@ -15,7 +15,15 @@ REPORT_FILE = FOLDER / "medicion.json"
 RUBRIC_FILE = FOLDER / "rubrica.json"
 HISTORY_FILE = FOLDER / "historial.json"
 POLICY_FILE = FOLDER / "politica.json"
+SQAP_FILE = FOLDER / "PLAN_DE_CALIDAD.md"
+# D-431: the seven reports of the construction stage (26 to 31 October 2026) stay as written, as a closed series named
+# C-1 to C-7; the weekly series, one report per data week, starts again at No. 1 in its own folder.
 REPORTS_FOLDER = FOLDER / "informes"
+WEEKLY_FOLDER = REPORTS_FOLDER / "semanales"
+SERIES_WEEKLY, SERIES_BUILD = "semanal", "construccion"
+# D-431: a weekly report holds only what is measured once per load; the code is checked by the CI of every push and the
+# days since the last load are the panel's.
+WEEKLY_INDICATORS = ("pruebas_dbt_pct", "comparables_pct", "rechazadas_pct")
 
 # (key, Spanish label, English label, unit, ISO/IEC 25010 characteristic, command that reproduces it)
 INDICATORS = [
@@ -80,8 +88,8 @@ SCHEDULE = [
         ),
         ("Automático: workflow «calidad» (scripts/medir_calidad.py)", "Automatic: «calidad» workflow"),
         (
-            "En cada push; una vez por semana cuando el autor lo active",
-            "On every push; once a week when the author turns it on",
+            "En cada push (el código, en el CI); el informe semanal, tras cada carga en verde (D-431)",
+            "On every push (the code, in the CI); the weekly report, after each load in green (D-431)",
         ),
     ),
     (
@@ -363,16 +371,83 @@ def evaluate(
     return rows
 
 
-def read_reports(folder: Path = REPORTS_FOLDER) -> list[dict[str, Any]]:
-    """Every numbered report (D-331), oldest first."""
-    return [json.loads(path.read_text(encoding="utf-8")) for path in sorted(folder.glob("informe-*.json"))]
+def read_series(series: str) -> list[dict[str, Any]]:
+    """Every report of one series (D-331, D-431), oldest first, each marked with its series."""
+    folder = WEEKLY_FOLDER if series == SERIES_WEEKLY else REPORTS_FOLDER
+    return [
+        {**json.loads(path.read_text(encoding="utf-8")), "serie": series}
+        for path in sorted(folder.glob("informe-*.json"))
+    ]
+
+
+def current_series() -> str:
+    """D-431: the weekly series once it has a report; until then, the construction series."""
+    return SERIES_WEEKLY if any(WEEKLY_FOLDER.glob("informe-*.json")) else SERIES_BUILD
+
+
+def read_reports(series: str | None = None) -> list[dict[str, Any]]:
+    """The reports of a series, the current one by default, oldest first."""
+    return read_series(series or current_series())
+
+
+def report_name(report: dict[str, Any], english: bool = False) -> str:
+    """D-431: «Informe semanal de calidad N° 1», or «Informe de calidad C-7» for the construction series."""
+    if report.get("serie") == SERIES_WEEKLY:
+        return (
+            f"Weekly quality report No. {report['numero']}"
+            if english
+            else f"Informe semanal de calidad N° {report['numero']}"
+        )
+    return f"Quality report C-{report['numero']}" if english else f"Informe de calidad C-{report['numero']}"
+
+
+def report_code(report: dict[str, Any], english: bool = False) -> str:
+    """The short name of a report: «N° 1» in the weekly series, «C-7» in the construction one."""
+    if report.get("serie") == SERIES_WEEKLY:
+        return f"{'No.' if english else 'N°'} {report['numero']}"
+    return f"C-{report['numero']}"
+
+
+def report_ref(report: dict[str, Any]) -> str:
+    """D-431: how the address names a report: «7» in the weekly series, «C7» in the construction one."""
+    return str(report["numero"]) if report.get("serie") == SERIES_WEEKLY else f"C{report['numero']}"
+
+
+def find_report(ref: str) -> tuple[list[dict[str, Any]], int] | None:
+    """(the reports of its series, its number) for an address's «7» or «C7»; None when there is no such report."""
+    text = str(ref).strip().upper()
+    series = SERIES_BUILD if text.startswith("C") else SERIES_WEEKLY
+    digits = text.lstrip("C")
+    if not digits.isdigit():
+        return None
+    reports = read_series(series)
+    return (reports, int(digits)) if any(item["numero"] == int(digits) for item in reports) else None
+
+
+def sqap_version(path: Path = SQAP_FILE) -> str | None:
+    """D-431: the version of the SQAP a report is measured by, read from its header."""
+    if not path.exists():
+        return None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("| Versión |"):
+            return line.split("|")[2].strip()
+    return None
+
+
+def same_report(record: dict[str, Any], report: dict[str, Any]) -> bool:
+    """D-431: a non-conformity belongs to a report by its number and its series; the records of the construction series
+    carry no series."""
+    return record.get("informe") == report["numero"] and record.get("serie", SERIES_BUILD) == report.get(
+        "serie", SERIES_BUILD
+    )
 
 
 def is_resolved(record: dict[str, Any]) -> bool:
-    """D-419: the author wrote «resuelta» as the state of a non-conformity (a text, or [es, en])."""
+    """D-419: the author wrote «resuelta» as the state of a non-conformity (a text, or [es, en]); D-431: «cerrada» too,
+    as the ten closed at the end of the construction series."""
     state = record.get("estado") or ""
     first = state[0] if isinstance(state, list) and state else state
-    return str(first).strip().lower().startswith("resuelt")
+    return str(first).strip().lower().startswith(("resuelt", "cerrad"))
 
 
 def incident_for(

@@ -130,4 +130,7 @@ def test_d377_the_page_reads_in_english():
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
     assert "Automated tests measure it" in markup  # read from docs/en/PLAN_DE_CALIDAD.md
-    assert any(caption.value.startswith("Latest quality report No.") for caption in app.caption)
+    assert any(
+        caption.value.startswith("Latest report: ") and "quality report" in caption.value.lower()
+        for caption in app.caption
+    )  # D-431

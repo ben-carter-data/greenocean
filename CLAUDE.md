@@ -95,7 +95,7 @@ Valen en todo diagrama, tabla o texto de `docs/` y del panel.
      - Ventanas, botones y avisos: «Elige tu vista», «Vista: … · Cambiar», «Ver todo el proyecto», «Volver», «Ejecutar pipeline ahora», «Recargar datos», «Cerrar acceso», «Acción requerida», «La carga del … falló».
    - **Fuentes:** ODEPA (precios mayoristas y al consumidor) e INE (IPC de alimentos).
    - **Documentos:** PRD, SAD, ADR, Índice de decisiones, SQAP (plan de calidad), Plan de pruebas y seguridad, MANUAL (manual de operación), Glosario; las decisiones, en `docs/DECISIONES.md` (D-xxx).
-   - **Informes y registros:** «Informe semanal» (issue de `semanal.yml`), informe de calidad N° x (pull request «Actualizar medición de calidad» de `calidad.yml`), `plan_mitigacion.json` (fallas F-xx), `no_conformidades.json`, `incidentes_externos.json`.
+   - **Informes y registros:** «Informe semanal» (issue de `semanal.yml`), informe semanal de calidad N° x (pull request «Actualizar medición de calidad» de `calidad.yml`, solo tras una carga en verde; los 7 primeros son la serie de construcción C-1 a C-7, D-431), `plan_mitigacion.json` (fallas F-xx), `no_conformidades.json`, `incidentes_externos.json`.
 2. **Con su ID del PRD** cuando lo tiene: P-1 a P-5, RF-01 a RF-09, RNF-01 a RNF-06 (por ejemplo, «Consultas SQL» P-2 · P-3 · RF-06). Si no lo tiene, no se inventa.
 3. **Si un nombre oficial no existe todavía,** se propone y se pregunta al autor antes de usarlo. Un genérico nunca es la solución.
 4. **Antes de entregar un diagrama,** se revisa que cada caja, flecha y etiqueta cumpla 1 y 2, y el resumen lista los nombres usados.

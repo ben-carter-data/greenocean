@@ -3297,3 +3297,23 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Seguridad:** sin cambios en el Autor: la pestaña guarda solo el ticket que emite el servidor, que vence con su sesión (30 min sin actividad, D-395) y que «Cerrar acceso» o cambiar de perfil anulan. Ninguna dirección abre la parte del autor.
   - **Documentos:** RF-09 del PRD (3.12) y el MANUAL (7, 3.8), en los dos idiomas; ocurrencia en F-18.
 - **Pruebas:** `tests/test_app_reloads.py::test_d430_every_run_keeps_the_view_so_no_reload_of_the_tab_asks_for_it_again`, y las de D-357, D-427 y D-428 al día. En el navegador, como Autor: el enlace del aviso, F5 dos veces y «Centro de operación» siguen en «Autor»; una pestaña nueva pide la vista.
+
+## D-431 · Un solo informe de calidad numerado: el semanal de los datos, en cuatro páginas
+
+- **Diagnóstico del autor, verificado:**
+  - El informe mezclaba tres frecuencias: según `metas.json`, 8 indicadores de código se miden «en cada push», 3 de datos «en cada carga semanal» y 1 «cada día». Por eso hubo 7 informes entre el 26 y el 31 de octubre.
+  - «Qué medimos y por qué» y «Cómo se mide» repetían en cada informe la metodología, que no cambia entre informes y que el SQAP define (con el detalle por indicador en `metas.json`).
+  - El N° 7 grabó como crítico un estado de unos minutos: la base de la carga llegó a main antes que los arreglos de D-380.
+  - El denominador cambiaba: N° 1 = 6/8, N° 2 = 8/11, N° 3 = 10/11, N° 7 = 10/12. Los 12 indicadores eran siempre los mismos; lo que cambiaba era cuántos se habían medido.
+- **Decisión:**
+  - **Por frecuencia:** el código se verifica en el CI de cada push (pasa o falla en GitHub Actions) y no genera informe. El único informe numerado es el semanal de los datos, con los 3 indicadores de cada carga: pruebas de datos dbt superadas, precios con comparación válida y filas rechazadas (`quality_metrics.WEEKLY_INDICATORS`). Los días desde la última carga quedan en el panel.
+  - **Solo tras una carga en verde:** `calidad.yml` propone el informe solo en `workflow_run` de `semanal.yml` con conclusión `success`, es decir, con sus pruebas pasadas y la base publicada; nunca a mano ni a mitad de un despliegue.
+  - **El SQAP es la metodología:** el informe deja «Qué medimos y por qué», «Cómo se mide» y el anexo técnico. Su portada dice «Medido según SQAP vX.Y», con enlace, y cada informe guarda esa versión (`sqap`).
+  - **Una tabla de no conformidades e incidencias:** indicador, estado, causa, disposición y fecha; las de ese informe, las abiertas de informes anteriores de la misma serie y los incidentes externos de su período. Esto reemplaza el conteo de incidentes de D-334: la causa y la respuesta de un incidente se leen en el informe.
+  - **La comparación avisa** si los dos informes no miden los mismos indicadores, y compara solo los que están en ambos.
+  - **Dos series:** los 7 informes de `docs/calidad/informes/` no se editan; son la serie de construcción y se nombran C-1 a C-7. La serie semanal empieza en el N° 1, en `docs/calidad/informes/semanales/`. El panel muestra una serie a la vez («Semanal» o «Construcción (C-1 a C-7)»), la dirección nombra el informe como `informe=1` o `informe=C7`, y cada no conformidad nueva guarda su serie. Hasta el primer informe semanal, el panel y la alerta siguen leyendo C-7.
+  - **Cierre de la serie de construcción:** a pedido del autor, las 10 no conformidades abiertas de C-1 a C-7 se cierran en bloque, con la disposición «cerrada al término de la serie de construcción; los indicadores se remiden en la serie semanal desde el N° 1» y el estado «cerrada»; sus causas y el resto del histórico no se tocan. «Cerrada» cuenta como «resuelta» (`is_resolved`): no sale en la alerta ni en la tabla de informes posteriores. Por eso, hasta el primer informe semanal, la alerta «Acción requerida» ya no muestra los precios comparables de C-7.
+  - **Impresión compacta:** al imprimir, las tablas usan letra de 11,5 px y menos relleno, para que los 12 indicadores de la serie de construcción quepan en una página.
+  - **Resultado:** el PDF semanal tiene 4 páginas (portada, resultados, comparación e incidencias), y también cada informe C-1 a C-7, en los dos idiomas; el N° 7 con el diseño anterior tenía 11 en A4 horizontal.
+  - **Documentos:** SQAP 1.5 (8) y MANUAL 3.9 (2), en los dos idiomas; la figura del ciclo de calidad dice «Informe semanal».
+- **Pruebas:** `tests/test_quality_method.py::test_d431_…` (cuatro páginas, el enlace al SQAP con su versión, la tabla única, solo los indicadores de datos, el aviso de la comparación, los nombres C-1 a C-7 y la serie de cada no conformidad) y las de D-331, D-333, D-335, D-347 y D-363 al día.

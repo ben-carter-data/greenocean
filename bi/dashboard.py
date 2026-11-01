@@ -925,7 +925,7 @@ def show_quality_alert_dialog():
         goals,
         policy,
         nonconformities,
-        lambda number: f"{address}&{REPORT_PARAMETER}={number}",
+        lambda report: f"{address}&{REPORT_PARAMETER}={quality_metrics.report_ref(report)}",
         day,
         incidents=incidents,
     )
@@ -5596,8 +5596,8 @@ def show_analysis_block(block, mode):
         if reports:
             within, _, measured = quality_metrics.report_counts(reports[-1])
             st.caption(
-                tr("Último informe de calidad N° {}: {} de {} indicadores dentro de lo aceptable.").format(
-                    reports[-1]["numero"], within, measured
+                tr("Último informe: {}, {} de {} indicadores dentro de lo aceptable.").format(
+                    quality_metrics.report_name(reports[-1], i18n.is_english()), within, measured
                 )
             )
     else:  # «Del feedback al cambio»
@@ -7606,16 +7606,30 @@ def show_stack_page(mode):
 
 
 @st.dialog("Informe de calidad", width="large")
-def show_quality_report_dialog(number):
-    """One numbered report as slides (D-333): its own document, so the keyboard, full screen and the PDF work."""
-    reports, goals, policy = quality_method.read_page()
-    if not any(item["numero"] == number for item in reports):
+def show_quality_report_dialog(ref):
+    """One numbered report as slides (D-333): its own document, so the keyboard, full screen and the PDF work. D-431:
+    «ref» is «7» for the weekly series or «C7» for the construction one; the viewer reads only that series."""
+    found = quality_metrics.find_report(ref)
+    if not found:
         st.warning(tr("Ese informe no existe."))
         return
+    reports, number = found
+    _, goals, policy = quality_method.read_page()
     nonconformities = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json").get("registros", [])
     incidents = quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json").get("registros", [])
     st.iframe(
-        quality_viewer.build_viewer_html(reports, number, goals, policy, nonconformities, incidents, i18n.is_english()),
+        quality_viewer.build_viewer_html(
+            reports,
+            number,
+            goals,
+            policy,
+            nonconformities,
+            incidents,
+            i18n.is_english(),
+            project.build_github_url(
+                i18n.document_path("PLAN_DE_CALIDAD.md").relative_to(project.PROJECT_DIR).as_posix()
+            ),
+        ),
         height=700,
     )
 
@@ -7695,8 +7709,8 @@ def show_method_page(mode):
     if asked:
         # A report named in the address (its number or its PDF icon in «Informes») opens once.
         del st.query_params[REPORT_PARAMETER]
-        if str(asked).isdigit():
-            show_quality_report_dialog(int(asked))
+        if quality_metrics.find_report(asked):
+            show_quality_report_dialog(asked)
     summary, history = st.tabs([tr("Resumen"), tr("Informes")])
     with summary:
         st.markdown(
@@ -7713,8 +7727,25 @@ def show_method_page(mode):
         if latest and st.button(
             tr("Abrir el último informe"), icon=":material/description:", key="quality_latest_report"
         ):
-            show_quality_report_dialog(latest["numero"])
+            show_quality_report_dialog(quality_metrics.report_ref(latest))
     with history:
+        # D-431: one series at a time, the weekly first; the construction series (C-1 to C-7) stays readable
+        series = [
+            name
+            for name in (quality_metrics.SERIES_WEEKLY, quality_metrics.SERIES_BUILD)
+            if quality_metrics.read_series(name)
+        ]
+        if len(series) > 1:
+            chosen = st.segmented_control(
+                tr("Serie"),
+                series,
+                default=series[0],
+                key="quality_series",
+                format_func=lambda name: (
+                    tr("Semanal") if name == quality_metrics.SERIES_WEEKLY else tr("Construcción (C-1 a C-7)")
+                ),
+            )
+            reports = quality_metrics.read_series(chosen or series[0])
         years = [ALL_VALUES] + sorted({str(item["fecha"])[:4] for item in reports}, reverse=True)
         months = [ALL_VALUES] + sorted({str(item["fecha"])[5:7] for item in reports}, reverse=True)
         data_weeks = [ALL_VALUES] + sorted({str(item["semana"]) for item in reports if item["semana"]}, reverse=True)
@@ -7742,17 +7773,17 @@ def show_method_page(mode):
             def open_report_button(report):
                 if st.button(
                     tr("Abrir el informe o su PDF"),
-                    key=f"cr_reports_open_{report['numero']}",
+                    key=f"cr_reports_open_{quality_metrics.report_ref(report)}",
                     icon=":material/description:",
                 ):
-                    show_quality_report_dialog(report["numero"])
+                    show_quality_report_dialog(quality_metrics.report_ref(report))
 
             compact_table.show_compact_rows(
                 "cr_reports",
                 sorted(shown, key=lambda item: -item["numero"]),
                 quality_method.report_summary,
                 lambda report: quality_method.build_report_detail(report, reports),
-                signature=f"{year}|{month}|{week}|{query}",
+                signature=f"{reports[0].get('serie') if reports else ''}|{year}|{month}|{week}|{query}",
                 after_detail=open_report_button,
             )
 
