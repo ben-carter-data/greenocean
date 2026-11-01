@@ -3143,3 +3143,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Índice de decisiones:** suma las diez grandes de esta etapa (D-393 a D-414) y pasa de 88 a 98 filas.
   - **CLAUDE.md:** nombra los módulos nuevos y el número de pruebas.
 - **Pruebas:** las de los documentos verifican la misma estructura, los mismos identificadores y las mismas cifras en los dos idiomas (`tests/test_i18n.py`, `tests/test_documents.py`), y que cada vista enlazada existe.
+
+## D-418 · La semana con 83,3 % de precios comparables se registra como incidente externo de la fuente
+
+- **Qué pasó:** en la semana del 26 oct al 1 nov, el indicador `comparables_pct` dio 83,3 %, bajo su aceptable de 90 %. 145 de 868 precios no tienen comparación con la semana anterior.
+- **Causa:** la fuente. Esos 145 precios no tuvieron precio la semana anterior: son 141 frutas y hortalizas y 4 carnes que ODEPA vuelve a publicar después de más de 12 semanas sin dato, productos de temporada que regresan. El código hace lo correcto: sin precio anterior no hay variación, y no se inventa una.
+- **Decisión del autor:** el aceptable se queda en 90 %. Esta semana se registra como incidente externo de ODEPA en `docs/calidad/incidentes_externos.json`, con la respuesta prevista para un producto sin datos: se muestra «sin comparación», sin rellenar. En la próxima carga esos precios ya tendrán semana anterior; si el indicador no vuelve a 90 % o más, se revisa el código.
+- **Pruebas:** `tests/test_quality_method.py` verifica que cada incidente diga qué pasó, la causa y la respuesta en los dos idiomas, con un tipo y una fuente conocidos.

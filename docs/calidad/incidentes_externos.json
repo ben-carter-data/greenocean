@@ -19,5 +19,29 @@
       "«No data» is shown, never filled in."
     ]
   },
-  "registros": []
+  "registros": [
+    {
+      "fecha": "2026-10-31",
+      "fuente": "ODEPA",
+      "tipo": "region_o_producto_sin_datos",
+      "semana": "2026-10-26",
+      "indicador": "comparables_pct",
+      "valor": 83.3,
+      "aceptable": 90,
+      "que_paso": [
+        "En la semana del 26 oct al 1 nov, 145 de 868 precios no tienen comparación con la semana anterior.",
+        "In the week of Oct 26 to Nov 1, 145 of 868 prices have no comparison with the week before."
+      ],
+      "causa": [
+        "ODEPA vuelve a publicar 141 frutas y hortalizas y 4 carnes de temporada que llevaban más de 12 semanas sin precio.",
+        "ODEPA publishes again 141 seasonal fruits and vegetables and 4 meats that had no price for over 12 weeks."
+      ],
+      "respuesta": [
+        "Se muestran «sin comparación», sin rellenar; el aceptable sigue en 90 % y se revisa en la próxima carga.",
+        "They are shown «without comparison», never filled in; the acceptable stays at 90 % and is checked at the next load."
+      ],
+      "estado": "aprobado por el autor",
+      "referencia": "D-418"
+    }
+  ]
 }

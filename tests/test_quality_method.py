@@ -378,6 +378,10 @@ def test_d334_every_nonconformity_of_the_reports_is_registered_and_the_author_wr
     incidents = quality_metrics.read(folder / "incidentes_externos.json")
     assert incidents["respuestas_por_defecto"]["estado"] == "pendiente de aprobación del autor"
     assert isinstance(incidents["registros"], list)
+    for record in incidents["registros"]:  # D-418: each incident says what, why and the answer, in both languages
+        assert {"fecha", "fuente", "tipo", "que_paso", "causa", "respuesta", "estado", "referencia"} <= set(record)
+        assert record["tipo"] in incidents["respuestas_por_defecto"] and record["fuente"] in ("ODEPA", "INE")
+        assert all(len(record[text]) == 2 and all(record[text]) for text in ("que_paso", "causa", "respuesta"))
 
 
 # endregion
