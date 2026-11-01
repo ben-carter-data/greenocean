@@ -840,8 +840,9 @@ QUALITY_ALERT_SEEN = "quality_alert_seen"
 
 @st.dialog("Acción requerida", width="large")
 def show_quality_alert_dialog():
-    """D-335, only for the author: what is out of its acceptable in the latest report, the critical first. «Entendido»
-    closes it; it comes back with the next visit while the condition lasts. It reads the report and computes nothing."""
+    """D-335, only for the author: what is out of its acceptable in the latest report, the critical first; D-410: before
+    it, each token at 15 days or fewer from its expiry. «Entendido» closes it; it comes back with the next visit while the
+    condition lasts. It reads the report and the tokens' dates; it computes nothing else."""
     reports, goals, policy = quality_method.read_page()
     nonconformities = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json").get("registros", [])
     runs, _ = read_pipeline_runs()
@@ -851,17 +852,39 @@ def show_quality_alert_dialog():
     body = quality_method.build_alert(
         reports, goals, policy, nonconformities, lambda number: f"{address}&{REPORT_PARAMETER}={number}", day
     )
-    st.markdown(quality_method.build_css(charts.get_palette(get_mode())) + body, unsafe_allow_html=True)
+    tokens = configuration.build_token_alerts_html(read_token_alerts())  # D-410: the tokens first, then the report
+    st.markdown(quality_method.build_css(charts.get_palette(get_mode())) + tokens + body, unsafe_allow_html=True)
     if st.button(tr("Entendido"), key="quality_alert_close", type="primary"):
         st.rerun()
 
 
+def read_token_alerts():
+    """D-410: each token at 15 days or fewer from its expiry, or expired, from the date GitHub gives (asked at most once
+    an hour). A token missing or that cannot be read is not here: «Configuración» shows it."""
+    now = datetime.now(timezone.utc)
+    alerts = []
+    for name in (SECRET_GITHUB_TOKEN, SECRET_READ_TOKEN):
+        token = get_secret(name)
+        if not token:
+            continue
+        try:
+            expiration = read_cached_token_expiration(token)
+        except Exception:  # GitHub unreachable or the token refused: the page says it, the alert does not guess
+            continue
+        alert = configuration.token_alert(configuration.token_label(name), expiration, now)
+        if alert:
+            alerts.append(alert)
+    return alerts
+
+
 def show_quality_alert():
-    """The author's alert, once per visit and only when something is out of its acceptable (D-335)."""
+    """The author's alert, once per visit and only when something is out of its acceptable (D-335) or a token is at 15
+    days or fewer from its expiry (D-410)."""
     if not st.session_state.get(ADMIN_UNLOCKED) or st.session_state.get(QUALITY_ALERT_SEEN):
         return
     reports, goals, policy = quality_method.read_page()
-    if not reports or not any(row["estado"] in ("urgente", "critico") for row in reports[-1]["indicadores"]):
+    out = bool(reports) and any(row["estado"] in ("urgente", "critico") for row in reports[-1]["indicadores"])
+    if not out and not read_token_alerts():
         return
     st.session_state[QUALITY_ALERT_SEEN] = True
     show_quality_alert_dialog()
@@ -6309,10 +6332,7 @@ def show_configuration_page(mode):
     st.markdown(configuration.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
     now = datetime.now(timezone.utc)
     model = read_configuration_model(get_secret(SECRET_GITHUB_TOKEN), get_secret(SECRET_READ_TOKEN))
-    labels = {
-        SECRET_GITHUB_TOKEN: configuration.t("token de lanzamiento", "launch token"),
-        SECRET_READ_TOKEN: configuration.t("token de solo lectura", "read-only token"),
-    }
+    labels = {name: configuration.token_label(name) for name in (SECRET_GITHUB_TOKEN, SECRET_READ_TOKEN)}
     latest = read_latest_run()
     runs, _ = read_pipeline_runs()
     failed = control.latest_load_failure(runs)

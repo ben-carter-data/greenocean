@@ -45,6 +45,17 @@ def day_text(moment: date | datetime) -> str:
     return f"{moment:%Y-%m-%d}" if i18n.is_english() else f"{moment:%d-%m-%Y}"
 
 
+TOKEN_LABELS = {
+    "GITHUB_TOKEN": ("token de lanzamiento", "launch token"),
+    "GITHUB_READ_TOKEN": ("token de solo lectura", "read-only token"),
+}
+
+
+def token_label(name: str) -> str:
+    """The name of a token's secret as the reader says it: «token de lanzamiento», never its value."""
+    return t(*TOKEN_LABELS[name])
+
+
 def card(key: str, icon: str, label: str, state: str, value: str, detail: str = "") -> dict[str, str]:
     return {"key": key, "icon": icon, "label": label, "state": state, "value": value, "detail": detail}
 
@@ -144,6 +155,43 @@ def sources_card(notice: str) -> dict[str, str]:
     if not notice:
         return card("sources", "cloud_download", label, OK, t("Al día", "Up to date"))
     return card("sources", "cloud_download", label, WARN, t("Atrasada", "Late"), notice)
+
+
+def token_alert(label: str, expiration: datetime | None, now: datetime) -> dict[str, Any] | None:
+    """D-410: a token at TOKEN_WARNING_DAYS or fewer from its expiry, or already expired, for the author's alert; None
+    otherwise. The same rule as its card."""
+    if expiration is None:
+        return None
+    days = (expiration - now).days
+    if days > control.TOKEN_WARNING_DAYS:
+        return None
+    return {"label": label, "days": days, "date": day_text(expiration), "expired": days < 0}
+
+
+def build_token_alerts_html(alerts: list[dict[str, Any]]) -> str:
+    """The tokens of «Acción requerida» (D-410), in the look of its indicators: what expires, when, and where its steps
+    are. Only the date, never the value."""
+    if not alerts:
+        return ""
+    case = t("Un token vence o falta", "A token expires or is missing")
+    parts = []
+    for alert in alerts:
+        title = (
+            t("{} · venció el {}", "{} · expired on {}").format(alert["label"].capitalize(), alert["date"])
+            if alert["expired"]
+            else t("{} · vence en {} días", "{} · expires in {} days").format(
+                alert["label"].capitalize(), alert["days"]
+            )
+        )
+        action = t(
+            "Renuévalo antes del {}: los pasos están en «Configuración», en «{}».",
+            "Renew it before {}: the steps are in «Settings», under «{}».",
+        ).format(alert["date"], case)
+        parts.append(
+            f'<div class="qm-alert qm-{"critico" if alert["expired"] else "urgente"}"><h4>{esc(title)}</h4>'
+            f"<p>{esc(action)}</p></div>"
+        )
+    return '<div class="qm-alerts">' + "".join(parts) + "</div>"
 
 
 # endregion

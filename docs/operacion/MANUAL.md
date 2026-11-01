@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.3 |
+| Versión | 3.4 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -58,9 +58,9 @@ Después de cada carga, el workflow de calidad mide los 12 indicadores del plan 
 | Ante una duda sobre las cifras | El veredicto de calidad y los controles de auditoría | «Calidad y auditoría» |
 | Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos | `agent/input.csv` |
 | Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](../arquitectura/ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días | Otro disco del autor |
-| Antes de su vencimiento | Renovar los dos tokens de GitHub del panel; «Configuración» los marca en ámbar cuando faltan 15 días o menos (sección 8.1) | Secretos de la app en Streamlit |
+| Antes de su vencimiento | Renovar los dos tokens de GitHub del panel; «Configuración» los marca en ámbar cuando faltan 15 días o menos, y la alerta «Acción requerida» lo avisa al entrar como Autor (sección 8.1) | Secretos de la app en Streamlit |
 | Después de cada carga semanal | El pull request «Actualizar medición de calidad»: fusionarlo o cerrarlo, borrar su rama y hacer `git pull` | Pull requests del repositorio (sección 8) |
-| Al entrar como Autor | La alerta «Acción requerida»; si empieza con «Última medición del …», el informe tiene más de 8 días y no es el estado de hoy | La ventana que abre el panel |
+| Al entrar como Autor | La alerta «Acción requerida»: primero, cada token a 15 días o menos de vencer; después, los indicadores fuera de su aceptable. Si dice «Última medición del …», el informe tiene más de 8 días y no es el estado de hoy | La ventana que abre el panel |
 
 ## 4. Fallas de la carga semanal
 
@@ -155,7 +155,7 @@ Cinco casos, cada uno con sus pasos en orden. Un paso automático lo hace el sis
 | Llegó un informe | 3 | Manual | «Merge pull request», o «Close pull request» si un informe más nuevo lo reemplaza | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) |
 | Llegó un informe | 4 | Manual | Borrar la rama «informe-calidad/…» del informe | [Branches](https://github.com/ben-carter-data/greenocean/branches) |
 | Llegó un informe | 5 | Manual | En el computador, traer el cambio con `git pull` | — |
-| Un token vence o falta | 1 | Automático | «Configuración» marca el token en ámbar cuando faltan 15 días o menos, y en rojo si venció o falta | [[vista:Configuración]] |
+| Un token vence o falta | 1 | Automático | «Configuración» marca el token en ámbar cuando faltan 15 días o menos, y en rojo si venció o falta; la alerta «Acción requerida» lo avisa al entrar como Autor | [[vista:Configuración]] |
 | Un token vence o falta | 2 | Manual | En GitHub, regenerar el token o crear uno nuevo, solo para este repositorio: «Actions: Read and write» para `GITHUB_TOKEN` y «Actions: Read» para `GITHUB_READ_TOKEN`. El valor se muestra una sola vez: copiarlo | [Tokens de GitHub](https://github.com/settings/personal-access-tokens) |
 | Un token vence o falta | 3 | Manual | En Streamlit Community Cloud: la app → ⋮ → «Settings» → «Secrets» | [Streamlit Community Cloud](https://share.streamlit.io) |
 | Un token vence o falta | 4 | Manual | Pegar el valor en `GITHUB_TOKEN` o `GITHUB_READ_TOKEN` y pulsar «Save» | — |
@@ -203,3 +203,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.1 | 30-10-2026 | Guía de GitHub y registro de fallas; fuentes retrasadas, informe de calidad semanal, ventana de la carga manual, acceso como Autor y los tres secretos (D-339 a D-363) |
 | 3.2 | 31-10-2026 | Redacción revisada; los 12 indicadores del plan de calidad (2); el token lanza, sigue y cancela la carga (7); las tres vistas (8, 9); el documento pasa a `docs/operacion/` (D-381, D-384, D-388) |
 | 3.3 | 01-11-2026 | Qué hacer en cada caso (8.1), que lee la página «Configuración»; los dos tokens en la guía de GitHub (8) y su aviso a 15 días (3, D-409) |
+| 3.4 | 01-11-2026 | La alerta «Acción requerida» avisa cada token a 15 días o menos de vencer (3, 8.1, D-410) |

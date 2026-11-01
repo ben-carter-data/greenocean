@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.3 |
+| Version | 3.4 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -58,9 +58,9 @@ After every load, the quality workflow measures the 12 indicators of the quality
 | When in doubt about the figures | The quality verdict and the audit controls | «Quality and audit» |
 | Every January | Add to `agent/input.csv` the two lines of the new year (wholesale and consumer), with the URL ODEPA publishes on the page of each dataset | `agent/input.csv` |
 | Periodically | Copy `agent/downloads` to another disk: the CSV files are not versioned ([ADR-04 · Do not commit the raw data to the repository](../arquitectura/ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository)) and the GitHub cache is deleted if it is not used for 7 days | Another disk of the author |
-| Before it expires | Renew the panel's two GitHub tokens; «Settings» marks them amber when 15 days or fewer are left (section 8.1) | App secrets on Streamlit |
+| Before it expires | Renew the panel's two GitHub tokens; «Settings» marks them amber when 15 days or fewer are left, and the alert «Action required» warns on entering as Author (section 8.1) | App secrets on Streamlit |
 | After every weekly load | The pull request «Actualizar medición de calidad»: merge it or close it, delete its branch and run `git pull` | Pull requests of the repository (section 8) |
-| On entering as Author | The alert «Acción requerida»; if it starts with «Última medición del …», the report is more than 8 days old and is not today's state | The window the panel opens |
+| On entering as Author | The alert «Action required»: first, each token at 15 days or fewer from its expiry; then, the indicators past their acceptable. If it says «Last measurement on …», the report is more than 8 days old and is not today's state | The window the panel opens |
 
 ## 4. Failures of the weekly load
 
@@ -155,7 +155,7 @@ Five cases, each with its steps in order. An automatic step is done by the syste
 | A report arrived | 3 | Manual | «Merge pull request», or «Close pull request» if a newer report replaces it | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) |
 | A report arrived | 4 | Manual | Delete the report's branch «informe-calidad/…» | [Branches](https://github.com/ben-carter-data/greenocean/branches) |
 | A report arrived | 5 | Manual | On the computer, bring the change with `git pull` | — |
-| A token expires or is missing | 1 | Automatic | «Settings» marks the token amber when 15 days or fewer are left, and red if it expired or is missing | [[vista:Settings]] |
+| A token expires or is missing | 1 | Automatic | «Settings» marks the token amber when 15 days or fewer are left, and red if it expired or is missing; the alert «Action required» warns on entering as Author | [[vista:Settings]] |
 | A token expires or is missing | 2 | Manual | On GitHub, regenerate the token or create a new one, only for this repository: «Actions: Read and write» for `GITHUB_TOKEN` and «Actions: Read» for `GITHUB_READ_TOKEN`. The value is shown only once: copy it | [GitHub tokens](https://github.com/settings/personal-access-tokens) |
 | A token expires or is missing | 3 | Manual | On Streamlit Community Cloud: the app → ⋮ → «Settings» → «Secrets» | [Streamlit Community Cloud](https://share.streamlit.io) |
 | A token expires or is missing | 4 | Manual | Paste the value into `GITHUB_TOKEN` or `GITHUB_READ_TOKEN` and press «Save» | — |
@@ -203,3 +203,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.1 | 2026-10-30 | GitHub guide and failure register; late sources, the weekly quality report, the manual load window, entering as Author and the three secrets (D-339 to D-363) |
 | 3.2 | 2026-10-31 | Wording reviewed; the 12 indicators of the quality plan (2); the token starts, follows and cancels the load (7); the three views (8, 9); the document moves to `docs/operacion/` (D-381, D-384, D-388) |
 | 3.3 | 2026-11-01 | What to do in each case (8.1), which the page «Settings» reads; the two tokens in the GitHub guide (8) and their warning at 15 days (3, D-409) |
+| 3.4 | 2026-11-01 | The alert «Action required» warns of each token at 15 days or fewer from its expiry (3, 8.1, D-410) |

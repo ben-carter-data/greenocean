@@ -162,3 +162,33 @@ def test_d409_in_english_nothing_is_left_in_spanish(network):  # noqa: F811
 
     state = {"admin_unlocked": True, "quality_alert_seen": True}
     assert i18n_audit.spanish_left("Configuración", i18n_audit.read_data_values(), state=state) == []
+
+
+def test_d410_a_token_at_fifteen_days_or_fewer_joins_the_authors_alert():
+    assert configuration.token_alert("token de lanzamiento", NOW + timedelta(days=16, hours=1), NOW) is None
+    assert configuration.token_alert("token de lanzamiento", None, NOW) is None  # a token that never expires
+    near = configuration.token_alert("token de lanzamiento", NOW + timedelta(days=15, hours=1), NOW)
+    assert near == {"label": "token de lanzamiento", "days": 15, "date": "16-11-2026", "expired": False}
+    gone = configuration.token_alert("token de solo lectura", NOW - timedelta(days=2), NOW)
+    html = configuration.build_token_alerts_html([near, gone])
+    assert '<div class="qm-alert qm-urgente"><h4>Token de lanzamiento · vence en 15 días</h4>' in html
+    assert '<div class="qm-alert qm-critico"><h4>Token de solo lectura · venció el 30-10-2026</h4>' in html
+    assert "«Configuración», en «Un token vence o falta»" in html
+    assert configuration.build_token_alerts_html([]) == ""
+
+
+@pytest.mark.parametrize("days, shown", [(10, True), (40, False)])
+def test_d410_the_alert_opens_with_the_tokens_first_and_never_their_value(network, monkeypatch, days, shown):  # noqa: F811
+    now = datetime.now(timezone.utc)
+    monkeypatch.setattr(control, "read_token_expiration", lambda token: now + timedelta(days=days, hours=1))
+    app = draw(view="Dashboard", run=False)
+    app.session_state["visitor_profile"] = "profesional"
+    app.session_state["quality_alert_seen"] = False
+    app.run()
+    assert not app.exception
+    page = everything_drawn(app)
+    assert ("Token de lanzamiento · vence en 10 días" in page) is shown
+    assert ("Token de solo lectura · vence en 10 días" in page) is shown
+    if shown and 'class="qm-alert-foot"' in page:  # the report's part, when it has one, comes after the tokens
+        assert page.index("Token de lanzamiento") < page.index('class="qm-alert-foot"')
+    assert TOKEN not in page and READ_TOKEN not in page

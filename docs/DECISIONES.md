@@ -3053,3 +3053,18 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - Los colores siguen fechas simuladas.
   - Los casos, pasos y enlaces son los del MANUAL en los dos idiomas, y en inglés no queda texto en español.
   - Las tareas de mantenimiento salen de los datos.
+
+## D-410 · La alerta «Acción requerida» avisa cada token a 15 días o menos de vencer
+
+- **Pedido del autor (parte 3):** aviso en la alerta del Autor 15 días antes de cada vencimiento.
+- **Decisión:** al entrar como Autor, la alerta «Acción requerida» se abre también cuando un token está a 15 días o menos de vencer, o ya venció, aunque el informe de calidad esté en orden.
+  - **Qué muestra:** primero los tokens, cada uno con su nombre («Token de lanzamiento», «Token de solo lectura»), los días que le quedan o el día en que venció, y dónde están sus pasos: «Configuración», caso «Un token vence o falta». Después vienen los indicadores del informe, como en D-335.
+  - **Mismas reglas:** el aviso usa la regla y la fecha de las tarjetas de «Configuración» (D-409). Nunca muestra el valor del token.
+  - **Qué no avisa:** un token que falta o que GitHub no deja leer no entra en la alerta, porque no se adivina su fecha; «Configuración» lo marca en rojo o «Sin leer».
+- **Cuántas consultas:** la fecha se pide a GitHub como mucho una vez por hora, la misma consulta del aviso del token.
+- **Documentos:** el MANUAL, en español e inglés, lo dice en «Qué se revisa y cuándo» (3) y en el paso automático del caso de los tokens (8.1).
+- **Pruebas:** `tests/test_configuration.py::test_d410_…`, que comprueba:
+  - La regla de los 15 días.
+  - El texto y el color de cada token.
+  - Con un token a 10 días, la alerta lo muestra antes del informe; a 40 días, no.
+  - Nunca aparece el valor de un token.
