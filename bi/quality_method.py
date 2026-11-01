@@ -252,6 +252,31 @@ def build_report_view(report: dict[str, Any], policy: dict[str, Any]) -> str:
     )
 
 
+def record_of(report: dict[str, Any], row: dict[str, Any], nonconformities: list[dict[str, Any]]) -> dict[str, Any]:
+    """The non-conformity of this indicator in this report, or {}."""
+    return next(
+        (
+            item
+            for item in nonconformities
+            if item.get("informe") == report["numero"] and item.get("indicador") == row["clave"]
+        ),
+        {},
+    )
+
+
+def open_rows(report: dict[str, Any], nonconformities: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The indicators of a report out of their acceptable that are not resolved yet (D-419), the critical first."""
+    return sorted(
+        (
+            row
+            for row in report["indicadores"]
+            if row["estado"] in ("urgente", "critico")
+            and not quality_metrics.is_resolved(record_of(report, row, nonconformities))
+        ),
+        key=lambda row: row["estado"] != "critico",
+    )
+
+
 def build_alert(
     reports: list[dict[str, Any]],
     goals: dict[str, Any],
@@ -260,19 +285,19 @@ def build_alert(
     link: Any = None,
     failed_load: str | None = None,
     today: Any = None,
+    incidents: list[dict[str, Any]] | None = None,
 ) -> str:
     """«Acción requerida» (D-335), for the author only: every indicator of the latest report out of its acceptable,
     the critical ones first, each with its level, failure against the acceptable, why it matters, the automatic
     diagnosis, the suggested action and the report. It reads the report; it computes nothing of its own. Nothing here
-    holds a key or an internal path: only what the public reports already show, plus the cause and the action."""
+    holds a key or an internal path: only what the public reports already show, plus the cause and the action.
+    D-419: a non-conformity the author marked resolved does not appear; the cause of an indicator is, in order, the one
+    the register writes, the external incident of its period, or the automatic diagnosis."""
     texts = policy.get("alerta", {})
     if not reports:
         return ""
     latest = reports[-1]
-    out = sorted(
-        (row for row in latest["indicadores"] if row["estado"] in ("urgente", "critico")),
-        key=lambda row: row["estado"] != "critico",
-    )
+    out = open_rows(latest, nonconformities)
     day = str(latest["fecha"])[:10]
     parts = []
     # D-361: a report older than STALE_DAYS is an old picture, not today's state: it says so and loses its alarm colours.
@@ -285,18 +310,19 @@ def build_alert(
         parts.append(f'<p class="qm-alert-load">{html.escape(t(*texts["falla_carga"]).format(dia=failed_load))}</p>')
     for row in out:
         goal = goals.get(row["clave"], {})
-        diagnosis = row.get("diagnostico") or quality_metrics.diagnose(row, latest, reports, policy)
-        diagnosis = diagnosis[1 if i18n.is_english() else 0]
-        record = next(
-            (
-                item
-                for item in nonconformities
-                if item.get("informe") == latest["numero"] and item.get("indicador") == row["clave"]
-            ),
-            {},
-        )
-        cause = record.get("causa")
-        cause_line = t(*cause) if cause else diagnosis["origen"]
+        # D-419: recomputed from the report's own measurement, so each language reads its own words; the report keeps
+        # its stored copy untouched (a report is never edited).
+        diagnosis = quality_metrics.diagnose(row, latest, reports, policy)[1 if i18n.is_english() else 0]
+        cause = record_of(latest, row, nonconformities).get("causa")
+        incident = quality_metrics.incident_for(row, latest, reports, incidents or [])
+        if cause:
+            cause_line = t(*cause)
+        elif incident:
+            cause_line = t("Incidente externo de {} ({}): {}", "External incident of {} ({}): {}").format(
+                incident.get("fuente", ""), incident.get("referencia", ""), t(*incident["causa"])
+            )
+        else:
+            cause_line = diagnosis["origen"]
         action = t(*goal["accion"]) if goal.get("accion") else ""
         parts.append(
             f'<div class="qm-alert qm-{"antigua" if stale else row["estado"]}"><h4>{html.escape(state_word(row["estado"], policy))} · '

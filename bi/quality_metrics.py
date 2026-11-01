@@ -368,6 +368,31 @@ def read_reports(folder: Path = REPORTS_FOLDER) -> list[dict[str, Any]]:
     return [json.loads(path.read_text(encoding="utf-8")) for path in sorted(folder.glob("informe-*.json"))]
 
 
+def is_resolved(record: dict[str, Any]) -> bool:
+    """D-419: the author wrote «resuelta» as the state of a non-conformity (a text, or [es, en])."""
+    state = record.get("estado") or ""
+    first = state[0] if isinstance(state, list) and state else state
+    return str(first).strip().lower().startswith("resuelt")
+
+
+def incident_for(
+    row: dict[str, Any], report: dict[str, Any], reports: list[dict[str, Any]], incidents: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """D-419: the external incident registered for this indicator in the report's period (after the report before it,
+    up to this one), or None."""
+    earlier = [item for item in reports if item["numero"] < report["numero"]]
+    start = str(earlier[-1]["fecha"])[:10] if earlier else ""
+    end = str(report["fecha"])[:10]
+    return next(
+        (
+            item
+            for item in incidents
+            if item.get("indicador") == row["clave"] and start < str(item.get("fecha", ""))[:10] <= end
+        ),
+        None,
+    )
+
+
 def report_counts(report: dict[str, Any]) -> tuple[int, int, int]:
     """(within the acceptable, non-conformities, measured) of a report: «aviso» is within the acceptable."""
     states = [row["estado"] for row in report["indicadores"]]
@@ -376,8 +401,10 @@ def report_counts(report: dict[str, Any]) -> tuple[int, int, int]:
     return within, nonconforming, within + nonconforming
 
 
-def where_text(key: str, measurement: dict[str, Any], row: dict[str, Any]) -> dict[str, str]:
-    """The figures of «what failed and where» for one indicator, read from the measurement (D-335)."""
+def where_text(key: str, measurement: dict[str, Any], row: dict[str, Any], english: bool = False) -> dict[str, str]:
+    """The figures of «what failed and where» for one indicator, read from the measurement (D-335). D-419: «723 of 868»
+    in English, «723 de 868» in Spanish."""
+    of = "of" if english else "de"
     tests = measurement.get("pruebas", {}).get("pruebas")
     coverage = measurement.get("cobertura", {}).get("modulos", {})
     lowest = sorted(coverage.items(), key=lambda item: item[1])[:3]
@@ -389,9 +416,9 @@ def where_text(key: str, measurement: dict[str, Any], row: dict[str, Any]) -> di
         "ruff_avisos": ", ".join(f"{code} ({count})" for code, count in sorted(ruff.items()) if code != "E501"),
         "cobertura_por_modulo": ", ".join(f"{name} ({value} %)" for name, value in lowest[:1]),
         "cobertura_total": ", ".join(f"{name} ({value} %)" for name, value in lowest),
-        "pruebas_dbt_pct": f"{dbt.get('pruebas_ok')} de {dbt.get('pruebas_total')}",
-        "comparables_pct": f"{data.get('con_comparacion')} de {data.get('precios_semana')}",
-        "rechazadas_pct": f"{data.get('filas_rechazadas')} de {data.get('filas_leidas')}",
+        "pruebas_dbt_pct": f"{dbt.get('pruebas_ok')} {of} {dbt.get('pruebas_total')}",
+        "comparables_pct": f"{data.get('con_comparacion')} {of} {data.get('precios_semana')}",
+        "rechazadas_pct": f"{data.get('filas_rechazadas')} {of} {data.get('filas_leidas')}",
         "vigencia_dias": str(data.get("dias_desde_ultima_carga")),
     }.get(key, "")
     return {"valor": str(row.get("valor")), "total": str(tests), "detalle": detail}
@@ -406,7 +433,6 @@ def diagnose(
     templates = policy.get("diagnostico", {})
     key = row["clave"]
     where = templates.get("donde", {}).get(key) or templates.get("donde", {}).get("otro", ["", ""])
-    figures = where_text(key, report.get("medicion", {}), row)
     streak = report["numero"]
     by_number = {item["numero"]: item for item in reports}
     while streak - 1 in by_number:
@@ -419,6 +445,7 @@ def diagnose(
     origin = templates.get("origen_codigo" if row.get("tipo") == "codigo" else "origen_datos", ["", ""])
     lines = []
     for language in (0, 1):
+        figures = where_text(key, report.get("medicion", {}), row, english=language == 1)
         lines.append(
             {
                 "donde": where[language].format(**figures),

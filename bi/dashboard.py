@@ -850,8 +850,15 @@ def show_quality_alert_dialog():
     failed = control.latest_load_failure(runs)
     day = failed["started_at"].astimezone(ZoneInfo(CHILE_TIME_ZONE)).strftime("%d-%m") if failed else None
     address = build_page_address(PAGE_METHOD)
+    incidents = quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json").get("registros", [])
     body = quality_method.build_alert(
-        reports, goals, policy, nonconformities, lambda number: f"{address}&{REPORT_PARAMETER}={number}", day
+        reports,
+        goals,
+        policy,
+        nonconformities,
+        lambda number: f"{address}&{REPORT_PARAMETER}={number}",
+        day,
+        incidents=incidents,
     )
     tokens = configuration.build_token_alerts_html(read_token_alerts())  # D-410: the tokens first, then the report
     st.markdown(quality_method.build_css(charts.get_palette(get_mode())) + tokens + body, unsafe_allow_html=True)
@@ -884,7 +891,10 @@ def show_quality_alert():
     if not st.session_state.get(ADMIN_UNLOCKED) or st.session_state.get(QUALITY_ALERT_SEEN):
         return
     reports, goals, policy = quality_method.read_page()
-    out = bool(reports) and any(row["estado"] in ("urgente", "critico") for row in reports[-1]["indicadores"])
+    nonconformities = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json").get("registros", [])
+    out = bool(reports) and bool(
+        quality_method.open_rows(reports[-1], nonconformities)
+    )  # D-419: a resolved one raises nothing
     if not out and not read_token_alerts():
         return
     st.session_state[QUALITY_ALERT_SEEN] = True

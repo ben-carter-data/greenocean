@@ -3150,3 +3150,19 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Causa:** la fuente. Esos 145 precios no tuvieron precio la semana anterior: son 141 frutas y hortalizas y 4 carnes que ODEPA vuelve a publicar después de más de 12 semanas sin dato, productos de temporada que regresan. El código hace lo correcto: sin precio anterior no hay variación, y no se inventa una.
 - **Decisión del autor:** el aceptable se queda en 90 %. Esta semana se registra como incidente externo de ODEPA en `docs/calidad/incidentes_externos.json`, con la respuesta prevista para un producto sin datos: se muestra «sin comparación», sin rellenar. En la próxima carga esos precios ya tendrán semana anterior; si el indicador no vuelve a 90 % o más, se revisa el código.
 - **Pruebas:** `tests/test_quality_method.py` verifica que cada incidente diga qué pasó, la causa y la respuesta en los dos idiomas, con un tipo y una fuente conocidos.
+
+## D-419 · La alerta «Acción requerida» oculta lo resuelto, lee la causa de un incidente externo y escribe cada idioma con sus palabras
+
+- **Pedido del autor:** tres arreglos de la alerta del Autor.
+  - «Pruebas que fallan» salía crítico, aunque ya se resolvió con D-380 y main está en verde.
+  - «Precios con comparación válida» decía «Causa por determinar», aunque D-418 la registró como incidente externo.
+  - En inglés decía «723 de 868».
+- **Decisión:**
+  - **Lo resuelto no sale:** una no conformidad cuyo estado el autor escribió como «resuelta» no aparece en la alerta, y no la abre. A pedido del autor, la de «Pruebas que fallan» del informe N° 7 queda en `docs/calidad/no_conformidades.json` con su acción (D-380) y el estado «resuelta», en español e inglés.
+  - **De dónde sale la causa,** en este orden: la que escribe el registro de no conformidades; si no hay, el incidente externo del mismo indicador en el período del informe (desde el informe anterior hasta este); y si tampoco hay, el diagnóstico automático. La de los precios comparables dice ahora «Incidente externo de ODEPA (D-418)» y su causa.
+  - **Cada idioma con sus palabras:** el diagnóstico une sus cifras con «de» en español y con «of» en inglés. Un informe no se edita: el informe N° 7 guarda su copia tal como se escribió, y la alerta vuelve a calcular el diagnóstico a partir de la medición del propio informe. Los informes siguientes ya se escriben bien.
+- **Pruebas:** `tests/test_quality_method.py::test_d419_…`, que comprueba:
+  - Con los registros reales, la alerta no muestra lo resuelto.
+  - Muestra la causa del incidente.
+  - No usa la palabra del otro idioma entre dos cifras (`\d de \d` en inglés, `\d of \d` en español).
+  - La prueba del registro de no conformidades acepta la acción y el estado escritos en los dos idiomas.

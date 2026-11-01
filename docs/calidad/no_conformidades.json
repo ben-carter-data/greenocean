@@ -105,8 +105,14 @@
         "La base de la carga del 31-10 llegó a main antes que los arreglos de pruebas de D-380; en 30fe842 fallaban 6 pruebas que suponían la base anterior.",
         "The database of the 31-10 load reached main before the test fixes of D-380; at 30fe842, 6 tests that assumed the previous database failed."
       ],
-      "accion": "",
-      "estado": ""
+      "accion": [
+        "Las 6 pruebas se ajustaron a la base nueva (D-380); main quedó en verde con la suite completa.",
+        "The 6 tests were adjusted to the new database (D-380); main turned green with the full suite."
+      ],
+      "estado": [
+        "resuelta",
+        "resolved"
+      ]
     },
     {
       "informe": 7,

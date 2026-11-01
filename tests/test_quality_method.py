@@ -358,7 +358,9 @@ def test_d334_every_nonconformity_of_the_reports_is_registered_and_the_author_wr
         if row["estado"] in ("urgente", "critico")
     }
     assert {(item["informe"], item["indicador"]) for item in records} == found
-    assert all(item["accion"] == "" and item["estado"] == "" for item in records)  # the author's to write
+    for item in records:  # the author's to write: both empty, or both written in the two languages (D-419)
+        written = (item["accion"], item["estado"])
+        assert written == ("", "") or all(isinstance(text, list) and len(text) == 2 and all(text) for text in written)
     plan = quality_metrics.read(folder / "plan_mitigacion.json")["fallas"]
     assert [item["id"] for item in plan] == [f"F-{n:02d}" for n in range(1, len(plan) + 1)]
     assert {item["causa"] for item in plan} == {"interna", "externa"}
@@ -654,3 +656,32 @@ def test_d401_creating_a_report_registers_its_nonconformities_once(tmp_path):
     assert all(row["causa"] == row["accion"] == row["estado"] == "" for row in rows)  # the author's to write
     workflow = (ROOT / ".github" / "workflows" / "calidad.yml").read_text(encoding="utf-8")
     assert "docs/calidad/no_conformidades.json" in workflow  # the pull request carries them
+
+
+def test_d419_the_alert_hides_what_is_resolved_reads_the_external_incident_and_writes_each_language(monkeypatch):
+    reports, goals, policy = quality_method.read_page()
+    nonconformities = quality_metrics.read(quality_metrics.FOLDER / "no_conformidades.json")["registros"]
+    incidents = quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json")["registros"]
+    latest = reports[-1]
+    for language in (False, True):
+        monkeypatch.setattr(i18n, "is_english", lambda english=language: english)
+        alert = quality_method.build_alert(reports, goals, policy, nonconformities, incidents=incidents)
+        # a figure is «723 of 868» in English and «723 de 868» in Spanish, never the other language's word
+        assert not re.search(r"\d de \d" if language else r"\d of \d", alert), alert
+        for row in latest["indicadores"]:
+            record = quality_method.record_of(latest, row, nonconformities)
+            if quality_metrics.is_resolved(record):  # a resolved non-conformity does not appear
+                assert html.escape(quality_method.t(*row["nombre"])) not in alert
+        for incident in incidents:
+            row = next((item for item in latest["indicadores"] if item["clave"] == incident.get("indicador")), None)
+            if row and quality_metrics.incident_for(row, latest, reports, incidents) is incident:
+                assert html.escape(quality_method.t(*incident["causa"])) in alert  # the cause the incident wrote
+    assert quality_metrics.is_resolved({"estado": ["resuelta", "resolved"]}) and quality_metrics.is_resolved(
+        {"estado": "Resuelta"}
+    )
+    assert not quality_metrics.is_resolved({"estado": ""}) and not quality_metrics.is_resolved({})
+    figures = quality_metrics.where_text("comparables_pct", {"datos": {"con_comparacion": 7, "precios_semana": 9}}, {})
+    english = quality_metrics.where_text(
+        "comparables_pct", {"datos": {"con_comparacion": 7, "precios_semana": 9}}, {}, english=True
+    )
+    assert figures["detalle"] == "7 de 9" and english["detalle"] == "7 of 9"
