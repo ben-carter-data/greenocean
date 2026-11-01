@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.5 |
+| Version | 3.6 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -109,7 +109,7 @@ The panel has one key only: the one to enter as Author (the panel's `CONTROL_COD
 
 The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. After 3 failures, each try waits 2 s, and twice as long after each new failure, up to 15 min; the right code resets it (D-393, [Test and Security Plan](../calidad/PLAN_PRUEBAS.md#11-accepted-risks-and-limits)). Each action of the Author (starting, cancelling, reloading the data) checks again on the server that the session is the Author's (D-421). If the wait jams the access, the load can be started from GitHub. The panel never shows the token or any part of it.
 
-To enter: in the window to choose the view, the link «Author access», in its corner, the key and Enter (D-369). The «View» button, under the logo, changes the view; a click on the logo does the same (D-373). Leaving Author closes its session.
+To enter: in the window to choose the view, the link «Author access», in its corner, the key and Enter (D-369). The «View» button, under the logo, changes the view; a click on the logo does the same (D-373). Leaving Author closes its session. Opening or printing a document and changing the theme reload the page: the view is kept, the Author's too, with a one-time ticket the server issues and checks (D-427); a reload the reader makes asks for the view again.
 
 The panel uses three secrets, kept in Streamlit (section 8):
 
@@ -205,3 +205,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.3 | 2026-11-01 | What to do in each case (8.1), which the page «Settings» reads; the two tokens in the GitHub guide (8) and their warning at 15 days (3, D-409) |
 | 3.4 | 2026-11-01 | The alert «Action required» warns of each token at 15 days or fewer from its expiry (3, 8.1, D-410) |
 | 3.5 | 2026-11-01 | The live flow in the manual load's window (2) and in «Stack and evidence» (4, D-412, D-413) |
+| 3.6 | 2026-11-01 | One key only, the Author's, and each action checked on the server; the app's reloads keep the Author's view (7, D-421, D-427) |

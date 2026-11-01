@@ -3253,3 +3253,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Etiquetas de dos o más líneas:** el dibujo de figuras acepta etiquetas partidas en líneas y, en una línea vertical, ponerlas a su izquierda, para que no se monten sobre otras.
   - **Documentos:** el SAD (versión 3.9) y el Glosario (versión 2.5), en los dos idiomas.
 - **Pruebas:** `tests/test_doc_diagrams.py::test_d297_…` busca los nombres nuevos, las 12 flechas y sus etiquetas con los dos tokens; `tests/test_documents.py::test_d248_the_file_sizes_…` lee el tamaño «en la Base DuckDB».
+
+## D-427 · Abrir o imprimir un documento ya no vuelve a «Elige tu vista», tampoco para el Autor
+
+- **Reporte del autor:** al abrir un documento de la carpeta como Autor, la app volvía a «Elige tu vista» y pedía la clave; al imprimirlo, volvía a pasar y la impresión salía con esa ventana. La vista se elige una sola vez por visita y solo se vuelve a ella con «Vista: … · Cambiar».
+- **Causa:** abrir un documento, imprimirlo (que cambia al tema claro, D-280) y cambiar la base del tema recargan la página, y cada recarga abre una sesión nueva. D-357 conserva la vista en esas recargas, pero nunca la del Autor, para que el navegador no guardara nada que abriera esa vista sin la clave. Además, la impresión salía a los 3 segundos aunque «Elige tu vista» siguiera abierta.
+- **Decisión:**
+  - **Ticket del Autor:** mientras la sesión es del Autor, el servidor emite un ticket aleatorio (`secrets.token_urlsafe`), lo guarda en su memoria con el mismo vencimiento de la sesión (30 min sin actividad, D-395) y lo renueva en cada ejecución. Antes de una recarga de la app, la pestaña lo guarda junto con la vista; después, el servidor lo canjea una sola vez y, si es suyo y no venció, la sesión nueva vuelve a ser del Autor sin pedir la clave.
+  - **Seguridad:** el navegador solo guarda un número que el servidor emitió; uno inventado, uno ya usado o uno vencido no abre nada. Salir de Autor o cambiar de perfil (D-353) anula el ticket. La recarga que hace el lector (F5) sigue pidiendo la vista (D-340).
+  - **Impresión:** el documento se imprime solo cuando «Elige tu vista» ya no está en la página; si sigue abierta a los 20 segundos, no se imprime nada.
+  - **Documentos:** RF-09 del PRD y el MANUAL (7), en los dos idiomas.
+- **Pruebas:** `tests/test_app_reloads.py::test_d427_…`: el Autor vuelve con un ticket emitido por el servidor y solo una vez, y no con uno usado, inventado o vencido; solo una sesión de Autor tiene ticket y salir lo anula; la impresión espera a que «Elige tu vista» desaparezca. En el navegador, como Autor: abrir el PRD desde la carpeta e imprimirlo no muestra «Elige tu vista» y la vista sigue siendo «Autor».

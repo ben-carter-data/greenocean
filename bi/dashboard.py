@@ -17,6 +17,7 @@ import logging
 import math
 import os
 import re
+import secrets
 import sys
 import unicodedata
 from datetime import datetime, timedelta, timezone
@@ -610,6 +611,7 @@ def leave_author():
     back in asks for the key again. The run being followed stays in GitHub and is forgotten here."""
     for key in (ADMIN_UNLOCKED, QUALITY_ALERT_SEEN, AUTHOR_CODE_ERROR, RUN_WINDOW_OPEN):
         st.session_state.pop(key, None)
+    AUTHOR_TICKETS.pop(st.session_state.pop(AUTHOR_TICKET, None), None)  # D-427: no reload brings the Autor back
     st.session_state.pop(run_monitor.WATCH, None)
 
 
@@ -728,8 +730,10 @@ def submit_author_code():
 
 
 # D-357: the page reloads by itself to change the native theme (D-070), to print (D-280) and when a document opens
-# from the folder. Right before those reloads the browser tab keeps the view (never the author) for one load; a reload
-# the reader makes keeps nothing, so the entry window asks again (D-340). D-373: a click on the logo reopens the window.
+# from the folder. Right before those reloads the browser tab keeps the view for one load; a reload the reader makes
+# keeps nothing, so the entry window asks again (D-340). D-427: the Autor comes along too, with a one-time ticket the
+# server issued and checks, so the tab never holds anything that opens the Autor's view by itself. D-373: a click on
+# the logo reopens the window.
 PROFILE_KEEPER_JS = r"""
 export default function(component) {
     const { setTriggerValue, data } = component;
@@ -737,7 +741,11 @@ export default function(component) {
     const store = window.sessionStorage;
     const remember = () => {
         if (!data || !data.perfil) return;
-        try { store.setItem(KEY, JSON.stringify({ p: data.perfil, r: data.rol || "", h: data.historial || [], t: Date.now() })); } catch (e) {}
+        try {
+            store.setItem(KEY, JSON.stringify({
+                p: data.perfil, r: data.rol || "", h: data.historial || [], a: data.autor || "", t: Date.now()
+            }));
+        } catch (e) {}
     };
     window.__goRemember = remember;
     // D-423: read even when the address already names the view, because the history of «Volver» comes along too.
@@ -769,15 +777,45 @@ export default function(component) {
 """
 
 
+# D-427: the tickets that carry the Autor's view across a reload the app makes. They live in the server process (the
+# bi package outlives the script runs), each one is used once and lasts as long as the Autor's idle time.
+AUTHOR_TICKETS = vars(bi).setdefault("AUTHOR_TICKETS", {})
+AUTHOR_TICKET = "author_ticket"
+
+
+def issue_author_ticket(now=None):
+    """The ticket of this Autor session, renewed on each run: it expires when the session would (D-395)."""
+    now = datetime.now(timezone.utc).timestamp() if now is None else now
+    for ticket, expiry in list(AUTHOR_TICKETS.items()):
+        if expiry <= now:
+            AUTHOR_TICKETS.pop(ticket, None)
+    if not is_author():
+        AUTHOR_TICKETS.pop(st.session_state.pop(AUTHOR_TICKET, None), None)
+        return ""
+    ticket = st.session_state.get(AUTHOR_TICKET)
+    if ticket not in AUTHOR_TICKETS:
+        ticket = st.session_state[AUTHOR_TICKET] = secrets.token_urlsafe(32)
+    AUTHOR_TICKETS[ticket] = now + AUTHOR_IDLE_SECONDS
+    return ticket
+
+
+def redeem_author_ticket(ticket, now=None):
+    """True once for a ticket the server issued and that has not expired; it is gone after that."""
+    now = datetime.now(timezone.utc).timestamp() if now is None else now
+    expiry = AUTHOR_TICKETS.pop(ticket, None) if isinstance(ticket, str) else None
+    return bool(expiry and expiry > now)
+
+
 def keep_profile_across_app_reloads():
-    """D-357: the view the visit had before a reload the app itself made, once; the author is never kept. D-373: a
-    click on the logo asks for the view again."""
+    """D-357: the view the visit had before a reload the app itself made, once; D-427: the Autor too, through a
+    one-time ticket the server checks. D-373: a click on the logo asks for the view again."""
     keeper = st.components.v2.component("profile_keeper", js=PROFILE_KEEPER_JS)
     profile = get_profile()
     data = {
         "perfil": profile or "",
         "rol": get_role() if profile == PROFILE_PROFESSIONAL else "",
         "historial": st.session_state.get(PAGE_HISTORY, []),  # D-423: «Volver» survives the reload too
+        "autor": issue_author_ticket(),
     }
     result = keeper(
         key="profile_keeper", data=data, on_keep_change=lambda: None, on_reopen_change=lambda: None, height=0
@@ -796,6 +834,10 @@ def keep_profile_across_app_reloads():
         return
     if values.get("p") in PROFILES:
         st.session_state[PROFILE_STATE] = values["p"]
+        if redeem_author_ticket(values.get("a")):  # D-427: the Autor's view, back without the key
+            st.session_state[ADMIN_UNLOCKED] = True
+            st.session_state[AUTHOR_SEEN] = datetime.now(timezone.utc).timestamp()
+            st.session_state[QUALITY_ALERT_SEEN] = True  # the alert was already shown in this visit
         if values.get("r") in ROLES:
             st.session_state[ROLE_STATE] = values["r"]
         settle_profile()
@@ -7392,7 +7434,13 @@ AUTO_PRINT_SCRIPT = r"""<script>
     if (window.__goRemember) window.__goRemember();
     window.location.replace(url.toString());
   }, { once: true });
-  setTimeout(() => window.print(), 3000);
+  // D-427: print only the document: wait until «Elige tu vista» is gone (the view comes back a moment after the load).
+  let tries = 0;
+  const ready = () => {
+    if (!document.querySelector(".profile-ask")) { window.print(); return; }
+    if (tries++ < 40) setTimeout(ready, 500);  // after 20 s with the window still open, nothing is printed
+  };
+  setTimeout(ready, 3000);
 })();
 </script>"""
 

@@ -775,6 +775,28 @@
           "estacion": 15,
           "estado": "resuelta",
           "referencia": "D-423"
+        },
+        {
+          "fecha": "2026-11-01",
+          "ocurrencia": [
+            "Como Autor, abrir o imprimir un documento volvía a «Elige tu vista», y la impresión salía con esa ventana.",
+            "As the Author, opening or printing a document went back to «Choose your view», and the print showed that window."
+          ],
+          "diagnostico": [
+            "Esas acciones recargan la página, y D-357 nunca conservaba la vista del Autor.",
+            "Those actions reload the page, and D-357 never kept the Author's view."
+          ],
+          "solucion": [
+            "El servidor emite un ticket de un solo uso que trae de vuelta al Autor, y la impresión espera a que la ventana se cierre (D-427).",
+            "The server issues a one-time ticket that brings the Author back, and printing waits until the window closes (D-427)."
+          ],
+          "comentario": [
+            "Un ticket inventado, usado o vencido no abre la vista del Autor.",
+            "A made-up, used or expired ticket does not open the Author's view."
+          ],
+          "estacion": 15,
+          "estado": "resuelta",
+          "referencia": "D-427"
         }
       ]
     },

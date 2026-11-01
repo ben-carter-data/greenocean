@@ -1,5 +1,6 @@
 """D-357: a reload the app makes by itself (opening or printing a document from the folder, the theme's base) keeps the
-visit's view once; a reload the reader makes still asks for it (D-340), and the author's view is never kept."""
+visit's view once; a reload the reader makes still asks for it (D-340). D-427: the author's view comes back only with a one-time ticket
+the server issued."""
 
 import json
 import re
@@ -56,3 +57,37 @@ def test_d357_every_reload_the_app_makes_remembers_the_view_first():
         before = source[: source.index(reload)].rsplit("\n", 2)[-2:]
         assert any("__goRemember" in line for line in before), reload
     assert re.search(r"Date\.now\(\) - kept\.t < \d+", dashboard.PROFILE_KEEPER_JS)  # used once and only fresh
+
+
+def test_d427_the_author_comes_back_after_a_reload_the_app_makes_only_with_a_ticket_the_server_issued():
+    tickets = dashboard.AUTHOR_TICKETS
+    tickets["ticket-de-prueba"] = 4_000_000_000  # issued by the server, far from expiring
+    app = reload_page(json.dumps({"p": "profesional", "r": "bi", "a": "ticket-de-prueba", "t": 0}))
+    assert not app.exception and app.session_state["admin_unlocked"] is True
+    assert not [box for box in app.text_input if box.key == "profile_author_code"]  # no «Elige tu vista», no key
+    assert "ticket-de-prueba" not in tickets  # used once
+    # the same ticket again, a ticket the server never issued, or an expired one: the view comes back without the Autor
+    tickets["ticket-vencido"] = 1
+    for ticket in ("ticket-de-prueba", "inventado", "ticket-vencido"):
+        app = reload_page(json.dumps({"p": "profesional", "r": "bi", "a": ticket, "t": 0}))
+        assert not app.exception and app.session_state["visitor_profile"] == "profesional", ticket
+        assert not app.session_state.get("admin_unlocked"), ticket
+
+
+def test_d427_only_an_author_session_holds_a_ticket_and_leaving_it_revokes_it(monkeypatch):
+    state = {}
+    monkeypatch.setattr(dashboard.st, "session_state", state)
+    assert dashboard.issue_author_ticket(now=100) == ""  # not the Autor: no ticket
+    state[dashboard.ADMIN_UNLOCKED] = True
+    ticket = dashboard.issue_author_ticket(now=100)
+    assert len(ticket) >= 40 and dashboard.AUTHOR_TICKETS[ticket] == 100 + dashboard.AUTHOR_IDLE_SECONDS
+    assert dashboard.issue_author_ticket(now=200) == ticket  # the same session keeps its ticket, renewed
+    dashboard.leave_author()
+    assert ticket not in dashboard.AUTHOR_TICKETS and not dashboard.redeem_author_ticket(ticket, now=200)
+
+
+def test_d427_the_document_is_printed_only_when_choose_your_view_is_gone():
+    script = dashboard.AUTO_PRINT_SCRIPT
+    assert 'document.querySelector(".profile-ask")' in script
+    assert script.count("window.print()") == 1 and "if (!document.querySelector" in script
+    assert "a: data.autor" in dashboard.PROFILE_KEEPER_JS
