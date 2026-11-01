@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.4 |
+| Version | 3.5 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -348,7 +348,7 @@ The diagram with the live status of each piece is in the «Deployment» tab of [
 - The GitHub Actions log: each step, including the ones that fail.
 - The email GitHub sends the author if the load fails.
 
-The «Monitoring» tab of [[vista:Operations center]] brings them together.
+The «Monitoring» tab of [[vista:Operations center]] brings them together. The live flow of «Stack and evidence» shows the running load piece by piece, for every view and with no logs (D-412).
 
 **Project quality.** The [Software Quality Assurance Plan (SQAP)](../calidad/PLAN_DE_CALIDAD.md) says how the quality of the data and of the code is measured, who decides and what happens when something fails. Its 12 indicators are measured by the quality workflow. On every push, it fails if a code indicator is past its acceptable. The numbered report is proposed as a pull request only after the weekly load, or by hand (D-363). If the last report is more than 8 days old, the author's alert says so and does not show it as today's state (D-361). Every failure lived is kept in the failure register, one line per field (D-342, D-354).
 
@@ -360,6 +360,8 @@ The «Monitoring» tab of [[vista:Operations center]] brings them together.
 
 Only the author sees the page «GitHub Actions». It shows the latest runs and, of the last failure, the job, the step, the failing tests and the last 60 lines of the log, with a «Copy» button and links to the run and the job. The token never shows on screen (D-339, D-359).
 
+The page «Settings» is also the author's only (D-409). It shows on one screen the state of the two tokens (days left and expiry date, read from GitHub, never their value), of the latest load, of the latest report, of the CI tests and of the sources; the steps of each case, read from the runbook, and the maintenance. A token at 15 days or fewer from its expiry also joins the alert «Action required» (D-410).
+
 **Security.** The threats, their controls and the tests that verify them are in [[vista:Security architecture]]. The verification procedure is in the [Test and Security Plan](../calidad/PLAN_PRUEBAS.md).
 
 **Quality requirements**
@@ -370,7 +372,7 @@ Only the author sees the page «GitHub Actions». It shows the latest runs and, 
 | Reliability | ODEPA publishes a truncated file | The load reads less than 90 % of the previous one and stops; the panel keeps the last valid database |
 | Availability | GitHub does not respond when the panel opens | The panel keeps the database it already has, and says so if it has none |
 | Security | A reader tries to read server files with the SQL studio | The query is rejected and the engine has no access to files or to the network |
-| Usability | A 1440 × 900 screen | Each main page is seen whole in the browser window (1440 × 790) |
+| Usability | A 1440 × 900 or 1280 × 800 screen | Each main page is seen whole in the browser window (1440 × 790 and 1280 × 800); at 1024 × 768 it scrolls down without cuts (D-407) |
 
 ## 9. Capacity and growth
 
@@ -465,3 +467,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.2 | 2026-10-30 | Late sources and the time limit of the load; the three views, the app's own reloads and tabs that draw only the one in sight; project quality, secrets and the page «GitHub Actions» (D-339 to D-363) |
 | 3.3 | 2026-10-31 | Wording reviewed; the three people of the context, each with what it sees (2); the GitHub API says start, read state and logs, cancel (3); the quality report as a pull request (4, 7, 8); the data quality indicators and those of the quality plan (8); the document moves to `docs/arquitectura/` (D-381 to D-384, D-388) |
 | 3.4 | 2026-11-01 | The system flow, with the fixed picture of the live view (3.3, D-412 to D-414) |
+| 3.5 | 2026-11-01 | Who writes and who reads on the GitHub API (3.2); the live flow in observability, the page «Settings» and the tokens' warning at 15 days (8); one screen also at 1280 × 800 (8, D-407 to D-417) |

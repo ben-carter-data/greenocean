@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.4 |
+| Versión | 3.5 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -43,7 +43,7 @@ El trabajo de operación se reduce a mirar un resultado por semana, a cuatro tar
 
 El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:00 UTC: las 09:00 en el horario de verano de Chile y las 08:00 en el de invierno. Descarga las fuentes, construye y prueba la base, la publica en el release «base-actual» y crea el informe semanal. La secuencia completa, paso a paso, está en la [secuencia de la carga del SAD](../arquitectura/SAD.md#4-la-carga-de-cada-semana).
 
-También se puede lanzar a mano: desde «Centro de operación», con el botón «Ejecutar pipeline ahora» (requiere la clave de control), o desde la página del workflow en GitHub.
+También se puede lanzar a mano: desde «Centro de operación», con el botón «Ejecutar pipeline ahora» (requiere la clave de control), o desde la página del workflow en GitHub. La ventana de la ejecución muestra arriba el flujo en vivo, enfocado en la carga: qué pieza trabaja y qué mensaje viaja en cada paso (D-413).
 
 Si un paso falla, los siguientes no se ejecutan y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](../arquitectura/ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)).
 
@@ -81,7 +81,7 @@ Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El
 
 Una semana que una fuente aún no publica no es una falla. La carga publica hasta la última semana completa en ambas fuentes, y el Panorama lo avisa. Sí detienen la carga `MISSING_WEEKS` (falta una semana en medio de los datos) y `LATE_SOURCE` (una fuente lleva más de 2 semanas sin publicar). En esos casos, revisar ODEPA y no rellenar nada: la carga vuelve sola cuando la fuente publica.
 
-Para leer cualquier falla sin copiar a mano, la página «GitHub Actions» del panel, en la vista Autor, muestra el job, el paso, las pruebas que fallan y el final del log, con «Copiar».
+Para leer cualquier falla sin copiar a mano, la página «GitHub Actions» del panel, en la vista Autor, muestra el job, el paso, las pruebas que fallan y el final del log, con «Copiar». Para ver en qué paso va una carga, sin logs y en cualquier vista, está el flujo en vivo de «Stack y evidencia» (D-412).
 
 ## 5. Fallas del panel publicado
 
@@ -204,3 +204,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.2 | 31-10-2026 | Redacción revisada; los 12 indicadores del plan de calidad (2); el token lanza, sigue y cancela la carga (7); las tres vistas (8, 9); el documento pasa a `docs/operacion/` (D-381, D-384, D-388) |
 | 3.3 | 01-11-2026 | Qué hacer en cada caso (8.1), que lee la página «Configuración»; los dos tokens en la guía de GitHub (8) y su aviso a 15 días (3, D-409) |
 | 3.4 | 01-11-2026 | La alerta «Acción requerida» avisa cada token a 15 días o menos de vencer (3, 8.1, D-410) |
+| 3.5 | 01-11-2026 | El flujo en vivo en la ventana de la carga manual (2) y en «Stack y evidencia» (4, D-412, D-413) |

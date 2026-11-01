@@ -3132,3 +3132,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **PRD 7:** el orden del menú incluye «Precios e inflación» (D-398).
   - **Caso S-12 del plan de pruebas y de `bi/security_plan.py`:** suma la prueba de que «Configuración» no se abre sin la clave.
 - **Pruebas:** las de los documentos y del plan de seguridad (`tests/test_documents.py`, `tests/test_doc_diagrams.py`) verifican que cada caso apunta a una prueba que existe y que el plan coincide con el código; `tests/test_i18n.py`, el inglés.
+
+## D-417 · El SAD, el MANUAL, el PRD y el índice cuentan las páginas y reglas nuevas
+
+- **Pedido del autor (parte 5):** agregar la página «Configuración», el diagrama nuevo y los cambios de seguridad al SAD, el MANUAL y el PRD, en español e inglés, con la misma redacción simple.
+- **Decisión:**
+  - **SAD:** la observabilidad (8) nombra el flujo en vivo; los secretos (8) describen «Configuración» y el aviso de los tokens a 15 días; la usabilidad (8) pide una pantalla también a 1280 × 800. La versión pasa a 3.5.
+  - **MANUAL:** la ventana de la carga manual muestra el flujo enfocado (2), y «Stack y evidencia» dice en qué paso va una carga sin logs (4). La versión pasa a 3.5.
+  - **PRD:** la vista Autor incluye «Configuración» (3.2). En Pantallas (7) se suman el Panorama que pliega sus pasos, las tarjetas por canal y las dos vistas de «Stack y evidencia». La versión pasa a 3.9.
+  - **Índice de decisiones:** suma las diez grandes de esta etapa (D-393 a D-414) y pasa de 88 a 98 filas.
+  - **CLAUDE.md:** nombra los módulos nuevos y el número de pruebas.
+- **Pruebas:** las de los documentos verifican la misma estructura, los mismos identificadores y las mismas cifras en los dos idiomas (`tests/test_i18n.py`, `tests/test_documents.py`), y que cada vista enlazada existe.

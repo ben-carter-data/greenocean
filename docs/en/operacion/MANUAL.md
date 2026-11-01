@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.4 |
+| Version | 3.5 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -43,7 +43,7 @@ The operations work comes down to looking at one result a week, four tasks on th
 
 The weekly job (`.github/workflows/semanal.yml`) runs every Tuesday at 12:00 UTC: 09:00 in Chilean summer time and 08:00 in winter time. It downloads the sources, builds and tests the database, publishes it in the «base-actual» release and creates the weekly report. The full sequence, step by step, is in the [load sequence of the SAD](../arquitectura/SAD.md#4-the-load-of-each-week).
 
-It can also be launched by hand: from «Operations center», with the «Run pipeline now» button (it requires the control code), or from the workflow page on GitHub.
+It can also be launched by hand: from «Operations center», with the «Run pipeline now» button (it requires the control code), or from the workflow page on GitHub. The run's window shows the live flow on top, focused on the load: which piece works and which message travels at each step (D-413).
 
 If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](../arquitectura/ADR.md#adr-11--publish-only-if-the-tests-pass)).
 
@@ -81,7 +81,7 @@ Each row is a step of the workflow, with its name in `semanal.yml`. The warning 
 
 A week a source has not published yet is not a failure. The load publishes up to the last week complete in both sources, and the Price overview says so. What does stop the load is `MISSING_WEEKS` (a week missing in the middle of the data) and `LATE_SOURCE` (a source has gone more than 2 weeks without publishing). In those cases, check ODEPA and fill nothing in: the load comes back by itself when the source publishes.
 
-To read any failure without copying by hand, the panel's page «GitHub Actions», in the Author view, shows the job, the step, the failing tests and the end of the log, with «Copy».
+To read any failure without copying by hand, the panel's page «GitHub Actions», in the Author view, shows the job, the step, the failing tests and the end of the log, with «Copy». To see which step a load is at, without logs and in any view, there is the live flow of «Stack and evidence» (D-412).
 
 ## 5. Failures of the published panel
 
@@ -204,3 +204,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.2 | 2026-10-31 | Wording reviewed; the 12 indicators of the quality plan (2); the token starts, follows and cancels the load (7); the three views (8, 9); the document moves to `docs/operacion/` (D-381, D-384, D-388) |
 | 3.3 | 2026-11-01 | What to do in each case (8.1), which the page «Settings» reads; the two tokens in the GitHub guide (8) and their warning at 15 days (3, D-409) |
 | 3.4 | 2026-11-01 | The alert «Action required» warns of each token at 15 days or fewer from its expiry (3, 8.1, D-410) |
+| 3.5 | 2026-11-01 | The live flow in the manual load's window (2) and in «Stack and evidence» (4, D-412, D-413) |

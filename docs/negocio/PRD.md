@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.8 |
+| Versión | 3.9 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -77,7 +77,7 @@ El panel es de consulta y no pide cuenta. Al entrar, y en cada recarga, la venta
 
 - **Usuario:** el negocio. El Panorama de precios, guiado en tres pasos, Insights y los precios frente a la inflación.
 - **Profesional:** todo el proyecto, ordenado según su perfil (datos, BA, BI, DevOps o seguridad), con el estudio SQL de solo lectura.
-- **Autor:** lo mismo que Profesional, más la página «GitHub Actions», la alerta «Acción requerida» y la carga manual. Pide la clave de control, que nunca está en el repositorio.
+- **Autor:** lo mismo que Profesional, más las páginas «GitHub Actions» y «Configuración», la alerta «Acción requerida» y la carga manual. Pide la clave de control, que nunca está en el repositorio.
 
 El botón «Vista», debajo del logo, cambia de vista; un clic en el logo hace lo mismo (D-373). Salir de Autor cierra su sesión. El autor mantiene el código y los secretos y responde consultas SQL puntuales.
 
@@ -143,8 +143,9 @@ Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 sema
 Estas son seis capturas reales, del 31-10-2026, de cinco páginas principales y en los cuatro temas de color. El Panorama aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
 
 - **Menú:** agrupa las páginas en cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera sigue el orden en que la lee un lector: Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal, Precios e inflación e Insights.
-- **Panorama de precios:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior.
-- **Último dato por canal:** muestra la última semana de cada fuente (mayorista y consumidor), con su variación por familia y sus productos, aunque la otra fuente todavía no la publique.
+- **Panorama de precios:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Elegida la familia, los pasos 1 y 2 se pliegan en una línea con «Cambiar» y la tabla de productos toma la pantalla (D-408).
+- **Último dato por canal:** una tarjeta por canal, con su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del Panorama, aunque la otra fuente todavía no publique esa semana (D-404 a D-406).
+- **Stack y evidencia:** dos vistas. «Herramientas» explica cada herramienta; «Flujo del sistema en vivo» muestra las piezas reales, lo que se dicen y la carga en curso (D-412).
 
 [[diagrama:mockups]]
 
@@ -217,3 +218,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.6 | 31-10-2026 | Redacción revisada; cifras de la carga del 31-10-2026 (6); las tres vistas, cada una con lo que ve (3.2); la alerta de precio completa (RF-05); los indicadores de calidad de los datos y los del plan de calidad (RNF-04); capturas nuevas (7, D-392); el documento pasa a `docs/negocio/` (D-381, D-385, D-388) |
 | 3.7 | 01-11-2026 | Una pantalla también a 1280 × 800 (RNF-06); a 1024 × 768 se acepta el desplazamiento vertical, sin cortes (RNF-05, D-407) |
 | 3.8 | 01-11-2026 | Las mini arquitecturas del flujo en vivo, como mejora futura (11, D-415) |
+| 3.9 | 01-11-2026 | La vista Autor con «Configuración» (3.2); el Panorama que pliega sus pasos, las tarjetas por canal y el flujo en vivo de «Stack y evidencia» (7, D-404 a D-417) |

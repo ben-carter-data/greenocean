@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.4 |
+| Versión | 3.5 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -348,7 +348,7 @@ El diagrama con el estado en vivo de cada pieza está en la pestaña «Despliegu
 - El registro de GitHub Actions: cada paso, incluidos los que fallan.
 - El correo que GitHub envía al autor si la carga falla.
 
-La pestaña «Monitoreo» de [[vista:Centro de operación]] los reúne.
+La pestaña «Monitoreo» de [[vista:Centro de operación]] los reúne. El flujo en vivo de «Stack y evidencia» muestra la carga en curso pieza por pieza, para cualquier vista y sin logs (D-412).
 
 **Calidad del proyecto.** El [Plan de calidad del software (SQAP)](../calidad/PLAN_DE_CALIDAD.md) dice cómo se mide la calidad de los datos y del código, quién decide y qué pasa cuando algo falla. Sus 12 indicadores los mide el workflow de calidad. En cada push, falla si un indicador de código pasa su aceptable. El informe numerado se propone como pull request solo después de la carga semanal, o a mano (D-363). Si el último informe tiene más de 8 días, la alerta del autor lo dice y no lo muestra como el estado de hoy (D-361). Cada falla vivida queda en el registro de fallas, una línea por campo (D-342, D-354).
 
@@ -360,6 +360,8 @@ La pestaña «Monitoreo» de [[vista:Centro de operación]] los reúne.
 
 La página «GitHub Actions» solo la ve el autor. Muestra las últimas ejecuciones y, del último fallo, el job, el paso, las pruebas que fallan y las últimas 60 líneas del log, con un botón «Copiar» y enlaces a la ejecución y al job. El token nunca aparece en pantalla (D-339, D-359).
 
+La página «Configuración» también es solo del autor (D-409). Muestra en una pantalla el estado de los dos tokens (días que quedan y fecha de vencimiento, leída de GitHub, nunca su valor), de la última carga, del último informe, de las pruebas del CI y de las fuentes; los pasos de cada caso, leídos del manual de operación, y el mantenimiento. Un token a 15 días o menos de vencer también entra en la alerta «Acción requerida» (D-410).
+
 **Seguridad.** Las amenazas, sus controles y las pruebas que los verifican están en [[vista:Arquitectura de seguridad]]. El procedimiento de verificación está en el [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md).
 
 **Requisitos de calidad**
@@ -370,7 +372,7 @@ La página «GitHub Actions» solo la ve el autor. Muestra las últimas ejecucio
 | Confiabilidad | ODEPA publica un archivo truncado | La carga lee menos del 90 % de la anterior y se detiene; el panel conserva la última base válida |
 | Disponibilidad | GitHub no responde al abrir el panel | El panel conserva la base que ya tiene y lo informa si no tiene ninguna |
 | Seguridad | Un lector intenta leer archivos del servidor con el estudio SQL | La consulta se rechaza y el motor no tiene acceso a archivos ni a la red |
-| Usabilidad | Una pantalla de 1440 × 900 | Cada página principal se ve entera en la ventana del navegador (1440 × 790) |
+| Usabilidad | Una pantalla de 1440 × 900 o de 1280 × 800 | Cada página principal se ve entera en la ventana del navegador (1440 × 790 y 1280 × 800); a 1024 × 768 baja sin cortes (D-407) |
 
 ## 9. Capacidad y crecimiento
 
@@ -465,3 +467,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.2 | 30-10-2026 | Fuentes retrasadas y límite de tiempo de la carga; las tres vistas, las recargas propias y las pestañas que dibujan solo la visible; calidad del proyecto, secretos y la página «GitHub Actions» (D-339 a D-363) |
 | 3.3 | 31-10-2026 | Redacción revisada; las tres personas del contexto, cada una con lo que ve (2); la API de GitHub dice lanzar, leer estado y logs, cancelar (3); el informe de calidad como pull request (4, 7, 8); los indicadores de calidad de los datos y los del plan de calidad (8); el documento pasa a `docs/arquitectura/` (D-381 a D-384, D-388) |
 | 3.4 | 01-11-2026 | El flujo del sistema, con la imagen fija de la vista en vivo (3.3, D-412 a D-414) |
+| 3.5 | 01-11-2026 | Quién escribe y quién lee en la API de GitHub (3.2); el flujo en vivo en la observabilidad, la página «Configuración» y el aviso de los tokens a 15 días (8); una pantalla también a 1280 × 800 (8, D-407 a D-417) |

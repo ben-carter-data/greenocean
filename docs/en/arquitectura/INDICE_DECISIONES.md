@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Decision Index |
-| Version | 2.1 |
-| Date | 2026-10-31 |
+| Version | 2.2 |
+| Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Gather, by theme, the decisions that change the architecture, the data, the security or the operations. |
@@ -27,7 +27,7 @@
 
 ## 1. In summary
 
-GreenOcean records each change of behavior as a decision with its date, its reason and its tests. This index gathers the 88 that weigh most, grouped in eight themes, so they can be read without going through the full log. Each row says first what was decided. If the decision gave rise to an architecture record, the second column links it. The D-xxx code finds it in `docs/DECISIONES.md` (in Spanish), which keeps them all in chronological order.
+GreenOcean records each change of behavior as a decision with its date, its reason and its tests. This index gathers the 98 that weigh most, grouped in eight themes, so they can be read without going through the full log. Each row says first what was decided. If the decision gave rise to an architecture record, the second column links it. The D-xxx code finds it in `docs/DECISIONES.md` (in Spanish), which keeps them all in chronological order.
 
 [[diagrama:temas]]
 
@@ -124,6 +124,8 @@ Who can do what, and how it is checked.
 | The security architecture is drawn by trust zones | — | D-254 |
 | The «GitHub Actions» page is read-only and only the Author sees it | — | D-339 |
 | The address does not choose the view: the window to choose it always opens | — | D-340 |
+| The key's doors share a limit of attempts, kept on the server | — | D-393 |
+| The Author's alert warns of each token at 15 days or fewer from its expiry | — | D-410 |
 
 ## 7. Operations and observability
 
@@ -142,6 +144,9 @@ How we know what happened in each load, and what to do.
 | The manual load is followed in a window that does not close by itself, and it can be minimized or cancelled | — | D-351 |
 | The quality report is weekly and proposed as a pull request; a push only measures | — | D-363 |
 | The deployment shows the two reports: the weekly one as an issue and the quality one as a pull request | — | D-383 |
+| The console «Settings» gathers the state, what to do in each case and the maintenance | — | D-409 |
+| The live system flow shows the real pieces, their messages and the running load | — | D-412 |
+| The manual load's window shows the flow focused on the run | — | D-413 |
 
 ## 8. Panel
 
@@ -161,6 +166,10 @@ How the panel reads on a single screen and in two languages.
 | The dark theme is the default | — | D-349 |
 | The page «Latest data by channel» shows the latest week of each source | — | D-365 |
 | The Price overview reads in three steps that open in order | — | D-372 |
+| The header only places the reader; the information goes in the content | — | D-398 |
+| Each channel opens with the Overview's steps, in its own latest week | — | D-405 |
+| Each main page also fits 1280 × 800 | — | D-407 |
+| Once the family is chosen, steps 1 and 2 fold and the products table takes the screen | — | D-408 |
 
 ## 9. Documentation
 
@@ -178,6 +187,7 @@ How the project is explained.
 | Every document in a single folder of the menu | — | D-282 |
 | The documents go from the most important to the least, for every reader | — | D-290 |
 | The documents are sorted into four folders by subject | — | D-381 |
+| The SAD carries the fixed picture of the system flow | — | D-414 |
 
 ## 10. Version history
 
@@ -186,3 +196,4 @@ How the project is explained.
 | 1.0 | 2026-10-25 | First version (D-279, professional documentation) |
 | 2.0 | 2026-10-25 | A summary with three diagrams; each row says first what was decided and links its architecture record by its name (D-290, documents for every reader) |
 | 2.1 | 2026-10-31 | The major decisions since D-290: late sources, quality in two parts, the three views, the manual load window, the two reports and the four folders of documents; wording reviewed (D-381, D-388) |
+| 2.2 | 2026-11-01 | The major decisions of the final part: the limit of attempts, «Settings» and its token warning, the live flow and its picture in the SAD, the header, the channels and one screen at 1280 × 800 (D-393 to D-414) |

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.8 |
+| Version | 3.9 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -77,7 +77,7 @@ The panel is read-only and needs no account. On entry, and on every reload, a wi
 
 - **User:** the business. The Price overview, guided in three steps, Insights and prices against inflation.
 - **Professional:** the whole project, ordered by profile (data, BA, BI, DevOps or security), with the read-only SQL studio.
-- **Author:** the same as Professional, plus the «GitHub Actions» page, the «Action required» alert and the manual load. It asks for the control code, which is never in the repository.
+- **Author:** the same as Professional, plus the pages «GitHub Actions» and «Settings», the «Action required» alert and the manual load. It asks for the control code, which is never in the repository.
 
 The «View» button, under the logo, changes the view; a click on the logo does the same (D-373). Leaving Author closes its session. The author maintains the code and the secrets and answers ad hoc SQL queries.
 
@@ -143,8 +143,9 @@ With the load of 2026-10-31, the database holds 821,072 weekly prices over 252 w
 These are six real captures, of 2026-10-31, of five main pages and in the four color themes. The Price overview appears twice: as the User sees it and as the Professional sees it. The dark theme is the one on entry.
 
 - **Menu:** it groups the pages in five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first follows a reader's reading order: Stakeholders, Business and systems analysis, Price overview, Latest data by channel, Prices and inflation and Insights.
-- **Price overview:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done.
-- **Latest data by channel:** it shows each source's latest week (wholesale and consumer), with its change by family and its products, even if the other source has not published it yet.
+- **Price overview:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done. Once the family is chosen, steps 1 and 2 fold into one line with «Change» and the products table takes the screen (D-408).
+- **Latest data by channel:** one card per channel, with its latest week, its prices, its change and the families it publishes. Each card opens that channel with the Overview's steps, even if the other source has not published that week yet (D-404 to D-406).
+- **Stack and evidence:** two views. «Tools» explains each tool; «Live system flow» shows the real pieces, what they say to each other and the running load (D-412).
 
 [[diagrama:mockups]]
 
@@ -217,3 +218,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.6 | 2026-10-31 | Wording reviewed; figures of the load of 2026-10-31 (6); the three views, each with what it sees (3.2); the full price alert (RF-05); the data quality indicators and those of the quality plan (RNF-04); new captures (7, D-392); the document moves to `docs/negocio/` (D-381, D-385, D-388) |
 | 3.7 | 2026-11-01 | One screen also at 1280 × 800 (RNF-06); at 1024 × 768 vertical scrolling is accepted, without cuts (RNF-05, D-407) |
 | 3.8 | 2026-11-01 | The mini architectures of the live flow, as a future improvement (11, D-415) |
+| 3.9 | 2026-11-01 | The Author view with «Settings» (3.2); the Overview that folds its steps, the channel cards and the live flow of «Stack and evidence» (7, D-404 to D-417) |

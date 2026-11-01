@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Índice de decisiones |
-| Versión | 2.1 |
-| Fecha | 31-10-2026 |
+| Versión | 2.2 |
+| Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Reunir, por tema, las decisiones que cambian la arquitectura, los datos, la seguridad o la operación. |
@@ -27,7 +27,7 @@
 
 ## 1. En resumen
 
-GreenOcean registra cada cambio de comportamiento como una decisión con su fecha, su motivo y sus pruebas. Este índice reúne las 88 que más pesan, agrupadas en ocho temas, para leerlas sin recorrer el registro completo. Cada fila dice primero qué se decidió. Si la decisión dio origen a un registro de arquitectura, la segunda columna lo enlaza. El código D-xxx sirve para buscarla en `docs/DECISIONES.md`, que guarda todas en orden cronológico.
+GreenOcean registra cada cambio de comportamiento como una decisión con su fecha, su motivo y sus pruebas. Este índice reúne las 98 que más pesan, agrupadas en ocho temas, para leerlas sin recorrer el registro completo. Cada fila dice primero qué se decidió. Si la decisión dio origen a un registro de arquitectura, la segunda columna lo enlaza. El código D-xxx sirve para buscarla en `docs/DECISIONES.md`, que guarda todas en orden cronológico.
 
 [[diagrama:temas]]
 
@@ -124,6 +124,8 @@ Quién puede hacer qué y cómo se comprueba.
 | La arquitectura de seguridad se dibuja por zonas de confianza | — | D-254 |
 | La página «GitHub Actions» es de solo lectura y solo la ve el Autor | — | D-339 |
 | La dirección no elige la vista: la ventana «Elige tu vista» se abre siempre | — | D-340 |
+| Las puertas de la clave comparten un límite de intentos, guardado en el servidor | — | D-393 |
+| La alerta del Autor avisa cada token a 15 días o menos de vencer | — | D-410 |
 
 ## 7. Operación y observabilidad
 
@@ -142,6 +144,9 @@ Cómo se sabe qué pasó en cada carga y qué hacer.
 | La carga manual se sigue en una ventana que no se cierra sola, y se puede minimizar o cancelar | — | D-351 |
 | El informe de calidad es semanal y se propone como pull request; un push solo mide | — | D-363 |
 | El despliegue muestra los dos informes: el semanal como issue y el de calidad como pull request | — | D-383 |
+| La consola «Configuración» reúne el estado, qué hacer en cada caso y el mantenimiento | — | D-409 |
+| El flujo del sistema en vivo muestra las piezas reales, sus mensajes y la carga en curso | — | D-412 |
+| La ventana de la carga manual muestra el flujo enfocado en la ejecución | — | D-413 |
 
 ## 8. Panel
 
@@ -161,6 +166,10 @@ Cómo se lee el panel en una sola pantalla y en dos idiomas.
 | El tema oscuro es el predeterminado | — | D-349 |
 | La página «Último dato por canal» muestra la última semana de cada fuente | — | D-365 |
 | El Panorama se lee en tres pasos que se abren en orden | — | D-372 |
+| El encabezado solo ubica; la información va en el contenido | — | D-398 |
+| Cada canal se abre con los pasos del Panorama, en su propia última semana | — | D-405 |
+| Cada página principal cabe también en 1280 × 800 | — | D-407 |
+| Elegida la familia, los pasos 1 y 2 se pliegan y la tabla de productos toma la pantalla | — | D-408 |
 
 ## 9. Documentación
 
@@ -178,6 +187,7 @@ Cómo se explica el proyecto.
 | Todos los documentos en una sola carpeta del menú | — | D-282 |
 | Los documentos se ordenan del más importante al menos, para todo lector | — | D-290 |
 | Los documentos se ordenan en cuatro carpetas por tema | — | D-381 |
+| El SAD lleva la imagen fija del flujo del sistema | — | D-414 |
 
 ## 10. Historial de versiones
 
@@ -186,3 +196,4 @@ Cómo se explica el proyecto.
 | 1.0 | 25-10-2026 | Primera versión (D-279, documentación profesional) |
 | 2.0 | 25-10-2026 | Un resumen con tres diagramas; cada fila dice primero qué se decidió y enlaza su registro de arquitectura por su nombre (D-290, documentos para todo lector) |
 | 2.1 | 31-10-2026 | Las decisiones grandes desde D-290: fuentes retrasadas, calidad en dos partes, las tres vistas, la ventana de la carga manual, los dos informes y las cuatro carpetas de documentos; redacción revisada (D-381, D-388) |
+| 2.2 | 01-11-2026 | Las decisiones grandes de la parte final: el límite de intentos, «Configuración» y su aviso de tokens, el flujo en vivo y su imagen en el SAD, el encabezado, los canales y una pantalla a 1280 × 800 (D-393 a D-414) |
