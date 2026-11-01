@@ -1580,7 +1580,7 @@ def test_d282_every_preview_shows_the_index_of_its_document():
 
 
 @needs_database
-def test_d295_the_user_view_sees_the_business_pages_and_unlocks_the_rest_only_with_the_key():
+def test_d394_the_user_view_sees_the_business_pages_and_opens_the_rest_as_the_professional_with_no_key():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
     app.secrets["CONTROL_CODE"] = "clave-larga"
     app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC
@@ -1594,12 +1594,11 @@ def test_d295_the_user_view_sees_the_business_pages_and_unlocks_the_rest_only_wi
     app.query_params["perfil"] = dashboard.PROFILE_PROFESSIONAL  # the address cannot change a chosen view
     app.run()
     assert app.query_params["perfil"] == dashboard.PROFILE_PUBLIC
-    app.text_input(key="profile_unlock_code").set_value("otra")
-    app.button(key="profile_unlock").click().run()
-    assert app.query_params["perfil"] == dashboard.PROFILE_PUBLIC and app.error
-    app.text_input(key="profile_unlock_code").set_value("clave-larga")
+    # D-394: «Ver todo el proyecto» opens the Profesional view with no key, and never the Autor.
+    assert not [field for field in app.text_input if str(field.key) == "profile_unlock_code"]
     app.button(key="profile_unlock").click().run()
     assert app.query_params["perfil"] == dashboard.PROFILE_PROFESSIONAL
+    assert dashboard.ADMIN_UNLOCKED not in app.session_state or not app.session_state[dashboard.ADMIN_UNLOCKED]
     labels = {link.proto.label for link in app.sidebar.get("page_link")}
     assert dashboard.SIDEBAR_LABELS.get(dashboard.PAGE_DIAGRAMS, dashboard.PAGE_DIAGRAMS) in labels
     assert not [button for button in app.button if str(button.key) == "profile_change"]  # no going back

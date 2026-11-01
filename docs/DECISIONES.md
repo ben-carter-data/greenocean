@@ -2940,3 +2940,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** cerrar el riesgo aceptado en D-249. Un script podía probar claves sin parar, y recargar la página reiniciaba cualquier conteo.
 - **Decisión:** todas las puertas de la clave (la esquina de «Elige tu vista», «Acceso del autor» en Centro de operación y la ventana de ejecución) comparten una sola espera, guardada en el servidor y no en la sesión. Tras 3 fallos, cada intento espera 2 s, y el doble tras cada nuevo fallo, hasta 15 min. Mientras espera, ni la clave correcta se compara: el panel dice «Demasiados intentos. Vuelve a intentar en N s». La clave correcta vuelve el conteo a cero. Como la espera es común, alguien podría trabar el acceso un rato; el autor siempre puede lanzar la carga desde GitHub.
 - **Pruebas:** `tests/test_control.py::test_d393_…` (2, 4, 8, 16 s… hasta 900 s, la clave correcta rechazada mientras espera y la vuelta a cero) y `tests/test_dashboard.py::test_d393_…` (la ventana de ejecución dice «Demasiados intentos» al cuarto intento). El caso S-05 del plan de pruebas apunta a la prueba nueva.
+
+## D-394 · «Ver todo el proyecto» abre la vista Profesional sin clave
+
+- **Pedido del autor:** que en la vista Usuario «Ver todo el proyecto» no pida la clave del Autor.
+- **Qué no cuadraba:** la vista Profesional es libre en «Elige tu vista», pero este botón pedía la clave de control y daba la vista Autor. Quien recibía «la clave para ver todo» recibía en realidad el poder de lanzar cargas, y el panel tenía una tercera puerta a la clave.
+- **Decisión:** el botón pasa a la vista Profesional, sin clave y sin la parte del Autor. Quedan dos puertas a la clave: la esquina de «Elige tu vista» y «Acceso del autor» en Centro de operación. Ambas comparten la espera de D-393.
+- **Pruebas:** `tests/test_dashboard.py::test_d394_…` (sin campo de clave, abre Profesional y nunca Autor).

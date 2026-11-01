@@ -869,21 +869,14 @@ def show_load_alert(windows_by_title):
 
 
 def show_profile_switch():
-    """Under the menu, only in the user view: the whole project opens with the app's key (D-295)."""
+    """Under the menu, only in the user view: the whole project, as the Profesional view, with no key (D-394). The
+    Profesional view is free in «Elige tu vista» too; only the Autor asks for the key."""
     if not is_public_profile():
         return
     with st.sidebar.container(key="profile_switch"):
-        with st.popover(tr("Ver todo el proyecto"), icon=":material/lock:", width="stretch"):
-            typed = st.text_input(
-                tr("Clave"), key="profile_unlock_code", label_visibility="collapsed", placeholder=tr("Clave")
-            )
-            if st.button(tr("Desbloquear"), key="profile_unlock", type="primary", width="stretch"):
-                ok, message = control.check_control_code(typed, get_secret(SECRET_CONTROL_CODE), control.GATE)
-                if ok:
-                    st.session_state[ADMIN_UNLOCKED] = True
-                    choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
-                    st.rerun()
-                st.error(tr(message))
+        if st.button(tr("Ver todo el proyecto"), icon=":material/open_in_full:", key="profile_unlock", width="stretch"):
+            choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
+            st.rerun()
 
 
 def open_profile_landing(windows_by_title):
