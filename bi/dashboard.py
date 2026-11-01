@@ -5716,14 +5716,16 @@ def show_admin_card():
                 unsafe_allow_html=True,
             )
     with st.container(key="runs_tools", horizontal=True, gap="small"):
-        st.button(
-            "Recargar datos",
-            icon=":material/refresh:",
-            key="runs_reload",
-            width="stretch",
-            on_click=reload_panel_data,
-            help="Vuelve a leer la base guardada; no ejecuta el pipeline.",
-        )
+        # D-396: reloading empties the caches of every reader at once, so only the Autor has it.
+        if unlocked:
+            st.button(
+                "Recargar datos",
+                icon=":material/refresh:",
+                key="runs_reload",
+                width="stretch",
+                on_click=reload_panel_data,
+                help="Vuelve a leer la base guardada; no ejecuta el pipeline.",
+            )
         show_author_access(access_code, unlocked)
     if st.session_state.pop(RELOADED_NOTICE, False):
         latest = read_latest_run()

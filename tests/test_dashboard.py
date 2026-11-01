@@ -508,6 +508,15 @@ def test_d149_without_secrets_the_run_is_disabled_and_reload_confirms():
         box for box in app.text_input if box.key == "author_access_code"
     ]
     assert "Se activa cuando el autor guarda la clave" in read_page_text(app)
+    assert "runs_reload" not in button_keys(app)  # D-396: without the key there is no reload
+
+
+@needs_database
+def test_d396_only_the_author_reloads_the_data_of_every_reader():
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN})
+    assert "runs_reload" not in button_keys(app)
+    app.session_state["admin_unlocked"] = True
+    app.run()
     app.button(key="runs_reload").click().run()
     assert not app.exception
     assert any("Datos recargados" in str(toast.proto) for toast in app.get("toast"))
@@ -1303,7 +1312,7 @@ def test_d165_the_operation_centre_reads_like_the_dashboard():
     text = " ".join(block.value for block in app.markdown)
     assert 'class="page-bar-title"' in text and text.count('class="oc-fact"') == 3
     assert "Ver historial de ejecuciones" not in [expander.label for expander in app.expander]
-    assert "runs_reload" in [str(button.key) for button in app.button]
+    assert "runs_reload" not in [str(button.key) for button in app.button]  # D-396: only the Autor reloads
 
 
 def test_d129_the_github_page_names_actions_so_it_is_not_confused_with_ejecuciones():

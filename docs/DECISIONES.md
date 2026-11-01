@@ -2953,3 +2953,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** que una pestaña olvidada en un computador compartido no quede como Autor para siempre.
 - **Decisión:** cada ejecución completa de la página (un clic, una elección, un cambio de página) cuenta como actividad. Si pasan más de 30 minutos sin ninguna, la vista Autor se cierra igual que al salir de ella (D-353): se pierde la clave y la carga seguida queda en GitHub. El panel lo avisa con «La vista Autor se cerró tras 30 min sin actividad», y volver a entrar pide la clave. El refresco automático de la ventana de ejecución no cuenta como actividad.
 - **Pruebas:** `tests/test_view_switch.py::test_d395_…` (29 min la mantiene, más de 30 la cierra, sin clave no hay nada que cerrar).
+
+## D-396 · «Recargar datos» solo para el Autor
+
+- **Pedido del autor:** que nadie sin la clave pueda vaciar la memoria del panel de todos.
+- **Qué no cuadraba:** el botón de Centro de operación vaciaba la caché compartida por todos los lectores. Cualquiera podía pulsarlo una y otra vez y obligar al panel a recalcularlo todo, más lento para todos.
+- **Decisión:** el botón aparece solo en la vista Autor. La base nueva igual llega sola: el panel la descarga cuando cambia su puntero.
+- **Pruebas:** `tests/test_dashboard.py::test_d396_…` y `test_d149_…` (sin la clave no hay botón; con ella, recarga y confirma).
