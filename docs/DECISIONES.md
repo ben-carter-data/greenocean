@@ -3228,3 +3228,17 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Límites:** bajo cada columna, en cursiva, lo que ese perfil no alcanza; bajo el Autor, que cada acción se comprueba en el servidor (D-421).
   - **Documentos:** el SAD (2.1) lo explica en una frase, en los dos idiomas (versión 3.7).
 - **Pruebas:** `tests/test_doc_diagrams.py::test_d424_…`: cada página del menú aparece en la columna del perfil que la ve y en ninguna otra; las páginas del Autor y sus acciones están en su columna; los tres workflows nombrados existen.
+
+## D-425 · Los escenarios clave son un mapa del panel web por perfil, con herencia
+
+- **Decisión del autor:** reemplazar el árbol de D-424 por un mapa que el autor diseñó: los perfiles a la izquierda, el panel web al centro con una franja por perfil y, a la derecha, la Base DuckDB y GitHub Actions. Lo prefiere al árbol lineal, aunque use recuadros.
+- **Errores corregidos del diseño original:**
+  - La flecha «lanza» iba a `pruebas.yml`; el panel lanza `semanal.yml` (`bi/control.py`, `WORKFLOW_FILE`).
+  - `calidad.yml` también mide en cada push, no solo después de cada carga.
+  - «Stack y evidencia» (Flujo del sistema en vivo) también lee el estado de GitHub con `GITHUB_READ_TOKEN`, para el Profesional; faltaba esa flecha.
+  - Nombres del menú: «Insights» (no «Insights de la semana») y «GitHub Actions» (no «GitHub Actions en el panel»).
+  - Faltaban la entrada del Autor (secreto `CONTROL_CODE`, espera tras 3 fallos, sesión de 30 min, RF-09), RF-07 junto a «Ejecutar pipeline ahora», el «Índice de decisiones» en los documentos y «Ver todo el proyecto» en el Usuario.
+  - Varios textos se salían de su recuadro o se montaban; ahora el dibujo es una grilla que ajusta el texto.
+- **Forma:** cada perfil queda en la fila de su franja del panel, con su flecha («ve», «además ve», «además opera») y su herencia («hereda todo · sin clave», «hereda todo · con clave»). Las flechas a GitHub Actions nombran el token que usan.
+- **Documentos:** el SAD (2.1) explica el mapa y la herencia, en los dos idiomas (versión 3.8).
+- **Pruebas:** `tests/test_doc_diagrams.py::test_d425_…`: cada página del menú está en la franja del primer perfil que la ve y en ninguna anterior; el panel lanza `semanal.yml`; los tres workflows existen; cada referencia P-x o RF-x del dibujo existe en el PRD.

@@ -311,46 +311,38 @@ def test_d392_the_english_captions_of_the_captures_are_in_english(monkeypatch):
     assert doc_views.mockup_detail("Vantablack", "Profesional") == "Vantablack theme · Professional view"
 
 
-def test_d424_the_scenarios_show_every_page_and_action_each_actor_really_has():
+def test_d425_the_scenarios_show_every_page_and_action_each_profile_really_reaches():
     from bi import dashboard
 
     page = doc_figures.sad_scenarios(charts.MODE_DARK)
-    actor = 'font-size="14" font-weight="700">{}<'.format
-    user, rest = page.split(actor("Profesional"))
-    professional, rest = rest.split(actor("Autor"))
-    author, robot = rest.split(actor("GitHub Actions"))
-    # the words of each column, read as one text (a long name wraps over two lines)
-    user, professional, author, robot = (
-        " ".join(re.findall(r">([^<>]+)<", part)) for part in (user, professional, author, robot)
-    )
+
+    def words(actor):
+        # the text of one profile's section, read as one line
+        block = re.search(rf'data-actor="{actor}".*?</section>', page, re.DOTALL).group(0)
+        return " ".join(re.findall(r">([^<>]+)<", block))
+
+    user, professional, author = words("usuario"), words("profesional"), words("autor")
 
     def label(view):
         return dashboard.SIDEBAR_LABELS.get(view, view)
 
     blocks = {key: pages for key, _, pages in dashboard.MENU_BLOCKS if pages is not dashboard.SOURCE_LINKS}
-    # the User reaches the business pages and the sources, and nothing else
+    # each page of the menu sits in the section of the first profile that sees it, and in no section before it
     for view in blocks["negocio"]:
         assert label(view) in user, view
-    assert "Fuentes de datos" in user
-    for key in ("ingenieria", "stack", "calidad", "devops"):
+    for key in ("ingenieria", "stack", "calidad"):
         for view in blocks[key]:
-            assert label(view) not in user, view
-    # the Professional reaches engineering, stack, quality and the documents, never DevOps
-    for key in ("ingenieria", "stack", "calidad", "documentos"):
-        for view in blocks[key]:
-            assert label(view) in professional, view
+            assert label(view) in professional and label(view) not in user, view
     for view in dashboard.AUTHOR_ONLY_PAGES:
-        assert label(view) not in user + professional, view
-    # the Author's pages and actions, each one named
-    for view in dashboard.AUTHOR_ONLY_PAGES:
-        assert label(view) in author, view
-    for action in (
-        "Lanzar una carga manual",
-        "Cancelar una carga",
-        "Recargar los datos del panel",
-        "«Acción requerida»",
-    ):
-        assert action in author, action
-    # the automation: the three workflows that exist
+        assert label(view) in author and label(view) not in user + professional, view
+    # the panel launches semanal.yml (never pruebas.yml) with GITHUB_TOKEN and reads with GITHUB_READ_TOKEN
+    from bi import control
+
+    assert control.WORKFLOW_FILE == "semanal.yml" and "lanza semanal.yml" in author
+    assert "GITHUB_TOKEN" in page and "GITHUB_READ_TOKEN" in page
+    # the three workflows that exist, and the PRD references beside their names
     for workflow in ("semanal.yml", "calidad.yml", "pruebas.yml"):
-        assert workflow in robot and (DOCS_DIR.parent / ".github" / "workflows" / workflow).exists(), workflow
+        assert workflow in page and (DOCS_DIR.parent / ".github" / "workflows" / workflow).exists(), workflow
+    prd = i18n.document_path("PRD.md", "es").read_text(encoding="utf-8")
+    for reference in set(re.findall(r"\b(?:P|RF)-\d+\b", page)):
+        assert f"| {reference} |" in prd, reference
