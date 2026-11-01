@@ -191,3 +191,33 @@ def test_d405_in_the_common_week_a_channel_has_the_same_national_prices_as_the_p
     theirs = panorama.set_index(dashboard.NATIONAL_KEY[1:])["national_price"]
     assert len(mine) == len(theirs)
     assert mine.sort_index().values == pytest.approx(theirs.sort_index().values)
+
+
+def test_d406_the_cards_share_one_scale_and_say_their_coverage():
+    cards = channel_latest.channel_cards(sample())
+    markup = dashboard.build_channel_cards_html(cards, lambda channel: f"?canal={channel}", total_families=3)
+    widths = re.findall(r'class="ch-bar"[^>]*><i class="[^"]*" style="[^"]*width:([\d.]+)%', markup)
+    assert len(widths) == 2 and max(float(width) for width in widths) == 50.0  # the largest change fills its half
+    assert markup.count("1 de 3 familias") == 2  # each covers one family of three
+    assert dashboard.bar_style(-0.05, 0.1) == "left:25.0%;width:25.0%" and dashboard.bar_style(None, 1) == "width:0"
+
+
+@needs_database
+def test_d406_a_channel_that_covers_some_families_says_which_read_from_the_data():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
+    app.session_state["visitor_profile"] = "profesional"
+    app.query_params.update({"vista": dashboard.PAGE_CHANNELS, "canal": "Panadería"})
+    app.run()
+    assert not app.exception
+    captions = " ".join(caption.value for caption in app.caption)
+    assert "Este canal publica 1 de las 7 familias: Pan." in captions
+
+
+def test_d406_a_card_keeps_the_view_and_the_steps_of_a_channel_do_not_reload_the_page():
+    # A card reloads the page like a document of the folder does: the view is kept once (D-357), never the author.
+    assert "a.ch-card" in dashboard.PROFILE_KEEPER_JS
+    # The map and family links of a channel page point to that same page: they are captured, not followed.
+    assert (
+        "params.get('vista') === here.get('vista') && params.get('canal') === here.get('canal')"
+        in dashboard.HOME_LINKS_JS
+    )

@@ -347,6 +347,8 @@ EN = {
     "Semana {}": "Week {}",
     "variación mediana frente a la semana anterior": "median change against the week before",
     "{} precios": "{} prices",
+    "{} de {} familias": "{} of {} families",
+    "Este canal publica {} de las {} familias: {}.": "This channel publishes {} of the {} families: {}.",
     "La última semana que publicó cada canal, aunque otra fuente todavía no la publique: un clic abre el canal.": "The latest week each channel published, even if another source has not published it yet: a click opens the channel.",
     "Vista del Panorama": "Price overview view",
     "La semana": "The week",

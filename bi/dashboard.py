@@ -733,7 +733,8 @@ export default function(component) {
         } catch (e) {}
     }
     const handler = (event) => {
-        const link = event.target.closest && event.target.closest(".df-actions a, .doc-path a, .doc-print");
+        // D-406: a channel card is a reload the app makes too, like a document of the folder
+        const link = event.target.closest && event.target.closest(".df-actions a, .doc-path a, .doc-print, a.ch-card");
         if (link) remember();
         // D-373: the GreenOcean logo reopens «Elige tu vista» instead of going to the first page.
         const logo = event.target.closest && event.target.closest(
@@ -3674,7 +3675,10 @@ export default function(component) {
         // Only the map and family links: a product's «Contexto del precio» link
         // carries a view and a product key, and must navigate (D-123b).
         const params = url.searchParams;
-        if (!params.has('_home_region') || params.has('_home_key') || params.has('vista')) return;
+        // D-406: a channel page links to itself (its own «vista» and «canal»); another view navigates.
+        const here = new URLSearchParams(window.location.search);
+        const samePage = params.get('vista') === here.get('vista') && params.get('canal') === here.get('canal');
+        if (!params.has('_home_region') || params.has('_home_key') || (params.has('vista') && !samePage)) return;
         event.preventDefault();
         setTriggerValue('link', url.search);
     };
@@ -4445,6 +4449,13 @@ def show_market_overview(mode, prefix):
         notice = (
             tr('ODEPA aún no publica la semana {}').format(i18n.tr_week(card['late'])) if card and card['late'] else ''
         )
+        everyone = read_all_families()
+        if card and len(card['families']) < len(everyone):  # D-406: read from the data, never written by hand
+            names = i18n.join_names(home_mockup.short_family(family) for family in card['families'])
+            covered = tr('Este canal publica {} de las {} familias: {}.').format(
+                len(card['families']), len(everyone), names
+            )
+            notice = f'{covered} {notice}'.strip()
     with st.container(key='home_info', horizontal=True, vertical_alignment='center'):
         home_view = (
             st.segmented_control(
@@ -5496,6 +5507,10 @@ a.ch-card:hover, a.ch-card:focus-visible {{ border-color:{accent}; box-shadow:0 
 .ch-change.rise {{ color:{palette["rise"]}; }} .ch-change.fall {{ color:{palette["fall"]}; }}
 .ch-change small {{ display:block; font-size:11.5px; font-weight:400; color:{muted}; }}
 .ch-prices {{ font-size:13px; }}
+.ch-bar {{ position:relative; height:6px; border-radius:3px; background:color-mix(in srgb, {border} 70%, transparent); }}
+.ch-bar::after {{ content:""; position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:{muted}; }}
+.ch-bar i {{ position:absolute; top:0; bottom:0; border-radius:3px; background:{muted}; }}
+.ch-bar i.rise {{ background:{palette["rise"]}; }} .ch-bar i.fall {{ background:{palette["fall"]}; }}
 .ch-state {{ align-self:flex-start; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600; }}
 .ch-state.ok {{ background:color-mix(in srgb, #2fa36b 18%, transparent); color:#2fa36b; }}
 .ch-state.late {{ background:color-mix(in srgb, #d99a1e 20%, transparent); color:#d99a1e; }}
@@ -5503,9 +5518,11 @@ a.ch-card:hover, a.ch-card:focus-visible {{ border-color:{accent}; box-shadow:0 
 </style>"""
 
 
-def build_channel_cards_html(cards, address_of):
-    """D-404: the grid of channels; the whole card is the link to its page."""
+def build_channel_cards_html(cards, address_of, total_families=None):
+    """D-404: the grid of channels; the whole card is the link to its page. D-406: each card says how many families it
+    covers, and its change is a bar drawn on one scale for every card."""
     items = []
+    scale = max((abs(card["median"]) for card in cards if card["median"] is not None), default=0) or 1
     for card in cards:
         change = card["median"]
         tone = "" if change is None else "rise" if change > 0.0005 else "fall" if change < -0.0005 else ""
@@ -5524,10 +5541,30 @@ def build_channel_cards_html(cards, address_of):
             f'<span class="ch-week">{html.escape(tr("Semana {}").format(i18n.tr_week(card["week"])))}</span>'
             f'<span class="ch-change {tone}">{html.escape(figure)}'
             f'<small>{html.escape(tr("variación mediana frente a la semana anterior"))}</small></span>'
-            f'<span class="ch-prices">{html.escape(tr("{} precios").format(charts.format_thousands(card["prices"])))}</span>'
-            f"{state}</a>"
+            f'<span class="ch-bar" aria-hidden="true"><i class="{tone}" style="{bar_style(change, scale)}"></i></span>'
+            f'<span class="ch-prices">{html.escape(tr("{} precios").format(charts.format_thousands(card["prices"])))}'
+            + (
+                f' · {html.escape(tr("{} de {} familias").format(len(card["families"]), total_families))}'
+                if total_families and len(card["families"]) < total_families
+                else ""
+            )
+            + f"</span>{state}</a>"
         )
     return f'<div class="ch-grid">{"".join(items)}</div>'
+
+
+def bar_style(change, scale):
+    """A bar from the middle: to the right when the change rises, to the left when it falls, on the scale of the
+    largest change among the cards (D-406)."""
+    if change is None:
+        return "width:0"
+    width = min(50.0, abs(change) / scale * 50)
+    return f"left:50%;width:{width:.1f}%" if change >= 0 else f"left:{50 - width:.1f}%;width:{width:.1f}%"
+
+
+def read_all_families():
+    """Every family of the data, for the coverage of each channel (D-406)."""
+    return sorted(queries.run_sql("SELECT DISTINCT product_group FROM dim_product")["product_group"])
 
 
 def channel_address(channel):
@@ -5555,7 +5592,7 @@ def show_channels_page(mode):
         st.info(tr("Esta página se llena con la próxima carga semanal."))
         return
     st.markdown(build_channel_cards_css(palette), unsafe_allow_html=True)
-    st.markdown(build_channel_cards_html(cards, channel_address), unsafe_allow_html=True)
+    st.markdown(build_channel_cards_html(cards, channel_address, len(read_all_families())), unsafe_allow_html=True)
 
 
 def show_channel_detail(mode, frame, card):
