@@ -24,6 +24,7 @@ from bi import architecture, brand_icons, charts, control, i18n
 WIDTH, HEIGHT = 1320, 650
 TOP = -8  # the deduced redeploy runs above GitHub
 FOCUS_BOX = (-10, TOP, 1190, 525)  # the run window: sources, GitHub and the runner
+FOCUS_LEFT_OUT = {"people", "devsecops", "browser"}  # groups and arrows a run does not touch
 TILE = 56
 CHILE = ZoneInfo("America/Santiago")
 GROUP_COLORS = {
@@ -744,8 +745,10 @@ def build_arrow(arrow_id: str, palette: dict[str, str]) -> str:
 
 
 def build_svg(palette: dict[str, str], focus: bool = False) -> str:
-    """The architecture as one SVG: groups, pieces, arrows. The arrows go first so a piece always sits above a line."""
+    """The architecture as one SVG: groups, pieces, arrows. The arrows go first so a piece always sits above a line.
+    Focused on a run (D-413), it keeps what the load touches: no browser and no DevSecOps band."""
     box = FOCUS_BOX if focus else (0, TOP, WIDTH, HEIGHT - TOP)
+    left_out = FOCUS_LEFT_OUT if focus else set()
     parts = [
         f'<svg class="lf-svg" viewBox="{" ".join(map(str, box))}" preserveAspectRatio="xMidYMid meet" role="img" '
         f'aria-label="{esc(t(("Flujo del sistema", "System flow")))}" xmlns="http://www.w3.org/2000/svg" '
@@ -753,9 +756,9 @@ def build_svg(palette: dict[str, str], focus: bool = False) -> str:
         f'<defs><marker id="lf-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
         f'orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="{palette["text"]}"/></marker></defs>',
     ]
-    parts += [build_group(*group, palette) for group in GROUPS]
-    parts += [build_arrow(arrow_id, palette) for arrow_id in ARROWS]
-    parts += [build_piece(piece_id, palette) for piece_id in PIECES]
+    parts += [build_group(*group, palette) for group in GROUPS if group[0] not in left_out]
+    parts += [build_arrow(arrow_id, palette) for arrow_id in ARROWS if arrow_id not in left_out]
+    parts += [build_piece(piece_id, palette) for piece_id in PIECES if PIECES[piece_id][0] not in left_out]
     parts.append("</svg>")
     return "".join(parts)
 

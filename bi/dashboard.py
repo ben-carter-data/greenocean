@@ -5811,6 +5811,7 @@ def render_run_window(token):
     run_monitor.refresh(watch, token, datetime.now(timezone.utc))
     phase = watch["phase"]
     final = run_monitor.is_final(watch)
+    show_run_flow(watch, get_mode())
     (
         st.success
         if phase == run_monitor.OK
@@ -5893,6 +5894,39 @@ def close_run_window():
     request_run_window_close()
 
 
+RUN_PHASE_STATES = {
+    run_monitor.STARTING: control.RUN_IN_PROGRESS,
+    run_monitor.RUNNING: control.RUN_IN_PROGRESS,
+    run_monitor.OK: control.RUN_OK,
+}
+
+
+def show_run_flow(watch, mode):
+    """D-413: on top of the window, the live flow (D-412) focused on the run: the same model and drawing, fed by the
+    window's own follow instead of asking GitHub again. Its HTML only changes when a step does, so the frame is not
+    redrawn every few seconds. Under 900 px of width it waits behind «Ver el diagrama» and the steps stay first."""
+    run = {
+        "state": RUN_PHASE_STATES.get(watch["phase"], control.RUN_FAILED),
+        "started_at": watch["started"],
+        "url": watch["url"],
+    }
+    model = live_flow.build_model([run], watch["steps"], read_flow_facts(get_database_version(), i18n.get_language()))
+    frame = live_flow.build_html(charts.get_palette(mode), model, focus=True)
+    st.markdown(
+        "<style>.st-key-rw_flow_narrow {display:none;} @media (max-width:900px) {.st-key-rw_flow {display:none;} "
+        ".st-key-rw_flow_narrow {display:block;}}</style>",
+        unsafe_allow_html=True,
+    )
+    with st.container(key="rw_flow"):
+        st.iframe(frame, height=RUN_FLOW_HEIGHT)
+    with st.container(key="rw_flow_narrow"):
+        with st.popover(tr("Ver el diagrama"), icon=":material/account_tree:"):
+            st.iframe(frame, height=RUN_FLOW_HEIGHT)
+
+
+RUN_FLOW_HEIGHT = 330
+
+
 def show_run_window_shell(token, final):
     """The window's frame (D-379): it never refreshes by itself; it draws the refreshing part, unless the window is being
     closed, in which case it reruns the whole page without drawing it."""
@@ -5956,7 +5990,7 @@ def reload_panel_data():
     st.session_state[RELOADED_NOTICE] = True
 
 
-@st.dialog("Ejecutar el pipeline ahora", width="medium", dismissible=False)
+@st.dialog("Ejecutar el pipeline ahora", width="large", dismissible=False)  # D-413: room for the flow
 def show_run_now_dialog(token, access_code):
     """The manual run behind the control code, in a layer above the page (D-149). D-351: no click outside and no X
     closes it; it follows the run and offers «Minimizar» and «Cancelar». With a run already followed it shows that one

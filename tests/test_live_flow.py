@@ -228,3 +228,22 @@ def test_d412_in_english_the_view_leaves_nothing_in_spanish(monkeypatch):
     state = {"stack_view": "Flujo del sistema en vivo"}
     assert i18n_audit.spanish_left("Stack y evidencia", i18n_audit.read_data_values(), state=state) == []
     st.cache_data.clear()
+
+
+def test_d413_the_run_window_shows_the_flow_focused_on_the_run_above_its_steps():
+    from tests.test_dashboard import FAKE_TOKEN, draw_control_page, open_run_dialog
+
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, run_state="in_progress", dialog=True)
+    open_run_dialog(app, "clave")
+    app.run()
+    assert not app.exception
+    frames = [element.proto.srcdoc for element in app.get("iframe") if "lf-data" in element.proto.srcdoc]
+    assert len(frames) == 2 and frames[0] == frames[1]  # the wide place and the narrow one: the same frame
+    assert 'class="lf lf-live"' in frames[0] and 'viewBox="-10 -8 1190 525"' in frames[0]
+    assert "En curso · Run the ETL" in frames[0] and FAKE_TOKEN not in frames[0]
+    assert "run_minimize" in [button.key for button in app.button]  # the steps and their buttons, as before
+    css = " ".join(block.value for block in app.markdown)
+    assert "@media (max-width:900px) {.st-key-rw_flow {display:none;}" in css
+    focus = live_flow.build_svg(PALETTE, focus=True)  # what the run touches: no browser and no DevSecOps band
+    assert 'id="piece-browser"' not in focus and 'id="arrow-browser"' not in focus and 'id="piece-gate"' not in focus
+    assert all(f'id="arrow-{arrow}"' in focus for arrow in ("odepa", "ine", "release", "repo", "start"))

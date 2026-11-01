@@ -70,6 +70,7 @@ EN = {
     "Volver a los pasos 1 y 2 para elegir otra región o familia.": "Go back to steps 1 and 2 to choose another region or family.",
     "Configuración": "Settings",
     "Herramientas": "Tools",
+    "Ver el diagrama": "See the diagram",
     "Flujo del sistema en vivo": "Live system flow",
     "Los logs de cada paso están en «GitHub Actions», solo para el autor.": "Each step's logs are in «GitHub Actions», for the author only.",
     "¿Qué pasó?": "What happened?",

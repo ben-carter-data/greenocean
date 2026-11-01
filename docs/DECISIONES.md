@@ -3100,3 +3100,12 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - No viajan logs ni tokens.
   - La animación cumple la regla del autor.
   - En inglés no queda texto en español.
+
+## D-413 · La ventana «Ejecutar pipeline ahora» muestra el flujo en vivo enfocado en la ejecución
+
+- **Pedido del autor (parte 4, fase 1):** al lanzar la carga, la ventana muestra arriba el diagrama en vivo, enfocado en la ejecución, y abajo el resumen por pasos con sus botones, como hoy. Debe ser responsiva, sin cortes ni desbordes, y usar el mismo componente y los mismos datos, sin duplicar lógica.
+- **Decisión:** arriba de la ventana va el mismo dibujo de D-412, recortado a las fuentes, GitHub y el runner, sin el navegador ni la franja DevSecOps; la ventana pasa a ancho «large» para que se lea. Lo alimenta el seguimiento que la ventana ya hace cada 4 s (D-351), así que no hace consultas nuevas a GitHub. El marco cambia solo cuando cambia un paso, de modo que no se vuelve a dibujar en cada consulta. Debajo siguen el estado, el log y los botones «Minimizar», «Cancelar» y «Cerrar», sin cambios. Con menos de 900 px de ancho, el diagrama queda detrás del botón «Ver el diagrama» y los pasos van primero.
+- **Pruebas:** `tests/test_live_flow.py::test_d413_…`, que comprueba:
+  - Con una ejecución simulada en curso, la ventana muestra el diagrama en vivo, enfocado y con el paso real, sin el token.
+  - El mismo marco sirve para el ancho y para la pantalla angosta.
+  - Los botones de la ventana siguen ahí.
