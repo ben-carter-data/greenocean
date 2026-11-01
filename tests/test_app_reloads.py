@@ -107,3 +107,27 @@ def test_d430_every_run_keeps_the_view_so_no_reload_of_the_tab_asks_for_it_again
     body = script.split("window.__goRemember = remember;")[1]
     assert body.lstrip().startswith("remember();")  # each run, before any reload: links, the alert, F5
     assert "if (!data || !data.perfil) return;" in script  # a session that has not chosen keeps nothing
+
+
+def test_d432_a_report_address_opens_its_report_after_the_reload_brings_the_view_back():
+    # In the browser the kept view arrives after the first run, from the keeper's JavaScript: the first run has no view.
+    kept = json.dumps({"p": "profesional", "r": "bi", "t": 0})
+    script = (
+        f"import sys\nsys.path.insert(0, {str(ROOT)!r})\nimport streamlit as st\nfrom bi import dashboard\n"
+        "ORIGINAL = st.components.v2.component\n"
+        "def fake(name, js=None):\n"
+        "    if name != 'profile_keeper':\n        return ORIGINAL(name, js=js)\n"
+        "    later = st.session_state.get('_second_run')\n"
+        "    st.session_state['_second_run'] = True\n"
+        f"    return lambda **kwargs: __import__('types').SimpleNamespace(keep={kept!r} if later else None, reopen=None)\n"
+        "st.components.v2.component = fake\n"
+        f"st.query_params['vista'] = {dashboard.PAGE_METHOD!r}\n"
+        f"st.query_params[{dashboard.REPORT_PARAMETER!r}] = 'C7'\n"
+        "try:\n    dashboard.main()\nfinally:\n    st.components.v2.component = ORIGINAL\n"
+    )
+    app = AppTest.from_string(script, default_timeout=90).run()
+    assert dashboard.REPORT_PARAMETER in app.query_params  # no view yet: the address waits
+    app.run()  # the keeper's value arrives and brings the view back
+    assert not app.exception and app.session_state["visitor_profile"] == "profesional"
+    assert dashboard.REPORT_PARAMETER not in app.query_params  # read once, in the run that has the view
+    assert any("Informe de calidad C-7" in str(getattr(block, "proto", "")) for block in app.get("iframe"))

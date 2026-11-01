@@ -841,6 +841,28 @@
           "estacion": 15,
           "estado": "resuelta",
           "referencia": "D-430"
+        },
+        {
+          "fecha": "2026-11-01",
+          "ocurrencia": [
+            "Una dirección con «informe=…», como el enlace del aviso «Acción requerida», no abría el informe tras recargar.",
+            "An address with «informe=…», like the link of the «Action required» alert, did not open the report after a reload."
+          ],
+          "diagnostico": [
+            "La primera ejecución, aún sin vista, gastaba la dirección, y el rerun que trae la vista cerraba el informe.",
+            "The first run, still without a view, used up the address, and the rerun that brings the view closed the report."
+          ],
+          "solucion": [
+            "La dirección se lee solo cuando la sesión ya tiene su vista (D-432).",
+            "The address is read only once the session has its view (D-432)."
+          ],
+          "comentario": [
+            "Defecto anterior a D-431; se encontró al revisar los informes en el navegador.",
+            "A defect older than D-431; it was found while checking the reports in the browser."
+          ],
+          "estacion": 15,
+          "estado": "resuelta",
+          "referencia": "D-432"
         }
       ]
     },

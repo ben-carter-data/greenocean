@@ -3317,3 +3317,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Resultado:** el PDF semanal tiene 4 páginas (portada, resultados, comparación e incidencias), y también cada informe C-1 a C-7, en los dos idiomas; el N° 7 con el diseño anterior tenía 11 en A4 horizontal.
   - **Documentos:** SQAP 1.5 (8) y MANUAL 3.9 (2), en los dos idiomas; la figura del ciclo de calidad dice «Informe semanal».
 - **Pruebas:** `tests/test_quality_method.py::test_d431_…` (cuatro páginas, el enlace al SQAP con su versión, la tabla única, solo los indicadores de datos, el aviso de la comparación, los nombres C-1 a C-7 y la serie de cada no conformidad) y las de D-331, D-333, D-335, D-347 y D-363 al día.
+
+## D-432 · La dirección de un informe lo abre también después de una recarga
+
+- **Defecto preexistente:** una dirección con `informe=…` (la del enlace «Abrir el informe» del aviso «Acción requerida», o una compartida) no abría el informe cuando la página se recargaba. La primera ejecución de la recarga todavía no tiene la vista: llega un momento después, desde el JavaScript que la guarda en la pestaña (D-357, D-430). Esa primera ejecución leía y borraba `informe=…`, y el rerun que trae la vista cerraba la ventana del informe. Se encontró al revisar D-431.
+- **Decisión:** «Método y calidad» lee `informe=…` solo cuando la sesión ya tiene su vista; hasta entonces, la dirección espera. Se lee una sola vez, como antes.
+- **Pruebas:** `tests/test_app_reloads.py::test_d432_a_report_address_opens_its_report_after_the_reload_brings_the_view_back` imita la vista que llega en la segunda ejecución: falla sin el arreglo y pasa con él. En el navegador, `informe=C3` abre el informe C-3 con sus 4 páginas.

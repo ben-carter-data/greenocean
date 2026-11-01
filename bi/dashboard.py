@@ -7706,7 +7706,8 @@ def show_method_page(mode):
     st.markdown(quality_method.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
     st.markdown(quality_method.build_header(latest), unsafe_allow_html=True)
     asked = st.query_params.get(REPORT_PARAMETER)
-    if asked:
+    # D-432: only once the view is back (D-430): the first run of a reload has none yet, and its rerun would close it.
+    if asked and get_profile():
         # A report named in the address (its number or its PDF icon in «Informes») opens once.
         del st.query_params[REPORT_PARAMETER]
         if quality_metrics.find_report(asked):
