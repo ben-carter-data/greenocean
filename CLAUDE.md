@@ -75,6 +75,31 @@ En el computador del autor, dbt corre en un entorno aparte: `DBT_BIN=$PWD/.venv-
 - **Qué prueba la carga (D-366):** la carga semanal solo corre las pruebas de datos y del pipeline (`pytest -m datos`, la lista vive en `tests/conftest.py`); las de pantalla (traducciones, páginas, AppTest, documentos) corren en el CI de cada push. Una falla de pantalla nunca bloquea la publicación de datos.
 - **Registro de fallas (D-342):** cada falla diagnosticada y resuelta se anota en `docs/calidad/plan_mitigacion.json` (fecha, ocurrencia, diagnóstico, solución, comentario, estación y estado) antes del push. No se anotan secretos ni datos sensibles: el repositorio es público. Cada ocurrencia va en una línea por campo y en lenguaje simple: la ocurrencia dice qué pasó; el diagnóstico, la causa en una frase; la solución, qué se hizo en una frase. El análisis largo va en la decisión (D-xxx), no en el registro (D-354).
 
+## Nombres oficiales en diagramas y documentos
+
+Valen en todo diagrama, tabla o texto de `docs/` y del panel.
+
+1. **Nunca un nombre genérico solo** («la base», «el pipeline», «el panel», «el workflow», «el token», «el informe»). Siempre el nombre oficial:
+   - **Datos:** Base DuckDB · `etl/datos.duckdb` (publicada en el release «base-actual», puntero `etl/datos.version` en main; antes «base servida», D-426); aterrizaje `etl/raw.db` (SQLite, solo local); bronce (Parquet, `etl/bronze/`); respaldo `etl/datos.db` (SQLite); registro de cargas `etl_run`; `agent/downloads/manifest.json`.
+   - **Carga:** carga semanal (`semanal.yml`), con dbt Core en tres capas: staging, intermedio y marts.
+   - **Workflows, por archivo:** `semanal.yml` (carga semanal), `calidad.yml` (medición e informe de calidad), `pruebas.yml` (pruebas de cada push).
+   - **Secretos, por nombre:** `GITHUB_TOKEN` (lanza y cancela `semanal.yml`), `GITHUB_READ_TOKEN` (solo lectura; en GitHub se llama `greenocean-read`), `CONTROL_CODE` (la clave del Autor).
+   - **Perfiles:** Usuario, Profesional (roles Data Eng, BA, BI, DevOps y Seguridad, que solo ordenan el menú) y Autor. GitHub Actions no es un perfil.
+   - **Panel web** (Streamlit Community Cloud), con el nombre exacto del menú:
+     - Negocio · BA y BI: «Interesados», «Análisis de negocio y sistemas», «Panorama de precios», «Último dato por canal», «Precios e inflación», «Insights».
+     - Ingeniería de datos: «Pipeline y linaje», «Modelo de datos», «Consultas SQL».
+     - DevOps y seguridad (solo el Autor): «Centro de operación», «GitHub Actions», «Configuración».
+     - Stack y evidencia: «Stack y evidencia» (con el «Flujo del sistema en vivo»), «Mapa de la app», «Arquitectura de seguridad».
+     - Calidad: «Calidad y auditoría», «Método y calidad», «Git workflow».
+     - Pie del menú: «Documentos» (carpeta), «Fuentes», «Apariencia», ES/EN, GitHub.
+     - Ventanas, botones y avisos: «Elige tu vista», «Vista: … · Cambiar», «Ver todo el proyecto», «Volver», «Ejecutar pipeline ahora», «Recargar datos», «Cerrar acceso», «Acción requerida», «La carga del … falló».
+   - **Fuentes:** ODEPA (precios mayoristas y al consumidor) e INE (IPC de alimentos).
+   - **Documentos:** PRD, SAD, ADR, Índice de decisiones, SQAP (plan de calidad), Plan de pruebas y seguridad, MANUAL (manual de operación), Glosario; las decisiones, en `docs/DECISIONES.md` (D-xxx).
+   - **Informes y registros:** «Informe semanal» (issue de `semanal.yml`), informe de calidad N° x (pull request «Actualizar medición de calidad» de `calidad.yml`), `plan_mitigacion.json` (fallas F-xx), `no_conformidades.json`, `incidentes_externos.json`.
+2. **Con su ID del PRD** cuando lo tiene: P-1 a P-5, RF-01 a RF-09, RNF-01 a RNF-06 (por ejemplo, «Consultas SQL» P-2 · P-3 · RF-06). Si no lo tiene, no se inventa.
+3. **Si un nombre oficial no existe todavía,** se propone y se pregunta al autor antes de usarlo. Un genérico nunca es la solución.
+4. **Antes de entregar un diagrama,** se revisa que cada caja, flecha y etiqueta cumpla 1 y 2, y el resumen lista los nombres usados.
+
 ## Trampas conocidas del panel
 
 - `st.html` ejecuta solo el primer `<script>` de un bloque y descarta los scripts cuyos textos JavaScript contienen etiquetas HTML. Construir el DOM con APIs (`createElement`, `textContent`) y escribir los scripts como cadenas crudas de Python (`r"""…"""`).
