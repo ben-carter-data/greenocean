@@ -29,7 +29,8 @@ dbt/.user.yml
 # The served database lives in the release «base-actual»; git keeps its pointer, etl/datos.version (D-270).
 etl/datos.duckdb
 # The SQLite backup is built by every load for the parity test and never published (D-270).
-etl/datos.db
+# D-402: the SQLite backup under any name (a renamed copy reached the history once)
+etl/datos.db*
 
 .coverage
 coverage.json

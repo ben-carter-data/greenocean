@@ -2993,3 +2993,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Qué pasó:** las no conformidades del informe N° 7 no estaban anotadas, y fusionar el informe hizo fallar `pytest` en main (D-400).
 - **Decisión:** `scripts/informe_calidad.py`, al crear un informe, agrega a `docs/calidad/no_conformidades.json` una línea por cada indicador urgente o crítico que falte, con la causa, la acción y el estado en blanco para el autor. Una segunda corrida no agrega nada. `calidad.yml` sube ese archivo en el mismo pull request del informe, así que fusionarlo deja main en verde.
 - **Pruebas:** `tests/test_quality_method.py::test_d401_…` (agrega solo lo que falta, una vez, y el workflow sube el archivo).
+
+## D-402 · El respaldo SQLite se ignora con cualquier nombre y ya no se renombra
+
+- **Qué pasó:** para correr la suite como el CI, sin el respaldo local desactualizado, se renombraba `etl/datos.db` a `etl/datos.db.hold`. `.gitignore` solo ignoraba el nombre original, y el commit `8cc2da3` (D-391) subió el respaldo (34 MB) a GitHub. Lo borró de la versión actual el commit de D-393.
+- **Decisión:** queda en el historial, por decisión del autor. Son precios públicos sin secretos, y sacarlo exigiría un push forzado. `.gitignore` ignora `etl/datos.db*`. El respaldo ya no se renombra: la suite «como el CI» corre en una copia aparte del repositorio (`git worktree`), que no lo tiene. Queda registrado como F-22, de categoría operación.
+- **Pruebas:** `tests/test_quality_method.py` (el registro de fallas sigue numerado y completo).

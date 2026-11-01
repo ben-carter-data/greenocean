@@ -911,6 +911,58 @@
           "referencia": "D-390"
         }
       ]
+    },
+    {
+      "id": "F-22",
+      "categoria": "operación",
+      "falla": [
+        "Un respaldo local renombrado entró al historial público",
+        "A renamed local backup reached the public history"
+      ],
+      "deteccion": [
+        "El diff entre main local y remota mostró etl/datos.db.hold, de 34 MB",
+        "The diff between local and remote main showed etl/datos.db.hold, 34 MB"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "Para correr las pruebas como el CI se renombraba el respaldo, y .gitignore solo ignoraba etl/datos.db",
+        "The backup was renamed to run the tests like the CI, and .gitignore only ignored etl/datos.db"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "Se deja en el historial: son precios públicos, sin secretos, y borrarlo exigiría un push forzado",
+        "It stays in the history: public prices, no secrets, and removing it would need a forced push"
+      ],
+      "correctiva": [
+        "etl/datos.db* en .gitignore y la suite «como el CI» corre en una copia aparte, sin renombrar nada (D-402)",
+        "etl/datos.db* in .gitignore, and the «like the CI» suite runs in a separate copy, renaming nothing (D-402)"
+      ],
+      "estacion": 6,
+      "caso_real": "D-402",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-01",
+          "ocurrencia": [
+            "El commit 8cc2da3 (D-391) subió etl/datos.db.hold a GitHub.",
+            "Commit 8cc2da3 (D-391) pushed etl/datos.db.hold to GitHub."
+          ],
+          "diagnostico": [
+            "El respaldo estaba renombrado para las capturas y git add -A lo incluyó.",
+            "The backup was renamed for the captures and git add -A included it."
+          ],
+          "solucion": [
+            "Se ignora cualquier nombre del respaldo y ya no se renombra.",
+            "Any name of the backup is ignored and it is no longer renamed."
+          ],
+          "comentario": [
+            "No tiene secretos; queda en el historial por decisión del autor.",
+            "It holds no secrets; it stays in the history by the author's decision."
+          ],
+          "estacion": 6,
+          "estado": "resuelta",
+          "referencia": "D-402"
+        }
+      ]
     }
   ]
 }
