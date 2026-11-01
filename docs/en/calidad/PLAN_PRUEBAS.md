@@ -101,7 +101,7 @@ Common precondition: the environment of section 9, without the real secret.
 | S-02 | Direct orders to the engine | 9 direct orders to the engine | Permission error | A05 | `tests/test_security.py::test_the_engine_refuses_even_if_the_filter_is_bypassed` |
 | S-03 | Endless queries | Endless queries or queries of millions of rows | Cut after 10 seconds; at most 5,000 rows | A04 | `tests/test_sql_explorer.py::test_slow_query_is_interrupted`, `tests/test_sql_explorer.py::test_result_is_limited_and_flagged` |
 | S-04 | Code with ñ or emojis | Code with ñ, accents or emojis | «Clave incorrecta.» (wrong code), without an error | A07 | `tests/test_control.py::test_d199_the_right_code_opens_and_any_character_is_safe` |
-| S-05 | Trying codes without stopping | Trying codes without stopping | «Clave incorrecta.» each time, without a lockout (accepted risk, section 11) | A07 | `tests/test_control.py::test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time` |
+| S-05 | Trying codes without stopping | Trying codes without stopping | After 3 failures, «Too many attempts» and a wait of 2 s that doubles up to 15 min; the right code resets it | A07 | `tests/test_control.py::test_d393_after_three_failures_every_door_waits_twice_as_long_up_to_fifteen_minutes` |
 | S-06 | Tokens in the repository | Search for tokens in the repository | None | A02 | `tests/test_security.py::test_no_secret_is_tracked_by_git` |
 | S-07 | GitHub error | Provoke a GitHub error | The message never shows the token | A09 | `tests/test_control.py::test_github_error_never_shows_the_token` |
 | S-08 | Workflow permissions | Abuse the permissions of the workflow | Only content and issues | A01 | `tests/test_security.py::test_the_weekly_job_has_least_privilege` |
@@ -172,7 +172,7 @@ Each change runs the same tests on a clean GitHub machine. Its result stays next
 | Without `etl/raw.db`, the rebuild from raw rows does not run in `pruebas.yml` | It runs on the author's computer and on each weekly load, where the raw data exists |
 | The tests that query public links depend on the network | A failed result is repeated before treating it as a defect of the code |
 | The screen measurement is not part of the suite | It runs before each visual change |
-| No limit of attempts for the control code | Risk accepted by the author (D-249): the code only prevents pressing «Run pipeline now» by accident, the most it allows is starting or cancelling the load, and it must be long |
+| Limit of attempts for the control code | Since D-393, after 3 failures each try waits 2 s, and twice as long after each new failure, up to 15 min. The wait is shared by every door: someone could jam the access for a while, but the author can always start the load from GitHub. The code must be long |
 | The panel's GitHub token | Minimum permissions and renewal before expiry; the panel warns when fewer than 14 days are left |
 | Streamlit publishes `main` without waiting for `pruebas.yml` | The author reviews locally before each push |
 | Two-step verification of the accounts | Declared by the author; not verifiable from the repository |

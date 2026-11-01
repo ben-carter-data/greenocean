@@ -146,7 +146,7 @@ def test_d258_each_security_case_points_to_a_test_that_exists_and_the_architectu
     cases = {case[0] for case in security_plan.CASES}
     for threat in security_map.THREATS:
         assert set(threat[4]) <= cases, threat[0]
-    assert "límite de intentos" in text and "riesgo aceptado" in text  # the accepted risk is written, not hidden
+    assert "Límite de intentos" in text and "D-393" in text  # the limit of attempts is written down
     # D-279: the plan carries its cases as a table again; test_documents checks it against security_plan.CASES.
 
 

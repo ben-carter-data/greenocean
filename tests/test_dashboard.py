@@ -392,13 +392,15 @@ def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
 
 
 @needs_database
-def test_d249_the_code_box_survives_any_character_and_never_locks():
+def test_d393_the_code_box_survives_any_character_and_waits_after_three_failures():
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
     text = open_run_dialog(app, "contraseña ñ")
     assert not app.exception and "Clave incorrecta" in text
-    for attempt in range(6):  # D-249: no limit of attempts, by the author's decision
+    for attempt in range(2):
         text = open_run_dialog(app, f"intento{attempt}")
-        assert "Clave incorrecta" in text and "bloqueado" not in text and "Demasiados" not in text
+        assert "Clave incorrecta" in text
+    text = open_run_dialog(app, "clave")  # the gate shared by every door waits now, even for the right code
+    assert not app.exception and "Demasiados intentos" in text
 
 
 @needs_database

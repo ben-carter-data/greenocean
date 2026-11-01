@@ -52,9 +52,9 @@ CASES = [
         "S-05",
         "Probar claves sin parar",
         "Probar claves sin parar",
-        "«Clave incorrecta.» cada vez, sin bloqueo: riesgo aceptado por el autor (ver el resumen)",
+        "Tras 3 fallos, «Demasiados intentos» y una espera de 2 s que se duplica hasta 15 min; la clave correcta vuelve a cero",
         "A07",
-        ["tests/test_control.py::test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time"],
+        ["tests/test_control.py::test_d393_after_three_failures_every_door_waits_twice_as_long_up_to_fifteen_minutes"],
     ),
     (
         "S-06",

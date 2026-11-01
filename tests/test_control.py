@@ -199,12 +199,26 @@ def test_d199_the_right_code_opens_and_any_character_is_safe():
     assert not control.check_control_code("", "clave")[0] and not control.check_control_code("clave", None)[0]
 
 
-def test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time():
-    for _ in range(20):
-        assert control.check_control_code("mal", "clave") == (False, "Clave incorrecta.")
-    assert control.check_control_code("clave", "clave")[0]
+def test_d393_after_three_failures_every_door_waits_twice_as_long_up_to_fifteen_minutes():
+    now = [1000.0]
+    gate = control.AttemptGate(clock=lambda: now[0])
+    for _ in range(control.FREE_ATTEMPTS - 1):
+        assert control.check_control_code("mal", "clave", gate) == (False, "Clave incorrecta.")
+        assert gate.seconds_left() == 0
+    waits = []
+    for _ in range(12):
+        assert control.check_control_code("mal", "clave", gate) == (False, "Clave incorrecta.")
+        waits.append(gate.seconds_left())
+        # while it waits, even the right code is refused without being compared
+        assert control.check_control_code("clave", "clave", gate)[1].startswith("Demasiados intentos")
+        now[0] += waits[-1]
+    assert waits[:4] == [2, 4, 8, 16] and max(waits) == control.MAX_WAIT_SECONDS == 900
+    assert control.check_control_code("clave", "clave", gate) == (True, "")  # a right code resets the gate
+    assert gate.failures == 0 and gate.seconds_left() == 0
+    assert control.describe_wait(4) == "Demasiados intentos. Vuelve a intentar en 4 s."
+    assert control.describe_wait(900) == "Demasiados intentos. Vuelve a intentar en 15 min."
     source = (Path(__file__).resolve().parent.parent / "bi" / "control.py").read_text(encoding="utf-8")
-    assert "hmac.compare_digest" in source and not hasattr(control, "LoginGuard")
+    assert "hmac.compare_digest" in source  # still compared in constant time
 
 
 def test_d298_only_a_real_failure_of_the_last_finished_load_raises_the_alert():

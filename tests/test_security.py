@@ -159,7 +159,7 @@ def test_d249_the_map_says_what_the_author_decided_about_the_code_and_the_sql_st
     controls = {control[1]: control for control in security_map.CONTROLS}
     code = controls["Clave de control"]
     assert "evita ejecuciones accidentales" in code[2] and "hmac.compare_digest" in code[4]
-    assert "No hay límite de intentos" in code[4]  # the accepted risk is stated, not hidden
+    assert "Tras 3 fallos" in code[4] and "15 min" in code[4]  # D-393: the limit replaced the accepted risk
     sql = controls["SQL público con límites"]
     assert "no pide cuenta" in sql[3] and "10 segundos" in sql[4] and "5.000 filas" in sql[4]
     assert sql_explorer.TIMEOUT_SECONDS == 10 and sql_explorer.ROW_LIMIT == 5000 and sql_explorer.MEMORY_LIMIT == "1GB"

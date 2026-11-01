@@ -12,6 +12,9 @@ from typing import Any, cast
 from datetime import datetime, timedelta, timezone
 
 import hmac
+import math
+import threading
+import time
 
 import requests
 
@@ -326,11 +329,56 @@ def find_run_started_after(runs: list[dict[str, Any]], requested_at: datetime) -
 # endregion
 
 
-# The control code (D-199, D-249): compared in constant time and as bytes, so any character works. There is no
-# limit of attempts: the code only keeps a visitor from launching the workflow by accident (the decision of the
-# author), and the most the button can do is start the weekly workflow.
-def check_control_code(typed: str | None, expected: str | None) -> tuple[bool, str]:
-    """(ok, message in Spanish)."""
-    if expected and hmac.compare_digest((typed or "").encode("utf-8"), str(expected).encode("utf-8")):
-        return True, ""
-    return False, "Clave incorrecta."
+# The control code (D-199): compared in constant time and as bytes, so any character works. D-393 (replaces the
+# accepted risk of D-249): every door of the code shares one gate kept by the server, so a reload does not reset it.
+# After 3 failures each try waits 2 s, and twice as long after each new failure, up to 15 minutes; a right key opens
+# it again.
+FREE_ATTEMPTS = 3
+FIRST_WAIT_SECONDS = 2
+MAX_WAIT_SECONDS = 15 * 60
+
+
+class AttemptGate:
+    """The failed tries of the control code, shared by every visit of the server process."""
+
+    def __init__(self, clock=time.monotonic):
+        self.clock = clock
+        self.lock = threading.Lock()
+        self.reset()
+
+    def reset(self) -> None:
+        self.failures = 0
+        self.open_at = 0.0
+
+    def seconds_left(self) -> int:
+        return max(0, math.ceil(self.open_at - self.clock()))
+
+    def record(self, ok: bool) -> None:
+        with self.lock:
+            if ok:
+                self.reset()
+                return
+            self.failures += 1
+            if self.failures >= FREE_ATTEMPTS:
+                wait = min(MAX_WAIT_SECONDS, FIRST_WAIT_SECONDS * 2 ** (self.failures - FREE_ATTEMPTS))
+                self.open_at = self.clock() + wait
+
+
+GATE = AttemptGate()
+
+
+def describe_wait(seconds: int) -> str:
+    """«Demasiados intentos. Vuelve a intentar en 4 s.», in minutes from two minutes on."""
+    if seconds >= 120:
+        return f"Demasiados intentos. Vuelve a intentar en {math.ceil(seconds / 60)} min."
+    return f"Demasiados intentos. Vuelve a intentar en {seconds} s."
+
+
+def check_control_code(typed: str | None, expected: str | None, gate: AttemptGate | None = None) -> tuple[bool, str]:
+    """(ok, message in Spanish). With a gate, a try while it waits is refused without comparing."""
+    if gate is not None and gate.seconds_left():
+        return False, describe_wait(gate.seconds_left())
+    ok = bool(expected) and hmac.compare_digest((typed or "").encode("utf-8"), str(expected).encode("utf-8"))
+    if gate is not None and expected:
+        gate.record(ok)
+    return (True, "") if ok else (False, "Clave incorrecta.")

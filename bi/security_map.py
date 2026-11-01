@@ -48,10 +48,12 @@ CONTROLS = [
         "evita ejecuciones accidentales · tiempo constante",
         "El botón «Ejecutar pipeline ahora»: con él, lo máximo que se puede hacer es lanzar el workflow semanal.",
         "La clave vive en los secretos del panel, fuera del repositorio, y se compara con hmac.compare_digest. Antes de la "
-        "clave el botón no existe. No hay límite de intentos: riesgo aceptado por el autor.",
+        "clave el botón no existe. Tras 3 fallos, cada intento espera 2 s, y el doble tras cada nuevo fallo, hasta 15 min; "
+        "todas las puertas comparten esa espera, que guarda el servidor.",
         "bi/control.py · bi/dashboard.py",
         [
             "tests/test_control.py::test_d199_the_right_code_opens_and_any_character_is_safe",
+            "tests/test_control.py::test_d393_after_three_failures_every_door_waits_twice_as_long_up_to_fifteen_minutes",
             "tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code",
         ],
         True,

@@ -101,7 +101,7 @@ Precondición común: el entorno de la sección 9, sin el secreto real.
 | S-02 | Órdenes directas al motor | 9 órdenes directas al motor | Error de permiso | A05 | `tests/test_security.py::test_the_engine_refuses_even_if_the_filter_is_bypassed` |
 | S-03 | Consultas sin fin | Consultas sin fin o de millones de filas | Cortada a los 10 segundos; como máximo 5.000 filas | A04 | `tests/test_sql_explorer.py::test_slow_query_is_interrupted`, `tests/test_sql_explorer.py::test_result_is_limited_and_flagged` |
 | S-04 | Clave con ñ o emojis | Clave con ñ, tildes o emojis | «Clave incorrecta.», sin error | A07 | `tests/test_control.py::test_d199_the_right_code_opens_and_any_character_is_safe` |
-| S-05 | Probar claves sin parar | Probar claves sin parar | «Clave incorrecta.» cada vez, sin bloqueo (riesgo aceptado, sección 11) | A07 | `tests/test_control.py::test_d249_there_is_no_limit_of_attempts_and_the_comparison_is_constant_time` |
+| S-05 | Probar claves sin parar | Probar claves sin parar | Tras 3 fallos, «Demasiados intentos» y una espera de 2 s que se duplica hasta 15 min; la clave correcta vuelve a cero | A07 | `tests/test_control.py::test_d393_after_three_failures_every_door_waits_twice_as_long_up_to_fifteen_minutes` |
 | S-06 | Tokens en el repositorio | Buscar tokens en el repositorio | Ninguno | A02 | `tests/test_security.py::test_no_secret_is_tracked_by_git` |
 | S-07 | Error de GitHub | Provocar un error de GitHub | El mensaje nunca muestra el token | A09 | `tests/test_control.py::test_github_error_never_shows_the_token` |
 | S-08 | Permisos del workflow | Abusar de los permisos del workflow | Solo contenido e issues | A01 | `tests/test_security.py::test_the_weekly_job_has_least_privilege` |
@@ -172,7 +172,7 @@ Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su result
 | Sin `etl/raw.db`, la reconstrucción desde filas crudas no corre en `pruebas.yml` | Corre en el computador del autor y en cada carga semanal, donde los datos crudos existen |
 | Las pruebas que consultan enlaces públicos dependen de la red | Un resultado fallido se repite antes de tratarlo como un defecto del código |
 | La medición de pantallas no forma parte de la suite | Se ejecuta antes de cada cambio visual |
-| Sin límite de intentos de la clave de control | Riesgo aceptado por el autor (D-249): la clave solo evita pulsar «Ejecutar pipeline ahora» por accidente, lo máximo que permite es lanzar o cancelar la carga, y debe ser larga |
+| Límite de intentos de la clave de control | Desde D-393, tras 3 fallos cada intento espera 2 s, y el doble tras cada nuevo fallo, hasta 15 min. La espera es común a todas las puertas: alguien podría trabar el acceso un rato, pero el autor siempre puede lanzar la carga desde GitHub. La clave debe ser larga |
 | Token de GitHub del panel | Permisos mínimos y renovación antes del vencimiento; el panel avisa cuando faltan menos de 14 días |
 | Streamlit publica `main` sin esperar a `pruebas.yml` | El autor revisa en local antes de cada push |
 | Verificación en dos pasos de las cuentas | Declarada por el autor; no verificable desde el repositorio |

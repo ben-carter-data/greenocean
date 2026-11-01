@@ -107,7 +107,7 @@ To read any failure without copying by hand, the panel's page «GitHub Actions»
 
 In «Operations center», «Author access» asks for the control code (the panel's `CONTROL_CODE` secret) and opens with Enter. With the right code, the «Run pipeline now» button, the token-expiry warning and the administration links appear: GitHub tokens, runs and the administration of the app on Streamlit. Without the secret configured, for example in a local copy, the access stays closed.
 
-The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. There is no limit of attempts for the code: it is an accepted risk, described in the [Test and Security Plan](../calidad/PLAN_PRUEBAS.md#11-accepted-risks-and-limits). The panel never shows the token or any part of it.
+The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. After 3 failures, each try waits 2 s, and twice as long after each new failure, up to 15 min; the right code resets it (D-393, [Test and Security Plan](../calidad/PLAN_PRUEBAS.md#11-accepted-risks-and-limits)). If the wait jams the access, the load can be started from GitHub. The panel never shows the token or any part of it.
 
 One also enters as Author from the window to choose the view: the link «Author access», in its corner, the key and Enter (D-369). The «View» button, under the logo, changes the view; a click on the logo does the same (D-373). Leaving Author closes its session.
 

@@ -674,7 +674,7 @@ def submit_author_code():
     """D-350: the author's door opens on Enter. A right key enters as the default professional view; a wrong one says
     so in place and empties the field, with no reload of the page."""
     ok, message = control.check_control_code(
-        st.session_state.get("profile_author_code", ""), get_secret(SECRET_CONTROL_CODE)
+        st.session_state.get("profile_author_code", ""), get_secret(SECRET_CONTROL_CODE), control.GATE
     )
     st.session_state["profile_author_code"] = ""
     if ok:
@@ -878,7 +878,7 @@ def show_profile_switch():
                 tr("Clave"), key="profile_unlock_code", label_visibility="collapsed", placeholder=tr("Clave")
             )
             if st.button(tr("Desbloquear"), key="profile_unlock", type="primary", width="stretch"):
-                ok, message = control.check_control_code(typed, get_secret(SECRET_CONTROL_CODE))
+                ok, message = control.check_control_code(typed, get_secret(SECRET_CONTROL_CODE), control.GATE)
                 if ok:
                     st.session_state[ADMIN_UNLOCKED] = True
                     choose_profile(PROFILE_PROFESSIONAL, DEFAULT_ROLE)
@@ -5654,7 +5654,7 @@ def show_run_now_dialog(token, access_code):
                     st.rerun()
             if not confirmed:
                 return
-            ok, message = control.check_control_code(typed_code, access_code)
+            ok, message = control.check_control_code(typed_code, access_code, control.GATE)
             if not ok:
                 st.error(tr(message), icon=":material/lock:")
                 return
@@ -5729,7 +5729,7 @@ def check_author_code(access_code):
     st.session_state["author_access_code"] = ""
     if not typed_code:
         return
-    ok, message = control.check_control_code(typed_code, access_code)
+    ok, message = control.check_control_code(typed_code, access_code, control.GATE)
     if ok:
         st.session_state[ADMIN_UNLOCKED] = True
     else:

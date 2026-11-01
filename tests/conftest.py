@@ -32,6 +32,16 @@ DATA_FILES = {
 }
 
 
+@pytest.fixture(autouse=True)
+def open_the_attempt_gate():
+    """D-393: the control code's gate is shared by the whole process; each test starts with it open."""
+    from bi import control
+
+    control.GATE.reset()
+    yield
+    control.GATE.reset()
+
+
 def pytest_collection_modifyitems(items):
     for item in items:
         if Path(str(item.fspath)).stem in DATA_FILES:
