@@ -2975,3 +2975,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Medición:** en 1920 × 1000, 1440 × 900, 1280 × 800 y 1024 × 768, en español e inglés, ningún elemento del encabezado ni de la fila de contenido se monta sobre otro. En 1280 × 800 y 1024 × 768 algunas páginas se desplazan; eso queda para el plan de 4B.
 - **Regla en CLAUDE.md:** el encabezado es solo para ubicarse y navegar; la información va en el contenido y los enlaces a páginas en el menú.
 - **Pruebas:** `tests/test_page_bar.py::test_d398_…` (en cada página y en los dos idiomas, el encabezado no tiene enlaces ni otro botón que «Volver»; la ruta se corta en vez de esconderse; la fila de contenido se acomoda), y las pruebas del menú, del Panorama y del mapa de la app con el orden nuevo.
+
+## D-399 · La prueba de los filtros de informes no supone una sola semana
+
+- **Qué pasó:** al fusionar el informe N° 7 (semana del 26-10), `pytest` falló en main en `test_d333_…`: la prueba suponía que todos los informes, salvo el N° 1, eran de la semana del 12-10. El error era de la prueba, no de la app.
+- **Decisión:** la prueba recorre las semanas que traen los informes y comprueba que el filtro de cada una devuelve exactamente los informes de esa semana.
+- **Pruebas:** `tests/test_quality_method.py::test_d333_…`.

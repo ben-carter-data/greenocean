@@ -333,9 +333,13 @@ def test_d333_the_reports_tab_filters_by_year_month_week_and_search_and_links_ea
     assert [r["numero"] for r in dashboard.filter_reports(reports, every, every, every, "b015e3a")] == [4]
     assert [r["numero"] for r in dashboard.filter_reports(reports, every, every, every, "N° 2")] == [2]
     assert dashboard.filter_reports(reports, "2025", every, every, "") == []
-    assert (
-        len(dashboard.filter_reports(reports, "2026", "10", "2026-10-12", "")) == len(reports) - 1
-    )  # N° 1 has no data week
+    # D-399: each week filters the reports of that week, whatever the weeks are; N° 1 has no data week.
+    weeks = {report["semana"] for report in reports if report["semana"]}
+    for week in weeks:
+        expected = [report["numero"] for report in reports if report["semana"] == week]
+        found = dashboard.filter_reports(reports, week[:4], week[5:7], week, "")
+        assert [report["numero"] for report in found] == expected, week
+    assert sum(1 for report in reports if report["semana"]) == len(reports) - 1
     detail = quality_method.build_report_detail(reports[2], reports[2:3] + reports[:1] + reports[1:2])
     assert "<b>Variación:</b> +2" in detail  # N° 3 against N° 2, though only N° 3 is listed
 
