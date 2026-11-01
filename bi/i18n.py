@@ -342,6 +342,7 @@ EN = {
     "Vista de usuario": "User view",
     "Vista profesional": "Professional view",
     "Ver todo el proyecto": "See the whole project",
+    "La vista Autor se cerró tras 30 min sin actividad.": "The Author view closed after 30 min without activity.",
     "La ingeniería de datos, la operación, la seguridad, el stack y la documentación.": "The data engineering, operations, security, the stack and the documentation.",
     "Clave": "Code",
     "Desbloquear": "Unlock",

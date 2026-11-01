@@ -603,6 +603,27 @@ def leave_author():
     st.session_state.pop(run_monitor.WATCH, None)
 
 
+AUTHOR_SEEN = "author_seen_at"
+AUTHOR_IDLE_SECONDS = 30 * 60
+
+
+def expire_idle_author(now=None):
+    """D-395: the Autor view closes after 30 minutes with nothing done in the page, as leaving it does (D-353); getting
+    back in asks for the key. Only a full run counts as activity: the timer of the run window does not."""
+    if not st.session_state.get(ADMIN_UNLOCKED):
+        st.session_state.pop(AUTHOR_SEEN, None)
+        return False
+    now = datetime.now(timezone.utc).timestamp() if now is None else now
+    seen = st.session_state.get(AUTHOR_SEEN)
+    if seen is not None and now - seen > AUTHOR_IDLE_SECONDS:
+        leave_author()
+        st.session_state.pop(AUTHOR_SEEN, None)
+        st.toast(tr("La vista Autor se cerró tras 30 min sin actividad."), icon=":material/lock:")
+        return True
+    st.session_state[AUTHOR_SEEN] = now
+    return False
+
+
 def current_view_name():
     """«Usuario», «Profesional» or «Autor»: the view the visit is in, for the indicator."""
     if is_public_profile():
@@ -8470,6 +8491,7 @@ def main():
         current_page.run()
         return
     WINDOW_PAGES.update(windows_by_title)
+    expire_idle_author()
     open_profile_landing(windows_by_title)
     show_sidebar_navigation(windows_by_title, current_window, order)
     keep_profile_across_app_reloads()

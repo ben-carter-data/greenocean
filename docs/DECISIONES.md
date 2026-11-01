@@ -2947,3 +2947,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Qué no cuadraba:** la vista Profesional es libre en «Elige tu vista», pero este botón pedía la clave de control y daba la vista Autor. Quien recibía «la clave para ver todo» recibía en realidad el poder de lanzar cargas, y el panel tenía una tercera puerta a la clave.
 - **Decisión:** el botón pasa a la vista Profesional, sin clave y sin la parte del Autor. Quedan dos puertas a la clave: la esquina de «Elige tu vista» y «Acceso del autor» en Centro de operación. Ambas comparten la espera de D-393.
 - **Pruebas:** `tests/test_dashboard.py::test_d394_…` (sin campo de clave, abre Profesional y nunca Autor).
+
+## D-395 · La vista Autor se cierra tras 30 minutos sin actividad
+
+- **Pedido del autor:** que una pestaña olvidada en un computador compartido no quede como Autor para siempre.
+- **Decisión:** cada ejecución completa de la página (un clic, una elección, un cambio de página) cuenta como actividad. Si pasan más de 30 minutos sin ninguna, la vista Autor se cierra igual que al salir de ella (D-353): se pierde la clave y la carga seguida queda en GitHub. El panel lo avisa con «La vista Autor se cerró tras 30 min sin actividad», y volver a entrar pide la clave. El refresco automático de la ventana de ejecución no cuenta como actividad.
+- **Pruebas:** `tests/test_view_switch.py::test_d395_…` (29 min la mantiene, más de 30 la cierra, sin clave no hay nada que cerrar).

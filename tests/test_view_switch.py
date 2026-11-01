@@ -120,3 +120,21 @@ def test_d373_a_click_on_the_logo_reopens_the_window():
     app.session_state["visitor_profile"] = "consulta"
     app.run()
     assert not app.exception and app.get("dialog") and app.button(key="profile_keep")
+
+
+def test_d395_the_author_view_closes_after_thirty_idle_minutes(monkeypatch):
+    from bi import dashboard
+
+    state = {dashboard.ADMIN_UNLOCKED: True}
+    toasts = []
+    monkeypatch.setattr(dashboard.st, "session_state", state)
+    monkeypatch.setattr(dashboard.st, "toast", lambda text, icon=None: toasts.append(text))
+    start = 1_000_000.0
+    assert not dashboard.expire_idle_author(start)  # the first run of the Autor view starts the clock
+    assert not dashboard.expire_idle_author(start + 29 * 60)  # activity before 30 min keeps it open
+    assert not dashboard.expire_idle_author(start + 58 * 60)  # and starts the 30 minutes again
+    assert state[dashboard.ADMIN_UNLOCKED]
+    assert dashboard.expire_idle_author(start + 58 * 60 + dashboard.AUTHOR_IDLE_SECONDS + 1)
+    assert dashboard.ADMIN_UNLOCKED not in state and dashboard.AUTHOR_SEEN not in state and toasts
+    assert not dashboard.expire_idle_author(start + 200 * 60)  # without the key there is nothing to close
+    assert dashboard.AUTHOR_SEEN not in state
