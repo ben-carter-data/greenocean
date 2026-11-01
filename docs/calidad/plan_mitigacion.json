@@ -753,6 +753,28 @@
           "estacion": 8,
           "estado": "resuelta",
           "referencia": "D-357"
+        },
+        {
+          "fecha": "2026-11-01",
+          "ocurrencia": [
+            "En la app publicada, la flecha «Volver» del encabezado llevaba siempre a «Elige tu vista».",
+            "In the published app, the «Back» arrow of the header always led to «Choose your view»."
+          ],
+          "diagnostico": [
+            "«Volver» recargaba la página, y la sesión nueva no traía la vista elegida.",
+            "«Back» reloaded the page, and the new session did not bring the chosen view."
+          ],
+          "solucion": [
+            "«Volver» usa un historial en la sesión y abre la página anterior sin recargar (D-423).",
+            "«Back» uses a history in the session and opens the previous page without a reload (D-423)."
+          ],
+          "comentario": [
+            "El historial también pasa por las recargas que hace la app, como la de una tarjeta de canal.",
+            "The history also goes through the reloads the app makes, such as a channel card's."
+          ],
+          "estacion": 15,
+          "estado": "resuelta",
+          "referencia": "D-423"
         }
       ]
     },

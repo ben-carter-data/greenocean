@@ -3207,3 +3207,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Textos:** el panel guarda «tokens y clave» (D-397, D-421); la nota del panel dice que lanza la carga en la sesión del Autor. Todo con su inglés.
   - **Documentos:** el SAD (7) cuenta las dos máquinas, los tres workflows y la descarga desde el release, en los dos idiomas (versión 3.6).
 - **Pruebas:** `tests/test_deployment.py::test_d422_…`: el release tiene `datos.duckdb` y el repositorio no; el runner de la carga tiene `semanal.yml` y `calidad.yml`, y el de cada push `pruebas.yml` y `calidad.yml`; las flechas al release, desde el release y hacia las pruebas existen; ninguna caja se sale del dibujo.
+
+## D-423 · «Volver» lleva a la página anterior de la visita, con su estado
+
+- **Pedido del autor:** la flecha ← del encabezado debe volver a la página anterior de esta sesión, con su estado (un canal abierto, los pasos del Panorama). Solo sin página anterior vuelve a «Elige tu vista». Con un historial simple en la sesión, sin recargar la página.
+- **Causa:** «Volver» guardaba el recorrido en el navegador y cambiaba la dirección con una recarga completa. La recarga abría una sesión nueva sin la vista elegida, así que la visita caía siempre en «Elige tu vista».
+- **Decisión:**
+  - **Historial en la sesión:** cada página que se dibuja agrega un paso con su ventana, sus parámetros propios (página, canal, familia) y su estado: los filtros del informe y los pasos del Panorama, cada canal con los suyos. Volver a dibujar la misma página solo actualiza su estado. Guarda hasta 30 pasos.
+  - **Volver:** al hacer clic, la página actual sale del historial, la anterior recupera su estado y se abre con `st.switch_page`, en la misma sesión y sin recargar. Sin página anterior, se abre «Elige tu vista».
+  - **Recargas de la app:** una tarjeta de canal y un documento de la carpeta recargan la página (D-406). El mismo mecanismo que conserva la vista en esas recargas (D-357) lleva también el historial, aunque la dirección ya nombre la vista; al volver, solo se aceptan pasos bien formados y claves de estado conocidas.
+  - Se retira el script que cambiaba la dirección para volver.
+- **Pruebas:** `tests/test_page_bar.py::test_d423_…`: desde «Modelo de datos», «Volver» abre el Panorama con sus pasos como estaban y la vista intacta; sin página anterior abre «Elige tu vista»; el historial que llega por una recarga solo toma pasos bien formados y queda antes de la página que la recarga abrió.

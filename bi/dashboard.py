@@ -737,19 +737,18 @@ export default function(component) {
     const store = window.sessionStorage;
     const remember = () => {
         if (!data || !data.perfil) return;
-        try { store.setItem(KEY, JSON.stringify({ p: data.perfil, r: data.rol || "", t: Date.now() })); } catch (e) {}
+        try { store.setItem(KEY, JSON.stringify({ p: data.perfil, r: data.rol || "", h: data.historial || [], t: Date.now() })); } catch (e) {}
     };
     window.__goRemember = remember;
-    if (!data || !data.perfil) {
-        try {
-            const raw = store.getItem(KEY);
+    // D-423: read even when the address already names the view, because the history of «Volver» comes along too.
+    try {
+        const raw = store.getItem(KEY);
+        if (raw) {
             store.removeItem(KEY);
-            if (raw) {
-                const kept = JSON.parse(raw);
-                if (Date.now() - kept.t < 120000) setTriggerValue("keep", raw);
-            }
-        } catch (e) {}
-    }
+            const kept = JSON.parse(raw);
+            if (Date.now() - kept.t < 120000) setTriggerValue("keep", raw);
+        }
+    } catch (e) {}
     const handler = (event) => {
         // D-406: a channel card is a reload the app makes too, like a document of the folder
         const link = event.target.closest && event.target.closest(".df-actions a, .doc-path a, .doc-print, a.ch-card");
@@ -775,18 +774,25 @@ def keep_profile_across_app_reloads():
     click on the logo asks for the view again."""
     keeper = st.components.v2.component("profile_keeper", js=PROFILE_KEEPER_JS)
     profile = get_profile()
-    data = {"perfil": profile or "", "rol": get_role() if profile == PROFILE_PROFESSIONAL else ""}
+    data = {
+        "perfil": profile or "",
+        "rol": get_role() if profile == PROFILE_PROFESSIONAL else "",
+        "historial": st.session_state.get(PAGE_HISTORY, []),  # D-423: «Volver» survives the reload too
+    }
     result = keeper(
         key="profile_keeper", data=data, on_keep_change=lambda: None, on_reopen_change=lambda: None, height=0
     )
     if result.reopen and profile:
         st.session_state[CHANGE_VIEW] = True  # D-373: the logo was clicked; the window opens in this same run
     kept = result.keep
-    if not kept or profile:
+    if not kept:
         return
     try:
         values = json.loads(kept)
     except (TypeError, ValueError):
+        return
+    restore_kept_history(values)  # D-423
+    if profile:
         return
     if values.get("p") in PROFILES:
         st.session_state[PROFILE_STATE] = values["p"]
@@ -2271,14 +2277,14 @@ def build_view_path(window, view):
 
 
 def show_return_button():
-    """Volver: back to the previous point of the project, with its selection."""
-    if st.button(
+    """Volver: back to the previous page of this visit, with its selection (D-423); without one, «Elige tu vista»."""
+    st.button(
         tr("Volver"),
         icon=":material/arrow_back:",
         key="return_to_previous",
         help=tr("Volver al punto anterior del proyecto, con su selección."),
-    ):
-        st.html(RETURN_ACTION_SCRIPT, unsafe_allow_javascript=True)
+        on_click=request_return,
+    )
 
 
 def show_theme_field():
@@ -8359,6 +8365,90 @@ def restore_return_context():
         pass
 
 
+# region Return (D-423): «Volver» walks back a short history kept in the session, with no page reload.
+PAGE_HISTORY = "page_history"
+RETURN_TARGET = "return_target"
+HISTORY_LIMIT = 30
+# Besides its address, a page is its report filters and the Panorama's steps (each channel keeps its own, «key@canal»).
+HISTORY_STATE_KEYS = {*RETURN_CONTEXT_KEYS, HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_EXPANDED, HOME_SEARCHED}
+# The parameters every address carries (theme, language, view) never make a new step.
+CONTEXT_PARAMETERS = {THEME_PARAMETER, i18n.LANGUAGE_PARAMETER, PROFILE_PARAMETER, ROLE_PARAMETER, "_ctx"}
+
+
+def read_page_state():
+    """The part of the session that makes this page what it is, as plain JSON values."""
+    state = {}
+    for key, value in st.session_state.items():
+        if str(key).split("@")[0] in HISTORY_STATE_KEYS:
+            try:
+                state[key] = json.loads(json.dumps(value))
+            except (TypeError, ValueError):
+                continue
+    return state
+
+
+def record_page_visit(window):
+    """One step of the history per page: the window, its own parameters and its state. Running the same page again
+    only refreshes its state, so the last step is always what the page showed last."""
+    parameters = {key: value for key, value in st.query_params.to_dict().items() if key not in CONTEXT_PARAMETERS}
+    step = {"window": window, "params": parameters, "state": read_page_state()}
+    history = st.session_state.setdefault(PAGE_HISTORY, [])
+    if history and (history[-1]["window"], history[-1]["params"]) == (window, parameters):
+        history[-1] = step
+    else:
+        history.append(step)
+    del history[:-HISTORY_LIMIT]
+
+
+def request_return():
+    """«Volver» (on click, before the run): this page leaves the history and the one before comes back with its state.
+    With no page before, the visit goes back to «Elige tu vista»."""
+    history = st.session_state.get(PAGE_HISTORY, [])
+    if history:
+        history.pop()
+    if not history:
+        st.session_state[CHANGE_VIEW] = True
+        return
+    previous = history[-1]
+    for key in [key for key in st.session_state if str(key).split("@")[0] in HISTORY_STATE_KEYS]:
+        if key not in previous["state"]:
+            del st.session_state[key]
+    for key, value in previous["state"].items():
+        st.session_state[key] = value
+    st.session_state[RETURN_TARGET] = previous
+
+
+def follow_return(windows_by_title):
+    """The page «Volver» asked for, opened in this same session (st.switch_page, no reload)."""
+    target = st.session_state.pop(RETURN_TARGET, None)
+    if target and target["window"] in windows_by_title:
+        st.switch_page(windows_by_title[target["window"]], query_params=target["params"] | keep_context())
+
+
+def restore_kept_history(kept):
+    """D-357, D-423: a reload the app makes (a channel card, a document) carries the history with the view. The steps
+    kept go first; the page the reload opened, already recorded in this new session, follows them."""
+    history = kept.get("h") if isinstance(kept, dict) else None
+    if not isinstance(history, list):
+        return
+    steps = [
+        step
+        for step in history[-HISTORY_LIMIT:]
+        if isinstance(step, dict)
+        and isinstance(step.get("window"), str)
+        and isinstance(step.get("params"), dict)
+        and isinstance(step.get("state"), dict)
+        and all(str(key).split("@")[0] in HISTORY_STATE_KEYS for key in step["state"])
+    ]
+    for step in st.session_state.get(PAGE_HISTORY, []):
+        if not steps or (steps[-1]["window"], steps[-1]["params"]) != (step["window"], step["params"]):
+            steps.append(step)
+    st.session_state[PAGE_HISTORY] = steps[-HISTORY_LIMIT:]
+
+
+# endregion
+
+
 def build_visit_history_script():
     snapshot = {key: st.session_state[key] for key in RETURN_CONTEXT_KEYS if key in st.session_state}
     encoded = json.dumps(snapshot, ensure_ascii=True, default=str).replace("<", "\\u003c")
@@ -8389,22 +8479,6 @@ def build_visit_history_script():
     } catch (_) {}
     })();</script>""".replace("__FILTERS__", encoded)
 
-
-RETURN_ACTION_SCRIPT = """<script>(() => {
-    try {
-        const rows = JSON.parse(sessionStorage.getItem('greenoceanTrail') || '[]');
-        if (rows.length > 1) rows.pop();
-        const previous = rows.length > 0 ? rows[rows.length-1] : null;
-        const url = new URL(previous ? previous.url : '/', location.origin);
-        if (url.origin !== location.origin) return;
-        if (previous) {
-            sessionStorage.setItem('greenoceanReturning', previous.identity);
-            url.searchParams.set('_ctx', btoa(unescape(encodeURIComponent(JSON.stringify(previous.filters || {})))));
-        }
-        sessionStorage.setItem('greenoceanTrail', JSON.stringify(rows));
-        location.assign(url.href);
-    } catch (_) { location.assign('/'); }
-})();</script>"""
 
 RELOAD_HOME_SCRIPT = """<script>
 (() => {
@@ -9014,8 +9088,11 @@ def main():
         return
     WINDOW_PAGES.update(windows_by_title)
     expire_idle_author()
+    follow_return(windows_by_title)
     open_profile_landing(windows_by_title)
     show_sidebar_navigation(windows_by_title, current_window, order)
+    if get_profile() and not st.session_state.get(CHANGE_VIEW):
+        record_page_visit(current_window)  # D-423: before the keeper, which carries the history across a reload
     keep_profile_across_app_reloads()
     if not get_profile() or st.session_state.get(CHANGE_VIEW):
         show_profile_dialog()

@@ -197,3 +197,69 @@ def test_d407_one_screen_down_to_1280_by_800_and_1024_by_768_scrolls_without_cut
     assert "@media (max-height:860px) and (min-width:1101px)" in css
     # the pages sized by the window leave room for the content row of D-398
     assert "max-height:calc(100vh - 340px)" in dashboard.build_architecture_css(charts.MODE_DARK)
+
+
+def open_as_professional():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60)
+    app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PROFESSIONAL
+    return app
+
+
+@needs_database
+def test_d423_volver_goes_back_to_the_previous_page_of_the_visit_with_its_state():
+    app = open_as_professional()
+    # the Panorama with its steps 1 and 2 opened again («Cambiar»)
+    app.session_state["home_region_done"] = app.session_state["home_family_done"] = True
+    app.session_state["home_expanded"] = True
+    app.run()
+    assert not app.exception
+    # another page of the menu; the Panorama's state changes meanwhile
+    app.query_params["vista"] = dashboard.PAGE_ARCHITECTURE
+    app.run()
+    assert [step["window"] for step in app.session_state[dashboard.PAGE_HISTORY]] == [
+        dashboard.WINDOW_OF_VIEW[dashboard.PAGE_HOME],
+        dashboard.WINDOW_OF_VIEW[dashboard.PAGE_ARCHITECTURE],
+    ]
+    app.session_state["home_expanded"] = False
+    app.button(key="return_to_previous").click().run()
+    assert not app.exception
+    # back on the Panorama, in this same session (the view is kept), with the steps as they were
+    markup = " ".join(block.value for block in app.markdown)
+    assert "Página actual: Ingeniería de datos › Modelo de datos" not in markup
+    assert "Mapa de Chile con la dirección dominante de los precios por región" in markup
+    assert app.session_state["home_expanded"] is True
+    assert app.session_state[dashboard.PROFILE_STATE] == dashboard.PROFILE_PROFESSIONAL
+    assert dashboard.VIEW_PARAMETER not in app.query_params
+    assert len(app.session_state[dashboard.PAGE_HISTORY]) == 1
+    # no page reload: the button walks the session's history, there is no script that changes the address
+    assert not hasattr(dashboard, "RETURN_ACTION_SCRIPT")
+
+
+@needs_database
+def test_d423_with_no_page_before_volver_opens_choose_your_view():
+    app = open_as_professional()
+    app.query_params["vista"] = dashboard.PAGE_ARCHITECTURE
+    app.run()
+    assert not app.exception and len(app.session_state[dashboard.PAGE_HISTORY]) == 1
+    app.button(key="return_to_previous").click().run()
+    assert not app.exception
+    markup = " ".join(block.value for block in app.markdown)
+    assert "Elige tu vista" in markup and app.session_state[dashboard.CHANGE_VIEW] is True
+
+
+def test_d423_the_history_kept_across_a_reload_takes_only_well_formed_steps(monkeypatch):
+    state = {}
+    monkeypatch.setattr(dashboard.st, "session_state", state)
+    good = {
+        "window": "Negocio",
+        "params": {"vista": dashboard.PAGE_CHANNELS},
+        "state": {"home_region_done@ODEPA": True},
+    }
+    sneaky = {"window": "Negocio", "params": {}, "state": {"admin_unlocked": True}}
+    dashboard.restore_kept_history({"p": "profesional", "h": [good, sneaky, "x", {"window": 3}]})
+    assert state[dashboard.PAGE_HISTORY] == [good]
+    # the page the reload opened, already recorded in the new session, follows the steps kept
+    opened = {"window": "Negocio", "params": {"vista": dashboard.PAGE_CHANNELS, "canal": "Mayorista"}, "state": {}}
+    state[dashboard.PAGE_HISTORY] = [opened]
+    dashboard.restore_kept_history({"p": "profesional", "h": [good]})
+    assert state[dashboard.PAGE_HISTORY] == [good, opened]
