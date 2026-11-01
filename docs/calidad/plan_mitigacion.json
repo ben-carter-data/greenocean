@@ -819,6 +819,28 @@
           "estacion": 15,
           "estado": "resuelta",
           "referencia": "D-428"
+        },
+        {
+          "fecha": "2026-11-01",
+          "ocurrencia": [
+            "Como Autor, el enlace «Abrir el informe» del aviso «Acción requerida» volvía a «Elige tu vista».",
+            "As the Author, the «Open the report» link of the «Action required» alert went back to «Choose your view»."
+          ],
+          "diagnostico": [
+            "La vista se guardaba solo antes de las recargas conocidas, y ese enlace recarga la página sin guardarla.",
+            "The view was kept only before the known reloads, and that link reloads the page without keeping it."
+          ],
+          "solucion": [
+            "Cada ejecución guarda la vista en la pestaña, así toda recarga la conserva, también F5 (D-430).",
+            "Each run keeps the view in the tab, so every reload keeps it, F5 too (D-430)."
+          ],
+          "comentario": [
+            "Solo «Vista: … · Cambiar», el logo o una pestaña nueva vuelven a pedir la vista.",
+            "Only «View: … · Change», the logo or a new tab ask for the view again."
+          ],
+          "estacion": 15,
+          "estado": "resuelta",
+          "referencia": "D-430"
         }
       ]
     },

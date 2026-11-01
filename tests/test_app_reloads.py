@@ -1,6 +1,5 @@
-"""D-357: a reload the app makes by itself (opening or printing a document from the folder, the theme's base) keeps the
-visit's view once; a reload the reader makes still asks for it (D-340). D-427: the author's view comes back only with a one-time ticket
-the server issued."""
+"""D-357, D-430: any reload of the tab keeps the visit's view (a document of the folder, printing, the theme's base, an
+ordinary link, F5); a new tab asks for it. D-427: the author's view comes back only with a ticket the server issued."""
 
 import json
 from pathlib import Path
@@ -37,8 +36,8 @@ def test_d357_opening_or_printing_a_document_from_the_folder_does_not_ask_for_th
     assert any("Plan de calidad del software" in block.value for block in app.markdown)  # still on the document
 
 
-def test_d357_a_reload_the_reader_makes_still_asks_for_the_view():
-    app = reload_page(None)
+def test_d357_a_tab_with_nothing_kept_asks_for_the_view():
+    app = reload_page(None)  # D-430: a new tab or a new visit
     assert [box for box in app.text_input if box.key == "profile_author_code"]  # «Elige tu vista» is back
     assert "visitor_profile" not in app.session_state or not app.session_state["visitor_profile"]
     forged = reload_page(json.dumps({"p": "autor", "r": "", "t": 0}))  # anything but a public view is ignored
@@ -55,7 +54,7 @@ def test_d357_every_reload_the_app_makes_remembers_the_view_first():
     ):
         before = source[: source.index(reload)].rsplit("\n", 2)[-2:]
         assert any("__goRemember" in line for line in before), reload
-    assert "Date.now() - kept.t < KEEP_MS" in dashboard.PROFILE_KEEPER_JS  # only fresh (D-428)
+    assert "Date.now() - kept.t" not in dashboard.PROFILE_KEEPER_JS  # D-430: kept for the life of the tab
 
 
 def test_d427_the_author_comes_back_after_a_reload_the_app_makes_only_with_a_ticket_the_server_issued():
@@ -100,5 +99,11 @@ def test_d427_the_document_is_printed_only_when_choose_your_view_is_gone():
 def test_d428_each_page_reads_the_kept_view_once_and_leaves_it_for_the_second_load_of_the_cloud():
     script = dashboard.PROFILE_KEEPER_JS
     assert "window.__goKeptRead ? null : store.getItem(KEY)" in script and "window.__goKeptRead = true" in script
-    assert script.count("removeItem") == 1 and "else store.removeItem(KEY)" in script  # only an expired view goes
-    assert "const KEEP_MS = 30000" in script
+    assert "removeItem" not in script  # D-430: the view stays for every later reload of the tab
+
+
+def test_d430_every_run_keeps_the_view_so_no_reload_of_the_tab_asks_for_it_again():
+    script = dashboard.PROFILE_KEEPER_JS
+    body = script.split("window.__goRemember = remember;")[1]
+    assert body.lstrip().startswith("remember();")  # each run, before any reload: links, the alert, F5
+    assert "if (!data || !data.perfil) return;" in script  # a session that has not chosen keeps nothing

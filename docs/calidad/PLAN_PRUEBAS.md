@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de pruebas y de seguridad |
-| Versión | 3.2 |
-| Fecha | 31-10-2026 |
+| Versión | 3.3 |
+| Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo se comprueba que cada cifra es correcta, que una carga con errores nunca se publica y que nadie puede leer los secretos, cambiar los datos ni lanzar la carga sin permiso. |
@@ -108,7 +108,7 @@ Precondición común: el entorno de la sección 9, sin el secreto real.
 | S-09 | Control sin prueba | Afirmar un control sin prueba | Cada control de la arquitectura de seguridad apunta a una prueba que existe | — | `tests/test_security.py::test_every_control_of_the_map_points_to_a_test_that_exists` |
 | S-10 | Pipeline sin la clave | Lanzar el pipeline sin la clave | El botón no existe antes de la clave | A01 | `tests/test_dashboard.py::test_d202_the_manual_run_and_the_links_appear_only_behind_the_code` |
 | S-11 | Clave del Autor con Enter | Escribir la clave del Autor y pulsar Enter, la correcta y otra | Entra solo con la correcta; con otra, «Clave incorrecta.» sin recargar | A07 | `tests/test_control.py::test_d350_enter_sends_the_author_key_a_wrong_one_says_so_in_place_and_there_is_no_button` |
-| S-12 | Autor por la dirección | Abrir la parte del autor con una dirección o una recarga | Vuelve «Elige tu vista» y la parte del autor no aparece | A01 | `tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_the_address_says`, `tests/test_app_reloads.py::test_d357_a_reload_the_reader_makes_still_asks_for_the_view`, `tests/test_configuration.py::test_d409_only_the_author_has_the_page_in_devops_and_security` |
+| S-12 | Autor por la dirección | Abrir la parte del autor con una dirección o en una pestaña nueva | Vuelve «Elige tu vista» y la parte del autor no aparece | A01 | `tests/test_actions_page.py::test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_the_address_says`, `tests/test_app_reloads.py::test_d357_a_tab_with_nothing_kept_asks_for_the_view`, `tests/test_configuration.py::test_d409_only_the_author_has_the_page_in_devops_and_security` |
 | S-13 | Token en un log | Hacer que un log de GitHub imprima el token en la página «GitHub Actions» | El token se cubre: nunca aparece en pantalla ni en la sesión | A09 | `tests/test_actions_page.py::test_d339_the_token_is_never_drawn_not_even_when_the_log_prints_it` |
 | S-14 | Escribir en GitHub | Buscar en el panel una escritura en GitHub fuera de lanzar y cancelar la carga | Solo control.py escribe; el lector de GitHub Actions solo lee | A01 | `tests/test_run_monitor.py::test_d351_cancelling_is_the_only_write_and_the_read_only_module_still_has_none` |
 
@@ -200,3 +200,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.0 | 25-10-2026 | Un solo documento para las pruebas y la seguridad: qué se prueba, quién participa, amenazas, casos, procedimiento y las secuencias de una carga manual y de un cambio de código (D-290, documentos para todo lector) |
 | 3.1 | 30-10-2026 | Pruebas que bloquean y pruebas que informan; cuatro casos de seguridad nuevos, S-11 a S-14 (D-364); ejecución sin las pruebas de velocidad en GitHub |
 | 3.2 | 31-10-2026 | Redacción revisada; el Usuario, el Profesional y el Autor (3); la carga semanal corre solo las pruebas de datos (2, 9, D-366); la salida de una carga con las fuentes retrasadas (10, D-356); el token lanza, sigue y cancela la carga (7, 11); el documento pasa a `docs/calidad/` (D-381, D-388) |
+| 3.3 | 01-11-2026 | S-12: la parte del autor no se abre con una dirección ni en una pestaña nueva; una recarga de la pestaña conserva la vista (D-430) |

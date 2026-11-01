@@ -730,16 +730,16 @@ def submit_author_code():
 
 
 # D-357: the page reloads by itself to change the native theme (D-070), to print (D-280) and when a document opens
-# from the folder. Right before those reloads the browser tab keeps the view for a short while; a reload the reader
-# makes later keeps nothing, so the entry window asks again (D-340). D-427: the Autor comes along too, with a ticket the
-# server issued and checks, so the tab never holds anything that opens the Autor's view by itself. D-428: Streamlit
-# Community Cloud loads the page twice after such a reload (the app frame, then the whole page), so each page reads the
-# kept view once and leaves it for the second load. D-373: a click on the logo reopens the window.
+# from the folder. D-430: every run keeps the view in the browser tab, so any reload of the tab finds it (an ordinary
+# link, such as the report link of «Acción requerida», or F5): the view is chosen once per tab and only «Vista: … ·
+# Cambiar» or the logo (D-373) open the window again; a new tab or a new visit asks. D-427: the Autor comes along too,
+# with a ticket the server issued and checks and that expires with the Autor's session, so the tab never holds anything
+# that opens the Autor's view by itself. D-428: Streamlit Community Cloud loads the page twice after a reload (the app
+# frame, then the whole page), so each page reads the kept view once and leaves it for the second load.
 PROFILE_KEEPER_JS = r"""
 export default function(component) {
     const { setTriggerValue, data } = component;
     const KEY = "go-keep-profile";
-    const KEEP_MS = 30000;  // the two loads of a reload take a few seconds; a later reload of the reader asks again
     const store = window.sessionStorage;
     const remember = () => {
         if (!data || !data.perfil) return;
@@ -750,16 +750,13 @@ export default function(component) {
         } catch (e) {}
     };
     window.__goRemember = remember;
+    remember();  // D-430: each run, so a reload of this tab never asks for the view again
     // D-423: read even when the address already names the view, because the history of «Volver» comes along too.
     // D-428: once per page, and the kept view stays for the second load Streamlit Community Cloud makes.
     try {
         const raw = window.__goKeptRead ? null : store.getItem(KEY);
         window.__goKeptRead = true;
-        if (raw) {
-            const kept = JSON.parse(raw);
-            if (Date.now() - kept.t < KEEP_MS) setTriggerValue("keep", raw);
-            else store.removeItem(KEY);
-        }
+        if (raw) setTriggerValue("keep", raw);
     } catch (e) {}
     const handler = (event) => {
         // D-406: a channel card is a reload the app makes too, like a document of the folder

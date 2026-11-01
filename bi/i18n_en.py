@@ -1012,7 +1012,7 @@ PAGES = {
     "Escribir la clave del Autor y pulsar Enter, la correcta y otra": "Type the Author key and press Enter, the right one and another",
     "Entra solo con la correcta; con otra, «Clave incorrecta.» sin recargar": "It enters only with the right one; with another, «Clave incorrecta.» without reloading",
     "Autor por la dirección": "Author by the address",
-    'Abrir la parte del autor con una dirección o una recarga': "Open the author's part with an address or a reload",
+    'Abrir la parte del autor con una dirección o en una pestaña nueva': "Open the author's part with an address or in a new tab",
     'Vuelve «Elige tu vista» y la parte del autor no aparece': "«Elige tu vista» comes back and the author's part does not show",
     "Token en un log": "Token in a log",
     "Hacer que un log de GitHub imprima el token en la página «GitHub Actions»": "Make a GitHub log print the token in the page «GitHub Actions»",

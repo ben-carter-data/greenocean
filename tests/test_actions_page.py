@@ -216,7 +216,7 @@ def test_d339_a_fresh_visit_or_a_reload_never_reaches_the_author_part_whatever_t
     app.query_params.update(params)
     app.run()
     assert not app.exception
-    assert app.get("dialog")  # D-340: the entry window opens whatever the address says, on every visit and reload
+    assert app.get("dialog")  # D-340: the entry window opens whatever the address says, on every new visit (D-430)
     assert not app.session_state["admin_unlocked"] if "admin_unlocked" in app.session_state else True
     assert "perfil" not in app.query_params and "rol" not in app.query_params  # nothing of it is kept
     assert "GitHub Actions" not in menu_labels(app)

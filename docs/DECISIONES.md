@@ -3286,3 +3286,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - Nada se quitó: las mismas páginas, acciones, secretos, workflows y referencias del PRD. Mide unos 760 px a 960 px de ancho, en los dos idiomas, sin desborde a 820 px.
   - **Documentos:** SAD 3.10 (2.1), en los dos idiomas.
 - **Pruebas:** `tests/test_doc_diagrams.py::test_d429_…` y las de D-425, que siguen exigiendo cada página del menú en la sección de su perfil.
+
+## D-430 · La vista se elige una vez por pestaña: ninguna recarga la vuelve a pedir
+
+- **Reporte del autor:** como Autor, el enlace «Abrir el informe» del aviso «Acción requerida» llevaba a «Elige tu vista». Una vez dentro, la ventana no debe volver a aparecer, salvo que el lector toque el botón de la vista.
+- **Causa:** D-357 guardaba la vista solo antes de las recargas que la app conocía (un documento, imprimir, una tarjeta de canal, el tema). Un enlace común, como el del aviso, o F5 recargaban sin guardarla, y la sesión nueva pedía la vista.
+- **Decisión:**
+  - Cada ejecución guarda la vista, el rol, el historial de «Volver» y el ticket del Autor en la pestaña (`sessionStorage`); toda recarga de la pestaña la encuentra, sea un enlace, el aviso, F5 o una recarga de la app. Esto reemplaza la regla de D-340 de que la recarga del lector pide la vista.
+  - «Elige tu vista» aparece una vez por pestaña; después, solo «Vista: … · Cambiar» o el logo (D-373) la abren. Una pestaña nueva o una visita nueva la piden.
+  - **Seguridad:** sin cambios en el Autor: la pestaña guarda solo el ticket que emite el servidor, que vence con su sesión (30 min sin actividad, D-395) y que «Cerrar acceso» o cambiar de perfil anulan. Ninguna dirección abre la parte del autor.
+  - **Documentos:** RF-09 del PRD (3.12) y el MANUAL (7, 3.8), en los dos idiomas; ocurrencia en F-18.
+- **Pruebas:** `tests/test_app_reloads.py::test_d430_every_run_keeps_the_view_so_no_reload_of_the_tab_asks_for_it_again`, y las de D-357, D-427 y D-428 al día. En el navegador, como Autor: el enlace del aviso, F5 dos veces y «Centro de operación» siguen en «Autor»; una pestaña nueva pide la vista.
