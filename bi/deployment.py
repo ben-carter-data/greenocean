@@ -5,6 +5,9 @@ Nodes are the 3D boxes where something runs (devices and platforms); inside them
 workflows). The lines are the communication paths, each with its protocol. Every piece is a real one: the workflows
 in .github/workflows/, the files of the repository and the services the panel talks to. The live part reads the
 state of the weekly workflow and of the panel, the size of the served database and the dates of the last load.
+D-422: the release is its own environment (the repository keeps only the pointer, D-270), the three workflows are drawn
+(the weekly load and its quality report on one runner, the tests of each push on another) and the panel reads the
+database from the release.
 
 build_deployment_html() returns one HTML document for st.iframe (CSS only, no script).
 """
@@ -15,7 +18,7 @@ from urllib.parse import urlparse
 
 from bi import architecture, charts, control, project, queries, quality_view
 
-WIDTH, HEIGHT = 1000, 566
+WIDTH, HEIGHT = 1210, 566  # D-422: wider, not taller, so it keeps its height on screen
 DEPTH = 12
 REPOSITORY = Path(__file__).resolve().parent.parent
 # Nodes: key -> (x, y, width, height, stereotype, name). (x, y) is the front face; the top and the side stick out DEPTH.
@@ -23,9 +26,9 @@ NODES = {
     "odepa": (20, 40, 230, 92, "dispositivo", "ODEPA"),
     "ine": (20, 160, 230, 90, "dispositivo", "INE"),
     "author": (20, 300, 230, 190, "dispositivo", "Computador del autor"),
-    "github": (320, 40, 470, 480, "plataforma", "GitHub"),
-    "streamlit": (810, 40, 175, 300, "plataforma", "Streamlit Cloud"),
-    "browser": (810, 392, 175, 80, "dispositivo", "Navegador"),
+    "github": (320, 40, 680, 480, "plataforma", "GitHub"),
+    "streamlit": (1020, 40, 175, 300, "plataforma", "Streamlit Cloud"),
+    "browser": (1020, 392, 175, 80, "dispositivo", "Navegador"),
 }
 # Execution environments, nested in a node: key -> (x, y, width, height, node, name).
 ENVIRONMENTS = {
@@ -34,9 +37,12 @@ ENVIRONMENTS = {
     "repo": (336, 358, 206, 150, "github", "Repositorio · rama main"),
     "cache": (590, 84, 180, 56, "github", "Caché de Actions"),
     # D-383: the two reports, each where GitHub keeps it: the weekly report as an issue, the quality report as a pull request.
-    "issues": (590, 184, 180, 56, "github", "Issues"),
+    "issues": (590, 180, 180, 56, "github", "Issues"),
     "pulls": (590, 252, 180, 56, "github", "Pull requests"),
-    "app": (822, 84, 151, 236, "streamlit", "Streamlit"),
+    # D-422: the tests of each push run on a runner of their own, apart from the weekly load.
+    "tests": (590, 392, 180, 120, "github", "Runner ubuntu-latest"),
+    "release": (800, 196, 184, 94, "github", "Release «base-actual»"),
+    "app": (1032, 84, 151, 236, "streamlit", "Streamlit"),
     "venv": (32, 344, 206, 134, "author", "Python 3.11 o 3.12"),
 }
 # Communication paths: (path, protocol, chip position). Straight segments only. A protocol of two lines is a tuple.
@@ -46,11 +52,14 @@ PATHS = [
     ("M250 420 H336", "git push", (262, 414)),
     ("M440 320 V358", "git push", (452, 344)),
     ("M542 112 H590", "", None),
-    ("M542 212 H590", "", None),
+    ("M542 208 H590", "", None),
     ("M542 280 H590", "", None),
-    ("M810 158 H542", ("API REST de GitHub", "lanzar, leer estado y logs, cancelar"), (548, 152)),  # D-370
-    ("M542 440 H640 V326 H810", "despliegue de main", (650, 320)),
-    ("M897 392 V340", "HTTPS", (908, 372)),
+    ("M542 316 H892 V290", "gh release upload", (790, 336)),  # D-422: the load replaces the served database
+    ("M542 450 H590", "", None),  # D-422: every push starts the tests
+    ("M1020 158 H542", ("API REST de GitHub", "lanzar, leer estado y logs, cancelar"), (548, 152)),  # D-370
+    ("M1020 278 H984", "", None),  # D-422: the panel downloads the database from the release
+    ("M542 372 H1060 V340", "despliegue de main", (800, 366)),
+    ("M1107 392 V340", "HTTPS", (1118, 372)),
 ]
 # What each node says on hover: what runs there and how it was deployed.
 TIPS = {
@@ -63,18 +72,22 @@ TIPS = {
     "las pruebas se corren antes de cada commit.",
     "venv": "El entorno de Python del autor: el panel, la ingesta, el ETL y dbt, más pytest. dbt corre en un entorno aparte. "
     "Aquí vive el aterrizaje raw.db, que no se sube a git.",
-    "runner": "Una máquina Ubuntu de GitHub Actions que nace y se borra en cada ejecución: el job semanal de cada martes "
-    "(semanal.yml) y las pruebas de cada push (pruebas.yml).",
+    "runner": "Una máquina Ubuntu de GitHub Actions que nace y se borra en cada ejecución: la carga de cada martes "
+    "(semanal.yml) y, al terminar, la medición de calidad que propone el informe (calidad.yml).",
+    "tests": "Otra máquina Ubuntu, aparte de la carga: en cada push corre las pruebas (pruebas.yml: lint, mypy y pytest en "
+    "Python 3.11 y 3.12) y mide la calidad sin proponer informe (calidad.yml). No toca la base publicada.",
+    "release": "Guarda la base servida, datos.duckdb, fuera de git. Solo si pasan todas las pruebas, la carga la reemplaza "
+    "(D-270); el panel la descarga de aquí.",
     "python": "El entorno Python 3.11 del runner: descarga, aterrizaje en SQLite, bronce en Parquet y dbt build sobre DuckDB.",
-    "repo": "El repositorio público: el código en la rama main y la base servida en el release «base-actual». Solo si pasan "
-    "todas las pruebas, la carga reemplaza la base del release y sube su puntero con un commit «Weekly data update» (D-270).",
+    "repo": "El repositorio público, rama main: el código y el puntero datos.version, que dice qué base del release está "
+    "publicada. Solo si pasan todas las pruebas, la carga sube el puntero con un commit «Weekly data update» (D-270).",
     "cache": "Guarda los CSV de los años cerrados, que ya no cambian, para no descargarlos cada semana. Se borra si no se usa en 7 días.",
     "issues": "Al final de cada carga, el workflow semanal (semanal.yml) abre un issue «Informe semanal» con lo que se cargó "
     "y lo que se revisó.",
     "pulls": "Después de cada carga semanal, el workflow de calidad (calidad.yml) mide los indicadores y propone el informe de "
     "calidad numerado como un pull request, que el autor revisa y aprueba antes de que el panel lo muestre (D-331, D-363).",
     "app": "Streamlit ejecuta bi/dashboard.py desde la rama main. Descarga del release la base de la última carga, comprueba su "
-    "huella y la lee en solo lectura; guarda los secretos del panel y, con la clave de control, lanza la carga por la API de GitHub.",
+    "huella y la lee en solo lectura; guarda los secretos del panel y, en la sesión del Autor, lanza la carga por la API de GitHub.",
     "browser": "El Usuario, el Profesional o el Autor. El panel público no pide cuenta; la clave de control solo abre lo del Autor, "
     "como el botón «Ejecutar pipeline ahora».",
 }
@@ -103,8 +116,8 @@ def build_css(palette):
 html, body {{ margin:0; background:transparent; color:{text}; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
 svg.dep {{ display:block; width:100%; height:auto; overflow:visible; }}
 .front {{ fill:{'rgba(255,255,255,.04)' if dark else '#ffffff'}; stroke:{ink}; stroke-width:1.5; }}
-.top {{ fill:{'rgba(255,255,255,.10)' if dark else '#e3e9f2'}; stroke:{ink}; stroke-width:1.5; stroke-linejoin:round; }}
-.side {{ fill:{'rgba(255,255,255,.02)' if dark else '#cfd8e6'}; stroke:{ink}; stroke-width:1.5; stroke-linejoin:round; }}
+.top {{ fill:{'rgba(255,255,255,.06)' if dark else '#e3e9f2'}; stroke:{muted}; stroke-width:1.2; stroke-linejoin:round; }}
+.side {{ fill:{'rgba(255,255,255,.03)' if dark else '#dfe6f0'}; stroke:{muted}; stroke-width:1.2; stroke-linejoin:round; }}
 .env {{ fill:{card}; stroke:{muted}; stroke-width:1.2; }}
 .env.inner {{ fill:{'rgba(255,255,255,.05)' if dark else '#f4f7fb'}; stroke-dasharray:5 4; }}
 .node, .envg {{ outline:none; cursor:default; }}
@@ -185,10 +198,10 @@ def build_contents(states, figures):
         "author": heading(34, 324, "dispositivo", "Computador del autor"),
         "github": heading(334, 64, "plataforma", "GitHub")
         + '<text class="note" x="400" y="80">código, automatización e informes</text>',
-        "streamlit": heading(824, 64, "plataforma", "Streamlit Cloud"),
+        "streamlit": heading(1034, 64, "plataforma", "Streamlit Cloud"),
         "browser": (
-            heading(824, 416, "dispositivo", "Navegador")
-            + '<text class="note" x="824" y="452">Usuario, Profesional o Autor</text>'
+            heading(1034, 416, "dispositivo", "Navegador")
+            + '<text class="note" x="1034" y="452">Usuario, Profesional o Autor</text>'
         ),
     }
     envs = {
@@ -197,8 +210,8 @@ def build_contents(states, figures):
             + '<text class="note" x="348" y="138">efímero: nace en cada ejecución</text>'
             + artifact(348, 158, "semanal.yml")
             + f'<text class="live" x="366" y="173">próxima {esc(figures.get("next_run", ""))}</text>'
-            + artifact(348, 192, "pruebas.yml")
-            + '<text class="note" x="366" y="207">en cada push</text>'
+            + artifact(348, 192, "calidad.yml")
+            + '<text class="note" x="366" y="207">después de cada carga</text>'
             + state_dot(526, 102, states.get("workflow"))
         ),
         "python": (
@@ -208,26 +221,37 @@ def build_contents(states, figures):
             + artifact(356, 302, "dbt build · DuckDB")
         ),
         "repo": (
-            heading(348, 378, "entorno de ejecución", "Repositorio · main y release")
+            heading(348, 378, "entorno de ejecución", "Repositorio · rama main")
             + artifact(348, 414, "código del proyecto")
-            + artifact(348, 430, f"datos.duckdb · {project.describe_file_size(queries.DATABASE_FILE)}")
-            + artifact(348, 446, "datos.version · puntero")
-            + artifact(348, 462, "manifest.json")
+            + artifact(348, 430, "datos.version · puntero")
+            + artifact(348, 446, "manifest.json")
             + f'<text class="live" x="348" y="486">{esc(figures.get("week_prices", ""))}</text>'
+        ),
+        "release": (
+            heading(812, 216, "entorno de ejecución", "Release «base-actual»")
+            + artifact(812, 254, f"datos.duckdb · {project.describe_file_size(queries.DATABASE_FILE)}")
+            + '<text class="note" x="830" y="270">fuera de git</text>'
+        ),
+        "tests": (
+            heading(602, 412, "entorno de ejecución", "Runner ubuntu-latest")
+            + '<text class="note" x="602" y="446">aparte, en cada push</text>'
+            + artifact(602, 466, "pruebas.yml")
+            + '<text class="note" x="620" y="481">lint · pytest 3.11 y 3.12</text>'
+            + artifact(602, 500, "calidad.yml · solo mide")
         ),
         "cache": heading(602, 100, "entorno de ejecución", "Caché de Actions")
         + artifact(602, 134, "CSV de años cerrados"),
         "issues": heading(602, 200, "entorno de ejecución", "Issues") + artifact(602, 234, "informe semanal"),
         "pulls": heading(602, 268, "entorno de ejecución", "Pull requests") + artifact(602, 302, "informe de calidad"),
         "app": (
-            heading(834, 104, "entorno de ejecución", "Streamlit")
-            + artifact(834, 150, "dashboard.py")
-            + artifact(834, 172, "datos.duckdb")
-            + '<text class="note" x="852" y="187">solo lectura</text>'
-            + artifact(834, 210, "st.secrets")
-            + '<text class="note" x="852" y="225">token y clave</text>'
-            + f'<text class="live" x="834" y="256">{esc(figures.get("panel_time", ""))}</text>'
-            + state_dot(958, 118, states.get("panel"))
+            heading(1044, 104, "entorno de ejecución", "Streamlit")
+            + artifact(1044, 150, "dashboard.py")
+            + artifact(1044, 172, "datos.duckdb")
+            + '<text class="note" x="1062" y="187">solo lectura</text>'
+            + artifact(1044, 210, "st.secrets")
+            + '<text class="note" x="1062" y="225">tokens y clave</text>'
+            + f'<text class="live" x="1044" y="256">{esc(figures.get("panel_time", ""))}</text>'
+            + state_dot(1168, 118, states.get("panel"))
         ),
         "venv": (
             heading(44, 364, "entorno de ejecución", "Python 3.11 o 3.12")

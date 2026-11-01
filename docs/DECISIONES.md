@@ -3195,3 +3195,15 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - `tests/test_dashboard.py::test_d421_…`: como Autor no hay campo de clave y la ventana lanza la carga; el panel tiene un solo campo de clave; «Recargar datos» no actúa sin la sesión del Autor y la cancelación está detrás de `is_author()`.
   - `tests/test_dashboard.py::test_d202_…`: sin la sesión, la ventana de la ejecución no lanza nada ni pide clave.
   - `tests/test_operation_center.py::test_d165_…`: el Centro de operación del Autor muestra la ejecución manual sin campo de clave.
+
+## D-422 · El diagrama de despliegue muestra el release aparte y los tres workflows
+
+- **Pedido del autor:** en «Centro de operación › Despliegue», separar el release en su propia caja con `datos.duckdb` y dejar en el repositorio solo `datos.version`; agregar `calidad.yml` y mostrar que `pruebas.yml` corre aparte, en cada push; quitar la franja blanca a la derecha de Streamlit.
+- **Decisión:**
+  - **Release:** un entorno propio, «Release «base-actual»», con `datos.duckdb` y su tamaño. El repositorio (rama `main`) guarda el código, el puntero `datos.version` y `manifest.json` (D-270). La carga sube la base al release («gh release upload») y el panel la descarga de ahí: las dos flechas están dibujadas.
+  - **Workflows:** el runner de la carga tiene `semanal.yml` y, después de cada carga, `calidad.yml`, que propone el informe como pull request. Las pruebas de cada push corren en otro runner, aparte: `pruebas.yml` (lint y pytest en Python 3.11 y 3.12) y `calidad.yml`, que solo mide. Una flecha va del repositorio a ese runner.
+  - **Tamaño:** el dibujo es más ancho (1210 de ancho), no más alto, así que sigue cabiendo en una pantalla.
+  - **Franja:** la cara lateral de cada caja 3D se dibujaba con el borde blanco del texto, y en la caja de Streamlit Cloud, la última a la derecha, se leía como una franja blanca. Las caras lateral y superior llevan ahora el borde gris suave del resto del dibujo.
+  - **Textos:** el panel guarda «tokens y clave» (D-397, D-421); la nota del panel dice que lanza la carga en la sesión del Autor. Todo con su inglés.
+  - **Documentos:** el SAD (7) cuenta las dos máquinas, los tres workflows y la descarga desde el release, en los dos idiomas (versión 3.6).
+- **Pruebas:** `tests/test_deployment.py::test_d422_…`: el release tiene `datos.duckdb` y el repositorio no; el runner de la carga tiene `semanal.yml` y `calidad.yml`, y el de cada push `pruebas.yml` y `calidad.yml`; las flechas al release, desde el release y hacia las pruebas existen; ninguna caja se sale del dibujo.

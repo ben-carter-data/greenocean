@@ -108,3 +108,26 @@ def test_d383_the_weekly_report_is_an_issue_and_the_quality_report_a_pull_reques
         deployment.TIPS["pulls"],
     ):
         assert text in i18n_en.PAGES, text
+
+
+def test_d422_the_release_has_its_own_box_and_the_three_workflows_are_drawn():
+    page = draw()
+    size = project.describe_file_size(queries.DATABASE_FILE)
+    # the served database lives in the release; the repository keeps only its pointer (D-270)
+    release = page.split('id="n-release"')[1].split("</g>")[0]
+    repo = page.split('id="n-repo"')[1].split("</g>")[0]
+    assert "Release «base-actual»" in release and f"datos.duckdb · {size}" in release
+    assert "datos.version" in repo and "datos.duckdb" not in repo
+    # the weekly runner holds the load and its quality report; the tests of each push run on a runner of their own
+    runner = page.split('id="n-runner"')[1].split('id="n-python"')[0]
+    tests = page.split('id="n-tests"')[1].split("</g>")[0]
+    assert "semanal.yml" in runner and "calidad.yml" in runner and "pruebas.yml" not in runner
+    assert "pruebas.yml" in tests and "en cada push" in tests and "calidad.yml" in tests
+    calidad = (REPOSITORY / ".github/workflows/calidad.yml").read_text(encoding="utf-8")
+    assert "push:" in calidad and "workflow_run" in calidad  # it measures on each push and proposes after the load
+    # the load uploads to the release, the panel downloads from it and every push starts the tests
+    paths = [d for d, *_ in deployment.PATHS]
+    assert "M542 316 H892 V290" in paths and "M1020 278 H984" in paths and "M542 450 H590" in paths
+    # nothing is drawn past the frame: the side of the last node ends inside the drawing (no stripe on the right)
+    right = max(x + width + deployment.DEPTH for x, _, width, *_ in deployment.NODES.values())
+    assert right <= deployment.WIDTH

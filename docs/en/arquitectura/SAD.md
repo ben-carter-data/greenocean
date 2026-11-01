@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.5 |
+| Version | 3.6 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -328,10 +328,11 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 
 | Piece | Where it runs | Detail |
 |---|---|---|
-| Weekly load and the tests of each change | GitHub Actions machines (Ubuntu, Python 3.11) | Created and discarded on each run; the CSV files of closed years stay in the Actions cache |
+| Weekly load and its quality report | GitHub Actions machines (Ubuntu, Python 3.11): `semanal.yml` and, when it ends, `calidad.yml` | Created and discarded on each run; the CSV files of closed years stay in the Actions cache |
+| Tests of each push | Another GitHub Actions machine, apart from the load: `pruebas.yml` (lint and pytest on Python 3.11 and 3.12) and `calidad.yml`, which only measures | They never touch the published database |
 | Code and database pointer | GitHub repository, `main` branch | |
-| Served database | «base-actual» release of the repository | A single copy, replaced by each load |
-| Panel | Streamlit Community Cloud, from `main` | Keeps the secrets: the GitHub token and the control code |
+| Served database | «base-actual» release of the repository | A single copy, replaced by each load; the panel downloads it from there |
+| Panel | Streamlit Community Cloud, from `main` | Keeps the secrets: the GitHub tokens and the Author's key |
 | Landing (`etl/raw.db`) | The author's computer and the machine of each load | Not versioned |
 | Reports | GitHub repository | The weekly report is an issue; the quality report, a pull request the author approves (D-383) |
 
@@ -468,3 +469,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.3 | 2026-10-31 | Wording reviewed; the three people of the context, each with what it sees (2); the GitHub API says start, read state and logs, cancel (3); the quality report as a pull request (4, 7, 8); the data quality indicators and those of the quality plan (8); the document moves to `docs/arquitectura/` (D-381 to D-384, D-388) |
 | 3.4 | 2026-11-01 | The system flow, with the fixed picture of the live view (3.3, D-412 to D-414) |
 | 3.5 | 2026-11-01 | Who writes and who reads on the GitHub API (3.2); the live flow in observability, the page «Settings» and the tokens' warning at 15 days (8); one screen also at 1280 × 800 (8, D-407 to D-417) |
+| 3.6 | 2026-11-01 | The deployment: the release in its own box, the three workflows and the separate machine for the tests of each push (7, D-422) |

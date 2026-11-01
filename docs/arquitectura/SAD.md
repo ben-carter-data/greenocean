@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.5 |
+| Versión | 3.6 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -328,10 +328,11 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 
 | Pieza | Dónde corre | Detalle |
 |---|---|---|
-| Carga semanal y pruebas de cada cambio | Máquinas de GitHub Actions (Ubuntu, Python 3.11) | Se crean y se descartan en cada ejecución; los CSV de años cerrados quedan en la caché de Actions |
+| Carga semanal y su informe de calidad | Máquinas de GitHub Actions (Ubuntu, Python 3.11): `semanal.yml` y, al terminar, `calidad.yml` | Se crean y se descartan en cada ejecución; los CSV de años cerrados quedan en la caché de Actions |
+| Pruebas de cada push | Otra máquina de GitHub Actions, aparte de la carga: `pruebas.yml` (lint y pytest en Python 3.11 y 3.12) y `calidad.yml`, que solo mide | No tocan la base publicada |
 | Código y puntero de la base | Repositorio de GitHub, rama `main` | |
-| Base servida | Release «base-actual» del repositorio | Una sola copia, reemplazada por cada carga |
-| Panel | Streamlit Community Cloud, desde `main` | Guarda los secretos: el token de GitHub y la clave de control |
+| Base servida | Release «base-actual» del repositorio | Una sola copia, reemplazada por cada carga; el panel la descarga de ahí |
+| Panel | Streamlit Community Cloud, desde `main` | Guarda los secretos: los tokens de GitHub y la clave del Autor |
 | Aterrizaje (`etl/raw.db`) | Computador del autor y máquina de cada carga | No se versiona |
 | Informes | Repositorio de GitHub | El informe semanal es un issue; el informe de calidad, un pull request que el autor aprueba (D-383) |
 
@@ -468,3 +469,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.3 | 31-10-2026 | Redacción revisada; las tres personas del contexto, cada una con lo que ve (2); la API de GitHub dice lanzar, leer estado y logs, cancelar (3); el informe de calidad como pull request (4, 7, 8); los indicadores de calidad de los datos y los del plan de calidad (8); el documento pasa a `docs/arquitectura/` (D-381 a D-384, D-388) |
 | 3.4 | 01-11-2026 | El flujo del sistema, con la imagen fija de la vista en vivo (3.3, D-412 a D-414) |
 | 3.5 | 01-11-2026 | Quién escribe y quién lee en la API de GitHub (3.2); el flujo en vivo en la observabilidad, la página «Configuración» y el aviso de los tokens a 15 días (8); una pantalla también a 1280 × 800 (8, D-407 a D-417) |
+| 3.6 | 01-11-2026 | El despliegue: el release en su propia caja, los tres workflows y la máquina aparte de las pruebas de cada push (7, D-422) |
