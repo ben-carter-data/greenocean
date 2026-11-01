@@ -654,3 +654,22 @@ ul.mock-calc-out li em {font-style:normal;}
  .st-key-home_overview .mock-products-note {display:none!important;}
  .st-key-home_overview .mock-products-table {max-height:max(90px, calc(100vh - 712px))!important;}
 }
+
+/* D-408: once a family is chosen, the steps 1 and 2 fold into one line each (what was chosen and «Cambiar») and the
+   products table takes the whole width and the height they leave: 8 rows or more at 1440 x 790, 6 at 1280 x 800. */
+.st-key-home_chosen {gap:8px 12px!important;flex-wrap:wrap!important;justify-content:flex-start!important;}
+.st-key-home_chosen > * {flex:0 0 auto!important;width:auto!important;min-width:0!important;}
+[class*="st-key-home_chosen_"] {width:fit-content!important;flex:0 0 auto!important;gap:10px!important;border:1px solid __BORDER__;
+ border-radius:999px;background:__PANEL__;padding:3px 4px 3px 5px;}
+[class*="st-key-home_chosen_"] [data-testid="stMarkdownContainer"] {margin-bottom:0!important;}
+.mock-chosen {display:flex;align-items:center;gap:8px;font-size:13px;color:__MUTED__;white-space:nowrap;}
+.mock-chosen b {display:inline-flex;align-items:center;justify-content:center;flex:none;width:22px;height:22px;border-radius:50%;
+ background:__ACCENT__;color:#ffffff;font-size:12.5px;font-weight:800;}
+.mock-chosen strong {color:__INK__;font-size:14px;font-weight:700;}
+[class*="st-key-home_change_"] button {min-height:28px!important;padding:0 12px!important;border-radius:999px!important;}
+.st-key-home_focus .mock-products-table {max-height:max(240px, calc(100vh - 360px))!important;min-height:0!important;}
+.st-key-home_focus .mock-products-table td:first-child strong {display:block;}
+.st-key-home_focus .mock-products-table td:first-child small {display:inline;}
+.st-key-home_focus .mock-products-table td:first-child .mock-calc {display:inline-block;margin:0 0 0 10px;}
+.st-key-home_focus .mock-products-table td {padding-top:3px;padding-bottom:3px;line-height:1.3;}
+@media (max-height:860px) {.st-key-home_focus .mock-products-note {display:none!important;}}

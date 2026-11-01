@@ -411,6 +411,17 @@ def step_chip(step, texts=None):
     )
 
 
+def chosen_step(step, label, value, average=None):
+    """D-408: a step already chosen, folded into one line: its number, what was chosen and, for a family, its median
+    change. The button «Cambiar» beside it opens the steps again."""
+    chip = (
+        ''
+        if average is None
+        else f'<span class="mock-products-chip {change_state(average)}">{percent(average * 100, True)}</span>'
+    )
+    return f'<div class="mock-chosen"><b>{step}</b><span>{esc(label)}</span><strong>{esc(value)}</strong>{chip}</div>'
+
+
 def lock_overlay(step, texts=None):
     """D-352: the padlock and the sentence over a panel the reader cannot use yet."""
     lock = (

@@ -3692,6 +3692,12 @@ HOME_LINK_PARAMETERS = ("_home_region", "_home_week", "familia")
 HOME_STEP_PARAMETER = "_home_step"
 HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_FLASH = "home_region_done", "home_family_done", "home_flash"
 HOME_SEARCHED = "home_searched"  # D-372
+HOME_EXPANDED = "home_expanded"  # D-408: the steps 1 and 2 opened again with «Cambiar»
+
+
+def open_home_steps(key):
+    """D-408: «Cambiar» opens the steps 1 and 2 again; choosing a family folds them."""
+    st.session_state[key] = True
 
 
 def apply_home_link_click():
@@ -3712,6 +3718,8 @@ def apply_home_link_click():
         st.session_state[scoped(HOME_REGION_DONE)] = True
         st.session_state[scoped(HOME_FAMILY_DONE)] = True
         st.session_state[scoped(HOME_FLASH)] = "products"
+    if step == "family":
+        st.session_state.pop(scoped(HOME_EXPANDED), None)  # D-408: a family chosen folds the steps 1 and 2 again
     for name in HOME_LINK_PARAMETERS:
         if parameters.get(name):
             st.query_params[name] = parameters[name][0]
@@ -4476,47 +4484,11 @@ def show_market_overview(mode, prefix):
     if home_view == HOME_VIEWS[1]:
         show_weeks_panel(mode)
         return
-    map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
-    # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
-    # sanitizer intentionally removes interactive SVG links.
-    map_column.markdown(
-        '<div class="greenocean-mockup">'
-        + home_mockup.regional_map(
-            regional_rows,
-            lambda chosen: overview_link(chosen, family, 'region'),
-            model['week_label'],
-            model['previous_label'],
-            None if region == ALL_VALUES else region,
-            step=1,
-            all_link=overview_link(None, family, 'region'),
-            prompt=not region_open,
-        )
-        + '</div>',
-        unsafe_allow_html=True,
-    )
-    trends, basket_trend = read_home_trends(get_database_version(), week)
-    basket_value = home_mockup.basket_median(model['family_rows'])
-    with detail_column:
-        with st.container(key='home_families'):
-            if not region_open:
-                st.markdown(
-                    f'<div class="greenocean-mockup">{home_mockup.lock_overlay(2)}</div>', unsafe_allow_html=True
-                )
-            st.markdown(
-                '<div class="greenocean-mockup">'
-                + home_mockup.family_movement(
-                    model['family_rows'],
-                    lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen, 'family'),
-                    family,
-                    scope,
-                    home_mockup.movement_note(model),
-                    step=2,
-                    trends=trends,
-                    basket=None if basket_value is None else (basket_value, basket_trend),
-                )
-                + '</div>',
-                unsafe_allow_html=True,
-            )
+    # D-408: once a family is chosen, the steps 1 and 2 fold into one line each, with what was chosen and «Cambiar»,
+    # and the products table takes the whole width and the height they leave; «Cambiar» opens them again.
+    folded = family_open and not st.session_state.get(scoped(HOME_EXPANDED))
+
+    def show_products():
         with st.container(key='home_products'):
             if not family_open:
                 st.markdown(
@@ -4615,6 +4587,75 @@ def show_market_overview(mode, prefix):
                     published,
                     note,
                 )
+
+    if folded:
+        family_average = next((value for name, value, _ in averages if name == family), None)
+        region_name = 'Todo Chile' if region == ALL_VALUES else home_mockup.short_region(region)
+        with st.container(key='home_chosen', horizontal=True, vertical_alignment='center'):
+            for target, step, label, value, average in (
+                ('region', 1, 'Región', region_name, None),
+                ('family', 2, 'Familia', home_mockup.short_family(family), family_average),
+            ):
+                with st.container(key=f'home_chosen_{target}', horizontal=True, vertical_alignment='center'):
+                    st.markdown(
+                        '<div class="greenocean-mockup">'
+                        + home_mockup.chosen_step(step, label, value, average)
+                        + '</div>',
+                        unsafe_allow_html=True,
+                        width='content',
+                    )
+                    st.button(
+                        tr('Cambiar'),
+                        key=f'home_change_{target}',
+                        on_click=open_home_steps,
+                        args=(scoped(HOME_EXPANDED),),
+                        help=tr('Volver a los pasos 1 y 2 para elegir otra región o familia.'),
+                    )
+        with st.container(key='home_focus'):
+            show_products()
+    else:
+        map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
+        # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
+        # sanitizer intentionally removes interactive SVG links.
+        map_column.markdown(
+            '<div class="greenocean-mockup">'
+            + home_mockup.regional_map(
+                regional_rows,
+                lambda chosen: overview_link(chosen, family, 'region'),
+                model['week_label'],
+                model['previous_label'],
+                None if region == ALL_VALUES else region,
+                step=1,
+                all_link=overview_link(None, family, 'region'),
+                prompt=not region_open,
+            )
+            + '</div>',
+            unsafe_allow_html=True,
+        )
+        trends, basket_trend = read_home_trends(get_database_version(), week)
+        basket_value = home_mockup.basket_median(model['family_rows'])
+        with detail_column:
+            with st.container(key='home_families'):
+                if not region_open:
+                    st.markdown(
+                        f'<div class="greenocean-mockup">{home_mockup.lock_overlay(2)}</div>', unsafe_allow_html=True
+                    )
+                st.markdown(
+                    '<div class="greenocean-mockup">'
+                    + home_mockup.family_movement(
+                        model['family_rows'],
+                        lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen, 'family'),
+                        family,
+                        scope,
+                        home_mockup.movement_note(model),
+                        step=2,
+                        trends=trends,
+                        basket=None if basket_value is None else (basket_value, basket_trend),
+                    )
+                    + '</div>',
+                    unsafe_allow_html=True,
+                )
+            show_products()
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown(
         '<div class="greenocean-mockup">'

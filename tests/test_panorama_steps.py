@@ -65,8 +65,8 @@ def test_d352_todo_chile_opens_step_two_a_family_opens_step_three_and_an_open_st
     family = draw("consulta", link="?_home_region=Todas&_home_week=2026-10-12&familia=Frutas&_home_step=family")
     text = page(family)
     assert family.session_state["home_family_done"] and "Elige primero" not in text
-    assert 'class="mock-lock"' not in text and 'mock-movement-row' in text
-    assert re.search(r"mock-movement-row (rise|fall|neutral) selected", text)  # now one family is chosen
+    assert 'class="mock-lock"' not in text and 'class="mock-movement-row' not in text  # D-408: steps 1 and 2 fold
+    assert '<span>Familia</span><strong>Frutas</strong>' in text  # the family chosen, in its folded line
     # Changing the region afterwards keeps both open: the flags stay in the session.
     again = draw(
         "consulta",
@@ -159,3 +159,46 @@ def test_d352_the_trends_are_calculated_from_the_weekly_variations_last_eight_we
     assert all(len(series) <= 8 for series in by_family.values())
     app = draw("profesional")
     assert page(app).count('class="mock-spark') >= len(by_family)  # one little line per family, plus the basket's
+
+
+FAMILY_CLICK = "?_home_region=Todas&_home_week=2026-10-12&familia=Frutas&_home_step=family"
+
+
+@needs_database
+def test_d408_a_family_chosen_folds_steps_one_and_two_into_a_line_with_cambiar():
+    app = draw("profesional", state={"home_region_done": True, "home_family_done": True}, query={"familia": "Frutas"})
+    text = page(app)
+    assert not app.exception
+    assert '<div class="mock-chosen"><b>1</b><span>Región</span><strong>Todo Chile</strong></div>' in text
+    assert '<b>2</b><span>Familia</span><strong>Frutas</strong><span class="mock-products-chip' in text
+    assert (
+        'class="mock-chile-map"' not in text and 'class="mock-movement-row' not in text
+    )  # the map and the families leave
+    assert "3</b><span>Mira los productos" in text and 'class="mock-products-table"' in text
+    assert {"home_change_region", "home_change_family"} <= {str(button.key) for button in app.button}
+    # «Cambiar» opens the steps again, with the family still chosen and nothing locked
+    app.button(key="home_change_family").click().run()
+    text = page(app)
+    assert 'class="mock-chile-map"' in text and re.search(r"mock-movement-row (rise|fall|neutral) selected", text)
+    assert 'class="mock-chosen"' not in text and 'class="mock-lock"' not in text
+
+
+@needs_database
+def test_d408_choosing_a_family_again_folds_the_steps_and_a_region_alone_does_not():
+    state = {"home_region_done": True, "home_family_done": True, "home_expanded": True}
+    region = draw(
+        "profesional", state=state, link="?_home_region=Todas&_home_week=2026-10-12&familia=Frutas&_home_step=region"
+    )
+    assert region.session_state["home_expanded"] and 'class="mock-chile-map"' in page(region)  # still choosing
+    family = draw("profesional", state=state, link=FAMILY_CLICK)
+    assert "home_expanded" not in family.session_state and 'class="mock-chosen"' in page(family)
+
+
+def test_d408_the_folded_table_takes_the_height_and_its_rows_two_lines():
+    css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
+    # 8 rows or more at 1440 x 790 and 6 at 1280 x 800, measured with Playwright (D-408)
+    assert ".st-key-home_focus .mock-products-table {max-height:max(240px, calc(100vh - 360px))!important;" in css
+    assert ".st-key-home_focus .mock-products-table td:first-child .mock-calc {display:inline-block;" in css
+    assert home_mockup.chosen_step(1, "Región", "Biobío") == (
+        '<div class="mock-chosen"><b>1</b><span>Región</span><strong>Biobío</strong></div>'
+    )

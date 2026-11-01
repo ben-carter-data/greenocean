@@ -221,3 +221,18 @@ def test_d406_a_card_keeps_the_view_and_the_steps_of_a_channel_do_not_reload_the
         "params.get('vista') === here.get('vista') && params.get('canal') === here.get('canal')"
         in dashboard.HOME_LINKS_JS
     )
+
+
+@needs_database
+def test_d408_a_channel_folds_its_steps_like_the_panorama():
+    app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
+    app.session_state["visitor_profile"] = "profesional"
+    app.session_state["home_region_done@Feria libre"] = True
+    app.session_state["home_family_done@Feria libre"] = True
+    app.query_params.update({"vista": dashboard.PAGE_CHANNELS, "canal": "Feria libre", "familia": "Frutas"})
+    app.run()
+    assert not app.exception
+    page = " ".join(block.value for block in app.markdown)
+    assert '<span>Familia</span><strong>Frutas</strong>' in page and 'class="mock-chile-map"' not in page
+    app.button(key="home_change_region").click().run()  # the state of the channel, never the Panorama's
+    assert app.session_state["home_expanded@Feria libre"] and "home_expanded" not in app.session_state
