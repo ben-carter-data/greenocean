@@ -246,3 +246,26 @@ def test_d380_the_names_of_the_changed_files_join_in_the_language_of_the_visit()
     source = inspect.getsource(dashboard)
     assert '" y ".join(changed_files)' not in source and "i18n.join_names(changed_files)" in source
     assert i18n.join_names(["consumer_2026.csv", "wholesale_2026.csv"]) == "consumer_2026.csv y wholesale_2026.csv"
+
+
+def test_d391_the_quality_pipeline_reads_in_english_down_to_its_kickers_and_legend(monkeypatch):
+    """The short words of the diagram (gates, «Mide», the legend) and the «Volver a medir» button have their English."""
+    from bi import i18n, quality_live
+
+    monkeypatch.setattr(i18n, "is_english", lambda: True)
+    words = quality_live.NUMBER_WORDS
+    head = f"{words[len(quality_live.GATE_VIEW)].capitalize()} puertas · {words[len(quality_live.HUB)]} dimensiones · un veredicto"
+    kickers = [title.partition(" · ")[0] for title, *_ in quality_live.GATE_VIEW]
+    for text in [
+        head,
+        *kickers,
+        "Origen",
+        "Archivos",
+        "Base",
+        "Mide",
+        "Rechazo",
+        "Rechazo o a revisar",
+        "Falla",
+        "Volver a medir",
+    ]:
+        assert i18n.translate_text(text) != text, text

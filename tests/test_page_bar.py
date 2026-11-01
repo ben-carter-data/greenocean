@@ -133,3 +133,10 @@ def test_d268_the_sql_filters_and_status_bar_fit_a_narrow_window():
     css = sql_explorer.build_css(charts.get_palette(charts.MODE_DARK))
     assert '.st-key-sqlx_params > [data-testid="stElementContainer"]:has([data-testid="stSelectbox"])' in css
     assert ".sqlx-status span:nth-child(4) { display:none; }" in css
+
+
+def test_d391_a_page_opened_from_a_button_sits_in_the_menu_section_of_the_page_it_opens_from():
+    for view, parent in dashboard.DOOR_PAGES.items():
+        path = dashboard.build_view_path(dashboard.WINDOW_OF_VIEW[view], view)
+        assert path == f"{dashboard.MENU_BLOCK_OF_VIEW[parent]} › {dashboard.SIDEBAR_LABELS[view]}", path
+        assert "Dashboard" not in path  # the old name of the window, which the menu no longer uses

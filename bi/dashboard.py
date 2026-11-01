@@ -2196,6 +2196,8 @@ def build_view_path(window, view):
         path = label if block == label else f"{block} › {label}"
     if view in FOLDER_ORDER:
         path = f"{tr(PAGE_FOLDER)} › {label}"
+    if view in DOOR_PAGES:  # D-391: a page opened from a button sits in the menu section of the page it opens from
+        path = f"{tr(MENU_BLOCK_OF_VIEW[DOOR_PAGES[view]])} › {label}"
     return path
 
 

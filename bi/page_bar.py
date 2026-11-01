@@ -41,7 +41,8 @@ def build_css(palette):
 .page-bar-path:not(:has(b)) {{ padding-right:0; border-right:0; }}
 .page-bar-title + .page-chip {{ margin-left:auto; }}
 .page-bar-path b {{ color:{ink}; font-weight:600; }}
-.page-bar-title {{ flex:0 1 auto; min-width:9em; margin:0 4px 0 2px; font-size:14.5px; font-weight:600; line-height:1.3;
+/* D-391: the question gives way to the path and the chips; its full text stays on hover. */
+.page-bar-title {{ flex:0 1 auto; min-width:6.5em; margin:0 4px 0 2px; font-size:14.5px; font-weight:600; line-height:1.3;
   letter-spacing:-.01em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:default; }}
 .page-chip {{ flex:none; display:inline-flex; align-items:baseline; gap:6px; padding:3px 9px; border-radius:8px; background:{soft};
   color:{ink}; font-size:13.5px; line-height:1.35; font-variant-numeric:tabular-nums; cursor:default; }}
