@@ -3275,3 +3275,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Impresión:** el guion espera sin el signo «menor que».
   - **Documentos:** RF-09 del PRD (3.11) y el MANUAL (7, 3.7), en los dos idiomas; ocurrencia en F-18.
 - **Pruebas:** `tests/test_app_reloads.py::test_d427_…` (la segunda carga vuelve como Autor; uno anulado, inventado o vencido no) y `test_d428_each_page_reads_the_kept_view_once_and_leaves_it_for_the_second_load_of_the_cloud`. En la app publicada, con Playwright: abrir el PRD e imprimirlo.
+
+## D-429 · Los escenarios clave del SAD tienen el tamaño de los demás diagramas
+
+- **Reporte del autor:** el mapa de escenarios (D-425) era demasiado alto (unos 1.240 px a 960 px de ancho, el doble que los contenedores) y ocupaba mucho espacio.
+- **Decisión:**
+  - La Base DuckDB y GitHub Actions pasan a una fila bajo el panel web, que así usa todo el ancho; sus flechas son verticales: «lee» de la Base DuckDB, «lanza y cancela» con `GITHUB_TOKEN` (Autor) y «estado y logs» con `GITHUB_READ_TOKEN` (logs, solo el Autor); «publica» va de GitHub Actions a la Base DuckDB.
+  - Las páginas del Usuario se acomodan en filas según su largo; el nombre y el detalle de cada página van en la misma línea.
+  - La protección pasa al encabezado del panel y a «Entrada»; el rol, al título del Profesional; «Fuera del panel», a la sección del Autor; la leyenda, bajo los perfiles.
+  - Nada se quitó: las mismas páginas, acciones, secretos, workflows y referencias del PRD. Mide unos 760 px a 960 px de ancho, en los dos idiomas, sin desborde a 820 px.
+  - **Documentos:** SAD 3.10 (2.1), en los dos idiomas.
+- **Pruebas:** `tests/test_doc_diagrams.py::test_d429_…` y las de D-425, que siguen exigiendo cada página del menú en la sección de su perfil.

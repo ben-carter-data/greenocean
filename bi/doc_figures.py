@@ -761,7 +761,9 @@ def sad_components_panel(mode):
 
 
 def scenario_css(palette):
-    """D-425: the scenarios map, laid out as a grid so each actor sits on the row of the panel section it reaches."""
+    """D-425: the scenarios map, laid out as a grid so each actor sits on the row of the panel section it reaches. D-429:
+    the Base DuckDB and GitHub Actions sit under the panel, so the panel takes the whole width and the map keeps the
+    size of the other diagrams."""
     ink, text, muted, card, border = (
         palette["strong_text"],
         palette["text"],
@@ -770,51 +772,71 @@ def scenario_css(palette):
         palette["card_border"],
     )
     return f"""<style>
-.sc {{ display:grid; grid-template-columns:112px 72px minmax(0, 1fr) 134px 216px; column-gap:0; row-gap:10px; }}
+.sc {{ display:grid; grid-template-columns:84px 44px minmax(0, 1fr); column-gap:0; row-gap:6px; }}
 .sc-frame {{ grid-column:3; grid-row:1 / 6; border:1.5px solid {border}; border-radius:16px; }}
-.sc-head {{ grid-column:3; grid-row:1; display:flex; gap:10px; align-items:center; padding:12px 14px 0; }}
-.sc-head svg {{ width:30px; height:30px; flex:none; }}
-.sc-head b, .sc-db b, .sc-gh-title b {{ display:block; color:{ink}; font-size:15px; }}
-.sc-head span, .sc-db span, .sc-gh-title span {{ display:block; font-size:12px; color:{text}; }}
-.sc-sec {{ grid-column:3; margin:0 12px; padding:9px 10px 10px; border-radius:12px;
+.sc-head {{ grid-column:3; grid-row:1; display:flex; gap:9px; align-items:center; padding:7px 12px 0; }}
+.sc-head b, .sc-head span {{ display:inline !important; }}
+.sc-head span::before {{ content:" · "; }}
+.sc-head svg {{ width:24px; height:24px; flex:none; }}
+.sc-head b, .sc-db b, .sc-gh-title b {{ display:block; color:{ink}; font-size:13.5px; line-height:1.25; }}
+.sc-head span, .sc-db span, .sc-gh-title span {{ display:block; font-size:11.5px; color:{text}; line-height:1.3; }}
+.sc-sec {{ grid-column:3; margin:0 10px; padding:6px 9px 7px; border-radius:10px;
   border:1.3px solid color-mix(in srgb, var(--c) 55%, transparent); background:color-mix(in srgb, var(--c) 6%, transparent); }}
-.sc-sec:last-of-type {{ margin-bottom:12px; }}
+.sc-sec:last-of-type {{ margin-bottom:10px; }}
 .sc-sec.all {{ border-style:dashed; border-color:{border}; background:transparent; }}
-.sc-sec h4 {{ margin:0 0 7px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--c); }}
-.sc-sec.all h4 {{ color:{muted}; }}
-.sc-sec p {{ margin:0; font-size:12px; color:{text}; }}
-.sc-grid {{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:6px; }}
-.sc-tile {{ padding:6px 8px; border-radius:9px; background:color-mix(in srgb, {card} 80%, transparent);
+.sc-sec h4 {{ margin:0 0 4px; font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--c); }}
+.sc-sec.all h4 {{ color:{muted}; display:inline; margin-right:6px; }}
+.sc-sec.all p {{ display:inline; }}
+.sc-sec p {{ margin:0; font-size:11.5px; line-height:1.35; color:{text}; }}
+.sc-grid {{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:4px; }}
+.sc-grid.flow {{ display:flex; flex-wrap:wrap; }}
+.sc-grid.flow > .sc-tile {{ flex:1 1 auto; }}
+.sc-tile {{ padding:3px 7px 4px; border-radius:7px; font-size:11.5px; line-height:1.35; color:{text}; background:color-mix(in srgb, {card} 80%, transparent);
   border:1px solid color-mix(in srgb, {border} 60%, transparent); min-width:0; }}
-.sc-tile b {{ display:block; color:{ink}; font-size:12.5px; font-weight:600; }}
-.sc-tile span {{ display:block; font-size:12px; color:{text}; }}
-.sc-tile b .ref {{ display:inline; color:{muted}; font-size:12px; font-weight:400; white-space:nowrap; }}
-.sc-warn {{ margin-top:7px !important; color:var(--c) !important; }}
+.sc-tile b {{ color:{ink}; font-size:12px; font-weight:600; }}
+.sc-tile > span {{ font-size:11.5px; color:{text}; }}
+.sc-tile b .ref {{ color:{muted}; font-size:11px; font-weight:400; white-space:nowrap; }}
+.sc-warn {{ margin-top:4px !important; color:var(--c) !important; }}
 .sc-actor {{ grid-column:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:2px; }}
-.sc-actor svg {{ width:46px; height:46px; }}
-.sc-actor b {{ color:{ink}; font-size:14px; }}
-.sc-actor span {{ font-size:12px; color:{text}; }}
-.sc-actor small {{ font-size:11.5px; color:{muted}; }}
-.sc-up {{ font-size:11.5px; color:{muted}; border:1px solid {border}; border-radius:999px; padding:1px 8px; margin-bottom:6px; }}
+.sc-actor svg {{ width:32px; height:32px; }}
+.sc-actor b {{ color:{ink}; font-size:13px; line-height:1.2; }}
+.sc-actor span {{ font-size:11px; line-height:1.25; color:{text}; }}
+.sc-up {{ font-size:10.5px; line-height:1.3; color:{muted}; border:1px solid {border}; border-radius:999px; padding:0 7px; margin-bottom:4px; }}
 .sc-arrow {{ align-self:center; position:relative; height:2px; background:var(--c); margin:0 10px 0 4px; }}
 .sc-arrow.back {{ background:transparent; border-top:2px dashed var(--c); height:0; }}
 .sc-arrow::after {{ content:""; position:absolute; top:-6px; border:6px solid transparent; }}
 .sc-arrow.right::after {{ right:-8px; border-left:9px solid var(--c); border-right:0; }}
 .sc-arrow.left::after {{ left:-8px; border-right:9px solid var(--c); border-left:0; }}
 .sc-arrow.back::after {{ top:-8px; }}
-.sc-arrow em {{ position:absolute; bottom:6px; left:-4px; right:-4px; text-align:center; font-style:normal; font-size:11px;
+.sc-arrow em {{ position:absolute; bottom:5px; left:-4px; right:-4px; text-align:center; font-style:normal; font-size:10.5px;
   color:var(--c); line-height:1.25; }}
 .sc-arrow em.under {{ bottom:auto; top:7px; }}
-.sc-links {{ grid-column:4; display:flex; flex-direction:column; justify-content:center; gap:58px; }}
-.sc-links .sc-arrow {{ align-self:stretch; margin:0 6px; }}
-.sc-db {{ grid-column:5; grid-row:1 / 3; align-self:center; display:flex; gap:10px; padding:10px 12px; border-radius:14px;
+.sc-conn {{ grid-column:3; grid-row:6; display:grid; grid-template-columns:200px 56px minmax(0, 1fr); height:40px; margin-top:-6px; }}
+.sc-ups {{ position:relative; }}
+.sc-ups > .sc-v {{ position:absolute; top:0; bottom:0; left:50%; }}
+.sc-ups > .sc-v + .sc-v {{ left:54%; }}
+.sc-ups > .sc-v:first-child:not(:last-child) {{ left:16%; }}
+.sc-v {{ position:relative; width:0; border-left:2px solid var(--c); }}
+.sc-v.back {{ border-left-style:dashed; }}
+.sc-v::after {{ content:""; position:absolute; left:-7px; border:6px solid transparent; }}
+.sc-v.up::after {{ top:-6px; border-bottom:9px solid var(--c); border-top:0; }}
+.sc-v.down::after {{ bottom:-6px; border-top:9px solid var(--c); border-bottom:0; }}
+.sc-v em {{ position:absolute; left:8px; top:50%; transform:translateY(-50%); width:max-content; max-width:180px; font-style:normal;
+  font-size:10.5px; line-height:1.25; color:var(--c); }}
+.sc-v em small {{ display:block; font-size:10px; }}
+.sc-gh-title b, .sc-gh-title span {{ display:inline !important; }}
+.sc-gh-title span::before {{ content:" · "; }}
+.sc-bottom {{ grid-column:3; grid-row:7; display:grid; grid-template-columns:200px 56px minmax(0, 1fr); align-items:stretch; }}
+.sc-db {{ display:flex; gap:8px; padding:7px 10px; border-radius:12px; align-self:start;
   border:1.5px solid var(--c); background:color-mix(in srgb, var(--c) 8%, transparent); }}
-.sc-db svg, .sc-gh-title svg {{ width:28px; height:28px; flex:none; }}
-.sc-gh {{ grid-column:5; grid-row:3 / 6; display:flex; flex-direction:column; gap:7px; padding:10px; border-radius:14px;
-  border:1.5px dashed var(--c); position:relative; }}
-.sc-gh-title {{ display:flex; gap:10px; align-items:center; }}
-.sc-pub {{ position:absolute; top:-24px; left:50%; font-size:11.5px; color:var(--c); }}
-.sc-legend {{ grid-column:1 / 6; display:flex; flex-wrap:wrap; gap:6px 18px; font-size:12px; color:{text}; }}
+.sc-db svg, .sc-gh-title svg {{ width:22px; height:22px; flex:none; }}
+.sc-gh {{ display:flex; flex-direction:column; gap:4px; padding:6px 8px 7px; border-radius:12px; border:1.5px dashed var(--c); }}
+.sc-gh .sc-grid {{ grid-template-columns:1fr; gap:3px; }}
+.sc-gh-title {{ display:flex; gap:8px; align-items:center; }}
+.sc-pub {{ align-self:start; margin-top:14px; position:relative; height:0; border-top:2px solid var(--c); }}
+.sc-pub::after {{ content:""; position:absolute; top:-7px; left:-6px; border:6px solid transparent; border-right:9px solid var(--c); border-left:0; }}
+.sc-pub em {{ position:absolute; bottom:4px; left:0; right:0; text-align:center; font-style:normal; font-size:10.5px; color:var(--c); }}
+.sc-legend {{ grid-column:1 / 3; grid-row:6 / 8; align-self:end; display:flex; flex-direction:column; gap:1px; font-size:11px; line-height:1.35; color:{text}; }}
 .sc-legend i {{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--c); margin-right:5px; }}
 </style>"""
 
@@ -840,13 +862,13 @@ def sad_scenarios(mode):
 
     def tile(name, detail="", ref=""):
         reference = f' <span class="ref">{esc(ref)}</span>' if ref else ""
-        body = f"<span>{esc(detail)}</span>" if detail else ""
+        body = f" <span>· {esc(detail)}</span>" if detail else ""
         return f'<div class="sc-tile"><b>{esc(name)}{reference}</b>{body}</div>'
 
-    def section(row, actor, color, heading, tiles, extra=""):
+    def section(row, actor, color, heading, tiles, extra="", layout=""):
         return (
             f'<section class="sc-sec" data-actor="{actor}" style="grid-row:{row};--c:{color}"><h4>{esc(heading)}</h4>'
-            f'<div class="sc-grid">{"".join(tiles)}</div>{extra}</section>'
+            f'<div class="sc-grid {layout}">{"".join(tiles)}</div>{extra}</section>'
         )
 
     def arrow(row, color, label, direction="right", column=2):
@@ -862,10 +884,7 @@ def sad_scenarios(mode):
             "professional",
             say("Profesional", "Professional"),
             say("Lee el proyecto completo", "Reads the whole project"),
-            say(
-                "Rol: Data Eng, BA, BI, DevOps o Seguridad (solo ordena el menú)",
-                "Role: Data Eng, BA, BI, DevOps or Security (it only orders the menu)",
-            ),
+            "",
             say("↑ hereda todo · sin clave", "↑ inherits all · no key"),
         ),
         (
@@ -873,17 +892,14 @@ def sad_scenarios(mode):
             "author",
             say("Autor", "Author"),
             say("Opera el sistema", "Operates the system"),
-            say(
-                "Fuera del panel: aprueba el pull request del informe de calidad y cambia el código y los secretos",
-                "Outside the panel: approves the quality report's pull request and changes the code and the secrets",
-            ),
+            "",
             say("↑ hereda todo · con clave", "↑ inherits all · with the key"),
         ),
     ]
     parts = ['<div class="sc-frame"></div>']
     parts.append(
         f'<div class="sc-head">{icon("chart", sky)}<div><b>{say("Panel web", "Web panel")} · Streamlit</b>'
-        f"<span>{esc(say('Lee la Base DuckDB en solo lectura. Cada perfil ve su menú; solo el Autor necesita clave.', 'Reads the DuckDB database read-only. Each profile sees its menu; only the Author needs a key.'))}</span></div></div>"
+        f"<span>{esc(say('Lee la Base DuckDB en solo lectura. Solo la entrada como Autor pide clave y se comprueba en el servidor; Usuario → Profesional es solo un filtro del menú.', 'Reads the DuckDB database read-only. Only the entry as the Author asks for a key and is checked on the server; User → Professional is only a menu filter.'))}</span></div></div>"
     )
     parts.append(
         f'<section class="sc-sec all" data-actor="todos" style="grid-row:2;--c:{sky}"><h4>'
@@ -920,6 +936,7 @@ def sad_scenarios(mode):
                 tile("Insights", say("las preguntas de la semana", "the questions of the week")),
             ],
             f'<p class="sc-warn">{esc(say("«Ver todo el proyecto»: pasa a Profesional, sin clave", "«See the whole project»: switches to Professional, no key"))}</p>',
+            layout="flow",
         )
     )
     parts.append(
@@ -927,7 +944,10 @@ def sad_scenarios(mode):
             4,
             "profesional",
             blue,
-            say("Profesional · el proyecto completo · sin cuenta", "Professional · the whole project · no account"),
+            say(
+                "Profesional · el proyecto completo · sin cuenta · el rol solo ordena el menú",
+                "Professional · the whole project · no account · the role only orders the menu",
+            ),
             [
                 tile(
                     say("Ingeniería de datos", "Data engineering"),
@@ -940,8 +960,8 @@ def sad_scenarios(mode):
                 tile(
                     say("Stack y evidencia", "Stack and evidence"),
                     say(
-                        "Stack y evidencia (Flujo del sistema en vivo) · Mapa de la app · Arquitectura de seguridad, sin valores secretos",
-                        "Stack and evidence (live system flow) · App map · Security architecture, no secret values",
+                        "«Flujo del sistema en vivo» · Mapa de la app · Arquitectura de seguridad, sin valores secretos",
+                        "«Live system flow» · App map · Security architecture, no secret values",
                     ),
                 ),
                 tile(
@@ -975,8 +995,8 @@ def sad_scenarios(mode):
                 tile(
                     say("Entrada", "Entry"),
                     say(
-                        "la clave del Autor (secreto CONTROL_CODE) en «Elige tu vista» · espera tras 3 fallos · sesión de 30 min",
-                        "the Author's key (CONTROL_CODE secret) in «Choose your view» · wait after 3 failures · 30 min session",
+                        "la clave del Autor (secreto CONTROL_CODE) en «Elige tu vista» · espera tras 3 fallos · sesión de 30 min · sin ser Autor, estas páginas dicen «No tienes acceso»",
+                        "the Author's key (CONTROL_CODE secret) in «Choose your view» · wait after 3 failures · 30 min session · without being the Author, these pages say «No access»",
                     ),
                     "RF-09",
                 ),
@@ -1003,7 +1023,8 @@ def sad_scenarios(mode):
                     ),
                 ),
             ],
-            f'<p class="sc-warn">{esc(say("Avisos solo para el Autor: «La carga del … falló» · «Acción requerida» (no conformidades e incidentes externos) · carga en curso", "Notices for the Author only: «The load of … failed» · «Action required» (nonconformities and external incidents) · load in progress"))}</p>',
+            f'<p class="sc-warn">{esc(say("Avisos solo para el Autor: «La carga del … falló» · «Acción requerida» (no conformidades e incidentes externos) · carga en curso", "Notices for the Author only: «The load of … failed» · «Action required» (nonconformities and external incidents) · load in progress"))}</p>'
+            f'<p class="sc-warn">{esc(say("Fuera del panel: aprueba el pull request del informe de calidad y cambia el código y los secretos", "Outside the panel: approves the pull request of the quality report and changes the code and the secrets"))}</p>',
         )
     )
     for row, name, label, caption, note, inherits in actors:
@@ -1018,16 +1039,15 @@ def sad_scenarios(mode):
         arrow(3, green, say("ve", "sees")),
         arrow(4, blue, say("además ve", "also sees")),
         arrow(5, amber, say("además opera", "also operates")),
-        arrow(2, sky, say("lee", "reads"), "left", 4),
-        f'<div class="sc-links" style="grid-row:4"><div class="sc-arrow left back" style="--c:{violet}">'
-        f'<em>{esc(say("estado", "state"))}</em><em class="under">GITHUB_READ_TOKEN</em></div></div>',
-        f'<div class="sc-links" style="grid-row:5"><div class="sc-arrow right" style="--c:{amber}"><em>'
-        f'{esc(say("lanza y cancela", "launches and cancels"))}</em><em class="under">GITHUB_TOKEN</em></div>'
-        f'<div class="sc-arrow left back" style="--c:{violet}"><em>{esc(say("estado, logs", "state, logs"))}</em>'
-        f'<em class="under">GITHUB_READ_TOKEN</em></div></div>',
+        f'<div class="sc-conn"><div class="sc-ups"><div class="sc-v up" style="--c:{sky}"><em>'
+        f'{esc(say("lee", "reads"))}</em></div></div><span></span><div class="sc-ups">'
+        f'<div class="sc-v down" style="--c:{amber}"><em>{esc(say("lanza y cancela", "launches and cancels"))}'
+        f'<small>GITHUB_TOKEN · {esc(say("Autor", "Author"))}</small></em></div>'
+        f'<div class="sc-v up back" style="--c:{violet}"><em>{esc(say("estado y logs", "state and logs"))}'
+        f'<small>GITHUB_READ_TOKEN · {esc(say("logs, solo el Autor", "logs, the Author only"))}</small></em></div></div></div>',
     ]
     parts.append(
-        f'<div class="sc-db" style="--c:{sky}">{icon("database", sky)}<div><b>{say("Base DuckDB", "DuckDB database")}</b><span>'
+        f'<div class="sc-bottom"><div class="sc-db" style="--c:{sky}">{icon("database", sky)}<div><b>{say("Base DuckDB", "DuckDB database")}</b><span>'
         + esc(
             say(
                 "datos.duckdb en el release «base-actual» · puntero datos.version en main",
@@ -1035,34 +1055,36 @@ def sad_scenarios(mode):
             )
         )
         + "</span></div></div>"
+        + f'<div class="sc-pub" style="--c:{violet}"><em>{esc(say("publica", "publishes"))}</em></div>'
     )
     parts.append(
-        f'<div class="sc-gh" style="--c:{violet}"><span class="sc-pub">↑ {esc(say("publica", "publishes"))}</span>'
+        f'<div class="sc-gh" style="--c:{violet}">'
         f'<div class="sc-gh-title">{icon("calendar", violet)}<div><b>GitHub Actions</b>'
         f'<span>{esc(say("Automatización. No es un perfil.", "Automation. Not a profile."))}</span></div></div>'
+        + '<div class="sc-grid">'
         + tile(
             "semanal.yml",
             say(
-                "martes 12:00 UTC: descarga ODEPA e INE → transforma (dbt) → prueba; publica la Base DuckDB solo si todo pasa; abre el «Informe semanal» como issue. También se lanza desde «Centro de operación».",
-                "Tuesdays 12:00 UTC: downloads ODEPA and INE → transforms (dbt) → tests; publishes the DuckDB database only if everything passes; opens the «Weekly report» as an issue. It is also launched from «Operations center».",
+                "martes 12:00 UTC y desde «Centro de operación»: ODEPA e INE → dbt → pruebas; si todo pasa, publica la Base DuckDB y abre el «Informe semanal»",
+                "Tuesdays 12:00 UTC and from «Operations center»: ODEPA and INE → dbt → tests; if everything passes, publishes the DuckDB database and opens the «Weekly report»",
             ),
             "RF-01 · RF-02 · RF-03 · RF-08",
         )
         + tile(
             "calidad.yml",
             say(
-                "en cada push mide la calidad; tras cada carga de semanal.yml propone el informe de calidad como pull request",
-                "on every push it measures quality; after each semanal.yml load it proposes the quality report as a pull request",
+                "mide en cada push; tras cada carga propone el informe de calidad (pull request)",
+                "measures on every push; after each load it proposes the quality report (pull request)",
             ),
         )
         + tile(
             "pruebas.yml",
             say(
-                "en cada push: ruff, mypy, pytest (3.11 y 3.12) y dbt parse; nunca toca la Base DuckDB",
-                "on every push: ruff, mypy, pytest (3.11 and 3.12) and dbt parse; never touches the DuckDB database",
+                "en cada push: ruff, mypy, pytest y dbt parse; no toca la Base DuckDB",
+                "on every push: ruff, mypy, pytest and dbt parse; does not touch the DuckDB database",
             ),
         )
-        + "</div>"
+        + "</div></div></div>"
     )
     legend = "".join(
         f'<span style="--c:{color}"><i></i>{esc(name)}</span>'
@@ -1074,14 +1096,8 @@ def sad_scenarios(mode):
         )
     )
     parts.append(
-        f'<div class="sc-legend" style="grid-row:6">{legend}<span>'
-        + esc(
-            say(
-                "Protección: solo la entrada como Autor pide clave y se comprueba en el servidor (sin ser Autor, «DevOps y seguridad» dice «No tienes acceso»). Usuario → Profesional es solo un filtro del menú. P = pregunta y RF = requisito del PRD.",
-                "Protection: only the Author's entry asks for a key and is checked on the server (without being the Author, «DevOps and security» says «No access»). User → Professional is only a menu filter. P = question and RF = requirement of the PRD.",
-            )
-        )
-        + "</span></div>"
+        f'<div class="sc-legend">{legend}<span>{esc(say("P = pregunta", "P = question"))}</span>'
+        f'<span>{esc(say("RF = requisito del PRD", "RF = PRD requirement"))}</span></div>'
     )
     title = say(
         "Escenarios clave: quién usa GreenOcean y a qué llega cada perfil",

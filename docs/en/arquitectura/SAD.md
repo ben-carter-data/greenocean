@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.9 |
+| Version | 3.10 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -56,7 +56,7 @@ Three people use the panel, depending on the view they choose:
 
 [[diagrama:escenarios]]
 
-The diagram shows what each profile reaches inside the web panel, by inheritance: the Professional has everything the User has, and the Author, everything the Professional has. Outside the panel sit the DuckDB database, which the panel reads, and GitHub Actions, which is not a profile: `semanal.yml` publishes the DuckDB database, the Author launches and cancels it with `GITHUB_TOKEN`, and the panel reads its state with `GITHUB_READ_TOKEN`. Each scenario goes through the architecture end to end. Sections 4 and 5 show them step by step.
+The diagram shows what each profile reaches inside the web panel, by inheritance: the Professional has everything the User has, and the Author, everything the Professional has. Under the panel, outside it, sit the DuckDB database, which the panel reads, and GitHub Actions, which is not a profile: `semanal.yml` publishes the DuckDB database, the Author launches and cancels it with `GITHUB_TOKEN`, and the panel reads its state with `GITHUB_READ_TOKEN`. Each scenario goes through the architecture end to end. Sections 4 and 5 show them step by step.
 
 ## 3. Containers
 
@@ -473,3 +473,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.7 | 2026-11-01 | The key scenarios show everything each actor can do and what it does not reach (2.1, D-424) |
 | 3.8 | 2026-11-01 | The key scenarios as a map of the web panel by profile, with inheritance, the DuckDB database and GitHub Actions (2.1, D-425) |
 | 3.9 | 2026-11-01 | «Served database» becomes «DuckDB database · `etl/datos.duckdb`» throughout the document; the containers show the upload to the «base-actual» release, the reading from it and the arrows from the web panel to GitHub with their tokens (3, D-426) |
+| 3.10 | 2026-11-01 | The key scenarios fit like the other diagrams: the DuckDB database and GitHub Actions move under the web panel, with no content removed (2.1, D-429) |

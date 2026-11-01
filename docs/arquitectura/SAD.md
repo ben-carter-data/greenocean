@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.9 |
+| Versión | 3.10 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -56,7 +56,7 @@ Tres personas usan el panel, según la vista que eligen:
 
 [[diagrama:escenarios]]
 
-El diagrama muestra a qué llega cada perfil dentro del panel web, por herencia: el Profesional tiene todo lo del Usuario, y el Autor, todo lo del Profesional. Fuera del panel quedan la Base DuckDB, que el panel lee, y GitHub Actions, que no es un perfil: `semanal.yml` publica la Base DuckDB, el Autor la lanza y la cancela con `GITHUB_TOKEN`, y el panel lee su estado con `GITHUB_READ_TOKEN`. Cada escenario recorre la arquitectura de punta a punta. Las secciones 4 y 5 los muestran paso a paso.
+El diagrama muestra a qué llega cada perfil dentro del panel web, por herencia: el Profesional tiene todo lo del Usuario, y el Autor, todo lo del Profesional. Debajo del panel, fuera de él, quedan la Base DuckDB, que el panel lee, y GitHub Actions, que no es un perfil: `semanal.yml` publica la Base DuckDB, el Autor la lanza y la cancela con `GITHUB_TOKEN`, y el panel lee su estado con `GITHUB_READ_TOKEN`. Cada escenario recorre la arquitectura de punta a punta. Las secciones 4 y 5 los muestran paso a paso.
 
 ## 3. Contenedores
 
@@ -473,3 +473,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.7 | 01-11-2026 | Los escenarios clave muestran todo lo que puede hacer cada actor y lo que no alcanza (2.1, D-424) |
 | 3.8 | 01-11-2026 | Los escenarios clave como mapa del panel web por perfil, con herencia, la Base DuckDB y GitHub Actions (2.1, D-425) |
 | 3.9 | 01-11-2026 | «Base servida» pasa a «Base DuckDB · `etl/datos.duckdb`» en todo el documento; los contenedores muestran la subida al release «base-actual», la lectura desde él y las flechas del panel web a GitHub con sus tokens (3, D-426) |
+| 3.10 | 01-11-2026 | Los escenarios clave caben como los demás diagramas: la Base DuckDB y GitHub Actions pasan bajo el panel web, sin quitar ningún contenido (2.1, D-429) |

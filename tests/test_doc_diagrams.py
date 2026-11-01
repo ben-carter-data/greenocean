@@ -361,3 +361,12 @@ def test_d425_the_scenarios_show_every_page_and_action_each_profile_really_reach
     prd = i18n.document_path("PRD.md", "es").read_text(encoding="utf-8")
     for reference in set(re.findall(r"\b(?:P|RF)-\d+\b", page)):
         assert f"| {reference} |" in prd, reference
+
+
+def test_d429_the_scenarios_keep_the_panel_wide_with_the_database_and_github_actions_under_it():
+    page = doc_figures.sad_scenarios(charts.MODE_DARK)
+    assert "grid-template-columns:84px 44px minmax(0, 1fr);" in page  # three columns: actors, arrows, the panel
+    bottom = page.split('class="sc-bottom"')[1]
+    assert "Base DuckDB" in bottom and "GitHub Actions" in bottom and "semanal.yml" in bottom
+    connectors = page.split('class="sc-conn"')[1].split('class="sc-bottom"')[0]
+    assert "GITHUB_TOKEN" in connectors and "GITHUB_READ_TOKEN" in connectors
