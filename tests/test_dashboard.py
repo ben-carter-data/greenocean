@@ -1,6 +1,7 @@
 """Tests for the dashboard: navigation, appearance, key figures and evidence."""
 
 import html
+import inspect
 import re
 import json
 import sys
@@ -295,9 +296,9 @@ def draw_control_page(secrets, run_state="ok", dialog=False, cancel_error=None, 
     run is accepted; GitHub answers that it is «run_state» (ok, failed or in_progress) with one
     job whose log ends in a line that prints the token. With dialog, the script opens the manual-run
     dialog itself: in a browser the dialog reruns alone (a fragment), which AppTest
-    does not reproduce. D-420: the page is the Autor's, so it opens as the Autor unless told otherwise; the dialog
-    opens without the session unless told otherwise."""
-    unlocked = not dialog if unlocked is None else unlocked
+    does not reproduce. D-420, D-421: the page and the window are the Autor's, so both open as the Autor unless told
+    otherwise."""
+    unlocked = True if unlocked is None else unlocked
     script = (
         f"import sys\nsys.path.insert(0, {str(PROJECT_DIR)!r})\n"
         "from datetime import datetime, timedelta, timezone\n"
@@ -358,10 +359,10 @@ def read_page_text(app):
     return "\n".join(parts)
 
 
-def open_run_dialog(app, code):
-    app.text_input(key="run_now_code").input(code).run()
-    app.button(key="run_now_confirm").click().run()
-    return read_page_text(app) + " ".join(str(element.proto) for element in app.get("success"))
+def open_run_dialog(app, code=None):
+    """D-421: the window asks for no key; as the Autor it starts the run at once. What it shows after one more turn."""
+    app.run()
+    return read_page_text(app) + " ".join(str(element.proto) for element in app.get("success") + app.get("error"))
 
 
 def button_keys(app):
@@ -381,8 +382,8 @@ def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
     assert not app.exception and [item.value for item in app.info] == [dashboard.NO_ACCESS]
     assert "runs_run_now" not in button_keys(app) and not list(app.text_input)
     assert not [address for address in ADMIN_ADDRESSES if address in read_page_text(app)]
-    # D-207: the key field, wherever it is, is a plain field shown as dots, never a browser password
-    assert "-webkit-text-security:disc" in dashboard.build_runs_css(charts.MODE_DARK)
+    # D-421: the only key field left is the Autor's entry in «Elige tu vista»; this page has no key box
+    assert "-webkit-text-security" not in dashboard.build_runs_css(charts.MODE_DARK)
     app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN})
     assert not app.exception
     assert (
@@ -394,22 +395,33 @@ def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
     assert app.button(key="author_access_close").label == "Cerrar acceso"
     app.button(key="author_access_close").click().run()
     assert "runs_run_now" not in button_keys(app) and [item.value for item in app.info] == [dashboard.NO_ACCESS]
-    # The dialog itself still asks for the code when the session is not open (defense in depth).
-    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
-    text = open_run_dialog(app, "equivocada")
-    assert not app.exception and "Clave incorrecta" in text
+    # D-421: the window itself checks the session on the server: without it, no key box and no run (defense in depth)
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True, unlocked=False)
+    assert not app.exception and dashboard.NO_ACCESS in " ".join(item.value for item in app.error)
+    assert not list(app.text_input) and "run_watch" not in app.session_state
 
 
 @needs_database
-def test_d393_the_code_box_survives_any_character_and_waits_after_three_failures():
-    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
-    text = open_run_dialog(app, "contraseña ñ")
-    assert not app.exception and "Clave incorrecta" in text
-    for attempt in range(2):
-        text = open_run_dialog(app, f"intento{attempt}")
-        assert "Clave incorrecta" in text
-    text = open_run_dialog(app, "clave")  # the gate shared by every door waits now, even for the right code
-    assert not app.exception and "Demasiados intentos" in text
+def test_d421_there_is_one_key_only_and_every_author_action_checks_the_session(monkeypatch):
+    # as the Autor: no key box on the page, and the run starts at once in its window
+    app = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN})
+    assert not app.exception and not list(app.text_input) and "runs_run_now" in button_keys(app)
+    window = draw_control_page({"CONTROL_CODE": "clave", "GITHUB_TOKEN": FAKE_TOKEN}, dialog=True)
+    assert not window.exception and not list(window.text_input) and "run_watch" in window.session_state
+    # the only key field of the panel is the Autor's entry in «Elige tu vista»
+    source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
+    assert 'key="run_now_code"' not in source and "author_access_code" not in source
+    assert source.count("control.check_control_code(") == 1 and "profile_author_code" in source
+    # each action of the Autor asks the session again on the server
+    state = {}
+    monkeypatch.setattr(dashboard.st, "session_state", state)
+    dashboard.reload_panel_data()
+    assert dashboard.RELOADED_NOTICE not in state  # not the Autor: nothing is reloaded
+    state[dashboard.ADMIN_UNLOCKED] = True
+    dashboard.reload_panel_data()
+    assert state[dashboard.RELOADED_NOTICE] is True
+    cancel = inspect.getsource(dashboard.render_run_window)
+    assert "if is_author():" in cancel.split("run_monitor.cancel(")[0].rsplit("\n", 3)[-2]
 
 
 @needs_database

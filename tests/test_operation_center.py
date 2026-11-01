@@ -151,8 +151,8 @@ def test_d165_the_page_draws_the_stage_beside_the_facts_and_the_manual_run():
     text = " ".join(block.value for block in app.markdown)
     assert "Centro de operación" in text and "Próxima ejecución" in text
     assert "Datos publicados" in text and "Última carga" in text
-    # D-202: the manual run waits behind «Acceso del autor».
-    assert "runs_run_now" not in [button.key for button in app.button] and app.get("popover")
+    # D-421: the page is the Autor's, so the run is right there, with no key box (the key is «Elige tu vista»'s)
+    assert "runs_run_now" in [button.key for button in app.button] and not list(app.text_input)
 
 
 def test_d271_the_path_shrinks_with_its_stage_and_never_grows_past_its_size():

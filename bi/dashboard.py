@@ -5854,7 +5854,9 @@ def render_run_window(token):
         st.warning(tr("¿Seguro que quieres cancelar? Esto detiene la ejecución en GitHub."))
         with st.container(horizontal=True):
             if st.button(tr("Sí, cancelar"), key="run_cancel_yes", type="primary"):
-                run_monitor.cancel(watch, token)
+                if is_author():  # D-421: checked on the server before the one write that stops a run
+                    run_monitor.cancel(watch, token)
+                    logging.getLogger(__name__).info("Autor: ejecución manual cancelada")
                 st.rerun(scope="fragment")
             if st.button(tr("No, seguir"), key="run_cancel_no"):
                 watch["confirming"] = False
@@ -5975,7 +5977,7 @@ def show_run_indicator():
 def reopen_run_window():
     """The window comes back when the indicator asked for it (a dialog opens from the main script, not the sidebar)."""
     if st.session_state.pop(RUN_WINDOW_OPEN, False):
-        show_run_now_dialog(get_secret(SECRET_GITHUB_TOKEN), get_secret(SECRET_CONTROL_CODE))
+        show_run_now_dialog(get_secret(SECRET_GITHUB_TOKEN))
 
 
 RUN_WINDOW_OPEN = "run_window_open"
@@ -6008,16 +6010,22 @@ RELOADED_NOTICE = "panel_reloaded"
 
 
 def reload_panel_data():
-    """Read datos.db again (the weekly load or a manual run may have replaced it)."""
+    """Read datos.db again (the weekly load or a manual run may have replaced it). D-421: only the Autor's session."""
+    if not is_author():
+        return
     st.cache_data.clear()
     st.session_state[RELOADED_NOTICE] = True
 
 
 @st.dialog("Ejecutar el pipeline ahora", width="large", dismissible=False)  # D-413: room for the flow
-def show_run_now_dialog(token, access_code):
-    """The manual run behind the control code, in a layer above the page (D-149). D-351: no click outside and no X
-    closes it; it follows the run and offers «Minimizar» and «Cancelar». With a run already followed it shows that one
-    instead of starting another."""
+def show_run_now_dialog(token, access_code=None):
+    """The manual run, in a layer above the page (D-149). D-351: no click outside and no X closes it; it follows the
+    run and offers «Minimizar» and «Cancelar». With a run already followed it shows that one instead of starting
+    another. D-421: there is one key only, the Autor's entry; this window asks for none, checks on the server that the
+    session is the Autor's and starts the run at once. `access_code` is no longer read."""
+    if not is_author():  # D-421: whatever opened the window, only the Autor's session starts a run
+        st.error(tr(NO_ACCESS), icon=":material/lock:")
+        return
     if run_monitor.WATCH not in st.session_state:
         st.caption(
             tr(
@@ -6025,21 +6033,6 @@ def show_run_now_dialog(token, access_code):
                 "que la ejecución automática de cada martes. Tarda unos 5 minutos."
             )
         )
-        if not st.session_state.get(ADMIN_UNLOCKED):
-            typed_code = st.text_input(tr("Clave de control"), key="run_now_code", autocomplete="off")
-            with st.container(horizontal=True):
-                confirmed = st.button(
-                    tr("Ejecutar"), type="primary", icon=":material/play_arrow:", key="run_now_confirm"
-                )
-                if st.button(tr("Cerrar"), key="run_now_leave"):
-                    st.rerun()
-            if not confirmed:
-                return
-            ok, message = control.check_control_code(typed_code, access_code, control.GATE)
-            if not ok:
-                st.error(tr(message), icon=":material/lock:")
-                return
-            st.session_state[ADMIN_UNLOCKED] = True
         try:
             control.start_workflow_run(token)
         except Exception as error:  # GitHub refused the request or did not answer
@@ -6050,6 +6043,8 @@ def show_run_now_dialog(token, access_code):
             if st.button(tr("Cerrar"), key="run_start_failed_close"):
                 st.rerun()
             return
+        # D-421: the record of a launched run: GitHub keeps it (event workflow_dispatch) and the server log says when.
+        logging.getLogger(__name__).info("Autor: ejecución manual lanzada en GitHub Actions")
         st.session_state[run_monitor.WATCH] = run_monitor.new_watch(datetime.now(timezone.utc))
         fetch_pipeline_runs.clear()
     show_token_expiration(token)
@@ -6058,42 +6053,40 @@ def show_run_now_dialog(token, access_code):
 
 
 def show_admin_card():
-    """One door for the author (D-202): before the control code, only «Acceso del autor»; after
-    it, the manual run (D-149) and the author's pages, «Configuración» among them (D-409). The reload
-    is the author's only (D-396). The pipeline also runs by itself every Tuesday."""
-    access_code = get_secret(SECRET_CONTROL_CODE)
+    """The Autor's tools on the Operations center (D-202): the manual run (D-149), «Recargar datos» (D-396) and the way
+    out. D-421: one key only, the Autor's entry; the page is the Autor's (D-420), so nothing here asks for a key, and
+    each action checks the session again on the server."""
+    if not is_author():
+        return
     token = get_secret(SECRET_GITHUB_TOKEN)
-    unlocked = bool(access_code and st.session_state.get(ADMIN_UNLOCKED))
-    if unlocked:
-        with st.container(key="runs_admin", horizontal=True, vertical_alignment="center", gap="small"):
-            if st.button(
-                "Ejecutar pipeline ahora",
-                type="primary",
-                icon=":material/power_settings_new:",
-                key="runs_run_now",
-                disabled=not token,
-                help="Lanza el pipeline en GitHub Actions."
-                if token
-                else "Falta el token de GitHub en los secretos del panel.",
-            ):
-                show_run_now_dialog(token, access_code)
-            st.markdown(
-                '<div class="run-now-label">Ejecutar pipeline ahora</div><div class="run-now-note">'
-                'Acceso del autor abierto.</div>',
-                unsafe_allow_html=True,
-            )
+    with st.container(key="runs_admin", horizontal=True, vertical_alignment="center", gap="small"):
+        if st.button(
+            "Ejecutar pipeline ahora",
+            type="primary",
+            icon=":material/power_settings_new:",
+            key="runs_run_now",
+            disabled=not token,
+            help="Lanza el pipeline en GitHub Actions."
+            if token
+            else "Falta el token de GitHub en los secretos del panel.",
+        ):
+            show_run_now_dialog(token)
+        st.markdown(
+            '<div class="run-now-label">Ejecutar pipeline ahora</div><div class="run-now-note">'
+            'Acceso del autor abierto.</div>',
+            unsafe_allow_html=True,
+        )
     with st.container(key="runs_tools", horizontal=True, gap="small"):
-        # D-396: reloading empties the caches of every reader at once, so only the Autor has it.
-        if unlocked:
-            st.button(
-                "Recargar datos",
-                icon=":material/refresh:",
-                key="runs_reload",
-                width="stretch",
-                on_click=reload_panel_data,
-                help="Vuelve a leer la base guardada; no ejecuta el pipeline.",
-            )
-        show_author_access(access_code, unlocked)
+        st.button(
+            "Recargar datos",
+            icon=":material/refresh:",
+            key="runs_reload",
+            width="stretch",
+            on_click=reload_panel_data,
+            help="Vuelve a leer la base guardada; no ejecuta el pipeline.",
+        )
+        # D-409: the administration links and the state live in «Configuración», in the menu; here only the way out.
+        st.button("Cerrar acceso", icon=":material/lock:", key="author_access_close", on_click=lock_author_access)
     if st.session_state.pop(RELOADED_NOTICE, False):
         latest = read_latest_run()
         st.toast(
@@ -6102,63 +6095,15 @@ def show_admin_card():
         )
 
 
-AUTHOR_CODE_MESSAGE = "author_code_message"
-
-
-def check_author_code(access_code):
-    """The code typed in «Acceso del autor», compared in constant time (D-199); the field is
-    emptied either way, so the code never stays on screen."""
-    typed_code = st.session_state.get("author_access_code", "")
-    st.session_state["author_access_code"] = ""
-    if not typed_code:
-        return
-    ok, message = control.check_control_code(typed_code, access_code, control.GATE)
-    if ok:
-        st.session_state[ADMIN_UNLOCKED] = True
-    else:
-        st.session_state[AUTHOR_CODE_MESSAGE] = message
-
-
 def lock_author_access():
-    st.session_state[ADMIN_UNLOCKED] = False
-
-
-def show_author_access(access_code, unlocked):
-    """«Acceso del autor» (D-165, D-202): the control code opens the manual run and the author's pages; D-409: the
-    administration links moved to «Configuración», each still asking for its own login."""
-    if unlocked:
-        # D-409: the administration links and the state live in «Configuración», in the menu; here only the way out.
-        st.button("Cerrar acceso", icon=":material/lock:", key="author_access_close", on_click=lock_author_access)
-        return
-    with st.popover(
-        "Acceso del autor",
-        icon=":material/lock:",
-        width="stretch",
-        help="Lanzar el pipeline y abrir las páginas del autor, con la clave de control.",
-    ):
-        if not access_code:
-            st.caption("Se activa cuando el autor guarda la clave de control en los secretos del panel.")
-            return
-        # Enter opens it (D-203): the code is checked when the field commits, no extra button.
-        st.text_input(
-            "Clave de control",
-            key="author_access_code",
-            autocomplete="off",
-            on_change=check_author_code,
-            args=(access_code,),
-            placeholder="Escribe la clave y pulsa Enter",
-        )
-        message = st.session_state.pop(AUTHOR_CODE_MESSAGE, None)
-        if message:
-            st.error(message, icon=":material/lock:")
+    """«Cerrar acceso»: the Autor's session ends, as choosing another view does (D-353)."""
+    leave_author()
 
 
 def build_runs_css(mode):
     palette = charts.get_palette(mode)
     return f"""<style>
-    /* D-207: the control code is a plain text field shown as dots, so the browser never takes
-       it for an account password and never offers to generate or save one. */
-    .st-key-author_access_code input, .st-key-run_now_code input {{-webkit-text-security:disc; text-security:disc;}}
+    /* D-421: the only key is typed in «Elige tu vista» (a password field there); this page asks for none. */
     /* The manual run is a round power button (D-149): deep glossy blue, a brushed
        metal ring, the white power symbol. The words sit under it. */
     .st-key-runs_run_now {{display:flex; justify-content:center; align-self:center; margin:10px auto 2px;}}
@@ -6222,8 +6167,8 @@ def show_view_tabs(key, labels, palette):
 def show_runs_page(mode):
     """Centro de operación (D-165): the weekly run as a path of floating logos, each
     with what it does and where to act, and beside it the facts and the manual run."""
-    # D-255 (the author's decision): the page opens on where each piece runs; «Acceso del autor» sits above the tabs,
-    # so the control code and the links are one click away in every one of them. D-267: in the page bar.
+    # D-255 (the author's decision): the page opens on where each piece runs. D-267: in the page bar. D-421: the page is
+    # the Autor's, so the manual run sits above the tabs with no key box.
     show_page_bar(
         PAGE_RUNS,
         "Centro de operación",

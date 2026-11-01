@@ -3180,3 +3180,18 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pruebas:**
   - `tests/test_menu_order.py::test_d420_…`: para Usuario y Profesional, cada página de DevOps por la dirección dice que no hay acceso y no dibuja nada propio, y el menú no tiene la sección. Profesional lee la seguridad en «Stack y evidencia». El Autor ve la sección entera.
   - Las pruebas del menú, la ruta, los vecinos, los perfiles y el encabezado siguen el orden nuevo.
+
+## D-421 · Una sola clave en el panel, y cada acción del Autor se comprueba en el servidor
+
+- **Decisión del autor:** hay una sola clave, la de entrar como Autor. Se quita el campo «Clave de control» y cualquier otra clave dentro del panel. Iniciar una ejecución queda directo; cancelar pide confirmar «¿Seguro?» en la página. Cada acción del Autor comprueba en el servidor que la sesión es del Autor.
+- **Decisión:**
+  - **Una clave:** la clave se escribe solo en «Elige tu vista» (D-369). El «Centro de operación» ya no tiene «Acceso del autor» ni campo de clave: es una página del Autor (D-420), así que muestra directo «Ejecutar pipeline ahora», «Recargar datos» y «Cerrar acceso». «Cerrar acceso» cierra la sesión del Autor, igual que cambiar de perfil (D-353).
+  - **Lanzar:** la ventana de la ejecución ya no pide clave; lanza la carga de inmediato.
+  - **Control en el servidor:** la ventana de la ejecución, la cancelación y «Recargar datos» vuelven a comprobar la sesión antes de actuar. Sin sesión del Autor, la ventana solo dice que no hay acceso, la cancelación no se envía y la recarga no ocurre.
+  - **Se mantienen:** el límite de intentos (D-393), la caducidad a los 30 min, el cierre al cambiar de perfil, los tokens con permisos mínimos (D-397) y el registro de cada ejecución (GitHub la guarda como `workflow_dispatch`; el registro del servidor anota cuándo se lanzó o canceló).
+  - **Regla:** `CLAUDE.md` agrega que las secciones de operación y seguridad interna se muestran solo al perfil administrador, con control de acceso en el servidor (el repositorio no tiene `AI_MASTER_METHODOLOGY.md`).
+  - **Documentos:** el MANUAL (sección 7) y el mapa de la app cuentan la clave única, en los dos idiomas.
+- **Pruebas:**
+  - `tests/test_dashboard.py::test_d421_…`: como Autor no hay campo de clave y la ventana lanza la carga; el panel tiene un solo campo de clave; «Recargar datos» no actúa sin la sesión del Autor y la cancelación está detrás de `is_author()`.
+  - `tests/test_dashboard.py::test_d202_…`: sin la sesión, la ventana de la ejecución no lanza nada ni pide clave.
+  - `tests/test_operation_center.py::test_d165_…`: el Centro de operación del Autor muestra la ejecución manual sin campo de clave.

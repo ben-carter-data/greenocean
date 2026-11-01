@@ -218,7 +218,7 @@ NODES = {
         "Cuando cambia el código o lanza una carga manual.",
         "Ejecuciones",
         [
-            ("clave de control", "la escribe en «Acceso del autor» para abrir el botón «Ejecutar pipeline ahora»."),
+            ("clave de control", "la única clave del panel: la escribe en «Elige tu vista» para entrar como Autor."),
             (
                 "verificación en dos pasos",
                 "en sus cuentas de GitHub y de Streamlit; declarada por el autor, no verificable desde el repositorio.",
