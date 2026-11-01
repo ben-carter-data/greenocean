@@ -393,7 +393,7 @@ def build_css(palette):
     sans = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
     return f"""<style>
 /* D-277: the diagram keeps its proportion and is never taller than what the window leaves for it, with the figures. */
-.sk-map {{ container-type:inline-size; max-width:min(1240px, calc((100vh - 314px) * {WIDTH} / {HEIGHT})); margin:4px auto 0; }}
+.sk-map {{ container-type:inline-size; max-width:min(1240px, calc((100vh - 326px) * {WIDTH} / {HEIGHT})); margin:4px auto 0; }}
 .sk-stage {{ --u:calc(100cqw / {WIDTH}); position:relative; width:100%; aspect-ratio:{WIDTH}/{HEIGHT}; }}
 .sk-wires {{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }}
 .sk-node {{ position:absolute; width:calc(158 * var(--u)); margin-left:calc(-79 * var(--u)); margin-top:calc(-{LOGO / 2} * var(--u));

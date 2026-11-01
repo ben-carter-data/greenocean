@@ -176,3 +176,18 @@ def test_d398_the_header_has_no_link_to_another_page(view, language):
     assert not [
         node for node in bar_elements(app) if type(node).__name__ in ("PageLink", "SegmentedControl", "Selectbox")
     ]
+
+
+def test_d407_one_screen_down_to_1280_by_800_and_1024_by_768_scrolls_without_cuts():
+    # RNF-06 adds 1280 x 800; the measurement scripts check that size by default
+    prd = (PROJECT_DIR / "docs" / "negocio" / "PRD.md").read_text(encoding="utf-8")
+    assert "(1440 × 790 útiles), a 1280 × 800 y a 1920 × 1000" in prd
+    assert "En 1024 × 768 se acepta el desplazamiento vertical, sin cortes" in prd
+    for script in ("medir.cjs", "desbordes.cjs"):
+        assert "1440x790,1280x800," in (PROJECT_DIR / "tests" / "medicion" / script).read_text(encoding="utf-8")
+    # the Panorama bar keeps one line, and under 860 px of height its family rows get thinner
+    css = (PROJECT_DIR / "bi" / "home_mockup.css").read_text(encoding="utf-8")
+    assert ".stApp .st-key-home_bar {flex-wrap:nowrap!important;}" in css
+    assert "@media (max-height:860px) and (min-width:1101px)" in css
+    # the pages sized by the window leave room for the content row of D-398
+    assert "max-height:calc(100vh - 340px)" in dashboard.build_architecture_css(charts.MODE_DARK)

@@ -458,10 +458,9 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .home-bar-updated {display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-size:12.5px;color:var(--mock-muted);}
 .home-bar-updated i {width:7px;height:7px;border-radius:50%;background:#529e57;flex:none;}
 .home-bar-updated i.failed {background:#e62035;}
-/* D-375: under 1300 px the bar takes two rows (the path and the week, then the buttons) instead of overlapping them. */
-@media (max-width:1300px) {.stApp .st-key-home_bar {flex-wrap:wrap!important;}
-  .stApp .st-key-home_bar > :has(.home-bar-main) {flex:1 1 calc(100% - 48px)!important;}
-  .home-bar-main {flex-wrap:wrap;row-gap:6px;}.home-bar-title {flex:1 1 100%;order:-1;white-space:normal;}}
+/* D-407: the bar holds only the path, the week and the time (D-398): it keeps one line at any width; the section of
+   the path is cut with «…» first. */
+.stApp .st-key-home_bar {flex-wrap:nowrap!important;}
 /* Map and right column end at the same line (D-150): the map stretches to the
    height of the family chart plus the products, and Chile scales inside it. */
 .st-key-home_overview [data-testid="stHorizontalBlock"] {align-items:stretch!important;}
@@ -489,11 +488,14 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-home_products [data-testid="stTextInput"] input {font-size:12px!important;min-height:28px!important;}
 .st-key-home_products [data-testid="stTextInput"] > div {min-height:28px!important;}
 .st-key-home_products {padding:6px 12px 8px!important;gap:4px!important;}
-.mock-products-table {max-height:max(110px, calc(100vh - 636px))!important;min-height:0!important;}
-/* D-309: the Panorama fits one screen: the map and the panels take the height the window leaves under the bar. */
-.st-key-home_overview {height:calc(100vh - 100px);min-height:520px;}
+.mock-products-table {max-height:max(110px, calc(100vh - 676px))!important;min-height:0!important;}
+/* D-309: the Panorama fits one screen: the map and the panels take the height the window leaves under the bar.
+   D-407: under the bar and the row of the content (D-398), about 140 px; the map is held by that height, not by the
+   column's width, so it never pushes the page down (1440 x 790 and 1280 x 800, RNF-06). */
+.st-key-home_overview {height:calc(100vh - 195px);min-height:420px;}
 .st-key-home_overview > [data-testid="stHorizontalBlock"] {height:100%;}
-.st-key-home_overview .mock-chile-map {min-height:0!important;max-height:none!important;height:auto;}
+.st-key-home_overview .mock-chile-map {min-height:0!important;max-height:none!important;height:max(280px, calc(100vh - 390px))!important;
+  width:100%;}
 .mock-products-table table {border-collapse:separate;border-spacing:0;}
 .mock-products-table td + td,.mock-products-table th + th {border-left:1px solid var(--mock-border);}
 /* The count of regions reads as a link: it opens its list with a click or with the cursor. */
@@ -642,3 +644,13 @@ ul.mock-calc-out li em {font-style:normal;}
 @keyframes mock-unlock {0% {box-shadow:0 0 0 0 color-mix(in srgb,__ACCENT__ 70%,transparent);} 60% {box-shadow:0 0 0 6px color-mix(in srgb,__ACCENT__ 25%,transparent);} 100% {box-shadow:0 0 0 0 transparent;}}
 @media (prefers-reduced-motion:reduce) {.st-key-home_families,.st-key-home_products,.st-key-home_products [data-testid="stTextInputRootElement"] {animation:none!important;}}
 .st-key-home_families > [data-testid="stElementContainer"]:has(.mock-lock),.st-key-home_products > [data-testid="stElementContainer"]:has(.mock-lock) {position:absolute!important;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;margin:0!important;}
+
+/* D-407: one screen down to 1280 x 800 (RNF-06). Under 860 px of height the family rows get thinner, the fixed line
+   over the products table leaves (each row keeps its «Ver cálculo») and the table takes what the window leaves. */
+@media (max-height:860px) and (min-width:1101px) {
+ .stApp .greenocean-mockup .mock-movement .mock-movement-row {min-height:26px!important;padding-top:0!important;padding-bottom:0!important;}
+ .stApp .greenocean-mockup .mock-movement .mock-movement-row.mock-movement-axis {min-height:16px!important;}
+ .stApp .greenocean-mockup .mock-movement .mock-movement-art {width:22px!important;height:22px!important;}
+ .st-key-home_overview .mock-products-note {display:none!important;}
+ .st-key-home_overview .mock-products-table {max-height:max(90px, calc(100vh - 712px))!important;}
+}

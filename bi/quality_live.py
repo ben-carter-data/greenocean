@@ -395,7 +395,7 @@ def build_css(palette):
 * {{ box-sizing:border-box; }}
 html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }}
 {states}
-.qp {{ padding:2px 2px 8px; }}
+.qp {{ padding:2px 2px 2px; }}
 .qp .hint {{ margin:0 0 4px; color:{muted}; font-size:13px; }}
 {build_pipeline_css(palette)}
 .qp .modal {{ display:none; position:fixed; inset:0; z-index:50; align-items:center; justify-content:center; padding:10px; background:rgba(0,0,0,.55); }}
@@ -578,7 +578,7 @@ def build_pipeline_css(palette):
 .qp .pq-grid {{ display:grid; margin-top:4px; align-items:center; column-gap:0; row-gap:0;
   grid-template-columns:minmax(76px, .85fr) minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(0, 1.3fr)
     minmax(88px, .7fr) minmax(0, 1.3fr) minmax(88px, .7fr) minmax(76px, .85fr);
-  grid-template-rows:auto 22px auto 22px auto 22px auto;
+  grid-template-rows:auto 16px auto 16px auto 16px auto;
   grid-template-areas:
     ".   .  .  rej rej rej .  .  .   "
     ".   .  .  .  vr  .  .  .  .   "
@@ -624,12 +624,12 @@ def build_pipeline_css(palette):
 .qp .pq .h::after {{ content:""; position:absolute; right:2px; top:27px; border:5px solid transparent; border-left:8px solid {accent}; }}
 .qp .pq .h span {{ position:absolute; left:0; right:0; top:6px; text-align:center; white-space:nowrap;
   font:600 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; color:{accent}; font-variant-numeric:tabular-nums; }}
-.qp .pq .v {{ position:relative; height:100%; min-height:28px; }}
+.qp .pq .v {{ position:relative; height:100%; min-height:20px; }}
 .qp .pq .v::before {{ content:""; position:absolute; left:50%; top:2px; bottom:9px; border-left:2px dashed {accent}; opacity:.85; }}
 .qp .pq .v::after {{ content:""; position:absolute; left:calc(50% - 4px); bottom:1px; border:5px solid transparent; border-top:8px solid {accent}; }}
 .qp .pq .v.up::before {{ top:9px; bottom:2px; border-left-color:{quality_view.PILL_COLORS["pending"]}; }}
 .qp .pq .v.up::after {{ top:-3px; bottom:auto; border-top-color:transparent; border-bottom:8px solid {quality_view.PILL_COLORS["pending"]}; }}
-.qp .pq .legend-box {{ align-self:end; padding:0 12px 4px 0; font-size:12px; line-height:1.7; color:{muted}; white-space:nowrap; }}
+.qp .pq .legend-box {{ align-self:end; padding:0 12px 4px 0; font-size:12px; line-height:1.5; color:{muted}; white-space:nowrap; }}
 .qp .pq .legend-box i {{ display:inline-block; width:9px; height:9px; margin-right:6px; border-radius:50%; background:var(--c); }}
 @media (min-width:761px) and (max-width:960px) {{
   .qp .pq {{ padding:12px 14px 14px; }}

@@ -1733,7 +1733,7 @@ def build_style_css(mode):
     .doc-diagram {{margin:12px 0 22px; padding:14px; border:1px solid {palette['card_border']};
         border-radius:14px; background:{palette['card']};}}
     .doc-diagram .zoom-content > svg {{display:block; width:100%; height:auto; max-height:640px; margin:0 auto;}}
-    .st-key-card_pipeline_main {{margin-top:10px;}}
+    .st-key-card_pipeline_main {{margin-top:6px;}}
     .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="12"] {{font-size:13px;}}
     .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="13"] {{font-size:15px;}}
     .stApp:has(.overview-pipeline) .pipeline-gallery-main-link svg text[font-size="14"] {{font-size:15px;}}
@@ -2834,11 +2834,11 @@ def build_architecture_css(mode):
     .st-key-architecture_diagram {{border:1px solid {palette['card_border']}; border-radius:14px;
         background:{palette['card']}; padding:14px 20px 18px;}}
     .st-key-architecture_diagram svg {{display:block; width:100%; height:auto;}}
-    .st-key-architecture_diagram svg:not(.zoom-frame svg) {{max-height:calc(100vh - 267px);}}
+    .st-key-architecture_diagram svg:not(.zoom-frame svg) {{max-height:calc(100vh - 340px);}}
     /* The diagram always fits the window (D-232): the viewport is as wide as the height left
        allows, by the drawing's own proportion; the zoom buttons bring it closer inside the panel. */
     .fit-modelo {{position:relative;}}
-    .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 372px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
+    .fit-modelo .zoom-viewport {{max-width:calc(max(100vh - 427px, 280px) * var(--ratio, 1.45)); margin:0 auto;}}
     .fit-modelo .zoom-buttons {{position:absolute; bottom:-46px; right:0; margin:0; z-index:2;}}
     .arch-legend {{display:flex; flex-wrap:wrap; gap:8px 22px; margin:12px 4px 0; padding-top:10px;
         border-top:1px solid {palette['card_border']}; font-size:12px; line-height:1.5; color:{palette['text']};}}
@@ -2887,7 +2887,7 @@ def show_architecture_page(mode):
             '<span class="fit-donde" aria-hidden="true"></span><style>'
             '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"],'
             '[data-testid="stElementContainer"]:has(.fit-donde) + [data-testid="stElementContainer"] iframe '
-            '{height:max(calc(100vh - 316px), 380px) !important; flex:none !important; min-height:0 !important;}'
+            '{height:max(calc(100vh - 371px), 380px) !important; flex:none !important; min-height:0 !important;}'
             '</style>',
             unsafe_allow_html=True,
         )
@@ -2906,7 +2906,7 @@ def show_architecture_page(mode):
             '<span class="fit-cruces" aria-hidden="true"></span><style>'
             '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"],'
             '[data-testid="stElementContainer"]:has(.fit-cruces) + [data-testid="stElementContainer"] iframe '
-            '{height:max(calc(100vh - 340px), 380px) !important; flex:none !important; min-height:0 !important;}'
+            '{height:max(calc(100vh - 395px), 380px) !important; flex:none !important; min-height:0 !important;}'
             '</style>',
             unsafe_allow_html=True,
         )
@@ -4743,6 +4743,8 @@ def build_context_css(mode):
     /* Precios e inflación (D-233): the two rows of cards take the height the window leaves, and each
        chart fills its card; below a floor the page scrolls rather than squash the charts. */
     [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) {{min-height:max(calc((100vh - 374px) / 2), 165px);}}
+    /* D-407: under 1366 px the controls above the cards take more height, so the two rows leave it (RNF-06). */
+    @media (max-width:1366px) {{[class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) {{min-height:max(calc((100vh - 456px) / 2), 165px);}}}}
     [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stElementContainer"]:has([data-testid="stVegaLiteChart"]) {{
         flex:1 1 0; min-height:0; display:flex; flex-direction:column;}}
     [class*="st-key-inf_card_"]:not(.st-key-inf_card_focus) [data-testid="stFullScreenFrame"],
@@ -6226,7 +6228,7 @@ def show_security_page(mode):
     # D-277: the drawing keeps its proportion and is never taller than what the window leaves.
     st.markdown(
         '<style>.st-key-sec_frame iframe {display:block; margin:0 auto; '
-        f'max-width:calc((100vh - 228px) * {security_map.WIDTH} / {security_map.HEIGHT});}}</style>',
+        f'max-width:calc((100vh - 240px) * {security_map.WIDTH} / {security_map.HEIGHT});}}</style>',
         unsafe_allow_html=True,
     )
     with st.container(key="sec_frame"):
@@ -6542,7 +6544,7 @@ def show_devops_tab(mode):
     # D-277: the drawing keeps its proportion and is never taller than what the window leaves under the tabs.
     st.markdown(
         '<style>.st-key-dep_frame iframe {display:block; margin:0 auto; '
-        f'max-width:calc((100vh - 292px) * {deployment.WIDTH} / {deployment.HEIGHT});}}</style>',
+        f'max-width:calc((100vh - 346px) * {deployment.WIDTH} / {deployment.HEIGHT});}}</style>',
         unsafe_allow_html=True,
     )
     with st.container(key="dep_frame"):

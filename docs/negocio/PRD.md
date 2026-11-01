@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.6 |
-| Fecha | 31-10-2026 |
+| Versión | 3.7 |
+| Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar qué problema resuelve GreenOcean, para quién, qué preguntas responde y qué debe cumplir para que sus cifras sean confiables. |
@@ -123,8 +123,8 @@ Los requisitos funcionales (RF) dicen qué hace el producto. Los no funcionales 
 | RNF-02 | Cada cifra se puede comprobar | Los precios semanales se reconstruyen desde las filas crudas y por un segundo camino independiente, sin dbt: diferencia 0 | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price`, `tests/test_data_audit.py::test_the_panel_reproduces_the_reference_figures_of_its_week` |
 | RNF-03 | Seguridad | Ningún secreto en el repositorio; el workflow semanal tiene solo los permisos que usa; el panel no puede escribir la base | `tests/test_security.py::test_no_secret_is_tracked_by_git`, `tests/test_security.py::test_the_weekly_job_has_least_privilege`, `tests/test_sql_explorer.py::test_read_only_statements_are_accepted` |
 | RNF-04 | Calidad vigilada en cada cambio | pytest y la compilación de dbt corren en cada push. Los 11 indicadores de calidad de los datos se miden en cada carga, y uno fuera de su umbral cambia el veredicto. Los 12 indicadores del plan de calidad se miden cada semana ([Plan de calidad](../calidad/PLAN_DE_CALIDAD.md)) | `.github/workflows/pruebas.yml`, `tests/test_quality_audit.py::test_a_degraded_measure_turns_its_indicator_and_the_verdict_red` |
-| RNF-05 | Legible en computador, tableta y teléfono | Ninguna página se desplaza a lo ancho entre 1024 × 768 y 1920 × 1080, en tableta vertical (768 × 1024) ni en teléfono horizontal (844 × 390); en vertical, el panel pide girar el teléfono | `tests/medicion/medir.cjs` |
-| RNF-06 | Cada página principal en una pantalla | En la ventana del navegador de una pantalla de 1440 × 900 (1440 × 790 útiles) y a 1920 × 1000, cada página principal se ve entera, sin desplazar | `tests/medicion/medir.cjs` |
+| RNF-05 | Legible en computador, tableta y teléfono | Ninguna página se desplaza a lo ancho entre 1024 × 768 y 1920 × 1080, en tableta vertical (768 × 1024) ni en teléfono horizontal (844 × 390); en vertical, el panel pide girar el teléfono. En 1024 × 768 se acepta el desplazamiento vertical, sin cortes | `tests/medicion/medir.cjs` |
+| RNF-06 | Cada página principal en una pantalla | En la ventana del navegador de una pantalla de 1440 × 900 (1440 × 790 útiles), a 1280 × 800 y a 1920 × 1000, cada página principal se ve entera, sin desplazar | `tests/medicion/medir.cjs` |
 
 ## 6. Alcance
 
@@ -213,3 +213,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.4 | 31-10-2026 | Qué escuchamos (3.3), el porqué del alcance (6), el ciclo semanal (2) y la página «Análisis de negocio y sistemas» (D-377) |
 | 3.5 | 31-10-2026 | El orden de lectura de la sección «Negocio · BA y BI» en el menú (7, D-378) |
 | 3.6 | 31-10-2026 | Redacción revisada; cifras de la carga del 31-10-2026 (6); las tres vistas, cada una con lo que ve (3.2); la alerta de precio completa (RF-05); los indicadores de calidad de los datos y los del plan de calidad (RNF-04); capturas nuevas (7, D-392); el documento pasa a `docs/negocio/` (D-381, D-385, D-388) |
+| 3.7 | 01-11-2026 | Una pantalla también a 1280 × 800 (RNF-06); a 1024 × 768 se acepta el desplazamiento vertical, sin cortes (RNF-05, D-407) |

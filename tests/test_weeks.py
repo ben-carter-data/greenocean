@@ -107,6 +107,6 @@ def test_d375_the_next_week_never_widens_the_bar_and_the_section_name_gives_way_
         "@container (max-width:400px) {.home-bar-section {display:none;}}",
         ".home-bar-where {display:grid;grid-template-columns:minmax(0,auto) auto;",
         "grid-template-columns:auto minmax(0,auto)",
-        "@media (max-width:1300px)",
+        ".stApp .st-key-home_bar {flex-wrap:nowrap!important;}",  # D-407: one line at any width
     ):
         assert rule in css, rule

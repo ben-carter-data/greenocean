@@ -3,7 +3,7 @@
 // Needs Playwright from outside the project (no dependency is added to the repo):
 //   NODE_PATH=/path/to/node_modules node tests/medicion/medir.cjs <out_dir>
 // Environment: BASE (default http://localhost:8599/), CHROMIUM_EXECUTABLE (default: the
-// installed Chrome channel), PAGES (comma list of indexes), THEMES, LANG_PANEL (en), SIZES ("1440x790,..."; the real viewport of a 1440 x 900 screen, D-274).
+// installed Chrome channel), PAGES (comma list of indexes), THEMES, LANG_PANEL (en), SIZES ("1440x790,..."; the real viewport of a 1440 x 900 screen, D-274; 1280 x 800 since D-407).
 //
 // Per page, theme and size it writes <out_dir>/medicion.json (one row each) and, at
 // 1440 x 900, a viewport screenshot in <out_dir>/capturas/<theme>/<n>-<slug>.png.
@@ -17,7 +17,7 @@ const executable = process.env.CHROMIUM_EXECUTABLE;
 const themes = (process.env.THEMES || 'Vantablack,Blue Light').split(',');
 // D-284: LANG=en measures the panel in English (longer texts must still fit).
 const lang = process.env.LANG_PANEL || '';
-const sizes = (process.env.SIZES || '1440x790,1920x1000,1440x700,1920x1080,1024x768,768x1024,390x844,844x390')
+const sizes = (process.env.SIZES || '1440x790,1280x800,1920x1000,1440x700,1920x1080,1024x768,768x1024,390x844,844x390')
   .split(',').map(s => s.split('x').map(Number));
 const only = process.env.PAGES ? process.env.PAGES.split(',').map(Number) : null;
 const SHOT_SIZE = [1440, 900];

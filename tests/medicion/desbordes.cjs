@@ -3,14 +3,14 @@
 // elements whose own text is wider than their box, or that leave the card or the window that holds them.
 //
 // Usage: NODE_PATH=<folder with playwright> node tests/medicion/desbordes.cjs http://localhost:8501 > out.json
-// Environment: THEMES (default Corporativo,Vantablack), LANGS (default es,en), SIZES (default "1440x790,1920x1000,1280x720,
+// Environment: THEMES (default Corporativo,Vantablack), LANGS (default es,en), SIZES (default "1440x790,1280x800,1920x1000,1280x720,
 // 1024x768,844x390"), PAGES (comma list of menu positions, to look at a few).
 const { chromium } = require('playwright');
 
 const BASE = process.argv[2] || 'http://localhost:8501';
 const THEMES = (process.env.THEMES || 'Corporativo,Vantablack').split(',');
 const LANGS = (process.env.LANGS || 'es,en').split(',');
-const SIZES = (process.env.SIZES || '1440x790,1920x1000,1280x720,1024x768,844x390').split(',').map((s) => s.split('x').map(Number));
+const SIZES = (process.env.SIZES || '1440x790,1280x800,1920x1000,1280x720,1024x768,844x390').split(',').map((s) => s.split('x').map(Number));
 const ONLY = process.env.PAGES ? process.env.PAGES.split(',').map(Number) : null;
 
 // Runs inside every frame: self-contained on purpose.

@@ -819,7 +819,7 @@ def build_css(palette):
 .st-key-sqlx_studio [data-testid="stMarkdownContainer"] {{ margin-bottom:0 !important; }}
 .st-key-sqlx_studio [data-testid="stMarkdownContainer"] > p {{ margin:0; }}
 .st-key-sqlx_studio {{ gap:0 !important; border-radius:18px; background:{card}; border:1px solid {border};
-  box-shadow:{panel_shadow}; overflow:hidden; margin-top:4px; }}
+  box-shadow:{panel_shadow}; overflow:hidden; margin-top:0; }}
 .st-key-sqlx_toolbar {{ gap:7px !important; padding:9px 14px 9px 12px;
   background:{toolbar}; border-bottom:1px solid {border}; box-shadow:0 1px 0 rgba(255,255,255,{'.06' if dark else '.9'}) inset; }}
 .st-key-sqlx_toolbar_main, .st-key-sqlx_chips_row {{ flex-wrap:wrap !important; gap:6px 10px !important; }}
@@ -844,9 +844,9 @@ def build_css(palette):
 .st-key-sqlx_body {{ gap:0 !important; }}
 /* D-233, D-267: the studio and the short footer fit the window: the explorer scrolls by itself (its bar shows on hover) and the grid takes
    what the editor leaves; below a floor the page scrolls rather than squash them. */
-.st-key-sqlx_explorer {{ max-height:max(calc(100vh - 334px), 360px); overflow-y:auto; scrollbar-width:none; }}
+.st-key-sqlx_explorer {{ max-height:max(calc(100vh - 388px), 360px); overflow-y:auto; scrollbar-width:none; }}
 .st-key-sqlx_explorer:hover {{ scrollbar-width:thin; scrollbar-color:{border} transparent; }}
-.st-key-sqlx_results [data-testid="stDataFrame"] {{ height:max(calc(100vh - 644px), 200px) !important; }}
+.st-key-sqlx_results [data-testid="stDataFrame"] {{ height:max(calc(100vh - 698px), 190px) !important; }}
 .st-key-sqlx_body [data-testid="stHorizontalBlock"] {{ align-items:stretch; gap:0 !important; }}
 [data-testid="stColumn"]:has(.st-key-sqlx_explorer) > [data-testid="stVerticalBlock"],
 [data-testid="stColumn"]:has(.st-key-sqlx_explorer) [data-testid="stLayoutWrapper"] {{ height:100%; flex:1 1 auto; }}
