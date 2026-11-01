@@ -240,7 +240,7 @@ NODES = {
             ("hmac.compare_digest", "compara la clave en tiempo constante."),
             (
                 "GITHUB_TOKEN",
-                "token para lanzar el workflow y leer sus ejecuciones; el panel avisa 14 días antes de su vencimiento.",
+                "token para lanzar el workflow y leer sus ejecuciones; el panel avisa 15 días antes de su vencimiento.",
             ),
         ],
     ),

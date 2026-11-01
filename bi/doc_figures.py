@@ -1718,7 +1718,7 @@ def manual_calendar(mode):
             (
                 say("Antes del vencimiento", "Before it expires"),
                 say("Renovar el token", "Renew the token"),
-                [say("el panel avisa 14 días antes", "the panel warns 14 days before")],
+                [say("el panel avisa 15 días antes", "the panel warns 15 days before")],
             ),
         ],
     )

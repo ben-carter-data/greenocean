@@ -22,7 +22,7 @@ def network(monkeypatch):
     st.cache_data.clear()
 
 
-def draw(unlocked=True, language="es", secrets=("read", "usual"), view="GitHub Actions"):
+def draw(unlocked=True, language="es", secrets=("read", "usual"), view="GitHub Actions", run=True):
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=90)
     app.query_params.update({"perfil": "profesional", "lang": language, "vista": view})
     if unlocked:
@@ -32,7 +32,8 @@ def draw(unlocked=True, language="es", secrets=("read", "usual"), view="GitHub A
         app.secrets["GITHUB_READ_TOKEN"] = READ_TOKEN
     if "usual" in secrets:
         app.secrets["GITHUB_TOKEN"] = TOKEN
-    app.run()
+    if run:
+        app.run()
     return app
 
 

@@ -3035,3 +3035,21 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor (4B):** la tabla del paso 3 debe mostrar al menos 8 filas a 1440 × 790 y 6 a 1280 × 800; si hace falta, los pasos 1 y 2 se compactan después de elegir, como una línea con lo elegido y un botón «Cambiar». Igual en el Panorama y en cada canal.
 - **Decisión:** cuando ya hay una región y una familia elegidas, el mapa y las familias dejan su lugar a dos líneas: «1 Región · Todo Chile · Cambiar» y «2 Familia · Frutas · +0,3 % · Cambiar». El paso 3 toma todo el ancho y la altura que dejan, y cada fila ocupa dos líneas: el producto, y debajo su calidad y unidad junto a «Ver cálculo». Bajo 860 px de alto, la línea fija sobre la tabla se oculta, como en D-407. «Cambiar» vuelve a abrir los pasos 1 y 2 sin bloquear nada (D-352); elegir una familia los pliega de nuevo, y elegir solo una región los deja abiertos para ver cómo se movieron sus familias. Cada canal guarda su propio estado (D-405). Con la base del 31-10-2026 se ven 9 filas a 1440 × 790 y 9 o 10 a 1280 × 800, sin desplazar, en español y en inglés.
 - **Pruebas:** `tests/test_panorama_steps.py::test_d408_…` (las líneas plegadas, «Cambiar» y cuándo se vuelve a plegar, y la altura de la tabla), `tests/test_channel_latest.py::test_d408_…` (un canal se pliega con su propio estado) y la medición con Playwright de las filas visibles.
+
+## D-409 · «Configuración», la consola del autor, reemplaza a «Enlaces del autor»
+
+- **Pedido del autor (parte 3):** una consola simple, solo para el Autor, en «DevOps y seguridad», con tarjetas e íconos en una sola pantalla: el estado con color, «¿Qué pasó?» con los pasos de cada caso y el mantenimiento con fecha, leído del MANUAL sin duplicar y sin mostrar nunca el valor de un token.
+- **Decisión:** la página «Configuración» tiene tres bandas.
+  - **Estado:** seis tarjetas. El token de lanzamiento y el de solo lectura muestran los días que les quedan y su fecha, leída de GitHub. Se ven en ámbar con 15 días o menos, y en rojo si vencieron o faltan. Las otras cuatro son la última carga (roja si una ejecución posterior falló, ámbar con más de 8 días), el último informe de calidad (D-361), las pruebas del CI en main y las fuentes atrasadas (D-356).
+  - **¿Qué pasó?:** cinco botones, uno por caso. Cada uno abre sus pasos en orden, marcados «Automático» o «Manual», con su enlace. Una página del panel se abre en la misma visita, porque una recarga cerraría la sesión de Autor; una dirección externa se abre en otra pestaña.
+  - **Mantenimiento y guía:** renovar cada token antes de su fecha, las ramas viejas de informes contadas en GitHub, las líneas de enero de `agent/input.csv` (comprobadas en el archivo) y la copia de `agent/downloads`. Al lado, los enlaces de la guía de GitHub.
+- **Fuente única:** los casos y sus pasos son la nueva sección 8.1 del MANUAL («Qué hacer en cada caso»), en español e inglés. Los enlaces salen de la guía de GitHub (8), que suma los dos enlaces de tokens, y las tareas, de «Qué se revisa y cuándo» (3).
+- **Qué cambia en el resto del panel:** el aviso del token pasa de 14 a 15 días o menos en todo el panel y en los documentos. En «Centro de operación», el desplegable «Enlaces del autor» deja su lugar a «Cerrar acceso»: los enlaces viven en «Configuración», en el menú (D-398).
+- **Cómo lee GitHub:** pide la fecha de cada token con ese mismo token, como ya hacía el aviso. Las ejecuciones de pruebas y las ramas las lee solo con el token de solo lectura (D-397). Guarda solo fechas, estados y frases de error, durante 5 minutos.
+- **Pantalla:** cabe en una pantalla a 1440 × 790 y a 1280 × 800, en los dos idiomas (RNF-06).
+- **Pruebas:** `tests/test_configuration.py`, que comprueba:
+  - Solo el Autor la ve, y sin la clave no se consulta a GitHub.
+  - Ningún token aparece, ni en la página ni en las cinco ventanas.
+  - Los colores siguen fechas simuladas.
+  - Los casos, pasos y enlaces son los del MANUAL en los dos idiomas, y en inglés no queda texto en español.
+  - Las tareas de mantenimiento salen de los datos.

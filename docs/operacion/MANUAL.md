@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.2 |
-| Fecha | 31-10-2026 |
+| Versión | 3.3 |
+| Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Indicar qué ocurre de forma automática, qué se revisa y cuándo, y qué hacer ante cada falla. |
@@ -58,7 +58,7 @@ Después de cada carga, el workflow de calidad mide los 12 indicadores del plan 
 | Ante una duda sobre las cifras | El veredicto de calidad y los controles de auditoría | «Calidad y auditoría» |
 | Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos | `agent/input.csv` |
 | Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](../arquitectura/ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días | Otro disco del autor |
-| Antes de su vencimiento | Renovar el token de GitHub del panel; el panel avisa cuando faltan menos de 14 días | Secretos de la app en Streamlit |
+| Antes de su vencimiento | Renovar los dos tokens de GitHub del panel; «Configuración» los marca en ámbar cuando faltan 15 días o menos (sección 8.1) | Secretos de la app en Streamlit |
 | Después de cada carga semanal | El pull request «Actualizar medición de calidad»: fusionarlo o cerrarlo, borrar su rama y hacer `git pull` | Pull requests del repositorio (sección 8) |
 | Al entrar como Autor | La alerta «Acción requerida»; si empieza con «Última medición del …», el informe tiene más de 8 días y no es el estado de hoy | La ventana que abre el panel |
 
@@ -105,7 +105,7 @@ Para leer cualquier falla sin copiar a mano, la página «GitHub Actions» del p
 
 ## 7. Acceso del autor y administración
 
-En «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso del vencimiento del token y los enlaces de administración: tokens de GitHub, ejecuciones y administración de la app en Streamlit. Sin el secreto configurado, por ejemplo en una copia local, el acceso queda cerrado.
+En «Centro de operación», «Acceso del autor» pide la clave de control (secreto `CONTROL_CODE` del panel) y se abre con Enter. Con la clave correcta aparecen el botón «Ejecutar pipeline ahora», el aviso del vencimiento del token y la página «Configuración», en «DevOps y seguridad». Esa página reúne en una pantalla el estado de los tokens, la última carga, el último informe, las pruebas y las fuentes; qué hacer en cada caso (sección 8.1), y las tareas de mantenimiento. Sin el secreto configurado, por ejemplo en una copia local, el acceso queda cerrado.
 
 La clave evita ejecuciones accidentales; no es la barrera principal. Lo que protege el proyecto es el inicio de sesión del autor en GitHub y en Streamlit (con verificación en dos pasos) y un token con los permisos mínimos. Tras 3 fallos, cada intento espera 2 s, y el doble tras cada nuevo fallo, hasta 15 min; con la clave correcta vuelve a cero (D-393, [Plan de pruebas y seguridad](../calidad/PLAN_PRUEBAS.md#11-riesgos-aceptados-y-límites)). Si la espera traba el acceso, la carga se puede lanzar desde GitHub. El panel nunca muestra el token ni una parte de él.
 
@@ -134,8 +134,40 @@ Los enlaces que se usan para operar el proyecto, agrupados por tarea.
 | Configuración | [Issues](https://github.com/ben-carter-data/greenocean/issues) | El informe semanal de cada carga publicada | Cada martes | «Informe semanal AAAA-MM-DD» |
 | La app | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | La app que ven el Usuario, el Profesional y el Autor | Después de cada push, para confirmar el cambio | Elegir la vista; como Autor, escribir la clave y Enter |
 | La app | [Streamlit Community Cloud](https://share.streamlit.io) | Los secretos del panel y su reinicio | Al renovar un token o si el panel muestra un error de módulo | La app → ⋮ → «Settings» → «Secrets», o «Reboot» |
+| Tokens | [Tokens de GitHub](https://github.com/settings/personal-access-tokens) | El vencimiento y los permisos de cada token | Cuando «Configuración» marca un token en ámbar o rojo | El token → «Regenerate token»; el valor nuevo se muestra una sola vez |
+| Tokens | [Crear un token](https://github.com/settings/personal-access-tokens/new) | Un token nuevo, solo para este repositorio | Si un token falta | «Repository access» → este repositorio; «Permissions» → «Actions» |
 
 **Dos reglas.** No editar archivos desde la web de GitHub: todo cambio se hace en el computador del autor y se sube con push, para que main local y remoto no se separen. Después de fusionar un pull request en la web, traer el cambio con `git pull` antes de trabajar.
+
+### 8.1 Qué hacer en cada caso
+
+Cinco casos, cada uno con sus pasos en orden. Un paso automático lo hace el sistema solo; uno manual lo hace el autor, con el enlace que lleva a ese lugar. La página «Configuración» muestra esta misma tabla.
+
+| Caso | Paso | Tipo | Qué hacer | Enlace |
+|---|---|---|---|---|
+| La carga falló | 1 | Automático | GitHub detiene los pasos siguientes y el panel sigue mostrando la última carga válida | — |
+| La carga falló | 2 | Automático | Llega el correo «Run failed: semanal» y el panel muestra un aviso rojo arriba del menú | — |
+| La carga falló | 3 | Manual | Leer qué paso falló y el final de su log | [[vista:GitHub Actions]] |
+| La carga falló | 4 | Manual | Corregir la causa según la tabla de la sección 4 | — |
+| La carga falló | 5 | Manual | Volver a lanzar la carga con «Ejecutar pipeline ahora», o con «Run workflow» en GitHub | [[vista:Centro de operación]] |
+| Llegó un informe | 1 | Automático | Después de cada carga, el workflow de calidad mide los 12 indicadores y abre el pull request «Actualizar medición de calidad» | — |
+| Llegó un informe | 2 | Manual | Revisar el informe en «Files changed» | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) |
+| Llegó un informe | 3 | Manual | «Merge pull request», o «Close pull request» si un informe más nuevo lo reemplaza | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) |
+| Llegó un informe | 4 | Manual | Borrar la rama «informe-calidad/…» del informe | [Branches](https://github.com/ben-carter-data/greenocean/branches) |
+| Llegó un informe | 5 | Manual | En el computador, traer el cambio con `git pull` | — |
+| Un token vence o falta | 1 | Automático | «Configuración» marca el token en ámbar cuando faltan 15 días o menos, y en rojo si venció o falta | [[vista:Configuración]] |
+| Un token vence o falta | 2 | Manual | En GitHub, regenerar el token o crear uno nuevo, solo para este repositorio: «Actions: Read and write» para `GITHUB_TOKEN` y «Actions: Read» para `GITHUB_READ_TOKEN`. El valor se muestra una sola vez: copiarlo | [Tokens de GitHub](https://github.com/settings/personal-access-tokens) |
+| Un token vence o falta | 3 | Manual | En Streamlit Community Cloud: la app → ⋮ → «Settings» → «Secrets» | [Streamlit Community Cloud](https://share.streamlit.io) |
+| Un token vence o falta | 4 | Manual | Pegar el valor en `GITHUB_TOKEN` o `GITHUB_READ_TOKEN` y pulsar «Save» | — |
+| Un token vence o falta | 5 | Manual | Pulsar «Reboot» y confirmar en «Configuración» la fecha nueva | [[vista:Configuración]] |
+| Una fuente se atrasó | 1 | Automático | La carga publica hasta la última semana completa en ambas fuentes y el Panorama avisa «ODEPA aún no publica la semana …» | [[vista:Panorama de precios]] |
+| Una fuente se atrasó | 2 | Automático | Si la fuente lleva más de 2 semanas sin publicar, la carga se detiene con `LATE_SOURCE` y llega el aviso de falla | — |
+| Una fuente se atrasó | 3 | Manual | Revisar en ODEPA si la semana ya está publicada | [Datos abiertos de ODEPA](https://datos.odepa.gob.cl) |
+| Una fuente se atrasó | 4 | Manual | No rellenar nada: la carga vuelve sola cuando la fuente publica | — |
+| La app no se actualiza | 1 | Automático | Después de cada push a main, Streamlit Community Cloud vuelve a desplegar la app | — |
+| La app no se actualiza | 2 | Manual | Abrir el panel publicado y confirmar que el cambio llegó | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) |
+| La app no se actualiza | 3 | Manual | Si una página muestra `AttributeError` o no cambia: la app → ⋮ → «Reboot», y esperar uno o dos minutos | [Streamlit Community Cloud](https://share.streamlit.io) |
+| La app no se actualiza | 4 | Manual | Si el panel dice que no tiene la base servida, revisar que `datos.duckdb` esté en el release | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) |
 
 ## 9. Registro de fallas
 
@@ -170,3 +202,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.0 | 25-10-2026 | Un resumen al inicio, el calendario, el árbol de fallas y la secuencia de recuperación como diagramas (D-290, documentos para todo lector) |
 | 3.1 | 30-10-2026 | Guía de GitHub y registro de fallas; fuentes retrasadas, informe de calidad semanal, ventana de la carga manual, acceso como Autor y los tres secretos (D-339 a D-363) |
 | 3.2 | 31-10-2026 | Redacción revisada; los 12 indicadores del plan de calidad (2); el token lanza, sigue y cancela la carga (7); las tres vistas (8, 9); el documento pasa a `docs/operacion/` (D-381, D-384, D-388) |
+| 3.3 | 01-11-2026 | Qué hacer en cada caso (8.1), que lee la página «Configuración»; los dos tokens en la guía de GitHub (8) y su aviso a 15 días (3, D-409) |

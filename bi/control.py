@@ -29,7 +29,7 @@ API_URL = "https://api.github.com"
 REQUEST_TIMEOUT_SECONDS = 10
 # GitHub states when the token of a request expires in this answer header.
 TOKEN_EXPIRATION_HEADER = "GitHub-Authentication-Token-Expiration"
-TOKEN_WARNING_DAYS = 14
+TOKEN_WARNING_DAYS = 15  # D-409: amber at 15 days or fewer, in the panel and in «Configuración»
 
 # Schedule of semanal.yml: Tuesdays at 12:00 UTC.
 SCHEDULE_WEEKDAY = 1  # Monday is 0
@@ -275,7 +275,7 @@ def describe_token_expiration(expiration: datetime | None, now: datetime) -> tup
     days = (expiration - now).days
     if days < 0:
         return "Tu token venció: crea uno nuevo y cámbialo en los secretos del panel.", True
-    return (f"Tu token vence en {days} días ({expiration:%d-%m-%Y}).", days < TOKEN_WARNING_DAYS)
+    return (f"Tu token vence en {days} días ({expiration:%d-%m-%Y}).", days <= TOKEN_WARNING_DAYS)
 
 
 def describe_github_error(error: Exception, now: datetime | None = None) -> str:

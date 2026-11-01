@@ -88,6 +88,12 @@ def list_runs(workflow_file: str, token: str | None, count: int = RUNS_PER_WORKF
     return [simplify_run(run) for run in answer.json()["workflow_runs"]]
 
 
+def count_branches(prefix: str, token: str | None) -> int:
+    """How many branches of the repository start with `prefix` (D-409: the old report branches). Public."""
+    answer = get(f"/repos/{control.REPOSITORY}/branches", token, {"per_page": 100})
+    return sum(branch["name"].startswith(prefix) for branch in answer.json())
+
+
 def list_failed_jobs(run_id: int, token: str | None) -> list[dict[str, Any]]:
     """The jobs of a run that did not succeed, each with the steps that failed."""
     answer = get(f"/repos/{control.REPOSITORY}/actions/runs/{run_id}/jobs", token, {"per_page": 30})

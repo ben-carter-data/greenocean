@@ -173,7 +173,7 @@ Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su result
 | Las pruebas que consultan enlaces públicos dependen de la red | Un resultado fallido se repite antes de tratarlo como un defecto del código |
 | La medición de pantallas no forma parte de la suite | Se ejecuta antes de cada cambio visual |
 | Límite de intentos de la clave de control | Desde D-393, tras 3 fallos cada intento espera 2 s, y el doble tras cada nuevo fallo, hasta 15 min. La espera es común a todas las puertas: alguien podría trabar el acceso un rato, pero el autor siempre puede lanzar la carga desde GitHub. La clave debe ser larga |
-| Token de GitHub del panel | Permisos mínimos y renovación antes del vencimiento; el panel avisa cuando faltan menos de 14 días |
+| Token de GitHub del panel | Permisos mínimos y renovación antes del vencimiento; el panel avisa cuando faltan 15 días o menos |
 | Streamlit publica `main` sin esperar a `pruebas.yml` | El autor revisa en local antes de cada push |
 | Verificación en dos pasos de las cuentas | Declarada por el autor; no verificable desde el repositorio |
 

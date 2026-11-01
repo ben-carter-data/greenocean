@@ -53,7 +53,7 @@ def token_note(expiration: datetime | None, now: datetime | None = None) -> tupl
     if days < 0:
         return tr("El token venció: crea otro y cámbialo en los secretos de Streamlit."), True
     text = tr("El token vence en {} días ({}).").format(days, expiration.astimezone(CHILE).strftime("%d-%m-%Y"))
-    return text, days < control.TOKEN_WARNING_DAYS
+    return text, days <= control.TOKEN_WARNING_DAYS
 
 
 def workflow_summary(entry: dict[str, Any]) -> str:

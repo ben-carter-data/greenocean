@@ -285,7 +285,8 @@ def test_t44_base_mode_switch_writes_streamlit_choice_and_tries_only_once():
 
 
 # region Administration (T-54)
-ADMIN_ADDRESSES = [link["url"] for link in dashboard.ADMIN_LINKS]
+# D-409: the administration links live in «Configuración», read from the runbook's GitHub guide.
+ADMIN_ADDRESSES = ["https://github.com/settings/personal-access-tokens", "https://share.streamlit.io"]
 FAKE_TOKEN = "github_pat_FAKE_SECRET_123"
 
 
@@ -389,7 +390,9 @@ def test_d202_the_manual_run_and_the_links_appear_only_behind_the_code():
         app.button(key="runs_run_now").label == "Ejecutar pipeline ahora"
         and not app.button(key="runs_run_now").disabled
     )
-    assert all(address in read_page_text(app) for address in ADMIN_ADDRESSES)
+    # D-409: the links moved to «Configuración» (in the menu); the Operations center keeps only the way out
+    assert not [address for address in ADMIN_ADDRESSES if address in read_page_text(app)]
+    assert app.button(key="author_access_close").label == "Cerrar acceso"
     app.button(key="author_access_close").click().run()
     assert "runs_run_now" not in button_keys(app)
     # The dialog itself still asks for the code when the session is not open (defense in depth).

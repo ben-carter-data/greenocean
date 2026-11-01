@@ -25,7 +25,7 @@ def test_every_signal_names_a_file_that_exists_and_produces_it():
     for key, *_, produced_by in monitoring.SIGNALS:
         source = (ROOT / produced_by).read_text(encoding="utf-8")
         assert evidence[key] in source, (key, produced_by)
-    assert control.TOKEN_WARNING_DAYS == 14  # the warning the view names
+    assert control.TOKEN_WARNING_DAYS == 15  # the warning the view names (D-409)
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")

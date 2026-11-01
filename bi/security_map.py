@@ -64,7 +64,7 @@ CONTROLS = [
         "nunca en pantalla ni en los errores · aviso antes de vencer",
         "El token de GitHub con el que el panel lanza el workflow.",
         "Vive en los secretos del panel. Los errores de GitHub se describen con su código y su causa, nunca con el token, "
-        "los encabezados ni la dirección completa; el panel avisa cuando faltan menos de 14 días para que venza.",
+        "los encabezados ni la dirección completa; el panel avisa cuando faltan 15 días o menos para que venza.",
         "bi/control.py",
         [
             "tests/test_control.py::test_github_error_never_shows_the_token",

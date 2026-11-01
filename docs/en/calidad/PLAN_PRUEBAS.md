@@ -173,7 +173,7 @@ Each change runs the same tests on a clean GitHub machine. Its result stays next
 | The tests that query public links depend on the network | A failed result is repeated before treating it as a defect of the code |
 | The screen measurement is not part of the suite | It runs before each visual change |
 | Limit of attempts for the control code | Since D-393, after 3 failures each try waits 2 s, and twice as long after each new failure, up to 15 min. The wait is shared by every door: someone could jam the access for a while, but the author can always start the load from GitHub. The code must be long |
-| The panel's GitHub token | Minimum permissions and renewal before expiry; the panel warns when fewer than 14 days are left |
+| The panel's GitHub token | Minimum permissions and renewal before expiry; the panel warns when 15 days or fewer are left |
 | Streamlit publishes `main` without waiting for `pruebas.yml` | The author reviews locally before each push |
 | Two-step verification of the accounts | Declared by the author; not verifiable from the repository |
 

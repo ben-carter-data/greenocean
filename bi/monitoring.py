@@ -79,7 +79,7 @@ SIGNALS = [
         "streamlit",
         "Panel",
         "Aviso de vencimiento",
-        "el token de GitHub vence en menos de 14 días",
+        "el token de GitHub vence en 15 días o menos",
         "Centro de operación, tras la clave",
         "autor",
         "bi/control.py",

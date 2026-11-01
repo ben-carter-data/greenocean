@@ -39,6 +39,7 @@ from bi import (
     business_analysis,
     alerts,
     compact_table,
+    configuration,
     channel_latest,
     data_terms,
     git_workflow,
@@ -113,7 +114,8 @@ PAGE_KPI = "Indicadores explicados"
 PAGE_OPERATIONS = "Monitoreo"
 PAGE_RUNS = "Ejecuciones"
 PAGE_ACTIONS = "GitHub Actions"  # D-339: the author's read-only view of the workflow runs
-AUTHOR_ONLY_PAGES = {PAGE_ACTIONS}
+PAGE_CONFIG = "Configuración"  # D-409: the author's console, in place of «Enlaces del autor»
+AUTHOR_ONLY_PAGES = {PAGE_ACTIONS, PAGE_CONFIG}
 PAGE_MANUAL = "Manual"
 PAGE_GLOSSARY = "Glosario"
 PAGE_LINKS = "Enlaces"
@@ -190,7 +192,7 @@ WINDOWS = {
         PAGE_STAKEHOLDERS,
         PAGE_ANALYSIS,
     ],
-    SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS, PAGE_ACTIONS],
+    SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
     SECTION_LINKS: [
         PAGE_FOLDER,
@@ -278,6 +280,7 @@ PAGE_ICONS = {
     PAGE_OPERATIONS: ":material/health_and_safety:",
     PAGE_RUNS: ":material/play_circle:",
     PAGE_ACTIONS: ":material/fact_check:",
+    PAGE_CONFIG: ":material/settings:",
     PAGE_MANUAL: ":material/menu_book:",
     PAGE_GLOSSARY: ":material/dictionary:",
     PAGE_LINKS: ":material/link:",
@@ -309,6 +312,7 @@ PAGE_PATHS = {
     PAGE_OPERATIONS: "operaciones",
     PAGE_RUNS: "ejecuciones",
     PAGE_ACTIONS: "github-actions",
+    PAGE_CONFIG: "configuracion",
     PAGE_MANUAL: "manual",
     PAGE_GLOSSARY: "glosario",
     PAGE_LINKS: "enlaces",
@@ -2180,6 +2184,7 @@ BAR_VIEWS = {
     PAGE_SQL,
     PAGE_RUNS,
     PAGE_ACTIONS,
+    PAGE_CONFIG,
     PAGE_SECURITY,
     PAGE_STACK,
     PAGE_FOLDER,
@@ -5898,9 +5903,6 @@ RUN_WINDOW_OPEN = "run_window_open"
 ADMIN_UNLOCKED = "admin_unlocked"
 
 
-ADMIN_LINKS = project.ADMIN_LINKS
-
-
 @st.cache_data(ttl=3600, show_spinner=False)
 def read_cached_token_expiration(token):
     """Expiration of the token, asked to GitHub at most once an hour."""
@@ -5908,7 +5910,7 @@ def read_cached_token_expiration(token):
 
 
 def show_token_expiration(token):
-    """«Tu token vence en X días», highlighted under 14 days. Never the token itself."""
+    """«Tu token vence en X días», highlighted at 15 days or fewer (D-409). Never the token itself."""
     try:
         expiration = read_cached_token_expiration(token)
     except Exception as error:  # GitHub unreachable or the token was refused
@@ -6041,23 +6043,11 @@ def lock_author_access():
 
 
 def show_author_access(access_code, unlocked):
-    """«Acceso del autor» (D-165, D-202): the control code opens the manual run and the
-    administration links together; each link still asks for its own login."""
+    """«Acceso del autor» (D-165, D-202): the control code opens the manual run and the author's pages; D-409: the
+    administration links moved to «Configuración», each still asking for its own login."""
     if unlocked:
-        with st.popover(
-            "Enlaces del autor",
-            icon=":material/lock_open:",
-            width="stretch",
-            help="Administrar la app publicada, los secretos y los tokens.",
-        ):
-            for link in ADMIN_LINKS:
-                st.markdown(
-                    f'<a href="{html.escape(link["url"], quote=True)}" target="_blank" rel="noopener noreferrer">'
-                    f'<b>{html.escape(link["name"])}</b></a> · {html.escape(link["description"])}',
-                    unsafe_allow_html=True,
-                )
-            st.caption("Cada enlace pide tu propia sesión de GitHub o de Streamlit.")
-            st.button("Cerrar acceso", icon=":material/lock:", key="author_access_close", on_click=lock_author_access)
+        # D-409: the administration links and the state live in «Configuración», in the menu; here only the way out.
+        st.button("Cerrar acceso", icon=":material/lock:", key="author_access_close", on_click=lock_author_access)
         return
     with st.popover(
         "Acceso del autor",
@@ -6254,6 +6244,120 @@ def show_actions_page(mode):
     st.caption(
         tr("Leído a las {}; se vuelve a leer cada 2 minutos.").format(actions_view.format_time(model["read_at"])[-5:])
     )
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def read_configuration_model(_token, _read_token):
+    """What «Configuración» asks GitHub (D-409), kept five minutes: the date of each token (asked with that token, as
+    its own warning does), the latest test runs on main and the report branches (with the read-only token only, D-397).
+    The tokens are not part of the cache key (the leading underscore) and never of what is kept: only dates, states and
+    error sentences."""
+    model = {"tokens": {}, "runs": [], "runs_error": None, "branches": None}
+    for name, token in ((SECRET_GITHUB_TOKEN, _token), (SECRET_READ_TOKEN, _read_token)):
+        expiration, error = None, None
+        if token:
+            try:
+                expiration = control.read_token_expiration(token)
+            except Exception as failure:  # GitHub unreachable or the token refused
+                error = github_actions.redact(control.describe_github_error(failure), (_token, _read_token))
+        model["tokens"][name] = {"present": bool(token), "expiration": expiration, "error": error}
+    try:
+        model["runs"] = github_actions.list_runs("pruebas.yml", _read_token or None, 10)
+    except Exception as failure:
+        model["runs_error"] = github_actions.redact(control.describe_github_error(failure), (_token, _read_token))
+    try:
+        model["branches"] = github_actions.count_branches(configuration.REPORT_BRANCH, _read_token or None)
+    except Exception:
+        model["branches"] = None
+    return model
+
+
+@st.dialog("¿Qué pasó?", width="large")
+def show_case_dialog(case):
+    """One case of the runbook (MANUAL 8.1): its steps in order, each automatic or manual, with its link. A page of the
+    panel opens as a page link, in the same visit: a reload would close the author's session."""
+    st.markdown(f"<h3 class='cf-case-title'>{html.escape(case['name'])}</h3>", unsafe_allow_html=True)
+    for index, step in enumerate(case["steps"]):
+        with st.container(key=f"cf_step_{index}", horizontal=True, vertical_alignment="center"):
+            st.markdown(configuration.build_step_html(step), unsafe_allow_html=True, width="stretch")
+            link = step["link"]
+            view = find_menu_page(link["target"]) if link and link["kind"] == "view" else None
+            window = WINDOW_PAGES.get(WINDOW_OF_VIEW.get(view)) if view else None
+            if window:  # absent when a test draws the page alone
+                st.page_link(
+                    window,
+                    label=link["text"],
+                    icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
+                    query_params=keep_context() | {VIEW_PARAMETER: view},
+                    width="content",
+                )
+
+
+def show_configuration_page(mode):
+    """«Configuración» (D-409), only for the author: on one screen, the state of what keeps the app running, one icon
+    per case of the runbook with its steps, and the maintenance tasks with their date. It replaces «Enlaces del
+    autor». It reads the runbook, the served database and GitHub; it never shows the value of a token."""
+    if not st.session_state.get(ADMIN_UNLOCKED):
+        st.info(tr("Esta página es solo para el autor."))
+        return
+    show_page_bar(
+        PAGE_CONFIG,
+        PAGE_CONFIG,
+        "La consola del autor: el estado de lo que mantiene la app, qué hacer en cada caso y el mantenimiento. "
+        "Nunca muestra el valor de un token.",
+    )
+    st.markdown(configuration.build_css(charts.get_palette(mode)), unsafe_allow_html=True)
+    now = datetime.now(timezone.utc)
+    model = read_configuration_model(get_secret(SECRET_GITHUB_TOKEN), get_secret(SECRET_READ_TOKEN))
+    labels = {
+        SECRET_GITHUB_TOKEN: configuration.t("token de lanzamiento", "launch token"),
+        SECRET_READ_TOKEN: configuration.t("token de solo lectura", "read-only token"),
+    }
+    latest = read_latest_run()
+    runs, _ = read_pipeline_runs()
+    failed = control.latest_load_failure(runs)
+    reports, _, _ = quality_method.read_page()
+    cards = [
+        configuration.token_card(
+            name.lower(), labels[name].capitalize(), entry["present"], entry["expiration"], entry["error"], now
+        )
+        for name, entry in model["tokens"].items()
+    ] + [
+        configuration.load_card(parse_run_start(latest["started_at"]), failed["started_at"] if failed else None, now),
+        configuration.report_card(reports[-1] if reports else None, now.date()),
+        configuration.ci_card(model["runs"], model["runs_error"]),
+        configuration.sources_card(
+            describe_late_sources(latest["message"] if latest["status"] == etl.STATUS_LOADED else "")
+        ),
+    ]
+    page = st.container(key="config_page")  # one screen at 1440 x 790 and 1280 x 800 (RNF-06): tighter gaps
+    page.markdown(
+        f'<p class="cf-band">{html.escape(configuration.t("Estado", "State"))}</p>'
+        + configuration.build_cards_html(cards)
+        + f'<p class="cf-band cf-next">{html.escape(configuration.t("¿Qué pasó?", "What happened?"))}</p>',
+        unsafe_allow_html=True,
+    )
+    cases = configuration.read_cases()
+    with page.container(key="config_cases", horizontal=True):
+        for index, case in enumerate(cases):
+            if st.button(case["name"], icon=f":material/{case['icon']}:", key=f"config_case_{index}", width="stretch"):
+                show_case_dialog(case)
+    tokens = [(labels[name], entry["present"], entry["expiration"]) for name, entry in model["tokens"].items()]
+    tasks = configuration.maintenance(
+        tokens, model["branches"], configuration.read_schedule(), now.date(), configuration.years_listed()
+    )
+    with page.container(key="config_lower"):
+        left, right = st.columns([1, 1.45], gap="small")
+        left.markdown(
+            f'<p class="cf-band">{html.escape(configuration.t("Mantenimiento", "Maintenance"))}</p>'
+            + configuration.build_maintenance_html(tasks),
+            unsafe_allow_html=True,
+        )
+        right.markdown(
+            f'<p class="cf-band">{html.escape(configuration.t("Guía de GitHub", "GitHub guide"))}</p>'
+            + configuration.build_guide_html(configuration.read_guide()),
+            unsafe_allow_html=True,
+        )
 
 
 def show_security_page(mode):
@@ -7659,6 +7763,7 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_OPERATIONS: show_operations_page,
     PAGE_RUNS: show_runs_page,
     PAGE_ACTIONS: lambda mode: show_actions_page(mode),
+    PAGE_CONFIG: lambda mode: show_configuration_page(mode),
     PAGE_MANUAL: lambda mode: show_project_document(mode, PAGE_MANUAL),
     PAGE_GLOSSARY: lambda mode: show_project_document(mode, PAGE_GLOSSARY),
     PAGE_DECISION_INDEX: lambda mode: show_project_document(mode, PAGE_DECISION_INDEX),
@@ -7986,6 +8091,7 @@ COMPACT_FOOTER_VIEWS = {
     PAGE_OPERATIONS,
     PAGE_RUNS,
     PAGE_ACTIONS,
+    PAGE_CONFIG,
     PAGE_SECURITY,
     PAGE_STACK,
     PAGE_FOLDER,
@@ -8213,7 +8319,7 @@ MENU_BLOCKS = [
         [PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_HOME, PAGE_CHANNELS, PAGE_SEASONALITY, PAGE_INSIGHTS],
     ),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
-    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_SECURITY]),
+    ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG, PAGE_SECURITY]),
     ("stack", "Stack y evidencia", [PAGE_STACK, PAGE_APP_MAP]),
     (
         "calidad",
@@ -8242,6 +8348,7 @@ SIDEBAR_ICONS = {
     PAGE_SQL: ":material/terminal:",
     PAGE_RUNS: ":material/radio_button_checked:",
     PAGE_ACTIONS: ":material/fact_check:",
+    PAGE_CONFIG: ":material/settings:",
     PAGE_SECURITY: ":material/lock:",
     PAGE_STACK: ":material/layers:",
     PAGE_APP_MAP: ":material/hub:",
@@ -8292,6 +8399,7 @@ SIDEBAR_LABELS = {
     PAGE_OPERATIONS: "Calidad y auditoría",
     PAGE_RUNS: "Centro de operación",
     PAGE_ACTIONS: "GitHub Actions",
+    PAGE_CONFIG: "Configuración",
     PAGE_SECURITY: "Arquitectura de seguridad",
     PAGE_DOCUMENTATION: "Documentación",
     PAGE_MANUAL: "Manual de operación",

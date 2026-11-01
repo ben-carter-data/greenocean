@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.2 |
-| Date | 2026-10-31 |
+| Version | 3.3 |
+| Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
 | Purpose | State what happens automatically, what is checked and when, and what to do about each failure. |
@@ -58,7 +58,7 @@ After every load, the quality workflow measures the 12 indicators of the quality
 | When in doubt about the figures | The quality verdict and the audit controls | «Quality and audit» |
 | Every January | Add to `agent/input.csv` the two lines of the new year (wholesale and consumer), with the URL ODEPA publishes on the page of each dataset | `agent/input.csv` |
 | Periodically | Copy `agent/downloads` to another disk: the CSV files are not versioned ([ADR-04 · Do not commit the raw data to the repository](../arquitectura/ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository)) and the GitHub cache is deleted if it is not used for 7 days | Another disk of the author |
-| Before it expires | Renew the panel's GitHub token; the panel warns when fewer than 14 days are left | App secrets on Streamlit |
+| Before it expires | Renew the panel's two GitHub tokens; «Settings» marks them amber when 15 days or fewer are left (section 8.1) | App secrets on Streamlit |
 | After every weekly load | The pull request «Actualizar medición de calidad»: merge it or close it, delete its branch and run `git pull` | Pull requests of the repository (section 8) |
 | On entering as Author | The alert «Acción requerida»; if it starts with «Última medición del …», the report is more than 8 days old and is not today's state | The window the panel opens |
 
@@ -105,7 +105,7 @@ To read any failure without copying by hand, the panel's page «GitHub Actions»
 
 ## 7. Author access and administration
 
-In «Operations center», «Author access» asks for the control code (the panel's `CONTROL_CODE` secret) and opens with Enter. With the right code, the «Run pipeline now» button, the token-expiry warning and the administration links appear: GitHub tokens, runs and the administration of the app on Streamlit. Without the secret configured, for example in a local copy, the access stays closed.
+In «Operations center», «Author access» asks for the control code (the panel's `CONTROL_CODE` secret) and opens with Enter. With the right code, the «Run pipeline now» button, the token-expiry warning and the page «Settings», in «DevOps and security», appear. That page gathers on one screen the state of the tokens, the latest load, the latest report, the tests and the sources; what to do in each case (section 8.1), and the maintenance tasks. Without the secret configured, for example in a local copy, the access stays closed.
 
 The code prevents accidental runs; it is not the main barrier. What protects the project is the author's sign-in on GitHub and Streamlit (with two-step verification) and a token with the minimum permissions. After 3 failures, each try waits 2 s, and twice as long after each new failure, up to 15 min; the right code resets it (D-393, [Test and Security Plan](../calidad/PLAN_PRUEBAS.md#11-accepted-risks-and-limits)). If the wait jams the access, the load can be started from GitHub. The panel never shows the token or any part of it.
 
@@ -132,10 +132,42 @@ The links used to run the project, grouped by task.
 | Settings | [Actions · General](https://github.com/ben-carter-data/greenocean/settings/actions) | Workflow permissions to write and open pull requests | If a publication or a pull request is rejected | «Workflow permissions» → «Read and write» and «Allow GitHub Actions to create and approve pull requests» |
 | Settings | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) | The served database the panel reads | If the panel cannot find its database | Check that the file `datos.duckdb` is in «Assets» |
 | Settings | [Issues](https://github.com/ben-carter-data/greenocean/issues) | The weekly report of every published load | Every Tuesday | «Informe semanal» with its date |
-| The app | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | The app the User, the Professional and the Author see | After every push, to confirm the change | Choose the view; as Author, type the key and Enter |
+| The app | [Published panel](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | The app the User, the Professional and the Author see | After every push, to confirm the change | Choose the view; as Author, type the key and Enter |
 | The app | [Streamlit Community Cloud](https://share.streamlit.io) | The panel's secrets and its restart | When renewing a token or if the panel shows a module error | The app → ⋮ → «Settings» → «Secrets», or «Reboot» |
+| Tokens | [GitHub tokens](https://github.com/settings/personal-access-tokens) | The expiry and the permissions of each token | When «Settings» marks a token amber or red | The token → «Regenerate token»; the new value is shown only once |
+| Tokens | [Create a token](https://github.com/settings/personal-access-tokens/new) | A new token, only for this repository | If a token is missing | «Repository access» → this repository; «Permissions» → «Actions» |
 
 **Two rules.** Do not edit files on GitHub's website: every change is made on the author's computer and sent with a push, so local and remote main do not drift apart. After merging a pull request on the website, bring the change with `git pull` before working.
+
+### 8.1 What to do in each case
+
+Five cases, each with its steps in order. An automatic step is done by the system itself; a manual one is done by the author, with the link that leads to that place. The page «Settings» shows this same table.
+
+| Case | Step | Type | What to do | Link |
+|---|---|---|---|---|
+| The load failed | 1 | Automatic | GitHub stops the next steps and the panel keeps showing the last valid load | — |
+| The load failed | 2 | Automatic | The «Run failed: semanal» email arrives and the panel shows a red notice above the menu | — |
+| The load failed | 3 | Manual | Read which step failed and the end of its log | [[vista:GitHub Actions]] |
+| The load failed | 4 | Manual | Fix the cause following the table of section 4 | — |
+| The load failed | 5 | Manual | Start the load again with «Run pipeline now», or with «Run workflow» on GitHub | [[vista:Operations center]] |
+| A report arrived | 1 | Automatic | After every load, the quality workflow measures the 12 indicators and opens the pull request «Actualizar medición de calidad» | — |
+| A report arrived | 2 | Manual | Review the report in «Files changed» | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) |
+| A report arrived | 3 | Manual | «Merge pull request», or «Close pull request» if a newer report replaces it | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) |
+| A report arrived | 4 | Manual | Delete the report's branch «informe-calidad/…» | [Branches](https://github.com/ben-carter-data/greenocean/branches) |
+| A report arrived | 5 | Manual | On the computer, bring the change with `git pull` | — |
+| A token expires or is missing | 1 | Automatic | «Settings» marks the token amber when 15 days or fewer are left, and red if it expired or is missing | [[vista:Settings]] |
+| A token expires or is missing | 2 | Manual | On GitHub, regenerate the token or create a new one, only for this repository: «Actions: Read and write» for `GITHUB_TOKEN` and «Actions: Read» for `GITHUB_READ_TOKEN`. The value is shown only once: copy it | [GitHub tokens](https://github.com/settings/personal-access-tokens) |
+| A token expires or is missing | 3 | Manual | On Streamlit Community Cloud: the app → ⋮ → «Settings» → «Secrets» | [Streamlit Community Cloud](https://share.streamlit.io) |
+| A token expires or is missing | 4 | Manual | Paste the value into `GITHUB_TOKEN` or `GITHUB_READ_TOKEN` and press «Save» | — |
+| A token expires or is missing | 5 | Manual | Press «Reboot» and confirm the new date in «Settings» | [[vista:Settings]] |
+| A source is late | 1 | Automatic | The load publishes up to the last week complete in both sources and the Price overview warns «ODEPA has not published the week of … yet» | [[vista:Price overview]] |
+| A source is late | 2 | Automatic | If the source has not published for more than 2 weeks, the load stops with `LATE_SOURCE` and the failure notice arrives | — |
+| A source is late | 3 | Manual | Check on ODEPA whether the week is already published | [ODEPA open data](https://datos.odepa.gob.cl) |
+| A source is late | 4 | Manual | Fill in nothing: the load resumes by itself when the source publishes | — |
+| The app does not update | 1 | Automatic | After every push to main, Streamlit Community Cloud deploys the app again | — |
+| The app does not update | 2 | Manual | Open the published panel and confirm the change arrived | [Published panel](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) |
+| The app does not update | 3 | Manual | If a page shows `AttributeError` or does not change: the app → ⋮ → «Reboot», and wait one or two minutes | [Streamlit Community Cloud](https://share.streamlit.io) |
+| The app does not update | 4 | Manual | If the panel says it has no served database, check that `datos.duckdb` is in the release | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) |
 
 ## 9. Failure register
 
@@ -170,3 +202,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.0 | 2026-10-25 | A summary at the start, the calendar, the fault tree and the recovery sequence as diagrams (D-290, documents for every reader) |
 | 3.1 | 2026-10-30 | GitHub guide and failure register; late sources, the weekly quality report, the manual load window, entering as Author and the three secrets (D-339 to D-363) |
 | 3.2 | 2026-10-31 | Wording reviewed; the 12 indicators of the quality plan (2); the token starts, follows and cancels the load (7); the three views (8, 9); the document moves to `docs/operacion/` (D-381, D-384, D-388) |
+| 3.3 | 2026-11-01 | What to do in each case (8.1), which the page «Settings» reads; the two tokens in the GitHub guide (8) and their warning at 15 days (3, D-409) |

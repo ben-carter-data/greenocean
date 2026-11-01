@@ -95,34 +95,6 @@ PROJECT_LINKS = [
         "group": "Documentos",
     },
 ]
-# Not part of a visitor's route: each service asks for its own login and permissions.
-ADMIN_LINKS = [
-    {
-        "name": "Administrar la app en Streamlit",
-        "description": "Reboot, secretos y registros del panel publicado.",
-        "url": STREAMLIT_ADMIN_URL,
-        "icon": "settings",
-    },
-    {
-        "name": "Lanzar el workflow en GitHub",
-        "description": "Run workflow, desde GitHub.",
-        "url": WORKFLOW_PAGE_URL,
-        "icon": "play_circle",
-    },
-    {
-        "name": "Crear token en GitHub",
-        "description": "Clave nueva para «Ejecutar ahora».",
-        "url": TOKEN_CREATE_URL,
-        "icon": "key",
-    },
-    {
-        "name": "Ver mis tokens en GitHub",
-        "description": "Vencimiento y permisos de cada clave.",
-        "url": TOKENS_URL,
-        "icon": "vpn_key",
-    },
-]
-
 INDICATORS_HEADING = "7. Indicadores"
 # A table cell may contain an escaped pipe (\|), which is not a column border.
 CELL_BORDER_PATTERN = re.compile(r"(?<!\\)\|")
