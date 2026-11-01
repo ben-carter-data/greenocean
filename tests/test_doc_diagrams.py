@@ -119,11 +119,26 @@ def test_d297_the_containers_view_is_c4_level_2_with_real_files_and_right_angle_
 
     root = Path(__file__).resolve().parent.parent
     page = doc_diagrams.DOC_DIAGRAMS["contenedores"](charts.MODE_DARK)
-    for name in ("Carga semanal", "Panel web", "Base servida", "Respaldo", "Archivos de trabajo"):
+    for name in ("Carga semanal", "Panel web", "Archivos de trabajo"):
         assert f">{name}<" in page, name
+    # D-426: the official names, each with its file
+    assert ">Base DuckDB ·<" in page and ">etl/datos.duckdb<" in page and ">Respaldo · etl/datos.db<" in page
+    for path in ("agent/agent.py", "etl/etl.py", "etl/pipeline.py", "bi/dashboard.py", "etl/datos.version"):
+        assert (root / path).exists(), path
     for path in ("agent/agent.py", "etl/etl.py", "etl/pipeline.py", "bi/dashboard.py"):
-        assert path in page and (root / path).exists(), path
-    assert len(graph_lines(page)) == 10  # D-382: one line from each of the three people to the panel
+        assert path in page, path
+    # D-382: one line from each of the three people to the panel; D-426: the load uploads to the release and the panel
+    # acts on GitHub with its two tokens
+    assert len(graph_lines(page)) == 12
+    for label in (
+        ">la lee desde el release<",
+        ">«base-actual», solo lectura<",
+        ">Base DuckDB<",
+        ">lanza y cancela cargas (GITHUB_TOKEN)<",
+        ">lee estado de workflows (GITHUB_READ_TOKEN)<",
+        ">los mismos precios sin<",
+    ):
+        assert label in page, label
     assert_right_angles(page)
 
 

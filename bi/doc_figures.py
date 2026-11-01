@@ -244,27 +244,34 @@ def stretch_length(pair):
     return abs(pair[0][0] - pair[1][0]) + abs(pair[0][1] - pair[1][1])
 
 
-def edge_label(points, label, at_start, halo, width):
+def edge_label(points, label, at_start, halo, width, left=False):
     """The label of a line, on its last stretch when it has room (the first may be shared by a fork), else on its
-    longest; above a horizontal stretch, beside a vertical one."""
+    longest; above a horizontal stretch, beside a vertical one. D-426: a label of several lines («\n») keeps its first
+    line above a horizontal stretch and the rest under it, and stacks them beside a vertical one."""
+    lines = label.split("\n")
+    longest = max(len(line) for line in lines)
     stretches = list(zip(points, points[1:]))
     last = stretches[-1]
     if at_start:  # two lines that end on the same stretch: each label on its own start
         (ax, ay), (bx, by) = stretches[0]
     else:
         (ax, ay), (bx, by) = (
-            last if stretch_length(last) >= max(70, len(label) * 6.2) else max(stretches, key=stretch_length)
+            last if stretch_length(last) >= max(70, longest * 6.2) else max(stretches, key=stretch_length)
         )
+    style = f'font-size="11" stroke="{halo}" stroke-width="4" paint-order="stroke"'
     if ay == by:
-        return (
-            f'<text class="mut" x="{(ax + bx) / 2:.1f}" y="{ay - 6:.1f}" text-anchor="middle" font-size="11" '
-            f'stroke="{halo}" stroke-width="4" paint-order="stroke">{esc(label)}</text>'
+        rows = [ay - 6] + [ay + 15 + 13 * index for index in range(len(lines) - 1)]
+        return "".join(
+            f'<text class="mut" x="{(ax + bx) / 2:.1f}" y="{y:.1f}" text-anchor="middle" {style}>{esc(line)}</text>'
+            for line, y in zip(lines, rows)
         )
     # beside a vertical stretch: on its right, or on its left near the right edge of the figure
-    side = f'x="{ax - 7:.1f}" text-anchor="end"' if ax + 7 + len(label) * 6.2 > width else f'x="{ax + 7:.1f}"'
-    return (
-        f'<text class="mut" {side} y="{(ay + by) / 2 + 4:.1f}" font-size="11" '
-        f'stroke="{halo}" stroke-width="4" paint-order="stroke">{esc(label)}</text>'
+    on_left = left or ax + 7 + longest * 6.2 > width
+    side = f'x="{ax - 7:.1f}" text-anchor="end"' if on_left else f'x="{ax + 7:.1f}"'
+    top = (ay + by) / 2 + 4 - 6.5 * (len(lines) - 1)
+    return "".join(
+        f'<text class="mut" {side} y="{top + 13 * index:.1f}" {style}>{esc(line)}</text>'
+        for index, line in enumerate(lines)
     )
 
 
@@ -304,7 +311,8 @@ def graph(mode, title, nodes, edges, note="", width=920, size=38, limit=22):
             f'<path d="{path}" fill="none" stroke="{color}" stroke-width="1.7"{dash} marker-end="url(#g-{kind})"/>'
         )
         if label:
-            lines_svg.append(edge_label(points, label, bool(where and where[0] == "start"), halo, width))
+            at = where[0] if where else ""  # «start»: on its first stretch; «left»: beside a vertical one, on its left
+            lines_svg.append(edge_label(points, label, at == "start", halo, width, left=at == "left"))
     height = max(bottoms.values()) + 6
     markers = "".join(
         f'<marker id="g-{kind}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
@@ -478,13 +486,22 @@ def sad_containers(mode):
                     "etl/raw.db, etl/bronze/ and the dbt working database",
                 ),
             ),
-            "served": (560, 175, "brand:duckdb", say("Base servida", "Served database"), "etl/datos.duckdb"),
+            "served": (
+                560,
+                175,
+                "brand:duckdb",
+                say("Base DuckDB · etl/datos.duckdb", "DuckDB database · etl/datos.duckdb"),
+                say("en el release «base-actual»", "in the «base-actual» release"),
+            ),
             "backup": (
                 560,
                 300,
                 "brand:sqlite",
-                say("Respaldo", "Backup"),
-                say("etl/datos.db, sin dbt, para la paridad", "etl/datos.db, without dbt, for the parity"),
+                say("Respaldo · etl/datos.db", "Backup · etl/datos.db"),
+                say(
+                    "los mismos precios sin dbt, para comprobar que dbt no cambió ninguna cifra",
+                    "the same prices without dbt, to check that dbt changed no figure",
+                ),
             ),
             "panel": (
                 830,
@@ -494,13 +511,13 @@ def sad_containers(mode):
                 say("Streamlit: bi/dashboard.py, en solo lectura", "Streamlit: bi/dashboard.py, read-only"),
             ),
             "github": (
-                300,
-                330,
+                400,
+                470,
                 "brand:github",
                 "GitHub",
                 say(
-                    "repositorio, Actions y el release de la base",
-                    "repository, Actions and the release of the database",
+                    "repositorio, Actions y el release «base-actual»",
+                    "repository, Actions and the «base-actual» release",
                 ),
             ),
             "user": (690, 20, "person:visitor", say("Usuario", "User"), say("ve el negocio", "sees the business")),
@@ -516,7 +533,7 @@ def sad_containers(mode):
                 20,
                 "person:author",
                 say("Autor", "Author"),
-                say("con clave", "with a code"),
+                say("con clave", "with the key"),
             ),
         },
         [
@@ -525,11 +542,43 @@ def sad_containers(mode):
             ("load", "work", say("lee y escribe", "reads and writes"), "flow", "h"),
             ("load", "served", say("publica", "publishes"), "flow", "h"),
             ("load", "backup", say("escribe", "writes"), "flow", "h"),
-            ("panel", "served", say("solo lectura", "read-only"), "flow", "h"),
+            # D-426: the panel downloads the DuckDB database from the release and reads it read-only
+            (
+                "panel",
+                "served",
+                say(
+                    "la lee desde el release\n«base-actual», solo lectura",
+                    "reads it from the release\n«base-actual», read-only",
+                ),
+                "flow",
+                "h",
+            ),
             ("user", "panel", "", "flow", "v"),
             ("professional", "panel", "", "flow", "v"),
             ("author", "panel", "", "order", "v"),
-            ("github", "load", say("ejecuta cada martes", "runs every Tuesday"), "order", "v"),
+            ("github", "load", say("ejecuta cada martes", "runs every Tuesday"), "order", "hv"),
+            # D-426: the load uploads the DuckDB database to the release; the panel acts on GitHub with its two tokens
+            (
+                "load",
+                "github",
+                say(
+                    "sube la\nBase DuckDB\nal release\n«base-actual»",
+                    "uploads the\nDuckDB database\nto the release\n«base-actual»",
+                ),
+                "flow",
+                "hv",
+                "left",
+            ),
+            (
+                "panel",
+                "github",
+                say(
+                    "lanza y cancela cargas (GITHUB_TOKEN)\nlee estado de workflows (GITHUB_READ_TOKEN)",
+                    "launches and cancels loads (GITHUB_TOKEN)\nreads workflow state (GITHUB_READ_TOKEN)",
+                ),
+                "order",
+                "vh",
+            ),
         ],
         size=46,
         limit=24,
@@ -590,7 +639,7 @@ def sad_components_load(mode):
                 30,
                 "brand:duckdb",
                 "etl/datos.duckdb",
-                say("la base servida, en un archivo nuevo", "the served database, in a new file"),
+                say("la Base DuckDB, en un archivo nuevo", "the DuckDB database, in a new file"),
             ),
             "tests": (
                 470,
@@ -1379,7 +1428,7 @@ def sad_layers(mode):
                 30,
                 "brand:streamlit",
                 say("Panel", "Panel"),
-                say("lee la base servida en solo lectura", "reads the served database read-only"),
+                say("lee la Base DuckDB en solo lectura", "reads the DuckDB database read-only"),
             ),
         },
         [
@@ -1434,7 +1483,7 @@ def sad_deployment(mode):
                 230,
                 "icon:box",
                 say("Release «base-actual»", "«base-actual» release"),
-                say("una sola copia de la base servida", "a single copy of the served database"),
+                say("una sola copia de la Base DuckDB", "a single copy of the DuckDB database"),
             ),
             "cloud": (
                 600,

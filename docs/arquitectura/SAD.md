@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.8 |
+| Versión | 3.9 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -35,7 +35,7 @@ GreenOcean es un pipeline semanal y un panel de solo lectura sobre los precios d
 | Prioridad | Objetivo de calidad | Qué significa aquí |
 |---|---|---|
 | 1 | Exactitud y trazabilidad | Cada cifra del panel se puede recalcular desde el archivo original |
-| 2 | Confiabilidad de la publicación | Una carga con errores nunca reemplaza a la base servida |
+| 2 | Confiabilidad de la publicación | Una carga con errores nunca reemplaza a la Base DuckDB |
 | 3 | Costo cero y mantenimiento mínimo | Solo servicios gratuitos permanentes y sin servidores propios |
 
 Para lograrlo, cada martes la carga rehace toda la historia desde los archivos oficiales. La comprueba por dos caminos independientes, y solo entonces reemplaza la base que lee el panel.
@@ -44,7 +44,7 @@ Para lograrlo, cada martes la carga rehace toda la historia desde los archivos o
 
 [[diagrama:contexto]]
 
-El sistema lee dos fuentes públicas, ODEPA y el INE, y se apoya en dos servicios gratuitos. GitHub guarda el código y la base servida, y ejecuta la carga. Streamlit Community Cloud publica el panel.
+El sistema lee dos fuentes públicas, ODEPA y el INE, y se apoya en dos servicios gratuitos. GitHub guarda el código y la Base DuckDB, y ejecuta la carga. Streamlit Community Cloud publica el panel.
 
 Tres personas usan el panel, según la vista que eligen:
 
@@ -66,11 +66,11 @@ El sistema tiene dos aplicaciones y tres almacenes de datos:
 
 | Contenedor | Tecnología | Responsabilidad |
 |---|---|---|
-| Carga semanal | Python, dbt Core, DuckDB | Descarga los CSV, los guarda sin cambios, los transforma y prueba, y reemplaza la base servida solo si todo pasa. El agente, el ETL y dbt corren en el mismo job |
+| Carga semanal | Python, dbt Core, DuckDB | Descarga los CSV, los guarda sin cambios, los transforma y prueba, y reemplaza la Base DuckDB solo si todo pasa. El agente, el ETL y dbt corren en el mismo job |
 | Archivos de trabajo | SQLite, Parquet, DuckDB | Aterrizaje, bronce y base de trabajo de dbt; se rehacen en cada carga y no se versionan |
-| Base servida | DuckDB (`etl/datos.duckdb`) | Las tablas que lee el panel; se publica en el release «base-actual» |
+| Base DuckDB · `etl/datos.duckdb` | DuckDB | Las tablas que lee el panel; se publica en el release «base-actual» |
 | Respaldo | SQLite (`etl/datos.db`) | Los mismos precios calculados sin dbt, para la prueba de paridad; se rehace en la máquina de cada carga y no se publica |
-| Panel web | Streamlit, Python | Muestra los indicadores y los documentos, y ofrece el estudio SQL. Lee la base servida en solo lectura. Con la clave de control, usa la API de GitHub para lanzar la carga, leer su estado y sus logs, y cancelarla |
+| Panel web | Streamlit, Python | Muestra los indicadores y los documentos, y ofrece el estudio SQL. Lee la Base DuckDB en solo lectura. Con la clave de control, usa la API de GitHub para lanzar la carga, leer su estado y sus logs, y cancelarla |
 
 ### 3.1 Componentes de la carga semanal
 
@@ -101,7 +101,7 @@ Cada paso empieza solo si el anterior terminó bien:
 | Paso | Qué ocurre |
 |---|---|
 | 1 | A las 12:00 UTC, GitHub Actions crea una máquina nueva y recupera de su caché los CSV de los años cerrados |
-| 2 | Descarga del release «base-actual» la base servida de la semana anterior y verifica su huella. De ella salen el historial de cargas y la comparación del paso 6 |
+| 2 | Descarga del release «base-actual» la Base DuckDB de la semana anterior y verifica su huella. De ella salen el historial de cargas y la comparación del paso 6 |
 | 3 | El agente descarga de ODEPA el archivo del año en curso y los faltantes, y registra la huella SHA-256 de cada uno en `manifest.json` |
 | 4 | El ETL en Python calcula los precios por su cuenta y escribe el respaldo `etl/datos.db` |
 | 5 | `etl/pipeline.py` guarda las filas en el aterrizaje, las copia al bronce junto con el IPC del INE y ejecuta `dbt build`, que construye y prueba cada modelo en la base de trabajo |
@@ -114,7 +114,7 @@ El trabajo tiene un límite de 20 minutos: si se cuelga, GitHub lo corta.
 
 La carga manual se lanza desde «Ejecutar pipeline ahora» y se sigue en una ventana que no se cierra sola. La ventana muestra cada paso con su hora y su duración, y el log real de cada job al terminar, sin tokens. Se puede minimizar, o cancelar la ejecución en GitHub con la misma clave que la lanzó. Lanzar y cancelar son las únicas escrituras del panel en GitHub (D-351).
 
-Si un paso falla, los siguientes no corren y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)). Cada ejecución y sus pasos se siguen en la pestaña «Operación» de [[vista:Centro de operación]].
+Si un paso falla, los siguientes no corren y la Base DuckDB no cambia ([ADR-11 · Publicar solo si pasan las pruebas](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)). Cada ejecución y sus pasos se siguen en la pestaña «Operación» de [[vista:Centro de operación]].
 
 ## 5. El panel al abrirse
 
@@ -146,7 +146,7 @@ Los datos pasan por cinco capas:
 
 El recorrido y el linaje están en [[vista:Pipeline y linaje]], y el modelo, en [[vista:Modelo de datos]]. Las fechas se guardan como texto ISO (`AAAA-MM-DD`).
 
-### 6.1 Tablas de la base servida
+### 6.1 Tablas de la Base DuckDB
 
 | Tabla | Función | Contenido |
 |---|---|---|
@@ -331,7 +331,7 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | Carga semanal y su informe de calidad | Máquinas de GitHub Actions (Ubuntu, Python 3.11): `semanal.yml` y, al terminar, `calidad.yml` | Se crean y se descartan en cada ejecución; los CSV de años cerrados quedan en la caché de Actions |
 | Pruebas de cada push | Otra máquina de GitHub Actions, aparte de la carga: `pruebas.yml` (lint y pytest en Python 3.11 y 3.12) y `calidad.yml`, que solo mide | No tocan la base publicada |
 | Código y puntero de la base | Repositorio de GitHub, rama `main` | |
-| Base servida | Release «base-actual» del repositorio | Una sola copia, reemplazada por cada carga; el panel la descarga de ahí |
+| Base DuckDB | Release «base-actual» del repositorio | Una sola copia, reemplazada por cada carga; el panel la descarga de ahí |
 | Panel | Streamlit Community Cloud, desde `main` | Guarda los secretos: los tokens de GitHub y la clave del Autor |
 | Aterrizaje (`etl/raw.db`) | Computador del autor y máquina de cada carga | No se versiona |
 | Informes | Repositorio de GitHub | El informe semanal es un issue; el informe de calidad, un pull request que el autor aprueba (D-383) |
@@ -381,7 +381,7 @@ La página «Configuración» también es solo del autor (D-409). Muestra en una
 
 | Medida | Valor | Origen |
 |---|---|---|
-| Base servida | Unos 14 MB en la base servida | Tamaño de `etl/datos.duckdb` |
+| Base DuckDB | Unos 14 MB en la Base DuckDB | Tamaño de `etl/datos.duckdb` |
 | Datos | Volumen y cobertura de la última carga | [PRD, sección 6](../negocio/PRD.md#6-alcance) |
 | Frecuencia | Una carga por semana | [RF-01](../negocio/PRD.md#5-requisitos) |
 | Usuarios | Un panel público de solo lectura | [PRD, sección 3](../negocio/PRD.md#3-para-quién-es) |
@@ -390,7 +390,7 @@ La página «Configuración» también es solo del autor (D-409). Muestra en una
 
 | Límite | Situación actual | Respuesta prevista |
 |---|---|---|
-| Tamaño de la base servida | Una sola copia en un release, reemplazada por cada carga ([ADR-35](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza)); el historial de Git ya no crece con los datos | Un archivo de release admite hasta 2 GB; mucho antes convendría la opción de la sección 9.4 |
+| Tamaño de la Base DuckDB | Una sola copia en un release, reemplazada por cada carga ([ADR-35](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza)); el historial de Git ya no crece con los datos | Un archivo de release admite hasta 2 GB; mucho antes convendría la opción de la sección 9.4 |
 | Duración de la carga | Cada carga rehace la historia completa desde 2022 ([ADR-10](ADR.md#adr-10--reconstruir-todo-en-cada-carga)) y tarda un poco más cada año | Cargas incrementales cuando la duración lo justifique |
 | Lectores simultáneos | Una aplicación gratuita de Streamlit que lee un archivo pequeño en solo lectura | Si varios equipos lo usaran a diario, el plan gratuito sería insuficiente: es uno de los umbrales de la sección 9.4 |
 
@@ -429,11 +429,11 @@ Con datos públicos, semanales y pequeños, leídos por un solo panel, un data w
 | Principio | Cómo se aplica | Decisión |
 |---|---|---|
 | Rehacer todo en cada carga | Cada martes se recalcula la historia completa desde los archivos oficiales; repetir una carga nunca duplica datos | [ADR-10](ADR.md#adr-10--reconstruir-todo-en-cada-carga) |
-| Publicar solo lo validado | La base servida cambia solo si pasan todas las pruebas | [ADR-11](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas) |
+| Publicar solo lo validado | La Base DuckDB cambia solo si pasan todas las pruebas | [ADR-11](ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas) |
 | Comprobar por un segundo camino | Un ETL en Python, independiente de dbt, calcula los mismos precios | [ADR-34](ADR.md#adr-34--separar-la-base-de-trabajo-de-dbt-la-base-que-lee-el-panel-y-el-respaldo) |
 | Capas declarativas y probadas | Bronce en Parquet; staging, intermedio y marts en dbt Core sobre DuckDB | [ADR-30](ADR.md#adr-30--parquet-dbt-core-y-duckdb) |
 | Bloquear solo lo que importa | Las pruebas que protegen los datos detienen la carga; las de velocidad solo informan y corren en local | D-341 |
-| Una sola copia publicada | La base servida vive en un release que cada carga reemplaza | [ADR-35](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) |
+| Una sola copia publicada | La Base DuckDB vive en un release que cada carga reemplaza | [ADR-35](ADR.md#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) |
 
 Las decisiones que dan forma a esta arquitectura, con su contexto, sus alternativas y sus consecuencias, están en los [Registros de decisiones de arquitectura (ADR)](ADR.md).
 
@@ -472,3 +472,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.6 | 01-11-2026 | El despliegue: el release en su propia caja, los tres workflows y la máquina aparte de las pruebas de cada push (7, D-422) |
 | 3.7 | 01-11-2026 | Los escenarios clave muestran todo lo que puede hacer cada actor y lo que no alcanza (2.1, D-424) |
 | 3.8 | 01-11-2026 | Los escenarios clave como mapa del panel web por perfil, con herencia, la Base DuckDB y GitHub Actions (2.1, D-425) |
+| 3.9 | 01-11-2026 | «Base servida» pasa a «Base DuckDB · `etl/datos.duckdb`» en todo el documento; los contenedores muestran la subida al release «base-actual», la lectura desde él y las flechas del panel web a GitHub con sus tokens (3, D-426) |

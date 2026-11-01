@@ -110,7 +110,7 @@ def test_d248_the_file_sizes_the_documents_state_are_the_real_ones():
     served = (ROOT / "etl" / "datos.duckdb").stat().st_size / 1e6
     sad = i18n.document_path("SAD.md", "es").read_text(encoding="utf-8")
     # D-299: the base grows a little every Tuesday; the round size of the SAD holds within 2 MB, so no load stops on it.
-    stated = int(re.search(r"Unos (\d+) MB en la base servida", sad)[1])
+    stated = int(re.search(r"Unos (\d+) MB en la Base DuckDB", sad)[1])
     assert abs(stated - served) <= 2, (stated, served)
 
 

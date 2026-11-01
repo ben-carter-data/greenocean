@@ -3242,3 +3242,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Forma:** cada perfil queda en la fila de su franja del panel, con su flecha («ve», «además ve», «además opera») y su herencia («hereda todo · sin clave», «hereda todo · con clave»). Las flechas a GitHub Actions nombran el token que usan.
 - **Documentos:** el SAD (2.1) explica el mapa y la herencia, en los dos idiomas (versión 3.8).
 - **Pruebas:** `tests/test_doc_diagrams.py::test_d425_…`: cada página del menú está en la franja del primer perfil que la ve y en ninguna anterior; el panel lanza `semanal.yml`; los tres workflows existen; cada referencia P-x o RF-x del dibujo existe en el PRD.
+
+## D-426 · «Base servida» pasa a «Base DuckDB · etl/datos.duckdb», y los contenedores muestran el release y los tokens
+
+- **Pedido del autor:** en el diagrama «Contenedores (C4, nivel 2)» del SAD, usar el mismo nombre que en los escenarios (D-425) y mostrar cómo el panel web y la carga semanal usan GitHub.
+- **Decisión:**
+  - **Nombre:** «Base servida» pasa a «Base DuckDB · `etl/datos.duckdb`» en el diagrama y en todo el SAD, también en sus figuras de componentes, capas y despliegue; en inglés, «DuckDB database». El historial de versiones conserva el nombre de su época. Los enlaces al ADR-35 no cambian, porque apuntan a su título.
+  - **Flechas nuevas:** Carga semanal → GitHub, «sube la Base DuckDB al release «base-actual»»; Panel web → GitHub, «lanza y cancela cargas (`GITHUB_TOKEN`)» y «lee estado de workflows (`GITHUB_READ_TOKEN`)». La flecha del panel web a la Base DuckDB dice ahora que la lee desde el release «base-actual», en solo lectura.
+  - **Respaldo:** «Respaldo · `etl/datos.db`», con una línea que dice para qué sirve: los mismos precios calculados sin dbt, para comprobar que dbt no cambió ninguna cifra (la prueba de paridad).
+  - **Etiquetas de dos o más líneas:** el dibujo de figuras acepta etiquetas partidas en líneas y, en una línea vertical, ponerlas a su izquierda, para que no se monten sobre otras.
+  - **Documentos:** el SAD (versión 3.9) y el Glosario (versión 2.5), en los dos idiomas.
+- **Pruebas:** `tests/test_doc_diagrams.py::test_d297_…` busca los nombres nuevos, las 12 flechas y sus etiquetas con los dos tokens; `tests/test_documents.py::test_d248_the_file_sizes_…` lee el tamaño «en la Base DuckDB».

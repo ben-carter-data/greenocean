@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.4 |
-| Date | 2026-10-31 |
+| Version | 2.5 |
+| Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Define once the acronyms and terms used by the panel and the documents. |
@@ -113,3 +113,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.2 | 2026-10-30 | SQAP, IEEE and IEC, from the software quality assurance plan (D-355) |
 | 2.3 | 2026-10-31 | BSA, from the pages «Stakeholders» and «Business and systems analysis» (D-376, D-377) |
 | 2.4 | 2026-10-31 | Wording reviewed; the three views; the data quality indicators and those of the quality plan; the pull request of the quality report; the full price alert; the document moves to `docs/negocio/` (D-381 to D-385, D-388) |
+| 2.5 | 2026-11-01 | «Served database» becomes «DuckDB database» (D-426) |

@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 2.4 |
-| Fecha | 31-10-2026 |
+| Versión | 2.5 |
+| Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Definir una sola vez las siglas y los términos que usan el panel y los documentos. |
@@ -113,3 +113,4 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | 2.2 | 30-10-2026 | SQAP, IEEE e IEC, del plan de calidad del software (D-355) |
 | 2.3 | 31-10-2026 | BSA, de las páginas «Interesados» y «Análisis de negocio y sistemas» (D-376, D-377) |
 | 2.4 | 31-10-2026 | Redacción revisada; las tres vistas; los indicadores de calidad de los datos y los del plan de calidad; el pull request del informe de calidad; la alerta de precio completa; el documento pasa a `docs/negocio/` (D-381 a D-385, D-388) |
+| 2.5 | 01-11-2026 | «Base servida» pasa a «Base DuckDB» (D-426) |

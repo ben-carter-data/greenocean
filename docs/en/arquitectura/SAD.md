@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.8 |
+| Version | 3.9 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -35,7 +35,7 @@ GreenOcean is a weekly pipeline and a read-only panel on food prices in Chile. I
 | Priority | Quality goal | What it means here |
 |---|---|---|
 | 1 | Accuracy and traceability | Every figure of the panel can be recomputed from the original file |
-| 2 | Reliability of publication | A load with errors never replaces the served database |
+| 2 | Reliability of publication | A load with errors never replaces the DuckDB database |
 | 3 | Zero cost and minimal maintenance | Only permanent free services and no servers of its own |
 
 To reach them, every Tuesday the load rebuilds the whole history from the official files. It checks it along two independent paths, and only then replaces the database the panel reads.
@@ -44,7 +44,7 @@ To reach them, every Tuesday the load rebuilds the whole history from the offici
 
 [[diagrama:contexto]]
 
-The system reads two public sources, ODEPA and the INE, and relies on two free services. GitHub keeps the code and the served database, and runs the load. Streamlit Community Cloud publishes the panel.
+The system reads two public sources, ODEPA and the INE, and relies on two free services. GitHub keeps the code and the DuckDB database, and runs the load. Streamlit Community Cloud publishes the panel.
 
 Three people use the panel, depending on the view they choose:
 
@@ -66,11 +66,11 @@ The system has two applications and three data stores:
 
 | Container | Technology | Responsibility |
 |---|---|---|
-| Weekly load | Python, dbt Core, DuckDB | Downloads the CSV files, keeps them unchanged, transforms and tests them, and replaces the served database only if everything passes. The agent, the ETL and dbt run in the same job |
+| Weekly load | Python, dbt Core, DuckDB | Downloads the CSV files, keeps them unchanged, transforms and tests them, and replaces the DuckDB database only if everything passes. The agent, the ETL and dbt run in the same job |
 | Working files | SQLite, Parquet, DuckDB | Landing, bronze and the dbt working database; rebuilt on each load and not versioned |
-| Served database | DuckDB (`etl/datos.duckdb`) | The tables the panel reads; published in the «base-actual» release |
+| DuckDB database · `etl/datos.duckdb` | DuckDB | The tables the panel reads; published in the «base-actual» release |
 | Backup | SQLite (`etl/datos.db`) | The same prices computed without dbt, for the parity test; rebuilt on the machine of each load and not published |
-| Web panel | Streamlit, Python | Shows the indicators and the documents, and offers the SQL studio. Reads the served database read-only. With the control code, uses the GitHub API to start the load, read its state and logs, and cancel it |
+| Web panel | Streamlit, Python | Shows the indicators and the documents, and offers the SQL studio. Reads the DuckDB database read-only. With the control code, uses the GitHub API to start the load, read its state and logs, and cancel it |
 
 ### 3.1 Components of the weekly load
 
@@ -101,7 +101,7 @@ Each step starts only if the previous one ended well:
 | Step | What happens |
 |---|---|
 | 1 | At 12:00 UTC, GitHub Actions creates a new machine and restores the CSV files of the closed years from its cache |
-| 2 | It downloads the served database of the previous week from the «base-actual» release and verifies its fingerprint. The load history and the comparison of step 6 come from it |
+| 2 | It downloads the DuckDB database of the previous week from the «base-actual» release and verifies its fingerprint. The load history and the comparison of step 6 come from it |
 | 3 | The agent downloads from ODEPA the file of the current year and any missing ones, and records the SHA-256 fingerprint of each in `manifest.json` |
 | 4 | The Python ETL computes the prices on its own and writes the backup `etl/datos.db` |
 | 5 | `etl/pipeline.py` stores the rows in the landing database, copies them to bronze together with the INE CPI and runs `dbt build`, which builds and tests each model in the working database |
@@ -114,7 +114,7 @@ The job has a limit of 20 minutes: if it hangs, GitHub cuts it.
 
 The manual load starts from «Run pipeline now» and is followed in a window that does not close by itself. The window shows each step with its time and duration, and the real log of each job when it ends, without tokens. It can be minimized, or the run can be cancelled in GitHub with the same code that started it. Starting and cancelling are the only writes of the panel to GitHub (D-351).
 
-If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass)). Each run and its steps can be followed in the «Operations» tab of [[vista:Operations center]].
+If a step fails, the following ones do not run and the DuckDB database does not change ([ADR-11 · Publish only if the tests pass](ADR.md#adr-11--publish-only-if-the-tests-pass)). Each run and its steps can be followed in the «Operations» tab of [[vista:Operations center]].
 
 ## 5. The panel when it opens
 
@@ -146,7 +146,7 @@ The data goes through five layers:
 
 The journey and the lineage are in [[vista:Pipeline and lineage]], and the model, in [[vista:Data model]]. Dates are stored as ISO text (`YYYY-MM-DD`).
 
-### 6.1 Tables of the served database
+### 6.1 Tables of the DuckDB database
 
 | Table | Role | Content |
 |---|---|---|
@@ -331,7 +331,7 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | Weekly load and its quality report | GitHub Actions machines (Ubuntu, Python 3.11): `semanal.yml` and, when it ends, `calidad.yml` | Created and discarded on each run; the CSV files of closed years stay in the Actions cache |
 | Tests of each push | Another GitHub Actions machine, apart from the load: `pruebas.yml` (lint and pytest on Python 3.11 and 3.12) and `calidad.yml`, which only measures | They never touch the published database |
 | Code and database pointer | GitHub repository, `main` branch | |
-| Served database | «base-actual» release of the repository | A single copy, replaced by each load; the panel downloads it from there |
+| DuckDB database | «base-actual» release of the repository | A single copy, replaced by each load; the panel downloads it from there |
 | Panel | Streamlit Community Cloud, from `main` | Keeps the secrets: the GitHub tokens and the Author's key |
 | Landing (`etl/raw.db`) | The author's computer and the machine of each load | Not versioned |
 | Reports | GitHub repository | The weekly report is an issue; the quality report, a pull request the author approves (D-383) |
@@ -381,7 +381,7 @@ The page «Settings» is also the author's only (D-409). It shows on one screen 
 
 | Measure | Value | Origin |
 |---|---|---|
-| Served database | About 14 MB in the served database | Size of `etl/datos.duckdb` |
+| DuckDB database | About 14 MB in the DuckDB database | Size of `etl/datos.duckdb` |
 | Data | Volume and coverage of the last load | [PRD, section 6](../negocio/PRD.md#6-scope) |
 | Frequency | One load per week | [RF-01](../negocio/PRD.md#5-requirements) |
 | Users | One public, read-only panel | [PRD, section 3](../negocio/PRD.md#3-who-it-is-for) |
@@ -390,7 +390,7 @@ The page «Settings» is also the author's only (D-409). It shows on one screen 
 
 | Limit | Current situation | Planned response |
 |---|---|---|
-| Size of the served database | A single copy in a release, replaced by each load ([ADR-35](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces)); the Git history no longer grows with the data | A release file can hold up to 2 GB; long before that, the option of section 9.4 would be advisable |
+| Size of the DuckDB database | A single copy in a release, replaced by each load ([ADR-35](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces)); the Git history no longer grows with the data | A release file can hold up to 2 GB; long before that, the option of section 9.4 would be advisable |
 | Duration of the load | Each load rebuilds the whole history since 2022 ([ADR-10](ADR.md#adr-10--rebuild-everything-on-each-load)) and takes a little longer every year | Incremental loads when the duration justifies them |
 | Simultaneous readers | A free Streamlit app that reads a small file read-only | If several teams used it daily, the free plan would not be enough: it is one of the thresholds of section 9.4 |
 
@@ -429,11 +429,11 @@ With public, weekly and small data, read by a single panel, a cloud data warehou
 | Principle | How it is applied | Decision |
 |---|---|---|
 | Rebuild everything on each load | Every Tuesday the whole history is recomputed from the official files; repeating a load never duplicates data | [ADR-10](ADR.md#adr-10--rebuild-everything-on-each-load) |
-| Publish only what is validated | The served database changes only if all the tests pass | [ADR-11](ADR.md#adr-11--publish-only-if-the-tests-pass) |
+| Publish only what is validated | The DuckDB database changes only if all the tests pass | [ADR-11](ADR.md#adr-11--publish-only-if-the-tests-pass) |
 | Check along a second path | A Python ETL, independent of dbt, computes the same prices | [ADR-34](ADR.md#adr-34--separate-the-dbt-working-database-the-database-the-panel-reads-and-the-backup) |
 | Declarative, tested layers | Bronze in Parquet; staging, intermediate and marts in dbt Core on DuckDB | [ADR-30](ADR.md#adr-30--parquet-dbt-core-and-duckdb) |
 | Block only what matters | The tests that protect the data stop the load; the speed tests only inform and run locally | D-341 |
-| A single published copy | The served database lives in a release that each load replaces | [ADR-35](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) |
+| A single published copy | The DuckDB database lives in a release that each load replaces | [ADR-35](ADR.md#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces) |
 
 The decisions that shape this architecture, with their context, their alternatives and their consequences, are in the [Architecture Decision Records (ADR)](ADR.md).
 
@@ -472,3 +472,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.6 | 2026-11-01 | The deployment: the release in its own box, the three workflows and the separate machine for the tests of each push (7, D-422) |
 | 3.7 | 2026-11-01 | The key scenarios show everything each actor can do and what it does not reach (2.1, D-424) |
 | 3.8 | 2026-11-01 | The key scenarios as a map of the web panel by profile, with inheritance, the DuckDB database and GitHub Actions (2.1, D-425) |
+| 3.9 | 2026-11-01 | «Served database» becomes «DuckDB database · `etl/datos.duckdb`» throughout the document; the containers show the upload to the «base-actual» release, the reading from it and the arrows from the web panel to GitHub with their tokens (3, D-426) |
