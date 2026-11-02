@@ -3496,3 +3496,32 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** en el Dashboard, los pasos 1, 2 y 3 quedan siempre juntos: el mapa, las familias con la elegida marcada y la tabla de productos. Para ver más filas, el botón de ampliar abre la tabla al tamaño de la ventana. Las páginas de cada canal («Último dato por canal») siguen plegando los pasos 1 y 2 al elegir la familia, con «Cambiar», como dice D-408.
 - **Documentos:** PRD 3.18 (7 y la captura M-1, en `docs/img/` y `docs/img/en/`) e Índice de decisiones, en los dos idiomas.
 - **Pruebas:** `tests/test_panorama_steps.py::test_d446_the_dashboard_never_folds_its_steps_when_a_family_is_chosen` y `tests/test_home_mockup.py::test_d092_region_and_family_clicks_fill_the_products_table` (el mapa sigue a la vista); `tests/test_channel_latest.py::test_d408_a_channel_folds_its_steps_like_the_panorama` sigue verde.
+
+## D-447 · La tabla del Dashboard: encabezado de una línea y 10 filas a la vista
+
+- **Pedido del autor:** con el panorama completo (D-446), la tabla de productos quedaba con un encabezado de cuatro líneas y casi sin filas; antes del botón de ampliar se deben ver al menos 10 filas, con un encabezado delgado.
+- **Decisión:** en el Dashboard, el encabezado ocupa una línea: las columnas de precio dicen solo su semana («19–25 oct», «26 oct – 1 nov»), con «Precio medio» al pasar el cursor, y la columna de regiones dice «Regiones ↑ / ↓». La ventana de la tabla y la de cada canal conservan «Precio 19–25 oct». Cada fila ocupa dos líneas: el producto y, debajo, su calidad, su unidad y «Ver cálculo». La tabla reserva la altura de 10 filas y la página crece bajo el mapa para mostrarlas; el botón de ampliar sigue abriendo la tabla al tamaño de la ventana.
+- **Medición:** 10 filas a la vista a 1440 × 790 y a 1280 × 800, sin desplazamiento horizontal (Playwright).
+- **Pruebas:** `tests/test_panorama_steps.py::test_d447_the_dashboard_table_has_a_one_line_header_and_ten_rows_in_sight`, y las del encabezado en `tests/test_dashboard.py`, `tests/test_home_mockup.py` y `tests/test_weeks.py`.
+
+## D-448 · El SAD dibuja los diagramas de la app con el mismo código
+
+- **Pedido del autor:** el SAD mostraba las tablas sueltas, una bajo otra, en vez del diagrama entidad-relación de «Modelo de datos»; no tenía el modelo estrella, «Dónde viven los datos» ni las herramientas de «Stack y evidencia», y su diagrama de despliegue no era el de la app.
+- **Decisión:** los documentos ya no copian esas vistas: `bi/app_diagrams.py` las dibuja con el mismo código del panel, como una imagen fija sin el estado en vivo, y `bi/doc_diagrams.py` las publica con sus marcadores. El SAD queda así:
+  - **3.4 Herramientas** (`[[diagrama:herramientas]]`): las herramientas de «Stack y evidencia» y sus tres cifras.
+  - **6.1 Dónde viven los datos** (`almacenamiento`), **6.2 Modelo estrella** (`estrella`), **6.3 Entidad-relación** (`entidad_relacion`) y **6.4 Cruces entre bases** (`cruces`), las cuatro vistas de «Modelo de datos».
+  - **6.5 Diccionario de datos:** la lista de tablas y las columnas de cada una, después de los diagramas.
+  - **7. Despliegue** (`despliegue`): el diagrama de la pestaña «Despliegue» del «Centro de operación», sin los puntos de estado ni la próxima ejecución. Reemplaza al dibujo propio del SAD, que se retira.
+- **Una sola fuente:** las funciones y las definiciones de las tablas, los tamaños de los archivos y las explicaciones al pasar el cursor viven en `bi/app_diagrams.py`; el panel y el SAD leen las mismas.
+- **De paso:** la nota de «Cruces entre bases» pasa a dos líneas, porque en el marco más angosto del documento se cortaba. En la tabla de despliegue, el informe de calidad ya no «lo aprueba el autor»: se fusiona solo si el código está en su aceptable (D-431, D-436).
+- **Documentos:** SAD 3.13, en los dos idiomas.
+- **Pruebas:** `tests/test_documents.py::test_each_document_carries_the_diagrams_its_kind_of_document_needs` (los 15 diagramas del SAD, en orden) y `::test_d279_the_data_dictionary_describes_every_table_and_column_of_the_served_database` (el diccionario en 6.5); `tests/test_doc_diagrams.py` (cada diagrama es un documento sin script, sin fondo y sin sombras al imprimir).
+
+## D-449 · «Git workflow» es un diagrama de flujo de forma fija
+
+- **Pedido del autor:** el mapa no se veía como un diagrama de workflow: en una ventana mediana las 15 estaciones quedaban en una cuadrícula de tres columnas, sin flechas.
+- **Decisión:** el mapa es un solo dibujo con forma fija, que una pantalla chica achica sin reordenar (como D-441). Tiene tres carriles con nombre: Preparar, Guardar y verificar, y Publicar. El camino serpentea de izquierda a derecha, de derecha a izquierda y otra vez de izquierda a derecha, con una flecha del color del carril entre cada dos estaciones y en cada vuelta.
+- **Cada estación** muestra su número, su ícono, su título, su línea y su primer comando (con «+n» si tiene más). Una opcional va con borde punteado y el final, en un círculo verde.
+- **Cada punto de control** es un rombo con sus dos salidas: la verde sigue («verde» o «sí») y la roja dice adónde vuelve el cambio («rojo → volver a 5», «pide forzar → parar»).
+- **Lo que no cambia:** un clic o Enter en una estación abre el mismo panel lateral, con sus comandos para copiar, qué hacer si falla, el ejemplo de GreenOcean y sus fallas del registro.
+- **Pruebas:** `tests/test_git_workflow.py::test_d449_the_map_is_a_flowchart_of_fixed_shape_with_an_arrow_between_every_two_stations`.

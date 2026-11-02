@@ -57,7 +57,7 @@ def test_d374_the_notices_tables_and_reports_name_the_week_by_its_range():
     )
     assert quality_view.format_week("2026-10-12") == "12–18 oct 2026"
     page = home_mockup.products_table([], "12–18 oct", "5–11 oct")
-    assert "Precio medio<br>5–11 oct" in page and "Precio medio<br>12–18 oct" in page
+    assert "Precio</span> 5–11 oct" in page and "Precio</span> 12–18 oct" in page
     # No screen writes a week as «semana del 19-10» any more; the data keep the Monday as the week's key.
     for path in sorted((ROOT / "bi").glob("*.py")):
         text = path.read_text(encoding="utf-8")

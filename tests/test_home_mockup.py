@@ -401,8 +401,8 @@ def test_d327_the_row_shows_the_prices_of_the_regions_it_compares_and_opens_its_
     page = home_mockup.products_table([dict(ZAPALLO)], '12–18 oct', '5–11 oct', published=9)
     # The two prices and the change rest on the same regions, so dividing them gives the change shown.
     assert '$1.247' in page and '$1.812' in page and '$1.199' not in page and '+45,3 %' in page
-    assert 'Precio medio<br>5–11 oct' in page and 'Precio medio<br>12–18 oct' in page  # D-374: ranges
-    assert 'title="Promedio de las regiones con precio publicado en las dos semanas"' in page
+    assert 'Precio</span> 5–11 oct' in page and 'Precio</span> 12–18 oct' in page  # D-374: ranges
+    assert 'title="Precio medio: promedio de las regiones con precio publicado en las dos semanas"' in page  # D-447
     assert '<summary>Ver cálculo · 2 de 9 regiones</summary>' in page and 'regiones comunes' not in page
     assert (
         '<span>Biobío</span><span class="mock-calc-prices"><span>$1.200</span> → <span>$2.000</span></span><b>+66,7 %</b>'

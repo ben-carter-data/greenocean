@@ -183,3 +183,15 @@ def test_d408_the_folded_table_takes_the_height_and_its_rows_two_lines():
     assert home_mockup.chosen_step(1, "Región", "Biobío") == (
         '<div class="mock-chosen"><b>1</b><span>Región</span><strong>Biobío</strong></div>'
     )
+
+
+def test_d447_the_dashboard_table_has_a_one_line_header_and_ten_rows_in_sight():
+    table = home_mockup.products_table([], "26 oct – 1 nov", "19–25 oct")
+    header = table.split("<thead>", 1)[1].split("</thead>", 1)[0]
+    assert "<br>" not in header and "mock-two-lines" not in header  # one line, the panel's own word hidden
+    assert '<span class="mock-th-word">Precio</span> 19–25 oct' in header and "Regiones ↑ / ↓</th>" in header
+    css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
+    # 10 rows at 1440 x 790 and at 1280 x 800, measured with Playwright (D-447); the page grows under the map for them.
+    assert ".st-key-home_overview .mock-products-table {max-height:592px!important;" in css
+    assert "@media (max-width:1380px) {.st-key-home_overview .mock-products-table {max-height:810px!important;}}" in css
+    assert ".st-key-home_overview .mock-th-word {display:none;}" in css

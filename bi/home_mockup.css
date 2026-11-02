@@ -673,3 +673,16 @@ ul.mock-calc-out li em {font-style:normal;}
 .st-key-home_focus .mock-products-table td:first-child .mock-calc {display:inline-block;margin:0 0 0 10px;}
 .st-key-home_focus .mock-products-table td {padding-top:3px;padding-bottom:3px;line-height:1.3;}
 @media (max-height:860px) {.st-key-home_focus .mock-products-note {display:none!important;}}
+
+/* D-447: the Dashboard keeps its three panels together (D-446), so the products table holds its own height: a header of
+   one line and rows of two lines, 10 rows in sight before the enlarge button; the page grows below the map for it. */
+.st-key-home_overview {height:auto!important;min-height:calc(100vh - 195px);}
+.st-key-home_overview .mock-products-table {max-height:592px!important;min-height:0!important;}
+@media (max-width:1380px) {.st-key-home_overview .mock-products-table {max-height:810px!important;}}
+.mock-products-table th {padding-top:6px;padding-bottom:6px;}
+.mock-products-table td:first-child strong {display:block;}
+.mock-products-table td:first-child small {display:inline;}
+.mock-products-table td:first-child .mock-calc {display:inline-block;margin:0 0 0 10px;}
+.mock-products-table td {padding-top:3px;padding-bottom:3px;line-height:1.3;}
+.st-key-home_overview .mock-products-table th,.st-key-home_overview .mock-products-table td {padding-left:7px;padding-right:7px;}
+.st-key-home_overview .mock-th-word {display:none;}

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.12 |
+| Version | 3.13 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -92,6 +92,12 @@ The pieces of the project and what they say to each other, in one view. Each arr
 
 The live view: [[vista:Stack and evidence]].
 
+### 3.4 Tools
+
+Each tool of the project, what it does and which ones it connects to: the data that flows, who starts whom, where SQL is used and what the tests verify. It is the same diagram as «Stack and evidence», drawn by the same code (D-448).
+
+[[diagrama:herramientas]]
+
 ## 4. The load of each week
 
 [[diagrama:secuencia_carga]]
@@ -146,7 +152,34 @@ The data goes through five layers:
 
 The journey and the lineage are in [[vista:Pipeline and lineage]], and the model, in [[vista:Data model]]. Dates are stored as ISO text (`YYYY-MM-DD`).
 
-### 6.1 Tables of the DuckDB database
+### 6.1 Where the data lives
+
+Each data file, where it lives and what produces it: the external sources, the work area rebuilt on every load, the result of the load and what is published on GitHub.
+
+[[diagrama:almacenamiento]]
+
+### 6.2 Star schema
+
+One row of `weekly_price` is a product (variety and quality) in a region, a channel, a unit and a week. The four dimensions surround it; the CPI and the load audit sit at the sides.
+
+[[diagrama:estrella]]
+
+### 6.3 Entity-relationship
+
+The same model in the classic notation: each table with its columns and types, its keys and the relationships between them. The types and the rows are read from the DuckDB database.
+
+[[diagrama:entidad_relacion]]
+
+### 6.4 Crossings between databases
+
+Each line is a crossing: the point where two databases touch, with what joins them. The color of each number says whether that crossing was checked when the document was opened.
+
+[[diagrama:cruces]]
+
+### 6.5 Data dictionary
+
+Each table of the DuckDB database, its role and its columns.
+
 
 | Table | Role | Content |
 |---|---|---|
@@ -164,9 +197,9 @@ The journey and the lineage are in [[vista:Pipeline and lineage]], and the model
 | `dbt_node` | Lineage | Models, sources and tests of the last `dbt build` |
 | `dbt_result` | Lineage | Result of each model and test of the last `dbt build` |
 
-### 6.2 Facts and dimensions
+**Facts and dimensions**
 
-### weekly_price
+#### weekly_price
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -180,7 +213,7 @@ The journey and the lineage are in [[vista:Pipeline and lineage]], and the model
 | `observation_count` | BIGINT | | Number of quotes that make up the price of the week |
 | `flag` | VARCHAR | | Empty if the price enters the indicators; `ATIPICO` (outlier) or `UNIDAD_NO_CONVERTIBLE` (unit that cannot be converted) if it stays out of them |
 
-### dim_product
+#### dim_product
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -190,14 +223,14 @@ The journey and the lineage are in [[vista:Pipeline and lineage]], and the model
 | `variety` | VARCHAR | | Variety |
 | `quality` | VARCHAR | | Quality |
 
-### dim_region
+#### dim_region
 
 | Column | Type | Key | Description |
 |---|---|---|---|
 | `region_id` | INTEGER | PK | Region identifier |
 | `region` | VARCHAR | | Name of the region |
 
-### dim_channel
+#### dim_channel
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -205,7 +238,7 @@ The journey and the lineage are in [[vista:Pipeline and lineage]], and the model
 | `channel` | VARCHAR | | Sales channel, for example «Supermercado» or «Feria libre» |
 | `source` | VARCHAR | | ODEPA source: `wholesale` or `consumer` |
 
-### dim_date
+#### dim_date
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -217,7 +250,7 @@ The journey and the lineage are in [[vista:Pipeline and lineage]], and the model
 | `year` | BIGINT | | Year of the Monday |
 | `season` | VARCHAR | | Season in Chile: `verano`, `otoño`, `invierno` or `primavera` (summer, autumn, winter or spring) |
 
-### latest_by_source
+#### latest_by_source
 
 The last two weeks of each source, without the cut of D-356. Only the page «Latest data by channel» reads it; the Dashboard and the indicators read `weekly_price`.
 
@@ -237,11 +270,11 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | `observation_count` | BIGINT |  | Number of quotes of the week |
 | `flag` | VARCHAR |  | Empty if the price enters the calculation; `ATIPICO` or `UNIDAD_NO_CONVERTIBLE` if it stays out |
 
-### 6.3 CPI
+**CPI**
 
 **Real prices.** Each week takes the food CPI of the month of its Monday. Real prices are expressed in pesos of the last published month ([ADR-33 · Compute real prices with the INE food CPI](ADR.md#adr-33--compute-real-prices-with-the-ine-food-cpi)).
 
-### ipc_monthly
+#### ipc_monthly
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -250,7 +283,7 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | `food_index` | DOUBLE | | Food CPI, base 2023 = 100 |
 | `origin` | VARCHAR | | Series of origin: the 2023 base or the spliced series, linked in January 2024 |
 
-### ipc_weekly
+#### ipc_weekly
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -263,7 +296,7 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | `real_factor` | DOUBLE | | Factor that turns a nominal price of the week into pesos of the reference month |
 | `provisional` | BOOLEAN | | True if the week is after the last published month |
 
-### ine_ipc_source
+#### ine_ipc_source
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -273,9 +306,9 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | `index_value` | VARCHAR | | Index value, as the INE publishes it |
 | `monthly_change` | VARCHAR | | Monthly change, as the INE publishes it |
 
-### 6.4 Audit and lineage
+**Audit and lineage**
 
-### etl_run
+#### etl_run
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -287,7 +320,7 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | `rows_rejected` | INTEGER | | Rows rejected; read = loaded + rejected |
 | `message` | VARCHAR | | Message of the load, if any |
 
-### rejection
+#### rejection
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -296,7 +329,7 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | `reason` | VARCHAR | | Reason for the rejection, for example `NON_POSITIVE_PRICE` (zero or negative price) |
 | `original_row` | JSON | | The row as it arrived |
 
-### dbt_node
+#### dbt_node
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -310,7 +343,7 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | `column_name` | VARCHAR | | Column it tests, if any |
 | `description` | VARCHAR | | Description of the node in the dbt project |
 
-### dbt_result
+#### dbt_result
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -334,9 +367,9 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | DuckDB database | «base-actual» release of the repository | A single copy, replaced by each load; the panel downloads it from there |
 | Panel | Streamlit Community Cloud, from `main` | Keeps the secrets: the GitHub tokens and the Author's key |
 | Landing (`etl/raw.db`) | The author's computer and the machine of each load | Not versioned |
-| Reports | GitHub repository | The weekly report is an issue; the quality report, a pull request the author approves (D-383) |
+| Reports | GitHub repository | The weekly report is an issue; the quality report, a pull request that is merged only if the code is within its acceptable (D-431, D-436) |
 
-The diagram with the live status of each piece is in the «Deployment» tab of [[vista:Operations center]]. The path of a change to production is in its «CI/CD» tab.
+It is the same diagram as the «Deployment» tab of [[vista:Operations center]], drawn by the same code; in the panel it also shows the live status of each piece (D-448). The path of a change to production is in its «CI/CD» tab.
 
 ## 8. Quality, security and observability
 
@@ -478,3 +511,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.10 | 2026-11-01 | The key scenarios fit like the other diagrams: the DuckDB database and GitHub Actions move under the web panel, with no content removed (2.1, D-429) |
 | 3.11 | 2026-11-01 | Two abandonment risks with their proposed mitigation, and every dependency with a maximum version (11, D-435, D-439) |
 | 3.12 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
+| 3.13 | 2026-11-02 | The app's diagrams in the document, drawn by the same code: tools (3.4), where the data lives, star schema, entity-relationship and crossings between databases (6.1 to 6.4), and deployment (7); the data dictionary moves to 6.5 (D-448) |

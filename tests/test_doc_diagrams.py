@@ -105,6 +105,13 @@ def test_d210_the_weak_views_are_gone():
         "sop",
         "pruebas",
         "flujo",
+        # D-448: the panel's own data and deployment diagrams.
+        "estrella",
+        "entidad_relacion",
+        "almacenamiento",
+        "cruces",
+        "herramientas",
+        "despliegue",
     } | set(doc_figures.FIGURES)
 
 

@@ -1464,78 +1464,6 @@ def sad_layers(mode):
     )
 
 
-def sad_deployment(mode):
-    return graph(
-        mode,
-        say("Dónde corre cada pieza", "Where each piece runs"),
-        {
-            "author": (
-                80,
-                40,
-                "person:author",
-                say("Computador del autor", "The author's computer"),
-                say(
-                    "el código y las pruebas antes de cada push; etl/raw.db fuera de git",
-                    "the code and the tests before each push; etl/raw.db outside git",
-                ),
-            ),
-            "repo": (
-                330,
-                40,
-                "brand:github",
-                say("GitHub, rama main", "GitHub, main branch"),
-                say("el código y el puntero de la base", "the code and the database pointer"),
-            ),
-            "actions": (
-                330,
-                230,
-                "icon:calendar",
-                "GitHub Actions",
-                say(
-                    "máquina efímera (Ubuntu): la carga de cada martes y las pruebas de cada push; caché de años cerrados",
-                    "ephemeral machine (Ubuntu): each Tuesday's load and each push's tests; cache of closed years",
-                ),
-            ),
-            "release": (
-                600,
-                230,
-                "icon:box",
-                say("Release «base-actual»", "«base-actual» release"),
-                say("una sola copia de la Base DuckDB", "a single copy of the DuckDB database"),
-            ),
-            "cloud": (
-                600,
-                40,
-                "brand:streamlit",
-                "Streamlit Community Cloud",
-                say("el panel, publicado desde main, en solo lectura", "the panel, published from main, read-only"),
-            ),
-            "secrets": (
-                840,
-                40,
-                "icon:key",
-                say("Secretos", "Secrets"),
-                say(
-                    "GITHUB_TOKEN, GITHUB_READ_TOKEN y CONTROL_CODE", "GITHUB_TOKEN, GITHUB_READ_TOKEN and CONTROL_CODE"
-                ),
-            ),
-        },
-        [
-            ("author", "repo", "push", "order", "h"),
-            ("repo", "actions", "", "order", "v"),
-            ("actions", "release", say("publica la base", "publishes the database"), "flow", "h"),
-            ("repo", "cloud", say("despliega main", "deploys main"), "order", "h"),
-            ("release", "cloud", say("descarga y huella", "download and fingerprint"), "flow", "v"),
-            ("cloud", "secrets", "", "check", "h"),
-        ],
-        limit=26,
-    )
-
-
-# endregion
-
-
-# region ADR
 def adr_map(mode):
     return graph(
         mode,
@@ -2638,7 +2566,6 @@ FIGURES = {
     "secuencia_carga": sad_weekly_sequence,
     "secuencia_panel": sad_panel_sequence,
     "capas": sad_layers,
-    "despliegue": sad_deployment,
     "mapa_adr": adr_map,
     "tiempo_adr": adr_timeline,
     "antes_despues": adr_before_after,

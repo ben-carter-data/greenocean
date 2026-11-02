@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.12 |
+| Versión | 3.13 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -92,6 +92,12 @@ Las piezas del proyecto y lo que se dicen entre ellas, en una sola vista. Cada f
 
 La vista en vivo: [[vista:Stack y evidencia]].
 
+### 3.4 Herramientas
+
+Cada herramienta del proyecto, qué hace y con cuáles se conecta: el dato que fluye, quién lanza a quién, dónde se usa SQL y qué verifican las pruebas. Es el mismo diagrama de «Stack y evidencia», dibujado por el mismo código (D-448).
+
+[[diagrama:herramientas]]
+
 ## 4. La carga de cada semana
 
 [[diagrama:secuencia_carga]]
@@ -146,7 +152,34 @@ Los datos pasan por cinco capas:
 
 El recorrido y el linaje están en [[vista:Pipeline y linaje]], y el modelo, en [[vista:Modelo de datos]]. Las fechas se guardan como texto ISO (`AAAA-MM-DD`).
 
-### 6.1 Tablas de la Base DuckDB
+### 6.1 Dónde viven los datos
+
+Cada archivo de datos, dónde vive y qué lo produce: las fuentes externas, la zona de trabajo que se rehace en cada carga, el resultado de la carga y lo que se publica en GitHub.
+
+[[diagrama:almacenamiento]]
+
+### 6.2 Modelo estrella
+
+Una fila de `weekly_price` es un producto (variedad y calidad) en una región, un canal, una unidad y una semana. Las cuatro dimensiones la rodean; el IPC y la auditoría de cargas quedan a los lados.
+
+[[diagrama:estrella]]
+
+### 6.3 Entidad-relación
+
+El mismo modelo en la notación clásica: cada tabla con sus columnas y tipos, sus claves y las relaciones entre ellas. Los tipos y las filas se leen de la Base DuckDB.
+
+[[diagrama:entidad_relacion]]
+
+### 6.4 Cruces entre bases
+
+Cada línea es un cruce: el punto donde dos bases se tocan, con lo que las une. El color de cada número dice si ese cruce se comprobó al abrir el documento.
+
+[[diagrama:cruces]]
+
+### 6.5 Diccionario de datos
+
+Cada tabla de la Base DuckDB, su función y sus columnas.
+
 
 | Tabla | Función | Contenido |
 |---|---|---|
@@ -164,9 +197,9 @@ El recorrido y el linaje están en [[vista:Pipeline y linaje]], y el modelo, en 
 | `dbt_node` | Linaje | Modelos, fuentes y pruebas del último `dbt build` |
 | `dbt_result` | Linaje | Resultado de cada modelo y prueba del último `dbt build` |
 
-### 6.2 Hechos y dimensiones
+**Hechos y dimensiones**
 
-### weekly_price
+#### weekly_price
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -180,7 +213,7 @@ El recorrido y el linaje están en [[vista:Pipeline y linaje]], y el modelo, en 
 | `observation_count` | BIGINT | | Número de cotizaciones que forman el precio de la semana |
 | `flag` | VARCHAR | | Vacía si el precio entra en los indicadores; `ATIPICO` o `UNIDAD_NO_CONVERTIBLE` si queda fuera de ellos |
 
-### dim_product
+#### dim_product
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -190,14 +223,14 @@ El recorrido y el linaje están en [[vista:Pipeline y linaje]], y el modelo, en 
 | `variety` | VARCHAR | | Variedad |
 | `quality` | VARCHAR | | Calidad |
 
-### dim_region
+#### dim_region
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
 | `region_id` | INTEGER | PK | Identificador de la región |
 | `region` | VARCHAR | | Nombre de la región |
 
-### dim_channel
+#### dim_channel
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -205,7 +238,7 @@ El recorrido y el linaje están en [[vista:Pipeline y linaje]], y el modelo, en 
 | `channel` | VARCHAR | | Canal de venta, por ejemplo «Supermercado» o «Feria libre» |
 | `source` | VARCHAR | | Fuente de ODEPA: `wholesale` (mayorista) o `consumer` (consumidor) |
 
-### dim_date
+#### dim_date
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -217,7 +250,7 @@ El recorrido y el linaje están en [[vista:Pipeline y linaje]], y el modelo, en 
 | `year` | BIGINT | | Año del lunes |
 | `season` | VARCHAR | | Estación en Chile: `verano`, `otoño`, `invierno` o `primavera` |
 
-### latest_by_source
+#### latest_by_source
 
 Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la página «Último dato por canal»; el Dashboard y los indicadores leen `weekly_price`.
 
@@ -237,11 +270,11 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | `observation_count` | BIGINT |  | Número de cotizaciones de la semana |
 | `flag` | VARCHAR |  | Vacía si el precio entra al cálculo; `ATIPICO` o `UNIDAD_NO_CONVERTIBLE` si queda fuera |
 
-### 6.3 IPC
+**IPC**
 
 **Precios reales.** Cada semana toma el IPC de alimentos del mes de su lunes. Los precios reales quedan en pesos del último mes publicado ([ADR-33 · Calcular precios reales con el IPC de alimentos del INE](ADR.md#adr-33--calcular-precios-reales-con-el-ipc-de-alimentos-del-ine)).
 
-### ipc_monthly
+#### ipc_monthly
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -250,7 +283,7 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | `food_index` | DOUBLE | | IPC de alimentos, base 2023 = 100 |
 | `origin` | VARCHAR | | Serie de origen: la base 2023 o la serie empalmada, enlazada en enero de 2024 |
 
-### ipc_weekly
+#### ipc_weekly
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -263,7 +296,7 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | `real_factor` | DOUBLE | | Factor que convierte un precio nominal de la semana en pesos del mes de referencia |
 | `provisional` | BOOLEAN | | Verdadero si la semana es posterior al último mes publicado |
 
-### ine_ipc_source
+#### ine_ipc_source
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -273,9 +306,9 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | `index_value` | VARCHAR | | Valor del índice, como lo publica el INE |
 | `monthly_change` | VARCHAR | | Variación mensual, como la publica el INE |
 
-### 6.4 Auditoría y linaje
+**Auditoría y linaje**
 
-### etl_run
+#### etl_run
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -287,7 +320,7 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | `rows_rejected` | INTEGER | | Filas rechazadas; leídas = cargadas + rechazadas |
 | `message` | VARCHAR | | Mensaje de la carga, si lo hay |
 
-### rejection
+#### rejection
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -296,7 +329,7 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | `reason` | VARCHAR | | Motivo del rechazo, por ejemplo `NON_POSITIVE_PRICE` (precio cero o negativo) |
 | `original_row` | JSON | | La fila tal como llegó |
 
-### dbt_node
+#### dbt_node
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -310,7 +343,7 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | `column_name` | VARCHAR | | Columna que prueba, si aplica |
 | `description` | VARCHAR | | Descripción del nodo en el proyecto dbt |
 
-### dbt_result
+#### dbt_result
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -334,9 +367,9 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | Base DuckDB | Release «base-actual» del repositorio | Una sola copia, reemplazada por cada carga; el panel la descarga de ahí |
 | Panel | Streamlit Community Cloud, desde `main` | Guarda los secretos: los tokens de GitHub y la clave del Autor |
 | Aterrizaje (`etl/raw.db`) | Computador del autor y máquina de cada carga | No se versiona |
-| Informes | Repositorio de GitHub | El informe semanal es un issue; el informe de calidad, un pull request que el autor aprueba (D-383) |
+| Informes | Repositorio de GitHub | El informe semanal es un issue; el informe de calidad, un pull request que se fusiona solo si el código está en su aceptable (D-431, D-436) |
 
-El diagrama con el estado en vivo de cada pieza está en la pestaña «Despliegue» de [[vista:Centro de operación]]. El camino de un cambio hasta producción está en su pestaña «CI/CD».
+Es el mismo diagrama de la pestaña «Despliegue» de [[vista:Centro de operación]], dibujado por el mismo código; en el panel muestra además el estado en vivo de cada pieza (D-448). El camino de un cambio hasta producción está en su pestaña «CI/CD».
 
 ## 8. Calidad, seguridad y observabilidad
 
@@ -478,3 +511,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.10 | 01-11-2026 | Los escenarios clave caben como los demás diagramas: la Base DuckDB y GitHub Actions pasan bajo el panel web, sin quitar ningún contenido (2.1, D-429) |
 | 3.11 | 01-11-2026 | Dos riesgos de abandono con su mitigación propuesta, y todas las dependencias con versión máxima (11, D-435, D-439) |
 | 3.12 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
+| 3.13 | 02-11-2026 | Los diagramas de la app en el documento, dibujados por el mismo código: herramientas (3.4), dónde viven los datos, modelo estrella, entidad-relación y cruces entre bases (6.1 a 6.4), y despliegue (7); el diccionario de datos pasa a 6.5 (D-448) |

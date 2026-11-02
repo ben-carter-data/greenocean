@@ -810,9 +810,9 @@ def products_table(rows, week_label, previous_label, query='', selected=None, pu
     return (
         '<div class="mock-products-table" role="region" tabindex="0" aria-label="Productos de la familia"><table><thead><tr>'
         f'<th>Producto</th><th>Canal</th>'
-        f'<th class="num mock-two-lines" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio<br>{esc(previous_label)}</th>'
-        f'<th class="num mock-two-lines" title="Promedio de las regiones con precio publicado en las dos semanas">Precio medio<br>{esc(week_label)}</th><th class="num">Variación</th>'
-        '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; haz clic en el conteo para ver cuáles">Regiones ↑ / ↓ · clic</th></tr></thead>'
+        f'<th class="num" title="Precio medio: promedio de las regiones con precio publicado en las dos semanas"><span class="mock-th-word">Precio</span> {esc(previous_label)}</th>'
+        f'<th class="num" title="Precio medio: promedio de las regiones con precio publicado en las dos semanas"><span class="mock-th-word">Precio</span> {esc(week_label)}</th><th class="num">Variación</th>'
+        '<th class="num" title="Regiones donde el mismo producto y canal subió / bajó; haz clic en el conteo para ver cuáles">Regiones ↑ / ↓</th></tr></thead>'
         '<tbody>' + ''.join(body) + '</tbody></table></div>'
     )
 

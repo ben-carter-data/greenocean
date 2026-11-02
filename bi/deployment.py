@@ -177,7 +177,7 @@ def read_hosts():
     return odepa_host, ine_host
 
 
-def build_contents(states, figures):
+def build_contents(states, figures, live=True):
     """Everything drawn inside the nodes and the environments, with its live figures."""
     odepa_host, ine_host = read_hosts()
     raw = REPOSITORY / "etl" / "raw.db"
@@ -209,7 +209,7 @@ def build_contents(states, figures):
             heading(348, 104, "entorno de ejecución", "Runner ubuntu-latest")
             + '<text class="note" x="348" y="138">efímero: nace en cada ejecución</text>'
             + artifact(348, 158, "semanal.yml")
-            + f'<text class="live" x="366" y="173">próxima {esc(figures.get("next_run", ""))}</text>'
+            + (f'<text class="live" x="366" y="173">próxima {esc(figures.get("next_run", ""))}</text>' if live else "")
             + artifact(348, 192, "calidad.yml")
             + '<text class="note" x="366" y="207">tras una carga en verde</text>'
             + state_dot(526, 102, states.get("workflow"))
@@ -264,9 +264,10 @@ def build_contents(states, figures):
     return parts, envs
 
 
-def build_deployment_html(palette, states, figures):
-    """The nodes, the environments inside them and the communication paths, with the live state of each piece."""
-    parts, envs = build_contents(states, figures)
+def build_deployment_html(palette, states, figures, live=True):
+    """The nodes, the environments inside them and the communication paths, with the live state of each piece.
+    D-448: the SAD draws it with live=False, a fixed picture without the state dots and the next run."""
+    parts, envs = build_contents(states, figures, live)
     head = (
         f'<defs><marker id="dep-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" '
         f'orient="auto"><path d="M0 0 10 5 0 10z" fill="{palette["accent"]}"/></marker></defs>'
@@ -297,8 +298,12 @@ def build_deployment_html(palette, states, figures):
         for row, line in enumerate(label if isinstance(label, tuple) else (label,))
     )
     legend = (
-        f'<circle cx="26" cy="550" r="5" fill="{architecture.STATE_COLORS[control.RUN_OK]}"/>'
-        '<text class="legend" x="38" y="554">estado de la última ejecución y del panel · la línea muestra quién inicia la comunicación</text>'
+        (
+            f'<circle cx="26" cy="550" r="5" fill="{architecture.STATE_COLORS[control.RUN_OK]}"/>'
+            '<text class="legend" x="38" y="554">estado de la última ejecución y del panel · la línea muestra quién inicia la comunicación</text>'
+        )
+        if live
+        else '<text class="legend" x="26" y="554">la línea muestra quién inicia la comunicación</text>'
     )
     return (
         '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'

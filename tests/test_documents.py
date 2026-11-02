@@ -43,9 +43,14 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
             "componentes_carga",
             "componentes_panel",
             "flujo",  # D-414: the fixed picture of the live system flow
+            "herramientas",  # D-448: the panel's own diagrams, drawn by the same code
             "secuencia_carga",
             "secuencia_panel",
             "capas",
+            "almacenamiento",
+            "estrella",
+            "entidad_relacion",
+            "cruces",
             "despliegue",
         ],
         "ADR.md": ["mapa_adr", "tiempo_adr", "antes_despues"],
@@ -317,13 +322,13 @@ def test_d279_the_data_dictionary_describes_every_table_and_column_of_the_served
             "SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_schema = 'main'"
         ).fetchall()
     tables = {table for table, *_ in columns}
-    documented = set(re.findall(r"^### (\w+)$", text, re.MULTILINE))
+    documented = set(re.findall(r"^#### (\w+)$", text, re.MULTILINE))  # D-448: the dictionary is 6.5
     # A table the pipeline already serves but the downloaded base does not hold yet arrives with the next load.
     from etl import pipeline
 
     assert tables <= documented and documented - tables <= set(pipeline.SERVING_TABLES) - tables
     for table, column, data_type in columns:
-        section = text.split(f"### {table}\n", 1)[1].split("\n### ", 1)[0]
+        section = text.split(f"#### {table}\n", 1)[1].split("\n#### ", 1)[0]
         assert f"| `{column}` | {data_type} |" in section, (table, column)
 
 

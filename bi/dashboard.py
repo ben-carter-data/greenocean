@@ -46,6 +46,7 @@ from bi import (
     git_workflow,
     github_actions,
     run_monitor,
+    app_diagrams,
     app_map,
     app_map_detail,
     overview,
@@ -2885,24 +2886,8 @@ def describe_state_source(error_text, step_states, latest_load):
     return tr("GitHub no respondió ({}); {}.").format(error_text, source)
 
 
-IPC_TABLE_DEFINITIONS = {
-    "ipc_weekly": "el deflactor de cada semana: el IPC del mes de su lunes frente al último mes publicado, "
-    "para expresar los precios en pesos reales",
-    "ipc_monthly": "el IPC de alimentos del INE como una sola serie mensual, base 2023 = 100",
-    "ine_ipc_source": "las filas del IPC tal como se leyeron del INE, para rehacer la capa bronce si el INE no responde",
-}
-TABLE_ROLES = {
-    "weekly_price": "hechos",
-    "dim_product": "dimensión",
-    "dim_region": "dimensión",
-    "dim_channel": "dimensión",
-    "dim_date": "dimensión",
-    "etl_run": "auditoría",
-    "rejection": "auditoría",
-    "ipc_weekly": "IPC",
-    "ipc_monthly": "IPC",
-    "ine_ipc_source": "IPC",
-}
+# D-448: the tables' roles and definitions are shared with the SAD, which draws the same model.
+IPC_TABLE_DEFINITIONS, TABLE_ROLES = app_diagrams.IPC_TABLE_DEFINITIONS, app_diagrams.TABLE_ROLES
 
 
 MODEL_DESCRIPTION = "Cómo se organizan los datos: las tablas y sus claves, dónde viven y cómo se cruzan las bases."
@@ -2971,16 +2956,8 @@ def show_architecture_page(mode):
     count is in the drawing; each table explains itself on hover. No table picker,
     no SQL."""
     row_counts = read_table_row_counts()
-    definitions = project.parse_definitions(
-        project.read_section(project.read_document(project.PROJECT_GUIDE_FILE), "Modelo de datos")
-    )
     columns = project.read_schema_columns(project.read_document(project.SCHEMA_FILE))
-    definitions = {**IPC_TABLE_DEFINITIONS, **definitions}
-    tooltips = {
-        table: f"{table} · {TABLE_ROLES[table]} · {charts.format_thousands(row_counts[table])} filas\n"
-        f"{definitions.get(table, '')[:1].upper()}{definitions.get(table, '')[1:]}"
-        for table in project.TABLE_NAMES + project.IPC_TABLE_NAMES
-    }
+    tooltips = app_diagrams.model_tooltips(row_counts)  # D-448: the same explanations as the SAD's drawing
     st.markdown(build_architecture_css(mode), unsafe_allow_html=True)
     show_page_bar(PAGE_ARCHITECTURE, PAGE_ARCHITECTURE, MODEL_DESCRIPTION, build_architecture_chips(row_counts))
     # The views of the same database, from the model to where it lives (D-189, D-236): the star, the
@@ -3087,25 +3064,9 @@ def read_database_map(database_version):
     return counts, layers, tests
 
 
-# raw.db is 665 MB on the author's computer and never in the repository (D-020); where
-# the file is missing, the documented size is shown with an approximation sign.
-RAW_DATABASE_SIZE_TEXT = "≈ 665 MB"
-
-
-def format_file_size(size):
-    megabytes = size / 1_000_000
-    return f"{megabytes:,.0f} MB".replace(",", ".") if megabytes >= 10 else f"{megabytes:.1f} MB".replace(".", ",")
-
-
-def read_store_sizes():
-    """{store key: size text} of the files of the storage diagram that exist here (D-191)."""
-    sizes = {}
-    for key, path in (("served", queries.DATABASE_FILE), ("backup", etl.BASE_DIR / "datos.db")):
-        if Path(path).exists():
-            sizes[key] = format_file_size(Path(path).stat().st_size)
-    raw = etl.RAW_DATABASE_FILE
-    sizes["raw"] = format_file_size(raw.stat().st_size) if raw.exists() else RAW_DATABASE_SIZE_TEXT
-    return sizes
+# D-448: the storage map of the panel and of the SAD reads the same sizes.
+RAW_DATABASE_SIZE_TEXT = app_diagrams.RAW_DATABASE_SIZE_TEXT
+format_file_size, read_store_sizes = app_diagrams.format_file_size, app_diagrams.read_store_sizes
 
 
 @st.cache_data
@@ -7722,7 +7683,7 @@ def show_git_page(mode):
         default=tr("Registro de incidentes") if st.query_params.get(GIT_TAB_PARAMETER) == GIT_TAB_LOG else None,
     )
     with flow:
-        st.iframe(git_workflow.build_map_html(charts.get_palette(mode), i18n.get_language(), author), height=760)
+        st.iframe(git_workflow.build_map_html(charts.get_palette(mode), i18n.get_language(), author), height="content")
     with log:
         language = i18n.get_language()
         states = [ALL_VALUES, "abierta", "resuelta"]

@@ -45,6 +45,7 @@ LABELS = {
     "solved": ("resuelta", "solved"),
     "legend_optional": ("se puede omitir en un repositorio pequeño", "skippable on a small repository"),
     "legend_checkpoint": ("el flujo se detiene hasta que se cumple", "the flow stops until it holds"),
+    "legend_arrow": ("el camino del cambio", "the path of the change"),
     "title": ("Git workflow", "Git workflow"),
     "lede": (
         "Cómo viaja un cambio desde la idea hasta el despliegue en un proyecto de datos con CI. Cada estación dice "
@@ -429,6 +430,131 @@ def build_data(language: str, failures: list[dict[str, Any]], author: bool) -> d
     return {"stations": stations, "labels": {key: pick(value, language) for key, value in LABELS.items()}}
 
 
+# D-449: the map is a flowchart of fixed shape (like D-441, it never changes its form on a small screen): three swimlanes
+# that snake left to right, right to left and left to right again, an arrow between every two stations and at each turn,
+# and each checkpoint as a diamond with its two exits: the green one goes on, the red one says where the change goes back.
+WIDTH, LANE_HEIGHT, LANE_GAP = 1305, 196, 12
+COLUMNS = (262, 490, 718, 946, 1174)
+TURN_RIGHT, TURN_LEFT = 1292, 140
+TILE = 24  # half the side of a station's tile
+GATE_EXITS = {
+    8: (("verde", "green"), ("rojo → volver a 5", "red → back to 5")),
+    12: (("sí", "yes"), ("pide forzar → parar", "asks to force → stop")),
+    14: (("verde", "green"), ("rojo → volver a 5", "red → back to 5")),
+}
+
+
+def lane_top(lane: str) -> int:
+    return "abc".index(lane) * (LANE_HEIGHT + LANE_GAP) + 6
+
+
+def place(item: dict[str, Any]) -> tuple[int, int]:
+    """(x, y) of a station's tile: lane b runs right to left, so the path snakes."""
+    index = (item["n"] - 1) % 5
+    column = COLUMNS[4 - index] if item["lane"] == "b" else COLUMNS[index]
+    return column, lane_top(item["lane"]) + 54
+
+
+def fit(text: str, size: float, width: float, mono: bool = False) -> str:
+    """The text cut with «…» where it would pass `width` pixels at `size`."""
+    limit = int(width / (size * (0.61 if mono else 0.52)))
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
+
+
+def wrap(text: str, size: float, width: float) -> list[str]:
+    limit, lines = int(width / (size * 0.55)), [""]
+    for word in text.split():
+        if lines[-1] and len(lines[-1]) + 1 + len(word) > limit:
+            lines.append(word)
+        else:
+            lines[-1] = f"{lines[-1]} {word}".strip()
+    return lines
+
+
+def svg_station(item: dict[str, Any], station: dict[str, Any]) -> str:
+    """One station: number, tile (a diamond for a checkpoint, a green circle for the end), title, line and command."""
+    x, y = place(item)
+    kind = "gate" if item.get("gate") else "end" if item.get("end") else "opt" if item.get("optional") else ""
+    if kind == "gate":
+        tile = f'<rect class="tile" x="{x - 21}" y="{y - 21}" width="42" height="42" rx="7" transform="rotate(45 {x} {y})"/>'
+    elif kind == "end":
+        tile = f'<circle class="tile" cx="{x}" cy="{y}" r="{TILE}"/>'
+    else:
+        tile = f'<rect class="tile" x="{x - TILE}" y="{y - TILE}" width="{2 * TILE}" height="{2 * TILE}" rx="12"/>'
+    icon = f'<svg class="ico" x="{x - 12}" y="{y - 12}" width="24" height="24" viewBox="0 0 24 24">{item_icon(item)}</svg>'
+    command = station["commands"][0] + (f" +{len(station['commands']) - 1}" if len(station["commands"]) > 1 else "")
+    command = fit(command, 11, 196, mono=True)
+    chip_width = min(206, int(len(command) * 11 * 0.61) + 18)
+    badge = (
+        f'<g class="badge"><rect x="{x + 18}" y="{y - 34}" width="22" height="16" rx="8"/>'
+        f'<text x="{x + 29}" y="{y - 22}">{len(station["register"])}</text></g>'
+        if station["register"]
+        else ""
+    )
+    return (
+        f'<g class="st {kind} {item["lane"]}" data-n="{item["n"]}" tabindex="0" role="button" '
+        f'aria-label="{html.escape(station["label"])}">'
+        f'<rect class="hit" x="{x - 108}" y="{y - 40}" width="216" height="168" rx="12"/>'
+        f'<circle class="num" cx="{x - 30}" cy="{y - 28}" r="11"/><text class="numt" x="{x - 30}" y="{y - 24}">{item["n"]}</text>'
+        f"{tile}{icon}{badge}"
+        f'<text class="ttl" x="{x}" y="{y + 52}">{html.escape(fit(station["title"], 15, 220))}</text>'
+        f'<text class="sub" x="{x}" y="{y + 70}">{html.escape(fit(station["sub"], 12, 220))}</text>'
+        f'<rect class="chip" x="{x - chip_width / 2}" y="{y + 80}" width="{chip_width}" height="21" rx="6"/>'
+        f'<text class="cmd" x="{x}" y="{y + 94.5}">{html.escape(command)}</text></g>'
+    )
+
+
+def item_icon(item: dict[str, Any]) -> str:
+    return f'<g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{ICONS[item["icon"]]}</g>'
+
+
+def svg_paths(language: str) -> str:
+    """The arrows: along each lane, the two turns, and the two exits of every checkpoint."""
+    parts = []
+    for item, after in zip(STATIONS, STATIONS[1:]):
+        (x1, y1), (x2, y2) = place(item), place(after)
+        lane = after["lane"]
+        if item["lane"] == lane:
+            step = 1 if x2 > x1 else -1
+            start, end = x1 + step * (TILE + 6), x2 - step * (TILE + 10)
+            parts.append(f'<path class="go {lane}" d="M{start} {y1} H{end}"/>')
+            if item["n"] in GATE_EXITS:
+                parts.append(f'<text class="yes" x="{(start + end) / 2}" y="{y1 - 8}">{pick(GATE_EXITS[item["n"]][0], language)}</text>')
+        else:
+            turn = TURN_RIGHT if x1 > WIDTH / 2 else TURN_LEFT
+            side = 1 if turn > x1 else -1
+            parts.append(
+                f'<path class="go {lane}" d="M{x1 + side * (TILE + 6)} {y1} H{turn} V{y2} H{x2 + side * (TILE + 10)}"/>'
+            )
+    for number, (_, red) in GATE_EXITS.items():
+        x, y = place(STATIONS[number - 1])
+        parts.append(f'<text class="no" x="{x}" y="{y + 118}">↺ {html.escape(pick(red, language))}</text>')
+    return "".join(parts)
+
+
+def build_svg(data: dict[str, Any], language: str) -> str:
+    height = 3 * LANE_HEIGHT + 2 * LANE_GAP + 10
+    lanes = []
+    for key, name in LANES:
+        top = lane_top(key)
+        words = wrap(pick(name, language), 13, 100)
+        label = "".join(
+            f'<text class="ln" x="62" y="{top + LANE_HEIGHT / 2 - 8 * (len(words) - 1) + 16 * row + 4}">{html.escape(word)}</text>'
+            for row, word in enumerate(words)
+        )
+        lanes.append(f'<g class="lane {key}"><rect x="4" y="{top}" width="{WIDTH - 8}" height="{LANE_HEIGHT}" rx="14"/>{label}</g>')
+    stations = "".join(svg_station(item, station) for item, station in zip(STATIONS, data["stations"]))
+    heads = "".join(
+        f'<marker id="h-{key}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">'
+        f'<path d="M0 0 10 5 0 10z" class="hd {key}"/></marker>'
+        for key, _ in LANES
+    )
+    return (
+        f'<svg class="flow" viewBox="0 0 {WIDTH} {height}" role="group" aria-label="Git workflow">'
+        f"<defs>{heads}</defs>{''.join(lanes)}{svg_paths(language)}{stations}</svg>"
+    )
+
+
 def build_css(palette: dict[str, str]) -> str:
     background = palette["background"].lstrip("#")
     dark = len(background) == 6 and sum(int(background[i : i + 2], 16) for i in (0, 2, 4)) < 3 * 128
@@ -443,47 +569,37 @@ def build_css(palette: dict[str, str]) -> str:
   color-scheme:{'dark' if dark else 'light'}}}
 *{{box-sizing:border-box}}
 body{{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.45;padding:10px 14px 16px}}
-main{{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:10px}}
+main{{max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:10px}}
 header{{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:6px 24px}}
 .lede{{margin:0;color:var(--muted);font-size:.86rem;max-width:80ch}}
 .legend{{display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;margin:0;padding:0;font-size:.78rem;color:var(--muted)}}
 .legend li{{display:flex;align-items:center;gap:6px}}
-.map{{display:flex;flex-direction:column;gap:6px}}
-.lane{{display:grid;grid-template-columns:1fr;gap:8px}}
-.st{{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:4px 4px 2px;min-width:0;
-  cursor:pointer;border-radius:12px;background:none;border:0;color:inherit;font:inherit}}
-.st:hover .tile,.st:focus-visible .tile{{transform:translateY(-2px)}}
-.st:focus-visible{{outline:2px solid var(--lc);outline-offset:2px}}
-.lane.a{{--lc:var(--l1)}} .lane.b{{--lc:var(--l2)}} .lane.c{{--lc:var(--l3)}}
-.head{{display:flex;align-items:center;gap:8px}}
-.num{{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--lc);color:#fff;font-family:var(--mono);font-size:.74rem;font-weight:600;flex:none}}
-.tile{{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;color:var(--lc);background:var(--panel);border:2px solid var(--lc);transition:transform .15s}}
-.st.opt .tile{{border-style:dashed}}
-.st.gate .tile{{border-radius:10px;transform:rotate(45deg);background:var(--flag);border-color:var(--flag);color:var(--flag-ink);width:42px;height:42px;margin:4px}}
-.st.gate .tile svg{{transform:rotate(-45deg)}}
-.st.gate:hover .tile{{transform:rotate(45deg) scale(1.05)}}
-.st.end .tile{{border-radius:50%;background:var(--ok);border-color:var(--ok);color:#fff}}
-.tile svg{{width:24px;height:24px}}
-.st h3{{margin:2px 0 0;font-size:.88rem;font-weight:600;line-height:1.25;color:var(--fg)}}
-.st .sub{{font-size:.72rem;color:var(--muted);line-height:1.3}}
-.tag{{font-family:var(--mono);font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;border-radius:10px}}
-.tag.o{{border:1px dashed var(--muted);color:var(--muted)}} .tag.g{{background:var(--flag);color:var(--flag-ink)}}
-.cmd{{font-family:var(--mono);font-size:.66rem;background:var(--chip);border:1px solid var(--line);border-radius:7px;padding:4px 7px;max-width:100%;overflow-wrap:anywhere;text-align:left;line-height:1.4;color:var(--fg)}}
-.info{{font-size:.66rem;color:var(--lc);font-family:var(--mono)}}
-.badge{{font-family:var(--mono);font-size:.6rem;background:var(--stop);color:#fff;border-radius:10px;padding:0 6px}}
-@media (min-width:880px){{
-  .lane{{grid-template-columns:repeat(5,1fr);gap:0}}
-  .lane.b{{direction:rtl}} .lane.b .st{{direction:ltr}}
-  .st::after{{content:"";position:absolute;top:40px;right:-14%;width:28%;border-top:2px dashed var(--lc);opacity:.85}}
-  .lane.b .st::after{{right:auto;left:-14%}}
-  .st:last-child::after{{display:none}}
-  .turn{{height:4px;position:relative}}
-  .turn::before{{content:"";position:absolute;top:-130px;height:150px;width:42px;border:2px dashed var(--lc);pointer-events:none}}
-  .turn.r{{--lc:var(--l2)}} .turn.l{{--lc:var(--l3)}}
-  .turn.r::before{{right:0;border-left:0;border-radius:0 40px 40px 0}}
-  .turn.l::before{{left:0;border-right:0;border-radius:40px 0 0 40px}}
-}}
-@media (min-width:560px) and (max-width:879px){{.lane{{grid-template-columns:repeat(3,1fr)}}}}
+.legend .k{{width:16px;height:16px;border:2px dashed var(--muted);border-radius:4px}}
+.legend .k.g{{border:0;background:var(--flag);transform:rotate(45deg) scale(.8);border-radius:3px}}
+.legend .k.a{{width:26px;height:0;border:0;border-top:2px solid var(--muted);border-radius:0}}
+.flow{{display:block;width:100%;height:auto;font-family:var(--body)}}
+.lane rect{{fill:color-mix(in srgb,var(--lc) 5%,transparent);stroke:color-mix(in srgb,var(--lc) 35%,transparent)}}
+.lane.a,.a{{--lc:var(--l1)}} .lane.b,.b{{--lc:var(--l2)}} .lane.c,.c{{--lc:var(--l3)}}
+.ln{{fill:var(--lc);font-size:13px;font-weight:700;text-anchor:middle;letter-spacing:.02em}}
+.go{{fill:none;stroke:var(--lc);stroke-width:2}}
+.go.a{{marker-end:url(#h-a)}} .go.b{{marker-end:url(#h-b)}} .go.c{{marker-end:url(#h-c)}}
+.hd{{fill:var(--lc)}}
+.yes{{fill:var(--ok);font-size:11.5px;font-weight:700;text-anchor:middle}}
+.no{{fill:var(--stop);font-size:11.5px;font-weight:600;text-anchor:middle}}
+.st{{cursor:pointer;outline:none}}
+.st .hit{{fill:transparent;stroke:none}}
+.st:hover .hit,.st:focus-visible .hit{{fill:color-mix(in srgb,var(--lc) 10%,transparent);stroke:var(--lc)}}
+.st .tile{{fill:var(--panel);stroke:var(--lc);stroke-width:2}}
+.st.opt .tile{{stroke-dasharray:5 4}}
+.st.gate .tile{{fill:var(--flag);stroke:var(--flag)}} .st.gate .ico{{color:var(--flag-ink)}}
+.st.end .tile{{fill:var(--ok);stroke:var(--ok)}} .st.end .ico{{color:#fff}}
+.st .ico{{color:var(--lc)}}
+.num{{fill:var(--lc)}} .numt{{fill:#fff;font-family:var(--mono);font-size:11.5px;font-weight:700;text-anchor:middle}}
+.ttl{{fill:var(--fg);font-size:15px;font-weight:650;text-anchor:middle}}
+.sub{{fill:var(--muted);font-size:12px;text-anchor:middle}}
+.chip{{fill:var(--chip);stroke:var(--line)}}
+.cmd{{fill:var(--fg);font-family:var(--mono);font-size:11px;text-anchor:middle}}
+.badge rect{{fill:var(--stop)}} .badge text{{fill:#fff;font-family:var(--mono);font-size:10.5px;font-weight:700;text-anchor:middle}}
 .scrim{{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20}}
 .drawer{{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--panel);border-left:1px solid var(--line);z-index:21;overflow-y:auto;padding:18px 20px 24px 22px;display:flex;flex-direction:column;gap:12px}}
 .drawer[hidden],.scrim[hidden]{{display:none}}
@@ -505,34 +621,16 @@ header{{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-b
 .nav button:disabled{{opacity:.4;cursor:default}}
 button:focus-visible{{outline:2px solid var(--l1);outline-offset:2px}}
 footer{{color:var(--muted);font-size:.78rem;border-top:1px solid var(--line);padding-top:8px}}
-@media (prefers-reduced-motion:reduce){{.tile{{transition:none}}}}
 </style>"""
 
 
 # The script is a raw string with no HTML tags in its texts (st.iframe runs it, D-173): the DOM is built with the DOM API.
+# D-449: the stations are drawn in Python as one SVG; the script only opens and walks the side panel.
 SCRIPT = r"""
 const D = JSON.parse(document.getElementById("data").textContent);
 const S = D.stations, L = D.labels;
-const NS = "http://www.w3.org/2000/svg";
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
-const icon = (paths) => { const s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("fill", "none");
-  s.setAttribute("stroke", "currentColor"); s.setAttribute("stroke-width", "2"); s.setAttribute("stroke-linecap", "round"); s.setAttribute("stroke-linejoin", "round");
-  s.setAttribute("aria-hidden", "true"); const g = document.createElementNS(NS, "g"); const t = document.createElementNS(NS, "svg"); t.innerHTML = paths;
-  while (t.firstChild) g.appendChild(t.firstChild); s.appendChild(g); return s; };
-function station(x) {
-  const b = el("button", ["st", x.optional ? "opt" : "", x.gate ? "gate" : "", x.end ? "end" : ""].join(" ").trim());
-  b.dataset.n = x.n; b.setAttribute("aria-label", L.station + " " + x.n + ": " + x.title);
-  const head = el("span", "head"); head.append(el("span", "num", x.n));
-  const tile = el("span", "tile"); tile.append(icon(x.icon)); head.append(tile); b.append(head);
-  b.append(el("h3", "", x.title), el("span", "sub", x.sub));
-  if (x.optional) b.append(el("span", "tag o", L.optional)); else if (x.gate) b.append(el("span", "tag g", L.checkpoint));
-  const cmd = el("span", "cmd"); x.commands.forEach((c, i) => { if (i) cmd.append(document.createElement("br")); cmd.append(document.createTextNode(c)); }); b.append(cmd);
-  const info = el("span", "info", L.details); if (x.register.length) info.append(document.createTextNode(" "), el("span", "badge", x.register.length)); b.append(info);
-  return b;
-}
 const map = document.getElementById("map");
-const lane = (id) => { const d = el("div", "lane " + id); S.filter((x) => x.lane === id).forEach((x) => d.append(station(x))); return d; };
-map.append(lane("a"), el("div", "turn r"), lane("b"), el("div", "turn l"), lane("c"));
 const dr = document.getElementById("drawer"), sc = document.getElementById("scrim");
 let cur = 0, last = null;
 const colors = { a: "var(--l1)", b: "var(--l2)", c: "var(--l3)" };
@@ -561,6 +659,8 @@ function open(n) {
 }
 function shut() { dr.hidden = true; sc.hidden = true; if (last) last.focus(); }
 map.addEventListener("click", (e) => { const b = e.target.closest(".st"); if (b) { last = b; open(+b.dataset.n); } });
+map.addEventListener("keydown", (e) => { const b = e.target.closest(".st");
+  if (b && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); last = b; open(+b.dataset.n); } });
 sc.onclick = shut;
 document.addEventListener("keydown", (e) => { if (dr.hidden) return; if (e.key === "Escape") shut();
   if (e.key === "ArrowRight" && cur < S.length) open(cur + 1); if (e.key === "ArrowLeft" && cur > 1) open(cur - 1); });
@@ -570,6 +670,8 @@ document.addEventListener("keydown", (e) => { if (dr.hidden) return; if (e.key =
 def build_map_html(palette: dict[str, str], language: str, author: bool) -> str:
     """The whole map as one HTML document for st.iframe: texts in the reader's language, diagnoses only for the author."""
     data = build_data(language, read_failures(), author)
+    for station in data["stations"]:
+        station["label"] = f'{data["labels"]["station"]} {station["n"]}: {station["title"]}'
     payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     labels = data["labels"]
     return (
@@ -578,9 +680,10 @@ def build_map_html(palette: dict[str, str], language: str, author: bool) -> str:
         + build_css(palette)
         + "</head><body><main>"
         f'<header><p class="lede">{html.escape(labels["lede"])}</p><ul class="legend">'
-        f'<li><span class="tag o">{html.escape(labels["optional"])}</span> {html.escape(labels["legend_optional"])}</li>'
-        f'<li><span class="tag g">{html.escape(labels["checkpoint"])}</span> {html.escape(labels["legend_checkpoint"])}</li>'
-        '</ul></header><div class="map" id="map"></div>'
+        f'<li><span class="k a"></span> {html.escape(labels["legend_arrow"])}</li>'
+        f'<li><span class="k"></span> {html.escape(labels["optional"])}: {html.escape(labels["legend_optional"])}</li>'
+        f'<li><span class="k g"></span> {html.escape(labels["checkpoint"])}: {html.escape(labels["legend_checkpoint"])}</li>'
+        f'</ul></header><div class="map" id="map">{build_svg(data, language)}</div>'
         f"<footer>{html.escape(labels['footer'])}</footer></main>"
         '<div class="scrim" id="scrim" hidden></div>'
         '<aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog" aria-labelledby="dt"></aside>'

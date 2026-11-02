@@ -103,3 +103,19 @@ def test_d344_the_page_has_the_same_name_in_both_languages_and_its_tabs_in_each(
     assert [tab.label for tab in es.tabs] == ["Mapa", "Registro de incidentes"]
     assert [tab.label for tab in en.tabs] == ["Map", "Incident log"]
     assert "Git workflow" in [link.proto.label for link in en.sidebar.get("page_link")]
+
+
+def test_d449_the_map_is_a_flowchart_of_fixed_shape_with_an_arrow_between_every_two_stations():
+    palette = {key: "#102030" for key in __import__("bi.charts", fromlist=["x"]).PALETTES["Corporativo"]}
+    for language, red in (("es", "rojo → volver a 5"), ("en", "red → back to 5")):
+        page = git_workflow.build_map_html(palette, language, False)
+        # One drawing with a viewBox, so a small screen scales it and never rearranges it (D-441).
+        assert page.count('<svg class="flow" viewBox="0 0 ') == 1 and "grid-template-columns" not in page
+        assert len(re.findall(r'<path class="go [abc]"', page)) == 14  # 15 stations, 14 arrows, two of them turns
+        assert len(re.findall(r'<path class="go [abc]" d="M[\d.]+ [\d.]+ H[\d.]+ V', page)) == 2
+        assert page.count('class="lane ') == 3 and page.count('class="st ') == 15
+        assert page.count(red) == 2 and page.count('class="no"') == 3  # every checkpoint says where red goes
+    # The stations never touch: each one's box sits apart from its neighbours'.
+    places = [git_workflow.place(item) for item in git_workflow.STATIONS]
+    for (x1, y1), (x2, y2) in zip(places, places[1:]):
+        assert abs(x1 - x2) >= 216 or abs(y1 - y2) >= 168

@@ -141,7 +141,7 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
         'Detalle de productos</span><span class="mock-products-family">Hortalizas' in texts
         and 'Producto seleccionado' not in texts
     )
-    assert 'Precio medio<br>28 sep – 4 oct' in texts and 'Precio medio<br>5–11 oct' in texts  # D-327, D-374
+    assert 'Precio</span> 28 sep – 4 oct' in texts and 'Precio</span> 5–11 oct' in texts  # D-327, D-374
     assert 'Variación' in texts
     assert 'class="zoom-frame' not in texts and 'animateMotion' not in texts
     assert texts.index('¿Qué familias subieron y cuáles bajaron?') < texts.index('¿Qué productos explican el cambio?')
@@ -1364,7 +1364,7 @@ def test_d151_documentation_is_the_prd_sad_and_adr_without_code():
     # D-205: the document views in their own frame, the live panel diagrams inline.
     for page, framed, inline in (
         (dashboard.PAGE_PRD, 5, 0),  # D-377: the weekly cycle joined valor, casos, requisitos and mockups
-        (dashboard.PAGE_SAD, 10, 0),  # D-414: the fixed picture of the system flow
+        (dashboard.PAGE_SAD, 15, 0),  # D-414: the system flow; D-448: the five diagrams of the panel
         (dashboard.PAGE_ADR, 3, 0),
         (dashboard.PAGE_TEST_PLAN, 6, 0),
     ):

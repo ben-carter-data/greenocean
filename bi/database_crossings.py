@@ -180,7 +180,7 @@ def read_checks(database_file=queries.DATABASE_FILE, backup_file=None):
     return checks
 
 
-WIDTH, HEIGHT = 1000, 614
+WIDTH, HEIGHT = 1000, 630
 SMALL = storage_map.SMALL
 # Columns of the tables: A is the IPC chain, B the consumer prices, C the wholesale prices.
 COLUMNS = {"a": (190, 350), "b": (416, 576), "c": (592, 752)}
@@ -476,8 +476,10 @@ def build_crossings_html(palette, checks):
         badges.append(build_badge(number, key, x, y, status, text))
         tips.append(build_tip(number, row, status, text, x, y))
     legend = (
-        f'<text class="note" x="{LAYER_X[0] + 16}" y="{HEIGHT - 6}">Cada línea es un cruce entre dos bases y lleva lo que las une. '
-        f'El número se colorea con su comprobación de ahora: verde comprobado, ámbar no medible aquí, gris dato.</text>'
+        # D-448: two lines, so the note stays inside the drawing at any width (the SAD's frame is narrower).
+        f'<text class="note" x="{LAYER_X[0] + 16}" y="{HEIGHT - 22}">Cada línea es un cruce entre dos bases y lleva lo que las une.</text>'
+        f'<text class="note" x="{LAYER_X[0] + 16}" y="{HEIGHT - 6}">'
+        'El número se colorea con su comprobación de ahora: verde comprobado, ámbar no medible aquí, gris dato.</text>'
     )
     return (
         '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
