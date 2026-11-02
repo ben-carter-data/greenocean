@@ -3147,7 +3147,8 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 ## D-418 · La semana con 83,3 % de precios comparables se registra como incidente externo de la fuente
 
 - **Qué pasó:** en la semana del 26 oct al 1 nov, el indicador `comparables_pct` dio 83,3 %, bajo su aceptable de 90 %. 145 de 868 precios no tienen comparación con la semana anterior.
-- **Causa:** la fuente. Esos 145 precios no tuvieron precio la semana anterior: son 141 frutas y hortalizas y 4 carnes que ODEPA vuelve a publicar después de más de 12 semanas sin dato, productos de temporada que regresan. El código hace lo correcto: sin precio anterior no hay variación, y no se inventa una.
+- **Causa:** la fuente. De esos 145 precios, 73 llevaban más de 12 semanas sin precio, 58 entre 2 y 12 semanas, y 14 tenían precio la semana anterior, pero en otras regiones, así que no hay una comparación entre las mismas regiones. Son 141 frutas y hortalizas y 4 carnes. Lo calcula `python scripts/semanas_sin_precio.py --semana 2026-10-26`. El código hace lo correcto: sin precio anterior en las mismas regiones no hay variación, y no se inventa una.
+- **Corrección (D-434):** la causa original decía que los 145 llevaban «más de 12 semanas sin dato». Era incorrecta: se escribió a partir de unos casos revisados a mano, sin medir cada serie, y solo 73 de 145 lo cumplen.
 - **Decisión del autor:** el aceptable se queda en 90 %. Esta semana se registra como incidente externo de ODEPA en `docs/calidad/incidentes_externos.json`, con la respuesta prevista para un producto sin datos: se muestra «sin comparación», sin rellenar. En la próxima carga esos precios ya tendrán semana anterior; si el indicador no vuelve a 90 % o más, se revisa el código.
 - **Pruebas:** `tests/test_quality_method.py` verifica que cada incidente diga qué pasó, la causa y la respuesta en los dos idiomas, con un tipo y una fuente conocidos.
 
@@ -3332,3 +3333,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - Los informes C-1 a C-7 no se vuelven a evaluar: son registros cerrados y guardan el aceptable de 90 % con que se midieron, bajo el SQAP vigente entonces.
   - **Documentos:** ADR-36 (ADR 3.3) y SQAP 1.6 (6), en los dos idiomas; la línea de tiempo de las decisiones suma ADR-36.
 - **Pruebas:** `tests/test_quality_method.py::test_d433_the_comparable_prices_acceptable_is_the_fifth_percentile_and_the_closed_reports_keep_theirs`, y las de D-330 y D-248 al día (81 % y 12 ADR).
+
+## D-434 · La causa del incidente de D-418 se corrige con las cifras medidas
+
+- **Qué pasó:** la causa registrada en D-418 y en `docs/calidad/incidentes_externos.json` decía que los 145 precios sin comparación de la semana del 26 oct «llevaban más de 12 semanas sin precio». La alerta «Acción requerida» y el informe C-7 la mostraban como cierta.
+- **Por qué era incorrecta:** se escribió a partir de unos casos revisados a mano, sin medir cada serie. Medida serie por serie sobre la Base DuckDB, 73 llevaban más de 12 semanas sin precio, 58 entre 2 y 12, y 14 tenían precio la semana anterior, pero en otras regiones. El reparto por grupo sí era correcto: 141 frutas y hortalizas y 4 carnes.
+- **Decisión:**
+  - **Texto corregido:** D-418 y el incidente dicen las cifras medidas; D-418 anota que la causa original era incorrecta y por qué. Nada más del histórico cambia: el informe C-7 no guarda la causa, la lee del registro.
+  - **Reproducible:** `scripts/semanas_sin_precio.py` calcula, para una semana, cuánto llevaba sin precio cada precio sin comparación, con el mismo código del indicador (`k6_national_weekly_price` y `alerts.add_weekly_variation`). `python scripts/semanas_sin_precio.py --semana 2026-10-26` da 145 de 868: 14, 58 y 73.
+  - **Regla:** una causa con cifras se escribe con la medición que la produce, nunca a ojo.
+- **Pruebas:** `tests/test_quality_method.py::test_d434_the_cause_of_the_incident_is_the_measured_one` vuelve a medir la semana del 26 oct con el script y compara con el texto del incidente.

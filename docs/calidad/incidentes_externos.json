@@ -33,8 +33,8 @@
         "In the week of Oct 26 to Nov 1, 145 of 868 prices have no comparison with the week before."
       ],
       "causa": [
-        "ODEPA vuelve a publicar 141 frutas y hortalizas y 4 carnes de temporada que llevaban más de 12 semanas sin precio.",
-        "ODEPA publishes again 141 seasonal fruits and vegetables and 4 meats that had no price for over 12 weeks."
+        "ODEPA vuelve a publicar precios ausentes: de los 145, 73 llevaban más de 12 semanas sin precio, 58 entre 2 y 12, y 14 tenían precio la semana anterior, pero en otras regiones; son 141 frutas y hortalizas y 4 carnes (scripts/semanas_sin_precio.py --semana 2026-10-26, D-434).",
+        "ODEPA publishes missing prices again: of the 145, 73 had no price for over 12 weeks, 58 for 2 to 12, and 14 had a price the week before, but in other regions; they are 141 fruits and vegetables and 4 meats (scripts/semanas_sin_precio.py --semana 2026-10-26, D-434)."
       ],
       "respuesta": [
         "Se muestran «sin comparación», sin rellenar; el aceptable sigue en 90 % y se revisa en la próxima carga.",

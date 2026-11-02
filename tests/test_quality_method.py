@@ -794,3 +794,29 @@ def test_d433_the_comparable_prices_acceptable_is_the_fifth_percentile_and_the_c
     assert {row["clave"]: row["estado"] for row in seventh["indicadores"]}["comparables_pct"] == "urgente"
     adr = i18n.document_path("ADR.md", "es").read_text(encoding="utf-8")
     assert "## ADR-36" in adr and "| 5 | 81,2 % |" in adr and "no una relajación del estándar" in adr
+
+
+def test_d434_the_cause_of_the_incident_is_the_measured_one():
+    incident = next(
+        item
+        for item in quality_metrics.read(quality_metrics.FOLDER / "incidentes_externos.json")["registros"]
+        if item.get("referencia") == "D-418"
+    )
+    spanish, english = incident["causa"]
+    assert "más de 12 semanas" in spanish and "73" in spanish and "58" in spanish and "14" in spanish
+    assert "73" in english and "scripts/semanas_sin_precio.py --semana 2026-10-26" in english
+    decisions = (ROOT / "docs" / "DECISIONES.md").read_text(encoding="utf-8")
+    d418 = decisions.split("## D-418 ")[1].split("\n## ")[0]
+    assert "**Corrección (D-434):**" in d418 and "Era incorrecta" in d418
+    from bi import queries
+
+    if not queries.DATABASE_FILE.exists():
+        pytest.skip("Sin la Base DuckDB no se puede volver a medir")
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import semanas_sin_precio
+
+    found = semanas_sin_precio.count_gaps(queries.run_query("k6_national_weekly_price"), "2026-10-26")
+    assert (found["prices"], found["without"]) == (868, 145)
+    assert (found["one_week"], found["two_to_twelve"], found["over_twelve"], found["never"]) == (14, 58, 73, 0)
+    fruit_and_vegetables = found["groups"].get("Frutas", 0) + found["groups"].get("Hortalizas", 0)
+    assert fruit_and_vegetables == 141 and found["without"] - fruit_and_vegetables == 4
