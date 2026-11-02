@@ -13,7 +13,7 @@ from bi import charts, dashboard, inflation_view, page_bar, queries  # noqa: E40
 from tests.test_dashboard import DASHBOARD_FILE, draw_page, needs_database  # noqa: E402
 
 MAIN_PAGES = [
-    dashboard.PAGE_SEASONALITY,
+    dashboard.PAGE_BA,  # D-456: with «Precios e inflación» as one of its tabs
     dashboard.PAGE_DIAGRAMS,
     dashboard.PAGE_ARCHITECTURE,
     dashboard.PAGE_OPERATIONS,
@@ -137,9 +137,12 @@ def test_d268_the_sql_filters_and_status_bar_fit_a_narrow_window():
 
 
 def test_d391_the_inflation_page_sits_in_its_menu_section():
-    view = dashboard.PAGE_SEASONALITY  # D-398: in the menu since the header opens no page
+    # D-456: «Precios e inflación» is a tab of «Análisis BA y BI», a page of «Negocio · BA y BI»; its address opens it
+    view = dashboard.PAGE_BA
     path = dashboard.build_view_path(dashboard.WINDOW_OF_VIEW[view], view)
-    assert path == "Negocio · BA y BI › Precios e inflación" and "Dashboard" not in path
+    assert path == "Negocio · BA y BI › Análisis BA y BI" and "Dashboard" not in path
+    address = dashboard.build_page_address(dashboard.PAGE_SEASONALITY)
+    assert "pestana=Precios+e+inflaci%C3%B3n" in address and "Contexto" not in address
 
 
 BAR_KEYS = ("page_bar", "home_bar")

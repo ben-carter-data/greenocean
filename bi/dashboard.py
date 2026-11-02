@@ -48,6 +48,7 @@ from bi import (
     run_monitor,
     app_diagrams,
     app_map,
+    ba_trends,
     channel_icons,
     interest_map,
     app_map_detail,
@@ -111,6 +112,17 @@ PAGE_ARCHITECTURE = "Modelo de datos"
 PAGE_SEASONALITY = "Contexto del precio"
 # D-162: read-only SQL on the gold layer, the destination of «Consultas SQL» in the pipeline.
 PAGE_SQL = "Consultas SQL"
+# D-456: the BA and BI analysis in one page, in tabs, like a report of Power BI: the history of the prices first, then
+# the four pages it gathers. Their old addresses open their tab.
+PAGE_BA = "Análisis BA y BI"
+BA_TREND_TAB = "Tendencias"
+BA_TAB_OF_VIEW = {
+    PAGE_SEASONALITY: "Precios e inflación",
+    PAGE_INSIGHTS: "Insights",
+    PAGE_STAKEHOLDERS: "Interesados",
+    PAGE_ANALYSIS: "Método",
+}
+BA_TABS = [BA_TREND_TAB] + list(BA_TAB_OF_VIEW.values())
 RETIRED_VIEWS = {
     "Histórico y estacionalidad": "Contexto del precio",
     "Dashboard general": PAGE_HOME,
@@ -147,6 +159,7 @@ PAGE_APP_MAP = "Mapa de la app"
 # D-320: how the project was assessed against software and data quality standards.
 PAGE_METHOD = "Método y calidad"
 GIT_TAB_PARAMETER, GIT_TAB_LOG = "pestana", "registro"  # D-346: «Ver registro completo» opens the Incident log
+BA_TAB_PARAMETER = GIT_TAB_PARAMETER  # D-456: the tab of «Análisis BA y BI» an address opens
 PAGE_GIT = "Git workflow"  # D-344: how a change travels from an idea to a live deployment
 PAGE_DECISION_INDEX = "Índice de decisiones"
 # D-290: the test plan and the security plan are one document; the scalability plan and the data dictionary live in the SAD.
@@ -200,6 +213,7 @@ WINDOWS = {
         PAGE_CHANNELS,
         PAGE_STAKEHOLDERS,
         PAGE_ANALYSIS,
+        PAGE_BA,
     ],
     SECTION_TECHNICAL: [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_OPERATIONS, PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG],
     SECTION_SECURITY: [PAGE_SECURITY, PAGE_TEST_PLAN],
@@ -281,6 +295,7 @@ PAGE_ICONS = {
     PAGE_CHANNELS: ":material/compare_arrows:",
     PAGE_STAKEHOLDERS: ":material/groups:",
     PAGE_ANALYSIS: ":material/analytics:",
+    PAGE_BA: ":material/query_stats:",
     PAGE_HOME: ":material/dashboard:",
     PAGE_DIAGRAMS: ":material/account_tree:",
     PAGE_ARCHITECTURE: ":material/schema:",
@@ -314,6 +329,7 @@ PAGE_PATHS = {
     PAGE_CHANNELS: "ultimo-dato-por-canal",
     PAGE_STAKEHOLDERS: "interesados",
     PAGE_ANALYSIS: "analisis-de-negocio-y-sistemas",
+    PAGE_BA: "analisis-ba-y-bi",
     PAGE_DIAGRAMS: "diagramas",
     PAGE_ARCHITECTURE: "arquitectura",
     PAGE_SEASONALITY: "estacionalidad",
@@ -2174,6 +2190,7 @@ OVERVIEW_CLASS_BY_VIEW = {
     PAGE_CHANNELS: "overview-dashboard",
     PAGE_STAKEHOLDERS: "overview-dashboard",  # D-378: the section's main pages share one look, with no route footer
     PAGE_ANALYSIS: "overview-dashboard",
+    PAGE_BA: "overview-dashboard",
     PAGE_HOME: "overview-dashboard",
     PAGE_SEASONALITY: "overview-history",
     PAGE_KPI: "overview-kpis",
@@ -2288,6 +2305,7 @@ BAR_VIEWS = {
     PAGE_CHANNELS,
     PAGE_STAKEHOLDERS,
     PAGE_ANALYSIS,
+    PAGE_BA,
     PAGE_HOME,
     PAGE_SEASONALITY,
     PAGE_DIAGRAMS,
@@ -2429,6 +2447,9 @@ def build_hint_icon(hint):
 def build_page_address(page_title, tab=None, kpi=None):
     """Relative address of a page, one of its tabs or a KPI card."""
     page_title = RETIRED_VIEWS.get(page_title, page_title)
+    ba_tab = BA_TAB_OF_VIEW.get(page_title)  # D-456: a page that became a tab opens its tab
+    if ba_tab:
+        page_title = PAGE_BA
     parameters = {}
     theme = st.session_state.get(THEME_STATE)
     if theme in charts.THEMES:
@@ -2439,6 +2460,8 @@ def build_page_address(page_title, tab=None, kpi=None):
         parameters[TAB_PARAMETER] = tab
     if kpi:
         parameters[KPI_PARAMETER] = kpi
+    if ba_tab:
+        parameters[BA_TAB_PARAMETER] = ba_tab
     window = WINDOW_OF_VIEW.get(page_title, page_title)
     if page_title in WINDOW_OF_VIEW and page_title != read_window_views(window)[0]:
         parameters[VIEW_PARAMETER] = page_title
@@ -3630,19 +3653,23 @@ def show_page_bar(view, title, description, chips=(), side=None, terms=()):
     """The header of a page (D-267, D-398): only «Volver», the path (the description on hover) and the time of the
     data. What the page says (its question when it is not just its name, its figures as chips, what it measures) and
     what it does (side: a button, a switch) go in a row of the content right under the bar. Links to other pages live
-    in the menu, never here."""
-    latest = read_latest_run()
-    path = build_view_path(WINDOW_OF_VIEW.get(view, view), view)
-    st.markdown(page_bar.build_css(charts.get_palette(get_mode())), unsafe_allow_html=True)
-    with st.container(key="page_bar", horizontal=True, vertical_alignment="center"):
-        show_return_button()
-        st.markdown(page_bar.build_bar_html(path, tr(description)), unsafe_allow_html=True, width="stretch")
-        st.markdown(
-            page_bar.build_updated_html(format_load_time(latest), latest["status"] == etl.STATUS_LOADED),
-            unsafe_allow_html=True,
-            width="content",
-        )
-    show_title = tr(title) != path.rpartition(" › ")[2]
+    in the menu, never here. D-456: a page drawn as a tab of «Análisis BA y BI» keeps only that row, under the tabs."""
+    tab = DRAWN_TAB.get()
+    if tab:
+        show_title = tr(title) != tr(tab)
+    else:
+        latest = read_latest_run()
+        path = build_view_path(WINDOW_OF_VIEW.get(view, view), view)
+        st.markdown(page_bar.build_css(charts.get_palette(get_mode())), unsafe_allow_html=True)
+        with st.container(key="page_bar", horizontal=True, vertical_alignment="center"):
+            show_return_button()
+            st.markdown(page_bar.build_bar_html(path, tr(description)), unsafe_allow_html=True, width="stretch")
+            st.markdown(
+                page_bar.build_updated_html(format_load_time(latest), latest["status"] == etl.STATUS_LOADED),
+                unsafe_allow_html=True,
+                width="content",
+            )
+        show_title = tr(title) != path.rpartition(" › ")[2]
     if not (show_title or chips or side or terms):
         return
     with st.container(key="page_info", horizontal=True, vertical_alignment="center"):
@@ -5220,13 +5247,14 @@ def show_overview_insights(mode, version):
             build_insight_table_html(["Pregunta", "Para quién", "Dónde verlo", "La respuesta de hoy"], questions),
             unsafe_allow_html=True,
         )
-        analysis = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_ANALYSIS])  # absent when a test draws the page alone
-        if analysis:  # D-377: the definition of each KPI lives in the analysis page; its values stay here
+        analysis = WINDOW_PAGES.get(WINDOW_OF_VIEW[PAGE_BA])  # absent when a test draws the page alone
+        if analysis:  # D-377, D-456: the definition of each KPI lives in the tab «Método»; its values stay here
             st.page_link(
                 analysis,
                 label=tr("Ver las definiciones de los KPI"),
                 icon=":material/functions:",
-                query_params=keep_context() | {VIEW_PARAMETER: PAGE_ANALYSIS, ANALYSIS_BLOCK_PARAMETER: "KPIs"},
+                query_params=keep_context()
+                | {VIEW_PARAMETER: PAGE_BA, BA_TAB_PARAMETER: BA_TAB_OF_VIEW[PAGE_ANALYSIS]},
             )
     with right:
         drops = overview.best_drops(upto, week)
@@ -5335,7 +5363,7 @@ def read_latest_by_source(database_version):
 def can_open(view):
     """D-376: whether this view's menu leads to a page: one of its own, or one that opens from a page of its own."""
     order = visible_menu_order()
-    return view in order or DOOR_PAGES.get(view) in order
+    return view in order or DOOR_PAGES.get(view) in order or (view in BA_TAB_OF_VIEW and PAGE_BA in order)
 
 
 def build_interest_map_html(rows, palette, address_of_view):
@@ -5349,6 +5377,164 @@ def build_interest_map_html(rows, palette, address_of_view):
         return None, tr("Se abre en la vista Profesional.")
 
     return interest_map.build_map_html(rows, palette, link_of, tr)
+
+
+# D-456: the tab of «Análisis BA y BI» being drawn, so the page it gathers draws only its own row under the tabs.
+DRAWN_TAB = contextvars.ContextVar("drawn_tab", default="")
+BA_TAB_KEY = "ba_tab"
+
+
+def show_ba_page(mode):
+    """«Análisis BA y BI» (D-456): the BA and BI analysis in one page, in tabs. «Tendencias» is the history of the prices
+    as a report; the other tabs are the pages it gathered, drawn by their own code, each under its tab."""
+    show_page_bar(
+        PAGE_BA,
+        PAGE_BA,
+        "La historia de los precios por mes, año y temporada, con sus valores atípicos; los precios frente a la "
+        "inflación, las respuestas de hoy, quién usa los datos y cómo se calcula cada cifra.",
+    )
+    palette = charts.get_palette(mode)
+    wanted = st.query_params.get(BA_TAB_PARAMETER)
+    if wanted in BA_TABS:
+        st.session_state[BA_TAB_KEY] = wanted  # read once: from here on, the tabs rule
+        st.query_params.pop(BA_TAB_PARAMETER)
+    with st.container(key="ba_head", horizontal=True, vertical_alignment="bottom"):
+        tab = show_view_tabs(BA_TAB_KEY, BA_TABS, palette)
+        if tab == BA_TREND_TAB:
+            show_ba_filters()  # D-456: the report's filters share the row of the tabs, like a report of Power BI
+    token = DRAWN_TAB.set(tab)
+    try:
+        if tab == BA_TREND_TAB:
+            show_ba_trends(mode)
+        elif tab == BA_TAB_OF_VIEW[PAGE_SEASONALITY]:
+            show_price_context_page(mode)
+        elif tab == BA_TAB_OF_VIEW[PAGE_INSIGHTS]:
+            show_insights_page(mode)
+        elif tab == BA_TAB_OF_VIEW[PAGE_STAKEHOLDERS]:
+            show_stakeholders_page(mode)
+        else:
+            show_ba_method(mode)
+    finally:
+        DRAWN_TAB.reset(token)
+
+
+@st.cache_data(show_spinner=False)
+def read_ba_history(database_version):
+    """The history behind «Tendencias» (D-456), read once per database: the monthly index of the families and of the
+    whole basket against the IPC (D-163), K1, K4 and the K6 alerts, each with the month of its week."""
+    rows, last = inflation_view.build_family_index(
+        queries.run_sql(inflation_view.SERIES_SQL),
+        queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"),
+        basket=True,
+    )
+    margins = ba_trends.add_month_key(queries.run_query("k1_margin")[["week_start", "product_group", "margin"]])
+    seasonal = ba_trends.add_month_key(
+        queries.run_query("k4_seasonal_index")[["week_start", "product_group", "seasonal_index"]]
+    )
+    found = read_cached_price_alerts_all(database_version)
+    alerts_found = ba_trends.add_month_key(found[["week_start", "product_group", "variation"]])
+    return rows, last, margins, seasonal, alerts_found
+
+
+def show_ba_filters():
+    """The period and the family of «Tendencias», on the row of the tabs; what each means is on hover."""
+    rows, last, *_ = read_ba_history(get_database_version())
+    if rows.empty:
+        return
+    with st.container(key="ba_filters", horizontal=True, vertical_alignment="bottom", width="content"):
+        st.selectbox(
+            tr("Período"),
+            ba_trends.periods(last),
+            key="ba_period",
+            format_func=tr,
+            width=190,
+            help=tr("Hasta {}, el último mes que publicó el INE: así cada cifra se compara con la inflación.").format(
+                ba_trends.month_label(last)
+            ),
+        )
+        st.selectbox(
+            tr("Familia"),
+            [ba_trends.BASKET] + ba_trends.families(rows),
+            key="ba_family",
+            format_func=lambda name: tr(home_mockup.short_family(name)),
+            width=210,
+            help=tr("Toda la canasta reúne todas las series de consumidor; una familia, solo las suyas."),
+        )
+
+
+def show_ba_trends(mode):
+    """«Tendencias» (D-456): a period and a family, five KPI cards, three charts and the table by family, like a report
+    of Power BI. Every card and column says on hover how it is computed."""
+    palette = charts.get_palette(mode)
+    rows, last, margins, seasonal, found = read_ba_history(get_database_version())
+    if rows.empty:
+        st.info(NO_DATA_TEXT)
+        return
+    st.markdown(ba_trends.build_css(palette), unsafe_allow_html=True)
+    choices = [ba_trends.BASKET] + ba_trends.families(rows)
+    period = st.session_state.get("ba_period") or ba_trends.periods(last)[0]
+    family = st.session_state.get("ba_family") if st.session_state.get("ba_family") in choices else choices[0]
+    start, end = ba_trends.bounds(period, last)
+    figures = ba_trends.summarize(rows, margins, seasonal, found, family, start, end)
+    st.markdown(ba_trends.build_cards(figures, start, end), unsafe_allow_html=True)
+    columns = st.columns(3, gap="medium")
+    titles = [
+        (
+            tr("Precio mes a mes"),
+            tr("inicio del período = 100; punteado, el IPC"),
+            tr(
+                "Índice del primer mes del período = 100, para la selección y para el IPC de alimentos del INE: arriba "
+                "de la línea punteada, subió más que la inflación."
+            ),
+        ),
+        (
+            tr("Temporada"),
+            # D-456: the months of the calendar, each gathering its weeks of every year from the first to the last month
+            tr("{} – {}; cada mes frente a su año").format(*ba_trends.season_span(start, end)),
+            tr(
+                "K4: el precio de cada semana sobre el promedio de su año; la mediana por mes del calendario. Con varios "
+                "años, cada barra junta ese mes de todos ellos; al pasar el cursor, sus años. Azul: meses más baratos que "
+                "el promedio; rojo: más caros."
+            ),
+        ),
+        (
+            tr("Valores atípicos por mes"),
+            tr("alertas de precio (K6): subidas y bajadas"),
+            tr(
+                "K6: una alerta compara el cambio de la semana con sus 12 semanas previas, así que la primera posible "
+                "es de abril 2022. Rojo: subidas; azul: bajadas."
+            ),
+        ),
+    ]
+    drawings = [
+        ba_trends.trend_chart(rows, family, start, end, mode),
+        ba_trends.season_chart(figures["profile"], mode),
+        ba_trends.alerts_chart(ba_trends.within(found, start, end, family), start, end, mode),
+    ]
+    for column, (title, note, hint), drawing in zip(columns, titles, drawings):
+        with column:
+            st.markdown(
+                f'<p class="ba-chart-title" title="{html.escape(hint, quote=True)}">{html.escape(title)}'
+                f"<span>{html.escape(note)}</span></p>",
+                unsafe_allow_html=True,
+            )
+            st.altair_chart(drawing, use_container_width=True)
+    summaries = [ba_trends.summarize(rows, margins, seasonal, found, name, start, end) for name in choices]
+    st.markdown(ba_trends.build_table(summaries, family), unsafe_allow_html=True)
+
+
+def show_ba_method(mode):
+    """«Método» (D-456): only what the PRD does not hold, read from the documents: how each KPI is computed and the
+    system decisions. The rest of the old «Análisis de negocio y sistemas» lives in the PRD."""
+    palette = charts.get_palette(mode)
+    st.markdown(
+        build_analysis_css(palette) + f"<style>{build_insight_table_css(palette)}</style>", unsafe_allow_html=True
+    )
+    kpis, decisions = st.columns([1.35, 1], gap="large")
+    with kpis, st.container(key="analysis_body"):
+        show_analysis_block("KPIs", mode)
+    with decisions, st.container(key="analysis_decisions"):
+        show_analysis_block("Decisiones de sistema", mode)
 
 
 def show_stakeholders_page(mode):
@@ -5370,43 +5556,7 @@ def build_interest_css(palette):
     return interest_map.build_css(palette)
 
 
-ANALYSIS_BLOCK_KEY = "analysis_block"
-ANALYSIS_BLOCK_PARAMETER = "bloque"  # D-377: a link may open the page on one block, like the KPIs from Insights
 SYSTEM_DECISION_PAGES = {"sqap": PAGE_QUALITY_PLAN, "git": PAGE_GIT}
-
-
-def show_analysis_page(mode):
-    """«Análisis de negocio y sistemas» (D-377): the BA and BSA work told as a case, in ten blocks; the list on the left,
-    one block at a time on the right, so the page fits one screen. Every text is read from the PRD, the SQAP and the
-    decisions, in the reader's language: nothing is written twice."""
-    show_page_bar(
-        PAGE_ANALYSIS,
-        PAGE_ANALYSIS,
-        "El trabajo de análisis de negocio y de sistemas, contado como un caso: del problema a la evaluación, leído del "
-        "PRD, del SQAP y de las decisiones.",
-    )
-    palette = charts.get_palette(mode)
-    st.markdown(
-        build_analysis_css(palette) + f"<style>{build_insight_table_css(palette)}</style>", unsafe_allow_html=True
-    )
-    wanted = st.query_params.get(ANALYSIS_BLOCK_PARAMETER)
-    if wanted in business_analysis.BLOCKS:
-        st.session_state[ANALYSIS_BLOCK_KEY] = wanted  # read once: from here on, the list rules
-        st.query_params.pop(ANALYSIS_BLOCK_PARAMETER)
-    elif st.session_state.get(ANALYSIS_BLOCK_KEY) not in business_analysis.BLOCKS:
-        st.session_state[ANALYSIS_BLOCK_KEY] = business_analysis.BLOCKS[0]
-    numbers = {title: f"{index}. {tr(title)}" for index, title in enumerate(business_analysis.BLOCKS, 1)}
-    menu, body = st.columns([1, 3.4], gap="medium")
-    with menu, st.container(key="analysis_menu"):
-        block = st.radio(
-            tr("Bloque"),
-            business_analysis.BLOCKS,
-            key=ANALYSIS_BLOCK_KEY,
-            format_func=numbers.get,
-            label_visibility="collapsed",
-        )
-    with body, st.container(key="analysis_body"):
-        show_analysis_block(block, mode)
 
 
 def show_analysis_text(paragraphs):
@@ -7196,7 +7346,7 @@ DOCUMENT_VIEW = re.compile(r"\[\[vista:([^\]]+)\]\]")
 def find_menu_page(label):
     """The page whose label in the menu, in the documents folder or on a page's door (D-376: «Precios e inflación»)
     is `label`, or None."""
-    for view in MENU_ORDER + FOLDER_ORDER + list(DOOR_PAGES):
+    for view in MENU_ORDER + FOLDER_ORDER + list(DOOR_PAGES) + list(BA_TAB_OF_VIEW):  # D-456: and the tabs
         name = SIDEBAR_LABELS.get(view, view)
         if label in (name, i18n.EN.get(name), i18n.PAGES.get(name)):  # D-444: a page label from either dictionary
             return view
@@ -7913,7 +8063,8 @@ SHOW_PAGE_BY_TITLE = {
     PAGE_INSIGHTS: lambda mode: show_insights_page(mode),
     PAGE_CHANNELS: lambda mode: show_channels_page(mode),
     PAGE_STAKEHOLDERS: lambda mode: show_stakeholders_page(mode),
-    PAGE_ANALYSIS: lambda mode: show_analysis_page(mode),
+    PAGE_ANALYSIS: lambda mode: show_ba_page(mode),  # D-456: its method is a tab of «Análisis BA y BI»
+    PAGE_BA: lambda mode: show_ba_page(mode),
     PAGE_SEASONALITY: show_price_context_page,
     PAGE_KPI: show_kpi_page,
     PAGE_ARCHITECTURE: show_architecture_page,
@@ -8550,7 +8701,9 @@ MENU_BLOCKS = [
         "Negocio · BA y BI",
         # D-453: the section opens with its two dashboards as tiles, the Dashboard (D-442) and «Último dato por canal»
         # (D-452), right before «Interesados»; D-378: then who it is for and the analysis (BA and BSA), then the prices.
-        [PAGE_HOME, PAGE_CHANNELS, PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_SEASONALITY, PAGE_INSIGHTS],
+        # D-456: and the third, «Análisis BA y BI», which gathers in its tabs the history of the prices and the former
+        # pages «Precios e inflación», «Insights» and «Interesados», with the method: the section is three dashboards.
+        [PAGE_HOME, PAGE_CHANNELS, PAGE_BA],
     ),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG]),  # D-420: the Autor's only
@@ -8570,12 +8723,9 @@ MENU_ORDER = [view for _, _, pages in MENU_BLOCKS if pages is not SOURCE_LINKS f
 MENU_BLOCK_OF_VIEW = {view: title for _, title, pages in MENU_BLOCKS if pages is not SOURCE_LINKS for view in pages}
 # The menu's own glyphs, one per page, thin lines (Material Symbols).
 SIDEBAR_ICONS = {
-    PAGE_INSIGHTS: ":material/lightbulb:",
     PAGE_CHANNELS: ":material/compare_arrows:",
-    PAGE_STAKEHOLDERS: ":material/groups:",
-    PAGE_ANALYSIS: ":material/analytics:",
+    PAGE_BA: ":material/query_stats:",
     PAGE_HOME: ":material/grid_view:",
-    PAGE_SEASONALITY: ":material/trending_up:",  # D-398
     PAGE_DIAGRAMS: ":material/share:",
     PAGE_ARCHITECTURE: ":material/database:",
     PAGE_OPERATIONS: ":material/verified_user:",
@@ -8802,9 +8952,12 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
     [class*="st-key-nav_folder_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] {{margin:2px 0 2px !important;}}
-    [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] {{margin:0 0 10px !important;}}
+    [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] {{margin:0 0 2px !important;}}
     [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] a::before {{
         background-image:url("data:image/svg+xml;base64,{base64.b64encode(CHANNELS_TILE_SVG.encode()).decode()}") !important;}}
+    [class*="st-key-nav_dashboard_tile_2"] [data-testid="stPageLink"] {{margin:0 0 10px !important;}}
+    [class*="st-key-nav_dashboard_tile_2"] [data-testid="stPageLink"] a::before {{
+        background-image:url("data:image/svg+xml;base64,{base64.b64encode(BA_TILE_SVG.encode()).decode()}") !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a {{display:flex !important; flex-direction:row;
         align-items:center; gap:12px !important; width:100% !important; min-height:58px !important; padding:8px 12px !important;
         border-radius:12px; background:{MENU_INK[dark][3]} !important; border:1px solid {MENU_INK[dark][6]} !important;
@@ -8837,7 +8990,7 @@ FOLDER_TILE_BLOCK = "documentos"
 # D-287: the sources are a tile of their own beside the folder; their links open in a floating panel.
 SOURCES_TILE_BLOCK = "fuentes"
 # D-442, D-452, D-453: the two dashboards are tiles, not lines, at the head of «Negocio · BA y BI».
-DASHBOARD_TILES = [PAGE_HOME, PAGE_CHANNELS]
+DASHBOARD_TILES = [PAGE_HOME, PAGE_CHANNELS, PAGE_BA]
 TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK}
 # A dashboard in miniature: three figures over a bar chart and a line, in the colours of the charts.
 DASHBOARD_TILE_SVG = (
@@ -8857,6 +9010,15 @@ CHANNELS_TILE_SVG = (
     'width="21" height="7" rx="2" fill="#f0b347"/><rect x="8" y="27" width="5" height="13" rx="1" fill="#8ac6f5"/>'
     '<rect x="16" y="21" width="5" height="19" rx="1" fill="#8ac6f5"/><rect x="39" y="24" width="5" height="16" rx="1" '
     'fill="#8ac6f5"/><rect x="47" y="18" width="5" height="22" rx="1" fill="#8ac6f5"/></svg>'
+)
+# D-456: «Análisis BA y BI»: a report with a line over bars and a magnifier, the history read closely.
+BA_TILE_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 46"><rect x="1" y="1" width="62" height="44" rx="6" '
+    'fill="#1d3557" stroke="#5aa9ea" stroke-width="1.5"/><rect x="7" y="27" width="5" height="12" rx="1" fill="#8ac6f5"/>'
+    '<rect x="15" y="21" width="5" height="18" rx="1" fill="#8ac6f5"/><rect x="23" y="24" width="5" height="15" rx="1" '
+    'fill="#8ac6f5"/><path d="M7 19l9-7 8 5 10-9" fill="none" stroke="#f0b347" stroke-width="2.4" stroke-linecap="round" '
+    'stroke-linejoin="round"/><circle cx="46" cy="25" r="9" fill="#1d3557" stroke="#5fd39b" stroke-width="3"/>'
+    '<path d="M52.5 31.5l6 6" stroke="#5fd39b" stroke-width="3.4" stroke-linecap="round"/></svg>'
 )
 SOURCES_TILE_SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><ellipse cx="28" cy="10" rx="20" ry="6" '
@@ -9169,6 +9331,9 @@ def main():
     # Views renamed since: old links open the new title (D-094).
     if st.query_params.get(VIEW_PARAMETER) in RETIRED_VIEWS:
         st.query_params[VIEW_PARAMETER] = RETIRED_VIEWS[st.query_params[VIEW_PARAMETER]]
+    if st.query_params.get(VIEW_PARAMETER) in BA_TAB_OF_VIEW:  # D-456: the page is now a tab of «Análisis BA y BI»
+        st.query_params[BA_TAB_PARAMETER] = BA_TAB_OF_VIEW[st.query_params[VIEW_PARAMETER]]
+        st.query_params[VIEW_PARAMETER] = PAGE_BA
     requested_view = st.query_params.get(VIEW_PARAMETER)
     requested_window = WINDOW_OF_VIEW.get(requested_view)
     if requested_window and requested_window != window_of_page(current_page):

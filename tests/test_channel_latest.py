@@ -137,7 +137,7 @@ def test_d365_the_table_is_served_and_documented():
     assert "### latest_by_source" in i18n.document_path("SAD.md", "es").read_text(encoding="utf-8")
     # D-452, D-453: the second dashboard tile, at the head of «Negocio · BA y BI»
     assert dashboard.PAGE_CHANNELS in next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
-    assert dashboard.DASHBOARD_TILES == [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS]
+    assert dashboard.DASHBOARD_TILES[:2] == [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS]
 
 
 def test_d380_the_channel_page_hands_its_scope_in_spanish_so_the_sentences_translate_whole():

@@ -27,6 +27,7 @@ from bi import charts
 
 BASE_YEAR, BASE_MONTH = 2022, 1
 IPC_NAME = "IPC alimentos (INE)"
+BASKET_NAME = "Toda la canasta"  # D-456: every consumer series at once, like the Dashboard's row (D-352)
 # A family within ±2 points of the IPC rose «al ritmo de la inflación».
 SAME_PACE_POINTS = 2.0
 FAMILY_COLORS = {
@@ -56,10 +57,13 @@ GROUP BY product_group, product_id, channel_id, normalized_unit, year, month
 """
 
 
-def build_family_index(series: pd.DataFrame, ipc: pd.DataFrame) -> tuple[pd.DataFrame, tuple[int, ...]]:
+def build_family_index(
+    series: pd.DataFrame, ipc: pd.DataFrame, basket: bool = False
+) -> tuple[pd.DataFrame, tuple[int, ...]]:
     """(index, last) where index has product_group, month_start, index, real — one row per
     family and month from the base month to the last IPC month, plus the IPC itself
-    (product_group = IPC_NAME) — and last is (year, month) of that last month."""
+    (product_group = IPC_NAME) — and last is (year, month) of that last month. D-456: with basket, the whole basket
+    too (product_group = BASKET_NAME): the median of every kept series, the same series the families use."""
     ipc = ipc.sort_values(["year", "month"])
     last = tuple(int(value) for value in ipc.iloc[-1][["year", "month"]])
     series = series.assign(
@@ -78,6 +82,11 @@ def build_family_index(series: pd.DataFrame, ipc: pd.DataFrame) -> tuple[pd.Data
     families = kept.groupby(["product_group", "year", "month"], as_index=False).agg(
         index=("index", "median"), series=("key", "nunique")
     )
+    if basket:
+        whole = kept.groupby(["year", "month"], as_index=False).agg(
+            index=("index", "median"), series=("key", "nunique")
+        )
+        families = pd.concat([families, whole.assign(product_group=BASKET_NAME)], ignore_index=True)
     ipc = ipc[(ipc["year"] * 100 + ipc["month"]) >= BASE_YEAR * 100 + BASE_MONTH]
     base_ipc = float(ipc.loc[(ipc["year"] == BASE_YEAR) & (ipc["month"] == BASE_MONTH), "food_index"].iloc[0])
     reference = ipc.assign(product_group=IPC_NAME, index=ipc["food_index"] / base_ipc * 100, series=None)

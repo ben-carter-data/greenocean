@@ -921,8 +921,6 @@ def sad_scenarios(mode):
             green,
             say("Usuario · Negocio · BA y BI · sin cuenta", "User · Business · BA and BI · no account"),
             [
-                tile(say("Interesados", "Stakeholders")),
-                tile(say("Análisis de negocio y sistemas", "Business and systems analysis")),
                 tile(
                     say("Dashboard", "Dashboard"),
                     say("alertas de precio", "price alerts"),
@@ -932,8 +930,15 @@ def sad_scenarios(mode):
                     say("Último dato por canal", "Latest data by channel"),
                     say("cada canal con su semana", "each channel with its week"),
                 ),
-                tile(say("Precios e inflación", "Prices and inflation"), "", "P-4 · RF-04"),
-                tile("Insights", say("las preguntas de la semana", "the questions of the week")),
+                # D-456: one page, in tabs, gathers the history and the former four pages of the section.
+                tile(
+                    say("Análisis BA y BI", "BA and BI analysis"),
+                    say(
+                        "Tendencias · Precios e inflación · Insights · Interesados · Método",
+                        "Trends · Prices and inflation · Insights · Stakeholders · Method",
+                    ),
+                    "P-4 · RF-04",
+                ),
             ],
             f'<p class="sc-warn">{esc(say("«Ver todo el proyecto»: pasa a Profesional, sin clave", "«See the whole project»: switches to Professional, no key"))}</p>',
             layout="flow",

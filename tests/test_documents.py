@@ -397,7 +397,7 @@ def test_d300_each_adr_names_the_test_that_confirms_it_and_the_test_exists():
 
 def test_d252_the_glossary_names_only_pages_and_tabs_that_exist():
     menu = {dashboard.SIDEBAR_LABELS.get(view, view) for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]}
-    tabs = {"Operación", "Despliegue", "CI/CD", "Monitoreo"}
+    tabs = {"Operación", "Despliegue", "CI/CD", "Monitoreo", *dashboard.BA_TABS}  # D-456: and the analysis's tabs
     text = i18n.document_path("GLOSARIO.md", "es").read_text(encoding="utf-8")
     table = text[text.index("| Sigla o término") :].split("\n\n", 1)[0]
     rows = [line.split(" | ") for line in table.splitlines()[2:] if line.startswith("| ")]

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.21 |
+| Version | 3.22 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -50,7 +50,7 @@ GreenOcean does that work by itself, every Tuesday, and leaves each step in view
 
 ### 3.1 Stakeholders
 
-Each stakeholder has a question, a decision that depends on the answer and a page where they find it. The page [[vista:Business and systems analysis]] shows their questions and decisions; [[vista:Stakeholders]] places them on the interest map (3.4).
+Each stakeholder has a question, a decision that depends on the answer and a page where they find it. In «BA and BI analysis», the tab [[vista:Insights]] answers their questions with today's figures and the tab [[vista:Stakeholders]] places them on the interest map (3.4).
 
 | Stakeholder | Who they are | What they ask | What decision it helps them make | Where the answer is |
 |---|---|---|---|---|
@@ -66,7 +66,7 @@ The panel has three profiles, the same as the window that asks for the view on e
 
 | Profile | What they use it for |
 |---|---|
-| User | The business, with no account: the section «Business · BA and BI», with the Dashboard guided in three steps, Latest data by channel, Stakeholders, Business and systems analysis, Prices and inflation and Insights |
+| User | The business, with no account: the section «Business · BA and BI», with the Dashboard guided in three steps, Latest data by channel and BA and BI analysis, with its tabs Trends, Prices and inflation, Insights, Stakeholders and Method |
 | Professional | The whole project, with no account, ordered by its role (Data Eng, BA, BI, DevOps or Security), with the read-only SQL queries |
 | Author | The same as Professional, plus «Operations center», «GitHub Actions» and «Settings», the «Action required» alert and the manual load; it asks for the control code, which is never in the repository |
 
@@ -83,7 +83,7 @@ Real users made two reviews: one of usability and one of architecture. Each chan
 
 ### 3.4 Interest map
 
-Each stakeholder sits on a ring according to **how much their decision depends on these data and how often they use them**. GreenOcean is the center; ODEPA and the INE, which provide the data, sit on the outer ring. It is the map of the page [[vista:Stakeholders]] (D-444):
+Each stakeholder sits on a ring according to **how much their decision depends on these data and how often they use them**. GreenOcean is the center; ODEPA and the INE, which provide the data, sit on the outer ring. It is the map of the tab [[vista:Stakeholders]] of «BA and BI analysis» (D-444, D-456):
 
 [[diagrama:interes]]
 
@@ -106,7 +106,7 @@ Each question has the screen that answers it and a test that recomputes the answ
 | P-1 | Which prices changed this week, and which are unusual? | Dashboard | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
 | P-2 | Is today's price normal for the season? | SQL queries · Price vs. season | `tests/test_sql_explorer.py::test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas` |
 | P-3 | How much does the consumer pay over the wholesale price? | SQL queries · Wholesale gap | `tests/test_sql_explorer.py::test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas` |
-| P-4 | Which foods rose more than inflation? | Prices and inflation | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
+| P-4 | Which foods rose more than inflation? | BA and BI analysis (Prices and inflation) | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
 | P-5 | Are the figures reliable? | Quality and audit | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price` |
 
 ## 5. Requirements
@@ -149,9 +149,10 @@ With the load of 2026-10-31, the database holds 821,072 weekly prices over 252 w
 
 These are six real captures, of 2026-11-02, of five main pages and in the four color themes. The Dashboard appears twice: as the User sees it and as the Professional sees it. The dark theme is the one on entry.
 
-- **Menu:** five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first opens with two tiles with a dashboard icon, the Dashboard and Latest data by channel, which stay in sight even when the section folds; then it follows a reader's reading order: Stakeholders, Business and systems analysis, Prices and inflation and Insights (D-442, D-452, D-453).
+- **Menu:** five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first is three tiles with a dashboard icon, which stay in sight even when the section folds: the Dashboard, Latest data by channel and BA and BI analysis (D-442, D-452, D-453, D-456).
 - **Dashboard:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done. The three steps always stay together on one screen; the products table fills panel 3, scrolls by itself and is enlarged with its own button (D-446, D-447).
 - **Latest data by channel:** one card per channel, with its 3D icon in its own colours (D-453), its latest week, its prices, its change and the families it publishes. Each card opens that channel with the Dashboard's steps and behaves exactly like it, even if the other source has not published that week yet (D-404 to D-406, D-452).
+- **BA and BI analysis:** five tabs (D-456). «Trends» is a report of the period and family chosen: five key figures (price change, against the CPI, consumer–wholesale gap, price alerts and cheapest month), three charts (price month by month, season and outliers by month) and the table by family; each figure explains on hover how it is computed. The other four are Prices and inflation, Insights, Stakeholders and Method.
 - **Stack and evidence:** two views. «Tools» explains each tool; «Live system flow» shows the real pieces, what they say to each other and the running load (D-412).
 
 [[diagrama:mockups]]
@@ -240,3 +241,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.19 | 2026-11-02 | «Latest data by channel» is a second tile under the Dashboard, and each channel behaves exactly like the Dashboard, without folding its steps (7, D-447, D-452) |
 | 3.20 | 2026-11-02 | The two dashboards open the section «Business · BA and BI», and each channel card carries its 3D icon (7, D-453) |
 | 3.21 | 2026-11-02 | The diagrams are the app's: the weekly cycle of the «Process» block of «Business and systems analysis» (2) and the map of «Stakeholders» (3.4); «From data to decision» and the use cases, which named profiles the panel does not have, are retired; 3.2 is the panel's three profiles; «served database» becomes «DuckDB database» (D-455) |
+| 3.22 | 2026-11-02 | «BA and BI analysis» gathers in tabs the history of prices, Prices and inflation, Insights, Stakeholders and the method; P-4 is seen in its tab (3.1, 3.2, 3.4, 4, 7, D-456) |

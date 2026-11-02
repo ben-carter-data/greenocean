@@ -92,12 +92,17 @@ def test_rf01_the_weekly_workflow_runs_on_tuesdays():
 
 
 def menu_labels():
-    return {
-        dashboard.SIDEBAR_LABELS.get(view, view)
-        for _, _, pages in dashboard.MENU_BLOCKS
-        if pages is not dashboard.SOURCE_LINKS
-        for view in pages
-    } | {dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.DOOR_PAGES}
+    """The pages of the menu, and each tab of «Análisis BA y BI» named «Análisis BA y BI (Pestaña)» (D-456)."""
+    return (
+        {
+            dashboard.SIDEBAR_LABELS.get(view, view)
+            for _, _, pages in dashboard.MENU_BLOCKS
+            if pages is not dashboard.SOURCE_LINKS
+            for view in pages
+        }
+        | {dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.DOOR_PAGES}
+        | {f"{dashboard.PAGE_BA} ({tab})" for tab in dashboard.BA_TABS}
+    )
 
 
 def test_rf08_the_new_weekly_report_closes_the_previous_ones():

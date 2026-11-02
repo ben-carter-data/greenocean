@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.21 |
+| Versión | 3.22 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -50,7 +50,7 @@ GreenOcean hace ese trabajo solo, cada martes, y deja cada paso a la vista.
 
 ### 3.1 Interesados
 
-Cada interesado tiene una pregunta, una decisión que depende de la respuesta y una página donde la encuentra. La página [[vista:Análisis de negocio y sistemas]] muestra sus preguntas y decisiones; [[vista:Interesados]] los ubica en el mapa de interés (3.4).
+Cada interesado tiene una pregunta, una decisión que depende de la respuesta y una página donde la encuentra. En «Análisis BA y BI», la pestaña [[vista:Insights]] responde sus preguntas con las cifras de hoy y la pestaña [[vista:Interesados]] los ubica en el mapa de interés (3.4).
 
 | Interesado | Quién es | Qué pregunta se hace | Qué decisión le ayuda a tomar | Dónde está la respuesta |
 |---|---|---|---|---|
@@ -66,7 +66,7 @@ El panel tiene tres perfiles, los mismos de la ventana «Elige tu vista». Los i
 
 | Perfil | Para qué lo usa |
 |---|---|
-| Usuario | El negocio, sin cuenta: la sección «Negocio · BA y BI», con el Dashboard guiado en tres pasos, Último dato por canal, Interesados, Análisis de negocio y sistemas, Precios e inflación e Insights |
+| Usuario | El negocio, sin cuenta: la sección «Negocio · BA y BI», con el Dashboard guiado en tres pasos, Último dato por canal y Análisis BA y BI, con sus pestañas Tendencias, Precios e inflación, Insights, Interesados y Método |
 | Profesional | Todo el proyecto, sin cuenta, ordenado según su rol (Data Eng, BA, BI, DevOps o Seguridad), con las Consultas SQL de solo lectura |
 | Autor | Lo mismo que Profesional, más «Centro de operación», «GitHub Actions» y «Configuración», la alerta «Acción requerida» y la carga manual; pide la clave de control, que nunca está en el repositorio |
 
@@ -83,7 +83,7 @@ Usuarios reales hicieron dos revisiones: una de uso y una de arquitectura. Cada 
 
 ### 3.4 Mapa de interés
 
-Cada interesado está en un anillo según **cuánto depende su decisión de estos datos y con qué frecuencia los usa**. El centro es GreenOcean; ODEPA y el INE, que entregan los datos, quedan en el anillo de afuera. Es el mapa de la página [[vista:Interesados]] (D-444):
+Cada interesado está en un anillo según **cuánto depende su decisión de estos datos y con qué frecuencia los usa**. El centro es GreenOcean; ODEPA y el INE, que entregan los datos, quedan en el anillo de afuera. Es el mapa de la pestaña [[vista:Interesados]] de «Análisis BA y BI» (D-444, D-456):
 
 [[diagrama:interes]]
 
@@ -106,7 +106,7 @@ Cada pregunta tiene la pantalla que la responde y una prueba que recalcula la re
 | P-1 | ¿Qué precios cambiaron esta semana y cuáles son inusuales? | Dashboard | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
 | P-2 | ¿El precio de hoy es normal para la temporada? | Consultas SQL · Precio vs. época | `tests/test_sql_explorer.py::test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas` |
 | P-3 | ¿Cuánto paga el consumidor sobre el mayorista? | Consultas SQL · Brecha mayorista | `tests/test_sql_explorer.py::test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas` |
-| P-4 | ¿Qué alimentos subieron más que la inflación? | Precios e inflación | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
+| P-4 | ¿Qué alimentos subieron más que la inflación? | Análisis BA y BI (Precios e inflación) | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
 | P-5 | ¿Las cifras son confiables? | Calidad y auditoría | `tests/test_data_audit.py::test_weekly_prices_rebuild_exactly_from_the_raw_rows`, `tests/test_migration_parity.py::test_every_weekly_price_has_the_same_key_flag_count_and_price` |
 
 ## 5. Requisitos
@@ -149,9 +149,10 @@ Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 sema
 
 Estas son seis capturas reales, del 02-11-2026, de cinco páginas principales y en los cuatro temas de color. El Dashboard aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
 
-- **Menú:** cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera abre con dos recuadros con ícono de dashboard, el Dashboard y Último dato por canal, que siguen a la vista aunque la sección se pliegue; después sigue el orden en que la lee un lector: Interesados, Análisis de negocio y sistemas, Precios e inflación e Insights (D-442, D-452, D-453).
+- **Menú:** cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera son tres recuadros con ícono de dashboard, que siguen a la vista aunque la sección se pliegue: el Dashboard, Último dato por canal y Análisis BA y BI (D-442, D-452, D-453, D-456).
 - **Dashboard:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Los tres pasos quedan siempre juntos en una sola pantalla; la tabla de productos llena el panel 3, se desplaza sola y se amplía con su propio botón (D-446, D-447).
 - **Último dato por canal:** una tarjeta por canal, con su ícono 3D en sus propios colores (D-453), su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del Dashboard y se comporta igual que él, aunque la otra fuente todavía no publique esa semana (D-404 a D-406, D-452).
+- **Análisis BA y BI:** cinco pestañas (D-456). «Tendencias» es un informe del período y la familia que se elijan: cinco cifras clave (cambio de precios, frente al IPC, brecha consumidor–mayorista, alertas de precio y mes más barato), tres gráficos (precio mes a mes, temporada y valores atípicos por mes) y la tabla por familia; cada cifra explica al pasar el cursor cómo se calcula. Las otras cuatro son Precios e inflación, Insights, Interesados y Método.
 - **Stack y evidencia:** dos vistas. «Herramientas» explica cada herramienta; «Flujo del sistema en vivo» muestra las piezas reales, lo que se dicen y la carga en curso (D-412).
 
 [[diagrama:mockups]]
@@ -240,3 +241,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.19 | 02-11-2026 | «Último dato por canal» es un segundo recuadro bajo el Dashboard, y cada canal se comporta igual que el Dashboard, sin plegar sus pasos (7, D-447, D-452) |
 | 3.20 | 02-11-2026 | Los dos dashboards abren la sección «Negocio · BA y BI», y cada tarjeta de canal lleva su ícono 3D (7, D-453) |
 | 3.21 | 02-11-2026 | Los diagramas son los de la app: el ciclo de cada semana del bloque «Proceso» de «Análisis de negocio y sistemas» (2) y el mapa de «Interesados» (3.4); se retiran «Del dato a la decisión» y los casos de uso, que nombraban perfiles que el panel no tiene; 3.2 son los tres perfiles del panel; «base servida» pasa a «Base DuckDB» (D-455) |
+| 3.22 | 02-11-2026 | «Análisis BA y BI» reúne en pestañas la historia de los precios, Precios e inflación, Insights, Interesados y el método; P-4 se ve en su pestaña (3.1, 3.2, 3.4, 4, 7, D-456) |

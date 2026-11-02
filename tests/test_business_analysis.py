@@ -91,49 +91,39 @@ def test_d377_the_kpi_definitions_left_insights_for_the_analysis_page():
 
 
 @needs_database
-def test_d377_the_page_draws_every_block_for_every_view_and_insights_links_to_the_kpis():
+def test_d456_the_method_tab_draws_the_kpis_and_the_system_decisions_and_insights_links_to_it():
+    """The old page «Análisis de negocio y sistemas» is the tab «Método» of «Análisis BA y BI»: only what the PRD does
+    not hold, the KPIs and the system decisions; its address opens that tab, and so does the link from Insights."""
     for profile in ("consulta", "profesional"):
         app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
         app.session_state["visitor_profile"] = profile
         app.query_params.update({"vista": dashboard.PAGE_ANALYSIS, "lang": "es"})
         app.run()
         assert not app.exception, profile
-        radio = app.radio(key="analysis_block")
-        assert len(radio.options) == len(ba.BLOCKS) and radio.value == ba.BLOCKS[0]
-        for title in ba.BLOCKS:
-            radio.set_value(title).run()
-            assert not app.exception, (profile, title)
+        assert app.session_state[dashboard.BA_TAB_KEY] == "Método"
         markup = " ".join(block.value for block in app.markdown)
-        assert "Revisión de uso" in markup  # the last block: from feedback to change
-    opened = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
-    opened.session_state["visitor_profile"] = "consulta"
-    opened.query_params.update({"vista": dashboard.PAGE_ANALYSIS, "bloque": "KPIs", "lang": "es"})
-    opened.run()
-    assert not opened.exception and opened.radio(key="analysis_block").value == "KPIs"
-    assert overview.KPIS[0][0] in " ".join(block.value for block in opened.markdown)
+        assert overview.KPIS[0][0] in markup and "Qué medimos y qué no, y por qué" in markup
+        assert "analysis_block" not in app.session_state  # no list of ten blocks any more
     insights = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
     insights.session_state["visitor_profile"] = "consulta"
     insights.query_params.update({"vista": dashboard.PAGE_INSIGHTS, "lang": "es"})
     insights.run()
-    assert not insights.exception and "ov_insight_view" not in insights.session_state
-    controls = " ".join(str(getattr(control, "options", "")) for control in insights.main.get("segmented_control"))
-    assert "KPIs" not in controls  # the «Preguntas / KPIs» switch is gone
-    assert "Ver las definiciones de los KPI" in [link.proto.label for link in insights.main.get("page_link")]
+    assert not insights.exception and insights.session_state[dashboard.BA_TAB_KEY] == "Insights"
+    link = next(
+        link for link in insights.main.get("page_link") if link.proto.label == "Ver las definiciones de los KPI"
+    )
+    assert "pestana=M%C3%A9todo" in link.proto.query_string
 
 
 @needs_database
-def test_d377_the_page_reads_in_english():
+def test_d456_the_method_tab_reads_in_english():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
     app.session_state["visitor_profile"] = "profesional"
-    app.query_params.update({"vista": dashboard.PAGE_ANALYSIS, "bloque": "Evaluación", "lang": "en"})
+    app.query_params.update({"vista": dashboard.PAGE_BA, "pestana": "Método", "lang": "en"})
     app.run()
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    assert "Automated tests measure it" in markup  # read from docs/en/PLAN_DE_CALIDAD.md
-    assert any(
-        caption.value.startswith("Latest report: ") and "quality report" in caption.value.lower()
-        for caption in app.caption
-    )  # D-431
+    assert "What we measure and what we do not, and why" in markup  # read from docs/en/PLAN_DE_CALIDAD.md
 
 
 def test_d455_the_problem_block_reads_whole_sentences_and_never_points_at_itself():

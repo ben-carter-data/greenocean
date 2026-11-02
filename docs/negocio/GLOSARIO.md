@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 2.7 |
+| Versión | 2.8 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -34,21 +34,21 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 
 | Sigla o término | Significado | Dónde aparece | Tema |
 |---|---|---|---|
-| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. Los indicadores técnicos se numeran de K1 a K8. | Dashboard, Precios e inflación, Análisis de negocio y sistemas | Indicadores |
+| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. Los indicadores técnicos se numeran de K1 a K8. | Dashboard, Análisis BA y BI (Tendencias), Análisis BA y BI (Método) | Indicadores |
 | BI | Inteligencia de negocios (*business intelligence*): el análisis de datos para tomar decisiones; aquí, el panel. | — | Indicadores |
-| BA | Análisis de negocio (*business analysis*): el rol que traduce los datos en decisiones; una de las vistas profesionales del panel. | Interesados, Análisis de negocio y sistemas | Indicadores |
-| BSA | Análisis de sistemas de negocio (*business systems analysis*): el rol que decide cómo el sistema cumple lo que el negocio pide: qué se mide, qué bloquea la publicación y qué avisa. | Análisis de negocio y sistemas | Indicadores |
+| BA | Análisis de negocio (*business analysis*): el rol que traduce los datos en decisiones; una de las vistas profesionales del panel. | Análisis BA y BI (Interesados) | Indicadores |
+| BSA | Análisis de sistemas de negocio (*business systems analysis*): el rol que decide cómo el sistema cumple lo que el negocio pide: qué se mide, qué bloquea la publicación y qué avisa. | Análisis BA y BI (Método) | Indicadores |
 | RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Calidad y auditoría | Indicadores |
 | Alerta de precio | Cambio semanal fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con dos cotizaciones en cada semana (K6). | Dashboard | Indicadores |
-| Precio real | Precio expresado en pesos del último mes publicado del IPC. | Precios e inflación | Indicadores |
-| Semana provisional | Semana de un mes cuyo IPC aún no se publica; usa el último mes disponible. | Precios e inflación | Indicadores |
+| Precio real | Precio expresado en pesos del último mes publicado del IPC. | Análisis BA y BI (Precios e inflación) | Indicadores |
+| Semana provisional | Semana de un mes cuyo IPC aún no se publica; usa el último mes disponible. | Análisis BA y BI (Precios e inflación) | Indicadores |
 | Indicador de calidad de los datos | Cada uno de los 11 indicadores que se miden en cada carga sobre la base publicada, en cinco dimensiones. | Calidad y auditoría | Indicadores |
 | Indicador del plan de calidad | Cada uno de los 12 indicadores del SQAP (8 de código y 4 de datos) que el workflow de calidad mide cada semana. | Método y calidad | Indicadores |
 | Dimensión de calidad | Aspecto de la calidad que se mide: completitud, actualidad, validez, unicidad, consistencia y exactitud. | Calidad y auditoría | Indicadores |
 | DAMA-DMBOK | Guía de gestión de datos de DAMA International (*Data Management Body of Knowledge*); de ella vienen las dimensiones de calidad. | — | Indicadores |
 | ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Dashboard, Pipeline y linaje | Fuentes |
-| INE | Instituto Nacional de Estadísticas de Chile. Publica el IPC de alimentos. | Precios e inflación, Pipeline y linaje | Fuentes |
-| IPC | Índice de precios al consumidor; aquí, la división «Alimentos y bebidas no alcohólicas» que publica el INE. | Precios e inflación | Fuentes |
+| INE | Instituto Nacional de Estadísticas de Chile. Publica el IPC de alimentos. | Análisis BA y BI (Precios e inflación), Pipeline y linaje | Fuentes |
+| IPC | Índice de precios al consumidor; aquí, la división «Alimentos y bebidas no alcohólicas» que publica el INE. | Análisis BA y BI (Precios e inflación) | Fuentes |
 | CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Pipeline y linaje | Fuentes |
 | SHA-256 | Función que calcula la huella de un archivo; cambia si cambia un solo byte. Se usa para verificar los archivos descargados y la Base DuckDB. | Calidad y auditoría | Fuentes |
 | JSON | Formato de texto para datos estructurados (*JavaScript Object Notation*); así se guardan el manifiesto de descargas y la fila original de cada rechazo. | — | Fuentes |
@@ -116,3 +116,4 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | 2.5 | 01-11-2026 | «Base servida» pasa a «Base DuckDB» (D-426) |
 | 2.6 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
 | 2.7 | 02-11-2026 | «Base servida» pasa a «Base DuckDB» también en las definiciones, que lo decían con el nombre anterior (D-455) |
+| 2.8 | 02-11-2026 | Las páginas que pasaron a pestañas de «Análisis BA y BI» se nombran «Análisis BA y BI (pestaña)» (D-456) |

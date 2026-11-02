@@ -83,7 +83,7 @@ NODES = {
         "Instituto Nacional de Estadísticas de Chile.",
         "Publica el IPC de alimentos, con el que los precios se expresan en pesos de hoy.",
         "Publica cada mes; la carga descarga cada martes.",
-        "Contexto del precio",
+        "Análisis BA y BI",
         [],
     ),
     "agent": (
@@ -189,8 +189,8 @@ NODES = {
         [
             (
                 "Páginas",
-                "Dashboard, Último dato por canal, Interesados, Análisis de negocio y sistemas, Precios e inflación, "
-                "Insights, Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, "
+                "Dashboard, Último dato por canal, Análisis BA y BI (Tendencias, Precios e inflación, Insights, "
+                "Interesados y Método), Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, "
                 "Arquitectura de seguridad, Calidad y auditoría, Método y calidad, Git workflow y la carpeta de "
                 "documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.",
             ),
@@ -384,9 +384,9 @@ NODES = {
         ["navegador"],
         ("web", 7),
         "Biblioteca de gráficos declarativos de Python y su motor en el navegador.",
-        "Dibuja los gráficos de Precios e inflación y del Resumen, con el formato de números del idioma.",
+        "Dibuja los gráficos de «Análisis BA y BI» y del Dashboard, con el formato de números del idioma.",
         "En el navegador, cuando una página muestra un gráfico.",
-        "Contexto del precio",
+        "Análisis BA y BI",
         [],
     ),
     "gates": (

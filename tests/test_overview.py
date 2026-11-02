@@ -87,13 +87,12 @@ def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
     source = (dashboard.Path(dashboard.__file__)).read_text(encoding="utf-8")
     assert "def show_overview_page" not in source and "def show_overview_inflation" not in source
     # D-453: the section opens with the Dashboard and «Último dato por canal» (D-365) as tiles
+    # D-456: and «Análisis BA y BI», whose tabs hold «Interesados» (D-376), the method (D-377), «Precios e inflación»
+    # (D-398) and «Insights»
     assert dashboard.MENU_BLOCKS[0][2] == [
         dashboard.HOME_PAGE,
         dashboard.PAGE_CHANNELS,
-        dashboard.PAGE_STAKEHOLDERS,  # D-376, D-378
-        dashboard.PAGE_ANALYSIS,  # D-377
-        dashboard.PAGE_SEASONALITY,  # D-398: in the menu, now that the header opens no page
-        dashboard.PAGE_INSIGHTS,
+        dashboard.PAGE_BA,
     ]  # D-325: «Dónde comprar» is gone; D-365: «Último dato por canal» sits next to the Dashboard
     assert dashboard.DOOR_PAGES == {}  # D-398: «Precios e inflación» left the Dashboard's header for the menu
     assert dashboard.RETIRED_VIEWS["Dashboard general"] == dashboard.HOME_PAGE
@@ -110,10 +109,7 @@ def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
     assert [name for _, _, pages in dashboard.MENU_BLOCKS[:1] for name in pages] == [
         dashboard.HOME_PAGE,  # D-442
         dashboard.PAGE_CHANNELS,  # D-365, D-452
-        dashboard.PAGE_STAKEHOLDERS,  # D-376, D-378
-        dashboard.PAGE_ANALYSIS,  # D-377
-        dashboard.PAGE_SEASONALITY,  # D-398: in the menu, now that the header opens no page
-        dashboard.PAGE_INSIGHTS,
+        dashboard.PAGE_BA,  # D-456
     ]
     assert "Dónde comprar" not in dashboard.SIDEBAR_LABELS.values()
     assert dashboard.RETIRED_VIEWS["Dónde comprar"] == dashboard.HOME_PAGE
@@ -130,21 +126,7 @@ def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
         assert not app.exception
         markup = " ".join(block.value for block in app.sidebar.markdown)
         assert "Where to buy" not in markup and "Dónde comprar" not in markup
-        assert [link.proto.label for link in app.sidebar.get("page_link")][:6] in (
-            [
-                "Dashboard",  # D-442, D-452: the two tiles over the sections
-                "Último dato por canal",
-                "Interesados",
-                "Análisis de negocio y sistemas",
-                "Precios e inflación",
-                "Insights",
-            ],
-            [
-                "Dashboard",
-                "Latest data by channel",
-                "Stakeholders",
-                "Business and systems analysis",
-                "Prices and inflation",
-                "Insights",
-            ],
+        assert [link.proto.label for link in app.sidebar.get("page_link")][:3] in (
+            ["Dashboard", "Último dato por canal", "Análisis BA y BI"],  # D-456: the section's three dashboards
+            ["Dashboard", "Latest data by channel", "BA and BI analysis"],
         )

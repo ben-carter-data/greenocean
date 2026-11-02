@@ -3626,3 +3626,33 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - `tests/test_doc_diagrams.py::test_d455_the_documents_draw_the_panels_own_diagrams_and_no_invented_profile`.
   - `tests/test_prd_traceability.py::test_d455_the_usage_profiles_are_the_three_views_of_the_panel`.
   - `tests/test_documents.py::test_each_document_carries_the_diagrams_its_kind_of_document_needs`.
+
+## D-456 · «Análisis BA y BI»: una sola página con pestañas, con la historia de los precios como informe
+
+- **Pedido del autor:** simplificar la parte BA. Debe ser un dashboard de análisis histórico, con las tendencias de los precios por mes, año y temporada y sus valores atípicos, en una sola página. Insights, Precios e inflación e Interesados quedan dentro, en pestañas. Todo bajo un recuadro con ícono, como el Dashboard, coherente y explicado al pasar el cursor; simple y eficaz, inspirado en un informe de Power BI. El nombre es «Análisis BA y BI». De «Análisis de negocio y sistemas» queda solo una pestaña «Método» breve (decisiones del autor).
+- **Diagnóstico:** «Análisis de negocio y sistemas» eran 10 bloques de texto copiados del PRD y del SQAP, sin análisis de datos. «Interesados» aparecía tres veces. «Insights» repetía en texto lo que mostraban el Dashboard y «Precios e inflación».
+- **Decisión:**
+  - **Menú:** «Negocio · BA y BI» son tres recuadros con ícono de dashboard: el Dashboard, «Último dato por canal» y «Análisis BA y BI». El tercero tiene su propio ícono: un informe con una lupa.
+  - **Pestañas de «Análisis BA y BI»:** Tendencias, Precios e inflación, Insights, Interesados y Método. Las cuatro últimas son las páginas de antes, dibujadas por su mismo código bajo su pestaña. Su pregunta y sus cifras quedan en la fila bajo las pestañas, sin una segunda barra (D-398).
+  - **Direcciones antiguas:** la dirección de cada página antigua abre su pestaña, también desde un enlace de un documento (`pestana=…`). En los documentos, una pestaña se nombra «Análisis BA y BI (Pestaña)», como «Centro de operación (CI/CD)».
+  - **Tendencias** es un informe de una sola pantalla. Arriba, en la fila de las pestañas, se elige el período (los últimos 12 meses, desde enero 2022 o un año) y la familia (toda la canasta o una de las siete).
+    - **Cinco cifras clave:** cambio de precios, frente al IPC, brecha consumidor–mayorista (K1), alertas de precio (K6) y mes más barato (K4).
+    - **Tres gráficos:** el precio mes a mes frente al IPC, la temporada por mes del calendario y los valores atípicos por mes.
+    - **Una tabla por familia.**
+    - Cada cifra, columna y gráfico explica al pasar el cursor cómo se calcula.
+  - **Método:** solo lo que el PRD no tiene: cómo se calcula cada KPI y las decisiones de sistema. El resto queda en el PRD. El enlace «Ver las definiciones de los KPI» de Insights abre esta pestaña.
+- **Coherencia de las cifras:**
+  - Todo sale de las mismas consultas y reglas del panel: el índice mensual de «Precios e inflación» (D-163), ahora con la canasta completa (la mediana de las mismas series), K1, K4 y K6.
+  - El período termina en el último mes que publicó el INE, para comparar con la inflación.
+  - Con la base del 31-10-2026, en los últimos 12 meses Frutas sube +5,9 % y el IPC +4,3 %, igual que en «Precios e inflación» e «Insights». Desde enero 2022 el IPC sube +44,8 %.
+- **Eje del tiempo:** «Precio mes a mes» y «Valores atípicos por mes» empiezan en el mes en que empieza el período, aunque no haya datos. Una alerta necesita las 12 semanas anteriores (K6), así que la primera posible es de abril 2022. Antes, el gráfico de alertas empezaba su eje en el primer mes con alertas, y con «Desde ene 2022» su primera etiqueta era «01-2023», aunque 2022 tuviera alertas (lo notó el autor). Cada barra ocupa su mes, y al pasar el cursor por el título de cada gráfico se lee cómo se calcula.
+- **Temporada:** sus barras son los meses del calendario, no los de un año. Cada una junta las semanas de ese mes de todos los años del período: con «Desde ene 2022», febrero reúne los febreros de 2022 a 2026; con los últimos 12 meses, cada mes aparece una vez, en su año. El subtítulo nombra el rango («oct 2025 – sep 2026; cada mes frente a su año») y, al pasar el cursor, cada barra dice sus años y sus semanas (lo preguntó el autor).
+- **Lo que deja de ser de la app:** el bloque «Proceso» de la página antigua se retira. «Del dato al informe, cada semana» vuelve a ser solo una figura del PRD, y lo que D-455 decía de ella queda así corregido.
+- **Medición:** la pestaña Tendencias cabe sin desplazar la página a 1440 × 900 y 1440 × 790, en español e inglés (Playwright).
+- **Documentos:** PRD 3.22 (3.1, 3.2, 3.4, la pantalla de P-4 y 7), SAD 3.15 (los escenarios clave y la vista Usuario), Glosario 2.8, CLAUDE.md (los nombres oficiales y los módulos nuevos `ba_trends.py`, `interest_map.py`, `app_diagrams.py` y `channel_icons.py`), README y la captura M-3, en los dos idiomas donde corresponde.
+- **Pruebas:**
+  - `tests/test_menu_order.py::test_d456_the_section_is_its_three_dashboards_and_the_analysis_gathers_the_rest_in_tabs`.
+  - `tests/test_ba_trends.py`: las cifras se recalculan y coinciden con «Precios e inflación».
+  - `tests/test_business_analysis.py::test_d456_the_method_tab_draws_the_kpis_and_the_system_decisions_and_insights_links_to_it` y `::test_d456_the_method_tab_reads_in_english`.
+  - `tests/test_page_bar.py::test_d391_the_inflation_page_sits_in_its_menu_section` (la dirección abre su pestaña).
+  - Las del menú, el encabezado, el idioma y los documentos, con la sección nueva.

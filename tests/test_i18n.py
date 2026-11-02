@@ -292,7 +292,7 @@ def test_d283_the_english_glossary_names_only_english_pages_and_tabs():
     menu = {
         i18n.EN[dashboard.SIDEBAR_LABELS.get(view, view)] for view in [*dashboard.MENU_ORDER, *dashboard.DOOR_PAGES]
     }
-    tabs = {"Operations", "Deployment", "CI/CD", "Monitoring"}
+    tabs = {"Operations", "Deployment", "CI/CD", "Monitoring"} | {i18n.EN[tab] for tab in dashboard.BA_TABS}  # D-456
     glossary = read(i18n.document_path("GLOSARIO.md", "en"))
     table = glossary[glossary.index("| Acronym or term") :].split("\n\n", 1)[0]
     for row in [line.split(" | ") for line in table.splitlines()[2:]]:
