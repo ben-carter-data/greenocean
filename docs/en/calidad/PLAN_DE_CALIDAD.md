@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.7 |
+| Version | 1.8 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -82,6 +82,8 @@ There is only one numbered report: the weekly quality report, one per data week 
 
 The report has four pages: the cover, with the version of this plan it was measured by; the results; the comparison with another report, which warns when the two do not measure the same indicators; and one table of non-conformities and incidents, with the open ones and the ones of that week. The method lives only in this plan. A report is never edited afterwards: if something changes, the next report comes out. If the code indicators are within their acceptable, the pull request is merged by itself and the dashboard shows the report; otherwise it stays open and the author reviews it; if it is still open the week after, the new report replaces it with the same number (D-436). In the dashboard, each report opens as a presentation and downloads as a PDF (D-333, D-347).
 
+A non-conformity of the weekly series closes by itself when a later report brings its indicator back within the acceptable, with the state «resolved automatically, report No. x»; the cause and the action the author wrote stay (D-437).
+
 Reports C-1 to C-7, from 26 to 31 October 2026, are the construction series: they mix code and data, were measured on every push and are never edited. The dashboard shows them apart and does not compare them with the weekly series.
 
 [[diagrama:ciclo_calidad]]
@@ -125,3 +127,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.5 | 2026-11-01 | One numbered report only, the weekly one of the data, in four pages and only after a load in green; the code is checked by the CI; the construction series C-1 to C-7 (8, D-431) |
 | 1.6 | 2026-11-01 | The acceptable and the goal of the comparable prices are calibrated to the 5th percentile of the history, 81 % (6, ADR-36, D-433) |
 | 1.7 | 2026-11-01 | The report's pull request is merged by itself if the code is within its acceptable; an open one is replaced by the next report (8, 11, D-436) |
+| 1.8 | 2026-11-01 | A non-conformity of the weekly series closes by itself when its indicator is back within the acceptable (8, D-437) |

@@ -8,7 +8,8 @@ against, and per indicator its value, failure against the acceptable, state, ins
 report. D-431: only the three indicators measured once per load (q.WEEKLY_INDICATORS); the code is checked by the CI of
 every push. The seven reports of docs/calidad/informes/ are the closed construction series, C-1 to C-7. A report is never rewritten: a second run
 on the same measurement adds nothing, and an error is corrected in the next report. docs/calidad/INFORME.md shows the
-latest one. With --cuerpo it also writes the body of the pull request «Actualizar medición de calidad». It never changes
+latest one. With --cuerpo it also writes the body of the pull request «Actualizar medición de calidad». D-437: an open
+non-conformity of the weekly series whose indicator is back within its acceptable is closed by itself. It never changes
 code.
 """
 
@@ -109,6 +110,33 @@ def register_nonconformities(report, path=NONCONFORMITIES):
     return len(added)
 
 
+def close_back_in_range(report, path=NONCONFORMITIES):
+    """D-437: each open non-conformity of the weekly series whose indicator is back within its acceptable in this report
+    is closed with the note «resuelta automáticamente, informe N° x». The cause and the action the author wrote stay; the
+    construction series, closed in D-431, is never touched. Returns how many it closed."""
+    text = path.read_text(encoding="utf-8")
+    register = json.loads(text)
+    within = {row["clave"] for row in report["indicadores"] if row["estado"] in ("cumple", "aviso")}
+    closed = 0
+    for record in register["registros"]:
+        if (
+            record.get("serie") == q.SERIES_WEEKLY
+            and record.get("informe", 0) < report["numero"]
+            and record.get("indicador") in within
+            and not q.is_resolved(record)
+        ):
+            record["estado"] = [
+                f"resuelta automáticamente, informe N° {report['numero']}",
+                f"resolved automatically, report No. {report['numero']}",
+            ]
+            closed += 1
+    if closed:
+        path.write_text(
+            json.dumps(register, ensure_ascii=False, indent=2) + ("\n" if text.endswith("\n") else ""), encoding="utf-8"
+        )
+    return closed
+
+
 def counts(report):
     """(within the acceptable, non-conformities, measured)."""
     return q.report_counts(report)
@@ -196,6 +224,7 @@ def main():
     goals, policy = q.read(q.GOALS_FILE), q.read(q.POLICY_FILE)
     report, new = add_report(measurement, goals, policy)
     register_nonconformities(report)
+    close_back_in_range(report)  # D-437
     q.HISTORY_FILE.write_text(
         json.dumps(q.add_to_history(q.read(q.HISTORY_FILE), measurement), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",

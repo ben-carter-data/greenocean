@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.7 |
+| Versión | 1.8 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -82,6 +82,8 @@ Hay un solo informe numerado: el informe semanal de calidad, uno por semana de d
 
 El informe tiene cuatro páginas: la portada, con la versión de este plan con que se midió; los resultados; la comparación con otro informe, que avisa si los dos no miden los mismos indicadores; y una sola tabla de no conformidades e incidencias, con las abiertas y las de esa semana. La metodología vive solo en este plan. Un informe no se edita después: si algo cambia, sale el informe siguiente. Si los indicadores de código están en su aceptable, el pull request se fusiona solo y el panel muestra el informe; si no, queda abierto y lo revisa el autor; si sigue abierto a la semana siguiente, el informe nuevo lo reemplaza con el mismo número (D-436). En el panel, cada informe se abre como presentación y se descarga en PDF (D-333, D-347).
 
+Una no conformidad de la serie semanal se cierra sola cuando un informe siguiente devuelve su indicador al aceptable, con el estado «resuelta automáticamente, informe N° x»; la causa y la acción que escribió el autor se conservan (D-437).
+
 Los informes C-1 a C-7, del 26 al 31 de octubre de 2026, son la serie de construcción: mezclan código y datos, se midieron en cada push y no se editan. El panel los muestra aparte y no los compara con la serie semanal.
 
 [[diagrama:ciclo_calidad]]
@@ -125,3 +127,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.5 | 01-11-2026 | Un solo informe numerado, el semanal de los datos, en cuatro páginas y solo tras una carga en verde; el código se verifica en el CI; la serie de construcción C-1 a C-7 (8, D-431) |
 | 1.6 | 01-11-2026 | El aceptable y la meta de los precios comparables se calibran al percentil 5 de la historia, 81 % (6, ADR-36, D-433) |
 | 1.7 | 01-11-2026 | El pull request del informe se fusiona solo si el código está en su aceptable; uno abierto lo reemplaza el informe siguiente (8, 11, D-436) |
+| 1.8 | 01-11-2026 | Una no conformidad de la serie semanal se cierra sola cuando su indicador vuelve al aceptable (8, D-437) |

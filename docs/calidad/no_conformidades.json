@@ -1,5 +1,5 @@
 {
-  "nota": "No conformidades de los informes de calidad (D-334): un indicador fuera de su aceptable. La causa la escribe quien la demuestra; la acción tomada y el estado los escribe el autor. Una causa vacía dice «pendiente de registrar por el autor».",
+  "nota": "No conformidades de los informes de calidad (D-334): un indicador fuera de su aceptable. La causa la escribe quien la demuestra; la acción tomada y el estado los escribe el autor, salvo el cierre automático de la serie semanal cuando el indicador vuelve a su aceptable (D-437). Una causa vacía dice «pendiente de registrar por el autor».",
   "registros": [
     {
       "informe": 1,

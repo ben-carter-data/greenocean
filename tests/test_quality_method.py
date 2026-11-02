@@ -836,3 +836,44 @@ def test_d436_the_report_is_merged_by_itself_only_with_the_code_in_range_and_an_
     assert 'gh pr merge "$branch" --squash --delete-branch' in merge and "--auto" not in code
     assert "::warning::" in merge  # a refused merge leaves the request open and says so
     assert "steps.verificar.outcome == 'failure'" in workflow  # the code out of range still fails the run
+
+
+def test_d437_a_weekly_non_conformity_closes_by_itself_when_its_indicator_is_back_and_the_construction_series_is_untouched(
+    tmp_path,
+):
+    informe_calidad = load_reports_module()
+    register = {
+        "nota": "",
+        "registros": [
+            {
+                "informe": 1,
+                "serie": "semanal",
+                "indicador": "comparables_pct",
+                "causa": "",
+                "accion": "Revisé.",
+                "estado": "",
+            },
+            {"informe": 1, "serie": "semanal", "indicador": "rechazadas_pct", "causa": "", "accion": "", "estado": ""},
+            {"informe": 1, "indicador": "comparables_pct", "causa": "", "accion": "", "estado": ""},  # construction
+            {"informe": 2, "serie": "semanal", "indicador": "pruebas_dbt_pct", "causa": "", "accion": "", "estado": ""},
+        ],
+    }
+    path = tmp_path / "no_conformidades.json"
+    path.write_text(json.dumps(register, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    report = {
+        "numero": 2,
+        "serie": "semanal",
+        "indicadores": [
+            {"clave": "comparables_pct", "estado": "cumple"},
+            {"clave": "rechazadas_pct", "estado": "urgente"},
+            {"clave": "pruebas_dbt_pct", "estado": "cumple"},
+        ],
+    }
+    assert informe_calidad.close_back_in_range(report, path) == 1
+    records = json.loads(path.read_text(encoding="utf-8"))["registros"]
+    assert records[0]["estado"] == ["resuelta automáticamente, informe N° 2", "resolved automatically, report No. 2"]
+    assert records[0]["accion"] == "Revisé." and quality_metrics.is_resolved(records[0])  # the author's text stays
+    assert records[1]["estado"] == ""  # still out of its acceptable
+    assert records[2]["estado"] == ""  # the construction series is never touched (D-431)
+    assert records[3]["estado"] == ""  # opened by this same report: only a later report closes it
+    assert informe_calidad.close_back_in_range(report, path) == 0  # a second run closes nothing more

@@ -3363,3 +3363,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Un número, un pull request:** el número del informe es el siguiente al último fusionado en main. Si un informe sigue abierto cuando llega el siguiente (porque el código estaba fuera de su aceptable), el workflow lo cierra con la nota «Reemplazado por el informe de …», borra su rama, y el nuevo toma el mismo número. Nunca hay dos pull requests con un número, y el cerrado queda en GitHub como registro.
   - **Documentos:** SQAP 1.7 (8 y 11) y MANUAL 3.11 (8 y 8.1), en los dos idiomas; la figura del ciclo de calidad y el calendario de «Método y calidad».
 - **Pruebas:** `tests/test_quality_method.py::test_d436_the_report_is_merged_by_itself_only_with_the_code_in_range_and_an_open_one_is_replaced`.
+
+## D-437 · Una no conformidad de la serie semanal se cierra sola cuando su indicador vuelve al aceptable
+
+- **Pedido del autor:** que las no conformidades no queden abiertas para siempre cuando el problema ya pasó.
+- **Decisión:**
+  - Al escribir un informe semanal, `scripts/informe_calidad.py` revisa las no conformidades abiertas de la serie semanal de informes anteriores. Si su indicador está «Cumple» o «Aviso» en el informe nuevo, les pone el estado «resuelta automáticamente, informe N° x» (y su inglés). La causa y la acción que escribió el autor se conservan.
+  - Solo la serie semanal, desde el N° 1. Las 10 de la serie de construcción ya se cerraron en bloque (D-431) y no se tocan.
+  - Un indicador sin medición no cierra nada: tiene que volver a medirse dentro de su aceptable. Una no conformidad abierta por el mismo informe solo la cierra un informe posterior. Una segunda ejecución no cierra nada más.
+  - El cierre viaja en el mismo pull request del informe (D-436), así que queda en git como cualquier otro cambio.
+  - **Documentos:** SQAP 1.8 (8), en los dos idiomas, y la nota de `no_conformidades.json`.
+- **Pruebas:** `tests/test_quality_method.py::test_d437_a_weekly_non_conformity_closes_by_itself_when_its_indicator_is_back_and_the_construction_series_is_untouched`.
