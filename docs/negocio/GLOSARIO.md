@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 2.8 |
+| Versión | 2.9 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -34,7 +34,7 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 
 | Sigla o término | Significado | Dónde aparece | Tema |
 |---|---|---|---|
-| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. Los indicadores técnicos se numeran de K1 a K8. | Dashboard, Análisis BA y BI (Tendencias), Análisis BA y BI (Método) | Indicadores |
+| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. Los indicadores técnicos se numeran de K1 a K8. | Dashboard, Análisis BA y BI (Mensual), Análisis BA y BI (Histórico), Análisis BA y BI (Método) | Indicadores |
 | BI | Inteligencia de negocios (*business intelligence*): el análisis de datos para tomar decisiones; aquí, el panel. | — | Indicadores |
 | BA | Análisis de negocio (*business analysis*): el rol que traduce los datos en decisiones; una de las vistas profesionales del panel. | Análisis BA y BI (Interesados) | Indicadores |
 | BSA | Análisis de sistemas de negocio (*business systems analysis*): el rol que decide cómo el sistema cumple lo que el negocio pide: qué se mide, qué bloquea la publicación y qué avisa. | Análisis BA y BI (Método) | Indicadores |
@@ -117,3 +117,4 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | 2.6 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
 | 2.7 | 02-11-2026 | «Base servida» pasa a «Base DuckDB» también en las definiciones, que lo decían con el nombre anterior (D-455) |
 | 2.8 | 02-11-2026 | Las páginas que pasaron a pestañas de «Análisis BA y BI» se nombran «Análisis BA y BI (pestaña)» (D-456) |
+| 2.9 | 02-11-2026 | La pestaña «Tendencias» de «Análisis BA y BI» pasa a «Mensual» e «Histórico» (D-457) |

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.8 |
+| Version | 2.9 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -34,7 +34,7 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 
 | Acronym or term | Meaning | Where it appears | Theme |
 |---|---|---|---|
-| KPI | Key performance indicator: each figure that measures something of the business. The technical indicators are numbered K1 to K8. | Dashboard, BA and BI analysis (Trends), BA and BI analysis (Method) | Indicators |
+| KPI | Key performance indicator: each figure that measures something of the business. The technical indicators are numbered K1 to K8. | Dashboard, BA and BI analysis (Monthly), BA and BI analysis (Historical), BA and BI analysis (Method) | Indicators |
 | BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
 | BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | BA and BI analysis (Stakeholders) | Indicators |
 | BSA | Business systems analysis: the role that decides how the system meets what the business asks: what is measured, what blocks publication and what warns. | BA and BI analysis (Method) | Indicators |
@@ -117,3 +117,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.6 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
 | 2.7 | 2026-11-02 | «Served database» becomes «DuckDB database» in the definitions too, which still used the former name (D-455) |
 | 2.8 | 2026-11-02 | The pages that became tabs of «BA and BI analysis» are named «BA and BI analysis (tab)» (D-456) |
+| 2.9 | 2026-11-02 | The «Trends» tab of «BA and BI analysis» becomes «Monthly» and «Historical» (D-457) |

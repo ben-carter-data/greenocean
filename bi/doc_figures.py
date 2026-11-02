@@ -934,8 +934,8 @@ def sad_scenarios(mode):
                 tile(
                     say("Análisis BA y BI", "BA and BI analysis"),
                     say(
-                        "Tendencias · Precios e inflación · Insights · Interesados · Método",
-                        "Trends · Prices and inflation · Insights · Stakeholders · Method",
+                        "Mensual · Histórico · Precios e inflación · Insights · Interesados · Método",
+                        "Monthly · Historical · Prices and inflation · Insights · Stakeholders · Method",
                     ),
                     "P-4 · RF-04",
                 ),

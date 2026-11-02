@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.15 |
+| Versión | 3.16 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -514,3 +514,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.13 | 02-11-2026 | Los diagramas de la app en el documento, dibujados por el mismo código: herramientas (3.4), dónde viven los datos, modelo estrella, entidad-relación y cruces entre bases (6.1 a 6.4), y despliegue (7); el diccionario de datos pasa a 6.5 (D-448) |
 | 3.14 | 02-11-2026 | Los datos se dibujan con el recorrido por capas de «Pipeline y linaje», en vez de un dibujo propio (6, D-455) |
 | 3.15 | 02-11-2026 | La vista Usuario y los escenarios clave nombran «Análisis BA y BI», que reúne en pestañas Precios e inflación, Insights e Interesados (2.1, 5, D-456) |
+| 3.16 | 02-11-2026 | Los escenarios clave nombran las pestañas «Mensual» e «Histórico» de «Análisis BA y BI», que reemplazan a «Tendencias» (2.1, D-457) |

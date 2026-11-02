@@ -113,16 +113,19 @@ PAGE_SEASONALITY = "Contexto del precio"
 # D-162: read-only SQL on the gold layer, the destination of «Consultas SQL» in the pipeline.
 PAGE_SQL = "Consultas SQL"
 # D-456: the BA and BI analysis in one page, in tabs, like a report of Power BI: the history of the prices first, then
-# the four pages it gathers. Their old addresses open their tab.
+# the four pages it gathers. Their old addresses open their tab. D-457: the history is read two ways that never mix,
+# one period month by month and the whole history year by year; the old «Tendencias» opens «Mensual».
 PAGE_BA = "Análisis BA y BI"
-BA_TREND_TAB = "Tendencias"
+BA_MONTHLY_TAB = "Mensual"
+BA_HISTORY_TAB = "Histórico"
+BA_RETIRED_TABS = {"Tendencias": BA_MONTHLY_TAB}
 BA_TAB_OF_VIEW = {
     PAGE_SEASONALITY: "Precios e inflación",
     PAGE_INSIGHTS: "Insights",
     PAGE_STAKEHOLDERS: "Interesados",
     PAGE_ANALYSIS: "Método",
 }
-BA_TABS = [BA_TREND_TAB] + list(BA_TAB_OF_VIEW.values())
+BA_TABS = [BA_MONTHLY_TAB, BA_HISTORY_TAB] + list(BA_TAB_OF_VIEW.values())
 RETIRED_VIEWS = {
     "Histórico y estacionalidad": "Contexto del precio",
     "Dashboard general": PAGE_HOME,
@@ -5385,8 +5388,9 @@ BA_TAB_KEY = "ba_tab"
 
 
 def show_ba_page(mode):
-    """«Análisis BA y BI» (D-456): the BA and BI analysis in one page, in tabs. «Tendencias» is the history of the prices
-    as a report; the other tabs are the pages it gathered, drawn by their own code, each under its tab."""
+    """«Análisis BA y BI» (D-456): the BA and BI analysis in one page, in tabs. «Mensual» and «Histórico» (D-457) are the
+    history of the prices as a report, one period month by month and the whole history year by year; the other tabs
+    are the pages it gathered, drawn by their own code, each under its tab."""
     show_page_bar(
         PAGE_BA,
         PAGE_BA,
@@ -5395,17 +5399,20 @@ def show_ba_page(mode):
     )
     palette = charts.get_palette(mode)
     wanted = st.query_params.get(BA_TAB_PARAMETER)
+    wanted = BA_RETIRED_TABS.get(wanted, wanted)
     if wanted in BA_TABS:
         st.session_state[BA_TAB_KEY] = wanted  # read once: from here on, the tabs rule
         st.query_params.pop(BA_TAB_PARAMETER)
     with st.container(key="ba_head", horizontal=True, vertical_alignment="bottom"):
         tab = show_view_tabs(BA_TAB_KEY, BA_TABS, palette)
-        if tab == BA_TREND_TAB:
-            show_ba_filters()  # D-456: the report's filters share the row of the tabs, like a report of Power BI
+        if tab in (BA_MONTHLY_TAB, BA_HISTORY_TAB):
+            show_ba_filters(tab)  # D-456: the report's filters share the row of the tabs, like a report of Power BI
     token = DRAWN_TAB.set(tab)
     try:
-        if tab == BA_TREND_TAB:
-            show_ba_trends(mode)
+        if tab == BA_MONTHLY_TAB:
+            show_ba_monthly(mode)
+        elif tab == BA_HISTORY_TAB:
+            show_ba_history(mode)
         elif tab == BA_TAB_OF_VIEW[PAGE_SEASONALITY]:
             show_price_context_page(mode)
         elif tab == BA_TAB_OF_VIEW[PAGE_INSIGHTS]:
@@ -5420,8 +5427,9 @@ def show_ba_page(mode):
 
 @st.cache_data(show_spinner=False)
 def read_ba_history(database_version):
-    """The history behind «Tendencias» (D-456), read once per database: the monthly index of the families and of the
-    whole basket against the IPC (D-163), K1, K4 and the K6 alerts, each with the month of its week."""
+    """The history behind «Mensual» and «Histórico» (D-456, D-457), read once per database: the monthly index of the
+    families and of the whole basket against the IPC (D-163), K1, K4 and the K6 alerts, each with the month of its
+    week."""
     rows, last = inflation_view.build_family_index(
         queries.run_sql(inflation_view.SERIES_SQL),
         queries.run_sql("SELECT year, month, food_index FROM ipc_monthly"),
@@ -5436,22 +5444,25 @@ def read_ba_history(database_version):
     return rows, last, margins, seasonal, alerts_found
 
 
-def show_ba_filters():
-    """The period and the family of «Tendencias», on the row of the tabs; what each means is on hover."""
+def show_ba_filters(tab):
+    """The family of «Mensual» and «Histórico», and the period of «Mensual», on the row of the tabs; what each means is
+    on hover. «Histórico» has no period: it is always from January 2022 to the last month."""
     rows, last, *_ = read_ba_history(get_database_version())
     if rows.empty:
         return
     with st.container(key="ba_filters", horizontal=True, vertical_alignment="bottom", width="content"):
-        st.selectbox(
-            tr("Período"),
-            ba_trends.periods(last),
-            key="ba_period",
-            format_func=tr,
-            width=190,
-            help=tr("Hasta {}, el último mes que publicó el INE: así cada cifra se compara con la inflación.").format(
-                ba_trends.month_label(last)
-            ),
-        )
+        if tab == BA_MONTHLY_TAB:
+            st.selectbox(
+                tr("Período"),
+                ba_trends.periods(last),
+                key="ba_period",
+                format_func=tr,
+                width=190,
+                help=tr(
+                    "Los últimos 12 meses o un año, mes a mes, hasta {}, el último mes que publicó el INE. Un año se "
+                    "mide de diciembre a diciembre, como el IPC."
+                ).format(ba_trends.month_label(last)),
+            )
         st.selectbox(
             tr("Familia"),
             [ba_trends.BASKET] + ba_trends.families(rows),
@@ -5462,65 +5473,65 @@ def show_ba_filters():
         )
 
 
-def show_ba_trends(mode):
-    """«Tendencias» (D-456): a period and a family, five KPI cards, three charts and the table by family, like a report
-    of Power BI. Every card and column says on hover how it is computed."""
+def chosen_ba_family(rows):
+    """The family chosen in «Mensual» or «Histórico»: the two tabs share it."""
+    choices = [ba_trends.BASKET] + ba_trends.families(rows)
+    return choices, st.session_state.get("ba_family") if st.session_state.get("ba_family") in choices else choices[0]
+
+
+def show_ba_monthly(mode):
+    """«Mensual» (D-457): one period, the last 12 months or one year, month by month: five KPI cards, three charts and
+    the table by family. Every card and column says on hover how it is computed; every chart, which months it shows."""
     palette = charts.get_palette(mode)
     rows, last, margins, seasonal, found = read_ba_history(get_database_version())
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
     st.markdown(ba_trends.build_css(palette), unsafe_allow_html=True)
-    choices = [ba_trends.BASKET] + ba_trends.families(rows)
-    period = st.session_state.get("ba_period") or ba_trends.periods(last)[0]
-    family = st.session_state.get("ba_family") if st.session_state.get("ba_family") in choices else choices[0]
+    choices, family = chosen_ba_family(rows)
+    period = st.session_state.get("ba_period")
+    if period not in ba_trends.periods(last):
+        period = ba_trends.periods(last)[0]
     start, end = ba_trends.bounds(period, last)
-    figures = ba_trends.summarize(rows, margins, seasonal, found, family, start, end)
-    st.markdown(ba_trends.build_cards(figures, start, end), unsafe_allow_html=True)
-    columns = st.columns(3, gap="medium")
-    titles = [
-        (
-            tr("Precio mes a mes"),
-            tr("inicio del período = 100; punteado, el IPC"),
-            tr(
-                "Índice del primer mes del período = 100, para la selección y para el IPC de alimentos del INE: arriba "
-                "de la línea punteada, subió más que la inflación."
-            ),
-        ),
-        (
-            tr("Temporada"),
-            # D-456: the months of the calendar, each gathering its weeks of every year from the first to the last month
-            tr("{} – {}; cada mes frente a su año").format(*ba_trends.season_span(start, end)),
-            tr(
-                "K4: el precio de cada semana sobre el promedio de su año; la mediana por mes del calendario. Con varios "
-                "años, cada barra junta ese mes de todos ellos; al pasar el cursor, sus años. Azul: meses más baratos que "
-                "el promedio; rojo: más caros."
-            ),
-        ),
-        (
-            tr("Valores atípicos por mes"),
-            tr("alertas de precio (K6): subidas y bajadas"),
-            tr(
-                "K6: una alerta compara el cambio de la semana con sus 12 semanas previas, así que la primera posible "
-                "es de abril 2022. Rojo: subidas; azul: bajadas."
-            ),
-        ),
-    ]
-    drawings = [
-        ba_trends.trend_chart(rows, family, start, end, mode),
-        ba_trends.season_chart(figures["profile"], mode),
-        ba_trends.alerts_chart(ba_trends.within(found, start, end, family), start, end, mode),
-    ]
-    for column, (title, note, hint), drawing in zip(columns, titles, drawings):
-        with column:
-            st.markdown(
-                f'<p class="ba-chart-title" title="{html.escape(hint, quote=True)}">{html.escape(title)}'
-                f"<span>{html.escape(note)}</span></p>",
-                unsafe_allow_html=True,
-            )
-            st.altair_chart(drawing, use_container_width=True)
-    summaries = [ba_trends.summarize(rows, margins, seasonal, found, name, start, end) for name in choices]
-    st.markdown(ba_trends.build_table(summaries, family), unsafe_allow_html=True)
+    figures = ba_trends.monthly(rows, margins, seasonal, found, family, start, end)
+    st.markdown(
+        ba_trends.monthly_cards(figures, start, end, ba_trends.wholesale_families(margins)), unsafe_allow_html=True
+    )
+    show_ba_tiles(ba_trends.monthly_tiles(rows, figures, start, end, mode))
+    summaries = [ba_trends.monthly(rows, margins, seasonal, found, name, start, end) for name in choices]
+    st.markdown(ba_trends.monthly_table(summaries, family), unsafe_allow_html=True)
+
+
+def show_ba_history(mode):
+    """«Histórico» (D-457): the whole history, from January 2022 to the last month, year by year and by season: five
+    KPI cards, three charts and the table by family."""
+    palette = charts.get_palette(mode)
+    rows, last, margins, seasonal, found = read_ba_history(get_database_version())
+    if rows.empty:
+        st.info(NO_DATA_TEXT)
+        return
+    st.markdown(ba_trends.build_css(palette), unsafe_allow_html=True)
+    choices, family = chosen_ba_family(rows)
+    figures = ba_trends.history(rows, margins, seasonal, found, family, last)
+    st.markdown(ba_trends.history_cards(figures, last), unsafe_allow_html=True)
+    show_ba_tiles(ba_trends.history_tiles(rows, figures, last, mode))
+    summaries = [ba_trends.history(rows, margins, seasonal, found, name, last) for name in choices]
+    st.markdown(ba_trends.history_table(summaries, family), unsafe_allow_html=True)
+
+
+def show_ba_tiles(tiles):
+    """D-457: three charts side by side, each with its title and the months it shows. On hover a chart grows, never
+    past the page, and says what it measures and what follows from it."""
+    for index, (column, (title, note, measures, deduce, draw)) in enumerate(zip(st.columns(3, gap="medium"), tiles)):
+        heading = f'<p class="ba-chart-title">{html.escape(title)}<span>{html.escape(note)}</span></p>'
+        with column, st.container(key=f"ba_tile_{index}"):
+            st.markdown(heading, unsafe_allow_html=True)
+            st.altair_chart(draw(), width="stretch", theme=None)
+            with st.container(key=f"ba_zoom_{index}"):
+                st.markdown(heading + ba_trends.zoom_text(measures, deduce), unsafe_allow_html=True)
+                st.altair_chart(
+                    draw(width=ba_trends.ZOOM_WIDTH, height=ba_trends.ZOOM_HEIGHT), width="content", theme=None
+                )
 
 
 def show_ba_method(mode):

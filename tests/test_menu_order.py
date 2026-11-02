@@ -13,7 +13,7 @@ DASHBOARD_FILE = str(Path(dashboard.__file__))
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
 # D-456: the section is its three dashboards, as tiles; what were its other pages are tabs of the third.
 TILES = [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS, dashboard.PAGE_BA]
-TABS = ["Tendencias", "Precios e inflación", "Insights", "Interesados", "Método"]
+TABS = ["Mensual", "Histórico", "Precios e inflación", "Insights", "Interesados", "Método"]  # D-457
 
 
 def draw(profile, view, language="es"):

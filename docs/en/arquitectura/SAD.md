@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.15 |
+| Version | 3.16 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -514,3 +514,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.13 | 2026-11-02 | The app's diagrams in the document, drawn by the same code: tools (3.4), where the data lives, star schema, entity-relationship and crossings between databases (6.1 to 6.4), and deployment (7); the data dictionary moves to 6.5 (D-448) |
 | 3.14 | 2026-11-02 | The data is drawn with the journey by layers of «Pipeline and lineage», instead of a drawing of its own (6, D-455) |
 | 3.15 | 2026-11-02 | The User view and the key scenarios name «BA and BI analysis», which gathers in tabs Prices and inflation, Insights and Stakeholders (2.1, 5, D-456) |
+| 3.16 | 2026-11-02 | The key scenarios name the tabs «Monthly» and «Historical» of «BA and BI analysis», which replace «Trends» (2.1, D-457) |

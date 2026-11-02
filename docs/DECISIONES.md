@@ -3656,3 +3656,38 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - `tests/test_business_analysis.py::test_d456_the_method_tab_draws_the_kpis_and_the_system_decisions_and_insights_links_to_it` y `::test_d456_the_method_tab_reads_in_english`.
   - `tests/test_page_bar.py::test_d391_the_inflation_page_sits_in_its_menu_section` (la dirección abre su pestaña).
   - Las del menú, el encabezado, el idioma y los documentos, con la sección nueva.
+
+## D-457 · «Análisis BA y BI»: lo mensual y lo histórico en pestañas separadas, y cada gráfico se explica al pasar el cursor
+
+- **Pedido del autor:** en «Tendencias» no se entendía de qué año eran los meses de «Precio mes a mes», y el período (12 meses) y la historia (desde 2022) se mezclaban en la misma vista. Todo lo mensual y periódico va en una pestaña; todo lo histórico, de 2022 a 2026, en otra. Cada gráfico dice claramente su período. Al pasar el cursor, el gráfico se agranda, sin pasar el ancho de la página, y explica qué mide y qué se deduce, para que nadie tenga que adivinar. Sin un solo error en las cifras: es el portafolio del autor y lo verá un gerente.
+- **Diagnóstico:**
+  - El eje de «Precio mes a mes» mostraba los meses sin año, y su subtítulo decía «inicio del período = 100» sin nombrar ese mes.
+  - «Tendencias» tenía el período «Desde ene 2022» junto a los de 12 meses y de un año: la misma vista servía para un período y para toda la historia.
+  - Las explicaciones estaban solo en el título de cada gráfico, en un texto fijo que no decía lo que muestran los datos.
+- **Decisión:**
+  - **Pestañas:** «Tendencias» se divide en «Mensual» e «Histórico». Las pestañas de «Análisis BA y BI» son seis: Mensual, Histórico, Precios e inflación, Insights, Interesados y Método. La dirección antigua de «Tendencias» abre «Mensual».
+  - **Mensual:** un período, los últimos 12 meses o un año, mes a mes. Se elige el período y la familia.
+    - Cinco cifras clave: cambio de precios, frente al IPC, brecha consumidor–mayorista (K1), alertas de precio (K6) y mayor alza mensual.
+    - Tres gráficos: precio mes a mes, cambio de cada mes frente al anterior (con el IPC de ese mes) y alertas de precio por mes.
+    - La tabla por familia.
+  - **Histórico:** siempre de enero 2022 al último mes que publicó el INE, por año y temporada. Se elige solo la familia, que las dos pestañas comparten.
+    - Cinco cifras clave: cambio desde enero 2022, frente al IPC, año de mayor alza, mes más barato (K4) y alertas de precio.
+    - Tres gráficos: precio desde enero 2022, cambio de cada año (con el IPC de ese año) y temporada.
+    - La tabla por familia.
+  - **Cada gráfico dice sus meses:** «sep 2025 – sep 2026 · base sep 2025 = 100», «oct 2025 – sep 2026 · frente al mes anterior», «2022–2026 · de diciembre a diciembre». Cada tarjeta dice los dos meses que compara («sep 2025 → sep 2026»).
+  - **Zoom al pasar el cursor:** el gráfico se agranda en una ventana de 750 px como máximo (o 72 % de la pantalla), dentro de la página, y dice «Qué mide» y «Qué se deduce». El texto se calcula con las mismas cifras que dibuja; nada se escribe a mano. Las definiciones de K1, K6 y del índice frente al IPC son las de «Método» (`overview.KPIS` y `alerts.describe_rule`, D-385).
+- **Cómo se mide un cambio:**
+  - Los últimos 12 meses, desde el mismo mes del año anterior; un año, de diciembre a diciembre, como el IPC del INE. 2022 empieza en enero, el mes base, porque no hay índice antes, y el año en curso llega al último mes publicado. El gráfico de cada año lo dice al pasar el cursor («desde ene», «hasta sep»).
+  - Un mes sin índice queda vacío; nunca se rellena.
+  - «Frente al IPC» se colorea solo a más de 2 puntos, igual que su veredicto y la tabla. Antes se coloreaba por su signo, y un «+1,8 pts» rojo decía «al ritmo de la inflación».
+- **Coherencia de las cifras** (base del 31-10-2026):
+  - **Mensual:** en los últimos 12 meses la canasta sube +6,1 % y el IPC +4,3 %, igual que en «Precios e inflación». Sus 12 cambios mensuales encadenados dan el mismo +6,1 %. Subió en 8 de 12 meses; la mayor alza fue jul 2026 (+3,9 %).
+  - **Histórico:** desde enero 2022 la canasta sube +43,7 % y el IPC +44,8 %. Los cambios de cada año (2022 +16,4 %, 2023 +5,6 %, 2024 +4,6 %, 2025 +2,8 % y 2026 hasta septiembre +8,7 %) encadenados dan el mismo +43,7 %. Solo 2026 superó al IPC por más de 2 puntos.
+  - **Alertas:** 916 en los últimos 12 meses y 4.004 desde 2022, la suma de las filas de cada tabla. La base tiene 4.057: las 53 restantes son de octubre 2026, después del último mes del IPC.
+  - **Temporada:** febrero es el mes más barato (−3,6 % frente al promedio de su año) y noviembre el más caro (+2,5 %). Son precios del día: cuando los precios suben durante el año, los primeros meses quedan bajo su promedio y los últimos sobre él. El zoom lo dice, para no confundir la inflación con la temporada.
+- **Medición (Playwright):** las dos pestañas caben sin desplazar la página a 1440 × 900 y 1440 × 790, en español e inglés. El zoom queda dentro de la página, en tema oscuro y claro. A 1280 × 800, «Mensual» se desplaza 50 px: los filtros bajan a una segunda fila bajo las seis pestañas.
+- **Documentos:** PRD 3.23 (3.2 y 7), SAD 3.16 (los escenarios clave), Glosario 2.9, CLAUDE.md, README y la captura M-3, en los dos idiomas.
+- **Pruebas:**
+  - `tests/test_ba_trends.py`: los cambios de cada mes encadenados dan el del período; los de cada año, el de enero 2022; las cifras coinciden con «Precios e inflación»; cada frase del zoom tiene las cifras que explica; cada tarjeta usa las definiciones de «Método»; un mes sin índice queda vacío; cada pestaña dibuja sus tres gráficos con su versión grande; la dirección de «Tendencias» abre «Mensual».
+  - `tests/i18n_audit.py`: la auditoría de inglés recorre cada pestaña de «Análisis BA y BI», y «Mensual» con 2022 y una familia.
+  - Las del menú y de los documentos, con las seis pestañas.
