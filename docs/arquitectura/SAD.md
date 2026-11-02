@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.11 |
-| Fecha | 01-11-2026 |
+| Versión | 3.12 |
+| Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo está construido GreenOcean, cómo corre cada semana, dónde viven sus datos y por qué tiene esa forma. |
@@ -124,7 +124,7 @@ Al abrirse, el panel compara su base con el puntero de la rama `main`. Si su cop
 
 La entrada pide la vista en cada visita y en cada recarga que hace el lector:
 
-- **Usuario:** el negocio. El Panorama de precios, guiado en tres pasos, Insights y Precios e inflación.
+- **Usuario:** el negocio. El Dashboard, guiado en tres pasos, Insights y Precios e inflación.
 - **Profesional:** todo el proyecto, ordenado según el perfil que elige (Data Eng, BA, BI, DevOps o Seguridad).
 - **Autor:** lo mismo que Profesional, más su parte, con la clave de control.
 
@@ -219,7 +219,7 @@ El recorrido y el linaje están en [[vista:Pipeline y linaje]], y el modelo, en 
 
 ### latest_by_source
 
-Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la página «Último dato por canal»; el Panorama y los indicadores leen `weekly_price`.
+Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la página «Último dato por canal»; el Dashboard y los indicadores leen `weekly_price`.
 
 | Columna | Tipo | Clave | Descripción |
 |---|---|---|---|
@@ -320,7 +320,7 @@ Las dos últimas semanas de cada fuente, sin el corte de D-356. Solo la lee la p
 | `failures` | INTEGER | | Filas que no cumplen la prueba |
 | `generated_at` | VARCHAR | | Fecha del `dbt build` |
 
-**Semanas que esperan.** Cuando una fuente ya publicó una semana y la otra no, esa semana no entra a la base. Espera a la otra fuente, sin rellenar nada. La línea de `etl_run` de esa carga lo dice (`SOURCE_LATE: wholesale 2026-10-19`) y el Panorama muestra «ODEPA aún no publica la semana 19–25 oct (mayorista)» (D-356, D-374).
+**Semanas que esperan.** Cuando una fuente ya publicó una semana y la otra no, esa semana no entra a la base. Espera a la otra fuente, sin rellenar nada. La línea de `etl_run` de esa carga lo dice (`SOURCE_LATE: wholesale 2026-10-19`) y el Dashboard muestra «ODEPA aún no publica la semana 19–25 oct (mayorista)» (D-356, D-374).
 
 ## 7. Despliegue
 
@@ -477,3 +477,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.9 | 01-11-2026 | «Base servida» pasa a «Base DuckDB · `etl/datos.duckdb`» en todo el documento; los contenedores muestran la subida al release «base-actual», la lectura desde él y las flechas del panel web a GitHub con sus tokens (3, D-426) |
 | 3.10 | 01-11-2026 | Los escenarios clave caben como los demás diagramas: la Base DuckDB y GitHub Actions pasan bajo el panel web, sin quitar ningún contenido (2.1, D-429) |
 | 3.11 | 01-11-2026 | Dos riesgos de abandono con su mitigación propuesta, y todas las dependencias con versión máxima (11, D-435, D-439) |
+| 3.12 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |

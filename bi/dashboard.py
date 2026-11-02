@@ -111,7 +111,7 @@ PAGE_SQL = "Consultas SQL"
 RETIRED_VIEWS = {
     "Histórico y estacionalidad": "Contexto del precio",
     "Dashboard general": PAGE_HOME,
-    "Dónde comprar": PAGE_HOME,  # D-325: the page is gone; its old address opens the Panorama
+    "Dónde comprar": PAGE_HOME,  # D-325: the page is gone; its old address opens the Dashboard
 }
 PAGE_KPI = "Indicadores explicados"
 PAGE_OPERATIONS = "Monitoreo"
@@ -449,7 +449,7 @@ ROLE_ORDER = {
 DEFAULT_ROLE = "bi"  # a user view unlocked with the key reads the business first
 LANDING_STATE = "profile_landing"
 # What the public profile sees in the menu; the rest is one click away («Ver todo el proyecto»).
-PUBLIC_BLOCKS = {"negocio", "fuentes"}
+PUBLIC_BLOCKS = {"dashboard", "negocio", "fuentes"}
 
 DEFAULT_CHANNEL = "Feria libre"
 SUPERMARKET = "Supermercado"
@@ -649,7 +649,7 @@ def choose_profile(profile, role=None):
     st.session_state[PROFILE_STATE] = profile
     if role:
         st.session_state[ROLE_STATE] = role
-    st.session_state[LANDING_STATE] = True  # D-371: the next run opens the Panorama
+    st.session_state[LANDING_STATE] = True  # D-371: the next run opens the Dashboard
     settle_profile()
 
 
@@ -695,7 +695,9 @@ def menu_blocks_of_profile():
         return [block for block in MENU_BLOCKS if block[0] in PUBLIC_BLOCKS]
     by_key = {block[0]: block for block in MENU_BLOCKS}
     order = ROLE_ORDER[get_role()] if get_profile() else [block[0] for block in MENU_BLOCKS]
-    blocks = [by_key[key] for key in order] + [block for block in MENU_BLOCKS if block[0] not in order]
+    # D-442: the Dashboard tile leads every profile's menu; the role orders the sections under it.
+    blocks = [by_key[DASHBOARD_TILE_BLOCK]] + [by_key[key] for key in order]
+    blocks += [block for block in MENU_BLOCKS if block not in blocks]
     if (
         get_profile() and get_role() == "seguridad"
     ):  # security first inside its own section (D-420: «Stack y evidencia»)
@@ -1012,7 +1014,7 @@ def show_profile_switch():
 
 
 def open_profile_landing(windows_by_title):
-    """D-371: right after a choice, the Panorama, whatever page the window opened on; only a document the address
+    """D-371: right after a choice, the Dashboard, whatever page the window opened on; only a document the address
     opens («Abrir» or «PDF» of the folder) stays where it is."""
     if not st.session_state.pop(LANDING_STATE, False):
         return
@@ -2549,16 +2551,16 @@ def read_week_range():
 
 
 def read_latest_week():
-    """Monday of the latest week with prices: the Panorama's common week, or a channel's own (D-405)."""
+    """Monday of the latest week with prices: the Dashboard's common week, or a channel's own (D-405)."""
     channel = current_channel()
     if channel is not None:
         return pd.Timestamp(max(read_channel_frame(get_database_version(), channel)["week_start"]))
     return pd.Timestamp(read_week_range()["last_week"])
 
 
-# D-405: the Panorama's data, for every channel (the Panorama itself) or for one channel with its own two latest weeks
+# D-405: the Dashboard's data, for every channel (the Dashboard itself) or for one channel with its own two latest weeks
 # (a channel page of «Último dato por canal», read from latest_by_source). The scope is set while a channel page draws;
-# every reader below keys its cache on it, so the Panorama never shows a channel's numbers, and the same code draws both.
+# every reader below keys its cache on it, so the Dashboard never shows a channel's numbers, and the same code draws both.
 PRICE_SCOPE: contextvars.ContextVar[str | None] = contextvars.ContextVar("price_scope", default=None)
 NATIONAL_KEY = ["week_start", "product_group", "product", "variety", "quality", "channel", "normalized_unit"]
 
@@ -2568,7 +2570,7 @@ def current_channel():
 
 
 def scoped(name):
-    """A key of the Panorama's state, its own for each channel page."""
+    """A key of the Dashboard's state, its own for each channel page."""
     channel = current_channel()
     return name if channel is None else f"{name}@{channel}"
 
@@ -3719,7 +3721,7 @@ def read_filter(name):
 
 
 def read_cached_filter_options(database_version):
-    """D-405: keyed on the scope, so a channel page never reads the Panorama's cache."""
+    """D-405: keyed on the scope, so a channel page never reads the Dashboard's cache."""
     return read_cached_filter_options_in(database_version, current_channel())
 
 
@@ -3796,7 +3798,7 @@ export default function(component) {
 }
 """
 HOME_LINK_PARAMETERS = ("_home_region", "_home_week", "familia")
-# D-352: the reading order of the Panorama. A map or «Todo Chile» click completes step 1, a family click step 2; for the
+# D-352: the reading order of the Dashboard. A map or «Todo Chile» click completes step 1, a family click step 2; for the
 # user view the panels 2 and 3 stay locked until the step before them is done, and a step done is never locked again.
 HOME_STEP_PARAMETER = "_home_step"
 HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_FLASH = "home_region_done", "home_family_done", "home_flash"
@@ -4313,7 +4315,7 @@ def matches_product_search(row, query):
 
 
 def read_cached_region_directions(database_version, week):
-    """D-405: keyed on the scope, so a channel page never reads the Panorama's cache."""
+    """D-405: keyed on the scope, so a channel page never reads the Dashboard's cache."""
     return read_cached_region_directions_in(database_version, week, current_channel())
 
 
@@ -4346,7 +4348,7 @@ def read_cached_region_directions_in(database_version, week, channel):
 
 
 def read_cached_region_calculation(database_version, week):
-    """D-405: keyed on the scope, so a channel page never reads the Panorama's cache."""
+    """D-405: keyed on the scope, so a channel page never reads the Dashboard's cache."""
     return read_cached_region_calculation_in(database_version, week, current_channel())
 
 
@@ -4429,14 +4431,14 @@ def build_steps_css(palette, region_open, family_open, flash, searched=False):
 
 
 def read_home_trends(database_version, week):
-    """D-405: keyed on the scope, so a channel page never reads the Panorama's cache."""
+    """D-405: keyed on the scope, so a channel page never reads the Dashboard's cache."""
     return read_home_trends_in(database_version, week, current_channel())
 
 
 @st.cache_data(show_spinner=False)
 def read_home_trends_in(database_version, week, channel):
     """The last 8 weeks of the median weekly change (national, in %) by family and for the whole basket, for the little
-    lines of the Panorama (D-352). Comparable series only, like the median beside them; calculated from the same
+    lines of the Dashboard (D-352). Comparable series only, like the median beside them; calculated from the same
     weekly variations as the weeks table."""
     variations = read_cached_all_variations(database_version)
     upto = variations[variations["week_start"] <= pd.Timestamp(week)]
@@ -4576,7 +4578,7 @@ def show_market_overview(mode, prefix):
     with st.container(key='home_info', horizontal=True, vertical_alignment='center'):
         home_view = (
             st.segmented_control(
-                tr('Vista del Panorama'),
+                tr('Vista del Dashboard'),
                 HOME_VIEWS,
                 default=HOME_VIEWS[0],
                 format_func=tr,
@@ -4810,13 +4812,13 @@ def show_products_dialog(
 
 
 def scope_address():
-    """The address of the page that draws the Panorama: the Panorama itself, or a channel page (D-405)."""
+    """The address of the page that draws the Dashboard: the Dashboard itself, or a channel page (D-405)."""
     channel = current_channel()
     return build_page_address(PAGE_HOME) if channel is None else channel_address(channel)
 
 
 def scope_path():
-    """The path of the bar: the Panorama's, or «… › Último dato por canal › Feria libre» (D-405)."""
+    """The path of the bar: the Dashboard's, or «… › Último dato por canal › Feria libre» (D-405)."""
     channel = current_channel()
     if channel is None:
         return build_view_path(WINDOW_OF_VIEW[PAGE_HOME], PAGE_HOME)
@@ -5212,7 +5214,7 @@ def show_overview_insights(mode, version):
         (
             "¿Qué está subiendo y qué está bajando esta semana?",
             "Persona común",
-            "Panorama de precios",
+            "Dashboard",
             f"Subieron: {overview.join(rose) or 'ninguna familia'}. Bajaron: {overview.join(fell) or 'ninguna familia'}.",
         ),
         (
@@ -5331,7 +5333,7 @@ def show_overview_insights(mode, version):
 
 
 def show_weeks_table(mode, version):
-    """The table of the last weeks, one row per family and one column per week (D-308): it opens from the Panorama."""
+    """The table of the last weeks, one row per family and one column per week (D-308): it opens from the Dashboard."""
     variations = read_cached_all_variations(version)
     weeks = sorted(variations["week_start"].unique())
     week = pd.Timestamp(weeks[-1])
@@ -5559,7 +5561,7 @@ def show_analysis_block(block, mode):
     elif block == "KPIs":
         show_analysis_lead(
             tr(
-                "Los valores de cada KPI se ven en el Panorama de precios, en Insights y en Precios e inflación. "
+                "Los valores de cada KPI se ven en el Dashboard, en Insights y en Precios e inflación. "
                 "Un KPI con indicador técnico (K1 a K8) abre su cálculo paso a paso; los demás se calculan solo para "
                 "el panel."
             )
@@ -5748,7 +5750,7 @@ def show_channels_page(mode):
 
 
 def show_channel_detail(mode, frame, card):
-    """D-405: one channel, drawn by the Panorama itself (map, families and products, in its three steps), with that
+    """D-405: one channel, drawn by the Dashboard itself (map, families and products, in its three steps), with that
     channel's prices and its own latest week."""
     token = PRICE_SCOPE.set(card["channel"])
     try:
@@ -8474,7 +8476,7 @@ def restore_return_context():
 PAGE_HISTORY = "page_history"
 RETURN_TARGET = "return_target"
 HISTORY_LIMIT = 30
-# Besides its address, a page is its report filters and the Panorama's steps (each channel keeps its own, «key@canal»).
+# Besides its address, a page is its report filters and the Dashboard's steps (each channel keeps its own, «key@canal»).
 HISTORY_STATE_KEYS = {*RETURN_CONTEXT_KEYS, HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_EXPANDED, HOME_SEARCHED}
 # The parameters every address carries (theme, language, view) never make a new step.
 CONTEXT_PARAMETERS = {THEME_PARAMETER, i18n.LANGUAGE_PARAMETER, PROFILE_PARAMETER, ROLE_PARAMETER, "_ctx"}
@@ -8624,12 +8626,14 @@ RELOAD_HOME_SCRIPT = """<script>
 # with a faint fill and a blue bar on its left. The documents close the list, before the sources.
 # (key, title, pages or source links)
 MENU_BLOCKS = [
+    # D-442: the Dashboard, the weekly summary of prices, is the main page: a tile of its own at the top of the menu.
+    ("dashboard", "Dashboard", [PAGE_HOME]),
     (
         "negocio",
         "Negocio · BA y BI",
         # D-378: the reading order of a visitor: first who it is for and the analysis (BA and BSA), then the prices (BI)
         # D-398: «Precios e inflación» joins the menu, after «Último dato por canal» (4C): the header no longer opens it.
-        [PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_HOME, PAGE_CHANNELS, PAGE_SEASONALITY, PAGE_INSIGHTS],
+        [PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_CHANNELS, PAGE_SEASONALITY, PAGE_INSIGHTS],
     ),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG]),  # D-420: the Autor's only
@@ -8706,7 +8710,7 @@ SIDEBAR_TOP_LABELS = {
 }
 SIDEBAR_LABELS = {
     PAGE_INSIGHTS: "Insights",
-    PAGE_HOME: "Panorama de precios",
+    PAGE_HOME: "Dashboard",
     PAGE_SEASONALITY: "Precios e inflación",
     PAGE_DIAGRAMS: "Pipeline y linaje",
     PAGE_OPERATIONS: "Calidad y auditoría",
@@ -8880,18 +8884,46 @@ def build_sidebar_css(mode):
         border-color:{MENU_INK[dark][5]};}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
     [class*="st-key-nav_folder_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] {{margin:2px 0 10px !important;}}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a {{display:flex !important; flex-direction:row;
+        align-items:center; gap:12px !important; width:100% !important; min-height:58px !important; padding:8px 12px !important;
+        border-radius:12px; background:{MENU_INK[dark][3]} !important; border:1px solid {MENU_INK[dark][5]} !important;
+        box-shadow:none !important;}}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:52px; height:38px;
+        background:url("data:image/svg+xml;base64,{base64.b64encode(DASHBOARD_TILE_SVG.encode()).decode()}") center / contain no-repeat;
+        transition:transform .18s ease;}}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a:hover {{background:{MENU_INK[dark][4]} !important;}}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a:hover::before {{transform:translateY(-2px);}}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
+        font-size:1rem !important; font-weight:700 !important; margin:0 !important;}}
+    .st-key-nav_dashboard_tile_nav_current [data-testid="stPageLink"] a {{border-color:{MENU_INK[dark][6]} !important;
+        box-shadow:inset 3px 0 0 #5aa9ea !important;}}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
     .st-key-sidebar_footer [data-testid="stCaptionContainer"] p {{color:{text} !important; opacity:.75;
         font-size:.69rem; line-height:1.35; padding:0 3px;}}
     </style>"""
 
 
-SIDEBAR_NAV_VERSION = 10
+SIDEBAR_NAV_VERSION = 11  # D-442: the Dashboard tile
 # D-286: the sources start folded; the documents are a folder at the end of the menu, not a section.
 FOLDED_BY_DEFAULT = {"fuentes"}
 FOLDER_TILE_BLOCK = "documentos"
 # D-287: the sources are a tile of their own beside the folder; their links open in a floating panel.
 SOURCES_TILE_BLOCK = "fuentes"
-TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK}
+# D-442: the Dashboard is a tile at the top of the menu, not a line of a section.
+DASHBOARD_TILE_BLOCK = "dashboard"
+TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK, DASHBOARD_TILE_BLOCK}
+# A dashboard in miniature: three figures over a bar chart and a line, in the colours of the charts.
+DASHBOARD_TILE_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 46"><rect x="1" y="1" width="62" height="44" rx="6" '
+    'fill="#1d3557" stroke="#5aa9ea" stroke-width="1.5"/><rect x="6" y="6" width="15" height="8" rx="2" fill="#5aa9ea"/>'
+    '<rect x="24.5" y="6" width="15" height="8" rx="2" fill="#5fd39b"/><rect x="43" y="6" width="15" height="8" rx="2" '
+    'fill="#f0b347"/><rect x="7" y="31" width="5" height="9" rx="1" fill="#8ac6f5"/><rect x="15" y="26" width="5" '
+    'height="14" rx="1" fill="#8ac6f5"/><rect x="23" y="21" width="5" height="19" rx="1" fill="#8ac6f5"/>'
+    '<path d="M34 37l7-8 6 4 11-12" fill="none" stroke="#5fd39b" stroke-width="2.4" stroke-linecap="round" '
+    'stroke-linejoin="round"/></svg>'
+)
 SOURCES_TILE_SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><ellipse cx="28" cy="10" rx="20" ry="6" '
     'fill="#5fd39b"/><path d="M8 10v28c0 3.3 9 6 20 6s20-2.7 20-6V10c0 3.3-9 6-20 6S8 13.3 8 10z" '
@@ -8919,6 +8951,7 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
     show_profile_indicator()  # D-373: first, right under the logo
     show_run_indicator()  # D-351
     show_load_alert(windows_by_title)  # D-298: first in the menu, where nothing covers it
+    show_dashboard_tile(windows_by_title, current_window, current_view)  # D-442
     for key, title, pages in visible_menu_blocks():
         if key in TILE_BLOCKS:
             continue  # D-286, D-287: the folder and the sources live in the footer, always in sight
@@ -8955,6 +8988,19 @@ def show_footer_tiles(windows_by_title, current_window, current_view):
                         buttons.build_link_html(tr(name), url, icon="external", variant="text", external=True),
                         unsafe_allow_html=True,
                     )
+
+
+def show_dashboard_tile(windows_by_title, current_window, current_view):
+    """D-442: the Dashboard, the weekly summary of prices, as a large tile at the top of the menu, for every profile;
+    it stays lit while it is open."""
+    window = WINDOW_OF_VIEW[PAGE_HOME]
+    active = window == current_window and current_view == PAGE_HOME
+    with st.sidebar.container(key="nav_dashboard_tile" + ("_nav_current" if active else "")):
+        st.page_link(
+            windows_by_title[window],
+            label=tr(SIDEBAR_LABELS[PAGE_HOME]),
+            query_params=keep_context() | {VIEW_PARAMETER: PAGE_HOME},
+        )
 
 
 def show_folder_tile(windows_by_title, current_window, current_view):
@@ -9017,7 +9063,7 @@ def build_sidebar_github_html(is_current):
 WINDOW_PAGES = {}
 
 
-# D-398: «Semanas» left the header: the Panorama shows the week, or the table of the last weeks, from a selector of
+# D-398: «Semanas» left the header: the Dashboard shows the week, or the table of the last weeks, from a selector of
 # its content.
 HOME_VIEW_KEY = "home_view"
 HOME_VIEWS = ["La semana", "Últimas semanas"]

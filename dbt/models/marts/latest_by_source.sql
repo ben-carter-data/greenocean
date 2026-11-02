@@ -1,5 +1,5 @@
 -- D-365: las dos últimas semanas de cada fuente, sin el corte de D-356, para la página «Último dato
--- por canal». El Panorama y los indicadores siguen con la semana completa en ambas fuentes; aquí cada
+-- por canal». El Dashboard y los indicadores siguen con la semana completa en ambas fuentes; aquí cada
 -- fuente muestra su propia última semana. RN-12 se aplica igual: un precio a más de 5 veces, o a menos
 -- de 1/5, de la mediana de su producto esa semana y fuente queda ATIPICO.
 with weeks as (

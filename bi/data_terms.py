@@ -1,7 +1,7 @@
 """D-403: the words the data brings, in the reader's language: families, channels, qualities and units.
 
 ODEPA writes them in Spanish and the database keeps them as published. The panel translates them only when it draws a
-page (the Panorama, the channel pages), never in the data: the SQL studio and the downloads show what is stored. The
+page (the Dashboard, the channel pages), never in the data: the SQL studio and the downloads show what is stored. The
 product names are not translated. A test checks that every family, channel, quality and unit of the served database
 has its English here.
 """
@@ -18,7 +18,7 @@ FAMILIES = {
     "Hortalizas": "Vegetables",
     "Lácteos - Huevos - Margarinas": "Dairy - Eggs - Margarines",
     "Pan": "Bread",
-    # The short names the Panorama draws (D-301)
+    # The short names the Dashboard draws (D-301)
     "Cerdo · Ave · Cordero": "Pork · Poultry · Lamb",
     "Lácteos y huevos": "Dairy and eggs",
 }

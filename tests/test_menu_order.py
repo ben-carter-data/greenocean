@@ -13,7 +13,6 @@ needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="
 ORDER = [
     dashboard.PAGE_STAKEHOLDERS,
     dashboard.PAGE_ANALYSIS,
-    dashboard.HOME_PAGE,
     dashboard.PAGE_CHANNELS,
     dashboard.PAGE_SEASONALITY,  # D-398
     dashboard.PAGE_INSIGHTS,
@@ -28,14 +27,15 @@ def draw(profile, view, language="es"):
 
 
 def test_d378_the_section_lists_who_it_is_for_and_the_analysis_before_the_prices():
-    assert dashboard.MENU_BLOCKS[0][0] == "negocio" and dashboard.MENU_BLOCKS[0][1] == "Negocio · BA y BI"
-    assert dashboard.MENU_BLOCKS[0][2] == ORDER
-    assert dashboard.MENU_ORDER[:6] == ORDER  # the path and the previous/next footer follow it (D-250)
+    # D-442: the Dashboard leads the menu as a tile of its own; the section follows it.
+    assert dashboard.MENU_BLOCKS[0] == ("dashboard", "Dashboard", [dashboard.HOME_PAGE])
+    assert dashboard.MENU_BLOCKS[1][0] == "negocio" and dashboard.MENU_BLOCKS[1][1] == "Negocio · BA y BI"
+    assert dashboard.MENU_BLOCKS[1][2] == ORDER
+    assert dashboard.MENU_ORDER[:6] == [dashboard.HOME_PAGE] + ORDER  # the path and the footer follow it (D-250)
     labels = [dashboard.SIDEBAR_LABELS.get(view, view) for view in ORDER]
     assert labels == [
         "Interesados",
         "Análisis de negocio y sistemas",
-        "Panorama de precios",
         "Último dato por canal",
         "Precios e inflación",
         "Insights",
@@ -50,9 +50,9 @@ def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_o
         (
             "es",
             [
+                "Dashboard",
                 "Interesados",
                 "Análisis de negocio y sistemas",
-                "Panorama de precios",
                 "Último dato por canal",
                 "Precios e inflación",
                 "Insights",
@@ -61,9 +61,9 @@ def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_o
         (
             "en",
             [
+                "Dashboard",
                 "Stakeholders",
                 "Business and systems analysis",
-                "Price overview",
                 "Latest data by channel",
                 "Prices and inflation",
                 "Insights",
@@ -77,6 +77,7 @@ def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_o
         ] == expected  # the user view: only this block
         professional = draw("profesional", dashboard.PAGE_STAKEHOLDERS, language)
         assert not professional.exception
+        # D-442: the Dashboard tile first, then the section
         assert [link.proto.label for link in professional.sidebar.get("page_link")][:6] == expected
 
 
@@ -93,18 +94,19 @@ def test_d378_the_main_pages_of_the_section_have_no_route_footer_and_the_next_se
         assert view in dashboard.OVERVIEW_CLASS_BY_VIEW and footer(view) == [], view
     # The next section still follows the last page of this one, so the previous/next footers of the rest do not change.
     assert dashboard.MENU_ORDER[5:7] == [dashboard.PAGE_INSIGHTS, dashboard.PAGE_DIAGRAMS]
+    assert footer(dashboard.HOME_PAGE) == []
 
 
 @needs_database
-def test_d378_choosing_a_view_still_opens_the_panorama_though_the_menu_now_starts_elsewhere():
-    assert dashboard.MENU_ORDER[0] != dashboard.HOME_PAGE
+def test_d378_choosing_a_view_opens_the_dashboard():
+    assert dashboard.MENU_ORDER[0] == dashboard.HOME_PAGE  # D-442: the Dashboard leads the menu
     app = draw(None, dashboard.PAGE_INSIGHTS)
     assert app.get("dialog")
     app.button(key="profile_choose_consulta").click().run()
     assert not app.exception and not app.get("dialog")
     assert [
         box for box in app.selectbox if box.key == "home_products_channel"
-    ]  # D-371: the Panorama, not the first link
+    ]  # D-371: the Dashboard, not the first link
 
 
 def test_d378_the_app_map_names_the_menu_pages_in_the_menu_order():

@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.12 |
-| Fecha | 01-11-2026 |
+| Versión | 3.13 |
+| Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Indicar qué ocurre de forma automática, qué se revisa y cuándo, y qué hacer ante cada falla. |
@@ -79,7 +79,7 @@ Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El
 | Publish the database | GitHub rechaza la subida del archivo o del puntero | Permisos del workflow o un cambio en `main` durante la carga | Revisar Settings → Actions → Workflow permissions («Read and write») y volver a lanzar |
 | Publish the weekly report | No se crea el issue | Permisos del workflow | Revisar los permisos; la base ya quedó publicada |
 
-Una semana que una fuente aún no publica no es una falla. La carga publica hasta la última semana completa en ambas fuentes, y el Panorama lo avisa. Sí detienen la carga `MISSING_WEEKS` (falta una semana en medio de los datos) y `LATE_SOURCE` (una fuente lleva más de 2 semanas sin publicar). En esos casos, revisar ODEPA y no rellenar nada: la carga vuelve sola cuando la fuente publica.
+Una semana que una fuente aún no publica no es una falla. La carga publica hasta la última semana completa en ambas fuentes, y el Dashboard lo avisa. Sí detienen la carga `MISSING_WEEKS` (falta una semana en medio de los datos) y `LATE_SOURCE` (una fuente lleva más de 2 semanas sin publicar). En esos casos, revisar ODEPA y no rellenar nada: la carga vuelve sola cuando la fuente publica.
 
 Cada dependencia de `requirements.txt` y `requirements-pipeline.txt` tiene una versión máxima, para que una versión nueva no rompa la carga del martes (D-435). Para usar una versión nueva, se sube su tope con un push: el CI la prueba antes de la carga siguiente.
 
@@ -162,7 +162,7 @@ Cinco casos, cada uno con sus pasos en orden. Un paso automático lo hace el sis
 | Un token vence o falta | 3 | Manual | En Streamlit Community Cloud: la app → ⋮ → «Settings» → «Secrets» | [Streamlit Community Cloud](https://share.streamlit.io) |
 | Un token vence o falta | 4 | Manual | Pegar el valor en `GITHUB_TOKEN` o `GITHUB_READ_TOKEN` y pulsar «Save» | — |
 | Un token vence o falta | 5 | Manual | Pulsar «Reboot» y confirmar en «Configuración» la fecha nueva | [[vista:Configuración]] |
-| Una fuente se atrasó | 1 | Automático | La carga publica hasta la última semana completa en ambas fuentes y el Panorama avisa «ODEPA aún no publica la semana …» | [[vista:Panorama de precios]] |
+| Una fuente se atrasó | 1 | Automático | La carga publica hasta la última semana completa en ambas fuentes y el Dashboard avisa «ODEPA aún no publica la semana …» | [[vista:Dashboard]] |
 | Una fuente se atrasó | 2 | Automático | Si la fuente lleva más de 2 semanas sin publicar, la carga se detiene con `LATE_SOURCE` y llega el aviso de falla | — |
 | Una fuente se atrasó | 3 | Manual | Revisar en ODEPA si la semana ya está publicada | [Datos abiertos de ODEPA](https://datos.odepa.gob.cl) |
 | Una fuente se atrasó | 4 | Manual | No rellenar nada: la carga vuelve sola cuando la fuente publica | — |
@@ -214,3 +214,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.10 | 01-11-2026 | Cada dependencia tiene una versión máxima; una nueva entra subiendo su tope (4, D-435) |
 | 3.11 | 01-11-2026 | El pull request del informe se fusiona solo si el código está en su aceptable (8, 8.1, D-436) |
 | 3.12 | 01-11-2026 | El informe semanal nuevo cierra el anterior (3, D-438) |
+| 3.13 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |

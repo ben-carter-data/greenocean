@@ -971,10 +971,10 @@ def test_historical_root_link_keeps_the_requested_project_view_after_route_chang
 def test_d250_the_path_and_the_footer_follow_the_menu():
     order = dashboard.MENU_ORDER
     assert len(order) == len(set(order))
-    assert order[:6] == [  # D-378: a visitor's reading order: who it is for and the analysis, then the prices
+    assert order[:6] == [  # D-442: the Dashboard first; D-378: then who it is for, the analysis and the prices
+        dashboard.HOME_PAGE,
         dashboard.PAGE_STAKEHOLDERS,
         dashboard.PAGE_ANALYSIS,
-        dashboard.HOME_PAGE,
         dashboard.PAGE_CHANNELS,
         dashboard.PAGE_SEASONALITY,  # D-398
         dashboard.PAGE_INSIGHTS,
@@ -1154,7 +1154,7 @@ def test_d096_sidebar_is_a_flat_explorer_with_every_section_open_by_default():
     # Step 4 of the refonte: «Ingeniería de datos», four pages; DevOps joined «Ejecuciones».
     assert 'DevOps y seguridad' not in labels
     for child in [
-        'Panorama de precios',
+        'Dashboard',
         'Pipeline y linaje',
         'Modelo de datos',
         'Calidad y auditoría',
@@ -1261,11 +1261,12 @@ def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
     toggle = next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio')
     assert not toggle.disabled
     assert toggle.label == 'Negocio · BA y BI'
-    assert 'Panorama de precios' in [link.proto.label for link in app.sidebar.get('page_link')]
+    assert 'Insights' in [link.proto.label for link in app.sidebar.get('page_link')]
     toggle.click().run()
     assert not app.exception
     assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio').label == 'Negocio · BA y BI'
-    assert 'Panorama de precios' not in [link.proto.label for link in app.sidebar.get('page_link')]
+    links = [link.proto.label for link in app.sidebar.get('page_link')]
+    assert 'Insights' not in links and 'Dashboard' in links  # D-442: the Dashboard tile never folds
 
 
 @needs_database
@@ -1444,7 +1445,6 @@ MENU_BLOCKS = {
     'Negocio · BA y BI': [
         'Interesados',
         'Análisis de negocio y sistemas',
-        'Panorama de precios',
         'Último dato por canal',
         'Precios e inflación',
         'Insights',
@@ -1464,8 +1464,9 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
     toggles = [b.label for b in app.sidebar.button if str(b.key).startswith('nav_toggle_')]
     assert toggles == list(MENU_BLOCKS)
     labels = [link.proto.label for link in app.sidebar.get('page_link')]
-    # D-286: the documents folder closes the menu as a larger tile in the footer, always in sight.
-    assert labels == [page for pages in MENU_BLOCKS.values() for page in pages] + ['Documentos']
+    # D-286: the documents folder closes the menu as a larger tile in the footer, always in sight; D-442: the
+    # Dashboard opens it, a tile of its own over the sections.
+    assert labels == ['Dashboard'] + [page for pages in MENU_BLOCKS.values() for page in pages] + ['Documentos']
     assert all(link.proto.icon for link in app.sidebar.get('page_link')[:-1])
     markup = " ".join(block.value for block in app.sidebar.markdown)
     assert 'class="nav-source-link"' not in markup  # the sources are a tile with a floating panel (D-287)
@@ -1519,7 +1520,7 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
     markup = " ".join(block.value for block in app.markdown)
     # the bar replaces the shared header on this page: one path, one Volver
     assert 'class="app-brand"' not in markup
-    assert '<span class="home-bar-section">Negocio · BA y BI › </span><b>Panorama de precios</b>' in markup  # D-375
+    assert '<b>Dashboard</b>' in markup and '<span class="home-bar-section">' not in markup  # D-375, D-442
     assert app.button(key="return_to_previous").label == "Volver"
     assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
     # each chip says in full what it counts, and the alerts are the week's national ones
@@ -1656,8 +1657,10 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
         state[dashboard.ROLE_STATE] = role
         blocks = [key for key, *_ in dashboard.visible_menu_blocks()]
         expected = [key for key in dashboard.ROLE_ORDER[role] if key != "devops"]  # D-420: the Autor's section
-        assert blocks[:4] == expected and blocks[4:] == ["fuentes", "documentos"], role
-        firsts[role] = dashboard.visible_menu_order()[0]
+        # D-442: the Dashboard tile leads every role's menu; the role orders the sections under it.
+        assert blocks[0] == "dashboard" and blocks[1:5] == expected and blocks[5:] == ["fuentes", "documentos"], role
+        assert dashboard.visible_menu_order()[0] == dashboard.HOME_PAGE
+        firsts[role] = dashboard.visible_menu_order()[1]
     assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.PAGE_STAKEHOLDERS  # D-378
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_DIAGRAMS
     source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")

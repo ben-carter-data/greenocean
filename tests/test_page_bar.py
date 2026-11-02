@@ -191,7 +191,7 @@ def test_d407_one_screen_down_to_1280_by_800_and_1024_by_768_scrolls_without_cut
     assert "En 1024 × 768 se acepta el desplazamiento vertical, sin cortes" in prd
     for script in ("medir.cjs", "desbordes.cjs"):
         assert "1440x790,1280x800," in (PROJECT_DIR / "tests" / "medicion" / script).read_text(encoding="utf-8")
-    # the Panorama bar keeps one line, and under 860 px of height its family rows get thinner
+    # the Dashboard bar keeps one line, and under 860 px of height its family rows get thinner
     css = (PROJECT_DIR / "bi" / "home_mockup.css").read_text(encoding="utf-8")
     assert ".stApp .st-key-home_bar {flex-wrap:nowrap!important;}" in css
     assert "@media (max-height:860px) and (min-width:1101px)" in css
@@ -208,12 +208,12 @@ def open_as_professional():
 @needs_database
 def test_d423_volver_goes_back_to_the_previous_page_of_the_visit_with_its_state():
     app = open_as_professional()
-    # the Panorama with its steps 1 and 2 opened again («Cambiar»)
+    # the Dashboard with its steps 1 and 2 opened again («Cambiar»)
     app.session_state["home_region_done"] = app.session_state["home_family_done"] = True
     app.session_state["home_expanded"] = True
     app.run()
     assert not app.exception
-    # another page of the menu; the Panorama's state changes meanwhile
+    # another page of the menu; the Dashboard's state changes meanwhile
     app.query_params["vista"] = dashboard.PAGE_ARCHITECTURE
     app.run()
     assert [step["window"] for step in app.session_state[dashboard.PAGE_HISTORY]] == [
@@ -223,7 +223,7 @@ def test_d423_volver_goes_back_to_the_previous_page_of_the_visit_with_its_state(
     app.session_state["home_expanded"] = False
     app.button(key="return_to_previous").click().run()
     assert not app.exception
-    # back on the Panorama, in this same session (the view is kept), with the steps as they were
+    # back on the Dashboard, in this same session (the view is kept), with the steps as they were
     markup = " ".join(block.value for block in app.markdown)
     assert "Página actual: Ingeniería de datos › Modelo de datos" not in markup
     assert "Mapa de Chile con la dirección dominante de los precios por región" in markup

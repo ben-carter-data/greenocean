@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.5 |
-| Date | 2026-11-01 |
+| Version | 2.6 |
+| Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Define once the acronyms and terms used by the panel and the documents. |
@@ -34,19 +34,19 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 
 | Acronym or term | Meaning | Where it appears | Theme |
 |---|---|---|---|
-| KPI | Key performance indicator: each figure that measures something of the business. The technical indicators are numbered K1 to K8. | Price overview, Prices and inflation, Business and systems analysis | Indicators |
+| KPI | Key performance indicator: each figure that measures something of the business. The technical indicators are numbered K1 to K8. | Dashboard, Prices and inflation, Business and systems analysis | Indicators |
 | BI | Business intelligence: data analysis to take decisions; here, the panel. | — | Indicators |
 | BA | Business analysis: the role that turns the data into decisions; one of the professional views of the panel. | Stakeholders, Business and systems analysis | Indicators |
 | BSA | Business systems analysis: the role that decides how the system meets what the business asks: what is measured, what blocks publication and what warns. | Business and systems analysis | Indicators |
 | RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
-| Price alert | A weekly change outside the average ± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week (K6). | Price overview | Indicators |
+| Price alert | A weekly change outside the average ± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week (K6). | Dashboard | Indicators |
 | Real price | A price expressed in pesos of the last published month of the CPI. | Prices and inflation | Indicators |
 | Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | Prices and inflation | Indicators |
 | Data quality indicator | Each of the 11 indicators measured on every load on the published database, in five dimensions. | Quality and audit | Indicators |
 | Quality plan indicator | Each of the 12 indicators of the SQAP (8 of code and 4 of data) that the quality workflow measures every week. | Method and quality | Indicators |
 | Quality dimension | An aspect of quality that is measured: completeness, timeliness, validity, uniqueness, consistency and accuracy. | Quality and audit | Indicators |
 | DAMA-DMBOK | Data management guide of DAMA International (*Data Management Body of Knowledge*); the quality dimensions come from it. | — | Indicators |
-| ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Price overview, Pipeline and lineage | Sources |
+| ODEPA | Office of Agricultural Studies and Policies (*Oficina de Estudios y Políticas Agrarias*), of Chile's Ministry of Agriculture. It publishes the two price sources. | Dashboard, Pipeline and lineage | Sources |
 | INE | Chile's National Statistics Institute (*Instituto Nacional de Estadísticas*). It publishes the food CPI. | Prices and inflation, Pipeline and lineage | Sources |
 | CPI (IPC) | Consumer price index (*índice de precios al consumidor*); here, the «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division published by the INE. | Prices and inflation | Sources |
 | CSV | Text file with comma-separated values: the format in which ODEPA publishes the prices. | Pipeline and lineage | Sources |
@@ -114,3 +114,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.3 | 2026-10-31 | BSA, from the pages «Stakeholders» and «Business and systems analysis» (D-376, D-377) |
 | 2.4 | 2026-10-31 | Wording reviewed; the three views; the data quality indicators and those of the quality plan; the pull request of the quality report; the full price alert; the document moves to `docs/negocio/` (D-381 to D-385, D-388) |
 | 2.5 | 2026-11-01 | «Served database» becomes «DuckDB database» (D-426) |
+| 2.6 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |

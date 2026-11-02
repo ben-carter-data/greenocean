@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 2.5 |
-| Fecha | 01-11-2026 |
+| Versión | 2.6 |
+| Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Definir una sola vez las siglas y los términos que usan el panel y los documentos. |
@@ -34,19 +34,19 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 
 | Sigla o término | Significado | Dónde aparece | Tema |
 |---|---|---|---|
-| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. Los indicadores técnicos se numeran de K1 a K8. | Panorama de precios, Precios e inflación, Análisis de negocio y sistemas | Indicadores |
+| KPI | Indicador clave de desempeño (*key performance indicator*): cada cifra que mide algo del negocio. Los indicadores técnicos se numeran de K1 a K8. | Dashboard, Precios e inflación, Análisis de negocio y sistemas | Indicadores |
 | BI | Inteligencia de negocios (*business intelligence*): el análisis de datos para tomar decisiones; aquí, el panel. | — | Indicadores |
 | BA | Análisis de negocio (*business analysis*): el rol que traduce los datos en decisiones; una de las vistas profesionales del panel. | Interesados, Análisis de negocio y sistemas | Indicadores |
 | BSA | Análisis de sistemas de negocio (*business systems analysis*): el rol que decide cómo el sistema cumple lo que el negocio pide: qué se mide, qué bloquea la publicación y qué avisa. | Análisis de negocio y sistemas | Indicadores |
 | RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Calidad y auditoría | Indicadores |
-| Alerta de precio | Cambio semanal fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con dos cotizaciones en cada semana (K6). | Panorama de precios | Indicadores |
+| Alerta de precio | Cambio semanal fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con dos cotizaciones en cada semana (K6). | Dashboard | Indicadores |
 | Precio real | Precio expresado en pesos del último mes publicado del IPC. | Precios e inflación | Indicadores |
 | Semana provisional | Semana de un mes cuyo IPC aún no se publica; usa el último mes disponible. | Precios e inflación | Indicadores |
 | Indicador de calidad de los datos | Cada uno de los 11 indicadores que se miden en cada carga sobre la base publicada, en cinco dimensiones. | Calidad y auditoría | Indicadores |
 | Indicador del plan de calidad | Cada uno de los 12 indicadores del SQAP (8 de código y 4 de datos) que el workflow de calidad mide cada semana. | Método y calidad | Indicadores |
 | Dimensión de calidad | Aspecto de la calidad que se mide: completitud, actualidad, validez, unicidad, consistencia y exactitud. | Calidad y auditoría | Indicadores |
 | DAMA-DMBOK | Guía de gestión de datos de DAMA International (*Data Management Body of Knowledge*); de ella vienen las dimensiones de calidad. | — | Indicadores |
-| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Panorama de precios, Pipeline y linaje | Fuentes |
+| ODEPA | Oficina de Estudios y Políticas Agrarias, del Ministerio de Agricultura de Chile. Publica las dos fuentes de precios. | Dashboard, Pipeline y linaje | Fuentes |
 | INE | Instituto Nacional de Estadísticas de Chile. Publica el IPC de alimentos. | Precios e inflación, Pipeline y linaje | Fuentes |
 | IPC | Índice de precios al consumidor; aquí, la división «Alimentos y bebidas no alcohólicas» que publica el INE. | Precios e inflación | Fuentes |
 | CSV | Archivo de texto con valores separados por comas: el formato en que ODEPA publica los precios. | Pipeline y linaje | Fuentes |
@@ -114,3 +114,4 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | 2.3 | 31-10-2026 | BSA, de las páginas «Interesados» y «Análisis de negocio y sistemas» (D-376, D-377) |
 | 2.4 | 31-10-2026 | Redacción revisada; las tres vistas; los indicadores de calidad de los datos y los del plan de calidad; el pull request del informe de calidad; la alerta de precio completa; el documento pasa a `docs/negocio/` (D-381 a D-385, D-388) |
 | 2.5 | 01-11-2026 | «Base servida» pasa a «Base DuckDB» (D-426) |
+| 2.6 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |

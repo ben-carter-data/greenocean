@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.12 |
-| Date | 2026-11-01 |
+| Version | 3.13 |
+| Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
 | Purpose | State what happens automatically, what is checked and when, and what to do about each failure. |
@@ -79,7 +79,7 @@ Each row is a step of the workflow, with its name in `semanal.yml`. The warning 
 | Publish the database | GitHub rejects the upload of the file or of the pointer | Workflow permissions, or a change on `main` during the load | Check Settings → Actions → Workflow permissions («Read and write») and launch again |
 | Publish the weekly report | The issue is not created | Workflow permissions | Check the permissions; the database is already published |
 
-A week a source has not published yet is not a failure. The load publishes up to the last week complete in both sources, and the Price overview says so. What does stop the load is `MISSING_WEEKS` (a week missing in the middle of the data) and `LATE_SOURCE` (a source has gone more than 2 weeks without publishing). In those cases, check ODEPA and fill nothing in: the load comes back by itself when the source publishes.
+A week a source has not published yet is not a failure. The load publishes up to the last week complete in both sources, and the Dashboard says so. What does stop the load is `MISSING_WEEKS` (a week missing in the middle of the data) and `LATE_SOURCE` (a source has gone more than 2 weeks without publishing). In those cases, check ODEPA and fill nothing in: the load comes back by itself when the source publishes.
 
 Each dependency of `requirements.txt` and `requirements-pipeline.txt` has a maximum version, so that a new version does not break Tuesday's load (D-435). To use a new version, its cap is raised with a push: the CI tests it before the next load.
 
@@ -162,7 +162,7 @@ Five cases, each with its steps in order. An automatic step is done by the syste
 | A token expires or is missing | 3 | Manual | On Streamlit Community Cloud: the app → ⋮ → «Settings» → «Secrets» | [Streamlit Community Cloud](https://share.streamlit.io) |
 | A token expires or is missing | 4 | Manual | Paste the value into `GITHUB_TOKEN` or `GITHUB_READ_TOKEN` and press «Save» | — |
 | A token expires or is missing | 5 | Manual | Press «Reboot» and confirm the new date in «Settings» | [[vista:Settings]] |
-| A source is late | 1 | Automatic | The load publishes up to the last week complete in both sources and the Price overview warns «ODEPA has not published the week of … yet» | [[vista:Price overview]] |
+| A source is late | 1 | Automatic | The load publishes up to the last week complete in both sources and the Dashboard warns «ODEPA has not published the week of … yet» | [[vista:Dashboard]] |
 | A source is late | 2 | Automatic | If the source has not published for more than 2 weeks, the load stops with `LATE_SOURCE` and the failure notice arrives | — |
 | A source is late | 3 | Manual | Check on ODEPA whether the week is already published | [ODEPA open data](https://datos.odepa.gob.cl) |
 | A source is late | 4 | Manual | Fill in nothing: the load resumes by itself when the source publishes | — |
@@ -214,3 +214,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.10 | 2026-11-01 | Each dependency has a maximum version; a new one comes in by raising its cap (4, D-435) |
 | 3.11 | 2026-11-01 | The report's pull request is merged by itself if the code is within its acceptable (8, 8.1, D-436) |
 | 3.12 | 2026-11-01 | The new weekly report closes the previous one (3, D-438) |
+| 3.13 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |

@@ -81,7 +81,7 @@ def test_d373_the_view_button_sits_under_the_logo_before_the_menu_and_left_the_f
         app = draw(profile, unlocked, language)
         button = indicator(app)
         assert button.label == label and button.proto.icon == ":material/account_circle:"
-        if language == "es":  # AppTest cannot rerun the English Panorama's selectboxes; the label is checked above
+        if language == "es":  # AppTest cannot rerun the English Dashboard's selectboxes; the label is checked above
             assert app.button(key="profile_indicator").click().run().get("dialog")  # it reopens «Elige tu vista»
     source = Path(dashboard.__file__).read_text(encoding="utf-8")
     navigation = source[source.index("def show_sidebar_navigation") :]

@@ -145,9 +145,9 @@ def test_d380_the_channel_page_hands_its_scope_in_spanish_so_the_sentences_trans
 
     source = inspect.getsource(dashboard.show_channels_page)
     # A scope translated before drawing («all of Chile») leaves «…mediana de 51 precios comparables · all of Chile»
-    # half in each language; the page translates whole sentences, as the Panorama's does.
+    # half in each language; the page translates whole sentences, as the Dashboard's does.
     assert 'tr("todo Chile")' not in source
-    # D-405: a channel page is drawn by the Panorama itself, which hands its scope in Spanish and translates whole.
+    # D-405: a channel page is drawn by the Dashboard itself, which hands its scope in Spanish and translates whole.
     assert "show_market_overview(mode" in inspect.getsource(dashboard.show_channel_detail)
 
 
@@ -163,10 +163,10 @@ def test_d405_a_channel_page_is_the_panorama_with_that_channel_and_the_panorama_
     assert not app.exception
     page = " ".join(block.value for block in app.markdown)
     assert "Último dato por canal › </span><b>Feria libre</b>" in page  # the path names the channel
-    assert 'class="mock-products-table"' in page and "mock-movement" in page  # the Panorama's own panels
+    assert 'class="mock-products-table"' in page and "mock-movement" in page  # the Dashboard's own panels
     channels = set(re.findall(r'</td><td>([^<]+)</td><td class="num">', page))
     assert channels == {"Feria libre"}, channels  # only that channel's products
-    # the Panorama, opened right after in the same visit, keeps all its channels and its own state
+    # the Dashboard, opened right after in the same visit, keeps all its channels and its own state
     app.query_params.clear()
     app.query_params.update({"vista": dashboard.HOME_PAGE})
     app.run()
@@ -234,5 +234,5 @@ def test_d408_a_channel_folds_its_steps_like_the_panorama():
     assert not app.exception
     page = " ".join(block.value for block in app.markdown)
     assert '<span>Familia</span><strong>Frutas</strong>' in page and 'class="mock-chile-map"' not in page
-    app.button(key="home_change_region").click().run()  # the state of the channel, never the Panorama's
+    app.button(key="home_change_region").click().run()  # the state of the channel, never the Dashboard's
     assert app.session_state["home_expanded@Feria libre"] and "home_expanded" not in app.session_state

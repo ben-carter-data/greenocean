@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.8 |
-| Fecha | 01-11-2026 |
+| Versión | 1.9 |
+| Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Decir qué calidad cuida GreenOcean, cómo la mide, quién decide y qué pasa cuando algo falla. |
@@ -100,7 +100,7 @@ Cada ocurrencia se escribe en una línea por campo y en lenguaje simple: qué pa
 
 Un incidente externo es una falla de las fuentes de datos: ODEPA o el INE. Por ejemplo, una semana que no se publica o un archivo que cambia de formato. Ante un incidente, la carga no pasa sus controles y el panel conserva la última carga válida, con su fecha a la vista. Los incidentes se anotan en `docs/calidad/incidentes_externos.json`, y su respuesta queda pendiente de aprobación del autor (D-334).
 
-**Fuentes retrasadas (D-356).** Se publica hasta la última semana completa en ambas fuentes, sin rellenar nada. Así lo leen el Panorama y los indicadores. La página «Último dato por canal» muestra la última semana de cada fuente, rotulada (D-365). Una semana reciente que una fuente aún no publica no bloquea la carga: queda como incidente externo y la app muestra un aviso discreto. La carga se detiene solo si falta una semana en medio de los datos, o si la fuente lleva más de 2 semanas sin publicar. En ese caso, además, el Autor recibe un aviso urgente.
+**Fuentes retrasadas (D-356).** Se publica hasta la última semana completa en ambas fuentes, sin rellenar nada. Así lo leen el Dashboard y los indicadores. La página «Último dato por canal» muestra la última semana de cada fuente, rotulada (D-365). Una semana reciente que una fuente aún no publica no bloquea la carga: queda como incidente externo y la app muestra un aviso discreto. La carga se detiene solo si falta una semana en medio de los datos, o si la fuente lleva más de 2 semanas sin publicar. En ese caso, además, el Autor recibe un aviso urgente.
 
 ## 11. Quién decide qué
 
@@ -128,3 +128,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.6 | 01-11-2026 | El aceptable y la meta de los precios comparables se calibran al percentil 5 de la historia, 81 % (6, ADR-36, D-433) |
 | 1.7 | 01-11-2026 | El pull request del informe se fusiona solo si el código está en su aceptable; uno abierto lo reemplaza el informe siguiente (8, 11, D-436) |
 | 1.8 | 01-11-2026 | Una no conformidad de la serie semanal se cierra sola cuando su indicador vuelve al aceptable (8, D-437) |
+| 1.9 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |

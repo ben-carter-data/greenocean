@@ -1,4 +1,4 @@
-"""The reading order of the Panorama (D-352, D-372): numbered panels, «Todo Chile», locks in every view, the search,
+"""The reading order of the Dashboard (D-352, D-372): numbered panels, «Todo Chile», locks in every view, the search,
 trends and the basket."""
 
 import re

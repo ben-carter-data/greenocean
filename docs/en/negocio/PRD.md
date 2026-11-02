@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.14 |
-| Date | 2026-11-01 |
+| Version | 3.15 |
+| Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain which problem GreenOcean solves, for whom, which questions it answers and what it must meet for its figures to be reliable. |
@@ -56,8 +56,8 @@ Each stakeholder has a question, a decision that depends on the answer and a pag
 
 | Stakeholder | Who they are | What they ask | What decision it helps them make | Where the answer is |
 |---|---|---|---|---|
-| People and families | Whoever buys the food for their home | Which foods are going up? | What to buy before going shopping | [[vista:Price overview]] |
-| Restaurants and grocery stores | Whoever buys food to cook or to sell | When and where is it best to buy? | When and in which channel to buy | [[vista:Price overview]] · [[vista:Latest data by channel]] |
+| People and families | Whoever buys the food for their home | Which foods are going up? | What to buy before going shopping | [[vista:Dashboard]] |
+| Restaurants and grocery stores | Whoever buys food to cook or to sell | When and where is it best to buy? | When and in which channel to buy | [[vista:Dashboard]] · [[vista:Latest data by channel]] |
 | Wholesalers, farmers and market vendors | Whoever sells wholesale or at the street market | How does the wholesale price compare with the consumer price? | At what price to sell | [[vista:Latest data by channel]] |
 | Journalists and economists | Whoever reports on the economy or analyzes it | Which foods rise more than inflation, according to official data? | What to report, with figures that can be checked | [[vista:Prices and inflation]] · [[vista:Insights]] |
 | Technical teams and recruiters | Whoever designs data systems or evaluates who builds them | How is a reliable data pipeline built and operated? | Which practices to follow or whom to hire | [[vista:Pipeline and lineage]] · [[vista:Method and quality]] · [[vista:Git workflow]] |
@@ -75,7 +75,7 @@ Each stakeholder has a question, a decision that depends on the answer and a pag
 
 The panel is read-only and needs no account. On entry, and on every reload, a window asks the reader to choose one of three views:
 
-- **User:** the business. The Price overview, guided in three steps, Insights and prices against inflation.
+- **User:** the business. The Dashboard, guided in three steps, Insights and prices against inflation.
 - **Professional:** the whole project, ordered by profile (data, BA, BI, DevOps or security), with the read-only SQL studio.
 - **Author:** the same as Professional, plus the pages «GitHub Actions» and «Settings», the «Action required» alert and the manual load. It asks for the control code, which is never in the repository.
 
@@ -87,7 +87,7 @@ Real users made two reviews: one of usability and one of architecture. Each chan
 
 | Review | What we heard | What changed | Decision |
 |---|---|---|---|
-| Usability review | They did not know where to start reading the Price overview | The Price overview reads in three numbered steps; steps 2 and 3 wait for the one before, with a padlock, in every view; the search stands out | D-352, D-372 |
+| Usability review | They did not know where to start reading the Dashboard | The Dashboard reads in three numbered steps; steps 2 and 3 wait for the one before, with a padlock, in every view; the search stands out | D-352, D-372 |
 | Architecture review | By a real user, no changes requested | — | — |
 
 ## 4. Business questions
@@ -96,7 +96,7 @@ Each question has the screen that answers it and a test that recomputes the answ
 
 | ID | Question | Screen that answers it | Evidence |
 |---|---|---|---|
-| P-1 | Which prices changed this week, and which are unusual? | Price overview | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
+| P-1 | Which prices changed this week, and which are unusual? | Dashboard | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
 | P-2 | Is today's price normal for the season? | SQL queries · Price vs. season | `tests/test_sql_explorer.py::test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas` |
 | P-3 | How much does the consumer pay over the wholesale price? | SQL queries · Wholesale gap | `tests/test_sql_explorer.py::test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas` |
 | P-4 | Which foods rose more than inflation? | Prices and inflation | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
@@ -134,16 +134,16 @@ Functional requirements (RF) say what the product does. Non-functional requireme
 | Unit conversion, weekly aggregation and real-price calculation | Without bringing each price to the kilo and to the week there is no comparison (RN-03, RN-07); the INE CPI discounts inflation (ADR-33) | Price forecasting or explanation of its causes | With public weekly data and no forecasting question, a model adds nothing (D-019); the indicators describe what happened and attribute no causes (section 8) |
 | Rejection of invalid rows with their reason, and an audit of every figure | A zero price or an impossible date is not used, but never deleted in silence (RN-11); every figure is rebuilt from the raw rows (RNF-02) | Purchase recommendations for consumers | The panel describes what happened to prices; recommending what to buy demands a judgement about each person that public data does not give |
 | Read-only panel with its documentation | A public panel, with no account and no cost (ADR-02); the documents leave every decision and every figure in view (RNF-02) | Data changes by the users | The data comes only from the official sources and the database opens read-only: nobody can change a figure (RF-06, RNF-03) |
-| Publication up to the last week complete in both sources | The Price overview compares wholesale and consumer in the same week; a half week would give incomplete figures (D-356) | Filling in a week a source has not published yet | An invented figure cannot be recomputed from the source; the load waits for the source to publish (D-356) |
+| Publication up to the last week complete in both sources | The Dashboard compares wholesale and consumer in the same week; a half week would give incomplete figures (D-356) | Filling in a week a source has not published yet | An invented figure cannot be recomputed from the source; the load waits for the source to publish (D-356) |
 
 With the load of 2026-10-31, the database holds 821,072 weekly prices over 252 weeks (from Jan 3–9, 2022 to Oct 26–Nov 1, 2026), 9 regions, 8 channels, 1,613 product keys and 202 months of the CPI. That load read 2,541,374 rows: 2,541,173 loaded and 201 rejected with their reason. The database grows every Tuesday; the figures of the day are in the panel.
 
 ## 7. Screens
 
-These are six real captures, of 2026-10-31, of five main pages and in the four color themes. The Price overview appears twice: as the User sees it and as the Professional sees it. The dark theme is the one on entry.
+These are six real captures, of 2026-10-31, of five main pages and in the four color themes. The Dashboard appears twice: as the User sees it and as the Professional sees it. The dark theme is the one on entry.
 
-- **Menu:** it groups the pages in five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first follows a reader's reading order: Stakeholders, Business and systems analysis, Price overview, Latest data by channel, Prices and inflation and Insights.
-- **Price overview:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done. Once the family is chosen, steps 1 and 2 fold into one line with «Change» and the products table takes the screen (D-408).
+- **Menu:** it groups the pages in five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first follows a reader's reading order: Stakeholders, Business and systems analysis, Dashboard, Latest data by channel, Prices and inflation and Insights.
+- **Dashboard:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done. Once the family is chosen, steps 1 and 2 fold into one line with «Change» and the products table takes the screen (D-408).
 - **Latest data by channel:** one card per channel, with its latest week, its prices, its change and the families it publishes. Each card opens that channel with the Overview's steps, even if the other source has not published that week yet (D-404 to D-406).
 - **Stack and evidence:** two views. «Tools» explains each tool; «Live system flow» shows the real pieces, what they say to each other and the running load (D-412).
 
@@ -226,3 +226,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.12 | 2026-11-01 | RF-09: the view is chosen once per tab; every reload keeps it, F5 and the link of the «Action required» alert too (D-430) |
 | 3.13 | 2026-11-01 | RF-08: opening the weekly report closes the previous one (D-438) |
 | 3.14 | 2026-11-01 | Two abandonment risks, with their proposed mitigation: workflows disabled for inactivity and the sleeping app (9, D-439) |
+| 3.15 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |

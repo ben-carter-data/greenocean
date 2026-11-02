@@ -27,7 +27,7 @@ def test_d376_the_prd_names_five_stakeholders_in_both_languages_and_each_page_ex
         views = [dashboard.find_menu_page(name) for name in one["pages"]]
         assert None not in views and views == [dashboard.find_menu_page(name) for name in other["pages"]]
     assert [dashboard.find_menu_page(name) for name in spanish[3]["pages"]] == [
-        dashboard.PAGE_SEASONALITY,  # «Precios e inflación» opens from the Panorama
+        dashboard.PAGE_SEASONALITY,  # «Precios e inflación» opens from the Dashboard
         dashboard.PAGE_INSIGHTS,
     ]
     # The usage profiles stay beside the stakeholders, as their own table.
@@ -49,14 +49,14 @@ def test_d376_the_professional_view_links_every_answer_and_the_user_view_offers_
     assert markup.count('class="stk-card"') == 5 and "¿Qué alimentos están subiendo?" in markup
     links = [link.proto.label for link in app.main.get("page_link")]
     for label in (
-        "Panorama de precios",
+        "Dashboard",
         "Último dato por canal",
         "Precios e inflación",
         "Insights",
         "Pipeline y linaje",
     ):
         assert label in links, label
-    assert links.count("Panorama de precios") == 2  # people and families; restaurants and grocery stores
+    assert links.count("Dashboard") == 2  # people and families; restaurants and grocery stores
     assert not [button for button in app.button if str(button.key).startswith("stakeholders_switch_")]
     user = draw("consulta")
     switches = [button for button in user.button if str(button.key).startswith("stakeholders_switch_")]

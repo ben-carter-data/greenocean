@@ -42,7 +42,7 @@ REPORT = {
     "secretos": {"sin_clasificar": 0},
     "consultas": {"consultas": {"k1": 0.2, "k3": 0.4}},
     "navegadores": {
-        "paginas": {"Panorama de precios": {"seconds": 0.3, "violations": 0}},
+        "paginas": {"Dashboard": {"seconds": 0.3, "violations": 0}},
         "violaciones_wcag": 0,
         "navegadores": {"chromium": {"checks": 3, "passed": 3, "failed": []}},
     },

@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.11 |
-| Date | 2026-11-01 |
+| Version | 3.12 |
+| Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain how GreenOcean is built, how it runs each week, where its data lives and why it has that shape. |
@@ -124,7 +124,7 @@ When it opens, the panel compares its database with the pointer of the `main` br
 
 The entry asks for the view on every visit and every reload the reader makes:
 
-- **User:** the business. The Price overview, guided in three steps, Insights and Prices and inflation.
+- **User:** the business. The Dashboard, guided in three steps, Insights and Prices and inflation.
 - **Professional:** the whole project, ordered by the profile it picks (Data Eng, BA, BI, DevOps or Security).
 - **Author:** the same as Professional, plus its own part, with the control code.
 
@@ -219,7 +219,7 @@ The journey and the lineage are in [[vista:Pipeline and lineage]], and the model
 
 ### latest_by_source
 
-The last two weeks of each source, without the cut of D-356. Only the page «Latest data by channel» reads it; the Price overview and the indicators read `weekly_price`.
+The last two weeks of each source, without the cut of D-356. Only the page «Latest data by channel» reads it; the Dashboard and the indicators read `weekly_price`.
 
 | Column | Type | Key | Description |
 |---|---|---|---|
@@ -320,7 +320,7 @@ The last two weeks of each source, without the cut of D-356. Only the page «Lat
 | `failures` | INTEGER | | Rows that do not meet the test |
 | `generated_at` | VARCHAR | | Date of the `dbt build` |
 
-**Weeks that wait.** When one source has already published a week and the other has not, that week does not enter the database. It waits for the other source, with nothing filled in. The line of `etl_run` of that load says so (`SOURCE_LATE: wholesale 2026-10-19`) and the Price overview shows «ODEPA has not published the week of Oct 19–25 yet (wholesale)» (D-356, D-374).
+**Weeks that wait.** When one source has already published a week and the other has not, that week does not enter the database. It waits for the other source, with nothing filled in. The line of `etl_run` of that load says so (`SOURCE_LATE: wholesale 2026-10-19`) and the Dashboard shows «ODEPA has not published the week of Oct 19–25 yet (wholesale)» (D-356, D-374).
 
 ## 7. Deployment
 
@@ -477,3 +477,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.9 | 2026-11-01 | «Served database» becomes «DuckDB database · `etl/datos.duckdb`» throughout the document; the containers show the upload to the «base-actual» release, the reading from it and the arrows from the web panel to GitHub with their tokens (3, D-426) |
 | 3.10 | 2026-11-01 | The key scenarios fit like the other diagrams: the DuckDB database and GitHub Actions move under the web panel, with no content removed (2.1, D-429) |
 | 3.11 | 2026-11-01 | Two abandonment risks with their proposed mitigation, and every dependency with a maximum version (11, D-435, D-439) |
+| 3.12 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |

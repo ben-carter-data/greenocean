@@ -924,7 +924,7 @@ def sad_scenarios(mode):
                 tile(say("Interesados", "Stakeholders")),
                 tile(say("Análisis de negocio y sistemas", "Business and systems analysis")),
                 tile(
-                    say("Panorama de precios", "Price overview"),
+                    say("Dashboard", "Dashboard"),
                     say("alertas de precio", "price alerts"),
                     "P-1 · RF-05",
                 ),

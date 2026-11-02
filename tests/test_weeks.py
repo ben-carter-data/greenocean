@@ -1,5 +1,5 @@
 """Weeks as their Monday-to-Sunday range (D-374): «19–25 oct», «26 oct – 1 nov», in Spanish and in English; the next
-week in the Panorama's header; no screen names a week by its Monday alone."""
+week in the Dashboard's header; no screen names a week by its Monday alone."""
 
 import re
 from datetime import date
@@ -37,7 +37,7 @@ def test_d374_the_next_week_is_worked_out_from_the_week_shown():
     assert weeks.next_week("2026-10-19") == date(2026, 10, 26)
     upcoming = weeks.week_range(weeks.next_week("2026-10-19"))
     bar = home_mockup.dashboard_bar(
-        "Negocio · BA y BI › Panorama de precios", "19–25 oct 2026", [], [], None, next_label=upcoming
+        "Negocio · BA y BI › Dashboard", "19–25 oct 2026", [], [], None, next_label=upcoming
     )
     assert '>19–25 oct<' in bar and '<span class="home-next-week"' in bar
     assert "Próxima semana: 26 oct – 1 nov" in bar
@@ -88,7 +88,7 @@ def test_d375_the_next_week_never_widens_the_bar_and_the_section_name_gives_way_
     from bi import charts
 
     bar = home_mockup.dashboard_bar(
-        "Negocio · BA y BI › Panorama de precios",
+        "Negocio · BA y BI › Dashboard",
         "19–25 oct 2026",
         [],
         [],
@@ -96,7 +96,7 @@ def test_d375_the_next_week_never_widens_the_bar_and_the_section_name_gives_way_
         next_label="26 oct – 1 nov",
     )
     path = bar[bar.index('class="home-bar-path"') : bar.index('class="home-bar-title"')]
-    assert '<span class="home-bar-section">Negocio · BA y BI › </span><b>Panorama de precios</b>' in path
+    assert '<span class="home-bar-section">Negocio · BA y BI › </span><b>Dashboard</b>' in path
     assert 'class="home-next-week"' in path  # under the page's name, beside the chip: it never widens the chip
     assert (
         '<span class="home-chip-week">19–25 oct</span><span class="home-chip-place"> · Arica y Parinacota</span>' in bar

@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.14 |
-| Fecha | 01-11-2026 |
+| Versión | 3.15 |
+| Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar qué problema resuelve GreenOcean, para quién, qué preguntas responde y qué debe cumplir para que sus cifras sean confiables. |
@@ -56,8 +56,8 @@ Cada interesado tiene una pregunta, una decisión que depende de la respuesta y 
 
 | Interesado | Quién es | Qué pregunta se hace | Qué decisión le ayuda a tomar | Dónde está la respuesta |
 |---|---|---|---|---|
-| Personas y familias | Quien compra los alimentos de su casa | ¿Qué alimentos están subiendo? | Qué comprar antes de ir a comprar | [[vista:Panorama de precios]] |
-| Restaurantes y almacenes | Quien compra alimentos para cocinar o para vender | ¿Cuándo y dónde conviene comprar? | Cuándo y en qué canal comprar | [[vista:Panorama de precios]] · [[vista:Último dato por canal]] |
+| Personas y familias | Quien compra los alimentos de su casa | ¿Qué alimentos están subiendo? | Qué comprar antes de ir a comprar | [[vista:Dashboard]] |
+| Restaurantes y almacenes | Quien compra alimentos para cocinar o para vender | ¿Cuándo y dónde conviene comprar? | Cuándo y en qué canal comprar | [[vista:Dashboard]] · [[vista:Último dato por canal]] |
 | Mayoristas, agricultores y feriantes | Quien vende al por mayor o en la feria | ¿Cómo está el precio mayorista frente al de consumidor? | A qué precio vender | [[vista:Último dato por canal]] |
 | Periodistas y economistas | Quien informa sobre la economía o la analiza | ¿Qué alimentos suben más que la inflación, según datos oficiales? | Qué informar, con cifras que se pueden comprobar | [[vista:Precios e inflación]] · [[vista:Insights]] |
 | Equipos técnicos y reclutadores | Quien diseña sistemas de datos o evalúa a quien los construye | ¿Cómo se construye y se opera un pipeline de datos confiable? | Qué prácticas seguir o a quién contratar | [[vista:Pipeline y linaje]] · [[vista:Método y calidad]] · [[vista:Git workflow]] |
@@ -75,7 +75,7 @@ Cada interesado tiene una pregunta, una decisión que depende de la respuesta y 
 
 El panel es de consulta y no pide cuenta. Al entrar, y en cada recarga, la ventana «Elige tu vista» ofrece tres vistas:
 
-- **Usuario:** el negocio. El Panorama de precios, guiado en tres pasos, Insights y los precios frente a la inflación.
+- **Usuario:** el negocio. El Dashboard, guiado en tres pasos, Insights y los precios frente a la inflación.
 - **Profesional:** todo el proyecto, ordenado según su perfil (datos, BA, BI, DevOps o seguridad), con el estudio SQL de solo lectura.
 - **Autor:** lo mismo que Profesional, más las páginas «GitHub Actions» y «Configuración», la alerta «Acción requerida» y la carga manual. Pide la clave de control, que nunca está en el repositorio.
 
@@ -87,7 +87,7 @@ Usuarios reales hicieron dos revisiones: una de uso y una de arquitectura. Cada 
 
 | Revisión | Qué escuchamos | Qué cambió | Decisión |
 |---|---|---|---|
-| Revisión de uso | No sabían por dónde empezar a leer el Panorama | El Panorama se lee en tres pasos numerados; los pasos 2 y 3 esperan al anterior, con candado, en todas las vistas; la búsqueda se nota | D-352, D-372 |
+| Revisión de uso | No sabían por dónde empezar a leer el Dashboard | El Dashboard se lee en tres pasos numerados; los pasos 2 y 3 esperan al anterior, con candado, en todas las vistas; la búsqueda se nota | D-352, D-372 |
 | Revisión de arquitectura | Por un usuario real, sin cambios solicitados | — | — |
 
 ## 4. Preguntas de negocio
@@ -96,7 +96,7 @@ Cada pregunta tiene la pantalla que la responde y una prueba que recalcula la re
 
 | ID | Pregunta | Pantalla que la responde | Evidencia |
 |---|---|---|---|
-| P-1 | ¿Qué precios cambiaron esta semana y cuáles son inusuales? | Panorama de precios | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
+| P-1 | ¿Qué precios cambiaron esta semana y cuáles son inusuales? | Dashboard | `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts`, `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material` |
 | P-2 | ¿El precio de hoy es normal para la temporada? | Consultas SQL · Precio vs. época | `tests/test_sql_explorer.py::test_p2_the_price_for_the_season_query_matches_a_recomputation_in_pandas` |
 | P-3 | ¿Cuánto paga el consumidor sobre el mayorista? | Consultas SQL · Brecha mayorista | `tests/test_sql_explorer.py::test_p3_the_wholesale_gap_query_matches_a_recomputation_in_pandas` |
 | P-4 | ¿Qué alimentos subieron más que la inflación? | Precios e inflación | `tests/test_inflation_view.py::test_p4_each_family_change_and_the_ipc_match_a_recomputation_in_sql`, `tests/test_page_bar.py::test_d267_the_reading_of_a_family_is_recomputed_from_its_index` |
@@ -134,17 +134,17 @@ Los requisitos funcionales (RF) dicen qué hace el producto. Los no funcionales 
 | Conversión de unidades, agregación semanal y cálculo de precios reales | Sin llevar cada precio al kilo y a la semana no hay comparación (RN-03, RN-07); el IPC del INE descuenta la inflación (ADR-33) | Predicción de precios o explicación de sus causas | Con datos semanales públicos y sin una pregunta de predicción, un modelo no aporta (D-019); los indicadores describen lo ocurrido y no atribuyen causas (sección 8) |
 | Rechazo de filas inválidas con su motivo y auditoría de cada cifra | Un precio cero o una fecha imposible no se usan, pero nunca se borran en silencio (RN-11); cada cifra se reconstruye desde las filas crudas (RNF-02) | Recomendaciones de compra para el consumidor | El panel describe lo que pasó con los precios; recomendar qué comprar exige un juicio sobre cada persona que los datos públicos no dan |
 | Panel de solo lectura con su documentación | Un panel público, sin cuenta ni costo (ADR-02); los documentos dejan cada decisión y cada cifra a la vista (RNF-02) | Modificación de datos por parte de los usuarios | Los datos vienen solo de las fuentes oficiales y la base se abre en solo lectura: nadie puede cambiar una cifra (RF-06, RNF-03) |
-| Publicación hasta la última semana completa en ambas fuentes | El Panorama compara mayorista y consumidor en la misma semana; una semana a medias daría cifras incompletas (D-356) | Rellenar una semana que una fuente aún no publica | Una cifra inventada no se puede recalcular desde la fuente; se espera a que la fuente publique (D-356) |
+| Publicación hasta la última semana completa en ambas fuentes | El Dashboard compara mayorista y consumidor en la misma semana; una semana a medias daría cifras incompletas (D-356) | Rellenar una semana que una fuente aún no publica | Una cifra inventada no se puede recalcular desde la fuente; se espera a que la fuente publique (D-356) |
 
 Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 semanas (de la 3–9 ene 2022 a la 26 oct–1 nov 2026), 9 regiones, 8 canales, 1.613 claves de producto y 202 meses del IPC. Esa carga leyó 2.541.374 filas: 2.541.173 cargadas y 201 rechazadas con su motivo. La base crece cada martes; las cifras del día están en el panel.
 
 ## 7. Pantallas
 
-Estas son seis capturas reales, del 31-10-2026, de cinco páginas principales y en los cuatro temas de color. El Panorama aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
+Estas son seis capturas reales, del 31-10-2026, de cinco páginas principales y en los cuatro temas de color. El Dashboard aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
 
-- **Menú:** agrupa las páginas en cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera sigue el orden en que la lee un lector: Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal, Precios e inflación e Insights.
-- **Panorama de precios:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Elegida la familia, los pasos 1 y 2 se pliegan en una línea con «Cambiar» y la tabla de productos toma la pantalla (D-408).
-- **Último dato por canal:** una tarjeta por canal, con su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del Panorama, aunque la otra fuente todavía no publique esa semana (D-404 a D-406).
+- **Menú:** agrupa las páginas en cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera sigue el orden en que la lee un lector: Interesados, Análisis de negocio y sistemas, Dashboard, Último dato por canal, Precios e inflación e Insights.
+- **Dashboard:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Elegida la familia, los pasos 1 y 2 se pliegan en una línea con «Cambiar» y la tabla de productos toma la pantalla (D-408).
+- **Último dato por canal:** una tarjeta por canal, con su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del Dashboard, aunque la otra fuente todavía no publique esa semana (D-404 a D-406).
 - **Stack y evidencia:** dos vistas. «Herramientas» explica cada herramienta; «Flujo del sistema en vivo» muestra las piezas reales, lo que se dicen y la carga en curso (D-412).
 
 [[diagrama:mockups]]
@@ -226,3 +226,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.12 | 01-11-2026 | RF-09: la vista se elige una vez por pestaña; toda recarga la conserva, también F5 y el enlace del aviso «Acción requerida» (D-430) |
 | 3.13 | 01-11-2026 | RF-08: al abrir el informe semanal se cierra el anterior (D-438) |
 | 3.14 | 01-11-2026 | Dos riesgos de abandono, con su mitigación propuesta: workflows desactivados por inactividad y la app dormida (9, D-439) |
+| 3.15 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |

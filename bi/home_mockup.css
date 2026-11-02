@@ -489,7 +489,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-home_products [data-testid="stTextInput"] > div {min-height:28px!important;}
 .st-key-home_products {padding:6px 12px 8px!important;gap:4px!important;}
 .mock-products-table {max-height:max(110px, calc(100vh - 676px))!important;min-height:0!important;}
-/* D-309: the Panorama fits one screen: the map and the panels take the height the window leaves under the bar.
+/* D-309: the Dashboard fits one screen: the map and the panels take the height the window leaves under the bar.
    D-407: under the bar and the row of the content (D-398), about 140 px; the map is held by that height, not by the
    column's width, so it never pushes the page down (1440 x 790 and 1280 x 800, RNF-06). */
 .st-key-home_overview {height:calc(100vh - 195px);min-height:420px;}
@@ -618,7 +618,7 @@ ul.mock-calc-out li em {font-style:normal;}
 .greenocean-mockup .mock-movement-heading p.mock-movement-note {margin:2px 0 0!important;font-size:10.5px!important;line-height:1.35!important;color:var(--mock-muted);}
 .mock-products-table th.mock-two-lines {white-space:normal;line-height:1.25;}
 
-/* D-352: reading order of the Panorama. Numbered panels, «Todo Chile», trends, the whole basket, locks and the search in the accent colour. */
+/* D-352: reading order of the Dashboard. Numbered panels, «Todo Chile», trends, the whole basket, locks and the search in the accent colour. */
 /* D-372: the step number big, in a circle of colour, at the start of each panel; its text clearly legible. */
 .mock-step {display:inline-flex;align-self:flex-start;width:fit-content;align-items:center;gap:9px;margin:0 10px 6px 0;font-size:14.5px;font-weight:700;color:__INK__;letter-spacing:-.01em;}
 .mock-step b {display:inline-flex;align-items:center;justify-content:center;flex:none;width:30px;height:30px;border-radius:50%;background:__ACCENT__;color:#ffffff;font-size:16px;font-weight:800;box-shadow:0 0 0 4px color-mix(in srgb,__ACCENT__ 22%,transparent);}

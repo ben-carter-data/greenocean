@@ -190,7 +190,7 @@ NODES = {
         [
             (
                 "Páginas",
-                "Interesados, Análisis de negocio y sistemas, Panorama de precios, Último dato por canal, Precios e inflación, "
+                "Dashboard, Interesados, Análisis de negocio y sistemas, Último dato por canal, Precios e inflación, "
                 "Insights, Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, "
                 "Arquitectura de seguridad, Calidad y auditoría, Método y calidad, Git workflow y la carpeta de "
                 "documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.",
@@ -204,7 +204,7 @@ NODES = {
         ["datos"],
         ("flow", 9),
         "Quien quiere saber cómo se mueven los precios: analista, compras, gerencia o público.",
-        "Ve el negocio: el Panorama, Insights y los precios frente a la inflación, sin cuenta: los datos son públicos.",
+        "Ve el negocio: el Dashboard, Insights y los precios frente a la inflación, sin cuenta: los datos son públicos.",
         "Cuando elige la vista Usuario.",
         "Dashboard",
         [],

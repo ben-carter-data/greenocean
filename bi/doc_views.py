@@ -212,7 +212,7 @@ CONTEXT_NODES = [
         PEOPLE_Y,
         "Usuario",
         "Quien quiere saber cómo se mueven los precios: analista, compras, gerencia o público.",
-        "Ve el negocio: el Panorama, Insights y los precios frente a la inflación. No necesita cuenta ni clave.",
+        "Ve el negocio: el Dashboard, Insights y los precios frente a la inflación. No necesita cuenta ni clave.",
     ),
     (
         "person",
@@ -326,7 +326,7 @@ def build_context_html(mode):
 USE_CASE_ROWS = (104, 200, 296, 392, 488)
 # (actor, row, case, PRD id, screen)
 USER_CASES = [
-    ("Gerencia", 0, "Revisar qué se movió en la semana y qué es inusual", "P-1", "Panorama de precios"),
+    ("Gerencia", 0, "Revisar qué se movió en la semana y qué es inusual", "P-1", "Dashboard"),
     (
         "Analista de pricing",
         1,
@@ -743,10 +743,10 @@ svg.c4 {{ display:block; width:100%; height:auto; overflow:visible; }}
 
 
 MOCKUP_DIR = Path(__file__).resolve().parent.parent / "docs" / "img"
-# (file, title, theme, view). D-392: the Panorama twice, as the Usuario and as the Profesional see it.
+# (file, title, theme, view). D-392: the Dashboard twice, as the Usuario and as the Profesional see it.
 MOCKUPS = [
-    ("m1-dashboard-corporativo.jpg", "M-1 · Panorama de precios", "Corporativo", "Usuario"),
-    ("m2-resumen-vantablack.jpg", "M-2 · Panorama de precios", "Vantablack", "Profesional"),
+    ("m1-dashboard-corporativo.jpg", "M-1 · Dashboard", "Corporativo", "Usuario"),
+    ("m2-resumen-vantablack.jpg", "M-2 · Dashboard", "Vantablack", "Profesional"),
     ("m3-precios-darkgrey.jpg", "M-3 · Precios e inflación", "Dark Grey", "Profesional"),
     ("m4-pipeline-bluelight.jpg", "M-4 · Pipeline y linaje", "Blue Light", "Profesional"),
     ("m5-sql-corporativo.jpg", "M-5 · Consultas SQL", "Corporativo", "Profesional"),
