@@ -3497,12 +3497,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Documentos:** PRD 3.18 (7 y la captura M-1, en `docs/img/` y `docs/img/en/`) e Índice de decisiones, en los dos idiomas.
 - **Pruebas:** `tests/test_panorama_steps.py::test_d446_the_dashboard_never_folds_its_steps_when_a_family_is_chosen` y `tests/test_home_mockup.py::test_d092_region_and_family_clicks_fill_the_products_table` (el mapa sigue a la vista); `tests/test_channel_latest.py::test_d408_a_channel_folds_its_steps_like_the_panorama` sigue verde.
 
-## D-447 · La tabla del Dashboard: encabezado de una línea y 10 filas a la vista
+## D-447 · La tabla del Dashboard: encabezado de una línea, en una sola pantalla, con su propio desplazamiento
 
-- **Pedido del autor:** con el panorama completo (D-446), la tabla de productos quedaba con un encabezado de cuatro líneas y casi sin filas; antes del botón de ampliar se deben ver al menos 10 filas, con un encabezado delgado.
-- **Decisión:** en el Dashboard, el encabezado ocupa una línea: las columnas de precio dicen solo su semana («19–25 oct», «26 oct – 1 nov»), con «Precio medio» al pasar el cursor, y la columna de regiones dice «Regiones ↑ / ↓». La ventana de la tabla y la de cada canal conservan «Precio 19–25 oct». Cada fila ocupa dos líneas: el producto y, debajo, su calidad, su unidad y «Ver cálculo». La tabla reserva la altura de 10 filas y la página crece bajo el mapa para mostrarlas; el botón de ampliar sigue abriendo la tabla al tamaño de la ventana.
-- **Medición:** 10 filas a la vista a 1440 × 790 y a 1280 × 800, sin desplazamiento horizontal (Playwright).
-- **Pruebas:** `tests/test_panorama_steps.py::test_d447_the_dashboard_table_has_a_one_line_header_and_ten_rows_in_sight`, y las del encabezado en `tests/test_dashboard.py`, `tests/test_home_mockup.py` y `tests/test_weeks.py`.
+- **Pedido del autor:** con el panorama completo (D-446), el encabezado de la tabla de productos ocupaba cuatro líneas. El Dashboard es una sola pantalla: la tabla se ve en pequeño bajo las familias y se desplaza sola, sin mover la página.
+- **Decisión:** en el Dashboard, el encabezado ocupa una línea. Las columnas de precio dicen solo su semana («19–25 oct», «26 oct – 1 nov»), con «Precio medio» al pasar el cursor, y la columna de regiones dice «Regiones ↑ / ↓». La ventana de la tabla y cada canal conservan «Precio 19–25 oct». La tabla termina en el borde inferior de la ventana y se desplaza por dentro; mide al menos 110 px. El botón de ampliar la abre al tamaño de la ventana.
+- **Lo que se probó y se descartó:** reservar 10 filas hacía crecer la página bajo el mapa, y el Dashboard dejaba de ser una sola pantalla (D-309).
+- **Medición:** el panel termina dentro de la ventana a 1440 × 790, 1280 × 800, 1440 × 900 y 1920 × 1000, sin desplazamiento horizontal. Bajo él queda solo la nota de cobertura, como antes (Playwright).
+- **Pruebas:** `tests/test_panorama_steps.py::test_d447_the_dashboard_table_has_a_one_line_header_and_scrolls_inside_one_screen`, y las del encabezado en `tests/test_dashboard.py`, `tests/test_home_mockup.py` y `tests/test_weeks.py`.
 
 ## D-448 · El SAD dibuja los diagramas de la app con el mismo código
 

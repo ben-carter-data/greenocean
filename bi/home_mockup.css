@@ -674,11 +674,13 @@ ul.mock-calc-out li em {font-style:normal;}
 .st-key-home_focus .mock-products-table td {padding-top:3px;padding-bottom:3px;line-height:1.3;}
 @media (max-height:860px) {.st-key-home_focus .mock-products-note {display:none!important;}}
 
-/* D-447: the Dashboard keeps its three panels together (D-446), so the products table holds its own height: a header of
-   one line and rows of two lines, 10 rows in sight before the enlarge button; the page grows below the map for it. */
+/* D-447: the Dashboard keeps its three panels together (D-446) on one screen (D-309): the products table ends at the
+   bottom of the window and scrolls by itself, never the page; 110 px is its least. Its header is one line
+   and its rows two, so it shows as many rows as the window leaves. The overview grows with it, so the note under it
+   never covers the table. */
 .st-key-home_overview {height:auto!important;min-height:calc(100vh - 195px);}
-.st-key-home_overview .mock-products-table {max-height:592px!important;min-height:0!important;}
-@media (max-width:1380px) {.st-key-home_overview .mock-products-table {max-height:810px!important;}}
+.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 766px))!important;min-height:0!important;}
+@media (max-height:860px) {.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 639px))!important;}}
 .mock-products-table th {padding-top:6px;padding-bottom:6px;}
 .mock-products-table td:first-child strong {display:block;}
 .mock-products-table td:first-child small {display:inline;}
