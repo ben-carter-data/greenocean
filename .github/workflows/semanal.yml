@@ -92,4 +92,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python bi/report.py > report.md
-          gh issue create --title "Informe semanal $(date +%Y-%m-%d)" --body-file report.md
+          new=$(gh issue create --title "Informe semanal $(date +%Y-%m-%d)" --body-file report.md)
+          # D-438: only the latest report stays open; the earlier ones are closed after the new one exists, pointing to it.
+          gh issue list --state open --limit 100 --json number,title \
+            --jq '.[] | select(.title | startswith("Informe semanal ")) | .number' |
+            { grep -vx "${new##*/}" || true; } |  # with no earlier report, grep finds nothing: not a failure
+            while read -r old; do
+              gh issue close "$old" --comment "Reemplazado por el informe de esta semana: $new (D-438)."
+            done

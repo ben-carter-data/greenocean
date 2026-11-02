@@ -91,3 +91,14 @@ def menu_labels():
         if pages is not dashboard.SOURCE_LINKS
         for view in pages
     } | {dashboard.SIDEBAR_LABELS.get(view, view) for view in dashboard.DOOR_PAGES}
+
+
+def test_rf08_the_new_weekly_report_closes_the_previous_ones():
+    """D-438: one weekly report stays open; the earlier ones are closed after the new one exists, pointing to it."""
+    workflow = (ROOT / ".github" / "workflows" / "semanal.yml").read_text(encoding="utf-8")
+    step = workflow.split("- name: Publish the weekly report")[1]
+    assert step.index('new=$(gh issue create --title "Informe semanal') < step.index("gh issue close")
+    assert 'startswith("Informe semanal ")' in step and 'grep -vx "${new##*/}"' in step  # never the new one
+    assert '{ grep -vx "${new##*/}" || true; }' in step  # pipefail: no earlier report is not a failure
+    assert "Reemplazado por el informe de esta semana: $new" in step
+    assert "permissions:\n  contents: write\n  issues: write\n" in workflow  # no new permission

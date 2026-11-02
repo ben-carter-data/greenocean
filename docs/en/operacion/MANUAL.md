@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.11 |
+| Version | 3.12 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -54,7 +54,7 @@ After every load that ends in green, the quality workflow proposes the weekly qu
 | When | What is checked or done | Where |
 |---|---|---|
 | Every Tuesday, after 12:00 UTC | That the run ended green | «Operations» tab of «Operations center», or the GitHub email if it failed |
-| Every Tuesday | That the issue «Informe semanal YYYY-MM-DD» (weekly report) exists | Issues of the repository |
+| Every Tuesday | That the issue «Informe semanal YYYY-MM-DD» (weekly report) exists, the only open one: the previous one is closed with a link to the new one (D-438) | Issues of the repository |
 | When in doubt about the figures | The quality verdict and the audit controls | «Quality and audit» |
 | Every January | Add to `agent/input.csv` the two lines of the new year (wholesale and consumer), with the URL ODEPA publishes on the page of each dataset | `agent/input.csv` |
 | Periodically | Copy `agent/downloads` to another disk: the CSV files are not versioned ([ADR-04 · Do not commit the raw data to the repository](../arquitectura/ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository)) and the GitHub cache is deleted if it is not used for 7 days | Another disk of the author |
@@ -213,3 +213,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.9 | 2026-11-01 | The weekly quality report comes only after a load in green and measures the 3 data indicators (2, D-431) |
 | 3.10 | 2026-11-01 | Each dependency has a maximum version; a new one comes in by raising its cap (4, D-435) |
 | 3.11 | 2026-11-01 | The report's pull request is merged by itself if the code is within its acceptable (8, 8.1, D-436) |
+| 3.12 | 2026-11-01 | The new weekly report closes the previous one (3, D-438) |

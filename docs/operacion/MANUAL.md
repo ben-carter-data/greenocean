@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.11 |
+| Versión | 3.12 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -54,7 +54,7 @@ Después de cada carga que termina en verde, el workflow de calidad propone el i
 | Cuándo | Qué se revisa o se hace | Dónde |
 |---|---|---|
 | Cada martes, después de las 12:00 UTC | Que la ejecución terminó en verde | Pestaña «Operación» de «Centro de operación», o el correo de GitHub si falló |
-| Cada martes | Que existe el issue «Informe semanal AAAA-MM-DD» | Issues del repositorio |
+| Cada martes | Que existe el issue «Informe semanal AAAA-MM-DD», el único abierto: el anterior queda cerrado con un enlace al nuevo (D-438) | Issues del repositorio |
 | Ante una duda sobre las cifras | El veredicto de calidad y los controles de auditoría | «Calidad y auditoría» |
 | Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos | `agent/input.csv` |
 | Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](../arquitectura/ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días | Otro disco del autor |
@@ -213,3 +213,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.9 | 01-11-2026 | El informe semanal de calidad sale solo tras una carga en verde y mide los 3 indicadores de datos (2, D-431) |
 | 3.10 | 01-11-2026 | Cada dependencia tiene una versión máxima; una nueva entra subiendo su tope (4, D-435) |
 | 3.11 | 01-11-2026 | El pull request del informe se fusiona solo si el código está en su aceptable (8, 8.1, D-436) |
+| 3.12 | 01-11-2026 | El informe semanal nuevo cierra el anterior (3, D-438) |

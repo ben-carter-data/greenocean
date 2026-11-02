@@ -3374,3 +3374,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - El cierre viaja en el mismo pull request del informe (D-436), así que queda en git como cualquier otro cambio.
   - **Documentos:** SQAP 1.8 (8), en los dos idiomas, y la nota de `no_conformidades.json`.
 - **Pruebas:** `tests/test_quality_method.py::test_d437_a_weekly_non_conformity_closes_by_itself_when_its_indicator_is_back_and_the_construction_series_is_untouched`.
+
+## D-438 · Al abrir el «Informe semanal», se cierra el anterior
+
+- **Pedido del autor:** que los issues «Informe semanal» no se acumulen. Cada martes se abría uno nuevo y nadie cerraba los anteriores.
+- **Decisión:**
+  - El paso «Publish the weekly report» de `semanal.yml` abre el issue nuevo y, después, cierra cada issue abierto cuyo título empieza por «Informe semanal », salvo el nuevo, con el comentario «Reemplazado por el informe de esta semana: …», que enlaza al nuevo.
+  - Se cierra después de abrir el nuevo, así nunca queda la semana sin informe abierto. El primer martes cierra también los que hoy sigan abiertos.
+  - Se eligió cerrar en vez de editar un único issue: cada semana queda como su propio registro, con su fecha y su enlace, y solo el último queda abierto.
+  - El workflow ya tenía el permiso `issues: write`; no se agrega ninguno.
+  - **Documentos:** PRD 3.13 (RF-08) y MANUAL 3.12 (3), en los dos idiomas.
+- **Pruebas:** `tests/test_prd_traceability.py::test_rf08_the_new_weekly_report_closes_the_previous_ones`.
