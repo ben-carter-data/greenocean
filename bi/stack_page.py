@@ -224,7 +224,7 @@ EDGES = [
         "ops",
         "M154 62 H256 V236",
         "cada martes",
-        205,
+        216,
         62,
         "El workflow semanal.yml lanza la descarga, el ETL y etl/pipeline.py en una máquina de GitHub.",
     ),
@@ -392,8 +392,13 @@ def build_css(palette):
     shadow = "rgba(0,0,0,.55)" if dark else "rgba(15,39,71,.22)"
     sans = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
     return f"""<style>
-/* D-277: the diagram keeps its proportion and is never taller than what the window leaves for it, with the figures. */
-.sk-map {{ container-type:inline-size; max-width:min(1240px, calc((100vh - 378px) * {WIDTH} / {HEIGHT})); margin:4px auto 0; }}
+/* D-277: the diagram keeps its proportion and is never taller than what the window leaves for it, with the figures.
+   D-440: but a short window never makes it narrower than 760 px; then the page scrolls a little instead. Every text
+   between two tools scales with the diagram, so none can cover its neighbour; a long description wraps inside its
+   tool; and when the diagram is too small for a secondary text to be read, it hides: the tooltip and the legend keep
+   it. The names of the tools always show. */
+.sk-map {{ container-type:inline-size; max-width:min(1240px, max(760px, calc((100vh - 378px) * {WIDTH} / {HEIGHT})));
+  margin:4px auto 0; }}
 .sk-stage {{ --u:calc(100cqw / {WIDTH}); position:relative; width:100%; aspect-ratio:{WIDTH}/{HEIGHT}; }}
 .sk-wires {{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }}
 .sk-node {{ position:absolute; width:calc(158 * var(--u)); margin-left:calc(-79 * var(--u)); margin-top:calc(-{LOGO / 2} * var(--u));
@@ -403,13 +408,16 @@ def build_css(palette):
   transition:transform .25s ease; }}
 .sk-node.source .logo {{ width:calc({SOURCE_LOGO} * var(--u)); height:calc({SOURCE_LOGO} * var(--u)); }}
 .sk-node:hover .logo, .sk-node:focus .logo {{ transform:translateY(-4px) scale(1.06); }}
-.sk-node b {{ margin-top:3px; color:{ink}; font:600 max(12px, calc(14.5 * var(--u)))/1.15 {sans}; white-space:nowrap; }}
-.sk-node small {{ white-space:nowrap; color:{text}; font:400 max(11px, calc(12 * var(--u)))/1.25 {sans}; }}
-.sk-node em {{ margin-top:2px; color:{muted}; font:600 max(10.5px, calc(10.5 * var(--u)))/1.2 {sans}; font-style:normal;
-  letter-spacing:.08em; text-transform:uppercase; }}
-.sk-node.source b {{ font-size:max(11.5px, calc(13 * var(--u))); }}
-.sk-chip {{ position:absolute; transform:translate(-50%,-50%); padding:1px 7px; border-radius:7px; background:{palette['background']};
-  border:1px solid currentColor; font:600 max(10.5px, calc(11.5 * var(--u)))/1.35 {sans}; white-space:nowrap; outline:none; cursor:default; }}
+.sk-node b {{ margin-top:3px; color:{ink}; font:600 max(10px, calc(14.5 * var(--u)))/1.15 {sans}; white-space:nowrap; }}
+.sk-node small {{ width:100%; color:{text}; font:400 max(9px, calc(12 * var(--u)))/1.2 {sans}; overflow-wrap:break-word; }}
+.sk-node em {{ margin-top:2px; color:{muted}; font:600 calc(12.5 * var(--u))/1.2 {sans}; font-style:normal;
+  letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; }}
+.sk-node.source b {{ font-size:max(10px, calc(13 * var(--u))); }}
+.sk-chip {{ position:absolute; transform:translate(-50%,-50%); padding:calc(1 * var(--u)) calc(7 * var(--u));
+  border-radius:calc(7 * var(--u)); background:{palette['background']}; border:1px solid currentColor;
+  font:600 calc(12.5 * var(--u))/1.35 {sans}; white-space:nowrap; outline:none; cursor:default; }}
+@container (max-width:700px) {{ .sk-node em, .sk-chip {{ visibility:hidden; }} }}
+@container (max-width:480px) {{ .sk-node small {{ display:none; }} }}
 .sk-tip {{ position:absolute; z-index:40; top:calc(100% + 8px); left:50%; transform:translateX(-50%); width:310px; padding:11px 13px;
   border-radius:12px; background:{card}; border:1px solid {border}; color:{text}; text-align:left;
   box-shadow:0 18px 40px rgba(0,0,0,{'.5' if dark else '.18'}); font:400 12.5px/1.45 {sans}; white-space:pre-line; letter-spacing:0; text-transform:none;

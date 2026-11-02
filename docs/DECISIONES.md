@@ -3397,3 +3397,16 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - Para la app dormida: el `README.md` y el enlace del portafolio avisan que puede tardar en despertar y muestran las capturas reales de `docs/img/`. No verificado: el plazo exacto de hibernación y si una visita automática la mantiene despierta.
 - **Documentos:** PRD 3.14 (9) y SAD 3.11 (11), en los dos idiomas. De paso, la fila del SAD sobre dependencias dice que todas tienen versión máxima (D-435).
 - **Pruebas:** `tests/test_documents.py::test_d439_the_risk_registers_name_both_abandonment_risks`.
+
+## D-440 · Un diagrama se achica sin que sus textos se pisen: «Stack y evidencia» es el primero
+
+- **Reporte del autor:** al achicar la ventana, el diagrama de herramientas de «Stack y evidencia» mezclaba sus letras. Medido sin ninguna pestaña abierta: 0 textos encimados a 1920 × 1000, 3 a 1440 × 790, 22 a 1100 × 650 y 127 a 700 × 500, en los dos idiomas.
+- **Causa:** las posiciones de cada herramienta se achican con el diagrama, pero las letras tenían un tamaño mínimo fijo (de 10,5 a 12 px) y no podían partirse en dos líneas; al achicarse, los nombres, las descripciones y las etiquetas de las flechas quedaban más anchos que el espacio entre herramientas. Además, el ancho del diagrama dependía del alto de la ventana (D-277): una ventana baja lo dejaba en 238 px aunque sobrara ancho.
+- **Decisión, la regla para todos los diagramas** (se aplica a los demás en la revisión de diagramas):
+  1. Todo texto que esté entre dos elementos se escala con el diagrama, sin tamaño mínimo fijo: así no puede pisar a su vecino, igual que en una imagen.
+  2. Una descripción larga se parte en líneas dentro del ancho de su elemento.
+  3. Cuando el diagrama queda tan chico que un texto secundario no se podría leer, ese texto se oculta; la explicación al pasar el cursor y la leyenda lo conservan. Los nombres se ven siempre.
+  4. Una ventana baja no achica el diagrama bajo un ancho legible; si falta alto, la página se desplaza un poco.
+- **En «Stack y evidencia»:** ancho mínimo de 760 px por alto de ventana; la etapa de cada herramienta y las etiquetas de las flechas, a 12,5 unidades del diagrama, sin mínimo; las descripciones se parten dentro de su herramienta (mínimo 9 px); bajo 700 px de ancho se ocultan las etapas y las etiquetas de las flechas, y bajo 480 px, las descripciones; la etiqueta «cada martes» se corre a la derecha para no rozar el logo de GitHub en inglés («every Tuesday»). «Capa bronce» tiene ahora su inglés, «Bronze layer».
+- **Resultado medido:** 0 textos encimados a 1920 × 1000, 1440 × 790, 1280 × 800, 1100 × 650, 700 × 500 y 520 × 700, en español e inglés; la letra visible más chica, 8,7 px a 1440 × 790. A 1440 × 790 y 1280 × 800 la página sigue cabiendo en una pantalla.
+- **Pruebas:** `tests/test_stack_page.py::test_d440_no_text_can_cover_its_neighbour_when_the_window_shrinks`.

@@ -90,3 +90,20 @@ def test_d266_the_explanations_stay_inside_the_stage():
     # The lowest tool opens its explanation upward, so it never covers the legend or the figures.
     assert stack_page.tip_html(*stack_page.NODES["pytest"][:2], []).startswith('<span class="sk-tip up"')
     assert page.index('class="sk-stage"') < page.index('class="sk-legend"') < page.index('class="evidence"')
+
+
+def test_d440_no_text_can_cover_its_neighbour_when_the_window_shrinks():
+    """D-440: what sits between two tools scales with the diagram; a description wraps inside its tool; a secondary text
+    hides when it would be too small to read; and a short window never makes the diagram narrower than 760 px."""
+    css = stack_page.build_css(charts.get_palette(charts.MODE_DARK))
+    rule = lambda selector: css.split(selector + " {")[1].split("}")[0]  # noqa: E731
+    assert "max(760px, calc((100vh - 378px)" in css
+    for selector in (".sk-node em", ".sk-chip"):
+        assert (
+            "calc(12.5 * var(--u))" in rule(selector) and "max(" not in rule(selector).split("font:")[1].split(";")[0]
+        )
+    small = rule(".sk-node small")
+    assert "nowrap" not in small and "width:100%" in small and "overflow-wrap:break-word" in small
+    assert "@container (max-width:700px) { .sk-node em, .sk-chip { visibility:hidden; } }" in css
+    assert "@container (max-width:480px) { .sk-node small { display:none; } }" in css
+    assert "white-space:nowrap" in rule(".sk-node b")  # the names always show, whole

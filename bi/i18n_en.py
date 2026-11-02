@@ -399,6 +399,7 @@ PAGES = {
     "ATTACH de solo lectura y CREATE TABLE AS": "read-only ATTACH and CREATE TABLE AS",
     "Base de trabajo": "Working database",
     "Bronce": "Bronze",
+    "Capa bronce": "Bronze layer",
     "Próxima carga": "Next load",
     "Cada línea es un cruce entre dos bases y lleva lo que las une. El número se colorea con su comprobación de ahora: verde comprobado, ámbar no medible aquí, gris dato.": "Each line is a crossing between two databases and carries what joins them. The number is colored by its check right now: green checked, amber not measurable here, grey a fact.",
     "Cada línea es un cruce: el punto donde dos bases se tocan, con lo que las une. El número muestra si se comprobó ahora; pasa el cursor por un número para ver el detalle.": "Each line is a crossing: the point where two databases touch, with what joins them. The number shows whether it was checked now; hover over a number to see the detail.",
