@@ -196,27 +196,18 @@ def test_d446_the_dashboard_never_folds_its_steps_when_a_family_is_chosen():
     assert not {"home_change_region", "home_change_family"} & {str(button.key) for button in app.button}
 
 
-def test_d408_the_folded_table_takes_the_height_and_its_rows_two_lines():
-    css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
-    # 8 rows or more at 1440 x 790 and 6 at 1280 x 800, measured with Playwright (D-408)
-    assert ".st-key-home_focus .mock-products-table {max-height:max(240px, calc(100vh - 360px))!important;" in css
-    assert ".st-key-home_focus .mock-products-table td:first-child .mock-calc {display:inline-block;" in css
-    assert home_mockup.chosen_step(1, "Región", "Biobío") == (
-        '<div class="mock-chosen"><b>1</b><span>Región</span><strong>Biobío</strong></div>'
-    )
-
-
 def test_d447_the_dashboard_table_has_a_one_line_header_and_scrolls_inside_one_screen():
     table = home_mockup.products_table([], "26 oct – 1 nov", "19–25 oct")
     header = table.split("<thead>", 1)[1].split("</thead>", 1)[0]
     assert "<br>" not in header and "mock-two-lines" not in header  # one line, the panel's own word hidden
     assert '<span class="mock-th-word">Precio</span> 19–25 oct' in header and "Regiones ↑ / ↓</th>" in header
     css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
-    # One screen (D-309): the table ends at the bottom of the window and scrolls by itself, measured with Playwright at
-    # 1440 x 790, 1280 x 800, 1440 x 900 and 1920 x 1000 (D-447).
-    assert ".st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 641px))!important;" in css
+    # One screen (D-309): the table fills the products panel down to the bottom of the window and scrolls by itself,
+    # with no figure fixed in advance, so a channel with two families fills it too (D-452). Measured with Playwright at
+    # 1440 x 790, 1280 x 800, 1440 x 900 and 1920 x 1000 on the Dashboard and on a channel.
+    assert ".st-key-home_overview {height:auto!important;min-height:calc(100vh - 136px);}" in css
     assert (
-        "@media (max-height:860px) {.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 515px))"
+        ".st-key-home_overview .mock-products-table {flex:1 1 0;min-height:110px!important;max-height:none!important;}"
         in css
     )
     assert ".st-key-home_overview .mock-th-word {display:none;}" in css

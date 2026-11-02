@@ -208,9 +208,9 @@ def open_as_professional():
 @needs_database
 def test_d423_volver_goes_back_to_the_previous_page_of_the_visit_with_its_state():
     app = open_as_professional()
-    # the Dashboard with its steps 1 and 2 opened again («Cambiar»)
+    # the Dashboard with its steps done and the search already used (D-372)
     app.session_state["home_region_done"] = app.session_state["home_family_done"] = True
-    app.session_state["home_expanded"] = True
+    app.session_state["home_searched"] = True
     app.run()
     assert not app.exception
     # another page of the menu; the Dashboard's state changes meanwhile
@@ -220,14 +220,14 @@ def test_d423_volver_goes_back_to_the_previous_page_of_the_visit_with_its_state(
         dashboard.WINDOW_OF_VIEW[dashboard.PAGE_HOME],
         dashboard.WINDOW_OF_VIEW[dashboard.PAGE_ARCHITECTURE],
     ]
-    app.session_state["home_expanded"] = False
+    app.session_state["home_searched"] = False
     app.button(key="return_to_previous").click().run()
     assert not app.exception
     # back on the Dashboard, in this same session (the view is kept), with the steps as they were
     markup = " ".join(block.value for block in app.markdown)
     assert "Página actual: Ingeniería de datos › Modelo de datos" not in markup
     assert "Mapa de Chile con la dirección dominante de los precios por región" in markup
-    assert app.session_state["home_expanded"] is True
+    assert app.session_state["home_searched"] is True
     assert app.session_state[dashboard.PROFILE_STATE] == dashboard.PROFILE_PROFESSIONAL
     assert dashboard.VIEW_PARAMETER not in app.query_params
     assert len(app.session_state[dashboard.PAGE_HISTORY]) == 1

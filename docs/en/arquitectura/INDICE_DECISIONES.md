@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Decision Index |
-| Version | 2.3 |
+| Version | 2.4 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -169,7 +169,7 @@ How the panel reads on a single screen and in two languages.
 | The header only places the reader; the information goes in the content | — | D-398 |
 | Each channel opens with the Overview's steps, in its own latest week | — | D-405 |
 | Each main page also fits 1280 × 800 | — | D-407 |
-| On a channel, once the family is chosen, steps 1 and 2 fold and the products table takes the screen | — | D-408 |
+| Each channel behaves exactly like the Dashboard, without folding its steps, and is the menu's second tile (replaces D-408) | — | D-452 |
 | The Dashboard never folds its steps: the overview stays whole | — | D-446 |
 
 ## 9. Documentation
@@ -199,3 +199,4 @@ How the project is explained.
 | 2.1 | 2026-10-31 | The major decisions since D-290: late sources, quality in two parts, the three views, the manual load window, the two reports and the four folders of documents; wording reviewed (D-381, D-388) |
 | 2.2 | 2026-11-01 | The major decisions of the final part: the limit of attempts, «Settings» and its token warning, the live flow and its picture in the SAD, the header, the channels and one screen at 1280 × 800 (D-393 to D-414) |
 | 2.3 | 2026-11-02 | The folding of the steps applies only to the channels; the Dashboard stays whole (D-446) |
+| 2.4 | 2026-11-02 | Each channel behaves exactly like the Dashboard and no longer folds its steps (D-452) |

@@ -135,7 +135,8 @@ def test_d365_the_table_is_served_and_documented():
         and "int_prices__weekly" in model
     )
     assert "### latest_by_source" in i18n.document_path("SAD.md", "es").read_text(encoding="utf-8")
-    assert dashboard.PAGE_CHANNELS in next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
+    # D-452: the second tile of the menu, under the Dashboard
+    assert dashboard.PAGE_CHANNELS in next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "dashboard")
 
 
 def test_d380_the_channel_page_hands_its_scope_in_spanish_so_the_sentences_translate_whole():
@@ -224,7 +225,7 @@ def test_d406_a_card_keeps_the_view_and_the_steps_of_a_channel_do_not_reload_the
 
 
 @needs_database
-def test_d408_a_channel_folds_its_steps_like_the_panorama():
+def test_d452_a_channel_behaves_exactly_like_the_dashboard_and_never_folds():
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=120)
     app.session_state["visitor_profile"] = "profesional"
     app.session_state["home_region_done@Feria libre"] = True
@@ -233,6 +234,6 @@ def test_d408_a_channel_folds_its_steps_like_the_panorama():
     app.run()
     assert not app.exception
     page = " ".join(block.value for block in app.markdown)
-    assert '<span>Familia</span><strong>Frutas</strong>' in page and 'class="mock-chile-map"' not in page
-    app.button(key="home_change_region").click().run()  # the state of the channel, never the Dashboard's
-    assert app.session_state["home_expanded@Feria libre"] and "home_expanded" not in app.session_state
+    assert 'class="mock-chile-map"' in page and "mock-movement-row rise selected" in page  # the map and the families
+    assert 'class="mock-chosen"' not in page and 'class="mock-products-table"' in page
+    assert not {"home_change_region", "home_change_family"} & {str(button.key) for button in app.button}

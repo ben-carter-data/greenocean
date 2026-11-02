@@ -3764,12 +3764,6 @@ HOME_LINK_PARAMETERS = ("_home_region", "_home_week", "familia")
 HOME_STEP_PARAMETER = "_home_step"
 HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_FLASH = "home_region_done", "home_family_done", "home_flash"
 HOME_SEARCHED = "home_searched"  # D-372
-HOME_EXPANDED = "home_expanded"  # D-408: the steps 1 and 2 opened again with «Cambiar»
-
-
-def open_home_steps(key):
-    """D-408: «Cambiar» opens the steps 1 and 2 again; choosing a family folds them."""
-    st.session_state[key] = True
 
 
 def apply_home_link_click():
@@ -3790,8 +3784,6 @@ def apply_home_link_click():
         st.session_state[scoped(HOME_REGION_DONE)] = True
         st.session_state[scoped(HOME_FAMILY_DONE)] = True
         st.session_state[scoped(HOME_FLASH)] = "products"
-    if step == "family":
-        st.session_state.pop(scoped(HOME_EXPANDED), None)  # D-408: a family chosen folds the steps 1 and 2 again
     for name in HOME_LINK_PARAMETERS:
         if parameters.get(name):
             st.query_params[name] = parameters[name][0]
@@ -4557,10 +4549,7 @@ def show_market_overview(mode, prefix):
     if home_view == HOME_VIEWS[1]:
         show_weeks_panel(mode)
         return
-    # D-408: on a channel page, once a family is chosen, the steps 1 and 2 fold into one line each, with what was chosen
-    # and «Cambiar», and the products table takes the whole width and the height they leave; «Cambiar» opens them again.
-    # D-446: the Dashboard never folds: its three panels stay together, and the table has its own enlarge button.
-    folded = channel is not None and family_open and not st.session_state.get(scoped(HOME_EXPANDED))
+    # D-452: a channel page behaves exactly as the Dashboard: its three panels stay together (D-446), nothing folds.
 
     def show_products():
         with st.container(key='home_products'):
@@ -4675,75 +4664,49 @@ def show_market_overview(mode, prefix):
                     note,
                 )
 
-    if folded:
-        family_average = next((value for name, value, _ in averages if name == family), None)
-        region_name = 'Todo Chile' if region == ALL_VALUES else home_mockup.short_region(region)
-        with st.container(key='home_chosen', horizontal=True, vertical_alignment='center'):
-            for target, step, label, value, average in (
-                ('region', 1, 'Región', region_name, None),
-                ('family', 2, 'Familia', home_mockup.short_family(family), family_average),
-            ):
-                with st.container(key=f'home_chosen_{target}', horizontal=True, vertical_alignment='center'):
-                    st.markdown(
-                        '<div class="greenocean-mockup">'
-                        + home_mockup.chosen_step(step, label, value, average)
-                        + '</div>',
-                        unsafe_allow_html=True,
-                        width='content',
-                    )
-                    st.button(
-                        tr('Cambiar'),
-                        key=f'home_change_{target}',
-                        on_click=open_home_steps,
-                        args=(scoped(HOME_EXPANDED),),
-                        help=tr('Volver a los pasos 1 y 2 para elegir otra región o familia.'),
-                    )
-        with st.container(key='home_focus'):
-            show_products()
-    else:
-        map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
-        # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
-        # sanitizer intentionally removes interactive SVG links.
-        map_column.markdown(
-            '<div class="greenocean-mockup">'
-            + home_mockup.regional_map(
-                regional_rows,
-                lambda chosen: overview_link(chosen, family, 'region'),
-                model['week_label'],
-                model['previous_label'],
-                None if region == ALL_VALUES else region,
-                step=1,
-                all_link=overview_link(None, family, 'region'),
-                prompt=not region_open,
-            )
-            + '</div>',
-            unsafe_allow_html=True,
+    map_column, detail_column = st.container(key='home_overview').columns([0.7, 1.3], gap='small')
+    # Markdown's explicit HTML mode preserves the inline geographic SVG; st.html's
+    # sanitizer intentionally removes interactive SVG links.
+    map_column.markdown(
+        '<div class="greenocean-mockup">'
+        + home_mockup.regional_map(
+            regional_rows,
+            lambda chosen: overview_link(chosen, family, 'region'),
+            model['week_label'],
+            model['previous_label'],
+            None if region == ALL_VALUES else region,
+            step=1,
+            all_link=overview_link(None, family, 'region'),
+            prompt=not region_open,
         )
-        trends, basket_trend = read_home_trends(get_database_version(), week)
-        basket_value = home_mockup.basket_median(model['family_rows'])
-        with detail_column:
-            with st.container(key='home_families'):
-                if not region_open:
-                    st.markdown(
-                        f'<div class="greenocean-mockup">{home_mockup.lock_overlay(2)}</div>', unsafe_allow_html=True
-                    )
+        + '</div>',
+        unsafe_allow_html=True,
+    )
+    trends, basket_trend = read_home_trends(get_database_version(), week)
+    basket_value = home_mockup.basket_median(model['family_rows'])
+    with detail_column:
+        with st.container(key='home_families'):
+            if not region_open:
                 st.markdown(
-                    '<div class="greenocean-mockup">'
-                    + home_mockup.family_movement(
-                        model['family_rows'],
-                        lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen, 'family'),
-                        family,
-                        scope,
-                        home_mockup.movement_note(model),
-                        step=2,
-                        trends=trends,
-                        basket=None if basket_value is None else (basket_value, basket_trend),
-                        basket_link=overview_link(None if region == ALL_VALUES else region, ALL_VALUES, 'family'),
-                    )
-                    + '</div>',
-                    unsafe_allow_html=True,
+                    f'<div class="greenocean-mockup">{home_mockup.lock_overlay(2)}</div>', unsafe_allow_html=True
                 )
-            show_products()
+            st.markdown(
+                '<div class="greenocean-mockup">'
+                + home_mockup.family_movement(
+                    model['family_rows'],
+                    lambda chosen: overview_link(None if region == ALL_VALUES else region, chosen, 'family'),
+                    family,
+                    scope,
+                    home_mockup.movement_note(model),
+                    step=2,
+                    trends=trends,
+                    basket=None if basket_value is None else (basket_value, basket_trend),
+                    basket_link=overview_link(None if region == ALL_VALUES else region, ALL_VALUES, 'family'),
+                )
+                + '</div>',
+                unsafe_allow_html=True,
+            )
+        show_products()
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown(
         '<div class="greenocean-mockup">'
@@ -8497,7 +8460,7 @@ PAGE_HISTORY = "page_history"
 RETURN_TARGET = "return_target"
 HISTORY_LIMIT = 30
 # Besides its address, a page is its report filters and the Dashboard's steps (each channel keeps its own, «key@canal»).
-HISTORY_STATE_KEYS = {*RETURN_CONTEXT_KEYS, HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_EXPANDED, HOME_SEARCHED}
+HISTORY_STATE_KEYS = {*RETURN_CONTEXT_KEYS, HOME_REGION_DONE, HOME_FAMILY_DONE, HOME_SEARCHED}
 # The parameters every address carries (theme, language, view) never make a new step.
 CONTEXT_PARAMETERS = {THEME_PARAMETER, i18n.LANGUAGE_PARAMETER, PROFILE_PARAMETER, ROLE_PARAMETER, "_ctx"}
 
@@ -8647,13 +8610,14 @@ RELOAD_HOME_SCRIPT = """<script>
 # (key, title, pages or source links)
 MENU_BLOCKS = [
     # D-442: the Dashboard, the weekly summary of prices, is the main page: a tile of its own at the top of the menu.
-    ("dashboard", "Dashboard", [PAGE_HOME]),
+    # D-452: «Último dato por canal», the same dashboard for each source's own latest week, is the second tile.
+    ("dashboard", "Dashboard", [PAGE_HOME, PAGE_CHANNELS]),
     (
         "negocio",
         "Negocio · BA y BI",
         # D-378: the reading order of a visitor: first who it is for and the analysis (BA and BSA), then the prices (BI)
         # D-398: «Precios e inflación» joins the menu, after «Último dato por canal» (4C): the header no longer opens it.
-        [PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_CHANNELS, PAGE_SEASONALITY, PAGE_INSIGHTS],
+        [PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_SEASONALITY, PAGE_INSIGHTS],
     ),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG]),  # D-420: the Autor's only
@@ -8904,7 +8868,10 @@ def build_sidebar_css(mode):
         border-color:{MENU_INK[dark][5]};}}
     [class*="st-key-nav_folder_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
     [class*="st-key-nav_folder_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
-    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] {{margin:2px 0 10px !important;}}
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] {{margin:2px 0 2px !important;}}
+    [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] {{margin:0 0 10px !important;}}
+    [class*="st-key-nav_dashboard_tile_1"] [data-testid="stPageLink"] a::before {{
+        background-image:url("data:image/svg+xml;base64,{base64.b64encode(CHANNELS_TILE_SVG.encode()).decode()}") !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a {{display:flex !important; flex-direction:row;
         align-items:center; gap:12px !important; width:100% !important; min-height:58px !important; padding:8px 12px !important;
         border-radius:12px; background:{MENU_INK[dark][3]} !important; border:1px solid {MENU_INK[dark][5]} !important;
@@ -8916,7 +8883,11 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a:hover::before {{transform:translateY(-2px);}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] p {{color:{text} !important; -webkit-text-fill-color:{text} !important;
         font-size:1rem !important; font-weight:700 !important; margin:0 !important;}}
-    .st-key-nav_dashboard_tile_nav_current [data-testid="stPageLink"] a {{border-color:{MENU_INK[dark][6]} !important;
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a span:has(> div > p),
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a span:has(> div > p) *,
+    [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] p {{white-space:normal !important;
+        overflow:visible !important; text-overflow:clip !important; line-height:1.2 !important;}}
+    [class*="st-key-nav_dashboard_tile"][class*="_nav_current"] [data-testid="stPageLink"] a {{border-color:{MENU_INK[dark][6]} !important;
         box-shadow:inset 3px 0 0 #5aa9ea !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
     [class*="st-key-nav_dashboard_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
@@ -8925,7 +8896,7 @@ def build_sidebar_css(mode):
     </style>"""
 
 
-SIDEBAR_NAV_VERSION = 11  # D-442: the Dashboard tile
+SIDEBAR_NAV_VERSION = 12  # D-442: the Dashboard tile; D-452: «Último dato por canal» under it
 # D-286: the sources start folded; the documents are a folder at the end of the menu, not a section.
 FOLDED_BY_DEFAULT = {"fuentes"}
 FOLDER_TILE_BLOCK = "documentos"
@@ -8943,6 +8914,15 @@ DASHBOARD_TILE_SVG = (
     'height="14" rx="1" fill="#8ac6f5"/><rect x="23" y="21" width="5" height="19" rx="1" fill="#8ac6f5"/>'
     '<path d="M34 37l7-8 6 4 11-12" fill="none" stroke="#5fd39b" stroke-width="2.4" stroke-linecap="round" '
     'stroke-linejoin="round"/></svg>'
+)
+# D-452: the same dashboard, split in two sources side by side, each with its own latest week.
+CHANNELS_TILE_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 46"><rect x="1" y="1" width="62" height="44" rx="6" '
+    'fill="#1d3557" stroke="#5aa9ea" stroke-width="1.5"/><path d="M32 6v34" stroke="#5aa9ea" stroke-width="1.2" '
+    'stroke-dasharray="2 2"/><rect x="6" y="6" width="21" height="7" rx="2" fill="#5fd39b"/><rect x="37" y="6" '
+    'width="21" height="7" rx="2" fill="#f0b347"/><rect x="8" y="27" width="5" height="13" rx="1" fill="#8ac6f5"/>'
+    '<rect x="16" y="21" width="5" height="19" rx="1" fill="#8ac6f5"/><rect x="39" y="24" width="5" height="16" rx="1" '
+    'fill="#8ac6f5"/><rect x="47" y="18" width="5" height="22" rx="1" fill="#8ac6f5"/></svg>'
 )
 SOURCES_TILE_SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 50"><ellipse cx="28" cy="10" rx="20" ry="6" '
@@ -9012,15 +8992,17 @@ def show_footer_tiles(windows_by_title, current_window, current_view):
 
 def show_dashboard_tile(windows_by_title, current_window, current_view):
     """D-442: the Dashboard, the weekly summary of prices, as a large tile at the top of the menu, for every profile;
-    it stays lit while it is open."""
-    window = WINDOW_OF_VIEW[PAGE_HOME]
-    active = window == current_window and current_view == PAGE_HOME
-    with st.sidebar.container(key="nav_dashboard_tile" + ("_nav_current" if active else "")):
-        st.page_link(
-            windows_by_title[window],
-            label=tr(SIDEBAR_LABELS[PAGE_HOME]),
-            query_params=keep_context() | {VIEW_PARAMETER: PAGE_HOME},
-        )
+    it stays lit while it is open. D-452: «Último dato por canal», the same dashboard by source, is a tile under it."""
+    for index, view in enumerate(next(pages for key, _, pages in MENU_BLOCKS if key == DASHBOARD_TILE_BLOCK)):
+        window = WINDOW_OF_VIEW[view]
+        active = window == current_window and current_view == view
+        with st.sidebar.container(key=f"nav_dashboard_tile_{index}" + ("_nav_current" if active else "")):
+            st.page_link(
+                windows_by_title[window],
+                label=tr(SIDEBAR_LABELS.get(view, view)),
+                icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
+                query_params=keep_context() | {VIEW_PARAMETER: view},
+            )
 
 
 def show_folder_tile(windows_by_title, current_window, current_view):

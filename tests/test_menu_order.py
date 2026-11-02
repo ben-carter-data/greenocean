@@ -13,10 +13,10 @@ needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="
 ORDER = [
     dashboard.PAGE_STAKEHOLDERS,
     dashboard.PAGE_ANALYSIS,
-    dashboard.PAGE_CHANNELS,
     dashboard.PAGE_SEASONALITY,  # D-398
     dashboard.PAGE_INSIGHTS,
 ]
+TILES = [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS]  # D-452: the two dashboards, as tiles over the section
 
 
 def draw(profile, view, language="es"):
@@ -27,19 +27,13 @@ def draw(profile, view, language="es"):
 
 
 def test_d378_the_section_lists_who_it_is_for_and_the_analysis_before_the_prices():
-    # D-442: the Dashboard leads the menu as a tile of its own; the section follows it.
-    assert dashboard.MENU_BLOCKS[0] == ("dashboard", "Dashboard", [dashboard.HOME_PAGE])
+    # D-442: the Dashboard leads the menu as a tile of its own; D-452: «Último dato por canal» is the tile under it.
+    assert dashboard.MENU_BLOCKS[0] == ("dashboard", "Dashboard", TILES)
     assert dashboard.MENU_BLOCKS[1][0] == "negocio" and dashboard.MENU_BLOCKS[1][1] == "Negocio · BA y BI"
     assert dashboard.MENU_BLOCKS[1][2] == ORDER
-    assert dashboard.MENU_ORDER[:6] == [dashboard.HOME_PAGE] + ORDER  # the path and the footer follow it (D-250)
+    assert dashboard.MENU_ORDER[:6] == TILES + ORDER  # the path and the footer follow it (D-250)
     labels = [dashboard.SIDEBAR_LABELS.get(view, view) for view in ORDER]
-    assert labels == [
-        "Interesados",
-        "Análisis de negocio y sistemas",
-        "Último dato por canal",
-        "Precios e inflación",
-        "Insights",
-    ]
+    assert labels == ["Interesados", "Análisis de negocio y sistemas", "Precios e inflación", "Insights"]
     for label in labels:
         assert i18n.EN[label] or i18n.PAGES[label], label
 
@@ -51,9 +45,9 @@ def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_o
             "es",
             [
                 "Dashboard",
+                "Último dato por canal",
                 "Interesados",
                 "Análisis de negocio y sistemas",
-                "Último dato por canal",
                 "Precios e inflación",
                 "Insights",
             ],
@@ -62,9 +56,9 @@ def test_d378_every_view_reads_the_section_in_that_order_and_the_user_view_has_o
             "en",
             [
                 "Dashboard",
+                "Latest data by channel",
                 "Stakeholders",
                 "Business and systems analysis",
-                "Latest data by channel",
                 "Prices and inflation",
                 "Insights",
             ],

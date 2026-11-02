@@ -971,11 +971,11 @@ def test_historical_root_link_keeps_the_requested_project_view_after_route_chang
 def test_d250_the_path_and_the_footer_follow_the_menu():
     order = dashboard.MENU_ORDER
     assert len(order) == len(set(order))
-    assert order[:6] == [  # D-442: the Dashboard first; D-378: then who it is for, the analysis and the prices
+    assert order[:6] == [  # D-442, D-452: the two dashboards first; D-378: then who it is for, the analysis, the prices
         dashboard.HOME_PAGE,
+        dashboard.PAGE_CHANNELS,
         dashboard.PAGE_STAKEHOLDERS,
         dashboard.PAGE_ANALYSIS,
-        dashboard.PAGE_CHANNELS,
         dashboard.PAGE_SEASONALITY,  # D-398
         dashboard.PAGE_INSIGHTS,
     ]
@@ -1445,7 +1445,6 @@ MENU_BLOCKS = {
     'Negocio · BA y BI': [
         'Interesados',
         'Análisis de negocio y sistemas',
-        'Último dato por canal',
         'Precios e inflación',
         'Insights',
     ],
@@ -1465,8 +1464,10 @@ def test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once():
     assert toggles == list(MENU_BLOCKS)
     labels = [link.proto.label for link in app.sidebar.get('page_link')]
     # D-286: the documents folder closes the menu as a larger tile in the footer, always in sight; D-442: the
-    # Dashboard opens it, a tile of its own over the sections.
-    assert labels == ['Dashboard'] + [page for pages in MENU_BLOCKS.values() for page in pages] + ['Documentos']
+    # Dashboard opens it, a tile of its own over the sections; D-452: «Último dato por canal» is the tile under it.
+    assert labels == ['Dashboard', 'Último dato por canal'] + [
+        page for pages in MENU_BLOCKS.values() for page in pages
+    ] + ['Documentos']
     assert all(link.proto.icon for link in app.sidebar.get('page_link')[:-1])
     markup = " ".join(block.value for block in app.sidebar.markdown)
     assert 'class="nav-source-link"' not in markup  # the sources are a tile with a floating panel (D-287)
@@ -1659,8 +1660,8 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
         expected = [key for key in dashboard.ROLE_ORDER[role] if key != "devops"]  # D-420: the Autor's section
         # D-442: the Dashboard tile leads every role's menu; the role orders the sections under it.
         assert blocks[0] == "dashboard" and blocks[1:5] == expected and blocks[5:] == ["fuentes", "documentos"], role
-        assert dashboard.visible_menu_order()[0] == dashboard.HOME_PAGE
-        firsts[role] = dashboard.visible_menu_order()[1]
+        assert dashboard.visible_menu_order()[:2] == [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS]  # D-452
+        firsts[role] = dashboard.visible_menu_order()[2]
     assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.PAGE_STAKEHOLDERS  # D-378
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_DIAGRAMS
     source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")

@@ -189,7 +189,7 @@ NODES = {
         [
             (
                 "Páginas",
-                "Dashboard, Interesados, Análisis de negocio y sistemas, Último dato por canal, Precios e inflación, "
+                "Dashboard, Último dato por canal, Interesados, Análisis de negocio y sistemas, Precios e inflación, "
                 "Insights, Pipeline y linaje, Modelo de datos, Consultas SQL, Stack y evidencia, Mapa de la app, "
                 "Arquitectura de seguridad, Calidad y auditoría, Método y calidad, Git workflow y la carpeta de "
                 "documentos; el Autor ve además Centro de operación, GitHub Actions y Configuración.",
