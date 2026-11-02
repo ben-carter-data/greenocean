@@ -3458,3 +3458,16 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **La regla** queda en CLAUDE.md, «Convenciones»: qué queda en su idioma y qué prueba la vigila.
 - **Documentos:** Plan de pruebas y seguridad 3.4 (2), en los dos idiomas.
 - **Pruebas:** `tests/test_i18n.py::test_d284_no_screen_shows_spanish_when_the_reader_chose_english` (ahora también «Elige tu vista» y la vista Usuario, y los textos de los scripts) y `tests/test_i18n.py::test_d443_the_texts_a_script_writes_are_whole_strings_with_their_english`.
+
+## D-444 · «Interesados» es un mapa de anillos de interés alrededor de GreenOcean
+
+- **Pedido del autor:** reemplazar las cinco tarjetas por un mapa de anillos concéntricos, con GreenOcean al centro y una leve perspectiva 3D; tres anillos con nombre y color (interés alto, medio y bajo); cada interesado solo como un ícono de línea y su nombre completo, sin tarjetas, cajas, círculos, bordes ni fondos; al pasar el cursor o con el teclado el ícono crece y aparece una frase simple que explica su nivel; un clic abre su página.
+- **Criterio de los anillos:** cuánto depende su decisión de estos datos y con qué frecuencia los usa. Se lee bajo el mapa.
+- **Ubicación y justificación** (PRD 3.4, la tabla que la página lee en el idioma de la visita):
+  - **Interés alto:** Restaurantes y almacenes (compran cada semana y el canal y la semana cambian su costo), Mayoristas, agricultores y feriantes (fijan su precio de venta cada semana) y Periodistas y economistas (cada nota sobre precios necesita una cifra oficial comprobable).
+  - **Interés medio:** Personas y familias (les ayuda antes de comprar, pero su compra no depende solo de estos datos) y Equipos técnicos y reclutadores (lo revisan de vez en cuando, por cómo se construye).
+  - **Interés bajo:** ODEPA y el INE, que entregan los datos y no deciden con ellos.
+- **Dibujo:** cada anillo es una elipse (un disco visto desde arriba, con sombra) y cada interesado tiene su ángulo en su anillo, para que dos nombres nunca se encuentren. El dibujo guarda su proporción a cualquier ancho y sus letras crecen con él, como una imagen (D-441: la forma no cambia en una pantalla chica). En la vista Usuario, el interesado cuya página es solo del Profesional (Equipos técnicos y reclutadores) no es un enlace y su frase dice que se abre en la vista Profesional.
+- **Lo que cambia en el PRD:** 3.1 sigue siendo la tabla de preguntas y decisiones, que ahora muestra «Análisis de negocio y sistemas»; 3.4 es el mapa nuevo.
+- **Documentos:** PRD 3.16 (3.1, 3.4), en los dos idiomas.
+- **Pruebas:** `tests/test_stakeholders.py::test_d444_the_page_is_the_interest_map_read_from_the_prd` y `tests/test_d444_the_map_reads_in_english_and_keeps_its_places`.

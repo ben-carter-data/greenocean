@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.15 |
+| Version | 3.16 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -52,7 +52,7 @@ GreenOcean does that work by itself, every Tuesday, and leaves each step in view
 
 ### 3.1 Stakeholders
 
-Each stakeholder has a question, a decision that depends on the answer and a page where they find it. The page [[vista:Stakeholders]] shows this same table.
+Each stakeholder has a question, a decision that depends on the answer and a page where they find it. The page [[vista:Business and systems analysis]] shows their questions and decisions; [[vista:Stakeholders]] places them on the interest map (3.4).
 
 | Stakeholder | Who they are | What they ask | What decision it helps them make | Where the answer is |
 |---|---|---|---|---|
@@ -89,6 +89,20 @@ Real users made two reviews: one of usability and one of architecture. Each chan
 |---|---|---|---|
 | Usability review | They did not know where to start reading the Dashboard | The Dashboard reads in three numbered steps; steps 2 and 3 wait for the one before, with a padlock, in every view; the search stands out | D-352, D-372 |
 | Architecture review | By a real user, no changes requested | — | — |
+
+### 3.4 Interest map
+
+Each stakeholder sits on a ring according to **how much their decision depends on these data and how often they use them**. GreenOcean is the center; ODEPA and the INE, which provide the data, sit on the outer ring. The page [[vista:Stakeholders]] draws this map (D-444).
+
+| Stakeholder | Interest | Why | Opens |
+|---|---|---|---|
+| Restaurants and grocery stores | High | They buy every week, and the channel and the week they buy in change their cost | [[vista:Dashboard]] |
+| Wholesalers, farmers and market vendors | High | Every week they set their selling price against the wholesale and the consumer price | [[vista:Latest data by channel]] |
+| Journalists and economists | High | Every story on prices needs an official figure that can be checked | [[vista:Prices and inflation]] |
+| People and families | Medium | It helps them before they shop, but what they buy does not depend on these data alone | [[vista:Dashboard]] |
+| Technical teams and recruiters | Medium | They review it now and then, for how it is built, not for the week's figures | [[vista:Pipeline and lineage]] |
+| ODEPA | Low | It publishes the prices: it provides the data, it does not decide with them | [[vista:Latest data by channel]] |
+| INE | Low | It publishes the food CPI: it provides the data, it does not decide with them | [[vista:Prices and inflation]] |
 
 ## 4. Business questions
 
@@ -227,3 +241,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.13 | 2026-11-01 | RF-08: opening the weekly report closes the previous one (D-438) |
 | 3.14 | 2026-11-01 | Two abandonment risks, with their proposed mitigation: workflows disabled for inactivity and the sleeping app (9, D-439) |
 | 3.15 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
+| 3.16 | 2026-11-02 | Interest map: each stakeholder on a ring (high, medium, low) with its reason (3.4, D-444) |

@@ -273,6 +273,9 @@ EN = {
     "Pregunta": "Question",
     "Decisión": "Decision",
     "Cambiar a Profesional": "Switch to Professional",
+    "Se abre en la vista Profesional.": "It opens in the Professional view.",  # D-444
+    "Mapa de interés": "Interest map",  # D-444
+    "Cada anillo dice cuánto depende su decisión de estos datos y con qué frecuencia los usa.": "Each ring says how much their decision depends on these data and how often they use them.",  # D-444
     "Quién usa estos datos, qué pregunta se hace, qué decisión le ayuda a tomar y dónde está la respuesta.": "Who uses this data, what they ask, what decision it helps them make and where the answer is.",
     "Ingeniería de datos": "Data engineering",
     "DevOps y seguridad": "DevOps and security",

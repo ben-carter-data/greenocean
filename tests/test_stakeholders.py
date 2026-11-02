@@ -1,12 +1,13 @@
-"""«Interesados» (D-376): one card per stakeholder, read from the PRD (3.1) in the reader's language, with the pages
-where the answer is; in the user view the technical card offers the professional view instead."""
+"""«Interesados» (D-376, D-444): the interest map read from the PRD (3.4) in the reader's language: three rings
+around GreenOcean, each stakeholder on its ring with why it is there and the page it opens."""
 
+import html
 from pathlib import Path
 
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from bi import business_analysis, dashboard, i18n, queries
+from bi import business_analysis, dashboard, queries
 
 DASHBOARD_FILE = str(Path(dashboard.__file__))
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
@@ -42,35 +43,43 @@ def draw(profile, language="es"):
 
 
 @needs_database
-def test_d376_the_professional_view_links_every_answer_and_the_user_view_offers_the_professional_one():
+def test_d444_the_page_is_the_interest_map_read_from_the_prd():
+    """Three rings around GreenOcean; each stakeholder is an icon and its name on its ring, with why it is there, and
+    opens its page; a page the view's menu does not lead to says it opens in the Profesional view."""
+    rows = business_analysis.read_interest("es")
+    assert [row["level"] for row in rows] == [0, 0, 0, 1, 1, 2, 2]
+    assert [row["name"] for row in rows if row["level"] == 2] == ["ODEPA", "INE"]
     app = draw("profesional")
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    assert markup.count('class="stk-card"') == 5 and "¿Qué alimentos están subiendo?" in markup
-    links = [link.proto.label for link in app.main.get("page_link")]
-    for label in (
-        "Dashboard",
-        "Último dato por canal",
-        "Precios e inflación",
-        "Insights",
-        "Pipeline y linaje",
-    ):
-        assert label in links, label
-    assert links.count("Dashboard") == 2  # people and families; restaurants and grocery stores
-    assert not [button for button in app.button if str(button.key).startswith("stakeholders_switch_")]
-    user = draw("consulta")
-    switches = [button for button in user.button if str(button.key).startswith("stakeholders_switch_")]
-    assert [button.key for button in switches] == ["stakeholders_switch_4"]  # only the technical card
-    assert switches[0].label == "Cambiar a Profesional"
-    switches[0].click().run()
-    assert not user.exception and user.session_state["visitor_profile"] == "profesional"
-    assert user.session_state["visitor_role"] == "data"
+    assert markup.count('class="im-ring ') == 3 and markup.count('class="im-node"') == 7
+    assert markup.count('<a class="im-node"') == 7  # the Profesional opens every page
+    for row in rows:
+        assert html.escape(row["name"]) in markup and html.escape(row["why"]) in markup
+    assert "Interés alto" in markup and "cuánto depende su decisión de estos datos" in markup
+    assert "stk-card" not in markup  # no cards, boxes or borders: icons and names
+    user = " ".join(block.value for block in draw("consulta").markdown)
+    assert user.count('<a class="im-node"') == 6 and "Se abre en la vista Profesional." in user  # the technical one
 
 
 @needs_database
-def test_d376_the_page_reads_in_english():
+def test_d444_the_map_reads_in_english_and_keeps_its_places():
     app = draw("profesional", "en")
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    assert "Technical teams and recruiters" in markup and "Who they are" in markup
-    assert i18n.EN["Interesados"] == "Stakeholders" and i18n.EN["Cambiar a Profesional"] == "Switch to Professional"
+    assert "Technical teams and recruiters" in markup and "High interest" in markup and "Interest map" in markup
+    english = business_analysis.read_interest("en")
+    assert [row["level"] for row in english] == [row["level"] for row in business_analysis.read_interest("es")]
+    # every name sits on its ring, and no two names of the same ring share a place
+    places = {(row["level"], dashboard.interest_place(row["level"], 0)) for row in english}
+    assert (
+        len(
+            {
+                dashboard.interest_place(level, order)
+                for level, angles in enumerate(dashboard.INTEREST_ANGLES)
+                for order in range(len(angles))
+            }
+        )
+        == 7
+    )
+    assert places

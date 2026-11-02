@@ -60,6 +60,37 @@ def read_stakeholders(language: str | None = None) -> list[dict[str, Any]]:
     return stakeholders
 
 
+# D-444: the interest map of PRD 3.4: the ring of each stakeholder, read from the PRD in the reader's language.
+INTEREST_LEVELS = {"alto": 0, "high": 0, "medio": 1, "medium": 1, "bajo": 2, "low": 2}
+INTEREST_ICONS = [
+    "restaurant",
+    "agriculture",
+    "newspaper",
+    "family_restroom",
+    "engineering",
+    "account_balance",
+    "query_stats",
+]
+
+
+def read_interest(language: str | None = None) -> list[dict[str, Any]]:
+    """PRD 3.4: each stakeholder with its ring (0 high, 1 medium, 2 low), why it sits there and the page it opens."""
+    rows = read_table(read_section("PRD.md", "3.4", language))
+    found = []
+    for row, icon in zip(rows, INTEREST_ICONS):
+        name, level, why, where = list(row.values())
+        found.append(
+            {
+                "name": name,
+                "level": INTEREST_LEVELS[level.strip().lower()],
+                "why": why,
+                "pages": views_in(where),
+                "icon": icon,
+            }
+        )
+    return found
+
+
 # D-377: the blocks of «Análisis de negocio y sistemas», in the reading order of a case.
 BLOCKS = [
     "El problema",

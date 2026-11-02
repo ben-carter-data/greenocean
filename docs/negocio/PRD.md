@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.15 |
+| Versión | 3.16 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -52,7 +52,7 @@ GreenOcean hace ese trabajo solo, cada martes, y deja cada paso a la vista.
 
 ### 3.1 Interesados
 
-Cada interesado tiene una pregunta, una decisión que depende de la respuesta y una página donde la encuentra. La página [[vista:Interesados]] muestra esta misma tabla.
+Cada interesado tiene una pregunta, una decisión que depende de la respuesta y una página donde la encuentra. La página [[vista:Análisis de negocio y sistemas]] muestra sus preguntas y decisiones; [[vista:Interesados]] los ubica en el mapa de interés (3.4).
 
 | Interesado | Quién es | Qué pregunta se hace | Qué decisión le ayuda a tomar | Dónde está la respuesta |
 |---|---|---|---|---|
@@ -89,6 +89,20 @@ Usuarios reales hicieron dos revisiones: una de uso y una de arquitectura. Cada 
 |---|---|---|---|
 | Revisión de uso | No sabían por dónde empezar a leer el Dashboard | El Dashboard se lee en tres pasos numerados; los pasos 2 y 3 esperan al anterior, con candado, en todas las vistas; la búsqueda se nota | D-352, D-372 |
 | Revisión de arquitectura | Por un usuario real, sin cambios solicitados | — | — |
+
+### 3.4 Mapa de interés
+
+Cada interesado está en un anillo según **cuánto depende su decisión de estos datos y con qué frecuencia los usa**. El centro es GreenOcean; ODEPA y el INE, que entregan los datos, quedan en el anillo de afuera. La página [[vista:Interesados]] dibuja este mapa (D-444).
+
+| Interesado | Interés | Por qué | Dónde abre |
+|---|---|---|---|
+| Restaurantes y almacenes | Alto | Compran cada semana y el canal y la semana en que compran cambian su costo | [[vista:Dashboard]] |
+| Mayoristas, agricultores y feriantes | Alto | Fijan cada semana su precio de venta frente al mayorista y al consumidor | [[vista:Último dato por canal]] |
+| Periodistas y economistas | Alto | Cada nota sobre precios necesita una cifra oficial que se pueda comprobar | [[vista:Precios e inflación]] |
+| Personas y familias | Medio | Les ayuda antes de comprar, pero su compra no depende solo de estos datos | [[vista:Dashboard]] |
+| Equipos técnicos y reclutadores | Medio | Lo revisan de vez en cuando, por cómo se construye, no por las cifras de la semana | [[vista:Pipeline y linaje]] |
+| ODEPA | Bajo | Publica los precios: entrega los datos, no decide con ellos | [[vista:Último dato por canal]] |
+| INE | Bajo | Publica el IPC de alimentos: entrega los datos, no decide con ellos | [[vista:Precios e inflación]] |
 
 ## 4. Preguntas de negocio
 
@@ -227,3 +241,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.13 | 01-11-2026 | RF-08: al abrir el informe semanal se cierra el anterior (D-438) |
 | 3.14 | 01-11-2026 | Dos riesgos de abandono, con su mitigación propuesta: workflows desactivados por inactividad y la app dormida (9, D-439) |
 | 3.15 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
+| 3.16 | 02-11-2026 | Mapa de interés: cada interesado en un anillo (alto, medio, bajo) con su justificación (3.4, D-444) |

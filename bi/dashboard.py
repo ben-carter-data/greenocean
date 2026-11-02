@@ -763,7 +763,7 @@ export default function(component) {
     } catch (e) {}
     const handler = (event) => {
         // D-406: a channel card is a reload the app makes too, like a document of the folder
-        const link = event.target.closest && event.target.closest(".df-actions a, .doc-path a, .doc-print, a.ch-card");
+        const link = event.target.closest && event.target.closest(".df-actions a, .doc-path a, .doc-print, a.ch-card, a.im-node");
         if (link) remember();
         // D-373: the GreenOcean logo reopens «Elige tu vista» instead of going to the first page.
         const logo = event.target.closest && event.target.closest(
@@ -5393,71 +5393,113 @@ def can_open(view):
     return view in order or DOOR_PAGES.get(view) in order
 
 
+# D-444: the interest map. Each ring (high, medium, low) is an ellipse around GreenOcean, a tilted disc; each stakeholder
+# sits on its ring at its own angle (degrees, 0 to the right, 90 down), so no two names meet.
+INTEREST_RINGS = [(0.21, "Interés alto"), (0.335, "Interés medio"), (0.445, "Interés bajo")]
+INTEREST_ANGLES = [[160, 20, 90], [212, 328], [163, 17]]
+INTEREST_TILT = 0.44  # the vertical radius of a ring over its horizontal one, on screen: the disc seen from above
+INTEREST_RATIO = 1.85  # the stage's width over its height
+INTEREST_COLORS = ["#5fd39b", "#5aa9ea", "#b49cff"]
+
+
+def interest_place(level, order):
+    """Where a stakeholder sits, in % of the stage: on its ring, at its angle."""
+    radius = INTEREST_RINGS[level][0]
+    angle = math.radians(INTEREST_ANGLES[level][order])
+    return 50 + radius * 100 * math.cos(angle), 50 + radius * 100 * INTEREST_RATIO * INTEREST_TILT * math.sin(angle)
+
+
+def build_interest_map_html(rows, palette, address_of_view):
+    """D-444: the rings, GreenOcean in the middle and each stakeholder as an icon and its name, nothing else; the cursor
+    or the keyboard grows the icon and shows why it is on its ring; a click opens its page."""
+    background = palette["background"]
+    colors = [charts.legible(color, background, 3) for color in INTEREST_COLORS]
+    rings = []
+    for level, (radius, label) in enumerate(INTEREST_RINGS):
+        height = radius * 100 * INTEREST_RATIO * INTEREST_TILT
+        rings.append(
+            f'<span class="im-ring r{level}" style="left:{50 - radius * 100:.2f}%;width:{radius * 200:.2f}%;'
+            f'top:{50 - height:.2f}%;height:{height * 2:.2f}%;--ring:{colors[level]}"></span>'
+            f'<span class="im-level" style="top:{50 - height:.2f}%;color:{colors[level]}">{html.escape(tr(label))}</span>'
+        )
+    nodes = []
+    seen = [0, 0, 0]
+    for row in rows:
+        level = row["level"]
+        x, y = interest_place(level, seen[level])
+        seen[level] += 1
+        view = next((page for page in (find_menu_page(name) for name in row["pages"]) if page), None)
+        why = row["why"] + "."
+        inner = (
+            f'<span class="im-icon" aria-hidden="true" style="color:{colors[level]}">{row["icon"]}</span>'
+            f'<span class="im-name">{html.escape(row["name"])}</span>'
+        )
+        if view and can_open(view):
+            nodes.append(
+                f'<a class="im-node" href="{html.escape(address_of_view(view), quote=True)}" target="_self" '
+                f'style="left:{x:.2f}%;top:{y:.2f}%">{inner}<span class="im-why">{html.escape(why)}</span></a>'
+            )
+        else:  # a page this view's menu does not lead to: it says where it opens instead
+            why += " " + tr("Se abre en la vista Profesional.")
+            nodes.append(
+                f'<span class="im-node" tabindex="0" style="left:{x:.2f}%;top:{y:.2f}%">{inner}'
+                f'<span class="im-why">{html.escape(why)}</span></span>'
+            )
+    return (
+        f'<div class="im-wrap"><div class="im-stage" role="img" aria-label="{html.escape(tr("Mapa de interés"))}">'
+        f'{"".join(rings)}<span class="im-center"><span class="im-logo" aria-hidden="true">waves</span>'
+        f'<b>GreenOcean</b></span>{"".join(nodes)}</div>'
+        f'<p class="im-criterion">{html.escape(tr("Cada anillo dice cuánto depende su decisión de estos datos y con qué frecuencia los usa."))}</p></div>'
+    )
+
+
 def show_stakeholders_page(mode):
-    """«Interesados» (D-376): one card per stakeholder, read from the PRD (3.1) in the reader's language: who they are,
-    what they ask, the decision the answer helps them make and the pages where it is. A page the view's menu does not
-    lead to becomes «Cambiar a Profesional»: in the user view, the technical card."""
+    """«Interesados» (D-376, D-444): the interest map, read from the PRD (3.4) in the reader's language: three rings
+    around GreenOcean and each stakeholder on its ring, with why it is there and the page it opens."""
     show_page_bar(
         PAGE_STAKEHOLDERS,
         PAGE_STAKEHOLDERS,
-        "Quién usa estos datos, qué pregunta se hace, qué decisión le ayuda a tomar y dónde está la respuesta.",
+        "Quién usa estos datos y cuánto depende de ellos.",
     )
     palette = charts.get_palette(mode)
-    st.markdown(build_stakeholders_css(palette), unsafe_allow_html=True)
-    labels = (tr("Quién es"), tr("Pregunta"), tr("Decisión"))
-    rows = business_analysis.read_stakeholders()
-    for index, (column, row) in enumerate(zip(st.columns(len(rows), gap="small"), rows)):
-        with column, st.container(key=f"stakeholder_{index}", height="stretch"):
-            st.markdown(
-                f'<div class="stk-card"><span class="stk-icon" aria-hidden="true">{row["icon"]}</span>'
-                f'<h3>{html.escape(row["name"])}</h3><dl>'
-                + "".join(
-                    f"<dt>{html.escape(label)}</dt><dd>{html.escape(text)}</dd>"
-                    for label, text in zip(labels, (row["who"], row["question"], row["decision"]))
-                )
-                + "</dl></div>",
-                unsafe_allow_html=True,
-            )
-            views = [find_menu_page(name) for name in row["pages"]]
-            if any(view and not can_open(view) for view in views):
-                if st.button(tr("Cambiar a Profesional"), key=f"stakeholders_switch_{index}", icon=":material/work:"):
-                    st.session_state[PROFILE_STATE] = PROFILE_PROFESSIONAL
-                    st.session_state[ROLE_STATE] = "data"  # the technical profile leads its menu
-                    settle_profile()
-                    st.rerun()
-                continue
-            for view in views:
-                window = WINDOW_PAGES.get(WINDOW_OF_VIEW.get(view))  # absent when a test draws the page alone
-                if view and window:
-                    st.page_link(
-                        window,
-                        label=tr(SIDEBAR_LABELS.get(view, view)),
-                        icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
-                        query_params=keep_context() | {VIEW_PARAMETER: view},
-                    )
+    st.markdown(build_interest_css(palette), unsafe_allow_html=True)
+    st.markdown(
+        build_interest_map_html(business_analysis.read_interest(), palette, build_page_address), unsafe_allow_html=True
+    )
 
 
-def build_stakeholders_css(palette):
-    """D-376: the five cards, side by side, the same height; the icon in a circle of the accent."""
-    accent, ink, text = palette["accent"], palette["strong_text"], palette["text"]
+def build_interest_css(palette):
+    """D-444: the stage keeps its proportions at any width, like a picture; letters and icons scale with it (cqw)."""
+    ink, text, muted, background = palette["strong_text"], palette["text"], palette["reference"], palette["background"]
     return f"""<style>
-    [class*="st-key-stakeholder_"] {{ border:1px solid {palette["card_border"]}; border-radius:14px; padding:16px 14px 12px;
-        background:{palette["card"]}; gap:6px !important; }}
-    .stk-icon {{ display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:50%;
-        background:color-mix(in srgb, {accent} 16%, transparent); color:{accent}; font-family:"Material Symbols Rounded";
-        font-size:23px; line-height:1; font-feature-settings:"liga"; }}
-    .stk-card h3 {{ margin:10px 0 6px !important; padding:0 !important; font-size:16px !important; line-height:1.3;
-        color:{ink} !important; }}
-    .stk-card dl {{ margin:0; }}
-    .stk-card dt {{ margin:8px 0 1px; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-        color:{charts.legible(palette["reference"], palette["card"])}; }}
-    .stk-card dd {{ margin:0; font-size:13.5px; line-height:1.45; color:{text}; }}
-    /* D-173: the card's text ends in a div, so its block gets no negative margin and nothing rides over it. */
-    [class*="st-key-stakeholder_"] [data-testid="stElementContainer"]:has(.stk-card) [data-testid="stMarkdownContainer"] {{
-        margin-bottom:0 !important; }}
-    [class*="st-key-stakeholder_"] [data-testid="stPageLink"] a {{ padding:3px 6px; height:auto; }}
-    [class*="st-key-stakeholder_"] [data-testid="stPageLink"] p {{ white-space:normal; font-size:13.5px; line-height:1.3; }}
-    [class*="st-key-stakeholder_"] button p {{ white-space:normal; }}
+    .im-wrap {{ container-type:inline-size; width:min(100%, calc((100vh - 190px) * {INTEREST_RATIO})); margin:0 auto; }}
+    .im-stage {{ position:relative; width:100%; aspect-ratio:{INTEREST_RATIO} / 1; }}
+    .im-ring {{ position:absolute; border-radius:50%; border:1.5px solid color-mix(in srgb, var(--ring) 70%, transparent);
+        background:radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--ring) 9%, transparent),
+        color-mix(in srgb, var(--ring) 2%, transparent) 70%);
+        box-shadow:0 1.2cqw 2.4cqw -1.6cqw color-mix(in srgb, var(--ring) 45%, transparent); pointer-events:none; }}
+    .im-level {{ position:absolute; left:50%; transform:translate(-50%, -50%); padding:0 .8cqw; font-size:max(9px, 1.05cqw);
+        font-weight:700; letter-spacing:.09em; text-transform:uppercase; background:{background}; border-radius:1cqw;
+        white-space:nowrap; pointer-events:none; }}
+    .im-center {{ position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); display:flex; flex-direction:column;
+        align-items:center; gap:.3cqw; color:{ink}; font-size:max(11px, 1.5cqw); pointer-events:none; }}
+    .im-logo {{ font-family:"Material Symbols Rounded"; font-feature-settings:"liga"; font-size:max(22px, 3.4cqw);
+        color:#5aa9ea; line-height:1; }}
+    .im-node {{ position:absolute; transform:translate(-50%, -32%); display:flex; flex-direction:column; align-items:center;
+        width:15cqw; gap:.35cqw; text-align:center; text-decoration:none !important; color:{ink} !important; outline:none;
+        z-index:1; }}
+    .im-node:hover, .im-node:focus-visible {{ z-index:3; }}
+    .im-icon {{ font-family:"Material Symbols Rounded"; font-feature-settings:"liga";
+        font-variation-settings:"FILL" 0, "wght" 300, "GRAD" 0, "opsz" 48; font-size:max(22px, 3.3cqw); line-height:1;
+        transition:transform .18s ease; }}
+    .im-node:hover .im-icon, .im-node:focus-visible .im-icon {{ transform:scale(1.35); }}
+    .im-name {{ font-size:max(10px, 1.3cqw); font-weight:600; line-height:1.25; color:{ink};
+        text-shadow:0 0 3px {background}, 0 0 3px {background}, 0 0 6px {background}; }}
+    .im-node:focus-visible .im-name {{ text-decoration:underline; text-underline-offset:3px; }}
+    .im-why {{ max-height:0; overflow:hidden; opacity:0; font-size:max(9.5px, 1.02cqw); line-height:1.35; color:{text};
+        background:{background}; border-radius:.6cqw; padding:0 .6cqw; transition:opacity .18s ease, max-height .18s ease; }}
+    .im-node:hover .im-why, .im-node:focus-visible .im-why {{ max-height:12cqw; opacity:1; }}
+    .im-criterion {{ margin:.4rem 0 0; text-align:center; font-size:13px; color:{charts.legible(muted, background)}; }}
     </style>"""
 
 
@@ -7283,7 +7325,8 @@ def find_menu_page(label):
     """The page whose label in the menu, in the documents folder or on a page's door (D-376: «Precios e inflación»)
     is `label`, or None."""
     for view in MENU_ORDER + FOLDER_ORDER + list(DOOR_PAGES):
-        if label in (SIDEBAR_LABELS.get(view, view), i18n.EN.get(SIDEBAR_LABELS.get(view, view))):
+        name = SIDEBAR_LABELS.get(view, view)
+        if label in (name, i18n.EN.get(name), i18n.PAGES.get(name)):  # D-444: a page label from either dictionary
             return view
     return None
 

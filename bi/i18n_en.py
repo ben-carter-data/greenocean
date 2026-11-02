@@ -1492,6 +1492,11 @@ PAGES = {
     "Alejar": "Zoom out",
     "Volver al tamaño original": "Back to the original size",
     "En este proyecto:": "In this project:",
+    # «Interesados»: the interest map (D-444)
+    "Quién usa estos datos y cuánto depende de ellos.": "Who uses these data and how much they depend on them.",
+    "Interés alto": "High interest",
+    "Interés medio": "Medium interest",
+    "Interés bajo": "Low interest",
     # Mapa de la app: fichas, interiores, ritmos y recorrido (D-441)
     "Agente": "Agent",
     "Puerta": "Gate",
