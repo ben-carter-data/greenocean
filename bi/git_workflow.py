@@ -571,7 +571,7 @@ def build_css(palette: dict[str, str]) -> str:
 :root{{--bg:{palette['background']};--panel:{palette['card']};--chip:{chip};--fg:{palette['strong_text']};--text:{palette['text']};
   --muted:{charts.legible(palette['reference'], palette['background'])};--line:{palette['card_border']};
   --l1:{lanes[0]};--l2:{lanes[1]};--l3:{lanes[2]};--flag:{flag};--flag-ink:#2a1d00;--stop:{stop};--ok:{ok};
-  --body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace;
+  --body:system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace;
   color-scheme:{'dark' if dark else 'light'}}}
 *{{box-sizing:border-box}}
 body{{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);line-height:1.45;padding:10px 14px 16px}}

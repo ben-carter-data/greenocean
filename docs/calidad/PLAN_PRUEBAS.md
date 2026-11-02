@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de pruebas y de seguridad |
-| Versión | 3.4 |
+| Versión | 3.5 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -37,7 +37,9 @@ Las pruebas de GreenOcean responden tres preguntas, siempre de forma automática
 - **¿Una carga con errores puede llegar al panel?** No: si una prueba falla, la carga se detiene y el panel conserva la última base válida.
 - **¿Alguien puede abusar del sistema?** Catorce ataques (S-01 a S-14) se repiten en cada cambio del código: leer secretos, colgar el panel, lanzar la carga sin la clave, entrar como Autor sin ella o robar el token.
 
-[[diagrama:niveles]]
+Así llega un cambio a producción y así corre cada carga, como en la pestaña «CI/CD» de [[vista:Centro de operación]]:
+
+[[diagrama:cicd]]
 
 ## 2. Qué se prueba
 
@@ -46,7 +48,7 @@ Las pruebas de GreenOcean responden tres preguntas, siempre de forma automática
 | Pruebas de datos de dbt | Unicidad, valores aceptados, relaciones entre tablas y conciliación de filas en cada modelo | dbt Core | `dbt/tests/`, modelos de `dbt/models/` |
 | Auditoría de cifras | Los precios semanales se reconstruyen desde las filas crudas; las cifras de referencia del panel se reproducen | pytest | `tests/test_data_audit.py`, `tests/test_reconciliation.py` |
 | Paridad | El ETL en Python y dbt producen los mismos precios, dimensiones y rechazos | pytest | `tests/test_migration_parity.py` |
-| Puerta de publicación | Una carga con pruebas fallidas o con muchas menos filas no reemplaza la base servida | pytest | `tests/test_pipeline_gate.py` |
+| Puerta de publicación | Una carga con pruebas fallidas o con muchas menos filas no reemplaza la Base DuckDB | pytest | `tests/test_pipeline_gate.py` |
 | IPC y precios reales | El factor semanal, el mes de referencia y las semanas provisionales | pytest | `tests/test_ipc_audit.py` |
 | Panel | Cada página se dibuja sin errores y muestra lo que su decisión exige | pytest con AppTest de Streamlit | `tests/test_dashboard.py` y las pruebas de cada vista |
 | Diagramas | Cada pieza dibujada existe en el código, el workflow o la base | pytest | `tests/test_devops.py`, `tests/test_monitoring.py`, `tests/test_stack_page.py` y afines |
@@ -58,14 +60,12 @@ Las pruebas de GreenOcean responden tres preguntas, siempre de forma automática
 
 ## 3. Quién participa en la seguridad
 
-[[diagrama:actores]]
-
 La seguridad no depende de esconder el código, que es público, sino de cuatro actores y de lo que cada uno puede hacer:
 
 - **El Usuario y el Profesional** leen el panel sin cuenta; el Profesional también usa el estudio SQL. Los datos son públicos y la base está en solo lectura.
 - **El Autor** mantiene el código y los secretos. Con la clave de control abre su vista y el botón «Ejecutar pipeline ahora». Entra a GitHub y a Streamlit con su propia cuenta, con verificación en dos pasos.
-- **Streamlit Community Cloud** guarda los secretos del panel (el token de GitHub y la clave de control), fuera del repositorio, y publica el panel desde `main`.
-- **GitHub** guarda el código, sin ningún secreto, y ejecuta el workflow semanal con los permisos mínimos: escribir contenido y crear issues.
+- **Streamlit Community Cloud** guarda los secretos del panel (los dos tokens de GitHub, `GITHUB_TOKEN` y `GITHUB_READ_TOKEN`, y la clave de control, `CONTROL_CODE`), fuera del repositorio, y publica el panel desde `main`.
+- **GitHub** guarda el código, sin ningún secreto, y ejecuta la carga semanal (`semanal.yml`) con los permisos mínimos: escribir contenido y crear issues.
 
 ## 4. Amenazas y controles
 
@@ -90,7 +90,9 @@ Las amenazas y los casos se clasifican según el OWASP Top 10 (2021), la lista d
 | Privilegio mínimo del job | El workflow semanal solo puede escribir contenido y crear issues | `.github/workflows/semanal.yml` |
 | Inicio de sesión externo | Declarado por el autor; no verificable desde el repositorio | Configuración de GitHub y Streamlit |
 
-La representación gráfica de las zonas de confianza, los controles y las amenazas está en [[vista:Arquitectura de seguridad]].
+Las zonas de confianza, los controles y las amenazas, como los dibuja [[vista:Arquitectura de seguridad]]:
+
+[[diagrama:seguridad]]
 
 ## 5. Casos de seguridad
 
@@ -139,7 +141,9 @@ El botón «Ejecutar pipeline ahora» no existe hasta que el autor escribe la cl
 
 ## 8. Un cambio de código, paso a paso
 
-[[diagrama:secuencia_ci]]
+El camino de un cambio es el de [[vista:Git workflow]]:
+
+[[diagrama:git_workflow]]
 
 Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su resultado queda junto al commit. Streamlit publica `main` sin esperarlo, un riesgo aceptado y descrito en la sección 11.
 
@@ -149,7 +153,7 @@ Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su result
 |---|---|
 | Sistema | Cualquier computador con Python 3.11 o 3.12, o una máquina de GitHub Actions (Ubuntu); el panel y las pruebas también corren en versiones más recientes |
 | Dependencias | `requirements.txt` (panel y pruebas) y `requirements-pipeline.txt` (dbt) |
-| Base | La base servida, descargada con `python bi/served_database.py` |
+| Base | La Base DuckDB, descargada con `python bi/served_database.py` |
 | Datos crudos | `etl/raw.db`, solo en el computador del autor y en la máquina de cada carga; sin ella, las pruebas que reconstruyen desde las filas crudas se omiten |
 | Secretos | Las pruebas crean su propio secreto ficticio y nunca usan el real |
 | Ejecución local | `python -m pytest -q`; las pruebas de velocidad, con `python -m pytest -m rendimiento` |
@@ -160,7 +164,7 @@ Cada cambio corre las mismas pruebas en una máquina limpia de GitHub. Su result
 
 | Momento | Criterio | Verificación |
 |---|---|---|
-| Entrada | El cambio compila y la base servida está disponible | `dbt parse` |
+| Entrada | El cambio compila y la Base DuckDB está disponible | `dbt parse` |
 | Salida de un cambio | Ruff, mypy y la suite completa pasan sobre todo el código antes del push, incluidos los catorce casos de seguridad | `pruebas.yml` en verde |
 | Salida de una carga | Pasan las pruebas de dbt; la carga lee al menos el 90 % de las filas de la anterior; no falta una semana en medio de los datos ni una fuente lleva más de 2 semanas sin publicar (D-356); y las pruebas de datos pasan sobre la base nueva | `semanal.yml` |
 | Seguridad | Cada control apunta a una prueba que existe y ningún secreto está en el repositorio | Casos S-09 y S-06 |
@@ -203,3 +207,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.2 | 31-10-2026 | Redacción revisada; el Usuario, el Profesional y el Autor (3); la carga semanal corre solo las pruebas de datos (2, 9, D-366); la salida de una carga con las fuentes retrasadas (10, D-356); el token lanza, sigue y cancela la carga (7, 11); el documento pasa a `docs/calidad/` (D-381, D-388) |
 | 3.3 | 01-11-2026 | S-12: la parte del autor no se abre con una dirección ni en una pestaña nueva; una recarga de la pestaña conserva la vista (D-430) |
 | 3.4 | 02-11-2026 | La prueba de idioma recorre toda la app en inglés (2, D-443) |
+| 3.5 | 02-11-2026 | Los diagramas son los de la app: CI/CD del «Centro de operación» (1), «Arquitectura de seguridad» (4) y «Git workflow» (8), en vez de dibujos propios; los secretos de Streamlit son los dos tokens y la clave de control (3); «base servida» pasa a «Base DuckDB» (D-455) |

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.13 |
+| Version | 3.14 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -31,13 +31,15 @@
 
 GreenOcean almost runs itself. Every Tuesday the load runs without intervention. If something fails, the panel keeps showing the last valid load: a half-finished figure is never published.
 
-The operations work comes down to looking at one result a week, four tasks on the calendar and, if a failure warning arrives, following the table of section 4. The warning arrives in three ways:
+The operations work comes down to looking at one result a week, the periodic tasks of section 3 and, if a failure warning arrives, following the table of section 4. The warning arrives in three ways:
 
 - GitHub's email.
 - The red run on GitHub.
 - Inside the panel, a red notice above the menu on every page, with a link to the step that failed.
 
-[[diagrama:calendario]]
+This is how we know that something failed, as in the «Monitoring» tab of [[vista:Operations center]]: each signal, where it is left and who reads it.
+
+[[diagrama:monitoreo]]
 
 ## 2. What happens automatically
 
@@ -45,7 +47,7 @@ The weekly job (`.github/workflows/semanal.yml`) runs every Tuesday at 12:00 UTC
 
 It can also be launched by hand: from «Operations center», with the «Run pipeline now» button (it requires the control code), or from the workflow page on GitHub. The run's window shows the live flow on top, focused on the load: which piece works and which message travels at each step (D-413).
 
-If a step fails, the following ones do not run and the served database does not change ([ADR-11 · Publish only if the tests pass](../arquitectura/ADR.md#adr-11--publish-only-if-the-tests-pass)).
+If a step fails, the following ones do not run and the DuckDB database does not change ([ADR-11 · Publish only if the tests pass](../arquitectura/ADR.md#adr-11--publish-only-if-the-tests-pass)).
 
 After every load that ends in green, the quality workflow proposes the weekly quality report, with the 3 data indicators, as the pull request «Actualizar medición de calidad» (D-431). On every push it only measures, and fails if a code indicator is past its acceptable.
 
@@ -59,7 +61,7 @@ After every load that ends in green, the quality workflow proposes the weekly qu
 | Every January | Add to `agent/input.csv` the two lines of the new year (wholesale and consumer), with the URL ODEPA publishes on the page of each dataset | `agent/input.csv` |
 | Periodically | Copy `agent/downloads` to another disk: the CSV files are not versioned ([ADR-04 · Do not commit the raw data to the repository](../arquitectura/ADR.md#adr-04--do-not-commit-the-raw-data-to-the-repository)) and the GitHub cache is deleted if it is not used for 7 days | Another disk of the author |
 | Before it expires | Renew the panel's two GitHub tokens; «Settings» marks them amber when 15 days or fewer are left, and the alert «Action required» warns on entering as Author (section 8.1) | App secrets on Streamlit |
-| After every weekly load | The pull request «Actualizar medición de calidad»: merge it or close it, delete its branch and run `git pull` | Pull requests of the repository (section 8) |
+| After every weekly load | The pull request «Actualizar medición de calidad»: the workflow merges it by itself if the code is within its acceptable (D-436); if it stayed open, review it and merge or close it. Then run `git pull` | Pull requests of the repository (section 8) |
 | On entering as Author | The alert «Action required»: first, each token at 15 days or fewer from its expiry; then, the indicators past their acceptable. If it says «Last measurement on …», the report is more than 8 days old and is not today's state | The window the panel opens |
 
 ## 4. Failures of the weekly load
@@ -75,7 +77,7 @@ Each row is a step of the workflow, with its name in `semanal.yml`. The warning 
 | Download the ODEPA files | `DOWNLOAD_ERROR` or `UNEXPECTED_HEADER` in the log | ODEPA did not respond, or changed the columns of a file | With `DOWNLOAD_ERROR`, wait a few hours and launch again; with `UNEXPECTED_HEADER`, check the file and adapt the agent |
 | Run the ETL (SQLite backup) | `MISSING_WEEKS`, `UNKNOWN_REGION`, `UNKNOWN_CHANNEL` or `DUPLICATE_KEYS` in the log | A week is missing outside the known gaps, ODEPA added a region or a channel, or there are repeated prices | Check the file at ODEPA; a new region or channel is added to the lists of the ETL; a week missing at the source is recorded as a known gap with its decision |
 | Build the data warehouse with dbt | A dbt model or test fails, or `TOO_FEW_ROWS` | A business rule is not met, or the load read less than 90 % of the previous one | Read in the log which model or test failed; it usually names the table and the rule |
-| Run the tests against the new database | A pytest test fails | The new data breaks something the code assumes, or the backup and the served database do not match | Read which test failed; it usually names the product or the week |
+| Run the tests against the new database | A pytest test fails | The new data breaks something the code assumes, or the backup and the DuckDB database do not match | Read which test failed; it usually names the product or the week |
 | Publish the database | GitHub rejects the upload of the file or of the pointer | Workflow permissions, or a change on `main` during the load | Check Settings → Actions → Workflow permissions («Read and write») and launch again |
 | Publish the weekly report | The issue is not created | Workflow permissions | Check the permissions; the database is already published |
 
@@ -91,7 +93,7 @@ To read any failure without copying by hand, the panel's page «GitHub Actions»
 |---|---|---|
 | After a push, a page shows `AttributeError` | Streamlit Cloud combined new files with others it had in memory (it happened on 2026-10-12) | In the panel, «Manage app» → ⋮ → **Reboot**, and wait one or two minutes |
 | «Operations center» says GitHub did not respond | Without a token, GitHub allows 60 requests per hour, shared by the apps of the same server | None: the panel shows the last saved response and asks again every 5 minutes; with the token configured, the limit rises |
-| The panel reports that it does not have the served database | It could not download it from the release when it started | Check that the «base-actual» release exists; the panel downloads it on the next visit |
+| The panel reports that it does not have the DuckDB database | It could not download it from the release when it started | Check that the «base-actual» release exists; the panel downloads it on the next visit |
 | The «Run pipeline now» button says the token is missing | The panel's token expired or is not configured | Create a token allowed to launch workflows of this repository and store it as `GITHUB_TOKEN` in the app secrets on Streamlit |
 
 ## 6. Recovery
@@ -132,7 +134,7 @@ The links used to run the project, grouped by task.
 | Approve a report | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) | Review the quality report the workflow did not merge by itself | If it stayed open, with the code past its acceptable (D-436) | «Actualizar medición de calidad» → «Files changed» → «Merge pull request», or «Close pull request» |
 | Approve a report | [Branches](https://github.com/ben-carter-data/greenocean/branches) | Delete the branch of a report already merged or closed | After merging or closing the pull request | The bin icon next to the branch «informe-calidad/…» |
 | Settings | [Actions · General](https://github.com/ben-carter-data/greenocean/settings/actions) | Workflow permissions to write and open pull requests | If a publication or a pull request is rejected | «Workflow permissions» → «Read and write» and «Allow GitHub Actions to create and approve pull requests» |
-| Settings | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) | The served database the panel reads | If the panel cannot find its database | Check that the file `datos.duckdb` is in «Assets» |
+| Settings | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) | The DuckDB database the panel reads | If the panel cannot find its database | Check that the file `datos.duckdb` is in «Assets» |
 | Settings | [Issues](https://github.com/ben-carter-data/greenocean/issues) | The weekly report of every published load | Every Tuesday | «Informe semanal» with its date |
 | The app | [Published panel](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | The app the User, the Professional and the Author see | After every push, to confirm the change | Choose the view; as Author, type the key and Enter |
 | The app | [Streamlit Community Cloud](https://share.streamlit.io) | The panel's secrets and its restart | When renewing a token or if the panel shows a module error | The app → ⋮ → «Settings» → «Secrets», or «Reboot» |
@@ -169,7 +171,7 @@ Five cases, each with its steps in order. An automatic step is done by the syste
 | The app does not update | 1 | Automatic | After every push to main, Streamlit Community Cloud deploys the app again | — |
 | The app does not update | 2 | Manual | Open the published panel and confirm the change arrived | [Published panel](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) |
 | The app does not update | 3 | Manual | If a page shows `AttributeError` or does not change: the app → ⋮ → «Reboot», and wait one or two minutes | [Streamlit Community Cloud](https://share.streamlit.io) |
-| The app does not update | 4 | Manual | If the panel says it has no served database, check that `datos.duckdb` is in the release | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) |
+| The app does not update | 4 | Manual | If the panel says it has no DuckDB database, check that `datos.duckdb` is in the release | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) |
 
 ## 9. Failure register
 
@@ -179,7 +181,7 @@ Every diagnosed and solved failure is recorded in `docs/calidad/plan_mitigacion.
 
 | Limit | Value | Source |
 |---|---|---|
-| Maximum size of a release file | 2 GB; the served database weighs about 14 MB | GitHub documentation on releases, read on 2026-10-24 |
+| Maximum size of a release file | 2 GB; the DuckDB database weighs about 14 MB | GitHub documentation on releases, read on 2026-10-24 |
 | GitHub Actions cache | Deleted if it is not used for 7 days; that week the job downloads every year | GitHub Actions documentation, read on 2026-10-24 |
 | GitHub API requests without a token | 60 per hour | GitHub API documentation |
 | Cloud architecture | Not adopted while the data is public, weekly and small | [ADR-31 · Do not use a cloud data warehouse](../arquitectura/ADR.md#adr-31--do-not-use-a-cloud-data-warehouse) and [Capacity and growth in the SAD](../arquitectura/SAD.md#9-capacity-and-growth) |
@@ -215,3 +217,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.11 | 2026-11-01 | The report's pull request is merged by itself if the code is within its acceptable (8, 8.1, D-436) |
 | 3.12 | 2026-11-01 | The new weekly report closes the previous one (3, D-438) |
 | 3.13 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
+| 3.14 | 2026-11-02 | How we know that something failed is drawn with the «Monitoring» tab of the «Operations center» (1), instead of a calendar of its own; the quality pull request is merged by itself if the code is within its acceptable (3, D-436); «served database» becomes «DuckDB database» (D-455) |

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.9 |
+| Version | 1.10 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -42,11 +42,15 @@ This plan says which quality the project looks after, how it measures it and who
 
 We measure two qualities. The first is that of the data we publish, following the ISO/IEC 25012 standard: nobody should see a corrupt, late or badly compared price without knowing it. The second is that of the code that treats the data, following the ISO/IEC 25010 standard: it must be tested, tidy and secure.
 
+[[diagrama:calidades]]
+
 They are the 12 indicators of the quality plan: 8 of the code and 4 of the data. Each one has written down what it measures, why it matters, how it is measured and what to do if it fails. All of that lives in `docs/calidad/metas.json`, and the page «Method and quality» shows it.
 
 They are not the 11 data quality indicators, which are measured on every load on the published database and shown in «Quality and audit». Those protect each publication; the plan's indicators measure the project week by week.
 
-[[diagrama:calidades]]
+This is how the 11 data indicators look in [[vista:Quality and audit]], each one under the pipeline stop where it is watched:
+
+[[diagrama:calidad]]
 
 ## 4. How we measure it
 
@@ -86,7 +90,6 @@ A non-conformity of the weekly series closes by itself when a later report bring
 
 Reports C-1 to C-7, from 26 to 31 October 2026, are the construction series: they mix code and data, were measured on every push and are never edited. The dashboard shows them apart and does not compare them with the weekly series.
 
-[[diagrama:ciclo_calidad]]
 
 ## 9. Failure register
 
@@ -129,3 +132,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.7 | 2026-11-01 | The report's pull request is merged by itself if the code is within its acceptable; an open one is replaced by the next report (8, 11, D-436) |
 | 1.8 | 2026-11-01 | A non-conformity of the weekly series closes by itself when its indicator is back within the acceptable (8, D-437) |
 | 1.9 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
+| 1.10 | 2026-11-02 | The 11 data indicators are drawn with the flow of «Quality and audit» (3), instead of «The cycle of each week» (D-455) |

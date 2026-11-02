@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.20 |
+| Versión | 3.21 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -38,8 +38,6 @@ GreenOcean publica cada semana cómo se mueven los precios de los alimentos en C
 - **Para quién:** quien compra o vende alimentos, quien informa sobre precios y quien revisa cómo está hecho el proyecto.
 - **Por qué fiarse:** cada cifra se puede seguir hasta el archivo original, y una carga con errores no llega al panel.
 
-[[diagrama:valor]]
-
 ## 2. El problema
 
 La Oficina de Estudios y Políticas Agrarias (ODEPA) publica cada semana los precios mayoristas y al consumidor de frutas, verduras y otros alimentos. El Instituto Nacional de Estadísticas (INE) publica cada mes el índice de precios al consumidor (IPC) de alimentos. Son datos abiertos y confiables, pero no se pueden comparar tal como llegan. Cada serie tiene su frecuencia, su unidad y su nivel de detalle, y ninguna descuenta la inflación. Para saber si un precio subió en términos reales, o si es alto para la época, hay que descargar y cruzar archivos a mano cada semana.
@@ -64,22 +62,15 @@ Cada interesado tiene una pregunta, una decisión que depende de la respuesta y 
 
 ### 3.2 Perfiles de uso
 
+El panel tiene tres perfiles, los mismos de la ventana «Elige tu vista». Los interesados de 3.1 entran por uno de ellos.
+
 | Perfil | Para qué lo usa |
 |---|---|
-| Analista de pricing | Saber si el precio de hoy es normal para la época y qué alimentos subieron más que la inflación, en pesos de hoy |
-| Compras y abastecimiento | Ver cuánto paga el consumidor sobre el precio mayorista del mismo producto |
-| Gerencia | Revisar qué se movió en la semana y qué está fuera de lo habitual |
-| Revisor técnico | Comprobar que las cifras son confiables: la calidad, las pruebas, el linaje y la documentación |
+| Usuario | El negocio, sin cuenta: la sección «Negocio · BA y BI», con el Dashboard guiado en tres pasos, Último dato por canal, Interesados, Análisis de negocio y sistemas, Precios e inflación e Insights |
+| Profesional | Todo el proyecto, sin cuenta, ordenado según su rol (Data Eng, BA, BI, DevOps o Seguridad), con las Consultas SQL de solo lectura |
+| Autor | Lo mismo que Profesional, más «Centro de operación», «GitHub Actions» y «Configuración», la alerta «Acción requerida» y la carga manual; pide la clave de control, que nunca está en el repositorio |
 
-[[diagrama:casos]]
-
-El panel es de consulta y no pide cuenta. Al entrar, y en cada recarga, la ventana «Elige tu vista» ofrece tres vistas:
-
-- **Usuario:** el negocio. El Dashboard, guiado en tres pasos, Insights y los precios frente a la inflación.
-- **Profesional:** todo el proyecto, ordenado según su perfil (datos, BA, BI, DevOps o seguridad), con el estudio SQL de solo lectura.
-- **Autor:** lo mismo que Profesional, más las páginas «GitHub Actions» y «Configuración», la alerta «Acción requerida» y la carga manual. Pide la clave de control, que nunca está en el repositorio.
-
-El botón «Vista», debajo del logo, cambia de vista; un clic en el logo hace lo mismo (D-373). Salir de Autor cierra su sesión. El autor mantiene el código y los secretos y responde consultas SQL puntuales.
+La ventana «Elige tu vista» pregunta una vez por pestaña, y la vista se conserva aunque la pestaña se recargue o el servidor olvide la sesión (D-430, D-454). «Vista: … · Cambiar», debajo del logo, cambia de vista; un clic en el logo hace lo mismo (D-373). Salir de Autor cierra su sesión, y la vista Autor se cierra sola tras 30 minutos sin actividad (D-395). El autor mantiene el código y los secretos y responde consultas SQL puntuales.
 
 ### 3.3 Qué escuchamos
 
@@ -92,7 +83,9 @@ Usuarios reales hicieron dos revisiones: una de uso y una de arquitectura. Cada 
 
 ### 3.4 Mapa de interés
 
-Cada interesado está en un anillo según **cuánto depende su decisión de estos datos y con qué frecuencia los usa**. El centro es GreenOcean; ODEPA y el INE, que entregan los datos, quedan en el anillo de afuera. La página [[vista:Interesados]] dibuja este mapa (D-444).
+Cada interesado está en un anillo según **cuánto depende su decisión de estos datos y con qué frecuencia los usa**. El centro es GreenOcean; ODEPA y el INE, que entregan los datos, quedan en el anillo de afuera. Es el mapa de la página [[vista:Interesados]] (D-444):
+
+[[diagrama:interes]]
 
 | Interesado | Interés | Por qué | Dónde abre |
 |---|---|---|---|
@@ -126,7 +119,7 @@ Los requisitos funcionales (RF) dicen qué hace el producto. Los no funcionales 
 |---|---|---|---|
 | RF-01 | Carga semanal automática | Un workflow corre cada martes a las 12:00 UTC (`0 12 * * 2`) | `.github/workflows/semanal.yml`, `tests/test_prd_traceability.py::test_rf01_the_weekly_workflow_runs_on_tuesdays` |
 | RF-02 | Ninguna fila se pierde | Filas leídas = cargadas + rechazadas: diferencia 0 en cada carga | `dbt/tests/rnf05_rows_reconcile.sql`, `tests/test_etl_run.py::test_rn11_rows_read_equal_rows_loaded_plus_rows_rejected` |
-| RF-03 | Solo se publica una carga válida | Si falla una de las 31 pruebas de dbt, la carga lee menos del 90 % de la anterior, falla pytest sobre la base nueva, falta una semana en medio de los datos o una fuente lleva más de 2 semanas sin publicar, la base servida no cambia; GitHub Actions marca la ejecución como fallida y avisa al autor por correo. Se publica hasta la última semana completa en ambas fuentes, sin rellenar; las pruebas de velocidad informan y nunca bloquean | `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, `tests/test_pipeline_gate.py::test_rf03_a_load_with_far_fewer_rows_than_the_last_good_one_is_refused`, `tests/test_late_sources.py::test_d356_a_hole_in_the_middle_of_the_data_stops_the_load`, `tests/test_late_sources.py::test_d356_a_recent_week_one_source_has_not_published_does_not_stop_the_load_and_waits`, `.github/workflows/semanal.yml` |
+| RF-03 | Solo se publica una carga válida | Si falla una de las 31 pruebas de dbt, la carga lee menos del 90 % de la anterior, falla pytest sobre la base nueva, falta una semana en medio de los datos o una fuente lleva más de 2 semanas sin publicar, la Base DuckDB no cambia; GitHub Actions marca la ejecución como fallida y avisa al autor por correo. Se publica hasta la última semana completa en ambas fuentes, sin rellenar; las pruebas de velocidad informan y nunca bloquean | `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, `tests/test_pipeline_gate.py::test_rf03_a_load_with_far_fewer_rows_than_the_last_good_one_is_refused`, `tests/test_late_sources.py::test_d356_a_hole_in_the_middle_of_the_data_stops_the_load`, `tests/test_late_sources.py::test_d356_a_recent_week_one_source_has_not_published_does_not_stop_the_load_and_waits`, `.github/workflows/semanal.yml` |
 | RF-04 | Precios reales junto a los nominales | El factor de cada semana sale del IPC del mes de su lunes; las semanas posteriores al último mes publicado se marcan como provisionales | `tests/test_ipc_audit.py::test_weekly_factor_uses_the_month_of_the_monday_and_the_last_published_month`, `tests/test_ipc_audit.py::test_only_weeks_after_the_last_published_month_are_provisional` |
 | RF-05 | Alertas de precio | Una alerta exige un cambio fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con dos cotizaciones en cada semana; SQL y Python levantan las mismas | `tests/test_data_audit.py::test_an_alert_must_be_unusual_and_material`, `tests/test_reconciliation.py::test_k6_sql_and_python_raise_the_same_alerts` |
 | RF-06 | Consultas SQL abiertas y de solo lectura | Toda orden que escribe se rechaza; cada consulta devuelve como máximo 5.000 filas y se detiene a los 10 s; el motor no lee archivos ni la red | `tests/test_sql_explorer.py::test_forbidden_statements_are_rejected`, `tests/test_sql_explorer.py::test_result_is_limited_and_flagged`, `tests/test_sql_explorer.py::test_slow_query_is_interrupted`, `tests/test_sql_explorer.py::test_external_access_is_disabled_at_the_engine` |
@@ -180,7 +173,7 @@ Estas son seis capturas reales, del 02-11-2026, de cinco páginas principales y 
 |---|---|---|
 | ODEPA (datos.odepa.gob.cl) | Precios mayoristas y al consumidor | La carga no pasa sus controles y el panel conserva la última carga válida |
 | INE | IPC de alimentos | Se conserva el último IPC leído; las semanas nuevas quedan provisionales |
-| GitHub (repositorio, Actions, releases) | Código, ejecución de la carga y base servida | No hay carga nueva; el panel conserva la base que ya tiene |
+| GitHub (repositorio, Actions, releases) | Código, ejecución de la carga y Base DuckDB | No hay carga nueva; el panel conserva la base que ya tiene |
 | Streamlit Community Cloud | Publicación del panel | El panel no está disponible; los datos no se pierden |
 
 ## 9. Riesgos
@@ -201,7 +194,7 @@ Estas son seis capturas reales, del 02-11-2026, de cinco páginas principales y 
 | Cada pregunta de negocio tiene pantalla y evidencia existentes | `tests/test_prd_traceability.py` |
 | Cada requisito tiene criterio medible y evidencia existente | `tests/test_prd_traceability.py` |
 | La suite completa pasa en cada push | `.github/workflows/pruebas.yml` |
-| Las cifras de este documento coinciden con la base servida | `tests/test_documents.py::test_d210_the_prd_figures_match_the_served_database` |
+| Las cifras de este documento coinciden con la Base DuckDB | `tests/test_documents.py::test_d210_the_prd_figures_match_the_served_database` |
 | Cada página principal cabe en una pantalla | `tests/medicion/medir.cjs` a 1440 × 790 y 1920 × 1000 |
 
 ## 11. Próximos pasos
@@ -246,3 +239,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.18 | 02-11-2026 | El Dashboard ya no pliega los pasos 1 y 2: el panorama queda completo, y la captura M-1 lo muestra así (7, D-446) |
 | 3.19 | 02-11-2026 | «Último dato por canal» es un segundo recuadro bajo el Dashboard, y cada canal se comporta igual que el Dashboard, sin plegar sus pasos (7, D-447, D-452) |
 | 3.20 | 02-11-2026 | Los dos dashboards abren la sección «Negocio · BA y BI», y cada tarjeta de canal lleva su ícono 3D (7, D-453) |
+| 3.21 | 02-11-2026 | Los diagramas son los de la app: el ciclo de cada semana del bloque «Proceso» de «Análisis de negocio y sistemas» (2) y el mapa de «Interesados» (3.4); se retiran «Del dato a la decisión» y los casos de uso, que nombraban perfiles que el panel no tiene; 3.2 son los tres perfiles del panel; «base servida» pasa a «Base DuckDB» (D-455) |

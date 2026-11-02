@@ -1,21 +1,40 @@
 """The panel's own diagrams for the documents (D-448): the SAD draws the same star schema, entity-relation, storage map,
-database crossings, stack and deployment as the panel, from the same code, as a fixed picture without the live state."""
+database crossings, stack and deployment as the panel, from the same code, as a fixed picture without the live state.
+D-455: the other documents too: the journey by layers, the interest map, CI/CD, monitoring, the security architecture,
+the quality flow and «Git workflow»."""
 
-from datetime import date
+import functools
+import json
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from bi import (
+    architecture,
+    business_analysis,
     charts,
+    control,
     database_crossings,
     deployment,
+    devops,
     er_diagram,
+    git_workflow,
+    i18n,
+    interest_map,
+    lineage,
+    monitoring,
     project,
+    quality,
+    quality_live,
+    quality_view,
     queries,
+    security_map,
     stack_page,
     star_model,
     storage_map,
     weeks,
 )
 from etl import etl
+
 
 IPC_TABLE_DEFINITIONS = {
     "ipc_weekly": "el deflactor de cada semana: el IPC del mes de su lunes frente al último mes publicado, "
@@ -128,3 +147,145 @@ def build_deployment_html(mode):
     week_prices = project.count_week_prices(f"{latest_week:%Y-%m-%d}")
     figures = {"week_prices": f"semana {weeks.week_range(latest_week)}: {charts.format_thousands(week_prices)} precios"}
     return deployment.build_deployment_html(charts.get_palette(mode), {}, figures, live=False)
+
+
+def chile_time(started_at):
+    """'2026-10-31T04:41:08' (UTC, as the ETL stores it) in Chilean time; a fixed UTC-3 without the time zone database."""
+    moment = datetime.fromisoformat(str(started_at)).replace(tzinfo=timezone.utc)
+    try:
+        return moment.astimezone(ZoneInfo("America/Santiago"))
+    except Exception:  # time zone database not installed
+        return moment.astimezone(timezone(timedelta(hours=-3)))
+
+
+def read_manifest():
+    try:
+        return json.loads(MANIFEST.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+MANIFEST = queries.DATABASE_FILE.parent.parent / "agent" / "downloads" / "manifest.json"
+
+
+def build_journey_html(mode):
+    """[[diagrama:recorrido]]: the journey by layers of «Pipeline y linaje» (D-136), with the state the latest published
+    load proves and the same figures as the page; the live state of each step is on the page."""
+    latest = queries.run_query("quality_runs").iloc[0]
+    week_range = queries.run_query("quality_week_range").iloc[0]
+    weekly_prices = int(queries.run_query("quality_flag_counts")["weekly_prices"].sum())
+    loaded = latest["status"] == etl.STATUS_LOADED
+    load_state = control.RUN_OK if loaded else control.RUN_FAILED
+    # As the page does without an answer from GitHub (D-034): the saved load proves download, ETL and tests.
+    states = {
+        "sources": control.RUN_OK if read_manifest() else architecture.STATE_UNKNOWN,
+        "download": load_state,
+        "etl": load_state,
+        "tests": load_state,
+        "report": architecture.STATE_UNKNOWN,
+        "workflow": architecture.STATE_UNKNOWN,
+        "load": load_state,
+        "etl_run": load_state,
+        "panel": control.RUN_OK,
+    }
+    first, last = week_range["first_year"], week_range["last_year"]
+    loaded_at = chile_time(latest["started_at"])
+    next_run = control.calculate_next_scheduled_run(datetime.now(timezone.utc)).astimezone(loaded_at.tzinfo)
+    figures = {
+        "source_years": f"año {last}" if first == last else f"años {first} a {last}",
+        "last_run": f"última {loaded_at:%d-%m %H:%M}",
+        "rows_read": f"{charts.format_thousands(latest['rows_read'])} filas leídas",
+        "rows_rejected": f"{charts.format_thousands(latest['rows_rejected'])} filas",
+        "weekly_prices": f"{charts.format_thousands(weekly_prices)} precios",
+        "latest_week": f"hasta {weeks.week_range(date.fromisoformat(str(week_range['last_week'])[:10]), year=True)}",
+        "panel_time": f"datos al {loaded_at:%d-%m %H:%M}",
+        "next_run": f"{next_run:%d-%m %H:%M}",
+    }
+    build = lineage.summarize_build(*lineage.read_tables(queries.run_sql))
+    if build:
+        figures["dbt"] = f"{build['models']} modelos · {build['passing']}/{build['tests']} pruebas"
+    caption = (
+        f"State of the latest published load, of {loaded_at:%Y-%m-%d %H:%M}; the live state of each step is in "
+        "«Pipeline and lineage»."
+        if i18n.is_english()
+        else f"Estado de la última carga publicada, del {loaded_at:%d-%m-%Y %H:%M}; "
+        "el estado en vivo de cada paso está en «Pipeline y linaje»."
+    )
+    return page(
+        architecture.build_journey_svg(states, figures, mode, animate_flow=False) + f'<p class="cap">{caption}</p>',
+        ".cap { margin:6px 0 0; text-align:center; font:12.5px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', "
+        f"sans-serif; color:{charts.get_palette(mode)['text']}; }}",
+    )
+
+
+def build_cicd_html(mode):
+    """[[diagrama:cicd]]: how a change reaches production, the «CI/CD» tab of «Centro de operación» (D-243, D-276)."""
+    return devops.build_cicd_html(charts.get_palette(mode))
+
+
+def build_monitoring_html(mode):
+    """[[diagrama:monitoreo]]: how we know that something failed, the «Monitoreo» tab of «Centro de operación» (D-249)."""
+    return monitoring.build_monitoring_html(charts.get_palette(mode))
+
+
+def build_security_html(mode):
+    """[[diagrama:seguridad]]: the trust zones, controls and threats of «Arquitectura de seguridad» (D-201)."""
+    return security_map.build_security_html(charts.get_palette(mode))
+
+
+@functools.lru_cache(maxsize=2)
+def read_quality(database_key):
+    """The measures and the evidence of «Calidad y auditoría», read once per database, as the page does (D-196)."""
+    measures = quality_live.read_measures()
+    manifest = read_manifest()
+    run = queries.run_query("quality_runs").iloc[0]
+    build = lineage.summarize_build(*lineage.read_tables(queries.run_sql))
+    checks, files = quality.check_database(), quality.check_source_files(manifest, MANIFEST.parent)
+    rejections = int(queries.run_sql("SELECT count(*) AS n FROM rejection").iloc[0, 0])
+    evidence = quality_view.build_evidence(
+        checks,
+        files,
+        manifest,
+        run,
+        build,
+        quality.check_parity(),
+        lambda value: f"{chile_time(value):%d-%m-%Y %H:%M}",
+        rejections=rejections,
+    )
+    return measures, quality_view.build_columns(evidence)
+
+
+def build_quality_html(mode):
+    """[[diagrama:calidad]]: the quality flow of «Calidad y auditoría» (D-220, D-257): each dimension under the pipeline
+    stop where it is watched, measured on the published database."""
+    stat = queries.DATABASE_FILE.stat()
+    measures, columns = read_quality((stat.st_size, stat.st_mtime_ns))
+    return quality_live.build_quality_html(
+        charts.get_palette(mode), quality_live.build_indicators(measures), columns, measures
+    )
+
+
+def build_git_workflow_html(mode):
+    """[[diagrama:git_workflow]]: the flowchart of «Git workflow» (D-449), as a picture: the side panel of each station
+    lives on the page."""
+    palette = charts.get_palette(mode)
+    language = i18n.get_language()
+    data = git_workflow.build_data(language, git_workflow.read_failures(), author=False)
+    for station in data["stations"]:
+        station["label"] = f'{data["labels"]["station"]} {station["n"]}: {station["title"]}'
+    return page(
+        git_workflow.build_svg(data, language),
+        git_workflow.build_css(palette).removeprefix("<style>").removesuffix("</style>")
+        + "html, body { background:transparent; padding:0; } .st { cursor:default; }"
+        + " svg.ico { width:24px !important; height:24px !important; }",
+    )
+
+
+def build_interest_html(mode):
+    """[[diagrama:interes]]: the interest map of «Interesados» (D-444), read from the PRD (3.4). It is drawn inline in the
+    document, not in a frame, because its icons are letters of the panel's own icon font."""
+    palette = charts.get_palette(mode)
+    rows = business_analysis.read_interest()
+    return interest_map.build_css(palette, fit_height=False) + interest_map.build_map_html(
+        rows, palette, lambda row: (None, ""), i18n.tr
+    )

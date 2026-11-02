@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Registros de decisiones de arquitectura (ADR), formato MADR |
-| Versión | 3.3 |
-| Fecha | 01-11-2026 |
+| Versión | 3.4 |
+| Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar las once decisiones que más pesan en la arquitectura de GreenOcean: por qué se tomaron, qué alternativas había y qué consecuencias tienen. |
@@ -65,7 +65,7 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 
 ## ADR-04 · No subir los datos crudos al repositorio
 
-- **Estado:** aceptada (D-020, datos crudos fuera del repositorio); la base servida y el respaldo salieron del repositorio en D-270 ([ADR-35](#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza)).
+- **Estado:** aceptada (D-020, datos crudos fuera del repositorio); la Base DuckDB y el respaldo salieron del repositorio en D-270 ([ADR-35](#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza)).
 - **Fecha:** 11-10-2026.
 - **Contexto:** cada CSV anual de ODEPA pesa hasta unos 65 MB y la base cruda de todos los años, cientos de MB. GitHub rechaza archivos de más de 100 MB y el repositorio crecería con cada carga.
 - **Decisión:** los CSV y la base de aterrizaje (`etl/raw.db`) se reconstruyen en cada carga y quedan fuera del repositorio. Se versiona el registro de descargas (`manifest.json`), con la huella SHA-256 de cada archivo.
@@ -88,7 +88,7 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 - **Estado:** aceptada (D-029, umbral de filas; D-154, construcción con dbt); ampliada por D-356, fuentes retrasadas.
 - **Fecha:** 11-10-2026.
 - **Contexto:** un archivo truncado o una regla rota no deben llegar nunca al panel.
-- **Decisión:** la base servida se reemplaza solo si pasan todas las pruebas de dbt, si la carga lee al menos el 90 % de las filas de la última carga correcta y si pytest pasa sobre la base nueva. Si algo falla, el workflow se detiene antes de publicar, GitHub Actions marca la ejecución como fallida y avisa al autor por correo.
+- **Decisión:** la Base DuckDB se reemplaza solo si pasan todas las pruebas de dbt, si la carga lee al menos el 90 % de las filas de la última carga correcta y si pytest pasa sobre la base nueva. Si algo falla, el workflow se detiene antes de publicar, GitHub Actions marca la ejecución como fallida y avisa al autor por correo.
 - **Opciones consideradas:** límites fijos de filas por semana.
 - **Consecuencias:** el panel siempre muestra la última carga válida. `etl_run` guarda solo las cargas publicadas; las fallidas quedan en el historial de GitHub Actions, visible en «Centro de operación». La primera carga no tiene con qué compararse, y un archivo duplicado no se detecta por conteo: lo detectan las pruebas de unicidad. Desde D-356, la carga también se detiene si a una fuente le falta una semana en medio de los datos o si lleva más de 2 semanas sin publicar.
 - **Confirmación:** la verifica `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database`, que corre en cada push.
@@ -118,7 +118,7 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 - **Estado:** aceptada (D-152, evolución prevista del stack).
 - **Fecha:** 19-10-2026.
 - **Contexto:** datos públicos, semanales y de pocos megabytes, leídos por un solo panel.
-- **Decisión:** la base servida es un archivo DuckDB; no hay un data warehouse en la nube.
+- **Decisión:** la Base DuckDB es un archivo DuckDB; no hay un data warehouse en la nube.
 - **Opciones consideradas:** BigQuery como segundo destino de dbt, declarado como opción y nunca como dependencia del panel.
 - **Consecuencias:** no hay costo, secretos de nube ni vencimientos. Se reconsideraría solo si una empresa sumara sus propios datos; los umbrales están en el [SAD, capacidad y crecimiento](SAD.md#9-capacidad-y-crecimiento).
 - **Confirmación:** la verifica `tests/test_documents.py::test_adr31_no_cloud_warehouse_is_a_dependency`, que corre en cada push.
@@ -145,13 +145,13 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 
 ## ADR-35 · Publicar la base servida en un release que cada carga reemplaza
 
-- **Estado:** aceptada (D-270, base servida en un release).
+- **Estado:** aceptada (D-270, Base DuckDB en un release).
 - **Fecha:** 24-10-2026.
-- **Contexto:** cada carga subía con un commit la base servida y el respaldo, unos 48 MB. Git conserva cada versión de un archivo: el historial crecía cerca de 1 GB por año con copias que nadie consulta, porque cada base nueva ya contiene la historia completa ([ADR-10](#adr-10--reconstruir-todo-en-cada-carga)). Las cifras se midieron el 24-10-2026, al tomar la decisión.
+- **Contexto:** cada carga subía con un commit la Base DuckDB y el respaldo, unos 48 MB. Git conserva cada versión de un archivo: el historial crecía cerca de 1 GB por año con copias que nadie consulta, porque cada base nueva ya contiene la historia completa ([ADR-10](#adr-10--reconstruir-todo-en-cada-carga)). Las cifras se midieron el 24-10-2026, al tomar la decisión.
 
 [[diagrama:antes_despues]]
 
-- **Decisión:** la base servida se publica como archivo del release «base-actual» de GitHub, reemplazado por cada carga. En Git queda solo su puntero, `etl/datos.version`, con la huella SHA-256, el tamaño y la fecha de la base publicada. El panel, las pruebas de cada push y una copia nueva del proyecto descargan el archivo cuando falta o es más antiguo, y lo usan solo si su huella coincide. El respaldo SQLite se rehace en la máquina de cada carga, donde corre la prueba de paridad, y no se publica.
+- **Decisión:** la Base DuckDB se publica como archivo del release «base-actual» de GitHub, reemplazado por cada carga. En Git queda solo su puntero, `etl/datos.version`, con la huella SHA-256, el tamaño y la fecha de la base publicada. El panel, las pruebas de cada push y una copia nueva del proyecto descargan el archivo cuando falta o es más antiguo, y lo usan solo si su huella coincide. El respaldo SQLite se rehace en la máquina de cada carga, donde corre la prueba de paridad, y no se publica.
 - **Opciones consideradas:** dejar de versionar solo el respaldo, lo que reducía el crecimiento a unos 300 MB por año sin detenerlo; almacenamiento de archivos grandes (Git LFS), que también conserva cada versión y tiene una cuota gratuita limitada; reescribir el historial periódicamente, lo que invalida las copias ya clonadas.
 - **Consecuencias:** el historial deja de crecer con los datos y existe una sola copia publicada. El panel depende de poder descargar la base al arrancar; si no puede, conserva la que tiene. Las versiones anteriores siguen en el historial. Una reconstrucción local más nueva que el puntero se conserva.
 - **Confirmación:** la verifica `tests/test_served_database.py::test_a_download_that_does_not_match_the_pointer_never_replaces_the_database`, que corre en cada push.
@@ -198,3 +198,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.1 | 26-10-2026 | Cada registro nombra la prueba que lo confirma, como pide MADR (D-300) |
 | 3.2 | 31-10-2026 | ADR-11 ampliado por las fuentes retrasadas (D-356); las cifras de ADR-35 rotuladas como medidas al decidir (D-386); el documento pasa a `docs/arquitectura/` (D-381, D-388) |
 | 3.3 | 01-11-2026 | ADR-36: el aceptable de los precios comparables se calibra con la historia de los datos (D-433) |
+| 3.4 | 02-11-2026 | «Base servida» pasa a «Base DuckDB» en el texto; el título de ADR-35 conserva el nombre con que se tomó (D-455) |

@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.13 |
+| Versión | 3.14 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -140,7 +140,7 @@ El tema oscuro es el de entrada. Las páginas con pestañas dibujan solo la que 
 
 ## 6. Los datos
 
-[[diagrama:capas]]
+[[diagrama:recorrido]]
 
 Los datos pasan por cinco capas:
 
@@ -150,7 +150,7 @@ Los datos pasan por cinco capas:
 - **Intermedio:** aplica las reglas de negocio (unidades, semanas y rechazos).
 - **Marts:** el modelo estrella que lee el panel.
 
-El recorrido y el linaje están en [[vista:Pipeline y linaje]], y el modelo, en [[vista:Modelo de datos]]. Las fechas se guardan como texto ISO (`AAAA-MM-DD`).
+El recorrido de arriba es el de [[vista:Pipeline y linaje]], con el estado de la última carga publicada; esa página muestra también el linaje dbt, modelo por modelo. El modelo está en [[vista:Modelo de datos]]. Las fechas se guardan como texto ISO (`AAAA-MM-DD`).
 
 ### 6.1 Dónde viven los datos
 
@@ -512,3 +512,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.11 | 01-11-2026 | Dos riesgos de abandono con su mitigación propuesta, y todas las dependencias con versión máxima (11, D-435, D-439) |
 | 3.12 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
 | 3.13 | 02-11-2026 | Los diagramas de la app en el documento, dibujados por el mismo código: herramientas (3.4), dónde viven los datos, modelo estrella, entidad-relación y cruces entre bases (6.1 a 6.4), y despliegue (7); el diccionario de datos pasa a 6.5 (D-448) |
+| 3.14 | 02-11-2026 | Los datos se dibujan con el recorrido por capas de «Pipeline y linaje», en vez de un dibujo propio (6, D-455) |

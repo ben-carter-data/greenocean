@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
-from bi import business_analysis, dashboard, queries
+from bi import business_analysis, dashboard, interest_map, queries
 
 DASHBOARD_FILE = str(Path(dashboard.__file__))
 needs_database = pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason="datos.duckdb is not here")
@@ -71,12 +71,12 @@ def test_d444_the_map_reads_in_english_and_keeps_its_places():
     english = business_analysis.read_interest("en")
     assert [row["level"] for row in english] == [row["level"] for row in business_analysis.read_interest("es")]
     # every name sits on its ring, and no two names of the same ring share a place
-    places = {(row["level"], dashboard.interest_place(row["level"], 0)) for row in english}
+    places = {(row["level"], interest_map.place(row["level"], 0)) for row in english}
     assert (
         len(
             {
-                dashboard.interest_place(level, order)
-                for level, angles in enumerate(dashboard.INTEREST_ANGLES)
+                interest_map.place(level, order)
+                for level, angles in enumerate(interest_map.ANGLES)
                 for order in range(len(angles))
             }
         )

@@ -26,7 +26,7 @@ def read_markers():
 
 
 def test_every_marker_names_a_diagram_that_exists():
-    known = set(doc_diagrams.DOC_DIAGRAMS)
+    known = set(doc_diagrams.DOC_DIAGRAMS) | set(doc_diagrams.INLINE)  # D-455: the interest map is drawn inline
     for name, markers in read_markers().items():
         assert set(markers) <= known, (name, set(markers) - known)
 
@@ -38,7 +38,7 @@ def test_no_diagram_appears_twice_across_the_documents():
 
 def test_every_document_diagram_is_used_by_a_document():
     used = {marker for found in read_markers().values() for marker in found}
-    assert set(doc_diagrams.DOC_DIAGRAMS) <= used
+    assert set(doc_diagrams.DOC_DIAGRAMS) | set(doc_diagrams.INLINE) <= used
 
 
 @pytest.mark.parametrize("mode", [charts.MODE_LIGHT, charts.MODE_DARK])
@@ -100,7 +100,6 @@ def test_d210_the_weak_views_are_gone():
     assert set(doc_diagrams.DOC_DIAGRAMS) == {
         "contexto",
         "contenedores",
-        "casos",
         "mockups",
         "sop",
         "pruebas",
@@ -112,6 +111,13 @@ def test_d210_the_weak_views_are_gone():
         "cruces",
         "herramientas",
         "despliegue",
+        # D-455: and the other documents' diagrams the panel draws.
+        "recorrido",
+        "cicd",
+        "monitoreo",
+        "seguridad",
+        "calidad",
+        "git_workflow",
     } | set(doc_figures.FIGURES)
 
 
@@ -262,7 +268,7 @@ def test_d280_no_document_diagram_has_a_background(name, theme):
         assert "background:transparent" in rule.replace(" ", ""), (name, rule)
 
 
-@pytest.mark.parametrize("name", ["contexto", "contenedores", "casos", "pruebas", "sop"])
+@pytest.mark.parametrize("name", ["contexto", "contenedores", "pruebas", "sop"])
 def test_d280_the_document_logos_are_flat_marks_in_their_own_color(name):
     page = doc_diagrams.DOC_DIAGRAMS[name](charts.MODE_CORPORATE)
     assert 'fill="url(#disc-' not in page and "-actors" not in page, name
@@ -377,3 +383,32 @@ def test_d429_the_scenarios_keep_the_panel_wide_with_the_database_and_github_act
     assert "Base DuckDB" in bottom and "GitHub Actions" in bottom and "semanal.yml" in bottom
     connectors = page.split('class="sc-conn"')[1].split('class="sc-bottom"')[0]
     assert "GITHUB_TOKEN" in connectors and "GITHUB_READ_TOKEN" in connectors
+
+
+def test_d455_the_documents_draw_the_panels_own_diagrams_and_no_invented_profile():
+    """The PRD, the SAD, the test plan, the SQAP and the MANUAL draw the diagrams of the panel, from the same code; the
+    use cases with profiles the panel does not have are gone."""
+    from bi import architecture, devops, git_workflow, interest_map, monitoring, security_map
+
+    assert "casos" not in doc_diagrams.DOC_DIAGRAMS and "build_use_cases_html" not in dir(doc_views)
+    for name, mark in (
+        ("recorrido", "Recorrido de los datos de ODEPA al panel"),
+        ("cicd", devops.build_cicd_html(charts.get_palette(charts.MODE_DARK))[-200:]),
+        ("monitoreo", monitoring.build_monitoring_html(charts.get_palette(charts.MODE_DARK))[-200:]),
+        ("seguridad", security_map.build_security_html(charts.get_palette(charts.MODE_DARK))[-200:]),
+        ("git_workflow", '<svg class="flow" viewBox="0 0 '),
+    ):
+        assert mark in doc_diagrams.DOC_DIAGRAMS[name](charts.MODE_DARK), name
+    assert architecture.build_journey_svg and git_workflow.build_svg
+    page = doc_diagrams.INLINE["interes"](charts.MODE_DARK)
+    assert page.count('class="im-node"') == 7 and "<a " not in page  # a picture: no stakeholder is a link in a document
+    assert f"aspect-ratio:{interest_map.RATIO} / 1" in page
+    # The version histories keep what each version did, so they may name a profile that left.
+    documents = " ".join(
+        line
+        for name in DOCUMENTS
+        for line in i18n.document_path(name, "es").read_text(encoding="utf-8").splitlines()
+        if not re.match(r"\| \d+\.\d+ \|", line)
+    )
+    for invented in ("Gerencia |", "Analista de pricing", "Compras y abastecimiento", "Revisor técnico"):
+        assert invented not in documents, invented

@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.13 |
+| Version | 3.14 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -140,7 +140,7 @@ The dark theme is the one on entry. Pages with tabs draw only the one in sight (
 
 ## 6. The data
 
-[[diagrama:capas]]
+[[diagrama:recorrido]]
 
 The data goes through five layers:
 
@@ -150,7 +150,7 @@ The data goes through five layers:
 - **Intermediate:** applies the business rules (units, weeks and rejections).
 - **Marts:** the star schema the panel reads.
 
-The journey and the lineage are in [[vista:Pipeline and lineage]], and the model, in [[vista:Data model]]. Dates are stored as ISO text (`YYYY-MM-DD`).
+The journey above is the one of [[vista:Pipeline and lineage]], with the state of the latest published load; that page also shows the dbt lineage, model by model. The model is in [[vista:Data model]]. Dates are stored as ISO text (`YYYY-MM-DD`).
 
 ### 6.1 Where the data lives
 
@@ -512,3 +512,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.11 | 2026-11-01 | Two abandonment risks with their proposed mitigation, and every dependency with a maximum version (11, D-435, D-439) |
 | 3.12 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
 | 3.13 | 2026-11-02 | The app's diagrams in the document, drawn by the same code: tools (3.4), where the data lives, star schema, entity-relationship and crossings between databases (6.1 to 6.4), and deployment (7); the data dictionary moves to 6.5 (D-448) |
+| 3.14 | 2026-11-02 | The data is drawn with the journey by layers of «Pipeline and lineage», instead of a drawing of its own (6, D-455) |

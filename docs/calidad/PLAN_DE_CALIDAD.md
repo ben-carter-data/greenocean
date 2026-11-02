@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.9 |
+| Versión | 1.10 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -42,11 +42,15 @@ Este plan dice qué calidad cuida el proyecto, cómo la mide y quién decide. As
 
 Medimos dos calidades. La primera es la de los datos que publicamos, según la norma ISO/IEC 25012: que nadie vea un precio corrupto, atrasado o mal comparado sin saberlo. La segunda es la del código que trata esos datos, según la norma ISO/IEC 25010: que sea probado, ordenado y seguro.
 
+[[diagrama:calidades]]
+
 Son los 12 indicadores del plan de calidad: 8 del código y 4 de los datos. Cada uno tiene escrito qué mide, por qué importa, cómo se mide y qué hacer si falla. Todo eso vive en `docs/calidad/metas.json`, y la página «Método y calidad» lo muestra.
 
 No hay que confundirlos con los 11 indicadores de calidad de los datos, que se miden en cada carga sobre la base publicada y se ven en «Calidad y auditoría». Esos protegen cada publicación; los del plan miden el proyecto semana a semana.
 
-[[diagrama:calidades]]
+Así se ven los 11 indicadores de los datos en [[vista:Calidad y auditoría]], cada uno bajo la parada del pipeline donde se vigila:
+
+[[diagrama:calidad]]
 
 ## 4. Cómo lo medimos
 
@@ -86,7 +90,6 @@ Una no conformidad de la serie semanal se cierra sola cuando un informe siguient
 
 Los informes C-1 a C-7, del 26 al 31 de octubre de 2026, son la serie de construcción: mezclan código y datos, se midieron en cada push y no se editan. El panel los muestra aparte y no los compara con la serie semanal.
 
-[[diagrama:ciclo_calidad]]
 
 ## 9. Registro de fallas
 
@@ -129,3 +132,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.7 | 01-11-2026 | El pull request del informe se fusiona solo si el código está en su aceptable; uno abierto lo reemplaza el informe siguiente (8, 11, D-436) |
 | 1.8 | 01-11-2026 | Una no conformidad de la serie semanal se cierra sola cuando su indicador vuelve al aceptable (8, D-437) |
 | 1.9 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
+| 1.10 | 02-11-2026 | Los 11 indicadores de los datos se dibujan con el flujo de «Calidad y auditoría» (3), en vez de «El ciclo de cada semana» (D-455) |

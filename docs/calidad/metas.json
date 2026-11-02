@@ -262,8 +262,8 @@
       "Without a comparison there is no change to show; if they drop a lot, the dashboard says less than it seems."
     ],
     "como": [
-      "Lo calcula el mismo código del panel sobre la base servida.",
-      "The dashboard's own code computes it on the served database."
+      "Lo calcula el mismo código del panel sobre la Base DuckDB.",
+      "The dashboard's own code computes it on the DuckDB database."
     ],
     "accion": [
       "Ver si falta una región o un canal entero; si la causa es la fuente, registrarla como incidente externo.",

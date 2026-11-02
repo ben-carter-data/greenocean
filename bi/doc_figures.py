@@ -1172,81 +1172,6 @@ def tests_procedure(mode):
 
 
 # region PRD
-def prd_value(mode):
-    return graph(
-        mode,
-        say("Del dato a la decisión", "From data to decision"),
-        {
-            "odepa": (
-                70,
-                30,
-                "source:odepa",
-                "ODEPA",
-                say("precios mayoristas y al consumidor, cada semana", "wholesale and consumer prices, every week"),
-            ),
-            "ine": (70, 190, "source:ine", "INE", say("IPC de alimentos, cada mes", "food CPI, every month")),
-            "load": (
-                270,
-                110,
-                "icon:calendar",
-                say("Carga semanal", "Weekly load"),
-                say("descarga, limpia y calcula cada martes", "downloads, cleans and computes every Tuesday"),
-            ),
-            "gates": (
-                455,
-                110,
-                "icon:shield@#199e70",
-                say("Puertas de calidad", "Quality gates"),
-                say("nada se publica si algo falla", "nothing is published if something fails"),
-            ),
-            "panel": (
-                635,
-                110,
-                "brand:streamlit",
-                say("Panel", "Panel"),
-                say(
-                    "P-1 a P-5: qué cambió, si es normal, la brecha, la inflación y la confianza",
-                    "P-1 to P-5: what changed, whether it is normal, the gap, inflation and trust",
-                ),
-            ),
-            "pricing": (
-                835,
-                20,
-                "person:visitor",
-                "Pricing",
-                say("precio de hoy frente a la época y la inflación", "today's price against the season and inflation"),
-            ),
-            "buying": (
-                835,
-                140,
-                "person:visitor",
-                say("Compras", "Purchasing"),
-                say("margen entre mayorista y consumidor", "margin between wholesale and consumer"),
-            ),
-            "board": (
-                835,
-                260,
-                "person:visitor",
-                say("Gerencia", "Management"),
-                say("qué se movió y qué es inusual", "what moved and what is unusual"),
-            ),
-        },
-        [
-            ("odepa", "load", "CSV", "flow", "h"),
-            ("ine", "load", say("IPC", "CPI"), "flow", "h"),
-            ("load", "gates", "", "flow", "h"),
-            ("gates", "panel", say("si todo pasa", "if all passes"), "flow", "h"),
-            ("panel", "pricing", "", "flow", "h"),
-            ("panel", "buying", "", "flow", "h"),
-            ("panel", "board", "", "flow", "h"),
-        ],
-        say(
-            "Cada cifra del panel se puede seguir hasta el archivo original de la fuente.",
-            "Every figure of the panel can be traced back to the original file of the source.",
-        ),
-    )
-
-
 def prd_requirements(mode):
     return graph(
         mode,
@@ -1392,75 +1317,6 @@ def sad_panel_sequence(mode):
             "The chosen view (User, Professional or Author, the last with a code) decides which pages the reader sees. "
             "If GitHub does not respond, the panel goes on with the database it already has.",
         ),
-    )
-
-
-def sad_layers(mode):
-    return graph(
-        mode,
-        say("Capas de los datos", "Data layers"),
-        {
-            "source": (
-                65,
-                30,
-                "source:odepa",
-                "ODEPA",
-                say("los CSV tal como se publican", "the CSV files as published"),
-            ),
-            "landing": (
-                215,
-                30,
-                "brand:sqlite",
-                say("Aterrizaje", "Landing"),
-                say("etl/raw.db: las filas tal como llegan", "etl/raw.db: the rows as they arrive"),
-            ),
-            "bronze": (
-                370,
-                30,
-                "brand:apacheparquet",
-                say("Bronce", "Bronze"),
-                say("copia literal en Parquet, por fuente y año", "literal copy in Parquet, by source and year"),
-            ),
-            "silver": (
-                530,
-                30,
-                "brand:dbt",
-                say("Plata", "Silver"),
-                say(
-                    "staging e intermedio: tipos, reglas, semanas y rechazos",
-                    "staging and intermediate: types, rules, weeks and rejections",
-                ),
-            ),
-            "gold": (
-                695,
-                30,
-                "brand:duckdb",
-                say("Oro", "Gold"),
-                say(
-                    "marts: el modelo estrella, el IPC y la auditoría, en etl/datos.duckdb",
-                    "marts: the star schema, the CPI and the audit, in etl/datos.duckdb",
-                ),
-            ),
-            "panel": (
-                855,
-                30,
-                "brand:streamlit",
-                say("Panel", "Panel"),
-                say("lee la Base DuckDB en solo lectura", "reads the DuckDB database read-only"),
-            ),
-        },
-        [
-            ("source", "landing", "", "flow", "h"),
-            ("landing", "bronze", "", "flow", "h"),
-            ("bronze", "silver", "", "flow", "h"),
-            ("silver", "gold", "", "flow", "h"),
-            ("gold", "panel", "", "flow", "h"),
-        ],
-        say(
-            "El respaldo etl/datos.db calcula los mismos precios sin dbt, para la prueba de paridad.",
-            "The backup etl/datos.db computes the same prices without dbt, for the parity test.",
-        ),
-        limit=20,
     )
 
 
@@ -1641,104 +1497,6 @@ def served_size_note():
 
 
 # region Test plan (with security)
-def tests_levels(mode):
-    load, push, visual = (
-        say("En cada carga", "On each load"),
-        say("En cada push", "On every push"),
-        say("Antes de un cambio visual", "Before a visual change"),
-    )
-    return graph(
-        mode,
-        say("Qué se prueba y cuándo", "What is tested and when"),
-        {
-            "load": (70, 30, "icon:calendar", load, say("semanal.yml, cada martes", "semanal.yml, every Tuesday")),
-            "dbt": (
-                270,
-                30,
-                "brand:dbt",
-                say("Pruebas de dbt", "dbt tests"),
-                say("claves, valores, relaciones y conciliación", "keys, values, relationships and reconciliation"),
-            ),
-            "gate": (
-                470,
-                30,
-                "icon:shield@#199e70",
-                say("Puerta de publicación", "Publication gate"),
-                say("no publica una carga incompleta", "does not publish an incomplete load"),
-            ),
-            "parity": (
-                670,
-                30,
-                "icon:arrows",
-                say("Paridad", "Parity"),
-                say("dbt y el ETL en Python dan lo mismo", "dbt and the Python ETL give the same"),
-            ),
-            "rebuild": (
-                850,
-                30,
-                "brand:sqlite",
-                say("Reconstrucción", "Rebuild"),
-                say("cada precio, desde las filas crudas", "each price, from the raw rows"),
-            ),
-            "push": (70, 190, "icon:commit", push, say("pruebas.yml, en cada cambio", "pruebas.yml, on every change")),
-            "audit": (
-                270,
-                190,
-                "brand:pytest",
-                say("Auditoría de cifras", "Figure audit"),
-                say("las cifras del panel, contra la base", "the panel's figures, against the database"),
-            ),
-            "panel": (
-                470,
-                190,
-                "brand:streamlit",
-                say("Panel", "Panel"),
-                say("cada página se dibuja sin errores", "each page draws without errors"),
-            ),
-            "security": (
-                670,
-                190,
-                "icon:lock",
-                say("Seguridad", "Security"),
-                say("los catorce ataques S-01 a S-14", "the fourteen attacks S-01 to S-14"),
-            ),
-            "visual": (
-                70,
-                340,
-                "icon:eye",
-                visual,
-                say("Playwright, fuera del proyecto", "Playwright, outside the project"),
-            ),
-            "measure": (
-                270,
-                340,
-                "icon:ruler",
-                say("Medición de pantallas", "Screen measurement"),
-                say("cada página en una pantalla", "each page on one screen"),
-            ),
-            "print": (
-                470,
-                340,
-                "icon:printer",
-                say("Impresión", "Printing"),
-                say("cada documento impreso igual a su página", "each printed document equal to its page"),
-            ),
-        },
-        [
-            ("load", "dbt", "", "check", "h"),
-            ("dbt", "gate", "", "check", "h"),
-            ("gate", "parity", "", "check", "h"),
-            ("parity", "rebuild", "", "check", "h"),
-            ("push", "audit", "", "check", "h"),
-            ("audit", "panel", "", "check", "h"),
-            ("panel", "security", "", "check", "h"),
-            ("visual", "measure", "", "check", "h"),
-            ("measure", "print", "", "check", "h"),
-        ],
-        limit=22,
-    )
-
-
 def tests_manual_sequence(mode):
     return sequence(
         mode,
@@ -1785,113 +1543,6 @@ def tests_manual_sequence(mode):
             "Con la misma API, el Autor puede cancelar la carga. semanal.yml solo puede escribir contenido y crear issues: permisos mínimos.",
             "With the same API, the Author can cancel the load. semanal.yml can only write content and create issues: least privilege.",
         ),
-    )
-
-
-def tests_ci_sequence(mode):
-    return sequence(
-        mode,
-        say("Secuencia de un cambio de código", "Sequence of a code change"),
-        [
-            ("author", say("Autor", "Author"), "person:author"),
-            ("repo", say("GitHub, main", "GitHub, main"), "brand:git"),
-            ("ci", "pruebas.yml", "brand:pytest"),
-            ("cloud", "Streamlit Cloud", "brand:streamlit"),
-        ],
-        [
-            ("author", "author", say("pruebas en su computador", "tests on their computer"), "check"),
-            ("author", "repo", "git push", "flow"),
-            ("repo", "ci", say("lanza pruebas.yml", "launches pruebas.yml"), "order"),
-            ("ci", "ci", say("dbt parse y pytest", "dbt parse and pytest"), "check"),
-            ("ci", "repo", say("verde o rojo junto al commit", "green or red next to the commit"), "back"),
-            ("repo", "cloud", say("despliega main", "deploys main"), "flow"),
-        ],
-        say(
-            "El resultado avisa, pero no detiene el despliegue: un riesgo aceptado y declarado.",
-            "The result warns, but it does not stop the deployment: an accepted and declared risk.",
-        ),
-    )
-
-
-def tests_actors(mode):
-    return graph(
-        mode,
-        say("Quién participa en la seguridad", "Who takes part in security"),
-        {
-            "visitor": (
-                90,
-                20,
-                "person:visitor",
-                say("Usuario y Profesional", "User and Professional"),
-                say(
-                    "sin cuenta: leen el panel; el Profesional usa el SQL de solo lectura",
-                    "no account: they read the panel; the Professional uses the read-only SQL",
-                ),
-            ),
-            "author": (
-                90,
-                230,
-                "person:author",
-                say("Autor", "Author"),
-                say(
-                    "su cuenta en GitHub y Streamlit, con dos pasos",
-                    "their account on GitHub and Streamlit, with two steps",
-                ),
-            ),
-            "panel": (
-                370,
-                125,
-                "brand:streamlit",
-                "Streamlit",
-                say(
-                    "compara la clave en tiempo constante; nunca muestra el token",
-                    "compares the code in constant time; never shows the token",
-                ),
-            ),
-            "duckdb": (
-                640,
-                20,
-                "brand:duckdb",
-                "DuckDB",
-                say("base en solo lectura, sin archivos ni red", "read-only database, no files or network"),
-            ),
-            "secrets": (
-                640,
-                230,
-                "icon:key",
-                say("Secretos del panel", "Panel secrets"),
-                say(
-                    "CONTROL_CODE, GITHUB_TOKEN y GITHUB_READ_TOKEN, fuera del repositorio",
-                    "CONTROL_CODE, GITHUB_TOKEN and GITHUB_READ_TOKEN, outside the repository",
-                ),
-            ),
-            "repo": (
-                835,
-                20,
-                "brand:github",
-                say("Repositorio", "Repository"),
-                say("público, sin ningún secreto", "public, with no secret"),
-            ),
-            "actions": (
-                835,
-                230,
-                "icon:calendar",
-                "semanal.yml",
-                say(
-                    "permisos mínimos: contenido e issues",
-                    "least privilege: content and issues",
-                ),
-            ),
-        },
-        [
-            ("visitor", "panel", say("SQL con límites", "SQL with limits"), "order", "h", "start"),
-            ("author", "panel", say("clave de control", "control code"), "order", "h", "start"),
-            ("panel", "duckdb", say("solo lectura", "read-only"), "flow", "h"),
-            ("panel", "secrets", say("lee", "reads"), "check", "h"),
-            ("secrets", "actions", say("token: carga manual", "token: manual load"), "order", "h"),
-            ("repo", "actions", say("workflow", "workflow"), "order", "v"),
-        ],
-        limit=24,
     )
 
 
@@ -1958,35 +1609,6 @@ def manual_fault_tree(mode):
             "Meanwhile, the panel shows the last valid load.",
         ),
         limit=40,
-    )
-
-
-def manual_calendar(mode):
-    return timeline(
-        mode,
-        say("Tareas periódicas", "Periodic tasks"),
-        [
-            (
-                say("Cada martes", "Every Tuesday"),
-                say("Revisar el resultado", "Check the result"),
-                [say("Centro de operación o correo", "Operations center or email")],
-            ),
-            (
-                say("Cada enero", "Every January"),
-                say("Año nuevo de ODEPA", "ODEPA's new year"),
-                [say("dos líneas en agent/input.csv", "two lines in agent/input.csv")],
-            ),
-            (
-                say("Periódicamente", "Periodically"),
-                say("Copiar las descargas", "Copy the downloads"),
-                [say("agent/downloads a otro disco", "agent/downloads to another disk")],
-            ),
-            (
-                say("Antes del vencimiento", "Before it expires"),
-                say("Renovar GITHUB_TOKEN y GITHUB_READ_TOKEN", "Renew GITHUB_TOKEN and GITHUB_READ_TOKEN"),
-                [say("el panel avisa 15 días antes", "the panel warns 15 days before")],
-            ),
-        ],
     )
 
 
@@ -2426,68 +2048,6 @@ def quality_states(mode):
     )
 
 
-def quality_cycle(mode):
-    return graph(
-        mode,
-        say("El ciclo de cada semana", "The cycle of every week"),
-        {
-            "measure": (
-                90,
-                30,
-                "icon:ruler",
-                say("Medir", "Measure"),
-                say("pruebas y herramientas en el CI", "tests and tools in the CI"),
-            ),
-            "check": (
-                300,
-                30,
-                "icon:check",
-                say("Comparar", "Compare"),
-                say("cada indicador con su aceptable", "each indicator with its acceptable"),
-            ),
-            "report": (
-                510,
-                30,
-                "icon:file",
-                say("Informe semanal de calidad", "Weekly quality report"),
-                say("no se edita después", "never edited afterwards"),
-            ),
-            "approve": (
-                720,
-                30,
-                "icon:eye",
-                say("Aprobación", "Approval"),
-                say(
-                    "solo, con el código en rango; si no, el autor",
-                    "by itself with the code in range; else, the author",
-                ),
-            ),
-            "register": (
-                510,
-                200,
-                "icon:warning",
-                say("Registro de fallas", "Failure register"),
-                say("una línea por campo", "one line per field"),
-            ),
-            "improve": (
-                90,
-                200,
-                "icon:tool",
-                say("Mejorar", "Improve"),
-                say("la causa se corrige, no se oculta", "the cause is fixed, never hidden"),
-            ),
-        },
-        [
-            ("measure", "check", "", "flow", "h"),
-            ("check", "report", "", "flow", "h"),
-            ("report", "approve", "", "flow", "h"),
-            ("approve", "register", say("si algo falló", "if something failed"), "check", "vh"),
-            ("register", "improve", "", "flow", "h"),
-            ("improve", "measure", say("la semana siguiente", "the next week"), "back", "v"),
-        ],
-    )
-
-
 def weekly_cycle(mode):
     """D-377: the weekly cycle as the business page tells it: load, tests, publication, the two reports and what gets
     fixed before the next Tuesday."""
@@ -2555,26 +2115,21 @@ def weekly_cycle(mode):
 # endregion
 
 FIGURES = {
+    "ciclo_semanal": weekly_cycle,  # D-377: also the «Proceso» block of «Análisis de negocio y sistemas»
     "contexto": sad_context,
     "contenedores": sad_containers,
     "sop": tests_procedure,
     "componentes_carga": sad_components_load,
     "componentes_panel": sad_components_panel,
     "escenarios": sad_scenarios,
-    "valor": prd_value,
     "requisitos": prd_requirements,
     "secuencia_carga": sad_weekly_sequence,
     "secuencia_panel": sad_panel_sequence,
-    "capas": sad_layers,
     "mapa_adr": adr_map,
     "tiempo_adr": adr_timeline,
     "antes_despues": adr_before_after,
-    "niveles": tests_levels,
     "secuencia_manual": tests_manual_sequence,
-    "secuencia_ci": tests_ci_sequence,
-    "actores": tests_actors,
     "arbol_fallas": manual_fault_tree,
-    "calendario": manual_calendar,
     "secuencia_recuperacion": manual_recovery_sequence,
     "temas": index_themes,
     "mapa_temas": index_map,
@@ -2584,6 +2139,4 @@ FIGURES = {
     "terminos_cifra": glossary_figure,
     "calidades": quality_qualities,
     "estados_calidad": quality_states,
-    "ciclo_calidad": quality_cycle,
-    "ciclo_semanal": weekly_cycle,
 }

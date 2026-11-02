@@ -63,20 +63,27 @@ def test_every_requirement_has_a_measurable_criterion_and_evidence_that_exists()
             assert_reference_exists(reference)
 
 
-def test_the_use_cases_follow_the_prd_and_each_points_to_a_real_screen():
-    profiles = business_analysis.read_table(business_analysis.read_section("PRD.md", "3.2", "es"))
-    users = {row["Perfil"] for row in profiles}
-    actors = {actor for actor, *_ in doc_views.USER_CASES}
-    assert actors == users  # the four profiles of «3.2 Perfiles de uso» (D-376), nothing else
-    questions = {row[0]: row for row in read_table("Preguntas de negocio")}
-    for actor, row, case, identifier, screen in doc_views.USER_CASES + doc_views.SYSTEM_CASES:
-        page = screen.partition(" · ")[0]
-        assert page in menu_labels() or page == "GitHub, fuera del panel", (case, page)
-        if identifier.startswith("P-"):
-            assert questions[identifier][2] == screen, identifier  # the same screen as in the table
-    assert "administrador" not in PRD.lower() and "- **Autor:**" in PRD  # D-382: the author is the Autor view
-    ids = {identifier for *_, identifier, _ in doc_views.SYSTEM_CASES}
-    assert "RF-01 a RF-04" in ids
+def test_d455_the_usage_profiles_are_the_three_views_of_the_panel():
+    """PRD 3.2 lists the profiles of «Elige tu vista», nothing else: the four invented profiles and their use cases left
+    (D-455). Each page it names is a page of the menu."""
+    for language, names in (("es", ["Usuario", "Profesional", "Autor"]), ("en", ["User", "Professional", "Author"])):
+        rows = business_analysis.read_table(business_analysis.read_section("PRD.md", "3.2", language))
+        assert [list(row.values())[0] for row in rows] == names, language
+    rows = business_analysis.read_table(business_analysis.read_section("PRD.md", "3.2", "es"))
+    named = [name for row in rows for name in re.findall(r"«([^»]+)»", list(row.values())[1])]
+    for name in named:
+        assert name in menu_labels() or name in ("Negocio · BA y BI", "Acción requerida"), name
+    for page in (
+        "Dashboard",
+        "Último dato por canal",
+        "Interesados",
+        "Precios e inflación",
+        "Insights",
+        "Consultas SQL",
+    ):
+        assert page in rows[0]["Para qué lo usa"] + rows[1]["Para qué lo usa"], page
+    assert "administrador" not in PRD.lower() and "| Autor |" in PRD  # D-382: the author is the Autor view
+    assert "[[diagrama:casos]]" not in PRD and not hasattr(doc_views, "USER_CASES")
 
 
 def test_rf01_the_weekly_workflow_runs_on_tuesdays():

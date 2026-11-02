@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Architecture Decision Records (ADR), MADR format |
-| Version | 3.3 |
-| Date | 2026-11-01 |
+| Version | 3.4 |
+| Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain the eleven decisions that weigh most on the architecture of GreenOcean: why they were taken, which alternatives there were and what consequences they have. |
@@ -65,7 +65,7 @@ Each decision of this document answers a concrete question: where the data comes
 
 ## ADR-04 · Do not commit the raw data to the repository
 
-- **Status:** accepted (D-020, raw data out of the repository); the served database and the backup left the repository in D-270 ([ADR-35](#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces)).
+- **Status:** accepted (D-020, raw data out of the repository); the DuckDB database and the backup left the repository in D-270 ([ADR-35](#adr-35--publish-the-served-database-in-a-release-that-each-load-replaces)).
 - **Date:** 2026-10-11.
 - **Context:** each yearly ODEPA CSV file weighs up to about 65 MB and the raw database of all years, hundreds of MB. GitHub rejects files over 100 MB and the repository would grow with each load.
 - **Decision:** the CSV files and the landing database (`etl/raw.db`) are rebuilt on each load and stay out of the repository. The download log (`manifest.json`) is versioned, with the SHA-256 fingerprint of each file.
@@ -88,7 +88,7 @@ Each decision of this document answers a concrete question: where the data comes
 - **Status:** accepted (D-029, row threshold; D-154, build with dbt); extended by D-356, late sources.
 - **Date:** 2026-10-11.
 - **Context:** a truncated file or a broken rule must never reach the panel.
-- **Decision:** the served database is replaced only if all the dbt tests pass, if the load reads at least 90 % of the rows of the last good load and if pytest passes on the new database. If something fails, the workflow stops before publishing, GitHub Actions marks the run as failed and emails the author.
+- **Decision:** the DuckDB database is replaced only if all the dbt tests pass, if the load reads at least 90 % of the rows of the last good load and if pytest passes on the new database. If something fails, the workflow stops before publishing, GitHub Actions marks the run as failed and emails the author.
 - **Considered options:** fixed row limits per week.
 - **Consequences:** the panel always shows the last valid load. `etl_run` keeps only the published loads; the failed ones stay in the GitHub Actions history, visible in «Operations center». The first load has nothing to compare with, and a duplicated file is not detected by counting: the uniqueness tests detect it. Since D-356, the load also stops if a source is missing a week in the middle of the data or has gone more than 2 weeks without publishing.
 - **Confirmation:** `tests/test_pipeline_gate.py::test_rf03_a_failed_dbt_build_records_the_failure_and_never_replaces_the_served_database` verifies it, on every push.
@@ -118,7 +118,7 @@ Each decision of this document answers a concrete question: where the data comes
 - **Status:** accepted (D-152, planned stack evolution).
 - **Date:** 2026-10-19.
 - **Context:** public, weekly data of a few megabytes, read by a single panel.
-- **Decision:** the served database is a DuckDB file; there is no cloud data warehouse.
+- **Decision:** the DuckDB database is a DuckDB file; there is no cloud data warehouse.
 - **Considered options:** BigQuery as a second dbt target, declared as an option and never as a dependency of the panel.
 - **Consequences:** there is no cost, no cloud secrets and no expiry. It would be reconsidered only if a company added its own data; the thresholds are in the [SAD, capacity and growth](SAD.md#9-capacity-and-growth).
 - **Confirmation:** `tests/test_documents.py::test_adr31_no_cloud_warehouse_is_a_dependency` verifies it, on every push.
@@ -145,13 +145,13 @@ Each decision of this document answers a concrete question: where the data comes
 
 ## ADR-35 · Publish the served database in a release that each load replaces
 
-- **Status:** accepted (D-270, served database in a release).
+- **Status:** accepted (D-270, DuckDB database in a release).
 - **Date:** 2026-10-24.
-- **Context:** each load committed the served database and the backup, about 48 MB. Git keeps every version of a file: the history grew by about 1 GB per year with copies nobody reads, because each new database already contains the whole history ([ADR-10](#adr-10--rebuild-everything-on-each-load)). The figures were measured on 2026-10-24, when the decision was taken.
+- **Context:** each load committed the DuckDB database and the backup, about 48 MB. Git keeps every version of a file: the history grew by about 1 GB per year with copies nobody reads, because each new database already contains the whole history ([ADR-10](#adr-10--rebuild-everything-on-each-load)). The figures were measured on 2026-10-24, when the decision was taken.
 
 [[diagrama:antes_despues]]
 
-- **Decision:** the served database is published as a file of the «base-actual» GitHub release, replaced by each load. Git keeps only its pointer, `etl/datos.version`, with the SHA-256 fingerprint, the size and the date of the published database. The panel, the tests of each push and a new copy of the project download the file when it is missing or older, and use it only if its fingerprint matches. The SQLite backup is rebuilt on the machine of each load, where the parity test runs, and is not published.
+- **Decision:** the DuckDB database is published as a file of the «base-actual» GitHub release, replaced by each load. Git keeps only its pointer, `etl/datos.version`, with the SHA-256 fingerprint, the size and the date of the published database. The panel, the tests of each push and a new copy of the project download the file when it is missing or older, and use it only if its fingerprint matches. The SQLite backup is rebuilt on the machine of each load, where the parity test runs, and is not published.
 - **Considered options:** no longer versioning only the backup, which reduced the growth to about 300 MB per year without stopping it; large-file storage (Git LFS), which also keeps every version and has a limited free quota; rewriting the history periodically, which invalidates the copies already cloned.
 - **Consequences:** the history stops growing with the data and there is a single published copy. The panel depends on being able to download the database when it starts; if it cannot, it keeps the one it has. The earlier versions stay in the history. A local rebuild newer than the pointer is kept.
 - **Confirmation:** `tests/test_served_database.py::test_a_download_that_does_not_match_the_pointer_never_replaces_the_database` verifies it, on every push.
@@ -198,3 +198,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.1 | 2026-10-26 | Each record names the test that confirms it, as MADR asks (D-300) |
 | 3.2 | 2026-10-31 | ADR-11 extended by the late sources (D-356); the figures of ADR-35 labelled as measured when deciding (D-386); the document moves to `docs/arquitectura/` (D-381, D-388) |
 | 3.3 | 2026-11-01 | ADR-36: the acceptable of the comparable prices is calibrated with the history of the data (D-433) |
+| 3.4 | 2026-11-02 | «Served database» becomes «DuckDB database» in the text; the title of ADR-35 keeps the name it was taken with (D-455) |

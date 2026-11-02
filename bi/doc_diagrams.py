@@ -37,7 +37,22 @@ DOC_DIAGRAMS.update(
     herramientas=for_print(app_diagrams.build_stack_html),
     despliegue=for_print(app_diagrams.build_deployment_html),
 )
+# D-455: and the other documents' diagrams that the panel already draws.
+DOC_DIAGRAMS.update(
+    recorrido=for_print(app_diagrams.build_journey_html),
+    cicd=for_print(app_diagrams.build_cicd_html),
+    monitoreo=for_print(app_diagrams.build_monitoring_html),
+    seguridad=for_print(app_diagrams.build_security_html),
+    calidad=for_print(app_diagrams.build_quality_html),
+    git_workflow=for_print(app_diagrams.build_git_workflow_html),
+)
 HEIGHTS.update(
+    recorrido="content",
+    cicd="content",
+    monitoreo="content",
+    seguridad="content",
+    calidad="content",
+    git_workflow="content",
     estrella="content",
     entidad_relacion="content",
     almacenamiento=560,
@@ -45,3 +60,6 @@ HEIGHTS.update(
     herramientas="content",
     despliegue="content",
 )
+# D-455: a diagram drawn inline in the document, not in a frame: the interest map's icons are letters of the panel's
+# own icon font, which a frame does not have.
+INLINE = {"interes": app_diagrams.build_interest_html}

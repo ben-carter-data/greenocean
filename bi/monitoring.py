@@ -168,6 +168,8 @@ html, body {{ margin:0; background:transparent; color:{text}; font:400 14px/1.4 
 .mo .stage span {{ min-width:0; }}
 .mo .stage b {{ display:block; font-size:14px; font-weight:700; color:{ink}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
 .mo .stage small {{ display:block; font:400 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; color:{muted}; }}
+/* D-455: in a narrow frame (a document's column) the stage gives its icon's room to its name, so no name is cut. */
+@media (max-width:900px) {{ .mo .stage svg {{ display:none; }} .mo .stage b {{ font-size:13px; }} }}
 .mo .h {{ position:relative; align-self:center; height:12px; }}
 .mo .h::before {{ content:""; position:absolute; left:3px; right:8px; top:5px; border-top:2px dashed {accent}; opacity:.85; }}
 .mo .h::after {{ content:""; position:absolute; right:1px; top:1px; border:5px solid transparent; border-left:8px solid {accent}; }}

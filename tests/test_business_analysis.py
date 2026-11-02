@@ -134,3 +134,12 @@ def test_d377_the_page_reads_in_english():
         caption.value.startswith("Latest report: ") and "quality report" in caption.value.lower()
         for caption in app.caption
     )  # D-431
+
+
+def test_d455_the_problem_block_reads_whole_sentences_and_never_points_at_itself():
+    # «El problema» is read from PRD 2: a sentence that leads to a diagram («…:») would hang on the page, and the page
+    # must not send the reader to itself.
+    for language, page in (("es", "Análisis de negocio y sistemas"), ("en", "Business and systems analysis")):
+        problem = ba.read_problem(language)
+        assert problem and all(paragraph.endswith(".") for paragraph in problem), problem
+        assert not any(page in paragraph for paragraph in problem)

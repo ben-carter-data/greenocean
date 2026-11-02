@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Test and security plan |
-| Version | 3.4 |
+| Version | 3.5 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -37,7 +37,9 @@ The tests of GreenOcean answer three questions, always automatically:
 - **Can a load with errors reach the panel?** No: if a test fails, the load stops and the panel keeps the last valid database.
 - **Can anyone abuse the system?** Fourteen attacks (S-01 to S-14) are repeated on every code change: reading secrets, hanging the panel, launching the load without the code, entering as Author without it or stealing the token.
 
-[[diagrama:niveles]]
+This is how a change reaches production and how each load runs, as in the «CI/CD» tab of [[vista:Operations center]]:
+
+[[diagrama:cicd]]
 
 ## 2. What is tested
 
@@ -46,7 +48,7 @@ The tests of GreenOcean answer three questions, always automatically:
 | dbt data tests | Uniqueness, accepted values, relationships between tables and row reconciliation in each model | dbt Core | `dbt/tests/`, models of `dbt/models/` |
 | Figure audit | Weekly prices are rebuilt from the raw rows; the reference figures of the panel are reproduced | pytest | `tests/test_data_audit.py`, `tests/test_reconciliation.py` |
 | Parity | The Python ETL and dbt produce the same prices, dimensions and rejections | pytest | `tests/test_migration_parity.py` |
-| Publication gate | A load with failed tests or with far fewer rows does not replace the served database | pytest | `tests/test_pipeline_gate.py` |
+| Publication gate | A load with failed tests or with far fewer rows does not replace the DuckDB database | pytest | `tests/test_pipeline_gate.py` |
 | CPI and real prices | The weekly factor, the reference month and the provisional weeks | pytest | `tests/test_ipc_audit.py` |
 | Panel | Each page draws without errors and shows what its decision requires | pytest with Streamlit's AppTest | `tests/test_dashboard.py` and the tests of each view |
 | Diagrams | Each piece drawn exists in the code, the workflow or the database | pytest | `tests/test_devops.py`, `tests/test_monitoring.py`, `tests/test_stack_page.py` and similar |
@@ -58,14 +60,12 @@ The tests of GreenOcean answer three questions, always automatically:
 
 ## 3. Who takes part in security
 
-[[diagrama:actores]]
-
 Security does not depend on hiding the code, which is public, but on four actors and on what each one can do:
 
 - **The User and the Professional** read the panel with no account; the Professional also uses the SQL studio. The data is public and the database is read-only.
 - **The Author** maintains the code and the secrets. With the control code, the Author opens that view and the «Run pipeline now» button. The Author signs in to GitHub and Streamlit with their own account, with two-step verification.
-- **Streamlit Community Cloud** keeps the panel's secrets (the GitHub token and the control code), outside the repository, and publishes the panel from `main`.
-- **GitHub** keeps the code, with no secret in it, and runs the weekly workflow with the least privileges: write content and create issues.
+- **Streamlit Community Cloud** keeps the panel's secrets (the two GitHub tokens, `GITHUB_TOKEN` and `GITHUB_READ_TOKEN`, and the control code, `CONTROL_CODE`), outside the repository, and publishes the panel from `main`.
+- **GitHub** keeps the code, with no secret in it, and runs the weekly load (`semanal.yml`) with the least privileges: write content and create issues.
 
 ## 4. Threats and controls
 
@@ -90,7 +90,9 @@ The threats and the cases are classified according to the OWASP Top 10 (2021), t
 | Least privilege of the job | The weekly workflow can only write content and create issues | `.github/workflows/semanal.yml` |
 | External sign-in | Declared by the author; not verifiable from the repository | GitHub and Streamlit configuration |
 
-The graphic representation of the trust zones, the controls and the threats is in [[vista:Security architecture]].
+The trust zones, the controls and the threats, as [[vista:Security architecture]] draws them:
+
+[[diagrama:seguridad]]
 
 ## 5. Security cases
 
@@ -139,7 +141,9 @@ The «Run pipeline now» button does not exist until the author types the contro
 
 ## 8. A code change, step by step
 
-[[diagrama:secuencia_ci]]
+The path of a change is the one of [[vista:Git workflow]]:
+
+[[diagrama:git_workflow]]
 
 Each change runs the same tests on a clean GitHub machine. Its result stays next to the commit; Streamlit publishes `main` without waiting for it, an accepted risk described in section 11.
 
@@ -149,7 +153,7 @@ Each change runs the same tests on a clean GitHub machine. Its result stays next
 |---|---|
 | System | Any computer with Python 3.11 or 3.12, or a GitHub Actions machine (Ubuntu); the panel and the tests also run on newer versions |
 | Dependencies | `requirements.txt` (panel and tests) and `requirements-pipeline.txt` (dbt) |
-| Database | The served database, downloaded with `python bi/served_database.py` |
+| Database | The DuckDB database, downloaded with `python bi/served_database.py` |
 | Raw data | `etl/raw.db`, only on the author's computer and on the machine of each load; without it, the tests that rebuild from the raw rows are skipped |
 | Secrets | The tests create their own fake secret and never use the real one |
 | Local execution | `python -m pytest -q`; the speed tests, with `python -m pytest -m rendimiento` |
@@ -160,7 +164,7 @@ Each change runs the same tests on a clean GitHub machine. Its result stays next
 
 | Moment | Criterion | Verification |
 |---|---|---|
-| Entry | The change compiles and the served database is available | `dbt parse` |
+| Entry | The change compiles and the DuckDB database is available | `dbt parse` |
 | Exit of a change | Ruff, mypy and the full suite pass on all the code before the push, the fourteen security cases included | `pruebas.yml` green |
 | Exit of a load | The dbt tests pass; the load reads at least 90 % of the rows of the previous one; no week is missing in the middle of the data and no source has gone more than 2 weeks without publishing (D-356); and the data tests pass on the new database | `semanal.yml` |
 | Security | Each control points to a test that exists and no secret is in the repository | Cases S-09 and S-06 |
@@ -203,3 +207,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.2 | 2026-10-31 | Wording reviewed; the User, the Professional and the Author (3); the weekly load runs only the data tests (2, 9, D-366); the exit of a load with the late sources (10, D-356); the token starts, follows and cancels the load (7, 11); the document moves to `docs/calidad/` (D-381, D-388) |
 | 3.3 | 2026-11-01 | S-12: the author's part does not open with an address or in a new tab; a reload of the tab keeps the view (D-430) |
 | 3.4 | 2026-11-02 | The language test walks the whole app in English (2, D-443) |
+| 3.5 | 2026-11-02 | The diagrams are the app's: CI/CD of the «Operations center» (1), «Security architecture» (4) and «Git workflow» (8), instead of drawings of their own; Streamlit's secrets are the two tokens and the control code (3); «served database» becomes «DuckDB database» (D-455) |

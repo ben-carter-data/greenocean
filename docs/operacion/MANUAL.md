@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.13 |
+| Versión | 3.14 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -31,13 +31,15 @@
 
 GreenOcean se opera casi solo. Cada martes la carga corre sin intervención. Si algo falla, el panel sigue mostrando la última carga válida: nunca se publica una cifra a medias.
 
-El trabajo de operación se reduce a mirar un resultado por semana, a cuatro tareas del calendario y, si llega el aviso de una falla, a seguir la tabla de la sección 4. El aviso llega por tres vías:
+El trabajo de operación se reduce a mirar un resultado por semana, a las tareas periódicas de la sección 3 y, si llega el aviso de una falla, a seguir la tabla de la sección 4. El aviso llega por tres vías:
 
 - El correo de GitHub.
 - La ejecución en rojo en GitHub.
 - Dentro del panel, un aviso rojo arriba del menú en todas las páginas, con un enlace al paso que falló.
 
-[[diagrama:calendario]]
+Así se sabe que algo falló, como en la pestaña «Monitoreo» de [[vista:Centro de operación]]: cada señal, dónde queda y quién la lee.
+
+[[diagrama:monitoreo]]
 
 ## 2. Qué ocurre automáticamente
 
@@ -45,7 +47,7 @@ El job semanal (`.github/workflows/semanal.yml`) corre cada martes a las 12:00 U
 
 También se puede lanzar a mano: desde «Centro de operación», con el botón «Ejecutar pipeline ahora» (requiere la clave de control), o desde la página del workflow en GitHub. La ventana de la ejecución muestra arriba el flujo en vivo, enfocado en la carga: qué pieza trabaja y qué mensaje viaja en cada paso (D-413).
 
-Si un paso falla, los siguientes no se ejecutan y la base servida no cambia ([ADR-11 · Publicar solo si pasan las pruebas](../arquitectura/ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)).
+Si un paso falla, los siguientes no se ejecutan y la Base DuckDB no cambia ([ADR-11 · Publicar solo si pasan las pruebas](../arquitectura/ADR.md#adr-11--publicar-solo-si-pasan-las-pruebas)).
 
 Después de cada carga que termina en verde, el workflow de calidad propone el informe semanal de calidad, con los 3 indicadores de datos, como pull request «Actualizar medición de calidad» (D-431). En cada push solo mide, y falla si un indicador de código pasa su aceptable: esa es la verificación del código, sin informe.
 
@@ -59,7 +61,7 @@ Después de cada carga que termina en verde, el workflow de calidad propone el i
 | Cada enero | Agregar a `agent/input.csv` las dos líneas del año nuevo (mayorista y consumidor), con la URL que publica ODEPA en la página de cada conjunto de datos | `agent/input.csv` |
 | Periódicamente | Copiar `agent/downloads` a otro disco: los CSV no se versionan ([ADR-04 · No subir los datos crudos al repositorio](../arquitectura/ADR.md#adr-04--no-subir-los-datos-crudos-al-repositorio)) y la caché de GitHub se borra si no se usa en 7 días | Otro disco del autor |
 | Antes de su vencimiento | Renovar los dos tokens de GitHub del panel; «Configuración» los marca en ámbar cuando faltan 15 días o menos, y la alerta «Acción requerida» lo avisa al entrar como Autor (sección 8.1) | Secretos de la app en Streamlit |
-| Después de cada carga semanal | El pull request «Actualizar medición de calidad»: fusionarlo o cerrarlo, borrar su rama y hacer `git pull` | Pull requests del repositorio (sección 8) |
+| Después de cada carga semanal | El pull request «Actualizar medición de calidad»: el workflow lo fusiona solo si el código está en su aceptable (D-436); si quedó abierto, revisarlo y fusionarlo o cerrarlo. Después, hacer `git pull` | Pull requests del repositorio (sección 8) |
 | Al entrar como Autor | La alerta «Acción requerida»: primero, cada token a 15 días o menos de vencer; después, los indicadores fuera de su aceptable. Si dice «Última medición del …», el informe tiene más de 8 días y no es el estado de hoy | La ventana que abre el panel |
 
 ## 4. Fallas de la carga semanal
@@ -75,7 +77,7 @@ Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El
 | Download the ODEPA files | `DOWNLOAD_ERROR` o `UNEXPECTED_HEADER` en el log | ODEPA no respondió, o cambió las columnas de un archivo | Con `DOWNLOAD_ERROR`, esperar unas horas y volver a lanzar; con `UNEXPECTED_HEADER`, revisar el archivo y adaptar el agente |
 | Run the ETL (SQLite backup) | `MISSING_WEEKS`, `UNKNOWN_REGION`, `UNKNOWN_CHANNEL` o `DUPLICATE_KEYS` en el log | Falta una semana fuera de los huecos conocidos, ODEPA agregó una región o un canal, o hay precios repetidos | Revisar el archivo en ODEPA; una región o un canal nuevos se agregan a las listas del ETL; una semana faltante en la fuente se registra como hueco conocido con su decisión |
 | Build the data warehouse with dbt | Un modelo o una prueba de dbt falla, o `TOO_FEW_ROWS` | Una regla de negocio no se cumple, o la carga leyó menos del 90 % de la anterior | Leer en el log qué modelo o prueba falló; suele nombrar la tabla y la regla |
-| Run the tests against the new database | Una prueba de pytest falla | Los datos nuevos no cumplen algo que el código supone, o el respaldo y la base servida no coinciden | Leer qué prueba falló; suele indicar el producto o la semana |
+| Run the tests against the new database | Una prueba de pytest falla | Los datos nuevos no cumplen algo que el código supone, o el respaldo y la Base DuckDB no coinciden | Leer qué prueba falló; suele indicar el producto o la semana |
 | Publish the database | GitHub rechaza la subida del archivo o del puntero | Permisos del workflow o un cambio en `main` durante la carga | Revisar Settings → Actions → Workflow permissions («Read and write») y volver a lanzar |
 | Publish the weekly report | No se crea el issue | Permisos del workflow | Revisar los permisos; la base ya quedó publicada |
 
@@ -91,7 +93,7 @@ Para leer cualquier falla sin copiar a mano, la página «GitHub Actions» del p
 |---|---|---|
 | Después de un push, una página muestra `AttributeError` | Streamlit Cloud combinó archivos nuevos con otros que tenía en memoria (ocurrió el 12-10-2026) | En el panel, «Manage app» → ⋮ → **Reboot**, y esperar uno o dos minutos |
 | «Centro de operación» indica «GitHub no respondió (…)» | Sin token, GitHub permite 60 consultas por hora, compartidas por las apps del mismo servidor | Ninguna: el panel muestra la última respuesta guardada y vuelve a consultar cada 5 minutos; con el token configurado, el límite sube |
-| El panel informa que no tiene la base servida | No pudo descargarla del release al arrancar | Verificar que el release «base-actual» existe; el panel la descarga en la siguiente visita |
+| El panel informa que no tiene la Base DuckDB | No pudo descargarla del release al arrancar | Verificar que el release «base-actual» existe; el panel la descarga en la siguiente visita |
 | El botón «Ejecutar pipeline ahora» indica que falta el token | El token del panel venció o no está configurado | Crear un token con permiso para lanzar workflows de este repositorio y guardarlo como `GITHUB_TOKEN` en los secretos de la app en Streamlit |
 
 ## 6. Recuperación
@@ -132,7 +134,7 @@ Los enlaces que se usan para operar el proyecto, agrupados por tarea.
 | Aprobar un informe | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) | Revisar el informe de calidad que el workflow no fusionó solo | Si quedó abierto, con el código fuera de su aceptable (D-436) | «Actualizar medición de calidad» → «Files changed» → «Merge pull request», o «Close pull request» |
 | Aprobar un informe | [Branches](https://github.com/ben-carter-data/greenocean/branches) | Borrar la rama de un informe ya fusionado o cerrado | Después de fusionar o cerrar el pull request | El ícono de la papelera junto a la rama «informe-calidad/…» |
 | Configuración | [Actions · General](https://github.com/ben-carter-data/greenocean/settings/actions) | Permisos del workflow para escribir y abrir pull requests | Si una publicación o un pull request son rechazados | «Workflow permissions» → «Read and write» y «Allow GitHub Actions to create and approve pull requests» |
-| Configuración | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) | La base servida que lee el panel | Si el panel no encuentra su base | Revisar que el archivo `datos.duckdb` esté en «Assets» |
+| Configuración | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) | La Base DuckDB que lee el panel | Si el panel no encuentra su base | Revisar que el archivo `datos.duckdb` esté en «Assets» |
 | Configuración | [Issues](https://github.com/ben-carter-data/greenocean/issues) | El informe semanal de cada carga publicada | Cada martes | «Informe semanal AAAA-MM-DD» |
 | La app | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) | La app que ven el Usuario, el Profesional y el Autor | Después de cada push, para confirmar el cambio | Elegir la vista; como Autor, escribir la clave y Enter |
 | La app | [Streamlit Community Cloud](https://share.streamlit.io) | Los secretos del panel y su reinicio | Al renovar un token o si el panel muestra un error de módulo | La app → ⋮ → «Settings» → «Secrets», o «Reboot» |
@@ -169,7 +171,7 @@ Cinco casos, cada uno con sus pasos en orden. Un paso automático lo hace el sis
 | La app no se actualiza | 1 | Automático | Después de cada push a main, Streamlit Community Cloud vuelve a desplegar la app | — |
 | La app no se actualiza | 2 | Manual | Abrir el panel publicado y confirmar que el cambio llegó | [Panel publicado](https://monitor-precios-hito1-d4hfucgaifcebbwahgrzwf.streamlit.app) |
 | La app no se actualiza | 3 | Manual | Si una página muestra `AttributeError` o no cambia: la app → ⋮ → «Reboot», y esperar uno o dos minutos | [Streamlit Community Cloud](https://share.streamlit.io) |
-| La app no se actualiza | 4 | Manual | Si el panel dice que no tiene la base servida, revisar que `datos.duckdb` esté en el release | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) |
+| La app no se actualiza | 4 | Manual | Si el panel dice que no tiene la Base DuckDB, revisar que `datos.duckdb` esté en el release | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) |
 
 ## 9. Registro de fallas
 
@@ -179,7 +181,7 @@ Cada falla diagnosticada y resuelta se anota en `docs/calidad/plan_mitigacion.js
 
 | Límite | Valor | Fuente |
 |---|---|---|
-| Tamaño máximo de un archivo de release | 2 GB; la base servida pesa unos 14 MB | Documentación de GitHub sobre releases, consultada el 24-10-2026 |
+| Tamaño máximo de un archivo de release | 2 GB; la Base DuckDB pesa unos 14 MB | Documentación de GitHub sobre releases, consultada el 24-10-2026 |
 | Caché de GitHub Actions | Se borra si no se usa en 7 días; esa semana el job descarga todos los años | Documentación de GitHub Actions, consultada el 24-10-2026 |
 | Consultas a la API de GitHub sin token | 60 por hora | Documentación de la API de GitHub |
 | Arquitectura en la nube | No se adopta mientras los datos sean públicos, semanales y pequeños | [ADR-31 · No usar un data warehouse en la nube](../arquitectura/ADR.md#adr-31--no-usar-un-data-warehouse-en-la-nube) y [Capacidad y crecimiento del SAD](../arquitectura/SAD.md#9-capacidad-y-crecimiento) |
@@ -215,3 +217,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.11 | 01-11-2026 | El pull request del informe se fusiona solo si el código está en su aceptable (8, 8.1, D-436) |
 | 3.12 | 01-11-2026 | El informe semanal nuevo cierra el anterior (3, D-438) |
 | 3.13 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
+| 3.14 | 02-11-2026 | Cómo se sabe que algo falló se dibuja con la pestaña «Monitoreo» del «Centro de operación» (1), en vez de un calendario propio; el pull request de calidad se fusiona solo si el código está en su aceptable (3, D-436); «base servida» pasa a «Base DuckDB» (D-455) |

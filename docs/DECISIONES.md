@@ -3591,3 +3591,38 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Lo que no cambia:** la vista Autor se sigue cerrando tras 30 minutos sin actividad (D-395), por seguridad. Si el servidor se reinició, su boleto ya no existe (D-427) y la visita sigue como Profesional.
 - **Medición:** con Playwright: Profesional en «Modelo de datos», el servidor olvida la sesión y un clic en «Documentos» abre la carpeta como Profesional, sin la ventana «Elige tu vista».
 - **Pruebas:** `tests/test_app_reloads.py::test_d454_a_session_the_server_forgot_reads_the_kept_view_again`.
+
+## D-455 · Los documentos usan los diagramas de la app, y el PRD nombra solo los tres perfiles del panel
+
+- **Pedido del autor:** el diagrama de casos de uso del PRD no era correcto. Mostraba cuatro perfiles que el panel no tiene (Gerencia, Analista de pricing, Compras y abastecimiento, Revisor técnico) y a GitHub Actions como actor, cuando el panel tiene tres vistas: Usuario, Profesional y Autor. Los documentos deben usar los diagramas que ya están en la app, en vez de dibujos propios, sin contradicciones entre la app, los documentos y las cifras.
+- **Decisión:** donde la app ya dibuja lo mismo, el documento usa ese diagrama, desde el mismo código (`bi/app_diagrams.py`, como D-448):
+
+| Documento | Dibujo propio que se retira | Diagrama de la app que lo reemplaza |
+|---|---|---|
+| PRD 3.2 | Casos de uso con los cuatro perfiles | — (la tabla 3.2 son los tres perfiles del panel) |
+| PRD 3.4 | — | Mapa de anillos de «Interesados» (`[[diagrama:interes]]`) |
+| PRD 1 | «Del dato a la decisión», que nombraba a «Gerencia» | — (el PRD conserva «Del dato al informe, cada semana», que es el bloque «Proceso» de «Análisis de negocio y sistemas») |
+| SAD 6 | «Capas de los datos» | Recorrido por capas de «Pipeline y linaje» (`recorrido`) |
+| Plan de pruebas 1 | «En cada carga» | Pestaña CI/CD del «Centro de operación» (`cicd`) |
+| Plan de pruebas 3 y 4 | «Quién participa en la seguridad» | «Arquitectura de seguridad» (`seguridad`), en la sección 4, donde el texto ya la nombraba |
+| Plan de pruebas 8 | «Secuencia de un cambio de código» | El diagrama de flujo de «Git workflow» (`git_workflow`) |
+| SQAP 3 | «El ciclo de cada semana» | El flujo de calidad de «Calidad y auditoría» (`calidad`), junto a los 11 indicadores de los datos |
+| MANUAL 1 | «Tareas periódicas» | Pestaña «Monitoreo» del «Centro de operación» (`monitoreo`) |
+
+- **Cómo se dibujan:**
+  - Como una imagen fija, sin el estado en vivo ni los paneles que se abren con un clic.
+  - El recorrido muestra el estado que prueba la última carga publicada y las mismas cifras de la página: filas, precios, semana y próxima carga. Su leyenda dice dónde está el estado en vivo.
+  - El mapa de interés se dibuja en el documento mismo, no en un marco, porque sus íconos son letras de la fuente de íconos del panel. Ningún interesado es un enlace.
+  - `bi/interest_map.py` dibuja el mapa para la página y para el PRD.
+  - En un marco angosto, como la columna de un documento, «Monitoreo» deja el espacio del ícono al nombre, así ningún nombre se corta.
+- **Lo que se mantiene:** las figuras sin equivalente en la app: los diagramas C4, los escenarios y las secuencias del SAD, las del ADR, el Índice y el Glosario, la secuencia de la carga manual y el procedimiento de seguridad, el árbol de fallas y la recuperación. Se revisó que solo nombren las tres vistas y los nombres oficiales.
+- **Coherencia del texto:**
+  - El PRD 3.2 ya no dice que «Elige tu vista» pregunta en cada recarga: pregunta una vez por pestaña (D-430, D-454). El Autor tiene también «Centro de operación» (D-420).
+  - El Plan de pruebas nombra los dos tokens y la clave de control (`GITHUB_TOKEN`, `GITHUB_READ_TOKEN`, `CONTROL_CODE`) y la carga semanal por su archivo (`semanal.yml`).
+  - El MANUAL dice que el pull request de calidad se fusiona solo si el código está en su aceptable (D-436).
+  - «Base servida» pasa a «Base DuckDB» en el texto del PRD, el Plan de pruebas, el MANUAL, el Glosario, el ADR y `metas.json` (D-426). El título de ADR-35 y los historiales de versiones conservan el nombre de su momento.
+- **Documentos:** PRD 3.21, SAD 3.14, Plan de pruebas y seguridad 3.5, SQAP 1.10, MANUAL 3.14, Glosario 2.7 y ADR 3.4, en los dos idiomas.
+- **Pruebas:**
+  - `tests/test_doc_diagrams.py::test_d455_the_documents_draw_the_panels_own_diagrams_and_no_invented_profile`.
+  - `tests/test_prd_traceability.py::test_d455_the_usage_profiles_are_the_three_views_of_the_panel`.
+  - `tests/test_documents.py::test_each_document_carries_the_diagrams_its_kind_of_document_needs`.

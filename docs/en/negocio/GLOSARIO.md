@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.6 |
+| Version | 2.7 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -50,26 +50,26 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | INE | Chile's National Statistics Institute (*Instituto Nacional de Estadísticas*). It publishes the food CPI. | Prices and inflation, Pipeline and lineage | Sources |
 | CPI (IPC) | Consumer price index (*índice de precios al consumidor*); here, the «Alimentos y bebidas no alcohólicas» (food and non-alcoholic beverages) division published by the INE. | Prices and inflation | Sources |
 | CSV | Text file with comma-separated values: the format in which ODEPA publishes the prices. | Pipeline and lineage | Sources |
-| SHA-256 | Function that computes the fingerprint of a file; it changes if a single byte changes. It is used to verify the downloaded files and the served database. | Quality and audit | Sources |
+| SHA-256 | Function that computes the fingerprint of a file; it changes if a single byte changes. It is used to verify the downloaded files and the DuckDB database. | Quality and audit | Sources |
 | JSON | Text format for structured data (*JavaScript Object Notation*); the download manifest and the original row of each rejection are stored in it. | — | Sources |
 | Pipeline | The whole flow of each Tuesday, from ODEPA to the panel: download, backup ETL, build with dbt, tests, publication and report. | Pipeline and lineage, Operations center | Pipeline |
 | Ingestion | The download of the ODEPA files; the ingestion agent (`agent/agent.py`) does it and checks that each file brings the expected columns. | Pipeline and lineage | Pipeline |
-| ETL | Extract, transform and load. `etl/etl.py` cleans the data and applies the rules for the backup `etl/datos.db`; the same rules run in dbt for the served database. | Pipeline and lineage, Operations center | Pipeline |
+| ETL | Extract, transform and load. `etl/etl.py` cleans the data and applies the rules for the backup `etl/datos.db`; the same rules run in dbt for the DuckDB database. | Pipeline and lineage, Operations center | Pipeline |
 | Quality gate | A check that stops the load if something does not comply: the file, each row or the database. | Quality and audit | Pipeline |
 | Job, workflow | Automated task of GitHub Actions; the weekly job (`semanal.yml`) runs the pipeline every Tuesday. | Operations center | Pipeline |
 | Cron | The schedule of the weekly job: every Tuesday at 12:00 UTC. | Operations center | Pipeline |
 | Run | One full pass of the weekly job. | Operations center | Pipeline |
 | CI, CD | Continuous integration: the tests run by themselves on each change of the code (`pruebas.yml`). Continuous delivery: what passes all the tests reaches production without manual steps. | Operations center (CI/CD) | Pipeline |
 | Commit, push | Save a change in the history of the code, and upload it to GitHub. | Operations center (CI/CD) | Pipeline |
-| Release | A GitHub publication that keeps files outside the history; the «base-actual» release keeps the served database and each load replaces it. | Operations center (CI/CD) | Pipeline |
-| Database pointer | The `etl/datos.version` file: the fingerprint, the size and the date of the published served database. | Operations center (Deployment) | Pipeline |
+| Release | A GitHub publication that keeps files outside the history; the «base-actual» release keeps the DuckDB database and each load replaces it. | Operations center (CI/CD) | Pipeline |
+| Database pointer | The `etl/datos.version` file: the fingerprint, the size and the date of the published DuckDB database. | Operations center (Deployment) | Pipeline |
 | Issue | A publication on GitHub; here, the weekly report each load leaves. | Operations center (Monitoring) | Pipeline |
 | Pull request | A proposed change on GitHub that the author reviews before accepting it; here, the quality report of each week. | Method and quality | Pipeline |
 | Landing | The `etl/raw.db` database, with the ODEPA rows as they arrive; it is not versioned. | Pipeline and lineage | Database |
 | Bronze, silver, gold | The data layers: bronze (Parquet, exact copy), silver (dbt staging and intermediate: types, rules and flags) and gold (marts: the star schema the panel reads). | Pipeline and lineage | Database |
-| Served database | `etl/datos.duckdb`: the database the panel reads, with the star schema; published in the «base-actual» release. | Pipeline and lineage, Data model | Database |
+| DuckDB database | `etl/datos.duckdb`: the database the panel reads, with the star schema; published in the «base-actual» release. It was called «DuckDB database» before (D-426). | Pipeline and lineage, Data model | Database |
 | Backup | `etl/datos.db`: the same prices computed without dbt, for the parity test. | Data model | Database |
-| Parity | Comparison between the backup and the served database: they must give the same figures. | Quality and audit | Database |
+| Parity | Comparison between the backup and the DuckDB database: they must give the same figures. | Quality and audit | Database |
 | Data warehouse | The database ready for analysis, with the star schema. | Pipeline and lineage, Data model | Database |
 | Star schema | A fact table (`weekly_price`) surrounded by its dimensions (product, region, channel, date). | Data model | Database |
 | PK, FK | Primary key: the column that identifies each row of a table. Foreign key: the column that points to the primary key of another table. | Data model | Database |
@@ -115,3 +115,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.4 | 2026-10-31 | Wording reviewed; the three views; the data quality indicators and those of the quality plan; the pull request of the quality report; the full price alert; the document moves to `docs/negocio/` (D-381 to D-385, D-388) |
 | 2.5 | 2026-11-01 | «Served database» becomes «DuckDB database» (D-426) |
 | 2.6 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
+| 2.7 | 2026-11-02 | «Served database» becomes «DuckDB database» in the definitions too, which still used the former name (D-455) |

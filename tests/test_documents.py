@@ -35,7 +35,8 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
         for name in READING
     }
     assert names == {
-        "PRD.md": ["valor", "ciclo_semanal", "casos", "requisitos", "mockups"],  # D-377
+        # D-455: the journey of «Pipeline y linaje» and the map of «Interesados», the panel's own diagrams
+        "PRD.md": ["ciclo_semanal", "interes", "requisitos", "mockups"],
         "SAD.md": [
             "contexto",
             "escenarios",
@@ -46,7 +47,7 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
             "herramientas",  # D-448: the panel's own diagrams, drawn by the same code
             "secuencia_carga",
             "secuencia_panel",
-            "capas",
+            "recorrido",  # D-455: the journey by layers of «Pipeline y linaje»
             "almacenamiento",
             "estrella",
             "entidad_relacion",
@@ -54,15 +55,16 @@ def test_each_document_carries_the_diagrams_its_kind_of_document_needs():
             "despliegue",
         ],
         "ADR.md": ["mapa_adr", "tiempo_adr", "antes_despues"],
-        "PLAN_PRUEBAS.md": ["niveles", "actores", "pruebas", "sop", "secuencia_manual", "secuencia_ci"],
-        "MANUAL.md": ["calendario", "arbol_fallas", "secuencia_recuperacion"],
+        "PLAN_PRUEBAS.md": ["cicd", "seguridad", "pruebas", "sop", "secuencia_manual", "git_workflow"],  # D-455
+        "MANUAL.md": ["monitoreo", "arbol_fallas", "secuencia_recuperacion"],  # D-455
         "GLOSARIO.md": ["terminos_cifra", "terminos_capas", "terminos_actores"],
         "INDICE_DECISIONES.md": ["temas", "mapa_temas", "adr_decisiones"],
-        "PLAN_DE_CALIDAD.md": ["calidades", "estados_calidad", "ciclo_calidad"],
+        "PLAN_DE_CALIDAD.md": ["calidades", "calidad", "estados_calidad"],  # D-455
     }
     for name, markers in names.items():
         assert len(markers) >= (5 if name == "SAD.md" else 3) and len(set(markers)) == len(markers), name
-    assert {marker for markers in names.values() for marker in markers} <= set(dashboard.doc_diagrams.DOC_DIAGRAMS)
+    drawn = set(dashboard.doc_diagrams.DOC_DIAGRAMS) | set(dashboard.doc_diagrams.INLINE)  # D-455: one drawn inline
+    assert {marker for markers in names.values() for marker in markers} <= drawn
 
 
 def test_d290_the_merged_documents_are_gone_and_their_addresses_open_the_document_that_holds_them():
