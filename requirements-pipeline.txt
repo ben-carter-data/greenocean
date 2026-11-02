@@ -1,6 +1,6 @@
 # Solo para el workflow semanal: construir el data warehouse con dbt (D-154).
-# El panel publicado no las necesita; usa requirements.txt.
+# El panel publicado no las necesita; usa requirements.txt. Topes como en requirements.txt (D-435).
 -r requirements.txt
-dbt-core>=1.8
-dbt-duckdb>=1.8
-pyarrow>=14
+dbt-core>=1.8,<1.13
+dbt-duckdb>=1.8,<1.12
+pyarrow>=14,<27

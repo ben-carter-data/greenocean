@@ -350,6 +350,16 @@ def test_adr04_the_raw_data_is_not_in_git():
     assert "etl/raw.db" not in tracked and "etl/datos.duckdb" not in tracked
 
 
+def test_d435_every_dependency_has_a_maximum_version():
+    """D-164 and D-227: a new version broke the weekly load twice; every dependency has its cap."""
+    for path in ("requirements.txt", "requirements-pipeline.txt"):
+        for line in (ROOT / path).read_text(encoding="utf-8").splitlines():
+            line = line.split("#")[0].strip()
+            if line and not line.startswith("-r"):
+                assert "<" in line, (path, line)
+    assert "duckdb>=1.1,<2" in (ROOT / "requirements.txt").read_text(encoding="utf-8")  # D-227 stays
+
+
 def test_adr31_no_cloud_warehouse_is_a_dependency():
     """ADR-31: the served database is a DuckDB file; a cloud warehouse is only a commented option of dbt."""
     for path in ("requirements.txt", "requirements-pipeline.txt"):

@@ -1,6 +1,8 @@
-requests>=2.31
-pandas>=2.0
-streamlit>=1.65
-pytest>=8.0
+# D-435: cada dependencia con un tope justo encima de la versión que funciona hoy (CI del 01-11-2026); una versión
+# nueva entra solo cuando el autor sube el tope y el CI la prueba. Ya rompieron dos cargas: certifi (D-164) y DuckDB (D-227).
+requests>=2.31,<3
+pandas>=2.0,<3.2
+streamlit>=1.65,<1.67
+pytest>=8.0,<10
 # DuckDB 2.0.0 (21-10-2026) vuelve la consulta k2_channel_gap de 0,1 s a más de 60 s (D-227).
 duckdb>=1.1,<2

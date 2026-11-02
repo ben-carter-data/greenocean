@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.9 |
+| Versión | 3.10 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -80,6 +80,8 @@ Cada fila corresponde a un paso del workflow, con su nombre en `semanal.yml`. El
 | Publish the weekly report | No se crea el issue | Permisos del workflow | Revisar los permisos; la base ya quedó publicada |
 
 Una semana que una fuente aún no publica no es una falla. La carga publica hasta la última semana completa en ambas fuentes, y el Panorama lo avisa. Sí detienen la carga `MISSING_WEEKS` (falta una semana en medio de los datos) y `LATE_SOURCE` (una fuente lleva más de 2 semanas sin publicar). En esos casos, revisar ODEPA y no rellenar nada: la carga vuelve sola cuando la fuente publica.
+
+Cada dependencia de `requirements.txt` y `requirements-pipeline.txt` tiene una versión máxima, para que una versión nueva no rompa la carga del martes (D-435). Para usar una versión nueva, se sube su tope con un push: el CI la prueba antes de la carga siguiente.
 
 Para leer cualquier falla sin copiar a mano, la página «GitHub Actions» del panel, en la vista Autor, muestra el job, el paso, las pruebas que fallan y el final del log, con «Copiar». Para ver en qué paso va una carga, sin logs y en cualquier vista, está el flujo en vivo de «Stack y evidencia» (D-412).
 
@@ -209,3 +211,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.7 | 01-11-2026 | Abrir o imprimir un documento conserva la vista también en Streamlit Community Cloud, que carga la página dos veces (7, D-428) |
 | 3.8 | 01-11-2026 | Toda recarga de la pestaña conserva la vista, también F5 y el enlace del aviso «Acción requerida»; solo una pestaña nueva la pide (7, D-430) |
 | 3.9 | 01-11-2026 | El informe semanal de calidad sale solo tras una carga en verde y mide los 3 indicadores de datos (2, D-431) |
+| 3.10 | 01-11-2026 | Cada dependencia tiene una versión máxima; una nueva entra subiendo su tope (4, D-435) |

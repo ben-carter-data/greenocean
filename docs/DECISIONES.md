@@ -3343,3 +3343,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Reproducible:** `scripts/semanas_sin_precio.py` calcula, para una semana, cuánto llevaba sin precio cada precio sin comparación, con el mismo código del indicador (`k6_national_weekly_price` y `alerts.add_weekly_variation`). `python scripts/semanas_sin_precio.py --semana 2026-10-26` da 145 de 868: 14, 58 y 73.
   - **Regla:** una causa con cifras se escribe con la medición que la produce, nunca a ojo.
 - **Pruebas:** `tests/test_quality_method.py::test_d434_the_cause_of_the_incident_is_the_measured_one` vuelve a medir la semana del 26 oct con el script y compara con el texto del incidente.
+
+## D-435 · Cada dependencia tiene una versión máxima
+
+- **Pedido del autor:** en `requirements.txt` y `requirements-pipeline.txt`, streamlit, pandas, dbt-core, dbt-duckdb y pyarrow no tenían tope. Una versión nueva ya rompió dos cargas: certifi (D-164) y DuckDB 2.0.0 (D-227).
+- **Decisión:** cada dependencia tiene un tope justo encima de la versión que funciona hoy. Para Python 3.11 en Linux, como en el CI, pip resuelve hoy streamlit 1.66.1, pandas 3.1.0, dbt-core 1.12.0, dbt-duckdb 1.11.1, pyarrow 26.0.0, duckdb 1.5.6, requests 2.34.2 y pytest 9.2.0; todas salieron antes del CI en verde del 01-11-2026. Los topes son `streamlit<1.67`, `pandas<3.2`, `dbt-core<1.13`, `dbt-duckdb<1.12`, `pyarrow<27`, `requests<3` y `pytest<10`; `duckdb<2` ya estaba (D-227).
+  - Streamlit y dbt quedan topados en su versión menor siguiente, porque el panel usa partes internas de Streamlit (los componentes v2, los `data-testid`) y dbt cambia de comportamiento entre versiones menores; pandas, pyarrow, requests y pytest, en su versión mayor o menor siguiente.
+  - Hoy los topes no cambian lo que se instala: pip resuelve las mismas versiones con y sin topes (`pip install --dry-run --python-version 3.11`, para la plataforma de los runners de GitHub). Solo frenan una versión futura.
+  - Una versión nueva entra solo cuando el autor sube su tope con un push y el CI la prueba antes de la carga siguiente.
+  - **Documentos:** MANUAL 3.10 (4), en los dos idiomas.
+- **Pruebas:** `tests/test_documents.py::test_d435_every_dependency_has_a_maximum_version`.

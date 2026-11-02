@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Operations Runbook |
-| Version | 3.9 |
+| Version | 3.10 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -80,6 +80,8 @@ Each row is a step of the workflow, with its name in `semanal.yml`. The warning 
 | Publish the weekly report | The issue is not created | Workflow permissions | Check the permissions; the database is already published |
 
 A week a source has not published yet is not a failure. The load publishes up to the last week complete in both sources, and the Price overview says so. What does stop the load is `MISSING_WEEKS` (a week missing in the middle of the data) and `LATE_SOURCE` (a source has gone more than 2 weeks without publishing). In those cases, check ODEPA and fill nothing in: the load comes back by itself when the source publishes.
+
+Each dependency of `requirements.txt` and `requirements-pipeline.txt` has a maximum version, so that a new version does not break Tuesday's load (D-435). To use a new version, its cap is raised with a push: the CI tests it before the next load.
 
 To read any failure without copying by hand, the panel's page «GitHub Actions», in the Author view, shows the job, the step, the failing tests and the end of the log, with «Copy». To see which step a load is at, without logs and in any view, there is the live flow of «Stack and evidence» (D-412).
 
@@ -209,3 +211,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.7 | 2026-11-01 | Opening or printing a document keeps the view on Streamlit Community Cloud too, which loads the page twice (7, D-428) |
 | 3.8 | 2026-11-01 | Every reload of the tab keeps the view, F5 and the link of the «Action required» alert too; only a new tab asks for it (7, D-430) |
 | 3.9 | 2026-11-01 | The weekly quality report comes only after a load in green and measures the 3 data indicators (2, D-431) |
+| 3.10 | 2026-11-01 | Each dependency has a maximum version; a new one comes in by raising its cap (4, D-435) |
