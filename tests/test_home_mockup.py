@@ -292,7 +292,7 @@ def test_d092_region_and_family_clicks_fill_the_products_table():
     assert app.session_state['dashboard_region'] == 'Región de Coquimbo'
     markup = ' '.join(block.value for block in app.markdown)
     assert 'mock-products-family">Frutas' in markup and 'en Coquimbo' in markup
-    assert '<span>Región</span><strong>Coquimbo</strong>' in markup  # D-408: the map folds into its chosen line
+    assert 'class="mock-chile-map"' in markup and 'class="mock-chosen"' not in markup  # D-446: the map stays
     table = re.search(r'<div class="mock-products-table".*?</table>', markup).group(0)
     assert table.count('<tr>') > 1 and 'Regiones ↑ / ↓' in table
     # Channel and order filter the same rows; prices stay real.

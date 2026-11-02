@@ -3489,3 +3489,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Capturas:** las seis capturas de `docs/img/` y `docs/img/en/` se toman de nuevo, sin el respaldo local (D-392): mostraban «Panorama de precios» y el menú anterior a D-442. M-1 muestra el Dashboard con la región y la familia elegidas; M-2, con la región elegida. PRD 3.17.
 - **Medición:** 0 textos encimados en los diagramas a 1440 × 790, 1280 × 800, 1920 × 1000 y 1100 × 650, en español e inglés (Playwright, como D-440).
 - **Pruebas:** las de cada diagrama (`tests/test_architecture.py`, `tests/test_doc_diagrams.py` y las demás) con los textos nuevos, y `tests/test_i18n.py` sin español en inglés.
+
+## D-446 · El Dashboard nunca pliega sus pasos: el panorama queda completo
+
+- **Pedido del autor:** al elegir la región y la familia, el Dashboard mostraba solo la tabla y el mapa y las familias desaparecían. El pliegue de D-408 era para las páginas de cada canal, no para el Dashboard, que siempre debe mostrar el panorama completo; la tabla ya tiene su botón para ampliarse (D-317).
+- **Decisión:** en el Dashboard, los pasos 1, 2 y 3 quedan siempre juntos: el mapa, las familias con la elegida marcada y la tabla de productos. Para ver más filas, el botón de ampliar abre la tabla al tamaño de la ventana. Las páginas de cada canal («Último dato por canal») siguen plegando los pasos 1 y 2 al elegir la familia, con «Cambiar», como dice D-408.
+- **Documentos:** PRD 3.18 (7 y la captura M-1, en `docs/img/` y `docs/img/en/`) e Índice de decisiones, en los dos idiomas.
+- **Pruebas:** `tests/test_panorama_steps.py::test_d446_the_dashboard_never_folds_its_steps_when_a_family_is_chosen` y `tests/test_home_mockup.py::test_d092_region_and_family_clicks_fill_the_products_table` (el mapa sigue a la vista); `tests/test_channel_latest.py::test_d408_a_channel_folds_its_steps_like_the_panorama` sigue verde.

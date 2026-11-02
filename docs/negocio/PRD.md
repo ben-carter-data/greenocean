@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.17 |
+| Versión | 3.18 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -157,7 +157,7 @@ Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 sema
 Estas son seis capturas reales, del 02-11-2026, de cinco páginas principales y en los cuatro temas de color. El Dashboard aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
 
 - **Menú:** agrupa las páginas en cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera sigue el orden en que la lee un lector: Interesados, Análisis de negocio y sistemas, Dashboard, Último dato por canal, Precios e inflación e Insights.
-- **Dashboard:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Elegida la familia, los pasos 1 y 2 se pliegan en una línea con «Cambiar» y la tabla de productos toma la pantalla (D-408).
+- **Dashboard:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Los tres pasos quedan siempre juntos en la pantalla; la tabla de productos se amplía con su propio botón (D-446). Solo en la página de un canal, elegida la familia, los pasos 1 y 2 se pliegan en una línea con «Cambiar» (D-408).
 - **Último dato por canal:** una tarjeta por canal, con su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del Dashboard, aunque la otra fuente todavía no publique esa semana (D-404 a D-406).
 - **Stack y evidencia:** dos vistas. «Herramientas» explica cada herramienta; «Flujo del sistema en vivo» muestra las piezas reales, lo que se dicen y la carga en curso (D-412).
 
@@ -243,3 +243,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.15 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
 | 3.16 | 02-11-2026 | Mapa de interés: cada interesado en un anillo (alto, medio, bajo) con su justificación (3.4, D-444) |
 | 3.17 | 02-11-2026 | Capturas nuevas de las seis pantallas, con el Dashboard y el menú actuales (7, D-445) |
+| 3.18 | 02-11-2026 | El Dashboard ya no pliega los pasos 1 y 2: el panorama queda completo, y la captura M-1 lo muestra así (7, D-446) |

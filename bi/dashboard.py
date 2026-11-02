@@ -4595,9 +4595,10 @@ def show_market_overview(mode, prefix):
     if home_view == HOME_VIEWS[1]:
         show_weeks_panel(mode)
         return
-    # D-408: once a family is chosen, the steps 1 and 2 fold into one line each, with what was chosen and «Cambiar»,
-    # and the products table takes the whole width and the height they leave; «Cambiar» opens them again.
-    folded = family_open and not st.session_state.get(scoped(HOME_EXPANDED))
+    # D-408: on a channel page, once a family is chosen, the steps 1 and 2 fold into one line each, with what was chosen
+    # and «Cambiar», and the products table takes the whole width and the height they leave; «Cambiar» opens them again.
+    # D-446: the Dashboard never folds: its three panels stay together, and the table has its own enlarge button.
+    folded = channel is not None and family_open and not st.session_state.get(scoped(HOME_EXPANDED))
 
     def show_products():
         with st.container(key='home_products'):

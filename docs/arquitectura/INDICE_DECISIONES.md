@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Índice de decisiones |
-| Versión | 2.2 |
-| Fecha | 01-11-2026 |
+| Versión | 2.3 |
+| Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Reunir, por tema, las decisiones que cambian la arquitectura, los datos, la seguridad o la operación. |
@@ -169,7 +169,8 @@ Cómo se lee el panel en una sola pantalla y en dos idiomas.
 | El encabezado solo ubica; la información va en el contenido | — | D-398 |
 | Cada canal se abre con los pasos del Panorama, en su propia última semana | — | D-405 |
 | Cada página principal cabe también en 1280 × 800 | — | D-407 |
-| Elegida la familia, los pasos 1 y 2 se pliegan y la tabla de productos toma la pantalla | — | D-408 |
+| En un canal, elegida la familia, los pasos 1 y 2 se pliegan y la tabla de productos toma la pantalla | — | D-408 |
+| El Dashboard nunca pliega sus pasos: el panorama queda completo | — | D-446 |
 
 ## 9. Documentación
 
@@ -197,3 +198,4 @@ Cómo se explica el proyecto.
 | 2.0 | 25-10-2026 | Un resumen con tres diagramas; cada fila dice primero qué se decidió y enlaza su registro de arquitectura por su nombre (D-290, documentos para todo lector) |
 | 2.1 | 31-10-2026 | Las decisiones grandes desde D-290: fuentes retrasadas, calidad en dos partes, las tres vistas, la ventana de la carga manual, los dos informes y las cuatro carpetas de documentos; redacción revisada (D-381, D-388) |
 | 2.2 | 01-11-2026 | Las decisiones grandes de la parte final: el límite de intentos, «Configuración» y su aviso de tokens, el flujo en vivo y su imagen en el SAD, el encabezado, los canales y una pantalla a 1280 × 800 (D-393 a D-414) |
+| 2.3 | 02-11-2026 | El pliegue de los pasos vale solo para los canales; el Dashboard queda completo (D-446) |

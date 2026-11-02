@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.17 |
+| Version | 3.18 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -157,7 +157,7 @@ With the load of 2026-10-31, the database holds 821,072 weekly prices over 252 w
 These are six real captures, of 2026-11-02, of five main pages and in the four color themes. The Dashboard appears twice: as the User sees it and as the Professional sees it. The dark theme is the one on entry.
 
 - **Menu:** it groups the pages in five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first follows a reader's reading order: Stakeholders, Business and systems analysis, Dashboard, Latest data by channel, Prices and inflation and Insights.
-- **Dashboard:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done. Once the family is chosen, steps 1 and 2 fold into one line with «Change» and the products table takes the screen (D-408).
+- **Dashboard:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done. The three steps always stay together on the screen; the products table is enlarged with its own button (D-446). Only on a channel page, once the family is chosen, steps 1 and 2 fold into one line with «Change» (D-408).
 - **Latest data by channel:** one card per channel, with its latest week, its prices, its change and the families it publishes. Each card opens that channel with the Overview's steps, even if the other source has not published that week yet (D-404 to D-406).
 - **Stack and evidence:** two views. «Tools» explains each tool; «Live system flow» shows the real pieces, what they say to each other and the running load (D-412).
 
@@ -243,3 +243,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.15 | 2026-11-02 | «Price overview» is renamed «Dashboard» and leads the menu (D-442) |
 | 3.16 | 2026-11-02 | Interest map: each stakeholder on a ring (high, medium, low) with its reason (3.4, D-444) |
 | 3.17 | 2026-11-02 | New captures of the six screens, with the current Dashboard and menu (7, D-445) |
+| 3.18 | 2026-11-02 | The Dashboard no longer folds steps 1 and 2: the overview stays whole, and capture M-1 shows it that way (7, D-446) |

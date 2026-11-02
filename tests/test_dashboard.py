@@ -133,8 +133,8 @@ def test_hover_hint_is_plain_text_and_escaped():
 
 @needs_database
 def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
-    # D-408: with a family chosen the steps 1 and 2 fold; «Cambiar» (home_expanded) shows the three panels together.
-    app = draw_page(dashboard.HOME_PAGE, state={dashboard.HOME_EXPANDED: True}, query=PINNED_HOME)
+    # D-446: the Dashboard never folds its steps, so the three panels are always together.
+    app = draw_page(dashboard.HOME_PAGE, query=PINNED_HOME)
     assert not app.exception and not app.tabs
     texts = " ".join(block.value for block in app.markdown)
     assert (
