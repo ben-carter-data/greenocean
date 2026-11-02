@@ -300,3 +300,19 @@ def test_d283_the_english_glossary_names_only_english_pages_and_tabs():
             page, _, tab = place.partition(" (")
             assert page in menu, (row[0], page)
             assert not tab or tab.rstrip(")") in tabs, (row[0], tab)
+
+
+def test_d443_the_texts_a_script_writes_are_whole_strings_with_their_english():
+    """A script's visible text is its own whole string, so the English layer finds it: a one-character string beside
+    it (the zoom's «⟲») once hid «Volver al tamaño original» from it."""
+    from bi import zoom
+    from tests import i18n_audit
+
+    for script in (zoom.ZOOM_SCRIPT, zoom.TIP_SCRIPT):
+        found = {match.group(2) for match in i18n.JS_STRING.finditer(script)}
+        for text in i18n_audit.script_texts(script):
+            if i18n_audit.SPANISH_MARKS.search(text):  # a sentence in Spanish: whole, and with its English
+                assert text in found and i18n.lookup(text), text
+    for text in ("Acercar", "Alejar", "Volver al tamaño original", "En este proyecto:"):
+        assert i18n.lookup(text), text
+    assert "(?:Aquí|Here):" in zoom.TIP_SCRIPT  # the role of a term splits off in both languages

@@ -1487,6 +1487,11 @@ PAGES = {
     "correo si la carga falla": "email if the load fails",
     "base anterior, para el historial": "previous database, for the history",
     "base para las pruebas": "database for the tests",
+    # D-443: what the scripts write on the page
+    "Acercar": "Zoom in",
+    "Alejar": "Zoom out",
+    "Volver al tamaño original": "Back to the original size",
+    "En este proyecto:": "In this project:",
     # Mapa de la app: fichas, interiores, ritmos y recorrido (D-441)
     "Agente": "Agent",
     "Puerta": "Gate",

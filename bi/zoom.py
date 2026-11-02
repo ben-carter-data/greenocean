@@ -80,8 +80,11 @@ const setZoom = (frame, scale, x, y) => {{
 const addButtons = (frame) => {{
     const buttons = document.createElement("div");
     buttons.className = "zoom-buttons";
-    const actions = [["＋", "Acercar", () => STEP], ["－", "Alejar", () => 1 / STEP],
-                     ["⟲", "Volver al tamaño original", null]];
+    // D-443: each name on its own, so the English layer reads it whole (a one-character string beside it misleads it).
+    const zoomIn = "Acercar";
+    const zoomOut = "Alejar";
+    const reset = "Volver al tamaño original";
+    const actions = [["＋", zoomIn, () => STEP], ["－", zoomOut, () => 1 / STEP], ["⟲", reset, null]];
     for (const [text, label, factor] of actions) {{
         const button = document.createElement("button");
         button.type = "button";
@@ -188,10 +191,10 @@ const render = (text) => {
         block.style.margin = "2px 0 7px";
         const parts = entry.split(" — ");
         const head = parts.length > 1 ? parts.shift() : "";
-        const [what, role] = parts.join(" — ").split(/\s*Aquí:\s*/);
+        const [what, role] = parts.join(" — ").split(/\s*(?:Aquí|Here):\s*/);  // D-443: both languages
         if (head) { line(block, head, {fontWeight: "700", color: "#fff"}); }
         line(block, what);
-        if (role) { line(block, "En este proyecto: " + role, {color: "#bae6fd", marginTop: "3px"}); }
+        if (role) { line(block, "En este proyecto:" + " " + role, {color: "#bae6fd", marginTop: "3px"}); }
         card.appendChild(block);
     }
 };

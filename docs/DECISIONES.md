@@ -3445,3 +3445,16 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Historia:** las decisiones anteriores, `docs/archivo/`, los informes de calidad ya emitidos y las filas del historial de versiones conservan el nombre de su momento.
 - **Documentos:** PRD 3.15, Glosario 2.6, SAD 3.12, MANUAL 3.13 y SQAP 1.9, en los dos idiomas.
 - **Pruebas:** `tests/test_menu_order.py` (el Dashboard encabeza el menú y el orden; la sección sigue sin él) y las pruebas de páginas, encabezado y traducciones con el nombre nuevo.
+
+## D-443 · Regla de idioma: en inglés no queda texto en español en ninguna parte de la app
+
+- **Pedido del autor:** con el inglés elegido, todo texto visible debe estar en inglés, salvo los nombres oficiales (ODEPA, INE, productos, regiones) y los nombres de archivos y código; una prueba debe recorrer cada página y cada diagrama, y la regla debe quedar en CLAUDE.md.
+- **Lo que ya existía:** `tests/test_i18n.py::test_d284_*` recorría con `tests/i18n_audit.py` cada página del menú, sus vistas y pestañas y cada documento, siempre como Profesional, y leía los textos de HTML, gráficos y controles, pero no los que escribe un script.
+- **Lo que se agrega:**
+  - La auditoría lee también las frases que los scripts escriben en la página (cadenas con palabras, no código) y recorre dos pantallas más: la ventana «Elige tu vista», antes de elegir vista, y la vista Usuario.
+  - **Encontró tres textos sin inglés,** todos en `bi/zoom.py`: «Acercar», «Alejar» y «Volver al tamaño original» (los botones del zoom de cada diagrama y documento) y «En este proyecto:» (la explicación de un término al pasar el cursor). La traducción ya existía para algunos, pero la capa de inglés no los encontraba: junto a una cadena de un solo carácter («⟲», «＋») leía mal las comillas. Ahora cada texto es su propia cadena.
+  - En inglés, la explicación de un término no separaba su papel («Here:») de su definición, porque el script solo buscaba «Aquí:»; ahora separa los dos.
+  - En «Git workflow», la palabra citada «continúa» va entre «» como el resto de los nombres citados.
+- **La regla** queda en CLAUDE.md, «Convenciones»: qué queda en su idioma y qué prueba la vigila.
+- **Documentos:** Plan de pruebas y seguridad 3.4 (2), en los dos idiomas.
+- **Pruebas:** `tests/test_i18n.py::test_d284_no_screen_shows_spanish_when_the_reader_chose_english` (ahora también «Elige tu vista» y la vista Usuario, y los textos de los scripts) y `tests/test_i18n.py::test_d443_the_texts_a_script_writes_are_whole_strings_with_their_english`.

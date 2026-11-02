@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de pruebas y de seguridad |
-| Versión | 3.3 |
-| Fecha | 01-11-2026 |
+| Versión | 3.4 |
+| Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar cómo se comprueba que cada cifra es correcta, que una carga con errores nunca se publica y que nadie puede leer los secretos, cambiar los datos ni lanzar la carga sin permiso. |
@@ -51,6 +51,7 @@ Las pruebas de GreenOcean responden tres preguntas, siempre de forma automática
 | Panel | Cada página se dibuja sin errores y muestra lo que su decisión exige | pytest con AppTest de Streamlit | `tests/test_dashboard.py` y las pruebas de cada vista |
 | Diagramas | Cada pieza dibujada existe en el código, el workflow o la base | pytest | `tests/test_devops.py`, `tests/test_monitoring.py`, `tests/test_stack_page.py` y afines |
 | Documentos | Trazabilidad de requisitos, cifras contra la base, estructura y redacción | pytest | `tests/test_documents.py`, `tests/test_prd_traceability.py` |
+| Idioma | Con el inglés elegido, ninguna página, vista, documento, diagrama, ventana ni texto que escribe un script queda en español, en las vistas Usuario, Profesional y Autor y en «Elige tu vista» | pytest con AppTest | `tests/test_i18n.py`, `tests/i18n_audit.py` |
 | Medición de pantallas | Desborde horizontal y altura de cada página en varios tamaños de ventana | Playwright, externo al proyecto | `tests/medicion/medir.cjs` |
 
 **Pruebas que bloquean y pruebas que informan.** Las pruebas de datos, de cifras, de paridad, de la puerta y de seguridad bloquean: si fallan, la carga o el cambio no siguen. La carga semanal corre solo las de datos y del pipeline; las de pantalla corren en el CI de cada push, y su falla nunca detiene la publicación de datos (D-366). Las pruebas de velocidad (marcador `rendimiento`) solo informan. Corren en el computador del autor y nunca en las máquinas compartidas de GitHub, que no son un entorno estable para medir tiempo (D-341).
@@ -201,3 +202,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.1 | 30-10-2026 | Pruebas que bloquean y pruebas que informan; cuatro casos de seguridad nuevos, S-11 a S-14 (D-364); ejecución sin las pruebas de velocidad en GitHub |
 | 3.2 | 31-10-2026 | Redacción revisada; el Usuario, el Profesional y el Autor (3); la carga semanal corre solo las pruebas de datos (2, 9, D-366); la salida de una carga con las fuentes retrasadas (10, D-356); el token lanza, sigue y cancela la carga (7, 11); el documento pasa a `docs/calidad/` (D-381, D-388) |
 | 3.3 | 01-11-2026 | S-12: la parte del autor no se abre con una dirección ni en una pestaña nueva; una recarga de la pestaña conserva la vista (D-430) |
+| 3.4 | 02-11-2026 | La prueba de idioma recorre toda la app en inglés (2, D-443) |

@@ -23,6 +23,9 @@ SPANISH_MARKS = re.compile(
     re.IGNORECASE,
 )
 TEXT_NODE = re.compile(r">([^<>]+)<")
+SCRIPT = re.compile(r"<script\b[^>]*>(.*?)</script>", re.DOTALL | re.IGNORECASE)
+# D-443: a sentence a script writes on the page: a string literal with a letter and a space, or with an accent.
+JS_TEXT = re.compile(r"""(["'`])((?:(?!\1)[^\\\n]|\\.){3,}?)\1""")
 ATTRIBUTE = re.compile(r'\b(?:title|aria-label|alt|placeholder|data-tip|data-title|data-label|data-what)="([^"]*)"')
 CODE = re.compile(r"<(script|style|pre|code)\b[^>]*>.*?</\1>", re.DOTALL | re.IGNORECASE)
 # The official name of a region, as the map of Chile writes it: «Región de Los Ríos».
@@ -79,13 +82,28 @@ def read_data_values():
     return values | {value.replace(" - ", " · ") for value in values} | set(home_mockup.FAMILY_SHORT_NAMES.values())
 
 
+def script_texts(markup):
+    """D-443: the sentences the scripts of a block write on the page (captions, labels, button names): string literals
+    that read as words, not code. Selectors, keys, CSS and paths are left out."""
+    found = []
+    for script in SCRIPT.findall(markup):
+        for _, text in JS_TEXT.findall(script):
+            if re.search(r"[áéíóúñ¿¡]", text) or (" " in text.strip() and re.search(r"[a-zA-Z]{3}", text)):
+                if not re.search(r"[{};=<>()\[\]#$]|\.\w|\bconst\b|=>|px\b|\bvar\(", text):  # not a selector or path
+                    found.append(html.unescape(text).strip())
+    return found
+
+
 def texts_of(markup):
     """The text nodes and visible attributes of an HTML block, or the lines of a plain text."""
     if not isinstance(markup, str):
         return []
     if "<" in markup and ">" in markup:
+        scripted = script_texts(markup)
         markup = CODE.sub("", markup)
-        return [html.unescape(text).strip() for text in TEXT_NODE.findall(markup) + ATTRIBUTE.findall(markup)]
+        return scripted + [
+            html.unescape(text).strip() for text in TEXT_NODE.findall(markup) + ATTRIBUTE.findall(markup)
+        ]
     return [line.strip() for line in markup.split("\n")]
 
 
@@ -173,6 +191,8 @@ def screens():
     author = {"admin_unlocked": True, "quality_alert_seen": True}
     return (
         [(view, author if view in dashboard.AUTHOR_ONLY_PAGES else None) for view in dashboard.MENU_ORDER]
+        # D-443: the window «Elige tu vista» (no view chosen yet) and the Usuario view, not only the Profesional
+        + [(dashboard.PAGE_HOME, {"visitor_profile": None}), (dashboard.PAGE_HOME, {"visitor_profile": "consulta"})]
         + [(dashboard.PAGE_DIAGRAMS, {dashboard.PIPELINE_VIEW_KEY: dashboard.PIPELINE_LINEAGE})]
         + [(dashboard.PAGE_ARCHITECTURE, {dashboard.MODEL_VIEW_KEY: view}) for view in dashboard.MODEL_VIEWS[1:]]
         + [(page, None) for page in dashboard.FOLDER_ORDER]

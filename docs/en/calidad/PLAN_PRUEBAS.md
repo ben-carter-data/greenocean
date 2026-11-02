@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Test and security plan |
-| Version | 3.3 |
-| Date | 2026-11-01 |
+| Version | 3.4 |
+| Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Explain how we check that each figure is correct, that a load with errors is never published and that nobody can read the secrets, change the data or launch the load without permission. |
@@ -51,6 +51,7 @@ The tests of GreenOcean answer three questions, always automatically:
 | Panel | Each page draws without errors and shows what its decision requires | pytest with Streamlit's AppTest | `tests/test_dashboard.py` and the tests of each view |
 | Diagrams | Each piece drawn exists in the code, the workflow or the database | pytest | `tests/test_devops.py`, `tests/test_monitoring.py`, `tests/test_stack_page.py` and similar |
 | Documents | Requirements traceability, figures against the database, structure and wording | pytest | `tests/test_documents.py`, `tests/test_prd_traceability.py` |
+| Language | With English chosen, no page, view, document, diagram, window or text a script writes stays in Spanish, in the Usuario, Profesional and Autor views and in «Elige tu vista» | pytest with Streamlit's AppTest | `tests/test_i18n.py`, `tests/i18n_audit.py` |
 | Screen measurement | Horizontal overflow and height of each page at several window sizes | Playwright, outside the project | `tests/medicion/medir.cjs` |
 
 **Tests that block and tests that inform.** The data, figure, parity, gate and security tests block: if they fail, the load or the change does not go on. The weekly load runs only the data and pipeline tests; the screen tests run in the CI of every push, and their failure never stops the publication of data (D-366). The speed tests (marker `rendimiento`) only inform. They run on the author's computer and never on GitHub's shared machines, which are not a stable place to measure time (D-341).
@@ -201,3 +202,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.1 | 2026-10-30 | Tests that block and tests that inform; four new security cases, S-11 to S-14 (D-364); runs without the speed tests on GitHub |
 | 3.2 | 2026-10-31 | Wording reviewed; the User, the Professional and the Author (3); the weekly load runs only the data tests (2, 9, D-366); the exit of a load with the late sources (10, D-356); the token starts, follows and cancels the load (7, 11); the document moves to `docs/calidad/` (D-381, D-388) |
 | 3.3 | 2026-11-01 | S-12: the author's part does not open with an address or in a new tab; a reload of the tab keeps the view (D-430) |
+| 3.4 | 2026-11-02 | The language test walks the whole app in English (2, D-443) |

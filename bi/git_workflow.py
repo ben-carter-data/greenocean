@@ -102,7 +102,7 @@ STATIONS: list[dict[str, Any]] = [
         ),
         "example": (
             "El plan de calidad corrió como un solo prompt dividido en etapas 0 a 6; cada una cerraba con un informe de un párrafo y esperaba «continúa».",
-            "The quality plan ran as one prompt split into stages 0 to 6, each ending with a one-paragraph briefing and a wait for “continúa”.",
+            "The quality plan ran as one prompt split into stages 0 to 6, each ending with a one-paragraph briefing and a wait for «continúa».",
         ),
     },
     {
