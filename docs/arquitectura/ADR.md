@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Registros de decisiones de arquitectura (ADR), formato MADR |
-| Versión | 3.2 |
-| Fecha | 31-10-2026 |
+| Versión | 3.3 |
+| Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Explicar las once decisiones que más pesan en la arquitectura de GreenOcean: por qué se tomaron, qué alternativas había y qué consecuencias tienen. |
@@ -29,6 +29,7 @@ Cada registro conserva su número original, por eso la numeración no es correla
 | [Calcular precios reales con el IPC de alimentos del INE](#adr-33--calcular-precios-reales-con-el-ipc-de-alimentos-del-ine) | ADR-33 | Aceptada | 19-10-2026 |
 | [Separar la base de trabajo de dbt, la base que lee el panel y el respaldo](#adr-34--separar-la-base-de-trabajo-de-dbt-la-base-que-lee-el-panel-y-el-respaldo) | ADR-34 | Aceptada | 19-10-2026 |
 | [Publicar la base servida en un release que cada carga reemplaza](#adr-35--publicar-la-base-servida-en-un-release-que-cada-carga-reemplaza) | ADR-35 | Aceptada | 24-10-2026 |
+| [Calibrar el aceptable de los precios comparables con la historia de los datos](#adr-36--calibrar-el-aceptable-de-los-precios-comparables-con-la-historia-de-los-datos) | ADR-36 | Aceptada | 01-11-2026 |
 
 ## En resumen
 
@@ -155,6 +156,29 @@ Cada decisión de este documento responde a una pregunta concreta: de dónde sal
 - **Consecuencias:** el historial deja de crecer con los datos y existe una sola copia publicada. El panel depende de poder descargar la base al arrancar; si no puede, conserva la que tiene. Las versiones anteriores siguen en el historial. Una reconstrucción local más nueva que el puntero se conserva.
 - **Confirmación:** la verifica `tests/test_served_database.py::test_a_download_that_does_not_match_the_pointer_never_replaces_the_database`, que corre en cada push.
 
+## ADR-36 · Calibrar el aceptable de los precios comparables con la historia de los datos
+
+- **Estado:** aceptada (D-433, calibración del aceptable de `comparables_pct`).
+- **Fecha:** 01-11-2026.
+- **Contexto:** el indicador «Precios con comparación válida» (`comparables_pct`) tenía un aceptable de 90 %, fijado sin referencia a la distribución histórica. Medido semana a semana sobre la Base DuckDB, con el mismo cálculo de `scripts/medir_calidad.py` (la consulta `k6_national_weekly_price` y `alerts.add_weekly_variation`), en las 251 semanas del 10-01-2022 al 26-10-2026, la mediana es 89,3 % y 145 semanas quedaron bajo 90 %. Con ese aceptable, la alerta salía en más de la mitad de las semanas, aunque nada estuviera mal: el informe del 31-10-2026 dio 83,3 %, dentro del rango histórico. Las cifras se midieron el 01-11-2026.
+
+| Percentil | Precios con comparación válida |
+|---|---|
+| Mínimo | 32,6 % |
+| 1 | 72,4 % |
+| 5 | 81,2 % |
+| 10 | 84,6 % |
+| 25 | 87,6 % |
+| 50 (mediana) | 89,3 % |
+| 75 | 91,5 % |
+| 90 | 92,5 % |
+| Máximo | 95,7 % |
+
+- **Decisión:** el aceptable pasa a 81 %, el percentil 5 de la historia, y la meta también, como en los otros 11 indicadores, donde meta y aceptable coinciden (D-337). Es una calibración, no una relajación del estándar: el 90 % se fijó sin referencia a la distribución histórica, y el valor medido sobre la historia de la fuente es el estándar. Con 81 %, 12 de las 251 semanas habrían quedado fuera, la peor de ellas más allá del margen crítico de 10 puntos (32,6 %, la semana del 09-05-2022).
+- **Opciones consideradas:** dejar el 90 % y registrar cada semana baja como incidente externo, lo que mantenía una alerta falsa casi semanal; dejar la meta en 90 % con el aceptable en 81 %, con lo que el indicador habría quedado en «aviso» en más de la mitad de las semanas, la misma señal falsa en amarillo, y la regla de lectura del panel («mientras la barra no pase la raya, cumple») dejaría de ser cierta; usar el percentil 10 (84,6 %), que habría marcado 25 semanas, una de cada diez, sin que fueran raras.
+- **Consecuencias:** la alerta sale solo en una semana rara para la fuente. Los informes C-1 a C-7 no se vuelven a evaluar: guardan el aceptable de 90 % con que se midieron, bajo la versión del SQAP vigente entonces. El percentil se revisa si la historia cambia mucho: es una decisión del autor, nunca automática.
+- **Confirmación:** la verifica `tests/test_quality_method.py::test_d433_the_comparable_prices_acceptable_is_the_fifth_percentile_and_the_closed_reports_keep_theirs`, que corre en cada push.
+
 ## Glosario
 
 Las siglas y los términos de este documento se definen en el [Glosario](../negocio/GLOSARIO.md).
@@ -173,3 +197,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.0 | 25-10-2026 | Resumen en lenguaje simple, mapa de dónde actúa cada decisión, línea de tiempo y el antes y después del ADR-35; índice por el nombre de cada decisión (D-290, documentos para todo lector) |
 | 3.1 | 26-10-2026 | Cada registro nombra la prueba que lo confirma, como pide MADR (D-300) |
 | 3.2 | 31-10-2026 | ADR-11 ampliado por las fuentes retrasadas (D-356); las cifras de ADR-35 rotuladas como medidas al decidir (D-386); el documento pasa a `docs/arquitectura/` (D-381, D-388) |
+| 3.3 | 01-11-2026 | ADR-36: el aceptable de los precios comparables se calibra con la historia de los datos (D-433) |

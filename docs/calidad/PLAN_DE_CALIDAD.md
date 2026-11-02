@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.5 |
+| Versión | 1.6 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -66,6 +66,8 @@ Cada indicador tiene una meta (el valor deseado), un aceptable (el peor valor qu
 
 Los valores de cada indicador están en `docs/calidad/metas.json`, y los nombres de los estados, en `docs/calidad/politica.json`.
 
+El aceptable de un indicador de datos se calibra con la historia de la fuente, no a ojo: marca lo que es raro en esos datos. El de los precios con comparación válida es 81 %, el percentil 5 de 251 semanas, igual que su meta ([ADR-36](../arquitectura/ADR.md#adr-36--calibrar-el-aceptable-de-los-precios-comparables-con-la-historia-de-los-datos), D-433). Un cambio de aceptable vale desde el informe siguiente: los informes ya escritos guardan el aceptable con que se midieron.
+
 ## 7. Pruebas que bloquean y pruebas que informan
 
 Una prueba que bloquea detiene la publicación si falla. Así funcionan las pruebas de datos de dbt y las de las cifras del panel. Una prueba que informa solo avisa: nunca debe frenar la publicación.
@@ -121,3 +123,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.3 | 30-10-2026 | La carga semanal corre solo las pruebas de datos y del pipeline (D-366) |
 | 1.4 | 31-10-2026 | Los 12 indicadores del plan de calidad, distintos de los 11 indicadores de calidad de los datos (3); el informe se propone como pull request después de cada carga (8); visión y misión como en el PRD; el documento pasa a `docs/calidad/` (D-381, D-384, D-388) |
 | 1.5 | 01-11-2026 | Un solo informe numerado, el semanal de los datos, en cuatro páginas y solo tras una carga en verde; el código se verifica en el CI; la serie de construcción C-1 a C-7 (8, D-431) |
+| 1.6 | 01-11-2026 | El aceptable y la meta de los precios comparables se calibran al percentil 5 de la historia, 81 % (6, ADR-36, D-433) |

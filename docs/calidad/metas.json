@@ -244,8 +244,8 @@
     ]
   },
   "comparables_pct": {
-    "min": 90,
-    "meta": 90,
+    "min": 81,
+    "meta": 81,
     "margen_critico": 10,
     "tipo": "datos",
     "medida": "cumplimiento",

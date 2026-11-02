@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.5 |
+| Version | 1.6 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -66,6 +66,8 @@ Each indicator has a goal (the wanted value), an acceptable (the worst value tol
 
 The values of each indicator are in `docs/calidad/metas.json`, and the names of the states, in `docs/calidad/politica.json`.
 
+The acceptable of a data indicator is calibrated with the history of the source, not by eye: it marks what is rare in those data. The one of the prices with a valid comparison is 81 %, the 5th percentile of 251 weeks, the same as its goal ([ADR-36](../arquitectura/ADR.md#adr-36--calibrate-the-acceptable-of-the-comparable-prices-with-the-history-of-the-data), D-433). A change of acceptable holds from the next report: the reports already written keep the acceptable they were measured with.
+
 ## 7. Tests that block and tests that inform
 
 A test that blocks stops publication if it fails. That is how dbt's data tests and the tests of the dashboard figures work. A test that informs only warns: it must never stop publication.
@@ -121,3 +123,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.3 | 2026-10-30 | The weekly load runs only the data and pipeline tests (D-366) |
 | 1.4 | 2026-10-31 | The 12 indicators of the quality plan, apart from the 11 data quality indicators (3); the report is proposed as a pull request after each load (8); vision and mission as in the PRD; the document moves to `docs/calidad/` (D-381, D-384, D-388) |
 | 1.5 | 2026-11-01 | One numbered report only, the weekly one of the data, in four pages and only after a load in green; the code is checked by the CI; the construction series C-1 to C-7 (8, D-431) |
+| 1.6 | 2026-11-01 | The acceptable and the goal of the comparable prices are calibrated to the 5th percentile of the history, 81 % (6, ADR-36, D-433) |

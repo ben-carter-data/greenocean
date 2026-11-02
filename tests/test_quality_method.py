@@ -255,7 +255,8 @@ def test_d330_metas_keeps_the_approved_twelve_indicators_with_their_explanation(
         assert all(len(goal[field]) == 2 and all(goal[field]) for field in ("que_mide", "por_que", "como", "accion"))
     # The approved numbers (2026-10-29).
     assert goals["cobertura_total"]["min"] == 90 and goals["cobertura_por_modulo"]["min"] == 70
-    assert goals["comparables_pct"]["min"] == 90 and goals["vigencia_dias"]["max"] == 8
+    assert goals["comparables_pct"]["min"] == 81 and goals["vigencia_dias"]["max"] == 8  # D-433: the 5th percentile
+    assert goals["comparables_pct"]["meta"] == 81  # the goal goes with the acceptable, as in every indicator (D-337)
     assert (
         goals["pip_audit_vulnerabilidades"]["max"] == 0 and goals["pip_audit_vulnerabilidades"]["margen_critico"] == 0
     )
@@ -279,10 +280,10 @@ def test_d330_the_state_says_meets_warning_urgent_or_critical():
 def test_d330_the_failure_reads_against_the_acceptable_and_the_insight_comes_from_the_policy():
     goals = quality_metrics.read(quality_metrics.GOALS_FILE)
     policy = quality_metrics.read(quality_metrics.POLICY_FILE)
-    report = dict(REPORT, datos={"pct_comparacion": 85.0, "pct_rechazadas": 0.01, "dias_desde_ultima_carga": 7})
+    report = dict(REPORT, datos={"pct_comparacion": 75.0, "pct_rechazadas": 0.01, "dias_desde_ultima_carga": 7})
     rows = {row["clave"]: row for row in quality_metrics.evaluate(report, goals, policy)}
     comparables = rows["comparables_pct"]
-    assert (comparables["falla"], comparables["falla_aceptable"], comparables["estado"]) == (15.0, 10.0, "urgente")
+    assert (comparables["falla"], comparables["falla_aceptable"], comparables["estado"]) == (25.0, 19.0, "urgente")
     assert not comparables["bloquea"] and "modo aviso" in comparables["insight"][0]  # data warns until approved
     ruff = rows["ruff_avisos"]
     assert ruff["estado"] == "urgente" and ruff["bloquea"] and goals["ruff_avisos"]["accion"][0] in ruff["insight"][0]
@@ -773,3 +774,23 @@ def test_d431_the_construction_series_is_named_c_and_opens_by_its_own_address():
 
 
 # endregion
+
+
+def test_d433_the_comparable_prices_acceptable_is_the_fifth_percentile_and_the_closed_reports_keep_theirs():
+    goals = quality_metrics.read(quality_metrics.GOALS_FILE)
+    policy = quality_metrics.read(quality_metrics.POLICY_FILE)
+    goal = goals["comparables_pct"]
+    assert (goal["min"], goal["meta"], goal["margen_critico"]) == (81, 81, 10)
+    # 83.3 %, the week of the report of 2026-10-31: within the acceptable now, not a non-conformity
+    assert quality_metrics.state(83.3, goal) == "cumple" and quality_metrics.state(75.7, goal) == "urgente"
+    assert quality_metrics.state(70.9, goal) == "critico"
+    rows = quality_metrics.evaluate({"datos": {"pct_comparacion": 83.3}}, goals, policy)
+    assert {row["clave"]: row["estado"] for row in rows}["comparables_pct"] == "cumple"
+    # C-1 to C-7 are closed records: they keep the 90 % they were measured with and are never evaluated again
+    for report in quality_metrics.read_series(quality_metrics.SERIES_BUILD):
+        frozen = report["aceptables"]["comparables_pct"]
+        assert frozen["min"] == 90, report["numero"]
+    seventh = quality_metrics.read_series(quality_metrics.SERIES_BUILD)[-1]
+    assert {row["clave"]: row["estado"] for row in seventh["indicadores"]}["comparables_pct"] == "urgente"
+    adr = i18n.document_path("ADR.md", "es").read_text(encoding="utf-8")
+    assert "## ADR-36" in adr and "| 5 | 81,2 % |" in adr and "no una relajación del estándar" in adr

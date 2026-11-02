@@ -1615,6 +1615,11 @@ def adr_timeline(mode):
                 say("Base en un release", "Database in a release"),
                 ["ADR-35"],
             ),
+            (
+                "01-11-2026" if not i18n.is_english() else "2026-11-01",
+                say("Aceptable calibrado", "Calibrated acceptable"),
+                ["ADR-36"],
+            ),
         ],
     )
 

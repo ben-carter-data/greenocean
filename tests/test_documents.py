@@ -84,7 +84,7 @@ def test_d248_each_adr_has_the_standard_parts_and_points_to_its_decision():
     text = i18n.document_path("ADR.md", "es").read_text(encoding="utf-8")
     entries = [entry for entry in re.split(r"^## ", text, flags=re.MULTILINE)[1:] if entry.startswith("ADR-")]
     numbers = [entry.split(" ", 1)[0] for entry in entries]
-    assert len(numbers) == 11 and len(set(numbers)) == 11 and all(re.fullmatch(r"ADR-\d{2}", n) for n in numbers)
+    assert len(numbers) == 12 and len(set(numbers)) == 12 and all(re.fullmatch(r"ADR-\d{2}", n) for n in numbers)
     decisions = i18n.document_path("DECISIONES.md", "es").read_text(encoding="utf-8")
     for entry in entries:
         for part in (
@@ -368,7 +368,7 @@ def test_d300_each_adr_names_the_test_that_confirms_it_and_the_test_exists():
     for language, word in (("es", "**Confirmación:**"), ("en", "**Confirmation:**")):
         text = i18n.document_path("ADR.md", language).read_text(encoding="utf-8")
         entries = [entry for entry in re.split(r"^## ", text, flags=re.MULTILINE)[1:] if entry.startswith("ADR-")]
-        assert len(entries) == 11
+        assert len(entries) == 12  # D-433: ADR-36
         for entry in entries:
             line = next(line for line in entry.splitlines() if word in line)
             path, test = re.search(r"`([^`]+)::([^`]+)`", line).groups()
