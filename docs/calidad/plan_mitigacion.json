@@ -1125,6 +1125,58 @@
           "referencia": "D-411"
         }
       ]
+    },
+    {
+      "id": "F-24",
+      "categoria": "código",
+      "falla": [
+        "La traducción al inglés cambia una palabra que un script usa como clave",
+        "The English translation changes a word a script uses as a key"
+      ],
+      "deteccion": [
+        "Una captura de la página en inglés muestra un diagrama al que le faltan líneas",
+        "A capture of the page in English shows a diagram with lines missing"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "La capa de inglés traduce toda cadena de un script que sea un texto del diccionario, y el script del mapa comparaba el tema con la palabra «datos»",
+        "The English layer translates every script string that is a dictionary text, and the map's script compared the theme with the word «datos»"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "Ninguna: la página en español estaba bien y los datos no cambian",
+        "None: the Spanish page was fine and the data does not change"
+      ],
+      "correctiva": [
+        "Las decisiones que dependen de una palabra se toman en Python, y una prueba exige que ninguna cadena de un script tenga traducción",
+        "Decisions that depend on a word are made in Python, and a test requires that no script string has a translation"
+      ],
+      "estacion": 9,
+      "caso_real": "D-441",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-02",
+          "ocurrencia": [
+            "En inglés, el «Mapa de la app» no dibujaba en reposo las líneas del flujo de datos.",
+            "In English, the «Mapa de la app» did not draw the data-flow lines at rest."
+          ],
+          "diagnostico": [
+            "El script decidía qué líneas se ven con la palabra «datos», y la capa de inglés la cambiaba por «data».",
+            "The script chose the visible lines by the word «datos», and the English layer changed it to «data»."
+          ],
+          "solucion": [
+            "Python marca cada línea que se ve en reposo, y el script solo lee esa marca.",
+            "Python marks each line shown at rest, and the script only reads that mark."
+          ],
+          "comentario": [
+            "La falla ya existía antes de D-441; se vio al revisar las capturas en inglés.",
+            "The failure existed before D-441; it showed up when reviewing the English captures."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-441"
+        }
+      ]
     }
   ]
 }

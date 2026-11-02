@@ -47,6 +47,7 @@ from bi import (
     github_actions,
     run_monitor,
     app_map,
+    app_map_detail,
     overview,
     quality_method,
     quality_metrics,
@@ -7797,7 +7798,21 @@ def show_app_map_page(mode):
         "Todo el sistema en una vista: cada tecnología, su rol, cuándo actúa y con qué se conecta.",
     )
     addresses = {node[7]: build_page_address(node[7]) for node in app_map.NODES.values()}
-    st.html(app_map.build_map_html(charts.get_palette(mode), addresses), unsafe_allow_javascript=True)
+    facts = read_app_map_facts(get_database_version())
+    st.html(app_map.build_map_html(charts.get_palette(mode), addresses, facts), unsafe_allow_javascript=True)
+
+
+@st.cache_data(show_spinner=False)
+def read_app_map_facts(database_version):
+    """D-441: what the map reads from the system, once per database: the dbt models and tests, the loads, the served
+    tables, the manifest, the workflows, the requirements and the goals; and from the panel itself, its menu and the tabs
+    of the Operations center, so the map never repeats them by hand."""
+    menu = [
+        (title, [SIDEBAR_LABELS.get(page, page) for page in pages])
+        for _, title, pages in MENU_BLOCKS
+        if pages is not SOURCE_LINKS
+    ]
+    return app_map_detail.read_facts(queries.DATABASE_FILE, menu=menu, runs_tabs=list(RUNS_VIEWS))
 
 
 CODE_SPAN = re.compile(r"`([^`\n]+)`")
