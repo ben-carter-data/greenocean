@@ -94,9 +94,8 @@ def style(mode, palette):
         'ACCENT': palette['accent'],
         'BORDER': '#e0e6ee' if not dark else palette['card_border'],
         'SOFT': '#f5f8fc' if not dark else palette['grid'],
-        # D-372: the search glows in a luminous light blue: the app's accent on dark themes; on light ones, whose accent
-        # is a blue close to the one of «bajó», a cyan that still reads on white.
-        'SEARCH': palette['accent'] if dark else SEARCH_LIGHT,
+        # D-450: the search glows in fluorescent green; on light themes, a deeper green that still reads on white.
+        'SEARCH': SEARCH_DARK if dark else SEARCH_LIGHT,
     }
     for key, value in colors.items():
         css = css.replace('__' + key + '__', value)
@@ -301,7 +300,9 @@ REGION_SHORT_NAMES = {
     'Región de Aysén del Gral.Ibañez del Campo': 'Aysén',
     'Región de Magallanes y Antártica Chilena': 'Magallanes',
 }
+ALL_FAMILIES = 'Todas'  # D-450: the whole basket, chosen like a family (the dashboard's ALL_VALUES)
 FAMILY_SHORT_NAMES = {
+    ALL_FAMILIES: 'Toda la canasta',
     'Carne de Cerdo - Ave - Cordero': 'Cerdo · Ave · Cordero',
     'Lácteos - Huevos - Margarinas': 'Lácteos y huevos',
 }  # D-301: 33 of its 34 products are dairy or eggs
@@ -399,7 +400,7 @@ STEP_TEXTS = {
     3: 'Mira los productos',
 }
 LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una familia'}
-SEARCH_LIGHT = '#0891b2'
+SEARCH_DARK, SEARCH_LIGHT = '#39ff14', '#00a83a'  # D-450: fluorescent green
 TREND_LABEL = 'Tendencia de las últimas 8 semanas'
 
 
@@ -631,7 +632,9 @@ def movement_note(model):
     return '<p class="mock-movement-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</p>'
 
 
-def family_movement(rows, family_link, selected_family, scope, note='', step=None, trends=None, basket=None):
+def family_movement(
+    rows, family_link, selected_family, scope, note='', step=None, trends=None, basket=None, basket_link=None
+):
     """One clickable row per family: a diverging bar from zero, its change and its state."""
     summary = family_averages(rows)
     if not summary:
@@ -639,18 +642,21 @@ def family_movement(rows, family_link, selected_family, scope, note='', step=Non
     limit = max(1, math.ceil(max(abs(average) for _, average, _ in summary) * 100))
     markup = []
     trends = trends or {}
-    if basket:  # D-352: the whole basket, one highlighted row; it is not a link and does not open the products
+    if basket:  # D-450: the whole basket is chosen like a family, with a box to tick, and opens every product
         value, series = basket
+        chosen = selected_family == ALL_FAMILIES
         state = change_state(value)
         word = {'rise': 'Subió', 'fall': 'Bajó', 'neutral': 'Sin cambio'}[state]
         size = min(50, abs(value) * 100 / limit * 50)
         side = 'left:50%' if value >= 0 else f'left:{50 - size:.2f}%'
         markup.append(
-            f'<div class="mock-movement-row mock-basket {state}" title="Mediana de todos los precios comparables, sin distinguir familia · {esc(scope)}">'
-            '<span class="mock-basket-art" aria-hidden="true"></span><strong>Toda la canasta</strong>'
+            f'<a class="mock-movement-row mock-basket {state}{" selected" if chosen else ""}" href="{esc(basket_link or "")}" '
+            f'target="_self" role="checkbox" aria-checked="{"true" if chosen else "false"}" '
+            f'title="Mediana de todos los precios comparables, sin distinguir familia · {esc(scope)}">'
+            f'<span class="mock-basket-art{" checked" if chosen else ""}" aria-hidden="true"></span><strong>Toda la canasta</strong>'
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(value * 100, True)}</b>'
-            f'<span class="mock-movement-state">{word}</span>{sparkline(series)}<span></span></div>'
+            f'<span class="mock-movement-state">{word}</span>{sparkline(series)}<span></span></a>'
         )
     for group, average, members in summary:
         state = change_state(average)

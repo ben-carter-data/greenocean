@@ -3526,3 +3526,19 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Cada punto de control** es un rombo con sus dos salidas: la verde sigue («verde» o «sí») y la roja dice adónde vuelve el cambio («rojo → volver a 5», «pide forzar → parar»).
 - **Lo que no cambia:** un clic o Enter en una estación abre el mismo panel lateral, con sus comandos para copiar, qué hacer si falla, el ejemplo de GreenOcean y sus fallas del registro.
 - **Pruebas:** `tests/test_git_workflow.py::test_d449_the_map_is_a_flowchart_of_fixed_shape_with_an_arrow_between_every_two_stations`.
+
+## D-450 · «Toda la canasta» se marca como una casilla, la cabecera de la tabla es fina y la búsqueda va en verde flúor
+
+- **Pedido del autor:**
+  - las líneas de tendencia de las familias se salían del panel;
+  - el botón de ampliar no respondía;
+  - un clic en «Toda la canasta» no desbloqueaba la tabla, que mostraba la primera familia por defecto: debía ser una casilla que la desbloquee;
+  - la parte de arriba de la tabla ocupaba mucha altura;
+  - el campo de búsqueda debía ir en verde flúor.
+- **Causa del botón:** en la vista Usuario, mientras no se elige una familia, el panel 3 está bloqueado (D-352) y el bloqueo no deja tocar sus controles, tampoco «Ampliar». Con una familia elegida, el botón abre la ventana (comprobado con clics reales a 1280 × 684 y 1440 × 790).
+- **Decisión:**
+  - **«Toda la canasta»** se elige como una familia: es una casilla que se marca, completa el paso 2 y abre el paso 3 con los productos de todas las familias, con su mediana y su cobertura sumada. Reemplaza la regla de D-352 de que la fila no se elige.
+  - **Las familias** no pasan el borde de su panel: el nombre y la barra ceden espacio antes que las cifras y la tendencia.
+  - **La cabecera del panel 3** es una línea fina (el paso, la familia, la mediana, el lugar y la cuenta) y los filtros otra, de 28 px; la pregunta queda al pasar el cursor. La tabla gana 56 px en una sola pantalla (D-447).
+  - **La búsqueda** brilla en verde flúor (`#39ff14`) en los temas oscuros y en un verde más hondo (`#00a83a`) en los claros, para que se lea sobre blanco. Reemplaza el celeste de D-372.
+- **Pruebas:** `tests/test_panorama_steps.py::test_d450_the_whole_basket_row_is_the_median_of_every_comparable_price_and_is_ticked_like_a_box`, `::test_d450_ticking_the_whole_basket_opens_every_product_of_the_week`, `::test_d450_the_products_head_is_one_thin_line_and_the_families_stay_inside_their_panel` y `::test_d450_the_search_glows_in_fluorescent_green_apart_from_the_blue_of_falls`.

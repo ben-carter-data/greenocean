@@ -679,8 +679,8 @@ ul.mock-calc-out li em {font-style:normal;}
    and its rows two, so it shows as many rows as the window leaves. The overview grows with it, so the note under it
    never covers the table. */
 .st-key-home_overview {height:auto!important;min-height:calc(100vh - 195px);}
-.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 766px))!important;min-height:0!important;}
-@media (max-height:860px) {.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 639px))!important;}}
+.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 711px))!important;min-height:0!important;}
+@media (max-height:860px) {.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 585px))!important;}}
 .mock-products-table th {padding-top:6px;padding-bottom:6px;}
 .mock-products-table td:first-child strong {display:block;}
 .mock-products-table td:first-child small {display:inline;}
@@ -688,3 +688,27 @@ ul.mock-calc-out li em {font-style:normal;}
 .mock-products-table td {padding-top:3px;padding-bottom:3px;line-height:1.3;}
 .st-key-home_overview .mock-products-table th,.st-key-home_overview .mock-products-table td {padding-left:7px;padding-right:7px;}
 .st-key-home_overview .mock-th-word {display:none;}
+
+/* D-450: the families never pass the panel's edge: the name and the bar give up room before the figures do. */
+@media (min-width:701px) {
+ .stApp .st-key-home_overview .greenocean-mockup .mock-movement-row {grid-template-columns:42px minmax(92px,1.3fr) minmax(36px,2.2fr) 62px 62px 56px 14px;gap:0 6px;}
+ .st-key-home_overview .mock-spark svg {max-width:100%;height:auto;}
+ .st-key-home_overview .mock-movement {overflow:hidden;}
+}
+/* D-450: «Toda la canasta» is ticked like a box and opens every product; once ticked, its box carries a check. */
+.mock-basket {cursor:pointer!important;}
+.mock-basket:hover {background:color-mix(in srgb,__ACCENT__ 16%,__PANEL__)!important;}
+.mock-basket-art {background:transparent!important;border:2px solid __ACCENT__;box-sizing:border-box;position:relative;}
+.mock-basket-art.checked {background:__ACCENT__!important;}
+.mock-basket-art.checked::after {content:"";position:absolute;left:3px;top:0;width:4px;height:8px;border:solid #ffffff;border-width:0 2px 2px 0;transform:rotate(45deg);}
+/* D-450: the head of the products panel is one thin line (the step, the family, the median, the place and the count)
+   and the filters another, 28 px high, so the table keeps the height. */
+.st-key-home_overview .mock-products-slim {flex-wrap:nowrap!important;gap:0 8px!important;}
+.st-key-home_overview .mock-products-slim .mock-kicker,.st-key-home_overview .mock-products-slim h2 {display:none!important;}
+.st-key-home_overview .mock-products-slim .mock-step {margin:0!important;font-size:13.5px;}
+.st-key-home_overview .mock-products-slim .mock-step b {width:22px;height:22px;font-size:12.5px;box-shadow:0 0 0 3px color-mix(in srgb,__ACCENT__ 22%,transparent);}
+.st-key-home_overview .st-key-home_products {gap:3px!important;padding-top:5px!important;}
+.st-key-home_overview .st-key-home_products [data-testid="stTextInput"] [data-testid="stTextInputRootElement"] {min-height:28px!important;height:28px;border-width:1.5px!important;border-radius:8px;}
+.st-key-home_overview .st-key-home_products [data-testid="stTextInput"] input {font-size:12.5px!important;min-height:0!important;padding-top:0;padding-bottom:0;}
+.st-key-home_overview .st-key-home_products [data-testid="stTextInput"] [data-testid="stIconMaterial"] {font-size:17px!important;}
+.st-key-home_overview .st-key-home_products [data-testid="stWidgetLabel"] p {font-size:12px!important;}

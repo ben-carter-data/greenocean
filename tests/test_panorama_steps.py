@@ -100,11 +100,12 @@ def test_d372_each_step_opens_with_its_number_in_a_big_circle_and_a_readable_tex
         assert text in i18n_en.PAGES, text
 
 
-def test_d372_the_search_glows_in_a_light_blue_apart_from_the_blue_of_falls():
+def test_d450_the_search_glows_in_fluorescent_green_apart_from_the_blue_of_falls():
     for theme in charts.THEMES:
         palette = charts.get_palette(theme)
         css = home_mockup.style(theme, palette)
-        light = palette["accent"] if palette["base"] == "dark" else home_mockup.SEARCH_LIGHT
+        light = home_mockup.SEARCH_DARK if palette["base"] == "dark" else home_mockup.SEARCH_LIGHT
+        assert light.lower() in {"#39ff14", "#00a83a"}  # D-450: fluorescent green, deeper on white
         assert light.lower() not in {"#0868c5", "#83baff", palette["fall"].lower()}  # never the blue of «bajó»
         assert f'[data-testid="stTextInputRootElement"] {{border:2px solid {light}!important;min-height:44px;' in css
         assert f"{{color:{light}!important;fill:{light}!important;font-size:22px!important;}}" in css  # the magnifier
@@ -122,7 +123,7 @@ def test_d372_the_search_glows_in_a_light_blue_apart_from_the_blue_of_falls():
     assert stopped not in dashboard.build_steps_css(palette, True, True, None)
 
 
-def test_d352_the_whole_basket_row_is_the_median_of_every_comparable_price_and_is_not_selectable():
+def test_d450_the_whole_basket_row_is_the_median_of_every_comparable_price_and_is_ticked_like_a_box():
     rows = [
         {"product_group": "Frutas", "variation": 0.04},
         {"product_group": "Frutas", "variation": -0.02},
@@ -133,13 +134,33 @@ def test_d352_the_whole_basket_row_is_the_median_of_every_comparable_price_and_i
     assert home_mockup.basket_median(rows) == statistics.median([0.04, -0.02, 0.01])
     assert home_mockup.basket_median([]) is None
     html = home_mockup.family_movement(
-        rows, lambda family: "#" + family, None, "todo Chile", basket=(0.01, [1.0, 2.0, 3.0])
+        rows, lambda family: "#" + family, None, "todo Chile", basket=(0.01, [1.0, 2.0, 3.0]), basket_link="#Todas"
     )
     basket = html[html.index("mock-basket") :]
     assert "Toda la canasta" in html and basket.index("Toda la canasta") < basket.index("mock-movement-row rise")
     row = html[html.rindex("<", 0, html.index("mock-basket")) : html.index("Toda la canasta")]
-    assert row.startswith("<div") and "href" not in row  # not a link: it does not choose a family
+    # D-450: a box to tick, which chooses every family at once and opens the products
+    assert row.startswith("<a") and 'href="#Todas"' in row and 'role="checkbox" aria-checked="false"' in row
     assert html.count("mock-spark") >= 1 and "<polyline" in html
+    ticked = home_mockup.family_movement(
+        rows,
+        lambda family: "#" + family,
+        home_mockup.ALL_FAMILIES,
+        "todo Chile",
+        basket=(0.01, [1.0, 2.0]),
+        basket_link="#",
+    )
+    assert 'aria-checked="true"' in ticked and 'mock-basket-art checked' in ticked
+
+
+@needs_database
+def test_d450_ticking_the_whole_basket_opens_every_product_of_the_week():
+    app = draw("consulta", link="?_home_region=Todas&_home_week=2026-10-12&familia=Todas&_home_step=family")
+    text = page(app)
+    assert not app.exception and app.session_state["home_family_done"] and 'class="mock-lock"' not in text
+    assert '<span class="mock-products-family">Toda la canasta</span>' in text
+    families = set(re.findall(r'<a class="mock-movement-row (?:rise|fall|neutral)', text))
+    assert families and 'aria-checked="true"' in text
 
 
 @needs_database
@@ -193,6 +214,23 @@ def test_d447_the_dashboard_table_has_a_one_line_header_and_scrolls_inside_one_s
     css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
     # One screen (D-309): the table ends at the bottom of the window and scrolls by itself, measured with Playwright at
     # 1440 x 790, 1280 x 800, 1440 x 900 and 1920 x 1000 (D-447).
-    assert ".st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 766px))!important;" in css
-    assert "@media (max-height:860px) {.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 639px))" in css
+    assert ".st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 711px))!important;" in css
+    assert (
+        "@media (max-height:860px) {.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 585px))"
+        in css
+    )
     assert ".st-key-home_overview .mock-th-word {display:none;}" in css
+
+
+def test_d450_the_products_head_is_one_thin_line_and_the_families_stay_inside_their_panel():
+    css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
+    # Measured with Playwright at 1280 x 684 and 1440 x 790: no family row passes the panel's edge.
+    assert (
+        ".stApp .st-key-home_overview .greenocean-mockup .mock-movement-row {grid-template-columns:42px minmax(92px,1.3fr)"
+        in css
+    )
+    assert (
+        ".st-key-home_overview .mock-products-slim .mock-kicker,.st-key-home_overview .mock-products-slim h2 {display:none!important;}"
+        in css
+    )
+    assert 'min-height:28px!important;height:28px;' in css  # the search, the height of the selectors

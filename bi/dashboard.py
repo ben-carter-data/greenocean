@@ -4456,14 +4456,15 @@ def show_market_overview(mode, prefix):
     averages = home_mockup.family_averages(model['family_rows'])
     families = [family for family, _, _ in averages]
     family = st.query_params.get('familia')
-    if family not in families:
+    choices = families + [ALL_VALUES]  # D-450: «Toda la canasta» is chosen like a family and shows every product
+    if family not in choices:
         family = families[0] if families else None
     scope = 'todo Chile' if region == ALL_VALUES else home_mockup.short_region(region)
     # D-352, D-372: in every view (user, professional and author) the panels 2 and 3 wait for the step before them; a
     # link that names a region or a family counts as having chosen it.
     if st.query_params.get('_home_region'):
         st.session_state[scoped(HOME_REGION_DONE)] = True
-    if st.session_state.get(scoped(HOME_REGION_DONE)) and st.query_params.get('familia') in families:
+    if st.session_state.get(scoped(HOME_REGION_DONE)) and st.query_params.get('familia') in choices:
         st.session_state[scoped(HOME_FAMILY_DONE)] = True
     region_open = bool(st.session_state.get(scoped(HOME_REGION_DONE)))
     family_open = bool(st.session_state.get(scoped(HOME_FAMILY_DONE)))
@@ -4567,9 +4568,17 @@ def show_market_overview(mode, prefix):
                 st.markdown(
                     f'<div class="greenocean-mockup">{home_mockup.lock_overlay(3)}</div>', unsafe_allow_html=True
                 )
-            rows = [row for row in model['family_rows'] if row['product_group'] == products_family]
+            rows = [
+                row
+                for row in model['family_rows']
+                if products_family == ALL_VALUES or row['product_group'] == products_family
+            ]
             family_rows = list(rows)
-            average = next((value for name, value, _ in averages if name == products_family), None)
+            average = (
+                home_mockup.basket_median(model['family_rows'])
+                if products_family == ALL_VALUES
+                else next((value for name, value, _ in averages if name == products_family), None)
+            )
             heading = st.empty()
             search_column, channel_column, order_column, enlarge_column = st.columns(
                 [1.35, 1.25, 1.5, 0.3], vertical_alignment='center'
@@ -4604,7 +4613,12 @@ def show_market_overview(mode, prefix):
             if region == ALL_VALUES:
                 # D-327: what every row was calculated from, and the one line that says how to read the prices.
                 calculation, published = read_cached_region_calculation(get_database_version(), week)
-                stats = model.get('family_coverage', {}).get(products_family) or {}
+                coverage = model.get('family_coverage', {})
+                stats = (
+                    {key: sum(item.get(key, 0) for item in coverage.values()) for key in ('available', 'comparable')}
+                    if products_family == ALL_VALUES
+                    else coverage.get(products_family) or {}
+                )
                 note = home_mockup.products_note(published, stats.get('available', 0) - stats.get('comparable', 0))
                 for row in family_rows:
                     row['_calc'] = calculation.get(tuple(row[field] for field in queries.KEY_COLUMNS + ['channel']))
@@ -4724,6 +4738,7 @@ def show_market_overview(mode, prefix):
                         step=2,
                         trends=trends,
                         basket=None if basket_value is None else (basket_value, basket_trend),
+                        basket_link=overview_link(None if region == ALL_VALUES else region, ALL_VALUES, 'family'),
                     )
                     + '</div>',
                     unsafe_allow_html=True,

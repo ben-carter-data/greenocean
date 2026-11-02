@@ -148,7 +148,7 @@ def test_dashboard_opens_with_data_and_diagrams_have_their_own_page():
     # The search, the order and the table replace the old «Explorar…» drop-down (D-093).
     assert not app.expander and not app.slider
     # Map, movement by family and products of the selected family, on one screen (D-092).
-    assert texts.count('<a class="mock-movement-row ') == 7
+    assert texts.count('<a class="mock-movement-row ') == 8  # D-450: seven families and the whole basket
     assert texts.count('<a class="mock-movement-row rise selected"') == 1
     assert 'class="mock-products-table"' in texts and '¿Qué productos explican el cambio?' in texts
     assert '¿Qué estamos comparando?' not in texts and 'class="mock-family-tile ' not in texts

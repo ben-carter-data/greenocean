@@ -481,7 +481,9 @@ def svg_station(item: dict[str, Any], station: dict[str, Any]) -> str:
         tile = f'<circle class="tile" cx="{x}" cy="{y}" r="{TILE}"/>'
     else:
         tile = f'<rect class="tile" x="{x - TILE}" y="{y - TILE}" width="{2 * TILE}" height="{2 * TILE}" rx="12"/>'
-    icon = f'<svg class="ico" x="{x - 12}" y="{y - 12}" width="24" height="24" viewBox="0 0 24 24">{item_icon(item)}</svg>'
+    icon = (
+        f'<svg class="ico" x="{x - 12}" y="{y - 12}" width="24" height="24" viewBox="0 0 24 24">{item_icon(item)}</svg>'
+    )
     command = station["commands"][0] + (f" +{len(station['commands']) - 1}" if len(station["commands"]) > 1 else "")
     command = fit(command, 11, 196, mono=True)
     chip_width = min(206, int(len(command) * 11 * 0.61) + 18)
@@ -519,7 +521,9 @@ def svg_paths(language: str) -> str:
             start, end = x1 + step * (TILE + 6), x2 - step * (TILE + 10)
             parts.append(f'<path class="go {lane}" d="M{start} {y1} H{end}"/>')
             if item["n"] in GATE_EXITS:
-                parts.append(f'<text class="yes" x="{(start + end) / 2}" y="{y1 - 8}">{pick(GATE_EXITS[item["n"]][0], language)}</text>')
+                parts.append(
+                    f'<text class="yes" x="{(start + end) / 2}" y="{y1 - 8}">{pick(GATE_EXITS[item["n"]][0], language)}</text>'
+                )
         else:
             turn = TURN_RIGHT if x1 > WIDTH / 2 else TURN_LEFT
             side = 1 if turn > x1 else -1
@@ -542,7 +546,9 @@ def build_svg(data: dict[str, Any], language: str) -> str:
             f'<text class="ln" x="62" y="{top + LANE_HEIGHT / 2 - 8 * (len(words) - 1) + 16 * row + 4}">{html.escape(word)}</text>'
             for row, word in enumerate(words)
         )
-        lanes.append(f'<g class="lane {key}"><rect x="4" y="{top}" width="{WIDTH - 8}" height="{LANE_HEIGHT}" rx="14"/>{label}</g>')
+        lanes.append(
+            f'<g class="lane {key}"><rect x="4" y="{top}" width="{WIDTH - 8}" height="{LANE_HEIGHT}" rx="14"/>{label}</g>'
+        )
     stations = "".join(svg_station(item, station) for item, station in zip(STATIONS, data["stations"]))
     heads = "".join(
         f'<marker id="h-{key}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">'
