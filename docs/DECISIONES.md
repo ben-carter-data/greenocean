@@ -3562,3 +3562,23 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Medición:** sin hueco ni desplazamiento horizontal a 1440 × 790, 1280 × 800, 1440 × 900 y 1920 × 1000 en el Dashboard, y a 1440 × 790 en el canal Mayorista, en las vistas Usuario y Profesional. En el canal Mayorista se ven 9 filas (Playwright).
 - **Documentos:** PRD 3.19 (7, menú, Dashboard y Último dato por canal), Índice de decisiones 2.4 y README, en los dos idiomas donde corresponde. El «Mapa de la app» nombra las páginas en el orden nuevo.
 - **Pruebas:** `tests/test_channel_latest.py::test_d452_a_channel_behaves_exactly_like_the_dashboard_and_never_folds`, `tests/test_menu_order.py` (los dos recuadros y la sección), `tests/test_dashboard.py::test_d213_the_menu_is_flat_sections_open_by_default_with_every_page_once`, `::test_d250_the_path_and_the_footer_follow_the_menu` y `::test_d295_each_professional_profile_reads_the_menu_like_its_portfolio`, y la altura en `tests/test_panorama_steps.py::test_d447_the_dashboard_table_has_a_one_line_header_and_scrolls_inside_one_screen`.
+
+## D-453 · Los dos dashboards abren «Negocio · BA y BI», y cada canal tiene su ícono 3D
+
+- **Pedido del autor:** los dos recuadros de dashboard deben estar en la sección «Negocio · BA y BI», justo antes de «Interesados». Cada tarjeta de canal puede tener un ícono 3D único que la identifique, con sus propios colores.
+- **Decisión:**
+  - **Menú:** la sección «Negocio · BA y BI» abre con sus dos recuadros, el Dashboard (D-442) y «Último dato por canal» (D-452), y sigue con Interesados, Análisis de negocio y sistemas, Precios e inflación e Insights. Los recuadros siguen a la vista aunque la sección se pliegue. Cada rol ordena las secciones como antes (D-295), así que los dashboards van donde cae la sección. La ruta del encabezado vuelve a nombrar la sección: «Negocio · BA y BI › Dashboard».
+  - **El recuadro encendido** lleva la clase «_lit», no «_nav_current». La línea actual de una sección dibuja su barra en el mismo lugar donde el recuadro dibuja su ícono, y lo borraba. Solo el recuadro de la página abierta lleva el borde azul y su barra; el otro, un borde tenue. Antes, el borde azul quedaba en el que no estaba abierto.
+  - **Tarjetas de canal:** cada canal tiene un ícono 3D propio, con degradados, sombra en el piso y sus colores (`bi/channel_icons.py`):
+    - Mayorista: cajas apiladas, naranja.
+    - Supermercado: carro, azul.
+    - Feria libre: puesto con toldo a rayas y fruta.
+    - Carnicería: corte de carne sobre una tabla, carmesí.
+    - Supermercado en Línea: teléfono con un carro, violeta.
+    - Mercado Minorista: local con toldo, turquesa.
+    - Panadería: pan dorado.
+    - Mercado Mayorista: camión de reparto, índigo.
+
+    Un canal que llegue después recibe una etiqueta neutra. El ícono es una imagen, así el markdown de Streamlit conserva sus degradados. El nombre del canal y su fuente van en dos líneas junto al ícono, así «Consumidor» ya no sale de la tarjeta.
+- **Documentos:** PRD 3.20 (7) y README.
+- **Pruebas:** `tests/test_channel_latest.py::test_d453_each_channel_card_has_its_own_3d_icon_in_its_own_colours`, `tests/test_menu_order.py` (la sección con sus dos recuadros), `tests/test_dashboard.py::test_d295_each_professional_profile_reads_the_menu_like_its_portfolio`, `::test_d102_the_current_window_also_starts_open_and_can_be_toggled` (los recuadros no se pliegan) y `::test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_alerts` (la ruta).

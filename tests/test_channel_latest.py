@@ -135,8 +135,9 @@ def test_d365_the_table_is_served_and_documented():
         and "int_prices__weekly" in model
     )
     assert "### latest_by_source" in i18n.document_path("SAD.md", "es").read_text(encoding="utf-8")
-    # D-452: the second tile of the menu, under the Dashboard
-    assert dashboard.PAGE_CHANNELS in next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "dashboard")
+    # D-452, D-453: the second dashboard tile, at the head of «Negocio · BA y BI»
+    assert dashboard.PAGE_CHANNELS in next(pages for key, _, pages in dashboard.MENU_BLOCKS if key == "negocio")
+    assert dashboard.DASHBOARD_TILES == [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS]
 
 
 def test_d380_the_channel_page_hands_its_scope_in_spanish_so_the_sentences_translate_whole():
@@ -237,3 +238,40 @@ def test_d452_a_channel_behaves_exactly_like_the_dashboard_and_never_folds():
     assert 'class="mock-chile-map"' in page and "mock-movement-row rise selected" in page  # the map and the families
     assert 'class="mock-chosen"' not in page and 'class="mock-products-table"' in page
     assert not {"home_change_region", "home_change_family"} & {str(button.key) for button in app.button}
+
+
+def test_d453_each_channel_card_has_its_own_3d_icon_in_its_own_colours():
+    from bi import channel_icons
+
+    channels = [
+        "Mayorista",
+        "Supermercado",
+        "Feria libre",
+        "Carnicería",
+        "Supermercado en Línea",
+        "Mercado Minorista",
+        "Panadería",
+        "Mercado Mayorista",
+    ]
+    assert set(channels) <= set(channel_icons.ICONS)
+    drawings = [channel_icons.svg(channel) for channel in channels]
+    assert len(set(drawings)) == len(channels)  # one drawing each
+    for drawing in drawings:
+        assert "<linearGradient" in drawing and 'opacity=".22"' in drawing  # the 3D shading and the floor shadow
+    first_colours = [re.search(r'stop-color="(#[0-9a-f]{6})"', drawing)[1] for drawing in drawings]
+    assert len(set(first_colours)) == len(channels)  # each in its own colours
+    assert channel_icons.svg("Otro canal") == channel_icons.svg("Otro")  # a channel added later still gets a mark
+    image = channel_icons.image("Panadería")
+    assert image.startswith('<img class="ch-icon" src="data:image/svg+xml;base64,') and 'alt=""' in image
+    cards = [
+        {
+            "channel": "Panadería",
+            "source": "consumer",
+            "week": "2026-10-26",
+            "median": 0.008,
+            "prices": 45,
+            "families": ["Pan"],
+            "late": None,
+        }
+    ]
+    assert '<span class="ch-head"><img class="ch-icon"' in dashboard.build_channel_cards_html(cards, lambda c: "#")

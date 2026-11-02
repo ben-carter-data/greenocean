@@ -16,7 +16,7 @@ ORDER = [
     dashboard.PAGE_SEASONALITY,  # D-398
     dashboard.PAGE_INSIGHTS,
 ]
-TILES = [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS]  # D-452: the two dashboards, as tiles over the section
+TILES = [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS]  # D-453: the two dashboards, as tiles that open the section
 
 
 def draw(profile, view, language="es"):
@@ -27,10 +27,9 @@ def draw(profile, view, language="es"):
 
 
 def test_d378_the_section_lists_who_it_is_for_and_the_analysis_before_the_prices():
-    # D-442: the Dashboard leads the menu as a tile of its own; D-452: «Último dato por canal» is the tile under it.
-    assert dashboard.MENU_BLOCKS[0] == ("dashboard", "Dashboard", TILES)
-    assert dashboard.MENU_BLOCKS[1][0] == "negocio" and dashboard.MENU_BLOCKS[1][1] == "Negocio · BA y BI"
-    assert dashboard.MENU_BLOCKS[1][2] == ORDER
+    # D-453: the section opens with its two dashboard tiles, right before «Interesados».
+    assert dashboard.MENU_BLOCKS[0] == ("negocio", "Negocio · BA y BI", TILES + ORDER)
+    assert dashboard.DASHBOARD_TILES == TILES
     assert dashboard.MENU_ORDER[:6] == TILES + ORDER  # the path and the footer follow it (D-250)
     labels = [dashboard.SIDEBAR_LABELS.get(view, view) for view in ORDER]
     assert labels == ["Interesados", "Análisis de negocio y sistemas", "Precios e inflación", "Insights"]

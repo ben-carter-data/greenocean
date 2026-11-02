@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.19 |
+| Versión | 3.20 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -156,9 +156,9 @@ Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 sema
 
 Estas son seis capturas reales, del 02-11-2026, de cinco páginas principales y en los cuatro temas de color. El Dashboard aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
 
-- **Menú:** arriba, dos recuadros con ícono de dashboard: el Dashboard y Último dato por canal (D-442, D-452). Debajo, cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera sigue el orden en que la lee un lector: Interesados, Análisis de negocio y sistemas, Precios e inflación e Insights.
+- **Menú:** cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera abre con dos recuadros con ícono de dashboard, el Dashboard y Último dato por canal, que siguen a la vista aunque la sección se pliegue; después sigue el orden en que la lee un lector: Interesados, Análisis de negocio y sistemas, Precios e inflación e Insights (D-442, D-452, D-453).
 - **Dashboard:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Los tres pasos quedan siempre juntos en una sola pantalla; la tabla de productos llena el panel 3, se desplaza sola y se amplía con su propio botón (D-446, D-447).
-- **Último dato por canal:** una tarjeta por canal, con su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del Dashboard y se comporta igual que él, aunque la otra fuente todavía no publique esa semana (D-404 a D-406, D-452).
+- **Último dato por canal:** una tarjeta por canal, con su ícono 3D en sus propios colores (D-453), su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del Dashboard y se comporta igual que él, aunque la otra fuente todavía no publique esa semana (D-404 a D-406, D-452).
 - **Stack y evidencia:** dos vistas. «Herramientas» explica cada herramienta; «Flujo del sistema en vivo» muestra las piezas reales, lo que se dicen y la carga en curso (D-412).
 
 [[diagrama:mockups]]
@@ -245,3 +245,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.17 | 02-11-2026 | Capturas nuevas de las seis pantallas, con el Dashboard y el menú actuales (7, D-445) |
 | 3.18 | 02-11-2026 | El Dashboard ya no pliega los pasos 1 y 2: el panorama queda completo, y la captura M-1 lo muestra así (7, D-446) |
 | 3.19 | 02-11-2026 | «Último dato por canal» es un segundo recuadro bajo el Dashboard, y cada canal se comporta igual que el Dashboard, sin plegar sus pasos (7, D-447, D-452) |
+| 3.20 | 02-11-2026 | Los dos dashboards abren la sección «Negocio · BA y BI», y cada tarjeta de canal lleva su ícono 3D (7, D-453) |

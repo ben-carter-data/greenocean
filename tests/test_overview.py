@@ -86,9 +86,10 @@ def test_d311_the_reading_of_the_period_chains_the_cells_of_the_weeks_table(mark
 def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
     source = (dashboard.Path(dashboard.__file__)).read_text(encoding="utf-8")
     assert "def show_overview_page" not in source and "def show_overview_inflation" not in source
-    # D-442: the Dashboard, a tile over the sections; D-452: «Último dato por canal» (D-365), the tile under it
-    assert dashboard.MENU_BLOCKS[0][2] == [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS]
-    assert dashboard.MENU_BLOCKS[1][2] == [
+    # D-453: the section opens with the Dashboard and «Último dato por canal» (D-365) as tiles
+    assert dashboard.MENU_BLOCKS[0][2] == [
+        dashboard.HOME_PAGE,
+        dashboard.PAGE_CHANNELS,
         dashboard.PAGE_STAKEHOLDERS,  # D-376, D-378
         dashboard.PAGE_ANALYSIS,  # D-377
         dashboard.PAGE_SEASONALITY,  # D-398: in the menu, now that the header opens no page
@@ -106,7 +107,7 @@ def test_d308_the_dashboard_is_gone_and_its_pieces_have_a_place():
 def test_d325_where_to_buy_is_gone_and_its_old_address_opens_the_panorama():
     source = dashboard.Path(dashboard.__file__).read_text(encoding="utf-8")
     assert "show_where_page" not in source and "PAGE_WHERE" not in source
-    assert [name for _, _, pages in dashboard.MENU_BLOCKS[:2] for name in pages] == [
+    assert [name for _, _, pages in dashboard.MENU_BLOCKS[:1] for name in pages] == [
         dashboard.HOME_PAGE,  # D-442
         dashboard.PAGE_CHANNELS,  # D-365, D-452
         dashboard.PAGE_STAKEHOLDERS,  # D-376, D-378

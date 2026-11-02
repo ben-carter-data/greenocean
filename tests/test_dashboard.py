@@ -1266,7 +1266,8 @@ def test_d102_the_current_window_also_starts_open_and_can_be_toggled():
     assert not app.exception
     assert next(b for b in app.sidebar.button if str(b.key) == 'nav_toggle_negocio').label == 'Negocio · BA y BI'
     links = [link.proto.label for link in app.sidebar.get('page_link')]
-    assert 'Insights' not in links and 'Dashboard' in links  # D-442: the Dashboard tile never folds
+    # D-442, D-453: the two dashboard tiles never fold with their section
+    assert 'Insights' not in links and 'Dashboard' in links and 'Último dato por canal' in links
 
 
 @needs_database
@@ -1521,7 +1522,8 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
     markup = " ".join(block.value for block in app.markdown)
     # the bar replaces the shared header on this page: one path, one Volver
     assert 'class="app-brand"' not in markup
-    assert '<b>Dashboard</b>' in markup and '<span class="home-bar-section">' not in markup  # D-375, D-442
+    # D-453: the Dashboard is a page of «Negocio · BA y BI» again, so its path names the section (D-375)
+    assert '<span class="home-bar-section">Negocio · BA y BI › </span><b>Dashboard</b>' in markup
     assert app.button(key="return_to_previous").label == "Volver"
     assert read_page_title(app) == "¿Qué familias de alimentos subieron y bajaron?"
     # each chip says in full what it counts, and the alerts are the week's national ones
@@ -1658,11 +1660,13 @@ def test_d295_each_professional_profile_reads_the_menu_like_its_portfolio(monkey
         state[dashboard.ROLE_STATE] = role
         blocks = [key for key, *_ in dashboard.visible_menu_blocks()]
         expected = [key for key in dashboard.ROLE_ORDER[role] if key != "devops"]  # D-420: the Autor's section
-        # D-442: the Dashboard tile leads every role's menu; the role orders the sections under it.
-        assert blocks[0] == "dashboard" and blocks[1:5] == expected and blocks[5:] == ["fuentes", "documentos"], role
-        assert dashboard.visible_menu_order()[:2] == [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS]  # D-452
-        firsts[role] = dashboard.visible_menu_order()[2]
-    assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.PAGE_STAKEHOLDERS  # D-378
+        # D-453: the role orders the sections; the two dashboards open «Negocio · BA y BI», wherever it falls.
+        assert blocks[:4] == expected and blocks[4:] == ["fuentes", "documentos"], role
+        order = dashboard.visible_menu_order()
+        start = order.index(dashboard.HOME_PAGE)
+        assert order[start : start + 3] == [dashboard.HOME_PAGE, dashboard.PAGE_CHANNELS, dashboard.PAGE_STAKEHOLDERS]
+        firsts[role] = order[0]
+    assert firsts["data"] == dashboard.PAGE_DIAGRAMS and firsts["bi"] == dashboard.HOME_PAGE  # D-378
     assert firsts["seguridad"] == dashboard.PAGE_SECURITY and firsts["devops"] == dashboard.PAGE_DIAGRAMS
     source = (PROJECT_DIR / "bi" / "dashboard.py").read_text(encoding="utf-8")
     assert source.count("profile_parameters()") >= 3  # page addresses, the menu and the neighbours keep the view

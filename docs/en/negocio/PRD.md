@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.19 |
+| Version | 3.20 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -156,9 +156,9 @@ With the load of 2026-10-31, the database holds 821,072 weekly prices over 252 w
 
 These are six real captures, of 2026-11-02, of five main pages and in the four color themes. The Dashboard appears twice: as the User sees it and as the Professional sees it. The dark theme is the one on entry.
 
-- **Menu:** at the top, two tiles with a dashboard icon: the Dashboard and Latest data by channel (D-442, D-452). Below, five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first follows a reader's reading order: Stakeholders, Business and systems analysis, Prices and inflation and Insights.
+- **Menu:** five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first opens with two tiles with a dashboard icon, the Dashboard and Latest data by channel, which stay in sight even when the section folds; then it follows a reader's reading order: Stakeholders, Business and systems analysis, Prices and inflation and Insights (D-442, D-452, D-453).
 - **Dashboard:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done. The three steps always stay together on one screen; the products table fills panel 3, scrolls by itself and is enlarged with its own button (D-446, D-447).
-- **Latest data by channel:** one card per channel, with its latest week, its prices, its change and the families it publishes. Each card opens that channel with the Dashboard's steps and behaves exactly like it, even if the other source has not published that week yet (D-404 to D-406, D-452).
+- **Latest data by channel:** one card per channel, with its 3D icon in its own colours (D-453), its latest week, its prices, its change and the families it publishes. Each card opens that channel with the Dashboard's steps and behaves exactly like it, even if the other source has not published that week yet (D-404 to D-406, D-452).
 - **Stack and evidence:** two views. «Tools» explains each tool; «Live system flow» shows the real pieces, what they say to each other and the running load (D-412).
 
 [[diagrama:mockups]]
@@ -245,3 +245,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.17 | 2026-11-02 | New captures of the six screens, with the current Dashboard and menu (7, D-445) |
 | 3.18 | 2026-11-02 | The Dashboard no longer folds steps 1 and 2: the overview stays whole, and capture M-1 shows it that way (7, D-446) |
 | 3.19 | 2026-11-02 | «Latest data by channel» is a second tile under the Dashboard, and each channel behaves exactly like the Dashboard, without folding its steps (7, D-447, D-452) |
+| 3.20 | 2026-11-02 | The two dashboards open the section «Business · BA and BI», and each channel card carries its 3D icon (7, D-453) |

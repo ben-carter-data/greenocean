@@ -48,6 +48,7 @@ from bi import (
     run_monitor,
     app_diagrams,
     app_map,
+    channel_icons,
     app_map_detail,
     overview,
     quality_method,
@@ -450,7 +451,7 @@ ROLE_ORDER = {
 DEFAULT_ROLE = "bi"  # a user view unlocked with the key reads the business first
 LANDING_STATE = "profile_landing"
 # What the public profile sees in the menu; the rest is one click away («Ver todo el proyecto»).
-PUBLIC_BLOCKS = {"dashboard", "negocio", "fuentes"}
+PUBLIC_BLOCKS = {"negocio", "fuentes"}
 
 DEFAULT_CHANNEL = "Feria libre"
 SUPERMARKET = "Supermercado"
@@ -696,8 +697,7 @@ def menu_blocks_of_profile():
         return [block for block in MENU_BLOCKS if block[0] in PUBLIC_BLOCKS]
     by_key = {block[0]: block for block in MENU_BLOCKS}
     order = ROLE_ORDER[get_role()] if get_profile() else [block[0] for block in MENU_BLOCKS]
-    # D-442: the Dashboard tile leads every profile's menu; the role orders the sections under it.
-    blocks = [by_key[DASHBOARD_TILE_BLOCK]] + [by_key[key] for key in order]
+    blocks = [by_key[key] for key in order]
     blocks += [block for block in MENU_BLOCKS if block not in blocks]
     if (
         get_profile() and get_role() == "seguridad"
@@ -5635,7 +5635,11 @@ def build_channel_cards_css(palette):
 a.ch-card {{ display:flex; flex-direction:column; gap:6px; padding:14px 16px; border-radius:14px; border:1px solid {border};
   background:{card}; color:{text} !important; text-decoration:none !important; transition:border-color .15s ease, box-shadow .15s ease; }}
 a.ch-card:hover, a.ch-card:focus-visible {{ border-color:{accent}; box-shadow:0 10px 24px -16px {accent}; outline:none; }}
-.ch-head {{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }}
+.ch-head {{ display:flex; align-items:center; gap:10px; }}
+.ch-head .ch-icon {{ flex:none; width:44px; height:44px; filter:drop-shadow(0 4px 6px rgba(0,0,0,.18)); transition:transform .18s ease; }}
+a.ch-card:hover .ch-icon, a.ch-card:focus-visible .ch-icon {{ transform:translateY(-2px) scale(1.04); }}
+.ch-titles {{ display:flex; flex-direction:column; gap:1px; min-width:0; }}
+.ch-titles .ch-source {{ font-size:10.5px; }}
 .ch-name {{ font-size:15.5px; font-weight:600; color:{ink}; }}
 .ch-source {{ font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:{muted}; }}
 .ch-week {{ font-size:13px; color:{muted}; }}
@@ -5672,8 +5676,9 @@ def build_channel_cards_html(cards, address_of, total_families=None):
         source = dict(channel_latest.SOURCES).get(card["source"], card["source"])
         items.append(
             f'<a class="ch-card" href="{html.escape(address_of(card["channel"]), quote=True)}" target="_self">'
-            f'<span class="ch-head"><span class="ch-name">{html.escape(data_terms.term(card["channel"]))}</span>'
-            f'<span class="ch-source">{html.escape(tr(source))}</span></span>'
+            f'<span class="ch-head">{channel_icons.image(card["channel"])}'  # D-453: each channel's own 3D icon
+            f'<span class="ch-titles"><span class="ch-name">{html.escape(data_terms.term(card["channel"]))}</span>'
+            f'<span class="ch-source">{html.escape(tr(source))}</span></span></span>'
             f'<span class="ch-week">{html.escape(tr("Semana {}").format(i18n.tr_week(card["week"])))}</span>'
             f'<span class="ch-change {tone}">{html.escape(figure)}'
             f'<small>{html.escape(tr("variación mediana frente a la semana anterior"))}</small></span>'
@@ -8609,15 +8614,12 @@ RELOAD_HOME_SCRIPT = """<script>
 # with a faint fill and a blue bar on its left. The documents close the list, before the sources.
 # (key, title, pages or source links)
 MENU_BLOCKS = [
-    # D-442: the Dashboard, the weekly summary of prices, is the main page: a tile of its own at the top of the menu.
-    # D-452: «Último dato por canal», the same dashboard for each source's own latest week, is the second tile.
-    ("dashboard", "Dashboard", [PAGE_HOME, PAGE_CHANNELS]),
     (
         "negocio",
         "Negocio · BA y BI",
-        # D-378: the reading order of a visitor: first who it is for and the analysis (BA and BSA), then the prices (BI)
-        # D-398: «Precios e inflación» joins the menu, after «Último dato por canal» (4C): the header no longer opens it.
-        [PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_SEASONALITY, PAGE_INSIGHTS],
+        # D-453: the section opens with its two dashboards as tiles, the Dashboard (D-442) and «Último dato por canal»
+        # (D-452), right before «Interesados»; D-378: then who it is for and the analysis (BA and BSA), then the prices.
+        [PAGE_HOME, PAGE_CHANNELS, PAGE_STAKEHOLDERS, PAGE_ANALYSIS, PAGE_SEASONALITY, PAGE_INSIGHTS],
     ),
     ("ingenieria", "Ingeniería de datos", [PAGE_DIAGRAMS, PAGE_ARCHITECTURE, PAGE_SQL]),
     ("devops", "DevOps y seguridad", [PAGE_RUNS, PAGE_ACTIONS, PAGE_CONFIG]),  # D-420: the Autor's only
@@ -8874,7 +8876,7 @@ def build_sidebar_css(mode):
         background-image:url("data:image/svg+xml;base64,{base64.b64encode(CHANNELS_TILE_SVG.encode()).decode()}") !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a {{display:flex !important; flex-direction:row;
         align-items:center; gap:12px !important; width:100% !important; min-height:58px !important; padding:8px 12px !important;
-        border-radius:12px; background:{MENU_INK[dark][3]} !important; border:1px solid {MENU_INK[dark][5]} !important;
+        border-radius:12px; background:{MENU_INK[dark][3]} !important; border:1px solid {MENU_INK[dark][6]} !important;
         box-shadow:none !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a::before {{content:""; flex:none; width:52px; height:38px;
         background:url("data:image/svg+xml;base64,{base64.b64encode(DASHBOARD_TILE_SVG.encode()).decode()}") center / contain no-repeat;
@@ -8887,7 +8889,8 @@ def build_sidebar_css(mode):
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a span:has(> div > p) *,
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] p {{white-space:normal !important;
         overflow:visible !important; text-overflow:clip !important; line-height:1.2 !important;}}
-    [class*="st-key-nav_dashboard_tile"][class*="_nav_current"] [data-testid="stPageLink"] a {{border-color:{MENU_INK[dark][6]} !important;
+    [class*="st-key-nav_dashboard_tile"][class*="_lit"] [data-testid="stPageLink"] a {{border-color:{MENU_INK[dark][5]} !important;
+        background:{MENU_INK[dark][4]} !important;
         box-shadow:inset 3px 0 0 #5aa9ea !important;}}
     [class*="st-key-nav_dashboard_tile"] [data-testid="stPageLink"] a > span:has([data-testid="stIconMaterial"]),
     [class*="st-key-nav_dashboard_tile"] [data-testid="stIconMaterial"] {{display:none !important;}}
@@ -8896,15 +8899,15 @@ def build_sidebar_css(mode):
     </style>"""
 
 
-SIDEBAR_NAV_VERSION = 12  # D-442: the Dashboard tile; D-452: «Último dato por canal» under it
+SIDEBAR_NAV_VERSION = 13  # D-453: the two dashboard tiles open «Negocio · BA y BI»
 # D-286: the sources start folded; the documents are a folder at the end of the menu, not a section.
 FOLDED_BY_DEFAULT = {"fuentes"}
 FOLDER_TILE_BLOCK = "documentos"
 # D-287: the sources are a tile of their own beside the folder; their links open in a floating panel.
 SOURCES_TILE_BLOCK = "fuentes"
-# D-442: the Dashboard is a tile at the top of the menu, not a line of a section.
-DASHBOARD_TILE_BLOCK = "dashboard"
-TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK, DASHBOARD_TILE_BLOCK}
+# D-442, D-452, D-453: the two dashboards are tiles, not lines, at the head of «Negocio · BA y BI».
+DASHBOARD_TILES = [PAGE_HOME, PAGE_CHANNELS]
+TILE_BLOCKS = {FOLDER_TILE_BLOCK, SOURCES_TILE_BLOCK}
 # A dashboard in miniature: three figures over a bar chart and a line, in the colours of the charts.
 DASHBOARD_TILE_SVG = (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 46"><rect x="1" y="1" width="62" height="44" rx="6" '
@@ -8951,7 +8954,6 @@ def show_sidebar_navigation(windows_by_title, current_window, order):
     show_profile_indicator()  # D-373: first, right under the logo
     show_run_indicator()  # D-351
     show_load_alert(windows_by_title)  # D-298: first in the menu, where nothing covers it
-    show_dashboard_tile(windows_by_title, current_window, current_view)  # D-442
     for key, title, pages in visible_menu_blocks():
         if key in TILE_BLOCKS:
             continue  # D-286, D-287: the folder and the sources live in the footer, always in sight
@@ -8990,19 +8992,21 @@ def show_footer_tiles(windows_by_title, current_window, current_view):
                     )
 
 
-def show_dashboard_tile(windows_by_title, current_window, current_view):
-    """D-442: the Dashboard, the weekly summary of prices, as a large tile at the top of the menu, for every profile;
-    it stays lit while it is open. D-452: «Último dato por canal», the same dashboard by source, is a tile under it."""
-    for index, view in enumerate(next(pages for key, _, pages in MENU_BLOCKS if key == DASHBOARD_TILE_BLOCK)):
-        window = WINDOW_OF_VIEW[view]
-        active = window == current_window and current_view == view
-        with st.sidebar.container(key=f"nav_dashboard_tile_{index}" + ("_nav_current" if active else "")):
-            st.page_link(
-                windows_by_title[window],
-                label=tr(SIDEBAR_LABELS.get(view, view)),
-                icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
-                query_params=keep_context() | {VIEW_PARAMETER: view},
-            )
+def show_dashboard_tile(windows_by_title, current_window, current_view, view):
+    """D-442: the Dashboard, the weekly summary of prices, as a large tile; D-452: «Último dato por canal», the same
+    dashboard by source, a second one. D-453: both open the section «Negocio · BA y BI», right before «Interesados»;
+    a tile stays lit while its page is open."""
+    window = WINDOW_OF_VIEW[view]
+    active = window == current_window and current_view == view
+    index = DASHBOARD_TILES.index(view)
+    # «_lit», not «_nav_current»: the current line of a section draws its bar where the tile draws its icon.
+    with st.container(key=f"nav_dashboard_tile_{index}" + ("_lit" if active else "")):
+        st.page_link(
+            windows_by_title[window],
+            label=tr(SIDEBAR_LABELS.get(view, view)),
+            icon=SIDEBAR_ICONS.get(view, PAGE_ICONS.get(view)),
+            query_params=keep_context() | {VIEW_PARAMETER: view},
+        )
 
 
 def show_folder_tile(windows_by_title, current_window, current_view):
@@ -9022,6 +9026,9 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
         if st.button(tr(title), key=f"nav_toggle_{key}"):
             st.session_state[open_key] = not is_open
             st.rerun()
+    for view in pages:  # D-453: the dashboard tiles open the section and stay in sight when it folds (D-442)
+        if view in DASHBOARD_TILES:
+            show_dashboard_tile(windows_by_title, current_window, current_view, view)
     if not is_open:
         return
     if pages is SOURCE_LINKS:
@@ -9037,6 +9044,8 @@ def show_menu_block(windows_by_title, current_window, current_view, key, title, 
         st.html(SHOW_SOURCES_SCRIPT, unsafe_allow_javascript=True)
         return
     for index, view in enumerate(pages):
+        if view in DASHBOARD_TILES:
+            continue
         window = WINDOW_OF_VIEW[view]
         # A document of the folder lights its folder (D-282).
         active = window == current_window and (
