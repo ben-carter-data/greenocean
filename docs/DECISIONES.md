@@ -3385,3 +3385,15 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - El workflow ya tenía el permiso `issues: write`; no se agrega ninguno.
   - **Documentos:** PRD 3.13 (RF-08) y MANUAL 3.12 (3), en los dos idiomas.
 - **Pruebas:** `tests/test_prd_traceability.py::test_rf08_the_new_weekly_report_closes_the_previous_ones`.
+
+## D-439 · Dos riesgos de abandono quedan en el registro de riesgos, con su mitigación propuesta
+
+- **Pedido del autor:** documentar, sin implementar, dos riesgos de que el sistema deje de funcionar si nadie lo opera.
+- **Riesgos:**
+  - **Workflows desactivados por inactividad:** GitHub desactiva los workflows programados de un repositorio público tras 60 días sin actividad. Su documentación no define qué cuenta como actividad ni si sirve el commit semanal del bot. Si pasa, `semanal.yml` deja de correr los martes y el panel no lo avisa.
+  - **App dormida:** Streamlit Community Cloud duerme la app por falta de visitas, no por falta de commits. El visitante ve la pantalla de la app dormida y debe despertarla.
+- **Mitigación propuesta, sin implementar:**
+  - No depender de la regla de GitHub: «Configuración» leería el estado de `semanal.yml` en la API (`active` o `disabled_inactivity`), la alerta «Acción requerida» lo avisaría y un botón lo reactivaría con `GITHUB_TOKEN`, el mismo que ya lanza la carga. GitHub, además, avisa por correo antes de desactivarlo.
+  - Para la app dormida: el `README.md` y el enlace del portafolio avisan que puede tardar en despertar y muestran las capturas reales de `docs/img/`. No verificado: el plazo exacto de hibernación y si una visita automática la mantiene despierta.
+- **Documentos:** PRD 3.14 (9) y SAD 3.11 (11), en los dos idiomas. De paso, la fila del SAD sobre dependencias dice que todas tienen versión máxima (D-435).
+- **Pruebas:** `tests/test_documents.py::test_d439_the_risk_registers_name_both_abandonment_risks`.

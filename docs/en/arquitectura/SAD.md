@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.10 |
+| Version | 3.11 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -442,9 +442,11 @@ The decisions that shape this architecture, with their context, their alternativ
 | Risk or debt | Effect | Current mitigation |
 |---|---|---|
 | ODEPA changes the format of its files | A load that was read wrongly | The publication gate rejects it and the panel keeps the last valid load |
-| A dependency changes without notice | A slow or broken load with no change in the code; it happened with DuckDB 2 (D-227, DuckDB with a maximum version) and with certifi, which removed the root of ODEPA's certificate (D-164, emSign root in the agent) | DuckDB has a maximum version in `requirements.txt`; ODEPA's root travels with the agent, without disabling verification |
+| A dependency changes without notice | A slow or broken load with no change in the code; it happened with DuckDB 2 (D-227, DuckDB with a maximum version) and with certifi, which removed the root of ODEPA's certificate (D-164, emSign root in the agent) | Every dependency has a maximum version in `requirements.txt` and `requirements-pipeline.txt` (D-435); ODEPA's root travels with the agent, without disabling verification |
 | The database cannot be downloaded from the release | The panel does not get the database of the last load | The panel keeps the database it already has; the weekly load stops before building |
 | The terms of the free plans change | The load or the panel would have to move | The pipeline runs on any machine with Python 3.11 or 3.12 |
+| GitHub disables the scheduled workflows after 60 days without activity in a public repository | `semanal.yml` would stop running on Tuesdays, with no warning in the panel | None in the panel. Proposal (D-439): read the workflow's state from the GitHub API, warn about it in «Action required» and enable it again from «Settings» |
+| Streamlit Community Cloud puts the app to sleep without visits | The visitor sees the sleeping app and waits for it to wake up | None. Proposal (D-439): warn about it in `README.md` and show the real captures of `docs/img/` |
 | Legacy views in `bi/dashboard.py` | Code reachable only through old addresses, which reads `docs/DISENO.md` | Pending removal |
 | Earlier versions of the database in the Git history | The repository weighed 309 MB on 2026-10-24; since ADR-35 the database is no longer added to the history | Kept; deleting them would require rewriting the history |
 
@@ -474,3 +476,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.8 | 2026-11-01 | The key scenarios as a map of the web panel by profile, with inheritance, the DuckDB database and GitHub Actions (2.1, D-425) |
 | 3.9 | 2026-11-01 | «Served database» becomes «DuckDB database · `etl/datos.duckdb`» throughout the document; the containers show the upload to the «base-actual» release, the reading from it and the arrows from the web panel to GitHub with their tokens (3, D-426) |
 | 3.10 | 2026-11-01 | The key scenarios fit like the other diagrams: the DuckDB database and GitHub Actions move under the web panel, with no content removed (2.1, D-429) |
+| 3.11 | 2026-11-01 | Two abandonment risks with their proposed mitigation, and every dependency with a maximum version (11, D-435, D-439) |

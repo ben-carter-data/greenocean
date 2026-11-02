@@ -418,3 +418,11 @@ def test_d386_no_document_of_docs_is_signed_with_a_personal_name():
             match = re.search(r"\bAutor(?:a)?: ([^·|]+)", line)
             if match:
                 assert match.group(1).strip() == "el autor", (path.name, match.group(1))
+
+
+def test_d439_the_risk_registers_name_both_abandonment_risks():
+    for name, section in (("PRD.md", "## 9. "), ("SAD.md", "## 11. ")):
+        for language, words in (("es", ("60 días", "duerme la app")), ("en", ("60 days", "to sleep"))):
+            text = i18n.document_path(name, language).read_text(encoding="utf-8")
+            risks = text.split(section)[1].split("\n## ")[0]
+            assert all(word in risks for word in words) and "D-439" in risks, (name, language)

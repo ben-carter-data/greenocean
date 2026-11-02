@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.13 |
+| Versión | 3.14 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -177,6 +177,8 @@ Estas son seis capturas reales, del 31-10-2026, de cinco páginas principales y 
 | Se interpreta una correlación como causa | Media | Medio | El panel y este documento lo advierten junto a cada comparación con el IPC |
 | Cambian las condiciones de un plan gratuito | Baja | Alto | El pipeline corre igual en cualquier máquina con Python 3.11 o 3.12 |
 | Un solo responsable de mantenimiento | Alta | Medio | Operación documentada en el [Manual de operación](../operacion/MANUAL.md) y pruebas automáticas en cada cambio |
+| GitHub desactiva los workflows programados de un repositorio público tras 60 días sin actividad; su documentación no define qué cuenta como actividad ni si sirve el commit semanal del bot | Baja | Alto | Propuesta (D-439), sin implementar: no depender de esa regla. «Configuración» leería el estado de `semanal.yml` en la API de GitHub (`active` o `disabled_inactivity`), la alerta «Acción requerida» lo avisaría al Autor y un botón lo reactivaría con `GITHUB_TOKEN`; GitHub, además, avisa por correo antes de desactivarlo |
+| Streamlit Community Cloud duerme la app cuando no tiene visitas, sin importar los commits; el visitante ve la pantalla de la app dormida y debe despertarla | Alta | Medio | Propuesta (D-439), sin implementar: el `README.md` y el enlace del portafolio avisan que la app puede tardar en despertar y muestran las capturas reales de `docs/img/`, para que el proyecto se vea aunque duerma. No verificado: el plazo exacto de hibernación y si una visita automática la mantiene despierta |
 
 ## 10. Criterios de aceptación
 
@@ -223,3 +225,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.11 | 01-11-2026 | RF-09: la vista se conserva también en Streamlit Community Cloud, que carga la página dos veces; el ticket del Autor vence con su sesión (D-428) |
 | 3.12 | 01-11-2026 | RF-09: la vista se elige una vez por pestaña; toda recarga la conserva, también F5 y el enlace del aviso «Acción requerida» (D-430) |
 | 3.13 | 01-11-2026 | RF-08: al abrir el informe semanal se cierra el anterior (D-438) |
+| 3.14 | 01-11-2026 | Dos riesgos de abandono, con su mitigación propuesta: workflows desactivados por inactividad y la app dormida (9, D-439) |

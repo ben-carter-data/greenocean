@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.13 |
+| Version | 3.14 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -177,6 +177,8 @@ These are six real captures, of 2026-10-31, of five main pages and in the four c
 | A correlation is read as a cause | Medium | Medium | The panel and this document warn about it next to each comparison with the CPI |
 | The terms of a free plan change | Low | High | The pipeline runs the same on any machine with Python 3.11 or 3.12 |
 | A single maintainer | High | Medium | Operation documented in the [Operations Runbook](../operacion/MANUAL.md) and automated tests on every change |
+| GitHub disables the scheduled workflows of a public repository after 60 days without activity; its documentation does not define what counts as activity nor whether the bot's weekly commit does | Low | High | Proposal (D-439), not implemented: not depending on that rule. «Settings» would read the state of `semanal.yml` from the GitHub API (`active` or `disabled_inactivity`), the «Action required» alert would warn the Author and a button would enable it again with `GITHUB_TOKEN`; GitHub also warns by email before disabling it |
+| Streamlit Community Cloud puts the app to sleep when it has no visits, whatever the commits; the visitor sees the sleeping app's screen and has to wake it up | High | Medium | Proposal (D-439), not implemented: `README.md` and the portfolio link warn that the app may take a moment to wake up and show the real captures of `docs/img/`, so the project shows even while it sleeps. Not verified: the exact sleep delay and whether an automatic visit keeps it awake |
 
 ## 10. Acceptance criteria
 
@@ -223,3 +225,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.11 | 2026-11-01 | RF-09: the view is kept on Streamlit Community Cloud too, which loads the page twice; the Author's ticket expires with the session (D-428) |
 | 3.12 | 2026-11-01 | RF-09: the view is chosen once per tab; every reload keeps it, F5 and the link of the «Action required» alert too (D-430) |
 | 3.13 | 2026-11-01 | RF-08: opening the weekly report closes the previous one (D-438) |
+| 3.14 | 2026-11-01 | Two abandonment risks, with their proposed mitigation: workflows disabled for inactivity and the sleeping app (9, D-439) |

@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de arquitectura de software (SAD), estructura arc42 con vistas C4 |
-| Versión | 3.10 |
+| Versión | 3.11 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -442,9 +442,11 @@ Las decisiones que dan forma a esta arquitectura, con su contexto, sus alternati
 | Riesgo o deuda | Efecto | Mitigación actual |
 |---|---|---|
 | ODEPA cambia el formato de sus archivos | Una carga mal leída | La puerta de publicación la rechaza y el panel conserva la última carga válida |
-| Una dependencia cambia sin aviso | Una carga lenta o rota sin cambios en el código; ocurrió con DuckDB 2 (D-227, DuckDB con versión máxima) y con certifi, que retiró la raíz del certificado de ODEPA (D-164, raíz emSign en el agente) | DuckDB tiene versión máxima en `requirements.txt`; la raíz de ODEPA viaja con el agente, sin desactivar la verificación |
+| Una dependencia cambia sin aviso | Una carga lenta o rota sin cambios en el código; ocurrió con DuckDB 2 (D-227, DuckDB con versión máxima) y con certifi, que retiró la raíz del certificado de ODEPA (D-164, raíz emSign en el agente) | Cada dependencia tiene versión máxima en `requirements.txt` y `requirements-pipeline.txt` (D-435); la raíz de ODEPA viaja con el agente, sin desactivar la verificación |
 | No se puede descargar la base del release | El panel no obtiene la base de la última carga | El panel conserva la base que ya tiene; la carga semanal se detiene antes de construir |
 | Cambian las condiciones de los planes gratuitos | Habría que mover la carga o el panel | El pipeline corre en cualquier máquina con Python 3.11 o 3.12 |
+| GitHub desactiva los workflows programados tras 60 días sin actividad en un repositorio público | `semanal.yml` dejaría de correr los martes, sin aviso en el panel | Ninguna en el panel. Propuesta (D-439): leer el estado del workflow en la API de GitHub, avisarlo en «Acción requerida» y reactivarlo desde «Configuración» |
+| Streamlit Community Cloud duerme la app sin visitas | El visitante ve la app dormida y espera a que despierte | Ninguna. Propuesta (D-439): avisarlo en `README.md` y mostrar las capturas reales de `docs/img/` |
 | Vistas antiguas en `bi/dashboard.py` | Código que solo se alcanza por direcciones antiguas y que lee `docs/DISENO.md` | Pendiente de retiro |
 | Versiones anteriores de la base en el historial de Git | El repositorio pesaba 309 MB el 24-10-2026; desde ADR-35 la base ya no se agrega al historial | Se conservan; borrarlas exigiría reescribir el historial |
 
@@ -474,3 +476,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.8 | 01-11-2026 | Los escenarios clave como mapa del panel web por perfil, con herencia, la Base DuckDB y GitHub Actions (2.1, D-425) |
 | 3.9 | 01-11-2026 | «Base servida» pasa a «Base DuckDB · `etl/datos.duckdb`» en todo el documento; los contenedores muestran la subida al release «base-actual», la lectura desde él y las flechas del panel web a GitHub con sus tokens (3, D-426) |
 | 3.10 | 01-11-2026 | Los escenarios clave caben como los demás diagramas: la Base DuckDB y GitHub Actions pasan bajo el panel web, sin quitar ningún contenido (2.1, D-429) |
+| 3.11 | 01-11-2026 | Dos riesgos de abandono con su mitigación propuesta, y todas las dependencias con versión máxima (11, D-435, D-439) |
