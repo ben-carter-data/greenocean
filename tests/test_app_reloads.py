@@ -98,7 +98,10 @@ def test_d427_the_document_is_printed_only_when_choose_your_view_is_gone():
 
 def test_d428_each_page_reads_the_kept_view_once_and_leaves_it_for_the_second_load_of_the_cloud():
     script = dashboard.PROFILE_KEEPER_JS
-    assert "window.__goKeptRead ? null : store.getItem(KEY)" in script and "window.__goKeptRead = true" in script
+    # D-454: once per page while the session has its view; again when the server forgot it
+    assert (
+        "window.__goKeptRead && !lost ? null : store.getItem(KEY)" in script and "window.__goKeptRead = true" in script
+    )
     assert "removeItem" not in script  # D-430: the view stays for every later reload of the tab
 
 
@@ -131,3 +134,12 @@ def test_d432_a_report_address_opens_its_report_after_the_reload_brings_the_view
     assert not app.exception and app.session_state["visitor_profile"] == "profesional"
     assert dashboard.REPORT_PARAMETER not in app.query_params  # read once, in the run that has the view
     assert any("Informe de calidad C-7" in str(getattr(block, "proto", "")) for block in app.get("iframe"))
+
+
+def test_d454_a_session_the_server_forgot_reads_the_kept_view_again():
+    # After a long idle time, a sleep or a restart, the page reconnects in place with a new session and no view: the
+    # keeper sends the tab's view again, instead of only once per page (D-428), so a click never lands on «Elige tu vista».
+    script = dashboard.PROFILE_KEEPER_JS
+    assert "const lost = !(data && data.perfil);" in script
+    assert "const raw = window.__goKeptRead && !lost ? null : store.getItem(KEY);" in script
+    assert "<" not in script.replace("=>", "")  # still a script with no HTML in it (st.html, D-173)

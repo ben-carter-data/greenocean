@@ -3582,3 +3582,12 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
     Un canal que llegue después recibe una etiqueta neutra. El ícono es una imagen, así el markdown de Streamlit conserva sus degradados. El nombre del canal y su fuente van en dos líneas junto al ícono, así «Consumidor» ya no sale de la tarjeta.
 - **Documentos:** PRD 3.20 (7) y README.
 - **Pruebas:** `tests/test_channel_latest.py::test_d453_each_channel_card_has_its_own_3d_icon_in_its_own_colours`, `tests/test_menu_order.py` (la sección con sus dos recuadros), `tests/test_dashboard.py::test_d295_each_professional_profile_reads_the_menu_like_its_portfolio`, `::test_d102_the_current_window_also_starts_open_and_can_be_toggled` (los recuadros no se pliegan) y `::test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_alerts` (la ruta).
+
+## D-454 · Una sesión que el servidor olvidó recupera la vista, sin preguntar ni volver al Dashboard
+
+- **Pedido del autor:** tras unos 30 minutos sin actividad, un clic en un enlace (por ejemplo, «Documentos») llevaba al inicio en vez de a la página. Una vez elegida la vista, se debe navegar sin interrupciones; solo «Vista: … · Cambiar» vuelve a preguntar.
+- **Causa:** tras un rato largo sin actividad (o si el computador se duerme, o el servidor se reinicia), el servidor olvida la sesión. El navegador se reconecta en la misma página, sin recargarla, y abre una sesión nueva sin vista. La vista seguía guardada en la pestaña (D-430), pero el guardián solo la leía una vez por página (D-428). Así, la sesión nueva mostraba «Elige tu vista» y, al elegir, abría el Dashboard (D-371).
+- **Decisión:** el guardián vuelve a enviar la vista guardada cada vez que el servidor llega sin vista y la pestaña tiene una. La sesión nueva la recupera, con su rol y su historial de «Volver» (D-423), y el clic abre la página pedida. Una pestaña nueva sigue preguntando, y «Vista: … · Cambiar» y el logo siguen abriendo la ventana (D-373).
+- **Lo que no cambia:** la vista Autor se sigue cerrando tras 30 minutos sin actividad (D-395), por seguridad. Si el servidor se reinició, su boleto ya no existe (D-427) y la visita sigue como Profesional.
+- **Medición:** con Playwright: Profesional en «Modelo de datos», el servidor olvida la sesión y un clic en «Documentos» abre la carpeta como Profesional, sin la ventana «Elige tu vista».
+- **Pruebas:** `tests/test_app_reloads.py::test_d454_a_session_the_server_forgot_reads_the_kept_view_again`.

@@ -739,7 +739,8 @@ def submit_author_code():
 # Cambiar» or the logo (D-373) open the window again; a new tab or a new visit asks. D-427: the Autor comes along too,
 # with a ticket the server issued and checks and that expires with the Autor's session, so the tab never holds anything
 # that opens the Autor's view by itself. D-428: Streamlit Community Cloud loads the page twice after a reload (the app
-# frame, then the whole page), so each page reads the kept view once and leaves it for the second load.
+# frame, then the whole page), so each page reads the kept view once and leaves it for the second load. D-454: a session
+# the server forgot (idle time, sleep, restart) reads it again, so the visit never asks twice for its view.
 PROFILE_KEEPER_JS = r"""
 export default function(component) {
     const { setTriggerValue, data } = component;
@@ -757,8 +758,11 @@ export default function(component) {
     remember();  // D-430: each run, so a reload of this tab never asks for the view again
     // D-423: read even when the address already names the view, because the history of «Volver» comes along too.
     // D-428: once per page, and the kept view stays for the second load Streamlit Community Cloud makes.
+    // D-454: and again whenever the server comes without a view while this tab has one: after a long idle time (or a
+    // sleep, or a restart) the server forgets the session and the page reconnects in place, without a reload.
     try {
-        const raw = window.__goKeptRead ? null : store.getItem(KEY);
+        const lost = !(data && data.perfil);
+        const raw = window.__goKeptRead && !lost ? null : store.getItem(KEY);
         window.__goKeptRead = true;
         if (raw) setTriggerValue("keep", raw);
     } catch (e) {}
