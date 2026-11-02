@@ -412,6 +412,15 @@ def step_chip(step, texts=None):
     )
 
 
+def panel_hint(title, body):
+    """D-451: what a panel explains, behind a small «i» next to its step: it opens on hover or with the keyboard, so the
+    panel keeps its height for the data."""
+    return (
+        f'<span class="mock-hint" tabindex="0" aria-label="{esc(title)}"><i aria-hidden="true">i</i>'
+        f'<span class="mock-hint-body" role="tooltip"><span class="mock-hint-title">{esc(title)}</span>{body}</span></span>'
+    )
+
+
 def chosen_step(step, label, value, average=None):
     """D-408: a step already chosen, folded into one line: its number, what was chosen and, for a family, its median
     change. The button «Cambiar» beside it opens the steps again."""
@@ -538,11 +547,15 @@ def regional_map(
         chosen = ' selected' if not selected_region and not prompt else ''
         button = f'<a class="mock-all-chile{chosen}" href="{esc(all_link)}" target="_self">Todo Chile</a>'
     return (
-        f'<section class="mock-regional" id="pulso-regional">{step_chip(step)}<span class="mock-kicker">Precios por región</span>'
-        f'<div class="mock-scope-row"><p class="mock-scope">{scope}</p>{button}</div>'
-        '<h2>¿Hacia dónde se movieron los precios?</h2>'
-        '<p>% de precios comparables que siguió la dirección dominante. Mapa en proporción real; '
-        'cada región se lee en su fila.</p>'
+        '<section class="mock-regional" id="pulso-regional"><div class="mock-step-row">'
+        + step_chip(step)
+        + panel_hint(
+            'Precios por región',
+            '<strong>¿Hacia dónde se movieron los precios?</strong>'
+            '<span>% de precios comparables que siguió la dirección dominante. Mapa en proporción real; '
+            'cada región se lee en su fila.</span>',
+        )
+        + f'</div><div class="mock-scope-row"><p class="mock-scope">{scope}</p>{button}</div>'
         f'<div class="mock-regional-legend">{legend}</div>'
         f'<svg class="mock-chile-map" preserveAspectRatio="xMidYMin meet" viewBox="0 0 {width} {height}" role="group" '
         'aria-label="Mapa de Chile con la dirección dominante de los precios por región">'
@@ -629,7 +642,7 @@ def movement_note(model):
     sentences = [f'Con {number(available - missing)} de {number(available)} precios de la semana.']
     if model.get('national') and model.get('coverage_changed'):
         sentences.append(f'En {number(model["coverage_changed"])} quedó fuera una región sin precio.')
-    return '<p class="mock-movement-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</p>'
+    return '<span class="mock-movement-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</span>'
 
 
 def family_movement(
@@ -675,8 +688,14 @@ def family_movement(
         )
     place = scope[0].upper() + scope[1:]
     return (
-        f'<section class="mock-movement"><div class="mock-movement-heading"><div>{step_chip(step)}<span class="mock-kicker">Variación por familia</span><h2>¿Qué familias subieron y cuáles bajaron?</h2>'
-        f'<p>Mediana de variaciones de precios comparables, {esc(scope)}.</p>{note}</div>'
+        '<section class="mock-movement"><div class="mock-movement-heading"><div class="mock-step-row">'
+        + step_chip(step)
+        + panel_hint(
+            'Variación por familia',
+            '<strong>¿Qué familias subieron y cuáles bajaron?</strong>'
+            f'<span>Mediana de variaciones de precios comparables, {esc(scope)}.</span>{note}',
+        )
+        + '</div>'
         f'<span class="mock-place">Región: <b>{esc(place)}</b></span>'
         '</div><div class="mock-movement-row mock-movement-axis" aria-hidden="true"><i></i><span></span>'
         f'<span class="mock-movement-scale"><span>−{limit} %</span><span>0</span><span>+{limit} %</span></span>'

@@ -3542,3 +3542,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **La cabecera del panel 3** es una línea fina (el paso, la familia, la mediana, el lugar y la cuenta) y los filtros otra, de 28 px; la pregunta queda al pasar el cursor. La tabla gana 56 px en una sola pantalla (D-447).
   - **La búsqueda** brilla en verde flúor (`#39ff14`) en los temas oscuros y en un verde más hondo (`#00a83a`) en los claros, para que se lea sobre blanco. Reemplaza el celeste de D-372.
 - **Pruebas:** `tests/test_panorama_steps.py::test_d450_the_whole_basket_row_is_the_median_of_every_comparable_price_and_is_ticked_like_a_box`, `::test_d450_ticking_the_whole_basket_opens_every_product_of_the_week`, `::test_d450_the_products_head_is_one_thin_line_and_the_families_stay_inside_their_panel` y `::test_d450_the_search_glows_in_fluorescent_green_apart_from_the_blue_of_falls`.
+
+## D-451 · Las explicaciones de los paneles 1 y 2 van tras una «i»
+
+- **Pedido del autor:** las descripciones de los paneles «Elige una región» y «Elige una familia» ocupaban altura que le faltaba a la tabla de productos; preguntó si convenía plegarlas o dejarlas tras un ícono de ayuda.
+- **Decisión:** un ícono «i» junto al paso de cada panel guarda su título («Precios por región», «Variación por familia»), su pregunta y su explicación, con las cifras de cobertura del panel 2. Se abre al pasar el cursor o con el teclado. Se prefirió al bloque plegable: no pide clics, no mueve la página y el espacio queda libre siempre. Quedan a la vista lo que se elige y cómo leerlo: «Viendo: …», «Todo Chile», la leyenda del mapa, «Región: …» y la escala.
+- **Resultado:** en el Dashboard, la tabla de productos sube 70 px y el mapa crece. A 1440 × 790 se ven 4 filas (antes 3), a 1920 × 1000 se ven 8 (antes 6), sin desplazar la página (Playwright).
+- **Pruebas:** `tests/test_panorama_steps.py::test_d451_the_panels_explain_themselves_behind_a_small_i_next_to_their_step` y la altura de la tabla en `::test_d447_the_dashboard_table_has_a_one_line_header_and_scrolls_inside_one_screen`.

@@ -679,8 +679,8 @@ ul.mock-calc-out li em {font-style:normal;}
    and its rows two, so it shows as many rows as the window leaves. The overview grows with it, so the note under it
    never covers the table. */
 .st-key-home_overview {height:auto!important;min-height:calc(100vh - 195px);}
-.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 711px))!important;min-height:0!important;}
-@media (max-height:860px) {.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 585px))!important;}}
+.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 641px))!important;min-height:0!important;}
+@media (max-height:860px) {.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 515px))!important;}}
 .mock-products-table th {padding-top:6px;padding-bottom:6px;}
 .mock-products-table td:first-child strong {display:block;}
 .mock-products-table td:first-child small {display:inline;}
@@ -712,3 +712,20 @@ ul.mock-calc-out li em {font-style:normal;}
 .st-key-home_overview .st-key-home_products [data-testid="stTextInput"] input {font-size:12.5px!important;min-height:0!important;padding-top:0;padding-bottom:0;}
 .st-key-home_overview .st-key-home_products [data-testid="stTextInput"] [data-testid="stIconMaterial"] {font-size:17px!important;}
 .st-key-home_overview .st-key-home_products [data-testid="stWidgetLabel"] p {font-size:12px!important;}
+
+/* D-451: the panels' explanations live behind a small «i» next to their step, opened on hover or with the keyboard,
+   so the families and the table keep the height. */
+.mock-step-row {display:flex;align-items:center;gap:8px;margin:0 0 6px;}
+.mock-step-row .mock-step {margin:0!important;}
+.mock-hint {position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:18px;height:18px;border-radius:50%;
+ border:1.5px solid var(--mock-muted);color:var(--mock-muted);cursor:help;outline:none;}
+.mock-hint i {font:italic 700 11px/1 Georgia,serif;}
+.mock-hint:hover,.mock-hint:focus-visible {border-color:__ACCENT__;color:__ACCENT__;}
+.mock-hint-body {display:none;position:absolute;left:0;top:24px;z-index:40;width:300px;padding:9px 11px;border-radius:9px;background:__PANEL__;
+ border:1px solid __BORDER__;box-shadow:0 10px 28px -10px rgba(0,0,0,.55);color:__INK__;font-size:12px;line-height:1.45;font-weight:400;
+ text-align:left;white-space:normal;letter-spacing:0;text-transform:none;}
+.mock-hint:hover .mock-hint-body,.mock-hint:focus .mock-hint-body {display:block;}
+.mock-hint-title {display:block;margin-bottom:4px;color:var(--mock-fall);font-size:10px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;}
+.mock-hint-body strong {display:block;margin-bottom:3px;font-size:13px;font-weight:600;}
+.mock-hint-body > span:not(.mock-hint-title),.mock-hint-body .mock-movement-note {display:block;color:var(--mock-muted);font-size:11.5px;}
+.st-key-home_overview .mock-movement {overflow:visible;}

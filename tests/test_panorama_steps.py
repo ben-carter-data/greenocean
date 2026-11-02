@@ -214,9 +214,9 @@ def test_d447_the_dashboard_table_has_a_one_line_header_and_scrolls_inside_one_s
     css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
     # One screen (D-309): the table ends at the bottom of the window and scrolls by itself, measured with Playwright at
     # 1440 x 790, 1280 x 800, 1440 x 900 and 1920 x 1000 (D-447).
-    assert ".st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 711px))!important;" in css
+    assert ".st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 641px))!important;" in css
     assert (
-        "@media (max-height:860px) {.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 585px))"
+        "@media (max-height:860px) {.st-key-home_overview .mock-products-table {max-height:max(110px, calc(100vh - 515px))"
         in css
     )
     assert ".st-key-home_overview .mock-th-word {display:none;}" in css
@@ -234,3 +234,14 @@ def test_d450_the_products_head_is_one_thin_line_and_the_families_stay_inside_th
         in css
     )
     assert 'min-height:28px!important;height:28px;' in css  # the search, the height of the selectors
+
+
+def test_d451_the_panels_explain_themselves_behind_a_small_i_next_to_their_step():
+    rows = [{"product_group": "Frutas", "variation": 0.04}, {"product_group": "Verduras", "variation": -0.01}]
+    families = home_mockup.family_movement(rows, lambda family: "#" + family, None, "todo Chile", step=2)
+    head = families.split('<div class="mock-movement-row', 1)[0]
+    assert '<div class="mock-step-row">' in head and 'class="mock-hint" tabindex="0"' in head
+    assert '<span class="mock-hint-body" role="tooltip">' in head and "<h2>" not in head and "mock-kicker" not in head
+    assert "¿Qué familias subieron y cuáles bajaron?" in head  # the same words, now on hover or focus
+    css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
+    assert ".mock-hint:hover .mock-hint-body,.mock-hint:focus .mock-hint-body {display:block;}" in css
