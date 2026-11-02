@@ -166,12 +166,19 @@ def add_month_key(frame: pd.DataFrame) -> pd.DataFrame:
     return frame.assign(month_key=stamp.dt.year * 100 + stamp.dt.month)
 
 
-def month_domain(start: tuple[int, int], end: tuple[int, int], counted: bool = False) -> list[str]:
-    """The time axis of a chart: the whole period, so every chart starts at its start month even where it has no data
-    (no alert can be raised in the first 12 weeks of the history). counted: from the first month whose weeks count."""
-    first = first_counted(start, end) if counted else start
-    last = next_month(end) if counted else end  # bars fill their month, so the axis runs to the end of the last one
-    return [f"{first[0]}-{first[1]:02d}-01", f"{last[0]}-{last[1]:02d}-01"]
+def months_between(first: tuple[int, int], last: tuple[int, int]) -> list[tuple[int, int]]:
+    """Every month from first to last, both included."""
+    months = [first]
+    while months[-1] < last:
+        months.append(next_month(months[-1]))
+    return months
+
+
+def month_domain(start: tuple[int, int], end: tuple[int, int]) -> list[Any]:
+    """The time axis of the price: the whole period, from its start month, even where it has no data. Given in local
+    time, like the data: a date written as text («2026-09-01») is read as midnight UTC, the day before in Chile, and
+    the last month fell outside the axis without its label (D-457)."""
+    return [alt.DateTime(year=year, month=month, date=1) for year, month in (start, end)]
 
 
 def within(frame: pd.DataFrame, start: tuple[int, int], end: tuple[int, int], family: str) -> pd.DataFrame:
@@ -209,15 +216,12 @@ def monthly_changes(rows: pd.DataFrame, family: str, start: tuple[int, int], end
     """The change of each month of a period against the month before, for the family and for the food IPC, in %. The
     months are those after the start, so chained together they give the change of the whole period; a month without
     an index stays empty, never filled."""
-    months = [start]
-    while months[-1] < end:
-        months.append(next_month(months[-1]))
     key = rows["year"] * 100 + rows["month"]
     panel = rows[
         rows["product_group"].isin([family, IPC]) & key.between(start[0] * 100 + start[1], end[0] * 100 + end[1])
     ]
     wide = panel.pivot_table(index=["year", "month"], columns="product_group", values="index")
-    wide = wide.reindex(pd.MultiIndex.from_tuples(months, names=["year", "month"]))
+    wide = wide.reindex(pd.MultiIndex.from_tuples(months_between(start, end), names=["year", "month"]))
     changed = (wide / wide.shift(1) - 1).mul(100).iloc[1:]
     result = pd.DataFrame(
         {
@@ -675,6 +679,16 @@ def sized(chart: Any, width: Any, height: int, mode: str) -> Any:
     return charts.apply_chart_style(chart.properties(width=width, height=height), mode)
 
 
+def label_size(height: int, small: int = 10) -> int:
+    """The letters of an axis: larger in the enlarged chart."""
+    return small if height < 200 else small + 2
+
+
+def month_axis(height: int, **extra: Any) -> Any:
+    """An axis with every month of the period named with its year, «oct 2025», slanted so that none is left out."""
+    return alt.Axis(labelAngle=-45, labelFontSize=label_size(height, 9), labelOverlap=False, **extra)
+
+
 def trend_chart(
     rows: pd.DataFrame,
     family: str,
@@ -698,31 +712,32 @@ def trend_chart(
     )
     color = inflation_view.FAMILY_COLORS.get(family, palette["accent"])
     several_years = end[0] - start[0] > 2
-    chart = (
-        alt.Chart(panel)
-        .mark_line(interpolate="monotone", strokeWidth=2.4)
-        .encode(
-            x=alt.X(
-                "month_start:T",
-                title=None,
-                scale=alt.Scale(domain=month_domain(start, end)),
-                axis=alt.Axis(format="%Y" if several_years else "%b %Y", tickCount=6, labelFontSize=10),
+    if several_years:
+        line = alt.Chart(panel).mark_line(interpolate="monotone", strokeWidth=2.4)
+        axis = alt.Axis(format="%Y", tickCount={"interval": "year", "step": 1}, labelFontSize=label_size(height))
+    else:  # D-457: each month is a point, and each point has its month on the axis
+        dot = alt.OverlayMarkDef(filled=True, size=22 if height < 200 else 40)
+        line = alt.Chart(panel).mark_line(interpolate="monotone", strokeWidth=2.4, point=dot)
+        axis = month_axis(height, format="%b %Y", tickCount={"interval": "month", "step": 1})
+    chart = line.encode(
+        x=alt.X("month_start:T", title=None, scale=alt.Scale(domain=month_domain(start, end)), axis=axis),
+        y=alt.Y(
+            "value:Q",
+            title=None,
+            scale=alt.Scale(zero=False),
+            axis=alt.Axis(labelFontSize=label_size(height), tickCount=4),
+        ),
+        color=alt.Color("serie:N", scale=alt.Scale(domain=names, range=[color, palette["strong_text"]]), legend=None),
+        strokeDash=alt.StrokeDash("serie:N", scale=alt.Scale(domain=names, range=[[1, 0], [5, 4]]), legend=None),
+        tooltip=[
+            alt.Tooltip("serie:N", title=say("Serie", "Series")),
+            alt.Tooltip("month_start:T", title=say("Mes", "Month"), format="%b %Y"),
+            alt.Tooltip(
+                "value:Q",
+                title=say(f"Índice ({month_label(start)} = 100)", f"Index ({month_label(start)} = 100)"),
+                format=",.1f",
             ),
-            y=alt.Y("value:Q", title=None, scale=alt.Scale(zero=False), axis=alt.Axis(labelFontSize=10, tickCount=4)),
-            color=alt.Color(
-                "serie:N", scale=alt.Scale(domain=names, range=[color, palette["strong_text"]]), legend=None
-            ),
-            strokeDash=alt.StrokeDash("serie:N", scale=alt.Scale(domain=names, range=[[1, 0], [5, 4]]), legend=None),
-            tooltip=[
-                alt.Tooltip("serie:N", title=say("Serie", "Series")),
-                alt.Tooltip("month_start:T", title=say("Mes", "Month"), format="%b %Y"),
-                alt.Tooltip(
-                    "value:Q",
-                    title=say(f"Índice ({month_label(start)} = 100)", f"Index ({month_label(start)} = 100)"),
-                    format=",.1f",
-                ),
-            ],
-        )
+        ],
     )
     return sized(chart, width, height, mode)
 
@@ -749,8 +764,8 @@ def months_chart(months: pd.DataFrame, mode: str, width: Any = "container", heig
         alt.Chart(frame)
         .mark_bar(cornerRadiusTopLeft=2, cornerRadiusTopRight=2)
         .encode(
-            x=alt.X("mes:N", sort=order, title=None, axis=alt.Axis(labelAngle=-45, labelFontSize=9)),
-            y=alt.Y("change:Q", title=None, axis=alt.Axis(labelFontSize=10, tickCount=4)),
+            x=alt.X("mes:N", sort=order, title=None, axis=month_axis(height)),
+            y=alt.Y("change:Q", title=None, axis=alt.Axis(labelFontSize=label_size(height), tickCount=4)),
             color=alt.Color(
                 "tone:N", scale=alt.Scale(domain=[rose, fell], range=[palette["rise"], palette["fall"]]), legend=None
             ),
@@ -773,19 +788,21 @@ def alerts_chart(
     width: Any = "container",
     height: int = 150,
 ) -> Any:
-    """The K6 alerts of each month, rises over falls, on the whole period's axis."""
+    """The K6 alerts of each month, rises over falls. The axis names every month of the period, also those without an
+    alert: no alert can be raised in the first 12 weeks of the history, so 2022 starts with three empty months."""
     palette = charts.get_palette(mode)
     rises, falls = say("Subidas", "Rises"), say("Bajadas", "Falls")
+    order = [month_label(pair) for pair in months_between(first_counted(start, end), end)]
     if alert_rows.empty:
-        frame = pd.DataFrame(columns=["month_start", "kind", "alerts"])
+        frame = pd.DataFrame(columns=["mes", "kind", "alerts"])
     else:
-        stamp = pd.to_datetime(alert_rows["week_start"])
+        keys = alert_rows["month_key"] if "month_key" in alert_rows.columns else add_month_key(alert_rows)["month_key"]
         frame = (
             alert_rows.assign(
-                month_start=stamp.dt.to_period("M").dt.to_timestamp(),
+                mes=[month_label((int(key) // 100, int(key) % 100)) for key in keys],
                 kind=[rises if value > 0 else falls for value in alert_rows["variation"]],
             )
-            .groupby(["month_start", "kind"], as_index=False)
+            .groupby(["mes", "kind"], as_index=False)
             .size()
             .rename(columns={"size": "alerts"})
         )
@@ -793,19 +810,13 @@ def alerts_chart(
         alt.Chart(frame)
         .mark_bar()
         .encode(
-            x=alt.X(
-                "month_start:T",
-                timeUnit="yearmonth",
-                title=None,
-                scale=alt.Scale(domain=month_domain(start, end, counted=True)),
-                axis=alt.Axis(format="%b %Y", tickCount=6, labelFontSize=10),
-            ),
-            y=alt.Y("alerts:Q", title=None, stack="zero", axis=alt.Axis(labelFontSize=10, tickCount=4)),
+            x=alt.X("mes:N", title=None, scale=alt.Scale(domain=order), axis=month_axis(height)),
+            y=alt.Y("alerts:Q", title=None, stack="zero", axis=alt.Axis(labelFontSize=label_size(height), tickCount=4)),
             color=alt.Color(
                 "kind:N", scale=alt.Scale(domain=[rises, falls], range=[palette["rise"], palette["fall"]]), legend=None
             ),
             tooltip=[
-                alt.Tooltip("month_start:T", title=say("Mes", "Month"), format="%b %Y"),
+                alt.Tooltip("mes:N", title=say("Mes", "Month")),
                 alt.Tooltip("kind:N", title=say("Tipo", "Kind")),
                 alt.Tooltip("alerts:Q", title=say("Alertas", "Alerts")),
             ],
@@ -831,8 +842,8 @@ def years_chart(years: pd.DataFrame, mode: str, width: Any = "container", height
         alt.Chart(frame)
         .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
         .encode(
-            x=alt.X("year:N", title=None, axis=alt.Axis(labelAngle=0, labelFontSize=10)),
-            y=alt.Y("change:Q", title=None, axis=alt.Axis(labelFontSize=10, tickCount=4)),
+            x=alt.X("year:N", title=None, axis=alt.Axis(labelAngle=0, labelFontSize=label_size(height))),
+            y=alt.Y("change:Q", title=None, axis=alt.Axis(labelFontSize=label_size(height), tickCount=4)),
             color=alt.Color(
                 "tone:N", scale=alt.Scale(domain=[rose, fell], range=[palette["rise"], palette["fall"]]), legend=None
             ),
@@ -860,12 +871,14 @@ def season_chart(profile: pd.DataFrame, mode: str, width: Any = "container", hei
         alt.Chart(frame)
         .mark_bar(cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
         .encode(
-            x=alt.X("mes:N", sort=order, title=None, axis=alt.Axis(labelAngle=0, labelFontSize=10)),
+            x=alt.X("mes:N", sort=order, title=None, axis=alt.Axis(labelAngle=0, labelFontSize=label_size(height))),
             y=alt.Y(
                 "change:Q",
                 title=None,
                 axis=alt.Axis(
-                    labelFontSize=10, tickCount=4, labelExpr="datum.value > 0 ? '+' + datum.label : datum.label"
+                    labelFontSize=label_size(height),
+                    tickCount=4,
+                    labelExpr="datum.value > 0 ? '+' + datum.label : datum.label",
                 ),
             ),
             color=alt.Color(

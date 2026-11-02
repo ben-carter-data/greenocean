@@ -200,15 +200,39 @@ def test_d457_every_card_and_column_explains_itself_on_hover_with_the_definition
 
 def test_d456_every_time_chart_starts_at_the_start_of_its_period():
     # The first alert can only come 12 weeks into the history (K6), so the alerts chart used to start its axis in
-    # 2023 although 2022 had alerts; the axis is now the whole period, bars filling their month.
-    assert ba_trends.month_domain((2022, 1), (2026, 9)) == ["2022-01-01", "2026-09-01"]
-    assert ba_trends.month_domain((2022, 1), (2026, 9), counted=True) == ["2022-01-01", "2026-10-01"]
-    assert ba_trends.month_domain((2025, 9), (2026, 9), counted=True) == ["2025-10-01", "2026-10-01"]
-    assert ba_trends.month_domain((2024, 12), (2025, 12), counted=True) == ["2025-01-01", "2026-01-01"]
+    # 2023 although 2022 had alerts; the axis is now the whole period, also its months without an alert.
+    assert [day.to_dict() for day in ba_trends.month_domain((2022, 1), (2026, 9))] == [
+        {"year": 2022, "month": 1, "date": 1},
+        {"year": 2026, "month": 9, "date": 1},
+    ]  # local time, like the data: a text date is midnight UTC, the day before in Chile (D-457)
+    assert ba_trends.months_between((2025, 11), (2026, 2)) == [(2025, 11), (2025, 12), (2026, 1), (2026, 2)]
     frame = pd.DataFrame({"week_start": ["2022-04-04"], "variation": [0.2]})
-    spec = ba_trends.alerts_chart(frame, (2022, 1), (2026, 9), "Vantablack").to_dict()
-    assert spec["encoding"]["x"]["scale"]["domain"] == ["2022-01-01", "2026-10-01"]
-    assert spec["encoding"]["x"]["timeUnit"] == "yearmonth"
+    spec = ba_trends.alerts_chart(frame, (2022, 1), (2022, 12), "Vantablack").to_dict()
+    assert spec["encoding"]["x"]["scale"]["domain"] == [f"{month} 2022" for month in weeks.MONTHS]
+    last_year = ba_trends.alerts_chart(frame.iloc[:0], (2025, 9), (2026, 9), "Vantablack").to_dict()
+    assert (
+        last_year["encoding"]["x"]["scale"]["domain"][0] == "oct 2025"
+        and len(last_year["encoding"]["x"]["scale"]["domain"]) == 12
+    )
+
+
+def test_d457_every_month_of_a_period_has_its_point_and_its_label():
+    # «Precio mes a mes» had a point per month but named one month in three (Vega leaves out labels that would
+    # touch), so it was not clear which months it drew: each month now has its dot and its label, with its year.
+    months = ba_trends.months_between((2025, 9), (2026, 9))
+    rows = pd.DataFrame(
+        [(family, year, month, 100.0 + index) for index, (year, month) in enumerate(months) for family in ("Pan", IPC)],
+        columns=["product_group", "year", "month", "index"],
+    )
+    rows["month_start"] = pd.to_datetime(dict(year=rows["year"], month=rows["month"], day=1))
+    spec = ba_trends.trend_chart(rows, "Pan", (2025, 9), (2026, 9), "Vantablack").to_dict()
+    axis = spec["encoding"]["x"]["axis"]
+    assert axis["tickCount"] == {"interval": "month", "step": 1} and axis["format"] == "%b %Y"
+    assert axis["labelOverlap"] is False and spec["mark"]["point"]["filled"] is True
+    whole = ba_trends.trend_chart(rows, "Pan", (2022, 1), (2026, 9), "Vantablack").to_dict()
+    assert whole["encoding"]["x"]["axis"]["format"] == "%Y" and "point" not in whole["mark"]  # «Histórico»: years
+    bars = ba_trends.months_chart(ba_trends.monthly_changes(rows, "Pan", (2025, 9), (2026, 9)), "Vantablack").to_dict()
+    assert bars["layer"][0]["encoding"]["x"]["axis"]["labelOverlap"] is False  # every month of the change, too
 
 
 def test_d456_the_season_says_which_years_each_calendar_month_gathers():
