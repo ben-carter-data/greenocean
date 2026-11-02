@@ -820,3 +820,19 @@ def test_d434_the_cause_of_the_incident_is_the_measured_one():
     assert (found["one_week"], found["two_to_twelve"], found["over_twelve"], found["never"]) == (14, 58, 73, 0)
     fruit_and_vegetables = found["groups"].get("Frutas", 0) + found["groups"].get("Hortalizas", 0)
     assert fruit_and_vegetables == 141 and found["without"] - fruit_and_vegetables == 4
+
+
+def test_d436_the_report_is_merged_by_itself_only_with_the_code_in_range_and_an_open_one_is_replaced():
+    workflow = (ROOT / ".github" / "workflows" / "calidad.yml").read_text(encoding="utf-8")
+    step = workflow.split("- name: Proponer el informe al autor")[1].split("- name:")[0]
+    lines = [line.strip() for line in step.splitlines() if not line.strip().startswith("#")]
+    code = "\n".join(lines)
+    # an earlier report still open is closed and its branch deleted before the new one takes its number
+    assert code.index("gh pr close") < code.index("informe_calidad.py") < code.index("gh pr create")
+    assert '.title == "Actualizar medición de calidad"' in code and "--delete-branch" in code
+    # merged directly, only when «verificar» (the code indicators) passed; never GitHub's --auto
+    merge = code.split("gh pr create")[1]
+    assert 'if [ "${{ steps.verificar.outcome }}" = "success" ]; then' in merge
+    assert 'gh pr merge "$branch" --squash --delete-branch' in merge and "--auto" not in code
+    assert "::warning::" in merge  # a refused merge leaves the request open and says so
+    assert "steps.verificar.outcome == 'failure'" in workflow  # the code out of range still fails the run

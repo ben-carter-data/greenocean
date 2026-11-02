@@ -3353,3 +3353,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - Una versión nueva entra solo cuando el autor sube su tope con un push y el CI la prueba antes de la carga siguiente.
   - **Documentos:** MANUAL 3.10 (4), en los dos idiomas.
 - **Pruebas:** `tests/test_documents.py::test_d435_every_dependency_has_a_maximum_version`.
+
+## D-436 · El pull request del informe de calidad se fusiona solo si el código está en su aceptable
+
+- **Pedido del autor:** que el informe no se congele. Si nadie acepta el pull request «Actualizar medición de calidad», «Método y calidad» y la alerta se quedan en el último informe aceptado.
+- **Decisión:**
+  - **Fusión automática:** después de abrir el pull request, `calidad.yml` lo fusiona (squash) y borra su rama si el paso «Comparar con los aceptables» terminó bien, es decir, si los indicadores de código están en su aceptable. Si no, queda abierto para el autor. Hasta ahora, esta fusión estaba escrita en comentarios, con `--auto`.
+  - **Sin «Allow auto-merge»:** la fusión es directa, no la automática de GitHub. `--auto` solo espera a las verificaciones obligatorias de una regla de rama; sin esa regla no tiene a quién esperar, y un pull request abierto por `GITHUB_TOKEN` no hace correr `pruebas.yml`. Basta el permiso que ya existe: Settings → Actions → General → «Read and write permissions» y «Allow GitHub Actions to create and approve pull requests». Si una regla de rama de main rechaza la fusión, el pull request queda abierto y la ejecución lo avisa; la fusión se reintenta tres veces, porque un pull request recién abierto puede tardar unos segundos en estar listo.
+  - **Un número, un pull request:** el número del informe es el siguiente al último fusionado en main. Si un informe sigue abierto cuando llega el siguiente (porque el código estaba fuera de su aceptable), el workflow lo cierra con la nota «Reemplazado por el informe de …», borra su rama, y el nuevo toma el mismo número. Nunca hay dos pull requests con un número, y el cerrado queda en GitHub como registro.
+  - **Documentos:** SQAP 1.7 (8 y 11) y MANUAL 3.11 (8 y 8.1), en los dos idiomas; la figura del ciclo de calidad y el calendario de «Método y calidad».
+- **Pruebas:** `tests/test_quality_method.py::test_d436_the_report_is_merged_by_itself_only_with_the_code_in_range_and_an_open_one_is_replaced`.

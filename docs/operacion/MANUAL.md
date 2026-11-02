@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Manual de operación (runbook) |
-| Versión | 3.10 |
+| Versión | 3.11 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -129,7 +129,7 @@ Los enlaces que se usan para operar el proyecto, agrupados por tarea.
 | Revisar fallas | [Carga semanal](https://github.com/ben-carter-data/greenocean/actions/workflows/semanal.yml) | Solo las cargas de cada martes y las manuales | Cada martes, después de las 12:00 UTC | La última ejecución → «weekly-load» |
 | Revisar fallas | [Pruebas](https://github.com/ben-carter-data/greenocean/actions/workflows/pruebas.yml) | Lint, mypy y pytest de cada push | Después de cada push | La ejecución del commit → «pytest» o «lint» |
 | Revisar fallas | [Calidad](https://github.com/ben-carter-data/greenocean/actions/workflows/calidad.yml) | La medición de calidad de cada push y el informe semanal | Si el panel o el correo avisan un indicador fuera de su aceptable | La ejecución → «medir» → el paso en rojo |
-| Aprobar un informe | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) | Revisar el informe de calidad que propone el workflow | Después de cada carga semanal | «Actualizar medición de calidad» → «Files changed» → «Merge pull request», o «Close pull request» |
+| Aprobar un informe | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) | Revisar el informe de calidad que el workflow no fusionó solo | Si quedó abierto, con el código fuera de su aceptable (D-436) | «Actualizar medición de calidad» → «Files changed» → «Merge pull request», o «Close pull request» |
 | Aprobar un informe | [Branches](https://github.com/ben-carter-data/greenocean/branches) | Borrar la rama de un informe ya fusionado o cerrado | Después de fusionar o cerrar el pull request | El ícono de la papelera junto a la rama «informe-calidad/…» |
 | Configuración | [Actions · General](https://github.com/ben-carter-data/greenocean/settings/actions) | Permisos del workflow para escribir y abrir pull requests | Si una publicación o un pull request son rechazados | «Workflow permissions» → «Read and write» y «Allow GitHub Actions to create and approve pull requests» |
 | Configuración | [Release «base-actual»](https://github.com/ben-carter-data/greenocean/releases/tag/base-actual) | La base servida que lee el panel | Si el panel no encuentra su base | Revisar que el archivo `datos.duckdb` esté en «Assets» |
@@ -152,10 +152,10 @@ Cinco casos, cada uno con sus pasos en orden. Un paso automático lo hace el sis
 | La carga falló | 3 | Manual | Leer qué paso falló y el final de su log | [[vista:GitHub Actions]] |
 | La carga falló | 4 | Manual | Corregir la causa según la tabla de la sección 4 | — |
 | La carga falló | 5 | Manual | Volver a lanzar la carga con «Ejecutar pipeline ahora», o con «Run workflow» en GitHub | [[vista:Centro de operación]] |
-| Llegó un informe | 1 | Automático | Después de cada carga, el workflow de calidad mide los 12 indicadores y abre el pull request «Actualizar medición de calidad» | — |
-| Llegó un informe | 2 | Manual | Revisar el informe en «Files changed» | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) |
-| Llegó un informe | 3 | Manual | «Merge pull request», o «Close pull request» si un informe más nuevo lo reemplaza | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) |
-| Llegó un informe | 4 | Manual | Borrar la rama «informe-calidad/…» del informe | [Branches](https://github.com/ben-carter-data/greenocean/branches) |
+| Llegó un informe | 1 | Automático | Después de cada carga en verde, el workflow de calidad abre el pull request «Actualizar medición de calidad» con el informe semanal; si un informe anterior sigue abierto, lo cierra y lo reemplaza | — |
+| Llegó un informe | 2 | Automático | Si los indicadores de código están en su aceptable, el workflow fusiona el pull request y borra su rama, y el panel muestra el informe | — |
+| Llegó un informe | 3 | Manual | Si quedó abierto, el código está fuera de su aceptable: corregirlo y revisar el informe en «Files changed» | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) |
+| Llegó un informe | 4 | Manual | «Merge pull request» y borrar la rama «informe-calidad/…» | [Pull requests](https://github.com/ben-carter-data/greenocean/pulls) |
 | Llegó un informe | 5 | Manual | En el computador, traer el cambio con `git pull` | — |
 | Un token vence o falta | 1 | Automático | «Configuración» marca el token en ámbar cuando faltan 15 días o menos, y en rojo si venció o falta; la alerta «Acción requerida» lo avisa al entrar como Autor | [[vista:Configuración]] |
 | Un token vence o falta | 2 | Manual | En GitHub, regenerar el token o crear uno nuevo, solo para este repositorio: «Actions: Read and write» para `GITHUB_TOKEN` y «Actions: Read» para `GITHUB_READ_TOKEN`. El valor se muestra una sola vez: copiarlo | [Tokens de GitHub](https://github.com/settings/personal-access-tokens) |
@@ -212,3 +212,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.8 | 01-11-2026 | Toda recarga de la pestaña conserva la vista, también F5 y el enlace del aviso «Acción requerida»; solo una pestaña nueva la pide (7, D-430) |
 | 3.9 | 01-11-2026 | El informe semanal de calidad sale solo tras una carga en verde y mide los 3 indicadores de datos (2, D-431) |
 | 3.10 | 01-11-2026 | Cada dependencia tiene una versión máxima; una nueva entra subiendo su tope (4, D-435) |
+| 3.11 | 01-11-2026 | El pull request del informe se fusiona solo si el código está en su aceptable (8, 8.1, D-436) |

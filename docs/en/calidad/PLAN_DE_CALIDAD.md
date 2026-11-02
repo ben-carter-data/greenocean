@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Quality Assurance Plan (SQAP) |
-| Version | 1.6 |
+| Version | 1.7 |
 | Date | 2026-11-01 |
 | Status | Current |
 | Owner | The author |
@@ -80,7 +80,7 @@ The example is F-10 of the failure register. A speed test, which was informative
 
 There is only one numbered report: the weekly quality report, one per data week (D-431). The quality workflow makes it only when the weekly load ended in green, with its tests passed and the database published, and proposes it as a pull request (D-363). It measures the 3 data indicators of each load: dbt data tests passed, prices with a valid comparison and rejected rows. The 8 code indicators are checked by the CI of every push: they pass or fail in GitHub Actions, with no report. The days since the last load are shown in the dashboard, not in the report.
 
-The report has four pages: the cover, with the version of this plan it was measured by; the results; the comparison with another report, which warns when the two do not measure the same indicators; and one table of non-conformities and incidents, with the open ones and the ones of that week. The method lives only in this plan. A report is never edited afterwards: if something changes, the next report comes out. The author reviews each report and approves the pull request before the dashboard shows it (D-331). In the dashboard, each report opens as a presentation and downloads as a PDF (D-333, D-347).
+The report has four pages: the cover, with the version of this plan it was measured by; the results; the comparison with another report, which warns when the two do not measure the same indicators; and one table of non-conformities and incidents, with the open ones and the ones of that week. The method lives only in this plan. A report is never edited afterwards: if something changes, the next report comes out. If the code indicators are within their acceptable, the pull request is merged by itself and the dashboard shows the report; otherwise it stays open and the author reviews it; if it is still open the week after, the new report replaces it with the same number (D-436). In the dashboard, each report opens as a presentation and downloads as a PDF (D-333, D-347).
 
 Reports C-1 to C-7, from 26 to 31 October 2026, are the construction series: they mix code and data, were measured on every push and are never edited. The dashboard shows them apart and does not compare them with the weekly series.
 
@@ -102,7 +102,7 @@ An external incident is a failure of the data sources: ODEPA or the INE. For exa
 
 ## 11. Who decides what
 
-- **The author:** sets the goals, the acceptables and the margins; approves each report; decides each change and each publication.
+- **The author:** sets the goals, the acceptables and the margins; approves the report that is not merged by itself; decides each change and each publication.
 - **The tools:** measure, compare and propose. They never publish or change a threshold on their own.
 
 ## 12. A self-assessment, not a certificate
@@ -124,3 +124,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 1.4 | 2026-10-31 | The 12 indicators of the quality plan, apart from the 11 data quality indicators (3); the report is proposed as a pull request after each load (8); vision and mission as in the PRD; the document moves to `docs/calidad/` (D-381, D-384, D-388) |
 | 1.5 | 2026-11-01 | One numbered report only, the weekly one of the data, in four pages and only after a load in green; the code is checked by the CI; the construction series C-1 to C-7 (8, D-431) |
 | 1.6 | 2026-11-01 | The acceptable and the goal of the comparable prices are calibrated to the 5th percentile of the history, 81 % (6, ADR-36, D-433) |
+| 1.7 | 2026-11-01 | The report's pull request is merged by itself if the code is within its acceptable; an open one is replaced by the next report (8, 11, D-436) |

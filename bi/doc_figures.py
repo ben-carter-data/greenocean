@@ -2525,7 +2525,10 @@ def quality_cycle(mode):
                 30,
                 "icon:eye",
                 say("Aprobación", "Approval"),
-                say("el autor lo revisa y lo acepta", "the author reviews and accepts it"),
+                say(
+                    "solo, con el código en rango; si no, el autor",
+                    "by itself with the code in range; else, the author",
+                ),
             ),
             "register": (
                 510,

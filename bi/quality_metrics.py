@@ -111,8 +111,8 @@ SCHEDULE = [
     (
         ("Publicar una medición en esta página", "Publishing a measurement on this page"),
         (
-            "Manual: el autor fusiona el pull request «Actualizar medición de calidad»",
-            "Manual: the author merges the pull request «Actualizar medición de calidad»",
+            "Automático: el workflow fusiona «Actualizar medición de calidad» si el código está en su aceptable; si no, el autor",
+            "Automatic: the workflow merges «Actualizar medición de calidad» if the code is within its acceptable; else, the author",
         ),
         ("Cada vez que el workflow lo abre", "Each time the workflow opens one"),
     ),

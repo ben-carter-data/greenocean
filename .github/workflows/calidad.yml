@@ -3,8 +3,9 @@
 # report. D-363, D-431: the report is weekly and holds only the data indicators, so only after a weekly load that ended
 # in green (workflow_run of «semanal», its tests passed and the database is published) does it turn the measurement
 # into the next weekly report (docs/calidad/informes/semanales/) and propose it to the author in a pull request
-# «Actualizar medición de calidad», with the comparison against the previous report; a push only measures. It never changes the code and never publishes anything: the page «Método y calidad» shows a report only after
-# the author merges that request.
+# «Actualizar medición de calidad», with the comparison against the previous report; a push only measures. It never
+# changes the code. D-436: the request is merged by itself when every code indicator is within its acceptable; otherwise
+# the author merges it. The page «Método y calidad» shows a report only once it is merged.
 # Opening the request needs Settings → Actions → General → «Allow GitHub Actions to create and approve pull requests».
 name: calidad
 on:
@@ -55,6 +56,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # D-436: a report still open (not merged because the code was out of range) is replaced by this one, which
+          # takes its number: it is closed with a note and its branch deleted, so two requests never propose one number.
+          gh pr list --state open --json number,title --jq '.[] | select(.title == "Actualizar medición de calidad") | .number' |
+            while read -r old; do
+              gh pr close "$old" --delete-branch --comment "Reemplazado por el informe de ${GITHUB_SHA::7} (D-436)."
+            done
           # F-11 (D-362): a remote branch named «calidad» blocked every «calidad/...» branch; the prefix is its own.
           branch="informe-calidad/${GITHUB_SHA::7}"
           cp medicion.json docs/calidad/medicion.json
@@ -68,10 +75,18 @@ jobs:
           git commit -m "chore(calidad): informe de calidad de ${GITHUB_SHA::7} (D-331)"
           git push origin "$branch"
           gh pr create --base main --head "$branch" --title "Actualizar medición de calidad" --body-file cuerpo.md
-          # D-331, PROPOSED, NOT ACTIVE: merge by itself when every code indicator is within its acceptable. It needs
-          # Settings → General → «Allow auto-merge». To turn it on, remove the # of the next two lines.
-          # if [ "${{ steps.verificar.outcome }}" = "success" ]; then
-          #   gh pr merge "$branch" --auto --squash; fi
+          # D-436: merged at once when every code indicator is within its acceptable (the step «verificar»), so the report
+          # never freezes; otherwise it waits for the author. A direct merge needs no «Allow auto-merge»; if a branch
+          # rule of main refuses it, the request stays open for the author and the run says so.
+          if [ "${{ steps.verificar.outcome }}" = "success" ]; then
+            merged=""
+            for attempt in 1 2 3; do  # a request just opened may need a few seconds before it can be merged
+              gh pr merge "$branch" --squash --delete-branch \
+                --subject "chore(calidad): informe semanal de calidad de ${GITHUB_SHA::7} (D-436)" && merged=yes && break
+              sleep 15
+            done
+            [ -n "$merged" ] || echo "::warning::El informe quedó abierto: main no aceptó la fusión automática (D-436)."
+          fi
       - name: Fallar si un indicador de código pasa lo aceptable
         if: steps.verificar.outcome == 'failure'
         run: exit 1

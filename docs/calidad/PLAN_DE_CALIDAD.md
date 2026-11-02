@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Plan de calidad del software (SQAP) |
-| Versión | 1.6 |
+| Versión | 1.7 |
 | Fecha | 01-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -80,7 +80,7 @@ El ejemplo es F-10 del registro de fallas. Una prueba de velocidad, que era info
 
 Hay un solo informe numerado: el informe semanal de calidad, uno por semana de datos (D-431). El workflow de calidad lo genera solo cuando la carga semanal terminó en verde, con sus pruebas pasadas y la base publicada, y lo propone como pull request (D-363). Mide los 3 indicadores de datos de cada carga: pruebas de datos dbt superadas, precios con comparación válida y filas rechazadas. Los 8 indicadores de código se verifican en el CI de cada push: pasan o fallan en GitHub Actions, sin informe. Los días desde la última carga se ven en el panel, no en el informe.
 
-El informe tiene cuatro páginas: la portada, con la versión de este plan con que se midió; los resultados; la comparación con otro informe, que avisa si los dos no miden los mismos indicadores; y una sola tabla de no conformidades e incidencias, con las abiertas y las de esa semana. La metodología vive solo en este plan. Un informe no se edita después: si algo cambia, sale el informe siguiente. El autor revisa cada informe y aprueba el pull request antes de que el panel lo muestre (D-331). En el panel, cada informe se abre como presentación y se descarga en PDF (D-333, D-347).
+El informe tiene cuatro páginas: la portada, con la versión de este plan con que se midió; los resultados; la comparación con otro informe, que avisa si los dos no miden los mismos indicadores; y una sola tabla de no conformidades e incidencias, con las abiertas y las de esa semana. La metodología vive solo en este plan. Un informe no se edita después: si algo cambia, sale el informe siguiente. Si los indicadores de código están en su aceptable, el pull request se fusiona solo y el panel muestra el informe; si no, queda abierto y lo revisa el autor; si sigue abierto a la semana siguiente, el informe nuevo lo reemplaza con el mismo número (D-436). En el panel, cada informe se abre como presentación y se descarga en PDF (D-333, D-347).
 
 Los informes C-1 a C-7, del 26 al 31 de octubre de 2026, son la serie de construcción: mezclan código y datos, se midieron en cada push y no se editan. El panel los muestra aparte y no los compara con la serie semanal.
 
@@ -102,7 +102,7 @@ Un incidente externo es una falla de las fuentes de datos: ODEPA o el INE. Por e
 
 ## 11. Quién decide qué
 
-- **El autor:** fija las metas, los aceptables y los márgenes; aprueba cada informe; decide cada cambio y cada publicación.
+- **El autor:** fija las metas, los aceptables y los márgenes; aprueba el informe que no se fusiona solo; decide cada cambio y cada publicación.
 - **Las herramientas:** miden, comparan y proponen. Nunca publican ni cambian un umbral por su cuenta.
 
 ## 12. Una autoevaluación, no un certificado
@@ -124,3 +124,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 1.4 | 31-10-2026 | Los 12 indicadores del plan de calidad, distintos de los 11 indicadores de calidad de los datos (3); el informe se propone como pull request después de cada carga (8); visión y misión como en el PRD; el documento pasa a `docs/calidad/` (D-381, D-384, D-388) |
 | 1.5 | 01-11-2026 | Un solo informe numerado, el semanal de los datos, en cuatro páginas y solo tras una carga en verde; el código se verifica en el CI; la serie de construcción C-1 a C-7 (8, D-431) |
 | 1.6 | 01-11-2026 | El aceptable y la meta de los precios comparables se calibran al percentil 5 de la historia, 81 % (6, ADR-36, D-433) |
+| 1.7 | 01-11-2026 | El pull request del informe se fusiona solo si el código está en su aceptable; uno abierto lo reemplaza el informe siguiente (8, 11, D-436) |
