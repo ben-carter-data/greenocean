@@ -429,8 +429,8 @@ def sad_context(mode):
                 "brand:github",
                 "GitHub",
                 say(
-                    "aloja el código, ejecuta la carga y guarda la base",
-                    "hosts the code, runs the load and keeps the database",
+                    "aloja el código, ejecuta semanal.yml y guarda la Base DuckDB en el release «base-actual»",
+                    "hosts the code, runs semanal.yml and keeps the DuckDB database in the «base-actual» release",
                 ),
             ),
             "cloud": (
@@ -1024,7 +1024,7 @@ def sad_scenarios(mode):
                 ),
             ],
             f'<p class="sc-warn">{esc(say("Avisos solo para el Autor: «La carga del … falló» · «Acción requerida» (no conformidades e incidentes externos) · carga en curso", "Notices for the Author only: «The load of … failed» · «Action required» (nonconformities and external incidents) · load in progress"))}</p>'
-            f'<p class="sc-warn">{esc(say("Fuera del panel: aprueba el pull request del informe de calidad y cambia el código y los secretos", "Outside the panel: approves the pull request of the quality report and changes the code and the secrets"))}</p>',
+            f'<p class="sc-warn">{esc(say("Fuera del panel: revisa el informe de calidad, que se fusiona solo si el código está en su aceptable, y cambia el código y los secretos", "Outside the panel: approves the pull request of the quality report and changes the code and the secrets"))}</p>',
         )
     )
     for row, name, label, caption, note, inherits in actors:
@@ -1073,8 +1073,8 @@ def sad_scenarios(mode):
         + tile(
             "calidad.yml",
             say(
-                "mide en cada push; tras cada carga propone el informe de calidad (pull request)",
-                "measures on every push; after each load it proposes the quality report (pull request)",
+                "mide en cada push; tras una carga en verde propone el informe de calidad (pull request) y lo fusiona si el código está en su aceptable",
+                "measures on every push; after a green load it proposes the quality report (pull request) and merges it if the code is in range",
             ),
         )
         + tile(
@@ -1314,7 +1314,7 @@ def sad_weekly_sequence(mode):
         mode,
         say("Secuencia de la carga semanal", "Sequence of the weekly load"),
         [
-            ("actions", "GitHub Actions", "brand:github"),
+            ("actions", "semanal.yml", "brand:github"),
             ("agent", say("Agente", "Agent"), "brand:python"),
             ("sources", "ODEPA · INE", "source:odepa"),
             ("etl", "SQLite · Parquet", "brand:sqlite"),
@@ -1324,10 +1324,12 @@ def sad_weekly_sequence(mode):
         ],
         [
             ("actions", "agent", say("martes 12:00 UTC: inicia", "Tuesday 12:00 UTC: starts"), "order"),
-            ("agent", "sources", say("descarga los CSV y el IPC", "downloads the CSV files and the CPI"), "flow"),
+            ("agent", "sources", say("descarga los CSV de ODEPA", "downloads the ODEPA CSV files"), "flow"),
             ("sources", "agent", say("archivos + huella SHA-256", "files + SHA-256 fingerprint"), "back"),
             ("agent", "etl", say("filas crudas → raw.db y bronce", "raw rows → raw.db and bronze"), "flow"),
             ("etl", "dbt", say("dbt build sobre el bronce", "dbt build on bronze"), "flow"),
+            # D-445: the CPI is downloaded by etl/ine.py inside etl/pipeline.py, not by the agent
+            ("dbt", "sources", say("etl/ine.py descarga el IPC del INE", "etl/ine.py downloads the INE's CPI"), "flow"),
             ("dbt", "dbt", say("modelos y pruebas de datos", "models and data tests"), "check"),
             (
                 "gate",
@@ -1513,7 +1515,9 @@ def sad_deployment(mode):
                 40,
                 "icon:key",
                 say("Secretos", "Secrets"),
-                say("el token de GitHub y la clave de control", "the GitHub token and the control code"),
+                say(
+                    "GITHUB_TOKEN, GITHUB_READ_TOKEN y CONTROL_CODE", "GITHUB_TOKEN, GITHUB_READ_TOKEN and CONTROL_CODE"
+                ),
             ),
         },
         [
@@ -1627,7 +1631,7 @@ def adr_timeline(mode):
 def adr_before_after(mode):
     return graph(
         mode,
-        say("ADR-35: la base servida, antes y después", "ADR-35: the served database, before and after"),
+        say("ADR-35: la Base DuckDB, antes y después", "ADR-35: the DuckDB database, before and after"),
         {
             "load1": (
                 90,
@@ -1699,8 +1703,8 @@ def served_size_note():
         history
         + " "
         + say(
-            f"Hoy la base servida pesa {megabytes:.1f} MB.".replace(".", ",", 1),
-            f"Today the served database weighs {megabytes:.1f} MB.",
+            f"Hoy la Base DuckDB pesa {megabytes:.1f} MB.".replace(".", ",", 1),
+            f"Today the DuckDB database weighs {megabytes:.1f} MB.",
         )
     )
 
@@ -1836,7 +1840,7 @@ def tests_manual_sequence(mode):
             (
                 "panel",
                 "secrets",
-                say("lee el token, que nunca se muestra", "reads the token, which is never shown"),
+                say("lee GITHUB_TOKEN, que nunca se muestra", "reads GITHUB_TOKEN, which is never shown"),
                 "flow",
             ),
             ("panel", "api", say("API REST: lanza la carga", "REST API: starts the load"), "order"),
@@ -1850,8 +1854,8 @@ def tests_manual_sequence(mode):
             ("panel", "author", say("progreso en el Centro de operación", "progress in the Operations center"), "back"),
         ],
         say(
-            "Con la misma API, el Autor puede cancelar la carga. El workflow solo puede escribir contenido y crear issues: permisos mínimos.",
-            "With the same API, the Author can cancel the load. The workflow can only write content and create issues: least privilege.",
+            "Con la misma API, el Autor puede cancelar la carga. semanal.yml solo puede escribir contenido y crear issues: permisos mínimos.",
+            "With the same API, the Author can cancel the load. semanal.yml can only write content and create issues: least privilege.",
         ),
     )
 
@@ -1929,8 +1933,8 @@ def tests_actors(mode):
                 "icon:key",
                 say("Secretos del panel", "Panel secrets"),
                 say(
-                    "CONTROL_CODE y GITHUB_TOKEN, fuera del repositorio",
-                    "CONTROL_CODE and GITHUB_TOKEN, outside the repository",
+                    "CONTROL_CODE, GITHUB_TOKEN y GITHUB_READ_TOKEN, fuera del repositorio",
+                    "CONTROL_CODE, GITHUB_TOKEN and GITHUB_READ_TOKEN, outside the repository",
                 ),
             ),
             "repo": (
@@ -1944,10 +1948,10 @@ def tests_actors(mode):
                 835,
                 230,
                 "icon:calendar",
-                "GitHub Actions",
+                "semanal.yml",
                 say(
-                    "workflow con permisos mínimos: contenido e issues",
-                    "workflow with least privilege: content and issues",
+                    "permisos mínimos: contenido e issues",
+                    "least privilege: content and issues",
                 ),
             ),
         },
@@ -2051,7 +2055,7 @@ def manual_calendar(mode):
             ),
             (
                 say("Antes del vencimiento", "Before it expires"),
-                say("Renovar el token", "Renew the token"),
+                say("Renovar GITHUB_TOKEN y GITHUB_READ_TOKEN", "Renew GITHUB_TOKEN and GITHUB_READ_TOKEN"),
                 [say("el panel avisa 15 días antes", "the panel warns 15 days before")],
             ),
         ],
@@ -2295,8 +2299,8 @@ def glossary_layers(mode):
                 "brand:duckdb",
                 say("Oro", "Gold"),
                 say(
-                    "el modelo estrella en la base servida, etl/datos.duckdb",
-                    "the star schema in the served database, etl/datos.duckdb",
+                    "el modelo estrella en la Base DuckDB, etl/datos.duckdb",
+                    "the star schema in the DuckDB database, etl/datos.duckdb",
                 ),
             ),
         },
@@ -2517,7 +2521,7 @@ def quality_cycle(mode):
                 510,
                 30,
                 "icon:file",
-                say("Informe semanal", "Weekly report"),
+                say("Informe semanal de calidad", "Weekly quality report"),
                 say("no se edita después", "never edited afterwards"),
             ),
             "approve": (
@@ -2568,7 +2572,7 @@ def weekly_cycle(mode):
                 30,
                 "icon:calendar",
                 say("Carga", "Load"),
-                say("cada martes · GitHub Actions", "every Tuesday · GitHub Actions"),
+                say("cada martes · semanal.yml", "every Tuesday · semanal.yml"),
             ),
             "tests": (
                 300,
@@ -2596,7 +2600,10 @@ def weekly_cycle(mode):
                 200,
                 "icon:files",
                 say("Informe de calidad", "Quality report"),
-                say("numerado · el autor lo aprueba", "numbered · the author approves it"),
+                say(
+                    "numerado · se fusiona si el código está en su aceptable",
+                    "numbered · merged if the code is in range",
+                ),
             ),
             "fix": (
                 90,

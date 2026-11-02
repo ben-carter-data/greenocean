@@ -687,7 +687,7 @@ def build_pipeline_html(indicators, columns, measures=None):
         '<div class="box end" style="grid-area:org" title="Los CSV anuales de ODEPA, descargados por HTTPS">'
         '<span class="kicker">Origen</span><b>Archivos</b><small>CSV de ODEPA</small></div>'
     )
-    prices = f"{number(flow['prices'])} precios" if flow and flow["prices"] is not None else "base servida"
+    prices = f"{number(flow['prices'])} precios" if flow and flow["prices"] is not None else "Base DuckDB"
     parts.append(
         f'<div class="box end" style="grid-area:base" title="{html.escape(prices)} semanales: las filas válidas, agrupadas '
         f'por semana, producto, región, canal y unidad"><span class="kicker">Carga</span><b>Base</b>'

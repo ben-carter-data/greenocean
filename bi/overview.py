@@ -446,7 +446,7 @@ def architect_insights(
         f"La carga del {day} leyó {number(latest['rows_read'])} filas de los archivos de ODEPA y rechazó "
         f"{number(latest['rows_rejected'])} con su motivo; pasaron {tests[0]} de {tests[1]} pruebas de dbt y {green} de "
         f"{indicators} indicadores de calidad de los datos están en su umbral.",
-        f"La base servida tiene {number(database['prices'])} precios semanales en {number(database['weeks'])} semanas sin "
+        f"La Base DuckDB tiene {number(database['prices'])} precios semanales en {number(database['weeks'])} semanas sin "
         f"huecos, de {database['regions']} regiones y {database['channels']} canales.",
     ]
     if unconvertible or outliers:

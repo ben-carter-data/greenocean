@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.16 |
+| Versión | 3.17 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -154,7 +154,7 @@ Con la carga del 31-10-2026, la base tiene 821.072 precios semanales en 252 sema
 
 ## 7. Pantallas
 
-Estas son seis capturas reales, del 31-10-2026, de cinco páginas principales y en los cuatro temas de color. El Dashboard aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
+Estas son seis capturas reales, del 02-11-2026, de cinco páginas principales y en los cuatro temas de color. El Dashboard aparece dos veces: como lo ve el Usuario y como lo ve el Profesional. El tema oscuro es el de entrada.
 
 - **Menú:** agrupa las páginas en cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera sigue el orden en que la lee un lector: Interesados, Análisis de negocio y sistemas, Dashboard, Último dato por canal, Precios e inflación e Insights.
 - **Dashboard:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Elegida la familia, los pasos 1 y 2 se pliegan en una línea con «Cambiar» y la tabla de productos toma la pantalla (D-408).
@@ -242,3 +242,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.14 | 01-11-2026 | Dos riesgos de abandono, con su mitigación propuesta: workflows desactivados por inactividad y la app dormida (9, D-439) |
 | 3.15 | 02-11-2026 | «Panorama de precios» pasa a llamarse «Dashboard» y encabeza el menú (D-442) |
 | 3.16 | 02-11-2026 | Mapa de interés: cada interesado en un anillo (alto, medio, bajo) con su justificación (3.4, D-444) |
+| 3.17 | 02-11-2026 | Capturas nuevas de las seis pantallas, con el Dashboard y el menú actuales (7, D-445) |

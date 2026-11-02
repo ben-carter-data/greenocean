@@ -38,7 +38,7 @@ ORIGINS = [
         ],
         "Las diez tablas del modelo: los precios semanales, sus dimensiones, el último dato de cada fuente, las filas "
         "rechazadas y el IPC.",
-        "dbt las construye y las prueba en cada carga; el pipeline las copia tal cual a la base servida.",
+        "dbt las construye y las prueba en cada carga; el pipeline las copia tal cual a la Base DuckDB.",
     ),
     (
         "log",
@@ -86,7 +86,7 @@ NODES = [
         "El índice de precios de alimentos, un valor por mes.",
         "Sirve para pasar los precios a pesos reales y separar la inflación de una subida de verdad. No pasa por SQLite: "
         "son dos CSV pequeños que el pipeline escribe directo en Parquet. Si el INE no responde una semana, se rehace "
-        "desde ine_ipc_source, que se guarda en la base servida.",
+        "desde ine_ipc_source, que se guarda en la Base DuckDB.",
     ),
     (
         "raw",
@@ -131,7 +131,7 @@ NODES = [
         "GitHub",
         "release y repositorio",
         (915, MAIN_Y),
-        "La base servida, en el release «base-actual»: una sola copia, que cada carga reemplaza.",
+        "La Base DuckDB, en el release «base-actual»: una sola copia, que cada carga reemplaza.",
         "Git guardaría cada versión para siempre; así el historial no crece y el panel toma del release la base de la "
         "última carga, tras comprobar su huella (D-270).",
     ),

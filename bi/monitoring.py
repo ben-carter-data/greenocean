@@ -67,7 +67,7 @@ SIGNALS = [
     (
         "issue",
         "github",
-        "Paso 9 · Informe",
+        "Paso 10 · Informe",
         "Issue «Informe semanal»",
         "estado de la carga y alertas de precio (K6)",
         "GitHub Issues",
@@ -79,7 +79,7 @@ SIGNALS = [
         "streamlit",
         "Panel",
         "Aviso de vencimiento",
-        "el token de GitHub vence en 15 días o menos",
+        "GITHUB_TOKEN o GITHUB_READ_TOKEN vence en 15 días o menos",
         "Centro de operación, tras la clave",
         "autor",
         "bi/control.py",
@@ -101,7 +101,7 @@ STAGES = [
     ("construccion", "dbt", "Construcción", "pipeline.py · dbt"),
     ("pruebas", "pytest", "Pruebas", "pytest"),
     ("publicacion", "github", "Publicación", "release · informe"),
-    ("panel", "streamlit", "Panel", "siempre en línea"),
+    ("panel", "streamlit", "Panel", "se duerme sin visitas"),
 ]
 # Where each signal is born. The step log is born at every stage: it is the band under the run.
 STAGE_OF_SIGNAL = {

@@ -35,7 +35,7 @@ STACK = [
     ("sql", "SQL", "Lenguaje de consultas", "Consultas SQL"),
     ("duckdb", "DuckDB", "Base analítica", "Modelo de datos"),
     ("pytest", "pytest", "Pruebas en Python", "Monitoreo"),
-    ("github", "GitHub Actions", "CI/CD de GitHub", "Ejecuciones"),
+    ("github", "GitHub Actions", "CI/CD de GitHub", "Git workflow"),  # D-445: a page the Profesional opens
     ("streamlit", "Streamlit", "Framework web", "Dashboard"),
 ]
 SOURCES = [("odepa", "ODEPA", "Precios de alimentos"), ("ine", "INE", "IPC de alimentos")]
@@ -112,8 +112,8 @@ NODES = {
         FLOW_Y,
         "Data warehouse",
         "Motor donde dbt construye el data warehouse "
-        "(etl/warehouse_build.duckdb) y base servida etl/datos.duckdb, que el panel lee en solo lectura.",
-        "Cada martes; la base servida se reemplaza solo al final de una carga válida.",
+        "(etl/warehouse_build.duckdb) y Base DuckDB etl/datos.duckdb, que el panel lee en solo lectura.",
+        "Cada martes; la Base DuckDB se reemplaza solo al final de una carga válida.",
     ),
     "streamlit": (
         1070,

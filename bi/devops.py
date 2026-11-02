@@ -230,7 +230,7 @@ STEPS = [
         "github",
         "Release",
         "base-actual",
-        "Guarda una sola copia de la base servida: cada carga reemplaza la anterior.",
+        "Guarda una sola copia de la Base DuckDB: cada carga reemplaza la anterior.",
         "gh release upload del paso 9",
         "semanal.yml::gh release upload",
         "",

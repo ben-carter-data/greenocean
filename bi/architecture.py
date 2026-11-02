@@ -136,14 +136,14 @@ TOOLTIPS = {
     "de trabajo y solo si todo pasa reemplaza datos.duckdb.",
     "Pruebas automáticas": "pytest corre contra la base nueva, con la paridad SQLite y DuckDB: "
     "si una prueba falla, no se guarda nada.",
-    "Secretos": "Claves que no están en el código: el token de GitHub y la clave del botón «Ejecutar ahora».",
+    "Secretos": "Claves que no están en el código, en los secretos de Streamlit: CONTROL_CODE (la clave del Autor), GITHUB_TOKEN y GITHUB_READ_TOKEN.",
     "etl_run": "Tabla con una fila por carga. ETL = extraer, transformar y cargar.",
     "dbt_result": "Tablas dbt_node y dbt_result: el linaje de cada modelo y el resultado de "
     "cada prueba de dbt en la última carga.",
     "Logs del agente": "Un archivo de texto por ejecución con lo que hizo la descarga.",
-    "Correo de GitHub": "GitHub avisa por correo al autor si el workflow semanal falla.",
+    "Correo de GitHub": "GitHub avisa por correo al autor si semanal.yml falla.",
     "Centro de operación": "Página del panel con el historial de ejecuciones en vivo.",
-    "API REST de GitHub": "Con el token del panel, la API REST de GitHub da el estado de cada carga y sus logs, que muestra la página «GitHub Actions» (solo el Autor), y lanza y cancela la carga manual desde la ventana de ejecución.",
+    "API REST de GitHub": "Con GITHUB_READ_TOKEN, la API REST de GitHub da el estado de cada carga y sus logs, que muestra la página «GitHub Actions» (solo el Autor), y, con GITHUB_TOKEN, lanza y cancela la carga manual desde la ventana de ejecución.",
     "ODEPA e INE · CSV": "Archivos CSV publicados por ODEPA y por el INE, descargados por "
     "HTTPS; ninguna de las dos fuentes ofrece una API en el flujo "
     "utilizado por el proyecto.",
@@ -161,7 +161,7 @@ TOOLTIPS = {
     "warehouse con dbt, prueba, guarda datos.duckdb y publica el informe.",
     "Caché de Actions": "Guarda los CSV de los años cerrados para no descargarlos cada semana (D-047).",
     "Issues": "Donde se publica el informe semanal, uno por ejecución.",
-    "Repositorio": "La rama main en GitHub: el código y el puntero de la base (etl/datos.version); la base servida "
+    "Repositorio": "La rama main en GitHub: el código y el puntero de la base (etl/datos.version); la Base DuckDB "
     "vive en el release «base-actual», que cada carga reemplaza (D-270).",
     "Pruebas (CI)": "CI = integración continua: pruebas.yml compila el proyecto dbt (dbt parse) "
     "y corre pytest en cada push, y avisa si algo se rompe.",
@@ -588,8 +588,9 @@ def build_chip(x, y, text, color, palette):
     return add_tooltip(chip, CHIP_TOOLTIPS.get(text))
 
 
-def build_link(start, end, color, palette, chip_text=None, dashed=False, moving_dot=False):
-    """Curved link between two points, with an optional chip and a travelling dot."""
+def build_link(start, end, color, palette, chip_text=None, dashed=False, moving_dot=False, chip_at=0.5):
+    """Curved link between two points, with an optional chip and a travelling dot. The chip sits on the curve at
+    `chip_at` (0 its start, 1 its end), so it can move off a name it would cover."""
     (x1, y1), (x2, y2) = start, end
     middle_x = (x1 + x2) / 2
     path = f"M{x1} {y1} C{middle_x} {y1} {middle_x} {y2} {x2} {y2}"
@@ -601,7 +602,10 @@ def build_link(start, end, color, palette, chip_text=None, dashed=False, moving_
             f'repeatCount="indefinite" path="{path}"/></circle>'
         )
     if chip_text:
-        parts.append(build_chip(middle_x, (y1 + y2) / 2, chip_text, color, palette))
+        t = chip_at
+        chip_x = (1 - t) ** 3 * x1 + 3 * (1 - t) * t * middle_x + t**3 * x2
+        chip_y = (1 - t) ** 3 * y1 + 3 * (1 - t) ** 2 * t * y1 + 3 * (1 - t) * t**2 * y2 + t**3 * y2
+        parts.append(build_chip(chip_x, chip_y, chip_text, color, palette))
     return "".join(parts)
 
 
@@ -940,6 +944,7 @@ def build_links(palette, is_running):
                 palette,
                 "consultas",
                 moving_dot=is_running,
+                chip_at=0.72,  # D-445: below the name «Informe semanal», which the middle covered
             ),
         ]
     )
@@ -999,7 +1004,7 @@ def build_orchestration(states, figures, palette):
             palette,
             states["tests"],
         ),
-        build_band_item(left + 30 + 3 * spacing, 128, "Secretos", "GitHub Actions · Secrets", palette),
+        build_band_item(left + 30 + 3 * spacing, 128, "Secretos", "Streamlit · st.secrets", palette),
     ]
     # Orders go down to the agent; they are commands, not data.
     agent_x = COLUMN_X["ingestion"]
@@ -1023,7 +1028,7 @@ def build_observability(states, figures, palette):
         ("Logs del agente", "Python · por ejecución", None),
         ("Correo de GitHub", "GitHub · si el job falla", None),
         ("Centro de operación", "Streamlit · historial", None),
-        ("API REST de GitHub", "token · cargas, logs, lanzar, cancelar", None),
+        ("API REST de GitHub", "dos tokens · cargas, logs, lanzar, cancelar", None),
     ]
     spacing = (width - 60) / len(items)
     return build_band(
@@ -1371,7 +1376,7 @@ def build_vertical_journey_svg(states, figures, mode, animate_flow=None):
         ("etl_run", "DuckDB · una fila por carga", states.get("etl_run")),
         ("dbt_result", "DuckDB · linaje y pruebas", None),
         ("Centro de operación", "Streamlit · historial", None),
-        ("API REST de GitHub", "token · cargas, logs, lanzar, cancelar", None),  # D-368
+        ("API REST de GitHub", "dos tokens · cargas, logs, lanzar, cancelar", None),  # D-368
     ]
     band_y = last_y + half + 44
     height = band_y + 26 + (len(observability) - 1) * 40 + 36

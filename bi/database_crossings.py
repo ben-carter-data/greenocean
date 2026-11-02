@@ -83,7 +83,7 @@ CROSSINGS = [
         "las 13 tablas servidas",
         "los mismos nombres de tabla",
         "Las diez tablas del modelo, más la traza de dbt y el registro de cargas.",
-        "Los mismos nombres de tabla; la base servida se reemplaza entera al final, nunca a medias.",
+        "Los mismos nombres de tabla; la Base DuckDB se reemplaza entera al final, nunca a medias.",
         "served",
     ),
     (
@@ -96,7 +96,7 @@ CROSSINGS = [
         "las mismas filas, sin dbt",
         "las mismas reglas de negocio",
         "Las mismas filas crudas, validadas y llevadas a precio semanal por un camino independiente de dbt.",
-        "Las mismas reglas de negocio: por eso su resultado debe dar las mismas cifras que la base servida.",
+        "Las mismas reglas de negocio: por eso su resultado debe dar las mismas cifras que la Base DuckDB.",
         "raw",
     ),
     (
@@ -121,7 +121,7 @@ CROSSINGS = [
         "etl_run arrastrado",
         "el historial de cargas",
         "el número de carga (run_id)",
-        "El historial de cargas: la carga nueva lo lee de la base servida y le agrega su fila. En la primera vez lo leyó de datos.db.",
+        "El historial de cargas: la carga nueva lo lee de la Base DuckDB y le agrega su fila. En la primera vez lo leyó de datos.db.",
         "El número de carga (run_id), que también guarda cada fila de rejection.",
         "history",
     ),
@@ -161,7 +161,7 @@ def read_checks(database_file=queries.DATABASE_FILE, backup_file=None):
         "ok" if unmatched == 0 else "warn",
         f"{database_map.thousands(weeks)} semanas con índice; {unmatched} semanas de precios sin índice.",
     )
-    checks["served"] = ("ok", f"{len(tables)} tablas en la base servida, publicadas de una vez.")
+    checks["served"] = ("ok", f"{len(tables)} tablas en la Base DuckDB, publicadas de una vez.")
     checks["history"] = (
         "ok" if rejection_runs == 0 else "fail",
         f"{runs} cargas registradas; {rejection_runs} rechazos sin su carga.",
@@ -173,7 +173,7 @@ def read_checks(database_file=queries.DATABASE_FILE, backup_file=None):
     else:
         text = (
             f"{database_map.thousands(parity['rows'][1])} filas y {database_map.thousands(parity['rejections'][1])} rechazos "
-            f"en la base servida; {database_map.thousands(parity['rows'][0])} y "
+            f"en la Base DuckDB; {database_map.thousands(parity['rows'][0])} y "
             f"{database_map.thousands(parity['rejections'][0])} en el respaldo."
         )
         checks["parity"] = ("ok" if parity["ok"] else "fail", text)
@@ -199,7 +199,7 @@ LAYERS = [
     ("raw", "raw.db", "SQLite", ("db", "sqlite"), 90, 64),
     ("bronze", "Bronce", "Parquet", ("files", "apacheparquet"), 190, 64),
     ("work", "Base de trabajo", "dbt + DuckDB", ("db", "duckdb"), 290, 112),
-    ("served", "datos.duckdb", "la base servida", ("db", "duckdb"), 438, 144),
+    ("served", "datos.duckdb", "la Base DuckDB", ("db", "duckdb"), 438, 144),
 ]
 SOURCE_Y = 14
 # Table chips: (layer key, row, column or span, name). The row is the chip's top, from the layer's top.

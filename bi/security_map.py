@@ -35,7 +35,7 @@ CONTROLS = [
         2,
         "Base en solo lectura",
         "motor sin acceso externo · configuración bloqueada",
-        "La base servida: nadie puede cambiar un dato desde el panel.",
+        "La Base DuckDB: nadie puede cambiar un dato desde el panel.",
         "DuckDB abre etl/datos.duckdb en solo lectura, sin acceso a archivos ni a internet y con la configuración bloqueada: "
         "aunque una consulta esquivara el filtro, el motor responde «Permission Error».",
         "bi/queries.py · bi/sql_explorer.py",
@@ -46,7 +46,8 @@ CONTROLS = [
         3,
         "Clave de control",
         "evita ejecuciones accidentales · tiempo constante",
-        "El botón «Ejecutar pipeline ahora»: con él, lo máximo que se puede hacer es lanzar el workflow semanal.",
+        "La vista Autor: sus tres páginas («Centro de operación», «GitHub Actions» y «Configuración») y el botón «Ejecutar "
+        "pipeline ahora»; el servidor comprueba la sesión antes de dibujar cada página y antes de cada acción (D-420, D-421).",
         "La clave vive en los secretos del panel, fuera del repositorio, y se compara con hmac.compare_digest. Antes de la "
         "clave el botón no existe. Tras 3 fallos, cada intento espera 2 s, y el doble tras cada nuevo fallo, hasta 15 min; "
         "todas las puertas comparten esa espera, que guarda el servidor.",
@@ -62,7 +63,7 @@ CONTROLS = [
         4,
         "Token protegido",
         "nunca en pantalla ni en los errores · aviso antes de vencer",
-        "El token de GitHub con el que el panel lanza el workflow.",
+        "GITHUB_TOKEN, con el que el panel lanza y cancela semanal.yml, y GITHUB_READ_TOKEN, que solo lee el estado y los logs.",
         "Vive en los secretos del panel. Los errores de GitHub se describen con su código y su causa, nunca con el token, "
         "los encabezados ni la dirección completa; el panel avisa cuando faltan 15 días o menos para que venza.",
         "bi/control.py",
@@ -85,9 +86,10 @@ CONTROLS = [
     (
         6,
         "Privilegio mínimo del job",
-        "solo contents e issues",
-        "El repositorio y la cuenta: el job semanal no puede hacer más que lo que necesita.",
-        "El workflow semanal solo puede escribir contenido (la base en el release y su puntero) y crear issues (el informe).",
+        "solo lo que cada workflow necesita",
+        "El repositorio y la cuenta: cada job no puede hacer más que lo que necesita.",
+        "semanal.yml solo puede escribir contenido (la Base DuckDB en el release y su puntero) y crear issues (el «Informe "
+        "semanal»); calidad.yml, contenido y pull requests (el informe de calidad); pruebas.yml no escribe nada.",
         ".github/workflows/semanal.yml",
         ["tests/test_security.py::test_the_weekly_job_has_least_privilege"],
         True,
@@ -112,7 +114,7 @@ THREATS = [
         "A03 · A05",
         [1, 2],
         ["S-01", "S-02"],
-        ("duckdb", "Servidor y base servida"),
+        ("duckdb", "Servidor y Base DuckDB"),
     ),
     ("T2", "Colgar el panel con consultas pesadas", "A04", [1], ["S-03"], ("streamlit", "Disponibilidad del panel")),
     (
@@ -121,7 +123,7 @@ THREATS = [
         "A01 · A07",
         [3],
         ["S-04", "S-05", "S-10"],
-        ("github", "Workflow semanal"),
+        ("github", "semanal.yml y la vista Autor"),
     ),
     ("T4", "Robar el token o la clave", "A02 · A09", [4, 5], ["S-06", "S-07"], ("lock", "Secretos")),
     ("T5", "Abusar de los permisos del workflow", "A01", [6], ["S-08"], ("git", "Repositorio")),
@@ -202,9 +204,19 @@ NODES = {
         30,
         "S-02",
     ),
-    "base": ("cylinder", 120, 470, "datos.duckdb", "la base servida, tomada del release", None, 152, 30, ""),
+    "base": ("cylinder", 120, 470, "datos.duckdb", "la Base DuckDB, tomada del release", None, 152, 30, ""),
     "code": ("lock", 400, 215, "Clave de control", "evita ejecuciones accidentales", 3, 432, 22, "S-04 · S-05 · S-10"),
-    "secrets": ("lock", 400, 300, "Secretos del panel", "token de GitHub y clave de control", 4, 432, 22, "S-07"),
+    "secrets": (
+        "lock",
+        400,
+        300,
+        "Secretos del panel",
+        "CONTROL_CODE · GITHUB_TOKEN · GITHUB_READ_TOKEN",
+        4,
+        432,
+        22,
+        "S-07",
+    ),
     "ci": (
         "brand:pytest",
         640,
@@ -231,8 +243,8 @@ NODES = {
         "brand:github",
         640,
         395,
-        "Workflow semanal",
-        "la carga de cada martes · solo escribe contenido e issues",
+        "semanal.yml",
+        "la carga semanal · solo escribe contenido e issues",
         6,
         672,
         44,
@@ -243,7 +255,7 @@ NODE_TIPS = {
     "visitor": "Cualquier persona con el enlace público. Lee el panel y usa el estudio SQL sin iniciar sesión: los datos son públicos.",
     "author": "El autor. Mantiene el código y los secretos; para lanzar la carga a mano desde el panel usa la clave de control.",
     "panel": "La aplicación de Streamlit (bi/dashboard.py). Lee etl/datos.duckdb en solo lectura: ninguna página puede cambiar un dato.",
-    "base": "etl/datos.duckdb: la base servida. Solo se publica si pasan las 31 pruebas de dbt y la carga lee al menos el 90 % de las filas de la anterior.",
+    "base": "etl/datos.duckdb: la Base DuckDB. Solo se publica si pasan las 31 pruebas de dbt y la carga lee al menos el 90 % de las filas de la anterior.",
     "ci": "El workflow pruebas.yml corre pytest en cada push y pull request: los casos S-01 a S-14 de docs/calidad/PLAN_PRUEBAS.md. Su resultado avisa; no detiene la publicación de main.",
 }
 # Threat markers: threat id -> (x, y, line label, label side).

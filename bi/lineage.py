@@ -25,7 +25,7 @@ LAYERS = [
     ("bronze", "Bronce", "Parquet"),
     ("staging", "Staging", "vistas"),
     ("intermediate", "Intermedio", "tablas"),
-    ("marts", "Marts", "servidas al panel"),
+    ("marts", "Marts", "las lee el Panel web"),
 ]
 MATERIALIZED = {"view": "vista", "table": "tabla", "": "parquet"}
 PASSING = {"pass", "success"}
@@ -50,7 +50,7 @@ FRAME_TITLES = {
     "staging": ("STAGING", "dbt · {count} vistas"),
     "intermediate": ("INTERMEDIO", "dbt · {count} tablas"),
     "marts": ("MARTS", "dbt · {count} modelos y pruebas"),
-    "serving": ("SERVING", "DuckDB · servida al panel"),
+    "serving": ("SERVING", "Base DuckDB · la lee el Panel web"),
 }
 # The explanation of each column title: the bronze column holds the dbt sources.
 HEADER_KEYS = dict(LAYER_KEYS, bronze="sources")

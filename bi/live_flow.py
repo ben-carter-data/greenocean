@@ -327,8 +327,8 @@ BAND_NOTES = {
         "On every push Ruff, mypy and pytest run (pruebas.yml); a failure shows before it reaches the app.",
     ),
     "quality": (
-        "Mide los 12 indicadores en cada push y, después de cada carga, propone el informe en un pull request.",
-        "Measures the 12 indicators on every push and, after each load, proposes the report in a pull request.",
+        "Mide los 12 indicadores en cada push y, tras una carga en verde, propone el informe en un pull request, que se fusiona solo si el código está en su aceptable.",
+        "Measures the 12 indicators on every push and, after a green load, proposes the report in a pull request, merged on its own if the code is in its acceptable range.",
     ),
     "tokens": (
         "CONTROL_CODE, GITHUB_TOKEN y GITHUB_READ_TOKEN viven en los secretos de Streamlit; nunca se muestran.",
@@ -510,8 +510,8 @@ ARROWS: dict[str, dict[str, Any]] = {
             "Downloads datos.duckdb (bi/served_database.py) and checks its fingerprint",
         ),
         "answer": (
-            "La base servida, que la app abre en solo lectura",
-            "The served database, which the app opens read-only",
+            "La Base DuckDB, que la app abre en solo lectura",
+            "The DuckDB database, which the app opens read-only",
         ),
         "when": ("Al arrancar la app y cuando cambia el puntero", "When the app starts and when the pointer changes"),
         "why": (

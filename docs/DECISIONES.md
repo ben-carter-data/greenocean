@@ -3471,3 +3471,21 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Lo que cambia en el PRD:** 3.1 sigue siendo la tabla de preguntas y decisiones, que ahora muestra «Análisis de negocio y sistemas»; 3.4 es el mapa nuevo.
 - **Documentos:** PRD 3.16 (3.1, 3.4), en los dos idiomas.
 - **Pruebas:** `tests/test_stakeholders.py::test_d444_the_page_is_the_interest_map_read_from_the_prd` y `tests/test_d444_the_map_reads_in_english_and_keeps_its_places`.
+
+## D-445 · Revisión de los diagramas contra el sistema actual
+
+- **Pedido del autor:** comparar cada diagrama del panel y de los documentos con el sistema de hoy (D-270 en adelante, los tres workflows, los tokens de D-397 y el acceso del Autor), corregirlo y aplicar la regla de D-440 (sin textos encimados a ningún tamaño, en los dos idiomas).
+- **Datos que estaban mal:**
+  - «Arquitectura de seguridad»: la clave de control solo «lanzaba el workflow semanal»; ahora dice que abre la vista Autor (sus tres páginas y la carga manual) con la sesión comprobada en el servidor (D-420, D-421). El token protegido nombra `GITHUB_TOKEN` y `GITHUB_READ_TOKEN`; el privilegio mínimo nombra `semanal.yml`, `calidad.yml` y `pruebas.yml`; los secretos del panel nombran los tres.
+  - «Pipeline y linaje»: los secretos estaban en «GitHub Actions · Secrets»; viven en los secretos de Streamlit. La API REST de GitHub dice qué token lee y cuál lanza; la etiqueta «consultas» ya no tapa el nombre «Informe semanal».
+  - «Stack y evidencia»: GitHub Actions abría «Centro de operación», que es solo del Autor; ahora abre «Git workflow».
+  - «Git workflow»: GitHub Actions no despliega (lo hace Streamlit Community Cloud desde main), y F-11 ya está resuelta.
+  - Monitoreo: el informe es el paso 10, no el 9; el aviso de vencimiento vale para los dos tokens; el panel no está «siempre en línea»: se duerme sin visitas (D-439).
+  - Secuencia de la carga semanal (SAD): la inicia `semanal.yml`, no «GitHub Actions», y el IPC lo descarga `etl/ine.py` dentro de `etl/pipeline.py`, no el agente.
+  - El informe de calidad ya no «lo aprueba el autor»: tras una carga en verde se propone y se fusiona solo si el código está en su aceptable (D-431, D-436), en el despliegue, el flujo en vivo, los escenarios y la mejora continua del SAD.
+- **Nombres:** «base servida» pasa a «Base DuckDB» en todos los diagramas y textos del panel (D-426), con su inglés; «Workflow semanal», «GitHub Actions» como actor y «el token» pasan a `semanal.yml`, `GITHUB_TOKEN` y `GITHUB_READ_TOKEN`; el informe de la mejora continua es el «Informe semanal de calidad». En «Dónde viven los datos», la zona que guarda la Base DuckDB y el respaldo local se llama «Resultado de la carga», porque el respaldo no se publica.
+- **Sin cambios, revisados:** contexto, contenedores, escenarios, capas de despliegue y secuencias del panel, del CI y de la recuperación del SAD; el ciclo de calidad; los pasos de CI/CD; el modelo estrella y el entidad-relación; las cifras del linaje.
+- **Queda anotado, sin cambio:** el entidad-relación no dibuja `latest_by_source` (D-365), que no tiene relaciones; el título de ADR-35 conserva «base servida», porque es el nombre de la decisión en su momento.
+- **Capturas:** las seis capturas de `docs/img/` y `docs/img/en/` se toman de nuevo, sin el respaldo local (D-392): mostraban «Panorama de precios» y el menú anterior a D-442. M-1 muestra el Dashboard con la región y la familia elegidas; M-2, con la región elegida. PRD 3.17.
+- **Medición:** 0 textos encimados en los diagramas a 1440 × 790, 1280 × 800, 1920 × 1000 y 1100 × 650, en español e inglés (Playwright, como D-440).
+- **Pruebas:** las de cada diagrama (`tests/test_architecture.py`, `tests/test_doc_diagrams.py` y las demás) con los textos nuevos, y `tests/test_i18n.py` sin español en inglés.

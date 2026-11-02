@@ -106,7 +106,7 @@ def test_pipeline_names_the_real_technology_used_at_each_stage():
         "DuckDB · modelo estrella",
         "dbt build",
         "pytest · si fallan",
-        "GitHub Actions · Secrets",
+        "Streamlit · st.secrets",
         "Streamlit · historial",
         "DuckDB · una fila por carga",
     ]:
@@ -296,8 +296,8 @@ def test_d368_the_observability_band_holds_github_rest_api_in_both_journeys():
     vertical = architecture.build_vertical_journey_svg(make_states(control.RUN_OK), FIGURES, charts.MODE_DARK)
     for svg in (horizontal, vertical):
         observability = svg[svg.index("OBSERVABILIDAD") :]
-        assert "API REST de GitHub" in observability and "token · cargas, logs, lanzar, cancelar" in observability
+        assert "API REST de GitHub" in observability and "dos tokens · cargas, logs, lanzar, cancelar" in observability
     from bi import i18n_en
 
-    for text in ("API REST de GitHub", "token · cargas, logs, lanzar, cancelar", tooltip):
+    for text in ("API REST de GitHub", "dos tokens · cargas, logs, lanzar, cancelar", tooltip):
         assert text in i18n_en.PAGES, text

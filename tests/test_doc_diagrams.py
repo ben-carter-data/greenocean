@@ -315,7 +315,7 @@ def test_d386_the_before_figures_are_labelled_history_and_the_size_of_today_is_m
     note = doc_figures.served_size_note()
     assert "se midieron el 24-10-2026, al decidir ADR-35" in note and "Medidas del" not in note
     if queries.DATABASE_FILE.exists():
-        assert f"Hoy la base servida pesa {project.describe_file_size(queries.DATABASE_FILE)}." in note
+        assert f"Hoy la Base DuckDB pesa {project.describe_file_size(queries.DATABASE_FILE)}." in note
 
 
 def test_d392_the_english_captions_of_the_captures_are_in_english(monkeypatch):

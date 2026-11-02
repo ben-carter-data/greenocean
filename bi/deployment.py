@@ -76,7 +76,7 @@ TIPS = {
     "(semanal.yml) y, al terminar, la medición de calidad que propone el informe (calidad.yml).",
     "tests": "Otra máquina Ubuntu, aparte de la carga: en cada push corre las pruebas (pruebas.yml: lint, mypy y pytest en "
     "Python 3.11 y 3.12) y mide la calidad sin proponer informe (calidad.yml). No toca la base publicada.",
-    "release": "Guarda la base servida, datos.duckdb, fuera de git. Solo si pasan todas las pruebas, la carga la reemplaza "
+    "release": "Guarda la Base DuckDB, datos.duckdb, fuera de git. Solo si pasan todas las pruebas, la carga la reemplaza "
     "(D-270); el panel la descarga de aquí.",
     "python": "El entorno Python 3.11 del runner: descarga, aterrizaje en SQLite, bronce en Parquet y dbt build sobre DuckDB.",
     "repo": "El repositorio público, rama main: el código y el puntero datos.version, que dice qué base del release está "
@@ -84,8 +84,8 @@ TIPS = {
     "cache": "Guarda los CSV de los años cerrados, que ya no cambian, para no descargarlos cada semana. Se borra si no se usa en 7 días.",
     "issues": "Al final de cada carga, el workflow semanal (semanal.yml) abre un issue «Informe semanal» con lo que se cargó "
     "y lo que se revisó.",
-    "pulls": "Después de cada carga semanal, el workflow de calidad (calidad.yml) mide los indicadores y propone el informe de "
-    "calidad numerado como un pull request, que el autor revisa y aprueba antes de que el panel lo muestre (D-331, D-363).",
+    "pulls": "Después de cada carga en verde, calidad.yml mide los indicadores y propone el informe de "
+    "calidad numerado como un pull request; se fusiona solo si los indicadores de código están en su aceptable (D-431, D-436).",
     "app": "Streamlit ejecuta bi/dashboard.py desde la rama main. Descarga del release la base de la última carga, comprueba su "
     "huella y la lee en solo lectura; guarda los secretos del panel y, en la sesión del Autor, lanza la carga por la API de GitHub.",
     "browser": "El Usuario, el Profesional o el Autor. El panel público no pide cuenta; la clave de control solo abre lo del Autor, "
@@ -211,7 +211,7 @@ def build_contents(states, figures):
             + artifact(348, 158, "semanal.yml")
             + f'<text class="live" x="366" y="173">próxima {esc(figures.get("next_run", ""))}</text>'
             + artifact(348, 192, "calidad.yml")
-            + '<text class="note" x="366" y="207">después de cada carga</text>'
+            + '<text class="note" x="366" y="207">tras una carga en verde</text>'
             + state_dot(526, 102, states.get("workflow"))
         ),
         "python": (

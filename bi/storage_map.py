@@ -29,7 +29,8 @@ SOURCES_X, WORK_X, SERVED_X, REPO_X = (28, 178), (242, 488), (552, 752), (816, 9
 ZONES = [
     ("sources", "Fuentes externas", "fuera del proyecto", (14, 192), "outside"),
     ("work", "Zona de trabajo", "fuera de Git · se rehace cada carga", (228, 502), "plain"),
-    ("served", "Base servida", "el resultado de cada carga", (538, 766), "accent"),
+    # D-445: the zone holds the published Base DuckDB and the local backup: what each load produces, not only what is served
+    ("served", "Resultado de la carga", "Base DuckDB y su respaldo local", (538, 766), "accent"),
     ("repo", "GitHub", "release y repositorio · público", (802, 990), "plain"),
 ]
 # Stores: (key, kind, row, x range, mark, name, file).
@@ -61,7 +62,7 @@ TIPS = {
     "backup": (database_map.NODES[8][5], database_map.NODES[8][6], "etl/etl.py"),
     "served": (database_map.NODES[6][5], database_map.NODES[6][6], "etl/pipeline.py"),
     "github": (
-        "Lo que la carga publica: la base servida, en el release «base-actual», con una sola copia que cada "
+        "Lo que la carga publica: la Base DuckDB, en el release «base-actual», con una sola copia que cada "
         "carga reemplaza; en la rama main, su puntero y el registro de las descargas (D-270).",
         database_map.NODES[7][6],
         ".github/workflows/semanal.yml",

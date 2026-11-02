@@ -336,16 +336,16 @@ STATIONS: list[dict[str, Any]] = [
         "title": ("¿CI en verde?", "CI checks green?"),
         "sub": ("Cada job en el remoto", "Every job on the remote"),
         "what": (
-            "GitHub Actions corre las pruebas, la medición de calidad y el despliegue. Una insignia roja en main es lo primero que ve una visita.",
-            "GitHub Actions runs the suite, the quality measure and the deploy. A red badge on main is the first thing a visitor sees.",
+            "GitHub Actions corre las pruebas y la medición de calidad; Streamlit Community Cloud despliega desde main. Una insignia roja en main es lo primero que ve una visita.",
+            "GitHub Actions runs the suite and the quality measure; Streamlit Community Cloud deploys from main. A red badge on main is the first thing a visitor sees.",
         ),
         "fail": (
             "Rojo: leer el final del log que falla, entregarlo y volver a la estación 5.",
             "Red: read the end of the failing log, hand it back, return to station 5.",
         ),
         "example": (
-            "Lint pasó; pytest falló en 3.11 y 3.12 por una prueba de velocidad (F-10, D-341); calidad sigue sin abrir el pull request (F-11).",
-            "Lint passed; pytest failed on 3.11 and 3.12 on a speed test (F-10, D-341); quality still cannot open the pull request (F-11).",
+            "Lint pasó; pytest falló en 3.11 y 3.12 por una prueba de velocidad (F-10, D-341); calidad no podía abrir el pull request (F-11, ya resuelta).",
+            "Lint passed; pytest failed on 3.11 and 3.12 on a speed test (F-10, D-341); quality could not open the pull request (F-11, since resolved).",
         ),
     },
     {

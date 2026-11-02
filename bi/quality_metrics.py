@@ -95,8 +95,8 @@ SCHEDULE = [
     (
         ("Calidad de los datos servidos", "Quality of the served data"),
         (
-            "Automático: el código del proyecto lee la base servida",
-            "Automatic: the project code reads the served database",
+            "Automático: el código del proyecto lee la Base DuckDB",
+            "Automatic: the project code reads the DuckDB database",
         ),
         ("En cada push", "On every push"),
     ),

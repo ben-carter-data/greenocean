@@ -156,9 +156,8 @@ NODES = {
         ["datos"],
         ("flow", 6),
         "Base de datos analítica por columnas, en un solo archivo y sin servidor.",
-        "Motor donde dbt construye el data warehouse y base servida etl/datos.duckdb, que el panel lee en solo "
-        "lectura.",
-        "Cada martes; la base servida se reemplaza solo al final de una carga válida.",
+        "Motor donde dbt construye el data warehouse y Base DuckDB etl/datos.duckdb, que el panel lee en solo lectura.",
+        "Cada martes; la Base DuckDB se reemplaza solo al final de una carga válida.",
         "Modelo de datos",
         [
             ("SQL", "el lenguaje de los modelos, de las consultas del panel (bi/queries.sql) y del estudio SQL."),
@@ -171,7 +170,7 @@ NODES = {
         ["datos", "orquestacion"],
         ("flow2", 7),
         "Archivo publicado en GitHub, fuera del historial de Git.",
-        "Guarda una sola copia de la base servida, reemplazada por cada carga; en main queda su puntero "
+        "Guarda una sola copia de la Base DuckDB, reemplazada por cada carga; en main queda su puntero "
         "etl/datos.version, con la huella, el tamaño y la fecha (D-270).",
         "Al final de cada carga que pasó todas las pruebas.",
         "Ejecuciones",
@@ -183,7 +182,7 @@ NODES = {
         ["datos"],
         ("flow", 8),
         "Framework de Python para aplicaciones web de datos.",
-        "Dibuja este panel con la base servida en solo lectura y lo publica en Streamlit Community Cloud "
+        "Dibuja este panel con la Base DuckDB en solo lectura y lo publica en Streamlit Community Cloud "
         "desde la rama main.",
         "Cada vez que alguien abre una página.",
         "Dashboard",
@@ -413,7 +412,7 @@ NODES = {
         ["calidad"],
         ("watch", 4),
         "Comparación de dos caminos independientes.",
-        "El respaldo SQLite y la base servida deben dar los mismos precios, los mismos rechazos y la misma suma.",
+        "El respaldo SQLite y la Base DuckDB deben dar los mismos precios, los mismos rechazos y la misma suma.",
         "En cada carga, antes de publicar.",
         "Monitoreo",
         [("tests/test_migration_parity.py", "la prueba que compara las dos bases.")],

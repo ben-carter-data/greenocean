@@ -9230,7 +9230,7 @@ def main():
     problem = follow_published_database()
     if not queries.DATABASE_FILE.exists():
         st.error(
-            "Falta la base servida etl/datos.duckdb y no se pudo descargar de GitHub"
+            "Falta la Base DuckDB etl/datos.duckdb y no se pudo descargar de GitHub"
             + (f" ({problem})" if problem else "")
             + ". En local: python bi/served_database.py"
         )

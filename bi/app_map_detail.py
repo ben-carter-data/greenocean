@@ -128,7 +128,7 @@ def read_data_files(root=ROOT):
 
 
 def read_database(database_file):
-    """What the served database records about itself; None when it is not there."""
+    """What the DuckDB database records about itself; None when it is not there."""
     if not database_file or not Path(database_file).exists():
         return None
     import duckdb
