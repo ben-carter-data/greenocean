@@ -284,3 +284,56 @@ def test_d457_the_old_address_of_tendencias_opens_mensual():
     app.query_params.update({"vista": dashboard.PAGE_BA, dashboard.BA_TAB_PARAMETER: "Tendencias"})
     app.run()
     assert not app.exception and app.session_state[dashboard.BA_TAB_KEY] == dashboard.BA_MONTHLY_TAB
+
+
+def test_d458_the_green_panel_says_from_which_month_to_which_and_why_for_each_period():
+    last = (2026, 9)
+    lead, detail = ba_trends.monthly_context("Últimos 12 meses", last)
+    assert lead == "Estás viendo los últimos 12 meses: de oct 2025 a sep 2026."
+    assert "Termina en sep 2026: es el último mes con la inflación del INE" in detail and "sep 2025 = 100" in detail
+    lead, detail = ba_trends.monthly_context("2026", last)  # the year so far: it ends in the last month of the INE
+    assert lead == "Estás viendo 2026: de ene 2026 a sep 2026."
+    assert "Termina en sep 2026" in detail and "dic 2025 = 100, el cierre del año anterior" in detail
+    assert "lo que va del año" in detail
+    lead, detail = ba_trends.monthly_context("2025", last)  # a whole year, December to December
+    assert lead == "Estás viendo 2025: de ene 2025 a dic 2025."
+    assert (
+        detail.startswith("Es el año completo.") and "dic 2024 = 100" in detail and "de diciembre a diciembre" in detail
+    )
+    lead, detail = ba_trends.monthly_context("2022", last)  # no index before January 2022, no alert before April
+    assert "ene 2022 = 100, el primer mes de los datos" in detail and "empieza en febrero" in detail
+    assert "La primera alerta posible es de abril 2022" in detail
+    lead, detail = ba_trends.history_context(last)
+    assert lead == "Estás viendo toda la historia: de ene 2022 a sep 2026."
+    assert "termina en sep 2026" in detail and detail.endswith("2022 desde enero y 2026 hasta septiembre.")
+    assert ba_trends.history_context((2026, 12))[1].endswith("2022 desde enero.")  # a whole last year says nothing more
+    lead, detail = ba_trends.inflation_context(last)
+    assert lead.endswith("de ene 2022 a sep 2026.") and "no prueba que la inflación cause la subida" in detail
+    lead, detail = ba_trends.insights_context(pd.Timestamp("2026-10-19"), last)
+    assert "la semana 19–25 oct 2026" in detail and "hasta sep 2026" in detail  # a week by its range (D-374)
+    panel = ba_trends.context_html("Estás viendo <esto>.", "Y por qué.")
+    assert panel.startswith('<div class="ba-context">') and "<b>Estás viendo &lt;esto&gt;.</b> Y por qué." in panel
+    assert "min-height:calc(2.9em + 16px)" in ba_trends.build_context_css(charts.get_palette("Vantablack"), "#39ff14")
+
+
+@needs_database
+def test_d458_the_panel_sits_above_the_tabs_and_follows_the_tab_and_the_period():
+    def draw(state):
+        app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=120)
+        app.session_state["visitor_profile"] = "profesional"
+        for key, value in state.items():
+            app.session_state[key] = value
+        app.query_params.update({"vista": dashboard.PAGE_BA})
+        app.run()
+        assert not app.exception
+        return " ".join(block.value for block in app.markdown)
+
+    markup = draw({})
+    assert markup.index('class="ba-context"') < markup.index('class="ba-card"')  # above the tabs and the report
+    assert "Estás viendo los últimos 12 meses" in markup
+    assert "Estás viendo 2024: de ene 2024 a dic 2024." in draw({"ba_period": "2024"})
+    assert "Estás viendo toda la historia" in draw({dashboard.BA_TAB_KEY: dashboard.BA_HISTORY_TAB})
+    inflation = draw({dashboard.BA_TAB_KEY: "Precios e inflación"})  # its note moved into the panel, said once
+    assert inflation.count("no prueba que la inflación cause la subida") == 1
+    stakeholders = draw({dashboard.BA_TAB_KEY: "Interesados"})  # the rule of the rings too
+    assert stakeholders.count("Cada anillo dice cuánto depende") == 1 and 'class="im-criterion"' not in stakeholders

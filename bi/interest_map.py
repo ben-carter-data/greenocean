@@ -23,10 +23,11 @@ def place(level, order):
     return 50 + radius * 100 * math.cos(angle), 50 + radius * 100 * RATIO * TILT * math.sin(angle)
 
 
-def build_map_html(rows, palette, link_of, translate=lambda text: text):
+def build_map_html(rows, palette, link_of, translate=lambda text: text, criterion=True):
     """The rings, GreenOcean in the middle and each stakeholder as an icon and its name, nothing else; the cursor or the
     keyboard grows the icon and shows why it is on its ring. link_of(row) gives (address, note): with an address the
-    stakeholder opens its page, without one it is not a link and the note follows its reason."""
+    stakeholder opens its page, without one it is not a link and the note follows its reason. criterion: the rule of
+    the rings under the map; the tab says it in its green panel instead (D-458)."""
     background = palette["background"]
     colors = [charts.legible(color, background, 3) for color in COLORS]
     rings = []
@@ -64,15 +65,17 @@ def build_map_html(rows, palette, link_of, translate=lambda text: text):
         f'<div class="im-wrap"><div class="im-stage" role="img" aria-label="{html.escape(translate("Mapa de interés"))}">'
         f'{"".join(rings)}<span class="im-center"><span class="im-logo" aria-hidden="true">waves</span>'
         f'<b>GreenOcean</b></span>{"".join(nodes)}</div>'
-        f'<p class="im-criterion">{html.escape(translate(CRITERION))}</p></div>'
+        + (f'<p class="im-criterion">{html.escape(translate(CRITERION))}</p>' if criterion else "")
+        + "</div>"
     )
 
 
-def build_css(palette, fit_height=True):
+def build_css(palette, fit_height=True, reserved=190):
     """The stage keeps its proportions at any width, like a picture; letters and icons scale with it (cqw). On its page
-    it is never taller than the window; in a document it takes the document's width."""
+    it is never taller than the window less the reserved height above and below it; in a document it takes the
+    document's width."""
     ink, text, muted, background = palette["strong_text"], palette["text"], palette["reference"], palette["background"]
-    width = f"min(100%, calc((100vh - 190px) * {RATIO}))" if fit_height else "100%"
+    width = f"min(100%, calc((100vh - {reserved}px) * {RATIO}))" if fit_height else "100%"
     return f"""<style>
     .im-wrap {{ container-type:inline-size; width:{width}; margin:0 auto; }}
     .im-stage {{ position:relative; width:100%; aspect-ratio:{RATIO} / 1; }}

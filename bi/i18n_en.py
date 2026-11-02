@@ -108,7 +108,6 @@ PAGES = {
     "Precios del día": "Prices of the day",
     "Sin inflación": "Without inflation",
     "Precios del día: lo que se pagó cada semana. Sin inflación (IPC): todos los precios en pesos del último mes publicado por el INE, descontada la inflación de alimentos, para comparar con años anteriores sin que la inflación los haga parecer caros.": "Prices of the day: what was paid each week. Without inflation (CPI): every price in pesos of the last month published by the INE, net of food inflation, to compare with earlier years without inflation making them look expensive.",
-    "Cada familia compara los mismos productos de enero 2022 a {m} (series de consumidor con precio en ambos meses). El IPC de alimentos se calcula con precios de alimentos: subir con él no prueba que la inflación cause la subida; dice si la familia subió más o menos que la canasta.": "Each family compares the same products from January 2022 to {} (consumer series with a price in both months). The food CPI is computed from food prices: rising with it does not prove that inflation causes the rise; it says whether the family rose more or less than the basket.",
     "{n} · más que la inflación": "{} · more than inflation",
     "{n} · menos que la inflación": "{} · less than inflation",
     "{n} · al ritmo de la inflación": "{} · at the pace of inflation",

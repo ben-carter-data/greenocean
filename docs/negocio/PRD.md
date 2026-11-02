@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Documento de requisitos del producto (PRD) |
-| Versión | 3.23 |
+| Versión | 3.24 |
 | Fecha | 02-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -152,7 +152,7 @@ Estas son seis capturas reales, del 02-11-2026, de cinco páginas principales y 
 - **Menú:** cinco secciones: Negocio · BA y BI, Ingeniería de datos, DevOps y seguridad, Stack y evidencia, y Calidad. La primera son tres recuadros con ícono de dashboard, que siguen a la vista aunque la sección se pliegue: el Dashboard, Último dato por canal y Análisis BA y BI (D-442, D-452, D-453, D-456).
 - **Dashboard:** se lee en tres pasos numerados. Primero se elige una región o todo Chile, después una familia, y al final se miran sus productos. Cada paso se abre al completar el anterior. Los tres pasos quedan siempre juntos en una sola pantalla; la tabla de productos llena el panel 3, se desplaza sola y se amplía con su propio botón (D-446, D-447).
 - **Último dato por canal:** una tarjeta por canal, con su ícono 3D en sus propios colores (D-453), su última semana, sus precios, su variación y las familias que publica. Cada tarjeta abre ese canal con los pasos del Dashboard y se comporta igual que él, aunque la otra fuente todavía no publique esa semana (D-404 a D-406, D-452).
-- **Análisis BA y BI:** seis pestañas (D-456, D-457). «Mensual» es un período, los últimos 12 meses o un año, mes a mes: cinco cifras clave (cambio de precios, frente al IPC, brecha consumidor–mayorista, alertas de precio y mayor alza mensual), tres gráficos (precio mes a mes, cambio de cada mes y alertas de precio por mes) y la tabla por familia. «Histórico» es toda la historia, de enero 2022 al último mes que publicó el INE: cinco cifras clave (cambio desde enero 2022, frente al IPC, año de mayor alza, mes más barato y alertas de precio), tres gráficos (precio desde enero 2022, cambio de cada año y temporada) y la tabla por familia. Cada gráfico dice qué meses muestra; al pasar el cursor se agranda y dice qué mide y qué se deduce, y cada cifra explica cómo se calcula. Las otras cuatro son Precios e inflación, Insights, Interesados y Método.
+- **Análisis BA y BI:** seis pestañas (D-456, D-457). «Mensual» es un período, los últimos 12 meses o un año, mes a mes: cinco cifras clave (cambio de precios, frente al IPC, brecha consumidor–mayorista, alertas de precio y mayor alza mensual), tres gráficos (precio mes a mes, cambio de cada mes y alertas de precio por mes) y la tabla por familia. «Histórico» es toda la historia, de enero 2022 al último mes que publicó el INE: cinco cifras clave (cambio desde enero 2022, frente al IPC, año de mayor alza, mes más barato y alertas de precio), tres gráficos (precio desde enero 2022, cambio de cada año y temporada) y la tabla por familia. Cada gráfico dice qué meses muestra; al pasar el cursor se agranda y dice qué mide y qué se deduce, y cada cifra explica cómo se calcula. Las otras cuatro son Precios e inflación, Insights, Interesados y Método. Sobre las pestañas, un recuadro verde dice qué se está viendo, de qué mes a qué mes y por qué empieza y termina ahí; cambia con la pestaña y el período (D-458).
 - **Stack y evidencia:** dos vistas. «Herramientas» explica cada herramienta; «Flujo del sistema en vivo» muestra las piezas reales, lo que se dicen y la carga en curso (D-412).
 
 [[diagrama:mockups]]
@@ -243,3 +243,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](GLOSARI
 | 3.21 | 02-11-2026 | Los diagramas son los de la app: el ciclo de cada semana del bloque «Proceso» de «Análisis de negocio y sistemas» (2) y el mapa de «Interesados» (3.4); se retiran «Del dato a la decisión» y los casos de uso, que nombraban perfiles que el panel no tiene; 3.2 son los tres perfiles del panel; «base servida» pasa a «Base DuckDB» (D-455) |
 | 3.22 | 02-11-2026 | «Análisis BA y BI» reúne en pestañas la historia de los precios, Precios e inflación, Insights, Interesados y el método; P-4 se ve en su pestaña (3.1, 3.2, 3.4, 4, 7, D-456) |
 | 3.23 | 02-11-2026 | «Análisis BA y BI» separa la historia de los precios en «Mensual», un período mes a mes, e «Histórico», de enero 2022 al último mes por año y temporada; cada gráfico dice sus meses y, al pasar el cursor, qué mide y qué se deduce (3.2, 7, D-457) |
+| 3.24 | 02-11-2026 | Un recuadro verde sobre las pestañas de «Análisis BA y BI» dice qué se ve, de qué mes a qué mes y por qué, según la pestaña y el período (7, D-458) |

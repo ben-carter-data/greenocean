@@ -5134,12 +5134,12 @@ def build_insight_table_html(head, rows, extra_class="", markup_columns=()):
 def build_insight_table_css(palette):
     """The look of the text tables of Insights, shared with «Análisis de negocio y sistemas» (D-377)."""
     return f"""
-    .ov-it {{ overflow:auto; max-height:calc(100vh - 290px); }}
+    .ov-it {{ overflow:auto; max-height:calc(100vh - 305px); }}  /* D-458: and the green panel above the tabs */
     .ov-it table {{ width:100%; border-collapse:separate; border-spacing:0; margin:0; font-size:12.5px; }}
     .ov-it thead th {{ position:sticky; top:0; background:{palette['accent']} !important; color:{charts.readable_on(palette['accent'])} !important; font-size:11px;
         font-weight:600; text-transform:uppercase; letter-spacing:.05em; padding:7px 10px !important; text-align:left; border:0 !important; }}
     .ov-it thead th:first-child {{ border-radius:10px 0 0 0; }} .ov-it thead th:last-child {{ border-radius:0 10px 0 0; }}
-    .ov-it td {{ padding:7px 10px !important; color:{palette['text']}; border:0 !important;
+    .ov-it td {{ padding:6px 10px !important; color:{palette['text']}; border:0 !important;
         border-bottom:1px solid {palette['card_border']} !important; vertical-align:top; line-height:1.4; background:transparent !important; }}
     .ov-it tbody tr:nth-child(even) td {{ background:color-mix(in srgb, {palette['accent']} 5%, transparent) !important; }}
     .ov-it td:first-child {{ font-weight:600; color:{palette['strong_text']}; }}
@@ -5379,7 +5379,7 @@ def build_interest_map_html(rows, palette, address_of_view):
             return address_of_view(view), ""
         return None, tr("Se abre en la vista Profesional.")
 
-    return interest_map.build_map_html(rows, palette, link_of, tr)
+    return interest_map.build_map_html(rows, palette, link_of, tr, criterion=not DRAWN_TAB.get())
 
 
 # D-456: the tab of «Análisis BA y BI» being drawn, so the page it gathers draws only its own row under the tabs.
@@ -5403,6 +5403,10 @@ def show_ba_page(mode):
     if wanted in BA_TABS:
         st.session_state[BA_TAB_KEY] = wanted  # read once: from here on, the tabs rule
         st.query_params.pop(BA_TAB_PARAMETER)
+    # D-458: the tab and the period of this run are already in the session, before their widgets are drawn
+    show_ba_context(
+        st.session_state.get(BA_TAB_KEY) if st.session_state.get(BA_TAB_KEY) in BA_TABS else BA_TABS[0], mode
+    )
     with st.container(key="ba_head", horizontal=True, vertical_alignment="bottom"):
         tab = show_view_tabs(BA_TAB_KEY, BA_TABS, palette)
         if tab in (BA_MONTHLY_TAB, BA_HISTORY_TAB):
@@ -5442,6 +5446,36 @@ def read_ba_history(database_version):
     found = read_cached_price_alerts_all(database_version)
     alerts_found = ba_trends.add_month_key(found[["week_start", "product_group", "variation"]])
     return rows, last, margins, seasonal, alerts_found
+
+
+def show_ba_context(tab, mode):
+    """D-458: the green panel above the tabs says what the reader is looking at, from which month to which, and why
+    each chart starts and ends where it does; it follows the tab and the period chosen."""
+    rows, last, *_ = read_ba_history(get_database_version())
+    if rows.empty:
+        return
+    if tab == BA_MONTHLY_TAB:
+        period = st.session_state.get("ba_period")
+        lead, detail = ba_trends.monthly_context(
+            period if period in ba_trends.periods(last) else ba_trends.periods(last)[0], last
+        )
+    elif tab == BA_HISTORY_TAB:
+        lead, detail = ba_trends.history_context(last)
+    elif tab == BA_TAB_OF_VIEW[PAGE_SEASONALITY]:
+        lead, detail = ba_trends.inflation_context(last)
+    elif tab == BA_TAB_OF_VIEW[PAGE_INSIGHTS]:
+        version = get_database_version()
+        week = overview_week(sorted(read_cached_all_variations(version)["week_start"].unique()))
+        lead, detail = ba_trends.insights_context(week, last)
+    elif tab == BA_TAB_OF_VIEW[PAGE_STAKEHOLDERS]:
+        lead, detail = ba_trends.stakeholders_context()
+    else:
+        lead, detail = ba_trends.method_context()
+    green = home_mockup.SEARCH_DARK if is_dark_theme(mode) else home_mockup.SEARCH_LIGHT
+    st.markdown(
+        ba_trends.build_context_css(charts.get_palette(mode), green) + ba_trends.context_html(lead, detail),
+        unsafe_allow_html=True,
+    )
 
 
 def show_ba_filters(tab):
@@ -5526,7 +5560,7 @@ def show_ba_tiles(tiles):
         heading = f'<p class="ba-chart-title">{html.escape(title)}<span>{html.escape(note)}</span></p>'
         with column, st.container(key=f"ba_tile_{index}"):
             st.markdown(heading, unsafe_allow_html=True)
-            st.altair_chart(draw(), width="stretch", theme=None)
+            st.altair_chart(draw(height="container"), width="stretch", height="stretch", theme=None)
             with st.container(key=f"ba_zoom_{index}"):
                 st.markdown(heading + ba_trends.zoom_text(measures, deduce), unsafe_allow_html=True)
                 st.altair_chart(
@@ -5564,7 +5598,11 @@ def show_stakeholders_page(mode):
 
 
 def build_interest_css(palette):
-    return interest_map.build_css(palette)
+    # D-458: as a tab, the green panel above the tabs takes height; the rule of the rings moved into it.
+    return interest_map.build_css(palette, reserved=INTEREST_RESERVED if DRAWN_TAB.get() else 190)
+
+
+INTEREST_RESERVED = 215
 
 
 SYSTEM_DECISION_PAGES = {"sqap": PAGE_QUALITY_PLAN, "git": PAGE_GIT}
@@ -5913,12 +5951,9 @@ def show_price_context_page(mode):
                 label_visibility="collapsed",
                 help=BASIS_HELP,
             )
+        # D-458: what used to be the note under the cards, the months and what rising with the CPI means, is now
+        # in the green panel above the tabs of «Análisis BA y BI».
         show_family_cards(rows, build_family_panel_titles(summary, ipc_total), mode, real, summary, last)
-    st.caption(
-        f"Cada familia compara los mismos productos de enero 2022 a {month(last)} (series de consumidor con "
-        "precio en ambos meses). El IPC de alimentos se calcula con precios de alimentos: subir con él no "
-        "prueba que la inflación cause la subida; dice si la familia subió más o menos que la canasta."
-    )
 
 
 # endregion

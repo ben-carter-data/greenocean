@@ -15,7 +15,7 @@ from typing import Any
 import altair as alt
 import pandas as pd
 
-from bi import charts, home_mockup, i18n, inflation_view, overview, weeks
+from bi import charts, home_mockup, i18n, inflation_view, interest_map, overview, weeks
 
 BASKET = inflation_view.BASKET_NAME
 IPC = inflation_view.IPC_NAME
@@ -23,6 +23,9 @@ BASE = (inflation_view.BASE_YEAR, inflation_view.BASE_MONTH)
 LAST_YEAR = "Últimos 12 meses"
 PACE = inflation_view.SAME_PACE_POINTS
 ZOOM_WIDTH, ZOOM_HEIGHT = 680, 250  # the enlarged chart, inside a window never wider than the page
+# D-458: a tile takes the window's height less what is above and below it (the header, the green panel, the tabs, the
+# cards and the table), never less than the floor.
+TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 637, 154, 128
 
 # One chart of a tab: its title, the months it shows, what it measures, what follows from it, and how to draw it at a
 # width and a height.
@@ -679,9 +682,14 @@ def sized(chart: Any, width: Any, height: int, mode: str) -> Any:
     return charts.apply_chart_style(chart.properties(width=width, height=height), mode)
 
 
-def label_size(height: int, small: int = 10) -> int:
+def enlarged(height: Any) -> bool:
+    """The chart of the zoom, drawn at a fixed height; a chart on the page takes the height of its tile."""
+    return isinstance(height, int) and height >= 200
+
+
+def label_size(height: Any, small: int = 10) -> int:
     """The letters of an axis: larger in the enlarged chart."""
-    return small if height < 200 else small + 2
+    return small + 2 if enlarged(height) else small
 
 
 def month_axis(height: int, **extra: Any) -> Any:
@@ -716,7 +724,7 @@ def trend_chart(
         line = alt.Chart(panel).mark_line(interpolate="monotone", strokeWidth=2.4)
         axis = alt.Axis(format="%Y", tickCount={"interval": "year", "step": 1}, labelFontSize=label_size(height))
     else:  # D-457: each month is a point, and each point has its month on the axis
-        dot = alt.OverlayMarkDef(filled=True, size=22 if height < 200 else 40)
+        dot = alt.OverlayMarkDef(filled=True, size=40 if enlarged(height) else 22)
         line = alt.Chart(panel).mark_line(interpolate="monotone", strokeWidth=2.4, point=dot)
         axis = month_axis(height, format="%b %Y", tickCount={"interval": "month", "step": 1})
     chart = line.encode(
@@ -1010,6 +1018,159 @@ def history_table(summaries: list[dict[str, Any]], chosen: str) -> str:
 # endregion
 
 
+# region Context
+def context_html(lead: str, detail: str) -> str:
+    """D-458: the green panel above the tabs: what the reader is looking at, from which month to which, and why."""
+    return (
+        '<div class="ba-context"><span class="ba-context-icon" aria-hidden="true">info</span>'
+        f"<p><b>{html.escape(lead)}</b> {html.escape(detail)}</p></div>"
+    )
+
+
+def inflation_lag(last: tuple[int, int]) -> str:
+    return say(
+        f"Termina en {month_label(last)}: es el último mes con la inflación del INE, que llega una vez al mes y con "
+        "atraso.",
+        f"It ends in {month_label(last)}: the last month with the INE's inflation, which arrives once a month and "
+        "late.",
+    )
+
+
+def monthly_context(period: str, last: tuple[int, int]) -> tuple[str, str]:
+    """«Mensual»: the months of the period chosen, why it ends where it ends and why the price starts where it does."""
+    start, end = bounds(period, last)
+    first = first_counted(start, end)
+    if period == LAST_YEAR:
+        return (
+            say(
+                f"Estás viendo los últimos 12 meses: de {month_label(first)} a {month_label(end)}.",
+                f"You are looking at the last 12 months: from {month_label(first)} to {month_label(end)}.",
+            ),
+            inflation_lag(last)
+            + " "
+            + say(
+                f"El precio parte en {month_label(start)} = 100, un año antes, para medir el cambio de 12 meses.",
+                f"The price starts at {month_label(start)} = 100, a year before, to measure the 12-month change.",
+            ),
+        )
+    year = int(period)
+    lead = say(
+        f"Estás viendo {year}: de {month_label(first)} a {month_label(end)}.",
+        f"You are looking at {year}: from {month_label(first)} to {month_label(end)}.",
+    )
+    ends = inflation_lag(last) if end != (year, 12) else say("Es el año completo.", "It is the whole year.")
+    if start == BASE:
+        starts = say(
+            f"El precio parte en {month_label(BASE)} = 100, el primer mes de los datos: no hay índice antes, así que "
+            f"el cambio de cada mes empieza en {full_month(next_month(BASE)[1]).lower()}. La primera alerta posible es de abril "
+            f"{BASE[0]}: una alerta necesita 12 semanas previas.",
+            f"The price starts at {month_label(BASE)} = 100, the first month of the data: there is no index before, so "
+            f"the change of each month starts in {full_month(next_month(BASE)[1])}. The first possible alert is from "
+            f"April {BASE[0]}: an alert needs 12 previous weeks.",
+        )
+    else:
+        measures = (
+            say("el año de diciembre a diciembre", "the year from December to December")
+            if end == (year, 12)
+            else say("lo que va del año", "the year so far")
+        )
+        starts = say(
+            f"El precio parte en {month_label(start)} = 100, el cierre del año anterior, para medir {measures}, como el "
+            "IPC del INE.",
+            f"The price starts at {month_label(start)} = 100, the close of the year before, to measure {measures}, "
+            "like the INE CPI.",
+        )
+    return lead, f"{ends} {starts}"
+
+
+def history_context(last: tuple[int, int]) -> tuple[str, str]:
+    """«Histórico»: from the first month of the data to the last month of the INE, and how a year is measured."""
+    shorter = say(f" y {last[0]} hasta {full_month(last[1]).lower()}", f" and {last[0]} up to {full_month(last[1])}")
+    shorter = shorter if last[1] != 12 else ""
+    return (
+        say(
+            f"Estás viendo toda la historia: de {month_label(BASE)} a {month_label(last)}.",
+            f"You are looking at the whole history: from {month_label(BASE)} to {month_label(last)}.",
+        ),
+        say(
+            f"Empieza en {month_label(BASE)} = 100, el primer mes de los datos, y termina en {month_label(last)}, el "
+            f"último mes con la inflación del INE, que llega con atraso. Cada año va de diciembre a diciembre: "
+            f"{BASE[0]} desde enero{shorter}.",
+            f"It starts at {month_label(BASE)} = 100, the first month of the data, and ends in {month_label(last)}, the "
+            f"last month with the INE's inflation, which arrives late. Each year runs from December to December: "
+            f"{BASE[0]} from January{shorter}.",
+        ),
+    )
+
+
+def inflation_context(last: tuple[int, int]) -> tuple[str, str]:
+    """«Precios e inflación»: its months and what rising with the CPI does not prove (the note under its cards)."""
+    return (
+        say(
+            f"Estás viendo cada familia frente a la inflación: de {month_label(BASE)} a {month_label(last)}.",
+            f"You are looking at each family against inflation: from {month_label(BASE)} to {month_label(last)}.",
+        ),
+        say(
+            f"{month_label(BASE).capitalize()} = 100 es el primer mes de los datos y {month_label(last)}, el último "
+            "con la inflación del INE, que llega con atraso. Subir con el IPC no prueba que la inflación cause la "
+            "subida.",
+            f"{month_label(BASE)} = 100 is the first month of the data and {month_label(last)}, the last one with the "
+            "INE's inflation, which arrives late. Rising with the CPI does not prove that inflation causes the rise.",
+        ),
+    )
+
+
+def insights_context(week: Any, last: tuple[int, int]) -> tuple[str, str]:
+    """«Insights»: today's answers, from the week shown and the last month of the INE."""
+    shown = weeks.week_range(week, year=True, english=i18n.is_english())
+    return (
+        say("Estás viendo las respuestas de hoy.", "You are looking at today's answers."),
+        say(
+            f"Los precios son de la semana {shown}; la inflación llega hasta {month_label(last)}, el último mes "
+            "que publicó el INE.",
+            f"The prices are those of the week of {shown}; inflation reaches {month_label(last)}, the last month the "
+            "INE published.",
+        ),
+    )
+
+
+def stakeholders_context() -> tuple[str, str]:
+    """«Interesados»: who uses the data; the rule of the rings, which was under the map."""
+    return (
+        say("Estás viendo quién usa estos datos.", "You are looking at who uses these data."),
+        i18n.translate_text(interest_map.CRITERION),
+    )
+
+
+def method_context() -> tuple[str, str]:
+    return (
+        say("Estás viendo cómo se calcula cada cifra.", "You are looking at how each figure is computed."),
+        say(
+            "Los KPI y las decisiones de sistema, leídos del PRD y del SQAP.",
+            "The KPIs and the system decisions, read from the PRD and the SQAP.",
+        ),
+    )
+
+
+def build_context_css(palette: dict[str, str], green: str) -> str:
+    """The panel in the fluorescent green of GreenOcean (D-450): a green edge and a light green ground, the text in the
+    ink of the theme so it reads on every theme. It keeps the height of two lines on every tab, so the tabs below it
+    never jump. It ends in a div, so its bottom margin makes up for the -1rem of the block (D-173)."""
+    return f"""<style>
+.ba-context {{ display:flex; gap:10px; align-items:center; padding:7px 14px; margin:-12px 0 6px; font-size:13px;
+  min-height:calc(2.9em + 16px); box-sizing:border-box; border:1px solid {green}; border-radius:12px;
+  background:color-mix(in srgb, {green} 11%, transparent); }}
+.ba-context-icon {{ font-family:"Material Symbols Rounded"; font-feature-settings:"liga"; font-size:20px;
+  line-height:1; color:{green}; }}
+.ba-context p {{ margin:0 !important; font-size:13px !important; line-height:1.45 !important;
+  color:{palette["text"]} !important; }}
+.ba-context b {{ color:{palette["strong_text"]}; }}
+</style>"""
+
+
+# endregion
+
+
 # region Zoom
 def zoom_text(measures: str, deduce: str) -> str:
     """The words of an enlarged chart: what it measures and what follows from it."""
@@ -1043,6 +1204,14 @@ def build_css(palette: dict[str, str]) -> str:
 .ba-chart-title {{ margin:0 !important; font-size:13.5px !important; font-weight:600; color:{ink} !important;
   line-height:1.3 !important; }}
 .ba-chart-title span {{ display:block; font-weight:400; color:{muted}; font-size:11.5px; }}
+/* D-458: the three charts take the height the window leaves, above a floor, so a tall window shows them larger. */
+[class*="st-key-ba_tile_"] {{ min-height:max(calc(100vh - {TILES_RESERVED}px), {TILES_FLOOR}px); }}
+[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"]:has([data-testid="stVegaLiteChart"]) {{
+  flex:1 1 0; min-height:0; display:flex; flex-direction:column; }}
+[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"],
+[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"] > div,
+[class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stVegaLiteChart"] {{
+  flex:1 1 auto; height:100%; min-height:0; }}
 /* D-457: a chart grows on hover, never past the page, and says what it measures and what follows from it. */
 [class*="st-key-ba_tile_"] {{ position:relative; cursor:zoom-in; }}
 [class*="st-key-ba_tile_"] [data-testid="stElementToolbar"] {{ display:none !important; }}
@@ -1059,14 +1228,19 @@ def build_css(palette: dict[str, str]) -> str:
 .ba-zoom-line {{ margin:0 0 3px !important; font-size:13px !important; line-height:1.45 !important;
   color:{text} !important; }}
 .ba-zoom-line b {{ color:{ink}; margin-right:4px; }}
+[class*="st-key-ba_zoom_"] [data-testid="stVegaLiteChart"] {{ margin-top:8px; }}
 .ba-table table {{ width:100%; border-collapse:collapse; font-size:12.5px; }}
-.ba-table th {{ text-align:left; font-weight:600; color:{muted}; padding:5px 8px; border-bottom:1px solid {border};
+.ba-table th {{ text-align:left; font-weight:600; color:{muted}; padding:4px 8px; border-bottom:1px solid {border};
   cursor:help; }}
-.ba-table td {{ padding:3px 8px; border-bottom:1px solid {border}; color:{text}; }}
+.ba-table td {{ padding:2px 8px; border-bottom:1px solid {border}; color:{text}; }}
 .ba-table td.num {{ text-align:right; font-variant-numeric:tabular-nums; }}
 .ba-table td.rise {{ color:{rise}; }} .ba-table td.fall {{ color:{fall}; }}
 .ba-table tr.ba-chosen td {{ background:color-mix(in srgb, {accent} 10%, transparent); color:{ink}; font-weight:600; }}
 @media (max-width:1100px) {{ .ba-cards {{ grid-template-columns:repeat(3, minmax(0, 1fr)); }} }}
+/* D-458: under 1400 px the filters wrap under the six tabs; the green panel already names the period, so they drop
+   their labels, and the charts accept a lower floor. */
+@media (max-width:1399px) {{ .st-key-ba_filters [data-testid="stWidgetLabel"] {{ display:none !important; }}
+  [class*="st-key-ba_tile_"] {{ min-height:max(calc(100vh - {TILES_RESERVED + 40}px), {NARROW_FLOOR}px); }} }}
 </style>"""
 
 
