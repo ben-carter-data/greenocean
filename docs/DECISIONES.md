@@ -3773,3 +3773,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Diagnóstico:** las tres vistas se ajustan al alto de la ventana restando un margen fijo para lo que va arriba y abajo: 427 px la entidad-relación (D-232), 371 px «Dónde viven los datos» (D-236) y 395 px «Cruces entre bases» (D-237). Desde que la página empieza más arriba (D-462, D-463), esos márgenes dejaban entre 166 y 188 px vacíos bajo el diagrama.
 - **Decisión:** los márgenes bajan a 287, 235 y 249 px. El dibujo sigue siendo el mismo SVG, que no pierde nitidez al crecer.
 - **Medición (Playwright):** a 1440 × 900, la entidad-relación pasa de 473 a 613 px de alto, «Dónde viven los datos» de 529 a 665 px y «Cruces entre bases» de 505 a 651 px; a 1266 × 712, la entidad-relación pasa de 285 a 425 px. Ninguna vista desplaza la página.
+
+## D-465 · El menú se abre solo al entrar a la app; después se pliega al ir a un dashboard o a un diagrama
+
+- **Pedido del autor:** la única vez que el menú está abierto por defecto es al entrar a la app; después, la regla de D-463 está bien. En su prueba, Semanal abría con el menú plegado, porque el navegador recordaba el menú plegado de antes.
+- **Decisión:** la pestaña recuerda la página anterior (`sessionStorage`). En la primera página de la pestaña, la entrada a la app, el menú se abre aunque el navegador lo recuerde plegado. Al recargar o volver a dibujar la misma página no cambia. Al ir a otra página, se pliega si es un dashboard o una página de diagramas. En una pantalla angosta o en un teléfono girado manda la regla de antes (D-166).
+- **Medición (Playwright):** la entrada (Semanal) abre el menú; Pipeline y linaje lo pliega; al recargarla sigue plegado; una pestaña nueva lo abre otra vez.
+- **Pruebas:** `tests/test_menu_order.py::test_d462_a_dashboard_opens_with_the_menu_folded_and_its_button_beating_in_green`, con la regla de la entrada.

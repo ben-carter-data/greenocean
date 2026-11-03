@@ -8343,29 +8343,31 @@ DASHBOARD_FOLD_SCRIPT = r"""<script>
 (() => {
     const view = "__VIEW__";
     const fold = "__FOLD__" === "yes";
-    // D-463: the app opens with its menu open; it folds only on going to a dashboard or a diagram
-    if (window.__goFoldedView === undefined) { window.__goFoldedView = view; return; }
-    if (window.__goFoldedView === view) return;
-    window.__goFoldedView = view;
-    if (!fold || window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches) return;
+    const wide = window.innerWidth >= __WIDE__ && !window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches;
+    // D-465: the page before, kept by the tab: the first page of the tab is the entry to the app
+    let last = null;
+    try { last = sessionStorage.getItem("goMenuView"); sessionStorage.setItem("goMenuView", view); } catch (error) { return; }
+    if (last === view) return;
+    // Streamlit marks the menu with data-collapsed (aria-expanded in older versions)
+    const isOpen = (sidebar) => sidebar.dataset.collapsed === "false" || sidebar.getAttribute("aria-expanded") === "true";
     let tries = 0;
-    const close = () => {
+    const act = () => {
         const sidebar = document.querySelector('[data-testid="stSidebar"]');
-        const button = document.querySelector('[data-testid="stSidebarCollapseButton"] button');
-        // Streamlit marks the menu with data-collapsed (aria-expanded in older versions)
-        const open = sidebar && (sidebar.dataset.collapsed === "false" || sidebar.getAttribute("aria-expanded") === "true");
-        if (open && button) { button.click(); return; }
-        if (sidebar && !open) return;
-        if (tries++ < 40) setTimeout(close, 100);
+        const button = last === null
+            ? document.querySelector('[data-testid="stExpandSidebarButton"]')
+            : document.querySelector('[data-testid="stSidebarCollapseButton"] button');
+        if (sidebar && button && (last === null) !== isOpen(sidebar)) { button.click(); return; }
+        if (sidebar && (last === null) === isOpen(sidebar)) return;
+        if (tries++ < 40) setTimeout(act, 100);
     };
-    close();
+    if (last === null ? wide : fold && wide) act();
 })();
 </script>"""
 
 
 def show_dashboard_menu_fold(view, mode):
-    """D-462, D-463: on going to a dashboard or a page of diagrams the menu folds and its button beats in green;
-    elsewhere it stays. The first page of the visit keeps it open."""
+    """D-462, D-463, D-465: on going to a dashboard or a page of diagrams the menu folds and its button beats in green;
+    elsewhere it stays. The first page of the tab, the entry to the app, opens it."""
     is_dashboard = view in FOLD_MENU_VIEWS
     if is_dashboard:
         green = ba_green(mode)
@@ -8383,7 +8385,11 @@ def show_dashboard_menu_fold(view, mode):
         )
     # the page as a neutral key: a page name in a script reads as Spanish text to the English layer (D-443)
     key = hashlib.sha1(view.encode()).hexdigest()[:10]
-    script = DASHBOARD_FOLD_SCRIPT.replace("__VIEW__", key).replace("__FOLD__", "yes" if is_dashboard else "no")
+    script = (
+        DASHBOARD_FOLD_SCRIPT.replace("__VIEW__", key)
+        .replace("__FOLD__", "yes" if is_dashboard else "no")
+        .replace("__WIDE__", str(NARROW_SCREEN_WIDTH))
+    )
     st.html(script, unsafe_allow_javascript=True)
 
 
