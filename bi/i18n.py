@@ -214,6 +214,7 @@ EN = {
     ":material/storefront: Mayorista": ":material/storefront: Wholesale",
     ":material/database: Datos": ":material/database: Data",
     "Ampliar la tabla de productos": "Enlarge the products table",
+    "Ampliar el gráfico": "Enlarge the chart",  # D-460
     "Variación semanal, %. Rojo: subió · Azul: bajó.": "Weekly change, %. Red: rose · Blue: fell.",
     "Últimas {} semanas": "Last {} weeks",
     "Total {} sem": "Total {} wk",

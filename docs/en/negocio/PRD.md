@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Product Requirements Document (PRD) |
-| Version | 3.25 |
+| Version | 3.26 |
 | Date | 2026-11-02 |
 | Status | Current |
 | Owner | The author |
@@ -152,7 +152,7 @@ These are six real captures, of 2026-11-02, of five main pages and in the four c
 - **Menu:** five sections: Business · BA and BI, Data engineering, DevOps and security, Stack and evidence, and Quality. The first gathers, under the title «Dashboards», three tiles with a dashboard icon, which stay in sight even when the section folds: Weekly, Latest data by channel and BA and BI analysis (D-442, D-452, D-453, D-456, D-459).
 - **Weekly:** it reads in three numbered steps. First a region or all of Chile is chosen, then a family, and last its products are shown. Each step opens when the one before is done. The three steps always stay together on one screen; the products table fills panel 3, scrolls by itself and is enlarged with its own button (D-446, D-447).
 - **Latest data by channel:** one card per channel, with its 3D icon in its own colours (D-453), its latest week, its prices, its change and the families it publishes. Each card opens that channel with the steps of the Weekly dashboard and behaves exactly like it, even if the other source has not published that week yet (D-404 to D-406, D-452).
-- **BA and BI analysis:** six tabs (D-456, D-457). «Monthly» is one period, the last 12 months or one year, month by month: five key figures (price change, against the CPI, consumer–wholesale gap, price alerts and biggest monthly rise), three charts (price month by month, change of each month and price alerts by month) and the table by family. «Historical» is the whole history, from January 2022 to the last month the INE published: five key figures (change since January 2022, against the CPI, year of the biggest rise, cheapest month and price alerts), three charts (price since January 2022, change of each year and season) and the table by family. Each chart says which months it shows; on hover it grows and says what it measures and what follows from it, and each figure explains how it is computed. The other four are Prices and inflation, Insights, Stakeholders and Method. Above the tabs, a green panel says what is being shown, from which month to which and why it starts and ends there; it follows the tab and the period (D-458).
+- **BA and BI analysis:** six tabs (D-456, D-457). «Monthly» is one period, the last 12 months or one year, month by month: five key figures (price change, against the CPI, consumer–wholesale gap, price alerts and biggest monthly rise), three charts (price month by month, change of each month and price alerts by month) and the table by family. «Historical» is the whole history, from January 2022 to the last month the INE published: five key figures (change since January 2022, against the CPI, year of the biggest rise, cheapest month and price alerts), three charts (price since January 2022, change of each year and season) and the table by family. Each chart says which months it shows, and its green magnifier opens it large, with what it measures and what follows from it; each figure explains on hover how it is computed. The other four are Prices and inflation, Insights, Stakeholders and Method. Above the tabs, a green panel says what is being shown, from which month to which and why it starts and ends there; it follows the tab and the period (D-458).
 - **Stack and evidence:** two views. «Tools» explains each tool; «Live system flow» shows the real pieces, what they say to each other and the running load (D-412).
 
 [[diagrama:mockups]]
@@ -245,3 +245,4 @@ The acronyms and terms of this document are defined in the [Glossary](GLOSARIO.m
 | 3.23 | 2026-11-02 | «BA and BI analysis» splits the history of prices into «Monthly», one period month by month, and «Historical», from January 2022 to the last month by year and season; each chart says its months and, on hover, what it measures and what follows from it (3.2, 7, D-457) |
 | 3.24 | 2026-11-02 | A green panel above the tabs of «BA and BI analysis» says what is shown, from which month to which and why, by tab and period (7, D-458) |
 | 3.25 | 2026-11-02 | The three dashboards of «Business · BA and BI» go under the title «Dashboards», and the first, the week's, is called «Weekly» (3.1 to 3.4, 4, 6, 7, D-459) |
+| 3.26 | 2026-11-02 | In «BA and BI analysis» the cards are thinner, the months read in two short lines and a green magnifier opens each chart large (7, D-460) |

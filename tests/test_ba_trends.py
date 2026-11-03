@@ -227,12 +227,19 @@ def test_d457_every_month_of_a_period_has_its_point_and_its_label():
     rows["month_start"] = pd.to_datetime(dict(year=rows["year"], month=rows["month"], day=1))
     spec = ba_trends.trend_chart(rows, "Pan", (2025, 9), (2026, 9), "Vantablack").to_dict()
     axis = spec["encoding"]["x"]["axis"]
-    assert axis["tickCount"] == {"interval": "month", "step": 1} and axis["format"] == "%b %Y"
-    assert axis["labelOverlap"] is False and spec["mark"]["point"]["filled"] is True
+    assert axis["tickCount"] == {"interval": "month", "step": 1} and axis["labelOverlap"] is False
+    assert spec["mark"]["point"]["filled"] is True
+    # D-460: on the page, each month in two short lines, the year under the first month and under January
+    assert axis["labelAngle"] == 0 and axis["labelExpr"] == (
+        "[timeFormat(datum.value, '%b'), datum.index == 0 || month(datum.value) == 0 ? timeFormat(datum.value, '%Y') : '']"
+    )
+    large = ba_trends.trend_chart(rows, "Pan", (2025, 9), (2026, 9), "Vantablack", height=300).to_dict()
+    assert large["encoding"]["x"]["axis"]["format"] == "%b %Y" and "labelExpr" not in large["encoding"]["x"]["axis"]
     whole = ba_trends.trend_chart(rows, "Pan", (2022, 1), (2026, 9), "Vantablack").to_dict()
     assert whole["encoding"]["x"]["axis"]["format"] == "%Y" and "point" not in whole["mark"]  # «Histórico»: years
     bars = ba_trends.months_chart(ba_trends.monthly_changes(rows, "Pan", (2025, 9), (2026, 9)), "Vantablack").to_dict()
-    assert bars["layer"][0]["encoding"]["x"]["axis"]["labelOverlap"] is False  # every month of the change, too
+    axis = bars["layer"][0]["encoding"]["x"]["axis"]  # every month of the change, too, «oct 2025» split in two
+    assert axis["labelOverlap"] is False and "split(datum.value, ' ')[0] == 'ene'" in axis["labelExpr"]
 
 
 def test_d456_the_season_says_which_years_each_calendar_month_gathers():
@@ -251,18 +258,18 @@ def test_d456_the_season_says_which_years_each_calendar_month_gathers():
     assert any(item.get("field") == "years" for item in spec["encoding"]["tooltip"])
 
 
-def test_d457_a_chart_grows_on_hover_never_past_the_page():
-    css = ba_trends.build_css(charts.get_palette("Vantablack"))
-    assert '[class*="st-key-ba_tile_"]:hover [class*="st-key-ba_zoom_"]' in css and "visibility:visible" in css
-    assert f"width:min({ba_trends.ZOOM_WIDTH + 70}px, 72vw)" in css  # never wider than the page
-    assert ".st-key-ba_zoom_0 { left:-10px; }" in css and ".st-key-ba_zoom_2 { right:-10px; }" in css
+def test_d460_the_green_magnifier_opens_the_chart_large_in_a_window():
+    css = ba_trends.build_css(charts.get_palette("Vantablack"), "#39ff14")
+    assert '[class*="st-key-ba_enlarge_"] button [data-testid="stIconMaterial"] { color:#39ff14 !important;' in css
+    assert "drop-shadow(0 0 3px #39ff14)" in css  # it glows
+    assert "st-key-ba_zoom_" not in css and ":hover [class*" not in css  # no more opening on hover
     words = ba_trends.zoom_text("lo que mide", "lo que se deduce")
     assert "<b>Qué mide</b> lo que mide" in words and "<b>Qué se deduce</b> lo que se deduce" in words
 
 
 @needs_database
 @pytest.mark.parametrize("tab", [dashboard.BA_MONTHLY_TAB, dashboard.BA_HISTORY_TAB])
-def test_d457_each_tab_draws_three_charts_each_with_its_enlarged_twin(tab):
+def test_d460_each_tab_draws_three_charts_and_each_magnifier_opens_its_window(tab):
     app = AppTest.from_file(str(Path(dashboard.__file__)), default_timeout=120)
     app.session_state["visitor_profile"] = "profesional"
     app.session_state[dashboard.BA_TAB_KEY] = tab
@@ -270,11 +277,24 @@ def test_d457_each_tab_draws_three_charts_each_with_its_enlarged_twin(tab):
     app.run()
     assert not app.exception
     markup = " ".join(block.value for block in app.markdown)
-    assert markup.count('class="ba-chart-title"') == 6 and markup.count("<b>Qué mide</b>") == 3
-    assert len(app.get("arrow_vega_lite_chart") + app.get("vega_lite_chart")) == 6
+    assert markup.count('class="ba-chart-title"') == 3 and "<b>Qué mide</b>" not in markup
+    assert len(app.get("arrow_vega_lite_chart") + app.get("vega_lite_chart")) == 3
     assert [box.key for box in app.selectbox if box.key in ("ba_period", "ba_family")] == (
         ["ba_period", "ba_family"] if tab == dashboard.BA_MONTHLY_TAB else ["ba_family"]
     )
+    # D-460: its green magnifier opens a chart large in a window, with what it measures and what follows from it
+    assert [button.key for button in app.button if str(button.key).startswith("ba_enlarge_")] == [
+        "ba_enlarge_0",
+        "ba_enlarge_1",
+        "ba_enlarge_2",
+    ]
+    app.button(key="ba_enlarge_1").click().run()
+    assert not app.exception
+    window = app.get("dialog")
+    assert len(window) == 1
+    words = " ".join(block.value for block in window[0].markdown)
+    assert "<b>Qué mide</b>" in words and "<b>Qué se deduce</b>" in words
+    assert len(window[0].get("arrow_vega_lite_chart") + window[0].get("vega_lite_chart")) == 1
 
 
 @needs_database

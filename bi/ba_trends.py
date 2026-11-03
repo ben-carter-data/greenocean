@@ -22,10 +22,10 @@ IPC = inflation_view.IPC_NAME
 BASE = (inflation_view.BASE_YEAR, inflation_view.BASE_MONTH)
 LAST_YEAR = "Últimos 12 meses"
 PACE = inflation_view.SAME_PACE_POINTS
-ZOOM_WIDTH, ZOOM_HEIGHT = 680, 250  # the enlarged chart, inside a window never wider than the page
+ZOOM_HEIGHT = 300  # the enlarged chart, in the window its green magnifier opens (D-460)
 # D-458: a tile takes the window's height less what is above and below it (the header, the green panel, the tabs, the
 # cards and the table), never less than the floor.
-TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 637, 154, 128
+TILES_RESERVED, TILES_FLOOR, NARROW_FLOOR = 603, 154, 128
 
 # One chart of a tab: its title, the months it shows, what it measures, what follows from it, and how to draw it at a
 # width and a height.
@@ -539,9 +539,10 @@ def history_tiles(rows, figures: dict[str, Any], last: tuple[int, int], mode: st
 
 # region Cards
 def card(label: str, value: str, note: str, hint: str, tone: str = "") -> str:
-    """One KPI card: what it measures, its figure, one line under it and, on hover, how it is computed."""
+    """One KPI card: what it measures, its figure, one line under it and, on hover, its name and how it is computed (a
+    narrow card cuts its lines short, D-460)."""
     return (
-        f'<div class="ba-card" tabindex="0" title="{html.escape(hint, quote=True)}"><span class="ba-card-label">'
+        f'<div class="ba-card" tabindex="0" title="{html.escape(label + ": " + hint, quote=True)}"><span class="ba-card-label">'
         f'{html.escape(label)}</span><b class="ba-card-value {tone}">{html.escape(value)}</b>'
         f'<span class="ba-card-note">{html.escape(note)}</span></div>'
     )
@@ -692,9 +693,31 @@ def label_size(height: Any, small: int = 10) -> int:
     return small + 2 if enlarged(height) else small
 
 
-def month_axis(height: int, **extra: Any) -> Any:
-    """An axis with every month of the period named with its year, «oct 2025», slanted so that none is left out."""
-    return alt.Axis(labelAngle=-45, labelFontSize=label_size(height, 9), labelOverlap=False, **extra)
+def month_axis(height: Any, temporal: bool = False, **extra: Any) -> Any:
+    """An axis that names every month of the period. Enlarged, each month with its year, «oct 2025». On the page, in two
+    short lines that leave the chart its height (D-460): the month, and under it the year, only on the first month and
+    where the year changes, «sep / 2025 · oct · nov · dic · ene / 2026»."""
+    if enlarged(height):
+        return alt.Axis(labelAngle=0, labelFontSize=label_size(height, 9), labelOverlap=False, **extra)
+    if temporal:
+        month, year, january = (
+            "timeFormat(datum.value, '%b')",
+            "timeFormat(datum.value, '%Y')",
+            "month(datum.value) == 0",
+        )
+    else:  # the category is «oct 2025»
+        month, year = "split(datum.value, ' ')[0]", "split(datum.value, ' ')[1]"
+        january = f"{month} == '{month_name(1)}'"
+    expression = f"[{month}, datum.index == 0 || {january} ? {year} : '']"
+    return alt.Axis(
+        labelAngle=0,
+        labelFontSize=9,
+        labelOverlap=False,
+        labelFlush=False,
+        labelExpr=expression,
+        labelPadding=3,
+        **extra,
+    )
 
 
 def trend_chart(
@@ -726,7 +749,7 @@ def trend_chart(
     else:  # D-457: each month is a point, and each point has its month on the axis
         dot = alt.OverlayMarkDef(filled=True, size=40 if enlarged(height) else 22)
         line = alt.Chart(panel).mark_line(interpolate="monotone", strokeWidth=2.4, point=dot)
-        axis = month_axis(height, format="%b %Y", tickCount={"interval": "month", "step": 1})
+        axis = month_axis(height, temporal=True, format="%b %Y", tickCount={"interval": "month", "step": 1})
     chart = line.encode(
         x=alt.X("month_start:T", title=None, scale=alt.Scale(domain=month_domain(start, end)), axis=axis),
         y=alt.Y(
@@ -1180,7 +1203,7 @@ def zoom_text(measures: str, deduce: str) -> str:
     )
 
 
-def build_css(palette: dict[str, str]) -> str:
+def build_css(palette: dict[str, str], green: str) -> str:
     ink, text, muted, card_color, border = (
         palette["strong_text"],
         palette["text"],
@@ -1193,14 +1216,14 @@ def build_css(palette: dict[str, str]) -> str:
 .ba-cards {{ display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; margin:0 0 6px; }}
 .st-key-ba_head {{ justify-content:space-between; gap:12px; flex-wrap:wrap; }}
 .st-key-ba_filters [data-testid="stWidgetLabel"] p {{ font-size:12px !important; }}
-.ba-card {{ display:flex; flex-direction:column; gap:2px; padding:10px 12px; border:1px solid {border}; border-radius:12px;
-  background:{card_color}; cursor:help; outline:none; }}
+/* D-460: thin cards, one line each: the label, the figure and its note, so the charts get the height. */
+.ba-card {{ display:flex; flex-direction:column; gap:0; padding:6px 11px 7px; border:1px solid {border}; border-radius:12px;
+  background:{card_color}; cursor:help; outline:none; min-width:0; }}
 .ba-card:hover, .ba-card:focus-visible {{ border-color:{accent}; }}
-.ba-card-label {{ font-size:12px; line-height:1.25; color:{muted}; }}
-.ba-card-value {{ font-size:24px; font-weight:700; color:{ink}; font-variant-numeric:tabular-nums; line-height:1.2; }}
+.ba-card-label {{ font-size:11px; line-height:1.3; color:{muted}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+.ba-card-value {{ font-size:20px; font-weight:700; color:{ink}; font-variant-numeric:tabular-nums; line-height:1.2; }}
 .ba-card-value.rise {{ color:{rise}; }} .ba-card-value.fall {{ color:{fall}; }}
-.ba-card-note {{ font-size:11.5px; line-height:1.3; color:{text}; display:-webkit-box; -webkit-line-clamp:2;
-  -webkit-box-orient:vertical; overflow:hidden; }}
+.ba-card-note {{ font-size:11px; line-height:1.3; color:{text}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
 .ba-chart-title {{ margin:0 !important; font-size:13.5px !important; font-weight:600; color:{ink} !important;
   line-height:1.3 !important; }}
 .ba-chart-title span {{ display:block; font-weight:400; color:{muted}; font-size:11.5px; }}
@@ -1212,23 +1235,25 @@ def build_css(palette: dict[str, str]) -> str:
 [class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stFullScreenFrame"] > div,
 [class*="st-key-ba_tile_"] > [data-testid="stElementContainer"] [data-testid="stVegaLiteChart"] {{
   flex:1 1 auto; height:100%; min-height:0; }}
-/* D-457: a chart grows on hover, never past the page, and says what it measures and what follows from it. */
-[class*="st-key-ba_tile_"] {{ position:relative; cursor:zoom-in; }}
+/* D-460: the green magnifier of a chart opens it large in a window; it glows in the green of GreenOcean (D-450). */
 [class*="st-key-ba_tile_"] [data-testid="stElementToolbar"] {{ display:none !important; }}
-[data-testid="stLayoutWrapper"]:has(> [class*="st-key-ba_zoom_"]) {{ display:contents; }}
-[class*="st-key-ba_zoom_"] {{ position:absolute !important; top:-10px; z-index:60;
-  width:min({ZOOM_WIDTH + 70}px, 72vw) !important; max-width:none !important; gap:6px !important; padding:12px 16px 10px;
-  border:1px solid {accent}; border-radius:14px; background:{card_color}; box-shadow:0 18px 40px -16px rgba(0,0,0,.55);
-  opacity:0; visibility:hidden; pointer-events:none; cursor:default;
-  transition:opacity .15s ease .15s, visibility 0s linear .3s; }}
-[class*="st-key-ba_tile_"]:hover [class*="st-key-ba_zoom_"] {{ opacity:1; visibility:visible; pointer-events:auto;
-  transition:opacity .15s ease .15s; }}
-.st-key-ba_zoom_0 {{ left:-10px; }} .st-key-ba_zoom_1 {{ left:50%; transform:translateX(-50%); }}
-.st-key-ba_zoom_2 {{ right:-10px; }}
+[class*="st-key-ba_chart_head_"] {{ gap:4px !important; flex-wrap:nowrap !important; }}
+[class*="st-key-ba_chart_head_"] > [data-testid="stElementContainer"]:first-child {{ flex:1 1 auto; min-width:0; }}
+[class*="st-key-ba_enlarge_"] button {{ min-height:24px !important; padding:0 2px !important; background:transparent !important;
+  border:0 !important; box-shadow:none !important; }}
+[class*="st-key-ba_enlarge_"] button [data-testid="stMarkdownContainer"] {{ position:absolute !important; width:1px;
+  height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }}
+[class*="st-key-ba_enlarge_"] button [data-testid="stIconMaterial"] {{ color:{green} !important; font-size:22px !important;
+  filter:drop-shadow(0 0 3px {green}) drop-shadow(0 0 7px color-mix(in srgb, {green} 55%, transparent));
+  transition:transform .15s ease; }}
+[class*="st-key-ba_enlarge_"] button:hover [data-testid="stIconMaterial"] {{ transform:scale(1.18); }}
 .ba-zoom-line {{ margin:0 0 3px !important; font-size:13px !important; line-height:1.45 !important;
   color:{text} !important; }}
 .ba-zoom-line b {{ color:{ink}; margin-right:4px; }}
-[class*="st-key-ba_zoom_"] [data-testid="stVegaLiteChart"] {{ margin-top:8px; }}
+.ba-zoom-title {{ margin:0 40px 8px 0 !important; font-size:17px !important; font-weight:700; color:{ink} !important;
+  line-height:1.3 !important; }}
+.ba-zoom-title span {{ display:block; font-weight:400; font-size:12.5px; color:{muted}; }}
+[role="dialog"]:has(.ba-zoom-title) [data-testid="stElementToolbar"] {{ display:none !important; }}
 .ba-table table {{ width:100%; border-collapse:collapse; font-size:12.5px; }}
 .ba-table th {{ text-align:left; font-weight:600; color:{muted}; padding:4px 8px; border-bottom:1px solid {border};
   cursor:help; }}
@@ -1240,7 +1265,13 @@ def build_css(palette: dict[str, str]) -> str:
 /* D-458: under 1400 px the filters wrap under the six tabs; the green panel already names the period, so they drop
    their labels, and the charts accept a lower floor. */
 @media (max-width:1399px) {{ .st-key-ba_filters [data-testid="stWidgetLabel"] {{ display:none !important; }}
-  [class*="st-key-ba_tile_"] {{ min-height:max(calc(100vh - {TILES_RESERVED + 40}px), {NARROW_FLOOR}px); }} }}
+  [class*="st-key-ba_tile_"] {{ min-height:max(calc(100vh - {TILES_RESERVED}px), {NARROW_FLOOR}px); }}
+  /* D-460: the tabs and the filters keep one row down to 1250 px, so the charts keep that height. */
+  .st-key-ba_tab [data-testid="stButtonGroup"] > div {{ gap:12px !important; }}
+  .st-key-ba_tab button p {{ font-size:13.5px !important; }}
+  .st-key-ba_filters [data-testid="stElementContainer"] {{ width:166px !important; max-width:166px !important; }}
+  .st-key-ba_filters [data-testid="stElementContainer"]:last-child {{ width:172px !important; max-width:172px !important; }}
+  .ba-context p {{ font-size:12.5px !important; }} }}
 </style>"""
 
 

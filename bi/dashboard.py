@@ -5474,11 +5474,15 @@ def show_ba_context(tab, mode):
         lead, detail = ba_trends.stakeholders_context()
     else:
         lead, detail = ba_trends.method_context()
-    green = home_mockup.SEARCH_DARK if is_dark_theme(mode) else home_mockup.SEARCH_LIGHT
     st.markdown(
-        ba_trends.build_context_css(charts.get_palette(mode), green) + ba_trends.context_html(lead, detail),
+        ba_trends.build_context_css(charts.get_palette(mode), ba_green(mode)) + ba_trends.context_html(lead, detail),
         unsafe_allow_html=True,
     )
+
+
+def ba_green(mode):
+    """The fluorescent green of GreenOcean (D-450), deeper on a light theme so it still reads on white."""
+    return home_mockup.SEARCH_DARK if is_dark_theme(mode) else home_mockup.SEARCH_LIGHT
 
 
 def show_ba_filters(tab):
@@ -5524,7 +5528,7 @@ def show_ba_monthly(mode):
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
-    st.markdown(ba_trends.build_css(palette), unsafe_allow_html=True)
+    st.markdown(ba_trends.build_css(palette, ba_green(mode)), unsafe_allow_html=True)
     choices, family = chosen_ba_family(rows)
     period = st.session_state.get("ba_period")
     if period not in ba_trends.periods(last):
@@ -5547,7 +5551,7 @@ def show_ba_history(mode):
     if rows.empty:
         st.info(NO_DATA_TEXT)
         return
-    st.markdown(ba_trends.build_css(palette), unsafe_allow_html=True)
+    st.markdown(ba_trends.build_css(palette, ba_green(mode)), unsafe_allow_html=True)
     choices, family = chosen_ba_family(rows)
     figures = ba_trends.history(rows, margins, seasonal, found, family, last)
     st.markdown(ba_trends.history_cards(figures, last), unsafe_allow_html=True)
@@ -5557,18 +5561,30 @@ def show_ba_history(mode):
 
 
 def show_ba_tiles(tiles):
-    """D-457: three charts side by side, each with its title and the months it shows. On hover a chart grows, never
-    past the page, and says what it measures and what follows from it."""
+    """D-457, D-460: three charts side by side, each with its title and the months it shows. Its green magnifier opens it
+    large in a window, with what it measures and what follows from it."""
     for index, (column, (title, note, measures, deduce, draw)) in enumerate(zip(st.columns(3, gap="medium"), tiles)):
         heading = f'<p class="ba-chart-title">{html.escape(title)}<span>{html.escape(note)}</span></p>'
         with column, st.container(key=f"ba_tile_{index}"):
-            st.markdown(heading, unsafe_allow_html=True)
+            # its own key: a key that started with «ba_tile_» would take the tile's height rules and leave the chart none
+            with st.container(key=f"ba_chart_head_{index}", horizontal=True, vertical_alignment="top"):
+                st.markdown(heading, unsafe_allow_html=True, width="stretch")
+                if st.button(
+                    tr("Ampliar"), icon=":material/zoom_in:", key=f"ba_enlarge_{index}", help=tr("Ampliar el gráfico")
+                ):
+                    st.dialog(title, width="large")(show_ba_chart_dialog)(title, note, measures, deduce, draw)
             st.altair_chart(draw(height="container"), width="stretch", height="stretch", theme=None)
-            with st.container(key=f"ba_zoom_{index}"):
-                st.markdown(heading + ba_trends.zoom_text(measures, deduce), unsafe_allow_html=True)
-                st.altair_chart(
-                    draw(width=ba_trends.ZOOM_WIDTH, height=ba_trends.ZOOM_HEIGHT), width="content", theme=None
-                )
+
+
+def show_ba_chart_dialog(title, note, measures, deduce, draw):
+    """D-460: a chart of «Mensual» or «Histórico» at the size of the window, with its months, what it measures and what
+    follows from it. The window's own title is hidden in every dialog (D-316), so the chart's title opens its content."""
+    st.markdown(
+        f'<p class="ba-zoom-title">{html.escape(title)}<span>{html.escape(note)}</span></p>'
+        + ba_trends.zoom_text(measures, deduce),
+        unsafe_allow_html=True,
+    )
+    st.altair_chart(draw(width="container", height=ba_trends.ZOOM_HEIGHT), width="stretch", theme=None)
 
 
 def show_ba_method(mode):
