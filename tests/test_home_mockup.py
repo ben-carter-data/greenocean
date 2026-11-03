@@ -110,45 +110,36 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
-def test_d489_a_chip_shows_the_alerts_in_step_three_without_a_window():
+def test_d491_the_alert_line_waits_for_a_family_then_filters_step_three_and_comes_back():
     app = AppTest.from_file(ROOT / 'bi/dashboard.py', default_timeout=60)
-    app.session_state['visitor_profile'] = 'profesional'
+    app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PUBLIC  # the Usuario view
     app.run()
     assert not app.exception
-    assert app.button(key='home_alert_trigger') not in app.sidebar.button  # on top of the Resumen (D-169)
-    app.button(key='home_alert_trigger').click().run()
-    assert not app.exception
-    assert app.query_params['alerta'] == dashboard.RISE and app.query_params['familia'] == dashboard.ALL_VALUES
+    assert app.button(key='home_alert_trigger').disabled  # no family chosen yet (D-352)
+    app.query_params.update({'_home_region': dashboard.ALL_VALUES, 'familia': 'Frutas'})
+    app.session_state[dashboard.scoped(dashboard.HOME_REGION_DONE)] = True
+    app.run()
     week = dashboard.read_cached_filter_options(dashboard.get_database_version())['week'][0]
-    rows = dashboard.home_alert_rows(week, dashboard.ALL_VALUES, direction=dashboard.RISE)
+    rows = dashboard.home_alert_rows(week, 'Frutas', direction=dashboard.RISE)
+    rise = app.button(key='home_alert_trigger')
+    assert not rise.disabled and rise.label == f'▲ {len(rows)} alzas fuertes'  # the family's own count
+    rise.click().run()
+    assert not app.exception and app.query_params['alerta'] == dashboard.RISE
     markup = ' '.join(block.value for block in app.markdown)
-    assert 'precio nacional de ODEPA' in markup and dashboard.alert_count_text(len(rows), dashboard.RISE) in markup
-    assert len(app.dataframe) == 1 and len(app.dataframe[0].value) == len(rows)  # every family's
-    assert not [block for block in app.get('dialog')]
-
-
-def test_d489_a_family_row_carries_its_sharp_rises_and_drops_as_links_of_their_own():
-    rows = [
-        {'product_group': 'Frutas', 'variation': -0.02, 'national_variation': -0.02},
-        {'product_group': 'Pan', 'variation': 0.01, 'national_variation': 0.01},
-    ]
-    markup = home_mockup.family_movement(
-        rows,
-        lambda family: f'#{family}',
-        None,
-        'todo Chile',
-        alerts={'Frutas': (4, 2)},
-        alert_link=lambda family, direction: f'#{family}-{direction}',
-        alert_chosen=('Frutas', 'baja'),
+    assert 'precio nacional de ODEPA' in markup and 'home-alert-level-guide' in ' '.join(
+        b.value for b in app.get('html')
     )
-    item = markup.split('<div class="mock-movement-item">', 1)[1].split('</div>', 1)[0]
-    row, marks = item.split('</a>', 1)  # the row's link closes before the marks: links are never nested
-    assert 'href="#Frutas"' in row and 'mock-alert-mark' not in row
-    assert 'href="#Frutas-alza"' in marks and '>▲4</a>' in marks and '>▼2</a>' in marks
-    assert 'class="mock-alert-mark fall on"' in marks  # the one shown in step 3
-    assert 'title="Muestra en la tabla solo las 4 alzas fuertes de Frutas' in marks  # what the click does, first
-    assert markup.count('mock-alert-mark') == 2  # Pan has no alert, so no mark
-    assert 'una familia puede bajar en conjunto y tener productos que subieron' in markup  # the hint says why
+    assert len(app.dataframe) == 1 and len(app.dataframe[0].value) == len(rows)
+    assert not app.get('dialog')  # no window (D-489)
+    app.button(key='home_alert_trigger').click().run()  # pressed again: every product
+    assert 'alerta' not in app.query_params and not app.dataframe
+
+
+def test_d491_the_families_carry_no_alert_marks_and_the_hint_says_why_the_bar_differs():
+    rows = [{'product_group': 'Frutas', 'variation': -0.02}, {'product_group': 'Pan', 'variation': 0.01}]
+    markup = home_mockup.family_movement(rows, lambda family: f'#{family}', None, 'todo Chile')
+    assert 'mock-alert-mark' not in markup
+    assert 'una familia puede bajar en conjunto y tener productos que subieron' in markup
 
 
 def test_d096_sidebar_footer_shows_the_real_alert_count():

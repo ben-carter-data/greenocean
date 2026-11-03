@@ -1081,12 +1081,8 @@ def test_summary_ranking_orders_change_rows_and_keep_real_prices_visible():
     for group in (True, False):
         values = [value for thin, value in rows() if thin == group]
         assert values == sorted(values)
-    # «Inusuales» keeps only national alerts.
-    app.selectbox(key='home_products_order').set_value('Inusuales').run()
-    assert not app.exception and len(changes()) < len(largest)
-    app.query_params['_home_region'] = 'Región de Coquimbo'
-    app.run()
-    assert 'Inusuales' not in app.selectbox(key='home_products_order').options
+    # D-491: the alerts have their own buttons between steps 2 and 3, so the order has no «Inusuales»
+    assert 'Inusuales' not in app.selectbox(key='home_products_order').options and largest
 
 
 @needs_database
@@ -1289,6 +1285,8 @@ def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
     app.run()
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
     assert '.home-alert-level-guide' in markup and '.mock-alert-mark' in markup
+    app.query_params.update({'_home_region': dashboard.ALL_VALUES, 'familia': 'Frutas'})  # D-491: after a family
+    app.run()
     app.button(key='home_alert_trigger').click().run()
     assert not app.exception
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
@@ -1330,7 +1328,9 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not app.exception
     alert = app.button(key="home_alert_trigger")
-    assert re.fullmatch(r"▲ \d+ alzas? fuertes?", alert.label) and "10 %" in alert.help and "12 semanas" in alert.help
+    # D-491: the alerts wait for a family, and say so
+    assert re.fullmatch(r"▲ \d+ alzas? fuertes?", alert.label) and alert.disabled
+    assert alert.help == "Elige primero una familia."
     drop = app.button(key="home_drop_trigger")  # D-477: the sharp drops, a green chip beside it
     assert re.fullmatch(r"▼ \d+ bajas? fuertes?", drop.label) and drop not in app.sidebar.button
     # D-169: the trigger sits on top of the Resumen, out of the sidebar.

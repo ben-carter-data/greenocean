@@ -337,7 +337,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-movement-row.mock-movement-axis {min-height:16px;font-size:10px;color:var(--mock-muted);}
 .mock-movement-axis:hover {background:transparent;}
 .mock-movement-scale {display:flex;justify-content:space-between;}
-.mock-movement-row,.mock-movement-alert-links {display:grid;grid-template-columns:12px minmax(138px,1.3fr) 64px minmax(160px,2.2fr) 70px 64px 60px 14px;gap:0 8px;align-items:center;min-height:31px;padding:2px 8px;border:1px solid transparent;border-radius:7px;color:var(--mock-ink)!important;text-decoration:none!important;font-size:12.5px;}
+.mock-movement-row {display:grid;grid-template-columns:12px minmax(138px,1.3fr) minmax(160px,2.2fr) 70px 64px 60px 14px;gap:0 8px;align-items:center;min-height:31px;padding:2px 8px;border:1px solid transparent;border-radius:7px;color:var(--mock-ink)!important;text-decoration:none!important;font-size:12.5px;}
 .mock-movement-row:hover {background:var(--mock-soft);}
 .mock-movement-row.selected {background:color-mix(in srgb,var(--mock-fall) 8%,__PANEL__);border-color:var(--mock-fall);}
 .mock-movement-row strong {font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -351,15 +351,11 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-movement-row.rise .mock-movement-value,.mock-movement-row.rise .mock-movement-state {color:var(--mock-rise);}
 .mock-movement-row.fall .mock-movement-value,.mock-movement-row.fall .mock-movement-state {color:var(--mock-fall);}
 .mock-movement-state {font-size:11px;}.mock-movement-chevron {color:var(--mock-muted);font-size:16px;}
-/* D-489: the family's sharp rises and drops, two links laid over the row on its own grid, so the row keeps its link. */
-.mock-movement-item {position:relative;}
-.mock-movement-alert-links {position:absolute;inset:0;pointer-events:none;background:none!important;}
-.mock-movement-alert-cell {display:flex;align-items:center;gap:4px;}
-.mock-alert-mark {pointer-events:auto;display:inline-flex;align-items:center;padding:2px 6px;border-radius:999px;font-size:11px;font-weight:600;line-height:1.2;text-decoration:none!important;font-variant-numeric:tabular-nums;white-space:nowrap;}
+/* D-489: in step 3's heading, the kind of alert it shows. */
+.mock-alert-mark {display:inline-flex;align-items:center;padding:2px 6px;border-radius:999px;font-size:11px;font-weight:600;line-height:1.2;text-decoration:none!important;font-variant-numeric:tabular-nums;white-space:nowrap;}
 .mock-alert-mark.rise {color:__ALERT_RISE__!important;background:color-mix(in srgb,__ALERT_RISE__ 16%,transparent);}
 .mock-alert-mark.fall {color:__ALERT_DROP__!important;background:color-mix(in srgb,__ALERT_DROP__ 16%,transparent);}
-.mock-alert-mark:hover,.mock-alert-mark.on {box-shadow:inset 0 0 0 1px currentColor;}
-.mock-alert-back {margin-left:auto;font-size:12px;font-weight:600;color:__ACCENT__!important;white-space:nowrap;}
+.mock-alert-mark.on {box-shadow:inset 0 0 0 1px currentColor;}
 .st-key-home_products {border:1px solid var(--mock-border, #e0e6ee);border-radius:12px;background:__PANEL__;padding:8px 14px 10px;gap:6px!important;flex:1;}
 .st-key-home_products [data-testid="stHorizontalBlock"] {gap:8px!important;}
 .st-key-home_products [data-testid="stSelectbox"] {display:flex;align-items:center;gap:6px;}
@@ -397,7 +393,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
  .mock-chile-map {max-height:none;}.mock-products-table {max-height:420px;}
 }
 @media(max-width:700px) {
- .mock-movement-row,.mock-movement-alert-links {grid-template-columns:10px minmax(0,1fr) 58px 64px 14px;}.mock-movement-track,.mock-movement-state,.mock-movement-axis,.mock-spark {display:none;}
+ .mock-movement-row {grid-template-columns:10px minmax(0,1fr) 64px 14px;}.mock-movement-track,.mock-movement-state,.mock-movement-axis,.mock-spark {display:none;}
  .st-key-home_products [data-testid="stHorizontalBlock"] {flex-wrap:wrap;}
 }
 .mock-products-count {margin-left:auto;font-size:11px;color:var(--mock-muted);font-variant-numeric:tabular-nums;}
@@ -666,8 +662,7 @@ ul.mock-calc-out li em {font-style:normal;}
 
 /* D-450: the families never pass the panel's edge: the name and the bar give up room before the figures do. */
 @media (min-width:701px) {
- .stApp .st-key-home_overview .greenocean-mockup .mock-movement-row,
- .stApp .st-key-home_overview .greenocean-mockup .mock-movement-alert-links {grid-template-columns:42px minmax(92px,1.3fr) 58px minmax(36px,2.2fr) 62px 62px 56px 14px;gap:0 6px;}
+ .stApp .st-key-home_overview .greenocean-mockup .mock-movement-row {grid-template-columns:42px minmax(92px,1.3fr) minmax(36px,2.2fr) 62px 62px 56px 14px;gap:0 6px;}
  .st-key-home_overview .mock-spark svg {max-width:100%;height:auto;}
  .st-key-home_overview .mock-movement {overflow:hidden;}
 }

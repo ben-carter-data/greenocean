@@ -217,9 +217,8 @@ def test_d450_the_products_head_is_one_thin_line_and_the_families_stay_inside_th
     css = home_mockup.style(charts.THEMES[0], charts.get_palette(charts.THEMES[0]))
     # Measured with Playwright at 1280 x 684 and 1440 x 790: no family row passes the panel's edge.
     assert (
-        # D-489: the alert marks lie over the row on the same columns, one of them for the marks
-        ".stApp .st-key-home_overview .greenocean-mockup .mock-movement-alert-links {grid-template-columns:42px "
-        "minmax(92px,1.3fr) 58px" in css
+        ".stApp .st-key-home_overview .greenocean-mockup .mock-movement-row {grid-template-columns:42px minmax(92px,1.3fr)"
+        in css
     )
     assert (
         ".st-key-home_overview .mock-products-slim .mock-kicker,.st-key-home_overview .mock-products-slim h2 {display:none!important;}"

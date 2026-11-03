@@ -4276,7 +4276,7 @@ def alert_count_text(count, direction):
     return f'{count} {one if count == 1 else many}'
 
 
-def show_family_alerts(week, family, direction, mode, all_link):
+def show_family_alerts(week, family, direction, mode):
     """D-489: step 3 with only the sharp rises or the sharp drops of a family (or of the whole basket), at the national
     price of K6, with the level of each one and the rule in words (D-479)."""
     rows = home_alert_rows(week, family or ALL_VALUES, direction=direction)
@@ -4284,9 +4284,7 @@ def show_family_alerts(week, family, direction, mode, all_link):
     professional = not is_public_profile()
     st.markdown(
         '<div class="greenocean-mockup">'
-        + home_mockup.alert_heading(
-            family or ALL_VALUES, alert_count_text(len(rows), direction), rise, all_link, step=3
-        )
+        + home_mockup.alert_heading(family or ALL_VALUES, alert_count_text(len(rows), direction), rise, step=3)
         + '</div>',
         unsafe_allow_html=True,
     )
@@ -4300,15 +4298,19 @@ def show_alert_table(rows, mode):
     if rows.empty:
         st.caption('No hay alertas para esta selección.')
         return
+    table = translate_alert_table(home_alert_table(rows))
+    # D-491: the product's column has a width, so «Variación» never falls off the panel; the full name shows on hover
+    product = table.columns[1]
     st.dataframe(
-        style_home_alert_table(translate_alert_table(home_alert_table(rows)), mode),
+        style_home_alert_table(table, mode),
         hide_index=True,
         use_container_width=True,
         height=min(520, max(150, 35 * (len(rows) + 1))),
+        column_config={product: st.column_config.TextColumn(product, width=230)},
     )
 
 
-PRODUCT_ORDERS = ('Mayor cambio', 'Subidas', 'Bajadas', 'Nombre', 'Inusuales')
+PRODUCT_ORDERS = ('Mayor cambio', 'Subidas', 'Bajadas', 'Nombre')
 
 
 def channel_label(channel):
@@ -4409,11 +4411,6 @@ def sort_family_products(rows, order):
         return sorted(rows, key=lambda row: (thin(row), -row['variation'], names(row)))
     if order == 'Bajadas':
         return sorted(rows, key=lambda row: (thin(row), row['variation'], names(row)))
-    if order == 'Inusuales':
-        # National alerts only, the most unusual first (distance to the usual range).
-        return sorted(
-            (row for row in rows if row.get('is_alert')), key=lambda row: (-row.get('_severity', 0), names(row))
-        )
     return sorted(rows, key=lambda row: (thin(row), -abs(row['variation']), names(row)))
 
 
@@ -4584,29 +4581,21 @@ def show_market_overview(mode, prefix):
                 len(card['families']), len(everyone), names
             )
             notice = f'{covered} {notice}'.strip()
-    # D-490: the row holds the week's alerts and the note of a late source; the table of the last weeks left.
-    with st.container(key='home_info', horizontal=True, vertical_alignment='center'):
-        show_alert_notice(week)
-        if notice:
+    # D-490: the row under the bar holds only the note of a late source; D-491: the alerts sit between steps 2 and 3.
+    if notice:
+        with st.container(key='home_info', horizontal=True, vertical_alignment='center'):
             st.caption(notice)  # D-356: a quiet line; the week is not filled in, it waits for the source
     # D-452: a channel page behaves exactly as the Dashboard: its three panels stay together (D-446), nothing folds.
 
-    # D-489: a family's ▲ or ▼ shows only its sharp rises or drops in step 3; its row brings back every product.
+    # D-489, D-491: ▲ or ▼, between steps 2 and 3, shows only the chosen family's sharp rises or drops in step 3;
+    # choosing a family again brings back every product.
     alert = st.query_params.get('alerta') if family_open else None
     alert = alert if alert in ALERT_KINDS else None
-    now = read_price_alerts()
-    now = now[now['week_start'] == pd.Timestamp(week)]
-    alert_counts = {
-        group: (int((part['variation'] > 0).sum()), int((part['variation'] < 0).sum()))
-        for group, part in now.groupby('product_group')
-    }
 
     def show_products():
         with st.container(key='home_products'):
             if alert:
-                show_family_alerts(
-                    week, family, alert, mode, overview_link(None if region == ALL_VALUES else region, family, 'family')
-                )
+                show_family_alerts(week, family, alert, mode)
                 return
             if not family_open:
                 st.markdown(
@@ -4643,8 +4632,7 @@ def show_market_overview(mode, prefix):
             channel = channel_column.selectbox(
                 'Canal', channels, key='home_products_channel', disabled=not family_open, format_func=channel_label
             )
-            # Alerts are national: «Inusuales» only applies to the whole country.
-            orders = PRODUCT_ORDERS if region == ALL_VALUES else PRODUCT_ORDERS[:-1]
+            orders = PRODUCT_ORDERS  # D-491: the alerts have their own buttons, so the order has no «Inusuales»
             if st.session_state.get('home_products_order') not in orders:
                 st.session_state['home_products_order'] = orders[0]
             order = order_column.selectbox('Orden', orders, key='home_products_order', disabled=not family_open)
@@ -4760,15 +4748,11 @@ def show_market_overview(mode, prefix):
                     trends=trends,
                     basket=None if basket_value is None else (basket_value, basket_trend),
                     basket_link=overview_link(None if region == ALL_VALUES else region, ALL_VALUES, 'family'),
-                    alerts=alert_counts,
-                    alert_link=lambda chosen, direction: overview_link(
-                        None if region == ALL_VALUES else region, chosen, 'family', direction
-                    ),
-                    alert_chosen=(family, alert) if alert else None,
                 )
                 + '</div>',
                 unsafe_allow_html=True,
             )
+        show_alert_line(week, products_family, family_open, alert)
         show_products()
     # Under both columns, full width (D-150): the note no longer lengthens one side.
     st.markdown(
@@ -9187,6 +9171,10 @@ def build_sidebar_css(mode):
     .st-key-home_drop_trigger button:hover {{background:color-mix(in srgb,{drop_text} 24%,transparent) !important;}}
     .st-key-home_drop_trigger button p {{color:{drop_text} !important; -webkit-text-fill-color:{drop_text} !important;
         font-weight:600; font-size:13.5px; letter-spacing:0; font-variant-numeric:tabular-nums;}}
+    /* D-491: the one shown in step 3 is outlined; both wait, faded, until a family is chosen. */
+    .st-key-home_alert_trigger [data-testid="stBaseButton-primary"] {{box-shadow:inset 0 0 0 1.5px {alert_text} !important;}}
+    .st-key-home_drop_trigger [data-testid="stBaseButton-primary"] {{box-shadow:inset 0 0 0 1.5px {drop_text} !important;}}
+    .st-key-home_alert_trigger button:disabled, .st-key-home_drop_trigger button:disabled {{opacity:.45;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button {{background:transparent !important;
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button p {{color:{quiet} !important; font-size:.76rem !important;}}
@@ -9452,13 +9440,14 @@ def build_sidebar_github_html(is_current):
 WINDOW_PAGES = {}
 
 
-def show_alert_notice(week):
-    """The price alerts of the week shown, a notice of the content (D-398; before, a chip of the header). The count is
-    national, like the detail. D-477: two chips, the sharp rises in red and the sharp drops in green. D-489: each one
-    shows its alerts of the whole basket in step 3, like a family's ▲ or ▼, without a window."""
-    alerts_now = read_price_alerts()
-    week = pd.Timestamp(week)
-    now = alerts_now[alerts_now["week_start"] == week] if not alerts_now.empty else alerts_now
+def show_alert_line(week, family, family_open, alert):
+    """D-491: between steps 2 and 3, a thin line with the sharp rises (red) and the sharp drops (green) of the chosen
+    family, or of the whole basket; they wake up once a family is chosen (D-352). One shows only those products in step
+    3, and pressing it again brings back every product. The count is national, like K6 (D-477, D-489)."""
+    now = read_price_alerts()
+    now = now[now["week_start"] == pd.Timestamp(week)] if not now.empty else now
+    if family_open and family not in (None, ALL_VALUES) and not now.empty:
+        now = now[now["product_group"] == family]
     counts = {
         RISE: int((now["variation"] > 0).sum()) if not now.empty else 0,
         DROP: int((now["variation"] < 0).sum()) if not now.empty else 0,
@@ -9468,23 +9457,34 @@ def show_alert_notice(week):
             RISE,
             "home_alert_trigger",
             tr("▲ {} alzas fuertes").format(counts[RISE]) if counts[RISE] != 1 else tr("▲ 1 alza fuerte"),
-            alerts.describe_kind(True, not is_public_profile()),
         ),
         (
             DROP,
             "home_drop_trigger",
             tr("▼ {} bajas fuertes").format(counts[DROP]) if counts[DROP] != 1 else tr("▼ 1 baja fuerte"),
-            alerts.describe_kind(False, not is_public_profile()),
         ),
     ]
     with st.container(key="home_alert_chips", horizontal=True, gap="small", width="content"):
-        for direction, key, label, help_text in chips:
-            if st.button(label, key=key, disabled=not counts[direction], help=help_text):
-                # D-489: no window: step 3 shows the sharp rises or drops of the whole basket, like a family's ▲ or ▼
-                st.session_state[scoped(HOME_REGION_DONE)] = True
-                st.session_state[scoped(HOME_FAMILY_DONE)] = True
-                st.query_params["familia"] = ALL_VALUES
-                st.query_params["alerta"] = direction
+        for direction, key, label in chips:
+            on = alert == direction
+            help_text = (
+                tr("Pulsa de nuevo para ver todos los productos.")
+                if on
+                else alerts.describe_kind(direction == RISE, not is_public_profile())
+                if family_open
+                else tr("Elige primero una familia.")
+            )
+            if st.button(
+                label,
+                key=key,
+                type="primary" if on else "secondary",
+                disabled=not family_open or not counts[direction],
+                help=help_text,
+            ):
+                if on:
+                    st.query_params.pop("alerta", None)
+                else:
+                    st.query_params["alerta"] = direction
                 st.rerun()
 
 

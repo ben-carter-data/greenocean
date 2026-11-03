@@ -640,33 +640,6 @@ def movement_note(model):
     return '<span class="mock-movement-note">' + ' '.join(f'<span>{esc(text)}</span>' for text in sentences) + '</span>'
 
 
-ALERT_MARKS = {
-    'alza': ('▲', 'rise', 'alza fuerte', 'alzas fuertes'),
-    'baja': ('▼', 'fall', 'baja fuerte', 'bajas fuertes'),
-}
-
-
-def alert_marks(family, counts, alert_link, chosen):
-    """D-489: beside a family, its sharp rises and its sharp drops of the week; each opens those products in step 3."""
-    marks = []
-    for direction, count in zip(ALERT_MARKS, counts or (0, 0)):
-        if not count:
-            continue
-        arrow, tone, one, many = ALERT_MARKS[direction]
-        moved = 'subió' if direction == 'alza' else 'bajó'
-        title = (  # D-489: before the click, what the click does
-            f'Muestra en la tabla solo {("el" if direction == "alza" else "la") if count == 1 else f"las {count}"} '
-            f'{one if count == 1 else many} de '
-            f'{short_family(family)}: productos cuyo precio nacional {moved} mucho más de lo normal para ellos.'
-        )
-        on = ' on' if chosen == (family, direction) else ''
-        marks.append(
-            f'<a class="mock-alert-mark {tone}{on}" href="{esc(alert_link(family, direction))}" target="_self" '
-            f'title="{esc(title)}">{arrow}{count}</a>'
-        )
-    return ''.join(marks)
-
-
 def family_movement(
     rows,
     family_link,
@@ -677,13 +650,8 @@ def family_movement(
     trends=None,
     basket=None,
     basket_link=None,
-    alerts=None,
-    alert_link=None,
-    alert_chosen=None,
 ):
-    """One clickable row per family: a diverging bar from zero, its change and its state. D-489: beside each name, the
-    family's sharp rises and drops of the week («alerts»: {family: (rises, drops)}), each a link of its own laid over the
-    row, so the row keeps opening the whole family."""
+    """One clickable row per family: a diverging bar from zero, its change and its state."""
     summary = family_averages(rows)
     if not summary:
         return '<section class="mock-movement"><span class="mock-kicker">Variación por familia</span><h2>¿Qué familias subieron y cuáles bajaron?</h2><p class="mock-empty">Sin precios comparables para esta selección.</p></section>'
@@ -702,7 +670,6 @@ def family_movement(
             f'target="_self" role="checkbox" aria-checked="{"true" if chosen else "false"}" '
             f'title="Mediana de todos los precios comparables, sin distinguir familia · {esc(scope)}">'
             f'<span class="mock-basket-art{" checked" if chosen else ""}" aria-hidden="true"></span><strong>Toda la canasta</strong>'
-            '<span class="mock-movement-alerts"></span>'
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(value * 100, True)}</b>'
             f'<span class="mock-movement-state">{word}</span>{sparkline(series)}<span></span></a>'
@@ -712,24 +679,15 @@ def family_movement(
         word = {'rise': 'Subió', 'fall': 'Bajó', 'neutral': 'Sin cambio'}[state]
         size = min(50, abs(average) * 100 / limit * 50)
         side = 'left:50%' if average >= 0 else f'left:{50 - size:.2f}%'
-        selected = ' selected' if group == selected_family and not alert_chosen else ''
-        marks = alert_marks(group, (alerts or {}).get(group), alert_link, alert_chosen) if alert_link else ''
+        selected = ' selected' if group == selected_family else ''
         markup.append(
-            ('<div class="mock-movement-item">' if marks else '')
-            + f'<a class="mock-movement-row {state}{selected}" href="{esc(family_link(group))}" target="_self"'
+            f'<a class="mock-movement-row {state}{selected}" href="{esc(family_link(group))}" target="_self"'
             f' title="{esc(short_family(group))}: mediana de {len(members)} precios comparables · {esc(scope)}">'
             f'{family_art(group, "mock-movement-art")}<strong>{esc(short_family(group))}</strong>'
-            '<span class="mock-movement-alerts"></span>'
             f'<span class="mock-movement-track"><span class="mock-movement-bar" style="{side};width:{size:.2f}%"></span></span>'
             f'<b class="mock-movement-value">{"0,0 %" if state == "neutral" else percent(average * 100, True)}</b>'
             f'<span class="mock-movement-state">{word}</span>{sparkline(trends.get(group))}'
             '<span class="mock-movement-chevron">›</span></a>'
-            + (
-                '<span class="mock-movement-alert-links"><span></span><span></span>'
-                f'<span class="mock-movement-alert-cell">{marks}</span></span></div>'
-                if marks
-                else ''
-            )
         )
     place = scope[0].upper() + scope[1:]
     return (
@@ -741,14 +699,14 @@ def family_movement(
             f'<span>Mediana (el valor del medio) del cambio de cada precio comparable frente a la semana anterior, '
             f'{esc(scope)}. «Sin cambio»: menos de 0,05 %. La línea pequeña: esa mediana en las últimas 8 '
             f'semanas, siempre de todo Chile.</span>'
-            '<span>▲ y ▼: los productos de la familia con un alza fuerte o una baja fuerte esta semana, en precio '
-            'nacional. La barra es la mediana de la familia, no de cada producto: una familia puede bajar en conjunto y '
-            'tener productos que subieron mucho más de lo normal para ellos.</span>'
+            '<span>La barra es la mediana de la familia, no de cada producto: una familia puede bajar en conjunto y '
+            'tener productos que subieron mucho más de lo normal para ellos. Bajo este panel, ▲ y ▼ muestran esas alzas '
+            'fuertes y bajas fuertes de la familia elegida.</span>'
             f'{note}',
         )
         + '</div>'
         f'<span class="mock-place">Región: <b>{esc(place)}</b></span>'
-        '</div><div class="mock-movement-row mock-movement-axis" aria-hidden="true"><i></i><span></span><span></span>'
+        '</div><div class="mock-movement-row mock-movement-axis" aria-hidden="true"><i></i><span></span>'
         f'<span class="mock-movement-scale"><span>−{limit} %</span><span>0</span><span>+{limit} %</span></span>'
         '<span></span><span></span><span></span><span></span></div>' + ''.join(markup) + '</section>'
     )
@@ -801,17 +759,16 @@ def products_heading(family, average, scope, shown=None, total=None, note='', st
     )
 
 
-def alert_heading(family, label, rise, all_link, step=None):
-    """D-489: step 3 while it shows only a family's sharp rises or drops: the family, how many, that the price is
-    national, and the link back to all its products."""
+def alert_heading(family, label, rise, step=None):
+    """D-489: step 3 while it shows only a family's sharp rises or drops: the family, how many, and that the price is
+    national."""
     name = 'Toda la canasta' if family == ALL_FAMILIES else short_family(family)
     return (
         f'<div class="mock-products-heading mock-products-slim">{step_chip(step)}'
         '<span class="mock-kicker">Detalle de productos</span>'
         f'<span class="mock-products-family">{esc(name)}</span>'
         f'<span class="mock-alert-mark {"rise" if rise else "fall"} on">{esc(label)}</span>'
-        '<span class="mock-products-scope">precio nacional de ODEPA</span>'
-        f'<a class="mock-alert-back" href="{esc(all_link)}" target="_self">Ver todos los productos</a></div>'
+        '<span class="mock-products-scope">precio nacional de ODEPA</span></div>'
     )
 
 

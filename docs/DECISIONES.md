@@ -4001,3 +4001,11 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Pedido del autor:** la pestaña «Últimas semanas» de «Semanal» (D-308, D-478) no aporta: la evolución semana a semana ya está en la línea pequeña de cada familia del paso 2 (las últimas 8 semanas), y la de meses y años en «Análisis BA y BI (Mensual)» e «(Histórico)».
 - **Decisión:** «Semanal» muestra solo la semana. La fila bajo el encabezado guarda las alertas de la semana y el aviso de una fuente atrasada (D-398). Se retira el código que solo usaba la tabla (`show_weeks_panel`, `show_weeks_table` y, en `bi/overview.py`, `product_heat`, `weeks_insight`, `period_totals`, `build_heat_table_html`, `heat_table_css` y `QUIET`) con sus pruebas.
 - **Pruebas:** `tests/test_overview.py` comprueba que la tabla ya no existe en el panel.
+
+## D-491 · Las alertas de la familia elegida, entre el paso 2 y el paso 3
+- **Pedido del autor:** las marcas ▲ ▼ de cada familia (D-489) y los botones de arriba hacían lo mismo, y los botones de arriba rompían el orden de lectura 1 → 2 → 3.
+- **Decisión:** salen las marcas de cada familia y los botones de arriba. Entre el paso 2 y el paso 3 queda una línea delgada con «▲ n alzas fuertes» y «▼ n bajas fuertes» de la familia elegida, o de toda la canasta. Están apagadas, y lo dicen al pasar el cursor («Elige primero una familia.»), hasta que se elige una familia (D-352). Al pulsar una, el paso 3 muestra solo esos productos, como en D-489; al pulsarla de nuevo, vuelve la tabla de todos los productos, y elegir otra familia también la devuelve. La que está activa se ve con borde.
+- **«Inusuales»:** sale del menú «Orden» del paso 3, porque las alertas tienen sus propios botones y sus nombres oficiales (D-477).
+- **Tabla:** la columna del producto tiene un ancho fijo, con el nombre completo al pasar el cursor, para que «Variación» nunca quede fuera del panel.
+- **La «i» del paso 2** dice que la barra es la mediana de la familia, y que bajo el panel ▲ y ▼ muestran sus alzas y bajas fuertes.
+- **Pruebas:** `tests/test_home_mockup.py` (las alertas esperan una familia, filtran el paso 3 y vuelven; las familias ya no llevan marcas), `tests/test_dashboard.py` (sin «Inusuales»; la ayuda de las alertas apagadas).
