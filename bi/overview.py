@@ -446,10 +446,12 @@ def best_drops(variations: pd.DataFrame, week: Any, count: int = 3) -> list[tupl
     if "same_region_quotes" in rows:
         rows = rows[(rows["same_region_quotes"] >= 2) & (rows["same_region_previous_quotes"] >= 2)]
     rows = rows[rows["variation"] < 0].nsmallest(count, "variation")
+    # D-482: the variety too, so two varieties of one product never read like the same product twice
+    varieties = rows["variety"] if "variety" in rows else pd.Series("", index=rows.index)
     return [
-        (product, channel, value * 100, family)
-        for product, channel, value, family in zip(
-            rows["product"], rows["channel"], rows["variation"], rows["product_group"]
+        (product if variety in ("", "Sin especificar") else f"{product} {variety}", channel, value * 100, family)
+        for product, variety, channel, value, family in zip(
+            rows["product"], varieties.fillna(""), rows["channel"], rows["variation"], rows["product_group"]
         )
     ]
 

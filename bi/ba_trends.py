@@ -493,10 +493,10 @@ def monthly_tiles(rows, figures: dict[str, Any], start, end, mode: str) -> list[
             if busiest is None
             else say(
                 f"{charts.format_thousands(figures['alerts'])} alertas: {charts.format_thousands(figures['rises'])} "
-                f"subidas y {charts.format_thousands(figures['falls'])} bajadas. El mes con más fue "
+                f"alzas fuertes y {charts.format_thousands(figures['falls'])} bajas fuertes. El mes con más fue "
                 f"{month_label(busiest[:2])}, con {charts.format_thousands(busiest[2])}.",
-                f"{charts.format_thousands(figures['alerts'])} alerts: {charts.format_thousands(figures['rises'])} rises "
-                f"and {charts.format_thousands(figures['falls'])} falls. The month with most was "
+                f"{charts.format_thousands(figures['alerts'])} alerts: {charts.format_thousands(figures['rises'])} sharp "
+                f"rises and {charts.format_thousands(figures['falls'])} sharp drops. The month with most was "
                 f"{month_label(busiest[:2])}, with {charts.format_thousands(busiest[2])}.",
             ),
             partial(alerts_chart, figures["alert_rows"], start, end, mode),
@@ -603,9 +603,9 @@ def change_card(label: str, figures: dict[str, Any], start, end) -> str:
         compared(start, end),
         say(
             f"Cambio del índice de {month_label(start)} a {month_label(end)}; el índice usa solo las series con "
-            "precio en enero 2022 y en el último mes (muestra fija).",
+            "precio en enero 2022 y en el último mes.",
             f"Change of the index from {month_label(start)} to {month_label(end)}; the index uses only the series "
-            "priced in January 2022 and in the last month (fixed sample).",
+            "priced in January 2022 and in the last month.",
         )
         + " "
         + definition("Alza frente al IPC"),
@@ -633,8 +633,9 @@ def alert_card(figures: dict[str, Any]) -> str:
         say("Alertas de precio", "Price alerts"),
         charts.format_thousands(figures["alerts"]),
         say(
-            f"{charts.format_thousands(figures['rises'])} subidas · {charts.format_thousands(figures['falls'])} bajadas",
-            f"{charts.format_thousands(figures['rises'])} rises · {charts.format_thousands(figures['falls'])} falls",
+            f"{charts.format_thousands(figures['rises'])} alzas fuertes · "
+            f"{charts.format_thousands(figures['falls'])} bajas fuertes",
+            f"{charts.format_thousands(figures['rises'])} sharp rises · {charts.format_thousands(figures['falls'])} sharp drops",
         ),
         "K6: " + definition("Alerta de precio"),
     )

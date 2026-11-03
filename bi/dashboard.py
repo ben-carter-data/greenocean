@@ -819,7 +819,8 @@ export default function(component) {
 
 
 # D-427: the tickets that carry the Autor's view across a reload the app makes. They live in the server process (the
-# bi package outlives the script runs), each one is used once and lasts as long as the Autor's idle time.
+# bi package outlives the script runs); D-428: a ticket may be redeemed again until it expires, as long as the Autor's
+# idle time, and leaving the Autor's view revokes it.
 AUTHOR_TICKETS = vars(bi).setdefault("AUTHOR_TICKETS", {})
 AUTHOR_TICKET = "author_ticket"
 
@@ -3894,8 +3895,8 @@ def compare_same_regions(variations, snapshot, prior, join):
     )
     regions_now = snapshot.groupby(join).region.nunique().rename('_regions_now')
     regions_before = prior.groupby(join).region.nunique().rename('_regions_before')
-    # The prices shown stay the national price of each week (every region with a price),
-    # the same figure Contexto de precios shows; only the change is like for like (D-153).
+    # D-327: the table shows the price of the regions with a price in both weeks (_same_now, _same_before), the same
+    # prices the change is computed from; the national price of each week stays as the fallback (D-153).
     rows = (
         variations.drop(columns=['variation', 'change_amount'])
         .merge(same, on=join, how='left')
@@ -4192,6 +4193,15 @@ def home_alert_rows(week, group, product_filter=None, direction=None):
     return rows.sort_values(['_distance', 'product_group', 'product'], ascending=[False, True, True])
 
 
+def alert_prices(row):
+    """(before, now): the same-region prices behind the change; a row without them shows «—», never a price worked
+    back from the change."""
+    before, now = row.get('same_region_previous_price'), row.get('same_region_price')
+    if before is not None and now is not None and pd.notna(before) and pd.notna(now) and before > 0:
+        return float(before), float(now)
+    return None, row['national_price']
+
+
 def home_alert_table(rows):
     """Readable, severity-ordered rows for the dashboard alert dialog."""
     records = rows.to_dict('records')
@@ -4203,8 +4213,10 @@ def home_alert_table(rows):
             'Producto': [describe_product(row) for row in records],
             'Canal': [row['channel'] for row in records],
             'Unidad': [f"$/{row['normalized_unit']}" for row in records],
-            'Anterior': [home_mockup.money(row['national_price'] / (1 + row['variation'])) for row in records],
-            'Actual': [home_mockup.money(row['national_price']) for row in records],
+            # D-482: the two prices the change is computed from (the regions with a price in both weeks, D-144), both
+            # published; before, «Anterior» was worked back from the national price and could be a price never seen
+            'Anterior': [home_mockup.money(alert_prices(row)[0]) for row in records],
+            'Actual': [home_mockup.money(alert_prices(row)[1]) for row in records],
             'Cambio': [home_mockup.percent(row['variation'] * 100, True) for row in records],
         }
     )
@@ -5140,7 +5152,7 @@ INFLATION_TERMS = [
         "Índice ene 2022 = 100",
         "Cada mes, el precio promedio de las semanas de cada serie de consumidor de ODEPA sobre su precio de enero "
         "2022, por 100; la familia toma la mediana de sus series, sin ponderar. Solo entran las series con precio en "
-        "enero 2022 y en el último mes del INE (muestra fija).",
+        "enero 2022 y en el último mes del INE; un mes intermedio usa las que tienen precio ese mes.",
     ),
 ]
 
@@ -6093,7 +6105,15 @@ def build_channel_cards_html(cards, address_of, total_families=None):
     scale = max((abs(card["median"]) for card in cards if card["median"] is not None), default=0) or 1
     for card in cards:
         change = card["median"]
-        tone = "" if change is None else "rise" if change > 0.0005 else "fall" if change < -0.0005 else ""
+        tone = (
+            ""
+            if change is None
+            else "rise"
+            if change >= overview.STILL
+            else "fall"
+            if change <= -overview.STILL
+            else ""
+        )
         figure = "—" if change is None else ("0,0 %" if not tone else home_mockup.percent(change * 100, True))
         state = (
             f'<span class="ch-state late">{html.escape(tr("Atrasado"))}</span>'

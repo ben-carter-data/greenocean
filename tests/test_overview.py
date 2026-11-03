@@ -162,7 +162,9 @@ def test_d478_the_insights_name_the_family_of_each_product(market):
     drops = overview.best_drops(variations, week)
     assert drops and all(len(drop) == 4 for drop in drops)
     for product, _, _, family in drops:
-        assert family in set(variations.loc[variations["product"] == product, "product_group"])
+        # D-482: the label carries the variety after the product's name
+        named = variations["product"].map(lambda name: product == name or product.startswith(f"{name} "))
+        assert family in set(variations.loc[named, "product_group"])
     line = next(
         text
         for text in overview.consumer_insights(

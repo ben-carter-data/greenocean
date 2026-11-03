@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.13 |
+| Version | 2.14 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -40,8 +40,8 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | BSA | Business systems analysis: the role that decides how the system meets what the business asks: what is measured, what blocks publication and what warns. | BA and BI analysis (Method) | Indicators |
 | RN | Business rule (*regla de negocio*): each cleaning and calculation rule (RN-01 to RN-14). | Quality and audit | Indicators |
 | Price alert | A weekly change outside the average ± 2 deviations of its previous 12 weeks, of at least 10 % and with two quotes in each week (K6). It splits into sharp rises and sharp drops (D-477). | Weekly | Indicators |
-| Sharp rise | A price alert for a rise, in red. Its level says how unusual it was: Extreme rise (more than 4 deviations), Very sharp rise (more than 3) or Sharp rise (D-478). | Weekly | Indicators |
-| Sharp drop | A price alert for a drop, in green: good news for whoever buys. Its level: Extreme drop (more than 4 deviations), Very sharp drop (more than 3) or Sharp drop (D-478). | Weekly | Indicators |
+| Sharp rise | A price alert for a rise, in red. Its level says how unusual it was: Extreme rise (4 deviations or more), Very sharp rise (3 or more) or Sharp rise (more than 2) (D-478, D-479). | Weekly | Indicators |
+| Sharp drop | A price alert for a drop, in green: good news for whoever buys. Its level: Extreme drop (4 deviations or more), Very sharp drop (3 or more) or Sharp drop (more than 2) (D-478, D-479). | Weekly | Indicators |
 | Real price | A price expressed in pesos of the last published month of the CPI. | BA and BI analysis (Prices and inflation) | Indicators |
 | Provisional week | A week of a month whose CPI is not yet published; it uses the last available month. | BA and BI analysis (Prices and inflation) | Indicators |
 | Data quality indicator | Each of the 11 indicators measured on every load on the published database, in five dimensions. | Quality and audit | Indicators |
@@ -124,3 +124,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.11 | 2026-11-03 | The quality plan has 14 indicators (D-475) |
 | 2.12 | 2026-11-03 | Sharp rise and sharp drop, the two kinds of price alert (D-477) |
 | 2.13 | 2026-11-03 | The levels of an alert, all at least «sharp» (D-478) |
+| 2.14 | 2026-11-03 | The bounds of each level, as the alert window shows them: 4 or more, 3 or more, more than 2 (D-479) |

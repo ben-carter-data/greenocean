@@ -4,11 +4,11 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Registros de decisiones de arquitectura (ADR), formato MADR |
-| Versión | 3.5 |
+| Versión | 3.6 |
 | Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
-| Propósito | Explicar las once decisiones que más pesan en la arquitectura de GreenOcean: por qué se tomaron, qué alternativas había y qué consecuencias tienen. |
+| Propósito | Explicar las doce decisiones que más pesan en la arquitectura de GreenOcean: por qué se tomaron, qué alternativas había y qué consecuencias tienen. |
 | Audiencia | Arquitectos, ingenieros, gerencia y revisores técnicos. |
 | Documentos relacionados | [Documento de arquitectura de software (SAD)](SAD.md) · [Índice de decisiones](INDICE_DECISIONES.md) · [Glosario](../negocio/GLOSARIO.md) |
 
@@ -214,3 +214,4 @@ Las siglas y los términos de este documento se definen en el [Glosario](../nego
 | 3.3 | 01-11-2026 | ADR-36: el aceptable de los precios comparables se calibra con la historia de los datos (D-433) |
 | 3.4 | 02-11-2026 | «Base servida» pasa a «Base DuckDB» en el texto; el título de ADR-35 conserva el nombre con que se tomó (D-455) |
 | 3.5 | 03-11-2026 | El título de ADR-35 usa el nombre oficial «Base DuckDB»; su estado recuerda el título original (D-474); ADR-36 revisado: la medida de los precios comparables y su aceptable de 97 % (D-475) |
+| 3.6 | 03-11-2026 | El propósito cuenta las doce decisiones: ADR-36 se había sumado sin cambiar el número |

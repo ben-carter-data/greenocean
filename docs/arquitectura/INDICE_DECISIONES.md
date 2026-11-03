@@ -4,8 +4,8 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Índice de decisiones |
-| Versión | 2.4 |
-| Fecha | 02-11-2026 |
+| Versión | 2.5 |
+| Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
 | Propósito | Reunir, por tema, las decisiones que cambian la arquitectura, los datos, la seguridad o la operación. |
@@ -27,7 +27,7 @@
 
 ## 1. En resumen
 
-GreenOcean registra cada cambio de comportamiento como una decisión con su fecha, su motivo y sus pruebas. Este índice reúne las 98 que más pesan, agrupadas en ocho temas, para leerlas sin recorrer el registro completo. Cada fila dice primero qué se decidió. Si la decisión dio origen a un registro de arquitectura, la segunda columna lo enlaza. El código D-xxx sirve para buscarla en `docs/DECISIONES.md`, que guarda todas en orden cronológico.
+GreenOcean registra cada cambio de comportamiento como una decisión con su fecha, su motivo y sus pruebas. Este índice reúne las 105 que más pesan, agrupadas en ocho temas, para leerlas sin recorrer el registro completo. Cada fila dice primero qué se decidió. Si la decisión dio origen a un registro de arquitectura, la segunda columna lo enlaza. El código D-xxx sirve para buscarla en `docs/DECISIONES.md`, que guarda todas en orden cronológico.
 
 [[diagrama:temas]]
 
@@ -107,7 +107,10 @@ Qué detiene una carga y cómo se demuestra cada cifra.
 | Los informes de calidad son numerados y no se modifican | — | D-331 |
 | Cada falla diagnosticada queda en un registro, con su categoría y su estación del flujo git | — | D-342 |
 | Un plan de calidad del software (SQAP) dice qué se mide, cómo y quién decide | — | D-355 |
-| Los 11 indicadores de la carga y los 12 del plan de calidad tienen nombres distintos | — | D-384 |
+| Los indicadores de la carga y los del plan de calidad tienen nombres distintos | — | D-384 |
+| El aceptable de los precios comparables se calibra con la historia de los datos | [Calibrar el aceptable de los precios comparables con la historia de los datos](ADR.md#adr-36--calibrar-el-aceptable-de-los-precios-comparables-con-la-historia-de-los-datos) | D-433 |
+| Los precios comparables se miden sobre los que tenían precio la semana anterior; el plan de calidad mide 14 indicadores | [Calibrar el aceptable de los precios comparables con la historia de los datos](ADR.md#adr-36--calibrar-el-aceptable-de-los-precios-comparables-con-la-historia-de-los-datos) | D-475 |
+| Ninguna cifra del panel se calcula en silencio: cada una dice su ventana, su agregado, su umbral y su alcance | — | D-480 |
 
 ## 6. Seguridad
 
@@ -156,7 +159,7 @@ Cómo se lee el panel en una sola pantalla y en dos idiomas.
 |---|---|---|
 | Se navega con un solo menú lateral, sin pestañas | — | D-096 |
 | En el teléfono, el panel se lee en horizontal | — | D-166 |
-| El Panorama de precios tiene una sola barra de encabezado | — | D-264 |
+| «Semanal» tiene una sola barra de encabezado | — | D-264 |
 | Cada página principal tiene una sola barra de encabezado | — | D-267 |
 | Cada página cabe en una ventana real de 1440 × 790 | — | D-274 |
 | Botones y enlaces comparten un solo componente | — | D-281 |
@@ -165,12 +168,15 @@ Cómo se lee el panel en una sola pantalla y en dos idiomas.
 | Un mapa de la app muestra todo el sistema en una vista | — | D-285 |
 | El tema oscuro es el predeterminado | — | D-349 |
 | La página «Último dato por canal» muestra la última semana de cada fuente | — | D-365 |
-| El Panorama se lee en tres pasos que se abren en orden | — | D-372 |
+| «Semanal» se lee en tres pasos que se abren en orden | — | D-372 |
 | El encabezado solo ubica; la información va en el contenido | — | D-398 |
-| Cada canal se abre con los pasos del Panorama, en su propia última semana | — | D-405 |
+| Cada canal se abre con los pasos de «Semanal», en su propia última semana | — | D-405 |
 | Cada página principal cabe también en 1280 × 800 | — | D-407 |
-| Cada canal se comporta igual que el Dashboard, sin plegar sus pasos, y es el segundo recuadro del menú (reemplaza D-408) | — | D-452 |
-| El Dashboard nunca pliega sus pasos: el panorama queda completo | — | D-446 |
+| Cada canal se comporta igual que «Semanal», sin plegar sus pasos, y es el segundo recuadro del menú (reemplaza D-408) | — | D-452 |
+| «Semanal» nunca pliega sus pasos: la vista queda completa | — | D-446 |
+| Con `?lang=en`, todo texto visible está en inglés, salvo los nombres oficiales de las fuentes y sus datos | — | D-443 |
+| Las alertas de precio son dos: alzas fuertes en rojo y bajas fuertes en verde, cada una con su ventana | — | D-477 |
+| Cada vista parte por familia y baja a los productos, con el mismo buscador | — | D-478 |
 
 ## 9. Documentación
 
@@ -200,3 +206,4 @@ Cómo se explica el proyecto.
 | 2.2 | 01-11-2026 | Las decisiones grandes de la parte final: el límite de intentos, «Configuración» y su aviso de tokens, el flujo en vivo y su imagen en el SAD, el encabezado, los canales y una pantalla a 1280 × 800 (D-393 a D-414) |
 | 2.3 | 02-11-2026 | El pliegue de los pasos vale solo para los canales; el Dashboard queda completo (D-446) |
 | 2.4 | 02-11-2026 | Cada canal se comporta igual que el Dashboard y deja de plegar sus pasos (D-452) |
+| 2.5 | 03-11-2026 | El enlace de ADR-35 usa el nombre oficial «Base DuckDB» (D-474); el panel se nombra «Semanal»; se suman ADR-36, la regla de idioma, las dos alertas, el paso de familia a productos y las cifras sin cálculo silencioso (D-433, D-443, D-475, D-477, D-478, D-480) |

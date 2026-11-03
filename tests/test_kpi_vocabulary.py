@@ -46,7 +46,7 @@ def test_d479_the_alert_chips_say_their_rule_in_the_words_of_each_view():
     for rise in (True, False):
         plain, formula = alerts.describe_kind(rise, False), alerts.describe_kind(rise, True)
         assert f"al menos {change} % frente a la semana anterior" in plain
-        assert f"{window} semanas previas (desviación estándar)" in plain
+        assert f"cambio promedio de sus {window} semanas previas" in plain and "(desviación estándar)" in plain
         assert f"{alerts.ALERT_DEVIATIONS} desviaciones estándar" in formula and f"{window} semanas previas" in formula
         assert i18n.lookup(plain) and i18n.lookup(formula)
     assert "Una oportunidad de compra." in alerts.describe_kind(False, False)
@@ -57,3 +57,13 @@ def test_d479_the_alert_chips_say_their_rule_in_the_words_of_each_view():
         assert (f"{floor}× o más" if floor else f"más de {alerts.ALERT_DEVIATIONS}×") in plain
         assert (f"≥ {floor} σ" if floor else f"> {alerts.ALERT_DEVIATIONS} σ") in formula
     assert "desviación estándar" in plain and "desviación estándar" in formula
+
+
+def test_d482_the_alert_window_shows_the_two_published_prices_of_its_change():
+    rows = dashboard.read_price_alerts()
+    week = rows[rows["week_start"] == rows["week_start"].max()]
+    for row in week.to_dict("records"):
+        before, now = dashboard.alert_prices(row)
+        # «Anterior» and «Actual» are the prices the change is computed from, never one worked back from the other
+        assert (row["same_region_previous_price"], row["same_region_price"]) == (before, now)
+        assert abs(now / before - 1 - row["variation"]) < 1e-9

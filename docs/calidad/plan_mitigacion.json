@@ -48,7 +48,30 @@
       ],
       "categoria": "código",
       "estacion": 8,
-      "ocurrencias": []
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "La prueba del «Mapa de la app» exigía inglés para «pip install» y otros comandos, y fallaba.",
+            "The «Mapa de la app» test required English for «pip install» and other commands, and failed."
+          ],
+          "diagnostico": [
+            "La prueba revisaba también los nombres de archivos y comandos, que la regla de idioma deja como están.",
+            "The test also checked the names of files and commands, which the language rule leaves as they are."
+          ],
+          "solucion": [
+            "La prueba revisa solo las notas en español.",
+            "The test checks only the notes in Spanish."
+          ],
+          "comentario": [
+            "Falló antes del commit, no en el panel.",
+            "It failed before the commit, not in the panel."
+          ],
+          "estacion": 8,
+          "estado": "resuelta",
+          "referencia": "D-471"
+        }
+      ]
     },
     {
       "id": "F-03",
@@ -863,6 +886,28 @@
           "estacion": 15,
           "estado": "resuelta",
           "referencia": "D-432"
+        },
+        {
+          "fecha": "2026-11-02",
+          "ocurrencia": [
+            "Tras unos 30 minutos sin actividad, un clic en «Documentos» llevaba a «Elige tu vista» en vez de a la página.",
+            "After about 30 idle minutes, a click on «Documentos» led to «Elige tu vista» instead of the page."
+          ],
+          "diagnostico": [
+            "El servidor olvidó la sesión y la nueva no leía la vista que la pestaña tenía guardada.",
+            "The server forgot the session and the new one did not read the view the tab had kept."
+          ],
+          "solucion": [
+            "La pestaña envía su vista en cada sesión nueva y la página se abre sin preguntar.",
+            "The tab sends its view on each new session and the page opens without asking."
+          ],
+          "comentario": [
+            "La misma falla con otra causa: esta vez el servidor olvida la sesión.",
+            "The same failure with another cause: this time the server forgets the session."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-454"
         }
       ]
     },
@@ -1279,6 +1324,324 @@
           "estacion": 9,
           "estado": "resuelta",
           "referencia": "D-478"
+        }
+      ]
+    },
+    {
+      "id": "F-27",
+      "categoria": "código",
+      "falla": [
+        "Un texto del panel dice algo distinto de lo que el sistema calcula o hace",
+        "A text of the panel says something different from what the system computes or does"
+      ],
+      "deteccion": [
+        "Una revisión de las cifras y los diagramas contra el código",
+        "A review of the figures and diagrams against the code"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "El texto se escribió a mano y no se lee del cálculo",
+        "The text was written by hand and is not read from the calculation"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "Ninguna: las cifras estaban bien; fallaba su explicación",
+        "None: the figures were right; their explanation was wrong"
+      ],
+      "correctiva": [
+        "Los textos se arman con las mismas constantes del cálculo y una prueba los compara",
+        "The texts are built from the same constants as the calculation and a test compares them"
+      ],
+      "estacion": 9,
+      "caso_real": "D-480",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-02",
+          "ocurrencia": [
+            "Varios diagramas decían datos viejos: dónde viven los secretos, quién despliega, los números de paso y el token.",
+            "Several diagrams said old facts: where the secrets live, who deploys, the step numbers and the token."
+          ],
+          "diagnostico": [
+            "Los diagramas no se revisaron cuando cambió el sistema.",
+            "The diagrams were not reviewed when the system changed."
+          ],
+          "solucion": [
+            "Cada diagrama se comparó con el sistema de hoy y se corrigió.",
+            "Each diagram was compared with today's system and corrected."
+          ],
+          "comentario": [
+            "Revisión pedida por el autor.",
+            "A review asked by the author."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-445"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "«Método y calidad» decía «Medimos los 12 indicadores» y el aceptable de 0,25 % se veía «0,3».",
+            "«Método y calidad» said «we measure the 12 indicators» and the 0.25 % acceptable showed as «0.3»."
+          ],
+          "diagnostico": [
+            "La frase contaba las filas del informe en pantalla y el redondeo usaba un decimal.",
+            "The sentence counted the rows of the report on screen and the rounding used one decimal."
+          ],
+          "solucion": [
+            "La frase nombra el informe y un porcentaje bajo 1 % lleva dos decimales.",
+            "The sentence names the report and a percentage under 1 % has two decimals."
+          ],
+          "comentario": [
+            "Apareció con los 14 indicadores del plan.",
+            "It appeared with the 14 indicators of the plan."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-475"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "Cuatro textos fijos o errados, como «Sí» escrito a mano en «Insights», y dos umbrales de «sin cambio» en dos pestañas.",
+            "Four fixed or wrong texts, such as a hand-written «Sí» in «Insights», and two «no change» thresholds in two tabs."
+          ],
+          "diagnostico": [
+            "Los textos se escribieron a mano y no se leían del cálculo.",
+            "The texts were written by hand and were not read from the calculation."
+          ],
+          "solucion": [
+            "Los textos se calculan y una sola regla de «sin cambio», 0,05 %, vale en las dos pestañas.",
+            "The texts are computed and one «no change» rule, 0.05 %, holds in both tabs."
+          ],
+          "comentario": [
+            "Encontrado en una revisión de todas las cifras del panel.",
+            "Found in a review of every figure of the panel."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-480"
+        }
+      ]
+    },
+    {
+      "id": "F-28",
+      "categoria": "código",
+      "falla": [
+        "Un arreglo en una vista rompe otra que usaba lo mismo",
+        "A fix in one view breaks another that used the same thing"
+      ],
+      "deteccion": [
+        "Una captura o una revisión del autor",
+        "A screenshot or a review by the author"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "El cambio no se probó en las otras vistas que compartían el mismo código",
+        "The change was not tested in the other views that shared the same code"
+      ],
+      "severidad": "media",
+      "contencion": [
+        "Recargar la página o usar otra vista",
+        "Reload the page or use another view"
+      ],
+      "correctiva": [
+        "Cada arreglo lleva una prueba del caso que había roto",
+        "Each fix carries a test of the case it had broken"
+      ],
+      "estacion": 9,
+      "caso_real": "D-473",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "Al entrar a la app el menú seguía plegado.",
+            "On entering the app the menu stayed folded."
+          ],
+          "diagnostico": [
+            "D-465 recordaba la página anterior en la pestaña, y una carga nueva contaba como volver a Semanal.",
+            "D-465 kept the previous page in the tab, and a new load counted as coming back to Semanal."
+          ],
+          "solucion": [
+            "Cada carga de la app abre el menú.",
+            "Each load of the app opens the menu."
+          ],
+          "comentario": [
+            "Regresión de D-465.",
+            "Regression of D-465."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-466"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "En el «Mapa de la app», «Pantalla completa» mostraba un recuadro vacío a la derecha.",
+            "In the «Mapa de la app», «Pantalla completa» showed an empty box on the right."
+          ],
+          "diagnostico": [
+            "La columna esperaba una explicación que desde D-467 se abre solo con la «i».",
+            "The column waited for an explanation that since D-467 opens only with the «i»."
+          ],
+          "solucion": [
+            "La columna derecha es la lista de pasos.",
+            "The right column is the list of steps."
+          ],
+          "comentario": [
+            "Regresión de D-467.",
+            "Regression of D-467."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-472"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "La ficha completa de una pieza del «Mapa de la app» ya no se podía abrir.",
+            "The full card of a piece of the «Mapa de la app» could no longer be opened."
+          ],
+          "diagnostico": [
+            "Desde D-467 la «i» abre solo la explicación corta.",
+            "Since D-467 the «i» opens only the short explanation."
+          ],
+          "solucion": [
+            "La explicación lleva el botón «Ver la ficha completa».",
+            "The explanation carries the button «Ver la ficha completa»."
+          ],
+          "comentario": [
+            "Regresión de D-467.",
+            "Regression of D-467."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-473"
+        }
+      ]
+    },
+    {
+      "id": "F-29",
+      "categoria": "código",
+      "falla": [
+        "Un texto queda en español en la página en inglés",
+        "A text stays in Spanish on the English page"
+      ],
+      "deteccion": [
+        "La prueba de idioma o una captura del autor",
+        "The language test or a screenshot by the author"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "El texto se dibuja por un camino que la capa de inglés no recorre",
+        "The text is drawn through a path the English layer does not cover"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Ninguna: el texto se entiende en español",
+        "None: the text can be read in Spanish"
+      ],
+      "correctiva": [
+        "La auditoría de idioma recorre ese camino y el texto se traduce antes de dibujarse",
+        "The language audit covers that path and the text is translated before it is drawn"
+      ],
+      "estacion": 9,
+      "caso_real": "D-477",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-02",
+          "ocurrencia": [
+            "Textos que escribe un script quedaban en español con el inglés elegido.",
+            "Texts a script writes stayed in Spanish with English chosen."
+          ],
+          "diagnostico": [
+            "La auditoría de idioma no leía los textos que escribe un script.",
+            "The language audit did not read the texts a script writes."
+          ],
+          "solucion": [
+            "La auditoría lee también esos textos y cada uno tiene su inglés.",
+            "The audit also reads those texts and each one has its English."
+          ],
+          "comentario": [
+            "Regla de idioma pedida por el autor.",
+            "Language rule asked by the author."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-443"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "La ventana de alertas se veía en español con el inglés elegido.",
+            "The alert window showed in Spanish with English chosen."
+          ],
+          "diagnostico": [
+            "Una tabla con estilo no pasa por la capa de inglés.",
+            "A styled table does not go through the English layer."
+          ],
+          "solucion": [
+            "La tabla se traduce antes de darle estilo.",
+            "The table is translated before it is styled."
+          ],
+          "comentario": [
+            "Apareció con las dos ventanas de alertas.",
+            "It appeared with the two alert windows."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-477"
+        }
+      ]
+    },
+    {
+      "id": "F-30",
+      "categoria": "código",
+      "falla": [
+        "Una versión nueva de Streamlit deja de escribir un atributo que un script lee",
+        "A new Streamlit version stops writing an attribute a script reads"
+      ],
+      "deteccion": [
+        "Una revisión en una pantalla angosta",
+        "A review on a narrow screen"
+      ],
+      "causa": "interna",
+      "causa_raiz": [
+        "El script dependía de un atributo interno de Streamlit",
+        "The script depended on an internal Streamlit attribute"
+      ],
+      "severidad": "baja",
+      "contencion": [
+        "Plegar el menú a mano",
+        "Fold the menu by hand"
+      ],
+      "correctiva": [
+        "El script lee los dos atributos, el antiguo y el nuevo",
+        "The script reads both attributes, the old and the new"
+      ],
+      "estacion": 9,
+      "caso_real": "D-473",
+      "ocurrencias": [
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "En un teléfono horizontal el menú no se plegaba solo.",
+            "On a phone in landscape the menu did not fold by itself."
+          ],
+          "diagnostico": [
+            "El script leía `aria-expanded`, que Streamlit ya no escribe.",
+            "The script read `aria-expanded`, which Streamlit no longer writes."
+          ],
+          "solucion": [
+            "El script lee también `data-collapsed`.",
+            "The script also reads `data-collapsed`."
+          ],
+          "comentario": [
+            "Mismo cambio que ya había resuelto el pliegue de los dashboards.",
+            "The same change had already been handled for the dashboards' fold."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-473"
         }
       ]
     }

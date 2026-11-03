@@ -4,8 +4,8 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Decision Index |
-| Version | 2.4 |
-| Date | 2026-11-02 |
+| Version | 2.5 |
+| Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
 | Purpose | Gather, by theme, the decisions that change the architecture, the data, the security or the operations. |
@@ -27,7 +27,7 @@
 
 ## 1. In summary
 
-GreenOcean records each change of behavior as a decision with its date, its reason and its tests. This index gathers the 98 that weigh most, grouped in eight themes, so they can be read without going through the full log. Each row says first what was decided. If the decision gave rise to an architecture record, the second column links it. The D-xxx code finds it in `docs/DECISIONES.md` (in Spanish), which keeps them all in chronological order.
+GreenOcean records each change of behavior as a decision with its date, its reason and its tests. This index gathers the 105 that weigh most, grouped in eight themes, so they can be read without going through the full log. Each row says first what was decided. If the decision gave rise to an architecture record, the second column links it. The D-xxx code finds it in `docs/DECISIONES.md` (in Spanish), which keeps them all in chronological order.
 
 [[diagrama:temas]]
 
@@ -107,7 +107,10 @@ What stops a load and how each figure is proven.
 | The quality reports are numbered and never modified | — | D-331 |
 | Each diagnosed failure goes into a register, with its category and its station of the git flow | — | D-342 |
 | A software quality assurance plan (SQAP) says what is measured, how and who decides | — | D-355 |
-| The 11 indicators of the load and the 12 of the quality plan have different names | — | D-384 |
+| The indicators of the load and those of the quality plan have different names | — | D-384 |
+| The acceptable of the comparable prices is calibrated with the history of the data | [Calibrate the acceptable of the comparable prices with the history of the data](ADR.md#adr-36--calibrate-the-acceptable-of-the-comparable-prices-with-the-history-of-the-data) | D-433 |
+| Comparable prices are measured over those that had a price the week before; the quality plan measures 14 indicators | [Calibrate the acceptable of the comparable prices with the history of the data](ADR.md#adr-36--calibrate-the-acceptable-of-the-comparable-prices-with-the-history-of-the-data) | D-475 |
+| No figure of the panel is computed in silence: each one says its window, its aggregate, its threshold and its scope | — | D-480 |
 
 ## 6. Security
 
@@ -156,7 +159,7 @@ How the panel reads on a single screen and in two languages.
 |---|---|---|
 | Navigation is a single side menu, without tabs | — | D-096 |
 | On a phone, the panel is read in landscape | — | D-166 |
-| The Price overview has a single header bar | — | D-264 |
+| «Weekly» has a single header bar | — | D-264 |
 | Each main page has a single header bar | — | D-267 |
 | Each page fits a real window of 1440 × 790 | — | D-274 |
 | Buttons and links share a single component | — | D-281 |
@@ -165,12 +168,15 @@ How the panel reads on a single screen and in two languages.
 | An app map shows the whole system in one view | — | D-285 |
 | The dark theme is the default | — | D-349 |
 | The page «Latest data by channel» shows the latest week of each source | — | D-365 |
-| The Price overview reads in three steps that open in order | — | D-372 |
+| «Weekly» reads in three steps that open in order | — | D-372 |
 | The header only places the reader; the information goes in the content | — | D-398 |
-| Each channel opens with the Overview's steps, in its own latest week | — | D-405 |
+| Each channel opens with the steps of «Weekly», in its own latest week | — | D-405 |
 | Each main page also fits 1280 × 800 | — | D-407 |
-| Each channel behaves exactly like the Dashboard, without folding its steps, and is the menu's second tile (replaces D-408) | — | D-452 |
-| The Dashboard never folds its steps: the overview stays whole | — | D-446 |
+| Each channel behaves exactly like «Weekly», without folding its steps, and is the menu's second tile (replaces D-408) | — | D-452 |
+| «Weekly» never folds its steps: the view stays whole | — | D-446 |
+| With `?lang=en`, every visible text is in English, except the official names of the sources and their data | — | D-443 |
+| The price alerts are two: sharp rises in red and sharp drops in green, each with its own window | — | D-477 |
+| Each view starts by family and goes down to the products, with the same search | — | D-478 |
 
 ## 9. Documentation
 
@@ -200,3 +206,4 @@ How the project is explained.
 | 2.2 | 2026-11-01 | The major decisions of the final part: the limit of attempts, «Settings» and its token warning, the live flow and its picture in the SAD, the header, the channels and one screen at 1280 × 800 (D-393 to D-414) |
 | 2.3 | 2026-11-02 | The folding of the steps applies only to the channels; the Dashboard stays whole (D-446) |
 | 2.4 | 2026-11-02 | Each channel behaves exactly like the Dashboard and no longer folds its steps (D-452) |
+| 2.5 | 2026-11-03 | The ADR-35 link uses the official name «DuckDB database» (D-474); the panel is named «Weekly»; ADR-36, the language rule, the two alerts, the step from family to products and the figures with no silent calculation are added (D-433, D-443, D-475, D-477, D-478, D-480) |

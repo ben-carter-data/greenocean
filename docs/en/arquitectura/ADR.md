@@ -4,11 +4,11 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Architecture Decision Records (ADR), MADR format |
-| Version | 3.5 |
+| Version | 3.6 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
-| Purpose | Explain the eleven decisions that weigh most on the architecture of GreenOcean: why they were taken, which alternatives there were and what consequences they have. |
+| Purpose | Explain the twelve decisions that weigh most on the architecture of GreenOcean: why they were taken, which alternatives there were and what consequences they have. |
 | Audience | Architects, engineers, management and technical reviewers. |
 | Related documents | [Software Architecture Document (SAD)](SAD.md) · [Decision Index](INDICE_DECISIONES.md) · [Glossary](../negocio/GLOSARIO.md) |
 
@@ -214,3 +214,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.3 | 2026-11-01 | ADR-36: the acceptable of the comparable prices is calibrated with the history of the data (D-433) |
 | 3.4 | 2026-11-02 | «Served database» becomes «DuckDB database» in the text; the title of ADR-35 keeps the name it was taken with (D-455) |
 | 3.5 | 2026-11-03 | The title of ADR-35 uses the official name «DuckDB database»; its status recalls the original title (D-474); ADR-36 revised: the measure of the comparable prices and its 97 % acceptable (D-475) |
+| 3.6 | 2026-11-03 | The purpose counts the twelve decisions: ADR-36 had been added without changing the number |

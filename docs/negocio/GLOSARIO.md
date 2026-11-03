@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 2.13 |
+| Versión | 2.14 |
 | Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -40,8 +40,8 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | BSA | Análisis de sistemas de negocio (*business systems analysis*): el rol que decide cómo el sistema cumple lo que el negocio pide: qué se mide, qué bloquea la publicación y qué avisa. | Análisis BA y BI (Método) | Indicadores |
 | RN | Regla de negocio: cada regla de limpieza y cálculo (RN-01 a RN-14). | Calidad y auditoría | Indicadores |
 | Alerta de precio | Cambio semanal fuera del promedio ± 2 desviaciones de sus 12 semanas previas, de al menos 10 % y con dos cotizaciones en cada semana (K6). Se separa en alzas fuertes y bajas fuertes (D-477). | Semanal | Indicadores |
-| Alza fuerte | Alerta de precio de una subida, en rojo. Su nivel dice cuán inusual fue: Alza extrema (más de 4 desviaciones), Alza muy fuerte (más de 3) o Alza fuerte (D-478). | Semanal | Indicadores |
-| Baja fuerte | Alerta de precio de una bajada, en verde: una buena noticia para quien compra. Su nivel: Baja extrema (más de 4 desviaciones), Baja muy fuerte (más de 3) o Baja fuerte (D-478). | Semanal | Indicadores |
+| Alza fuerte | Alerta de precio de una subida, en rojo. Su nivel dice cuán inusual fue: Alza extrema (4 desviaciones o más), Alza muy fuerte (3 o más) o Alza fuerte (más de 2) (D-478, D-479). | Semanal | Indicadores |
+| Baja fuerte | Alerta de precio de una bajada, en verde: una buena noticia para quien compra. Su nivel: Baja extrema (4 desviaciones o más), Baja muy fuerte (3 o más) o Baja fuerte (más de 2) (D-478, D-479). | Semanal | Indicadores |
 | Precio real | Precio expresado en pesos del último mes publicado del IPC. | Análisis BA y BI (Precios e inflación) | Indicadores |
 | Semana provisional | Semana de un mes cuyo IPC aún no se publica; usa el último mes disponible. | Análisis BA y BI (Precios e inflación) | Indicadores |
 | Indicador de calidad de los datos | Cada uno de los 11 indicadores que se miden en cada carga sobre la base publicada, en cinco dimensiones. | Calidad y auditoría | Indicadores |
@@ -124,3 +124,4 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | 2.11 | 03-11-2026 | El plan de calidad tiene 14 indicadores (D-475) |
 | 2.12 | 03-11-2026 | Alza fuerte y baja fuerte, los dos tipos de alerta de precio (D-477) |
 | 2.13 | 03-11-2026 | Los niveles de una alerta, todos al menos «fuerte» (D-478) |
+| 2.14 | 03-11-2026 | Los límites de cada nivel, como los muestra la ventana de alertas: 4 o más, 3 o más, más de 2 (D-479) |

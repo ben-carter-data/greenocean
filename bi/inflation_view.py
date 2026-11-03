@@ -5,7 +5,7 @@ one monthly index (January 2022 = 100) of the consumer prices ODEPA publishes, s
 against the food IPC of the INE on the same base:
 - a series (product key, consumer channel, unit) counts only when it has a price in the
   base month and in the last month the INE has published, so the index compares the same
-  products from start to end, never a changing mix;
+  products at both ends; a month in between uses the series priced that month (D-482);
 - each month, the series' index is its monthly average price over its base price, and a
   family's index is the median of its series;
 - «sin inflación» divides each index by the IPC: 100 means «rose exactly like the food

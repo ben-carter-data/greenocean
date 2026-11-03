@@ -41,10 +41,12 @@ def describe_kind(rise: bool, professional: bool) -> str:
             f"estándar del promedio de las variaciones de sus {ALERT_WINDOW_WEEKS} semanas previas; precio nacional, "
             f"con {quotes} cotizaciones en cada semana."
         )
+    # D-482: the distance is from the usual change, not from zero, as the formula of the Profesional says
     return (
-        f"El precio {'subió' if rise else 'bajó'} al menos {change} % frente a la semana anterior: más de "
-        f"{ALERT_DEVIATIONS} veces lo que ese producto suele moverse en sus {ALERT_WINDOW_WEEKS} semanas previas "
-        f"(desviación estándar). {'Conviene comparar antes de comprar.' if rise else 'Una oportunidad de compra.'}"
+        f"El precio {'subió' if rise else 'bajó'} al menos {change} % frente a la semana anterior, y ese cambio se "
+        f"alejó del cambio promedio de sus {ALERT_WINDOW_WEEKS} semanas previas más de {ALERT_DEVIATIONS} veces lo "
+        f"que suele variar (desviación estándar). "
+        f"{'Conviene comparar antes de comprar.' if rise else 'Una oportunidad de compra.'}"
     )
 
 
@@ -52,7 +54,10 @@ def describe_scale(professional: bool) -> str:
     """D-479: what the number next to each level means."""
     if professional:
         return f"σ: desviación estándar de las variaciones semanales de las {ALERT_WINDOW_WEEKS} semanas previas."
-    return f"Veces lo que el producto suele moverse en {ALERT_WINDOW_WEEKS} semanas (desviación estándar)."
+    return (
+        f"Cuántas veces se alejó el cambio de su promedio de {ALERT_WINDOW_WEEKS} semanas, medido en lo que suele "
+        "variar (desviación estándar)."
+    )
 
 
 # region Alerts
