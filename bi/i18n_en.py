@@ -2494,6 +2494,17 @@ PAGES = {
     "copia por año": "copy per year",
     "IPC, directo": "CPI, straight",
     "martes 12:00 UTC": "Tuesday 12:00 UTC",  # D-469
+    # D-471: the steps of the load beside the map
+    "La carga semanal, paso a paso": "The weekly load, step by step",
+    "GitHub Actions (cron del martes)": "GitHub Actions (Tuesday cron)",
+    "semanal.yml, un paso tras otro": "semanal.yml, one step after another",
+    "Después de la carga": "After the load",
+    "Cuando alguien abre el panel": "When someone opens the panel",
+    "lo revisa agent.py al bajar": "agent.py checks it while downloading",
+    "las pruebas de dbt": "the dbt tests",
+    "fuente atrasada, pocas filas": "late source, too few rows",
+    "se escribe datos.duckdb": "datos.duckdb is written",
+    "Desde el paso 21, Streamlit Cloud toma el commit mientras GitHub abre el informe y corre calidad.yml.": "From step 21, Streamlit Cloud takes the commit while GitHub opens the report and runs calidad.yml.",
     "GitHub Actions corre semanal.yml cada martes a las 12:00 UTC (cron 0 12 * * 2); el Autor también puede lanzarla a mano.": "GitHub Actions runs semanal.yml every Tuesday at 12:00 UTC (cron 0 12 * * 2); the Author can also launch it by hand.",
     "Una máquina temporal con el repositorio, que corre los pasos de la carga.": "A temporary machine with the repository, which runs the steps of the load.",
     "fuentes": "sources",

@@ -1170,44 +1170,76 @@ TOUR = [
 # it, copies it to bronze, adds the IPC, builds with dbt, tests, publishes, reports; calidad.yml follows; Streamlit
 # Community Cloud takes the new pointer and the panel serves the week to the people.
 STORY = [
-    ("github", "semanal"),
-    ("pypi", "semanal"),
-    ("release", "semanal"),
-    ("semanal", "agent"),
-    ("odepa", "agent"),
-    ("odepa_consumer", "agent"),
-    ("gates", "agent"),
-    ("agent", "sqlite"),
-    ("sqlite", "parquet"),
-    ("ine", "agent"),
-    ("agent", "parquet"),
-    ("parquet", "dbt"),
-    ("gates", "dbt"),
-    ("gates", "release"),  # etl/pipeline.py checks the late sources and the rows before it writes the database
-    ("dbt", "duckdb"),
-    ("semanal", "ci"),
-    ("ci", "parity"),
-    ("parity", "sqlite"),
-    ("parity", "duckdb"),
-    ("duckdb", "release"),
-    ("semanal", "github"),
-    ("semanal", "calidad"),
-    ("calidad", "github"),
-    ("github", "stcloud"),
-    ("stcloud", "streamlit"),
-    ("release", "streamlit"),
-    ("streamlit", "web"),
-    ("streamlit", "charts"),
-    ("visitor", "streamlit"),
-    ("professional", "streamlit"),
+    ("github", "semanal", ""),
+    ("pypi", "semanal", "pip install"),
+    ("release", "semanal", "bi/served_database.py"),
+    ("semanal", "agent", ""),
+    ("odepa", "agent", "agent/agent.py"),
+    ("odepa_consumer", "agent", ""),
+    ("gates", "agent", "lo revisa agent.py al bajar"),
+    ("agent", "sqlite", "etl/etl.py"),
+    ("sqlite", "parquet", "etl/pipeline.py"),
+    ("ine", "agent", "etl/ine.py"),
+    ("agent", "parquet", ""),
+    ("parquet", "dbt", "dbt build"),
+    ("gates", "dbt", "las pruebas de dbt"),
+    ("gates", "release", "fuente atrasada, pocas filas"),  # etl/pipeline.py, right after dbt, before the database
+    ("dbt", "duckdb", "se escribe datos.duckdb"),
+    ("semanal", "ci", ""),
+    ("ci", "parity", ""),
+    ("parity", "sqlite", ""),
+    ("parity", "duckdb", ""),
+    ("duckdb", "release", "gh release upload"),
+    ("semanal", "github", ""),
+    ("semanal", "calidad", "workflow_run"),
+    ("calidad", "github", ""),
+    ("github", "stcloud", ""),
+    ("stcloud", "streamlit", ""),
+    ("release", "streamlit", ""),
+    ("streamlit", "web", ""),
+    ("streamlit", "charts", ""),
+    ("visitor", "streamlit", ""),
+    ("professional", "streamlit", ""),
 ]
+# D-471: the list beside the map groups the steps by who runs them, as the author read it.
+STORY_GROUPS = [
+    ("GitHub Actions (cron del martes)", 1),
+    ("semanal.yml, un paso tras otro", 20),
+    ("Después de la carga", 4),
+    ("Cuando alguien abre el panel", 5),
+]
+STORY_TITLE = "La carga semanal, paso a paso"
+STORY_PARALLEL = "Desde el paso 21, Streamlit Cloud toma el commit mientras GitHub abre el informe y corre calidad.yml."
 PEOPLE_KEYS = {"visitor", "professional", "author"}
 
 
 def story_steps():
     """The story as [line index, towards a person]: each line in its turn, from GitHub's start to the people."""
     index = {link[:2]: number for number, link in enumerate(LINKS)}
-    return [[index[pair], pair[0] in PEOPLE_KEYS] for pair in STORY]
+    return [[index[(source, target)], source in PEOPLE_KEYS] for source, target, _ in STORY]
+
+
+def build_story_list():
+    """D-471: the steps of the weekly load beside the map, grouped by who runs them, each with the file that does it;
+    the step in view lights up, and a click on a step shows its line."""
+    names = {key: SHORT_NAMES.get(key, node[0]) for key, node in NODES.items()}
+    rows, number = [], 0
+    for title, count in STORY_GROUPS:
+        rows.append(f'<p class="am-steps-group">{esc(title)}</p>')
+        for source, target, note in STORY[number : number + count]:
+            what = next(link[3] for link in LINKS if link[:2] == (source, target))
+            rows.append(
+                f'<button type="button" class="am-step" data-step="{number}"><b>{number + 1}</b>'
+                f'<span>{esc(names[source])} → {esc(names[target])}: <i>{esc(what)}</i></span>'
+                + (f"<code>{esc(note)}</code>" if note else "")
+                + "</button>"
+            )
+            number += 1
+    return (
+        f'<aside class="am-steps" aria-label="{esc(STORY_TITLE)}"><div class="am-steps-in">'
+        f'<p class="am-steps-title">{esc(STORY_TITLE)}</p>{"".join(rows)}'
+        f'<p class="am-steps-note">{esc(STORY_PARALLEL)}</p></div></aside>'
+    )
 
 
 def evidence_label(source, target):
@@ -1627,6 +1659,26 @@ def build_css(palette):
 .am-main {{ row-gap:6px; }} .am-main .am-node {{ padding:2px 4px; }} .am-main .am-layer {{ margin-bottom:8px; }}
 /* D-469: room over the top row, where the line from GitHub to semanal.yml runs with its label. */
 .am-main {{ margin-top:16px; }}
+/* D-471: the steps of the load beside the map, as tall as the map, scrolling on their own. */
+.am-row {{ display:flex; gap:16px; align-items:stretch; }}
+.am-row > .am-main {{ flex:1 1 auto; min-width:0; }}
+.am-steps {{ position:relative; flex:0 0 280px; margin-top:16px; border-left:1px solid {border}; }}
+.am-steps-in {{ position:absolute; inset:0; overflow-y:auto; padding:0 4px 0 12px; scrollbar-width:thin; }}
+.am-steps-title {{ margin:0 0 6px; font-size:12.5px; font-weight:700; color:{ink}; }}
+.am-steps-group {{ margin:8px 0 3px; font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  color:{muted}; }}
+.am-step {{ display:grid; grid-template-columns:22px 1fr; column-gap:6px; width:100%; padding:3px 6px; margin:0;
+  border:0; border-radius:7px; background:transparent; color:{text}; font:inherit; font-size:11.5px; line-height:1.35;
+  text-align:left; cursor:pointer; }}
+.am-step b {{ color:{muted}; font-weight:600; text-align:right; font-variant-numeric:tabular-nums; }}
+.am-step i {{ font-style:normal; color:{muted}; }}
+.am-step code {{ grid-column:2; font-size:10.5px; color:{muted}; }}
+.am-step:hover, .am-step:focus-visible {{ background:color-mix(in srgb, {accent} 10%, transparent); outline:none; }}
+.am-step.now {{ background:color-mix(in srgb, #f0b347 16%, transparent); box-shadow:inset 2px 0 0 #f0b347; color:{ink}; }}
+.am-step.now b {{ color:#f0b347; }}
+.am-steps-note {{ margin:8px 0 4px; font-size:10.5px; line-height:1.4; color:{muted}; }}
+.am.am-full .am-steps {{ display:none; }}
+@container am (max-width:900px) {{ .am-steps {{ display:none; }} }}
 /* D-441: the pieces of the map fill their space: bigger logos, with «i» and the magnifier beside them. */
 .am-main .am-logo {{ width:36px; height:36px; }}
 .am-lines {{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:1; }}
@@ -2032,7 +2084,9 @@ SCRIPT = r"""<script>
     const DESIGN = 820;
     const fit = (stage) => {
       // A little slack on the right: a caption or a label may reach past the last column.
-      const width = map.clientWidth - 12, mini = width > 0 && DESIGN > width + 12;
+      const aside = map.querySelector(".am-steps");
+      const side = aside && aside.offsetWidth ? aside.offsetWidth + 16 : 0;  // D-471: the list takes its share
+      const width = map.clientWidth - side - 12, mini = width > 0 && DESIGN > width + 12;
       map.classList.toggle("am-mini", !!mini);
       Object.assign(stage.style, mini
         ? { width: DESIGN + "px", transform: "scale(" + width / DESIGN + ")", transformOrigin: "0 0" }
@@ -2511,6 +2565,11 @@ SCRIPT = r"""<script>
       }
       const [index] = story[tale.at];
       state.story = story[tale.at];
+      map.querySelectorAll(".am-step").forEach((item) => item.classList.toggle("now", Number(item.dataset.step) === tale.at));
+      const now = map.querySelector('.am-step[data-step="' + tale.at + '"]'), list = map.querySelector(".am-steps-in");
+      if (now && list && (now.offsetTop - list.scrollTop > list.clientHeight - 40 || 30 > now.offsetTop - list.scrollTop)) {
+        list.scrollTop = now.offsetTop - list.clientHeight / 2;
+      }
       refresh();
       caption.hidden = false;
       caption.querySelector("b").textContent = (tale.at + 1) + " / " + story.length;
@@ -2524,6 +2583,11 @@ SCRIPT = r"""<script>
         tale.timer = setTimeout(tell, tale.at === 0 ? 1600 : 450);
       }, 1500);
     };
+    map.querySelectorAll(".am-step").forEach((item) => item.addEventListener("click", () => {
+      tale.at = Number(item.dataset.step);
+      state.story = null;
+      tell();
+    }));
     new ResizeObserver(settle(drawMain)).observe(map);
     map.querySelectorAll(".am-istage").forEach((stage) => new ResizeObserver(settle(() => drawInside(stage))).observe(stage));
     drawMain();
@@ -2627,10 +2691,11 @@ def build_map_html(palette, addresses, facts=None):
         f'<span class="am-close-full">⤡ {esc("Salir de pantalla completa")}</span></button></div></div>'
         f'<div class="am-crumb" hidden><button type="button">← {esc("Volver")}</button>'
         f'<span>{esc("Mapa de la app")} › <b></b></span></div>'
+        '<div class="am-row">'
         f'<div class="am-stage am-main" data-links="{data}" data-phases="{esc(json.dumps(rhythm_phases()))}" '
         f'data-story="{esc(json.dumps(story_steps()))}" '
         f'aria-label="{esc("Mapa de la app")}">'
-        f"{layers}{bands}{nodes}</div>"
+        f"{layers}{bands}{nodes}</div>{build_story_list()}</div>"
         f"{insides}{cards}"
         f'<p class="am-caption" hidden><b></b><span></span></p>'
         ''

@@ -3831,3 +3831,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Revisión del orden** (pedida por el autor: el recorrido debe ser el orden real de la app): «Puerta → Release: publica solo si todo pasa» aparecía después de pytest. La revisión que dibuja esa flecha (fuente atrasada y pocas filas, `etl.MINIMUM_ROWS_RATIO`) corre dentro de `etl/pipeline.py`, justo después de `dbt build` y antes de escribir la Base DuckDB.
 - **Decisión:** en `STORY` el paso va después de «Puerta → dbt» y antes de «dbt → Base DuckDB». Los demás pasos ya seguían el orden de `semanal.yml`.
 - **Pruebas:** `tests/test_app_map.py::test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description_opens_on_its_i`.
+
+## D-471 · «Mapa de la app»: los 30 pasos de la carga, junto al mapa
+
+- **Pedido del autor:** la lista de los 30 pasos de la carga, en su orden real, merece su propio lugar en el panel. Eligió ponerla junto al mapa.
+- **Decisión:**
+  - **La lista:** a la derecha del mapa, con el título «La carga semanal, paso a paso» y los pasos en cuatro grupos, según quién los corre: GitHub Actions (el cron del martes), `semanal.yml` (un paso tras otro, del 2 al 21), «Después de la carga» (`calidad.yml` y Streamlit Cloud) y «Cuando alguien abre el panel». Cada paso dice su flecha, lo que lleva y el archivo o comando que lo hace (`agent/agent.py`, `etl/ine.py`, `dbt build`, `gh release upload`, `workflow_run`…). El orden y los grupos viven en `STORY` y `STORY_GROUPS`, en `bi/app_map.py`, los mismos que mueve el mapa.
+  - **Sincronía:** el paso que el mapa muestra se ilumina en la lista, que se desplaza sola para tenerlo a la vista. Un clic en un paso muestra su flecha, y el recorrido sigue desde ahí.
+  - **La verdad del paralelo:** una nota al pie dice que desde el paso 21 Streamlit Cloud toma el commit mientras GitHub abre el informe y corre `calidad.yml`, el único punto donde dos cosas ocurren a la vez.
+  - **Espacio:** el mapa mide solo su parte de la fila, y la lista se oculta en pantalla completa y bajo 900 px de ancho, donde no cabe.
+- **Medición (Playwright):** a 1440 × 900, en español e inglés, la lista acompaña al mapa sin achicarlo; un clic en el paso 12 muestra «Parquet → dbt Core» en el mapa y en la lista.
+- **Pruebas:** `tests/test_app_map.py::test_d471_the_steps_of_the_load_sit_beside_the_map_grouped_by_who_runs_them`.

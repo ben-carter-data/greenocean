@@ -451,3 +451,25 @@ def test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description
     assert ".am-info { position:absolute; top:3px; right:calc(50% + 7px);" in css
     markup = app_map.build_map_html(charts.get_palette(charts.THEMES[0]), {})
     assert "data-story=" in markup
+
+
+def test_d471_the_steps_of_the_load_sit_beside_the_map_grouped_by_who_runs_them():
+    """The 30 steps beside the map, in the four groups the author read (GitHub Actions, semanal.yml, after the load, when
+    someone opens the panel), each with the file that does it; the step in view lights up and a click goes to a step."""
+    assert sum(count for _, count in app_map.STORY_GROUPS) == len(app_map.STORY) == 30
+    assert [title for title, _ in app_map.STORY_GROUPS][0] == "GitHub Actions (cron del martes)"
+    notes = {(source, target): note for source, target, note in app_map.STORY}
+    assert notes[("odepa", "agent")] == "agent/agent.py" and notes[("ine", "agent")] == "etl/ine.py"
+    assert notes[("duckdb", "release")] == "gh release upload" and notes[("semanal", "calidad")] == "workflow_run"
+    listing = app_map.build_story_list()
+    assert listing.count('class="am-step"') == 30 and listing.count('class="am-steps-group"') == 4
+    assert app_map.esc(app_map.STORY_PARALLEL) in listing  # the one place where two things run at once
+    for text in (
+        [title for title, _ in app_map.STORY_GROUPS]
+        + [app_map.STORY_TITLE, app_map.STORY_PARALLEL]
+        + [note for note in notes.values() if " " in note and "." not in note.split()[0]]
+    ):
+        assert i18n.lookup(text), text
+    script = app_map.SCRIPT
+    assert 'item.classList.toggle("now", Number(item.dataset.step) === tale.at)' in script
+    assert "tale.at = Number(item.dataset.step);" in script and "const side = aside && aside.offsetWidth" in script
