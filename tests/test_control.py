@@ -33,14 +33,12 @@ class FakeResponse:
 
 def test_next_run_is_the_coming_tuesday_at_noon_utc():
     monday = datetime(2026, 10, 12, 10, 0, tzinfo=timezone.utc)
-    assert control.calculate_next_scheduled_run(monday) == datetime(2026, 10, 13, 12, 17, tzinfo=timezone.utc)
+    assert control.calculate_next_scheduled_run(monday) == datetime(2026, 10, 13, 12, 7, tzinfo=timezone.utc)
 
 
 def test_next_run_after_tuesday_noon_is_the_following_week():
     tuesday_afternoon = datetime(2026, 10, 13, 12, 30, tzinfo=timezone.utc)
-    assert control.calculate_next_scheduled_run(tuesday_afternoon) == datetime(
-        2026, 10, 20, 12, 17, tzinfo=timezone.utc
-    )
+    assert control.calculate_next_scheduled_run(tuesday_afternoon) == datetime(2026, 10, 20, 12, 7, tzinfo=timezone.utc)
 
 
 def test_run_states_are_ok_failed_or_in_progress():

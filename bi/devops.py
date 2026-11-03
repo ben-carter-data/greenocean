@@ -104,11 +104,11 @@ STEPS = [
         "github",
         "Disparo",
         "martes o a mano",
-        "El cron lo lanza cada martes a las 12:17 UTC (09:17 en Chile en horario de verano, 08:17 en invierno), con dos "
-        "intentos más a las 14:17 y 16:17 si GitHub se atrasa (D-485). También se lanza a mano: desde el "
+        "El cron lo lanza cada martes a las 12:07 UTC (09:07 en Chile en horario de verano, 08:07 en invierno), con otro "
+        "intento cada 15 minutos hasta las 14:52 y cada hora hasta las 02:07 si GitHub se atrasa (D-485). También se lanza a mano: desde el "
         "Centro de operación, con la clave de control, por la API de GitHub; o desde GitHub, donde se puede pedir una falla simulada.",
         "on: schedule, workflow_dispatch",
-        "semanal.yml::17 12,14,16 * * 2",
+        "semanal.yml::7,22,37,52 12-14 * * 2",
         "",
     ),
     (
@@ -116,11 +116,11 @@ STEPS = [
         "cd",
         "github",
         "1 · Guardia",
-        "¿ya hubo carga hoy?",
+        "¿ya hubo carga este martes?",
         "Un intento programado revisa si ese día ya hubo una carga en verde; si la hubo, termina en segundos sin hacer "
         "nada (D-485). Una carga lanzada a mano corre siempre.",
-        "Check whether today's load is already done",
-        "semanal.yml::Check whether today's load is already done",
+        "Check whether this Tuesday's load is already done",
+        "semanal.yml::Check whether this Tuesday's load is already done",
         "",
     ),
     (

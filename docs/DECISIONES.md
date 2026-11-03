@@ -3976,3 +3976,11 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** el valor base se convierte a número antes de dividir. Una selección vacía da un gráfico vacío, como antes, en las dos versiones.
 - **Cómo se halló:** los logs del CI piden token (F-14), así que la suite se corrió en un entorno igual al del CI: Python 3.12, las versiones que instala y la hora en UTC.
 - **Pruebas:** `tests/test_ba_trends.py`, que ya fallaba en el CI, pasa con pandas 3.0 y 3.1.
+
+## D-487 · La carga semanal intenta todo el martes, cada 15 minutos hasta mediodía
+- **Problema:** el 03-11-2026 GitHub no lanzó ningún intento programado de la carga: ni el de las 12:00 UTC ni los de D-485 (14:17 y 16:17). Los datos deben estar listos antes de la tarde.
+- **Decisión (pedida por el autor):** `semanal.yml` tiene tres líneas de cron: `7,22,37,52 12-14 * * 2` (un intento cada 15 minutos de 12:07 a 14:52 UTC, 09:07 a 11:52 en Chile en verano), `7 15-23 * * 2` y `7 0-2 * * 3` (uno cada hora hasta las 02:07 UTC del miércoles, 23:07 en Chile), siempre fuera de la hora en punto. En invierno todo ocurre una hora antes en Chile. Si el martes termina sin carga, el Autor la lanza a mano con «Ejecutar pipeline ahora»; una vez por semana es parte de su operación.
+- **Guardia:** busca una carga en verde desde el martes (UTC), no solo del mismo día, porque GitHub puede lanzar el miércoles un intento atrasado del martes; así nunca se repite una carga. El paso se llama «Revisa si la carga de este martes ya se hizo». Una carga lanzada a mano corre siempre.
+- **Descartado:** un servicio externo de tareas programadas (necesita un token de GitHub fuera del repositorio) y el computador del autor (debe funcionar con el computador apagado).
+- **Panel y documentos:** la próxima carga se calcula a las 12:07 UTC; el PRD (RF-01), el SAD, el MANUAL, el Glosario, DevOps, el mapa de la app, el flujo en vivo y el glosario técnico dicen la hora y los intentos nuevos.
+- **Pruebas:** `tests/test_control.py`, `tests/test_devops.py` (las líneas de cron y el guardia desde el martes) y `tests/test_prd_traceability.py`.

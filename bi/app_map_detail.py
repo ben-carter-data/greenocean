@@ -1261,7 +1261,7 @@ STEP_NAMES = {
 }
 PHASES = {
     "semanal.yml": [
-        ("Preparación", ("today's load", "checkout")),
+        ("Preparación", ("tuesday's load", "checkout")),
         ("Lo que ya existe", ("current year",)),
         ("Ingesta", ("download",)),
         ("Construcción", ("etl",)),

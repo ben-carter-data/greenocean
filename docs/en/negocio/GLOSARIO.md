@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Glossary |
-| Version | 2.15 |
+| Version | 2.16 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -59,7 +59,7 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | ETL | Extract, transform and load. `etl/etl.py` cleans the data and applies the rules for the backup `etl/datos.db`; the same rules run in dbt for the DuckDB database. | Pipeline and lineage, Operations center | Pipeline |
 | Quality gate | A check that stops the load if something does not comply: the file, each row or the database. | Quality and audit | Pipeline |
 | Job, workflow | Automated task of GitHub Actions; the weekly job (`semanal.yml`) runs the pipeline every Tuesday. | Operations center | Pipeline |
-| Cron | The schedule of the weekly job: every Tuesday at 12:17 UTC, with two more attempts at 14:17 and 16:17 if GitHub is late (D-485). | Operations center | Pipeline |
+| Cron | The schedule of the weekly job: every Tuesday at 12:07 UTC, with another attempt every 15 minutes until 14:52 and every hour until 02:07 if GitHub is late (D-485). | Operations center | Pipeline |
 | Run | One full pass of the weekly job. | Operations center | Pipeline |
 | CI, CD | Continuous integration: the tests run by themselves on each change of the code (`pruebas.yml`). Continuous delivery: what passes all the tests reaches production without manual steps. | Operations center (CI/CD) | Pipeline |
 | Commit, push | Save a change in the history of the code, and upload it to GitHub. | Operations center (CI/CD) | Pipeline |
@@ -90,7 +90,7 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | API | Interface through which one program talks to another. The panel uses GitHub's to start the load, read its state and logs, and cancel it. | Operations center | Connections |
 | HTTPS | Encrypted web connection. | Pipeline and lineage, Operations center (Deployment) | Connections |
 | URL | Address of a page or a file on the web. | — | Connections |
-| UTC | Coordinated universal time; the job runs at 12:17 UTC: 09:17 in Chile in summer time and 08:17 in winter. | Operations center | Connections |
+| UTC | Coordinated universal time; the job runs at 12:07 UTC: 09:07 in Chile in summer time and 08:07 in winter. | Operations center | Connections |
 | PRD | Product Requirements Document. | — | Documents |
 | SAD | Software Architecture Document. | — | Documents |
 | SQAP | Software Quality Assurance Plan: which quality is looked after, how it is measured and who decides. | Method and quality | Documents |
@@ -126,3 +126,4 @@ The terms are ordered by theme, from what is read in the panel to the documents.
 | 2.13 | 2026-11-03 | The levels of an alert, all at least «sharp» (D-478) |
 | 2.14 | 2026-11-03 | The bounds of each level, as the alert window shows them: 4 or more, 3 or more, more than 2 (D-479) |
 | 2.15 | 2026-11-03 | The load's cron: 12:17 UTC and two more attempts (D-485) |
+| 2.16 | 2026-11-03 | The load's cron: 12:07 UTC, an attempt every 15 minutes until 14:52 and every hour until 02:07 (D-487) |

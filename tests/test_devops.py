@@ -26,7 +26,9 @@ def test_every_box_that_names_a_workflow_step_points_to_text_that_exists_in_that
 def test_the_two_workflows_and_their_triggers_are_the_ones_drawn():
     pruebas, semanal = read_workflow("pruebas.yml"), read_workflow("semanal.yml")
     assert "push:" in pruebas and "pull_request:" in pruebas
-    assert re.search(r'cron:\s*"17 12,14,16 \* \* 2"', semanal) and "workflow_dispatch:" in semanal
+    assert re.search(r'cron:\s*"7,22,37,52 12-14 \* \* 2"', semanal) and "workflow_dispatch:" in semanal
+    # D-487: the guard looks for a green load since this Tuesday, so an attempt started late on Wednesday does nothing
+    assert '--created ">=$tuesday"' in semanal and "(($(date -u +%u) + 5) % 7)) days ago" in semanal
     # D-323: the quality measurement is the third workflow, drawn in the CI row.
     assert {path.name for path in WORKFLOWS.glob("*.yml")} == {"pruebas.yml", "semanal.yml", "calidad.yml"}
 

@@ -4,7 +4,7 @@
 |---|---|
 | Proyecto | GreenOcean |
 | Tipo de documento | Glosario |
-| Versión | 2.15 |
+| Versión | 2.16 |
 | Fecha | 03-11-2026 |
 | Estado | Vigente |
 | Responsable | El autor |
@@ -59,7 +59,7 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | ETL | Extraer, transformar y cargar. `etl/etl.py` limpia los datos y aplica las reglas para el respaldo `etl/datos.db`; las mismas reglas corren en dbt para la Base DuckDB. | Pipeline y linaje, Centro de operación | Pipeline |
 | Puerta de calidad | Control que detiene la carga si algo no cumple: el archivo, cada fila o la base. | Calidad y auditoría | Pipeline |
 | Job, workflow | Tarea automática de GitHub Actions; el job semanal (`semanal.yml`) ejecuta el pipeline cada martes. | Centro de operación | Pipeline |
-| Cron | La programación del job semanal: cada martes a las 12:17 UTC, con dos intentos más a las 14:17 y 16:17 si GitHub se atrasa (D-485). | Centro de operación | Pipeline |
+| Cron | La programación del job semanal: cada martes a las 12:07 UTC, con otro intento cada 15 minutos hasta las 14:52 y cada hora hasta las 02:07 si GitHub se atrasa (D-485). | Centro de operación | Pipeline |
 | Ejecución | Una pasada completa del job semanal. | Centro de operación | Pipeline |
 | CI, CD | Integración continua (*continuous integration*): las pruebas corren solas en cada cambio del código (`pruebas.yml`). Entrega continua (*continuous delivery*): lo que pasa todas las pruebas llega a producción sin pasos manuales. | Centro de operación (CI/CD) | Pipeline |
 | Commit, push | Guardar un cambio en el historial del código, y subirlo a GitHub. | Centro de operación (CI/CD) | Pipeline |
@@ -90,7 +90,7 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | API | Interfaz por la que un programa se comunica con otro. El panel usa la de GitHub para lanzar la carga, leer su estado y sus logs, y cancelarla. | Centro de operación | Conexiones |
 | HTTPS | Conexión web cifrada. | Pipeline y linaje, Centro de operación (Despliegue) | Conexiones |
 | URL | Dirección de una página o de un archivo en la web. | — | Conexiones |
-| UTC | Tiempo universal coordinado; el job corre a las 12:17 UTC: las 09:17 en Chile en horario de verano y las 08:17 en invierno. | Centro de operación | Conexiones |
+| UTC | Tiempo universal coordinado; el job corre a las 12:07 UTC: las 09:07 en Chile en horario de verano y las 08:07 en invierno. | Centro de operación | Conexiones |
 | PRD | Documento de requisitos del producto (*Product Requirements Document*). | — | Documentos |
 | SAD | Documento de arquitectura de software (*Software Architecture Document*). | — | Documentos |
 | SQAP | Plan de calidad del software (*Software Quality Assurance Plan*): qué calidad se cuida, cómo se mide y quién decide. | Método y calidad | Documentos |
@@ -126,3 +126,4 @@ Los términos van ordenados por tema, desde lo que se lee en el panel hasta los 
 | 2.13 | 03-11-2026 | Los niveles de una alerta, todos al menos «fuerte» (D-478) |
 | 2.14 | 03-11-2026 | Los límites de cada nivel, como los muestra la ventana de alertas: 4 o más, 3 o más, más de 2 (D-479) |
 | 2.15 | 03-11-2026 | El cron de la carga: 12:17 UTC y dos intentos más (D-485) |
+| 2.16 | 03-11-2026 | El cron de la carga: 12:07 UTC, un intento cada 15 minutos hasta las 14:52 y cada hora hasta las 02:07 (D-487) |

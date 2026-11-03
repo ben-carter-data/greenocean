@@ -7,10 +7,13 @@ name: semanal
 # git keeps only its pointer, etl/datos.version, so the history no longer grows with it.
 on:
   schedule:
-    # D-485: three attempts on Tuesdays, at 12:17, 14:17 and 16:17 UTC (09:17, 11:17 and 13:17 in Chile in summer
-    # time). GitHub delays or skips scheduled runs when it is busy, most at the top of the hour; the guard below makes
-    # an attempt do nothing once a load of the day is green.
-    - cron: "17 12,14,16 * * 2"
+    # D-485, D-487: on Tuesdays, an attempt every 15 minutes from 12:07 to 14:52 UTC (09:07 to 11:52 in Chile in summer
+    # time), so the data is ready before noon, then one every hour until 02:07 UTC (23:07 in Chile). GitHub delays or
+    # skips scheduled runs when it is busy, most at the top of the hour; the guard below makes an attempt do nothing once
+    # a load of this Tuesday is green. If none started on Tuesday, the Author launches it by hand.
+    - cron: "7,22,37,52 12-14 * * 2"
+    - cron: "7 15-23 * * 2"
+    - cron: "7 0-2 * * 3"
   workflow_dispatch:
     inputs:
       simulate_failure:
@@ -34,9 +37,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20  # D-351: GitHub cuts a stuck load; the panel's window stops asking at the same minute
     steps:
-      # D-485: a scheduled attempt runs only if no load of this workflow was green today (UTC); a manual run always
-      # runs. The later steps read the answer, so a skipped attempt ends in seconds and records nothing in etl_run.
-      - name: Check whether today's load is already done
+      # D-485, D-487: a scheduled attempt runs only if no load of this workflow was green since this Tuesday (UTC), so
+      # an attempt GitHub starts late, even on Wednesday, never repeats the load; a manual run always runs. The later
+      # steps read the answer, so a skipped attempt ends in seconds and records nothing in etl_run.
+      - name: Check whether this Tuesday's load is already done
         id: guard
         env:
           GH_TOKEN: ${{ github.token }}
@@ -45,10 +49,11 @@ jobs:
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          tuesday=$(date -u -d "$((($(date -u +%u) + 5) % 7)) days ago" +%Y-%m-%d)  # %u: Monday 1 … Sunday 7
           done=$(gh run list -R "$GITHUB_REPOSITORY" --workflow semanal.yml --status success \
-            --created ">=$(date -u +%Y-%m-%d)" --json databaseId --jq 'length')
+            --created ">=$tuesday" --json databaseId --jq 'length')
           if [ "$done" -gt 0 ]; then
-            echo "A load of today is already green: this attempt does nothing."
+            echo "A load of this Tuesday is already green: this attempt does nothing."
             echo "run=false" >> "$GITHUB_OUTPUT"
           else
             echo "run=true" >> "$GITHUB_OUTPUT"

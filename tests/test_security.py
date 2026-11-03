@@ -93,7 +93,7 @@ def test_the_weekly_job_has_least_privilege():
     workflow = (REPOSITORY / ".github" / "workflows" / "semanal.yml").read_text()
     block = workflow.split("permissions:", 1)[1].split("\n\n", 1)[0]
     granted = dict(re.findall(r"(\w[\w-]*):\s*(\w+)", block))
-    # D-485: plus reading the workflow's own runs, for the guard of the three attempts
+    # D-485: plus reading the workflow's own runs, for the guard of the retries
     assert granted == {"contents": "write", "issues": "write", "actions": "read"}
 
 

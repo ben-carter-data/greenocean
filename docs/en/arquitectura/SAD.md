@@ -4,7 +4,7 @@
 |---|---|
 | Project | GreenOcean |
 | Document type | Software Architecture Document (SAD), arc42 structure with C4 views |
-| Version | 3.19 |
+| Version | 3.20 |
 | Date | 2026-11-03 |
 | Status | Current |
 | Owner | The author |
@@ -106,7 +106,7 @@ Each step starts only if the previous one ended well:
 
 | Step | What happens |
 |---|---|
-| 1 | At 12:17 UTC, GitHub Actions creates a new machine and restores the CSV files of the closed years from its cache |
+| 1 | At 12:07 UTC, GitHub Actions creates a new machine and restores the CSV files of the closed years from its cache |
 | 2 | It downloads the DuckDB database of the previous week from the «base-actual» release and verifies its fingerprint. The load history and the comparison of step 6 come from it |
 | 3 | The agent downloads from ODEPA the file of the current year and any missing ones, and records the SHA-256 fingerprint of each in `manifest.json` |
 | 4 | The Python ETL computes the prices on its own and writes the backup `etl/datos.db` |
@@ -518,3 +518,4 @@ The acronyms and terms of this document are defined in the [Glossary](../negocio
 | 3.17 | 2026-11-02 | The week's dashboard is called «Weekly», under the title «Dashboards» (2.1, 5, 6.5, D-459) |
 | 3.18 | 2026-11-03 | The quality plan measures 14 indicators (D-475); the entity-relationship diagram names latest_by_source outside the model (D-474) |
 | 3.19 | 2026-11-03 | The load starts at 12:17 UTC, with two more attempts (D-485) |
+| 3.20 | 2026-11-03 | The load starts at 12:07 UTC, with an attempt every 15 minutes until 14:52 and every hour until 02:07 (D-487) |
