@@ -79,17 +79,26 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
     assert len(table) == len(rows)
     assert table['N.º'].tolist() == list(range(1, len(rows) + 1))
     assert {'Nivel', 'Familia', 'Producto', 'Canal', 'Unidad', 'Anterior', 'Actual', 'Cambio'} <= set(table)
-    assert set(table['Nivel']) <= {'Muy alta', 'Alta', 'Moderada'}
+    # D-477: a rise takes the rise words, a drop the drop words
+    rises = {'Muy alta', 'Alta', 'Moderada'}
+    drops = {'Baja importante', 'Baja moderada', 'Baja leve'}
+    for level, variation in zip(table['Nivel'], rows['variation']):
+        assert level in (rises if variation > 0 else drops), (level, variation)
+    assert (
+        set(dashboard.home_alert_table(dashboard.home_alert_rows(week, 'Frutas', direction='baja'))['Nivel']) <= drops
+    )
     styled = dashboard.style_home_alert_table(
         pd.DataFrame(
             {
-                'Nivel': ['Muy alta', 'Alta', 'Moderada'],
-                'Cambio': ['+1,0 %', '−1,0 %', '0,0 %'],
+                'Nivel': ['Muy alta', 'Alta', 'Moderada', 'Baja importante', 'Baja moderada', 'Baja leve'],
+                'Cambio': ['+1,0 %', '+1,0 %', '+1,0 %', '−1,0 %', '−1,0 %', '−1,0 %'],
             }
         ),
         dashboard.charts.MODE_DARK,
     ).to_html()
-    assert '#7f1d1d' in styled and '#9a3412' in styled and '#78450a' in styled
+    # three reds for the rises, three greens for the drops: never the same colour for both
+    assert '#991b1b' in styled and '#7a2424' in styled and '#4f2424' in styled
+    assert '#166534' in styled and '#1d5233' in styled and '#1c3b2a' in styled
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
@@ -136,10 +145,15 @@ def test_d096_sidebar_footer_shows_the_real_alert_count():
     assert not app.exception
     button = app.button(key='home_alert_trigger')
     week = dashboard.read_latest_week()
-    count = int((dashboard.read_price_alerts()['week_start'] == week).sum())
-    assert button.label == (
-        f'▲ {count} alertas de precio esta semana' if count != 1 else '▲ 1 alerta de precio esta semana'
+    now = dashboard.read_price_alerts()
+    now = now[now['week_start'] == week]
+    rises, drops = int((now['variation'] > 0).sum()), int((now['variation'] < 0).sum())
+    # D-477: the sharp rises and the sharp drops, apart
+    assert button.label == (f'▲ {rises} alzas fuertes' if rises != 1 else '▲ 1 alza fuerte')
+    assert app.button(key='home_drop_trigger').label == (
+        f'▼ {drops} bajas fuertes' if drops != 1 else '▼ 1 baja fuerte'
     )
+    assert rises + drops == len(now)
     dark_css = dashboard.build_sidebar_css(dashboard.charts.MODE_DARK)
     light_css = dashboard.build_sidebar_css(dashboard.charts.MODE_BLUE_LIGHT)
     assert '.st-key-home_alert_trigger button' in dark_css

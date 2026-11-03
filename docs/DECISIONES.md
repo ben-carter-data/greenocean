@@ -3888,3 +3888,13 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** cuando un canal tiene menos familias que el total, su tarjeta dice por qué, en letra chica bajo los precios: «ODEPA solo publica 2 de las 7 familias en este canal». La cuenta se lee de los datos de esa semana, nunca se escribe a mano.
 - **Medición (Playwright):** a 1440 × 900 las ocho tarjetas caben en una pantalla. En inglés, la auditoría de idioma no encuentra español en la página.
 - **Pruebas:** `tests/test_channel_latest.py` (la tarjeta dice por qué tiene menos familias).
+
+## D-477 · Alertas de precio: alzas fuertes en rojo y bajas fuertes en verde
+- **Pedido del autor:** en la tabla de alertas, una bajada fuerte salía en rojo y con el nivel «Muy alta», como si fuera un peligro. Para quien compra, una bajada es una buena noticia. El autor pidió dos tipos de alerta: roja para las subidas y verde para las bajadas.
+- **Nombres (aprobados por el autor):** «alza fuerte» y «baja fuerte». Los niveles de un alza son Muy alta, Alta y Moderada; los de una baja, Baja importante, Baja moderada y Baja leve. Los umbrales no cambian: más de 4, más de 3 y más de 2 desviaciones respecto de las 12 semanas anteriores, y un cambio de al menos 10 % (K6).
+- **Panel:** bajo la barra del Semanal hay dos botones, «▲ 7 alzas fuertes» en rojo y «▼ 6 bajas fuertes» en verde. Cada uno abre su ventana: las familias en tarjetas de su color y, al elegir una, su tabla. Los niveles se pintan en tres rojos o tres verdes, de intenso a suave. La columna «Cambio» sigue en rojo cuando sube y en azul cuando baja, como en todo el panel.
+- **Inglés:** la ventana de alertas no tenía inglés. Ahora se traducen el título, las tarjetas, la guía de niveles, la unidad y la tabla. La tabla se traduce antes de darle estilo, porque una tabla con estilo no pasa por la capa de inglés.
+- **«Informe semanal»:** `bi/report.py` separa las alertas en dos tablas, «Alzas fuertes» y «Bajas fuertes».
+- **Documentos:** RF-05 del PRD y el Glosario, con los dos términos nuevos, en los dos idiomas.
+- **Medición (Playwright):** a 1440 × 900, en español y en inglés, se abrieron los dos botones y una familia de cada uno.
+- **Pruebas:** `tests/test_home_mockup.py`, `tests/test_dashboard.py` y `tests/test_report.py`.

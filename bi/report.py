@@ -64,8 +64,25 @@ def build_alert_line(alert):
     )
 
 
+def build_alert_table(title, rows):
+    """D-477: one kind of alert, its count and its largest movements first."""
+    if rows.empty:
+        return []
+    largest_first = rows["variation"].abs().sort_values(ascending=False).index
+    shown = rows.loc[largest_first].head(MAXIMUM_ALERTS_IN_REPORT)
+    return [
+        f"### {title}: {len(rows)}",
+        "",
+        "| Producto | Variedad | Calidad | Canal | Precio nacional ($) | Variación |",
+        "|---|---|---|---|---|---|",
+        *[build_alert_line(alert) for alert in shown.to_dict("records")],
+        "",
+    ]
+
+
 def build_alerts_section(database_file):
-    """Lines with the K6 alerts of the latest week, largest movements first."""
+    """Lines with the K6 alerts of the latest week: the sharp rises and the sharp drops apart (D-477), largest
+    movements first."""
     prices = queries.run_query("k6_national_weekly_price", database_file)
     alert_rows = alerts.find_price_alerts(prices)
     latest_week = prices["week_start"].max()
@@ -73,18 +90,14 @@ def build_alerts_section(database_file):
     lines = [f"## Alertas de la semana {weeks.week_range(latest_week, year=True)}", ""]  # D-374
     if week_alerts.empty:
         return lines + ["Ningún producto se movió fuera de su rango habitual."]
-
-    largest_first = week_alerts["variation"].abs().sort_values(ascending=False).index
-    shown_alerts = week_alerts.loc[largest_first].head(MAXIMUM_ALERTS_IN_REPORT)
     lines += [
-        f"{len(week_alerts)} productos fuera de su rango habitual (K6). "
-        f"Se muestran los {len(shown_alerts)} mayores movimientos.",
+        f"{len(week_alerts)} productos fuera de su rango habitual (K6). Se muestran hasta "
+        f"{MAXIMUM_ALERTS_IN_REPORT} de cada tipo, los mayores movimientos primero.",
         "",
-        "| Producto | Variedad | Calidad | Canal | Precio nacional ($) | Variación |",
-        "|---|---|---|---|---|---|",
     ]
-    lines += [build_alert_line(alert) for alert in shown_alerts.to_dict("records")]
-    return lines
+    lines += build_alert_table("Alzas fuertes", week_alerts[week_alerts["variation"] > 0])
+    lines += build_alert_table("Bajas fuertes", week_alerts[week_alerts["variation"] < 0])
+    return lines[:-1]
 
 
 def build_report(database_file=queries.DATABASE_FILE):

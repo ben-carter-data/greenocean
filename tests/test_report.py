@@ -51,6 +51,15 @@ def test_report_shows_the_load_status_and_the_alert_of_the_week(tmp_path):
     assert "Alertas de la semana 6–12 abr 2026" in report_text
     expected_line = "| Tomate | Larga vida | Primera | Feria libre | 1.300 | +30,0 % |"
     assert expected_line in report_text
+    # D-477: a rise goes to the sharp rises; a week with a drop would list it apart, under «Bajas fuertes»
+    assert "### Alzas fuertes: 1" in report_text and "Bajas fuertes" not in report_text
+
+
+def test_d477_a_sharp_drop_goes_to_its_own_table(tmp_path):
+    database_file = build_database(tmp_path, STEADY_PRICES + [700])
+    report_text = report.build_report(database_file)
+    assert "### Bajas fuertes: 1" in report_text and "Alzas fuertes" not in report_text
+    assert "| Tomate | Larga vida | Primera | Feria libre | 700 | -30,0 % |" in report_text
 
 
 def test_report_says_so_when_no_product_is_out_of_range(tmp_path):

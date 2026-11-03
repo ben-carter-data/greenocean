@@ -93,7 +93,7 @@ Valen en todo diagrama, tabla o texto de `docs/` y del panel.
      - Stack y evidencia: «Stack y evidencia» (con el «Flujo del sistema en vivo»), «Mapa de la app», «Arquitectura de seguridad».
      - Calidad: «Calidad y auditoría», «Método y calidad», «Git workflow».
      - Pie del menú: «Documentos» (carpeta), «Fuentes», «Apariencia», ES/EN, GitHub.
-     - Ventanas, botones y avisos: «Elige tu vista», «Vista: … · Cambiar», «Ver todo el proyecto», «Volver», «Ejecutar pipeline ahora», «Recargar datos», «Cerrar acceso», «Acción requerida», «La carga del … falló».
+     - Ventanas, botones y avisos: «Elige tu vista», «Vista: … · Cambiar», «Ver todo el proyecto», «Volver», «Ejecutar pipeline ahora», «▲ n alzas fuertes» (rojo) y «▼ n bajas fuertes» (verde), las alertas de precio de la semana (D-477), «Recargar datos», «Cerrar acceso», «Acción requerida», «La carga del … falló».
    - **Fuentes:** ODEPA (precios mayoristas y al consumidor) e INE (IPC de alimentos).
    - **Documentos:** PRD, SAD, ADR, Índice de decisiones, SQAP (plan de calidad), Plan de pruebas y seguridad, MANUAL (manual de operación), Glosario; las decisiones, en `docs/DECISIONES.md` (D-xxx).
    - **Informes y registros:** «Informe semanal» (issue de `semanal.yml`), informe semanal de calidad N° x (pull request «Actualizar medición de calidad» de `calidad.yml`, solo tras una carga en verde; los 7 primeros son la serie de construcción C-1 a C-7, D-431), `plan_mitigacion.json` (fallas F-xx), `no_conformidades.json`, `incidentes_externos.json`.

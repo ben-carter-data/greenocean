@@ -1330,7 +1330,9 @@ def test_d128_the_price_alert_closes_the_list_in_red_away_from_the_github_mark()
     app = AppTest.from_file(DASHBOARD_FILE, default_timeout=60).run()
     assert not app.exception
     alert = app.button(key="home_alert_trigger")
-    assert re.fullmatch(r"▲ \d+ alertas? de precio esta semana", alert.label) and "al menos 10 %" in alert.help
+    assert re.fullmatch(r"▲ \d+ alzas? fuertes?", alert.label) and "al menos 10 %" in alert.help
+    drop = app.button(key="home_drop_trigger")  # D-477: the sharp drops, a green chip beside it
+    assert re.fullmatch(r"▼ \d+ bajas? fuertes?", drop.label) and drop not in app.sidebar.button
     # D-169: the trigger sits on top of the Resumen, out of the sidebar.
     assert alert not in app.sidebar.button
     css = " ".join(block.value for block in app.sidebar.markdown)
@@ -1531,9 +1533,10 @@ def test_d264_the_resumen_has_one_thin_bar_with_the_path_the_figures_and_the_ale
     for note in ("Sin cambio claro", "Sin dato"):  # the map's legend says what its greys mean
         assert note in markup, note
     week = dashboard.read_latest_week()
-    count = int((dashboard.read_price_alerts()["week_start"] == week).sum())
-    # D-398: the alerts are a notice of the content, under the bar
-    assert app.button(key="home_alert_trigger").label.startswith(f"▲ {count} alerta")
+    now = dashboard.read_price_alerts()
+    rises = int(((now["week_start"] == week) & (now["variation"] > 0)).sum())
+    # D-398: the alerts are a notice of the content, under the bar; D-477: the sharp rises and drops apart
+    assert app.button(key="home_alert_trigger").label.startswith(f"▲ {rises} alza")
     assert 'class="home-bar-updated"' in markup
 
 

@@ -560,6 +560,12 @@ REJECTED_ROW_LABELS = {
 NO_DATA_TEXT = "No hay datos para esta selección."
 # Alertas: (lowest distance in standard deviations, label, icon, status color).
 ALERT_LEVELS = [(4, "Muy alta", "◆", "critical"), (3, "Alta", "▲", "serious"), (0, "Moderada", "●", "warning")]
+# D-477: a sharp drop is good news for the buyer, not a danger: its own words and its own colour, green.
+DROP_LEVELS = [(4, "Baja importante", "◆", "good"), (3, "Baja moderada", "▼", "good"), (0, "Baja leve", "●", "good")]
+RISE, DROP = "alza", "baja"
+# (one, many) of each kind, the official names approved by the author (D-477).
+ALERT_KINDS = {RISE: ("alza fuerte", "alzas fuertes"), DROP: ("baja fuerte", "bajas fuertes")}
+ALERT_DIRECTION_KEY = "home_alert_direction"
 # Contexto: nominal prices or real prices deflated with the INE IPC (D-155).
 CONTEXT_BASIS_KEY = "context_price_basis"
 BASIS_NOMINAL, BASIS_REAL = "Precios del día", "Sin inflación"
@@ -4165,10 +4171,15 @@ def read_regional_movement_model(week, group=ALL_VALUES, product_filter=None):
     return build_regional_movement_model(current, previous)
 
 
-def home_alert_rows(week, group, product_filter=None):
-    """National alerts in the same week and product scope as the dashboard."""
+def home_alert_rows(week, group, product_filter=None, direction=None):
+    """National alerts in the same week and product scope as the dashboard; D-477: only the sharp rises or only the
+    sharp drops when a direction is given."""
     rows = read_price_alerts()
     rows = rows[rows['week_start'] == pd.Timestamp(week)]
+    if direction == RISE:
+        rows = rows[rows['variation'] > 0]
+    elif direction == DROP:
+        rows = rows[rows['variation'] < 0]
     if group != ALL_VALUES:
         rows = rows[rows['product_group'] == group]
     if product_filter:
@@ -4185,7 +4196,7 @@ def home_alert_table(rows):
     return pd.DataFrame(
         {
             'N.º': range(1, len(records) + 1),
-            'Nivel': [find_alert_level(row['_distance'])[0] for row in records],
+            'Nivel': [find_alert_level(row['_distance'], row['variation'] > 0)[0] for row in records],
             'Familia': [row['product_group'] for row in records],
             'Producto': [describe_product(row) for row in records],
             'Canal': [row['channel'] for row in records],
@@ -4198,13 +4209,30 @@ def home_alert_table(rows):
 
 
 def style_home_alert_table(table, mode):
-    """Color the alert level and price direction without changing their text labels."""
+    """Color the alert level and price direction without changing their text labels. D-477: the sharp rises in three
+    reds, the sharp drops in three greens, from strong to light."""
     dark = charts.get_palette(mode)['base'] == 'dark'
     colors = (
-        {'Muy alta': ('#7f1d1d', '#fff4f4'), 'Alta': ('#9a3412', '#fff4e8'), 'Moderada': ('#78450a', '#fff4d2')}
+        {
+            'Muy alta': ('#991b1b', '#fff4f4'),
+            'Alta': ('#7a2424', '#ffe4e4'),
+            'Moderada': ('#4f2424', '#ffcfcf'),
+            'Baja importante': ('#166534', '#f0fff4'),
+            'Baja moderada': ('#1d5233', '#dcfce7'),
+            'Baja leve': ('#1c3b2a', '#bbf7d0'),
+        }
         if dark
-        else {'Muy alta': ('#fee2e2', '#991b1b'), 'Alta': ('#ffedd5', '#9a3412'), 'Moderada': ('#fef3c7', '#854d0e')}
+        else {
+            'Muy alta': ('#fecaca', '#7f1d1d'),
+            'Alta': ('#fee2e2', '#991b1b'),
+            'Moderada': ('#fef2f2', '#b91c1c'),
+            'Baja importante': ('#bbf7d0', '#14532d'),
+            'Baja moderada': ('#dcfce7', '#166534'),
+            'Baja leve': ('#f0fdf4', '#15803d'),
+        }
     )
+
+    colors = {i18n.translate_text(label): pair for label, pair in colors.items()}  # D-477: the table may be in English
 
     def level_css(value):
         background, foreground = colors[value]
@@ -4214,14 +4242,36 @@ def style_home_alert_table(table, mode):
         foreground = ('#ff8a96' if dark else '#b91c1c') if value.startswith('+') else ('#83baff' if dark else '#1d4ed8')
         return f'color:{foreground};font-weight:600'
 
-    return table.style.map(level_css, subset=['Nivel']).map(change_css, subset=['Cambio'])
+    level, change = i18n.translate_text('Nivel'), i18n.translate_text('Cambio')
+    return table.style.map(level_css, subset=[level]).map(change_css, subset=[change])
+
+
+def translate_alert_table(table):
+    """D-477: the alert table in the reader's language. A styled table skips the English layer, so its headers,
+    levels, channels and figures are translated here, before the style."""
+    if not i18n.is_english():
+        return table
+    table = table.copy()
+    if 'Canal' in table:
+        table['Canal'] = table['Canal'].map(data_terms.term)
+    for column in table.columns:  # every text cell, whatever the column's dtype (pandas 3 has a string dtype)
+        table[column] = table[column].map(lambda value: i18n.translate_text(value) if isinstance(value, str) else value)
+    return table.rename(columns=i18n.translate_text)
+
+
+def alert_count_text(count, direction):
+    """«8 alzas fuertes», «1 baja fuerte» (D-477)."""
+    one, many = ALERT_KINDS[direction]
+    return f'{count} {one if count == 1 else many}'
 
 
 @st.dialog('Alertas de precio', width='large')
-def show_home_alerts_dialog(week, group, product_filter, mode):
-    rows = home_alert_rows(week, group, product_filter)
+def show_home_alerts_dialog(week, group, product_filter, mode, direction=RISE):
+    """D-477: the sharp rises (red) or the sharp drops (green) of the week, by family, then each family's table."""
+    rows = home_alert_rows(week, group, product_filter, direction)
+    rise = direction == RISE
     if rows.empty:
-        st.info('No hay alertas para esta selección.')
+        st.info('No hay alzas fuertes para esta selección.' if rise else 'No hay bajas fuertes para esta selección.')
         return
     counts = rows.groupby('product_group').size().sort_values(ascending=False)
     families = counts.index.tolist()
@@ -4231,16 +4281,20 @@ def show_home_alerts_dialog(week, group, product_filter, mode):
         st.session_state['home_alert_selected_family'] = None
     if selected is None:
         st.html('<div class="home-alert-overview-marker"></div>')
-        st.caption(f'{len(rows)} cambios poco habituales · {len(families)} familias · datos nacionales de ODEPA')
+        st.caption(
+            f'{alert_count_text(len(rows), direction)} · {len(families)} '
+            f'{"familia" if len(families) == 1 else "familias"} · datos nacionales de ODEPA'
+        )
         icons = {'Hortalizas': '🥬', 'Frutas': '🍎', 'Pan': '🍞', 'Carne bovina': '🥩', 'Abarrotes y otros': '🥫'}
         # Every family gets the same tile (D-150): the number of alerts is written on it,
         # so neither the shape nor the colour has to stand for a quantity.
+        tone = '#db3349' if rise else '#1f9d55'
         tile_css = []
         for index, family in enumerate(families):
             icon = icons.get(family, '🍗' if 'Cerdo' in family else '🥚')
             tile_css.append(
                 f'.st-key-home_alert_card_{index}'
-                '{--alert-tone:#db3349;--alert-shape:inset(0 round 24%);}'
+                f'{{--alert-tone:{tone};--alert-shape:inset(0 round 24%);}}'
                 f'.st-key-home_alert_card_{index} button::after{{content:"{icon}";}}'
             )
         st.html('<style>' + ''.join(tile_css) + '</style>')
@@ -4248,14 +4302,17 @@ def show_home_alerts_dialog(week, group, product_filter, mode):
             columns = st.columns(4, gap='small')
             for offset, family in enumerate(families[start : start + 4]):
                 index = start + offset
-                total = int(counts[family])
-                label = f'{family}\n{total} {"alerta" if total == 1 else "alertas"}  →'
+                label = f'{data_terms.term(family)}\n{alert_count_text(int(counts[family]), direction)}  →'
                 with columns[offset].container(key=f'home_alert_card_{index}'):
                     if st.button(label, key=f'home_alert_family_{index}', use_container_width=True):
                         st.session_state['home_alert_selected_family'] = family
                         st.rerun(scope='fragment')
         st.caption(
-            'La alerta señala un cambio inusual respecto de la semana anterior; no significa que el alimento sea el más caro.'
+            'Un alza fuerte es una subida fuera de lo habitual para ese producto y de al menos 10 %; no significa que '
+            'el alimento sea el más caro.'
+            if rise
+            else 'Una baja fuerte es una bajada fuera de lo habitual para ese producto y de al menos 10 %: una buena '
+            'noticia para quien compra.'
         )
         return
 
@@ -4266,7 +4323,7 @@ def show_home_alerts_dialog(week, group, product_filter, mode):
         if st.button('← Familias', key='home_alert_back'):
             st.session_state['home_alert_selected_family'] = None
             st.rerun(scope='fragment')
-        st.subheader(f'{selected} · {family_total} {"alerta" if family_total == 1 else "alertas"}')
+        st.subheader(f'{data_terms.term(selected)} · {alert_count_text(family_total, direction)}')
     units = ['Todas las unidades'] + sorted(family_rows['normalized_unit'].unique())
     unit_key = f'home_alert_unit_{selected}'
     if st.session_state.get(unit_key) not in units:
@@ -4277,18 +4334,24 @@ def show_home_alerts_dialog(week, group, product_filter, mode):
             '<span><i class="critical"></i>Muy alta</span>'
             '<span><i class="high"></i>Alta</span>'
             '<span><i class="moderate"></i>Moderada</span>'
-            '<small>El color indica cuán inusual fue el cambio.</small></div>'
+            '<small>El color indica cuán inusual fue el alza.</small></div>'
+            if rise
+            else '<div class="home-alert-level-guide">'
+            '<span><i class="drop-strong"></i>Baja importante</span>'
+            '<span><i class="drop-medium"></i>Baja moderada</span>'
+            '<span><i class="drop-light"></i>Baja leve</span>'
+            '<small>El color indica cuán inusual fue la baja.</small></div>'
         )
         selected_unit = st.selectbox(
             'Unidad',
             units,
             key=unit_key,
-            format_func=lambda value: value if value == 'Todas las unidades' else f'$/{value}',
+            format_func=lambda value: i18n.translate_text(value) if value == 'Todas las unidades' else f'$/{value}',
         )
     if selected_unit != 'Todas las unidades':
         family_rows = family_rows[family_rows['normalized_unit'] == selected_unit]
-        st.caption(f'Mostrando {len(family_rows)} de {family_total} alertas de esta familia.')
-    table = home_alert_table(family_rows).drop(columns='Familia')
+        st.caption(f'Mostrando {len(family_rows)} de {alert_count_text(family_total, direction)} de esta familia.')
+    table = translate_alert_table(home_alert_table(family_rows).drop(columns='Familia'))
     st.dataframe(
         style_home_alert_table(table, mode),
         hide_index=True,
@@ -4838,9 +4901,10 @@ def read_lineage(database_version):
 
 
 # region Alerts page
-def find_alert_level(distance):
-    """(label, icon, status) of an alert by its distance in standard deviations."""
-    return next((label, icon, status) for floor, label, icon, status in ALERT_LEVELS if distance >= floor)
+def find_alert_level(distance, rise=True):
+    """(label, icon, status) of an alert by its distance in standard deviations; D-477: a drop takes the drop words."""
+    levels = ALERT_LEVELS if rise else DROP_LEVELS
+    return next((label, icon, status) for floor, label, icon, status in levels if distance >= floor)
 
 
 # region Contexto del precio (D-094)
@@ -9005,6 +9069,7 @@ def build_sidebar_css(mode):
     quiet = "rgba(214, 218, 227, .68)" if dark else "rgba(31, 41, 55, .68)"
     # The price alert sits on the page, not in the sidebar (D-264): its red follows the page's surface.
     alert_text = "#ff9ca4" if is_dark_surface(palette["background"]) else "#9d1f2c"
+    drop_text = "#6ee7a0" if is_dark_surface(palette["background"]) else "#15693a"
     view_ink = "#7dd3fc" if dark else palette["accent"]  # D-373: the view button reads on the sidebar's surface
     return f"""<style>
     [data-testid="stSidebar"] {{background:{palette['sidebar']}; border-right:0; box-shadow:none;}}
@@ -9054,6 +9119,12 @@ def build_sidebar_css(mode):
         color:{alert_text} !important; border-radius:8px; padding:3px 10px !important; min-height:28px; box-shadow:none !important;}}
     .st-key-home_alert_trigger button:hover {{background:color-mix(in srgb,{alert_text} 24%,transparent) !important;}}
     .st-key-home_alert_trigger button p {{color:{alert_text} !important; -webkit-text-fill-color:{alert_text} !important;
+        font-weight:600; font-size:13.5px; letter-spacing:0; font-variant-numeric:tabular-nums;}}
+    /* D-477: the sharp drops, a green chip beside it: good news for whoever buys. */
+    .st-key-home_drop_trigger button {{border:0 !important; background:color-mix(in srgb,{drop_text} 14%,transparent) !important;
+        color:{drop_text} !important; border-radius:8px; padding:3px 10px !important; min-height:28px; box-shadow:none !important;}}
+    .st-key-home_drop_trigger button:hover {{background:color-mix(in srgb,{drop_text} 24%,transparent) !important;}}
+    .st-key-home_drop_trigger button p {{color:{drop_text} !important; -webkit-text-fill-color:{drop_text} !important;
         font-weight:600; font-size:13.5px; letter-spacing:0; font-variant-numeric:tabular-nums;}}
     .st-key-sidebar_appearance [data-testid="stPopover"] button {{background:transparent !important;
         box-shadow:none !important; color:{quiet} !important; padding:6px 8px !important;}}
@@ -9346,23 +9417,34 @@ def show_weeks_panel(mode):
 
 def show_alert_notice(week):
     """The price alerts of the week shown, a notice of the content (D-398; before, a chip of the header): it opens the
-    same detail by family. The count is national, like the detail."""
+    same detail by family. The count is national, like the detail. D-477: two chips, the sharp rises in red and the
+    sharp drops in green, each opening its own detail."""
     alerts_now = read_price_alerts()
     week = pd.Timestamp(week)
-    count = int((alerts_now["week_start"] == week).sum()) if not alerts_now.empty else 0
-    label = (
-        tr("▲ {} alertas de precio esta semana").format(count) if count != 1 else tr("▲ 1 alerta de precio esta semana")
-    )
-    if st.button(
-        label,
-        key="home_alert_trigger",
-        disabled=not count,
-        help=tr(
-            "Cambios fuera de lo habitual y de al menos 10 % esta semana, en todo Chile. Abre el detalle por familia."
+    now = alerts_now[alerts_now["week_start"] == week] if not alerts_now.empty else alerts_now
+    counts = {
+        RISE: int((now["variation"] > 0).sum()) if not now.empty else 0,
+        DROP: int((now["variation"] < 0).sum()) if not now.empty else 0,
+    }
+    chips = [
+        (
+            RISE,
+            "home_alert_trigger",
+            tr("▲ {} alzas fuertes").format(counts[RISE]) if counts[RISE] != 1 else tr("▲ 1 alza fuerte"),
+            tr("Subidas fuera de lo habitual para el producto y de al menos 10 % esta semana, en todo Chile."),
         ),
-    ):
-        st.session_state["home_alert_selected_family"] = None
-        show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode())
+        (
+            DROP,
+            "home_drop_trigger",
+            tr("▼ {} bajas fuertes").format(counts[DROP]) if counts[DROP] != 1 else tr("▼ 1 baja fuerte"),
+            tr("Bajadas fuera de lo habitual para el producto y de al menos 10 % esta semana, en todo Chile."),
+        ),
+    ]
+    with st.container(key="home_alert_chips", horizontal=True, gap="small", width="content"):
+        for direction, key, label, help_text in chips:
+            if st.button(label, key=key, disabled=not counts[direction], help=help_text):
+                st.session_state["home_alert_selected_family"] = None
+                show_home_alerts_dialog(f"{week:%Y-%m-%d}", ALL_VALUES, None, get_mode(), direction)
 
 
 def show_profile_indicator():
