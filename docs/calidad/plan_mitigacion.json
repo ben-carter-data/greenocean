@@ -70,6 +70,28 @@
           "estacion": 8,
           "estado": "resuelta",
           "referencia": "D-471"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "El CI falló dos pushes seguidos en un gráfico de «Análisis BA y BI»; en el equipo del autor pasaba.",
+            "The CI failed two pushes in a row on a chart of «Análisis BA y BI»; on the author's computer it passed."
+          ],
+          "diagnostico": [
+            "El CI instala pandas 3.1, que da texto al buscar en una selección vacía; el equipo tenía pandas 3.0.",
+            "The CI installs pandas 3.1, which gives text when looking up an empty selection; the computer had pandas 3.0."
+          ],
+          "solucion": [
+            "El valor buscado se convierte a número antes de dividir.",
+            "The looked-up value is turned into a number before dividing."
+          ],
+          "comentario": [
+            "Se halló con un entorno igual al del CI (Python 3.12, sus versiones), porque sus logs piden token (F-14).",
+            "Found with an environment like the CI's (Python 3.12, its versions), because its logs need a token (F-14)."
+          ],
+          "estacion": 8,
+          "estado": "resuelta",
+          "referencia": "D-486"
         }
       ]
     },

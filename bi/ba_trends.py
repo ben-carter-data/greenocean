@@ -793,7 +793,8 @@ def trend_chart(
     first = panel[(panel["year"] == start[0]) & (panel["month"] == start[1])].set_index("product_group")["index"]
     names = [family_label(family), say("IPC de alimentos", "Food CPI")]
     panel = panel[panel["product_group"].isin(first.index)].assign(
-        value=lambda frame: frame["index"] / frame["product_group"].map(first) * 100,
+        # astype: pandas 3.1 maps an empty selection to text, which cannot divide (D-486)
+        value=lambda frame: frame["index"] / frame["product_group"].map(first).astype(float) * 100,
         serie=lambda frame: frame["product_group"].map({family: names[0], IPC: names[1]}),
     )
     color = inflation_view.FAMILY_COLORS.get(family, palette["accent"])
