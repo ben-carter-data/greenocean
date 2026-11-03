@@ -433,6 +433,8 @@ def test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description
     assert position(("odepa", "agent")) < position(("agent", "sqlite")) < position(("sqlite", "parquet"))
     assert position(("sqlite", "parquet")) < position(("ine", "agent")) < position(("parquet", "dbt"))
     assert position(("dbt", "duckdb")) < position(("semanal", "ci")) < position(("duckdb", "release"))
+    # D-470: the gate of etl/pipeline.py (late sources, too few rows) runs right after dbt, before the database is written
+    assert position(("gates", "dbt")) < position(("gates", "release")) < position(("dbt", "duckdb"))
     assert position(("duckdb", "release")) < position(("semanal", "calidad")) < position(("github", "stcloud"))
     assert position(("github", "stcloud")) < position(("release", "streamlit")) < position(("visitor", "streamlit"))
     script, css = app_map.SCRIPT, app_map.build_css(charts.get_palette(charts.THEMES[0]))

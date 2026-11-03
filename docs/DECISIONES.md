@@ -3825,3 +3825,9 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Aire arriba:** el mapa baja 16 px para que la flecha de GitHub, que corre sobre la fila de arriba, no roce los filtros.
 - **Medición (Playwright):** el paso 1 muestra solo la flecha de GitHub a `semanal.yml`; luego PyPI, la base anterior y el agente, cada una sola y con una pausa sin flechas entre ellas. Con el cursor sobre dbt no se ilumina nada.
 - **Pruebas:** `tests/test_app_map.py` (ningún `mouseenter` en el guion, el recorrido parte en GitHub, una línea por vez con su pausa).
+
+## D-470 · «Mapa de la app»: la puerta de publicación entra en su momento real
+
+- **Revisión del orden** (pedida por el autor: el recorrido debe ser el orden real de la app): «Puerta → Release: publica solo si todo pasa» aparecía después de pytest. La revisión que dibuja esa flecha (fuente atrasada y pocas filas, `etl.MINIMUM_ROWS_RATIO`) corre dentro de `etl/pipeline.py`, justo después de `dbt build` y antes de escribir la Base DuckDB.
+- **Decisión:** en `STORY` el paso va después de «Puerta → dbt» y antes de «dbt → Base DuckDB». Los demás pasos ya seguían el orden de `semanal.yml`.
+- **Pruebas:** `tests/test_app_map.py::test_d467_the_data_travels_its_real_way_one_line_at_a_time_and_a_description_opens_on_its_i`.

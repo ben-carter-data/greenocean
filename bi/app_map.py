@@ -1183,12 +1183,12 @@ STORY = [
     ("agent", "parquet"),
     ("parquet", "dbt"),
     ("gates", "dbt"),
+    ("gates", "release"),  # etl/pipeline.py checks the late sources and the rows before it writes the database
     ("dbt", "duckdb"),
     ("semanal", "ci"),
     ("ci", "parity"),
     ("parity", "sqlite"),
     ("parity", "duckdb"),
-    ("gates", "release"),
     ("duckdb", "release"),
     ("semanal", "github"),
     ("semanal", "calidad"),
