@@ -3984,3 +3984,8 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Descartado:** un servicio externo de tareas programadas (necesita un token de GitHub fuera del repositorio) y el computador del autor (debe funcionar con el computador apagado).
 - **Panel y documentos:** la próxima carga se calcula a las 12:07 UTC; el PRD (RF-01), el SAD, el MANUAL, el Glosario, DevOps, el mapa de la app, el flujo en vivo y el glosario técnico dicen la hora y los intentos nuevos.
 - **Pruebas:** `tests/test_control.py`, `tests/test_devops.py` (las líneas de cron y el guardia desde el martes) y `tests/test_prd_traceability.py`.
+
+## D-488 · La medición de calidad vuelve a verde y el linaje queda en inglés con la base nueva
+- **Problema:** `calidad.yml` falló en los pushes del 03-11 por dos indicadores críticos de código. Bandit marcaba como alto el SHA-1 que da a cada página una llave neutra (D-443), y el detector de secretos tenía un candidato sin clasificar: la palabra «Secreto» del diccionario de inglés. Además, con la base de la carga del 03-11, la ficha de `latest_by_source` en «Pipeline y linaje» quedaba en español en la página en inglés: su descripción dbt llegó a la base con esa carga y nunca tuvo traducción (F-29).
+- **Decisión:** el SHA-1 declara `usedforsecurity=False`, porque solo nombra una página y no protege nada. «Secreto» queda en `.secrets.baseline` como candidato revisado y no secreto. La descripción de `latest_by_source` tiene su inglés en `bi/i18n_en.py`.
+- **Pruebas:** `tests/test_i18n.py` (la auditoría de idioma con la base nueva) y la medición de `scripts/medir_calidad.py`.

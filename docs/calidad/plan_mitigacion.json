@@ -1678,6 +1678,28 @@
           "estacion": 9,
           "estado": "resuelta",
           "referencia": "D-483"
+        },
+        {
+          "fecha": "2026-11-03",
+          "ocurrencia": [
+            "Tras la carga del 03-11, la ficha de latest_by_source en «Pipeline y linaje» quedó en español en la página en inglés.",
+            "After the 03-11 load, the card of latest_by_source in «Pipeline y linaje» stayed in Spanish on the English page."
+          ],
+          "diagnostico": [
+            "Su descripción dbt llegó a la base con esa carga y nunca tuvo traducción.",
+            "Its dbt description reached the database with that load and never had a translation."
+          ],
+          "solucion": [
+            "Se agregó su inglés en bi/i18n_en.py.",
+            "Its English was added in bi/i18n_en.py."
+          ],
+          "comentario": [
+            "La auditoría de idioma lo halló con la base nueva.",
+            "The language audit found it with the new database."
+          ],
+          "estacion": 9,
+          "estado": "resuelta",
+          "referencia": "D-488"
         }
       ]
     },

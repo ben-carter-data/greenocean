@@ -8694,7 +8694,7 @@ def show_dashboard_menu_fold(view, mode):
             unsafe_allow_html=True,
         )
     # the page as a neutral key: a page name in a script reads as Spanish text to the English layer (D-443)
-    key = hashlib.sha1(view.encode()).hexdigest()[:10]
+    key = hashlib.sha1(view.encode(), usedforsecurity=False).hexdigest()[:10]
     script = (
         DASHBOARD_FOLD_SCRIPT.replace("__VIEW__", key)
         .replace("__FOLD__", "yes" if is_dashboard else "no")
