@@ -4217,7 +4217,7 @@ def home_alert_table(rows):
             # published; before, «Anterior» was worked back from the national price and could be a price never seen
             'Anterior': [home_mockup.money(alert_prices(row)[0]) for row in records],
             'Actual': [home_mockup.money(alert_prices(row)[1]) for row in records],
-            'Cambio': [home_mockup.percent(row['variation'] * 100, True) for row in records],
+            'Variación': [home_mockup.percent(row['variation'] * 100, True) for row in records],
         }
     )
 
@@ -4256,7 +4256,7 @@ def style_home_alert_table(table, mode):
         foreground = ('#ff8a96' if dark else '#b91c1c') if value.startswith('+') else ('#83baff' if dark else '#1d4ed8')
         return f'color:{foreground};font-weight:600'
 
-    level, change = i18n.translate_text('Nivel'), i18n.translate_text('Cambio')
+    level, change = i18n.translate_text('Nivel'), i18n.translate_text('Variación')
     return table.style.map(level_css, subset=[level]).map(change_css, subset=[change])
 
 

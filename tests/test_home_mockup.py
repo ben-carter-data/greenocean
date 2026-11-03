@@ -78,7 +78,7 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
     table = dashboard.home_alert_table(rows)
     assert len(table) == len(rows)
     assert table['N.º'].tolist() == list(range(1, len(rows) + 1))
-    assert {'Nivel', 'Familia', 'Producto', 'Canal', 'Unidad', 'Anterior', 'Actual', 'Cambio'} <= set(table)
+    assert {'Nivel', 'Familia', 'Producto', 'Canal', 'Unidad', 'Anterior', 'Actual', 'Variación'} <= set(table)
     # D-477: a rise takes the rise words, a drop the drop words; D-478: every level is at least «fuerte», as its alert
     rises = {'Alza extrema', 'Alza muy fuerte', 'Alza fuerte'}
     drops = {'Baja extrema', 'Baja muy fuerte', 'Baja fuerte'}
@@ -98,7 +98,7 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
                     'Baja muy fuerte',
                     'Baja fuerte',
                 ],
-                'Cambio': ['+1,0 %', '+1,0 %', '+1,0 %', '−1,0 %', '−1,0 %', '−1,0 %'],
+                'Variación': ['+1,0 %', '+1,0 %', '+1,0 %', '−1,0 %', '−1,0 %', '−1,0 %'],
             }
         ),
         dashboard.charts.MODE_DARK,
