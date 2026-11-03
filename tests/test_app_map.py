@@ -286,7 +286,9 @@ def test_d441_lines_are_orthogonal_and_each_has_a_colour_of_its_own_in_every_the
     # A description never covers the drawing: beside the map, in the corner clear of the piece and its partners, or, on
     # the whole screen, in a column of its own.
     assert "if (window.innerWidth - box.right - room * 2 >= width)" in app_map.SCRIPT
-    assert ".am.am-full::after {" in app_map.build_css(charts.get_palette(charts.THEMES[0]))
+    # D-472: on the whole screen the right column is the list of steps, not an empty frame
+    css = app_map.build_css(charts.get_palette(charts.THEMES[0]))
+    assert ".am.am-full::after" not in css and ".am.am-full .am-steps" not in css and ".am.am-full .am-row" in css
     # A narrow window (a tablet, a phone) keeps the same drawing, scaled down: no layout of its own.
     assert (
         "const DESIGN = 820;" in app_map.SCRIPT

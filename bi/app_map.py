@@ -1626,11 +1626,11 @@ def build_css(palette):
   color:{ink}; border:1px solid {border}; background:transparent; }}
 .am-fullbtn:hover, .am-fullbtn:focus-visible {{ border-color:{accent}; outline:none; }}
 .am-close-full, .am.am-full .am-open-full {{ display:none; }} .am.am-full .am-close-full {{ display:inline; }}
-.am.am-full {{ position:fixed; inset:0; z-index:1000000; height:100vh; padding:14px 370px 10px 26px; overflow:auto;
+.am.am-full {{ position:fixed; inset:0; z-index:1000000; height:100vh; padding:14px 26px 10px; overflow:auto;
   background:var(--am-surface); }}
-/* On the whole screen the descriptions have a column of their own, on the right, so they never cover the drawing. */
-.am.am-full::after {{ content:""; position:fixed; top:12px; right:12px; bottom:12px; width:330px; border-radius:14px;
-  border:1px dashed color-mix(in srgb, {border} 80%, transparent); pointer-events:none; }}
+/* D-472: on the whole screen the right column is the list of the load's steps, not an empty frame waiting for a
+   description: a description, opened with its «i», shows over it while it is read. */
+.am.am-full .am-row {{ flex:1 1 auto; min-height:0; }}
 .am.am-full .am-main {{ flex:1 1 auto; min-height:0; grid-template-rows:auto auto 1fr 1fr 1fr 1fr; }}
 .am.am-full .am-main .am-node {{ align-self:center; }}
 .am-tourbtn.on {{ background:color-mix(in srgb, #f0b347 16%, transparent); }}
@@ -1677,7 +1677,6 @@ def build_css(palette):
 .am-step.now {{ background:color-mix(in srgb, #f0b347 16%, transparent); box-shadow:inset 2px 0 0 #f0b347; color:{ink}; }}
 .am-step.now b {{ color:#f0b347; }}
 .am-steps-note {{ margin:8px 0 4px; font-size:10.5px; line-height:1.4; color:{muted}; }}
-.am.am-full .am-steps {{ display:none; }}
 @container am (max-width:900px) {{ .am-steps {{ display:none; }} }}
 /* D-441: the pieces of the map fill their space: bigger logos, with «i» and the magnifier beside them. */
 .am-main .am-logo {{ width:36px; height:36px; }}

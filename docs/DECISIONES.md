@@ -3842,3 +3842,11 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
   - **Espacio:** el mapa mide solo su parte de la fila, y la lista se oculta en pantalla completa y bajo 900 px de ancho, donde no cabe.
 - **Medición (Playwright):** a 1440 × 900, en español e inglés, la lista acompaña al mapa sin achicarlo; un clic en el paso 12 muestra «Parquet → dbt Core» en el mapa y en la lista.
 - **Pruebas:** `tests/test_app_map.py::test_d471_the_steps_of_the_load_sit_beside_the_map_grouped_by_who_runs_them`.
+
+## D-472 · «Mapa de la app»: en pantalla completa, la columna derecha es la lista de pasos y no un recuadro vacío
+
+- **Pedido del autor:** el botón «Pantalla completa» mostraba un recuadro vacío, con borde punteado, a la derecha del mapa.
+- **Diagnóstico:** desde D-441, la pantalla completa reservaba esa columna (y 370 px de margen) para la explicación de una pieza, que se abría al pasar el cursor. Desde D-467 la explicación se abre solo con la «i», así que la columna quedaba vacía casi siempre, y la lista de pasos (D-471) se ocultaba en ese modo.
+- **Decisión:** en pantalla completa se quitan el recuadro y su margen; la lista «La carga semanal, paso a paso» ocupa la columna derecha, a toda la altura. La explicación de la «i» se abre encima mientras se lee, con la animación detenida.
+- **Medición (Playwright):** a 1440 × 900, en pantalla completa, el mapa ocupa la izquierda y la lista la derecha; la «i» de dbt abre su explicación sin cubrir la lista entera.
+- **Pruebas:** `tests/test_app_map.py` (sin el recuadro vacío y con la fila del mapa y su lista en pantalla completa).
