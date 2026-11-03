@@ -5799,6 +5799,7 @@ a.ch-card:hover .ch-icon, a.ch-card:focus-visible .ch-icon {{ transform:translat
 .ch-change.rise {{ color:{palette["rise"]}; }} .ch-change.fall {{ color:{palette["fall"]}; }}
 .ch-change small {{ display:block; font-size:11.5px; font-weight:400; color:{muted}; }}
 .ch-prices {{ font-size:13px; }}
+.ch-families {{ display:block; margin-top:2px; font-size:12px; color:{muted}; }}
 .ch-bar {{ position:relative; height:6px; border-radius:3px; background:color-mix(in srgb, {border} 70%, transparent); }}
 .ch-bar::after {{ content:""; position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:{muted}; }}
 .ch-bar i {{ position:absolute; top:0; bottom:0; border-radius:3px; background:{muted}; }}
@@ -5837,7 +5838,10 @@ def build_channel_cards_html(cards, address_of, total_families=None):
             f'<span class="ch-bar" aria-hidden="true"><i class="{tone}" style="{bar_style(change, scale)}"></i></span>'
             f'<span class="ch-prices">{html.escape(tr("{} precios").format(charts.format_thousands(card["prices"])))}'
             + (
-                f' · {html.escape(tr("{} de {} familias").format(len(card["families"]), total_families))}'
+                # D-476: the reason, so the reader does not take the short count for missing data
+                f'<span class="ch-families">'
+                f'{html.escape(tr("ODEPA solo publica {} de las {} familias en este canal").format(len(card["families"]), total_families))}'
+                "</span>"
                 if total_families and len(card["families"]) < total_families
                 else ""
             )

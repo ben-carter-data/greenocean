@@ -200,7 +200,8 @@ def test_d406_the_cards_share_one_scale_and_say_their_coverage():
     markup = dashboard.build_channel_cards_html(cards, lambda channel: f"?canal={channel}", total_families=3)
     widths = re.findall(r'class="ch-bar"[^>]*><i class="[^"]*" style="[^"]*width:([\d.]+)%', markup)
     assert len(widths) == 2 and max(float(width) for width in widths) == 50.0  # the largest change fills its half
-    assert markup.count("1 de 3 familias") == 2  # each covers one family of three
+    # D-476: a channel that covers fewer families says why: the source publishes only those for it
+    assert markup.count('<span class="ch-families">ODEPA solo publica 1 de las 3 familias en este canal</span>') == 2
     assert dashboard.bar_style(-0.05, 0.1) == "left:25.0%;width:25.0%" and dashboard.bar_style(None, 1) == "width:0"
 
 

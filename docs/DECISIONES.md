@@ -3881,3 +3881,10 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Cifras chicas:** un porcentaje bajo 1 % se muestra con dos decimales (0,25 %), para que el aceptable no se redondee a «0,3» ni la falla a «0,0».
 - **Medición:** `docs/calidad/medicion.json` lleva la parte de datos medida de nuevo el 03-11-2026 con `scripts/medir_calidad.py`. Los 6 indicadores de datos cumplen.
 - **Pruebas:** `tests/test_quality_method.py` (las metas, la medida nueva, las dos detecciones, los decimales, el SQAP y ADR-36; las series cerradas guardan sus 12).
+
+## D-476 · «Último dato por canal»: la tarjeta dice por qué un canal tiene menos familias
+- **Pedido del autor:** la tarjeta Mayorista decía «2 de 7 familias», y el visitante no tenía cómo saber por qué.
+- **Causa:** no es un faltante. ODEPA publica cada canal solo con algunas familias. Mayorista tiene solo Frutas y Hortalizas desde enero de 2022; Carnicería, carnes; Panadería, pan. Solo los supermercados tienen las 7 (consulta a la Base DuckDB: familias distintas por canal en `weekly_price`).
+- **Decisión:** cuando un canal tiene menos familias que el total, su tarjeta dice por qué, en letra chica bajo los precios: «ODEPA solo publica 2 de las 7 familias en este canal». La cuenta se lee de los datos de esa semana, nunca se escribe a mano.
+- **Medición (Playwright):** a 1440 × 900 las ocho tarjetas caben en una pantalla. En inglés, la auditoría de idioma no encuentra español en la página.
+- **Pruebas:** `tests/test_channel_latest.py` (la tarjeta dice por qué tiene menos familias).
