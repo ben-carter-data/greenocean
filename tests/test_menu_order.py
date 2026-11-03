@@ -2,6 +2,7 @@
 and «Análisis BA y BI», which gathers the history of the prices and the former pages in its tabs; the app map lists the
 same pages in the same order."""
 
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -178,3 +179,20 @@ def test_d459_the_three_dashboards_sit_under_their_title_and_the_old_address_ope
         assert [link.proto.label for link in app.sidebar.get("page_link")][:3] == labels
         assert f'<p class="nav-subtitle">{title}</p>' in " ".join(block.value for block in app.sidebar.markdown)
         assert f"<b>{labels[0]}</b>" in " ".join(block.value for block in app.main.markdown)  # the page it opened
+
+
+@needs_database
+def test_d462_a_dashboard_opens_with_the_menu_folded_and_its_button_beating_in_green():
+    script = dashboard.DASHBOARD_FOLD_SCRIPT
+    assert 'sidebar.dataset.collapsed === "false"' in script  # how Streamlit marks the menu today
+    assert "window.__goFoldedView === view" in script  # once per page opened: a menu opened by hand stays open
+    assert "<" not in script.replace("<script>", "").replace("</script>", "").replace("tries++ <", "")
+    for view, folds in ((dashboard.HOME_PAGE, True), (dashboard.PAGE_BA, True), (dashboard.PAGE_DIAGRAMS, False)):
+        app = draw("profesional", view)
+        assert not app.exception
+        scripts = [str(block.proto.body) for block in app.get("html") if "__goFoldedView" in str(block.proto.body)]
+        key = hashlib.sha1(view.encode()).hexdigest()[:10]  # the page as a neutral key, not a Spanish name
+        assert len(scripts) == 1 and f'const view = "{key}";' in scripts[0], view
+        assert ('"yes" === "yes"' in scripts[0]) is folds, view
+        beat = "animation:go-menu-beat" in " ".join(block.value for block in app.markdown)
+        assert beat is folds, view

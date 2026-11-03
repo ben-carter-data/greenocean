@@ -3744,3 +3744,14 @@ Desde D-279, el plan de capacidad y escalabilidad es un documento propio: `docs/
 - **Decisión:** el piso de los gráficos sube a 230 px (210 px bajo 1400 px de ancho). La tabla por familia va en su propia caja, que se desplaza por dentro con el encabezado siempre a la vista, y toma el alto que queda, nunca menos de 140 px. En una ventana alta no cambia nada: la tabla cabe entera y no se desplaza.
 - **Medición (Playwright):** a 1440 × 790 los gráficos miden 230 px (antes 187) y la tabla muestra 7 de sus 9 filas; a 1440 × 900, 297 px y la tabla entera; a 1280 × 720, 210 px. Nada desplaza la página a 1440 × 900, 1440 × 790 ni 1280 × 720; a 1440 px de ancho, solo una ventana de menos de unos 720 px de alto desplaza la página.
 - **Pruebas:** `tests/test_ba_trends.py::test_d460_the_green_magnifier_opens_the_chart_large_in_a_window` revisa también el piso de los gráficos y la caja de la tabla.
+
+## D-462 · Los tres dashboards abren con el menú plegado y su botón palpita en verde
+
+- **Pedido del autor:** con el menú plegado, los dashboards se ven mejor, pero el botón para abrirlo casi no se veía. En los tres dashboards el menú se pliega solo, y el botón queda palpitando en verde flúor para mostrar que está ahí. Además, el espacio de arriba debe aprovecharse: quedaba una franja vacía sin razón (el autor eligió los tres dashboards, no solo Análisis BA y BI).
+- **Decisión:**
+  - **Menú plegado:** al abrir Semanal, Último dato por canal o Análisis BA y BI, el menú se pliega una vez. Si quien lee lo abre, queda abierto mientras siga en esa página; al abrir otro dashboard se pliega de nuevo. En las demás páginas no cambia nada. Un teléfono girado conserva su menú abierto (D-166).
+  - **Botón que palpita:** en los tres dashboards, el botón que pliega y despliega el menú va en el verde flúor de GreenOcean (D-450) y late con un brillo. Si el sistema pide menos movimiento, solo brilla.
+  - **Sin franja arriba:** con el menú plegado, la página empieza arriba, a la derecha del logo y del botón, en vez de dejar 54 px vacíos bajo ellos.
+  - **Detalle de Streamlit:** esta versión marca el menú con `data-collapsed`, no con `aria-expanded`; el guion lee los dos.
+- **Medición (Playwright):** Semanal abre con el menú plegado y el botón latiendo; abierto a mano, sigue abierto; Pipeline y linaje no late; Análisis BA y BI se pliega otra vez.
+- **Pruebas:** `tests/test_menu_order.py::test_d462_a_dashboard_opens_with_the_menu_folded_and_its_button_beating_in_green`.

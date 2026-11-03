@@ -10,6 +10,7 @@ The color modes and chart palettes live in bi/charts.py.
 
 import base64
 import contextvars
+import hashlib
 import html
 import importlib
 import json
@@ -2246,7 +2247,10 @@ def show_app_header(window):
     st.markdown(
         f"""<style>
     [data-testid="stElementContainer"]:has([data-testid="stMarkdownContainer"] > style:only-child) {{display:none;}}
-    .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMainBlockContainer"] {{padding-top:54px !important;}}
+    /* D-462: with the menu folded, the page starts at the top, to the right of the logo and its unfold button, instead
+       of leaving a band under them. */
+    .stApp:has([data-testid="stSidebar"][data-collapsed="true"]) [data-testid="stMainBlockContainer"] {{padding-top:12px !important;
+        padding-left:112px !important;}}
     .reading-guide {{font-size:.8rem; margin:5px 0 14px; color:{palette['text']};}}
     .reading-term {{font-size:inherit; margin-left:0; border-bottom:1px dotted currentColor; font-weight:400;}}
     .regional-detail {{width:100%; font-size:.75rem; border-collapse:collapse;}}
@@ -8318,6 +8322,7 @@ def render_window(window, pages=None):
         if pages:
             show_route_footer(window, pages, view)
         show_attribution()
+    show_dashboard_menu_fold(view, mode)
     st.html(
         PHONE_LAYOUT_HTML
         + FOLD_SIDEBAR_SCRIPT
@@ -8326,6 +8331,54 @@ def render_window(window, pages=None):
         + build_visit_history_script(),
         unsafe_allow_javascript=True,
     )
+
+
+# D-462: a dashboard opens with the menu folded, so its charts get the width; the button that unfolds it beats in the
+# green of GreenOcean (D-450), so it is seen. It folds once per page opened: a menu the reader opens stays open while
+# the reader works on that page. A phone turned sideways keeps its menu open (D-166).
+DASHBOARD_FOLD_SCRIPT = r"""<script>
+(() => {
+    const view = "__VIEW__";
+    const fold = "__FOLD__" === "yes";
+    if (window.__goFoldedView === view) return;
+    window.__goFoldedView = view;
+    if (!fold || window.matchMedia("(orientation: landscape) and (max-height: 500px)").matches) return;
+    let tries = 0;
+    const close = () => {
+        const sidebar = document.querySelector('[data-testid="stSidebar"]');
+        const button = document.querySelector('[data-testid="stSidebarCollapseButton"] button');
+        // Streamlit marks the menu with data-collapsed (aria-expanded in older versions)
+        const open = sidebar && (sidebar.dataset.collapsed === "false" || sidebar.getAttribute("aria-expanded") === "true");
+        if (open && button) { button.click(); return; }
+        if (sidebar && !open) return;
+        if (tries++ < 40) setTimeout(close, 100);
+    };
+    close();
+})();
+</script>"""
+
+
+def show_dashboard_menu_fold(view, mode):
+    """D-462: on the three dashboards the menu folds on opening and its button beats in green; elsewhere it stays."""
+    is_dashboard = view in DASHBOARD_TILES
+    if is_dashboard:
+        green = ba_green(mode)
+        st.markdown(
+            f"""<style>
+@keyframes go-menu-beat {{ 0%, 100% {{ filter:drop-shadow(0 0 2px {green}); opacity:1; }}
+  50% {{ filter:drop-shadow(0 0 9px {green}); opacity:.55; }} }}
+[data-testid="stSidebarCollapseButton"] button, [data-testid="stExpandSidebarButton"] {{ color:{green} !important;
+  animation:go-menu-beat 1.6s ease-in-out infinite; }}
+[data-testid="stSidebarCollapseButton"] button *, [data-testid="stExpandSidebarButton"] * {{ color:{green} !important; }}
+@media (prefers-reduced-motion:reduce) {{ [data-testid="stSidebarCollapseButton"] button,
+  [data-testid="stExpandSidebarButton"] {{ animation:none; filter:drop-shadow(0 0 4px {green}); }} }}
+</style>""",
+            unsafe_allow_html=True,
+        )
+    # the page as a neutral key: a page name in a script reads as Spanish text to the English layer (D-443)
+    key = hashlib.sha1(view.encode()).hexdigest()[:10]
+    script = DASHBOARD_FOLD_SCRIPT.replace("__VIEW__", key).replace("__FOLD__", "yes" if is_dashboard else "no")
+    st.html(script, unsafe_allow_javascript=True)
 
 
 # D-166: the panel is read in landscape. A phone held upright sees one screen asking to
