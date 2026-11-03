@@ -50,12 +50,12 @@ def test_d479_the_alert_chips_say_their_rule_in_the_words_of_each_view():
         assert f"{alerts.ALERT_DEVIATIONS} desviaciones estándar" in formula and f"{window} semanas previas" in formula
         assert i18n.lookup(plain) and i18n.lookup(formula)
     assert "Una oportunidad de compra." in alerts.describe_kind(False, False)
-    # Each level shows its threshold, taken from the same table that colours the rows.
-    plain, formula = dashboard.build_level_guide_html(False, False), dashboard.build_level_guide_html(False, True)
+    # Each level says its threshold on hover of «Nivel» (D-492), taken from the same table that colours the rows.
+    plain, formula = dashboard.level_guide_text(False, False), dashboard.level_guide_text(False, True)
     for floor, label, _, _ in dashboard.DROP_LEVELS:
         assert label in plain
-        assert (f"{floor}× o más" if floor else f"más de {alerts.ALERT_DEVIATIONS}×") in plain
-        assert (f"≥ {floor} σ" if floor else f"> {alerts.ALERT_DEVIATIONS} σ") in formula
+        assert (f"{label}: {floor}× o más" if floor else f"{label}: más de {alerts.ALERT_DEVIATIONS}×") in plain
+        assert (f"{label}: {floor} σ o más" if floor else f"{label}: más de {alerts.ALERT_DEVIATIONS} σ") in formula
     assert "desviación estándar" in plain and "desviación estándar" in formula
 
 

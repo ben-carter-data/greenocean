@@ -400,7 +400,7 @@ def region_layout(geometry):
 STEP_TEXTS = {
     1: 'Elige una región',
     2: 'Elige una familia',
-    3: 'Mira los productos',
+    3: 'Productos',  # D-492: the reader knows the products are there to be looked at
 }
 LOCK_TEXTS = {2: 'Elige primero una región', 3: 'Elige primero una familia'}
 SEARCH_DARK, SEARCH_LIGHT = '#39ff14', '#00a83a'  # D-450: fluorescent green
@@ -759,16 +759,51 @@ def products_heading(family, average, scope, shown=None, total=None, note='', st
     )
 
 
-def alert_heading(family, label, rise, step=None):
-    """D-489: step 3 while it shows only a family's sharp rises or drops: the family, how many, and that the price is
-    national."""
-    name = 'Toda la canasta' if family == ALL_FAMILIES else short_family(family)
+def alert_heading(step=None):
+    """D-492: step 3 while it shows the alerts: its number and name, and the price it uses, at the right edge."""
     return (
         f'<div class="mock-products-heading mock-products-slim">{step_chip(step)}'
-        '<span class="mock-kicker">Detalle de productos</span>'
-        f'<span class="mock-products-family">{esc(name)}</span>'
-        f'<span class="mock-alert-mark {"rise" if rise else "fall"} on">{esc(label)}</span>'
-        '<span class="mock-products-scope">precio nacional de ODEPA</span></div>'
+        '<span class="mock-alert-scope">precio nacional de ODEPA</span></div>'
+    )
+
+
+ALERT_LEVEL_CLASSES = {
+    'Alza extrema': 'rise-3',
+    'Alza muy fuerte': 'rise-2',
+    'Alza fuerte': 'rise-1',
+    'Baja extrema': 'drop-3',
+    'Baja muy fuerte': 'drop-2',
+    'Baja fuerte': 'drop-1',
+}
+
+
+def alert_table(items, query='', level_title=''):
+    """D-492: the alerts of step 3 drawn like the products table, so they scroll inside the panel and never run over
+    the line under it. Each item: the alert row with its «level», and the two prices of its change (D-482)."""
+    body = []
+    for row in items:
+        change = row['variation'] * 100
+        body.append(
+            '<tr>'
+            f'<td><span class="mock-level {ALERT_LEVEL_CLASSES[row["level"]]}">{esc(row["level"])}</span></td>'
+            f'<td><strong>{esc(product_label(row))}</strong>'
+            f'<small>{esc(data_terms.term(row["quality"]))} · $/{esc(data_terms.term(row["normalized_unit"]))}</small></td>'
+            f'<td>{esc(data_terms.term(row["channel"]))}</td>'
+            f'<td class="num">{money(row["before"])}</td><td class="num">{money(row["now"])}</td>'
+            f'<td class="num {"rise" if change > 0 else "fall"}"><b>{percent(change, True)}</b></td></tr>'
+        )
+    if not body:
+        empty = (
+            f'Ningún producto empieza por «{esc(query)}» en estas alertas.'
+            if query
+            else 'No hay alertas para esta selección.'
+        )
+        body = [f'<tr><td colspan="6" class="mock-empty">{empty}</td></tr>']
+    return (
+        '<div class="mock-products-table" role="region" tabindex="0"><table><thead><tr>'
+        f'<th title="{esc(level_title)}">Nivel</th><th>Producto</th><th>Canal</th>'
+        '<th class="num">Anterior</th><th class="num">Actual</th><th class="num">Variación</th></tr></thead>'
+        f'<tbody>{"".join(body)}</tbody></table></div>'
     )
 
 

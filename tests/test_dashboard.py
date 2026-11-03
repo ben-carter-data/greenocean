@@ -1284,13 +1284,13 @@ def test_d100_alert_dialog_is_styled_from_every_page_not_only_the_summary():
     app.session_state[dashboard.PROFILE_STATE] = dashboard.PROFILE_PROFESSIONAL
     app.run()
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
-    assert '.home-alert-level-guide' in markup and '.mock-alert-mark' in markup
+    assert '.mock-level.rise-3' in markup and '.mock-alert-scope' in markup
     app.query_params.update({'_home_region': dashboard.ALL_VALUES, 'familia': 'Frutas'})  # D-491: after a family
     app.run()
     app.button(key='home_alert_trigger').click().run()
     assert not app.exception
     markup = ' '.join(block.value for block in app.get('html')) + ' '.join(c.value for c in app.markdown)
-    assert 'home-alert-level-guide' in markup  # D-489: the levels of step 3, no window
+    assert 'class="mock-level ' in markup  # D-489, D-492: the levels of step 3, no window
 
 
 def test_movement_ring_parts_cover_comparable_series_not_the_top_n():

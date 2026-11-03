@@ -2238,7 +2238,7 @@ PAGES = {
     "Toda la canasta": "The whole basket",
     "Elige una región": "Choose a region",
     "Elige una familia": "Choose a family",
-    "Mira los productos": "Look at the products",
+    "Productos": "Products",  # D-492: the name of step 3
     "Elige primero una región": "Choose a region first",
     "Elige primero una familia": "Choose a family first",
     "Todo Chile": "All of Chile",

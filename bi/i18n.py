@@ -374,6 +374,11 @@ EN = {
     "ODEPA solo publica {} de las {} familias en este canal": "ODEPA publishes only {} of the {} families for this channel",
     "Este canal publica {} de las {} familias: {}.": "This channel publishes {} of the {} families: {}.",
     "La última semana que publicó cada canal, aunque otra fuente todavía no la publique: un clic abre el canal.": "The latest week each channel published, even if another source has not published it yet: a click opens the channel.",
+    # D-492: the levels of the alerts, on hover of the «Nivel» header
+    "{}: {} σ o más": "{}: {} σ or more",
+    "{}: más de {} σ": "{}: more than {} σ",
+    "{}: {}× o más": "{}: {}× or more",
+    "{}: más de {}×": "{}: more than {}×",
     # D-491: the help of the alert line between steps 2 and 3
     "Pulsa de nuevo para ver todos los productos.": "Press again to see every product.",
     "Elige primero una familia.": "Choose a family first.",

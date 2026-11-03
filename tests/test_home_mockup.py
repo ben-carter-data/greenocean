@@ -75,38 +75,22 @@ def test_dashboard_alerts_follow_week_and_family_and_keep_severity_order():
     assert not rows.empty
     assert set(rows['product_group']) == {'Frutas'}
     assert rows['_distance'].is_monotonic_decreasing
-    table = dashboard.home_alert_table(rows)
-    assert len(table) == len(rows)
-    # D-489: in step 3 the unit goes with the product and the family is chosen in step 2, so the table fits the panel
-    assert list(table) == ['Nivel', 'Producto', 'Canal', 'Anterior', 'Actual', 'Variación']
-    assert all(' · $/' in name for name in table['Producto'])
+    items = dashboard.alert_items(rows)
+    assert len(items) == len(rows)
     # D-477: a rise takes the rise words, a drop the drop words; D-478: every level is at least «fuerte», as its alert
     rises = {'Alza extrema', 'Alza muy fuerte', 'Alza fuerte'}
     drops = {'Baja extrema', 'Baja muy fuerte', 'Baja fuerte'}
-    for level, variation in zip(table['Nivel'], rows['variation']):
-        assert level in (rises if variation > 0 else drops), (level, variation)
-    assert (
-        set(dashboard.home_alert_table(dashboard.home_alert_rows(week, 'Frutas', direction='baja'))['Nivel']) <= drops
-    )
-    styled = dashboard.style_home_alert_table(
-        pd.DataFrame(
-            {
-                'Nivel': [
-                    'Alza extrema',
-                    'Alza muy fuerte',
-                    'Alza fuerte',
-                    'Baja extrema',
-                    'Baja muy fuerte',
-                    'Baja fuerte',
-                ],
-                'Variación': ['+1,0 %', '+1,0 %', '+1,0 %', '−1,0 %', '−1,0 %', '−1,0 %'],
-            }
-        ),
-        dashboard.charts.MODE_DARK,
-    ).to_html()
-    # three reds for the rises, three greens for the drops: never the same colour for both
-    assert '#991b1b' in styled and '#7a2424' in styled and '#4f2424' in styled
-    assert '#166534' in styled and '#1d5233' in styled and '#1c3b2a' in styled
+    for item in items:
+        assert item['level'] in (rises if item['variation'] > 0 else drops), item['level']
+    falls = dashboard.alert_items(dashboard.home_alert_rows(week, 'Frutas', direction='baja'))
+    assert {item['level'] for item in falls} <= drops
+    # D-492: drawn like the products table, each level a tint of its alert's colour, three for each kind
+    table = home_mockup.alert_table(items, level_title='niveles')
+    assert table.startswith('<div class="mock-products-table"') and '<th title="niveles">Nivel</th>' in table
+    assert table.count('<tr>') == len(items) + 1
+    assert set(home_mockup.ALERT_LEVEL_CLASSES) == rises | drops
+    assert len(set(home_mockup.ALERT_LEVEL_CLASSES.values())) == 6
+    assert 'Ningún producto empieza por «zz» en estas alertas.' in home_mockup.alert_table([], 'zz')
 
 
 @pytest.mark.skipif(not queries.DATABASE_FILE.exists(), reason='Requires real database')
@@ -126,13 +110,18 @@ def test_d491_the_alert_line_waits_for_a_family_then_filters_step_three_and_come
     rise.click().run()
     assert not app.exception and app.query_params['alerta'] == dashboard.RISE
     markup = ' '.join(block.value for block in app.markdown)
-    assert 'precio nacional de ODEPA' in markup and 'home-alert-level-guide' in ' '.join(
-        b.value for b in app.get('html')
-    )
-    assert len(app.dataframe) == 1 and len(app.dataframe[0].value) == len(rows)
+    assert 'precio nacional de ODEPA' in markup and markup.count('class="mock-level ') == len(rows)
     assert not app.get('dialog')  # no window (D-489)
+    # D-492: the search stays, and looks only among the alerts shown
+    first = str(rows.iloc[0]['product'])
+    app.text_input(key='home_products_search').set_value(first[:4]).run()
+    markup = ' '.join(block.value for block in app.markdown)
+    found = rows[[dashboard.matches_product_search(row, first[:4]) for row in rows.to_dict('records')]]
+    assert markup.count('class="mock-level ') == len(found) > 0
+    app.text_input(key='home_products_search').set_value('').run()
     app.button(key='home_alert_trigger').click().run()  # pressed again: every product
-    assert 'alerta' not in app.query_params and not app.dataframe
+    markup = ' '.join(block.value for block in app.markdown)
+    assert 'alerta' not in app.query_params and 'class="mock-level ' not in markup
 
 
 def test_d491_the_families_carry_no_alert_marks_and_the_hint_says_why_the_bar_differs():

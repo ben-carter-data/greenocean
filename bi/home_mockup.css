@@ -37,13 +37,6 @@
 .st-key-home_table_controls {padding:10px 16px;margin-top:10px;border:1px solid __BORDER__;border-radius:9px;background:__PANEL__;}
 .st-key-home_table_controls [data-testid="stSlider"] {max-width:380px;}
 .stApp:has(.greenocean-mockup) [data-testid="stDialog"] [data-testid="stCaptionContainer"] p {color:__MUTED__!important;line-height:1.45;}
-.home-alert-level-guide {display:flex;align-items:center;gap:7px 15px;flex-wrap:wrap;color:__MUTED__;font-size:12px;line-height:1.3;padding-bottom:7px;}
-.home-alert-level-guide span {display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-weight:500;color:__INK__;}
-.home-alert-level-guide i {display:block;width:9px;height:9px;border-radius:50%;}
-.home-alert-level-guide i.critical {background:#b91c1c;}.home-alert-level-guide i.high {background:#dc4a4a;}.home-alert-level-guide i.moderate {background:#f19a9a;}
-.home-alert-level-guide i.drop-strong {background:#15803d;}.home-alert-level-guide i.drop-medium {background:#3fb56b;}.home-alert-level-guide i.drop-light {background:#94dcae;}
-.home-alert-level-guide small {font-size:11px;color:__MUTED__;}
-.home-alert-level-guide em {font-style:normal;font-weight:400;color:__MUTED__;margin-left:2px;}
 .mock-scope {padding:0 0 6px;color:var(--mock-muted);font-size:12px;line-height:1.4;}
 .st-key-home_product_scope {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin:3px 0 10px;padding:10px 14px;border:1px solid var(--mock-border);border-left:3px solid var(--mock-fall);border-radius:8px;background:__PANEL__;}
 .st-key-home_product_scope > div:first-child {flex:1 1 520px;min-width:0;}
@@ -351,7 +344,11 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-movement-row.rise .mock-movement-value,.mock-movement-row.rise .mock-movement-state {color:var(--mock-rise);}
 .mock-movement-row.fall .mock-movement-value,.mock-movement-row.fall .mock-movement-state {color:var(--mock-fall);}
 .mock-movement-state {font-size:11px;}.mock-movement-chevron {color:var(--mock-muted);font-size:16px;}
-/* D-489: in step 3's heading, the kind of alert it shows. */
+/* D-492: in step 3, the price the alerts use sits at the right edge; each level is a tint of its alert's colour. */
+.mock-alert-scope {margin-left:auto;font-size:11.5px;color:var(--mock-muted);white-space:nowrap;}
+.mock-level {display:inline-block;padding:2px 8px;border-radius:6px;font-weight:600;white-space:nowrap;color:var(--mock-ink);}
+.mock-level.rise-3 {background:color-mix(in srgb,__ALERT_RISE__ 48%,transparent);}.mock-level.rise-2 {background:color-mix(in srgb,__ALERT_RISE__ 30%,transparent);}.mock-level.rise-1 {background:color-mix(in srgb,__ALERT_RISE__ 15%,transparent);}
+.mock-level.drop-3 {background:color-mix(in srgb,__ALERT_DROP__ 48%,transparent);}.mock-level.drop-2 {background:color-mix(in srgb,__ALERT_DROP__ 30%,transparent);}.mock-level.drop-1 {background:color-mix(in srgb,__ALERT_DROP__ 15%,transparent);}
 .mock-alert-mark {display:inline-flex;align-items:center;padding:2px 6px;border-radius:999px;font-size:11px;font-weight:600;line-height:1.2;text-decoration:none!important;font-variant-numeric:tabular-nums;white-space:nowrap;}
 .mock-alert-mark.rise {color:__ALERT_RISE__!important;background:color-mix(in srgb,__ALERT_RISE__ 16%,transparent);}
 .mock-alert-mark.fall {color:__ALERT_DROP__!important;background:color-mix(in srgb,__ALERT_DROP__ 16%,transparent);}
@@ -399,8 +396,8 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-products-count {margin-left:auto;font-size:11px;color:var(--mock-muted);font-variant-numeric:tabular-nums;}
 .greenocean-mockup .mock-coverage-note {margin-top:6px!important;font-size:10.5px!important;line-height:1.4!important;color:var(--mock-muted);}
 .mock-coverage-note a {color:var(--mock-fall)!important;}
-.st-key-home_products [data-testid="stTextInput"] input {font-size:12.5px;}
-.st-key-home_products [data-testid="stTextInput"] [data-baseweb="input"] {min-height:32px;}
+.st-key-home_products_search input {font-size:12.5px;}
+.st-key-home_products_search [data-baseweb="input"] {min-height:32px;}
 .mock-products-table {max-height:calc(100vh - 590px);}
 
 /* The Resumen's header (D-264): one thin bar. Volver, the path, the question (cut with «…», whole on hover), the
@@ -466,8 +463,8 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .mock-family-track {height:14px!important;}
 .mock-family-bar {top:2px!important;height:10px!important;}
 .st-key-home_products [data-baseweb="select"] > div {min-height:28px!important;font-size:12px!important;}
-.st-key-home_products [data-testid="stTextInput"] input {font-size:12px!important;min-height:28px!important;}
-.st-key-home_products [data-testid="stTextInput"] > div {min-height:28px!important;}
+.st-key-home_products_search input {font-size:12px!important;min-height:28px!important;}
+.st-key-home_products_search > div {min-height:28px!important;}
 .st-key-home_products {padding:6px 12px 8px!important;gap:4px!important;}
 .mock-products-table {max-height:max(110px, calc(100vh - 676px))!important;min-height:0!important;}
 /* D-309: the Dashboard fits one screen: the map and the panels take the height the window leaves under the bar.
@@ -491,7 +488,7 @@ a.mock-family-tile:hover .mock-family-product-image,a.mock-family-tile:focus-vis
 .st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox > div {height:28px!important;min-height:28px!important;}
 .st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox input {height:26px!important;padding:0 8px!important;font-size:12.5px!important;}
 .st-key-home_products [data-testid="stSelectbox"] .react-aria-ComboBox button {height:26px!important;}
-.st-key-home_products [data-testid="stTextInput"] input {height:26px!important;}
+.st-key-home_products_search input {height:26px!important;}
 
 /* D-312: the region the families are read for, above them, also when it is all of Chile. */
 .mock-movement-heading {display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
@@ -616,14 +613,14 @@ ul.mock-calc-out li em {font-style:normal;}
 .st-key-home_families,.st-key-home_products {position:relative;}
 /* D-372: the search in a luminous light blue, a little bigger, with a soft glow that pulses while nobody has typed;
    it stops on a click or a letter, and never moves when the system asks for reduced motion. */
-.st-key-home_products [data-testid="stTextInput"] [data-testid="stTextInputRootElement"] {border:2px solid __SEARCH__!important;min-height:44px;border-radius:10px;}
-.st-key-home_products [data-testid="stTextInput"] input {font-size:15px!important;}
-.st-key-home_products [data-testid="stTextInput"] svg,.st-key-home_products [data-testid="stTextInput"] [data-testid="stIconMaterial"] {color:__SEARCH__!important;fill:__SEARCH__!important;font-size:22px!important;}
+.st-key-home_products_search [data-testid="stTextInputRootElement"] {border:2px solid __SEARCH__!important;min-height:38px;border-radius:10px;}
+.st-key-home_products_search input {font-size:14px!important;}
+.st-key-home_products_search svg,.st-key-home_products_search [data-testid="stIconMaterial"] {color:__SEARCH__!important;fill:__SEARCH__!important;font-size:20px!important;}
 .st-key-home_products_search [data-testid="stTextInputRootElement"] {animation:mock-search-glow 2.4s ease-in-out infinite;}
-.st-key-home_products .st-key-home_products_search:focus-within [data-testid="stTextInputRootElement"],.st-key-home_products .st-key-home_products_search:has(input:not(:placeholder-shown)) [data-testid="stTextInputRootElement"],.st-key-home_products .st-key-home_products_search:has(input:disabled) [data-testid="stTextInputRootElement"] {animation:none!important;}
+.st-key-home_products_search:focus-within [data-testid="stTextInputRootElement"],.st-key-home_products_search:has(input:not(:placeholder-shown)) [data-testid="stTextInputRootElement"],.st-key-home_products_search:has(input:disabled) [data-testid="stTextInputRootElement"] {animation:none!important;}
 @keyframes mock-search-glow {0%,100% {box-shadow:0 0 0 0 color-mix(in srgb,__SEARCH__ 0%,transparent);} 50% {box-shadow:0 0 14px 3px color-mix(in srgb,__SEARCH__ 55%,transparent);}}
 @keyframes mock-unlock {0% {box-shadow:0 0 0 0 color-mix(in srgb,__ACCENT__ 70%,transparent);} 60% {box-shadow:0 0 0 6px color-mix(in srgb,__ACCENT__ 25%,transparent);} 100% {box-shadow:0 0 0 0 transparent;}}
-@media (prefers-reduced-motion:reduce) {.st-key-home_families,.st-key-home_products,.st-key-home_products [data-testid="stTextInputRootElement"] {animation:none!important;}}
+@media (prefers-reduced-motion:reduce) {.st-key-home_families,.st-key-home_products,.st-key-home_products_search [data-testid="stTextInputRootElement"] {animation:none!important;}}
 .st-key-home_families > [data-testid="stElementContainer"]:has(.mock-lock),.st-key-home_products > [data-testid="stElementContainer"]:has(.mock-lock) {position:absolute!important;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;margin:0!important;}
 
 /* D-407: one screen down to 1280 x 800 (RNF-06). Under 860 px of height the family rows get thinner, the fixed line
@@ -679,9 +676,9 @@ ul.mock-calc-out li em {font-style:normal;}
 .st-key-home_overview .mock-products-slim .mock-step {margin:0!important;font-size:13.5px;}
 .st-key-home_overview .mock-products-slim .mock-step b {width:22px;height:22px;font-size:12.5px;box-shadow:0 0 0 3px color-mix(in srgb,__ACCENT__ 22%,transparent);}
 .st-key-home_overview .st-key-home_products {gap:3px!important;padding-top:5px!important;}
-.st-key-home_overview .st-key-home_products [data-testid="stTextInput"] [data-testid="stTextInputRootElement"] {min-height:28px!important;height:28px;border-width:1.5px!important;border-radius:8px;}
-.st-key-home_overview .st-key-home_products [data-testid="stTextInput"] input {font-size:12.5px!important;min-height:0!important;padding-top:0;padding-bottom:0;}
-.st-key-home_overview .st-key-home_products [data-testid="stTextInput"] [data-testid="stIconMaterial"] {font-size:17px!important;}
+.st-key-home_overview .st-key-home_products_search [data-testid="stTextInputRootElement"] {min-height:28px!important;height:28px;border-width:1.5px!important;border-radius:8px;}
+.st-key-home_overview .st-key-home_products_search input {font-size:12.5px!important;min-height:0!important;padding-top:0;padding-bottom:0;}
+.st-key-home_overview .st-key-home_products_search [data-testid="stIconMaterial"] {font-size:17px!important;}
 .st-key-home_overview .st-key-home_products [data-testid="stWidgetLabel"] p {font-size:12px!important;}
 
 /* D-451: the panels' explanations live behind a small «i» next to their step, opened on hover or with the keyboard,
@@ -701,3 +698,7 @@ ul.mock-calc-out li em {font-style:normal;}
 .mock-hint-body > span:not(.mock-hint-title),.mock-hint-body .mock-movement-note {display:block;color:var(--mock-muted);font-size:11.5px;}
 .st-key-home_overview .mock-movement {overflow:visible;}
 .mock-products-table td.mock-family-cell {width:84px;max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mock-muted);}
+
+/* D-492: the alerts and the search, on one line between steps 2 and 3. */
+.st-key-home_alert_line {align-items:center!important;gap:8px!important;}
+.st-key-home_alert_line .st-key-home_products_search {flex:1 1 220px!important;max-width:380px;}

@@ -43,7 +43,7 @@ def test_d352_in_the_user_view_panels_two_and_three_start_locked_with_no_region_
     app = draw("consulta")
     text = page(app)
     assert not app.exception
-    for step in ("1</b><span>Elige una región", "2</b><span>Elige una familia", "3</b><span>Mira los productos"):
+    for step in ("1</b><span>Elige una región", "2</b><span>Elige una familia", "3</b><span>Productos"):
         assert step in text, step
     assert (
         "Elige primero una región" in text and "Elige primero una familia" in text
@@ -81,7 +81,7 @@ def test_d372_the_professional_and_the_author_wait_for_each_step_like_the_user()
     for state in ({}, {"admin_unlocked": True, "quality_alert_seen": True}):
         app = draw("profesional", state=state)
         text = page(app)
-        assert not app.exception and "1</b><span>Elige una región" in text and "3</b><span>Mira los productos" in text
+        assert not app.exception and "1</b><span>Elige una región" in text and "3</b><span>Productos" in text
         assert text.count('class="mock-lock"') == 2 and "Elige primero una región" in text and "saturate(.4)" in text
         assert all(box.disabled for box in app.text_input if box.key == "home_products_search")
         assert re.search(r"mock-movement-row (rise|fall|neutral) selected", text) is None  # no family preselected
@@ -107,15 +107,15 @@ def test_d450_the_search_glows_in_fluorescent_green_apart_from_the_blue_of_falls
         light = home_mockup.SEARCH_DARK if palette["base"] == "dark" else home_mockup.SEARCH_LIGHT
         assert light.lower() in {"#39ff14", "#00a83a"}  # D-450: fluorescent green, deeper on white
         assert light.lower() not in {"#0868c5", "#83baff", palette["fall"].lower()}  # never the blue of «bajó»
-        assert f'[data-testid="stTextInputRootElement"] {{border:2px solid {light}!important;min-height:44px;' in css
-        assert f"{{color:{light}!important;fill:{light}!important;font-size:22px!important;}}" in css  # the magnifier
+        assert f'[data-testid="stTextInputRootElement"] {{border:2px solid {light}!important;min-height:38px;' in css
+        assert f"{{color:{light}!important;fill:{light}!important;font-size:20px!important;}}" in css  # the magnifier
         assert "animation:mock-search-glow 2.4s ease-in-out infinite" in css
         assert (
             ':focus-within [data-testid="stTextInputRootElement"]' in css and "input:not(:placeholder-shown)" in css
         )  # click, letter
         assert (
             '@media (prefers-reduced-motion:reduce) {.st-key-home_families,.st-key-home_products,'
-            '.st-key-home_products [data-testid="stTextInputRootElement"] {animation:none!important;}}' in css
+            '.st-key-home_products_search [data-testid="stTextInputRootElement"] {animation:none!important;}}' in css
         )
     palette = charts.get_palette(charts.THEMES[0])
     stopped = '.st-key-home_products_search [data-testid="stTextInputRootElement"] {animation:none!important;}'

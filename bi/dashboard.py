@@ -4201,113 +4201,39 @@ def alert_prices(row):
     return None, row['national_price']
 
 
-def home_alert_table(rows):
-    """Readable, severity-ordered rows for step 3 (D-489): the unit goes with the product, so the table fits the panel."""
-    records = rows.to_dict('records')
-    return pd.DataFrame(
-        {
-            'Nivel': [find_alert_level(row['_distance'], row['variation'] > 0)[0] for row in records],
-            'Producto': [f"{describe_product(row)} · $/{row['normalized_unit']}" for row in records],
-            'Canal': [row['channel'] for row in records],
-            # D-482: the two prices the change is computed from (the regions with a price in both weeks, D-144), both
-            # published; before, «Anterior» was worked back from the national price and could be a price never seen
-            'Anterior': [home_mockup.money(alert_prices(row)[0]) for row in records],
-            'Actual': [home_mockup.money(alert_prices(row)[1]) for row in records],
-            'Variación': [home_mockup.percent(row['variation'] * 100, True) for row in records],
-        }
-    )
-
-
-def style_home_alert_table(table, mode):
-    """Color the alert level and price direction without changing their text labels. D-477: the sharp rises in three
-    reds, the sharp drops in three greens, from strong to light."""
-    dark = charts.get_palette(mode)['base'] == 'dark'
-    colors = (
-        {
-            'Alza extrema': ('#991b1b', '#fff4f4'),
-            'Alza muy fuerte': ('#7a2424', '#ffe4e4'),
-            'Alza fuerte': ('#4f2424', '#ffcfcf'),
-            'Baja extrema': ('#166534', '#f0fff4'),
-            'Baja muy fuerte': ('#1d5233', '#dcfce7'),
-            'Baja fuerte': ('#1c3b2a', '#bbf7d0'),
-        }
-        if dark
-        else {
-            'Alza extrema': ('#fecaca', '#7f1d1d'),
-            'Alza muy fuerte': ('#fee2e2', '#991b1b'),
-            'Alza fuerte': ('#fef2f2', '#b91c1c'),
-            'Baja extrema': ('#bbf7d0', '#14532d'),
-            'Baja muy fuerte': ('#dcfce7', '#166534'),
-            'Baja fuerte': ('#f0fdf4', '#15803d'),
-        }
-    )
-
-    colors = {i18n.translate_text(label): pair for label, pair in colors.items()}  # D-477: the table may be in English
-
-    def level_css(value):
-        background, foreground = colors[value]
-        return f'background-color:{background};color:{foreground};font-weight:600'
-
-    def change_css(value):
-        foreground = ('#ff8a96' if dark else '#b91c1c') if value.startswith('+') else ('#83baff' if dark else '#1d4ed8')
-        return f'color:{foreground};font-weight:600'
-
-    level, change = i18n.translate_text('Nivel'), i18n.translate_text('Variación')
-    return table.style.map(level_css, subset=[level]).map(change_css, subset=[change])
-
-
-def translate_alert_table(table):
-    """D-477: the alert table in the reader's language. A styled table skips the English layer, so its headers,
-    levels, channels and figures are translated here, before the style."""
-    if not i18n.is_english():
-        return table
-    table = table.copy()
-    for column in ('Canal',):
-        if column in table:
-            table[column] = table[column].map(data_terms.term)
-    for column in table.columns:  # every text cell, whatever the column's dtype (pandas 3 has a string dtype)
-        table[column] = table[column].map(lambda value: i18n.translate_text(value) if isinstance(value, str) else value)
-    return table.rename(columns=i18n.translate_text)
-
-
 def alert_count_text(count, direction):
     """«8 alzas fuertes», «1 baja fuerte» (D-477)."""
     one, many = ALERT_KINDS[direction]
     return f'{count} {one if count == 1 else many}'
 
 
-def show_family_alerts(week, family, direction, mode):
-    """D-489: step 3 with only the sharp rises or the sharp drops of a family (or of the whole basket), at the national
-    price of K6, with the level of each one and the rule in words (D-479)."""
+def show_family_alerts(week, family, direction, query):
+    """D-489, D-492: step 3 with only the sharp rises or the sharp drops of the chosen family (or of the whole basket),
+    at the national price of K6; the search of the alert line looks only among them. The levels and the rule are said
+    on hover (D-479): the «Nivel» header and the buttons."""
     rows = home_alert_rows(week, family or ALL_VALUES, direction=direction)
-    rise = direction == RISE
-    professional = not is_public_profile()
+    if query:
+        rows = rows[[matches_product_search(row, query) for row in rows.to_dict('records')]]
     st.markdown(
         '<div class="greenocean-mockup">'
-        + home_mockup.alert_heading(family or ALL_VALUES, alert_count_text(len(rows), direction), rise, step=3)
+        + home_mockup.alert_heading(step=3)
+        + home_mockup.alert_table(
+            alert_items(rows), query, level_guide_text(direction == RISE, not is_public_profile())
+        )
         + '</div>',
         unsafe_allow_html=True,
     )
-    st.html(build_level_guide_html(rise, professional))
-    show_alert_table(rows, mode)
-    st.caption(alerts.describe_kind(rise, professional))  # D-479: the rule, never computed in silence
 
 
-def show_alert_table(rows, mode):
-    """The alert rows as the styled table, at the width of step 3 (D-489): the family is chosen in step 2."""
-    if rows.empty:
-        st.caption('No hay alertas para esta selección.')
-        return
-    table = translate_alert_table(home_alert_table(rows))
-    # D-491: the product's column has a width, so «Variación» never falls off the panel; the full name shows on hover
-    product = table.columns[1]
-    st.dataframe(
-        style_home_alert_table(table, mode),
-        hide_index=True,
-        use_container_width=True,
-        height=min(520, max(150, 35 * (len(rows) + 1))),
-        column_config={product: st.column_config.TextColumn(product, width=230)},
-    )
+def alert_items(rows):
+    """The alert rows with their level and the two published prices of their change (D-482), in severity order."""
+    items = []
+    for row in rows.to_dict('records'):
+        before, now = alert_prices(row)
+        items.append(
+            {**row, 'level': find_alert_level(row['_distance'], row['variation'] > 0)[0], 'before': before, 'now': now}
+        )
+    return items
 
 
 PRODUCT_ORDERS = ('Mayor cambio', 'Subidas', 'Bajadas', 'Nombre')
@@ -4594,8 +4520,9 @@ def show_market_overview(mode, prefix):
 
     def show_products():
         with st.container(key='home_products'):
+            query = st.session_state.get('home_products_search', '').strip()  # D-492: typed in the alert line
             if alert:
-                show_family_alerts(week, family, alert, mode)
+                show_family_alerts(week, family, alert, query)
                 return
             if not family_open:
                 st.markdown(
@@ -4613,19 +4540,7 @@ def show_market_overview(mode, prefix):
                 else next((value for name, value, _ in averages if name == products_family), None)
             )
             heading = st.empty()
-            search_column, channel_column, order_column, enlarge_column = st.columns(
-                [1.35, 1.25, 1.5, 0.3], vertical_alignment='center'
-            )
-            query = search_column.text_input(
-                'Buscar',
-                key='home_products_search',
-                icon=':material/search:',
-                placeholder='Producto, ej.: lechuga',
-                label_visibility='collapsed',
-                type='search',
-                live=True,
-                disabled=not family_open,
-            )
+            channel_column, order_column, enlarge_column = st.columns([1.25, 1.5, 0.3], vertical_alignment='center')
             channels = ['Todos'] + sorted({str(row['channel']) for row in rows})
             if st.session_state.get('home_products_channel') not in channels:
                 st.session_state['home_products_channel'] = 'Todos'
@@ -4639,7 +4554,7 @@ def show_market_overview(mode, prefix):
             total = len(rows)
             if channel != 'Todos':
                 rows = [row for row in rows if row['channel'] == channel]
-            if query.strip():
+            if query:
                 rows = [row for row in rows if matches_product_search(row, query)]
             rows = sort_family_products(rows, order)
             published = None
@@ -4842,21 +4757,17 @@ def read_lineage(database_version):
 
 
 # region Alerts page
-LEVEL_DOTS = {RISE: ("critical", "high", "moderate"), DROP: ("drop-strong", "drop-medium", "drop-light")}
-
-
-def build_level_guide_html(rise, professional):
-    """D-479: each level with its threshold, in σ for Profesional and Autor and in «veces» for the Usuario, and what
-    the number means; before, only «El color indica cuán inusual fue…», a calculation nobody could see."""
-    levels = ALERT_LEVELS if rise else DROP_LEVELS
-    spans = []
-    for (floor, label, _, _), dot in zip(levels, LEVEL_DOTS[RISE if rise else DROP]):
+def level_guide_text(rise, professional):
+    """D-479, D-492: what each level means, said on hover of the «Nivel» header: its threshold in standard deviations,
+    from the same table that colours the rows; in the reader's language, since a hover text has no layer of its own."""
+    parts = []
+    for floor, label, _, _ in ALERT_LEVELS if rise else DROP_LEVELS:
         if professional:
-            scale = f"≥ {floor} σ" if floor else f"> {alerts.ALERT_DEVIATIONS} σ"
+            template, value = ('{}: {} σ o más', floor) if floor else ('{}: más de {} σ', alerts.ALERT_DEVIATIONS)
         else:
-            scale = f"{floor}× o más" if floor else f"más de {alerts.ALERT_DEVIATIONS}×"
-        spans.append(f'<span><i class="{dot}"></i>{label}<em>{scale}</em></span>')
-    return f'<div class="home-alert-level-guide">{"".join(spans)}<small>{alerts.describe_scale(professional)}</small></div>'
+            template, value = ('{}: {}× o más', floor) if floor else ('{}: más de {}×', alerts.ALERT_DEVIATIONS)
+        parts.append(tr(template).format(i18n.translate_text(label), value))
+    return ' · '.join(parts) + '. ' + i18n.translate_text(alerts.describe_scale(professional))
 
 
 def find_alert_level(distance, rise=True):
@@ -9443,7 +9354,8 @@ WINDOW_PAGES = {}
 def show_alert_line(week, family, family_open, alert):
     """D-491: between steps 2 and 3, a thin line with the sharp rises (red) and the sharp drops (green) of the chosen
     family, or of the whole basket; they wake up once a family is chosen (D-352). One shows only those products in step
-    3, and pressing it again brings back every product. The count is national, like K6 (D-477, D-489)."""
+    3, and pressing it again brings back every product. The count is national, like K6 (D-477, D-489). D-492: the
+    search sits on the same line and never leaves: with a kind of alert chosen it looks only among those alerts."""
     now = read_price_alerts()
     now = now[now["week_start"] == pd.Timestamp(week)] if not now.empty else now
     if family_open and family not in (None, ALL_VALUES) and not now.empty:
@@ -9464,7 +9376,7 @@ def show_alert_line(week, family, family_open, alert):
             tr("▼ {} bajas fuertes").format(counts[DROP]) if counts[DROP] != 1 else tr("▼ 1 baja fuerte"),
         ),
     ]
-    with st.container(key="home_alert_chips", horizontal=True, gap="small", width="content"):
+    with st.container(key="home_alert_line", horizontal=True, gap="small", vertical_alignment="center"):
         for direction, key, label in chips:
             on = alert == direction
             help_text = (
@@ -9486,6 +9398,16 @@ def show_alert_line(week, family, family_open, alert):
                 else:
                     st.query_params["alerta"] = direction
                 st.rerun()
+        st.text_input(
+            "Buscar",
+            key="home_products_search",
+            icon=":material/search:",
+            placeholder="Producto, ej.: lechuga",
+            label_visibility="collapsed",
+            type="search",
+            live=True,
+            disabled=not family_open,
+        )
 
 
 def show_profile_indicator():
